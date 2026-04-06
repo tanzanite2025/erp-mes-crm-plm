@@ -1,0 +1,88 @@
+import { useState } from 'react'
+import { Settings2 } from 'lucide-react'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Form } from '@/components/ui/form'
+import { type Material } from '../data/schema'
+import { useMaterialForm } from '../hooks/use-material-form'
+import { MaterialForm } from './material-form'
+
+interface MaterialUpsertDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  material: Material | null
+  defaultCategory?: string
+  onSave: (data: Partial<Material>) => Promise<void>
+}
+
+export function MaterialUpsertDialog({
+  open,
+  onOpenChange,
+  material,
+  defaultCategory,
+  onSave,
+}: MaterialUpsertDialogProps) {
+  const { t } = useLanguage()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { form, selectedCategory } = useMaterialForm({ material, open, defaultCategory })
+
+  const onSubmit = (data: Material) => {
+    setIsSubmitting(true)
+    onSave(data)
+      .then(() => onOpenChange(false))
+      .finally(() => setIsSubmitting(false))
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[700px]'>
+        <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+        <div className='relative max-h-[90vh] overflow-y-auto p-6'>
+          <DialogHeader className='mb-4'>
+            <div className='flex items-center gap-2 text-primary'>
+              <Settings2 className='size-5' />
+              <DialogTitle className='text-lg font-black italic tracking-tighter'>
+                {material
+                  ? t('materialArchive.upsertDialog.editTitle')
+                  : t('materialArchive.upsertDialog.createTitle')}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+              <MaterialForm form={form} selectedCategory={selectedCategory} />
+
+              <DialogFooter className='pt-4'>
+                <Button
+                  variant='outline'
+                  type='button'
+                  onClick={() => onOpenChange(false)}
+                  className='h-12 rounded-full px-8 text-[10px] font-black tracking-widest'
+                >
+                  {t('materialArchive.upsertDialog.cancel')}
+                </Button>
+                <Button
+                  type='submit'
+                  disabled={isSubmitting}
+                  className='h-12 rounded-full px-10 text-[10px] font-black tracking-widest shadow-lg shadow-primary/20'
+                >
+                  {isSubmitting
+                    ? t('materialArchive.upsertDialog.submitting')
+                    : t('materialArchive.upsertDialog.confirm')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

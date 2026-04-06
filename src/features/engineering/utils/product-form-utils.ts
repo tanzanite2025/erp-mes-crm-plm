@@ -1,0 +1,107 @@
+import { type Product } from '../data/schema'
+
+export interface ProductVariantSelection {
+    level: string
+    weight: number | undefined
+}
+
+export type SkuValidationResult =
+    | { ok: true }
+    | { ok: false; reason: 'EMPTY' | 'DUPLICATE_IN_BATCH' | 'DUPLICATE_EXISTING'; sku?: string }
+
+interface BuildDefaultProductValuesOptions {
+    includeVersion?: boolean
+}
+
+export function buildDefaultProductValues(
+    options: BuildDefaultProductValuesOptions = {}
+): Partial<Product> {
+    const { includeVersion = true } = options
+
+    return {
+        id: '',
+        sku: '',
+        name: '',
+        modelCode: '01',
+        typeId: '',
+        depth: undefined,
+        widthInternal: undefined,
+        widthExternal: undefined,
+        tireType: undefined,
+        weight: undefined,
+        brakeType: '',
+        techSeries: '',
+        versionLevel: '',
+        image: '',
+        restrictions: [],
+        moldGroup: '',
+        description: '',
+        status: 'Active',
+        templateKey: '',
+        createdAt: new Date().toISOString(),
+        length: undefined,
+        angle: undefined,
+        clamp: '',
+        offset: undefined,
+        axleCrown: undefined,
+        steerer: '',
+        engineeringSpecId: '',
+        ...(includeVersion ? { _v: undefined } : {})
+    }
+}
+
+export function deriveSku(typeCode: string, modelCode: string, versionLevel?: string): string {
+    if (versionLevel) {
+        return `${typeCode}-${modelCode}-${versionLevel}`
+    }
+    return `${typeCode}-${modelCode}`
+}
+
+export function ensureSkuUnique(
+    productsToSave: Product[],
+    existingSkus: Set<string>
+): SkuValidationResult {
+    const seen = new Set<string>()
+    for (const product of productsToSave) {
+        const sku = product.sku || ''
+        if (!sku) {
+            return { ok: false, reason: 'EMPTY' }
+        }
+        if (seen.has(sku)) {
+            return { ok: false, reason: 'DUPLICATE_IN_BATCH', sku }
+        }
+        if (existingSkus.has(sku)) {
+            return { ok: false, reason: 'DUPLICATE_EXISTING', sku }
+        }
+        seen.add(sku)
+    }
+    return { ok: true }
+}
+
+export function buildBatchProducts(
+    values: Product,
+    selectedVariants: ProductVariantSelection[],
+    typeCode: string
+): Product[] {
+    return selectedVariants.map(variant => ({
+        ...values,
+        id: '',
+        versionLevel: variant.level,
+        weight: variant.weight,
+        sku: deriveSku(typeCode, values.modelCode, variant.level),
+        createdAt: new Date().toISOString()
+    }))
+}
+
+export function buildSingleVariantProduct(
+    values: Product,
+    variant: ProductVariantSelection,
+    typeCode: string
+): Product {
+    return {
+        ...values,
+        versionLevel: variant.level,
+        weight: variant.weight,
+        sku: deriveSku(typeCode, values.modelCode, variant.level)
+    }
+}

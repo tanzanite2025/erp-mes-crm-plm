@@ -1,0 +1,70 @@
+import { Loader } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { FormControl } from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+import { useFormContext } from 'react-hook-form'
+
+type SelectDropdownProps = {
+  onValueChange?: (value: string) => void
+  value?: string | undefined
+  defaultValue?: string | undefined
+  placeholder?: string
+  isPending?: boolean
+  items: { label: string; value: string; disabled?: boolean }[] | undefined
+  disabled?: boolean
+  className?: string
+  isControlled?: boolean
+}
+
+export function SelectDropdown({
+  value,
+  defaultValue,
+  onValueChange,
+  isPending,
+  items,
+  placeholder,
+  disabled,
+  className = '',
+  isControlled = false,
+}: SelectDropdownProps) {
+  const form = useFormContext()
+  const selectProps = isControlled
+    ? { value: value ?? '', onValueChange }
+    : { defaultValue, onValueChange }
+
+  const trigger = (
+    <SelectTrigger disabled={disabled} className={cn(className)}>
+      <SelectValue placeholder={placeholder ?? 'Select'} />
+    </SelectTrigger>
+  )
+
+  return (
+    <Select {...selectProps}>
+      {form ? <FormControl>{trigger}</FormControl> : trigger}
+      <SelectContent>
+        {isPending ? (
+          <SelectItem disabled value='loading' className='h-14'>
+            <div className='flex items-center justify-center gap-2'>
+              <Loader className='h-5 w-5 animate-spin' />
+              {'  '}
+              Loading...
+            </div>
+          </SelectItem>
+        ) : (
+          items?.map(({ label, value, disabled: itemDisabled }) => (
+            <SelectItem key={value} value={value} disabled={itemDisabled}>
+              {label}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
+  )
+}

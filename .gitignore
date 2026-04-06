@@ -1,0 +1,108 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+.env
+.env.production.local
+.env.test.local
+.env.development.local
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.gemini/
+.playwright-cli/
+.vs/
+.tanstack/
+.tanzanite/
+.vscode/
+
+# --- Generated Files ---
+src/routeTree.gen.ts
+src/**/*.gen.ts
+!src/features/authz/data/permission-contract.gen.ts
+dist
+dist-ssr
+*.local
+# 忽略编译后的二进制文件
+server/xdfc-server
+server/*.exe
+server/*.test
+
+# Production SSL Certificates
+*.crt
+*.key
+*.pem
+/server/xdfc_origin.crt
+/server/xdfc_origin.key
+
+# Binaries
+bin/
+/server/bin/
+
+# 忽略本地数据库数据（由 Docker 挂载产生）
+server/postgres_data/
+
+# 忽略日志与监控中间数据
+server/deployment/loki/tmp/
+server/tmp/
+
+# 忽略生产生成的业务数据与备份 (由 Docker 挂载)
+server/uploads/
+server/backups/
+/server/uploads/
+/server/backups/
+
+# 🛑 Watchdog (Rust) 编译与配置隔离
+server/watchdog/target/
+server/watchdog/.env
+server/watchdog/uploads/
+server/watchdog/backups/
+
+# 忽略环境配置备忘（只保留 .env.example）
+.env
+.env.local
+.env.production
+!.env.example
+
+# 服务端敏感配置 (绝对禁止入库)
+server/.env
+server/.env.dev
+server/server.env
+server/watchdog/.env
+
+# 临时调试文件
+server/tmp_test_security.go
+server/tmp_server.exe
+
+# Local Go build cache
+.gocache/
+server/.gocache-test/
+server/.codex-tmp/
+server/.gocache/
+server/server/.codex-tmp/
+server/server/.gocache/
+
+# Route snapshot artifacts (generated during route refactor verification)
+route_snapshot*.txt
+server/route_snapshot*.txt
+
+# Coverage artifacts
+coverage.out
+*.coverprofile

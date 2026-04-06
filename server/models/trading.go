@@ -1,0 +1,138 @@
+package models
+
+import (
+	"time"
+)
+
+// SalesOrder 销售订单主单
+type SalesOrder struct {
+	ID                 string           `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	OrderNo            string           `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
+	OrderName          string           `gorm:"size:255" json:"orderName"`
+	CustomerName       string           `gorm:"size:100" json:"customerName"`
+	CustomerID         string           `gorm:"size:100" json:"customerId"`
+	Type               string           `gorm:"size:50" json:"type"`
+	Currency           string           `gorm:"size:20" json:"currency"`
+	Classification     string           `gorm:"size:50" json:"classification"`
+	Status             string           `gorm:"size:50;default:'Draft'" json:"status"`
+	StatusNote         string           `json:"statusNote"`
+	Amount             float64          `json:"amount"`
+	Quantity           float64          `json:"quantity"`
+	OrderDate          string           `gorm:"index:idx_so_deleted_date" json:"orderDate"`
+	DeliveryDate       string           `json:"deliveryDate"`
+	PurchaseOrderNo    string           `gorm:"size:100" json:"purchaseOrderNo"`
+	Barcode            string           `gorm:"size:100" json:"barcode"`
+	Requirements       string           `gorm:"type:text" json:"requirements"`
+	WorkflowInstanceID string           `gorm:"size:100;index" json:"workflowInstanceId"`
+	Lines              []SalesOrderLine `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+	CreatedAt          time.Time        `json:"createdAt"`
+	UpdatedAt          time.Time        `json:"updatedAt"`
+	UpdatedBy          string           `json:"updatedBy"`
+	IsDeleted          bool             `gorm:"index:idx_so_deleted_date;default:false" json:"isDeleted"`
+	Version            int              `gorm:"default:1" json:"_v"` // 对应前端 BaseEntity._v
+}
+
+// SalesOrderLine 销售订单明细行
+type SalesOrderLine struct {
+	ID             uint    `gorm:"primaryKey" json:"id"`
+	SalesOrderID   string  `gorm:"type:uuid;index" json:"-"`
+	LineNo         int     `json:"lineNo"`
+	ProductID      string  `json:"productId"`
+	ProductModel   string  `json:"productModel"`
+	ProductCode    string  `json:"productCode"`
+	Specification  string  `json:"specification"`
+	Description    string  `json:"description"`
+	Qty            float64 `json:"qty"`
+	UOM            string  `json:"uom"`
+	Price          float64 `json:"price"`
+	Amount         float64 `json:"amount"`
+	DeliveredQty   float64 `json:"deliveredQty"`
+	CustomerPartNo string  `json:"customerPartNo"`
+	JobNo          string  `json:"jobNo"`
+	Note           string  `json:"note"`
+	DrillingPlanID string  `json:"drillingPlanId"`
+	LabelingPlanID string  `json:"labelingPlanId"`
+	HoleCount      int     `json:"holeCount"`
+	Route          string  `json:"route"`
+	OrderDate      string  `json:"orderDate"`
+	Status         string  `json:"status"`
+	ClaimedBy      string  `json:"claimedBy"`
+	ClaimedAt      string  `json:"claimedAt"`
+}
+
+// Customer 客户模型
+type Customer struct {
+	ID            string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Name          string    `gorm:"size:255;index:idx_cust_deleted_name;not null" json:"name"`
+	Code          string    `gorm:"size:100;uniqueIndex;not null" json:"code"`
+	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
+	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
+	Email         string    `gorm:"size:100" json:"email"`
+	Address       string    `gorm:"type:text" json:"address"`
+	Status        string    `gorm:"size:20;default:'Active'" json:"status"`
+	CreditLimit   float64   `json:"creditLimit"`
+	Balance       float64   `json:"balance"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	IsDeleted     bool      `gorm:"index:idx_cust_deleted_name;default:false" json:"isDeleted"`
+	Version       int       `gorm:"default:1" json:"_v"`
+}
+
+// Supplier 供应商模型
+type Supplier struct {
+	ID            string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Name          string    `gorm:"size:255;index:idx_supp_deleted_name;not null" json:"name"`
+	Code          string    `gorm:"size:100;uniqueIndex;not null" json:"code"`
+	Category      string    `gorm:"size:100" json:"category"`
+	MainProducts  string    `gorm:"type:jsonb" json:"mainProducts"` // 存储产品列表 JSON
+	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
+	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
+	Email         string    `gorm:"size:100" json:"email"`
+	Address       string    `gorm:"type:text" json:"address"`
+	Status        string    `gorm:"size:20;default:'Active'" json:"status"`
+	Rating        float64   `json:"rating"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	IsDeleted     bool      `gorm:"index:idx_supp_deleted_name;default:false" json:"isDeleted"`
+	Version       int       `gorm:"default:1" json:"_v"`
+}
+
+// PurchaseOrder 采购订单主单
+type PurchaseOrder struct {
+	ID                 string              `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	OrderNo            string              `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
+	SupplierID         string              `gorm:"size:100" json:"supplierId"`
+	SupplierName       string              `gorm:"size:255" json:"supplierName"`
+	OrderDate          string              `json:"orderDate"`
+	ExpectedDate       string              `json:"expectedDate"`
+	Status             string              `gorm:"size:50;default:'Draft'" json:"status"`
+	Currency           string              `gorm:"size:20" json:"currency"`
+	Amount             float64             `json:"amount"`
+	ExchangeRate       float64             `gorm:"default:1.0" json:"exchangeRate"`
+	Purchaser          string              `gorm:"size:100" json:"purchaser"`
+	PaymentTerm        string              `gorm:"size:255" json:"paymentTerm"`
+	Note               string              `gorm:"type:text" json:"note"`
+	WorkflowInstanceID string              `gorm:"size:100;index" json:"workflowInstanceId"`
+	Lines              []PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	UpdatedAt          time.Time           `json:"updatedAt"`
+	IsDeleted          bool                `gorm:"default:false" json:"isDeleted"`
+	Version            int                 `gorm:"default:1" json:"_v"`
+}
+
+// PurchaseOrderLine 采购订单明细
+type PurchaseOrderLine struct {
+	ID              uint    `gorm:"primaryKey" json:"id"`
+	PurchaseOrderID string  `gorm:"type:uuid;index" json:"-"`
+	LineNo          int     `json:"lineNo"`
+	MaterialID      string  `json:"materialId"`
+	MaterialCode    string  `json:"materialCode"`
+	MaterialName    string  `json:"materialName"`
+	Specification   string  `json:"specification"`
+	Qty             float64 `json:"qty"`
+	UOM             string  `json:"uom"`
+	Price           float64 `json:"price"`
+	Amount          float64 `json:"amount"`
+	ReceivedQty     float64 `json:"receivedQty"`
+	Status          string  `json:"status"`
+}

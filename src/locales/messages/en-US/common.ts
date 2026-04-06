@@ -1,0 +1,97 @@
+export const common = {
+  language: {
+    label: 'Language',
+    switcher: 'Switch language',
+    zhCN: 'Chinese',
+    enUS: 'English',
+  },
+  theme: {
+    switcher: 'Toggle theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+  },
+  empty: {
+    noData: 'No data',
+    noRecords: 'No records',
+  },
+  status: {
+    ready: 'SYNC_READY',
+    syncing: 'Syncing...',
+  },
+  table: {
+    view: 'VIEW',
+    viewManagement: 'VIEW_MGMT',
+    viewing: 'VIEWING',
+    selectColumns: 'SELECT_COLUMNS',
+  },
+  actions: {
+    reset: 'Reset',
+    retry: 'Retry',
+    loading: 'Loading...',
+    close: 'Close',
+    save: 'Save',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    delete: 'Delete',
+    print: 'Print',
+    export: 'Export',
+    commit: 'Commit',
+    preview: 'Preview',
+    signOut: 'Sign Out',
+  },
+  labels: {
+    nodes: 'Nodes',
+    items: 'Items',
+  },
+  auth: {
+    signOutTitle: 'Sign out',
+    signOutDescription:
+      'Are you sure you want to sign out? You will need to sign in again to access your account.',
+    layout: {
+      title: 'Digital Management System',
+      description: 'Authorized Access Area · Follow Internal Management and Privacy Policy',
+      connectivity: 'System Connectivity',
+      smartFactory: 'Smart Factory',
+      factoryDesc:
+        'Empowering the future of manufacturing through digital intelligence and deep connectivity.',
+    },
+    signInForm: {
+      account: 'Account',
+      password: 'Password',
+      accountPlaceholder: 'e.g. XDFC or name@example.com',
+      passwordPlaceholder: 'Enter your password',
+      forgotPassword: 'Forgot password?',
+      submit: 'Sign In',
+      validationAccountRequired: 'Please enter your account or email.',
+      validationPasswordRequired: 'Please enter your password.',
+      validationPasswordMin: 'Password must be at least 7 characters.',
+      success: 'Signed in successfully. Welcome back, {{name}}!',
+      invalidCredentials: 'Incorrect account or password. Please try again.',
+      apiNotReady: 'Backend service is not ready (404). Please verify the API route.',
+      serverError: 'Unexpected server response: {{status}}',
+      serverErrorDescription:
+        'If this keeps happening, record request ID {{requestId}} and check the server logs.',
+      timeout: 'The sign-in request timed out. Please check your network connection.',
+      timeoutHint:
+        'Try an incognito window or clear the current site data, then verify the route to this domain is stable.',
+      deployMismatch:
+        'The frontend is running on {{currentHost}}, but the API still points to {{apiHost}}. Please check VITE_API_BASE_URL.',
+      deployMismatchHint:
+        'This usually means the build-time API URL or the entry domain is inconsistent across devices.',
+      networkError:
+        'Network request failed: {{error}}. Please verify that the backend ALLOWED_ORIGIN includes the current domain.',
+      networkHint:
+        'Check the [AUTH_DIAG] entries in the browser console, then try incognito mode, disabling extensions, or clearing site data.',
+      offlineHint:
+        'The browser appears to be offline. Restore connectivity and try signing in again.',
+      rateLimited: 'Too many sign-in attempts. Please try again later.',
+      rateLimitedDescription:
+        'Sign-in from the current network is temporarily limited. Retry in about {{seconds}} seconds.',
+      criticalError: 'Critical system error: {{error}}',
+    },
+  },
+  units: {
+    month: 'Month',
+  },
+} as const

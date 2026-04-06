@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const repoRoot = resolve(__dirname, '..')
+
+function fail(message, details = '') {
+  console.error(`\n[SERVER_DEPLOY_CHECK_FAILED] ${message}`)
+  if (details) console.error(details)
+  process.exit(1)
+}
+
+function load(pathFromRoot) {
+  const absPath = resolve(repoRoot, pathFromRoot)
+  if (!existsSync(absPath)) {
+    fail('Missing required file.', `Path: ${pathFromRoot}`)
+  }
+  return readFileSync(absPath, 'utf8')
+}
+
+function expectIncludes(content, marker, filePath, failures) {
+  if (!content.includes(marker)) {
+    failures.push(`${filePath}: missing "${marker}"`)
+  }
+}
+
+const files = {
+  deploySh: 'deploy.sh',
+  deployProdSh: 'server/deploy-prod.sh',
+  compose: 'server/docker-compose.yml',
+  nginxInternalLb: 'server/deployment/nginx/internal_lb.conf',
+  nginxServerSite: 'server/deployment/nginx/erp.tanzanite.site.conf',
+  nginxRootSite: 'deployment/nginx/erp.tanzanite.site.conf',
+}
+
+const deploySh = load(files.deploySh)
+const deployProdSh = load(files.deployProdSh)
+const compose = load(files.compose)
+const nginxInternalLb = load(files.nginxInternalLb)
+const nginxServerSite = load(files.nginxServerSite)
+const nginxRootSite = load(files.nginxRootSite)
+
+const failures = []
+
+// Root deploy script safety expectations.
+expectIncludes(deploySh, '-e server/.env', files.deploySh, failures)
+expectIncludes(deploySh, '-e server/uploads', files.deploySh, failures)
+expectIncludes(deploySh, '-e server/backups', files.deploySh, failures)
+expectIncludes(deploySh, '-e server/postgres_data', files.deploySh, failures)
+expectIncludes(deploySh, './server/deploy-prod.sh', files.deploySh, failures)
+
+// Production deploy script expectations.
+expectIncludes(
+  deployProdSh,
+  'mkdir -p ./uploads ./backups ./postgres_data',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build --remove-orphans db redis app watchdog nginx_lb',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'cp ./deployment/nginx/erp.tanzanite.site.conf /etc/nginx/sites-available/xdfc_erp',
+  files.deployProdSh,
+  failures
+)
+
+// Compose volume and service-chain expectations.
+expectIncludes(compose, './uploads:/app/uploads', files.compose, failures)
+expectIncludes(compose, './backups:/app/backups', files.compose, failures)
+expectIncludes(
+  compose,
+  './uploads:/usr/share/nginx/html/uploads:ro',
+  files.compose,
+  failures
+)
+expectIncludes(compose, 'db:', files.compose, failures)
+expectIncludes(compose, 'redis:', files.compose, failures)
+expectIncludes(compose, 'app:', files.compose, failures)
+expectIncludes(compose, 'watchdog:', files.compose, failures)
+expectIncludes(compose, 'nginx_lb:', files.compose, failures)
+
+// Nginx static uploads route expectations.
+expectIncludes(nginxInternalLb, 'location /uploads/', files.nginxInternalLb, failures)
+expectIncludes(
+  nginxInternalLb,
+  'alias /usr/share/nginx/html/uploads/',
+  files.nginxInternalLb,
+  failures
+)
+expectIncludes(
+  nginxServerSite,
+  'alias /var/www/erp/server/uploads/',
+  files.nginxServerSite,
+  failures
+)
+expectIncludes(
+  nginxRootSite,
+  'alias /var/www/erp/server/uploads/',
+  files.nginxRootSite,
+  failures
+)
+
+if (failures.length > 0) {
+  fail(
+    'Server deployment self-check failed.',
+    `Please fix the following items:\n- ${failures.join('\n- ')}`
+  )
+}
+
+console.log('[SERVER_DEPLOY_CHECK] OK: deploy scripts, compose, and nginx upload path are aligned.')

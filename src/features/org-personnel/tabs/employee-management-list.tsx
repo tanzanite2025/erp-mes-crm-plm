@@ -1,0 +1,443 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import {
+    flexRender,
+    getCoreRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table'
+import { Download, FileSpreadsheet, Plus, Share } from 'lucide-react'
+import { toast } from 'sonner'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+import { DataTablePagination } from '@/components/data-table'
+import { DataTableViewOptions } from '@/components/data-table/view-options'
+import { useLanguage } from '@/context/language-provider'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import { isForbiddenError } from '@/lib/error-status'
+import { createLogger } from '@/lib/logger'
+
+import { EmployeeActionDialog } from '../components/employee-action-dialog'
+import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
+import { EmployeeBulkActions } from '../components/employee-bulk-actions'
+import { getEmployeeColumns } from '../components/employee-columns'
+import { type Employee } from '../data/schema'
+import { employees as initialData } from '../data/employees'
+import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
+import { type EmployeeStatus, EmployeeService } from '../services/employee-service'
+import { OrgService } from '../services/org-service'
+import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
+import { type OrgNode } from '../data/org-schema'
+
+const logger = createLogger('EmployeeManagementList')
+
+type RecentResignSnapshot = {
+    employees: Array<{
+        id: string
+        name: string
+        staffId?: string
+    }>
+    operatedAt: string
+}
+
+export function EmployeeManagementList() {
+    const { locale, t } = useLanguage()
+    const [data, setData] = useState<Employee[]>(initialData)
+    const [open, setOpen] = useState(false)
+    const [importOpen, setImportOpen] = useState(false)
+    const [rowSelection, setRowSelection] = useState({})
+    const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
+        id: false,
+    })
+    const [nameMap, setNameMap] = useState<Record<string, string>>({})
+    const [recentResignSnapshot, setRecentResignSnapshot] = useState<RecentResignSnapshot | null>(null)
+    const [isUndoingRecentResign, setIsUndoingRecentResign] = useState(false)
+    const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
+    const [itemsToDelete, setItemsToDelete] = useState<Employee[]>([])
+    const [error, setError] = useState<unknown>(null)
+
+    const loadLookups = useCallback(async () => {
+        try {
+            const [orgData, lineData, prcData] = await Promise.all([
+                OrgService.getOrgTree(),
+                productionResourceService.getLines(),
+                productionResourceService.getSteps(),
+            ])
+
+            const newMap: Record<string, string> = {}
+
+            const flattenOrg = (nodes: OrgNode[]) => {
+                nodes.forEach((node) => {
+                    newMap[node.id || ''] = node.name
+                    if (node.children) flattenOrg(node.children)
+                })
+            }
+            flattenOrg(orgData)
+
+            lineData.forEach((line) => {
+                newMap[line.id] = line.name
+                line.segments.forEach((seg) => {
+                    seg.jobCategories.forEach((job) => {
+                        newMap[job.id] = job.name
+                    })
+                })
+            })
+
+            prcData.forEach((process) => {
+                newMap[process.id] = process.name
+            })
+
+            setNameMap(newMap)
+        } catch (err) {
+            logger.error('Load lookups failed', err)
+        }
+    }, [])
+
+    const handleBulkStatusChange = async (
+        items: Employee[],
+        status: Extract<EmployeeStatus, 'active' | 'resigned'>
+    ): Promise<number> => {
+        const idsToUpdate = items
+            .map((item) => item.id)
+            .filter((id): id is string => Boolean(id))
+
+        if (idsToUpdate.length === 0) {
+            throw new Error(t('orgPersonnel.list.noIdFound'))
+        }
+
+        const updated = await EmployeeService.updateEmployeesStatus(idsToUpdate, status)
+
+        if (status === 'resigned') {
+            const idsToUpdateSet = new Set(idsToUpdate)
+            const recentEmployees = items
+                .filter((item) => idsToUpdateSet.has(item.id))
+                .map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    staffId: item.staffId,
+                }))
+
+            if (recentEmployees.length > 0) {
+                setRecentResignSnapshot({
+                    employees: recentEmployees,
+                    operatedAt: new Date().toISOString(),
+                })
+            }
+        }
+
+        await loadData()
+        setRowSelection({})
+        return updated
+    }
+
+    const handleUndoRecentResign = async () => {
+        if (!recentResignSnapshot) {
+            return
+        }
+
+        const idsToRestore = recentResignSnapshot.employees.map((item) => item.id)
+        if (idsToRestore.length === 0) {
+            toast.error(t('orgPersonnel.list.undoErrorEmpty'))
+            return
+        }
+
+        setIsUndoingRecentResign(true)
+        try {
+            const updated = await EmployeeService.updateEmployeesStatus(idsToRestore, 'active')
+            await loadData()
+            setRowSelection({})
+
+            if (updated === 0) {
+                toast.error(t('orgPersonnel.list.undoErrorNone'))
+                return
+            }
+
+            setRecentResignSnapshot(null)
+            if (updated < idsToRestore.length) {
+                toast.success(t('orgPersonnel.list.undoPartial', { updated, total: idsToRestore.length }))
+                return
+            }
+
+            toast.success(t('orgPersonnel.list.undoSuccess', { count: updated }))
+        } catch (err) {
+            logger.error('Undo resign failed', err)
+            toast.error(err instanceof Error ? err.message : t('orgPersonnel.list.saveFailed', { message: t('orgPersonnel.org.saveFailed') }))
+        } finally {
+            setIsUndoingRecentResign(false)
+        }
+    }
+
+    const loadData = useCallback(async () => {
+        try {
+            setError(null)
+            await loadLookups()
+            const stored = await EmployeeService.getEmployees()
+            if (stored) setData(stored)
+        } catch (err) {
+            setError(err)
+            logger.error('Load failed', err)
+        }
+    }, [loadLookups])
+
+    useEffect(() => {
+        const timer = globalThis.setTimeout(() => {
+            void loadData()
+        }, 0)
+
+        const handleSync = () => {
+            void loadData()
+        }
+        window.addEventListener('xdfc_employees_data_updated', handleSync)
+
+        return () => {
+            globalThis.clearTimeout(timer)
+            window.removeEventListener('xdfc_employees_data_updated', handleSync)
+        }
+    }, [loadData])
+
+    const handleBulkDelete = (items: Employee[]) => {
+        setItemsToDelete(items)
+        setBulkDeleteConfirmOpen(true)
+    }
+
+    const onConfirmBulkDelete = async () => {
+        if (itemsToDelete.length === 0) return
+        try {
+            const idsToDelete = itemsToDelete.map((item) => item.id)
+            await EmployeeService.deleteEmployees(idsToDelete)
+            await loadData()
+            setRowSelection({})
+            setBulkDeleteConfirmOpen(false)
+            setItemsToDelete([])
+            toast.success(t('orgPersonnel.importDialog.importSuccess', { count: idsToDelete.length }))
+        } catch (err) {
+            logger.error('Bulk delete failed', err)
+            toast.error(t('orgPersonnel.list.saveFailed', { message: err instanceof Error ? err.message : '' }))
+        }
+    }
+
+    const handleAddEmployee = async (newEmp: Employee) => {
+        try {
+            await EmployeeService.saveEmployee(newEmp)
+            await loadData()
+            toast.success(newEmp.id ? t('orgPersonnel.list.saveUpdated') : t('orgPersonnel.list.saveCreated'))
+        } catch (err) {
+            logger.error('Add employee failed', err)
+            toast.error(t('orgPersonnel.list.saveFailed', {
+                message: err instanceof Error ? err.message : 'Unknown error'
+            }))
+        }
+    }
+
+    const table = useReactTable({
+        data,
+        columns: getEmployeeColumns(t),
+        state: {
+            rowSelection,
+            columnVisibility,
+        },
+        onColumnVisibilityChange: setColumnVisibility,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        onRowSelectionChange: setRowSelection,
+    })
+
+    const recentResignPreviewNames = recentResignSnapshot
+        ? recentResignSnapshot.employees
+            .slice(0, 6)
+            .map((item) => item.name || item.staffId || item.id)
+            .join('、')
+        : ''
+    const recentResignExtraCount = recentResignSnapshot
+        ? Math.max(recentResignSnapshot.employees.length - 6, 0)
+        : 0
+    const recentResignTimeLabel = recentResignSnapshot
+        ? new Date(recentResignSnapshot.operatedAt).toLocaleString(locale === 'zh-CN' ? 'zh-CN' : 'en-US', { hour12: false })
+        : ''
+
+    if (isForbiddenError(error)) {
+        return <ForbiddenState />
+    }
+
+    return (
+        <div className='flex flex-col gap-6 mt-2'>
+            <div className='flex items-center justify-between px-1 gap-2 flex-wrap'>
+                <DataTableViewOptions table={table} variant='industrial' />
+                <div className='flex items-center gap-2 flex-wrap'>
+                    <Button
+                        variant='outline'
+                        onClick={() => exportPersonnelData(data, nameMap, locale)}
+                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                    >
+                        <div className='flex items-center gap-1'>
+                            <Share className='size-3 text-emerald-600' />
+                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.exportData')}</span>
+                        </div>
+                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.exporting')}</span>
+                    </Button>
+                    <Button
+                        variant='outline'
+                        onClick={() => downloadPersonnelTemplate(locale)}
+                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                    >
+                        <div className='flex items-center gap-1'>
+                            <Download className='size-3 text-blue-600' />
+                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.downloadTemplate')}</span>
+                        </div>
+                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.templates')}</span>
+                    </Button>
+                    <Button
+                        variant='outline'
+                        onClick={() => setImportOpen(true)}
+                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed shadow-sm hover:bg-muted active:scale-95 transition-all bg-blue-500/5 border-blue-200 p-0'
+                    >
+                        <div className='flex items-center gap-1'>
+                            <FileSpreadsheet className='size-3 text-blue-600' />
+                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.importOneClick')}</span>
+                        </div>
+                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('orgPersonnel.list.importsOk')}</span>
+                    </Button>
+                    <Button
+                        onClick={() => setOpen(true)}
+                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-500/10 active:scale-95 transition-all p-0'
+                    >
+                        <div className='flex items-center gap-1'>
+                            <Plus className='size-3' />
+                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.addEmployee')}</span>
+                        </div>
+                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('orgPersonnel.list.addPers')}</span>
+                    </Button>
+                </div>
+            </div>
+
+            <Card className='rounded-[24px] border-dashed bg-muted/5 shadow-inner border-muted/50 p-1 overflow-hidden'>
+                <div className='bg-background/50 rounded-[22px] overflow-hidden'>
+                    <Table>
+                        <TableHeader className='bg-muted/50'>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id} className='hover:bg-transparent border-none'>
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead key={header.id} className='h-10 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 py-0'>
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext()
+                                                )}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow key={row.id} className='border-muted/20 hover:bg-muted/30 transition-colors'>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id} className='py-3 text-xs font-medium'>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={table.getAllColumns().length}
+                                        className='h-24 text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'
+                                    >
+                                        {t('orgPersonnel.list.empty')}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </Card>
+
+            <DataTablePagination table={table} />
+
+            {recentResignSnapshot && (
+                <Card className='rounded-[24px] border-dashed border-amber-300/60 bg-amber-50/20 shadow-inner p-5 animate-in fade-in slide-in-from-bottom-4 duration-500'>
+                    <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+                        <div className='space-y-1.5'>
+                            <p className='text-[10px] font-black tracking-[0.2em] uppercase text-amber-700/80 italic'>
+                                {t('orgPersonnel.list.recentResignTitle')}
+                            </p>
+                            <p className='text-xs font-black italic text-slate-700'>
+                                {t('orgPersonnel.list.recentResignCount', { 
+                                    count: recentResignSnapshot.employees.length,
+                                    time: recentResignTimeLabel
+                                })}
+                            </p>
+                            <div className='flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/60 tracking-tight'>
+                                <span className='uppercase opacity-50 tracking-widest'>{t('orgPersonnel.list.recentResignPeople', { names: '' })}</span>
+                                <span className='text-slate-600'>{recentResignPreviewNames}</span>
+                                {recentResignExtraCount > 0 && (
+                                    <span className='bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full text-[8px] font-black'>
+                                        +{recentResignExtraCount}
+                                    </span>
+                                )}
+                            </div>
+                            <p className='text-[9px] font-black uppercase tracking-widest opacity-40 mt-2'>
+                                {t('orgPersonnel.list.recentResignHint')}
+                            </p>
+                        </div>
+                        <Button
+                            variant='outline'
+                            onClick={() => {
+                                void handleUndoRecentResign()
+                            }}
+                            disabled={isUndoingRecentResign}
+                            className='h-11 rounded-full border-amber-200 bg-amber-100/50 text-amber-700 hover:bg-amber-100 shadow-sm font-black text-[10px] uppercase tracking-widest'
+                        >
+                            {isUndoingRecentResign ? t('orgPersonnel.list.undoing') : t('orgPersonnel.list.undoResign')}
+                        </Button>
+                    </div>
+                </Card>
+            )}
+
+            <EmployeeBulkActions
+                table={table}
+                onDelete={handleBulkDelete}
+                onStatusChange={handleBulkStatusChange}
+            />
+
+            <EmployeeActionDialog
+                open={open}
+                onOpenChange={setOpen}
+                onSubmit={handleAddEmployee}
+            />
+
+            <ImportPersonnelDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                onSuccess={loadData}
+            />
+
+            <ConfirmDialog
+                open={bulkDeleteConfirmOpen}
+                onOpenChange={setBulkDeleteConfirmOpen}
+                title={t('orgPersonnel.list.bulk.deleteTitle')}
+                desc={t('orgPersonnel.list.bulkDeleteConfirm', { count: itemsToDelete.length })}
+                handleConfirm={onConfirmBulkDelete}
+                destructive
+            />
+        </div>
+    )
+}

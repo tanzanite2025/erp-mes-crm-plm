@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+uploads
+backups
+postgres_data
+storage
+logs
+*.log
+watchdog/target
+watchdog/.git

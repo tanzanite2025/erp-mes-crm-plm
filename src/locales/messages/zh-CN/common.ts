@@ -1,0 +1,91 @@
+export const common = {
+  language: {
+    label: '语言',
+    switcher: '切换语言',
+    zhCN: '中文',
+    enUS: '英文',
+  },
+  theme: {
+    switcher: '切换主题',
+    light: '浅色',
+    dark: '深色',
+    system: '跟随系统',
+  },
+  empty: {
+    noData: '暂无数据',
+    noRecords: '暂无记录',
+  },
+  status: {
+    ready: '同步就绪',
+    syncing: '正在同步...',
+  },
+  table: {
+    view: '视图',
+    viewManagement: '视图管理',
+    viewing: 'VIEWING',
+    selectColumns: '选择显示列 SELECT_COLUMNS',
+  },
+  actions: {
+    signOut: '安全退出',
+    reset: '重置',
+    retry: '重试',
+    loading: '正在加载...',
+    close: '关闭',
+    save: '保存',
+    cancel: '取消',
+    edit: '编辑',
+    delete: '删除',
+    print: '打印',
+    export: '导出',
+    commit: '提交',
+    preview: '预览',
+  },
+  labels: {
+    nodes: '记录数',
+    items: '条目',
+  },
+  auth: {
+    signOutTitle: '退出登录',
+    signOutDescription: '确定要退出登录吗？退出后需要重新登录才能继续访问当前账户。',
+    layout: {
+      title: '数字化管理系统',
+      description: '授权访问区域 · 遵循内部管理规范与隐私政策',
+      connectivity: 'System Connectivity',
+      smartFactory: 'Smart Factory',
+      factoryDesc:
+        'Empowering the future of manufacturing through digital intelligence and deep connectivity.',
+    },
+    signInForm: {
+      account: '账号',
+      password: '密码',
+      accountPlaceholder: '例如：XDFC 或 name@example.com',
+      passwordPlaceholder: '请输入密码',
+      forgotPassword: '忘记密码？',
+      submit: '立即登录',
+      validationAccountRequired: '请输入账号或邮箱',
+      validationPasswordRequired: '请输入密码',
+      validationPasswordMin: '密码长度至少 7 位',
+      success: '登录成功，欢迎回来，{{name}}！',
+      invalidCredentials: '账号或密码错误，请核对后重试。',
+      apiNotReady: '后端服务未就绪（404），请确认 API 路由。',
+      serverError: '服务响应异常：{{status}}',
+      serverErrorDescription: '如果问题持续出现，请记录请求编号 {{requestId}} 并查看后端日志。',
+      timeout: '登录请求超时，请检查网络连接。',
+      timeoutHint: '建议先用无痕窗口或清理当前站点数据后再试，同时确认当前域名到服务器的链路稳定。',
+      deployMismatch:
+        '前端运行在 {{currentHost}}，但 API 仍指向 {{apiHost}}，请检查环境变量 VITE_API_BASE_URL。',
+      deployMismatchHint: '这通常是构建环境变量或访问入口不一致造成的。',
+      networkError:
+        '网络请求失败：{{error}}。请检查后端 ALLOWED_ORIGIN 是否包含当前域名。',
+      networkHint:
+        '可以先查看浏览器控制台中的 [AUTH_DIAG] 日志，然后尝试无痕窗口、禁用扩展或清理站点数据。',
+      offlineHint: '检测到当前浏览器处于离线状态，请先恢复网络后再试。',
+      rateLimited: '当前网络登录尝试过于频繁，请稍后再试。',
+      rateLimitedDescription: '系统已暂时限制当前网络的登录请求，请大约 {{seconds}} 秒后再试。',
+      criticalError: '系统严重错误：{{error}}',
+    },
+  },
+  units: {
+    month: '月',
+  },
+} as const

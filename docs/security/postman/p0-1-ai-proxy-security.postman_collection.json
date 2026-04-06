@@ -1,0 +1,272 @@
+{
+  "info": {
+    "_postman_id": "8b4a0794-0f88-4ac0-b011-df9d1f9fb9d2",
+    "name": "P0-1 AI Proxy Security Tests",
+    "description": "Security test matrix for /api/v1/ai/proxy (P0-1 SSRF & forwarding controls).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Allow OpenAI (whitelisted)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\n    \"Authorization\": \"{{vendorAuth}}\"\n  },\n  \"body\": {\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n      {\"role\": \"user\", \"content\": \"hello\"}\n    ]\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status not blocked by local policy', function () { pm.expect([200,400,401,402,403,404,429,500,502]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "02 Allow Gemini (whitelisted)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{geminiKey}}\",\n  \"method\": \"POST\",\n  \"headers\": {\n    \"Content-Type\": \"application/json\"\n  },\n  \"body\": {\n    \"contents\": [\n      {\"role\": \"user\", \"parts\": [{\"text\": \"hello\"}]}\n    ]\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status not blocked by local policy', function () { pm.expect([200,400,401,402,403,404,429,500,502]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "03 Reject non-HTTPS",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\":\"user\",\"content\":\"x\"}]}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 400 after hardening', function () { pm.expect(pm.response.code).to.eql(400); });"] } }]
+    },
+    {
+      "name": "04 Reject non-whitelist public domain",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://example.com/api\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {\"x\": 1}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "05 Reject loopback 127.0.0.1",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://127.0.0.1:8080/admin\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {\"x\": 1}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "06 Reject localhost",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://localhost:2375/containers/json\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {\"x\": 1}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "07 Reject private 10.x",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://10.0.0.5:9200/_search\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {\"query\": {\"match_all\": {}}}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "08 Reject cloud metadata 169.254.169.254",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://169.254.169.254/latest/meta-data/\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "09 Reject IPv6 loopback",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"http://[::1]:8080/\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"Bearer test\"},\n  \"body\": {}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "10 Reject @-host confusion",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com@evil.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\":\"user\",\"content\":\"x\"}]}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect blocked after hardening', function () { pm.expect([400,403]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "11 Reject fake subdomain",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com.evil.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\":\"user\",\"content\":\"x\"}]}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 403 after hardening', function () { pm.expect(pm.response.code).to.eql(403); });"] } }]
+    },
+    {
+      "name": "12 Reject invalid method GET",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"GET\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 405 after hardening', function () { pm.expect(pm.response.code).to.eql(405); });"] } }]
+    },
+    {
+      "name": "13 Reject oversized body (expect 413)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n      {\"role\": \"user\", \"content\": \"{{veryLargeText}}\"}\n    ]\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 413 after hardening', function () { pm.expect(pm.response.code).to.eql(413); });"] } }]
+    },
+    {
+      "name": "14 Reject header injection",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\n    \"Authorization\": \"{{vendorAuth}}\",\n    \"X-Forwarded-For\": \"127.0.0.1\",\n    \"Host\": \"internal.service\"\n  },\n  \"body\": {\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\":\"user\",\"content\":\"x\"}]}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect blocked or sanitized path', function () { pm.expect([400,403,200]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "15 Allow stream=true (same validation chain)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\n    \"model\": \"gpt-4o-mini\",\n    \"stream\": true,\n    \"messages\": [{\"role\":\"user\",\"content\":\"stream test\"}]\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Stream request accepted or upstream denied', function () { pm.expect([200,400,401,403,429,500,502]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "16 Missing JWT (expect auth fail)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://api.openai.com/v1/chat/completions\",\n  \"method\": \"POST\",\n  \"headers\": {\"Authorization\": \"{{vendorAuth}}\"},\n  \"body\": {\"model\": \"gpt-4o-mini\", \"messages\": [{\"role\":\"user\",\"content\":\"x\"}]}\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/ai/proxy"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Expect 401', function () { pm.expect(pm.response.code).to.eql(401); });"] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "jwt", "value": "" },
+    { "key": "vendorAuth", "value": "Bearer sk-xxx" },
+    { "key": "geminiKey", "value": "" },
+    { "key": "veryLargeText", "value": "REPLACE_WITH_LARGE_TEXT_PAYLOAD" }
+  ]
+}

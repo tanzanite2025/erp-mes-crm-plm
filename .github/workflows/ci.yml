@@ -1,0 +1,67 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  install-lint-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint the code
+        run: pnpm lint
+
+      - name: Verify i18n parity
+        run: pnpm verify:i18n
+
+      - name: Verify frontend logging governance
+        run: pnpm lint:logging
+
+      # - name: Analyze unused files and dependencies
+      #   run: pnpm knip
+
+      - name: Run Prettier check
+        run: pnpm format:check
+
+      - name: Run frontend contract tests
+        run: pnpm run test:contracts
+
+      - name: Build the project
+        run: pnpm build
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: server/go.sum
+
+      - name: Run Backend Tests
+        run: |
+          cd server
+          go test -v ./handlers/...

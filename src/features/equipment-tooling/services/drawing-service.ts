@@ -1,0 +1,77 @@
+'use client'
+
+import { apiFetch } from '@/lib/api-client'
+import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
+
+/**
+ * DrawingService - 专门负责模具技术图纸的管理 (已同步至后端)
+ */
+export const DrawingService = {
+    async getDrawings(): Promise<MoldDrawing[]> {
+        const data = await apiFetch<MoldDrawing[]>('/drawings')
+        if (!data) throw new Error('[CRITICAL] 未能获取技术图纸数据')
+        return data
+    },
+
+    async saveDrawings(drawings: MoldDrawing[]): Promise<void> {
+        // 通常批量保存建议由后端处理，此处为保持兼容性保留接口
+        await apiFetch('/drawings/batch', {
+            method: 'POST',
+            body: JSON.stringify(drawings)
+        })
+        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
+    },
+
+    async getDrawingLogs(drawingId: string): Promise<MoldDrawingLog[]> {
+        const logs = await apiFetch<MoldDrawingLog[]>(`/drawings/${drawingId}/logs`)
+        if (!logs) throw new Error(`[CRITICAL] 获取图纸 ${drawingId} 的审计日志失败`)
+        return logs
+    },
+
+    async addLog(log: Omit<MoldDrawingLog, 'id' | 'timestamp'>): Promise<void> {
+        await apiFetch(`/drawings/${log.drawingId}/logs`, {
+            method: 'POST',
+            body: JSON.stringify(log)
+        })
+    },
+
+    async addDrawing(drawing: Omit<MoldDrawing, 'id' | 'uploadedAt'>): Promise<MoldDrawing> {
+        const result = await apiFetch<MoldDrawing>('/drawings', {
+            method: 'POST',
+            body: JSON.stringify(drawing)
+        })
+        
+        // 自动注入日志 (后端若已处理则可移除，此处保留前端触发以确保审计闭环)
+        await this.addLog({
+            drawingId: result.id,
+            action: 'CREATED',
+            details: `技术归档创建。${result.moldSn ? `初始绑定至模具: ${result.moldSn}` : '未关联特定模具'}`,
+            operator: '系统管理员'
+        })
+        
+        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
+        return result
+    },
+
+    async updateDrawing(id: string, updates: Partial<MoldDrawing>): Promise<void> {
+        await apiFetch(`/drawings/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates)
+        })
+
+        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
+    },
+
+    async deleteDrawing(id: string): Promise<void> {
+        await apiFetch(`/drawings/${id}`, {
+            method: 'DELETE'
+        })
+        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
+    },
+
+    async getDrawingsByMold(moldSn: string): Promise<MoldDrawing[]> {
+        const response = await apiFetch<MoldDrawing[]>(`/drawings/by-mold/${moldSn}`)
+        if (!response) throw new Error(`[CRITICAL] 按模具编号 ${moldSn} 查询图纸结果为空 (预期至少为长度为0的数组)`)
+        return response
+    }
+}

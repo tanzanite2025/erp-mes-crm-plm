@@ -1,0 +1,69 @@
+{
+  "security": {
+    "secureMode": true,
+    "reviewPolicy": "RequestReview",
+    "terminalExecution": "RequestReview",
+    "scopeLocking": false,
+    "maxCommandHistory": 100
+  },
+  "circuitBreaker": {
+    "enabled": false
+  },
+  "terminal": {
+    "allowList": [
+      "npm test",
+      "npm start",
+      "npm run *",
+      "git status",
+      "echo *"
+    ],
+    "denyList": [
+      "rm -rf /",
+      "rm -fr /",
+      ":(){ :|:& };:"
+    ]
+  },
+  "fileAccess": {
+    "gitignoreAccess": false,
+    "nonWorkspaceAccess": false,
+    "autoOpenEditedFiles": true,
+    "lockedPaths": []
+  },
+  "memory": {
+    "autoCheck": true,
+    "autoArchive": true,
+    "vectorModel": "Xenova/all-MiniLM-L6-v2"
+  },
+  "artifacts": {
+    "language": "zh-CN",
+    "structure": [
+      "ANALYSIS",
+      "PLAN",
+      "TASK",
+      "WALKTHROUGH"
+    ],
+    "batchMode": {
+      "enabled": true,
+      "threshold": 5,
+      "categories": [
+        "lint",
+        "format",
+        "minor-refactor"
+      ]
+    }
+  },
+  "quickScripts": [
+    {
+      "label": "Build",
+      "command": "npm run build"
+    },
+    {
+      "label": "Test",
+      "command": "npm test"
+    },
+    {
+      "label": "Check",
+      "command": "npm run lint"
+    }
+  ]
+}

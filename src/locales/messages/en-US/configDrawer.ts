@@ -1,0 +1,47 @@
+export const configDrawer = {
+  triggerLabel: 'Open system preferences',
+  title: 'System Preferences',
+  description: 'Adjust your operation environment and AI agent behavior.',
+  resetAll: 'Reset All',
+  resetAriaLabel: 'Reset all settings to default values',
+  sections: {
+    theme: 'Theme',
+    sidebar: 'Sidebar',
+    layout: 'Layout',
+    direction: 'Direction',
+  },
+  themeDescription: 'Choose between system preference, light mode, or dark mode.',
+  sidebarDescription: 'Choose between inset, floating, or standard sidebar layout.',
+  layoutDescription: 'Choose between default expanded, compact icon-only, or full layout mode.',
+  directionDescription: 'Choose between left-to-right or right-to-left site direction.',
+  sidebarOptions: {
+    inset: 'Inset',
+    floating: 'Floating',
+    sidebar: 'Sidebar',
+  },
+  layoutOptions: {
+    default: 'Default',
+    compact: 'Compact',
+    fullLayout: 'Full Layout',
+  },
+  directionOptions: {
+    ltr: 'Left to Right',
+    rtl: 'Right to Left',
+  },
+  agent: {
+    title: 'AI Agent Settings',
+    dailyBriefing: 'Daily Briefing',
+    dailyDescription: 'Push the daily operations summary',
+    weeklyAudit: 'Weekly Audit',
+    weeklyDescription: 'Deep audit summary every Monday',
+    amSession: 'AM Session',
+    pmSession: 'PM Session',
+    scheduleDay: 'Schedule Day',
+    weeklySchedule: 'Every Monday @ 08:30',
+    runNow: 'Run Intelligence Analysis Now',
+    toasts: {
+      updated: 'Agent settings updated',
+      running: 'Launching the realtime operations analysis...',
+    },
+  },
+}

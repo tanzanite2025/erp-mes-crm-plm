@@ -1,0 +1,21 @@
+groups:
+  - name: xdfc-system-alerts
+    rules:
+      - alert: InstanceDown
+        expr: up{job="xdfc-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 应用实例不可达
+          description: xdfc-app 实例在 1 分钟内持续不可达
+
+      - alert: HighGoGoroutines
+        expr: go_goroutines{job="xdfc-app"} > 1500
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Goroutine 数异常升高
+          description: goroutine 持续超过 1500，请检查阻塞或泄漏
+

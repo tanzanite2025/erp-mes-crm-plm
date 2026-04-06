@@ -1,0 +1,18 @@
+export const master = {
+      columns: {
+        orderStatus: '业务单号 / 状态',
+        customer: '客户主体',
+        classificationDate: '分类与日期',
+        totalQuantity: '合同总量',
+        deliveryDeadline: '交付截止',
+        actions: '操作',
+      },
+      empty: '未找到匹配的订单数据',
+      auditor: '审计人',
+      system: '系统',
+      overdue: '超期',
+      editOrder: '编辑单据',
+      removePermanently: '物理移除',
+      voidContract: '作废合同',
+      unregistered: '未登记',
+    } as const

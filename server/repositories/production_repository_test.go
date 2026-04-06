@@ -1,0 +1,167 @@
+package repositories
+
+import (
+	"testing"
+	"xdfc-server/models"
+
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+)
+
+func setupProductionRepositoryTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+
+	return setupRepositoryTestDB(t,
+		`CREATE TABLE production_lines (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			code TEXT,
+			name TEXT,
+			description TEXT,
+			version INTEGER,
+			is_active BOOLEAN
+		)`,
+		`CREATE TABLE line_segments (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			line_id TEXT NOT NULL,
+			name TEXT,
+			description TEXT,
+			sort_order INTEGER,
+			attributes BLOB
+		)`,
+		`CREATE TABLE job_categories (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			segment_id TEXT NOT NULL,
+			name TEXT,
+			description TEXT,
+			sort_order INTEGER,
+			attributes BLOB
+		)`,
+		`CREATE TABLE stations (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			category_id TEXT NOT NULL,
+			code TEXT,
+			name TEXT,
+			description TEXT,
+			sort_order INTEGER,
+			attributes BLOB
+		)`,
+		`CREATE TABLE process_steps (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			code TEXT,
+			name TEXT,
+			description TEXT,
+			sort_order INTEGER,
+			is_active BOOLEAN
+		)`,
+		`CREATE TABLE line_segment_process_mappings (
+			line_segment_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL
+		)`,
+		`CREATE TABLE station_process_mappings (
+			station_id TEXT NOT NULL,
+			process_step_id TEXT NOT NULL
+		)`,
+	)
+}
+
+func TestGormProductionRepositoryBumpProductionLineVersion(t *testing.T) {
+	repo := NewProductionRepository()
+	testDB := setupProductionRepositoryTestDB(t)
+
+	line := models.ProductionLine{
+		BaseModel: models.BaseModel{ID: "line-1"},
+		Code:      "L-01",
+		Name:      "Line 01",
+		Version:   2,
+	}
+	require.NoError(t, testDB.Create(&line).Error)
+
+	updated, err := repo.BumpProductionLineVersion(testDB, line.ID, 2)
+	require.NoError(t, err)
+	require.True(t, updated)
+
+	var stored models.ProductionLine
+	require.NoError(t, testDB.First(&stored, "id = ?", line.ID).Error)
+	require.Equal(t, int64(3), stored.Version)
+}
+
+func TestGormProductionRepositoryAppendProcessToStationLoadsProcesses(t *testing.T) {
+	repo := NewProductionRepository()
+	testDB := setupProductionRepositoryTestDB(t)
+
+	job := models.JobCategory{
+		BaseModel: models.BaseModel{ID: "job-1"},
+		SegmentID: "segment-1",
+		Name:      "Category 1",
+	}
+	station := models.Station{
+		BaseModel:  models.BaseModel{ID: "station-1"},
+		CategoryID: job.ID,
+		Name:       "Station 1",
+	}
+	process := models.ProcessStep{
+		BaseModel: models.BaseModel{ID: "step-1"},
+		Code:      "P-01",
+		Name:      "Polish",
+	}
+	require.NoError(t, testDB.Create(&job).Error)
+	require.NoError(t, testDB.Create(&station).Error)
+	require.NoError(t, testDB.Create(&process).Error)
+
+	require.NoError(t, repo.AppendProcessToStation(testDB, station.ID, process.ID))
+
+	stations, err := repo.ListStationsWithProcesses(testDB)
+	require.NoError(t, err)
+	require.Len(t, stations, 1)
+	require.Len(t, stations[0].Processes, 1)
+	require.Equal(t, process.ID, stations[0].Processes[0].ID)
+}
+
+func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *testing.T) {
+	repo := NewProductionRepository()
+	testDB := setupProductionRepositoryTestDB(t)
+
+	process := models.ProcessStep{
+		BaseModel: models.BaseModel{ID: "step-9"},
+		Code:      "P-09",
+		Name:      "Process 9",
+	}
+	require.NoError(t, testDB.Create(&process).Error)
+
+	line := models.ProductionLine{
+		BaseModel: models.BaseModel{ID: "line-2"},
+		Code:      "L-02",
+		Name:      "Line 02",
+		Segments: []models.LineSegment{
+			{
+				BaseModel: models.BaseModel{ID: "segment-2"},
+				Name:      "Segment 1",
+				Processes: []models.ProcessStep{process},
+			},
+		},
+	}
+
+	require.NoError(t, repo.SaveProductionLine(testDB, &line))
+
+	lines, err := repo.ListProductionLines(testDB)
+	require.NoError(t, err)
+	require.Len(t, lines, 1)
+	require.Len(t, lines[0].Segments, 1)
+	require.Len(t, lines[0].Segments[0].Processes, 1)
+	require.Equal(t, process.ID, lines[0].Segments[0].Processes[0].ID)
+}
