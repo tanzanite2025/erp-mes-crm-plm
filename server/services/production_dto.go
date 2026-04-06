@@ -46,6 +46,14 @@ type ProductionLineDTO struct {
 	Segments    []LineSegmentDTO `json:"segments"`
 }
 
+type ProductionLinesResponse struct {
+	Items []ProductionLineDTO `json:"items"`
+}
+
+type ProcessStepsResponse struct {
+	Items []ProcessStepDTO `json:"items"`
+}
+
 func mapProcessStepToDTO(step models.ProcessStep) ProcessStepDTO {
 	return ProcessStepDTO{
 		ID:          step.ID,

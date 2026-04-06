@@ -1,5 +1,110 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`production` 核心查询链轻量风格统一化（plans / stats / order-progress）（2026-04-07）
+
+### 已执行变更
+1. 核心查询链保持既有 query DTO 不变，仅补轻量 wrapper 统一输出风格
+   - `server/services/production_query_dto.go`
+   - 已新增：
+     - `ProductionStatsEnvelopeResponse`
+     - `OrderProgressListResponse`
+
+2. 查询接口输出风格已进一步统一
+   - `server/handlers/production_plans.go`
+   - 已完成：
+     - `GetProductionPlansHandler` 保持 `ProductionPlansListResponse`
+     - `GetProductionStatsHandler` -> `ProductionStatsEnvelopeResponse`
+     - `GetOrderProgressHandler` -> `OrderProgressListResponse`
+
+3. 保留边界
+   - 未重做 `production_query_dto.go` 的既有响应字段；
+   - 未改 plans / stats / order-progress 的 SQL、聚合逻辑与字段语义；
+   - `order-progress` 空数组语义继续保持稳定。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Production|Progress|Report|Calendar|Dashboard"
+```
+
+结果：通过。
+
+### 当前结果
+- `production` 核心查询链 3 个核心入口的输出风格已统一到正式命名 response；
+- plans / stats / order-progress 的 contract 可读性和防回退能力进一步增强；
+- 当前 `production` Yellow 风险已基本从“风格不一致”降到“已完成主链统一化”。
+
+## P0：`production` Yellow 缺口统一化（第一步：主配置链读接口 wrapper 统一）（2026-04-07）
+
+### 已执行变更
+1. 为 production 主配置链读接口补充正式命名 response wrapper
+   - `server/services/production_dto.go`
+   - `server/services/production_process_dto.go`
+   - 已新增：
+     - `ProductionLinesResponse`
+     - `ProcessStepsResponse`
+     - `StationMappingsResponse`
+
+2. 主配置链读接口已切到统一命名 response
+   - `server/handlers/production_topology_handlers.go`
+     - `GetProductionLinesHandler` -> `ProductionLinesResponse`
+   - `server/handlers/production_process_handlers.go`
+     - `GetProcessStepsHandler` -> `ProcessStepsResponse`
+   - `server/handlers/production_station_mapping_handlers.go`
+     - `GetStationMappingsHandler` -> `StationMappingsResponse`
+
+3. 保留边界
+   - `production topology` / `process step` 保存逻辑未改；
+   - `station mapping` 数据语义保持 `StationProcessMappingsResponse` 不变，仅在 handler 出口补统一 wrapper；
+   - 主配置链字段语义与错误语义未漂移。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Production|Topology|Process|Station|Progress"
+```
+
+结果：通过。
+
+### 当前结果
+- `production` 主配置链读接口的 contract 风格已完成统一；
+- `GetProductionLinesHandler`、`GetProcessStepsHandler`、`GetStationMappingsHandler` 不再直接返回裸 DTO slice / map；
+- 当前若继续做 `production` Yellow 统一化，可把重点转向核心查询链的轻量风格统一，而不是主配置链。
+
+## P0：`workflow` contract 补缺口（Yellow 缺口小闭环）（2026-04-07）
+
+### 已执行变更
+1. 收口 `workflow` service 对外公开返回 contract
+   - `server/services/workflow_service.go`
+   - 已补齐：
+     - `ApproveWorkflowTask(...)` 返回 `WorkflowInstanceResponse`
+     - `RejectWorkflowTask(...)` 返回 `WorkflowInstanceResponse`
+     - `ListWorkflowTasks(...)` 返回 `[]WorkflowTaskResponse`
+
+2. handler 已同步改为直接消费 service 返回的正式 DTO
+   - `server/handlers/workflow.go`
+   - 已完成：
+     - task list handler 不再对 service 返回值做重复 mapper
+     - 审批/驳回 handler 不再持有 `models.WorkflowInstance` 作为对外结构
+
+3. 保留边界
+   - workflow 审批/驳回事务逻辑未重写；
+   - 状态流转、任务分配与错误语义未改动；
+   - 仅修正了 service 对外 contract 与 handler response contract 的不一致。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Workflow"
+```
+
+结果：通过。
+
+### 当前结果
+- `workflow` 已补齐 service 对外仍收发 `models.Workflow*` 的主要 Yellow 缺口；
+- service / handler / mapper 的 contract 边界继续保持一致；
+- 后续新增 workflow 接口时，回退到 model-first 的风险进一步降低。
+
 ## P0：`voucher / finance` 核心读接口 DTO 加固（2026-04-07）
 
 ### 已执行变更

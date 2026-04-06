@@ -14,7 +14,7 @@ func GetProcessStepsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch process steps"})
 		return
 	}
-	c.JSON(http.StatusOK, steps)
+	c.JSON(http.StatusOK, services.ProcessStepsResponse{Items: steps})
 }
 
 func SaveProcessStepHandler(c *gin.Context) {

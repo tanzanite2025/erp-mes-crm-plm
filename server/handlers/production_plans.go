@@ -21,7 +21,7 @@ func GetProductionPlansHandler(c *gin.Context) {
 	orderNo := c.Query("orderNo")
 
 	query := db.DB.Model(&models.ProductionPlan{}).Preload("Tasks")
-	
+
 	if status != "" && status != "ALL" {
 		query = query.Where("status = ?", status)
 	}
@@ -121,7 +121,7 @@ func GetProductionStatsHandler(c *gin.Context) {
 		Where("status != ? AND end_date < ?", "COMPLETED", time.Now()).
 		Count(&stats.DelayedCount)
 
-	c.JSON(http.StatusOK, services.MapProductionStatsToResponse(stats))
+	c.JSON(http.StatusOK, services.ProductionStatsEnvelopeResponse{Item: services.MapProductionStatsToResponse(stats)})
 }
 
 // GetOrderProgressHandler 聚合订单进度 (看板专用)
@@ -147,5 +147,5 @@ func GetOrderProgressHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, results)
+	c.JSON(http.StatusOK, services.OrderProgressListResponse{Items: results})
 }

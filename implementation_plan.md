@@ -6267,3 +6267,380 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
 2. 已确认执行顺序应先 `inventory` 命令链，再 `voucher / finance` 核心读接口；
 3. 在你明确批准前，不开始 A 级总推进下的业务代码修改；
 4. 你批准后，我将按阶段先进入 `inventory` 命令链 DTO 收口，不会并行摊开所有 A 级模块。
+
+---
+
+## A 级模块 contract 巡检审批稿：检查新增接口是否回退到 `models.*`
+
+### 背景
+当前 A 级总推进已经完成两类关键实施：
+
+1. `inventory` 命令链第一轮 DTO 收口
+2. `voucher / finance` 核心读接口 DTO 加固
+
+同时，`workflow`、`sales_orders`、`purchase_orders`、`production` 主配置链与核心查询链也已完成主要边界收口。
+
+这时最合理的下一步，不是马上继续扩新模块，而是做一轮 **A 级模块 contract 巡检**，确认这些已完成模块中，是否因为后续新增接口或局部修复而出现边界回退。
+
+### 巡检目标
+本轮目标不是大改代码，而是识别以下问题：
+
+1. handler 是否重新直接绑定或返回 `models.*`
+2. 新增接口是否使用匿名 request / response 结构替代正式 DTO
+3. 聚合查询是否回退到匿名 response、未命名 wrapper 或空态语义不稳定
+4. tests 是否重新耦合到底层 model，而没有继续锁定稳定 contract
+
+### 巡检范围
+仅限当前 A 级模块：
+
+1. `workflow`
+2. `sales_orders`
+3. `purchase_orders`
+4. `inventory` 命令链
+5. `production` 主配置链
+6. `production` 核心查询链
+7. `voucher / finance` 核心读接口
+
+### 巡检方法
+#### 1) handler 出口检查
+重点检查：
+
+- `c.ShouldBindJSON(&models.Xxx{})`
+- `c.JSON(..., model)`
+- handler 内匿名 struct request/response
+
+#### 2) service contract 检查
+重点检查：
+
+- service 对外公开函数是否又开始直接收发 `models.*`
+- 是否新增未命名 query/result struct 跨层传递
+
+#### 3) test contract 检查
+重点检查：
+
+- handler tests 是否继续以 response DTO 断言
+- 是否重新直接用 model 作为外部 response 断言
+
+#### 4) 聚合查询空态检查
+重点检查：
+
+- `[]` vs `null`
+- list/dashboards 是否存在匿名 response 回退
+
+### 输出结果形式
+巡检输出建议分三类：
+
+1. **Green**：边界稳定，无需动作
+2. **Yellow**：存在轻微漂移，建议后续补缺口
+3. **Red**：已回退到高风险 contract，建议立即单独开闭环修复
+
+### 执行原则
+#### 1) 巡检优先于修改
+- 本轮先得到完整清单；
+- 不默认边查边改，避免范围膨胀。
+
+#### 2) 若发现缺口，再按模块开小闭环
+- 例如：
+  - workflow 缺口一轮
+  - inventory 缺口一轮
+  - voucher 缺口一轮
+
+#### 3) 已完成模块以“防回退”为第一目标
+- 不为“更整齐”而重做已稳定链路；
+- 只修真实缺口。
+
+### 风险评估
+1. 若直接边巡检边改，极容易失去边界；
+2. 若缺乏统一判定标准，不同模块容易出现“看起来差不多，但实际 contract 水平不一致”；
+3. 若 tests 回退到底层 model，未来新增接口时会持续放大 contract 漂移风险。
+
+### 验证策略
+- 第一阶段：静态巡检（grep + read）
+- 第二阶段：仅对确认存在缺口的模块做局部修复
+- 若进入修复阶段，再执行：
+  - `go test ./handlers ./services ./routes -run "Workflow|Trading|PurchaseOrder|SalesOrder|Inventory|Finance|Voucher|Production"`
+  - 或按缺口所属模块执行更细粒度回归
+
+### 约束与边界
+- 本轮只做 A 级模块 contract 巡检规划；
+- 在你明确批准前，不开始巡检后的业务代码修复；
+- 不改变既有中文用户面错误语义；
+- 用户面消息保持中文，日志保持英文。
+
+### 当前状态与暂停点
+本节当前仅为 A 级模块 contract 巡检执行前审批稿：
+
+1. 已确认巡检目标是“找回退点”，不是立即大改；
+2. 已确认巡检范围仅限当前 A 级模块；
+3. 在你明确批准前，不开始新的业务代码修复；
+4. 你批准后，我将先做静态巡检并给出 Green / Yellow / Red 清单，再决定是否进入补缺口执行。
+
+---
+
+## `workflow` contract 补缺口小闭环审批稿：修正 service 对外仍收发 `models.Workflow*` 的 Yellow 缺口
+
+### 背景
+在 A 级模块巡检中，`workflow` 被判定为 **Yellow**，原因不是 handler 侧完全失控，而是：
+
+- `workflow` 已经具备 response DTO 与 mapper；
+- 但部分 service 对外公开函数仍直接返回 `models.WorkflowInstance` / `models.WorkflowTask`；
+- 这会导致后续新增 handler 或跨模块调用时，更容易绕回 model-first 方式，形成 contract 回退。
+
+因此，本轮不需要重做 workflow，而是做一个 **补缺口小闭环**。
+
+### 改造目标
+本轮只做：
+
+1. 修正 `workflow` service 对外 contract 中仍直接收发 `models.Workflow*` 的关键暴露点；
+2. 让 service / handler / mapper 继续对齐到正式 response contract；
+3. 不重写 workflow 事务与状态流转逻辑。
+
+### 建议范围
+#### 第一优先级
+优先排查与补齐：
+
+1. `ApproveWorkflowTask(...)`
+2. `RejectWorkflowTask(...)`
+3. `ListWorkflowTasks(...)`
+
+原因：
+
+- 它们直接对应已存在的外部 API；
+- 已有 handler / mapper contract 可以复用；
+- 是最容易在新增接口时继续把 `models.Workflow*` 外溢的点。
+
+#### 第二优先级（按需）
+若第一优先级修完后仍发现同类缺口，再补：
+
+- instance list / detail 查询 service 边界
+- 其它直接暴露 workflow model 的公开 service
+
+### 实施策略
+#### 1) 优先补 service result object，不重写事务逻辑
+- 若当前 service 事务与业务逻辑稳定，则保持事务代码不动；
+- 重点收口 service 返回对象与 mapper 边界。
+
+#### 2) 复用现有 mapper / response DTO
+- 不重复定义第二套 workflow response；
+- 尽量复用现有 `WorkflowInstanceResponse` / `WorkflowTaskResponse` 相关 mapper。
+
+#### 3) 只修真实 Yellow 缺口
+- 不顺手重构整个 workflow 模块；
+- 不把“补缺口”扩大成“workflow 第二轮全面 DTO 化”。
+
+### 预计改动文件
+- `server/services/workflow_service.go`
+- `server/services/workflow_*dto.go` / `workflow_mapper.go`（按实际需要）
+- `server/handlers` 中与 workflow task / instance 相关的 handler（仅当 call site 需要同步）
+- `server/services/*workflow*test.go`
+- `server/handlers/*workflow*test.go`
+
+### 风险评估
+1. 若顺手修改 workflow 事务逻辑，风险会远高于 contract 补缺口本身；
+2. 若 service contract 和 handler contract 继续长期不一致，后续新增接口很容易直接回退到 `models.Workflow*`；
+3. 若不复用现有 mapper，而是再造一套 workflow response，反而会制造重复 contract。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Workflow"`
+- 重点复核：
+  - 审批 / 驳回 response
+  - task list response
+  - instance 查询返回是否继续稳定
+  - 既有 workflow 挂接与状态流转不回归
+
+### 约束与边界
+- 本轮只做 `workflow` Yellow 缺口补齐；
+- 不扩展到 trading / inventory / production；
+- 不改变既有中文用户面错误语义；
+- 用户面消息保持中文，日志保持英文。
+
+### 当前状态与暂停点
+本节当前仅为 `workflow` contract 补缺口执行前审批稿：
+
+1. 已确认这是一个 Yellow 缺口补齐任务，不是 workflow 全面重做；
+2. 已确认应优先修正 service 对外仍收发 `models.Workflow*` 的链路；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先从审批/驳回与 task list 相关 service contract 切入，按最小闭环执行。
+
+---
+
+## `production` Yellow 缺口统一化审批稿：主配置链与核心查询链 contract 风格补齐
+
+### 背景
+在 A 级模块巡检中，`production` 被判定为 **Yellow**，但不是因为主链回退严重，而是因为：
+
+- `production` 主配置链与核心查询链已经完成主要 DTO 收口；
+- 但部分读接口仍以“直接返回 DTO slice / map / alias”的形式存在，缺少更统一的命名 response 风格；
+- 查询链与写链在部分文件内仍混放，导致模块的 contract 边界看起来已收口但不够整齐，后续新增接口时更容易回退到匿名风格。
+
+因此，本轮不应重做 production，而应做一个 **Yellow 缺口统一化小闭环**。
+
+### 改造目标
+本轮只做：
+
+1. 提高 `production` 主配置链与核心查询链的 contract 风格一致性；
+2. 用最小补强方式提升防回退能力；
+3. 不重写 production 事务、保存逻辑或核心聚合 SQL。
+
+### 建议范围
+#### 第一优先级：主配置链读接口统一化
+优先排查：
+
+1. `GetProductionLinesHandler`
+2. `GetProcessStepsHandler`
+3. `GetStationMappingsHandler`
+
+关注点：
+
+- 是否需要更明确的命名 response type / wrapper；
+- 是否仍停留在“虽然返回 DTO，但 contract 命名不够完整”的状态。
+
+#### 第二优先级：核心查询链风格统一化
+优先排查：
+
+1. `GetProductionPlansHandler`
+2. `GetProductionStatsHandler`
+3. `GetOrderProgressHandler`
+
+关注点：
+
+- query DTO 是否已足够稳定；
+- 是否需要在文件边界、mapper 入口或 response wrapper 上再做轻量统一；
+- 不碰现有已稳定的空数组与字段语义。
+
+### 实施策略
+#### 1) 优先补 wrapper / response type，不动核心逻辑
+- 如果当前问题只是 contract 风格不统一，就优先补命名 response type；
+- 不为“整齐”而重写查询逻辑或事务代码。
+
+#### 2) 复用既有 production DTO / mapper
+- 继续复用：
+  - `production_dto.go`
+  - `production_process_dto.go`
+  - `production_query_dto.go`
+- 不重复定义第二套 production response。
+
+#### 3) 只修 Yellow 缺口，不扩大范围
+- 不重新做 production topology
+- 不重新做 ProcessStep / StationProcessMapping
+- 不重新做 plans/stats/order-progress 的核心逻辑
+
+### 预计改动文件
+- `server/handlers/production_topology_handlers.go`
+- `server/handlers/production_process_handlers.go`
+- `server/handlers/production_station_mapping_handlers.go`
+- `server/handlers/production_plans.go`
+- `server/services/production_dto.go`
+- `server/services/production_process_dto.go`
+- `server/services/production_query_dto.go`
+- 如有必要补少量 handler/service tests
+
+### 风险评估
+1. 若把统一化误做成生产域重构，收益会远小于风险；
+2. 若不统一，现有“看起来像 DTO，但 contract 命名不够完整”的边缘点会成为后续回退入口；
+3. 若动到已稳定的空数组语义或查询字段名，前端看板和报告页会立即受影响。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Production|Topology|Process|Station|Progress"`
+- 重点复核：
+  - 主配置链读接口 response shape
+  - 核心查询链空态语义
+  - 已有 DTO / mapper 输出的一致性
+
+### 约束与边界
+- 本轮只做 `production` Yellow 缺口统一化；
+- 不扩展到 workflow / trading / inventory / finance；
+- 不改变既有中文用户面错误语义；
+- 用户面消息保持中文，日志保持英文。
+
+### 当前状态与暂停点
+本节当前仅为 `production` Yellow 缺口统一化执行前审批稿：
+
+1. 已确认这是 Yellow 统一化任务，不是 production 第二轮大改；
+2. 已确认应优先统一主配置链读接口与核心查询链的 contract 风格；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先从主配置链读接口的 wrapper / 命名 response 一致性切入，再决定是否补核心查询链的轻量统一化。
+
+---
+
+## `production` 核心查询链轻量风格统一化审批稿：plans / stats / order-progress
+
+### 背景
+`production` Yellow 缺口统一化第一步已经完成主配置链读接口 wrapper 统一。接下来若继续推进，最合理的下一步不是再回头动主配置链，而是对核心查询链做一轮 **轻量风格统一化**。
+
+这里的“轻量”有明确边界：
+
+- 不重新做 query DTO；
+- 不改写 plans / stats / order-progress 的查询逻辑；
+- 不改变空数组语义、字段名和前端已依赖 contract。
+
+### 改造目标
+本轮只做：
+
+1. 提高 `GetProductionPlansHandler`、`GetProductionStatsHandler`、`GetOrderProgressHandler` 的输出风格一致性；
+2. 在不改变 response 语义的前提下，让 mapper / response 入口更清晰；
+3. 降低核心查询链后续新增接口继续沿用不整齐风格的概率。
+
+### 建议范围
+#### 目标接口
+1. `GetProductionPlansHandler`
+2. `GetProductionStatsHandler`
+3. `GetOrderProgressHandler`
+
+#### 关注点
+1. response wrapper 是否足够明确
+2. handler 与 mapper 的边界是否足够清晰
+3. 读写接口同文件共存是否已经形成维护性噪音，若有必要是否做最小拆分
+
+### 实施策略
+#### 1) 保持 contract 语义完全不变
+- 不改字段名；
+- 不改数组空态；
+- 不改 SQL / 聚合逻辑；
+- 不改第一阶段已稳定的 query DTO 定义。
+
+#### 2) 优先做“风格统一”，不做“逻辑重构”
+- 若当前问题能通过 wrapper / mapper 入口清晰化解决，就不拆逻辑；
+- 若文件边界确实影响可维护性，再做最小拆分，而不是大调整。
+
+#### 3) 复用现有 query DTO / mapper
+- 继续复用：
+  - `production_query_dto.go`
+  - `production_query_mapper.go`
+- 不再引入第二套查询 response。
+
+### 预计改动文件
+- `server/handlers/production_plans.go`
+- `server/services/production_query_dto.go`
+- `server/services/production_query_mapper.go`
+- 如有必要补少量 handler tests
+
+### 风险评估
+1. 若把轻量统一化做成 query 重构，会破坏第一阶段已稳定 contract；
+2. 若误动 `order-progress` 空数组语义，前端 dashboard / calendar 相关页面会立即受影响；
+3. 若为“整齐”过度拆文件，收益可能低于维护成本。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Production|Progress|Report|Calendar|Dashboard"`
+- 重点复核：
+  - plans response shape
+  - stats response shape
+  - order-progress 空数组语义
+  - 前端已依赖字段名未漂移
+
+### 约束与边界
+- 本轮只做 `production` 核心查询链轻量风格统一化；
+- 不扩展到 workflow / trading / inventory / finance；
+- 不改变既有中文用户面错误语义；
+- 用户面消息保持中文，日志保持英文。
+
+### 当前状态与暂停点
+本节当前仅为 `production` 核心查询链轻量风格统一化执行前审批稿：
+
+1. 已确认这是轻量风格统一化任务，不是 query 第二轮重做；
+2. 已确认只处理 plans / stats / order-progress；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先复核 `production_plans.go` 与现有 query DTO/mapper，再按最小闭环执行。

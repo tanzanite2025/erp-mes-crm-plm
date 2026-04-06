@@ -303,7 +303,7 @@ func GetWorkflowTasksHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取流程任务失败"})
 		return
 	}
-	c.JSON(http.StatusOK, services.MapWorkflowTasksToResponse(tasks))
+	c.JSON(http.StatusOK, tasks)
 }
 
 // ApproveWorkflowTaskHandler approves one workflow task.
@@ -333,7 +333,7 @@ func handleWorkflowTaskDecision(c *gin.Context, approved bool) {
 	_ = c.ShouldBindJSON(&input)
 
 	var (
-		instance models.WorkflowInstance
+		instance services.WorkflowInstanceResponse
 		err      error
 	)
 	if approved {
@@ -358,5 +358,5 @@ func handleWorkflowTaskDecision(c *gin.Context, approved bool) {
 		}
 	}
 
-	c.JSON(http.StatusOK, services.MapWorkflowInstanceToResponse(instance))
+	c.JSON(http.StatusOK, instance)
 }

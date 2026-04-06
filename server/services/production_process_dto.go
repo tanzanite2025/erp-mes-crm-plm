@@ -15,3 +15,7 @@ type MessageResponse struct {
 }
 
 type StationProcessMappingsResponse map[string][]string
+
+type StationMappingsResponse struct {
+	Items StationProcessMappingsResponse `json:"items"`
+}

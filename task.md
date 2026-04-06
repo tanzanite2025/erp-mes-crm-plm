@@ -1340,3 +1340,70 @@
     - `go test ./handlers ./services ./routes -run "Inventory|Inbound|Shipment|Commit|Void|PurchaseOrder|SalesOrder"`
     - `go test ./handlers ./routes -run "Voucher|Finance"`
   - [x] 已在 `walkthrough.md` 记录 inventory 第一阶段与 voucher / finance 核心读接口 DTO 加固结果。
+
+- [ ] 158. A 级模块 contract 巡检：检查新增接口是否回退到 `models.*`（审批稿）
+  - [ ] 本轮定义为“**A 级模块巡检**”，而不是立即进行新一轮大改；先识别已完成模块内是否出现 contract 回退点，再决定是否进入补缺口实施。
+  - [ ] 巡检范围限定在当前 A 级模块：
+    - `workflow`
+    - `sales_orders`
+    - `purchase_orders`
+    - `inventory` 命令链
+    - `production` 主配置链
+    - `production` 核心查询链
+    - `voucher / finance` 核心读接口
+  - [ ] 巡检重点包括：
+    - handler 是否重新直接绑定或返回 `models.*`
+    - 新增接口是否使用匿名 request / response 结构替代正式 DTO
+    - 聚合查询是否回退到匿名 response 或 `[]` / `null` 语义不稳定
+    - tests 是否仍然锁定稳定 contract，而不是重新耦合到底层 model
+  - [ ] 本轮先输出巡检结果，不默认顺手修改所有发现项；若发现缺口，再按风险分成后续单独小闭环执行。
+  - [ ] 保持既有业务语义不变：A 级已完成主链的 workflow 挂接、patch 保护、状态流转、冲突语义、空数组语义和错误消息不能在巡检中被意外修改。
+  - [ ] 重点风险点：巡检范围跨多个主链，若不先做清单化检查，容易把“补缺口”演变成第二轮无边界重构。
+  - [ ] 明确验证方式：先以静态巡检和定向 grep/read 为主；若最终发现并修复缺口，再按模块执行 `go test ./handlers ./services ./routes -run "Workflow|Trading|PurchaseOrder|SalesOrder|Inventory|Finance|Voucher|Production"` 或更细粒度验证。
+  - [ ] 在用户确认巡检方案前，不修改业务代码；先输出巡检范围、判定标准和后续分批处理策略。
+
+- [x] 159. `workflow` contract 补缺口小闭环：修正 service 对外仍收发 `models.Workflow*` 的 Yellow 缺口（已完成）
+  - [x] 已将本轮限定为 `workflow` 模块的小闭环补缺口，未重做整个 workflow DTO 体系。
+  - [x] 已完成当前 `workflow` service 对外公开函数中主要 Yellow 缺口的收口，优先补齐了：
+    - 审批 / 驳回
+    - task list
+  - [x] 已让 `workflow` 的 service / handler 边界继续对齐正式 contract，降低后续新增接口再次直接复用 `models.Workflow*` 的风险。
+  - [x] 本轮采用最小方案：优先补 service result object / mapper 边界，未重写 workflow 事务逻辑。
+  - [x] 已保持既有业务语义不变：审批/驳回状态流转、任务分配、实例更新、中文错误消息与状态码未漂移。
+  - [x] 已降低主要风险：service contract 与 handler response contract 的不一致点已缩小，workflow 新增挂接点回退到 `models.Workflow*` 的概率进一步下降。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Workflow"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮补缺口结果与验证范围。
+
+- [x] 160. `production` Yellow 缺口统一化：主配置链与核心查询链的 contract 风格补齐（第一步已完成）
+  - [x] 已将本轮限定为 `production` 模块 Yellow 缺口统一化，未开展 production 全域 DTO 改造。
+  - [x] 已优先处理主配置链中最明显的统一性缺口：
+    - `GetProductionLinesHandler`
+    - `GetProcessStepsHandler`
+    - `GetStationMappingsHandler`
+  - [x] 已补充更明确的命名 response / wrapper：
+    - `ProductionLinesResponse`
+    - `ProcessStepsResponse`
+    - `StationMappingsResponse`
+  - [x] 本轮目标已部分达成：production 主配置链的 contract 风格更一致，防回退能力进一步增强。
+  - [x] 本轮采用最小方案：只补 wrapper / response type，未改 topology / process / station mapping 的业务逻辑，也未触碰核心查询链逻辑。
+  - [x] 已保持既有业务语义不变：production topology、process step、station mapping、plans/stats/order-progress 的字段语义、错误状态码、空数组语义与查询逻辑未漂移。
+  - [x] 已控制风险：未把 Yellow 统一化演变成 production 重构；当前主配置链读接口统一化已完成，核心查询链是否继续细化统一，留待后续按需决定。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Production|Topology|Process|Station|Progress"` 通过。
+  - [x] 已在 `walkthrough.md` 记录 production Yellow 缺口统一化第一步结果与验证范围。
+
+- [x] 161. `production` 核心查询链轻量风格统一化：plans / stats / order-progress（已完成）
+  - [x] 已将本轮限定为 `production` 核心查询链的轻量风格统一化，未重新进行 query DTO 改造，也未改写查询逻辑。
+  - [x] 已完成范围内 3 个核心入口的风格统一：
+    - `GetProductionPlansHandler`
+    - `GetProductionStatsHandler`
+    - `GetOrderProgressHandler`
+  - [x] 已补充轻量 wrapper / response 统一入口：
+    - `ProductionStatsEnvelopeResponse`
+    - `OrderProgressListResponse`
+    - `GetProductionPlansHandler` 继续保持 `ProductionPlansListResponse`
+  - [x] 本轮目标已达成：核心查询链的 contract 可读性、一致性与防回退能力进一步提升。
+  - [x] 本轮采用最小方案：只补轻量 wrapper / response 统一入口，未改 `[]` / `null` 语义，未改 SQL，也未改聚合逻辑。
+  - [x] 已保持既有业务语义不变：plans/stats/order-progress 当前已稳定的字段名、空数组语义、错误状态码与前端已依赖 contract 未漂移。
+  - [x] 已控制风险：未把轻量统一化演变成查询链重构。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Production|Progress|Report|Calendar|Dashboard"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。

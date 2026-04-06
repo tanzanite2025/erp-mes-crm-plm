@@ -55,5 +55,5 @@ func GetStationMappingsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mappings)
+	c.JSON(http.StatusOK, services.StationMappingsResponse{Items: mappings})
 }

@@ -103,7 +103,7 @@ func CreateWorkflowInstanceForDocumentTx(
 	return &instance, nil
 }
 
-func ApproveWorkflowTask(taskID, userID, comment string) (models.WorkflowInstance, error) {
+func ApproveWorkflowTask(taskID, userID, comment string) (WorkflowInstanceResponse, error) {
 	var instance models.WorkflowInstance
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		updated, err := processWorkflowTaskDecisionTx(tx, taskID, userID, comment, true)
@@ -114,12 +114,12 @@ func ApproveWorkflowTask(taskID, userID, comment string) (models.WorkflowInstanc
 		return nil
 	})
 	if err != nil {
-		return models.WorkflowInstance{}, err
+		return WorkflowInstanceResponse{}, err
 	}
-	return instance, nil
+	return MapWorkflowInstanceToResponse(instance), nil
 }
 
-func RejectWorkflowTask(taskID, userID, comment string) (models.WorkflowInstance, error) {
+func RejectWorkflowTask(taskID, userID, comment string) (WorkflowInstanceResponse, error) {
 	var instance models.WorkflowInstance
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		updated, err := processWorkflowTaskDecisionTx(tx, taskID, userID, comment, false)
@@ -130,12 +130,12 @@ func RejectWorkflowTask(taskID, userID, comment string) (models.WorkflowInstance
 		return nil
 	})
 	if err != nil {
-		return models.WorkflowInstance{}, err
+		return WorkflowInstanceResponse{}, err
 	}
-	return instance, nil
+	return MapWorkflowInstanceToResponse(instance), nil
 }
 
-func ListWorkflowTasks(instanceID, assigneeUserID, status string) ([]models.WorkflowTask, error) {
+func ListWorkflowTasks(instanceID, assigneeUserID, status string) ([]WorkflowTaskResponse, error) {
 	query := db.DB.Model(&models.WorkflowTask{})
 	if strings.TrimSpace(instanceID) != "" {
 		query = query.Where("instance_id = ?", strings.TrimSpace(instanceID))
@@ -151,7 +151,7 @@ func ListWorkflowTasks(instanceID, assigneeUserID, status string) ([]models.Work
 	if err := query.Order("created_at asc").Find(&tasks).Error; err != nil {
 		return nil, err
 	}
-	return tasks, nil
+	return MapWorkflowTasksToResponse(tasks), nil
 }
 
 func findActiveWorkflowDefinitionByModule(tx *gorm.DB, module string) (models.WorkflowDefinition, error) {

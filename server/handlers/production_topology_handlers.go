@@ -14,7 +14,7 @@ func GetProductionLinesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch production lines"})
 		return
 	}
-	c.JSON(http.StatusOK, lines)
+	c.JSON(http.StatusOK, services.ProductionLinesResponse{Items: lines})
 }
 
 func SaveProductionLineHandler(c *gin.Context) {

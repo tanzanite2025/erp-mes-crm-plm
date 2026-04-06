@@ -49,6 +49,10 @@ type ProductionStatsResponse struct {
 	DelayedCount   int64   `json:"delayedCount"`
 }
 
+type ProductionStatsEnvelopeResponse struct {
+	Item ProductionStatsResponse `json:"item"`
+}
+
 type OrderProgressItemResponse struct {
 	ID        string  `json:"id"`
 	OrderNo   string  `json:"orderNo"`
@@ -56,4 +60,8 @@ type OrderProgressItemResponse struct {
 	Target    float64 `json:"target"`
 	Completed float64 `json:"completed"`
 	WIP       float64 `json:"wip"`
+}
+
+type OrderProgressListResponse struct {
+	Items []OrderProgressItemResponse `json:"items"`
 }
