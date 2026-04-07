@@ -60,11 +60,8 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
     return name.includes(keyword) || code.includes(keyword) || section.includes(keyword)
   })
 
-  const handleSaveTeam = (data: Partial<TeamRecord>) => {
-    void adapter.saveTeam({
-      ...data,
-      id: editingTeam?.id,
-    })
+  const handleSaveTeam = (params: { data: TeamRecord; isPatch: boolean; delta?: any; version?: number }) => {
+    void adapter.saveTeam(params)
     setIsDialogOpen(false)
   }
 
@@ -131,17 +128,17 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
 
       <div className='rounded-[24px] border border-dashed border-muted/50 bg-background overflow-hidden'>
         <Table>
-          <TableHeader className='bg-muted/30'>
+          <TableHeader className='bg-muted/10 border-b border-dashed border-muted/50'>
             <TableRow className='border-white/5 hover:bg-transparent'>
-              <TableHead className='w-[100px] text-[11px] font-black uppercase tracking-widest py-5'>群组编码</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest'>群组名称</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest'>群组步骤</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest text-center'>归属区段</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest text-center'>群组类型</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest text-center'>是否维修</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest text-center'>当前状态</TableHead>
-              <TableHead className='text-[11px] font-black uppercase tracking-widest'>操作审计</TableHead>
-              <TableHead className='text-right text-[11px] font-black uppercase tracking-widest pr-8'>管理控制</TableHead>
+              <TableHead className='w-[120px] text-[10px] font-black uppercase tracking-widest py-6 italic'>群组编码 / CODE</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>群组名称 / NAME</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>显示序列 / STEP</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>归属区段 / SECTION</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>业务类型 / TYPE</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>特殊标识 / MAINT</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>运行状态 / STATUS</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>操作记录 / AUDIT</TableHead>
+              <TableHead className='text-right text-[10px] font-black uppercase tracking-widest pr-8 italic'>系统指令 / CMD</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -235,6 +232,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         onOpenChange={setIsDialogOpen}
         team={editingTeam}
         onSave={handleSaveTeam}
+        isLoading={adapter.isLoading}
       />
     </div>
   )
