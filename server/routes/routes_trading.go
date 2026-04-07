@@ -28,6 +28,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesGroup.GET("/:id", handlers.GetSalesOrderHandler)
 	salesGroup.GET("/by-no/:orderNo", handlers.GetSalesOrderByNoHandler)
 	salesGroup.POST("", salesOrderManage, handlers.SaveSalesOrderHandler)
+	salesGroup.PATCH("/:id", salesOrderManage, handlers.PatchSalesOrderHandler)
 	salesGroup.DELETE("/:id", salesOrderDelete, handlers.DeleteSalesOrderHandler)
 	salesGroup.POST("/sync", salesOrderSync, handlers.BulkSyncSalesOrdersHandler)
 
@@ -42,6 +43,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	supplierGroup.Use(tradingAccess)
 	supplierGroup.GET("", handlers.GetSuppliersHandler)
 	supplierGroup.POST("", supplierManage, handlers.SaveSupplierHandler)
+	supplierGroup.PATCH("/:id", supplierManage, handlers.PatchSupplierHandler)
 	supplierGroup.DELETE("/:id", supplierDelete, handlers.DeleteSupplierHandler)
 	supplierGroup.POST("/sync", supplierSync, handlers.BulkSyncSuppliersHandler)
 
@@ -51,6 +53,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	purchaseGroup.GET("/deleted-orders", handlers.GetDeletedPurchaseOrdersHandler)
 	purchaseGroup.GET("/orders/:id", handlers.GetPurchaseOrderHandler)
 	purchaseGroup.POST("/orders", purchaseOrderManage, handlers.SavePurchaseOrderHandler)
+	purchaseGroup.PATCH("/orders/:id", purchaseOrderManage, handlers.PatchPurchaseOrderHandler)
 	purchaseGroup.POST("/orders/:id/confirm-receipt", purchaseOrderManage, handlers.ConfirmPurchaseReceiptHandler)
 	purchaseGroup.DELETE("/orders/:id", purchaseOrderDelete, handlers.DeletePurchaseOrderHandler)
 }

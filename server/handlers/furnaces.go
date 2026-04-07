@@ -8,6 +8,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -112,42 +113,51 @@ func patchFurnaceRecord(id string, updates map[string]interface{}) error {
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 
+func buildFurnacePatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
+	updates := make(map[string]interface{})
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
+		switch key {
+		case "sn", "name", "type", "status", "location", "description":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		case "maxTemp", "currentTemp":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		}
+	}
+	return updates, nil
+}
+
 // SaveFurnaceHandler 保存/创建炉台
 func SaveFurnaceHandler(c *gin.Context) {
-	payload, body, err := decodeJSONBodyMap(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 JSON 映射"})
+	var input services.SaveFurnaceRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 炉台格式错误"})
 		return
 	}
 
 	operator := middleware.GetSafeUsername(c)
 
-	if rawID, ok := payload["id"]; ok && string(rawID) != "null" && string(rawID) != `""` {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
-			return
-		}
-		updates, err := buildFurnaceUpdates(payload)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		updates["updated_by"] = operator
-		if err := patchFurnaceRecord(id, updates); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存炉台资产失败: " + err.Error()})
-			return
-		}
-		var furnace models.Furnace
-		db.DB.First(&furnace, "id = ?", id)
-		c.JSON(http.StatusOK, furnace)
-		return
-	}
-
-	var furnace models.Furnace
-	if err := json.Unmarshal(body, &furnace); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 炉台格式错误"})
-		return
+	furnace := models.Furnace{
+		ID:          input.ID,
+		SN:          input.SN,
+		Name:        input.Name,
+		Type:        input.Type,
+		MaxTemp:     input.MaxTemp,
+		CurrentTemp: input.CurrentTemp,
+		Status:      input.Status,
+		Location:    input.Location,
+		Description: input.Description,
 	}
 
 	furnace.CreatedBy = operator
@@ -163,21 +173,32 @@ func SaveFurnaceHandler(c *gin.Context) {
 // PatchFurnaceHandler 局部更新炉台 (差分更新支持)
 func PatchFurnaceHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input map[string]interface{}
+	var input services.DeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
 		return
 	}
 
-	operator := middleware.GetSafeUsername(c)
-	input["updated_by"] = operator
-	input["updated_at"] = time.Now()
+	updates, err := buildFurnacePatchUpdates(input.Delta)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的炉台差量数据"})
+		return
+	}
 
-	if err := db.DB.Model(&models.Furnace{}).Where("id = ?", id).Updates(input).Error; err != nil {
+	operator := middleware.GetSafeUsername(c)
+	updates["updated_by"] = operator
+	updates["updated_at"] = time.Now()
+
+	if err := db.DB.Model(&models.Furnace{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新炉台属性失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+	var furnace models.Furnace
+	if err := db.DB.First(&furnace, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的炉台失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, furnace)
 }
 
 // UpdateFurnaceTelemetryHandler 更新炉台遥测 (温度)

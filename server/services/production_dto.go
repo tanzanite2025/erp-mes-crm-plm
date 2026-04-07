@@ -17,9 +17,22 @@ type PatchProductionLineMetadata struct {
 	AuthCode string `json:"authCode"`
 }
 
+type DeltaItemDTO struct {
+	Old json.RawMessage `json:"o"`
+	New json.RawMessage `json:"n"`
+}
+
+type PatchProductionLineDeltaDTO struct {
+	Code        *DeltaItemDTO `json:"code,omitempty"`
+	Name        *DeltaItemDTO `json:"name,omitempty"`
+	Description *DeltaItemDTO `json:"description,omitempty"`
+	IsActive    *DeltaItemDTO `json:"isActive,omitempty"`
+	Segments    *DeltaItemDTO `json:"segments,omitempty"`
+}
+
 type PatchProductionLineHandlerRequest struct {
 	Op       string                      `json:"op"`
-	Delta    map[string]json.RawMessage  `json:"delta"`
+	Delta    PatchProductionLineDeltaDTO `json:"delta"`
 	Metadata PatchProductionLineMetadata `json:"metadata"`
 }
 

@@ -1,5 +1,505 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`trading` 下一批 DTO 补齐（2026-04-07）
+
+### 本轮目标
+本轮聚焦 `trading` 域中已经由前端采用 SDRTS PATCH 语义、但后端仍存在隐式 contract 或 route 缺失的三条链路：
+
+1. `supplier`
+2. `purchase-order`
+3. `sales-order`
+
+本轮原则：
+
+1. 不修改前端已有 `patchSupplier(...)` / `patchPurchaseOrder(...)` / `patchSalesOrder(...)` 的 URL 与 `DeltaPayload` 结构；
+2. 不另起第二套保存主链；
+3. 仅把后端从“前端已 patch、后端未正式接入 / 仍隐式绑定模型”的状态收口到正式 DTO 边界。
+
+### 本轮前的问题
+
+#### 1) `supplier`
+- 前端已经存在 `patchSupplier(...)`
+- 后端此前未正式暴露 `PATCH /suppliers/:id`
+- `SaveSupplierHandler` 仍直接绑定 `models.Supplier`
+
+这意味着供应商模块同时存在：
+- PATCH route 断链
+- handler 直接暴露数据库模型边界
+
+#### 2) `purchase-order`
+- 前端已经存在 `patchPurchaseOrder(...)`
+- 后端此前未正式暴露 `PATCH /purchase/orders/:id`
+- 仅有 `SavePurchaseOrderRequest`，没有正式 patch request DTO
+
+#### 3) `sales-order`
+- 后端已经存在 `PatchSalesOrderRequest`
+- 已存在 `MapPatchSalesOrderRequestToModel(...)`
+- 但此前 route 层未正式接入 `PATCH /sales-orders/:id`
+
+这说明 sales-order 更像“DTO 有一半，正式 PATCH 入口没接完”。
+
+### 已执行变更
+
+#### 1) 为 `supplier` 建立正式 save / patch DTO 边界
+更新：
+- `server/services/purchase_order_dto.go`
+- `server/services/purchase_order_mapper.go`
+- `server/handlers/suppliers.go`
+
+新增 / 调整：
+- `SaveSupplierRequest`
+- `PatchSupplierRequest`
+- `PatchDeltaHandlerRequest`
+- `MapSaveSupplierRequestToModel(...)`
+- `ApplyPatchSupplierRequestToModel(...)`
+
+并将：
+- `SaveSupplierHandler`
+  - 从直接绑定 `models.Supplier`
+  - 改为绑定显式 `SaveSupplierRequest`
+
+- `PatchSupplierHandler`
+  - 正式承接前端 `DeltaPayload`
+  - 解析 `metadata.version`
+  - 显式按允许字段应用 patch
+
+结果：
+- `supplier` 不再把数据库模型直接暴露为 handler request 边界；
+- 前端 `patchSupplier(...)` 现在有正式 PATCH 路由与 DTO 入口。
+
+#### 2) 为 `purchase-order` 补正式 patch DTO 与 handler
+更新：
+- `server/services/purchase_order_dto.go`
+- `server/services/purchase_order_mapper.go`
+- `server/handlers/purchase_orders.go`
+
+新增：
+- `PatchPurchaseOrderRequest`
+- `MapPatchPurchaseOrderRequestToModel(...)`
+- `PatchPurchaseOrderHandler`
+
+处理方式：
+- 先读取当前采购单及其 `Lines`
+- 将当前对象映射为正式 patch request
+- 应用前端传入的 delta 字段
+- 继续复用既有采购单保存主链与版本冲突语义
+
+保持不变：
+- 收货确认逻辑
+- 工作流实例关联逻辑
+- 采购单保存的事务主链
+
+#### 3) 为 `sales-order` 正式接入 PATCH handler
+更新：
+- `server/handlers/sales_orders.go`
+
+新增：
+- `PatchSalesOrderHandler`
+
+处理方式：
+- 复用已有：
+  - `PatchSalesOrderRequest`
+  - `MapPatchSalesOrderRequestToModel(...)`
+- 从当前订单详情生成 patch request 基线
+- 应用 delta 后沿既有更新链保存
+
+结果：
+- `sales-order` 从“已有 patch DTO，但 route/handler 未正式接入”收口为完整 PATCH contract。
+
+#### 4) 注册三条正式 PATCH route
+更新：
+- `server/routes/routes_trading.go`
+
+新增：
+- `PATCH /suppliers/:id`
+- `PATCH /purchase/orders/:id`
+- `PATCH /sales-orders/:id`
+
+结果：
+- 与前端已有 `patchSupplier(...)` / `patchPurchaseOrder(...)` / `patchSalesOrder(...)` 请求路径正式对齐。
+
+### 本轮保持不变的边界
+- 未修改前端 trading service 的 PATCH URL 与 payload；
+- 未改动 purchase / sales workflow 的业务语义；
+- 未将本轮扩散为 trading 全域重构；
+- 未额外引入“兼容旧 map 更新”的长期双轨实现。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./routes -run "Supplier|PurchaseOrder|SalesOrder|Trading"
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `trading` 下一批 DTO 补齐，重点收口：
+
+- `supplier`
+- `purchase-order`
+- `sales-order`
+
+并修复了三条真实 PATCH 断链：
+
+- `PATCH /suppliers/:id`
+- `PATCH /purchase/orders/:id`
+- `PATCH /sales-orders/:id`
+
+这使 `trading` 域从“前端已 patch、后端入口不一致”的状态，推进到“正式 PATCH route + DTO + handler 边界已接通”的状态。
+
+## P0：`production line topology` 二次 DTO 收口（2026-04-07）
+
+### 本轮目标
+在已经补通 `PATCH /production/lines/:id` 正式 contract 的基础上，继续把 production topology patch 链从“可运行但仍依赖裸 map / raw message”的状态，收口到更明确的 DTO / mapper 边界。
+
+本轮要求：
+
+1. 不改变前端现有 `DeltaPayload` 提交结构；
+2. 不改变后端现有路由与 API path；
+3. 不另起第二套 topology 持久化逻辑；
+4. 继续复用 `SaveProductionLine(...)` 主链。
+
+### 本轮前的问题
+上一轮虽然已经补齐 production line PATCH contract，但中间层仍存在两个遗留问题：
+
+1. `server/services/production_dto.go`
+   - `PatchProductionLineHandlerRequest.Delta` 仍是 `map[string]json.RawMessage`
+
+2. `server/services/production_service.go`
+   - `PatchProductionLineRequest.Delta` 仍是 `map[string]json.RawMessage`
+   - `applyProductionLineDelta(...)` 仍依赖 `switch key` + 手写字段解释
+
+这意味着：
+- 当前链路虽然能工作；
+- 但 topology 字段一旦继续演进，仍容易退回“隐式 contract + 运行时解析”的漂移模式。
+
+### 已执行变更
+
+#### 1) 为 production patch 新增显式 delta DTO
+更新：
+- `server/services/production_dto.go`
+
+新增：
+- `DeltaItemDTO`
+- `PatchProductionLineDeltaDTO`
+
+当前 patch delta 字段明确为：
+- `code`
+- `name`
+- `description`
+- `isActive`
+- `segments`
+
+作用：
+- 将 production topology patch 的允许字段从裸 `map` 收口成显式 DTO；
+- 保持对前端 SDRTS `DeltaItem { o, n }` 结构的正式承接。
+
+#### 2) 收口 service 层 patch request 与 delta 应用逻辑
+更新：
+- `server/services/production_service.go`
+
+调整：
+- `PatchProductionLineRequest.Delta` 改为 `PatchProductionLineDeltaDTO`
+- `applyProductionLineDelta(...)` 改为面向显式 delta DTO，而非 `switch key`
+- 新增/保留统一 helper：
+  - `unmarshalDeltaItemNewValue(...)`
+
+结果：
+- patch 入口不再依赖 service 层裸 `map[string]json.RawMessage`；
+- topology patch 字段解释边界更明确；
+- 仍保持“先读取完整现状，再应用 delta，再复用 `SaveProductionLine(...)` 主链”的策略不变。
+
+#### 3) 对齐 handler / service 回归测试
+更新：
+- `server/handlers/production_topology_handlers_test.go`
+- `server/services/production_service_test.go`
+
+调整：
+- handler binding 测试改为构造 `PatchProductionLineDeltaDTO`
+- service patch 回归测试改为构造 `DeltaItemDTO` + `PatchProductionLineDeltaDTO`
+
+作用：
+- 锁住 production topology patch contract 的显式 DTO 形状；
+- 防止未来又回退到裸 `map/raw message` 的测试构造方式。
+
+### 保持不变的边界
+- 未修改前端 `productionResourceService.patchLine(...)` 提交格式；
+- 未修改 `PATCH /production/lines/:id` 路由与路径；
+- 未改变拓扑授权码、版本冲突、事务保存的主逻辑；
+- 未引入第二套 production topology 保存实现。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services ./routes -run "Production|Topology"
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+production line topology patch 链已从：
+
+- `map[string]json.RawMessage`
+- `switch key`
+- 运行时隐式字段解释
+
+进一步收口为：
+
+- `PatchProductionLineDeltaDTO`
+- `DeltaItemDTO`
+- 显式的 delta 应用边界
+
+这使 production topology 在 DTO 补齐专项中，从“PATCH contract 已补通”进一步提升到“patch DTO 边界已正式化”的状态。
+
+## P0：`use-users-action-dialog-sync` 测试工厂重建（2026-04-07）
+
+### 根因结论
+本轮不是给 `use-users-action-dialog-sync.test.ts` 中每个报错对象逐处补 `version: 1`，而是修复一类更底层的测试数据构造问题：**测试仍在直接手写正式 `Employee` / `Role` 对象，已经脱离正式 schema 演进。**
+
+已确认事实：
+
+1. `src/features/org-personnel/data/schema.ts`
+   - 正式 `Employee` schema 已要求 `version`
+
+2. `src/features/system-mgmt/data/role-schema.ts`
+   - 正式 `Role` schema 已要求 `version`
+
+3. `src/features/users/components/users-action-dialog.shared.ts`
+   - `EmployeeOption.raw` 明确要求正式 `Employee`
+
+4. `src/features/users/hooks/use-users-action-dialog-sync.test.ts`
+   - 仍在直接手写：
+     - `employees[].raw`
+     - `dynamicRoles[]`
+   - 导致 schema 演进后，测试在严格模式下集中报错。
+
+### 需要纠正的误判
+本轮并不是“项目里没有测试工厂”。
+
+当前已存在：
+
+- `src/features/users/test-factories.ts`
+  - `createTestUser`
+- `src/features/system-mgmt/test-factories.ts`
+  - `createTestRole`
+
+因此真正缺的不是第二套 User / Role mock 体系，而是：
+
+1. 缺少 `Employee` 共享测试工厂；
+2. 目标测试文件没有复用已有 `createTestRole`；
+3. 测试仍在直接手写正式对象。
+
+### 已执行变更
+
+#### 1) 新增 Employee 共享测试工厂
+新增：
+- `src/features/org-personnel/test-factories.ts`
+
+新增：
+- `createTestEmployee(overrides?: Partial<Employee>)`
+
+默认补齐：
+- `id`
+- `staffId`
+- `name`
+- `phone`
+- `status`
+- `deptId`
+- `lineId`
+- `processId`
+- `version`
+
+作用：
+- 让测试层通过单一入口构造正式 `Employee`；
+- 后续如 `Employee` schema 再扩字段，只需修改工厂一处。
+
+#### 2) 改造 `use-users-action-dialog-sync.test.ts`
+更新：
+- `src/features/users/hooks/use-users-action-dialog-sync.test.ts`
+
+调整：
+- 引入 `createTestEmployee`
+- 引入现有 `createTestRole`
+- 补 `createEmployeeOption(...)` 轻量装配函数
+- 移除原始 `employees[].raw` / `dynamicRoles[]` 字面量
+
+作用：
+- 让测试数据重新对齐正式类型边界；
+- 保持测试业务语义不变，不改 hook 本身逻辑。
+
+### 明确不做事项
+- 未逐处手工补 `version: 1`；
+- 未新建第二套 `Role` mock 工厂；
+- 未修改 `use-users-action-dialog-sync.ts` 的业务逻辑；
+- 未扩散到 `User` / `Role` 正式 schema 改造。
+
+### 验证
+执行：
+```bash
+pnpm exec vitest run src/features/users/hooks/use-users-action-dialog-sync.test.ts
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已经把 `use-users-action-dialog-sync.test.ts` 从“硬编码正式对象、随 schema 演进脆裂”的状态，收口到“共享工厂 + 正式类型对齐”的稳定边界。
+
+## P0：DTO 边界补齐专项 Phase A（2026-04-07）
+
+### 本批目标
+按已批准规划，优先处理 `equipment-tooling` 第一批高风险模块：
+
+1. `molds`
+2. `furnaces`
+3. `partners`
+4. `drawings`
+
+目标不是继续“前端加字段、后端补 switch-case”，而是把这批模块的保存/更新入口从隐式 JSON map 收口为显式 DTO 边界。
+
+### 本批前的主要问题
+1. 多个 handler 仍依赖 `decodeJSONBodyMap(...)` + `map[string]json.RawMessage`；
+2. `SaveXxxHandler` 同时承担创建与更新语义，导致 contract 边界含混；
+3. 前端已使用 SDRTS `DeltaPayload`，但后端 patch 入口并未统一按 `DeltaItem { o, n }` 解析；
+4. `partners` 与 `drawings` 前端已有 PATCH 调用，但后端 equipment routes 未完整注册对应 PATCH 路由；
+5. `drawings` 同时承载图纸元数据与日志语义，如果继续靠 raw map 更新，后续字段演进容易再次漂移。
+
+### 已执行变更
+
+#### 1) 新增 equipment assets DTO 文件
+新增：
+- `server/services/equipment_assets_dto.go`
+
+包含：
+- `DeltaMetadata`
+- `DeltaHandlerRequest`
+- `SaveMoldRequest`
+- `SaveFurnaceRequest`
+- `SaveEquipmentPartnerRequest`
+- `SaveMoldDrawingRequest`
+
+作用：
+- 为 equipment-tooling 第一批模块建立统一 request DTO 入口；
+- 不再让 handler 直接面向任意 JSON body 做字段解释。
+
+#### 2) 抽出通用 SDRTS DeltaItem 解包 helper
+更新：
+- `server/handlers/json_utils.go`
+
+新增：
+- `extractDeltaNewValue(raw)`
+- `parseOptionalTimeValue(raw)`
+
+作用：
+- 统一解析 `DeltaItem { o, n }`；
+- 统一处理可空时间字段；
+- 避免 `molds/furnaces/partners/drawings` 各自重复手写 `json.RawMessage` 解包逻辑。
+
+#### 3) 收口 `molds` handler
+更新：
+- `server/handlers/molds.go`
+
+调整：
+- `SaveMoldHandler` 改为绑定 `services.SaveMoldRequest`
+- `PatchMoldHandler` 改为绑定 `services.DeltaHandlerRequest`
+- 新增 `buildMoldPatchUpdates(...)`
+- PATCH 更新后返回完整对象，不再只返回简单 message
+
+结果：
+- `molds` 不再依赖裸 `map[string]interface{}` 作为主 patch 入口；
+- `lastCheckedAt` 等字段现在沿统一 helper 解析。
+
+#### 4) 收口 `furnaces` handler
+更新：
+- `server/handlers/furnaces.go`
+
+调整：
+- `SaveFurnaceHandler` 改为绑定 `services.SaveFurnaceRequest`
+- `PatchFurnaceHandler` 改为绑定 `services.DeltaHandlerRequest`
+- 新增 `buildFurnacePatchUpdates(...)`
+- PATCH 更新后返回完整对象
+
+结果：
+- `furnaces` 的 save/patch 语义不再依赖 raw map 入口；
+- 前端现有 `patchFurnace(...)` 的 `DeltaPayload` 能沿正式 DTO 边界进入后端。
+
+#### 5) 收口 `partners` handler 并补正式 PATCH route
+更新：
+- `server/handlers/partners.go`
+- `server/routes/routes_equipment.go`
+
+调整：
+- `SaveEquipmentPartnerHandler` 改为绑定 `services.SaveEquipmentPartnerRequest`
+- 新增 `PatchEquipmentPartnerHandler`
+- 新增 `buildPartnerPatchUpdates(...)`
+- equipment routes 注册：`PATCH /equipment-partners/:id`
+
+结果：
+- 修复了“前端已调用 patchPartner，但后端路由未完整对齐”的断链；
+- `partners` 从保存/更新混用的隐式实现收口到正式 POST/PATCH 分离入口。
+
+#### 6) 收口 `drawings` handler 并补正式 PATCH route
+更新：
+- `server/handlers/drawings.go`
+- `server/routes/routes_equipment.go`
+
+调整：
+- `SaveDrawingHandler` 改为绑定 `services.SaveMoldDrawingRequest`
+- 新增 `PatchDrawingHandler`
+- 新增 `buildDrawingPatchUpdates(...)`
+- equipment routes 注册：`PATCH /drawings/:id`
+- 保持既有图纸日志写入行为不变
+
+结果：
+- 修复了“前端已调用 patchDrawing，但后端路由未完整对齐”的断链；
+- `drawings` 的元数据更新与日志写入边界更清晰。
+
+#### 7) 补最小 binding 回归测试
+更新：
+- `server/handlers/production_topology_handlers_test.go`
+
+新增：
+- `TestSaveEquipmentPartnerRequestBinding`
+- `TestPatchDrawingDeltaRequestBinding`
+
+作用：
+- 锁住新增 DTO 的 request binding 行为；
+- 锁住 equipment patch 入口对 `DeltaPayload` / `metadata` 的基本结构承接。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./routes -run "Production|Equipment|Mold|Furnace|Partner|Drawing"
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本批结论
+Phase A 已完成 equipment-tooling 第一批 DTO 收口：
+
+- `molds`
+- `furnaces`
+- `partners`
+- `drawings`
+
+并额外修复了两处前后端 PATCH route 断链：
+
+- `PATCH /equipment-partners/:id`
+- `PATCH /drawings/:id`
+
+### 下一步建议
+按既定规划继续进入：
+
+1. `production line topology` 二次收口
+   - 从当前 `map[string]json.RawMessage` 继续收口到显式 delta DTO / metadata DTO
+
+2. `warehouse` / `trading` 第一批 patch 模块
+   - 优先 `inventory` / `shipment`
+   - 以及 `supplier` / `purchase-order`
+
 ## P0：`production line topology` 更新 contract 断链修复（2026-04-07）
 
 ### 根因结论

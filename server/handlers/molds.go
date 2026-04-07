@@ -8,6 +8,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -152,42 +153,78 @@ func patchMoldRecord(id string, updates map[string]interface{}) error {
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 
+func buildMoldPatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
+	updates := make(map[string]interface{})
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
+		switch key {
+		case "sn", "name", "groupName", "status", "location", "description", "imageUrl":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		case "maxCycles", "currentCycles", "maintenanceThreshold", "totalLifeCycles":
+			var value int
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		case "isAlerted":
+			var value bool
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates["is_alerted"] = value
+		case "lastCheckedAt":
+			value, err := parseOptionalTimeValue(valueRaw)
+			if err != nil {
+				return nil, err
+			}
+			updates["last_checked_at"] = value
+		}
+	}
+	return updates, nil
+}
+
 // SaveMoldHandler 保存/创建模具
 func SaveMoldHandler(c *gin.Context) {
-	payload, body, err := decodeJSONBodyMap(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 JSON 映射"})
+	var input services.SaveMoldRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 模具格式错误"})
 		return
 	}
 
 	operator := middleware.GetSafeUsername(c)
 
-	if rawID, ok := payload["id"]; ok && string(rawID) != "null" && string(rawID) != `""` {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
-			return
-		}
-		updates, err := buildMoldUpdates(payload)
+	var lastCheckedAt *time.Time
+	if input.LastCheckedAt != nil && *input.LastCheckedAt != "" {
+		parsed, err := time.Parse(time.RFC3339, *input.LastCheckedAt)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] lastCheckedAt 格式错误"})
 			return
 		}
-		updates["updated_by"] = operator
-		if err := patchMoldRecord(id, updates); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存模具资产失败: " + err.Error()})
-			return
-		}
-		var mold models.Mold
-		db.DB.First(&mold, "id = ?", id)
-		c.JSON(http.StatusOK, mold)
-		return
+		lastCheckedAt = &parsed
 	}
 
-	var mold models.Mold
-	if err := json.Unmarshal(body, &mold); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 模具格式错误"})
-		return
+	mold := models.Mold{
+		ID:                   input.ID,
+		SN:                   input.SN,
+		Name:                 input.Name,
+		MaxCycles:            input.MaxCycles,
+		CurrentCycles:        input.CurrentCycles,
+		MaintenanceThreshold: input.MaintenanceThreshold,
+		TotalLifeCycles:      input.TotalLifeCycles,
+		GroupName:            input.GroupName,
+		Status:               input.Status,
+		Location:             input.Location,
+		Description:          input.Description,
+		IsAlerted:            input.IsAlerted,
+		LastCheckedAt:        lastCheckedAt,
+		ImageURL:             input.ImageURL,
 	}
 
 	mold.CreatedBy = operator
@@ -203,21 +240,32 @@ func SaveMoldHandler(c *gin.Context) {
 // PatchMoldHandler 差分更新 (解决全量保存开销风险)
 func PatchMoldHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input map[string]interface{}
+	var input services.DeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
 		return
 	}
 
-	operator := middleware.GetSafeUsername(c)
-	input["updated_by"] = operator
-	input["updated_at"] = time.Now()
+	updates, err := buildMoldPatchUpdates(input.Delta)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的模具差量数据"})
+		return
+	}
 
-	if err := db.DB.Model(&models.Mold{}).Where("id = ?", id).Updates(input).Error; err != nil {
+	operator := middleware.GetSafeUsername(c)
+	updates["updated_by"] = operator
+	updates["updated_at"] = time.Now()
+
+	if err := db.DB.Model(&models.Mold{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新模具属性失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+	var mold models.Mold
+	if err := db.DB.First(&mold, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的模具失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, mold)
 }
 
 // UpdateTelemetryHandler 更新遥测数据

@@ -35,11 +35,13 @@ func registerEquipmentRoutes(authorized *gin.RouterGroup) {
 	partnerGroup := equipmentGroup.Group("/equipment-partners")
 	partnerGroup.GET("", handlers.GetEquipmentPartnersHandler)
 	partnerGroup.POST("", partnerManage, handlers.SaveEquipmentPartnerHandler)
+	partnerGroup.PATCH("/:id", partnerManage, handlers.PatchEquipmentPartnerHandler)
 	partnerGroup.DELETE("/:id", partnerManage, handlers.DeleteEquipmentPartnerHandler)
 
 	drawingGroup := equipmentGroup.Group("/drawings")
 	drawingGroup.GET("", handlers.GetDrawingsHandler)
 	drawingGroup.POST("", drawingManage, handlers.SaveDrawingHandler)
+	drawingGroup.PATCH("/:id", drawingManage, handlers.PatchDrawingHandler)
 	drawingGroup.GET("/:id/logs", handlers.GetDrawingLogsHandler)
 	drawingGroup.GET("/by-mold/:moldSn", handlers.GetDrawingsByMoldHandler)
 	drawingGroup.DELETE("/:id", drawingDelete, handlers.DeleteDrawingHandler)

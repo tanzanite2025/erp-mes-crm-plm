@@ -237,8 +237,11 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 
 	line, err := service.PatchProductionLine(PatchProductionLineRequest{
 		ID: "line-1",
-		Delta: map[string]json.RawMessage{
-			"segments": json.RawMessage(`{"o":[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"processes":[]}],"n":` + string(segmentsRaw) + `}`),
+		Delta: PatchProductionLineDeltaDTO{
+			Segments: &DeltaItemDTO{
+				Old: json.RawMessage(`[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"processes":[]}]`),
+				New: segmentsRaw,
+			},
 		},
 		Version:  3,
 		AuthCode: "expected",

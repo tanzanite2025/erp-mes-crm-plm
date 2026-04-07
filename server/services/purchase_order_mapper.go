@@ -2,6 +2,59 @@ package services
 
 import "xdfc-server/models"
 
+func MapSaveSupplierRequestToModel(input SaveSupplierRequest) models.Supplier {
+	return models.Supplier{
+		ID:            input.ID,
+		Name:          input.Name,
+		Code:          input.Code,
+		Category:      input.Category,
+		MainProducts:  input.MainProducts,
+		ContactPerson: input.ContactPerson,
+		ContactPhone:  input.ContactPhone,
+		Email:         input.Email,
+		Address:       input.Address,
+		Status:        input.Status,
+		Rating:        input.Rating,
+		Version:       input.Version,
+	}
+}
+
+func ApplyPatchSupplierRequestToModel(target *models.Supplier, patch PatchSupplierRequest) {
+	if patch.Name != nil {
+		target.Name = *patch.Name
+	}
+	if patch.Code != nil {
+		target.Code = *patch.Code
+	}
+	if patch.Category != nil {
+		target.Category = *patch.Category
+	}
+	if patch.MainProducts != nil {
+		target.MainProducts = *patch.MainProducts
+	}
+	if patch.ContactPerson != nil {
+		target.ContactPerson = *patch.ContactPerson
+	}
+	if patch.ContactPhone != nil {
+		target.ContactPhone = *patch.ContactPhone
+	}
+	if patch.Email != nil {
+		target.Email = *patch.Email
+	}
+	if patch.Address != nil {
+		target.Address = *patch.Address
+	}
+	if patch.Status != nil {
+		target.Status = *patch.Status
+	}
+	if patch.Rating != nil {
+		target.Rating = *patch.Rating
+	}
+	if patch.Version != 0 {
+		target.Version = patch.Version
+	}
+}
+
 func mapPurchaseOrderLineRequestToModel(line PurchaseOrderLineRequest) models.PurchaseOrderLine {
 	return models.PurchaseOrderLine{
 		ID:            line.ID,
@@ -20,6 +73,32 @@ func mapPurchaseOrderLineRequestToModel(line PurchaseOrderLineRequest) models.Pu
 }
 
 func MapSavePurchaseOrderRequestToModel(input SavePurchaseOrderRequest) models.PurchaseOrder {
+	lines := make([]models.PurchaseOrderLine, 0, len(input.Lines))
+	for _, line := range input.Lines {
+		lines = append(lines, mapPurchaseOrderLineRequestToModel(line))
+	}
+	return models.PurchaseOrder{
+		ID:                 input.ID,
+		OrderNo:            input.OrderNo,
+		SupplierID:         input.SupplierID,
+		SupplierName:       input.SupplierName,
+		OrderDate:          input.OrderDate,
+		ExpectedDate:       input.ExpectedDate,
+		Status:             input.Status,
+		Currency:           input.Currency,
+		Amount:             input.Amount,
+		ExchangeRate:       input.ExchangeRate,
+		Purchaser:          input.Purchaser,
+		PaymentTerm:        input.PaymentTerm,
+		Note:               input.Note,
+		WorkflowInstanceID: input.WorkflowInstanceID,
+		IsDeleted:          input.IsDeleted,
+		Version:            input.Version,
+		Lines:              lines,
+	}
+}
+
+func MapPatchPurchaseOrderRequestToModel(input PatchPurchaseOrderRequest) models.PurchaseOrder {
 	lines := make([]models.PurchaseOrderLine, 0, len(input.Lines))
 	for _, line := range input.Lines {
 		lines = append(lines, mapPurchaseOrderLineRequestToModel(line))

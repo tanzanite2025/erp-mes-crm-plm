@@ -1,4 +1,440 @@
 ﻿#
+## `warehouse` 下一批 DTO 补齐方案（2026-04-07，待确认）
+
+### 一、当前结论
+`warehouse` 域当前最明确的 PATCH contract 断链集中在两条已经由前端采用 SDRTS 语义、但后端仍未正式承接的链路：
+
+1. `inventory`
+   - 前端已存在 `patchInventory(...)`
+   - 后端当前无正式 `PATCH /inventory/:id`
+   - route 仍停留在 `GET /inventory`、`POST /inventory/inbound`、`POST /inventory/shipment`、`POST /inventory/transfer`、`POST /inventory/reconcile`
+
+2. `shipment`
+   - 前端已存在 `patchShipment(...)`
+   - 后端当前无正式 `PATCH /inventory/shipment/:id`
+   - 当前仅有：
+     - `POST /inventory/shipment`
+     - `POST /inventory/shipment/:id/commit`
+     - `POST /inventory/shipment/:id/void`
+
+同时已确认：
+
+3. `inbound` / `transfer` / `adjustment`
+   - 当前不是 SDRTS PATCH 主链
+   - 本轮不应扩散改造到这些模块
+
+### 二、本轮目标
+本轮不重写整个 warehouse 域，只聚焦把前端已存在的 PATCH 语义补成正式后端 contract：
+
+1. `inventory`：建立正式 PATCH DTO 与 route；
+2. `shipment`：建立正式 PATCH DTO 与 route；
+3. 保持 `inbound`、`transfer`、`commit/void`、`reconcile` 语义不变。
+
+### 三、实施顺序
+
+#### Phase A：`inventory`
+预计补齐：
+- `PatchInventoryHandlerRequest`
+- `PatchInventoryRequest`
+- `PATCH /inventory/:id`
+
+处理原则：
+- patch 入口承接 `op / delta / metadata.id / metadata.version`
+- 明确 inventory 允许 patch 的字段范围（如数量、财务累计值、分类、更新时间等）
+- 不另起第二套库存保存逻辑
+
+#### Phase B：`shipment`
+预计补齐：
+- `PatchShipmentHandlerRequest`
+- `PatchShipmentRequest`
+- `PATCH /inventory/shipment/:id`
+
+处理原则：
+- patch 只处理出库单据元数据 / 草稿修改边界；
+- 不与 `commit` / `void` 语义混用；
+- 保持出库对库存影响的正式链仍由现有 commit/void 主链负责。
+
+### 四、关键风险
+
+1. 风险：`inventory` 同时带库存数量、成本、分类等会影响账实一致的数据
+   - 若 patch 字段放得过宽，可能绕过既有对账与业务校验
+   - 处理原则：仅开放真正被前端 patch 使用的字段，不把 PATCH 做成任意字段直通更新
+
+2. 风险：`shipment` 已存在 `commit` / `void` 正式动作
+   - 若 patch 也允许直接改状态，容易与正式审批动作冲突
+   - 处理原则：状态类敏感动作继续保留在 `commit` / `void` 链，PATCH 只处理普通编辑字段
+
+3. 风险：warehouse 历史接口以 POST 为主
+   - 若直接引入 PATCH 而不保持主链一致，可能出现保存路径分叉
+   - 处理原则：PATCH 只作为显式 delta 入口，底层尽量复用现有持久化主链。
+
+### 五、验证要求
+至少执行：
+
+```bash
+go test ./handlers ./routes ./services -run "Inventory|Shipment|Warehouse"
+pnpm exec tsc --noEmit
+```
+
+### 六、明确不做事项
+- 不改前端 `patchInventory(...)` / `patchShipment(...)` 的 URL 与 payload 设计；
+- 不把本轮扩散到 `inbound` / `transfer` / `adjustment` 全域改造；
+- 不用“继续兼容任意 raw map 更新”作为长期方案；
+- 不改变 `commit` / `void` / `reconcile` 等既有业务语义。
+
+## `trading` 下一批 DTO 补齐方案（2026-04-07，待确认）
+
+### 一、当前结论
+`trading` 域已经出现与 production / equipment 类似的 PATCH contract 漂移，只是三条链路成熟度不一致：
+
+1. `supplier`
+   - 前端已存在 `patchSupplier(...)`
+   - 后端当前无正式 `PATCH /suppliers/:id`
+   - `SaveSupplierHandler` 仍直接绑定 `models.Supplier`
+   - 这是当前最明显的“前端已 patch、后端未正式接入”断链
+
+2. `purchase-order`
+   - 前端已存在 `patchPurchaseOrder(...)`
+   - 后端当前无正式 `PATCH /purchase/orders/:id`
+   - 当前仅有 `SavePurchaseOrderRequest`
+   - 说明采购单仍停留在“前端 patch、后端只有 save”状态
+
+3. `sales-order`
+   - 后端已存在 `PatchSalesOrderRequest`
+   - 已存在 `MapPatchSalesOrderRequestToModel(...)`
+   - 但当前 route / handler 仍未正式暴露 `PATCH /sales-orders/:id`
+   - 说明销售单更像“DTO 已部分补齐，但 patch 入口没接完”
+
+### 二、本轮目标
+本轮不追求一次性重写整个 trading 域，而是优先把最明显的 patch contract 断链补齐：
+
+1. `supplier`：从直接绑定模型，收口为正式 POST / PATCH DTO 边界；
+2. `purchase-order`：新增正式 patch DTO 与 PATCH 路由；
+3. `sales-order`：优先判断是否只需把已有 patch DTO 接到 route / handler，不重复大改。
+
+### 三、实施顺序
+
+#### Phase A：`supplier`
+预计补齐：
+- `SaveSupplierRequest`
+- `PatchSupplierHandlerRequest`
+- `PatchSupplierRequest`
+- `PATCH /suppliers/:id`
+
+处理原则：
+- 不再让 `SaveSupplierHandler` 直接绑定 `models.Supplier`
+- patch 入口必须承接 `op / delta / metadata.id / metadata.version`
+- 保持现有版本冲突与逻辑删除语义不变
+
+#### Phase B：`purchase-order`
+预计补齐：
+- `PatchPurchaseOrderRequest`
+- `MapPatchPurchaseOrderRequestToModel(...)`
+- `PATCH /purchase/orders/:id`
+
+处理原则：
+- 继续复用现有采购单保存主链；
+- 不破坏 workflow instance 创建、收货确认等既有链路；
+- patch 语义仍遵循“读取现状 -> 应用正式 patch request -> 保存”。
+
+#### Phase C：`sales-order`
+预计动作：
+- 若现有 `PatchSalesOrderRequest` 已足够，则仅新增正式 PATCH route / handler；
+- 若 handler 仍混用 save 语义，再做最小范围补齐。
+
+处理原则：
+- 不重复重写已存在的 sales-order DTO / mapper；
+- 只收口真正还缺的一层边界。
+
+### 四、关键风险
+
+1. 风险：`supplier` 当前直接绑定 `models.Supplier`
+   - 若贸然切换，可能影响旧的全量保存调用
+   - 处理原则：保留 POST save 语义，但改由显式 save DTO 承接，不直接暴露模型
+
+2. 风险：采购/销售单同时带主表与明细行
+   - patch 若处理不当，容易把“局部更新”误做成“整单替换”
+   - 处理原则：明确 patch DTO 的允许字段，并复用既有 save 主链，不在 handler 内直接操作 association
+
+3. 风险：sales-order 已有 patch DTO 雏形
+   - 若重复大改，可能引入无谓回归
+   - 处理原则：优先判断“已有 DTO 是否只差 route / handler 接入”，尽量最小改动
+
+### 五、验证要求
+至少执行：
+
+```bash
+go test ./handlers ./services ./routes -run "Supplier|PurchaseOrder|SalesOrder|Trading"
+pnpm exec tsc --noEmit
+```
+
+### 六、明确不做事项
+- 不修改前端 `patchSupplier(...)` / `patchPurchaseOrder(...)` / `patchSalesOrder(...)` 的 URL 设计；
+- 不把本轮扩展成 trading 全域重构；
+- 不在 handler 中继续追加“隐式兼容 map 更新”作为长期方案；
+- 不因为 DTO 补齐而改动工作流、库存联动等无关业务语义。
+
+## `use-users-action-dialog-sync` 测试工厂重建方案（2026-04-07，待确认）
+
+### 一、根因结论
+本轮报错集中在 `src/features/users/hooks/use-users-action-dialog-sync.test.ts`，但根因不是单个测试忘了补 `version`，而是**测试数据构造边界已经落后于正式 schema 演进**。
+
+已确认的事实：
+
+1. `src/features/org-personnel/data/schema.ts`
+   - 正式 `Employee` schema 已要求 `version: number`
+
+2. `src/features/system-mgmt/data/role-schema.ts`
+   - 正式 `Role` schema 已要求 `version: number`
+
+3. `src/features/users/hooks/use-users-action-dialog-sync.ts`
+   - `employees` 参数类型为 `EmployeeOption[]`
+   - 其中 `EmployeeOption.raw` 实际要求正式 `Employee`
+   - `dynamicRoles` 实际要求正式 `Role[]`
+
+4. `src/features/users/hooks/use-users-action-dialog-sync.test.ts`
+   - 当前仍在手写：
+     - `employees[].raw` 原始对象字面量
+     - `dynamicRoles[]` 原始对象字面量
+   - 这些字面量缺少 `version`，因此在严格模式下集中报错。
+
+### 二、需要纠正的判断
+本轮不是“项目里完全没有 mock 工厂”。
+
+当前已存在：
+
+1. `src/features/users/test-factories.ts`
+   - `createTestUser`
+
+2. `src/features/system-mgmt/test-factories.ts`
+   - `createTestRole`
+
+因此真正缺的不是“再建一整套 User/Role mock 基础设施”，而是：
+
+1. **缺少 `Employee` 测试工厂**；
+2. `use-users-action-dialog-sync.test.ts` 没有复用现有 `createTestRole`；
+3. 测试仍在直接手写正式对象，导致 schema 一演进就集体失效。
+
+### 三、建议方案
+
+#### 1) 新增 `Employee` 测试工厂
+新增文件建议：
+- `src/features/org-personnel/test-factories.ts`
+
+提供：
+- `createTestEmployee(overrides?: Partial<Employee>): Employee`
+
+默认应补齐：
+- `id`
+- `staffId`
+- `name`
+- `phone`
+- `status`
+- `version`
+- `deptId`
+- `lineId`
+- `processId`
+
+原则：
+- 工厂产出必须对齐正式 `Employee` schema；
+- 不新增“仅供测试使用但与正式 schema 脱节”的临时类型。
+
+#### 2) 复用现有 `Role` 工厂
+不新增新的 `createMockRole`。
+
+直接复用：
+- `src/features/system-mgmt/test-factories.ts`
+  - `createTestRole`
+
+原因：
+- 当前 Role 工厂已经承接 `version` 默认值；
+- 若这轮再新建第二套 Role mock，会把测试构造边界重新打散。
+
+#### 3) 如有必要，补轻量 option 帮助函数
+可选新增：
+- `createEmployeeOption(employee: Employee, overrides?)`
+
+用途：
+- 降低 `EmployeeOption` 测试装配噪音；
+- 但它必须基于正式 `Employee`，而不是重新定义裸对象结构。
+
+### 四、实施文件
+预计改动：
+
+1. `src/features/org-personnel/test-factories.ts`
+   - 新增 `createTestEmployee`
+
+2. `src/features/users/hooks/use-users-action-dialog-sync.test.ts`
+   - 改为使用 `createTestEmployee`
+   - 改为使用 `createTestRole`
+   - 视情况补轻量 `createEmployeeOption`
+
+### 五、验证要求
+至少执行：
+
+```bash
+pnpm exec vitest run src/features/users/hooks/use-users-action-dialog-sync.test.ts
+pnpm exec tsc --noEmit
+```
+
+### 六、明确不做事项
+- 不逐处手工补 `version: 1`；
+- 不改 `use-users-action-dialog-sync.ts` 的业务逻辑；
+- 不新建第二套 `Role` mock 工厂；
+- 不把这轮测试修复扩散成 `User` / `Role` 正式 schema 改造。
+
+## DTO 边界补齐专项实施方案（2026-04-07，已确认）
+
+### 一、专项根因
+当前多个模块已经在前端采用 SDRTS `DeltaPayload` / `DeltaSet` 进行 PATCH 更新，但后端仍存在大量“隐式 contract”实现：
+
+1. handler 通过 `decodeJSONBodyMap(...)` 读取原始 JSON；
+2. 再由 `buildXxxUpdates(payload map[string]json.RawMessage)` 手工拆字段；
+3. 最后以 `map[string]interface{}` 或直接模型写库。
+
+这类实现短期灵活，但会持续带来三类系统性问题：
+
+- 前端 schema 增加 `version` / `sysVersion` / `delta` / 生命周期字段后，后端缺少单点 contract 收口，必须靠补 switch-case 追着对齐；
+- 前端发送的是 SDRTS `DeltaItem { o, n }`，后端却可能按“裸值”理解，导致 runtime 500；
+- handler、service、repository 的职责边界混乱，字段解释、权限判断、审计边界与持久化语义耦在一起，不利于演进。
+
+### 二、专项目标
+本专项不是简单“把几个字段补进 schema”，而是为高风险模块建立正式的 request DTO / service DTO / patch metadata 边界，减少 contract 漂移。
+
+目标如下：
+
+1. 所有纳入专项的模块，PATCH 入口必须有显式 DTO，不再让 handler 直接解释任意 JSON map；
+2. 对采用 SDRTS 的模块，统一承接：
+   - `op`
+   - `delta`
+   - `metadata.id`
+   - `metadata.version`
+   - 以及模块特有安全字段（如 `authCode`）；
+3. 对嵌套结构建立可测试的 delta 应用规则，不再依赖前端偶然的对象形状；
+4. 将“字段解释”下沉到 service 层或独立 mapper，不让 handler 同时承担协议解析器与业务逻辑入口。
+
+### 三、纳入范围与优先级
+
+#### P0：第一批必须补 DTO
+1. `equipment-tooling`
+   - `molds`
+   - `furnaces`
+   - `partners`
+   - `drawings`
+
+选择原因：
+- 当前 schema 正在持续演进；
+- 后端仍大量依赖 `decodeJSONBodyMap(...)`；
+- 已出现多个“version / delta / 生命周期字段”被动追补信号，属于高风险 contract 漂移区。
+
+2. `production line topology`
+
+选择原因：
+- 虽已补正式 `PATCH /production/lines/:id` contract；
+- 但当前 delta 仍以 `map[string]json.RawMessage` 进入 service；
+- 还需要继续收口为显式 delta DTO / metadata DTO，避免 topology 再次在嵌套结构上漂移。
+
+#### P1：第二批建议补 DTO
+1. `warehouse`
+   - `inventory`
+   - `shipment`
+
+2. `trading`
+   - `supplier`
+   - `purchase-order`
+   - 同步复核 `sales-order` 的 DTO 接入是否完整一致
+
+3. `org-personnel`
+   - `employee`
+   - `org`
+
+#### P2：后续统一治理
+1. `material-archive`
+2. `logistics`
+3. `purchase-logistics`
+4. `role-service` 对应后端
+
+### 四、统一设计要求
+对每个纳入模块，至少补齐以下结构：
+
+1. `SaveXxxRequest`
+   - 用于创建 / 全量保存场景；
+   - 明确哪些字段允许客户端提交，哪些由服务端补齐。
+
+2. `PatchXxxHandlerRequest`
+   - 用于承接 HTTP PATCH body；
+   - 必须显式声明：
+     - `op`
+     - `delta`
+     - `metadata`
+
+3. `PatchXxxServiceRequest`
+   - 用于 service 层内部调用；
+   - 负责把 HTTP 元信息与领域 patch 请求分离。
+
+4. 如模块存在历史记录 / 审计事件
+   - 继续补 `EventDTO` / `AuditDTO`；
+   - 禁止前端随意附带任意字段穿透数据库。
+
+### 五、SDRTS 统一收口要求
+本专项必须同步补一层通用 delta 收口，否则每个模块都可能再次犯 production 这次的错误。
+
+要求：
+
+1. 为 `DeltaItem { o, n }` 建立统一解析模型；
+2. 建立通用 helper，避免每个模块自行 `json.Unmarshal(raw, &target)`；
+3. 明确“delta 原始载荷 -> 允许字段 -> 目标 DTO”的转换规则；
+4. 对嵌套结构（segments、订单行、库存明细等）提供独立测试。
+
+### 六、实施批次建议
+
+#### Phase A
+- `equipment-tooling/molds`
+- `equipment-tooling/furnaces`
+- `equipment-tooling/partners`
+- `equipment-tooling/drawings`
+
+交付要求：
+- request DTO 补齐；
+- 保留既有业务行为；
+- 不扩大为 UI 重构。
+
+#### Phase B
+- `production line topology` 二次收口
+
+交付要求：
+- 将现有 `map[string]json.RawMessage` 收口到显式 delta DTO；
+- 继续复用既有 `SaveProductionLine(...)` 主链；
+- 不另起第二套 topology 持久化逻辑。
+
+#### Phase C
+- `warehouse` / `trading` 第一批 patch 模块
+
+交付要求：
+- 对齐 patch DTO；
+- 统一版本冲突与错误语义；
+- 保持现有 API path 不变。
+
+### 七、风险与注意事项
+
+1. 风险：前后端字段名可能长期存在“历史兼容名”
+   - 处理原则：DTO 层允许兼容映射，但 service 层只保留一个正式字段名。
+
+2. 风险：PATCH 与 Save 语义混用
+   - 处理原则：显式区分 `SaveXxxRequest` 与 `PatchXxxRequest`，禁止一个结构同时承担两种语义。
+
+3. 风险：嵌套结构 patch 易出现部分字段丢失
+   - 处理原则：Patch 入口必须先获取完整现状，再应用 delta，再进入正式保存主链。
+
+4. 风险：迁移期大面积改动影响范围广
+   - 处理原则：按模块分批，每批只处理一组领域对象，不横向扩散。
+
+### 八、明确不做事项
+- 不在本专项中联动改 UI 交互；
+- 不因 DTO 收口而随意变更已有 API URL；
+- 不把所有模块一次性并行重写；
+- 不继续依赖“前端加字段，后端补 switch-case”作为长期机制。
+
 ## `production line topology` 更新 contract 断链修复（审批稿，2026-04-07）
 
 ### 背景

@@ -1,6 +1,50 @@
 package services
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+type PatchMetadata struct {
+	ID      string `json:"id"`
+	Version int    `json:"version"`
+}
+
+type PatchDeltaHandlerRequest struct {
+	Op       string                     `json:"op"`
+	Delta    map[string]json.RawMessage `json:"delta"`
+	Metadata PatchMetadata              `json:"metadata"`
+}
+
+type SaveSupplierRequest struct {
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	Code          string  `json:"code"`
+	Category      string  `json:"category"`
+	MainProducts  string  `json:"mainProducts"`
+	ContactPerson string  `json:"contactPerson"`
+	ContactPhone  string  `json:"contactPhone"`
+	Email         string  `json:"email"`
+	Address       string  `json:"address"`
+	Status        string  `json:"status"`
+	Rating        float64 `json:"rating"`
+	Version       int     `json:"_v"`
+}
+
+type PatchSupplierRequest struct {
+	ID            string
+	Name          *string
+	Code          *string
+	Category      *string
+	MainProducts  *string
+	ContactPerson *string
+	ContactPhone  *string
+	Email         *string
+	Address       *string
+	Status        *string
+	Rating        *float64
+	Version       int
+}
 
 type PurchaseOrderLineRequest struct {
 	ID            uint    `json:"id"`
@@ -18,6 +62,26 @@ type PurchaseOrderLineRequest struct {
 }
 
 type SavePurchaseOrderRequest struct {
+	ID                 string                     `json:"id"`
+	OrderNo            string                     `json:"orderNo"`
+	SupplierID         string                     `json:"supplierId"`
+	SupplierName       string                     `json:"supplierName"`
+	OrderDate          string                     `json:"orderDate"`
+	ExpectedDate       string                     `json:"expectedDate"`
+	Status             string                     `json:"status"`
+	Currency           string                     `json:"currency"`
+	Amount             float64                    `json:"amount"`
+	ExchangeRate       float64                    `json:"exchangeRate"`
+	Purchaser          string                     `json:"purchaser"`
+	PaymentTerm        string                     `json:"paymentTerm"`
+	Note               string                     `json:"note"`
+	WorkflowInstanceID string                     `json:"workflowInstanceId"`
+	IsDeleted          bool                       `json:"isDeleted"`
+	Version            int                        `json:"_v"`
+	Lines              []PurchaseOrderLineRequest `json:"lines"`
+}
+
+type PatchPurchaseOrderRequest struct {
 	ID                 string                     `json:"id"`
 	OrderNo            string                     `json:"orderNo"`
 	SupplierID         string                     `json:"supplierId"`

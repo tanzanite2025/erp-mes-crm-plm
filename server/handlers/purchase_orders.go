@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -144,6 +145,179 @@ func SavePurchaseOrderHandler(c *gin.Context) {
 	}
 
 	db.DB.Preload("Lines").First(&order, "id = ?", order.ID)
+	c.JSON(http.StatusOK, services.MapPurchaseOrderToResponse(order))
+}
+
+// PatchPurchaseOrderHandler 局部更新采购订单
+func PatchPurchaseOrderHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.PatchDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var existing models.PurchaseOrder
+	if err := db.DB.Preload("Lines").First(&existing, "id = ?", id).Error; err != nil {
+		respondPurchaseOrderError(c, http.StatusNotFound, "采购订单不存在")
+		return
+	}
+
+	patch := services.MapPurchaseOrderToResponse(existing)
+	patchReq := services.PatchPurchaseOrderRequest{
+		ID:                 patch.ID,
+		OrderNo:            patch.OrderNo,
+		SupplierID:         patch.SupplierID,
+		SupplierName:       patch.SupplierName,
+		OrderDate:          patch.OrderDate,
+		ExpectedDate:       patch.ExpectedDate,
+		Status:             patch.Status,
+		Currency:           patch.Currency,
+		Amount:             patch.Amount,
+		ExchangeRate:       patch.ExchangeRate,
+		Purchaser:          patch.Purchaser,
+		PaymentTerm:        patch.PaymentTerm,
+		Note:               patch.Note,
+		WorkflowInstanceID: patch.WorkflowInstanceID,
+		IsDeleted:          patch.IsDeleted,
+		Version:            req.Metadata.Version,
+		Lines:              make([]services.PurchaseOrderLineRequest, 0, len(patch.Lines)),
+	}
+	for _, line := range patch.Lines {
+		patchReq.Lines = append(patchReq.Lines, services.PurchaseOrderLineRequest{
+			ID:            line.ID,
+			LineNo:        line.LineNo,
+			MaterialID:    line.MaterialID,
+			MaterialCode:  line.MaterialCode,
+			MaterialName:  line.MaterialName,
+			Specification: line.Specification,
+			Qty:           line.Qty,
+			UOM:           line.UOM,
+			Price:         line.Price,
+			Amount:        line.Amount,
+			ReceivedQty:   line.ReceivedQty,
+			Status:        line.Status,
+		})
+	}
+
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			respondPurchaseOrderError(c, http.StatusBadRequest, "无效的采购订单差量数据")
+			return
+		}
+		switch key {
+		case "orderNo":
+			if err := json.Unmarshal(valueRaw, &patchReq.OrderNo); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "orderNo 字段错误")
+				return
+			}
+		case "supplierId":
+			if err := json.Unmarshal(valueRaw, &patchReq.SupplierID); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "supplierId 字段错误")
+				return
+			}
+		case "supplierName":
+			if err := json.Unmarshal(valueRaw, &patchReq.SupplierName); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "supplierName 字段错误")
+				return
+			}
+		case "orderDate":
+			if err := json.Unmarshal(valueRaw, &patchReq.OrderDate); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "orderDate 字段错误")
+				return
+			}
+		case "expectedDate":
+			if err := json.Unmarshal(valueRaw, &patchReq.ExpectedDate); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "expectedDate 字段错误")
+				return
+			}
+		case "status":
+			if err := json.Unmarshal(valueRaw, &patchReq.Status); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "status 字段错误")
+				return
+			}
+		case "currency":
+			if err := json.Unmarshal(valueRaw, &patchReq.Currency); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "currency 字段错误")
+				return
+			}
+		case "amount":
+			if err := json.Unmarshal(valueRaw, &patchReq.Amount); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "amount 字段错误")
+				return
+			}
+		case "exchangeRate":
+			if err := json.Unmarshal(valueRaw, &patchReq.ExchangeRate); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "exchangeRate 字段错误")
+				return
+			}
+		case "purchaser":
+			if err := json.Unmarshal(valueRaw, &patchReq.Purchaser); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "purchaser 字段错误")
+				return
+			}
+		case "paymentTerm":
+			if err := json.Unmarshal(valueRaw, &patchReq.PaymentTerm); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "paymentTerm 字段错误")
+				return
+			}
+		case "note":
+			if err := json.Unmarshal(valueRaw, &patchReq.Note); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "note 字段错误")
+				return
+			}
+		case "workflowInstanceId":
+			if err := json.Unmarshal(valueRaw, &patchReq.WorkflowInstanceID); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "workflowInstanceId 字段错误")
+				return
+			}
+		case "isDeleted":
+			if err := json.Unmarshal(valueRaw, &patchReq.IsDeleted); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "isDeleted 字段错误")
+				return
+			}
+		case "lines":
+			if err := json.Unmarshal(valueRaw, &patchReq.Lines); err != nil {
+				respondPurchaseOrderError(c, http.StatusBadRequest, "lines 字段错误")
+				return
+			}
+		}
+	}
+
+	order := services.MapPatchPurchaseOrderRequestToModel(patchReq)
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		for _, line := range order.Lines {
+			var material models.Material
+			if err := tx.Where("id = ? AND status = ?", line.MaterialID, "Active").First(&material).Error; err != nil {
+				return errors.New("[CRITICAL_DATA_INTEGRITY] 采购单保存失败：明细行引用了无效或已停用的物料 ID: " + line.MaterialID)
+			}
+		}
+
+		var current models.PurchaseOrder
+		if err := tx.Preload("Lines").Where("id = ?", id).First(&current).Error; err != nil {
+			return err
+		}
+		if order.Version != 0 && order.Version != current.Version {
+			return ErrVersionConflict
+		}
+		order.Version = current.Version + 1
+		if err := tx.Model(&current).Updates(order).Error; err != nil {
+			return err
+		}
+		return tx.Model(&current).Association("Lines").Replace(order.Lines)
+	})
+
+	if err != nil {
+		if err == ErrVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	db.DB.Preload("Lines").First(&order, "id = ?", id)
 	c.JSON(http.StatusOK, services.MapPurchaseOrderToResponse(order))
 }
 

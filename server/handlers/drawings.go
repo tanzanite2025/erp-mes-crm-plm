@@ -6,6 +6,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -106,54 +107,67 @@ func patchDrawingRecord(id string, updates map[string]interface{}) error {
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 
+func buildDrawingPatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
+	updates := make(map[string]interface{})
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
+		switch key {
+		case "moldId", "moldSn", "name", "type", "fileUrl", "version", "status", "remarks":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		case "uploadedAt":
+			value, err := parseOptionalTimeValue(valueRaw)
+			if err != nil {
+				return nil, err
+			}
+			updates["uploaded_at"] = value
+		}
+	}
+	return updates, nil
+}
+
 // SaveDrawingHandler 保存（创建或更新）图纸信息
 func SaveDrawingHandler(c *gin.Context) {
-	payload, body, err := decodeJSONBodyMap(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 JSON 映射"})
-		return
-	}
-
-	if rawID, ok := payload["id"]; ok && string(rawID) != "null" && string(rawID) != `""` {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
-			return
-		}
-		updates, err := buildDrawingUpdates(payload)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if err := patchDrawingRecord(id, updates); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存图纸失败: " + err.Error()})
-			return
-		}
-		var drawing models.MoldDrawing
-		db.DB.First(&drawing, "id = ?", id)
-
-		// 记录日志
-		db.DB.Create(&models.MoldDrawingLog{
-			DrawingID: drawing.ID,
-			Action:    "VERSION_UPDATE",
-			Details:   "图纸档案被部分更新",
-			Operator:  "系统管理员",
-			Timestamp: time.Now(),
-		})
-
-		c.JSON(http.StatusOK, drawing)
-		return
-	}
-
-	var drawing models.MoldDrawing
-	if err := json.Unmarshal(body, &drawing); err != nil {
+	var input services.SaveMoldDrawingRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 图纸元数据无效"})
 		return
 	}
 
+	uploadedAt := time.Now()
+	if input.UploadedAt != "" {
+		parsed, err := time.Parse(time.RFC3339, input.UploadedAt)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] uploadedAt 格式错误"})
+			return
+		}
+		uploadedAt = parsed
+	}
+
+	drawing := models.MoldDrawing{
+		ID:         input.ID,
+		MoldID:     input.MoldID,
+		MoldSN:     input.MoldSN,
+		Name:       input.Name,
+		Type:       input.Type,
+		FileURL:    input.FileURL,
+		Version:    input.Version,
+		Status:     input.Status,
+		UploadedAt: uploadedAt,
+		Remarks:    input.Remarks,
+	}
+
 	if drawing.ID == "" {
 		drawing.CreatedAt = time.Now()
-		drawing.UploadedAt = time.Now()
+		if input.UploadedAt == "" {
+			drawing.UploadedAt = time.Now()
+		}
 	}
 
 	if err := saveDrawingRecord(&drawing); err != nil {
@@ -166,6 +180,43 @@ func SaveDrawingHandler(c *gin.Context) {
 		DrawingID: drawing.ID,
 		Action:    "CREATED",
 		Details:   "图纸档案被创建/全量保存",
+		Operator:  "系统管理员",
+		Timestamp: time.Now(),
+	})
+
+	c.JSON(http.StatusOK, drawing)
+}
+
+// PatchDrawingHandler 差分更新图纸
+func PatchDrawingHandler(c *gin.Context) {
+	id := c.Param("id")
+	var input services.DeltaHandlerRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
+		return
+	}
+
+	updates, err := buildDrawingPatchUpdates(input.Delta)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的图纸差量数据"})
+		return
+	}
+
+	if err := patchDrawingRecord(id, updates); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存图纸失败: " + err.Error()})
+		return
+	}
+
+	var drawing models.MoldDrawing
+	if err := db.DB.First(&drawing, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的图纸失败: " + err.Error()})
+		return
+	}
+
+	db.DB.Create(&models.MoldDrawingLog{
+		DrawingID: drawing.ID,
+		Action:    "VERSION_UPDATE",
+		Details:   "图纸档案被部分更新",
 		Operator:  "系统管理员",
 		Timestamp: time.Now(),
 	})

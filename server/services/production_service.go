@@ -22,14 +22,9 @@ type SaveProductionLineRequest struct {
 	IP       string
 }
 
-type deltaValue struct {
-	Old json.RawMessage `json:"o"`
-	New json.RawMessage `json:"n"`
-}
-
 type PatchProductionLineRequest struct {
 	ID       string
-	Delta    map[string]json.RawMessage
+	Delta    PatchProductionLineDeltaDTO
 	Version  int64
 	AuthCode string
 	Operator string
@@ -196,53 +191,43 @@ func (s *ProductionService) PatchProductionLine(req PatchProductionLineRequest) 
 	})
 }
 
-func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.RawMessage, version int64) error {
+func applyProductionLineDelta(line *ProductionLineDTO, delta PatchProductionLineDeltaDTO, version int64) error {
 	line.Version = version
 
-	for key, raw := range delta {
-		valueRaw, err := extractDeltaNewValue(raw)
-		if err != nil {
+	if delta.Code != nil {
+		if err := unmarshalDeltaItemNewValue(delta.Code, &line.Code); err != nil {
 			return err
 		}
-
-		switch key {
-		case "code":
-			if err := json.Unmarshal(valueRaw, &line.Code); err != nil {
-				return err
-			}
-		case "name":
-			if err := json.Unmarshal(valueRaw, &line.Name); err != nil {
-				return err
-			}
-		case "description":
-			if err := json.Unmarshal(valueRaw, &line.Description); err != nil {
-				return err
-			}
-		case "isActive":
-			if err := json.Unmarshal(valueRaw, &line.IsActive); err != nil {
-				return err
-			}
-		case "segments":
-			if err := json.Unmarshal(valueRaw, &line.Segments); err != nil {
-				return err
-			}
-		case "id", "createdAt", "updatedAt", "version":
-			// metadata handled separately
-		default:
-			// ignore unsupported patch paths for now
+	}
+	if delta.Name != nil {
+		if err := unmarshalDeltaItemNewValue(delta.Name, &line.Name); err != nil {
+			return err
+		}
+	}
+	if delta.Description != nil {
+		if err := unmarshalDeltaItemNewValue(delta.Description, &line.Description); err != nil {
+			return err
+		}
+	}
+	if delta.IsActive != nil {
+		if err := unmarshalDeltaItemNewValue(delta.IsActive, &line.IsActive); err != nil {
+			return err
+		}
+	}
+	if delta.Segments != nil {
+		if err := unmarshalDeltaItemNewValue(delta.Segments, &line.Segments); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func extractDeltaNewValue(raw json.RawMessage) (json.RawMessage, error) {
-	var value deltaValue
-	if err := json.Unmarshal(raw, &value); err == nil && value.New != nil {
-		return value.New, nil
+func unmarshalDeltaItemNewValue[T any](item *DeltaItemDTO, target *T) error {
+	if item == nil || item.New == nil {
+		return nil
 	}
-
-	return raw, nil
+	return json.Unmarshal(item.New, target)
 }
 
 func (s *ProductionService) DeleteProductionLine(id string, operator string, ip string) error {

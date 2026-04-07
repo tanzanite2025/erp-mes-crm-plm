@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -54,11 +56,13 @@ func GetSuppliersHandler(c *gin.Context) {
 
 // SaveSupplierHandler 新增或更新供应商
 func SaveSupplierHandler(c *gin.Context) {
-	var input models.Supplier
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var req services.SaveSupplierRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 供应商数据格式错误: " + err.Error()})
 		return
 	}
+
+	input := services.MapSaveSupplierRequestToModel(req)
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if input.ID != "" {
@@ -88,6 +92,136 @@ func SaveSupplierHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, input)
+}
+
+// PatchSupplierHandler 局部更新供应商
+func PatchSupplierHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.PatchDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 供应商更新数据格式错误: " + err.Error()})
+		return
+	}
+
+	var patch services.PatchSupplierRequest
+	patch.ID = id
+	patch.Version = req.Metadata.Version
+
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的供应商差量数据"})
+			return
+		}
+		switch key {
+		case "name":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] name 字段错误"})
+				return
+			}
+			patch.Name = &value
+		case "code":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] code 字段错误"})
+				return
+			}
+			patch.Code = &value
+		case "category":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] category 字段错误"})
+				return
+			}
+			patch.Category = &value
+		case "mainProducts":
+			var values []string
+			if err := json.Unmarshal(valueRaw, &values); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] mainProducts 字段错误"})
+				return
+			}
+			encoded, err := json.Marshal(values)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] mainProducts 编码失败"})
+				return
+			}
+			value := string(encoded)
+			patch.MainProducts = &value
+		case "contactPerson":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] contactPerson 字段错误"})
+				return
+			}
+			patch.ContactPerson = &value
+		case "contactPhone":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] contactPhone 字段错误"})
+				return
+			}
+			patch.ContactPhone = &value
+		case "email":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] email 字段错误"})
+				return
+			}
+			patch.Email = &value
+		case "address":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] address 字段错误"})
+				return
+			}
+			patch.Address = &value
+		case "status":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] status 字段错误"})
+				return
+			}
+			patch.Status = &value
+		case "rating":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] rating 字段错误"})
+				return
+			}
+			patch.Rating = &value
+		}
+	}
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var existing models.Supplier
+		if err := tx.Where("id = ?", id).First(&existing).Error; err != nil {
+			return err
+		}
+		if patch.Version != existing.Version {
+			return ErrVersionConflict
+		}
+		services.ApplyPatchSupplierRequestToModel(&existing, patch)
+		existing.Version = existing.Version + 1
+		return tx.Model(&existing).Select("*").Updates(existing).Error
+	})
+
+	if err != nil {
+		if err == ErrVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新供应商失败: " + err.Error()})
+		return
+	}
+
+	var supplier models.Supplier
+	if err := db.DB.Where("id = ?", id).First(&supplier).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的供应商失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, supplier)
 }
 
 // DeleteSupplierHandler 逻辑删除供应商

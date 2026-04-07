@@ -58,8 +58,10 @@ func TestPatchProductionLineHandlerRequestBinding(t *testing.T) {
 
 	payload := services.PatchProductionLineHandlerRequest{
 		Op: "PATCH",
-		Delta: map[string]json.RawMessage{
-			"segments": json.RawMessage(`[{"id":"segment-1","name":"Segment A","sortOrder":1,"processes":[]}]`),
+		Delta: services.PatchProductionLineDeltaDTO{
+			Segments: &services.DeltaItemDTO{
+				New: json.RawMessage(`[{"id":"segment-1","name":"Segment A","sortOrder":1,"processes":[]}]`),
+			},
 		},
 		Metadata: services.PatchProductionLineMetadata{
 			ID:       "line-1",
@@ -84,5 +86,67 @@ func TestPatchProductionLineHandlerRequestBinding(t *testing.T) {
 	require.Equal(t, payload.Metadata.ID, bound.Metadata.ID)
 	require.Equal(t, payload.Metadata.Version, bound.Metadata.Version)
 	require.Equal(t, payload.Metadata.AuthCode, bound.Metadata.AuthCode)
-	require.Contains(t, bound.Delta, "segments")
+	require.NotNil(t, bound.Delta.Segments)
+	require.NotNil(t, bound.Delta.Segments.New)
+}
+
+func TestSaveEquipmentPartnerRequestBinding(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	payload := services.SaveEquipmentPartnerRequest{
+		ID:            "partner-1",
+		Name:          "外协厂A",
+		Type:          "EXTERNAL",
+		ContactPerson: "张三",
+		Phone:         "13800000000",
+		Address:       "深圳",
+	}
+
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest("POST", "/api/v1/equipment-partners", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+
+	var bound services.SaveEquipmentPartnerRequest
+	err = ctx.ShouldBindJSON(&bound)
+	require.NoError(t, err)
+	require.Equal(t, payload.Name, bound.Name)
+	require.Equal(t, payload.Type, bound.Type)
+	require.Equal(t, payload.ContactPerson, bound.ContactPerson)
+}
+
+func TestPatchDrawingDeltaRequestBinding(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	payload := services.DeltaHandlerRequest{
+		Op: "PATCH",
+		Delta: map[string]json.RawMessage{
+			"status": json.RawMessage(`{"o":"DRAFT","n":"ACTIVE"}`),
+		},
+		Metadata: services.DeltaMetadata{
+			ID:      "drawing-1",
+			Version: 2,
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest("PATCH", "/api/v1/drawings/drawing-1", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+
+	var bound services.DeltaHandlerRequest
+	err = ctx.ShouldBindJSON(&bound)
+	require.NoError(t, err)
+	require.Equal(t, payload.Op, bound.Op)
+	require.Equal(t, payload.Metadata.ID, bound.Metadata.ID)
+	require.Equal(t, payload.Metadata.Version, bound.Metadata.Version)
+	require.Contains(t, bound.Delta, "status")
 }

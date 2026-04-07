@@ -1,4 +1,98 @@
 
+## P0 `warehouse` 下一批 DTO 补齐（2026-04-07，待确认）
+
+- [ ] 204. 冻结 `warehouse` 域下一批 DTO 缺口，禁止前端 PATCH 已落地而后端仍停留在 POST-only
+  - [ ] 确认 `inventory`：前端已存在 `patchInventory(...)`，后端当前无正式 `PATCH /inventory/:id`。
+  - [ ] 确认 `shipment`：前端已存在 `patchShipment(...)`，后端当前无正式 `PATCH /inventory/shipment/:id`。
+  - [ ] 确认 `inbound` / `transfer` / `adjustment` 当前并非 SDRTS PATCH 主链，本轮不扩散改造。
+
+- [ ] 205. 优先补 `inventory` 正式 PATCH contract
+  - [ ] 为库存记录建立显式 `PatchInventoryHandlerRequest` / `PatchInventoryRequest` 边界。
+  - [ ] 注册 `PATCH /inventory/:id`，对齐前端现有 `patchInventory(...)`。
+  - [ ] 保持库存记录现有查询、对账、同步主链不变，不另起第二套库存保存实现。
+
+- [ ] 206. 补 `shipment` 正式 PATCH contract
+  - [ ] 为出库记录建立显式 `PatchShipmentHandlerRequest` / `PatchShipmentRequest` 边界。
+  - [ ] 注册 `PATCH /inventory/shipment/:id`，对齐前端现有 `patchShipment(...)`。
+  - [ ] 保持 `commit` / `void` 等审批与库存影响链不变，不把 PATCH 与 commit/void 语义混在一起。
+
+- [ ] 207. 验证与总结
+  - [ ] 至少执行 `warehouse` 目标 handler / routes / services 测试与 `pnpm exec tsc --noEmit`。
+  - [ ] 更新 `walkthrough.md`，记录本轮 `warehouse` 是如何从 inventory / shipment patch 断链中收口 DTO 边界的。
+
+## P0 `trading` 下一批 DTO 补齐（2026-04-07，待确认）
+
+- [ ] 199. 冻结 `trading` 域下一批 DTO 缺口，禁止再让前后端 PATCH 各说各话
+  - [ ] 确认 `supplier`：前端已有 `patchSupplier(...)`，后端当前无正式 `PATCH /suppliers/:id`，且 `SaveSupplierHandler` 仍直接绑定 `models.Supplier`。
+  - [ ] 确认 `purchase-order`：前端已有 `patchPurchaseOrder(...)`，后端当前无正式 `PATCH /purchase/orders/:id`，且仅存在 `SavePurchaseOrderRequest`，缺少正式 `PatchPurchaseOrderRequest`。
+  - [ ] 确认 `sales-order`：后端已有 `PatchSalesOrderRequest` / mapper 基础，但当前 route / handler 仍未正式承接前端 `patchSalesOrder(...)`。
+
+- [ ] 200. 优先补 `supplier` 正式 PATCH contract
+  - [ ] 新增 `SaveSupplierRequest` / `PatchSupplierHandlerRequest` / `PatchSupplierRequest`，不再让 handler 直接绑定 `models.Supplier`。
+  - [ ] 注册 `PATCH /suppliers/:id`，对齐前端现有 `patchSupplier(...)`。
+  - [ ] 将供应商更新从“POST save 混合更新”收口为正式 POST / PATCH 分离边界。
+
+- [ ] 201. 补 `purchase-order` 正式 PATCH contract
+  - [ ] 在现有 `SavePurchaseOrderRequest` 基础上补正式 `PatchPurchaseOrderRequest` 与 mapper。
+  - [ ] 注册 `PATCH /purchase/orders/:id`，对齐前端现有 `patchPurchaseOrder(...)`。
+  - [ ] 保持现有采购单保存、工作流创建、收货确认主链不变，不另起第二套持久化逻辑。
+
+- [ ] 202. 复核 `sales-order` 是否只需补路由接入，不重复大改已存在 DTO
+  - [ ] 若 `PatchSalesOrderRequest` 与 mapper 已能承接正式 patch 语义，则只补 route / handler 接入。
+  - [ ] 若仍存在 save/patch 语义混用，再最小范围补 handler/service 边界，不重复重写已存在 mapper。
+
+- [ ] 203. 验证与总结
+  - [ ] 至少执行 `trading` 目标 handler / service / routes 测试与 `pnpm exec tsc --noEmit`。
+  - [ ] 更新 `walkthrough.md`，记录本轮 `trading` 是如何从 supplier / purchase-order / sales-order patch 断链中收口 DTO 边界的。
+
+## P0 `use-users-action-dialog-sync` 测试工厂重建（2026-04-07，待确认）
+
+- [ ] 195. 复核 `use-users-action-dialog-sync.test.ts` 的类型断裂根因，禁止逐处补 `version`
+  - [ ] 确认 `EmployeeOption.raw` 当前要求正式 `Employee` 类型，而测试仍在手写缺少 `version` 的原始字面量。
+  - [ ] 确认 `dynamicRoles` 当前要求正式 `Role[]`，测试中的角色字面量同样缺少 `version`。
+  - [ ] 复核现有测试基础设施，确认项目并非完全没有工厂，而是**缺少 `Employee` 测试工厂**，且本文件应优先复用已有 `createTestRole`。
+
+- [ ] 196. 重建正式测试数据构造边界，而不是继续手工拼对象
+  - [ ] 在 `src/features/org-personnel` 下新增共享 `Employee` 测试工厂，统一补齐 `version`、`status`、`staffId`、`deptId/lineId/processId` 等正式字段默认值。
+  - [ ] 保持 `Role` 测试数据复用 `src/features/system-mgmt/test-factories.ts` 中现有 `createTestRole`，不重复发明第二套 Role mock 工厂。
+  - [ ] 如需统一风格，可为本轮测试补一个轻量 `createEmployeeOption` 帮助函数，但不新增与正式 schema 脱节的“临时 mock 类型”。
+
+- [ ] 197. 改造 `use-users-action-dialog-sync.test.ts` 以消费共享工厂
+  - [ ] 移除该测试文件中的 `employees[].raw` / `dynamicRoles[]` 原始字面量构造。
+  - [ ] 改为通过 `Employee` 工厂构造 `raw`，通过 `createTestRole` 构造动态角色。
+  - [ ] 保持测试语义不变，只修复测试数据构造边界，不改 hook 业务逻辑。
+
+- [ ] 198. 验证并补总结
+  - [ ] 至少执行目标测试文件与 `pnpm exec tsc --noEmit`，确认 29 个类型错误闭合。
+  - [ ] 更新 `walkthrough.md`，记录本轮不是补 `version`，而是收口测试工厂边界。
+
+## P0 DTO 边界补齐专项（2026-04-07，已确认）
+
+- [ ] 190. 盘点并冻结当前必须补 DTO 的模块范围，避免继续按症状逐字段追补
+  - [ ] 将 `equipment-tooling` 域列为第一优先级：`molds`、`furnaces`、`partners`、`drawings`。
+  - [ ] 将 `production line topology` 列为同批收口对象：在已有 PATCH contract 基础上继续从 `map[string]json.RawMessage` 收口到显式 DTO。
+  - [ ] 将 `warehouse`（`inventory` / `shipment`）、`trading`（`supplier` / `purchase-order`）、`org-personnel`（`employee` / `org`）列为下一批 DTO 收口对象。
+
+- [ ] 191. 为第一批模块建立统一 DTO 分层，不再让 handler 直接承担字段解释器职责
+  - [ ] 每个模块至少补 `SaveXxxRequest`、`PatchXxxHandlerRequest`、`PatchXxxServiceRequest` 三层显式 DTO。
+  - [ ] PATCH DTO 统一承接 `op`、`delta`、`metadata.id`、`metadata.version`，如有安全校验字段则显式承接（如 `authCode`）。
+  - [ ] 对存在历史/审计记录的模块（如图纸、模具流转）同步明确事件 DTO / 审计 DTO，避免前端任意附带字段穿透入库。
+
+- [ ] 192. 统一 SDRTS Delta 解析边界，避免再出现“后端把 DeltaItem 当裸值”的断链
+  - [ ] 抽出通用 `DeltaItem { o, n }` 解析模型与帮助函数，不在每个模块重复手写不一致的 `json.RawMessage` 解包逻辑。
+  - [ ] 明确区分“允许的 patch 字段”“服务层解释后的目标 DTO”“最终持久化模型”，避免 handler 直接面向数据库更新 map。
+  - [ ] 为嵌套结构（如产线 `segments/processes`、库存明细、订单行）建立可测试的 delta 应用规则，而不是隐式依赖前端对象形状。
+
+- [ ] 193. 第一批优先模块按风险顺序执行并验证
+  - [ ] 第一组：`equipment-tooling/molds`、`equipment-tooling/furnaces`、`equipment-tooling/partners`、`equipment-tooling/drawings`。
+  - [ ] 第二组：`production line topology` 二次收口，去除当前裸 `map[string]json.RawMessage` 依赖。
+  - [ ] 第三组：`warehouse/inventory`、`warehouse/shipment`、`trading/supplier`、`trading/purchase-order`。
+
+- [ ] 194. 保持边界与验证标准一致
+  - [ ] 不再新增“前端 schema 加字段，后端再补 switch-case”的工作方式。
+  - [ ] 不在 handler 内长期保留 `decodeJSONBodyMap + buildXxxUpdates(map[string]json.RawMessage)` 作为主实现路径，仅允许作为迁移期过渡。
+  - [ ] 每补一个模块，至少补 request binding、service 层 delta 应用、版本冲突/权限校验三类验证。
+
 ## P0 `production line topology` 更新 contract 断链修复（2026-04-07，待确认）
 
 - [x] 186. 追溯 `/personnel/line` 工段/工序拓扑更新失败的共享根因，而非继续在前端交互层补丁
