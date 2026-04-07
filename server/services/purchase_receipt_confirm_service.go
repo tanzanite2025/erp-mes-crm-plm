@@ -17,6 +17,7 @@ type ConfirmPurchaseReceiptInput struct {
 	Operator        string
 	Remarks         string
 	ReceiptDate     time.Time
+	ReceiptDateRaw  string
 	Lines           []ConfirmPurchaseReceiptLineInput
 }
 
@@ -34,13 +35,20 @@ type ConfirmPurchaseReceiptResult struct {
 	CreatedInboundRecords []models.InboundRecord
 }
 
-func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseReceiptResult, error) {
+func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseReceiptResponse, error) {
 	purchaseOrderID := strings.TrimSpace(input.PurchaseOrderID)
 	if purchaseOrderID == "" {
-		return ConfirmPurchaseReceiptResult{}, errors.New("purchase order id is required")
+		return ConfirmPurchaseReceiptResponse{}, errors.New("purchase order id is required")
 	}
 	if len(input.Lines) == 0 {
-		return ConfirmPurchaseReceiptResult{}, errors.New("receipt lines are required")
+		return ConfirmPurchaseReceiptResponse{}, errors.New("receipt lines are required")
+	}
+	if strings.TrimSpace(input.ReceiptDateRaw) != "" {
+		parsed, err := time.Parse(time.RFC3339, strings.TrimSpace(input.ReceiptDateRaw))
+		if err != nil {
+			return ConfirmPurchaseReceiptResponse{}, errors.New("receiptDate 格式错误，需为 RFC3339")
+		}
+		input.ReceiptDate = parsed
 	}
 	if input.ReceiptDate.IsZero() {
 		input.ReceiptDate = time.Now()
@@ -98,7 +106,7 @@ func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseR
 			}
 
 			inbound := models.InboundRecord{
-				BaseModel: models.BaseModel{ID: uuid.NewString()},
+				BaseModel:           models.BaseModel{ID: uuid.NewString()},
 				MaterialID:          materialID,
 				PurchaseOrderID:     purchaseOrderID,
 				PurchaseOrderLineID: lineInput.PurchaseOrderLineID,
@@ -128,7 +136,7 @@ func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseR
 		return nil
 	})
 	if err != nil {
-		return ConfirmPurchaseReceiptResult{}, err
+		return ConfirmPurchaseReceiptResponse{}, err
 	}
-	return result, nil
+	return MapConfirmPurchaseReceiptResultToResponse(result), nil
 }

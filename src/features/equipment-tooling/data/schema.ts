@@ -72,6 +72,7 @@ export function createMoldSchema(t?: EquipmentToolingTranslate) {
         isAlerted: z.boolean().default(false),
         lastCheckedAt: z.string().optional(),
         imageUrl: z.string().optional(),
+        version: z.number().default(1),
         createdAt: z.string(),
         createdBy: z.string().optional(),
         updatedBy: z.string().optional(),

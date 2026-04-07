@@ -1,5 +1,237 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：A 级模块 contract 防回退测试（2026-04-07）
+
+### 已执行测试补强
+1. `inventory` query handler response shape 防回退
+   - 新增 `server/handlers/inventory_query_handlers_test.go`
+   - 已覆盖：
+     - `GetInventoryHandler`
+     - `GetInboundHistoryHandler`
+     - `GetShipmentHistoryHandler`
+   - 重点断言：返回正式命名 paged response，而非不稳定匿名 JSON 结构。
+
+2. `inventory` commit shipment DTO shape 防回退
+   - 更新 `server/services/inventory_command_service_test.go`
+   - 已补 `CommitShipment(...)` 返回 DTO 关键字段断言：
+     - `id`
+     - `materialId`
+     - `sourceCategory`
+     - `batchNo`
+     - `status`
+
+3. `purchase_orders` 收货确认链 contract 防回退
+   - 更新 `server/handlers/purchase_receipt_confirm_handler_test.go`
+   - 更新 `server/services/purchase_receipt_confirm_service_test.go`
+   - 已补：
+     - 收货确认成功时返回 `ConfirmPurchaseReceiptResponse` 的关键字段断言
+     - `receiptDate` 非 RFC3339 时的负向断言
+
+4. `sales_orders` 保存返回 contract 防回退
+   - 更新 `server/handlers/trading_workflow_e2e_test.go`
+   - 已补 `SaveSalesOrderHandler` 成功返回 `SalesOrderResponse` 的关键字段断言：
+     - `orderNo`
+     - `orderName`
+     - `workflowInstanceId`
+     - `lines`
+
+### 保留边界
+- 未扩展为全量测试体系治理；
+- 未改业务逻辑，只补 contract / response shape / workflow 挂接稳定性测试；
+- 未新增复杂测试框架，优先复用既有 handler / service 测试文件与 SQLite 测试搭建方式。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory|PurchaseOrder|SalesOrder|Workflow"
+```
+
+结果：通过。
+
+### 当前结果
+- 第二轮巡检已收口的 A 级 contract 关键边界已有第一批防回退测试保护；
+- `inventory`、`purchase_orders`、`sales_orders` 的关键 response shape 与 workflow 挂接稳定性得到进一步固化；
+- 后续再出现匿名 struct / 裸 model / 不稳定 response 回退时，更容易被定向测试及时拦住。
+
+## P0：`sales_orders` 旧审批稿清账（主链复核结论固化）（2026-04-07）
+
+### 复核结论
+- 已对 `sales_orders` 的列表、详情、保存与 workflow 挂接面做过最小闭环级别复核；
+- 当前主链外部 contract 基本稳定，判定为 **基本 Green**；
+- 当前未命中值得立即进入实现阶段的明确 contract Yellow 点。
+
+### 已确认的稳定点
+- 列表接口已有 `SalesOrderListResponse`
+- 详情接口已有 `SalesOrderResponse`
+- 保存接口已有 `SaveSalesOrderRequest`
+- 保存成功返回已走 `MapSalesOrderToResponse(...)`
+- workflow 挂接已有定向 E2E 覆盖
+
+### 收尾结论
+- 将 `task.md` 中遗留的 `sales_orders` 审批稿状态整理为“已复核，暂不进入实现”；
+- 避免文档中留下看似待做、实际不应继续推进的悬空条目。
+
+## P0：`purchase_orders` 最小 contract 闭环（收货确认链）（2026-04-07）
+
+### 已执行变更
+1. 为采购收货确认链补正式命名 request DTO
+   - `server/services/purchase_receipt_confirm_dto.go`
+   - 已新增：
+     - `ConfirmPurchaseReceiptRequest`
+     - `ConfirmPurchaseReceiptLineRequest`
+
+2. handler 已从匿名 request 切到正式命名 contract
+   - `server/handlers/purchase_orders.go`
+   - `ConfirmPurchaseReceiptHandler` 不再使用匿名 `struct`
+
+3. 采购收货确认 service 对外返回值已切到正式 response DTO
+   - `server/services/purchase_receipt_confirm_service.go`
+   - `ConfirmPurchaseReceipt(...)` 已改为返回 `ConfirmPurchaseReceiptResponse`
+
+4. 已补 request -> service input mapper
+   - `server/services/purchase_order_mapper.go`
+   - 已新增 `MapConfirmPurchaseReceiptRequestToInput(...)`
+
+### 保留边界
+- 未改采购收货确认的事务逻辑；
+- 未改入库记录创建逻辑；
+- 未改采购单状态重算逻辑；
+- 未改 workflow 挂接语义与既有中文错误语义。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "PurchaseOrder|Workflow"
+```
+
+结果：通过。
+
+### 当前结果
+- `purchase_orders` 主链中最明确的 Yellow 点已收口到收货确认链；
+- handler / service 对外 contract 已进一步稳定；
+- 当前采购单主链的 contract 一致性与防回退能力进一步增强。
+
+## P0：A 级模块 contract 回归巡检（第二轮）正式总结（2026-04-07）
+
+### 巡检范围
+本轮优先复核了以下 A 级模块与其主链 contract：
+
+- `workflow`
+- `production`
+- `inventory`
+- `voucher / finance`
+- `sales_orders`
+
+### 巡检关注点
+- service / handler 对外是否重新暴露 `models.*`
+- 是否重新出现匿名 request / response
+- handler 是否直接返回裸 model / 裸 slice / 裸 map
+- 新增接口是否绕开既有 DTO / mapper / wrapper 体系
+
+### 模块级结论
+1. `workflow`
+   - 结论：Green
+   - 说明：审批 / 驳回 / task list 的 service / handler contract 已保持 DTO 化，对外未发现新的 `models.Workflow*` 回退。
+
+2. `production`
+   - 结论：Green
+   - 说明：主配置链与核心查询链已完成 wrapper 风格统一，当前主链未发现新的裸 DTO / 裸 map / model contract 回退。
+
+3. `voucher / finance`
+   - 结论：Green
+   - 说明：读接口仍稳定通过 voucher DTO / mapper 输出，对外 contract 保持稳定。
+
+4. `inventory`
+   - 初始判定：Yellow
+   - 命中问题：
+     - query service 对外仍返回 `[]models.*`
+     - query handler 仍以 `gin.H{"items": ...}` 承载 model slice
+     - `CommitShipment` service 对外仍返回 `models.ShipmentRecord`
+   - 处理结果：本轮已完成 `inventory query + commit contract` 补缺口
+   - 当前结论：已收口，回到 Green
+
+5. `sales_orders`
+   - 结论：主链基本 Green
+   - 说明：列表 / 详情 / 保存接口已有正式命名 request / response，workflow 挂接已有定向覆盖；当前未命中值得立即开刀的明确 contract Yellow 点。
+
+### 本轮实际改动闭环
+本轮第二轮巡检期间，唯一命中的明确 Yellow 缺口为 `inventory`，并已在同轮完成修复：
+
+- 已新增独立 inventory query DTO / mapper
+- 已将 inventory query service 切到正式 DTO response
+- 已将 inventory query handler 切到正式命名 paged wrapper
+- 已将 `CommitShipment` 公开 service 返回值切到 `InventoryShipmentRecordResponse`
+
+### 当前整体状态
+- `workflow`：Green
+- `production`：Green
+- `voucher / finance`：Green
+- `inventory`：本轮补缺口后已回到 Green
+- `sales_orders`：当前主链基本 Green
+
+### 收尾结论
+第二轮 A 级模块 contract 回归巡检已经完成正式收尾：
+
+- 已识别并修复本轮唯一明确 Yellow：`inventory`
+- 已确认 `workflow / production / voucher / finance / sales_orders` 当前主链 contract 基本稳定
+- 当前 A 级已收口主链的主要风险，已从“明显 contract 回退”下降为“后续新增接口的持续防回退治理”
+
+### 建议下一步
+若继续推进 A 级模块，建议优先进入：
+
+- `purchase_orders` 最小 contract 小闭环
+
+若先做治理收尾，也可以转向：
+
+- 为已收口 A 级模块补轻量防回退测试 / 巡检约束
+
+## P0：`inventory query + commit contract` 补缺口（2026-04-07）
+
+### 已执行变更
+1. 为 inventory 查询链补独立 DTO / mapper 文件
+   - `server/services/inventory_query_dto.go`
+   - `server/services/inventory_query_mapper.go`
+   - 已新增：
+     - `InventoryItemResponse`
+     - `InventoryListResponse`
+     - `InventoryInboundHistoryResponse`
+     - `InventoryShipmentHistoryResponse`
+
+2. inventory query service 已切到正式 DTO contract
+   - `server/services/inventory_query_service.go`
+   - 已完成：
+     - `ListInventory` 返回 `InventoryListResponse`
+     - `ListInboundHistory` 返回 `InventoryInboundHistoryResponse`
+     - `ListShipmentHistory` 返回 `InventoryShipmentHistoryResponse`
+
+3. inventory query handler 已切到正式命名 wrapper
+   - `server/handlers/inventory_query_handlers.go`
+   - 不再使用 `gin.H{"items": ...}` 直接承载 `[]models.*`
+
+4. `CommitShipment` service 对外返回值已切到 DTO
+   - `server/services/inventory_command_service.go`
+   - `CommitShipment(...)` 已改为返回 `InventoryShipmentRecordResponse`
+   - `server/handlers/inventory_command_handlers.go` 无需额外改动即可直接消费新的 DTO 返回值
+
+### 保留边界
+- 未改 inventory query 分页语义；
+- 未改 commit shipment 事务逻辑、库存扣减逻辑与销售履约联动；
+- 未改既有中文错误语义与状态码。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory"
+```
+
+结果：通过。
+
+### 当前结果
+- `inventory` 查询链不再由 service 对外返回 `[]models.*`；
+- query handler 已切到正式命名 paged response；
+- `CommitShipment` service 的公开返回 contract 已与 inventory DTO 体系对齐；
+- 第二轮 A 级巡检中命中的 `inventory` Yellow 缺口已完成收口。
+
 ## P0：`production` 核心查询链轻量风格统一化（plans / stats / order-progress）（2026-04-07）
 
 ### 已执行变更

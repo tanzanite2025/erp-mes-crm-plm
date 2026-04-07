@@ -51,8 +51,11 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 		},
 	})
 	require.NoError(t, err)
+	require.Equal(t, "po-confirm-1", result.PurchaseOrder.ID)
 	require.Equal(t, "Received", result.PurchaseOrder.Status)
 	require.Len(t, result.CreatedInboundRecords, 1)
+	require.Equal(t, materialID, result.CreatedInboundRecords[0].MaterialID)
+	require.Equal(t, "MATERIAL", result.CreatedInboundRecords[0].TargetCategory)
 
 	var receivedQty float64
 	require.NoError(t, db.DB.Raw(`SELECT received_qty FROM purchase_order_lines WHERE id = ?`, 1).Scan(&receivedQty).Error)
@@ -65,4 +68,22 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 	var inboundCount int64
 	require.NoError(t, db.DB.Model(&models.InboundRecord{}).Where("purchase_order_id = ?", "po-confirm-1").Count(&inboundCount).Error)
 	require.Equal(t, int64(1), inboundCount)
+}
+
+func TestConfirmPurchaseReceiptReturnsErrorWhenReceiptDateRawInvalid(t *testing.T) {
+	result, err := ConfirmPurchaseReceipt(ConfirmPurchaseReceiptInput{
+		PurchaseOrderID: "po-invalid-date",
+		ReceiptDateRaw:  "not-a-rfc3339",
+		Lines: []ConfirmPurchaseReceiptLineInput{
+			{
+				PurchaseOrderLineID: 1,
+				Quantity:            1,
+				PurchasePrice:       1,
+				TargetCategory:      "MATERIAL",
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "receiptDate 格式错误")
+	require.Equal(t, ConfirmPurchaseReceiptResponse{}, result)
 }

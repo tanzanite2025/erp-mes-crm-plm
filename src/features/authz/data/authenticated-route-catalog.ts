@@ -28,6 +28,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/equipment-tooling/loans",
   "/equipment-tooling/molds",
   "/engineering-db/nipples",
+  "/personnel/architecture",
   "/terminal-config/guides",
   "/engineering/templates",
   "/personnel/permissions",

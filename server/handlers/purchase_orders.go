@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
@@ -155,25 +154,10 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Operator    string                                     `json:"operator"`
-		Remarks     string                                     `json:"remarks"`
-		ReceiptDate string                                     `json:"receiptDate"`
-		Lines       []services.ConfirmPurchaseReceiptLineInput `json:"lines"`
-	}
+	var req services.ConfirmPurchaseReceiptRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}
-
-	receiptDate := time.Now()
-	if strings.TrimSpace(req.ReceiptDate) != "" {
-		parsed, err := time.Parse(time.RFC3339, req.ReceiptDate)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "receiptDate 格式错误，需为 RFC3339"})
-			return
-		}
-		receiptDate = parsed
 	}
 
 	operator := strings.TrimSpace(req.Operator)
@@ -181,13 +165,7 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 		operator = middleware.GetSafeUsername(c)
 	}
 
-	result, err := services.ConfirmPurchaseReceipt(services.ConfirmPurchaseReceiptInput{
-		PurchaseOrderID: purchaseOrderID,
-		Operator:        operator,
-		Remarks:         req.Remarks,
-		ReceiptDate:     receiptDate,
-		Lines:           req.Lines,
-	})
+	result, err := services.ConfirmPurchaseReceipt(services.MapConfirmPurchaseReceiptRequestToInput(req, purchaseOrderID, operator, req.ReceiptDate))
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
@@ -198,7 +176,7 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, services.MapConfirmPurchaseReceiptResultToResponse(result))
+	c.JSON(http.StatusOK, result)
 }
 
 // DeletePurchaseOrderHandler 删除采购订单 (逻辑删除)

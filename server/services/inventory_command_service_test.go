@@ -320,6 +320,10 @@ func TestCommitShipmentSnapshotsCOGSAndDeductsInventoryValue(t *testing.T) {
 
 	shipment, err := CommitShipment(shipmentID)
 	require.NoError(t, err)
+	require.Equal(t, shipmentID, shipment.ID)
+	require.Equal(t, materialID, shipment.MaterialID)
+	require.Equal(t, "WH_A", shipment.SourceCategory)
+	require.Equal(t, "B-001", shipment.BatchNo)
 	require.Equal(t, "COMMITTED", shipment.Status)
 	require.InDelta(t, 24.0, shipment.COGS, 0.000001)
 

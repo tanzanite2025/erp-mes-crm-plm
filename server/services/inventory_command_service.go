@@ -224,20 +224,20 @@ func rollbackShipmentFromSalesOrderTx(tx *gorm.DB, shipment *models.ShipmentReco
 	return err
 }
 
-func CommitShipment(id string) (models.ShipmentRecord, error) {
+func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 	var shipment models.ShipmentRecord
 	if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.ShipmentRecord{}, ErrShipmentNotFound
+			return InventoryShipmentRecordResponse{}, ErrShipmentNotFound
 		}
-		return models.ShipmentRecord{}, err
+		return InventoryShipmentRecordResponse{}, err
 	}
 
 	if shipment.Status != "DRAFT" {
-		return models.ShipmentRecord{}, ErrShipmentNotDraft
+		return InventoryShipmentRecordResponse{}, ErrShipmentNotDraft
 	}
 	if shipment.Quantity <= 0 {
-		return models.ShipmentRecord{}, errors.New("[CRITICAL_LOGIC_ERROR] invalid shipment quantity")
+		return InventoryShipmentRecordResponse{}, errors.New("[CRITICAL_LOGIC_ERROR] invalid shipment quantity")
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
@@ -291,14 +291,14 @@ func CommitShipment(id string) (models.ShipmentRecord, error) {
 		return err
 	})
 	if err != nil {
-		return models.ShipmentRecord{}, err
+		return InventoryShipmentRecordResponse{}, err
 	}
 
 	if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
-		return models.ShipmentRecord{}, err
+		return InventoryShipmentRecordResponse{}, err
 	}
 
-	return shipment, nil
+	return MapShipmentRecordToResponse(shipment), nil
 }
 
 func TransferInventory(input TransferInventoryInput) error {

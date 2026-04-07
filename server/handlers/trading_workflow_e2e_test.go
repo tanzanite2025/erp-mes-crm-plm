@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -216,6 +217,13 @@ func TestSaveSalesOrderHandlerCreatesWorkflowInstanceOnCreate(t *testing.T) {
 	SaveSalesOrderHandler(ctx)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.SalesOrderResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "SO-E2E-001", response.OrderNo)
+	require.Equal(t, "Sample SO", response.OrderName)
+	require.NotEmpty(t, response.WorkflowInstanceID)
+	require.Len(t, response.Lines, 0)
 
 	var persisted models.SalesOrder
 	require.NoError(t, testDB.Where("order_no = ?", "SO-E2E-001").First(&persisted).Error)

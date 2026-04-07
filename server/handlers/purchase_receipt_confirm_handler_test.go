@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -143,6 +145,13 @@ func TestConfirmPurchaseReceiptHandlerCreatesInboundAndUpdatesOrder(t *testing.T
 	ConfirmPurchaseReceiptHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 
+	var response services.ConfirmPurchaseReceiptResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "po-handler-1", response.PurchaseOrder.ID)
+	require.Equal(t, "Received", response.PurchaseOrder.Status)
+	require.Len(t, response.CreatedInboundRecords, 1)
+	require.Equal(t, "MATERIAL", response.CreatedInboundRecords[0].TargetCategory)
+
 	var status string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM purchase_orders WHERE id = ?`, "po-handler-1").Scan(&status).Error)
 	require.Equal(t, "Received", status)
@@ -150,4 +159,31 @@ func TestConfirmPurchaseReceiptHandlerCreatesInboundAndUpdatesOrder(t *testing.T
 	var inboundCount int64
 	require.NoError(t, db.DB.Raw(`SELECT COUNT(1) FROM inbound_records WHERE purchase_order_id = ?`, "po-handler-1").Scan(&inboundCount).Error)
 	require.Equal(t, int64(1), inboundCount)
+}
+
+func TestConfirmPurchaseReceiptHandlerReturnsBadRequestWhenReceiptDateInvalid(t *testing.T) {
+	setupPurchaseReceiptConfirmHandlerTestDB(t)
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`INSERT INTO materials (id, created_at, updated_at) VALUES (?, ?, ?)`, materialID, now, now).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO purchase_orders (id, order_no, status, currency, amount, exchange_rate, created_at, updated_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "po-handler-invalid-date", "PO-H-002", "Awaiting", "CNY", 50.0, 1.0, now, now, false, 1).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-handler-invalid-date", 1, materialID, "MAT-H-002", "Handler Material", "Spec", 5.0, "PCS", 10.0, 50.0, 0.0, "Open").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/purchase/orders/po-handler-invalid-date/confirm-receipt", strings.NewReader(`{"receiptDate":"not-a-rfc3339","lines":[{"purchaseOrderLineId":1,"materialId":"`+materialID+`","quantity":5,"purchasePrice":10,"batchNo":"B-H-002","targetCategory":"MATERIAL"}]}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: "po-handler-invalid-date"}}
+
+	ConfirmPurchaseReceiptHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "receiptDate 格式错误")
 }

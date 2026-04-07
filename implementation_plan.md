@@ -6644,3 +6644,378 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
 2. 已确认只处理 plans / stats / order-progress；
 3. 在你明确批准前，不开始业务代码修改；
 4. 你批准后，我将先复核 `production_plans.go` 与现有 query DTO/mapper，再按最小闭环执行。
+
+---
+
+## A 级模块 contract 回归巡检（第二轮）执行方案
+
+### 背景
+`workflow` 与 `production` 的 Yellow 缺口已经完成补齐，`inventory`、`voucher / finance` 也已完成前序 DTO 收口。当前最合理的下一步不是立刻扩到新的大模块，而是先对已收口的 A 级模块做一次 **第二轮 contract 回归巡检**，确认没有新增回退。
+
+### 目标
+本轮目标是：
+
+1. 用一次面向 contract 的静态扫描确认最近已收口模块没有回退；
+2. 对命中的问题做 Green / Yellow / Red 分级；
+3. 只产出结论与后续最小闭环建议，不在巡检阶段默认扩展成大改。
+
+### 巡检范围
+#### 第一层：优先模块
+- `workflow`
+- `production`
+- `inventory`
+- `voucher / finance`
+
+#### 第二层：相邻挂接面（按需）
+- `sales_orders`
+- `purchase_orders`
+
+### 扫描重点
+1. `models.*` 是否重新暴露到 handler / service 对外 contract
+2. 是否重新出现匿名 request / response
+3. handler 是否直接返回裸 model / 裸 slice / 裸 map
+4. 新增接口是否绕过既有 DTO / mapper / wrapper 体系
+
+### 建议扫描方法
+1. 先用代码搜索定位目标模块中的：
+   - `models.`
+   - `c.JSON(`
+   - `var input struct`
+   - `[]models.`
+   - `map[string]`
+2. 再结合关键 handler / service 文件做人工复核，避免误报；
+3. 输出时按模块分组，并给出命中类型与原因。
+
+### 分级标准
+#### Green
+- 已收口模块未发现新的外部 contract 回退；
+- 现有裸 slice / map 若已在既有统一方案内被明确接受，可维持 Green。
+
+#### Yellow
+- 存在 1~2 个小范围 contract 风格不一致点；
+- 能通过补 DTO / wrapper / mapper 在最小闭环内修复。
+
+#### Red
+- 出现 service / handler 大面积重新暴露 model；
+- 或新增接口系统性绕开 DTO / mapper 体系；
+- 或存在会直接影响外部契约稳定性的高风险回退。
+
+### 预期输出
+1. 模块级结论清单（Green / Yellow / Red）
+2. 命中文件与问题类型
+3. 最值得优先处理的小闭环建议
+
+### 风险与边界
+- 本轮是巡检，不是功能改造；
+- 不主动改业务逻辑；
+- 不扩展到权限链、前端 UI、报表逻辑或数据库结构；
+- 若发现缺口，需单独回到审批流程开下一轮小闭环。
+
+### 当前状态
+本节当前作为 A 级模块 contract 回归巡检（第二轮）的执行方案：
+
+1. 已确认本轮目标是巡检和分级，而不是立即改代码；
+2. 已确认优先检查 `workflow`、`production`、`inventory`、`voucher / finance`；
+3. 已确认如发现 Yellow / Red 缺口，再单独开最小闭环；
+4. 接下来将先执行代码搜索与关键文件复核，再输出巡检结论。
+
+---
+
+## `inventory query + commit contract` 补缺口执行方案
+
+### 背景
+在 A 级模块 contract 回归巡检（第二轮）中，`inventory` 被判定为 **Yellow**，问题集中在两个边界：
+
+1. `inventory_query_service.go` 对外仍直接返回 `[]models.*`；
+2. `CommitShipment` 公开 service 仍返回 `models.ShipmentRecord`；
+3. `inventory_query_handlers.go` 仍使用 `gin.H{"items": ...}` 直接承载 model slice 输出。
+
+这说明 `inventory` 第一轮命令链 DTO 收口完成后，查询链和个别 command service 公开返回值仍存在补缺口空间。
+
+### 目标
+本轮只做：
+
+1. 将 inventory query service 对外返回值切到正式 DTO；
+2. 为 inventory query handler 提供正式命名 paged response wrapper；
+3. 将 `CommitShipment` 公开 service 返回值切到正式 DTO；
+4. 不改库存业务逻辑、分页逻辑与事务逻辑。
+
+### 建议范围
+#### 第一部分：query chain
+- `server/services/inventory_query_service.go`
+- `server/handlers/inventory_query_handlers.go`
+- 如缺少类型，新增独立文件：
+  - `server/services/inventory_query_dto.go`
+  - `server/services/inventory_query_mapper.go`
+
+#### 第二部分：command service return contract
+- `server/services/inventory_command_service.go`
+- `server/handlers/inventory_command_handlers.go`
+
+### 实施策略
+#### 1) query 使用独立 DTO / mapper
+- 优先新建独立 query DTO / mapper 文件；
+- 不把 query response 继续堆叠到 command DTO 文件；
+- 保持命令链与查询链边界清晰。
+
+#### 2) `CommitShipment` 复用已有 shipment response DTO
+- 优先复用 `InventoryShipmentRecordResponse`；
+- 不重复定义第二套 shipment commit response。
+
+#### 3) 只修 contract，不改逻辑
+- 不改库存扣减逻辑；
+- 不改分页逻辑；
+- 不改错误状态码与中文错误语义；
+- 不改 `RecordInbound/Shipment/Void` 已稳定 contract。
+
+### 预计改动文件
+- `server/services/inventory_query_service.go`
+- `server/services/inventory_command_service.go`
+- `server/handlers/inventory_query_handlers.go`
+- `server/handlers/inventory_command_handlers.go`
+- `server/services/inventory_query_dto.go`（如不存在则新增）
+- `server/services/inventory_query_mapper.go`（如不存在则新增）
+- 如有必要补充 inventory handler/service tests
+
+### 风险评估
+1. 若误改分页结构或字段名，库存列表页会直接受影响；
+2. 若误动 `CommitShipment` 事务逻辑，会影响库存扣减与销售履约联动；
+3. 若把 query DTO 混进 command DTO 文件，会进一步加重文件堆叠，不利于后续维护。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory"`
+- 重点复核：
+  - inventory list / inbound history / shipment history response shape
+  - commit shipment response shape
+  - commit 后库存与单据状态联动未回归
+
+### 当前状态
+本节当前作为 `inventory query + commit contract` 补缺口的执行方案：
+
+1. 已确认本轮只处理 query + commit contract Yellow 点；
+2. 已确认优先通过独立 query DTO / mapper + 复用 shipment DTO 的最小方案执行；
+3. 已确认不改库存业务逻辑；
+4. 接下来将先补 query contract 类型，再落 service / handler 改动并执行 Inventory 定向回归。
+
+---
+
+## `sales_orders` contract 小闭环审批稿
+
+### 背景
+`workflow`、`production`、`inventory`、`voucher / finance` 的 A 级主链 contract 已完成多轮收口与巡检。下一步若继续推进 A 级模块，`sales_orders` 是最合适的下一个小闭环候选，因为它：
+
+- 属于核心单据主链；
+- 已与 workflow 存在挂接；
+- 一旦 contract 不稳，容易影响创建、保存、状态流转与跨模块联动。
+
+### 改造目标
+本轮目标不是重做 `sales_orders`，而是：
+
+1. 复核 `sales_orders` 当前对外 contract 是否还存在明显缺口；
+2. 识别最值得优先处理的一个最小闭环；
+3. 在你批准后，只对命中的最小闭环做收口。
+
+### 优先排查范围
+#### 第一层：handler / service 外部 contract
+- `server/handlers/sales_orders.go`
+- `server/services/*sales*`
+
+#### 第二层：workflow 挂接面
+- 销售订单创建 / 保存时与 workflow instance 的交互边界
+- 订单读接口是否暴露 workflow 相关 model 字段而缺少正式 response contract
+
+### 重点问题类型
+1. `models.SalesOrder` / `models.SalesOrderLine` 是否直接暴露到外部 contract
+2. 是否存在匿名 request / response
+3. 是否存在裸 model / 裸 slice / 裸 map 输出
+4. workflow 挂接点是否仍未通过明确 DTO / response wrapper 固化
+
+### 实施策略
+#### 1) 先找最小闭环，不预设全面改造
+- 如果命中点集中在单条保存 / 查询链，就先只处理那一条；
+- 如果命中点集中在 workflow 挂接面，就先收口挂接面 contract；
+- 不默认扩展到 sales fulfillment、invoice 或 shipment 全链。
+
+#### 2) 不改业务逻辑，只收口 contract
+- 不改销售订单状态机；
+- 不改 workflow 创建逻辑；
+- 不改已有中文错误语义；
+- 不改订单字段含义与现有前端依赖。
+
+### 预计改动文件（待复核后收敛）
+- `server/handlers/sales_orders.go`
+- `server/services/*sales*`
+- 如缺少类型，补独立 sales DTO / mapper 文件
+- 如有必要补少量 `SalesOrder|Workflow` 定向测试
+
+### 风险评估
+1. 若把小闭环误做成 trading 域大改，会放大风险；
+2. 若误动 workflow 挂接逻辑，可能影响建单即发起流程的稳定性；
+3. 若不先做复核，容易在错误位置投入过多改造成本。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "SalesOrder|Workflow"`
+- 重点复核：
+  - 保存 / 查询 response shape
+  - workflow instance 挂接稳定性
+  - 外部 contract 是否已脱离直接 model 暴露
+
+### 当前状态与暂停点
+本节当前仅为 `sales_orders` contract 小闭环执行前审批稿：
+
+1. 已确认本轮只做 `sales_orders` 最小闭环，而不是整个 trading 域重构；
+2. 已确认优先复核 handler / service contract 与 workflow 挂接面；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先扫描 `sales_orders` 相关 handler / service，再给出最小改动范围并执行。
+
+---
+
+## `purchase_orders` contract 小闭环审批稿
+
+### 背景
+第二轮 A 级模块巡检收尾后，若继续推进核心单据主链，`purchase_orders` 是当前最自然的下一步。原因是：
+
+- 它与 `sales_orders` 形成对称主链；
+- 已与 workflow 存在挂接关系；
+- 若 contract 不稳，会影响建单、保存、收货联动与流程边界稳定性。
+
+### 改造目标
+本轮目标不是重做 `purchase_orders`，而是：
+
+1. 复核 `purchase_orders` 当前对外 contract 是否存在明显缺口；
+2. 识别最值得优先处理的一个最小闭环；
+3. 在你批准后，只对命中的最小闭环做收口。
+
+### 优先排查范围
+#### 第一层：handler / service 外部 contract
+- `server/handlers/purchase_orders.go`
+- `server/services/*purchase*`
+
+#### 第二层：workflow 挂接面
+- 采购单创建 / 保存时与 workflow instance 的交互边界
+- 采购单读接口是否暴露 workflow 相关 model 字段而缺少正式 response contract
+
+### 重点问题类型
+1. `models.PurchaseOrder` / `models.PurchaseOrderLine` 是否直接暴露到外部 contract
+2. 是否存在匿名 request / response
+3. 是否存在裸 model / 裸 slice / 裸 map 输出
+4. workflow 挂接点是否仍未通过明确 DTO / response wrapper 固化
+
+### 实施策略
+#### 1) 先找最小闭环，不预设全面改造
+- 如果命中点集中在单条保存 / 查询链，就先只处理那一条；
+- 如果命中点集中在 workflow 挂接面，就先收口挂接面 contract；
+- 不默认扩展到 purchase receipt、inventory inbound 或 voucher 全链。
+
+#### 2) 不改业务逻辑，只收口 contract
+- 不改采购单状态机；
+- 不改 workflow 创建逻辑；
+- 不改已有中文错误语义；
+- 不改采购单字段含义与现有前端依赖。
+
+### 预计改动文件（待复核后收敛）
+- `server/handlers/purchase_orders.go`
+- `server/services/*purchase*`
+- 如缺少类型，补独立 purchase DTO / mapper 文件
+- 如有必要补少量 `PurchaseOrder|Workflow` 定向测试
+
+### 风险评估
+1. 若把小闭环误做成 procurement 域大改，会放大风险；
+2. 若误动 workflow 挂接逻辑，可能影响建单即发起流程的稳定性；
+3. 若误碰收货 / 入库联动，容易把风险扩散到 inventory。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "PurchaseOrder|Workflow"`
+- 重点复核：
+  - 保存 / 查询 response shape
+  - workflow instance 挂接稳定性
+  - 外部 contract 是否已脱离直接 model 暴露
+
+### 当前状态与暂停点
+本节当前仅为 `purchase_orders` contract 小闭环执行前审批稿：
+
+1. 已确认本轮只做 `purchase_orders` 最小闭环，而不是整个 procurement 域重构；
+2. 已确认优先复核 handler / service contract 与 workflow 挂接面；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先扫描 `purchase_orders` 相关 handler / service，再给出最小改动范围并执行。
+
+## A 级模块 contract 防回退测试（审批稿）
+
+### 背景
+第二轮 A 级模块 contract 巡检与最小闭环已经完成了两类结果：
+
+1. `inventory` 已完成 query + commit contract 补缺口；
+2. `purchase_orders` 已完成收货确认链 contract 最小闭环；
+3. `sales_orders` 经复核后主链基本 Green，暂不进入代码改造。
+
+下一步最合适的收口方向，不是继续扩大业务改造，而是把上述关键结论转成可回归的防回退测试，提升后续稳定性。
+
+### 改造目标
+本轮目标限定为：
+
+1. 为 A 级模块关键 contract 边界补最小必要的定向测试；
+2. 固化 response shape、DTO 边界与 workflow 挂接关键断言；
+3. 防止后续改动把已收口的 contract 回退为匿名 struct、裸 model 或不稳定响应。
+
+### 优先覆盖范围
+#### 第一优先级：已收口的 Yellow 点
+- `server/services/inventory_query_service.go`
+- `server/handlers/inventory_query_handlers.go`
+- `server/services/inventory_command_service.go`
+- `server/handlers/purchase_orders.go`
+- `server/services/purchase_receipt_confirm_service.go`
+
+#### 第二优先级：已判定 Green、但值得固化的主链
+- `server/handlers/sales_orders.go`
+- 与 `SalesOrder|Workflow` 相关的既有测试文件
+
+### 重点断言类型
+1. handler 返回值 shape 是否仍为正式命名 response；
+2. service 对外返回是否仍为 DTO，而非 `models.*`；
+3. purchase / sales 创建与 workflow 挂接的关键结果是否稳定；
+4. 空列表、分页列表、收货确认结果等关键外部 contract 是否仍保持既有字段结构。
+
+### 实施策略
+#### 1) 只补最小必要测试，不扩大到测试体系重构
+- 不重写已有测试基建；
+- 不追求一次性覆盖所有 A 级模块；
+- 优先围绕本轮已确认的关键 contract 边界补点状测试。
+
+#### 2) 优先复用既有测试文件与测试数据模式
+- 尽量落在既有 `handlers` / `services` 模块测试文件中；
+- 复用当前 SQLite / GORM / handler 测试搭建方式；
+- 避免无必要新增大而散的测试骨架。
+
+#### 3) 不改变业务语义
+- 不借测试补强之名改业务逻辑；
+- 如测试暴露真实 contract 漏洞，再单独开新闭环处理；
+- 本轮默认只做防回退固化，不做功能扩展。
+
+### 预计改动文件（待批准后收敛）
+- `server/handlers/*test.go`
+- `server/services/*test.go`
+- 如确有必要，补极少量测试辅助函数，但不新增复杂测试框架
+
+### 风险评估
+1. 若范围失控，容易把“防回退测试”做成测试体系重构；
+2. 若断言写得过细，可能把正常演进误判为回归；
+3. 若测试与业务实现耦合过深，会提高后续维护成本。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory|PurchaseOrder|SalesOrder|Workflow"`
+- 重点关注：
+  - 既有通过用例不回退
+  - 新增 contract 定向断言稳定
+  - workflow 挂接与 response shape 不被破坏
+
+### 当前状态与暂停点
+本节当前仅为 A 级模块 contract 防回退测试审批稿：
+
+1. 已确认本轮目标是“测试补强”，不是新一轮业务重构；
+2. 已确认优先覆盖 `inventory`、`purchase_orders`、`sales_orders` 的关键 contract 边界；
+3. 在你明确批准前，不开始新增测试代码；
+4. 你批准后，我将先收敛第一批测试点，再按最小范围实现并回归。

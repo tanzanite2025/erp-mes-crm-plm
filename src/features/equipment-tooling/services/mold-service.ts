@@ -2,6 +2,7 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { type Mold, type MoldStatus } from '../data/schema'
+import { type DeltaPayload } from '@/lib/delta/types'
 
 /**
  * 模具状态流转合法性映射表
@@ -83,14 +84,37 @@ export class MoldService {
     }
 
     /**
-     * 局部更新模具信息 (差分更新 - 解决性能开销风险)
+     * 局部更新模具信息 (SDRTS 结构化差量更新)
      */
-    static async patchMold(moldId: string, updates: Partial<Mold>): Promise<void> {
+    static async patchMold(moldId: string, delta: Record<string, any>, version?: number): Promise<void> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id: moldId, version }
+        }
+
         await apiFetch(`/molds/${moldId}`, {
             method: 'PATCH',
-            body: JSON.stringify(updates)
+            body: JSON.stringify(payload)
         })
         window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
+    }
+
+    /**
+     * 基于追踪器的自动差量保存
+     */
+    static async saveWithDelta(moldId: string, original: Mold, current: Mold): Promise<void> {
+        // 此处逻辑未来将由 BaseApiService 统一处理
+        const { trackDelta } = await import('@/lib/delta/proxy-tracker')
+        const tracker = trackDelta(original)
+        
+        // 模拟变更应用（实际开发中应在 UI 层直接操作 tracker.data）
+        Object.assign(tracker.data, current)
+        
+        const delta = tracker.commit()
+        if (Object.keys(delta).length > 0) {
+            await this.patchMold(moldId, delta, original.version)
+        }
     }
 
     /**
