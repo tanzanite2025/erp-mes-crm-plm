@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { createTestRole } from '@/features/system-mgmt/test-factories'
+import { createTestUser } from '../test-factories'
 import { resolveOrgNodeLabel, resolveRoleLabel, resolveUserRole } from './role-resolver'
 import { buildDepartmentRoleId, resolveDepartmentRoleId } from './department-role'
 
@@ -7,7 +9,7 @@ describe('role-resolver regression', () => {
     expect(buildDepartmentRoleId(' Dept-1 ')).toBe('org_dept-1')
     expect(
       resolveDepartmentRoleId(
-        [{ id: 'ORG_DEPT-1', label: '财务部', color: '', permissions: [] }],
+        [createTestRole({ id: 'ORG_DEPT-1', label: '财务部', color: '' })],
         'dept-1',
       ),
     ).toBe('ORG_DEPT-1')
@@ -15,20 +17,17 @@ describe('role-resolver regression', () => {
 
   it('prefers department role over stored role marker for employee-bound user', () => {
     const result = resolveUserRole(
-      {
+      createTestUser({
         id: 'u-1',
         username: 'alice',
         firstName: 'Alice',
         lastName: 'Fin',
         phoneNumber: '123',
-        status: 'active',
         role: 'legacy_role',
         employeeId: 'emp-1',
-        createdAt: new Date('2026-04-06T00:00:00.000Z'),
-        updatedAt: new Date('2026-04-06T00:00:00.000Z'),
-      },
+      }),
       [{ id: 'emp-1', name: 'Alice', deptId: 'dept-1' }],
-      [{ id: 'org_dept-1', label: '财务部', color: '', permissions: ['menu_org'] }],
+      [createTestRole({ id: 'org_dept-1', label: '财务部', color: '', permissions: ['menu_org'] })],
     )
 
     expect(result).toEqual({
@@ -41,18 +40,15 @@ describe('role-resolver regression', () => {
 
   it('marks user role invalid when employee department role is missing', () => {
     const result = resolveUserRole(
-      {
+      createTestUser({
         id: 'u-2',
         username: 'bob',
         firstName: 'Bob',
         lastName: 'Ops',
         phoneNumber: '456',
-        status: 'active',
         role: 'org_missing',
         employeeId: 'emp-2',
-        createdAt: new Date('2026-04-06T00:00:00.000Z'),
-        updatedAt: new Date('2026-04-06T00:00:00.000Z'),
-      },
+      }),
       [{ id: 'emp-2', name: 'Bob', deptId: 'dept-missing' }],
       [],
     )

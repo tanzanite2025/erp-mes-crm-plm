@@ -23,14 +23,16 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { createFurnaceSchema, type Furnace } from '../data/schema'
+import { createFurnaceDraft, createFurnaceSchema, type Furnace, type FurnaceFormInput, type FurnaceFormOutput } from '../data/schema'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface FurnaceActionDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onConfirm: (data: Furnace) => void
+    onConfirm: (data: Furnace, isPatch?: boolean, delta?: DeltaSet) => void
     editData?: Furnace | null
 }
 
@@ -44,43 +46,44 @@ export function FurnaceActionDialog({
     const { allowsAction } = useNonBlockingPermissionActions()
     const defaultFurnaceType = t('equipmentTooling.furnaces.dialog.defaults.type')
     const furnaceFormSchema = useMemo(() => createFurnaceSchema(t), [t])
+    const defaultDraft = useMemo(() => createFurnaceDraft(defaultFurnaceType, editData ?? {}), [defaultFurnaceType, editData])
 
-    const form = useForm<Furnace>({
+    // SDRTS: 接入增量记录器
+    const { tracker, deltaProxy, reset } = useDeltaTracker<Furnace>(editData || createFurnaceDraft(defaultFurnaceType))
+    const isEdit = !!editData
+
+    const form = useForm<FurnaceFormInput, unknown, FurnaceFormOutput>({
         resolver: zodResolver(furnaceFormSchema),
-        defaultValues: {
-            id: editData?.id || '',
-            sn: editData?.sn || '',
-            name: editData?.name || '',
-            type: editData?.type || defaultFurnaceType,
-            maxTemp: editData?.maxTemp || 1200,
-            currentTemp: editData?.currentTemp || 25,
-            status: editData?.status || 'IDLE',
-            location: editData?.location || '',
-            description: editData?.description || '',
-            createdAt: editData?.createdAt || new Date().toISOString(),
-        },
+        defaultValues: defaultDraft,
     })
 
     useEffect(() => {
         if (!open) return
 
-        form.reset(editData || {
-            id: '',
-            sn: '',
-            name: '',
-            type: defaultFurnaceType,
-            maxTemp: 1200,
-            currentTemp: 25,
-            status: 'IDLE',
-            location: '',
-            description: '',
-            createdAt: new Date().toISOString(),
-        })
-    }, [defaultFurnaceType, editData, form, open])
+        const draft = editData ? createFurnaceDraft(defaultFurnaceType, editData) : createFurnaceDraft(defaultFurnaceType)
+        form.reset(draft)
+        reset(draft)
+    }, [defaultFurnaceType, editData, form, open, reset])
 
-    const onSubmit = (data: Furnace) => {
+    const onSubmit = (data: FurnaceFormOutput) => {
         if (!allowsAction('action_equipment_furnace_manage')) return
-        onConfirm(data)
+
+        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
+        Object.assign(deltaProxy, data)
+        const delta = tracker.commit()
+        const isDirty = Object.keys(delta).length > 0
+
+        if (isEdit && !isDirty) {
+            onOpenChange(false)
+            return
+        }
+
+        if (isEdit && editData?.version === undefined) {
+             throw new Error('[CRITICAL] 炉台编辑模式下版本号(version)缺失，无法执行 SDRTS 安全 Patch。');
+        }
+
+        // SDRTS: 发送 Patch 意图或全量数据
+        onConfirm(data as Furnace, isEdit, isEdit ? delta : undefined)
         onOpenChange(false)
     }
 

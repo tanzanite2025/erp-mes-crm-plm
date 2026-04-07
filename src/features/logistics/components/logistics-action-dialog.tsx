@@ -19,6 +19,7 @@ import { useLogisticsMutations } from '../hooks/use-logistics'
 import { type LogisticsRecord, getCarrierLabelKey } from '../types'
 import { getPreferredCarriers } from '../utils/carriers'
 import { inferCarrierFromTrackingNo } from '../utils/tracking-no'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface LogisticsActionDialogProps {
   open: boolean
@@ -39,16 +40,24 @@ export function LogisticsActionDialog({
   const { saveMutation } = useLogisticsMutations()
   const { data } = useGetSalesOrders(1, 1000, { enabled: open })
   const salesOrders = data?.items || []
-  const [formData, setFormData] = useState<Partial<LogisticsRecord>>({
-    orderNo: defaultOrderNo,
-    carrier: '',
-    trackingNo: '',
-    status: 'Pending',
-    type: 'Shipment',
-    contactPerson: '',
-    contactPhone: '',
-    shipmentId: defaultShipmentId || '',
-  })
+  
+  const initialValues = useMemo(() => {
+    if (record) return record
+    return {
+        orderNo: defaultOrderNo,
+        carrier: '',
+        trackingNo: '',
+        status: 'Pending' as const,
+        type: 'Shipment' as const,
+        contactPerson: '',
+        contactPhone: '',
+        shipmentId: defaultShipmentId || '',
+        events: [],
+    }
+  }, [record, defaultOrderNo, defaultShipmentId])
+
+  const { data: formData, tracker } = useDeltaTracker(initialValues, open)
+
   const [associatedShipments, setAssociatedShipments] = useState<ShipmentRecord[]>([])
   const [isLoadingShipments, setIsLoadingShipments] = useState(false)
   const [isCarrierTouched, setIsCarrierTouched] = useState(false)
@@ -74,29 +83,11 @@ export function LogisticsActionDialog({
   )
 
   useEffect(() => {
-    if (!open) return
-
-    if (record) {
-      setFormData(record)
-      setIsCarrierTouched(Boolean(record.carrier))
-      setInferredCarrier('')
-      return
+    if (!open) {
+        setIsCarrierTouched(false)
+        setInferredCarrier('')
     }
-
-    setFormData({
-      orderNo: defaultOrderNo,
-      carrier: '',
-      trackingNo: '',
-      status: 'Pending',
-      type: 'Shipment',
-      contactPerson: '',
-      contactPhone: '',
-      shipmentId: defaultShipmentId || '',
-      events: [],
-    })
-    setIsCarrierTouched(false)
-    setInferredCarrier('')
-  }, [record, open, defaultOrderNo, defaultShipmentId])
+  }, [open])
 
   useEffect(() => {
     const loadShipments = async () => {
@@ -123,20 +114,13 @@ export function LogisticsActionDialog({
   const handleTrackingNoChange = (trackingNo: string) => {
     const autoDetectedCarrier = inferCarrierFromTrackingNo(trackingNo)
     setInferredCarrier(autoDetectedCarrier || '')
-    setFormData((prev) => {
-      if (isCarrierTouched) {
-        return { ...prev, trackingNo }
-      }
-
-      const shouldClearAutoCarrier =
-        !autoDetectedCarrier && Boolean(inferredCarrier) && prev.carrier === inferredCarrier
-
-      return {
-        ...prev,
-        trackingNo,
-        carrier: autoDetectedCarrier || (shouldClearAutoCarrier ? '' : prev.carrier),
-      }
-    })
+    
+    formData.trackingNo = trackingNo
+    if (!isCarrierTouched && autoDetectedCarrier) {
+        formData.carrier = autoDetectedCarrier
+    } else if (!isCarrierTouched && !autoDetectedCarrier && inferredCarrier && formData.carrier === inferredCarrier) {
+        formData.carrier = ''
+    }
   }
 
   const handleSave = async () => {
@@ -144,7 +128,20 @@ export function LogisticsActionDialog({
     if (!formData.carrier) return alert(t('trading.logistics.dialog.validationCarrier'))
     if (!formData.trackingNo) return alert(t('trading.logistics.dialog.validationTracking'))
 
-    await saveMutation.mutateAsync(formData)
+    const delta = tracker.commit()
+    const isEdit = !!record
+    const isDirty = Object.keys(delta).length > 0
+
+    if (isEdit && !isDirty) {
+        onOpenChange(false)
+        return
+    }
+
+    await saveMutation.mutateAsync({
+        data: formData as Partial<LogisticsRecord>,
+        isPatch: isEdit,
+        delta: isEdit ? delta : undefined
+    })
     onOpenChange(false)
   }
 
@@ -186,9 +183,10 @@ export function LogisticsActionDialog({
                 placeholder={t('trading.logistics.dialog.orderPlaceholder')}
                 items={orderOptions}
                 defaultValue={formData.orderNo}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, orderNo: value, shipmentId: '' }))
-                }
+                onValueChange={(value) => {
+                  formData.orderNo = value
+                  formData.shipmentId = ''
+                }}
                 className='h-11 rounded-2xl font-black bg-muted/20 border-none'
               />
             </div>
@@ -213,7 +211,7 @@ export function LogisticsActionDialog({
                   value: shipment.id,
                 }))}
                 defaultValue={formData.shipmentId}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, shipmentId: value }))}
+                onValueChange={(value) => { formData.shipmentId = value }}
                 className='h-11 rounded-2xl font-bold bg-muted/20 border-none'
                 disabled={associatedShipments.length === 0}
               />
@@ -232,7 +230,7 @@ export function LogisticsActionDialog({
                 onValueChange={(value) => {
                   setIsCarrierTouched(true)
                   setInferredCarrier('')
-                  setFormData((prev) => ({ ...prev, carrier: value }))
+                  formData.carrier = value
                 }}
                 className='h-11 rounded-2xl font-bold bg-muted/20 border-none'
               />
@@ -247,7 +245,7 @@ export function LogisticsActionDialog({
                       onClick={() => {
                         setIsCarrierTouched(true)
                         setInferredCarrier('')
-                        setFormData((prev) => ({ ...prev, carrier }))
+                        formData.carrier = carrier
                       }}
                       className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
                         isActive
@@ -292,10 +290,8 @@ export function LogisticsActionDialog({
               <div className='relative'>
                 <User className='absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground' />
                 <Input
-                  value={formData.contactPerson}
-                  onChange={(event) =>
-                    setFormData((prev) => ({ ...prev, contactPerson: event.target.value }))
-                  }
+                  value={formData.contactPerson || ''}
+                  onChange={(event) => { formData.contactPerson = event.target.value }}
                   placeholder={t('trading.logistics.dialog.contactPlaceholder')}
                   className='pl-9 h-11 rounded-2xl font-bold bg-muted/20 border-none'
                 />
@@ -309,10 +305,8 @@ export function LogisticsActionDialog({
               <div className='relative'>
                 <Phone className='absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground' />
                 <Input
-                  value={formData.contactPhone}
-                  onChange={(event) =>
-                    setFormData((prev) => ({ ...prev, contactPhone: event.target.value }))
-                  }
+                  value={formData.contactPhone || ''}
+                  onChange={(event) => { formData.contactPhone = event.target.value }}
                   placeholder={t('trading.logistics.dialog.phonePlaceholder')}
                   className='pl-9 h-11 rounded-2xl font-bold bg-muted/20 border-none'
                 />

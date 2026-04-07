@@ -15,6 +15,7 @@ import { FurnaceStatsHeader } from '../components/furnace/furnace-stats-header'
 import { type Furnace, type FurnaceStatus } from '../data/schema'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export function FurnaceMgmt() {
   const { t } = useLanguage()
@@ -25,8 +26,8 @@ export function FurnaceMgmt() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingFurnace, setEditingFurnace] = useState<Furnace | null>(null)
 
-  const saveFurnaces = (newFurnaces: Furnace[]) => {
-    updateFurnaces(newFurnaces)
+  const saveFurnaces = (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
+    updateFurnaces(furnace, isPatch, delta)
   }
 
   const handleAddFurnace = () => {
@@ -54,23 +55,19 @@ export function FurnaceMgmt() {
       permission: 'action_equipment_furnace_manage',
       confirmKey: 'equipmentTooling.furnaces.confirm.remove',
       onAction: () => {
-        saveFurnaces(furnaces.filter((f) => f.id !== id))
+        // 此处删除暂不涉及 Delta，维持原样
+        updateFurnaces(furnaces.filter((f) => f.id !== id) as any)
         toast.info(t('equipmentTooling.furnaces.toast.removed'))
       }
     })
   }
 
-  const handleConfirm = (data: Furnace) => {
+  const handleConfirm = (data: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
     runConfirmedAction({
       permission: 'action_equipment_furnace_manage',
-      onAction: () => {
-        if (editingFurnace) {
-          saveFurnaces(furnaces.map((f) => (f.id === editingFurnace.id ? data : f)))
-          toast.success(t('equipmentTooling.furnaces.toast.updated'))
-        } else {
-          saveFurnaces([...furnaces, data])
-          toast.success(t('equipmentTooling.furnaces.toast.created'))
-        }
+      onAction: async () => {
+        await saveFurnaces(data, isPatch, delta)
+        toast.success(editingFurnace ? t('equipmentTooling.furnaces.toast.updated') : t('equipmentTooling.furnaces.toast.created'))
       }
     })
   }

@@ -1,7 +1,9 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
+import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 /**
  * DrawingService - 专门负责模具技术图纸的管理 (已同步至后端)
@@ -40,8 +42,12 @@ export const DrawingService = {
             method: 'POST',
             body: JSON.stringify(drawing)
         })
+
+        if (!result) {
+            throw new Error('[CRITICAL_DATA_PATH] Create drawing failed, returned no data.')
+        }
         
-        // 自动注入日志 (后端若已处理则可移除，此处保留前端触发以确保审计闭环)
+        // 自动注入日志
         await this.addLog({
             drawingId: result.id,
             action: 'CREATED',
@@ -50,7 +56,46 @@ export const DrawingService = {
         })
         
         window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
-        return result
+        return ensureObjectResponse<MoldDrawing>(result, 'DrawingService.addDrawing')
+    },
+
+    /**
+     * 局部更新图纸信息 (SDRTS 结构化差量更新)
+     */
+    async patchDrawing(id: string, delta: DeltaSet, sysVersion: number): Promise<MoldDrawing> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version: sysVersion }
+        }
+
+        const res = await apiFetch<MoldDrawing>(`/drawings/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+
+        if (!res) {
+            throw new Error(`[CRITICAL_DATA_PATH] Patch drawing ${id} failed, returned no data.`)
+        }
+
+        // 推理操作类型以注入更精准的日志 (前端模拟后端审计逻辑)
+        let action: MoldDrawingLog['action'] = 'STATUS_CHANGE'
+        if (delta.moldSn) {
+            action = delta.moldSn.n ? 'BIND' : 'UNBIND'
+        } else if (delta.version) {
+            action = 'VERSION_UPDATE'
+        }
+
+        await this.addLog({
+            drawingId: id,
+            action,
+            details: `技术变更: ${Object.keys(delta).join(', ')}`,
+            delta,
+            operator: '系统管理员'
+        })
+
+        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
+        return ensureObjectResponse<MoldDrawing>(res, 'DrawingService.patchDrawing')
     },
 
     async updateDrawing(id: string, updates: Partial<MoldDrawing>): Promise<void> {

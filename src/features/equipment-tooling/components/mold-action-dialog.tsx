@@ -45,11 +45,13 @@ import { Plus, RotateCcw, Save, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface MoldActionDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onConfirm: (data: Mold) => void
+    onConfirm: (data: Mold, isPatch?: boolean, delta?: DeltaSet) => void
     editData?: Mold | null
 }
 
@@ -68,6 +70,10 @@ export function MoldActionDialog({
     const [linkedDrawings, setLinkedDrawings] = useState<MoldDrawing[]>([])
     const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
     const defaultDraft = useMemo(() => createMoldDraft(editData ?? {}), [editData])
+
+    // SDRTS: 接入增量记录器
+    const { tracker, deltaProxy } = useDeltaTracker<Mold>(editData || createMoldDraft())
+    const isEdit = !!editData
 
     const form = useForm<MoldFormInput, unknown, MoldFormOutput>({
         resolver: zodResolver(moldFormSchema),
@@ -93,14 +99,17 @@ export function MoldActionDialog({
 
             if (editData) {
                 form.reset(editData)
+                tracker.reset(editData)
                 return
             }
 
-            form.reset(createMoldDraft())
+            const draft = createMoldDraft()
+            form.reset(draft)
+            tracker.reset(draft)
         }
 
         loadInitialData()
-    }, [editData, form, open])
+    }, [editData, form, open, tracker])
 
     const onSubmit = async (data: MoldFormOutput) => {
         if (!allowsAction('action_equipment_mold_manage')) return
@@ -111,8 +120,24 @@ export function MoldActionDialog({
             return
         }
 
-        const stampedData = auditUtils.stamp(data, editData ? 'update' : 'create')
-        onConfirm(stampedData as Mold)
+        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
+        Object.assign(deltaProxy, data)
+        const delta = tracker.commit()
+        const isDirty = Object.keys(delta).length > 0
+
+        if (isEdit && !isDirty) {
+            onOpenChange(false)
+            return
+        }
+
+        if (isEdit && editData?.version === undefined) {
+            throw new Error('[CRITICAL] 模具编辑模式下版本号(version)缺失，无法执行 SDRTS 安全 Patch。');
+        }
+
+        const stampedData = auditUtils.stamp(data, editData ? 'update' : 'create') as Mold
+        
+        // SDRTS: 发送 Patch 意图或全量数据
+        onConfirm(stampedData, isEdit, isEdit ? delta : undefined)
         onOpenChange(false)
     }
 

@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type OrgNode } from '../data/org-schema'
 
 /**
@@ -22,8 +23,13 @@ export class OrgService {
             method: 'POST',
             body: JSON.stringify(node)
         })
+        
+        if (!data) {
+            throw new Error('[CRITICAL_DATA_PATH] Save organization node returned no data for: ' + (node.id || 'NEW_NODE'))
+        }
+
         window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'))
-        return data
+        return ensureObjectResponse<OrgNode>(data, 'OrgService.saveOrgNode')
     }
 
     /**
@@ -37,12 +43,21 @@ export class OrgService {
     }
 
     /**
-     * Bulk synchronize organization nodes (Data recovery)
+     * Patch organization node (SDRTS Delta Protocol)
      */
-    static async syncOrgNodes(nodes: OrgNode[]): Promise<any> {
-        return await apiFetch('/org/sync', {
-            method: 'POST',
-            body: JSON.stringify(nodes)
-        })
+    static async patchOrgNode(id: string, delta: DeltaSet, version: number): Promise<OrgNode> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        };
+
+        const res = await apiFetch<OrgNode>(`/org/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+
+        window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'));
+        return ensureObjectResponse<OrgNode>(res, 'OrgService.patchOrgNode');
     }
 }

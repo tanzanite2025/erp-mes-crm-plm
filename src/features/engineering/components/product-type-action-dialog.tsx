@@ -29,6 +29,7 @@ import { createLogger } from '@/lib/logger'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
 import { productService } from '../services/product-service'
 import { productTemplateService } from '../services/product-template-service'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('ProductTypeActionDialog')
 
@@ -41,7 +42,7 @@ type ProductTypeActionDialogProps = {
   currentRow?: ProductType
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Partial<ProductType>) => void | Promise<void>
+  onSubmit?: (data: Partial<ProductType>, isPatch?: boolean, delta?: any) => void | Promise<void>
 }
 
 const CODE_RULES = [
@@ -81,6 +82,10 @@ export function ProductTypeActionDialog({
     },
   })
 
+  const deltaTracker = useDeltaTracker<ProductType>(currentRow || ({} as ProductType), {
+    enabled: isEdit,
+  })
+
   const categoryName = form.watch('name')
   const currentCode = form.watch('code')
 
@@ -104,10 +109,11 @@ export function ProductTypeActionDialog({
           parentId: currentRow.parentId || 'root',
           templateId: currentRow.templateId || 'none',
         })
+        deltaTracker.reset(currentRow)
         return
       }
 
-      form.reset({
+      const defaultValues = {
         id: '',
         parentId: 'root',
         name: '',
@@ -116,7 +122,9 @@ export function ProductTypeActionDialog({
         description: '',
         active: true,
         createdAt: new Date().toISOString(),
-      })
+      } as ProductType
+      form.reset(defaultValues)
+      deltaTracker.reset(defaultValues)
     }
 
     if (open) void loadInitialData()
@@ -195,11 +203,15 @@ export function ProductTypeActionDialog({
         templateId: values.templateId === 'none' ? undefined : values.templateId || undefined,
       }
 
-      if (!isEdit && !submissionData.id) {
-        delete submissionData.id
+      if (isEdit && currentRow) {
+        // SDRTS: 增量更新逻辑
+        const delta = deltaTracker.commit()
+        if (Object.keys(delta).length > 0) {
+          if (onSubmit) await onSubmit(submissionData, true, delta)
+        }
+      } else {
+        if (onSubmit) await onSubmit(submissionData)
       }
-
-      if (onSubmit) await onSubmit(submissionData)
     } finally {
       setIsSubmitting(false)
     }

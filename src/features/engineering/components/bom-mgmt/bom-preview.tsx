@@ -85,7 +85,7 @@ export function BOMPreview({
           <div>
             <div className='flex flex-wrap items-center gap-2'>
               <h3 className='text-xl font-bold'>{bom.bomNo}</h3>
-              <Badge className='bg-blue-600'>{bom.version}</Badge>
+              <Badge className='bg-blue-600'>{bom.bomVersion}</Badge>
               {bom.revisionNo && <Badge variant='outline'>{bom.revisionNo}</Badge>}
               {bom.siteCode && <Badge variant='outline'>{bom.siteCode}</Badge>}
               <Badge variant='outline'>

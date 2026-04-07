@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { type Mold, type Furnace, type MoldLoan, type MoldStatus, type FurnaceStatus } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 import { MoldService } from './mold-service'
 import { FurnaceService } from './furnace-service'
 import { MoldLoanService } from './mold-loan-service'
@@ -20,6 +21,9 @@ export class AssetService {
     static saveFurnaces = FurnaceService.saveFurnaces.bind(FurnaceService)
 
     static getLoans = MoldLoanService.getLoans.bind(MoldLoanService)
+    static lendMold = MoldLoanService.createLoan.bind(MoldLoanService)
+    static borrowMold = MoldLoanService.createBorrowRecord.bind(MoldLoanService)
+    static returnMold = MoldLoanService.returnMold.bind(MoldLoanService)
 
     /**
      * 更新资产遥测数据
@@ -98,72 +102,51 @@ export function useAssets() {
     }, [loadInitial, loadMolds, loadFurnaces, loadLoans])
 
     const actions = {
-        updateMolds: async (newMolds: Mold[]) => {
+        updateMolds: async (mold: Mold, isPatch?: boolean, delta?: DeltaSet) => {
             const previousMolds = [...molds]
-            setMolds(newMolds) // 乐观更新
+            
+            // 乐观更新
+            const exists = molds.some(m => m.id === mold.id)
+            const nextMolds = exists 
+                ? molds.map(m => m.id === mold.id ? mold : m)
+                : [...molds, mold]
+            setMolds(nextMolds)
 
             try {
-                // 【性能优化】差分更新探测：如果只有一个模具变更，使用 PATCH
-                const changedIndices = newMolds
-                    .map((m, i) => (JSON.stringify(m) !== JSON.stringify(previousMolds[i]) ? i : -1))
-                    .filter((i) => i !== -1)
-
-                if (changedIndices.length === 1 && previousMolds.length === newMolds.length) {
-                    const idx = changedIndices[0]
-                    const target = newMolds[idx]
-                    const original = previousMolds[idx]
-
-                    if (original && target.id === original.id) {
-                        const { trackDelta } = await import('@/lib/delta/proxy-tracker')
-                        const tracker = trackDelta(original)
-                        Object.assign(tracker.data, target)
-                        const delta = tracker.commit()
-
-                        if (Object.keys(delta).length > 0) {
-                            await MoldService.patchMold(target.id, delta, original.version)
-                            return
-                        }
-                    }
+                if (isPatch && delta && mold.id) {
+                    // SDRTS: 执行精准 Patch
+                    await MoldService.patchMold(mold.id, delta, mold.version || 1)
+                } else {
+                    // 全量保存
+                    await MoldService.saveMold(mold)
                 }
-
-                // 否则使用批量保存
-                await AssetService.saveMolds(newMolds)
             } catch (err) {
                 setMolds(previousMolds) // 失败回滚
-                console.error('[OPTIMISTIC_UI] Update molds failed, rolled back.', err)
+                console.error('[SDRTS] Update mold failed, rolled back.', err)
                 throw err
             }
         },
-        updateFurnaces: async (newFurnaces: Furnace[]) => {
+        updateFurnaces: async (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
             const previousFurnaces = [...furnaces]
-            setFurnaces(newFurnaces) // 乐观更新
+            
+            // 乐观更新
+            const exists = furnaces.some(f => f.id === furnace.id)
+            const nextFurnaces = exists
+                ? furnaces.map(f => f.id === furnace.id ? furnace : f)
+                : [...furnaces, furnace]
+            setFurnaces(nextFurnaces)
+
             try {
-                // 【性能优化】差分更新探测
-                const changedIndices = newFurnaces
-                    .map((f, i) => (JSON.stringify(f) !== JSON.stringify(previousFurnaces[i]) ? i : -1))
-                    .filter((i) => i !== -1)
-
-                if (changedIndices.length === 1 && previousFurnaces.length === newFurnaces.length) {
-                    const idx = changedIndices[0]
-                    const target = newFurnaces[idx]
-                    const original = previousFurnaces[idx]
-
-                    if (original && target.id === original.id) {
-                        const { trackDelta } = await import('@/lib/delta/proxy-tracker')
-                        const tracker = trackDelta(original)
-                        Object.assign(tracker.data, target)
-                        const delta = tracker.commit()
-
-                        if (Object.keys(delta).length > 0) {
-                            await FurnaceService.patchFurnace(target.id, delta, original.version)
-                            return
-                        }
-                    }
+                if (isPatch && delta && furnace.id) {
+                    // SDRTS: 执行精准 Patch
+                    await FurnaceService.patchFurnace(furnace.id, delta, furnace.version || 1)
+                } else {
+                    // 全量保存
+                    await FurnaceService.saveFurnace(furnace)
                 }
-
-                await AssetService.saveFurnaces(newFurnaces)
             } catch (err) {
                 setFurnaces(previousFurnaces) // 失败回滚
+                console.error('[SDRTS] Update furnace failed, rolled back.', err)
                 throw err
             }
         },

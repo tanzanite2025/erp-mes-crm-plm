@@ -17,6 +17,7 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 	{
 		productionGroup.GET("/lines", handlers.GetProductionLinesHandler)
 		productionGroup.POST("/lines", adminOnly, handlers.SaveProductionLineHandler)
+		productionGroup.PATCH("/lines/:id", adminOnly, handlers.PatchProductionLineHandler)
 		productionGroup.DELETE("/lines/:id", adminOnly, handlers.DeleteProductionLineHandler)
 		productionGroup.GET("/processes", handlers.GetProcessStepsHandler)
 		productionGroup.POST("/processes", adminOnly, handlers.SaveProcessStepHandler)

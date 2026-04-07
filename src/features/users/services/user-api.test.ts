@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTestUser } from '../test-factories'
 
 const { apiFetchMock } = vi.hoisted(() => ({
   apiFetchMock: vi.fn(),
@@ -18,18 +19,15 @@ describe('user-api contract regression', () => {
   it('fetchUsers builds paginated query contract', async () => {
     const expected = {
       items: [
-        {
+        createTestUser({
           id: 'u-1',
           employeeId: 'EMP-1',
           firstName: 'Alice',
           lastName: 'Fin',
           username: 'alice',
           phoneNumber: '123',
-          status: 'active',
           role: 'finance_manager',
-          createdAt: new Date('2026-04-06T00:00:00.000Z'),
-          updatedAt: new Date('2026-04-06T00:00:00.000Z'),
-        },
+        }),
       ],
       total: 1,
       page: 2,
@@ -99,15 +97,22 @@ describe('user-api contract regression', () => {
     apiFetchMock.mockResolvedValue({ id: 'u-4' })
 
     await patchUser('u-4', {
-      email: 'patched@example.com',
-      status: 'inactive',
-    })
+      email: { o: undefined, n: 'patched@example.com' },
+      status: { o: undefined, n: 'inactive' },
+    }, 3)
 
     expect(apiFetchMock).toHaveBeenCalledWith('/users/u-4', {
       method: 'PATCH',
       body: JSON.stringify({
-        email: 'patched@example.com',
-        status: 'inactive',
+        op: 'PATCH',
+        delta: {
+          email: { o: undefined, n: 'patched@example.com' },
+          status: { o: undefined, n: 'inactive' },
+        },
+        metadata: {
+          id: 'u-4',
+          version: 3,
+        },
       }),
     })
   })

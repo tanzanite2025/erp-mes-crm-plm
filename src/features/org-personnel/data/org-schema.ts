@@ -14,6 +14,7 @@ export const orgNodeSchema: z.ZodType<any> = z.lazy(() =>
             id: z.string(),
             name: z.string()
         })).optional(),
+        version: z.number().default(1),
     })
 )
 

@@ -78,6 +78,11 @@ export function PurchaseOrderActionDialog({
           onOpenChange(false)
           return
         }
+
+        if (activeOrder.version === undefined || activeOrder.version === null) {
+          throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${activeOrder.id}`)
+        }
+
         await patchMutation.mutateAsync({
           id: activeOrder.id,
           delta,

@@ -1,5 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type BOM } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
  * BOM 配方清单服务层
@@ -25,10 +27,27 @@ export const bomService = {
      * 保存或更新 BOM
      */
     async saveBOM(bom: Partial<BOM>): Promise<BOM> {
-        return apiFetch<BOM>('/engineering/bom', {
+        const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',
             body: JSON.stringify(bom),
         })
+        return ensureObjectResponse<BOM>(res, 'BOMService.saveBOM')
+    },
+
+    /**
+     * SDRTS: 增量更新 BOM 配方
+     */
+    async patchBOM(id: string, delta: DeltaSet, version: number): Promise<BOM> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        }
+        const res = await apiFetch<BOM>(`/engineering/bom/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+        return ensureObjectResponse<BOM>(res, 'BOMService.patchBOM')
     },
 
     /**

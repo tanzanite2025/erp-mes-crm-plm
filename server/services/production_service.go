@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"xdfc-server/models"
@@ -16,6 +17,20 @@ var (
 
 type SaveProductionLineRequest struct {
 	Line     ProductionLineDTO
+	AuthCode string
+	Operator string
+	IP       string
+}
+
+type deltaValue struct {
+	Old json.RawMessage `json:"o"`
+	New json.RawMessage `json:"n"`
+}
+
+type PatchProductionLineRequest struct {
+	ID       string
+	Delta    map[string]json.RawMessage
+	Version  int64
 	AuthCode string
 	Operator string
 	IP       string
@@ -71,6 +86,10 @@ func ListProductionLines() ([]ProductionLineDTO, error) {
 
 func SaveProductionLine(req SaveProductionLineRequest) (ProductionLineDTO, error) {
 	return defaultProductionService.SaveProductionLine(req)
+}
+
+func PatchProductionLine(req PatchProductionLineRequest) (ProductionLineDTO, error) {
+	return defaultProductionService.PatchProductionLine(req)
 }
 
 func DeleteProductionLine(id string, operator string, ip string) error {
@@ -156,6 +175,74 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 		return s.repository.SaveProductionLine(tx, &line)
 	})
 	return mapProductionLineToDTO(line), err
+}
+
+func (s *ProductionService) PatchProductionLine(req PatchProductionLineRequest) (ProductionLineDTO, error) {
+	line, err := s.repository.GetProductionLineByID(s.txManager.DB(), req.ID)
+	if err != nil {
+		return ProductionLineDTO{}, err
+	}
+
+	lineDTO := mapProductionLineToDTO(line)
+	if err := applyProductionLineDelta(&lineDTO, req.Delta, req.Version); err != nil {
+		return ProductionLineDTO{}, err
+	}
+
+	return s.SaveProductionLine(SaveProductionLineRequest{
+		Line:     lineDTO,
+		AuthCode: req.AuthCode,
+		Operator: req.Operator,
+		IP:       req.IP,
+	})
+}
+
+func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.RawMessage, version int64) error {
+	line.Version = version
+
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return err
+		}
+
+		switch key {
+		case "code":
+			if err := json.Unmarshal(valueRaw, &line.Code); err != nil {
+				return err
+			}
+		case "name":
+			if err := json.Unmarshal(valueRaw, &line.Name); err != nil {
+				return err
+			}
+		case "description":
+			if err := json.Unmarshal(valueRaw, &line.Description); err != nil {
+				return err
+			}
+		case "isActive":
+			if err := json.Unmarshal(valueRaw, &line.IsActive); err != nil {
+				return err
+			}
+		case "segments":
+			if err := json.Unmarshal(valueRaw, &line.Segments); err != nil {
+				return err
+			}
+		case "id", "createdAt", "updatedAt", "version":
+			// metadata handled separately
+		default:
+			// ignore unsupported patch paths for now
+		}
+	}
+
+	return nil
+}
+
+func extractDeltaNewValue(raw json.RawMessage) (json.RawMessage, error) {
+	var value deltaValue
+	if err := json.Unmarshal(raw, &value); err == nil && value.New != nil {
+		return value.New, nil
+	}
+
+	return raw, nil
 }
 
 func (s *ProductionService) DeleteProductionLine(id string, operator string, ip string) error {

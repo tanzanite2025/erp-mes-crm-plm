@@ -289,7 +289,11 @@ export const equipmentTooling = {
       return: '确认归还',
     },
     dialog: {
-      title: '模具流转登记',
+      title: {
+        edit: '编辑流转记录',
+        create: '登记流转记录',
+      },
+      description: '追踪模具在单位间的物理位置变动与状态同步',
       modes: {
         lend: '我方借出',
         borrow: '他方借入',
@@ -319,6 +323,10 @@ export const equipmentTooling = {
         remarks: '输入备注...',
       },
       actions: {
+        loading: '正在加载...',
+        close: '关闭',
+        save: '保存',
+        create: '立即创建',
         cancel: '取消',
         submit: '提交 {{mode}}',
       },
@@ -404,6 +412,9 @@ export const equipmentTooling = {
         version: 'V1.0',
         selectMold: '选择关联资产',
         remarks: '填写改模记录或备注...',
+      },
+      warnings: {
+        unbindConfirm: '检测到资产解绑动作。该图纸将不再与模具关联，是否确认脱钩？',
       },
       actions: {
         cancel: '取消',

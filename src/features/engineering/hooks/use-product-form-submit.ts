@@ -11,6 +11,7 @@ import {
   ensureSkuUnique,
   type ProductVariantSelection,
 } from '../utils/product-form-utils'
+import { type useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface UseProductFormSubmitParams {
   currentRow?: Product
@@ -20,7 +21,8 @@ interface UseProductFormSubmitParams {
   selectedVariants: ProductVariantSelection[]
   setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Product | Product[]) => Promise<void> | void
+  onSubmit?: (data: Product | Product[], isPatch?: boolean, delta?: any) => Promise<void> | void
+  deltaTracker: ReturnType<typeof useDeltaTracker<Product>>
 }
 
 export function useProductFormSubmit({
@@ -32,6 +34,7 @@ export function useProductFormSubmit({
   setSelectedVariants,
   onOpenChange,
   onSubmit,
+  deltaTracker,
 }: UseProductFormSubmitParams) {
   const { t } = useLanguage()
 
@@ -71,7 +74,7 @@ export function useProductFormSubmit({
       }
 
       if (result.reason === 'DUPLICATE_IN_BATCH') {
-            toast.error(
+        toast.error(
           t('engineering.productArchive.toasts.skuDuplicateBatch', {
             sku: result.sku ?? '',
           })
@@ -141,7 +144,16 @@ export function useProductFormSubmit({
       )
     } else {
       if (!validateSkuUnique([values])) return
-      if (onSubmit) await onSubmit(values)
+      
+      if (isEdit && currentRow) {
+        // SDRTS: 增量更新逻辑
+        const delta = deltaTracker.commit()
+        if (Object.keys(delta).length > 0) {
+          if (onSubmit) await onSubmit(values, true, delta)
+        }
+      } else {
+        if (onSubmit) await onSubmit(values)
+      }
 
       toast.success(
         isEdit

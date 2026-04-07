@@ -61,9 +61,13 @@ export class EmployeeService {
             method: 'POST',
             body: JSON.stringify(employee)
         })
-        if (!data) throw new Error('[CRITICAL_DATA_PATH] Save employee operation returned no data')
+        
+        if (!data) {
+            throw new Error('[CRITICAL_DATA_PATH] Save employee operation returned no data. Entity ID: ' + (employee.id || 'NEW'))
+        }
+        
         window.dispatchEvent(new CustomEvent('xdfc_employees_data_updated'))
-        return data
+        return ensureObjectResponse<Employee>(data, 'EmployeeService.saveEmployee') as Employee
     }
 
     /**
@@ -131,6 +135,10 @@ export class EmployeeService {
             body: JSON.stringify(payload)
         });
         
+        if (!res) {
+            throw new Error(`[CRITICAL_DATA_PATH] Patch employee failed for ID ${id}. SDRTS Sync halted.`)
+        }
+
         window.dispatchEvent(new CustomEvent('xdfc_employees_data_updated'));
         return ensureObjectResponse<Employee & Record<string, unknown>>(res, 'EmployeeService.patchEmployee') as Employee;
     }

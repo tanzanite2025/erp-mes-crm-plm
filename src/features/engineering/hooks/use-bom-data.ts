@@ -77,9 +77,13 @@ export function useBOMData() {
   )
 
   const saveBOM = useCallback(
-    async (bom: Partial<BOM>) => {
+    async (bom: Partial<BOM>, isPatch?: boolean, delta?: any) => {
       try {
-        await bomService.saveBOM(bom)
+        if (isPatch && bom.id && delta) {
+          await bomService.patchBOM(bom.id, delta, bom.version || 1)
+        } else {
+          await bomService.saveBOM(bom)
+        }
         await refreshAll()
         toast.success(t('engineering.bomArchive.toasts.saveSuccess'))
         return true

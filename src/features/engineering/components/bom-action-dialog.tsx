@@ -23,11 +23,11 @@ import { useBOMForm } from '../hooks/use-bom-form'
 
 type BOMActionDialogProps = {
   currentRow?: BOM
-  initialItems?: unknown[]
+  initialItems?: any[]
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: BOM) => void
+  onSubmit?: (data: BOM, isPatch?: boolean, delta?: any) => void | Promise<void>
 }
 
 export function BOMActionDialog({
@@ -40,7 +40,7 @@ export function BOMActionDialog({
 }: BOMActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, products, materials, dictEntries, changeOrders } = useBOMForm({
+  const { form, fields, append, remove, products, materials, dictEntries, changeOrders, deltaTracker } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
@@ -48,8 +48,16 @@ export function BOMActionDialog({
     isEdit,
   })
 
-  const handleFormSubmit = (data: BOM) => {
-    onSubmit?.(data)
+  const handleFormSubmit = async (data: BOM) => {
+    if (isEdit && currentRow) {
+      const delta = deltaTracker.commit()
+      if (Object.keys(delta).length > 0) {
+        if (onSubmit) await onSubmit(data, true, delta)
+      }
+    } else {
+      if (onSubmit) await onSubmit(data)
+    }
+    onOpenChange(false)
   }
 
   return (

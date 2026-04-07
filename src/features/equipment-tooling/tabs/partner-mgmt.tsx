@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Edit2, Trash2, Factory, Globe, User, Phone, MapPin, Building2 } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,28 +9,25 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from '@/components/ui/dialog'
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { PartnerActionDialog } from '../components/partner-action-dialog'
 import { type EquipmentPartner } from '../data/schema'
 import { EquipmentPartnerService } from '../services/partner-service'
 import { toast } from 'sonner'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export function PartnerMgmt() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
     const [partners, setPartners] = useState<EquipmentPartner[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -38,16 +35,9 @@ export function PartnerMgmt() {
     const [loadError, setLoadError] = useState<string | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingPartner, setEditingPartner] = useState<EquipmentPartner | null>(null)
-    const [formData, setFormData] = useState<Partial<EquipmentPartner>>({
-        name: '',
-        type: 'INTERNAL',
-        contactPerson: '',
-        phone: '',
-        address: '',
-    })
     const loadFailedLabel = t('equipmentTooling.partners.toast.loadFailed')
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setIsLoading(true)
         setError(null)
         setLoadError(null)
@@ -63,46 +53,17 @@ export function PartnerMgmt() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [loadFailedLabel])
 
     useEffect(() => {
-        let cancelled = false
-
-        void (async () => {
-            setIsLoading(true)
-            setError(null)
-            setLoadError(null)
-            try {
-                const data = await EquipmentPartnerService.getPartners()
-                if (!cancelled) {
-                    setPartners(data)
-                }
-            } catch (error) {
-                if (!cancelled) {
-                    setError(error)
-                    setLoadError(error instanceof Error ? error.message : loadFailedLabel)
-                    if (!isForbiddenError(error)) {
-                        toast.error(loadFailedLabel)
-                    }
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoading(false)
-                }
-            }
-        })()
-
-        return () => {
-            cancelled = true
-        }
-    }, [loadFailedLabel])
+        void loadData()
+    }, [loadData])
 
     const handleAdd = () => {
         runConfirmedAction({
             permission: 'action_equipment_partner_manage',
             onAction: () => {
                 setEditingPartner(null)
-                setFormData({ name: '', type: 'INTERNAL', contactPerson: '', phone: '', address: '' })
                 setIsDialogOpen(true)
             }
         })
@@ -113,10 +74,39 @@ export function PartnerMgmt() {
             permission: 'action_equipment_partner_manage',
             onAction: () => {
                 setEditingPartner(partner)
-                setFormData(partner)
                 setIsDialogOpen(true)
             }
         })
+    }
+
+    const mutation = useMutation({
+        mutationFn: async ({ 
+            data, 
+            isPatch, 
+            delta 
+        }: { 
+            data: EquipmentPartner; 
+            isPatch?: boolean; 
+            delta?: DeltaSet 
+        }) => {
+            if (isPatch && delta && editingPartner) {
+                return EquipmentPartnerService.patchPartner(editingPartner.id, delta, editingPartner.version)
+            }
+            return EquipmentPartnerService.upsertPartner(data)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['equipmentPartners'] })
+            toast.success(editingPartner ? t('equipmentTooling.partners.toast.updated') : t('equipmentTooling.partners.toast.created'))
+            setIsDialogOpen(false)
+            loadData()
+        },
+        onError: (error: any) => {
+            toast.error(error.message || '操作失败')
+        }
+    })
+
+    const handleSave = (data: EquipmentPartner, isPatch?: boolean, delta?: DeltaSet) => {
+        mutation.mutate({ data, isPatch, delta })
     }
 
     const handleDelete = (id: string) => {
@@ -126,33 +116,6 @@ export function PartnerMgmt() {
             onAction: async () => {
                 await EquipmentPartnerService.deletePartner(id)
                 toast.success(t('equipmentTooling.partners.toast.removed'))
-                loadData()
-            }
-        })
-    }
-
-    const handleSave = () => {
-        runConfirmedAction({
-            permission: 'action_equipment_partner_manage',
-            onAction: async () => {
-                if (!formData.name) {
-                    toast.error(t('equipmentTooling.partners.validation.nameRequired'))
-                    return
-                }
-
-                const partner: EquipmentPartner = {
-                    id: editingPartner?.id || '',
-                    name: formData.name,
-                    type: (formData.type as EquipmentPartner['type']) || 'INTERNAL',
-                    contactPerson: formData.contactPerson || '',
-                    phone: formData.phone || '',
-                    address: formData.address || '',
-                    createdAt: editingPartner?.createdAt || new Date().toISOString(),
-                }
-
-                await EquipmentPartnerService.upsertPartner(partner)
-                toast.success(editingPartner ? t('equipmentTooling.partners.toast.updated') : t('equipmentTooling.partners.toast.created'))
-                setIsDialogOpen(false)
                 loadData()
             }
         })
@@ -179,58 +142,12 @@ export function PartnerMgmt() {
                 </Button>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className='w-[95vw] sm:max-w-md max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden'>
-                    <DialogHeader className='p-6 sm:p-8 shrink-0 pb-4 bg-primary/5 border-b border-dashed'>
-                        <DialogTitle className='text-xl font-black tracking-tighter flex items-center gap-2'>
-                            <Factory className='size-6 text-blue-600' />
-                            {editingPartner ? t('equipmentTooling.partners.dialog.title.edit') : t('equipmentTooling.partners.dialog.title.create')}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className='flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar space-y-6'>
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.partners.dialog.fields.name')}</Label>
-                            <Input className='h-12 rounded-2xl border-none bg-muted/50 font-bold' placeholder={t('equipmentTooling.partners.dialog.placeholders.name')} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-                        </div>
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.partners.dialog.fields.type')}</Label>
-                            <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as EquipmentPartner['type'] })}>
-                                <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 focus:ring-blue-500/20 font-bold'>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                                    <SelectItem value='INTERNAL' className='rounded-xl font-bold'>{t('equipmentTooling.partners.types.internal')}</SelectItem>
-                                    <SelectItem value='EXTERNAL' className='rounded-xl font-bold'>{t('equipmentTooling.partners.types.external')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                            <div className='space-y-2'>
-                                <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.partners.dialog.fields.contact')}</Label>
-                                <Input className='h-12 rounded-2xl border-none bg-muted/50 font-bold' placeholder={t('equipmentTooling.partners.dialog.placeholders.contact')} value={formData.contactPerson} onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })} />
-                            </div>
-                            <div className='space-y-2'>
-                                <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.partners.dialog.fields.phone')}</Label>
-                                <Input className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold' placeholder={t('equipmentTooling.partners.dialog.placeholders.phone')} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.partners.dialog.fields.address')}</Label>
-                            <Input className='h-12 rounded-2xl border-none bg-muted/50 font-bold' placeholder={t('equipmentTooling.partners.dialog.placeholders.address')} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
-                        </div>
-                    </div>
-
-                    <DialogFooter className='p-6 sm:p-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                        <Button variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-muted-foreground/60' onClick={() => setIsDialogOpen(false)}>
-                            {t('equipmentTooling.partners.dialog.actions.cancel')}
-                        </Button>
-                        <Button onClick={handleSave} className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-blue-600 hover:bg-blue-700 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'>
-                            {t('equipmentTooling.partners.dialog.actions.save')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <PartnerActionDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                currentRow={editingPartner}
+                onSubmit={handleSave}
+            />
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                 {isLoading && partners.length === 0 && (

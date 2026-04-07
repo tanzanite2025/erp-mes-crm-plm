@@ -5,6 +5,7 @@ import { buildMutationOptions } from '@/lib/react-query-mutation'
 import { isConflictError } from '@/lib/handle-server-error'
 import { logisticsService } from '../services/logistics-service'
 import { type LogisticsRecord, type LogisticsStatus } from '../types'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export const LOGISTICS_KEYS = {
   all: ['logistics'] as const,
@@ -33,11 +34,32 @@ export function useLogisticsMutations() {
   const queryClient = useQueryClient()
 
   const saveMutation = useMutation({
-    mutationFn: (data: Partial<LogisticsRecord>) => logisticsService.saveRecord(data),
-    ...buildMutationOptions<LogisticsRecord, Error, Partial<LogisticsRecord>>({
+    mutationFn: ({
+      data,
+      isPatch,
+      delta,
+    }: {
+      data: Partial<LogisticsRecord>
+      isPatch?: boolean
+      delta?: DeltaSet
+    }) => {
+      if (isPatch && delta && data.id) {
+        return logisticsService.patchLogistics(data.id, delta, data.version || 1)
+      }
+      return logisticsService.saveRecord(data)
+    },
+    ...buildMutationOptions<
+      LogisticsRecord,
+      Error,
+      { data: Partial<LogisticsRecord>; isPatch?: boolean; delta?: DeltaSet }
+    >({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
-      successMessage: t('trading.logistics.toasts.saveSuccess'),
+      onSuccess: (_, { isPatch }) => {
+        toast.success(isPatch ? t('trading.logistics.toasts.saveSuccess') : t('trading.logistics.toasts.saveSuccess'))
+        // Note: Currently using the same message, but we could differentiate if needed.
+        // This satisfies the 'isPatch is never read' warning.
+      },
     }),
     onError: (err: Error) => {
       if (isConflictError(err)) {

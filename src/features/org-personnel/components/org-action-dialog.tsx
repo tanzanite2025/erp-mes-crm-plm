@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type OrgNode } from '../data/org-schema'
 
 type OrgForm = {
@@ -22,6 +25,7 @@ type OrgForm = {
     manager?: string
     type: 'company' | 'department' | 'team'
     description?: string
+    version?: number
 }
 
 type OrgActionDialogProps = {
@@ -29,7 +33,7 @@ type OrgActionDialogProps = {
     parentId?: string
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }) => void
+    onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }, isPatch?: boolean, delta?: DeltaSet) => void
 }
 
 function getOrgFormDefaults(currentRow?: OrgNode, parentId?: string): OrgForm {
@@ -39,6 +43,7 @@ function getOrgFormDefaults(currentRow?: OrgNode, parentId?: string): OrgForm {
             manager: currentRow.manager || '',
             type: currentRow.type as OrgForm['type'],
             description: currentRow.description || '',
+            version: currentRow.version || 1,
         }
     }
 
@@ -54,7 +59,8 @@ type OrgActionDialogFormProps = {
     currentRow?: OrgNode
     parentId?: string
     isEdit: boolean
-    onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }) => void
+    open: boolean
+    onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }, isPatch?: boolean, delta?: DeltaSet) => void
     onOpenChange: (open: boolean) => void
     t: ReturnType<typeof useLanguage>['t']
 }
@@ -63,6 +69,7 @@ function OrgActionDialogForm({
     currentRow,
     parentId,
     isEdit,
+    open,
     onSubmit,
     onOpenChange,
     t,
@@ -74,12 +81,25 @@ function OrgActionDialogForm({
         description: z.string().optional(),
     })
 
+    const initialValues = useMemo(() => getOrgFormDefaults(currentRow, parentId), [currentRow, parentId])
+    const { data: deltaProxy, tracker } = useDeltaTracker(initialValues, open)
+
     const form = useForm<OrgForm>({
         resolver: zodResolver(formSchema),
-        defaultValues: getOrgFormDefaults(currentRow, parentId),
+        defaultValues: initialValues,
     })
 
     function handleFormSubmit(values: OrgForm) {
+        // SDRTS: 同步 RHF 数据到 Proxy 用于增量追踪
+        Object.assign(deltaProxy, values)
+        const delta = tracker.commit()
+        const isDirty = Object.keys(delta).length > 0
+
+        if (isEdit && !isDirty) {
+            onOpenChange(false)
+            return
+        }
+
         const nodeData = {
             ...(isEdit && currentRow ? { id: currentRow.id } : {}),
             parentId: isEdit && currentRow ? currentRow.parentId : parentId,
@@ -87,7 +107,7 @@ function OrgActionDialogForm({
         }
 
         if (onSubmit) {
-            onSubmit(nodeData)
+            onSubmit(nodeData, isEdit, isEdit ? delta : undefined)
         }
 
         form.reset(getOrgFormDefaults(currentRow, parentId))
@@ -223,6 +243,7 @@ export function OrgActionDialog({
                     currentRow={currentRow}
                     parentId={parentId}
                     isEdit={isEdit}
+                    open={open}
                     onSubmit={onSubmit}
                     onOpenChange={onOpenChange}
                     t={t}

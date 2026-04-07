@@ -404,6 +404,9 @@ export const equipmentTooling = {
         selectMold: 'Select linked asset',
         remarks: 'Revision notes or remarks...',
       },
+      warnings: {
+        unbindConfirm: 'Asset unbinding detected. This drawing will no longer be linked to the mold. Confirm detachment?',
+      },
       actions: {
         cancel: 'Cancel',
         save: 'Save Archive',

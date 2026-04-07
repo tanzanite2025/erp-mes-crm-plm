@@ -44,7 +44,14 @@ func (GormProductionRepository) ListProductionLines(database *gorm.DB) ([]models
 
 func (GormProductionRepository) GetProductionLineByID(database *gorm.DB, id string) (models.ProductionLine, error) {
 	var line models.ProductionLine
-	err := database.First(&line, "id = ?", id).Error
+	err := database.
+		Preload("Segments", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("sort_order asc")
+		}).
+		Preload("Segments.Processes", func(tx *gorm.DB) *gorm.DB {
+			return tx.Distinct("process_steps.id", "process_steps.created_at", "process_steps.updated_at", "process_steps.deleted_at", "process_steps.code", "process_steps.name", "process_steps.description", "process_steps.sort_order", "process_steps.is_active").Order("sort_order asc")
+		}).
+		First(&line, "id = ?", id).Error
 	return line, err
 }
 

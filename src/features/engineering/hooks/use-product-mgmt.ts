@@ -77,9 +77,11 @@ export function useProductMgmt() {
         })
     }, [activeSubTab, activeTab, data, productTypes])
 
-    const handleFormSubmit = async (formData: Product | Product[]) => {
+    const handleFormSubmit = async (formData: Product | Product[], isPatch?: boolean, delta?: any) => {
         if (Array.isArray(formData)) {
             await productService.bulkSyncProducts(formData)
+        } else if (isPatch && formData.id && delta) {
+            await productService.patchProduct(formData.id, delta, formData.version || 1)
         } else {
             await productService.saveProduct(formData)
         }

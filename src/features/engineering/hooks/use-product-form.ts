@@ -5,6 +5,7 @@ import { productSchema, type Product, type ProductType } from '../data/schema'
 import { useProductFormInit } from './use-product-form-init'
 import { useProductFormSubmit } from './use-product-form-submit'
 import { useProductFormDerive } from './use-product-form-derive'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import {
     buildDefaultProductValues,
     type ProductVariantSelection
@@ -27,6 +28,10 @@ export function useProductForm({ currentRow, open, productTypes, onOpenChange, o
         defaultValues: buildDefaultProductValues({ includeVersion: true }),
     })
 
+    const deltaTracker = useDeltaTracker<Product>(currentRow || ({} as Product), {
+        enabled: isEdit,
+    })
+
     const {
         tireTypeOptions,
         brakeTypeOptions,
@@ -41,7 +46,8 @@ export function useProductForm({ currentRow, open, productTypes, onOpenChange, o
         productTypes,
         form,
         selectedVariants,
-        setSelectedVariants
+        setSelectedVariants,
+        deltaTracker
     })
 
     const { dynamicTypes, watchedTemplateKey, specSummary } = useProductFormDerive({
@@ -59,7 +65,8 @@ export function useProductForm({ currentRow, open, productTypes, onOpenChange, o
         selectedVariants,
         setSelectedVariants,
         onOpenChange,
-        onSubmit
+        onSubmit,
+        deltaTracker,
     })
 
     return {
@@ -77,6 +84,7 @@ export function useProductForm({ currentRow, open, productTypes, onOpenChange, o
         specSummary,
         handleVariantToggle,
         updateVariantWeight,
-        handleFormSubmit
+        handleFormSubmit,
+        deltaTracker,
     }
 }

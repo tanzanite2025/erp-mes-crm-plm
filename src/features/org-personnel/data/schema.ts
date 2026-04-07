@@ -32,6 +32,7 @@ export const jobTypeSchema = z.object({
     name: z.string().min(1, 'orgPersonnel.validation.jobNameRequired'),
     code: z.string().min(1, 'orgPersonnel.validation.jobCodeRequired'),
     description: z.string().optional(),
+    version: z.number().default(1),
 })
 
 export type JobType = z.infer<typeof jobTypeSchema>
@@ -52,6 +53,7 @@ export const teamSchema = z.object({
     remarks: z.string().optional(),
     operator: z.string().optional(),
     operateTime: z.string().optional(),
+    version: z.number().default(1),
 })
 
 export type Team = z.infer<typeof teamSchema>

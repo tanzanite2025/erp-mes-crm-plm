@@ -8,7 +8,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { ProcessStep } from '../../types'
-import { SecurityAuthDialog } from './security-auth-dialog'
 import { useLanguage } from '@/context/language-provider'
 
 interface ProcessNodeProps {
@@ -27,8 +26,6 @@ export const ProcessNode = memo(({
     const { t } = useLanguage()
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState(process.name)
-    const [isAuthOpen, setIsAuthOpen] = useState(false)
-    const [pendingAction, setPendingAction] = useState<'rename' | 'remove' | null>(null)
 
     useEffect(() => {
         const timer = globalThis.setTimeout(() => {
@@ -39,14 +36,6 @@ export const ProcessNode = memo(({
             globalThis.clearTimeout(timer)
         }
     }, [process.name])
-
-    const handleAuthConfirm = () => {
-        if (pendingAction === 'rename') {
-            setIsEditing(true)
-        } else if (pendingAction === 'remove') {
-            onRemove(segmentId, process.id)
-        }
-    }
 
     const handleSave = () => {
         if (editValue.trim() !== '') {
@@ -97,14 +86,14 @@ export const ProcessNode = memo(({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align='end' className='rounded-2xl border border-border/50 bg-background/95 p-1 shadow-xl backdrop-blur-md dark:bg-popover/95'>
                                 <DropdownMenuItem
-                                    onClick={() => { setPendingAction('rename'); setIsAuthOpen(true) }}
+                                    onClick={() => setIsEditing(true)}
                                     className='gap-2 text-[10px] font-bold uppercase tracking-widest rounded-xl px-3 py-2 cursor-pointer'
                                 >
                                     <ShieldCheck className='size-3.5 text-blue-500' />
                                     {t('orgPersonnel.lineMgmt.topology.renameProcess')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={() => { setPendingAction('remove'); setIsAuthOpen(true) }}
+                                    onClick={() => onRemove(segmentId, process.id)}
                                     className='gap-2 text-[10px] font-bold uppercase tracking-widest text-rose-500 rounded-xl px-3 py-2 cursor-pointer focus:text-rose-600'
                                 >
                                     <X className='size-3.5' />
@@ -115,14 +104,6 @@ export const ProcessNode = memo(({
                     </div>
                 </div>
             </div>
-
-            <SecurityAuthDialog
-                open={isAuthOpen}
-                onOpenChange={setIsAuthOpen}
-                onConfirm={handleAuthConfirm}
-                title={pendingAction === 'rename' ? t('orgPersonnel.lineMgmt.topology.processRenameTitle') : t('orgPersonnel.lineMgmt.topology.processRemoveTitle')}
-                description={pendingAction === 'rename' ? t('orgPersonnel.lineMgmt.topology.processRenameDesc') : t('orgPersonnel.lineMgmt.topology.processRemoveDesc')}
-            />
         </div>
     )
 })

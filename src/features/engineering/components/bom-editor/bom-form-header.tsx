@@ -59,7 +59,7 @@ export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdi
         })),
       },
       {
-        name: 'version',
+        name: 'bomVersion',
         label: t('engineering.bomArchive.form.version'),
         colSpan: 'col-span-full sm:col-span-2',
         type: 'input',

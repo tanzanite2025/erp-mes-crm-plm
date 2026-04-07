@@ -67,6 +67,22 @@ export const deleteSupplier = async (id: string): Promise<void> => {
     await apiFetch<void>(`/suppliers/${id}`, { method: 'DELETE' });
 }
 
+/**
+ * 局部更新供应商 (SDRTS 协议)
+ */
+export const patchSupplier = async (id: string, delta: DeltaSet, version: number): Promise<Supplier> => {
+    const payload: DeltaPayload = {
+        op: 'PATCH',
+        delta,
+        metadata: { id, version }
+    };
+
+    return apiFetch<Supplier>(`/suppliers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+}
+
 // --- Sales Order Service (已支持分页与性能优化) ---
 
 export const getSalesOrders = async (page = 1, pageSize = 50): Promise<PaginatedResponse<SalesOrder>> => {

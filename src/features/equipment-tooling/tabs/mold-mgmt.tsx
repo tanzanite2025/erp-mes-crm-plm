@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { MoldActionDialog } from '../components/mold-action-dialog'
 import { useAssets } from '../services/asset-service'
 import { createMoldDraft, type Mold, type MoldStatus } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { useMoldGroups } from '../hooks/use-mold-groups'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -28,8 +29,8 @@ export function MoldMgmt() {
 
     const { groupNames, groupedMolds, groupToProducts } = useMoldGroups(molds, searchTerm)
 
-    const saveMolds = (newMolds: Mold[]) => {
-        updateMolds(newMolds)
+    const saveMolds = (mold: Mold, isPatch?: boolean, delta?: DeltaSet) => {
+        updateMolds(mold, isPatch, delta)
     }
 
     const handleAddMold = () => {
@@ -57,23 +58,19 @@ export function MoldMgmt() {
             permission: 'action_equipment_mold_manage',
             confirmKey: 'equipmentTooling.molds.confirm.remove',
             onAction: () => {
-                saveMolds(molds.filter((m) => m.id !== id))
+                // 此处删除暂不涉及 Delta，维持原样
+                updateMolds(molds.filter((m) => m.id !== id) as any) 
                 toast.info(t('equipmentTooling.molds.toast.removed'))
             }
         })
     }
 
-    const handleConfirm = (data: Mold) => {
+    const handleConfirm = (data: Mold, isPatch?: boolean, delta?: DeltaSet) => {
         runConfirmedAction({
             permission: 'action_equipment_mold_manage',
-            onAction: () => {
-                if (editingMold) {
-                    saveMolds(molds.map((m) => (m.id === editingMold.id ? data : m)))
-                    toast.success(t('equipmentTooling.molds.toast.updated'))
-                } else {
-                    saveMolds([...molds, data])
-                    toast.success(t('equipmentTooling.molds.toast.created'))
-                }
+            onAction: async () => {
+                await saveMolds(data, isPatch, delta)
+                toast.success(editingMold ? t('equipmentTooling.molds.toast.updated') : t('equipmentTooling.molds.toast.created'))
             }
         })
     }

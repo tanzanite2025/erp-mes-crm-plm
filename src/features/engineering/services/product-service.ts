@@ -1,5 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type Product, type ProductType } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 export { type Product, type ProductType }
 
@@ -24,10 +26,27 @@ export const productService = {
     },
 
     saveProduct: async (product: Partial<Product>): Promise<Product> => {
-        return apiFetch<Product>('/engineering/products', {
+        const res = await apiFetch<Product>('/engineering/products', {
             method: 'POST',
             body: JSON.stringify(product)
         })
+        return ensureObjectResponse<Product>(res, 'ProductService.saveProduct')
+    },
+    
+    /**
+     * SDFTS: 增量更新产品
+     */
+    patchProduct: async (id: string, delta: DeltaSet, version: number): Promise<Product> => {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        }
+        const res = await apiFetch<Product>(`/engineering/products/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+        return ensureObjectResponse<Product>(res, 'ProductService.patchProduct')
     },
 
     /**
@@ -75,10 +94,27 @@ export const productService = {
     },
 
     saveProductType: async (type: Partial<ProductType>): Promise<ProductType> => {
-        return apiFetch<ProductType>('/engineering/product-types', {
+        const res = await apiFetch<ProductType>('/engineering/product-types', {
             method: 'POST',
             body: JSON.stringify(type)
         })
+        return ensureObjectResponse<ProductType>(res, 'ProductService.saveProductType')
+    },
+
+    /**
+     * SDRTS: 增量更新产品类型
+     */
+    patchProductType: async (id: string, delta: DeltaSet, version: number): Promise<ProductType> => {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        }
+        const res = await apiFetch<ProductType>(`/engineering/product-types/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+        return ensureObjectResponse<ProductType>(res, 'ProductService.patchProductType')
     },
 
     deleteProductType: async (id: string): Promise<void> => {

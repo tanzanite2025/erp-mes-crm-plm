@@ -74,9 +74,9 @@ export function SupplierList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveSupplier = (data: Partial<Supplier>) => {
+  const handleSaveSupplier = (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: any }) => {
     if (!allowsAction('action_trading_supplier_manage')) return
-    saveMutation.mutate(data)
+    saveMutation.mutate(payload)
   }
 
   const handleDeleteSupplier = (id: string) => {

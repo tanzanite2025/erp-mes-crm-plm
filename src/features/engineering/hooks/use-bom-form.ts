@@ -8,6 +8,7 @@ import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/sch
 import { bomService } from '../services/bom-service'
 import { changeOrderService } from '../services/change-order-service'
 import { productService } from '../services/product-service'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('useBOMForm')
 
@@ -34,7 +35,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       bomNo: '',
       productId: '',
       changeOrderId: '',
-      version: 'V1.0',
+      bomVersion: 'V1.0',
       revisionNo: 'V1.0',
       changeType: 'MANUAL',
       isDefaultSite: true,
@@ -43,6 +44,10 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       description: '',
       createdAt: new Date().toISOString(),
     },
+  })
+
+  const deltaTracker = useDeltaTracker<BOM>(currentRow || ({} as BOM), {
+    enabled: isEdit,
   })
 
   const { fields, append, remove } = useFieldArray({
@@ -70,17 +75,17 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           const boms = await bomService.getBOMs(value.productId)
           if (boms && boms.length > 0) {
             const versions = boms.map((bom) => {
-              const versionText = bom.version.replace(/[^\d.]/g, '')
+              const versionText = bom.bomVersion.replace(/[^\d.]/g, '')
               const parsed = parseFloat(versionText)
               return isNaN(parsed) ? 1.0 : parsed
             })
             const nextVersion = `V${(Math.max(...versions) + 0.1).toFixed(1)}`
-            form.setValue('version', nextVersion, { shouldDirty: true })
+            form.setValue('bomVersion', nextVersion, { shouldDirty: true })
             if (!form.getValues('changeOrderId')) {
               form.setValue('revisionNo', nextVersion, { shouldDirty: true })
             }
           } else {
-            form.setValue('version', 'V1.0', { shouldDirty: true })
+            form.setValue('bomVersion', 'V1.0', { shouldDirty: true })
             if (!form.getValues('changeOrderId')) {
               form.setValue('revisionNo', 'V1.0', { shouldDirty: true })
             }
@@ -149,23 +154,25 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
         setDictEntries(dictionaryService.getEntries() || [])
 
         if (isEdit && currentRow) {
-          form.reset({
-            ...currentRow,
-            changeOrderId: currentRow.changeOrderId || '',
-            revisionNo: currentRow.revisionNo || currentRow.version,
-            changeType: currentRow.changeType || 'MANUAL',
-            isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
-            effectiveFrom: formatDateInput(currentRow.effectiveFrom),
-            effectiveTo: formatDateInput(currentRow.effectiveTo),
-            items: (currentRow.items || []).map((item) => ({
-              ...item,
-              substitutes: item.substitutes || [],
-              standardUsage:
-                item.unitUsage && !item.standardUsage
-                  ? parseFloat((item.unitUsage * (1 + (item.wastagePercent || 0) / 100)).toFixed(6))
-                  : item.standardUsage || 0,
-            })),
-          })
+                const data = {
+                    ...currentRow,
+                    changeOrderId: currentRow.changeOrderId || '',
+                    revisionNo: currentRow.revisionNo || currentRow.bomVersion,
+                    changeType: currentRow.changeType || 'MANUAL',
+                    isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
+                    effectiveFrom: formatDateInput(currentRow.effectiveFrom),
+                    effectiveTo: formatDateInput(currentRow.effectiveTo),
+                    items: (currentRow.items || []).map((item) => ({
+                      ...item,
+                      substitutes: item.substitutes || [],
+                      standardUsage:
+                        item.unitUsage && !item.standardUsage
+                          ? parseFloat((item.unitUsage * (1 + (item.wastagePercent || 0) / 100)).toFixed(6))
+                          : item.standardUsage || 0,
+                    })),
+                } as BOM
+                form.reset(data)
+                deltaTracker.reset(data)
           return
         }
 
@@ -175,7 +182,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
             const boms = await bomService.getBOMs(initialProductId)
             if (boms && boms.length > 0) {
               const versions = boms.map((bom) => {
-                const versionText = bom.version.replace(/[^\d.]/g, '')
+                const versionText = bom.bomVersion.replace(/[^\d.]/g, '')
                 const parsed = parseFloat(versionText)
                 return isNaN(parsed) ? 1.0 : parsed
               })
@@ -186,12 +193,12 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           }
         }
 
-        form.reset({
+        const data = {
           id: '',
           bomNo: `BOM-${new Date().getFullYear()}${(Math.random() * 1000).toFixed(0).padStart(4, '0')}`,
           productId: initialProductId || '',
           changeOrderId: '',
-          version: initialVersion,
+          bomVersion: initialVersion,
           revisionNo: initialVersion,
           changeType: 'MANUAL',
           isDefaultSite: true,
@@ -206,7 +213,9 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           })),
           description: '',
           createdAt: new Date().toISOString(),
-        })
+        } as BOM
+        form.reset(data)
+        deltaTracker.reset(data)
       } catch (error) {
         logger.error('BOM form load data failed', error)
       }
@@ -248,5 +257,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     materials,
     dictEntries,
     changeOrders,
+    deltaTracker,
   }
 }

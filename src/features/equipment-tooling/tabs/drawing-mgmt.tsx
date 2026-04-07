@@ -16,47 +16,18 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { isConflictError } from '@/lib/handle-server-error'
 import { DrawingService } from '../services/drawing-service'
 import { MoldService } from '../services/mold-service'
-import { AssetService } from '@/services/asset-service'
 import { type MoldDrawing, type Mold, type MoldDrawingLog } from '../data/schema'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
 
-interface DrawingDraft {
-    name: string
-    type: MoldDrawing['type']
-    moldSn: string
-    remarks: string
-    version: string
-    fileUrl: string
-    status: MoldDrawing['status']
-}
-
-const EMPTY_MOLD_VALUE = '__NONE__'
-
-function createDrawingDraft(): DrawingDraft {
-    return {
-        name: '',
-        type: '2D',
-        moldSn: '',
-        remarks: '',
-        version: 'V1.0',
-        fileUrl: '',
-        status: 'ACTIVE',
-    }
-}
+import { useMutation } from '@tanstack/react-query'
+import { DrawingActionDialog } from '../components/drawing-action-dialog'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export function DrawingMgmt() {
     const { t } = useLanguage()
@@ -69,45 +40,24 @@ export function DrawingMgmt() {
     const [currentLogs, setCurrentLogs] = useState<MoldDrawingLog[]>([])
     const [selectedDrawing, setSelectedDrawing] = useState<MoldDrawing | null>(null)
     const [editingDrawing, setEditingDrawing] = useState<MoldDrawing | null>(null)
-    const [pendingFile, setPendingFile] = useState<File | null>(null)
-    const [newDrawing, setNewDrawing] = useState<DrawingDraft>(() => createDrawingDraft())
     const [error, setError] = useState<unknown>(null)
 
     const loadData = async () => {
         setError(null)
-        const [drawingRecords, moldRecords] = await Promise.all([
-            DrawingService.getDrawings(),
-            MoldService.getMolds(),
-        ])
-        setDrawings(drawingRecords)
-        setMolds(moldRecords)
+        try {
+            const [drawingRecords, moldRecords] = await Promise.all([
+                DrawingService.getDrawings(),
+                MoldService.getMolds(),
+            ])
+            setDrawings(drawingRecords)
+            setMolds(moldRecords)
+        } catch (err) {
+            setError(err)
+        }
     }
 
     useEffect(() => {
-        let cancelled = false
-
-        void Promise.all([
-            DrawingService.getDrawings(),
-            MoldService.getMolds(),
-        ])
-            .then(([drawingRecords, moldRecords]) => {
-                if (cancelled) {
-                    return
-                }
-                setError(null)
-                setDrawings(drawingRecords)
-                setMolds(moldRecords)
-            })
-            .catch((error) => {
-                if (cancelled) {
-                    return
-                }
-                setError(error)
-            })
-
-        return () => {
-            cancelled = true
-        }
+        loadData()
     }, [])
 
     const filteredDrawings = useMemo(() => {
@@ -122,29 +72,13 @@ export function DrawingMgmt() {
         )
     }, [drawings, searchTerm])
 
-    const resetDialog = () => {
-        setEditingDrawing(null)
-        setPendingFile(null)
-        setNewDrawing(createDrawingDraft())
-    }
-
     const openCreateDialog = () => {
-        resetDialog()
+        setEditingDrawing(null)
         setIsDialogOpen(true)
     }
 
     const openEditDialog = (drawing: MoldDrawing) => {
         setEditingDrawing(drawing)
-        setPendingFile(null)
-        setNewDrawing({
-            name: drawing.name,
-            type: drawing.type,
-            moldSn: drawing.moldSn ?? '',
-            remarks: drawing.remarks ?? '',
-            version: drawing.version,
-            fileUrl: drawing.fileUrl,
-            status: drawing.status,
-        })
         setIsDialogOpen(true)
     }
 
@@ -155,75 +89,44 @@ export function DrawingMgmt() {
         setIsLogOpen(true)
     }
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (!file) {
-            return
-        }
-
-        setPendingFile(file)
-        setNewDrawing((previous) => ({
-            ...previous,
-            name: previous.name || file.name,
-        }))
-    }
-
-    const handleSave = () => {
-        void runConfirmedAction({
-            permission: 'action_equipment_drawing_manage',
-            onAction: async () => {
-                if (!newDrawing.name.trim()) {
-                    toast.error(t('equipmentTooling.drawings.toast.nameRequired'))
-                    return
-                }
-
-                try {
-                    const finalDrawing: DrawingDraft = { ...newDrawing }
-
-                    if (pendingFile) {
-                        toast.loading(t('equipmentTooling.drawings.toast.uploading'), { id: 'upload' })
-                        const uploadResult = await AssetService.uploadFile(pendingFile)
-                        finalDrawing.fileUrl = uploadResult.url
-                        toast.success(t('equipmentTooling.drawings.toast.uploaded'), { id: 'upload' })
-                    }
-
-                    if (!finalDrawing.fileUrl) {
-                        toast.error(t('equipmentTooling.drawings.toast.fileRequired'), { id: 'upload' })
-                        return
-                    }
-
-                    if (editingDrawing) {
-                        await DrawingService.updateDrawing(editingDrawing.id, {
-                            ...finalDrawing,
-                            moldSn: finalDrawing.moldSn || undefined,
-                        })
-                        toast.success(t('equipmentTooling.drawings.toast.updated'))
-                    } else {
-                        await DrawingService.addDrawing({
-                            ...finalDrawing,
-                            moldSn: finalDrawing.moldSn || undefined,
-                        })
-                        toast.success(t('equipmentTooling.drawings.toast.created'))
-                    }
-
-                    setIsDialogOpen(false)
-                    resetDialog()
-                    await loadData()
-                } catch (error) {
-                    if (isConflictError(error)) {
-                        toast.error(t('equipmentTooling.drawings.toast.conflict'), { id: 'upload' })
-                        return
-                    }
-
-                    const message = error instanceof Error ? error.message : t('equipmentTooling.common.unknownError')
-                    toast.error(t('equipmentTooling.drawings.toast.saveFailed', { message }), { id: 'upload' })
-                }
+    // SDRTS: 突变逻辑封装
+    const mutation = useMutation({
+        mutationFn: async ({
+            data,
+            isPatch,
+            delta
+        }: {
+            data: MoldDrawing;
+            isPatch?: boolean;
+            delta?: DeltaSet
+        }) => {
+            if (isPatch && delta && editingDrawing) {
+                return DrawingService.patchDrawing(editingDrawing.id, delta, editingDrawing.sysVersion)
             }
-        })
+            return DrawingService.addDrawing(data)
+        },
+        onSuccess: () => {
+            toast.success(editingDrawing ? t('equipmentTooling.drawings.toast.updated') : t('equipmentTooling.drawings.toast.created'))
+            setIsDialogOpen(false)
+            setEditingDrawing(null)
+            loadData()
+        },
+        onError: (error: any) => {
+            if (isConflictError(error)) {
+                toast.error(t('equipmentTooling.drawings.toast.conflict'))
+                return
+            }
+            const message = error instanceof Error ? error.message : t('equipmentTooling.common.unknownError')
+            toast.error(t('equipmentTooling.drawings.toast.saveFailed', { message }))
+        }
+    })
+
+    const handleSave = async (data: MoldDrawing, isPatch?: boolean, delta?: DeltaSet) => {
+        mutation.mutate({ data, isPatch, delta })
     }
 
     const handleDownload = (drawing: MoldDrawing) => {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+        const baseUrl = (import.meta as any).env.VITE_API_BASE_URL || ''
         const fullUrl = drawing.fileUrl.startsWith('http') ? drawing.fileUrl : `${baseUrl}${drawing.fileUrl}`
 
         const link = document.createElement('a')
@@ -375,142 +278,13 @@ export function DrawingMgmt() {
                 )}
             </div>
 
-            <Dialog
-                open={isDialogOpen}
-                onOpenChange={(open) => {
-                    setIsDialogOpen(open)
-                    if (!open) {
-                        resetDialog()
-                    }
-                }}
-            >
-                <DialogContent className='w-[95vw] sm:max-w-lg max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden'>
-                    <DialogHeader className='p-6 sm:p-8 shrink-0 pb-4 bg-primary/5 border-b border-dashed'>
-                        <DialogTitle className='font-black text-xl tracking-tighter flex items-center gap-3'>
-                            <FilePlus className='size-5 text-blue-600' />
-                            {editingDrawing ? t('equipmentTooling.drawings.dialog.title.edit') : t('equipmentTooling.drawings.dialog.title.create')}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className='flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar space-y-6'>
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.drawings.dialog.fields.name')}</Label>
-                            <Input
-                                className='h-12 rounded-2xl border-none bg-muted/50 focus:ring-blue-500/20 font-bold'
-                                placeholder={t('equipmentTooling.drawings.dialog.placeholders.name')}
-                                value={newDrawing.name}
-                                onChange={(event) => setNewDrawing({ ...newDrawing, name: event.target.value })}
-                            />
-                        </div>
-
-                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                            <div className='space-y-2'>
-                                <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.drawings.dialog.fields.type')}</Label>
-                                <Select value={newDrawing.type} onValueChange={(value: MoldDrawing['type']) => setNewDrawing({ ...newDrawing, type: value })}>
-                                    <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50'>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                                        <SelectItem value='2D' className='rounded-xl'>{t('equipmentTooling.drawings.types.twoD')}</SelectItem>
-                                        <SelectItem value='3D' className='rounded-xl'>{t('equipmentTooling.drawings.types.threeD')}</SelectItem>
-                                        <SelectItem value='TECH_SPEC' className='rounded-xl'>{t('equipmentTooling.drawings.types.techSpec')}</SelectItem>
-                                        <SelectItem value='OTHER' className='rounded-xl'>{t('equipmentTooling.drawings.types.other')}</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className='space-y-2'>
-                                <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.drawings.dialog.fields.version')}</Label>
-                                <Input
-                                    className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-bold'
-                                    placeholder={t('equipmentTooling.drawings.dialog.placeholders.version')}
-                                    value={newDrawing.version}
-                                    onChange={(event) => setNewDrawing({ ...newDrawing, version: event.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-primary/40 ml-1'>{t('equipmentTooling.drawings.dialog.fields.mold')}</Label>
-                            <Select
-                                value={newDrawing.moldSn || EMPTY_MOLD_VALUE}
-                                onValueChange={(value) => setNewDrawing({ ...newDrawing, moldSn: value === EMPTY_MOLD_VALUE ? '' : value })}
-                            >
-                                <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50'>
-                                    <SelectValue placeholder={t('equipmentTooling.drawings.dialog.placeholders.selectMold')} />
-                                </SelectTrigger>
-                                <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                                    <SelectItem value={EMPTY_MOLD_VALUE} className='rounded-xl italic text-muted-foreground'>
-                                        {t('equipmentTooling.drawings.options.independent')}
-                                    </SelectItem>
-                                    {molds.map((mold) => (
-                                        <SelectItem key={mold.id} value={mold.sn} className='rounded-xl font-bold'>
-                                            {mold.sn} - {mold.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.drawings.dialog.fields.source')}</Label>
-                            {(newDrawing.fileUrl || pendingFile) ? (
-                                <div className='p-4 bg-emerald-500/5 rounded-2xl border border-dashed border-emerald-500/20 flex items-center justify-between'>
-                                    <div className='flex items-center gap-3'>
-                                        <div className='size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0'>
-                                            <FileText className='size-5 text-emerald-600' />
-                                        </div>
-                                        <div className='min-w-0'>
-                                            <span className='text-[10px] font-black text-emerald-600 uppercase tracking-widest block'>
-                                                {t('equipmentTooling.drawings.source.ready')}
-                                            </span>
-                                            <span className='text-[9px] text-emerald-600/60 font-mono italic truncate block max-w-[120px]'>
-                                                {pendingFile?.name || t('equipmentTooling.drawings.source.archived')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant='ghost'
-                                        size='sm'
-                                        className='rounded-xl text-[9px] font-black uppercase tracking-widest text-rose-500'
-                                        onClick={() => {
-                                            setNewDrawing({ ...newDrawing, fileUrl: '' })
-                                            setPendingFile(null)
-                                        }}
-                                    >
-                                        {t('equipmentTooling.drawings.source.reupload')}
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className='border-2 border-dashed border-muted-foreground/10 rounded-[24px] p-8 sm:p-10 bg-muted/5 flex flex-col items-center justify-center gap-3 hover:bg-primary/5 hover:border-primary/30 transition-all cursor-pointer relative group'>
-                                    <div className='size-14 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform'>
-                                        <FilePlus className='size-6 text-primary' />
-                                    </div>
-                                    <p className='text-[10px] font-black text-muted-foreground uppercase tracking-widest'>{t('equipmentTooling.drawings.source.clickUpload')}</p>
-                                    <input type='file' className='absolute inset-0 opacity-0 cursor-pointer' onChange={handleFileUpload} />
-                                </div>
-                            )}
-                        </div>
-
-                        <div className='space-y-2'>
-                            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('equipmentTooling.drawings.dialog.fields.remarks')}</Label>
-                            <Input
-                                className='h-12 rounded-2xl border-none bg-muted/50'
-                                placeholder={t('equipmentTooling.drawings.dialog.placeholders.remarks')}
-                                value={newDrawing.remarks}
-                                onChange={(event) => setNewDrawing({ ...newDrawing, remarks: event.target.value })}
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter className='p-6 sm:p-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                        <Button variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-muted-foreground/60' onClick={() => setIsDialogOpen(false)}>
-                            {t('equipmentTooling.drawings.dialog.actions.cancel')}
-                        </Button>
-                        <Button className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-blue-600 hover:bg-blue-700 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all' onClick={handleSave}>
-                            {t('equipmentTooling.drawings.dialog.actions.save')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DrawingActionDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                currentRow={editingDrawing}
+                molds={molds}
+                onSubmit={handleSave}
+            />
 
             <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
                 <DialogContent className='w-[95vw] sm:max-w-[600px] max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden'>
@@ -542,6 +316,7 @@ export function DrawingMgmt() {
                                                 'absolute left-[-21px] sm:left-[-5px] top-1 size-4 rounded-full border-2 border-white shadow-sm z-10',
                                                 log.action === 'CREATED' ? 'bg-emerald-500' :
                                                 log.action === 'BIND' ? 'bg-blue-600' :
+                                                log.action === 'VERSION_UPDATE' ? 'bg-purple-600' :
                                                 log.action === 'STATUS_CHANGE' ? 'bg-rose-500' : 'bg-slate-400'
                                             )}
                                         />
@@ -552,6 +327,26 @@ export function DrawingMgmt() {
                                                 <span className='text-[8px] text-muted-foreground/30 font-mono font-bold italic'>{new Date(log.timestamp).toLocaleDateString()}</span>
                                             </div>
                                             <p className='text-sm font-black text-slate-700 tracking-tight leading-snug mb-3'>{log.details}</p>
+                                            
+                                            {/* SDRTS: 结构化差量可视化 (演进时间线) */}
+                                            {log.delta && Object.keys(log.delta).length > 0 && (
+                                                <div className='bg-white/50 p-3 rounded-xl border border-dashed border-slate-200 space-y-2 mb-3'>
+                                                    <div className='text-[8px] font-black uppercase tracking-widest text-slate-400 border-b border-dashed border-slate-100 pb-1'>Technical Changes (SDRTS)</div>
+                                                    <div className='space-y-1.5'>
+                                                        {Object.entries(log.delta).map(([field, values]: [string, any]) => (
+                                                            <div key={field} className='flex items-center gap-2 text-[9px] min-w-0'>
+                                                                <span className='font-black text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded italic whitespace-nowrap'>{field}</span>
+                                                                <div className='flex items-center gap-1.5 flex-1 min-w-0 font-mono'>
+                                                                    <span className='text-rose-400/60 line-through truncate max-w-[100px]'>{String(values.o ?? 'NULL')}</span>
+                                                                    <span className='text-slate-300'>→</span>
+                                                                    <span className='text-emerald-600 font-bold truncate max-w-[150px]'>{String(values.n ?? 'NULL')}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className='flex items-center justify-between pt-2 border-t border-dashed border-muted-foreground/5'>
                                                 <div className='flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40'>
                                                     <User className='size-3' /> {t('equipmentTooling.drawings.audit.operator')}: {log.operator}

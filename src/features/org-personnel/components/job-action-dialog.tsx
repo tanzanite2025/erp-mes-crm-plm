@@ -1,7 +1,9 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { Button } from '@/components/ui/button'
@@ -16,8 +18,9 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
 import { jobTypeSchema, type JobType } from '../data/schema'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 type JobTypeForm = JobType
 
@@ -40,7 +43,7 @@ type JobActionDialogProps = {
     currentRow?: JobType
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSubmit?: (data: JobType) => void
+    onSubmit?: (data: JobType, isPatch?: boolean, delta?: DeltaSet) => void
 }
 
 function getJobFormDefaults(currentRow?: JobType): JobTypeForm {
@@ -53,13 +56,15 @@ function getJobFormDefaults(currentRow?: JobType): JobTypeForm {
         name: '',
         code: '',
         description: '',
+        version: 1,
     }
 }
 
 type JobActionDialogFormProps = {
     currentRow?: JobType
     isEdit: boolean
-    onSubmit?: (data: JobType) => void
+    open: boolean
+    onSubmit?: (data: JobType, isPatch?: boolean, delta?: DeltaSet) => void
     onOpenChange: (open: boolean) => void
     t: ReturnType<typeof useLanguage>['t']
 }
@@ -67,19 +72,33 @@ type JobActionDialogFormProps = {
 function JobActionDialogForm({
     currentRow,
     isEdit,
+    open,
     onSubmit,
     onOpenChange,
     t,
 }: JobActionDialogFormProps) {
-    const form = useForm<JobTypeForm>({
+    const initialValues = useMemo(() => getJobFormDefaults(currentRow), [currentRow])
+    const { data: deltaProxy, tracker } = useDeltaTracker<JobType>(initialValues, open)
+
+    const form = useForm<any>({
         resolver: zodResolver(jobTypeSchema),
-        defaultValues: getJobFormDefaults(currentRow),
+        defaultValues: initialValues,
     })
 
     function handleFormSubmit(values: JobTypeForm) {
+        // SDRTS: 同步 RHF 对象到 Proxy 以计算 Delta
+        Object.assign(deltaProxy, values)
+        const delta = tracker.commit()
+        const isDirty = Object.keys(delta).length > 0
+
+        if (isEdit && !isDirty) {
+            onOpenChange(false)
+            return
+        }
+
         toast.success(isEdit ? t(jobDialogKeys.successEdit) : t(jobDialogKeys.successCreate))
         if (onSubmit) {
-            onSubmit(values)
+            onSubmit(values, isEdit, isEdit ? delta : undefined)
         }
         onOpenChange(false)
     }
@@ -188,6 +207,7 @@ export function JobActionDialog({
                     key={formKey}
                     currentRow={currentRow}
                     isEdit={isEdit}
+                    open={open}
                     onSubmit={onSubmit}
                     onOpenChange={onOpenChange}
                     t={t}

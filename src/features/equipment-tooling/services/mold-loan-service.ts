@@ -1,7 +1,9 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type MoldLoan, type Mold } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
  * MoldLoanService - 专门负责模具跨厂流转/借用业务 (已同步至后端)
@@ -41,9 +43,13 @@ export class MoldLoanService {
             })
         })
         
+        if (!newLoan) {
+            throw new Error('[CRITICAL_DATA_PATH] Create mold loan failed, returned no data.')
+        }
+
         window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
         window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
-        return newLoan
+        return ensureObjectResponse<MoldLoan>(newLoan, 'MoldLoanService.createLoan')
     }
 
     /**
@@ -83,5 +89,28 @@ export class MoldLoanService {
             method: 'DELETE'
         })
         window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
+    }
+
+    /**
+     * 局部更新借用记录 (SDRTS 结构化差量更新)
+     */
+    static async patchLoan(loanId: string, delta: DeltaSet, version: number): Promise<MoldLoan> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id: loanId, version }
+        }
+
+        const res = await apiFetch<MoldLoan>(`/mold-loans/${loanId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+
+        if (!res) {
+            throw new Error(`[CRITICAL_DATA_PATH] Patch mold loan ${loanId} failed, returned no data.`)
+        }
+
+        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
+        return ensureObjectResponse<MoldLoan>(res, 'MoldLoanService.patchLoan')
     }
 }

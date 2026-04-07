@@ -1,6 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { type LogisticsRecord, type LogisticsStatus, type LogisticsEvent } from '../types'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { ensureObjectResponse } from '@/lib/api-response'
 
 const logger = createLogger('LogisticsService')
 
@@ -93,6 +95,25 @@ class LogisticsService {
         await apiFetch(`/logistics/${id}`, {
             method: 'DELETE'
         })
+    }
+
+    /**
+     * SDRTS: 增量 Patch 物流记录
+     */
+    async patchLogistics(id: string, delta: DeltaSet, version: number): Promise<LogisticsRecord> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        }
+
+        const res = await apiFetch<LogisticsRecord>(`/logistics/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        })
+
+        const checked = ensureObjectResponse<LogisticsRecord & Record<string, unknown>>(res, 'LogisticsService.patchLogistics')
+        return checked as LogisticsRecord
     }
 }
 

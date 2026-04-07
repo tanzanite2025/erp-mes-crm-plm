@@ -7,6 +7,7 @@ import { engineeringDBService } from '@/features/engineering-db/services/enginee
 import { getEffectiveTemplate } from '../components/specs'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { buildDefaultProductValues, type ProductVariantSelection } from '../utils/product-form-utils'
+import { type useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 type OptionItem = { label: string; value: string }
 
@@ -18,6 +19,7 @@ interface UseProductFormInitParams {
     form: UseFormReturn<Product>
     selectedVariants: ProductVariantSelection[]
     setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
+    deltaTracker: ReturnType<typeof useDeltaTracker<Product>>
 }
 
 export function useProductFormInit({
@@ -27,7 +29,8 @@ export function useProductFormInit({
     productTypes,
     form,
     selectedVariants,
-    setSelectedVariants
+    setSelectedVariants,
+    deltaTracker
 }: UseProductFormInitParams) {
     const [tireTypeOptions, setTireTypeOptions] = useState<OptionItem[]>([])
     const [brakeTypeOptions, setBrakeTypeOptions] = useState<OptionItem[]>([])
@@ -81,11 +84,14 @@ export function useProductFormInit({
                     }
                 }
                 form.reset(draftRow)
+                deltaTracker.reset(draftRow as Product)
                 if (draftRow.versionLevel) {
                     setSelectedVariants([{ level: draftRow.versionLevel, weight: draftRow.weight || 0 }])
                 }
             } else if (open) {
-                form.reset(buildDefaultProductValues({ includeVersion: false }))
+                const defaultValues = buildDefaultProductValues({ includeVersion: false }) as Product
+                form.reset(defaultValues)
+                deltaTracker.reset(defaultValues)
             }
         }
         initForm()

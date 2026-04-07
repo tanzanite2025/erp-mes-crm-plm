@@ -46,6 +46,37 @@ func SaveProductionLineHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, line)
 }
 
+func PatchProductionLineHandler(c *gin.Context) {
+	var input services.PatchProductionLineHandlerRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	line, err := services.PatchProductionLine(services.PatchProductionLineRequest{
+		ID:       c.Param("id"),
+		Delta:    input.Delta,
+		Version:  input.Metadata.Version,
+		AuthCode: input.Metadata.AuthCode,
+		Operator: middleware.GetSafeUsername(c),
+		IP:       c.ClientIP(),
+	})
+	if err != nil {
+		if err == services.ErrProductionLineVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+		if err == services.ErrProductionTopologyUnauthorized {
+			c.JSON(http.StatusForbidden, gin.H{"error": "UNAUTHORIZED", "message": "Topology authorization code is invalid"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to patch production line: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, line)
+}
+
 func DeleteProductionLineHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductionLine(id, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {

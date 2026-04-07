@@ -11,6 +11,18 @@ type SaveProductionLineHandlerRequest struct {
 	AuthCode string `json:"authCode"`
 }
 
+type PatchProductionLineMetadata struct {
+	ID       string `json:"id"`
+	Version  int64  `json:"version"`
+	AuthCode string `json:"authCode"`
+}
+
+type PatchProductionLineHandlerRequest struct {
+	Op       string                      `json:"op"`
+	Delta    map[string]json.RawMessage  `json:"delta"`
+	Metadata PatchProductionLineMetadata `json:"metadata"`
+}
+
 type ProcessStepDTO struct {
 	ID          string    `json:"id"`
 	CreatedAt   time.Time `json:"createdAt"`

@@ -1,5 +1,9 @@
 import { type DeltaSet } from './types';
 
+function cloneValue<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value));
+}
+
 /**
  * SDRTS ProxyTracker
  * 
@@ -7,17 +11,30 @@ import { type DeltaSet } from './types';
  * 能够自动捕获深度嵌套对象的变更，并生成扁平化路径的 Delta 集合。
  */
 export class ProxyTracker<T extends Record<string, any>> {
-    private readonly original: T;
+    private baseline: T;
+    private workingCopy: T;
     private draft: T;
     private readonly mutations = new Map<string, any>();
     private proxyCache = new WeakMap<object, any>();
     private onMutation?: () => void;
 
     constructor(initialData: T, onMutation?: () => void) {
-        // 深拷贝原始数据，确保对比基准不被改变
-        this.original = JSON.parse(JSON.stringify(initialData));
+        this.baseline = cloneValue(initialData);
+        this.workingCopy = cloneValue(initialData);
         this.onMutation = onMutation;
-        this.draft = this.createProxy(this.original, "");
+        this.draft = this.createProxy(this.workingCopy, "");
+    }
+
+    /**
+     * 重置追踪器到新的基准数据
+     */
+    public reset(newData: T) {
+        this.baseline = cloneValue(newData);
+        this.workingCopy = cloneValue(newData);
+        this.mutations.clear();
+        this.proxyCache = new WeakMap();
+        this.draft = this.createProxy(this.workingCopy, "");
+        this.onMutation?.();
     }
 
     /**
@@ -89,7 +106,7 @@ export class ProxyTracker<T extends Record<string, any>> {
         const delta: DeltaSet = {};
 
         this.mutations.forEach((newValue, path) => {
-            const oldValue = this.getValueByPath(this.original, path);
+            const oldValue = this.getValueByPath(this.baseline, path);
             
             // 最终脏检查：提交时再次确认新值与旧值是否真的不同
             if (!this.isEqual(oldValue, newValue)) {

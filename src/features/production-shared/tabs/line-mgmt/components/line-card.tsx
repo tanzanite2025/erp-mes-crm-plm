@@ -16,7 +16,8 @@ import { SegmentNode } from './topology/segment-node'
 import { SecurityAuthDialog } from './topology/security-auth-dialog'
 import { useLanguage } from '@/context/language-provider'
 
-import { DeltaSet } from '@/lib/delta/types'
+import { type DeltaSet } from '@/lib/delta/types'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 interface LineCardProps {
   line: ProductionLine
@@ -33,10 +34,19 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
   const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | 'topology' | null>(null)
   const [pendingDelta, setPendingDelta] = useState<DeltaSet | null>(null)
   const { templates, addTemplate } = useTopologyTemplates()
+  const authDialogTitle = pendingAction === 'edit'
+    ? t('orgPersonnel.lineMgmt.auth.editTitle')
+    : pendingAction === 'topology'
+      ? t('orgPersonnel.lineMgmt.topology.authGenericTitle')
+      : t('orgPersonnel.lineMgmt.auth.deleteTitle')
+  const authDialogDescription = pendingAction === 'edit'
+    ? t('orgPersonnel.lineMgmt.auth.editDesc')
+    : pendingAction === 'topology'
+      ? t('orgPersonnel.lineMgmt.topology.authGenericDesc')
+      : t('orgPersonnel.lineMgmt.auth.deleteDesc')
 
-  const handleTopologyUpdate = async (updatedLine: ProductionLine) => {
+  const handleTopologyUpdate = (updatedLine: ProductionLine) => {
     // 1. 自动生成 Delta 载荷
-    const { trackDelta } = await import('@/lib/delta/proxy-tracker')
     const tracker = trackDelta(line)
     Object.assign(tracker.data, updatedLine)
     const delta = tracker.commit()
@@ -160,8 +170,8 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
             open={isAuthOpen}
             onOpenChange={setIsAuthOpen}
             onConfirm={handleAuthConfirm}
-            title={pendingAction === 'edit' ? t('orgPersonnel.lineMgmt.auth.editTitle') : t('orgPersonnel.lineMgmt.auth.deleteTitle')}
-            description={pendingAction === 'edit' ? t('orgPersonnel.lineMgmt.auth.editDesc') : t('orgPersonnel.lineMgmt.auth.deleteDesc')}
+            title={authDialogTitle}
+            description={authDialogDescription}
         />
 
         <div className='grid grid-cols-2 gap-4 py-3 border-y border-dashed border-muted/50'>

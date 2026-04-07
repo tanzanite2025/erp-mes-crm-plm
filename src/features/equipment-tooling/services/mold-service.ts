@@ -1,6 +1,7 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type Mold, type MoldStatus } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
@@ -80,24 +81,25 @@ export class MoldService {
             body: JSON.stringify(mold)
         })
         window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
-        return result
+        return ensureObjectResponse<Mold>(result, 'MoldService.saveMold')
     }
 
     /**
      * 局部更新模具信息 (SDRTS 结构化差量更新)
      */
-    static async patchMold(moldId: string, delta: DeltaSet, version?: number): Promise<void> {
+    static async patchMold(moldId: string, delta: DeltaSet, version?: number): Promise<Mold> {
         const payload: DeltaPayload = {
             op: 'PATCH',
             delta,
             metadata: { id: moldId, version }
         }
 
-        await apiFetch(`/molds/${moldId}`, {
+        const res = await apiFetch<Mold>(`/molds/${moldId}`, {
             method: 'PATCH',
             body: JSON.stringify(payload)
         })
         window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
+        return ensureObjectResponse<Mold>(res, 'MoldService.patchMold')
     }
 
     /**

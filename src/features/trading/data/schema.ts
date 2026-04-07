@@ -28,6 +28,7 @@ export interface Supplier extends BaseEntity {
     address: string
     status: SupplierStatus
     rating: number
+    version: number // SDRTS 乐观锁
 }
 
 export type SalesOrderStatus = 'Draft' | 'Pending' | 'InProgress' | 'Done' | 'Canceled'

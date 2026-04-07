@@ -47,9 +47,11 @@ export function useDeltaTracker<T extends Record<string, any>>(initialData: T, r
 
   return {
     data,
+    deltaProxy: data, // 别名，提高语义化
     commit,
     isDirty,
     mutationCount,
-    tracker // 暴露原始实例以备不时之需
+    tracker,
+    reset: (newData: T) => tracker.reset(newData)
   };
 }

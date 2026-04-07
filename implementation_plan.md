@@ -1,4 +1,107 @@
 ﻿#
+## `production line topology` 更新 contract 断链修复（审批稿，2026-04-07）
+
+### 背景
+`/personnel/line` 页面中“工段/工序注销”问题，在前端交互链收口后继续暴露出更深层根因：
+
+1. 前端当前已能够进入 topology 授权与提交链；
+2. 提交时实际命中 `productionResourceService.patchLine(...)`；
+3. 浏览器控制台已明确返回：`PATCH /production/lines/:id -> 404 Not Found`；
+4. 这说明问题已经不是“密码框是否弹出”，而是**前后端对 production line topology 更新的正式 contract 已经漂移。**
+
+### 已确认的事实
+#### 1) 前端当前 contract
+- `src/features/production-shared/services/production-resource-service.ts`
+- 当前 `patchLine(...)` 明确按 SDRTS 设计提交：
+  - 方法：`PATCH`
+  - 路径：`/production/lines/:id`
+  - 载荷：`DeltaPayload`
+  - 元数据：`id / version / authCode`
+
+#### 2) 后端当前 contract
+- `server/routes/routes_production.go`
+- 当前只暴露：
+  - `GET /production/lines`
+  - `POST /production/lines`
+  - `DELETE /production/lines/:id`
+- **不存在** `PATCH /production/lines/:id`
+
+#### 3) 后端保存主链
+- `server/handlers/production_topology_handlers.go`
+- `server/services/production_service.go`
+- 当前真实主链是：
+  - `POST /production/lines`
+  - 绑定 `SaveProductionLineHandlerRequest`
+  - 服务侧接收 `SaveProductionLineRequest{ Line, AuthCode, Operator, IP }`
+- 即当前后端仍以“整条产线 DTO 全量保存”作为正式入口，而不是 delta patch。
+
+### 根因判断
+本轮真正根因不是单个按钮事件，也不是密码框组件，而是：
+
+**前端已经按 SDRTS `PATCH + DeltaPayload` 设计了 topology 更新链，但后端 production line 仍停留在 `POST /production/lines` 的全量保存 contract。**
+
+这会导致：
+
+1. 前端拓扑敏感操作链已经进入正式提交；
+2. 但请求目标路由在后端根本不存在；
+3. 最终表现为 404、保存失败、用户感知为“输入密码后还是不生效”。
+
+### 可选路线
+#### 路线 A：前端回退对齐后端现有 POST contract
+优点：
+- 改动范围较小；
+- 可以较快恢复 topology 修改功能。
+
+风险：
+- production line topology 链继续脱离 SDRTS patch 设计；
+- 当前前端已有的 `delta / version / authCode` 结构会变成半废状态；
+- 后续仍容易再次漂移。
+
+#### 路线 B：后端补正式 `PATCH /production/lines/:id`
+优点：
+- 从根上统一 production line topology 更新 contract；
+- 前端当前已建立的 topology 授权链、delta、version、authCode 语义可以成立；
+- 与项目其余 SDRTS patch 设计更一致。
+
+风险：
+- 改动更深，需要补 routes / handler / service / tests；
+- 需要明确 patch 语义是“真正 delta patch”还是“handler 接收 delta 后自行还原再保存”。
+
+### 建议路线
+从“禁止补丁、优先根因修复”的要求看，**建议优先采用路线 B：后端补正式 `PATCH /production/lines/:id` contract。**
+
+原因：
+- 当前问题已经不是前端偶发实现错误，而是明确的 contract 断链；
+- 如果只让前端回退到 POST，全量保存虽然可能暂时恢复功能，但 production topology 链会继续成为一个脱离 SDRTS 的特例；
+- 长期更稳妥的是把后端补齐成与前端一致的正式 patch 入口。
+
+### 预计改动文件（若按路线 B 执行）
+- `server/routes/routes_production.go`
+- `server/handlers/production_topology_handlers.go`
+- `server/services/production_service.go`
+- 如缺少正式 patch DTO / mapper，最小范围补到 production DTO 文件
+- 视需要补充 handler/service 定向测试
+
+### 实施边界
+- 不在页面层继续增加临时 fallback；
+- 不把 404 当成普通错误提示问题处理；
+- 不让 `segment-node.tsx` / `process-node.tsx` 重新发明自己的提交协议；
+- 无论走哪条路线，都要保证 topology 敏感操作最终只服从一个正式 contract。
+
+### 验证策略
+- 前端：
+  - `pnpm exec tsc --noEmit`
+- 若走后端 PATCH 路线：
+  - 定向验证 production routes / handlers / services
+  - 至少覆盖 topology 更新成功、授权码错误、版本冲突三类场景
+
+### 当前状态与暂停点
+本节当前仅为 `production line topology` 更新 contract 断链审批稿：
+
+1. 已确认 404 的真正根因是前后端 PATCH/POST contract 漂移；
+2. 已明确两条修复路线及其风险；
+3. 我建议优先采用“后端补正式 PATCH contract”路线；
+4. **在你明确批准前，我不会继续修改这轮业务代码。**
  
 ## 任务扩展（2026-04-05）：项目冗余分析与优化计划
 
@@ -7551,3 +7654,166 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
 2. 已确认修复方向是“统一构造入口 + 对齐共享权威类型”，不是放宽类型约束；
 3. 我已更新 `task.md` 与本方案文档；
 4. **在你明确批准前，我不会开始修改业务代码。**
+
+## 正式对象单一构造入口第二轮（审批稿，2026-04-07）
+
+### 背景
+第一轮已经验证：`equipment-tooling` 中“页面/弹窗直接手写正式对象默认值”确实会在共享 contract 演进时形成漂移。
+
+当前继续盘点后，下一批最接近同一根因的目标是：
+
+1. `src/features/equipment-tooling/components/furnace-action-dialog.tsx`
+   - 仍在表单 `defaultValues` 与 `form.reset(...)` 中各自手写一套 `Furnace` 正式对象默认值；
+   - 与第一轮 `MoldActionDialog` 的问题高度同构。
+
+2. `src/features/equipment-tooling/tabs/furnace-mgmt.tsx`
+   - 当前新增入口主要通过 `null + dialog` 打开，不像 `mold-mgmt.tsx` 那样直接手写完整正式对象；
+   - 但如果 `Furnace` 默认值入口仍不统一，后续仍可能在别的页面或弹窗复制出第二套默认对象。
+
+3. `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts`
+   - 当前存在 `createLoanDraft(...)`，但其对象是 `LoanDraft` UI 组合模型，不是正式 `MoldLoan` contract；
+   - 因此它更像“本地草稿状态”，不应被误归类为本轮正式对象构造入口问题。
+
+### 本轮目标
+本轮目标限定为：
+
+1. 盘清 `equipment-tooling` 中仍直接手写正式对象默认值的残留点；
+2. 将单一构造入口从 `Mold` 推广到 `Furnace`；
+3. 明确把 `LoanDraft` 等 UI 草稿模型排除在本轮正式对象治理之外；
+4. 在不扩展模块重构的前提下保持 `tsc` 通过。
+
+### 根因判断
+#### 1) `Furnace` 与 `Mold` 属于同类问题
+- `Furnace` 也是 schema 推导出的正式领域对象；
+- 其默认值当前仍分散在 `furnace-action-dialog.tsx` 中手写两次；
+- 这意味着一旦 `Furnace` 正式字段增加或约束升级，也会复现第一轮 `Mold` 的同类漂移。
+
+#### 2) `LoanDraft` 目前不属于同类正式对象问题
+- `LoanDraft` 的字段明显混合了借还 UI 所需的表单态与引用信息；
+- 它不是 `MoldLoan` 正式 contract 的简单默认值副本；
+- 因此本轮不应为了“统一入口”而强行把它塞回正式对象工厂模式。
+
+### 预计改动文件
+- `src/features/equipment-tooling/data/schema.ts`
+- `src/features/equipment-tooling/components/furnace-action-dialog.tsx`
+- 如复核确认 `furnace-mgmt.tsx` 或同域其它文件存在直接手写 `Furnace` 正式对象入口，再最小范围补充
+
+### 实施策略
+#### 1) 为 `Furnace` 增加共享草稿/默认值工厂
+- 参考 `createMoldDraft(...)` 模式；
+- 将 `type / maxTemp / currentTemp / version / createdAt` 等正式默认值统一收敛；
+- 不放宽 `Furnace` 正式类型约束。
+
+#### 2) 让弹窗默认值与 reset 只消费单一入口
+- `furnace-action-dialog.tsx` 的 `defaultValues` 与新建态 `form.reset(...)` 统一改为共享工厂函数；
+- 避免继续维护两套手写默认对象。
+
+#### 3) 明确排除项
+- 不把 `LoanDraft` 误当成正式 `MoldLoan` 对象整改；
+- 不顺手扩展为借还管理表单重构；
+- 不扩大到 `equipment-tooling` 全域对象工厂体系重写。
+
+### 风险评估
+1. 若误把 UI 草稿模型与正式领域对象混为一谈，会造成错误抽象；
+2. 若为追求统一而扩大到借还管理整链，范围会超出本轮最小闭环；
+3. 若 `Furnace` 默认值工厂设计不当，可能影响新建弹窗默认 `type` 的现有语义。
+
+### 验证策略
+- 至少执行：
+  - `pnpm exec tsc --noEmit`
+- 如有必要补充：
+  - 定向搜索确认 `Furnace` 默认值不再在多个入口重复手写
+  - 定向 lint 复核目标文件
+
+### 当前状态与暂停点
+本节当前仅为第二轮正式对象单一构造入口审批稿：
+
+1. 已确认下一批同类问题优先目标为 `Furnace`；
+2. 已确认 `LoanDraft` 暂不纳入本轮正式对象治理；
+3. 我已完成盘点并同步到 `task.md` / `implementation_plan.md`；
+4. **在你明确批准前，我不会开始第二轮业务代码修改。**
+
+## `users` 测试数据构造边界收口（审批稿，2026-04-07）
+
+### 背景
+当前新暴露的 `users` TypeScript 错误，不适合按“给测试对象补一个 `version` 字段”来处理。
+
+从现有代码看，问题更接近：**`User` 正式 schema 已升级，但测试层仍在直接手写正式 `User` 对象，而项目中缺少统一测试工厂/fixture 入口。**
+
+目前已确认的现象：
+
+1. `src/features/users/data/schema.ts`
+   - `User` 正式 contract 当前已包含 `version`，并同时承接 `password`、`resolvedRole`、`roleInfo`、`createdAt`、`updatedAt` 等字段。
+
+2. `src/features/users/utils/role-resolver.test.ts`
+   - 仍直接手写 `User` 字面量作为 `resolveUserRole(...)` 入参；
+   - 当前字面量未跟随正式 schema 同步补齐 `version`，因此在 schema 升级后直接触发编译错误。
+
+3. 当前未发现稳定的共享 `User` 测试工厂入口
+   - 这意味着每个测试文件都在维护“自己理解的 User 结构”；
+   - 一旦 `User` contract 演进，同类测试会批量漂移。
+
+### 本轮目标
+本轮目标限定为：
+
+1. 把这轮报错定义为“测试数据构造边界失控”而不是单点测试漏字段；
+2. 为正式 `User` 类型建立统一测试工厂/fixture 入口；
+3. 让消费正式 `User` 类型的目标测试统一走共享工厂；
+4. 在不放宽正式 schema 的前提下恢复 `tsc` 通过。
+
+### 根因判断
+#### 1) 正式 `User` contract 已进入演进态
+- `User` 现在不再只是最小展示结构；
+- 它已经承接 SDRTS 所需 `version`，以及角色解析展示所需 `resolvedRole` / `roleInfo` 等字段；
+- 因此它属于不适合在测试里到处裸写的正式领域对象。
+
+#### 2) 测试层缺少统一构造边界
+- `role-resolver.test.ts` 之类测试继续手写 `User` 对象；
+- 测试里只关注某几个业务字段，却绕过正式构造入口直接声明完整实体；
+- 这会让 schema 每次升级都要求人工到多处测试同步补字段。
+
+#### 3) 根因不是 `version` 本身，而是“正式对象在测试中被裸写”
+- 如果本轮只给一两个测试字面量补 `version`，后续 `User` 再增字段时仍会复发；
+- 因此本轮应优先建立共享测试工厂，而不是继续散点补齐字面量对象。
+
+### 预计改动文件
+- `src/features/users/data/schema.ts`（如仅需导出类型，不一定改动）
+- `src/features/users/utils/role-resolver.test.ts`
+- 如确认还有同类目标测试，同域极少量补充
+- 如当前缺少共享测试工厂，则最小新增一个 `users` 测试 helper / fixture 文件
+
+### 实施策略
+#### 1) 为正式 `User` 类型建立统一测试工厂
+- 统一承接：`id / username / firstName / lastName / phoneNumber / status / role / version / createdAt / updatedAt` 等正式默认值；
+- 允许通过 overrides 覆盖测试关心字段；
+- 保持工厂职责只服务正式 `User` 测试对象，不扩展到所有用户 API payload。
+
+#### 2) 只收口真正消费正式 `User` 的测试
+- `role-resolver.test.ts` 优先切到共享工厂；
+- 其他测试仅在其确实消费 `User` 正式类型时再纳入；
+- `CreateUserPayload`、`UserOption`、`UserReplacePayload` 等 API contract 测试保持各自语义，不强行混入正式实体工厂。
+
+#### 3) 禁止补丁式误修
+- 不把 `version` 改回可选；
+- 不在多个测试里继续各自补字段；
+- 不用 `as User` 或宽断言掩盖正式 contract 漂移。
+
+### 风险评估
+1. 若把所有用户相关结构都强行并入同一测试工厂，会混淆正式实体与 API payload 边界；
+2. 若只修单个报错测试，不建立共享入口，后续 `User` schema 继续演进时仍会再次大面积漂移；
+3. 若工厂默认值设计不当，可能掩盖某些测试本来要显式声明的关键字段。
+
+### 验证策略
+- 至少执行：
+  - `pnpm exec tsc --noEmit`
+- 如有必要补充：
+  - 定向搜索确认目标测试不再直接手写正式 `User` 对象
+  - 定向测试 / lint 复核目标文件
+
+### 当前状态与暂停点
+本节当前仅为 `users` 测试数据构造边界收口审批稿：
+
+1. 已确认本轮根因是“正式 `User` schema 升级 + 测试工厂缺失”；
+2. 已确认修复方向是“共享测试工厂收口”，不是给单个测试补字段；
+3. 我已同步到 `task.md` / `implementation_plan.md`；
+4. **在你明确批准前，我不会开始这轮业务代码修改。**

@@ -174,6 +174,10 @@ export function EmployeeActionDialog({
             return
         }
 
+        if (isEdit && values.version === undefined) {
+             throw new Error('[CRITICAL] Missing version for SDRTS Patch operation on Employee ID: ' + (values.id || 'Unknown'));
+        }
+
         const nextEmployee: Partial<Employee> = {
             id: values.id || '',
             lineId: values.lineId,

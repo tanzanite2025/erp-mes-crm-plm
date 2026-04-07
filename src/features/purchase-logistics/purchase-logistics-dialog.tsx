@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, useMemo, useEffect } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Plus, Truck, Package, Info } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,6 +19,7 @@ import { apiFetch } from '@/lib/api-client'
 import { type PurchaseOrder } from '@/features/trading/data/schema'
 import { getPreferredCarriers } from '@/features/logistics/utils/carriers'
 import { inferCarrierFromTrackingNo } from '@/features/logistics/utils/tracking-no'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import {
   queuePurchaseLogisticsOfflineDraft,
   shouldQueuePurchaseLogisticsOfflineDraft,
@@ -27,17 +28,21 @@ import { PurchaseLogisticsService } from './services/purchase-logistics-service'
 
 type PurchaseOrderOption = Pick<PurchaseOrder, 'id' | 'orderNo' | 'supplierName'>
 
+const DEFAULT_FORM = {
+  purchaseOrderId: '',
+  orderNo: '',
+  carrier: '',
+  trackingNo: '',
+}
+
 export function PurchaseLogisticsDialog() {
   const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const [form, setForm] = useState({
-    purchaseOrderId: '',
-    orderNo: '',
-    carrier: '',
-    trackingNo: '',
-  })
+  const initialForm = useMemo(() => DEFAULT_FORM, [])
+  const { data: form } = useDeltaTracker(initialForm as any, open)
+
   const [isCarrierTouched, setIsCarrierTouched] = useState(false)
   const [inferredCarrier, setInferredCarrier] = useState('')
   const preferredCarriers = getPreferredCarriers()
@@ -52,12 +57,12 @@ export function PurchaseLogisticsDialog() {
     mutationFn: (data: typeof form) => PurchaseLogisticsService.saveRecord(data),
   })
 
-  const resetForm = () => {
-    setOpen(false)
-    setForm({ purchaseOrderId: '', orderNo: '', carrier: '', trackingNo: '' })
-    setIsCarrierTouched(false)
-    setInferredCarrier('')
-  }
+  useEffect(() => {
+    if (!open) {
+      setIsCarrierTouched(false)
+      setInferredCarrier('')
+    }
+  }, [open])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -66,33 +71,35 @@ export function PurchaseLogisticsDialog() {
       return
     }
 
+    const payload = { ...form }
+
     if (!navigator.onLine) {
-      queuePurchaseLogisticsOfflineDraft(form)
+      queuePurchaseLogisticsOfflineDraft(payload)
       toast.success(t('purchase.logistics.offlineQueued'), {
         description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
         icon: <Truck className='h-4 w-4' />,
       })
-      resetForm()
+      setOpen(false)
       return
     }
 
     try {
-      await mutation.mutateAsync(form)
+      await mutation.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ['purchase-logistics-list'] })
       toast.success(t('purchase.logistics.bindSuccess'), {
         description: t('purchase.logistics.bindSuccessDesc', { trackingNo: form.trackingNo }),
         icon: <Truck className='h-4 w-4' />,
       })
-      resetForm()
+      setOpen(false)
     } catch (err) {
       if (shouldQueuePurchaseLogisticsOfflineDraft(err)) {
         const message = err instanceof Error ? err.message : undefined
-        queuePurchaseLogisticsOfflineDraft(form, message)
+        queuePurchaseLogisticsOfflineDraft(payload, message)
         toast.success(t('purchase.logistics.offlineQueued'), {
           description: t('purchase.logistics.offlineQueuedDesc', { trackingNo: form.trackingNo }),
           icon: <Truck className='h-4 w-4' />,
         })
-        resetForm()
+        setOpen(false)
         return
       }
 
@@ -104,20 +111,17 @@ export function PurchaseLogisticsDialog() {
   const handleTrackingNoChange = (trackingNo: string) => {
     const autoDetectedCarrier = inferCarrierFromTrackingNo(trackingNo)
     setInferredCarrier(autoDetectedCarrier || '')
-    setForm((prev) => {
-      if (isCarrierTouched) {
-        return { ...prev, trackingNo }
-      }
+    
+    form.trackingNo = trackingNo
 
-      const shouldClearAutoCarrier =
-        !autoDetectedCarrier && Boolean(inferredCarrier) && prev.carrier === inferredCarrier
-
-      return {
-        ...prev,
-        trackingNo,
-        carrier: autoDetectedCarrier || (shouldClearAutoCarrier ? '' : prev.carrier),
+    if (!isCarrierTouched) {
+      const shouldClearAutoCarrier = !autoDetectedCarrier && Boolean(inferredCarrier) && form.carrier === inferredCarrier
+      if (autoDetectedCarrier) {
+        form.carrier = autoDetectedCarrier
+      } else if (shouldClearAutoCarrier) {
+        form.carrier = ''
       }
-    })
+    }
   }
 
   return (
@@ -151,11 +155,8 @@ export function PurchaseLogisticsDialog() {
                 value={form.purchaseOrderId}
                 onChange={(e) => {
                   const selected = orders.find((order) => order.id === e.target.value)
-                  setForm((prev) => ({
-                    ...prev,
-                    purchaseOrderId: e.target.value,
-                    orderNo: selected?.orderNo || '',
-                  }))
+                  form.purchaseOrderId = e.target.value
+                  form.orderNo = selected?.orderNo || ''
                 }}
                 className='w-full h-12 rounded-2xl bg-slate-100 border-none px-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none appearance-none'
               >
@@ -179,7 +180,7 @@ export function PurchaseLogisticsDialog() {
                   onChange={(e) => {
                     setIsCarrierTouched(true)
                     setInferredCarrier('')
-                    setForm((prev) => ({ ...prev, carrier: e.target.value }))
+                    form.carrier = e.target.value
                   }}
                   placeholder={t('purchase.logistics.carrierPlaceholder')}
                   className='h-12 rounded-2xl bg-slate-100 border-none'
@@ -200,7 +201,7 @@ export function PurchaseLogisticsDialog() {
                         onClick={() => {
                           setIsCarrierTouched(true)
                           setInferredCarrier('')
-                          setForm((prev) => ({ ...prev, carrier }))
+                          form.carrier = carrier
                         }}
                         className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
                           isActive

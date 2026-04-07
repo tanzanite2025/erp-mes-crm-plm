@@ -1,5 +1,269 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`production line topology` 更新 contract 断链修复（2026-04-07）
+
+### 根因结论
+本轮 `/personnel/line` 工段/工序拓扑更新失败，最终确认不是单个前端按钮或密码框问题，而是**前后端对 production line topology 更新的正式 contract 漂移**。
+
+已确认的断链如下：
+
+1. 前端
+   - `src/features/production-shared/services/production-resource-service.ts`
+   - 当前 topology 敏感操作已按 SDRTS 设计提交：`PATCH /production/lines/:id + DeltaPayload + version + authCode`
+
+2. 后端
+   - 原 `server/routes/routes_production.go` 仅暴露 `GET /production/lines`、`POST /production/lines`、`DELETE /production/lines/:id`
+   - 原后端**不存在** `PATCH /production/lines/:id`
+
+3. 直接后果
+   - 工段/工序删除在前端授权后会真正发起 PATCH 请求；
+   - 但后端路由不存在，直接返回 404；
+   - 用户侧表现为“密码框出现后保存失败 / 不生效”。
+
+### 同轮一起确认并修复的底层问题
+1. 节点层授权分叉
+   - `segment-node.tsx` / `process-node.tsx` 之前各自维护授权弹框，已收口回外层统一 topology 保存边界。
+
+2. SDRTS `ProxyTracker` 根因
+   - `src/lib/delta/proxy-tracker.ts` 原实现把原始快照与工作副本混用，导致 delta 可能被算空；
+   - 已修正为 `baseline`（只读基准）+ `workingCopy`（可变副本）模型，恢复正确的 delta 计算。
+
+### 已执行变更
+1. 为 production line 补正式 PATCH request DTO
+   - `server/services/production_dto.go`
+   - 新增：
+     - `PatchProductionLineMetadata`
+     - `PatchProductionLineHandlerRequest`
+
+2. 为 production line 注册正式 PATCH 路由
+   - `server/routes/routes_production.go`
+   - 新增：
+     - `PATCH /production/lines/:id`
+
+3. 为 production topology 新增 PATCH handler
+   - `server/handlers/production_topology_handlers.go`
+   - 新增 `PatchProductionLineHandler`
+   - 明确承接：
+     - `delta`
+     - `metadata.version`
+     - `metadata.authCode`
+   - 并保持既有：
+     - 版本冲突 -> `409`
+     - 授权码错误 -> `403`
+
+4. 为 production service 新增 PATCH 正式主链
+   - `server/services/production_service.go`
+   - 新增：
+     - `PatchProductionLineRequest`
+     - `PatchProductionLine(...)`
+     - `applyProductionLineDelta(...)`
+   - PATCH 策略为：
+     - 先读取当前完整产线拓扑；
+     - 将前端 `delta` 应用到完整 `ProductionLineDTO`；
+     - 再复用既有 `SaveProductionLine(...)` 主链处理版本校验、授权码校验与拓扑事务保存。
+
+5. 为 repository 补完整拓扑读取
+   - `server/repositories/production_repository.go`
+   - `GetProductionLineByID(...)` 改为 preload：
+     - `Segments`
+     - `Segments.Processes`
+   - 保证 PATCH 时是基于完整现状还原，而不是只拿主表字段。
+
+6. 补最小回归测试
+   - `server/handlers/production_topology_handlers_test.go`
+     - 新增 PATCH request binding 测试，锁住 `delta / version / authCode` 结构
+   - `server/services/production_service_test.go`
+     - 新增 `PatchProductionLine(...)` 回归测试，锁住“delta -> 完整 DTO -> Save 主链”行为
+
+### 保留边界
+- 未让前端回退为 `POST /production/lines` 全量保存；
+- 未在节点层重新发明自己的提交协议；
+- 未把 404 当成普通 toast 问题处理；
+- PATCH 仍复用既有 `SaveProductionLine(...)` 主链，没有再发明第二套 topology 持久化逻辑。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Production|Topology"
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 当前结果
+- production line topology 更新 contract 已从“前端 PATCH / 后端无路由”的断链状态恢复为正式闭环；
+- 工段/工序拓扑敏感操作现在可沿统一授权链进入正式 PATCH 持久化；
+- 本轮从根因层同时修复了节点层授权分叉、ProxyTracker delta 失真、以及 production PATCH contract 缺失三处断点。
+
+## P0：`users` 测试数据构造边界收口（2026-04-07）
+
+### 根因结论
+本轮不是给单个测试散点补 `version`，而是收口一类共享根因：**正式 `User` / `Role` schema 已演进，但测试层仍在直接手写正式对象，缺少统一测试工厂入口。**
+
+已确认的根因链如下：
+
+1. `User`
+   - `src/features/users/data/schema.ts` 中正式 `User` contract 已要求 `version`，并承接 `createdAt / updatedAt / resolvedRole / roleInfo` 等字段；
+   - `role-resolver.test.ts`、`user-api.test.ts` 仍直接手写正式 `User` 字面量；
+   - 一旦 schema 演进，测试会成片漂移。
+
+2. `Role`
+   - `src/features/system-mgmt/data/role-schema.ts` 中正式 `Role` contract 同样已要求 `version`；
+   - `role-resolver.test.ts` 中的角色对象也仍直接手写；
+   - 这说明测试层“正式对象裸写”问题并不只存在于 `User`。
+
+3. `PATCH` contract
+   - `user-api.test.ts` 中 `patchUser(...)` 的测试不仅对象字面量陈旧，连调用签名与 SDRTS `DeltaPayload` 结构也停留在旧 contract；
+   - 问题根因同样是测试未跟随真实 service contract 一起收口。
+
+### 已执行变更
+1. 为正式 `User` 建立共享测试工厂
+   - `src/features/users/test-factories.ts`
+   - 已新增 `createTestUser(overrides)`，统一承接 `User` 的正式默认值、`version` 与时间字段。
+
+2. 为正式 `Role` 建立共享测试工厂
+   - `src/features/system-mgmt/test-factories.ts`
+   - 已新增 `createTestRole(overrides)`，统一承接 `Role` 的正式默认值与 `version`。
+
+3. `role-resolver.test.ts` 已切到共享测试工厂
+   - `src/features/users/utils/role-resolver.test.ts`
+   - 正式 `User` 对象改为消费 `createTestUser(...)`
+   - 正式 `Role` 对象改为消费 `createTestRole(...)`
+   - 不再在测试里直接手写旧版正式对象字面量。
+
+4. `user-api.test.ts` 已对齐正式 `User` 与真实 PATCH contract
+   - `src/features/users/services/user-api.test.ts`
+   - 分页返回中的正式 `User` 列表项改为消费 `createTestUser(...)`
+   - `patchUser(...)` 测试已对齐真实签名：`patchUser(id, delta, version)`
+   - `delta` 断言已改为真实 SDRTS `DeltaSet/DeltaPayload` 结构。
+
+### 保留边界
+- 未放宽 `User` 或 `Role` 正式 schema；
+- 未通过 `as User` / `as Role` 或宽断言掩盖问题；
+- 未把 `CreateUserPayload` / `UserOption` / `UserReplacePayload` 等 API payload 误塞进正式实体测试工厂；
+- 未扩展为整个 `users` 域测试体系重构。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 当前结果
+- 正式 `User` / `Role` 在目标测试链中的构造入口已收口到共享测试工厂；
+- `users` 相关测试对真实 `PATCH` contract 的调用方式已重新对齐；
+- 本轮以根因整改而非补丁方式恢复了前端 TypeScript 构建。
+
+## P0：正式对象单一构造入口第二轮（`Furnace` 推广）（2026-04-07）
+
+### 排查结论
+本轮继续搜索 `equipment-tooling` 中同类“直接手写正式对象默认值”的残留点后，确认：
+
+1. `Furnace`
+   - `src/features/equipment-tooling/components/furnace-action-dialog.tsx` 仍在 `defaultValues` 与 `form.reset(...)` 中手写两套 `Furnace` 正式对象默认值；
+   - 与第一轮 `Mold` 的根因完全同构，适合继续推广单一构造入口。
+
+2. `LoanDraft`
+   - `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts` 中的 `createLoanDraft(...)` 属于本地 UI 草稿模型；
+   - 当前不属于正式 `MoldLoan` contract 的默认值漂移问题，因此未并入本轮整改。
+
+### 已执行变更
+1. 为 `Furnace` 建立统一草稿构造入口
+   - `src/features/equipment-tooling/data/schema.ts`
+   - 已新增 `createFurnaceDraft(defaultType, overrides)`，统一承接 `Furnace` 默认值、`version`、`createdAt` 与基础字段初值。
+
+2. `FurnaceActionDialog` 已切到统一构造入口
+   - `src/features/equipment-tooling/components/furnace-action-dialog.tsx`
+   - 表单 `defaultValues` 改为消费 `createFurnaceDraft(defaultFurnaceType, editData ?? {})`
+   - 新建/编辑态 `form.reset(...)` 改为统一消费 `createFurnaceDraft(...)`
+   - 不再在弹窗内维护第二套手写 `Furnace` 默认对象。
+
+### 保留边界
+- 未把 `LoanDraft` 错归为正式对象整改目标；
+- 未扩展为借还管理表单重构；
+- 未改 `Furnace` 业务语义，仅收口其正式默认值构造入口；
+- 未扩大为 `equipment-tooling` 全域对象工厂体系重写。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+补充核对：
+- `createFurnaceDraft(...)` 已成为本轮目标链中的统一默认值入口；
+- 当前 `equipment-tooling` 目标链中已无第二套 `Furnace` 默认值手写残留。
+
+### 当前结果
+- 单一构造入口已从 `Mold` 稳定推广到 `Furnace`；
+- `equipment-tooling` 中正式对象默认值漂移的同类风险进一步下降；
+- `LoanDraft` 等 UI 草稿模型保持独立，没有被错误并入正式对象治理。
+
+## P0：TypeScript 构建错误收口（共享 contract 边界整改）（2026-04-07）
+
+### 根因结论
+本轮不是对两个独立报错做补丁，而是收口一类共同根因：**共享 contract 已演进，但页面层仍可直接手写正式对象、直接猜共享结构，缺少单一构造入口与稳定消费边界。**
+
+已确认的两条根因链如下：
+
+1. `equipment-tooling`
+   - `Mold` 已是正式领域类型，但 `mold-mgmt.tsx` 与 `mold-action-dialog.tsx` 仍分别手写新增草稿/默认值；
+   - 当 `Mold` 正式字段包含 `version` 后，页面层字面量对象立刻发生 contract 漂移。
+
+2. `org-personnel`
+   - 员工管理列表的名称映射消费边界与同域实现不一致；
+   - 同域已有实现按 `line -> segment -> processes` 消费当前权威拓扑，但员工列表仍停留在较旧、更宽松的 segment 级读取方式；
+   - 这类不一致在共享类型演进时容易再次触发漂移。
+
+### 已执行变更
+1. 为 `Mold` 建立统一草稿构造入口
+   - `src/features/equipment-tooling/data/schema.ts`
+   - 已新增 `createMoldDraft(overrides)`，统一承接 `Mold` 默认值、`version` 与基础字段初值。
+
+2. `MoldActionDialog` 已切到统一草稿入口
+   - `src/features/equipment-tooling/components/mold-action-dialog.tsx`
+   - 表单 `defaultValues` 改为消费 `createMoldDraft(editData ?? {})`
+   - 新建态 `form.reset(...)` 改为消费 `createMoldDraft()`
+   - 不再在弹窗内维护第二套手写默认值。
+
+3. `MoldMgmt` 已移除页面层手写 `Mold` 字面量
+   - `src/features/equipment-tooling/tabs/mold-mgmt.tsx`
+   - 分组内“新增模具”入口改为消费 `createMoldDraft(...)`
+   - 页面层不再直接手写正式 `Mold` 对象。
+
+4. `EmployeeManagementList` 已对齐权威产线/工序映射结构
+   - `src/features/org-personnel/tabs/employee-management-list.tsx`
+   - 名称映射从仅遍历 `segment` 改为对齐当前权威的 `segment -> processes`
+   - 同步移除了目标文件中的显式 `any`，改用 `Row<Employee>`。
+
+### 保留边界
+- 未放宽 `Mold` 正式类型约束；
+- 未通过临时断言或可选字段规避 contract 问题；
+- 未重构 `equipment-tooling` 或产线拓扑整体架构；
+- 未改变模具新增/编辑交互语义；
+- 未改变员工管理业务逻辑，仅收口其名称映射消费边界。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+补充核对：
+- `createMoldDraft(...)` 已成为本轮目标链中的统一草稿入口；
+- 当前工作区已无 `jobCategories` 旧字段读取残留。
+
+### 当前结果
+- `equipment-tooling` 的正式 `Mold` 草稿构造已收口到单一入口，后续新增正式字段时不再需要在页面多处同步手写默认对象；
+- `org-personnel` 的员工管理名称映射已对齐当前权威拓扑消费方式，减少同域实现不一致导致的再次漂移；
+- 本轮以边界整改而非补丁方式恢复了前端 TypeScript 构建。
+
 ## P0：`purchase_orders` 再开一条最小闭环（错误响应 contract 统一）（2026-04-07）
 
 ### 已执行变更

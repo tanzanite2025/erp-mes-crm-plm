@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { OrgService } from '../services/org-service'
 import { type OrgNode } from '../data/org-schema'
+import { type DeltaSet } from '@/lib/delta/types'
 import { initialOrgData } from '../data/org-data'
 
 const logger = createLogger('useOrgMgmt')
@@ -76,15 +77,23 @@ export function useOrgMgmt() {
     }
   }, [loadData])
 
-  const handleOrgSubmit = async (data: OrgNode) => {
+  const handleOrgSubmit = async (data: OrgNode, isPatch?: boolean, delta?: DeltaSet) => {
     try {
-      const isEdit = !!data.id
-      const savedNode = await OrgService.saveOrgNode(data)
-      const freshTree = await loadData()
-      const updatedNodeInTree = findNodeInTree(freshTree, savedNode.id)
-      setSelectedNode(updatedNodeInTree || savedNode)
+      let savedNode: OrgNode;
+      
+      if (isPatch && delta && data.id) {
+        // SDRTS: 执行增量 Patch
+        savedNode = await OrgService.patchOrgNode(data.id, delta, data.version || 1)
+        toast.success(t('orgPersonnel.org.saveSuccess'))
+      } else {
+        // 全量保存 (创建新节点或回退方案)
+        savedNode = await OrgService.saveOrgNode(data)
+        toast.success(data.id ? t('orgPersonnel.org.saveSuccess') : t('orgPersonnel.org.createSuccess'))
+      }
 
-      toast.success(isEdit ? t('orgPersonnel.org.saveSuccess') : t('orgPersonnel.org.createSuccess'))
+      const freshTree = await loadData()
+      const updatedNodeInTree = findNodeInTree(freshTree, savedNode.id!)
+      setSelectedNode(updatedNodeInTree || savedNode)
     } catch (err) {
       logger.error('Submit failed', err)
       toast.error(t('orgPersonnel.org.saveFailed'))
@@ -107,14 +116,23 @@ export function useOrgMgmt() {
   const handleLinkSave = async (
     items: { type: 'line' | 'segment'; id: string; name: string }[],
   ) => {
-    if (!selectedNode) return
+    if (!selectedNode || !selectedNode.id) return
     try {
-      const updated = { ...selectedNode, linkedArchitecture: items }
-      await OrgService.saveOrgNode(updated)
-      setSelectedNode(updated)
-      await loadData()
+        // SDRTS: 构建针对 linkedArchitecture 的增量
+        const delta: DeltaSet = {
+            'linkedArchitecture': {
+                o: selectedNode.linkedArchitecture || [],
+                n: items
+            }
+        }
+        
+        const saved = await OrgService.patchOrgNode(selectedNode.id, delta, selectedNode.version || 1)
+        setSelectedNode(saved)
+        await loadData()
+        toast.success(t('orgPersonnel.org.saveSuccess'))
     } catch (err) {
       logger.error('Link architecture failed', err)
+      toast.error(t('orgPersonnel.org.saveFailed'))
     }
   }
 

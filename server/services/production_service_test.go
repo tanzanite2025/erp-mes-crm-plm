@@ -199,6 +199,61 @@ func TestProductionServiceSaveProductionLineSetsInitialVersionForNewLine(t *test
 	require.Equal(t, int64(1), repo.savedLine.Version)
 }
 
+func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveChain(t *testing.T) {
+	repo := &fakeProductionRepository{
+		existingLine: models.ProductionLine{
+			BaseModel: models.BaseModel{ID: "line-1"},
+			Code:      "LINE-A",
+			Name:      "Line A",
+			Version:   3,
+			Segments: []models.LineSegment{
+				{
+					BaseModel: models.BaseModel{ID: "segment-1"},
+					LineID:    "line-1",
+					Name:      "旧工段",
+					SortOrder: 0,
+				},
+			},
+		},
+		bumpVersionResult: true,
+	}
+	service := NewProductionService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		repo,
+		fakeSystemConfigRepository{value: "expected"},
+	)
+
+	segmentsRaw, err := json.Marshal([]LineSegmentDTO{
+		{
+			ID:        "segment-2",
+			LineID:    "line-1",
+			Name:      "新工段",
+			SortOrder: 0,
+			Processes: []ProcessStepDTO{},
+		},
+	})
+	require.NoError(t, err)
+
+	line, err := service.PatchProductionLine(PatchProductionLineRequest{
+		ID: "line-1",
+		Delta: map[string]json.RawMessage{
+			"segments": json.RawMessage(`{"o":[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"processes":[]}],"n":` + string(segmentsRaw) + `}`),
+		},
+		Version:  3,
+		AuthCode: "expected",
+		Operator: "tester",
+		IP:       "127.0.0.1",
+	})
+
+	require.NoError(t, err)
+	require.True(t, repo.saveProductionLineHit)
+	require.Equal(t, int64(4), line.Version)
+	require.Len(t, repo.savedLine.Segments, 1)
+	require.Equal(t, "segment-2", repo.savedLine.Segments[0].ID)
+	require.Equal(t, "新工段", repo.savedLine.Segments[0].Name)
+}
+
 func TestProductionServiceSaveProcessStepAppendsStationMapping(t *testing.T) {
 	repo := &fakeProductionRepository{}
 	service := NewProductionService(

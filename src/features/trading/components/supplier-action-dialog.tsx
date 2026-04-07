@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Box, Building2, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -9,13 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Supplier, type SupplierStatus } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface SupplierActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   supplier?: Supplier | null
-  onSave: (data: Partial<Supplier>) => void
+  onSave: (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: DeltaSet }) => void
 }
 
 const DEFAULT_CATEGORY = '原材料'
@@ -47,58 +49,43 @@ export function SupplierActionDialog({
     body: 'custom-scrollbar flex-1 space-y-6 overflow-y-auto px-6 py-6 sm:px-8',
     footer: 'shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:justify-end sm:px-8',
   })
-  const sourceKey = supplier?.id ?? 'create'
+  
   const initialFormData = useMemo(() => (supplier ? supplier : DEFAULT_FORM_DATA), [supplier])
-  const [draftState, setDraftState] = useState<{
-    sourceKey: string
-    draft: Partial<Supplier>
-  }>({
-    sourceKey,
-    draft: {},
-  })
-  const draft = draftState.sourceKey === sourceKey ? draftState.draft : {}
-  const formData = { ...initialFormData, ...draft }
+  const { data: formData, tracker } = useDeltaTracker(initialFormData as Supplier, open)
   const [productInput, setProductInput] = useState('')
 
-  const updateFormData = (updater: (prev: Partial<Supplier>) => Partial<Supplier>) => {
-    setDraftState((prev) => {
-      const currentDraft = prev.sourceKey === sourceKey ? prev.draft : {}
-      return {
-        sourceKey,
-        draft: updater({ ...initialFormData, ...currentDraft }),
-      }
-    })
-  }
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setDraftState({ sourceKey, draft: {} })
-      setProductInput('')
+  useEffect(() => {
+    if (!open) {
+        setProductInput('')
     }
-    onOpenChange(nextOpen)
-  }
+  }, [open])
 
   const handleSave = () => {
-    onSave(formData)
-    setDraftState({ sourceKey, draft: {} })
+    const isPatch = !!supplier
+    const delta = tracker.commit()
+    
+    if (isPatch && Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+    }
+
+    onSave({ 
+        data: formData as Partial<Supplier>, 
+        isPatch, 
+        delta: isPatch ? delta : undefined 
+    })
     setProductInput('')
     onOpenChange(false)
   }
 
   const addProduct = () => {
     if (!productInput || formData.mainProducts?.includes(productInput)) return
-    updateFormData((prev) => ({
-      ...prev,
-      mainProducts: [...(prev.mainProducts || []), productInput],
-    }))
+    formData.mainProducts = [...(formData.mainProducts || []), productInput]
     setProductInput('')
   }
 
   const removeProduct = (product: string) => {
-    updateFormData((prev) => ({
-      ...prev,
-      mainProducts: prev.mainProducts?.filter((item) => item !== product),
-    }))
+    formData.mainProducts = formData.mainProducts?.filter((item) => item !== product)
   }
 
   const categoryOptions = [
@@ -111,7 +98,7 @@ export function SupplierActionDialog({
   return (
     <ActionDialogShell
       open={open}
-      onOpenChange={handleOpenChange}
+      onOpenChange={onOpenChange}
       title={supplier ? t('purchase.suppliers.dialogEditTitle') : t('purchase.suppliers.dialogCreateTitle')}
       description={t('purchase.suppliers.dialogDescription')}
       contentClassName={shellClasses.content}
@@ -150,7 +137,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.namePlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all placeholder:text-muted-foreground/20 focus:ring-2 focus:ring-primary/20'
               value={formData.name}
-              onChange={(e) => updateFormData((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => { formData.name = e.target.value }}
             />
           </div>
         </div>
@@ -163,7 +150,7 @@ export function SupplierActionDialog({
             placeholder={t('purchase.suppliers.fields.codePlaceholder')}
             className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.code}
-            onChange={(e) => updateFormData((prev) => ({ ...prev, code: e.target.value }))}
+            onChange={(e) => { formData.code = e.target.value }}
           />
         </div>
       </div>
@@ -175,7 +162,7 @@ export function SupplierActionDialog({
           </Label>
           <Select
             value={formData.category}
-            onValueChange={(value) => updateFormData((prev) => ({ ...prev, category: value }))}
+            onValueChange={(value) => { formData.category = value }}
           >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
               <SelectValue placeholder={t('purchase.suppliers.fields.categoryPlaceholder')} />
@@ -195,9 +182,7 @@ export function SupplierActionDialog({
           </Label>
           <Select
             value={formData.status}
-            onValueChange={(value) =>
-              updateFormData((prev) => ({ ...prev, status: value as SupplierStatus }))
-            }
+            onValueChange={(value) => { formData.status = value as SupplierStatus }}
           >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
               <SelectValue placeholder={t('purchase.suppliers.fields.statusPlaceholder')} />
@@ -278,9 +263,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.contactPersonPlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.contactPerson}
-              onChange={(e) =>
-                updateFormData((prev) => ({ ...prev, contactPerson: e.target.value }))
-              }
+              onChange={(e) => { formData.contactPerson = e.target.value }}
             />
           </div>
         </div>
@@ -295,9 +278,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.contactPhonePlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.contactPhone}
-              onChange={(e) =>
-                updateFormData((prev) => ({ ...prev, contactPhone: e.target.value }))
-              }
+              onChange={(e) => { formData.contactPhone = e.target.value }}
             />
           </div>
         </div>
@@ -315,7 +296,7 @@ export function SupplierActionDialog({
             rows={2}
             className='resize-none rounded-2xl border-none bg-muted/50 py-4 pl-11 pr-4 text-sm font-bold leading-relaxed transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.address}
-            onChange={(e) => updateFormData((prev) => ({ ...prev, address: e.target.value }))}
+            onChange={(e) => { formData.address = e.target.value }}
           />
         </div>
       </div>

@@ -108,6 +108,7 @@ export function createEquipmentPartnerSchema(t?: EquipmentToolingTranslate) {
         contactPerson: z.string().optional(),
         phone: z.string().optional(),
         address: z.string().optional(),
+        version: z.number().default(1),
         createdAt: z.string(),
     })
 }
@@ -121,6 +122,7 @@ export function createMoldDrawingSchema(t?: EquipmentToolingTranslate) {
         type: z.enum(['2D', '3D', 'TECH_SPEC', 'OTHER']),
         fileUrl: z.string().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.drawings.validation.fileRequired', drawingValidationFallbacks)),
         version: z.string().default('V1.0'),
+        sysVersion: z.number().default(1),
         status: z.enum(['ACTIVE', 'DRAFT', 'OBSOLETE']).default('ACTIVE'),
         uploadedAt: z.string(),
         remarks: z.string().optional(),
@@ -158,6 +160,24 @@ export function createMoldDraft(overrides: Partial<MoldFormOutput> = {}): MoldFo
     }
 }
 
+export function createFurnaceDraft(defaultType: string, overrides: Partial<FurnaceFormOutput> = {}): FurnaceFormOutput {
+    return {
+        id: '',
+        sn: '',
+        name: '',
+        type: defaultType,
+        maxTemp: 1200,
+        currentTemp: 25,
+        version: 1,
+        status: 'IDLE',
+        location: '',
+        description: '',
+        imageUrl: '',
+        createdAt: new Date().toISOString(),
+        ...overrides,
+    }
+}
+
 export const moldLoanSchema = z.object({
     id: z.string(),
     moldId: z.string(),
@@ -172,6 +192,11 @@ export const moldLoanSchema = z.object({
     status: z.enum(['ACTIVE', 'RETURNED', 'OVERDUE']),
     remarks: z.string().optional(),
     photoUrl: z.string().optional(),
+    // 借入模式下的资产初始化元数据
+    maxCycles: z.number().optional(),
+    currentCycles: z.number().optional(),
+    maintenanceThreshold: z.number().optional(),
+    version: z.number().default(1),
     createdAt: z.string(),
 })
 
@@ -189,6 +214,7 @@ export const moldDrawingLogSchema = z.object({
     drawingId: z.string(),
     action: z.enum(['CREATED', 'BIND', 'UNBIND', 'STATUS_CHANGE', 'VERSION_UPDATE']),
     details: z.string(),
+    delta: z.record(z.string(), z.any()).optional(),
     operator: z.string().default('SYSTEM'),
     timestamp: z.string(),
 })

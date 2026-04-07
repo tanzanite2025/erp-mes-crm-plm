@@ -1,66 +1,32 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type EquipmentPartner, type Mold, type MoldLoan } from '../data/schema'
 import { MoldLoanService } from '../services/mold-loan-service'
 import { MoldService } from '../services/mold-service'
 import { EquipmentPartnerService } from '../services/partner-service'
+import { AssetService } from '../services/asset-service'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export type LoanMode = 'LEND' | 'BORROW'
-
-export interface LoanDraft {
-    moldId: string
-    fromFactory: string
-    toFactory: string
-    contactPerson: string
-    loanDate: string
-    expectedReturnDate: string
-    remarks: string
-    photoUrl: string
-    moldSn: string
-    moldName: string
-    maxCycles: number
-    currentCycles: number
-    maintenanceThreshold: number
-}
-
-function getToday() {
-    return new Date().toISOString().split('T')[0] ?? ''
-}
-
-function createLoanDraft(homeFactory: string): LoanDraft {
-    return {
-        moldId: '',
-        fromFactory: homeFactory,
-        toFactory: '',
-        contactPerson: '',
-        loanDate: getToday(),
-        expectedReturnDate: '',
-        remarks: '',
-        photoUrl: '',
-        moldSn: '',
-        moldName: '',
-        maxCycles: 1000,
-        currentCycles: 0,
-        maintenanceThreshold: 800,
-    }
-}
 
 export function useMoldLoanMgmt() {
     const { t } = useLanguage()
     const { runConfirmedAction } = useConfirmedActionFlow()
+    const queryClient = useQueryClient()
     const homeFactory = t('equipmentTooling.loans.defaults.homeFactory')
     
     const [loans, setLoans] = useState<MoldLoan[]>([])
     const [molds, setMolds] = useState<Mold[]>([])
     const [partners, setPartners] = useState<EquipmentPartner[]>([])
     const [searchTerm, setSearchTerm] = useState('')
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
     const [mode, setMode] = useState<LoanMode>('LEND')
-    const [newLoan, setNewLoan] = useState<LoanDraft>(() => createLoanDraft(homeFactory))
+    const [currentRow, setCurrentRow] = useState<MoldLoan | null>(null)
     const [error, setError] = useState<unknown>(null)
 
     const loadData = useCallback(async () => {
@@ -79,17 +45,63 @@ export function useMoldLoanMgmt() {
         }
     }, [])
 
-    useEffect(() => {
-        void loadData()
-    }, [loadData])
+    const handleAddClick = (initialMode: LoanMode = 'LEND') => {
+        setMode(initialMode)
+        setCurrentRow(null)
+        setIsOpen(true)
+    }
 
-    const resetDraft = (nextMode: LoanMode) => {
-        const nextDraft = createLoanDraft(homeFactory)
-        if (nextMode === 'BORROW') {
-            nextDraft.toFactory = homeFactory
+    const handleEditClick = (row: MoldLoan) => {
+        setCurrentRow(row)
+        setIsOpen(true)
+    }
+
+    const mutation = useMutation({
+        mutationFn: async ({ 
+            data, 
+            isPatch, 
+            delta 
+        }: { 
+            data: MoldLoan; 
+            isPatch?: boolean; 
+            delta?: DeltaSet 
+        }) => {
+            if (isPatch && delta) {
+                return MoldLoanService.patchLoan(data.id, delta, data.version)
+            }
+            if (mode === 'LEND') {
+                return AssetService.lendMold(data)
+            } else {
+                // 构造借入模式需要的两部分数据
+                const { maxCycles, currentCycles, maintenanceThreshold, ...loanBase } = data
+                const moldData = {
+                    sn: data.moldSn,
+                    name: data.moldName,
+                    maxCycles: maxCycles || 1000,
+                    currentCycles: currentCycles || 0,
+                    maintenanceThreshold: maintenanceThreshold || 800,
+                    totalLifeCycles: currentCycles || 0,
+                    description: `借入自 ${data.fromFactory}`,
+                    isAlerted: false,
+                    version: 1
+                }
+                return AssetService.borrowMold(loanBase, moldData)
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
+            queryClient.invalidateQueries({ queryKey: ['molds'] })
+            toast.success(currentRow ? '记录已更新' : '记录已创建')
+            setIsOpen(false)
+            void loadData()
+        },
+        onError: (error: any) => {
+            toast.error(error.message || '操作失败')
         }
-        setMode(nextMode)
-        setNewLoan(nextDraft)
+    })
+
+    const handleDialogSubmit = (data: MoldLoan, isPatch?: boolean, delta?: DeltaSet) => {
+        mutation.mutate({ data, isPatch, delta })
     }
 
     const filteredLoans = useMemo(() => {
@@ -102,75 +114,6 @@ export function useMoldLoanMgmt() {
                 .some((value) => value.toLowerCase().includes(keyword))
         )
     }, [loans, searchTerm])
-
-    const handleCreateRecord = async () => {
-        runConfirmedAction({
-            permission: 'action_equipment_loan_manage',
-            confirmKey: 'equipmentTooling.loans.confirm.createDescription',
-            onAction: async () => {
-                if (mode === 'LEND') {
-                    const selectedMold = molds.find((mold) => mold.id === newLoan.moldId)
-                    if (!selectedMold || !newLoan.toFactory || !newLoan.contactPerson || !newLoan.expectedReturnDate) {
-                        toast.error(t('equipmentTooling.loans.validation.incompleteLend'))
-                        return
-                    }
-
-                    await MoldLoanService.createLoan({
-                        moldId: newLoan.moldId,
-                        moldName: selectedMold.name,
-                        moldSn: selectedMold.sn,
-                        fromFactory: newLoan.fromFactory,
-                        toFactory: newLoan.toFactory,
-                        contactPerson: newLoan.contactPerson,
-                        loanDate: new Date(newLoan.loanDate).toISOString(),
-                        expectedReturnDate: new Date(newLoan.expectedReturnDate).toISOString(),
-                        status: 'ACTIVE',
-                        remarks: newLoan.remarks,
-                        photoUrl: newLoan.photoUrl,
-                    })
-
-                    toast.success(t('equipmentTooling.loans.toast.createdLend'))
-                } else {
-                    if (!newLoan.moldSn || !newLoan.moldName || !newLoan.fromFactory || !newLoan.expectedReturnDate) {
-                        toast.error(t('equipmentTooling.loans.validation.incompleteBorrow'))
-                        return
-                    }
-
-                    await MoldLoanService.createBorrowRecord(
-                        {
-                            moldId: '',
-                            moldName: newLoan.moldName,
-                            moldSn: newLoan.moldSn,
-                            fromFactory: newLoan.fromFactory,
-                            toFactory: homeFactory,
-                            contactPerson: newLoan.contactPerson,
-                            loanDate: new Date(newLoan.loanDate).toISOString(),
-                            expectedReturnDate: new Date(newLoan.expectedReturnDate).toISOString(),
-                            status: 'ACTIVE',
-                            remarks: newLoan.remarks,
-                            photoUrl: newLoan.photoUrl,
-                        },
-                        {
-                            sn: newLoan.moldSn,
-                            name: newLoan.moldName,
-                            maxCycles: newLoan.maxCycles,
-                            currentCycles: newLoan.currentCycles,
-                            maintenanceThreshold: newLoan.maintenanceThreshold,
-                            totalLifeCycles: newLoan.currentCycles,
-                            description: t('equipmentTooling.loans.borrow.autoDescription', { fromFactory: newLoan.fromFactory }),
-                            isAlerted: false,
-                        }
-                    )
-
-                    toast.success(t('equipmentTooling.loans.toast.createdBorrow'))
-                }
-
-                setIsDialogOpen(false)
-                resetDraft(mode)
-                await loadData()
-            }
-        })
-    }
 
     const handleReturn = async (loanId: string) => {
         runConfirmedAction({
@@ -190,16 +133,16 @@ export function useMoldLoanMgmt() {
         partners,
         searchTerm,
         setSearchTerm,
-        isDialogOpen,
-        setIsDialogOpen,
+        isOpen,
+        setIsOpen,
         mode,
         setMode,
-        newLoan,
-        setNewLoan,
-        error,
-        handleCreateRecord,
+        currentRow,
+        handleAddClick,
+        handleEditClick,
+        handleDialogSubmit,
         handleReturn,
-        resetDraft,
+        error,
         homeFactory
     }
 }

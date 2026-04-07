@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 export interface LogisticsEvent {
   id: string
@@ -93,5 +94,21 @@ export const PurchaseLogisticsService = {
       method: 'PUT',
       body: JSON.stringify(data),
     })
+  },
+
+  /**
+   * 局部更新物流记录 (SDRTS 协议)
+   */
+  async patchRecord(id: string, delta: DeltaSet, version: number): Promise<PurchaseLogisticsRecord> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version }
+    };
+
+    return apiFetch<PurchaseLogisticsRecord>(`/logistics/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   }
 }

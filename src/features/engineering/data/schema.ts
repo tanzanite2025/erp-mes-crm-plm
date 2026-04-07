@@ -62,7 +62,7 @@ export const productSchema = z.object({
   status: z.enum(['Active', 'Draft', 'Archived']).default('Active'),
   templateKey: z.string().optional(),
   createdAt: z.string(),
-  _v: z.number().optional(),
+  version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
 
 export type Product = z.infer<typeof productSchema>
@@ -75,7 +75,7 @@ export const productTemplateSchema = z.object({
   description: z.string().optional(),
   active: z.boolean().default(true),
   createdAt: z.string(),
-  _v: z.number().optional(),
+  version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
 
 export type ProductTemplate = z.infer<typeof productTemplateSchema>
@@ -91,6 +91,7 @@ export const productTypeSchema = z.object({
   sortOrder: z.number().default(0),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  version: z.number().default(1),
 })
 
 export type ProductType = z.infer<typeof productTypeSchema>
@@ -102,7 +103,7 @@ export const changeOrderSchema = z.object({
   status: z.enum(['draft', 'released', 'obsolete']).default('draft'),
   description: z.string().optional(),
   createdAt: z.string(),
-  _v: z.number().optional(),
+  version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
 
 export type ChangeOrder = z.infer<typeof changeOrderSchema>
@@ -138,11 +139,12 @@ export const bomSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   changeOrderId: z.string().optional(),
   changeOrder: changeOrderSchema.optional(),
-  version: z.string().min(1, 'Version is required').default('V1.0'),
+  bomVersion: z.string().min(1, 'Version is required').default('V1.0'),
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
   items: z.array(bomItemSchema).default([]),
   description: z.string().optional(),
   createdAt: z.string(),
+  version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
 
 export type BOMSubstitute = z.infer<typeof bomSubstituteSchema>
@@ -169,6 +171,7 @@ export const productProcessRoutingSchema = z.object({
   routeNodes: z.array(productProcessRoutingNodeSchema).default([]),
   engineeringApprovalMemo: z.string().optional(),
   createdAt: z.string().optional(),
+  version: z.number().default(1),
 })
 
 export type ProductProcessRoutingNode = z.infer<typeof productProcessRoutingNodeSchema>
