@@ -13,9 +13,9 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { materialService, type Material } from '@/features/material-archive/services/material-service'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrder } from '../../data/schema'
-import { useGetPurchaseOrderDetail } from '../../hooks/use-purchase'
+import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
+import { useGetSuppliers } from '../../supplier'
 import { usePurchaseOrderForm } from '../../hooks/use-purchase-order-form'
-import { useGetSuppliers, usePurchaseOrderMutations } from '../../hooks/use-trading'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 
@@ -64,7 +64,7 @@ export function PurchaseOrderActionDialog({
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const { saveMutation, patchMutation } = usePurchaseOrderMutations()
+  const { createMutation, patchMutation } = usePurchaseOrderMutations()
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -90,10 +90,10 @@ export function PurchaseOrderActionDialog({
         })
       } else {
         // 新建采购单
-        await saveMutation.mutateAsync(formData)
+        await createMutation.mutateAsync(formData)
       }
       onOpenChange(false)
-    } catch (error) {
+    } catch (_error) {
       // 错误已处理
     }
   }

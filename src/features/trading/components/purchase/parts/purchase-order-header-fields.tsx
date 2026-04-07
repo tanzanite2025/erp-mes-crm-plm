@@ -10,10 +10,11 @@ import { type PurchaseOrder, type Supplier } from '../../../data/schema'
 import { getPurchaseStatusLabel } from '../../../data/purchase-status'
 
 const logger = createLogger('PurchaseOrderHeaderFields')
+type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
 
 interface PurchaseOrderHeaderFieldsProps {
   formData: Partial<PurchaseOrder>
-  handleHeaderChange: (field: keyof PurchaseOrder, value: any) => void
+  handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
   suppliers: Supplier[]
 }
 

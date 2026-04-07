@@ -12,14 +12,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { engineeringDBService } from '@/features/engineering-db/services/engineering-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { auditUtils } from '@/lib/audit-utils'
 import { type SalesOrder } from '../data/schema'
+import { useGetCustomers } from '../customer'
+import { useSalesOrderMutations } from '../sales'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
-import { useGetCustomers, useSalesOrderMutations } from '../hooks/use-trading'
 import { OrderFooterStats } from './parts/order-footer-stats'
 import { OrderHeaderFields } from './parts/order-header-fields'
 import { OrderLinesEditor } from './parts/order-lines-editor'
@@ -39,7 +41,7 @@ export function SalesOrderActionDialog({
   const { allowsAction } = useNonBlockingPermissionActions()
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
-  const [dictEntries, setDictEntries] = useState<any[]>([])
+  const [dictEntries, setDictEntries] = useState<DictionaryEntry[]>([])
   const [units, setUnits] = useState<Unit[]>([])
   const [drillingOptions, setDrillingOptions] = useState<{ label: string; value: string }[]>([])
   const [labelingOptions, setLabelingOptions] = useState<{ label: string; value: string }[]>([])
@@ -90,7 +92,7 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { saveMutation, patchMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -117,10 +119,10 @@ export function SalesOrderActionDialog({
       } else {
         // 新建订单: 提交全量数据
         const stampedData = auditUtils.stamp(finalData, 'create')
-        await saveMutation.mutateAsync(stampedData)
+        await createMutation.mutateAsync(stampedData)
       }
       onOpenChange(false)
-    } catch (error) {
+    } catch (_error) {
       // 错误已由 mutation 的 onError 处理（toast）
     }
   }

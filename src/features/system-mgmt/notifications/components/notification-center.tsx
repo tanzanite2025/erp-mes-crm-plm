@@ -18,7 +18,7 @@ import { type NotificationRule } from '@/features/system-mgmt/workflow-core/data
 import { resolveTemplate } from '../notification-service'
 import { useNavigate } from '@tanstack/react-router'
 import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
-import { getSalesOrders } from '@/features/trading/services/trading-service'
+import { getSalesOrders } from '@/features/trading/sales'
 import {
   getAuthSessionCompatibleRoleIds,
 } from '@/features/authz/utils/auth-session'

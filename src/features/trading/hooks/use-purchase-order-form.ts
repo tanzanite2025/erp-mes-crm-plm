@@ -1,13 +1,17 @@
 import { useMemo, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { financeService } from '@/features/finance/services/finance-service'
+import { financeService, type Currency } from '@/features/finance/services/finance-service'
 import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('usePurchaseOrderForm')
+type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
+type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
+type PurchaseOrderFormState = PurchaseOrder
+type PurchaseOrderFormUpdater = PurchaseOrderFormState | ((prev: PurchaseOrderFormState) => PurchaseOrderFormState)
 
 const emptyLine: Partial<PurchaseOrderLine> = {
     lineNo: 1,
@@ -47,47 +51,74 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     const memoizedInitial = useMemo(() => initialOrder || (DEFAULT_PURCHASE_ORDER as PurchaseOrder), [initialOrder])
     const { data: formData, commit } = useDeltaTracker(memoizedInitial, open)
 
-    const handleHeaderChange = useCallback(async (field: keyof PurchaseOrder, value: any) => {
+    const setFormData = useCallback((updater: PurchaseOrderFormUpdater) => {
+        if (typeof updater === 'function') {
+            const next = updater(formData)
+            Object.assign(formData, next)
+        } else {
+            Object.assign(formData, updater)
+        }
+    }, [formData])
+
+    const handleHeaderChange = useCallback(async (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => {
         if (field === 'currency') {
             try {
                 const currencies = await financeService.getCurrencies()
-                const target = currencies.find((c: any) => c.code === value)
-                formData[field] = value
-                if (target) {
-                    formData.exchangeRate = target.rate
-                }
+                const currencyValue = typeof value === 'string' ? value : String(value ?? '')
+                const target = currencies.find((c: Currency) => c.code === currencyValue)
+                setFormData((prev) => ({
+                    ...prev,
+                    currency: currencyValue,
+                    exchangeRate: target?.rate ?? prev.exchangeRate,
+                }))
             } catch (error) {
                 logger.error('Failed to fetch exchange rate', error)
-                formData[field] = value
+                const currencyValue = typeof value === 'string' ? value : String(value ?? '')
+                setFormData((prev) => ({
+                    ...prev,
+                    currency: currencyValue,
+                }))
             }
         } else {
-            ;(formData as any)[field] = value
+            setFormData((prev) => ({
+                ...prev,
+                [field]: value,
+            } as PurchaseOrder))
         }
-    }, [formData])
+    }, [setFormData])
 
     useEffect(() => {
         if (!open || initialOrder) return
 
         const newId = `PO${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
-        formData.id = newId
-        formData.orderNo = newId
-        formData.orderDate = new Date().toISOString().split('T')[0]
-        formData.purchaser = purchaserName
-        formData.lines = [{ ...emptyLine, lineNo: 1 } as PurchaseOrderLine]
-    }, [open, initialOrder, formData, purchaserName])
+        setFormData((prev) => ({
+            ...prev,
+            id: newId,
+            orderNo: newId,
+            orderDate: new Date().toISOString().split('T')[0],
+            purchaser: purchaserName,
+            lines: [{ ...emptyLine, lineNo: 1 } as PurchaseOrderLine],
+        }))
+    }, [open, initialOrder, purchaserName, setFormData])
 
     const handleAddLine = useCallback(() => {
         const nextLineNo = (formData.lines?.length || 0) + 1
-        formData.lines = [...(formData.lines || []), { ...emptyLine, lineNo: nextLineNo } as PurchaseOrderLine]
-    }, [formData])
+        setFormData((prev) => ({
+            ...prev,
+            lines: [...(prev.lines || []), { ...emptyLine, lineNo: nextLineNo } as PurchaseOrderLine],
+        }))
+    }, [formData.lines, setFormData])
 
     const handleRemoveLine = useCallback((index: number) => {
         const nextLines = (formData.lines || []).filter((_, i) => i !== index)
-        formData.lines = nextLines.map((line, i) => ({ ...line, lineNo: i + 1 }))
-    }, [formData])
+        setFormData((prev) => ({
+            ...prev,
+            lines: nextLines.map((line, i) => ({ ...line, lineNo: i + 1 })),
+        }))
+    }, [formData.lines, setFormData])
 
     const updateLine = useCallback(
-        (index: number, field: keyof PurchaseOrderLine, value: any, extraData?: Partial<PurchaseOrderLine>) => {
+        (index: number, field: keyof PurchaseOrderLine, value: PurchaseOrderLineFieldValue, extraData?: Partial<PurchaseOrderLine>) => {
             if (!formData.lines) return
             const nextLines = [...formData.lines]
             if (!nextLines[index]) return
@@ -100,10 +131,13 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
                 nextLines[index].amount = Number((q * p).toFixed(2))
             }
 
-            formData.lines = nextLines
-            formData.amount = nextLines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
+            setFormData((prev) => ({
+                ...prev,
+                lines: nextLines,
+                amount: nextLines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0),
+            }))
         },
-        [formData]
+        [formData.lines, setFormData]
     )
 
     const validate = (): boolean => {

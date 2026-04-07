@@ -1,5 +1,5 @@
 import { PrintRecordService } from '../../print-mgmt/services/print-record-service'
-import { getSalesOrders } from '../../trading/services/trading-service'
+import { getSalesOrders } from '../../trading/sales'
 
 export interface TraceStats {
     wip: number

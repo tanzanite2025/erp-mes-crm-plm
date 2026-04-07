@@ -22,7 +22,7 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { type PurchaseOrder } from '../../data/schema'
-import type { ConfirmPurchaseReceiptPayload } from '../../services/purchase-service'
+import type { ConfirmPurchaseReceiptPayload } from '../../purchase'
 
 interface ReceiptLineFormItem {
   purchaseOrderLineId: number

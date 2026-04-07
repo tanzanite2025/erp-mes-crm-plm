@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { type MaterialRequirement, type MrpStats } from '../data/requirement-schema'
-import { getSalesOrders } from '../services/trading-service'
+import { getSalesOrders } from '../sales'
 import { requirementService } from '../services/requirement-service'
 import { createLogger } from '@/lib/logger'
 import { type SalesOrder } from '../data/schema'

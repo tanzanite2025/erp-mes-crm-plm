@@ -14,7 +14,7 @@ import { productService } from '@/features/engineering/services/product-service'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import { useAuthStore } from '@/stores/auth-store'
 import type { SalesOrder } from '../data/schema'
-import { useGetSalesOrderDetail, useSalesOrderMutations } from '../hooks/use-trading'
+import { useGetSalesOrderDetail, useSalesOrderMutations } from '../sales'
 import { SalesOrderDetailActivity } from './parts/sales-order-detail-activity'
 import { SalesOrderDetailHeader } from './parts/sales-order-detail-header'
 import { SalesOrderDetailItemsCard } from './parts/sales-order-detail-items-card'
@@ -23,6 +23,19 @@ import { SalesOrderDetailSummary } from './parts/sales-order-detail-summary'
 interface PreviewFile {
   fileName: string
   fileUrl: string
+}
+
+interface ProductPreviewRefs {
+  engineeringSpecId?: string
+  techSpecId?: string
+  drillingPlanId?: string
+}
+
+interface PreviewAsset {
+  id: string
+  fileUrl?: string
+  name?: string
+  fileExtension?: string
 }
 
 type DrawingType = 'spec' | 'drilling' | 'labeling'
@@ -40,7 +53,7 @@ export function SalesOrderDetail({
     initialOrder?.id || ''
   )
   const order = detailedOrder || initialOrder
-  const { createMutation, patchMutation, claimMutation } = useSalesOrderMutations()
+  const { patchMutation, claimMutation } = useSalesOrderMutations()
   const user = useAuthStore((state) => state.user)
   const { commands } = useCommands()
   const canHardDelete = allowsAction('action_trading_sales_order_delete')
@@ -76,12 +89,12 @@ export function SalesOrderDetail({
     try {
       let targetId = planId
       if (!targetId && productId) {
-        const product = await productService.getProductById(productId)
+        const product = await productService.getProductById(productId) as ProductPreviewRefs | null
         if (product) {
           targetId =
             type === 'spec'
-              ? (product as any).engineeringSpecId || (product as any).techSpecId
-              : (product as any).drillingPlanId
+              ? product.engineeringSpecId || product.techSpecId
+              : product.drillingPlanId
         }
       }
 
@@ -90,7 +103,7 @@ export function SalesOrderDetail({
         return
       }
 
-      let files: any[] = []
+      let files: PreviewAsset[] = []
       if (type === 'spec') files = await engineeringDBService.getSpecs()
       else if (type === 'drilling') files = await engineeringDBService.getDrilling()
       else files = await engineeringDBService.getLabeling()

@@ -1,5 +1,312 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：Trading 局部 warning 清理（2026-04-07）
+
+### 本轮目标
+在确认 Trading 域显式 `any` 已基本清理完成后，本轮不再扩散到跨模块类型治理，只处理 Trading 局部、低风险、无业务语义影响的规范 warning。
+
+### 已执行变更
+更新：
+- `src/features/trading/components/parts/order-lines-editor.tsx`
+
+### 本轮实际处理内容
+- 将移动端行卡片中的 Tailwind 类名 `flex-shrink-0` 收口为简写 `shrink-0`；
+- 未继续扩散到跨模块类型债务治理；
+- 未改动任何 Trading 业务语义。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮只完成了 Trading 局部 warning 的最小修正：
+
+- 低风险规范 warning 已处理；
+- 编译保持通过；
+- 更深层类型债务仍建议转入新的独立专项，而不是继续挂在 Trading 局部清理尾项下推进。
+
+## P1：Trading 相关既有 lint 欠账清理（2026-04-07）
+
+### 本轮目标
+在 Trading 子域拆分与旧入口删除完成后，本轮继续清理与本次解耦直接相关的历史 lint 欠账，但只处理低风险、可在不改变业务语义前提下收口的类型问题。
+
+### 已执行变更
+更新：
+- `src/features/trading/hooks/use-sales-order-ops.ts`
+- `src/features/trading/hooks/use-sales-order-form.ts`
+- `src/features/trading/hooks/use-purchase-order-form.ts`
+- `src/features/trading/components/parts/order-lines-editor.tsx`
+- `src/features/trading/components/parts/order-header-fields.tsx`
+- `src/features/trading/components/purchase/parts/purchase-order-header-fields.tsx`
+- `src/features/trading/components/purchase/parts/purchase-order-lines-editor.tsx`
+- `src/features/trading/components/sales-order-detail.tsx`
+- `task.md`
+- `implementation_plan.md`
+
+### 本轮实际清理内容
+- 将销售单/采购单行编辑器中的 `value: any` 收口为字段联合类型；
+- 将表单头部组件中的 `setFormData` / `handleHeaderChange` 参数改为显式表单更新器类型；
+- 将 `order-lines-editor.tsx` 中 `products`、`dictEntries` 改为显式 `Product`、`DictionaryEntry` 类型；
+- 将 `sales-order-detail.tsx` 中预览链路使用的历史 `any` 收口为最小结构类型；
+- 对 `useDeltaTracker` 返回值直接赋值的目标文件，改为通过局部 shim/update 方式写入，避免新的 lint 规则报错。
+
+### 本轮说明
+- 本轮没有扩散为全仓库 lint 清理；
+- 本轮没有为了消除 lint 而重写 Trading 业务语义；
+- 当前 `src/features/trading` 下通过简单搜索已不再存在本轮目标范围内的显式 `any` / `as any` / `: any` 残留。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 Trading 域与本次解耦直接相关的低风险 lint 欠账收口：
+
+- 历史 `any` 已被替换为显式业务类型；
+- 表单更新与行编辑接口类型更加稳定；
+- 未引入新的编译断裂；
+- 为后续若要继续做更深层 lint/类型治理提供了更干净的基础。
+
+## P1：Trading 4 个旧兼容代理文件物理删除（2026-04-07）
+
+### 本轮目标
+在上一轮已完成旧入口“薄代理收口”的基础上，本轮继续做最后一步：物理删除 Trading 中 4 个已失去正式实现职责的旧兼容文件，彻底移除旧 God File 文件实体。
+
+### 已执行变更
+删除：
+- `src/features/trading/hooks/use-trading.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/trading/hooks/use-purchase.ts`
+- `src/features/trading/services/purchase-service.ts`
+
+结果：
+- Trading 域不再保留这 4 个旧兼容代理文件；
+- `sales/*` 与 `purchase/*` 继续作为唯一正式入口与唯一实现源；
+- 旧 God File 已从“残余兼容层”进一步收口为“物理不存在”。
+
+### 本轮说明
+- 删除前已再次执行全局搜索，确认仓库内无正式调用方继续依赖上述旧路径；
+- 本轮仍未扩散处理无关 lint 欠账；
+- 若未来需要兼容回退，回退策略应是恢复薄代理，而不是恢复旧实现体。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 Trading 旧 God File 清理的最后一步：
+
+- 4 个旧兼容代理文件已物理删除；
+- `sales/*` 与 `purchase/*` 成为唯一正式入口；
+- Trading 域已不再保留旧总入口文件实体；
+- TypeScript 编译通过，说明删除后调用链保持完整。
+
+## P1：Trading 旧 God File 最终残余清理与双入口收口（2026-04-07）
+
+### 本轮目标
+本轮在上一轮 `customer / supplier / sales / purchase` 子域公开面建立完成的基础上，继续执行旧入口物理收口：
+
+- 清理旧 `use-trading.ts` 的 `sales / purchase` 残余公开面；
+- 清理旧 `trading-service.ts` 的 `sales / purchase` 残余实现；
+- 收口旧 `use-purchase.ts` 与旧 `services/purchase-service.ts`，结束采购双入口并存；
+- 在不引入隐藏回归风险的前提下，让旧文件退出“正式实现体”角色。
+
+### 已执行变更
+更新：
+- `src/features/trading/hooks/use-trading.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/trading/hooks/use-purchase.ts`
+- `src/features/trading/services/purchase-service.ts`
+- `task.md`
+
+#### 1) 旧 `use-trading.ts` 收口为薄代理
+- 删除旧文件中的 `sales / purchase` query/mutation 实现体；
+- 改为仅重导出：
+  - `../sales`
+  - `../purchase`
+
+结果：
+- 旧总 Hook 不再持有正式实现；
+- 若仓库内仍有少量历史导入，也只会被透明转发到新子域公开面。
+
+#### 2) 旧 `trading-service.ts` 收口为薄代理
+- 删除旧文件中的 `sales` 与 `purchase` 具体 service 实现；
+- 改为统一 re-export：
+  - `../sales`
+  - `../purchase`
+
+结果：
+- 旧 God Service 不再维护真实实现逻辑；
+- `sales / purchase` 的正式实现源已统一回到各自子域目录。
+
+#### 3) 旧 `use-purchase.ts` 收口为薄代理
+- 删除旧采购 Hook 实现体；
+- 改为直接重导出 `../purchase` 中的：
+  - `useGetPurchaseOrders`
+  - `useGetPurchaseOrderDetail`
+  - `usePurchaseOrderMutations`
+
+结果：
+- 旧采购 Hook 正式退出实现角色；
+- 旧 `saveMutation` 风格入口不再继续扩散。
+
+#### 4) 旧 `services/purchase-service.ts` 收口为薄代理
+- 删除旧采购 service 实现体；
+- 改为重导出新 `purchase` 子域 service 公开面。
+
+结果：
+- 仓库内不再维护两套采购 service 实现；
+- 采购查询/详情/收货确认/删除等能力回归单一实现源。
+
+### 本轮说明
+- 本轮采用的是“薄代理收口”，而不是直接删除旧文件；
+- 这样做的目的是在保证正式实现源已统一的同时，避免潜在隐藏导入路径在本轮直接断裂；
+- 旧文件当前仍存在，但已不再承担正式业务实现职责，可视为兼容过渡层。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 Trading 旧 God File 最终残余清理的核心收口：
+
+- 旧 `use-trading.ts`、旧 `trading-service.ts`、旧 `use-purchase.ts`、旧 `services/purchase-service.ts` 已全部退出正式实现体角色；
+- `sales / purchase` 的正式实现源已统一收口到新子域目录；
+- 双入口并存问题已从“双实现”降为“新实现 + 旧兼容薄代理”；
+- TypeScript 编译通过，为下一轮若要进一步物理删除旧兼容文件提供了稳定基础。
+
+## P1：Trading 模块 God Files Phase 1 解耦实施（2026-04-07）
+
+### 本轮目标
+本轮按已批准的 God Files Phase 1 方案执行 Trading 前端最小解耦，目标不是一次性重写交易状态流，而是优先恢复业务域边界：
+
+- 将 `customer / supplier / sales / purchase` 建立为独立子域公开面；
+- 将 `trading-service.ts` / `use-trading.ts` 从“大一统入口”收口为最小残余；
+- 保持现有页面行为与 authoritative flow 语义稳定；
+- 为后续继续处理更深层状态流拆分提供稳定基础。
+
+### 已执行变更
+更新：
+- `src/features/trading/customer/services/customer-service.ts`
+- `src/features/trading/customer/hooks/use-customer.ts`
+- `src/features/trading/customer/index.ts`
+- `src/features/trading/supplier/services/supplier-service.ts`
+- `src/features/trading/supplier/hooks/use-supplier.ts`
+- `src/features/trading/supplier/index.ts`
+- `src/features/trading/sales/services/sales-service.ts`
+- `src/features/trading/sales/hooks/use-sales.ts`
+- `src/features/trading/sales/index.ts`
+- `src/features/trading/purchase/services/purchase-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/purchase/index.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/trading/hooks/use-trading.ts`
+- `src/features/trading/components/customer-list.tsx`
+- `src/features/trading/components/supplier-list.tsx`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+- `src/features/trading/components/sales-order-detail.tsx`
+- `src/features/trading/components/sales-order-list-fixed.tsx`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- `src/features/trading/components/purchase/purchase-order-list.tsx`
+- `src/features/trading/components/purchase/purchase-order-detail.tsx`
+- `src/features/trading/components/purchase/purchase-order-logs.tsx`
+- `src/features/trading/components/purchase/purchase-receipt-confirm-dialog.tsx`
+- `src/features/trading/hooks/use-requirements.ts`
+- `src/features/warehouse/hooks/use-shipment.ts`
+- `src/features/logistics/components/logistics-action-dialog.tsx`
+- `src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts`
+- `src/features/system-mgmt/notifications/components/notification-center.tsx`
+- `src/features/dashboard/services/trace-service.ts`
+- `task.md`
+
+#### 1) 建立 `customer / supplier` 子域公开面
+- 新增 `customer` 子域：
+  - `services/customer-service.ts`
+  - `hooks/use-customer.ts`
+  - `index.ts`
+- 新增 `supplier` 子域：
+  - `services/supplier-service.ts`
+  - `hooks/use-supplier.ts`
+  - `index.ts`
+
+结果：
+- 客户与供应商查询/创建/PATCH/删除能力不再挂在单个 `trading-service.ts` / `use-trading.ts` 上；
+- `customer-list.tsx`、`supplier-list.tsx`、销售/采购单对话框中的客户/供应商读取已切到新子域公开面。
+
+#### 2) 建立 `sales / purchase` 子域公开面
+- 新增 `sales` 子域：
+  - `services/sales-service.ts`
+  - `hooks/use-sales.ts`
+  - `index.ts`
+- 新增 `purchase` 子域：
+  - `services/purchase-service.ts`
+  - `hooks/use-purchase-orders.ts`
+  - `index.ts`
+
+结果：
+- 销售单列表、详情、创建、PATCH、认领等入口已收口到 `sales` 子域；
+- 采购单列表、详情、创建、PATCH、收货确认、已删除日志等入口已收口到 `purchase` 子域；
+- `sales / purchase` 深层业务状态流语义本轮未重写，仅做公开面与调用点迁移。
+
+#### 3) 瘦身 `trading-service.ts` 与 `use-trading.ts`
+- `trading-service.ts` 已移除 `customer / supplier` 相关职责；
+- `use-trading.ts` 已移除 `customer / supplier` query/mutation；
+- `customer / supplier` 调用方已不再依赖旧 God Hook/God Service 入口。
+
+结果：
+- 旧 God File 的职责堆叠已明显下降；
+- `src/features/trading` 现在按业务域拥有更清晰的入口边界。
+
+#### 4) 清理跨模块对旧 sales 入口的残余依赖
+本轮额外将以下跨模块读取切换到新的 `sales` 子域公开面：
+
+- `warehouse/hooks/use-shipment.ts`
+- `logistics/components/logistics-action-dialog.tsx`
+- `system-mgmt/workflow-core/hooks/use-notification-rules.ts`
+- `system-mgmt/notifications/components/notification-center.tsx`
+- `dashboard/services/trace-service.ts`
+
+结果：
+- 旧 `trading-service.ts` / `use-trading.ts` 不再承担这些跨模块读口径；
+- 交易域外部调用方也开始显式依赖具体业务子域，而不是继续走模糊总入口。
+
+### 本轮说明
+- 本轮遵循“先拆公开面、后碰深状态流”的策略，没有顺手重写 `sales / purchase` authoritative flow；
+- `sales-order-detail.tsx`、`use-notification-rules.ts` 等文件中仍有既有 `any` lint 欠账，本轮未扩散治理，只处理拆分所需最小改动；
+- 当前更像是“恢复边界的 Phase 1”，而不是交易模块的最终形态重构。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 Trading 模块 God Files Phase 1 的最小落地：
+
+- `customer / supplier / sales / purchase` 四个业务子域已建立公开面；
+- `trading-service.ts` / `use-trading.ts` 的“大一统职责”已被明显削薄；
+- 跨模块调用开始显式依赖具体业务子域；
+- 在不重写深状态流的前提下，编译验证通过，为后续继续收口交易模块边界提供了稳定基础。
+
 ## P1：仓储库存视图 `getInventoryList()` 后移后端实施（2026-04-07）
 
 ### 本轮目标

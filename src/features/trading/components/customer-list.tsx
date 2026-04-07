@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { CustomerActionDialog } from './customer-action-dialog'
-import { useCustomerMutations, useGetCustomers } from '../hooks/use-trading'
+import { useCustomerMutations, useGetCustomers } from '../customer'
 
 export function CustomerList() {
   const { locale, t } = useLanguage()

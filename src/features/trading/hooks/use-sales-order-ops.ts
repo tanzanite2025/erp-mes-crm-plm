@@ -2,6 +2,8 @@ import { useCallback } from 'react'
 import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
 import { calculateLineAmount, recalculateOrderTotals } from '../utils/sales-order-calc'
 
+type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
+
 export function useSalesOrderOps(
   setFormData: React.Dispatch<React.SetStateAction<Partial<SalesOrder>>>
 ) {
@@ -22,7 +24,7 @@ export function useSalesOrderOps(
   }, [setFormData])
 
   const updateLine = useCallback(
-    (index: number, field: keyof SalesOrderLine, value: any, extraData?: Partial<SalesOrderLine>) => {
+    (index: number, field: keyof SalesOrderLine, value: SalesOrderLineFieldValue, extraData?: Partial<SalesOrderLine>) => {
       setFormData((prev) => {
         const nextLines = [...(prev.lines || [])]
         if (!nextLines[index]) return prev

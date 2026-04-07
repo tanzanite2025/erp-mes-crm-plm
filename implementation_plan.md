@@ -1,5 +1,577 @@
 # implementation plan
 
+## Trading 剩余 warning / 更深层类型债务专项（2026-04-07，待确认）
+
+### 一、当前现状
+在上一轮 Trading lint 欠账清理后，`src/features/trading` 范围内通过简单静态搜索已不再存在本轮目标范围内的显式：
+
+- `any`
+- `as any`
+- `: any`
+
+说明上一轮“低风险历史 any 收口”已经基本完成。
+
+当前剩余问题主要转为两类：
+
+1. 局部非阻塞 warning
+   - 例如样式规范类 warning（如 Tailwind class 简写建议）；
+   - 这类问题改动风险低，但收益也偏局部。
+
+2. 更深层类型债务
+   - 如果继续深挖，问题将更多落在跨模块类型边界、通用服务层返回值、共享模型松散定义；
+   - 这已经不再是 Trading 域局部 `any` 收口，而更接近新的类型治理专项。
+
+### 二、本轮目标
+本轮的目标不再是“继续清显式 any”，而是先确认剩余问题的归属：
+
+1. 明确 Trading 域内还值得继续处理的低风险 warning；
+2. 明确哪些问题已经超出 Trading 专项边界；
+3. 避免把小型 warning 清理误扩散成跨模块类型重构；
+4. 若要继续编码，只在 Trading 局部 warning 范围内做最小改动。
+
+### 三、本轮明确不做
+1. 不将本轮扩散为全仓库类型治理；
+2. 不顺手改造通用 service / schema / shared 类型系统；
+3. 不为追求“零 warning”而修改业务语义；
+4. 不在未确认专项归属前直接推进跨模块类型重构。
+
+### 四、建议处理策略
+
+#### 1. Trading 局部 warning
+若问题明确属于 Trading 局部且不涉及业务逻辑，可直接处理，例如：
+
+- 样式 class 规范 warning；
+- 局部可直接替换的命名或依赖数组 warning；
+- 不改变运行语义的轻量规范修正。
+
+#### 2. 跨模块类型债务
+若问题已经涉及：
+
+- `engineering` / `engineering-db` / `finance` 等跨域类型边界；
+- 通用 hook / service 返回值建模；
+- 多模块共享 schema 的宽泛定义；
+
+则建议新建独立专项，而不是继续挂在 Trading 尾项下实施。
+
+### 五、验证口径
+如果本轮仅做 Trading 局部 warning 修正，至少验证：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并在总结中明确：
+
+1. 哪些 warning 已处理；
+2. 哪些更深层类型债务被判定为新专项候选；
+3. 本轮是否仍保持在 Trading 局部范围内。
+
+## Trading 相关既有 lint 欠账清理专项（2026-04-07，已完成）
+
+### 一、当前现状
+在完成 Trading 子域拆分、旧入口收口与旧兼容文件删除后，Trading 域仍残留少量历史 lint 欠账，主要表现为：
+
+1. 表单更新器参数使用 `any`；
+2. 行编辑器 `onLineChange` 参数使用 `any`；
+3. `sales-order-detail.tsx` 中存在低风险预览数据 `any`；
+4. 少量组件 props 仍用宽泛类型而非业务域显式类型。
+
+这些问题虽然不阻塞编译，但会降低 Trading 域在新边界稳定后的类型可信度。
+
+### 二、本轮目标
+本轮只做低风险 lint 欠账收口，不改变业务语义：
+
+1. 将 Trading 域内可直接收口的历史 `any` 改为联合类型、显式业务类型或表单更新器类型；
+2. 修复因 `useDeltaTracker` 返回值直接赋值而触发的新 lint 规则问题；
+3. 维持现有 `sales / purchase` 页面与流程语义不变；
+4. 通过 `pnpm exec tsc --noEmit` 验证本轮修改稳定。
+
+### 三、本轮明确不做
+1. 不扩散为全仓库 lint 清理；
+2. 不处理与 Trading 解耦无关的 warning；
+3. 不为消除 lint 重写业务逻辑；
+4. 不触碰 Trading 之外模块的历史类型债务。
+
+### 四、本轮实施范围
+本轮仅处理以下 Trading 文件：
+
+- `src/features/trading/hooks/use-sales-order-ops.ts`
+- `src/features/trading/hooks/use-sales-order-form.ts`
+- `src/features/trading/hooks/use-purchase-order-form.ts`
+- `src/features/trading/components/parts/order-lines-editor.tsx`
+- `src/features/trading/components/parts/order-header-fields.tsx`
+- `src/features/trading/components/purchase/parts/purchase-order-header-fields.tsx`
+- `src/features/trading/components/purchase/parts/purchase-order-lines-editor.tsx`
+- `src/features/trading/components/sales-order-detail.tsx`
+
+### 五、实施策略
+1. 优先将 `any` 收口为 `SalesOrderLine[keyof SalesOrderLine]`、`PurchaseOrderLine[keyof PurchaseOrderLine]` 等字段联合类型；
+2. 对字典、产品、币种等已有模型，优先使用现有业务类型；
+3. 对 `useDeltaTracker` 返回值，不再直接赋值，改用局部 shim/update 方式写入；
+4. 每次只做最小类型收口，不顺手改业务分支。
+
+### 六、验证口径
+至少验证：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并补充确认：
+
+1. 本轮处理文件编译通过；
+2. Trading 域内直接可收口的历史 `any` 已明显下降；
+3. 未引入新的业务语义改动。
+
+## Trading 4 个旧兼容代理文件物理删除专项（2026-04-07，待确认）
+
+### 一、当前现状
+上一轮已完成旧入口的“薄代理收口”：
+
+- `src/features/trading/hooks/use-trading.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/trading/hooks/use-purchase.ts`
+- `src/features/trading/services/purchase-service.ts`
+
+这 4 个文件当前已不再承担正式实现体角色，只保留对新子域公开面的 re-export 转发。
+
+因此当前仓库状态已经从“双实现并存”变为：
+
+- 新子域目录：正式实现源
+- 旧文件：兼容代理层
+
+### 二、本轮目标
+本轮目标是在确认无正式引用残留后，物理删除上述 4 个旧兼容代理文件，使 Trading 域彻底摆脱旧 God File 文件实体。
+
+具体目标：
+
+1. 删除 `hooks/use-trading.ts`；
+2. 删除 `services/trading-service.ts`；
+3. 删除 `hooks/use-purchase.ts`；
+4. 删除 `services/purchase-service.ts`；
+5. 保持 `sales/*` 与 `purchase/*` 作为唯一正式入口。
+
+### 三、本轮明确不做
+本轮仅处理这 4 个旧兼容代理文件，不做以下事项：
+
+1. 不继续扩散删除其他历史文件；
+2. 不顺手治理与删除无关的 `any` / lint 欠账；
+3. 不新增新的兼容总入口文件；
+4. 不重写 `sales / purchase` 业务逻辑；
+5. 不把删除动作扩散为全仓库结构重整。
+
+### 四、删除前提
+执行删除前必须满足：
+
+1. 仓库内无正式调用方继续 import 这 4 个旧文件路径；
+2. `warehouse / logistics / notifications / dashboard` 等跨模块链路已全部改为依赖 `sales` / `purchase` 子域；
+3. 新子域公开面已覆盖旧文件承担的全部正式能力；
+4. 即使删除旧文件，调用方也不会因路径断裂而需要重新回滚到旧实现体。
+
+### 五、实施顺序
+
+#### Phase A：删除前确认
+1. 再次全局搜索旧文件路径引用；
+2. 若仍有残余 import，先完成迁移，不直接删除；
+3. 仅在确认零正式引用后进入删除阶段。
+
+#### Phase B：执行物理删除
+1. 删除 `hooks/use-trading.ts`；
+2. 删除 `services/trading-service.ts`；
+3. 删除 `hooks/use-purchase.ts`；
+4. 删除 `services/purchase-service.ts`。
+
+#### Phase C：验证与回退判断
+1. 执行 `pnpm exec tsc --noEmit`；
+2. 若通过，则说明旧兼容层可安全移除；
+3. 若失败，则优先恢复为薄代理，不恢复旧实现体。
+
+### 六、风险点
+
+#### 1. 隐藏导入风险
+虽然目前静态搜索已经基本收口，但仍需防范：
+
+- 历史未打开页面的导入路径；
+- IDE 未即时暴露的边缘引用；
+- 少量遗留相对路径引用。
+
+#### 2. 回退策略必须克制
+若删后断裂：
+
+- 允许恢复为薄代理；
+- 不允许恢复旧 God File 具体实现；
+- 不允许临时把新逻辑重新塞回旧文件。
+
+#### 3. “删除成功”不等于“架构完成”
+本轮只是删除旧兼容层文件实体，并不代表 Trading 全部深层历史问题都已结束；
+但这是从“边界恢复”走向“结构定型”的必要一步。
+
+### 七、验证口径
+至少验证：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并补充确认：
+
+1. 上述 4 个文件在仓库中已物理不存在；
+2. `sales/*` 与 `purchase/*` 继续作为唯一正式入口；
+3. 编译通过，调用链无断裂；
+4. `walkthrough.md` 已记录删除文件清单与验证结果。
+
+### 八、确认点
+进入执行前，需要你确认：
+
+1. 本轮允许直接物理删除这 4 个旧兼容代理文件；
+2. 若删后断裂，只回退为薄代理，不恢复旧实现体；
+3. 本轮仍坚持不扩散无关 lint 治理。
+
+## Trading 模块旧 God File 最终残余清理与双入口收口专项（2026-04-07，待确认）
+
+### 一、当前现状
+在上一轮 Phase 1 中，`customer / supplier / sales / purchase` 四个子域公开面已经建立完成，且大部分调用方已迁移至新子域。
+
+但当前仍存在以下残余问题：
+
+1. `src/features/trading/hooks/use-trading.ts`
+   - 仍保留 `sales` 的 query/detail/mutation；
+   - 仍保留 `purchase` 的 create/PATCH mutation；
+   - 旧总 Hook 虽已不再承担 `customer / supplier`，但依然是 `sales / purchase` 的残余总入口。
+
+2. `src/features/trading/services/trading-service.ts`
+   - 仍保留 `sales` 全链 service；
+   - 仍保留 `purchase` 的部分能力（列表、新建、PATCH）；
+   - 还保留 `updateOrderDelivery` 这类跨模块调用点。
+
+3. `src/features/trading/hooks/use-purchase.ts`
+   - 与 `src/features/trading/purchase/hooks/use-purchase-orders.ts` 并存；
+   - 旧入口使用 `saveMutation` 命名，而新入口使用 `createMutation` 命名；
+   - 当前形成双入口与语义口径漂移。
+
+4. `src/features/trading/services/purchase-service.ts`
+   - 与新 `src/features/trading/purchase/services/purchase-service.ts` 并存；
+   - 二者共同维护采购查询/详情/收货确认等能力，存在双 source 风险。
+
+### 二、本轮目标
+本轮目标不是新增架构层，而是完成上一轮拆分的最终物理收口：
+
+1. 将 `sales` 正式入口统一收口到 `src/features/trading/sales/*`；
+2. 将 `purchase` 正式入口统一收口到 `src/features/trading/purchase/*`；
+3. 让旧 `use-trading.ts`、旧 `use-purchase.ts`、旧 `trading-service.ts`、旧 `services/purchase-service.ts` 退出正式调用链；
+4. 在确认无残余引用后，做最小物理删除或瘦身代理收口；
+5. 保持现有页面行为与跨模块联动稳定。
+
+### 三、本轮明确不做
+为控制风险，本轮不做以下事项：
+
+1. 不继续扩散到新的业务域目录重组；
+2. 不重写 `sales / purchase` 的 authoritative flow 逻辑；
+3. 不顺手治理本轮无关的既有 `any`/lint 欠账；
+4. 不把清理范围扩散为全仓库 import 大扫除；
+5. 不在无确认情况下直接删除存在潜在外部引用的旧文件。
+
+### 四、实施策略
+
+#### 1. 先“去引用”，再“做删除”
+本轮优先级必须是：
+
+1. 搜尽旧入口引用；
+2. 将残余调用点切到新子域公开面；
+3. 确认无外部正式引用后，再执行旧文件瘦身或删除。
+
+#### 2. 允许短期薄代理，但不允许长期双入口
+如果某旧文件仍被少量兼容调用点引用，可短期将其收口为“薄代理”转发到新子域；
+但本轮目标仍是避免仓库长期保留两套正式入口。
+
+#### 3. `purchase` 命名口径必须统一
+必须统一以下语义：
+
+- 新建：`createMutation`
+- 局部更新：`patchMutation`
+- 删除：`deleteMutation`
+- 收货确认：`confirmReceiptMutation`
+
+避免旧 `saveMutation` 与新 `createMutation` 长期并存。
+
+### 五、建议实施顺序
+
+#### Phase A：残余引用确认
+1. 搜索 `use-trading.ts` 的 `sales / purchase` 调用方；
+2. 搜索旧 `hooks/use-purchase.ts` 的调用方；
+3. 搜索旧 `services/trading-service.ts` 与旧 `services/purchase-service.ts` 的直接引用；
+4. 列出仍未迁移的跨模块消费者。
+
+#### Phase B：旧入口去引用
+1. 所有 `sales` 读写能力切到 `sales` 子域；
+2. 所有 `purchase` 读写能力切到 `purchase` 子域；
+3. `warehouse / logistics / notifications / dashboard` 这类跨模块链路统一改为依赖新子域。
+
+#### Phase C：旧文件物理收口
+1. `use-trading.ts` 删除 `sales / purchase` 公开面实现，必要时保留最小兼容代理或直接清空；
+2. `use-purchase.ts` 在确认无引用后删除，或改为显式 re-export 到新子域并标注待删；
+3. `trading-service.ts` 删除 `sales / purchase` 正式 service 实现，必要时改为薄代理；
+4. 旧 `services/purchase-service.ts` 在确认无引用后删除，或改为薄代理。
+
+#### Phase D：验证与文档收尾
+1. 执行 `pnpm exec tsc --noEmit`；
+2. 同步 `task.md` / `walkthrough.md`；
+3. 明确哪些旧文件已删除，哪些只是短期兼容代理。
+
+### 六、风险点
+
+#### 1. `sales` 跨模块联动误伤风险
+`sales` 仍被以下链路消费：
+
+- `warehouse` 发货/出库联动
+- `logistics` 物流对话框单据选择
+- `notifications` / `workflow-core` 通知扫描
+- `dashboard` 追溯统计
+
+若直接删除旧 `sales` 入口而未完成迁移，会引入非交易页面断裂。
+
+#### 2. `purchase` 双入口历史包袱
+旧 `use-purchase.ts` 与旧 `services/purchase-service.ts` 代表的是旧采购入口体系；
+新 `purchase/*` 代表的是新的域入口体系。
+
+如果处理不彻底，会出现：
+
+1. 类型定义分叉；
+2. mutation 命名不一致；
+3. 后续继续误加新逻辑到旧入口。
+
+#### 3. 物理删除时机风险
+若仍存在隐藏引用，直接删除旧文件会导致：
+
+- 编译错误；
+- 懒加载页面在运行时断裂；
+- IDE 无法立即显式提示的动态导入问题。
+
+因此本轮必须遵循“先确认无引用，再删除”的策略。
+
+### 七、验证口径
+执行阶段至少验证：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并补充确认：
+
+1. `use-trading.ts` 不再暴露 `sales / purchase` 正式公开面；
+2. `hooks/use-purchase.ts` 不再作为正式采购入口；
+3. `trading-service.ts` 与旧 `services/purchase-service.ts` 不再承担正式业务入口职责，或已被安全删除；
+4. `sales / purchase` 调用链无导入断裂；
+5. 跨模块联动（warehouse / logistics / notifications / dashboard）继续可编译。
+
+### 八、确认点
+进入执行前，需要你明确确认以下策略：
+
+1. 若旧文件已无引用，是否允许直接删除；
+2. 若仍有零星兼容引用，是否先接受“薄代理过渡”再下一轮物理删除；
+3. 本轮是否坚持只做 Trading 旧入口收口，不顺手治理既有 lint 欠账。
+
+## Trading 模块 God Files Phase 1 解耦专项（2026-04-07，已确认）
+
+### 一、当前问题
+当前 `src/features/trading` 已出现典型的 God Files 现象，核心不只是单文件行数偏大，而是多个职责长期叠加在同一入口与同一 Hook 中。
+
+当前重点问题文件：
+
+1. `src/features/trading/services/trading-service.ts`
+   - 同时承载客户、供应商、销售、采购等多域 API 访问；
+   - 混合 DTO/响应适配、局部业务语义拼装与跨域对外导出入口；
+   - 容易形成“任何交易能力都从一个文件拿”的大门洞依赖。
+2. `src/features/trading/hooks/use-trading.ts`
+   - 同时承载 React 生命周期、刷新协调、状态聚合与业务语义编排；
+   - Hook 名称过泛，后续能力倾向继续往内堆积；
+   - 不利于按子域做测试与回归隔离。
+
+这类结构会继续放大以下问题：
+
+- 域模型污染；
+- Hook 命名冲突与语义漂移；
+- DTO / SDRTS 协议边界难以下沉；
+- Tree-shaking 与依赖裁剪效果变差；
+- 拆分测试与按业务域治理的成本持续升高。
+
+### 二、本轮目标
+本轮只处理 Trading 模块 Phase 1 解耦，不扩散为全仓库重构。
+
+第一阶段目标如下：
+
+1. 将 Trading 物理拆分为 `customer / supplier / sales / purchase` 四个业务子域；
+2. 优先完成 `customer / supplier` 的 service/hook/model/adapter 最小落位；
+3. 对 `sales / purchase` 先建立目录与依赖方向约束，不在本轮深改高风险状态流；
+4. 禁止继续依赖根级 `trading/index.ts` 聚合导出全部交易能力；
+5. 为后续 DTO/协议收口、authoritative flow 后迁与模块级回归测试建立边界基础。
+
+### 三、本轮明确不做
+为控制风险，本轮明确不做以下事项：
+
+1. 不把本轮扩散为 `engineering-db`、`requirement export` 等全域同步重构；
+2. 不在第一阶段一次性重写 `sales / purchase` 的 authoritative flow；
+3. 不为了“更纯粹的架构”预先引入过多 `commands / queries / repositories` 抽象；
+4. 不做全仓库 import 路径一次性横扫重写；
+5. 不把所有跨域 helper 一股脑塞进 `shared`，制造新的 God File。
+
+### 四、拆分原则
+
+#### 1. 以业务域为主，不以技术切片为主
+本轮首要拆分维度采用：
+
+- `customer`
+- `supplier`
+- `sales`
+- `purchase`
+
+而不是优先按 `queries / mutations / utils / hooks` 做纯技术切片。
+
+原因：
+
+1. 业务域边界更稳定；
+2. 更利于权限、DTO、测试、状态流与页面调用一起收口；
+3. 更能避免把 `shared/utils.ts` 重新做成跨域垃圾桶。
+
+#### 2. 先恢复边界，再追求极致抽象
+本轮优先目标不是“抽象层数更多”，而是先让调用方明确知道自己依赖的是哪个业务子域能力。
+
+#### 3. 迁移顺序按风险与外溢面控制
+优先迁出主数据与低流程复杂度部分，再处理状态机/工作流耦合更重的部分。
+
+### 五、目录与职责矩阵
+
+建议将 `src/features/trading` 逐步收口为以子域为中心的目录结构。第一阶段至少建立以下职责边界：
+
+#### 1. `services/`
+职责：
+
+- 只负责 API 调用；
+- 只负责 DTO/响应 guard；
+- 只负责协议适配与最小错误映射；
+- 不承载 React 状态与页面生命周期。
+
+#### 2. `hooks/`
+职责：
+
+- 只负责 React 状态编排；
+- 只负责刷新、加载与组合调用；
+- 不直接承担跨多个子域的大总线职责。
+
+#### 3. `models/` 或 `types/`
+职责：
+
+- 只负责域模型；
+- 只负责输入输出类型；
+- 不混入命令执行与 UI 副作用。
+
+#### 4. `adapters/` 或 `mappers/`
+职责：
+
+- 只负责 SDRTS / DTO / UI model 转换；
+- 不混入请求发起与 Hook 状态维护。
+
+#### 5. 额外抽象的控制原则
+`commands / queries / repositories` 等额外抽象仅在某子域已明显复杂时再引入，禁止为“架构整齐”提前过度分层。
+
+### 六、导出策略
+
+#### 1. 根级聚合导出策略
+本轮采用以下约束：
+
+- 禁止保留 `src/features/trading/index.ts` 这类根级“大一统聚合导出”；
+- 调用方不得继续通过 Trading 根入口隐式拿取所有业务域能力。
+
+#### 2. 子域导出策略
+允许子域内部存在窄范围 `index.ts`，但前提是：
+
+1. 只暴露该子域稳定公开面；
+2. 不重新跨域汇总其他子域能力；
+3. 不夹带副作用初始化逻辑。
+
+#### 3. 关于 Tree-shaking 的约束解释
+本轮取消根级聚合导出的核心目的，不只是追求构建层面的 Tree-shaking，更重要的是：
+
+1. 强制调用方显式引用具体业务域；
+2. 阻断“大门洞”式跨域误依赖；
+3. 降低未来再次长出 God File 的概率。
+
+### 七、`shared` 准入规则
+为避免 `shared` 重演 God File 问题，本轮明确如下：
+
+#### 允许进入 `shared` 的内容
+- 真正跨多个 Trading 子域稳定复用；
+- 不携带单一业务域语义；
+- 不反向依赖某个子域内部实现；
+- 例如通用 DTO guard、分页响应适配、稳定错误映射辅助。
+
+#### 禁止进入 `shared` 的内容
+- `sales` / `purchase` 专属状态判断；
+- 某个子域专属 mapper / normalize；
+- 某个页面专属筛选拼装；
+- 含明显单域业务语义的 helper。
+
+### 八、依赖方向约束
+第一阶段开始后，至少遵循以下依赖方向：
+
+1. `customer` 不直接依赖 `sales` 内部实现；
+2. `supplier` 不直接依赖 `purchase` 内部实现；
+3. 子域之间若需复用，只能依赖：
+   - 各自稳定公开面；
+   - 或受约束的 `shared` 能力；
+4. 禁止通过新的“临时聚合文件”变相恢复旧的 God File 调用路径。
+
+### 九、Phase 1 迁移顺序
+
+#### Phase A：建立目录边界与公开面约束
+1. 建立 `customer / supplier / sales / purchase` 目录骨架；
+2. 明确每个子域的 service/hook/model/adapter 职责；
+3. 停止新增根级 Trading 聚合导出依赖。
+
+#### Phase B：优先迁出 `customer`
+1. 将 `customer` 相关 API 与 DTO 适配迁入独立子域；
+2. 将 `customer` 相关 Hook 从 `use-trading.ts` 中剥离；
+3. 保持现有调用行为与页面语义稳定。
+
+#### Phase C：优先迁出 `supplier`
+1. 将 `supplier` 相关 API 与 DTO 适配迁入独立子域；
+2. 将 `supplier` 相关 Hook/状态协调从总 Hook 中剥离；
+3. 继续压缩 God File 入口职责。
+
+#### Phase D：评估 `sales / purchase` 的最小入口瘦身
+1. 本轮先建立目录与导入收口基础；
+2. 仅在不触碰 authoritative flow 风险的前提下做最小入口瘦身；
+3. 深状态流迁移留待后续专项。
+
+### 十、风险与注意事项
+
+#### 1. 物理拆分后逻辑仍高耦合
+若只是把函数搬到不同文件，但仍允许跨域随意互调，最终只会得到“多文件版 God Graph”。
+
+#### 2. `shared` 膨胀风险
+若缺少准入约束，`shared/helpers.ts`、`shared/types.ts` 会迅速变成新的超级垃圾桶。
+
+#### 3. Hook 名称继续泛化风险
+若拆分后仍大量使用 `useSales`、`useTradingData` 这类模糊命名，语义边界仍会再次恶化。
+
+#### 4. 高风险状态流误伤
+`sales / purchase` 涉及 authoritative flow、workflow、receipt、delivery 等链路，本轮不应在第一刀里深改。
+
+### 十一、验证建议
+待进入执行与验证阶段时，至少覆盖：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并补充确认：
+
+1. `src/features/trading` 不再依赖单个根级 God File 暴露全部能力；
+2. `customer / supplier` 迁出后，现有页面行为保持稳定；
+3. 根级 `trading/index.ts` 不再作为公开聚合导出入口；
+4. 目标文件 ESLint 通过，且关键调用链无导入断裂；
+5. `sales / purchase` 本轮未发生超出计划的深状态流回归。
+
 ## 仓储库存聚合后移后端专项（2026-04-07，待确认）
 
 ### 一、当前问题

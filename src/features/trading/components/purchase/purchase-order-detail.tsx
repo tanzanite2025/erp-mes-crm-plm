@@ -8,7 +8,7 @@ import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type PurchaseOrder } from '../../data/schema'
 import { canReceivePurchaseOrder, getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
-import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../hooks/use-purchase'
+import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { PurchaseReceiptConfirmDialog } from './purchase-receipt-confirm-dialog'
 
 interface PurchaseOrderDetailProps {

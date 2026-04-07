@@ -9,6 +9,8 @@ import { type Material } from '@/features/material-archive/services/material-ser
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrderLine } from '../../../data/schema'
 
+type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
+
 interface PurchaseOrderLinesEditorProps {
   lines: PurchaseOrderLine[]
   units: Unit[]
@@ -20,7 +22,7 @@ interface PurchaseOrderLinesEditorProps {
   onLineChange: (
     index: number,
     field: keyof PurchaseOrderLine,
-    value: any,
+    value: PurchaseOrderLineFieldValue,
     extraData?: Partial<PurchaseOrderLine>
   ) => void
 }

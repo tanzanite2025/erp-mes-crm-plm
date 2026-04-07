@@ -9,6 +9,9 @@ import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
+type SalesOrderFormState = Partial<SalesOrder>
+type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
+
 const DEFAULT_ORDER: Partial<SalesOrder> = {
   orderNo: '',
   orderName: '',
@@ -41,7 +44,7 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
    * 兼容性 Shim: 模拟 useState 的 setFormData
    * 实际上操作的是 ProxyTracker 的 Proxy 对象
    */
-  const setFormData = useCallback((updater: any) => {
+  const setFormData = useCallback((updater: SalesOrderFormUpdater) => {
     if (typeof updater === 'function') {
       const next = updater(formData)
       Object.assign(formData, next)
@@ -61,15 +64,18 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     const classOpt = dictionaryService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === value)
     const newBarcode = await numberingService.previewContractBarcode(classOpt?.ext || 'GS')
 
-    formData.classification = value
-    formData.barcode = newBarcode
-  }, [formData])
+    setFormData((prev) => ({
+      ...prev,
+      classification: value,
+      barcode: newBarcode,
+    }))
+  }, [setFormData])
 
   // 4. 校验逻辑集成
   const validate = (): boolean => {
-    const { isValid, errorKey } = validateSalesOrder(formData as any, initialOrder)
+    const { isValid, errorKey } = validateSalesOrder(formData, initialOrder)
     if (!isValid && errorKey) {
-      toast.error(t(errorKey as any))
+      toast.error(t(errorKey))
       return false
     }
     return true
@@ -82,8 +88,15 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     )
     
     if (!initialOrder) {
-      formData.barcode = await numberingService.generateContractBarcode(classOpt?.ext || 'GS')
-      return formData as SalesOrder
+      const barcode = await numberingService.generateContractBarcode(classOpt?.ext || 'GS')
+      setFormData((prev) => ({
+        ...prev,
+        barcode,
+      }))
+      return {
+        ...formData,
+        barcode,
+      } as SalesOrder
     }
 
     return formData as SalesOrder

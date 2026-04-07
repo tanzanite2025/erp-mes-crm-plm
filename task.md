@@ -1,4 +1,150 @@
 
+- [ ] 355. 冻结本轮范围，只处理 Trading 剩余 warning 与更深层类型债务（2026-04-07，待确认）
+  - [ ] 当前 `src/features/trading` 内显式 `any / as any / : any` 已完成清理，本轮不再重复做同类局部收口。
+  - [ ] 本轮重点改为识别剩余的样式/规范 warning，以及是否存在跨模块类型债务需要单独专项处理。
+  - [ ] 本轮不得误把小型 warning 清理扩散成跨域重构。
+
+- [ ] 356. 明确当前剩余项形态
+  - [ ] Trading 域内剩余可见项以非阻塞 warning 为主，例如 Tailwind 类名规范建议。
+  - [ ] 若继续下钻，更多问题将不再是 Trading 局部 `any`，而是跨模块类型边界与通用服务层历史债务。
+  - [ ] 这类问题需要重新判断是否仍属于 Trading 专项，还是应拆成新的独立治理任务。
+
+- [ ] 357. 明确本轮目标与边界
+  - [ ] 若只处理 Trading 局部 warning，则仅做低风险、无业务语义影响的规范修正。
+  - [ ] 若发现问题已超出 Trading 边界，则本轮只沉淀问题清单与专项建议，不直接扩散改代码。
+  - [ ] 本轮不再以“继续清 any”为目标，而以“界定剩余债务归属”为目标。
+
+- [ ] 358. 明确验证口径
+  - [ ] 若执行 Trading 局部 warning 修正，需保证 `pnpm exec tsc --noEmit` 仍通过。
+  - [ ] `walkthrough.md` 需明确记录：哪些问题已处理，哪些问题已判定应转入新专项。
+
+- [x] 351. 冻结本轮范围，只处理 Trading 相关既有 lint 欠账清理（2026-04-07，已完成）
+  - [x] 聚焦 Trading 域内与本轮解耦直接相关的历史 `any`、类型松散与表单更新器类型问题。
+  - [x] 本轮不扩散为全仓库 lint 大扫除，不顺手处理无关 warning。
+  - [x] 本轮仅处理低风险、可在不改业务语义前提下收口的类型问题。
+
+- [x] 352. 明确本轮实际清理范围
+  - [x] `src/features/trading/hooks/use-sales-order-ops.ts`
+  - [x] `src/features/trading/hooks/use-sales-order-form.ts`
+  - [x] `src/features/trading/hooks/use-purchase-order-form.ts`
+  - [x] `src/features/trading/components/parts/order-lines-editor.tsx`
+  - [x] `src/features/trading/components/parts/order-header-fields.tsx`
+  - [x] `src/features/trading/components/purchase/parts/purchase-order-header-fields.tsx`
+  - [x] `src/features/trading/components/purchase/parts/purchase-order-lines-editor.tsx`
+  - [x] `src/features/trading/components/sales-order-detail.tsx`
+
+- [x] 353. 明确本轮清理结果
+  - [x] Trading 域内可直接收口的历史 `any` 已清理为显式联合类型、字典类型、产品类型或表单更新器类型。
+  - [x] `useDeltaTracker` 返回值的直接赋值场景，已在目标文件内通过 shim/update 方式收口，避免新 lint 规则报错。
+  - [x] 本轮未扩散修改 Trading 之外模块，也未为消除 lint 改动业务语义。
+
+- [x] 354. 明确验证口径
+  - [x] `pnpm exec tsc --noEmit` 通过。
+  - [x] `walkthrough.md` 已记录本轮 Trading lint 清理内容与验证结果。
+
+- [x] 346. 冻结本轮范围，只处理 Trading 4 个旧兼容代理文件的物理删除（2026-04-07，已完成）
+  - [x] 聚焦删除：`src/features/trading/hooks/use-trading.ts`、`src/features/trading/services/trading-service.ts`、`src/features/trading/hooks/use-purchase.ts`、`src/features/trading/services/purchase-service.ts`。
+  - [x] 删除前提是这些旧文件仅剩兼容代理职责，且正式实现源已稳定收口到 `sales/*` 与 `purchase/*`。
+  - [x] 本轮不扩散为其他旧文件清理，不顺手处理无关 lint 欠账。
+
+- [x] 347. 明确删除前置条件
+  - [x] 仓库内已无正式调用方依赖上述 4 个旧文件路径。
+  - [x] `warehouse / logistics / notifications / dashboard` 等跨模块链路已改为依赖新子域公开面。
+  - [x] 旧文件删除后，不应再存在通过旧路径导入 `sales / purchase` 正式能力的场景。
+
+- [x] 348. 明确本轮删除策略
+  - [x] 若搜索确认无引用，则直接物理删除旧文件，不再保留兼容层。
+  - [x] 若删除后出现断裂，则应优先恢复为薄代理，而不是临时拼补新总入口实现。
+  - [x] 本轮目标是让 Trading 域彻底摆脱旧 God File 文件实体，而非仅仅保留空壳文件。
+
+- [x] 349. 明确风险与回退口径
+  - [x] 若存在隐藏导入或动态引用，删除后可能出现编译错误或运行时断裂。
+  - [x] 若发现删后断裂，本轮回退口径是恢复薄代理，不恢复旧实现体。
+  - [x] 若删后 `tsc` 不通过，本轮不继续扩散改造，先恢复可编译状态。
+
+- [x] 350. 明确验证口径
+  - [x] 4 个旧兼容代理文件已物理不存在。
+  - [x] `pnpm exec tsc --noEmit` 通过。
+  - [x] `walkthrough.md` 记录本轮删除结果、删除文件清单与验证结果。
+
+- [x] 340. 冻结本轮范围，只处理 Trading 旧 God File 最终残余清理与双入口彻底收口（2026-04-07，已完成）
+  - [x] 聚焦 `src/features/trading/hooks/use-trading.ts`、`src/features/trading/services/trading-service.ts`、`src/features/trading/hooks/use-purchase.ts` 与旧 `src/features/trading/services/purchase-service.ts`。
+  - [x] 本轮目标是物理收口旧入口，而不是继续扩散到交易域外的业务重构。
+  - [x] 本轮只在已完成公开面迁移的前提下，删除或瘦身旧兼容实现。
+
+- [x] 341. 明确当前残余问题
+  - [x] `use-trading.ts` 仍保留 `sales / purchase` query/mutation，旧总 Hook 尚未物理退出。
+  - [x] `trading-service.ts` 仍保留 `sales` 全链与部分 `purchase` 能力，旧总 service 尚未物理退出。
+  - [x] `hooks/use-purchase.ts` 与 `purchase/hooks/use-purchase-orders.ts` 并存，形成双入口与命名口径漂移。
+  - [x] 旧 `services/purchase-service.ts` 与新 `purchase/services/purchase-service.ts` 并存，存在双 service 源风险。
+
+- [x] 342. 明确本轮收口目标
+  - [x] 将所有 `sales` 对外稳定能力统一收口到 `src/features/trading/sales/*`。
+  - [x] 将所有 `purchase` 对外稳定能力统一收口到 `src/features/trading/purchase/*`。
+  - [x] 旧 `use-trading.ts` 不再承担 `sales / purchase` 公开面职责。
+  - [x] 旧 `use-purchase.ts` 与旧 `services/purchase-service.ts` 退出正式调用链。
+
+- [x] 343. 固化本轮实施顺序
+  - [x] 先确认旧入口是否仍有残余引用，避免误删。
+  - [x] 再把 `warehouse / logistics / notifications / dashboard` 等跨模块读口径全部切到新子域。
+  - [x] 再物理瘦身或删除旧 `use-trading.ts`、旧 `use-purchase.ts`、旧 `trading-service.ts`、旧 `services/purchase-service.ts`。
+  - [x] 最后执行编译验证与文档收尾。
+
+- [x] 344. 明确本轮风险与回退点
+  - [x] `sales` 存在 `updateOrderDelivery`、认领、通知联动等跨模块链路，误删旧入口会影响仓储/通知/物流链。
+  - [x] `purchase` 存在创建、PATCH、收货确认三类不同语义，双入口清理时需避免 mutation 命名再次漂移。
+  - [x] 旧文件删除前必须确认无外部引用，否则宁可先瘦身为薄代理也不直接删除。
+  - [x] 若发现仍有未迁移调用方，本轮应先补迁移，不强行做物理删除。
+
+- [x] 345. 明确验证口径
+  - [x] `src/features/trading/hooks/use-trading.ts` 不再暴露 `sales / purchase` 正式公开面。
+  - [x] `src/features/trading/hooks/use-purchase.ts` 不再作为采购正式入口。
+  - [x] `src/features/trading/services/trading-service.ts` 与旧 `src/features/trading/services/purchase-service.ts` 不再承担正式业务入口职责，或已被安全删除。
+  - [x] `pnpm exec tsc --noEmit` 通过，且调用链无导入断裂。
+
+- [x] 333. 冻结本轮范围，只处理 Trading 模块 God Files Phase 1 解耦（2026-04-07，已完成）
+  - [x] 聚焦 `src/features/trading` 下 `trading-service.ts`、`use-trading.ts` 及其直接相关调用链。
+  - [x] 第一阶段优先建立 `customer / supplier / sales / purchase` 四个业务子域边界。
+  - [x] 第一阶段优先迁出 `customer / supplier`，暂不把 `sales / purchase` 深状态流一次性全部重写。
+  - [x] 本轮先按批准方案执行 Trading 解耦，不顺带扩散为全仓库重构。
+
+- [x] 334. 固化当前 God Files 的结构性问题
+  - [x] `trading-service.ts` 当前同时承载领域 API、DTO/协议适配、业务流程拼装与跨域复用入口。
+  - [x] `use-trading.ts` 当前同时承载 React 生命周期、状态编排、刷新协调与业务语义聚合。
+  - [x] 现状会持续放大域模型污染、Hook 命名泛化与模块边界模糊问题。
+  - [x] 现状不利于后续 SDRTS/DTO 协议收口、精确 Tree-shaking 与按业务域做测试隔离。
+
+- [x] 335. 明确第一阶段的物理解耦目标
+  - [x] 将 Trading 拆为 `customer / supplier / sales / purchase` 四个子域目录，而不是继续保留单总入口文件。
+  - [x] `customer / supplier` 先完成 service/hook/model/adapter 的最小边界落位。
+  - [x] `sales / purchase` 本轮先建立目录与依赖方向约束，避免高风险状态流一次性大改。
+  - [x] 子域之间不得继续通过根级 Trading God File 间接耦合。
+
+- [x] 336. 固化导出策略与依赖边界
+  - [x] 禁止保留 `trading/index.ts` 这类根级聚合导出，避免继续形成“大门洞”式跨域依赖。
+  - [x] 允许子域内部存在窄范围 `index.ts`，但只服务该子域稳定公开面。
+  - [x] 共享目录仅允许进入真正跨域稳定复用且不携带单一业务语义的能力。
+  - [x] 禁止把 `sales` / `purchase` 专属语义 helper、mapper、normalize 塞入 `shared` 重新长成新 God File。
+
+- [x] 337. 固化第一阶段实施顺序
+  - [x] 先建立 Trading 新目录契约与依赖方向约束。
+  - [x] 再迁出 `customer` 相关 service/hook/model/adapter。
+  - [x] 再迁出 `supplier` 相关 service/hook/model/adapter。
+  - [x] 最后评估 `sales / purchase` 是否仅做入口瘦身与导入收敛，不在本阶段深改 authoritative flow。
+
+- [x] 338. 明确拆分后的职责矩阵
+  - [x] `services/` 只负责 API 调用、DTO guard、协议适配。
+  - [x] `hooks/` 只负责 React 状态编排、刷新与组合调用。
+  - [x] `models/` 或 `types/` 只负责域模型与输入输出类型。
+  - [x] `adapters/` 或 `mappers/` 只负责 SDRTS / DTO / UI model 转换。
+  - [x] 非必要不预拆 `commands/queries` 等额外抽象，避免为架构而架构。
+
+- [x] 339. 明确第一阶段验证口径
+  - [x] `src/features/trading` 不再依赖单个根级 God File 暴露全部交易能力。
+  - [x] `customer / supplier` 调用链完成迁出后，现有页面行为保持稳定。
+  - [x] 根级 `trading/index.ts` 不再作为公开聚合导出入口。
+  - [x] `pnpm exec tsc --noEmit` 通过，且目标文件 ESLint/最小回归检查通过。
+
 - [ ] 328. 冻结本轮范围，只处理仓储库存聚合链后移后端方案（2026-04-07，待确认）
   - [ ] 聚焦 `src/features/warehouse/services/inventory-service.ts` 的 `getInventoryList()`。
   - [ ] 本轮只先收口库存视图聚合，不顺带处理主数据搜索聚合、通知扫描与 dashboard 统计。

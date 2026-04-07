@@ -2,14 +2,18 @@ import { ImageIcon, Layers, Package, Plus, Scissors, Settings2, Trash2 } from 'l
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
+import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type Product } from '@/features/engineering/data/schema'
 import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { type SalesOrderLine } from '../../data/schema'
 
+type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
+
 interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
-  products: any[]
-  dictEntries: any[]
+  products: Product[]
+  dictEntries: DictionaryEntry[]
   units: Unit[]
   drillingOptions: { label: string; value: string }[]
   labelingOptions: { label: string; value: string }[]
@@ -19,7 +23,7 @@ interface OrderLinesEditorProps {
   onLineChange: (
     index: number,
     field: keyof SalesOrderLine,
-    value: any,
+    value: SalesOrderLineFieldValue,
     extraData?: Partial<SalesOrderLine>
   ) => void
 }
@@ -230,7 +234,7 @@ export function OrderLinesEditor({
         {lines?.map((line, index) => (
           <div key={index} className='relative rounded-[24px] border-2 border-dashed bg-muted/5 p-4 animate-in fade-in slide-in-from-bottom-2'>
             <div className='mb-4 flex items-start gap-4'>
-              <div className='flex size-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background'>
+              <div className='flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background'>
                 {(() => {
                   const product = products.find((item) => item.id === line.productId)
                   return product?.image ? (

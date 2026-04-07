@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from '../services/dispatch-service'
-import { getSalesOrders } from '@/features/trading/services/trading-service'
+import { getSalesOrders } from '@/features/trading/sales'
 import { RoutingService } from '../services/routing-service'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 

@@ -29,9 +29,10 @@ import {
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { SupplierActionDialog } from './supplier-action-dialog'
-import { useGetSuppliers, useSupplierMutations } from '../hooks/use-trading'
+import { useGetSuppliers, useSupplierMutations } from '../supplier'
 import { cn } from '@/lib/utils'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 
@@ -74,7 +75,7 @@ export function SupplierList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveSupplier = (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: any }) => {
+  const handleSaveSupplier = (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_supplier_manage')) return
     
     if (payload.isPatch && payload.delta && selectedSupplier) {

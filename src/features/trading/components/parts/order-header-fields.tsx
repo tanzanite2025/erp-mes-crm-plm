@@ -6,9 +6,12 @@ import { useLanguage } from '@/context/language-provider'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { type Customer, type SalesOrder } from '../../data/schema'
 
+type SalesOrderFormState = Partial<SalesOrder>
+type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
+
 interface OrderHeaderFieldsProps {
   formData: Partial<SalesOrder>
-  setFormData: (value: any) => void
+  setFormData: (value: SalesOrderFormUpdater) => void
   customers: Customer[]
   onClassificationChange: (value: string) => void
 }
@@ -65,7 +68,7 @@ export function OrderHeaderFields({
                 value={formData.customerName}
                 onChange={(e) => {
                   const customer = customers.find((item) => item.name === e.target.value)
-                  setFormData((prev: any) => ({
+                  setFormData((prev) => ({
                     ...prev,
                     customerName: e.target.value,
                     customerId: customer?.id,
@@ -89,7 +92,7 @@ export function OrderHeaderFields({
             <select
               className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
               value={formData.type}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, type: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
             >
               {dictionaryService.getOptions('ORDER_TYPE').map((option) => (
                 <option key={option.value} value={option.value}>
@@ -125,7 +128,7 @@ export function OrderHeaderFields({
               <Input
                 type='date'
                 value={formData.deliveryDate}
-                onChange={(e) => setFormData((prev: any) => ({ ...prev, deliveryDate: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, deliveryDate: e.target.value }))}
                 className='h-11 pl-9 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
               />
             </div>

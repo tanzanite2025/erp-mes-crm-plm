@@ -15,7 +15,7 @@ import {
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { getDeletedPurchaseOrders } from '../../services/purchase-service'
+import { getDeletedPurchaseOrders } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
 
 export function PurchaseOrderLogs() {
