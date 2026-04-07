@@ -1,4 +1,4 @@
-import { type PurchaseOrder, type PurchaseOrderStatus } from '../data/schema'
+import { type PurchaseOrder } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
 
 export interface PaginatedResponse<T> {
@@ -52,15 +52,6 @@ export const confirmPurchaseReceipt = async (
 }
 
 export const savePurchaseOrder = async (order: Partial<PurchaseOrder>): Promise<PurchaseOrder> => {
-    // 【加固】同步明细状态 (前端先行处理，减轻后端事务压力)
-    if (order.status && ['Canceled', 'Received'].includes(order.status) && order.lines) {
-        const targetStatus = order.status as PurchaseOrderStatus
-        order.lines = order.lines.map(line => ({
-            ...line,
-            status: targetStatus
-        }))
-    }
-
     return apiFetch<PurchaseOrder>('/purchase/orders', {
         method: 'POST',
         body: JSON.stringify(order),

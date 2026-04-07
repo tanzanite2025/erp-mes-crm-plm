@@ -33,25 +33,11 @@ import { createLogger } from '@/lib/logger'
 import { type ChangeOrder, type Product } from '../data/schema'
 import { changeOrderService } from '../services/change-order-service'
 import { productService } from '../services/product-service'
+import { createChangeOrderDraft } from '../utils/default-builders'
 
 const logger = createLogger('ChangeOrdersTab')
 
-const EMPTY_ORDER: ChangeOrder = {
-  id: '',
-  title: '',
-  productId: '',
-  status: 'draft',
-  description: '',
-  createdAt: new Date().toISOString(),
-  version: 1,
-  changeOrderNo: '',
-  changeType: 'ECO',
-  siteCode: '',
-  revisionNo: 'R1',
-  isDefaultSite: true,
-  effectiveFrom: '',
-  effectiveTo: '',
-}
+const EMPTY_ORDER: ChangeOrder = createChangeOrderDraft()
 
 const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { createLogger } from '@/lib/logger'
+import { renderBwipBarcode } from '@/lib/bwip-renderer'
 import { cn } from '@/lib/utils'
-import { loadBwipJs } from '@/lib/lazy-vendors'
 
 import { useLanguage } from '@/context/language-provider'
 import type { TranslationKey } from '@/locales'
@@ -41,26 +41,13 @@ export function DMPreview({
 
         const renderBarcode = async () => {
             try {
-                const bwipjs = await loadBwipJs()
-
                 if (cancelled || !canvasRef.current) return
 
-                const barcodeOptions: Parameters<typeof bwipjs.toCanvas>[1] = {
-                    bcid: barcodeId,
-                    text: code,
-                    scale: isLinearBarcode ? 3 : 10,
-                    includetext: false,
-                    backgroundcolor: 'ffffff',
-                    barcolor: '000000',
-                }
-
-                if (isLinearBarcode) {
-                    barcodeOptions.height = 18
-                    barcodeOptions.paddingwidth = 6
-                    barcodeOptions.paddingheight = 4
-                }
-
-                bwipjs.toCanvas(canvasRef.current, barcodeOptions)
+                await renderBwipBarcode({
+                    canvas: canvasRef.current,
+                    code,
+                    type,
+                })
             } catch (error) {
                 logger.error(`${type} render failed`, error)
             }

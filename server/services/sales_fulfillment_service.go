@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func recalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.SalesOrder, error) {
+func RecalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.SalesOrder, error) {
 	if tx == nil {
 		return models.SalesOrder{}, errors.New("transaction is required")
 	}
@@ -20,6 +20,26 @@ func recalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.Sal
 	var order models.SalesOrder
 	if err := tx.Preload("Lines").Where("id = ?", salesOrderID).First(&order).Error; err != nil {
 		return models.SalesOrder{}, err
+	}
+
+	for i := range order.Lines {
+		desiredStatus := "Pending"
+		if strings.TrimSpace(order.Status) == "Canceled" {
+			desiredStatus = "Canceled"
+		} else if order.Lines[i].DeliveredQty >= order.Lines[i].Qty-salesDeliveryTolerance {
+			desiredStatus = "Done"
+		} else if order.Lines[i].DeliveredQty > salesDeliveryTolerance {
+			desiredStatus = "InProgress"
+		} else if strings.TrimSpace(order.Status) == "Draft" {
+			desiredStatus = "Draft"
+		}
+
+		if order.Lines[i].Status != desiredStatus {
+			if err := tx.Model(&models.SalesOrderLine{}).Where("id = ?", order.Lines[i].ID).Update("status", desiredStatus).Error; err != nil {
+				return models.SalesOrder{}, err
+			}
+			order.Lines[i].Status = desiredStatus
+		}
 	}
 
 	nextStatus, err := recalculateSalesOrderStatus(&order)

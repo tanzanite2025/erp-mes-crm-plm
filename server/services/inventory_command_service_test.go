@@ -434,6 +434,40 @@ func TestCommitShipmentAppliesSalesFulfillmentProgressAndRecalculatesSalesOrderS
 	require.Equal(t, "InProgress", order.Status)
 }
 
+func TestCommitShipmentRejectsNonDraftShipment(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at)
+		VALUES (?, ?, ?)
+	`, materialID, now, now).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO shipment_records (id, created_at, updated_at, material_id, quantity, source_category, batch_no, order_no, status, shipment_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "ship-not-draft-1", now, now, materialID, 3.0, "WH_A", "B-001", "SO-LOCK-001", "COMMITTED", now).Error)
+
+	_, err := CommitShipment("ship-not-draft-1")
+	require.ErrorIs(t, err, ErrShipmentNotDraft)
+
+	type shipmentRow struct {
+		Status string
+	}
+	var shipment shipmentRow
+	require.NoError(t, db.DB.Raw(`SELECT status FROM shipment_records WHERE id = ?`, "ship-not-draft-1").Scan(&shipment).Error)
+	require.Equal(t, "COMMITTED", shipment.Status)
+}
+
 func TestVoidShipmentRollsBackSalesFulfillmentProgressAndRecalculatesSalesOrderStatus(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupInventoryCommandTestDB(t)

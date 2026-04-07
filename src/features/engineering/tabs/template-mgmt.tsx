@@ -29,6 +29,7 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { INITIAL_TEMPLATES, SPEC_COMPONENTS } from '../components/specs'
 import { type ProductTemplate } from '../data/schema'
 import { productTemplateService } from '../services/product-template-service'
+import { createProductTemplateDraft } from '../utils/default-builders'
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
@@ -137,16 +138,7 @@ export function TemplateMgmt() {
   }
 
   const handleAdd = () => {
-    setEditingTemplate({
-      id: '',
-      name: '',
-      code: '',
-      componentKey: 'GENERAL',
-      description: '',
-      active: true,
-      version: 1,
-      createdAt: new Date().toISOString(),
-    })
+    setEditingTemplate(createProductTemplateDraft())
     setIsDialogOpen(true)
   }
 

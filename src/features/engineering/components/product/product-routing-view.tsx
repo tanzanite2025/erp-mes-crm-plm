@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, ArrowDown, Activity, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { type Product, type ProductProcessRouting, type ProductProcessRoutingNode } from '../../data/schema'
+import { createProductRoutingDraft } from '../../utils/default-builders'
 import { getStoredProcesses, type ProcessStep } from '@/features/production-shared/tabs/work-architecture/components/process-utils'
 
 interface ProductRoutingViewProps {
@@ -16,13 +17,9 @@ interface ProductRoutingViewProps {
 export function ProductRoutingView({ product }: ProductRoutingViewProps) {
     const [globalProcessResourcePool, setGlobalProcessResourcePool] = useState<ProcessStep[]>([])
     // Mock a current routing state, later to be hooked up with real backend query
-    const [currentBlueprint, setCurrentBlueprint] = useState<ProductProcessRouting>({
+    const [currentBlueprint, setCurrentBlueprint] = useState<ProductProcessRouting>(createProductRoutingDraft({
         targetProductId: product.id,
-        versionControlTag: 'V1.0.0.Draft',
-        isCurrentlyActiveBlueprint: true,
-        version: 1,
-        routeNodes: []
-    })
+    }))
 
     useEffect(() => {
         const loadProcesses = async () => {

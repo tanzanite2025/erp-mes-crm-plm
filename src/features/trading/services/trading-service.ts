@@ -1,13 +1,17 @@
-import { type Customer, type Supplier, type SalesOrder, type SalesOrderStatus, type PurchaseOrder } from '../data/schema'
-import { auditUtils } from '@/lib/audit-utils'
+import { type Customer, type Supplier, type SalesOrder, type PurchaseOrder } from '../data/schema'
 import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const logger = createLogger('tradingService');
+
+type SupplierListMeta = {
+    total?: number
+    page?: number
+    pageSize?: number
+}
 
 export interface PaginatedResponse<T> {
     items: T[];
@@ -36,16 +40,19 @@ export const deleteCustomer = async (id: string): Promise<void> => {
 export const getSuppliers = async (): Promise<Supplier[]> => {
     const raw = await apiFetch<Supplier[]>('/suppliers');
     const checkedRaw = ensureArrayResponse<Supplier>(raw, 'TradingService.getSuppliers');
+    const supplierListMeta = raw as Supplier[] & SupplierListMeta
     
     const result = checkedRaw.map(s => ({
         ...s,
         mainProducts: typeof s.mainProducts === 'string' ? JSON.parse(s.mainProducts) : (s.mainProducts || [])
     }));
     
-    if ((raw as any).total !== undefined) {
-        (result as any).total = (raw as any).total;
-        (result as any).page = (raw as any).page;
-        (result as any).pageSize = (raw as any).pageSize;
+    if (supplierListMeta.total !== undefined) {
+        Object.assign(result, {
+            total: supplierListMeta.total,
+            page: supplierListMeta.page,
+            pageSize: supplierListMeta.pageSize,
+        })
     }
     
     return result;
@@ -99,14 +106,6 @@ export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> =>
 }
 
 export const saveSalesOrder = async (order: Partial<SalesOrder>): Promise<SalesOrder> => {
-    if (order.status && ['Canceled', 'Done'].includes(order.status) && order.lines) {
-        const targetStatus = order.status;
-        order.lines = order.lines.map(line => ({
-            ...line,
-            status: targetStatus
-        }))
-    }
-    
     return apiFetch<SalesOrder>('/sales-orders', {
         method: 'POST',
         body: JSON.stringify(order),
@@ -114,26 +113,14 @@ export const saveSalesOrder = async (order: Partial<SalesOrder>): Promise<SalesO
 }
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {
-    const order = await getSalesOrderById(id);
-
-    if (order.status === 'Canceled') {
-        await apiFetch<void>(`/sales-orders/${id}`, { method: 'DELETE' });
-    } else {
-        const canceledOrder = auditUtils.stamp({
-            ...order,
-            status: 'Canceled' as SalesOrderStatus,
-            lines: order.lines.map(line => ({ ...line, status: 'Canceled' as SalesOrderStatus }))
-        }, 'update');
-        await saveSalesOrder(canceledOrder);
-    }
-    
+    await apiFetch<void>(`/sales-orders/${id}`, { method: 'DELETE' });
     useNotificationStore.getState().archiveByOrderId(id);
 }
 
 export const claimOrderLine = async (orderId: string, lineNos: number[], operator: string): Promise<SalesOrder> => {
     const order = await getSalesOrderById(orderId);
-    
-    order.lines = order.lines.map(line => {
+
+    const nextLines = order.lines.map(line => {
         if (lineNos.includes(line.lineNo)) {
             return {
                 ...line,
@@ -144,13 +131,9 @@ export const claimOrderLine = async (orderId: string, lineNos: number[], operato
         return line
     });
 
-    const allClaimed = order.lines.every(l => !!l.claimedBy)
-    if (allClaimed && order.status === 'Pending') {
-        order.status = 'InProgress'
-    }
-
-    const stampedOrder = auditUtils.stamp(order, 'update');
-    return saveSalesOrder(stampedOrder);
+    return patchSalesOrder(orderId, {
+        lines: { o: order.lines, n: nextLines }
+    }, order.version)
 }
 
 /**
@@ -196,37 +179,23 @@ export const updateOrderDelivery = async (orderNo: string, materialId: string, q
     }
     if (order.isDeleted) return;
 
-    // 使用 ProxyTracker 捕获交付变更
-    const tracker = trackDelta(order);
-    const draft = tracker.data as SalesOrder;
-
     let changed = false;
-    draft.lines.forEach((line, index) => {
+    const nextLines = order.lines.map((line) => {
         if (line.productId === materialId || line.productCode === materialId) {
             const delivered = Math.max(0, Number(line.deliveredQty || 0) + quantity);
-            draft.lines[index].deliveredQty = delivered;
-            draft.lines[index].status = delivered >= line.qty ? 'Done' : (delivered > 0 ? 'InProgress' : 'Pending');
             changed = true;
+            return {
+                ...line,
+                deliveredQty: delivered,
+            }
         }
+        return line
     });
 
     if (changed) {
-        // 自动触发主表状态机流转
-        const allDone = draft.lines.every(l => Number(l.deliveredQty || 0) >= l.qty);
-        const anyStarted = draft.lines.some(l => Number(l.deliveredQty || 0) > 0);
-
-        if (allDone) {
-            draft.status = 'Done';
-        } else if (anyStarted) {
-            draft.status = 'InProgress';
-        } else {
-            draft.status = 'Pending';
-        }
-        
-        const delta = tracker.commit();
-        if (Object.keys(delta).length > 0) {
-            await patchSalesOrder(order.id, delta, order.version);
-        }
+        await patchSalesOrder(order.id, {
+            lines: { o: order.lines, n: nextLines }
+        }, order.version);
     }
 }
 

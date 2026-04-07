@@ -28,6 +28,9 @@ const DEFAULT_FORM_DATA = {
   remarks: '',
 }
 
+type ShipmentFormData = typeof DEFAULT_FORM_DATA
+type ShipmentFormUpdater = Partial<ShipmentFormData> | ((current: ShipmentFormData) => Partial<ShipmentFormData>)
+
 export function useShipment() {
   const { locale, t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
@@ -50,7 +53,7 @@ export function useShipment() {
   const { data: formData } = useDeltaTracker(initialForm, isShipmentOpen)
 
   // 兼容性 Shim: 模拟 setFormData
-  const setFormData = useCallback((updater: any) => {
+  const setFormData = useCallback((updater: ShipmentFormUpdater) => {
     if (typeof updater === 'function') {
       const next = updater(formData)
       Object.assign(formData, next)
@@ -152,13 +155,12 @@ export function useShipment() {
     }
 
     if (status === 'COMMITTED' && formData.quantity > categoryStock) {
-      toast.error(
+      toast.warning(
         t('warehouse.shipment.toast.insufficientStock', {
           count: categoryStock,
           uom: selectedItem.uom,
         })
       )
-      return
     }
 
     try {
@@ -220,8 +222,7 @@ export function useShipment() {
     }
 
     try {
-      // SDRTS: 提交状态切换的 Delta (status: DRAFT -> COMMITTED)
-      await inventoryService.patchShipment(id, { status: { o: 'DRAFT', n: 'COMMITTED' } }, record.version)
+      await inventoryService.commitShipment(id)
       toast.success(t('warehouse.shipment.toast.commitRecorded'))
       loadInitialData()
     } catch (e: unknown) {

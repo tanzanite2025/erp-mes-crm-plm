@@ -23,12 +23,16 @@ func recalculateSalesOrderStatus(order *models.SalesOrder) (string, error) {
 
 	hasDelivery := false
 	allDelivered := true
+	allClaimed := true
 	for _, line := range order.Lines {
 		if line.DeliveredQty > salesDeliveryTolerance {
 			hasDelivery = true
 		}
 		if line.Qty-line.DeliveredQty > salesDeliveryTolerance {
 			allDelivered = false
+		}
+		if strings.TrimSpace(line.ClaimedBy) == "" {
+			allClaimed = false
 		}
 	}
 
@@ -40,6 +44,9 @@ func recalculateSalesOrderStatus(order *models.SalesOrder) (string, error) {
 	}
 	if currentStatus == "Draft" {
 		return "Draft", nil
+	}
+	if allClaimed && currentStatus == "Pending" {
+		return "InProgress", nil
 	}
 	return "Pending", nil
 }

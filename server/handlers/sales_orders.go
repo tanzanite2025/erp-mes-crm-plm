@@ -219,7 +219,11 @@ func SaveSalesOrderHandler(c *gin.Context) {
 					return err
 				}
 				// 同步明细行 (Replace 模式)
-				return tx.Model(&existing).Association("Lines").Replace(input.Lines)
+				if err := tx.Model(&existing).Association("Lines").Replace(input.Lines); err != nil {
+					return err
+				}
+				_, err := services.RecalculateSalesOrderStatusTx(tx, existing.ID)
+				return err
 			}
 		}
 
@@ -229,6 +233,9 @@ func SaveSalesOrderHandler(c *gin.Context) {
 			input.OrderNo = originalID
 		}
 		if err := tx.Create(&input).Error; err != nil {
+			return err
+		}
+		if _, err := services.RecalculateSalesOrderStatusTx(tx, input.ID); err != nil {
 			return err
 		}
 
@@ -460,7 +467,11 @@ func PatchSalesOrderHandler(c *gin.Context) {
 		if err := tx.Model(&current).Updates(input).Error; err != nil {
 			return err
 		}
-		return tx.Model(&current).Association("Lines").Replace(input.Lines)
+		if err := tx.Model(&current).Association("Lines").Replace(input.Lines); err != nil {
+			return err
+		}
+		_, err := services.RecalculateSalesOrderStatusTx(tx, current.ID)
+		return err
 	})
 
 	if err != nil {
@@ -480,13 +491,39 @@ func PatchSalesOrderHandler(c *gin.Context) {
 func DeleteSalesOrderHandler(c *gin.Context) {
 	id := c.Param("id")
 	var order models.SalesOrder
-	if err := db.DB.Where("id = ?", id).First(&order).Error; err != nil {
+	if err := db.DB.Preload("Lines").Where("id = ?", id).First(&order).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] 订单 ID " + id + " 不存在"})
 		return
 	}
 
-	// 执行逻辑删除
-	if err := db.DB.Model(&order).Update("is_deleted", true).Error; err != nil {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if order.Status == "Canceled" {
+			return tx.Model(&order).Updates(map[string]interface{}{
+				"is_deleted": true,
+				"version":    order.Version + 1,
+			}).Error
+		}
+
+		if err := tx.Model(&order).Updates(map[string]interface{}{
+			"status":  "Canceled",
+			"version": order.Version + 1,
+		}).Error; err != nil {
+			return err
+		}
+
+		if len(order.Lines) > 0 {
+			lineIDs := make([]uint, 0, len(order.Lines))
+			for _, line := range order.Lines {
+				lineIDs = append(lineIDs, line.ID)
+			}
+			if err := tx.Model(&models.SalesOrderLine{}).Where("id IN ?", lineIDs).Update("status", "Canceled").Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除订单失败: " + err.Error()})
 		return
 	}

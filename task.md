@@ -1,4 +1,133 @@
 
+## P0 生产环境 `/auth/snapshot` 404 导致登录成功后循环回登录页故障专项（2026-04-07，待确认）
+
+- [ ] 259. 冻结本轮生产故障处理范围，只处理 auth snapshot 404 与登录循环
+  - [ ] 明确本轮先不扩散到 WebSocket、通知中心、权限体系全量重构。
+  - [ ] 明确当前最高优先级是“登录成功但反复回到登录页，无法进入系统”。
+
+- [ ] 260. 盘清 `/auth/snapshot` 的前后端调用链与生产 404 根因
+  - [ ] 排查前端 `syncIdentitySnapshotFromProfile()` 对 `/auth/snapshot` 的调用路径。
+  - [ ] 排查 `AuthenticatedLayout` 与 `UserAuthForm` 在 snapshot 失败后的重定向策略。
+  - [ ] 排查后端 `GET /api/v1/auth/snapshot` 路由与 handler 是否实际注册。
+  - [ ] 判断生产 404 是由 API base 拼接错误、网关转发错误、后端未部署新路由，还是前端容错策略过于激进导致。
+
+- [ ] 261. 明确生产修复原则
+  - [ ] 先恢复“登录成功后可进入页面”的最小可用性。
+  - [ ] 若 snapshot 缺失是部署版本问题，优先补正式后端路由/部署一致性。
+  - [ ] 若 snapshot 只是背景同步失败，前端不应无条件把 404 视为必须重新登录，避免形成登录死循环。
+
+- [ ] 262. 将故障修复方案、拟改文件与验证口径写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确最小修复路径与回归验证方式。
+  - [ ] 待确认后再进入代码修复与验证。
+
+## P0 已治理真相边界链路的最小后端回归测试补强（2026-04-07，待确认）
+
+- [ ] 254. 冻结本轮测试补强范围，只覆盖已完成治理的三条链
+  - [ ] 仅覆盖 `sales-order`、`shipment`、`purchase-order`。
+  - [ ] 不扩散成全仓库测试重构，不顺带补 unrelated handler/service 测试。
+
+- [ ] 255. 为 `sales-order` 补最小后端回归测试
+  - [ ] 覆盖 sales order authoritative flow 中主状态重算规则，至少包含：
+    - [ ] `Pending + all claimed -> InProgress`
+    - [ ] delivery 后 `InProgress / Done`
+    - [ ] `Canceled` 保持稳定
+  - [ ] 覆盖删除/取消语义的最小后端行为，防止前端状态机后迁后再次反弹。
+
+- [ ] 256. 为 `shipment` 补最小后端回归测试
+  - [ ] 覆盖 `CommitShipment(...)` 的正式提交流程。
+  - [ ] 覆盖库存不足 / 非 DRAFT 状态等关键拒绝路径。
+  - [ ] 覆盖 commit 后对库存与 sales order 交付联动的关键断言。
+
+- [ ] 257. 为 `purchase-order` 补最小后端回归测试
+  - [ ] 覆盖 purchase-order authoritative flow 的核心状态规则。
+  - [ ] 覆盖 workflow 批准后 `Draft -> Sent`。
+  - [ ] 覆盖 receipt 后 `Awaiting / Received`，确保前端状态扩散删除后仍由后端承接。
+
+- [ ] 258. 将测试补强方案、拟改测试文件与验证口径写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确最小测试文件清单、验证命令与风险。
+  - [ ] 待确认后再进入测试代码实施。
+
+## P0 `purchase-service.ts` 前端状态扩散清理专项（2026-04-07，待确认）
+
+- [ ] 250. 冻结本轮真相边界治理范围，先只打 `src/features/trading/services/purchase-service.ts`
+  - [ ] 明确本轮不扩散到全部 purchase 页面、hooks、receipt 全链或 warehouse 域。
+  - [ ] 明确当前问题不是完整前端状态机，而是前端残留了主表状态向明细状态的补丁式扩散。
+
+- [ ] 251. 盘清必须清理的前端状态扩散逻辑
+  - [ ] 排查 `savePurchaseOrder(...)` 中 `Canceled / Received -> lines.status` 的前端扩散逻辑。
+  - [ ] 判断该逻辑是否与后端 `purchase_order_flow` / `purchase_receipt` authoritative flow 重复定义。
+
+- [ ] 252. 明确 purchase-order 链的 authoritative path
+  - [ ] 前端仅提交采购单数据与用户意图，不再本地派生明细正式状态。
+  - [ ] 后端工作流审批负责 `Draft -> Sent`。
+  - [ ] 后端收货确认与状态重算负责 `Awaiting / Received` 等正式状态流转。
+
+- [ ] 253. 将专项方案、风险与验证口径写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确前后职责分界、拟改文件与验证方式。
+  - [ ] 待确认后再进入代码实施。
+
+## P0 `warehouse / shipment` 真相边界后迁专项（2026-04-07，待确认）
+
+- [ ] 246. 冻结本轮真相边界治理范围，先只打 shipment 链
+  - [ ] 明确本轮不扩散到全部 warehouse 模块、stocktake 或 purchase-order。
+  - [ ] 明确当前最高风险问题是前端在 `use-shipment.ts` 中承担了库存裁决与状态推进。
+
+- [ ] 247. 盘清 shipment 链必须后迁的前端越界逻辑
+  - [ ] 排查 `submitShipment(...)` 中 `quantity > categoryStock` 的提交阻断逻辑，确认其应降级为提示而非最终裁决。
+  - [ ] 排查 `commitDraft(...)` 中前端直接提交 `status: DRAFT -> COMMITTED` 的状态推进逻辑。
+  - [ ] 排查 `removeRecord(...)` 中前端对 draft / committed 记录语义分流是否越界。
+
+- [ ] 248. 明确 shipment 链的 authoritative path
+  - [ ] 前端仅提交出库意图与必要字段，不再本地决定最终 commit 条件。
+  - [ ] 后端 `CommitShipment(...)` 成为正式提交入口，负责库存校验、扣减、联动与失败原因返回。
+  - [ ] 前端保留预警提示与交互确认，但不保留最终业务裁决。
+
+- [ ] 249. 将专项方案、风险与验证口径写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确前后职责边界、拟改文件与验证方式。
+  - [ ] 待确认后再进入代码实施。
+
+## P0 `trading-service.ts` 前端状态机后迁专项（2026-04-07，待确认）
+
+- [ ] 242. 冻结本轮真相边界治理范围，先只打 `src/features/trading/services/trading-service.ts`
+  - [ ] 明确本轮不扩散到全部 trading 页面、hooks、后端全域重构。
+  - [ ] 明确当前最高风险问题是前端 service 已承担主表/明细状态推进与删除/取消语义分流。
+
+- [ ] 243. 盘清必须后迁的前端状态机逻辑
+  - [ ] 排查 `saveSalesOrder(...)` 中主表状态向明细状态扩散的前端逻辑。
+  - [ ] 排查 `deleteSalesOrder(...)` 中“删除 vs 取消”语义分流的前端逻辑。
+  - [ ] 排查 `claimOrderLine(...)` 中 claim 后主状态推进的前端逻辑。
+  - [ ] 排查 `updateOrderDelivery(...)` 中 deliveredQty -> 行状态 -> 主表状态推进的前端逻辑。
+
+- [ ] 244. 明确后迁后的 authoritative path
+  - [ ] 前端仅提交意图、正式 delta 或 command 参数，不再本地推导最终业务状态。
+  - [ ] 后端统一负责销售订单主表/明细状态推进与取消/删除裁决。
+  - [ ] 前端保留提示、展示和局部输入辅助，不保留最终业务裁决。
+
+- [ ] 245. 将专项方案、风险与验证口径写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确前后职责分界、拟改文件与验证方式。
+  - [ ] 待确认后再进入代码实施。
+
+## P0 三类共享根因的可复用约束沉淀（2026-04-07，待确认）
+
+- [ ] 238. 沉淀统一默认值 builder 约束，禁止 schema 演进后继续由页面/样例/normalize 裸写核心字段
+  - [ ] 明确默认值 builder 的职责边界：负责新建态初始对象、样例草稿、必要的正式默认字段（如 `version` / `createdAt`）。
+  - [ ] 明确哪些模块优先接入统一 builder：先从 `engineering` 这轮已暴露问题的 `Product` / `ProductTemplate` / `ChangeOrder` / `Routing` 开始。
+  - [ ] 明确页面初始化对象、`INITIAL_*` 常量、局部 `normalizeXxx(...)` 后续优先复用 builder，不再各自手写核心字段。
+
+- [ ] 239. 沉淀统一表单子组件 contract 模式，禁止子组件直接窄化整份 `UseFormReturn`
+  - [ ] 明确字段级 contract 为默认方案：子组件优先接 `value` / `onChange` 或最小字段集合，而不是整份 `form`。
+  - [ ] 明确只有真正的通用字段容器组件，才允许依赖整份 `form`，且需与父层共享同一正式泛型边界。
+  - [ ] 明确 `react-hook-form + zodResolver` 的统一收口方向，避免继续出现父层完整模型、子层局部模型互不兼容。
+
+- [ ] 240. 沉淀统一第三方 adapter 模式，禁止业务组件散写 vendor options
+  - [ ] 明确第三方 adapter 的职责边界：对外暴露项目内稳定配置面，对内对齐 vendor 正式类型。
+  - [ ] 明确优先接入对象：先从本轮已暴露的条码/二维码渲染链开始。
+  - [ ] 明确后续业务组件优先依赖 adapter/helper，不再直接持有 vendor 原始 options。
+
+- [ ] 241. 将三类约束的拟落地目录、风险与不做事项写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确约束落地点、实施批次与回归验证方式。
+  - [ ] 待确认后再进入代码实施，不直接扩散修改全仓库。
+
 ## P0 本轮 `pnpm build` 多点报错的共享根因分析（2026-04-07，待确认）
 
 - [ ] 233. 先收口“为什么会一批量暴露”，禁止继续把 build 报错当作孤立点逐条打补丁

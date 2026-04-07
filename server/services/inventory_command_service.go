@@ -197,7 +197,7 @@ func applyShipmentToSalesOrderTx(tx *gorm.DB, shipment *models.ShipmentRecord) e
 		return errors.New("[CRITICAL_DATA_INTEGRITY] shipment commit failed: sales order line not found")
 	}
 
-	_, err := recalculateSalesOrderStatusTx(tx, salesOrderID)
+	_, err := RecalculateSalesOrderStatusTx(tx, salesOrderID)
 	return err
 }
 
@@ -220,7 +220,7 @@ func rollbackShipmentFromSalesOrderTx(tx *gorm.DB, shipment *models.ShipmentReco
 		return errors.New("[CRITICAL_DATA_INTEGRITY] shipment rollback failed: sales order line not found")
 	}
 
-	_, err := recalculateSalesOrderStatusTx(tx, salesOrderID)
+	_, err := RecalculateSalesOrderStatusTx(tx, salesOrderID)
 	return err
 }
 
