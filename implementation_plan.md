@@ -1,4 +1,253 @@
 ﻿#
+## ExcelJS 类型边界与销售订单状态映射收口方案（2026-04-07，待确认）
+
+### 一、当前结论
+在尝试继续清理目标文件 ESLint 债务时，已经暴露出两条新的根因层问题，说明当前范围不再只是 lint 收尾：
+
+1. `src/features/material-archive/services/excel-service.ts`
+   - 目前问题不再只是 `no-explicit-any`
+   - 已升级为 ExcelJS 真实类型边界对齐问题
+   - 当前自定义的窄类型未覆盖 `Date`、公式结果等 ExcelJS 合法值形态，因此与真实库类型发生冲突
+
+2. `src/features/trading/components/sales-order-list-fixed.tsx`
+   - 目前问题不再只是 `no-explicit-any`
+   - 已升级为销售订单状态值到 i18n key 的正式映射收口问题
+   - 当前状态值与翻译 key 存在命名差异，例如 `cancelled` / `canceled`、`completed` 等边界不一致
+
+### 二、本轮目标
+本轮不再把问题当成“顺手 lint 清理”，而是分别收口两条新的正式边界：
+
+1. `excel-service.ts`：ExcelJS 类型边界；
+2. `sales-order-list-fixed.tsx`：状态值 -> i18n key 映射边界；
+3. 保持 `tsc` 与目标文件 eslint 可通过。
+
+### 三、实施顺序
+
+#### Phase A：ExcelJS 类型边界对齐
+涉及重点：
+- `src/features/material-archive/services/excel-service.ts`
+
+处理原则：
+- 不再用过窄的本地类型硬套 ExcelJS；
+- 仅建立与当前使用面相匹配、但能覆盖真实值形态的最小兼容类型；
+- 不破坏已完成的 `version` 契约统一。
+
+#### Phase B：销售订单状态映射收口
+涉及重点：
+- `src/features/trading/components/sales-order-list-fixed.tsx`
+- 相关销售订单状态定义 / locales key
+
+处理原则：
+- 先对齐真实状态枚举与正式翻译 key；
+- 使用显式映射函数，不继续依赖宽泛字符串拼接；
+- 不改动销售订单业务流程与筛选语义。
+
+### 四、关键风险
+
+1. 风险：ExcelJS 第三方类型面较宽
+   - 若引入过度复杂的全量类型，可能扩大改动面
+   - 处理原则：只覆盖当前实际读取 / 写入所用到的值形态
+
+2. 风险：状态值与多语言 key 的命名差异可能牵涉历史数据
+   - 若直接改业务状态值，可能影响筛选与展示
+   - 处理原则：优先建立映射层，而非直接改业务枚举
+
+3. 风险：当前问题已超出原 ESLint 范围
+   - 若继续按“风格清理”思路推进，容易做成补丁式修复
+   - 处理原则：以边界收口为目标，而非单纯消 warning。
+
+### 五、验证要求
+至少执行：
+
+```bash
+pnpm exec eslint src/features/material-archive/services/excel-service.ts src/features/trading/components/sales-order-list-fixed.tsx
+pnpm exec tsc --noEmit
+```
+
+### 六、明确不做事项
+- 不将本轮扩散成 ExcelJS 全域类型重写；
+- 不直接改销售订单业务状态值本身作为快速绕过；
+- 不继续使用 `as any`、宽泛断言或字符串硬拼接掩盖边界问题；
+- 不顺手清理与本轮无关的其它历史 warning。
+
+## 目标文件 ESLint 债务清理方案（2026-04-07，待确认）
+
+### 一、当前结论
+在完成本轮 TypeScript 根因修复后，`pnpm exec tsc --noEmit` 已恢复通过，说明截图中的主阻塞错误链已被切断。
+
+当前剩余问题已从“编译失败”降级为“目标文件 ESLint 债务”，范围集中在：
+
+1. `src/features/material-archive/services/excel-service.ts`
+   - 存在若干 `@typescript-eslint/no-explicit-any`
+
+2. `src/features/trading/components/sales-order-list-fixed.tsx`
+   - 存在两个 `@typescript-eslint/no-explicit-any`
+   - 存在 `react-hooks/exhaustive-deps` warning
+   - 存在 class 简写 warning
+
+3. `src/features/equipment-tooling/tabs/partner-mgmt.tsx`
+   - 存在一个 `@typescript-eslint/no-explicit-any`
+
+### 二、本轮目标
+本轮不再处理编译阻塞，而是对刚才已经触达的目标文件完成收尾级 ESLint 清理：
+
+1. 清退目标文件中的 `any`；
+2. 处理局部 hook 依赖 warning；
+3. 处理本轮目标文件中的 class 简写 warning；
+4. 保持 `tsc` 继续通过。
+
+### 三、实施顺序
+
+#### Phase A：`excel-service.ts`
+处理重点：
+- 为 worksheet / row / cell 使用到的最小对象形态定义局部类型；
+- 消除 `any`，但不引入庞大的 ExcelJS 全量类型耦合。
+
+处理原则：
+- 以最小必要结构类型替代 `any`；
+- 不破坏已完成的 `version` 契约统一。
+
+#### Phase B：`sales-order-list-fixed.tsx`
+处理重点：
+- 为当前残留 `any` 的事件 / 数据路径补正式类型；
+- 将 `orders` 初始化收敛到稳定依赖形式；
+- 顺手处理本文件 class 简写 warning。
+
+处理原则：
+- 不改动销售订单业务语义；
+- 不把本轮扩展成 sales 列表组件全面重构。
+
+#### Phase C：`partner-mgmt.tsx`
+处理重点：
+- 将错误处理中的 `any` 收口为更明确的错误类型。
+
+处理原则：
+- 仅处理本轮已暴露的 ESLint 错误；
+- 不扩展成 equipment-tooling UI 重写。
+
+### 四、关键风险
+
+1. 风险：`excel-service.ts` 若直接引入大面积第三方类型，可能带来额外耦合与新错误
+   - 处理原则：仅定义本地最小必要类型，不做过度类型化
+
+2. 风险：`sales-order-list-fixed.tsx` 同时存在代码风格与类型问题
+   - 若顺手重排太多逻辑，容易扩大改动面
+   - 处理原则：只做为消除目标 lint 必需的最小收口
+
+3. 风险：当前工作已完成主阻塞修复
+   - 若继续扩散到全项目 warning，可能偏离本轮目标
+   - 处理原则：仅处理已明确列入范围的目标文件。
+
+### 五、验证要求
+至少执行：
+
+```bash
+pnpm exec eslint src/features/material-archive/services/excel-service.ts src/features/trading/components/sales-order-list-fixed.tsx src/features/equipment-tooling/tabs/partner-mgmt.tsx
+pnpm exec tsc --noEmit
+```
+
+### 六、明确不做事项
+- 不把本轮扩展成全项目 ESLint 清零；
+- 不为消除 lint 重新引入 `any` 旁路或业务弱类型兜底；
+- 不改动与本轮范围无关的 trading / material / equipment 业务逻辑；
+- 不顺手处理其他文件中的历史样式 warning。
+
+## TypeScript 契约漂移根因修复方案（2026-04-07，待确认）
+
+### 一、根因结论
+本轮截图中的 TypeScript 报错并非单个文件损坏，而是两条前端契约迁移未闭环后集中暴露：
+
+1. `Material` 版本字段契约漂移
+   - 正式 `Material` schema 已收口到 `version`
+   - 但 `src/features/material-archive/services/excel-service.ts` 仍在使用旧 `_v`
+   - 这导致 Excel 导入导出链与正式实体类型发生直接冲突
+
+2. `Trading Action Dialog` 组件 props 契约漂移
+   - `PurchaseOrderActionDialog` / `SalesOrderActionDialog` 当前已内聚 save / patch mutation
+   - 组件正式 props 已不再包含 `onSave`
+   - 但 `purchase-order-list.tsx` / `sales-order-list-fixed.tsx` 仍按旧接口传入 `onSave`
+   - `TS2322` 与随后出现的 `implicit any` 属于同一根因的连锁症状
+
+同时已确认：
+
+3. `partner-mgmt.tsx` unused import
+   - 属于局部遗留清理问题
+   - 不是本轮系统性根因
+
+### 二、本轮目标
+本轮不做“逐条消红”，而是从契约定义层完成统一收口：
+
+1. 将 `Material` 领域版本字段统一到单一命名；
+2. 清退 `Trading Action Dialog` 的旧 `onSave` 调用契约；
+3. 最后再处理顺带暴露的孤立遗留（如 unused import）。
+
+### 三、实施顺序
+
+#### Phase A：统一 `Material.version` 契约
+涉及重点：
+- `src/features/material-archive/data/schema.ts`
+- `src/features/material-archive/services/material-service.ts`
+- `src/features/material-archive/services/excel-service.ts`
+- `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+
+处理原则：
+- 以正式 schema 为单一事实来源；
+- 将 Excel 复合 ID 拼装 / 解析统一切到 `version`；
+- 不保留 `_v` / `version` 双轨长期兼容层。
+
+#### Phase B：清退 `Trading Action Dialog` 旧 props 契约
+涉及重点：
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- `src/features/trading/components/purchase/purchase-order-list.tsx`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+- `src/features/trading/components/sales-order-list-fixed.tsx`
+
+处理原则：
+- 以当前 action dialog 的正式 props 为单一事实来源；
+- 列表页移除旧 `onSave` 传参；
+- 保存与 patch 责任继续集中在弹窗内部 mutation 主链。
+
+#### Phase C：收尾清理
+涉及重点：
+- `src/features/equipment-tooling/tabs/partner-mgmt.tsx`
+
+处理原则：
+- 仅清理孤立死代码；
+- 不把本轮扩展成 equipment-tooling UI 重构。
+
+### 四、关键风险
+
+1. 风险：`Material` 导入导出链同时涉及 Excel 模板兼容
+   - 若只改类型名而不改复合 ID 解析，会出现导出/导入链不一致
+   - 处理原则：导出拼接、导入解析、批量同步使用同一版本字段命名
+
+2. 风险：Trading 弹窗保存逻辑已内聚
+   - 若同时保留旧 `onSave` 契约，容易形成双入口、双真相
+   - 处理原则：明确以组件当前正式 props 为准，清退旧接口调用
+
+3. 风险：截图报错包含局部症状
+   - 若先修 unused import 等表层问题，容易掩盖真正的契约漂移
+   - 处理原则：先收口主因，再处理症状。
+
+### 五、验证要求
+至少执行：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+必要时补充：
+
+```bash
+pnpm exec eslint src/features/material-archive/services/excel-service.ts src/features/trading/components/purchase/purchase-order-list.tsx src/features/trading/components/sales-order-list-fixed.tsx src/features/equipment-tooling/tabs/partner-mgmt.tsx
+```
+
+### 六、明确不做事项
+- 不为了短期消红重新引入 `_v` / `version` 双字段长期并存；
+- 不把 `Trading Action Dialog` 又退回到外部 `onSave` 驱动；
+- 不把本轮扩散成 material / trading / equipment 三域的大规模重构；
+- 不用局部类型断言或 `any` 作为掩盖性补丁。
+
 ## `warehouse` 下一批 DTO 补齐方案（2026-04-07，待确认）
 
 ### 一、当前结论

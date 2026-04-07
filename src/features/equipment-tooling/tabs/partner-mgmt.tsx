@@ -6,15 +6,6 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
 import { PartnerActionDialog } from '../components/partner-action-dialog'
 import { type EquipmentPartner } from '../data/schema'
 import { EquipmentPartnerService } from '../services/partner-service'
@@ -100,8 +91,8 @@ export function PartnerMgmt() {
             setIsDialogOpen(false)
             loadData()
         },
-        onError: (error: any) => {
-            toast.error(error.message || '操作失败')
+        onError: (error: unknown) => {
+            toast.error(error instanceof Error ? error.message : '操作失败')
         }
     })
 

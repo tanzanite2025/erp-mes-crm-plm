@@ -1,4 +1,71 @@
 
+## P0 ExcelJS 类型边界与销售订单状态映射收口（2026-04-07，待确认）
+
+- [ ] 217. 冻结本轮新增根因范围，禁止继续按“ESLint 收尾”误判执行
+  - [ ] 确认 `excel-service.ts` 当前已从 `any` 问题升级为 ExcelJS 真实类型边界对齐问题。
+  - [ ] 确认 `sales-order-list-fixed.tsx` 当前已从 `any` 问题升级为销售订单状态值到 i18n key 的正式映射收口问题。
+  - [ ] 本轮不再把这两项当作单纯风格清理处理。
+
+- [ ] 218. 对齐 `excel-service.ts` 的 ExcelJS 类型边界
+  - [ ] 基于 ExcelJS 实际 `Workbook` / `Worksheet` / `Row` / `CellValue` 能力建立兼容的最小类型方案。
+  - [ ] 允许覆盖 `Date`、公式结果等真实值形态，避免过窄本地类型再次与库类型冲突。
+  - [ ] 保持已完成的 `Material.version` 契约收口不回退。
+
+- [ ] 219. 收口销售订单状态值到 i18n key 的正式映射
+  - [ ] 盘清 `SalesOrder` 状态枚举的真实取值与 locales 中的正式 key 差异。
+  - [ ] 建立明确映射函数，避免继续使用宽泛断言或隐式字符串拼接。
+  - [ ] 保持销售订单列表现有业务行为不变，只修复类型与映射边界。
+
+- [ ] 220. 验证与总结
+  - [ ] 执行目标文件 eslint 与 `pnpm exec tsc --noEmit`。
+  - [ ] 更新 `walkthrough.md`，记录本轮从“ESLint 清理”升级为“类型边界 / 映射边界收口”的原因与结果。
+
+## P0 目标文件 ESLint 债务清理（2026-04-07，待确认）
+
+- [ ] 212. 冻结本轮 ESLint 清理范围，禁止借机扩散成全项目风格整改
+  - [ ] 仅处理本轮已验证目标文件中的 ESLint 债务：`excel-service.ts`、`sales-order-list-fixed.tsx`、`partner-mgmt.tsx`。
+  - [ ] 以 `pnpm exec eslint <目标文件>` 当前输出为范围基线，不扩散到全项目既有 warning。
+  - [ ] 明确本轮目标是消除目标文件中的 `no-explicit-any` 与局部 hook / class warning，不重做业务结构。
+
+- [ ] 213. 清理 `material-archive` 目标文件 ESLint 债务
+  - [ ] 为 `excel-service.ts` 中 Excel worksheet / row / cell 辅助对象建立最小必要类型，清退 `any`。
+  - [ ] 保持已完成的 `version` 契约收口不回退，不为了消 lint 再引入弱类型兜底。
+
+- [ ] 214. 清理 `trading` 目标文件 ESLint 债务
+  - [ ] 为 `sales-order-list-fixed.tsx` 中剩余 `any` 提供正式类型。
+  - [ ] 收敛 `orders` 的 `useMemo` 依赖 warning。
+  - [ ] 处理该文件内本轮范围中的 class 简写 warning。
+
+- [ ] 215. 清理 `equipment-tooling` 目标文件 ESLint 债务
+  - [ ] 为 `partner-mgmt.tsx` 中剩余错误处理 `any` 提供正式类型。
+  - [ ] 保持本轮只处理孤立遗留，不扩展成 equipment-tooling 组件重构。
+
+- [ ] 216. 验证与总结
+  - [ ] 执行目标文件 eslint 与 `pnpm exec tsc --noEmit`。
+  - [ ] 更新 `walkthrough.md`，记录本轮 ESLint 债务是如何在不扩散范围的前提下完成清理。
+
+## P0 TypeScript 契约漂移根因修复（2026-04-07，待确认）
+
+- [ ] 208. 冻结本轮 TS 报错的真正根因，禁止逐行消红式补丁
+  - [ ] 确认 `material-archive` 的正式实体版本字段已收口到 `version`，而 `excel-service.ts` 仍停留在旧 `_v` 契约。
+  - [ ] 确认 `trading` 的 `PurchaseOrderActionDialog` / `SalesOrderActionDialog` 已内聚保存逻辑，不再暴露 `onSave` props，而列表页仍按旧接口调用。
+  - [ ] 确认 `partner-mgmt.tsx` 的 unused import 仅是局部遗留，不是本轮系统性根因。
+
+- [ ] 209. 统一 `Material` 前端版本字段契约到单一事实来源
+  - [ ] 将 `excel-service.ts` 的导出、导入、Excel 复合主键解析统一从 `_v` 收口到 `version`。
+  - [ ] 复核 `material-service.ts`、`use-material-mgmt-data.ts`、Excel 导入导出链，确保不再混用 `_v` / `version`。
+  - [ ] 禁止继续在 `Material` 领域引入第二套版本字段命名兼容层。
+
+- [ ] 210. 清退 `trading` 动作弹窗的旧 `onSave` 调用契约
+  - [ ] 以 `PurchaseOrderActionDialog` / `SalesOrderActionDialog` 当前正式 props 为准，移除列表页对旧 `onSave` 的传参。
+  - [ ] 复核相关列表/弹窗边界，确保保存与 patch 责任只保留在弹窗内部 mutation 主链。
+  - [ ] 消除因旧 `onSave` 失效引出的 `implicit any` 等连锁症状。
+
+- [ ] 211. 收尾清理与验证
+  - [ ] 清理 `partner-mgmt.tsx` 等本轮顺带暴露的未使用 import 遗留。
+  - [ ] 至少执行 `pnpm exec tsc --noEmit`，必要时补目标文件 lint / 组件回归验证。
+  - [ ] 更新 `walkthrough.md`，记录本轮不是逐点消红，而是如何从契约定义层完成根因收口。
+
 ## P0 `warehouse` 下一批 DTO 补齐（2026-04-07，待确认）
 
 - [ ] 204. 冻结 `warehouse` 域下一批 DTO 缺口，禁止前端 PATCH 已落地而后端仍停留在 POST-only
@@ -93,29 +160,6 @@
   - [ ] 不在 handler 内长期保留 `decodeJSONBodyMap + buildXxxUpdates(map[string]json.RawMessage)` 作为主实现路径，仅允许作为迁移期过渡。
   - [ ] 每补一个模块，至少补 request binding、service 层 delta 应用、版本冲突/权限校验三类验证。
 
-## P0 `production line topology` 更新 contract 断链修复（2026-04-07，待确认）
-
-- [x] 186. 追溯 `/personnel/line` 工段/工序拓扑更新失败的共享根因，而非继续在前端交互层补丁
-  - [x] 复核 `/personnel/line` 三层结构中工段/工序敏感操作的真实提交链，确认前端当前已进入 `productionResourceService.patchLine(...)`。
-  - [x] 复核 `server/routes/routes_production.go`、`server/handlers/production_topology_handlers.go` 与 `server/services/production_service.go`，确认后端是否真的存在 `PATCH /production/lines/:id` 正式路由。
-  - [x] 判断本轮失败是否属于系统性 contract 漂移：前端按 SDRTS `PATCH + DeltaPayload` 设计提交，而后端当前仅暴露 `POST /production/lines` 保存入口。
-
-- [x] 187. 明确 `production line topology` 更新的单一正式 contract
-  - [x] 在“前端回退对齐现有 POST 保存入口”与“后端补正式 PATCH /production/lines/:id`”之间做根因级取舍，不继续维持双边各说各话。
-  - [x] 若选择补正式 PATCH contract，则要求其明确承接 `delta / version / authCode`，并与当前前端 topology 授权链一致。
-  - [x] 若选择前端回退到 POST 全量保存，则需要明确这是临时兼容还是正式定稿，避免后续再次回漂到 PATCH 设计。
-
-- [x] 188. 保持 topology 敏感操作边界一致
-  - [x] 工段/工序拓扑删除、重命名、增删改等敏感操作必须统一走同一条授权与持久化边界。
-  - [x] 不继续在 `segment-node.tsx` / `process-node.tsx` 等节点层各自发明一套提交协议。
-  - [x] 保持失败提示、版本冲突、授权码错误与权限错误语义统一，不让页面再出现“弹框有了但实际 404/无提示”的断裂体验。
-
-- [x] 189. 执行验证并补充总结
-  - [x] 至少执行 `pnpm exec tsc --noEmit` 验证前端类型检查保持通过。
-  - [x] 如有后端改动，执行对应的 production route/handler/service 定向验证。
-  - [x] 更新 `walkthrough.md`，记录本轮 contract 断链根因、取舍方案与验证结果。
-
-## P0 `users` 测试数据构造边界收口（2026-04-07，待确认）
 
 ## P1 第三批接口语义升级（2026-04-06，已确认）
 
@@ -133,43 +177,6 @@
   - [ ] 将主查询接口收敛为分页结构：`items / total / page / pageSize`。
   - [ ] 为审批人选择、下拉选项等轻量场景拆出独立用户选项接口，避免继续复用主查询接口赌数组返回。
   - [ ] 清理当前“数组 / 分页结构”混用点，消除调用方理解不一致。
-
-## P1 第三批接口语义升级测试补强（2026-04-06，待确认）
-
-- [x] 10. 补 `ReplaceUserHandler` 后端回归测试
-  - [x] 覆盖 `PUT /users/:id` 完整替换语义，断言 `username / phoneNumber / firstName / lastName / role / status / employeeId` 被整包覆盖。
-  - [x] 覆盖“未提供 password 时不改密码”场景，避免 replace 误清空或误重置密码。
-  - [x] 覆盖非法 `role / status` 校验与管理员保护边界，确保 replace 语义不突破既有安全约束。
-
-- [x] 11. 补 `/auth/snapshot` 后端与前端回归测试
-  - [x] 后端验证 `/auth/snapshot` 与 `/profile` 返回同一身份快照结构，确保别名不漂移。
-  - [x] 前端验证身份快照同步函数主调用已切到 `/auth/snapshot`，并正确回填 `role / effectiveRoles / permissions`。
-  - [x] 验证前端仍保持“以后端为准”的身份快照消费，不引入前端自判权限分支。
-
-- [x] 12. 补用户分页契约后端与前端回归测试
-  - [x] 后端验证 `GET /users` 返回 `items / total / page / pageSize`，并覆盖 `username / status / role` 过滤与 `options=true` 轻量分支。
-  - [x] 前端验证 `fetchUsers()` 解析分页结果、`fetchUserOptions()` 解析轻量数组结果。
-  - [x] 如测试基建允许，补充 `useUsersQuery / useUserOptionsQuery` 或消费层最小回归，避免再次出现数组/分页契约混用。
-
-- [x] 13. 执行验证并同步总结
-  - [x] 运行后端定向测试、前端测试与 `pnpm exec tsc --noEmit`。
-  - [x] 将测试结果补充到 `walkthrough.md`。
-
-## P1 前端回归测试接入与 hooks 补强（2026-04-06，待确认）
-
-- [x] 14. 将前端 contract test 接入常用脚本与 CI
-  - [x] 收敛 `package.json` 中的测试脚本层级，明确 contract tests 的常用入口。
-  - [x] 将 `test:contracts` 接入现有 `.github/workflows/ci.yml`，确保 PR / main 分支持续校验。
-  - [x] 避免把过重的前端测试直接塞进 `build`，优先走独立测试步骤，减少构建链路耦合。
-
-- [x] 15. 补 `useUsersQuery / useUserOptionsQuery` hooks 层回归测试
-  - [x] 验证 `useUsersQuery` 触发 `fetchUsers` 且 query key 保持分页查询语义。
-  - [x] 验证 `useUserOptionsQuery` 触发 `fetchUserOptions` 且 query key 与主列表查询隔离。
-  - [x] 覆盖 hooks 层最小职责边界，避免再次出现“分页列表 / 轻量选项”混用回退。
-
-- [x] 16. 执行验证并同步总结
-  - [x] 运行 Vitest 定向测试、`pnpm exec tsc --noEmit`，以及如有需要的 CI 配置校验。
-  - [x] 将接入结果与 hooks 测试结果补充到 `walkthrough.md`。
 
 ## P1 生成链耦合治理（2026-04-06，待确认）
 

@@ -1,5 +1,6 @@
-import { AppLocale, translate } from '@/locales'
+import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
+import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import { type Material } from '../data/schema'
 import { packagingService } from './packaging-service'
 import { unitService } from '../../basic-settings/services/unit-service'
@@ -41,12 +42,22 @@ function unescapeFormula(value: string) {
   return value
 }
 
-function getWorksheetByNames(workbook: any, names: string[]) {
+function getWorksheetByNames(workbook: Workbook, names: string[]) {
   for (const name of names) {
     const sheet = workbook.getWorksheet(name)
     if (sheet) return sheet
   }
   return undefined
+}
+
+function getCellValue(cell: Cell) {
+	const value = cell.value as CellValue | undefined
+	if (value === null || value === undefined) return ''
+	if (typeof value === 'object' && 'result' in value) {
+		const resultValue = value.result
+		return unescapeFormula(resultValue?.toString() || '')
+	}
+	return unescapeFormula(value.toString().trim())
 }
 
 export const MaterialExcelService = {
@@ -121,7 +132,7 @@ export const MaterialExcelService = {
         categories.find(
           (option) => option.value.toUpperCase() === (material.category || '').toUpperCase()
         )?.label || material.category
-      const compositeId = `${material.id}_${material._v || 1}`
+      const compositeId = `${material.id}_${material.version || 1}`
 
       const row = sheet.addRow({
         id: compositeId,
@@ -228,7 +239,7 @@ export const MaterialExcelService = {
     const configSheet = workbook.getWorksheet(CONFIG_SHEET_NAME)
     let globalSnapshotVersion = 0
     if (configSheet) {
-      configSheet.eachRow((row: any) => {
+      configSheet.eachRow((row: Row) => {
         const key = row.getCell(1).value?.toString()
         if (key === 'GLOBAL_MATERIAL_VERSION') {
           globalSnapshotVersion = Number(row.getCell(2).value)
@@ -239,7 +250,7 @@ export const MaterialExcelService = {
     const dictSheet = getWorksheetByNames(workbook, getDictionarySheetNames())
     const categoryMap = new Map<string, string>()
     if (dictSheet) {
-      dictSheet.eachRow((row: any, index: number) => {
+      dictSheet.eachRow((row: Row, index: number) => {
         if (index === 1) return
         const categoryName = row.getCell(3).value?.toString().trim()
         const categoryValue = row.getCell(4).value?.toString().trim()
@@ -260,16 +271,7 @@ export const MaterialExcelService = {
 
     const materials: Partial<Material>[] = []
 
-    const getCellValue = (cell: any) => {
-      const value = cell.value
-      if (value === null || value === undefined) return ''
-      if (typeof value === 'object' && 'result' in value) {
-        return unescapeFormula(value.result?.toString() || '')
-      }
-      return unescapeFormula(value.toString().trim())
-    }
-
-    maintenanceSheet.eachRow((row: any, index: number) => {
+    maintenanceSheet.eachRow((row: Row, index: number) => {
       if (index === 1) return
 
       const compositeId = getCellValue(row.getCell(1))
@@ -285,7 +287,7 @@ export const MaterialExcelService = {
 
       materials.push({
         id,
-        _v: version,
+        version,
         code: getCellValue(row.getCell(2)),
         name: getCellValue(row.getCell(3)),
         spec: getCellValue(row.getCell(4)),

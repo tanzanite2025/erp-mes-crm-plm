@@ -24,7 +24,7 @@ export function PurchaseOrderList() {
   const { data, isLoading, error } = useGetPurchaseOrders(page, pageSize)
   const orders = useMemo(() => data?.items ?? [], [data?.items])
   const total = data?.total || 0
-  const { saveMutation, deleteMutation } = usePurchaseOrderMutations()
+  const { deleteMutation } = usePurchaseOrderMutations()
   const [selectedId, setSelectedId] = useState<string | undefined>(detailId || undefined)
   const [isDetailOpen, setIsDetailOpen] = useState<boolean>(!!detailId)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
@@ -228,7 +228,6 @@ export function PurchaseOrderList() {
         open={isActionDialogOpen}
         onOpenChange={setIsActionDialogOpen}
         order={editingOrder}
-        onSave={(data: Partial<PurchaseOrder>) => saveMutation.mutate(data)}
       />
     </div>
   )

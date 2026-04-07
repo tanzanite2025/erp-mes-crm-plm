@@ -2,6 +2,78 @@ package services
 
 import "xdfc-server/models"
 
+func ApplyPatchInventoryRequestToModel(target *models.Inventory, patch PatchInventoryRequest) {
+	if patch.MaterialID != nil {
+		target.MaterialID = *patch.MaterialID
+	}
+	if patch.MaterialName != nil {
+		target.MaterialName = *patch.MaterialName
+	}
+	if patch.MaterialCode != nil {
+		target.MaterialCode = *patch.MaterialCode
+	}
+	if patch.MaterialSpec != nil {
+		target.MaterialSpec = *patch.MaterialSpec
+	}
+	if patch.Quantity != nil {
+		target.Quantity = *patch.Quantity
+	}
+	if patch.TotalValue != nil {
+		target.TotalValue = *patch.TotalValue
+	}
+	if patch.AverageUnitCost != nil {
+		target.AverageUnitCost = *patch.AverageUnitCost
+	}
+	if patch.CategoryCode != nil {
+		target.CategoryCode = *patch.CategoryCode
+	}
+	if patch.BatchNo != nil {
+		target.BatchNo = *patch.BatchNo
+	}
+	if patch.UOM != nil {
+		target.UOM = *patch.UOM
+	}
+}
+
+func ApplyPatchShipmentRequestToModel(target *models.ShipmentRecord, patch PatchShipmentRequest) {
+	if patch.MaterialID != nil {
+		target.MaterialID = *patch.MaterialID
+	}
+	if patch.MaterialName != nil {
+		target.MaterialName = *patch.MaterialName
+	}
+	if patch.MaterialCode != nil {
+		target.MaterialCode = *patch.MaterialCode
+	}
+	if patch.SalesOrderID != nil {
+		target.SalesOrderID = *patch.SalesOrderID
+	}
+	if patch.SalesOrderLineID != nil {
+		target.SalesOrderLineID = *patch.SalesOrderLineID
+	}
+	if patch.Quantity != nil {
+		target.Quantity = *patch.Quantity
+	}
+	if patch.SourceCategory != nil {
+		target.SourceCategory = *patch.SourceCategory
+	}
+	if patch.BatchNo != nil {
+		target.BatchNo = *patch.BatchNo
+	}
+	if patch.OrderNo != nil {
+		target.OrderNo = *patch.OrderNo
+	}
+	if patch.ShipmentDate != nil {
+		target.ShipmentDate = *patch.ShipmentDate
+	}
+	if patch.Operator != nil {
+		target.Operator = *patch.Operator
+	}
+	if patch.Remarks != nil {
+		target.Remarks = *patch.Remarks
+	}
+}
+
 func MapRecordInboundRequestToModel(input RecordInboundRequest) models.InboundRecord {
 	return models.InboundRecord{
 		MaterialID:          input.MaterialID,

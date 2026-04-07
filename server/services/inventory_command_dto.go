@@ -1,6 +1,52 @@
 package services
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+type InventoryPatchMetadata struct {
+	ID      string `json:"id"`
+	Version int    `json:"version"`
+}
+
+type PatchInventoryHandlerRequest struct {
+	Op       string                     `json:"op"`
+	Delta    map[string]json.RawMessage `json:"delta"`
+	Metadata InventoryPatchMetadata     `json:"metadata"`
+}
+
+type PatchInventoryRequest struct {
+	ID              string
+	MaterialID      *string
+	MaterialName    *string
+	MaterialCode    *string
+	MaterialSpec    *string
+	Quantity        *float64
+	TotalValue      *float64
+	AverageUnitCost *float64
+	CategoryCode    *string
+	BatchNo         *string
+	UOM             *string
+	Version         int
+}
+
+type PatchShipmentRequest struct {
+	ID               string
+	MaterialID       *string
+	MaterialName     *string
+	MaterialCode     *string
+	SalesOrderID     *string
+	SalesOrderLineID *uint
+	Quantity         *float64
+	SourceCategory   *string
+	BatchNo          *string
+	OrderNo          *string
+	ShipmentDate     *time.Time
+	Operator         *string
+	Remarks          *string
+	Version          int
+}
 
 type RecordInboundRequest struct {
 	MaterialID          string    `json:"materialId"`

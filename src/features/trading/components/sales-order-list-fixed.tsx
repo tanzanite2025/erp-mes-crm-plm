@@ -24,11 +24,23 @@ import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
-import { type SalesOrder, salesOrderStatuses } from '../data/schema'
+import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
 import { useGetSalesOrders, useSalesOrderMutations } from '../hooks/use-trading'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderDetail } from './sales-order-detail'
 import { SalesOrderMaster } from './sales-order-master'
+
+const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
+	Draft: 'draft',
+	Pending: 'pending',
+	InProgress: 'inProgress',
+	Done: 'done',
+	Canceled: 'canceled',
+}
+
+function toSalesOrderStatusKey(status: SalesOrderStatus) {
+	return salesOrderStatusLabelKeyMap[status]
+}
 
 export function SalesOrderList() {
   const { t } = useLanguage()
@@ -46,9 +58,9 @@ export function SalesOrderList() {
 
   // Data Fetching
   const { data, isLoading, isError, error } = useGetSalesOrders(page, pageSize)
-  const { saveMutation, deleteMutation } = useSalesOrderMutations()
+  const { deleteMutation } = useSalesOrderMutations()
 
-  const orders = data?.items || []
+  const orders = useMemo(() => data?.items ?? [], [data?.items])
   const total = data?.total || 0
 
   // Filtering Logic
@@ -155,7 +167,7 @@ export function SalesOrderList() {
                   <Filter className='mr-2 size-4' />
                   {statusFilter === 'all' 
                     ? t('tradingSalesOrder.tabs.list') 
-                    : t(`tradingSalesOrder.status.${statusFilter === 'InProgress' ? 'inProgress' : statusFilter.toLowerCase()}` as any)}
+                    : t(`tradingSalesOrder.status.${toSalesOrderStatusKey(statusFilter as SalesOrderStatus)}`)}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end' className='rounded-[20px] p-2'>
@@ -168,7 +180,7 @@ export function SalesOrderList() {
                     onClick={() => setStatusFilter(s.value)}
                     className='text-[10px] font-black uppercase tracking-widest px-4 py-2'
                   >
-                    {t(`tradingSalesOrder.status.${s.value === 'InProgress' ? 'inProgress' : s.value.toLowerCase()}` as any)}
+                    {t(`tradingSalesOrder.status.${toSalesOrderStatusKey(s.value)}`)}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -227,7 +239,7 @@ export function SalesOrderList() {
 
       {/* Detail View (Right Panel) */}
       {selectedId && (
-        <div className='relative flex flex-1 flex-col rounded-[40px] border-2 border-dashed border-primary/20 bg-primary/[0.02] shadow-2xl animate-in slide-in-from-right-8 duration-500'>
+        <div className='relative flex flex-1 flex-col rounded-[40px] border-2 border-dashed border-primary/20 bg-primary/2 shadow-2xl animate-in slide-in-from-right-8 duration-500'>
           <ScrollArea className='flex-1'>
             <div className='p-8'>
               <SalesOrderDetail
@@ -261,7 +273,6 @@ export function SalesOrderList() {
         open={isActionDialogOpen}
         onOpenChange={setIsActionDialogOpen}
         order={editingOrder}
-        onSave={(data) => saveMutation.mutate(data)}
       />
     </div>
   )
