@@ -15,7 +15,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
-import { engineeringDBService } from '@/features/engineering-db/services/engineering-db-service'
+import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { auditUtils } from '@/lib/audit-utils'
 import { type SalesOrder } from '../data/schema'
@@ -51,8 +51,8 @@ export function SalesOrderActionDialog({
       await dictionaryService.init()
       const [unitList, drillingList, labelingList] = await Promise.all([
         unitService.getUnits(),
-        engineeringDBService.getDrilling(),
-        engineeringDBService.getLabeling(),
+        ProductionDBService.getDrilling(),
+        ProductionDBService.getLabeling(),
       ])
       setDictEntries(dictionaryService.getEntries())
       setUnits(unitList || [])

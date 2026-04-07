@@ -3,7 +3,7 @@ import { type UseFormReturn } from 'react-hook-form'
 import { useState } from 'react'
 import { type Product, type ProductType } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
-import { engineeringDBService } from '@/features/engineering-db/services/engineering-db-service'
+import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { getEffectiveTemplate } from '../components/specs'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { buildDefaultProductValues, type ProductVariantSelection } from '../utils/product-form-utils'
@@ -56,7 +56,7 @@ export function useProductFormInit({
             const groups = await AssetService.getGroupNames()
             setMoldOptions(groups.map(group => ({ label: group, value: group })))
 
-            const specs = await engineeringDBService.getSpecs()
+            const specs = await SpecsService.getSpecs()
             setSpecOptions(specs.map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id })))
 
             const weights = getDict('VERSION_LEVEL')

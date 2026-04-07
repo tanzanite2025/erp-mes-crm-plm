@@ -9,7 +9,9 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { CADViewerDialog } from '@/features/engineering-db/components/cad-viewer/cad-viewer-dialog'
 import { ExcelViewerDialog } from '@/features/engineering-db/components/excel-viewer/excel-viewer-dialog'
 import { PDFViewerDialog } from '@/features/engineering-db/components/pdf-viewer/pdf-viewer-dialog'
-import { engineeringDBService } from '@/features/engineering-db/services/engineering-db-service'
+import { SpecsService } from '@/features/engineering-db/services/specs-service'
+import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
+import { FileResolverService } from '@/features/engineering-db/services/file-resolver-service'
 import { productService } from '@/features/engineering/services/product-service'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import { useAuthStore } from '@/stores/auth-store'
@@ -104,9 +106,9 @@ export function SalesOrderDetail({
       }
 
       let files: PreviewAsset[] = []
-      if (type === 'spec') files = await engineeringDBService.getSpecs()
-      else if (type === 'drilling') files = await engineeringDBService.getDrilling()
-      else files = await engineeringDBService.getLabeling()
+      if (type === 'spec') files = await SpecsService.getSpecs()
+      else if (type === 'drilling') files = await ProductionDBService.getDrilling()
+      else files = await ProductionDBService.getLabeling()
 
       const file = files.find((item) => item.id === targetId)
       if (!file || !file.fileUrl) {
@@ -114,7 +116,7 @@ export function SalesOrderDetail({
         return
       }
 
-      const resolvedUrl = await engineeringDBService.resolveFileUrl(file.fileUrl)
+      const resolvedUrl = await FileResolverService.resolveFileUrl(file.fileUrl)
       if (!resolvedUrl) {
         toast.error(t('tradingSalesOrder.preview.resolveFailed'))
         return

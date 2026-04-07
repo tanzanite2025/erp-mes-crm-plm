@@ -8,7 +8,9 @@ import { dictionaryService } from '@/features/basic-settings/services/dictionary
 import { useGetSalesOrders, getSalesOrderById } from '@/features/trading/sales'
 import { auditUtils } from '@/lib/audit-utils'
 import { resolveInventoryErrorTip } from '../constants/inventory-error-codes'
-import { inventoryService, type MasterDataSearchResult, type ShipmentRecord } from '../services/inventory-service'
+import { StockService } from '../services/stock-service'
+import { ShipmentService, type ShipmentRecord } from '../services/shipment-service'
+import { InventoryUtils, type MasterDataSearchResult } from '../services/inventory-utils'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface WarehouseCategoryOption {
@@ -68,10 +70,10 @@ export function useShipment() {
     try {
       setError(null)
       const [recentHistory, categories, allMasterData, thresholds] = await Promise.all([
-        inventoryService.getShipmentHistory(),
+        ShipmentService.getShipmentHistory(),
         Promise.resolve(dictionaryService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[]),
-        inventoryService.searchMasterData(''),
-        inventoryService.getAlertThresholds(),
+        InventoryUtils.searchMasterData(''),
+        StockService.getAlertThresholds(),
       ])
       setHistory(recentHistory)
       setWarehouseCategories(categories)
@@ -94,13 +96,13 @@ export function useShipment() {
 
   useEffect(() => {
     if (selectedItem) {
-      inventoryService.getInventoryBreakdown(selectedItem.id).then(setInventoryBreakdown)
+      StockService.getInventoryBreakdown(selectedItem.id).then(setInventoryBreakdown)
     }
   }, [selectedItem])
 
   useEffect(() => {
     if (selectedItem && formData.sourceCategory) {
-      inventoryService.getCategoryStock(selectedItem.id, formData.sourceCategory).then(setCategoryStock)
+      StockService.getCategoryStock(selectedItem.id, formData.sourceCategory).then(setCategoryStock)
     }
   }, [selectedItem, formData.sourceCategory])
 
@@ -108,7 +110,7 @@ export function useShipment() {
     if (!searchQuery.trim()) return
     setIsSearching(true)
     try {
-      const results = await inventoryService.searchMasterData(searchQuery)
+      const results = await InventoryUtils.searchMasterData(searchQuery)
       setSearchResults(results)
       if (results.length === 0) {
         toast.error(t('warehouse.shipment.toast.notFound'))
@@ -178,7 +180,7 @@ export function useShipment() {
         }
       }
 
-      await inventoryService.recordShipment({
+      await ShipmentService.recordShipment({
         materialId: selectedItem.id,
         salesOrderId: salesOrderId || undefined,
         salesOrderLineId: salesOrderLineId || undefined,
@@ -221,7 +223,7 @@ export function useShipment() {
     }
 
     try {
-      await inventoryService.commitShipment(id)
+      await ShipmentService.commitShipment(id)
       toast.success(t('warehouse.shipment.toast.commitRecorded'))
       loadInitialData()
     } catch (e: unknown) {
@@ -249,7 +251,7 @@ export function useShipment() {
     if (!approvalId && !confirm(dialogMsg)) return
 
     try {
-      await inventoryService.deleteShipmentRecord(id, approvalId)
+      await ShipmentService.deleteShipmentRecord(id, approvalId)
       toast.success(
         status === 'COMMITTED'
           ? t('warehouse.shipment.toast.voidSuccess')

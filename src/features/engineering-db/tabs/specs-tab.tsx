@@ -19,7 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { type TechnicalSpec } from '../data/schema'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { SpecsService } from '../services/specs-service'
+import { FileResolverService } from '../services/file-resolver-service'
 import { SpecActionDialog } from '../components/spec-action-dialog'
 import { toast } from 'sonner'
 import { CADViewerDialog } from '../components/cad-viewer'
@@ -55,7 +56,7 @@ export function SpecsTab() {
         const loadData = async () => {
             setIsLoading(true)
             try {
-                const specs = await engineeringDBService.getSpecs()
+                const specs = await SpecsService.getSpecs()
                 setData(specs)
             } finally {
                 setIsLoading(false)
@@ -85,7 +86,7 @@ export function SpecsTab() {
 
     const handleDownload = async (item: TechnicalSpec) => {
         if (item.fileUrl) {
-            const url = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const url = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (url) window.open(url, '_blank')
         } else {
             toast.error(t('engineering.specs.toasts.noAttachment'))
@@ -94,7 +95,7 @@ export function SpecsTab() {
 
     const handlePreview = async (item: TechnicalSpec) => {
         if (item.fileUrl) {
-            const resolvedUrl = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (!resolvedUrl) {
                 toast.error(t('engineering.specs.toasts.unResolved'))
                 return
@@ -178,7 +179,7 @@ export function SpecsTab() {
                                     return
                                 }
                                 try {
-                                    await engineeringDBService.deleteSpec(row.original.id)
+                                    await SpecsService.deleteSpec(row.original.id)
                                     setData(prev => prev.filter(p => p.id !== row.original.id))
                                     toast.success(t('engineering.specs.toasts.deleteSuccess'))
                                 } catch (error) {
@@ -212,11 +213,11 @@ export function SpecsTab() {
         const { data: formData, isPatch, delta, version } = params
         
         if (isPatch && delta) {
-            await engineeringDBService.patchSpec(formData.id, delta, version!)
+            await SpecsService.patchSpec(formData.id, delta, version!)
             setData(prev => prev.map(p => (p.id === formData.id ? formData : p)))
             toast.success(t('engineering.specs.toasts.updateSuccess'))
         } else {
-            const saved = await engineeringDBService.saveSpec(formData)
+            const saved = await SpecsService.saveSpec(formData)
             setData(prev => [saved, ...prev])
             toast.success(t('engineering.specs.toasts.saveSuccess'))
         }
@@ -381,7 +382,7 @@ export function SpecsTab() {
                                                                 return
                                                             }
                                                             try {
-                                                                await engineeringDBService.deleteSpec(item.id)
+                                                                await SpecsService.deleteSpec(item.id)
                                                                 setData(prev => prev.filter(p => p.id !== item.id))
                                                                 toast.success(t('engineering.specs.toasts.deleteSuccess'))
                                                             } catch (error) {

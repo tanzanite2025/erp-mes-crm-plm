@@ -45,4 +45,25 @@
 
 ---
 
-> **警告**: 任何违反上述 DTO 规范或 SDRTS 协议的代码生成行为均被视为“损坏（Broken Block）”，AI 必须在生成前自检是否符合此文档。
+## 🏗️ 5. 架构对齐：从 SDRTS 向 TDO 与工作流收敛
+
+为了实现工业级事务的语义化审计与自愈，所有业务开发必须遵循以下对齐准则：
+
+### 5.1 从物理差量 (Delta) 向语义事务 (TDO) 进化
+- **语义化指令**: 严禁在组件中直接构建复杂的字段级 `PATCH`。对于具备明确业务意图的操作（如“认领订单”、“调整库存”），必须将其封装为 **TDO (Transaction Data Object)** 或调用 **Workflow Command**。
+- **意图声明**: 所有的 SDRTS 载荷应在 `metadata` 中携带 `intent` (意图) 标识，以便后端审计系统将物理变更还原为业务事务。
+
+### 5.2 服务层 (Services) 的去副作用化
+- **纯净化原则**: `services/` 目录下的代码应仅负责 API 请求与 SDRTS 协议封装（`apiFetch`, `patch`, `create`）。
+- **禁止副作用**: 严禁在 Service 中手动触发 Toast、Notification 或跨模块状态更新。所有的业务副作用必须交由工作流引擎（`DispatchService`）或 Hook 层的 `onSuccess` 统一编排。
+
+### 5.3 单一职责与物理隔离
+- **禁止上帝文件 (Anti-God Files)**: 严禁创建类似 `trading-service.ts` 这种跨越多个核心实体（客户、供应商、订单）的服务。
+- **目录隔离规范**: 每个子域（如 `sales`, `customer`）必须拥有独立的 `services/`, `hooks/`, `data/` 目录。跨域逻辑必须上浮至 `Workflow-Core` 或通过特性层入口 `index.ts` 转发。
+
+### 5.4 工作流 (Workflow) 优先
+- **Command 驱动**: 复杂的长事务流程必须注册为 `StandardCommand`，并受 `RoutingService` 和 `DispatchService` 的管控。
+
+---
+
+> **警告**: 任何违反上述 DTO 规范、SDRTS 协议或 **TDO 事务封装** 的代码生成行为均被视为“损坏（Broken Block）”，AI 必须在生成前自检是否符合此文档。

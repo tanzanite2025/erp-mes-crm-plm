@@ -27,7 +27,8 @@ import {
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { type DrillingPlan } from '../data/schema'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { ProductionDBService } from '../services/production-db-service'
+import { FileResolverService } from '../services/file-resolver-service'
 import { DrillingActionDialog } from '../components/drilling-action-dialog'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
@@ -70,7 +71,7 @@ export function DrillingTab() {
         const loadData = async () => {
             setIsLoading(true)
             try {
-                const drilings = await engineeringDBService.getDrilling()
+                const drilings = await ProductionDBService.getDrilling()
                 setData(drilings)
             } finally {
                 setIsLoading(false)
@@ -100,7 +101,7 @@ export function DrillingTab() {
 
     const handlePreview = async (item: DrillingPlan) => {
         if (item.fileUrl) {
-            const resolvedUrl = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (!resolvedUrl) {
                 toast.error(t('engineering.drilling.toasts.unResolved'))
                 return
@@ -210,7 +211,7 @@ export function DrillingTab() {
                             onAction: async () => {
                                 const newData = data.filter(p => p.id !== row.original.id)
                                 setData(newData)
-                                await engineeringDBService.saveDrilling(newData)
+                                await ProductionDBService.saveDrilling(newData)
                                 toast.success(t('engineering.drilling.toasts.deleteSuccess'))
                             }
                         })}
@@ -248,10 +249,10 @@ export function DrillingTab() {
         })
 
         if (isPatch && delta) {
-            await engineeringDBService.patchDrilling(formData.id, delta, version!)
+            await ProductionDBService.patchDrilling(formData.id, delta, version!)
             toast.success(t('engineering.drilling.toasts.updateSuccess'))
         } else {
-            await engineeringDBService.saveDrilling([formData])
+            await ProductionDBService.saveDrilling([formData])
             toast.success(t('engineering.drilling.toasts.saveSuccess'))
         }
     }
@@ -410,7 +411,7 @@ export function DrillingTab() {
                                                         onAction: async () => {
                                                             const newData = data.filter(p => p.id !== item.id)
                                                             setData(newData)
-                                                            await engineeringDBService.saveDrilling(newData)
+                                                            await ProductionDBService.saveDrilling(newData)
                                                             toast.success(t('engineering.drilling.toasts.deleteSuccess'))
                                                         }
                                                     })

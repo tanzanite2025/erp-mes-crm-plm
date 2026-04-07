@@ -25,7 +25,9 @@ import {
 import { DataTablePagination } from '@/components/data-table'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { SpecsService } from '../services/specs-service'
+import { ProductionDBService } from '../services/production-db-service'
+import { FileResolverService } from '../services/file-resolver-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
@@ -76,9 +78,9 @@ export function OverviewTab() {
             setLoading(true)
             try {
                 const [specsData, drillingData, labelingData] = await Promise.all([
-                    engineeringDBService.getSpecs(),
-                    engineeringDBService.getDrilling(),
-                    engineeringDBService.getLabeling()
+                    SpecsService.getSpecs(),
+                    ProductionDBService.getDrilling(),
+                    ProductionDBService.getLabeling()
                 ])
 
                 const specs = specsData.map(s => ({
@@ -152,7 +154,7 @@ export function OverviewTab() {
 
     const handlePreview = async (item: UnifiedEntry) => {
         if (item.fileUrl) {
-            const resolvedUrl = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (!resolvedUrl) {
                 toast.error(t('engineering.db.status.unResolved'))
                 return

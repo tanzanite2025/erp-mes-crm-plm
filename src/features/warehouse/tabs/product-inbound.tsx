@@ -38,7 +38,8 @@ import { NonBlockingPermissionBoundary } from '@/components/permission-passthrou
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 
 import { toast } from 'sonner'
-import { inventoryService, type MasterDataSearchResult, type InboundRecord } from '../services/inventory-service'
+import { InboundService, type InboundRecord } from '../services/inbound-service'
+import { InventoryUtils, type MasterDataSearchResult } from '../services/inventory-utils'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
@@ -77,7 +78,7 @@ export default function ProductInbound() {
         try {
             setError(null)
             const [recentHistory, categories] = await Promise.all([
-                inventoryService.getInboundHistory(),
+                InboundService.getInboundHistory(),
                 Promise.resolve(dictionaryService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[])
             ])
             setHistory(recentHistory)
@@ -96,7 +97,7 @@ export default function ProductInbound() {
         if (!searchQuery.trim()) return
         setIsSearching(true)
         try {
-            const results = await inventoryService.searchMasterData(searchQuery)
+            const results = await InventoryUtils.searchMasterData(searchQuery)
             setSearchResults(results)
             if (results.length === 0) {
                 toast.error(t('warehouse.inbound.toast.notFound'))
@@ -142,7 +143,7 @@ export default function ProductInbound() {
         }
 
         try {
-            await inventoryService.recordInbound({
+            await InboundService.recordInbound({
                 materialId: selectedItem.id,
                 quantity: formData.quantity,
                 purchasePrice: 0,

@@ -3,7 +3,8 @@ import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
-import { inventoryService, type InventoryView } from '../services/inventory-service'
+import { StockService, type InventoryView } from '../services/stock-service'
+import { InventoryUtils } from '../services/inventory-utils'
 import { warehouseCategoryService } from '../services/category-service'
 
 export function useStockMgmt() {
@@ -34,8 +35,8 @@ export function useStockMgmt() {
         try {
             setError(null)
             const [data, thresholds, categoryData] = await Promise.all([
-                inventoryService.getInventoryList(),
-                inventoryService.getAlertThresholds(),
+                StockService.getInventoryList(),
+                StockService.getAlertThresholds(),
                 warehouseCategoryService.getCategories()
             ])
             setInventory(data)
@@ -64,7 +65,7 @@ export function useStockMgmt() {
     const onConfirmReconcile = async () => {
         setIsReconciling(true)
         try {
-            await inventoryService.reconcileInventory()
+            await InventoryUtils.reconcileInventory()
             await refreshData()
             toast.success(t('warehouse.stock.toast.reconcileSuccess'))
             setReconcileConfirmOpen(false)
@@ -80,7 +81,7 @@ export function useStockMgmt() {
         if (!selectedMaterial) return
         if (!allowsAction('action_warehouse_reconcile')) return
         const value = parseFloat(tempThreshold) || 0
-        await inventoryService.setAlertThreshold(selectedMaterial.id, value)
+        await StockService.setAlertThreshold(selectedMaterial.id, value)
         toast.success(t('warehouse.stock.toast.thresholdUpdated', { name: selectedMaterial.name, value }))
         setConfigDialogOpen(false)
         void refreshData()

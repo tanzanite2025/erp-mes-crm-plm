@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { SpokeService } from '../services/spoke-service'
 import { hubService } from '../services/hub-service'
 import { nippleService } from '../services/nipple-service'
 import { type SpokeLength } from '../data/schema'
@@ -23,7 +23,7 @@ export function useSpokeLengthMgmt() {
         setIsLoading(true)
         try {
             const [spokeData, hubData, nippleData] = await Promise.all([
-                engineeringDBService.getSpokeLength(),
+                SpokeService.getSpokeLength(),
                 hubService.getHubs(),
                 nippleService.getNipples()
             ])
@@ -87,7 +87,7 @@ export function useSpokeLengthMgmt() {
         try {
             const newData = data.filter(p => p.id !== item.id)
             setData(newData)
-            await engineeringDBService.saveSpokeLength(newData)
+            await SpokeService.saveSpokeLength(newData)
             window.dispatchEvent(new CustomEvent('xdfc_spoke_lengths_data_updated'))
             toast.success(t('engineering.spokeLength.toasts.deleteSuccess'))
         } catch (error) {
@@ -113,10 +113,10 @@ export function useSpokeLengthMgmt() {
         })
 
         if (isPatch && delta) {
-            await engineeringDBService.patchSpokeLength(formData.id, delta, version!)
+            await SpokeService.patchSpokeLength(formData.id, delta, version!)
         } else {
             // 注意：这里由于 service 原有设计限制，包装成数组传递
-            await engineeringDBService.saveSpokeLength([formData])
+            await SpokeService.saveSpokeLength([formData])
         }
         
         window.dispatchEvent(new CustomEvent('xdfc_spoke_lengths_data_updated'))

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { type SpokeLength } from '../data/schema'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { FileResolverService } from '../services/file-resolver-service'
 import { SpokeLengthActionDialog } from '../components/spoke-length-action-dialog'
 import { SpokeLengthPreviewDialog } from '../components/spoke-length-preview-dialog'
 import { useSpokeLengthMgmt } from '../hooks/use-spoke-length-mgmt'
@@ -56,7 +56,7 @@ export function SpokeLengthTab() {
 
     const handlePreview = async (item: SpokeLength) => {
         if (item.fileUrl) {
-            const resolvedUrl = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (!resolvedUrl) {
                 toast.error(t('engineering.spokeLength.toasts.unResolved'))
                 return

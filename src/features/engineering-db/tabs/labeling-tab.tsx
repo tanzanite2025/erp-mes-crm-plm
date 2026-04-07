@@ -27,7 +27,8 @@ import {
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { type LabelingDraft } from '../data/schema'
-import { engineeringDBService } from '../services/engineering-db-service'
+import { ProductionDBService } from '../services/production-db-service'
+import { FileResolverService } from '../services/file-resolver-service'
 import { LabelingActionDialog } from '../components/labeling-action-dialog'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { toast } from 'sonner'
@@ -70,7 +71,7 @@ export function LabelingTab() {
         const loadData = async () => {
             setIsLoading(true)
             try {
-                const labelings = await engineeringDBService.getLabeling()
+                const labelings = await ProductionDBService.getLabeling()
                 setData(labelings)
             } finally {
                 setIsLoading(false)
@@ -113,7 +114,7 @@ export function LabelingTab() {
 
     const handlePreview = async (item: LabelingDraft) => {
         if (item.fileUrl) {
-            const resolvedUrl = await engineeringDBService.resolveFileUrl(item.fileUrl)
+            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
             if (!resolvedUrl) {
                 toast.error(t('engineering.labeling.toasts.unResolved'))
                 return
@@ -213,7 +214,7 @@ export function LabelingTab() {
                             onAction: async () => {
                                 const newData = data.filter(p => p.id !== row.original.id)
                                 setData(newData)
-                                await engineeringDBService.saveLabeling(newData)
+                                await ProductionDBService.saveLabeling(newData)
                                 toast.success(t('engineering.labeling.toasts.deleteSuccess'))
                             }
                         })}
@@ -251,10 +252,10 @@ export function LabelingTab() {
         })
 
         if (isPatch && delta) {
-            await engineeringDBService.patchLabeling(formData.id, delta, version!)
+            await ProductionDBService.patchLabeling(formData.id, delta, version!)
             toast.success(t('engineering.labeling.toasts.updateSuccess'))
         } else {
-            await engineeringDBService.saveLabeling([formData])
+            await ProductionDBService.saveLabeling([formData])
             toast.success(t('engineering.labeling.toasts.saveSuccess'))
         }
     }
@@ -415,7 +416,7 @@ export function LabelingTab() {
                                                         onAction: async () => {
                                                             const newData = data.filter(p => p.id !== item.id)
                                                             setData(newData)
-                                                            await engineeringDBService.saveLabeling(newData)
+                                                            await ProductionDBService.saveLabeling(newData)
                                                             toast.success(t('engineering.labeling.toasts.deleteSuccess'))
                                                         }
                                                     })

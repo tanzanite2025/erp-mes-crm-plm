@@ -3,7 +3,9 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 
-import { inventoryService, type InboundRecord, type MasterDataSearchResult, type ShipmentRecord } from '../services/inventory-service'
+import { InboundService, type InboundRecord } from '../services/inbound-service'
+import { ShipmentService, type ShipmentRecord } from '../services/shipment-service'
+import { InventoryUtils, type MasterDataSearchResult } from '../services/inventory-utils'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 
 const logger = createLogger('useWarehouseReport')
@@ -25,9 +27,9 @@ export function useReport() {
         try {
             setError(null)
             const [inbound, shipment, masterList] = await Promise.all([
-                inventoryService.getInboundHistory(),
-                inventoryService.getShipmentHistory(),
-                inventoryService.searchMasterData('')
+                InboundService.getInboundHistory(),
+                ShipmentService.getShipmentHistory(),
+                InventoryUtils.searchMasterData('')
             ])
 
             const map: Record<string, MasterDataSearchResult> = {}
@@ -94,7 +96,7 @@ export function useReport() {
         if (!confirm(t('warehouse.reports.reconcileConfirm'))) return
 
         try {
-            const result = await inventoryService.reconcileInventory()
+            const result = await InventoryUtils.reconcileInventory()
             await loadData()
             toast.success(t('warehouse.reports.reconcileSuccess', {
                 totalItems: result.totalItems,
