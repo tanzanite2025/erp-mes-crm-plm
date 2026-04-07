@@ -15,14 +15,13 @@ export function MoldLoanMgmt() {
         partners,
         searchTerm,
         setSearchTerm,
-        isDialogOpen,
-        setIsDialogOpen,
+        isOpen,
+        setIsOpen,
         mode,
-        resetDraft,
-        newLoan,
-        setNewLoan,
+        currentRow,
         error,
-        handleCreateRecord,
+        handleAddClick,
+        handleDialogSubmit,
         handleReturn
     } = useMoldLoanMgmt()
 
@@ -40,8 +39,7 @@ export function MoldLoanMgmt() {
                 searchTerm={searchTerm} 
                 onSearchChange={setSearchTerm} 
                 onAddClick={() => {
-                    resetDraft('LEND')
-                    setIsDialogOpen(true)
+                    handleAddClick('LEND')
                 }}
             />
 
@@ -53,15 +51,13 @@ export function MoldLoanMgmt() {
 
             {/* 4. 流转登记操作弹窗 */}
             <MoldLoanActionDialog
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                mode={mode}
-                onModeChange={resetDraft}
-                newLoan={newLoan}
-                onLoanChange={setNewLoan}
+                isOpen={isOpen}
+                onOpenChange={setIsOpen}
+                initialMode={mode}
+                currentRow={currentRow}
                 molds={molds}
                 partners={partners}
-                onSubmit={handleCreateRecord}
+                onSubmit={handleDialogSubmit}
             />
         </div>
     )

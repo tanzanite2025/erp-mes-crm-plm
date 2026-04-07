@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Truck, Save } from 'lucide-react'
@@ -33,9 +33,14 @@ import { type EquipmentPartner, type Mold, type MoldLoan, moldLoanSchema } from 
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
-import { useMemo, useEffect } from 'react'
 
 type LoanMode = 'LEND' | 'BORROW'
+
+type MoldLoanFormValues = MoldLoan
+
+function createLoanDraftId() {
+	return `LOAN-${Math.floor(Math.random() * 90000) + 10000}`
+}
 
 interface MoldLoanActionDialogProps {
     isOpen: boolean
@@ -58,16 +63,21 @@ export function MoldLoanActionDialog({
 }: MoldLoanActionDialogProps) {
     const { t } = useLanguage()
     const homeFactory = t('equipmentTooling.loans.defaults.homeFactory')
+    const [draftId, setDraftId] = useState(() => createLoanDraftId())
     
     // SDRTS: 状态初始化
     const isEdit = !!currentRow
-    
-    const [mode, setMode] = useState<LoanMode>(initialMode)
+    const [createMode, setCreateMode] = useState<LoanMode>(initialMode)
+    const mode: LoanMode = currentRow
+        ? currentRow.toFactory === homeFactory
+            ? 'BORROW'
+            : 'LEND'
+        : createMode
 
     const initialValues = useMemo(() => {
         if (currentRow) return currentRow
         return {
-            id: `LOAN-${Math.floor(Math.random() * 90000) + 10000}`,
+            id: draftId,
             moldId: '',
             moldSn: '',
             moldName: '',
@@ -85,26 +95,28 @@ export function MoldLoanActionDialog({
             version: 1,
             createdAt: new Date().toISOString(),
         }
-    }, [currentRow, mode, homeFactory])
+    }, [currentRow, mode, homeFactory, draftId])
 
     const { tracker, deltaProxy } = useDeltaTracker<MoldLoan>(initialValues, isOpen)
 
-    const form = useForm<MoldLoan>({
-        resolver: zodResolver(moldLoanSchema) as any,
-        defaultValues: initialValues as any,
+    const form = useForm<MoldLoanFormValues>({
+        resolver: zodResolver(moldLoanSchema),
+        defaultValues: initialValues,
     })
+
+    const handleOpenChange = (open: boolean) => {
+        if (open && !currentRow) {
+            setDraftId(createLoanDraftId())
+            setCreateMode(initialMode)
+        }
+        onOpenChange(open)
+    }
 
     useEffect(() => {
         if (isOpen) {
-            form.reset(initialValues as any)
-            if (currentRow) {
-                 // 自动推断模式
-                 setMode(currentRow.toFactory === homeFactory ? 'BORROW' : 'LEND')
-            } else {
-                 setMode(initialMode)
-            }
+            form.reset(initialValues)
         }
-    }, [isOpen, initialValues, form, currentRow, initialMode, homeFactory])
+    }, [isOpen, initialValues, form])
 
     const handleFormSubmit = (values: MoldLoan) => {
         Object.assign(deltaProxy, values)
@@ -112,16 +124,16 @@ export function MoldLoanActionDialog({
         const isDirty = Object.keys(delta).length > 0
 
         if (isEdit && !isDirty) {
-            onOpenChange(false)
+            handleOpenChange(false)
             return
         }
 
         onSubmit(values, isEdit, isEdit ? delta : undefined)
-        onOpenChange(false)
+        handleOpenChange(false)
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogContent className='w-[95vw] sm:max-w-md max-h-[92vh] flex flex-col p-0 rounded-[32px] shadow-2xl border-none overflow-hidden'>
                 <DialogHeader className='p-6 sm:p-8 shrink-0 pb-4 bg-muted/5 border-b border-dashed'>
                     <DialogTitle className='text-xl font-black tracking-tighter flex items-center gap-2 italic uppercase'>
@@ -142,7 +154,7 @@ export function MoldLoanActionDialog({
                                     'flex-1 rounded-xl font-black text-[10px] uppercase tracking-widest h-10',
                                     mode === 'LEND' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-muted-foreground/60'
                                 )}
-                                onClick={() => setMode('LEND')}
+                                onClick={() => setCreateMode('LEND')}
                             >
                                 {t('equipmentTooling.loans.dialog.modes.lend')}
                             </Button>
@@ -152,7 +164,7 @@ export function MoldLoanActionDialog({
                                     'flex-1 rounded-xl font-black text-[10px] uppercase tracking-widest h-10',
                                     mode === 'BORROW' ? 'bg-white text-purple-600 shadow-sm border border-purple-100' : 'text-muted-foreground/60'
                                 )}
-                                onClick={() => setMode('BORROW')}
+                                onClick={() => setCreateMode('BORROW')}
                             >
                                 {t('equipmentTooling.loans.dialog.modes.borrow')}
                             </Button>
@@ -412,7 +424,7 @@ export function MoldLoanActionDialog({
                 <DialogFooter className='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
                     <Button
                         variant='ghost'
-                        onClick={() => onOpenChange(false)}
+                        onClick={() => handleOpenChange(false)}
                         className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest'
                     >
                         {t('equipmentTooling.loans.dialog.actions.cancel')}
@@ -422,7 +434,7 @@ export function MoldLoanActionDialog({
                         className='flex-1 sm:flex-none rounded-full shadow-lg h-11 px-10 font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 active:scale-95 transition-all'
                     >
                         <Save className='size-3.5 mr-2' />
-                        {isEdit ? t('common.actions.save') : (t as any)('common.actions.create') || t('common.actions.save')}
+                        {isEdit ? t('common.actions.save') : t('common.actions.create')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

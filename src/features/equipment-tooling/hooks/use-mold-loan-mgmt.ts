@@ -95,8 +95,8 @@ export function useMoldLoanMgmt() {
             setIsOpen(false)
             void loadData()
         },
-        onError: (error: any) => {
-            toast.error(error.message || '操作失败')
+        onError: (error: unknown) => {
+            toast.error(error instanceof Error ? error.message : '操作失败')
         }
     })
 

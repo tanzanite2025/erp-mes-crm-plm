@@ -1,4 +1,107 @@
 ﻿#
+## `mold-loan` 页面层契约漂移修复方案（2026-04-07，待确认）
+
+### 一、当前结论
+当前 `src/features/equipment-tooling/tabs/mold-loan-mgmt.tsx` 的报错并不是页面局部拼写问题，而是页面层仍停留在旧版消费方式，而 hook / dialog 定义层已经完成新版契约收口。
+
+已确认的两条定义层变化：
+
+1. `useMoldLoanMgmt`
+   - 当前正式返回值以：
+     - `isOpen`
+     - `setIsOpen`
+     - `mode`
+     - `currentRow`
+     - `handleAddClick`
+     - `handleEditClick`
+     - `handleDialogSubmit`
+     为主
+   - 不再暴露旧页面草稿驱动字段：
+     - `isDialogOpen`
+     - `resetDraft`
+     - `newLoan`
+     - `setNewLoan`
+     - `handleCreateRecord`
+
+2. `MoldLoanActionDialog`
+   - 当前正式 props 为：
+     - `isOpen`
+     - `onOpenChange`
+     - `initialMode?`
+     - `currentRow?`
+     - `molds`
+     - `partners`
+     - `onSubmit`
+   - 不再承接旧页面字段：
+     - `mode`
+     - `onModeChange`
+     - `newLoan`
+     - `onLoanChange`
+
+### 二、本轮目标
+本轮修复目标不是补回旧字段，而是让 `mold-loan-mgmt.tsx` 回到当前正式契约：
+
+1. 页面层改为消费新版 `useMoldLoanMgmt` 返回值；
+2. 页面层按新版 `MoldLoanActionDialog` props 正式接线；
+3. 保持借出 / 借入业务语义不变；
+4. 不制造兼容旧接口的回退壳。
+
+### 三、实施顺序
+
+#### Phase A：页面层改为消费新版 hook
+涉及重点：
+- `src/features/equipment-tooling/tabs/mold-loan-mgmt.tsx`
+- `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts`
+
+处理原则：
+- 页面层不再自己持有 `newLoan` 草稿状态；
+- 以 hook 返回的 `isOpen / currentRow / handleAddClick / handleDialogSubmit` 为准；
+- 不回退 hook 到旧草稿驱动接口。
+
+#### Phase B：页面层按新版 dialog 正式 props 接线
+涉及重点：
+- `src/features/equipment-tooling/tabs/mold-loan-mgmt.tsx`
+- `src/features/equipment-tooling/components/mold-loan-action-dialog.tsx`
+
+处理原则：
+- 使用 `initialMode` 承接新增时的借出/借入模式；
+- 使用 `currentRow` 承接编辑态；
+- 使用 `onSubmit` 接回 hook 的正式提交主链；
+- 不把旧 `mode / newLoan / onLoanChange` props 再补回 dialog。
+
+### 四、关键风险
+
+1. 风险：页面此前可能依赖旧草稿驱动流程
+   - 若直接补字段而不改消费边界，只会继续累积双真相
+   - 处理原则：页面彻底切到新版正式契约
+
+2. 风险：借出 / 借入初始模式依赖页面打开弹窗时传值
+   - 若接线错误，可能导致新增借入时默认模式丢失
+   - 处理原则：通过 `initialMode` 明确传递新增场景初始模式
+
+3. 风险：编辑态与新增态入口共用同一 dialog
+   - 若 `currentRow` 与 `initialMode` 的优先级处理不清，可能出现表单初始化错误
+   - 处理原则：保持 dialog 内部当前“编辑优先、否则使用初始模式”的逻辑不变。
+
+### 五、验证要求
+至少执行：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+必要时补充：
+
+```bash
+pnpm exec eslint src/features/equipment-tooling/tabs/mold-loan-mgmt.tsx src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts src/features/equipment-tooling/components/mold-loan-action-dialog.tsx
+```
+
+### 六、明确不做事项
+- 不把旧 `newLoan / resetDraft / onLoanChange` 字段补回 hook 或 dialog；
+- 不把本轮扩展成 mold loan 全域重构；
+- 不改借出 / 借入 / 归还业务语义；
+- 不使用 `as any` 或新增兼容壳掩盖页面层契约漂移。
+
 ## ExcelJS 类型边界与销售订单状态映射收口方案（2026-04-07，待确认）
 
 ### 一、当前结论

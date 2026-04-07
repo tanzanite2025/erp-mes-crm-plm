@@ -1,4 +1,25 @@
 
+## P0 `mold-loan` 页面层契约漂移修复（2026-04-07，待确认）
+
+- [ ] 221. 冻结 `mold-loan` 本轮根因范围，禁止回退为旧页面草稿驱动接口
+  - [ ] 确认 `useMoldLoanMgmt` 已从“`newLoan / resetDraft` 草稿驱动”收口为“`isOpen / currentRow / handleDialogSubmit` 驱动”。
+  - [ ] 确认 `MoldLoanActionDialog` 已从“外部传 `mode / newLoan / onLoanChange`”收口为“`initialMode / currentRow / onSubmit`”正式 props。
+  - [ ] 确认 `mold-loan-mgmt.tsx` 当前仍停留在旧消费方式，因此触发整组 TS2339 / TS2322 报错。
+
+- [ ] 222. 按新版 `useMoldLoanMgmt` 正式返回契约改造页面层
+  - [ ] 将 `mold-loan-mgmt.tsx` 从旧 `isDialogOpen / resetDraft / newLoan / setNewLoan / handleCreateRecord` 消费方式切到新版返回值。
+  - [ ] 以 `isOpen / setIsOpen / handleAddClick / currentRow / handleDialogSubmit` 为页面层单一事实来源。
+  - [ ] 保持借出 / 借入切换、列表展示、归还动作语义不变。
+
+- [ ] 223. 按新版 `MoldLoanActionDialog` 正式 props 收口页面接线
+  - [ ] 页面层不再传 `mode / onModeChange / newLoan / onLoanChange`。
+  - [ ] 改为按正式 props 传递 `isOpen / onOpenChange / initialMode / currentRow / molds / partners / onSubmit`。
+  - [ ] 禁止为了兼容旧页面而把旧 props 补回 dialog 组件。
+
+- [ ] 224. 验证与总结
+  - [ ] 执行 `pnpm exec tsc --noEmit`，必要时补目标文件 eslint。
+  - [ ] 更新 `walkthrough.md`，记录本轮如何从“旧页面消费未同步”收口回新版正式契约。
+
 ## P0 ExcelJS 类型边界与销售订单状态映射收口（2026-04-07，待确认）
 
 - [ ] 217. 冻结本轮新增根因范围，禁止继续按“ESLint 收尾”误判执行
