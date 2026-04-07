@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { MasterDataSearchResult } from '../services/inventory-service'
+import { MasterDataSearchResult } from '../services/inventory-core-service'
 
 interface ShipmentSearchProps {
     searchQuery: string

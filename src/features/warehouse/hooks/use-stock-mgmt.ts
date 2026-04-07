@@ -3,8 +3,8 @@ import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
-import { StockService, type InventoryView } from '../services/stock-service'
-import { InventoryUtils } from '../services/inventory-utils'
+import { InventoryCoreService, type InventoryView } from '../services/inventory-core-service'
+import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
 import { warehouseCategoryService } from '../services/category-service'
 
 export function useStockMgmt() {
@@ -35,8 +35,8 @@ export function useStockMgmt() {
         try {
             setError(null)
             const [data, thresholds, categoryData] = await Promise.all([
-                StockService.getInventoryList(),
-                StockService.getAlertThresholds(),
+                InventoryCoreService.getInventoryList(),
+                InventoryMaintenanceService.getAlertThresholds(),
                 warehouseCategoryService.getCategories()
             ])
             setInventory(data)
@@ -65,7 +65,7 @@ export function useStockMgmt() {
     const onConfirmReconcile = async () => {
         setIsReconciling(true)
         try {
-            await InventoryUtils.reconcileInventory()
+            await InventoryMaintenanceService.reconcileInventory()
             await refreshData()
             toast.success(t('warehouse.stock.toast.reconcileSuccess'))
             setReconcileConfirmOpen(false)
@@ -81,7 +81,7 @@ export function useStockMgmt() {
         if (!selectedMaterial) return
         if (!allowsAction('action_warehouse_reconcile')) return
         const value = parseFloat(tempThreshold) || 0
-        await StockService.setAlertThreshold(selectedMaterial.id, value)
+        await InventoryMaintenanceService.setAlertThreshold(selectedMaterial.id, value)
         toast.success(t('warehouse.stock.toast.thresholdUpdated', { name: selectedMaterial.name, value }))
         setConfigDialogOpen(false)
         void refreshData()

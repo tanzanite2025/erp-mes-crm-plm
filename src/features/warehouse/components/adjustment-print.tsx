@@ -2,7 +2,7 @@ import React from 'react'
 import { format } from 'date-fns'
 import { useLanguage } from '@/context/language-provider'
 
-import { InventoryAdjustment } from '../services/adjustment-service'
+import { type InventoryAdjustment } from '../services/inventory-maintenance-service'
 
 interface Props {
   data: InventoryAdjustment

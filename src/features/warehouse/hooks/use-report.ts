@@ -3,9 +3,10 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 
-import { InboundService, type InboundRecord } from '../services/inbound-service'
-import { ShipmentService, type ShipmentRecord } from '../services/shipment-service'
-import { InventoryUtils, type MasterDataSearchResult } from '../services/inventory-utils'
+import { InventoryCoreService } from '../services/inventory-core-service'
+import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
+import { type InboundRecord, type ShipmentRecord } from '../services/inventory-transaction-service'
+import { type MasterDataSearchResult } from '../services/inventory-core-service'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 
 const logger = createLogger('useWarehouseReport')
@@ -27,13 +28,13 @@ export function useReport() {
         try {
             setError(null)
             const [inbound, shipment, masterList] = await Promise.all([
-                InboundService.getInboundHistory(),
-                ShipmentService.getShipmentHistory(),
-                InventoryUtils.searchMasterData('')
+                InventoryCoreService.getInboundHistory(),
+                InventoryCoreService.getShipmentHistory(),
+                InventoryCoreService.searchMasterData('')
             ])
 
             const map: Record<string, MasterDataSearchResult> = {}
-            masterList.forEach((item) => { map[item.id] = item })
+            masterList.forEach((item: MasterDataSearchResult) => { map[item.id] = item })
 
             setInboundData(inbound)
             setShipmentData(shipment)
@@ -96,7 +97,7 @@ export function useReport() {
         if (!confirm(t('warehouse.reports.reconcileConfirm'))) return
 
         try {
-            const result = await InventoryUtils.reconcileInventory()
+            const result = await InventoryMaintenanceService.reconcileInventory()
             await loadData()
             toast.success(t('warehouse.reports.reconcileSuccess', {
                 totalItems: result.totalItems,

@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { InboundRecord, ShipmentRecord, MasterDataSearchResult } from '../services/inventory-service'
+import { MasterDataSearchResult } from '../services/inventory-core-service'
+import { InboundRecord, ShipmentRecord } from '../services/inventory-transaction-service'
 
 interface InboundTableProps {
     data: InboundRecord[]

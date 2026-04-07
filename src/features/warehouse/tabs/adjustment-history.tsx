@@ -18,7 +18,7 @@ import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { AdjustmentPrint } from '../components/adjustment-print'
-import { AdjustmentService, type InventoryAdjustment } from '../services/adjustment-service'
+import { InventoryMaintenanceService, type InventoryAdjustment } from '../services/inventory-maintenance-service'
 
 export function AdjustmentHistory() {
     const queryClient = useQueryClient()
@@ -30,7 +30,7 @@ export function AdjustmentHistory() {
 
     const { data: adjustments, isLoading, error, refetch } = useQuery({
         queryKey: ['inventory-adjustments'],
-        queryFn: () => AdjustmentService.getHistory()
+        queryFn: () => InventoryMaintenanceService.getAdjustmentHistory()
     })
 
     const handlePrint = () => {
@@ -38,7 +38,7 @@ export function AdjustmentHistory() {
     }
 
     const executeMutation = useMutation({
-        mutationFn: (id: string) => AdjustmentService.execute(id),
+        mutationFn: (id: string) => InventoryMaintenanceService.executeAdjustment(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] })
             toast.success(t('warehouse.adjustment.toast.executeSuccess'))
@@ -138,7 +138,7 @@ export function AdjustmentHistory() {
                                             <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/30'>{t('warehouse.adjustment.empty')}</p>
                                         </TableCell>
                                     </TableRow>
-                                ) : adjustments?.map((adj) => (
+                                ) : adjustments?.map((adj: InventoryAdjustment) => (
                                     <TableRow key={adj.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
                                         <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-amber-600 transition-colors truncate max-w-[120px]'>{adj.adjustmentNo}</TableCell>
                                         <TableCell>

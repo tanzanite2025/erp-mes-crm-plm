@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { MasterDataSearchResult } from '../services/inventory-service'
+import { MasterDataSearchResult } from '../services/inventory-core-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { auditUtils } from '@/lib/audit-utils'
 

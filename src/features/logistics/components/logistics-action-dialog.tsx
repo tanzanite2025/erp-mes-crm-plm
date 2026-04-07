@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
 import { useGetSalesOrders } from '@/features/trading/sales'
-import { inventoryService, type ShipmentRecord } from '@/features/warehouse/services/inventory-service'
+import { InventoryCoreService } from '@/features/warehouse/services/inventory-core-service'
+import { type ShipmentRecord } from '@/features/warehouse/services/inventory-transaction-service'
 import { useLogisticsMutations } from '../hooks/use-logistics'
 import { type LogisticsRecord, getCarrierLabelKey } from '../types'
 import { getPreferredCarriers } from '../utils/carriers'
@@ -98,9 +99,9 @@ export function LogisticsActionDialog({
 
       setIsLoadingShipments(true)
       try {
-        const history = await inventoryService.getShipmentHistory()
+        const history = await InventoryCoreService.getShipmentHistory()
         const filtered = history.filter(
-          (shipment) => shipment.orderNo === formData.orderNo && shipment.status === 'COMMITTED'
+          (shipment: ShipmentRecord) => shipment.orderNo === formData.orderNo && shipment.status === 'COMMITTED'
         )
         setAssociatedShipments(filtered)
       } finally {

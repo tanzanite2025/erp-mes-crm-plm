@@ -1,7 +1,8 @@
 import { AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 
-import { InboundRecord, MasterDataSearchResult, ShipmentRecord } from './inventory-service'
+import { MasterDataSearchResult } from './inventory-core-service'
+import { InboundRecord, ShipmentRecord } from './inventory-transaction-service'
 
 export const WarehouseExportService = {
     async exportInbound(

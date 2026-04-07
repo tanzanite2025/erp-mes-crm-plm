@@ -21,7 +21,7 @@ import { failLoudly } from '@/lib/safe-catch'
 
 import { StocktakeService, type StocktakeItem, type StocktakeTask } from '../services/stocktake-service'
 import { warehouseCategoryService } from '../services/category-service'
-import { AdjustmentService } from '../services/adjustment-service'
+import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
 
 export function StocktakeMgmt() {
     const queryClient = useQueryClient()
@@ -72,7 +72,7 @@ export function StocktakeMgmt() {
     }
 
     const postAdjustmentMutation = useMutation({
-        mutationFn: (taskId: string) => AdjustmentService.submitForApproval(taskId),
+        mutationFn: (taskId: string) => InventoryMaintenanceService.submitAdjustmentForApproval(taskId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stocktake-tasks'] })
             toast.success(t('warehouse.stocktake.toast.postSuccess'))
