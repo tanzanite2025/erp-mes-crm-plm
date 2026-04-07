@@ -8,6 +8,7 @@ export const hubService = {
       return raw.map(s => ({
         ...s.hubData,
         id: s.id,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => hubSchema.safeParse(item).success)
     } catch (e) {
@@ -24,9 +25,18 @@ export const hubService = {
       type: 'HUB_DATA',
       active: true,
       hubData: data,
-      _v: 1
+      _v: data.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
+  },
+
+  patchHub: async (id: string, delta: any, version: number) => {
+    // 映射 delta 路径：工艺数据存储在 hubData 字段下
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`hubData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
 
   saveHubs: async (data: Hub[]) => {

@@ -2,13 +2,11 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, Mic } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useDashboardSnapshot } from '../hooks/use-dashboard-snapshot'
-import { AiDrawer } from './ai-drawer'
 import { cn } from '@/lib/utils'
 import { aiAgentService } from '../services/ai-agent-service'
 import { DailyInsightModal } from './daily-insight-modal'
 import { useAiPermissions } from '../hooks/use-ai-permissions'
 import { useAiVoice } from '../hooks/use-ai-voice'
-import { toast } from 'sonner'
 
 /**
  * AI 极光分析按钮 (V4.1 架构纯化版)
@@ -16,26 +14,28 @@ import { toast } from 'sonner'
  * 特点：按钮永久显示 (Always Visible)，实时抓取快照 (Live Context)。
  */
 export function AiTrigger() {
-    const { isVisible, canUseDashboardSnapshot } = useAiPermissions()
+    const { canUseDashboardSnapshot } = useAiPermissions()
     const { getSnapshot } = useDashboardSnapshot()
     
-    const [isOpen, setIsOpen] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false)
     const [initialQuery, setInitialQuery] = useState<string>('')
+    const [hasUnread, setHasUnread] = useState(false)
+    const pressTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+    const handleTrigger = useCallback((query: string = '') => {
+        setInitialQuery(query)
+        setIsModalOpen(true)
+    }, [])
   
     // 语音识别集成
     const handleVoiceResult = useCallback((transcript: string) => {
         setInitialQuery(transcript)
         handleTrigger(transcript)
-    }, [])
+    }, [handleTrigger])
     
     const { isRecording, startRecording, stopRecording } = useAiVoice(handleVoiceResult)
 
     // Agent 状态同步
-    const [hasUnread, setHasUnread] = useState(false)
-    const [isInsightOpen, setIsInsightOpen] = useState(false)
-
-    const pressTimerRef = useRef<NodeJS.Timeout | null>(null)
-
     useEffect(() => {
         const updateStatus = () => setHasUnread(aiAgentService.getHasUnread())
         aiAgentService.subscribe(updateStatus)
@@ -50,26 +50,6 @@ export function AiTrigger() {
 
         return () => clearTimeout(checkTimer)
     }, [canUseDashboardSnapshot])
-
-    const handleTrigger = (query: string = '') => {
-        // [FAIL_LOUDLY] 权限检查不再静默隐藏按钮，而是点击时大声报错
-        if (!isVisible) {
-          toast.error('[权限拒绝] 您当前的角色未被授予极光 AI 决策权限。', {
-              description: '请联系系统管理员在 [AI 治理政策] 中开启权限。',
-              duration: 5000,
-          })
-          return
-        }
-
-        // 如果有未读 Agent 洞察，优先弹出大窗
-        if (hasUnread) {
-            setIsInsightOpen(true)
-            return
-        }
-
-        setInitialQuery(query)
-        setIsOpen(true)
-    }
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
         if (pressTimerRef.current) clearTimeout(pressTimerRef.current)
@@ -113,7 +93,7 @@ export function AiTrigger() {
                             isRecording 
                                 ? "bg-rose-600 border-rose-100 scale-110 animate-pulse opacity-100" 
                                 : "bg-indigo-600 border-indigo-100 hover:scale-105 active:scale-95 opacity-80 hover:opacity-100",
-                            (isOpen || isInsightOpen) && "scale-0 opacity-0 pointer-events-none"
+                            isModalOpen && "scale-0 opacity-0 pointer-events-none"
                         )}
                     >
                         <div className="relative flex items-center justify-center">
@@ -136,18 +116,13 @@ export function AiTrigger() {
             </div>
 
             <DailyInsightModal 
-                open={isInsightOpen} 
-                onOpenChange={setIsInsightOpen}
+                open={isModalOpen} 
+                onOpenChange={setIsModalOpen}
                 session={aiAgentService.getLastType()}
                 content={aiAgentService.getLastInsight()}
-            />
-
-            <AiDrawer 
-                open={isOpen} 
-                onOpenChange={setIsOpen}
-                // [LIVE_CONTEXT] 传递快照抓取函数，确保分析始终使用最新数据 
                 getLatestSnapshot={getSnapshot}
                 initialQuery={initialQuery}
+                hasUnread={hasUnread}
             />
         </>
     )

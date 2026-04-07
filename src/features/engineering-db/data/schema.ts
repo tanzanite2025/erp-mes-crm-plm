@@ -4,7 +4,6 @@ export const technicalSpecSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Spec name is required'),
   category: z.string().default('SOP'),
-  version: z.string().default('V1.0'),
   revisionNo: z.string().optional(),
   effectiveFrom: z.string().nullable().optional(),
   effectiveTo: z.string().nullable().optional(),
@@ -16,6 +15,7 @@ export const technicalSpecSchema = z.object({
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
   description: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 
@@ -29,6 +29,7 @@ export const drillingPlanSchema = z.object({
   standardHoles: z.string().optional(),
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 
@@ -41,6 +42,7 @@ export const labelingDraftSchema = z.object({
   productId: z.string().optional().nullable(),
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 
@@ -56,6 +58,7 @@ export const spokeLengthSchema = z.object({
   material: z.string().optional(),
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 

@@ -203,15 +203,23 @@ export function SpecsTab() {
         getSortedRowModel: getSortedRowModel(),
     })
 
-    const handleFormSubmit = async (formData: TechnicalSpec) => {
-        const saved = await engineeringDBService.saveSpec(formData)
-
-        if (currentRow) {
-            setData(prev => prev.map(p => (p.id === currentRow.id ? saved : p)))
-            return
+    const handleSave = async (params: { 
+        data: TechnicalSpec; 
+        isPatch: boolean; 
+        delta?: any; 
+        version?: number 
+    }) => {
+        const { data: formData, isPatch, delta, version } = params
+        
+        if (isPatch && delta) {
+            await engineeringDBService.patchSpec(formData.id, delta, version!)
+            setData(prev => prev.map(p => (p.id === formData.id ? formData : p)))
+            toast.success(t('engineering.specs.toasts.updateSuccess'))
+        } else {
+            const saved = await engineeringDBService.saveSpec(formData)
+            setData(prev => [saved, ...prev])
+            toast.success(t('engineering.specs.toasts.saveSuccess'))
         }
-
-        setData(prev => [saved, ...prev])
     }
 
     return (
@@ -399,7 +407,7 @@ export function SpecsTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <SpecActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSubmit={handleFormSubmit} />
+            <SpecActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} />
             <ExcelViewerDialog open={excelPreviewOpen} onOpenChange={setExcelPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} />

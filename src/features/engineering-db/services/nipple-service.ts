@@ -8,6 +8,7 @@ export const nippleService = {
       return raw.map(s => ({
         ...s.nippleData,
         id: s.id,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => nippleSchema.safeParse(item).success)
     } catch (e) {
@@ -24,9 +25,17 @@ export const nippleService = {
       type: 'NIPPLE_DATA',
       active: true,
       nippleData: data,
-      _v: 1
+      _v: data.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
+  },
+
+  patchNipple: async (id: string, delta: any, version: number) => {
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`nippleData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
 
   saveNipples: async (data: Nipple[]) => {

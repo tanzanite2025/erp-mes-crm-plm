@@ -1,4 +1,264 @@
-﻿# implementation plan
+# implementation plan
+
+## AI 管理员前端误拒绝回归（2026-04-07，待确认）
+
+### 一、当前问题
+当前 DEV 环境下，系统管理员点击 AI 按钮时，前端直接弹出：
+
+- `[权限拒绝] 您当前的角色未被授予极光 AI 决策权限。`
+
+这意味着当前前端 AI 准入判断仍存在回归，管理员在进入 AI 主容器前就被阻断，导致当前无法放心推进生产复测。
+
+### 二、根因判断
+本轮回归不是后端治理策略拒绝，而是前端准入判断比后端更严：
+
+1. 后端 `server/middleware/ai_policy_guard.go`
+   - 当前仍保留 `admin / superadmin` bypass；
+2. 前端 `src/features/ai-assistant/hooks/use-ai-permissions.ts`
+   - 上轮已切到基于 `effectiveRoles` 的统一口径；
+   - 但没有同步保留管理员 bypass。
+
+因此产生新的轻量漂移：
+
+- 后端允许管理员使用 AI；
+- 前端却先在按钮点击阶段把管理员误判为无权限。
+
+### 三、最小修复目标
+本轮不再扩散重构，只做最小回归修复：
+
+1. 前端 `useAiPermissions()` 补回与后端一致的 `admin / superadmin` bypass；
+2. 管理员即使未命中显式 `allowedRoles / allowedUsers`，仍可进入 AI；
+3. 普通用户继续按既有 AI policy 判定，不放宽治理边界。
+
+### 四、拟改范围（待确认后实施）
+
+#### 必改
+- `src/features/ai-assistant/hooks/use-ai-permissions.ts`
+
+#### 不改
+- `server/middleware/ai_policy_guard.go`
+- AI policy 数据结构
+- AI 单入口容器逻辑
+
+### 五、推荐实施方式
+
+#### Phase A：补回前端管理员 bypass
+- 在 `useAiPermissions()` 中，基于已规范化的有效角色集合增加：
+  - `admin`
+  - `superadmin`
+  的物理绕过逻辑；
+- 让前端与后端在管理员场景保持一致。
+
+#### Phase B：保持普通用户治理不变
+- 对非管理员用户，继续按：
+  - `allowedRoles`
+  - `allowedUsers`
+  - `enabled`
+  做现有 policy 判定；
+- 不做额外放宽。
+
+### 六、验证要求
+待实施阶段至少验证：
+
+1. `admin / superadmin` 在 DEV 环境点击 AI 时不再出现前端误拒绝提示；
+2. 管理员仍能进入当前统一中间弹窗；
+3. 非管理员用户继续按 AI policy 正常限制；
+4. 不引入新的“前端放行、后端拒绝”漂移。
+
+### 七、风险与注意事项
+1. 若前端不补回管理员 bypass，当前 DEV 验证链会一直被误拒绝阻断；
+2. 若错误地把 bypass 扩大到普通角色，会破坏 AI 治理边界；
+3. 本轮修复应严格限定为管理员场景回归，不扩散到整体 AI policy 重写。
+
+## AI 单入口收敛专项（2026-04-07，待确认）
+
+### 一、当前问题
+当前 AI 入口存在明显交互与维护歧义：同一个 AI 按钮在不同状态下会打开两套完全不同的主容器。
+
+当前已确认：
+
+1. 有 unread insight 时，会打开 `DailyInsightModal`；
+2. 无 unread insight 时，会打开 `AiDrawer`；
+3. 这会让用户点击前无法预期结果；
+4. 也会让前端维护同时背负两套主 UI、两套状态流、两套样式与交互语义。
+
+### 二、为什么需要收敛为单入口
+本问题不只是“样式不一致”，而是入口语义不稳定：
+
+- 同一个按钮，却可能打开不同形态的主容器；
+- 用户无法提前理解自己会进入“简报模式”还是“聊天模式”；
+- 多容器并存会让权限、状态、未读、空态、移动端适配、视觉迭代都出现双份维护成本。
+
+从维护性角度，继续保留 `DailyInsightModal + AiDrawer` 双主容器并存并不划算。
+
+### 三、当前决策
+本轮决定采用更易维护的方向：
+
+1. 保留中间弹窗作为唯一 AI 主容器；
+2. 删除 `AiDrawer` 的主入口职责；
+3. 不再让同一个 AI 按钮分流到两种主弹窗形态。
+
+### 四、最小收口目标
+本轮不做大型 AI 重构，只做入口收敛：
+
+1. AI 按钮点击后始终进入统一中间弹窗；
+2. unread insight 只影响内容状态，不再决定容器类型；
+3. 普通问询能力若保留，也应在同一中间弹窗内部承载；
+4. 删除侧边抽屉式主入口，减少后续维护歧义。
+
+### 五、拟改范围（待确认后实施）
+
+#### 必改
+- `src/features/ai-assistant/components/ai-trigger.tsx`
+- `src/features/ai-assistant/components/daily-insight-modal.tsx`
+
+#### 视实现情况决定
+- `src/features/ai-assistant/components/ai-drawer.tsx`
+- `src/features/ai-assistant/hooks/use-ai-chat-engine.ts`
+- 与 AI 容器状态相关的局部组件或样式片段
+
+### 六、推荐实施方式
+
+#### Phase A：统一入口行为
+- 调整 `AiTrigger`：点击 AI 按钮时不再分流到 `AiDrawer`；
+- 始终进入中间弹窗；
+- unread insight 仅决定默认展示内容，而不是决定打开哪个容器。
+
+#### Phase B：把必要的普通问询能力收编进中间弹窗
+- 如果仍需保留手动提问/发送能力，则在 `DailyInsightModal` 内承载；
+- 不再保留抽屉作为第二主交互容器。
+
+#### Phase C：移除或降级 `AiDrawer`
+- 若抽屉已无主职责，则删除其触发链；
+- 若短期还需保留内部复用价值，则不再由主按钮直接打开。
+
+### 七、风险与注意事项
+1. 若直接删 `AiDrawer` 而不承接普通问询能力，可能造成功能缺失；
+2. 若中间弹窗继续只适配“简报展示”，则需要最小补齐输入/对话承载；
+3. 若双容器逻辑残留在 `AiTrigger` 中，后续仍会产生随机体验。
+
+### 八、验证要求
+待实施阶段至少验证：
+
+1. 点击 AI 按钮后，DEV / 生产都进入统一中间弹窗；
+2. unread insight 存在时可正常展示简报；
+3. unread insight 不存在时也不会再退回侧边抽屉；
+4. 若保留普通问询能力，用户可在同一中间弹窗内继续发起 AI 请求。
+
+### 九、明确不做事项
+1. 不在本轮顺带重写 AI provider 调用链；
+2. 不在本轮扩散成 AI 模块全量视觉重设计；
+3. 不保留“双主容器长期共存”的折中状态。
+
+## AI 治理权限口径统一专项（方案B，2026-04-07，待确认）
+
+### 一、当前问题
+当前 AI 弹窗在 DEV 与生产环境表现不一致，但根因并非 UI 组件差异，而是 AI 背景任务在生产环境被服务端治理策略拒绝，导致 `DailyInsightModal` 所需的 unread insight 无法生成。
+
+当前已确认现象：
+
+1. DEV 环境可进入 `DailyInsightModal`；
+2. 生产环境仅进入 `AiDrawer`；
+3. 生产日志明确报错：
+   - `AI_PROXY_ERROR (403): Current user is not allowed by AI governance policy`
+
+### 二、当前根因判断
+
+#### 1) `DailyInsightModal` 缺失只是结果，不是根因
+`DailyInsightModal` 是否出现，取决于 `aiAgentService.executeAgentTask()` 是否成功完成并将 `hasUnread` 置为 `true`。
+
+生产环境中，后台任务已经触发，但在调用 `/api/v1/ai/proxy` 时被服务端 `AIPolicyGuard()` 拒绝，因此：
+
+- 背景任务中断；
+- `hasUnread` 不会变成 `true`；
+- 最终只会打开普通 `AiDrawer`。
+
+#### 2) 前后端 AI 权限判定口径存在漂移
+当前前端与后端的 AI 准入逻辑并不完全一致：
+
+- 前端 `use-ai-permissions.ts`
+  - 依据：`user.role[]` 与 `username`
+  - 数据源：远端 policy + 本地 IndexedDB 缓存
+
+- 后端 `server/middleware/ai_policy_guard.go`
+  - 依据：单个 `context.role` 与 `context.username`
+  - 数据源：服务端 `ai_capability_policy`
+
+这会导致一种割裂状态：
+
+- 前端认为当前用户可见、可启动 AI；
+- 后端却在 `/api/v1/ai/proxy` 处返回 403。
+
+### 三、方案B目标
+本方案不做前端吞错补丁，也不伪造 unread insight，而是统一 AI 权限裁决口径：
+
+1. 前后端对“当前用户是否允许使用 AI”必须基于同一事实来源；
+2. 不再允许前端本地角色数组与后端单角色上下文各自独立判定；
+3. 让 AI 按钮显示、后台任务执行、`/ai/proxy` 调用结果三者一致。
+
+### 四、推荐收口方向
+
+#### 方向A：以后端权威身份上下文为准
+优先将 AI 治理裁决统一到后端权威上下文：
+
+- 后端负责根据登录态解析当前用户的权威身份信息；
+- 后端 AI policy 基于同一组权威角色/用户名做裁决；
+- 前端不再自己猜测“当前用户应不应该可用”，而是消费与后端一致的结果。
+
+这是本专项推荐方向。
+
+#### 方向B：若保留前端预判，也必须使用与后端一致的字段
+如果短期内仍保留前端 `useAiPermissions()` 作为按钮显隐预判，则必须确保它与后端使用同一口径，例如：
+
+- 使用同一份权威角色集合；
+- 使用同一份标准化后的用户名；
+- 避免前端 `role[]` 与后端单个 `role` 字段各自解释。
+
+### 五、拟改范围（待确认后实施）
+
+#### 前端
+- `src/features/ai-assistant/hooks/use-ai-permissions.ts`
+- `src/features/ai-assistant/components/ai-trigger.tsx`
+- 必要时：`src/features/authz/services/effective-permission-service.ts` 或 auth store 身份字段映射
+
+#### 后端
+- `server/middleware/ai_policy_guard.go`
+- 必要时：认证中间件/身份上下文字段注入位置（确保 AI guard 能拿到权威角色集合或标准化身份）
+
+### 六、最小实施原则
+1. 不通过前端吞掉 `/ai/proxy` 403 来掩盖治理口径不一致；
+2. 不通过强行伪造 `hasUnread` 来制造 `DailyInsightModal` 假象；
+3. 不在本轮扩散成全量权限体系重构；
+4. 不改 AI provider 选型与模型接入链路，除非排查中确认它们同样阻断执行。
+
+### 七、待确认后的最小实施思路
+
+#### Phase A：统一权威身份字段
+- 盘清后端 AI guard 当前读取的 `role/username` 来源；
+- 明确当前认证上下文是否支持角色集合；
+- 若后端本就有权威角色集合，则 AI guard 应改为基于集合判定，而不是单个主角色。
+
+#### Phase B：前端只做与后端一致的预判
+- 调整 `useAiPermissions()`，避免继续以不一致的 `user.role[]` 本地推导作为最终准入判断；
+- 必要时将按钮显隐与后台任务可执行性统一收敛到同一能力判定。
+
+#### Phase C：统一拒绝体验
+- 若用户未授权：前后端都一致拒绝；
+- 若用户已授权：前端不应显示可用而后端仍返回 403；
+- 背景任务成功时，生产与 DEV 都应能生成 unread insight。
+
+### 八、验证要求
+待实施阶段至少验证：
+
+1. 授权用户在 DEV / 生产均可成功触发背景任务；
+2. 授权用户点击 AI 后，后台简报任务可成功完成并出现 `DailyInsightModal`；
+3. 未授权用户在前后端均被一致拒绝，且拒绝原因一致；
+4. `/api/v1/ai/proxy` 不再对“前端已判定可用”的同一用户返回治理 403。
+
+### 九、风险与注意事项
+1. 若只改前端显隐，不改后端 guard，仍会继续出现生产 403；
+2. 若只改后端默认放开，不统一口径，会留下治理策略漂移隐患；
+3. 若直接把所有用户加入白名单，只是绕过问题，不是根治。
 
 ## 仓储报表异常专项（2026-04-07，待确认）
 
@@ -750,12 +1010,12 @@ pnpm build
 
 #### 功能回归
 ```bash
-curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
+curl -i http://127.0.0.1:8000/api/v1/<新增或变更的后端路由>
 ```
 
 应确认：
 - 默认路径部署后，后端路由更新仍可生效
-- `/api/v1/auth/snapshot` 不再因旧 app 镜像导致 404
+- 新增后端路由不再因旧 app 镜像导致 404
 
 ### 九、明确不做事项
 - 不在本轮引入自动 diff 检测来智能判断哪些服务该 build；
@@ -765,12 +1025,12 @@ curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
 ## 生产部署脚本默认重建后端固化修复（2026-04-07，待确认）
 
 ### 一、当前结论
-本轮生产故障已经确认：线上 `/api/v1/auth/snapshot` 返回 404 的高概率根因，是前端已更新而后端仍在运行旧镜像。
+本轮生产部署风险已经确认：新增后端路由在默认 fast path 下可能因旧 app 镜像仍在运行而表现为 404。
 
 当前证据包括：
 
-1. 代码仓库中后端已存在 `GET /api/v1/auth/snapshot`
-2. 线上实际请求 `/api/v1/auth/snapshot` 返回 404
+1. 代码仓库中后端已新增路由
+2. 线上对新增路由的请求曾出现 404
 3. 部署日志显示：
    - `Build mode: disabled (fast path)`
 4. `server-app-*` 容器创建时间停留在数天前，说明后端并未在本次部署中重建
@@ -828,7 +1088,7 @@ curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
 #### Phase C：生产验证
 - 部署日志应明确显示 build 已启用；
 - `server-app-*` 容器创建时间应更新；
-- `/api/v1/auth/snapshot` 不再返回 404。
+- 新增后端路由不再返回 404。
 
 ### 六、风险与注意事项
 1. 默认启用 build 会延长生产部署时间，但相较于登录阻塞故障，这个代价更可接受。
@@ -852,131 +1112,12 @@ curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
 
 - 部署日志显示 build 已启用
 - `docker compose ps` 中 `server-app-*` 容器创建时间更新
-- `curl -i http://127.0.0.1:8000/api/v1/auth/snapshot` 不再返回 404
+- 对新增后端路由的源站探测不再返回 404
 
 ### 八、明确不做事项
 - 不在本轮同时重构部署体系或引入完整 CI/CD 平台；
 - 不把本轮扩散成前后端全部服务的镜像版本管理工程；
 - 不在未验证生产结果前，将问题简单归咎于前端容错。
-
-## 生产环境 `/auth/snapshot` 404 与登录页循环重定向故障修复（2026-04-07，待确认）
-
-### 一、当前现象
-生产环境当前存在高优先级登录阻塞故障：
-
-1. 用户输入账号后前端提示登录成功；
-2. 随后前端背景请求 `/auth/snapshot` 返回 404；
-3. `AuthenticatedLayout` 将该错误视为身份同步失败，强制跳回 `/sign-in`；
-4. 用户表现为反复回到登录页，无法进入系统。
-
-伴随日志还包括 WebSocket 连接失败，但当前首要问题不是通知链，而是登录成功后无法进入页面。
-
-### 二、已确认事实
-当前代码中已确认：
-
-1. 前端 `effective-permission-service.ts`
-   - `syncIdentitySnapshotFromProfile()` 会调用：
-     - `GET /auth/snapshot`
-2. 前端 `authenticated-layout.tsx`
-   - 背景身份同步失败后当前会直接：
-     - `navigate({ to: '/sign-in', replace: true })`
-3. 前端 `user-auth-form.tsx`
-   - 登录成功后也会尝试 background profile sync；
-4. 后端 `server/routes/routes.go`
-   - 代码中确实注册了：
-     - `GET /api/v1/auth/snapshot`
-5. 后端 `server/handlers/auth.go`
-   - 存在 `GetAuthSnapshotHandler`
-
-这说明当前问题不是“代码仓库里完全没有这个路由”，而更可能是：
-
-- 生产前端请求路径与实际后端路由前缀不一致；
-- 生产网关/反代没有把该路由转发到 API；
-- 生产后端部署版本落后，未包含该路由；
-- 或前端把 snapshot 404 过度解释成“必须重新登录”，导致可恢复问题被放大成登录死循环。
-
-### 三、本轮目标
-本轮目标按优先级排序如下：
-
-1. 先恢复“登录成功后可进入页面”的最小可用性；
-2. 明确 `/auth/snapshot` 404 的真实根因；
-3. 修复生产环境前后端或部署不一致；
-4. 避免背景身份同步失败再次演化成登录死循环。
-
-### 四、拟调整的职责边界
-
-#### 前端应负责
-- 在登录成功后尝试做背景身份同步；
-- 对 snapshot 失败做分级处理；
-- 只在明确认证失效（401/403/token invalid）时强制退出登录；
-- 对 404/网络异常等非认证失效场景避免无限回登录页。
-
-#### 后端 / 部署应负责
-- 正式提供 `GET /api/v1/auth/snapshot`；
-- 确保生产环境路由注册与部署版本一致；
-- 确保网关/反代对 `/api/v1/auth/snapshot` 转发正确。
-
-### 五、最小修复路径建议
-
-#### Path A：先确认生产路由是否真实缺失
-优先检查：
-
-- `src/lib/api-client.ts` 的 base URL 拼接行为
-- 生产环境 API 前缀与反代配置
-- 当前线上后端版本是否包含 `GetAuthSnapshotHandler`
-
-若确认是后端/部署缺失，应优先修复后端路由可达性。
-
-#### Path B：补前端登录链的降级保护
-即便后端路由有问题，前端也不应在 404 时形成无限重定向死循环。
-
-建议最小策略：
-
-- 401/403：视为认证失败，可回登录页
-- 404/网络错误/5xx：
-  - 记录错误
-  - 保留已登录态的最小进入能力
-  - 将身份同步标记为失败或降级，而不是立即踢回登录页
-
-#### Path C：若需要，补 auth snapshot 回归测试
-在修复完成后，可补最小前后端回归测试，防止未来再次删除或绕过该路由。
-
-### 六、预计改动范围（待确认后实施）
-
-#### 前端
-- `src/lib/api-client.ts`
-- `src/features/authz/services/effective-permission-service.ts`
-- `src/components/layout/authenticated-layout.tsx`
-- `src/features/auth/sign-in/components/user-auth-form.tsx`
-
-#### 后端
-- `server/routes/routes.go`
-- `server/handlers/auth.go`
-- 如确认是部署/反代问题，再检查部署脚本或 nginx 配置
-
-### 七、风险与注意事项
-1. 若只在前端 suppress 404，但真实后端路由仍缺失，会留下身份同步不完整的隐患。
-2. 若继续维持“任何 snapshot 失败都强制回登录页”，生产可用性会持续受影响。
-3. 若不区分 401/403 与 404/网络异常，前端会把部署问题误判成认证问题。
-
-### 八、验证要求
-待实施阶段至少执行：
-
-```bash
-pnpm build
-```
-
-并做最小登录回归验证：
-
-- 登录成功后可进入受保护页面
-- `/auth/snapshot` 正常返回时权限同步成功
-- `/auth/snapshot` 返回 404 时不再陷入登录死循环
-- 真正 token 失效时仍会正确退出登录
-
-### 九、明确不做事项
-- 不在本轮同时重构整个权限同步架构；
-- 不将 WebSocket/通知链问题与登录死循环问题混为一个大专项；
-- 不在未确认根因前直接大改登录表单或全局路由守卫。
 
 ## 已治理真相边界链路的最小后端回归测试补强（2026-04-07，待确认）
 

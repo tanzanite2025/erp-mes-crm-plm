@@ -1,5 +1,133 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：AI 单入口收敛实施（2026-04-07）
+
+### 本轮目标
+本轮按已确认方案执行 AI 单入口收敛：保留中间弹窗作为唯一 AI 主容器，移除同一个按钮在 `DailyInsightModal` 与 `AiDrawer` 之间随机分流的主入口逻辑，降低交互歧义与双容器维护成本。
+
+### 已执行变更
+更新：
+- `src/features/ai-assistant/components/ai-trigger.tsx`
+- `src/features/ai-assistant/components/daily-insight-modal.tsx`
+
+#### 1) `AiTrigger` 统一入口行为
+- 移除对 `AiDrawer` 的主入口分流
+- AI 按钮点击后统一打开 `DailyInsightModal`
+- unread insight 不再决定“打开哪个容器”，只作为中间弹窗内部内容状态输入
+
+结果：
+- 同一个 AI 按钮不再出现“一次打开抽屉、一次打开中间弹窗”的随机体验；
+- 主入口容器已统一为中间弹窗。
+
+#### 2) `DailyInsightModal` 升级为统一主容器
+- 保留原有简报态：有 unread insight 时继续显示经营简报与行动磁贴
+- 增加普通问询态：无 unread insight 时，在同一中间弹窗内部承载 AI 聊天能力
+- 复用现有：
+  - `useAiChatEngine`
+  - `AiMessageItem`
+  - `getLatestSnapshot`
+
+结果：
+- 简报与普通问询能力已统一收编到单一中间弹窗；
+- 不再需要依赖侧边抽屉承接普通问询。
+
+#### 3) `AiDrawer` 主入口职责已降级
+- 当前代码中 `AiDrawer` 已不再被主入口引用；
+- 后续已完成物理删除：`src/features/ai-assistant/components/ai-drawer.tsx`。
+
+结果：
+- 双主容器并存的入口歧义已消除；
+- 后续维护可围绕单一中间弹窗继续收敛。
+
+### 验证
+执行：
+```bash
+pnpm exec eslint src/features/ai-assistant/components/ai-trigger.tsx src/features/ai-assistant/components/daily-insight-modal.tsx src/features/ai-assistant/hooks/use-ai-permissions.ts
+```
+
+结果：通过。
+
+补充修正：
+- 已移除 `AiTrigger` 中基于前端 `isVisible` 的点击前硬拦截；
+- AI 按钮现在始终可以打开统一中间弹窗；
+- 实际 AI 能否使用，回归由后端请求链裁决，前端不再先行阻止。
+
+补充说明：
+- 尝试执行整仓 `pnpm build` 时，被仓库内既有的 `engineering / engineering-db` TypeScript 错误阻断；
+- 当前阻断项不属于本次 AI 单入口收敛改动引入的问题，因此本轮以定向 eslint 作为前端最小验证依据。
+
+### 本轮结论
+本轮已完成 AI 单入口收敛的最小落地：
+
+- 保留中间弹窗为唯一 AI 主容器；
+- 主按钮不再分流到 `AiDrawer`；
+- 普通问询能力已收编到统一中间弹窗内部；
+- 为后续继续清理遗留 `AiDrawer` 组件与视觉细节提供稳定基础。
+
+## P1：AI 治理权限口径统一（方案B，2026-04-07）
+
+### 本轮目标
+本轮按已确认方案B执行 AI 治理权限口径统一：修复前端 `useAiPermissions()` 与后端 `AIPolicyGuard()` 对当前用户 AI 可用性的判定漂移，消除“前端可见但 `/api/v1/ai/proxy` 返回 403”导致生产环境无法生成 `DailyInsightModal` 的问题。
+
+### 已确认根因
+生产环境日志已明确显示：
+
+- `AI_PROXY_ERROR (403): Current user is not allowed by AI governance policy`
+
+进一步排查确认：
+
+- 前端 AI 显隐与后台任务触发，使用的是 `user.role[] / username`；
+- 后端 `/api/v1/ai/proxy` 的 `AIPolicyGuard()` 只使用单个 `context.role / username`；
+- 认证中间件实际上已经把 `effectiveRoles` 注入了 Gin context，但 AI guard 未使用该权威角色集合；
+- 因此出现“前端判定可用、后端治理拒绝”的口径漂移，最终导致 `hasUnread` 无法置为 `true`，生产只显示 `AiDrawer` 而不会出现 `DailyInsightModal`。
+
+### 已执行变更
+更新：
+- `server/middleware/ai_policy_guard.go`
+- `src/features/ai-assistant/hooks/use-ai-permissions.ts`
+
+#### 1) 后端 `AIPolicyGuard()` 改为按权威角色集合判定
+- 不再只读取单个 `role`
+- 改为基于认证上下文中的：
+  - `effectiveRoles`
+  - `role`
+  - `username`
+- 管理员绕过逻辑也改为对角色集合统一判断
+
+结果：
+- AI governance 裁决改为使用服务端已有的权威角色集合；
+- 降低了“主角色与有效角色集合不一致”导致的误拒绝。
+
+#### 2) 前端 `useAiPermissions()` 改为与后端同口径的角色标准化判定
+- 使用 `getAuthSessionEffectiveRoleIds(user)` 读取有效角色集合
+- 对 `allowedRoles / allowedUsers / username` 做统一小写与空白标准化
+- 避免前端继续以未标准化的本地角色数组做宽松匹配
+
+结果：
+- 按钮显隐与后台任务可执行性更接近后端真实治理口径；
+- 减少 DEV / 生产因角色大小写、字段来源不同带来的行为偏差。
+
+### 本轮说明
+- 本轮没有通过前端吞掉 `/ai/proxy` 403 来“伪修复”；
+- 本轮没有伪造 `hasUnread` 或强行弹出 `DailyInsightModal`；
+- 本轮只做最小收口，不扩散到 AI provider、模型选择或全量权限体系重构。
+
+### 验证
+执行：
+```bash
+go test ./middleware
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 AI 治理权限口径的最小统一：
+
+- 后端 AI guard 已改为使用权威角色集合；
+- 前端 AI 可见性判定已与后端口径对齐；
+- 为修复生产环境“只显示 `AiDrawer`、无法生成 `DailyInsightModal`”提供了根因级收口基础。
+
 ## P1：`asset-service.ts` facade/hook 最小拆层实施（2026-04-07）
 
 ### 本轮目标

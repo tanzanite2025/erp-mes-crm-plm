@@ -233,15 +233,30 @@ export function LabelingTab() {
         getSortedRowModel: getSortedRowModel(),
     })
 
-    const handleFormSubmit = async (formData: LabelingDraft) => {
-        let newData: LabelingDraft[]
-        if (currentRow) {
-            newData = data.map(p => p.id === formData.id ? formData : p)
+    const handleSave = async (params: { 
+        data: LabelingDraft; 
+        isPatch: boolean; 
+        delta?: any; 
+        version?: number 
+    }) => {
+        const { data: formData, isPatch, delta, version } = params
+
+        // 更新本地状态
+        setData(prev => {
+            const exists = prev.find(p => p.id === formData.id)
+            if (exists) {
+                return prev.map(p => p.id === formData.id ? formData : p)
+            }
+            return [formData, ...prev]
+        })
+
+        if (isPatch && delta) {
+            await engineeringDBService.patchLabeling(formData.id, delta, version!)
+            toast.success(t('engineering.labeling.toasts.updateSuccess'))
         } else {
-            newData = [formData, ...data]
+            await engineeringDBService.saveLabeling([formData])
+            toast.success(t('engineering.labeling.toasts.saveSuccess'))
         }
-        setData(newData)
-        await engineeringDBService.saveLabeling(newData)
     }
 
     return (
@@ -421,7 +436,7 @@ export function LabelingTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <LabelingActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSubmit={handleFormSubmit} />
+            <LabelingActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <ExcelViewerDialog open={excelPreviewOpen} onOpenChange={setExcelPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />

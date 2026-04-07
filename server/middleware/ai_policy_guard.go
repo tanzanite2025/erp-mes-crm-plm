@@ -21,11 +21,11 @@ type AIPolicy struct {
 // AIPolicyGuard enforces AI governance policy on backend.
 func AIPolicyGuard() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role := strings.TrimSpace(getStringContext(c, "role"))
+		roleIDs := collectContextRoleIDs(c)
 		username := strings.TrimSpace(getStringContext(c, "username"))
 
 		// --- [CRITICAL_BYPASS] 上帝视角物理绕过 AI 政策 ---
-		if strings.EqualFold(role, "admin") || strings.EqualFold(role, "superadmin") {
+		if hasBypassRole(roleIDs) {
 			c.Next()
 			return
 		}
@@ -41,7 +41,7 @@ func AIPolicyGuard() gin.HandlerFunc {
 			return
 		}
 
-		if contains(policy.AllowedUsers, username) || contains(policy.AllowedRoles, role) {
+		if contains(policy.AllowedUsers, username) || containsAny(policy.AllowedRoles, roleIDs) {
 			c.Next()
 			return
 		}
@@ -95,6 +95,24 @@ func normalize(in []string) []string {
 func contains(list []string, target string) bool {
 	for _, v := range list {
 		if strings.EqualFold(strings.TrimSpace(v), strings.TrimSpace(target)) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsAny(list []string, targets []string) bool {
+	for _, target := range targets {
+		if contains(list, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasBypassRole(roleIDs []string) bool {
+	for _, roleID := range roleIDs {
+		if strings.EqualFold(strings.TrimSpace(roleID), "admin") || strings.EqualFold(strings.TrimSpace(roleID), "superadmin") {
 			return true
 		}
 	}

@@ -1,235 +1,223 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Upload } from 'lucide-react'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+import { useMemo } from 'react'
+import { Sticker, Hash, Tag, Save, Layers, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { labelingDraftSchema, type LabelingDraft } from '../data/schema'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { SelectDropdown } from '@/components/select-dropdown'
+import { FileUploader } from '@/components/file-uploader'
+import { type LabelingDraft } from '../data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
-import { FileUploadZone } from './file-upload-zone'
 
 interface LabelingActionDialogProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    currentRow?: LabelingDraft
-    onSubmit: (data: LabelingDraft) => void
+  currentRow?: LabelingDraft | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (params: { 
+    data: LabelingDraft; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void
+  isLoading?: boolean
+}
+
+const DEFAULT_LABELING: Partial<LabelingDraft> = {
+  name: '',
+  type: 'Water',
+  productId: '',
+  fileUrl: '',
+  fileExtension: '',
+  version: 1,
 }
 
 export function LabelingActionDialog({
-    open,
-    onOpenChange,
-    currentRow,
-    onSubmit,
+  currentRow,
+  open,
+  onOpenChange,
+  onSave,
+  isLoading,
 }: LabelingActionDialogProps) {
-    const { t } = useLanguage()
-    const { data: products = [] } = useGetProducts()
-    
-    const form = useForm<LabelingDraft>({
-        resolver: zodResolver(labelingDraftSchema),
-        defaultValues: {
-            id: '',
-            name: '',
-            type: 'Water',
-            productId: '',
-            fileUrl: '',
-            fileExtension: '',
-            createdAt: new Date().toISOString(),
-        },
-    })
+  const { data: products = [] } = useGetProducts()
+  
+  const shellClasses = buildActionDialogShellClasses({
+    content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
+    header: 'p-8 pb-4 border-none bg-muted/5',
+    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
+    body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
+    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+  })
 
-    useEffect(() => {
-        if (open) {
-            if (currentRow) {
-                form.reset(currentRow)
-            } else {
-                form.reset({
-                    id: Math.random().toString(36).substring(2, 9),
-                    name: '',
-                    type: 'Water',
-                    productId: '',
-                    fileUrl: '',
-                    fileExtension: '',
-                    createdAt: new Date().toISOString(),
-                })
-            }
-        }
-    }, [currentRow, form, open])
+  const isEdit = !!currentRow
+  const initialFormData = useMemo(() => {
+    if (currentRow) return currentRow
+    return { 
+      ...DEFAULT_LABELING, 
+      id: `LBL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      createdAt: new Date().toISOString() 
+    } as LabelingDraft
+  }, [currentRow, open])
 
-    const handleFormSubmit = (data: LabelingDraft) => {
-        if (!data.fileUrl) {
-            toast.error(t('engineering.specs.toasts.noAttachment'))
-            return
-        }
-        onSubmit(data)
-        onOpenChange(false)
-        toast.success(currentRow ? t('engineering.labeling.toasts.updateSuccess') : t('engineering.labeling.toasts.saveSuccess'))
+  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+
+  const handleSave = () => {
+    if (!formData.name || !formData.fileUrl) {
+      toast.error('请上传设计稿并填写方案名称')
+      return
     }
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-xl rounded-[32px] border-none shadow-2xl p-0 overflow-hidden bg-card flex flex-col max-h-[92vh] md:max-h-[85vh]'>
-                <div className='absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent pointer-events-none' />
-                
-                {/* Fixed Header */}
-                <DialogHeader className='p-6 md:p-8 pb-0 shrink-0 relative'>
-                    <div className='flex items-center gap-2'>
-                        <div className='size-8 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-600 shrink-0'>
-                            <Upload className='size-4' />
-                        </div>
-                        <DialogTitle className='text-base md:text-lg font-black italic uppercase tracking-tight'>
-                            {currentRow ? t('engineering.labeling.dialog.editTitle') : t('engineering.labeling.dialog.createTitle')}
-                        </DialogTitle>
-                    </div>
-                    <DialogDescription className='text-[9px] md:text-[10px] font-medium uppercase tracking-widest opacity-60 ml-10'>
-                        {t('engineering.labeling.dialog.description')}
-                    </DialogDescription>
-                </DialogHeader>
+    if (isEdit && currentRow) {
+      const delta = tracker.commit()
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      onSave({ 
+        data: formData, 
+        isPatch: true, 
+        delta, 
+        version: currentRow.version 
+      })
+    } else {
+      onSave({ data: formData, isPatch: false })
+    }
+  }
 
-                {/* Scrollable Form Content */}
-                <div className='flex-1 overflow-y-auto px-6 md:px-8 py-4 custom-scrollbar relative'>
-                    <Form {...form}>
-                        <form id='labeling-form' onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-6'>
-                            <div className='bg-teal-500/5 p-4 md:p-6 rounded-[24px] border border-dashed border-teal-500/20 shadow-inner'>
-                                <FileUploadZone 
-                                    fileUrl={form.watch('fileUrl')}
-                                    fileName={form.watch('name')}
-                                    fileExtension={form.watch('fileExtension')}
-                                    onFileSelected={(name, ext, url) => {
-                                        form.setValue('name', name)
-                                        form.setValue('fileExtension', ext)
-                                        form.setValue('fileUrl', url)
-                                    }}
-                                    onFileClear={() => {
-                                        form.setValue('fileUrl', '')
-                                        form.setValue('name', '')
-                                        form.setValue('fileExtension', '')
-                                    }}
-                                />
-                            </div>
+  return (
+    <ActionDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(
+        <>
+          <div className='p-2 bg-teal-500/10 rounded-xl'>
+            <Sticker className='size-5 text-teal-600' />
+          </div>
+          {isEdit ? '编辑贴标设计' : '发布视觉方案'}
+        </>
+      )}
+      description="DESIGN_MASTER_LABELING / 管理水标、涂装、激光镭雕等外观设计稿及成品适配关系。"
+      contentClassName={shellClasses.content}
+      headerClassName={shellClasses.header}
+      bodyClassName={shellClasses.body}
+      footerClassName={shellClasses.footer}
+      titleClassName={shellClasses.title}
+      descriptionClassName={shellClasses.description}
+      footer={(
+        <>
+          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
+            <span className='inline-block size-1.5 rounded-full bg-teal-500 animate-pulse' />
+            Sync_to_Visual_Identity
+          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => onOpenChange(false)} 
+              className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+            >
+              取消 / CANCEL
+            </Button>
+            <Button 
+              disabled={isLoading || (isEdit && !isDirty())}
+              onClick={handleSave} 
+              className="bg-teal-600 hover:bg-teal-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-teal-600/20 active:scale-95 transition-all gap-2"
+            >
+              {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+              同步存档 / SYNC_ARCHIVE
+            </Button>
+          </div>
+        </>
+      )}
+    >
+      <div className='absolute inset-0 bg-linear-to-br from-teal-500/5 via-transparent pointer-events-none' />
 
-                            <FormField
-                                control={form.control}
-                                name='name'
-                                render={({ field }) => (
-                                    <FormItem className='space-y-2'>
-                                        <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                            {t('engineering.labeling.form.name')}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                placeholder={t('engineering.labeling.placeholders.name')} 
-                                                {...field} 
-                                                className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm focus-visible:ring-1 focus-visible:ring-teal-500/20 shadow-inner' 
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+      <div className='grid gap-8 relative'>
+        {/* 设计稿预览与上传区 */}
+        <div className='bg-teal-500/5 p-6 rounded-[32px] border border-dashed border-teal-500/20 space-y-4'>
+           <div className='flex items-center justify-between'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-teal-600/70 flex items-center gap-2'>
+              <Layers className='size-3' /> 设计稿原始文件 / DESIGN_ASSET
+            </p>
+          </div>
+          <FileUploader 
+            value={formData.fileUrl} 
+            accept='image/*,.pdf,.ai,.eps'
+            onChange={(url, ext) => {
+              formData.fileUrl = url
+              if (ext) formData.fileExtension = ext
+            }}
+          />
+        </div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='type'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                                {t('engineering.labeling.form.category')}
-                                            </FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner'>
-                                                        <SelectValue placeholder={t('engineering.labeling.placeholders.category')} />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className='rounded-[24px] border-none shadow-2xl bg-card p-2'>
-                                                    <SelectItem value='Water' className='font-bold rounded-xl'>{t('engineering.labeling.types.water')}</SelectItem>
-                                                    <SelectItem value='Paint' className='font-bold rounded-xl'>{t('engineering.labeling.types.paint')}</SelectItem>
-                                                    <SelectItem value='Laser' className='font-bold rounded-xl'>{t('engineering.labeling.types.laser')}</SelectItem>
-                                                    <SelectItem value='Other' className='font-bold rounded-xl'>{t('engineering.labeling.types.other')}</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+        {/* 核心标识组 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Tag className='size-3' /> 方案名称 / SCHEME_NAME
+            </Label>
+            <Input
+              placeholder='例如: DT-SWISS-2025-V1-Water'
+              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-teal-500/20 px-5 shadow-inner'
+              value={formData.name}
+              onChange={(e) => { formData.name = e.target.value }}
+            />
+          </div>
+           <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Layers className='size-3' /> 工艺类型 / TECH_TYPE
+            </Label>
+            <SelectDropdown
+              defaultValue={formData.type}
+              onValueChange={(val) => { formData.type = val as any }}
+              items={[
+                { label: '水际贴标 / WATER_DECAL', value: 'Water' },
+                { label: '涂装喷漆 / PAINTING', value: 'Paint' },
+                { label: '激光镭雕 / LASER_ENGRAVING', value: 'Laser' },
+                { label: '其他工艺 / OTHERS', value: 'Other' },
+              ]}
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
+            />
+          </div>
+        </div>
 
-                                <FormField
-                                    control={form.control}
-                                    name='productId'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2 pb-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                                {t('engineering.labeling.form.product')}
-                                            </FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value || 'none'}>
-                                                <FormControl>
-                                                    <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner'>
-                                                        <SelectValue placeholder={t('engineering.labeling.placeholders.product')} />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className='rounded-[24px] border-none shadow-2xl bg-card p-2'>
-                                                    <SelectItem value='none' className='italic opacity-60 font-bold rounded-xl'>-- {t('engineering.labeling.table.generic')} --</SelectItem>
-                                                    {products.map(p => (
-                                                        <SelectItem key={p.id} value={p.id} className='font-bold rounded-xl'>{p.sku} | {p.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </form>
-                    </Form>
-                </div>
+        {/* 适配关系组 */}
+        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-4'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Package className='size-3' /> 适配成品 / TARGET_PRODUCT (SKU)
+            </Label>
+            <SelectDropdown
+              defaultValue={formData.productId || 'generic'}
+              onValueChange={(val) => { formData.productId = val === 'generic' ? '' : val }}
+              items={[
+                { label: '-- 通用视觉方案 / GENERIC_SCHEME --', value: 'generic' },
+                ...products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))
+              ]}
+              placeholder='选择适配的产品'
+              className='h-12 rounded-2xl border-none bg-background px-5 font-bold text-sm shadow-sm italic'
+            />
+          </div>
+        </div>
 
-                {/* Fixed Footer */}
-                <DialogFooter className='p-6 md:p-8 pt-4 shrink-0 flex flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 relative'>
-                    <Button 
-                        type='button' 
-                        variant='ghost' 
-                        onClick={() => onOpenChange(false)} 
-                        className='flex-1 md:flex-none rounded-full h-11 px-6 md:px-8 font-black text-[10px] uppercase tracking-widest opacity-60 hover:opacity-100 transition-all'
-                    >
-                        {t('engineering.changeOrders.actions.cancel')}
-                    </Button>
-                    <Button 
-                        form='labeling-form'
-                        type='submit' 
-                        className='flex-2 md:flex-none rounded-full h-11 px-10 md:px-12 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-teal-500/20 bg-teal-600 hover:bg-teal-700 text-white'
-                    >
-                        {t('engineering.labeling.form.submit')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+         {/* 系统元数据 (只读区) */}
+        <div className='grid grid-cols-2 gap-6 opacity-40 grayscale pointer-events-none'>
+           <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest'>设计编码 / ASSET_UID</Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id} />
+          </div>
+          <div className='space-y-2'>
+             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Hash className='size-3' /> 数据版本 / DATA_VERSION
+            </Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={`REV.${formData.version ?? 1}`} />
+          </div>
+        </div>
+      </div>
+    </ActionDialogShell>
+  )
 }

@@ -3,9 +3,22 @@ import { useAuthStore } from '@/stores/auth-store'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { aiPolicyService, type AiPolicyConfig } from '../services/ai-policy-service'
 import { createLogger } from '@/lib/logger'
+import { getAuthSessionEffectiveRoleIds } from '@/features/authz/utils/auth-session'
 
 const AI_CONFIG_KEY = 'xdfc_ai_capability_config'
 const logger = createLogger('useAiPermissions')
+
+function normalizeIdList(values?: string[]): string[] {
+  if (!Array.isArray(values)) return []
+
+  return values
+    .map((value) => String(value).trim().toLowerCase())
+    .filter(Boolean)
+}
+
+function normalizeUsername(value?: string): string {
+  return String(value || '').trim().toLowerCase()
+}
 
 /**
  * AI 权限判定 Hook
@@ -23,12 +36,13 @@ export function useAiPermissions() {
       const local = await StorageService.getItem<AiPolicyConfig>(AI_CONFIG_KEY).catch(() => null)
 
       const config = remote || local
-      const roleIds = Array.isArray(user?.role) ? user.role.map((roleId) => String(roleId)) : []
-      const allowedRoles = config?.allowedRoles || []
-      const allowedUsers = config?.allowedUsers || []
+      const roleIds = normalizeIdList(getAuthSessionEffectiveRoleIds(user))
+      const allowedRoles = normalizeIdList(config?.allowedRoles)
+      const allowedUsers = normalizeIdList(config?.allowedUsers)
+      const username = normalizeUsername(user?.username)
 
       const matchedByRole = roleIds.some((roleId) => allowedRoles.includes(roleId))
-      const matchedByUser = allowedUsers.includes(String(user?.username || ''))
+      const matchedByUser = !!username && allowedUsers.includes(username)
 
       setIsVisible(!!config?.enabled && !!user && (matchedByRole || matchedByUser))
     } catch (e) {

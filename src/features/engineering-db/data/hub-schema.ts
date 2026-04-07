@@ -12,6 +12,7 @@ export const hubSchema = z.object({
   flangeRight: z.string().optional(), // 右侧法兰距
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 

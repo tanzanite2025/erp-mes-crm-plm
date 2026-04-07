@@ -42,6 +42,13 @@ export const engineeringSpecService = {
     });
   },
 
+  patchSpec: async (id: string, delta: any, version: number): Promise<EngineeringSpec> => {
+    return apiFetch<EngineeringSpec>(`/engineering/specs/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ delta, version }),
+    });
+  },
+
   syncSpecs: async (specs: any[]): Promise<any> => {
     return apiFetch<any>('/engineering/specs/sync', {
       method: 'POST',

@@ -226,10 +226,16 @@ export function NipplesTab() {
                 open={open}
                 onOpenChange={setOpen}
                 currentRow={currentRow}
-                onSubmit={val => {
+                onSave={({ data: val, isPatch, delta, version }) => {
                     const newData = currentRow ? data.map(d => d.id === val.id ? val : d) : [val, ...data]
                     setData(newData)
-                    nippleService.saveNipple(val)
+                    if (isPatch && delta) {
+                        nippleService.patchNipple(val.id, delta, version!)
+                        toast.success(t('engineering.nipples.toasts.updateSuccess'))
+                    } else {
+                        nippleService.saveNipple(val)
+                        toast.success(t('engineering.nipples.toasts.saveSuccess'))
+                    }
                 }}
             />
             

@@ -190,11 +190,22 @@ export function HubsTab() {
 
             <div className='pt-2'><DataTablePagination table={table} /></div>
 
-            <HubActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSubmit={val => {
-                const newData = currentRow ? data.map(d => d.id === val.id ? val : d) : [val, ...data]
-                setData(newData)
-                hubService.saveHub(val)
-            }} />
+            <HubActionDialog 
+                open={open} 
+                onOpenChange={setOpen} 
+                currentRow={currentRow} 
+                onSave={({ data: val, isPatch, delta, version }) => {
+                    const newData = currentRow ? data.map(d => d.id === val.id ? val : d) : [val, ...data]
+                    setData(newData)
+                    if (isPatch && delta) {
+                        hubService.patchHub(val.id, delta, version!)
+                        toast.success(t('engineering.hubs.toasts.updateSuccess'))
+                    } else {
+                        hubService.saveHub(val)
+                        toast.success(t('engineering.hubs.toasts.saveSuccess'))
+                    }
+                }} 
+            />
             
             <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
                 <DialogContent className='sm:max-w-3xl rounded-[32px] p-0 overflow-hidden border-none shadow-2xl'>

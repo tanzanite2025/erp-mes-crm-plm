@@ -45,7 +45,7 @@ export function SpokeLengthTab() {
         hubMap,
         nippleMap,
         handleDelete,
-        handleFormSubmit,
+        handleSave,
         refresh
     } = useSpokeLengthMgmt()
 
@@ -168,7 +168,7 @@ export function SpokeLengthTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <SpokeLengthActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSubmit={(data) => handleFormSubmit(data, currentRow)} />
+            <SpokeLengthActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
             <SpokeLengthPreviewDialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen} previewFile={previewFile} />
         </div>
     )

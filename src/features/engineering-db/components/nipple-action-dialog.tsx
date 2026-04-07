@@ -1,201 +1,235 @@
 'use client'
 
-import { useEffect } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useMemo } from 'react'
+import { Nut, Hash, Tag, Info, Save, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { FileUploader } from '@/components/file-uploader'
-import { toast } from 'sonner'
-import { nippleSchema, type Nipple } from '../data/nipple-schema'
 import { useLanguage } from '@/context/language-provider'
-
-type NippleForm = z.infer<typeof nippleSchema>
+import { Nipple } from '../data/nipple-schema'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { toast } from 'sonner'
 
 interface NippleActionDialogProps {
-    currentRow?: Nipple
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    onSubmit: (data: Nipple) => void
+  currentRow?: Nipple | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (params: { 
+    data: Nipple; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void
+  isLoading?: boolean
+}
+
+const DEFAULT_NIPPLE: Partial<Nipple> = {
+  name: '',
+  brand: '',
+  material: '',
+  length: '',
+  color: '',
+  fileUrl: '',
+  fileExtension: '',
+  version: 1,
 }
 
 export function NippleActionDialog({
-    currentRow,
-    open,
-    onOpenChange,
-    onSubmit,
+  currentRow,
+  open,
+  onOpenChange,
+  onSave,
+  isLoading,
 }: NippleActionDialogProps) {
-    const { t } = useLanguage()
-    const isEdit = !!currentRow
+  const { t } = useLanguage()
+  const shellClasses = buildActionDialogShellClasses({
+    content: 'sm:max-w-[650px] rounded-[32px] overflow-hidden',
+    header: 'p-8 pb-4 border-none bg-muted/5',
+    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
+    body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
+    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+  })
 
-    const form = useForm<NippleForm>({
-        resolver: zodResolver(nippleSchema) as any,
-        defaultValues: {
-            id: '',
-            name: '',
-            brand: '',
-            material: '',
-            length: '',
-            color: '',
-            fileUrl: '',
-            fileExtension: '',
-            createdAt: new Date().toISOString(),
-        },
-    })
+  const isEdit = !!currentRow
+  const initialFormData = useMemo(() => {
+    if (currentRow) return currentRow
+    return { 
+      ...DEFAULT_NIPPLE, 
+      id: `NIP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      createdAt: new Date().toISOString() 
+    } as Nipple
+  }, [currentRow, open])
 
-    useEffect(() => {
-        if (open) {
-            if (isEdit && currentRow) {
-                form.reset(currentRow)
-            } else {
-                form.reset({
-                    id: `NIP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-                    name: '',
-                    brand: '',
-                    material: '',
-                    length: '',
-                    color: '',
-                    fileUrl: '',
-                    fileExtension: '',
-                    createdAt: new Date().toISOString(),
-                })
-            }
-        }
-    }, [currentRow, open, isEdit, form])
+  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
-    const handleFormSubmit = (values: NippleForm) => {
-        onSubmit(values as Nipple)
-        onOpenChange(false)
-        toast.success(isEdit ? t('engineering.nipples.toasts.updateSuccess') : t('engineering.nipples.toasts.saveSuccess'))
+  const handleSave = () => {
+    if (!formData.name) {
+      toast.error('请填写条帽名称')
+      return
     }
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-xl rounded-[32px] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] md:max-h-[85vh]'>
-                <div className='absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent pointer-events-none' />
-                
-                <DialogHeader className='p-6 md:p-8 pb-0 shrink-0 relative'>
-                    <DialogTitle className='text-base md:text-lg font-black italic uppercase tracking-tight'>
-                        {isEdit ? t('engineering.nipples.dialog.editTitle') : t('engineering.nipples.dialog.createTitle')}
-                    </DialogTitle>
-                    <DialogDescription className='text-[9px] md:text-[10px] font-medium uppercase tracking-widest opacity-60'>
-                        {t('engineering.nipples.dialog.description')}
-                    </DialogDescription>
-                </DialogHeader>
+    if (isEdit && currentRow) {
+      const delta = tracker.commit()
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      onSave({ 
+        data: formData, 
+        isPatch: true, 
+        delta, 
+        version: currentRow.version 
+      })
+    } else {
+      onSave({ data: formData, isPatch: false })
+    }
+  }
 
-                <div className='flex-1 overflow-y-auto px-6 md:px-8 py-4 custom-scrollbar relative'>
-                    <Form {...form}>
-                        <form id='nipple-form' onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-6'>
-                            <FormField
-                                control={form.control}
-                                name='name'
-                                render={({ field }) => (
-                                    <FormItem className='space-y-2'>
-                                        <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.nipples.form.name')}</FormLabel>
-                                        <FormControl><Input placeholder={t('engineering.nipples.placeholders.name')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+  return (
+    <ActionDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(
+        <>
+          <div className='p-2 bg-orange-500/10 rounded-xl'>
+            <Nut className='size-5 text-orange-500' />
+          </div>
+          {isEdit ? '编辑条帽参数' : '建立条帽基准'}
+        </>
+      )}
+      description="COMPONENT_MASTER_NIPPLE / 定义条帽长度、材质与颜色特征，确保装配兼容性。"
+      contentClassName={shellClasses.content}
+      headerClassName={shellClasses.header}
+      bodyClassName={shellClasses.body}
+      footerClassName={shellClasses.footer}
+      titleClassName={shellClasses.title}
+      descriptionClassName={shellClasses.description}
+      footer={(
+        <>
+          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
+            <span className='inline-block size-1.5 rounded-full bg-orange-500 animate-pulse' />
+            Sync_to_BOM_Engine
+          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => onOpenChange(false)} 
+              className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+            >
+              取消 / CANCEL
+            </Button>
+            <Button 
+              disabled={isLoading || (isEdit && !isDirty())}
+              onClick={handleSave} 
+              className="bg-orange-600 hover:bg-orange-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-orange-600/20 active:scale-95 transition-all gap-2"
+            >
+              {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+              同步存档 / SYNC_ARCHIVE
+            </Button>
+          </div>
+        </>
+      )}
+    >
+      <div className='absolute inset-0 bg-linear-to-br from-orange-500/5 via-transparent pointer-events-none' />
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='brand'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.nipples.form.brand')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.nipples.placeholders.brand')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='material'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.nipples.form.material')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.nipples.placeholders.material')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+      <div className='grid gap-8 relative'>
+        {/* 核心标识组 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Tag className='size-3' /> 条帽名称 / NIPPLE_NAME
+            </Label>
+            <Input
+              placeholder='例如: Brass-12mm-Black'
+              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-orange-500/20 px-5 shadow-inner'
+              value={formData.name}
+              onChange={(e) => { formData.name = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Hash className='size-3' /> 系统编码 / INTERNAL_ID
+            </Label>
+            <Input
+              readOnly
+              className='h-12 font-mono font-bold text-xs bg-muted/20 border-none rounded-2xl px-5 opacity-60 cursor-not-allowed'
+              value={formData.id}
+            />
+          </div>
+        </div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='length'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.nipples.form.length')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.nipples.placeholders.length')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='color'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.nipples.form.color')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.nipples.placeholders.color')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+        {/* 品牌与材质 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>品牌 / BRAND</Label>
+            <Input
+              placeholder='输入品牌名称'
+              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              value={formData.brand}
+              onChange={(e) => { formData.brand = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>材质 / MATERIAL</Label>
+            <Input
+              placeholder='例如: Brass / Aluminum'
+              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              value={formData.material}
+              onChange={(e) => { formData.material = e.target.value }}
+            />
+          </div>
+        </div>
 
-                            <div className='bg-orange-500/5 p-5 md:p-6 rounded-[24px] border border-dashed border-orange-500/20'>
-                                <FormField
-                                    control={form.control}
-                                    name='fileUrl'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[9px] font-black uppercase tracking-widest text-orange-600/60'>{t('engineering.nipples.form.attachment')}</FormLabel>
-                                            <FormControl>
-                                                <FileUploader 
-                                                    value={field.value} 
-                                                    accept='image/*'
-                                                    onChange={(url, ext) => {
-                                                        field.onChange(url)
-                                                        if (ext) form.setValue('fileExtension', ext)
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </form>
-                    </Form>
-                </div>
+        {/* 规格参数 */}
+        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
+          <div className='flex items-center justify-between'>
+            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-orange-600/70 flex items-center gap-2'>
+              <Layers className='size-3' /> 规格定义 / SPECIFICATION
+            </p>
+            <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
+          </div>
 
-                <DialogFooter className='p-6 md:p-8 pt-4 shrink-0 flex flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 relative'>
-                    <Button variant='ghost' onClick={() => onOpenChange(false)} className='flex-1 md:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest opacity-60'>取消</Button>
-                    <Button type='submit' form='nipple-form' className='flex-2 md:flex-none rounded-full h-11 px-12 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-orange-600/20 bg-orange-600 hover:bg-orange-700 text-white'>{t('engineering.nipples.form.submit')}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+          <div className='grid grid-cols-2 gap-6'>
+            <div className='space-y-2'>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>长度 / LENGTH (MM)</Label>
+              <Input
+                placeholder='例如: 12 / 14 / 16'
+                className='h-12 font-mono font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
+                value={formData.length}
+                onChange={(e) => { formData.length = e.target.value }}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>颜色 / COLOR</Label>
+              <Input
+                placeholder='例如: Black / Silver'
+                className='h-12 font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
+                value={formData.color}
+                onChange={(e) => { formData.color = e.target.value }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 附件上传 */}
+        <div className='bg-orange-500/5 p-6 rounded-[32px] border border-dashed border-orange-500/20 space-y-3'>
+          <Label className='text-[10px] font-black uppercase tracking-widest text-orange-600/60 flex items-center gap-2'>
+            <Info className='size-3' /> 附件存档 / DOCUMENTATION
+          </Label>
+          <FileUploader 
+            value={formData.fileUrl} 
+            accept='image/*'
+            onChange={(url, ext) => {
+              formData.fileUrl = url
+              if (ext) formData.fileExtension = ext
+            }}
+          />
+        </div>
+      </div>
+    </ActionDialogShell>
+  )
 }

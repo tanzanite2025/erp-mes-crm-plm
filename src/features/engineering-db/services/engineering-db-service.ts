@@ -16,7 +16,7 @@ export const engineeringDBService = {
         changeOrderNo: s.changeOrderNo,
         siteCode: s.siteCode,
         isDefaultSite: s.isDefaultSite,
-        _v: s._v,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => technicalSpecSchema.safeParse(item).success)
     } catch (e) {
@@ -35,7 +35,7 @@ export const engineeringDBService = {
       code: safeCode,
       type: 'TECH_SPEC',
       active: true,
-      revisionNo: item.revisionNo || item.version || 'V1.0',
+      revisionNo: item.revisionNo || 'V1.0',
       effectiveFrom: item.effectiveFrom,
       effectiveTo: item.effectiveTo,
       changeType: item.changeType,
@@ -43,7 +43,7 @@ export const engineeringDBService = {
       siteCode: item.siteCode,
       isDefaultSite: item.isDefaultSite,
       specData: item,
-      _v: item._v || 1,
+      _v: item.version || 1,
     }
 
     const saved = await engineeringSpecService.saveSpec(spec)
@@ -57,11 +57,19 @@ export const engineeringDBService = {
       changeOrderNo: saved.changeOrderNo,
       siteCode: saved.siteCode,
       isDefaultSite: saved.isDefaultSite,
-      _v: saved._v,
+      version: saved._v,
       createdAt: saved.createdAt || item.createdAt || new Date().toISOString(),
     }
 
     return normalized
+  },
+
+  patchSpec: async (id: string, delta: any, version: number) => {
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`specData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
 
   deleteSpec: async (id: string): Promise<void> => {
@@ -69,8 +77,6 @@ export const engineeringDBService = {
   },
 
   saveSpecs: async (data: TechnicalSpec[]) => {
-    // 兼容旧调用：保留方法签名，但仅保存首条。
-    // 新代码请优先使用 saveSpec。
     if (data.length === 0) return;
     await engineeringDBService.saveSpec(data[0]);
   },
@@ -82,6 +88,7 @@ export const engineeringDBService = {
       return raw.map(s => ({
         ...s.drillingData,
         id: s.id,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => drillingPlanSchema.safeParse(item).success)
     } catch (e) {
@@ -101,9 +108,17 @@ export const engineeringDBService = {
       type: 'DRILLING_PLAN',
       active: true,
       drillingData: item,
-      _v: 1
+      _v: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
+  },
+
+  patchDrilling: async (id: string, delta: any, version: number) => {
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`drillingData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
 
   // Labeling (贴标方案)
@@ -113,6 +128,7 @@ export const engineeringDBService = {
       return raw.map(s => ({
         ...s.labelingData,
         id: s.id,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => labelingDraftSchema.safeParse(item).success)
     } catch (e) {
@@ -132,9 +148,17 @@ export const engineeringDBService = {
       type: 'LABELING_DRAFT',
       active: true,
       labelingData: item,
-      _v: 1
+      _v: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
+  },
+
+  patchLabeling: async (id: string, delta: any, version: number) => {
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`labelingData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
 
   // Spoke Length (辐条长度)
@@ -144,6 +168,7 @@ export const engineeringDBService = {
       return raw.map(s => ({
         ...s.spokeLengthData,
         id: s.id,
+        version: s._v,
         createdAt: s.createdAt || new Date().toISOString()
       })).filter(item => spokeLengthSchema.safeParse(item).success)
     } catch (e) {
@@ -163,9 +188,17 @@ export const engineeringDBService = {
       type: 'SPOKE_LENGTH',
       active: true,
       spokeLengthData: item,
-      _v: 1
+      _v: item.version || 1
     }
     await engineeringSpecService.saveSpec(spec);
+  },
+
+  patchSpokeLength: async (id: string, delta: any, version: number) => {
+    const mappedDelta: any = {}
+    Object.entries(delta).forEach(([path, value]) => {
+      mappedDelta[`spokeLengthData.${path}`] = value
+    })
+    await engineeringSpecService.patchSpec(id, mappedDelta, version)
   },
   
   // 获取文件 (已迁移云端预览，本地 Blob 仅作兼容检查)

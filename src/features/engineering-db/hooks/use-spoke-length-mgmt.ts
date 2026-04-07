@@ -95,15 +95,30 @@ export function useSpokeLengthMgmt() {
         }
     }
 
-    const handleFormSubmit = async (formData: SpokeLength, currentRow?: SpokeLength) => {
-        let newData: SpokeLength[]
-        if (currentRow) {
-            newData = data.map(p => p.id === formData.id ? formData : p)
+    const handleSave = async (params: { 
+        data: SpokeLength; 
+        isPatch: boolean; 
+        delta?: any; 
+        version?: number 
+    }) => {
+        const { data: formData, isPatch, delta, version } = params
+        
+        // 更新本地状态
+        setData(prev => {
+            const exists = prev.find(p => p.id === formData.id)
+            if (exists) {
+                return prev.map(p => p.id === formData.id ? formData : p)
+            }
+            return [formData, ...prev]
+        })
+
+        if (isPatch && delta) {
+            await engineeringDBService.patchSpokeLength(formData.id, delta, version!)
         } else {
-            newData = [formData, ...data]
+            // 注意：这里由于 service 原有设计限制，包装成数组传递
+            await engineeringDBService.saveSpokeLength([formData])
         }
-        setData(newData)
-        await engineeringDBService.saveSpokeLength(newData)
+        
         window.dispatchEvent(new CustomEvent('xdfc_spoke_lengths_data_updated'))
     }
 
@@ -117,7 +132,7 @@ export function useSpokeLengthMgmt() {
         hubMap,
         nippleMap,
         handleDelete,
-        handleFormSubmit,
+        handleSave,
         refresh: loadAllData
     }
 }

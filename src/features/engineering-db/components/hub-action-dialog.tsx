@@ -1,214 +1,241 @@
 'use client'
 
-import { useEffect } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useMemo } from 'react'
+import { Box, Hash, Tag, Info, Save, Cpu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { FileUploader } from '@/components/file-uploader'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { hubSchema, type Hub } from '../data/hub-schema'
-
-type HubForm = z.infer<typeof hubSchema>
+import { Hub } from '../data/hub-schema'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { toast } from 'sonner'
 
 interface HubActionDialogProps {
-    currentRow?: Hub
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    onSubmit: (data: Hub) => void
+  currentRow?: Hub | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (params: { 
+    data: Hub; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void
+  isLoading?: boolean
+}
+
+const DEFAULT_HUB: Partial<Hub> = {
+  name: '',
+  brand: '',
+  model: '',
+  holeCount: '',
+  pcdLeft: '',
+  pcdRight: '',
+  flangeLeft: '',
+  flangeRight: '',
+  fileUrl: '',
+  fileExtension: '',
+  version: 1,
 }
 
 export function HubActionDialog({
-    currentRow,
-    open,
-    onOpenChange,
-    onSubmit,
+  currentRow,
+  open,
+  onOpenChange,
+  onSave,
+  isLoading,
 }: HubActionDialogProps) {
-    const { t } = useLanguage()
-    const isEdit = !!currentRow
+  const { t } = useLanguage()
+  const shellClasses = buildActionDialogShellClasses({
+    content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
+    header: 'p-8 pb-4 border-none bg-muted/5',
+    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
+    body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
+    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+  })
 
-    const form = useForm<HubForm>({
-        resolver: zodResolver(hubSchema) as any,
-        defaultValues: {
-            id: '',
-            name: '',
-            brand: '',
-            model: '',
-            holeCount: '',
-            pcdLeft: '',
-            pcdRight: '',
-            flangeLeft: '',
-            flangeRight: '',
-            fileUrl: '',
-            fileExtension: '',
-            createdAt: new Date().toISOString(),
-        },
-    })
+  const isEdit = !!currentRow
+  const initialFormData = useMemo(() => {
+    if (currentRow) return currentRow
+    return { 
+      ...DEFAULT_HUB, 
+      id: `HUB-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      createdAt: new Date().toISOString() 
+    } as Hub
+  }, [currentRow, open])
 
-    useEffect(() => {
-        if (open) {
-            if (isEdit && currentRow) {
-                form.reset(currentRow)
-            } else {
-                form.reset({
-                    id: `HUB-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-                    name: '',
-                    brand: '',
-                    model: '',
-                    holeCount: '',
-                    pcdLeft: '',
-                    pcdRight: '',
-                    flangeLeft: '',
-                    flangeRight: '',
-                    fileUrl: '',
-                    fileExtension: '',
-                    createdAt: new Date().toISOString(),
-                })
-            }
-        }
-    }, [currentRow, open, isEdit, form])
+  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
-    const handleFormSubmit = (values: HubForm) => {
-        onSubmit(values as Hub)
-        onOpenChange(false)
-        toast.success(isEdit ? t('engineering.hubs.toasts.updateSuccess') : t('engineering.hubs.toasts.saveSuccess'))
+  const handleSave = () => {
+    if (!formData.name) {
+      toast.error('请填写花鼓名称')
+      return
     }
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-2xl rounded-[32px] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] md:max-h-[85vh]'>
-                <div className='absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent pointer-events-none' />
-                
-                <DialogHeader className='p-6 md:p-8 pb-0 shrink-0 relative'>
-                    <DialogTitle className='text-base md:text-lg font-black italic uppercase tracking-tight'>
-                        {isEdit ? t('engineering.hubs.dialog.editTitle') : t('engineering.hubs.dialog.createTitle')}
-                    </DialogTitle>
-                    <DialogDescription className='text-[9px] md:text-[10px] font-medium uppercase tracking-widest opacity-60'>
-                        {t('engineering.hubs.dialog.description')}
-                    </DialogDescription>
-                </DialogHeader>
+    if (isEdit && currentRow) {
+      const delta = tracker.commit()
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      onSave({ 
+        data: formData, 
+        isPatch: true, 
+        delta, 
+        version: currentRow.version 
+      })
+    } else {
+      onSave({ data: formData, isPatch: false })
+    }
+  }
 
-                <div className='flex-1 overflow-y-auto px-6 md:px-8 py-4 custom-scrollbar relative'>
-                    <Form {...form}>
-                        <form id='hub-form' onSubmit={form.handleSubmit(handleFormSubmit)} className='space-y-6'>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='name'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.hubs.form.name')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.hubs.placeholders.name')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='brand'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.hubs.form.brand')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.hubs.placeholders.brand')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+  return (
+    <ActionDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(
+        <>
+          <div className='p-2 bg-indigo-500/10 rounded-xl'>
+            <Box className='size-5 text-indigo-500' />
+          </div>
+          {isEdit ? '编辑花鼓参数' : '建立花鼓基准'}
+        </>
+      )}
+      description="COMPONENT_MASTER_HUB / 定义花鼓核心几何特征，确保辐条长度计算精度。"
+      contentClassName={shellClasses.content}
+      headerClassName={shellClasses.header}
+      bodyClassName={shellClasses.body}
+      footerClassName={shellClasses.footer}
+      titleClassName={shellClasses.title}
+      descriptionClassName={shellClasses.description}
+      footer={(
+        <>
+          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
+            <span className='inline-block size-1.5 rounded-full bg-indigo-500 animate-pulse' />
+            Sync_to_Geometry_Engine
+          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => onOpenChange(false)} 
+              className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+            >
+              取消 / CANCEL
+            </Button>
+            <Button 
+              disabled={isLoading || (isEdit && !isDirty())}
+              onClick={handleSave} 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-indigo-600/20 active:scale-95 transition-all gap-2"
+            >
+              {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+              同步存档 / SYNC_ARCHIVE
+            </Button>
+          </div>
+        </>
+      )}
+    >
+      <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='model'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.hubs.form.model')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.hubs.placeholders.model')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='holeCount'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>{t('engineering.hubs.form.holes')}</FormLabel>
-                                            <FormControl><Input placeholder={t('engineering.hubs.placeholders.holes')} className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner' {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+      <div className='grid gap-8 relative'>
+        {/* 核心标识组 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Tag className='size-3' /> 花鼓名称 / HUB_NAME
+            </Label>
+            <Input
+              placeholder='例如: SHIMANO-M8100'
+              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
+              value={formData.name}
+              onChange={(e) => { formData.name = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Hash className='size-3' /> 系统编码 / INTERNAL_ID
+            </Label>
+            <Input
+              readOnly
+              className='h-12 font-mono font-bold text-xs bg-muted/20 border-none rounded-2xl px-5 opacity-60 cursor-not-allowed'
+              value={formData.id}
+            />
+          </div>
+        </div>
 
-                            {/* 核心几何数值 */}
-                            <div className='bg-muted/5 p-6 rounded-[28px] border border-dashed border-muted-foreground/10 space-y-4'>
-                                <p className='text-[9px] font-black uppercase tracking-widest text-indigo-600/60 mb-2'>{t('engineering.hubs.form.geometryTitle')}</p>
-                                <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-                                    <FormField control={form.control} name='pcdLeft' render={({ field }) => (
-                                        <FormItem><FormLabel className='text-[9px] font-bold'>{t('engineering.hubs.form.pcdLeft')}</FormLabel><FormControl><Input className='h-10 rounded-xl bg-background border-none shadow-sm' {...field} /></FormControl></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name='pcdRight' render={({ field }) => (
-                                        <FormItem><FormLabel className='text-[9px] font-bold'>{t('engineering.hubs.form.pcdRight')}</FormLabel><FormControl><Input className='h-10 rounded-xl bg-background border-none shadow-sm' {...field} /></FormControl></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name='flangeLeft' render={({ field }) => (
-                                        <FormItem><FormLabel className='text-[9px] font-bold'>{t('engineering.hubs.form.flangeLeft')}</FormLabel><FormControl><Input className='h-10 rounded-xl bg-background border-none shadow-sm' {...field} /></FormControl></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name='flangeRight' render={({ field }) => (
-                                        <FormItem><FormLabel className='text-[9px] font-bold'>{t('engineering.hubs.form.flangeRight')}</FormLabel><FormControl><Input className='h-10 rounded-xl bg-background border-none shadow-sm' {...field} /></FormControl></FormItem>
-                                    )} />
-                                </div>
-                            </div>
+        {/* 品牌与型号 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>品牌 / BRAND</Label>
+            <Input
+              placeholder='输入品牌名称'
+              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              value={formData.brand}
+              onChange={(e) => { formData.brand = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>型号 / MODEL</Label>
+            <Input
+              placeholder='输入型号编码'
+              className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
+              value={formData.model}
+              onChange={(e) => { formData.model = e.target.value }}
+            />
+          </div>
+        </div>
 
-                            <div className='bg-indigo-500/5 p-5 md:p-6 rounded-[24px] border border-dashed border-indigo-500/20'>
-                                <FormField
-                                    control={form.control}
-                                    name='fileUrl'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[9px] font-black uppercase tracking-widest text-indigo-600/60'>{t('engineering.hubs.form.attachment')}</FormLabel>
-                                            <FormControl>
-                                                <FileUploader 
-                                                    value={field.value} 
-                                                    accept='image/*,.pdf'
-                                                    onChange={(url, ext) => {
-                                                        field.onChange(url)
-                                                        if (ext) form.setValue('fileExtension', ext)
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </form>
-                    </Form>
-                </div>
+        {/* 核心几何数值 */}
+        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
+          <div className='flex items-center justify-between'>
+            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600/70 flex items-center gap-2'>
+              <Cpu className='size-3' /> 几何计算参数 / GEOMETRY_PROPERTIES
+            </p>
+            <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
+            <span className='text-[8px] font-mono text-muted-foreground'>(UNIT: MM)</span>
+          </div>
 
-                <DialogFooter className='p-6 md:p-8 pt-4 shrink-0 flex flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 relative'>
-                    <Button variant='ghost' onClick={() => onOpenChange(false)} className='flex-1 md:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest opacity-60'>{t('engineering.changeOrders.actions.cancel')}</Button>
-                    <Button type='submit' form='hub-form' className='flex-2 md:flex-none rounded-full h-11 px-12 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20 bg-indigo-600 hover:bg-indigo-700 text-white'>{t('engineering.hubs.form.submit')}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+          <div className='grid grid-cols-2 lg:grid-cols-5 gap-4'>
+            <div className='space-y-2'>
+              <Label className='text-[9px] font-bold opacity-60'>孔数 / HOLES</Label>
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.holeCount} onChange={(e) => { formData.holeCount = e.target.value }} />
+            </div>
+            <div className='space-y-2 text-indigo-600'>
+              <Label className='text-[9px] font-bold'>PCD_LEFT</Label>
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdLeft} onChange={(e) => { formData.pcdLeft = e.target.value }} />
+            </div>
+            <div className='space-y-2 text-indigo-600'>
+              <Label className='text-[9px] font-bold'>PCD_RIGHT</Label>
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdRight} onChange={(e) => { formData.pcdRight = e.target.value }} />
+            </div>
+            <div className='space-y-2 text-amber-600'>
+              <Label className='text-[9px] font-bold'>FL_LEFT</Label>
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeLeft} onChange={(e) => { formData.flangeLeft = e.target.value }} />
+            </div>
+            <div className='space-y-2 text-amber-600'>
+              <Label className='text-[9px] font-bold'>FL_RIGHT</Label>
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeRight} onChange={(e) => { formData.flangeRight = e.target.value }} />
+            </div>
+          </div>
+        </div>
+
+        {/* 附件上传 */}
+        <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
+          <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
+            <Info className='size-3' /> 附件存档 / DOCUMENTATION
+          </Label>
+          <FileUploader 
+            value={formData.fileUrl} 
+            accept='image/*,.pdf'
+            onChange={(url, ext) => {
+              formData.fileUrl = url
+              if (ext) formData.fileExtension = ext
+            }}
+          />
+        </div>
+      </div>
+    </ActionDialogShell>
+  )
 }

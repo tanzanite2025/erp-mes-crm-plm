@@ -9,6 +9,7 @@ export const nippleSchema = z.object({
   color: z.string().optional(),
   fileUrl: z.string().optional(),
   fileExtension: z.string().optional(),
+  version: z.number().default(1),
   createdAt: z.string(),
 })
 

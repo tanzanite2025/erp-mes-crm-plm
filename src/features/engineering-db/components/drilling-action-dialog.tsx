@@ -1,249 +1,232 @@
 'use client'
 
-import { useEffect } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useMemo } from 'react'
+import { CircleDot, Hash, Tag, Info, Save, Grid3X3, FileType } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { FileUploader } from '@/components/file-uploader'
-import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
-import { drillingPlanSchema, type DrillingPlan } from '../data/schema'
+import { type DrillingPlan } from '../data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
-
-type DrillingForm = z.infer<typeof drillingPlanSchema>
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { toast } from 'sonner'
 
 interface DrillingActionDialogProps {
-    currentRow?: DrillingPlan
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    onSubmit: (data: DrillingPlan) => void
+  currentRow?: DrillingPlan | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSave: (params: { 
+    data: DrillingPlan; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void
+  isLoading?: boolean
+}
+
+const DEFAULT_DRILLING: Partial<DrillingPlan> = {
+  name: '',
+  productId: '',
+  lacingPattern: '',
+  standardHoles: '',
+  fileUrl: '',
+  fileExtension: 'pdf',
+  version: 1,
 }
 
 export function DrillingActionDialog({
-    currentRow,
-    open,
-    onOpenChange,
-    onSubmit,
+  currentRow,
+  open,
+  onOpenChange,
+  onSave,
+  isLoading,
 }: DrillingActionDialogProps) {
-    const { t } = useLanguage()
-    const isEdit = !!currentRow
-    const { data: products = [] } = useGetProducts()
+  const { data: products = [] } = useGetProducts()
+  
+  const shellClasses = buildActionDialogShellClasses({
+    content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
+    header: 'p-8 pb-4 border-none bg-muted/5',
+    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
+    body: 'p-8 pt-4 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar',
+    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+  })
 
-    const form = useForm<DrillingForm>({
-        resolver: zodResolver(drillingPlanSchema) as any,
-        defaultValues: {
-            id: '',
-            name: '',
-            productId: '',
-            lacingPattern: '',
-            standardHoles: '',
-            fileUrl: '',
-            fileExtension: 'pdf',
-            createdAt: new Date().toISOString(),
-        },
-    })
+  const isEdit = !!currentRow
+  const initialFormData = useMemo(() => {
+    if (currentRow) return currentRow
+    return { 
+      ...DEFAULT_DRILLING, 
+      id: `DRL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      createdAt: new Date().toISOString() 
+    } as DrillingPlan
+  }, [currentRow, open])
 
-    useEffect(() => {
-        if (open) {
-            if (isEdit && currentRow) {
-                form.reset(currentRow)
-            } else {
-                form.reset({
-                    id: '',
-                    name: '',
-                    productId: '',
-                    lacingPattern: '',
-                    standardHoles: '',
-                    fileUrl: '',
-                    fileExtension: 'pdf',
-                    createdAt: new Date().toISOString(),
-                })
-            }
-        }
-    }, [currentRow, open, isEdit, form])
+  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
-    const handleFormSubmit = (values: DrillingForm) => {
-        onSubmit(values as DrillingPlan)
-        onOpenChange(false)
-        toast.success(isEdit ? t('engineering.drilling.toasts.updateSuccess') : t('engineering.drilling.toasts.saveSuccess'))
+  const handleSave = () => {
+    if (!formData.name || !formData.productId) {
+      toast.error('请填写规范名称与关联产品')
+      return
     }
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-xl rounded-[32px] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] md:max-h-[85vh]'>
-                <div className='absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent pointer-events-none' />
-                
-                {/* Fixed Header */}
-                <DialogHeader className='p-6 md:p-8 pb-0 shrink-0 relative'>
-                    <DialogTitle className='text-base md:text-lg font-black italic uppercase tracking-tight'>
-                        {isEdit ? t('engineering.drilling.dialog.editTitle') : t('engineering.drilling.dialog.createTitle')}
-                    </DialogTitle>
-                    <DialogDescription className='text-[9px] md:text-[10px] font-medium uppercase tracking-widest opacity-60'>
-                        {t('engineering.drilling.dialog.description')}
-                    </DialogDescription>
-                </DialogHeader>
+    if (isEdit && currentRow) {
+      const delta = tracker.commit()
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      onSave({ 
+        data: formData, 
+        isPatch: true, 
+        delta, 
+        version: currentRow.version 
+      })
+    } else {
+      onSave({ data: formData, isPatch: false })
+    }
+  }
 
-                {/* Scrollable Form Content */}
-                <div className='flex-1 overflow-y-auto px-6 md:px-8 py-4 custom-scrollbar relative'>
-                    <Form {...form}>
-                        <form
-                            id='drilling-form'
-                            onSubmit={form.handleSubmit(handleFormSubmit)}
-                            className='space-y-6'
-                        >
-                            <FormField
-                                control={form.control}
-                                name='name'
-                                render={({ field }) => (
-                                    <FormItem className='space-y-2'>
-                                        <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                            {t('engineering.drilling.form.name')}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                placeholder={t('engineering.drilling.placeholders.name')} 
-                                                className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm focus-visible:ring-1 focus-visible:ring-primary/20 shadow-inner'
-                                                {...field} 
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            
-                            <FormField
-                                control={form.control}
-                                name='productId'
-                                render={({ field }) => (
-                                    <FormItem className='space-y-2'>
-                                        <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                            {t('engineering.drilling.form.product')}
-                                        </FormLabel>
-                                        <SelectDropdown
-                                            defaultValue={field.value}
-                                            onValueChange={field.onChange}
-                                            items={(products || []).map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
-                                            placeholder={t('engineering.drilling.placeholders.product')}
-                                            className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner'
-                                        />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+  return (
+    <ActionDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(
+        <>
+          <div className='p-2 bg-indigo-500/10 rounded-xl'>
+            <CircleDot className='size-5 text-indigo-500' />
+          </div>
+          {isEdit ? '编辑钻孔方案' : '建立编织准则'}
+        </>
+      )}
+      description="COMPONENT_MASTER_DRILLING / 定义轮圈钻孔偏位、编织交叉模式及孔数标准。"
+      contentClassName={shellClasses.content}
+      headerClassName={shellClasses.header}
+      bodyClassName={shellClasses.body}
+      footerClassName={shellClasses.footer}
+      titleClassName={shellClasses.title}
+      descriptionClassName={shellClasses.description}
+      footer={(
+        <>
+          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
+            <span className='inline-block size-1.5 rounded-full bg-indigo-500 animate-pulse' />
+            Sync_to_Manufacturing_Module
+          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => onOpenChange(false)} 
+              className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+            >
+              取消 / CANCEL
+            </Button>
+            <Button 
+              disabled={isLoading || (isEdit && !isDirty())}
+              onClick={handleSave} 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-indigo-600/20 active:scale-95 transition-all gap-2"
+            >
+              {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+              同步存档 / SYNC_ARCHIVE
+            </Button>
+          </div>
+        </>
+      )}
+    >
+      <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormField
-                                    control={form.control}
-                                    name='lacingPattern'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                                {t('engineering.drilling.form.lacing')}
-                                            </FormLabel>
-                                            <SelectDropdown
-                                                defaultValue={field.value}
-                                                onValueChange={field.onChange}
-                                                items={dictionaryService.getOptions('LACING_PATTERN')}
-                                                placeholder={t('engineering.drilling.placeholders.lacing')}
-                                                className='h-12 rounded-2xl border-none bg-muted/50 px-4 font-bold text-sm shadow-inner'
-                                            />
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='standardHoles'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2'>
-                                            <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1'>
-                                                {t('engineering.drilling.form.holes')}
-                                            </FormLabel>
-                                            <SelectDropdown
-                                                defaultValue={field.value}
-                                                onValueChange={field.onChange}
-                                                items={dictionaryService.getOptions('HOLE_COUNT')}
-                                                placeholder={t('engineering.drilling.placeholders.holes')}
-                                                className='h-12 rounded-2xl border-none bg-muted-foreground/5 px-4 font-bold text-sm shadow-inner'
-                                            />
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            
-                            <div className='bg-indigo-500/5 p-5 md:p-6 rounded-[24px] border border-dashed border-indigo-500/20 space-y-3 relative overflow-hidden'>
-                                <div className='absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent pointer-events-none' />
-                                <FormField
-                                    control={form.control}
-                                    name='fileUrl'
-                                    render={({ field }) => (
-                                        <FormItem className='space-y-2 pb-2'>
-                                            <FormLabel className='text-[9px] font-black uppercase tracking-widest text-indigo-600/60'>
-                                                {t('engineering.drilling.form.attachment')}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <FileUploader 
-                                                    value={field.value} 
-                                                    onChange={(url, ext) => {
-                                                        field.onChange(url)
-                                                        if (ext) {
-                                                            const supported = ['pdf', 'dwg', 'dxf', 'stp', 'step']
-                                                            if (supported.includes(ext)) {
-                                                                form.setValue('fileExtension', ext)
-                                                            }
-                                                        }
-                                                    }}
-                                                    placeholder={t('engineering.drilling.placeholders.attachment')}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </form>
-                    </Form>
-                </div>
+      <div className='grid gap-8 relative'>
+        {/* 核心标识组 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Tag className='size-3' /> 方案名称 / PLAN_NAME
+            </Label>
+            <Input
+              placeholder='例如: 2X-Cross-Standard-32H'
+              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
+              value={formData.name}
+              onChange={(e) => { formData.name = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <FileType className='size-3' /> 关联成品 SKU / PRODUCT_REF
+            </Label>
+            <SelectDropdown
+              defaultValue={formData.productId}
+              onValueChange={(val) => { formData.productId = val }}
+              items={products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
+              placeholder='选择适配的产品'
+              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
+            />
+          </div>
+        </div>
 
-                {/* Fixed Footer */}
-                <DialogFooter className='p-6 md:p-8 pt-4 shrink-0 flex flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 relative'>
-                    <Button 
-                        variant='ghost' 
-                        onClick={() => onOpenChange(false)} 
-                        className='flex-1 md:flex-none rounded-full h-11 px-6 md:px-8 font-black text-[10px] uppercase tracking-widest opacity-60 hover:opacity-100 transition-all'
-                    >
-                        {t('engineering.changeOrders.actions.cancel')}
-                    </Button>
-                    <Button 
-                        type='submit' 
-                        form='drilling-form' 
-                        className='flex-2 md:flex-none rounded-full h-11 px-10 md:px-12 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20 bg-indigo-600 hover:bg-indigo-700 text-white'
-                    >
-                        {t('engineering.drilling.form.submit')}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+        {/* 技术规格组 */}
+        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
+          <div className='flex items-center justify-between'>
+            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600/70 flex items-center gap-2'>
+              <Grid3X3 className='size-3' /> 钻孔技术参数 / DRILLING_SPECS
+            </p>
+            <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
+          </div>
+
+          <div className='grid grid-cols-2 gap-6'>
+            <div className='space-y-2'>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>编织模式 / LACING_PATTERN</Label>
+              <SelectDropdown
+                defaultValue={formData.lacingPattern}
+                onValueChange={(val) => { formData.lacingPattern = val }}
+                items={dictionaryService.getOptions('LACING_PATTERN')}
+                placeholder='选择编织模式'
+                className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>标准孔数 / HOLE_COUNT</Label>
+              <SelectDropdown
+                defaultValue={formData.standardHoles}
+                onValueChange={(val) => { formData.standardHoles = val }}
+                items={dictionaryService.getOptions('HOLE_COUNT')}
+                placeholder='选择孔数'
+                className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 附件上传 */}
+        <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
+          <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
+            <Info className='size-3' /> 钻孔工程图纸 / ENGINEERING_DWG
+          </Label>
+          <FileUploader 
+            value={formData.fileUrl} 
+            accept='.pdf,.dwg,.dxf,.stp,.step'
+            onChange={(url, ext) => {
+              formData.fileUrl = url
+              if (ext) formData.fileExtension = ext
+            }}
+          />
+        </div>
+
+        <div className='grid grid-cols-2 gap-6 opacity-40 grayscale pointer-events-none'>
+           <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest'>系统编码 / INTERNAL_ID</Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id} />
+          </div>
+          <div className='space-y-2'>
+             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Hash className='size-3' /> 数据版本 / DATA_VERSION
+            </Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={`REV.${formData.version ?? 1}`} />
+          </div>
+        </div>
+      </div>
+    </ActionDialogShell>
+  )
 }
