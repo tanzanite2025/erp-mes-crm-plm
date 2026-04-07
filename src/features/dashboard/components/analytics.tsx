@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { SimpleBarList } from './common/simple-bar-list'
-import { useAssets } from '@/features/equipment-tooling/services/asset-service'
+import { useAssets } from '@/features/equipment-tooling/hooks/use-assets'
 import { useTraceStats } from '../hooks/use-trace-stats'
 import { Info, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'

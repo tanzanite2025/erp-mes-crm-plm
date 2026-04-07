@@ -1,5 +1,138 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：`asset-service.ts` facade/hook 最小拆层实施（2026-04-07）
+
+### 本轮目标
+本轮按已确认的拆层专项执行最小拆层：保留 `AssetService` 作为无状态 facade，将 `useAssets()` 抽离为独立 hook，不改页面业务语义与底层领域 service API。
+
+### 已执行变更
+更新：
+- `src/features/equipment-tooling/services/asset-service.ts`
+- `src/features/equipment-tooling/hooks/use-assets.ts`
+- `src/features/equipment-tooling/tabs/furnace-mgmt.tsx`
+- `src/features/equipment-tooling/tabs/mold-mgmt.tsx`
+- `src/features/equipment-tooling/hooks/use-dashboard-stats.ts`
+- `src/features/dashboard/components/system-events.tsx`
+- `src/features/dashboard/components/analytics.tsx`
+
+#### 1) `asset-service.ts` 收口为纯 facade
+- 移除文件内 `useAssets()` hook 实现
+- 保留 `AssetService` 的静态 facade 能力：
+  - 模具查询/命令
+  - 炉台查询/命令
+  - 借用记录查询/命令
+  - 遥测更新
+
+结果：
+- `asset-service.ts` 不再混合 React 状态与 UI 协调逻辑；
+- facade 职责边界更清晰。
+
+#### 2) 新建独立 hook：`hooks/use-assets.ts`
+- 将原 `useAssets()` 的以下职责迁移到独立 hook 文件：
+  - 本地状态管理
+  - 初始并行加载
+  - 事件监听与局部刷新
+  - 乐观更新与失败回滚
+- 使用 `createLogger('useAssets')` 替换新文件中的 `console.error`
+
+结果：
+- React 侧状态管理从 facade 文件中解耦；
+- hook 可以独立演进，不再与门面层强绑定。
+
+#### 3) 调用方引用切换
+将以下文件对 `useAssets` 的引用改为新 hook 文件：
+
+- `equipment-tooling/tabs/furnace-mgmt.tsx`
+- `equipment-tooling/tabs/mold-mgmt.tsx`
+- `equipment-tooling/hooks/use-dashboard-stats.ts`
+- `dashboard/components/system-events.tsx`
+- `dashboard/components/analytics.tsx`
+
+结果：
+- 所有 `useAssets()` 使用点均已指向新 hook 文件；
+- `AssetService` 的 facade 引用保持不变，降低联动风险。
+
+### 本轮说明
+- `analytics.tsx` 中原有 `as any` 提示为既有问题，本轮未扩散处理；
+- 现有 equipment-tooling / dashboard 页面业务行为保持不变，仅调整 hook 所在位置与职责边界。
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 `asset-service.ts` 的最小拆层：
+
+- `AssetService` 保留为无状态 facade；
+- `useAssets()` 已迁移为独立 hook；
+- 调用方已完成联动切换；
+- 在不扩散到底层 service 和页面重写的前提下，职责边界已明显收清。
+
+## P1：DTO 第二阶段第二批整改（`equipment-tooling/services`，2026-04-07）
+
+### 本轮目标
+本轮按第二阶段审批稿继续处理 `equipment-tooling/services` 中已明确的 DTO 缺口，仅收口响应校验与类型边界，不修改接口路径与业务状态流。
+
+本轮目标：
+
+- 为炉台、模具借用、模具资产主干读取链路补齐显式 DTO guard；
+- 去掉已确认链路中的裸 `any`；
+- 对 `mold-service.ts` 仅做最小类型收口，保持现有兼容返回形状不变。
+
+### 已执行变更
+更新：
+- `src/features/equipment-tooling/services/furnace-service.ts`
+- `src/features/equipment-tooling/services/mold-loan-service.ts`
+- `src/features/equipment-tooling/services/mold-service.ts`
+
+#### 1) `furnace-service.ts`
+- `getFurnaces()`：增加 `ensureArrayResponse<Furnace>(...)`
+
+结果：
+- 炉台列表读取不再依赖裸 `apiFetch` 返回值；
+- 与其他列表型 service 的 DTO guard 风格保持一致。
+
+#### 2) `mold-loan-service.ts`
+- `getLoans()`：增加 `ensureArrayResponse<MoldLoan>(...)`
+- `createBorrowRecord()`：移除 `apiFetch<any>`，明确返回 `MoldBorrowRecordResponse`，并增加 `ensureObjectResponse(...)`
+
+结果：
+- 模具借用记录列表具备明确数组响应边界；
+- 借入聚合接口不再直接返回裸 `any` 结果。
+
+#### 3) `mold-service.ts`
+- `getMoldsWithVersion()`：引入 `MoldListResponse`，在保持“数组或对象兼容分支”不变的前提下，收口对象路径的 DTO 类型边界
+- `getMoldById()`：增加 `ensureObjectResponse<Mold>(...)`
+- `isSnDuplicate()`：增加对象响应校验后再读取 `duplicate`
+- `checkLinkIntegrity()`：增加 `ensureObjectResponse(...)`
+
+结果：
+- 模具详情、重复检查、链路完整性检查的对象返回都具备显式 guard；
+- `getMoldsWithVersion()` 保留现有兼容形状，没有贸然重写为新 DTO 语义，降低了回归风险。
+
+### 本轮说明
+- `mold-service.ts` 中存在既有 `console` 语句 lint，本轮未处理，避免将 DTO 整改扩散为日志风格治理；
+- `archive-service.ts` 与 `asset-service.ts` 仍待后续函数级核对，不在本轮实施范围内。
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 DTO 第二阶段第二批的主干收口：
+
+- 炉台、模具借用、模具资产主链路的 DTO guard 更完整；
+- 去除了明确的裸 `any` 返回；
+- 保持了模具模块现有兼容返回语义，不做业务层重写。
+
 ## P1：DTO 第二阶段第一批整改（`basic-settings/services`，2026-04-07）
 
 ### 本轮目标

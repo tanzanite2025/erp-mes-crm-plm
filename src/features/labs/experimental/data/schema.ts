@@ -33,6 +33,7 @@ export const equipmentSchema = z.object({
     imageUrl: z.string().optional(),
     lastCalibratedAt: z.string().optional(),
     description: z.string().optional(),
+    version: z.number().default(1), // SDRTS 乐观锁
     createdAt: z.string(),
 })
 

@@ -1,5 +1,234 @@
 ﻿# implementation plan
 
+## 仓储报表异常专项（2026-04-07，待确认）
+
+### 一、当前目标
+本专项用于收口仓储报表当前异常链路的根因判断与后续验证顺序。
+
+本轮不直接改业务代码，只明确：
+
+1. 当前异常实际发生在哪条调用链；
+2. 哪些日志是主因，哪些只是伴随 warning；
+3. 后续应优先验证运行 bundle 与仓库代码是否一致；
+4. 如何避免把问题误修成补丁式 try/catch 或全局 API 魔改。
+
+### 二、已确认调用链
+
+#### 入口
+- `src/features/warehouse/hooks/use-report.ts`
+
+#### 主数据加载
+- `inventoryService.searchMasterData()`
+
+#### 下游依赖
+- `materialService.getMaterialOptions()`
+- `inventoryService.getAlertThresholds()`
+
+### 三、当前异常现象
+用户反馈的控制台信息主要有两类：
+
+1. `MaterialService.getMaterialOptions ... expected an object response`
+2. `InventoryService [MOCK_SERVICE] getAlertThresholds is returning empty initial object`
+
+两者同时出现，容易误导为同一根因，但当前只读分析显示它们不是同级别问题。
+
+### 四、根因判断
+
+#### 1) `MaterialService.getMaterialOptions` 报错更像旧 bundle 漂移
+当前仓库代码里，`src/features/material-archive/services/material-service.ts` 的 `getMaterialOptions()` 已经按数组响应校验收口。
+
+也就是说，当前源码语义应更接近：
+
+- 接受 `apiFetch` 解包后的数组结果
+- 使用数组 guard，而不是对象 guard
+
+但用户现场报错文案仍然是：
+
+- `expected an object response`
+
+这与当前仓库代码不一致，因此最合理的判断是：
+
+- 运行中的前端 bundle 仍是旧版本；
+- 或浏览器 / CDN / 部署缓存仍命中旧静态资源；
+- 或部署产物与当前本地仓库版本不一致。
+
+#### 2) `getAlertThresholds()` mock warning 不是主因
+`inventoryService.getAlertThresholds()` 当前确实是 mock，实现为返回空对象并打 warning。
+
+但它对应的是：
+
+- “阈值能力尚未接后端”的事实提醒
+
+而不是：
+
+- `MaterialService.getMaterialOptions` 契约错误的直接原因
+
+因此该 warning 更像伴随噪音，而非导致报表初始化失败的根因。
+
+### 五、后续验证顺序（待确认后执行）
+
+#### 第一步：验证运行 bundle 是否为最新产物
+优先检查：
+
+1. 重新构建前端；
+2. 确认部署的静态资源 hash 是否更新；
+3. 浏览器强制刷新 / 清缓存后复测仓储报表；
+4. 对照运行时 source map 或打包产物，确认 `getMaterialOptions()` 是否仍包含旧对象 guard 文案。
+
+#### 第二步：仅在运行产物已确认最新后，再判断是否仍有真实代码缺口
+如果最新 bundle 下仍报错，再进入下一轮代码级排查：
+
+1. 复核 `searchMasterData()` 的聚合返回结构；
+2. 复核仓储报表页面是否有旧调用方依赖过期 shape；
+3. 再判断 `getAlertThresholds()` 是否需要从 mock 升级为真实后端接口或显式空态协议。
+
+### 六、明确不做事项
+1. 不把本问题误修成“改全局 `apiFetch` 行为”；
+2. 不通过前端 try/catch 吞错来掩盖 bundle 漂移；
+3. 不把 `getAlertThresholds()` mock warning 当作主因处理；
+4. 不在未确认运行产物版本前贸然继续改 `material-service.ts`。
+
+### 七、建议实施方式
+若后续进入执行阶段，建议先做“验证类动作”而非改代码：
+
+1. 重建前端；
+2. 确认部署结果；
+3. 复测仓储报表；
+4. 仅在异常仍存在时再进入代码层修复。
+
+## `asset-service.ts` facade/hook 拆层专项（2026-04-07，待确认）
+
+### 一、当前目标
+本专项不是继续补 DTO guard，而是单独分析 `src/features/equipment-tooling/services/asset-service.ts` 是否需要从当前的 facade/hook 混合结构中拆层。
+
+本轮目标：
+
+1. 明确 `asset-service.ts` 当前承担的职责；
+2. 判断现状是否已经越过合理边界；
+3. 设计最小拆层路径；
+4. 保证后续实施时不扩散为 equipment-tooling 全模块重构。
+
+### 二、现状职责拆解
+当前 `asset-service.ts` 同时承担了三类职责：
+
+#### 1) 无状态 facade
+通过静态绑定导出：
+
+- `getMolds`
+- `getGroupNames`
+- `saveMolds`
+- `checkMoldCapacity`
+- `checkLinkIntegrity`
+- `getFurnaces`
+- `saveFurnaces`
+- `getLoans`
+- `lendMold`
+- `borrowMold`
+- `returnMold`
+
+这部分职责本质上是对底层领域 service 的统一门面封装。
+
+#### 2) React hook 状态管理
+`useAssets()` 内部负责：
+
+- `molds` / `furnaces` / `loans` 本地状态
+- `isLoading` 状态
+- 初始加载 `loadInitial()`
+- `loadMolds()` / `loadFurnaces()` / `loadLoans()`
+- `useEffect()` 事件监听与解绑
+
+这部分职责属于典型 UI/React 侧协调逻辑。
+
+#### 3) 乐观更新与回滚协调
+`useAssets()` 的 `actions` 内部还承担：
+
+- `updateMolds()`：乐观更新、失败回滚、patch/save 路由分流
+- `updateFurnaces()`：乐观更新、失败回滚、patch/save 路由分流
+- `setAssetStatus()`：状态乐观更新与失败还原
+
+这已经超出“简单 hook”范围，更接近 UI 侧状态协调器。
+
+### 三、是否需要拆层
+结论：**需要，但应采用最小拆层策略。**
+
+理由如下：
+
+1. 同一文件同时承载 facade + hook + 协调器，职责边界已经不清晰；
+2. 当前结构使得测试粒度不自然：
+   - facade 很难单独测试
+   - hook 很难在不触发领域逻辑的情况下独立验证
+3. 后续若继续抽离炉台模块或资产子域，该文件会成为高耦合节点；
+4. 当前 DTO guard 已大多下沉到底层 service，`asset-service.ts` 再继续承担同层职责收益不高，反而更适合拆成“门面层”和“React 组合层”。
+
+### 四、最小拆层方案
+
+#### 方案核心
+保留无状态 facade，拆出独立 hook。
+
+#### 拟拆分方向
+
+##### A. 保留 `asset-service.ts`
+仅保留无状态 facade 能力：
+
+- 聚合底层 `MoldService` / `FurnaceService` / `MoldLoanService`
+- 暴露统一查询与命令入口
+- 不再包含 React hook 与本地状态逻辑
+
+##### B. 新建独立 hook 文件
+建议新建类似：
+
+- `src/features/equipment-tooling/hooks/use-assets.ts`
+
+职责包括：
+
+- `molds` / `furnaces` / `loans` / `isLoading`
+- 初始加载与局部刷新
+- 事件监听与清理
+- 乐观更新与失败回滚
+
+##### C. 暂不新建更重的 service 抽象层
+本轮不建议继续引入：
+
+- `BaseAssetCoordinator`
+- `AssetRepository`
+- 通用 optimistic-update framework
+
+因为这会显著扩大改动面。
+
+### 五、拟实施顺序（待确认后执行）
+
+1. 新建 hook 文件，迁移 `useAssets()` 逻辑；
+2. 保持 `AssetService` 对外静态方法签名不变；
+3. 将当前引用 `useAssets` 的调用方切换到新 hook 文件；
+4. 回归验证 `molds` / `furnaces` / `loans` 加载、局部刷新、乐观更新与回滚行为；
+5. 若稳定，再考虑是否把 hook 内部的乐观更新 helper 继续拆小。
+
+### 六、风险点
+1. `useAssets()` 当前混合了事件监听与乐观更新，拆分时容易遗漏事件订阅；
+2. 若调用方直接从 `asset-service.ts` 同时 import `AssetService` 与 `useAssets`，需要同步修正引用；
+3. `setAssetStatus()`、`updateMolds()`、`updateFurnaces()` 的回滚语义不能退化；
+4. 本专项如果顺带动到底层 service，会显著放大回归面，因此必须严格收住。
+
+### 七、明确不做事项
+1. 不重写资产页面组件；
+2. 不改底层 `MoldService` / `FurnaceService` / `MoldLoanService` 的 API 语义；
+3. 不替换现有事件总线机制；
+4. 不将本次拆层扩散为 equipment-tooling 目录全面重构。
+
+### 八、验证要求
+若后续进入执行阶段，至少验证：
+
+```bash
+pnpm build
+```
+
+并人工验证：
+
+- 资产页面初始加载正常
+- 模具/炉台/借用记录局部刷新正常
+- 乐观更新失败时可正确回滚
+- 状态切换失败时本地状态可恢复
+
 ## DTO 第二阶段：`equipment-tooling/services` 与 `basic-settings/services`（2026-04-07，待确认）
 
 ### 一、当前目标
@@ -78,7 +307,43 @@
 3. 本阶段不重写 `mold-service.ts` 的业务语义，只收口 DTO guard；
 4. 本阶段不把目录内所有 service 强行统一为抽象基类。
 
-### 六、实施约束
+### 六、补充结论：`archive-service.ts` 与 `asset-service.ts`
+
+#### `archive-service.ts`
+函数级核对结果：
+
+- `getArchivedMolds()`
+  - 当前已使用 `ensureArrayResponse<Mold>(...)`
+  - 列表读取链路已具备明确数组响应校验
+- `archive()`
+  - 当前是命令型接口：提交归档命令后派发事件
+  - 不依赖返回对象 DTO，也不承担复杂响应结构解析
+
+结论：
+- 该文件当前不属于高优先级 DTO 缺口；
+- 若无新增后端返回对象契约需求，不建议为追求形式统一而额外改动。
+
+#### `asset-service.ts`
+函数级核对结果：
+
+- 当前文件不直接调用 `apiFetch`
+- 其职责主要是：
+  - 聚合 `MoldService` / `FurnaceService` / `MoldLoanService`
+  - 暴露 facade 能力
+  - 在 `useAssets()` 中做局部刷新、乐观更新与事件监听
+
+结论：
+- `asset-service.ts` 更接近 facade/hook 组合层，而非底层 DTO service；
+- 它的 DTO 边界主要继承自下游 service；
+- 当前不建议把它作为“补 response guard”的主战场。
+
+若后续继续治理本文件，应另立专项，聚焦：
+
+1. facade 是否过重；
+2. hook 与 service 是否需要拆层；
+3. 乐观更新与事件同步边界是否需要进一步收口。
+
+### 七、实施约束
 后续若进入执行阶段，必须遵守：
 
 1. 先改 `basic-settings/services`，再改 `equipment-tooling/services`；

@@ -5,13 +5,21 @@ import { useGetTeams, usePieceworkMutations } from './use-piecework'
 
 export function usePieceworkTeamAdapter(): TeamModuleAdapter {
   const { data: teams = [], isLoading } = useGetTeams()
-  const { saveTeamMutation, deleteTeamMutation } = usePieceworkMutations()
+  const { saveTeamMutation, patchTeamMutation, deleteTeamMutation } = usePieceworkMutations()
 
   const saveTeam = useCallback(
-    (data: Partial<TeamRecord> & { id?: string }) => {
-      saveTeamMutation.mutate(data as Partial<Team>)
+    ({ data, isPatch, delta, version }: { data: Partial<TeamRecord>; isPatch: boolean; delta?: any; version?: number }) => {
+      if (isPatch && delta && version !== undefined) {
+        patchTeamMutation.mutate({
+          id: data.id as string,
+          delta,
+          version
+        })
+      } else {
+        saveTeamMutation.mutate(data as Partial<Team>)
+      }
     },
-    [saveTeamMutation]
+    [saveTeamMutation, patchTeamMutation]
   )
 
   const deleteTeam = useCallback(

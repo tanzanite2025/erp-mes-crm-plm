@@ -17,6 +17,7 @@ export const teamSchema = z.object({
     operator: z.string().optional(),
     operateTime: z.string().optional(),
     remarks: z.string().optional(),
+    version: z.number().default(1),
 })
 
 export type Team = z.infer<typeof teamSchema>

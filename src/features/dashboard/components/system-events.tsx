@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { useState } from 'react'
-import { useAssets } from '@/features/equipment-tooling/services/asset-service'
+import { useAssets } from '@/features/equipment-tooling/hooks/use-assets'
 import { useLanguage } from '@/context/language-provider'
 
 export function SystemEvents({ className }: { className?: string }) {

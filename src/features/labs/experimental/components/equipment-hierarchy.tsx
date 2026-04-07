@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, Plus, Edit2, ChevronRight, Folder, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { EquipmentCategoryDeleteDialog } from './equipment-category-delete-dialog'
+import { useLabExperimentalEquipment } from '../hooks/use-lab-experimental'
+import { type Equipment } from '../data/schema'
+import { Fingerprint, Settings, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface EquipmentHierarchyProps {
     categories: EquipmentCategory[]
@@ -12,6 +16,8 @@ interface EquipmentHierarchyProps {
     onAddSubCategory: (parentId: string) => void
     onEditCategory: (cat: EquipmentCategory) => void
     onDeleteCategory: (id: string) => void
+    onAddEquipment: (categoryId: string) => void
+    onEditEquipment: (equip: Equipment) => void
 }
 
 /**
@@ -24,7 +30,10 @@ export function EquipmentHierarchy({
     onAddSubCategory,
     onEditCategory,
     onDeleteCategory,
+    onAddEquipment,
+    onEditEquipment,
 }: EquipmentHierarchyProps) {
+    const { data: equipments = [], isLoading: isEquipLoading } = useLabExperimentalEquipment(parentCategoryId)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<EquipmentCategory | null>(null)
 
@@ -192,6 +201,77 @@ export function EquipmentHierarchy({
                     </div>
                     <span className='text-[10px] font-black uppercase tracking-widest italic'>新建设备子类 / ADD_SUB_CATEGORY</span>
                 </button>
+            </div>
+
+            {/* 具体设备资产列表 (SDRTS Integrated) */}
+            <div className='mt-12 space-y-6'>
+                <div className='flex items-center justify-between px-2'>
+                    <div className='flex flex-col gap-1'>
+                        <h3 className='text-sm font-black uppercase italic tracking-tighter flex items-center gap-2'>
+                            <Settings className='size-4 text-primary animate-spin-slow' />
+                            下属实验资产明细 / ASSET_INVENTORY
+                        </h3>
+                        <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                            当前分类直属的精密仪器与检测设备实时清单
+                        </p>
+                    </div>
+                    <Button 
+                        size='sm' 
+                        onClick={() => onAddEquipment(parentCategoryId)}
+                        className='h-9 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground font-black text-[9px] uppercase tracking-widest px-6 transition-all'
+                    >
+                        <Plus className='mr-2 size-3.5' />
+                        注册新设备 / REGISTER_ASSET
+                    </Button>
+                </div>
+
+                {isEquipLoading ? (
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse'>
+                        {[1, 2, 3, 4].map(i => <div key={i} className='h-32 rounded-3xl bg-muted/20 border border-dashed' />)}
+                    </div>
+                ) : equipments.length > 0 ? (
+                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                        {equipments.map(equip => (
+                            <div 
+                                key={equip.id} 
+                                onClick={() => onEditEquipment(equip)}
+                                className='group p-5 rounded-[24px] border border-dashed bg-background hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer relative overflow-hidden flex flex-col gap-4'
+                            >
+                                <div className='flex items-start justify-between'>
+                                    <div className='flex items-center gap-2'>
+                                        <div className={cn(
+                                            'size-2 rounded-full',
+                                            equip.status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
+                                            equip.status === 'Maintenance' ? 'bg-amber-500 animate-pulse' : 'bg-muted'
+                                        )} />
+                                        <span className='text-[9px] font-black uppercase tracking-widest opacity-60'>{equip.status}</span>
+                                    </div>
+                                    <Fingerprint className='size-3.5 text-muted-foreground/30 group-hover:text-primary/40 transition-colors' />
+                                </div>
+
+                                <div className='space-y-1'>
+                                    <h4 className='text-[11px] font-black uppercase tracking-tight truncate'>{equip.name}</h4>
+                                    <p className='text-[9px] font-mono text-muted-foreground truncate opacity-70'>SN: {equip.sn}</p>
+                                </div>
+
+                                <div className='pt-3 border-t border-dashed flex items-center justify-between mt-auto'>
+                                    <span className='text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
+                                        {equip.model || 'N/A_MODEL'}
+                                    </span>
+                                    {equip.status === 'Maintenance' ? (
+                                        <AlertTriangle className='size-3 text-amber-500' />
+                                    ) : (
+                                        <ShieldCheck className='size-3 text-emerald-500/50' />
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className='h-32 border border-dashed rounded-[32px] flex flex-col items-center justify-center gap-2 bg-muted/5'>
+                        <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 italic'>此分类下暂无已登记的资产设备 / EMPTY_INVENTORY</span>
+                    </div>
+                )}
             </div>
 
             {/* 删除确认弹窗 */}

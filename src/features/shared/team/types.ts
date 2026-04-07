@@ -15,13 +15,19 @@ export interface TeamRecord {
   remarks?: string
   operator?: string
   operateTime?: string
+  version: number // SDRTS 乐观锁
   [key: string]: unknown
 }
 
 export interface TeamModuleAdapter {
   teams: TeamRecord[]
   isLoading?: boolean
-  saveTeam: (data: Partial<TeamRecord> & { id?: string }) => void | Promise<void>
+  saveTeam: (params: { 
+    data: Partial<TeamRecord>; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void | Promise<void>
   deleteTeam: (id: string) => void | Promise<void>
   headerTitle?: string
   headerDescription?: string

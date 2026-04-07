@@ -1,7 +1,7 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type Furnace, type FurnaceStatus } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
@@ -13,9 +13,8 @@ export class FurnaceService {
      * 获取所有炉台
      */
     static async getFurnaces(): Promise<Furnace[]> {
-        const data = await apiFetch<Furnace[]>('/furnaces')
-        if (!data) throw new Error('[CRITICAL] 未能从后端获取炉台配置数据')
-        return data
+        const res = await apiFetch<Furnace[]>('/furnaces')
+        return ensureArrayResponse<Furnace>(res, 'FurnaceService.getFurnaces')
     }
 
     /**

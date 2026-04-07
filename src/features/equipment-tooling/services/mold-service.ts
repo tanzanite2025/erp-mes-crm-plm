@@ -5,6 +5,21 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type Mold, type MoldStatus } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
+type MoldListResponse = {
+    data?: Mold[]
+    version?: number
+}
+
+type MoldDuplicateCheckResponse = {
+    duplicate: boolean
+}
+
+type MoldIntegrityCheckResponse = {
+    totalProducts: number
+    orphanProducts: { sku: string, missingGroup: string }[]
+    isHealthy: boolean
+}
+
 /**
  * 模具状态流转合法性映射表
  */
@@ -27,17 +42,20 @@ export class MoldService {
      */
     static async getMoldsWithVersion(): Promise<{ molds: Mold[], version: number }> {
         // 后端接口应返回 { data: Mold[], version: number } 结构
-        const response = await apiFetch<{ data: Mold[], version: number }>('/molds')
+        const response = await apiFetch<Mold[] | MoldListResponse>('/molds')
         
         // 兼容处理：如果 apiFetch 触发了分页包装，response 本身就是一个数组
-        const rawData = (response as any).data || response
-        const version = (response as any).version || 0
+        const objectResponse = Array.isArray(response)
+            ? null
+            : ensureObjectResponse<MoldListResponse & Record<string, unknown>>(response, 'MoldService.getMoldsWithVersion')
+        const rawData = objectResponse?.data || response
+        const version = objectResponse?.version || 0
 
         if (!Array.isArray(rawData)) {
             throw new Error(`[CRITICAL] 后端返回模具数据格式错误或数据偏移: ${JSON.stringify(response)}`)
         }
         
-        const molds = rawData.map((m: any) => ({
+        const molds = rawData.map((m) => ({
             ...m,
             totalLifeCycles: m.totalLifeCycles || m.currentCycles || 0,
             status: m.status || 'IDLE',
@@ -60,7 +78,8 @@ export class MoldService {
      * 获取单个模具详情
      */
     static async getMoldById(id: string): Promise<Mold> {
-        return apiFetch<Mold>(`/molds/${id}`)
+        const res = await apiFetch<Mold>(`/molds/${id}`)
+        return ensureObjectResponse<Mold & Record<string, unknown>>(res, 'MoldService.getMoldById') as Mold
     }
 
     /**
@@ -202,7 +221,8 @@ export class MoldService {
      */
     static async isSnDuplicate(sn: string, excludeId?: string): Promise<boolean> {
         // 后端应提供验证接口
-        const response = await apiFetch<{ duplicate: boolean }>(`/molds/check-sn?sn=${sn}&excludeId=${excludeId || ''}`)
+        const res = await apiFetch<MoldDuplicateCheckResponse>(`/molds/check-sn?sn=${sn}&excludeId=${excludeId || ''}`)
+        const response = ensureObjectResponse<MoldDuplicateCheckResponse & Record<string, unknown>>(res, 'MoldService.isSnDuplicate')
         return response.duplicate
     }
 
@@ -224,14 +244,10 @@ export class MoldService {
     /**
      * 【审计加固】检查数据链路完整性
      */
-    static async checkLinkIntegrity() {
+    static async checkLinkIntegrity(): Promise<MoldIntegrityCheckResponse> {
         // 此逻辑涉及跨模块，建议由后端聚合接口提供
-        const response = await apiFetch<{ 
-            totalProducts: number, 
-            orphanProducts: { sku: string, missingGroup: string }[],
-            isHealthy: boolean 
-        }>('/molds/integrity-check')
+        const res = await apiFetch<MoldIntegrityCheckResponse>('/molds/integrity-check')
         
-        return response
+        return ensureObjectResponse<MoldIntegrityCheckResponse & Record<string, unknown>>(res, 'MoldService.checkLinkIntegrity') as MoldIntegrityCheckResponse
     }
 }

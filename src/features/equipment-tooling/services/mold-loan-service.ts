@@ -1,9 +1,14 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type MoldLoan, type Mold } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+
+type MoldBorrowRecordResponse = {
+    loan: MoldLoan
+    mold: Mold
+}
 
 /**
  * MoldLoanService - 专门负责模具跨厂流转/借用业务 (已同步至后端)
@@ -13,8 +18,8 @@ export class MoldLoanService {
      * 获取所有借用记录
      */
     static async getLoans(): Promise<MoldLoan[]> {
-        const stored = await apiFetch<MoldLoan[]>('/mold-loans')
-        if (!stored) throw new Error('[CRITICAL] 未能从后端获取模具借还记录')
+        const res = await apiFetch<MoldLoan[]>('/mold-loans')
+        const stored = ensureArrayResponse<MoldLoan>(res, 'MoldLoanService.getLoans')
         
         // 【智能预警】动态判定逾期状态 (前端实时计算以保证 UI 即时性)
         const now = new Date()
@@ -56,16 +61,16 @@ export class MoldLoanService {
      * 发起借入记录 (外部模具入库)
      * 会在资产档案中创建一个临时模具记录
      */
-    static async createBorrowRecord(loan: Omit<MoldLoan, 'id' | 'createdAt'>, moldData: Omit<Mold, 'id' | 'createdAt' | 'status'>) {
+    static async createBorrowRecord(loan: Omit<MoldLoan, 'id' | 'createdAt'>, moldData: Omit<Mold, 'id' | 'createdAt' | 'status'>): Promise<MoldBorrowRecordResponse> {
         // 建议由后端聚合接口处理
-        const result = await apiFetch<any>('/mold-loans/borrow', {
+        const res = await apiFetch<MoldBorrowRecordResponse>('/mold-loans/borrow', {
             method: 'POST',
             body: JSON.stringify({ loan, moldData })
         })
 
         window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
         window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
-        return result
+        return ensureObjectResponse<MoldBorrowRecordResponse & Record<string, unknown>>(res, 'MoldLoanService.createBorrowRecord') as MoldBorrowRecordResponse
     }
 
     /**

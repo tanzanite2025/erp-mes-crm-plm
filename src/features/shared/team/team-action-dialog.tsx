@@ -1,14 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Users, Hash, Layers, Tag, Info } from 'lucide-react'
+import { useMemo } from 'react'
+import { Users, Hash, Layers, Tag, Info, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -21,229 +13,274 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { TeamRecord } from './types'
+import { ActionDialogShell } from '@/components/action-dialog-shell'
+import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { toast } from 'sonner'
 
 type TeamActionDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   team?: TeamRecord | null
-  onSave: (data: Partial<TeamRecord>) => void
+  onSave: (params: { 
+    data: TeamRecord; 
+    isPatch: boolean; 
+    delta?: any; 
+    version?: number 
+  }) => void
+  isLoading?: boolean
 }
 
-function getDefaultFormData(): Partial<TeamRecord> {
-  return {
-    code: '',
-    name: '',
-    shortName: '',
-    step: 0,
-    section: '',
-    type: 'dispatch',
-    isMaintenance: false,
-    status: 'active',
-    remarks: '',
-  }
+const DEFAULT_TEAM: Partial<TeamRecord> = {
+  code: '',
+  name: '',
+  shortName: '',
+  step: 0,
+  section: '',
+  type: 'dispatch',
+  isMaintenance: false,
+  status: 'active',
+  remarks: '',
+  version: 1,
 }
 
+/**
+ * 班组管理详细资料弹窗 (UDS 1.0 + SDRTS)
+ */
 export function TeamActionDialog({
   open,
   onOpenChange,
   team,
   onSave,
+  isLoading,
 }: TeamActionDialogProps) {
-  const [formData, setFormData] = useState<Partial<TeamRecord>>(getDefaultFormData())
+  const shellClasses = buildActionDialogShellClasses({
+    content: 'sm:max-w-[650px] rounded-[32px] overflow-hidden',
+    header: 'p-8 pb-4 border-none bg-muted/5',
+    title: 'text-xl font-black uppercase italic tracking-tighter flex items-center gap-2',
+    description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
+    body: 'p-8 pt-4 space-y-8',
+    footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
+  })
 
-  useEffect(() => {
-    if (team) {
-      setFormData(team)
-      return
-    }
-    setFormData(getDefaultFormData())
+  const isEdit = !!team
+  const initialFormData = useMemo(() => {
+    if (team) return team
+    return { 
+      ...DEFAULT_TEAM, 
+      id: crypto.randomUUID(),
+      operateTime: new Date().toISOString() 
+    } as TeamRecord
   }, [team, open])
 
+  const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+
   const handleSave = () => {
-    onSave(formData)
-    onOpenChange(false)
+    if (!formData.code || !formData.name || !formData.section) {
+      toast.error('请完整填写核心参数（编码、名称、区段）')
+      return
+    }
+
+    if (isEdit && team) {
+      const delta = tracker.commit()
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      onSave({ 
+        data: formData, 
+        isPatch: true, 
+        delta, 
+        version: team.version 
+      })
+    } else {
+      onSave({ data: formData, isPatch: false })
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[600px] border-none shadow-2xl overflow-hidden rounded-3xl'>
-        <div className='absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/50 via-primary to-primary/50' />
-
-        <DialogHeader className='pt-4'>
-          <DialogTitle className='text-2xl font-black tracking-tighter flex items-center gap-3'>
-            <div className='p-2 bg-primary/10 rounded-xl'>
-              <Users className='size-6 text-primary' />
-            </div>
-            {team ? '编辑班组定义' : '建立全新工作团队'}
-          </DialogTitle>
-          <DialogDescription className='text-xs font-bold uppercase tracking-widest opacity-70'>
-            {team
-              ? `正在调整群组 [${team.code}] 的核心参数`
-              : '定义新的生产协作单元，优化车间排产链路'}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className='grid gap-6 py-6'>
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2'>
-                <Hash className='size-3' /> 群组编码
-              </Label>
-              <Input
-                placeholder='例如: G001'
-                className='h-11 font-mono font-bold bg-muted/30 border-none focus-visible:ring-2 focus-visible:ring-primary/20'
-                value={formData.code}
-                onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value }))}
-              />
-            </div>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2'>
-                <Tag className='size-3' /> 群组名称
-              </Label>
-              <Input
-                placeholder='例如: 生管派工组'
-                className='h-11 font-bold bg-muted/30 border-none focus-visible:ring-2 focus-visible:ring-primary/20'
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
+    <ActionDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={(
+        <>
+          <div className='p-2 bg-primary/10 rounded-xl'>
+            <Users className='size-5 text-primary' />
           </div>
-
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>群组简称</Label>
-              <Input
-                placeholder='输入易于识别的简称'
-                className='h-11 font-medium bg-muted/10 border-none'
-                value={formData.shortName}
-                onChange={(e) => setFormData((prev) => ({ ...prev, shortName: e.target.value }))}
-              />
-            </div>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>群组步骤 (排序)</Label>
-              <Input
-                type='number'
-                placeholder='0'
-                className='h-11 font-bold bg-muted/10 border-none'
-                value={formData.step}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, step: Number.parseInt(e.target.value, 10) || 0 }))
-                }
-              />
-            </div>
+          {isEdit ? '编辑班组定义' : '建立全新工作团队'}
+        </>
+      )}
+      description="TEAM_GOVERNANCE / 定义生产协作单元，优化车间排产与计件核算链路。"
+      contentClassName={shellClasses.content}
+      headerClassName={shellClasses.header}
+      bodyClassName={shellClasses.body}
+      footerClassName={shellClasses.footer}
+      titleClassName={shellClasses.title}
+      descriptionClassName={shellClasses.description}
+      footer={(
+        <>
+          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-black uppercase tracking-widest opacity-50'>
+            <span className='inline-block size-1.5 rounded-full bg-primary animate-pulse' />
+            Sync_to_ERP_Nodes
+          </p>
+          <div className="flex items-center gap-3">
+            <Button 
+                variant="ghost" 
+                onClick={() => onOpenChange(false)} 
+                className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
+            >
+                取消 / CANCEL
+            </Button>
+            <Button 
+                disabled={isLoading}
+                onClick={handleSave} 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-primary/20 active:scale-95 transition-all gap-2"
+            >
+                {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
+                同步保存 / SYNC_ARCHIVE
+            </Button>
           </div>
+        </>
+      )}
+    >
+      <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
 
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2'>
-                <Layers className='size-3' /> 归属区段
-              </Label>
-              <Select
-                value={typeof formData.section === 'string' ? formData.section : ''}
-                onValueChange={(val) => setFormData((prev) => ({ ...prev, section: val }))}
-              >
-                <SelectTrigger className='h-11 font-bold bg-muted/30 border-none'>
-                  <SelectValue placeholder='请选择区段' />
-                </SelectTrigger>
-                <SelectContent className='rounded-xl border-none shadow-xl'>
-                  <SelectItem value='生管段'>生管段</SelectItem>
-                  <SelectItem value='备料段'>备料段</SelectItem>
-                  <SelectItem value='配料段'>配料段</SelectItem>
-                  <SelectItem value='成型段'>成型段</SelectItem>
-                  <SelectItem value='机加段'>机加段</SelectItem>
-                  <SelectItem value='精细段'>精细段</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='grid gap-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>群组类型</Label>
-              <Select
-                value={typeof formData.type === 'string' ? formData.type : 'dispatch'}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({ ...prev, type: val as TeamRecord['type'] }))
-                }
-              >
-                <SelectTrigger className='h-11 font-bold bg-muted/30 border-none'>
-                  <SelectValue placeholder='选择类型' />
-                </SelectTrigger>
-                <SelectContent className='rounded-xl border-none shadow-xl'>
-                  <SelectItem value='dispatch'>派工系统</SelectItem>
-                  <SelectItem value='quality'>品质检验</SelectItem>
-                  <SelectItem value='transfer'>生产移转</SelectItem>
-                  <SelectItem value='receive'>物料接收</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className='grid grid-cols-2 gap-4 items-center bg-muted/10 p-4 rounded-2xl border border-white/5'>
-            <div className='flex items-center justify-between space-x-4'>
-              <div className='space-y-0.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>是否维修组</Label>
-                <p className='text-[10px] text-muted-foreground'>开启后具备返修作业权限</p>
-              </div>
-              <Switch
-                checked={Boolean(formData.isMaintenance)}
-                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isMaintenance: checked }))}
-              />
-            </div>
-            <div className='flex items-center justify-between space-x-4 border-l pl-4 border-white/10'>
-              <div className='space-y-0.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>运行状态</Label>
-                <p className='text-[10px] text-muted-foreground'>群组是否允许在排产中使用</p>
-              </div>
-              <Select
-                value={typeof formData.status === 'string' ? formData.status : 'active'}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({ ...prev, status: val as TeamRecord['status'] }))
-                }
-              >
-                <SelectTrigger className='w-[100px] h-9 text-xs font-bold bg-background border-none rounded-lg'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className='rounded-lg border-none'>
-                  <SelectItem value='active'>启用</SelectItem>
-                  <SelectItem value='inactive'>停用</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className='grid gap-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2'>
-              <Info className='size-3' /> 备注说明
+      <div className='grid gap-8 relative'>
+        {/* 核心标识组 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Hash className='size-3' /> 群组编码 / TEAM_CODE
             </Label>
-            <Textarea
-              placeholder='输入群组的其他描述或特殊规则...'
-              className='bg-muted/10 border-none resize-none font-medium h-24 rounded-2xl p-4 text-xs'
-              value={typeof formData.remarks === 'string' ? formData.remarks : ''}
-              onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
+            <Input
+              placeholder='例如: G001'
+              className='h-12 font-mono font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-primary/20 px-5'
+              value={formData.code}
+              onChange={(e) => { formData.code = e.target.value }}
+            />
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Tag className='size-3' /> 群组名称 / DISPLAY_NAME
+            </Label>
+            <Input
+              placeholder='例如: 生管派工组'
+              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-primary/20 px-5'
+              value={formData.name}
+              onChange={(e) => { formData.name = e.target.value }}
             />
           </div>
         </div>
 
-        <DialogFooter className='bg-muted/30 p-6 -mx-6 -mb-6 mt-2 flex items-center justify-between'>
-          <p className='text-[10px] text-muted-foreground flex items-center gap-2 font-medium'>
-            <span className='inline-block size-1.5 rounded-full bg-primary animate-pulse' />
-            数据将同步至全线 ERP 节点
-          </p>
-          <div className='flex gap-3'>
-            <Button
-              variant='ghost'
-              onClick={() => onOpenChange(false)}
-              className='rounded-full px-6 font-bold text-xs uppercase hover:bg-white/5'
-            >
-              取消操作
-            </Button>
-            <Button
-              onClick={handleSave}
-              className='rounded-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase shadow-lg shadow-primary/20 transition-all active:scale-95'
-            >
-              提交保存
-            </Button>
+        {/* 排序与简称 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>群组简称 / SHORT_NAME</Label>
+            <Input
+              placeholder='输入外部系统识别码'
+              className='h-11 font-medium text-xs bg-muted/20 border-none rounded-2xl px-5'
+              value={formData.shortName}
+              onChange={(e) => { formData.shortName = e.target.value }}
+            />
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>显示序列 / ORDER_STEP</Label>
+            <Input
+              type='number'
+              className='h-11 font-mono font-black text-xs bg-muted/20 border-none rounded-2xl px-5'
+              value={formData.step}
+              onChange={(e) => { formData.step = Number.parseInt(e.target.value, 10) || 0 }}
+            />
+          </div>
+        </div>
+
+        {/* 类型与区段 */}
+        <div className='grid grid-cols-2 gap-6'>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+              <Layers className='size-3' /> 归属区段 / SECTION_DOMAIN
+            </Label>
+            <Select
+              value={formData.section}
+              onValueChange={(val) => { formData.section = val }}
+            >
+              <SelectTrigger className='h-12 font-black text-xs bg-muted/40 border-none rounded-2xl px-5'>
+                <SelectValue placeholder='请选择业务区段' />
+              </SelectTrigger>
+              <SelectContent className='rounded-2xl border-none shadow-2xl'>
+                <SelectItem value='生管段' className="text-[10px] font-black uppercase py-3">生管段 / PMC</SelectItem>
+                <SelectItem value='备料段' className="text-[10px] font-black uppercase py-3">备料段 / PREP</SelectItem>
+                <SelectItem value='配料段' className="text-[10px] font-black uppercase py-3">配料段 / BATCH</SelectItem>
+                <SelectItem value='成型段' className="text-[10px] font-black uppercase py-3">成型段 / MOLD</SelectItem>
+                <SelectItem value='机加段' className="text-[10px] font-black uppercase py-3">机加段 / MACH</SelectItem>
+                <SelectItem value='精细段' className="text-[10px] font-black uppercase py-3">精细段 / FINISH</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>群组类型 / CORE_TYPE</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(val: any) => { formData.type = val }}
+            >
+              <SelectTrigger className='h-12 font-black text-xs bg-muted/40 border-none rounded-2xl px-5 italic'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='rounded-2xl border-none shadow-2xl'>
+                <SelectItem value='dispatch' className="text-[10px] font-black uppercase py-3">派工系统 / DISPATCH</SelectItem>
+                <SelectItem value='quality' className="text-[10px] font-black uppercase py-3 text-emerald-600">品质检验 / QUALITY</SelectItem>
+                <SelectItem value='transfer' className="text-[10px] font-black uppercase py-3 text-orange-600">生产移转 / TRANSFER</SelectItem>
+                <SelectItem value='receive' className="text-[10px] font-black uppercase py-3 text-purple-600">物料接收 / RECEIVE</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* 状态开关 */}
+        <div className='grid grid-cols-2 gap-6 p-6 rounded-3xl bg-muted/10 border border-dashed border-muted/50'>
+          <div className='flex items-center justify-between'>
+            <div className='space-y-1'>
+              <Label className='text-[10px] font-black uppercase tracking-widest'>维修权限 / MAINT</Label>
+              <p className='text-[8px] font-bold text-muted-foreground uppercase'>具备返修任务流转权限</p>
+            </div>
+            <Switch
+              checked={formData.isMaintenance}
+              onCheckedChange={(checked) => { formData.isMaintenance = checked }}
+            />
+          </div>
+          <div className='flex items-center justify-between border-l border-dashed border-muted/50 pl-6'>
+            <div className='space-y-1'>
+              <Label className='text-[10px] font-black uppercase tracking-widest'>激活状态 / ACTIVE</Label>
+              <p className='text-[8px] font-bold text-muted-foreground uppercase'>是否允许参与排产调度</p>
+            </div>
+            <Select
+              value={formData.status}
+              onValueChange={(val: any) => { formData.status = val }}
+            >
+              <SelectTrigger className='w-[100px] h-9 text-[10px] font-black bg-background border-none rounded-full'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl border-none'>
+                <SelectItem value='active' className="text-[10px] font-black py-2">启用</SelectItem>
+                <SelectItem value='inactive' className="text-[10px] font-black py-2 text-destructive">停用</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* 备注 */}
+        <div className='space-y-2'>
+          <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
+            <Info className='size-3' /> 备注说明 / REMARKS
+          </Label>
+          <Textarea
+            placeholder='输入群组的其他描述或特殊规则...'
+            className='bg-muted/40 border-none resize-none font-medium h-24 rounded-3xl p-5 text-sm transition-all focus-visible:ring-primary/20'
+            value={formData.remarks}
+            onChange={(e) => { formData.remarks = e.target.value }}
+          />
+        </div>
+      </div>
+    </ActionDialogShell>
   )
 }

@@ -29,6 +29,21 @@ export function usePieceworkMutations() {
         }
     })
 
+    const patchTeamMutation = useMutation({
+        mutationFn: ({ id, delta, version }: { id: string, delta: any, version: number }) => 
+            apiFetch(`/piecework/teams/${id}`, { 
+                method: 'PATCH', 
+                body: JSON.stringify({ delta, version }) 
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['piecework_teams'] })
+            toast.success('班组差量更新已同步')
+        },
+        onError: (err: any) => {
+            toast.error('同步班组差量失败: ' + err.message)
+        }
+    })
+
     const deleteTeamMutation = useMutation({
         mutationFn: (id: string) => apiFetch(`/piecework/teams/${id}`, { 
             method: 'DELETE' 
@@ -39,7 +54,7 @@ export function usePieceworkMutations() {
         }
     })
 
-    return { saveTeamMutation, deleteTeamMutation }
+    return { saveTeamMutation, patchTeamMutation, deleteTeamMutation }
 }
 
 // --- 工价标准 (Rates) ---

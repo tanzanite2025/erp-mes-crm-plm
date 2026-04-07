@@ -1,4 +1,68 @@
 
+## P1 仓储报表异常专项（2026-04-07，待确认）
+
+- [ ] 300. 冻结本轮范围，只分析仓储报表当前异常链路
+  - [ ] 聚焦 `useWarehouseReport` / `use-report.ts` / `InventoryService.searchMasterData()` / `MaterialService.getMaterialOptions()` / `getAlertThresholds()`。
+  - [ ] 本轮先补审批稿，不直接修改业务代码。
+  - [ ] 不扩散到库存模块整体重构或全局 API 客户端重写。
+
+- [ ] 301. 明确当前异常现象
+  - [ ] 控制台出现 `MaterialService.getMaterialOptions ... expected an object response` 相关错误文案。
+  - [ ] 同时可见 `InventoryService [MOCK_SERVICE] getAlertThresholds is returning empty initial object` 警告。
+  - [ ] 用户要求“找根因，禁止打补丁”。
+
+- [ ] 302. 明确已确认调用链
+  - [ ] `src/features/warehouse/hooks/use-report.ts` 负责报表主数据加载。
+  - [ ] `inventoryService.searchMasterData()` 内部调用 `materialService.getMaterialOptions()`。
+  - [ ] `inventoryService.getAlertThresholds()` 当前是 mock，返回空对象并打印 warning。
+
+- [ ] 303. 明确根因判断
+  - [ ] 当前 `src/features/material-archive/services/material-service.ts` 中 `getMaterialOptions()` 已按数组响应校验收口。
+  - [ ] 报错文案仍声称“expected an object response”，与现仓代码不一致。
+  - [ ] 结论：当前仓储报表异常更符合“旧 bundle 仍在运行 / 前端资源未刷新 / 部署版本错位”特征，而不是 `getAlertThresholds()` mock 自身导致。
+
+- [ ] 304. 明确不应误判的点
+  - [ ] `getAlertThresholds()` 的 mock warning 是噪音，但不是当前 `MaterialService.getMaterialOptions` 契约错误的直接根因。
+  - [ ] 不应把本问题误修成继续改 `apiFetch` 全局解包策略。
+  - [ ] 不应仅通过前端 try/catch 吞错来掩盖 bundle 漂移问题。
+
+- [ ] 305. 明确后续实施边界
+  - [ ] 优先验证实际运行 bundle 是否为最新构建产物。
+  - [ ] 若运行产物落后，则先做部署/缓存刷新验证，不直接改业务代码。
+  - [ ] 仅当确认当前运行代码与仓库一致后，才评估是否仍存在真实仓储报表链路缺口。
+
+## P1 `asset-service.ts` facade/hook 拆层专项（2026-04-07，待确认）
+
+- [ ] 294. 冻结本轮范围，只分析 `src/features/equipment-tooling/services/asset-service.ts` 是否需要拆层
+  - [ ] 本轮仅输出职责拆解、风险判断与拟拆层路径。
+  - [ ] 本轮不直接修改 `asset-service.ts`、不改页面调用方。
+  - [ ] 本轮不顺带重构 `MoldService`、`FurnaceService`、`MoldLoanService`。
+
+- [ ] 295. 明确 `asset-service.ts` 当前混合职责
+  - [ ] facade 职责：聚合 `MoldService` / `FurnaceService` / `MoldLoanService` 能力并统一导出。
+  - [ ] hook 职责：`useAssets()` 中维护本地状态、初始加载、事件监听与局部刷新。
+  - [ ] UI 协调职责：在 `updateMolds()` / `updateFurnaces()` / `setAssetStatus()` 中执行乐观更新、回滚与错误处理。
+
+- [ ] 296. 判断是否需要拆层
+  - [ ] 当前文件已同时承担“领域 facade + React hook + 状态协调器”三类职责。
+  - [ ] 该结构增加了测试难度、职责边界模糊度与后续模块抽离成本。
+  - [ ] 结论：适合拆层，但应采用最小拆法，避免影响 equipment-tooling 现有页面行为。
+
+- [ ] 297. 明确最小拆层方向
+  - [ ] 保留 `AssetService` 作为无状态 facade（仅聚合领域命令与查询能力）。
+  - [ ] 将 `useAssets()` 抽离到独立 hook 文件，专门承载 React 状态、事件监听与局部刷新。
+  - [ ] 将乐观更新/回滚逻辑视情况进一步收口到 hook 内部私有 helper，不提前引入新的抽象基类。
+
+- [ ] 298. 明确本轮不做事项
+  - [ ] 不重写资产模块页面。
+  - [ ] 不改变现有事件名（如 `xdfc_molds_updated` 等）。
+  - [ ] 不调整 `AssetService` 对外 API 名称。
+  - [ ] 不把本专项扩散成 equipment-tooling 全量架构重写。
+
+- [ ] 299. 将拆层实施方案写入 `implementation_plan.md`
+  - [ ] 明确拆分后的文件职责、迁移顺序、风险点与验证方式。
+  - [ ] 待确认后再进入实施阶段。
+
 ## P1 DTO 第二阶段：`equipment-tooling/services` 与 `basic-settings/services`（2026-04-07，待确认）
 
 - [ ] 287. 冻结本轮范围，只处理 `equipment-tooling/services` 与 `basic-settings/services` 的 DTO 接入缺口规划
@@ -44,7 +108,18 @@
 - [ ] 292. 明确第二阶段拟整改顺序
   - [ ] 先处理 `system-config-service.ts`、`enterprise-service.ts`、`linear-barcode-protocol-service.ts`、`numbering-service.ts`。
   - [ ] 再处理 `mold-service.ts`、`mold-loan-service.ts`、`furnace-service.ts`。
-  - [ ] `archive-service.ts`、`asset-service.ts` 待补充函数级核对后再进入实施。
+  - [ ] `archive-service.ts`、`asset-service.ts` 已完成函数级核对后再决定是否实施。
+
+- [ ] 293. 补充 `archive-service.ts` 与 `asset-service.ts` 的函数级盘点结论
+  - [ ] `src/features/equipment-tooling/services/archive-service.ts`
+    - [ ] `getArchivedMolds()`：已使用 `ensureArrayResponse<Mold>(...)`，当前可视为已基本接入 DTO。
+    - [ ] `archive()`：命令型接口，当前不依赖返回对象 DTO，主要是事件分发与命令提交。
+    - [ ] 结论：本文件当前不作为优先整改目标，避免为了“统一形式”而过度修改。
+  - [ ] `src/features/equipment-tooling/services/asset-service.ts`
+    - [ ] 当前文件本质为 facade + hook 组合层，并不直接发起 `apiFetch`。
+    - [ ] DTO 边界主要依赖 `MoldService`、`FurnaceService`、`MoldLoanService` 的返回契约。
+    - [ ] 结论：本文件当前不应按底层 DTO service 同等处理，优先保持 facade 职责稳定。
+  - [ ] 若后续继续治理 `asset-service.ts`，应聚焦 facade 边界与 hook 职责，而非强行补 response guard。
 
 ## P1 DTO 接入缺口盘点与整改规划（2026-04-07，待确认）
 

@@ -1,4 +1,4 @@
-import { useAssets } from '../services/asset-service'
+import { useAssets } from './use-assets'
 import { type Mold, type Furnace } from '../data/schema'
 
 export interface DashboardStats {

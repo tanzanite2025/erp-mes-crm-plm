@@ -117,6 +117,32 @@ export function useLabExperimentalMutations() {
         }
     })
 
+    const patchEquipmentMutation = useMutation({
+        mutationFn: ({ id, delta, version }: { id: string, delta: DeltaSet, version: number }) => {
+            const payload: DeltaPayload = {
+                op: 'PATCH',
+                delta,
+                metadata: { id, version }
+            };
+            return apiFetch(`/labs/experimental/equipment/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['exp_equipment'] })
+            toast.success(t('labExperimental.toasts.equipmentSaved'))
+        }
+    })
+
+    const deleteEquipmentMutation = useMutation({
+        mutationFn: (id: string) => apiFetch(`/labs/experimental/equipment/${id}`, { method: 'DELETE' }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['exp_equipment'] })
+            toast.success(t('labExperimental.toasts.equipmentDeleted' as any) || '设备已删除')
+        }
+    })
+
     const saveTaskMutation = useMutation({
         mutationFn: (data: LabExperimentalTaskMutationInput) => apiFetch('/labs/experimental/tasks', { method: 'POST', body: JSON.stringify(data) }),
         onSuccess: () => {
@@ -139,6 +165,8 @@ export function useLabExperimentalMutations() {
         patchCategoryMutation,
         deleteCategoryMutation,
         saveEquipmentMutation,
+        patchEquipmentMutation,
+        deleteEquipmentMutation,
         saveTaskMutation,
         saveReportMutation
     }

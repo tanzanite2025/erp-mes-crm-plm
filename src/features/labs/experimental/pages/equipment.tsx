@@ -5,21 +5,33 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { CategoryActionDialog } from '../components/category-action-dialog'
+import { EquipmentActionDialog } from '../components/equipment-action-dialog'
 import { EquipmentCategoryNav } from '../components/equipment-category-nav'
 import { EquipmentHierarchy } from '../components/equipment-hierarchy'
-import { type EquipmentCategory } from '../data/schema'
+import { type EquipmentCategory, type Equipment } from '../data/schema'
 import { useLabExperimentalMutations, useLabExperimentalCategories } from '../hooks/use-lab-experimental'
 import { isForbiddenError } from '@/lib/error-status'
 
 export function LabEquipmentPage() {
   const { t } = useLanguage()
   const { data: categories = [], isLoading, error } = useLabExperimentalCategories()
-  const { saveCategoryMutation, patchCategoryMutation, deleteCategoryMutation } = useLabExperimentalMutations()
+  const { 
+    saveCategoryMutation, 
+    patchCategoryMutation, 
+    deleteCategoryMutation,
+    saveEquipmentMutation,
+    patchEquipmentMutation,
+    deleteEquipmentMutation
+  } = useLabExperimentalMutations()
 
   const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<EquipmentCategory | null>(null)
   const [pendingParentId, setPendingParentId] = useState<string | undefined>(undefined)
+
+  // 设备相关状态
+  const [isEquipDialogOpen, setIsEquipDialogOpen] = useState(false)
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null)
 
   useEffect(() => {
     if (!activeCategoryId && categories.length > 0) {
@@ -57,6 +69,23 @@ export function LabEquipmentPage() {
     if (categoryId === activeCategoryId) {
       setActiveCategoryId(undefined)
     }
+  }
+
+  const handleSaveEquipment = async ({ data, isPatch, delta, version }: { data: Equipment; isPatch: boolean; delta?: any; version?: number }) => {
+    if (isPatch && delta && version !== undefined) {
+      patchEquipmentMutation.mutate({
+        id: data.id,
+        delta,
+        version
+      })
+    } else {
+      saveEquipmentMutation.mutate(data)
+    }
+    setIsEquipDialogOpen(false)
+  }
+
+  const handleDeleteEquipment = (id: string) => {
+    deleteEquipmentMutation.mutate(id)
   }
 
   if (isLoading && categories.length === 0) {
@@ -112,6 +141,14 @@ export function LabEquipmentPage() {
                 setIsDialogOpen(true)
               }}
               onDeleteCategory={handleDeleteCategory}
+              onAddEquipment={() => {
+                setEditingEquipment(null)
+                setIsEquipDialogOpen(true)
+              }}
+              onEditEquipment={(equip) => {
+                setEditingEquipment(equip)
+                setIsEquipDialogOpen(true)
+              }}
             />
           </div>
         ) : (
@@ -143,7 +180,17 @@ export function LabEquipmentPage() {
         parentId={pendingParentId}
         onSave={handleSaveCategory}
         onDelete={handleDeleteCategory}
-        isLoading={saveCategoryMutation.isPending}
+        isLoading={saveCategoryMutation.isPending || patchCategoryMutation.isPending}
+      />
+
+      <EquipmentActionDialog
+        open={isEquipDialogOpen}
+        onOpenChange={setIsEquipDialogOpen}
+        equipment={editingEquipment}
+        categoryId={activeCategoryId}
+        onSave={handleSaveEquipment}
+        onDelete={handleDeleteEquipment}
+        isLoading={saveEquipmentMutation.isPending || patchEquipmentMutation.isPending}
       />
     </div>
   )
