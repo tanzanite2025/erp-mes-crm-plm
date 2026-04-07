@@ -5,6 +5,7 @@ export const roleSchema = z.object({
     label: z.string(),
     color: z.string().optional().default('bg-blue-500/10 text-blue-600 border-blue-200'),
     permissions: z.array(z.string()),
+    version: z.number().default(1),
 })
 
 export type Role = z.infer<typeof roleSchema>

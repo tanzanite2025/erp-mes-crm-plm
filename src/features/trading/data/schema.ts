@@ -94,6 +94,7 @@ export interface SalesOrder extends BaseEntity {
     requirements?: string
     lines: SalesOrderLine[]
     workflowInstanceId?: string // 统一工作流引擎桥接关键链
+    version: number // SDRTS 乐观锁
 }
 
 export const salesOrderStatuses: { value: SalesOrderStatus; label: string; color: string }[] = [
@@ -141,6 +142,7 @@ export interface PurchaseOrder extends BaseEntity {
     lines: PurchaseOrderLine[]
     workflowInstanceId?: string // 统一工作流引擎桥接关键链
     isDeleted: boolean
+    version: number // SDRTS 乐观锁
 }
 
 export { purchaseOrderStatuses }

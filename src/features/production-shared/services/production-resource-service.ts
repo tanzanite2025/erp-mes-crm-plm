@@ -2,6 +2,7 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse } from '@/lib/api-response'
 import type { ProcessStep } from '../tabs/work-architecture/components/process-utils'
 import type { ProductionLine } from '../tabs/line-mgmt/types'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 type SaveLinePayload = ProductionLine & {
     authCode?: string
@@ -24,6 +25,27 @@ export const productionResourceService = {
         const payload: SaveLinePayload = authCode ? { ...line, authCode } : line
         return apiFetch<ProductionLine>('/production/lines', {
             method: 'POST',
+            body: JSON.stringify(payload)
+        })
+    },
+
+    /**
+     * 局部更新产线信息 (SDRTS 结构化差量更新)
+     */
+    patchLine: async (id: string, delta: DeltaSet, version: number, authCode?: string): Promise<ProductionLine> => {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { 
+                id, 
+                version,
+                // 将 authCode 注入 metadata 以保证审计与安全校验一致性
+                authCode 
+            }
+        }
+
+        return apiFetch<ProductionLine>(`/production/lines/${id}`, {
+            method: 'PATCH',
             body: JSON.stringify(payload)
         })
     },

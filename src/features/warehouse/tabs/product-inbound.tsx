@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { RefreshCw, Search, Plus, History, Package, CheckCircle2, AlertCircle, Database } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
@@ -42,10 +42,19 @@ import { inventoryService, type MasterDataSearchResult, type InboundRecord } fro
 import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 type WarehouseCategoryOption = {
     value: string
     label: string
+}
+
+const DEFAULT_INBOUND_DATA = {
+    quantity: 1,
+    batchNo: '',
+    targetCategory: '',
+    entryDate: new Date().toISOString().slice(0, 10),
+    remarks: ''
 }
 
 export default function ProductInbound() {
@@ -60,13 +69,9 @@ export default function ProductInbound() {
     const [warehouseCategories, setWarehouseCategories] = useState<WarehouseCategoryOption[]>([])
     const [error, setError] = useState<unknown>(null)
 
-    const [formData, setFormData] = useState({
-        quantity: 1,
-        batchNo: `P${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`,
-        targetCategory: '',
-        entryDate: new Date().toISOString().slice(0, 10),
-        remarks: ''
-    })
+    // SDRTS: 使用 DeltaTracker 追踪入库表单
+    const initialForm = useMemo(() => DEFAULT_INBOUND_DATA, [])
+    const { data: formData } = useDeltaTracker(initialForm, isInboundOpen)
 
     const loadInitialData = useCallback(async () => {
         try {
@@ -117,10 +122,14 @@ export default function ProductInbound() {
     const openInboundForm = (item: MasterDataSearchResult) => {
         if (!allowsAction('action_warehouse_inbound_record')) return
         setSelectedItem(item)
-        setFormData(prev => ({
-            ...prev,
-            targetCategory: item.category || 'MATERIAL'
-        }))
+        
+        // 直接操作 Proxy 数据
+        formData.targetCategory = item.category || 'MATERIAL'
+        formData.batchNo = `P${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`
+        formData.quantity = 1
+        formData.entryDate = new Date().toISOString().slice(0, 10)
+        formData.remarks = ''
+        
         setIsInboundOpen(true)
     }
 
@@ -271,7 +280,7 @@ export default function ProductInbound() {
                                         <TableCell className='py-2.5'>
                                             <div className='flex flex-col overflow-hidden max-w-[150px]'>
                                                 <span className='font-bold text-[12px] text-slate-700 tracking-tight uppercase group-hover:text-emerald-600 transition-colors truncate'>
-                                                    {searchResults.find(s => s.id === record.materialId)?.name || t('warehouse.inbound.masterRecord')}
+                                                    {record.materialId}
                                                 </span>
                                                 <span className='text-[8px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>ID: {record.materialId}</span>
                                             </div>
@@ -328,7 +337,7 @@ export default function ProductInbound() {
                                     </Label>
                                     <Select
                                         value={formData.targetCategory}
-                                        onValueChange={(val) => setFormData(prev => ({ ...prev, targetCategory: val }))}
+                                        onValueChange={(val) => formData.targetCategory = val}
                                     >
                                         <SelectTrigger className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-bold px-4 md:px-5 focus:ring-emerald-500 shadow-inner text-xs'>
                                             <SelectValue placeholder={t('warehouse.inbound.dialog.selectArea')} />
@@ -349,7 +358,7 @@ export default function ProductInbound() {
                                     <Input
                                         type='date'
                                         value={formData.entryDate}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, entryDate: e.target.value }))}
+                                        onChange={(e) => formData.entryDate = e.target.value}
                                         className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-bold px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner text-xs'
                                     />
                                 </div>
@@ -365,7 +374,7 @@ export default function ProductInbound() {
                                             type='number'
                                             className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono text-lg md:text-xl font-black pl-4 md:pl-5 pr-10 md:pr-12 focus-visible:ring-emerald-500 shadow-inner group-hover:bg-muted/70 transition-all'
                                             value={formData.quantity}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, quantity: Number(e.target.value) }))}
+                                            onChange={(e) => formData.quantity = Number(e.target.value)}
                                         />
                                         <div className='absolute right-4 md:right-5 top-1/2 -translate-y-1/2 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/20 select-none group-focus-within:text-emerald-500 transition-colors'>
                                             {selectedItem?.uom || t('warehouse.inbound.dialog.units')}
@@ -379,7 +388,7 @@ export default function ProductInbound() {
                                     <Input
                                         placeholder={t('warehouse.inbound.dialog.batchPlaceholder')}
                                         value={formData.batchNo}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, batchNo: e.target.value }))}
+                                        onChange={(e) => formData.batchNo = e.target.value}
                                         className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner'
                                     />
                                 </div>
@@ -392,7 +401,7 @@ export default function ProductInbound() {
                                 <Input
                                     placeholder={t('warehouse.inbound.dialog.remarksPlaceholder')}
                                     value={formData.remarks}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+                                    onChange={(e) => formData.remarks = e.target.value}
                                     className='h-11 rounded-xl bg-muted/50 border-none font-bold px-5 focus-visible:ring-emerald-500 shadow-inner'
                                 />
                             </div>

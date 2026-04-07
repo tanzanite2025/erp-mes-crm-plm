@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type Material, type MaterialCategory } from '../data/schema'
-import { deleteMaterial, getMaterials, saveMaterial } from '../services/material-service'
+import { deleteMaterial, getMaterials, saveMaterial, patchMaterial } from '../services/material-service'
+import { type DeltaSet } from '@/lib/delta/types'
 
 type MaterialListResponse = {
     data?: Material[]
@@ -33,10 +34,15 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
     const totalCount = qData?.total || 0
 
     const upsertMutation = useMutation({
-        mutationFn: saveMaterial,
-        onSuccess: () => {
+        mutationFn: async ({ data, isPatch, delta }: { data: Material, isPatch?: boolean, delta?: DeltaSet }) => {
+            if (isPatch && delta && data.id) {
+                return patchMaterial(data.id, delta, data.version || 1)
+            }
+            return saveMaterial(data)
+        },
+        onSuccess: (_, { isPatch }) => {
             queryClient.invalidateQueries({ queryKey: ['material-archive'] })
-            toast.success('物料数据已同步')
+            toast.success(isPatch ? '物料档案已更新 (SDRTS Patch)' : '物料档案已同步')
         }
     })
 

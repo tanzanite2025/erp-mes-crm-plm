@@ -33,7 +33,7 @@ import { getFormSchema, type UserForm } from './users-action-dialog.shared'
 import {
   buildUserCreatePayload,
   buildDialogCloseHandler,
-  buildUserReplacePayload,
+  buildUserDelta,
   buildSubmitSuccessHandler,
   resolveSubmitRole,
 } from './users-action-dialog.submit'
@@ -122,7 +122,7 @@ export function UsersActionDialog({
     }
   }, [open, isEdit, currentRow, form])
 
-  const { createMutation, replaceMutation } = useUserMutations()
+  const { createMutation, updateMutation } = useUserMutations()
   const handleDialogOpenChange = buildDialogCloseHandler({
     onOpenChange,
     reset: () => {}, // 移至 useEffect 统一处理
@@ -164,15 +164,23 @@ export function UsersActionDialog({
     }
 
     if (isEdit && currentRow) {
-      const payload = buildUserReplacePayload({
+      const delta = buildUserDelta({
         currentRow,
         resolvedRole,
         values,
       })
 
-      replaceMutation.mutate({ id: currentRow.id, data: payload }, {
-        onSuccess: handleUpdateSuccess,
-      })
+      if (Object.keys(delta).length > 0) {
+        updateMutation.mutate({ 
+          id: currentRow.id, 
+          delta, 
+          version: currentRow.version || 1 
+        }, {
+          onSuccess: handleUpdateSuccess,
+        })
+      } else {
+        handleUpdateSuccess()
+      }
     } else {
       const payload = buildUserCreatePayload({
         resolvedRole,

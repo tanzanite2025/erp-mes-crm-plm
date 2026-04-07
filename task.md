@@ -887,3 +887,53 @@
   - [x] 已保持既有业务语义不变：库存数量/金额逻辑、transfer 事务语义、权限校验、错误状态码与中文错误语义未漂移。
   - [x] 已完成验证：`go test ./handlers ./services -run "Inventory"` 通过。
   - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。
+
+- [x] 171. 第二批 `inventory` 防回退测试（已完成）
+  - [x] 本轮已限定为 `inventory` 的第二批防回退测试补强，未扩展为新的业务逻辑改造或库存域继续收口。
+  - [x] 本轮已优先覆盖三类定向测试：
+    - `bulk sync` 负向测试
+    - `transfer request` 负向测试
+    - `void` success / request shape 测试
+  - [x] 本轮测试目标已达成：
+    - bulk sync 权限/输入边界已增加防回退断言
+    - transfer request contract 异常输入已增加负向断言
+    - void 链 success / request shape 已增加稳定性断言
+  - [x] 已采用最小增量策略：仅补 `handlers` 定向测试，未改既有业务逻辑。
+  - [x] 已保持既有业务语义不变：库存数量/金额逻辑、事务语义、权限校验、错误状态码与中文错误语义未漂移。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Inventory"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮测试补强与验证结果。
+
+- [x] 172. `purchase_orders` 再开一条最小闭环（已完成）
+  - [x] 本轮作为新的独立最小闭环，仅处理 `purchase_orders` 中一个最值得优先收口的剩余 contract 缺口，未扩展为整个 procurement / trading 域改造。
+  - [x] 已优先复核 `purchase_orders` 当前剩余边界，并识别出最小 contract 缺口：主链错误响应仍大量使用裸 `gin.H`。
+  - [x] 已完成本轮最小收口：
+  - [x] 已保持既有业务语义不变：采购单字段语义、收货/状态重算/流程挂接、错误状态码与中文错误语义未漂移。
+  - [x] 已完成验证：`go test ./handlers ./services -run "PurchaseOrder|Workflow"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。
+
+## P0 TypeScript 构建错误收口（2026-04-07，待确认）
+
+- [x] 173. 追溯本轮报错的共享根因，而非逐点补丁
+  - [x] 复核 `equipment-tooling` 中 `Mold` 的权威类型来源、`useAssets` 数据流与页面层直接手写对象的入口，确认问题根因是否为“正式模型升级后，页面仍绕过统一构造入口”。
+  - [x] 复核 `org-personnel` 读取产线拓扑时所依赖的共享类型来源，确认问题根因是否为“共享拓扑 contract 已升级，但消费侧仍保留旧字段假设”。
+  - [x] 判断这两类报错是否同属一类系统性问题：共享 contract 已变化，但项目中仍允许页面层直接猜结构、直接造对象，缺少单一事实来源和消费边界约束。
+
+- [x] 174. 为 `equipment-tooling` 建立对正式 `Mold` contract 的单一构造边界
+  - [x] 复核 `src/features/equipment-tooling/data/schema.ts`、`mold-action-dialog.tsx`、`mold-mgmt.tsx`、`asset-service.ts` 的职责边界，明确谁是 `Mold` 默认值/新建草稿的正式构造入口。
+  - [x] 禁止页面继续在多个位置直接手写 `Mold` 临时对象，避免后续 `version`、`createdAt`、审计字段再发生二次漂移。
+  - [x] 如需新增统一构造函数或默认值工厂，只在最小范围内建立单一入口，不扩展为整个模块重构。
+
+- [x] 175. 为 `org-personnel` 收口对产线拓扑共享类型的消费边界
+  - [x] 复核 `productionResourceService.getLines()` 返回的 `ProductionLine/Segment` 权威类型与员工管理列表的真实消费意图。
+  - [x] 将员工管理列表的名称映射逻辑对齐到当前正式拓扑结构，避免继续在页面层假设旧字段 `jobCategories`。
+  - [x] 如员工管理实际只需要“产线/工序名称映射”，则明确只消费正式的 `line` 与 `process` 层，不再隐式依赖拓扑中间层历史结构。
+
+- [x] 176. 以根因整改方式恢复前端类型检查
+  - [x] 修复方向以“建立单一构造入口 / 对齐共享权威类型”为准，不通过放宽类型、加可选字段、临时断言等方式掩盖问题。
+  - [x] 保持现有业务语义不变：模具新增/编辑交互、员工管理名称映射、产线/工序展示逻辑不因本轮收口而被重新设计。
+  - [x] 如执行中发现还存在同类旧 contract 消费点，先判断是否属于同一根因链，再决定是否纳入同轮最小闭环。
+
+- [x] 177. 执行验证并补充总结
+  - [x] 至少执行 `pnpm exec tsc --noEmit` 验证本轮根因整改后相关前端类型错误已消除。
+  - [x] 如有必要，补充定向搜索校验：确认页面层不再直接手写正式 `Mold` 对象、目标链不再读取 `jobCategories`。
+  - [x] 更新 `walkthrough.md`，记录本轮共享根因、边界收口方式与验证结果。

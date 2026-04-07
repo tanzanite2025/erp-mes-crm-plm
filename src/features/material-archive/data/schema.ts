@@ -48,7 +48,7 @@ export const materialSchema = z.object({
   status: z.enum(['Active', 'Inactive', 'Archived']).default('Active'),
   createdAt: z.string(),
   updatedAt: z.string(),
-  _v: z.number().optional(),
+  version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
 
 export type Material = z.infer<typeof materialSchema>

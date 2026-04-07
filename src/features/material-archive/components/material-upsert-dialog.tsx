@@ -13,13 +13,14 @@ import { Form } from '@/components/ui/form'
 import { type Material } from '../data/schema'
 import { useMaterialForm } from '../hooks/use-material-form'
 import { MaterialForm } from './material-form'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface MaterialUpsertDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   material: Material | null
   defaultCategory?: string
-  onSave: (data: Partial<Material>) => Promise<void>
+  onSave: (data: Material, isPatch?: boolean, delta?: DeltaSet) => Promise<void>
 }
 
 export function MaterialUpsertDialog({
@@ -31,11 +32,25 @@ export function MaterialUpsertDialog({
 }: MaterialUpsertDialogProps) {
   const { t } = useLanguage()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { form, selectedCategory } = useMaterialForm({ material, open, defaultCategory })
+  const { form, selectedCategory, tracker, deltaProxy } = useMaterialForm({ material, open, defaultCategory })
 
   const onSubmit = (data: Material) => {
     setIsSubmitting(true)
-    onSave(data)
+    
+    // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
+    Object.assign(deltaProxy, data)
+    const delta = tracker.commit()
+    const isEdit = !!material
+    const isDirty = Object.keys(delta).length > 0
+
+    // 如果是编辑且无变更，直接关闭
+    if (isEdit && !isDirty) {
+        onOpenChange(false)
+        setIsSubmitting(false)
+        return
+    }
+
+    onSave(data, isEdit, isEdit ? delta : undefined)
       .then(() => onOpenChange(false))
       .finally(() => setIsSubmitting(false))
   }

@@ -16,12 +16,14 @@ import { SegmentNode } from './topology/segment-node'
 import { SecurityAuthDialog } from './topology/security-auth-dialog'
 import { useLanguage } from '@/context/language-provider'
 
+import { DeltaSet } from '@/lib/delta/types'
+
 interface LineCardProps {
   line: ProductionLine
   onEdit: (line: ProductionLine, authCode?: string) => void
   onDelete: (id: string) => void
   onToggleActive: (id: string) => void
-  onUpdate: (updatedLine: ProductionLine, authCode?: string) => void
+  onUpdate: (payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }, authCode?: string) => void
 }
 
 export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: LineCardProps) {
@@ -29,20 +31,31 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
   const [isExpanded, setIsExpanded] = useState(true)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<'edit' | 'delete' | 'topology' | null>(null)
-  const [pendingTopologyLine, setPendingTopologyLine] = useState<ProductionLine | null>(null)
+  const [pendingDelta, setPendingDelta] = useState<DeltaSet | null>(null)
   const { templates, addTemplate } = useTopologyTemplates()
-  const handleTopologyUpdate = (updatedLine: ProductionLine) => {
-    const requiresAuth = Boolean(updatedLine.id && !updatedLine.id.startsWith('temp-'))
+
+  const handleTopologyUpdate = async (updatedLine: ProductionLine) => {
+    // 1. 自动生成 Delta 载荷
+    const { trackDelta } = await import('@/lib/delta/proxy-tracker')
+    const tracker = trackDelta(line)
+    Object.assign(tracker.data, updatedLine)
+    const delta = tracker.commit()
+
+    if (Object.keys(delta).length === 0) return
+
+    // 2. 检查权限需求
+    const requiresAuth = Boolean(line.id && !line.id.startsWith('temp-'))
 
     if (!requiresAuth) {
-      onUpdate(updatedLine)
+      onUpdate({ type: 'UPDATE', id: line.id, delta, version: line.version })
       return
     }
 
-    setPendingTopologyLine(updatedLine)
+    setPendingDelta(delta)
     setPendingAction('topology')
     setIsAuthOpen(true)
   }
+
   const {
     handleApplyTemplate,
     handleAddSegment,
@@ -58,10 +71,15 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
         onEdit(line, password)
     } else if (pendingAction === 'delete') {
         onDelete(line.id)
-    } else if (pendingAction === 'topology' && pendingTopologyLine) {
-        onUpdate(pendingTopologyLine, password)
+    } else if (pendingAction === 'topology' && pendingDelta) {
+        onUpdate({ 
+          type: 'UPDATE', 
+          id: line.id, 
+          delta: pendingDelta, 
+          version: line.version 
+        }, password)
     }
-    setPendingTopologyLine(null)
+    setPendingDelta(null)
     setPendingAction(null)
   }
 

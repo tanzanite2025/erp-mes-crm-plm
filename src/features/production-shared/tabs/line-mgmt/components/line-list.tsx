@@ -8,10 +8,11 @@ import { LineDialog } from './line-dialog'
 import type { ProductionLine } from '../types'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface LineListProps {
   lines: ProductionLine[]
-  onUpdate: (line: ProductionLine, authCode?: string) => void
+  onUpdate: (payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }, authCode?: string) => void
   onDelete: (id: string) => void
 }
 
@@ -44,29 +45,28 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
   const handleToggleActive = (id: string) => {
     const line = lines.find((l) => l.id === id)
     if (line) {
-        onUpdate({ ...line, isActive: !line.isActive })
+        onUpdate({ 
+          type: 'UPDATE', 
+          id, 
+          delta: { isActive: { o: line.isActive, n: !line.isActive } }, 
+          version: line.version 
+        })
     }
   }
 
-  const handleUpdateLine = (updatedLine: ProductionLine, authCode?: string) => {
-    onUpdate(updatedLine, authCode)
+  const handleUpdateLine = (payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }, authCode?: string) => {
+    onUpdate(payload, authCode)
   }
 
-  const handleDialogConfirm = (data: Partial<ProductionLine>) => {
-    if (editingLine) {
-      onUpdate({ ...editingLine, ...data }, pendingEditAuthCode)
-      toast.success(t('orgPersonnel.lineMgmt.list.updateSuccess'))
-    } else {
-      const newLine: Partial<ProductionLine> = {
-        code: data.code || '',
-        name: data.name || '',
-        description: data.description || '',
-        isActive: true,
-        segments: [], // 初始为空拓扑
-      }
-      onUpdate(newLine as ProductionLine)
+  const handleDialogConfirm = (payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }) => {
+    onUpdate(payload, pendingEditAuthCode)
+    
+    if (payload.type === 'CREATE') {
       toast.success(t('orgPersonnel.lineMgmt.list.addSuccess'))
+    } else {
+      toast.success(t('orgPersonnel.lineMgmt.list.updateSuccess'))
     }
+    
     setPendingEditAuthCode(undefined)
     setIsDialogOpen(false)
   }

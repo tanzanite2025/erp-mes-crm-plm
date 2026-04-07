@@ -4,6 +4,7 @@ import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 const logger = createLogger('InventoryService')
 
@@ -15,6 +16,7 @@ export interface InventoryRecord {
     averageUnitCost: number;  // Moving average cost (Accounting)
     categoryCode: string;     // Physical warehouse category (MATERIAL, FINISHED, etc.)
     lastUpdated: string;
+    version: number;          // SDRTS Optimistic Lock
 }
 
 export interface InboundRecord {
@@ -47,6 +49,7 @@ export interface ShipmentRecord {
     remarks: string;
     sourceCategory: string; // Source warehouse category
     status: ShipmentStatus; // Record status
+    version: number;        // SDRTS Optimistic Lock
 }
 
 export interface MasterDataSearchResult {
@@ -308,6 +311,44 @@ class InventoryService {
     async getLowStockAlerts() {
         logger.warn('[MOCK_SERVICE] getLowStockAlerts is returning empty list. Backend sync pending.')
         return [];
+    }
+
+    /**
+     * Patch Inventory (SDRTS Delta Protocol)
+     */
+    async patchInventory(id: string, delta: DeltaSet, version: number): Promise<InventoryRecord> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        };
+
+        const res = await apiFetch<InventoryRecord>(`/inventory/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        
+        this.broadcastUpdate();
+        return ensureObjectResponse<InventoryRecord & Record<string, unknown>>(res, 'InventoryService.patchInventory') as InventoryRecord;
+    }
+
+    /**
+     * Patch Shipment (SDRTS Delta Protocol)
+     */
+    async patchShipment(id: string, delta: DeltaSet, version: number): Promise<ShipmentRecord> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        };
+
+        const res = await apiFetch<ShipmentRecord>(`/inventory/shipment/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        
+        this.broadcastUpdate();
+        return ensureObjectResponse<ShipmentRecord & Record<string, unknown>>(res, 'InventoryService.patchShipment') as ShipmentRecord;
     }
 }
 

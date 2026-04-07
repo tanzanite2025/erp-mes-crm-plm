@@ -18,6 +18,7 @@ const userSchema = z.object({
   phoneNumber: z.string(),
   status: userStatusSchema,
   role: userRoleSchema,
+  version: z.number().default(1), // 为 SDRTS 增加版本号支持
   password: z.string().optional(), // 移除硬编码默认值
   resolvedRole: z.string().optional(),
   roleInfo: z.object({

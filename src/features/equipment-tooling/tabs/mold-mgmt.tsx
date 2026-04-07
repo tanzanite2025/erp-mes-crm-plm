@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { MoldActionDialog } from '../components/mold-action-dialog'
 import { useAssets } from '../services/asset-service'
-import { type Mold, type MoldStatus } from '../data/schema'
+import { createMoldDraft, type Mold, type MoldStatus } from '../data/schema'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { useMoldGroups } from '../hooks/use-mold-groups'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -268,20 +268,10 @@ export function MoldMgmt() {
                                             variant='ghost'
                                             className='min-h-[260px] py-12 border-2 border-dashed border-muted/50 rounded-[24px] hover:border-primary/50 hover:bg-primary/[0.02] flex flex-col gap-3 text-muted-foreground/40 group transition-all h-full'
                                             onClick={() => {
-                                                setEditingMold({
-                                                    id: '',
+                                                setEditingMold(createMoldDraft({
                                                     sn: `MOLD-${Date.now().toString().slice(-6)}`,
-                                                    name: '',
-                                                    maxCycles: 1000,
-                                                    currentCycles: 0,
-                                                    maintenanceThreshold: 800,
-                                                    totalLifeCycles: 0,
-                                                    isAlerted: false,
-                                                    status: 'IDLE',
-                                                    location: '',
                                                     groupName: group === t('equipmentTooling.molds.defaults.uncategorized') ? '' : group,
-                                                    createdAt: new Date().toISOString(),
-                                                })
+                                                }))
                                                 setIsDialogOpen(true)
                                             }}
                                         >

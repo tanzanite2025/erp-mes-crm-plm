@@ -8,8 +8,9 @@ import { ProxyTracker } from '@/lib/delta/proxy-tracker';
  * 自动捕获变更，并提供脏检查与 Delta 提交功能。
  * 
  * @param initialData 初始领域模型数据
+ * @param resetKey 可选的重置键，变化时将重新初始化追踪器
  */
-export function useDeltaTracker<T extends Record<string, any>>(initialData: T) {
+export function useDeltaTracker<T extends Record<string, any>>(initialData: T, resetKey?: any) {
   // 用于强制触发组件重绘的状态
   const [, setTick] = useState(0);
   
@@ -18,7 +19,7 @@ export function useDeltaTracker<T extends Record<string, any>>(initialData: T) {
     return new ProxyTracker<T>(initialData, () => {
       setTick(t => t + 1);
     });
-  }, [initialData]);
+  }, [initialData, resetKey]);
 
   /**
    * 获取追踪中的代理对象

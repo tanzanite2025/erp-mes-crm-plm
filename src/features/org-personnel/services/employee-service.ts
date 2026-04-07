@@ -1,6 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { type Employee } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { ensureObjectResponse } from '@/lib/api-response'
 
 const logger = createLogger('EmployeeService')
 
@@ -112,5 +114,24 @@ export class EmployeeService {
             method: 'POST',
             body: JSON.stringify(employees)
         })
+    }
+
+    /**
+     * Patch Employee (SDRTS Delta Protocol)
+     */
+    static async patchEmployee(id: string, delta: DeltaSet, version: number): Promise<Employee> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id, version }
+        };
+
+        const res = await apiFetch<Employee>(`/employees/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        
+        window.dispatchEvent(new CustomEvent('xdfc_employees_data_updated'));
+        return ensureObjectResponse<Employee & Record<string, unknown>>(res, 'EmployeeService.patchEmployee') as Employee;
     }
 }

@@ -1,5 +1,6 @@
 import type { User, UserListPage, UserOption } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 export interface CreateUserPayload {
   username: string
@@ -92,12 +93,21 @@ export const createUser = async (userData: CreateUserPayload) => {
 }
 
 /**
- * 更新用户
+ * 局部更新用户 (SDRTS 结构化差量更新)
  */
-export const patchUser = async (id: string, userData: UserUpdatePayload) => {
+export const patchUser = async (id: string, delta: DeltaSet, version: number) => {
+  const payload: DeltaPayload = {
+    op: 'PATCH',
+    delta,
+    metadata: {
+      id,
+      version,
+    },
+  }
+
   return apiFetch<User>(`/users/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(userData),
+    body: JSON.stringify(payload),
   })
 }
 

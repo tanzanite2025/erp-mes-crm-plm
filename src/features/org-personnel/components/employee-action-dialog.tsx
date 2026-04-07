@@ -33,18 +33,21 @@ import {
     type PersonnelFormFieldKey,
     type PersonnelSelectOption,
 } from '../config/personnel-archive-columns'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 type EmployeeForm = Record<PersonnelFormFieldKey, string> & {
     id?: string
     lineId: string
     processId: string
+    version?: number
 }
 
 type EmployeeActionDialogProps = {
     currentRow?: Employee
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSubmit?: (data: Employee) => void
+    onSubmit?: (data: Employee, isPatch?: boolean, delta?: DeltaSet) => void
 }
 
 function buildDefaultValues(): EmployeeForm {
@@ -64,7 +67,7 @@ function buildFormValues(employee?: Employee): EmployeeForm {
     const defaults = buildDefaultValues()
     if (!employee) return defaults
 
-    const values = { ...defaults, id: employee.id }
+    const values = { ...defaults, id: employee.id, version: employee.version }
 
     PERSONNEL_FORM_FIELDS.forEach(field => {
         values[field.key] = field.formValueFromEmployee
@@ -98,6 +101,10 @@ export function EmployeeActionDialog({
     const isEdit = !!currentRow
     const [dynamicDepts, setDynamicDepts] = useState<PersonnelSelectOption[]>([])
 
+    // SDRTS: Delta 追踪器
+    const initialFormValues = useMemo(() => buildFormValues(currentRow), [currentRow])
+    const { data: deltaProxy, tracker } = useDeltaTracker(initialFormValues, open)
+
     const formSchema = z.object({
         id: z.string().optional(),
         staffId: z.string().trim().min(1, t('orgPersonnel.employeeDialog.errors.staffId' as any)),
@@ -123,7 +130,7 @@ export function EmployeeActionDialog({
 
     const form = useForm<EmployeeForm>({
         resolver: zodResolver(formSchema),
-        defaultValues,
+        defaultValues: initialFormValues,
     })
 
     useEffect(() => {
@@ -153,14 +160,25 @@ export function EmployeeActionDialog({
 
     useEffect(() => {
         if (!open) return
-        form.reset(buildFormValues(currentRow))
-    }, [currentRow, form, open])
+        form.reset(initialFormValues)
+    }, [initialFormValues, form, open])
 
     const onSubmitHandler = (values: EmployeeForm) => {
+        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
+        Object.assign(deltaProxy, values)
+        const delta = tracker.commit()
+        const isDirty = Object.keys(delta).length > 0
+
+        if (isEdit && !isDirty) {
+            onOpenChange(false)
+            return
+        }
+
         const nextEmployee: Partial<Employee> = {
             id: values.id || '',
             lineId: values.lineId,
             processId: values.processId,
+            version: values.version,
         }
 
         PERSONNEL_FORM_FIELDS.forEach(field => {
@@ -172,7 +190,9 @@ export function EmployeeActionDialog({
             ;(nextEmployee as Record<string, unknown>)[field.key] = normalizedValue
         })
 
-        onSubmit?.(nextEmployee as Employee)
+        // 发送给父组件进行 SDRTS 或全量处理
+        onSubmit?.(nextEmployee as Employee, isEdit, isEdit ? delta : undefined)
+        
         form.reset(defaultValues)
         onOpenChange(false)
     }

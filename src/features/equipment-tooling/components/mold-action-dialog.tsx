@@ -36,7 +36,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import { useAuthStore } from '@/stores/auth-store'
-import { createMoldSchema, type Mold, type MoldDrawing, type MoldFormInput, type MoldFormOutput } from '../data/schema'
+import { createMoldDraft, createMoldSchema, type Mold, type MoldDrawing, type MoldFormInput, type MoldFormOutput } from '../data/schema'
 import { ImageUpload } from './image-upload'
 import { AssetService } from '../services/asset-service'
 import { MoldService } from '../services/mold-service'
@@ -67,25 +67,11 @@ export function MoldActionDialog({
     const [isAddingNewGroup, setIsAddingNewGroup] = useState(false)
     const [linkedDrawings, setLinkedDrawings] = useState<MoldDrawing[]>([])
     const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
+    const defaultDraft = useMemo(() => createMoldDraft(editData ?? {}), [editData])
 
     const form = useForm<MoldFormInput, unknown, MoldFormOutput>({
         resolver: zodResolver(moldFormSchema),
-        defaultValues: {
-            id: editData?.id || '',
-            sn: editData?.sn || '',
-            name: editData?.name || '',
-            maxCycles: editData?.maxCycles || 1000,
-            currentCycles: editData?.currentCycles || 0,
-            maintenanceThreshold: editData?.maintenanceThreshold || 800,
-            totalLifeCycles: editData?.totalLifeCycles || 0,
-            isAlerted: editData?.isAlerted || false,
-            status: editData?.status || 'IDLE',
-            location: editData?.location || '',
-            groupName: editData?.groupName || '',
-            imageUrl: editData?.imageUrl || '',
-            createdAt: editData?.createdAt || new Date().toISOString(),
-            description: editData?.description || '',
-        },
+        defaultValues: defaultDraft,
     })
 
     const watchedMax = useWatch({ control: form.control, name: 'maxCycles' }) ?? 0
@@ -110,22 +96,7 @@ export function MoldActionDialog({
                 return
             }
 
-            form.reset({
-                id: '',
-                sn: '',
-                name: '',
-                maxCycles: 1000,
-                currentCycles: 0,
-                maintenanceThreshold: 800,
-                totalLifeCycles: 0,
-                status: 'IDLE',
-                isAlerted: false,
-                location: '',
-                groupName: '',
-                description: '',
-                imageUrl: '',
-                createdAt: new Date().toISOString(),
-            })
+            form.reset(createMoldDraft())
         }
 
         loadInitialData()

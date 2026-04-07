@@ -15,7 +15,7 @@ import { unitService, type Unit } from '@/features/basic-settings/services/unit-
 import { type PurchaseOrder } from '../../data/schema'
 import { useGetPurchaseOrderDetail } from '../../hooks/use-purchase'
 import { usePurchaseOrderForm } from '../../hooks/use-purchase-order-form'
-import { useGetSuppliers } from '../../hooks/use-trading'
+import { useGetSuppliers, usePurchaseOrderMutations } from '../../hooks/use-trading'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 
@@ -23,14 +23,12 @@ interface PurchaseOrderActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order?: PurchaseOrder | null
-  onSave: (data: Partial<PurchaseOrder>) => void
 }
 
 export function PurchaseOrderActionDialog({
   open,
   onOpenChange,
   order: summaryOrder,
-  onSave,
 }: PurchaseOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
@@ -63,14 +61,36 @@ export function PurchaseOrderActionDialog({
     loadMetadata()
   }, [])
 
-  const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate } =
+  const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const handleSave = () => {
+  const { saveMutation, patchMutation } = usePurchaseOrderMutations()
+
+  const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
     if (!validate()) return
-    onSave(formData)
-    onOpenChange(false)
+
+    try {
+      if (activeOrder && summaryOrder) {
+        // SDRTS: 提交增量
+        const delta = commit()
+        if (Object.keys(delta).length === 0) {
+          onOpenChange(false)
+          return
+        }
+        await patchMutation.mutateAsync({
+          id: activeOrder.id,
+          delta,
+          version: activeOrder.version,
+        })
+      } else {
+        // 新建采购单
+        await saveMutation.mutateAsync(formData)
+      }
+      onOpenChange(false)
+    } catch (error) {
+      // 错误已处理
+    }
   }
 
   const isDataLoading = isMetaLoading || (!!summaryOrder && isDetailLoading)

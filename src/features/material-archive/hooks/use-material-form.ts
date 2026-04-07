@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { materialSchema, type Material } from '../data/schema'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const categoryShortNames: Record<string, string> = {
     RAW_MATERIAL: 'RAW',
@@ -64,6 +65,7 @@ const DEFAULT_VALUES: Material = {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     images: [],
+    version: 1,
 }
 
 interface UseMaterialFormProps {
@@ -73,9 +75,20 @@ interface UseMaterialFormProps {
 }
 
 export function useMaterialForm({ material, open, defaultCategory }: UseMaterialFormProps) {
+    // SDRTS: Delta 追踪器
+    const initialValues = useMemo(() => {
+        if (material) return material
+        return {
+            ...DEFAULT_VALUES,
+            category: defaultCategory || DEFAULT_VALUES.category
+        }
+    }, [material, defaultCategory])
+
+    const { data: deltaProxy, tracker } = useDeltaTracker(initialValues, open)
+
     const form = useForm<Material>({
         resolver: zodResolver(materialSchema) as any,
-        defaultValues: DEFAULT_VALUES
+        defaultValues: initialValues
     })
 
     const selectedCategory = form.watch('category')
@@ -115,20 +128,15 @@ export function useMaterialForm({ material, open, defaultCategory }: UseMaterial
     // 弹窗打开/关闭时重置表单
     useEffect(() => {
         if (open) {
-            if (material) {
-                form.reset(material)
-            } else {
-                form.reset({
-                    ...DEFAULT_VALUES,
-                    category: defaultCategory || DEFAULT_VALUES.category
-                })
-            }
+            form.reset(initialValues)
         }
-    }, [open, material, form])
+    }, [open, initialValues, form])
 
     return {
         form,
         selectedCategory,
-        materialName
+        materialName,
+        tracker,
+        deltaProxy
     }
 }

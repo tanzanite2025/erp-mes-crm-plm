@@ -19,7 +19,7 @@ import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { auditUtils } from '@/lib/audit-utils'
 import { type SalesOrder } from '../data/schema'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
-import { useGetCustomers } from '../hooks/use-trading'
+import { useGetCustomers, useSalesOrderMutations } from '../hooks/use-trading'
 import { OrderFooterStats } from './parts/order-footer-stats'
 import { OrderHeaderFields } from './parts/order-header-fields'
 import { OrderLinesEditor } from './parts/order-lines-editor'
@@ -28,14 +28,12 @@ interface SalesOrderActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order?: SalesOrder | null
-  onSave: (data: Partial<SalesOrder>) => void
 }
 
 export function SalesOrderActionDialog({
   open,
   onOpenChange,
   order,
-  onSave,
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
@@ -89,18 +87,42 @@ export function SalesOrderActionDialog({
     updateLine,
     validate,
     prepareToSave,
+    commit,
   } = useSalesOrderForm(order, open)
+
+  const { saveMutation, patchMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
     if (!validate()) return
 
+    // 预处理数据（如生成正式条码）
     const finalData = await prepareToSave()
     if (!finalData) return
 
-    const stampedData = auditUtils.stamp(finalData, order ? 'update' : 'create')
-    onSave(stampedData)
-    onOpenChange(false)
+    try {
+      if (order) {
+        // SDRTS: 提交增量差异
+        const delta = commit()
+        // 如果没有实际变更，直接关闭
+        if (Object.keys(delta).length === 0) {
+          onOpenChange(false)
+          return
+        }
+        await patchMutation.mutateAsync({
+          id: order.id,
+          delta,
+          version: order.version,
+        })
+      } else {
+        // 新建订单: 提交全量数据
+        const stampedData = auditUtils.stamp(finalData, 'create')
+        await saveMutation.mutateAsync(stampedData)
+      }
+      onOpenChange(false)
+    } catch (error) {
+      // 错误已由 mutation 的 onError 处理（toast）
+    }
   }
 
   return (

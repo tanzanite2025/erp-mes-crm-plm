@@ -1,6 +1,8 @@
 import { type User } from '../data/schema'
-import { type CreateUserPayload, type UserReplacePayload } from '../services/user-api'
+import { type CreateUserPayload } from '../services/user-api'
 import { type UserForm } from './users-action-dialog.shared'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export function resolveSubmitRole(params: {
   currentRow?: User
@@ -14,28 +16,31 @@ export function resolveSubmitRole(params: {
     : roleFromForm.trim()
 }
 
-export function buildUserReplacePayload(params: {
+/**
+ * 使用 ProxyTracker 构建局部更新的 Delta 载荷
+ */
+export function buildUserDelta(params: {
   currentRow: User
   resolvedRole: string
   values: UserForm
-}): UserReplacePayload {
+}): DeltaSet {
   const { currentRow, resolvedRole, values } = params
-  const payload: UserReplacePayload = {
-    username: values.username.trim(),
-    phoneNumber: values.phoneNumber?.trim() || '',
-    firstName: values.firstName.trim(),
-    lastName: values.lastName.trim(),
-    status: currentRow.status,
-    role: resolvedRole,
-    employeeId: values.employeeId?.trim() || currentRow.employeeId || undefined,
+  
+  const tracker = trackDelta(currentRow)
+  const draft = tracker.data as User
+  
+  draft.username = values.username.trim()
+  draft.phoneNumber = values.phoneNumber?.trim() || ''
+  draft.firstName = values.firstName.trim()
+  draft.lastName = values.lastName.trim()
+  draft.role = resolvedRole
+  draft.employeeId = values.employeeId?.trim() || currentRow.employeeId || undefined
+  
+  if (values.password && values.password.trim()) {
+    draft.password = values.password.trim()
   }
 
-  const normalizedPassword = values.password.trim()
-  if (normalizedPassword) {
-    payload.password = normalizedPassword
-  }
-
-  return payload
+  return tracker.commit()
 }
 
 export function buildUserCreatePayload(params: {

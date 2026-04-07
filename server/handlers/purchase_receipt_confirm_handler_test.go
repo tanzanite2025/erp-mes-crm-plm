@@ -185,5 +185,8 @@ func TestConfirmPurchaseReceiptHandlerReturnsBadRequestWhenReceiptDateInvalid(t 
 
 	ConfirmPurchaseReceiptHandler(ctx)
 	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
-	require.Contains(t, recorder.Body.String(), "receiptDate 格式错误")
+
+	var response purchaseOrderErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response.Error, "receiptDate 格式错误")
 }

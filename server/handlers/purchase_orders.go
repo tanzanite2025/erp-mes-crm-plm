@@ -35,7 +35,7 @@ func GetPurchaseOrdersHandler(c *gin.Context) {
 		Limit(pageSize).
 		Offset((page - 1) * pageSize).
 		Find(&orders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -52,7 +52,7 @@ func GetPurchaseOrderHandler(c *gin.Context) {
 	id := c.Param("id")
 	var order models.PurchaseOrder
 	if err := db.DB.Preload("Lines").First(&order, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "采购订单不存在"})
+		respondPurchaseOrderError(c, http.StatusNotFound, "采购订单不存在")
 		return
 	}
 	c.JSON(http.StatusOK, services.MapPurchaseOrderToResponse(order))
@@ -62,7 +62,7 @@ func GetPurchaseOrderHandler(c *gin.Context) {
 func SavePurchaseOrderHandler(c *gin.Context) {
 	var req services.SavePurchaseOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -136,10 +136,10 @@ func SavePurchaseOrderHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, services.ErrWorkflowDefinitionMissing) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "未找到可用流程定义，请先配置并启用采购单工作流"})
+			respondPurchaseOrderError(c, http.StatusBadRequest, "未找到可用流程定义，请先配置并启用采购单工作流")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -150,13 +150,13 @@ func SavePurchaseOrderHandler(c *gin.Context) {
 func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 	purchaseOrderID := strings.TrimSpace(c.Param("id"))
 	if purchaseOrderID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "采购订单ID不能为空"})
+		respondPurchaseOrderError(c, http.StatusBadRequest, "采购订单ID不能为空")
 		return
 	}
 
 	var req services.ConfirmPurchaseReceiptRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -169,9 +169,9 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": "采购订单不存在"})
+			respondPurchaseOrderError(c, http.StatusNotFound, "采购订单不存在")
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
 		}
 		return
 	}
@@ -183,7 +183,7 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 func DeletePurchaseOrderHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := db.DB.Model(&models.PurchaseOrder{}).Where("id = ?", id).Update("is_deleted", true).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -211,7 +211,7 @@ func GetDeletedPurchaseOrdersHandler(c *gin.Context) {
 		Limit(pageSize).
 		Offset((page - 1) * pageSize).
 		Find(&orders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

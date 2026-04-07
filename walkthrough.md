@@ -1,5 +1,89 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`purchase_orders` 再开一条最小闭环（错误响应 contract 统一）（2026-04-07）
+
+### 已执行变更
+1. 为 `purchase_orders` 补独立错误响应 contract
+   - `server/handlers/purchase_order_error_response.go`
+   - 已新增：
+     - `purchaseOrderErrorResponse`
+     - `respondPurchaseOrderError(...)`
+
+2. `purchase_orders` handler 错误分支已统一切到正式错误响应
+   - `server/handlers/purchase_orders.go`
+   - 已覆盖：
+     - 列表查询失败
+     - 详情不存在
+     - 保存参数绑定失败 / workflow definition 缺失 / 通用失败
+     - 收货确认参数错误 / 单据不存在 / 业务校验失败
+     - 删除失败
+     - 已删除列表查询失败
+
+3. 已补定向防回退测试
+   - `server/handlers/purchase_orders_handler_test.go`
+   - 已新增 `TestGetPurchaseOrderHandlerReturnsNamedErrorResponseWhenMissing`
+   - `server/handlers/purchase_receipt_confirm_handler_test.go` 已补错误响应 shape 断言
+   - `server/handlers/trading_workflow_e2e_test.go` 已补 `SavePurchaseOrderHandler` 缺失 workflow definition 的错误响应 shape 断言
+
+### 保留边界
+- 未改采购单业务逻辑；
+- 未改收货事务逻辑；
+- 未改 workflow 挂接与状态重算语义；
+- 未改错误消息语义，仅统一错误响应 contract。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "PurchaseOrder|Workflow"
+```
+
+结果：通过。
+
+### 当前结果
+- `purchase_orders` 主链错误响应已从裸 `gin.H` 收口为正式命名错误响应；
+- 成功响应与错误响应的 contract 风格更一致；
+- 后续若 `purchase_orders` 错误分支再回退为散乱裸响应，更容易被定向测试及时拦住。
+
+## P0：第二批 `inventory` 防回退测试（2026-04-07）
+
+### 已执行测试补强
+1. `bulk sync` 负向测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已覆盖：
+     - 非 admin 角色请求返回 `403`
+     - 非法 payload 返回 `400`
+
+2. `transfer request` 负向测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已覆盖：
+     - 非法 payload 返回 `400`
+
+3. `void` success / request shape 测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已覆盖：
+     - success 响应保持 `InventoryCommandStatusResponse`
+     - 启用审批配置且缺少 `approvalId` 时返回 `403`
+     - `INVENTORY_VOID_FORBIDDEN` 错误码与审批字段错误语义保持稳定
+
+### 保留边界
+- 未改 inventory 业务代码；
+- 未改库存事务逻辑；
+- 未改权限裁决逻辑；
+- 未改错误状态码与中文错误语义。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory"
+```
+
+结果：通过。
+
+### 当前结果
+- `inventory` 第二批防回退测试已覆盖 bulk sync、transfer、void 的关键负向/shape 边界；
+- 近期连续收口的 request / response / success status contract 已有更完整的测试保护；
+- 后续若这些链路回退为权限绕过、请求绑定漂移或 success / request shape 漂移，更容易被定向测试及时拦住。
+
 ## P0：`inventory transfer request DTO` 最小闭环（2026-04-07）
 
 ### 已执行变更

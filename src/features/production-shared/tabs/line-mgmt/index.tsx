@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { failLoudly } from '@/lib/safe-catch'
+import { type DeltaSet } from '@/lib/delta/types'
 
 function isTopologyAuthForbidden(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -46,43 +47,51 @@ export function LineMgmt() {
     }
   }, [loadData])
 
-  const handleUpdateLine = async (line: ProductionLine, authCode?: string) => {
+  const handleUpdateLine = async (
+    payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }, 
+    authCode?: string
+  ) => {
+    const isUpdate = payload.type === 'UPDATE'
+    
     // 乐观 UI 更新
-    setLines(prev => {
-      // 这里的逻辑必须非常严谨：
-      // 1. 如果传入的 line 已经有正式 ID (不是 temp-)，且列表中存在该 ID，则执行替换。
-      // 2. 如果列表中存在一个临时 ID 的卡片，其特征匹配（如名称相同），而传入的 line 是正式 ID，也应执行替换。
-      const index = prev.findIndex(l => l.id === line.id || (line.id && !line.id.startsWith('temp-') && l.name === line.name && l.id.startsWith('temp-')))
-      
-      if (index !== -1) {
-        const updated = [...prev]
-        updated[index] = { ...line }
+    if (isUpdate) {
+      const { id, delta } = payload
+      setLines(prev => prev.map(l => {
+        if (l.id !== id) return l
+        // 根据 Delta 进行局部状态回写 (乐观更新)
+        const updated = { ...l }
+        ;(Object.entries(delta) as [string, any][]).forEach(([path, item]) => {
+          // 此处暂不处理深度路径，仅处理一级字段（产线主表基本是一级）
+          if (!path.includes('.')) {
+            (updated as any)[path] = item.n
+          }
+        })
         return updated
-      } else {
-        // 全新产线
+      }))
+    } else {
+      const { data: line } = payload
+      setLines(prev => {
         const tempId = `temp-${Date.now()}`
         const newLine = { ...line, id: tempId }
         return [newLine, ...prev]
-      }
-    })
+      })
+    }
     
     try {
-      // 发送到后端前，如果是临时 ID 则置空以触发服务器 UUID 生成
-      const lineToSave = { 
-        ...line, 
-        id: (line.id && line.id.startsWith('temp-')) ? '' : (line.id || '') 
-      }
-      const saved = await productionResourceService.saveLine(lineToSave, authCode)
-      // 如果保存成功且原本是临时 ID，我们需要同步服务端生成的真实 ID
-      if (line.id?.startsWith('temp-')) {
-        setLines(prev => prev.map(l => l.id === line.id ? saved : l))
+      if (isUpdate) {
+        const { id, delta, version } = payload
+        const saved = await productionResourceService.patchLine(id, delta, version, authCode)
+        setLines(prev => prev.map(l => l.id === id ? saved : l))
       } else {
-        // 如果是更新操作，我们要同步最新的版本号 (Version) 以维持乐观锁链
-        setLines(prev => prev.map(l => l.id === line.id ? saved : l))
+        const { data: line } = payload
+        const lineToSave = { ...line, id: '' } // 触发后端生成 UUID
+        const saved = await productionResourceService.saveLine(lineToSave, authCode)
+        // 同步服务端生成的真实 ID
+        setLines(prev => prev.map(l => l.name === line.name && l.id.startsWith('temp-') ? saved : l))
       }
       
-      // 关键加固：保存成功后强制全量刷新一次数据，防止注销后的数据残影
       toast.success(t('orgPersonnel.lineMgmt.list.updateSuccess'))
+      // 关键加固：保存成功后延迟全量刷新一次数据，确保嵌套关系同步
       await loadData()
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'status' in error && Number(error.status) === 409) {

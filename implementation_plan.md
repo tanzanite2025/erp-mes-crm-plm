@@ -7321,3 +7321,233 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
 2. 已确认本轮目标是 request DTO + mapper 收口；
 3. 在你明确批准前，不开始业务代码修改；
 4. 你批准后，我将按最小范围实现并执行 `Inventory` 定向回归。
+
+## 第二批 `inventory` 防回退测试（审批稿）
+
+### 背景
+`inventory` 当前已经连续完成多条最小闭环：
+
+1. query / commit contract 收口；
+2. 命令成功响应统一；
+3. bulk sync contract 收口；
+4. transfer request DTO 收口。
+
+在这种情况下，继续扩大实现改造的收益已经下降；更合适的下一步，是对刚刚收口和仍有风险的边界补第二批定向防回退测试。
+
+### 改造目标
+本轮目标限定为：
+
+1. 为 `inventory` 补第二批定向防回退测试；
+2. 覆盖 bulk sync、transfer、void 三条链的关键负向/shape 边界；
+3. 在不改业务逻辑的前提下，提高后续回退可见性。
+
+### 优先覆盖范围
+#### 第一优先级：bulk sync 负向测试
+- 非 admin 角色请求 bulk sync 应返回 403
+- 非法 payload / 绑定失败应返回 400
+
+#### 第二优先级：transfer request 负向测试
+- 非法 payload / 缺字段 / 类型错误时应返回 400
+- request contract 不应回退为 service input 直绑风格
+
+#### 第三优先级：void success / request shape 测试
+- success 响应保持 `InventoryCommandStatusResponse`
+- request shape 仍通过 `VoidShipmentRequest` 承载审批字段
+
+### 实施策略
+#### 1) 只补测试，不进入实现改造
+- 不再扩展 inventory 业务代码；
+- 不修改库存事务逻辑；
+- 不修改权限裁决逻辑；
+- 仅通过测试锁住当前 contract 结果。
+
+#### 2) 优先落在既有测试文件
+- 优先复用 `server/handlers/inventory_command_handlers_test.go`
+- 仅在必要时补少量 `services` 侧测试
+- 不新增复杂测试框架
+
+### 风险评估
+1. 若断言写得过细，可能把正常演进误判为回归；
+2. 若负向测试构造不准确，容易测到权限/业务副作用而不是 contract 本身；
+3. 若范围继续扩大，容易从测试补强滑向新一轮实现改造。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory"`
+- 重点关注：
+  - bulk sync 权限与 payload 负向断言稳定
+  - transfer request 负向断言稳定
+  - void success / request shape 不回退
+
+### 当前状态与暂停点
+本节当前仅为第二批 `inventory` 防回退测试审批稿：
+
+1. 已确认本轮目标是测试补强，不是新的实现闭环；
+2. 已确认优先覆盖 bulk sync、transfer、void 三条链；
+3. 在你明确批准前，不开始新增测试代码；
+4. 你批准后，我将按最小范围补测试并执行 `Inventory` 定向回归。
+
+## `purchase_orders` 再开一条最小闭环（审批稿）
+
+### 背景
+`purchase_orders` 当前已经完成了一条明确的最小闭环：采购收货确认链 contract 收口。
+
+但与 `inventory` 连续收口前的状态类似，模块本身仍然较大，且收货确认链之外仍可能存在剩余 contract 边界未被正式复核。因此，当前最适合的下一轮实现型动作，是再单独开一条新的 `purchase_orders` 最小闭环，而不是直接扩大为 procurement 域改造。
+
+### 改造目标
+本轮目标限定为：
+
+1. 复核 `purchase_orders` 剩余 handler / service 对外 contract；
+2. 识别一个最值得优先处理的单一最小缺口；
+3. 在你批准后，仅对该单一缺口做最小收口。
+
+### 优先排查范围
+#### 第一层：`purchase_orders` 剩余 handler / service contract
+- `server/handlers/purchase_orders.go`
+- `server/services/*purchase*`
+
+#### 第二层：收货确认链之外的主链边界
+- 列表 / 详情 / 已删除列表
+- workflow 挂接相关返回边界
+- 其他仍可能偏离既有 DTO / mapper / wrapper 风格的链路
+
+### 重点问题类型
+1. 是否仍存在 `models.PurchaseOrder*` 直接进入 handler / service 外部 contract；
+2. 是否仍存在匿名 request / response；
+3. 是否仍存在裸 model / 裸 slice / 裸 map 作为外部 contract；
+4. 是否有单条链路与当前 `purchase_orders` 已收口风格明显不一致。
+
+### 实施策略
+#### 1) 每轮只收一个小点
+- 不同时处理多个 purchase_orders 子链；
+- 先扫描，再挑一个最值得优先处理的点；
+- 如发现范围扩大，优先缩回到更小目标。
+
+#### 2) 不改业务逻辑，只收口 contract
+- 不改采购单字段含义；
+- 不改收货事务逻辑；
+- 不改状态重算与 workflow 挂接语义；
+- 不改错误状态码与中文错误语义。
+
+### 预计改动文件（待复核后收敛）
+- `server/handlers/purchase_orders.go`
+- `server/services/*purchase*`
+- 如缺少类型，按最小范围补独立 DTO / mapper 文件
+- 如有必要补少量 `PurchaseOrder|Workflow` 定向测试
+
+### 风险评估
+1. 若把最小闭环误做成 procurement 域继续扩展，会迅速放大改动面；
+2. 若误动 workflow 挂接或状态重算，风险会超出 contract 收口范围；
+3. 若同时触碰多条采购链路，验证成本会明显上升。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "PurchaseOrder|Workflow"`
+- 重点复核：
+  - 命中链路的 request / response shape
+  - service 对外 contract 是否已脱离直接 model 暴露
+  - 既有 purchase_orders 主链测试不回退
+
+### 当前状态与暂停点
+本节当前仅为 `purchase_orders` 再开一条最小闭环审批稿：
+
+1. 已确认这是独立新一轮，不与既有收货确认链闭环混写；
+2. 已确认本轮只找一个新的最小缺口，不扩展为 procurement 域继续改造；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先扫描剩余 purchase_orders 边界，再给出最小改动范围并执行。
+
+## TypeScript 构建错误收口（审批稿，2026-04-07）
+
+### 背景
+当前前端构建被两处已可复现的类型错误阻断，但继续把它们当成两个孤立报错分别补平，风险很高。
+
+进一步追链后，当前更接近的结论是：**共享 contract 已升级，但消费侧仍允许页面直接手写正式对象、直接猜共享结构，缺少单一构造入口与消费边界约束。**
+
+当前已暴露的两个报错只是这一类问题在不同模块上的表象：
+
+1. `src/features/equipment-tooling/tabs/mold-mgmt.tsx`
+   - 在“分组内快速新增模具”时直接构造了一个 `Mold` 临时对象并传给 `setEditingMold(...)`。
+   - 但 `src/features/equipment-tooling/data/schema.ts` 中当前 `Mold` 类型已要求包含 `version: number`，而页面仍在绕过统一入口直接手写对象，因此一旦正式字段升级，就会立刻漂移。
+
+2. `src/features/org-personnel/tabs/employee-management-list.tsx`
+   - 当前仍按 `line.segments[].jobCategories[]` 遍历产线结构构造名称映射。
+   - 但现有 `Segment` 权威类型已不再包含 `jobCategories`，而是以 `processes` 为正式子节点字段，说明页面消费层仍在直接假设旧拓扑结构。
+
+### 改造目标
+本轮目标限定为：
+
+1. 先明确这两处问题的共享根因，避免继续按补丁思路逐点修错；
+2. 为 `equipment-tooling` 建立正式 `Mold` 对象的单一构造边界；
+3. 为 `org-personnel` 收口对产线拓扑共享类型的消费边界；
+4. 在不改变业务语义的前提下恢复 `pnpm exec tsc --noEmit`。
+
+### 根因判断
+#### 1) `equipment-tooling`：缺少正式 `Mold` 的单一构造入口
+- `Mold` 目前由 zod schema 推导，已经承载了正式字段约束；
+- `useAssets`、`MoldActionDialog`、`MoldMgmt` 都在消费 `Mold`，但“新建草稿/默认值”并没有被统一收敛到单一入口；
+- 结果是：某些位置通过表单 schema `default()` 或 `form.reset(...)` 间接获得默认值，另一些位置却继续手写对象字面量；
+- 一旦正式字段新增（如 `version`），手写入口就会与权威 schema 脱节。
+
+#### 2) `org-personnel`：页面层直接猜共享拓扑结构
+- `productionResourceService.getLines()` 明确返回 `ProductionLine[]`，其 `Segment` 权威类型当前只暴露 `processes`；
+- 但 `employee-management-list.tsx` 仍按历史字段 `jobCategories` 去遍历 segment 子节点；
+- 这说明员工管理页没有围绕“它真实需要的名称映射”建立稳定消费边界，而是直接把共享拓扑结构当成页面可随意假设的内部细节。
+
+#### 3) 两个问题的共同根因
+- **共享 contract 演进后，缺少强制性的消费收口机制。**
+- 页面层仍能：
+  - 直接手写正式领域对象；
+  - 直接依赖共享结构的历史字段；
+  - 在没有单一入口的情况下各自维护“我以为的模型”。
+- 因此这轮不应只修“漏了 `version`”和“把 `jobCategories` 改名”，而应把这两条链的边界一起收紧。
+
+### 预计改动文件
+- `src/features/equipment-tooling/tabs/mold-mgmt.tsx`
+- `src/features/equipment-tooling/components/mold-action-dialog.tsx`
+- `src/features/equipment-tooling/data/schema.ts`
+- `src/features/org-personnel/tabs/employee-management-list.tsx`
+- `src/features/production-shared/services/production-resource-service.ts`
+- `src/features/production-shared/tabs/line-mgmt/types.ts`
+- 如复核发现同域还有同类直接构造 `Mold` 或直接读取旧拓扑字段的点，最多补充极少量同域文件，但不扩大到无关模块。
+
+### 实施策略
+#### 1) `equipment-tooling`：统一 `Mold` 草稿/默认值构造入口
+- 先识别当前哪些地方在构造“新增模具默认对象”；
+- 将页面层直接手写 `Mold` 的入口收敛为单一来源；
+- 让 `mold-mgmt.tsx` 与 `mold-action-dialog.tsx` 共享同一套正式默认值逻辑；
+- 不通过把 `version` 改回可选来掩盖问题。
+
+#### 2) `org-personnel`：按真实消费需求收口共享类型读取
+- 员工管理页的目标只是构建“组织/产线/工序名称映射”；
+- 本轮会按这个真实需求重新核定它应该读取哪些权威节点；
+- 如果页面其实只需要 `line` 和 `process` 名称，就不再让它耦合 `Segment` 的历史中间层字段；
+- 如需要，再补最小显式类型，消除 `implicit any`，但不扩展为产线拓扑重构。
+
+#### 3) 以边界整改为验收，而非只看编译通过
+- 验收不只看 TS 报错消失；
+- 还要确认：
+  - 页面层是否还在直接手写正式 `Mold`；
+  - 目标链是否还在直接读取旧字段 `jobCategories`；
+  - 正式类型的新增字段未来是否仍会在多个页面入口重复漂移。
+
+### 风险评估
+1. 若错误地把 `version` 改回可选，虽然能暂时过编译，但会削弱正式模型约束，属于典型补丁式误修；
+2. 若只把 `jobCategories` 改成另一个字段名，而不明确页面真实依赖层级，后续共享拓扑再演进时仍会复发；
+3. 若把本轮扩展成 `equipment-tooling` 或产线拓扑整体重构，范围会超出“根因收口”的最小闭环；
+4. 若没有建立清晰的单一入口，未来新增字段时仍会在别的页面再次出现同类漂移。
+
+### 验证策略
+- 至少执行：
+  - `pnpm exec tsc --noEmit`
+- 如有必要补充：
+  - 目标文件定向 lint
+  - 定向搜索确认页面层不再直接手写正式 `Mold` 对象
+  - 定向搜索确认 `jobCategories` 旧字段读取未在本轮目标链继续残留
+
+### 当前状态与暂停点
+本节当前仅为 TypeScript 构建错误收口审批稿：
+
+1. 已确认本轮优先处理的是“共享 contract 漂移 + 页面边界未收口”的根因，而不是两个孤立报错；
+2. 已确认修复方向是“统一构造入口 + 对齐共享权威类型”，不是放宽类型约束；
+3. 我已更新 `task.md` 与本方案文档；
+4. **在你明确批准前，我不会开始修改业务代码。**

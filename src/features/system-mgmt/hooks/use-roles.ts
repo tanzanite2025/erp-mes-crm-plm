@@ -6,6 +6,7 @@ import {
 } from '@/features/authz/data/default-permission-queries'
 import { buildTreeAssistedPermissionIds } from '../utils/role-permission-tree'
 import { toast } from 'sonner'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const DEFAULT_PERMISSIONS = getDefaultPermissions()
 
@@ -79,11 +80,16 @@ export function useRoles(enabled = true) {
     if (!role) return
     if (isProtectedRoleId(role.id)) return
 
-    const updatedRole = { ...role, label }
-    setRoles((prev) => prev.map((item) => (item.id === roleId ? updatedRole : item)))
+    const tracker = trackDelta(role)
+    const draft = tracker.data as Role
+    draft.label = label
+    const delta = tracker.commit()
+    
+    if (Object.keys(delta).length === 0) return
 
     try {
-      await RoleService.upsertRole(updatedRole)
+      const result = await RoleService.patchRole(roleId, delta, role.version)
+      setRoles((prev) => prev.map((item) => (item.id === roleId ? result : item)))
     } catch (error) {
       toast.error(buildUserFacingErrorMessage(error, '角色名称保存失败，请稍后重试'))
     }
@@ -94,17 +100,18 @@ export function useRoles(enabled = true) {
     if (!role) return
     if (isSuperAdminRoleId(role.id)) return
 
-    const updatedRole = {
-      ...role,
-      permissions: buildTreeAssistedPermissionIds(role.permissions, permissionId),
-    }
-    setRoles((prev) => prev.map((item) => (item.id === roleId ? updatedRole : item)))
+    const tracker = trackDelta(role)
+    const draft = tracker.data as Role
+    draft.permissions = buildTreeAssistedPermissionIds(role.permissions, permissionId)
+    const delta = tracker.commit()
+
+    if (Object.keys(delta).length === 0) return
 
     try {
-      await RoleService.upsertRole(updatedRole)
+      const result = await RoleService.patchRole(roleId, delta, role.version)
+      setRoles((prev) => prev.map((item) => (item.id === roleId ? result : item)))
     } catch (error) {
-      toast.error(buildUserFacingErrorMessage(error, '角色权限保存失败，已回滚本地更改'))
-      setRoles((prev) => prev.map((item) => (item.id === roleId ? role : item)))
+      toast.error(buildUserFacingErrorMessage(error, '角色权限保存失败，已自动恢复至服务端状态'))
     }
   }
 
@@ -115,6 +122,7 @@ export function useRoles(enabled = true) {
       label,
       color: 'bg-slate-500/10 text-slate-600 border-slate-200',
       permissions: [],
+      version: 1,
     }
 
     setRoles((prev) => [...prev, newRole])

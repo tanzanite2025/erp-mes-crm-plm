@@ -137,6 +137,27 @@ export type MoldFormOutput = z.output<ReturnType<typeof createMoldSchema>>
 export type FurnaceFormInput = z.input<ReturnType<typeof createFurnaceSchema>>
 export type FurnaceFormOutput = z.output<ReturnType<typeof createFurnaceSchema>>
 
+export function createMoldDraft(overrides: Partial<MoldFormOutput> = {}): MoldFormOutput {
+    return {
+        id: '',
+        sn: '',
+        name: '',
+        maxCycles: 1000,
+        currentCycles: 0,
+        maintenanceThreshold: 800,
+        totalLifeCycles: 0,
+        groupName: '',
+        status: 'IDLE',
+        location: '',
+        description: '',
+        isAlerted: false,
+        imageUrl: '',
+        version: 1,
+        createdAt: new Date().toISOString(),
+        ...overrides,
+    }
+}
+
 export const moldLoanSchema = z.object({
     id: z.string(),
     moldId: z.string(),

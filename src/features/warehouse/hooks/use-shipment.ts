@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
@@ -10,10 +10,22 @@ import { getSalesOrderById } from '@/features/trading/services/trading-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { resolveInventoryErrorTip } from '../constants/inventory-error-codes'
 import { inventoryService, type MasterDataSearchResult, type ShipmentRecord } from '../services/inventory-service'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface WarehouseCategoryOption {
   value: string
   label: string
+}
+
+const DEFAULT_FORM_DATA = {
+  quantity: 1,
+  batchNo: '',
+  orderNo: '',
+  salesOrderId: '',
+  salesOrderLineId: 0,
+  sourceCategory: '',
+  shipmentDate: new Date().toISOString().slice(0, 10),
+  remarks: '',
 }
 
 export function useShipment() {
@@ -33,16 +45,19 @@ export function useShipment() {
   const [inventoryBreakdown, setInventoryBreakdown] = useState<Record<string, number>>({})
   const [error, setError] = useState<unknown>(null)
 
-  const [formData, setFormData] = useState({
-    quantity: 1,
-    batchNo: '',
-    orderNo: '',
-    salesOrderId: '',
-    salesOrderLineId: 0,
-    sourceCategory: '',
-    shipmentDate: new Date().toISOString().slice(0, 10),
-    remarks: '',
-  })
+  // 使用 SDRTS DeltaTracker 进行状态追踪
+  const initialForm = useMemo(() => DEFAULT_FORM_DATA, [])
+  const { data: formData } = useDeltaTracker(initialForm, isShipmentOpen)
+
+  // 兼容性 Shim: 模拟 setFormData
+  const setFormData = useCallback((updater: any) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
 
   const { data } = useGetSalesOrders()
   const salesOrders = data?.items || []
@@ -116,16 +131,15 @@ export function useShipment() {
     if (!allowsAction('action_warehouse_shipment_record')) return
 
     setSelectedItem(item)
-    setFormData((prev) => ({
-      ...prev,
-      sourceCategory: item.category || (item.sourceModule === 'PRODUCT' ? 'FINISHED' : 'MATERIAL'),
-      batchNo: `S${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`,
-      quantity: 1,
-      orderNo: '',
-      salesOrderId: '',
-      salesOrderLineId: 0,
-      remarks: '',
-    }))
+    // 直接操作 Proxy 数据
+    formData.sourceCategory = item.category || (item.sourceModule === 'PRODUCT' ? 'FINISHED' : 'MATERIAL')
+    formData.batchNo = `S${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`
+    formData.quantity = 1
+    formData.orderNo = ''
+    formData.salesOrderId = ''
+    formData.salesOrderLineId = 0
+    formData.remarks = ''
+    
     setIsShipmentOpen(true)
   }
 
@@ -176,6 +190,7 @@ export function useShipment() {
         remarks: formData.remarks,
         sourceCategory: formData.sourceCategory,
         status,
+        version: 1, // 新建 record 默认版本 1
       })
 
       toast.success(
@@ -193,17 +208,20 @@ export function useShipment() {
 
   const commitDraft = async (id: string, name: string) => {
     if (!allowsAction('action_warehouse_shipment_commit')) return
-    if (
-      !confirm(
-        t('warehouse.shipment.toast.commitConfirm', {
-          name,
-        })
-      )
-    )
+    
+    const record = history.find(h => h.id === id)
+    if (!record) {
+      toast.error(t('warehouse.shipment.toast.notFound'))
       return
+    }
+
+    if (!confirm(t('warehouse.shipment.toast.commitConfirm', { name }))) {
+      return
+    }
 
     try {
-      await inventoryService.commitShipment(id)
+      // SDRTS: 提交状态切换的 Delta (status: DRAFT -> COMMITTED)
+      await inventoryService.patchShipment(id, { status: { o: 'DRAFT', n: 'COMMITTED' } }, record.version)
       toast.success(t('warehouse.shipment.toast.commitRecorded'))
       loadInitialData()
     } catch (e: unknown) {
@@ -219,6 +237,9 @@ export function useShipment() {
     approvalId?: string
   ) => {
     if (!allowsAction('action_warehouse_shipment_void')) return
+
+    const record = history.find(h => h.id === id)
+    if (!record) return
 
     const dialogMsg =
       status === 'COMMITTED'
@@ -242,7 +263,7 @@ export function useShipment() {
 
   const fillMaxQuantity = () => {
     if (selectedItem) {
-      setFormData((prev) => ({ ...prev, quantity: categoryStock }))
+      formData.quantity = categoryStock
     }
   }
 

@@ -251,7 +251,10 @@ func TestSavePurchaseOrderHandlerReturnsBadRequestWhenWorkflowDefinitionMissing(
 	SavePurchaseOrderHandler(ctx)
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
-	require.Contains(t, recorder.Body.String(), "未找到可用流程定义")
+
+	var response purchaseOrderErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response.Error, "未找到可用流程定义")
 
 	var count int64
 	require.NoError(t, testDB.Model(&models.PurchaseOrder{}).Where("order_no = ?", "PO-E2E-NEG-001").Count(&count).Error)

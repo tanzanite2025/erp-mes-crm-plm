@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { NotificationService } from '@/features/system-mgmt/notifications/notification-service'
 import { handleServerError } from '@/lib/handle-server-error'
 import * as tradingService from '../services/trading-service'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -176,5 +177,44 @@ export const useSalesOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { saveMutation, deleteMutation, claimMutation }
+  const patchMutation = useMutation({
+    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => 
+      tradingService.patchSalesOrder(id, delta, version),
+    onSuccess: (data) => {
+      toast.success(t('tradingSalesOrder.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['requirements'] })
+    },
+    onError: handleServerError,
+  })
+
+  return { saveMutation, patchMutation, deleteMutation, claimMutation }
+}
+
+export const usePurchaseOrderMutations = () => {
+  const { t } = useLanguage()
+  const queryClient = useQueryClient()
+
+  const saveMutation = useMutation({
+    mutationFn: tradingService.savePurchaseOrder,
+    onSuccess: () => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+    },
+    onError: handleServerError,
+  })
+
+  const patchMutation = useMutation({
+    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => 
+      tradingService.patchPurchaseOrder(id, delta, version),
+    onSuccess: (data) => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+    },
+    onError: handleServerError,
+  })
+
+  return { saveMutation, patchMutation }
 }

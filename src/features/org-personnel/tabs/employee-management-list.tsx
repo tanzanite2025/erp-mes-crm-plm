@@ -1,14 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
     flexRender,
     getCoreRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    type Row,
     useReactTable,
 } from '@tanstack/react-table'
-import { Download, FileSpreadsheet, Plus, Share } from 'lucide-react'
+import { Download, FileSpreadsheet, Plus, Share, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card } from '@/components/ui/card'
@@ -39,6 +40,7 @@ import { type EmployeeStatus, EmployeeService } from '../services/employee-servi
 import { OrgService } from '../services/org-service'
 import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
 import { type OrgNode } from '../data/org-schema'
+import { type DeltaSet } from '@/lib/delta/types'
 
 const logger = createLogger('EmployeeManagementList')
 
@@ -55,6 +57,7 @@ export function EmployeeManagementList() {
     const { locale, t } = useLanguage()
     const [data, setData] = useState<Employee[]>(initialData)
     const [open, setOpen] = useState(false)
+    const [currentRow, setCurrentRow] = useState<Employee | undefined>(undefined)
     const [importOpen, setImportOpen] = useState(false)
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -88,8 +91,8 @@ export function EmployeeManagementList() {
             lineData.forEach((line) => {
                 newMap[line.id] = line.name
                 line.segments.forEach((seg) => {
-                    seg.jobCategories.forEach((job) => {
-                        newMap[job.id] = job.name
+                    seg.processes.forEach((process) => {
+                        newMap[process.id] = process.name
                     })
                 })
             })
@@ -227,22 +230,59 @@ export function EmployeeManagementList() {
         }
     }
 
-    const handleAddEmployee = async (newEmp: Employee) => {
+    // SDRTS: 适配增量 Patch 提交
+    const handleUpdateEmployee = async (finalEmp: Employee, isPatch?: boolean, delta?: DeltaSet) => {
         try {
-            await EmployeeService.saveEmployee(newEmp)
+            if (isPatch && delta && finalEmp.id) {
+                // 执行增量更新
+                await EmployeeService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
+                toast.success(t('orgPersonnel.list.saveUpdated'))
+            } else {
+                // 执行全量保存 (创建新员工)
+                await EmployeeService.saveEmployee(finalEmp)
+                toast.success(t('orgPersonnel.list.saveCreated'))
+            }
             await loadData()
-            toast.success(newEmp.id ? t('orgPersonnel.list.saveUpdated') : t('orgPersonnel.list.saveCreated'))
+            setCurrentRow(undefined)
         } catch (err) {
-            logger.error('Add employee failed', err)
+            logger.error('Update employee failed', err)
             toast.error(t('orgPersonnel.list.saveFailed', {
                 message: err instanceof Error ? err.message : 'Unknown error'
             }))
         }
     }
 
+    const handleEditRow = (row: Employee) => {
+        setCurrentRow(row)
+        setOpen(true)
+    }
+
+    // 动态注入操作列，实现增量介入入口
+    const columns = useMemo(() => {
+        const baseColumns = getEmployeeColumns(t)
+        const actionColumn = {
+            id: 'actions',
+            header: () => <div className='w-10'></div>,
+            cell: ({ row }: { row: Row<Employee> }) => (
+                <div className='flex justify-end'>
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => handleEditRow(row.original)}
+                        className='size-7 rounded-full hover:bg-primary/5 hover:text-primary transition-colors'
+                    >
+                        <Pencil className='size-3.5' />
+                    </Button>
+                </div>
+            ),
+            meta: { viewable: false },
+        }
+        return [...baseColumns, actionColumn]
+    }, [t])
+
     const table = useReactTable({
         data,
-        columns: getEmployeeColumns(t),
+        columns,
         state: {
             rowSelection,
             columnVisibility,
@@ -310,7 +350,10 @@ export function EmployeeManagementList() {
                         <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('orgPersonnel.list.importsOk')}</span>
                     </Button>
                     <Button
-                        onClick={() => setOpen(true)}
+                        onClick={() => {
+                            setCurrentRow(undefined)
+                            setOpen(true)
+                        }}
                         className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-500/10 active:scale-95 transition-all p-0'
                     >
                         <div className='flex items-center gap-1'>
@@ -420,8 +463,12 @@ export function EmployeeManagementList() {
 
             <EmployeeActionDialog
                 open={open}
-                onOpenChange={setOpen}
-                onSubmit={handleAddEmployee}
+                onOpenChange={(val) => {
+                    setOpen(val)
+                    if (!val) setCurrentRow(undefined)
+                }}
+                currentRow={currentRow}
+                onSubmit={handleUpdateEmployee}
             />
 
             <ImportPersonnelDialog

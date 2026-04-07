@@ -4,6 +4,8 @@ import { useNotificationStore } from '@/features/system-mgmt/notifications/notif
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const logger = createLogger('tradingService');
 
@@ -136,47 +138,92 @@ export const claimOrderLine = async (orderId: string, lineNos: number[], operato
 }
 
 /**
- * 【加固】跨模块联动：更新订单交付进度
+ * 局部更新销售订单 (SDRTS 协议)
+ */
+export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {
+    const payload: DeltaPayload = {
+        op: 'PATCH',
+        delta,
+        metadata: { id, version }
+    };
+
+    return apiFetch<SalesOrder>(`/sales-orders/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+}
+
+/**
+ * 局部更新采购订单 (SDRTS 协议)
+ */
+export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: number): Promise<PurchaseOrder> => {
+    const payload: DeltaPayload = {
+        op: 'PATCH',
+        delta,
+        metadata: { id, version }
+    };
+
+    return apiFetch<PurchaseOrder>(`/purchase/orders/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+}
+
+/**
+ * 【加固】跨模块联动：更新订单交付进度 (基于 Delta 原子更新)
  */
 export const updateOrderDelivery = async (orderNo: string, materialId: string, quantity: number): Promise<void> => {
     const order = await getSalesOrderByNo(orderNo);
     if (!order) {
         logger.error('Order not found for delivery update', { orderNo, materialId, quantity });
-        return; // 在背景联动链路中，如果单据丢失，记录 CRITICAL 日志
+        return;
     }
     if (order.isDeleted) return;
 
+    // 使用 ProxyTracker 捕获交付变更
+    const tracker = trackDelta(order);
+    const draft = tracker.data as SalesOrder;
+
     let changed = false;
-    const lines = ensureArrayResponse<any>(order.lines, `Order[${orderNo}].lines`);
-    order.lines = lines.map(line => {
+    draft.lines.forEach((line, index) => {
         if (line.productId === materialId || line.productCode === materialId) {
             const delivered = Math.max(0, Number(line.deliveredQty || 0) + quantity);
+            draft.lines[index].deliveredQty = delivered;
+            draft.lines[index].status = delivered >= line.qty ? 'Done' : (delivered > 0 ? 'InProgress' : 'Pending');
             changed = true;
-            return {
-                ...line,
-                deliveredQty: delivered,
-                status: delivered >= line.qty ? 'Done' : (delivered > 0 ? 'InProgress' : 'Pending')
-            }
         }
-        return line
-    })
+    });
 
     if (changed) {
-        const allDone = order.lines.every((l: any) => Number(l.deliveredQty || 0) >= l.qty);
-        const anyStarted = order.lines.some((l: any) => Number(l.deliveredQty || 0) > 0);
+        // 自动触发主表状态机流转
+        const allDone = draft.lines.every(l => Number(l.deliveredQty || 0) >= l.qty);
+        const anyStarted = draft.lines.some(l => Number(l.deliveredQty || 0) > 0);
 
         if (allDone) {
-            order.status = 'Done'
+            draft.status = 'Done';
         } else if (anyStarted) {
-            order.status = 'InProgress'
+            draft.status = 'InProgress';
         } else {
-            order.status = 'Pending'
+            draft.status = 'Pending';
         }
         
-        await saveSalesOrder(order);
+        const delta = tracker.commit();
+        if (Object.keys(delta).length > 0) {
+            await patchSalesOrder(order.id, delta, order.version);
+        }
     }
 }
 
+
+/**
+ * 保存采购订单 (全量)
+ */
+export const savePurchaseOrder = async (order: Partial<PurchaseOrder>): Promise<PurchaseOrder> => {
+    return apiFetch<PurchaseOrder>('/purchase/orders', {
+        method: 'POST',
+        body: JSON.stringify(order),
+    });
+}
 
 /**
  * 采购订单列表 (分页)

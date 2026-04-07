@@ -113,7 +113,7 @@ export function MaterialMgmt({ category }: MaterialMgmtProps) {
                 onOpenChange={setIsDialogOpen}
                 material={editingMaterial}
                 defaultCategory={category !== 'all' ? category : undefined}
-                onSave={async (data) => { await upsertMutation.mutateAsync(data) }}
+                onSave={async (data, isPatch, delta) => { await upsertMutation.mutateAsync({ data, isPatch, delta }) }}
             />
         </div>
     )

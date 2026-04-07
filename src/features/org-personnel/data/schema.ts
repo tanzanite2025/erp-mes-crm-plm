@@ -22,6 +22,7 @@ export const employeeSchema = z.object({
     deptName: z.string().optional(),
     lineName: z.string().optional(),
     processName: z.string().optional(),
+    version: z.number().default(1),
 })
 
 export type Employee = z.infer<typeof employeeSchema>

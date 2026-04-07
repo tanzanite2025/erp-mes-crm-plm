@@ -1,6 +1,7 @@
 import { type Material } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
  * 物料档案存储服务 (已同步至后端)
@@ -77,13 +78,33 @@ export const deleteMaterial = async (id: string): Promise<void> => {
     window.dispatchEvent(new CustomEvent('xdfc_materials_updated'))
 }
 
+/**
+ * Patch Material (SDRTS Delta Protocol)
+ */
+export const patchMaterial = async (id: string, delta: DeltaSet, version: number): Promise<Material> => {
+    const payload: DeltaPayload = {
+        op: 'PATCH',
+        delta,
+        metadata: { id, version }
+    };
+
+    const res = await apiFetch<Material>(`/materials/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+    });
+
+    window.dispatchEvent(new CustomEvent('xdfc_materials_updated'));
+    return ensureObjectResponse<Material & Record<string, unknown>>(res, 'MaterialService.patchMaterial') as Material;
+}
+
 export const materialService = {
     getMaterials,
     getMaterialsWithVersion,
     getMaterialOptions,
     saveMaterial,
     saveMaterials,
-    deleteMaterial
+    deleteMaterial,
+    patchMaterial
 }
 
 export type { Material }

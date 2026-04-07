@@ -183,6 +183,25 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			claimed_by TEXT,
 			claimed_at TEXT
 		)`,
+		`CREATE TABLE approval_configs (
+			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			module TEXT NOT NULL,
+			action TEXT NOT NULL,
+			is_active BOOLEAN DEFAULT FALSE
+		)`,
+		`CREATE TABLE approval_requests (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			module TEXT NOT NULL,
+			action TEXT NOT NULL,
+			target_id TEXT NOT NULL,
+			status TEXT NOT NULL
+		)`,
 	}
 
 	for _, stmt := range schemaStatements {
@@ -355,4 +374,103 @@ func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
 	require.NoError(t, db.DB.Raw(`SELECT category_code, quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, "WH_B", "B-TR-001").Scan(&toRow).Error)
 	require.Equal(t, "WH_B", toRow.CategoryCode)
 	require.Equal(t, 4.0, toRow.Quantity)
+}
+
+func TestBulkSyncInventoryHandlerReturnsForbiddenForNonAdmin(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(`[]`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Set("role", "user")
+
+	BulkSyncInventoryHandler(ctx)
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "Bulk sync requires admin role")
+}
+
+func TestBulkSyncInventoryHandlerReturnsBadRequestForInvalidPayload(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(`{"invalid":true}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Set("role", "admin")
+
+	BulkSyncInventoryHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response inventoryErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "INVENTORY_BULK_SYNC_VALIDATION_FAILED", response.Code)
+}
+
+func TestTransferInventoryHandlerReturnsBadRequestForInvalidPayload(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/transfer", strings.NewReader(`{"materialId":123}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+
+	TransferInventoryHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response inventoryErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "INVENTORY_TRANSFER_VALIDATION_FAILED", response.Code)
+}
+
+func TestVoidShipmentHandlerReturnsNamedStatusResponse(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`INSERT INTO materials (id, created_at, updated_at) VALUES (?, ?, ?)`, materialID, now, now).Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO inventory (id, created_at, updated_at, material_id, quantity, total_value, average_unit_cost, category_code, batch_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, uuid.NewString(), now, now, materialID, 17.0, 85.0, 5.0, "WH_A", "B-001").Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, amount, quantity, order_date, delivery_date, created_at, updated_at, updated_by, is_deleted, version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, "so-void-handler-1", "SO-VOID-001", "Order", "Customer", "cust-1", "standard", "CNY", "GENERAL", "InProgress", 100.0, 10.0, "2026-04-05", "2026-04-12", now, now, "alice", false, 1).Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO sales_order_lines (id, sales_order_id, line_no, product_id, product_model, qty, uom, price, amount, delivered_qty, order_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 1, "so-void-handler-1", 1, materialID, "MODEL-1", 10.0, "PCS", 10.0, 100.0, 5.0, "2026-04-05", "InProgress").Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO shipment_records (id, created_at, updated_at, material_id, sales_order_id, sales_order_line_id, quantity, source_category, batch_no, order_no, status, cogs, shipment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, "ship-void-handler-1", now, now, materialID, "so-void-handler-1", 1, 3.0, "WH_A", "B-001", "SO-VOID-001", "COMMITTED", 15.0, now).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Params = gin.Params{{Key: "id", Value: "ship-void-handler-1"}}
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment/ship-void-handler-1/void", strings.NewReader(`{"approvalId":""}`))
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	VoidShipmentHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryCommandStatusResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "success", response.Status)
+}
+
+func TestVoidShipmentHandlerReturnsForbiddenWhenApprovalIdMissingUnderActiveConfig(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`INSERT INTO materials (id, created_at, updated_at) VALUES (?, ?, ?)`, materialID, now, now).Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO shipment_records (id, created_at, updated_at, material_id, quantity, source_category, batch_no, order_no, status, cogs, shipment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, "ship-void-handler-need-approval", now, now, materialID, 3.0, "WH_A", "B-001", "SO-VOID-002", "COMMITTED", 15.0, now).Error)
+	require.NoError(t, db.DB.Exec(`INSERT INTO approval_configs (id, created_at, updated_at, module, action, is_active) VALUES (?, ?, ?, ?, ?, ?)`, uuid.NewString(), now, now, "Inventory", "VOID", true).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Params = gin.Params{{Key: "id", Value: "ship-void-handler-need-approval"}}
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment/ship-void-handler-need-approval/void", strings.NewReader(`{"approvalId":""}`))
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	VoidShipmentHandler(ctx)
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+
+	var response inventoryErrorResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "INVENTORY_VOID_FORBIDDEN", response.Code)
+	require.Contains(t, response.Error, "Missing Approval ID")
 }
