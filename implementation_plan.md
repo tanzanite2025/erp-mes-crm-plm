@@ -1,5 +1,67 @@
 # implementation plan
 
+## 截图报错定点修复专项（2026-04-07，待确认）
+
+### 一、当前现状
+最新一轮编译截图显示，当前仓库还存在一组明确、可复现的 TypeScript/未使用变量错误，主要集中在以下文件：
+
+1. `src/features/ai-assistant/components/daily-insight-modal.tsx`
+2. `src/features/ai-assistant/components/ai-message-item.tsx`
+3. `src/features/engineering-db/components/hub-action-dialog.tsx`
+4. `src/features/engineering-db/components/nipple-action-dialog.tsx`
+5. `src/features/piecework/tabs/index.tsx`
+6. `src/features/trading/hooks/use-sales-order-form.ts`
+
+这批问题的共同点是：
+
+- 可以通过截图直接定位；
+- 主要属于 props 协议不一致、未使用变量、翻译 key 类型过宽；
+- 不需要扩散为架构重构即可修复。
+
+### 二、本轮目标
+本轮只做“定点恢复编译”的最小修复：
+
+1. 修复 `ai-assistant` 中 `onExecuteAction` 协议不匹配；
+2. 清理 `engineering-db` 与 `piecework` 中截图可见的未使用变量；
+3. 修复 `use-sales-order-form.ts` 中 `t(errorKey)` 的类型错误；
+4. 通过 `pnpm exec tsc --noEmit` 恢复截图中的编译错误为 0。
+
+### 三、本轮明确不做
+1. 不将本轮扩散为 AI Assistant、Engineering DB、Piecework 模块重构；
+2. 不顺手清理截图外的全部 lint/warning；
+3. 不为了类型收窄改动业务协议语义；
+4. 不把此次修复扩散为新的 shared 抽象层。
+
+### 四、根因判断
+
+#### 1. AI Assistant
+`daily-insight-modal.tsx` 传入的执行函数签名与 `AiMessageItem` 约定的 `ActionItem` 协议未完全对齐，导致 props 类型报错。
+
+#### 2. Engineering DB / Piecework
+部分导入或语言解构在当前文件实现里已无使用，但仍然残留，属于典型的未使用变量错误。
+
+#### 3. Trading
+`validateSalesOrder()` 返回的 `errorKey` 只是 `string`，而 `t()` 期待的是更受约束的翻译 key 类型，因此在 `use-sales-order-form.ts` 处触发 TS2345。
+
+### 五、修复策略
+1. 对 props 协议错误，优先统一真实调用协议；
+2. 对未使用变量，直接删除无效导入/解构；
+3. 对翻译 key 类型错误，优先收窄验证器返回类型，而不是在调用处继续做宽泛断言；
+4. 只做最小修改，保持当前功能语义不变。
+
+### 六、验证口径
+至少执行：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+并补充确认：
+
+1. 截图中的报错已消失；
+2. 未引入新的编译断裂；
+3. `walkthrough.md` 已记录本轮定点修复结果。
+
 ## Trading 剩余 warning / 更深层类型债务专项（2026-04-07，待确认）
 
 ### 一、当前现状

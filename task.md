@@ -1,4 +1,25 @@
 
+- [x] 359. 冻结本轮范围，只处理截图中的编译报错定点修复（2026-04-07，已完成）
+  - [x] 聚焦 `ai-assistant`、`engineering-db`、`piecework` 与 `trading/use-sales-order-form.ts` 中截图可见报错。
+  - [x] 本轮目标是恢复编译通过，不扩散为无关模块重构。
+  - [x] 本轮仅处理 props 不匹配、未使用变量和明确类型错误，不顺手扩散清理其他技术债。
+
+- [x] 360. 明确当前待修错误
+  - [x] `src/features/ai-assistant/components/daily-insight-modal.tsx` 向 `AiMessageItem` 传入的 `onExecuteAction` 与子组件 props 类型不匹配。
+  - [x] `src/features/engineering-db/components/hub-action-dialog.tsx` 存在未使用的 `t`。
+  - [x] `src/features/engineering-db/components/nipple-action-dialog.tsx` 存在未使用的 `t`。
+  - [x] `src/features/piecework/tabs/index.tsx` 存在未使用的 `Tag`、`toast`、`t`。
+  - [x] `src/features/trading/hooks/use-sales-order-form.ts` 中 `t(errorKey)` 的 key 类型过宽，导致 TS2345。
+
+- [x] 361. 明确修复策略
+  - [x] 对 props 类型不匹配问题，优先对齐调用方与组件真实协议，不发明新的中间协议层。
+  - [x] 对未使用变量，直接删除无效导入/解构，不保留空占位。
+  - [x] 对 `use-sales-order-form.ts`，在不改变业务语义前提下收窄 `errorKey` 的翻译 key 类型。
+
+- [x] 362. 明确验证口径
+  - [x] `pnpm exec tsc --noEmit` 通过。
+  - [x] `walkthrough.md` 记录本轮截图报错修复结果与验证结果。
+
 - [ ] 355. 冻结本轮范围，只处理 Trading 剩余 warning 与更深层类型债务（2026-04-07，待确认）
   - [ ] 当前 `src/features/trading` 内显式 `any / as any / : any` 已完成清理，本轮不再重复做同类局部收口。
   - [ ] 本轮重点改为识别剩余的样式/规范 warning，以及是否存在跨模块类型债务需要单独专项处理。

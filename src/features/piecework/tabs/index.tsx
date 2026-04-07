@@ -2,17 +2,17 @@
 
 import { useState, useMemo } from 'react'
 import { flexRender, getCoreRowModel, type ColumnDef, useReactTable } from '@tanstack/react-table'
-import { Landmark, Plus, Edit, Trash2, Search, Tag, Box, Target } from 'lucide-react'
+import { Landmark, Plus, Edit, Trash2, Search, Box, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import type { DeltaSet } from '@/lib/delta/types'
 import { useGetPieceworkRates, usePieceworkRateMutations } from '../hooks/use-piecework'
-import { PieceworkRate } from '../data/schema'
+import type { PieceworkRate } from '../data/schema'
 import { RateActionDialog } from '../components/rate-action-dialog'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 export function PieceworkQuery() {
@@ -21,7 +21,6 @@ export function PieceworkQuery() {
 }
 
 export function PieceworkRules() {
-    const { t } = useLanguage()
     const { data: rates = [], isLoading } = useGetPieceworkRates()
     const { saveRateMutation, patchRateMutation, deleteRateMutation } = usePieceworkRateMutations()
     
@@ -120,7 +119,7 @@ export function PieceworkRules() {
     const handleSave = (params: { 
         data: PieceworkRate; 
         isPatch: boolean; 
-        delta?: any; 
+        delta?: DeltaSet; 
         version?: number 
     }) => {
         const { data: formData, isPatch, delta, version } = params

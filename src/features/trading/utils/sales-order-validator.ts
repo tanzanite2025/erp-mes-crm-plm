@@ -1,8 +1,15 @@
 import { type SalesOrder } from '../data/schema'
 
+export type SalesOrderValidationErrorKey =
+  | 'tradingSalesOrder.headerFields.lockedMessage'
+  | 'tradingSalesOrder.headerFields.customerPlaceholder'
+  | 'tradingSalesOrder.headerFields.deliveryDeadline'
+  | 'tradingSalesOrder.linesEditor.noLines'
+  | 'tradingSalesOrder.linesEditor.selectProduct'
+
 export interface SalesOrderValidationResult {
   isValid: boolean
-  errorKey?: string
+  errorKey?: SalesOrderValidationErrorKey
 }
 
 /**

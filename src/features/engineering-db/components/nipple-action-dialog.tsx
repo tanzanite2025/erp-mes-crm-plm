@@ -1,17 +1,20 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Nut, Hash, Tag, Info, Save, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FileUploader } from '@/components/file-uploader'
-import { useLanguage } from '@/context/language-provider'
-import { Nipple } from '../data/nipple-schema'
+import type { DeltaSet } from '@/lib/delta/types'
+import type { Nipple } from '../data/nipple-schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
+
+type NippleFormState = Nipple
+type NippleFormUpdater = NippleFormState | ((prev: NippleFormState) => NippleFormState)
 
 interface NippleActionDialogProps {
   currentRow?: Nipple | null
@@ -20,7 +23,7 @@ interface NippleActionDialogProps {
   onSave: (params: { 
     data: Nipple; 
     isPatch: boolean; 
-    delta?: any; 
+    delta?: DeltaSet; 
     version?: number 
   }) => void
   isLoading?: boolean
@@ -44,7 +47,7 @@ export function NippleActionDialog({
   onSave,
   isLoading,
 }: NippleActionDialogProps) {
-  const { t } = useLanguage()
+  const [draftId] = useState(() => `NIP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`)
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[650px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
@@ -59,12 +62,28 @@ export function NippleActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_NIPPLE, 
-      id: `NIP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      id: draftId,
       createdAt: new Date().toISOString() 
     } as Nipple
-  }, [currentRow, open])
+  }, [currentRow, draftId])
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+
+  const setFormData = useCallback((updater: NippleFormUpdater) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
+
+  const updateField = useCallback(<K extends keyof Nipple>(field: K, value: Nipple[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }, [setFormData])
 
   const handleSave = () => {
     if (!formData.name) {
@@ -147,7 +166,7 @@ export function NippleActionDialog({
               placeholder='例如: Brass-12mm-Black'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-orange-500/20 px-5 shadow-inner'
               value={formData.name}
-              onChange={(e) => { formData.name = e.target.value }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -170,7 +189,7 @@ export function NippleActionDialog({
               placeholder='输入品牌名称'
               className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
               value={formData.brand}
-              onChange={(e) => { formData.brand = e.target.value }}
+              onChange={(e) => updateField('brand', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -179,7 +198,7 @@ export function NippleActionDialog({
               placeholder='例如: Brass / Aluminum'
               className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
               value={formData.material}
-              onChange={(e) => { formData.material = e.target.value }}
+              onChange={(e) => updateField('material', e.target.value)}
             />
           </div>
         </div>
@@ -200,7 +219,7 @@ export function NippleActionDialog({
                 placeholder='例如: 12 / 14 / 16'
                 className='h-12 font-mono font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
                 value={formData.length}
-                onChange={(e) => { formData.length = e.target.value }}
+                onChange={(e) => updateField('length', e.target.value)}
               />
             </div>
             <div className='space-y-2'>
@@ -209,7 +228,7 @@ export function NippleActionDialog({
                 placeholder='例如: Black / Silver'
                 className='h-12 font-black text-sm bg-background border-none rounded-2xl px-5 shadow-sm'
                 value={formData.color}
-                onChange={(e) => { formData.color = e.target.value }}
+                onChange={(e) => updateField('color', e.target.value)}
               />
             </div>
           </div>
@@ -224,8 +243,11 @@ export function NippleActionDialog({
             value={formData.fileUrl} 
             accept='image/*'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              setFormData((prev) => ({
+                ...prev,
+                fileUrl: url,
+                fileExtension: ext || prev.fileExtension,
+              }))
             }}
           />
         </div>

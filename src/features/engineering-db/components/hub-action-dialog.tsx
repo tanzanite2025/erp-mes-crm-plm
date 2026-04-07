@@ -1,17 +1,20 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Box, Hash, Tag, Info, Save, Cpu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FileUploader } from '@/components/file-uploader'
-import { useLanguage } from '@/context/language-provider'
-import { Hub } from '../data/hub-schema'
+import type { DeltaSet } from '@/lib/delta/types'
+import type { Hub } from '../data/hub-schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
+
+type HubFormState = Hub
+type HubFormUpdater = HubFormState | ((prev: HubFormState) => HubFormState)
 
 interface HubActionDialogProps {
   currentRow?: Hub | null
@@ -20,7 +23,7 @@ interface HubActionDialogProps {
   onSave: (params: { 
     data: Hub; 
     isPatch: boolean; 
-    delta?: any; 
+    delta?: DeltaSet; 
     version?: number 
   }) => void
   isLoading?: boolean
@@ -47,7 +50,7 @@ export function HubActionDialog({
   onSave,
   isLoading,
 }: HubActionDialogProps) {
-  const { t } = useLanguage()
+  const [draftId] = useState(() => `HUB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`)
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
@@ -62,12 +65,28 @@ export function HubActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_HUB, 
-      id: `HUB-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      id: draftId,
       createdAt: new Date().toISOString() 
     } as Hub
-  }, [currentRow, open])
+  }, [currentRow, draftId])
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+
+  const setFormData = useCallback((updater: HubFormUpdater) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
+
+  const updateField = useCallback(<K extends keyof Hub>(field: K, value: Hub[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }, [setFormData])
 
   const handleSave = () => {
     if (!formData.name) {
@@ -150,7 +169,7 @@ export function HubActionDialog({
               placeholder='例如: SHIMANO-M8100'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
               value={formData.name}
-              onChange={(e) => { formData.name = e.target.value }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -173,7 +192,7 @@ export function HubActionDialog({
               placeholder='输入品牌名称'
               className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
               value={formData.brand}
-              onChange={(e) => { formData.brand = e.target.value }}
+              onChange={(e) => updateField('brand', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -182,7 +201,7 @@ export function HubActionDialog({
               placeholder='输入型号编码'
               className='h-12 font-bold text-sm bg-muted/40 border-none rounded-2xl px-5 shadow-inner'
               value={formData.model}
-              onChange={(e) => { formData.model = e.target.value }}
+              onChange={(e) => updateField('model', e.target.value)}
             />
           </div>
         </div>
@@ -200,23 +219,23 @@ export function HubActionDialog({
           <div className='grid grid-cols-2 lg:grid-cols-5 gap-4'>
             <div className='space-y-2'>
               <Label className='text-[9px] font-bold opacity-60'>孔数 / HOLES</Label>
-              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.holeCount} onChange={(e) => { formData.holeCount = e.target.value }} />
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.holeCount} onChange={(e) => updateField('holeCount', e.target.value)} />
             </div>
             <div className='space-y-2 text-indigo-600'>
               <Label className='text-[9px] font-bold'>PCD_LEFT</Label>
-              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdLeft} onChange={(e) => { formData.pcdLeft = e.target.value }} />
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdLeft} onChange={(e) => updateField('pcdLeft', e.target.value)} />
             </div>
             <div className='space-y-2 text-indigo-600'>
               <Label className='text-[9px] font-bold'>PCD_RIGHT</Label>
-              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdRight} onChange={(e) => { formData.pcdRight = e.target.value }} />
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.pcdRight} onChange={(e) => updateField('pcdRight', e.target.value)} />
             </div>
             <div className='space-y-2 text-amber-600'>
               <Label className='text-[9px] font-bold'>FL_LEFT</Label>
-              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeLeft} onChange={(e) => { formData.flangeLeft = e.target.value }} />
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeLeft} onChange={(e) => updateField('flangeLeft', e.target.value)} />
             </div>
             <div className='space-y-2 text-amber-600'>
               <Label className='text-[9px] font-bold'>FL_RIGHT</Label>
-              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeRight} onChange={(e) => { formData.flangeRight = e.target.value }} />
+              <Input className='h-10 rounded-xl bg-background border-none shadow-sm font-mono' value={formData.flangeRight} onChange={(e) => updateField('flangeRight', e.target.value)} />
             </div>
           </div>
         </div>
@@ -230,8 +249,11 @@ export function HubActionDialog({
             value={formData.fileUrl} 
             accept='image/*,.pdf'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              setFormData((prev) => ({
+                ...prev,
+                fileUrl: url,
+                fileExtension: ext || prev.fileExtension,
+              }))
             }}
           />
         </div>

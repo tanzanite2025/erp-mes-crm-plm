@@ -17,11 +17,7 @@ import { useAiChatEngine } from '../hooks/use-ai-chat-engine'
 import { AiMessageItem } from './ai-message-item'
 import { aiActionBus } from '../services/ai-action-bus'
 import { type DashboardSummary } from '../services/ai-service'
-
-interface ActionItem {
-    label: string;
-    path: string;
-}
+import { type ActionItem } from '../utils/tag-parser'
 
 type AiRouteTarget = Parameters<ReturnType<typeof useNavigate>>[0]['to']
 
@@ -66,7 +62,8 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
         while ((match = regex.exec(content)) !== null) {
             matches.push({
                 label: match[1].trim(),
-                path: match[2].trim()
+                value: match[2].trim(),
+                type: 'ACT'
             });
         }
         return matches;
@@ -171,20 +168,20 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                                     {actions.map((action, idx) => (
                                         <button
                                             key={idx}
-                                            onClick={() => handleAction(action.path)}
+                                            onClick={() => handleAction(action.value)}
                                             className="flex items-center justify-between p-4 rounded-2xl border border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all group group-active:scale-95"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="size-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-white transition-colors">
-                                                    {action.path.includes('trading') && <ShoppingCart className="size-4 text-slate-600" />}
-                                                    {action.path.includes('production') && <Factory className="size-4 text-slate-600" />}
-                                                    {action.path.includes('furnace') && <Cpu className="size-4 text-slate-600" />}
-                                                    {!['trading', 'production', 'furnace'].some(k => action.path.includes(k)) && <ExternalLink className="size-4 text-slate-600" />}
+                                                    {action.value.includes('trading') && <ShoppingCart className="size-4 text-slate-600" />}
+                                                    {action.value.includes('production') && <Factory className="size-4 text-slate-600" />}
+                                                    {action.value.includes('furnace') && <Cpu className="size-4 text-slate-600" />}
+                                                    {!['trading', 'production', 'furnace'].some(k => action.value.includes(k)) && <ExternalLink className="size-4 text-slate-600" />}
                                                 </div>
                                                 <div className="text-left">
                                                     <div className="text-[11px] font-black text-slate-900 leading-none mb-1">{action.label}</div>
                                                     <div className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter truncate w-32">
-                                                        {action.path}
+                                                        {action.value}
                                                     </div>
                                                 </div>
                                             </div>

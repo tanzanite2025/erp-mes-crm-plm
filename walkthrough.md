@@ -1,5 +1,42 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：截图报错定点修复（2026-04-07）
+
+### 本轮目标
+只处理截图中已经暴露的 TypeScript/未使用变量错误，以最小修改恢复编译通过，不扩散为无关模块重构。
+
+### 已执行变更
+更新：
+- `src/features/ai-assistant/components/daily-insight-modal.tsx`
+- `src/features/engineering-db/components/hub-action-dialog.tsx`
+- `src/features/engineering-db/components/nipple-action-dialog.tsx`
+- `src/features/piecework/tabs/index.tsx`
+- `src/features/piecework/components/rate-action-dialog.tsx`
+- `src/features/trading/utils/sales-order-validator.ts`
+
+### 本轮实际处理内容
+- 对齐 `daily-insight-modal.tsx` 与 `AiMessageItem` 使用的动作协议，统一为 `ActionItem` 的 `label/value/type` 结构；
+- 删除 `engineering-db` 与 `piecework` 中截图涉及的无效导入/未使用变量；
+- 对 `hub-action-dialog.tsx` 与 `nipple-action-dialog.tsx` 一并补充类型导入、`DeltaSet` 类型收窄，以及局部 `setFormData` shim，避免直接修改 `useDeltaTracker` 返回对象；
+- 将新增记录的草稿 id 生成移动到 `useState` 初始化阶段，避免渲染期 impure 调用；
+- 将 `sales-order-validator.ts` 的 `errorKey` 收窄为显式联合翻译 key，消除 `t(errorKey)` 的 TS2345；
+- 将 `piecework` 相关对话框/列表的 `delta` 参数从 `any` 收窄为 `DeltaSet`。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成截图中可见编译错误的定点修复：
+
+- 编译已恢复通过；
+- 未扩散为跨模块重构；
+- `piecework/tabs/index.tsx` 中 `useReactTable()` 仍有 React Compiler 兼容性 warning，但不阻塞 TypeScript 编译，本轮未扩 scope 处理。
+
 ## P1：Trading 局部 warning 清理（2026-04-07）
 
 ### 本轮目标

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import type { DeltaSet } from '@/lib/delta/types'
 import { toast } from 'sonner'
 import { PieceworkRate } from '../data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
@@ -20,7 +21,7 @@ interface RateActionDialogProps {
   onSave: (params: { 
     data: PieceworkRate; 
     isPatch: boolean; 
-    delta?: any; 
+    delta?: DeltaSet; 
     version?: number 
   }) => void
   isLoading?: boolean
