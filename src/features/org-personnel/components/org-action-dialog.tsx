@@ -125,7 +125,7 @@ function OrgActionDialogForm({
                     control={form.control}
                     name='name'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.org.dialog.nameLabel')}</FormLabel>
                             <FormControl>
                                 <Input
@@ -143,7 +143,7 @@ function OrgActionDialogForm({
                     control={form.control}
                     name='type'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.org.dialog.typeLabel')}</FormLabel>
                             <div className='col-span-4'>
                                 <SelectDropdown
@@ -165,7 +165,7 @@ function OrgActionDialogForm({
                     control={form.control}
                     name='manager'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.org.dialog.managerLabel')}</FormLabel>
                             <FormControl>
                                 <Input
@@ -182,7 +182,7 @@ function OrgActionDialogForm({
                     control={form.control}
                     name='description'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
+                        <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end mt-2 text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.org.dialog.descLabel')}</FormLabel>
                             <FormControl>
                                 <Input
@@ -211,12 +211,10 @@ export function OrgActionDialog({
     const isEdit = !!currentRow
     const formKey = `${currentRow?.id ?? 'create'}:${parentId ?? 'root'}`
     const shellClasses = buildActionDialogShellClasses({
-        content: 'sm:max-w-lg rounded-[32px] border-none shadow-2xl',
+        content: 'sm:max-w-lg',
         header: 'text-start',
         title: 'text-lg font-black italic tracking-tighter uppercase',
         description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
-        body: undefined,
-        footer: 'mt-2',
     })
 
     return (

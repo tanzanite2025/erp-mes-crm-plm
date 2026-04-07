@@ -114,7 +114,7 @@ function JobActionDialogForm({
                     control={form.control}
                     name='name'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 mx-8'>
+                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t(jobDialogKeys.nameLabel)}</FormLabel>
                             <FormControl>
                                 <Input
@@ -131,7 +131,7 @@ function JobActionDialogForm({
                     control={form.control}
                     name='code'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 mx-8'>
+                        <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t(jobDialogKeys.codeLabel)}</FormLabel>
                             <FormControl>
                                 <Input
@@ -148,7 +148,7 @@ function JobActionDialogForm({
                     control={form.control}
                     name='description'
                     render={({ field }) => (
-                        <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1 mx-8'>
+                        <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1 py-1'>
                             <FormLabel className='col-span-2 text-end mt-2 text-[10px] font-black uppercase tracking-widest opacity-60'>{t(jobDialogKeys.descLabel)}</FormLabel>
                             <FormControl>
                                 <Input
@@ -176,12 +176,10 @@ export function JobActionDialog({
     const isEdit = !!currentRow
     const formKey = currentRow?.id ?? 'create'
     const shellClasses = buildActionDialogShellClasses({
-        content: 'sm:max-w-lg rounded-[32px] border-none shadow-2xl overflow-hidden p-0 bg-background',
-        header: 'text-start p-8 bg-muted/10 border-b border-dashed border-muted/50',
+        content: 'sm:max-w-lg',
+        header: 'text-start',
         title: 'text-lg font-black tracking-tighter italic uppercase',
         description: 'text-[10px] font-black uppercase tracking-widest opacity-60',
-        body: undefined,
-        footer: 'p-6 bg-muted/5 border-t border-dashed border-muted/50',
     })
 
     return (

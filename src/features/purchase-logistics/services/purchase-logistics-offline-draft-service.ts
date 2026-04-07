@@ -6,6 +6,7 @@ const PURCHASE_LOGISTICS_DRAFT_EVENT = 'xdfc:purchase-logistics-offline-drafts'
 const PURCHASE_LOGISTICS_DRAFT_LIMIT = 200
 
 const logger = createLogger('PurchaseLogisticsOfflineDrafts')
+let draftsSnapshot: PurchaseLogisticsOfflineDraft[] = []
 
 export interface PurchaseLogisticsOfflineDraftInput {
   purchaseOrderId: string
@@ -114,6 +115,7 @@ function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
       .slice(0, PURCHASE_LOGISTICS_DRAFT_LIMIT)
 
     window.localStorage.setItem(PURCHASE_LOGISTICS_DRAFT_KEY, JSON.stringify(normalized))
+    draftsSnapshot = normalized
     emitDraftsChanged()
   } catch (error) {
     logger.error('Failed to write drafts', error)
@@ -125,7 +127,31 @@ export function listPurchaseLogisticsOfflineDrafts() {
 }
 
 export function getPurchaseLogisticsOfflineDraftsSnapshot() {
-  return listPurchaseLogisticsOfflineDrafts()
+  if (!canUseStorage()) {
+    return draftsSnapshot
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PURCHASE_LOGISTICS_DRAFT_KEY)
+    if (!raw) {
+      draftsSnapshot = []
+      return draftsSnapshot
+    }
+
+    const nextDrafts = readDrafts()
+    const nextSerialized = JSON.stringify(nextDrafts)
+    const currentSerialized = JSON.stringify(draftsSnapshot)
+
+    if (nextSerialized !== currentSerialized) {
+      draftsSnapshot = nextDrafts
+    }
+
+    return draftsSnapshot
+  } catch (error) {
+    logger.error('Failed to get drafts snapshot', error)
+    draftsSnapshot = []
+    return draftsSnapshot
+  }
 }
 
 export function subscribePurchaseLogisticsOfflineDrafts(onStoreChange: () => void) {

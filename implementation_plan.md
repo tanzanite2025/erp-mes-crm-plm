@@ -1,5 +1,414 @@
 ﻿# implementation plan
 
+## `/purchase/logistics` 页面 500 修复（2026-04-07，待确认）
+
+### 一、当前问题
+`/purchase/logistics` 页面当前无法正常打开，前端同时出现两类错误：
+
+1. React 警告与崩溃：
+   - `The result of getSnapshot should be cached to avoid an infinite loop`
+   - `Maximum update depth exceeded`
+2. 请求错误：
+   - `GET /purchase-orders?status=Approved` 返回 `404 Not Found`
+
+当前堆栈显示错误落点在：
+
+- `PurchaseLogisticsPage`
+- `PurchaseLogisticsDialog`
+- `purchase-logistics-offline-draft-service`
+
+### 二、根因结论
+本轮已定位到两处直接根因：
+
+#### 根因 1：采购订单查询路径写错
+前端当前在 `PurchaseLogisticsDialog` 中请求：
+
+- `/purchase-orders?status=Approved`
+
+但后端真实路由注册为：
+
+- `/purchase/orders`
+
+因此该请求会稳定返回 404。
+
+#### 根因 2：`useSyncExternalStore` 的 `getSnapshot` 不稳定
+`PurchaseLogisticsPage` 中：
+
+- `React.useSyncExternalStore(subscribePurchaseLogisticsOfflineDrafts, getPurchaseLogisticsOfflineDraftsSnapshot, () => [])`
+
+而 `getPurchaseLogisticsOfflineDraftsSnapshot()` 当前直接返回：
+
+- `listPurchaseLogisticsOfflineDrafts()`
+
+其底层 `readDrafts()` 每次都会重新构造并返回新数组，即使 localStorage 数据没有变化，快照引用也不稳定。
+
+这违反了 `useSyncExternalStore` 对 `getSnapshot` 的要求，最终会触发：
+
+- `The result of getSnapshot should be cached`
+- `Maximum update depth exceeded`
+
+### 三、本轮目标
+本轮只做最小修复：
+
+1. 让采购物流页不再因为错误接口路径触发 404；
+2. 让离线草稿订阅快照在未变化时返回稳定引用；
+3. 恢复 `/purchase/logistics` 页面的正常打开与基础交互。
+
+### 四、拟改范围（待确认后实施）
+
+#### 必改
+- `src/features/purchase-logistics/purchase-logistics-dialog.tsx`
+- `src/features/purchase-logistics/services/purchase-logistics-offline-draft-service.ts`
+
+#### 本轮明确不改
+- `server/handlers/purchase_orders.go`
+- 全局 `useSyncExternalStore` 封装
+- 整个采购模块的数据模型或 API 架构
+
+### 五、拟采用的最小修复路径
+
+#### 修复路径 1：对齐采购订单查询接口路径
+将前端查询：
+
+- `/purchase-orders?status=Approved`
+
+调整为与后端真实路由一致的路径。
+
+#### 修复路径 2：缓存离线草稿快照
+在离线草稿服务中建立稳定快照机制，确保：
+
+- localStorage 内容未变化时，`getPurchaseLogisticsOfflineDraftsSnapshot()` 返回同一引用
+- 仅在 `writeDrafts()` 或实际存储变化后，才更新快照引用并触发订阅通知
+
+### 六、风险与注意事项
+1. 若只修接口 404，不修快照稳定性，页面仍可能因为无限更新崩溃。
+2. 若只修快照稳定性，不修路径错误，采购订单下拉仍然无法正常加载。
+3. 本轮不确认后端是否支持 `status=Approved` 过滤语义以外的更多筛选扩展，只先修路由正确性与页面可用性。
+
+### 七、验证要求
+待实施阶段至少验证：
+
+```bash
+pnpm build
+```
+
+并做页面行为验证：
+
+- `/purchase/logistics` 页面可正常打开
+- 控制台不再出现 `getSnapshot should be cached`
+- 控制台不再出现 `Maximum update depth exceeded`
+- 采购订单下拉请求不再是 `/purchase-orders?...` 404
+
+### 八、明确不做事项
+- 不在本轮将采购订单接口统一重命名为另一套 REST 风格；
+- 不在本轮重写整个离线草稿存储层；
+- 不把本轮问题扩散成全局 React store 抽象重构。
+
+## MaterialService.getMaterialOptions 响应契约冲突修复（2026-04-07，待确认）
+
+### 一、当前问题
+材料组装页当前出现前端运行时错误：
+
+```text
+[INVALID_RESPONSE] MaterialService.getMaterialOptions expected an object response.
+```
+
+触发点位于：
+
+- `MaterialAssemblyManager.loadData`
+- `materialService.getMaterialOptions()`
+
+页面表现为材料选项加载失败，进而导致材料组装页无法正常初始化。
+
+### 二、根因结论
+当前问题不是后端 `/materials?options=true` 返回错误，也不是接口 404/500。
+
+根因是前端内部响应契约漂移：
+
+1. 后端 `GET /materials?options=true` 返回：
+   - `{ data: Material[], version: string }`
+2. 全局 `apiFetch` 已具备自动解包逻辑：
+   - 对 `{ data: [] }` 包装响应会返回数组实例（附带元数据）
+3. `materialService.getMaterialOptions()` 仍然调用：
+   - `ensureObjectResponse(...)`
+4. 因此该函数把已经被 `apiFetch` 解包成数组的结果，再次误判为“非法对象响应”，最终抛出 `[INVALID_RESPONSE]`
+
+### 三、本轮目标
+本轮不改全局 API 语义，也不改后端 handler，只做最小对齐修复：
+
+1. 让 `getMaterialOptions()` 与 `apiFetch` 当前解包行为保持一致；
+2. 保持该函数对外仍返回 `Material[]`；
+3. 保证 `MaterialAssemblyManager` 无需改动即可恢复加载。
+
+### 四、拟改范围（待确认后实施）
+
+#### 必改
+- `src/features/material-archive/services/material-service.ts`
+
+#### 本轮明确不改
+- `server/handlers/materials.go`
+- `src/lib/api-client.ts`
+- 其他材料、仓库、工程等模块的响应校验逻辑
+
+### 五、拟采用的最小修复路径
+将 `getMaterialOptions()` 从“对象响应假设”切换为“数组响应假设”。
+
+也就是说：
+
+- 不再对其结果调用 `ensureObjectResponse(...)`
+- 改为按 `apiFetch` 解包后的数组结果进行校验与返回
+
+这样可以保证：
+
+- 与当前全局解包行为一致
+- 不影响 `getMaterialsWithVersion()` 这类仍依赖对象元数据读取的调用方
+
+### 六、风险与注意事项
+1. 若未来回滚 `apiFetch` 的自动解包机制，这里的契约需要再同步检查。
+2. 本轮只修复 `getMaterialOptions()`，不代表全仓库所有旧对象假设都已排查完毕。
+3. 若相同模式在其他模块存在，后续应单独做“响应契约巡检专项”，而不是在本轮顺手扩散。
+
+### 七、验证要求
+待实施阶段至少验证：
+
+```bash
+pnpm build
+```
+
+并做页面行为验证：
+
+- 材料组装页打开后不再出现 `[INVALID_RESPONSE]`
+- 材料下拉选项正常展示
+- `MaterialAssemblyManager.loadData` 不再 fail loudly
+
+### 八、明确不做事项
+- 不在本轮调整后端 `/materials` 响应结构；
+- 不在本轮回退或重写 `apiFetch` 全局解包机制；
+- 不把本轮扩散成所有 `ensureObjectResponse` 调用点的大规模清理。
+
+## 生产部署脚本二阶段优化：默认只重建 `app`，`watchdog` 按需重建（2026-04-07，待确认）
+
+### 一、当前背景
+上一轮已经将生产部署修正为默认重建后端，堵住了“前端已更新、后端没 build 导致 API 404”的高风险缺口。
+
+但实际执行中暴露了新的效率问题：
+
+1. 默认 build 会同时重建 `app` 与 `watchdog`
+2. `watchdog` 的 Rust `cargo build --release` 在 VPS 上耗时很长
+3. 对大多数常规发布而言，真正高频变化的是 `app`，不是 `watchdog`
+
+因此需要做二阶段优化：
+
+- 保留“默认路径足够安全、下次可以直接用”
+- 同时避免每次部署都无差别重建 `watchdog`
+
+### 二、本轮目标
+本轮目标是把默认部署路径优化成更贴近真实使用频率的方案：
+
+1. 默认无参执行时，优先重建 `app`
+2. `watchdog` 改为按需显式重建
+3. 保留全量重建入口，确保特殊场景仍可完整刷新所有服务
+
+### 三、目标策略
+
+#### 默认路径
+- 无参执行：
+  - 重建 `app`
+  - 继续拉起/保持 `db`、`redis`、`nginx_lb` 等依赖服务
+  - 不默认重建 `watchdog`
+
+#### 扩展路径
+- 全量重建：
+  - 显式参数触发 `app + watchdog` 等服务重建
+- watchdog 重建：
+  - 单独提供按需参数，用于 watchdog 代码确有变更时执行
+- 快路径：
+  - 如保留，必须是显式 opt-in，而不能作为默认行为
+
+### 四、建议参数矩阵
+建议将 `server/deploy-prod.sh` 调整为以下语义：
+
+- 默认：
+  - `./deploy-prod.sh`
+  - 重建 `app`
+- 全量重建：
+  - `./deploy-prod.sh --full-build`
+  - 重建 `app` + `watchdog`
+- 仅重建 watchdog：
+  - `./deploy-prod.sh --watchdog-build`
+- 快路径：
+  - `./deploy-prod.sh --no-build`
+
+具体参数命名可在实施时微调，但必须满足：
+
+1. 默认路径最常用
+2. 默认路径最安全
+3. 默认路径耗时明显低于全量重建
+
+### 五、预计改动范围（待确认后实施）
+
+#### 必改
+- `server/deploy-prod.sh`
+
+#### 可能联动
+- `deploy.sh`
+- `walkthrough.md`
+
+### 六、实施顺序建议
+
+#### Phase A：重构 `server/deploy-prod.sh` 的服务选择策略
+- 将 compose 启动服务列表拆分为：
+  - 默认部署服务集
+  - 全量重建服务集
+  - watchdog 专项重建服务集
+
+#### Phase B：统一参数语义与日志文案
+- 日志必须清楚打印当前走的是：
+  - 默认 app rebuild path
+  - full rebuild path
+  - watchdog rebuild path
+  - no-build fast path
+
+#### Phase C：必要时最小联动根脚本
+- 确保根目录 `deploy.sh` 的默认入口语义与新默认策略一致。
+
+### 七、风险与注意事项
+1. 若参数设计过多或命名不清，会造成新的运维误用。
+2. 若默认路径漏掉必要依赖服务，可能导致部署后状态不一致。
+3. 若未来 watchdog 也变成高频变更点，需要重新评估默认策略。
+
+### 八、验证要求
+待实施阶段至少验证：
+
+#### 默认路径
+```bash
+./server/deploy-prod.sh
+```
+
+应确认：
+- 日志表明仅重建 `app`
+- `app` 创建时间更新
+- `watchdog` 不强制更新
+
+#### 全量路径
+```bash
+./server/deploy-prod.sh --full-build
+```
+
+应确认：
+- `app` 与 `watchdog` 都会重建
+
+#### 功能回归
+```bash
+curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
+```
+
+应确认：
+- 默认路径部署后，后端路由更新仍可生效
+- `/api/v1/auth/snapshot` 不再因旧 app 镜像导致 404
+
+### 九、明确不做事项
+- 不在本轮引入自动 diff 检测来智能判断哪些服务该 build；
+- 不在本轮改造为完整 CI/CD pipeline；
+- 不把本轮扩散成 docker-compose 全体系重构。
+
+## 生产部署脚本默认重建后端固化修复（2026-04-07，待确认）
+
+### 一、当前结论
+本轮生产故障已经确认：线上 `/api/v1/auth/snapshot` 返回 404 的高概率根因，是前端已更新而后端仍在运行旧镜像。
+
+当前证据包括：
+
+1. 代码仓库中后端已存在 `GET /api/v1/auth/snapshot`
+2. 线上实际请求 `/api/v1/auth/snapshot` 返回 404
+3. 部署日志显示：
+   - `Build mode: disabled (fast path)`
+4. `server-app-*` 容器创建时间停留在数天前，说明后端并未在本次部署中重建
+
+这说明当前生产部署默认策略存在结构性风险：
+
+- 前端部署会更新
+- 后端默认可能不重建
+- 一旦引入新的 API/路由/handler，就可能产生前后端版本错位
+
+### 二、本轮目标
+本轮不先改业务逻辑，只把这个高风险部署缺口固化修复掉：
+
+1. 生产部署默认重建后端 app 镜像；
+2. fast path 改为显式选项，而不是默认行为；
+3. 避免未来再次因为忘记 `--build` 而把生产环境打成前后端版本不一致。
+
+### 三、拟调整策略
+
+#### 目标策略
+- 默认：
+  - 生产部署执行带 build 的后端部署
+- 可选：
+  - 仅在明确确认需要快路径时，才允许显式禁用 build
+
+#### 推荐方向
+优先改：
+- `server/deploy-prod.sh`
+
+必要时联动：
+- 根目录 `deploy.sh`
+
+确保统一入口与直接进入 `server/` 执行脚本两种路径都尽量不再落入“默认不重建后端”的陷阱。
+
+### 四、预计改动范围（待确认后实施）
+
+#### 必改
+- `server/deploy-prod.sh`
+
+#### 可选联动
+- `deploy.sh`
+
+### 五、实施顺序建议
+
+#### Phase A：先调整 `server/deploy-prod.sh`
+- 将当前默认：
+  - `WITH_BUILD=false`
+  调整为默认启用 build；
+- 如需保留快路径，改为显式参数，例如：
+  - `--no-build`
+
+#### Phase B：视情况同步根脚本入口
+- 若根目录 `deploy.sh` 是主入口，则确保其调用后端部署时不会继续触发默认 fast path。
+
+#### Phase C：生产验证
+- 部署日志应明确显示 build 已启用；
+- `server-app-*` 容器创建时间应更新；
+- `/api/v1/auth/snapshot` 不再返回 404。
+
+### 六、风险与注意事项
+1. 默认启用 build 会延长生产部署时间，但相较于登录阻塞故障，这个代价更可接受。
+2. 若只改根脚本、不改 `server/deploy-prod.sh`，直接在 `server/` 目录部署时仍可能复发。
+3. 若保留 fast path，必须把它变成显式 opt-in，而不能继续作为默认。
+
+### 七、验证要求
+待实施阶段至少验证：
+
+```bash
+./server/deploy-prod.sh --build
+```
+
+或修改默认后：
+
+```bash
+./server/deploy-prod.sh
+```
+
+并确认：
+
+- 部署日志显示 build 已启用
+- `docker compose ps` 中 `server-app-*` 容器创建时间更新
+- `curl -i http://127.0.0.1:8000/api/v1/auth/snapshot` 不再返回 404
+
+### 八、明确不做事项
+- 不在本轮同时重构部署体系或引入完整 CI/CD 平台；
+- 不把本轮扩散成前后端全部服务的镜像版本管理工程；
+- 不在未验证生产结果前，将问题简单归咎于前端容错。
+
 ## 生产环境 `/auth/snapshot` 404 与登录页循环重定向故障修复（2026-04-07，待确认）
 
 ### 一、当前现象

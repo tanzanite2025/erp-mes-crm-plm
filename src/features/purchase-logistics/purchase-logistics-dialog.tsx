@@ -1,4 +1,4 @@
-import { useState, type FormEvent, useMemo, useEffect } from 'react'
+import { useState, type FormEvent, useMemo } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Plus, Truck, Package, Info } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,7 +19,6 @@ import { apiFetch } from '@/lib/api-client'
 import { type PurchaseOrder } from '@/features/trading/data/schema'
 import { getPreferredCarriers } from '@/features/logistics/utils/carriers'
 import { inferCarrierFromTrackingNo } from '@/features/logistics/utils/tracking-no'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import {
   queuePurchaseLogisticsOfflineDraft,
   shouldQueuePurchaseLogisticsOfflineDraft,
@@ -27,8 +26,14 @@ import {
 import { PurchaseLogisticsService } from './services/purchase-logistics-service'
 
 type PurchaseOrderOption = Pick<PurchaseOrder, 'id' | 'orderNo' | 'supplierName'>
+type PurchaseLogisticsForm = {
+  purchaseOrderId: string
+  orderNo: string
+  carrier: string
+  trackingNo: string
+}
 
-const DEFAULT_FORM = {
+const DEFAULT_FORM: PurchaseLogisticsForm = {
   purchaseOrderId: '',
   orderNo: '',
   carrier: '',
@@ -40,8 +45,8 @@ export function PurchaseLogisticsDialog() {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const initialForm = useMemo(() => DEFAULT_FORM, [])
-  const { data: form } = useDeltaTracker(initialForm as any, open)
+  const initialForm = useMemo(() => ({ ...DEFAULT_FORM }), [])
+  const [form, setForm] = useState<PurchaseLogisticsForm>(initialForm)
 
   const [isCarrierTouched, setIsCarrierTouched] = useState(false)
   const [inferredCarrier, setInferredCarrier] = useState('')
@@ -49,20 +54,22 @@ export function PurchaseLogisticsDialog() {
 
   const { data: purchaseOrders } = useQuery<PurchaseOrderOption[] | { items?: PurchaseOrderOption[] }>({
     queryKey: ['pending-purchase-orders'],
-    queryFn: () => apiFetch('/purchase-orders?status=Approved'),
+    queryFn: () => apiFetch('/purchase/orders?status=Approved'),
   })
   const orders = Array.isArray(purchaseOrders) ? purchaseOrders : purchaseOrders?.items || []
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) => PurchaseLogisticsService.saveRecord(data),
+    mutationFn: (data: PurchaseLogisticsForm) => PurchaseLogisticsService.saveRecord(data),
   })
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) {
+      setForm({ ...initialForm })
       setIsCarrierTouched(false)
       setInferredCarrier('')
     }
-  }, [open])
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -111,21 +118,29 @@ export function PurchaseLogisticsDialog() {
   const handleTrackingNoChange = (trackingNo: string) => {
     const autoDetectedCarrier = inferCarrierFromTrackingNo(trackingNo)
     setInferredCarrier(autoDetectedCarrier || '')
-    
-    form.trackingNo = trackingNo
 
-    if (!isCarrierTouched) {
-      const shouldClearAutoCarrier = !autoDetectedCarrier && Boolean(inferredCarrier) && form.carrier === inferredCarrier
-      if (autoDetectedCarrier) {
-        form.carrier = autoDetectedCarrier
-      } else if (shouldClearAutoCarrier) {
-        form.carrier = ''
+    setForm((currentForm) => {
+      const nextForm: PurchaseLogisticsForm = {
+        ...currentForm,
+        trackingNo,
       }
-    }
+
+      if (!isCarrierTouched) {
+        const shouldClearAutoCarrier =
+          !autoDetectedCarrier && Boolean(inferredCarrier) && currentForm.carrier === inferredCarrier
+        if (autoDetectedCarrier) {
+          nextForm.carrier = autoDetectedCarrier
+        } else if (shouldClearAutoCarrier) {
+          nextForm.carrier = ''
+        }
+      }
+
+      return nextForm
+    })
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className='rounded-full h-10 font-black text-[10px] uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20'>
           <Plus className='size-4 me-2' />
@@ -155,8 +170,11 @@ export function PurchaseLogisticsDialog() {
                 value={form.purchaseOrderId}
                 onChange={(e) => {
                   const selected = orders.find((order) => order.id === e.target.value)
-                  form.purchaseOrderId = e.target.value
-                  form.orderNo = selected?.orderNo || ''
+                  setForm((currentForm) => ({
+                    ...currentForm,
+                    purchaseOrderId: e.target.value,
+                    orderNo: selected?.orderNo || '',
+                  }))
                 }}
                 className='w-full h-12 rounded-2xl bg-slate-100 border-none px-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none appearance-none'
               >
@@ -180,7 +198,10 @@ export function PurchaseLogisticsDialog() {
                   onChange={(e) => {
                     setIsCarrierTouched(true)
                     setInferredCarrier('')
-                    form.carrier = e.target.value
+                    setForm((currentForm) => ({
+                      ...currentForm,
+                      carrier: e.target.value,
+                    }))
                   }}
                   placeholder={t('purchase.logistics.carrierPlaceholder')}
                   className='h-12 rounded-2xl bg-slate-100 border-none'
@@ -201,7 +222,10 @@ export function PurchaseLogisticsDialog() {
                         onClick={() => {
                           setIsCarrierTouched(true)
                           setInferredCarrier('')
-                          form.carrier = carrier
+                          setForm((currentForm) => ({
+                            ...currentForm,
+                            carrier,
+                          }))
                         }}
                         className={`h-8 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
                           isActive
@@ -249,7 +273,7 @@ export function PurchaseLogisticsDialog() {
               <Button
                 type='button'
                 variant='ghost'
-                onClick={() => setOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 className='rounded-full h-11 px-8 text-[10px] font-black uppercase tracking-widest'
               >
                 {t('purchase.logistics.cancel')}

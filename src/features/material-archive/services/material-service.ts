@@ -1,6 +1,6 @@
 import { type Material } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
@@ -8,9 +8,8 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
  */
 
 export const getMaterialOptions = async (): Promise<Material[]> => {
-    const res = await apiFetch<{ data: Material[], version: string }>('/materials?options=true')
-    const checked = ensureObjectResponse<{ data: Material[], version: string } & Record<string, unknown>>(res, 'MaterialService.getMaterialOptions')
-    return checked.data
+    const res = await apiFetch<Material[]>('/materials?options=true')
+    return ensureArrayResponse<Material>(res, 'MaterialService.getMaterialOptions')
 }
 
 export const getMaterials = async (category?: string, page: number = 1, pageSize: number = 20, search: string = ''): Promise<{ data: Material[], total: number }> => {

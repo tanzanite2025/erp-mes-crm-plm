@@ -66,7 +66,7 @@ echo -e "${CYAN}>>> [STAGE 2.5/4] Publish frontend release atomically...${NC}"
 chmod +x ./scripts/publish-frontend-release.sh
 ./scripts/publish-frontend-release.sh
 
-echo -e "${CYAN}>>> [STAGE 3/4] Run backend deploy script...${NC}"
+echo -e "${CYAN}>>> [STAGE 3/4] Run backend deploy script (default app rebuild path)...${NC}"
 if [[ -f "./server/deploy-prod.sh" ]]; then
   cd server
   chmod +x deploy-prod.sh

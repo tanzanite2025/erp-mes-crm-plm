@@ -1,5 +1,328 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`/purchase/logistics` 页面 500 修复（2026-04-07）
+
+### 本轮目标
+本轮只修复采购物流页当前已定位的两处前端故障，不扩散到采购模块整体重构或全局 store 抽象改造。
+
+目标是消除：
+
+- `/purchase/logistics` 页面初始化 500
+- `The result of getSnapshot should be cached to avoid an infinite loop`
+- `Maximum update depth exceeded`
+- `GET /purchase-orders?status=Approved` 的 404
+
+### 根因结论
+本轮确认该页故障由两个前端问题叠加触发：
+
+1. 采购订单查询路径错误
+   - 前端请求写成了：`/purchase-orders?status=Approved`
+   - 后端真实路由是：`/purchase/orders`
+   - 因此前端在弹窗初始化时稳定触发 404。
+
+2. 离线草稿 store 的 `getSnapshot` 不稳定
+   - `PurchaseLogisticsPage` 使用 `useSyncExternalStore(...)` 订阅离线草稿。
+   - `getPurchaseLogisticsOfflineDraftsSnapshot()` 之前每次都会重新构造数组并返回新引用。
+   - 即使 localStorage 数据未变化，React 仍会判定快照变化，最终引发无限更新警告与崩溃。
+
+### 已执行变更
+更新：
+- `src/features/purchase-logistics/purchase-logistics-dialog.tsx`
+- `src/features/purchase-logistics/services/purchase-logistics-offline-draft-service.ts`
+
+调整内容：
+
+#### 1) 修正采购订单查询路径
+- 将采购物流弹窗中的采购订单查询从：
+  - `/purchase-orders?status=Approved`
+- 调整为：
+  - `/purchase/orders?status=Approved`
+
+结果：
+- 前端请求路径与后端真实采购路由保持一致；
+- 消除该页弹窗初始化阶段的错误 404 来源。
+
+#### 2) 为离线草稿订阅增加稳定快照
+- 在离线草稿服务中引入模块级 `draftsSnapshot` 缓存；
+- `writeDrafts()` 写入后同步更新快照；
+- `getPurchaseLogisticsOfflineDraftsSnapshot()` 在数据未变化时返回同一引用，仅在存储内容变化时替换快照。
+
+结果：
+- 满足 `useSyncExternalStore` 对稳定 `getSnapshot` 的要求；
+- 避免因未变化却返回新数组引用而触发无限更新。
+
+#### 3) 收口采购物流弹窗页自身阻塞 lint
+- 将弹窗表单改为本地 `useState` 管理；
+- 移除该页对 `useDeltaTracker(... as any)` 的依赖；
+- 将关闭弹窗后的表单重置逻辑收口到 `onOpenChange` 回调中。
+
+结果：
+- 避免当前页面继续被 `any` 与“不可修改 hook 返回值”的规则阻塞；
+- 不扩散到其他页面或全局 hook 实现。
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮修复的是采购物流页内部两个直接前端根因：
+
+- 错误的采购订单接口路径；
+- 不稳定的 `useSyncExternalStore` 快照实现。
+
+修复后，该页应恢复正常打开，并消除当前已定位的无限更新链路。
+
+## P0：MaterialService.getMaterialOptions 响应契约冲突修复（2026-04-07）
+
+### 本轮目标
+本轮只修复材料组装页的材料选项加载失败问题，不扩散到后端接口或全局 API 客户端重构。
+
+目标是消除：
+
+- `MaterialService.getMaterialOptions expected an object response`
+
+导致的材料组装页初始化失败。
+
+### 根因结论
+本轮确认问题根因不是后端 `/materials?options=true` 返回错误，而是前端内部响应契约冲突：
+
+1. 后端返回：
+   - `{ data: Material[], version: string }`
+2. 全局 `apiFetch` 会将 `{ data: [] }` 包装自动解包为数组
+3. `getMaterialOptions()` 却仍然调用 `ensureObjectResponse(...)`
+4. 因此前端在本地把已经解包后的数组误判为非法对象响应，并抛出 `[INVALID_RESPONSE]`
+
+### 已执行变更
+更新：
+- `src/features/material-archive/services/material-service.ts`
+
+调整内容：
+- `getMaterialOptions()` 不再按对象响应处理
+- 改为直接按数组响应校验 `apiFetch('/materials?options=true')` 的返回值
+- 保持函数对外签名不变，仍返回 `Promise<Material[]>`
+
+结果：
+- 与当前 `apiFetch` 的自动解包语义重新对齐
+- `MaterialAssemblyManager` 无需联动修改
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮修复的是前端响应契约漂移，而不是后端接口本身。
+
+修复后，材料选项接口与全局 `apiFetch` 语义保持一致，材料组装页不应再因该 `[INVALID_RESPONSE]` 错误而初始化失败。
+
+## P0：生产部署脚本二阶段优化：默认只重建 `app`，`watchdog` 按需重建（2026-04-07）
+
+### 本轮目标
+上一轮已经把生产部署从“默认 fast path”修正成“默认会 build 后端”，解决了前后端版本错位的高风险问题。
+
+但实际执行中发现默认全量 build 会把 `watchdog` 也一并重编译，导致常规发布耗时过长。
+
+因此本轮继续做二阶段优化：
+
+- 默认无参部署改为只重建 `app`
+- `watchdog` 只在确有需要时按需重建
+- 保留全量重建与快路径，兼顾安全性与效率
+
+### 已执行变更
+
+#### 1) `server/deploy-prod.sh` 新增更细的构建模式
+更新：
+- `server/deploy-prod.sh`
+
+调整后参数矩阵：
+
+- 默认：
+  - `./deploy-prod.sh`
+  - 仅重建 `app`
+- 全量重建：
+  - `./deploy-prod.sh --full-build`
+  - 重建 `app + watchdog`
+- watchdog 按需重建：
+  - `./deploy-prod.sh --watchdog-build`
+  - 保持默认服务集运行，并显式重建 `watchdog`
+- 快路径：
+  - `./deploy-prod.sh --no-build`
+  - 不执行镜像重建
+
+实现方式：
+- 引入 `BUILD_MODE` 取代单一 `WITH_BUILD` 布尔开关
+- 将服务集拆分为：
+  - 默认服务集：`db redis app nginx_lb`
+  - 全量重建服务集：`db redis app watchdog nginx_lb`
+- 日志文案按当前路径分别输出：
+  - `default app rebuild path`
+  - `--full-build path: app + watchdog`
+  - `--watchdog-build path`
+  - `--no-build fast path`
+
+结果：
+- 默认路径更贴近常规发布习惯，后续可以直接使用；
+- 不再要求每次部署都等待 Rust `watchdog` 全量重编译；
+- 仍保留显式全量刷新能力。
+
+#### 2) 根目录 `deploy.sh` 同步默认路径语义
+更新：
+- `deploy.sh`
+
+调整内容：
+- 将后端部署阶段提示文案改为：
+  - `Run backend deploy script (default app rebuild path)...`
+
+结果：
+- 统一入口的提示与新默认行为保持一致；
+- 降低运维误判默认仍为全量重建的概率。
+
+### 推荐使用方式
+
+#### 常规生产发布
+```bash
+cd /var/www/erp/server
+./deploy-prod.sh
+```
+
+适用场景：
+- 大多数 Go 后端变更
+- 新增 handler / route / service
+- 常规前后端联动发布
+
+#### 需要连同 watchdog 一起刷新
+```bash
+cd /var/www/erp/server
+./deploy-prod.sh --full-build
+```
+
+适用场景：
+- watchdog 代码有改动
+- 需要做完整辅助服务刷新
+
+#### 仅 watchdog 变更
+```bash
+cd /var/www/erp/server
+./deploy-prod.sh --watchdog-build
+```
+
+#### 明确确认可以跳过构建
+```bash
+cd /var/www/erp/server
+./deploy-prod.sh --no-build
+```
+
+### 验证口径
+实施后至少应验证：
+
+1. 默认执行 `./deploy-prod.sh` 时，日志应显示：
+   - `Build mode: enabled (default app rebuild path)`
+2. `docker compose ps` 中：
+   - `app` 创建时间更新
+   - `watchdog` 不必每次变化
+3. 执行：
+   ```bash
+   curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
+   ```
+   默认路径部署后结果不应因旧 `app` 镜像而返回 `404`
+
+### 本轮结论
+本轮完成了部署脚本的二阶段优化：
+
+- 默认路径更适合高频使用
+- 安全性没有回退
+- 重型 `watchdog` 构建改为按需触发
+
+这样下次常规生产发布时，可以优先直接使用默认命令，而不必每次都承担全量 Rust 重编译成本。
+
+## P0：生产部署脚本默认重建后端固化修复（2026-04-07）
+
+### 本轮目标
+本轮不改业务代码，而是修补导致生产前后端版本错位的部署脚本默认策略。
+
+目标是把“生产默认可能不重建后端”改为“生产默认重建后端”，避免再次出现：
+
+- 前端已更新
+- 后端仍沿用旧镜像
+- 新 API / 新路由在线上返回 404
+
+### 根因结论
+本轮生产故障已确认高概率根因是部署默认策略问题：
+
+1. 仓库代码中后端已存在 `/api/v1/auth/snapshot`
+2. 线上实际请求仍返回 404
+3. 部署日志显示：
+   - `Build mode: disabled (fast path)`
+4. `server-app-*` 容器创建时间停留在数天前
+
+这说明生产部署时，前端已更新，但后端未重建，导致前后端版本错位。
+
+### 已执行变更
+
+#### 1) `server/deploy-prod.sh` 改为默认启用 build
+更新：
+- `server/deploy-prod.sh`
+
+调整内容：
+- 默认值从：
+  - `WITH_BUILD=false`
+  改为：
+  - `WITH_BUILD=true`
+- 保留 `--build` 参数兼容
+- 新增显式快路径参数：
+  - `--no-build`
+- 日志文案同步调整：
+  - 默认输出为 `Build mode: enabled (default rebuild path)`
+  - 显式快路径输出为 `Build mode: disabled (--no-build fast path)`
+
+结果：
+- 生产部署默认会重建后端镜像；
+- fast path 不再是隐式默认行为。
+
+#### 2) 根目录 `deploy.sh` 最小联动
+更新：
+- `deploy.sh`
+
+调整内容：
+- 后端部署阶段提示文案改为：
+  - `Run backend deploy script (default rebuild path)...`
+
+结果：
+- 统一入口的语义与新脚本默认行为保持一致；
+- 减少运维误判“仍然是老 fast path 逻辑”。
+
+### 线上验证口径
+修复后，线上至少应验证：
+
+```bash
+cd /var/www/erp/server
+./deploy-prod.sh
+```
+
+验证点：
+
+1. 部署日志中应看到：
+   - `Build mode: enabled (default rebuild path)`
+2. `docker compose ps` 中 `server-app-*` 的创建时间应更新
+3. 执行：
+   ```bash
+   curl -i http://127.0.0.1:8000/api/v1/auth/snapshot
+   ```
+   结果不应再是 `404`
+4. 浏览器重新登录后，应不再出现“登录成功但循环回登录页”的现象
+
+### 本轮结论
+本轮不是修具体业务，而是修复导致生产版本错位的部署默认策略。
+
+这条修复完成后，生产环境默认将更偏向“慢一点但一致”，避免再次因为忘记 `--build` 触发高优先级线上故障。
+
 ## P0：已治理真相边界链路的最小后端回归测试补强（2026-04-07）
 
 ### 本轮目标
