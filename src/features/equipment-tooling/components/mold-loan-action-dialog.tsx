@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Truck, Save } from 'lucide-react'
+import { type z } from 'zod'
 import { cn } from '@/lib/utils'
 import {
     Dialog,
@@ -36,7 +37,8 @@ import { type DeltaSet } from '@/lib/delta/types'
 
 type LoanMode = 'LEND' | 'BORROW'
 
-type MoldLoanFormValues = MoldLoan
+type MoldLoanFormInput = z.input<typeof moldLoanSchema>
+type MoldLoanFormOutput = z.output<typeof moldLoanSchema>
 
 function createLoanDraftId() {
 	return `LOAN-${Math.floor(Math.random() * 90000) + 10000}`
@@ -99,7 +101,7 @@ export function MoldLoanActionDialog({
 
     const { tracker, deltaProxy } = useDeltaTracker<MoldLoan>(initialValues, isOpen)
 
-    const form = useForm<MoldLoanFormValues>({
+    const form = useForm<MoldLoanFormInput, unknown, MoldLoanFormOutput>({
         resolver: zodResolver(moldLoanSchema),
         defaultValues: initialValues,
     })
@@ -118,7 +120,7 @@ export function MoldLoanActionDialog({
         }
     }, [isOpen, initialValues, form])
 
-    const handleFormSubmit = (values: MoldLoan) => {
+    const handleFormSubmit = (values: MoldLoanFormOutput) => {
         Object.assign(deltaProxy, values)
         const delta = tracker.commit()
         const isDirty = Object.keys(delta).length > 0
@@ -434,7 +436,7 @@ export function MoldLoanActionDialog({
                         className='flex-1 sm:flex-none rounded-full shadow-lg h-11 px-10 font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 active:scale-95 transition-all'
                     >
                         <Save className='size-3.5 mr-2' />
-                        {isEdit ? t('common.actions.save') : t('common.actions.create')}
+                        {t('common.actions.save')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

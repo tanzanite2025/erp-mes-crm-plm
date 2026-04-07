@@ -52,17 +52,12 @@ export function DMPreview({
                     includetext: false,
                     backgroundcolor: 'ffffff',
                     barcolor: '000000',
-                    textencoding: 'utf8',
                 }
 
                 if (isLinearBarcode) {
                     barcodeOptions.height = 18
                     barcodeOptions.paddingwidth = 6
                     barcodeOptions.paddingheight = 4
-                }
-
-                if (type === 'qrcode') {
-                    barcodeOptions.eclevel = 'L'
                 }
 
                 bwipjs.toCanvas(canvasRef.current, barcodeOptions)

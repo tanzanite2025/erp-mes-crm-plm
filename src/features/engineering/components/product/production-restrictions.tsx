@@ -5,20 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
-import { useWatch, type UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 
-type RestrictionsFormValues = {
-    restrictions?: string[]
-}
-
 interface ProductionRestrictionsProps {
-    form: UseFormReturn<RestrictionsFormValues>
+    restrictions: string[]
+    setRestrictions: (nextRestrictions: string[]) => void
 }
 
-export function ProductionRestrictions({ form }: ProductionRestrictionsProps) {
+export function ProductionRestrictions({ restrictions, setRestrictions }: ProductionRestrictionsProps) {
     const { t } = useLanguage()
-    const restrictions = (useWatch({ control: form.control, name: 'restrictions' }) as string[]) || []
     const [newTag, setNewTag] = useState('')
 
     const handleAddTag = (e?: React.MouseEvent) => {
@@ -26,7 +21,7 @@ export function ProductionRestrictions({ form }: ProductionRestrictionsProps) {
         if (!newTag.trim()) return
         const tags = [...restrictions]
         if (!tags.includes(newTag.trim())) {
-            form.setValue('restrictions', [...tags, newTag.trim()])
+            setRestrictions([...tags, newTag.trim()])
         }
         setNewTag('')
     }
@@ -49,7 +44,7 @@ export function ProductionRestrictions({ form }: ProductionRestrictionsProps) {
                                 {tag}
                                 <button
                                     type='button'
-                                    onClick={() => form.setValue('restrictions', restrictions.filter((t: string) => t !== tag))}
+                                    onClick={() => setRestrictions(restrictions.filter((t: string) => t !== tag))}
                                     className='hover:scale-110 transition-transform'
                                 >
                                     <X className='size-3 stroke-3' />

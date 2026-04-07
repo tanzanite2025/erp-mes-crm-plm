@@ -43,7 +43,7 @@ const EMPTY_ORDER: ChangeOrder = {
   status: 'draft',
   description: '',
   createdAt: new Date().toISOString(),
-  _v: 0,
+  version: 1,
   changeOrderNo: '',
   changeType: 'ECO',
   siteCode: '',
@@ -69,7 +69,7 @@ const normalizeOrder = (order?: Partial<ChangeOrder> | null): ChangeOrder => ({
   effectiveFrom: formatDateInput(order?.effectiveFrom),
   effectiveTo: formatDateInput(order?.effectiveTo),
   createdAt: order?.createdAt || new Date().toISOString(),
-  _v: order?._v ?? 0,
+  version: order?.version ?? 1,
 })
 
 export function ChangeOrdersTab() {

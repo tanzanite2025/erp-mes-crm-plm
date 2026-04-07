@@ -1,4 +1,66 @@
 
+## P0 本轮 `pnpm build` 多点报错的共享根因分析（2026-04-07，待确认）
+
+- [ ] 233. 先收口“为什么会一批量暴露”，禁止继续把 build 报错当作孤立点逐条打补丁
+  - [ ] 确认当前错误不是同一时刻新增的一组偶发 typo，而是 `tsc -b` 口径下把多轮迭代累积欠账集中揭开。
+  - [ ] 区分“历史欠账被统一验证放大显形”与“共享架构边界缺口导致持续外溢”两种因素。
+
+- [ ] 234. 归类 schema 演进后的消费层断链根因
+  - [ ] 确认 `engineering/data/schema.ts` 已将多个实体的 `version` 正式化，但默认值工厂、样例常量、页面初始化对象没有统一单一事实来源。
+  - [ ] 确认 `version` 缺失、`_v` 残留、`never` 推断等现象属于同一类“schema 演进 -> 消费层失联”的表层症状。
+
+- [ ] 235. 归类 `react-hook-form + zodResolver + 子组件 form props` 的共享根因
+  - [ ] 确认父层完整 `form` 与子组件窄化 `UseFormReturn<X>` 之间缺少统一泛型策略。
+  - [ ] 确认 `mold-loan`、`product-action-dialog`、`use-product-form` 这类问题本质都是表单 contract 未统一，而不是单个字段错误。
+
+- [ ] 236. 归类第三方库类型边界未封装根因
+  - [ ] 确认 `dm-preview.tsx` 暴露的是 vendor options 经验写法与正式类型定义不一致问题。
+  - [ ] 确认这类问题需要本地 adapter / wrapper 收口，而不是继续在业务组件里散写第三方字段。
+
+- [ ] 237. 将根因/症状/不做事项写入实施文档
+  - [ ] 在 `implementation_plan.md` 中明确主根因、表层症状与后续修复顺序。
+  - [ ] 待确认后按“根因分批修复”推进，而不是逐条消红。
+
+## P0 `engineering` 域 `version/_v` 契约漂移修复（2026-04-07，待确认）
+
+- [ ] 229. 冻结本轮新增根因范围，禁止将 `mold-loan` 已完成问题与 `engineering` 新问题混为一谈
+  - [ ] 确认 `pnpm build` 已不再停在 `mold-loan-action-dialog.tsx`。
+  - [ ] 确认当前新阻塞点位于 `src/features/engineering` 域。
+  - [ ] 确认新报错本质是 `version` 正式字段必填后，初始化对象/样例数据/旧 `_v` 使用仍未同步收口。
+
+- [ ] 230. 盘清 `engineering` 域缺失 `version` 的对象初始化与样例数据
+  - [ ] 排查 `product-routing-view.tsx` 中 `ProductProcessRouting` 初始状态对象缺失 `version` 的根因。
+  - [ ] 排查 `template-mgmt.tsx` 中 `INITIAL_TEMPLATES` 映射结果缺失 `version` 的根因。
+  - [ ] 确认是否还有同类“schema 已要求 `version`，页面/常量仍未补齐”的断点。
+
+- [ ] 231. 清退 `engineering` 域残留 `_v` 旧字段
+  - [ ] 排查 `change-orders.tsx` 中默认对象与编辑对象仍使用 `_v` 的位置。
+  - [ ] 将相关逻辑正式切回 `version`，禁止再保留 `_v` 兼容壳。
+
+- [ ] 232. 执行 build 级验证与记录
+  - [ ] 重新执行 `pnpm build`，确认 `engineering` 域 version 契约漂移被切断。
+  - [ ] 更新 `walkthrough.md`，记录本轮从 `mold-loan` 转移到 `engineering` 的新根因链与修复结果。
+
+## P0 `build` 模式下 `mold-loan-action-dialog` 表单泛型与 i18n key 修复（2026-04-07，待确认）
+
+- [ ] 225. 冻结本轮新增根因范围，禁止再以根目录 `tsc --noEmit` 误判为已通过
+  - [ ] 确认当前仓库 `build` 实际执行的是 `tsc -b`，并非与根目录 `pnpm exec tsc --noEmit` 等价。
+  - [ ] 确认 `mold-loan-action-dialog.tsx` 在 `tsc -b` 下仍暴露 `react-hook-form + zodResolver` 泛型边界问题。
+  - [ ] 确认 `common.actions.create` 不在当前正式翻译 key 联合中，属于真实 i18n 契约漂移。
+
+- [ ] 226. 收口 `MoldLoanActionDialog` 的表单泛型边界到 build 真实检查口径
+  - [ ] 对齐 `useForm`、`zodResolver(moldLoanSchema)`、`FormField`、`handleSubmit` 的泛型边界，避免仅在 `tsc -b` 下爆出 `control` / `SubmitHandler` 类型错误。
+  - [ ] 不通过 `as any` 或宽泛断言掩盖 resolver / field values 不一致问题。
+  - [ ] 保持借出 / 借入表单行为与当前业务语义不变。
+
+- [ ] 227. 收口 `mold-loan-action-dialog.tsx` 的翻译 key 到正式 key
+  - [ ] 将 `common.actions.create` 替换为当前正式存在的 key。
+  - [ ] 不额外扩散成全局 i18n 重构。
+
+- [ ] 228. 执行 build 级验证与总结
+  - [ ] 执行 `pnpm build` 作为本轮最终验证标准。
+  - [ ] 更新 `walkthrough.md`，记录为何根目录 `tsc --noEmit` 不能替代 `tsc -b` / `pnpm build`。
+
 ## P0 `mold-loan` 页面层契约漂移修复（2026-04-07，待确认）
 
 - [ ] 221. 冻结 `mold-loan` 本轮根因范围，禁止回退为旧页面草稿驱动接口

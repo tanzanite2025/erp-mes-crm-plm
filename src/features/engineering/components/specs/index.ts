@@ -3,6 +3,7 @@
 import { RimSpecForm, RimSpecOverview } from './rim-spec'
 import { StemSpecForm, StemSpecOverview } from './stem-spec'
 import { ForkSpecForm, ForkSpecOverview } from './fork-spec'
+import { type ProductTemplate } from '../../data/schema'
 import { productTemplateService } from '../../services/product-template-service'
 
 type TranslationFn<T extends string = string> = (
@@ -10,7 +11,7 @@ type TranslationFn<T extends string = string> = (
   params?: Record<string, string | number>
 ) => string
 
-export const INITIAL_TEMPLATES = [
+export const INITIAL_TEMPLATES: ProductTemplate[] = [
   {
     id: '787d558d-71b5-4a5d-a602-990a986f1e2c',
     name: 'Rim Physical Spec Template',
@@ -18,6 +19,7 @@ export const INITIAL_TEMPLATES = [
     componentKey: 'RIM',
     description: 'Standard geometry template for rim products.',
     active: true,
+    version: 1,
     createdAt: new Date().toISOString(),
   },
   {
@@ -27,6 +29,7 @@ export const INITIAL_TEMPLATES = [
     componentKey: 'STEM',
     description: 'Physical spec template for stems and related components.',
     active: true,
+    version: 1,
     createdAt: new Date().toISOString(),
   },
   {
@@ -36,9 +39,10 @@ export const INITIAL_TEMPLATES = [
     componentKey: 'FORK',
     description: 'Parameter definition template for composite forks.',
     active: true,
+    version: 1,
     createdAt: new Date().toISOString(),
   },
-] as const
+]
 
 export const SPEC_COMPONENTS = {
   RIM: {

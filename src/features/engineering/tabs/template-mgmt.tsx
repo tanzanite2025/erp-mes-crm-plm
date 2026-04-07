@@ -58,6 +58,7 @@ export function TemplateMgmt() {
         if (template.code === 'RIM_STD') {
           return {
             ...template,
+            version: template.version,
             name: t('engineering.templateMgmt.presets.RIM_STD.name'),
             description: t('engineering.templateMgmt.presets.RIM_STD.description'),
           }
@@ -66,6 +67,7 @@ export function TemplateMgmt() {
         if (template.code === 'STEM_STD') {
           return {
             ...template,
+            version: template.version,
             name: t('engineering.templateMgmt.presets.STEM_STD.name'),
             description: t('engineering.templateMgmt.presets.STEM_STD.description'),
           }
@@ -74,12 +76,16 @@ export function TemplateMgmt() {
         if (template.code === 'FORK_STD') {
           return {
             ...template,
+            version: template.version,
             name: t('engineering.templateMgmt.presets.FORK_STD.name'),
             description: t('engineering.templateMgmt.presets.FORK_STD.description'),
           }
         }
 
-        return template
+        return {
+          ...template,
+          version: template.version,
+        }
       }),
     [t]
   )
@@ -138,6 +144,7 @@ export function TemplateMgmt() {
       componentKey: 'GENERAL',
       description: '',
       active: true,
+      version: 1,
       createdAt: new Date().toISOString(),
     })
     setIsDialogOpen(true)

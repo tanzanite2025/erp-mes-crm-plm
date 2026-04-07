@@ -155,7 +155,12 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 </div>
               )}
 
-              <ProductionRestrictions form={form} />
+              <ProductionRestrictions
+                restrictions={form.watch('restrictions') || []}
+                setRestrictions={(nextRestrictions) => {
+                  form.setValue('restrictions', nextRestrictions, { shouldDirty: true })
+                }}
+              />
 
               <div className='p-3 bg-blue-600/5 border border-dashed border-blue-600/30 rounded-[24px] space-y-1 group transition-all hover:bg-blue-600/10'>
                 <div className='flex items-center justify-between border-b border-dashed border-blue-600/30 pb-1'>
