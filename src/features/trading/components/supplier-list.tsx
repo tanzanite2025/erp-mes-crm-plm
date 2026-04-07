@@ -47,7 +47,7 @@ export function SupplierList() {
     error,
     refetch,
   } = useGetSuppliers()
-  const { saveMutation, deleteMutation } = useSupplierMutations()
+  const { createMutation, patchMutation, deleteMutation } = useSupplierMutations()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
 
@@ -76,7 +76,16 @@ export function SupplierList() {
 
   const handleSaveSupplier = (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: any }) => {
     if (!allowsAction('action_trading_supplier_manage')) return
-    saveMutation.mutate(payload)
+    
+    if (payload.isPatch && payload.delta && selectedSupplier) {
+      patchMutation.mutate({
+        id: selectedSupplier.id,
+        delta: payload.delta,
+        version: selectedSupplier.version
+      })
+    } else {
+      createMutation.mutate(payload.data as Omit<Supplier, 'id' | 'version'>)
+    }
   }
 
   const handleDeleteSupplier = (id: string) => {

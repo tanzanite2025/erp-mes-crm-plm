@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
@@ -108,6 +109,8 @@ func saveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 func GetSalesOrdersHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
+	withLines := strings.EqualFold(strings.TrimSpace(c.Query("withLines")), "true")
+	statusFilterRaw := strings.TrimSpace(c.Query("status"))
 	if page < 1 {
 		page = 1
 	}
@@ -118,15 +121,31 @@ func GetSalesOrdersHandler(c *gin.Context) {
 	var orders []models.SalesOrder
 	var total int64
 
+	query := db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false)
+	if statusFilterRaw != "" {
+		statuses := make([]string, 0)
+		for _, item := range strings.Split(statusFilterRaw, ",") {
+			status := strings.TrimSpace(item)
+			if status != "" {
+				statuses = append(statuses, status)
+			}
+		}
+		if len(statuses) > 0 {
+			query = query.Where("status IN ?", statuses)
+		}
+	}
+
 	// 1. 获取总数
-	db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false).Count(&total)
+	query.Count(&total)
 
 	// 2. 分页获取数据 (列表页移除 Preload("Lines") 以减小 JSON 大包体积)
-	if err := db.DB.Where("is_deleted = ?", false).
-		Order("order_date desc").
+	listQuery := query.Order("order_date desc").
 		Limit(pageSize).
-		Offset((page - 1) * pageSize).
-		Find(&orders).Error; err != nil {
+		Offset((page - 1) * pageSize)
+	if withLines {
+		listQuery = listQuery.Preload("Lines")
+	}
+	if err := listQuery.Find(&orders).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取订单列表失败: " + err.Error()})
 		return
 	}

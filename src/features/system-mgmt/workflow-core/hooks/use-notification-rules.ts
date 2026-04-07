@@ -4,6 +4,7 @@ import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from '../services/dispatch-service'
 import { getSalesOrders } from '@/features/trading/services/trading-service'
 import { RoutingService } from '../services/routing-service'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const logger = createLogger('NotificationRules')
 
@@ -43,9 +44,10 @@ export function useNotificationRules() {
 
     // ─── CRUD 适配 (后端对接) ───────────────────────────────────────────────────
 
-    const addRule = useCallback(async (ruleData: Omit<NotificationRule, 'id' | 'createdAt'>) => {
+    const addRule = useCallback(async (ruleData: Omit<NotificationRule, 'id' | 'createdAt' | 'version'>) => {
         try {
-            const newRule = await RoutingService.saveRule(ruleData)
+            const ruleWithVersion = { ...ruleData, version: 1 }
+            const newRule = await RoutingService.saveRule(ruleWithVersion as any)
             setRules(prev => [...prev, newRule])
             await triggerScan([...rules, newRule])
         } catch (err) {
@@ -54,8 +56,20 @@ export function useNotificationRules() {
     }, [rules, triggerScan])
 
     const updateRule = useCallback(async (id: string, updates: Partial<NotificationRule>) => {
+        const target = rules.find(r => r.id === id)
+        if (!target) return
+
         try {
-            const updated = await RoutingService.updateRule(id, updates)
+            // 使用 SDRTS 差量分析
+            const tracker = trackDelta(target)
+            const draft = tracker.data as NotificationRule
+            Object.assign(draft, updates)
+            const delta = tracker.commit()
+
+            // 幂等性保护：无变更则跳过
+            if (Object.keys(delta).length === 0) return
+
+            const updated = await RoutingService.patchRule(id, delta, target.version)
             const next = rules.map(r => r.id === id ? updated : r)
             setRules(next)
             await triggerScan(next)
@@ -78,7 +92,13 @@ export function useNotificationRules() {
         if (!target) return
         
         try {
-            const updated = await RoutingService.updateRule(id, { enabled: !target.enabled })
+            // SDRTS 差量切换开关
+            const tracker = trackDelta(target)
+            const draft = tracker.data as NotificationRule
+            draft.enabled = !target.enabled
+            const delta = tracker.commit()
+
+            const updated = await RoutingService.patchRule(id, delta, target.version)
             const next = rules.map(r => r.id === id ? updated : r)
             setRules(next)
             if (updated.enabled) {

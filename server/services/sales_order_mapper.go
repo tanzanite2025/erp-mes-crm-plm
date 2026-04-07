@@ -156,6 +156,10 @@ func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
 func MapSalesOrdersToListItems(orders []models.SalesOrder) []SalesOrderListItemResponse {
 	items := make([]SalesOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
+		lines := make([]SalesOrderLineResponse, 0, len(order.Lines))
+		for _, line := range order.Lines {
+			lines = append(lines, mapSalesOrderLineToResponse(line))
+		}
 		items = append(items, SalesOrderListItemResponse{
 			ID:                 order.ID,
 			OrderNo:            order.OrderNo,
@@ -180,6 +184,7 @@ func MapSalesOrdersToListItems(orders []models.SalesOrder) []SalesOrderListItemR
 			UpdatedBy:          order.UpdatedBy,
 			IsDeleted:          order.IsDeleted,
 			Version:            order.Version,
+			Lines:              lines,
 		})
 	}
 	return items

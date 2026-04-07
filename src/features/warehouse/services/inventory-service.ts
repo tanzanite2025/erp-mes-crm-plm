@@ -3,7 +3,6 @@ import { productService, type Product } from '@/features/engineering/services/pr
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 const logger = createLogger('InventoryService')
@@ -71,19 +70,19 @@ export interface InventoryView extends InventoryRecord {
     uom: string;
 }
 
+interface InventoryListResponse {
+    items: InventoryView[]
+    total: number
+    page: number
+    pageSize: number
+}
+
 export interface ReconcileResult {
     totalItems: number;
     fixedNegatives: number;
 }
 
 class InventoryService {
-    private getLocale(): AppLocale {
-        if (typeof window !== 'undefined') {
-            return (localStorage.getItem('xdfc_locale') as AppLocale) || DEFAULT_LOCALE
-        }
-        return DEFAULT_LOCALE
-    }
-
     /**
      * Initialization (Primarily ensures API environment readiness)
      */
@@ -142,41 +141,14 @@ class InventoryService {
      * Fetch full inventory view (Connected to backend API)
      */
     async getInventoryList(): Promise<InventoryView[]> {
-        const [materials, products, records] = await Promise.all([
-            materialService.getMaterialOptions(),
-            productService.getProducts(),
-            this.getInventoryListRaw()
-        ])
+        const res = await apiFetch<InventoryListResponse>('/inventory?page=1&pageSize=1000')
+        const response = ensureObjectResponse<InventoryListResponse & Record<string, unknown>>(res, 'InventoryService.getInventoryList')
 
-        // [Performance Optimization] Cache master data in a Map to eliminate O(N^2) lookups
-        const materialMap = new Map<string, Material>(materials.map((m: Material) => [m.id, m] as [string, Material]))
-        const productMap = new Map<string, Product>(products.map((p: Product) => [p.id, p] as [string, Product]))
-        
-        return records.map((record: InventoryRecord) => {
-            const material = materialMap.get(record.materialId)
-            const product = productMap.get(record.materialId)
-            
-            if (!material && !product) {
-                // [FAIL LOUDLY] Strict zero-tolerance for data integrity: 
-                // Issue critical error if orphan stock is found (Material or Product master ID missing)
-                const errorMsg = translate(this.getLocale(), 'warehouse.service.integrityError', {
-                    id: record.id,
-                    materialId: record.materialId
-                })
-                logger.error(`[DATA_INTEGRITY] ${errorMsg}`)
-            }
+        if (!Array.isArray(response.items)) {
+            throw new Error('[INVALID_RESPONSE] InventoryService.getInventoryList expected "items" to be an array.')
+        }
 
-            return {
-                ...record,
-                materialName: material?.name || product?.name || translate(this.getLocale(), 'warehouse.service.unknownItem'),
-                materialCode: material?.code || product?.sku || 'N/A',
-                materialCategory: material?.category || 'FINISHED',
-                materialSpec: material?.spec || product?.tireType || '-',
-                uom: material?.uom || 'pcs',
-                totalValue: record.totalValue || 0,
-                averageUnitCost: record.averageUnitCost || 0
-            }
-        })
+        return response.items
     }
 
     private async getInventoryListRaw(): Promise<InventoryRecord[]> {

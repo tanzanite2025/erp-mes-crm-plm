@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { ApprovalService, type ApprovalRequest } from '../services/approval-service'
+import { DeltaPreview } from '../components/delta-preview'
 
 export function ApprovalRequests() {
   const { t, locale } = useLanguage()
@@ -93,14 +94,15 @@ export function ApprovalRequests() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-        <div className='flex items-center gap-2 text-primary'>
-          <Shield className='size-4' />
-          <h3 className='text-lg font-black uppercase italic tracking-tighter'>
+      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
+        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+        <div className='flex items-center gap-3 text-primary relative z-10'>
+          <Shield className='size-5' />
+          <h3 className='text-xl font-black uppercase italic tracking-tighter'>
             {t('approval.requests.heroTitle')}
           </h3>
         </div>
-        <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
           {t('approval.requests.heroSubtitle', { count: pendingForMe.length })}
         </p>
       </div>
@@ -117,7 +119,7 @@ export function ApprovalRequests() {
           pendingForMe.map((req) => (
             <Card
               key={req.id}
-              className='group overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-none transition-all duration-300 hover:bg-muted/10'
+              className='group overflow-hidden rounded-[32px] border-dashed border-muted/50 bg-muted/2 shadow-xl shadow-primary/2 duration-300 hover:bg-muted/5 animate-in zoom-in-95'
             >
               <CardContent className='space-y-4 pt-6'>
                 <div className='flex items-center justify-between'>
@@ -133,19 +135,25 @@ export function ApprovalRequests() {
                 </div>
 
                 <div className='space-y-4'>
-                  <h4 className='flex items-center gap-2 text-sm font-black uppercase italic tracking-tighter'>
-                    <Lock className='size-3.5 text-primary' />
+                  <h4 className='flex items-center gap-2 text-base font-black uppercase italic tracking-tighter'>
+                    <Lock className='size-4 text-primary' />
                     {t(getActionKey(req.action))}
                   </h4>
 
-                  <div className='rounded-[20px] border border-dashed border-muted/50 bg-background/50 p-4 text-xs font-bold leading-relaxed text-muted-foreground/80 shadow-inner'>
-                    <span className='mb-1 block text-[9px] font-black uppercase tracking-widest opacity-40'>
-                      {t('approval.labels.requestReason')}
+                  <div className='rounded-[20px] border border-dashed border-muted-foreground/10 bg-muted/5 p-5 text-xs font-bold leading-relaxed text-muted-foreground/80 shadow-inner'>
+                    <span className='mb-2 block text-[9px] font-black uppercase tracking-widest opacity-40 italic'>
+                      {t('approval.labels.requestReason')} / REQUEST_REASON
                     </span>
-                    <p className='text-xs'>
+                    <p className='text-xs font-black italic tracking-tight opacity-90'>
                       {req.reason || t('approval.requests.noReasonProvided')}
                     </p>
                   </div>
+
+                  {/* SDRTS 差量预览区 */}
+                  <DeltaPreview 
+                    delta={req.delta} 
+                    className='rounded-[24px] border-none shadow-none bg-background/40' 
+                  />
                 </div>
 
                 <div className='flex items-center gap-3 px-1 pt-2'>
@@ -194,14 +202,15 @@ export function ApprovalRequests() {
         )}
       </div>
 
-      <div className='mt-10 flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-6'>
-        <div className='flex items-center gap-2 text-muted-foreground'>
-          <HistoryIcon className='size-4' />
-          <h3 className='text-lg font-black uppercase italic tracking-tighter'>
+      <div className='mt-10 flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
+        <div className='absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent pointer-events-none' />
+        <div className='flex items-center gap-3 text-muted-foreground relative z-10'>
+          <HistoryIcon className='size-5' />
+          <h3 className='text-xl font-black uppercase italic tracking-tighter'>
             {t('approval.requests.myLogsTitle')}
           </h3>
         </div>
-        <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
           {t('approval.requests.myLogsSubtitle')}
         </p>
       </div>

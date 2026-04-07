@@ -3,19 +3,22 @@ package services
 import "time"
 
 type InventoryItemResponse struct {
-	ID              string    `json:"id"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
-	MaterialID      string    `json:"materialId"`
-	MaterialName    string    `json:"materialName"`
-	MaterialCode    string    `json:"materialCode"`
-	MaterialSpec    string    `json:"materialSpec"`
-	Quantity        float64   `json:"quantity"`
-	TotalValue      float64   `json:"totalValue"`
-	AverageUnitCost float64   `json:"averageUnitCost"`
-	CategoryCode    string    `json:"categoryCode"`
-	BatchNo         string    `json:"batchNo"`
-	UOM             string    `json:"uom"`
+	ID               string    `json:"id"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+	LastUpdated      time.Time `json:"lastUpdated"`
+	MaterialID       string    `json:"materialId"`
+	MaterialName     string    `json:"materialName"`
+	MaterialCode     string    `json:"materialCode"`
+	MaterialCategory string    `json:"materialCategory"`
+	MaterialSpec     string    `json:"materialSpec"`
+	Quantity         float64   `json:"quantity"`
+	TotalValue       float64   `json:"totalValue"`
+	AverageUnitCost  float64   `json:"averageUnitCost"`
+	CategoryCode     string    `json:"categoryCode"`
+	BatchNo          string    `json:"batchNo"`
+	UOM              string    `json:"uom"`
+	Version          int       `json:"version"`
 }
 
 type InventoryListResponse struct {

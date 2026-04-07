@@ -20,6 +20,10 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	now := time.Now()
 	materialID := uuid.NewString()
 	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at, category)
+		VALUES (?, ?, ?, ?)
+	`, materialID, now, now, "RAW").Error)
+	require.NoError(t, db.DB.Exec(`
 		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, material_spec, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, uuid.NewString(), now, now, materialID, "Copper Wire", "MAT-I-001", "Spec-A", 12.5, 100.0, 8.0, "WH_A", "B-INV-001", "KG").Error)
@@ -38,8 +42,11 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	require.Equal(t, 10, response.PageSize)
 	require.Len(t, response.Items, 1)
 	require.Equal(t, materialID, response.Items[0].MaterialID)
+	require.Equal(t, "RAW", response.Items[0].MaterialCategory)
 	require.Equal(t, "WH_A", response.Items[0].CategoryCode)
 	require.Equal(t, "KG", response.Items[0].UOM)
+	require.Equal(t, 1, response.Items[0].Version)
+	require.WithinDuration(t, now, response.Items[0].LastUpdated, time.Second)
 }
 
 func TestGetInboundHistoryHandlerReturnsNamedPagedResponse(t *testing.T) {

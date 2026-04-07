@@ -37,6 +37,8 @@ export interface ApprovalRequest {
   module: string
   action: string
   createdAt: string
+  delta?: any // SDRTS 格式的差量快照
+  targetVersion?: number // 被审批实体的目标版次
 }
 
 export const ApprovalService = {

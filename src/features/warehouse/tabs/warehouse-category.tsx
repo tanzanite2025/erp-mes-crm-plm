@@ -24,7 +24,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+// Removed unused PageHeader
 import { isForbiddenError } from '@/lib/error-status'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -33,6 +33,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 import { warehouseCategoryService, type WarehouseCategory as Category } from '../services/category-service'
 
@@ -111,10 +112,31 @@ export default function WarehouseCategory() {
         }
 
         try {
-            await warehouseCategoryService.saveCategory({
-                ...editingCategory,
-                ...formData
-            })
+            if (editingCategory) {
+                // SDRTS 差量更新模式
+                const tracker = trackDelta(editingCategory)
+                const draft = tracker.data as Category
+                Object.assign(draft, formData)
+                const delta = tracker.commit()
+
+                // 幂等性：无变动则直接关闭
+                if (Object.keys(delta).length === 0) {
+                    setIsDialogOpen(false)
+                    return
+                }
+
+                await warehouseCategoryService.patchCategory(editingCategory.id, delta, editingCategory.version)
+            } else {
+                // 原子创建模式
+                const newCategory: Omit<Category, 'id' | 'version'> = {
+                    ...formData,
+                    isSystem: false,
+                    active: true,
+                    sortOrder: 0
+                }
+                await warehouseCategoryService.createCategory(newCategory)
+            }
+            
             setIsDialogOpen(false)
             toast.success(
                 editingCategory
@@ -143,7 +165,18 @@ export default function WarehouseCategory() {
     return (
         <>
             <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-                <PageHeader title={t('warehouse.category.title')} description={t('warehouse.category.subtitle')} icon={Warehouse} />
+                <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
+                    <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+                    <div className='flex items-center gap-3 text-primary relative z-10'>
+                        <Warehouse className='size-5' />
+                        <h2 className='text-xl font-black uppercase italic tracking-tighter'>
+                            {t('warehouse.category.title')} / CATEGORY_REGISTRY
+                        </h2>
+                    </div>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
+                        {t('warehouse.category.subtitle')}
+                    </p>
+                </div>
 
                 <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                     <div className='relative w-full sm:max-w-sm shrink-0'>

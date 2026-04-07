@@ -18,6 +18,7 @@ export function NotificationRuleList() {
             name: '新业务通知规则',
             enabled: true,
             entity: 'ORDER',
+            version: 1,
             segments: [
                 {
                     id: '',
@@ -48,27 +49,30 @@ export function NotificationRuleList() {
 
     return (
         <div className='space-y-6 max-w-6xl mx-auto pb-12 transition-all duration-500'>
-            {/* 1. 顶部状态栏 */}
-            <div className='flex items-center justify-between px-2'>
-                <div className='flex items-center gap-3'>
-                    <div className='size-10 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner'>
-                        <ShieldCheck className='size-5 text-primary' />
+            {/* 1. 顶部状态栏 - UDS 1.0 物理大圆角 */}
+            <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
+                <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+                <div className='flex items-center justify-between relative z-10'>
+                    <div className='flex items-center gap-3'>
+                        <div className='size-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner'>
+                            <ShieldCheck className='size-6 text-primary' />
+                        </div>
+                        <div>
+                            <h2 className='text-xl font-black italic uppercase tracking-tighter'>通知规则引擎 / NOTIFICATION_RULES_ENGINE</h2>
+                            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+                              当前活跃: {rules.filter(r => r.enabled).length} / {rules.length} 条业务监听
+                            </span>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className='text-[14px] font-black tracking-tight'>通知规则引擎</h2>
-                        <span className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>
-                            已激活 {rules.filter(r => r.enabled).length} / {rules.length} 条业务监听
-                        </span>
-                    </div>
+                    
+                    <Button
+                        size='lg'
+                        className='rounded-full font-black text-[10px] uppercase gap-2 shadow-xl shadow-primary/20 h-12 px-8 bg-primary text-white hover:scale-105 active:scale-95 transition-all'
+                        onClick={handleAddNewRule}
+                    >
+                        <Plus className='size-4' /> 创建监控规则 / NEW_RULE
+                    </Button>
                 </div>
-                
-                <Button
-                    size='lg'
-                    className='rounded-2xl font-black text-[11px] uppercase gap-2 shadow-xl shadow-primary/20 h-11 px-6 hover:translate-y-[-2px] active:translate-y-0 transition-transform'
-                    onClick={handleAddNewRule}
-                >
-                    <Plus className='size-4' /> 创建监控规则
-                </Button>
             </div>
 
             {/* 2. 规则卡片列表 */}

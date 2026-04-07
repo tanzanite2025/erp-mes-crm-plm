@@ -5,7 +5,7 @@ import { NotificationService } from '@/features/system-mgmt/notifications/notifi
 import { handleServerError } from '@/lib/handle-server-error'
 import * as tradingService from '../services/trading-service'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type Customer, type Supplier } from '../data/schema'
+import { type Customer, type Supplier, type SalesOrder, type PurchaseOrder } from '../data/schema'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -37,25 +37,25 @@ export const useCustomerMutations = () => {
     return t(fallbackKey)
   }
 
-  const saveMutation = useMutation({
-    mutationFn: ({ 
-      data, 
-      isPatch, 
-      delta 
-    }: { 
-      data: Partial<Customer>; 
-      isPatch?: boolean; 
-      delta?: DeltaSet 
-    }) => {
-      if (isPatch && data.id && delta) {
-        return tradingService.patchCustomer(data.id, delta, (data as Customer).version)
-      }
-      return tradingService.saveCustomer(data)
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<Customer, 'id' | 'version'>) => {
+      return tradingService.createCustomer(data)
     },
-    onSuccess: (_data, variables) => {
-      toast.success(
-        variables?.isPatch ? t('trading.customers.toasts.updated') : t('trading.customers.toasts.created')
-      )
+    onSuccess: () => {
+      toast.success(t('trading.customers.toasts.created'))
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    },
+    onError: (error) => {
+      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+    },
+  })
+
+  const patchMutation = useMutation({
+    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => {
+      return tradingService.patchCustomer(id, delta, version)
+    },
+    onSuccess: () => {
+      toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },
     onError: (error) => {
@@ -74,7 +74,7 @@ export const useCustomerMutations = () => {
     },
   })
 
-  return { saveMutation, deleteMutation }
+  return { createMutation, patchMutation, deleteMutation }
 }
 
 export const useGetSuppliers = (options = {}) => {
@@ -89,15 +89,23 @@ export const useSupplierMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
 
-  const saveMutation = useMutation({
-    mutationFn: ({ data, isPatch, delta }: { data: Partial<Supplier>; isPatch?: boolean; delta?: DeltaSet }) => {
-      if (isPatch && data.id && delta) {
-        return tradingService.patchSupplier(data.id, delta, (data as Supplier).version)
-      }
-      return tradingService.saveSupplier(data)
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<Supplier, 'id' | 'version'>) => {
+      return tradingService.createSupplier(data)
     },
-    onSuccess: (_, { isPatch }) => {
-      toast.success(isPatch ? t('purchase.suppliers.toasts.saved') : t('purchase.suppliers.toasts.saved'))
+    onSuccess: () => {
+      toast.success(t('purchase.suppliers.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    },
+    onError: handleServerError,
+  })
+
+  const patchMutation = useMutation({
+    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) => {
+      return tradingService.patchSupplier(id, delta, version)
+    },
+    onSuccess: () => {
+      toast.success(t('purchase.suppliers.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['suppliers'] })
     },
     onError: handleServerError,
@@ -112,13 +120,13 @@ export const useSupplierMutations = () => {
     onError: handleServerError,
   })
 
-  return { saveMutation, deleteMutation }
+  return { createMutation, patchMutation, deleteMutation }
 }
 
 export const useGetSalesOrders = (page = 1, pageSize = 50, options = {}) => {
   return useQuery({
     queryKey: ['sales-orders', page, pageSize],
-    queryFn: () => tradingService.getSalesOrders(page, pageSize),
+    queryFn: () => tradingService.getSalesOrders({ page, pageSize }),
     ...options,
   })
 }
@@ -142,8 +150,8 @@ export const useSalesOrderMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
 
-  const saveMutation = useMutation({
-    mutationFn: tradingService.saveSalesOrder,
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<SalesOrder, 'id' | 'version'>) => tradingService.createSalesOrder(data),
     onSuccess: (data) => {
       toast.success(t('tradingSalesOrder.toasts.saved'))
 
@@ -208,15 +216,15 @@ export const useSalesOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { saveMutation, patchMutation, deleteMutation, claimMutation }
+  return { createMutation, patchMutation, deleteMutation, claimMutation }
 }
 
 export const usePurchaseOrderMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
 
-  const saveMutation = useMutation({
-    mutationFn: tradingService.savePurchaseOrder,
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<PurchaseOrder, 'id' | 'version'>) => tradingService.createPurchaseOrder(data),
     onSuccess: () => {
       toast.success(t('purchase.orders.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
@@ -235,5 +243,5 @@ export const usePurchaseOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { saveMutation, patchMutation }
+  return { createMutation, patchMutation }
 }

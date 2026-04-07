@@ -24,8 +24,11 @@ function toActivity(payload: any): ScanActivity | null {
   if (!rawCode) return null
 
   const scannedAt = String(payload?.scannedAt || new Date().toISOString())
-  const bridge = payload?.bridge || {}
-  const resolved = payload?.resolved || {}
+  if (!payload?.bridge || !payload?.resolved) {
+    throw new Error("[CRITICAL] Scan activity payload corrupted: missing bridge or resolved metadata");
+  }
+  const bridge = payload.bridge
+  const resolved = payload.resolved
   const productName = resolved?.product?.name ? String(resolved.product.name) : ''
   const materialCode = resolved?.material?.code ? String(resolved.material.code) : ''
 

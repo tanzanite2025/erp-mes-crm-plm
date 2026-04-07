@@ -2,28 +2,31 @@ package services
 
 import "xdfc-server/models"
 
-func MapInventoryToResponse(item models.Inventory) InventoryItemResponse {
+func MapInventoryToResponse(item models.Inventory, materialCategory string) InventoryItemResponse {
 	return InventoryItemResponse{
-		ID:              item.ID,
-		CreatedAt:       item.CreatedAt,
-		UpdatedAt:       item.UpdatedAt,
-		MaterialID:      item.MaterialID,
-		MaterialName:    item.MaterialName,
-		MaterialCode:    item.MaterialCode,
-		MaterialSpec:    item.MaterialSpec,
-		Quantity:        item.Quantity,
-		TotalValue:      item.TotalValue,
-		AverageUnitCost: item.AverageUnitCost,
-		CategoryCode:    item.CategoryCode,
-		BatchNo:         item.BatchNo,
-		UOM:             item.UOM,
+		ID:               item.ID,
+		CreatedAt:        item.CreatedAt,
+		UpdatedAt:        item.UpdatedAt,
+		LastUpdated:      item.UpdatedAt,
+		MaterialID:       item.MaterialID,
+		MaterialName:     item.MaterialName,
+		MaterialCode:     item.MaterialCode,
+		MaterialCategory: materialCategory,
+		MaterialSpec:     item.MaterialSpec,
+		Quantity:         item.Quantity,
+		TotalValue:       item.TotalValue,
+		AverageUnitCost:  item.AverageUnitCost,
+		CategoryCode:     item.CategoryCode,
+		BatchNo:          item.BatchNo,
+		UOM:              item.UOM,
+		Version:          1,
 	}
 }
 
-func MapInventoryListToResponse(items []models.Inventory) []InventoryItemResponse {
+func MapInventoryListToResponse(items []models.Inventory, materialCategoryMap map[string]string) []InventoryItemResponse {
 	response := make([]InventoryItemResponse, 0, len(items))
 	for _, item := range items {
-		response = append(response, MapInventoryToResponse(item))
+		response = append(response, MapInventoryToResponse(item, materialCategoryMap[item.MaterialID]))
 	}
 	return response
 }

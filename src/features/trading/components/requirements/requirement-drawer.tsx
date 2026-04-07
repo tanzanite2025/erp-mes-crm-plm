@@ -1,5 +1,6 @@
 'use client'
 
+import { type MaterialRequirement } from '../../data/requirement-schema'
 import {
     Sheet,
     SheetContent,
@@ -15,7 +16,6 @@ import { useLanguage } from '@/context/language-provider'
 import { RequirementList } from './requirement-list'
 import { MoldRequirementAlert } from './mold-requirement-alert'
 import { RequirementExportService } from '../../services/requirement-export-service'
-import { type MaterialRequirement } from '../../hooks/use-requirements'
 
 interface RequirementDrawerProps {
     isOpen: boolean

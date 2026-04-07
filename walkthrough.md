@@ -1,5 +1,211 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：仓储库存视图 `getInventoryList()` 后移后端实施（2026-04-07）
+
+### 本轮目标
+本轮按已批准的缩小范围执行仓储库存聚合后移，只处理 `src/features/warehouse/services/inventory-service.ts#getInventoryList()` 主链：由后端输出权威库存视图，前端不再并行拉取物料、产品与原始库存记录做正式展示聚合。
+
+### 已执行变更
+更新：
+- `server/services/inventory_query_dto.go`
+- `server/services/inventory_query_mapper.go`
+- `server/services/inventory_query_service.go`
+- `server/handlers/inventory_query_handlers_test.go`
+- `server/handlers/inventory_command_handlers_test.go`
+- `src/features/warehouse/services/inventory-service.ts`
+
+#### 1) 复用现有 `GET /api/v1/inventory`，补强为库存视图权威返回
+- 未新增新路由，继续复用现有 `GET /api/v1/inventory`
+- 在后端库存查询 DTO 中补齐前端 `InventoryView` 主链所需字段：
+  - `lastUpdated`
+  - `materialCategory`
+  - `version`
+- 其中：
+  - `lastUpdated` 当前对齐 `inventory.updated_at`
+  - `version` 本轮按最小兼容口径固定回填为 `1`
+
+结果：
+- 前端库存管理页正式展示所需字段已由后端统一返回；
+- 本轮无需再额外新开 `/inventory/view` 接口，降低联动面。
+
+#### 2) 后端补充物料类别映射，收口 `materialCategory`
+- `server/services/inventory_query_service.go` 在读取库存分页结果后，额外按 `materialId` 查询 `materials` 表中的 `category`
+- 若命中物料主数据，则返回对应 `materialCategory`
+- 若未命中物料主数据，则按现有前端兼容口径默认回填为 `FINISHED`
+
+结果：
+- 现有库存记录中“物料 / 成品共用 `materialId` 字段”的历史口径被保留；
+- `use-stock-mgmt.ts` 无需自行再从前端主数据表推导 `materialCategory`。
+
+#### 3) 前端 `getInventoryList()` 已切换为直接消费后端分页结果
+- `src/features/warehouse/services/inventory-service.ts#getInventoryList()` 已从：
+  - 并行拉取 `materialService.getMaterialOptions()`
+  - 并行拉取 `productService.getProducts()`
+  - 拉取 `/inventory` 原始列表
+  - 在浏览器内拼装 `InventoryView`
+- 调整为：
+  - 直接请求 `/inventory?page=1&pageSize=1000`
+  - 读取后端分页响应中的 `items`
+  - 将 `items` 作为正式库存视图返回
+
+结果：
+- `getInventoryList()` 已不再承担前端正式聚合职责；
+- 仓储库存管理主链已改为消费后端权威库存视图。
+
+#### 4) 保持本轮边界：`searchMasterData()` 不扩散处理
+- `searchMasterData()` 仍保留当前实现
+- `use-stock-mgmt.ts` 未做不必要重构
+- 本轮未扩散到：
+  - `use-report.ts`
+  - `use-notification-rules.ts`
+  - `dashboard/services/trace-service.ts`
+
+结果：
+- 本轮严格保持在用户已批准的最小范围内；
+- 只收口库存视图正式事实源，不顺手处理其他聚合候选链。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run Inventory
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+补充验证结论：
+- 后端库存查询 handler 测试已覆盖新增字段：
+  - `materialCategory`
+  - `lastUpdated`
+  - `version`
+- 前端 TypeScript 编译通过，说明 `inventory-service.ts#getInventoryList()` 切换为分页结果消费后，`warehouse` 主链未引入新的类型错误。
+
+### 本轮结论
+本轮已完成仓储库存视图 `getInventoryList()` 的最小后移：
+
+- 后端 `GET /inventory` 已承担库存视图权威返回职责；
+- 前端不再拉取物料、产品与库存三份数据做正式视图拼装；
+- `use-stock-mgmt.ts` 主消费链保持稳定；
+- `searchMasterData()` 等后续候选链留待下一轮处理。
+
+## P1：前端 MRP 大运算后移后端实施（2026-04-07）
+
+### 本轮目标
+本轮按已批准方案执行 `trading/requirements` 页的 MRP 大运算后迁：将正式 MRP 需求计算从前端 `MrpEngine` 主链迁移到后端权威聚合接口，前端只保留订单选择、结果展示与交互职责。
+
+### 已执行变更
+更新：
+- `server/services/mrp_requirements.go`
+- `server/services/mrp_requirements_test.go`
+- `server/handlers/mrp_requirements.go`
+- `server/routes/routes_trading.go`
+- `server/handlers/sales_orders.go`
+- `server/services/sales_order_dto.go`
+- `server/services/sales_order_mapper.go`
+- `src/features/trading/services/requirement-service.ts`
+- `src/features/trading/hooks/use-requirements.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/trading/hooks/use-trading.ts`
+- `task.md`
+- `implementation_plan.md`
+
+#### 1) 后端新增权威 MRP 聚合计算链
+- 新增 `server/services/mrp_requirements.go`
+- 后端统一读取：
+  - 活动销售订单及明细
+  - 有效 BOM 与 BOM Items
+  - 物料主数据
+  - 产品显示信息
+  - 包装规则
+  - 库存
+- 后端统一完成：
+  - BOM 爆炸
+  - 物料需求汇总
+  - 库存对冲
+  - 缺口计算
+  - 包装换算
+  - 统计快照生成
+
+结果：
+- 正式 MRP 结果不再由浏览器本地计算；
+- `requirements` 页结果改为以后端权威返回为准。
+
+#### 2) 后端新增 `MRP requirements` 接口
+- 新增 `server/handlers/mrp_requirements.go`
+- 在 `server/routes/routes_trading.go` 注册：
+  - `GET /api/v1/mrp/requirements`
+
+结果：
+- 前端有了单一 MRP 结果事实源；
+- 后续如需导出、缓存、审计或预计算，已有正式服务端入口可扩展。
+
+#### 3) 销售订单列表接口最小增强，支持 requirements 选择树
+- `server/handlers/sales_orders.go` 增加：
+  - `withLines=true`
+  - `status=Pending,InProgress`
+- `server/services/sales_order_dto.go` 与 `sales_order_mapper.go` 在列表项场景下支持返回 `lines`
+
+结果：
+- `requirements` 页的订单选择树仍可继续使用活动订单明细；
+- 但它只承担选择与展示职责，不再承担正式业务计算。
+
+#### 4) 前端 `useRequirements()` 改为消费后端结果
+- 新增 `src/features/trading/services/requirement-service.ts`
+- `src/features/trading/hooks/use-requirements.ts` 已从“拉 6 份主数据 + 本地 `MrpEngine` 运算”改为：
+  - 只加载带明细的活动订单供选择树使用；
+  - 点击分析时调用后端 `requirementService.getMrpRequirements(...)`；
+  - 使用后端返回的 `requirements` 与 `stats` 作为正式结果。
+
+结果：
+- 前端正式退出 MRP 主计算链；
+- 浏览器不再承担 BOM 爆炸、库存对冲、包装换算等领域运算。
+
+#### 5) 交易前端调用层完成适配
+- `src/features/trading/services/trading-service.ts` 的 `getSalesOrders(...)` 改为 options 形式，支持 `withLines/status`
+- `src/features/trading/hooks/use-trading.ts` 已同步适配，保持现有页面调用方式稳定
+
+结果：
+- 未把本轮改动扩散成销售订单模块整体重构；
+- 现有列表页与其他调用方仍可沿用原有 hook 入口。
+
+#### 6) 前端遗留 `MrpEngine` 与 `features/mrp` 死代码已物理删除
+- 新增 `src/features/trading/data/requirement-schema.ts`
+- `MaterialRequirement` / `MrpStats` 已迁移到 trading 域内聚维护
+- 已删除：
+  - `src/features/mrp/services/mrp-engine.ts`
+  - `src/features/mrp/data/schema.ts`
+- `RequirementDrawer` / `RequirementList` / `RequirementExportService` / `useRequirements` / `requirement-service` 的类型引用已全部切到 `trading/data/requirement-schema.ts`
+
+结果：
+- 前端 `MRP` 历史计算实现已彻底脱离仓库主代码路径；
+- `features/mrp` 不再保留孤岛类型与无主服务实现；
+- `trading/requirements` 的类型边界回归到 trading 域自身维护。
+
+### 验证
+执行：
+```bash
+go test ./services -run Mrp
+go test ./handlers ./routes -run ^$
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+补充验证结论：
+- 后端 `MRP` service 已覆盖：
+  - 空数据返回空数组与零统计；
+  - 有订单/BOM/库存/包装规则时可正确产出需求结果与包装换算。
+- 前端 TypeScript 编译通过，说明本轮 `getSalesOrders(...)` 签名调整与 `requirements` 主链切换未引入新的类型错误。
+
+### 本轮结论
+本轮已完成 `trading/requirements` 页 MRP 大运算的主链后迁：
+
+- 正式 MRP 结果已以后端为准；
+- 前端只保留订单选择、抽屉展示与交互；
+- 原前端 `MrpEngine` 已不再参与页面正式计算主链。
+
+这次改造满足了“前端不应该参与这种大运算”的目标，同时保持了页面交互外观与使用方式基本稳定。
+
 ## P1：AI 单入口收敛实施（2026-04-07）
 
 ### 本轮目标

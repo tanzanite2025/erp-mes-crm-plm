@@ -20,7 +20,14 @@ export interface ScanResolvedContext<TPayload = unknown> {
   payload: TPayload
 }
 
+export interface ScanDeltaResult {
+  id: string
+  delta: any // SDRTS 差量对象
+  version: number // 悲观并发版次
+}
+
 export interface ScanSubmitResult {
   success: boolean
   message: string
+  deltaResult?: ScanDeltaResult // 可选的 SDRTS 成功结果
 }

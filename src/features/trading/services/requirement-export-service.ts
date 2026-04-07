@@ -1,6 +1,6 @@
-import { AppLocale, translate } from '@/locales'
+import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
-import { type MaterialRequirement } from '@/features/mrp/data/schema'
+import { type MaterialRequirement } from '../data/requirement-schema'
 import type { Alignment, Borders } from 'exceljs'
 
 export const RequirementExportService = {

@@ -78,7 +78,10 @@ function readQueue(): PDAIngestRetryItem[] {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.map((item) => normalizeRetryItem(item || {}))
+    return parsed.map((item) => {
+        if (!item) throw new Error("[CRITICAL] PDA Queue Item is null during normalization");
+        return normalizeRetryItem(item)
+    })
   } catch (error) {
     logger.error('Failed to read retry queue', error)
     return []

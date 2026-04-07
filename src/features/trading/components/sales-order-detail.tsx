@@ -3,6 +3,7 @@ import { useSearch } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { CADViewerDialog } from '@/features/engineering-db/components/cad-viewer/cad-viewer-dialog'
@@ -39,7 +40,7 @@ export function SalesOrderDetail({
     initialOrder?.id || ''
   )
   const order = detailedOrder || initialOrder
-  const { saveMutation, claimMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation, claimMutation } = useSalesOrderMutations()
   const user = useAuthStore((state) => state.user)
   const { commands } = useCommands()
   const canHardDelete = allowsAction('action_trading_sales_order_delete')
@@ -120,8 +121,22 @@ export function SalesOrderDetail({
   }
 
   const handleMutateStatus = (payload: Partial<SalesOrder>) => {
+    if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
-    saveMutation.mutate(payload)
+
+    // SDRTS 状态变更隔离
+    const tracker = trackDelta(order)
+    const draft = tracker.data as SalesOrder
+    Object.assign(draft, payload)
+    const delta = tracker.commit()
+
+    if (Object.keys(delta).length === 0) return
+
+    patchMutation.mutate({
+      id: order.id,
+      delta,
+      version: order.version
+    })
   }
 
   const handleClaimModel = (model: string) => {

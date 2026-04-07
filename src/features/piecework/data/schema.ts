@@ -22,3 +22,18 @@ export const teamSchema = z.object({
 
 export type Team = z.infer<typeof teamSchema>
 export type TeamType = z.infer<typeof teamTypeEnum>
+
+// --- 计件工价规则 (Piecework Rates/Rules) ---
+
+export const pieceworkRateSchema = z.object({
+    id: z.string(),
+    productId: z.string().min(1, '请选择关联产品 SKU'),
+    processName: z.string().min(1, '请输入工序名称'),
+    piecePrice: z.number().min(0, '单价不能为负数'),
+    unit: z.string().default('PCS'),
+    status: z.enum(['active', 'inactive']).default('active'),
+    remarks: z.string().optional(),
+    version: z.number().default(1),
+})
+
+export type PieceworkRate = z.infer<typeof pieceworkRateSchema>

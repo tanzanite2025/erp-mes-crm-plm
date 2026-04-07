@@ -45,7 +45,7 @@ export function CustomerList() {
     error,
     refetch,
   } = useGetCustomers()
-  const { saveMutation, deleteMutation } = useCustomerMutations()
+  const { createMutation, patchMutation, deleteMutation } = useCustomerMutations()
   const loadFailedLabel =
     locale === 'zh-CN' ? '客户数据加载失败，请稍后重试' : 'Failed to load customer data. Please try again.'
 
@@ -74,7 +74,16 @@ export function CustomerList() {
 
   const handleSaveCustomer = (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_customer_manage')) return
-    saveMutation.mutate(payload)
+    
+    if (payload.isPatch && payload.delta && selectedCustomer) {
+      patchMutation.mutate({
+        id: selectedCustomer.id,
+        delta: payload.delta,
+        version: selectedCustomer.version
+      })
+    } else {
+      createMutation.mutate(payload.data as Omit<Customer, 'id' | 'version'>)
+    }
   }
 
   const handleDeleteCustomer = (id: string) => {

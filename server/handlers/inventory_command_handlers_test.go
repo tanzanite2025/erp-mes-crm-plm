@@ -103,7 +103,8 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
 			created_at DATETIME,
 			updated_at DATETIME,
-			deleted_at DATETIME
+			deleted_at DATETIME,
+			category TEXT
 		)`,
 		`CREATE TABLE purchase_orders (
 			id TEXT PRIMARY KEY NOT NULL,

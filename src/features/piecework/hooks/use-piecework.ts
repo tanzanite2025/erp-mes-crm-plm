@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Team } from '../data/schema'
+import { Team, PieceworkRate } from '../data/schema'
 
 // --- 生产班组 (Teams) ---
 
@@ -57,11 +57,54 @@ export function usePieceworkMutations() {
     return { saveTeamMutation, patchTeamMutation, deleteTeamMutation }
 }
 
-// --- 工价标准 (Rates) ---
-
 export function useGetPieceworkRates() {
     return useQuery({
         queryKey: ['piecework_rates'],
-        queryFn: () => apiFetch<any[]>('/piecework/rates')
+        queryFn: () => apiFetch<PieceworkRate[]>('/piecework/rates')
     })
+}
+
+export function usePieceworkRateMutations() {
+    const queryClient = useQueryClient()
+
+    const saveRateMutation = useMutation({
+        mutationFn: (data: Partial<PieceworkRate>) => apiFetch('/piecework/rates', { 
+            method: 'POST', 
+            body: JSON.stringify(data) 
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
+            toast.success('计件工价已更新')
+        },
+        onError: (err: any) => {
+            toast.error('保存工价失败: ' + err.message)
+        }
+    })
+
+    const patchRateMutation = useMutation({
+        mutationFn: ({ id, delta, version }: { id: string, delta: any, version: number }) => 
+            apiFetch(`/piecework/rates/${id}`, { 
+                method: 'PATCH', 
+                body: JSON.stringify({ delta, version }) 
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
+            toast.success('工价差量同步成功')
+        },
+        onError: (err: any) => {
+            toast.error('工价差量同步失败: ' + err.message)
+        }
+    })
+
+    const deleteRateMutation = useMutation({
+        mutationFn: (id: string) => apiFetch(`/piecework/rates/${id}`, { 
+            method: 'DELETE' 
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['piecework_rates'] })
+            toast.success('工价项已移除')
+        }
+    })
+
+    return { saveRateMutation, patchRateMutation, deleteRateMutation }
 }

@@ -25,12 +25,13 @@ export const getCustomers = async (): Promise<Customer[]> => {
     return ensureArrayResponse<Customer>(res, 'TradingService.getCustomers')
 }
 
-export const saveCustomer = async (customer: Partial<Customer>): Promise<Customer> => {
+/** 仅用于新建客户 */
+export const createCustomer = async (customer: Omit<Customer, 'id' | 'version'>): Promise<Customer> => {
     const res = await apiFetch<Customer>('/customers', {
         method: 'POST',
         body: JSON.stringify(customer),
     });
-    return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'TradingService.saveCustomer') as Customer
+    return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'TradingService.createCustomer') as Customer
 }
 
 export const deleteCustomer = async (id: string): Promise<void> => {
@@ -76,7 +77,8 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
     return result;
 }
 
-export const saveSupplier = async (supplier: Partial<Supplier>): Promise<Supplier> => {
+/** 仅用于新建供应商 */
+export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>): Promise<Supplier> => {
     const payload = {
         ...supplier,
         mainProducts: supplier.mainProducts ? JSON.stringify(supplier.mainProducts) : '[]'
@@ -86,7 +88,7 @@ export const saveSupplier = async (supplier: Partial<Supplier>): Promise<Supplie
         method: 'POST',
         body: JSON.stringify(payload),
     });
-    return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'TradingService.saveSupplier') as Supplier
+    return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'TradingService.createSupplier') as Supplier
 }
 
 export const deleteSupplier = async (id: string): Promise<void> => {
@@ -112,8 +114,34 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
 
 // --- Sales Order Service (已支持分页与性能优化) ---
 
-export const getSalesOrders = async (page = 1, pageSize = 50): Promise<PaginatedResponse<SalesOrder>> => {
-    const res = await apiFetch<PaginatedResponse<SalesOrder>>(`/sales-orders?page=${page}&pageSize=${pageSize}`);
+type GetSalesOrdersOptions = {
+    page?: number
+    pageSize?: number
+    withLines?: boolean
+    status?: string[]
+}
+
+export const getSalesOrders = async (options: GetSalesOrdersOptions = {}): Promise<PaginatedResponse<SalesOrder>> => {
+    const {
+        page = 1,
+        pageSize = 50,
+        withLines = false,
+        status,
+    } = options
+
+    const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+    })
+
+    if (withLines) {
+        params.set('withLines', 'true')
+    }
+    if (status && status.length > 0) {
+        params.set('status', status.join(','))
+    }
+
+    const res = await apiFetch<PaginatedResponse<SalesOrder>>(`/sales-orders?${params.toString()}`);
     return ensureObjectResponse<PaginatedResponse<SalesOrder> & Record<string, unknown>>(res, 'TradingService.getSalesOrders') as PaginatedResponse<SalesOrder>
 }
 
@@ -127,12 +155,13 @@ export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> =>
     return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.getSalesOrderByNo') as SalesOrder
 }
 
-export const saveSalesOrder = async (order: Partial<SalesOrder>): Promise<SalesOrder> => {
+/** 仅用于新建销售订单 */
+export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>): Promise<SalesOrder> => {
     const res = await apiFetch<SalesOrder>('/sales-orders', {
         method: 'POST',
         body: JSON.stringify(order),
     });
-    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.saveSalesOrder') as SalesOrder
+    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.createSalesOrder') as SalesOrder
 }
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {
@@ -228,12 +257,13 @@ export const updateOrderDelivery = async (orderNo: string, materialId: string, q
 /**
  * 保存采购订单 (全量)
  */
-export const savePurchaseOrder = async (order: Partial<PurchaseOrder>): Promise<PurchaseOrder> => {
+/** 仅用于新建采购订单 */
+export const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'version'>): Promise<PurchaseOrder> => {
     const res = await apiFetch<PurchaseOrder>('/purchase/orders', {
         method: 'POST',
         body: JSON.stringify(order),
     });
-    return ensureObjectResponse<PurchaseOrder & Record<string, unknown>>(res, 'TradingService.savePurchaseOrder') as PurchaseOrder
+    return ensureObjectResponse<PurchaseOrder & Record<string, unknown>>(res, 'TradingService.createPurchaseOrder') as PurchaseOrder
 }
 
 /**

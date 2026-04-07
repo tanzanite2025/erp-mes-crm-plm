@@ -89,6 +89,16 @@ export const StocktakeService = {
   },
 
   /**
+   * PDA Exclusive: SDRTS Delta Item Patch
+   */
+  async pdaPatchItem(id: string, delta: any, version: number) {
+    return apiFetch(`/pda/stocktakes/items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ delta, version }),
+    })
+  },
+
+  /**
    * PDA Exclusive: Bulk sync offline scan data
    */
   async pdaBulkSync(scans: PDAScanPayload[]): Promise<PDABulkSyncResponse> {

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
 )
@@ -15,8 +16,36 @@ func ListInventory(page, pageSize int) (InventoryListResponse, error) {
 		return InventoryListResponse{}, err
 	}
 
+	materialCategoryMap := make(map[string]string, len(items))
+	materialIDs := make([]string, 0, len(items))
+	for _, item := range items {
+		materialID := strings.TrimSpace(item.MaterialID)
+		if materialID == "" {
+			continue
+		}
+		if _, exists := materialCategoryMap[materialID]; exists {
+			continue
+		}
+		materialCategoryMap[materialID] = "FINISHED"
+		materialIDs = append(materialIDs, materialID)
+	}
+
+	if len(materialIDs) > 0 {
+		var materials []models.Material
+		if err := db.DB.Select("id", "category").Where("id IN ?", materialIDs).Find(&materials).Error; err != nil {
+			return InventoryListResponse{}, err
+		}
+		for _, material := range materials {
+			category := strings.TrimSpace(material.Category)
+			if category == "" {
+				category = "MATERIAL"
+			}
+			materialCategoryMap[material.ID] = category
+		}
+	}
+
 	return InventoryListResponse{
-		Items:    MapInventoryListToResponse(items),
+		Items:    MapInventoryListToResponse(items, materialCategoryMap),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

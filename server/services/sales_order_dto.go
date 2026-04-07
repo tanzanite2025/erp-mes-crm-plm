@@ -132,29 +132,30 @@ type SalesOrderResponse struct {
 }
 
 type SalesOrderListItemResponse struct {
-	ID                 string    `json:"id"`
-	OrderNo            string    `json:"orderNo"`
-	OrderName          string    `json:"orderName"`
-	CustomerName       string    `json:"customerName"`
-	CustomerID         string    `json:"customerId"`
-	Type               string    `json:"type"`
-	Currency           string    `json:"currency"`
-	Classification     string    `json:"classification"`
-	Status             string    `json:"status"`
-	StatusNote         string    `json:"statusNote"`
-	Amount             float64   `json:"amount"`
-	Quantity           float64   `json:"quantity"`
-	OrderDate          string    `json:"orderDate"`
-	DeliveryDate       string    `json:"deliveryDate"`
-	PurchaseOrderNo    string    `json:"purchaseOrderNo"`
-	Barcode            string    `json:"barcode"`
-	Requirements       string    `json:"requirements"`
-	WorkflowInstanceID string    `json:"workflowInstanceId"`
-	CreatedAt          time.Time `json:"createdAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
-	UpdatedBy          string    `json:"updatedBy"`
-	IsDeleted          bool      `json:"isDeleted"`
-	Version            int       `json:"_v"`
+	ID                 string                   `json:"id"`
+	OrderNo            string                   `json:"orderNo"`
+	OrderName          string                   `json:"orderName"`
+	CustomerName       string                   `json:"customerName"`
+	CustomerID         string                   `json:"customerId"`
+	Type               string                   `json:"type"`
+	Currency           string                   `json:"currency"`
+	Classification     string                   `json:"classification"`
+	Status             string                   `json:"status"`
+	StatusNote         string                   `json:"statusNote"`
+	Amount             float64                  `json:"amount"`
+	Quantity           float64                  `json:"quantity"`
+	OrderDate          string                   `json:"orderDate"`
+	DeliveryDate       string                   `json:"deliveryDate"`
+	PurchaseOrderNo    string                   `json:"purchaseOrderNo"`
+	Barcode            string                   `json:"barcode"`
+	Requirements       string                   `json:"requirements"`
+	WorkflowInstanceID string                   `json:"workflowInstanceId"`
+	CreatedAt          time.Time                `json:"createdAt"`
+	UpdatedAt          time.Time                `json:"updatedAt"`
+	UpdatedBy          string                   `json:"updatedBy"`
+	IsDeleted          bool                     `json:"isDeleted"`
+	Version            int                      `json:"_v"`
+	Lines              []SalesOrderLineResponse `json:"lines,omitempty"`
 }
 
 type SalesOrderListResponse struct {

@@ -31,6 +31,14 @@ export const RoutingService = {
     })
   },
 
+  /** 局部更新指令配置 (SDRTS) */
+  patchCommand: async (id: string, delta: any, version: number): Promise<StandardCommand> => {
+    return apiFetch<StandardCommand>(`/system/routing/commands/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
+    })
+  },
+
   // --- 通知规则 (Rules) ---
   getRules: async (): Promise<NotificationRule[]> => {
     return apiFetch<NotificationRule[]>('/system/routing/rules')
@@ -53,6 +61,14 @@ export const RoutingService = {
   deleteRule: async (id: string): Promise<void> => {
     return apiFetch(`/system/routing/rules/${id}`, {
       method: 'DELETE',
+    })
+  },
+
+  /** 局部更新通知规则 (SDRTS) */
+  patchRule: async (id: string, delta: any, version: number): Promise<NotificationRule> => {
+    return apiFetch<NotificationRule>(`/system/routing/rules/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
     })
   },
 }

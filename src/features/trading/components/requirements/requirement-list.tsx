@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { type MaterialRequirement } from '../../data/requirement-schema'
 import { AlertTriangle, ArrowRightLeft, ChevronDown, Layers, Search } from 'lucide-react'
 import {
   Collapsible,
@@ -21,7 +22,6 @@ import {
 } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { type MaterialRequirement } from '../../hooks/use-requirements'
 
 interface RequirementListProps {
   data: MaterialRequirement[]

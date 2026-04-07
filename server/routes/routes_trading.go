@@ -56,4 +56,8 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	purchaseGroup.PATCH("/orders/:id", purchaseOrderManage, handlers.PatchPurchaseOrderHandler)
 	purchaseGroup.POST("/orders/:id/confirm-receipt", purchaseOrderManage, handlers.ConfirmPurchaseReceiptHandler)
 	purchaseGroup.DELETE("/orders/:id", purchaseOrderDelete, handlers.DeletePurchaseOrderHandler)
+
+	mrpGroup := authorized.Group("/mrp")
+	mrpGroup.Use(tradingAccess)
+	mrpGroup.GET("/requirements", handlers.GetMrpRequirementsHandler)
 }

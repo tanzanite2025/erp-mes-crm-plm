@@ -9,6 +9,7 @@ export interface WarehouseCategory {
     isSystem: boolean
     active: boolean
     sortOrder: number
+    version: number // SDRTS 乐观锁
 }
 
 class WarehouseCategoryService {
@@ -17,10 +18,19 @@ class WarehouseCategoryService {
         return ensureArrayResponse<WarehouseCategory>(res, 'WarehouseCategoryService.getCategories')
     }
 
-    async saveCategory(category: Partial<WarehouseCategory>): Promise<void> {
+    /** 仅用于新建分类 */
+    async createCategory(category: Omit<WarehouseCategory, 'id' | 'version'>): Promise<void> {
         return apiFetch('/warehouse/categories', {
             method: 'POST',
             body: JSON.stringify(category)
+        })
+    }
+
+    /** 局部更新分类 (SDRTS) */
+    async patchCategory(id: string, delta: any, version: number): Promise<void> {
+        return apiFetch(`/warehouse/categories/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } })
         })
     }
 

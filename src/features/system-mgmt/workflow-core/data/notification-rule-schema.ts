@@ -33,6 +33,7 @@ export const NotificationRuleSchema = z.object({
     /** 业务规则分支列表，每个分支对应一个 Tab */
     segments: z.array(RuleSegmentSchema).min(1, '至少需要一个配置分支'),
     createdAt: z.string(),
+    version: z.number().default(1),
 })
 
 export type NotificationRule = z.infer<typeof NotificationRuleSchema>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ShieldCheck } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { OrgService } from '@/features/org-personnel/services/org-service'
 import * as userApi from '@/features/users/services/user-api'
@@ -167,17 +168,33 @@ export function UserRights() {
   }
 
   return (
-    <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-      <UserRightsHeader
-        isAddingMode={isAddingMode}
-        newRoleId={newRoleId}
-        orgNodes={orgNodes}
-        isConfirmDisabled={!newRoleId || Boolean(selectedOrgRoleOption?.disabled)}
-        onNewRoleChange={setNewRoleId}
-        onStartAdd={() => setIsAddingMode(true)}
-        onConfirmAdd={handleAddRole}
-        onCancelAdd={() => setIsAddingMode(false)}
-      />
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
+        <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+        <div className='flex items-center justify-between relative z-10'>
+          <div className='flex items-center gap-3'>
+            <div className='size-10 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner'>
+              <ShieldCheck className='size-5 text-primary' />
+            </div>
+            <div>
+              <h2 className='text-xl font-black uppercase italic tracking-tighter'>权限控制中心 / ACCESS_CONTROL_MATRIX</h2>
+              <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>
+                管理系统角色、权限条目及多维权限矩阵
+              </span>
+            </div>
+          </div>
+          <UserRightsHeader
+            isAddingMode={isAddingMode}
+            newRoleId={newRoleId}
+            orgNodes={orgNodes}
+            isConfirmDisabled={!newRoleId || Boolean(selectedOrgRoleOption?.disabled)}
+            onNewRoleChange={setNewRoleId}
+            onStartAdd={() => setIsAddingMode(true)}
+            onConfirmAdd={handleAddRole}
+            onCancelAdd={() => setIsAddingMode(false)}
+          />
+        </div>
+      </div>
 
       <UserRightsRoleSelector
         roles={roles}
