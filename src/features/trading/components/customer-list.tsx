@@ -27,6 +27,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { type Customer } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 import { CustomerActionDialog } from './customer-action-dialog'
 import { useCustomerMutations, useGetCustomers } from '../hooks/use-trading'
 
@@ -71,9 +72,9 @@ export function CustomerList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveCustomer = (data: Partial<Customer>) => {
+  const handleSaveCustomer = (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_customer_manage')) return
-    saveMutation.mutate(data)
+    saveMutation.mutate(payload)
   }
 
   const handleDeleteCustomer = (id: string) => {

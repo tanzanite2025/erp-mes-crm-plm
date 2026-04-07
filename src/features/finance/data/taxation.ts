@@ -5,6 +5,7 @@ export interface TaxRate {
     rate: number        // 税率百分比 (如：13)
     status: 'Active' | 'Inactive'
     description?: string
+    version: number     // SDRTS 乐观锁
 }
 
 export const defaultTaxRates: TaxRate[] = [
@@ -14,7 +15,8 @@ export const defaultTaxRates: TaxRate[] = [
         code: 'VAT13',
         rate: 13,
         status: 'Active',
-        description: ''
+        description: '',
+        version: 1
     },
     {
         id: 'tax_vat_9',
@@ -22,7 +24,8 @@ export const defaultTaxRates: TaxRate[] = [
         code: 'VAT9',
         rate: 9,
         status: 'Active',
-        description: ''
+        description: '',
+        version: 1
     },
     {
         id: 'tax_vat_6',
@@ -30,7 +33,8 @@ export const defaultTaxRates: TaxRate[] = [
         code: 'VAT6',
         rate: 6,
         status: 'Active',
-        description: ''
+        description: '',
+        version: 1
     },
     {
         id: 'tax_vat_0',
@@ -38,6 +42,7 @@ export const defaultTaxRates: TaxRate[] = [
         code: 'VAT0',
         rate: 0,
         status: 'Active',
-        description: ''
+        description: '',
+        version: 1
     }
 ]

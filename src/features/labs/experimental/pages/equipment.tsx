@@ -14,7 +14,7 @@ import { isForbiddenError } from '@/lib/error-status'
 export function LabEquipmentPage() {
   const { t } = useLanguage()
   const { data: categories = [], isLoading, error } = useLabExperimentalCategories()
-  const { saveCategoryMutation, deleteCategoryMutation } = useLabExperimentalMutations()
+  const { saveCategoryMutation, patchCategoryMutation, deleteCategoryMutation } = useLabExperimentalMutations()
 
   const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -36,12 +36,19 @@ export function LabEquipmentPage() {
     }
   }, [categories, activeCategoryId])
 
-  const handleSaveCategory = async (data: Partial<EquipmentCategory>) => {
-    saveCategoryMutation.mutate({
-      ...editingCategory,
-      ...data,
-      parentId: pendingParentId || editingCategory?.parentId,
-    })
+  const handleSaveCategory = async ({ data, isPatch, delta, version }: { data: EquipmentCategory; isPatch: boolean; delta?: any; version?: number }) => {
+    if (isPatch && delta && version !== undefined) {
+      patchCategoryMutation.mutate({
+        id: data.id,
+        delta,
+        version
+      })
+    } else {
+      saveCategoryMutation.mutate({
+        ...data,
+        parentId: pendingParentId || data.parentId,
+      })
+    }
     setIsDialogOpen(false)
   }
 

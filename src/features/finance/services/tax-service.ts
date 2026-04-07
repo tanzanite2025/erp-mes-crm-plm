@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { type TaxRate } from '../data/taxation'
+import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 class TaxService {
   async getTaxRates(): Promise<TaxRate[]> {
@@ -11,6 +12,22 @@ class TaxService {
       method: 'POST',
       body: JSON.stringify(rate),
     })
+  }
+
+  /**
+   * 局部更新税率 (SDRTS 协议)
+   */
+  async patchTaxRate(id: string, delta: DeltaSet, version: number): Promise<TaxRate> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version }
+    };
+
+    return apiFetch<TaxRate>(`/finance/tax-rates/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   }
 
   calculateFromTotal(totalAmount: number, taxRate: number) {

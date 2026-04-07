@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Building2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -8,13 +8,15 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { StatusGuard } from '@/components/status-guard'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Customer } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface CustomerActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
-  onSave: (data: Partial<Customer>) => void
+  onSave: (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => void
 }
 
 const defaultFormData: Partial<Customer> = {
@@ -45,38 +47,27 @@ export function CustomerActionDialog({
     footer: 'flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
   })
   const allowedEditStatuses = ['Active', 'Pending']
-  const sourceKey = customer?.id ?? 'create'
-  const initialFormData = useMemo(() => (customer ? customer : defaultFormData), [customer])
-  const [draftState, setDraftState] = useState<{
-    sourceKey: string
-    draft: Partial<Customer>
-  }>({
-    sourceKey,
-    draft: {},
-  })
-  const draft = draftState.sourceKey === sourceKey ? draftState.draft : {}
-  const formData = { ...initialFormData, ...draft }
-
-  const updateFormData = (updater: (prev: Partial<Customer>) => Partial<Customer>) => {
-    setDraftState((prev) => {
-      const currentDraft = prev.sourceKey === sourceKey ? prev.draft : {}
-      return {
-        sourceKey,
-        draft: updater({ ...initialFormData, ...currentDraft }),
-      }
-    })
-  }
+  const initialFormData = useMemo(() => (customer ? customer : (defaultFormData as Customer)), [customer])
+  const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setDraftState({ sourceKey, draft: {} })
-    }
     onOpenChange(nextOpen)
   }
 
   const handleSave = () => {
-    onSave(formData)
-    setDraftState({ sourceKey, draft: {} })
+    const isPatch = !!customer
+    const delta = tracker.commit()
+    
+    if (isPatch && Object.keys(delta).length === 0) {
+      onOpenChange(false)
+      return
+    }
+
+    onSave({ 
+      data: formData as Partial<Customer>, 
+      isPatch, 
+      delta: isPatch ? delta : undefined 
+    })
     onOpenChange(false)
   }
 
@@ -137,7 +128,7 @@ export function CustomerActionDialog({
                   className='pl-10 h-10 font-bold'
                   value={formData.name}
                   onChange={(event) =>
-                    updateFormData((prev) => ({ ...prev, name: event.target.value }))
+                    { formData.name = event.target.value }
                   }
                 />
               </div>
@@ -156,7 +147,7 @@ export function CustomerActionDialog({
                 className='h-10 font-mono text-sm'
                 value={formData.code}
                 onChange={(event) =>
-                  updateFormData((prev) => ({ ...prev, code: event.target.value }))
+                  { formData.code = event.target.value }
                 }
               />
             </div>
@@ -178,7 +169,7 @@ export function CustomerActionDialog({
                   className='pl-10 h-11 rounded-2xl border-none bg-muted/50 font-bold'
                   value={formData.contactPerson}
                   onChange={(event) =>
-                    updateFormData((prev) => ({ ...prev, contactPerson: event.target.value }))
+                    { formData.contactPerson = event.target.value }
                   }
                 />
               </div>
@@ -199,7 +190,7 @@ export function CustomerActionDialog({
                   className='pl-10 h-11 rounded-2xl border-none bg-muted/50 font-bold'
                   value={formData.contactPhone}
                   onChange={(event) =>
-                    updateFormData((prev) => ({ ...prev, contactPhone: event.target.value }))
+                    { formData.contactPhone = event.target.value }
                   }
                 />
               </div>
@@ -222,7 +213,7 @@ export function CustomerActionDialog({
                 className='pl-10 h-10 font-bold'
                 value={formData.email}
                 onChange={(event) =>
-                  updateFormData((prev) => ({ ...prev, email: event.target.value }))
+                  { formData.email = event.target.value }
                 }
               />
             </div>
@@ -244,7 +235,7 @@ export function CustomerActionDialog({
                 className='pl-10 resize-none font-medium text-xs leading-relaxed'
                 value={formData.address}
                 onChange={(event) =>
-                  updateFormData((prev) => ({ ...prev, address: event.target.value }))
+                  { formData.address = event.target.value }
                 }
               />
             </div>

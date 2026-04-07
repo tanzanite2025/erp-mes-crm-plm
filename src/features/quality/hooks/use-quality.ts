@@ -3,6 +3,7 @@ import { apiFetch } from '@/lib/api-client'
 import { useLanguage } from '@/context/language-provider'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import type { Standard } from '../data/schema'
+import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 export interface QualityStandardsResponse {
     items: Standard[]
@@ -63,8 +64,24 @@ export function useQualityMutations() {
     const queryClient = useQueryClient()
 
     const saveStandardMutation = useMutation({
-        mutationFn: (data: Partial<Standard>) => apiFetch('/quality/standards', { method: 'POST', body: JSON.stringify(data) }),
-        ...buildMutationOptions<unknown, unknown, Partial<Standard>>({
+        mutationFn: ({ data, isPatch, delta }: { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }) => {
+            if (isPatch && data.id && delta) {
+                const payload: DeltaPayload = {
+                    op: 'PATCH',
+                    delta,
+                    metadata: { id: data.id, version: (data as Standard).version }
+                }
+                return apiFetch(`/quality/standards/${data.id}`, { 
+                    method: 'PATCH', 
+                    body: JSON.stringify(payload) 
+                })
+            }
+            return apiFetch('/quality/standards', { 
+                method: 'POST', 
+                body: JSON.stringify(data) 
+            })
+        },
+        ...buildMutationOptions<unknown, unknown, { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }>({
             queryClient,
             invalidateQueryKeys: [['quality_standards']],
             successMessage: t('quality.hooks.saveStandardSuccess'),

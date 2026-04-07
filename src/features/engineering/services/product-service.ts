@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type Product, type ProductType } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
@@ -15,10 +15,8 @@ export const productService = {
         } else {
             qs = '?options=true' // 向下兼容旧组件（如下拉、仿真）的无参调用
         }
-        const res = await apiFetch<any>(`/engineering/products${qs}`)
-        
-        // 底层 apiFetch 已处理解包（Hybrid Array），此处直接返回
-        return res as Product[]
+        const res = await apiFetch<Product[]>(`/engineering/products${qs}`)
+        return ensureArrayResponse<Product>(res, 'ProductService.getProducts')
     },
 
     getProductById: async (id: string): Promise<Product> => {
@@ -89,8 +87,8 @@ export const productService = {
         } else if (params?.page) {
             qs = `?page=${params.page}&pageSize=${params.pageSize || 50}`
         }
-        const res = await apiFetch<any>(`/engineering/product-types${qs}`)
-        return res as ProductType[]
+        const res = await apiFetch<ProductType[]>(`/engineering/product-types${qs}`)
+        return ensureArrayResponse<ProductType>(res, 'ProductService.getProductTypes')
     },
 
     saveProductType: async (type: Partial<ProductType>): Promise<ProductType> => {

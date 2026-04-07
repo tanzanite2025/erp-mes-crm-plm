@@ -1,6 +1,7 @@
 import type { User, UserListPage, UserOption } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 
 export interface CreateUserPayload {
   username: string
@@ -59,7 +60,8 @@ export const fetchUsers = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  return apiFetch<UserListPage>(`/users?${query.toString()}`)
+  const res = await apiFetch<UserListPage>(`/users?${query.toString()}`)
+  return ensureObjectResponse<UserListPage & Record<string, unknown>>(res, 'UserApi.fetchUsers') as UserListPage
 }
 
 export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
@@ -79,17 +81,19 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  return apiFetch<UserOption[]>(`/users?${query.toString()}`)
+  const res = await apiFetch<UserOption[]>(`/users?${query.toString()}`)
+  return ensureArrayResponse<UserOption>(res, 'UserApi.fetchUserOptions')
 }
 
 /**
  * 创建用户
  */
 export const createUser = async (userData: CreateUserPayload) => {
-  return apiFetch<User>('/users', {
+  const res = await apiFetch<User>('/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   })
+  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.createUser') as User
 }
 
 /**
@@ -105,17 +109,19 @@ export const patchUser = async (id: string, delta: DeltaSet, version: number) =>
     },
   }
 
-  return apiFetch<User>(`/users/${id}`, {
+  const res = await apiFetch<User>(`/users/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
+  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.patchUser') as User
 }
 
 export const replaceUser = async (id: string, userData: UserReplacePayload) => {
-  return apiFetch<User>(`/users/${id}`, {
+  const res = await apiFetch<User>(`/users/${id}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   })
+  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.replaceUser') as User
 }
 
 /**

@@ -13,6 +13,7 @@ export interface Customer extends BaseEntity {
     status: CustomerStatus
     creditLimit: number
     balance: number
+    version: number // SDRTS 乐观锁
 }
 
 export type SupplierStatus = 'Active' | 'Inactive' | 'OnReview'

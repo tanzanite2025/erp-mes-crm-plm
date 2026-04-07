@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 
 /**
  * 企业配置接口定义
@@ -23,9 +24,10 @@ export const EnterpriseService = {
      */
     getConfig: async (): Promise<EnterpriseConfig> => {
         try {
-            return await apiFetch<EnterpriseConfig>('/enterprise/config', {
+            const res = await apiFetch<EnterpriseConfig>('/enterprise/config', {
                 suppressErrorStatuses: [404],
             })
+            return ensureObjectResponse<EnterpriseConfig & Record<string, unknown>>(res, 'EnterpriseService.getConfig') as EnterpriseConfig
         } catch (error) {
             const status =
                 error && typeof error === 'object' && 'status' in error
@@ -44,9 +46,10 @@ export const EnterpriseService = {
      * 保存企业配置到后端
      */
     saveConfig: async (config: EnterpriseConfig): Promise<EnterpriseConfig> => {
-        return apiFetch<EnterpriseConfig>('/enterprise/config', {
+        const res = await apiFetch<EnterpriseConfig>('/enterprise/config', {
             method: 'POST',
             body: JSON.stringify(config)
         })
+        return ensureObjectResponse<EnterpriseConfig & Record<string, unknown>>(res, 'EnterpriseService.saveConfig') as EnterpriseConfig
     }
 }

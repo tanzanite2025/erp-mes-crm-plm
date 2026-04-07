@@ -10,18 +10,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { type Standard } from '../data/schema'
-import { ShieldCheck, Save, Info, History, Loader2 } from 'lucide-react'
 import * as React from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { type Standard } from '../data/schema'
+import { ShieldCheck, Save, Info, History, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
 
 interface StandardActionDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     standard?: Standard | null
-    onSave?: (data: Partial<Standard>) => void
+    onSave?: (payload: { data: Partial<Standard>; isPatch: boolean; delta?: DeltaSet }) => void
     isLoading?: boolean
 }
 
@@ -71,7 +73,6 @@ export function StandardActionDialog({
 }: StandardActionDialogProps) {
     const { t } = useLanguage()
     const isEdit = !!standard
-    const sourceKey = standard?.id ?? 'create'
     const shellClasses = buildActionDialogShellClasses({
         content: 'max-h-[92vh] flex flex-col sm:max-w-[560px] p-0 overflow-hidden rounded-[1.5rem] lg:rounded-[2rem] bg-background/95 backdrop-blur-2xl transition-all',
         header: 'p-6 lg:p-8 pb-0 shrink-0 border-none',
@@ -80,31 +81,10 @@ export function StandardActionDialog({
         body: 'flex-1 overflow-y-auto p-6 lg:p-8 pt-4 space-y-6 scrollbar-thin',
         footer: 'p-6 lg:p-8 bg-muted/20 border-t border-white/5 shrink-0 flex items-center justify-between gap-4',
     })
-    const initialFormData = React.useMemo(() => (standard ?? DEFAULT_STANDARD), [standard])
-    const [draftState, setDraftState] = React.useState<{
-        sourceKey: string
-        draft: Partial<Standard>
-    }>({
-        sourceKey,
-        draft: {},
-    })
-    const draft = draftState.sourceKey === sourceKey ? draftState.draft : {}
-    const formData = { ...initialFormData, ...draft }
-
-    const updateFormData = (updater: (prev: Partial<Standard>) => Partial<Standard>) => {
-        setDraftState((prev) => {
-            const currentDraft = prev.sourceKey === sourceKey ? prev.draft : {}
-            return {
-                sourceKey,
-                draft: updater({ ...initialFormData, ...currentDraft }),
-            }
-        })
-    }
+    const initialFormData = React.useMemo(() => (standard ? standard : (DEFAULT_STANDARD as Standard)), [standard])
+    const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
 
     const handleOpenChange = (nextOpen: boolean) => {
-        if (!nextOpen) {
-            setDraftState({ sourceKey, draft: {} })
-        }
         onOpenChange(nextOpen)
     }
 
@@ -114,14 +94,26 @@ export function StandardActionDialog({
             return
         }
 
-        onSave?.(formData)
-        const nextVersion = isEdit ? (Number(formData.version || 1) + 0.1).toFixed(1) : '1.0'
+        const isPatch = !!standard
+        const delta = tracker.commit()
+
+        if (isPatch && Object.keys(delta).length === 0) {
+            onOpenChange(false)
+            return
+        }
+
+        onSave?.({
+            data: formData as Partial<Standard>,
+            isPatch,
+            delta: isPatch ? delta : undefined
+        })
+        
+        const nextVersion = isPatch ? (Number(formData.version || 1) + 0.1).toFixed(1) : '1.0'
         toast.success(
-            isEdit
+            isPatch
                 ? t('quality.standards.dialog.action.toastUpdated', { version: nextVersion })
                 : t('quality.standards.dialog.action.toastCreated')
         )
-        setDraftState({ sourceKey, draft: {} })
         onOpenChange(false)
     }
 
@@ -175,7 +167,7 @@ export function StandardActionDialog({
                                 placeholder={t('quality.standards.dialog.action.placeholders.code')}
                                 className="h-11 rounded-xl bg-muted/30 border-none shadow-inner focus:ring-2 focus:ring-primary/20 transition-all font-mono"
                                 value={formData.code || ''}
-                                onChange={(e) => updateFormData((prev) => ({ ...prev, code: e.target.value }))}
+                                onChange={(e) => { formData.code = e.target.value }}
                             />
                         </div>
                         <div className="col-span-1 space-y-2 flex flex-col justify-end">
@@ -201,7 +193,7 @@ export function StandardActionDialog({
                             placeholder={t('quality.standards.dialog.action.placeholders.name')}
                             className="h-11 rounded-xl bg-muted/30 border-none shadow-inner focus:ring-2 focus:ring-primary/20 transition-all font-bold"
                             value={formData.name || ''}
-                            onChange={(e) => updateFormData((prev) => ({ ...prev, name: e.target.value }))}
+                            onChange={(e) => { formData.name = e.target.value }}
                         />
                     </div>
 
@@ -212,7 +204,7 @@ export function StandardActionDialog({
                             </Label>
                             <Select
                                 value={normalizeType(formData.type)}
-                                onValueChange={(value: Standard['type']) => updateFormData((prev) => ({ ...prev, type: value }))}
+                                onValueChange={(value: Standard['type']) => { formData.type = value }}
                             >
                                 <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-none shadow-inner focus:ring-2 focus:ring-primary/20 transition-all">
                                     <SelectValue placeholder={t('quality.standards.dialog.action.placeholders.type')} />
@@ -230,7 +222,7 @@ export function StandardActionDialog({
                             </Label>
                             <Select
                                 value={normalizeStatus(formData.status)}
-                                onValueChange={(value: Standard['status']) => updateFormData((prev) => ({ ...prev, status: value }))}
+                                onValueChange={(value: Standard['status']) => { formData.status = value }}
                             >
                                 <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-none shadow-inner focus:ring-2 focus:ring-primary/20 transition-all">
                                     <SelectValue placeholder={t('quality.standards.dialog.action.placeholders.status')} />
@@ -253,7 +245,7 @@ export function StandardActionDialog({
                             placeholder={t('quality.standards.dialog.action.placeholders.remarks')}
                             className="w-full p-4 rounded-xl bg-muted/30 border-none shadow-inner focus:ring-2 focus:ring-primary/20 transition-all text-sm resize-none"
                             value={formData.remarks || ''}
-                            onChange={(e) => updateFormData((prev) => ({ ...prev, remarks: e.target.value }))}
+                            onChange={(e) => { formData.remarks = e.target.value }}
                         />
                     </div>
 

@@ -3,6 +3,7 @@ import { apiFetch } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type EquipmentCategory, type Equipment } from '../data/schema'
+import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 type LabExperimentalTaskRecord = {
     id: string
@@ -82,6 +83,24 @@ export function useLabExperimentalMutations() {
         }
     })
 
+    const patchCategoryMutation = useMutation({
+        mutationFn: ({ id, delta, version }: { id: string, delta: DeltaSet, version: number }) => {
+            const payload: DeltaPayload = {
+                op: 'PATCH',
+                delta,
+                metadata: { id, version }
+            };
+            return apiFetch(`/labs/experimental/categories/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['exp_categories'] })
+            toast.success(t('labExperimental.toasts.categorySaved'))
+        }
+    })
+
     const deleteCategoryMutation = useMutation({
         mutationFn: (id: string) => apiFetch(`/labs/experimental/categories/${id}`, { method: 'DELETE' }),
         onSuccess: () => {
@@ -117,6 +136,7 @@ export function useLabExperimentalMutations() {
 
     return {
         saveCategoryMutation,
+        patchCategoryMutation,
         deleteCategoryMutation,
         saveEquipmentMutation,
         saveTaskMutation,

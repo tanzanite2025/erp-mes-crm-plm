@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGetQualityStandards, useQualityMutations } from './use-quality'
 import { type Standard } from '../data/schema'
+import { type DeltaSet } from '@/lib/delta/types'
 
 export function useQualityStandardsMgmt() {
     const [page] = useState(1)
@@ -37,11 +38,8 @@ export function useQualityStandardsMgmt() {
         setIsActionOpen(true)
     }
 
-    const handleSaveStandard = (formData: Partial<Standard>) => {
-        saveStandardMutation.mutate({
-            ...formData,
-            id: actionStandard?.id,
-        })
+    const handleSaveStandard = (payload: { data: Partial<Standard>; isPatch: boolean; delta?: DeltaSet }) => {
+        saveStandardMutation.mutate(payload)
         setIsActionOpen(false)
     }
 

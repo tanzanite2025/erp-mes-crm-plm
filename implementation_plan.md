@@ -1,5 +1,190 @@
 ﻿# implementation plan
 
+## DTO 第二阶段：`equipment-tooling/services` 与 `basic-settings/services`（2026-04-07，待确认）
+
+### 一、当前目标
+在 DTO 第一阶段已完成主干 `product-service`、`category-service`、`trading-service`、`user-api` 收口后，本阶段聚焦两个历史 service 密集目录：
+
+- `src/features/equipment-tooling/services`
+- `src/features/basic-settings/services`
+
+本阶段仍先输出审批稿，不直接改代码。目标是进一步细化到文件与函数级，明确下一批 DTO 整改优先顺序。
+
+### 二、目录级初步结论
+
+#### `equipment-tooling/services`
+- **相对完整**：`drawing-service.ts`、`partner-service.ts`
+- **存在明确缺口**：`mold-service.ts`、`mold-loan-service.ts`、`furnace-service.ts`
+- **待二次核对**：`archive-service.ts`、`asset-service.ts`
+
+#### `basic-settings/services`
+- **相对完整**：`unit-service.ts`、`dictionary-service.ts`
+- **存在明确缺口**：`system-config-service.ts`、`enterprise-service.ts`、`linear-barcode-protocol-service.ts`、`numbering-service.ts`
+
+### 三、第二阶段 DTO 整改表（审批稿）
+
+| 风险级别 | 文件 | 函数 | 当前问题类型 | 拟整改策略 |
+| --- | --- | --- | --- | --- |
+| 高 | `src/features/basic-settings/services/system-config-service.ts` | `getConfigs()` | 列表读取直接返回 `apiFetch<SystemConfig[]>`，未显式做数组响应校验 | 增加 `ensureArrayResponse<SystemConfig>(...)` |
+| 高 | `src/features/basic-settings/services/system-config-service.ts` | `updateConfig()` | 保存返回对象未显式做对象响应校验 | 增加 `ensureObjectResponse<SystemConfig>(...)` |
+| 高 | `src/features/basic-settings/services/enterprise-service.ts` | `getConfig()` | 成功路径直接返回 `apiFetch<EnterpriseConfig>`，404 fallback 与 DTO guard 未统一收口 | 在成功路径增加 `ensureObjectResponse<EnterpriseConfig>(...)`，保留 404 fallback |
+| 高 | `src/features/basic-settings/services/enterprise-service.ts` | `saveConfig()` | 保存返回对象未显式做对象响应校验 | 增加 `ensureObjectResponse<EnterpriseConfig>(...)` |
+| 高 | `src/features/basic-settings/services/linear-barcode-protocol-service.ts` | `getConfig()` | 成功路径直接返回对象，异常 fallback 存在，但未显式做 DTO guard | 在成功路径增加 `ensureObjectResponse<LinearBarcodeProtocolConfig>(...)` |
+| 高 | `src/features/basic-settings/services/linear-barcode-protocol-service.ts` | `updateConfig()` | 保存返回对象未显式做对象响应校验 | 增加 `ensureObjectResponse<LinearBarcodeProtocolConfig>(...)` |
+| 高 | `src/features/basic-settings/services/numbering-service.ts` | `generateNumber()` | 直接读取 `data.number`，未显式确认返回对象结构 | 增加对象响应校验，并显式校验 `number` 字段 |
+| 高 | `src/features/equipment-tooling/services/mold-service.ts` | `getMoldsWithVersion()` | 依赖 `(response as any).data` / `(response as any).version` 与手工兼容分支，DTO 边界松散 | 评估是否改为 `ensureObjectResponse(...)` + 明确 DTO 结构，避免裸 `any` |
+| 高 | `src/features/equipment-tooling/services/mold-service.ts` | `getMoldById()` | 详情读取未显式做对象响应校验 | 增加 `ensureObjectResponse<Mold>(...)` |
+| 高 | `src/features/equipment-tooling/services/mold-service.ts` | `isSnDuplicate()` | 对象返回直接读取字段，未显式做 DTO guard | 增加对象响应校验后再读取 `duplicate` |
+| 高 | `src/features/equipment-tooling/services/mold-service.ts` | `checkLinkIntegrity()` | 聚合对象返回未显式做对象响应校验 | 增加 `ensureObjectResponse(...)` |
+| 高 | `src/features/equipment-tooling/services/mold-loan-service.ts` | `getLoans()` | 列表读取仅做空值判断，未显式做数组响应校验 | 增加 `ensureArrayResponse<MoldLoan>(...)` |
+| 高 | `src/features/equipment-tooling/services/mold-loan-service.ts` | `createBorrowRecord()` | 使用 `apiFetch<any>` 并直接返回裸结果 | 明确返回 DTO 结构，移除 `any`，补对象响应校验 |
+| 高 | `src/features/equipment-tooling/services/furnace-service.ts` | `getFurnaces()` | 列表读取未显式做数组响应校验 | 增加 `ensureArrayResponse<Furnace>(...)` |
+| 中 | `src/features/equipment-tooling/services/archive-service.ts` | 待二次核对 | 尚未展开函数级盘点 | 进入实施前先补读源码，确认是否存在裸 `apiFetch` / 缺失 patch |
+| 中 | `src/features/equipment-tooling/services/asset-service.ts` | 待二次核对 | 尚未展开函数级盘点 | 进入实施前先补读源码，确认缺口后再实施 |
+| 低 | `src/features/basic-settings/services/unit-service.ts` | 已基本完整 | 已具备数组/对象 guard 与 `patchUnit()` | 本轮不动 |
+| 低 | `src/features/basic-settings/services/dictionary-service.ts` | 已基本完整 | 主要读取链路已显式做数组响应校验 | 本轮不动 |
+| 低 | `src/features/equipment-tooling/services/drawing-service.ts` | 已基本完整 | 已具备 patch DTO 与对象响应校验 | 本轮不动 |
+| 低 | `src/features/equipment-tooling/services/partner-service.ts` | 已基本完整 | 已具备列表/对象 guard 与 `patchPartner()` | 本轮不动 |
+
+### 四、建议实施顺序
+
+#### 第一批：basic-settings 高风险项
+1. `system-config-service.ts`
+2. `enterprise-service.ts`
+3. `linear-barcode-protocol-service.ts`
+4. `numbering-service.ts`
+
+原因：
+- 文件短；
+- 风险边界清晰；
+- 以 DTO guard 收口为主，不涉及复杂状态流。
+
+#### 第二批：equipment-tooling 明确缺口项
+1. `furnace-service.ts`
+2. `mold-loan-service.ts`
+3. `mold-service.ts`
+
+原因：
+- 这些文件已明显存在列表读取裸返回、`any`、详情对象无 guard 等问题；
+- 但 `mold-service.ts` 内含兼容逻辑与聚合接口，风险略高，应放在 `furnace/mold-loan` 之后。
+
+#### 第三批：待二次核对项
+1. `archive-service.ts`
+2. `asset-service.ts`
+
+### 五、明确不做事项
+1. 本阶段不修改 `drawing-service.ts` 与 `partner-service.ts`；
+2. 本阶段不扩散到 `engineering-db/services`、`finance/services`、`approval/services`；
+3. 本阶段不重写 `mold-service.ts` 的业务语义，只收口 DTO guard；
+4. 本阶段不把目录内所有 service 强行统一为抽象基类。
+
+### 六、实施约束
+后续若进入执行阶段，必须遵守：
+
+1. 先改 `basic-settings/services`，再改 `equipment-tooling/services`；
+2. 每次只处理少量文件，避免大面积联动；
+3. 每批改完后至少执行：
+
+```bash
+pnpm build
+```
+
+4. 对 `mold-service.ts` 中涉及 hybrid array / 兼容结构的链路，必须先确认调用方是否依赖现有返回形状，再决定是否只加 guard 或同时做最小 DTO 映射。
+
+## DTO 接入缺口盘点与整改规划（2026-04-07，待确认）
+
+### 一、当前目标
+本轮不是直接改业务代码，而是将当前前端 service 层尚未完全接入 DTO/Delta 协议的缺口整理成一份可执行的整改表，供后续分批确认实施。
+
+本轮输出要求：
+
+1. 精确到文件；
+2. 精确到函数；
+3. 标注风险级别；
+4. 标注问题类型；
+5. 给出拟整改策略；
+6. 明确本轮仅为审批稿，不直接实施代码修改。
+
+### 二、判定标准
+本轮将“尚未完全接入 DTO/Delta 协议”定义为以下任一情况：
+
+1. 使用 `apiFetch<any>` 或直接 `as Xxx[]` / `as Xxx` 类型断言返回；
+2. 创建/更新返回对象未显式做 `ensureObjectResponse(...)` 校验；
+3. 列表/选项返回数组未显式做 `ensureArrayResponse(...)` 校验；
+4. 已存在 save/get，但缺少配套 `patchXXX()` 的 `DeltaPayload` / `DeltaSet` 接入；
+5. 同一 service 内部 create/read/patch 三类链路的 DTO 风格不一致。
+
+### 三、DTO 整改表（审批稿）
+
+| 风险级别 | 文件 | 函数 | 当前问题类型 | 拟整改策略 |
+| --- | --- | --- | --- | --- |
+| 高 | `src/features/engineering/services/product-service.ts` | `getProducts()` | 使用 `apiFetch<any>`，并直接 `as Product[]` 返回 | 改为 `apiFetch<unknown>` 或明确泛型后，使用 `ensureArrayResponse<Product>(...)` 收口 |
+| 高 | `src/features/engineering/services/product-service.ts` | `getProductTypes()` | 使用 `apiFetch<any>`，并直接 `as ProductType[]` 返回 | 改为显式数组响应校验，消除对解包结果的裸断言依赖 |
+| 高 | `src/features/trading/services/trading-service.ts` | `saveCustomer()` | 创建返回对象未显式做 `ensureObjectResponse(...)` | 对创建返回值统一增加对象响应校验 |
+| 高 | `src/features/trading/services/trading-service.ts` | `saveSupplier()` | 创建返回对象未显式做 `ensureObjectResponse(...)` | 对创建返回值统一增加对象响应校验 |
+| 高 | `src/features/trading/services/trading-service.ts` | `getSalesOrderById()` | 详情读取未显式做对象响应校验 | 统一详情读取口径，增加 `ensureObjectResponse(...)` |
+| 高 | `src/features/trading/services/trading-service.ts` | `getSalesOrderByNo()` | 详情读取未显式做对象响应校验 | 统一详情读取口径，增加 `ensureObjectResponse(...)` |
+| 高 | `src/features/trading/services/trading-service.ts` | `saveSalesOrder()` | 创建返回对象未显式做对象响应校验 | 与 patch/order list 风格对齐，补齐对象响应校验 |
+| 高 | `src/features/trading/services/trading-service.ts` | `savePurchaseOrder()` | 创建返回对象未显式做对象响应校验 | 与 `patchPurchaseOrder()`、分页查询风格统一 |
+| 高 | `src/features/warehouse/services/category-service.ts` | `getCategories()` | 列表读取直接返回 `apiFetch` 结果，未显式校验 | 增加 `ensureArrayResponse<WarehouseCategory>(...)` |
+| 中 | `src/features/users/services/user-api.ts` | `fetchUsers()` | 分页读取未显式做对象响应校验 | 明确分页 DTO 结构，增加对象响应校验 |
+| 中 | `src/features/users/services/user-api.ts` | `fetchUserOptions()` | 选项读取未显式做数组响应校验 | 增加 `ensureArrayResponse<UserOption>(...)` |
+| 中 | `src/features/users/services/user-api.ts` | `createUser()` | 创建返回对象未显式做对象响应校验 | 增加 `ensureObjectResponse<User>(...)` |
+| 中 | `src/features/users/services/user-api.ts` | `replaceUser()` | 替换返回对象未显式做对象响应校验 | 增加 `ensureObjectResponse<User>(...)` |
+| 中 | `src/features/trading/services/trading-service.ts` | `patchCustomer()` / `patchSupplier()` / `patchSalesOrder()` / `patchPurchaseOrder()` | 已接 `DeltaPayload`，但 patch 返回值仍未统一显式校验风格 | 分批补齐 patch 返回对象的 `ensureObjectResponse(...)`，与其他已治理模块保持一致 |
+| 中 | `src/features/trading/services/trading-service.ts` | customer / supplier / order 整体 service | 同一 service 内 create/read/patch 风格不一致 | 按实体分批收口：先 customer/supplier，再 sales/purchase |
+| 低-中 | `src/features/equipment-tooling/services/*.ts` | 待二次审计 | 当前尚未完成函数级盘点，疑似存在旧式 `save/get/delete` 链路 | 二次审计后补充函数级整改表，不在本轮直接实施 |
+| 低-中 | `src/features/basic-settings/services/*.ts` | 待二次审计 | 基础配置类 service 可能仍保留裸 `apiFetch` 返回 | 二次审计后按配置模块分批治理 |
+| 低-中 | `src/features/engineering-db/services/*.ts` | 待二次审计 | 工程数据库 service 可能仍有未接 Delta/DTO 的历史接口 | 二次审计后补充明细 |
+| 低-中 | `src/features/finance/services/*.ts` | 待二次审计 | 财务 service 尚未确认是否统一接入 DTO guard | 二次审计后补充明细 |
+| 低-中 | `src/features/approval/services/*.ts` | 待二次审计 | 审批 service 尚未确认返回结构是否已统一收口 | 二次审计后补充明细 |
+
+### 四、分批整改顺序建议
+
+#### 第一批：高风险、低扩散、最容易复发响应契约错误
+1. `src/features/engineering/services/product-service.ts`
+   - `getProducts()`
+   - `getProductTypes()`
+2. `src/features/warehouse/services/category-service.ts`
+   - `getCategories()`
+
+#### 第二批：trading service 风格统一
+1. `saveCustomer()`
+2. `saveSupplier()`
+3. `getSalesOrderById()`
+4. `getSalesOrderByNo()`
+5. `saveSalesOrder()`
+6. `savePurchaseOrder()`
+7. patch 返回值统一补 guard
+
+#### 第三批：users 与其他中风险 service
+1. `src/features/users/services/user-api.ts`
+2. 目录级二次审计：
+   - `equipment-tooling/services`
+   - `basic-settings/services`
+   - `engineering-db/services`
+   - `finance/services`
+   - `approval/services`
+
+### 五、明确不做事项
+1. 本轮不修改后端 DTO 定义；
+2. 本轮不重写全局 `apiFetch` 解包策略；
+3. 本轮不做一次性跨仓横扫式替换；
+4. 本轮不将所有旧式 service 统一迁移为同一抽象基类。
+
+### 六、实施约束
+后续若进入执行阶段，必须遵守：
+
+1. 每一批只改少量 service，避免一次性大面积触发响应契约回归；
+2. 优先补响应校验与 DTO guard，不先做抽象层重构；
+3. 每批改完后至少执行：
+
+```bash
+pnpm build
+```
+
+4. 若某模块实际依赖 `apiFetch` 的 hybrid array 语义，需先确认调用方是否依赖附加元数据，再决定使用 `ensureArrayResponse(...)` 还是对象 DTO 收口。
+
 ## `/purchase/logistics` 页面 500 修复（2026-04-07，待确认）
 
 ### 一、当前问题

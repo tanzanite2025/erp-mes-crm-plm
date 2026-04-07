@@ -26,14 +26,32 @@ export const getCustomers = async (): Promise<Customer[]> => {
 }
 
 export const saveCustomer = async (customer: Partial<Customer>): Promise<Customer> => {
-    return apiFetch<Customer>('/customers', {
+    const res = await apiFetch<Customer>('/customers', {
         method: 'POST',
         body: JSON.stringify(customer),
     });
+    return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'TradingService.saveCustomer') as Customer
 }
 
 export const deleteCustomer = async (id: string): Promise<void> => {
     await apiFetch<void>(`/customers/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * 局部更新客户 (SDRTS 协议)
+ */
+export const patchCustomer = async (id: string, delta: DeltaSet, version: number): Promise<Customer> => {
+    const payload: DeltaPayload = {
+        op: 'PATCH',
+        delta,
+        metadata: { id, version }
+    };
+
+    const res = await apiFetch<Customer>(`/customers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+    return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'TradingService.patchCustomer') as Customer
 }
 
 // --- Supplier Service (已打通真实后端) ---
@@ -64,10 +82,11 @@ export const saveSupplier = async (supplier: Partial<Supplier>): Promise<Supplie
         mainProducts: supplier.mainProducts ? JSON.stringify(supplier.mainProducts) : '[]'
     };
 
-    return apiFetch<Supplier>('/suppliers', {
+    const res = await apiFetch<Supplier>('/suppliers', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
+    return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'TradingService.saveSupplier') as Supplier
 }
 
 export const deleteSupplier = async (id: string): Promise<void> => {
@@ -84,10 +103,11 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
         metadata: { id, version }
     };
 
-    return apiFetch<Supplier>(`/suppliers/${id}`, {
+    const res = await apiFetch<Supplier>(`/suppliers/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
+    return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'TradingService.patchSupplier') as Supplier
 }
 
 // --- Sales Order Service (已支持分页与性能优化) ---
@@ -98,18 +118,21 @@ export const getSalesOrders = async (page = 1, pageSize = 50): Promise<Paginated
 }
 
 export const getSalesOrderById = async (id: string): Promise<SalesOrder> => {
-    return apiFetch<SalesOrder>(`/sales-orders/${id}`);
+    const res = await apiFetch<SalesOrder>(`/sales-orders/${id}`);
+    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.getSalesOrderById') as SalesOrder
 }
 
 export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> => {
-    return apiFetch<SalesOrder>(`/sales-orders/by-no/${orderNo}`);
+    const res = await apiFetch<SalesOrder>(`/sales-orders/by-no/${orderNo}`);
+    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.getSalesOrderByNo') as SalesOrder
 }
 
 export const saveSalesOrder = async (order: Partial<SalesOrder>): Promise<SalesOrder> => {
-    return apiFetch<SalesOrder>('/sales-orders', {
+    const res = await apiFetch<SalesOrder>('/sales-orders', {
         method: 'POST',
         body: JSON.stringify(order),
     });
+    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.saveSalesOrder') as SalesOrder
 }
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {
@@ -146,10 +169,11 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
         metadata: { id, version }
     };
 
-    return apiFetch<SalesOrder>(`/sales-orders/${id}`, {
+    const res = await apiFetch<SalesOrder>(`/sales-orders/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
+    return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'TradingService.patchSalesOrder') as SalesOrder
 }
 
 /**
@@ -162,10 +186,11 @@ export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: n
         metadata: { id, version }
     };
 
-    return apiFetch<PurchaseOrder>(`/purchase/orders/${id}`, {
+    const res = await apiFetch<PurchaseOrder>(`/purchase/orders/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
+    return ensureObjectResponse<PurchaseOrder & Record<string, unknown>>(res, 'TradingService.patchPurchaseOrder') as PurchaseOrder
 }
 
 /**
@@ -204,10 +229,11 @@ export const updateOrderDelivery = async (orderNo: string, materialId: string, q
  * 保存采购订单 (全量)
  */
 export const savePurchaseOrder = async (order: Partial<PurchaseOrder>): Promise<PurchaseOrder> => {
-    return apiFetch<PurchaseOrder>('/purchase/orders', {
+    const res = await apiFetch<PurchaseOrder>('/purchase/orders', {
         method: 'POST',
         body: JSON.stringify(order),
     });
+    return ensureObjectResponse<PurchaseOrder & Record<string, unknown>>(res, 'TradingService.savePurchaseOrder') as PurchaseOrder
 }
 
 /**

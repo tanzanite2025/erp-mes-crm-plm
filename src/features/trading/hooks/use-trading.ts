@@ -5,7 +5,7 @@ import { NotificationService } from '@/features/system-mgmt/notifications/notifi
 import { handleServerError } from '@/lib/handle-server-error'
 import * as tradingService from '../services/trading-service'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type Supplier } from '../data/schema'
+import { type Customer, type Supplier } from '../data/schema'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -38,10 +38,23 @@ export const useCustomerMutations = () => {
   }
 
   const saveMutation = useMutation({
-    mutationFn: tradingService.saveCustomer,
+    mutationFn: ({ 
+      data, 
+      isPatch, 
+      delta 
+    }: { 
+      data: Partial<Customer>; 
+      isPatch?: boolean; 
+      delta?: DeltaSet 
+    }) => {
+      if (isPatch && data.id && delta) {
+        return tradingService.patchCustomer(data.id, delta, (data as Customer).version)
+      }
+      return tradingService.saveCustomer(data)
+    },
     onSuccess: (_data, variables) => {
       toast.success(
-        variables?.id ? t('trading.customers.toasts.updated') : t('trading.customers.toasts.created')
+        variables?.isPatch ? t('trading.customers.toasts.updated') : t('trading.customers.toasts.created')
       )
       queryClient.invalidateQueries({ queryKey: ['customers'] })
     },

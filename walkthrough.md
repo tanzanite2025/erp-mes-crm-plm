@@ -1,5 +1,162 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：DTO 第二阶段第一批整改（`basic-settings/services`，2026-04-07）
+
+### 本轮目标
+本轮按已确认的第二阶段审批稿，先处理 `basic-settings/services` 中风险边界最清晰、最适合做 DTO guard 收口的一批文件。
+
+本轮目标：
+
+- 为系统配置、企业配置、线性条码协议、编号服务补齐显式响应校验；
+- 保持现有接口路径与 fallback 语义不变；
+- 不扩散到 `equipment-tooling/services`。
+
+### 已执行变更
+更新：
+- `src/features/basic-settings/services/system-config-service.ts`
+- `src/features/basic-settings/services/enterprise-service.ts`
+- `src/features/basic-settings/services/linear-barcode-protocol-service.ts`
+- `src/features/basic-settings/services/numbering-service.ts`
+
+#### 1) `system-config-service.ts`
+- `getConfigs()`：增加 `ensureArrayResponse<SystemConfig>(...)`
+- `updateConfig()`：增加 `ensureObjectResponse<SystemConfig>(...)`
+
+结果：
+- 系统配置列表与保存返回不再直接信任裸 `apiFetch` 结果；
+- 与第一阶段已治理模块的 DTO guard 风格对齐。
+
+#### 2) `enterprise-service.ts`
+- `getConfig()`：成功路径增加 `ensureObjectResponse<EnterpriseConfig>(...)`
+- `saveConfig()`：增加 `ensureObjectResponse<EnterpriseConfig>(...)`
+- 保留现有 `404 -> DEFAULT_ENTERPRISE_CONFIG` fallback 语义
+
+结果：
+- 企业配置在成功路径具备明确对象响应校验；
+- 未改变当前“未配置时回退默认值”的前端兼容策略。
+
+#### 3) `linear-barcode-protocol-service.ts`
+- `getConfig()`：成功路径增加 `ensureObjectResponse<LinearBarcodeProtocolConfig>(...)`
+- `updateConfig()`：增加 `ensureObjectResponse<LinearBarcodeProtocolConfig>(...)`
+- 保留异常 fallback 默认协议配置
+
+结果：
+- 协议配置读取与保存具有一致的 DTO 对象边界；
+- 不影响当前异常时回退默认配置的语义。
+
+#### 4) `numbering-service.ts`
+- `generateNumber()`：先对响应做 `ensureObjectResponse(...)`，再读取 `number` 字段
+
+结果：
+- 编号生成链路不再直接读取未校验对象；
+- 继续保留现有的错误日志与抛错语义。
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 DTO 第二阶段第一批的 `basic-settings/services` 收口：
+
+- 只补显式 DTO guard；
+- 不改后端协议与接口路径；
+- 不改变既有 fallback 行为；
+- 为下一批 `equipment-tooling/services` 整改提供稳定基线。
+
+## P1：DTO 接入缺口第一阶段整改（2026-04-07）
+
+### 本轮目标
+本轮根据已确认的 DTO 整改审批稿，先执行高风险与中风险中最明确、最小扩散的一批前端 service 收口工作。
+
+本轮目标：
+
+- 为高风险读取链路补齐显式数组响应校验；
+- 为 trading 与 users 模块的 create/read/patch 返回补齐显式对象响应校验；
+- 不修改后端 DTO 定义；
+- 不重写全局 `apiFetch` 解包机制；
+- 不一次性横扫所有 service。
+
+### 已执行变更
+更新：
+- `src/features/engineering/services/product-service.ts`
+- `src/features/warehouse/services/category-service.ts`
+- `src/features/trading/services/trading-service.ts`
+- `src/features/users/services/user-api.ts`
+
+#### 1) `product-service.ts` 补齐读取链路数组响应校验
+- `getProducts()`：从 `apiFetch<any>` + 裸类型断言改为 `ensureArrayResponse<Product>(...)`
+- `getProductTypes()`：从 `apiFetch<any>` + 裸类型断言改为 `ensureArrayResponse<ProductType>(...)`
+
+结果：
+- 收口产品与产品类型读取链路的 DTO 边界；
+- 降低后续再次出现数组/对象响应契约漂移的概率。
+
+#### 2) `category-service.ts` 补齐仓库分类列表读取校验
+- `getCategories()`：增加 `ensureArrayResponse<WarehouseCategory>(...)`
+
+结果：
+- 仓库分类列表不再直接信任裸 `apiFetch` 返回值；
+- 与其他已治理模块的列表读取风格对齐。
+
+#### 3) `trading-service.ts` 统一 create/read/patch 对象响应校验
+本轮补齐以下函数的显式对象响应校验：
+
+- `saveCustomer()`
+- `patchCustomer()`
+- `saveSupplier()`
+- `patchSupplier()`
+- `getSalesOrderById()`
+- `getSalesOrderByNo()`
+- `saveSalesOrder()`
+- `patchSalesOrder()`
+- `patchPurchaseOrder()`
+- `savePurchaseOrder()`
+
+结果：
+- trading service 内 customer / supplier / order 的 create/read/patch 风格更统一；
+- 不改变现有 API 路径与 payload 结构，仅收口 DTO guard。
+
+#### 4) `user-api.ts` 补齐 users 模块 DTO guard
+本轮补齐以下函数：
+
+- `fetchUsers()`：增加对象响应校验
+- `fetchUserOptions()`：增加数组响应校验
+- `createUser()`：增加对象响应校验
+- `patchUser()`：增加对象响应校验
+- `replaceUser()`：增加对象响应校验
+
+结果：
+- users 模块的列表、选项、创建、局部更新、全量替换链路具备一致的响应校验边界；
+- 降低用户管理页因响应结构漂移出现运行时异常的风险。
+
+### 本轮未处理项
+- `equipment-tooling/services/*.ts`
+- `basic-settings/services/*.ts`
+- `engineering-db/services/*.ts`
+- `finance/services/*.ts`
+- `approval/services/*.ts`
+
+这些目录仍属于待二次审计范围，本轮未扩散处理。
+
+### 验证
+执行：
+```bash
+pnpm build
+```
+
+结果：通过。
+
+### 本轮结论
+本轮完成了 DTO 整改的第一阶段落地：
+
+- 补齐了产品、仓库分类、交易、用户等主干 service 的显式响应校验；
+- 没有修改接口语义与后端协议；
+- 保持了“先收口 DTO guard，再考虑后续目录级二次审计”的最小扩散策略。
+
 ## P0：`/purchase/logistics` 页面 500 修复（2026-04-07）
 
 ### 本轮目标

@@ -11,6 +11,7 @@ export const equipmentCategorySchema = z.object({
     description: z.string().optional(),
     imageUrl: z.string().optional(), // 分类配图
     order: z.number().default(0),
+    version: z.number().default(1), // SDRTS 乐观锁
     createdAt: z.string(),
 })
 

@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('NumberingService')
@@ -16,8 +17,9 @@ class NumberingService {
         if (!this.isInitialized) await this.init()
 
         try {
-            const data = await apiFetch<{ number: string }>(`/numbering/generate?ruleKey=${ruleKey}`)
-            if (!data?.number) {
+            const res = await apiFetch<{ number: string }>(`/numbering/generate?ruleKey=${ruleKey}`)
+            const data = ensureObjectResponse<{ number?: string } & Record<string, unknown>>(res, 'NumberingService.generateNumber')
+            if (!data.number) {
                 throw new Error(`[NUMBERING_ERROR] Unexpected response: ruleKey=${ruleKey}`)
             }
             return data.number

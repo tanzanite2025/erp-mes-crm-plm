@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureArrayResponse } from '@/lib/api-response'
 
 export interface WarehouseCategory {
     id: string
@@ -12,7 +13,8 @@ export interface WarehouseCategory {
 
 class WarehouseCategoryService {
     async getCategories(): Promise<WarehouseCategory[]> {
-        return apiFetch<WarehouseCategory[]>('/warehouse/categories')
+        const res = await apiFetch<WarehouseCategory[]>('/warehouse/categories')
+        return ensureArrayResponse<WarehouseCategory>(res, 'WarehouseCategoryService.getCategories')
     }
 
     async saveCategory(category: Partial<WarehouseCategory>): Promise<void> {

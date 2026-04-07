@@ -1,39 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Edit2, Percent, Plus, ShieldAlert } from 'lucide-react'
+import { Edit2, Percent, Plus, ShieldAlert, RefreshCcw } from 'lucide-react'
 import { taxService, type TaxRate } from '../services/tax-service'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import { TaxActionDialog } from '../components/tax-action-dialog'
 
 export function TaxationTab() {
   const { t } = useLanguage()
   const [rates, setRates] = useState<TaxRate[]>([])
   const [error, setError] = useState<unknown>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingRate, setEditingRate] = useState<TaxRate | null>(null)
-  const [formData, setFormData] = useState<Omit<TaxRate, 'id'>>({
-    code: '',
-    name: '',
-    rate: 13,
-    status: 'Active',
-    description: '',
-  })
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setIsLoading(true)
     try {
       setError(null)
       const data = await taxService.getTaxRates()
@@ -41,65 +26,22 @@ export function TaxationTab() {
     } catch (error) {
       setError(error)
       toast.error(t('finance.taxation.toast.loadFailed'))
-    }
-  }
-
-  useEffect(() => {
-    let cancelled = false
-
-    void Promise.resolve()
-      .then(() => taxService.getTaxRates())
-      .then((data) => {
-        if (cancelled) {
-          return
-        }
-
-        setError(null)
-        setRates(data)
-      })
-      .catch((error) => {
-        if (cancelled) {
-          return
-        }
-
-        setError(error)
-        toast.error(t('finance.taxation.toast.loadFailed'))
-      })
-
-    return () => {
-      cancelled = true
+    } finally {
+      setIsLoading(false)
     }
   }, [t])
 
-  const handleSave = async () => {
-    if (!formData.code || !formData.name) {
-      toast.error(t('finance.taxation.toast.formIncomplete'))
-      return
-    }
-
-    try {
-      await taxService.saveTaxRate({
-        ...formData,
-        id: editingRate?.id ?? '',
-      } as TaxRate)
-      toast.success(editingRate ? t('finance.taxation.toast.saveSuccessUpdated') : t('finance.taxation.toast.saveSuccessCreated'))
-      setIsDialogOpen(false)
-      setEditingRate(null)
-      void loadData()
-    } catch (_error) {
-      toast.error(t('finance.taxation.toast.saveFailed'))
-    }
-  }
+  useEffect(() => {
+    void loadData()
+  }, [loadData])
 
   const openEdit = (rate: TaxRate) => {
     setEditingRate(rate)
-    setFormData({
-      code: rate.code,
-      name: rate.name,
-      rate: rate.rate,
-      status: rate.status,
-      description: rate.description || '',
-    })
+    setIsDialogOpen(true)
+  }
+
+  const openAdd = () => {
+    setEditingRate(null)
     setIsDialogOpen(true)
   }
 
@@ -118,74 +60,23 @@ export function TaxationTab() {
           <p className='text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60'>{t('finance.taxation.page.subtitle')}</p>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                size='sm'
-                onClick={() => {
-                  setEditingRate(null)
-                  setFormData({ code: '', name: '', rate: 13, status: 'Active', description: '' })
-                }}
-                className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20'
-              >
-                <Plus className='size-3 mr-2' />
-                {t('finance.taxation.page.add')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className='rounded-[32px] border-none shadow-2xl'>
-              <DialogHeader>
-                <DialogTitle className='font-black italic tracking-tighter uppercase'>
-                  {editingRate ? t('finance.taxation.dialog.editTitle') : t('finance.taxation.dialog.createTitle')}
-                </DialogTitle>
-              </DialogHeader>
-              <div className='space-y-4 py-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-2'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest pl-1'>{t('finance.taxation.dialog.codeLabel')}</Label>
-                    <Input
-                      placeholder={t('finance.taxation.dialog.codePlaceholder')}
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                      className='rounded-2xl h-11'
-                    />
-                  </div>
-                  <div className='space-y-2'>
-                    <Label className='text-[10px] font-black uppercase tracking-widest pl-1'>{t('finance.taxation.dialog.rateLabel')}</Label>
-                    <Input
-                      type='number'
-                      placeholder={t('finance.taxation.dialog.ratePlaceholder')}
-                      value={formData.rate}
-                      onChange={(e) => setFormData({ ...formData, rate: Number(e.target.value) })}
-                      className='rounded-2xl h-11'
-                    />
-                  </div>
-                </div>
-                <div className='space-y-2'>
-                  <Label className='text-[10px] font-black uppercase tracking-widest pl-1'>{t('finance.taxation.dialog.nameLabel')}</Label>
-                  <Input
-                    placeholder={t('finance.taxation.dialog.namePlaceholder')}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className='rounded-2xl h-11'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label className='text-[10px] font-black uppercase tracking-widest pl-1'>{t('finance.taxation.dialog.descriptionLabel')}</Label>
-                  <Textarea
-                    placeholder={t('finance.taxation.dialog.descriptionPlaceholder')}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className='rounded-2xl min-h-[80px]'
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleSave} className='rounded-full w-full font-black uppercase tracking-widest h-11'>
-                  {t('finance.taxation.dialog.save')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant='outline' 
+            size='sm' 
+            onClick={loadData}
+            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-emerald-500/5 hover:text-emerald-600 transition-all'
+          >
+            <RefreshCcw className={`size-3 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {t('finance.currencyRates.page.refresh' as any) || '刷新列表'}
+          </Button>
+          <Button
+            size='sm'
+            onClick={openAdd}
+            className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95'
+          >
+            <Plus className='size-3 mr-2' />
+            {t('finance.taxation.page.add')}
+          </Button>
         </div>
       </div>
 
@@ -210,21 +101,26 @@ export function TaxationTab() {
                     </CardDescription>
                   </div>
                 </div>
-                <Button variant='ghost' size='icon' onClick={() => openEdit(rate)} className='size-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity'>
+                <Button 
+                    variant='ghost' 
+                    size='icon' 
+                    onClick={() => openEdit(rate)} 
+                    className='size-8 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-600/10 hover:text-emerald-700'
+                >
                   <Edit2 className='size-3' />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className='pt-2'>
               <div className='space-y-3'>
-                <div className='p-3 bg-background rounded-2xl border border-dashed text-[10px] font-medium leading-relaxed min-h-[60px] text-muted-foreground/80'>
+                <div className='p-3 bg-background rounded-2xl border border-dashed border-emerald-500/20 text-[10px] font-medium leading-relaxed min-h-[60px] text-muted-foreground/80'>
                   {(() => {
                     const translatedDesc = t(getCardDescriptionKey(rate.code))
                     return translatedDesc.includes('finance.taxation.card.descriptions') ? (rate.description || t('finance.taxation.card.emptyDescription')) : translatedDesc
                   })()}
                 </div>
-                <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted pt-3'>
-                  <span className='px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-700'>
+                <div className='flex items-center justify-between gap-2 border-t border-dashed border-muted/20 pt-3'>
+                  <span className='px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-700 border border-emerald-500/20'>
                     {t('finance.taxation.card.ratioLabel', { rate: rate.rate })}
                   </span>
                   <span className='text-[8px] font-mono font-black text-muted-foreground/40 uppercase tracking-widest'>
@@ -248,6 +144,13 @@ export function TaxationTab() {
           </div>
         </div>
       </Card>
+
+      <TaxActionDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        editingRate={editingRate}
+        onSuccess={loadData}
+      />
     </div>
   )
 }

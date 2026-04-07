@@ -1,4 +1,99 @@
 
+## P1 DTO 第二阶段：`equipment-tooling/services` 与 `basic-settings/services`（2026-04-07，待确认）
+
+- [ ] 287. 冻结本轮范围，只处理 `equipment-tooling/services` 与 `basic-settings/services` 的 DTO 接入缺口规划
+  - [ ] 本轮仅更新审批稿，不直接修改业务代码。
+  - [ ] 仅处理文件级、函数级、风险级别与拟整改策略。
+  - [ ] 不扩散到 `engineering-db`、`finance`、`approval` 目录。
+
+- [ ] 288. 识别 `equipment-tooling/services` 高风险缺口
+  - [ ] `src/features/equipment-tooling/services/mold-service.ts`
+    - [ ] `getMoldsWithVersion()`：仍依赖 `(response as any).data` 与 `(response as any).version` 的旧式兼容分支。
+    - [ ] `getMoldById()`：详情读取未显式做对象响应校验。
+    - [ ] `isSnDuplicate()`：对象读取未显式做 DTO guard。
+    - [ ] `checkLinkIntegrity()`：聚合对象返回未显式做 DTO guard。
+  - [ ] `src/features/equipment-tooling/services/mold-loan-service.ts`
+    - [ ] `getLoans()`：列表读取未显式做数组响应校验。
+    - [ ] `createBorrowRecord()`：仍使用 `apiFetch<any>` 且直接返回裸结果。
+  - [ ] `src/features/equipment-tooling/services/furnace-service.ts`
+    - [ ] `getFurnaces()`：列表读取未显式做数组响应校验。
+
+- [ ] 289. 识别 `equipment-tooling/services` 中风险缺口
+  - [ ] `src/features/equipment-tooling/services/archive-service.ts`
+  - [ ] `src/features/equipment-tooling/services/asset-service.ts`
+  - [ ] 待进入实施前再补函数级核对，避免当前误改未读文件。
+  - [ ] `drawing-service.ts`、`partner-service.ts` 当前可暂视为已基本接入，不列入本轮优先整改。
+
+- [ ] 290. 识别 `basic-settings/services` 高风险缺口
+  - [ ] `src/features/basic-settings/services/system-config-service.ts`
+    - [ ] `getConfigs()`：列表读取直接返回 `apiFetch` 结果。
+    - [ ] `updateConfig()`：保存返回对象未显式做 DTO guard。
+  - [ ] `src/features/basic-settings/services/enterprise-service.ts`
+    - [ ] `getConfig()`：成功路径未显式做对象响应校验，404 fallback 与 DTO guard 未统一收口。
+    - [ ] `saveConfig()`：保存返回对象未显式做 DTO guard。
+  - [ ] `src/features/basic-settings/services/linear-barcode-protocol-service.ts`
+    - [ ] `getConfig()`：成功路径未显式做对象响应校验。
+    - [ ] `updateConfig()`：保存返回对象未显式做对象响应校验。
+  - [ ] `src/features/basic-settings/services/numbering-service.ts`
+    - [ ] `generateNumber()`：直接读取 `data.number`，未显式做 DTO guard。
+
+- [ ] 291. 识别 `basic-settings/services` 相对完整链路
+  - [ ] `src/features/basic-settings/services/unit-service.ts`：已具备数组/对象响应校验与 `patchUnit()`。
+  - [ ] `src/features/basic-settings/services/dictionary-service.ts`：主要读取链路已显式做数组响应校验。
+
+- [ ] 292. 明确第二阶段拟整改顺序
+  - [ ] 先处理 `system-config-service.ts`、`enterprise-service.ts`、`linear-barcode-protocol-service.ts`、`numbering-service.ts`。
+  - [ ] 再处理 `mold-service.ts`、`mold-loan-service.ts`、`furnace-service.ts`。
+  - [ ] `archive-service.ts`、`asset-service.ts` 待补充函数级核对后再进入实施。
+
+## P1 DTO 接入缺口盘点与整改规划（2026-04-07，待确认）
+
+- [ ] 281. 冻结本轮范围，只处理前端 service 层 DTO/Delta 协议接入缺口盘点与整改规划
+  - [ ] 仅盘点 `src/features/**/services` 下的前端 service 文件。
+  - [ ] 仅输出文件、函数、风险级别、问题类型与拟整改策略。
+  - [ ] 本轮不直接修改业务代码，不顺带重构全局 `apiFetch`。
+
+- [ ] 282. 识别高风险 DTO 缺口（优先整改候选）
+  - [ ] `src/features/engineering/services/product-service.ts`
+    - [ ] `getProducts()`：仍使用 `apiFetch<any>` + `as Product[]`。
+    - [ ] `getProductTypes()`：仍使用 `apiFetch<any>` + `as ProductType[]`。
+  - [ ] `src/features/trading/services/trading-service.ts`
+    - [ ] `saveCustomer()`：返回对象未显式做响应校验。
+    - [ ] `saveSupplier()`：返回对象未显式做响应校验。
+    - [ ] `getSalesOrderById()`：详情读取未显式做响应校验。
+    - [ ] `getSalesOrderByNo()`：详情读取未显式做响应校验。
+    - [ ] `saveSalesOrder()`：返回对象未显式做响应校验。
+    - [ ] `savePurchaseOrder()`：返回对象未显式做响应校验。
+  - [ ] `src/features/warehouse/services/category-service.ts`
+    - [ ] `getCategories()`：列表读取仍直接返回 `apiFetch` 结果。
+
+- [ ] 283. 识别中风险 DTO 缺口（已部分接入 Delta，但全链路未收口）
+  - [ ] `src/features/users/services/user-api.ts`
+    - [ ] `fetchUsers()`：分页读取未显式做响应校验。
+    - [ ] `fetchUserOptions()`：选项读取未显式做响应校验。
+    - [ ] `createUser()`：创建返回对象未显式做响应校验。
+    - [ ] `replaceUser()`：全量替换返回对象未显式做响应校验。
+  - [ ] `src/features/trading/services/trading-service.ts`
+    - [ ] 已补 `patchCustomer()`，但 customer/supplier/order 的 create/read/patch 响应校验风格仍未完全统一。
+
+- [ ] 284. 识别待二次审计的低到中风险目录
+  - [ ] `src/features/equipment-tooling/services/*.ts`
+  - [ ] `src/features/basic-settings/services/*.ts`
+  - [ ] `src/features/engineering-db/services/*.ts`
+  - [ ] `src/features/finance/services/*.ts`
+  - [ ] `src/features/approval/services/*.ts`
+  - [ ] 输出时优先确认是否存在“只有 save/get，没有 patch DTO”或“直接 `apiFetch<any>` + 类型断言”的链路。
+
+- [ ] 285. 为每个整改项定义统一判定标准
+  - [ ] 读取链路：避免 `apiFetch<any>` 与裸 `as Xxx[]`。
+  - [ ] 创建/更新链路：返回对象需显式做 `ensureObjectResponse(...)`。
+  - [ ] 列表/选项链路：返回数组需显式做 `ensureArrayResponse(...)`。
+  - [ ] Patch 链路：统一走 `DeltaPayload` / `DeltaSet`。
+
+- [ ] 286. 将 DTO 整改表写入实施文档
+  - [ ] 在 `implementation_plan.md` 中输出“文件 + 函数 + 风险级别 + 问题类型 + 拟整改策略”表。
+  - [ ] 待确认后再按风险等级分批实施，避免一次性横扫全部 service。
+
 ## P0 `/purchase/logistics` 页面 500 修复（2026-04-07，待确认）
 
 - [ ] 276. 冻结本轮修复范围，只处理 `/purchase/logistics` 页面当前两处已定位故障
