@@ -2,7 +2,7 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { type Mold, type MoldStatus } from '../data/schema'
-import { type DeltaPayload } from '@/lib/delta/types'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
  * 模具状态流转合法性映射表
@@ -86,7 +86,7 @@ export class MoldService {
     /**
      * 局部更新模具信息 (SDRTS 结构化差量更新)
      */
-    static async patchMold(moldId: string, delta: Record<string, any>, version?: number): Promise<void> {
+    static async patchMold(moldId: string, delta: DeltaSet, version?: number): Promise<void> {
         const payload: DeltaPayload = {
             op: 'PATCH',
             delta,

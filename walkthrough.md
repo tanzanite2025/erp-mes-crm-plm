@@ -1,5 +1,144 @@
 # 变更记录与验证（walkthrough.md）
 
+## P0：`inventory transfer request DTO` 最小闭环（2026-04-07）
+
+### 已执行变更
+1. 为 transfer 链补正式命名 request DTO
+   - `server/services/inventory_command_dto.go`
+   - 已新增 `TransferInventoryRequest`
+
+2. 已补 transfer request -> service input mapper
+   - `server/services/inventory_command_mapper.go`
+   - 已新增 `MapTransferInventoryRequestToInput(...)`
+
+3. transfer handler 已切到正式 request contract
+   - `server/handlers/inventory_command_handlers.go`
+   - `TransferInventoryHandler` 不再直接绑定 `TransferInventoryInput`
+
+4. 已补定向防回退测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已新增 `TestTransferInventoryHandlerUsesNamedRequestContract`
+
+### 保留边界
+- 未改 transfer 数量/金额逻辑；
+- 未改 transfer 事务语义；
+- 未改权限校验逻辑；
+- 未改错误状态码与中文错误语义。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory"
+```
+
+结果：通过。
+
+### 当前结果
+- `inventory` transfer 链的 request 边界已从 service input 风格收口为正式 request DTO；
+- handler / service 职责边界进一步清晰；
+- 后续若 transfer request 再回退为直接绑定 service input，更容易被定向测试及时拦住。
+
+## P0：`inventory` 再下一条最小闭环（bulk sync contract 收口）（2026-04-07）
+
+### 已执行变更
+1. 为 `inventory` bulk sync 补正式命名 request / response DTO
+   - `server/services/inventory_command_dto.go`
+   - 已新增：
+     - `BulkSyncInventoryItemRequest`
+     - `BulkSyncInventoryResponse`
+
+2. 已补 bulk sync request -> model mapper
+   - `server/services/inventory_command_mapper.go`
+   - 已新增 `MapBulkSyncInventoryRequestsToModels(...)`
+
+3. bulk sync service 对外已脱离直接 `models.Inventory`
+   - `server/services/inventory_command_service.go`
+   - `BulkSyncInventory(...)` 已改为接收 `[]BulkSyncInventoryItemRequest`
+
+4. bulk sync handler 已切到正式 request / response contract
+   - `server/handlers/inventory_command_handlers.go`
+   - 不再直接绑定 `[]models.Inventory`
+   - 成功响应已切到 `BulkSyncInventoryResponse`
+
+5. 已补定向防回退测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已新增 `TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract`
+   - `server/services/inventory_command_service_test.go` 已同步到新的 bulk sync request contract
+
+### 保留边界
+- 未改 bulk sync 合并逻辑；
+- 未改库存数量/金额业务语义；
+- 未改权限校验逻辑；
+- 未改错误状态码与既有中文错误语义。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory"
+```
+
+结果：通过。
+
+### 当前结果
+- `inventory` bulk sync 链已补齐正式命名 request / response contract；
+- handler / service 对外已不再直接暴露 `models.Inventory`；
+- 后续若 bulk sync 再回退为直接绑定 model 或裸响应，更容易被定向测试及时拦住。
+
+## P0：下一轮 `inventory` 后续最小闭环（命令成功响应统一）（2026-04-07）
+
+### 已执行变更
+1. 统一 `inventory` 命令成功响应 contract
+   - `server/handlers/inventory_command_handlers.go`
+   - 已完成：
+     - `ReconcileInventoryHandler` 成功响应从 `gin.H` 切到 `InventoryCommandStatusResponse`
+     - `VoidShipmentHandler` 成功响应从 `gin.H` 切到 `InventoryCommandStatusResponse`
+
+2. 已补定向防回退测试
+   - `server/handlers/inventory_command_handlers_test.go`
+   - 已新增 `TestReconcileInventoryHandlerReturnsNamedStatusResponse`
+   - 重点断言：成功响应使用正式命名 DTO，且 reconcile 后负库存被归零
+
+### 保留边界
+- 未改库存事务逻辑；
+- 未改 void shipment 回滚逻辑；
+- 未改 reconcile 业务语义；
+- 未改错误状态码与既有中英文错误消息。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Inventory"
+```
+
+结果：通过。
+
+### 当前结果
+- `inventory` 命令链成功响应风格进一步统一；
+- `transfer / reconcile / void` 成功响应已对齐到正式命名 status DTO；
+- 后续若再次回退为裸 `gin.H`，更容易被定向测试及时拦住。
+
+## P0：第二轮 A 级模块 contract 巡检总收尾（2026-04-07）
+
+### 最终状态总览
+- `workflow`：Green
+- `production`：Green
+- `voucher / finance`：Green
+- `inventory`：已完成最小闭环并回到 Green
+- `sales_orders`：已复核，主链基本 Green，暂不进入实现
+- `purchase_orders`：已完成收货确认链最小闭环并通过定向回归
+
+### 已完成的同轮动作
+- 已完成第二轮 A 级模块 contract 回归巡检；
+- 已完成 `inventory query + commit contract` 补缺口；
+- 已完成 `purchase_orders` 收货确认链最小闭环；
+- 已完成 `sales_orders` 旧审批稿清账；
+- 已完成第一批 A 级 contract 防回退测试。
+
+### 本轮收尾结果
+- 第二轮 A 级模块巡检相关文档口径已统一；
+- 当前轮次下的审批稿、执行前表述与悬空待办已完成清理；
+- 后续若继续推进第二批防回退测试或新的模块闭环，应进入下一轮，不再挂在本轮名下。
+
 ## P0：A 级模块 contract 防回退测试（2026-04-07）
 
 ### 已执行测试补强
@@ -174,16 +313,9 @@ go test ./handlers ./services -run "PurchaseOrder|Workflow"
 
 - 已识别并修复本轮唯一明确 Yellow：`inventory`
 - 已确认 `workflow / production / voucher / finance / sales_orders` 当前主链 contract 基本稳定
+- `purchase_orders` 已在后续同轮中完成最小闭环收口并通过定向回归
 - 当前 A 级已收口主链的主要风险，已从“明显 contract 回退”下降为“后续新增接口的持续防回退治理”
-
-### 建议下一步
-若继续推进 A 级模块，建议优先进入：
-
-- `purchase_orders` 最小 contract 小闭环
-
-若先做治理收尾，也可以转向：
-
-- 为已收口 A 级模块补轻量防回退测试 / 巡检约束
+- 本轮后续动作已完成补齐：包括 `purchase_orders` 最小闭环、`sales_orders` 清账与第一批防回退测试
 
 ## P0：`inventory query + commit contract` 补缺口（2026-04-07）
 

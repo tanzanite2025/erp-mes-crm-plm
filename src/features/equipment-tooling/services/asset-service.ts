@@ -104,21 +104,25 @@ export function useAssets() {
 
             try {
                 // 【性能优化】差分更新探测：如果只有一个模具变更，使用 PATCH
-                const changedMolds = newMolds.filter((m, i) => JSON.stringify(m) !== JSON.stringify(previousMolds[i]))
+                const changedIndices = newMolds
+                    .map((m, i) => (JSON.stringify(m) !== JSON.stringify(previousMolds[i]) ? i : -1))
+                    .filter((i) => i !== -1)
 
-                if (changedMolds.length === 1 && previousMolds.length === newMolds.length) {
-                    const target = changedMolds[0]
-                    const original = previousMolds.find(m => m.id === target.id)
-                    if (original) {
-                        // 计算增量字段
-                        const updates: Partial<Mold> = {}
-                        Object.keys(target).forEach(key => {
-                            if (target[key as keyof Mold] !== original[key as keyof Mold]) {
-                                (updates as any)[key] = target[key as keyof Mold]
-                            }
-                        })
-                        await MoldService.patchMold(target.id, updates)
-                        return
+                if (changedIndices.length === 1 && previousMolds.length === newMolds.length) {
+                    const idx = changedIndices[0]
+                    const target = newMolds[idx]
+                    const original = previousMolds[idx]
+
+                    if (original && target.id === original.id) {
+                        const { trackDelta } = await import('@/lib/delta/proxy-tracker')
+                        const tracker = trackDelta(original)
+                        Object.assign(tracker.data, target)
+                        const delta = tracker.commit()
+
+                        if (Object.keys(delta).length > 0) {
+                            await MoldService.patchMold(target.id, delta, original.version)
+                            return
+                        }
                     }
                 }
 
@@ -135,20 +139,25 @@ export function useAssets() {
             setFurnaces(newFurnaces) // 乐观更新
             try {
                 // 【性能优化】差分更新探测
-                const changedFurnaces = newFurnaces.filter((f, i) => JSON.stringify(f) !== JSON.stringify(previousFurnaces[i]))
+                const changedIndices = newFurnaces
+                    .map((f, i) => (JSON.stringify(f) !== JSON.stringify(previousFurnaces[i]) ? i : -1))
+                    .filter((i) => i !== -1)
 
-                if (changedFurnaces.length === 1 && previousFurnaces.length === newFurnaces.length) {
-                    const target = changedFurnaces[0]
-                    const original = previousFurnaces.find(f => f.id === target.id)
-                    if (original) {
-                        const updates: Partial<Furnace> = {}
-                        Object.keys(target).forEach(key => {
-                            if (target[key as keyof Furnace] !== original[key as keyof Furnace]) {
-                                (updates as any)[key] = target[key as keyof Furnace]
-                            }
-                        })
-                        await FurnaceService.patchFurnace(target.id, updates)
-                        return
+                if (changedIndices.length === 1 && previousFurnaces.length === newFurnaces.length) {
+                    const idx = changedIndices[0]
+                    const target = newFurnaces[idx]
+                    const original = previousFurnaces[idx]
+
+                    if (original && target.id === original.id) {
+                        const { trackDelta } = await import('@/lib/delta/proxy-tracker')
+                        const tracker = trackDelta(original)
+                        Object.assign(tracker.data, target)
+                        const delta = tracker.commit()
+
+                        if (Object.keys(delta).length > 0) {
+                            await FurnaceService.patchFurnace(target.id, delta, original.version)
+                            return
+                        }
                     }
                 }
 

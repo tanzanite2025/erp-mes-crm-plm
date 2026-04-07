@@ -33,6 +33,14 @@ type RecordShipmentRequest struct {
 	Remarks          string    `json:"remarks"`
 }
 
+type TransferInventoryRequest struct {
+	MaterialID   string  `json:"materialId"`
+	Quantity     float64 `json:"quantity"`
+	FromCategory string  `json:"fromCategory"`
+	ToCategory   string  `json:"toCategory"`
+	BatchNo      string  `json:"batchNo"`
+}
+
 type InventoryInboundRecordResponse struct {
 	ID                  string    `json:"id"`
 	MaterialID          string    `json:"materialId"`
@@ -75,6 +83,25 @@ type VoidShipmentRequest struct {
 	ApprovalId string `json:"approvalId"`
 }
 
+type BulkSyncInventoryItemRequest struct {
+	ID              string  `json:"id"`
+	MaterialID      string  `json:"materialId"`
+	MaterialName    string  `json:"materialName"`
+	MaterialCode    string  `json:"materialCode"`
+	MaterialSpec    string  `json:"materialSpec"`
+	Quantity        float64 `json:"quantity"`
+	TotalValue      float64 `json:"totalValue"`
+	AverageUnitCost float64 `json:"averageUnitCost"`
+	CategoryCode    string  `json:"categoryCode"`
+	BatchNo         string  `json:"batchNo"`
+	UOM             string  `json:"uom"`
+}
+
 type InventoryCommandStatusResponse struct {
 	Status string `json:"status"`
+}
+
+type BulkSyncInventoryResponse struct {
+	Status string `json:"status"`
+	Count  int    `json:"count"`
 }

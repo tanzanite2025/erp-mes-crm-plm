@@ -28,6 +28,7 @@ const logger = createLogger('DashboardOverviewTab')
 async function fetchRemoteSegments(): Promise<(Segment & { lineName: string })[]> {
   try {
     const lines = await productionResourceService.getLines()
+
     return lines.flatMap((line) =>
       (line.segments || []).map((segment) => ({
         ...segment,

@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { createLogger } from '@/lib/logger'
+import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 const logger = createLogger('UnitService')
 
@@ -44,12 +45,18 @@ export const unitService = {
     return ensureObjectResponse<Unit & Record<string, unknown>>(res, 'UnitService.addUnit') as Unit
   },
 
-  updateUnit: async (id: string, updates: Partial<Unit>): Promise<Unit> => {
-    const res = await apiFetch<Unit>('/basic/units', {
-      method: 'POST',
-      body: JSON.stringify({ ...updates, id }),
+  patchUnit: async (id: string, delta: DeltaSet, version?: number): Promise<Unit> => {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version },
+    }
+
+    const res = await apiFetch<Unit>(`/basic/units/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     })
-    return ensureObjectResponse<Unit & Record<string, unknown>>(res, 'UnitService.updateUnit') as Unit
+    return ensureObjectResponse<Unit & Record<string, unknown>>(res, 'UnitService.patchUnit') as Unit
   },
 
   deleteUnit: async (id: string) => {

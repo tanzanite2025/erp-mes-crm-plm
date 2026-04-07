@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureArrayResponse } from '@/lib/api-response'
 import type { ProcessStep } from '../tabs/work-architecture/components/process-utils'
 import type { ProductionLine } from '../tabs/line-mgmt/types'
 
@@ -15,7 +16,8 @@ type ProcessCapabilityMutationPayload = {
 export const productionResourceService = {
     // --- 产线相关 ---
     getLines: async (): Promise<ProductionLine[]> => {
-        return apiFetch<ProductionLine[]>('/production/lines')
+        const res = await apiFetch<ProductionLine[]>('/production/lines')
+        return ensureArrayResponse<ProductionLine>(res, 'productionResourceService.getLines')
     },
 
     saveLine: async (line: ProductionLine, authCode?: string): Promise<ProductionLine> => {

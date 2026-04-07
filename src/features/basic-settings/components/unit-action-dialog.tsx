@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { CheckCircle2, Settings2, XCircle } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { unitService, type Unit, type UnitCategory } from '../services/unit-service'
 
 interface UnitActionDialogProps {
@@ -59,7 +60,6 @@ export function UnitActionDialog({
     body: 'grid gap-4 py-4 px-6',
     footer: 'gap-2 sm:gap-0 p-6 pt-0 border-none',
   })
-  const sourceKey = unit?.id ?? 'create'
   const initialFormData = useMemo<Omit<Unit, 'id' | 'isSystem'>>(
     () =>
       unit
@@ -72,34 +72,13 @@ export function UnitActionDialog({
             description: unit.description || '',
           }
         : EMPTY_FORM,
-    [unit]
+    [unit, open] // Include open to reset tracker when dialog re-opens
   )
-  const [draftState, setDraftState] = useState<{
-    sourceKey: string
-    draft: Partial<Omit<Unit, 'id' | 'isSystem'>>
-  }>({
-    sourceKey,
-    draft: {},
-  })
-  const draft = draftState.sourceKey === sourceKey ? draftState.draft : {}
-  const formData = { ...initialFormData, ...draft }
 
-  const updateFormData = (
-    updater: (prev: Omit<Unit, 'id' | 'isSystem'>) => Omit<Unit, 'id' | 'isSystem'>
-  ) => {
-    setDraftState((prev) => {
-      const currentDraft = prev.sourceKey === sourceKey ? prev.draft : {}
-      return {
-        sourceKey,
-        draft: updater({ ...initialFormData, ...currentDraft }),
-      }
-    })
-  }
+  const tracker = useDeltaTracker(initialFormData)
+  const formData = tracker.data
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setDraftState({ sourceKey, draft: {} })
-    }
     onOpenChange(nextOpen)
   }
 
@@ -107,12 +86,17 @@ export function UnitActionDialog({
     if (!formData.code || !formData.name) return
 
     if (unit) {
-      await unitService.updateUnit(unit.id, formData)
+      const delta = tracker.commit()
+      // 如果没有变更，直接关闭
+      if (Object.keys(delta).length === 0) {
+        onOpenChange(false)
+        return
+      }
+      await unitService.patchUnit(unit.id, delta, unit.version)
     } else {
       await unitService.addUnit(formData)
     }
 
-    setDraftState({ sourceKey, draft: {} })
     onOpenChange(false)
     onSaveSuccess?.()
   }
@@ -163,9 +147,9 @@ export function UnitActionDialog({
               <Input
                 placeholder={t('basicSettings.units.dialog.placeholders.code')}
                 value={formData.code}
-                onChange={(e) =>
-                  updateFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))
-                }
+                onChange={(e) => {
+                  formData.code = e.target.value.toUpperCase()
+                }}
                 disabled={unit?.isSystem}
                 className='h-10 font-mono font-black text-xs uppercase rounded-xl'
               />
@@ -177,7 +161,9 @@ export function UnitActionDialog({
               <Input
                 placeholder={t('basicSettings.units.dialog.placeholders.name')}
                 value={formData.name}
-                onChange={(e) => updateFormData((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => {
+                  formData.name = e.target.value
+                }}
                 className='h-10 font-bold text-xs rounded-xl'
               />
             </div>
@@ -191,9 +177,9 @@ export function UnitActionDialog({
               <select
                 className='w-full h-10 rounded-xl border border-input bg-background/50 px-3 py-1 text-xs font-black shadow-sm outline-none focus:ring-1 focus:ring-primary'
                 value={formData.category}
-                onChange={(e) =>
-                  updateFormData((prev) => ({ ...prev, category: e.target.value as UnitCategory }))
-                }
+                onChange={(e) => {
+                  formData.category = e.target.value as UnitCategory
+                }}
               >
                 {CATEGORY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -211,12 +197,9 @@ export function UnitActionDialog({
                 min={0}
                 max={6}
                 value={formData.precision}
-                onChange={(e) =>
-                  updateFormData((prev) => ({
-                    ...prev,
-                    precision: Math.min(6, Math.max(0, parseInt(e.target.value, 10) || 0)),
-                  }))
-                }
+                onChange={(e) => {
+                  formData.precision = Math.min(6, Math.max(0, parseInt(e.target.value, 10) || 0))
+                }}
                 className='h-10 font-mono font-black text-xs rounded-xl'
               />
             </div>
@@ -229,7 +212,9 @@ export function UnitActionDialog({
             <div className='flex gap-2'>
               <button
                 type='button'
-                onClick={() => updateFormData((prev) => ({ ...prev, status: 'active' }))}
+                onClick={() => {
+                  formData.status = 'active'
+                }}
                 className={`flex-1 h-10 rounded-xl border text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${
                   formData.status === 'active'
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
@@ -241,7 +226,9 @@ export function UnitActionDialog({
               </button>
               <button
                 type='button'
-                onClick={() => updateFormData((prev) => ({ ...prev, status: 'inactive' }))}
+                onClick={() => {
+                  formData.status = 'inactive'
+                }}
                 className={`flex-1 h-10 rounded-xl border text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${
                   formData.status === 'inactive'
                     ? 'bg-red-50 border-red-200 text-red-600'
@@ -261,9 +248,9 @@ export function UnitActionDialog({
             <Input
               placeholder={t('basicSettings.units.dialog.placeholders.description')}
               value={formData.description}
-              onChange={(e) =>
-                updateFormData((prev) => ({ ...prev, description: e.target.value }))
-              }
+              onChange={(e) => {
+                formData.description = e.target.value
+              }}
               className='h-10 font-medium text-xs rounded-xl'
             />
           </div>

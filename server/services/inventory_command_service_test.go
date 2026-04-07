@@ -732,8 +732,8 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, inventoryID, now, now, materialID, "Copper Wire", "MAT-001", "Spec-A", 10.0, 80.0, 8.0, "WH_A", "B-001", "kg").Error)
 
-	err := BulkSyncInventory([]models.Inventory{{
-		BaseModel:       models.BaseModel{ID: inventoryID},
+	err := BulkSyncInventory([]BulkSyncInventoryItemRequest{{
+		ID:              inventoryID,
 		MaterialID:      materialID,
 		Quantity:        15,
 		TotalValue:      120,

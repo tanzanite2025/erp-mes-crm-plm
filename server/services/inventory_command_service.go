@@ -372,9 +372,10 @@ func ReconcileNegativeInventory() error {
 		}).Error
 }
 
-func BulkSyncInventory(items []models.Inventory) error {
+func BulkSyncInventory(items []BulkSyncInventoryItemRequest) error {
+	modelsItems := MapBulkSyncInventoryRequestsToModels(items)
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, inv := range items {
+		for _, inv := range modelsItems {
 			var existing models.Inventory
 			var lookupErr error
 			if strings.TrimSpace(inv.ID) != "" {

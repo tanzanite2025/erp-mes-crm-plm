@@ -88,6 +88,8 @@ export function createFurnaceSchema(t?: EquipmentToolingTranslate) {
         type: z.string().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.furnaces.dialog.validation.typeRequired', furnaceValidationFallbacks)),
         maxTemp: z.number().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.furnaces.dialog.validation.maxTempPositive', furnaceValidationFallbacks)),
         currentTemp: z.number(),
+        imageUrl: z.string().optional(),
+        version: z.number().default(1),
         status: furnaceStatusSchema,
         location: z.string().optional(),
         description: z.string().optional(),

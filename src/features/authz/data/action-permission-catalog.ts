@@ -280,6 +280,14 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     routeBindings: ['DELETE /purchase/orders/:id'],
   },
   {
+    id: 'action_trading_purchase_order_sync',
+    label: '贸销：同步采购订单',
+    desc: '允许批量同步采购订单数据。',
+    category: 'action',
+    parentId: 'menu_trading',
+    routeBindings: ['POST /purchase/orders/sync'],
+  },
+  {
     id: 'action_trading_logistics_manage',
     label: '贸销：管理物流',
     desc: '允许创建或编辑物流记录。',

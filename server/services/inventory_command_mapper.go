@@ -37,6 +37,36 @@ func MapRecordShipmentRequestToModel(input RecordShipmentRequest) models.Shipmen
 	}
 }
 
+func MapTransferInventoryRequestToInput(request TransferInventoryRequest) TransferInventoryInput {
+	return TransferInventoryInput{
+		MaterialID:   request.MaterialID,
+		Quantity:     request.Quantity,
+		FromCategory: request.FromCategory,
+		ToCategory:   request.ToCategory,
+		BatchNo:      request.BatchNo,
+	}
+}
+
+func MapBulkSyncInventoryRequestsToModels(items []BulkSyncInventoryItemRequest) []models.Inventory {
+	result := make([]models.Inventory, 0, len(items))
+	for _, item := range items {
+		result = append(result, models.Inventory{
+			BaseModel:       models.BaseModel{ID: item.ID},
+			MaterialID:      item.MaterialID,
+			MaterialName:    item.MaterialName,
+			MaterialCode:    item.MaterialCode,
+			MaterialSpec:    item.MaterialSpec,
+			Quantity:        item.Quantity,
+			TotalValue:      item.TotalValue,
+			AverageUnitCost: item.AverageUnitCost,
+			CategoryCode:    item.CategoryCode,
+			BatchNo:         item.BatchNo,
+			UOM:             item.UOM,
+		})
+	}
+	return result
+}
+
 func MapInboundRecordToResponse(record models.InboundRecord) InventoryInboundRecordResponse {
 	return InventoryInboundRecordResponse{
 		ID:                  record.ID,

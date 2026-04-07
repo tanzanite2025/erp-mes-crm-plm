@@ -6935,12 +6935,12 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
   - 外部 contract 是否已脱离直接 model 暴露
 
 ### 当前状态与暂停点
-本节当前仅为 `purchase_orders` contract 小闭环执行前审批稿：
+本节对应的 `purchase_orders` contract 小闭环已执行完成：
 
-1. 已确认本轮只做 `purchase_orders` 最小闭环，而不是整个 procurement 域重构；
-2. 已确认优先复核 handler / service contract 与 workflow 挂接面；
-3. 在你明确批准前，不开始业务代码修改；
-4. 你批准后，我将先扫描 `purchase_orders` 相关 handler / service，再给出最小改动范围并执行。
+1. 已确认并实际按最小范围收口采购收货确认链；
+2. 已完成命名 request DTO、service 正式 response DTO 与 request -> input mapper 收口；
+3. 已完成 `go test ./handlers ./services -run "PurchaseOrder|Workflow"` 定向验证；
+4. 当前该闭环结果已并入第二轮 A 级模块收尾结论。
 
 ## A 级模块 contract 防回退测试（审批稿）
 
@@ -7013,9 +7013,311 @@ Phase 2 的目标不是把前端权限彻底移除，而是把前端降级为**�
   - workflow 挂接与 response shape 不被破坏
 
 ### 当前状态与暂停点
-本节当前仅为 A 级模块 contract 防回退测试审批稿：
+本节对应的 A 级模块 contract 防回退测试第一批已执行完成：
 
-1. 已确认本轮目标是“测试补强”，不是新一轮业务重构；
-2. 已确认优先覆盖 `inventory`、`purchase_orders`、`sales_orders` 的关键 contract 边界；
-3. 在你明确批准前，不开始新增测试代码；
-4. 你批准后，我将先收敛第一批测试点，再按最小范围实现并回归。
+1. 已按最小范围覆盖 `inventory`、`purchase_orders`、`sales_orders` 的关键 contract 边界；
+2. 已补 response shape、DTO 边界与 workflow 挂接关键断言；
+3. 已完成 `go test ./handlers ./services -run "Inventory|PurchaseOrder|SalesOrder|Workflow"` 定向验证；
+4. 当前该批测试结果已并入第二轮 A 级模块收尾结论。
+
+## 第二轮 A 级模块 contract 巡检总收尾（已完成）
+
+### 背景
+第二轮 A 级模块 contract 巡检已经完成了核心执行动作：
+
+1. `inventory` Yellow 点已完成最小闭环收口；
+2. `purchase_orders` 已完成收货确认链 contract 最小闭环；
+3. `sales_orders` 已复核为主链基本 Green，并完成旧审批稿清账；
+4. 第一批 A 级 contract 防回退测试已完成并通过定向回归。
+
+当前最合适的下一步，不是继续开新代码闭环，而是把第二轮巡检整体状态彻底收束，形成统一、可交接的最终口径。
+
+### 改造目标
+本轮目标限定为：
+
+1. 统一第二轮 A 级模块 contract 巡检的最终状态表达；
+2. 清理三份文档中残留的审批稿、执行前表述或悬空待办；
+3. 形成“已收口 / 已验证 / 暂缓 / 下一轮再议”的干净收尾记录。
+
+### 优先覆盖范围
+#### 第一层：第二轮巡检涉及模块的最终状态
+- `workflow`
+- `production`
+- `inventory`
+- `voucher / finance`
+- `sales_orders`
+- `purchase_orders`
+
+#### 第二层：文档一致性
+- `task.md`
+- `implementation_plan.md`
+- `walkthrough.md`
+
+### 重点问题类型
+1. 是否仍存在“审批稿”状态，但其实已经完成或不再推进；
+2. 是否仍存在“执行前”措辞，但实际已完成实现与验证；
+3. 三份文档对同一模块状态是否存在口径不一致；
+4. 是否仍有应划入“下一轮候选”的事项，错误地挂在本轮收尾中。
+
+### 实施策略
+#### 1) 只做状态收束，不进入新实现
+- 不新增业务代码；
+- 不追加新的测试批次；
+- 不顺手开启下一轮模块闭环。
+
+#### 2) 以“最终可交接”为标准整理文档
+- 对每个模块只保留当前有效结论；
+- 已完成的事项写清“已收口 + 已验证”；
+- 暂缓项写清“已复核 + 暂不进入实现”；
+- 后续候选项显式标注为“下一轮再议”。
+
+#### 3) 优先保证三文档口径一致
+- `task.md` 负责待办与状态；
+- `implementation_plan.md` 负责收尾范围、结论与剩余边界；
+- `walkthrough.md` 负责最终交付记录与验证结果。
+
+### 预计改动文件
+- `task.md`
+- `implementation_plan.md`
+- `walkthrough.md`
+
+### 风险评估
+1. 若清账不彻底，后续阅读者仍会误判哪些事项待做；
+2. 若为追求“干净”误删必要上下文，可能降低交接可读性；
+3. 若本轮顺手开启新实现，会打破当前收尾边界并扩大范围。
+
+### 交付物
+1. 第二轮 A 级模块 contract 巡检的最终状态总览；
+2. 三份核心文档状态一致后的收尾版本；
+3. 对“下一轮再议事项”的清晰边界说明。
+
+### 当前状态与完成结果
+本节已完成第二轮 A 级模块 contract 巡检总收尾：
+
+1. 已统一第二轮巡检涉及模块的最终状态口径；
+2. 已清理三份核心文档中的审批稿、执行前表述与悬空待办；
+3. 已形成“已收口 / 已验证 / 暂缓 / 下一轮再议”的最终收尾表达；
+4. 后续若继续推进新的模块闭环或第二批测试，应作为下一轮事项单独立项。
+
+## 下一轮 `inventory` 后续最小闭环（审批稿）
+
+### 背景
+`inventory` 在第二轮 A 级巡检中，已经完成了首批明确 Yellow 点收口：
+
+1. query service 已切到正式 DTO response；
+2. query handler 已切到正式命名 paged wrapper；
+3. `CommitShipment(...)` 已切到正式 DTO 返回值；
+4. 第一批防回退测试也已覆盖 query handler 与 commit shipment 的关键 contract。
+
+因此，若下一轮继续推进 `inventory`，应当把它作为独立新一轮立项，只挑一个新的最小边界处理，而不是回到上一轮继续扩展库存域改造。
+
+### 改造目标
+本轮目标限定为：
+
+1. 复核 `inventory` 当前剩余 handler / service contract 边界；
+2. 识别一个最值得优先处理的最小缺口；
+3. 在你批准后，仅对该单一最小闭环做收口。
+
+### 优先排查范围
+#### 第一层：现有 `inventory` handler / service 对外 contract
+- `server/handlers/inventory_*`
+- `server/services/inventory_*`
+
+#### 第二层：query / commit 主链之外的剩余边界
+- transfer
+- void / reconcile
+- 其他已暴露给外部但尚未明确通过命名 contract 固化的链路
+
+### 重点问题类型
+1. 是否仍有 `models.Inventory*`、`models.InboundRecord`、`models.ShipmentRecord` 等直接暴露到对外 contract；
+2. 是否仍存在匿名 request / response；
+3. 是否仍存在 `gin.H` 承载不稳定外部结构；
+4. 是否有单条 service / handler 已偏离既有 DTO / mapper / wrapper 风格。
+
+### 实施策略
+#### 1) 只找一个最小闭环，不做库存域扩展改造
+- 不默认同时处理 transfer、void、reconcile 多条链；
+- 先扫描，再只挑一个最值得优先处理的缺口；
+- 一旦发现范围扩大，优先回退到更小目标。
+
+#### 2) 不改业务逻辑，只收口 contract
+- 不改库存数量/金额计算；
+- 不改入库/出库事务语义；
+- 不改已有中文错误语义与状态码；
+- 不改既有调用方依赖的业务含义。
+
+### 预计改动文件（待复核后收敛）
+- `server/handlers/inventory_*`
+- `server/services/inventory_*`
+- 如缺少类型，按最小范围补独立 DTO / mapper 文件
+- 如有必要补少量 `Inventory` 定向测试
+
+### 风险评估
+1. 若把“后续最小闭环”误做成库存域继续扩展，会迅速放大改动面；
+2. 若误动事务或库存数值逻辑，风险会从 contract 扩散到业务正确性；
+3. 若同时触碰多条库存链路，验证成本会明显上升。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory"`
+- 重点复核：
+  - 命中链路的 response shape
+  - service 对外 contract 是否已脱离直接 model 暴露
+  - 既有 inventory 主链测试不回退
+
+### 当前状态与暂停点
+本节当前仅为下一轮 `inventory` 后续最小闭环审批稿：
+
+1. 已确认这是独立下一轮，不再挂在第二轮名下；
+2. 已确认本轮只找一个新的最小闭环，不扩展为库存域继续重构；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先扫描 `inventory` 剩余 handler / service，再给出最小改动范围并执行。
+
+## `inventory` 再下一条最小闭环（审批稿）
+
+### 背景
+上一条独立 `inventory` 闭环已经完成了命令成功响应统一：
+
+1. `ReconcileInventoryHandler` 成功响应已切到 `InventoryCommandStatusResponse`；
+2. `VoidShipmentHandler` 成功响应已切到 `InventoryCommandStatusResponse`；
+3. 对应 `Inventory` 定向回归已通过。
+
+因此，如果继续推进 `inventory`，需要再单独开一条新闭环，避免把多条小问题混成同一轮库存改造。
+
+### 改造目标
+本轮目标限定为：
+
+1. 复核 `inventory` 剩余对外 contract 边界；
+2. 再识别一个最值得优先处理的单一最小缺口；
+3. 在你批准后，仅对该单一缺口做最小收口。
+
+### 优先排查范围
+#### 第一层：`inventory` 剩余 handler / service contract
+- `server/handlers/inventory_*`
+- `server/services/inventory_*`
+
+#### 第二层：尚未优先处理的库存链路
+- transfer
+- void / reconcile 的请求边界
+- bulk sync
+- 其他仍可能偏离既有 DTO / mapper / wrapper 风格的链路
+
+### 重点问题类型
+1. 是否仍存在 `models.*` 直接进入 handler / service 外部 contract；
+2. 是否仍存在匿名 request / response；
+3. 是否仍存在裸 `gin.H`、裸 map、裸 slice 作为外部 contract；
+4. 是否有单条链路与当前 `inventory` 已统一的 contract 风格明显不一致。
+
+### 实施策略
+#### 1) 每轮只收一个小点
+- 不同时处理多个 inventory 子链；
+- 先扫描，再挑一个最值得优先处理的点；
+- 如发现范围扩大，优先缩回到更小目标。
+
+#### 2) 不改业务逻辑，只收口 contract
+- 不改库存数值逻辑；
+- 不改事务语义；
+- 不改权限校验逻辑；
+- 不改错误状态码与中文错误语义。
+
+### 预计改动文件（待复核后收敛）
+- `server/handlers/inventory_*`
+- `server/services/inventory_*`
+- 如缺少类型，按最小范围补独立 DTO / mapper 文件
+- 如有必要补少量 `Inventory` 定向测试
+
+### 风险评估
+1. 若本轮同时触碰多个库存子链，会放大改动面和验证成本；
+2. 若误动事务或权限逻辑，风险会超出 contract 收口范围；
+3. 若为追求统一而过度重构，会破坏“最小闭环”目标。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory"`
+- 重点复核：
+  - 命中链路的 request / response shape
+  - service 对外 contract 是否已脱离直接 model 暴露
+  - 既有 inventory 主链测试不回退
+
+### 当前状态与暂停点
+本节当前仅为 `inventory` 再下一条最小闭环审批稿：
+
+1. 已确认这是在上一条 inventory 闭环之后单独新开的一轮；
+2. 已确认本轮只再找一个最小缺口，不扩展为库存域继续改造；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将先扫描剩余 inventory 边界，再给出最小改动范围并执行。
+
+## `inventory transfer request DTO` 最小闭环（审批稿）
+
+### 背景
+在 `inventory` 已完成 query / commit contract、命令成功响应统一、bulk sync contract 收口之后，剩余高性价比的小点之一是 transfer 请求边界：
+
+1. `TransferInventoryHandler` 当前直接绑定 `services.TransferInventoryInput`；
+2. 该结构更接近 service input，而不是对外 request DTO；
+3. 与当前 `inventory` 其他已收口链路相比，request 边界风格仍不够稳定。
+
+因此，本轮适合单独开一个极小闭环，只处理 transfer 请求 contract，而不继续扩大库存域改造范围。
+
+### 改造目标
+本轮目标限定为：
+
+1. 为 transfer 链补正式命名 request DTO；
+2. 为 request -> service input 增加明确 mapper；
+3. 让 handler 与 service input 边界职责更清晰，同时保持业务逻辑不变。
+
+### 优先排查范围
+#### 第一层：transfer 对外请求边界
+- `server/handlers/inventory_command_handlers.go`
+- `server/services/inventory_command_service.go`
+- `server/services/inventory_command_dto.go`
+- `server/services/inventory_command_mapper.go`
+
+#### 第二层：transfer 定向测试
+- `server/handlers/inventory_command_handlers_test.go`
+- 如有必要，补少量 `services` 侧定向测试
+
+### 重点问题类型
+1. handler 是否直接绑定 service input，而不是正式命名 request DTO；
+2. request -> service input 是否缺少明确 mapper；
+3. transfer 请求 contract 是否与当前 inventory 其他链路风格不一致；
+4. 在不改变业务逻辑的前提下，能否最小化收口请求边界。
+
+### 实施策略
+#### 1) 只收 request 边界，不动业务逻辑
+- 不改 transfer 数量/金额计算；
+- 不改 transfer 事务语义；
+- 不改权限校验；
+- 不改错误状态码与中文错误语义。
+
+#### 2) 保持改动最小
+- 新增 `TransferInventoryRequest`；
+- 新增 request -> input mapper；
+- handler 改为消费 request DTO；
+- service 仍保留 `TransferInventoryInput` 作为内部输入结构。
+
+### 预计改动文件
+- `server/handlers/inventory_command_handlers.go`
+- `server/services/inventory_command_dto.go`
+- `server/services/inventory_command_mapper.go`
+- 如有必要，更新 `server/handlers/inventory_command_handlers_test.go`
+
+### 风险评估
+1. 若误把 request 边界收口扩成 transfer 业务改造，会放大范围；
+2. 若误改 service input 语义，可能影响既有 transfer 逻辑；
+3. 若测试覆盖不足，后续仍可能回退到直接绑定 service input。
+
+### 验证策略
+- 至少执行：
+  - `go test ./handlers ./services -run "Inventory"`
+- 重点复核：
+  - transfer request contract 已切到正式 DTO
+  - request -> input mapper 生效
+  - 既有 inventory 主链测试不回退
+
+### 当前状态与暂停点
+本节当前仅为 `inventory transfer request DTO` 最小闭环审批稿：
+
+1. 已确认本轮只处理 transfer 请求边界，不进入 transfer 业务逻辑改造；
+2. 已确认本轮目标是 request DTO + mapper 收口；
+3. 在你明确批准前，不开始业务代码修改；
+4. 你批准后，我将按最小范围实现并执行 `Inventory` 定向回归。

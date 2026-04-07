@@ -4,7 +4,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -69,11 +68,13 @@ func CommitShipmentHandler(c *gin.Context) {
 
 // TransferInventoryHandler transfers stock between categories.
 func TransferInventoryHandler(c *gin.Context) {
-	var input services.TransferInventoryInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var request services.TransferInventoryRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_TRANSFER_VALIDATION_FAILED", "[VALIDATION] invalid transfer payload")
 		return
 	}
+
+	input := services.MapTransferInventoryRequestToInput(request)
 
 	if err := services.TransferInventory(input); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_TRANSFER_FAILED", "[SERVER] transfer failed: "+err.Error())
@@ -89,7 +90,7 @@ func ReconcileInventoryHandler(c *gin.Context) {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_RECONCILE_FAILED", "reconcile failed")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, services.InventoryCommandStatusResponse{Status: "success"})
 }
 
 // VoidShipmentHandler voids shipment and rolls back inventory for committed records.
@@ -114,7 +115,7 @@ func VoidShipmentHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, services.InventoryCommandStatusResponse{Status: "success"})
 }
 
 // BulkSyncInventoryHandler bulk upserts inventory records.
@@ -123,7 +124,7 @@ func BulkSyncInventoryHandler(c *gin.Context) {
 		return
 	}
 
-	var input []models.Inventory
+	var input []services.BulkSyncInventoryItemRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_BULK_SYNC_VALIDATION_FAILED", "[VALIDATION] invalid bulk sync payload: "+err.Error())
 		return
@@ -134,5 +135,5 @@ func BulkSyncInventoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(input)})
+	c.JSON(http.StatusOK, services.BulkSyncInventoryResponse{Status: "success", Count: len(input)})
 }

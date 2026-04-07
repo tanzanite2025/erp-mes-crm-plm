@@ -11,10 +11,12 @@ export class ProxyTracker<T extends Record<string, any>> {
     private draft: T;
     private readonly mutations = new Map<string, any>();
     private proxyCache = new WeakMap<object, any>();
+    private onMutation?: () => void;
 
-    constructor(initialData: T) {
+    constructor(initialData: T, onMutation?: () => void) {
         // 深拷贝原始数据，确保对比基准不被改变
         this.original = JSON.parse(JSON.stringify(initialData));
+        this.onMutation = onMutation;
         this.draft = this.createProxy(this.original, "");
     }
 
@@ -59,12 +61,19 @@ export class ProxyTracker<T extends Record<string, any>> {
                 Reflect.set(obj, key, value);
                 self.mutations.set(currentPath, value);
                 
+                // 通知监听器相关变更
+                self.onMutation?.();
+                
                 return true;
             },
             deleteProperty(obj, key) {
                 const currentPath = path ? `${path}.${String(key)}` : String(key);
                 Reflect.deleteProperty(obj, key);
                 self.mutations.set(currentPath, null); // 删除视作设为 null
+                
+                // 通知监听器相关变更
+                self.onMutation?.();
+                
                 return true;
             }
         });
@@ -129,6 +138,6 @@ export class ProxyTracker<T extends Record<string, any>> {
 /**
  * 便利函数：初始化一个追踪任务
  */
-export function trackDelta<T extends Record<string, any>>(data: T) {
-    return new ProxyTracker<T>(data);
+export function trackDelta<T extends Record<string, any>>(data: T, onMutation?: () => void) {
+    return new ProxyTracker<T>(data, onMutation);
 }

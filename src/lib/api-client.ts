@@ -181,22 +181,32 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
         if (response.status === 204) return null as T;
         const data = await response.json();
 
-        // 【增强版：破坏性变更全局防御】
-        // 判定条件：只要对象同时包含 items 和 total，就认为是分页包装。
-        if (data && typeof data === 'object' && !Array.isArray(data) && 'items' in data && 'total' in data) {
-            const pagedData = data as Record<string, unknown> & { items?: unknown };
-            const itemsArr = Array.isArray(pagedData.items) ? pagedData.items : [];
+        // 【根治方案：全局 API 响应解包与混合对象防御】
+        // 条件：判定 data 是一个简单的 Data/Pagination 包装器对象。
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            // 候选包装路径：items (标准分页) 或 data (标准响应包装)
+            const wrapperKey = ('items' in data) ? 'items' : (('data' in data) ? 'data' : null);
             
-            // 复制数组并保留分页元数据
-            const hybridArray = [...itemsArr] as unknown[] & Record<string, unknown>;
-            
-            // 将原始对象的所有字段（如 version, status, data 等）合并到混合对象
-            Object.assign(hybridArray, pagedData);
-            
-            // 确保 items 属性正确指向数组部分
-            hybridArray.items = itemsArr; 
-            
-            return hybridArray as T;
+            if (wrapperKey && Array.isArray((data as any)[wrapperKey])) {
+                const wrappedData = data as Record<string, unknown>;
+                const primaryArray = Array.isArray(wrappedData[wrapperKey]) ? wrappedData[wrapperKey] as unknown[] : [];
+                
+                // 混合数组逻辑：将数组实例包装为带有原始对象元数据的 Proxy。
+                // 这种模式能确保：Array.isArray(hybrid) === true，且 hybrid.total / hybrid.version 依然可访问。
+                const hybridArray = [...primaryArray] as unknown[] & Record<string, unknown>;
+                
+                // 合并所有非数组部分的元数据（如 total, version, status 等）
+                Object.entries(wrappedData).forEach(([key, val]) => {
+                    if (key !== wrapperKey) {
+                        hybridArray[key] = val;
+                    }
+                });
+                
+                // 显式保留对原始包装键的引用
+                hybridArray[wrapperKey] = primaryArray; 
+                
+                return hybridArray as T;
+            }
         }
 
         return data;

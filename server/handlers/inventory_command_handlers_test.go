@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -255,4 +257,102 @@ func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdate
 	var status string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM sales_orders WHERE id = ?`, "so-handler-1").Scan(&status).Error)
 	require.Equal(t, "InProgress", status)
+}
+
+func TestReconcileInventoryHandlerReturnsNamedStatusResponse(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, quantity, total_value, average_unit_cost, category_code, batch_no)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, uuid.NewString(), -3.0, -15.0, 5.0, "WH_A", "B-REC-001").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/reconcile", nil)
+
+	ReconcileInventoryHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryCommandStatusResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "success", response.Status)
+
+	var quantity float64
+	require.NoError(t, db.DB.Raw(`SELECT quantity FROM inventory WHERE category_code = ? AND batch_no = ?`, "WH_A", "B-REC-001").Scan(&quantity).Error)
+	require.Equal(t, 0.0, quantity)
+}
+
+func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	payload := `[{"materialId":"mat-bulk-1","materialName":"Bulk Material","materialCode":"MAT-BULK-001","materialSpec":"Spec-B","quantity":8,"totalValue":40,"averageUnitCost":5,"categoryCode":"WH_A","batchNo":"B-BULK-001","uom":"PCS"}]`
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Set("username", "admin")
+	ctx.Set("role", "admin")
+
+	BulkSyncInventoryHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.BulkSyncInventoryResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "success", response.Status)
+	require.Equal(t, 1, response.Count)
+
+	type inventoryRow struct {
+		MaterialID   string
+		CategoryCode string
+		BatchNo      string
+		Quantity     float64
+	}
+	var row inventoryRow
+	require.NoError(t, db.DB.Raw(`SELECT material_id, category_code, batch_no, quantity FROM inventory WHERE material_id = ?`, "mat-bulk-1").Scan(&row).Error)
+	require.Equal(t, "mat-bulk-1", row.MaterialID)
+	require.Equal(t, "WH_A", row.CategoryCode)
+	require.Equal(t, "B-BULK-001", row.BatchNo)
+	require.Equal(t, 8.0, row.Quantity)
+}
+
+func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, quantity, total_value, average_unit_cost, category_code, batch_no)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, materialID, 10.0, 50.0, 5.0, "WH_A", "B-TR-001").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	payload := `{"materialId":"` + materialID + `","quantity":4,"fromCategory":"WH_A","toCategory":"WH_B","batchNo":"B-TR-001"}`
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/transfer", strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+
+	TransferInventoryHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryCommandStatusResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "success", response.Status)
+
+	type inventoryRow struct {
+		CategoryCode string
+		Quantity     float64
+	}
+	var fromRow inventoryRow
+	require.NoError(t, db.DB.Raw(`SELECT category_code, quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, "WH_A", "B-TR-001").Scan(&fromRow).Error)
+	require.Equal(t, "WH_A", fromRow.CategoryCode)
+	require.Equal(t, 6.0, fromRow.Quantity)
+
+	var toRow inventoryRow
+	require.NoError(t, db.DB.Raw(`SELECT category_code, quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, "WH_B", "B-TR-001").Scan(&toRow).Error)
+	require.Equal(t, "WH_B", toRow.CategoryCode)
+	require.Equal(t, 4.0, toRow.Quantity)
 }

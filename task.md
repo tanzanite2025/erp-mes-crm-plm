@@ -835,3 +835,55 @@
   - [x] 已优先复用现有模块测试文件；仅新增 `server/handlers/inventory_query_handlers_test.go` 作为缺失的 query handler 测试文件。
   - [x] 已完成验证：`go test ./handlers ./services -run "Inventory|PurchaseOrder|SalesOrder|Workflow"` 通过。
   - [x] 已在 `walkthrough.md` 记录本轮测试补强与验证结果。
+
+- [x] 167. 第二轮 A 级模块 contract 巡检总收尾（已完成）
+  - [x] 本轮已限定为第二轮 A 级模块 contract 巡检的总收尾，未扩展为新的业务代码改造、下一轮模块闭环或测试体系重构。
+  - [x] 已统一当前第二轮巡检涉及模块的最终状态口径，覆盖：
+    - `workflow`
+    - `production`
+    - `inventory`
+    - `voucher / finance`
+    - `sales_orders`
+    - `purchase_orders`
+  - [x] 已按最终收尾口径整理三类状态：
+    - 已收口并已验证
+    - 已复核、当前基本 Green、暂不进入实现
+    - 后续如需继续推进，应进入下一轮而非继续挂在本轮
+  - [x] 已复核 `task.md`、`implementation_plan.md`、`walkthrough.md` 三份文档口径，并清理残留的审批稿/执行前表述。
+  - [x] 本轮目标已达成：第二轮 A 级巡检已形成“可阅读、可交接、状态一致”的最终收尾材料。
+  - [x] 已明确当前收尾边界：若后续继续推进新的模块闭环或第二批测试，应进入下一轮，不再挂在本轮名下。
+
+- [x] 168. 下一轮 `inventory` 后续最小闭环（已完成）
+  - [x] 本轮已作为独立下一轮立项，仅处理 `inventory` 的一个最小闭环，未回退到第二轮收尾范围。
+  - [x] 已优先复核 `inventory` 当前剩余边界，并识别出最值得优先处理的最小 contract 缺口：命令成功响应风格不一致。
+  - [x] 已完成本轮最小收口：
+    - `ReconcileInventoryHandler` 成功响应从 `gin.H` 切到 `InventoryCommandStatusResponse`
+    - `VoidShipmentHandler` 成功响应从 `gin.H` 切到 `InventoryCommandStatusResponse`
+  - [x] 本轮目标已达成：未扩展整个库存域改造，只收口了 `inventory` 命令链中命中的单一最小边界。
+  - [x] 已保持既有业务语义不变：库存数量/金额逻辑、入库/出库事务、reconcile / void 语义、错误状态码与中文错误语义未漂移。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Inventory"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。
+
+- [x] 169. `inventory` 再下一条最小闭环（已完成）
+  - [x] 本轮已作为新的独立闭环继续推进 `inventory`，并与上一条命令成功响应统一闭环分开管理。
+  - [x] 已优先复核 `inventory` 在 query / commit / command success response 统一之后的剩余边界，并识别出最值得优先处理的单一最小 contract 缺口：bulk sync 链仍直接暴露 `models.Inventory`。
+  - [x] 已完成本轮最小收口：
+    - 已为 bulk sync 补 `BulkSyncInventoryItemRequest` / `BulkSyncInventoryResponse`
+    - `BulkSyncInventory(...)` 已改为接收正式命名 request DTO 列表
+    - `BulkSyncInventoryHandler` 已切到正式 request / response contract
+  - [x] 本轮目标已达成：未继续扩展库存域，只收口了 bulk sync 这一条单一最小 contract 边界。
+  - [x] 已保持既有业务语义不变：库存数量/金额逻辑、bulk sync 合并逻辑、权限校验、错误状态码与中文错误语义未漂移。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Inventory"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。
+
+- [x] 170. `inventory transfer request DTO` 最小闭环（已完成）
+  - [x] 本轮作为新的独立最小闭环，仅处理 `TransferInventoryHandler` 的 request contract，未扩展为整个库存域继续改造。
+  - [x] 已优先复核 `TransferInventoryHandler` / `TransferInventory(...)` 当前边界，并识别出最小 contract 缺口：handler 直接绑定 service input。
+  - [x] 已完成本轮最小收口：
+    - 已新增 `TransferInventoryRequest`
+    - 已新增 `MapTransferInventoryRequestToInput(...)`
+    - `TransferInventoryHandler` 已改为消费正式 request DTO
+  - [x] 本轮目标已达成：未改 transfer 业务逻辑，只完成 request -> input contract 收口。
+  - [x] 已保持既有业务语义不变：库存数量/金额逻辑、transfer 事务语义、权限校验、错误状态码与中文错误语义未漂移。
+  - [x] 已完成验证：`go test ./handlers ./services -run "Inventory"` 通过。
+  - [x] 已在 `walkthrough.md` 记录本轮结果与验证范围。

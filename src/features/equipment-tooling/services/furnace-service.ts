@@ -2,6 +2,7 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { type Furnace, type FurnaceStatus } from '../data/schema'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
  * FurnaceService - 专门负责炉台资产的数据模型与业务逻辑 (已同步至后端)
@@ -61,12 +62,18 @@ export class FurnaceService {
     }
 
     /**
-     * 局部更新炉台信息 (差分更新 - 解决性能开销风险)
+     * 局部更新炉台信息 (SDRTS 结构化差量更新)
      */
-    static async patchFurnace(furnaceId: string, updates: Partial<Furnace>): Promise<void> {
+    static async patchFurnace(furnaceId: string, delta: DeltaSet, version?: number): Promise<void> {
+        const payload: DeltaPayload = {
+            op: 'PATCH',
+            delta,
+            metadata: { id: furnaceId, version }
+        }
+
         await apiFetch(`/furnaces/${furnaceId}`, {
             method: 'PATCH',
-            body: JSON.stringify(updates)
+            body: JSON.stringify(payload)
         })
         window.dispatchEvent(new CustomEvent('xdfc_furnaces_updated'))
     }
