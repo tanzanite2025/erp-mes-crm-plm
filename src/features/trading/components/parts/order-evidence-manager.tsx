@@ -53,7 +53,7 @@ export function OrderEvidenceManager({
             name: string
             uploadedAt: string
             isDuplicate: boolean
-          }>('/trading/orders/evidence/upload', {
+          }>('/sales-orders/evidence/upload', {
             method: 'POST',
             body: formData,
           })

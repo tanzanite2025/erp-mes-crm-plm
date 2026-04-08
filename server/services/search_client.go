@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -108,6 +110,7 @@ func (s *SearchServiceClient) HealthCheck() bool {
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
 }
+
 // ImageProcessResult 对应 Rust 图像处理结果情况情况总量针对。
 type ImageProcessResult struct {
 	PHash      string `json:"phash"`
@@ -126,7 +129,17 @@ func (s *SearchServiceClient) ProcessImage(rawData []byte) (*ImageProcessResult,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("rust image worker returned status: %d", resp.StatusCode)
+		responseBody, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("rust image worker returned status: %d (failed to read error body: %w)", resp.StatusCode, readErr)
+		}
+
+		message := strings.TrimSpace(string(responseBody))
+		if message == "" {
+			return nil, fmt.Errorf("rust image worker returned status: %d", resp.StatusCode)
+		}
+
+		return nil, fmt.Errorf("rust image worker returned status: %d, body: %s", resp.StatusCode, message)
 	}
 
 	var res ImageProcessResult

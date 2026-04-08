@@ -77,11 +77,16 @@ func HandleEvidenceUpload(c *gin.Context) {
 	isDuplicate := false
 	var fileName string
 	
-	existingFileName, err := db.RDB.HGet(c.Request.Context(), REDIS_PHASH_KEY, processed.PHash).Result()
-	if err == nil && existingFileName != "" {
-		isDuplicate = true
-		fileName = existingFileName // 查重命中，直接复用旧文件名
-		log.Info().Str("phash", processed.PHash).Str("existing", fileName).Msg("Storage Optimization: Reusing existing physical file for duplicate pHash")
+	// [CRITICAL] 增强健壮性：检查 Redis 客户端是否初始化
+	if db.RDB != nil {
+		existingFileName, err := db.RDB.HGet(c.Request.Context(), REDIS_PHASH_KEY, processed.PHash).Result()
+		if err == nil && existingFileName != "" {
+			isDuplicate = true
+			fileName = existingFileName // 查重命中，直接复用旧文件名
+			log.Info().Str("phash", processed.PHash).Str("existing", fileName).Msg("Storage Optimization: Reusing existing physical file for duplicate pHash")
+		}
+	} else {
+		log.Warn().Msg("Redis client (RDB) is nil, skipping perceptual hash deduplication to maintain service availability")
 	}
 
 	// 4. 持久化 (仅在非重复时执行物理写入)

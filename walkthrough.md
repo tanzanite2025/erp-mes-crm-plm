@@ -1,5 +1,152 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`search-engine` 纳入生产部署链（2026-04-08）
+
+### 问题现象
+虽然顶层部署命令会执行 `deploy.sh -> server/deploy-prod.sh`，但原有生产部署路径存在明显缺口：
+
+- `server/docker-compose.yml` 未声明 `search-engine` 服务；
+- `server/deploy-prod.sh` 默认只重建 `app`；
+- 因此 `server/search-engine/src/processor.rs` 的修复不会随默认部署自动发布到服务器。
+
+### 根因分析
+当前仓库里虽然已有 `server/search-engine/Dockerfile`，但该 Rust 图像处理服务没有正式接入生产 compose 编排；同时 `app` 继续依赖宿主机 `localhost:8081` 的默认假设，不适合容器内服务间通信。
+
+### 修复方式
+已执行最小部署链修复：
+
+#### 1. `server/docker-compose.yml`
+- 新增 `search-engine` 服务，构建上下文为 `./search-engine`；
+- 容器内暴露 `8081`；
+- 为 `app` 注入：`SEARCH_ENGINE_URL=${SEARCH_ENGINE_URL:-http://search-engine:8081}`；
+- 为 `app.depends_on` 增加 `search-engine`。
+
+#### 2. `server/deploy-prod.sh`
+- 默认部署路径由仅重建 `app`，调整为同时 `--build search-engine app`；
+- `--full-build` 路径纳入 `search-engine`；
+- `--no-build` 与 `--watchdog-build` 路径也通过 `DEFAULT_SERVICES` 保证 `search-engine` 会被启动。
+
+### 使用方式
+修复后，服务器仍可继续沿用你现有的部署入口：
+
+```bash
+chmod +x deploy.sh && ./deploy.sh
+```
+
+区别在于：现在默认部署会把 `search-engine` 一起构建并启动，因此 Rust 图像处理修复具备了真正发布到服务器的路径。
+
+### 本轮结论
+本轮已补齐图片上传依赖的 Rust 图像处理服务部署缺口：
+
+- `search-engine` 已成为正式的生产 compose 服务；
+- `app` 已改为使用容器内服务地址访问它；
+- 默认部署命令现在可以真正把 Rust 图像处理改动发布到服务器。
+
+## 专项：销售订单图片上传 `500 Image processing failed` 修复（2026-04-08）
+
+### 问题现象
+在上一轮修复上传路径后，销售订单图片上传已能命中后端接口，但继续报：
+
+- `/sales-orders/evidence/upload` 返回 `500`
+- 前端提示 `Image processing failed`
+- 错误发生在后端 `HandleEvidenceUpload(...)` 调用 Rust 图像处理链期间
+
+### 根因判断
+本轮复核确认：
+
+- 不是文件体积超限；超限按现有逻辑应返回 `413`
+- 不是 Redis 未初始化；当前实现只会降级跳过 pHash 去重，不会返回 `500`
+- 真实高风险点位于 Rust `/v1/process-image`：
+  - `image::load_from_memory(...)` 图像解码
+  - `webp::Encoder::from_image(...)` WebP 编码器创建
+
+结合当前实现方式，优先判断为 WebP 编码输入格式兼容性不足，同时 Go 侧又吞掉了 Rust 的真实错误文本，导致前端只能看到笼统的 `Image processing failed`。
+
+### 修复方式
+已执行两类底层修复：
+
+#### 1. Go 侧错误可观测性增强
+文件：`server/services/search_client.go`
+
+- `ProcessImage(...)` 在 Rust 返回非 `200` 时，现会读取响应体内容；
+- 错误会同时带上：
+  - Rust 返回状态码
+  - Rust 真实错误文本
+- 这样后端日志可直接区分“图像解码失败”与“WebP 编码失败”。
+
+#### 2. Rust 侧 WebP 编码兼容性修复
+文件：`server/search-engine/src/processor.rs`
+
+- 不再直接把 `DynamicImage` 原样传给 `Encoder::from_image(...)`；
+- 改为先显式转换为稳定的 `RGBA8` 像素缓冲；
+- 再通过 `Encoder::from_rgba(...)` 进行 WebP 编码；
+- 额外增加空编码结果保护，避免返回空 payload。
+
+### 验证
+已执行：
+
+```bash
+go test ./services -run ^$
+```
+
+结果：通过。
+
+另执行：
+
+```bash
+cargo check
+```
+
+结果：未完成，当前被本机 `server/search-engine/target/...` 构建产物文件锁阻塞（Windows `os error 32`，另一个进程正在占用文件），属于本地环境占用问题，不是当前代码链已确认的业务错误口径。
+
+### 本轮结论
+本轮已从底层收敛图片上传 `500` 的两个核心问题：
+
+- Go 侧不再吞掉 Rust 真实错误上下文；
+- Rust 侧 WebP 编码改为使用稳定的 `RGBA8` 输入格式；
+
+当前剩余事项仅为：待释放本机 Rust 构建文件占用后，再补一次 `cargo check` 或实际上传回归验证。
+
+## 专项：销售订单图片上传 404 修复（2026-04-08）
+
+### 问题现象
+在“创建销售订单”时上传订单凭据图片，前端控制台报错：
+
+- `/trading/sales-orders/evidence/upload` 返回 `404 Not Found`
+- UI 提示 `Evidence upload failed [API_ERROR] 404 Not Found`
+- 页面同时显示“存储服务同步失败”
+
+### 根因分析
+本轮先完成代码级排查，确认主因不是 Redis 未就绪，也不是 Rust 图像处理服务先崩溃，而是前后端上传路径契约漂移：
+
+1. 前端 `order-evidence-manager.tsx` 之前调用的是 `'/trading/sales-orders/evidence/upload'`；
+2. `apiFetch(...)` 会统一拼接 `/api/v1` 前缀，因此真实请求变成 `/api/v1/trading/sales-orders/evidence/upload`；
+3. 后端 `server/routes/routes_trading.go` 实际注册的是 `POST /api/v1/sales-orders/evidence/upload`；
+4. 因此前端多出的 `/trading` 前缀直接导致 `404`，请求未命中 `HandleEvidenceUpload`；
+5. 若是 Rust 不可用，后端按当前逻辑会返回 `503 Image worker offline`；若 Rust 处理失败，会返回 `500 Image processing failed`；若 Redis 未初始化，仅会降级跳过 pHash 去重，不会返回 `404`。
+
+### 修复方式
+已执行最小修复：
+
+- 将 `src/features/trading/components/parts/order-evidence-manager.tsx` 中的上传地址从 `/trading/sales-orders/evidence/upload` 改为 `/sales-orders/evidence/upload`；
+- 将 `src/locales/messages/zh-CN/tradingSalesOrder.ts` 中误导性的失败文案从“存储服务同步失败”改为“图片上传失败”。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本次订单图片上传失败的第一根因已确认并修复：
+
+- 主因是前端上传路径多写了 `/trading` 前缀；
+- Redis 与 Rust 不是本次 `404` 的主因；
+- 当前前端已改为命中后端真实存在的上传接口；
+- 用户侧失败提示也已与真实语义对齐，不再把路由问题误报为存储同步失败。
+
 ## 专项：`error-action-registry` / `translate` 类型对齐修复（2026-04-08）
 
 ### 问题现象

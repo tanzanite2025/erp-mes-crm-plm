@@ -11,7 +11,7 @@ usage() {
 Usage: ./deploy-prod.sh [--full-build] [--watchdog-build] [--no-build]
 
 Options:
-  --full-build      Rebuild app and watchdog before recreating containers.
+  --full-build      Rebuild app, search-engine and watchdog before recreating containers.
   --watchdog-build  Rebuild watchdog explicitly.
   --no-build        Skip image rebuild and use fast path.
   -h, --help  Show this help message.
@@ -67,18 +67,18 @@ else
   echo -e "${YELLOW}>>> [WARN] No server/.env(.production) found; using shell env/defaults.${NC}"
 fi
 
-DEFAULT_SERVICES=(db redis app nginx_lb)
-FULL_BUILD_SERVICES=(db redis app watchdog nginx_lb)
+DEFAULT_SERVICES=(db redis search-engine app nginx_lb)
+FULL_BUILD_SERVICES=(db redis search-engine app watchdog nginx_lb)
 
 echo -e "${GREEN}>>> [2/6] Start Docker services...${NC}"
 case "${BUILD_MODE}" in
   app)
     echo -e "${YELLOW}>>> Build mode: enabled (default app rebuild path)${NC}"
     docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --remove-orphans db redis nginx_lb
-    docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build app
+    docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build search-engine app
     ;;
   full)
-    echo -e "${YELLOW}>>> Build mode: enabled (--full-build path: app + watchdog)${NC}"
+    echo -e "${YELLOW}>>> Build mode: enabled (--full-build path: search-engine + app + watchdog)${NC}"
     docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build --remove-orphans "${FULL_BUILD_SERVICES[@]}"
     ;;
   watchdog)

@@ -7,6 +7,8 @@ export const orgPersonnel = {
     permissions: '权限审计',
     line: '产线管理',
     topology: '拓扑模板',
+    leave: '请假管理',
+    stats: '人事统计',
   },
   excel: {
     templateSheetName: '人员档案导入模板',

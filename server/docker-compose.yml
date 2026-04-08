@@ -57,6 +57,14 @@ services:
       - ./deployment/loki/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
     restart: always
 
+  search-engine:
+    build:
+      context: ./search-engine
+      dockerfile: Dockerfile
+    expose:
+      - "8081"
+    restart: always
+
   app:
     build: .
     expose:
@@ -70,6 +78,7 @@ services:
       - ALERT_WEBHOOK_TOKEN=${ALERT_WEBHOOK_TOKEN}
       - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
       - EXCHANGERATE_API_KEY=${EXCHANGERATE_API_KEY}
+      - SEARCH_ENGINE_URL=${SEARCH_ENGINE_URL:-http://search-engine:8081}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-xdfc_default_redis_password}
@@ -80,6 +89,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      search-engine:
         condition: service_started
     volumes:
       - ./uploads:/app/uploads

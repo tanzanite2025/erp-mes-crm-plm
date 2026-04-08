@@ -35,11 +35,15 @@ pub fn process_image(raw_data: &[u8]) -> Result<ProcessedImage> {
 
     // 3. 执行 WebP 压缩
     // 设置质量为 75，这是工业凭据平衡清晰度与体积的黄金点
-    let encoder = Encoder::from_image(&img)
-        .map_err(|e| anyhow::anyhow!("Failed to create WebP encoder: {}", e))?;
+    let rgba = img.to_rgba8();
+    let encoder = Encoder::from_rgba(rgba.as_raw(), width, height);
     
     let webp_memory: WebPMemory = encoder.encode(75.0);
     let webp_data = webp_memory.to_vec();
+
+    if webp_data.is_empty() {
+        return Err(anyhow::anyhow!("Failed to encode image to WebP: encoder returned empty payload"));
+    }
 
     Ok(ProcessedImage {
         phash: phash_hex,

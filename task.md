@@ -1,5 +1,52 @@
 
 
+- [ ] 501. 冻结本轮范围，修复 `search-engine` 未随生产部署更新的问题（2026-04-08，待确认）
+  - [ ] 本轮只修部署链，不扩散到业务逻辑或搜索索引功能重构。
+  - [ ] 目标是让默认部署路径能够同步构建并启动 Rust 图像处理服务。
+  - [ ] 不改变现有运行时数据目录保护策略。
+
+- [ ] 502. 固化当前部署缺口
+  - [ ] 顶层 `deploy.sh` 最终调用 `server/deploy-prod.sh`。
+  - [ ] `server/deploy-prod.sh` 默认只重建 `app`，不会重建 `search-engine`。
+  - [ ] `server/docker-compose.yml` 当前未声明 `search-engine` 服务。
+  - [ ] 因此 `server/search-engine/src/processor.rs` 的修复不会随默认部署自动上服务器。
+
+- [ ] 503. 明确本轮修复要求
+  - [ ] `docker-compose.yml` 需要纳入 `search-engine` 服务，并提供稳定的容器内访问地址。
+  - [ ] `deploy-prod.sh` 默认部署路径需要把 `search-engine` 一起构建/启动。
+  - [ ] `app` 需要通过环境变量显式指向容器内 `search-engine`，避免继续依赖宿主机 `localhost:8081` 假设。
+
+- [ ] 498. 冻结本轮范围，修复销售订单图片上传 `500 Image processing failed`（2026-04-08，待确认）
+  - [ ] 本轮聚焦 Go -> Rust 图像处理链，不扩散到通知 WebSocket 或其他业务域。
+  - [ ] 先增强错误可观测性，再修复图像处理兼容性。
+  - [ ] 不把 Redis 查重降级链误判为本次主因。
+
+- [ ] 499. 固化当前 500 根因判断
+  - [ ] 当前失败点位于后端 `HandleEvidenceUpload(...)` 内的 `ProcessImage(rawData)`。
+  - [ ] 文件大小超限并非本次主因；超限按现有逻辑应返回 `413`。
+  - [ ] Redis 未初始化并非本次主因；当前实现只会跳过去重，不会返回 `500`。
+  - [ ] 高优先级怀疑为 Rust 图像解码或 WebP 编码兼容性问题。
+
+- [ ] 500. 明确本轮修复与验证要求
+  - [ ] Go 侧需要保留 Rust 返回的真实错误上下文，避免前端只看到笼统的 `Image processing failed`。
+  - [ ] Rust 侧需要提升 `process_image(...)` 对常见截图格式的兼容性，优先修复 WebP 编码输入格式问题。
+  - [ ] 完成后至少执行与本轮改动直接相关的最小验证，并同步 `walkthrough.md`。
+
+- [ ] 495. 冻结本轮范围，只排查“建立订单时图片上传报错”根因（2026-04-08，待确认）
+  - [ ] 本轮先做根因分析，不直接修改业务代码。
+  - [ ] 聚焦销售订单图片上传链路：前端请求、后端路由、存储同步提示。
+  - [ ] 明确判断当前报错是否与 Redis 未就绪、Rust 服务异常或接口未实现/未注册有关。
+
+- [ ] 496. 固化当前已观察现象
+  - [ ] 前端控制台对 `/trading/sales-orders/evidence/upload` 报 `[API_ERROR] 404 Not Found`。
+  - [ ] UI 同时出现“Evidence upload failed [API_ERROR] 404 Not Found”。
+  - [ ] 页面另有“存储服务同步失败”提示，需要判断其是否与本次图片上传主失败链路直接相关。
+
+- [ ] 497. 明确排查结论输出要求
+  - [ ] 需要确认上传接口在前后端是否真实存在且路径一致。
+  - [ ] 需要确认上传链路是否依赖 Redis、WebSocket 通知、或 Rust 解析服务。
+  - [ ] 需要给出根因优先级判断，并明确下一步应修复的最小切口。
+
 - [x] 494. 修复 `error-action-registry` 与 `translate` 的类型不匹配构建失败（2026-04-08，已完成）
   - [x] 已定位为 `handle-server-error.ts` 中传入 `translate(...)` 的 `messageKey` / `actionLabelKey` 被推断为普通 `string`。
   - [x] 已收紧 `src/lib/error-action-registry.ts` 的 key 类型，使其对齐 `TranslationKey`。

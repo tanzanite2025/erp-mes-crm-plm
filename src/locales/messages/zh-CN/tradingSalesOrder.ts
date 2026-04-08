@@ -127,7 +127,7 @@ export const tradingSalesOrder = {
     upload: '选择图片上传',
     toasts: {
       maxSizeExceeded: '文件体积超出限制 (最大 {{max}}MB)',
-      saveFailed: '存储服务同步失败',
+      saveFailed: '图片上传失败',
     },
   },
 }
