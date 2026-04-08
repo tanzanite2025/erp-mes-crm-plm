@@ -1,5 +1,137 @@
 # implementation plan
 
+## `customer / supplier`：核心标识字段变更事务化（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `customer / supplier` 第二批主数据 TDO 接入，且验证通过：
+
+1. 后端 `partner_transaction_service.go` 已新增：`CUSTOMER_IDENTITY_CHANGE`、`SUPPLIER_IDENTITY_CHANGE`；
+2. transaction payload 已限定为 `code` / `name`；
+3. transaction 已复用版本控制、存在性校验、`code` 唯一性校验与审计日志；
+4. 前端 `customer-service.ts` / `supplier-service.ts` 已新增 identity transaction 请求；
+5. 前端 hooks 已新增 `identityChangeMutation`；
+6. `customer-list.tsx` / `supplier-list.tsx` 已在纯 `code` / `name` 变更时优先命中显式 transaction；
+7. 混合档案编辑继续保留在现有 `patch` 链中；
+8. 验证通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
+
+## `customer / supplier`：核心标识字段变更事务化（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `customer.status` / `supplier.status` 第一批主数据 TDO 接入后，继续推进第二批更高语义密度的主数据动作：主体核心标识字段变更。
+
+本轮目标不是把普通档案编辑全部事务化，而是只挑选真正代表“主体身份识别”的字段建立显式 intent，并保留现有 `patch` 作为普通维护型修改的安全兜底。
+
+### 二、候选字段与语义边界
+
+#### A. `customer`
+建议优先只纳入：
+
+1. `code`
+2. `name`
+
+理由：
+
+- 二者直接影响客户主体识别、检索、展示与审计语义；
+- 相比联系人、电话、邮箱、地址，更容易被稳定表达为单一业务动作；
+- 更适合作为显式 transaction intent，而不是继续与普通档案字段混在通用 `patch` 中。
+
+建议 intent 颗粒：
+
+1. `CUSTOMER_IDENTITY_CHANGE`
+   - 允许 payload 包含 `code`、`name`
+   - 可覆盖纯 `code`、纯 `name`、`code + name` 三类主体标识变更
+
+不纳入本轮：
+
+- `contactPerson`
+- `contactPhone`
+- `email`
+- `address`
+- `creditLimit`
+- `balance`
+- `status`
+
+#### B. `supplier`
+建议优先只纳入：
+
+1. `code`
+2. `name`
+
+理由：
+
+- 二者直接影响供应商主体识别、搜索命中、下游引用与审计语义；
+- 相比分类、联系人、电话、主营产品，更接近稳定的主体身份字段；
+- 适合用单一 transaction intent 表达。
+
+建议 intent 颗粒：
+
+1. `SUPPLIER_IDENTITY_CHANGE`
+   - 允许 payload 包含 `code`、`name`
+   - 可覆盖纯 `code`、纯 `name`、`code + name` 三类主体标识变更
+
+不纳入本轮：
+
+- `category`
+- `mainProducts`
+- `contactPerson`
+- `contactPhone`
+- `email`
+- `address`
+- `rating`
+- `status`
+
+### 三、前端分流建议
+前端建议只在以下条件命中显式 transaction：
+
+1. 编辑对象已存在；
+2. delta 仅包含 `code`、`name`；
+3. 不混入其他普通档案字段；
+4. 提交时仍携带版本号，由后端负责最终裁决。
+
+其余情况：
+
+- 新建继续走现有 create；
+- 混合档案编辑继续保留在 `patch`；
+- 前端不新增任何自定义唯一性猜测逻辑。
+
+### 四、后端职责
+后端若执行本轮实现，建议承担：
+
+1. 新增 customer / supplier 身份字段变更 transaction service；
+2. 明确 payload 只允许 `code`、`name`；
+3. 复用现有唯一性校验、存在性校验、乐观锁、审计日志与引用约束；
+4. 若 `code` 或 `name` 在下游存在额外联动要求，由后端统一裁决，不前移到前端；
+5. 返回最新实体快照，保证前端缓存可直接刷新。
+
+### 五、风险评估
+本轮风险高于状态事务化，主要在于：
+
+1. `code` 可能具备唯一性约束；
+2. `name` 可能被 UI 检索、打印文案、订单快照或外部同步引用；
+3. 若历史单据保存的是冗余快照字段，需确认“改主数据名称”是否允许只影响未来显示；
+4. 若 `code` 被外部系统当作对接键，需确认是否允许修改；
+5. 若后端当前仅在通用 save / patch 中处理唯一性，需先抽出可复用业务裁决，再接 transaction。
+
+### 六、涉及文件（预估）
+- `src/features/trading/customer/services/customer-service.ts`
+- `src/features/trading/customer/hooks/use-customer.ts`
+- `src/features/trading/supplier/services/supplier-service.ts`
+- `src/features/trading/supplier/hooks/use-supplier.ts`
+- `src/features/trading/components/customer-list.tsx`
+- `src/features/trading/components/supplier-list.tsx`
+- `server/services/partner_transaction_service.go`
+- `server/handlers/partner_transaction_handlers.go`
+- 如需复用唯一性/映射逻辑，可能涉及现有 customer / supplier save/patch 相关文件
+
+### 七、建议确认边界
+建议你确认以下边界后再进入代码阶段：
+
+1. 本轮只处理 `customer.code` / `customer.name` / `supplier.code` / `supplier.name`；
+2. 纯 `code`、纯 `name`、`code + name` 走显式 transaction；
+3. 混入其他字段时继续回落 `patch`；
+4. 不新增前端唯一性判断，完全以后端裁决为准；
+5. 完成后通过 `pnpm exec tsc --noEmit` 与 `go test ./handlers ./routes ./services -run "Customer|Supplier"` 验证。
+
 ## `trading/customer` / `trading/supplier`：主数据 TDO 接入（2026-04-08，已完成）
 
 ### 执行结果摘要（2026-04-08，已完成）

@@ -12,11 +12,12 @@ import {
     type Row,
     useReactTable,
 } from '@tanstack/react-table'
-import { Download, FileSpreadsheet, Plus, Share, Pencil, UserCheck, UserMinus, Clock } from 'lucide-react'
+import { Download, FileSpreadsheet, Plus, Share, Pencil, UserCheck, UserMinus, Clock, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
     Table,
     TableBody,
@@ -74,6 +75,16 @@ export function EmployeeManagementList() {
     const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
     const [itemsToDelete, setItemsToDelete] = useState<Employee[]>([])
     const [error, setError] = useState<unknown>(null)
+    const [globalFilter, setGlobalFilter] = useState('')
+    const [searchValue, setSearchValue] = useState('')
+
+    // 防抖处理：避免频繁触发表格重绘导致的输入卡顿
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setGlobalFilter(searchValue)
+        }, 300)
+        return () => clearTimeout(handler)
+    }, [searchValue])
 
     const loadLookups = useCallback(async () => {
         try {
@@ -287,8 +298,10 @@ export function EmployeeManagementList() {
         state: {
             rowSelection,
             columnVisibility,
+            globalFilter,
         },
         onColumnVisibilityChange: setColumnVisibility,
+        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -296,6 +309,11 @@ export function EmployeeManagementList() {
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
         onRowSelectionChange: setRowSelection,
+        // 性能关键优化：仅允许对“姓名”和“工号”进行全局搜索过滤
+        getColumnCanGlobalFilter: (column) => {
+            const id = column.id
+            return id === 'name' || id === 'staffId'
+        },
     })
 
     const recentResignPreviewNames = recentResignSnapshot
@@ -316,9 +334,28 @@ export function EmployeeManagementList() {
     }
 
     return (
-        <div className='flex flex-col gap-6 mt-2'>
-            <div className='flex items-center justify-between px-1 gap-2 flex-wrap'>
-                <div className='flex items-center gap-2'>
+        <div className='flex flex-col gap-4'>
+            <div className='flex items-center justify-between px-1 gap-4 flex-wrap'>
+                <div className='flex items-center gap-3 overflow-hidden'>
+                    <div className='relative w-[240px] md:w-[280px] shrink-0'>
+                        <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30' />
+                        <Input
+                            placeholder={t('orgPersonnel.list.searchPlaceholder' as any)}
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            className='h-12 w-full pl-11 pr-10 rounded-[18px] border border-dashed border-muted bg-muted/10 font-bold text-sm shadow-none transition-all focus-visible:bg-background focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/20 placeholder:text-muted-foreground/20'
+                        />
+                        {searchValue && (
+                            <Button
+                                variant='ghost'
+                                size='icon'
+                                onClick={() => setSearchValue('')}
+                                className='absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full hover:bg-transparent text-muted-foreground/40 hover:text-rose-500 transition-colors'
+                            >
+                                <X className='size-3.5' />
+                            </Button>
+                        )}
+                    </div>
                     <DataTableFacetedFilter
                         column={table.getColumn('status')}
                         title={t('orgPersonnel.list.filterStatus' as any)}

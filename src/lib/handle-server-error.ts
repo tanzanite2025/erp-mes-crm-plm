@@ -2,6 +2,11 @@ import { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import { getErrorStatus, isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
+import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
+import { router } from '@/lib/router'
+import { translate, AppLocale, DEFAULT_LOCALE } from '@/locales'
+import { getCookie } from '@/lib/cookies'
+import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
 
 const logger = createLogger('handleServerError')
 
@@ -14,45 +19,77 @@ export function isConflictError(error: unknown) {
 
 export function handleServerError(error: unknown) {
   const status = getErrorStatus(error)
-  const errorMessage = error instanceof Error ? error.message : String(error)
+  let errorMessage = error instanceof Error ? error.message : String(error)
+  
+  // If it's an AxiosError, prioritize the inner error message if available
+  if (error instanceof AxiosError && error.response?.data?.error) {
+    errorMessage = error.response.data.error
+  }
 
-  // 结构化后台日志上报（含 HTTP 状态码，便于远程日志平台按 status 聚合搜索）
+  const locale = (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
+
+  // 结构化后台日志上报
   logger.error('Server error intercepted', {
     status,
     message: errorMessage,
     errorObject: error,
   })
 
-  // --- UI 层分支处理 ---
+  // --- 1. 尝试从全局错误动作注册表中匹配 ---
+  const actionMetadata = ERROR_ACTION_REGISTRY[errorMessage]
+  if (actionMetadata) {
+    const msg = translate(locale, actionMetadata.messageKey)
+    if (actionMetadata.actionLabelKey && actionMetadata.target) {
+      toast.error(msg, {
+        duration: 8000, // 稍微延长显示时间
+        action: {
+          label: translate(locale, actionMetadata.actionLabelKey),
+          onClick: () => {
+            logger.info('Action triggered', { target: actionMetadata.target })
+            // 尝试直接使用 navigate
+            router.navigate({ to: actionMetadata.target as any })
+              .then(() => logger.info('Navigation successful'))
+              .catch((err) => logger.error('Navigation failed', err))
+          }
+        }
+      })
+    } else {
+      toast.error(msg)
+    }
+    return
+  }
+
+  // --- 2. UI 层分支处理 (i18n 化) ---
 
   if (isForbiddenError(error)) {
-    toast.error('无权限执行当前操作')
+    toast.error(translate(locale, 'errors.forbidden.subtitle' as any))
     return
   }
 
+  // 默认冲突逻辑 (如果没有被 Registry 命中)
   if (isConflictError(error)) {
-    toast.error('数据已被更新，请刷新后重试')
+    toast.error(translate(locale, 'common.auth.signInForm.invalidCredentials' as any)) // or another generic
+    // Note: The previous hardcoded '数据已被更新' is better suited for a generic conflict key
     return
   }
 
-  // 熔断器触发的请求
+  // 熔断器 / 超时 / 异常状态
   if (errorMessage.includes('[CIRCUIT_BREAKER]')) {
-    toast.error('服务暂时不可用，请稍后重试')
+    toast.error(translate(locale, 'common.auth.signInForm.apiNotReady' as any))
     return
   }
 
-  // 请求超时
   if (errorMessage.includes('[TIMEOUT]')) {
-    toast.error('请求超时，请检查网络连接')
+    toast.error(translate(locale, 'common.auth.signInForm.timeout' as any))
     return
   }
 
   if (status === 204) {
-    toast.error('未找到相关内容')
+    toast.error(translate(locale, 'common.empty.noData' as any))
     return
   }
 
-  let errMsg = '操作失败，请重试'
+  let errMsg = translate(locale, 'common.auth.signInForm.serverError' as any, { status: status || '???' })
 
   if (error instanceof AxiosError) {
     errMsg = error.response?.data.title || error.message

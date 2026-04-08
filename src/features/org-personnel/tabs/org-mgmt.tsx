@@ -342,7 +342,10 @@ export function OrgMgmt() {
       <ConfirmDialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
-        handleConfirm={handleDelete}
+        handleConfirm={async () => {
+          setDeleteConfirmOpen(false)
+          await handleDelete()
+        }}
         title={t('orgPersonnel.org.removeItem')}
         desc={t('orgPersonnel.org.deleteConfirm', { name: selectedNode?.name || '' })}
         destructive

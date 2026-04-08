@@ -117,6 +117,7 @@ export const orgPersonnel = {
     noIdFound: 'No updatable personnel ID found',
     filterStatus: 'Filter Status',
     filterFiltering: 'FILTERING',
+    searchPlaceholder: 'Search name, ID, phone...',
     bulk: {
       entity: 'Staff',
       notEnabled: 'Bulk service is currently unavailable',
@@ -166,6 +167,7 @@ export const orgPersonnel = {
     deleteSuccess: 'Organization removed successfully',
     deleteFailed: 'Failed to remove organization',
     saveFailed: 'Failed to save organization data. Please check network or format.',
+    goToPersonnel: 'Go to Personnel Management',
     backendErrors: {
       nameConflict: 'Organization name already exists under the same parent',
       hasChildren: 'Cannot delete: this organization still has child departments',

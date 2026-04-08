@@ -48,7 +48,7 @@ export function SupplierList() {
     error,
     refetch,
   } = useGetSuppliers()
-  const { createMutation, patchMutation, statusChangeMutation, deleteMutation } = useSupplierMutations()
+  const { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation } = useSupplierMutations()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
 
@@ -81,11 +81,23 @@ export function SupplierList() {
     if (payload.isPatch && payload.delta && selectedSupplier) {
       const deltaKeys = Object.keys(payload.delta)
       const isStatusOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status')
+      const isIdentityOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'code' || key === 'name')
 
       if (isStatusOnlyChange) {
         statusChangeMutation.mutate({
           id: selectedSupplier.id,
           status: payload.data.status || selectedSupplier.status,
+          operator: 'Unknown',
+          expectedVersion: selectedSupplier.version,
+        })
+        return
+      }
+
+      if (isIdentityOnlyChange) {
+        identityChangeMutation.mutate({
+          id: selectedSupplier.id,
+          code: payload.data.code,
+          name: payload.data.name,
           operator: 'Unknown',
           expectedVersion: selectedSupplier.version,
         })

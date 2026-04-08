@@ -4,6 +4,7 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
+export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'SUPPLIER_IDENTITY_CHANGE'
 
 export interface SupplierTransactionRequest<TPayload> {
   intent: string
@@ -14,6 +15,12 @@ export interface SupplierTransactionRequest<TPayload> {
 
 export interface SupplierStatusChangePayload {
   status: string
+  operator: string
+}
+
+export interface SupplierIdentityChangePayload {
+  code?: string
+  name?: string
   operator: string
 }
 
@@ -93,6 +100,28 @@ export const changeSupplierStatus = async (
     expectedVersion: params.expectedVersion,
     payload: {
       status: params.status,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changeSupplierIdentity = async (
+  supplierId: string,
+  params: {
+    code?: string
+    name?: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<Supplier> => {
+  return executeSupplierTransaction<SupplierIdentityChangePayload>(supplierId, {
+    intent: SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      code: params.code,
+      name: params.name,
       operator: params.operator,
     },
   })

@@ -45,7 +45,7 @@ export function CustomerList() {
     error,
     refetch,
   } = useGetCustomers()
-  const { createMutation, patchMutation, statusChangeMutation, deleteMutation } = useCustomerMutations()
+  const { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation } = useCustomerMutations()
   const loadFailedLabel =
     locale === 'zh-CN' ? '客户数据加载失败，请稍后重试' : 'Failed to load customer data. Please try again.'
 
@@ -78,11 +78,23 @@ export function CustomerList() {
     if (payload.isPatch && payload.delta && selectedCustomer) {
       const deltaKeys = Object.keys(payload.delta)
       const isStatusOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status')
+      const isIdentityOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'code' || key === 'name')
 
       if (isStatusOnlyChange) {
         statusChangeMutation.mutate({
           id: selectedCustomer.id,
           status: payload.data.status || selectedCustomer.status,
+          operator: 'Unknown',
+          expectedVersion: selectedCustomer.version,
+        })
+        return
+      }
+
+      if (isIdentityOnlyChange) {
+        identityChangeMutation.mutate({
+          id: selectedCustomer.id,
+          code: payload.data.code,
+          name: payload.data.name,
           operator: 'Unknown',
           expectedVersion: selectedCustomer.version,
         })

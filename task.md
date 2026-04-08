@@ -1,5 +1,29 @@
 
 
+- [x] 490. 冻结本轮范围，规划并实现 `customer / supplier` 核心标识字段变更事务化（2026-04-08，已完成）
+  - [x] 本轮只处理 `customer` / `supplier` 的核心标识字段，未并发进入状态、归档、删除或其他业务域。
+  - [x] 已为“主体身份识别字段变更”建立显式 intent，而不是继续只依赖通用 `patch`。
+  - [x] 仅对具备稳定业务语义、可审计、可复用后端裁决的字段进行了事务化。
+
+- [x] 491. 明确 `customer` 核心标识字段事务化边界
+  - [x] 已将候选字段限定为 `code` 与 `name`，未扩展到联系人、电话、邮箱、地址等普通档案字段。
+  - [x] 已在纯 `code`、纯 `name` 或 `code + name` 场景下命中显式 transaction。
+  - [x] 若混入其他普通档案字段，继续保留在现有 `patch` 链中。
+  - [x] 唯一性、存在性与可变更约束继续由后端裁决，前端未猜规则。
+
+- [x] 492. 明确 `supplier` 核心标识字段事务化边界
+  - [x] 已将候选字段限定为 `code` 与 `name`，未扩展到分类、联系人、电话、邮箱、地址、主营产品等普通档案字段。
+  - [x] 已在纯 `code`、纯 `name` 或 `code + name` 场景下命中显式 transaction。
+  - [x] 若混入其他普通档案字段，继续保留在现有 `patch` 链中。
+  - [x] 唯一性、存在性与可变更约束继续由后端裁决，前端未猜规则。
+
+- [x] 493. 明确本轮风险、验证与收尾要求
+  - [x] 已确认 `code` 存在唯一索引约束，并在 transaction 中复用后端唯一性校验。
+  - [x] 已补后端 identity change transaction service，而不是仅让前端硬分流。
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
+  - [x] 已同步 `walkthrough.md` 记录核心标识字段 intent、分流条件、唯一性约束复用情况与验证结果。
+
 - [x] 486. 冻结本轮范围，执行 `trading/customer` / `trading/supplier` 的 TDO 接入（2026-04-08，已完成）
   - [x] 本轮优先处理客户与供应商主数据模块，未并发进入其他业务域。
   - [x] 已为主数据编辑建立显式业务 intent，而不是继续只依赖 `patch`。

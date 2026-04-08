@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { getCookie } from '@/lib/cookies'
+import { handleServerError } from '@/lib/handle-server-error'
+import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
+import { AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
 import { OrgService } from '../services/org-service'
 import { type OrgNode } from '../data/org-schema'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -23,16 +27,6 @@ function findNodeInTree(nodes: OrgNode[], id: string): OrgNode | null {
   return null
 }
 
-const BACKEND_ERROR_MAP: Record<string, string> = {
-  'Organization name already exists under the same parent': 'orgPersonnel.org.backendErrors.nameConflict',
-  'Cannot delete organization with child departments': 'orgPersonnel.org.backendErrors.hasChildren',
-  'Cannot delete organization with active employees': 'orgPersonnel.org.backendErrors.hasEmployees',
-  'Failed to delete organization': 'orgPersonnel.org.backendErrors.deleteFailed',
-  'Failed to save organization': 'orgPersonnel.org.backendErrors.saveFailed',
-  'Invalid organization payload': 'orgPersonnel.org.backendErrors.invalidPayload',
-  'Failed to fetch organization tree': 'orgPersonnel.org.backendErrors.fetchTreeFailed',
-}
-
 export function useOrgMgmt() {
   const { locale, t } = useLanguage()
   const [orgData, setOrgData] = useState<OrgNode[]>(initialOrgData)
@@ -40,13 +34,6 @@ export function useOrgMgmt() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-
-  const getErrorMessage = (err: unknown) => {
-    const rawMsg = err instanceof Error ? err.message : ''
-    const mappedKey = BACKEND_ERROR_MAP[rawMsg]
-    if (mappedKey) return t(mappedKey as any)
-    return rawMsg || t('orgPersonnel.org.saveFailed')
-  }
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -68,7 +55,8 @@ export function useOrgMgmt() {
     } catch (err) {
       setError(err)
       logger.error('Failed to load org tree', err)
-      setLoadError(getErrorMessage(err))
+      const locale = (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
+      setLoadError(translate(locale, 'orgPersonnel.org.saveFailed'))
       return []
     } finally {
       setIsLoading(false)
@@ -107,7 +95,7 @@ export function useOrgMgmt() {
       setSelectedNode(updatedNodeInTree || savedNode)
     } catch (err) {
       logger.error('Submit failed', err)
-      toast.error(getErrorMessage(err))
+      handleServerError(err)
     }
   }
 
@@ -120,7 +108,7 @@ export function useOrgMgmt() {
       toast.success(t('orgPersonnel.org.deleteSuccess'))
     } catch (err) {
       logger.error('Delete failed', err)
-      toast.error(getErrorMessage(err))
+      handleServerError(err)
     }
   }
 

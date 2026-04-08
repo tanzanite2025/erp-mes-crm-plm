@@ -1,12 +1,8 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
-import {
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query'
+import { RouterProvider } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { getErrorStatus } from '@/lib/error-status'
@@ -16,8 +12,6 @@ import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { LanguageProvider } from './context/language-provider'
 import { ThemeProvider } from './context/theme-provider'
-// Generated Routes
-import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
 
@@ -75,20 +69,15 @@ const queryClient = new QueryClient({
   }),
 })
 
-// Create a new router instance
-const router = createRouter({
-  routeTree,
-  context: { queryClient },
-  defaultPreload: 'intent',
-  defaultPreloadStaleTime: 0,
-})
+import { router } from '@/lib/router'
 
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
+// Update the router context with the real queryClient instance
+router.update({
+  context: {
+    ...router.options.context,
+    queryClient,
+  },
+})
 
 // Render the app
 const rootElement = document.getElementById('root')!

@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
-import { changeSupplierStatus, createSupplier, deleteSupplier, getSuppliers, patchSupplier } from '../services/supplier-service'
+import { changeSupplierIdentity, changeSupplierStatus, createSupplier, deleteSupplier, getSuppliers, patchSupplier } from '../services/supplier-service'
 
 export const useGetSuppliers = (options = {}) => {
   return useQuery({
@@ -61,6 +61,29 @@ export const useSupplierMutations = () => {
     onError: handleServerError,
   })
 
+  const identityChangeMutation = useMutation({
+    mutationFn: ({
+      id,
+      code,
+      name,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      id: string
+      code?: string
+      name?: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changeSupplierIdentity(id, { code, name, operator, expectedVersion, actorId }),
+    onSuccess: () => {
+      toast.success(t('purchase.suppliers.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    },
+    onError: handleServerError,
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deleteSupplier,
     onSuccess: () => {
@@ -70,5 +93,5 @@ export const useSupplierMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, patchMutation, statusChangeMutation, deleteMutation }
+  return { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
 }

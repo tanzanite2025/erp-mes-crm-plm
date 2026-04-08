@@ -1,5 +1,57 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`customer / supplier` 核心标识字段变更事务化（2026-04-08）
+
+### 本轮目标
+在已完成 `customer.status` / `supplier.status` 主数据事务化后，继续为更高语义密度的主数据动作建立显式 transaction：主体核心标识字段变更。
+
+本轮限定只处理：
+
+- `customer.code`
+- `customer.name`
+- `supplier.code`
+- `supplier.name`
+
+### 本轮实际执行
+已完成：
+
+- 后端 `partner_transaction_service.go` 新增：
+  - `CUSTOMER_IDENTITY_CHANGE`
+  - `SUPPLIER_IDENTITY_CHANGE`
+- transaction payload 仅允许 `code` / `name`；
+- 事务链继续复用：
+  - 乐观锁版本控制
+  - 主数据存在性校验
+  - 审计日志写入
+  - `code` 唯一性校验
+- 前端 `customer-service.ts` / `supplier-service.ts` 已新增 identity change transaction 请求；
+- 前端 hooks 已新增 `identityChangeMutation`；
+- `customer-list.tsx` / `supplier-list.tsx` 已在纯 `code`、纯 `name`、`code + name` 变更时优先走显式 transaction；
+- 若混入其他普通档案字段，仍继续保留在原有 `patch` 链中。
+
+### 本轮分流边界
+- 仅当 delta 只包含 `code` / `name` 时命中 identity transaction；
+- `status` 仍继续命中上一轮已落地的 status transaction；
+- 若同时混入联系人、地址、分类、主营产品等字段，则不进入本轮 identity intent；
+- 新建场景继续走现有 create；
+- 前端未新增任何唯一性猜测逻辑，最终裁决仍以后端为准。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run "Customer|Supplier"
+```
+
+结果：通过。
+
+### 本轮结论
+`customer / supplier` 第二批主数据 TDO 已完成：
+
+- 核心标识字段变更已具备显式 transaction 语义；
+- 纯身份字段变更与普通混合档案编辑已形成稳定分流；
+- 未破坏现有 `patch` 兜底链与前后端编译测试。
+
 ## 专项：`trading/customer` / `trading/supplier` 主数据 TDO 接入（2026-04-08）
 
 ### 本轮目标

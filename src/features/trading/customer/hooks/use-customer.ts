@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Customer } from '../../data/schema'
-import { changeCustomerStatus, createCustomer, deleteCustomer, getCustomers, patchCustomer } from '../services/customer-service'
+import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomers, patchCustomer } from '../services/customer-service'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -84,6 +84,31 @@ export const useCustomerMutations = () => {
     },
   })
 
+  const identityChangeMutation = useMutation({
+    mutationFn: ({
+      id,
+      code,
+      name,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      id: string
+      code?: string
+      name?: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changeCustomerIdentity(id, { code, name, operator, expectedVersion, actorId }),
+    onSuccess: () => {
+      toast.success(t('trading.customers.toasts.updated'))
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    },
+    onError: (error) => {
+      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+    },
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deleteCustomer,
     onSuccess: () => {
@@ -95,5 +120,5 @@ export const useCustomerMutations = () => {
     },
   })
 
-  return { createMutation, patchMutation, statusChangeMutation, deleteMutation }
+  return { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
 }

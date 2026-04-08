@@ -117,6 +117,7 @@ export const orgPersonnel = {
     noIdFound: '未找到可更新的人员 ID',
     filterStatus: '筛选状态',
     filterFiltering: 'FILTERING',
+    searchPlaceholder: '搜索姓名、工号、电话...',
     bulk: {
       entity: '位人员',
       notEnabled: '批量处理服务不可用',
@@ -166,6 +167,7 @@ export const orgPersonnel = {
     deleteSuccess: '机构已成功移除',
     deleteFailed: '移除失败',
     saveFailed: '保存机构信息失败，请检查网络或数据格式',
+    goToPersonnel: '前往人员管理',
     backendErrors: {
       nameConflict: '同级目录下已存在同名节点',
       hasChildren: '无法删除：该机构下仍存在子组织，请先移除子项',
