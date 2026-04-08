@@ -6,7 +6,6 @@ import { createLogger } from '@/lib/logger'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
 import { type Material } from '../../material-archive/data/schema'
 import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/schema'
-import { bomService } from '../services/bom-service'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -59,42 +58,9 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
   const selectedProductId = form.watch('productId')
 
   useEffect(() => {
-    const subscription = form.watch(async (value, { name }) => {
-      if (name?.startsWith('items.') && (name.endsWith('.unitUsage') || name.endsWith('.wastagePercent'))) {
-        const index = parseInt(name.split('.')[1])
-        const item = value.items?.[index]
-        if (item) {
-          const usage = item.unitUsage || 0
-          const wastage = item.wastagePercent || 0
-          const standard = (usage * (1 + wastage / 100)).toFixed(6)
-          form.setValue(`items.${index}.standardUsage` as any, parseFloat(standard), { shouldDirty: true })
-        }
-      }
-
-      if (!isEdit && name === 'productId' && value.productId) {
-        try {
-          const boms = await bomService.getBOMs(value.productId)
-          if (boms && boms.length > 0) {
-            const versions = boms.map((bom) => {
-              const versionText = bom.bomVersion.replace(/[^\d.]/g, '')
-              const parsed = parseFloat(versionText)
-              return isNaN(parsed) ? 1.0 : parsed
-            })
-            const nextVersion = `V${(Math.max(...versions) + 0.1).toFixed(1)}`
-            form.setValue('bomVersion', nextVersion, { shouldDirty: true })
-            if (!form.getValues('changeOrderId')) {
-              form.setValue('revisionNo', nextVersion, { shouldDirty: true })
-            }
-          } else {
-            form.setValue('bomVersion', 'V1.0', { shouldDirty: true })
-            if (!form.getValues('changeOrderId')) {
-              form.setValue('revisionNo', 'V1.0', { shouldDirty: true })
-            }
-          }
-        } catch (error) {
-          logger.error('BOM version auto-calculate failed', error)
-        }
-      }
+    const subscription = form.watch(async () => {
+      // [REMOVED] standardUsage 响应式计算已迁移至后端 Authority 引擎
+      // [REMOVED] bomVersion 自动步进逻辑已迁移至后端
     })
     return () => subscription.unsubscribe()
   }, [form, isEdit])
@@ -166,10 +132,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
                     items: (currentRow.items || []).map((item) => ({
                       ...item,
                       substitutes: item.substitutes || [],
-                      standardUsage:
-                        item.unitUsage && !item.standardUsage
-                          ? parseFloat((item.unitUsage * (1 + (item.wastagePercent || 0) / 100)).toFixed(6))
-                          : item.standardUsage || 0,
+                      standardUsage: item.standardUsage || 0, // 仅读取后端返回的权用量
                     })),
                 } as BOM
                 form.reset(data)
@@ -177,22 +140,8 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           return
         }
 
-        let initialVersion = 'V1.0'
-        if (initialProductId) {
-          try {
-            const boms = await bomService.getBOMs(initialProductId)
-            if (boms && boms.length > 0) {
-              const versions = boms.map((bom) => {
-                const versionText = bom.bomVersion.replace(/[^\d.]/g, '')
-                const parsed = parseFloat(versionText)
-                return isNaN(parsed) ? 1.0 : parsed
-              })
-              initialVersion = `V${(Math.max(...versions) + 0.1).toFixed(1)}`
-            }
-          } catch (error) {
-            logger.error('BOM version initial fetch failed', error)
-          }
-        }
+        // [REMOVED] 前端不再预计算初始版本号，由后端在创建请求时分配初始值或通过 DTO 返回
+        const initialVersion = currentRow?.bomVersion || 'V1.0'
 
         const data = {
           id: '',
@@ -207,10 +156,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           items: (initialItems || []).map((item) => ({
             ...item,
             substitutes: item.substitutes || [],
-            standardUsage:
-              item.unitUsage && !item.standardUsage
-                ? parseFloat((item.unitUsage * (1 + (item.wastagePercent || 0) / 100)).toFixed(6))
-                : item.standardUsage || 0,
+            standardUsage: item.standardUsage || 0,
           })),
           description: '',
           createdAt: new Date().toISOString(),

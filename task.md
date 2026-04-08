@@ -1,4 +1,19 @@
+- [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+  - [ ] 本轮聚焦 Rust `search-engine` 的图像处理稳定性，不扩散到上传业务接口、Redis 查重策略或前端交互。
+  - [ ] 不采用补丁式“双解码兜底”，而是转向长期稳定的单次解码方案。
+  - [ ] 目标是让同一张图片在尺寸读取、pHash 计算、WebP 编码三步共享同一份已解码图像数据。
 
+- [ ] 511. 固化当前运行时根因
+  - [ ] 前端请求已命中正确后端 `http://localhost:8080`，当前问题不再是 Vite 代理错配。
+  - [ ] Go 后端日志显示：`rust image worker returned status: 400, body: Failed to decode image for perceptual hash`。
+  - [ ] Rust 当前实现先用 `image::load_from_memory(raw_data)` 解码，再用 `img_hash::image::load_from_memory(raw_data)` 二次解码用于 pHash。
+  - [ ] 同一份原始字节由两套解码路径处理，导致运行时格式兼容性出现分叉，是当前 500 的直接根因。
+
+- [ ] 512. 明确长期稳定修复要求
+  - [ ] Rust 图像处理链改为“单次权威解码 + 统一像素管线”，避免同一请求内出现双解码分叉。
+  - [ ] pHash 计算需要基于已成功解码后的统一像素数据完成，而不是再次从原始字节独立解码。
+  - [ ] 如需调整依赖组合，只能作为配套收敛手段，不能替代主方案。
+  - [ ] 完成后需要重新验证图片上传成功，并确认 Rust 日志中不再出现 `Failed to decode image for perceptual hash`。
 
 - [ ] 507. 冻结本轮范围，修复 `search-engine` 本地 Docker 构建失败（2026-04-08，待确认）
   - [ ] 本轮只修 Rust 构建链，不扩散到图像处理业务逻辑。

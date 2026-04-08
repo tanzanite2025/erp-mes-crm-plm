@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
-import { calculateLineAmount, recalculateOrderTotals } from '../utils/sales-order-calc'
+import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
@@ -10,7 +10,7 @@ export function useSalesOrderOps(
   const handleAddLine = useCallback(() => {
     setFormData((prev) => {
       const nextLines = [...(prev.lines || []), { ...EMPTY_SALES_ORDER_LINE } as SalesOrderLine]
-      const { lines, quantity, amount } = recalculateOrderTotals(nextLines)
+      const { lines, quantity, amount } = previewOrderTotals(nextLines)
       return { ...prev, lines, quantity, amount }
     })
   }, [setFormData])
@@ -18,7 +18,7 @@ export function useSalesOrderOps(
   const handleRemoveLine = useCallback((index: number) => {
     setFormData((prev) => {
       const nextLines = (prev.lines || []).filter((_, lineIndex) => lineIndex !== index)
-      const { lines, quantity, amount } = recalculateOrderTotals(nextLines)
+      const { lines, quantity, amount } = previewOrderTotals(nextLines)
       return { ...prev, lines, quantity, amount }
     })
   }, [setFormData])
@@ -39,10 +39,10 @@ export function useSalesOrderOps(
         if (field === 'qty' || field === 'price' || extraData) {
           const qty = Number(nextLines[index].qty) || 0
           const price = Number(nextLines[index].price) || 0
-          nextLines[index].amount = calculateLineAmount(qty, price)
+          nextLines[index].amount = previewLineAmount(qty, price)
         }
 
-        const { lines, quantity, amount } = recalculateOrderTotals(nextLines)
+        const { lines, quantity, amount } = previewOrderTotals(nextLines)
         return { ...prev, lines, quantity, amount }
       })
     },

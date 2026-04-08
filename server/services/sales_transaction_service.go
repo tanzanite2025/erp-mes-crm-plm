@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 	"xdfc-server/models"
@@ -99,24 +100,18 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 		return nil, fmt.Errorf("%w: no line remove detected", ErrSalesTransactionInvalidPayload)
 	}
 
-	totalQuantity := 0.0
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalQuantity += line.Qty
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculateSalesOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]interface{}{
-		"quantity":   totalQuantity,
-		"amount":     totalAmount,
+		"quantity":   current.Quantity,
+		"amount":     current.Amount,
 		"updated_by": operator,
 		"version":    current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Quantity = totalQuantity
-	current.Amount = totalAmount
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
@@ -136,8 +131,8 @@ func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input Exe
 		"payload": map[string]any{
 			"lineCount":        len(nextLines),
 			"removedLineCount": removedLineCount,
-			"quantity":         totalQuantity,
-			"amount":           totalAmount,
+			"quantity":         current.Quantity,
+			"amount":           current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -227,24 +222,18 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 		}
 	}
 
-	totalQuantity := 0.0
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalQuantity += line.Qty
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculateSalesOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]interface{}{
-		"quantity":   totalQuantity,
-		"amount":     totalAmount,
+		"quantity":   current.Quantity,
+		"amount":     current.Amount,
 		"updated_by": operator,
 		"version":    current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Quantity = totalQuantity
-	current.Amount = totalAmount
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
@@ -264,8 +253,8 @@ func executeOrderLineAddTx(tx *gorm.DB, current *models.SalesOrder, input Execut
 		"payload": map[string]any{
 			"lineCount":      len(nextLines),
 			"addedLineCount": newLineCount,
-			"quantity":       totalQuantity,
-			"amount":         totalAmount,
+			"quantity":       current.Quantity,
+			"amount":         current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -335,24 +324,18 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 		return nil, fmt.Errorf("%w: lines unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	totalQuantity := 0.0
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalQuantity += line.Qty
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculateSalesOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]interface{}{
-		"quantity":   totalQuantity,
-		"amount":     totalAmount,
+		"quantity":   current.Quantity,
+		"amount":     current.Amount,
 		"updated_by": operator,
 		"version":    current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Quantity = totalQuantity
-	current.Amount = totalAmount
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
@@ -371,8 +354,8 @@ func executeOrderLineContentChangeTx(tx *gorm.DB, current *models.SalesOrder, in
 		"nextVersion":     current.Version,
 		"payload": map[string]any{
 			"lineCount": len(nextLines),
-			"quantity":  totalQuantity,
-			"amount":    totalAmount,
+			"quantity":  current.Quantity,
+			"amount":    current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -430,24 +413,18 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		return nil, fmt.Errorf("%w: lines unchanged", ErrSalesTransactionInvalidPayload)
 	}
 
-	totalQuantity := 0.0
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalQuantity += line.Qty
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculateSalesOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]interface{}{
-		"quantity":   totalQuantity,
-		"amount":     totalAmount,
+		"quantity":   current.Quantity,
+		"amount":     current.Amount,
 		"updated_by": operator,
 		"version":    current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Quantity = totalQuantity
-	current.Amount = totalAmount
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
 
@@ -466,8 +443,8 @@ func executeOrderLinesChangeTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		"nextVersion":     current.Version,
 		"payload": map[string]any{
 			"lineCount": len(nextLines),
-			"quantity":  totalQuantity,
-			"amount":    totalAmount,
+			"quantity":  current.Quantity,
+			"amount":    current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -1478,4 +1455,22 @@ func parseSalesOrderStatusTransitionPayload(raw json.RawMessage) (SalesOrderStat
 	}
 
 	return payload, nil
+}
+
+// [BACKEND_AUTHORITY] 订单权威计算引擎。
+// 强制根据明细行的单价与数量重新核算。
+func recalculateSalesOrderAuthorityCosts(order *models.SalesOrder) {
+	totalQuantity := 0.0
+	totalAmount := 0.0
+
+	for i := range order.Lines {
+		line := &order.Lines[i]
+		// 计算单行金额，保留两位小数精度 (与财务对账一致)
+		line.Amount = math.Round(line.Qty*line.Price*100) / 100
+		totalQuantity += line.Qty
+		totalAmount += line.Amount
+	}
+
+	order.Quantity = totalQuantity
+	order.Amount = math.Round(totalAmount*100) / 100
 }

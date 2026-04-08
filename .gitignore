@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+server/search-engine/target/
+/server/search-engine/target/
 .env
 .env.production.local
 .env.test.local

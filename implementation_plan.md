@@ -1,4 +1,59 @@
 # implementation plan
+ 
+## 图片上传 pHash 运行时解码失败的长期稳定修复（2026-04-08，待确认）
+
+### 一、问题概述
+当前图片上传链已经确认命中正确的本地后端与 Rust 服务，但上传仍返回 `500 Image processing failed`。最新运行日志显示：
+
+1. Go 后端请求 `search-engine` 成功发出；
+2. Rust 返回 `400`，正文为 `Failed to decode image for perceptual hash`；
+3. `server/search-engine/src/processor.rs` 当前实现存在两次解码：
+   - `image::load_from_memory(raw_data)`
+   - `img_hash::image::load_from_memory(raw_data)`
+4. 第一次解码可成功用于尺寸读取与 WebP 编码，第二次解码却可能失败，说明当前并非“图片本身不可解”，而是“双解码 + 不同 crate 解码路径”带来的运行时兼容性分叉。
+
+### 二、修复目标
+本轮不做补丁式兜底，而是直接切到长期稳定方案：
+
+1. 建立单次权威解码流程；
+2. 让 pHash、宽高读取、WebP 编码共享同一份已解码图像数据；
+3. 降低后续 `image` / `img_hash` 版本漂移导致的运行时分叉风险；
+4. 保持现有对外接口、端口、返回结构不变。
+
+### 三、长期稳定实施方案
+
+#### A. 单次权威解码
+1. 在 `process_image(raw_data)` 入口只保留一次原始字节解码；
+2. 将解码结果立即转换为稳定、明确的像素表示（如 `RGBA8` 或其他单一内部格式）；
+3. 后续所有图像处理步骤都基于这份统一的内存图像数据进行。
+
+#### B. 统一 pHash 输入
+1. 不再让 `img_hash` 直接对 `raw_data` 再走一遍独立解码；
+2. 改为从已解码图像/统一像素缓冲构造 `img_hash` 可接受的图像对象；
+3. 确保 pHash 计算与 WebP 编码面对的是同一份像素事实来源。
+
+#### C. 依赖收敛作为配套，而非主解
+1. 如现有 `img_hash` API 对直接接收统一像素对象支持不足，再评估最小范围的依赖调整；
+2. 依赖调整仅用于配合单解码管线落地，不能继续维持“两个 crate 各解各的”结构；
+3. 若需调整依赖，必须继续保证 Docker 构建链可通过。
+
+### 四、风险与注意事项
+1. pHash 计算输入路径变化后，历史哈希值分布可能与旧实现存在轻微差异，需要确认是否仍满足当前查重容忍度；
+2. 不能破坏现有 WebP 编码输出与上传响应结构；
+3. 不能为了兼容单一图片样本而引入新的双路径逻辑，否则后续仍会复发；
+4. 若涉及依赖调整，需要同时复核 `docker compose build search-engine`。
+
+### 五、涉及文件
+- `server/search-engine/src/processor.rs`
+- `server/search-engine/Cargo.toml`（如需要配套收敛依赖）
+- `server/search-engine/Cargo.lock`（如依赖发生变化）
+- `walkthrough.md`
+
+### 六、验证口径
+1. 在本地 DEV 环境下重新上传当前失败图片，接口不再返回 `500`；
+2. Go 后端日志不再出现 `Failed to decode image for perceptual hash`；
+3. Rust 服务能稳定完成：尺寸读取、pHash 生成、WebP 编码；
+4. 如修改了依赖，`docker compose build search-engine` 仍需通过。
 
 ## `search-engine` Docker 构建链修复（2026-04-08，待确认）
 

@@ -30,6 +30,10 @@ class TaxService {
     });
   }
 
+  /**
+   * @deprecated [PREVIEW-ONLY] 前端价税计算逻辑已弃用。
+   * 警告：财务类数据的税额计算必须由后端根据税务引擎规则处理并回填，以确保精度和合法性一致。
+   */
   calculateFromTotal(totalAmount: number, taxRate: number) {
     const rateDecimal = taxRate / 100
     const amountExclTax = totalAmount / (1 + rateDecimal)

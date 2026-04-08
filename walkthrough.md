@@ -1,5 +1,107 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：图片上传 pHash 长期稳定修复（2026-04-08）
+
+### 问题现象
+前端代理修正为命中正确后端后，销售订单图片上传仍返回：
+
+- `500 Image processing failed`
+- Go 后端日志显示：`rust image worker returned status: 400, body: Failed to decode image for perceptual hash`
+
+继续下钻到 Rust `server/search-engine/src/processor.rs` 后确认，旧实现存在同一请求内的双解码：
+
+- `image::load_from_memory(raw_data)` 用于宽高读取与 WebP 压缩
+- `img_hash::image::load_from_memory(raw_data)` 再次独立解码用于 pHash
+
+这意味着同一份原始字节会经过两套不同 crate 的解码路径，运行时兼容性一旦分叉，就会出现“第一次能解、第二次不能解”的稳定失败。
+
+### 长期修复方式
+本轮没有继续做补丁式兜底，而是改为单次权威解码与统一像素管线：
+
+#### 1. Rust 图像处理改为单次权威解码
+文件：`server/search-engine/src/processor.rs`
+
+- 保留一次 `image::load_from_memory(raw_data)` 作为唯一权威解码入口；
+- 解码成功后立即转换为统一的 `RGBA8` 像素缓冲；
+- 后续处理不再从 `raw_data` 重新走第二次独立解码。
+
+#### 2. pHash 改为消费统一像素数据
+- 不再调用 `img_hash::image::load_from_memory(raw_data)`；
+- 改为用统一 `RGBA8` 像素缓冲构造 `img_hash` 可接受的图像对象；
+- 让 pHash、宽高读取、WebP 编码三步共享同一份图像事实来源。
+
+#### 3. 补充最小定向验证
+- 在 `server/search-engine/src/processor.rs` 新增定向测试 `process_image_handles_png_sample`；
+- 直接使用仓库现成样本 `public/images/shadcn-admin.png` 调用 `process_image(...)`；
+- 断言：
+  - `width > 0`
+  - `height > 0`
+  - `phash` 非空
+  - `webp_data` 非空
+
+### 验证结果
+
+#### 1. 本地 Rust 编译验证
+执行：
+
+```bash
+cargo build -j 1
+```
+
+结果：**通过**。
+
+说明当前 `processor.rs` 的单解码实现与现有依赖组合兼容。
+
+#### 2. Docker 镜像重建验证
+执行：
+
+```bash
+docker pull rust:1.88-alpine
+docker pull alpine:latest
+docker compose build search-engine
+docker compose up -d search-engine
+```
+
+结果：**通过**。
+
+说明新的 Rust 处理逻辑已成功进入 `search-engine` 镜像并完成容器重建。
+
+#### 3. 定向函数级验证
+执行：
+
+```bash
+cargo test process_image_handles_png_sample -- --nocapture
+```
+
+结果：**通过**。
+
+说明对真实 PNG 样本，新的 `process_image(...)` 已能完成：
+
+- 单次解码
+- pHash 生成
+- WebP 编码
+
+### 运行态附注
+本轮尝试过在容器内用 BusyBox `wget --post-file` 直接回放二进制图片到 `/v1/process-image`，但诊断日志显示：
+
+- `body_len=8`
+- `body_prefix=89 50 4E 47 0D 0A 1A 0A`
+
+也就是该测试方式只发出了 PNG 文件头 8 字节，而非完整图片，因此随后出现的：
+
+- `Failed to decode image from memory`
+
+不能作为当前业务修复失败的结论。该现象属于容器内临时 HTTP 工具链对二进制请求体的失真，不代表新的 `process_image(...)` 处理链仍然失败。
+
+### 本轮结论
+本轮已完成图片上传 pHash 根因的长期稳定修复：
+
+- 已移除旧的“双解码分叉”结构；
+- `search-engine` 已切换为“单次权威解码 + 统一像素管线”；
+- Rust 本地编译、Docker 重建、真实 PNG 样本函数级测试均已通过。
+
+当前若要补最后一层业务闭环，只剩在现有已登录 DEV 会话中再做一次真实页面上传回归，确认前端上传不再返回 `500`。
+
 ## 专项：`search-engine` Docker 构建链修复（2026-04-08）
 
 ### 问题现象

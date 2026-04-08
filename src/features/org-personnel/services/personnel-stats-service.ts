@@ -1,70 +1,42 @@
-import { EmployeeCoreService } from './employee-core-service'
-import { LeaveService } from './leave-service'
+import { apiFetch } from '@/lib/api-client'
 
 export interface EmployeeStats {
   employeeId: string
   name: string
   deptName?: string
-  attendanceRate: number // 出勤率 0-1
+  attendanceRate: number 
   leaveDays: number
   tenureYears: number
-  score: number // 综合评分
+  score: number 
 }
 
 /**
- * PersonnelStatsService - 专门用于人员统计与优秀员工筛选逻辑。
- * 完全隔离开发，不修改核心业务 Service。
+ * PersonnelStatsService - 负责人员分析统计的前端服务。
+ * 遵循“后端权威”原则：所有的核心评分（优秀员工算法）均在后端计算。
+ * 前端仅作为展示层，不包含业务计算模型。
  */
 export const PersonnelStatsService = {
   /**
    * 获取全员深度统计分析（含优秀员工排名）
+   * 逻辑变迁：从前端手动 map/filter/score 重构成直接请求后端权威接口。
    */
   getExcellentEmployeeRanking: async (): Promise<EmployeeStats[]> => {
-    // 1. 获取基础数据
-    const [employees, leaves] = await Promise.all([
-      EmployeeCoreService.getEmployees(),
-      // 模拟获取全量请假记录（实际应有后端接口支持全量统计）
-      // 此处为了隔离开发，即便 LeaveService 报错也不应崩溃
-      LeaveService.getMyLeaveRequests().catch(() => []) 
-    ])
+    // 调用后端权威统计接口
+    const data = await apiFetch<EmployeeStats[]>('/stats/excellence')
+    
+    if (!data) {
+       throw new Error('[CRITICAL_PATH] Backend failed to return personnel analytics data')
+    }
 
-    // 2. 计算统计指标
-    const stats: EmployeeStats[] = employees.map(emp => {
-      // 计算工龄
-      const joinedDate = emp.joinedDate ? new Date(emp.joinedDate) : new Date()
-      const tenureYears = Math.floor((new Date().getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24 * 365))
-      
-      // 计算请假天数（此处仅为演示逻辑，过滤该员工的已批准请假）
-      const empLeaves = leaves.filter(l => l.employeeId === emp.id && l.status === 'APPROVED')
-      const leaveDays = empLeaves.reduce((acc, curr) => acc + (curr.durationDays || 0), 0)
-
-      // 计算出勤率（简单假设周期为 30 天）
-      const totalWorkDays = 22
-      const attendanceRate = Math.max(0, (totalWorkDays - leaveDays) / totalWorkDays)
-
-      // 优秀员工评分模型：Score = (出勤率 * 50) + (工龄权重 * 20) + (基础分 30)
-      const score = (attendanceRate * 50) + (Math.min(tenureYears, 10) * 2) + 30
-
-      return {
-        employeeId: emp.id,
-        name: emp.name,
-        deptName: emp.deptName,
-        attendanceRate,
-        leaveDays,
-        tenureYears,
-        score: Math.round(score * 10) / 10
-      }
-    })
-
-    // 3. 排序：按评分降序
-    return stats.sort((a, b) => b.score - a.score)
+    return data
   },
 
   /**
-   * 获取部门维度的统计概况
+   * 获取部门维度的统计概况 (可根据需要也迁移至后端)
    */
   getDeptOverview: async () => {
-    const employees = await EmployeeCoreService.getEmployees()
+    // 暂时保留简单 UI 统计，或后续统一由后端聚合
+    const employees = await apiFetch<any[]>('/employees')
     const depts: Record<string, number> = {}
     
     employees.forEach(emp => {

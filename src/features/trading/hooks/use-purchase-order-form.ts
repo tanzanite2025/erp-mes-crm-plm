@@ -7,6 +7,7 @@ import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
 
 const logger = createLogger('usePurchaseOrderForm')
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
@@ -129,13 +130,14 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
             if (field === 'qty' || field === 'price' || extraData) {
                 const q = Number(nextLines[index].qty) || 0
                 const p = Number(nextLines[index].price) || 0
-                nextLines[index].amount = Number((q * p).toFixed(2))
+                nextLines[index].amount = previewLineAmount(q, p)
             }
 
+            const { lines, amount } = previewOrderTotals(nextLines)
             setFormData((prev) => ({
                 ...prev,
-                lines: nextLines,
-                amount: nextLines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0),
+                lines: lines as PurchaseOrderLine[],
+                amount: amount,
             }))
         },
         [formData.lines, setFormData]

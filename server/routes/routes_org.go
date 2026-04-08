@@ -18,6 +18,7 @@ func registerOrgRoutes(authorized *gin.RouterGroup) {
 
 
 	authorized.GET("/org/tree", middleware.RequirePermissions(authz.MenuOrg), handlers.GetOrgTreeHandler)
+	authorized.GET("/stats/excellence", middleware.RequirePermissions(authz.MenuOrg), handlers.GetExcellentRankingHandler)
 
 	authorized.POST("/org", orgWrite, handlers.SaveOrgHandler)
 	authorized.POST("/org/sync", adminOnly, handlers.BulkSyncOrgHandler)

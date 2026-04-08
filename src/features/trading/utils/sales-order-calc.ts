@@ -1,16 +1,21 @@
-import { type SalesOrderLine } from '../data/schema'
+
 
 /**
- * 计算单行的总额 (Fixed 2 digits)
+ * [PREVIEW-ONLY] 前端预览计算单行的总额 (仅用于 UI 实时反馈)
+ * 警告：此计算结果严禁作为业务提交的最终数据。最终金额由 Go 后端 Authority 重算引擎裁定。
  */
-export const calculateLineAmount = (qty: number, price: number): number => {
-  return Number((qty * price).toFixed(2))
+export const previewLineAmount = (qty: number, price: number): number => {
+  return roundToTwo(qty * price)
 }
 
 /**
- * 重新编排行号并计算总汇总指标
+ * [PREVIEW-ONLY] 前端预览重新汇总指标
+ * 警告：此计算结果仅用于 UI 渲染。最终数据以 API 返回的后端重算结果为准。
+ * 支持 SalesOrderLine 和 PurchaseOrderLine (Duck Typing)
  */
-export const recalculateOrderTotals = (lines: SalesOrderLine[]) => {
+export const previewOrderTotals = <T extends { lineNo: number; qty: number; price: number; amount: number }>(
+  lines: T[]
+) => {
   const reindexed = lines.map((line, index) => ({
     ...line,
     lineNo: index + 1,
@@ -22,8 +27,16 @@ export const recalculateOrderTotals = (lines: SalesOrderLine[]) => {
   return {
     lines: reindexed,
     quantity: totalQty,
-    amount: totalAmount,
+    amount: roundToTwo(totalAmount),
   }
+}
+
+/**
+ * 精度对齐工具：保留两位小数 (四舍五入)
+ * 匹配后端 math.Round(x*100)/100 逻辑
+ */
+export const roundToTwo = (num: number): number => {
+  return Math.round((num + Number.EPSILON) * 100) / 100
 }
 
 /**

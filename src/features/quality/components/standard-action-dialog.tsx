@@ -108,10 +108,9 @@ export function StandardActionDialog({
             delta: isPatch ? delta : undefined
         })
         
-        const nextVersion = isPatch ? (Number(formData.version || 1) + 0.1).toFixed(1) : '1.0'
         toast.success(
             isPatch
-                ? t('quality.standards.dialog.action.toastUpdated', { version: nextVersion })
+                ? t('quality.standards.dialog.action.toastUpdated')
                 : t('quality.standards.dialog.action.toastCreated')
         )
         onOpenChange(false)
@@ -255,7 +254,7 @@ export function StandardActionDialog({
                             <p className="text-[10px] font-black uppercase tracking-widest text-primary">{t('quality.standards.dialog.action.versionNoticeTitle')}</p>
                             <p className="text-[10px] font-medium leading-relaxed text-primary/70">
                                 {isEdit
-                                    ? t('quality.standards.dialog.action.versionNoticeEdit', { version: (Number(formData.version || 1) + 0.1).toFixed(1) })
+                                    ? t('quality.standards.dialog.action.versionNoticeEdit')
                                     : t('quality.standards.dialog.action.versionNoticeCreate')}
                             </p>
                         </div>

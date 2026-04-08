@@ -146,8 +146,29 @@ async fn search(
 async fn process_image_handler(
     body: Bytes,
 ) -> Result<Json<ImageProcessResponse>, (StatusCode, String)> {
+    let body_prefix_hex = body
+        .iter()
+        .take(16)
+        .map(|byte| format!("{:02X}", byte))
+        .collect::<Vec<_>>()
+        .join(" ");
+    tracing::info!(
+        body_len = body.len(),
+        body_prefix = %body_prefix_hex,
+        "Received image processing request"
+    );
+
     let result = processor::process_image(&body)
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+        .map_err(|e| {
+            let message = e.to_string();
+            tracing::error!(
+                error = %message,
+                body_len = body.len(),
+                body_prefix = %body_prefix_hex,
+                "Image processing failed"
+            );
+            (StatusCode::BAD_REQUEST, message)
+        })?;
     
     use base64::{Engine as _, engine::general_purpose};
     let webp_base64 = general_purpose::STANDARD.encode(&result.webp_data);

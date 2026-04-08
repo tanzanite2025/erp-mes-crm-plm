@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"xdfc-server/models"
 
@@ -247,19 +248,16 @@ func executePurchaseOrderLineRemoveTx(tx *gorm.DB, current *models.PurchaseOrder
 		return nil, fmt.Errorf("%w: no line remove detected", ErrPurchaseTransactionInvalidPayload)
 	}
 
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculatePurchaseOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]any{
-		"amount":  totalAmount,
+		"amount":  current.Amount,
 		"version": current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Amount = totalAmount
 	current.Version = current.Version + 1
 
 	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
@@ -275,7 +273,7 @@ func executePurchaseOrderLineRemoveTx(tx *gorm.DB, current *models.PurchaseOrder
 		"payload": map[string]any{
 			"lineCount":        len(nextLines),
 			"removedLineCount": removedLineCount,
-			"amount":           totalAmount,
+			"amount":           current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -362,19 +360,16 @@ func executePurchaseOrderLineAddTx(tx *gorm.DB, current *models.PurchaseOrder, i
 		}
 	}
 
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculatePurchaseOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]any{
-		"amount":  totalAmount,
+		"amount":  current.Amount,
 		"version": current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Amount = totalAmount
 	current.Version = current.Version + 1
 
 	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
@@ -390,7 +385,7 @@ func executePurchaseOrderLineAddTx(tx *gorm.DB, current *models.PurchaseOrder, i
 		"payload": map[string]any{
 			"lineCount":      len(nextLines),
 			"addedLineCount": newLineCount,
-			"amount":         totalAmount,
+			"amount":         current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -457,19 +452,16 @@ func executePurchaseOrderLineContentChangeTx(tx *gorm.DB, current *models.Purcha
 		return nil, fmt.Errorf("%w: lines unchanged", ErrPurchaseTransactionInvalidPayload)
 	}
 
-	totalAmount := 0.0
-	for _, line := range nextLines {
-		totalAmount += line.Amount
-	}
+	// [BACKEND_AUTHORITY] 强制重算权威金额与汇总，忽略前端传入值
+	current.Lines = nextLines
+	recalculatePurchaseOrderAuthorityCosts(current)
 
 	if err := tx.Model(current).Updates(map[string]any{
-		"amount":  totalAmount,
+		"amount":  current.Amount,
 		"version": current.Version + 1,
 	}).Error; err != nil {
 		return nil, err
 	}
-	current.Lines = nextLines
-	current.Amount = totalAmount
 	current.Version = current.Version + 1
 
 	if err := tx.Model(current).Association("Lines").Replace(nextLines); err != nil {
@@ -484,7 +476,7 @@ func executePurchaseOrderLineContentChangeTx(tx *gorm.DB, current *models.Purcha
 		"nextVersion":     current.Version,
 		"payload": map[string]any{
 			"lineCount": len(nextLines),
-			"amount":    totalAmount,
+			"amount":    current.Amount,
 		},
 	})
 	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
@@ -642,4 +634,18 @@ func parsePurchaseOrderLineContentChangePayload(raw json.RawMessage) (PurchaseOr
 	}
 
 	return payload, nil
+}
+
+// [BACKEND_AUTHORITY] 采购订单权威计算引擎。
+func recalculatePurchaseOrderAuthorityCosts(order *models.PurchaseOrder) {
+	totalAmount := 0.0
+
+	for i := range order.Lines {
+		line := &order.Lines[i]
+		// 计算单行金额，保留两位小数精度
+		line.Amount = math.Round(line.Qty*line.Price*100) / 100
+		totalAmount += line.Amount
+	}
+
+	order.Amount = math.Round(totalAmount*100) / 100
 }
