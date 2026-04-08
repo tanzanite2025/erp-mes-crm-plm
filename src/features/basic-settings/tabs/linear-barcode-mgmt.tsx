@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Barcode, RotateCcw, Save, Settings2 } from 'lucide-react'
@@ -15,8 +15,8 @@ import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Product } from '@/features/engineering/data/schema'
-import { productService } from '@/features/engineering/services/product-service'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { ProductCoreService } from '@/features/engineering/services/product-core-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
@@ -106,8 +106,8 @@ export function LinearBarcodeMgmt() {
     if (typeof window === 'undefined') return
 
     try {
-      const savedProducts = await productService.getProducts()
-      await dictionaryService.init()
+      const savedProducts = await ProductCoreService.getProducts()
+      await DictionaryCoreService.init()
       const savedAppearance = await StorageService.getItem<AppearanceMapping>(APPEARANCE_MAPPING_KEY)
 
       setAppearanceMapping(savedAppearance || DEFAULT_APPEARANCE_MAPPING)

@@ -1,7 +1,7 @@
 import { type Dispatch, type SetStateAction, useEffect } from 'react'
 import { type DictionaryEntry, type DictionaryGroup } from '../data/schema'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { dictionaryService } from '../services/dictionary-service'
+import { DictionaryCoreService } from '../services/dictionary-core-service'
 
 interface UseDictionaryBootstrapParams {
     activeGroupId: string
@@ -24,10 +24,10 @@ export function useDictionaryBootstrap({
 }: UseDictionaryBootstrapParams) {
     useEffect(() => {
         const refreshData = async () => {
-            await dictionaryService.init()
+            await DictionaryCoreService.init()
 
-            const initialGroups = dictionaryService.getGroups()
-            const initialEntries = dictionaryService.getEntries()
+            const initialGroups = DictionaryCoreService.getGroups()
+            const initialEntries = DictionaryCoreService.getEntries()
             setGroups(initialGroups)
             setEntries(initialEntries)
             if (initialGroups.length > 0 && !activeGroupId) {

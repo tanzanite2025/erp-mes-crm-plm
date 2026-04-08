@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder } from '../../data/schema'
+import { changePurchaseOrderExpectedDate } from '../services/purchase-transaction-service'
 import {
   confirmPurchaseReceipt,
   createPurchaseOrder,
@@ -55,6 +56,28 @@ export const usePurchaseOrderMutations = () => {
     onError: handleServerError,
   })
 
+  const expectedDateChangeMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      expectedDate,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      expectedDate: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changePurchaseOrderExpectedDate(orderId, { expectedDate, operator, expectedVersion, actorId }),
+    onSuccess: (data) => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+    },
+    onError: handleServerError,
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deletePurchaseOrder,
     onSuccess: () => {
@@ -75,5 +98,5 @@ export const usePurchaseOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, patchMutation, deleteMutation, confirmReceiptMutation }
+  return { createMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation }
 }

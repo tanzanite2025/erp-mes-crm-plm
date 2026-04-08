@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type Material } from '../data/schema'
-import { saveMaterials } from '../services/material-service'
+import { MaterialMaintenanceService } from '../services/material-maintenance-service'
 import { MaterialExcelService } from '../services/excel-service'
 import { isConflictImportError } from '../utils/material-mgmt-utils'
 
@@ -72,7 +72,9 @@ export function useMaterialMgmtActions({
         return
       }
 
-      await saveMaterials(parsedMaterials, { globalVersion: globalSnapshotVersion })
+      await MaterialMaintenanceService.saveMaterials(parsedMaterials, {
+        globalVersion: globalSnapshotVersion?.toString(),
+      })
       queryClient.invalidateQueries({ queryKey: ['material-archive'] })
       toast.success(
         t('materialArchive.actions.importSuccess', { count: parsedMaterials.length }),

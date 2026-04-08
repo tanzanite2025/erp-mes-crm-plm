@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createLogger } from '@/lib/logger'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
+import { ProductMaintenanceService } from '../services/product-maintenance-service'
+import { ProductTypeService } from '../services/product-type-service'
 import { type Product, type ProductType } from '../data/schema'
 
 const logger = createLogger('useProductMgmt')
@@ -16,8 +18,8 @@ export function useProductMgmt() {
         setIsLoading(true)
         try {
             const [storedProducts, storedTypes] = await Promise.all([
-                productService.getProducts(),
-                productService.getProductTypes(),
+                ProductCoreService.getProducts(),
+                ProductTypeService.getProductTypes(),
             ])
             setData(storedProducts || [])
             setProductTypes(storedTypes || [])
@@ -79,11 +81,11 @@ export function useProductMgmt() {
 
     const handleFormSubmit = async (formData: Product | Product[], isPatch?: boolean, delta?: any) => {
         if (Array.isArray(formData)) {
-            await productService.bulkSyncProducts(formData)
+            await ProductMaintenanceService.bulkSyncProducts(formData)
         } else if (isPatch && formData.id && delta) {
-            await productService.patchProduct(formData.id, delta, formData.version || 1)
+            await ProductMaintenanceService.patchProduct(formData.id, delta, formData.version || 1)
         } else {
-            await productService.saveProduct(formData)
+            await ProductMaintenanceService.createProduct(formData)
         }
         window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
     }

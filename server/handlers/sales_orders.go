@@ -515,32 +515,16 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 		return
 	}
 
+	if order.Status != "Canceled" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "未作废订单不可直接删除，请先执行作废事务"})
+		return
+	}
+
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if order.Status == "Canceled" {
-			return tx.Model(&order).Updates(map[string]interface{}{
-				"is_deleted": true,
-				"version":    order.Version + 1,
-			}).Error
-		}
-
-		if err := tx.Model(&order).Updates(map[string]interface{}{
-			"status":  "Canceled",
-			"version": order.Version + 1,
-		}).Error; err != nil {
-			return err
-		}
-
-		if len(order.Lines) > 0 {
-			lineIDs := make([]uint, 0, len(order.Lines))
-			for _, line := range order.Lines {
-				lineIDs = append(lineIDs, line.ID)
-			}
-			if err := tx.Model(&models.SalesOrderLine{}).Where("id IN ?", lineIDs).Update("status", "Canceled").Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return tx.Model(&order).Updates(map[string]interface{}{
+			"is_deleted": true,
+			"version":    order.Version + 1,
+		}).Error
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除订单失败: " + err.Error()})

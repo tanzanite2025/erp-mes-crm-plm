@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { SPEC_COMPONENTS, getEffectiveTemplate } from './specs'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductTypeService } from '../services/product-type-service'
 
 type ProductOverviewTabProps = {
     product: Product
@@ -25,7 +25,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
         const loadTemplateData = async () => {
             setIsLoading(true)
             try {
-                const types = await productService.getProductTypes()
+                const types = await ProductTypeService.getProductTypes()
                 const type = types.find((entry) => entry.id === product.typeId) || null
                 setCategoryType(type)
                 

@@ -3,7 +3,7 @@ import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type Customer, type SalesOrder } from '../../data/schema'
 
 type SalesOrderFormState = Partial<SalesOrder>
@@ -94,7 +94,7 @@ export function OrderHeaderFields({
               value={formData.type}
               onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
             >
-              {dictionaryService.getOptions('ORDER_TYPE').map((option) => (
+              {DictionaryCoreService.getOptions('ORDER_TYPE').map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -111,7 +111,7 @@ export function OrderHeaderFields({
               value={formData.classification}
               onChange={(e) => onClassificationChange(e.target.value)}
             >
-              {dictionaryService.getOptions('ORDER_CLASSIFICATION').map((option) => (
+              {DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

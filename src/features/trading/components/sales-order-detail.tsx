@@ -3,7 +3,6 @@ import { useSearch } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
-import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { CADViewerDialog } from '@/features/engineering-db/components/cad-viewer/cad-viewer-dialog'
@@ -12,7 +11,7 @@ import { PDFViewerDialog } from '@/features/engineering-db/components/pdf-viewer
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { FileResolverService } from '@/features/engineering-db/services/file-resolver-service'
-import { productService } from '@/features/engineering/services/product-service'
+import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import { useAuthStore } from '@/stores/auth-store'
 import type { SalesOrder } from '../data/schema'
@@ -55,7 +54,7 @@ export function SalesOrderDetail({
     initialOrder?.id || ''
   )
   const order = detailedOrder || initialOrder
-  const { patchMutation, claimMutation } = useSalesOrderMutations()
+  const { claimMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
   const user = useAuthStore((state) => state.user)
   const { commands } = useCommands()
   const canHardDelete = allowsAction('action_trading_sales_order_delete')
@@ -91,7 +90,7 @@ export function SalesOrderDetail({
     try {
       let targetId = planId
       if (!targetId && productId) {
-        const product = await productService.getProductById(productId) as ProductPreviewRefs | null
+        const product = await ProductCoreService.getProductById(productId) as ProductPreviewRefs | null
         if (product) {
           targetId =
             type === 'spec'
@@ -139,18 +138,28 @@ export function SalesOrderDetail({
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
 
-    // SDRTS 状态变更隔离
-    const tracker = trackDelta(order)
-    const draft = tracker.data as SalesOrder
-    Object.assign(draft, payload)
-    const delta = tracker.commit()
+    const nextStatus = payload.status
+    const nextStatusNote = payload.statusNote
+    if (!nextStatus) return
+    if (nextStatus === 'Canceled') {
+      cancelMutation.mutate({
+        orderId: order.id,
+        reason: nextStatusNote,
+        operator: user?.accountNo || 'Unknown',
+        actorId: user?.id,
+        expectedVersion: order.version,
+      })
+      return
+    }
+    if (nextStatus === order.status && (nextStatusNote ?? '') === (order.statusNote ?? '')) return
 
-    if (Object.keys(delta).length === 0) return
-
-    patchMutation.mutate({
-      id: order.id,
-      delta,
-      version: order.version
+    statusTransitionMutation.mutate({
+      orderId: order.id,
+      status: nextStatus,
+      statusNote: nextStatusNote,
+      operator: user?.accountNo || 'Unknown',
+      actorId: user?.id,
+      expectedVersion: order.version,
     })
   }
 
@@ -165,6 +174,8 @@ export function SalesOrderDetail({
       orderId: order.id,
       lineNos,
       operator: user?.accountNo || 'Unknown',
+      actorId: user?.id,
+      expectedVersion: order.version,
     })
   }
 
@@ -176,6 +187,8 @@ export function SalesOrderDetail({
       orderId: order.id,
       lineNos: [lineNo],
       operator: user?.accountNo || 'Unknown',
+      actorId: user?.id,
+      expectedVersion: order.version,
     })
   }
 

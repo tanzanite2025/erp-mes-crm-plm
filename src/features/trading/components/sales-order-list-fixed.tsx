@@ -24,6 +24,7 @@ import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
@@ -46,6 +47,7 @@ export function SalesOrderList() {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const search = useSearch({ from: '/_authenticated/trading/sales-orders' })
+  const user = useAuthStore((state) => state.user)
   
   // UI States
   const [page, setPage] = useState(1)
@@ -58,7 +60,7 @@ export function SalesOrderList() {
 
   // Data Fetching
   const { data, isLoading, isError, error } = useGetSalesOrders(page, pageSize)
-  const { deleteMutation } = useSalesOrderMutations()
+  const { deleteMutation, cancelMutation } = useSalesOrderMutations()
 
   const orders = useMemo(() => data?.items ?? [], [data?.items])
   const total = data?.total || 0
@@ -103,7 +105,20 @@ export function SalesOrderList() {
     runConfirmedAction({
       permission: 'action_trading_sales_order_delete',
       confirmKey: 'common.actions.delete',
-      onAction: () => deleteMutation.mutate(id)
+      onAction: () => {
+        const order = orders.find((item) => item.id === id)
+        if (!order) return
+        if (order.status === 'Canceled') {
+          deleteMutation.mutate(id)
+          return
+        }
+        cancelMutation.mutate({
+          orderId: id,
+          operator: user?.accountNo || 'Unknown',
+          actorId: user?.id,
+          expectedVersion: order.version,
+        })
+      }
     })
   }
 

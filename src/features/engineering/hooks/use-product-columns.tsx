@@ -3,7 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { type Product, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductMaintenanceService } from '../services/product-maintenance-service'
 import { toast } from 'sonner'
 
 export function useProductColumns(
@@ -104,7 +104,7 @@ export function useProductColumns(
                             if (!confirmed) return
 
                             try {
-                                await productService.deleteProduct(row.original.id)
+                                await ProductMaintenanceService.deleteProduct(row.original.id)
                                 window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
                                 toast.success(t('engineering.productArchive.toasts.deleteSuccess'))
                                 onDeleteSuccess()

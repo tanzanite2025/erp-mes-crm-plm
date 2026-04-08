@@ -1,6 +1,6 @@
 'use client'
 
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -42,7 +42,7 @@ export const PersistenceService = {
         hasAnyPermission(permissionIds, ['menu_settings', 'menu_engineering', 'menu_trading', 'menu_org'])
 
       if (canInitDictionary) {
-        dictionaryService.init().then(() => {
+        DictionaryCoreService.init().then(() => {
           logger.info('Dictionary background loaded')
         })
       } else {

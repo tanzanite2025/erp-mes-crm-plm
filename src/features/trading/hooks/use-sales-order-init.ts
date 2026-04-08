@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
 import { generateSalesOrderId } from '../utils/sales-order-calc'
@@ -19,10 +19,10 @@ export function useSalesOrderInit(
       }
 
       const defaultClass = 'GENERAL'
-      const classOpt = dictionaryService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === defaultClass)
+      const classOpt = DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === defaultClass)
       const initialBarcode = await numberingService.previewContractBarcode(classOpt?.ext || 'GS')
       const newId = generateSalesOrderId()
-      const typeOpt = dictionaryService.getOptions('ORDER_TYPE')[0]
+      const typeOpt = DictionaryCoreService.getOptions('ORDER_TYPE')[0]
 
       setFormData({
         id: newId,

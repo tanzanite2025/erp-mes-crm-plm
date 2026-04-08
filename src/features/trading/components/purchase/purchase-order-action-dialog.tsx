@@ -10,8 +10,10 @@ import {
 } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { materialService, type Material } from '@/features/material-archive/services/material-service'
+import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
+import { type Material } from '@/features/material-archive/data/schema'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
+import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder } from '../../data/schema'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { useGetSuppliers } from '../../supplier'
@@ -32,6 +34,7 @@ export function PurchaseOrderActionDialog({
 }: PurchaseOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
+  const user = useAuthStore((state) => state.user)
   const { data: suppliers = [] } = useGetSuppliers({ enabled: open })
   const { data: detailedOrder, isLoading: isDetailLoading } = useGetPurchaseOrderDetail(
     summaryOrder?.id || ''
@@ -49,7 +52,7 @@ export function PurchaseOrderActionDialog({
       try {
         const [unitList, materialList] = await Promise.all([
           unitService.getUnits(),
-          materialService.getMaterialOptions(),
+          MaterialCoreService.getMaterialOptions(),
         ])
         setUnits(unitList || [])
         setMaterials(materialList || [])
@@ -64,7 +67,7 @@ export function PurchaseOrderActionDialog({
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const { createMutation, patchMutation } = usePurchaseOrderMutations()
+  const { createMutation, patchMutation, expectedDateChangeMutation } = usePurchaseOrderMutations()
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -79,15 +82,28 @@ export function PurchaseOrderActionDialog({
           return
         }
 
+        const deltaKeys = Object.keys(delta)
+        const isExpectedDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'expectedDate')
+
         if (activeOrder.version === undefined || activeOrder.version === null) {
           throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${activeOrder.id}`)
         }
 
-        await patchMutation.mutateAsync({
-          id: activeOrder.id,
-          delta,
-          version: activeOrder.version,
-        })
+        if (isExpectedDateOnlyChange) {
+          await expectedDateChangeMutation.mutateAsync({
+            orderId: activeOrder.id,
+            expectedDate: formData.expectedDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: activeOrder.version,
+          })
+        } else {
+          await patchMutation.mutateAsync({
+            id: activeOrder.id,
+            delta,
+            version: activeOrder.version,
+          })
+        }
       } else {
         // 新建采购单
         await createMutation.mutateAsync(formData)

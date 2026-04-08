@@ -1,5 +1,7 @@
-import { materialService, type Material } from '@/features/material-archive/services/material-service'
-import { productService, type Product } from '@/features/engineering/services/product-service'
+import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
+import { type Material } from '@/features/material-archive/data/schema'
+import { ProductCoreService } from '@/features/engineering/services/product-core-service'
+import { type Product } from '@/features/engineering/data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type InboundRecord, type ShipmentRecord } from './inventory-transaction-service'
@@ -84,8 +86,8 @@ export const InventoryCoreService = {
      */
     searchMasterData: async (query: string): Promise<MasterDataSearchResult[]> => {
         const [materials, products, records] = await Promise.all([
-            materialService.getMaterialOptions(),
-            productService.getProducts(),
+            MaterialCoreService.getMaterialOptions(),
+            ProductCoreService.getProducts(),
             apiFetch<InventoryRecord[]>('/inventory').then(res => ensureArrayResponse<InventoryRecord>(res, 'InventoryCoreService.searchMasterData'))
         ])
 

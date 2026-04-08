@@ -6,13 +6,14 @@ import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import { MaterialCoreService } from '../../material-archive/services/material-core-service'
+import { MaterialMaintenanceService } from '../../material-archive/services/material-maintenance-service'
 import { type Material } from '../../material-archive/data/schema'
-import { materialService } from '../../material-archive/services/material-service'
 import { type BOM, type Product } from '../data/schema'
 import { bomService } from '../services/bom-service'
 import { ExcelService } from '../services/excel-service'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 
 const logger = createLogger('useBOMData')
 
@@ -41,14 +42,14 @@ export function useBOMData() {
     try {
       const [boms, loadedProducts, _, loadedMaterials] = await Promise.all([
         bomService.getBOMs(),
-        productService.getProducts(),
-        dictionaryService.init(),
-        materialService.getMaterialOptions(),
+        ProductCoreService.getProducts(),
+        DictionaryCoreService.init(),
+        MaterialCoreService.getMaterialOptions(),
       ])
 
       setData(boms || [])
       setProducts(loadedProducts || [])
-      setDictEntries(dictionaryService.getEntries() || [])
+      setDictEntries(DictionaryCoreService.getEntries() || [])
       setMaterials(loadedMaterials || [])
     } catch (error) {
       logger.error('BOM data load error', error)
@@ -119,9 +120,9 @@ export function useBOMData() {
     void refreshAll()
 
     const handleProductsUpdate = () => void refreshAll()
-    const handleDictsUpdate = () => setDictEntries(dictionaryService.getEntries() || [])
+    const handleDictsUpdate = () => setDictEntries(DictionaryCoreService.getEntries() || [])
     const handleMaterialsUpdate = async () => {
-      const loadedMaterials = await materialService.getMaterialOptions()
+      const loadedMaterials = await MaterialCoreService.getMaterialOptions()
       setMaterials(loadedMaterials || [])
     }
 
@@ -140,7 +141,7 @@ export function useBOMData() {
     const loadingId = toast.loading(t('engineering.bomArchive.toasts.downloadLoading'))
 
     try {
-      const loadedMaterials = await materialService.getMaterialOptions()
+      const loadedMaterials = await MaterialCoreService.getMaterialOptions()
       await ExcelService.generateBOMTemplate(loadedMaterials || [], products, dictEntries)
       toast.success(t('engineering.bomArchive.toasts.downloadSuccess'), { id: loadingId })
     } catch (error) {
@@ -198,12 +199,12 @@ export function useBOMData() {
         const sanitizedMaterials = extractedMaterials.filter(
           (material) => material.name && material.code && material.id
         )
-        await materialService.saveMaterials(sanitizedMaterials)
+        await MaterialMaintenanceService.saveMaterials(sanitizedMaterials)
       }
 
-      const latestMaterials = (await materialService.getMaterialOptions()) || []
+      const latestMaterials = (await MaterialCoreService.getMaterialOptions()) || []
       const processedItems = validItems.map((item) => {
-        const material = latestMaterials.find((entry) => entry.id === item.materialId)
+        const material = latestMaterials.find((entry: Material) => entry.id === item.materialId)
 
         return {
           id: crypto.randomUUID(),

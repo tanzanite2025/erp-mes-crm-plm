@@ -48,7 +48,7 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { type Material, type PackagingRule } from '../data/schema'
-import { materialService } from '../services/material-service'
+import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
 function buildRelation(rule: Partial<PackagingRule> | null) {
@@ -108,7 +108,7 @@ export function MaterialAssemblyManager() {
       try {
         const [allRules, allMaterials] = await Promise.all([
           packagingService.getRules(),
-          materialService.getMaterialOptions(),
+          MaterialCoreService.getMaterialOptions(),
         ])
         setRules(allRules)
         setMaterials(allMaterials)

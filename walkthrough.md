@@ -1,5 +1,477 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：`purchase` 事务化第一刀（2026-04-08）
+
+### 本轮目标
+将已在 `sales` 域验证通过的 transaction 样板横向复制到 `purchase` 域，并以最小切口先收口采购订单 `expectedDate` 的纯头部语义变更。
+
+### 已执行变更
+更新：
+- `server/services/purchase_transaction_service.go`
+- `server/handlers/purchase_transaction_handlers.go`
+- `server/routes/routes_trading.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `purchase` transaction 骨架；
+- 新增采购订单 `ORDER_DELIVERY_DATE_CHANGE` intent，用于 `expectedDate` 事务化；
+- 新增采购事务 handler 与 `POST /purchase/orders/:id/transactions` 路由；
+- 前端新增 `changePurchaseOrderExpectedDate()` 与 `expectedDateChangeMutation`；
+- 在采购订单编辑对话框中，当 delta 仅包含 `expectedDate` 时，优先走 transaction；
+- 其他采购订单编辑仍继续保留在现有 `patchMutation` 链中，避免把 transaction 退化为 patch 包装壳。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Purchase
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `purchase` 事务化第一刀：
+
+- `purchase` 域已具备可复用的 transaction 入口样板；
+- 采购订单 `expectedDate` 已成为独立 transaction 语义；
+- `sales` 样板已开始横向复制到 `purchase` 域。
+
+## P1：`sales` 行级事务化第四刀：`ORDER_LINE_REMOVE`（2026-04-08）
+
+### 本轮目标
+在已完成 `ORDER_LINE_ADD` 的基础上，继续细化 `sales` 行级事务，单独收口“纯删除行”这一语义动作。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_LINE_REMOVE` intent；
+- `ORDER_LINE_REMOVE` 只允许处理“相较当前订单，仅删除行、保留行未改动”的场景；
+- 前端新增 `removeSalesOrderLine()` 与 `lineRemoveMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当 delta 仅包含 `lines`、`quantity`、`amount` 且可稳定识别为“纯删除行”时，优先走 `lineRemoveMutation`；
+- 若纯行级变更但不是“仅删除”，仍继续保留在 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` 既有边界中；
+- 继续保持头部字段与混合编辑不进入该 intent。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 行级事务化第四刀：
+
+- “纯删除行”已从结构性行集合变更中进一步细化为独立 transaction；
+- 当前 `sales` 行级事务已形成：
+  - `ORDER_LINE_CONTENT_CHANGE`
+  - `ORDER_LINE_ADD`
+  - `ORDER_LINE_REMOVE`
+  - `ORDER_LINES_CHANGE`（其余结构性变更兜底）
+- `sales` 行级事务化样板已形成较完整的细粒度骨架。
+
+## P1：`sales` 行级事务化第三刀：`ORDER_LINE_ADD`（2026-04-08）
+
+### 本轮目标
+在已完成 `ORDER_LINE_CONTENT_CHANGE` 的基础上，继续细化 `sales` 行级事务，单独收口“纯新增行”这一语义动作。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_LINE_ADD` intent；
+- `ORDER_LINE_ADD` 只允许处理“相较当前订单，仅新增行、既有行未改动”的场景；
+- 前端新增 `addSalesOrderLine()` 与 `lineAddMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当 delta 仅包含 `lines`、`quantity`、`amount` 且可稳定识别为“纯新增行”时，优先走 `lineAddMutation`；
+- 若纯行级变更但不是“仅新增”，仍继续保留在 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE` 既有边界中；
+- 继续保持头部字段与混合编辑不进入该 intent。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 行级事务化第三刀：
+
+- “纯新增行”已从结构性行集合变更中进一步细化为独立 transaction；
+- 当前 `sales` 行级事务已形成：
+  - `ORDER_LINE_CONTENT_CHANGE`
+  - `ORDER_LINE_ADD`
+  - `ORDER_LINES_CHANGE`（其余结构性变更兜底）
+- 为下一刀继续拆分 `ORDER_LINE_REMOVE` 提供了稳定边界。
+
+## P1：`sales` 行级事务化第二刀（2026-04-08）
+
+### 本轮目标
+在已完成 `ORDER_LINES_CHANGE` 的基础上，把 `sales` 行级事务进一步细化，先将“既有行内容修改、无增删”的场景收敛为独立 transaction。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_LINE_CONTENT_CHANGE` intent；
+- `ORDER_LINE_CONTENT_CHANGE` 只允许处理既有行内容修改，不允许行新增/删除；
+- 前端新增 `changeSalesOrderLineContent()` 与 `lineContentChangeMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当 delta 仅包含 `lines`、`quantity`、`amount` 且行结构未变化时，优先走 `lineContentChangeMutation`；
+- 若纯行级变更但发生了行结构变化（如新增/删除导致 `lineNo` 集合变化），则继续保留在 `ORDER_LINES_CHANGE`；
+- 继续保持头部字段与混合编辑不进入该 intent。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 行级事务化第二刀：
+
+- 纯“既有行内容修改”已经从 `ORDER_LINES_CHANGE` 中进一步细化出来；
+- 行级事务链已形成“内容修改”与“集合增删”两层边界；
+- 为后续继续拆分 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE` 提供了稳定落点。
+
+## P1：`sales` 行级编辑事务化第一刀（2026-04-08）
+
+### 本轮目标
+将 `sales` 事务化从订单头字段进一步推进到行级编辑，先把销售订单 `lines` 的纯内容编辑收敛为独立 transaction，而不把整单编辑整体 transaction 化。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_LINES_CHANGE` intent；
+- payload 以 `lines` 为 authoritative source，并携带操作者信息；
+- 前端新增 `changeSalesOrderLines()` 与 `linesChangeMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当编辑订单提交的 delta 仅包含 `lines`、`quantity`、`amount` 时，优先走 `linesChangeMutation`；
+- 其中 `quantity` / `amount` 被视为 `lines` 变化带出的派生聚合字段，避免纯行级编辑被误判回 `patchMutation`；
+- 后端按 `lines` 重算并落库 `quantity` / `amount`，不把这两个聚合字段视为前端真相源；
+- 其他编辑仍继续保留 `patchMutation`，避免把改单事务化退化为整单 patch 包装壳。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 行级编辑事务化第一刀：
+
+- 销售订单纯行级编辑已成为独立 transaction 语义；
+- 行编辑引起的聚合字段联动已被纳入分流边界；
+- `sales` 事务化样板从“头部字段事务”进一步扩展到了“行级事务”。
+
+## P1：`sales` 分类/模式调整事务化（2026-04-08）
+
+### 本轮目标
+将 `sales` 改单事务化第三刀收敛为“分类/模式调整”，只在编辑订单时当且仅当 `classification` / `type` 发生纯语义变化时，走独立 transaction，而不把整单编辑整体 transaction 化。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_CLASSIFICATION_TYPE_CHANGE` intent；
+- payload 以 `classification` / `type` 为主，并允许携带由分类变更派生的 `barcode`；
+- 前端新增 `changeSalesOrderClassificationType()` 与 `classificationTypeChangeMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当编辑订单提交的 delta 仅包含 `classification`、`type`、`barcode` 时，优先走 `classificationTypeChangeMutation`；
+- 其中 `barcode` 被视为 `classification` 变化带出的派生副作用，避免纯分类变更被误判回 `patchMutation`；
+- 其他编辑仍继续保留 `patchMutation`，避免把改单事务化退化为整单 patch 包装壳。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 改单事务化第三刀：
+
+- 分类/模式调整已成为独立 transaction 语义；
+- `classification` 引起的预览条码联动已被纳入事务分流边界；
+- 整单普通编辑仍保留 `patch` 链，未被过早整体 transaction 化。
+
+## P1：`sales` 交期调整事务化（2026-04-08）
+
+### 本轮目标
+将 `sales` 改单事务化第二刀收敛为“交期调整”，只在编辑订单时当且仅当 `deliveryDate` 发生变化时，走独立 transaction，而不把整单编辑整体 transaction 化。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_DELIVERY_DATE_CHANGE` intent；
+- `ORDER_DELIVERY_DATE_CHANGE` payload 只承载 `deliveryDate` 与操作者信息；
+- 前端新增 `changeSalesOrderDeliveryDate()` 与 `deliveryDateChangeMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当编辑订单提交的 delta 仅包含 `deliveryDate` 时，优先走 `deliveryDateChangeMutation`；
+- 其他编辑仍继续保留 `patchMutation`，避免把改单事务化退化为整单 patch 包装壳。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 改单事务化第二刀：
+
+- 交期调整已成为独立 transaction 语义；
+- 整单普通编辑仍保留 `patch` 链，未被过早整体 transaction 化；
+- 为下一刀继续推进“分类/模式调整事务化”提供了可复用样板。
+
+## P1：`sales` 客户主体调整事务化（2026-04-08）
+
+### 本轮目标
+将 `sales` 改单事务化的第一刀收敛为“客户主体调整”，只在编辑订单时当且仅当 `customerId/customerName` 发生变化时，走独立 transaction，而不把整单编辑整体 transaction 化。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_CUSTOMER_CHANGE` intent；
+- `ORDER_CUSTOMER_CHANGE` payload 只承载 `customerId/customerName` 与操作者信息；
+- 前端新增 `changeSalesOrderCustomer()` 与 `customerChangeMutation`；
+- 在 `sales-order-action-dialog.tsx` 中，当编辑订单提交的 delta 仅包含 `customerId/customerName` 时，优先走 `customerChangeMutation`；
+- 其他编辑仍继续保留 `patchMutation`，避免把改单事务化退化为整单 patch 包装壳。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 改单事务化第一刀：
+
+- 客户主体调整已成为独立 transaction 语义；
+- 整单普通编辑仍保留 `patch` 链，未被过早整体 transaction 化；
+- 为下一刀继续推进“交期调整事务化”或“分类/模式调整事务化”提供了可复用样板。
+
+## P1：`sales` 取消事务化（2026-04-08）
+
+### 本轮目标
+将当前混在 `DELETE /sales-orders/:id` 里的“作废/取消”语义拆出为独立 transaction intent，使取消与硬删除不再共用同一入口。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `server/handlers/sales_orders.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-detail.tsx`
+- `src/features/trading/components/sales-order-list-fixed.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_CANCEL` transaction intent；
+- `ORDER_CANCEL` 已支持版本校验、主单状态改为 `Canceled`、明细行状态同步改为 `Canceled`，并写入最小审计记录；
+- 前端新增 `cancelSalesOrder()` 与 `cancelMutation`；
+- 详情页中的“作废订单”已从状态事务分流为独立取消事务；
+- 列表页中的删除动作已区分：
+  - 未作废订单：走 `cancelMutation`
+  - 已作废订单：保留 `DELETE` 作为硬删除/清理入口；
+- 后端 `DELETE /sales-orders/:id` 已收紧为只允许已作废订单执行硬删除，不再承担“取消”语义。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 第三个正式语义事务动作：
+
+- 取消已成为独立事务，而不再混在 `DELETE` 中；
+- `DELETE` 语义已收敛为已取消后的硬删除；
+- `sales` 当前已具备三条正式 transaction 链：`ORDER_LINE_CLAIM`、`ORDER_STATUS_TRANSITION`、`ORDER_CANCEL`。
+
+## P1：`use-sales.ts` 删除 + `ORDER_STATUS_TRANSITION` 事务化（2026-04-08）
+
+### 本轮目标
+在已批准的顺序下，先物理删除已退出正式入口的 `use-sales.ts`，再把 `sales-order-detail.tsx` 中的状态推进从 `patchMutation` 改造为 `ORDER_STATUS_TRANSITION` transaction。
+
+### 已执行变更
+删除：
+- `src/features/trading/sales/hooks/use-sales.ts`
+
+更新：
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-detail.tsx`
+- `server/services/sales_transaction_service.go`
+
+### 本轮实际处理内容
+- 已物理删除 `use-sales.ts`，并确认其不再存在正式引用；
+- 前端新增 `ORDER_STATUS_TRANSITION` transaction 调用能力；
+- `use-sales-transactions.ts` 已新增 `statusTransitionMutation`；
+- `sales-order-detail.tsx` 的状态推进已从 `trackDelta() + patchMutation` 切换为 `statusTransitionMutation`；
+- 后端 `sales_transaction_service.go` 已支持 `ORDER_STATUS_TRANSITION` intent，完成版本校验、状态更新与最小审计写入；
+- 状态推进仍沿用现有 transaction endpoint：`POST /sales-orders/:id/transactions`。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 第二个语义事务动作落地：
+
+- `use-sales.ts` 已被物理移除；
+- `ORDER_STATUS_TRANSITION` 已不再依赖字段 patch 驱动；
+- `sales` 目前已至少拥有两条正式 transaction 链：`ORDER_LINE_CLAIM`、`ORDER_STATUS_TRANSITION`；
+- 本轮未扩散到更多 intent，也未进入其他域改造。
+
+## P1：`sales` query / transaction 分层拆分（2026-04-08）
+
+### 本轮目标
+在已批准的前提下，正式完成 `sales` 前端 query / transaction 分层拆分，拆出 query hooks、transaction hooks 与 query service，并让旧 `use-sales.ts` 退出正式入口。
+
+### 已执行变更
+新增：
+- `src/features/trading/sales/services/sales-query-service.ts`
+- `src/features/trading/sales/hooks/use-sales-queries.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+
+更新：
+- `src/features/trading/sales/services/sales-service.ts`
+- `src/features/trading/sales/index.ts`
+
+### 本轮实际处理内容
+- 将 `getSalesOrders()`、`getSalesOrderById()`、`getSalesOrderByNo()` 从 `sales-service.ts` 拆出到 `sales-query-service.ts`；
+- 新增 `use-sales-queries.ts`，承载 `useGetSalesOrders()` 与 `useGetSalesOrderDetail()`；
+- 新增 `use-sales-transactions.ts`，承载 `useSalesOrderMutations()`；
+- `sales-service.ts` 已收缩为 create / delete / patch / 兼容更新相关职责；
+- `sales/index.ts` 已切换为从新分层文件正式导出；
+- 旧 `use-sales.ts` 已退出正式导出入口，当前不再由 `sales/index.ts` 暴露，也未再发现直接引用。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 前端 query / transaction 分层拆分：
+
+- 查询能力已独立成 query service + query hooks；
+- mutation 能力已独立成 transaction hooks；
+- `sales-service.ts` 的混合职责已明显收缩；
+- 旧 `use-sales.ts` 已失去正式入口职责，未再作为兼容桥接层继续使用。
+
+## P1：`sales` 第一阶段 TDO 化最小闭环（2026-04-08）
+
+### 本轮目标
+在已批准的 `sales-phase1-tdo-execution-checklist.md` 基础上，只落地第一阶段最小闭环：围绕 `claim` 建立 transaction 入口，并将前端 `claim` 从 patch 驱动切换到 transaction 驱动。
+
+### 已执行变更
+新增：
+- `server/services/sales_transaction_service.go`
+- `server/handlers/sales_transaction_handlers.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+
+更新：
+- `server/routes/routes_trading.go`
+- `src/features/trading/sales/hooks/use-sales.ts`
+- `src/features/trading/components/sales-order-detail.tsx`
+- `src/features/trading/sales/index.ts`
+- `task.md`
+- `implementation_plan.md`
+
+### 本轮实际处理内容
+- 后端新增 `POST /sales-orders/:id/transactions` 路由；
+- 新增 `ORDER_LINE_CLAIM` transaction service，改为后端在事务内锁定订单、校验版本、更新被认领明细并回写版本；
+- 复用现有 `auditLogger`，为 `ORDER_LINE_CLAIM` 补最小事务审计记录；
+- 前端新增 `sales-transaction-service.ts`，`claimMutation` 已改为提交 transaction payload；
+- `sales-order-detail.tsx` 认领动作已传递 `expectedVersion` 与 `actorId`，不再依赖前端读取后拼接 `nextLines` 的旧链路；
+- 保留现有 `patchSalesOrder()` 作为普通编辑兼容入口，本轮未扩散到状态推进事务化。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 第一阶段最小可运行闭环：
+
+- `claim` 已从 patch 驱动迁移到 transaction 驱动；
+- 后端已具备最小事务入口、版本校验与审计锚点；
+- 前端保留的 `claim` 副作用已收敛为 toast 与 query invalidate；
+- 未扩散到 `ORDER_STATUS_TRANSITION`、全量 query/transaction 分层或其他域改造。
+
+### 第二小步收尾
+- 已删除 `src/features/trading/sales/services/sales-service.ts` 中旧的 `claimOrderLine()` 兼容实现；
+- 已删除 `src/features/trading/sales/index.ts` 中对 `claimOrderLine` 的导出；
+- 已确认前端已无任何 `claimOrderLine` 引用残留，避免后续继续误走旧 patch 驱动入口。
+
+### 第二小步验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
 ## P1：截图报错定点修复（2026-04-07）
 
 ### 本轮目标

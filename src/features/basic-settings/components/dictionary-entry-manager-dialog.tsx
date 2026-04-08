@@ -26,7 +26,8 @@ import {
     DialogTitle,
     DialogDescription
 } from '@/components/ui/dialog'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import { DictionaryMaintenanceService } from '@/features/basic-settings/services/dictionary-maintenance-service'
 import { type DictionaryOption } from '@/features/basic-settings/data/schema'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -69,12 +70,12 @@ export function DictionaryEntryManagerDialog({
     // 加载数据
     useEffect(() => {
         if (open) {
-            setOptions([...dictionaryService.getOptions(entryCode)])
+            setOptions([...DictionaryCoreService.getOptions(entryCode)])
         }
     }, [open, entryCode])
 
-    const saveOptions = (newOptions: DictionaryOption[]) => {
-        dictionaryService.updateEntry(entryCode, newOptions)
+    const saveOptions = async (newOptions: DictionaryOption[]) => {
+        await DictionaryMaintenanceService.updateEntry(entryCode, newOptions)
         setOptions(newOptions)
         // 触发全局更新
         window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))

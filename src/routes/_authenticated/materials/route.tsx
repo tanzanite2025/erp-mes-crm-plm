@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Settings2, Package2 } from 'lucide-react'
@@ -20,7 +20,7 @@ function MaterialsLayout() {
 
   useEffect(() => {
     const updateTabs = () => {
-      const options = dictionaryService.getOptions('MATERIAL_CATEGORY')
+      const options = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
       const dynamicTabs = options.map((opt) => ({
         key: opt.value.toLowerCase(),
         label: opt.label,

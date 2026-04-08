@@ -14,13 +14,15 @@ import { ProductActionDialog } from './components/product-action-dialog'
 import { ProductOverviewTab } from './components/product-overview-tab'
 import { ProductRoutingView } from './components/product/product-routing-view'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { productService } from './services/product-service'
+import { ProductCoreService } from './services/product-core-service'
+import { ProductMaintenanceService } from './services/product-maintenance-service'
+import { ProductTypeService } from './services/product-type-service'
 import { EngineeringSidebar } from './components/engineering-sidebar'
 import { CategoryManagerDialog } from './components/category-manager-dialog'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { isForbiddenError } from '@/lib/error-status'
 
-type DictionaryEntry = ReturnType<typeof dictionaryService.getEntries>[number]
+type DictionaryEntry = ReturnType<typeof DictionaryCoreService.getEntries>[number]
 
 export function Engineering() {
     const { t } = useLanguage()
@@ -37,7 +39,7 @@ export function Engineering() {
     const [error, setError] = useState<unknown>(null)
 
     const refreshProducts = useCallback(async () => {
-        const prds = await productService.getProducts()
+        const prds = await ProductCoreService.getProducts()
         const nextProducts = prds || []
         setProducts(nextProducts)
         setSelectedProductId(prev => {
@@ -48,29 +50,29 @@ export function Engineering() {
     }, [])
 
     const refreshTypes = useCallback(async () => {
-        const typs = await productService.getProductTypes()
+        const typs = await ProductTypeService.getProductTypes()
         setTypes(typs || [])
     }, [])
 
     const refreshDicts = useCallback(async () => {
-        await dictionaryService.init()
-        setDictEntries(dictionaryService.getEntries())
+        await DictionaryCoreService.init()
+        setDictEntries(DictionaryCoreService.getEntries())
     }, [])
 
     const loadAllData = useCallback(async () => {
         setIsLoading(true)
         try {
             setError(null)
-            await dictionaryService.init()
+            await DictionaryCoreService.init()
             const [prds, typs] = await Promise.all([
-                productService.getProducts(),
-                productService.getProductTypes()
+                ProductCoreService.getProducts(),
+                ProductTypeService.getProductTypes()
             ])
 
             const nextProducts = prds || []
             setProducts(nextProducts)
             setTypes(typs || [])
-            setDictEntries(dictionaryService.getEntries())
+            setDictEntries(DictionaryCoreService.getEntries())
 
             setSelectedProductId(prev => {
                 if (nextProducts.length === 0) return null
@@ -121,7 +123,7 @@ export function Engineering() {
         const incoming = Array.isArray(data) ? data : [data]
         
         for (const item of incoming) {
-            await productService.saveProduct(item)
+            await ProductMaintenanceService.createProduct(item)
         }
 
         window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))

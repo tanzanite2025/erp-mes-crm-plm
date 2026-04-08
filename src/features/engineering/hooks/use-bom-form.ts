@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { createLogger } from '@/lib/logger'
-import { materialService, type Material } from '../../material-archive/services/material-service'
+import { MaterialCoreService } from '../../material-archive/services/material-core-service'
+import { type Material } from '../../material-archive/data/schema'
 import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/schema'
 import { bomService } from '../services/bom-service'
 import { changeOrderService } from '../services/change-order-service'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('useBOMForm')
@@ -144,14 +145,14 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
       try {
         const [storedProducts, allMaterials] = await Promise.all([
-          productService.getProducts(),
-          materialService.getMaterialOptions(),
-          dictionaryService.init(),
+          ProductCoreService.getProducts(),
+          MaterialCoreService.getMaterialOptions(),
+          DictionaryCoreService.init(),
         ])
 
         setProducts(storedProducts || [])
         setMaterials(allMaterials || [])
-        setDictEntries(dictionaryService.getEntries() || [])
+        setDictEntries(DictionaryCoreService.getEntries() || [])
 
         if (isEdit && currentRow) {
                 const data = {
@@ -224,17 +225,17 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     loadInitData()
 
     const handleProductsUpdate = async () => {
-      const nextProducts = await productService.getProducts()
+      const nextProducts = await ProductCoreService.getProducts()
       setProducts(nextProducts || [])
     }
 
     const handleMaterialsUpdate = async () => {
-      const nextMaterials = await materialService.getMaterialOptions()
+      const nextMaterials = await MaterialCoreService.getMaterialOptions()
       setMaterials(nextMaterials || [])
     }
 
     const handleDictsUpdate = async () => {
-      setDictEntries(dictionaryService.getEntries() || [])
+      setDictEntries(DictionaryCoreService.getEntries() || [])
     }
 
     window.addEventListener('xdfc_products_data_updated', handleProductsUpdate)

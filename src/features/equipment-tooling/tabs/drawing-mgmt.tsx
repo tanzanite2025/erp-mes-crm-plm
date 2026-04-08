@@ -20,7 +20,7 @@ import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { isConflictError } from '@/lib/handle-server-error'
 import { DrawingService } from '../services/drawing-service'
-import { MoldService } from '../services/mold-service'
+import { MoldCoreService } from '../services/mold-core-service'
 import { type MoldDrawing, type Mold, type MoldDrawingLog } from '../data/schema'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
@@ -47,7 +47,7 @@ export function DrawingMgmt() {
         try {
             const [drawingRecords, moldRecords] = await Promise.all([
                 DrawingService.getDrawings(),
-                MoldService.getMolds(),
+                MoldCoreService.getMolds(),
             ])
             setDrawings(drawingRecords)
             setMolds(moldRecords)

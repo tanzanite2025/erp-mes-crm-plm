@@ -2,7 +2,7 @@ import { type Dispatch, type SetStateAction } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DictionaryEntry, type DictionaryGroup } from '../data/schema'
-import { dictionaryService } from '../services/dictionary-service'
+import { DictionaryMaintenanceService } from '../services/dictionary-maintenance-service'
 import { createDraftEntry, createNewGroup } from '../utils/dictionary-mgmt-utils'
 
 interface UseDictionaryMgmtActionsParams {
@@ -106,7 +106,7 @@ export function useDictionaryMgmtActions({
 
   const handleSyncSystem = async () => {
     setIsSyncing(true)
-    toast.promise(dictionaryService.syncSystemDictionary(), {
+    toast.promise(DictionaryMaintenanceService.syncSystemDictionary(), {
       loading: t('basicSettings.dictionaryActions.toasts.syncLoading'),
       success: () => {
         setIsSyncing(false)

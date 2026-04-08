@@ -13,11 +13,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { auditUtils } from '@/lib/audit-utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder } from '../data/schema'
 import { useGetCustomers } from '../customer'
 import { useSalesOrderMutations } from '../sales'
@@ -39,6 +40,7 @@ export function SalesOrderActionDialog({
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
+  const user = useAuthStore((state) => state.user)
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
   const [dictEntries, setDictEntries] = useState<DictionaryEntry[]>([])
@@ -48,13 +50,13 @@ export function SalesOrderActionDialog({
 
   useEffect(() => {
     const loadMetadata = async () => {
-      await dictionaryService.init()
+      await DictionaryCoreService.init()
       const [unitList, drillingList, labelingList] = await Promise.all([
         unitService.getUnits(),
         ProductionDBService.getDrilling(),
         ProductionDBService.getLabeling(),
       ])
-      setDictEntries(dictionaryService.getEntries())
+      setDictEntries(DictionaryCoreService.getEntries())
       setUnits(unitList || [])
       setDrillingOptions(drillingList?.map((item) => ({ label: item.name, value: item.id })) || [])
       setLabelingOptions(labelingList?.map((item) => ({ label: item.name, value: item.id })) || [])
@@ -63,7 +65,7 @@ export function SalesOrderActionDialog({
     loadMetadata()
 
     const handleDictsUpdate = async () => {
-      setDictEntries(dictionaryService.getEntries())
+      setDictEntries(DictionaryCoreService.getEntries())
     }
 
     const handleUnitsUpdate = async () => {
@@ -92,7 +94,7 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { createMutation, patchMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -111,6 +113,156 @@ export function SalesOrderActionDialog({
           onOpenChange(false)
           return
         }
+
+        const deltaKeys = Object.keys(delta)
+        const isCustomerOnlyChange =
+          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'customerId' || key === 'customerName')
+        const isLinesOnlyChange =
+          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'lines' || key === 'quantity' || key === 'amount')
+        const isClassificationTypeOnlyChange =
+          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'classification' || key === 'type' || key === 'barcode')
+        const isDeliveryDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'deliveryDate')
+        const hasLineStructureChange = (() => {
+          if (!order || !isLinesOnlyChange) return false
+          const previousLineNos = (order.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
+          const nextLineNos = (finalData.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
+          if (previousLineNos.length !== nextLineNos.length) return true
+          return previousLineNos.some((lineNo, index) => lineNo !== nextLineNos[index])
+        })()
+        const isPureLineAdd = (() => {
+          if (!order || !isLinesOnlyChange || !hasLineStructureChange) return false
+          const previousLines = order.lines || []
+          const nextLines = finalData.lines || []
+          if (nextLines.length <= previousLines.length) return false
+
+          const previousByLineNo = new Map(previousLines.map((line) => [line.lineNo, line]))
+          let addedCount = 0
+
+          for (const line of nextLines) {
+            const previousLine = previousByLineNo.get(line.lineNo)
+            if (!previousLine) {
+              addedCount++
+              continue
+            }
+
+            if (JSON.stringify(previousLine) !== JSON.stringify(line)) {
+              return false
+            }
+          }
+
+          return addedCount > 0
+        })()
+        const isPureLineRemove = (() => {
+          if (!order || !isLinesOnlyChange || !hasLineStructureChange) return false
+          const previousLines = order.lines || []
+          const nextLines = finalData.lines || []
+          if (nextLines.length >= previousLines.length) return false
+
+          const nextByLineNo = new Map(nextLines.map((line) => [line.lineNo, line]))
+          let removedCount = 0
+
+          for (const line of previousLines) {
+            const nextLine = nextByLineNo.get(line.lineNo)
+            if (!nextLine) {
+              removedCount++
+              continue
+            }
+
+            if (JSON.stringify(nextLine) !== JSON.stringify(line)) {
+              return false
+            }
+          }
+
+          return removedCount > 0
+        })()
+
+        if (isCustomerOnlyChange) {
+          await customerChangeMutation.mutateAsync({
+            orderId: order.id,
+            customerId: finalData.customerId,
+            customerName: finalData.customerName || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isLinesOnlyChange) {
+          if (!hasLineStructureChange) {
+            await lineContentChangeMutation.mutateAsync({
+              orderId: order.id,
+              lines: finalData.lines || [],
+              operator: user?.accountNo || 'Unknown',
+              actorId: user?.id,
+              expectedVersion: order.version,
+            })
+            onOpenChange(false)
+            return
+          }
+
+          if (isPureLineAdd) {
+            await lineAddMutation.mutateAsync({
+              orderId: order.id,
+              lines: finalData.lines || [],
+              operator: user?.accountNo || 'Unknown',
+              actorId: user?.id,
+              expectedVersion: order.version,
+            })
+            onOpenChange(false)
+            return
+          }
+
+          if (isPureLineRemove) {
+            await lineRemoveMutation.mutateAsync({
+              orderId: order.id,
+              lines: finalData.lines || [],
+              operator: user?.accountNo || 'Unknown',
+              actorId: user?.id,
+              expectedVersion: order.version,
+            })
+            onOpenChange(false)
+            return
+          }
+
+          await linesChangeMutation.mutateAsync({
+            orderId: order.id,
+            lines: finalData.lines || [],
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isClassificationTypeOnlyChange) {
+          await classificationTypeChangeMutation.mutateAsync({
+            orderId: order.id,
+            classification: finalData.classification,
+            type: finalData.type,
+            barcode: finalData.barcode,
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isDeliveryDateOnlyChange) {
+          await deliveryDateChangeMutation.mutateAsync({
+            orderId: order.id,
+            deliveryDate: finalData.deliveryDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
         await patchMutation.mutateAsync({
           id: order.id,
           delta,

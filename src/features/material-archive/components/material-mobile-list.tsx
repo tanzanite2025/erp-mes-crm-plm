@@ -1,6 +1,6 @@
 import { Hash } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type Material } from '../data/schema'
 import { resolveMaterialCategoryLabel } from '../utils/material-mgmt-utils'
 
@@ -28,7 +28,7 @@ export function MaterialMobileList({ isLoading, materials, onEdit }: MaterialMob
                     >
                         <div className='absolute top-0 right-0 p-2'>
                             <Badge variant='outline' className='text-[8px] font-black uppercase tracking-widest bg-primary/5 border-none text-primary/60 rounded-full h-4'>
-                                {resolveMaterialCategoryLabel(m.category, dictionaryService.getOptions('MATERIAL_CATEGORY'))}
+                                {resolveMaterialCategoryLabel(m.category, DictionaryCoreService.getOptions('MATERIAL_CATEGORY'))}
                             </Badge>
                         </div>
 

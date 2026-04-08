@@ -39,7 +39,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { createMoldDraft, createMoldSchema, type Mold, type MoldDrawing, type MoldFormInput, type MoldFormOutput } from '../data/schema'
 import { ImageUpload } from './image-upload'
 import { AssetService } from '../services/asset-service'
-import { MoldService } from '../services/mold-service'
+import { MoldCoreService } from '../services/mold-core-service'
 import { DrawingService } from '../services/drawing-service'
 import { Plus, RotateCcw, Save, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
@@ -114,7 +114,7 @@ export function MoldActionDialog({
     const onSubmit = async (data: MoldFormOutput) => {
         if (!allowsAction('action_equipment_mold_manage')) return
 
-        const isDuplicate = await MoldService.isSnDuplicate(data.sn, editData?.id)
+        const isDuplicate = await MoldCoreService.isSnDuplicate(data.sn, editData?.id)
         if (isDuplicate) {
             toast.error(t('equipmentTooling.molds.dialog.validation.duplicateSn', { sn: data.sn }))
             return

@@ -27,7 +27,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductTypeService } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
@@ -93,7 +93,7 @@ export function ProductTypeActionDialog({
     const loadInitialData = async () => {
       try {
         const [storedTypes, storedTemplates] = await Promise.all([
-          productService.getProductTypes(),
+          ProductTypeService.getProductTypes(),
           productTemplateService.getTemplates(),
         ])
 

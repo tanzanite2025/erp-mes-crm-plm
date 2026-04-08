@@ -1,6 +1,6 @@
-'use client'
-
-import { MoldService } from './mold-service'
+import { MoldCoreService } from './mold-core-service'
+import { MoldTransactionService } from './mold-transaction-service'
+import { MoldMaintenanceService } from './mold-maintenance-service'
 import { FurnaceService } from './furnace-service'
 import { MoldLoanService } from './mold-loan-service'
 
@@ -8,11 +8,11 @@ import { MoldLoanService } from './mold-loan-service'
  * AssetService - 资产管理服务 (Facade 模式 - 已适配后端与性能优化)
  */
 export class AssetService {
-    static getMolds = MoldService.getMolds.bind(MoldService)
-    static getGroupNames = MoldService.getGroupNames.bind(MoldService)
-    static saveMolds = MoldService.saveMolds.bind(MoldService)
-    static checkMoldCapacity = MoldService.checkMoldCapacity.bind(MoldService)
-    static checkLinkIntegrity = MoldService.checkLinkIntegrity.bind(MoldService)
+    static getMolds = MoldCoreService.getMolds.bind(MoldCoreService)
+    static getGroupNames = MoldCoreService.getGroupNames.bind(MoldCoreService)
+    static saveMolds = MoldMaintenanceService.saveMolds.bind(MoldMaintenanceService)
+    static checkMoldCapacity = MoldTransactionService.checkMoldCapacity.bind(MoldTransactionService)
+    static checkLinkIntegrity = MoldCoreService.checkLinkIntegrity.bind(MoldCoreService)
 
     static getFurnaces = FurnaceService.getFurnaces.bind(FurnaceService)
     static saveFurnaces = FurnaceService.saveFurnaces.bind(FurnaceService)
@@ -27,7 +27,7 @@ export class AssetService {
      */
     static async updateTelemetry(assetId: string, type: 'MOLD' | 'FURNACE', data: { temp?: number; cycles?: number }) {
         if (type === 'MOLD' && data.cycles !== undefined) {
-            await MoldService.updateTelemetry(assetId, data.cycles)
+            await MoldTransactionService.updateTelemetry(assetId, data.cycles)
         } else if (type === 'FURNACE' && data.temp !== undefined) {
             await FurnaceService.updateTelemetry(assetId, data.temp)
         }

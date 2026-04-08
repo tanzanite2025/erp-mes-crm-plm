@@ -32,7 +32,8 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from './product-type-action-dialog'
 import { type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
+import { ProductTypeService } from '../services/product-type-service'
 
 interface CategoryManagerDialogProps {
   open: boolean
@@ -50,7 +51,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
   useEffect(() => {
     const loadData = async () => {
       if (!open) return
-      const stored = await productService.getProductTypes()
+      const stored = await ProductTypeService.getProductTypes()
       setData(stored || [])
     }
 
@@ -164,7 +165,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
 
-              const products = await productService.getProducts()
+              const products = await ProductCoreService.getProducts()
               const relatedCount = products.filter((product) => product.typeId === row.original.id).length
               if (relatedCount > 0) {
                 toast.error(
@@ -186,7 +187,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
               }
 
               try {
-                await productService.deleteProductType(row.original.id)
+                await ProductTypeService.deleteProductType(row.original.id)
                 setData((prev) => prev.filter((item) => item.id !== row.original.id))
                 window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
                 toast.success(t('engineering.categoryArchive.toasts.deleteSuccess'))
@@ -215,7 +216,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
 
   const handleFormSubmit = async (formData: Partial<ProductType>) => {
     try {
-      const saved = await productService.saveProductType(formData)
+      const saved = await ProductTypeService.saveProductType(formData)
       const updated = currentRow
         ? data.map((item) => (item.id === saved.id ? saved : item))
         : [...data, saved]

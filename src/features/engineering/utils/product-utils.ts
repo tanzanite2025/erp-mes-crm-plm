@@ -1,16 +1,16 @@
 import { type Product } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 
 /**
  * 格式化产品展示名称的全局工具函数
- * 已统一委托给 productService.formatDisplay 实现全系统标准化显示
+ * 已统一委托给 ProductCoreService.formatDisplay 实现全系统标准化显示
  * 
  * @param product 产品对象
  * @param _dictEntries (已废弃，逻辑由服务层统一处理)
  * @returns 语义化后的中文字符串
  */
 export function formatProductDisplayName(product: Product, _dictEntries: any[] = []) {
-    return productService.formatDisplay(product)
+    return ProductCoreService.formatDisplay(product)
 }
 
 /**

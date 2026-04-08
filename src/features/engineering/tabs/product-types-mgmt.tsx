@@ -31,7 +31,8 @@ import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from '../components/product-type-action-dialog'
 import { type Product, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
+import { ProductTypeService } from '../services/product-type-service'
 
 const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : '')
 const logger = createLogger('ProductTypesMgmt')
@@ -46,7 +47,7 @@ export function ProductTypesMgmt() {
   const loadData = useCallback(async () => {
     try {
       setError(null)
-      const stored = await productService.getProductTypes()
+      const stored = await ProductTypeService.getProductTypes()
       setData(stored || [])
     } catch (loadError) {
       setError(loadError)
@@ -202,7 +203,7 @@ export function ProductTypesMgmt() {
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
 
-              const products = await productService.getProducts()
+              const products = await ProductCoreService.getProducts()
               const relatedCount = (products as Product[]).filter(
                 (product) => product.typeId === row.original.id
               ).length
@@ -227,7 +228,7 @@ export function ProductTypesMgmt() {
               }
 
               try {
-                await productService.deleteProductType(row.original.id)
+                await ProductTypeService.deleteProductType(row.original.id)
                 window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
                 toast.success(t('engineering.categoryArchive.toasts.deleteSuccess'))
               } catch (error) {
@@ -261,9 +262,9 @@ export function ProductTypesMgmt() {
   const handleFormSubmit = async (formData: Partial<ProductType>, isPatch?: boolean, delta?: any) => {
     try {
       if (isPatch && formData.id && delta) {
-        await productService.patchProductType(formData.id, delta, formData.version || 1)
+        await ProductTypeService.patchProductType(formData.id, delta, formData.version || 1)
       } else {
-        await productService.saveProductType(formData)
+        await ProductTypeService.saveProductType(formData)
       }
       window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
       toast.success(t('engineering.categoryArchive.toasts.saveSuccess'))

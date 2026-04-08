@@ -32,7 +32,7 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { type ChangeOrder, type Product } from '../data/schema'
 import { changeOrderService } from '../services/change-order-service'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 import { createChangeOrderDraft } from '../utils/default-builders'
 
 const logger = createLogger('ChangeOrdersTab')
@@ -78,7 +78,7 @@ export function ChangeOrdersTab() {
       setError(null)
       const [orders, productList] = await Promise.all([
         changeOrderService.getChangeOrders(),
-        productService.getProducts(),
+        ProductCoreService.getProducts(),
       ])
       setChangeOrders(orders || [])
       setProducts(productList || [])

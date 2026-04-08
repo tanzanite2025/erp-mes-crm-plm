@@ -24,7 +24,7 @@ export function EmployeeBulkResignDialog<TData>({
     onResign,
 }: EmployeeBulkResignDialogProps<TData>) {
     const { t } = useLanguage()
-    const CONFIRM_WORD = t('common.delete' as any) || 'DELETE'
+    const CONFIRM_WORD = t('common.actions.delete' as any) || 'DELETE'
     const [value, setValue] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -74,38 +74,50 @@ export function EmployeeBulkResignDialog<TData>({
             }}
             disabled={value.trim() !== CONFIRM_WORD || isSubmitting}
             isLoading={isSubmitting}
-            cancelBtnText={t('common.cancel' as any)}
+            cancelBtnText={t('common.actions.cancel' as any)}
             title={
-                <span className='text-destructive text-start'>
+                <>
                     <UserX
-                        className='me-1 inline-block stroke-destructive'
+                        className='me-2 inline-block'
                         size={18}
-                    />{' '}
-                    {t('orgPersonnel.list.bulk.resignDialog.title' as any, { count: selectedRows.length })}
-                </span>
+                    />
+                    {t('orgPersonnel.list.bulk.resignDialog.title' as any, {
+                        count: selectedRows.length,
+                    })}
+                </>
             }
             desc={
-                <div className='space-y-4 text-start'>
-                    <p className='mb-2 text-sm opacity-80'>
+                <div className='flex flex-col gap-6 text-start animate-in fade-in duration-500'>
+                    <p className='text-sm font-medium opacity-90 leading-relaxed'>
                         {t('orgPersonnel.list.bulk.resignDialog.desc' as any)}
                     </p>
 
-                    <Label className='my-4 flex flex-col items-start gap-2'>
-                        <span className='text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.list.bulk.resignDialog.confirmWordLabel' as any, { word: CONFIRM_WORD })}</span>
+                    <Label className='flex flex-col items-start gap-3'>
+                        <span className='text-[10px] font-black uppercase tracking-widest opacity-50'>
+                            {t('orgPersonnel.list.bulk.resignDialog.confirmWordLabel' as any, {
+                                word: CONFIRM_WORD,
+                            })}
+                        </span>
                         <Input
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
-                            placeholder={t('orgPersonnel.list.bulk.resignDialog.confirmPlaceholder' as any, { word: CONFIRM_WORD })}
-                            className='h-11 rounded-2xl bg-muted/50 border-none'
+                            placeholder={t(
+                                'orgPersonnel.list.bulk.resignDialog.confirmPlaceholder' as any,
+                                { word: CONFIRM_WORD }
+                            )}
+                            className='h-12 rounded-2xl bg-muted/40 border-none px-4 focus-visible:ring-1 focus-visible:ring-destructive/30 transition-all'
                         />
                     </Label>
 
-                    <Alert variant='destructive'>
-                        <AlertTitle className='text-[10px] font-black uppercase tracking-widest'>
-                            <AlertTriangle className='mr-1 inline-block size-4' />
+                    <Alert
+                        variant='destructive'
+                        className='border-dashed rounded-[20px] bg-destructive/5 border-destructive/20'
+                    >
+                        <AlertTitle className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2'>
+                            <AlertTriangle className='size-3.5' />
                             {t('orgPersonnel.list.bulk.resignDialog.warningTitle' as any)}
                         </AlertTitle>
-                        <AlertDescription className='text-[9px] font-bold uppercase tracking-widest opacity-80'>
+                        <AlertDescription className='text-[9px] font-bold uppercase tracking-widest opacity-70 mt-1 leading-normal'>
                             {t('orgPersonnel.list.bulk.resignDialog.warningDesc' as any)}
                         </AlertDescription>
                     </Alert>

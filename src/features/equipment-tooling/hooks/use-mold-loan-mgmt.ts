@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type EquipmentPartner, type Mold, type MoldLoan } from '../data/schema'
 import { MoldLoanService } from '../services/mold-loan-service'
-import { MoldService } from '../services/mold-service'
+import { MoldCoreService } from '../services/mold-core-service'
 import { EquipmentPartnerService } from '../services/partner-service'
 import { AssetService } from '../services/asset-service'
 import { useLanguage } from '@/context/language-provider'
@@ -34,11 +34,11 @@ export function useMoldLoanMgmt() {
         try {
             const [loanRecords, moldRecords, partnerRecords] = await Promise.all([
                 MoldLoanService.getLoans(),
-                MoldService.getMolds(),
+                MoldCoreService.getMolds(),
                 EquipmentPartnerService.getPartners(),
             ])
             setLoans(loanRecords)
-            setMolds(moldRecords.filter((mold) => mold.status === 'IDLE' || mold.status === 'LENT_OUT'))
+            setMolds(moldRecords.filter((mold: Mold) => mold.status === 'IDLE' || mold.status === 'LENT_OUT'))
             setPartners(partnerRecords)
         } catch (err) {
             setError(err)

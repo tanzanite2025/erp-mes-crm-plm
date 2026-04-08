@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { useGetSalesOrders, getSalesOrderById } from '@/features/trading/sales'
 import { auditUtils } from '@/lib/audit-utils'
 import { resolveInventoryErrorTip } from '../constants/inventory-error-codes'
@@ -71,7 +71,7 @@ export function useShipment() {
       setError(null)
       const [recentHistory, categories, allMasterData, thresholds] = await Promise.all([
         InventoryCoreService.getShipmentHistory(),
-        Promise.resolve(dictionaryService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[]),
+        Promise.resolve(DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[]),
         InventoryCoreService.searchMasterData(''),
         InventoryMaintenanceService.getAlertThresholds(),
       ])

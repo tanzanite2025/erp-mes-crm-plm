@@ -5,7 +5,8 @@ import { createLogger } from '@/lib/logger'
 import { type Mold, type Furnace, type MoldLoan, type MoldStatus, type FurnaceStatus } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { AssetService } from '../services/asset-service'
-import { MoldService } from '../services/mold-service'
+import { MoldTransactionService } from '../services/mold-transaction-service'
+import { MoldMaintenanceService } from '../services/mold-maintenance-service'
 import { FurnaceService } from '../services/furnace-service'
 
 const logger = createLogger('useAssets')
@@ -81,10 +82,17 @@ export function useAssets() {
 
             try {
                 if (isPatch && delta && mold.id) {
-                    await MoldService.patchMold(mold.id, delta, mold.version || 1)
+                    await MoldMaintenanceService.patchMold(mold.id, delta, mold.version || 1)
                 } else {
-                    await MoldService.saveMold(mold)
+                    if (exists) {
+                         // 理论上 update 不应走 create，但在遗留代码中兼容
+                         await MoldMaintenanceService.patchMold(mold.id, {} as DeltaSet, mold.version || 1)
+                    } else {
+                        await MoldTransactionService.createMold(mold)
+                    }
                 }
+                // 服务层去副作用化后，在 Hook 层手动触发刷新
+                window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
             } catch (err) {
                 setMolds(previousMolds)
                 logger.error('Update mold failed, rolled back', err)
@@ -118,7 +126,8 @@ export function useAssets() {
                 setMolds(prev => prev.map(m => m.id === id ? { ...m, status: status as MoldStatus } : m))
 
                 try {
-                    await MoldService.changeStatus(id, status as MoldStatus, 'UI 联动调整')
+                    await MoldTransactionService.changeStatus(id, status as MoldStatus, 'UI 联动调整')
+                    window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
                 } catch (err) {
                     setMolds(previousMolds)
                     throw err

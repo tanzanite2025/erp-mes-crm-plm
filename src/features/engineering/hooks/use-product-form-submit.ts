@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 import {
   buildBatchProducts,
   buildSingleVariantProduct,
@@ -55,7 +55,7 @@ export function useProductFormSubmit({
   }
 
   const handleFormSubmit = async (values: Product) => {
-    const allProducts = (await productService.getProducts()) || []
+    const allProducts = (await ProductCoreService.getProducts()) || []
     const existingSkuMap = new Map<string, string>()
 
     for (const product of allProducts) {

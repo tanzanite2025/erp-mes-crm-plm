@@ -1,4 +1,4 @@
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
@@ -55,7 +55,7 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
         <InfoRow
           label={t('tradingSalesOrder.detail.info.orderType')}
           value={
-            dictionaryService.getOptions('ORDER_TYPE').find((item) => item.value === order.type)?.label ||
+            DictionaryCoreService.getOptions('ORDER_TYPE').find((item) => item.value === order.type)?.label ||
             order.type
           }
         />
@@ -63,8 +63,7 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
         <InfoRow
           label={t('tradingSalesOrder.detail.info.classification')}
           value={
-            dictionaryService
-              .getOptions('ORDER_CLASSIFICATION')
+            DictionaryCoreService.getOptions('ORDER_CLASSIFICATION')
               .find((item) => item.value === order.classification)?.label || order.classification
           }
         />

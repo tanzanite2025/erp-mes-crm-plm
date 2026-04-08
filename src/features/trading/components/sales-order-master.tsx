@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import type { SalesOrder } from '../data/schema'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
 
@@ -82,7 +82,7 @@ export function SalesOrderMaster({
               orders.map((order) => {
                 const active = order.id === selectedId
                 const classification =
-                  dictionaryService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === order.classification)
+                  DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === order.classification)
                     ?.label ||
                   order.classification ||
                   '-'

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn, useWatch } from 'react-hook-form'
 import { type Product, type ProductType } from '../data/schema'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 import { getEffectiveTemplate } from '../components/specs'
 import { deriveSku } from '../utils/product-form-utils'
 
@@ -28,7 +28,7 @@ export function useProductFormDerive({
     useEffect(() => {
         if (isEdit || !watchedTypeId || !open) return
         const deriveNextCode = async () => {
-            const allProducts = await productService.getProducts() || []
+            const allProducts = await ProductCoreService.getProducts() || []
             const sameTypeProducts = allProducts.filter(p => p.typeId === watchedTypeId)
 
             if (sameTypeProducts.length === 0) {
@@ -71,7 +71,7 @@ export function useProductFormDerive({
     }, [watchedTypeId, watchedModelCode, isEdit, open, productTypes, form])
 
     const specSummary = useMemo(() => {
-        return productService.formatDisplay(allValues as Product)
+        return ProductCoreService.formatDisplay(allValues as Product)
     }, [allValues])
 
     return {

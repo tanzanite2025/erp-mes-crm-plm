@@ -23,7 +23,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-import { dictionaryService } from '../services/dictionary-service'
+import { DictionaryCoreService } from '../services/dictionary-core-service'
+import { DictionaryMaintenanceService } from '../services/dictionary-maintenance-service'
 import { DictionaryEntryActionDialog } from './dictionary-entry-action-dialog'
 
 interface DictionarySubEditorProps {
@@ -41,12 +42,12 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
     // 初始化加载与事件监听
     useEffect(() => {
         const refreshData = () => {
-            const currentEntries = dictionaryService.getEntries()
+            const currentEntries = DictionaryCoreService.getEntries()
             setEntries(currentEntries)
         }
 
         // 异步初始化
-        dictionaryService.init().then(refreshData)
+        DictionaryCoreService.init().then(refreshData)
 
         // 监听全局更新事件
         window.addEventListener('xdfc_dictionary_updated', refreshData)
@@ -55,7 +56,7 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
 
     const saveEntries = async (newEntries: DictionaryEntry[]) => {
         setEntries(newEntries)
-        await dictionaryService.saveEntries(newEntries)
+        await DictionaryMaintenanceService.saveEntries(newEntries)
         // 显式触发全局刷新 (Service 内部也会发，这里双保险)
         window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
     }

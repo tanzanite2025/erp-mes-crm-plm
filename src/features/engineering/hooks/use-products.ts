@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { productService } from '../services/product-service'
+import { ProductCoreService } from '../services/product-core-service'
 
 /**
  * 获取产品 SKUs 的 Hook
@@ -7,7 +7,7 @@ import { productService } from '../services/product-service'
 export const useGetProducts = (options = {}) => {
     return useQuery({
         queryKey: ['engineering', 'products'],
-        queryFn: () => productService.getProducts(),
+        queryFn: () => ProductCoreService.getProducts(),
         staleTime: 5 * 60 * 1000, // 5分钟缓存
         ...options
     })
@@ -19,7 +19,7 @@ export const useGetProducts = (options = {}) => {
 export const useGetProductDetail = (id: string | undefined) => {
     return useQuery({
         queryKey: ['engineering', 'products', id],
-        queryFn: () => id ? productService.getProductById(id) : null,
+        queryFn: () => id ? ProductCoreService.getProductById(id) : null,
         enabled: !!id,
     })
 }

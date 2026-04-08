@@ -1,11 +1,10 @@
 export {
-  claimOrderLine,
   createSalesOrder,
   deleteSalesOrder,
-  getSalesOrderById,
-  getSalesOrderByNo,
-  getSalesOrders,
   patchSalesOrder,
   updateOrderDelivery,
 } from './services/sales-service'
-export { useGetSalesOrderDetail, useGetSalesOrders, useSalesOrderMutations } from './hooks/use-sales'
+export { getSalesOrderById, getSalesOrderByNo, getSalesOrders } from './services/sales-query-service'
+export { claimSalesOrderLines, executeSalesOrderTransaction } from './services/sales-transaction-service'
+export { useGetSalesOrderDetail, useGetSalesOrders } from './hooks/use-sales-queries'
+export { useSalesOrderMutations } from './hooks/use-sales-transactions'

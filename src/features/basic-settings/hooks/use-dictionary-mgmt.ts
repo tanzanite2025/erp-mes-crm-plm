@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DictionaryEntry, type DictionaryGroup } from '../data/schema'
-import { dictionaryService } from '../services/dictionary-service'
+import { DictionaryCoreService } from '../services/dictionary-core-service'
+import { DictionaryMaintenanceService } from '../services/dictionary-maintenance-service'
 import { createDraftEntry, createNewGroup, filterEntries } from '../utils/dictionary-mgmt-utils'
 
 export function useDictionaryMgmt() {
@@ -23,9 +24,9 @@ export function useDictionaryMgmt() {
     const refreshData = useCallback(async (silent = false) => {
         if (!silent) setIsSyncing(true)
         try {
-            await dictionaryService.init()
-            const initialGroups = dictionaryService.getGroups()
-            const initialEntries = dictionaryService.getEntries()
+            await DictionaryCoreService.init()
+            const initialGroups = DictionaryCoreService.getGroups()
+            const initialEntries = DictionaryCoreService.getEntries()
             
             setGroups(initialGroups)
             setEntries(initialEntries)
@@ -57,18 +58,18 @@ export function useDictionaryMgmt() {
     // 保存分组
     const saveGroups = async (newGroups: DictionaryGroup[]) => {
         setGroups(newGroups)
-        await dictionaryService.saveGroups(newGroups)
+        await DictionaryMaintenanceService.saveGroups(newGroups)
     }
 
     // 保存字典项
     const saveEntries = async (newEntries: DictionaryEntry[]) => {
         setEntries(newEntries)
-        await dictionaryService.saveEntries(newEntries)
+        await DictionaryMaintenanceService.saveEntries(newEntries)
     }
 
     const handleSyncSystem = async () => {
         setIsSyncing(true)
-        toast.promise(dictionaryService.syncSystemDictionary(), {
+        toast.promise(DictionaryMaintenanceService.syncSystemDictionary(), {
             loading: t('basicSettings.dictionaryActions.toasts.syncLoading'),
             success: () => {
                 setIsSyncing(false)

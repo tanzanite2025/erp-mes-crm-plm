@@ -4,7 +4,7 @@ import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import { type Material } from '../data/schema'
 import { packagingService } from './packaging-service'
 import { unitService } from '../../basic-settings/services/unit-service'
-import { dictionaryService } from '../../basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '../../basic-settings/services/dictionary-core-service'
 import { getMaterialsWithVersion } from './material-service'
 
 const DICT_SHEET_NAME = '__MATERIAL_DICTIONARY__'
@@ -76,7 +76,7 @@ export const MaterialExcelService = {
     const configSheet = workbook.addWorksheet(CONFIG_SHEET_NAME, { state: 'veryHidden' })
 
     const units = await unitService.getUnits()
-    const categories = dictionaryService.getOptions('MATERIAL_CATEGORY')
+    const categories = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
 
     dictSheet.columns = [
       { header: 'Unit_Name', key: 'u_name' },

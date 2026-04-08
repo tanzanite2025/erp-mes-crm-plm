@@ -40,7 +40,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { toast } from 'sonner'
 import { InventoryTransactionService, type InboundRecord } from '../services/inventory-transaction-service'
 import { InventoryCoreService, type MasterDataSearchResult } from '../services/inventory-core-service'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -79,7 +79,7 @@ export default function ProductInbound() {
             setError(null)
             const [recentHistory, categories] = await Promise.all([
                 InventoryCoreService.getInboundHistory(),
-                Promise.resolve(dictionaryService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[])
+                Promise.resolve(DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[])
             ])
             setHistory(recentHistory)
             setWarehouseCategories(categories)

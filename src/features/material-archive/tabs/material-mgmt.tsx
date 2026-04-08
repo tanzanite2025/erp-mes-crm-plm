@@ -8,7 +8,7 @@ import { DataTablePagination } from '@/components/data-table/pagination'
 import { isForbiddenError } from '@/lib/error-status'
 import { MaterialUpsertDialog } from '../components/material-upsert-dialog'
 import { type MaterialCategory, materialCategoryLabels } from '../data/schema'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { resolveCurrentCategoryLabel } from '../utils/material-mgmt-utils'
 import { useMaterialMgmtActions } from '../hooks/use-material-mgmt-actions'
 import { useMaterialMgmtData } from '../hooks/use-material-mgmt-data'
@@ -38,7 +38,7 @@ export function MaterialMgmt({ category }: MaterialMgmtProps) {
 
     // 动态获取分类标签
     const currentCategoryLabel = useMemo(() => {
-        const options = dictionaryService.getOptions('MATERIAL_CATEGORY')
+        const options = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
         return resolveCurrentCategoryLabel(category, options, materialCategoryLabels)
     }, [category])
 

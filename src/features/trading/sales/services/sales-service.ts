@@ -4,51 +4,9 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
 import { type SalesOrder } from '../../data/schema'
+import { getSalesOrderByNo } from './sales-query-service'
 
 const logger = createLogger('salesService')
-
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-}
-
-type GetSalesOrdersOptions = {
-  page?: number
-  pageSize?: number
-  withLines?: boolean
-  status?: string[]
-}
-
-export const getSalesOrders = async (options: GetSalesOrdersOptions = {}): Promise<PaginatedResponse<SalesOrder>> => {
-  const { page = 1, pageSize = 50, withLines = false, status } = options
-
-  const params = new URLSearchParams({
-    page: String(page),
-    pageSize: String(pageSize),
-  })
-
-  if (withLines) {
-    params.set('withLines', 'true')
-  }
-  if (status && status.length > 0) {
-    params.set('status', status.join(','))
-  }
-
-  const res = await apiFetch<PaginatedResponse<SalesOrder>>(`/sales-orders?${params.toString()}`)
-  return ensureObjectResponse<PaginatedResponse<SalesOrder> & Record<string, unknown>>(res, 'SalesService.getSalesOrders') as PaginatedResponse<SalesOrder>
-}
-
-export const getSalesOrderById = async (id: string): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrder>(`/sales-orders/${id}`)
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'SalesService.getSalesOrderById') as SalesOrder
-}
-
-export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrder>(`/sales-orders/by-no/${orderNo}`)
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'SalesService.getSalesOrderByNo') as SalesOrder
-}
 
 export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>): Promise<SalesOrder> => {
   const res = await apiFetch<SalesOrder>('/sales-orders', {
@@ -75,25 +33,6 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
     body: JSON.stringify(payload),
   })
   return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'SalesService.patchSalesOrder') as SalesOrder
-}
-
-export const claimOrderLine = async (orderId: string, lineNos: number[], operator: string): Promise<SalesOrder> => {
-  const order = await getSalesOrderById(orderId)
-
-  const nextLines = order.lines.map((line) => {
-    if (lineNos.includes(line.lineNo)) {
-      return {
-        ...line,
-        claimedBy: operator,
-        claimedAt: new Date().toISOString(),
-      }
-    }
-    return line
-  })
-
-  return patchSalesOrder(orderId, {
-    lines: { o: order.lines, n: nextLines },
-  }, order.version)
 }
 
 export const updateOrderDelivery = async (orderNo: string, materialId: string, quantity: number): Promise<void> => {

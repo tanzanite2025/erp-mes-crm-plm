@@ -1,23 +1,275 @@
 
-- [ ] 371. 冻结本轮范围，只沉淀 `sales` 第一阶段 TDO 化可执行实施清单（2026-04-08，待确认）
-  - [ ] 本轮只新增单独 Markdown 执行清单，不修改业务代码。
-  - [ ] 清单需从既有方案文档压缩而来，直接服务于后续代码改造审批。
-  - [ ] 清单需按可执行 Phase 输出目标文件、动作、风险与验证口径。
+- [x] 429. 冻结本轮范围，执行 `purchase` 事务化第一刀（2026-04-08，已完成）
+  - [x] 已将 `sales` 已验证的 transaction 样板开始横向复制到 `purchase`。
+  - [x] 本轮只实现采购订单 `expectedDate` 事务化。
+  - [x] 未扩展到采购订单行级事务或跨域链路。
 
-- [ ] 372. 明确执行清单目标与边界
-  - [ ] 文档目标是让后续代码改造可按阶段推进，而不是重复展开长篇方案说明。
-  - [ ] 本轮只覆盖 `sales` 第一阶段，不扩散到 `purchase / inventory / workflow-core` 实施清单。
-  - [ ] 清单应明确“先改什么、后改什么、每步验什么”，但不直接写代码 diff。
+- [x] 430. 明确 `purchase` 第一刀边界
+  - [x] 当 delta 仅包含 `expectedDate` 时，走 transaction。
+  - [x] 其他采购订单编辑继续保留在现有 `patch` 链中。
+  - [x] 已保持本轮不进入采购订单行级事务化。
 
-- [ ] 373. 明确建议落点与目录策略
-  - [ ] 延续 `workflow` 专题目录，与“现状拓扑图”“方案文档”形成配套三件套。
-  - [ ] 建议路径：`docs/architecture/workflow/sales-phase1-tdo-execution-checklist.md`。
-  - [ ] 用户确认后创建，作为进入代码改造前的最后审批稿。
+- [x] 431. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已同步 `walkthrough.md`，记录 `purchase` 第一刀 intent、分流条件与验证结果。
 
-- [ ] 374. 明确进入代码改造前的确认点
-  - [ ] 需要用户确认执行清单内容可作为正式实施顺序。
-  - [ ] 需要用户明确批准后，才可进入 `sales` 第一阶段代码改造。
-  - [ ] 未获批准前，不得开始修改业务代码。
+- [ ] 426. 冻结本轮范围，执行 `purchase` 事务化第一刀（2026-04-08，待确认）
+  - [ ] 本轮目标是将 `sales` 已验证的 transaction 样板横向复制到 `purchase`。
+  - [ ] 本轮只选一个最小可复制切口，不并发推进整个采购域事务化。
+  - [ ] 不扩展到库存、MRP 或跨域聚合链路。
+
+- [ ] 427. 明确 `purchase` 第一刀的优先切口
+  - [ ] 优先分析是否应先做采购订单头部字段事务，而非直接切行级。
+  - [ ] 候选优先项：`ORDER_DELIVERY_DATE_CHANGE` 对应采购预计到货期调整。
+  - [ ] 明确本轮只选一个最稳妥切口实施，避免一开始并发复制过多 intent。
+
+- [ ] 428. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 第一刀 intent、分流条件与验证结果。
+
+- [x] 423. 冻结本轮范围，执行 `sales` 行级事务化第四刀：`ORDER_LINE_REMOVE`（2026-04-08，已完成）
+  - [x] 本轮只处理销售订单纯删除行事务。
+  - [x] 已新增 `ORDER_LINE_REMOVE`，未并发处理 `ORDER_LINE_ADD`。
+  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 424. 明确 `ORDER_LINE_REMOVE` 的边界
+  - [x] 仅当可稳定识别为“纯删除行”时，走 `ORDER_LINE_REMOVE`。
+  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [x] 若纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD`。
+
+- [x] 425. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已同步 `walkthrough.md`，记录 `ORDER_LINE_REMOVE` 的分流条件与验证结果。
+
+- [ ] 420. 冻结本轮范围，执行 `sales` 行级事务化第四刀：`ORDER_LINE_REMOVE`（2026-04-08，待确认）
+  - [ ] 本轮只处理销售订单纯删除行事务。
+  - [ ] 不并发处理 `ORDER_LINE_ADD`。
+  - [ ] 不扩展回订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 421. 明确 `ORDER_LINE_REMOVE` 的边界
+  - [ ] 仅当可稳定识别为“纯删除行”时，才走 `ORDER_LINE_REMOVE`。
+  - [ ] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [ ] 若是纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD`。
+
+- [ ] 422. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `ORDER_LINE_REMOVE` 的分流条件与验证结果。
+
+- [x] 417. 冻结本轮范围，执行 `sales` 行级事务化第三刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
+  - [x] 本轮只处理销售订单纯新增行事务。
+  - [x] 已新增 `ORDER_LINE_ADD`，未并发处理 `ORDER_LINE_REMOVE`。
+  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 418. 明确 `ORDER_LINE_ADD` 的边界
+  - [x] 仅当可稳定识别为“纯新增行”时，走 `ORDER_LINE_ADD`。
+  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [x] 若纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE`。
+
+- [x] 419. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已同步 `walkthrough.md`，记录 `ORDER_LINE_ADD` 的分流条件与验证结果。
+
+- [ ] 414. 冻结本轮范围，执行 `sales` 行级事务化第三刀：`ORDER_LINE_ADD`（2026-04-08，待确认）
+  - [ ] 本轮只处理销售订单行新增事务。
+  - [ ] 不并发处理 `ORDER_LINE_REMOVE`。
+  - [ ] 不扩展回订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 415. 明确 `ORDER_LINE_ADD` 的边界
+  - [ ] 仅当可稳定识别为“纯行级新增”时，才走 `ORDER_LINE_ADD`。
+  - [ ] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [ ] 若是纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE`。
+
+- [ ] 416. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `ORDER_LINE_ADD` 的分流条件与验证结果。
+
+- [x] 411. 冻结本轮范围，执行 `sales` 行级事务化第二刀（2026-04-08，已完成）
+  - [x] 本轮已将 `ORDER_LINES_CHANGE` 进一步细化为更窄的行级语义事务。
+  - [x] 本轮实际落地切口为 `ORDER_LINE_CONTENT_CHANGE`。
+  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 412. 明确行级第二刀边界
+  - [x] 仅当可稳定识别为“既有行内容修改、无增删”时，走 `ORDER_LINE_CONTENT_CHANGE`。
+  - [x] 若纯行级变更但存在增删，则继续保留在 `ORDER_LINES_CHANGE`。
+  - [x] `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE` 暂未进入本轮。
+
+- [x] 413. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已同步 `walkthrough.md`，记录本轮 intent、分流条件与验证结果。
+
+- [ ] 408. 冻结本轮范围，执行 `sales` 行级事务化第二刀（2026-04-08，待确认）
+  - [ ] 本轮目标是将 `ORDER_LINES_CHANGE` 进一步细化为更窄的行级语义事务。
+  - [ ] 候选范围仅限：行新增、行删除、行内容编辑。
+  - [ ] 不扩展回订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 409. 明确行级第二刀的优先切口
+  - [ ] 优先分析是否应先做 `ORDER_LINE_CONTENT_CHANGE`。
+  - [ ] 评估 `ORDER_LINE_ADD` 与 `ORDER_LINE_REMOVE` 是否适合在本轮独立收口。
+  - [ ] 明确本轮只选一个最稳妥切口实施，避免一次性并发改三条行级语义链。
+
+- [ ] 410. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [ ] 完成后同步 `walkthrough.md`，记录本轮 intent、分流条件与验证结果。
+
+- [x] 405. 冻结本轮范围，执行 `sales` 行级编辑事务化第一刀（2026-04-08，已完成）
+  - [x] 本轮只处理销售订单 `lines` 的纯内容编辑事务化。
+  - [x] 已新增 `ORDER_LINES_CHANGE`，不扩展到订单头字段或泛化改单。
+  - [x] 已保持其他普通编辑继续保留在 `patch` 链中。
+
+- [x] 406. 明确行级编辑事务化第一刀边界
+  - [x] 当 delta 仅包含 `lines`、`quantity`、`amount` 时，走 transaction。
+  - [x] 已将 `quantity` / `amount` 视为 `lines` 变更带出的派生聚合字段。
+  - [x] 若混入头部字段，仍保留在现有 `patch` 链中。
+
+- [x] 407. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已同步 `walkthrough.md`，记录本轮 transaction intent、分流条件与验证结果。
+
+- [ ] 402. 冻结本轮范围，执行 `sales` 行级编辑事务化第一刀（2026-04-08，待确认）
+  - [ ] 本轮只处理销售订单 `lines` 的纯内容编辑事务化。
+  - [ ] 不扩展到订单头字段、客户主体、交期、分类/模式调整。
+  - [ ] 不实现泛化 `ORDER_AMEND` 或整单 patch 包装型 transaction。
+
+- [ ] 403. 明确行级编辑事务化第一刀边界
+  - [ ] 仅当编辑订单提交的 delta 只涉及 `lines` 时，才允许切换到行级 transaction。
+  - [ ] 本轮优先覆盖行内内容编辑场景，不把头部字段混入同一个 intent。
+  - [ ] 其余任何混合编辑仍继续保留在现有 `patchMutation` 链中。
+
+- [ ] 404. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [ ] 完成后同步 `walkthrough.md`，记录本轮行级 transaction intent、分流条件与验证结果。
+
+- [ ] 396. 冻结本轮范围，执行 `sales` 分类/模式调整事务化（2026-04-08，待确认）
+  - [ ] 本轮只处理订单头字段 `classification` / `type` 的语义事务化。
+  - [ ] 不扩展到行项目编辑、客户主体、交期之外的其他改单项。
+  - [ ] 代码改造前需确认：仅在纯 `classification/type` 变更场景切换到 transaction。
+
+- [ ] 397. 明确分类/模式调整事务化边界
+  - [ ] 当编辑订单提交的 delta 仅包含 `classification`、`type` 时，走独立 transaction。
+  - [ ] 若同时混入其他字段，仍保留在现有 `patch` 链中。
+  - [ ] 保持已有 `ORDER_CUSTOMER_CHANGE` 与 `ORDER_DELIVERY_DATE_CHANGE` 分流逻辑不回退。
+
+- [ ] 398. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [ ] 完成后同步 `walkthrough.md`，记录本轮 transaction intent、分流条件与验证结果。
+
+- [x] 394. 冻结本轮范围，执行 `sales` 交期调整事务化（2026-04-08，已完成）
+  - [x] 本轮只处理改单事务化第二刀：交期调整。
+  - [x] 已新增 `ORDER_DELIVERY_DATE_CHANGE`，不扩展到分类/模式调整。
+  - [x] 已保证其他普通编辑仍保留在 `patch` 链中。
+
+- [x] 395. 明确交期调整事务化边界
+  - [x] 仅当 `deliveryDate` 发生变化时，编辑对话框才走 transaction。
+  - [x] 不将其他字段一并混入本轮 intent。
+  - [x] 保持现有普通编辑流程可用。
+
+- [ ] 391. 冻结本轮范围，执行 `sales` 交期调整事务化（2026-04-08，待确认）
+  - [ ] 本轮只处理改单事务化第二刀：交期调整。
+  - [ ] 已完成客户主体调整事务化后，本轮继续沿用“单字段语义收口”的推进方式。
+  - [ ] 代码改造前需先确认本轮只覆盖 `deliveryDate`。
+
+- [ ] 392. 明确交期调整事务化边界
+  - [ ] 仅当 `deliveryDate` 发生变化时，编辑订单才走独立 transaction。
+  - [ ] 不将分类/模式调整或其他字段一并混入本轮 intent。
+  - [ ] 其他普通编辑仍继续保留在 `patch` 链中。
+
+- [ ] 393. 明确交期调整事务化风险控制
+  - [ ] 需要避免把包含多字段的 delta 强行塞入“交期调整 transaction”。
+  - [ ] 需要保证现有编辑对话框在非纯交期修改场景下继续走 `patchMutation`。
+  - [ ] 需要保持 toast、invalidate、版本冲突与详情回显口径一致。
+
+- [x] 389. 冻结本轮范围，执行 `sales` 客户主体调整事务化（2026-04-08，已完成）
+  - [x] 本轮只处理改单事务化第一刀：客户主体调整。
+  - [x] 已新增 `ORDER_CUSTOMER_CHANGE`，不扩展到交期或分类/模式调整。
+  - [x] 已保证其他普通编辑仍保留在 `patch` 链中。
+
+- [x] 390. 明确客户主体调整事务化边界
+  - [x] 仅当 `customerId/customerName` 发生变化时，编辑对话框才走 transaction。
+  - [x] 不把整单编辑整体 transaction 化。
+  - [x] 保持现有普通编辑流程可用。
+
+- [ ] 386. 冻结本轮范围，执行 `sales` 改单事务化（2026-04-08，待确认）
+  - [ ] 本轮只推进改单事务化，不扩展到审批后状态细化或其他域。
+  - [ ] 第一刀不做全量改单事务化，避免退化成 `patch` 外层包装壳。
+  - [ ] 代码改造前需先确认本轮首个切入范围。
+
+- [ ] 387. 明确改单事务化首个切入范围
+  - [ ] 建议第一刀只处理订单头关键语义修改，而不是整单任意字段修改。
+  - [ ] 优先候选可包含：客户主体调整、交期调整、订单分类/模式调整。
+  - [ ] 行项目明细的大范围编辑暂继续保留在普通 `patch` 表单链中。
+
+- [ ] 388. 明确改单事务化风险与边界
+  - [ ] 需要避免把现有 `patchSalesOrder` 原样包进 transaction intent，导致语义失真。
+  - [ ] 需要明确改单事务的 payload 只承载被批准的一小组业务语义字段。
+  - [ ] 需要保证普通表单编辑链路仍可用，不因首刀事务化造成大面积断裂。
+
+- [x] 383. 冻结本轮范围，执行 `sales` 取消事务化（2026-04-08，已完成）
+  - [x] 已将“取消/作废”从 `DELETE /sales-orders/:id` 中拆出为独立 transaction intent。
+  - [x] 列表与详情中的取消动作已切换为 transaction 链。
+  - [x] `DELETE` 已收敛为仅处理已取消后的硬删除。
+
+- [x] 384. 明确取消事务化目标与边界
+  - [x] 本轮只处理取消语义，不扩展到改单或审批后状态细化。
+  - [x] 取消沿用既有 `/sales-orders/:id/transactions` endpoint，不新增平行事务入口。
+  - [x] 保持版本冲突、toast、invalidate 与详情回显口径一致。
+
+- [x] 385. 明确改动面与风险控制
+  - [x] 已改动前后端 transaction service、前端 transaction hooks、详情页与列表页取消调用点。
+  - [x] 已避免继续让未取消订单通过 `DELETE` 直接进入取消语义。
+  - [x] 已完成前后端编译与目标测试验证。
+
+- [x] 379. 冻结本轮范围，执行 `use-sales.ts` 物理删除与 `ORDER_STATUS_TRANSITION` 事务化（2026-04-08，已完成）
+  - [x] 已按批准顺序完成：先物理删除 `use-sales.ts`，再推进 `ORDER_STATUS_TRANSITION` 事务化。
+  - [x] 本轮继续只聚焦 `sales` 域，未扩散到 `purchase / inventory / workflow-core`。
+  - [x] 已在规划确认后完成代码改造。
+
+- [x] 380. 明确本轮目标与边界
+  - [x] 删除前已确认 `use-sales.ts` 无正式引用残留。
+  - [x] `ORDER_STATUS_TRANSITION` 已沿用既有 transaction endpoint，而未回退到 patch 驱动。
+  - [x] 本轮未顺手扩展更多 intent，只处理状态推进事务化。
+
+- [x] 381. 明确建议改动面与风险
+  - [x] 实际已改动 `sales-order-detail.tsx`、`sales-transaction-service.ts`、前端 transaction hooks、后端 sales transaction service。
+  - [x] 当前状态变更入口已从 `trackDelta()` 与 `patchMutation` 切换为语义事务提交。
+  - [x] 状态推进后的 toast、invalidate、版本冲突与详情回显已按现有口径保持一致，并通过验证。
+
+- [x] 382. 明确进入实施前确认点
+  - [x] 用户已确认按“先删 `use-sales.ts`，再做 `ORDER_STATUS_TRANSITION` 事务化”的顺序执行。
+  - [x] 用户已确认本轮只处理状态推进事务，不扩展更多动作。
+  - [x] 已按确认结果完成代码改造。
+
+- [ ] 375. 冻结本轮范围，只处理 `sales` query / transaction 分层拆分（2026-04-08，待确认）
+  - [ ] 本轮聚焦前端 `sales` 域分层拆分，不扩散到新的事务语义扩展。
+  - [ ] 本轮目标是拆出 query hooks / transaction hooks / query service，收口旧混合入口。
+  - [ ] 本轮不顺手推进 `ORDER_STATUS_TRANSITION` 或其他域改造。
+
+- [ ] 376. 明确分层拆分目标与边界
+  - [ ] 拆分目标优先覆盖：`use-sales-queries.ts`、`use-sales-transactions.ts`、`sales-query-service.ts`。
+  - [ ] 已存在的 `sales-transaction-service.ts` 继续保留，作为 transaction 层正式入口之一。
+  - [ ] 本轮只做职责重组与引用切换，不改变现有业务语义与接口契约。
+
+- [ ] 377. 明确建议改动面与风险点
+  - [ ] 需要评估 `use-sales.ts` 是否保留为兼容 re-export 薄壳，还是直接收缩为过渡文件。
+  - [ ] 需要同步评估 `src/features/trading/sales/index.ts` 的导出策略，避免拆分后出现双入口漂移。
+  - [ ] 需要控制 query key、mutation 成功回调、toast / invalidate 行为不发生回归。
+
+- [ ] 378. 明确进入拆分实施前确认点
+  - [ ] 需要用户确认本轮按前端分层拆分推进。
+  - [ ] 需要用户确认是否允许 `use-sales.ts` 暂时保留为兼容桥接层。
+  - [ ] 用户确认后再正式开始业务代码拆分。
+
+
 
 - [ ] 367. 冻结本轮范围，只沉淀 `sales` 第一阶段 TDO 化改造方案独立文档（2026-04-08，待确认）
   - [ ] 本轮只新增单独 Markdown 方案文档，不修改业务代码。
@@ -91,33 +343,6 @@
   - [ ] `searchMasterData()` 保持现状，不作为本轮回归阻塞项。
   - [ ] `pnpm exec tsc --noEmit` 通过，且 `warehouse` 库存管理主链可正常编译。
 
-
-## P1 AI 管理员前端误拒绝回归（2026-04-07，待确认）
-
-- [ ] 317. 冻结本轮范围，只处理管理员点击 AI 被前端误拒绝的问题
-  - [ ] 聚焦 `src/features/ai-assistant/hooks/use-ai-permissions.ts`。
-  - [ ] 本轮不重做 AI policy 数据模型，不扩散到后端治理策略重构。
-  - [ ] 本轮先输出最小修复方案，待确认后实施。
-
-- [ ] 318. 固化当前现象
-  - [ ] DEV 环境下系统管理员点击 AI 按钮，前端直接提示：`[权限拒绝] 您当前的角色未被授予极光 AI 决策权限。`
-  - [ ] 这导致当前无法放心进入生产验证。
-
-- [ ] 319. 固化根因判断
-  - [ ] 后端 `AIPolicyGuard()` 当前仍保留 `admin / superadmin` bypass。
-  - [ ] 前端 `useAiPermissions()` 在上轮口径统一时已切到 `effectiveRoles` 判定，但没有同步保留管理员 bypass。
-  - [ ] 因此前后端再次出现新的轻量漂移：后端可放行，前端先误拒绝。
-
-- [ ] 320. 明确最小修复目标
-  - [ ] 前端 AI 准入判定补回与后端一致的 `admin / superadmin` bypass。
-  - [ ] 管理员在未命中显式 `allowedRoles / allowedUsers` 时，仍可使用 AI。
-  - [ ] 不改普通用户的 AI 治理口径。
-
-- [ ] 321. 明确验证要求
-  - [ ] DEV 环境下 `admin / superadmin` 点击 AI 时不再出现前端误拒绝提示。
-  - [ ] 非管理员仍按现有 AI policy 正常判定。
-  - [ ] 不引入新的“前端放行、后端拒绝”漂移。
-
 ## P1 AI 单入口收敛专项（2026-04-07，待确认）
 
 - [ ] 312. 冻结本轮范围，只处理 AI 入口容器收敛
@@ -177,127 +402,7 @@
   - [ ] 未授权用户前后端都应一致拒绝，且拒绝方式一致、可解释。
   - [ ] `/api/v1/ai/proxy` 不应再对“前端已判定可用”的同一用户返回治理 403。
 
-## P1 仓储报表异常专项（2026-04-07，待确认）
-
-- [ ] 300. 冻结本轮范围，只分析仓储报表当前异常链路
-  - [ ] 聚焦 `useWarehouseReport` / `use-report.ts` / `InventoryService.searchMasterData()` / `MaterialService.getMaterialOptions()` / `getAlertThresholds()`。
-  - [ ] 本轮先补审批稿，不直接修改业务代码。
-  - [ ] 不扩散到库存模块整体重构或全局 API 客户端重写。
-
-- [ ] 301. 明确当前异常现象
-  - [ ] 控制台出现 `MaterialService.getMaterialOptions ... expected an object response` 相关错误文案。
-  - [ ] 同时可见 `InventoryService [MOCK_SERVICE] getAlertThresholds is returning empty initial object` 警告。
-  - [ ] 用户要求“找根因，禁止打补丁”。
-
-- [ ] 302. 明确已确认调用链
-  - [ ] `src/features/warehouse/hooks/use-report.ts` 负责报表主数据加载。
-  - [ ] `inventoryService.searchMasterData()` 内部调用 `materialService.getMaterialOptions()`。
-  - [ ] `inventoryService.getAlertThresholds()` 当前是 mock，返回空对象并打印 warning。
-
-- [ ] 303. 明确根因判断
-  - [ ] 当前 `src/features/material-archive/services/material-service.ts` 中 `getMaterialOptions()` 已按数组响应校验收口。
-  - [ ] 报错文案仍声称“expected an object response”，与现仓代码不一致。
-  - [ ] 结论：当前仓储报表异常更符合“旧 bundle 仍在运行 / 前端资源未刷新 / 部署版本错位”特征，而不是 `getAlertThresholds()` mock 自身导致。
-
-- [ ] 304. 明确不应误判的点
-  - [ ] `getAlertThresholds()` 的 mock warning 是噪音，但不是当前 `MaterialService.getMaterialOptions` 契约错误的直接根因。
-  - [ ] 不应把本问题误修成继续改 `apiFetch` 全局解包策略。
-  - [ ] 不应仅通过前端 try/catch 吞错来掩盖 bundle 漂移问题。
-
-- [ ] 305. 明确后续实施边界
-  - [ ] 优先验证实际运行 bundle 是否为最新构建产物。
-  - [ ] 若运行产物落后，则先做部署/缓存刷新验证，不直接改业务代码。
-  - [ ] 仅当确认当前运行代码与仓库一致后，才评估是否仍存在真实仓储报表链路缺口。
-
-## P1 `asset-service.ts` facade/hook 拆层专项（2026-04-07，待确认）
-
-- [ ] 294. 冻结本轮范围，只分析 `src/features/equipment-tooling/services/asset-service.ts` 是否需要拆层
-  - [ ] 本轮仅输出职责拆解、风险判断与拟拆层路径。
-  - [ ] 本轮不直接修改 `asset-service.ts`、不改页面调用方。
-  - [ ] 本轮不顺带重构 `MoldService`、`FurnaceService`、`MoldLoanService`。
-
-- [ ] 295. 明确 `asset-service.ts` 当前混合职责
-  - [ ] facade 职责：聚合 `MoldService` / `FurnaceService` / `MoldLoanService` 能力并统一导出。
-  - [ ] hook 职责：`useAssets()` 中维护本地状态、初始加载、事件监听与局部刷新。
-  - [ ] UI 协调职责：在 `updateMolds()` / `updateFurnaces()` / `setAssetStatus()` 中执行乐观更新、回滚与错误处理。
-
-- [ ] 296. 判断是否需要拆层
-  - [ ] 当前文件已同时承担“领域 facade + React hook + 状态协调器”三类职责。
-  - [ ] 该结构增加了测试难度、职责边界模糊度与后续模块抽离成本。
-  - [ ] 结论：适合拆层，但应采用最小拆法，避免影响 equipment-tooling 现有页面行为。
-
-- [ ] 297. 明确最小拆层方向
-  - [ ] 保留 `AssetService` 作为无状态 facade（仅聚合领域命令与查询能力）。
-  - [ ] 将 `useAssets()` 抽离到独立 hook 文件，专门承载 React 状态、事件监听与局部刷新。
-  - [ ] 将乐观更新/回滚逻辑视情况进一步收口到 hook 内部私有 helper，不提前引入新的抽象基类。
-
-- [ ] 298. 明确本轮不做事项
-  - [ ] 不重写资产模块页面。
-  - [ ] 不改变现有事件名（如 `xdfc_molds_updated` 等）。
-  - [ ] 不调整 `AssetService` 对外 API 名称。
-  - [ ] 不把本专项扩散成 equipment-tooling 全量架构重写。
-
-- [ ] 299. 将拆层实施方案写入 `implementation_plan.md`
-  - [ ] 明确拆分后的文件职责、迁移顺序、风险点与验证方式。
-  - [ ] 待确认后再进入实施阶段。
-
-## P1 DTO 第二阶段：`equipment-tooling/services` 与 `basic-settings/services`（2026-04-07，待确认）
-
-- [ ] 287. 冻结本轮范围，只处理 `equipment-tooling/services` 与 `basic-settings/services` 的 DTO 接入缺口规划
-  - [ ] 本轮仅更新审批稿，不直接修改业务代码。
-  - [ ] 仅处理文件级、函数级、风险级别与拟整改策略。
-  - [ ] 不扩散到 `engineering-db`、`finance`、`approval` 目录。
-
-- [ ] 288. 识别 `equipment-tooling/services` 高风险缺口
-  - [ ] `src/features/equipment-tooling/services/mold-service.ts`
-    - [ ] `getMoldsWithVersion()`：仍依赖 `(response as any).data` 与 `(response as any).version` 的旧式兼容分支。
-    - [ ] `getMoldById()`：详情读取未显式做对象响应校验。
-    - [ ] `isSnDuplicate()`：对象读取未显式做 DTO guard。
-    - [ ] `checkLinkIntegrity()`：聚合对象返回未显式做 DTO guard。
-  - [ ] `src/features/equipment-tooling/services/mold-loan-service.ts`
-    - [ ] `getLoans()`：列表读取未显式做数组响应校验。
-    - [ ] `createBorrowRecord()`：仍使用 `apiFetch<any>` 且直接返回裸结果。
-  - [ ] `src/features/equipment-tooling/services/furnace-service.ts`
-    - [ ] `getFurnaces()`：列表读取未显式做数组响应校验。
-
-- [ ] 289. 识别 `equipment-tooling/services` 中风险缺口
-  - [ ] `src/features/equipment-tooling/services/archive-service.ts`
-  - [ ] `src/features/equipment-tooling/services/asset-service.ts`
-  - [ ] 待进入实施前再补函数级核对，避免当前误改未读文件。
-  - [ ] `drawing-service.ts`、`partner-service.ts` 当前可暂视为已基本接入，不列入本轮优先整改。
-
-- [ ] 290. 识别 `basic-settings/services` 高风险缺口
-  - [ ] `src/features/basic-settings/services/system-config-service.ts`
-    - [ ] `getConfigs()`：列表读取直接返回 `apiFetch` 结果。
-    - [ ] `updateConfig()`：保存返回对象未显式做 DTO guard。
-  - [ ] `src/features/basic-settings/services/enterprise-service.ts`
-    - [ ] `getConfig()`：成功路径未显式做对象响应校验，404 fallback 与 DTO guard 未统一收口。
-    - [ ] `saveConfig()`：保存返回对象未显式做 DTO guard。
-  - [ ] `src/features/basic-settings/services/linear-barcode-protocol-service.ts`
-    - [ ] `getConfig()`：成功路径未显式做对象响应校验。
-    - [ ] `updateConfig()`：保存返回对象未显式做对象响应校验。
-  - [ ] `src/features/basic-settings/services/numbering-service.ts`
-    - [ ] `generateNumber()`：直接读取 `data.number`，未显式做 DTO guard。
-
-- [ ] 291. 识别 `basic-settings/services` 相对完整链路
-  - [ ] `src/features/basic-settings/services/unit-service.ts`：已具备数组/对象响应校验与 `patchUnit()`。
-  - [ ] `src/features/basic-settings/services/dictionary-service.ts`：主要读取链路已显式做数组响应校验。
-
-- [ ] 292. 明确第二阶段拟整改顺序
-  - [ ] 先处理 `system-config-service.ts`、`enterprise-service.ts`、`linear-barcode-protocol-service.ts`、`numbering-service.ts`。
-  - [ ] 再处理 `mold-service.ts`、`mold-loan-service.ts`、`furnace-service.ts`。
-  - [ ] `archive-service.ts`、`asset-service.ts` 已完成函数级核对后再决定是否实施。
-
-- [ ] 293. 补充 `archive-service.ts` 与 `asset-service.ts` 的函数级盘点结论
-  - [ ] `src/features/equipment-tooling/services/archive-service.ts`
-    - [ ] `getArchivedMolds()`：已使用 `ensureArrayResponse<Mold>(...)`，当前可视为已基本接入 DTO。
-    - [ ] `archive()`：命令型接口，当前不依赖返回对象 DTO，主要是事件分发与命令提交。
-    - [ ] 结论：本文件当前不作为优先整改目标，避免为了“统一形式”而过度修改。
-  - [ ] `src/features/equipment-tooling/services/asset-service.ts`
-    - [ ] 当前文件本质为 facade + hook 组合层，并不直接发起 `apiFetch`。
-    - [ ] DTO 边界主要依赖 `MoldService`、`FurnaceService`、`MoldLoanService` 的返回契约。
-    - [ ] 结论：本文件当前不应按底层 DTO service 同等处理，优先保持 facade 职责稳定。
-  - [ ] 若后续继续治理 `asset-service.ts`，应聚焦 facade 边界与 hook 职责，而非强行补 response guard。
+。
 
 ## P1 DTO 接入缺口盘点与整改规划（2026-04-07，待确认）
 
@@ -347,50 +452,3 @@
   - [ ] 在 `implementation_plan.md` 中输出“文件 + 函数 + 风险级别 + 问题类型 + 拟整改策略”表。
   - [ ] 待确认后再按风险等级分批实施，避免一次性横扫全部 service。
 
-## P0 `/purchase/logistics` 页面 500 修复（2026-04-07，待确认）
-
-- [ ] 276. 冻结本轮修复范围，只处理 `/purchase/logistics` 页面当前两处已定位故障
-  - [ ] 修复采购订单查询接口路径错误导致的 404。
-  - [ ] 修复离线草稿 `useSyncExternalStore` 快照不稳定导致的无限更新。
-  - [ ] 不扩散成采购模块整体重构或全局 store 架构改造。
-
-- [ ] 277. 修复采购订单查询路径与后端真实路由不一致问题
-  - [ ] 当前前端请求：`/purchase-orders?status=Approved`
-  - [ ] 后端真实路由：`/purchase/orders`
-  - [ ] 对齐前端请求路径，避免弹窗初始化阶段稳定 404。
-
-- [ ] 278. 修复离线草稿 store 的快照稳定性
-  - [ ] `getPurchaseLogisticsOfflineDraftsSnapshot()` 不能每次返回新的数组实例。
-  - [ ] 确保 `useSyncExternalStore` 的 `getSnapshot` 在未变化时返回稳定引用。
-  - [ ] 消除 `The result of getSnapshot should be cached` 与 `Maximum update depth exceeded`。
-
-- [ ] 279. 明确本轮验证口径
-  - [ ] `/purchase/logistics` 页面可正常打开。
-  - [ ] 页面不再触发 `useSyncExternalStore` 无限循环。
-  - [ ] 采购单下拉不再请求错误路径导致 404。
-  - [ ] 不影响现有采购订单列表/物流提交流程。
-
-- [ ] 280. 将最小修复方案写入实施文档
-  - [ ] 在 `implementation_plan.md` 中明确拟改文件、根因与验证方式。
-  - [ ] 待确认后再进入代码修复与验证。
-
-## P0 MaterialService.getMaterialOptions 响应契约冲突修复（2026-04-07，待确认）
-
-- [ ] 272. 冻结本轮修复范围，只处理材料选项接口的前端响应契约冲突
-  - [ ] 仅聚焦 `src/features/material-archive/services/material-service.ts` 及必要验证。
-  - [ ] 不修改后端 `materials` handler。
-  - [ ] 不扩散成全局 `apiFetch` 解包机制重构。
-
-- [ ] 273. 修复 `getMaterialOptions()` 与全局解包语义冲突
-  - [ ] 对齐 `apiFetch` 当前会将 `{ data: [] }` 自动解包为数组的事实。
-  - [ ] 移除该函数中对“必须是对象响应”的错误假设。
-  - [ ] 保持返回值仍为 `Material[]`，不改页面调用方式。
-
-- [ ] 274. 明确本轮验证口径
-  - [ ] 材料组装页 `MaterialAssemblyManager.loadData` 不再因 `[INVALID_RESPONSE]` 失败。
-  - [ ] `getMaterialOptions()` 返回的材料数组仍可用于下拉筛选与映射。
-  - [ ] 不引入对 `getMaterialsWithVersion()` 等其他依赖对象包装的回归影响。
-
-- [ ] 275. 将最小修复方案写入实施文档
-  - [ ] 在 `implementation_plan.md` 中明确根因、拟改文件与验证方式。
-  - [ ] 待确认后再进入代码修复与验证。

@@ -5,7 +5,7 @@ import { type Product, type ProductType } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { getEffectiveTemplate } from '../components/specs'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { buildDefaultProductValues, type ProductVariantSelection } from '../utils/product-form-utils'
 import { type useDeltaTracker } from '@/hooks/use-delta-tracker'
 
@@ -42,10 +42,10 @@ export function useProductFormInit({
     useEffect(() => {
         const loadDictData = async () => {
             if (!open) return
-            await dictionaryService.init()
+            await DictionaryCoreService.init()
 
             const getDict = (code: string) => {
-                return dictionaryService.getOptions(code)
+                return DictionaryCoreService.getOptions(code)
             }
 
             setTireTypeOptions(getDict('TIRE_TYPE'))

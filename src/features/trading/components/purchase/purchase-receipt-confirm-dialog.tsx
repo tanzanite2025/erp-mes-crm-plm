@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
-import { dictionaryService } from '@/features/basic-settings/services/dictionary-service'
+import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type PurchaseOrder } from '../../data/schema'
 import type { ConfirmPurchaseReceiptPayload } from '../../purchase'
 
@@ -85,7 +85,7 @@ function PurchaseReceiptConfirmDialogBody({
 }) {
   const { t } = useLanguage()
   const warehouseCategories = useMemo(
-    () => (dictionaryService.getOptions('WAREHOUSE_CATEGORY') || []) as Array<{ value: string; label: string }>,
+    () => (DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') || []) as Array<{ value: string; label: string }>,
     []
   )
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().slice(0, 10))
