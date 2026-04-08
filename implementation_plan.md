@@ -1,5 +1,49 @@
 # implementation plan
 
+## `error-action-registry` / `translate` 类型对齐修复（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成本次部署构建失败修复：
+
+1. 根因定位为 `handle-server-error.ts` 将 `ErrorActionMetadata.messageKey` / `actionLabelKey` 作为普通 `string` 传入 `translate(...)`；
+2. `src/lib/error-action-registry.ts` 已引入 `TranslationKey`；
+3. `messageKey` 已收紧为 `TranslationKey`；
+4. `actionLabelKey` 已收紧为 `TranslationKey | undefined`；
+5. 验证通过：`pnpm exec tsc --noEmit`。
+
+## `error-action-registry` / `translate` 类型对齐修复（2026-04-08，进行中）
+
+### 一、问题概述
+部署构建失败点位于 `src/lib/handle-server-error.ts`：
+
+```ts
+translate(locale, actionMetadata.messageKey)
+translate(locale, actionMetadata.actionLabelKey)
+```
+
+其中 `translate` 的第二个参数要求是 `TranslationKey`，但 `src/lib/error-action-registry.ts` 当前把 `messageKey` / `actionLabelKey` 声明为普通 `string`，导致 `tsc` 在构建阶段报 `TS2345`。
+
+### 二、最小修复策略
+本轮采用最小修复：
+
+1. 在 `src/lib/error-action-registry.ts` 中引入 `TranslationKey`；
+2. 将 `messageKey` 类型收紧为 `TranslationKey`；
+3. 将 `actionLabelKey` 类型收紧为 `TranslationKey | undefined`；
+4. 不在 `handle-server-error.ts` 中继续扩大 `as any` 范围；
+5. 保持注册表定义期即完成 i18n key 合法性校验。
+
+### 三、验证要求
+执行：
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+目标：
+
+1. `handle-server-error.ts` 中 `translate(...)` 不再报 `TS2345`；
+2. 前端构建链恢复可通过状态。
+
 ## `customer / supplier`：核心标识字段变更事务化（2026-04-08，已完成）
 
 ### 执行结果摘要（2026-04-08，已完成）

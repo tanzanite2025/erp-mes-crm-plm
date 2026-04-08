@@ -94,7 +94,7 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, orderNameChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -123,7 +123,6 @@ export function SalesOrderActionDialog({
           deltaKeys.length > 0 && deltaKeys.every((key) => key === 'classification' || key === 'type' || key === 'barcode')
         const isDeliveryDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'deliveryDate')
         const isStatusFlowOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status' || key === 'statusNote')
-        const isOrderNameOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'orderName')
         const isPurchaseOrderNoOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'purchaseOrderNo')
         const isRequirementsOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'requirements')
         const hasLineStructureChange = (() => {
@@ -295,17 +294,6 @@ export function SalesOrderActionDialog({
           return
         }
 
-        if (isOrderNameOnlyChange) {
-          await orderNameChangeMutation.mutateAsync({
-            orderId: order.id,
-            orderName: finalData.orderName || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
 
         if (isPurchaseOrderNoOnlyChange) {
           await purchaseOrderNoChangeMutation.mutateAsync({

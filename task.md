@@ -1,5 +1,11 @@
 
 
+- [x] 494. 修复 `error-action-registry` 与 `translate` 的类型不匹配构建失败（2026-04-08，已完成）
+  - [x] 已定位为 `handle-server-error.ts` 中传入 `translate(...)` 的 `messageKey` / `actionLabelKey` 被推断为普通 `string`。
+  - [x] 已收紧 `src/lib/error-action-registry.ts` 的 key 类型，使其对齐 `TranslationKey`。
+  - [x] 已避免继续使用宽泛 `string` 导致部署构建时 `tsc -b` 失败。
+  - [x] 已验证：`pnpm exec tsc --noEmit` 通过，且 `handle-server-error.ts` 不再报 TS2345。
+
 - [x] 490. 冻结本轮范围，规划并实现 `customer / supplier` 核心标识字段变更事务化（2026-04-08，已完成）
   - [x] 本轮只处理 `customer` / `supplier` 的核心标识字段，未并发进入状态、归档、删除或其他业务域。
   - [x] 已为“主体身份识别字段变更”建立显式 intent，而不是继续只依赖通用 `patch`。

@@ -183,7 +183,7 @@ export function OrderLinesEditor({
                   <Input
                     type='number'
                     value={line.qty}
-                    onChange={(e) => onLineChange(index, 'qty', e.target.value)}
+                    onChange={(e) => onLineChange(index, 'qty', Number(e.target.value) || 0)}
                     className='h-9 border-primary/20 text-center text-[12px] font-black'
                   />
                 </td>
@@ -191,7 +191,7 @@ export function OrderLinesEditor({
                   <Input
                     type='number'
                     value={line.price}
-                    onChange={(e) => onLineChange(index, 'price', e.target.value)}
+                    onChange={(e) => onLineChange(index, 'price', Number(e.target.value) || 0)}
                     className='h-9 border-amber-500/20 text-center text-[12px] font-black'
                   />
                 </td>
@@ -359,7 +359,7 @@ export function OrderLinesEditor({
                   <Input
                     type='number'
                     value={line.qty}
-                    onChange={(e) => onLineChange(index, 'qty', e.target.value)}
+                    onChange={(e) => onLineChange(index, 'qty', Number(e.target.value) || 0)}
                     className='h-11 rounded-xl border-primary/30 bg-primary/5 text-center text-[13px] font-black shadow-sm focus:ring-primary'
                   />
                 </div>
@@ -370,8 +370,8 @@ export function OrderLinesEditor({
                   <Input
                     type='number'
                     value={line.price}
-                    onChange={(e) => onLineChange(index, 'price', e.target.value)}
-                    className='h-11 rounded-xl border-amber-500/30 bg-amber-500/5 text-center text-[13px] font-black'
+                    onChange={(e) => onLineChange(index, 'price', Number(e.target.value) || 0)}
+                    className='h-11 rounded-xl border-amber-500/30 bg-amber-50/5 text-center text-[13px] font-black'
                   />
                 </div>
               </div>

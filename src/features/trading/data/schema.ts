@@ -77,16 +77,24 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
 
 // Removed old manual SalesOrderApproval as it was superseded by Workflow Engine
 
+export interface OrderEvidence {
+    id: string
+    url: string
+    name: string
+    uploadedAt: string
+}
+
 export interface SalesOrder extends BaseEntity {
     orderNo: string
-    orderName: string
+    orderName?: string
     customerName: string
     customerId?: string // 引用客户 ID
     type: SalesOrderType
     currency: string // 字典引用：货币类别
     classification: string // 字典引用：订单分类 (TRADING/ORDER_CLASSIFICATION)
     status: SalesOrderStatus
-    statusNote?: string
+    statusNote?: string // 弃用：建议使用 evidences
+    evidences?: OrderEvidence[]
     amount: number
     quantity: number
     orderDate: string

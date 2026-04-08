@@ -29,7 +29,12 @@ export function useSalesOrderOps(
         const nextLines = [...(prev.lines || [])]
         if (!nextLines[index]) return prev
         
-        nextLines[index] = { ...nextLines[index], [field]: value, ...extraData }
+        let finalValue = value
+        if (field === 'qty' || field === 'price' || field === 'holeCount') {
+          finalValue = Number(value) || 0
+        }
+
+        nextLines[index] = { ...nextLines[index], [field]: finalValue, ...extraData }
 
         if (field === 'qty' || field === 'price' || extraData) {
           const qty = Number(nextLines[index].qty) || 0

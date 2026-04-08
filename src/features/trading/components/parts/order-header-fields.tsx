@@ -2,10 +2,10 @@ import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
 import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type Customer, type SalesOrder } from '../../data/schema'
+import { OrderEvidenceManager } from './order-evidence-manager'
 
 type SalesOrderFormState = Partial<SalesOrder>
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
@@ -43,17 +43,6 @@ export function OrderHeaderFields({
         message={t('tradingSalesOrder.headerFields.lockedMessage')}
       >
         <div className='grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2 lg:grid-cols-4'>
-          <div className='grid gap-1'>
-            <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
-              {t('tradingSalesOrder.detail.info.orderName')}
-            </Label>
-            <Input
-              placeholder={t('tradingSalesOrder.detail.info.orderName')}
-              value={formData.orderName || ''}
-              onChange={(e) => setFormData((prev) => ({ ...prev, orderName: e.target.value }))}
-              className='h-11 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
-            />
-          </div>
 
           <div className='grid gap-1'>
             <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
@@ -159,7 +148,7 @@ export function OrderHeaderFields({
             </div>
           </div>
 
-          <div className='grid gap-1 md:col-span-3'>
+          <div className='grid gap-1 md:col-span-2'>
             <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.barcode')}
             </Label>
@@ -174,16 +163,11 @@ export function OrderHeaderFields({
             </div>
           </div>
 
-          <div className='grid gap-1 md:col-span-4'>
-            <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
-              {t('tradingSalesOrder.detail.info.progress')}
-            </Label>
-            <Textarea
-              placeholder={t('tradingSalesOrder.detail.info.progress')}
-              rows={2}
-              value={formData.statusNote || ''}
-              onChange={(e) => setFormData((prev) => ({ ...prev, statusNote: e.target.value }))}
-              className='resize-none rounded-[20px] border-muted/60 p-3 text-[13px] font-medium leading-relaxed shadow-sm transition-shadow focus:shadow-xl sm:text-[12px]'
+          <div className='grid gap-3 md:col-span-4'>
+            <OrderEvidenceManager
+              evidences={formData.evidences || []}
+              onChange={(evs) => setFormData((prev) => ({ ...prev, evidences: evs }))}
+              disabled={!allowedEditStatuses.includes(formData.status || 'Draft')}
             />
           </div>
         </div>

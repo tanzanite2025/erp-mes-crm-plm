@@ -1,5 +1,37 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`error-action-registry` / `translate` 类型对齐修复（2026-04-08）
+
+### 问题现象
+部署机构建失败，报错点位于 `src/lib/handle-server-error.ts`：
+
+```ts
+translate(locale, actionMetadata.messageKey)
+translate(locale, actionMetadata.actionLabelKey)
+```
+
+`translate` 要求第二个参数为 `TranslationKey`，但 `error-action-registry.ts` 中的 `messageKey` / `actionLabelKey` 被声明为普通 `string`，导致 `tsc` 报 `TS2345`。
+
+### 修复方式
+本轮采用最小修复：
+
+- 在 `src/lib/error-action-registry.ts` 中引入 `TranslationKey`；
+- 将 `messageKey` 收紧为 `TranslationKey`；
+- 将 `actionLabelKey` 收紧为 `TranslationKey | undefined`；
+- 不继续扩大 `handle-server-error.ts` 中的 `as any` 覆盖范围；
+- 让错误动作注册表在定义期就接受 i18n key 合法性校验。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 结论
+本次失败的根因不是部署脚本，而是前端严格类型构建拦截了 `string -> TranslationKey` 的不兼容传参。修复后，`handle-server-error.ts` 对 `translate(...)` 的调用已重新满足类型约束。
+
 ## 专项：`customer / supplier` 核心标识字段变更事务化（2026-04-08）
 
 ### 本轮目标

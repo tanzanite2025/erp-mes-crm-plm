@@ -14,7 +14,6 @@ type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) 
 
 const DEFAULT_ORDER: Partial<SalesOrder> = {
   orderNo: '',
-  orderName: '',
   customerName: '',
   customerId: '',
   type: '',
@@ -27,6 +26,7 @@ const DEFAULT_ORDER: Partial<SalesOrder> = {
   barcode: '',
   statusNote: '',
   lines: [],
+  evidences: [],
   quantity: 0,
   amount: 0,
   requirements: '',

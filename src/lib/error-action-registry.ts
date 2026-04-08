@@ -2,11 +2,13 @@
  * 定义全局错误动作映射
  * 键：后端返回的原始英文错误字符串
  */
+import { type TranslationKey } from '@/locales'
+
 export interface ErrorActionMetadata {
   /** 映射的翻译 Key (用于显示提示消息) */
-  messageKey: string
+  messageKey: TranslationKey
   /** 操作按钮的翻译 Key (如果不提供，则只显示普通报错) */
-  actionLabelKey?: string
+  actionLabelKey?: TranslationKey
   /** 点击按钮后跳转的目标路由 */
   target?: string
 }

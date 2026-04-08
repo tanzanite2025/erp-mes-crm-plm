@@ -1,7 +1,10 @@
 import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
-import { type SalesOrder } from '../../data/schema'
+import { type SalesOrder, type OrderEvidence } from '../../data/schema'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { ImageIcon, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 function InfoRow({
   label,
@@ -24,6 +27,66 @@ function InfoRow({
       >
         {value || '-'}
       </span>
+    </div>
+  )
+}
+
+function EvidenceGallery({ evidences }: { evidences: OrderEvidence[] }) {
+  const [previews, setPreviews] = useState<Record<string, string>>({})
+  const { t } = useLanguage()
+
+  useEffect(() => {
+    const loadPreviews = async () => {
+      const urls: Record<string, string> = {}
+      for (const ev of evidences) {
+        try {
+          const blob = await StorageService.getItem<Blob>(ev.url)
+          if (blob instanceof Blob) {
+            urls[ev.id] = URL.createObjectURL(blob)
+          } else {
+            urls[ev.id] = ev.url
+          }
+        } catch (e) {
+          console.error('Failed to load detail preview', e)
+        }
+      }
+      setPreviews(urls)
+    }
+    loadPreviews()
+  }, [evidences])
+
+  if (!evidences || evidences.length === 0) return null
+
+  return (
+    <div className='mt-6 border-t border-muted-foreground/10 pt-4'>
+      <div className='flex items-center gap-2 mb-3'>
+        <ImageIcon className='size-3.5 text-primary' />
+        <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 italic'>
+          {t('tradingSalesOrder.detail.evidenceTitle') || '订单凭据 (Order Evidence)'}
+        </h4>
+      </div>
+      <div className='flex flex-wrap gap-4'>
+        {evidences.map((ev) => (
+          <div
+            key={ev.id}
+            className='group relative size-20 overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:ring-2 hover:ring-primary/20'
+          >
+            {previews[ev.id] ? (
+              <a href={previews[ev.id]} target='_blank' rel='noreferrer'>
+                <img
+                  src={previews[ev.id]}
+                  alt={ev.name}
+                  className='size-full object-cover transition-transform group-hover:scale-110'
+                />
+              </a>
+            ) : (
+              <div className='flex size-full items-center justify-center'>
+                <Loader2 className='size-4 animate-spin text-muted-foreground/20' />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -51,7 +114,6 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
   return (
     <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-6 py-5 shadow-inner'>
       <div className='grid grid-cols-2 gap-x-4 gap-y-2.5 md:grid-cols-4 lg:grid-cols-6'>
-        <InfoRow label={t('tradingSalesOrder.detail.info.orderName')} value={order.orderName} />
         <InfoRow
           label={t('tradingSalesOrder.detail.info.orderType')}
           value={
@@ -97,9 +159,10 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
         />
         <InfoRow label={t('tradingSalesOrder.detail.info.customerPo')} value={order.purchaseOrderNo} />
         <InfoRow label={t('tradingSalesOrder.detail.info.barcode')} value={order.barcode} />
-        <InfoRow label={t('tradingSalesOrder.detail.info.progress')} value={order.statusNote} />
         <InfoRow label={t('tradingSalesOrder.detail.info.orderId')} value={order.id} />
       </div>
+
+      <EvidenceGallery evidences={order.evidences || []} />
 
       <div className='border-t border-muted-foreground/10 pt-4'>
         <div className='flex items-start gap-3'>
