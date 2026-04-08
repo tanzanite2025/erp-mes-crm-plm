@@ -1,19 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { StocktakeService } from '@/features/warehouse/services/stocktake-service'
-import { StocktakeItem, StocktakeTask } from '../data/schema'
+import { StocktakeCoreService, type StocktakeItem } from '@/features/warehouse/services/stocktake-core-service'
+import { StocktakeMaintenanceService } from '@/features/warehouse/services/stocktake-maintenance-service'
 import { toast } from 'sonner'
 
 export function useGetStocktakeTasks() {
   return useQuery({
     queryKey: ['pda_stocktake_tasks'],
-    queryFn: () => StocktakeService.getTasks() as unknown as Promise<StocktakeTask[]>,
+    queryFn: () => StocktakeCoreService.getTasks(),
   })
 }
 
 export function useGetStocktakeItems(taskId: string) {
   return useQuery({
     queryKey: ['pda_stocktake_items', taskId],
-    queryFn: () => StocktakeService.getItems(taskId) as unknown as Promise<StocktakeItem[]>,
+    queryFn: () => StocktakeCoreService.getItems(taskId),
     enabled: !!taskId,
   })
 }
@@ -23,7 +23,7 @@ export function useStocktakeMutations() {
 
   const patchItemMutation = useMutation({
     mutationFn: ({ id, delta, version }: { id: string; delta: any; version: number; taskId: string }) =>
-      StocktakeService.pdaPatchItem(id, delta, version),
+      StocktakeMaintenanceService.pdaPatchItem(id, delta, version),
     onMutate: async ({ id, delta, taskId }) => {
       // 乐观更新 (Optimistic UI) - SDRTS 核心体验
       await queryClient.cancelQueries({ queryKey: ['pda_stocktake_items', taskId] })

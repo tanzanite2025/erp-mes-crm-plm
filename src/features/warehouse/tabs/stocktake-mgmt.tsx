@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, PackageSearch, RefreshCw, Send, AlertCircle, History, Database, Search } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
@@ -19,56 +19,48 @@ import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
 
-import { StocktakeService, type StocktakeItem, type StocktakeTask } from '../services/stocktake-service'
-import { warehouseCategoryService } from '../services/category-service'
+import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
+import { useWarehouseCategory } from '../hooks/use-warehouse-category'
+import { type StocktakeItem, type StocktakeTask } from '../services/stocktake-core-service'
 import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
 
 export function StocktakeMgmt() {
-    const queryClient = useQueryClient()
     const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
+    
+    const queryClient = useQueryClient()
+    const { 
+        tasks, 
+        isLoading, 
+        isError: error,
+        refetch,
+        createStocktake,
+        isCreating 
+    } = useStocktake()
+
+    const { categories } = useWarehouseCategory()
+
     const [selectedTask, setSelectedTask] = useState<StocktakeTask | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [adjustmentConfirmOpen, setAdjustmentConfirmOpen] = useState(false)
     const selectedTaskId = selectedTask?.id
 
-    const { data: tasks, isLoading, error, refetch } = useQuery({
-        queryKey: ['stocktake-tasks'],
-        queryFn: () => StocktakeService.getTasks()
-    })
+    const { data: items, isLoading: itemsLoading } = useStocktakeItems(selectedTaskId || null)
 
-    const { data: categories } = useQuery({
-        queryKey: ['warehouse-categories'],
-        queryFn: () => warehouseCategoryService.getCategories()
-    })
-
-    const { data: items, isLoading: itemsLoading } = useQuery({
-        queryKey: ['stocktake-items', selectedTaskId],
-        queryFn: () => selectedTaskId ? StocktakeService.getItems(selectedTaskId) : Promise.resolve([]),
-        enabled: !!selectedTaskId
-    })
-
-    const createMutation = useMutation({
-        mutationFn: StocktakeService.create,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['stocktake-tasks'] })
-            setIsCreateOpen(false)
-            toast.success(t('warehouse.stocktake.toast.createSuccess'))
-        },
-        onError: (err: Error) => {
-            toast.error(t('warehouse.stocktake.toast.createFailed', { message: err.message }))
-        }
-    })
-
-    const handleCreateTask = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (!allowsAction('action_warehouse_stocktake_manage')) return
         const formData = new FormData(e.currentTarget)
-        createMutation.mutate({
-            title: formData.get('title') as string,
-            warehouseCategoryCode: formData.get('category') as string,
-            remarks: formData.get('remarks') as string
-        })
+        try {
+            await createStocktake({
+                title: formData.get('title') as string,
+                warehouseCategoryCode: formData.get('category') as string,
+                remarks: formData.get('remarks') as string
+            })
+            setIsCreateOpen(false)
+        } catch (error) {
+            // Already handled in hook toast
+        }
     }
 
     const postAdjustmentMutation = useMutation({
@@ -209,10 +201,10 @@ export function StocktakeMgmt() {
                                 <div className='mt-6 md:mt-8 flex gap-4'>
                                     <Button
                                         type='submit'
-                                        disabled={createMutation.isPending}
+                                        disabled={isCreating}
                                         className='flex-1 h-10 md:h-11 rounded-full shadow-lg shadow-blue-500/20 bg-blue-600 font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all active:scale-95'
                                     >
-                                        {createMutation.isPending ? t('warehouse.stocktake.createDialog.creating') : t('warehouse.stocktake.createDialog.start')}
+                                        {isCreating ? t('warehouse.stocktake.createDialog.creating') : t('warehouse.stocktake.createDialog.start')}
                                     </Button>
                                 </div>
                             </form>

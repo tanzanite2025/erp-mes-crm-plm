@@ -1,22 +1,37 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
 import { InventoryCoreService, type InventoryView } from '../services/inventory-core-service'
 import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
-import { warehouseCategoryService } from '../services/category-service'
+import { WarehouseCategoryCoreService } from '../services/warehouse-category-core-service'
 
+/**
+ * useStockMgmt - 深度重构后的库存管理 Hook 情况情况总量针对。
+ * 职责：聚合多个核心查询，处理过滤器状态，并提供事务性维护操作。
+ */
 export function useStockMgmt() {
+    const queryClient = useQueryClient()
     const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
     
-    // Core data states
-    const [inventory, setInventory] = useState<InventoryView[]>([])
-    const [alertThresholds, setAlertThresholds] = useState<Record<string, number>>({})
-    const [categories, setCategories] = useState<Array<{ code: string, name: string }>>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<unknown>(null)
+    // 【归一化查询】：并行获取所有依赖数据情况情况总量针对。
+    const inventoryQuery = useQuery({
+        queryKey: ['inventory_list'],
+        queryFn: () => InventoryCoreService.getInventoryList()
+    })
+
+    const thresholdsQuery = useQuery({
+        queryKey: ['inventory_thresholds'],
+        queryFn: () => InventoryMaintenanceService.getAlertThresholds()
+    })
+
+    const categoriesQuery = useQuery({
+        queryKey: ['warehouse_categories'],
+        queryFn: () => WarehouseCategoryCoreService.getCategories()
+    })
 
     // UI & Filter states
     const [searchTerm, setSearchTerm] = useState('')
@@ -27,67 +42,53 @@ export function useStockMgmt() {
     const [selectedMaterial, setSelectedMaterial] = useState<{ id: string, name: string, current: number } | null>(null)
     const [tempThreshold, setTempThreshold] = useState<string>('')
     const [reconcileConfirmOpen, setReconcileConfirmOpen] = useState(false)
-    const [isReconciling, setIsReconciling] = useState(false)
 
-    // Data Fetching logic
-    const refreshData = useCallback(async () => {
-        setLoading(true)
-        try {
-            setError(null)
-            const [data, thresholds, categoryData] = await Promise.all([
-                InventoryCoreService.getInventoryList(),
-                InventoryMaintenanceService.getAlertThresholds(),
-                warehouseCategoryService.getCategories()
-            ])
-            setInventory(data)
-            setAlertThresholds(thresholds)
-            setCategories(categoryData || [])
-        } catch (loadError) {
-            setError(loadError)
-            toast.error(t('warehouse.stock.toast.loadFailed'))
-        } finally {
-            setLoading(false)
+    // Mutations
+    const reconcileMutation = useMutation({
+        mutationFn: () => InventoryMaintenanceService.reconcileInventory(),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['inventory_list'] })
+            toast.success(t('warehouse.stock.toast.reconcileSuccess'))
+            setReconcileConfirmOpen(false)
+        },
+        onError: (err) => failLoudly(err, 'StockMgmt.onConfirmReconcile')
+    })
+
+    const setThresholdMutation = useMutation({
+        mutationFn: (params: { id: string, value: number }) => 
+            InventoryMaintenanceService.setAlertThreshold(params.id, params.value),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['inventory_thresholds'] })
+            toast.success(t('warehouse.stock.toast.thresholdUpdated', { 
+                name: selectedMaterial?.name || 'Item', 
+                value: variables.value 
+            }))
+            setConfigDialogOpen(false)
         }
-    }, [t])
+    })
 
-    useEffect(() => {
-        void refreshData()
-        window.addEventListener('xdfc_inventory_updated', refreshData)
-        return () => window.removeEventListener('xdfc_inventory_updated', refreshData)
-    }, [refreshData])
-
-    // Business Logic - Reconcile
+    // Business Logic Handlers
     const handleHardReconcile = () => {
         if (!allowsAction('action_warehouse_reconcile')) return
         setReconcileConfirmOpen(true)
     }
 
     const onConfirmReconcile = async () => {
-        setIsReconciling(true)
-        try {
-            await InventoryMaintenanceService.reconcileInventory()
-            await refreshData()
-            toast.success(t('warehouse.stock.toast.reconcileSuccess'))
-            setReconcileConfirmOpen(false)
-        } catch (error) {
-            failLoudly(error, 'StockMgmt.onConfirmReconcile')
-        } finally {
-            setIsReconciling(false)
-        }
+        await reconcileMutation.mutateAsync()
     }
 
-    // Business Logic - Threshold
     const handleSaveThreshold = async () => {
         if (!selectedMaterial) return
         if (!allowsAction('action_warehouse_reconcile')) return
         const value = parseFloat(tempThreshold) || 0
-        await InventoryMaintenanceService.setAlertThreshold(selectedMaterial.id, value)
-        toast.success(t('warehouse.stock.toast.thresholdUpdated', { name: selectedMaterial.name, value }))
-        setConfigDialogOpen(false)
-        void refreshData()
+        await setThresholdMutation.mutateAsync({ id: selectedMaterial.id, value })
     }
 
-    // Data Aggregation & Filtering
+    // Data Aggregation & Filtering (Derived State)
+    const inventory = inventoryQuery.data || []
+    const alertThresholds = thresholdsQuery.data || {}
+    const categories = categoriesQuery.data || []
+
     const materialTotalStock = useMemo(() => {
         const totals: Record<string, number> = {}
         inventory.forEach((item) => {
@@ -134,8 +135,8 @@ export function useStockMgmt() {
         totalAssetsValue,
         alertThresholds,
         categories,
-        loading,
-        error,
+        loading: inventoryQuery.isLoading || thresholdsQuery.isLoading || categoriesQuery.isLoading,
+        error: inventoryQuery.error || thresholdsQuery.error || categoriesQuery.error,
         alertCount,
 
         // UI & Filter states
@@ -153,12 +154,15 @@ export function useStockMgmt() {
         setTempThreshold,
         reconcileConfirmOpen,
         setReconcileConfirmOpen,
-        isReconciling,
+        isReconciling: reconcileMutation.isPending,
 
         // Handlers
         handleHardReconcile,
         onConfirmReconcile,
         handleSaveThreshold,
-        refreshData
+        refreshData: () => {
+            queryClient.invalidateQueries({ queryKey: ['inventory_list'] })
+            queryClient.invalidateQueries({ queryKey: ['inventory_thresholds'] })
+        }
     }
 }

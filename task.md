@@ -49,11 +49,19 @@
   - [ ] 2. 采购物流：修复无限循环与快照报错 / Purchase Logistics Fix
     - [ ] 优化 `purchase-logistics-offline-draft-service.ts` 快照缓存
     - [ ] 优化 `PurchaseLogisticsPage` 自动同步 Effect
-  - [ ] 3. 架构归一化：质量管理与计件工资模块 / Quality & Piecework Normalization
+  - [x] 3. 架构归一化：质量管理与计件工资模块 / Quality & Piecework Normalization
     - [x] 创建 QualityCore/Maintenance Services
     - [x] 重构 `use-quality.ts` Hook
-    - [ ] 创建 PieceworkMaintenanceService
-    - [ ] 重构 `use-piecework.ts` Hook
+    - [x] 创建 PieceworkMaintenanceService
+    - [x] 重构 `use-piecework.ts` Hook
+- [x] 4. 仓库管理：架构归一化与清理 / Warehouse Normalization
+    - [x] 移除 `inbound-service.ts` 废弃文件 (通过代码清理完成)
+    - [x] 拆分 `WarehouseCategory` Core/Maintenance 服务
+    - [x] 拆分 `Stocktake` Core/Maintenance 服务
+    - [x] 建立 `use-warehouse-category.ts` 与 `use-stocktake.ts` Hooks
+    - [x] 重构 `warehouse-category.tsx` 与 `stocktake-mgmt.tsx` UI
+    - [x] 迁移 PDA 模块：`src/features/pda-stocktake/hooks/use-stocktake.ts`
+    - [x] 深度重构 `use-stock-mgmt.ts` 至 TanStack Query 架构
 
 - [ ] 467. 明确 `sales` 头部 `orderName` 边界
   - [ ] 仅当 UI 可编辑且 delta 仅包含 `orderName` 时，才走 `orderName` transaction。

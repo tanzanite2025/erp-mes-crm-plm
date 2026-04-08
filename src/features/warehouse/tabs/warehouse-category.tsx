@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
     Plus,
     Search,
@@ -35,35 +35,29 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 
-import { warehouseCategoryService, type WarehouseCategory as Category } from '../services/category-service'
+import { useWarehouseCategory } from '../hooks/use-warehouse-category'
+import { type WarehouseCategory as Category } from '../services/warehouse-category-core-service'
 
 export default function WarehouseCategory() {
     const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
-    const [categories, setCategories] = useState<Category[]>([])
+    
+    // 【归一化 Hook 接入】
+    const { 
+        categories, 
+        isError: loadError, 
+        createCategory, 
+        patchCategory, 
+        deleteCategory,
+        isActionLoading
+    } = useWarehouseCategory()
+
     const [searchTerm, setSearchTerm] = useState('')
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [formData, setFormData] = useState({ name: '', code: '', description: '' })
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<{ id: string, name: string } | null>(null)
-    const [isDeleting, setIsDeleting] = useState(false)
-    const [error, setError] = useState<unknown>(null)
-
-    const refreshData = useCallback(async () => {
-        try {
-            setError(null)
-            const data = await warehouseCategoryService.getCategories()
-            setCategories(data)
-        } catch (loadError) {
-            setError(loadError)
-            toast.error(t('warehouse.category.toast.loadFailed'))
-        }
-    }, [t])
-
-    useEffect(() => {
-        void refreshData()
-    }, [refreshData])
 
     const handleAdd = () => {
         if (!allowsAction('action_warehouse_category_manage')) return
@@ -79,7 +73,7 @@ export default function WarehouseCategory() {
         setIsDialogOpen(true)
     }
 
-    const handleDelete = async (id: string, isSystem: boolean, name: string) => {
+    const handleDeleteClick = async (id: string, isSystem: boolean, name: string) => {
         if (!allowsAction('action_warehouse_category_manage')) return
         if (isSystem) {
             toast.error(t('warehouse.category.toast.systemProtected'))
@@ -91,16 +85,11 @@ export default function WarehouseCategory() {
 
     const onConfirmDelete = async () => {
         if (!categoryToDelete) return
-        setIsDeleting(true)
         try {
-            await warehouseCategoryService.deleteCategory(categoryToDelete.id)
-            toast.success(t('warehouse.category.toast.deleted'))
+            await deleteCategory(categoryToDelete.id)
             setDeleteConfirmOpen(false)
-            refreshData()
         } catch (error) {
             failLoudly(error, 'WarehouseCategory.onConfirmDelete')
-        } finally {
-            setIsDeleting(false)
         }
     }
 
@@ -125,7 +114,7 @@ export default function WarehouseCategory() {
                     return
                 }
 
-                await warehouseCategoryService.patchCategory(editingCategory.id, delta, editingCategory.version)
+                await patchCategory({ id: editingCategory.id, delta, version: editingCategory.version })
             } else {
                 // 原子创建模式
                 const newCategory: Omit<Category, 'id' | 'version'> = {
@@ -134,16 +123,10 @@ export default function WarehouseCategory() {
                     active: true,
                     sortOrder: 0
                 }
-                await warehouseCategoryService.createCategory(newCategory)
+                await createCategory(newCategory)
             }
             
             setIsDialogOpen(false)
-            toast.success(
-                editingCategory
-                    ? t('warehouse.category.toast.updated')
-                    : t('warehouse.category.toast.created')
-            )
-            refreshData()
         } catch (error) {
             if (isConflictError(error)) {
                 toast.error(t('warehouse.category.toast.staleData'))
@@ -158,7 +141,7 @@ export default function WarehouseCategory() {
         cat.code.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    if (isForbiddenError(error)) {
+    if (isForbiddenError(loadError)) {
         return <ForbiddenState />
     }
 
@@ -232,7 +215,7 @@ export default function WarehouseCategory() {
                                         <Button
                                             variant='ghost'
                                             size='icon'
-                                            onClick={() => handleDelete(cat.id, cat.isSystem, cat.name)}
+                                            onClick={() => handleDeleteClick(cat.id, cat.isSystem, cat.name)}
                                             className='size-9 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all'
                                         >
                                             <Trash2 className='size-4' />
@@ -336,7 +319,7 @@ export default function WarehouseCategory() {
                 desc={categoryToDelete?.name || ''}
                 destructive
                 handleConfirm={onConfirmDelete}
-                isLoading={isDeleting}
+                isLoading={isActionLoading}
             />
         </>
     )
