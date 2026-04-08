@@ -17,12 +17,10 @@ import { DictionaryCoreService } from '@/features/basic-settings/services/dictio
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
-import { auditUtils } from '@/lib/audit-utils'
-import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder } from '../data/schema'
 import { useGetCustomers } from '../customer'
-import { useSalesOrderMutations } from '../sales'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
+import { useSalesOrderSave } from '../hooks/use-sales-order-save'
 import { OrderFooterStats } from './parts/order-footer-stats'
 import { OrderHeaderFields } from './parts/order-header-fields'
 import { OrderLinesEditor } from './parts/order-lines-editor'
@@ -40,7 +38,6 @@ export function SalesOrderActionDialog({
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
-  const user = useAuthStore((state) => state.user)
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
   const [dictEntries, setDictEntries] = useState<DictionaryEntry[]>([])
@@ -57,9 +54,15 @@ export function SalesOrderActionDialog({
         ProductionDBService.getLabeling(),
       ])
       setDictEntries(DictionaryCoreService.getEntries())
-      setUnits(unitList || [])
-      setDrillingOptions(drillingList?.map((item) => ({ label: item.name, value: item.id })) || [])
-      setLabelingOptions(labelingList?.map((item) => ({ label: item.name, value: item.id })) || [])
+
+      // Fail loudly if critical metadata is unavailable; the editor cannot recover safely.
+      if (!unitList) throw new Error('[CRITICAL] Metadata missing: Units')
+      if (!drillingList) throw new Error('[CRITICAL] Metadata missing: DrillingOptions')
+      if (!labelingList) throw new Error('[CRITICAL] Metadata missing: LabelingOptions')
+
+      setUnits(unitList)
+      setDrillingOptions(drillingList.map((item) => ({ label: item.name, value: item.id })))
+      setLabelingOptions(labelingList.map((item) => ({ label: item.name, value: item.id })))
     }
 
     loadMetadata()
@@ -94,245 +97,17 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
+  const { handleSave } = useSalesOrderSave({
+    order,
+    validate,
+    prepareToSave,
+    commit,
+    onSaved: () => onOpenChange(false),
+  })
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
-    if (!validate()) return
-
-    // 预处理数据（如生成正式条码）
-    const finalData = await prepareToSave()
-    if (!finalData) return
-
-    try {
-      if (order) {
-        // SDRTS: 提交增量差异
-        const delta = commit()
-        // 如果没有实际变更，直接关闭
-        if (Object.keys(delta).length === 0) {
-          onOpenChange(false)
-          return
-        }
-
-        const deltaKeys = Object.keys(delta)
-        const isCustomerOnlyChange =
-          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'customerId' || key === 'customerName')
-        const isLinesOnlyChange =
-          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'lines' || key === 'quantity' || key === 'amount')
-        const isClassificationTypeOnlyChange =
-          deltaKeys.length > 0 && deltaKeys.every((key) => key === 'classification' || key === 'type' || key === 'barcode')
-        const isDeliveryDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'deliveryDate')
-        const isStatusFlowOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status' || key === 'statusNote')
-        const isPurchaseOrderNoOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'purchaseOrderNo')
-        const isRequirementsOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'requirements')
-        const hasLineStructureChange = (() => {
-          if (!order || !isLinesOnlyChange) return false
-          const previousLineNos = (order.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
-          const nextLineNos = (finalData.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
-          if (previousLineNos.length !== nextLineNos.length) return true
-          return previousLineNos.some((lineNo, index) => lineNo !== nextLineNos[index])
-        })()
-        const isPureLineAdd = (() => {
-          if (!order || !isLinesOnlyChange || !hasLineStructureChange) return false
-          const previousLines = order.lines || []
-          const nextLines = finalData.lines || []
-          if (nextLines.length <= previousLines.length) return false
-
-          const previousByLineNo = new Map(previousLines.map((line) => [line.lineNo, line]))
-          let addedCount = 0
-
-          for (const line of nextLines) {
-            const previousLine = previousByLineNo.get(line.lineNo)
-            if (!previousLine) {
-              addedCount++
-              continue
-            }
-
-            if (JSON.stringify(previousLine) !== JSON.stringify(line)) {
-              return false
-            }
-          }
-
-          return addedCount > 0
-        })()
-        const isPureLineRemove = (() => {
-          if (!order || !isLinesOnlyChange || !hasLineStructureChange) return false
-          const previousLines = order.lines || []
-          const nextLines = finalData.lines || []
-          if (nextLines.length >= previousLines.length) return false
-
-          const nextByLineNo = new Map(nextLines.map((line) => [line.lineNo, line]))
-          let removedCount = 0
-
-          for (const line of previousLines) {
-            const nextLine = nextByLineNo.get(line.lineNo)
-            if (!nextLine) {
-              removedCount++
-              continue
-            }
-
-            if (JSON.stringify(nextLine) !== JSON.stringify(line)) {
-              return false
-            }
-          }
-
-          return removedCount > 0
-        })()
-
-        if (isCustomerOnlyChange) {
-          await customerChangeMutation.mutateAsync({
-            orderId: order.id,
-            customerId: finalData.customerId,
-            customerName: finalData.customerName || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        if (isLinesOnlyChange) {
-          if (!hasLineStructureChange) {
-            await lineContentChangeMutation.mutateAsync({
-              orderId: order.id,
-              lines: finalData.lines || [],
-              operator: user?.accountNo || 'Unknown',
-              actorId: user?.id,
-              expectedVersion: order.version,
-            })
-            onOpenChange(false)
-            return
-          }
-
-          if (isPureLineAdd) {
-            await lineAddMutation.mutateAsync({
-              orderId: order.id,
-              lines: finalData.lines || [],
-              operator: user?.accountNo || 'Unknown',
-              actorId: user?.id,
-              expectedVersion: order.version,
-            })
-            onOpenChange(false)
-            return
-          }
-
-          if (isPureLineRemove) {
-            await lineRemoveMutation.mutateAsync({
-              orderId: order.id,
-              lines: finalData.lines || [],
-              operator: user?.accountNo || 'Unknown',
-              actorId: user?.id,
-              expectedVersion: order.version,
-            })
-            onOpenChange(false)
-            return
-          }
-
-          await linesChangeMutation.mutateAsync({
-            orderId: order.id,
-            lines: finalData.lines || [],
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        if (isClassificationTypeOnlyChange) {
-          await classificationTypeChangeMutation.mutateAsync({
-            orderId: order.id,
-            classification: finalData.classification,
-            type: finalData.type,
-            barcode: finalData.barcode,
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        if (isDeliveryDateOnlyChange) {
-          await deliveryDateChangeMutation.mutateAsync({
-            orderId: order.id,
-            deliveryDate: finalData.deliveryDate || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        if (isStatusFlowOnlyChange) {
-          const nextStatus = finalData.status || order.status
-          const nextStatusNote = finalData.statusNote || ''
-
-          if (nextStatus === 'Canceled') {
-            await cancelMutation.mutateAsync({
-              orderId: order.id,
-              reason: nextStatusNote,
-              operator: user?.accountNo || 'Unknown',
-              actorId: user?.id,
-              expectedVersion: order.version,
-            })
-            onOpenChange(false)
-            return
-          }
-
-          await statusTransitionMutation.mutateAsync({
-            orderId: order.id,
-            status: nextStatus,
-            statusNote: nextStatusNote,
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-
-        if (isPurchaseOrderNoOnlyChange) {
-          await purchaseOrderNoChangeMutation.mutateAsync({
-            orderId: order.id,
-            purchaseOrderNo: finalData.purchaseOrderNo || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        if (isRequirementsOnlyChange) {
-          await requirementsChangeMutation.mutateAsync({
-            orderId: order.id,
-            requirements: finalData.requirements || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: order.version,
-          })
-          onOpenChange(false)
-          return
-        }
-
-        await patchMutation.mutateAsync({
-          id: order.id,
-          delta,
-          version: order.version,
-        })
-      } else {
-        // 新建订单: 提交全量数据
-        const stampedData = auditUtils.stamp(finalData, 'create')
-        await createMutation.mutateAsync(stampedData)
-      }
-      onOpenChange(false)
-    } catch (_error) {
-      // 错误已由 mutation 的 onError 处理（toast）
-    }
+    await handleSave()
   }
 
   return (

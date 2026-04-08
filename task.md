@@ -36,6 +36,32 @@
   - [x] `server/deploy-prod.sh` 已在每次部署前按同一 UID/GID 准备 `./uploads` 与 `./backups` 顶层目录属主和权限，防止再次生成容器不可写的挂载目录。
   - [x] `.env.example` 已补充运行时身份配置项，默认与部署脚本、容器镜像保持一致。
 
+- [ ] 522. 冻结本轮范围，规划 `sales` 事务编排下沉与并发写收口（2026-04-09，待确认）
+  - [ ] 本轮先固化审查结论与改造边界，不直接并发修改 `sales` UI、前端 service 与后端事务接口。
+  - [ ] 本轮聚焦两个问题：`sales-order-action-dialog.tsx` 的交易编排泄露，以及遗留前端交付回写链路的并发写风险。
+  - [ ] 本轮不顺手扩散到 `purchase`、`customer`、`supplier` 或新的事务语义实现。
+
+- [ ] 523. 固化当前 `sales` 交易编排泄露现状
+  - [ ] `src/features/trading/components/sales-order-action-dialog.tsx` 当前在 UI 层承担了大段 delta 分类、行结构比对与 mutation 分发逻辑。
+  - [ ] 组件当前通过 `isCustomerOnlyChange`、`isLinesOnlyChange`、`isPureLineAdd`、`isPureLineRemove` 等条件，在保存前手动决定调用哪条 transaction mutation 或 `patchMutation`。
+  - [ ] 这意味着“哪种编辑命中哪种事务意图”的领域编排仍由 UI 裁决，而不是由单一 orchestration/service 层或后端权威入口裁决。
+
+- [ ] 524. 固化当前并发写风险边界
+  - [ ] 当前主 `patchSalesOrder(...)` 链路已通过 `version` 与后端 `409 CONFLICT` 具备基础乐观锁保护，不应误判为完全没有并发保护。
+  - [ ] 但 `src/features/trading/services/order-delivery-service.ts` 仍保留前端 read-modify-write 式的交付数量累加与状态推导，并通过整单保存方式回写。
+  - [ ] 该遗留链路绕开了显式事务意图与版本治理，若仍被业务入口调用，将存在脏写覆盖与状态漂移风险。
+  - [ ] 需进一步确认该文件是否已完全失去引用；若未失活，应视为高优先级架构风险。
+
+- [ ] 525. 明确本轮专项规划目标
+  - [ ] 将 `sales-order-action-dialog.tsx` 中的 delta 分类与 mutation 分发下沉到单一 `sales` orchestration/service hook，UI 仅提交表单结果与 delta。
+  - [ ] 将“交付增量”收敛为显式事务意图，由后端基于快照与版本执行原子裁决，而不是前端先计算后回写。
+  - [ ] 在完成上述收敛前，不继续增加新的 UI 内 if/else 分流规则，不继续复制到 `purchase` 侧形成新的泄露面。
+
+- [ ] 526. 明确实施前验证与约束
+  - [ ] 先补专项规划文档，明确改造切口、涉及文件、兼容策略与最小验证口径，再开始实际代码改造。
+  - [ ] 若 `order-delivery-service.ts` 已无引用，可将其移出正式导出面或删除；若仍有引用，需先定位调用入口。
+  - [ ] 实施时必须保留现有 `patch`/transaction 路径的 `version` 冲突语义，不得为了下沉 orchestration 反向削弱乐观锁。
+
 - [ ] 513. 冻结本轮范围，补齐本地 DEV `/uploads` 访问链（2026-04-08，待确认）
   - [ ] 本轮只修本地开发环境中的静态上传资源访问链，不扩散到上传业务逻辑、Rust 图像处理或生产 Nginx 配置。
   - [ ] 当前问题表现为本地图片上传成功后，`GET /uploads/ev-*.webp` 在 `127.0.0.1:5173` 返回 `200` 但预览破图。

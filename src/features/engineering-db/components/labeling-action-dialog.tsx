@@ -59,7 +59,8 @@ export function LabelingActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_LABELING, 
-      id: `LBL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+      id: '',
       createdAt: new Date().toISOString() 
     } as LabelingDraft
   }, [currentRow, open])

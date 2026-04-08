@@ -40,10 +40,6 @@ type LoanMode = 'LEND' | 'BORROW'
 type MoldLoanFormInput = z.input<typeof moldLoanSchema>
 type MoldLoanFormOutput = z.output<typeof moldLoanSchema>
 
-function createLoanDraftId() {
-	return `LOAN-${Math.floor(Math.random() * 90000) + 10000}`
-}
-
 interface MoldLoanActionDialogProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
@@ -65,7 +61,6 @@ export function MoldLoanActionDialog({
 }: MoldLoanActionDialogProps) {
     const { t } = useLanguage()
     const homeFactory = t('equipmentTooling.loans.defaults.homeFactory')
-    const [draftId, setDraftId] = useState(() => createLoanDraftId())
     
     // SDRTS: 状态初始化
     const isEdit = !!currentRow
@@ -79,7 +74,8 @@ export function MoldLoanActionDialog({
     const initialValues = useMemo(() => {
         if (currentRow) return currentRow
         return {
-            id: draftId,
+            // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+            id: '',
             moldId: '',
             moldSn: '',
             moldName: '',
@@ -97,7 +93,7 @@ export function MoldLoanActionDialog({
             version: 1,
             createdAt: new Date().toISOString(),
         }
-    }, [currentRow, mode, homeFactory, draftId])
+    }, [currentRow, mode, homeFactory])
 
     const { tracker, deltaProxy } = useDeltaTracker<MoldLoan>(initialValues, isOpen)
 
@@ -108,7 +104,6 @@ export function MoldLoanActionDialog({
 
     const handleOpenChange = (open: boolean) => {
         if (open && !currentRow) {
-            setDraftId(createLoanDraftId())
             setCreateMode(initialMode)
         }
         onOpenChange(open)

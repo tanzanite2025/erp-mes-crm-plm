@@ -62,9 +62,11 @@ function buildDefaultReceiptLines(order: PurchaseOrder | undefined): ReceiptLine
         materialName: line.materialName,
         materialCode: line.materialCode,
         specification: line.specification,
+        // [UI-PREVIEW-VALUE]: 剩余待收数量由 UI 实时试算，仅供预览，权威值由后端库存引擎校验。
         remainingQty,
         quantity: remainingQty,
         purchasePrice: line.price || 0,
+        // [UI-SUGGESTED-ID]: 默认批次号仅供建议，权威唯一 ID 将在入库事务提及时生成。
         batchNo: `${order.orderNo || 'PO'}-L${line.lineNo}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
         targetCategory: line.materialId ? 'MATERIAL' : '',
       }
@@ -138,6 +140,17 @@ function PurchaseReceiptConfirmDialogBody({
         <DialogDescription className='text-[11px] font-bold text-muted-foreground'>
           {t('purchase.orders.receiptDialogDescription')}
         </DialogDescription>
+        
+        {/* [BACKEND-AUTHORITY] 架构提示 */}
+        <div className='mt-4 p-3 bg-amber-500/5 rounded-2xl border border-dashed border-amber-500/20'>
+          <p className='text-[9px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-2'>
+            <span className='size-1.5 rounded-full bg-amber-500 animate-pulse' />
+            [UI-DERIVED-PREVIEW] 后端权威校验已开启
+          </p>
+          <p className='text-[8px] mt-1 text-amber-600/60 leading-relaxed font-bold'>
+            当前显示的待收数量与系统批次号为 UI 实时生成的【逻辑预览值】。实际入库数量将由服务器在执行事务时，基于最新的库存与对账快照进行二次验证，以确保财务合规。
+          </p>
+        </div>
       </DialogHeader>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -169,7 +182,7 @@ function PurchaseReceiptConfirmDialogBody({
               </div>
               <div className='text-right'>
                 <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                  {t('purchase.orders.receiptDialogRemainingQty')}
+                  {t('purchase.orders.receiptDialogRemainingQty')} [PREVIEW]
                 </div>
                 <div className='text-[12px] font-black text-primary'>{line.remainingQty}</div>
               </div>

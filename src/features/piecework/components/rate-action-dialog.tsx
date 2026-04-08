@@ -60,7 +60,8 @@ export function RateActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_RATE, 
-      id: `R-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+      // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+      id: ''
     } as PieceworkRate
   }, [currentRow, open])
 

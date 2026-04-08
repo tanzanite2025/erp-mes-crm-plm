@@ -2,11 +2,7 @@ import { useNotificationStore } from '@/features/system-mgmt/notifications/notif
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { createLogger } from '@/lib/logger'
 import { type SalesOrder } from '../../data/schema'
-import { getSalesOrderByNo } from './sales-query-service'
-
-const logger = createLogger('salesService')
 
 export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>): Promise<SalesOrder> => {
   const res = await apiFetch<SalesOrder>('/sales-orders', {
@@ -33,32 +29,4 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
     body: JSON.stringify(payload),
   })
   return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'SalesService.patchSalesOrder') as SalesOrder
-}
-
-export const updateOrderDelivery = async (orderNo: string, materialId: string, quantity: number): Promise<void> => {
-  const order = await getSalesOrderByNo(orderNo)
-  if (!order) {
-    logger.error('Order not found for delivery update', { orderNo, materialId, quantity })
-    return
-  }
-  if (order.isDeleted) return
-
-  let changed = false
-  const nextLines = order.lines.map((line) => {
-    if (line.productId === materialId || line.productCode === materialId) {
-      const delivered = Math.max(0, Number(line.deliveredQty || 0) + quantity)
-      changed = true
-      return {
-        ...line,
-        deliveredQty: delivered,
-      }
-    }
-    return line
-  })
-
-  if (changed) {
-    await patchSalesOrder(order.id, {
-      lines: { o: order.lines, n: nextLines },
-    }, order.version)
-  }
 }

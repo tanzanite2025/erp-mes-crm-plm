@@ -36,8 +36,9 @@ export const SpecsService = {
    * 保存或更新技术规范
    */
   saveSpec: async (item: TechnicalSpec): Promise<TechnicalSpec> => {
-    const generatedCode = `TECH_SPEC_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-    const safeCode = (item.id || '').trim() || generatedCode
+    // [BACKEND-AUTHORITY]: 业务编码严禁在前端使用 Date.now() / Math.random() 模拟生成的伪 ID。
+    // 编码应当由后端发号器在事务执行时分配。
+    const safeCode = (item.id || '').trim()
     
     const spec: EngineeringSpec = {
       id: item.id,

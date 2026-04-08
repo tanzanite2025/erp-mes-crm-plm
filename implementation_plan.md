@@ -1,5 +1,117 @@
 # implementation plan
  
+## `sales` 事务编排下沉与并发写收口规划（2026-04-09，待确认）
+
+### 一、问题概述
+本轮审查确认 `sales` 域当前仍存在两类架构问题：
+
+1. `src/features/trading/components/sales-order-action-dialog.tsx` 在 UI 层承担了交易编排职责；
+2. `src/features/trading/services/order-delivery-service.ts` 保留了前端 read-modify-write 式的交付进度回写链路。
+
+这两类问题共同说明：虽然 `sales` 域已经补入多条 transaction mutation 与基础 version 冲突保护，但“事务意图如何判定”与“交付增量如何裁决”还没有完全从前端剥离。
+
+### 二、已确认事实链
+
+#### A. UI 编排泄露已成立
+`sales-order-action-dialog.tsx` 当前在保存时并不只是“提交表单”，而是：
+
+1. 先 `commit()` 拿到 delta；
+2. 在组件内判断 `isCustomerOnlyChange`、`isLinesOnlyChange`、`isClassificationTypeOnlyChange`、`isDeliveryDateOnlyChange`、`isStatusFlowOnlyChange` 等条件；
+3. 对行编辑再细分 `hasLineStructureChange`、`isPureLineAdd`、`isPureLineRemove`；
+4. 最终由 UI 决定调用 `customerChangeMutation`、`lineAddMutation`、`lineRemoveMutation`、`linesChangeMutation` 或 `patchMutation`。
+
+这意味着“哪种修改命中哪种 transaction intent”的规则仍沉在 UI 组件内，而不是统一收口到 orchestration/service 层。
+
+#### B. 并发写风险边界需要更准确表述
+当前并不能简单说 `sales` 全链路缺乏乐观锁：
+
+1. `src/features/trading/sales/services/sales-service.ts` 的 `patchSalesOrder(...)` 会把 `version` 放进 payload metadata；
+2. 后端 `server/handlers/sales_orders.go` 会校验版本不一致并返回统一的 `409 CONFLICT`；
+3. 因此主 patch 链路已经具备基础 optimistic locking 保护。
+
+但同时，`order-delivery-service.ts` 仍存在更危险的遗留模式：
+
+1. 先按 `orderNo` 拉订单快照；
+2. 在前端内存中累加 `deliveredQty`；
+3. 在前端推导行状态与订单状态；
+4. 再以整单保存方式回写。
+
+这条链路属于典型的前端 authority / read-modify-write，若仍被正式入口调用，会绕开显式 transaction intent，并带来脏写覆盖与状态漂移风险。
+
+### 三、本轮规划目标
+本轮先沉淀改造方案，不直接并发改造 `sales` 全域：
+
+1. 把 `sales-order-action-dialog.tsx` 的 delta 分类与 mutation 分发下沉到单一 orchestration/service hook；
+2. 让 UI 退回“提交结果 + 展示反馈”的职责，不再维护事务路由规则；
+3. 将交付进度更新收敛为显式事务意图，由后端基于版本与数据库快照做原子裁决；
+4. 在完成收敛前，不继续向 UI 组件中追加新的 `if/else` transaction 分流。
+
+### 四、最小实施路线
+
+#### A. 收口前端 orchestration
+优先切口：
+
+1. 新建或扩展单一 `sales` orchestration 层；
+2. 输入为：
+   - 当前订单快照
+   - `commit()` 生成的 delta
+   - 预处理后的 `finalData`
+3. 输出为：
+   - 应调用的 transaction mutation / patch mutation
+   - 对应 payload
+
+这样可以先把交易编排从 UI 中移出，而不立即改变现有后端契约。
+
+#### B. 收口交付增量更新
+对 `order-delivery-service.ts` 做单独收口：
+
+1. 先确认该文件是否仍被引用；
+2. 若已无引用，则将其移出正式导出面或删除；
+3. 若仍有引用，则需要为“交付数量变更”建立显式 transaction intent；
+4. 由后端基于订单当前版本和真实快照完成：
+   - deliveredQty 增量更新
+   - 行状态推导
+   - 订单状态聚合
+
+#### C. 保持现有 version 冲突语义
+无论 orchestration 下沉到哪一层，都必须保留：
+
+1. 前端提交 `version` / `expectedVersion`；
+2. 后端发现版本不一致时返回 `409 CONFLICT`；
+3. 前端统一按冲突场景提示“刷新后重试”；
+4. 不得为追求 UI 简化而回退到无版本的整单回写。
+
+### 五、本轮不做的事情
+1. 不直接并发重构 `purchase` 侧同类问题；
+2. 不在本轮同时新增多个新的 `sales` transaction intent；
+3. 不把所有现有 patch 路径一次性迁走；
+4. 不先改后端事务实现，再回头找前端入口；
+5. 不在尚未确认引用关系前贸然删除 `order-delivery-service.ts`。
+
+### 六、涉及文件
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/sales/services/sales-service.ts`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/services/order-delivery-service.ts`
+- `server/handlers/sales_orders.go`
+- `server/services/sales_transaction_service.go`
+
+### 七、实施前核实项
+1. 确认 `order-delivery-service.ts` 当前是否还有正式调用入口；
+2. 确认新的 orchestration 层落点是 hook、service 还是独立 orchestrator；
+3. 确认 UI 下沉后是否保留 `useSalesOrderMutations()` 作为执行层，还是进一步收口；
+4. 确认交付增量最终是复用已有 transaction service，还是新增专门 intent。
+
+### 八、后续验证口径
+实施后至少应满足：
+
+1. `sales-order-action-dialog.tsx` 不再承担大段 delta 分类与 mutation 分发逻辑；
+2. UI 不再直接裁决“行新增 / 行删除 / 行内容修改 / 客户变更 / 状态变更”命中哪条事务主链；
+3. `order-delivery-service.ts` 不再存在可被正式入口使用的前端 authority 回写链路；
+4. `sales` 域现有 `409 CONFLICT` 乐观锁语义保持不变；
+5. `pnpm exec tsc --noEmit` 与对应后端最小测试仍通过。
+
 ## 生产环境图片上传 `Disk write failed` 根因锁定与专项修复规划（2026-04-09，待批准）
 
 ### 一、问题概述

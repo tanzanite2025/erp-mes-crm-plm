@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Box, Hash, Tag, Info, Save, Cpu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,7 +50,6 @@ export function HubActionDialog({
   onSave,
   isLoading,
 }: HubActionDialogProps) {
-  const [draftId] = useState(() => `HUB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`)
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
@@ -65,10 +64,11 @@ export function HubActionDialog({
     if (currentRow) return currentRow
     return { 
       ...DEFAULT_HUB, 
-      id: draftId,
+      // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+      id: '',
       createdAt: new Date().toISOString() 
     } as Hub
-  }, [currentRow, draftId])
+  }, [currentRow])
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 

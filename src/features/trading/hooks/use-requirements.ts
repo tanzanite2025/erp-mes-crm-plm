@@ -35,7 +35,11 @@ export function useRequirements() {
             status: ['Pending', 'InProgress'],
             pageSize: 200,
         })
-        setOrders(data?.items || [])
+        // [FAIL-LOUDLY]: 严禁使用 || [] 掩盖物料需求前置单据的缺失
+        if (!data?.items) {
+            throw new Error('[CRITICAL] Base SalesOrders for MRP are missing from backend response')
+        }
+        setOrders(data.items)
     }, [])
 
     const loadAllData = useCallback(async () => {
@@ -83,7 +87,11 @@ export function useRequirements() {
                     logger.info(`Calculating requirements for ${selectedKeys.length} keys...`)
                 }
                 const result = await requirementService.getMrpRequirements(selectedKeys || [])
-                setRequirements(result.requirements || [])
+                // [FAIL-LOUDLY]: 显式校验 MRP 计算结果
+                if (!result.requirements) {
+                    throw new Error('[CRITICAL] MRP Calculation returned invalid null requirements')
+                }
+                setRequirements(result.requirements)
                 setStats(result.stats)
                 setError(null)
             } catch (calculateError) {

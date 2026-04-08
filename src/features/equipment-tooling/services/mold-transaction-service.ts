@@ -5,6 +5,19 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type Mold, type MoldStatus } from '../data/schema'
 import { MoldCoreService, VALID_MOLD_STATUS_TRANSITIONS } from './mold-core-service'
 
+export interface MoldCapacityInstance {
+    sn: string
+    health: number
+    status: MoldStatus
+}
+
+export interface MoldCapacityCheckResult extends Record<string, unknown> {
+    isSufficient: boolean
+    totalRemaining: number
+    shortage: number
+    instances: MoldCapacityInstance[]
+}
+
 /**
  * MoldTransactionService - 模具事务管理服务
  * 职责: 处理有明确业务意义的状态流转、资产归档及遥测同步。
@@ -81,9 +94,9 @@ export const MoldTransactionService = {
      * 检查模具产能 (业务逻辑查询)
      * [REFACTORED]: 核心资产算法已迁移至 Go 后端。
      */
-    async checkMoldCapacity(groupName: string, requestedQty: number) {
+    async checkMoldCapacity(groupName: string, requestedQty: number): Promise<MoldCapacityCheckResult> {
         // [BACKEND-AUTHORITY] 调用后端业务逻辑接口，获取计算后的产能模型
-        const res = await apiFetch<any>(`/molds/capacity?groupName=${encodeURIComponent(groupName)}&requestedQty=${requestedQty}`)
-        return ensureObjectResponse(res, 'MoldTransactionService.checkMoldCapacity')
+        const res = await apiFetch<MoldCapacityCheckResult>(`/molds/capacity?groupName=${encodeURIComponent(groupName)}&requestedQty=${requestedQty}`)
+        return ensureObjectResponse<MoldCapacityCheckResult>(res, 'MoldTransactionService.checkMoldCapacity')
     }
 }

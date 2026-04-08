@@ -52,7 +52,8 @@ function getJobFormDefaults(currentRow?: JobType): JobTypeForm {
     }
 
     return {
-        id: `JOB-${Math.floor(Math.random() * 9000) + 1000}`,
+        // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+        id: '',
         name: '',
         code: '',
         description: '',

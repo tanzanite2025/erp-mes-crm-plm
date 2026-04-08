@@ -161,14 +161,23 @@ function getAuthPersistApi(): AuthPersistApi | undefined {
 }
 
 function sanitizePersistedAuthState(persistedState: unknown): Partial<AuthState> {
-  const raw = (persistedState ?? {}) as LegacyAuthPersistShape
+  // [BACKEND-AUTHORITY & FAIL-LOUDLY]: 身份验证状态必须严谨。
+  // 严禁使用 persistedState ?? {} 掩盖加载失败或状态损坏。
+  if (persistedState !== null && persistedState !== undefined && typeof persistedState !== 'object') {
+    const errorMsg = `[CRITICAL] Auth Storage Corruption: Persisted state is not an object (type: ${typeof persistedState})`
+    console.error(errorMsg)
+    throw new Error(errorMsg)
+  }
+
+  const raw = (persistedState || {}) as LegacyAuthPersistShape
   const nestedAuth = raw.auth && typeof raw.auth === 'object' ? raw.auth : undefined
 
+  // 校验 Token 类型，非字符串则视为缺失
   const accessTokenCandidate =
     typeof raw.accessToken === 'string'
       ? raw.accessToken
       : typeof nestedAuth?.accessToken === 'string'
-        ? nestedAuth.accessToken
+        ? (nestedAuth.accessToken as string)
         : ''
 
   return {

@@ -95,11 +95,27 @@ export function useStockMgmt() {
     }
 
     // Data Aggregation & Filtering (Derived State)
-    const inventory = inventoryQuery.data || []
-    const alertThresholds = thresholdsQuery.data || {}
-    const categories = categoriesQuery.data || []
+    // [FAIL-LOUDLY]: 严禁使用 || [] 掩盖核心业务数据的缺失。
+    // 如果查询已完成且未报错，但返回数据为空，则视为 [CRITICAL] 逻辑故障。
+    const inventory = inventoryQuery.data
+    const alertThresholds = thresholdsQuery.data
+    const categories = categoriesQuery.data
+
+    if (!inventoryQuery.isLoading && inventoryQuery.isSuccess && !inventory) {
+        throw new Error('[CRITICAL] Inventory Physical data missing in Hook: UseStockMgmt.inventory')
+    }
+    if (!thresholdsQuery.isLoading && thresholdsQuery.isSuccess && !alertThresholds) {
+        throw new Error('[CRITICAL] Inventory Security data missing in Hook: UseStockMgmt.alertThresholds')
+    }
+    if (!categoriesQuery.isLoading && categoriesQuery.isSuccess && !categories) {
+        throw new Error('[CRITICAL] Warehouse Topology data missing in Hook: UseStockMgmt.categories')
+    }
+
+    const safeAlertThresholds = alertThresholds ?? {}
+    const safeCategories = categories ?? []
 
     const materialTotalStock = useMemo(() => {
+        if (!inventory) return {}
         const totals: Record<string, number> = {}
         inventory.forEach((item) => {
             totals[item.materialId] = (totals[item.materialId] || 0) + item.quantity
@@ -108,6 +124,7 @@ export function useStockMgmt() {
     }, [inventory])
 
     const filteredInventory = useMemo(() => {
+        if (!inventory) return []
         return inventory.filter((item) =>
             item.materialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.materialCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -115,9 +132,14 @@ export function useStockMgmt() {
     }, [inventory, searchTerm])
 
     // [BACKEND-AUTHORITY]: 预警总数由后端统计服务返回
-    const alertCount = alertSummaryQuery.data?.alertCount || 0
+    const alertCount = alertSummaryQuery.data?.alertCount
+    if (!alertSummaryQuery.isLoading && alertSummaryQuery.isSuccess && alertCount === undefined) {
+        throw new Error('[CRITICAL] Inventory Alert Summary missing in Hook: UseStockMgmt.alertCount')
+    }
+    const safeAlertCount = alertCount ?? 0
 
     const groupedInventory = useMemo(() => {
+        if (!categories || !filteredInventory) return {}
         const groups: Record<string, InventoryView[]> = {}
         categories.forEach((cat) => { groups[cat.code] = [] })
 
@@ -131,18 +153,22 @@ export function useStockMgmt() {
     }, [filteredInventory, categories])
 
     // [BACKEND-AUTHORITY]: 资产估值由后端财务模块权威返回
-    const totalAssetsValue = valuationQuery.data || 0
+    const totalAssetsValue = valuationQuery.data
+    if (!valuationQuery.isLoading && valuationQuery.isSuccess && totalAssetsValue === undefined) {
+        throw new Error('[CRITICAL] Inventory Valuation missing in Hook: UseStockMgmt.totalAssetsValue')
+    }
+    const safeTotalAssetsValue = totalAssetsValue ?? 0
 
     return {
         // Data states
         groupedInventory,
         materialTotalStock,
-        totalAssetsValue,
-        alertThresholds,
-        categories,
+        totalAssetsValue: safeTotalAssetsValue,
+        alertThresholds: safeAlertThresholds,
+        categories: safeCategories,
         loading: inventoryQuery.isLoading || thresholdsQuery.isLoading || categoriesQuery.isLoading || valuationQuery.isLoading || alertSummaryQuery.isLoading,
         error: inventoryQuery.error || thresholdsQuery.error || categoriesQuery.error || valuationQuery.error || alertSummaryQuery.error,
-        alertCount,
+        alertCount: safeAlertCount,
 
         // UI & Filter states
         searchTerm,

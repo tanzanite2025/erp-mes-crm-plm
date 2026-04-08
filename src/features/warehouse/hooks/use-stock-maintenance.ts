@@ -36,8 +36,14 @@ export function useStocktake() {
         }
     })
 
+    // [FAIL-LOUDLY]: 严禁使用 || [] 掩盖盘点任务数据的缺失。
+    const tasks = tasksQuery.data
+    if (!tasksQuery.isLoading && tasksQuery.isSuccess && !tasks) {
+        throw new Error('[CRITICAL] Stocktake Tasks missing in Hook: UseStocktake.tasks')
+    }
+
     return {
-        tasks: tasksQuery.data || [],
+        tasks: tasks || [], // 此时经过校验，若到达此处且非 loading，tasks 已确定存在或为合法空值（由后端判定）
         isLoading: tasksQuery.isLoading,
         isError: tasksQuery.isError,
         refetch: tasksQuery.refetch,

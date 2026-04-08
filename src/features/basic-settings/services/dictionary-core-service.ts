@@ -71,18 +71,19 @@ class DictionaryCoreServiceImpl {
                     }
                     
                     const entry = result.data
-                    // 继承并优化解析逻辑
                     let rawOptions: any = entry.options
 
+                    // [BACKEND-AUTHORITY]: 基础元数据解析逻辑
                     if (typeof rawOptions === 'string') {
                         try {
                             rawOptions = JSON.parse(rawOptions)
                         } catch {
                             try {
                                 rawOptions = JSON.parse(atob(rawOptions))
-                            } catch {
+                            } catch (err) {
                                 logger.error('Options parse failed', entry.code)
-                                rawOptions = []
+                                // [FAIL-LOUDLY]: 元数据损坏必须阻断系统运行
+                                throw new Error(`[CRITICAL] Dictionary Entry "${entry.code}" has corrupted options: ${err}`)
                             }
                         }
                     }
@@ -108,7 +109,11 @@ class DictionaryCoreServiceImpl {
      */
     getLabel(groupCode: string, value: string | number): string {
         const targetGroup = this.groups.find(g => g.code === groupCode)
-        if (!targetGroup) return String(value || '')
+        // [FAIL-LOUDLY]: 分组不存在说明业务代码引用了无效的元数据系统定义
+        if (!targetGroup) {
+            logger.error(`[CRITICAL] Dictionary Group "${groupCode}" not found in current index`)
+            return `[MISSING_GROUP:${groupCode}]`
+        }
 
         const entry = this.entries.find(item => 
             item.groupId === targetGroup.id &&
@@ -126,7 +131,8 @@ class DictionaryCoreServiceImpl {
             }
         }
 
-        return String(value || '未定义')
+        // [FAIL-LOUDLY]: 明确未匹配状态
+        return `[UNDEFINED_VAL:${value}]`
     }
 
     getGroups(): DictionaryGroup[] {
@@ -144,7 +150,12 @@ class DictionaryCoreServiceImpl {
      */
     getOptions(entryCode: string): DictionaryOption[] {
         const entry = this.entries.find(e => e.code === entryCode)
-        if (!entry) return []
+        // [FAIL-LOUDLY]: 业务逻辑请求不存在的字典 Entry 编码，严禁返回 [] 导致渲染空列表引起误操作
+        if (!entry) {
+            const msg = `[CRITICAL] Required Dictionary Entry "${entryCode}" is missing from system`
+            logger.error(msg)
+            throw new Error(msg)
+        }
         return (entry.options || []) as DictionaryOption[]
     }
 }

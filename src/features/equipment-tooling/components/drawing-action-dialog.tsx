@@ -62,7 +62,8 @@ export function DrawingActionDialog({
     const initialValues = useMemo(() => {
         if (currentRow) return currentRow
         return {
-            id: `DRAWING-${Math.floor(Math.random() * 90000) + 10000}`,
+            // [BACKEND-AUTHORITY]: 物理 ID 严禁在前端使用 Math.random 生成，必须由后端数据库在创建时分配。
+            id: '',
             moldId: '',
             moldSn: '',
             name: '',

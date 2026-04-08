@@ -64,6 +64,10 @@ export function useShipment() {
   }, [formData])
 
   const { data } = useGetSalesOrders()
+  // [FAIL-LOUDLY]: 严禁使用 || [] 掩盖销售订单加载异常。
+  if (!data?.items && !useGetSalesOrders().isLoading && useGetSalesOrders().isSuccess) {
+    throw new Error('[CRITICAL] Sales orders data missing in UseShipment.salesOrders')
+  }
   const salesOrders = data?.items || []
 
   const loadInitialData = useCallback(async () => {
@@ -75,6 +79,12 @@ export function useShipment() {
         InventoryCoreService.searchMasterData(''),
         InventoryMaintenanceService.getAlertThresholds(),
       ])
+
+      // [FAIL-LOUDLY]: 元数据与核心快照缺失校验
+      if (!recentHistory || !categories || !thresholds) {
+        throw new Error('[CRITICAL] Mandatory inventory master data missing during rehydration')
+      }
+
       setHistory(recentHistory)
       setWarehouseCategories(categories)
       setAlertThresholds(thresholds)
@@ -173,7 +183,11 @@ export function useShipment() {
         if (selectedOrder?.id) {
           salesOrderId = selectedOrder.id
           const detail = await getSalesOrderById(selectedOrder.id)
-          const matchedLine = (detail.lines || []).find((line) => {
+          // [FAIL-LOUDLY]: 订单详情行项目缺失校验
+          if (!detail.lines) {
+            throw new Error(`[CRITICAL] Order ${selectedOrder.orderNo} lines missing from backend detail`)
+          }
+          const matchedLine = detail.lines.find((line) => {
             return line.productId === selectedItem.id || line.productCode === selectedItem.code
           })
           salesOrderLineId = matchedLine?.id || 0
