@@ -32,6 +32,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesGroup.PATCH("/:id", salesOrderManage, handlers.PatchSalesOrderHandler)
 	salesGroup.DELETE("/:id", salesOrderDelete, handlers.DeleteSalesOrderHandler)
 	salesGroup.POST("/sync", salesOrderSync, handlers.BulkSyncSalesOrdersHandler)
+	salesGroup.POST("/evidence/upload", handlers.HandleEvidenceUpload)
 
 	customerGroup := authorized.Group("/customers")
 	customerGroup.Use(tradingAccess)

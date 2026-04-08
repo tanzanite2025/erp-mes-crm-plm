@@ -1,10 +1,9 @@
 import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
+import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { type SalesOrder, type OrderEvidence } from '../../data/schema'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { ImageIcon, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 function InfoRow({
   label,
@@ -32,28 +31,7 @@ function InfoRow({
 }
 
 function EvidenceGallery({ evidences }: { evidences: OrderEvidence[] }) {
-  const [previews, setPreviews] = useState<Record<string, string>>({})
   const { t } = useLanguage()
-
-  useEffect(() => {
-    const loadPreviews = async () => {
-      const urls: Record<string, string> = {}
-      for (const ev of evidences) {
-        try {
-          const blob = await StorageService.getItem<Blob>(ev.url)
-          if (blob instanceof Blob) {
-            urls[ev.id] = URL.createObjectURL(blob)
-          } else {
-            urls[ev.id] = ev.url
-          }
-        } catch (e) {
-          console.error('Failed to load detail preview', e)
-        }
-      }
-      setPreviews(urls)
-    }
-    loadPreviews()
-  }, [evidences])
 
   if (!evidences || evidences.length === 0) return null
 
@@ -71,10 +49,10 @@ function EvidenceGallery({ evidences }: { evidences: OrderEvidence[] }) {
             key={ev.id}
             className='group relative size-20 overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:ring-2 hover:ring-primary/20'
           >
-            {previews[ev.id] ? (
-              <a href={previews[ev.id]} target='_blank' rel='noreferrer'>
+            {ev.url ? (
+              <a href={getStaticEvidenceUrl(ev.url)} target='_blank' rel='noreferrer'>
                 <img
-                  src={previews[ev.id]}
+                  src={getStaticEvidenceUrl(ev.url)}
                   alt={ev.name}
                   className='size-full object-cover transition-transform group-hover:scale-110'
                 />

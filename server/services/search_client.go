@@ -108,3 +108,31 @@ func (s *SearchServiceClient) HealthCheck() bool {
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
 }
+// ImageProcessResult 对应 Rust 图像处理结果情况情况总量针对。
+type ImageProcessResult struct {
+	PHash      string `json:"phash"`
+	WebPBase64 string `json:"webp_base64"`
+	Width      uint32 `json:"width"`
+	Height     uint32 `json:"height"`
+}
+
+// ProcessImage 调用 Rust 微服务对图片进行 pHash 计算与 WebP 压缩情况情况总量针对。
+func (s *SearchServiceClient) ProcessImage(rawData []byte) (*ImageProcessResult, error) {
+	url := fmt.Sprintf("%s/v1/process-image", s.BaseURL)
+	resp, err := s.HTTPClient.Post(url, "application/octet-stream", bytes.NewReader(rawData))
+	if err != nil {
+		return nil, fmt.Errorf("request to rust image worker failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("rust image worker returned status: %d", resp.StatusCode)
+	}
+
+	var res ImageProcessResult
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, fmt.Errorf("decode rust image response failed: %w", err)
+	}
+
+	return &res, nil
+}

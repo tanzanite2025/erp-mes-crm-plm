@@ -17,6 +17,8 @@ export const tradingSalesOrder = {
   },
   toasts: {
     saved: '销售订单保存成功',
+    duplicateEvidence: '检测到相似凭据',
+    duplicateEvidenceDetail: '系统通过感知哈希(pHash)识别到该凭据此前已上传过。',
     voided: '销售订单已作废',
     claimed: '订单明细行认领成功',
     saveFailed: '保存销售订单失败',
@@ -120,5 +122,12 @@ export const tradingSalesOrder = {
   print: {
     templatePending: 'PDF 打印模块正在与模板对接中...',
     printShipment: '打印发货清单',
+  },
+  fileUploader: {
+    upload: '选择图片上传',
+    toasts: {
+      maxSizeExceeded: '文件体积超出限制 (最大 {{max}}MB)',
+      saveFailed: '存储服务同步失败',
+    },
   },
 }

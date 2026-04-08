@@ -12,6 +12,9 @@ use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::*;
 use tantivy::{doc, Index, IndexReader, IndexWriter, ReloadPolicy};
+use axum::body::Bytes;
+
+mod processor;
 
 // --- Data Models ---
 
@@ -42,6 +45,14 @@ pub struct SearchResponse {
     pub items: Vec<SearchResult>,
     pub total: usize,
     pub took_ms: u128,
+}
+
+#[derive(Serialize)]
+pub struct ImageProcessResponse {
+    pub phash: String,
+    pub webp_base64: String,
+    pub width: u32,
+    pub height: u32,
 }
 
 // --- App State ---
@@ -130,6 +141,23 @@ async fn search(
     Json(response)
 }
 
+async fn process_image_handler(
+    body: Bytes,
+) -> Result<Json<ImageProcessResponse>, (StatusCode, String)> {
+    let result = processor::process_image(&body)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    
+    use base64::{Engine as _, engine::general_purpose};
+    let webp_base64 = general_purpose::STANDARD.encode(&result.webp_data);
+
+    Ok(Json(ImageProcessResponse {
+        phash: result.phash,
+        webp_base64,
+        width: result.width,
+        height: result.height,
+    }))
+}
+
 // --- Main ---
 
 #[tokio::main]
@@ -168,6 +196,11 @@ async fn main() -> anyhow::Result<()> {
         .route("/v1/health", get(health_check))
         .route("/v1/index", post(index_document))
         .route("/v1/search", get(search))
+        .route(
+            "/v1/process-image", 
+            post(process_image_handler)
+                .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
+        )
         .with_state(state);
 
     // 5. 启动服务
