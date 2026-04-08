@@ -1,5 +1,35 @@
 
 
+- [ ] 507. 冻结本轮范围，修复 `search-engine` 本地 Docker 构建失败（2026-04-08，待确认）
+  - [ ] 本轮只修 Rust 构建链，不扩散到图像处理业务逻辑。
+  - [ ] 目标是恢复 `search-engine` 在本地 DEV/Compose 下的可构建性。
+  - [ ] 不改变运行时接口、端口和镜像职责。
+
+- [ ] 508. 固化当前构建失败根因
+  - [ ] `server/search-engine/Dockerfile` 当前使用 `rust:1.75-alpine`，工具链版本过旧。
+  - [ ] 构建日志显示依赖链中的 `time-core` 需要更高版本 Cargo 才能解析 `edition2024`。
+  - [ ] Dockerfile 当前只复制 `Cargo.toml`，没有复制已存在的 `Cargo.lock`，导致依赖解析存在漂移。
+
+- [ ] 509. 明确本轮修复要求
+  - [ ] 升级 `search-engine` 的 Rust builder 镜像到兼容当前依赖链的稳定版本。
+  - [ ] 将 `Cargo.lock` 纳入 Docker 构建缓存层，避免依赖漂移。
+  - [ ] 完成后需要重新验证 `docker compose build search-engine` 能通过。
+
+- [ ] 504. 冻结本轮范围，补齐本地 DEV 一键启动链（2026-04-08，待确认）
+  - [ ] 本轮只修本地开发启动体验，不扩散到业务逻辑或生产部署语义。
+  - [ ] 目标是让前端、Go 后端与 Rust `search-engine` 在本地具备一致的启动入口。
+  - [ ] 优先复用现有脚本，而不是重复创建新的平行入口。
+
+- [ ] 505. 固化当前 DEV 启动缺口
+  - [ ] `server/dev-up.ps1` 当前只启动 `db/redis/app/nginx_lb/watchdog`。
+  - [ ] 当前脚本未启动 `search-engine`，导致图片上传链在 DEV 下天然缺失图像处理依赖。
+  - [ ] 根目录 `package.json` 也没有可直接拉起完整本地开发链的脚本。
+
+- [ ] 506. 明确本轮修复要求
+  - [ ] `server/dev-up.ps1` 需要把 `search-engine` 纳入本地启动流程。
+  - [ ] 根目录需要提供清晰的脚本入口，减少手工切目录操作。
+  - [ ] `walkthrough.md` 需要记录新的本地 DEV 使用方式。
+
 - [ ] 501. 冻结本轮范围，修复 `search-engine` 未随生产部署更新的问题（2026-04-08，待确认）
   - [ ] 本轮只修部署链，不扩散到业务逻辑或搜索索引功能重构。
   - [ ] 目标是让默认部署路径能够同步构建并启动 Rust 图像处理服务。

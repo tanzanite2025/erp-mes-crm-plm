@@ -1,5 +1,115 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`search-engine` Docker 构建链修复（2026-04-08）
+
+### 问题现象
+本地执行 `pnpm run dev:stack` 后，`search-engine` 在 Docker 构建阶段失败，外层表现为：
+
+- `cargo build --release` 退出码 `101`
+- `docker compose up -d --build search-engine app nginx_lb watchdog` 失败
+
+进一步展开构建日志后，根因分为四层：
+
+1. `server/search-engine/Dockerfile` 使用的 `rust:1.75-alpine` 过旧；
+2. Dockerfile 只复制 `Cargo.toml`，未复制仓库中已有的 `Cargo.lock`，导致依赖解析漂移；
+3. `Cargo.lock` 中的 `zstd-sys 2.0.16+zstd.1.5.7` 与 `zstd-safe 6.0.6` 组合不兼容；
+4. 构建链恢复后，Rust 源码本身还暴露出若干真实编译错误。
+
+### 修复方式
+
+#### 1. 修复 Docker 构建链
+- 将 `server/search-engine/Dockerfile` 的 builder 从 `rust:1.75-alpine` 升级为 `rust:1.88-alpine`；
+- 在依赖缓存层同时复制：
+  - `Cargo.toml`
+  - `Cargo.lock`
+
+#### 2. 修复锁文件依赖失配
+- 使用 Cargo 将 `zstd-sys` 从：
+  - `2.0.16+zstd.1.5.7`
+- 回退锁定到：
+  - `2.0.9+zstd.1.5.5`
+
+这样 `zstd-safe 6.0.6` 才能和底层绑定保持兼容。
+
+#### 3. 修复 Rust 源码真实编译错误
+- `src/main.rs`
+  - 将 `StatusCode.OK` 修正为 `StatusCode::OK`
+  - 先保存 `results.len()`，避免 `items: results` 后再次借用
+- `src/processor.rs`
+  - pHash 计算改为使用 `img_hash::image::load_from_memory(raw_data)` 单独解码
+  - 避免 `img_hash` 内部 `image` 类型与项目直接依赖的 `image` crate 类型冲突
+
+### 验证结果
+已执行：
+
+```bash
+docker compose build search-engine
+```
+
+结果：**通过**。
+
+日志显示：
+
+- `server-search-engine Built`
+- 最终镜像成功导出并命名为 `server-search-engine:latest`
+
+### 本轮结论
+本地 DEV 一键启动链此前失败的关键阻塞点已解除：
+
+- `search-engine` 已恢复可构建；
+- Rust 工具链与锁文件依赖已收敛到可用组合；
+- Docker 构建现已能进入并完成真实业务代码编译。
+
+## 专项：本地 DEV 一键启动链补齐（2026-04-08）
+
+### 问题现象
+本地开发时虽然已有前端与后端启动入口，但图片上传链仍会因为缺少 Rust 图像处理服务而失败：
+
+- `pnpm dev` 只启动前端 Vite；
+- `server/dev-up.ps1` 原先只启动 `db/redis/app/nginx_lb/watchdog`；
+- Rust `search-engine` 未被纳入本地 DEV 启动链。
+
+### 修复方式
+已执行最小补齐：
+
+#### 1. `server/dev-up.ps1`
+- 保留原有本地数据库健康检查与 `-ResetDb` 自愈逻辑；
+- 将启动服务从 `app/nginx_lb/watchdog` 扩展为：
+  - `search-engine`
+  - `app`
+  - `nginx_lb`
+  - `watchdog`
+- 完成后终端会额外输出：`Search engine: http://localhost:8081`
+
+#### 2. 根目录 `package.json`
+- 新增：`pnpm run dev:stack`
+- 新增：`pnpm run dev:stack:reset-db`
+- 保持原有 `pnpm dev` 仅启动前端的语义不变。
+
+### 使用方式
+
+#### 只启动前端
+```bash
+pnpm dev
+```
+
+#### 启动完整本地栈（前提：已先单独开前端或按需再执行 `pnpm dev`）
+```bash
+pnpm run dev:stack
+```
+
+#### 本地数据库凭据不一致时重建本地 DB 数据
+```bash
+pnpm run dev:stack:reset-db
+```
+
+### 本轮结论
+本轮已补齐本地 DEV 图片上传链的基础运行条件：
+
+- 现有 `server/dev-up.ps1` 已纳入 Rust `search-engine`；
+- 根目录已有清晰快捷入口；
+- 后续本地排查图片上传问题时，不再需要手工遗漏图像处理服务。
+
 ## 专项：`search-engine` 纳入生产部署链（2026-04-08）
 
 ### 问题现象

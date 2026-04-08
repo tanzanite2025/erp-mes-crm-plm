@@ -72,6 +72,8 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/personnel/rights",
   "/quality/formulas",
   "/engineering/bom",
+  "/personnel/leave",
+  "/personnel/stats",
   "/piecework/query",
   "/piecework/rules",
   "/piecework/stats",

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-permission-contract.mjs && vite",
+    "dev:stack": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1",
+    "dev:stack:reset-db": "powershell -ExecutionPolicy Bypass -File ./server/dev-up.ps1 -ResetDb",
     "build": "node scripts/generate-route-tree.mjs && node scripts/generate-authenticated-route-catalog.mjs && node scripts/generate-permission-contract.mjs && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc -b && node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js build",
     "test": "vitest run",
     "test:contracts": "vitest run src/features/authz/services/effective-permission-service.test.ts src/features/users/services/user-api.test.ts src/features/users/hooks/use-users.test.ts",

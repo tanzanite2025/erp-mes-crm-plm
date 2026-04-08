@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM rust:1.75-alpine as builder
+FROM rust:1.88-alpine AS builder
 
 # 安装必要的编译依赖
 RUN apk add --no-cache musl-dev gcc
@@ -8,7 +8,7 @@ WORKDIR /app
 
 # 先创建一个假的 main.rs 以利用 Docker 缓存层优化依赖编译
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 RUN rm -rf src
 

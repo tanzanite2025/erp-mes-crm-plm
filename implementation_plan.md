@@ -1,5 +1,93 @@
 # implementation plan
 
+## `search-engine` Docker 构建链修复（2026-04-08，待确认）
+
+### 一、问题概述
+本地执行 `docker compose build search-engine` 失败，真实根因并非业务代码，而是 Rust 构建链老化：
+
+1. `server/search-engine/Dockerfile` 当前 builder 镜像为 `rust:1.75-alpine`；
+2. 构建日志显示依赖链中的 `time-core` 需要支持 `edition2024` 的 Cargo；
+3. 当前 Dockerfile 只复制 `Cargo.toml`，未复制仓库中已存在的 `Cargo.lock`，导致依赖解析可能漂移到新版本；
+4. 因此本地 DEV 一键启动链虽然已补齐 `search-engine`，但实际仍会卡在镜像构建阶段。
+
+### 二、修复目标
+1. 恢复 `search-engine` 在本地 Docker/Compose 下的可构建性；
+2. 不修改图像处理接口与运行时行为；
+3. 锁定依赖解析，避免再次因为上游包漂移导致构建失败。
+
+### 三、最小实施方案
+
+#### A. 升级 Rust builder
+1. 将 `rust:1.75-alpine` 升级到较新的稳定 Alpine Rust 镜像；
+2. 保持运行层仍为轻量 Alpine，不改变最终镜像职责。
+
+#### B. 纳入 `Cargo.lock`
+1. 在依赖预构建阶段同时复制 `Cargo.toml` 与 `Cargo.lock`；
+2. 让 Docker 依赖缓存与仓库锁文件对齐；
+3. 降低后续构建对 crates.io 最新解析结果的敏感度。
+
+### 四、风险与注意事项
+1. Rust builder 升级后，部分依赖编译时间可能变化，但这是可接受成本；
+2. 不能破坏当前二阶段 Docker 构建结构；
+3. 需要用实际 `docker compose build search-engine` 复核结果。
+
+### 五、涉及文件
+- `server/search-engine/Dockerfile`
+- `server/search-engine/Cargo.lock`
+- `walkthrough.md`
+
+### 六、验证口径
+1. `docker compose build search-engine` 成功；
+2. `pnpm run dev:stack` 不再卡在 `cargo build --release` 的 `edition2024` 解析错误；
+3. 文档同步记录根因与修复方式。
+
+## 本地 DEV 一键启动链补齐（2026-04-08，待确认）
+
+### 一、问题概述
+当前本地开发链存在入口割裂：
+
+1. 前端 `pnpm dev` 只启动 Vite；
+2. `server/dev-up.ps1` 当前只启动 `db/redis/app/nginx_lb/watchdog`；
+3. 图片上传链依赖的 Rust `search-engine` 未被纳入本地 DEV 启动流程；
+4. 因此开发者即使看见前后端都在运行，图片上传仍可能因为缺少图像处理服务而稳定失败。
+
+### 二、修复目标
+本轮只补本地开发启动体验，不改业务语义：
+
+1. 复用现有 `server/dev-up.ps1`，把 `search-engine` 纳入启动流程；
+2. 在根目录提供清晰的快捷脚本入口，减少手工切目录；
+3. 让本地 DEV 对图片上传链具备完整依赖。
+
+### 三、最小实施方案
+
+#### A. `server/dev-up.ps1`
+1. 保持现有 `db/redis` 健康检查与本地凭据自愈逻辑；
+2. 在应用层服务启动阶段，把 `search-engine` 与 `app/nginx_lb/watchdog` 一起启动；
+3. 终端输出中补充 `search-engine` 已纳入本地栈的信息。
+
+#### B. 根目录 `package.json`
+1. 新增本地快捷入口，例如 `dev:stack`；
+2. 该入口直接调用 `server/dev-up.ps1`；
+3. 保持原有 `dev` 仅启动前端 Vite 的语义不变，避免影响既有使用习惯。
+
+### 四、风险与注意事项
+1. 不应破坏现有 `-ResetDb` 的安全行为；
+2. 不应让根目录 `dev` 脚本语义突然变化；
+3. 需要保持为 Windows 本地环境友好的调用方式；
+4. 文档需要明确区分“只开前端”与“拉起完整本地栈”。
+
+### 五、涉及文件
+- `server/dev-up.ps1`
+- `package.json`
+- `walkthrough.md`
+
+### 六、验证口径
+完成后至少应满足：
+
+1. 执行新的本地快捷入口后，`search-engine` 会与其他 DEV 依赖一起启动；
+2. 本地图片上传链不再因为缺少 Rust 图像处理服务而天然失败；
+3. `walkthrough.md` 记录新的本地使用方式。
+
 ## `search-engine` 纳入生产部署链修复（2026-04-08，待确认）
 
 ### 一、问题概述

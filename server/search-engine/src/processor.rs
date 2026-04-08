@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use image::{DynamicImage, GenericImageView};
+use image::GenericImageView;
 use img_hash::{HasherConfig, HashAlg};
 use webp::{Encoder, WebPMemory};
 
@@ -29,8 +29,10 @@ pub fn process_image(raw_data: &[u8]) -> Result<ProcessedImage> {
         .hash_size(8, 8)
         .hash_alg(HashAlg::Gradient)
         .to_hasher();
-    
-    let hash = hasher.hash_image(&img);
+
+    let hash_img = img_hash::image::load_from_memory(raw_data)
+        .context("Failed to decode image for perceptual hash")?;
+    let hash = hasher.hash_image(&hash_img);
     let phash_hex = hash.to_base64(); // 使用 base64 减少字符串长度，也可使用 to_string() 16进制
 
     // 3. 执行 WebP 压缩

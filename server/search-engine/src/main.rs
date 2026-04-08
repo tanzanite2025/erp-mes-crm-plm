@@ -103,7 +103,7 @@ async fn index_document(
     writer.add_document(tantivy_doc).unwrap();
     writer.commit().unwrap();
 
-    (StatusCode.OK, "Indexed")
+    (StatusCode::OK, "Indexed")
 }
 
 async fn search(
@@ -132,9 +132,11 @@ async fn search(
         results.push(SearchResult { id, score });
     }
 
+    let total = results.len();
+
     let response = SearchResponse {
         items: results,
-        total: results.len(),
+        total,
         took_ms: start.elapsed().as_millis(),
     };
 

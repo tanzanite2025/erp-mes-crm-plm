@@ -166,9 +166,10 @@ if (-not (Test-DbCredentials -PgUser $pgUser -PgPassword $pgPassword -PgDb $pgDb
 }
 
 Write-Step "Starting app + nginx_lb + watchdog..."
-Invoke-Compose @("up", "-d", "--build", "app", "nginx_lb", "watchdog")
+Invoke-Compose @("up", "-d", "--build", "search-engine", "app", "nginx_lb", "watchdog")
 
 Write-Step "Done. Local stack is ready."
+Write-Host "  Search engine: http://localhost:8081"
 Write-Host "  API/LB: http://localhost:8080"
 Write-Host "  Postgres: localhost:5432 (container: xdfc-postgres)"
 Write-Host "  Redis: localhost:16379 (container: xdfc-redis)"
