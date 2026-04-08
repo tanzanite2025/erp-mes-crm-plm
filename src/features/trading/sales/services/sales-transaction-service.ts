@@ -5,6 +5,9 @@ import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
 export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE = 'ORDER_CLASSIFICATION_TYPE_CHANGE'
 export const SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE = 'ORDER_CUSTOMER_CHANGE'
 export const SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
+export const SALES_TRANSACTION_INTENT_NAME_CHANGE = 'ORDER_NAME_CHANGE'
+export const SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE = 'ORDER_PURCHASE_ORDER_NO_CHANGE'
+export const SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE = 'ORDER_REQUIREMENTS_CHANGE'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_REMOVE = 'ORDER_LINE_REMOVE'
 export const SALES_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE = 'ORDER_LINE_CONTENT_CHANGE'
@@ -40,6 +43,21 @@ export interface SalesOrderClassificationTypeChangePayload {
 
 export interface SalesOrderDeliveryDateChangePayload {
   deliveryDate: string
+  operator: string
+}
+
+export interface SalesOrderNameChangePayload {
+  orderName: string
+  operator: string
+}
+
+export interface SalesOrderPurchaseOrderNoChangePayload {
+  purchaseOrderNo: string
+  operator: string
+}
+
+export interface SalesOrderRequirementsChangePayload {
+  requirements: string
   operator: string
 }
 
@@ -169,6 +187,66 @@ export const changeSalesOrderDeliveryDate = async (
     expectedVersion: params.expectedVersion,
     payload: {
       deliveryDate: params.deliveryDate,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changeSalesOrderName = async (
+  orderId: string,
+  params: {
+    orderName: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<SalesOrder> => {
+  return executeSalesOrderTransaction<SalesOrderNameChangePayload>(orderId, {
+    intent: SALES_TRANSACTION_INTENT_NAME_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      orderName: params.orderName,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changeSalesOrderPurchaseOrderNo = async (
+  orderId: string,
+  params: {
+    purchaseOrderNo: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<SalesOrder> => {
+  return executeSalesOrderTransaction<SalesOrderPurchaseOrderNoChangePayload>(orderId, {
+    intent: SALES_TRANSACTION_INTENT_PURCHASE_ORDER_NO_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      purchaseOrderNo: params.purchaseOrderNo,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changeSalesOrderRequirements = async (
+  orderId: string,
+  params: {
+    requirements: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<SalesOrder> => {
+  return executeSalesOrderTransaction<SalesOrderRequirementsChangePayload>(orderId, {
+    intent: SALES_TRANSACTION_INTENT_REQUIREMENTS_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      requirements: params.requirements,
       operator: params.operator,
     },
   })

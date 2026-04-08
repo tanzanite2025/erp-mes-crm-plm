@@ -1,7 +1,8 @@
 import { useMemo, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { financeService, type Currency } from '@/features/finance/services/finance-service'
+import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
+import { type Currency } from '@/features/finance/data/schema'
 import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
@@ -63,7 +64,7 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     const handleHeaderChange = useCallback(async (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => {
         if (field === 'currency') {
             try {
-                const currencies = await financeService.getCurrencies()
+                const currencies = await CurrencyCoreService.getCurrencies()
                 const currencyValue = typeof value === 'string' ? value : String(value ?? '')
                 const target = currencies.find((c: Currency) => c.code === currencyValue)
                 setFormData((prev) => ({

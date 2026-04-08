@@ -5,7 +5,7 @@ import { type Material } from '../data/schema'
 import { packagingService } from './packaging-service'
 import { unitService } from '../../basic-settings/services/unit-service'
 import { DictionaryCoreService } from '../../basic-settings/services/dictionary-core-service'
-import { getMaterialsWithVersion } from './material-service'
+import { MaterialCoreService } from './material-core-service'
 
 const DICT_SHEET_NAME = '__MATERIAL_DICTIONARY__'
 const CONFIG_SHEET_NAME = '__SYSTEM_CONFIG__'
@@ -69,7 +69,7 @@ export const MaterialExcelService = {
     const { default: ExcelJS } = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
 
-    const { version } = await getMaterialsWithVersion()
+    const { version } = await MaterialCoreService.getMaterialsWithVersion()
     const globalVersion = Number(version)
 
     const dictSheet = workbook.addWorksheet(DICT_SHEET_NAME, { state: 'veryHidden' })

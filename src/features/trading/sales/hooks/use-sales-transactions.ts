@@ -5,7 +5,7 @@ import { NotificationService } from '@/features/system-mgmt/notifications/notifi
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
-import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
+import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderName, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
 import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
 
 export const useSalesOrderMutations = () => {
@@ -32,6 +32,75 @@ export const useSalesOrderMutations = () => {
         })
       }
 
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['requirements'] })
+    },
+    onError: handleServerError,
+  })
+
+  const purchaseOrderNoChangeMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      purchaseOrderNo,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      purchaseOrderNo: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changeSalesOrderPurchaseOrderNo(orderId, { purchaseOrderNo, operator, expectedVersion, actorId }),
+    onSuccess: (data) => {
+      toast.success(t('tradingSalesOrder.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['requirements'] })
+    },
+    onError: handleServerError,
+  })
+
+  const orderNameChangeMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      orderName,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      orderName: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changeSalesOrderName(orderId, { orderName, operator, expectedVersion, actorId }),
+    onSuccess: (data) => {
+      toast.success(t('tradingSalesOrder.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['requirements'] })
+    },
+    onError: handleServerError,
+  })
+
+  const requirementsChangeMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      requirements,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      requirements: string
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changeSalesOrderRequirements(orderId, { requirements, operator, expectedVersion, actorId }),
+    onSuccess: (data) => {
+      toast.success(t('tradingSalesOrder.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
       queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
       queryClient.invalidateQueries({ queryKey: ['requirements'] })
@@ -297,5 +366,5 @@ export const useSalesOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, patchMutation, deleteMutation, claimMutation, statusTransitionMutation, cancelMutation, customerChangeMutation, deliveryDateChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
+  return { createMutation, patchMutation, deleteMutation, claimMutation, statusTransitionMutation, cancelMutation, customerChangeMutation, deliveryDateChangeMutation, orderNameChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
 }

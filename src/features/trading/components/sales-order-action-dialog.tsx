@@ -94,7 +94,7 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, orderNameChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -122,6 +122,9 @@ export function SalesOrderActionDialog({
         const isClassificationTypeOnlyChange =
           deltaKeys.length > 0 && deltaKeys.every((key) => key === 'classification' || key === 'type' || key === 'barcode')
         const isDeliveryDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'deliveryDate')
+        const isOrderNameOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'orderName')
+        const isPurchaseOrderNoOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'purchaseOrderNo')
+        const isRequirementsOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'requirements')
         const hasLineStructureChange = (() => {
           if (!order || !isLinesOnlyChange) return false
           const previousLineNos = (order.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
@@ -255,6 +258,42 @@ export function SalesOrderActionDialog({
           await deliveryDateChangeMutation.mutateAsync({
             orderId: order.id,
             deliveryDate: finalData.deliveryDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isOrderNameOnlyChange) {
+          await orderNameChangeMutation.mutateAsync({
+            orderId: order.id,
+            orderName: finalData.orderName || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isPurchaseOrderNoOnlyChange) {
+          await purchaseOrderNoChangeMutation.mutateAsync({
+            orderId: order.id,
+            purchaseOrderNo: finalData.purchaseOrderNo || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isRequirementsOnlyChange) {
+          await requirementsChangeMutation.mutateAsync({
+            orderId: order.id,
+            requirements: finalData.requirements || '',
             operator: user?.accountNo || 'Unknown',
             actorId: user?.id,
             expectedVersion: order.version,

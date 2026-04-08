@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Trash2, UserPen } from 'lucide-react'
+import { Trash2, UserPen, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { type User } from '../data/schema'
 import { useUsers } from './users-provider'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
+import { isSuperAdmin } from '../utils/user-utils'
 
 type DataTableRowActionsProps = {
   row: Row<User>
@@ -21,6 +22,8 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useLanguage()
   const { setOpen, setCurrentRow } = useUsers()
+  const isProtected = isSuperAdmin(row.original)
+
   return (
     <>
       <DropdownMenu modal={false}>
@@ -38,29 +41,35 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         <DropdownMenuContent align='end' className='w-[160px]'>
           <NonBlockingPermissionBoundary permission='user_edit'>
             <DropdownMenuItem
+              disabled={isProtected}
               onClick={() => {
+                if (isProtected) return
                 setCurrentRow(row.original)
                 setOpen('edit')
               }}
+              title={isProtected ? t('users.table.protectedTooltip') : undefined}
             >
               {t('common.actions.edit')}
               <DropdownMenuShortcut>
-                <UserPen size={16} />
+                {isProtected ? <Lock size={14} className='text-amber-500' /> : <UserPen size={16} />}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
           </NonBlockingPermissionBoundary>
           
           <NonBlockingPermissionBoundary permission='user_delete'>
             <DropdownMenuItem
+              disabled={isProtected}
               onClick={() => {
+                if (isProtected) return
                 setCurrentRow(row.original)
                 setOpen('delete')
               }}
-              className='text-red-500!'
+              className={isProtected ? 'opacity-50' : 'text-red-500!'}
+              title={isProtected ? t('users.table.protectedTooltip') : undefined}
             >
               {t('common.actions.delete')}
               <DropdownMenuShortcut>
-                <Trash2 size={16} />
+                {isProtected ? <Lock size={14} className='text-amber-500' /> : <Trash2 size={16} />}
               </DropdownMenuShortcut>
             </DropdownMenuItem>
           </NonBlockingPermissionBoundary>

@@ -14,6 +14,7 @@ export const users = {
       status: 'Status',
       role: 'Role',
     },
+    protectedTooltip: 'System core account is protected and cannot be changed here',
   },
   columns: {
     username: 'Username',
@@ -130,5 +131,7 @@ export const users = {
     deactivateSuccess: '{{count}} users deactivated successfully',
     switchAdminSuccess: 'Root privileges successfully escalated',
     switchAdminFailed: 'Permission switch failed',
+    noActionableUsers: 'Selected users are system-protected, action aborted',
+    skippedProtected: 'Automatically skipped {{count}} system-protected core accounts',
   },
 } as const

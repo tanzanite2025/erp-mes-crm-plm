@@ -15,7 +15,8 @@ import { Star, RefreshCcw, Coins } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { financeService, type Currency } from '../services/finance-service'
+import { CurrencyMaintenanceService } from '../services/currency-maintenance-service'
+import { type Currency } from '../data/schema'
 import { PRESET_CURRENCIES } from '../data/currency-constants'
 import { isConflictError } from '@/lib/handle-server-error'
 
@@ -79,9 +80,9 @@ export function CurrencyActionDialog({
                     onOpenChange(false)
                     return
                 }
-                await financeService.patchCurrency(editingCurrency.id, delta, editingCurrency.version)
+                await CurrencyMaintenanceService.patchCurrency(editingCurrency.id, delta, editingCurrency.version)
             } else {
-                await financeService.saveCurrency(data)
+                await CurrencyMaintenanceService.saveCurrency(data)
             }
             
             toast.success(isPatch 

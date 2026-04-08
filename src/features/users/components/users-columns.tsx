@@ -5,11 +5,13 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type Role } from '@/features/system-mgmt/data/role-schema'
 import { cn } from '@/lib/utils'
+import { ShieldAlert } from 'lucide-react'
 import { DataTableRowActions } from './data-table-row-actions'
 import { callTypes, roles } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 import { resolveRoleLabel } from '../utils/role-resolver'
+import { isSuperAdmin } from '../utils/user-utils'
 
 const userStatusTranslationKeys: Record<
   UserStatus,
@@ -78,9 +80,19 @@ export function getUsersColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t('users.columns.username')} />
       ),
-      cell: ({ row }) => (
-        <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
-      ),
+      cell: ({ row }) => {
+        const protected_ = isSuperAdmin(row.original)
+        return (
+          <div className='flex items-center gap-2 ps-3'>
+            <LongText className={cn('max-w-36', protected_ && 'font-black text-amber-600 italic')}>
+              {row.getValue('username')}
+            </LongText>
+            {protected_ && (
+              <ShieldAlert size={12} className='text-amber-500 animate-pulse shrink-0' />
+            )}
+          </div>
+        )
+      },
       meta: {
         className: cn(
           'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',

@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCcw, CreditCard, Edit2 } from 'lucide-react'
-import { financeService, type PaymentTerm } from '../services/finance-service'
+import { PaymentTermCoreService } from '../services/payment-term-core-service'
+import { type PaymentTerm } from '../data/schema'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { isForbiddenError } from '@/lib/error-status'
@@ -24,7 +25,7 @@ export function PaymentTermsTab() {
         setIsLoading(true)
         setError(null)
         try {
-            const data = await financeService.getPaymentTerms()
+            const data = await PaymentTermCoreService.getPaymentTerms()
             setTerms(data)
         } catch (error) {
             setError(error)

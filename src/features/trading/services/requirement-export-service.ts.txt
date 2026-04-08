@@ -1,7 +1,6 @@
 import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { type MaterialRequirement } from '../data/requirement-schema'
-import { RequirementCoreService } from './requirement-core-service'
 import type { Alignment, Borders } from 'exceljs'
 
 export const RequirementExportService = {
@@ -65,7 +64,11 @@ export const RequirementExportService = {
             cell.font = { size: 9 }
         })
 
-        const productList = RequirementCoreService.getUniqueProductsSummary(data, locale)
+        const separator = translate(locale, 'trading.requirements.export.separator')
+        const uniqueProducts = Array.from(new Set(data.flatMap((item) => item.sourceOrders.map((order) => order.productName))))
+        const productList = uniqueProducts.length > 3
+            ? `${uniqueProducts.slice(0, 3).join(separator)} ${translate(locale, 'trading.requirements.export.productsMore', { count: uniqueProducts.length - 3 })}`
+            : uniqueProducts.join(separator)
 
         sheet.mergeCells('A4:J4')
         const descCell = sheet.getCell('A4')
@@ -121,8 +124,25 @@ export const RequirementExportService = {
                 const row = sheet.getRow(currentRowNum)
                 row.height = 24
 
-                const packagingDesc = RequirementCoreService.formatPackaging(item, locale)
-                const shortageStr = RequirementCoreService.formatShortage(item, locale)
+                let packagingDesc = '-'
+                if (item.packaging) {
+                    const { packQty, packUnit, factor, direction } = item.packaging
+                    const formula = direction === 'reverse'
+                        ? translate(locale, 'trading.requirements.export.packagingFormulaReverse', { unit: item.unit, factor, packUnit })
+                        : translate(locale, 'trading.requirements.export.packagingFormulaForward', { unit: item.unit, factor, packUnit })
+                    packagingDesc = `${packQty} ${packUnit} (${formula})`
+                }
+
+                const shortageStr = item.shortageGap > 0
+                    ? item.packaging
+                        ? translate(locale, 'trading.requirements.export.shortageWithPack', {
+                            gap: item.shortageGap.toFixed(1),
+                            unit: item.unit,
+                            packQty: item.packaging.packQty,
+                            packUnit: item.packaging.packUnit
+                        })
+                        : `${item.shortageGap.toFixed(1)} ${item.unit}`
+                    : translate(locale, 'trading.requirements.export.shortageEnough')
 
                 row.values = [
                     item.section,

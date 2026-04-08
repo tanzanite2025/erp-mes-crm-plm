@@ -5,7 +5,7 @@ import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { type Material } from '@/features/material-archive/services/material-service'
+import { type Material } from '@/features/material-archive/data/schema'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrderLine } from '../../../data/schema'
 

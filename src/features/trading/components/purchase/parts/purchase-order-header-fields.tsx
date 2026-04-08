@@ -4,7 +4,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
-import { financeService, type Currency, type PaymentTerm } from '@/features/finance/services/finance-service'
+import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
+import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
+import { type Currency, type PaymentTerm } from '@/features/finance/data/schema'
 import { createLogger } from '@/lib/logger'
 import { type PurchaseOrder, type Supplier } from '../../../data/schema'
 import { getPurchaseStatusLabel } from '../../../data/purchase-status'
@@ -31,8 +33,8 @@ export function PurchaseOrderHeaderFields({
     const loadFinanceData = async () => {
       try {
         const [currencyData, paymentTermData] = await Promise.all([
-          financeService.getCurrencies(),
-          financeService.getPaymentTerms(),
+          CurrencyCoreService.getCurrencies(),
+          PaymentTermCoreService.getPaymentTerms(),
         ])
         setCurrencies(currencyData)
         setPaymentTerms(paymentTermData)

@@ -14,6 +14,7 @@ export const users = {
       status: '状态',
       role: '角色',
     },
+    protectedTooltip: '系统核心账户受保护，在此处不可更改',
   },
   columns: {
     username: '用户名',
@@ -130,5 +131,7 @@ export const users = {
     deactivateSuccess: '{{count}} 位用户已成功禁用',
     switchAdminSuccess: '系统本位权限切换成功',
     switchAdminFailed: '切换失败',
+    noActionableUsers: '选中的用户均受系统保护，无法执行此操作',
+    skippedProtected: '已自动跳过 {{count}} 个受系统保护的核心账户',
   },
 } as const

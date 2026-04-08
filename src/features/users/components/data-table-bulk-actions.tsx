@@ -13,6 +13,7 @@ import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-ta
 import { type User } from '../data/schema'
 import { UsersMultiDeleteDialog } from './users-multi-delete-dialog'
 import { useLanguage } from '@/context/language-provider'
+import { isSuperAdmin } from '../utils/user-utils'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -24,14 +25,27 @@ export function DataTableBulkActions<TData>({
   const { t } = useLanguage()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const selectedRows = table.getFilteredSelectedRowModel().rows
-
+  
   const handleBulkStatusChange = (status: 'active' | 'inactive') => {
-    const selectedUsers = selectedRows.map((row) => row.original as User)
+    const allSelected = selectedRows.map((row) => row.original as User)
+    const actionableUsers = allSelected.filter(user => !isSuperAdmin(user))
+    const skippedCount = allSelected.length - actionableUsers.length
+
+    if (actionableUsers.length === 0) {
+      toast.error(t('users.toast.noActionableUsers'))
+      table.resetRowSelection()
+      return
+    }
+
+    if (skippedCount > 0) {
+      toast.warning(t('users.toast.skippedProtected', { count: skippedCount }))
+    }
+
     toast.promise(sleep(2000), {
       loading: status === 'active' ? t('users.toast.activateSyncing') : t('users.toast.deactivateSyncing'),
       success: () => {
         table.resetRowSelection()
-        return status === 'active' ? t('users.toast.activateSuccess', { count: selectedUsers.length }) : t('users.toast.deactivateSuccess', { count: selectedUsers.length })
+        return status === 'active' ? t('users.toast.activateSuccess', { count: actionableUsers.length }) : t('users.toast.deactivateSuccess', { count: actionableUsers.length })
       },
       error: t('users.toast.switchAdminFailed'),
     })
@@ -39,12 +53,25 @@ export function DataTableBulkActions<TData>({
   }
 
   const handleBulkInvite = () => {
-    const selectedUsers = selectedRows.map((row) => row.original as User)
+    const allSelected = selectedRows.map((row) => row.original as User)
+    const actionableUsers = allSelected.filter(user => !isSuperAdmin(user))
+    const skippedCount = allSelected.length - actionableUsers.length
+
+    if (actionableUsers.length === 0) {
+      toast.error(t('users.toast.noActionableUsers'))
+      table.resetRowSelection()
+      return
+    }
+
+    if (skippedCount > 0) {
+      toast.warning(t('users.toast.skippedProtected', { count: skippedCount }))
+    }
+
     toast.promise(sleep(2000), {
       loading: t('users.toast.inviteSyncing'),
       success: () => {
         table.resetRowSelection()
-        return t('users.toast.inviteSuccess', { count: selectedUsers.length })
+        return t('users.toast.inviteSuccess', { count: actionableUsers.length })
       },
       error: t('users.toast.switchAdminFailed'),
     })

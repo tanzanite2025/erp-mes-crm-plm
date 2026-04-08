@@ -16,6 +16,9 @@ const (
 	SalesTransactionIntentClassificationTypeChange = "ORDER_CLASSIFICATION_TYPE_CHANGE"
 	SalesTransactionIntentCustomerChange           = "ORDER_CUSTOMER_CHANGE"
 	SalesTransactionIntentDeliveryDateChange       = "ORDER_DELIVERY_DATE_CHANGE"
+	SalesTransactionIntentNameChange               = "ORDER_NAME_CHANGE"
+	SalesTransactionIntentPurchaseOrderNoChange    = "ORDER_PURCHASE_ORDER_NO_CHANGE"
+	SalesTransactionIntentRequirementsChange       = "ORDER_REQUIREMENTS_CHANGE"
 	SalesTransactionIntentOrderLineAdd             = "ORDER_LINE_ADD"
 	SalesTransactionIntentOrderLineRemove          = "ORDER_LINE_REMOVE"
 	SalesTransactionIntentOrderLineContentChange   = "ORDER_LINE_CONTENT_CHANGE"
@@ -637,6 +640,189 @@ func executeOrderDeliveryDateChangeTx(tx *gorm.DB, current *models.SalesOrder, i
 	return current, nil
 }
 
+func executeOrderNameChangeTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
+	payload, err := parseSalesOrderNameChangePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := strings.TrimSpace(payload.Operator)
+	if operator == "" {
+		operator = strings.TrimSpace(input.Operator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(input.ActorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+
+	orderName := strings.TrimSpace(payload.OrderName)
+	if orderName == strings.TrimSpace(current.OrderName) {
+		return nil, fmt.Errorf("%w: orderName unchanged", ErrSalesTransactionInvalidPayload)
+	}
+
+	if err := tx.Model(current).Updates(map[string]interface{}{
+		"order_name": orderName,
+		"updated_by": operator,
+		"version":    current.Version + 1,
+	}).Error; err != nil {
+		return nil, err
+	}
+	current.OrderName = orderName
+	current.UpdatedBy = operator
+	current.Version = current.Version + 1
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          SalesTransactionIntentNameChange,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"orderName": orderName,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "SalesOrder",
+		TargetID: current.ID,
+		Action:   SalesTransactionIntentNameChange,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
+func executeOrderPurchaseOrderNoChangeTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
+	payload, err := parseSalesOrderPurchaseOrderNoChangePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := strings.TrimSpace(payload.Operator)
+	if operator == "" {
+		operator = strings.TrimSpace(input.Operator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(input.ActorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+
+	purchaseOrderNo := strings.TrimSpace(payload.PurchaseOrderNo)
+	if purchaseOrderNo == strings.TrimSpace(current.PurchaseOrderNo) {
+		return nil, fmt.Errorf("%w: purchaseOrderNo unchanged", ErrSalesTransactionInvalidPayload)
+	}
+
+	if err := tx.Model(current).Updates(map[string]interface{}{
+		"purchase_order_no": purchaseOrderNo,
+		"updated_by":        operator,
+		"version":           current.Version + 1,
+	}).Error; err != nil {
+		return nil, err
+	}
+	current.PurchaseOrderNo = purchaseOrderNo
+	current.UpdatedBy = operator
+	current.Version = current.Version + 1
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          SalesTransactionIntentPurchaseOrderNoChange,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"purchaseOrderNo": purchaseOrderNo,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "SalesOrder",
+		TargetID: current.ID,
+		Action:   SalesTransactionIntentPurchaseOrderNoChange,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
+func executeOrderRequirementsChangeTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
+	payload, err := parseSalesOrderRequirementsChangePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := strings.TrimSpace(payload.Operator)
+	if operator == "" {
+		operator = strings.TrimSpace(input.Operator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(input.ActorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+
+	requirements := strings.TrimSpace(payload.Requirements)
+	if requirements == strings.TrimSpace(current.Requirements) {
+		return nil, fmt.Errorf("%w: requirements unchanged", ErrSalesTransactionInvalidPayload)
+	}
+
+	if err := tx.Model(current).Updates(map[string]interface{}{
+		"requirements": requirements,
+		"updated_by":   operator,
+		"version":      current.Version + 1,
+	}).Error; err != nil {
+		return nil, err
+	}
+	current.Requirements = requirements
+	current.UpdatedBy = operator
+	current.Version = current.Version + 1
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          SalesTransactionIntentRequirementsChange,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"requirements": requirements,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "SalesOrder",
+		TargetID: current.ID,
+		Action:   SalesTransactionIntentRequirementsChange,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
 func executeOrderCustomerChangeTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
 	payload, err := parseSalesOrderCustomerChangePayload(input.Payload)
 	if err != nil {
@@ -739,6 +925,21 @@ type SalesOrderDeliveryDateChangePayload struct {
 	Operator     string `json:"operator"`
 }
 
+type SalesOrderNameChangePayload struct {
+	OrderName string `json:"orderName"`
+	Operator  string `json:"operator"`
+}
+
+type SalesOrderPurchaseOrderNoChangePayload struct {
+	PurchaseOrderNo string `json:"purchaseOrderNo"`
+	Operator        string `json:"operator"`
+}
+
+type SalesOrderRequirementsChangePayload struct {
+	Requirements string `json:"requirements"`
+	Operator     string `json:"operator"`
+}
+
 type SalesOrderLinesChangePayload struct {
 	Lines    []SalesOrderLineRequest `json:"lines"`
 	Operator string                  `json:"operator"`
@@ -793,7 +994,7 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 	}
 
 	intent := strings.TrimSpace(input.Intent)
-	if intent != SalesTransactionIntentClassificationTypeChange && intent != SalesTransactionIntentCustomerChange && intent != SalesTransactionIntentDeliveryDateChange && intent != SalesTransactionIntentOrderLineAdd && intent != SalesTransactionIntentOrderLineRemove && intent != SalesTransactionIntentOrderLineContentChange && intent != SalesTransactionIntentOrderLinesChange && intent != SalesTransactionIntentOrderLineClaim && intent != SalesTransactionIntentStatusTransition && intent != SalesTransactionIntentOrderCancel {
+	if intent != SalesTransactionIntentClassificationTypeChange && intent != SalesTransactionIntentCustomerChange && intent != SalesTransactionIntentDeliveryDateChange && intent != SalesTransactionIntentNameChange && intent != SalesTransactionIntentPurchaseOrderNoChange && intent != SalesTransactionIntentRequirementsChange && intent != SalesTransactionIntentOrderLineAdd && intent != SalesTransactionIntentOrderLineRemove && intent != SalesTransactionIntentOrderLineContentChange && intent != SalesTransactionIntentOrderLinesChange && intent != SalesTransactionIntentOrderLineClaim && intent != SalesTransactionIntentStatusTransition && intent != SalesTransactionIntentOrderCancel {
 		return nil, ErrSalesTransactionUnsupportedIntent
 	}
 
@@ -813,6 +1014,12 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 		return executeOrderCustomerChangeTx(tx, &current, input)
 	case SalesTransactionIntentDeliveryDateChange:
 		return executeOrderDeliveryDateChangeTx(tx, &current, input)
+	case SalesTransactionIntentNameChange:
+		return executeOrderNameChangeTx(tx, &current, input)
+	case SalesTransactionIntentPurchaseOrderNoChange:
+		return executeOrderPurchaseOrderNoChangeTx(tx, &current, input)
+	case SalesTransactionIntentRequirementsChange:
+		return executeOrderRequirementsChangeTx(tx, &current, input)
 	case SalesTransactionIntentOrderLineAdd:
 		return executeOrderLineAddTx(tx, &current, input)
 	case SalesTransactionIntentOrderLineRemove:
@@ -1088,6 +1295,45 @@ func parseSalesOrderLineClaimPayload(raw json.RawMessage) (SalesOrderLineClaimPa
 	}
 	if len(payload.LineNos) == 0 {
 		return SalesOrderLineClaimPayload{}, fmt.Errorf("%w: lineNos is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	return payload, nil
+}
+
+func parseSalesOrderNameChangePayload(raw json.RawMessage) (SalesOrderNameChangePayload, error) {
+	if len(raw) == 0 {
+		return SalesOrderNameChangePayload{}, fmt.Errorf("%w: payload is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	var payload SalesOrderNameChangePayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return SalesOrderNameChangePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
+	}
+
+	return payload, nil
+}
+
+func parseSalesOrderPurchaseOrderNoChangePayload(raw json.RawMessage) (SalesOrderPurchaseOrderNoChangePayload, error) {
+	if len(raw) == 0 {
+		return SalesOrderPurchaseOrderNoChangePayload{}, fmt.Errorf("%w: payload is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	var payload SalesOrderPurchaseOrderNoChangePayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return SalesOrderPurchaseOrderNoChangePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
+	}
+
+	return payload, nil
+}
+
+func parseSalesOrderRequirementsChangePayload(raw json.RawMessage) (SalesOrderRequirementsChangePayload, error) {
+	if len(raw) == 0 {
+		return SalesOrderRequirementsChangePayload{}, fmt.Errorf("%w: payload is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	var payload SalesOrderRequirementsChangePayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return SalesOrderRequirementsChangePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
 	}
 
 	return payload, nil

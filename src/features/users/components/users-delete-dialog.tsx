@@ -30,7 +30,7 @@ export function UsersDeleteDialog({
   const handleDelete = () => {
     if (value.trim() !== CONFIRM_WORD) return
 
-    deleteMutation.mutate(currentRow.id, {
+    deleteMutation.mutate({ id: currentRow.id, user: currentRow }, {
       onSuccess: () => {
         onOpenChange(false)
         setValue('')

@@ -39,7 +39,9 @@ import { getEmployeeColumns } from '../components/employee-columns'
 import { type Employee } from '../data/schema'
 import { employees as initialData } from '../data/employees'
 import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
-import { type EmployeeStatus, EmployeeService } from '../services/employee-service'
+import { type EmployeeStatus } from '../services/employee-service'
+import { EmployeeCoreService } from '../services/employee-core-service'
+import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
 import { OrgService } from '../services/org-service'
 import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
 import { type OrgNode } from '../data/org-schema'
@@ -122,7 +124,7 @@ export function EmployeeManagementList() {
             throw new Error(t('orgPersonnel.list.noIdFound'))
         }
 
-        const updated = await EmployeeService.updateEmployeesStatus(idsToUpdate, status)
+        const updated = await EmployeeMaintenanceService.updateEmployeesStatus(idsToUpdate, status)
 
         if (status === 'resigned') {
             const idsToUpdateSet = new Set(idsToUpdate)
@@ -160,7 +162,7 @@ export function EmployeeManagementList() {
 
         setIsUndoingRecentResign(true)
         try {
-            const updated = await EmployeeService.updateEmployeesStatus(idsToRestore, 'active')
+            const updated = await EmployeeMaintenanceService.updateEmployeesStatus(idsToRestore, 'active')
             await loadData()
             setRowSelection({})
 
@@ -188,7 +190,7 @@ export function EmployeeManagementList() {
         try {
             setError(null)
             await loadLookups()
-            const stored = await EmployeeService.getEmployees()
+            const stored = await EmployeeCoreService.getEmployees()
             if (stored) setData(stored)
         } catch (err) {
             setError(err)
@@ -201,14 +203,10 @@ export function EmployeeManagementList() {
             void loadData()
         }, 0)
 
-        const handleSync = () => {
-            void loadData()
-        }
-        window.addEventListener('xdfc_employees_data_updated', handleSync)
+        void loadData()
 
         return () => {
             globalThis.clearTimeout(timer)
-            window.removeEventListener('xdfc_employees_data_updated', handleSync)
         }
     }, [loadData])
 
@@ -221,7 +219,7 @@ export function EmployeeManagementList() {
         if (itemsToDelete.length === 0) return
         try {
             const idsToDelete = itemsToDelete.map((item) => item.id)
-            await EmployeeService.deleteEmployees(idsToDelete)
+            await EmployeeMaintenanceService.deleteEmployees(idsToDelete)
             await loadData()
             setRowSelection({})
             setBulkDeleteConfirmOpen(false)
@@ -238,11 +236,11 @@ export function EmployeeManagementList() {
         try {
             if (isPatch && delta && finalEmp.id) {
                 // 执行增量更新
-                await EmployeeService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
+                await EmployeeMaintenanceService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
                 toast.success(t('orgPersonnel.list.saveUpdated'))
             } else {
                 // 执行全量保存 (创建新员工)
-                await EmployeeService.saveEmployee(finalEmp)
+                await EmployeeMaintenanceService.saveEmployee(finalEmp)
                 toast.success(t('orgPersonnel.list.saveCreated'))
             }
             await loadData()

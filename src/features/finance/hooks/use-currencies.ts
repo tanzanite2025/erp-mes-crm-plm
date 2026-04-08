@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { financeService, type Currency } from '../services/finance-service'
+import { CurrencyCoreService } from '../services/currency-core-service'
+import { CurrencyMaintenanceService } from '../services/currency-maintenance-service'
+import { type Currency } from '../data/schema'
 
 const logger = createLogger('useCurrencies')
 
@@ -15,7 +17,7 @@ export function useCurrencies() {
     const loadData = useCallback(async () => {
         setIsLoading(true)
         try {
-            const data = await financeService.getCurrencies()
+            const data = await CurrencyCoreService.getCurrencies()
             // 确保本位币排在第一位
             const sorted = [...data].sort((a, b) => (b.isBase ? 1 : 0) - (a.isBase ? 1 : 0))
             setCurrencies(sorted)
@@ -45,7 +47,7 @@ export function useCurrencies() {
     const handleSync = async () => {
         setIsSyncing(true)
         try {
-            const res = await financeService.syncCurrencies()
+            const res = await CurrencyMaintenanceService.syncCurrencies()
             toast.success(t('finance.currencyRates.toast.syncSuccess', { count: res.count }))
             window.dispatchEvent(new CustomEvent('xdfc_currencies_data_updated'))
         } catch (error) {
@@ -58,7 +60,7 @@ export function useCurrencies() {
     const handleSetBase = async (id: number) => {
         if (!window.confirm(t('finance.currencyRates.confirm.setBase'))) return
         try {
-            await financeService.setBaseCurrency(id)
+            await CurrencyMaintenanceService.setBaseCurrency(id)
             toast.success(t('finance.currencyRates.toast.setBaseSuccess'))
             window.dispatchEvent(new CustomEvent('xdfc_currencies_data_updated'))
         } catch (error) {

@@ -15,7 +15,7 @@ import { createLogger } from '@/lib/logger'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 
-import { EmployeeService } from '../services/employee-service'
+import { EmployeeTransactionService } from '../services/employee-transaction-service'
 import { OrgService } from '../services/org-service'
 import {
     downloadPersonnelTemplate,
@@ -98,7 +98,7 @@ export function ImportPersonnelDialog({
             validatePersonnelWorkbookStructure(previewData, sheetName)
             const finalMapped = mapExcelToEmployees(previewData, deptMap)
 
-            await EmployeeService.syncEmployees(finalMapped)
+            await EmployeeTransactionService.syncEmployees(finalMapped)
 
             toast.success(t('orgPersonnel.importDialog.importSuccess', { count: finalMapped.length }))
             onSuccess?.()

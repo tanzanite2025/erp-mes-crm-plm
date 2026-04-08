@@ -10,7 +10,8 @@ import { CreditCard, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { financeService, type PaymentTerm } from '../services/finance-service'
+import { PaymentTermMaintenanceService } from '../services/payment-term-maintenance-service'
+import { type PaymentTerm } from '../data/schema'
 import { isConflictError } from '@/lib/handle-server-error'
 
 interface PaymentTermActionDialogProps {
@@ -24,6 +25,7 @@ const DEFAULT_TERM: Partial<PaymentTerm> = {
     code: '',
     name: '',
     description: '',
+    installments: '',
     isDefault: false,
     status: 'Active',
     version: 1,
@@ -72,9 +74,9 @@ export function PaymentTermActionDialog({
                     onOpenChange(false)
                     return
                 }
-                await financeService.patchPaymentTerm(editingTerm.id, delta, editingTerm.version)
+                await PaymentTermMaintenanceService.patchPaymentTerm(editingTerm.id, delta, editingTerm.version)
             } else {
-                await financeService.savePaymentTerm(data)
+                await PaymentTermMaintenanceService.savePaymentTerm(data)
             }
             
             toast.success(isPatch 

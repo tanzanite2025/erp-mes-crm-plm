@@ -44,6 +44,30 @@ export function OrderHeaderFields({
         <div className='grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2 lg:grid-cols-4'>
           <div className='grid gap-1'>
             <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
+              {t('tradingSalesOrder.detail.info.orderName')}
+            </Label>
+            <Input
+              placeholder={t('tradingSalesOrder.detail.info.orderName')}
+              value={formData.orderName || ''}
+              onChange={(e) => setFormData((prev) => ({ ...prev, orderName: e.target.value }))}
+              className='h-11 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+            />
+          </div>
+
+          <div className='grid gap-1'>
+            <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
+              {t('tradingSalesOrder.detail.info.customerPo')}
+            </Label>
+            <Input
+              placeholder={t('tradingSalesOrder.detail.info.customerPo')}
+              value={formData.purchaseOrderNo || ''}
+              onChange={(e) => setFormData((prev) => ({ ...prev, purchaseOrderNo: e.target.value }))}
+              className='h-11 text-[13px] font-bold shadow-sm sm:h-10 sm:text-[12px]'
+            />
+          </div>
+
+          <div className='grid gap-1'>
+            <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.orderNo')}
             </Label>
             <div className='group relative'>

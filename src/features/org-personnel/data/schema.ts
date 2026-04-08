@@ -25,6 +25,9 @@ export const employeeSchema = z.object({
     version: z.number().default(1),
 })
 
+export const employeeStatusSchema = z.enum(['active', 'resigned', 'on-leave'])
+export type EmployeeStatus = z.infer<typeof employeeStatusSchema>
+
 export type Employee = z.infer<typeof employeeSchema>
 
 export const jobTypeSchema = z.object({

@@ -1,5 +1,139 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`sales` 头部下一刀：`orderName` 编辑入口 + 事务化（2026-04-08）
+
+### 本轮目标
+在已完成 `sales` 的 `requirements` 事务化后，继续压缩 `sales` 头部 `patchMutation` 的承担面，并将另一个稳定单字段 `orderName` 收口为可编辑、可分流、可验证的完整 transaction 链。
+
+### 本轮处理的计划外复杂度
+在开始实现后确认到：
+
+- `sales` 模型中存在 `orderName` 字段；
+- 后端也存在 `order_name` 持久化字段；
+- 但当前销售订单编辑 UI 中没有 `orderName` 的编辑入口。
+
+因此本轮先回到规划阶段扩容范围，补上最小编辑入口，再继续接 `ORDER_NAME_CHANGE`。
+
+### 已执行变更
+更新：
+- `src/features/trading/components/parts/order-header-fields.tsx`
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 在销售订单头部新增 `orderName` 的最小编辑输入；
+- 后端新增 `ORDER_NAME_CHANGE` intent；
+- `ORDER_NAME_CHANGE` 只允许处理 `orderName` 的纯头部变更；
+- 前端新增 `changeSalesOrderName()` 与 `orderNameChangeMutation`；
+- 在销售订单编辑对话框中，当 delta 仅包含 `orderName` 时，优先走 `orderNameChangeMutation`；
+- 若混入其他头部字段或任何行级字段，则继续保留在现有 `patchMutation` / 其他 transaction 边界中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 头部下一刀：
+
+- `sales` 头部现在不仅新增了 `orderName` transaction，也补齐了实际可编辑入口；
+- `sales` 头部 patch 覆盖面继续缩小；
+- 后续若继续压缩 `sales` 头部 patch，仍应优先选择已可编辑、低联动、单语义字段。
+
+## 专项：`sales` 头部 patch 压缩本轮切口：`requirements` 事务化（2026-04-08）
+
+### 本轮目标
+在 `sales` 已具备客户主体、分类/类型、交期等头部 transaction 的基础上，继续压缩头部 `patchMutation` 的承担面，并选择一个仍直接落回 patch 的稳定单字段切口进入实现。
+
+### 本轮选点
+本轮选择：
+
+- `requirements`
+
+选择原因：
+- 单字段；
+- 纯头部；
+- 当前直接落回 `patchMutation`；
+- 不像 `classification/type` 那样带联动；
+- 比 `purchaseOrderNo` / `orderName` 更稳定，且收益明确。
+
+### 已执行变更
+更新：
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增 `ORDER_REQUIREMENTS_CHANGE` intent；
+- `ORDER_REQUIREMENTS_CHANGE` 只允许处理 `requirements` 的纯头部变更；
+- 前端新增 `changeSalesOrderRequirements()` 与 `requirementsChangeMutation`；
+- 在销售订单编辑对话框中，当 delta 仅包含 `requirements` 时，优先走 `requirementsChangeMutation`；
+- 若混入其他头部字段或任何行级字段，则继续保留在现有 `patchMutation` / 其他 transaction 边界中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 头部 patch 压缩的一个稳定切口：
+
+- `sales` 头部 transaction 已新增 `requirements`；
+- `sales` 头部 patch 覆盖面进一步缩小；
+- 下一步若继续压缩 `sales` 头部 patch，应继续挑选同样单语义、低联动的字段，而不是进入头部混合变更。
+
+## P1：`purchase` 头部第二刀：供应商主体变更事务化（2026-04-08）
+
+### 本轮目标
+在已完成 `purchase` 头部 `expectedDate` 事务化与三类基础行级事务化后，继续压缩 `purchase` 的 patch 覆盖面，单独收口采购订单“供应商主体变更”这一稳定头部语义动作。
+
+### 已执行变更
+更新：
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增采购订单 `ORDER_SUPPLIER_CHANGE` intent；
+- `ORDER_SUPPLIER_CHANGE` 只允许处理 `supplierId` / `supplierName` 的纯头部变更；
+- 后端补充供应商存在性校验，不存在或已删除时拒绝更新；
+- 前端新增 `changePurchaseOrderSupplier()` 与 `supplierChangeMutation`；
+- 在采购订单编辑对话框中，当 delta 仅包含 `supplierId` / `supplierName` 时，优先走 `supplierChangeMutation`；
+- 若混入其他头部字段或任何行级字段，则继续保留在现有 `patchMutation` 链中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Purchase
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `purchase` 头部第二刀：
+
+- `purchase` 头部事务已从 `expectedDate` 扩展到供应商主体变更；
+- 当前采购事务样板已形成：
+  - `ORDER_DELIVERY_DATE_CHANGE`
+  - `ORDER_SUPPLIER_CHANGE`
+  - `ORDER_LINE_CONTENT_CHANGE`
+  - `ORDER_LINE_ADD`
+  - `ORDER_LINE_REMOVE`
+- `purchase` 的 patch 回退已进一步收敛到更少、更复杂的混合编辑场景。
+
 ## 专项：`sales` / `purchase` patch 兜底压缩盘点（2026-04-08）
 
 ### 本轮目标

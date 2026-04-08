@@ -24,7 +24,7 @@ export const MaterialCoreService = {
     pageSize: number = 20,
     search: string = ''
   ): Promise<{ data: Material[]; total: number }> {
-    const { molds: data, total } = await this.getMaterialsWithVersion(category, page, pageSize, search)
+    const { data, total } = await this.getMaterialsWithVersion(category, page, pageSize, search)
     return { data, total }
   },
 
@@ -36,7 +36,7 @@ export const MaterialCoreService = {
     page: number = 1,
     pageSize: number = 20,
     search: string = ''
-  ): Promise<{ molds: Material[]; total: number; version: string }> {
+  ): Promise<{ data: Material[]; total: number; version: string }> {
     const params = new URLSearchParams()
     if (category && category !== 'all') params.append('category', category.toUpperCase())
     params.append('page', page.toString())
@@ -52,7 +52,7 @@ export const MaterialCoreService = {
     )
 
     return {
-      molds: checked.data,
+      data: checked.data,
       total: checked.total || 0,
       version: checked.version || '1',
     }
