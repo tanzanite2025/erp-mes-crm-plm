@@ -1,5 +1,55 @@
 
 
+- [x] 486. 冻结本轮范围，执行 `trading/customer` / `trading/supplier` 的 TDO 接入（2026-04-08，已完成）
+  - [x] 本轮优先处理客户与供应商主数据模块，未并发进入其他业务域。
+  - [x] 已为主数据编辑建立显式业务 intent，而不是继续只依赖 `patch`。
+  - [x] 本轮先落地了最窄语义动作：`customer.status` / `supplier.status` 变更。
+
+- [x] 487. 明确 `trading/customer` 的 TDO 边界
+  - [x] 已盘点客户当前编辑仍以 CRUD + `patch` 主导的现状。
+  - [x] 已为稳定、单语义的 `status` 变更建立 customer transaction intent。
+  - [x] 普通档案混合编辑继续保留在现有 `patch` 链中。
+  - [x] 未前端猜测客户校验规则，继续复用后端主数据裁决。
+
+- [x] 488. 明确 `trading/supplier` 的 TDO 边界
+  - [x] 已盘点供应商当前编辑仍以 CRUD + `patch` 主导的现状。
+  - [x] 已为稳定、单语义的 `status` 变更建立 supplier transaction intent。
+  - [x] 普通档案混合编辑继续保留在现有 `patch` 链中。
+  - [x] 未前端猜测供应商校验规则，继续复用后端主数据裁决。
+
+- [x] 489. 明确本轮验证与收尾要求
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
+  - [x] 已验证：customer / supplier 的纯 `status` 动作命中显式 transaction，普通混合编辑仍保留原链路。
+  - [x] 已同步 `walkthrough.md`，记录 customer / supplier 的 TDO intent、分流条件与验证结果。
+
+- [x] 484. 完成 `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，已完成）
+  - [x] 已确认 `ORDER_SUPPLIER_CHANGE` 在前后端均已落地。
+  - [x] 已确认采购编辑弹窗中纯 `supplierId` / `supplierName` 变更命中显式 transaction。
+  - [x] 已确认混合编辑继续保留在现有 transaction / `patch` 链中。
+
+- [x] 485. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已同步 `walkthrough.md`，记录 `purchase` 头部第二刀结果。
+
+- [x] 481. 冻结本轮范围，执行 `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，已完成）
+  - [x] 本轮只处理采购订单 `supplierId` / `supplierName` 的纯头部变更事务。
+  - [x] 已确认供应商主体切换使用窄语义 intent。
+  - [x] 未并发处理 `expectedDate`、其他头部字段、收货状态或任何行级编辑。
+
+- [x] 482. 明确 `purchase` 头部第二刀边界
+  - [x] 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走供应商主体变更 transaction。
+  - [x] 若混入其他头部字段或行级字段，则不进入本轮 intent。
+  - [x] 其余采购订单编辑继续保留在现有 transaction / `patch` 链中。
+  - [x] 供应商不存在或不可用校验继续复用现有后端规则，不由前端猜测。
+
+- [x] 483. 明确本轮验证与收尾要求
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已验证：采购编辑弹窗中纯供应商主体切换命中 transaction，混合编辑仍回落原链路。
+  - [x] 完成后已同步 `walkthrough.md`，记录 `purchase` 头部第二刀 intent、分流条件与验证结果。
+
 - [x] 479. 完成 `sales` 的 `status` / `statusNote` 联动重构（2026-04-08，已完成）
   - [x] 已补销售订单 `statusNote` 的最小编辑入口。
   - [x] 已将编辑弹窗中的纯 `statusNote` 修改从 `patch` 收敛到显式状态 transaction。
@@ -62,6 +112,36 @@
     - [x] 重构 `warehouse-category.tsx` 与 `stocktake-mgmt.tsx` UI
     - [x] 迁移 PDA 模块：`src/features/pda-stocktake/hooks/use-stocktake.ts`
     - [x] 深度重构 `use-stock-mgmt.ts` 至 TanStack Query 架构
+
+- [ ] 5. Rust 高性能搜索增强 (隔离开发阶段) / Rust Search Engine (Isolated)
+    - [x] 初始化项目结构: `server/search-engine` & `Cargo.toml`
+    - [x] 定义 Tantivy 索引 Schema (Material/Asset 映射)
+    - [x] 实现 Axum 接口: `/v1/index` (SDRTS 接入) & `/v1/search`
+    - [x] 编写支持多阶段构建的 `Dockerfile` (适配 VPS)
+    - [ ] 6. Rust 高性能搜索增强 (后端集成阶段) / Rust Search Integration (Backend)
+    - [x] 创建 Go 侧 `SearchServiceClient` (`search_client.go`)
+    - [x] 为 `Inventory` 实体插入 SDRTS 同步钩子 (入库/出库/调拨)
+    - [x] 实现全量索引初始化脚本 (`RebuildSearchIndex`)
+    - [x] 验证后端变动与 Rust 服务的连通性
+    - [x] 7. Rust 高性能搜索增强 (全栈集成阶段) / Rust Search Full-Stack Integration
+    - [x] 在 `SearchServiceClient` 中增加 `Search` 查询方法
+    - [x] 实现 Go 侧 `SearchGlobal` Handler (带数据脱敏/增强)
+    - [x] 注册 `/api/v1/search/global` 路由
+    - [x] 重构 `use-command-menu.ts` 接入新接口并清理旧调用
+    - [x] 8. 全量搜索 UI 重构 (业务优先 & 选项卡布局) / Search UI Refactor (Tabbed)
+    - [x] 简化 `search-data.ts` 剔除冗余导航项
+    - [x] 引入 `Tabs` 组件并重构 `CommandMenuView` 为双 Tab 架构
+    - [x] 适配跨设备样式 (Mobile/PDA/Desktop)
+    - [x] 验证 Tab 切换动画及 Rust 结果展示逻辑
+    - [x] 9. 命令菜单生产力中心重构 (指令爆炸 & 去外观化) / Search Productivity Hub
+    - [x] 补全全量业务指令集 (`search-data.ts` / `actionConfigs`)
+    - [x] 清理 `CommandMenuView` 中的主题设置与低频系统入口
+    - [x] 调整操作 Tab 为高密度紧凑布局
+    - [x] 验证全量指令的搜索命中与路由直达逻辑
+    - [x] 10. 搜索结果初始展示优化 (按需折叠) / Search Display Optimization
+    - [x] 实现针对 `searchValue` 为空的列表截断逻辑 (`slice(0, 6)`)
+    - [x] 添加全量搜索引导视觉锚点 (`More...`)
+    - [x] 验证有无搜索关键词状态下的布局联动效果
 
 - [ ] 467. 明确 `sales` 头部 `orderName` 边界
   - [ ] 仅当 UI 可编辑且 delta 仅包含 `orderName` 时，才走 `orderName` transaction。

@@ -37,6 +37,8 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	customerGroup.Use(tradingAccess)
 	customerGroup.GET("", handlers.GetCustomersHandler)
 	customerGroup.POST("", customerManage, handlers.SaveCustomerHandler)
+	customerGroup.POST("/:id/transactions", customerManage, handlers.ExecuteCustomerTransactionHandler)
+	customerGroup.PATCH("/:id", customerManage, handlers.PatchCustomerHandler)
 	customerGroup.DELETE("/:id", customerDelete, handlers.DeleteCustomerHandler)
 	customerGroup.POST("/sync", customerSync, handlers.BulkSyncCustomersHandler)
 
@@ -44,6 +46,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	supplierGroup.Use(tradingAccess)
 	supplierGroup.GET("", handlers.GetSuppliersHandler)
 	supplierGroup.POST("", supplierManage, handlers.SaveSupplierHandler)
+	supplierGroup.POST("/:id/transactions", supplierManage, handlers.ExecuteSupplierTransactionHandler)
 	supplierGroup.PATCH("/:id", supplierManage, handlers.PatchSupplierHandler)
 	supplierGroup.DELETE("/:id", supplierDelete, handlers.DeleteSupplierHandler)
 	supplierGroup.POST("/sync", supplierSync, handlers.BulkSyncSuppliersHandler)

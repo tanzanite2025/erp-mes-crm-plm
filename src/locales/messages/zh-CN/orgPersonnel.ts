@@ -163,7 +163,18 @@ export const orgPersonnel = {
     deleteConfirm: '确定要删除部门 "{{name}}" 吗？此操作不可撤销。',
     saveSuccess: '机构信息已更新',
     createSuccess: '新机构已成功创建',
+    deleteSuccess: '机构已成功移除',
+    deleteFailed: '移除失败',
     saveFailed: '保存机构信息失败，请检查网络或数据格式',
+    backendErrors: {
+      nameConflict: '同级目录下已存在同名节点',
+      hasChildren: '无法删除：该机构下仍存在子组织，请先移除子项',
+      hasEmployees: '无法删除：当前机构仍有关联的活跃员工，请先在人员管理中移除或调离人员',
+      deleteFailed: '删除机构失败',
+      saveFailed: '保存机构失败',
+      invalidPayload: '无效的机构数据载荷',
+      fetchTreeFailed: '获取组织架构树失败'
+    },
     nodeTypes: {
       root: '总部',
       dept: '部门',

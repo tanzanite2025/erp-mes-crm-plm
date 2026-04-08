@@ -16,7 +16,6 @@ export function CommandMenu() {
     isSearching,
     groupedItems,
     handleNavigate,
-    handleThemeChange
   } = useCommandMenu()
 
   return (
@@ -29,7 +28,6 @@ export function CommandMenu() {
       groupedItems={groupedItems}
       asyncResults={asyncResults}
       onItemSelect={handleNavigate}
-      onThemeSelect={handleThemeChange}
     />
   )
 }

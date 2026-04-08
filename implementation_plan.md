@@ -1,5 +1,190 @@
 # implementation plan
 
+## `trading/customer` / `trading/supplier`：主数据 TDO 接入（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `trading/customer` / `trading/supplier` 第一批主数据 TDO 接入，且验证通过：
+
+1. 后端新增 customer / supplier 状态变更 transaction 服务与 handler；
+2. 新增交易路由：`POST /customers/:id/transactions`、`POST /suppliers/:id/transactions`；
+3. 前端 `customer-service.ts` / `supplier-service.ts` 已新增状态变更 transaction 请求；
+4. 前端 hooks 已新增 `statusChangeMutation`；
+5. `customer-list.tsx` / `supplier-list.tsx` 已在纯 `status` 变更场景下优先走显式 transaction；
+6. `customer-action-dialog.tsx` 已补最小状态编辑入口；
+7. 普通 customer / supplier 混合档案编辑仍继续保留在 `patch` 链中；
+8. 已补齐 `customer` 原有前端依赖但后端缺失的 `PATCH /customers/:id` 兜底链；
+9. 验证通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
+
+## `trading/customer` / `trading/supplier`：主数据 TDO 接入（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `sales` / `purchase` 订单域局部事务化后，优先回到主数据域，补齐 `trading/customer` 与 `trading/supplier` 当前仍以 CRUD + `patch` 为主的编辑链路，为高频、单语义主数据动作建立显式 TDO 入口。
+
+本轮目标：
+
+1. 先盘点 customer / supplier 现有编辑入口、字段与后端裁决能力；
+2. 只选择稳定、单语义、可审计的主数据动作建立 transaction intent；
+3. 不把普通档案混合编辑强行包装成 transaction；
+4. 继续保留 `patch` 作为未覆盖维护场景的安全兜底；
+5. 复用后端主数据校验，不由前端猜测启停、唯一性或状态规则。
+
+### 二、现状判断
+当前确认到：
+
+1. `trading/customer` 当前主要暴露 `create` / `patch` / `delete`；
+2. `trading/supplier` 当前主要暴露 `create` / `patch` / `delete`；
+3. 两者前端尚未形成类似 `sales-transaction-service.ts` / `purchase-transaction-service.ts` 的显式 transaction service；
+4. 两者当前也未形成编辑弹窗中的纯语义分流规则；
+5. 因此这两块是当前全局最明确仍未接稳 TDO 的主数据模块。
+
+### 三、建议方案
+建议把本轮拆成两个并行但边界独立的子专项：
+
+#### A. `customer` 主数据 TDO
+优先候选动作：
+
+1. 客户主体启停；
+2. 客户核心标识字段变更；
+3. 客户归档 / 禁用；
+
+约束：
+
+- 仅处理可稳定表达为单一业务动作的场景；
+- 若一次编辑混入多个普通档案字段，则继续保留在 `patch`；
+- 若后端已存在唯一性、引用关系、禁删限制，必须复用原规则。
+
+#### B. `supplier` 主数据 TDO
+优先候选动作：
+
+1. 供应商主体启停；
+2. 供应商核心标识字段变更；
+3. 供应商归档 / 禁用；
+
+约束：
+
+- 仅处理可稳定表达为单一业务动作的场景；
+- 若一次编辑混入多个普通档案字段，则继续保留在 `patch`；
+- 若后端已存在唯一性、引用关系、禁删限制，必须复用原规则。
+
+### 四、前后端职责
+
+#### 后端
+1. 为 customer / supplier 增补显式 transaction handler 或等价业务入口；
+2. 为每个 intent 限定 payload 结构与允许字段；
+3. 复用现有存在性、唯一性、启停、引用约束等主数据校验；
+4. 写审计日志并返回最新实体快照。
+
+#### 前端
+1. 为 customer / supplier 增加独立 transaction service；
+2. 在对应 hooks 中补充 mutation；
+3. 若存在编辑对话框，则对纯语义动作做显式分流；
+4. 普通混合档案编辑继续保留在现有 `patchMutation`。
+
+### 五、涉及文件（预估）
+- `src/features/trading/customer/hooks/use-customer.ts`
+- `src/features/trading/customer/services/customer-service.ts`
+- `src/features/trading/supplier/hooks/use-supplier.ts`
+- `src/features/trading/supplier/services/supplier-service.ts`
+- `server/handlers/...customer...`
+- `server/handlers/...supplier...`
+- `server/services/...customer...`
+- `server/services/...supplier...`
+
+### 六、风险与注意事项
+1. 主数据模块常含唯一性与引用约束，必须先确认后端裁决位置，避免前端自造规则；
+2. 不能把普通档案 patch 伪装成 transaction，避免 TDO 退化为空壳；
+3. customer / supplier 可能已有被订单、库存、工作流引用的删除限制，本轮必须优先复用已有约束；
+4. 若发现后端尚无可复用语义入口，本轮需先补后端裁决，再接前端分流。
+
+### 七、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮优先只做 `trading/customer` 与 `trading/supplier`；
+2. 只为单语义、高频主数据动作接入 TDO，不强拆普通混合档案编辑；
+3. customer / supplier 的普通维护型混合修改继续保留在 `patch`；
+4. 完成后通过 `tsc` 与 `Customer|Supplier` 相关 Go 测试验证，并同步 `walkthrough.md`。
+
+## `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已确认 `purchase` 头部第二刀——供应商主体变更事务化——已在当前仓库中落地并验证通过：
+
+1. 前端 `purchase-transaction-service.ts` 已存在 `ORDER_SUPPLIER_CHANGE` 与供应商主体事务请求函数；
+2. 前端 `use-purchase-orders.ts` 已存在 `supplierChangeMutation`；
+3. `purchase-order-action-dialog.tsx` 已在纯 `supplierId` / `supplierName` 变更场景下优先走显式 transaction；
+4. 后端 `purchase_transaction_service.go` 已存在 `PurchaseTransactionIntentSupplierChange` 与 `executePurchaseOrderSupplierChangeTx(...)`；
+5. 后端已复用供应商存在性校验、版本控制、审计与快照返回；
+6. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Purchase`。
+
+## `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `purchase` 的 `expectedDate` 事务化与行级三类基础事务后，继续压缩采购订单编辑中的 `patchMutation` 承担面，但本轮只处理一个稳定头部语义：供应商主体切换。
+
+本轮目标：
+
+1. 只处理 `supplierId` / `supplierName` 的纯头部变更；
+2. 不并发处理 `expectedDate`、其他头部字段、收货状态或任何行级变更；
+3. 继续避免 transaction 退化为 `patch` 包装壳；
+4. 保持 `patch` 作为未覆盖编辑的安全兜底。
+
+### 二、建议方案
+建议新增更窄语义 intent：
+
+- `ORDER_SUPPLIER_CHANGE`
+
+payload 建议仅承载：
+
+- `supplierId`
+- `supplierName`
+- `operator`
+
+语义约束为：
+
+1. 只表达采购订单供应商主体切换；
+2. 不允许混入其他头部字段修改；
+3. 不允许混入任何行级修改；
+4. 更新后返回最新采购订单快照并写入审计。
+
+### 三、前后端职责
+
+#### 后端
+1. 在 `purchase_transaction_service.go` 中新增 `ORDER_SUPPLIER_CHANGE`；
+2. 校验 payload 只包含供应商主体字段；
+3. 复用现有供应商数据源完成存在性 / 可用性 / 名称一致性校验（如当前已有）；
+4. 更新 `supplier_id` / `supplier_name`；
+5. 写入审计日志并返回最新采购订单快照。
+
+#### 前端
+1. 在 `purchase-transaction-service.ts` 中新增供应商主体事务请求函数；
+2. 在 `use-purchase-orders.ts` 中新增对应 mutation；
+3. 在 `purchase-order-action-dialog.tsx` 中新增纯 `supplierId` / `supplierName` 变更分流；
+4. 若混入其他字段，则继续保留在现有 transaction / `patchMutation`。
+
+### 四、涉及文件
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 五、风险与注意事项
+1. 若当前采购编辑中切换供应商会联动其他派生字段，本轮必须避免把附带变化误判为纯供应商主体切换；
+2. 若后端当前对供应商停用、删除、名称漂移存在强校验，本轮必须复用现有规则，不得前端猜测；
+3. 本轮不得破坏已落地的：
+   - `ORDER_DELIVERY_DATE_CHANGE`
+   - `ORDER_LINE_CONTENT_CHANGE`
+   - `ORDER_LINE_ADD`
+   - `ORDER_LINE_REMOVE`
+4. `patch` 兜底链路必须保留。
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮只实现 `purchase` 的供应商主体变更事务化；
+2. 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走该 transaction；
+3. 若混入其他头部字段或行级字段，则不进入该 intent；
+4. 其余采购订单编辑继续留在现有 transaction / `patch` 链中。
+
 ## `sales`：`status` / `statusNote` 联动重构（2026-04-08，已完成）
 
 ### 执行结果摘要（2026-04-08，已完成）

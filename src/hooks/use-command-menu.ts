@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Box, Package } from 'lucide-react'
+import { Box } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { useSearch } from '@/context/search-provider'
 import { useTheme } from '@/context/theme-provider'
@@ -40,53 +40,23 @@ export function useCommandMenu() {
     const fetchResults = async () => {
       setIsSearching(true)
       try {
-        const [matRes, prodRes] = await Promise.all([
-          apiFetch<any>(`/materials?search=${debouncedValue}&pageSize=5`),
-          apiFetch<any>(`/engineering/products?search=${debouncedValue}&pageSize=5`),
-        ])
+        const res = await apiFetch<any>(`/search/global?q=${debouncedValue}`)
 
         const results: SearchItem[] = []
 
-        if (matRes?.data) {
-          matRes.data.forEach((material: any) => {
+        if (res?.data) {
+          res.data.forEach((item: any) => {
             results.push({
-              id: `async-mat-${material.id}`,
-              title: material.name,
-              href: `/materials?id=${material.id}`,
+              id: `rust-search-${item.id}`,
+              title: item.title,
+              href: item.href,
               category: 'data',
               icon: Box,
-              parentTitle: t('commandMenu.async.materialArchiveResult', {
-                code: material.code || '',
-              }),
+              parentTitle: item.parentTitle + ` (${item.code})`,
               keywords: [
-                material.name,
-                material.code || '',
-                t('commandMenu.parents.materialArchive'),
-                'material',
-                '物料',
-              ],
-            })
-          })
-        }
-
-        if (prodRes?.data) {
-          prodRes.data.forEach((product: any) => {
-            results.push({
-              id: `async-prod-${product.id}`,
-              title: product.name,
-              href: `/engineering/products?id=${product.id}`,
-              category: 'data',
-              icon: Package,
-              parentTitle: t('commandMenu.async.productBomResult', {
-                code: product.code || '',
-              }),
-              keywords: [
-                product.name,
-                product.code || '',
-                'product',
-                'bom',
-                '产品',
-                'BOM',
+                item.title,
+                item.code,
+                'search',
               ],
             })
           })
@@ -94,7 +64,7 @@ export function useCommandMenu() {
 
         setAsyncResults(results)
       } catch (error) {
-        logger.error('Global search failed', error)
+        logger.error('Global search (Rust-backed) failed', error)
       } finally {
         setIsSearching(false)
       }

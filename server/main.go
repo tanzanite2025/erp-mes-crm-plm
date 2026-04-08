@@ -13,6 +13,7 @@ import (
 	"xdfc-server/handlers"
 	"xdfc-server/middleware"
 	"xdfc-server/routes"
+	"xdfc-server/services"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -177,6 +178,7 @@ func main() {
 	}
 
 	middleware.InitJwt()
+	services.InitSearchClient()
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {

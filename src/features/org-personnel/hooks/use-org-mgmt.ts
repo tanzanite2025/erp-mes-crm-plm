@@ -23,6 +23,16 @@ function findNodeInTree(nodes: OrgNode[], id: string): OrgNode | null {
   return null
 }
 
+const BACKEND_ERROR_MAP: Record<string, string> = {
+  'Organization name already exists under the same parent': 'orgPersonnel.org.backendErrors.nameConflict',
+  'Cannot delete organization with child departments': 'orgPersonnel.org.backendErrors.hasChildren',
+  'Cannot delete organization with active employees': 'orgPersonnel.org.backendErrors.hasEmployees',
+  'Failed to delete organization': 'orgPersonnel.org.backendErrors.deleteFailed',
+  'Failed to save organization': 'orgPersonnel.org.backendErrors.saveFailed',
+  'Invalid organization payload': 'orgPersonnel.org.backendErrors.invalidPayload',
+  'Failed to fetch organization tree': 'orgPersonnel.org.backendErrors.fetchTreeFailed',
+}
+
 export function useOrgMgmt() {
   const { locale, t } = useLanguage()
   const [orgData, setOrgData] = useState<OrgNode[]>(initialOrgData)
@@ -30,6 +40,13 @@ export function useOrgMgmt() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  const getErrorMessage = (err: unknown) => {
+    const rawMsg = err instanceof Error ? err.message : ''
+    const mappedKey = BACKEND_ERROR_MAP[rawMsg]
+    if (mappedKey) return t(mappedKey as any)
+    return rawMsg || t('orgPersonnel.org.saveFailed')
+  }
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -51,13 +68,7 @@ export function useOrgMgmt() {
     } catch (err) {
       setError(err)
       logger.error('Failed to load org tree', err)
-      const errorMsg =
-        err instanceof Error
-          ? err.message
-          : locale === 'zh-CN'
-            ? '组织架构加载失败，请稍后重试。'
-            : 'Failed to load the organization tree. Please try again.'
-      setLoadError(errorMsg)
+      setLoadError(getErrorMessage(err))
       return []
     } finally {
       setIsLoading(false)
@@ -96,20 +107,20 @@ export function useOrgMgmt() {
       setSelectedNode(updatedNodeInTree || savedNode)
     } catch (err) {
       logger.error('Submit failed', err)
-      toast.error(t('orgPersonnel.org.saveFailed'))
+      toast.error(getErrorMessage(err))
     }
   }
 
   const handleDelete = async () => {
-    if (!selectedNode) return
+    if (!selectedNode || !selectedNode.id) return
 
     try {
       await OrgService.deleteOrgNode(selectedNode.id)
       await loadData()
-      toast.success(t('orgPersonnel.org.saveSuccess'))
+      toast.success(t('orgPersonnel.org.deleteSuccess'))
     } catch (err) {
       logger.error('Delete failed', err)
-      toast.error(t('orgPersonnel.lineMgmt.toasts.deleteFailed'))
+      toast.error(getErrorMessage(err))
     }
   }
 

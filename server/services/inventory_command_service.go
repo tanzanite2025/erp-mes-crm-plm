@@ -33,6 +33,24 @@ func updateInventoryRecord(tx *gorm.DB, inv *models.Inventory) error {
 	return tx.Model(inv).Updates(inventoryUpdateMap(*inv)).Error
 }
 
+// syncInventoryToSearch 将库存状态异步同步到 Rust 搜索引擎情况情况总量针对。
+func syncInventoryToSearch(inv models.Inventory) {
+	if GlobalSearchClient == nil {
+		return
+	}
+	go func() {
+		doc := SearchDocument{
+			ID:       inv.ID,
+			Code:     inv.MaterialCode,
+			Name:     inv.MaterialName,
+			Model:    inv.MaterialSpec,
+			Category: inv.CategoryCode,
+			Version:  uint64(inv.UpdatedAt.UnixNano()), // 使用纳秒时间戳作为基础版本号
+		}
+		_ = GlobalSearchClient.SyncIndex(doc)
+	}()
+}
+
 func mergeInventoryForSync(existing *models.Inventory, incoming models.Inventory) {
 	existing.MaterialID = incoming.MaterialID
 	if strings.TrimSpace(incoming.MaterialName) != "" {
@@ -150,9 +168,17 @@ func RecordInbound(inbound *models.InboundRecord) error {
 		inbound.ID = uuid.NewString()
 	}
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		return recordInboundTx(tx, inbound)
 	})
+	if err == nil {
+		// 事务成功后异步同步搜索引擎情况情况总量针对。
+		var latestInv models.Inventory
+		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", inbound.MaterialID, inbound.TargetCategory, inbound.BatchNo).First(&latestInv).Error == nil {
+			syncInventoryToSearch(latestInv)
+		}
+	}
+	return err
 }
 
 func applyInboundToPurchaseOrderTx(tx *gorm.DB, inbound *models.InboundRecord) error {
@@ -290,19 +316,22 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		_, err = CreateShipmentVoucherTx(tx, shipment)
 		return err
 	})
-	if err != nil {
-		return InventoryShipmentRecordResponse{}, err
+	if err == nil {
+		// 出库成功后同步搜索索引情况情况总量针对。
+		var latestInv models.Inventory
+		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).First(&latestInv).Error == nil {
+			syncInventoryToSearch(latestInv)
+		}
+		if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
+			return InventoryShipmentRecordResponse{}, err
+		}
+		return MapShipmentRecordToResponse(shipment), nil
 	}
-
-	if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
-		return InventoryShipmentRecordResponse{}, err
-	}
-
-	return MapShipmentRecordToResponse(shipment), nil
+	return InventoryShipmentRecordResponse{}, err
 }
 
 func TransferInventory(input TransferInventoryInput) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var from models.Inventory
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).
@@ -360,6 +389,18 @@ func TransferInventory(input TransferInventoryInput) error {
 		}
 		return updateInventoryRecord(tx, &to)
 	})
+
+	if err == nil {
+		// 调拨成功后同步双端搜索索引情况情况总量针对。
+		var fromInv, toInv models.Inventory
+		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).First(&fromInv).Error == nil {
+			syncInventoryToSearch(fromInv)
+		}
+		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.ToCategory, input.BatchNo).First(&toInv).Error == nil {
+			syncInventoryToSearch(toInv)
+		}
+	}
+	return err
 }
 
 func ReconcileNegativeInventory() error {

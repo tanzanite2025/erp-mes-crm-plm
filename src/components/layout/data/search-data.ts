@@ -1,7 +1,6 @@
-import { ArrowRight, Compass, Layout, PlusCircle } from 'lucide-react'
+import { Layout, PlusCircle } from 'lucide-react'
 import type { ElementType } from 'react'
 import { type TranslationKey } from '@/locales'
-import { getSidebarData } from './sidebar-data'
 
 export type SearchCategory = 'navigation' | 'modules' | 'actions' | 'data'
 
@@ -18,13 +17,6 @@ export interface SearchItem {
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
-type SearchConfig = {
-  titleKey: TranslationKey
-  parentKey: TranslationKey
-  keywords?: string[]
-  pinyin?: string
-}
-
 type CommandItemConfig = {
   id: string
   href: string
@@ -32,117 +24,6 @@ type CommandItemConfig = {
   parentKey: TranslationKey
   keywords?: string[]
   pinyin?: string
-}
-
-const navigationConfigs: Record<string, SearchConfig> = {
-  '/dashboard/overview': {
-    titleKey: 'commandMenu.items.dashboard',
-    parentKey: 'commandMenu.parents.resourceManagement',
-    keywords: ['dashboard', 'overview', '仪表盘'],
-    pinyin: 'ybp',
-  },
-  '/warehouse': {
-    titleKey: 'commandMenu.items.warehouse',
-    parentKey: 'commandMenu.parents.resourceManagement',
-    keywords: ['warehouse', 'stock', '仓储'],
-    pinyin: 'ck',
-  },
-  '/trading': {
-    titleKey: 'commandMenu.items.trading',
-    parentKey: 'commandMenu.parents.resourceManagement',
-    keywords: ['trading', 'sales', 'purchase', '贸销'],
-    pinyin: 'mxgl',
-  },
-  '/purchase': {
-    titleKey: 'commandMenu.items.purchase',
-    parentKey: 'commandMenu.parents.resourceManagement',
-    keywords: ['purchase', 'procurement', '采购'],
-    pinyin: 'cggl',
-  },
-  '/engineering': {
-    titleKey: 'commandMenu.items.engineering',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['engineering', 'product', '工程'],
-    pinyin: 'gcgl',
-  },
-  '/materials': {
-    titleKey: 'commandMenu.items.materialArchive',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['material', 'archive', 'master', '物料'],
-    pinyin: 'wlda',
-  },
-  '/engineering-db': {
-    titleKey: 'commandMenu.items.engineeringDb',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['engineering', 'database', '工程数据库'],
-    pinyin: 'gcsjk',
-  },
-  '/quality': {
-    titleKey: 'commandMenu.items.quality',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['quality', 'audit', 'inspection', '品质', '质检', '审计'],
-    pinyin: 'pzsj',
-  },
-  '/piecework': {
-    titleKey: 'commandMenu.items.piecework',
-    parentKey: 'commandMenu.parents.productionCoordination',
-    keywords: ['piecework', '计件'],
-    pinyin: 'jjgl',
-  },
-  '/equipment-tooling/overview': {
-    titleKey: 'commandMenu.items.toolingAssets',
-    parentKey: 'commandMenu.parents.toolingManagement',
-    keywords: ['tooling', 'mold', '模具'],
-    pinyin: 'mjzc',
-  },
-  '/furnaces': {
-    titleKey: 'commandMenu.items.furnaces',
-    parentKey: 'commandMenu.parents.toolingManagement',
-    keywords: ['furnace', '炉台'],
-    pinyin: 'ltzc',
-  },
-  '/personnel': {
-    titleKey: 'commandMenu.items.personnel',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['personnel', 'accounts', '人事'],
-    pinyin: 'rszh',
-  },
-  '/print-mgmt': {
-    titleKey: 'commandMenu.items.printMgmt',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['print', 'label', '打印'],
-    pinyin: 'dyzx',
-  },
-  '/terminal-config': {
-    titleKey: 'commandMenu.items.terminalConfig',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['terminal', 'scanner', 'printer', 'pda', '终端配置'],
-    pinyin: 'zdpz',
-  },
-  '/system-management/routing': {
-    titleKey: 'commandMenu.items.systemManagement',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['system', 'management', '系统'],
-    pinyin: 'xtgl',
-  },
-  '/approval': {
-    titleKey: 'commandMenu.items.approval',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['approval', 'workflow', '审批'],
-    pinyin: 'spzx',
-  },
-  '/basic-settings': {
-    titleKey: 'commandMenu.items.basicSettings',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['settings', 'config', '基础配置'],
-    pinyin: 'jcpz',
-  },
-  '/finance-management': {
-    titleKey: 'commandMenu.items.finance',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['finance', '财务'],
-    pinyin: 'cwzx',
-  },
 }
 
 const moduleGroups: CommandItemConfig[] = [
@@ -461,21 +342,108 @@ const moduleGroups: CommandItemConfig[] = [
 ]
 
 const actionConfigs: CommandItemConfig[] = [
+  // --- 工程类 (Engineering) ---
   {
-    id: 'action-add-employee',
-    href: '/personnel/employees?action=add',
-    titleKey: 'commandMenu.items.addEmployee',
-    parentKey: 'commandMenu.parents.employeeManagement',
-    keywords: ['employee', 'staff', 'add', '新增员工'],
-    pinyin: 'xzry',
+    id: 'action-add-material',
+    href: '/materials?action=add',
+    titleKey: 'commandMenu.items.addMaterial',
+    parentKey: 'commandMenu.parents.engineeringManagement',
+    keywords: ['material', 'add', 'new', '新增物料', '创建物料'],
+    pinyin: 'xzwl',
   },
+  {
+    id: 'action-add-product',
+    href: '/engineering/products?action=add',
+    titleKey: 'commandMenu.items.addProduct',
+    parentKey: 'commandMenu.parents.engineeringManagement',
+    keywords: ['product', 'bom', 'add', '创建型号', '新增产品'],
+    pinyin: 'xzcp',
+  },
+  {
+    id: 'action-import-drawing',
+    href: '/engineering/drawings?action=import',
+    titleKey: 'commandMenu.items.importDrawing',
+    parentKey: 'commandMenu.parents.engineeringManagement',
+    keywords: ['drawing', 'import', 'upload', '导入图纸', '上传'],
+    pinyin: 'drtz',
+  },
+
+  // --- 贸销类 (Trading) ---
+  {
+    id: 'action-add-customer',
+    href: '/trading/customers?action=add',
+    titleKey: 'commandMenu.items.addCustomer',
+    parentKey: 'commandMenu.parents.trading',
+    keywords: ['customer', 'partner', 'add', '新增客户', '登记'],
+    pinyin: 'xzkh',
+  },
+  {
+    id: 'action-create-sales-order',
+    href: '/trading/sales-orders?action=create',
+    titleKey: 'commandMenu.items.createSalesOrder',
+    parentKey: 'commandMenu.parents.trading',
+    keywords: ['sales', 'order', 'create', '创建订单', '销售'],
+    pinyin: 'cjdd',
+  },
+  {
+    id: 'action-create-requirement',
+    href: '/trading/requirements?action=create',
+    titleKey: 'commandMenu.items.createRequirement',
+    parentKey: 'commandMenu.parents.trading',
+    keywords: ['requirement', 'part', 'new', '发起需求', '料号'],
+    pinyin: 'fqxq',
+  },
+
+  // --- 仓库类 (Warehouse) ---
   {
     id: 'action-inbound',
     href: '/warehouse/inbound?action=add',
     titleKey: 'commandMenu.items.inboundAction',
     parentKey: 'commandMenu.parents.warehouse',
-    keywords: ['inbound', 'action', 'product', '产品入库操作'],
-    pinyin: 'cprkcz',
+    keywords: ['inbound', 'action', 'product', '入库操作', '成品'],
+    pinyin: 'rkcz',
+  },
+  {
+    id: 'action-start-stocktake',
+    href: '/warehouse/stocktake?action=start',
+    titleKey: 'commandMenu.items.startStocktake',
+    parentKey: 'commandMenu.parents.warehouse',
+    keywords: ['stocktake', 'inventory', 'start', '开始盘点', '实地'],
+    pinyin: 'kspd',
+  },
+  {
+    id: 'action-inventory-adjustment',
+    href: '/warehouse/adjustments?action=new',
+    titleKey: 'commandMenu.items.newAdjustment',
+    parentKey: 'commandMenu.parents.warehouse',
+    keywords: ['adjustment', 'fix', 'stock', '调账操作', '修正'],
+    pinyin: 'tzcz',
+  },
+
+  // --- 人事与系统 (System & HR) ---
+  {
+    id: 'action-add-employee',
+    href: '/personnel/employees?action=add',
+    titleKey: 'commandMenu.items.addEmployee',
+    parentKey: 'commandMenu.parents.employeeManagement',
+    keywords: ['employee', 'staff', 'add', '新入职', '添加员工'],
+    pinyin: 'xryz',
+  },
+  {
+    id: 'action-print-labels',
+    href: '/print-mgmt',
+    titleKey: 'commandMenu.items.printLabels',
+    parentKey: 'commandMenu.parents.systemSettings',
+    keywords: ['print', 'label', 'batch', '打印中心'],
+    pinyin: 'dyzx',
+  },
+  {
+    id: 'action-approval-center',
+    href: '/approval',
+    titleKey: 'commandMenu.items.approvalCenter',
+    parentKey: 'commandMenu.parents.systemSettings',
+    keywords: ['approval', 'workflow', 'center', '审批中心'],
+    pinyin: 'spzx',
   },
 ]
 
@@ -506,51 +474,6 @@ function toSearchItem(
   }
 }
 
-function getSidebarItems(t: TranslateFn): SearchItem[] {
-  const items: SearchItem[] = []
-  const localizedSidebarData = getSidebarData(t)
-
-  localizedSidebarData.navGroups.forEach((group) => {
-    group.items.forEach((navItem) => {
-      if ('url' in navItem && navItem.url) {
-        const config = navigationConfigs[String(navItem.url)]
-        if (config) {
-          items.push({
-            id: `nav-${navItem.url}`,
-            title: t(config.titleKey),
-            href: String(navItem.url),
-            category: 'navigation',
-            icon: navItem.icon || Compass,
-            parentTitle: t(config.parentKey),
-            keywords: buildKeywords(t, config.titleKey, config.parentKey, config.keywords),
-            pinyin: config.pinyin || '',
-          })
-        }
-      }
-
-      if ('items' in navItem && navItem.items) {
-        navItem.items.forEach((subItem) => {
-          const config = navigationConfigs[String(subItem.url)]
-          if (config) {
-            items.push({
-              id: `nav-${subItem.url}`,
-              title: t(config.titleKey),
-              href: String(subItem.url),
-              category: 'navigation',
-              icon: ArrowRight,
-              parentTitle: t(config.parentKey),
-              keywords: buildKeywords(t, config.titleKey, config.parentKey, config.keywords),
-              pinyin: config.pinyin || '',
-            })
-          }
-        })
-      }
-    })
-  })
-
-  return items
-}
-
 function getTabItems(t: TranslateFn): SearchItem[] {
   return moduleGroups.map((config) => toSearchItem(t, config, 'modules', Layout))
 }
@@ -560,5 +483,5 @@ function getActionItems(t: TranslateFn): SearchItem[] {
 }
 
 export function getSearchItems(t: TranslateFn): SearchItem[] {
-  return [...getSidebarItems(t), ...getTabItems(t), ...getActionItems(t)]
+  return [...getTabItems(t), ...getActionItems(t)]
 }

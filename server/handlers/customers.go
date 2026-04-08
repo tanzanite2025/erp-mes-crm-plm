@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -99,6 +101,90 @@ func SaveCustomerHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, input)
+}
+
+func PatchCustomerHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.PatchDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] 客户更新数据格式错误: " + err.Error(),
+			"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
+		})
+		return
+	}
+
+	updates := make(map[string]interface{})
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "[VALIDATION] 无效的客户差量数据",
+				"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
+			})
+			return
+		}
+
+		switch key {
+		case "name", "code", "contactPerson", "contactPhone", "email", "address", "status":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "[VALIDATION] 客户字段格式错误: " + key,
+					"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
+				})
+				return
+			}
+			updates[key] = value
+		case "creditLimit", "balance":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "[VALIDATION] 客户字段格式错误: " + key,
+					"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
+				})
+				return
+			}
+			updates[key] = value
+		}
+	}
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var existing models.Customer
+		if err := tx.Where("id = ? AND is_deleted = ?", id, false).First(&existing).Error; err != nil {
+			return err
+		}
+		if req.Metadata.Version != existing.Version {
+			return ErrVersionConflict
+		}
+
+		updates["version"] = existing.Version + 1
+		return tx.Model(&existing).Updates(updates).Error
+	})
+
+	if err != nil {
+		if err == ErrVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] 更新客户失败: " + err.Error(),
+			"code":  "CUSTOMER_PATCH_FAILED",
+		})
+		return
+	}
+
+	var customer models.Customer
+	if err := db.DB.Where("id = ?", id).First(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] 获取更新后的客户失败: " + err.Error(),
+			"code":  "CUSTOMER_PATCH_FETCH_FAILED",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, customer)
 }
 
 func DeleteCustomerHandler(c *gin.Context) {

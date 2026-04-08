@@ -3,6 +3,20 @@ import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
 
+export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
+
+export interface SupplierTransactionRequest<TPayload> {
+  intent: string
+  actorId?: string
+  expectedVersion: number
+  payload: TPayload
+}
+
+export interface SupplierStatusChangePayload {
+  status: string
+  operator: string
+}
+
 type SupplierListMeta = {
   total?: number
   page?: number
@@ -33,6 +47,20 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
   return result
 }
 
+export const executeSupplierTransaction = async <TPayload>(
+  supplierId: string,
+  request: SupplierTransactionRequest<TPayload>
+): Promise<Supplier> => {
+  const res = await apiFetch<Supplier>(`/suppliers/${supplierId}/transactions`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+  return ensureObjectResponse<Supplier & Record<string, unknown>>(
+    res,
+    'SupplierService.executeSupplierTransaction'
+  ) as Supplier
+}
+
 export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>): Promise<Supplier> => {
   const payload = {
     ...supplier,
@@ -48,6 +76,26 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>)
 
 export const deleteSupplier = async (id: string): Promise<void> => {
   await apiFetch<void>(`/suppliers/${id}`, { method: 'DELETE' })
+}
+
+export const changeSupplierStatus = async (
+  supplierId: string,
+  params: {
+    status: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<Supplier> => {
+  return executeSupplierTransaction<SupplierStatusChangePayload>(supplierId, {
+    intent: SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      status: params.status,
+      operator: params.operator,
+    },
+  })
 }
 
 export const patchSupplier = async (id: string, delta: DeltaSet, version: number): Promise<Supplier> => {

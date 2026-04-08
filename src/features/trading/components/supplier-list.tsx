@@ -48,7 +48,7 @@ export function SupplierList() {
     error,
     refetch,
   } = useGetSuppliers()
-  const { createMutation, patchMutation, deleteMutation } = useSupplierMutations()
+  const { createMutation, patchMutation, statusChangeMutation, deleteMutation } = useSupplierMutations()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
 
@@ -79,6 +79,19 @@ export function SupplierList() {
     if (!allowsAction('action_trading_supplier_manage')) return
     
     if (payload.isPatch && payload.delta && selectedSupplier) {
+      const deltaKeys = Object.keys(payload.delta)
+      const isStatusOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status')
+
+      if (isStatusOnlyChange) {
+        statusChangeMutation.mutate({
+          id: selectedSupplier.id,
+          status: payload.data.status || selectedSupplier.status,
+          operator: 'Unknown',
+          expectedVersion: selectedSupplier.version,
+        })
+        return
+      }
+
       patchMutation.mutate({
         id: selectedSupplier.id,
         delta: payload.delta,

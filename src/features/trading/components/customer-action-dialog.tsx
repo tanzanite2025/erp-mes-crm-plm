@@ -5,6 +5,7 @@ import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { StatusGuard } from '@/components/status-guard'
 import { useLanguage } from '@/context/language-provider'
@@ -52,6 +53,10 @@ export function CustomerActionDialog({
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen)
+  }
+
+  const updateField = <K extends keyof Customer>(key: K, value: Customer[K]) => {
+    Reflect.set(formData as unknown as Partial<Record<keyof Customer, Customer[keyof Customer]>>, key, value)
   }
 
   const handleSave = () => {
@@ -127,9 +132,7 @@ export function CustomerActionDialog({
                   placeholder={t('trading.customers.dialog.placeholders.name')}
                   className='pl-10 h-10 font-bold'
                   value={formData.name}
-                  onChange={(event) =>
-                    { formData.name = event.target.value }
-                  }
+                  onChange={(event) => updateField('name', event.target.value)}
                 />
               </div>
             </div>
@@ -146,9 +149,7 @@ export function CustomerActionDialog({
                 placeholder={t('trading.customers.dialog.placeholders.code')}
                 className='h-10 font-mono text-sm'
                 value={formData.code}
-                onChange={(event) =>
-                  { formData.code = event.target.value }
-                }
+                onChange={(event) => updateField('code', event.target.value)}
               />
             </div>
           </div>
@@ -168,11 +169,33 @@ export function CustomerActionDialog({
                   placeholder={t('trading.customers.dialog.placeholders.contactPerson')}
                   className='pl-10 h-11 rounded-2xl border-none bg-muted/50 font-bold'
                   value={formData.contactPerson}
-                  onChange={(event) =>
-                    { formData.contactPerson = event.target.value }
-                  }
+                  onChange={(event) => updateField('contactPerson', event.target.value)}
                 />
               </div>
+            </div>
+
+            <div className='grid gap-2'>
+              <Label
+                htmlFor='status'
+                className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'
+              >
+                状态
+              </Label>
+              <Select
+                value={formData.status || 'Active'}
+                onValueChange={(value) => {
+                  updateField('status', value as Customer['status'])
+                }}
+              >
+                <SelectTrigger className='h-11 rounded-2xl border-none bg-muted/50 font-bold'>
+                  <SelectValue placeholder='请选择状态' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='Active'>{t('trading.customerStatus.active')}</SelectItem>
+                  <SelectItem value='Pending'>{t('trading.customerStatus.pending')}</SelectItem>
+                  <SelectItem value='Inactive'>{t('trading.customerStatus.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className='grid gap-2'>
@@ -189,9 +212,7 @@ export function CustomerActionDialog({
                   placeholder={t('trading.customers.dialog.placeholders.contactPhone')}
                   className='pl-10 h-11 rounded-2xl border-none bg-muted/50 font-bold'
                   value={formData.contactPhone}
-                  onChange={(event) =>
-                    { formData.contactPhone = event.target.value }
-                  }
+                  onChange={(event) => updateField('contactPhone', event.target.value)}
                 />
               </div>
             </div>
@@ -212,9 +233,7 @@ export function CustomerActionDialog({
                 placeholder={t('trading.customers.dialog.placeholders.email')}
                 className='pl-10 h-10 font-bold'
                 value={formData.email}
-                onChange={(event) =>
-                  { formData.email = event.target.value }
-                }
+                onChange={(event) => updateField('email', event.target.value)}
               />
             </div>
           </div>
@@ -234,9 +253,7 @@ export function CustomerActionDialog({
                 rows={3}
                 className='pl-10 resize-none font-medium text-xs leading-relaxed'
                 value={formData.address}
-                onChange={(event) =>
-                  { formData.address = event.target.value }
-                }
+                onChange={(event) => updateField('address', event.target.value)}
               />
             </div>
           </div>

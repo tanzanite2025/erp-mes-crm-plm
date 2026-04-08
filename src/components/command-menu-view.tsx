@@ -1,4 +1,4 @@
-import { ArrowRight, Laptop, Moon, Sun } from 'lucide-react'
+import { ArrowRight, Box, Zap, Search } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { SearchItem } from './layout/data/search-data'
 import {
@@ -8,10 +8,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from './ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 
 interface CommandMenuViewProps {
   open: boolean
@@ -22,8 +22,9 @@ interface CommandMenuViewProps {
   groupedItems: Record<string, SearchItem[]>
   asyncResults: SearchItem[]
   onItemSelect: (href: string) => void
-  onThemeSelect: (theme: 'light' | 'dark' | 'system') => void
 }
+
+const DISPLAY_LIMIT = 6
 
 export function CommandMenuView({
   open,
@@ -34,22 +35,22 @@ export function CommandMenuView({
   groupedItems,
   asyncResults,
   onItemSelect,
-  onThemeSelect,
 }: CommandMenuViewProps) {
   const { t } = useLanguage()
 
   const categoryLabels: Record<string, string> = {
-    navigation: t('commandMenu.headings.navigation'),
     modules: t('commandMenu.headings.modules'),
     actions: t('commandMenu.headings.actions'),
   }
+
+  const isInitialState = searchValue === ''
 
   return (
     <CommandDialog
       modal
       open={open}
       onOpenChange={onOpenChange}
-      className='max-w-[calc(100%-2rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-4xl [&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:px-6 [&_[data-slot=command-input-wrapper]_svg]:size-5'
+      className='max-w-[calc(100%-2rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-2xl [&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:px-6 [&_[data-slot=command-input-wrapper]_svg]:size-5'
     >
       <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
 
@@ -67,100 +68,102 @@ export function CommandMenuView({
         )}
       </div>
 
-      <CommandList className='max-h-none overflow-hidden'>
-        <ScrollArea>
-          <div className='h-[480px]'>
-            <CommandEmpty className='py-24 text-sm italic text-muted-foreground/50'>
-              {t('commandMenu.empty')}
-            </CommandEmpty>
+      <Tabs defaultValue='business' className='flex flex-col'>
+        <div className='px-4 pt-2'>
+          <TabsList className='grid w-full grid-cols-2 rounded-2xl bg-muted/50 p-1'>
+            <TabsTrigger
+              value='business'
+              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest italic transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm'
+            >
+              <Box size={12} />
+              {t('commandMenu.headings.data')}
+            </TabsTrigger>
+            <TabsTrigger
+              value='actions'
+              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest italic transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm'
+            >
+              <Zap size={12} />
+              {t('commandMenu.headings.actions')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-            <div className='grid min-h-[480px] grid-cols-1 divide-x divide-dashed divide-muted md:grid-cols-3'>
-              <div className='space-y-2 p-2'>
-                {groupedItems.navigation && (
-                  <CommandGroup
-                    heading={categoryLabels.navigation}
-                    className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-3 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-primary/60'
-                  >
-                    {groupedItems.navigation.map((item) => (
-                      <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item.href)} />
-                    ))}
-                  </CommandGroup>
-                )}
-              </div>
+        <CommandList className='max-h-none overflow-hidden'>
+          <ScrollArea>
+            <div className={cn('overflow-hidden transition-all duration-500', isInitialState ? 'h-[280px]' : 'h-[420px]')}>
+              <CommandEmpty className='py-24 text-sm italic text-muted-foreground/50'>
+                {t('commandMenu.empty')}
+              </CommandEmpty>
 
-              <div className='space-y-2 bg-muted/5 p-2'>
-                {groupedItems.modules && (
-                  <CommandGroup
-                    heading={categoryLabels.modules}
-                    className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-3 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-indigo-600/70'
-                  >
-                    {groupedItems.modules.map((item) => (
-                      <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item.href)} />
-                    ))}
-                  </CommandGroup>
-                )}
+              <TabsContent value='business' className='m-0 focus-visible:outline-none'>
+                <div className='space-y-4 p-4'>
+                  {/* Rust Results (Always show all matches if searching) */}
+                  {asyncResults.length > 0 && (
+                    <CommandGroup
+                      heading={t('commandMenu.headings.data')}
+                      className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[9px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-emerald-600/70'
+                    >
+                      {asyncResults.map((item) => (
+                        <SearchListItem
+                          key={item.id}
+                          item={item}
+                          onSelect={() => onItemSelect(item.href)}
+                          isData
+                        />
+                      ))}
+                    </CommandGroup>
+                  )}
 
-                {asyncResults.length > 0 && (
-                  <CommandGroup
-                    heading={t('commandMenu.headings.data')}
-                    className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-3 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-emerald-600/70'
-                  >
-                    {asyncResults.map((item) => (
-                      <SearchListItem
-                        key={item.id}
-                        item={item}
-                        onSelect={() => onItemSelect(item.href)}
-                        isData
-                      />
-                    ))}
-                  </CommandGroup>
-                )}
-              </div>
+                  {groupedItems.modules && (
+                    <CommandGroup
+                      heading={categoryLabels.modules}
+                      className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[9px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-indigo-600/70'
+                    >
+                      {groupedItems.modules
+                        .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
+                        .map((item) => (
+                          <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item.href)} />
+                        ))}
+                      
+                      {isInitialState && groupedItems.modules.length > DISPLAY_LIMIT && (
+                        <SearchHintItem />
+                      )}
+                    </CommandGroup>
+                  )}
+                </div>
+              </TabsContent>
 
-              <div className='space-y-2 p-2'>
-                {groupedItems.actions && (
-                  <CommandGroup
-                    heading={categoryLabels.actions}
-                    className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-3 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-amber-600/70'
-                  >
-                    {groupedItems.actions.map((item) => (
-                      <SearchListItem
-                        key={item.id}
-                        item={item}
-                        onSelect={() => onItemSelect(item.href)}
-                        isAction
-                      />
-                    ))}
-                  </CommandGroup>
-                )}
-
-                <CommandSeparator className='my-2 border-dashed' />
-
-                <CommandGroup
-                  heading={t('commandMenu.headings.system')}
-                  className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-3 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-primary/40'
-                >
-                  <ThemeItem
-                    icon={Sun}
-                    label={t('common.theme.light')}
-                    onSelect={() => onThemeSelect('light')}
-                  />
-                  <ThemeItem
-                    icon={Moon}
-                    label={t('common.theme.dark')}
-                    onSelect={() => onThemeSelect('dark')}
-                  />
-                  <ThemeItem
-                    icon={Laptop}
-                    label={t('common.theme.system')}
-                    onSelect={() => onThemeSelect('system')}
-                  />
-                </CommandGroup>
-              </div>
+              <TabsContent value='actions' className='m-0 focus-visible:outline-none'>
+                <div className='p-4'>
+                  {groupedItems.actions && (
+                    <CommandGroup
+                      heading={categoryLabels.actions}
+                      className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[9px] [&_[cmdk-group-heading]]:font-black [&_[cmdk-group-heading]]:italic [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-amber-600/70'
+                    >
+                      <div className='grid grid-cols-1 gap-1'>
+                        {groupedItems.actions
+                          .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
+                          .map((item) => (
+                            <SearchListItem
+                              key={item.id}
+                              item={item}
+                              onSelect={() => onItemSelect(item.href)}
+                              isAction
+                            />
+                          ))}
+                        
+                        {isInitialState && groupedItems.actions.length > DISPLAY_LIMIT && (
+                          <SearchHintItem />
+                        )}
+                      </div>
+                    </CommandGroup>
+                  )}
+                </div>
+              </TabsContent>
             </div>
-          </div>
-        </ScrollArea>
-      </CommandList>
+          </ScrollArea>
+        </CommandList>
+      </Tabs>
 
       <div className='flex items-center justify-between border-t border-dashed bg-muted/20 px-6 p-3'>
         <div className='flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
@@ -247,24 +250,11 @@ function SearchListItem({
   )
 }
 
-function ThemeItem({
-  icon: Icon,
-  label,
-  onSelect,
-}: {
-  icon: typeof Sun
-  label: string
-  onSelect: () => void
-}) {
+function SearchHintItem() {
   return (
-    <CommandItem
-      onSelect={onSelect}
-      className='group flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 transition-all data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary'
-    >
-      <div className='flex size-7 items-center justify-center rounded-lg border border-dashed border-muted-foreground/10 bg-muted/30 group-data-[selected=true]:border-primary/20'>
-        <Icon className='size-3.5 text-muted-foreground/80' />
-      </div>
-      <span className='text-xs font-bold tracking-tight'>{label}</span>
-    </CommandItem>
+    <div className='flex items-center gap-2 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 italic'>
+      <Search size={10} />
+      <span>输入更多关键词以搜索完整列表...</span>
+    </div>
   )
 }

@@ -163,7 +163,18 @@ export const orgPersonnel = {
     deleteConfirm: 'Are you sure you want to delete the department "{{name}}"? This action is irreversible.',
     saveSuccess: 'Organization information updated',
     createSuccess: 'New organization created successfully',
+    deleteSuccess: 'Organization removed successfully',
+    deleteFailed: 'Failed to remove organization',
     saveFailed: 'Failed to save organization data. Please check network or format.',
+    backendErrors: {
+      nameConflict: 'Organization name already exists under the same parent',
+      hasChildren: 'Cannot delete: this organization still has child departments',
+      hasEmployees: 'Cannot delete: this organization still has active employees',
+      deleteFailed: 'Failed to delete organization',
+      saveFailed: 'Failed to save organization',
+      invalidPayload: 'Invalid organization payload',
+      fetchTreeFailed: 'Failed to fetch organization tree'
+    },
     nodeTypes: {
       root: 'ROOT / HQ',
       dept: 'DEPT / Department',
