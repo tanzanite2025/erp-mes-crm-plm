@@ -18,6 +18,37 @@ Options:
 EOF
 }
 
+load_deploy_env() {
+  if [[ -f ./.env ]]; then
+    DEPLOY_ENV_FILE="./.env"
+    COMPOSE_ENV_ARGS=(--env-file ./.env)
+  elif [[ -f ./.env.production ]]; then
+    DEPLOY_ENV_FILE="./.env.production"
+    COMPOSE_ENV_ARGS=(--env-file ./.env.production)
+  else
+    DEPLOY_ENV_FILE=""
+    COMPOSE_ENV_ARGS=()
+    echo -e "${YELLOW}>>> [WARN] No server/.env(.production) found; using shell env/defaults.${NC}"
+  fi
+
+  if [[ -n "${DEPLOY_ENV_FILE}" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${DEPLOY_ENV_FILE}"
+    set +a
+  fi
+
+  XDFC_APP_UID="${XDFC_APP_UID:-10001}"
+  XDFC_APP_GID="${XDFC_APP_GID:-10001}"
+}
+
+prepare_app_runtime_dir() {
+  local path="$1"
+  mkdir -p "${path}"
+  chown "${XDFC_APP_UID}:${XDFC_APP_GID}" "${path}"
+  chmod 0755 "${path}"
+}
+
 BUILD_MODE="app"
 for arg in "$@"; do
   case "$arg" in
@@ -44,6 +75,8 @@ done
 
 cd "$(dirname "$0")"
 
+load_deploy_env
+
 echo -e "${GREEN}>>> [1/6] Ensure runtime directories...${NC}"
 mkdir -p ./uploads ./backups ./postgres_data
 
@@ -58,14 +91,8 @@ if [[ -d ../uploads ]]; then
   fi
 fi
 
-COMPOSE_ENV_ARGS=()
-if [[ -f ./.env ]]; then
-  COMPOSE_ENV_ARGS=(--env-file ./.env)
-elif [[ -f ./.env.production ]]; then
-  COMPOSE_ENV_ARGS=(--env-file ./.env.production)
-else
-  echo -e "${YELLOW}>>> [WARN] No server/.env(.production) found; using shell env/defaults.${NC}"
-fi
+prepare_app_runtime_dir ./uploads
+prepare_app_runtime_dir ./backups
 
 DEFAULT_SERVICES=(db redis search-engine app nginx_lb)
 FULL_BUILD_SERVICES=(db redis search-engine app watchdog nginx_lb)

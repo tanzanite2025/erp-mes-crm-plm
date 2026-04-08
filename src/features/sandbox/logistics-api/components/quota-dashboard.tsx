@@ -37,6 +37,7 @@ export function QuotaDashboard({ providers }: QuotaDashboardProps) {
             ) : (
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     {providers.map(p => {
+                        // [UI-ONLY-CALC]: 派生字段计算。建议未来由后端 QuotaInfo 结构直接提供 authoritative 'remaining'。
                         const remaining = p.quotaTotal - p.quotaUsed
                         const usagePercent = p.quotaTotal > 0 ? (p.quotaUsed / p.quotaTotal) * 100 : 0
                         const isAlert = remaining <= p.quotaAlertAt && p.quotaTotal > 0

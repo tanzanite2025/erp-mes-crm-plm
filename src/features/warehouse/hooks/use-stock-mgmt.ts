@@ -23,6 +23,16 @@ export function useStockMgmt() {
         queryFn: () => InventoryCoreService.getInventoryList()
     })
 
+    const valuationQuery = useQuery({
+        queryKey: ['inventory_valuation'],
+        queryFn: () => InventoryCoreService.getInventoryValuation()
+    })
+
+    const alertSummaryQuery = useQuery({
+        queryKey: ['inventory_alert_summary'],
+        queryFn: () => InventoryCoreService.getAlertSummary()
+    })
+
     const thresholdsQuery = useQuery({
         queryKey: ['inventory_thresholds'],
         queryFn: () => InventoryMaintenanceService.getAlertThresholds()
@@ -104,12 +114,8 @@ export function useStockMgmt() {
         )
     }, [inventory, searchTerm])
 
-    const alertCount = useMemo(() => {
-        return Object.entries(materialTotalStock).filter(([id, qty]) => {
-            const min = alertThresholds[id] || 0
-            return min > 0 && qty < min
-        }).length
-    }, [materialTotalStock, alertThresholds])
+    // [BACKEND-AUTHORITY]: 预警总数由后端统计服务返回
+    const alertCount = alertSummaryQuery.data?.alertCount || 0
 
     const groupedInventory = useMemo(() => {
         const groups: Record<string, InventoryView[]> = {}
@@ -124,9 +130,8 @@ export function useStockMgmt() {
         return groups
     }, [filteredInventory, categories])
 
-    const totalAssetsValue = useMemo(() => {
-        return inventory.reduce((acc, item) => acc + (item.totalValue || 0), 0)
-    }, [inventory])
+    // [BACKEND-AUTHORITY]: 资产估值由后端财务模块权威返回
+    const totalAssetsValue = valuationQuery.data || 0
 
     return {
         // Data states
@@ -135,8 +140,8 @@ export function useStockMgmt() {
         totalAssetsValue,
         alertThresholds,
         categories,
-        loading: inventoryQuery.isLoading || thresholdsQuery.isLoading || categoriesQuery.isLoading,
-        error: inventoryQuery.error || thresholdsQuery.error || categoriesQuery.error,
+        loading: inventoryQuery.isLoading || thresholdsQuery.isLoading || categoriesQuery.isLoading || valuationQuery.isLoading || alertSummaryQuery.isLoading,
+        error: inventoryQuery.error || thresholdsQuery.error || categoriesQuery.error || valuationQuery.error || alertSummaryQuery.error,
         alertCount,
 
         // UI & Filter states

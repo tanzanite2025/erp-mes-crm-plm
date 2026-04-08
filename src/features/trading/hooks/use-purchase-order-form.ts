@@ -104,43 +104,70 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     }, [open, initialOrder, purchaserName, setFormData])
 
     const handleAddLine = useCallback(() => {
-        const nextLineNo = (formData.lines?.length || 0) + 1
-        setFormData((prev) => ({
-            ...prev,
-            lines: [...(prev.lines || []), { ...emptyLine, lineNo: nextLineNo } as PurchaseOrderLine],
-        }))
-    }, [formData.lines, setFormData])
+        setFormData((prev) => {
+            const nextLines = [...(prev.lines || []), { ...emptyLine, lineNo: (prev.lines?.length || 0) + 1 } as PurchaseOrderLine]
+            
+            // [PREVIEW-ONLY] 重新计算预览统计
+            const { lines: reindexedLines, amount } = previewOrderTotals(nextLines)
+            
+            return {
+                ...prev,
+                lines: reindexedLines as PurchaseOrderLine[],
+                amount: amount,
+            }
+        })
+    }, [setFormData])
 
     const handleRemoveLine = useCallback((index: number) => {
-        const nextLines = (formData.lines || []).filter((_, i) => i !== index)
-        setFormData((prev) => ({
-            ...prev,
-            lines: nextLines.map((line, i) => ({ ...line, lineNo: i + 1 })),
-        }))
-    }, [formData.lines, setFormData])
+        setFormData((prev) => {
+            if (!prev.lines || index < 0 || index >= prev.lines.length) {
+                throw new Error(`[CRITICAL] Cannot remove purchase order line at index ${index}: Lines missing or index out of bounds`);
+            }
+
+            const nextRawLines = prev.lines.filter((_, i) => i !== index)
+            
+            // [PREVIEW-ONLY] 重新计算预览统计 (重新编号)
+            const { lines: reindexedLines, amount } = previewOrderTotals(nextRawLines)
+
+            return {
+                ...prev,
+                lines: reindexedLines as PurchaseOrderLine[],
+                amount: amount,
+            }
+        })
+    }, [setFormData])
 
     const updateLine = useCallback(
         (index: number, field: keyof PurchaseOrderLine, value: PurchaseOrderLineFieldValue, extraData?: Partial<PurchaseOrderLine>) => {
-            if (!formData.lines) return
-            const nextLines = [...formData.lines]
-            if (!nextLines[index]) return
+            setFormData((prev) => {
+                const nextLines = [...(prev.lines || [])]
+                const targetLine = nextLines[index]
 
-            nextLines[index] = { ...nextLines[index], [field]: value, ...extraData }
+                if (!targetLine) {
+                    throw new Error(`[CRITICAL] Update failed: Purchase line at index ${index} not found in state`);
+                }
 
-            if (field === 'qty' || field === 'price' || extraData) {
-                const q = Number(nextLines[index].qty) || 0
-                const p = Number(nextLines[index].price) || 0
-                nextLines[index].amount = previewLineAmount(q, p)
-            }
+                // 1. 基础值更新
+                nextLines[index] = { ...targetLine, [field]: value, ...extraData }
 
-            const { lines, amount } = previewOrderTotals(nextLines)
-            setFormData((prev) => ({
-                ...prev,
-                lines: lines as PurchaseOrderLine[],
-                amount: amount,
-            }))
+                // 2. [PREVIEW-ONLY] 单行预览计算
+                if (field === 'qty' || field === 'price' || extraData) {
+                    const q = Number(nextLines[index].qty) || 0
+                    const p = Number(nextLines[index].price) || 0
+                    nextLines[index].amount = previewLineAmount(q, p)
+                }
+
+                // 3. [PREVIEW-ONLY] 全单预览计算
+                const { lines: reindexedLines, amount } = previewOrderTotals(nextLines)
+                
+                return {
+                    ...prev,
+                    lines: reindexedLines as PurchaseOrderLine[],
+                    amount: amount,
+                }
+            })
         },
-        [formData.lines, setFormData]
+        [setFormData]
     )
 
     const validate = (): boolean => {

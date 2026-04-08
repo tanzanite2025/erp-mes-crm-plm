@@ -57,5 +57,13 @@ export const QualityCoreService = {
     getAbnormalities: async (): Promise<QualityAbnormality[]> => {
         const res = await apiFetch<QualityAbnormality[]>('/quality/abnormalities')
         return ensureArrayResponse<QualityAbnormality>(res, 'QualityCoreService.getAbnormalities')
+    },
+
+    /**
+     * 获取质量检测指标概览 (权威汇总)
+     */
+    getInspectionStats: async (): Promise<{ pendingCount: number, passCount: number, failCount: number }> => {
+        const res = await apiFetch<{ pendingCount: number, passCount: number, failCount: number }>('/quality/stats')
+        return ensureObjectResponse<{ pendingCount: number, passCount: number, failCount: number }>(res, 'QualityCoreService.getInspectionStats')
     }
 }

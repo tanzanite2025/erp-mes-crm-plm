@@ -1,5 +1,123 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：生产 `uploads/backups` 目录权限防回归固化（2026-04-09）
+
+### 背景
+生产图片上传 `Disk write failed` 的证据链已经基本锁定为：
+
+- `app` 容器以非 root 的 `xdfcuser` 运行；
+- 宿主机 `server/uploads` 曾出现 `root:root 755`；
+- 该目录挂载进容器后，普通用户没有写权限。
+
+这类问题如果只靠一次人工 `chown` 恢复，后续部署仍可能再次回归。因此本轮改动目标不是临时补丁，而是把“容器运行身份”和“宿主机挂载目录归属”固化成同一套可重复约束。
+
+### 固化方式
+
+#### 1. 固定 `app` 运行用户的数值身份
+文件：`server/Dockerfile`
+
+- 为运行时镜像新增显式 build args：
+  - `XDFC_APP_UID`
+  - `XDFC_APP_GID`
+- `xdfcuser:xdfcgroup` 不再依赖 Alpine 自动分配 UID/GID；
+- `/app/uploads` 与 `/app/backups` 的镜像内默认归属也同步改为同一组数值身份。
+
+#### 2. 让 compose 构建链显式传入同一身份
+文件：`server/docker-compose.yml`
+
+- `app.build` 改为显式 `context + args`；
+- 将：
+  - `XDFC_APP_UID=${XDFC_APP_UID:-10001}`
+  - `XDFC_APP_GID=${XDFC_APP_GID:-10001}`
+ 传入镜像构建；
+- 这样镜像内用户身份与部署脚本准备目录时使用的是同一组值。
+
+#### 3. 在部署脚本中固化挂载目录准备逻辑
+文件：`server/deploy-prod.sh`
+
+- 新增 `load_deploy_env()`，先读取 `server/.env` 或 `server/.env.production`；
+- 新增 `prepare_app_runtime_dir()`，在每次部署前对 `./uploads` 与 `./backups` 执行：
+  - `mkdir -p`
+  - `chown ${XDFC_APP_UID}:${XDFC_APP_GID}`
+  - `chmod 0755`
+- 这样无论目录是否首次创建，部署都会把顶层挂载目录重新收敛到容器可写状态。
+
+#### 4. 补充环境模板
+文件：`.env.example`
+
+- 新增：
+  - `XDFC_APP_UID=10001`
+  - `XDFC_APP_GID=10001`
+- 用于明确仓库约定的默认运行时身份，并与部署脚本和镜像构建保持一致。
+
+### 验证
+已执行：
+
+```bash
+docker compose -f server/docker-compose.yml config
+```
+
+结果：**通过**。
+
+展开后的 compose 配置中可确认：
+
+- `app.build.args.XDFC_APP_UID = 10001`
+- `app.build.args.XDFC_APP_GID = 10001`
+- `app` 仍挂载：
+  - `./uploads -> /app/uploads`
+  - `./backups -> /app/backups`
+
+### 本轮结论
+本轮已完成仓库侧的防回归固化：
+
+- 容器运行用户身份已显式固定；
+- 部署脚本会在每次部署前主动修正运行目录顶层属主与权限；
+- 后续生产恢复不再依赖“记得手工 `chown` 一次”这种一次性动作。
+
+## 专项：本地 DEV `/uploads` 访问链补齐（2026-04-08）
+
+### 问题现象
+图片上传主链恢复后，本地页面里上传返回已成功，浏览器对图片资源请求也显示：
+
+- `GET /uploads/ev-*.webp 200 OK`
+
+但页面预览仍显示坏图。
+
+继续复核前端预览链与本地开发代理后确认：
+
+- 前端最终预览地址来自 `getStaticEvidenceUrl(...)`；
+- 上传成功后会访问 `/uploads/{fileName}`；
+- 当前 `vite.config.ts` 只代理 `/api`，未代理 `/uploads`；
+- 因此本地 `127.0.0.1:5173/uploads/*` 请求会落到 Vite Dev Server，而不是后端静态资源提供方。
+
+这属于本地 DEV 访问链缺口，不是本轮 Rust 图像处理再次失败；同时仓库中的生产 Nginx 与容器内 Nginx 已存在 `/uploads/` 映射，因此该问题本质上是“本地与生产访问语义不一致”。
+
+### 修复方式
+文件：`vite.config.ts`
+
+已执行最小修复：
+
+- 保留现有 `/api` 代理；
+- 新增 `/uploads` 代理；
+- `/uploads` 与 `/api` 统一复用现有 `VITE_PROXY_TARGET` / `proxyTarget`；
+- 不新增新的上传资源地址环境变量，避免本地与生产再次分叉。
+
+### 最小验证口径
+本轮代码改动完成后，应按以下口径做本地回归：
+
+1. 重启前端 Vite Dev Server；
+2. 在现有已登录 DEV 会话中重新上传一张图片；
+3. 确认浏览器请求 `/uploads/ev-*.webp` 时返回真实图片内容；
+4. 确认页面中的图片预览可正常显示；
+5. 确认 `/api` 现有代理行为未受影响。
+
+### 本轮结论
+本轮已完成本地 DEV 上传资源访问链补齐：
+
+- Vite 开发环境现已同时代理 `/api` 与 `/uploads`；
+- 本地图片预览链路已与生产站点保持同一访问语义；
+- 后续凡是依赖 `/uploads/` 的页面回显问题，都可以在 DEV 阶段更早暴露与验证。
+
 ## 专项：图片上传 pHash 长期稳定修复（2026-04-08）
 
 ### 问题现象
@@ -522,4 +640,3 @@ go test ./handlers ./routes ./services -run Purchase
 - 采购头部供应商主体切换已具备独立 transaction 语义；
 - `purchase` 编辑弹窗对纯供应商主体切换与混合编辑的分流边界清晰；
 - 当前无需重复补码，可直接视为本轮治理项已完成并已完成验证收尾。
-

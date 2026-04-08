@@ -129,19 +129,29 @@ export function SalesOrderMaster({
                         <span className='text-[12px] font-black tabular-nums'>
                           {order.quantity?.toLocaleString() || 0} PCS
                         </span>
-                        {order.status !== 'Draft' && order.lines && order.lines.length > 0 && (
-                          <div className='h-1.5 w-full max-w-[60px] overflow-hidden rounded-full bg-muted'>
-                            <div
-                              className='h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] transition-all duration-1000'
-                              style={{
-                                width: `${Math.min(
-                                  100,
-                                  (order.lines.reduce((acc, line) => acc + Number(line.deliveredQty || 0), 0) /
-                                    (order.quantity || 1)) *
-                                    100
-                                )}%`,
-                              }}
-                            />
+                        {order.status !== 'Draft' && (
+                          <div className='flex flex-col gap-1'>
+                            <div className='h-1.5 w-full max-w-[60px] overflow-hidden rounded-full bg-muted shadow-inner'>
+                              <div
+                                className='h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] transition-all duration-1000'
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    // [UI-DERIVED-PREVIEW]: 由于 SalesOrder 实体当前缺失 header 级的 deliveredQty 汇总
+                                    // 我们暂时在 UI 层通过聚合子行数据得出。
+                                    // [CRITICAL]: 严禁静默过滤，如果 order.lines 缺失，此百分比将失去权威性。
+                                    (() => {
+                                      if (!order.lines) return 0;
+                                      const totalDelivered = order.lines.reduce((acc, line) => acc + Number(line.deliveredQty || 0), 0);
+                                      return (totalDelivered / (order.quantity || 1)) * 100;
+                                    })()
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <p className='text-[7px] font-black opacity-20 uppercase tracking-tighter'>
+                              {t('tradingSalesOrder.master.fulfillmentCalculatedInUI')}
+                            </p>
                           </div>
                         )}
                       </div>

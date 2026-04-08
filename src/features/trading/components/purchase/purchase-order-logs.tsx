@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,8 +29,15 @@ export function PurchaseOrderLogs() {
       try {
         setIsLoading(true)
         setError(null)
-        const data = await getDeletedPurchaseOrders(1, 100)
-        setOrders(data.items || [])
+        // [ARCHITECTURAL-DEBT]: 目前后端 getDeletedPurchaseOrders 返回的分页数据中缺少全量总计金额
+        // 暂时在前端进行分页内统计，但建议后续由后端在元数据中提供。
+        const response = await getDeletedPurchaseOrders(1, 100)
+        
+        if (!response || !Array.isArray(response.items)) {
+          throw new Error('[CRITICAL] PurchaseOrderLogs: Invalid response format or items missing');
+        }
+
+        setOrders(response.items)
       } catch (loadError) {
         setError(loadError)
         toast.error(t('purchase.logs.loadFailed'))
@@ -42,7 +49,13 @@ export function PurchaseOrderLogs() {
     void loadLogs()
   }, [t])
 
-  const totalAmount = orders.reduce((sum, order) => sum + order.amount, 0)
+  /**
+   * [UI-ONLY-AGGREGATION] 仅针对当前已加载的分页数据进行汇总。
+   * 注意：这不代表全量删除订单的总金额，极致实时性请通过后端聚合接口获取。
+   */
+  const totalAmount = useMemo(() => {
+    return orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0)
+  }, [orders])
 
   if (isLoading) {
     return (

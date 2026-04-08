@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useGetQualityTasks, useQualityMutations, type QualityTask } from '../hooks/use-quality'
+import { useGetQualityTasks, useGetInspectionStats, useQualityMutations, type QualityTask } from '../hooks/use-quality'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
@@ -24,9 +24,12 @@ import { useLanguage } from '@/context/language-provider'
 export function QualityInspection() {
     const { t } = useLanguage()
     const [searchTerm, setSearchTerm] = useState('')
-    const { data, error, isLoading } = useGetQualityTasks(1, 100, searchTerm)
+    const { data, error, isLoading: isTasksLoading } = useGetQualityTasks(1, 100, searchTerm)
     const tasks = data?.items || []
+    const { data: stats, isLoading: isStatsLoading } = useGetInspectionStats()
     const { executeInspectionMutation } = useQualityMutations()
+
+    const isLoading = isTasksLoading || isStatsLoading
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -74,7 +77,8 @@ export function QualityInspection() {
                 <div className='flex items-center gap-3 shrink-0'>
                     <div className='px-4 py-2 bg-muted/10 rounded-full border border-dashed border-muted/50 flex items-center gap-3 w-full sm:w-auto justify-center'>
                         <span className='text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest leading-none'>{t('quality.inspection.page.pendingLoad')}</span>
-                        <span className='text-sm font-black italic text-primary tabular-nums'>{tasks.filter((task: QualityTask) => task.result === 'PENDING').length}</span>
+                        {/* [BACKEND-AUTHORITY]: 权威待检总量由后端统计服务直接返回，解决前端分页数据不全问题 */}
+                        <span className='text-sm font-black italic text-primary tabular-nums'>{stats?.pendingCount ?? 0}</span>
                     </div>
                 </div>
             </div>

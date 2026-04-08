@@ -45,6 +45,16 @@ export const ProductCoreService = {
             return `${name} (${details})`
         }
         
-        return name || sku || 'UNNAMED'
-    }
+    return name || sku || 'UNNAMED'
+  },
+
+  /**
+   * 获取下一个可用的产品分类型号编码 (权威发号)
+   * [BACKEND-AUTHORITY]: 严禁前端拉取全量产品列表进行自增计算，必须由后端原子化发号。
+   */
+  async getNextCode(typeId: string): Promise<string> {
+    const res = await apiFetch<{ nextCode: string }>(`/engineering/products/next-code?typeId=${typeId}`)
+    const data = ensureObjectResponse<{ nextCode: string }>(res, 'ProductCoreService.getNextCode')
+    return data.nextCode
+  }
 }

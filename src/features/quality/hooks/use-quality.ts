@@ -30,6 +30,13 @@ export function useGetAbnormalities() {
     })
 }
 
+export function useGetInspectionStats() {
+    return useQuery({
+        queryKey: ['quality_inspection_stats'],
+        queryFn: () => QualityCoreService.getInspectionStats(),
+    })
+}
+
 export function useQualityMutations() {
     const { t } = useLanguage()
     const queryClient = useQueryClient()

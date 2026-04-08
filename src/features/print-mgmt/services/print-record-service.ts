@@ -14,6 +14,7 @@ export interface PrintBatch {
     _v: number              // 乐观锁版本号
 }
 
+import { ensureObjectResponse } from '@/lib/api-response'
 import { apiFetch } from '@/lib/api-client'
 
 const UPDATE_EVENT = 'xdfc_print_batches_updated'
@@ -98,22 +99,26 @@ export const PrintRecordService = {
     },
 
     /**
-     * 获取总激活量 (仪表盘使用)
+     * 获取打印批次综合统计 (已对接后端权威聚合)
      */
-    async getTotalActivatedCount(): Promise<number> {
-        const batches = await this.getBatches()
-        return batches
-            .filter(b => b.status !== 'Scrapped')
-            .reduce((sum, b) => sum + b.activatedCount, 0)
+    async getPrintStats(): Promise<{ totalActivated: number, totalScrapped: number }> {
+        const res = await apiFetch<{ totalActivated: number, totalScrapped: number }>('/print-batches/stats')
+        return ensureObjectResponse<Record<string, unknown>>(res, 'PrintRecordService.getPrintStats') as { totalActivated: number, totalScrapped: number }
     },
 
     /**
-     * 获取报废总量 (仪表盘使用)
+     * 获取总激活量 (已迁移至后端)
+     */
+    async getTotalActivatedCount(): Promise<number> {
+        const stats = await this.getPrintStats()
+        return stats.totalActivated
+    },
+
+    /**
+     * 获取报废总量 (已迁移至后端)
      */
     async getScrapCount(): Promise<number> {
-        const batches = await this.getBatches()
-        return batches
-            .filter(b => b.status === 'Scrapped')
-            .reduce((sum, b) => sum + b.quantity, 0)
+        const stats = await this.getPrintStats()
+        return stats.totalScrapped
     }
 }

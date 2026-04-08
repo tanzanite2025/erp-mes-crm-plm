@@ -39,9 +39,6 @@ export const roundToTwo = (num: number): number => {
   return Math.round((num + Number.EPSILON) * 100) / 100
 }
 
-/**
- * 简单的 UUID/ID 生成器逻辑外置
- */
-export const generateSalesOrderId = (): string => {
-  return `SO${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
-}
+
+// [DEPRECATED] generateSalesOrderId 逻辑已迁移至后端权威发号器
+// 前端不再承担单号推导职责。

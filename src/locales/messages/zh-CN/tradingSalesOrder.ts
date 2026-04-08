@@ -130,4 +130,7 @@ export const tradingSalesOrder = {
       saveFailed: '图片上传失败',
     },
   },
+  master: {
+    fulfillmentCalculatedInUI: '指标由前端实时聚合 (PREVIEW)',
+  },
 }

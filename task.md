@@ -3,6 +3,55 @@
   - [ ] 不采用补丁式“双解码兜底”，而是转向长期稳定的单次解码方案。
   - [ ] 目标是让同一张图片在尺寸读取、pHash 计算、WebP 编码三步共享同一份已解码图像数据。
 
+- [ ] 516. 冻结本轮范围，规划生产环境图片上传 `500 Disk write failed` 的专项修复（2026-04-09，待批准）
+  - [ ] 本轮先聚焦生产环境上传物理落盘失败，不扩散到前端预览、本地 DEV `/uploads` 代理或新的业务重构。
+  - [ ] 当前已确认前端拿到的错误文案为 `Disk write failed`，该文本来自 Go 上传处理器，不是 Rust `search-engine` 直接返回。
+  - [ ] 本轮先完成“高概率根因锁定 + 修复专项规划”，待批准后再实施生产变更。
+
+- [ ] 517. 固化当前已确认的生产现场事实链
+  - [ ] `server/handlers/evidence_handler.go` 中先执行 Rust 图像处理，随后才调用 `os.WriteFile(filepath.Join("uploads", fileName), ...)` 落盘，因此 `Disk write failed` 发生在 Go 本地写盘阶段。
+  - [ ] 生产宿主机当前工作目录已确认是 `/var/www/erp/server`，`./uploads` 目录存在，但当前权限为 `root:root` + `755`。
+  - [ ] 生产 `app` 当前有两个副本在跑，因此此前 `docker exec -it $(docker compose ps -q app) ...` 失败是因为命令替换返回了两个容器 ID，不是新的独立根因。
+  - [ ] 生产磁盘空间与 inode 已确认正常，当前不再优先怀疑 `no space left on device` 一类基础设施问题。
+
+- [ ] 518. 锁定当前高概率直接根因
+  - [ ] `server/Dockerfile` 已确认 `app` 容器最终以非 root 用户 `xdfcuser:xdfcgroup` 运行。
+  - [ ] `server/docker-compose.yml` 已确认宿主机 `./uploads` 以卷挂载方式映射到容器内 `/app/uploads`。
+  - [ ] 因此在宿主机 `server/uploads` 为 `root:root 755` 的前提下，容器内普通用户对挂载目录无写权限，与当前 `Disk write failed` 现象高度吻合。
+  - [ ] 当前高优先级修复方向应落在宿主机挂载目录权限/归属与容器运行用户对齐，而不是 Rust 版本、图像处理逻辑或前端上传链。
+
+- [ ] 519. 明确专项修复分层
+  - [ ] A 层先做生产恢复：让宿主机 `server/uploads` 对容器内 `xdfcuser` 可写，优先恢复上传能力。
+  - [ ] B 层再做长期防回归：补齐 `server/deploy-prod.sh` 的运行目录权限准备逻辑，避免后续部署再次生成 `root:root 755` 的不可写挂载目录。
+  - [ ] 本轮不把容器重新切回 root 作为默认方案，也不采用无边界的 `777` 兜底作为长期解法。
+
+- [ ] 520. 明确批准前的产出与约束
+  - [ ] 当前阶段只更新 `task.md` 与 `implementation_plan.md`，把根因、修复分层与实施边界写清楚。
+  - [ ] 在收到批准前，不直接对生产宿主机目录执行 `chown`、`chmod`、`docker compose up` 或其他实际变更动作。
+  - [ ] 实施时需同时准备“临时人工恢复步骤”和“部署脚本固化步骤”，避免只救火、不防回归。
+
+- [x] 521. 固化 `uploads/backups` 目录权限防回归约束（2026-04-09，仓库侧已完成）
+  - [x] `server/Dockerfile` 已改为显式固定 `app` 运行用户的 UID/GID，避免继续依赖 Alpine 自动分配系统用户编号。
+  - [x] `server/docker-compose.yml` 已把同一组 `XDFC_APP_UID` / `XDFC_APP_GID` 作为 build args 传入 `app` 镜像构建链。
+  - [x] `server/deploy-prod.sh` 已在每次部署前按同一 UID/GID 准备 `./uploads` 与 `./backups` 顶层目录属主和权限，防止再次生成容器不可写的挂载目录。
+  - [x] `.env.example` 已补充运行时身份配置项，默认与部署脚本、容器镜像保持一致。
+
+- [ ] 513. 冻结本轮范围，补齐本地 DEV `/uploads` 访问链（2026-04-08，待确认）
+  - [ ] 本轮只修本地开发环境中的静态上传资源访问链，不扩散到上传业务逻辑、Rust 图像处理或生产 Nginx 配置。
+  - [ ] 当前问题表现为本地图片上传成功后，`GET /uploads/ev-*.webp` 在 `127.0.0.1:5173` 返回 `200` 但预览破图。
+  - [ ] 已确认生产配置中 `/uploads/` 由 Nginx 正式暴露，本轮不改生产部署语义。
+
+- [ ] 514. 固化当前本地预览坏图根因
+  - [ ] 前端预览使用 `getStaticEvidenceUrl(...)` 将后端返回文件名拼为 `/uploads/{fileName}`，不是 `blob:` 临时地址。
+  - [ ] `vite.config.ts` 当前只代理 `/api`，未代理 `/uploads`，导致浏览器把 `/uploads/*` 请求发给 Vite Dev Server。
+  - [ ] 本地坏图不代表 Rust 图像处理失败，也不代表生产必然复现；它是 DEV 访问链与生产访问链不一致导致的验证盲区。
+
+- [ ] 515. 明确本轮修复要求
+  - [ ] 在本地 DEV 中补齐 `/uploads` 代理，使上传后图片回显链路与生产访问语义一致。
+  - [ ] 优先复用现有 `VITE_PROXY_TARGET`，避免为 `/uploads` 再引入新的独立目标地址配置。
+  - [ ] 不修改生产 Nginx、`docker-compose`、Go 上传接口或 Rust 图像处理逻辑。
+  - [ ] 完成后需要验证本地上传后的 `GET /uploads/*.webp` 能正常返回真实图片内容，而不是 Vite 回退响应。
+
 - [ ] 511. 固化当前运行时根因
   - [ ] 前端请求已命中正确后端 `http://localhost:8080`，当前问题不再是 Vite 代理错配。
   - [ ] Go 后端日志显示：`rust image worker returned status: 400, body: Failed to decode image for perceptual hash`。
@@ -218,15 +267,19 @@
   - [x] 1. 账号管理：修复废弃服务调用逻辑 / Personnel Accounts Migration
     - [x] 修正 `EmployeeService` Proxy 导出逻辑
     - [x] 完成 `use-users-action-dialog-options.ts` 迁移
-  - [ ] 2. 采购物流：修复无限循环与快照报错 / Purchase Logistics Fix
-    - [ ] 优化 `purchase-logistics-offline-draft-service.ts` 快照缓存
-    - [ ] 优化 `PurchaseLogisticsPage` 自动同步 Effect
+  - [x] 2. 采购物流：修复无限循环与快照报错 / Purchase Logistics Fix
+    - [x] 优化 `purchase-logistics-offline-draft-service.ts` 快照缓存
+    - [x] 优化 `PurchaseLogisticsPage` 自动同步 Effect
   - [x] 3. 架构归一化：质量管理与计件工资模块 / Quality & Piecework Normalization
     - [x] 创建 QualityCore/Maintenance Services
     - [x] 重构 `use-quality.ts` Hook
     - [x] 创建 PieceworkMaintenanceService
     - [x] 重构 `use-piecework.ts` Hook
-- [x] 4. 仓库管理：架构归一化与清理 / Warehouse Normalization
+    - [x] [四阶段] BOM 财务成本试算下沉 (SummaryPanel)
+- [x] [四阶段] SKU 与 产品条码规则合规化 (ProductDerive)
+- [x] [四阶段] 质量任务待测总量统计优化 (QualityInspection)
+- [x] [四阶段] 物料使用频率统计下沉 (MaterialUsageService)
+  - [x] 4. 仓库管理：架构归一化与清理 / Warehouse Normalization
     - [x] 移除 `inbound-service.ts` 废弃文件 (通过代码清理完成)
     - [x] 拆分 `WarehouseCategory` Core/Maintenance 服务
     - [x] 拆分 `Stocktake` Core/Maintenance 服务
@@ -669,4 +722,3 @@
 - [ ] 286. 将 DTO 整改表写入实施文档
   - [ ] 在 `implementation_plan.md` 中输出“文件 + 函数 + 风险级别 + 问题类型 + 拟整改策略”表。
   - [ ] 待确认后再按风险等级分批实施，避免一次性横扫全部 service。
-

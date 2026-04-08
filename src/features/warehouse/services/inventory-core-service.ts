@@ -1,7 +1,3 @@
-import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
-import { type Material } from '@/features/material-archive/data/schema'
-import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { type Product } from '@/features/engineering/data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type InboundRecord, type ShipmentRecord } from './inventory-transaction-service'
@@ -68,63 +64,25 @@ export const InventoryCoreService = {
 
     /**
      * 获取物料在不同分类下的库存分布
+     * [REFACTORED]: 改为参数化后端查询。
      */
     getInventoryBreakdown: async (materialId: string): Promise<Record<string, number>> => {
-        const res = await apiFetch<InventoryRecord[]>('/inventory');
-        const records = ensureArrayResponse<InventoryRecord>(res, 'InventoryCoreService.getInventoryBreakdown')
-        const breakdown: Record<string, number> = {}
-        records
-            .filter(r => r.materialId === materialId)
-            .forEach(r => {
-                breakdown[r.categoryCode] = r.quantity
-            })
-        return breakdown
+        const res = await apiFetch<Record<string, number>>(`/inventory/breakdown?materialId=${encodeURIComponent(materialId)}`);
+        return ensureObjectResponse<Record<string, number>>(res, 'InventoryCoreService.getInventoryBreakdown')
     },
 
     /**
-     * 跨模块聚合搜索: 同时检索物料档案与成品档案，并关联实时库存
+     * 跨模块聚合搜索: 聚合检索物料档案与成品档案，并关联实时库存
+     * [HEAVY-COMPUTATION]: 原始实现拉取了全量 Material + Product + Inventory 并在前端进行三表关联 (O(N) Join)。
+     * 已重写为调用后端聚合搜索接口，遵循“后端权威”原则。
      */
     searchMasterData: async (query: string): Promise<MasterDataSearchResult[]> => {
-        const [materials, products, records] = await Promise.all([
-            MaterialCoreService.getMaterialOptions(),
-            ProductCoreService.getProducts(),
-            apiFetch<InventoryRecord[]>('/inventory').then(res => ensureArrayResponse<InventoryRecord>(res, 'InventoryCoreService.searchMasterData'))
-        ])
-
-        const stockMap = new Map<string, number>()
-        records.forEach((r) => {
-            stockMap.set(r.materialId, (stockMap.get(r.materialId) || 0) + r.quantity)
-        })
-
-        const searchLower = query.toLowerCase()
-
-        const materialResults: MasterDataSearchResult[] = materials
-            .filter((m: Material) => m.name.toLowerCase().includes(searchLower) || m.code.toLowerCase().includes(searchLower))
-            .map((m: Material) => ({
-                id: m.id,
-                name: m.name,
-                code: m.code,
-                spec: m.spec || '',
-                uom: m.uom || 'pcs',
-                category: m.category,
-                sourceModule: 'MATERIAL',
-                stock: stockMap.get(m.id) || 0
-            }))
-
-        const productResults: MasterDataSearchResult[] = products
-            .filter((p: Product) => p.name.toLowerCase().includes(searchLower) || p.sku.toLowerCase().includes(searchLower))
-            .map((p: Product) => ({
-                id: p.id,
-                name: p.name,
-                code: p.sku,
-                spec: p.tireType || p.description || '',
-                uom: 'pcs',
-                category: 'FINISHED',
-                sourceModule: 'PRODUCT' as const,
-                stock: stockMap.get(p.id) || 0
-            }))
-
-        return [...materialResults, ...productResults]
+        if (!query) return []
+        
+        // 调用后端专门的聚合搜索接口：/inventory/search
+        // 由后端执行物料/成品表的关联以及库存汇总
+        const res = await apiFetch<MasterDataSearchResult[]>(`/inventory/search?q=${encodeURIComponent(query)}`)
+        return ensureArrayResponse<MasterDataSearchResult>(res, 'InventoryCoreService.searchMasterData')
     },
 
     /**
@@ -145,12 +103,30 @@ export const InventoryCoreService = {
 
     /**
      * 获取特定物料在特定分类下的库存
+     * [REFACTORED]: 改为精确的单条库存查询接口。
      */
     getCategoryStock: async (materialId: string, category: string): Promise<number> => {
-        const res = await apiFetch<InventoryRecord[]>('/inventory');
-        const records = ensureArrayResponse<InventoryRecord>(res, 'InventoryCoreService.getCategoryStock')
-        const inv = records.find(r => r.materialId === materialId && r.categoryCode === category)
-        return inv ? inv.quantity : 0
+        const res = await apiFetch<{ quantity: number }>(`/inventory/stock?materialId=${encodeURIComponent(materialId)}&category=${encodeURIComponent(category)}`);
+        const response = ensureObjectResponse<{ quantity: number }>(res, 'InventoryCoreService.getCategoryStock')
+        return response.quantity
+    },
+
+    /**
+     * 获取全量库存资产估值
+     * [BACKEND-AUTHORITY]: 聚合金额由后端财务模块权威计算。
+     */
+    getInventoryValuation: async (): Promise<number> => {
+        const res = await apiFetch<{ totalValue: number }>('/inventory/valuation')
+        const response = ensureObjectResponse<{ totalValue: number }>(res, 'InventoryCoreService.getInventoryValuation')
+        return response.totalValue
+    },
+
+    /**
+     * 获取库存预警摘要统计
+     */
+    getAlertSummary: async (): Promise<{ alertCount: number }> => {
+        const res = await apiFetch<{ alertCount: number }>('/inventory/alerts/summary')
+        return ensureObjectResponse<{ alertCount: number }>(res, 'InventoryCoreService.getAlertSummary')
     },
 
     /**

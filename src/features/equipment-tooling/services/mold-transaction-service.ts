@@ -79,26 +79,11 @@ export const MoldTransactionService = {
 
     /**
      * 检查模具产能 (业务逻辑查询)
+     * [REFACTORED]: 核心资产算法已迁移至 Go 后端。
      */
     async checkMoldCapacity(groupName: string, requestedQty: number) {
-        const molds = await MoldCoreService.getMolds()
-        const targetMolds = molds.filter(m => m.groupName === groupName && m.status !== 'RETIRED')
-        
-        const instances = targetMolds.map(m => ({
-            id: m.id,
-            sn: m.sn,
-            remaining: Math.max(0, m.maxCycles - (m.currentCycles || 0)),
-            health: Math.round(((m.maxCycles - (m.currentCycles || 0)) / m.maxCycles) * 100),
-            status: m.status
-        }))
-
-        const totalRemaining = instances.reduce((sum, inst) => sum + inst.remaining, 0)
-        
-        return {
-            isSufficient: totalRemaining >= requestedQty,
-            totalRemaining,
-            instances,
-            shortage: Math.max(0, requestedQty - totalRemaining)
-        }
+        // [BACKEND-AUTHORITY] 调用后端业务逻辑接口，获取计算后的产能模型
+        const res = await apiFetch<any>(`/molds/capacity?groupName=${encodeURIComponent(groupName)}&requestedQty=${requestedQty}`)
+        return ensureObjectResponse(res, 'MoldTransactionService.checkMoldCapacity')
     }
 }

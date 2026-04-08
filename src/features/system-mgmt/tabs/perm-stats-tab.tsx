@@ -86,14 +86,14 @@ export function PermStatsTab() {
     )
   }
 
-  const coreCoverage =
-    stats.totalRoles > 0
-      ? Math.round(
-          (stats.moduleCoverage.reduce((total, item) => total + item.roles, 0) /
-            (stats.totalRoles * stats.moduleCoverage.length)) *
-            100,
-        )
-      : 0
+  // [UI-DERIVED-METRIC]: 核心覆盖率指标 (由前端推导，仅供 UI 参考)
+  // 全域系统安全审计指标应由后端 API /authz/audit/coverage 提供权威数据。
+  const coreCoverage = useMemo(() => {
+    if (!stats || stats.totalRoles === 0) return 0
+    const totalModuleRoles = stats.moduleCoverage.reduce((total, item) => total + item.roles, 0)
+    const baseCount = stats.totalRoles * stats.moduleCoverage.length
+    return Math.round((totalModuleRoles / baseCount) * 100)
+  }, [stats])
 
   return (
     <div className='animate-in fade-in flex flex-col gap-8 duration-700'>

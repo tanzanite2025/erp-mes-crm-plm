@@ -1,5 +1,170 @@
 # implementation plan
  
+## 生产环境图片上传 `Disk write failed` 根因锁定与专项修复规划（2026-04-09，待批准）
+
+### 一、问题概述
+当前生产环境销售订单图片上传失败，前端直接收到：
+
+1. `POST /sales-orders/evidence/upload`
+2. `500 Disk write failed`
+
+结合现有后端实现，`server/handlers/evidence_handler.go` 的上传流程为：
+
+1. 读取上传原始字节；
+2. 调用 Rust `search-engine` 执行图像处理；
+3. 进行 Redis pHash 查重；
+4. 对非重复图片执行：
+   - `os.MkdirAll("uploads", 0755)`
+   - `os.WriteFile(filepath.Join("uploads", fileName), webpBytes, 0644)`
+
+因此 `Disk write failed` 只会在 Go 本地写盘阶段返回，不是 Rust 直接返回的错误。
+
+### 二、已确认事实链
+当前已经拿到的高价值事实如下：
+
+1. `server/deploy-prod.sh` 的目录准备与容器启动链已经执行，说明不是“部署脚本完全没跑”；
+2. 生产宿主机当前目录已确认是 `/var/www/erp/server`；
+3. 宿主机 `./uploads` 已存在，但权限是 `drwxr-xr-x root root`，也就是 `root:root 755`；
+4. 生产磁盘空间与 inode 均正常，当前不再优先怀疑磁盘打满；
+5. 生产 `app` 当前有两个副本，之前 `docker exec -it $(docker compose ps -q app) ...` 失败，是因为命令替换返回了两个容器 ID，不是新的故障点；
+6. `server/Dockerfile` 已明确 `app` 运行时使用非 root 用户 `xdfcuser:xdfcgroup`；
+7. `server/docker-compose.yml` 已明确将宿主机 `./uploads` 挂载到容器内 `/app/uploads`。
+
+### 三、当前高概率根因判断
+基于上面的事实链，当前可以将根因高概率锁定为：
+
+1. 容器内 `app` 不是以 root 运行，而是以普通用户 `xdfcuser` 运行；
+2. 宿主机 `server/uploads` 当前是 `root:root 755`；
+3. 该目录挂载进入容器后，普通用户只有读/执行权限，没有写权限；
+4. Go 在 `os.WriteFile(...)` 写入 `/app/uploads` 对应挂载目录时失败，前端因此收到 `Disk write failed`。
+
+这条证据链已经足够解释当前现象。虽然还没有直接截到生产日志里的 `permission denied` 原文，但现有事实与该结论高度一致，因此本轮规划按“宿主机挂载目录权限与容器运行用户不匹配”收口。
+
+### 四、专项修复目标
+本专项不再继续泛化排查，而是拆成两层：
+
+1. A 层先恢复生产上传能力，让宿主机 `server/uploads` 对容器内 `xdfcuser` 可写；
+2. B 层再做长期防回归，把运行目录权限准备逻辑固化到部署路径，避免后续部署再次生成不可写目录；
+3. 不把容器改回 root 作为默认解法；
+4. 不采用 `chmod 777` 作为长期方案；
+5. 不扩散到 Rust 版本、图像处理逻辑、前端上传协议或本地 DEV `/uploads` 代理。
+
+### 五、推荐实施方案
+
+#### A. 生产恢复动作
+目标是先恢复线上上传，不改变当前容器架构：
+
+1. 保持 `app` 继续以非 root 用户运行；
+2. 在生产宿主机上修正 `server/uploads` 的属主/属组/权限，使其与容器运行用户可写要求对齐；
+3. 优先采用“对齐目录归属 + 最小必要写权限”的方案，而不是开放世界可写权限；
+4. 实施前需要明确容器内 `xdfcuser` 的实际 UID/GID，避免宿主机只改名字、不改到正确身份映射。
+
+#### B. 部署链固化动作
+当前 `server/deploy-prod.sh` 只有：
+
+- `mkdir -p ./uploads ./backups ./postgres_data`
+
+但没有补齐目录归属或权限，因此后续部署仍可能重新留下 `root:root 755` 的挂载目录。长期修复应为：
+
+1. 在 `mkdir -p` 之后补充运行目录权限准备逻辑；
+2. 至少覆盖 `./uploads`，必要时一并审视 `./backups`；
+3. 保证“目录存在”与“容器内应用用户可写”同时成立；
+4. 避免把历史数据迁移逻辑与权限修复逻辑混在一起导致行为不透明。
+
+#### C. 可选增强项
+如果在实施时发现当前代码仍然长期依赖相对路径 `uploads`，可评估后续增强，但不纳入本专项首刀：
+
+1. 为上传目录引入显式配置，减少对工作目录的隐式依赖；
+2. 在应用启动时增加上传目录可写性检查与更清晰的日志；
+3. 将“权限错误”暴露为更可诊断的服务端日志，而不是只有前端 `Disk write failed`。
+
+### 六、当前不做的事情
+1. 不先修改 Rust 版本；
+2. 不先修改 Rust 图像处理代码；
+3. 不先修改前端上传逻辑；
+4. 不先调整 `app` 为 root 运行；
+5. 不在未经批准前直接对生产执行 `chown`、`chmod`、`docker compose up` 等实际变更。
+
+### 七、涉及文件
+- `server/Dockerfile`
+- `server/docker-compose.yml`
+- `server/deploy-prod.sh`
+- `server/handlers/evidence_handler.go`
+- `walkthrough.md`
+
+### 八、实施后验证口径
+完成后至少应满足：
+
+1. 生产环境重新上传图片时，不再返回 `500 Disk write failed`；
+2. 上传后的 WebP 文件可在生产 `server/uploads` 目录中实际看到；
+3. 浏览器可通过生产 `/uploads/{fileName}` 正常访问该图片；
+4. `app` 日志中不再出现 `Failed to write to physical storage`，或至少不再出现权限相关写盘失败；
+5. 后续再次执行 `server/deploy-prod.sh` 后，不会重新把 `uploads` 留成容器不可写状态。
+
+## 本地 DEV `/uploads` 访问链补齐（2026-04-08，待确认）
+
+### 一、问题概述
+当前图片上传核心链已经恢复：
+
+1. Go 后端上传接口可成功返回；
+2. Rust `search-engine` 可成功完成图片处理；
+3. 后端会返回 `ev-*.webp` 文件名；
+4. 前端会通过 `getStaticEvidenceUrl(...)` 将其拼成 `/uploads/{fileName}` 用于预览。
+
+但本地 DEV 环境下，浏览器实际请求的是：
+
+1. `http://127.0.0.1:5173/uploads/ev-*.webp`
+2. `vite.config.ts` 当前只代理 `/api`，未代理 `/uploads`
+3. 导致 `/uploads/*` 请求落到 Vite Dev Server，而不是后端 / 本地 Nginx
+4. 表现为 Network 中 `200 OK`，但 `<img>` 预览破图
+
+这意味着当前本地开发环境与生产环境在静态上传资源访问语义上不一致，后续任何依赖 `/uploads/` 回显的功能都可能在 DEV 中出现“假失败 / 假坏图”，形成验证盲区。
+
+### 二、修复目标
+本轮只补本地 DEV 静态上传资源访问链，不改生产部署语义：
+
+1. 让本地 DEV 的 `/uploads/*` 请求也能命中真实后端资源提供方；
+2. 保持前端现有 `getStaticEvidenceUrl(...)` 与上传返回结构不变；
+3. 不修改生产 Nginx、`docker-compose.yml`、Go 上传接口或 Rust 图像处理逻辑；
+4. 让本地图片上传后的预览行为尽量与生产保持一致。
+
+### 三、最小实施方案
+
+#### A. 补齐 Vite 开发代理
+文件：`vite.config.ts`
+
+1. 保留现有 `/api` 代理配置；
+2. 新增 `/uploads` 代理配置；
+3. `/uploads` 代理目标与 `/api` 统一复用现有 `VITE_PROXY_TARGET`；
+4. 不额外新增新的环境变量，避免本地地址源再次分叉。
+
+#### B. 保持前端 URL 拼装逻辑不变
+文件：`src/lib/url-utils.ts`
+
+本轮不修改该文件，原因是：
+
+1. 当前 `/uploads/{fileName}` 语义已经与生产站点保持一致；
+2. 问题不在 URL 拼装，而在 DEV 请求没有被正确转发；
+3. 若改为在前端硬编码不同 DEV URL，反而会让本地与生产再次分叉。
+
+### 四、风险与注意事项
+1. 不能破坏现有 `/api` 代理链；
+2. 不能为了修本地预览而改变生产访问语义；
+3. 不能引入新的独立上传资源基地址配置，否则后续仍可能漂移；
+4. 若本地 `VITE_PROXY_TARGET` 再次被错误指到非资源提供方，`/uploads` 仍会失败，因此本轮仍默认它应指向真实后端入口（当前为 `http://localhost:8080`）。
+
+### 五、涉及文件
+- `vite.config.ts`
+- `walkthrough.md`
+
+### 六、验证口径
+完成后至少应满足：
+
+1. 本地上传成功后，浏览器对 `/uploads/ev-*.webp` 的请求不再落到 Vite 回退响应；
+2. 本地预览可正常显示上传后的 WebP 图片；
+3. `/api` 现有代理行为不受影响；
+4. `walkthrough.md` 补充本轮 DEV `/uploads` 访问链修复结果。
+
 ## 图片上传 pHash 运行时解码失败的长期稳定修复（2026-04-08，待确认）
 
 ### 一、问题概述

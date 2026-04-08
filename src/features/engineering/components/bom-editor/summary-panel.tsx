@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 import { type BOM } from '../../data/schema'
@@ -12,12 +13,18 @@ interface SummaryPanelProps {
 export function SummaryPanel({ fields, form, sections, onSectionClick }: SummaryPanelProps) {
   const { t } = useLanguage()
 
-  const totalCost = fields.reduce((acc, _, i) => {
-    const item = form.getValues(`items.${i}`)
-    return acc + (item.standardUsage || 0) * (item.unitPrice || 0)
-  }, 0)
+  // [PREVIEW-ONLY-VALUATION]: BOM 成本预览 (仅供参考)
+  // [BACKEND-AUTHORITY]: 权威财务价值(成本、毛利)应由后端 BRP/MRP 核心试算接口返回
+  const totalCost = useMemo(() => {
+    return fields.reduce((acc, _, i) => {
+        const item = form.getValues(`items.${i}`)
+        return acc + (item.standardUsage || 0) * (item.unitPrice || 0)
+    }, 0)
+  }, [fields, form])
 
-  const stageCoverage = new Set(fields.map((_, i) => form.getValues(`items.${i}.section`))).size
+  const stageCoverage = useMemo(() => {
+    return new Set(fields.map((_, i) => form.getValues(`items.${i}.section`))).size
+  }, [fields, form])
 
   return (
     <div className='space-y-4 bg-muted/5 p-3 sm:p-4'>

@@ -56,6 +56,8 @@ export function ProductBarcodeTab({ product, onUpdateProduct }: ProductBarcodeTa
         setConfig(prev => ({ ...prev, ...updates }))
     }, [])
 
+    // [UI-PREVIEW-ONLY]: 这里的条码生成仅用于前端即时渲染预览
+    // [BACKEND-AUTHORITY]: 物理条码的分配与生成规则由后端 BRP 引擎权威管控，正式发号在 handlePrintSingle 中原子化触发。
     const code = BarcodeService.generateCode(config)
 
     // 【深度集成】从后端获取下一个可用流水号 (36 进制)

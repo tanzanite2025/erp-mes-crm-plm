@@ -180,6 +180,8 @@ export function MoldMgmt() {
                                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
                                         {groupMolds.map((mold) => {
                                             const status = getStatusInfo(mold.status)
+                                            // [UI-DISPLAY-ONLY]: 这里的健康度/使用率仅为基于当前循环次数的即时显示
+                                            // [BACKEND-AUTHORITY]: 权威的资产健康评分应由后端 EquipmentMaintenanceService 综合判定。
                                             const usageRate = Math.min(Math.round((mold.currentCycles / mold.maxCycles) * 100), 100)
                                             const isMaintenanceNeeded = mold.currentCycles >= mold.maintenanceThreshold
                                             const isOver = mold.currentCycles >= mold.maxCycles

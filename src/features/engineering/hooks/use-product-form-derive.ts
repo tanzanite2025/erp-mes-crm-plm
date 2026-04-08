@@ -27,20 +27,17 @@ export function useProductFormDerive({
 
     useEffect(() => {
         if (isEdit || !watchedTypeId || !open) return
+        
         const deriveNextCode = async () => {
-            const allProducts = await ProductCoreService.getProducts() || []
-            const sameTypeProducts = allProducts.filter(p => p.typeId === watchedTypeId)
-
-            if (sameTypeProducts.length === 0) {
-                form.setValue('modelCode', '01')
-            } else {
-                const codes = sameTypeProducts.map(p => parseInt(p.modelCode)).filter(n => !isNaN(n))
-                const maxCode = codes.length > 0 ? Math.max(...codes) : 0
-                const nextCode = (maxCode + 1).toString().padStart(2, '0')
+            try {
+                // [BACKEND-AUTHORITY]: 权威发号必须由后端原子化完成，严禁前端拉取全量数据进行 O(N) 汇总计算。
+                const nextCode = await ProductCoreService.getNextCode(watchedTypeId)
                 const currentVal = form.getValues('modelCode')
                 if (!currentVal || currentVal === '01' || currentVal === '') {
                     form.setValue('modelCode', nextCode)
                 }
+            } catch (error) {
+                console.error('[CRITICAL] Failed to derive next product code from authority engine', error)
             }
         }
         deriveNextCode()
@@ -64,6 +61,8 @@ export function useProductFormDerive({
         if (isEdit || !open) return
         const selectedType = productTypes.find(t => t.id === watchedTypeId)
         const typeCode = selectedType?.code || ''
+        // [UI-PREVIEW]: SKU 前端自动派生仅供交互参考
+        // [BACKEND-AUTHORITY]: 物理 SKU 的最终合法性必须由后端在保存阶段进行冲突检查与确认。
         const generatedSku = deriveSku(typeCode, watchedModelCode || '01')
         if (generatedSku && !isEdit && generatedSku !== form.getValues('sku')) {
             form.setValue('sku', generatedSku, { shouldDirty: true })

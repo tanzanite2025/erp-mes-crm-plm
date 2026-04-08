@@ -66,7 +66,8 @@ export function OrdersAnalysisTab() {
             {t('trading.analytics.globalVolume')}
           </p>
           <h3 className="text-3xl font-black tracking-tighter italic">
-            {globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0).toLocaleString()}
+            {/* [UI-DISPLAY-ONLY]: 仅汇总当前排行榜 Top 10 的数量。全域总量应取自后端 Metadata */}
+            {useMemo(() => globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0) || 0, [globalRanking]).toLocaleString()}
           </h3>
           <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
             {t('trading.analytics.globalVolumeDesc')}
@@ -81,7 +82,8 @@ export function OrdersAnalysisTab() {
             {t('trading.analytics.analyzedLines')}
           </p>
           <h3 className="text-3xl font-black tracking-tighter italic">
-            {analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0)}
+            {/* [UI-DISPLAY-ONLY]: 仅汇总当前已加载客户的订单数。系统全量指标需由后端聚合提供 */}
+            {useMemo(() => analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0) || 0, [analytics])}
           </h3>
           <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
             {t('trading.analytics.analyzedLinesDesc')}

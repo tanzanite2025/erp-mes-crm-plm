@@ -6,10 +6,18 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export default function LeaveManagement() {
-  const { data: leaves, isLoading } = useQuery({
+  const { data: leaves, isLoading: isLeavesLoading } = useQuery({
     queryKey: ['personnel', 'leaves', 'my'],
     queryFn: () => LeaveService.getMyLeaveRequests()
   })
+
+  // [BACKEND-AUTHORITY]: 获取由后端财务与人事服务精确计算的统计指标
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['personnel', 'leaves', 'stats', 'my'],
+    queryFn: () => LeaveService.getLeaveStats()
+  })
+
+  const isLoading = isLeavesLoading || isStatsLoading
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 p-8">
@@ -33,10 +41,16 @@ export default function LeaveManagement() {
       {/* 状态统计概览 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { icon: Clock, label: '待审批', val: leaves?.filter(l => l.status === 'PENDING').length || 0, color: 'text-amber-500' },
-          { icon: BadgeCheck, label: '已通过', val: leaves?.filter(l => l.status === 'APPROVED').length || 0, color: 'text-emerald-500' },
-          { icon: XCircle, label: '已拒绝', val: leaves?.filter(l => l.status === 'REJECTED').length || 0, color: 'text-rose-500' },
-          { icon: Calendar, label: '累计工日', val: leaves?.reduce((a, b) => a + (b.durationDays || 0), 0).toFixed(1) || 0, color: 'text-primary' },
+          { icon: Clock, label: '待审批', val: stats?.pendingCount ?? 0, color: 'text-amber-500' },
+          { icon: BadgeCheck, label: '已通过', val: stats?.approvedCount ?? 0, color: 'text-emerald-500' },
+          { icon: XCircle, label: '已拒绝', val: stats?.rejectedCount ?? 0, color: 'text-rose-500' },
+          { 
+            icon: Calendar, 
+            label: '累计工日', 
+            // [BACKEND-AUTHORITY]: 权威统计，禁止前端自行累加
+            val: (stats?.totalDays ?? 0).toFixed(1), 
+            color: 'text-primary' 
+          },
         ].map((stat, i) => (
           <Card key={i} className="rounded-2xl p-4 border-dashed bg-muted/5 flex items-center gap-4">
              <div className={`p-2 rounded-xl bg-white/50 dark:bg-black/20 ${stat.color}`}>

@@ -55,3 +55,20 @@ export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> =>
     'SalesQueryService.getSalesOrderByNo'
   ) as SalesOrder
 }
+
+/**
+ * [BACKEND-AGGREGATION] 获取客户产品统计数据
+ */
+export const getCustomerProductStats = async (params: { customerId?: string } = {}): Promise<any> => {
+  const query = params.customerId ? `?customerId=${params.customerId}` : ''
+  const res = await apiFetch(`/sales-orders/analytics/customer-product-stats${query}`)
+  return ensureObjectResponse(res, 'SalesQueryService.getCustomerProductStats')
+}
+
+/**
+ * [BACKEND-AGGREGATION] 获取全局产品排行榜
+ */
+export const getGlobalProductRanking = async (limit: number = 10): Promise<any> => {
+  const res = await apiFetch(`/sales-orders/analytics/global-product-ranking?limit=${limit}`)
+  return ensureObjectResponse(res, 'SalesQueryService.getGlobalProductRanking')
+}

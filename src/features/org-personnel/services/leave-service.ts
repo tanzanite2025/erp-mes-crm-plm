@@ -58,5 +58,14 @@ export const LeaveService = {
     await apiFetch(`/leaves/${id}/cancel`, {
       method: 'POST'
     })
+  },
+  /**
+   * 获取当前用户的请假统计指标
+   * [BACKEND-AUTHORITY]: 累计工日由后端根据排班与节假日逻辑精确计算。
+   */
+  getLeaveStats: async (): Promise<{ totalDays: number, pendingCount: number, approvedCount: number, rejectedCount: number }> => {
+    const data = await apiFetch<{ totalDays: number, pendingCount: number, approvedCount: number, rejectedCount: number }>('/leaves/stats')
+    if (!data) throw new Error('[CRITICAL] Failed to fetch leave statistics')
+    return data
   }
 }

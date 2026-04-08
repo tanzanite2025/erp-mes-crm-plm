@@ -82,6 +82,8 @@ export function MoldActionDialog({
 
     const watchedMax = useWatch({ control: form.control, name: 'maxCycles' }) ?? 0
     const watchedCurrent = useWatch({ control: form.control, name: 'currentCycles' }) ?? 0
+    // [UI-PREVIEW-INDICATOR]: 对话框内的健康百分比仅用于 UI 反馈预览
+    // [BACKEND-AUTHORITY]: 物理资产的权威健康评分属于后端 BRP/Asset-Core 的核算范畴。
     const healthPercent = Math.max(0, Math.min(100, Math.round(((watchedMax - watchedCurrent) / watchedMax) * 100)))
 
     useEffect(() => {

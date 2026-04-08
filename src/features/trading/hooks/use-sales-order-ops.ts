@@ -4,46 +4,97 @@ import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
+/**
+ * useSalesOrderOps - 负责销售订单明细行的 CRUD 操作及前端预览重算逻辑。
+ * 
+ * ⚠️ 架构约束：
+ * 所有的量值（quantity, amount）计算在此 Hook 中仅作为 UI 预览使用。
+ * 系统的最终权威数据由 Go 后端计算引擎在提交时重算生成。
+ */
 export function useSalesOrderOps(
   setFormData: React.Dispatch<React.SetStateAction<Partial<SalesOrder>>>
 ) {
+  /**
+   * 添加新行
+   */
   const handleAddLine = useCallback(() => {
     setFormData((prev) => {
-      const nextLines = [...(prev.lines || []), { ...EMPTY_SALES_ORDER_LINE } as SalesOrderLine]
-      const { lines, quantity, amount } = previewOrderTotals(nextLines)
-      return { ...prev, lines, quantity, amount }
+      const lines = prev.lines || []
+      const nextRawLines = [...lines, { ...EMPTY_SALES_ORDER_LINE } as SalesOrderLine]
+      
+      // [PREVIEW-ONLY] 重新计算预览统计
+      const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextRawLines)
+      
+      return { 
+        ...prev, 
+        lines: reindexedLines, 
+        quantity, 
+        amount 
+      }
     })
   }, [setFormData])
 
+  /**
+   * 删除行
+   */
   const handleRemoveLine = useCallback((index: number) => {
     setFormData((prev) => {
-      const nextLines = (prev.lines || []).filter((_, lineIndex) => lineIndex !== index)
-      const { lines, quantity, amount } = previewOrderTotals(nextLines)
-      return { ...prev, lines, quantity, amount }
+      if (!prev.lines || index < 0 || index >= prev.lines.length) {
+        throw new Error(`[CRITICAL] Cannot remove line at index ${index}: Lines array missing or index out of bounds`);
+      }
+
+      const nextRawLines = prev.lines.filter((_, lineIndex) => lineIndex !== index)
+      
+      // [PREVIEW-ONLY] 重新计算预览统计
+      const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextRawLines)
+      
+      return { 
+        ...prev, 
+        lines: reindexedLines, 
+        quantity, 
+        amount 
+      }
     })
   }, [setFormData])
 
+  /**
+   * 更新行字段
+   */
   const updateLine = useCallback(
     (index: number, field: keyof SalesOrderLine, value: SalesOrderLineFieldValue, extraData?: Partial<SalesOrderLine>) => {
       setFormData((prev) => {
         const nextLines = [...(prev.lines || [])]
-        if (!nextLines[index]) return prev
+        const targetLine = nextLines[index]
         
+        if (!targetLine) {
+          throw new Error(`[CRITICAL] Update failed: Line at index ${index} not found in state`);
+        }
+        
+        // 1. 基本字段更新
         let finalValue = value
         if (field === 'qty' || field === 'price' || field === 'holeCount') {
           finalValue = Number(value) || 0
         }
 
-        nextLines[index] = { ...nextLines[index], [field]: finalValue, ...extraData }
+        nextLines[index] = { ...targetLine, [field]: finalValue, ...extraData }
 
+        // 2. [PREVIEW-ONLY] 单行金额预览计算
+        // 仅当涉及计算因子变更时触发
         if (field === 'qty' || field === 'price' || extraData) {
           const qty = Number(nextLines[index].qty) || 0
           const price = Number(nextLines[index].price) || 0
           nextLines[index].amount = previewLineAmount(qty, price)
         }
 
-        const { lines, quantity, amount } = previewOrderTotals(nextLines)
-        return { ...prev, lines, quantity, amount }
+        // 3. [PREVIEW-ONLY] 全单统计预览
+        const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextLines)
+        
+        return { 
+          ...prev, 
+          lines: reindexedLines, 
+          quantity, 
+          amount 
+        }
       })
     },
     [setFormData]

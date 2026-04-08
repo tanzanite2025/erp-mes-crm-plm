@@ -233,6 +233,10 @@ export function getPersonnelStatusLabel(status?: string, t?: any): string {
     return t ? t('orgPersonnel.excel.statuses.active' as any) : 'active'
 }
 
+/**
+ * [UI-PREVIEW-VALUE]: 前端工龄计算仅用于 UI 即时展示反馈
+ * [BACKEND-AUTHORITY]: 权威工龄核算属于后端 PersonnelService/BRP 范畴，涉及节假日、入职节点及特殊政策。
+ */
 export function calculatePersonnelWorkYears(joinedDate?: string | null): string {
     const normalized = formatPersonnelDate(joinedDate)
     if (!normalized) return ''
