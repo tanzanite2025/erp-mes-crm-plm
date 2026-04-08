@@ -1,4 +1,29 @@
 
+- [ ] 455. 冻结本轮范围，执行 `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，待确认）
+  - [ ] 本轮只处理采购订单供应商主体变更事务。
+  - [ ] 仅针对 `supplierId` / `supplierName` 的纯头部变更建 intent。
+  - [ ] 不并发处理 `expectedDate`、其他头部字段或任何行级编辑。
+
+- [ ] 456. 明确 `purchase` 头部第二刀边界
+  - [ ] 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走供应商主体变更 transaction。
+  - [ ] 若混入其他头部字段或行级字段，则不进入本轮 intent。
+  - [ ] 其余采购订单编辑继续保留在现有 `patch` 链中。
+
+- [ ] 457. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 头部第二刀 intent、分流条件与验证结果。
+
+- [x] 453. 完成 `sales` / `purchase` patch 兜底压缩专项盘点（2026-04-08，已完成）
+  - [x] 已盘点双域当前仍落回 `patch` 的真实路径。
+  - [x] 已区分“合理兜底”与“仍可继续事务化”的回退点。
+  - [x] 已收敛出下一轮唯一优先建议切口：`purchase` 头部第二刀（供应商主体变更事务化）。
+
+- [x] 454. 完成本轮专项收尾
+  - [x] 本轮未直接新增业务 transaction intent。
+  - [x] 已同步 `walkthrough.md`，记录双域 patch 回退盘点结论。
+  - [x] 已明确继续保留 `patch` 作为安全兜底。
+
 - [ ] 450. 冻结本轮范围，执行 `sales` / `purchase` 的 patch 兜底压缩专项（2026-04-08，待确认）
   - [ ] 本轮先做双域现状盘点，不直接并发推进多个新 intent。
   - [ ] 目标是明确哪些编辑路径仍落回 `patch`，以及这些回退是否合理。

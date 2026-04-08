@@ -13,6 +13,7 @@ import (
 
 const (
 	PurchaseTransactionIntentExpectedDateChange     = "ORDER_DELIVERY_DATE_CHANGE"
+	PurchaseTransactionIntentSupplierChange         = "ORDER_SUPPLIER_CHANGE"
 	PurchaseTransactionIntentOrderLineAdd           = "ORDER_LINE_ADD"
 	PurchaseTransactionIntentOrderLineRemove        = "ORDER_LINE_REMOVE"
 	PurchaseTransactionIntentOrderLineContentChange = "ORDER_LINE_CONTENT_CHANGE"
@@ -31,8 +32,85 @@ type PurchaseOrderTransactionRequest struct {
 	Payload         json.RawMessage `json:"payload"`
 }
 
+func executePurchaseOrderSupplierChangeTx(tx *gorm.DB, current *models.PurchaseOrder, input ExecutePurchaseOrderTransactionInput) (*models.PurchaseOrder, error) {
+	payload, err := parsePurchaseOrderSupplierChangePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := strings.TrimSpace(payload.Operator)
+	if operator == "" {
+		operator = strings.TrimSpace(input.Operator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(input.ActorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+
+	supplierID := strings.TrimSpace(payload.SupplierID)
+	supplierName := strings.TrimSpace(payload.SupplierName)
+	if supplierID == strings.TrimSpace(current.SupplierID) && supplierName == strings.TrimSpace(current.SupplierName) {
+		return nil, fmt.Errorf("%w: supplier unchanged", ErrPurchaseTransactionInvalidPayload)
+	}
+
+	var supplier models.Supplier
+	if err := tx.Where("id = ? AND is_deleted = ?", supplierID, false).First(&supplier).Error; err != nil {
+		return nil, errors.New("[CRITICAL_DATA_INTEGRITY] 采购单保存失败：供应商不存在或已停用: " + supplierID)
+	}
+	if supplierName == "" {
+		supplierName = strings.TrimSpace(supplier.Name)
+	}
+
+	if err := tx.Model(current).Updates(map[string]any{
+		"supplier_id":   supplierID,
+		"supplier_name": supplierName,
+		"version":       current.Version + 1,
+	}).Error; err != nil {
+		return nil, err
+	}
+	current.SupplierID = supplierID
+	current.SupplierName = supplierName
+	current.Version = current.Version + 1
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          PurchaseTransactionIntentSupplierChange,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"supplierId":   supplierID,
+			"supplierName": supplierName,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "PurchaseOrder",
+		TargetID: current.ID,
+		Action:   PurchaseTransactionIntentSupplierChange,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
 type PurchaseOrderExpectedDateChangePayload struct {
 	ExpectedDate string `json:"expectedDate"`
+	Operator     string `json:"operator"`
+}
+
+type PurchaseOrderSupplierChangePayload struct {
+	SupplierID   string `json:"supplierId"`
+	SupplierName string `json:"supplierName"`
 	Operator     string `json:"operator"`
 }
 
@@ -85,7 +163,7 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 	}
 
 	intent := strings.TrimSpace(input.Intent)
-	if intent != PurchaseTransactionIntentExpectedDateChange && intent != PurchaseTransactionIntentOrderLineAdd && intent != PurchaseTransactionIntentOrderLineRemove && intent != PurchaseTransactionIntentOrderLineContentChange {
+	if intent != PurchaseTransactionIntentExpectedDateChange && intent != PurchaseTransactionIntentSupplierChange && intent != PurchaseTransactionIntentOrderLineAdd && intent != PurchaseTransactionIntentOrderLineRemove && intent != PurchaseTransactionIntentOrderLineContentChange {
 		return nil, ErrPurchaseTransactionUnsupportedIntent
 	}
 
@@ -101,6 +179,8 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 	switch intent {
 	case PurchaseTransactionIntentExpectedDateChange:
 		return executePurchaseOrderExpectedDateChangeTx(tx, &current, input)
+	case PurchaseTransactionIntentSupplierChange:
+		return executePurchaseOrderSupplierChangeTx(tx, &current, input)
 	case PurchaseTransactionIntentOrderLineAdd:
 		return executePurchaseOrderLineAddTx(tx, &current, input)
 	case PurchaseTransactionIntentOrderLineRemove:
@@ -495,6 +575,22 @@ func parsePurchaseOrderExpectedDateChangePayload(raw json.RawMessage) (PurchaseO
 	}
 	if strings.TrimSpace(payload.ExpectedDate) == "" {
 		return PurchaseOrderExpectedDateChangePayload{}, fmt.Errorf("%w: expectedDate is required", ErrPurchaseTransactionInvalidPayload)
+	}
+
+	return payload, nil
+}
+
+func parsePurchaseOrderSupplierChangePayload(raw json.RawMessage) (PurchaseOrderSupplierChangePayload, error) {
+	if len(raw) == 0 {
+		return PurchaseOrderSupplierChangePayload{}, fmt.Errorf("%w: payload is required", ErrPurchaseTransactionInvalidPayload)
+	}
+
+	var payload PurchaseOrderSupplierChangePayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return PurchaseOrderSupplierChangePayload{}, fmt.Errorf("%w: %v", ErrPurchaseTransactionInvalidPayload, err)
+	}
+	if strings.TrimSpace(payload.SupplierID) == "" {
+		return PurchaseOrderSupplierChangePayload{}, fmt.Errorf("%w: supplierId is required", ErrPurchaseTransactionInvalidPayload)
 	}
 
 	return payload, nil

@@ -36,6 +36,7 @@ interface ComboboxProps {
   className?: string
   disabled?: boolean
   isLoading?: boolean
+  variant?: 'default' | 'industrial'
 }
 
 export function Combobox({
@@ -47,7 +48,8 @@ export function Combobox({
   emptyText = '未找到结果',
   className,
   disabled,
-  isLoading
+  isLoading,
+  variant = 'default',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState('')
@@ -71,18 +73,36 @@ export function Combobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant='outline'
-          role='combobox'
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn('w-full justify-between h-8 px-2 text-xs font-normal', className)}
-        >
-          <span className='truncate text-left'>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          <ChevronsUpDown className='ml-2 h-3 w-3 shrink-0 opacity-50' />
-        </Button>
+        {variant === 'industrial' ? (
+          <Button
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn(
+              'w-full h-11 rounded-2xl bg-muted/50 border-none shadow-inner flex items-center justify-between px-4 text-xs font-bold transition-all focus-visible:ring-primary/20',
+              className
+            )}
+          >
+            <span className='truncate text-left'>
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
+            <ChevronsUpDown className='ml-2 h-3.5 w-3.5 shrink-0 opacity-40' />
+          </Button>
+        ) : (
+          <Button
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn('w-full justify-between h-8 px-2 text-xs font-normal', className)}
+          >
+            <span className='truncate text-left'>
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
+            <ChevronsUpDown className='ml-2 h-3 w-3 shrink-0 opacity-50' />
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className='w-[580px] p-0 shadow-2xl border-blue-500/20' align='start'>
         <Command filter={() => 1}>

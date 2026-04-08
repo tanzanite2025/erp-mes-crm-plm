@@ -3,6 +3,7 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
 
 export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
+export const PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE = 'ORDER_SUPPLIER_CHANGE'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_REMOVE = 'ORDER_LINE_REMOVE'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE = 'ORDER_LINE_CONTENT_CHANGE'
@@ -16,6 +17,12 @@ export interface PurchaseOrderTransactionRequest<TPayload> {
 
 export interface PurchaseOrderExpectedDateChangePayload {
   expectedDate: string
+  operator: string
+}
+
+export interface PurchaseOrderSupplierChangePayload {
+  supplierId: string
+  supplierName: string
   operator: string
 }
 
@@ -63,6 +70,28 @@ export const changePurchaseOrderExpectedDate = async (
     expectedVersion: params.expectedVersion,
     payload: {
       expectedDate: params.expectedDate,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changePurchaseOrderSupplier = async (
+  orderId: string,
+  params: {
+    supplierId: string
+    supplierName: string
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<PurchaseOrder> => {
+  return executePurchaseOrderTransaction<PurchaseOrderSupplierChangePayload>(orderId, {
+    intent: PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      supplierId: params.supplierId,
+      supplierName: params.supplierName,
       operator: params.operator,
     },
   })

@@ -1,5 +1,93 @@
 # implementation plan
 
+## `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `purchase` 头部 `expectedDate` 事务化与三类基础行级事务化后，继续压缩 `purchase` 的 patch 覆盖面，单独收口采购订单“供应商主体变更”这一稳定头部语义动作。
+
+本轮目标：
+
+1. 只处理 `supplierId` / `supplierName` 的供应商主体变更；
+2. 不并发处理 `expectedDate`、其他头部字段或任何行级变更；
+3. 继续避免 transaction 退化为 patch 包装壳；
+4. 保持 `patch` 作为未覆盖编辑的安全兜底。
+
+### 二、建议方案
+建议新增更窄语义 intent：
+
+- `ORDER_SUPPLIER_CHANGE`
+
+payload 建议包含：
+
+- `supplierId`
+- `supplierName`
+- `operator`
+
+语义约束为：
+
+1. 只表达采购订单供应商主体切换；
+2. 不允许混入其他头部字段修改；
+3. 不允许混入任何行级修改；
+4. 更新后返回最新采购订单快照并写入审计。
+
+### 三、前后端职责
+
+#### 后端
+1. 在 `purchase_transaction_service.go` 中新增 `ORDER_SUPPLIER_CHANGE`；
+2. 校验 payload 只包含供应商主体信息；
+3. 视当前采购单数据规则，补充供应商存在性或名称一致性校验；
+4. 更新 `supplier_id` / `supplier_name`；
+5. 写入审计日志并返回最新采购订单快照。
+
+#### 前端
+1. 在 `purchase-transaction-service.ts` 中新增 `changePurchaseOrderSupplier()`；
+2. 在 `use-purchase-orders.ts` 中新增对应 mutation；
+3. 在 `purchase-order-action-dialog.tsx` 中新增纯 `supplierId` / `supplierName` 变更分流；
+4. 若混入其他字段，则继续保留在现有 `patchMutation`。
+
+### 四、涉及文件
+- `server/services/purchase_transaction_service.go`
+- `server/handlers/purchase_transaction_handlers.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 五、风险与注意事项
+1. 若当前前端供应商切换会同步影响其他派生字段，本轮必须避免把附带变化误判为纯供应商主体变更；
+2. 若供应商数据需要后端强校验，必须先复用现有 supplier 数据源，不得猜测；
+3. 本轮不得破坏已落地的：
+   - `ORDER_DELIVERY_DATE_CHANGE`
+   - `ORDER_LINE_CONTENT_CHANGE`
+   - `ORDER_LINE_ADD`
+   - `ORDER_LINE_REMOVE`
+4. `patch` 兜底链路必须保留。
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮只实现 `purchase` 的供应商主体变更事务化；
+2. 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走该 transaction；
+3. 若混入其他头部字段或行级字段，则不进入该 intent；
+4. 其余采购订单编辑继续留在现有 `patch` 链中。
+
+## `sales` / `purchase` patch 兜底压缩专项（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成双域 patch 回退盘点，结论如下：
+
+1. `sales` 当前仍存在两层剩余承担面：
+   - `linesChangeMutation`：承接复杂行级混合编辑；
+   - `patchMutation`：承接剩余头部未事务化编辑与混合编辑。
+2. `purchase` 当前 transaction 已覆盖头部 `expectedDate` 与三类基础行级动作，剩余 `patchMutation` 主要集中在：
+   - 头部未事务化字段；
+   - 头部+行级混合编辑；
+   - 多语义混合行级编辑。
+3. 分类判断：
+   - 复杂混合编辑继续保留为合理兜底；
+   - 双域头部稳定单字段编辑仍值得继续事务化。
+4. 唯一优先建议切口：
+   - `purchase` 头部第二刀：供应商主体变更事务化。
+
 ## `sales` / `purchase` patch 兜底压缩专项（2026-04-08，待确认）
 
 ### 一、目标

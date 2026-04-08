@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { Combobox } from '@/components/ui/combobox'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
 import { useUsersActionDialogOptions } from '../hooks/use-users-action-dialog-options'
@@ -201,9 +201,17 @@ export function UsersActionDialog({
       onOpenChange={handleDialogOpenChange}
     >
       <DialogContent className='sm:max-w-xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
-        <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>{isEdit ? t('users.dialogs.editTitle') : t('users.dialogs.createTitle')}</DialogTitle>
-          <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
+        <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50 relative'>
+          <div className='absolute right-8 top-8 opacity-5 select-none pointer-events-none'>
+            <UserPlus className='h-12 w-12' />
+          </div>
+          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex flex-col gap-0.5'>
+            <span>{isEdit ? t('users.dialogs.editTitle') : t('users.dialogs.createTitle')}</span>
+            <span className='text-[9px] font-mono opacity-40 tracking-widest'>
+              {isEdit ? 'ACCOUNT_PROFILE_RECOVERY' : 'PROVISION_CONTROL_CLUSTER'}
+            </span>
+          </DialogTitle>
+          <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60 mt-2'>
             {isEdit ? t('users.dialogs.editSubtitle') : t('users.dialogs.createSubtitle')}
           </DialogDescription>
         </DialogHeader>
@@ -219,22 +227,29 @@ export function UsersActionDialog({
                   control={form.control}
                   name='employeeId'
                   render={({ field }) => (
-                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1 bg-primary/5 p-4 rounded-2xl border border-dashed border-primary/20 mb-4'>
-                      <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-primary'>
-                        <div className='flex items-center justify-end gap-1'>
-                          <UserPlus className='h-3 w-3' /> {t('users.dialogs.labels.sync')}
-                        </div>
-                      </FormLabel>
-                      <SelectDropdown
-                        defaultValue={field.value}
-                        onValueChange={(value) => {
-                          field.onChange(value)
-                          handleEmployeeSync(value)
-                        }}
-                        placeholder={t('users.dialogs.placeholders.sync')}
-                        className='col-span-4 h-11 rounded-2xl bg-background border-none shadow-inner font-bold text-xs'
-                        items={employees}
-                      />
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1 bg-primary/5 p-6 rounded-[28px] border border-dashed border-primary/20 mb-6'>
+                      <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                        <FormLabel className='text-[11px] font-black tracking-tight text-primary leading-none'>
+                          {t('users.dialogs.labels.sync')}
+                        </FormLabel>
+                        <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-40 leading-none'>
+                          IDENTITY_SYNC
+                        </span>
+                      </div>
+                      <div className='col-span-4'>
+                        <Combobox
+                          variant='industrial'
+                          value={field.value}
+                          onValueChange={(value) => {
+                            field.onChange(value)
+                            handleEmployeeSync(value)
+                          }}
+                          placeholder={t('users.dialogs.placeholders.sync')}
+                          searchPlaceholder='搜索姓名或部门名称...'
+                          emptyText='未找到对应员工记录'
+                          options={employees}
+                        />
+                      </div>
                       <div className='col-span-4 col-start-3 text-[9px] font-black uppercase tracking-widest opacity-50 mt-1'>
                         {t('users.dialogs.hints.sync')}
                       </div>
@@ -248,9 +263,14 @@ export function UsersActionDialog({
                 name='firstName'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.firstName')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.firstName')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        FIRST_NAME
+                      </span>
+                    </div>
                     <FormControl>
                       <Input
                         disabled
@@ -269,9 +289,14 @@ export function UsersActionDialog({
                 name='lastName'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.lastName')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.lastName')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        LAST_NAME
+                      </span>
+                    </div>
                     <FormControl>
                       <Input
                         disabled
@@ -290,9 +315,14 @@ export function UsersActionDialog({
                 name='username'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.username')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.username')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        AUTH_IDENTIFIER
+                      </span>
+                    </div>
                     <FormControl>
                       <Input
                         placeholder={t('users.dialogs.placeholders.username')}
@@ -309,9 +339,14 @@ export function UsersActionDialog({
                 name='phoneNumber'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.phone')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.phone')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        CONTACT_PROTO
+                      </span>
+                    </div>
                     <FormControl>
                       <Input
                         disabled
@@ -329,15 +364,24 @@ export function UsersActionDialog({
                 name='role'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{roleFieldLabel}</FormLabel>
-                    <SelectDropdown
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      placeholder={roleFieldPlaceholder}
-                      disabled={isEmployeeBoundRoleLocked}
-                      className='col-span-4 h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs'
-                      items={combinedRoleOptions}
-                    />
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {roleFieldLabel}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        ACCESS_ROLE_MAP
+                      </span>
+                    </div>
+                    <div className='col-span-4'>
+                      <Combobox
+                        variant='industrial'
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder={roleFieldPlaceholder}
+                        disabled={isEmployeeBoundRoleLocked}
+                        options={combinedRoleOptions}
+                      />
+                    </div>
                     <FormMessage className='col-span-4 col-start-3' />
                   </FormItem>
                 )}
@@ -347,9 +391,14 @@ export function UsersActionDialog({
                 name='password'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.password')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.password')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        SECURITY_CRED
+                      </span>
+                    </div>
                     <FormControl>
                       <PasswordInput
                         placeholder={isEdit ? t('users.dialogs.placeholders.passwordEdit') : t('users.dialogs.placeholders.passwordCreate')}
@@ -367,9 +416,14 @@ export function UsersActionDialog({
                 name='confirmPassword'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                      {t('users.dialogs.labels.confirm')}
-                    </FormLabel>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.confirm')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        CRED_VERIFICATION
+                      </span>
+                    </div>
                     <FormControl>
                       <PasswordInput
                         disabled={!isPasswordTouched}

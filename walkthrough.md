@@ -1,5 +1,84 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`sales` / `purchase` patch 兜底压缩盘点（2026-04-08）
+
+### 本轮目标
+在 `sales` 与 `purchase` 已形成基础 transaction 骨架后，盘点双域当前仍落回 `patch` 的真实路径，区分“合理兜底”与“仍可继续事务化”的回退点，并给出唯一优先建议切口。
+
+### 盘点范围
+分析：
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `server/services/purchase_transaction_service.go`
+
+### 盘点结论
+
+#### `sales`
+当前仍存在两层未完全收敛路径：
+
+1. `linesChangeMutation`
+   - 命中条件：`delta` 仅涉及 `lines` / `quantity` / `amount`；
+   - 但既不是纯内容修改，也不是纯新增，也不是纯删除；
+   - 说明其承担的是“复杂行级混合编辑”的语义兜底。
+
+2. `patchMutation`
+   - 命中条件：除 customer / classification+type+barcode / deliveryDate / 已拆行级事务 / claim / status / cancel 外的剩余编辑；
+   - 主要承接头部混合字段变更或尚未语义化的头部编辑。
+
+结论：
+- `sales` 的 `linesChangeMutation` 目前仍有合理存在价值；
+- `sales` 真正值得压缩的，是头部仍直接落回 `patchMutation` 的稳定单字段或窄字段组合。
+
+#### `purchase`
+当前 transaction 分流已覆盖：
+
+1. `expectedDate`
+2. `ORDER_LINE_CONTENT_CHANGE`
+3. `ORDER_LINE_ADD`
+4. `ORDER_LINE_REMOVE`
+
+当前仍回退到 `patchMutation` 的路径主要是：
+
+1. 采购头部除 `expectedDate` 外的其他字段编辑；
+2. 行级混合编辑（如同时增删与修改内容）；
+3. 头部字段与行级字段混合编辑。
+
+结论：
+- `purchase` 当前没有像 `sales` 那样的中间层 transaction fallback；
+- 它的 patch 回退几乎全部集中在“头部未事务化字段”与“混合编辑”两类场景。
+
+### 分类判断
+
+#### 合理兜底
+- `sales` 的复杂行级混合编辑 -> `linesChangeMutation`
+- `sales` / `purchase` 的头部+行级混合编辑 -> `patchMutation`
+- `purchase` 的多语义混合行级编辑 -> `patchMutation`
+
+#### 仍可继续事务化
+- `sales` 头部未事务化的稳定单字段编辑
+- `purchase` 头部除 `expectedDate` 外的稳定单字段编辑
+
+### 唯一优先建议切口
+建议下一轮只做一个切口：
+
+- **`purchase` 头部第二刀：供应商主体变更事务化**
+
+建议原因：
+
+1. `purchase` 当前 patch 回退高度集中在头部字段；
+2. `sales` 已有 `ORDER_CUSTOMER_CHANGE` 成熟样板，可直接横向复制；
+3. 相比继续拆更复杂的混合编辑，供应商主体变更边界更窄、更稳定、更容易显著压缩 patch 覆盖面。
+
+### 本轮结论
+本轮只完成 patch 兜底压缩盘点，不直接实现新 intent。
+
+当前建议进入下一轮的唯一优先切口为：
+
+- `purchase` 头部第二刀：**供应商主体变更事务化**
+
 ## P1：`purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08）
 
 ### 本轮目标

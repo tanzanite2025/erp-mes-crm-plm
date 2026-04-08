@@ -67,7 +67,7 @@ export function PurchaseOrderActionDialog({
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const { createMutation, patchMutation, expectedDateChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = usePurchaseOrderMutations()
+  const { createMutation, patchMutation, expectedDateChangeMutation, supplierChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = usePurchaseOrderMutations()
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -84,6 +84,7 @@ export function PurchaseOrderActionDialog({
 
         const deltaKeys = Object.keys(delta)
         const isExpectedDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'expectedDate')
+        const isSupplierOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'supplierId' || key === 'supplierName')
         const isLinesOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'lines' || key === 'amount')
         const hasLineStructureChange = (() => {
           if (!activeOrder || !isLinesOnlyChange) return false
@@ -147,6 +148,15 @@ export function PurchaseOrderActionDialog({
           await expectedDateChangeMutation.mutateAsync({
             orderId: activeOrder.id,
             expectedDate: formData.expectedDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: activeOrder.version,
+          })
+        } else if (isSupplierOnlyChange) {
+          await supplierChangeMutation.mutateAsync({
+            orderId: activeOrder.id,
+            supplierId: formData.supplierId || '',
+            supplierName: formData.supplierName || '',
             operator: user?.accountNo || 'Unknown',
             actorId: user?.id,
             expectedVersion: activeOrder.version,
