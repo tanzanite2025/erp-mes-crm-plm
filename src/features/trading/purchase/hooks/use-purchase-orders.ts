@@ -3,8 +3,8 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type PurchaseOrder } from '../../data/schema'
-import { changePurchaseOrderExpectedDate } from '../services/purchase-transaction-service'
+import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
+import { changePurchaseOrderExpectedDate, changePurchaseOrderLineAdd, changePurchaseOrderLineContent } from '../services/purchase-transaction-service'
 import {
   confirmPurchaseReceipt,
   createPurchaseOrder,
@@ -37,6 +37,50 @@ export const usePurchaseOrderMutations = () => {
 
   const createMutation = useMutation({
     mutationFn: (data: Omit<PurchaseOrder, 'id' | 'version'>) => createPurchaseOrder(data),
+    onSuccess: (data) => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+    },
+    onError: handleServerError,
+  })
+
+  const lineAddMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      lines,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      lines: PurchaseOrderLine[]
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changePurchaseOrderLineAdd(orderId, { lines, operator, expectedVersion, actorId }),
+    onSuccess: (data) => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+    },
+    onError: handleServerError,
+  })
+
+  const lineContentChangeMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      lines,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      lines: PurchaseOrderLine[]
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => changePurchaseOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       toast.success(t('purchase.orders.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
@@ -98,5 +142,5 @@ export const usePurchaseOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation }
+  return { createMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation, lineContentChangeMutation, lineAddMutation }
 }

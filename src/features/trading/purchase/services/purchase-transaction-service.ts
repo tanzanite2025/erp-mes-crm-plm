@@ -1,8 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
 
 export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
+export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
+export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE = 'ORDER_LINE_CONTENT_CHANGE'
 
 export interface PurchaseOrderTransactionRequest<TPayload> {
   intent: string
@@ -13,6 +15,16 @@ export interface PurchaseOrderTransactionRequest<TPayload> {
 
 export interface PurchaseOrderExpectedDateChangePayload {
   expectedDate: string
+  operator: string
+}
+
+export interface PurchaseOrderLineContentChangePayload {
+  lines: PurchaseOrderLine[]
+  operator: string
+}
+
+export interface PurchaseOrderLineAddPayload {
+  lines: PurchaseOrderLine[]
   operator: string
 }
 
@@ -45,6 +57,46 @@ export const changePurchaseOrderExpectedDate = async (
     expectedVersion: params.expectedVersion,
     payload: {
       expectedDate: params.expectedDate,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changePurchaseOrderLineAdd = async (
+  orderId: string,
+  params: {
+    lines: PurchaseOrderLine[]
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<PurchaseOrder> => {
+  return executePurchaseOrderTransaction<PurchaseOrderLineAddPayload>(orderId, {
+    intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_ADD,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      lines: params.lines,
+      operator: params.operator,
+    },
+  })
+}
+
+export const changePurchaseOrderLineContent = async (
+  orderId: string,
+  params: {
+    lines: PurchaseOrderLine[]
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<PurchaseOrder> => {
+  return executePurchaseOrderTransaction<PurchaseOrderLineContentChangePayload>(orderId, {
+    intent: PURCHASE_TRANSACTION_INTENT_ORDER_LINE_CONTENT_CHANGE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      lines: params.lines,
       operator: params.operator,
     },
   })

@@ -115,11 +115,14 @@ export const orgPersonnel = {
     undoPartial: '已恢复 {{updated}}/{{total}} 位人员，其余人员可能已被删除',
     undoSuccess: '已恢复 {{count}} 位人员为在职',
     noIdFound: '未找到可更新的人员 ID',
+    filterStatus: '筛选状态',
+    filterFiltering: 'FILTERING',
     bulk: {
       entity: '位人员',
       notEnabled: '批量处理服务不可用',
       resignTitle: '批量办理离职',
       deleteTitle: '批量永久删除',
+      editTitle: '快速编辑 / 修正录入',
       resignDialog: {
         title: '批量办理离职 (已选 {{count}} 位人员)',
         desc: '您确定要为选中的人员办理离职吗？办理后，员工状态将变为“离职”并在名单中存档。',

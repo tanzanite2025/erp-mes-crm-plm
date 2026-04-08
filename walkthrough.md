@@ -1,5 +1,82 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：`purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08）
+
+### 本轮目标
+在已完成 `purchase` 的 `ORDER_LINE_CONTENT_CHANGE` 基础上，继续复制 `sales` 行级样板，单独收口采购订单“纯新增行”这一语义动作。
+
+### 已执行变更
+更新：
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增采购订单 `ORDER_LINE_ADD` intent；
+- `ORDER_LINE_ADD` 只允许处理“相较当前采购订单，仅新增行、既有行未改动”的场景；
+- 保留采购物料有效性校验；
+- 前端新增 `changePurchaseOrderLineAdd()` 与 `lineAddMutation`；
+- 在采购订单编辑对话框中，当 delta 仅包含 `lines` / `amount` 且可稳定识别为“纯新增行”时，优先走 `lineAddMutation`；
+- 若混入既有行内容修改、头部字段或其他结构性变更，则继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `patchMutation` 边界中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Purchase
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `purchase` 行级事务化第二刀：
+
+- `purchase` 已从首个行级事务扩展到“行内容修改 + 行新增”双事务结构；
+- 当前采购事务样板已形成：
+  - `ORDER_DELIVERY_DATE_CHANGE`
+  - `ORDER_LINE_CONTENT_CHANGE`
+  - `ORDER_LINE_ADD`
+- 为后续继续拆分 `ORDER_LINE_REMOVE` 提供了稳定边界。
+
+## P1：`purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08）
+
+### 本轮目标
+在已完成 `purchase` 头部 `expectedDate` 事务化的基础上，继续复制 `sales` 样板，单独收口采购订单“既有行内容修改、无增删”这一行级语义动作。
+
+### 已执行变更
+更新：
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增采购订单 `ORDER_LINE_CONTENT_CHANGE` intent；
+- `ORDER_LINE_CONTENT_CHANGE` 只允许处理“既有采购行内容修改、无增删”的场景；
+- 保留采购物料有效性校验；
+- 前端新增 `changePurchaseOrderLineContent()` 与 `lineContentChangeMutation`；
+- 在采购订单编辑对话框中，当 delta 仅包含 `lines` / `amount` 且可稳定识别为“无增删的既有行内容修改”时，优先走 `lineContentChangeMutation`；
+- 若混入头部字段或出现行新增/删除，则继续保留在现有 `patchMutation` 链中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Purchase
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `purchase` 行级事务化第一刀：
+
+- `purchase` 已从头部事务扩展到首个行级事务；
+- 当前采购事务样板已形成：
+  - `ORDER_DELIVERY_DATE_CHANGE`
+  - `ORDER_LINE_CONTENT_CHANGE`
+- 为后续继续拆分 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE` 提供了稳定边界。
+
 ## P1：`purchase` 事务化第一刀（2026-04-08）
 
 ### 本轮目标

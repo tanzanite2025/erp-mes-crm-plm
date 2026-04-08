@@ -147,6 +147,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.status')} />
         ),
+        filterFn: 'arrIncludesSome',
         cell: ({ row }) => {
             const status = row.getValue('status') as string
 

@@ -115,11 +115,14 @@ export const orgPersonnel = {
     undoPartial: 'Restored {{updated}}/{{total}} personnel, others may have been deleted',
     undoSuccess: 'Restored {{count}} personnel to active status',
     noIdFound: 'No updatable personnel ID found',
+    filterStatus: 'Filter Status',
+    filterFiltering: 'FILTERING',
     bulk: {
       entity: 'Staff',
       notEnabled: 'Bulk service is currently unavailable',
       resignTitle: 'Bulk Resignation',
       deleteTitle: 'Bulk Permanent Delete',
+      editTitle: 'Quick Edit / Correction',
       resignDialog: {
         title: 'Bulk Resignation ({{count}} personnel selected)',
         desc: 'Are you sure you want to handle the resignation for the selected personnel? They will be moved to the resigned list.',

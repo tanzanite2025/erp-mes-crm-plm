@@ -67,7 +67,7 @@ export function PurchaseOrderActionDialog({
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const { createMutation, patchMutation, expectedDateChangeMutation } = usePurchaseOrderMutations()
+  const { createMutation, patchMutation, expectedDateChangeMutation, lineContentChangeMutation, lineAddMutation } = usePurchaseOrderMutations()
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -84,6 +84,37 @@ export function PurchaseOrderActionDialog({
 
         const deltaKeys = Object.keys(delta)
         const isExpectedDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'expectedDate')
+        const isLinesOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'lines' || key === 'amount')
+        const hasLineStructureChange = (() => {
+          if (!activeOrder || !isLinesOnlyChange) return false
+          const previousLineNos = (activeOrder.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
+          const nextLineNos = (formData.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
+          if (previousLineNos.length !== nextLineNos.length) return true
+          return previousLineNos.some((lineNo, index) => lineNo !== nextLineNos[index])
+        })()
+        const isPureLineAdd = (() => {
+          if (!activeOrder || !isLinesOnlyChange || !hasLineStructureChange) return false
+          const previousLines = activeOrder.lines || []
+          const nextLines = formData.lines || []
+          if (nextLines.length <= previousLines.length) return false
+
+          const previousByLineNo = new Map(previousLines.map((line) => [line.lineNo, line]))
+          let addedCount = 0
+
+          for (const line of nextLines) {
+            const previousLine = previousByLineNo.get(line.lineNo)
+            if (!previousLine) {
+              addedCount++
+              continue
+            }
+
+            if (JSON.stringify(previousLine) !== JSON.stringify(line)) {
+              return false
+            }
+          }
+
+          return addedCount > 0
+        })()
 
         if (activeOrder.version === undefined || activeOrder.version === null) {
           throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${activeOrder.id}`)
@@ -93,6 +124,22 @@ export function PurchaseOrderActionDialog({
           await expectedDateChangeMutation.mutateAsync({
             orderId: activeOrder.id,
             expectedDate: formData.expectedDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: activeOrder.version,
+          })
+        } else if (isPureLineAdd) {
+          await lineAddMutation.mutateAsync({
+            orderId: activeOrder.id,
+            lines: formData.lines || [],
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: activeOrder.version,
+          })
+        } else if (isLinesOnlyChange && !hasLineStructureChange) {
+          await lineContentChangeMutation.mutateAsync({
+            orderId: activeOrder.id,
+            lines: formData.lines || [],
             operator: user?.accountNo || 'Unknown',
             actorId: user?.id,
             expectedVersion: activeOrder.version,

@@ -1,4 +1,64 @@
 
+- [x] 441. 冻结本轮范围，执行 `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
+  - [x] 本轮只处理采购订单纯新增行事务。
+  - [x] 未并发处理 `ORDER_LINE_REMOVE`。
+  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 442. 明确 `purchase` 行级第二刀边界
+  - [x] 仅当可稳定识别为“纯新增行”时，走 `ORDER_LINE_ADD`。
+  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [x] 若纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `patch` 链中。
+
+- [x] 443. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第二刀 intent、分流条件与验证结果。
+
+- [ ] 438. 冻结本轮范围，执行 `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，待确认）
+  - [ ] 本轮只处理采购订单纯新增行事务。
+  - [ ] 不并发处理 `ORDER_LINE_REMOVE`。
+  - [ ] 不扩展回采购订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 439. 明确 `purchase` 行级第二刀边界
+  - [ ] 仅当可稳定识别为“纯新增行”时，才走 `ORDER_LINE_ADD`。
+  - [ ] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [ ] 若纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `patch` 链中。
+
+- [ ] 440. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第二刀 intent、分流条件与验证结果。
+
+- [x] 435. 冻结本轮范围，执行 `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，已完成）
+  - [x] 本轮只处理采购订单既有行内容修改事务。
+  - [x] 未并发处理 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE`。
+  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 436. 明确 `purchase` 行级第一刀边界
+  - [x] 仅当可稳定识别为“既有行内容修改、无增删”时，走 `ORDER_LINE_CONTENT_CHANGE`。
+  - [x] 若存在行新增/删除或头部字段混入，则不进入本轮 intent。
+  - [x] 其余采购订单行集合变更继续保留在现有 `patch` 链中。
+
+- [x] 437. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第一刀 intent、分流条件与验证结果。
+
+- [ ] 432. 冻结本轮范围，执行 `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，待确认）
+  - [ ] 本轮只处理采购订单既有行内容修改事务。
+  - [ ] 不并发处理 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE`。
+  - [ ] 不扩展回采购订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 433. 明确 `purchase` 行级第一刀边界
+  - [ ] 仅当可稳定识别为“既有行内容修改、无增删”时，才走 `ORDER_LINE_CONTENT_CHANGE`。
+  - [ ] 若存在行新增/删除或头部字段混入，则不进入本轮 intent。
+  - [ ] 其余采购订单行集合变更继续保留在现有 `patch` 链中，待后续再细化。
+
+- [ ] 434. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第一刀 intent、分流条件与验证结果。
+
 - [x] 429. 冻结本轮范围，执行 `purchase` 事务化第一刀（2026-04-08，已完成）
   - [x] 已将 `sales` 已验证的 transaction 样板开始横向复制到 `purchase`。
   - [x] 本轮只实现采购订单 `expectedDate` 事务化。

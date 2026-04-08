@@ -28,12 +28,16 @@ type DataTableFacetedFilterProps<TData, TValue> = {
     value: string
     icon?: React.ComponentType<{ className?: string }>
   }[]
+  variant?: 'default' | 'industrial'
+  subtitle?: string
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  variant = 'default',
+  subtitle,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   const selectedValues = new Set(column?.getFilterValue() as string[])
@@ -41,43 +45,66 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant='outline' size='sm' className='h-8 border-dashed'>
-          <PlusCircledIcon className='size-4' />
-          {title}
-          {selectedValues?.size > 0 && (
-            <>
-              <Separator orientation='vertical' className='mx-2 h-4' />
-              <Badge
-                variant='secondary'
-                className='rounded-sm px-1 font-normal lg:hidden'
-              >
-                {selectedValues.size}
-              </Badge>
-              <div className='hidden space-x-1 lg:flex'>
-                {selectedValues.size > 2 ? (
-                  <Badge
-                    variant='secondary'
-                    className='rounded-sm px-1 font-normal'
-                  >
-                    {selectedValues.size} selected
-                  </Badge>
-                ) : (
-                  options
-                    .filter((option) => selectedValues.has(option.value))
-                    .map((option) => (
-                      <Badge
-                        variant='secondary'
-                        key={option.value}
-                        className='rounded-sm px-1 font-normal'
-                      >
-                        {option.label}
-                      </Badge>
-                    ))
-                )}
-              </div>
-            </>
-          )}
-        </Button>
+        {variant === 'industrial' ? (
+          <Button
+            variant='outline'
+            className='h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all px-4 min-w-[105px]'
+          >
+            <div className='flex items-center gap-1.5'>
+              <PlusCircledIcon className='size-3 text-blue-600' />
+              <span className='text-[10px] font-black tracking-tighter'>{title}</span>
+              {selectedValues?.size > 0 && (
+                <Badge
+                  variant='secondary'
+                  className='h-3.5 rounded-full px-1 text-[8px] font-mono bg-blue-500/10 text-blue-600 border-none ml-1'
+                >
+                  {selectedValues.size}
+                </Badge>
+              )}
+            </div>
+            {subtitle && (
+              <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{subtitle}</span>
+            )}
+          </Button>
+        ) : (
+          <Button variant='outline' size='sm' className='h-8 border-dashed'>
+            <PlusCircledIcon className='size-4' />
+            {title}
+            {selectedValues?.size > 0 && (
+              <>
+                <Separator orientation='vertical' className='mx-2 h-4' />
+                <Badge
+                  variant='secondary'
+                  className='rounded-sm px-1 font-normal lg:hidden'
+                >
+                  {selectedValues.size}
+                </Badge>
+                <div className='hidden space-x-1 lg:flex'>
+                  {selectedValues.size > 2 ? (
+                    <Badge
+                      variant='secondary'
+                      className='rounded-sm px-1 font-normal'
+                    >
+                      {selectedValues.size} selected
+                    </Badge>
+                  ) : (
+                    options
+                      .filter((option) => selectedValues.has(option.value))
+                      .map((option) => (
+                        <Badge
+                          variant='secondary'
+                          key={option.value}
+                          className='rounded-sm px-1 font-normal'
+                        >
+                          {option.label}
+                        </Badge>
+                      ))
+                  )}
+                </div>
+              </>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className='w-[200px] p-0' align='start'>
         <Command>

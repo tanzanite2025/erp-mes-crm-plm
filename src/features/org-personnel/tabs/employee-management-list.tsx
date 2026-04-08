@@ -6,10 +6,13 @@ import {
     getCoreRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    getFilteredRowModel,
+    getFacetedRowModel,
+    getFacetedUniqueValues,
     type Row,
     useReactTable,
 } from '@tanstack/react-table'
-import { Download, FileSpreadsheet, Plus, Share, Pencil } from 'lucide-react'
+import { Download, FileSpreadsheet, Plus, Share, Pencil, UserCheck, UserMinus, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card } from '@/components/ui/card'
@@ -22,7 +25,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination } from '@/components/data-table'
+import { DataTablePagination, DataTableFacetedFilter } from '@/components/data-table'
 import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -291,6 +294,9 @@ export function EmployeeManagementList() {
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getFacetedRowModel: getFacetedRowModel(),
+        getFacetedUniqueValues: getFacetedUniqueValues(),
         onRowSelectionChange: setRowSelection,
     })
 
@@ -314,7 +320,32 @@ export function EmployeeManagementList() {
     return (
         <div className='flex flex-col gap-6 mt-2'>
             <div className='flex items-center justify-between px-1 gap-2 flex-wrap'>
-                <DataTableViewOptions table={table} variant='industrial' />
+                <div className='flex items-center gap-2'>
+                    <DataTableFacetedFilter
+                        column={table.getColumn('status')}
+                        title={t('orgPersonnel.list.filterStatus' as any)}
+                        subtitle={t('orgPersonnel.list.filterFiltering' as any)}
+                        variant='industrial'
+                        options={[
+                            {
+                                label: t('orgPersonnel.excel.statuses.active'),
+                                value: 'active',
+                                icon: UserCheck,
+                            },
+                            {
+                                label: t('orgPersonnel.excel.statuses.resigned'),
+                                value: 'resigned',
+                                icon: UserMinus,
+                            },
+                            {
+                                label: t('orgPersonnel.excel.statuses.onLeave'),
+                                value: 'on-leave',
+                                icon: Clock,
+                            },
+                        ]}
+                    />
+                    <DataTableViewOptions table={table} variant='industrial' />
+                </div>
                 <div className='flex items-center gap-2 flex-wrap'>
                     <Button
                         variant='outline'
@@ -459,6 +490,14 @@ export function EmployeeManagementList() {
                 table={table}
                 onDelete={handleBulkDelete}
                 onStatusChange={handleBulkStatusChange}
+                onEdit={(items) => {
+                    if (items.length > 1) {
+                        toast.info(t('orgPersonnel.org.employeeDialog.actionInProgress' as any))
+                    }
+                    if (items.length > 0) {
+                        handleEditRow(items[0])
+                    }
+                }}
             />
 
             <EmployeeActionDialog

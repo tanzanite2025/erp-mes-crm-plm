@@ -1,5 +1,167 @@
 # implementation plan
 
+## `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `purchase` 行级事务化第二刀：
+
+1. 后端在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_ADD`；
+2. 前端新增采购纯新增行事务请求函数与 `lineAddMutation`；
+3. 当且仅当采购订单 delta 仅涉及 `lines` / `amount` 且可稳定识别为“纯新增行”时，编辑订单走 `ORDER_LINE_ADD`；
+4. 若混入既有行内容修改、头部字段或其他结构性变更，则继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `patchMutation`；
+5. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Purchase`。
+
+## `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `purchase` 的 `ORDER_LINE_CONTENT_CHANGE` 基础上，继续复制 `sales` 行级样板，单独收口采购订单“纯新增行”这一语义动作。
+
+本轮目标：
+
+1. 只处理采购订单纯新增行；
+2. 不并发处理采购订单行删除；
+3. 不把既有行内容修改和新增行混在同一条 intent 中；
+4. 继续避免 transaction 退化为整单 patch 包装壳。
+
+### 二、建议方案
+建议新增更窄语义 intent：
+
+- `ORDER_LINE_ADD`
+
+payload 建议仅包含：
+
+- `lines`
+- `operator`
+
+其中：
+
+1. `lines` 仍作为提交后的最新采购行集合快照；
+2. 但 intent 语义约束为“相较当前采购订单，仅发生新增行”；
+3. 后端负责验证：
+   - 原有行未被删除；
+   - 原有 `lineNo` 集合仍保留；
+   - 既有行内容未被顺带修改；
+   - 新行数量大于 0；
+   - 订单金额由后端重算。
+
+### 三、前后端职责
+
+#### 后端
+1. 在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_ADD`；
+2. 校验本次变更确实属于“仅新增行”；
+3. 保留物料完整性校验；
+4. 保存新行集合；
+5. 重算 `amount`；
+6. 写入审计日志并返回最新采购订单快照。
+
+#### 前端
+1. 在 `purchase-transaction-service.ts` 中新增 `changePurchaseOrderLineAdd()`；
+2. 在 `use-purchase-orders.ts` 中新增 `lineAddMutation`；
+3. 在 `purchase-order-action-dialog.tsx` 中识别“纯新增行”场景，优先走 `lineAddMutation`；
+4. 若无法稳定识别为“仅新增”，则继续保留在现有 `patchMutation` / `ORDER_LINE_CONTENT_CHANGE` 边界中。
+
+### 四、涉及文件
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- 视需要补充：`src/features/trading/hooks/use-purchase-order-form.ts`
+
+### 五、风险与注意事项
+1. 当前采购表单新增行使用 `lineNo = length + 1`，删除行时还会重排 `lineNo`，本轮必须只收口“纯新增”场景，避免和结构重排混淆；
+2. 如果前端新增行时同时编辑了既有行内容，本轮不应错误归入 `ORDER_LINE_ADD`；
+3. 新增行会联动 `amount`，必须明确这是派生聚合字段，而非 intent 真相源；
+4. 本轮不得破坏已落地的：
+   - `ORDER_DELIVERY_DATE_CHANGE`
+   - `ORDER_LINE_CONTENT_CHANGE`
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮只实现 `purchase` 的 `ORDER_LINE_ADD`；
+2. 仅当可稳定识别为“纯新增行”时，才走该 transaction；
+3. 若混入既有行内容修改或头部字段，则不进入该 intent；
+4. `ORDER_LINE_REMOVE` 暂不进入本轮。
+
+## `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `purchase` 行级事务化第一刀：
+
+1. 后端在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_CONTENT_CHANGE`；
+2. 前端新增采购行内容事务请求函数与 `lineContentChangeMutation`；
+3. 当且仅当采购订单 delta 仅涉及 `lines` / `amount` 且无增删时，编辑订单走 `ORDER_LINE_CONTENT_CHANGE`；
+4. 若混入头部字段或结构性行变更，则继续保留在现有 `patchMutation`；
+5. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Purchase`。
+
+## `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `purchase` 头部 `expectedDate` 事务化的基础上，继续复制 `sales` 样板，单独收口采购订单“既有行内容修改、无增删”这一行级语义动作。
+
+本轮目标：
+
+1. 只处理采购订单既有行内容修改；
+2. 不并发处理采购订单行新增/行删除；
+3. 不把头部字段和行内容编辑混在同一条 intent 中；
+4. 继续避免 transaction 退化为整单 patch 包装壳。
+
+### 二、建议方案
+建议新增更窄语义 intent：
+
+- `ORDER_LINE_CONTENT_CHANGE`
+
+在 `purchase` 域中，payload 仍仅包含：
+
+- `lines`
+- `operator`
+
+但 intent 语义约束为：
+
+1. 不允许行新增；
+2. 不允许行删除；
+3. 只允许既有采购行内容修改；
+4. `amount` 等聚合结果由后端重算或以后端校验为准。
+
+### 三、前后端职责
+
+#### 后端
+1. 在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_CONTENT_CHANGE`；
+2. 校验本次变更确实属于“无增删的既有行内容修改”；
+3. 保留物料完整性校验；
+4. 更新采购单明细行；
+5. 重算并落库订单金额；
+6. 写入审计日志并返回最新采购订单快照。
+
+#### 前端
+1. 在 `purchase-transaction-service.ts` 中新增行内容事务请求函数；
+2. 在 `use-purchase-orders.ts` 中新增对应 mutation；
+3. 在 `purchase-order-action-dialog.tsx` 中增加分流：
+   - 若 delta 仅涉及 `lines` / `amount` 且无增删，走 transaction；
+   - 若混入头部字段或出现行集合增删，继续保留在现有 `patchMutation`。
+
+### 四、涉及文件
+- `server/services/purchase_transaction_service.go`
+- `server/handlers/purchase_transaction_handlers.go`
+- `server/routes/routes_trading.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 五、风险与注意事项
+1. 当前采购表单删除行时会重排 `lineNo`，新增行时也会生成新 `lineNo`，本轮必须避免把这些结构性变化误判为内容修改；
+2. 采购行内容修改会联动 `amount`，需要明确它是派生聚合字段，不应单独成为 intent 真相源；
+3. 若采购行编辑天然会顺带混入头部字段，则本轮应回退为规划调整，而不是强行编码；
+4. 本轮不得破坏已落地的采购头部事务：`ORDER_DELIVERY_DATE_CHANGE`。
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮只实现 `purchase` 的 `ORDER_LINE_CONTENT_CHANGE`；
+2. 仅当可稳定识别为“既有行内容修改、无增删”时，才走该 transaction；
+3. 若混入 `expectedDate` 或其他头部字段，则不进入该 intent；
+4. `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE` 暂不进入本轮。
+
 ## `purchase` 事务化第一刀（2026-04-08，已完成）
 
 ### 执行结果摘要（2026-04-08，已完成）

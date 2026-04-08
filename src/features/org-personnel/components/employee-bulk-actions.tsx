@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
-import { Trash2, UserX } from 'lucide-react'
+import { Trash2, UserX, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
@@ -19,12 +19,14 @@ type EmployeeBulkActionsProps<TData> = {
     table: Table<TData>
     onDelete?: (items: TData[]) => void
     onStatusChange?: (items: TData[], status: 'active' | 'resigned') => Promise<number>
+    onEdit?: (items: TData[]) => void
 }
 
 export function EmployeeBulkActions<TData>({
     table,
     onDelete,
     onStatusChange,
+    onEdit,
 }: EmployeeBulkActionsProps<TData>) {
     const { t } = useLanguage()
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -41,6 +43,28 @@ export function EmployeeBulkActions<TData>({
     return (
         <>
             <BulkActionsToolbar table={table} entityName={t('orgPersonnel.list.bulk.entity' as any)}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant='outline'
+                            size='icon'
+                            onClick={() => {
+                                const selected = table.getFilteredSelectedRowModel().rows
+                                if (selected.length > 0 && onEdit) {
+                                    onEdit(selected.map((r) => r.original))
+                                }
+                            }}
+                            className='size-8'
+                            title={t('orgPersonnel.list.bulk.editTitle' as any)}
+                        >
+                            <Pencil className='size-3.5 text-slate-500' />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{t('orgPersonnel.list.bulk.editTitle' as any)}</p>
+                    </TooltipContent>
+                </Tooltip>
+
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
