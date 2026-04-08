@@ -214,10 +214,10 @@ export function EmployeeActionDialog({
             <DialogContent className='sm:max-w-3xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
                 <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
                     <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
-                        {isEdit ? t('orgPersonnel.employeeDialog.editTitle' as any) : t('orgPersonnel.employeeDialog.createTitle' as any)}
+                        {isEdit ? t('orgPersonnel.org.employeeDialog.editTitle' as any) : t('orgPersonnel.org.employeeDialog.createTitle' as any)}
                     </DialogTitle>
                     <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                        {isEdit ? t('orgPersonnel.employeeDialog.editDesc' as any) : t('orgPersonnel.employeeDialog.createDesc' as any)}
+                        {isEdit ? t('orgPersonnel.org.employeeDialog.editDesc' as any) : t('orgPersonnel.org.employeeDialog.createDesc' as any)}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -245,7 +245,10 @@ export function EmployeeActionDialog({
                                                         value={field.value}
                                                         onValueChange={field.onChange}
                                                         placeholder={t(`orgPersonnel.excel.columns.${fieldConfig.key}` as any)}
-                                                        items={resolveFieldOptions(fieldConfig, dynamicDepts)}
+                                                        items={resolveFieldOptions(fieldConfig, dynamicDepts).map(opt => ({
+                                                            ...opt,
+                                                            label: opt.label.includes('.') ? t(opt.label as any) : opt.label
+                                                        }))}
                                                         className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs'
                                                     />
                                                 </div>
@@ -274,7 +277,7 @@ export function EmployeeActionDialog({
                         form='employee-form'
                         className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
                     >
-                        {t('orgPersonnel.employeeDialog.submit' as any)}
+                        {t('orgPersonnel.org.employeeDialog.submit' as any)}
                     </Button>
                 </DialogFooter>
             </DialogContent>

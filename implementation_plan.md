@@ -1,5 +1,148 @@
 # implementation plan
 
+## `sales` / `purchase` patch 兜底压缩专项（2026-04-08，待确认）
+
+### 一、目标
+在 `sales` 与 `purchase` 已形成头部事务 + 行级事务基础骨架后，进入“patch 兜底压缩”阶段，明确双域当前仍落回 `patch` 的真实路径，并判断哪些应继续语义化、哪些应保留为合理兜底。
+
+本轮目标：
+
+1. 不盲目继续新增 intent；
+2. 先完成双域 patch 回退路径盘点；
+3. 明确每一类 patch 回退的成因、边界与必要性；
+4. 仅在分析完成后，选择一个最高价值切口进入下一轮实现。
+
+### 二、专项输出
+本轮希望输出三类结论：
+
+1. **双域 patch 回退清单**
+   - 哪些 `sales` 编辑仍落回 `patchMutation`
+   - 哪些 `purchase` 编辑仍落回 `patchMutation`
+
+2. **分类结论**
+   - 合理兜底：混合语义、暂不值得拆分、结构复杂度过高
+   - 值得继续事务化：边界清晰、调用频繁、可显著减少 patch 覆盖面
+
+3. **下一轮唯一推荐切口**
+   - 只挑一个最高价值回退点进入实现，避免多点并发造成边界漂移
+
+### 三、分析重点
+
+#### `sales`
+1. 头部字段是否仍存在未事务化的单字段编辑；
+2. 行级混合编辑里是否还有稳定可拆分路径；
+3. `ORDER_LINES_CHANGE` 与 `patchMutation` 的剩余承担面是否过大。
+
+#### `purchase`
+1. 头部字段除 `expectedDate` 外，还有哪些仍走 `patchMutation`；
+2. 行级混合场景是否存在下一个最自然切口；
+3. 当前 `patchMutation` 是否承担了本可收敛为单 intent 的稳定路径。
+
+### 四、涉及文件（分析阶段）
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `server/services/sales_transaction_service.go`
+- `server/services/purchase_transaction_service.go`
+
+### 五、风险与注意事项
+1. 不得为了压缩 patch 覆盖面而硬拆不稳定语义；
+2. 不得删除 `patch` 兜底链路；
+3. 若某条回退路径本质上是“混合编辑”，应如实保留为 patch，而不是伪造新 intent；
+4. 本轮分析必须基于现有代码逻辑，不依赖猜测。
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮先做 `sales` / `purchase` 双域 patch 回退盘点；
+2. 先不直接并发实现多个新 intent；
+3. 仅在盘点完成后，选择一个最高价值回退点进入下一轮；
+4. 继续保留 `patch` 作为安全兜底。
+
+## `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `purchase` 行级事务化第三刀：
+
+1. 后端在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_REMOVE`；
+2. 前端新增采购纯删除行事务请求函数与 `lineRemoveMutation`；
+3. 当且仅当采购订单 delta 仅涉及 `lines` / `amount` 且可稳定识别为“纯删除行”时，编辑订单走 `ORDER_LINE_REMOVE`；
+4. 若混入既有行内容修改、头部字段或其他结构性变更，则继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` / `patchMutation`；
+5. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Purchase`。
+
+## `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，待确认）
+
+### 一、目标
+在已完成 `purchase` 的 `ORDER_LINE_ADD` 基础上，继续复制 `sales` 行级样板，单独收口采购订单“纯删除行”这一语义动作。
+
+本轮目标：
+
+1. 只处理采购订单纯删除行；
+2. 不并发处理采购订单行新增；
+3. 不把既有行内容修改和删除行混在同一条 intent 中；
+4. 继续避免 transaction 退化为整单 patch 包装壳。
+
+### 二、建议方案
+建议新增更窄语义 intent：
+
+- `ORDER_LINE_REMOVE`
+
+payload 建议仅包含：
+
+- `lines`
+- `operator`
+
+其中：
+
+1. `lines` 仍作为提交后的最新采购行集合快照；
+2. 但 intent 语义约束为“相较当前采购订单，仅发生删除行”；
+3. 后端负责验证：
+   - 原有行中存在被删除目标；
+   - 保留行内容未被顺带修改；
+   - 不存在新增行；
+   - 订单金额由后端重算。
+
+### 三、前后端职责
+
+#### 后端
+1. 在 `purchase_transaction_service.go` 中新增 `ORDER_LINE_REMOVE`；
+2. 校验本次变更确实属于“仅删除行”；
+3. 保留物料完整性校验；
+4. 保存剩余行集合；
+5. 重算 `amount`；
+6. 写入审计日志并返回最新采购订单快照。
+
+#### 前端
+1. 在 `purchase-transaction-service.ts` 中新增 `changePurchaseOrderLineRemove()`；
+2. 在 `use-purchase-orders.ts` 中新增 `lineRemoveMutation`；
+3. 在 `purchase-order-action-dialog.tsx` 中识别“纯删除行”场景，优先走 `lineRemoveMutation`；
+4. 若无法稳定识别为“仅删除”，则继续保留在现有 `patchMutation` / `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` 边界中。
+
+### 四、涉及文件
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- 视需要补充：`src/features/trading/hooks/use-purchase-order-form.ts`
+
+### 五、风险与注意事项
+1. 当前采购表单删除行时会重排 `lineNo`，本轮必须只在“纯删除行”场景下分流，避免把结构重排误判成内容修改或新增；
+2. 如果前端删除行时同时编辑了既有行内容，本轮不应错误归入 `ORDER_LINE_REMOVE`；
+3. 删除行会联动 `amount`，必须明确这是派生聚合字段，而非 intent 真相源；
+4. 本轮不得破坏已落地的：
+   - `ORDER_DELIVERY_DATE_CHANGE`
+   - `ORDER_LINE_CONTENT_CHANGE`
+   - `ORDER_LINE_ADD`
+
+### 六、待你确认的实施边界
+请确认是否按以下边界执行：
+
+1. 本轮只实现 `purchase` 的 `ORDER_LINE_REMOVE`；
+2. 仅当可稳定识别为“纯删除行”时，才走该 transaction；
+3. 若混入既有行内容修改或头部字段，则不进入该 intent；
+4. `ORDER_LINE_ADD` 暂不进入本轮。
+
 ## `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
 
 ### 执行结果摘要（2026-04-08，已完成）

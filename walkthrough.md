@@ -1,5 +1,45 @@
 # 变更记录与验证（walkthrough.md）
 
+## P1：`purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08）
+
+### 本轮目标
+在已完成 `purchase` 的 `ORDER_LINE_ADD` 基础上，继续复制 `sales` 行级样板，单独收口采购订单“纯删除行”这一语义动作。
+
+### 已执行变更
+更新：
+- `server/services/purchase_transaction_service.go`
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 后端新增采购订单 `ORDER_LINE_REMOVE` intent；
+- `ORDER_LINE_REMOVE` 只允许处理“相较当前采购订单，仅删除行、保留行未改动”的场景；
+- 保留采购物料有效性校验；
+- 前端新增 `changePurchaseOrderLineRemove()` 与 `lineRemoveMutation`；
+- 在采购订单编辑对话框中，当 delta 仅包含 `lines` / `amount` 且可稳定识别为“纯删除行”时，优先走 `lineRemoveMutation`；
+- 若混入既有行内容修改、头部字段或其他结构性变更，则继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` / `patchMutation` 边界中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Purchase
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `purchase` 行级事务化第三刀：
+
+- `purchase` 已形成“行内容修改 + 行新增 + 行删除”的三段式行级事务结构；
+- 当前采购事务样板已形成：
+  - `ORDER_DELIVERY_DATE_CHANGE`
+  - `ORDER_LINE_CONTENT_CHANGE`
+  - `ORDER_LINE_ADD`
+  - `ORDER_LINE_REMOVE`
+- `purchase` 已基本追平 `sales` 当前的行级事务化骨架。
+
 ## P1：`purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08）
 
 ### 本轮目标

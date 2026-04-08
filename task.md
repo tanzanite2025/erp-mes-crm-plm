@@ -1,4 +1,49 @@
 
+- [ ] 450. 冻结本轮范围，执行 `sales` / `purchase` 的 patch 兜底压缩专项（2026-04-08，待确认）
+  - [ ] 本轮先做双域现状盘点，不直接并发推进多个新 intent。
+  - [ ] 目标是明确哪些编辑路径仍落回 `patch`，以及这些回退是否合理。
+  - [ ] 本轮只允许在完成分析后选择一个最高价值切口进入下一轮实现。
+
+- [ ] 451. 梳理 `sales` / `purchase` 仍落回 `patch` 的真实路径
+  - [ ] 明确头部字段编辑中哪些仍由 `patchMutation` 承担。
+  - [ ] 明确行级混合编辑中哪些仍由 `patchMutation` 承担。
+  - [ ] 区分“合理兜底”与“仍可继续语义化”的回退路径。
+
+- [ ] 452. 明确本轮验证与收尾要求
+  - [ ] 若本轮仅完成分析，则同步 `walkthrough.md` 记录盘点结论与下一轮建议。
+  - [ ] 若本轮选定并实现一个新切口，则执行 `pnpm exec tsc --noEmit` 与对应 Go 测试。
+  - [ ] 全程不得把 `patch` 直接删除，必须保留安全兜底链路。
+
+- [x] 447. 冻结本轮范围，执行 `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，已完成）
+  - [x] 本轮只处理采购订单纯删除行事务。
+  - [x] 未并发处理 `ORDER_LINE_ADD`。
+  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
+
+- [x] 448. 明确 `purchase` 行级第三刀边界
+  - [x] 仅当可稳定识别为“纯删除行”时，走 `ORDER_LINE_REMOVE`。
+  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [x] 若纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` / `patch` 链中。
+
+- [x] 449. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第三刀 intent、分流条件与验证结果。
+
+- [ ] 444. 冻结本轮范围，执行 `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，待确认）
+  - [ ] 本轮只处理采购订单纯删除行事务。
+  - [ ] 不并发处理 `ORDER_LINE_ADD`。
+  - [ ] 不扩展回采购订单头字段，不退回整单 patch 包装型 transaction。
+
+- [ ] 445. 明确 `purchase` 行级第三刀边界
+  - [ ] 仅当可稳定识别为“纯删除行”时，才走 `ORDER_LINE_REMOVE`。
+  - [ ] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
+  - [ ] 若纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` / `patch` 链中。
+
+- [ ] 446. 明确本轮验证与收尾要求
+  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
+  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
+  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第三刀 intent、分流条件与验证结果。
+
 - [x] 441. 冻结本轮范围，执行 `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
   - [x] 本轮只处理采购订单纯新增行事务。
   - [x] 未并发处理 `ORDER_LINE_REMOVE`。

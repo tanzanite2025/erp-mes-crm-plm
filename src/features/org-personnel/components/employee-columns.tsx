@@ -11,7 +11,7 @@ import {
 function renderDateCell(value: string | undefined) {
     const formatted = formatPersonnelDate(value)
     if (!formatted) return <div className='opacity-30'>-</div>
-    return <div className='font-mono text-[9px] uppercase'>{formatted}</div>
+    return <div className='font-mono text-[11px] uppercase font-medium tracking-tight'>{formatted}</div>
 }
 
 export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
@@ -45,7 +45,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.serialNo')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px]'>{row.index + 1}</div>,
+        cell: ({ row }) => <div className='font-mono text-[11px] opacity-40'>{row.index + 1}</div>,
         enableSorting: false,
         meta: { viewLabel: t('orgPersonnel.excel.columns.serialNo') },
     },
@@ -56,7 +56,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         ),
         cell: ({ row }) => {
             const staffId = row.getValue('staffId') as string
-            return <div className='font-mono text-[11px] font-black italic text-primary tracking-widest'>{staffId || '-'}</div>
+            return <div className='font-mono text-xs font-black italic text-primary tracking-widest'>{staffId || '-'}</div>
         },
         enableSorting: true,
         enableHiding: false,
@@ -94,7 +94,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.phone')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px]'>{row.getValue('phone') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-xs font-medium'>{row.getValue('phone') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.phone') },
     },
     {
@@ -102,7 +102,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.emergencyPhone')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px]'>{row.getValue('emergencyPhone') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-xs font-medium'>{row.getValue('emergencyPhone') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.emergencyPhone') },
     },
     {
@@ -178,7 +178,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.age')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px]'>{row.getValue('age') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-xs font-medium'>{row.getValue('age') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.age') },
     },
     {
@@ -186,7 +186,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.idCard')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px] text-muted-foreground/80'>{row.getValue('idCard') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.getValue('idCard') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.idCard') },
     },
     {
@@ -202,7 +202,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.address')} />
         ),
-        cell: ({ row }) => <div className='truncate max-w-[200px] text-[10px] text-muted-foreground'>{row.getValue('address') || '-'}</div>,
+        cell: ({ row }) => <div className='truncate max-w-[200px] text-[11px] text-muted-foreground font-medium tracking-tight'>{row.getValue('address') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.address') },
     },
     {
@@ -210,7 +210,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.bankCard')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[10px] text-muted-foreground/80'>{row.getValue('bankCard') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.getValue('bankCard') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.bankCard') },
     },
     {
@@ -226,7 +226,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.education')} />
         ),
-        cell: ({ row }) => <div className='text-[10px] font-bold'>{row.getValue('education') || '-'}</div>,
+        cell: ({ row }) => <div className='text-xs font-bold'>{row.getValue('education') || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.education') },
     },
     {
@@ -236,7 +236,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
         ),
         cell: ({ row }) => {
             const id = row.getValue('id') as string
-            return <div className='font-mono text-[9px] text-muted-foreground/30 w-[80px] truncate' title={id}>{id}</div>
+            return <div className='font-mono text-[10.5px] text-muted-foreground/30 w-[80px] truncate leading-none overflow-hidden' title={id}>{id}</div>
         },
         enableSorting: false,
         enableHiding: true,
