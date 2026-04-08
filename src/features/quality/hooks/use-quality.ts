@@ -3,11 +3,11 @@ import { useLanguage } from '@/context/language-provider'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import type { Standard } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
-import { QualityCoreService, type QualityStandardsResponse, type QualityTasksResponse, type QualityAbnormality } from '../services/quality-core-service'
+import { QualityCoreService, type QualityStandardsResponse, type QualityTasksResponse, type QualityAbnormality, type QualityTask } from '../services/quality-core-service'
 import { QualityMaintenanceService, type ExecuteInspectionPayload } from '../services/quality-maintenance-service'
 
 // Re-export types for backward compatibility in components
-export type { QualityStandardsResponse, QualityTasksResponse, QualityAbnormality, ExecuteInspectionPayload }
+export type { QualityStandardsResponse, QualityTasksResponse, QualityAbnormality, ExecuteInspectionPayload, QualityTask }
 
 export function useGetQualityStandards(page: number, pageSize: number, type?: string) {
     return useQuery({

@@ -27,6 +27,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/engineering-db/labeling",
   "/equipment-tooling/loans",
   "/equipment-tooling/molds",
+  "/trading/orders-analysis",
   "/engineering-db/nipples",
   "/personnel/architecture",
   "/terminal-config/guides",
