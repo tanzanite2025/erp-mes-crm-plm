@@ -1,4 +1,5 @@
 export const common = {
+  all: '全部',
   language: {
     label: '语言',
     switcher: '切换语言',

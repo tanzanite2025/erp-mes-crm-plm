@@ -1,5 +1,17 @@
 # implementation plan
 
+## `sales` 头部下一刀：`purchaseOrderNo` 编辑入口 + 事务化（2026-04-08，已完成）
+
+### 执行结果摘要（2026-04-08，已完成）
+已完成 `sales` 头部下一刀：
+
+1. 已补 `sales` 的 `purchaseOrderNo` 最小编辑入口；
+2. 后端在 `sales_transaction_service.go` 中新增 `ORDER_PURCHASE_ORDER_NO_CHANGE`；
+3. 前端新增 `purchaseOrderNoChangeMutation` 与纯 `purchaseOrderNo` 分流；
+4. 当且仅当销售订单 delta 仅涉及 `purchaseOrderNo` 时，编辑订单走 `ORDER_PURCHASE_ORDER_NO_CHANGE`；
+5. 若混入其他头部字段或行级字段，则继续保留在现有 `patchMutation` 或其他已落地 transaction 中；
+6. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Sales`。
+
 ## `sales` 头部下一刀：`purchaseOrderNo` 事务化（2026-04-08，待确认）
 
 ### 一、目标

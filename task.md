@@ -1,4 +1,14 @@
 
+- [x] 474. 完成 `sales` 头部下一刀：`purchaseOrderNo` 编辑入口 + 事务化（2026-04-08，已完成）
+  - [x] 已补销售订单 `purchaseOrderNo` 的最小编辑入口。
+  - [x] 已为 `sales` 增加 `ORDER_PURCHASE_ORDER_NO_CHANGE`。
+  - [x] 已完成前后端分流，并保留其余头部编辑在现有 transaction / `patch` 链中。
+
+- [x] 475. 完成本轮验证与收尾
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已同步 `walkthrough.md`，记录 `sales` 头部 `purchaseOrderNo` 编辑入口 + 事务化结果。
+
 - [ ] 471. 冻结本轮范围，执行 `sales` 头部下一刀：`purchaseOrderNo` 事务化（2026-04-08，待确认）
   - [ ] 本轮只处理销售订单 `purchaseOrderNo` 的纯头部变更事务。
   - [ ] 仅针对 `purchaseOrderNo` 单字段建 intent。

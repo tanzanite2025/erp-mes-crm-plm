@@ -45,7 +45,7 @@ export function UsersMultiDeleteDialog<TData>({
       // 串行删除以保证本地存储状态一致性，避免并发写入竞态
       for (const row of selectedRows) {
         const user = row.original as User
-        await deleteMutation.mutateAsync(user.id)
+        await deleteMutation.mutateAsync({ id: user.id, user })
       }
       await sleep(500) // 视觉停留，确保反馈平滑
     }

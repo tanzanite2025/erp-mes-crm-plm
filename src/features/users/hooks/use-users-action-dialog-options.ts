@@ -67,8 +67,8 @@ export function useUsersActionDialogOptions({
       )
 
       const nextEmployees = data
-        .filter((emp) => !existingEmployeeIds.has(emp.id))
-        .map((emp) => ({
+        .filter((emp: Employee) => !existingEmployeeIds.has(emp.id))
+        .map((emp: Employee) => ({
           label: buildEmployeeDisplayLabel(emp, nameMap, t),
           value: emp.id,
           raw: emp,

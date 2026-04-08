@@ -17,5 +17,6 @@ export function getTradingTabs(t: TranslateFn): TabItem[] {
     { key: 'sales-orders', label: t('trading.tabs.salesOrders'), href: '/trading/sales-orders' },
     { key: 'requirements', label: t('trading.tabs.requirements'), href: '/trading/requirements' },
     { key: 'logistics', label: t('trading.tabs.logistics'), href: '/trading/logistics' },
+    { key: 'orders-analysis', label: t('trading.tabs.ordersAnalysis'), href: '/trading/orders-analysis' },
   ]
 }

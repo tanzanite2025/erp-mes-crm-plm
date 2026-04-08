@@ -1,5 +1,51 @@
 # 变更记录与验证（walkthrough.md）
 
+## 专项：`sales` 头部下一刀：`purchaseOrderNo` 编辑入口 + 事务化（2026-04-08）
+
+### 本轮目标
+在已完成 `sales` 的 `orderName` 编辑入口 + 事务化后，继续压缩 `sales` 头部 `patchMutation` 的承担面，并将另一个稳定单字段 `purchaseOrderNo` 收口为可编辑、可分流、可验证的完整 transaction 链。
+
+### 本轮处理的计划外复杂度
+在开始实现后确认到：
+
+- `sales` 模型中存在 `purchaseOrderNo` 字段；
+- 后端也存在 `purchase_order_no` 持久化字段；
+- 但当前销售订单编辑 UI 中没有 `purchaseOrderNo` 的编辑入口。
+
+因此本轮沿用上一轮方法，先补上最小编辑入口，再继续接 `ORDER_PURCHASE_ORDER_NO_CHANGE`。
+
+### 已执行变更
+更新：
+- `src/features/trading/components/parts/order-header-fields.tsx`
+- `server/services/sales_transaction_service.go`
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+- `src/features/trading/sales/hooks/use-sales-transactions.ts`
+- `src/features/trading/components/sales-order-action-dialog.tsx`
+
+### 本轮实际处理内容
+- 在销售订单头部新增 `purchaseOrderNo` 的最小编辑输入；
+- 后端新增 `ORDER_PURCHASE_ORDER_NO_CHANGE` intent；
+- `ORDER_PURCHASE_ORDER_NO_CHANGE` 只允许处理 `purchaseOrderNo` 的纯头部变更；
+- 前端新增 `changeSalesOrderPurchaseOrderNo()` 与 `purchaseOrderNoChangeMutation`；
+- 在销售订单编辑对话框中，当 delta 仅包含 `purchaseOrderNo` 时，优先走 `purchaseOrderNoChangeMutation`；
+- 若混入其他头部字段或任何行级字段，则继续保留在现有 `patchMutation` / 其他 transaction 边界中。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services -run Sales
+```
+
+结果：通过。
+
+### 本轮结论
+本轮已完成 `sales` 头部下一刀：
+
+- `sales` 头部现在不仅新增了 `purchaseOrderNo` transaction，也补齐了实际可编辑入口；
+- `sales` 头部 patch 覆盖面继续缩小；
+- 后续若继续压缩 `sales` 头部 patch，仍应优先选择已可编辑、低联动、单语义字段。
+
 ## 专项：`sales` 头部下一刀：`orderName` 编辑入口 + 事务化（2026-04-08）
 
 ### 本轮目标
