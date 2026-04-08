@@ -2,6 +2,7 @@ import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
 import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type Customer, type SalesOrder } from '../../data/schema'
@@ -171,6 +172,19 @@ export function OrderHeaderFields({
                 className='h-11 cursor-not-allowed border-primary/20 bg-primary/5 pl-9 font-mono text-[13px] font-bold text-primary sm:h-10 sm:text-[12px]'
               />
             </div>
+          </div>
+
+          <div className='grid gap-1 md:col-span-4'>
+            <Label className='pl-1 text-[8px] font-bold uppercase leading-none tracking-widest text-muted-foreground/80 italic sm:text-[9px]'>
+              {t('tradingSalesOrder.detail.info.progress')}
+            </Label>
+            <Textarea
+              placeholder={t('tradingSalesOrder.detail.info.progress')}
+              rows={2}
+              value={formData.statusNote || ''}
+              onChange={(e) => setFormData((prev) => ({ ...prev, statusNote: e.target.value }))}
+              className='resize-none rounded-[20px] border-muted/60 p-3 text-[13px] font-medium leading-relaxed shadow-sm transition-shadow focus:shadow-xl sm:text-[12px]'
+            />
           </div>
         </div>
       </StatusGuard>

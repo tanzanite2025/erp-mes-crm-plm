@@ -1,61 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiFetch } from '@/lib/api-client'
 import { useLanguage } from '@/context/language-provider'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import type { Standard } from '../data/schema'
-import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
+import { type DeltaSet } from '@/lib/delta/types'
+import { QualityCoreService, type QualityStandardsResponse, type QualityTasksResponse, type QualityAbnormality } from '../services/quality-core-service'
+import { QualityMaintenanceService, type ExecuteInspectionPayload } from '../services/quality-maintenance-service'
 
-export interface QualityStandardsResponse {
-    items: Standard[]
-    total: number
-}
-
-export interface QualityTask {
-    id: string
-    batchNo: string
-    productName?: string
-    result: 'PENDING' | 'PASS' | 'FAIL'
-    inspector?: string
-    remarks?: string
-}
-
-export interface QualityTasksResponse {
-    items: QualityTask[]
-    total: number
-}
-
-export interface QualityAbnormality {
-    id: string
-    description: string
-    severity: 'CRITICAL' | 'MAJOR' | 'HIGH' | 'MEDIUM' | 'MINOR' | 'LOW'
-    status: 'OPEN' | 'CLOSED' | 'REJECTED'
-    disposalMethod?: string
-}
-
-export interface ExecuteInspectionPayload {
-    id: string
-    result: 'PASS' | 'FAIL'
-    remarks?: string
-}
+// Re-export types for backward compatibility in components
+export type { QualityStandardsResponse, QualityTasksResponse, QualityAbnormality, ExecuteInspectionPayload }
 
 export function useGetQualityStandards(page: number, pageSize: number, type?: string) {
     return useQuery({
         queryKey: ['quality_standards', page, pageSize, type],
-        queryFn: () => apiFetch<QualityStandardsResponse>(`/quality/standards?page=${page}&pageSize=${pageSize}&type=${type || 'ALL'}`),
+        queryFn: () => QualityCoreService.getStandards(page, pageSize, type),
     })
 }
 
 export function useGetQualityTasks(page: number, pageSize: number, batchNo?: string) {
     return useQuery({
         queryKey: ['quality_tasks', page, pageSize, batchNo],
-        queryFn: () => apiFetch<QualityTasksResponse>(`/quality/tasks?page=${page}&pageSize=${pageSize}&batchNo=${batchNo || ''}`),
+        queryFn: () => QualityCoreService.getTasks(page, pageSize, batchNo),
     })
 }
 
 export function useGetAbnormalities() {
     return useQuery({
         queryKey: ['quality_abnormalities'],
-        queryFn: () => apiFetch<QualityAbnormality[]>('/quality/abnormalities'),
+        queryFn: () => QualityCoreService.getAbnormalities(),
     })
 }
 
@@ -64,24 +35,9 @@ export function useQualityMutations() {
     const queryClient = useQueryClient()
 
     const saveStandardMutation = useMutation({
-        mutationFn: ({ data, isPatch, delta }: { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }) => {
-            if (isPatch && data.id && delta) {
-                const payload: DeltaPayload = {
-                    op: 'PATCH',
-                    delta,
-                    metadata: { id: data.id, version: (data as Standard).version }
-                }
-                return apiFetch(`/quality/standards/${data.id}`, { 
-                    method: 'PATCH', 
-                    body: JSON.stringify(payload) 
-                })
-            }
-            return apiFetch('/quality/standards', { 
-                method: 'POST', 
-                body: JSON.stringify(data) 
-            })
-        },
-        ...buildMutationOptions<unknown, unknown, { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }>({
+        mutationFn: (params: { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }) => 
+            QualityMaintenanceService.saveStandard(params),
+        ...buildMutationOptions<void, Error, { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }>({
             queryClient,
             invalidateQueryKeys: [['quality_standards']],
             successMessage: t('quality.hooks.saveStandardSuccess'),
@@ -89,8 +45,9 @@ export function useQualityMutations() {
     })
 
     const executeInspectionMutation = useMutation({
-        mutationFn: (data: ExecuteInspectionPayload) => apiFetch('/quality/tasks', { method: 'POST', body: JSON.stringify(data) }),
-        ...buildMutationOptions<unknown, unknown, ExecuteInspectionPayload>({
+        mutationFn: (data: ExecuteInspectionPayload) => 
+            QualityMaintenanceService.executeInspection(data),
+        ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
             queryClient,
             invalidateQueryKeys: [['quality_tasks'], ['quality_abnormalities']],
             successMessage: t('quality.inspection.toast.submitted'),

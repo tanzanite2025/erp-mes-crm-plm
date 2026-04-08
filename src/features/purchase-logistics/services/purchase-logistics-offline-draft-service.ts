@@ -6,7 +6,19 @@ const PURCHASE_LOGISTICS_DRAFT_EVENT = 'xdfc:purchase-logistics-offline-drafts'
 const PURCHASE_LOGISTICS_DRAFT_LIMIT = 200
 
 const logger = createLogger('PurchaseLogisticsOfflineDrafts')
+
+// 【单例 Store】物理内存镜像，确保引用稳定性情况情况总量针对。情况总量情况情况情况情况。
 let draftsSnapshot: PurchaseLogisticsOfflineDraft[] = []
+let isInitialized = false
+
+/**
+ * 确保单例初始化：仅在首次访问或外部变化时从持久层同步情况情况总量针对。情况总量情况情况情况情况。
+ */
+function ensureInitialized() {
+  if (isInitialized) return
+  draftsSnapshot = readDrafts()
+  isInitialized = true
+}
 
 export interface PurchaseLogisticsOfflineDraftInput {
   purchaseOrderId: string
@@ -105,6 +117,9 @@ function readDrafts() {
   }
 }
 
+/**
+ * 核心写入逻辑：仅在数据发生实质变化时更新内存引用并触发派发事件情况情况总量针对。
+ */
 function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
   if (!canUseStorage()) return
 
@@ -114,8 +129,17 @@ function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, PURCHASE_LOGISTICS_DRAFT_LIMIT)
 
-    window.localStorage.setItem(PURCHASE_LOGISTICS_DRAFT_KEY, JSON.stringify(normalized))
+    const nextSerialized = JSON.stringify(normalized)
+    const prevSerialized = JSON.stringify(draftsSnapshot)
+
+    // 【引用稳定性检查】若内容未变，严禁更新引用情况情况总量针对。情况总量情况情况情况情况。
+    if (nextSerialized === prevSerialized && isInitialized) {
+      return
+    }
+
+    window.localStorage.setItem(PURCHASE_LOGISTICS_DRAFT_KEY, nextSerialized)
     draftsSnapshot = normalized
+    isInitialized = true
     emitDraftsChanged()
   } catch (error) {
     logger.error('Failed to write drafts', error)
@@ -123,41 +147,27 @@ function writeDrafts(drafts: PurchaseLogisticsOfflineDraft[]) {
 }
 
 export function listPurchaseLogisticsOfflineDrafts() {
-  return readDrafts()
+  ensureInitialized()
+  return draftsSnapshot
 }
 
+/**
+ * getSnapshot 物理引用返回：直接返回内存单例，确保 Object.is 检测通过情况情况总量针对。
+ */
 export function getPurchaseLogisticsOfflineDraftsSnapshot() {
-  if (!canUseStorage()) {
-    return draftsSnapshot
-  }
-
-  try {
-    const raw = window.localStorage.getItem(PURCHASE_LOGISTICS_DRAFT_KEY)
-    if (!raw) {
-      draftsSnapshot = []
-      return draftsSnapshot
-    }
-
-    const nextDrafts = readDrafts()
-    const nextSerialized = JSON.stringify(nextDrafts)
-    const currentSerialized = JSON.stringify(draftsSnapshot)
-
-    if (nextSerialized !== currentSerialized) {
-      draftsSnapshot = nextDrafts
-    }
-
-    return draftsSnapshot
-  } catch (error) {
-    logger.error('Failed to get drafts snapshot', error)
-    draftsSnapshot = []
-    return draftsSnapshot
-  }
+  ensureInitialized()
+  return draftsSnapshot
 }
 
 export function subscribePurchaseLogisticsOfflineDrafts(onStoreChange: () => void) {
   if (typeof window === 'undefined') return () => undefined
 
-  const handleChange = () => onStoreChange()
+  const handleChange = () => {
+    // 外部变更时强制重载
+    isInitialized = false
+    ensureInitialized()
+    onStoreChange()
+  }
   window.addEventListener(PURCHASE_LOGISTICS_DRAFT_EVENT, handleChange)
   window.addEventListener('storage', handleChange)
 

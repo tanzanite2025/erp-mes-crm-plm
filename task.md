@@ -1,13 +1,31 @@
 
-- [x] 474. 完成 `sales` 头部下一刀：`purchaseOrderNo` 编辑入口 + 事务化（2026-04-08，已完成）
-  - [x] 已补销售订单 `purchaseOrderNo` 的最小编辑入口。
-  - [x] 已为 `sales` 增加 `ORDER_PURCHASE_ORDER_NO_CHANGE`。
-  - [x] 已完成前后端分流，并保留其余头部编辑在现有 transaction / `patch` 链中。
 
-- [x] 475. 完成本轮验证与收尾
+- [x] 479. 完成 `sales` 的 `status` / `statusNote` 联动重构（2026-04-08，已完成）
+  - [x] 已补销售订单 `statusNote` 的最小编辑入口。
+  - [x] 已将编辑弹窗中的纯 `statusNote` 修改从 `patch` 收敛到显式状态 transaction。
+  - [x] 已保持详情页状态按钮与编辑弹窗共享同一条状态语义主链。
+
+- [x] 480. 完成本轮验证与收尾
   - [x] 前端验证：`pnpm exec tsc --noEmit`。
   - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录 `sales` 头部 `purchaseOrderNo` 编辑入口 + 事务化结果。
+  - [x] 已同步 `walkthrough.md`，记录 `sales` 的 `status` / `statusNote` 联动重构结果。
+
+- [x] 476. 冻结本轮范围，执行 `sales` 的 `status` / `statusNote` 联动重构（2026-04-08，已完成）
+  - [x] 本轮处理销售订单 `status` 与 `statusNote` 的联动语义边界。
+  - [x] 本轮按单一状态 transaction 主链收敛执行。
+  - [x] 不并发处理 `orderName`、`purchaseOrderNo`、`requirements`、交期、客户、分类/类型或任何行级编辑。
+
+- [x] 477. 明确 `sales` 中 `status` / `statusNote` 的重构边界
+  - [x] 纯 `statusNote` 修改不再落回 `patch`，统一进入显式状态 transaction。
+  - [x] `status + statusNote` 同时修改继续走现有状态流转 transaction。
+  - [x] 若混入其他头部字段或行级字段，则不在本轮重构范围内。
+  - [x] 其余销售订单编辑继续保留在现有 transaction / `patch` 链中。
+
+- [x] 478. 明确本轮验证与收尾要求
+  - [x] 前端验证：`pnpm exec tsc --noEmit`。
+  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
+  - [x] 已验证：详情页状态按钮与编辑弹窗保存链路的 `status` / `statusNote` 语义一致。
+  - [x] 完成后已同步 `walkthrough.md`，记录 `sales` 的 `status` / `statusNote` 联动重构结果。
 
 - [ ] 471. 冻结本轮范围，执行 `sales` 头部下一刀：`purchaseOrderNo` 事务化（2026-04-08，待确认）
   - [ ] 本轮只处理销售订单 `purchaseOrderNo` 的纯头部变更事务。
@@ -24,20 +42,18 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `sales` 头部 `purchaseOrderNo` 事务化结果。
 
-- [x] 469. 完成 `sales` 头部下一刀：`orderName` 编辑入口 + 事务化（2026-04-08，已完成）
-  - [x] 已补销售订单 `orderName` 的最小编辑入口。
-  - [x] 已为 `sales` 增加 `ORDER_NAME_CHANGE`。
-  - [x] 已完成前后端分流，并保留其余头部编辑在现有 transaction / `patch` 链中。
-
-- [x] 470. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录 `sales` 头部 `orderName` 编辑入口 + 事务化结果。
-
 - [ ] 466. 冻结本轮范围，执行 `sales` 头部下一刀：`orderName` 编辑入口 + 事务化（2026-04-08，待确认）
-  - [ ] 本轮先补销售订单 `orderName` 的编辑入口。
-  - [ ] 仅针对 `orderName` 单字段建 intent。
-  - [ ] 不并发处理 `requirements`、交期、客户、分类/类型或任何行级编辑。
+  - [x] 1. 账号管理：修复废弃服务调用逻辑 / Personnel Accounts Migration
+    - [x] 修正 `EmployeeService` Proxy 导出逻辑
+    - [x] 完成 `use-users-action-dialog-options.ts` 迁移
+  - [ ] 2. 采购物流：修复无限循环与快照报错 / Purchase Logistics Fix
+    - [ ] 优化 `purchase-logistics-offline-draft-service.ts` 快照缓存
+    - [ ] 优化 `PurchaseLogisticsPage` 自动同步 Effect
+  - [ ] 3. 架构归一化：质量管理与计件工资模块 / Quality & Piecework Normalization
+    - [x] 创建 QualityCore/Maintenance Services
+    - [x] 重构 `use-quality.ts` Hook
+    - [ ] 创建 PieceworkMaintenanceService
+    - [ ] 重构 `use-piecework.ts` Hook
 
 - [ ] 467. 明确 `sales` 头部 `orderName` 边界
   - [ ] 仅当 UI 可编辑且 delta 仅包含 `orderName` 时，才走 `orderName` transaction。
@@ -48,16 +64,6 @@
   - [ ] 前端验证：`pnpm exec tsc --noEmit`。
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `sales` 头部 `orderName` 事务化结果。
-
-- [x] 464. 完成 `sales` 头部 patch 压缩本轮切口：`requirements` 事务化（2026-04-08，已完成）
-  - [x] 已确认本轮唯一稳定切口为 `requirements`。
-  - [x] 已为 `sales` 增加 `ORDER_REQUIREMENTS_CHANGE`。
-  - [x] 已完成前后端分流，并保留其余头部编辑在现有 `patch` 链中。
-
-- [x] 465. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录 `sales` 头部 patch 压缩本轮结果。
 
 - [ ] 461. 冻结本轮范围，执行 `sales` 头部 patch 压缩下一稳定切口（2026-04-08，待确认）
   - [ ] 本轮只从 `sales` 当前仍直落 `patchMutation` 的头部字段中挑一个稳定切口。
@@ -74,21 +80,6 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `sales` 头部 patch 压缩结果。
 
-- [x] 458. 冻结本轮范围，执行 `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，已完成）
-  - [x] 本轮只处理采购订单供应商主体变更事务。
-  - [x] 仅针对 `supplierId` / `supplierName` 的纯头部变更建 intent。
-  - [x] 未并发处理 `expectedDate`、其他头部字段或任何行级编辑。
-
-- [x] 459. 明确 `purchase` 头部第二刀边界
-  - [x] 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走供应商主体变更 transaction。
-  - [x] 若混入其他头部字段或行级字段，则不进入本轮 intent。
-  - [x] 其余采购订单编辑继续保留在现有 `patch` 链中。
-
-- [x] 460. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [x] 已同步 `walkthrough.md`，记录 `purchase` 头部第二刀 intent、分流条件与验证结果。
-
 - [ ] 455. 冻结本轮范围，执行 `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，待确认）
   - [ ] 本轮只处理采购订单供应商主体变更事务。
   - [ ] 仅针对 `supplierId` / `supplierName` 的纯头部变更建 intent。
@@ -103,16 +94,6 @@
   - [ ] 前端验证：`pnpm exec tsc --noEmit`。
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 头部第二刀 intent、分流条件与验证结果。
-
-- [x] 453. 完成 `sales` / `purchase` patch 兜底压缩专项盘点（2026-04-08，已完成）
-  - [x] 已盘点双域当前仍落回 `patch` 的真实路径。
-  - [x] 已区分“合理兜底”与“仍可继续事务化”的回退点。
-  - [x] 已收敛出下一轮唯一优先建议切口：`purchase` 头部第二刀（供应商主体变更事务化）。
-
-- [x] 454. 完成本轮专项收尾
-  - [x] 本轮未直接新增业务 transaction intent。
-  - [x] 已同步 `walkthrough.md`，记录双域 patch 回退盘点结论。
-  - [x] 已明确继续保留 `patch` 作为安全兜底。
 
 - [ ] 450. 冻结本轮范围，执行 `sales` / `purchase` 的 patch 兜底压缩专项（2026-04-08，待确认）
   - [ ] 本轮先做双域现状盘点，不直接并发推进多个新 intent。
@@ -129,21 +110,6 @@
   - [ ] 若本轮选定并实现一个新切口，则执行 `pnpm exec tsc --noEmit` 与对应 Go 测试。
   - [ ] 全程不得把 `patch` 直接删除，必须保留安全兜底链路。
 
-- [x] 447. 冻结本轮范围，执行 `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，已完成）
-  - [x] 本轮只处理采购订单纯删除行事务。
-  - [x] 未并发处理 `ORDER_LINE_ADD`。
-  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 448. 明确 `purchase` 行级第三刀边界
-  - [x] 仅当可稳定识别为“纯删除行”时，走 `ORDER_LINE_REMOVE`。
-  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
-  - [x] 若纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD` / `patch` 链中。
-
-- [x] 449. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第三刀 intent、分流条件与验证结果。
-
 - [ ] 444. 冻结本轮范围，执行 `purchase` 行级事务化第三刀：`ORDER_LINE_REMOVE`（2026-04-08，待确认）
   - [ ] 本轮只处理采购订单纯删除行事务。
   - [ ] 不并发处理 `ORDER_LINE_ADD`。
@@ -158,21 +124,6 @@
   - [ ] 前端验证：`pnpm exec tsc --noEmit`。
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第三刀 intent、分流条件与验证结果。
-
-- [x] 441. 冻结本轮范围，执行 `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
-  - [x] 本轮只处理采购订单纯新增行事务。
-  - [x] 未并发处理 `ORDER_LINE_REMOVE`。
-  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 442. 明确 `purchase` 行级第二刀边界
-  - [x] 仅当可稳定识别为“纯新增行”时，走 `ORDER_LINE_ADD`。
-  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
-  - [x] 若纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINE_CONTENT_CHANGE` / `patch` 链中。
-
-- [x] 443. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第二刀 intent、分流条件与验证结果。
 
 - [ ] 438. 冻结本轮范围，执行 `purchase` 行级事务化第二刀：`ORDER_LINE_ADD`（2026-04-08，待确认）
   - [ ] 本轮只处理采购订单纯新增行事务。
@@ -189,51 +140,6 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第二刀 intent、分流条件与验证结果。
 
-- [x] 435. 冻结本轮范围，执行 `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，已完成）
-  - [x] 本轮只处理采购订单既有行内容修改事务。
-  - [x] 未并发处理 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE`。
-  - [x] 未扩展回采购订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 436. 明确 `purchase` 行级第一刀边界
-  - [x] 仅当可稳定识别为“既有行内容修改、无增删”时，走 `ORDER_LINE_CONTENT_CHANGE`。
-  - [x] 若存在行新增/删除或头部字段混入，则不进入本轮 intent。
-  - [x] 其余采购订单行集合变更继续保留在现有 `patch` 链中。
-
-- [x] 437. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [x] 已同步 `walkthrough.md`，记录 `purchase` 行级第一刀 intent、分流条件与验证结果。
-
-- [ ] 432. 冻结本轮范围，执行 `purchase` 行级事务化第一刀：`ORDER_LINE_CONTENT_CHANGE`（2026-04-08，待确认）
-  - [ ] 本轮只处理采购订单既有行内容修改事务。
-  - [ ] 不并发处理 `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE`。
-  - [ ] 不扩展回采购订单头字段，不退回整单 patch 包装型 transaction。
-
-- [ ] 433. 明确 `purchase` 行级第一刀边界
-  - [ ] 仅当可稳定识别为“既有行内容修改、无增删”时，才走 `ORDER_LINE_CONTENT_CHANGE`。
-  - [ ] 若存在行新增/删除或头部字段混入，则不进入本轮 intent。
-  - [ ] 其余采购订单行集合变更继续保留在现有 `patch` 链中，待后续再细化。
-
-- [ ] 434. 明确本轮验证与收尾要求
-  - [ ] 前端验证：`pnpm exec tsc --noEmit`。
-  - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 行级第一刀 intent、分流条件与验证结果。
-
-- [x] 429. 冻结本轮范围，执行 `purchase` 事务化第一刀（2026-04-08，已完成）
-  - [x] 已将 `sales` 已验证的 transaction 样板开始横向复制到 `purchase`。
-  - [x] 本轮只实现采购订单 `expectedDate` 事务化。
-  - [x] 未扩展到采购订单行级事务或跨域链路。
-
-- [x] 430. 明确 `purchase` 第一刀边界
-  - [x] 当 delta 仅包含 `expectedDate` 时，走 transaction。
-  - [x] 其他采购订单编辑继续保留在现有 `patch` 链中。
-  - [x] 已保持本轮不进入采购订单行级事务化。
-
-- [x] 431. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
-  - [x] 已同步 `walkthrough.md`，记录 `purchase` 第一刀 intent、分流条件与验证结果。
-
 - [ ] 426. 冻结本轮范围，执行 `purchase` 事务化第一刀（2026-04-08，待确认）
   - [ ] 本轮目标是将 `sales` 已验证的 transaction 样板横向复制到 `purchase`。
   - [ ] 本轮只选一个最小可复制切口，不并发推进整个采购域事务化。
@@ -248,21 +154,6 @@
   - [ ] 前端验证：`pnpm exec tsc --noEmit`。
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Purchase`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `purchase` 第一刀 intent、分流条件与验证结果。
-
-- [x] 423. 冻结本轮范围，执行 `sales` 行级事务化第四刀：`ORDER_LINE_REMOVE`（2026-04-08，已完成）
-  - [x] 本轮只处理销售订单纯删除行事务。
-  - [x] 已新增 `ORDER_LINE_REMOVE`，未并发处理 `ORDER_LINE_ADD`。
-  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 424. 明确 `ORDER_LINE_REMOVE` 的边界
-  - [x] 仅当可稳定识别为“纯删除行”时，走 `ORDER_LINE_REMOVE`。
-  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
-  - [x] 若纯行级变更但不是“仅删除”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE` / `ORDER_LINE_ADD`。
-
-- [x] 425. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录 `ORDER_LINE_REMOVE` 的分流条件与验证结果。
 
 - [ ] 420. 冻结本轮范围，执行 `sales` 行级事务化第四刀：`ORDER_LINE_REMOVE`（2026-04-08，待确认）
   - [ ] 本轮只处理销售订单纯删除行事务。
@@ -279,21 +170,6 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `ORDER_LINE_REMOVE` 的分流条件与验证结果。
 
-- [x] 417. 冻结本轮范围，执行 `sales` 行级事务化第三刀：`ORDER_LINE_ADD`（2026-04-08，已完成）
-  - [x] 本轮只处理销售订单纯新增行事务。
-  - [x] 已新增 `ORDER_LINE_ADD`，未并发处理 `ORDER_LINE_REMOVE`。
-  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 418. 明确 `ORDER_LINE_ADD` 的边界
-  - [x] 仅当可稳定识别为“纯新增行”时，走 `ORDER_LINE_ADD`。
-  - [x] 若存在既有行内容修改或头部字段混入，则不进入本轮 intent。
-  - [x] 若纯行级变更但不是“仅新增”，继续保留在现有 `ORDER_LINES_CHANGE` / `ORDER_LINE_CONTENT_CHANGE`。
-
-- [x] 419. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录 `ORDER_LINE_ADD` 的分流条件与验证结果。
-
 - [ ] 414. 冻结本轮范围，执行 `sales` 行级事务化第三刀：`ORDER_LINE_ADD`（2026-04-08，待确认）
   - [ ] 本轮只处理销售订单行新增事务。
   - [ ] 不并发处理 `ORDER_LINE_REMOVE`。
@@ -309,21 +185,6 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录 `ORDER_LINE_ADD` 的分流条件与验证结果。
 
-- [x] 411. 冻结本轮范围，执行 `sales` 行级事务化第二刀（2026-04-08，已完成）
-  - [x] 本轮已将 `ORDER_LINES_CHANGE` 进一步细化为更窄的行级语义事务。
-  - [x] 本轮实际落地切口为 `ORDER_LINE_CONTENT_CHANGE`。
-  - [x] 未扩展回订单头字段，也未退回整单 patch 包装型 transaction。
-
-- [x] 412. 明确行级第二刀边界
-  - [x] 仅当可稳定识别为“既有行内容修改、无增删”时，走 `ORDER_LINE_CONTENT_CHANGE`。
-  - [x] 若纯行级变更但存在增删，则继续保留在 `ORDER_LINES_CHANGE`。
-  - [x] `ORDER_LINE_ADD` / `ORDER_LINE_REMOVE` 暂未进入本轮。
-
-- [x] 413. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录本轮 intent、分流条件与验证结果。
-
 - [ ] 408. 冻结本轮范围，执行 `sales` 行级事务化第二刀（2026-04-08，待确认）
   - [ ] 本轮目标是将 `ORDER_LINES_CHANGE` 进一步细化为更窄的行级语义事务。
   - [ ] 候选范围仅限：行新增、行删除、行内容编辑。
@@ -338,21 +199,6 @@
   - [ ] 前端验证：`pnpm exec tsc --noEmit`。
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录本轮 intent、分流条件与验证结果。
-
-- [x] 405. 冻结本轮范围，执行 `sales` 行级编辑事务化第一刀（2026-04-08，已完成）
-  - [x] 本轮只处理销售订单 `lines` 的纯内容编辑事务化。
-  - [x] 已新增 `ORDER_LINES_CHANGE`，不扩展到订单头字段或泛化改单。
-  - [x] 已保持其他普通编辑继续保留在 `patch` 链中。
-
-- [x] 406. 明确行级编辑事务化第一刀边界
-  - [x] 当 delta 仅包含 `lines`、`quantity`、`amount` 时，走 transaction。
-  - [x] 已将 `quantity` / `amount` 视为 `lines` 变更带出的派生聚合字段。
-  - [x] 若混入头部字段，仍保留在现有 `patch` 链中。
-
-- [x] 407. 完成本轮验证与收尾
-  - [x] 前端验证：`pnpm exec tsc --noEmit`。
-  - [x] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
-  - [x] 已同步 `walkthrough.md`，记录本轮 transaction intent、分流条件与验证结果。
 
 - [ ] 402. 冻结本轮范围，执行 `sales` 行级编辑事务化第一刀（2026-04-08，待确认）
   - [ ] 本轮只处理销售订单 `lines` 的纯内容编辑事务化。
@@ -384,16 +230,6 @@
   - [ ] 后端验证：`go test ./handlers ./routes ./services -run Sales`。
   - [ ] 完成后同步 `walkthrough.md`，记录本轮 transaction intent、分流条件与验证结果。
 
-- [x] 394. 冻结本轮范围，执行 `sales` 交期调整事务化（2026-04-08，已完成）
-  - [x] 本轮只处理改单事务化第二刀：交期调整。
-  - [x] 已新增 `ORDER_DELIVERY_DATE_CHANGE`，不扩展到分类/模式调整。
-  - [x] 已保证其他普通编辑仍保留在 `patch` 链中。
-
-- [x] 395. 明确交期调整事务化边界
-  - [x] 仅当 `deliveryDate` 发生变化时，编辑对话框才走 transaction。
-  - [x] 不将其他字段一并混入本轮 intent。
-  - [x] 保持现有普通编辑流程可用。
-
 - [ ] 391. 冻结本轮范围，执行 `sales` 交期调整事务化（2026-04-08，待确认）
   - [ ] 本轮只处理改单事务化第二刀：交期调整。
   - [ ] 已完成客户主体调整事务化后，本轮继续沿用“单字段语义收口”的推进方式。
@@ -409,16 +245,6 @@
   - [ ] 需要保证现有编辑对话框在非纯交期修改场景下继续走 `patchMutation`。
   - [ ] 需要保持 toast、invalidate、版本冲突与详情回显口径一致。
 
-- [x] 389. 冻结本轮范围，执行 `sales` 客户主体调整事务化（2026-04-08，已完成）
-  - [x] 本轮只处理改单事务化第一刀：客户主体调整。
-  - [x] 已新增 `ORDER_CUSTOMER_CHANGE`，不扩展到交期或分类/模式调整。
-  - [x] 已保证其他普通编辑仍保留在 `patch` 链中。
-
-- [x] 390. 明确客户主体调整事务化边界
-  - [x] 仅当 `customerId/customerName` 发生变化时，编辑对话框才走 transaction。
-  - [x] 不把整单编辑整体 transaction 化。
-  - [x] 保持现有普通编辑流程可用。
-
 - [ ] 386. 冻结本轮范围，执行 `sales` 改单事务化（2026-04-08，待确认）
   - [ ] 本轮只推进改单事务化，不扩展到审批后状态细化或其他域。
   - [ ] 第一刀不做全量改单事务化，避免退化成 `patch` 外层包装壳。
@@ -433,41 +259,6 @@
   - [ ] 需要避免把现有 `patchSalesOrder` 原样包进 transaction intent，导致语义失真。
   - [ ] 需要明确改单事务的 payload 只承载被批准的一小组业务语义字段。
   - [ ] 需要保证普通表单编辑链路仍可用，不因首刀事务化造成大面积断裂。
-
-- [x] 383. 冻结本轮范围，执行 `sales` 取消事务化（2026-04-08，已完成）
-  - [x] 已将“取消/作废”从 `DELETE /sales-orders/:id` 中拆出为独立 transaction intent。
-  - [x] 列表与详情中的取消动作已切换为 transaction 链。
-  - [x] `DELETE` 已收敛为仅处理已取消后的硬删除。
-
-- [x] 384. 明确取消事务化目标与边界
-  - [x] 本轮只处理取消语义，不扩展到改单或审批后状态细化。
-  - [x] 取消沿用既有 `/sales-orders/:id/transactions` endpoint，不新增平行事务入口。
-  - [x] 保持版本冲突、toast、invalidate 与详情回显口径一致。
-
-- [x] 385. 明确改动面与风险控制
-  - [x] 已改动前后端 transaction service、前端 transaction hooks、详情页与列表页取消调用点。
-  - [x] 已避免继续让未取消订单通过 `DELETE` 直接进入取消语义。
-  - [x] 已完成前后端编译与目标测试验证。
-
-- [x] 379. 冻结本轮范围，执行 `use-sales.ts` 物理删除与 `ORDER_STATUS_TRANSITION` 事务化（2026-04-08，已完成）
-  - [x] 已按批准顺序完成：先物理删除 `use-sales.ts`，再推进 `ORDER_STATUS_TRANSITION` 事务化。
-  - [x] 本轮继续只聚焦 `sales` 域，未扩散到 `purchase / inventory / workflow-core`。
-  - [x] 已在规划确认后完成代码改造。
-
-- [x] 380. 明确本轮目标与边界
-  - [x] 删除前已确认 `use-sales.ts` 无正式引用残留。
-  - [x] `ORDER_STATUS_TRANSITION` 已沿用既有 transaction endpoint，而未回退到 patch 驱动。
-  - [x] 本轮未顺手扩展更多 intent，只处理状态推进事务化。
-
-- [x] 381. 明确建议改动面与风险
-  - [x] 实际已改动 `sales-order-detail.tsx`、`sales-transaction-service.ts`、前端 transaction hooks、后端 sales transaction service。
-  - [x] 当前状态变更入口已从 `trackDelta()` 与 `patchMutation` 切换为语义事务提交。
-  - [x] 状态推进后的 toast、invalidate、版本冲突与详情回显已按现有口径保持一致，并通过验证。
-
-- [x] 382. 明确进入实施前确认点
-  - [x] 用户已确认按“先删 `use-sales.ts`，再做 `ORDER_STATUS_TRANSITION` 事务化”的顺序执行。
-  - [x] 用户已确认本轮只处理状态推进事务，不扩展更多动作。
-  - [x] 已按确认结果完成代码改造。
 
 - [ ] 375. 冻结本轮范围，只处理 `sales` query / transaction 分层拆分（2026-04-08，待确认）
   - [ ] 本轮聚焦前端 `sales` 域分层拆分，不扩散到新的事务语义扩展。
@@ -523,12 +314,9 @@
 
 - [ ] 365. 明确建议落点与目录策略
   - [ ] 优先采用目录化落点，避免继续在仓库根目录堆叠架构说明。
-  - [x] 路径确认：`docs/architecture/workflow/current-domain-topology-map.md`。
   - [ ] 若用户确认其他目录，再按确认结果调整，不擅自新增多个重复版本。
 
 - [ ] 366. 明确本轮确认点
-  - [x] 用户已确认接受路径 `docs/architecture/workflow/current-domain-topology-map.md`。
-  - [x] 用户已确认文档主体为“当前现状拓扑”，并允许文末补充“后续收敛方向”。
   - [ ] 根据确认结果创建该独立 Markdown 文件。
 
 

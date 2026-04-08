@@ -16,12 +16,14 @@ const DEPRECATED_ERROR = "[CRITICAL] 调用了已废弃的 EmployeeService。请
 
 export const EmployeeService = new Proxy({} as any, {
     get() {
-        console.error(DEPRECATED_ERROR);
-        throw new Error(DEPRECATED_ERROR);
+        return () => {
+            console.error(DEPRECATED_ERROR);
+            throw new Error(DEPRECATED_ERROR);
+        };
     }
 });
 
-// 仅保留导出函数名以防 IDE 索引未及时更新导致的类型报错，但运行时均会触发 Proxy 错误
+// 仅保留导出函数名以防 IDE 索引未及时更新导致的类型报错
 export const getEmployees = (EmployeeService as any).getEmployees;
 export const saveEmployee = (EmployeeService as any).saveEmployee;
 export const updateEmployeesStatus = (EmployeeService as any).updateEmployeesStatus;

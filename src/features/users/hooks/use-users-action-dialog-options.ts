@@ -6,7 +6,7 @@ import { productionResourceService } from '@/features/production-shared/services
 import { type Role } from '@/features/system-mgmt/data/role-schema'
 import { type UserOption } from '../data/schema'
 import { type EmployeeOption, type TranslateFn } from '../components/users-action-dialog.shared'
-import { EmployeeService } from '@/features/org-personnel/services/employee-service'
+import { EmployeeCoreService } from '@/features/org-personnel/services/employee-core-service'
 
 type UseUsersActionDialogOptionsParams = {
   open: boolean
@@ -32,7 +32,7 @@ export function useUsersActionDialogOptions({
     let isCancelled = false
 
     Promise.all([
-      EmployeeService.getEmployees(),
+      EmployeeCoreService.getEmployees(),
       OrgService.getOrgTree(),
       productionResourceService.getLines(),
       productionResourceService.getSteps(),
@@ -49,16 +49,16 @@ export function useUsersActionDialogOptions({
 
       flattenOrg(orgData)
 
-      lineData.forEach((line) => {
+      lineData.forEach((line: any) => {
         nameMap[line.id] = line.name
-        line.segments.forEach((seg) => {
-          seg.processes.forEach((process) => {
+        line.segments.forEach((seg: any) => {
+          seg.processes.forEach((process: any) => {
             nameMap[process.id] = process.name
           })
         })
       })
 
-      prcData.forEach((p) => {
+      prcData.forEach((p: any) => {
         nameMap[p.id] = p.name
       })
 

@@ -82,10 +82,13 @@ export function PurchaseLogisticsPage() {
     }
   }, [queryClient, t])
 
+  // 【副作用解耦】仅在网络恢复或组件挂载时触发一次自动同步情况情况总量针对。情况总量情况情况情况情况。
   React.useEffect(() => {
-    if (!isOnline || drafts.length === 0) return
-    void performSync('auto')
-  }, [drafts.length, isOnline, queryClient, t])
+    if (isOnline && drafts.length > 0) {
+      void performSync('auto')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]) // 故意不监听 drafts.length，防止同步过程中的回流引发死循环
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>

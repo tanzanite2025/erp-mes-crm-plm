@@ -94,7 +94,7 @@ export function SalesOrderActionDialog({
     commit,
   } = useSalesOrderForm(order, open)
 
-  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, orderNameChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = useSalesOrderMutations()
+  const { createMutation, patchMutation, customerChangeMutation, deliveryDateChangeMutation, orderNameChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
 
   const handleActualSave = async () => {
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -122,6 +122,7 @@ export function SalesOrderActionDialog({
         const isClassificationTypeOnlyChange =
           deltaKeys.length > 0 && deltaKeys.every((key) => key === 'classification' || key === 'type' || key === 'barcode')
         const isDeliveryDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'deliveryDate')
+        const isStatusFlowOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status' || key === 'statusNote')
         const isOrderNameOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'orderName')
         const isPurchaseOrderNoOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'purchaseOrderNo')
         const isRequirementsOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'requirements')
@@ -258,6 +259,34 @@ export function SalesOrderActionDialog({
           await deliveryDateChangeMutation.mutateAsync({
             orderId: order.id,
             deliveryDate: finalData.deliveryDate || '',
+            operator: user?.accountNo || 'Unknown',
+            actorId: user?.id,
+            expectedVersion: order.version,
+          })
+          onOpenChange(false)
+          return
+        }
+
+        if (isStatusFlowOnlyChange) {
+          const nextStatus = finalData.status || order.status
+          const nextStatusNote = finalData.statusNote || ''
+
+          if (nextStatus === 'Canceled') {
+            await cancelMutation.mutateAsync({
+              orderId: order.id,
+              reason: nextStatusNote,
+              operator: user?.accountNo || 'Unknown',
+              actorId: user?.id,
+              expectedVersion: order.version,
+            })
+            onOpenChange(false)
+            return
+          }
+
+          await statusTransitionMutation.mutateAsync({
+            orderId: order.id,
+            status: nextStatus,
+            statusNote: nextStatusNote,
             operator: user?.accountNo || 'Unknown',
             actorId: user?.id,
             expectedVersion: order.version,
