@@ -20,7 +20,7 @@ func GetInspectionStandardsHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
 	typeFilter := c.Query("type")
-	
+
 	// 使用 Clone() 确保 Session 隔离，防止 Count 污染 Find
 	baseQuery := db.DB.Model(&models.InspectionStandard{})
 	if typeFilter != "" && typeFilter != "ALL" {
@@ -39,43 +39,46 @@ func GetInspectionStandardsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    standards,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, InspectionStandardsListResponse{
+		Items:    mapInspectionStandardsToResponse(standards),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
 // SaveInspectionStandardHandler 保存/更新检验标准 (版本受控)
 func SaveInspectionStandardHandler(c *gin.Context) {
-	var input models.InspectionStandard
+	var input InspectionStandardRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的标准数据: " + err.Error()})
 		return
 	}
 
+	standard := mapInspectionStandardRequestToModel(input)
+
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var existing models.InspectionStandard
-		if input.ID != "" {
+		if standard.ID != "" {
 			// 如果是编辑现有标准，自动递增版本号 (0.1)
-			if err := tx.First(&existing, "id = ?", input.ID).Error; err == nil {
-				input.Version = existing.Version + 0.1
-				log.Printf("[INFO] Incrementing Standard %s Version to %.1f", input.Code, input.Version)
+			if err := tx.First(&existing, "id = ?", standard.ID).Error; err == nil {
+				standard.Version = existing.Version + 0.1
+				log.Printf("[INFO] Incrementing Standard %s Version to %.1f", standard.Code, standard.Version)
 			}
 		} else {
 			// 新增标准，默认 VER 1.0
-			input.Version = 1.0
+			standard.Version = 1.0
 		}
 
-		if input.ID != "" {
+		if standard.ID != "" {
 			// 编辑模式：使用 Updates 仅同步非零值，手动排除 CreatedAt 保护审计信息
-			if err := tx.Model(&existing).Omit("CreatedAt", "CreatedBy").Updates(input).Error; err != nil {
+			if err := tx.Model(&existing).Omit("CreatedAt", "CreatedBy").Updates(standard).Error; err != nil {
 				return err
 			}
+			return tx.First(&standard, "id = ?", existing.ID).Error
 		} else {
 			// 新增模式：保持使用 Save/Create
-			if err := tx.Save(&input).Error; err != nil {
+			if err := tx.Save(&standard).Error; err != nil {
 				return err
 			}
 		}
@@ -87,7 +90,7 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存品质标准失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
 }
 
 // --- 检验执行流水 (Inspection Tasks) ---
@@ -112,21 +115,23 @@ func GetInspectionTasksHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    tasks,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, InspectionTasksListResponse{
+		Items:    mapInspectionTasksToResponse(tasks),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
 // SaveInspectionTaskHandler 提交检验结果 (Triggering Abnormality if failed)
 func SaveInspectionTaskHandler(c *gin.Context) {
-	var task models.InspectionTask
-	if err := c.ShouldBindJSON(&task); err != nil {
+	var input InspectionTaskRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的检验数据"})
 		return
 	}
+
+	task := mapInspectionTaskRequestToModel(input)
 
 	now := time.Now()
 	task.CompletedAt = &now
@@ -138,9 +143,15 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 			if err := tx.Model(&models.InspectionTask{}).Where("id = ?", task.ID).Updates(task).Error; err != nil {
 				return err
 			}
+			if err := tx.Preload("Standard").First(&task, "id = ?", task.ID).Error; err != nil {
+				return err
+			}
 		} else {
 			// 新增模式
 			if err := tx.Save(&task).Error; err != nil {
+				return err
+			}
+			if err := tx.Preload("Standard").First(&task, "id = ?", task.ID).Error; err != nil {
 				return err
 			}
 		}
@@ -165,7 +176,7 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 提交检验失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, mapInspectionTaskToResponse(task))
 }
 
 // --- 质量异常管理 (Quality Abnormalities) ---
@@ -177,5 +188,5 @@ func GetAbnormalitiesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取异常数据失败"})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, mapQualityAbnormalitiesToResponse(items))
 }

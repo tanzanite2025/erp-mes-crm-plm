@@ -13,8 +13,12 @@ import (
 func GetWarehouseCategoriesHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 { page = 1 }
-	if pageSize < 1 { pageSize = 50 }
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 50
+	}
 
 	isOptions := c.Query("options") == "true"
 	query := db.DB.Model(&models.WarehouseCategory{})
@@ -25,7 +29,7 @@ func GetWarehouseCategoriesHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取仓库分类选项失败: " + err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, categories) // 保持向前兼容数组格式
+		c.JSON(http.StatusOK, mapWarehouseCategoriesToResponse(categories))
 		return
 	}
 
@@ -37,41 +41,46 @@ func GetWarehouseCategoriesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取仓库分类失败: " + err.Error()})
 		return
 	}
-	
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+
+	c.JSON(http.StatusOK, WarehouseCategoryListResponse{
+		Items:    mapWarehouseCategoriesToResponse(items),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
 // SaveWarehouseCategoryHandler 保存或更新仓库分类
 func SaveWarehouseCategoryHandler(c *gin.Context) {
-	var input models.WarehouseCategory
+	var input WarehouseCategoryRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的参数格式"})
 		return
 	}
 
+	category := mapWarehouseCategoryRequestToModel(input)
+
 	var existing models.WarehouseCategory
-	res := db.DB.Where("code = ?", input.Code).First(&existing)
-	
+	res := db.DB.Where("code = ?", category.Code).First(&existing)
+
 	if res.Error == nil {
 		// 更新
-		if err := db.DB.Model(&existing).Updates(input).Error; err != nil {
+		if err := db.DB.Model(&existing).Updates(category).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新仓库分类失败"})
 			return
 		}
+		db.DB.First(&existing, "id = ?", existing.ID)
+		c.JSON(http.StatusOK, mapWarehouseCategoryToResponse(existing))
+		return
 	} else {
 		// 新建
-		if err := db.DB.Create(&input).Error; err != nil {
+		if err := db.DB.Create(&category).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建仓库分类失败"})
 			return
 		}
+		c.JSON(http.StatusOK, mapWarehouseCategoryToResponse(category))
+		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "保存成功"})
 }
 
 // DeleteWarehouseCategoryHandler 删除仓库分类

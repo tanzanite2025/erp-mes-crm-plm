@@ -194,11 +194,11 @@ func GetUsersHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, UserListResponse{
+		Items:    mapUsersToResponse(items),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -361,7 +361,7 @@ func CreateUserHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, mapUserToResponse(user))
 }
 
 // PatchUserHandler 鏇存柊鐢ㄦ埛淇℃伅
@@ -468,7 +468,7 @@ func PatchUserHandler(c *gin.Context) {
 	}
 
 	if len(updates) == 0 {
-		c.JSON(http.StatusOK, user)
+		c.JSON(http.StatusOK, mapUserToResponse(user))
 		return
 	}
 
@@ -482,7 +482,7 @@ func PatchUserHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, mapUserToResponse(user))
 }
 
 // ReplaceUserHandler 鏇存柊鐢ㄦ埛淇℃伅 (完整替换语义)
@@ -567,7 +567,7 @@ func ReplaceUserHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, mapUserToResponse(user))
 }
 
 // DeleteUserHandler 鍒犻櫎鐢ㄦ埛

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -291,226 +290,6 @@ func SaveSalesOrderHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.MapSalesOrderToResponse(input))
 }
 
-// PatchSalesOrderHandler 局部更新销售订单
-func PatchSalesOrderHandler(c *gin.Context) {
-	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 订单更新数据格式错误: " + err.Error()})
-		return
-	}
-
-	var existing models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false).First(&existing).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] 订单 ID " + id + " 不存在"})
-		return
-	}
-
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid sales order delta: " + err.Error()})
-		return
-	}
-
-	current := services.MapSalesOrderToResponse(existing)
-	patchReq := services.PatchSalesOrderRequest{
-		ID:                 current.ID,
-		OrderNo:            current.OrderNo,
-		OrderName:          current.OrderName,
-		CustomerName:       current.CustomerName,
-		CustomerID:         current.CustomerID,
-		Type:               current.Type,
-		Currency:           current.Currency,
-		Classification:     current.Classification,
-		Status:             current.Status,
-		StatusNote:         current.StatusNote,
-		Amount:             current.Amount,
-		Quantity:           current.Quantity,
-		OrderDate:          current.OrderDate,
-		DeliveryDate:       current.DeliveryDate,
-		PurchaseOrderNo:    current.PurchaseOrderNo,
-		Barcode:            current.Barcode,
-		Requirements:       current.Requirements,
-		WorkflowInstanceID: current.WorkflowInstanceID,
-		UpdatedBy:          middleware.GetSafeUsername(c),
-		IsDeleted:          current.IsDeleted,
-		Version:            req.Metadata.Version,
-		Lines:              make([]services.SalesOrderLineRequest, 0, len(current.Lines)),
-	}
-	for _, line := range current.Lines {
-		patchReq.Lines = append(patchReq.Lines, services.SalesOrderLineRequest{
-			ID:             line.ID,
-			LineNo:         line.LineNo,
-			ProductID:      line.ProductID,
-			ProductModel:   line.ProductModel,
-			ProductCode:    line.ProductCode,
-			Specification:  line.Specification,
-			Description:    line.Description,
-			Qty:            line.Qty,
-			UOM:            line.UOM,
-			Price:          line.Price,
-			Amount:         line.Amount,
-			DeliveredQty:   line.DeliveredQty,
-			CustomerPartNo: line.CustomerPartNo,
-			JobNo:          line.JobNo,
-			Note:           line.Note,
-			DrillingPlanID: line.DrillingPlanID,
-			LabelingPlanID: line.LabelingPlanID,
-			HoleCount:      line.HoleCount,
-			Route:          line.Route,
-			OrderDate:      line.OrderDate,
-			Status:         line.Status,
-			ClaimedBy:      line.ClaimedBy,
-			ClaimedAt:      line.ClaimedAt,
-		})
-	}
-
-	for key, raw := range req.Delta {
-		valueRaw, err := extractDeltaNewValue(raw)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的订单差量数据"})
-			return
-		}
-		switch key {
-		case "orderNo":
-			if err := json.Unmarshal(valueRaw, &patchReq.OrderNo); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] orderNo 字段错误"})
-				return
-			}
-		case "orderName":
-			if err := json.Unmarshal(valueRaw, &patchReq.OrderName); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] orderName 字段错误"})
-				return
-			}
-		case "customerName":
-			if err := json.Unmarshal(valueRaw, &patchReq.CustomerName); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] customerName 字段错误"})
-				return
-			}
-		case "customerId":
-			if err := json.Unmarshal(valueRaw, &patchReq.CustomerID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] customerId 字段错误"})
-				return
-			}
-		case "type":
-			if err := json.Unmarshal(valueRaw, &patchReq.Type); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] type 字段错误"})
-				return
-			}
-		case "currency":
-			if err := json.Unmarshal(valueRaw, &patchReq.Currency); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] currency 字段错误"})
-				return
-			}
-		case "classification":
-			if err := json.Unmarshal(valueRaw, &patchReq.Classification); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] classification 字段错误"})
-				return
-			}
-		case "status":
-			if err := json.Unmarshal(valueRaw, &patchReq.Status); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] status 字段错误"})
-				return
-			}
-		case "statusNote":
-			if err := json.Unmarshal(valueRaw, &patchReq.StatusNote); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] statusNote 字段错误"})
-				return
-			}
-		case "amount":
-			if err := json.Unmarshal(valueRaw, &patchReq.Amount); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] amount 字段错误"})
-				return
-			}
-		case "quantity":
-			if err := json.Unmarshal(valueRaw, &patchReq.Quantity); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] quantity 字段错误"})
-				return
-			}
-		case "orderDate":
-			if err := json.Unmarshal(valueRaw, &patchReq.OrderDate); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] orderDate 字段错误"})
-				return
-			}
-		case "deliveryDate":
-			if err := json.Unmarshal(valueRaw, &patchReq.DeliveryDate); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] deliveryDate 字段错误"})
-				return
-			}
-		case "purchaseOrderNo":
-			if err := json.Unmarshal(valueRaw, &patchReq.PurchaseOrderNo); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] purchaseOrderNo 字段错误"})
-				return
-			}
-		case "barcode":
-			if err := json.Unmarshal(valueRaw, &patchReq.Barcode); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] barcode 字段错误"})
-				return
-			}
-		case "requirements":
-			if err := json.Unmarshal(valueRaw, &patchReq.Requirements); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] requirements 字段错误"})
-				return
-			}
-		case "workflowInstanceId":
-			if err := json.Unmarshal(valueRaw, &patchReq.WorkflowInstanceID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] workflowInstanceId 字段错误"})
-				return
-			}
-		case "isDeleted":
-			if err := json.Unmarshal(valueRaw, &patchReq.IsDeleted); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] isDeleted 字段错误"})
-				return
-			}
-		case "lines":
-			if err := json.Unmarshal(valueRaw, &patchReq.Lines); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] lines 字段错误"})
-				return
-			}
-		}
-	}
-
-	input := services.MapPatchSalesOrderRequestToModel(patchReq)
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, line := range input.Lines {
-			var product models.Product
-			if err := tx.Where("id = ?", line.ProductID).First(&product).Error; err != nil {
-				var material models.Material
-				if errM := tx.Where("id = ?", line.ProductID).First(&material).Error; errM != nil {
-					return errors.New("[CRITICAL_DATA_INTEGRITY] 订单保存失败：明细行物料 ID " + line.ProductID + " 不存在")
-				}
-			}
-		}
-		var current models.SalesOrder
-		if err := tx.Preload("Lines").Where("id = ?", id).First(&current).Error; err != nil {
-			return err
-		}
-		if input.Version != current.Version {
-			return ErrVersionConflict
-		}
-		input.Version = current.Version + 1
-		if err := tx.Model(&current).Updates(input).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&current).Association("Lines").Replace(input.Lines); err != nil {
-			return err
-		}
-		_, err := services.RecalculateSalesOrderStatusTx(tx, current.ID)
-		return err
-	})
-
-	if err != nil {
-		if err == ErrVersionConflict {
-			respondVersionConflict(c)
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存订单失败: " + err.Error()})
-		return
-	}
-
-	db.DB.Preload("Lines").First(&input, "id = ?", id)
-	c.JSON(http.StatusOK, services.MapSalesOrderToResponse(input))
-}
-
 // DeleteSalesOrderHandler 逻辑删除订单
 func DeleteSalesOrderHandler(c *gin.Context) {
 	id := c.Param("id")
@@ -545,7 +324,7 @@ func BulkSyncSalesOrdersHandler(c *gin.Context) {
 		return
 	}
 
-	var input []services.PatchSalesOrderRequest
+	var input []services.SalesOrderSnapshotRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 订单同步数据错误: " + err.Error()})
 		return
@@ -553,7 +332,7 @@ func BulkSyncSalesOrdersHandler(c *gin.Context) {
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, payload := range input {
-			order := services.MapPatchSalesOrderRequestToModel(payload)
+			order := services.MapSalesOrderSnapshotRequestToModel(payload)
 			// 1. 保存/更新主表
 			if err := saveSalesOrderForBulkSync(tx, &order); err != nil {
 				return err

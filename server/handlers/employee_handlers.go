@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"xdfc-server/db"
-	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -57,31 +55,19 @@ func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
 }
 
 func SaveEmployeeHandler(c *gin.Context) {
-	var input models.Employee
+	var input EmployeeSaveHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee payload: " + err.Error()})
 		return
 	}
 
-	employee, err := services.SaveEmployee(input)
+	employee, err := services.SaveEmployee(mapEmployeeSaveHandlerRequestToService(input))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save employee"})
 		return
 	}
 
-	var refreshed models.Employee
-	if err := db.DB.Table("employees").
-		Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
-		Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
-		Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
-		Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
-		Where("employees.id = ?", employee.ID).
-		First(&refreshed).Error; err == nil {
-		c.JSON(http.StatusOK, mapEmployeeResponse(refreshed))
-		return
-	}
-
-	c.JSON(http.StatusOK, mapEmployeeResponse(employee))
+	c.JSON(http.StatusOK, mapEmployeeSaveServiceResponseToResponse(employee))
 }
 
 func PatchEmployeeHandler(c *gin.Context) {

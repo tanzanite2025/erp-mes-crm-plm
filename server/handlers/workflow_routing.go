@@ -17,32 +17,36 @@ func GetCommandsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取指令模板列表失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, commands)
+	c.JSON(http.StatusOK, mapStandardCommandsToResponse(commands))
 }
 
 // SaveCommandHandler 保存(创建)指令模板
 func SaveCommandHandler(c *gin.Context) {
-	var input models.StandardCommand
+	var input StandardCommandRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 指令模板数据格式错误: " + err.Error()})
 		return
 	}
 
-	if err := db.DB.Create(&input).Error; err != nil {
+	command := mapStandardCommandRequestToModel(input)
+
+	if err := db.DB.Create(&command).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存指令模板失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapStandardCommandToResponse(command))
 }
 
 // UpdateCommandHandler 更新指令模板
 func UpdateCommandHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input models.StandardCommand
+	var input StandardCommandRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 指令模板数据格式错误: " + err.Error()})
 		return
 	}
+
+	command := mapStandardCommandRequestToModel(input)
 
 	var existing models.StandardCommand
 	if err := db.DB.Where("id = ?", id).First(&existing).Error; err != nil {
@@ -50,13 +54,13 @@ func UpdateCommandHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Model(&existing).Updates(input).Error; err != nil {
+	if err := db.DB.Model(&existing).Updates(command).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新指令模板失败: " + err.Error()})
 		return
 	}
 
 	db.DB.First(&existing, "id = ?", id)
-	c.JSON(http.StatusOK, existing)
+	c.JSON(http.StatusOK, mapStandardCommandToResponse(existing))
 }
 
 // DeleteCommandHandler 删除指令模板
@@ -78,32 +82,36 @@ func GetRulesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取通知规则列表失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, rules)
+	c.JSON(http.StatusOK, mapNotificationRulesToResponse(rules))
 }
 
 // SaveRuleHandler 保存(创建)通知规则
 func SaveRuleHandler(c *gin.Context) {
-	var input models.NotificationRule
+	var input NotificationRuleRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 通知规则数据格式错误: " + err.Error()})
 		return
 	}
 
-	if err := db.DB.Create(&input).Error; err != nil {
+	rule := mapNotificationRuleRequestToModel(input)
+
+	if err := db.DB.Create(&rule).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存通知规则失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapNotificationRuleToResponse(rule))
 }
 
 // UpdateRuleHandler 更新通知规则
 func UpdateRuleHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input models.NotificationRule
+	var input NotificationRuleRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 通知规则数据格式错误: " + err.Error()})
 		return
 	}
+
+	rule := mapNotificationRuleRequestToModel(input)
 
 	var existing models.NotificationRule
 	if err := db.DB.Where("id = ?", id).First(&existing).Error; err != nil {
@@ -111,13 +119,13 @@ func UpdateRuleHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Model(&existing).Updates(input).Error; err != nil {
+	if err := db.DB.Model(&existing).Updates(rule).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新通知规则失败: " + err.Error()})
 		return
 	}
 
 	db.DB.First(&existing, "id = ?", id)
-	c.JSON(http.StatusOK, existing)
+	c.JSON(http.StatusOK, mapNotificationRuleToResponse(existing))
 }
 
 // DeleteRuleHandler 删除通知规则

@@ -6,7 +6,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
 import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, saveSalesOrderTransaction, transitionSalesOrderStatus } from '../services/sales-transaction-service'
-import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
+import { createSalesOrder, deleteSalesOrder } from '../services/sales-service'
 
 export const useSalesOrderMutations = () => {
   const { t } = useLanguage()
@@ -357,17 +357,5 @@ export const useSalesOrderMutations = () => {
     onError: handleServerError,
   })
 
-  const patchMutation = useMutation({
-    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) =>
-      patchSalesOrder(id, delta, version),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
-    onError: handleServerError,
-  })
-
-  return { createMutation, saveMutation, patchMutation, deleteMutation, claimMutation, statusTransitionMutation, cancelMutation, customerChangeMutation, deliveryDateChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
+  return { createMutation, saveMutation, deleteMutation, claimMutation, statusTransitionMutation, cancelMutation, customerChangeMutation, deliveryDateChangeMutation, purchaseOrderNoChangeMutation, requirementsChangeMutation, classificationTypeChangeMutation, linesChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
 }

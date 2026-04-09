@@ -33,7 +33,7 @@ func GetSuppliersHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商选项失败: " + err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, suppliers)
+		c.JSON(http.StatusOK, mapSuppliersToResponse(suppliers))
 		return
 	}
 
@@ -62,8 +62,8 @@ func GetSuppliersHandler(c *gin.Context) {
 		return
 	}
 
-	response := services.SupplierListResponse{
-		Items:    items,
+	response := SupplierListHandlerResponse{
+		Items:    mapSuppliersToResponse(items),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -121,7 +121,7 @@ func SaveSupplierHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapSupplierToResponse(input))
 }
 
 // PatchSupplierHandler 局部更新供应商
@@ -256,7 +256,7 @@ func PatchSupplierHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, supplier)
+	c.JSON(http.StatusOK, mapSupplierToResponse(supplier))
 }
 
 // DeleteSupplierHandler 逻辑删除供应商
@@ -275,10 +275,15 @@ func BulkSyncSuppliersHandler(c *gin.Context) {
 		return
 	}
 
-	var suppliers []models.Supplier
-	if err := c.ShouldBindJSON(&suppliers); err != nil {
+	var input []BulkSyncSupplierRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 批量同步数据错误: " + err.Error()})
 		return
+	}
+
+	suppliers := make([]models.Supplier, 0, len(input))
+	for _, item := range input {
+		suppliers = append(suppliers, mapBulkSyncSupplierRequestToModel(item))
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {

@@ -115,7 +115,8 @@ export const systemManagement = {
       '* Audit data refreshes in real time as roles and permissions change, keeping the permission view aligned with the effective grant state.',
     modules: {
       warehouse: 'Warehouse',
-      trading: 'Trading / MRP',
+      trading: 'Trading',
+      mrp: 'MRP',
       engineering: 'Engineering',
       quality: 'Quality',
       production: 'Production',

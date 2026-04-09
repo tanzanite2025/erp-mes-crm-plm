@@ -42,8 +42,8 @@ export const MENU_PERMISSIONS = {
   },
   trading: {
     id: 'menu_trading',
-    label: '访问：购销 / MRP',
-    desc: '允许进入 Trading、Purchase 与 MRP 模块页面',
+    label: '访问：购销 / 采购',
+    desc: '允许进入 Trading 与 Purchase 模块',
     icon: 'ShoppingBag',
     rootPath: '/trading',
   },

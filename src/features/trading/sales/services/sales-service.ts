@@ -1,7 +1,6 @@
 import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder } from '../../data/schema'
 
 export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>): Promise<SalesOrder> => {
@@ -15,18 +14,4 @@ export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>
 export const deleteSalesOrder = async (id: string): Promise<void> => {
   await apiFetch<void>(`/sales-orders/${id}`, { method: 'DELETE' })
   NotificationGateway.archiveByOrderId(id)
-}
-
-export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {
-  const payload: DeltaPayload = {
-    op: 'PATCH',
-    delta,
-    metadata: { id, version },
-  }
-
-  const res = await apiFetch<SalesOrder>(`/sales-orders/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  })
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(res, 'SalesService.patchSalesOrder') as SalesOrder
 }

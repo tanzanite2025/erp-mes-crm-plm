@@ -145,7 +145,7 @@ func TestOrganizationServiceSaveOrganizationRejectsDuplicateName(t *testing.T) {
 		repo,
 	)
 
-	_, err := service.SaveOrganization(models.Organization{Name: "Ops"})
+	_, err := service.SaveOrganization(OrganizationSaveRequest{Name: "Ops"})
 
 	require.ErrorIs(t, err, ErrOrganizationNameConflict)
 	require.False(t, repo.saveOrgHit)
@@ -182,7 +182,7 @@ func TestOrganizationServiceSaveOrganizationRejectsInvalidRootType(t *testing.T)
 		&fakeOrganizationRepository{},
 	)
 
-	_, err := service.SaveOrganization(models.Organization{
+	_, err := service.SaveOrganization(OrganizationSaveRequest{
 		Name: "Production Unit A",
 		Type: "team",
 	})
@@ -198,7 +198,7 @@ func TestOrganizationServiceSaveOrganizationRejectsMissingParent(t *testing.T) {
 		&fakeOrganizationRepository{},
 	)
 
-	_, err := service.SaveOrganization(models.Organization{
+	_, err := service.SaveOrganization(OrganizationSaveRequest{
 		Name:     "Manufacturing",
 		Type:     "department",
 		ParentID: &parentID,
@@ -222,7 +222,7 @@ func TestOrganizationServiceSaveOrganizationRejectsInvalidChildType(t *testing.T
 		repo,
 	)
 
-	_, err := service.SaveOrganization(models.Organization{
+	_, err := service.SaveOrganization(OrganizationSaveRequest{
 		Name:     "Workshop Unit",
 		Type:     "team",
 		ParentID: &parentID,
@@ -246,7 +246,7 @@ func TestOrganizationServiceSaveOrganizationRejectsFourthLevel(t *testing.T) {
 		repo,
 	)
 
-	_, err := service.SaveOrganization(models.Organization{
+	_, err := service.SaveOrganization(OrganizationSaveRequest{
 		Name:     "Too Deep",
 		Type:     "team",
 		ParentID: &parentID,
@@ -270,7 +270,7 @@ func TestOrganizationServiceSaveOrganizationAcceptsDepartmentUnderCompany(t *tes
 		repo,
 	)
 
-	_, err := service.SaveOrganization(models.Organization{
+	_, err := service.SaveOrganization(OrganizationSaveRequest{
 		Name:     "Manufacturing",
 		Type:     "department",
 		ParentID: &parentID,
@@ -334,18 +334,18 @@ func TestOrganizationServiceBulkSyncEmployeesWritesAudit(t *testing.T) {
 		repo,
 	)
 
-	count, err := service.BulkSyncEmployees([]models.Employee{
+	count, err := service.BulkSyncEmployees([]BulkSyncEmployeeRequest{
 		{
-			BaseModel: models.BaseModel{ID: "emp-1"},
-			Name:      "Alice",
-			Status:    "resigned",
-			DeptID:    "dept-new",
+			ID:     "emp-1",
+			Name:   "Alice",
+			Status: "resigned",
+			DeptID: "dept-new",
 		},
 		{
-			BaseModel: models.BaseModel{ID: "emp-2"},
-			Name:      "Bob",
-			Status:    "active",
-			DeptID:    "dept-new",
+			ID:     "emp-2",
+			Name:   "Bob",
+			Status: "active",
+			DeptID: "dept-new",
 		},
 	})
 

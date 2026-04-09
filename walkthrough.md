@@ -1,5 +1,365 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-09 第三批 DTO 治理（organization_service / org-personnel）
+
+### 变更概述
+- 已完成第三批 DTO 治理，范围覆盖：
+  - `server/services/organization_service.go`
+  - `server/services/org_personnel_dto.go`
+  - `server/services/org_personnel_patch_service.go`
+  - `server/handlers/org_handlers.go`
+  - `server/handlers/employee_handlers.go`
+  - `server/handlers/org_bulk_sync_handlers.go`
+  - `server/handlers/org_personnel_dto.go`
+
+### 收口方式
+
+#### 1. service 边界正式 DTO 化
+- 新增 service DTO / mapper：
+  - `OrganizationSaveRequest / Response`
+  - `EmployeeSaveRequest / Response`
+  - `BulkSyncOrganizationRequest`
+  - `BulkSyncEmployeeRequest`
+- `organization_service.go` 公开签名已完成收口：
+  - `SaveOrganization`
+  - `SaveEmployee`
+  - `BulkSyncOrganizations`
+  - `BulkSyncEmployees`
+- 上述 public service API 不再直接以 `models.Organization` / `models.Employee` 作为保存与批量同步契约。
+
+#### 2. handler 入站 DTO 接线
+- 新增 handler DTO / mapper：
+  - `OrganizationSaveHandlerRequest`
+  - `EmployeeSaveHandlerRequest`
+  - `BulkSyncOrganizationHandlerRequest`
+  - `BulkSyncEmployeeHandlerRequest`
+- 已接线：
+  - `SaveOrgHandler`
+  - `SaveEmployeeHandler`
+  - `BulkSyncOrgHandler`
+  - `BulkSyncEmployeesHandler`
+- 结果：上述入口不再直接 `ShouldBindJSON(&models.Organization)` / `ShouldBindJSON(&models.Employee)`，而是通过 handler DTO -> service DTO -> model 的显式链路进入服务层。
+
+#### 3. 现有 patch / response 主链保持兼容
+- `PatchOrgHandler` / `PatchEmployeeHandler` 继续沿用既有 patch DTO。
+- `personnel_response_helpers.go` 继续承担 org / employee 响应映射职责，本轮未强制改为新 response struct，以避免扩大改动面。
+
+### 验证
+执行：
+```bash
+go test ./services -run "Organization|Employee" -count=1
+```
+
+结果：通过。
+
+### 补充说明
+- 当前 `handlers` 包全量编译仍受 `sales_orders.go` 对已删除 PATCH DTO / mapper 的残留引用阻塞，这是另一条由销售单 hard-cut 引出的独立问题，不是本轮 org-personnel DTO 改造引入的新阻塞。
+
+### 本轮结论
+- 第三批已把 `organization_service / org-personnel` 从“handler 局部 DTO + service 直接暴露 model”收口为“service DTO + handler DTO”双层边界。
+- 到这一步，DTO 治理的重点已经从“继续找明显 handler 直通”逐步转向“更深层 service 边界与前端 contract 的系统收口”。
+
+## 2026-04-09 第二批 DTO 治理（customers / suppliers / users）
+
+### 变更概述
+- 已完成第二批半接入链 DTO 收口：
+  - `server/handlers/customers.go`
+  - `server/handlers/suppliers.go`
+  - `server/handlers/users.go`
+- 新增独立 DTO / mapper 文件：
+  - `server/handlers/customer_dto.go`
+  - `server/handlers/supplier_dto.go`
+  - `server/handlers/user_dto.go`
+
+### 收口方式
+
+#### 1. `customers`
+- 新增：
+  - `CustomerRequest`
+  - `CustomerResponse`
+  - `CustomerListResponse`
+  - `BulkSyncCustomerRequest`
+- 新增映射：
+  - `mapCustomerRequestToModel`
+  - `mapBulkSyncCustomerRequestToModel`
+  - `mapCustomerToResponse`
+- 结果：
+  - `SaveCustomerHandler` 不再直接绑定 `models.Customer`；
+  - `options` 不再直接返回 `[]models.Customer`；
+  - `PatchCustomerHandler` 响应不再直接回传实体；
+  - `BulkSyncCustomersHandler` 不再直接接收 `[]models.Customer`。
+
+#### 2. `suppliers`
+- 新增：
+  - `SupplierResponse`
+  - `SupplierListResponse`
+  - `BulkSyncSupplierRequest`
+- 新增映射：
+  - `mapBulkSyncSupplierRequestToModel`
+  - `mapSupplierToResponse`
+- 结果：
+  - `options` 不再直接返回 `[]models.Supplier`；
+  - `SaveSupplierHandler` / `PatchSupplierHandler` 响应不再直接回传实体；
+  - `BulkSyncSuppliersHandler` 不再直接接收 `[]models.Supplier`。
+
+#### 3. `users`
+- 新增：
+  - `UserResponse`
+  - `UserListResponse`
+- 新增映射：
+  - `mapUserToResponse`
+  - `mapUsersToResponse`
+- 结果：
+  - `GetUsersHandler` 列表响应不再直接回传 `[]models.User`；
+  - `CreateUserHandler`、`PatchUserHandler`、`ReplaceUserHandler` 响应统一改为 `UserResponse`；
+  - `users` 这条链当前主要剩余问题已从“响应直通”收口为更深层 service / 领域边界问题。
+
+### 本轮设计边界
+- 本轮继续沿用第一批 handler DTO 样板，优先处理半接入链中的高风险直通入口。
+- 本轮未扩散到：
+  - `organization_service` service 层签名
+  - 更深层 partner/user service 边界改造
+  - 前端 contract 联动收口
+
+### 验证
+执行：
+```bash
+go test ./handlers -run ^$
+```
+
+结果：通过。
+
+### 本轮结论
+- 第二批已把 `customers / suppliers / users` 从“局部 DTO + 局部实体直通”进一步收口到更一致的 handler DTO 边界。
+- 当前下一批若继续推进，优先级应转向：
+  - `organization_service` 的 service 层签名泄漏
+  - partner/user 相关 service 边界与前端 contract 的进一步解耦
+
+## 2026-04-09 首批 C 级 DTO 样板治理
+
+### 变更概述
+- 已完成三处首批 C 级 handler DTO 样板治理：
+  - `server/handlers/workflow_routing.go`
+  - `server/handlers/quality.go`
+  - `server/handlers/warehouse_category.go`
+- 新增独立 DTO / mapper 文件：
+  - `server/handlers/workflow_routing_dto.go`
+  - `server/handlers/quality_dto.go`
+  - `server/handlers/warehouse_category_dto.go`
+
+### 收口方式
+
+#### 1. `workflow_routing`
+- 新增：
+  - `StandardCommandRequest`
+  - `StandardCommandResponse`
+  - `NotificationRuleRequest`
+  - `NotificationRuleResponse`
+- 新增映射：
+  - `mapStandardCommandRequestToModel`
+  - `mapStandardCommandToResponse`
+  - `mapNotificationRuleRequestToModel`
+  - `mapNotificationRuleToResponse`
+- 结果：
+  - handler 不再直接 `ShouldBindJSON(&models.StandardCommand)` / `ShouldBindJSON(&models.NotificationRule)`；
+  - 列表与保存响应不再直接回传实体。
+
+#### 2. `warehouse_category`
+- 新增：
+  - `WarehouseCategoryRequest`
+  - `WarehouseCategoryResponse`
+  - `WarehouseCategoryListResponse`
+- 新增映射：
+  - `mapWarehouseCategoryRequestToModel`
+  - `mapWarehouseCategoryToResponse`
+- 结果：
+  - handler 不再直接 `ShouldBindJSON(&models.WarehouseCategory)`；
+  - `options` 与分页列表均改为返回 DTO response；
+  - 保存后返回显式 DTO，而不是匿名 message 或实体直返。
+
+#### 3. `quality`
+- 新增：
+  - `InspectionStandardRequest / Response / ListResponse`
+  - `InspectionTaskRequest / Response / ListResponse`
+  - `QualityAbnormalityResponse`
+- 新增映射：
+  - `mapInspectionStandardRequestToModel`
+  - `mapInspectionStandardToResponse`
+  - `mapInspectionTaskRequestToModel`
+  - `mapInspectionTaskToResponse`
+  - `mapQualityAbnormalityToResponse`
+- 结果：
+  - `SaveInspectionStandardHandler` 不再直接绑定 `models.InspectionStandard`；
+  - `SaveInspectionTaskHandler` 不再直接绑定 `models.InspectionTask`；
+  - 标准列表、检验任务列表、异常列表均不再直接返回实体集合。
+
+### 本轮设计边界
+- 本轮只做 handler DTO 样板治理，未扩散到：
+  - `organization_service`
+  - `customers / suppliers / users` 半接入链
+  - 全仓 service 层签名重构
+- 本轮目标是先固定“最小可复制样板”，后续再把同一模式复制到更多 C/B 级模块。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run ^$
+```
+
+结果：通过。
+
+### 本轮结论
+- 三处 C 级直通链已完成第一批 DTO 样板化，handler 边界已从“直接绑/直接回 model”收口为“request/response + mapper”。
+- 当前已经形成一套可复制的 handler DTO 样板，后续可优先复制到 `customers`、`suppliers`、`users` 与 `organization_service` 相邻链路。
+
+## 专项：DTO 全局接入审计与分级治理首轮盘点（2026-04-09）
+
+### 本轮目标
+本轮没有直接进入“逐个接口补 DTO”，而是先完成全仓 DTO 接入现状审计，建立统一的分级口径与后续治理顺序，避免继续靠个案记忆补洞。
+
+### 审计方法
+本轮采用统一“五层链路”审计法，而不是仅按命名搜索 `DTO`：
+
+1. HTTP 入站层：检查 `handler` 是否直接 `ShouldBindJSON(&models.X)`。
+2. 服务边界层：检查 `service` 公共入参/出参是否直接暴露 `models.*`。
+3. 持久化/模型层：检查 ORM model 是否被复用为 API contract。
+4. HTTP 出站层：检查 `c.JSON(...)` 是否直接回传 model 或 model 列表。
+5. 前端契约消费层：检查前端 `services / data / schema / types` 是否形成独立 contract，而不是默认镜像后端实体。
+
+### 审计结论概览
+当前仓库的 DTO 现状不是“统一已接入”也不是“完全没有”，而是明显的并存态：
+
+#### A 级：完整 DTO 链（可作为样板）
+- `server/services/production_dto.go`
+- `server/services/production_process_dto.go`
+- `server/services/workflow_dto.go`
+- `server/services/workflow_mapper.go`
+- `server/services/sales_order_dto.go`
+- `server/services/sales_order_mapper.go`
+- `server/services/purchase_order_dto.go`
+- `server/services/purchase_order_mapper.go`
+- `server/services/voucher_dto.go`
+- `server/services/voucher_mapper.go`
+
+这些链路具备较完整特征：
+
+- 请求结构与响应结构独立存在；
+- model -> response、request -> model 映射显式存在；
+- handler 不再直接以数据库实体作为唯一对外契约。
+
+#### B 级：半接入链（局部 DTO 化，边界未闭环）
+- `server/handlers/customers.go`
+- `server/handlers/suppliers.go`
+- `server/handlers/users.go`
+
+代表性特征：
+
+- 某些列表/patch 链路已经开始使用显式 request/response；
+- 但 save / bulk sync / options 等路径仍残留 model 直通或局部直通；
+- 同一模块内部 DTO 完整度不一致，说明当前是“局部收口、未完全闭环”。
+
+#### C 级：模型直通链（首批高优先级治理）
+- `server/handlers/workflow_routing.go`
+- `server/handlers/quality.go`
+- `server/handlers/warehouse_category.go`
+- `server/handlers/customers.go` 的 `SaveCustomerHandler`
+- `server/services/organization_service.go`
+
+已确认的高风险模式包括：
+
+- `ShouldBindJSON(&models.StandardCommand)`
+- `ShouldBindJSON(&models.NotificationRule)`
+- `ShouldBindJSON(&models.InspectionStandard)`
+- `ShouldBindJSON(&models.InspectionTask)`
+- `ShouldBindJSON(&models.WarehouseCategory)`
+- `SaveOrganization(input models.Organization) (models.Organization, error)`
+- `ListEmployees() ([]models.Employee, error)`
+- `SaveEmployee(input models.Employee) (models.Employee, error)`
+- `BulkSyncOrganizations(input []models.Organization)`
+- `BulkSyncEmployees(input []models.Employee)`
+
+这些链路的问题不只在于“没叫 DTO”，而在于 API 契约、服务边界和 ORM 实体已经混在一起。
+
+#### D 级：伪 DTO 风险（当前需持续复核）
+本轮未把仓库内所有命名为 `Request / Response / DTO` 的结构自动视为已完成，而是明确保留了“伪 DTO”风险位：
+
+- 若结构只是对 `models.*` 做机械镜像；
+- 若不存在显式 mapping；
+- 若只是把实体套进 request/response 外壳；
+
+则后续统计时应继续单独标记为 D 级，而不能计入真正 DTO 化完成率。
+
+### 代表性证据
+
+#### 1. 明确的模型直通证据
+`server/handlers/customers.go`
+
+- `SaveCustomerHandler` 直接 `ShouldBindJSON(&input)`，其中 `input` 为 `models.Customer`；
+- 保存完成后直接 `c.JSON(http.StatusOK, input)`；
+- 更新时仍通过 `Select("*").Updates(input)` 做实体覆盖式更新。
+
+`server/handlers/workflow_routing.go`
+
+- `GetCommandsHandler` 直接返回 `[]models.StandardCommand`；
+- `SaveCommandHandler` / `UpdateCommandHandler` 入站直接绑定 `models.StandardCommand`；
+- `GetRulesHandler` 直接返回 `[]models.NotificationRule`；
+- `SaveRuleHandler` / `UpdateRuleHandler` 入站直接绑定 `models.NotificationRule`。
+
+`server/handlers/quality.go`
+
+- `SaveInspectionStandardHandler` 直接绑定 `models.InspectionStandard`；
+- `SaveInspectionTaskHandler` 直接绑定 `models.InspectionTask`；
+- 列表与异常查询仍直接返回实体集合。
+
+`server/handlers/warehouse_category.go`
+
+- `SaveWarehouseCategoryHandler` 直接绑定 `models.WarehouseCategory`；
+- `options` 场景直接返回 `[]models.WarehouseCategory`；
+- 分页列表虽然包了一层 `items/total/page/pageSize`，但 `items` 仍是实体集合。
+
+`server/services/organization_service.go`
+
+- 服务公开方法直接以 `models.Organization`、`models.Employee` 作为输入输出契约；
+- 这意味着即使 handler 未来补 request/response，service 边界仍会继续泄漏 ORM model。
+
+#### 2. 明确的 DTO 样板证据
+`server/services/sales_order_dto.go` + `server/services/sales_order_mapper.go`
+
+- 存在独立 `SaveSalesOrderRequest`、`PatchSalesOrderRequest`、`SalesOrderResponse`、`SalesOrderListResponse`；
+- 存在 `MapSaveSalesOrderRequestToModel`、`MapPatchSalesOrderRequestToModel`、`MapSalesOrderToResponse`；
+- request、response、model 三者分层明确，可作为后续交易域 DTO 治理样板。
+
+`server/services/workflow_dto.go` + `server/services/workflow_mapper.go`
+
+- 存在独立 `SaveWorkflowDefinitionRequest`、`WorkflowDefinitionResponse`、`WorkflowInstanceResponse`、`WorkflowTaskResponse`；
+- 存在 `MapWorkflowDefinitionToResponse`、`MapWorkflowInstanceToResponse`、`MapWorkflowTaskToResponse`；
+- 当前 workflow 主链已经具备较完整 DTO 化表达。
+
+### 本轮结论
+本轮审计后的核心判断如下：
+
+1. 当前仓库已经有可复用的 A 级 DTO 样板，不需要从零发明模式。
+2. 真正的问题不是“少几个 DTO 文件”，而是**很多模块的 API 契约、service 边界、ORM 实体仍未解耦**。
+3. 首批治理不应平均撒网，而应优先处理以下三类高风险链路：
+   - 请求直接绑定 model；
+   - 响应直接回传 model；
+   - service 公开签名直接暴露 model。
+4. 从首批收益与风险比看，建议优先治理：
+   - `workflow_routing`
+   - `quality`
+   - `warehouse_category`
+   - `organization_service` / org-personnel 主链
+   - `customers` 中仍未完成 DTO 化的保存链路
+
+### 本轮验证
+本轮为架构审计与文档沉淀轮，未执行业务代码改造，也未新增运行时依赖。
+
+已完成：
+
+- `task.md` 同步本轮 DTO 审计事项为已完成；
+- `implementation_plan.md` 沉淀全局 DTO 审计框架；
+- `walkthrough.md` 记录首轮全仓 DTO 分级结论与后续治理顺序。
+
 ## 2026-04-09 Notification Gateway 硬切（Phase 1）
 
 ### 变更概览
@@ -1432,3 +1792,64 @@ pnpm exec tsc --noEmit
 ```
 
 结果：通过。
+## 2026-04-09 Sales Order Save Hard-Cut (No PATCH Fallback)
+
+### Changes
+- Frontend sales service removed `patchSalesOrder` and now keeps only create/delete in `sales-service.ts`.
+- Sales mutation hook removed `patchMutation`; save flow stays on `saveSalesOrderTransaction` (`ORDER_SAVE`) only.
+- Sales barrel export removed `patchSalesOrder` to prevent new call sites from re-introducing PATCH usage.
+- Backend trading routes removed `PATCH /sales-orders/:id`.
+- Backend handler removed `PatchSalesOrderHandler` implementation to complete hard-cut at code level.
+
+### Verification
+Executed:
+```bash
+pnpm exec tsc --noEmit
+node scripts/verify-permissions.mjs
+go test ./handlers ./routes ./services -run Sales -count=1
+```
+
+Result: passed.
+
+### Outcome
+- Sales order save path is now transaction-only for edit persistence.
+- No compatibility PATCH entry remains in frontend export surface or backend route/handler path.
+
+## 2026-04-09 Sales Hard-Cut Cleanup Retrospective
+
+### Residual scan scope
+- residual code: frontend callsites, exports, backend route/handler, service DTO naming.
+- residual semantics: `Trading / MRP` permission labels and permission-audit module grouping.
+- residual permission mapping: trading transaction route bindings in action catalog.
+
+### Cleanup applied
+- renamed sales save snapshot contract from patch naming:
+  - `PatchSalesOrderRequest` -> `SalesOrderSnapshotRequest`
+  - `MapPatchSalesOrderRequestToModel(...)` -> `MapSalesOrderSnapshotRequestToModel(...)`
+- updated trading action route bindings to include current transaction routes:
+  - `action_trading_sales_order_manage` binds `POST /sales-orders/:id/transactions`
+  - `action_trading_customer_manage` binds customer transaction + patch routes
+  - `action_trading_supplier_manage` binds supplier transaction + patch routes
+  - `action_trading_purchase_order_manage` binds purchase transaction + patch routes
+  - `action_trading_purchase_order_sync` stale binding cleared (`[]`) to remove non-existent route reference
+- removed MRP from trading-only semantic labels and split MRP as a separate module in permission audit UI:
+  - `menu_trading` label/desc now only describe Trading/Purchase
+  - permission-audit modules changed from `Trading / MRP` to `Trading` + separate `MRP`
+
+### Verification
+Executed:
+```bash
+pnpm exec tsc --noEmit
+node scripts/verify-permissions.mjs
+go test ./handlers ./routes ./services -run Sales -count=1
+node scripts/check-action-permission-closure.mjs
+```
+
+Result:
+- `tsc` pass
+- `verify-permissions` pass
+- sales-focused go tests pass
+- action-permission closure improved from:
+  - `unbound_backend_routes: 19 -> 12`
+  - `invalid_route_bindings: 1 -> 0`
+- remaining 12 unbound routes are pre-existing non-sales residuals.

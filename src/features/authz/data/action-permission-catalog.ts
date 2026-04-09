@@ -222,7 +222,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑销售订单。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /sales-orders'],
+    routeBindings: ['POST /sales-orders', 'POST /sales-orders/:id/transactions'],
   },
   {
     id: 'action_trading_sales_order_delete',
@@ -246,7 +246,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑客户资料。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /customers'],
+    routeBindings: ['POST /customers', 'POST /customers/:id/transactions', 'PATCH /customers/:id'],
   },
   {
     id: 'action_trading_customer_delete',
@@ -270,7 +270,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑供应商资料。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /suppliers'],
+    routeBindings: ['POST /suppliers', 'POST /suppliers/:id/transactions', 'PATCH /suppliers/:id'],
   },
   {
     id: 'action_trading_supplier_delete',
@@ -294,7 +294,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑采购订单。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /purchase/orders', 'POST /purchase/orders/:id/confirm-receipt'],
+    routeBindings: ['POST /purchase/orders', 'POST /purchase/orders/:id/transactions', 'PATCH /purchase/orders/:id', 'POST /purchase/orders/:id/confirm-receipt'],
   },
   {
     id: 'action_trading_purchase_order_delete',
@@ -310,7 +310,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许批量同步采购订单数据。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /purchase/orders/sync'],
+    routeBindings: [],
   },
   {
     id: 'action_trading_logistics_manage',

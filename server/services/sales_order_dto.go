@@ -53,7 +53,7 @@ type SaveSalesOrderRequest struct {
 	Lines              []SalesOrderLineRequest `json:"lines"`
 }
 
-type PatchSalesOrderRequest struct {
+type SalesOrderSnapshotRequest struct {
 	ID                 string                  `json:"id"`
 	OrderNo            string                  `json:"orderNo"`
 	OrderName          string                  `json:"orderName"`

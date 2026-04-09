@@ -61,7 +61,7 @@ func MapSaveSalesOrderRequestToModel(input SaveSalesOrderRequest) models.SalesOr
 	}
 }
 
-func MapPatchSalesOrderRequestToModel(input PatchSalesOrderRequest) models.SalesOrder {
+func MapSalesOrderSnapshotRequestToModel(input SalesOrderSnapshotRequest) models.SalesOrder {
 	lines := make([]models.SalesOrderLine, 0, len(input.Lines))
 	for _, line := range input.Lines {
 		lines = append(lines, mapSalesOrderLineRequestToModel(line))

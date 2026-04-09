@@ -50,7 +50,7 @@ func TestParseSalesOrderSavePayloadRejectsNestedDeltaPath(t *testing.T) {
 		Delta: map[string]json.RawMessage{
 			"lines[0].qty": json.RawMessage(`{"o":10,"n":12}`),
 		},
-		FinalData: PatchSalesOrderRequest{
+		FinalData: SalesOrderSnapshotRequest{
 			ID: "so-1",
 		},
 		Operator: "tester",

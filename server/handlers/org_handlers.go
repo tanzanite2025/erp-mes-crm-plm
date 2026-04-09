@@ -22,13 +22,13 @@ func GetOrgTreeHandler(c *gin.Context) {
 }
 
 func SaveOrgHandler(c *gin.Context) {
-	var input models.Organization
+	var input OrganizationSaveHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization payload"})
 		return
 	}
 
-	organization, err := services.SaveOrganization(input)
+	organization, err := services.SaveOrganization(mapOrganizationSaveHandlerRequestToService(input))
 	if err != nil {
 		if err == services.ErrOrganizationNameConflict {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization name already exists under the same parent"})
@@ -59,7 +59,7 @@ func SaveOrgHandler(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, mapOrganizationResponse(&organization))
+	c.JSON(http.StatusOK, mapOrganizationSaveServiceResponseToResponse(organization))
 }
 
 func PatchOrgHandler(c *gin.Context) {

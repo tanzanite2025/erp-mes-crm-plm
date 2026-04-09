@@ -252,6 +252,85 @@ DTO 的目标是建立边界、裁剪契约、隔离内部模型，而不是单�
 3. 形成统一的“已接入 / 半接入 / 未接入 / 伪 DTO”判定口径。
 4. 后续执行时可按该口径持续复用，不再依赖人工记忆逐个碰运气。
 
+## 11. 已批准的首批实施范围
+
+你已确认首批 DTO 样板治理范围固定为三处 C 级 handler：
+
+1. `server/handlers/workflow_routing.go`
+2. `server/handlers/quality.go`
+3. `server/handlers/warehouse_category.go`
+
+本轮不扩散到：
+
+1. `server/services/organization_service.go`
+2. `customers / suppliers / users` 的半接入链
+3. 大规模 service 层签名重构
+
+## 12. 首批实施策略
+
+首批三处统一采用同一收口策略：
+
+1. 为每个子域补独立 request / response struct。
+2. handler 不再直接 `ShouldBindJSON(&models.X)`。
+3. 列表与详情响应不再直接回传 `[]models.X` 或 `models.X`。
+4. 显式引入 `model -> response` 映射函数。
+5. 保持现有路由、字段名与主要业务语义尽量不变，优先做边界收口而非业务重写。
+
+## 13. 首批样板的验收口径
+
+完成后至少满足：
+
+1. `workflow_routing` 不再直接绑定或返回 `models.StandardCommand` / `models.NotificationRule`。
+2. `quality` 不再直接绑定或返回 `models.InspectionStandard` / `models.InspectionTask` / `models.QualityAbnormality`。
+3. `warehouse_category` 不再直接绑定或返回 `models.WarehouseCategory`。
+4. 三处样板具备统一风格的 request / response / mapper 结构。
+5. `walkthrough.md` 记录本轮样板化结果与后续复制建议。
+
+## 14. 第二批已启动范围
+
+当前已启动第二批 DTO 治理，范围固定为三条半接入链：
+
+1. `server/handlers/customers.go`
+2. `server/handlers/suppliers.go`
+3. `server/handlers/users.go`
+
+## 15. 第二批治理目标
+
+第二批目标不是从零搭样板，而是把第一批 handler DTO 样板复制到半接入链中仍残留的高风险入口：
+
+1. save/create/update 仍直接绑定 `models.*` 的入口。
+2. options/list 仍直接返回实体集合的入口。
+3. bulk sync 仍直接接收 `[]models.*` 或返回实体直通结果的入口。
+
+本轮暂不扩散到 `organization_service` 的 service 层签名改造。
+
+## 16. 第三批已批准范围
+
+当前已批准第三批 DTO 治理，范围固定为：
+
+1. `server/services/organization_service.go`
+2. `server/services/org_personnel_patch_service.go`
+3. `server/handlers/org_handlers.go`
+4. `server/handlers/employee_handlers.go`
+
+## 17. 第三批治理目标
+
+第三批不再以 handler DTO 为唯一主战场，而是优先收口 `organization_service / org-personnel` 的 service 边界：
+
+1. 不再以 `models.Organization` / `models.Employee` 作为公开 save / bulk sync 契约。
+2. 为 organization / employee 建立独立 service request / response / bulk sync DTO。
+3. 引入显式 mapper，确保 service 与 ORM model 的边界清晰。
+4. 在 service DTO 收口后，再让 `SaveOrgHandler`、`SaveEmployeeHandler`、`BulkSyncOrgHandler`、`BulkSyncEmployeesHandler` 接入新 DTO。
+
+## 18. 第三批验收口径
+
+完成后至少满足：
+
+1. `SaveOrganization`、`SaveEmployee`、`BulkSyncOrganizations`、`BulkSyncEmployees` 不再公开暴露 `models.*` 作为输入输出契约。
+2. `SaveOrgHandler`、`SaveEmployeeHandler` 不再直接 `ShouldBindJSON(&models.Organization)` / `ShouldBindJSON(&models.Employee)`。
+3. `org-personnel` 主链形成 service DTO + handler DTO 的双层边界。
+4. `walkthrough.md` 明确记录 service DTO 收口方案与验证口径。
+
 ---
 
 # 正式 notification gateway 抽象收口实施计划

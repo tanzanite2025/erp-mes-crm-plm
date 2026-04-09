@@ -1,7 +1,6 @@
 export {
   createSalesOrder,
   deleteSalesOrder,
-  patchSalesOrder,
 } from './services/sales-service'
 export { getSalesOrderById, getSalesOrderByNo, getSalesOrders } from './services/sales-query-service'
 export { claimSalesOrderLines, executeSalesOrderTransaction } from './services/sales-transaction-service'

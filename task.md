@@ -1,31 +1,49 @@
 - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
-- [ ] 587. 冻结本轮范围，规划“DTO 全局接入审计与分级治理”（2026-04-09，待批准）
-  - [ ] 本轮聚焦“如何以全局方式审计 DTO 接入现状并形成统一治理规则”，不扩散为逐个接口立即补 DTO 的执行轮。
-  - [ ] 当前目标不是只找单一缺失点，而是识别仓库内 `handler -> service -> model -> frontend contract` 的 DTO 分层现状、缺口模式与高风险区域。
-  - [ ] 在你批准前，本阶段只更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码、不开始批量补 DTO。
+- [x] 594. 执行第三批 DTO 治理（2026-04-09，已完成）
+  - [x] 第三批范围已覆盖 `server/services/organization_service.go`、`server/services/org_personnel_patch_service.go`、`server/handlers/org_handlers.go`、`server/handlers/employee_handlers.go`、`server/handlers/org_bulk_sync_handlers.go`。
+  - [x] 已优先收口 `organization_service / org-personnel` 的 service 边界：`SaveOrganization`、`SaveEmployee`、`BulkSyncOrganizations`、`BulkSyncEmployees` 不再公开暴露 `models.Organization` / `models.Employee` 作为保存与批量同步契约。
+  - [x] 已在 service DTO 收口后补齐 `SaveOrgHandler`、`SaveEmployeeHandler`、`BulkSyncOrgHandler`、`BulkSyncEmployeesHandler` 的入站 DTO 接入。
+  - [x] 已在 `walkthrough.md` 记录 service DTO 方案、handler 接线范围与验证结果；`go test ./services -run "Organization|Employee" -count=1` 通过。当前 `handlers` 包全量编译仍受 `sales_orders` 的无关 PATCH 残留阻塞。
 
-- [ ] 588. 固化当前 DTO 现状的已确认事实链
-  - [ ] 代码扫描已确认，仓库内并非“完全无 DTO”或“完全统一 DTO”，而是存在多种并存形态。
-  - [ ] `server/services/production_dto.go`、`server/services/production_process_dto.go` 已体现较完整的 DTO 分层：存在请求/响应 DTO 与 model 映射函数。
-  - [ ] `server/handlers/customers.go` 仍存在 `ShouldBindJSON(&input)` 直接绑定 `models.Customer`，并在保存后直接 `c.JSON(http.StatusOK, input)` 返回实体，说明部分链路仍是模型直通。
-  - [ ] `server/handlers` 下大量文件仍存在 `ShouldBindJSON` / `BindJSON` 分布，说明 DTO 接入现状需要按全局规则分级盘点，而不是靠个案记忆判断。
+- [x] 593. 执行第二批 DTO 治理（2026-04-09，已完成）
+  - [x] 第二批范围已覆盖 `server/handlers/customers.go`、`server/handlers/suppliers.go`、`server/handlers/users.go`。
+  - [x] 已把当前半接入链继续收口：优先消除了 save / options / bulk sync / patch response / list response 中残留的 model 直通。
+  - [x] 本轮未扩散到 `organization_service` 的 service 层签名重构。
+  - [x] 已在 `walkthrough.md` 记录第二批 DTO 收口结果与验证口径；最小验证 `go test ./handlers -run ^$` 通过。
 
-- [ ] 589. 明确本轮 DTO 全局审计的目标产物
-  - [ ] 形成一套 DTO 审计框架：定义什么算“已接入 DTO”、什么算“半接入”、什么算“未接入/伪 DTO”。
-  - [ ] 形成面向全仓的审计维度：请求入站、服务入参、服务出参、响应出站、前端 contract/type 五层。
-  - [ ] 形成风险分级口径：哪些模块优先治理、哪些问题属于高危直通、哪些属于可延后优化。
-  - [ ] 为后续真正执行时提供可批量推进的清单与验收标准，而不是继续零散补洞。
+- [x] 592. 执行首批 C 级 DTO 样板治理（2026-04-09，已完成）
+  - [x] 首批范围已覆盖 `server/handlers/workflow_routing.go`、`server/handlers/quality.go`、`server/handlers/warehouse_category.go`。
+  - [x] 已建立统一 handler DTO 样板：请求不再直接绑定 `models.*`，响应不再直接回传实体集合或实体对象。
+  - [x] 本轮未扩散到 `organization_service`、`customers/suppliers/users` 半接入链，也未顺手大规模改 service 层。
+  - [x] 已在 `walkthrough.md` 记录三处样板的收口方式、影响范围与验证结果；最小验证 `go test ./handlers -run ^$` 通过。
 
-- [ ] 590. 明确 DTO 审计前的关键设计约束
-  - [ ] DTO 审计不能只看“有没有 `*DTO` 命名”，还要看是否真正隔离了数据库 model、是否存在显式映射与独立契约。
-  - [ ] 需要区分“合法的领域输入结构体”与“把 `models.*` 改名成 request/response 壳子”的伪 DTO，避免统计失真。
-  - [ ] 审计范围必须覆盖后端入站/出站，也要覆盖前端 service/type 是否直接耦合后端实体字段，避免只做后端半边治理。
-  - [ ] 本轮不直接引入一刀切强制重构；先建立全局口径、分类结果与推进顺序，再决定批准后的执行范围。
+- [x] 587. 冻结本轮范围，执行“DTO 全局接入审计与分级治理首轮盘点”（2026-04-09，已完成）
+  - [x] 本轮聚焦“如何以全局方式审计 DTO 接入现状并形成统一治理规则”，未扩散为逐个接口立即补 DTO 的执行轮。
+  - [x] 已识别仓库内 `handler -> service -> model -> frontend contract` 的 DTO 分层现状、缺口模式与高风险区域。
+  - [x] 本轮执行产出为全仓 DTO 审计方法、分级口径与首批治理对象摘要，未直接修改业务代码。
 
-- [ ] 591. 明确待批准后的实施顺序与验收口径
-  - [ ] 批准后先产出 DTO 全量清单与分级表，再按高风险模块优先推进，而不是随机逐文件修补。
-  - [ ] 批准后优先处理“请求直接绑定 model / 响应直接回传 model / 前端直接吃实体结构”这三类高风险链路。
-  - [ ] 完成阶段性治理后，至少验证：新增接口遵循统一 DTO 规则、重点模块不再模型直通、文档与审计结果可持续复用。
+- [x] 588. 固化当前 DTO 现状的已确认事实链
+  - [x] 代码扫描已确认，仓库内并非“完全无 DTO”或“完全统一 DTO”，而是存在多种并存形态。
+  - [x] `server/services/production_dto.go`、`server/services/production_process_dto.go` 已体现较完整的 DTO 分层：存在请求/响应 DTO 与 model 映射函数。
+  - [x] `server/handlers/customers.go` 仍存在 `ShouldBindJSON(&input)` 直接绑定 `models.Customer`，并在保存后直接 `c.JSON(http.StatusOK, input)` 返回实体，说明部分链路仍是模型直通。
+  - [x] `server/handlers` 下大量文件仍存在 `ShouldBindJSON` / `BindJSON` 分布，说明 DTO 接入现状需要按全局规则分级盘点，而不是靠个案记忆判断。
+
+- [x] 589. 明确本轮 DTO 全局审计的目标产物
+  - [x] 已形成一套 DTO 审计框架：定义什么算“已接入 DTO”、什么算“半接入”、什么算“未接入/伪 DTO”。
+  - [x] 已形成面向全仓的审计维度：请求入站、服务入参、服务出参、响应出站、前端 contract/type 五层。
+  - [x] 已形成风险分级口径：哪些模块优先治理、哪些问题属于高危直通、哪些属于可延后优化。
+  - [x] 已为后续真正执行时提供可批量推进的清单与验收标准，而不是继续零散补洞。
+
+- [x] 590. 明确 DTO 审计前的关键设计约束
+  - [x] DTO 审计不能只看“有没有 `*DTO` 命名”，还要看是否真正隔离了数据库 model、是否存在显式映射与独立契约。
+  - [x] 需要区分“合法的领域输入结构体”与“把 `models.*` 改名成 request/response 壳子”的伪 DTO，避免统计失真。
+  - [x] 审计范围必须覆盖后端入站/出站，也要覆盖前端 service/type 是否直接耦合后端实体字段，避免只做后端半边治理。
+  - [x] 本轮未直接引入一刀切强制重构；已先建立全局口径、分类结果与推进顺序。
+
+- [x] 591. 明确待批准后的实施顺序与验收口径
+  - [x] 已产出 DTO 首轮清单摘要与分级方法，后续可按高风险模块优先推进，而不是随机逐文件修补。
+  - [x] 已明确后续优先处理“请求直接绑定 model / 响应直接回传 model / 前端直接吃实体结构”这三类高风险链路。
+  - [x] 已明确阶段性治理验收口径：新增接口遵循统一 DTO 规则、重点模块不再模型直通、文档与审计结果可持续复用。
 
 - [ ] 582. 冻结本轮范围，规划“正式 notification gateway 抽象收口”（2026-04-09，待批准）
   - [ ] 本轮聚焦通知域的正式 gateway 抽象，目标是阻止 `service / lib / 跨域模块` 继续直接把 `notification-store` 当作基础设施 API 使用。

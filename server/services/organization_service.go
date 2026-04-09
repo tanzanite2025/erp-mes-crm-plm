@@ -51,7 +51,7 @@ func ListOrganizationTree() ([]*models.Organization, error) {
 	return defaultOrganizationService.ListOrganizationTree()
 }
 
-func SaveOrganization(input models.Organization) (models.Organization, error) {
+func SaveOrganization(input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
 	return defaultOrganizationService.SaveOrganization(input)
 }
 
@@ -67,7 +67,7 @@ func BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {
 	return defaultOrganizationService.BulkUpdateEmployeeStatus(ids, status)
 }
 
-func SaveEmployee(input models.Employee) (models.Employee, error) {
+func SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
 	return defaultOrganizationService.SaveEmployee(input)
 }
 
@@ -83,11 +83,11 @@ func DeleteEmployees(ids []string) error {
 	return defaultOrganizationService.DeleteEmployees(ids)
 }
 
-func BulkSyncOrganizations(input []models.Organization) (int, error) {
+func BulkSyncOrganizations(input []BulkSyncOrganizationRequest) (int, error) {
 	return defaultOrganizationService.BulkSyncOrganizations(input)
 }
 
-func BulkSyncEmployees(input []models.Employee) (int, error) {
+func BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
 	return defaultOrganizationService.BulkSyncEmployees(input)
 }
 
@@ -123,26 +123,27 @@ func (s *OrganizationService) ListOrganizationTree() ([]*models.Organization, er
 	return rootNodes, nil
 }
 
-func (s *OrganizationService) SaveOrganization(input models.Organization) (models.Organization, error) {
-	if err := s.validateOrganizationHierarchy(&input); err != nil {
-		return models.Organization{}, err
+func (s *OrganizationService) SaveOrganization(input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
+	model := MapOrganizationSaveRequestToModel(input)
+	if err := s.validateOrganizationHierarchy(&model); err != nil {
+		return OrganizationSaveResponse{}, err
 	}
 
-	nameExists, err := s.repository.OrganizationNameExists(s.txManager.DB(), input.Name, input.ParentID, input.ID)
+	nameExists, err := s.repository.OrganizationNameExists(s.txManager.DB(), model.Name, model.ParentID, model.ID)
 	if err != nil {
-		return models.Organization{}, err
+		return OrganizationSaveResponse{}, err
 	}
 	if nameExists {
-		return models.Organization{}, ErrOrganizationNameConflict
+		return OrganizationSaveResponse{}, ErrOrganizationNameConflict
 	}
 
 	if err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.SaveOrganization(tx, &input)
+		return s.repository.SaveOrganization(tx, &model)
 	}); err != nil {
-		return models.Organization{}, err
+		return OrganizationSaveResponse{}, err
 	}
 
-	return input, nil
+	return MapOrganizationToSaveResponse(model), nil
 }
 
 func (s *OrganizationService) validateOrganizationHierarchy(input *models.Organization) error {
@@ -251,14 +252,25 @@ func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status stri
 	return updated, nil
 }
 
-func (s *OrganizationService) SaveEmployee(input models.Employee) (models.Employee, error) {
+func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
+	model := MapEmployeeSaveRequestToModel(input)
+	var refreshed models.Employee
 	if err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.SaveEmployee(tx, &input)
+		if err := s.repository.SaveEmployee(tx, &model); err != nil {
+			return err
+		}
+		return tx.Table("employees").
+			Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
+			Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
+			Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
+			Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
+			Where("employees.id = ?", model.ID).
+			First(&refreshed).Error
 	}); err != nil {
-		return models.Employee{}, err
+		return EmployeeSaveResponse{}, err
 	}
 
-	return input, nil
+	return MapEmployeeToSaveResponse(refreshed), nil
 }
 
 func (s *OrganizationService) DeleteEmployees(ids []string) error {
@@ -289,9 +301,10 @@ func (s *OrganizationService) DeleteEmployees(ids []string) error {
 	})
 }
 
-func (s *OrganizationService) BulkSyncOrganizations(input []models.Organization) (int, error) {
+func (s *OrganizationService) BulkSyncOrganizations(input []BulkSyncOrganizationRequest) (int, error) {
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		for _, node := range input {
+		for _, item := range input {
+			node := MapBulkSyncOrganizationRequestToModel(item)
 			if err := s.repository.SaveOrganization(tx, &node); err != nil {
 				return err
 			}
@@ -304,9 +317,10 @@ func (s *OrganizationService) BulkSyncOrganizations(input []models.Organization)
 	return len(input), nil
 }
 
-func (s *OrganizationService) BulkSyncEmployees(input []models.Employee) (int, error) {
+func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		for _, employee := range input {
+		for _, item := range input {
+			employee := MapBulkSyncEmployeeRequestToModel(item)
 			existing, found, err := s.repository.FindEmployeeByIDOrStaffID(tx, employee.ID, employee.StaffID)
 			if err != nil {
 				return err

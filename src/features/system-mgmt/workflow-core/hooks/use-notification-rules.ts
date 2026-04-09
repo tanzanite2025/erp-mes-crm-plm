@@ -4,12 +4,23 @@ import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from '../services/dispatch-service'
 import { getSalesOrders } from '@/features/trading/sales'
+import { type SalesOrder } from '@/features/trading/data/schema'
 import { RoutingService } from '../services/routing-service'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const logger = createLogger('NotificationRules')
 
 type NotificationRuleCreateInput = Omit<NotificationRule, 'id' | 'createdAt'>
+type DispatchOrderSnapshot = {
+    id: string
+    orderNo: string
+    status: string
+    createdBy?: string
+    lines?: Array<{
+        productModel?: string
+        claimedBy?: string
+    }>
+}
 
 /**
  * 通知规则管理 Hook (V2: 后端裁决架构)
@@ -38,8 +49,17 @@ export function useNotificationRules() {
     const triggerScan = useCallback(async (latestRules: NotificationRule[]) => {
         try {
             const orders = await getSalesOrders()
-            // 扫描任务目前依然由前端驱动
-            const scannedCount = await DispatchService.scanByRules(latestRules, orders.items)
+            const orderSnapshots: DispatchOrderSnapshot[] = orders.items.map((order: SalesOrder) => ({
+                id: order.id,
+                orderNo: order.orderNo,
+                status: order.status,
+                createdBy: order.createdBy,
+                lines: order.lines?.map(line => ({
+                    productModel: line.productModel,
+                    claimedBy: line.claimedBy,
+                })),
+            }))
+            const scannedCount = await DispatchService.scanByRules(latestRules, orderSnapshots)
             if (scannedCount > 0) {
                 toast.success(`扫描完成：已为 ${scannedCount} 项存量业务补偿了通知`)
             }

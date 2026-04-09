@@ -46,7 +46,7 @@ type SalesOrderTransactionRequest struct {
 
 type SalesOrderSavePayload struct {
 	Delta     map[string]json.RawMessage `json:"delta"`
-	FinalData PatchSalesOrderRequest     `json:"finalData"`
+	FinalData SalesOrderSnapshotRequest  `json:"finalData"`
 	Operator  string                     `json:"operator"`
 }
 
@@ -145,7 +145,7 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 		return nil, fmt.Errorf("%w: delta is required", ErrSalesTransactionInvalidPayload)
 	}
 
-	nextOrder := MapPatchSalesOrderRequestToModel(payload.FinalData)
+	nextOrder := MapSalesOrderSnapshotRequestToModel(payload.FinalData)
 	nextLines := nextOrder.Lines
 	if nextLines == nil {
 		nextLines = []models.SalesOrderLine{}

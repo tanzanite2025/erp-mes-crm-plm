@@ -37,7 +37,7 @@ func GetCustomersHandler(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, customers)
+		c.JSON(http.StatusOK, mapCustomersToResponse(customers))
 		return
 	}
 
@@ -81,8 +81,8 @@ func GetCustomersHandler(c *gin.Context) {
 		return
 	}
 
-	response := services.CustomerListResponse{
-		Items:    items,
+	response := CustomerListHandlerResponse{
+		Items:    mapCustomersToResponse(items),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -104,14 +104,16 @@ func GetCustomersHandler(c *gin.Context) {
 }
 
 func SaveCustomerHandler(c *gin.Context) {
-	var input models.Customer
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var req CustomerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[VALIDATION] 客户数据格式错误: " + err.Error(),
 			"code":  "CUSTOMER_SAVE_VALIDATION_FAILED",
 		})
 		return
 	}
+
+	input := mapCustomerRequestToModel(req)
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if input.ID != "" {
@@ -143,7 +145,7 @@ func SaveCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapCustomerToResponse(input))
 }
 
 func PatchCustomerHandler(c *gin.Context) {
@@ -235,7 +237,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, customer)
+	c.JSON(http.StatusOK, mapCustomerToResponse(customer))
 }
 
 func DeleteCustomerHandler(c *gin.Context) {
@@ -270,13 +272,18 @@ func BulkSyncCustomersHandler(c *gin.Context) {
 		return
 	}
 
-	var customers []models.Customer
-	if err := c.ShouldBindJSON(&customers); err != nil {
+	var input []BulkSyncCustomerRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[VALIDATION] 批量同步数据错误: " + err.Error(),
 			"code":  "CUSTOMER_BULK_SYNC_VALIDATION_FAILED",
 		})
 		return
+	}
+
+	customers := make([]models.Customer, 0, len(input))
+	for _, item := range input {
+		customers = append(customers, mapBulkSyncCustomerRequestToModel(item))
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
