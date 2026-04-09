@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+type deltaValue struct {
+	Old json.RawMessage `json:"o"`
+	New json.RawMessage `json:"n"`
+}
+
 func validateSupportedTopLevelDeltaKeys(delta map[string]json.RawMessage, allowedKeys ...string) error {
 	if len(delta) == 0 {
 		return fmt.Errorf("delta is required")
@@ -30,4 +35,13 @@ func validateSupportedTopLevelDeltaKeys(delta map[string]json.RawMessage, allowe
 	}
 
 	return nil
+}
+
+func extractDeltaNewValue(raw json.RawMessage) (json.RawMessage, error) {
+	var value deltaValue
+	if err := json.Unmarshal(raw, &value); err == nil && value.New != nil {
+		return value.New, nil
+	}
+
+	return raw, nil
 }

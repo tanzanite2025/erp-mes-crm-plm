@@ -1,0 +1,120 @@
+import type { PurchaseOrder, PurchaseOrderLine } from '../../data/schema'
+import type { ConfirmPurchaseReceiptResponseApiDTO, PurchaseOrderApiDTO, PurchaseOrderLineApiDTO, PurchaseOrderListPageApiDTO } from '../contracts/purchase-order-api-dto'
+
+export interface PaginatedPurchaseOrders {
+  items: PurchaseOrder[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface ConfirmPurchaseReceiptContract {
+  purchaseOrder: PurchaseOrder
+  createdInboundRecords: Array<{ id: string }>
+}
+
+function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrderLine {
+  return {
+    id: dto.id,
+    lineNo: dto.lineNo,
+    materialId: dto.materialId,
+    materialName: dto.materialName,
+    materialCode: dto.materialCode,
+    specification: dto.specification,
+    qty: dto.qty,
+    uom: dto.uom,
+    price: dto.price,
+    amount: dto.amount,
+    expectedDate: dto.expectedDate,
+    receivedQty: dto.receivedQty,
+    status: dto.status as PurchaseOrderLine['status'],
+    note: dto.note,
+  }
+}
+
+function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineApiDTO {
+  return {
+    id: line.id,
+    lineNo: line.lineNo,
+    materialId: line.materialId,
+    materialName: line.materialName,
+    materialCode: line.materialCode,
+    specification: line.specification,
+    qty: line.qty,
+    uom: line.uom,
+    price: line.price,
+    amount: line.amount,
+    expectedDate: line.expectedDate,
+    receivedQty: line.receivedQty,
+    status: line.status,
+    note: line.note,
+  }
+}
+
+export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder {
+  return {
+    id: dto.id,
+    orderNo: dto.orderNo,
+    supplierName: dto.supplierName,
+    supplierId: dto.supplierId,
+    status: dto.status as PurchaseOrder['status'],
+    amount: dto.amount,
+    orderDate: dto.orderDate,
+    expectedDate: dto.expectedDate,
+    purchaser: dto.purchaser,
+    currency: dto.currency,
+    exchangeRate: dto.exchangeRate,
+    paymentTerm: dto.paymentTerm,
+    note: dto.note,
+    workflowInstanceId: dto.workflowInstanceId,
+    isDeleted: dto.isDeleted ?? false,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    version: dto._v ?? 1,
+    lines: (dto.lines ?? []).map(toPurchaseOrderLineContract),
+  }
+}
+
+export function toPurchaseOrderApiDTO(order: PurchaseOrder): PurchaseOrderApiDTO {
+  return {
+    id: order.id,
+    orderNo: order.orderNo,
+    supplierName: order.supplierName,
+    supplierId: order.supplierId,
+    status: order.status,
+    amount: order.amount,
+    orderDate: order.orderDate,
+    expectedDate: order.expectedDate,
+    purchaser: order.purchaser,
+    currency: order.currency,
+    exchangeRate: order.exchangeRate,
+    paymentTerm: order.paymentTerm,
+    note: order.note,
+    workflowInstanceId: order.workflowInstanceId,
+    isDeleted: order.isDeleted,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    _v: order.version,
+    lines: (order.lines ?? []).map(toPurchaseOrderLineApiDTO),
+  }
+}
+
+export function toPurchaseOrderContracts(items: PurchaseOrderApiDTO[]): PurchaseOrder[] {
+  return items.map(toPurchaseOrderContract)
+}
+
+export function toPurchaseOrderListPageContract(dto: PurchaseOrderListPageApiDTO): PaginatedPurchaseOrders {
+  return {
+    items: toPurchaseOrderContracts(dto.items ?? []),
+    total: dto.total,
+    page: dto.page,
+    pageSize: dto.pageSize,
+  }
+}
+
+export function toConfirmPurchaseReceiptContract(dto: ConfirmPurchaseReceiptResponseApiDTO): ConfirmPurchaseReceiptContract {
+  return {
+    purchaseOrder: toPurchaseOrderContract(dto.purchaseOrder),
+    createdInboundRecords: dto.createdInboundRecords,
+  }
+}

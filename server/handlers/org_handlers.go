@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +17,7 @@ func GetOrgTreeHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organization tree"})
 		return
 	}
-	c.JSON(http.StatusOK, mapOrganizationTreeResponse(tree))
+	c.JSON(http.StatusOK, tree)
 }
 
 func SaveOrgHandler(c *gin.Context) {
@@ -166,16 +165,13 @@ func PatchOrgHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapOrganizationResponse(&refreshed))
+	c.JSON(http.StatusOK, refreshed)
 }
 
-func findOrganizationResponse(node *models.Organization, targetID string) gin.H {
-	if node == nil {
-		return nil
-	}
+func findOrganizationResponse(node services.OrganizationTreeNodeResponse, targetID string) *services.OrganizationTreeNodeResponse {
 	if node.ID == targetID {
-		response := mapOrganizationResponse(node)
-		return response
+		response := node
+		return &response
 	}
 	for _, child := range node.Children {
 		if found := findOrganizationResponse(child, targetID); found != nil {

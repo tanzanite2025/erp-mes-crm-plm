@@ -2,6 +2,8 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
+import { toSalesOrderContract } from '../adapters/sales-order-api-adapter'
+import { type SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
 
 export const SALES_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
 export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE = 'ORDER_CLASSIFICATION_TYPE_CHANGE'
@@ -104,14 +106,16 @@ export const executeSalesOrderTransaction = async <TPayload>(
   orderId: string,
   request: SalesOrderTransactionRequest<TPayload>
 ): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrder>(`/sales-orders/${orderId}/transactions`, {
+  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${orderId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(
-    res,
-    'SalesTransactionService.executeSalesOrderTransaction'
-  ) as SalesOrder
+  return toSalesOrderContract(
+    ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
+      res,
+      'SalesTransactionService.executeSalesOrderTransaction'
+    ) as SalesOrderApiDTO
+  )
 }
 
 export const saveSalesOrderTransaction = async (

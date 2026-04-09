@@ -10,16 +10,20 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { type SalesOrder } from '../data/schema'
+import { toSalesOrderApiDTO, toSalesOrderContract } from '../sales/adapters/sales-order-api-adapter'
+import { type SalesOrderApiDTO } from '../sales/contracts/sales-order-api-dto'
 
 const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> => {
-  return apiFetch<SalesOrder>(`/sales-orders/by-no/${orderNo}`)
+  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/by-no/${orderNo}`)
+  return toSalesOrderContract(res)
 }
 
 const saveSalesOrderDeliveryProgress = async (order: SalesOrder): Promise<SalesOrder> => {
-  return apiFetch<SalesOrder>('/sales-orders', {
+  const res = await apiFetch<SalesOrderApiDTO>('/sales-orders', {
     method: 'POST',
-    body: JSON.stringify(order),
+    body: JSON.stringify(toSalesOrderApiDTO(order)),
   })
+  return toSalesOrderContract(res)
 }
 
 /**

@@ -34,3 +34,25 @@ func GetShipmentHistoryHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+// GetInventoryValuationHandler returns aggregated inventory valuation.
+func GetInventoryValuationHandler(c *gin.Context) {
+	response, err := services.GetInventoryValuation()
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_VALUATION_FAILED", "[SERVER] failed to aggregate inventory valuation: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// GetInventoryAlertSummaryHandler returns inventory low-stock alert summary.
+func GetInventoryAlertSummaryHandler(c *gin.Context) {
+	response, err := services.GetInventoryAlertSummary()
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_ALERT_SUMMARY_FAILED", "[SERVER] failed to aggregate inventory alert summary: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}

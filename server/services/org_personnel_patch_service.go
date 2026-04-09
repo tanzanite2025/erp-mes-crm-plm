@@ -56,7 +56,7 @@ type PatchEmployeeRequest struct {
 	ProcessID       *string
 }
 
-func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) (models.Organization, error) {
+func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
 	var updated models.Organization
 
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
@@ -125,13 +125,13 @@ func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) 
 		return nil
 	})
 	if err != nil {
-		return models.Organization{}, err
+		return OrganizationTreeNodeResponse{}, err
 	}
 
-	return updated, nil
+	return MapOrganizationNodeToResponse(&updated), nil
 }
 
-func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (models.Employee, error) {
+func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
 	var updated models.Employee
 
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
@@ -224,8 +224,8 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (models.
 			First(&updated).Error
 	})
 	if err != nil {
-		return models.Employee{}, err
+		return EmployeeListItemResponse{}, err
 	}
 
-	return updated, nil
+	return MapEmployeeToListItemResponse(updated), nil
 }

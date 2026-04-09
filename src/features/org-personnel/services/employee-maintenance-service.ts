@@ -1,8 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
-import { type Employee } from '../data/schema'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { toEmployeeApiDTO, toEmployeeContract } from '../adapters/employee-api-adapter'
+import { type EmployeeApiDTO } from '../contracts/employee-api-dto'
+import { type Employee } from '../data/schema'
 import { EmployeeCoreService } from './employee-core-service'
 
 const logger = createLogger('EmployeeMaintenanceService')
@@ -23,9 +25,9 @@ export const EmployeeMaintenanceService = {
    * 保存或更新员工记录 (全量更新)
    */
   saveEmployee: async (employee: Employee): Promise<Employee> => {
-    const data = await apiFetch<Employee>('/employees', {
+    const data = await apiFetch<EmployeeApiDTO>('/employees', {
       method: 'POST',
-      body: JSON.stringify(employee),
+      body: JSON.stringify(toEmployeeApiDTO(employee)),
     })
 
     if (!data) {
@@ -35,7 +37,9 @@ export const EmployeeMaintenanceService = {
       )
     }
 
-    return ensureObjectResponse<Employee>(data, 'EmployeeMaintenanceService.saveEmployee') as Employee
+    return toEmployeeContract(
+      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(data, 'EmployeeMaintenanceService.saveEmployee') as EmployeeApiDTO
+    )
   },
 
   /**
@@ -86,7 +90,7 @@ export const EmployeeMaintenanceService = {
       metadata: { id, version },
     }
 
-    const res = await apiFetch<Employee>(`/employees/${id}`, {
+    const res = await apiFetch<EmployeeApiDTO>(`/employees/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
@@ -95,10 +99,12 @@ export const EmployeeMaintenanceService = {
       throw new Error(`[CRITICAL_DATA_PATH] Patch employee failed for ID ${id}. SDRTS Sync halted.`)
     }
 
-    return ensureObjectResponse<Employee & Record<string, unknown>>(
-      res,
-      'EmployeeMaintenanceService.patchEmployee'
-    ) as Employee
+    return toEmployeeContract(
+      ensureObjectResponse<EmployeeApiDTO & Record<string, unknown>>(
+        res,
+        'EmployeeMaintenanceService.patchEmployee'
+      ) as EmployeeApiDTO
+    )
   },
 }
 
@@ -115,12 +121,14 @@ async function fallbackUpdateEmployeesStatus(ids: string[], status: EmployeeStat
 
   await Promise.all(
     employeesToUpdate.map((employee) =>
-      apiFetch<Employee>('/employees', {
+      apiFetch<EmployeeApiDTO>('/employees', {
         method: 'POST',
-        body: JSON.stringify({
-          ...employee,
-          status,
-        }),
+        body: JSON.stringify(
+          toEmployeeApiDTO({
+            ...employee,
+            status,
+          })
+        ),
       })
     )
   )

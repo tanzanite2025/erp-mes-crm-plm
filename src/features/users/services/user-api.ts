@@ -1,7 +1,8 @@
-import type { User, UserListPage, UserOption } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { toUserContract, toUserListPageContract, toUserOptionContracts } from '../adapters/user-api-adapter'
+import { type UserApiDTO, type UserListPageApiDTO, type UserOptionApiDTO } from '../contracts/user-api-dto'
 
 export interface CreateUserPayload {
   username: string
@@ -60,8 +61,10 @@ export const fetchUsers = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  const res = await apiFetch<UserListPage>(`/users?${query.toString()}`)
-  return ensureObjectResponse<UserListPage & Record<string, unknown>>(res, 'UserApi.fetchUsers') as UserListPage
+  const res = await apiFetch<UserListPageApiDTO>(`/users?${query.toString()}`)
+  return toUserListPageContract(
+    ensureObjectResponse<UserListPageApiDTO & Record<string, unknown>>(res, 'UserApi.fetchUsers') as UserListPageApiDTO
+  )
 }
 
 export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
@@ -81,19 +84,21 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
     }
   })
 
-  const res = await apiFetch<UserOption[]>(`/users?${query.toString()}`)
-  return ensureArrayResponse<UserOption>(res, 'UserApi.fetchUserOptions')
+  const res = await apiFetch<UserOptionApiDTO[]>(`/users?${query.toString()}`)
+  return toUserOptionContracts(ensureArrayResponse<UserOptionApiDTO>(res, 'UserApi.fetchUserOptions'))
 }
 
 /**
  * 创建用户
  */
 export const createUser = async (userData: CreateUserPayload) => {
-  const res = await apiFetch<User>('/users', {
+  const res = await apiFetch<UserApiDTO>('/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   })
-  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.createUser') as User
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.createUser') as UserApiDTO
+  )
 }
 
 /**
@@ -109,19 +114,23 @@ export const patchUser = async (id: string, delta: DeltaSet, version: number) =>
     },
   }
 
-  const res = await apiFetch<User>(`/users/${id}`, {
+  const res = await apiFetch<UserApiDTO>(`/users/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.patchUser') as User
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.patchUser') as UserApiDTO
+  )
 }
 
 export const replaceUser = async (id: string, userData: UserReplacePayload) => {
-  const res = await apiFetch<User>(`/users/${id}`, {
+  const res = await apiFetch<UserApiDTO>(`/users/${id}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   })
-  return ensureObjectResponse<User & Record<string, unknown>>(res, 'UserApi.replaceUser') as User
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.replaceUser') as UserApiDTO
+  )
 }
 
 /**

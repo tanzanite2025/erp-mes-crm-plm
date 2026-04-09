@@ -60,6 +60,48 @@ type EmployeeSaveRequest struct {
 	ProcessID      string     `json:"processId"`
 }
 
+type OrganizationTreeNodeResponse struct {
+	ID                 string                         `json:"id"`
+	Name               string                         `json:"name"`
+	ParentID           *string                        `json:"parentId"`
+	Manager            string                         `json:"manager"`
+	Description        string                         `json:"description"`
+	Type               string                         `json:"type"`
+	LinkedArchitecture json.RawMessage                `json:"linkedArchitecture"`
+	Children           []OrganizationTreeNodeResponse `json:"children,omitempty"`
+	CreatedAt          time.Time                      `json:"createdAt"`
+	UpdatedAt          time.Time                      `json:"updatedAt"`
+	Version            int                            `json:"version"`
+}
+
+type EmployeeListItemResponse struct {
+	ID             string     `json:"id"`
+	StaffID        string     `json:"staffId"`
+	Name           string     `json:"name"`
+	Gender         string     `json:"gender"`
+	Birthday       *time.Time `json:"birthday"`
+	IDCard         string     `json:"idCard"`
+	Phone          string     `json:"phone"`
+	EmergencyPhone string     `json:"emergencyPhone"`
+	Address        string     `json:"address"`
+	BankCard       string     `json:"bankCard"`
+	BankName       string     `json:"bankName"`
+	Education      string     `json:"education"`
+	Age            int        `json:"age"`
+	Station        string     `json:"station"`
+	Status         string     `json:"status"`
+	JoinedDate     *time.Time `json:"joinedDate"`
+	DeptID         string     `json:"deptId"`
+	LineID         string     `json:"lineId"`
+	ProcessID      string     `json:"processId"`
+	DeptName       string     `json:"deptName"`
+	LineName       string     `json:"lineName"`
+	ProcessName    string     `json:"processName"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+	Version        int        `json:"version"`
+}
+
 type EmployeeSaveResponse struct {
 	ID             string     `json:"id"`
 	StaffID        string     `json:"staffId"`
@@ -111,13 +153,13 @@ type BulkSyncEmployeeRequest struct {
 
 func MapOrganizationSaveRequestToModel(input OrganizationSaveRequest) models.Organization {
 	return models.Organization{
-		BaseModel:           models.BaseModel{ID: input.ID},
-		Name:                input.Name,
-		ParentID:            input.ParentID,
-		Manager:             input.Manager,
-		Description:         input.Description,
-		Type:                input.Type,
-		LinkedArchitecture:  input.LinkedArchitecture,
+		BaseModel:          models.BaseModel{ID: input.ID},
+		Name:               input.Name,
+		ParentID:           input.ParentID,
+		Manager:            input.Manager,
+		Description:        input.Description,
+		Type:               input.Type,
+		LinkedArchitecture: input.LinkedArchitecture,
 	}
 }
 
@@ -137,13 +179,13 @@ func MapOrganizationToSaveResponse(model models.Organization) OrganizationSaveRe
 
 func MapBulkSyncOrganizationRequestToModel(input BulkSyncOrganizationRequest) models.Organization {
 	return models.Organization{
-		BaseModel:           models.BaseModel{ID: input.ID},
-		Name:                input.Name,
-		ParentID:            input.ParentID,
-		Manager:             input.Manager,
-		Description:         input.Description,
-		Type:                input.Type,
-		LinkedArchitecture:  input.LinkedArchitecture,
+		BaseModel:          models.BaseModel{ID: input.ID},
+		Name:               input.Name,
+		ParentID:           input.ParentID,
+		Manager:            input.Manager,
+		Description:        input.Description,
+		Type:               input.Type,
+		LinkedArchitecture: input.LinkedArchitecture,
 	}
 }
 
@@ -169,6 +211,80 @@ func MapEmployeeSaveRequestToModel(input EmployeeSaveRequest) models.Employee {
 		LineID:         input.LineID,
 		ProcessID:      input.ProcessID,
 	}
+}
+
+func MapOrganizationTreeToResponse(nodes []*models.Organization) []OrganizationTreeNodeResponse {
+	items := make([]OrganizationTreeNodeResponse, 0, len(nodes))
+	for _, node := range nodes {
+		items = append(items, MapOrganizationNodeToResponse(node))
+	}
+	return items
+}
+
+func MapOrganizationNodeToResponse(node *models.Organization) OrganizationTreeNodeResponse {
+	if node == nil {
+		return OrganizationTreeNodeResponse{}
+	}
+
+	response := OrganizationTreeNodeResponse{
+		ID:                 node.ID,
+		Name:               node.Name,
+		ParentID:           node.ParentID,
+		Manager:            node.Manager,
+		Description:        node.Description,
+		Type:               node.Type,
+		LinkedArchitecture: node.LinkedArchitecture,
+		CreatedAt:          node.CreatedAt,
+		UpdatedAt:          node.UpdatedAt,
+		Version:            optimisticVersionFromTimestamps(node.UpdatedAt, node.CreatedAt),
+	}
+
+	if len(node.Children) > 0 {
+		response.Children = make([]OrganizationTreeNodeResponse, 0, len(node.Children))
+		for _, child := range node.Children {
+			response.Children = append(response.Children, MapOrganizationNodeToResponse(child))
+		}
+	}
+
+	return response
+}
+
+func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemResponse {
+	return EmployeeListItemResponse{
+		ID:             model.ID,
+		StaffID:        model.StaffID,
+		Name:           model.Name,
+		Gender:         model.Gender,
+		Birthday:       model.Birthday,
+		IDCard:         model.IDCard,
+		Phone:          model.Phone,
+		EmergencyPhone: model.EmergencyPhone,
+		Address:        model.Address,
+		BankCard:       model.BankCard,
+		BankName:       model.BankName,
+		Education:      model.Education,
+		Age:            model.Age,
+		Station:        model.Station,
+		Status:         model.Status,
+		JoinedDate:     model.JoinedDate,
+		DeptID:         model.DeptID,
+		LineID:         model.LineID,
+		ProcessID:      model.ProcessID,
+		DeptName:       model.DeptName,
+		LineName:       model.LineName,
+		ProcessName:    model.ProcessName,
+		CreatedAt:      model.CreatedAt,
+		UpdatedAt:      model.UpdatedAt,
+		Version:        optimisticVersionFromTimestamps(model.UpdatedAt, model.CreatedAt),
+	}
+}
+
+func MapEmployeesToListItemResponse(models []models.Employee) []EmployeeListItemResponse {
+	items := make([]EmployeeListItemResponse, 0, len(models))
+	for _, model := range models {
+		items = append(items, MapEmployeeToListItemResponse(model))
+	}
+	return items
 }
 
 func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {

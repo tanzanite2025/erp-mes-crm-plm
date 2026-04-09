@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -17,70 +19,20 @@ import (
 func GetSuppliersHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
-
 	isOptions := c.Query("options") == "true"
-	query := db.DB.Model(&models.Supplier{}).Where("is_deleted = ?", false)
-
-	if isOptions {
-		var suppliers []models.Supplier
-		if err := query.Order("name asc").Find(&suppliers).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商选项失败: " + err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, mapSuppliersToResponse(suppliers))
-		return
-	}
-
-	statsBaseQuery := db.DB.Model(&models.Supplier{}).Where("is_deleted = ?", false)
-	var total int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
-		return
-	}
-
-	var active int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
-		return
-	}
-
-	var pendingReview int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "OnReview").Count(&pendingReview).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
-		return
-	}
-
-	var items []models.Supplier
-	if err := query.Order("name asc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
+	response, err := services.ListSuppliers(services.SupplierListQuery{
+		Page:     page,
+		PageSize: pageSize,
+		Options:  isOptions,
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商列表失败: " + err.Error()})
 		return
 	}
-
-	response := SupplierListHandlerResponse{
-		Items:    mapSuppliersToResponse(items),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Metadata: services.SupplierListMetadata{
-			Pagination: services.PartnerListPaginationMeta{
-				Total:    total,
-				Page:     page,
-				PageSize: pageSize,
-			},
-			Stats: services.SupplierListStats{
-				Total:         total,
-				Active:        active,
-				PendingReview: pendingReview,
-			},
-		},
+	if isOptions {
+		c.JSON(http.StatusOK, response.Items)
+		return
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 
@@ -92,28 +44,9 @@ func SaveSupplierHandler(c *gin.Context) {
 		return
 	}
 
-	input := services.MapSaveSupplierRequestToModel(req)
-
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if input.ID != "" {
-			var existing models.Supplier
-			if err := tx.Where("id = ?", input.ID).First(&existing).Error; err == nil {
-				// 乐观锁校验
-				if input.Version != existing.Version {
-					return ErrVersionConflict
-				}
-				input.Version = existing.Version + 1
-				// 使用 Select("*") 确保零值字段正常更新
-				return tx.Model(&existing).Select("*").Updates(input).Error
-			}
-		}
-
-		input.Version = 1
-		return tx.Create(&input).Error
-	})
-
+	response, err := services.SaveSupplier(req, middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP())
 	if err != nil {
-		if err == ErrVersionConflict {
+		if errors.Is(err, services.ErrSupplierTransactionVersionConflict) || err == ErrVersionConflict {
 			respondVersionConflict(c)
 			return
 		}
@@ -121,7 +54,7 @@ func SaveSupplierHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapSupplierToResponse(input))
+	c.JSON(http.StatusOK, response)
 }
 
 // PatchSupplierHandler 局部更新供应商
@@ -228,35 +161,16 @@ func PatchSupplierHandler(c *gin.Context) {
 		}
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var existing models.Supplier
-		if err := tx.Where("id = ?", id).First(&existing).Error; err != nil {
-			return err
-		}
-		if patch.Version != existing.Version {
-			return ErrVersionConflict
-		}
-		services.ApplyPatchSupplierRequestToModel(&existing, patch)
-		existing.Version = existing.Version + 1
-		return tx.Model(&existing).Select("*").Updates(existing).Error
-	})
-
+	response, err := services.PatchSupplier(patch, middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP())
 	if err != nil {
-		if err == ErrVersionConflict {
+		if errors.Is(err, services.ErrSupplierTransactionVersionConflict) || err == ErrVersionConflict {
 			respondVersionConflict(c)
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新供应商失败: " + err.Error()})
 		return
 	}
-
-	var supplier models.Supplier
-	if err := db.DB.Where("id = ?", id).First(&supplier).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的供应商失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, mapSupplierToResponse(supplier))
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteSupplierHandler 逻辑删除供应商

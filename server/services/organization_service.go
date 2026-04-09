@@ -47,7 +47,7 @@ var defaultOrganizationService = NewOrganizationService(
 	repositories.NewOrganizationRepository(),
 )
 
-func ListOrganizationTree() ([]*models.Organization, error) {
+func ListOrganizationTree() ([]OrganizationTreeNodeResponse, error) {
 	return defaultOrganizationService.ListOrganizationTree()
 }
 
@@ -59,7 +59,7 @@ func DeleteOrganization(id string) error {
 	return defaultOrganizationService.DeleteOrganization(id)
 }
 
-func ListEmployees() ([]models.Employee, error) {
+func ListEmployees() ([]EmployeeListItemResponse, error) {
 	return defaultOrganizationService.ListEmployees()
 }
 
@@ -71,11 +71,11 @@ func SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
 	return defaultOrganizationService.SaveEmployee(input)
 }
 
-func PatchOrganization(input PatchOrganizationRequest) (models.Organization, error) {
+func PatchOrganization(input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
 	return defaultOrganizationService.PatchOrganization(input)
 }
 
-func PatchEmployee(input PatchEmployeeRequest) (models.Employee, error) {
+func PatchEmployee(input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
 	return defaultOrganizationService.PatchEmployee(input)
 }
 
@@ -91,7 +91,7 @@ func BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
 	return defaultOrganizationService.BulkSyncEmployees(input)
 }
 
-func (s *OrganizationService) ListOrganizationTree() ([]*models.Organization, error) {
+func (s *OrganizationService) ListOrganizationTree() ([]OrganizationTreeNodeResponse, error) {
 	allNodes, err := s.repository.ListOrganizations(s.txManager.DB())
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (s *OrganizationService) ListOrganizationTree() ([]*models.Organization, er
 		rootNodes = append(rootNodes, node)
 	}
 
-	return rootNodes, nil
+	return MapOrganizationTreeToResponse(rootNodes), nil
 }
 
 func (s *OrganizationService) SaveOrganization(input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
@@ -222,8 +222,12 @@ func (s *OrganizationService) DeleteOrganization(id string) error {
 	return s.repository.DeleteOrganization(s.txManager.DB(), id)
 }
 
-func (s *OrganizationService) ListEmployees() ([]models.Employee, error) {
-	return s.repository.ListEmployees(s.txManager.DB())
+func (s *OrganizationService) ListEmployees() ([]EmployeeListItemResponse, error) {
+	employees, err := s.repository.ListEmployees(s.txManager.DB())
+	if err != nil {
+		return nil, err
+	}
+	return MapEmployeesToListItemResponse(employees), nil
 }
 
 func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {

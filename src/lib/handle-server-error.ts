@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import { getErrorStatus, isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
@@ -29,6 +28,43 @@ const TIMEOUT_KEY: TranslationKey = 'common.auth.signInForm.timeout'
 const EMPTY_NO_DATA_KEY: TranslationKey = 'common.empty.noData'
 const SERVER_ERROR_KEY: TranslationKey = 'common.auth.signInForm.serverError'
 
+function asNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (!error || typeof error !== 'object') {
+    return String(error)
+  }
+
+  const shape = error as {
+    error?: unknown
+    message?: unknown
+    response?: {
+      data?: {
+        error?: unknown
+        message?: unknown
+        title?: unknown
+      }
+    }
+  }
+
+  return (
+    asNonEmptyString(shape.error) ||
+    asNonEmptyString(shape.message) ||
+    asNonEmptyString(shape.response?.data?.error) ||
+    asNonEmptyString(shape.response?.data?.message) ||
+    asNonEmptyString(shape.response?.data?.title) ||
+    String(error)
+  )
+}
+
 export function isConflictError(error: unknown) {
   if (!error || typeof error !== 'object') return false
   if ('isConflict' in error && Boolean(error.isConflict)) return true
@@ -38,12 +74,7 @@ export function isConflictError(error: unknown) {
 
 export function getServerErrorPresentation(error: unknown): ServerErrorPresentation {
   const status = getErrorStatus(error)
-  let errorMessage = error instanceof Error ? error.message : String(error)
-  
-  // If it's an AxiosError, prioritize the inner error message if available
-  if (error instanceof AxiosError && error.response?.data?.error) {
-    errorMessage = error.response.data.error
-  }
+  const errorMessage = extractErrorMessage(error)
 
   const locale = (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
 
@@ -103,12 +134,8 @@ export function getServerErrorPresentation(error: unknown): ServerErrorPresentat
   }
 
   let errMsg = translate(locale, SERVER_ERROR_KEY, { status: status || '???' })
-
-  if (error instanceof AxiosError) {
-    errMsg = error.response?.data.title || error.message
-  } else if (error instanceof Error) {
-    errMsg = error.message
-  }
+  const concreteMessage = asNonEmptyString(errorMessage)
+  if (concreteMessage) errMsg = concreteMessage
 
   return { message: errMsg, status }
 }
@@ -128,4 +155,3 @@ export function showServerErrorToast(presentation: ServerErrorPresentation) {
 export function handleServerError(error: unknown) {
   showServerErrorToast(getServerErrorPresentation(error))
 }
-

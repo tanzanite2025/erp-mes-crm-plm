@@ -3,11 +3,11 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - main
+      - master
 
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   install-lint-build:
@@ -22,11 +22,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Setup pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify pnpm lockfile sync
+        run: node scripts/check-pnpm-lock-sync.mjs
+
+      - name: Verify package-manager command policy
+        run: pnpm run verify:package-manager-commands
 
       - name: Lint the code
         run: pnpm lint
@@ -58,7 +66,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25.x'
           cache-dependency-path: server/go.sum
 
       - name: Run Backend Tests

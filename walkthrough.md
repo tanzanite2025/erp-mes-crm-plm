@@ -1,5 +1,581 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-09 `sales_orders PATCH` 历史残留清理
+
+### 变更概述
+- 本轮不是新增功能，而是针对 `sales-order PATCH hard-cut` 之后的历史残留做专项核查与清理确认。
+- 本轮范围严格限制在：
+  - `server/handlers/sales_orders.go`
+  - `server/services/sales_*` 最小相关调用面
+  - 路由注册与最小编译面
+
+### 核查结果
+
+#### 1. 公开 PATCH 路由未回潮
+- 核查 `routes/routing_trading.go`（实际注册文件为 `routes/routes_trading.go`）后确认：
+  - `sales-order` 当前仅暴露 `GET / POST / POST transactions / DELETE`
+  - **不存在** `PATCH /sales-orders/:id`
+
+#### 2. 旧 PATCH DTO / mapper 残留已清空
+- 核查后确认已不存在以下旧残留：
+  - `PatchSalesOrderRequest`
+  - `MapPatchSalesOrderRequestToModel`
+  - 旧 `PATCH /sales-orders` 相关引用
+- 说明此前 hard-cut 后的直接旧引用已不再留存在代码中。
+
+#### 3. 当前保留的是“内部 command 边界”，不是历史残留
+- 当前 `sales_order_command_service.go` 中保留的：
+  - `PatchSalesOrderCommand`
+  - `BuildSalesOrderSavePayload(...)`
+- 这些并非旧 PATCH 路由的残留，而是第四段明确建立的**内部对称 command 抽象**，用于统一 `sales / purchase` 的写入组织方式。
+- 因此，本轮不再对这部分做删除性修改，避免误伤当前有效边界。
+
+### 本轮处理结论
+- 本轮专项核查的实际结论是：
+  - **旧 PATCH 残留已基本清空**
+  - **公开 PATCH 路由未恢复**
+  - **当前保留的是应当保留的内部 command 能力**
+- 因而本轮不进行额外的业务代码删除，而是通过验证与记录将边界正式固定，避免后续误判“内部 command 抽象 = PATCH 回潮”。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "Sales|Trading" -count=1
+go test ./services -run "Sales|Trading" -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+- `sales_orders PATCH` 历史残留专项已完成。
+- 当前 `sales-order` 的边界已明确固定：
+  - 保留内部 command 组织能力
+  - 不恢复公开 `PATCH /sales-orders/:id`
+- 后续若再审视该处，不应再把当前内部 command 抽象误判为 hard-cut 失败或旧 PATCH 回潮。
+
+## 2026-04-09 `trading` 第四段：sales 对称 patch 包装与写入模式统一
+
+### 变更概述
+- 本轮是在 `trading` 第三段完成后继续推进，目标不是恢复 `sales-order` 公开 PATCH 路由，而是在不破坏既有 hard-cut 决策的前提下，为 `sales-order` 补充**内部对称 patch / command 包装**。
+- 本轮聚焦：
+  - `sales_order_command_service.go`
+  - `sales / purchase` command service 的内部组织方式统一
+- 本轮原则是统一**内部 command 组织模式**，而不是统一外部 HTTP 接口形态。
+
+### 收口方式
+
+#### 1. 为 `sales-order` 增补内部对称 patch command
+- 更新 `server/services/sales_order_command_service.go`
+- 新增：
+  - `PatchSalesOrderCommand`
+  - `PatchSalesOrder(...)`
+  - `BuildSalesOrderSavePayload(...)`
+- 处理方式：
+  - 复用既有 `SalesTransactionIntentOrderSave`
+  - 以 `SalesOrderSnapshotRequest + delta` 形式封装内部 patch/update 语义
+  - 明确这只是**内部 command 抽象**，不对外恢复 `PATCH /sales-orders/:id`
+
+#### 2. 收敛 `sales / purchase` command service 的 payload 组织方式
+- `sales-order`
+  - `SaveSalesOrder(...)` 改为复用 `BuildSalesOrderSavePayload(...)`
+- `purchase-order`
+  - 继续保持 `PatchPurchaseOrder(...)` / `SavePurchaseOrder(...)` 通过 payload builder 进入 transaction 主链
+- 结果：`sales / purchase` 在内部都形成了“command -> payload builder -> ORDER_SAVE transaction”的稳定组织模式。
+
+#### 3. 显式固定保留差异
+- 本轮没有恢复 `sales-order` 公开 PATCH 路由。
+- 保留差异被明确固定为：
+  - `purchase-order` 仍保有外部 patch 主链
+  - `sales-order` 只补内部对称包装，不恢复公开 PATCH 能力
+- 结果：统一的是**内部写入组织模式**，保留的是**外部接口决策差异**。
+
+### 本轮效果
+- `sales / purchase` 的 command service 组织方式已进一步统一。
+- `sales-order` 不再是“只有 save command、没有任何对称 patch 包装”的特殊孤岛。
+- `trading` 在不回滚 hard-cut 决策的前提下，完成了“内部统一、外部差异显式固定”的第四段收口。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "Sales|Purchase|Trading|Workflow" -count=1
+go test ./services -run "Sales|Purchase|Trading|Workflow" -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+- `trading` 第四段已完成：
+  - `sales-order` 内部对称 patch / command 包装已补齐
+  - `sales / purchase` 写入组织方式进一步统一
+  - `sales-order` 公开 PATCH hard-cut 边界未被破坏
+- 若继续下一段，可转回 DTO 总表开始下一批模块治理，或专门清理 `sales_orders PATCH` 历史残留章节中记录的遗留编译/文档面。
+
+## 2026-04-09 `trading` 第三段：patch 展开与写入主链继续下沉
+
+### 变更概述
+- 本轮是在 `trading` 第二段完成后继续推进，目标不是再新增 command service，而是继续清理 `purchase-order patch` 主链中仍残留在 handler 的 delta 展开与 request 组装逻辑。
+- 本轮聚焦：
+  - `PatchPurchaseOrderHandler`
+  - `purchase_order_command_service.go`
+  - `services` 侧 delta 解析能力补齐
+- 本轮原则是让 handler 真正收敛到 HTTP 边界，把 `purchase patch` 的组装逻辑与 `ORDER_SAVE` payload 前置准备继续下沉到 service。
+
+### 收口方式
+
+#### 1. 在 `services` 侧补齐 delta 新值提取能力
+- 更新 `server/services/delta_validation.go`
+- 新增：
+  - `deltaValue`
+  - `extractDeltaNewValue(...)`
+- 结果：delta 新值提取能力不再只存在于 handler 层，后续 patch assembler 可以在 service 侧直接复用。
+
+#### 2. 在 `purchase_order_command_service.go` 中新增 patch assembler
+- 扩展 `PatchPurchaseOrderCommand`，允许直接接收 `SDRTSDeltaHandlerRequest`
+- 新增 `BuildPurchaseOrderPatchRequest(...)`
+- 下沉内容包括：
+  - `validateSupportedTopLevelDeltaKeys(...)`
+  - 现有实体读取与 response 回填
+  - `PatchPurchaseOrderRequest` 初始化
+  - `extractDeltaNewValue(...)` 后逐字段展开
+  - 最终 `PatchPurchaseOrderRequest` 组装
+- 同时让 `PatchPurchaseOrder(...)` 支持：
+  - 若收到 `DeltaReq`，先在 service 内完成 patch request 组装
+  - 再统一封装为 `ORDER_SAVE` payload，复用既有 transaction 主链
+
+#### 3. `PatchPurchaseOrderHandler` 进一步收敛为薄壳
+- `server/handlers/purchase_orders.go`
+  - 删除 handler 中原有的大段 patch 展开与字段解释逻辑
+  - 改为仅：
+    - 绑定 `SDRTSDeltaHandlerRequest`
+    - 提取 `actor / operator / ip`
+    - 调用 `services.PatchPurchaseOrder(...)`
+    - 映射 400 / 404 / 409 / 500
+- 结果：`purchase patch` 的业务组装职责已从 handler 退出。
+
+### 本轮效果
+- `purchase-order patch` 已从“handler 负责 delta 展开，service 只负责提交事务”推进到“service 同时负责 patch assembler + command + transaction 组织”。
+- `sales / purchase` 的写入组织方式进一步对齐：
+  - `sales-order` 第二段已完成 save command 下沉
+  - `purchase-order` 第三段继续完成 patch assembler 下沉
+- `trading` 写入主链中最重的 handler 残留逻辑已进一步收薄。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "Purchase|Sales|Trading|Workflow" -count=1
+go test ./services -run "Purchase|Sales|Trading|Workflow" -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+- `trading` 第三段已完成：
+  - `PatchPurchaseOrderHandler` 中的 delta 展开与 patch request 组装下沉完成
+  - `purchase-order` patch 主链 service 边界进一步完整
+  - `sales / purchase` 写入组织方式进一步收敛
+- 若继续下一段，可转向评估 `sales-order` 是否需要补充对称 patch command 包装，或回到 DTO 总表进入下一批模块治理。
+
+## 2026-04-09 `trading` 第二段：订单 handler 编排下沉
+
+### 变更概述
+- 本轮是在 `trading` 第一段完成后继续推进，目标不是再扩前端 contract 面，而是继续把订单保存/patch 主链从 handler 下沉到更明确的 service / command 边界。
+- 本轮聚焦：
+  - `SaveSalesOrderHandler`
+  - `SavePurchaseOrderHandler`
+  - `PatchPurchaseOrderHandler`
+- 本轮原则是**优先复用既有 transaction service**，不重新发明第二套业务规则，只补 handler 与 transaction/service 之间缺失的 command orchestration 层。
+
+### 收口方式
+
+#### 1. 新增 `sales-order` command service
+- 新增 `server/services/sales_order_command_service.go`
+- 新增：
+  - `SaveSalesOrderCommand`
+  - `SaveSalesOrder(...)`
+  - `createSalesOrderTx(...)`
+  - `MapSaveSalesOrderRequestToSnapshot(...)`
+- 处理方式：
+  - **新建订单**：在 command service 内承接校验、创建、状态重算、工作流实例创建与 `workflow_instance_id` 回填
+  - **已有订单更新**：统一封装为 `ORDER_SAVE` payload，复用 `ExecuteSalesOrderTransaction(...)`
+- 结果：`SaveSalesOrderHandler` 不再自己承担核心事务编排。
+
+#### 2. 新增 `purchase-order` command service
+- 新增 `server/services/purchase_order_command_service.go`
+- 新增：
+  - `SavePurchaseOrderCommand`
+  - `PatchPurchaseOrderCommand`
+  - `SavePurchaseOrder(...)`
+  - `PatchPurchaseOrder(...)`
+  - `createPurchaseOrderTx(...)`
+  - `MapSavePurchaseOrderRequestToPatchRequest(...)`
+- 处理方式：
+  - **新建采购订单**：在 command service 内承接物料校验、创建、工作流实例挂接
+  - **已有采购订单保存**：统一封装为 `ORDER_SAVE` payload，复用 `ExecutePurchaseOrderTransaction(...)`
+  - **采购订单 patch**：将 handler 中展开后的完整 patch request 统一交给 `PatchPurchaseOrder(...)`，再复用 `ORDER_SAVE` transaction 语义提交
+- 结果：`SavePurchaseOrderHandler` 与 `PatchPurchaseOrderHandler` 不再自己承担核心事务编排。
+
+#### 3. handler 收敛为参数解析 + 错误码映射层
+- `server/handlers/sales_orders.go`
+  - `SaveSalesOrderHandler` 改为仅绑定请求、提取 `actor/operator/ip`、调用 `services.SaveSalesOrder(...)`、映射版本冲突错误
+- `server/handlers/purchase_orders.go`
+  - `SavePurchaseOrderHandler` 改为仅绑定请求、提取 `actor/operator/ip`、调用 `services.SavePurchaseOrder(...)`
+  - `PatchPurchaseOrderHandler` 保留 delta 展开步骤，但不再自行落事务，而是交给 `services.PatchPurchaseOrder(...)`
+- 结果：handler 明显收敛到 HTTP 边界职责，不再继续成为订单写入主链的事务编排中心。
+
+### 本轮效果
+- `sales-order` 的保存主链已从 handler 内联事务编排推进到 command service + transaction service 组合边界。
+- `purchase-order` 的保存 / patch 主链已从 handler 内联事务编排推进到 command service + transaction service 组合边界。
+- `trading` 第二段完成后，订单域已经从“前端边界先闭环”继续推进到“后端订单编排层继续下沉”。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "Sales|Purchase|Trading|Workflow" -count=1
+go test ./services -run "Sales|Purchase|Trading|Workflow" -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+- `trading` 第二段已完成：
+  - `SaveSalesOrderHandler` 下沉完成
+  - `SavePurchaseOrderHandler` 下沉完成
+  - `PatchPurchaseOrderHandler` 下沉完成
+- 下一步若继续，可优先评估是否需要将 `purchase_orders.go` 中 patch delta 展开本身也进一步收口到 service，或转向下一个模块的 DTO 闭环批次。
+
+## 2026-04-09 `trading` 整域 DTO 闭环（第一段）
+
+### 变更概述
+- 本轮按已批准的 `trading` 整域方案，先完成第一段最关键的 DTO 收口，目标是优先清理两类最大断点：
+  - 后端 `logistics` 仍直接返回 `models.LogisticsRecord`
+  - 前端 `sales-order / purchase-order` 仍大量 `apiFetch<SalesOrder>` / `apiFetch<PurchaseOrder>` 直连
+- 本轮没有在一次提交中把所有订单 handler 事务编排完全下沉重写，而是优先完成**后端最明显 model 直出点**与**前端最大面积 contract 断点**，先把 `trading` 拉进可持续闭环轨道。
+
+### 收口方式
+
+#### 1. 后端为 `logistics` 建立 DTO 出口
+- 新增 `server/services/logistics_dto.go`：
+  - `LogisticsRecordResponse`
+  - `LogisticsRecordListResponse`
+  - `MapLogisticsRecordToResponse`
+  - `MapLogisticsRecordsToResponse`
+- 结果：`logistics` 已具备独立 response DTO 与 mapper，不再只能直接回传 `models.LogisticsRecord`。
+
+#### 2. `logistics` handlers 停止直接返回 `models.LogisticsRecord`
+- `server/handlers/logistics.go`
+  - `GetLogisticsRecordsHandler` 改为返回 `services.LogisticsRecordListResponse`
+  - `GetLogisticsRecordHandler` 改为返回 `services.MapLogisticsRecordToResponse(record)`
+  - `SaveLogisticsRecordHandler` 的新增/更新返回统一映射为 DTO
+  - `UpdateLogisticsStatusHandler` 的最终返回统一映射为 DTO
+- 结果：`trading` 域里最明显的后端 model 直出点已经收口。
+
+#### 3. 前端为 `sales-order` 建立 `API DTO + adapter`
+- 新增：
+  - `src/features/trading/sales/contracts/sales-order-api-dto.ts`
+  - `src/features/trading/sales/adapters/sales-order-api-adapter.ts`
+- adapter 覆盖：
+  - `SalesOrderApiDTO -> SalesOrder`
+  - `SalesOrderLineApiDTO -> SalesOrderLine`
+  - `SalesOrder -> SalesOrderApiDTO`
+  - 列表分页 DTO -> 页面 contract
+
+#### 4. `sales-order` 前端主链停止实体直连
+- `src/features/trading/sales/services/sales-query-service.ts`
+  - `getSalesOrders`
+  - `getSalesOrderById`
+  - `getSalesOrderByNo`
+  改为先读取 API DTO，再经 adapter 转为页面 contract
+- `src/features/trading/sales/services/sales-service.ts`
+  - `createSalesOrder` 改为通过 adapter 显式映射请求与响应
+- `src/features/trading/sales/services/sales-transaction-service.ts`
+  - transaction 响应改为 `SalesOrderApiDTO -> SalesOrder`
+- `src/features/trading/services/order-delivery-service.ts`
+  - 旁路直连销售订单的读写逻辑改为经 adapter 进行转换
+
+#### 5. 前端为 `purchase-order` 建立 `API DTO + adapter`
+- 新增：
+  - `src/features/trading/purchase/contracts/purchase-order-api-dto.ts`
+  - `src/features/trading/purchase/adapters/purchase-order-api-adapter.ts`
+- adapter 覆盖：
+  - `PurchaseOrderApiDTO -> PurchaseOrder`
+  - `PurchaseOrderLineApiDTO -> PurchaseOrderLine`
+  - `PurchaseOrder -> PurchaseOrderApiDTO`
+  - `ConfirmPurchaseReceiptResponseApiDTO -> 页面 contract`
+
+#### 6. `purchase-order` 前端主链停止实体直连
+- `src/features/trading/purchase/services/purchase-service.ts`
+  - `getPurchaseOrders`
+  - `getDeletedPurchaseOrders`
+  - `getPurchaseOrderById`
+  - `createPurchaseOrder`
+  - `patchPurchaseOrder`
+  - `confirmPurchaseReceipt`
+  全部改为经 API DTO / adapter 转换
+- `src/features/trading/purchase/services/purchase-transaction-service.ts`
+  - transaction 响应改为 `PurchaseOrderApiDTO -> PurchaseOrder`
+
+### 本轮效果
+- `trading` 前端已经从“销售单/采购单 service 大面积实体直连”推进到“订单主链 `API DTO + adapter + 页面 contract` 显式边界”。
+- `trading` 后端已经清除 `logistics` 这一块最明显的 `model` 直出风险。
+- 当前 `sales-order / purchase-order` 的后端读取与 transaction 出口虽然原本已有 DTO 样板，但经过本轮前端对齐后，前后端契约边界终于同步起来，不再形成“后端有 DTO、前端仍把页面 schema 当 API 契约”的半接入状态。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "Sales|Purchase|Logistics|Trading" -count=1
+go test ./services -run "Sales|Purchase|Logistics|Trading" -count=1
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `trading` 已完成第一段 DTO 闭环：
+  - 后端 `logistics` DTO 出口收口
+  - 前端 `sales-order / purchase-order` 主链 `API DTO + adapter` 收口
+- 若继续下一段，建议优先处理 `sales_orders.go` / `purchase_orders.go` 中仍留在 handler 内的 `save / patch` 事务编排，将其继续下沉到更明确的 query / command service 边界。
+
+## 2026-04-09 `users` 读取链 DTO 收口与前端 `contract / adapter` 闭环
+
+### 变更概述
+- 本轮按已批准的专项方案，完成了 `users` 模块**读取链**的 DTO 收口，并同步补齐了前端 `contract / adapter` 边界。
+- 本轮范围聚焦：
+  - 后端 `GET /users` 的列表 / options 读取主链
+  - 前端 `src/features/users/services/user-api.ts` 的读取链与相关返回契约
+- 本轮不扩大到权限体系治理，也不重开写入链重构，只在必要范围内顺手让前端写入接口也对齐同一套 API DTO 适配边界，避免再次形成半边状态。
+
+### 收口方式
+
+#### 1. 后端新增 `users` 读取链 service DTO / mapper / service
+- 新增 `server/services/user_query_dto.go`：
+  - `UserQuery`
+  - `UserResponse`
+  - `UserOptionResponse`
+  - `UserListResponse`
+  - `MapUserToResponse` / `MapUsersToResponse`
+  - `MapUserToOptionResponse` / `MapUsersToOptionResponse`
+- 新增 `server/services/user_query_service.go`：
+  - `ListUsers(...)`
+  - `ListUserOptions(...)`
+- 结果：`users` 的读取链已有独立 service DTO 与 mapper 承接层，不再只停留在 handler 内部组织查询与映射。
+
+#### 2. `GetUsersHandler` 改为通过 service 承接读取主链
+- `server/handlers/users.go`
+  - `GetUsersHandler` 现在先归一化 query 参数（`page / pageSize / username / status / role`）
+  - `options=true` 时调用 `services.ListUserOptions(...)`
+  - 普通列表时调用 `services.ListUsers(...)`
+- 结果：`GetUsersHandler` 不再在公开读取主链上直接以 `[]models.User` 作为事实载体。
+
+#### 3. handler DTO 文件降级为兼容壳层
+- `server/handlers/user_dto.go`
+  - 改为通过 type alias 与 wrapper 复用 `services.UserResponse` / `services.UserListResponse` / `services.UserOptionResponse`
+  - `mapUserToResponse` / `mapUsersToResponse` 改为转发到 services mapper
+- 结果：`users` 的读取契约中心从 handler 层下沉到 service DTO 层，避免后续读取链继续在 handler 里散落重复 DTO 定义。
+
+#### 4. 前端建立 `users` 的 `API DTO + adapter` 边界
+- 新增：
+  - `src/features/users/contracts/user-api-dto.ts`
+  - `src/features/users/adapters/user-api-adapter.ts`
+- adapter 负责：
+  - `UserApiDTO -> User`
+  - `UserOptionApiDTO -> UserOption`
+  - `UserListPageApiDTO -> UserListPage`
+- 同时补充了 `User -> UserApiDTO` 的反向映射，为后续写入链统一契约提供基础。
+
+#### 5. 前端 `user-api.ts` 停止 `apiFetch<User>` / `apiFetch<User[]>` 直连
+- `src/features/users/services/user-api.ts`
+  - `fetchUsers` 改为 `apiFetch<UserListPageApiDTO>` 后经 adapter 转成 `UserListPage`
+  - `fetchUserOptions` 改为 `apiFetch<UserOptionApiDTO[]>` 后经 adapter 转成 `UserOption[]`
+  - `createUser` / `patchUser` / `replaceUser` 的响应也统一改为 `UserApiDTO -> User`
+- 结果：`users` 前端已不再直接把页面 schema 当作后端 API 契约使用。
+
+### 本轮效果
+- 后端 `users` 已从“读取链主要停留在 handler，`[]models.User` 为公开事实载体”推进到“读取链 service DTO 化”。
+- 前端 `users` 已从“`apiFetch<User>` / `apiFetch<User[]>` 类型化直连”推进到“`API DTO + adapter + 页面 contract` 显式边界”。
+- 这使 `users` 成为继 `org-personnel`、`partner` 之后第三个完成核心主链 DTO 闭环的模块级样板。
+
+### 验证
+执行：
+```bash
+go test ./handlers -run "User" -count=1
+go test ./services -run User -count=1
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `users` 已完成本轮计划中的读取链 DTO 收口与前端 `contract / adapter` 闭环。
+- 下一轮可优先推进 `trading`（尤其订单前端 contract / adapter）做第四个整域样板，或回到全局总表继续分批执行下一组模块。
+
+## 2026-04-09 `partner`（`customers / suppliers`）整域 DTO 闭环
+
+### 变更概述
+- 本轮按已批准的整域方案，完成了 `partner` 域中 `customers / suppliers` 的主链 DTO 闭环，范围覆盖：
+  - 后端 `list / options / save / patch / transactions` 的公共 service / handler 边界
+  - 前端 `customer-service`、`supplier-service` 的 API 消费边界
+- 本轮目标不是扩散到交易明细或其他邻接域，而是先把 `partner` 做成继 `org-personnel` 之后的第二个整域闭环样板。
+
+### 收口方式
+
+#### 1. 后端新增 `partner` 统一 DTO / mapper / service
+- 在 `server/services/partner_list_dto.go` 中补齐并统一了 `partner` 域 DTO：
+  - `CustomerResponse`
+  - `SupplierResponse`
+  - `CustomerListResponse`
+  - `SupplierListResponse`
+  - `SaveCustomerRequest`
+  - `PatchCustomerRequest`
+  - 对应 customer / supplier mapper 与 snapshot mapper
+- 新增 `server/services/partner_service.go`：
+  - `ListCustomers`
+  - `ListSuppliers`
+  - `SaveCustomer`
+  - `SaveSupplier`
+  - `PatchCustomer`
+  - `PatchSupplier`
+- 结果：`partner` 的 `list / options / save / patch` 主链有了明确的 service DTO 承接层，不再由 handler 直接成为主链事实中心。
+
+#### 2. `customers.go` / `suppliers.go` 不再直接编排主链 DB 行为
+- `server/handlers/customers.go`
+  - `GetCustomersHandler` 改为通过 `services.ListCustomers(...)`
+  - `SaveCustomerHandler` 改为通过 `services.SaveCustomer(...)`
+  - `PatchCustomerHandler` 改为通过 `services.PatchCustomer(...)`
+- `server/handlers/suppliers.go`
+  - `GetSuppliersHandler` 改为通过 `services.ListSuppliers(...)`
+  - `SaveSupplierHandler` 改为通过 `services.SaveSupplier(...)`
+  - `PatchSupplierHandler` 改为通过 `services.PatchSupplier(...)`
+- 结果：handler 现在只承担 handler DTO 解析、错误码映射与 service 调用，不再直接作为 save / patch 主链的 DB 编排层。
+
+#### 3. `Select("*").Updates(...)` 不再作为主链默认更新语义
+- 本轮关键目标之一是把 `customers / suppliers` 从“DTO 入口 + 实体覆盖式更新”推进到真正的 service 主链。
+- 实际做法：
+  - 对 `customers / suppliers` 的更新主链，优先复用现有 `partner_transaction_service.go`
+  - 由 `partner_service.go` 组装 save snapshot / delta 后，调用：
+    - `ExecuteCustomerTransaction(...)`
+    - `ExecuteSupplierTransaction(...)`
+- 结果：`save / patch` 主链已不再以 handler 内联 `Select("*").Updates(...)` 作为默认更新方式，而是切到已有的事务型 service 样板。
+
+#### 4. transaction handler 返回统一 DTO
+- `server/handlers/partner_transaction_handlers.go`：
+  - `ExecuteCustomerTransactionHandler` 改为返回 `services.MapCustomerToResponse(*result)`
+  - `ExecuteSupplierTransactionHandler` 改为返回 `services.MapSupplierToResponse(*result)`
+- 结果：即使 transaction service 当前内部仍返回 `models.*`，对外 handler 已统一返回 `partner` DTO，而不再直接暴露实体。
+
+#### 5. 前端建立 `customer / supplier` 的 `API DTO + adapter` 边界
+- 新增客户前端契约文件：
+  - `src/features/trading/customer/contracts/customer-api-dto.ts`
+  - `src/features/trading/customer/adapters/customer-api-adapter.ts`
+- 新增供应商前端契约文件：
+  - `src/features/trading/supplier/contracts/supplier-api-dto.ts`
+  - `src/features/trading/supplier/adapters/supplier-api-adapter.ts`
+- 这些文件承担两类职责：
+  - `API DTO -> 页面 contract` 的响应映射
+  - `页面 contract -> API DTO` 的请求映射
+
+#### 6. 前端 service 停止 `apiFetch<Customer>` / `apiFetch<Supplier>` 直连
+- `src/features/trading/customer/services/customer-service.ts`
+  - 改为 `apiFetch<CustomerApiDTO>` / `apiFetch<CustomerApiDTO[]>`
+  - 列表响应 `items` 经 adapter 转为 `Customer[]`
+  - 创建、patch、transaction 响应统一经 adapter 转为 `Customer`
+- `src/features/trading/supplier/services/supplier-service.ts`
+  - 改为 `apiFetch<SupplierApiDTO>` / `apiFetch<SupplierApiDTO[]>`
+  - `mainProducts` 的字符串 / 数组兼容由 adapter 统一消化
+  - 创建、patch、transaction 响应统一经 adapter 转为 `Supplier`
+- 结果：`partner` 前端主链已不再直接把页面 schema 当作 API 契约使用。
+
+### 本轮效果
+- 后端 `partner` 已从“handler 已局部 DTO 化，但 service 缺位、更新仍偏实体覆盖”推进到“后端主链公共契约 DTO 化 + service 主链承接”。
+- 前端 `partner` 已从“`apiFetch<Customer>` / `apiFetch<Supplier>` 类型化直连”推进到“`API DTO + adapter + 页面 contract` 显式边界”。
+- 这使 `partner` 成为当前仓库里继 `org-personnel` 之后第二个真正同时覆盖**后端 service 边界**与**前端消费边界**的模块级闭环样板。
+
+### 验证
+执行：
+```bash
+go test ./services -run "Customer|Supplier|Partner" -count=1
+go test ./handlers -run "Customer|Supplier|Partner" -count=1
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `partner`（`customers / suppliers`）已完成本轮计划中的整域主链 DTO 闭环。
+- 下一轮可优先推进 `users` 的读取链 DTO 化，或转向 `trading`（尤其前端 contract / adapter）做第三个整域闭环。
+
+## 2026-04-09 `org-personnel` 整域 DTO 闭环
+
+### 变更概述
+- 本轮按已批准的整域方案，完成了 `org-personnel` 的主链 DTO 闭环，范围覆盖：
+  - 后端 `list / tree / save / patch / bulk sync` 的公共 service / handler 边界
+  - 前端 `employee-core-service`、`employee-maintenance-service`、`org-service` 的 API 消费边界
+- 本轮目标不是继续扩散到相邻模块，而是先把 `org-personnel` 做成一个可以复制到 `partner`、`users`、`trading` 的整域样板。
+
+### 收口方式
+
+#### 1. 后端 `list / tree / patch` 公共契约改为 DTO
+- 在 `server/services/org_personnel_dto.go` 中新增并接入：
+  - `OrganizationTreeNodeResponse`
+  - `EmployeeListItemResponse`
+  - 对应 `MapOrganizationTreeToResponse` / `MapOrganizationNodeToResponse` / `MapEmployeeToListItemResponse` / `MapEmployeesToListItemResponse`
+- `server/services/organization_service.go` 公开签名已完成收口：
+  - `ListOrganizationTree() ([]OrganizationTreeNodeResponse, error)`
+  - `ListEmployees() ([]EmployeeListItemResponse, error)`
+  - `PatchOrganization(...) (OrganizationTreeNodeResponse, error)`
+  - `PatchEmployee(...) (EmployeeListItemResponse, error)`
+- `server/services/org_personnel_patch_service.go` 中 patch 主链不再把 `models.Organization` / `models.Employee` 作为 service 出口，而是统一返回 DTO。
+
+#### 2. handlers 不再以 `models.* -> gin.H` 作为公开响应主链
+- `server/handlers/org_handlers.go`：
+  - `GetOrgTreeHandler` 直接返回 `[]OrganizationTreeNodeResponse`
+  - `PatchOrgHandler` 直接返回 `OrganizationTreeNodeResponse`
+  - `SaveOrgHandler` 在保存后复查组织树时，改为在 DTO 树中定位目标节点
+- `server/handlers/employee_handlers.go`：
+  - `GetEmployeesHandler` 直接返回 `[]EmployeeListItemResponse`
+  - `PatchEmployeeHandler` 直接返回 `EmployeeListItemResponse`
+- 结果：`org-personnel` 的 list / tree / patch 主链已不再公开暴露 `models.Organization` / `models.Employee`。
+
+#### 3. 前端建立 `API DTO + adapter` 边界
+- 新增前端契约文件：
+  - `src/features/org-personnel/contracts/employee-api-dto.ts`
+  - `src/features/org-personnel/contracts/org-api-dto.ts`
+- 新增前端适配器文件：
+  - `src/features/org-personnel/adapters/employee-api-adapter.ts`
+  - `src/features/org-personnel/adapters/org-api-adapter.ts`
+- 这些文件承担两类职责：
+  - `API DTO -> 页面 contract` 的响应映射
+  - `页面 contract -> API DTO` 的请求映射
+
+#### 4. 前端 service 停止 `apiFetch<Employee>` / `apiFetch<OrgNode>` 直连
+- `src/features/org-personnel/services/org-service.ts`
+  - 改为 `apiFetch<OrgNodeApiDTO>` / `apiFetch<OrgNodeApiDTO[]>`
+  - 经 `org-api-adapter` 转换为 `OrgNode`
+- `src/features/org-personnel/services/employee-core-service.ts`
+  - 改为 `apiFetch<EmployeeApiDTO>` / `apiFetch<EmployeeApiDTO[]>`
+  - 经 `employee-api-adapter` 转换为 `Employee`
+- `src/features/org-personnel/services/employee-maintenance-service.ts`
+  - 保存与 patch 响应统一走 `EmployeeApiDTO -> Employee`
+  - 保存请求与 fallback 保存统一走 `Employee -> EmployeeApiDTO`
+- 结果：`org-personnel` 前端主链已不再直接把页面 schema 当作 API 契约使用。
+
+### 本轮效果
+- 后端 `org-personnel` 已从“save 链 DTO 化，但 list/tree/patch 仍泄漏 model”推进到“后端主链公共契约 DTO 化”。
+- 前端 `org-personnel` 已从“`apiFetch<Employee>` / `apiFetch<OrgNode>` 类型化直连”推进到“`API DTO + adapter + 页面 contract` 显式边界”。
+- 这使 `org-personnel` 成为当前仓库里少数真正同时覆盖**后端 service 边界**与**前端消费边界**的模块级闭环样板。
+
+### 验证
+执行：
+```bash
+go test ./services -run "Organization|Employee" -count=1
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `org-personnel` 已完成本轮计划中的整域主链 DTO 闭环。
+- 下一轮可优先复用该样板收口 `partner`（`customers` / `suppliers`），其次推进 `trading` 前端 contract / adapter 收口。
+
 ## 2026-04-09 DTO 现状总表（按模块 / 五层链路）
 
 ### 本轮目标

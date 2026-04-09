@@ -195,89 +195,15 @@ func SaveSalesOrderHandler(c *gin.Context) {
 		return
 	}
 
-	input := services.MapSaveSalesOrderRequestToModel(req)
-
-	operator := middleware.GetSafeUsername(c)
-	input.UpdatedBy = operator
-
-	// 【ID 规范加固】如果前端传来的 ID 不是有效的 UUID 格式 (如遗留的 SO...),
-	// 则将其视为新记录，主键 ID 置空交由 DB 自动生成，同时确保业务单号 OrderNo 得到保留。
-	isNew := input.ID == "" || len(input.ID) < 36
-	originalID := input.ID
-	if isNew {
-		input.ID = "" // 触发 PostgreSQL 的 gen_random_uuid()
-	}
-	requesterID := middleware.GetSafeUserID(c)
-
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. 【审计加固】强制校验所有明细行的物料/产品是否存在 (Referential Integrity)
-		for _, line := range input.Lines {
-			var product models.Product
-			if err := tx.Where("id = ?", line.ProductID).First(&product).Error; err != nil {
-				// 同时尝试从 Material 表查找
-				var material models.Material
-				if errM := tx.Where("id = ?", line.ProductID).First(&material).Error; errM != nil {
-					return errors.New("[CRITICAL_DATA_INTEGRITY] 订单保存失败：明细行物料 ID " + line.ProductID + " 不存在")
-				}
-			}
-		}
-
-		// 2. 检查是更新还是新增
-		if !isNew {
-			var existing models.SalesOrder
-			if err := tx.Preload("Lines").Where("id = ?", input.ID).First(&existing).Error; err == nil {
-				// 乐观锁版本校验
-				if input.Version != existing.Version {
-					return ErrVersionConflict
-				}
-
-				input.Version = existing.Version + 1
-				// 更新主表
-				if err := tx.Model(&existing).Updates(input).Error; err != nil {
-					return err
-				}
-				// 同步明细行 (Replace 模式)
-				if err := tx.Model(&existing).Association("Lines").Replace(input.Lines); err != nil {
-					return err
-				}
-				_, err := services.RecalculateSalesOrderStatusTx(tx, existing.ID)
-				return err
-			}
-		}
-
-		// 新增逻辑 (处理从新 ID 映射而来的情况)
-		input.Version = 1
-		if input.OrderNo == "" && originalID != "" {
-			input.OrderNo = originalID
-		}
-		if err := tx.Create(&input).Error; err != nil {
-			return err
-		}
-		if _, err := services.RecalculateSalesOrderStatusTx(tx, input.ID); err != nil {
-			return err
-		}
-
-		workflowInstance, err := services.CreateWorkflowInstanceForDocumentTx(
-			tx,
-			services.WorkflowModuleSalesOrder,
-			"SALES_ORDER",
-			input.ID,
-			requesterID,
-		)
-		if err != nil {
-			if errors.Is(err, services.ErrWorkflowDefinitionMissing) {
-				// 工作流定义尚未配置时允许先保存销售订单，后续可补挂流程。
-				return nil
-			}
-			return err
-		}
-
-		input.WorkflowInstanceID = workflowInstance.ID
-		return tx.Model(&input).Update("workflow_instance_id", workflowInstance.ID).Error
+	response, err := services.SaveSalesOrder(services.SaveSalesOrderCommand{
+		Request:  req,
+		ActorID:  middleware.GetSafeUserID(c),
+		Operator: middleware.GetSafeUsername(c),
+		IP:       c.ClientIP(),
 	})
 
 	if err != nil {
-		if err == ErrVersionConflict {
+		if err == ErrVersionConflict || errors.Is(err, services.ErrSalesTransactionVersionConflict) {
 			respondVersionConflict(c)
 			return
 		}
@@ -285,9 +211,7 @@ func SaveSalesOrderHandler(c *gin.Context) {
 		return
 	}
 
-	// 【加固】重新加载完整对象，确保 CreatedAt, ID 等数据库生成的字段准确返回给前端
-	db.DB.Preload("Lines").First(&input, "id = ?", input.ID)
-	c.JSON(http.StatusOK, services.MapSalesOrderToResponse(input))
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteSalesOrderHandler 逻辑删除订单

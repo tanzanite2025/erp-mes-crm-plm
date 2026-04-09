@@ -11,9 +11,9 @@
   },
   "terminal": {
     "allowList": [
-      "npm test",
-      "npm start",
-      "npm run *",
+      "pnpm test",
+      "pnpm dev",
+      "pnpm run *",
       "git status",
       "echo *"
     ],
@@ -55,15 +55,15 @@
   "quickScripts": [
     {
       "label": "Build",
-      "command": "npm run build"
+      "command": "pnpm run build"
     },
     {
       "label": "Test",
-      "command": "npm test"
+      "command": "pnpm test"
     },
     {
       "label": "Check",
-      "command": "npm run lint"
+      "command": "pnpm run lint"
     }
   ]
 }

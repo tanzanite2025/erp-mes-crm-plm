@@ -1,51 +1,20 @@
 package handlers
 
 import (
-	"time"
 	"xdfc-server/models"
+	"xdfc-server/services"
 )
 
-type UserResponse struct {
-	ID          string    `json:"id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	PhoneNumber string    `json:"phoneNumber"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
-	Role        string    `json:"role"`
-	Status      string    `json:"status"`
-	EmployeeID  string    `json:"employeeId"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
+type UserResponse = services.UserResponse
 
-type UserListResponse struct {
-	Items    []UserResponse `json:"items"`
-	Total    int64          `json:"total"`
-	Page     int            `json:"page"`
-	PageSize int            `json:"pageSize"`
-}
+type UserListResponse = services.UserListResponse
+
+type UserOptionResponse = services.UserOptionResponse
 
 func mapUserToResponse(user models.User) UserResponse {
-	return UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		Email:       user.Email,
-		PhoneNumber: user.PhoneNumber,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		Role:        user.Role,
-		Status:      user.Status,
-		EmployeeID:  user.EmployeeID,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
-	}
+	return services.MapUserToResponse(user)
 }
 
 func mapUsersToResponse(items []models.User) []UserResponse {
-	result := make([]UserResponse, 0, len(items))
-	for _, item := range items {
-		result = append(result, mapUserToResponse(item))
-	}
-	return result
+	return services.MapUsersToResponse(items)
 }

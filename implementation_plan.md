@@ -437,24 +437,669 @@ DTO 的目标是建立边界、裁剪契约、隔离内部模型，而不是单�
 3. 前端 `org-personnel` 不再以 `apiFetch<Employee>` / `apiFetch<Organization>` 直接消费实体结构。
 4. `walkthrough.md` 完整记录变更范围、映射策略与验证结果。
 
-## 20. sales_orders PATCH 残留清理（待确认）
+## 20. `partner`（`customers / suppliers`）整域 DTO 闭环实施计划（待确认）
 
-该轮不是新的 DTO 扩面，而是为销售单 hard-cut 做最小残留清理，范围限定为：
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮不再把 `customers` 与 `suppliers` 当作两个孤立 handler 修补，而是按 `partner` 整域闭环推进，目标是一次性回答并落地以下问题：
+
+1. 后端 `list / options / save / patch` 是否全部通过独立 DTO 边界暴露。
+2. `customers` 与 `suppliers` 是否停止由 handler 直接编排 DB，改为形成稳定的 service DTO 主链。
+3. `Select("*").Updates(input)` 一类实体覆盖式更新是否可以从 `partner` 主链中退出，避免 DTO 入口之后立刻退回实体直通更新语义。
+4. 前端客户 / 供应商页面与 service 是否停止直接消费实体 shape，改为 `API DTO -> contract -> adapter/gateway` 的显式转换链。
+5. `partner` 是否可以成为继 `org-personnel` 之后的第二个整域闭环样板。
+
+### 2. 当前已确认断点
+
+#### 2.1 后端断点
+
+当前已确认：
+
+1. `customers` 已具备 `CustomerRequest` / response DTO，但 service 公开边界仍未独立成型。
+2. `suppliers` 已具备 `services.SaveSupplierRequest` / `services.PatchSupplierRequest` 与 response DTO，但 service 域边界尚未真正承接主链。
+3. `customers` 与 `suppliers` 的保存链仍存在 `Select("*").Updates(input)` 一类实体覆盖式更新，这意味着即使入口已 DTO 化，持久化语义仍偏实体直通。
+4. 当前 `partner` 域的主要逻辑仍大量停留在 handler 内编排事务与 DB 行为，导致 service 层缺位。
+
+#### 2.2 前端断点
+
+当前已确认：
+
+1. 客户 / 供应商前端 service 仍以 `apiFetch<Customer>` / `apiFetch<Supplier>` 或等价 schema 直连为主。
+2. `partner` 域尚未像 `wheel-trace` 或已完成的 `org-personnel` 一样形成独立的 `contracts + adapters + gateway` 样板。
+3. 这意味着即使后端 response 已局部 DTO 化，前端仍可能继续锁死在后端实体字段形态上。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/handlers/customers.go`
+2. `server/handlers/suppliers.go`
+3. `server/handlers/customer_dto.go`
+4. `server/handlers/supplier_dto.go`
+5. `server/services/partner_list_dto.go`
+6. `server/services/purchase_order_dto.go` 中 supplier 相关 DTO 复用点
+7. `server/services` 下与 `customers / suppliers` 直接相关的新增或补齐的 service DTO / mapper 最小文件集合
+
+后端目标：
+
+1. 把 `customers` 与 `suppliers` 的 `list / options / save / patch` 主链统一收口到 service DTO 边界。
+2. 让 handler 只承担 handler DTO 解析、错误码映射与 service DTO 调用，不再直接成为 DB 编排中心。
+3. 为 `customers` 与 `suppliers` 补齐明确的 mapper，使 model 仅保留在内部持久化层。
+4. 评估并替换实体覆盖式更新路径，避免 DTO 入口之后仍通过全量实体覆盖更新落库。
+
+#### 3.2 前端范围
+
+计划覆盖：
+
+1. `src/features/trading/customer/services/customer-service.ts`
+2. `src/features/trading/supplier/services/supplier-service.ts`
+3. `src/features/trading/customer/data/*`
+4. `src/features/trading/supplier/data/*`
+5. `src/features/trading/customer` 与 `src/features/trading/supplier` 下新增的 `contracts` / `adapters` / `gateway` 最小文件集合
+6. 与客户列表、供应商列表、选项加载、保存、patch 直接相关的调用面
+
+前端目标：
+
+1. 定义 `customers` 与 `suppliers` 的 API DTO，而不是继续直接复用页面 schema。
+2. 定义页面 / 领域 contract，隔离后端字段演进对页面的直接冲击。
+3. 通过 adapter / gateway 将 `apiFetch` 返回值转换为 contract，再由页面消费。
+4. 尽量复用 `org-personnel` 的最小闭环样板，但只复制必要结构，不扩大到 trading 其他子域。
+
+### 4. 设计原则
+
+1. 不把“已有 request / response struct”误判为真正闭环；必须存在明确 service DTO 边界与 mapper / adapter 才算完成。
+2. 不继续允许 handler 直接编排 DB 成为 `partner` 主链事实。
+3. 不继续允许 `Select("*").Updates(input)` 一类实体覆盖式更新作为 `partner` 主链的默认更新策略。
+4. 不让前端页面直接依赖后端实体 shape，即使 TypeScript 类型名不同也不算完成。
+5. 不扩大到 `partner_transaction_service`、采购/销售交易明细等邻接域，除非编译面强依赖。
+
+### 5. 潜在风险
+
+1. `customers` 与 `suppliers` 的列表 / options / patch 可能被多个页面、弹窗或下拉选项复用，若 DTO / contract 字段裁剪不当，容易造成前端隐式回归。
+2. 从实体覆盖式更新切换到 DTO 主链后，需重点复核零值字段、可选字段与乐观锁 / 版本字段兼容。
+3. `suppliers` 当前部分 request 位于 `services` 包内，`customers` DTO 又位于 handler 层，整域统一时要避免出现新的“双重标准”。
+4. 如果 `partner` 域当前不存在现成 service 承接层，新增 service DTO / mapper 时要控制最小改动面，避免无关扩散。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "Customer|Supplier" -count=1` 或等价最小测试集
+2. 若 service 层新增测试，则执行对应 `go test ./services -run "Customer|Supplier|Partner" -count=1`
+3. 若缺少现成测试，至少执行相关包最小编译验证
+
+前端至少执行：
+
+1. `tsc --noEmit` 或项目既有等价类型检查命令
+2. 若 `customer` / `supplier` 存在相关测试，则执行最小相关测试集
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `partner` 整域闭环完成：
+
+1. 后端 `customers / suppliers` 的 `list / options / save / patch` 主链全部通过 DTO 边界暴露。
+2. `customers / suppliers` 不再由 handler 直接承担主要 DB 编排职责。
+3. `partner` 主链不再把实体覆盖式更新作为默认更新语义。
+4. 前端 `customers / suppliers` 不再以 `apiFetch<Customer>` / `apiFetch<Supplier>` 直接消费实体结构。
+5. `walkthrough.md` 完整记录变更范围、映射策略与验证结果。
+
+## 21. `users` 读取链 DTO 收口与前端 `contract / adapter` 闭环实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮不再继续围绕 `users` 的写入链做局部净化，而是聚焦**读取链 DTO 收口**，目标是一次性回答并落地以下问题：
+
+1. 后端 `users` 的 `list / options / detail` 读取链是否全部通过独立 DTO 边界暴露。
+2. `GetUsersHandler` 是否停止把 `[]models.User` 作为公开返回主链中的事实载体。
+3. `users` 前端是否停止直接消费接口类型 / 实体 shape，改为 `API DTO -> contract -> adapter/gateway` 的显式转换链。
+4. `users` 是否可以成为继 `org-personnel`、`partner` 之后的第三个模块级 DTO 闭环样板。
+
+### 2. 当前已确认断点
+
+#### 2.1 后端断点
+
+当前已确认：
+
+1. `users` 的写入链（尤其更新链）已做过净化，但读取链仍主要停留在 handler 层。
+2. `GetUsersHandler` 查询主链当前仍使用 `var users []models.User` / `var items []models.User` 作为中间载体。
+3. 虽然列表最终已包装为 `UserListResponse` / option response，但 service 读取边界尚未独立出来。
+
+#### 2.2 前端断点
+
+当前已确认：
+
+1. `src/features/users/services/user-api.ts` 或其等价调用面仍偏接口类型直连。
+2. `users` 尚未像 `org-personnel` 与 `partner` 一样形成独立的 `contracts + adapters + gateway` 样板。
+3. 这意味着即使后端读取响应已有局部 DTO，前端仍可能继续锁死在后端实体字段形态上。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/handlers/users.go`
+2. `server/handlers/user_dto.go`
+3. `server/services` 下与 `users` 读取链直接相关的新增或补齐的 service DTO / mapper / service 最小文件集合
+4. 与用户列表、用户选项、用户详情读取直接相关的最小调用面
+
+后端目标：
+
+1. 让 `users` 的 `list / options / detail` 主链统一收口到 service DTO 边界。
+2. 让 handler 只承担 handler DTO / query 参数解析、错误码映射与 service DTO 调用，不再直接成为 query 编排中心。
+3. 让 `models.User` 保留在内部持久化层或 service 内部中间态，而不再作为公开读取契约事实。
+
+#### 3.2 前端范围
+
+计划覆盖：
+
+1. `src/features/users/services/user-api.ts`
+2. `src/features/users` 下与用户列表、选项、详情直接相关的 hooks / components 最小调用面
+3. `src/features/users` 下新增的 `contracts` / `adapters` / `gateway` 最小文件集合
+
+前端目标：
+
+1. 定义 `users` 的 API DTO，而不是继续直接复用页面 schema / 接口类型。
+2. 定义页面 / 领域 contract，隔离后端字段演进对页面的直接冲击。
+3. 通过 adapter / gateway 将 `apiFetch` 返回值转换为 contract，再由页面消费。
+4. 尽量复用 `org-personnel` 与 `partner` 的最小闭环样板，但只复制必要结构，不扩大到权限体系或其他邻接域。
+
+### 4. 设计原则
+
+1. 不把“列表最终包成 response object”误判为真正闭环；必须存在明确 service DTO 边界与前端 adapter 才算完成。
+2. 不继续允许 handler 直接承担 `users` 读取链主要 query 编排职责。
+3. 不让前端页面直接依赖后端实体 shape，即使 TypeScript 类型名不同也不算完成。
+4. 不把本轮扩大为权限体系改造；本轮仅聚焦 `users` 读取链 DTO 与前端消费边界。
+
+### 5. 潜在风险
+
+1. 用户列表与 options 可能被多个模块复用（例如用户管理、组织选择、系统管理下拉等），若 DTO / contract 字段裁剪不当，容易造成前端隐式回归。
+2. 角色、状态、员工关联字段的读取兼容需要重点检查，否则容易影响用户页列表与编辑弹窗回显。
+3. `users` 可能与权限/角色模块共享部分展示字段，本轮要严格限制范围，避免无关扩散。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "User" -count=1` 或等价最小测试集
+2. 若 service 层新增测试，则执行对应 `go test ./services -run "User" -count=1`
+3. 若缺少现成测试，至少执行相关包最小编译验证
+
+前端至少执行：
+
+1. `tsc --noEmit` 或项目既有等价类型检查命令
+2. 若 `users` 存在相关测试，则执行最小相关测试集
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `users` 读取链闭环完成：
+
+1. 后端 `users` 的 `list / options / detail` 主链全部通过 DTO 边界暴露。
+2. `GetUsersHandler` 不再把 `[]models.User` 作为公开读取链事实载体。
+3. 前端 `users` 不再以 `apiFetch<User>` / `apiFetch<User[]>` 直接消费实体结构。
+4. `walkthrough.md` 完整记录变更范围、映射策略与验证结果。
+
+## 22. `trading` 整域 DTO 闭环实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮不再把 `trading` 视作若干零散订单接口的集合，而是按整域闭环推进，目标是一次性回答并落地以下问题：
+
+1. 后端 `sales-order / purchase-order / logistics` 的 `list / detail / save / patch / transaction` 是否全部通过独立 DTO 边界暴露。
+2. `sales-order` 与 `purchase-order` 的 service 边界是否停止公开暴露 `models.*` 或由 handler 继续承担主链编排职责。
+3. 前端订单页、详情页、操作弹窗是否停止直接消费接口 shape，改为 `API DTO -> contract -> adapter/gateway` 的显式转换链。
+4. `trading` 是否可以成为继 `org-personnel`、`partner`、`users` 之后的第四个整域闭环样板。
+
+### 2. 当前已确认断点
+
+#### 2.1 后端断点
+
+当前已确认：
+
+1. `sales-order` 与 `purchase-order` 已存在 transaction service / mapper / DTO 样板，但整域内链路完成度并不均衡。
+2. 某些读取链、详情链、patch 链与 transaction / workflow 链之间仍可能存在 DTO 标准不一致的问题。
+3. `trading` 域字段复杂度高，包含 `lines`、`workflowInstanceId`、`evidences`、客户/供应商快照等复合结构，容易出现“主 DTO 已有，但子结构仍半接入”的问题。
+
+#### 2.2 前端断点
+
+当前已确认：
+
+1. `src/features/trading` 下仍存在大量 `apiFetch<SalesOrder>` / `apiFetch<PurchaseOrder>` 或等价页面 schema 直连。
+2. `customer / supplier` 子域已形成 `API DTO + adapter` 样板，但订单域尚未整体对齐。
+3. 订单列表、详情、编辑弹窗、transaction 提交与 workflow 展示可能各自使用不同契约，导致前端边界不统一。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
 
 1. `server/handlers/sales_orders.go`
-2. 与其直接相关的最小调用面 / 编译面
+2. `server/handlers/purchase_orders.go`
+3. `server/handlers/trading_transaction_handlers.go` 或等价 transaction handler 文件
+4. `server/services/sales_transaction_service.go`
+5. `server/services/purchase_transaction_service.go`
+6. `server/services/sales_order_*` / `purchase_order_*` 下与 DTO / mapper / query / command 直接相关的最小文件集合
+7. 与 `logistics`、订单详情、workflow 桥接直接相关的最小调用面
 
-### 目标
+后端目标：
 
-1. 清除对已删除 `services.PatchSalesOrderRequest` 的残留引用。
-2. 清除对已删除 `services.MapPatchSalesOrderRequestToModel` 的残留引用。
-3. 恢复 `go test ./handlers -run ^$` 的编译通过前提。
+1. 把 `sales-order / purchase-order` 的 `list / detail / save / patch / transaction` 主链统一收口到 service DTO 边界。
+2. 让 handler 只承担 handler DTO 解析、错误码映射与 service DTO 调用，不再继续成为订单主链编排中心。
+3. 明确 `lines`、`workflowInstanceId`、客户/供应商快照、evidences 等复杂字段的 mapper 与 DTO 出口。
+4. 根据实际调用面评估 `logistics` 是否纳入本轮核心链或作为受影响最小联动范围处理。
 
-### 明确不做的事
+#### 3.2 前端范围
+
+计划覆盖：
+
+1. `src/features/trading` 下 `sales-order` / `purchase-order` / `logistics` 相关 service 文件
+2. 订单列表、详情、编辑/创建弹窗、transaction 操作、workflow 展示等直接消费面
+3. `src/features/trading` 下新增的 `contracts` / `adapters` / `gateway` 最小文件集合
+
+前端目标：
+
+1. 定义 `sales-order` 与 `purchase-order` 的 API DTO，而不是继续直接复用页面 schema。
+2. 定义页面 / 领域 contract，隔离后端字段演进对页面的直接冲击。
+3. 通过 adapter / gateway 将 `apiFetch` 返回值转换为 contract，再由页面消费。
+4. 尽量复用此前 `org-personnel` / `partner` / `users` 的最小闭环样板，但不做无关扩散。
+
+### 4. 设计原则
+
+1. 不把“已存在 transaction DTO”误判为整域完成；必须覆盖读取链、详情链、写入链和前端消费边界。
+2. 不继续允许 handler 直接承担 `trading` 主链编排职责。
+3. 不让前端页面直接依赖后端实体 shape，即使类型名不同也不算完成。
+4. 不把本轮扩大到 finance / inventory / MRP 等跨域重构；仅处理 `trading` 核心订单域与其直接受影响调用面。
+
+### 5. 潜在风险
+
+1. 订单 `lines`、金额汇总、客户/供应商快照字段存在多处联动，若 DTO / contract 设计不当，容易造成列表与详情不一致。
+2. `workflowInstanceId`、`evidences`、`statusNote` 等桥接字段可能被多个页面共享，需重点检查兼容。
+3. 交易型 transaction payload 已存在测试样板，本轮整域统一时要避免破坏既有 transaction 语义。
+4. `trading` 域页面多、状态多，需严格控制范围，避免在一次闭环中无限扩大到所有邻接模块。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "Sales|Purchase|Trading|Workflow" -count=1` 或等价最小测试集
+2. `go test ./services -run "Sales|Purchase|Trading|Workflow" -count=1`
+3. 若 `logistics` 受影响，则补对应最小编译/测试验证
+
+前端至少执行：
+
+1. `tsc --noEmit` 或项目既有等价类型检查命令
+2. 若 `trading` 存在相关测试，则执行最小相关测试集
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `trading` 整域闭环完成：
+
+1. 后端 `sales-order / purchase-order` 的 `list / detail / save / patch / transaction` 主链全部通过 DTO 边界暴露。
+2. `trading` 主链不再以 handler 作为主要编排中心。
+3. 前端 `trading` 不再以 `apiFetch<SalesOrder>` / `apiFetch<PurchaseOrder>` 直接消费实体结构。
+4. `walkthrough.md` 完整记录变更范围、映射策略与验证结果。
+
+## 23. `trading` 第二段：订单 handler 编排下沉实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮是在 `trading` 第一段已完成的基础上继续推进，不再优先处理前端契约层，而是聚焦回答以下问题：
+
+1. `sales_orders.go` 的 `SaveSalesOrderHandler` 是否还在承担主事务编排、物料校验、工作流挂接与版本推进职责。
+2. `purchase_orders.go` 的 `SavePurchaseOrderHandler` / `PatchPurchaseOrderHandler` 是否还在承担主事务编排与 patch 落盘职责。
+3. `sales / purchase` 是否可以形成更明确的 command service 边界，使 handler 退化为参数解析、错误码映射与 service DTO 调用层。
+4. `trading` 是否可以从“前端边界先闭环”继续推进到“后端订单编排层继续下沉”。
+
+### 2. 当前已确认断点
+
+#### 2.1 `sales-order` 断点
+
+当前已确认：
+
+1. `GetSalesOrdersHandler` / `GetSalesOrderHandler` 的读取出口已是 DTO。
+2. 但 `SaveSalesOrderHandler` 仍在 handler 内承担：
+  - 明细物料/产品校验
+  - 新增/更新判断
+  - 乐观锁版本校验与推进
+  - `Lines` Replace
+  - 工作流实例创建与 `workflow_instance_id` 回填
+3. 这意味着 `sales-order` 的写入主链仍未完全从 handler 下沉。
+
+#### 2.2 `purchase-order` 断点
+
+当前已确认：
+
+1. `GetPurchaseOrdersHandler` / `GetPurchaseOrderHandler` 的读取出口已是 DTO。
+2. 但 `SavePurchaseOrderHandler` 与 `PatchPurchaseOrderHandler` 仍在 handler 内承担：
+  - 明细物料合法性校验
+  - 新增/更新分支判断
+  - patch request 回填与 delta 解释
+  - 乐观锁版本校验与推进
+  - `Lines` Replace
+  - 工作流实例创建与回填
+3. 这导致 `purchase-order` 的 command 主链仍属于 handler 重编排态。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/handlers/sales_orders.go`
+2. `server/handlers/purchase_orders.go`
+3. `server/services/sales_transaction_service.go`
+4. `server/services/purchase_transaction_service.go`
+5. `server/services` 下新增的 `sales_order_command_*` / `purchase_order_command_*` 或等价最小 service 文件集合
+6. 与工作流桥接、版本冲突、明细替换直接相关的最小调用面
+
+后端目标：
+
+1. 将 `SaveSalesOrderHandler` 的核心事务编排下沉到 service / command 层。
+2. 将 `SavePurchaseOrderHandler` / `PatchPurchaseOrderHandler` 的核心事务编排下沉到 service / command 层。
+3. 保持现有 DTO 出口不回退，并让 handler 只负责：
+  - request 绑定
+  - query/path 参数解析
+  - HTTP 错误码映射
+  - 返回 service DTO
+4. 明确与 transaction service 的关系：统一保存逻辑要么复用 transaction service，要么通过 command service 规范化包装，避免双轨主链并存。
+
+#### 3.2 明确不做的事
+
+1. 不重新打开新的前端收口范围。
+2. 不在本轮把 `trading` 扩散到 finance、warehouse、MRP 等邻接域。
+3. 不无上限重构所有订单子事务；仅处理保存 / patch 主链中 handler 过重的问题。
+
+### 4. 设计原则
+
+1. 不为了“减少 handler 行数”而硬拆 service；必须以职责收口为目的。
+2. 不破坏现有 transaction service 已验证的业务语义。
+3. 不改变现有响应 DTO 结构，避免无意义牵动前端已完成的 adapter 收口。
+4. 对 `workflow_instance_id`、版本号、`Lines.Replace` 等高风险逻辑，要优先保持行为一致，再追求结构整洁。
+
+### 5. 潜在风险
+
+1. `save` 语义与 transaction `ORDER_SAVE` 语义存在重叠，若边界处理不好，容易形成重复逻辑或行为不一致。
+2. 工作流定义缺失时的容错路径（尤其 sales-order）如果迁移不慎，容易改变现有保存行为。
+3. `purchase-order` 的 patch 是通过 delta 展开回完整 request 再落盘，迁移时容易引入字段遗漏。
+4. `Lines.Replace` 与版本递增顺序若发生变化，容易引起并发或测试回归。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "Sales|Purchase|Trading|Workflow" -count=1`
+2. `go test ./services -run "Sales|Purchase|Trading|Workflow" -count=1`
+3. 若新增 command service 测试，则执行对应最小测试集
+
+前端至少执行：
+
+1. `pnpm exec tsc --noEmit`
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `trading` 第二段完成：
+
+1. `SaveSalesOrderHandler` 不再承担核心事务编排职责。
+2. `SavePurchaseOrderHandler` / `PatchPurchaseOrderHandler` 不再承担核心事务编排职责。
+3. `sales-order / purchase-order` 的保存与 patch 主链拥有明确 service / command 边界。
+4. `walkthrough.md` 完整记录编排下沉范围、职责调整与验证结果。
+
+## 24. `trading` 第三段：patch 展开与写入主链继续下沉实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮是在 `trading` 第二段已完成 command service 下沉的基础上继续推进，目标是回答以下问题：
+
+1. `PatchPurchaseOrderHandler` 中的 delta 展开、字段解释与完整 patch request 组装，是否还应继续停留在 handler。
+2. `purchase-order` 的 patch 主链是否可以拥有与 save 主链同等级的 service 边界，而不是只把“事务提交”下沉一半。
+3. `sales-order` 是否需要补充统一 patch / command 包装，以避免 `sales` 与 `purchase` 在写入编排模式上继续分化。
+4. `trading` 是否可以从“订单保存主链已下沉”进一步推进到“写入前组装逻辑也从 handler 退出”。
+
+### 2. 当前已确认断点
+
+#### 2.1 `purchase-order` 断点
+
+当前已确认：
+
+1. `PatchPurchaseOrderHandler` 虽已将事务提交下沉到 `services.PatchPurchaseOrder(...)`，但仍保留：
+  - `validateSupportedTopLevelDeltaKeys(...)`
+  - 现有实体读取与 response 回填为 patch request
+  - `extractDeltaNewValue(...)` 后的逐字段 `json.Unmarshal`
+  - `PatchPurchaseOrderRequest` 组装
+2. 这意味着 `purchase-order` 的 patch 主链仍有相当一部分业务组装逻辑停留在 handler。
+
+#### 2.2 `sales-order` 对齐问题
+
+当前已确认：
+
+1. `sales-order` 已完成保存主链下沉，但并不存在与 `purchase-order patch` 对应的统一 patch 包装模式。
+2. 若第三段只处理采购单 patch，而不评估销售单写入边界是否需要补同类抽象，`trading` 域的 command 模式仍可能继续分叉。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/handlers/purchase_orders.go`
+2. `server/services/purchase_order_command_service.go`
+3. `server/services/purchase_transaction_service.go`
+4. `server/handlers/json_utils.go`（若需要移动/复用 delta 解释能力）
+5. `server/services` 下新增的 patch assembler / payload builder 最小文件集合
+6. 必要时评估 `server/services/sales_order_command_service.go` 的最小对齐改动
+
+后端目标：
+
+1. 让 `PatchPurchaseOrderHandler` 不再承担 delta 展开与 patch request 组装职责，或至少只保留极薄的一层转发壳。
+2. 把字段白名单校验、delta 新值提取、完整 patch request 组装、`ORDER_SAVE` payload 组装收口到 service。
+3. 如有必要，为 `sales-order` 增补同类包装抽象，避免 `sales`/`purchase` 的写入组织方式继续分叉。
+
+#### 3.2 明确不做的事
+
+1. 不重新打开新的前端改造范围。
+2. 不在本轮重写 transaction service 的核心业务规则。
+3. 不扩散到 `logistics`、`finance`、`inventory` 等其他模块。
+
+### 4. 设计原则
+
+1. 不把“所有 json.Unmarshal 都搬走”作为目标，目标是职责归位而不是机械搬代码。
+2. 不破坏第二段已形成的 command service 主链。
+3. 不改变现有 response DTO 结构与前端已完成的 adapter 边界。
+4. 优先统一 `purchase` patch 的 service 组织方式，再决定是否需要对 `sales` 做最小对齐。
+
+### 5. 潜在风险
+
+1. delta 展开迁移时容易遗漏字段，导致 patch 行为与旧实现不一致。
+2. `PatchPurchaseOrderRequest` 的回填若不完整，可能造成未变更字段被错误覆盖。
+3. 若强行让 `sales` 跟进同一抽象而缺少真实需求，可能引入无谓复杂度。
+4. 若同时移动 `validateSupportedTopLevelDeltaKeys` 与 `extractDeltaNewValue` 的归属，可能带来跨 handler 复用面的连锁影响。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "Purchase|Sales|Trading|Workflow" -count=1`
+2. `go test ./services -run "Purchase|Sales|Trading|Workflow" -count=1`
+3. 若新增 patch assembler 测试，则执行对应最小测试集
+
+前端至少执行：
+
+1. `pnpm exec tsc --noEmit`
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `trading` 第三段完成：
+
+1. `PatchPurchaseOrderHandler` 不再承担主要 delta 展开与 patch request 组装职责。
+2. `purchase-order` 的 patch 主链拥有更完整的 service 边界。
+3. `sales` / `purchase` 的写入组织方式不再继续分叉，或已明确记录为什么保持差异。
+4. `walkthrough.md` 完整记录下沉范围、职责变化与验证结果。
+
+## 25. `trading` 第四段：sales 对称 patch 包装与写入模式统一实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮是在 `trading` 第三段完成后继续推进，目标是回答以下问题：
+
+1. `sales-order` 是否需要补充对称的 patch / command 包装，来与 `purchase-order patch` 已完成的 service 边界对齐。
+2. 在 sales order 已 hard-cut PATCH 路由的前提下，是否仍需要保留最小的 patch assembler / snapshot update 抽象，以统一 `sales / purchase` 的写入组织模式。
+3. `sales_order_command_service.go` 与 `purchase_order_command_service.go` 中哪些结构可以统一，哪些必须保留差异。
+4. `trading` 是否可以从“purchase patch 继续下沉”进一步推进到“sales / purchase 写入模式达成稳定统一约定”。
+
+### 2. 当前已确认断点
+
+#### 2.1 `sales-order` 对称性问题
+
+当前已确认：
+
+1. `sales-order` 已完成保存主链下沉，但并没有与 `purchase-order patch` 对应的 patch command 包装。
+2. 历史上 `sales-order PATCH` 已 hard-cut，因此第四段不能简单回滚为恢复 PATCH 路由。
+3. 这意味着第四段需要判断：
+  - 是补充**内部对称抽象**而不公开 PATCH 路由
+  - 还是明确记录 `sales` 与 `purchase` 在写入组织上的保留差异
+
+#### 2.2 command service 组织仍有可统一空间
+
+当前已确认：
+
+1. `sales_order_command_service.go` 与 `purchase_order_command_service.go` 都已存在，但内部 payload builder、snapshot 变换、错误约定仍有继续统一空间。
+2. 若不在此时固化统一约定，后续新增订单命令时容易再次分叉。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/services/sales_order_command_service.go`
+2. `server/services/purchase_order_command_service.go`
+3. 必要时的 `server/handlers/sales_orders.go` 最小调用面对齐
+4. 与 sales hard-cut 设计直接相关的最小文档 / 注记面
+
+后端目标：
+
+1. 评估并决定 `sales-order` 是否需要内部对称 patch 包装。
+2. 若需要，则以**不恢复公开 PATCH 路由**为前提，补最小内部抽象。
+3. 若不需要，则明确记录并固定 `sales` / `purchase` 的保留差异，避免后续再次来回摇摆。
+4. 收敛 `sales` / `purchase` command service 中重复的 payload builder / mapper 约定，但避免过度抽象。
+
+#### 3.2 明确不做的事
 
 1. 不恢复 `PATCH /sales-orders/:id` 路由。
-2. 不重新引入 sales order PATCH DTO。
+2. 不重新引入与 hard-cut 决策冲突的公开接口。
+3. 不在本轮扩散到新的前端契约层或其他模块。
+
+### 4. 设计原则
+
+1. 对称性服务于维护性，不为了“形式统一”而破坏既有 hard-cut 决策。
+2. 优先统一内部 command 组织模式，而不是统一外部接口形态。
+3. 若差异保留更合理，必须在文档中明确写清原因，而不是隐式保留。
+4. 避免把 `sales / purchase` command service 抽成过度通用的基类或模板。
+
+### 5. 潜在风险
+
+1. 若误把“内部对称包装”做成“恢复 sales PATCH 能力”，会直接偏离既有 hard-cut 边界。
+2. 若为了统一而抽象过度，可能降低可读性并增加后续维护成本。
+3. 若仅在代码层面微调而不写清差异原因，后续仍会再次出现模式漂移。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./handlers -run "Sales|Purchase|Trading|Workflow" -count=1`
+2. `go test ./services -run "Sales|Purchase|Trading|Workflow" -count=1`
+
+前端至少执行：
+
+1. `npx tsc --noEmit`
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `trading` 第四段完成：
+
+1. `sales / purchase` 写入模式已经进一步统一，或差异已被显式固定。
+2. 不恢复 `sales-order` 公开 PATCH 路由。
+3. `walkthrough.md` 完整记录统一策略、保留差异与验证结果。
+
+## 26. `sales_orders PATCH` 历史残留清理实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮不是新的 DTO 扩面，也不是新的交易域闭环阶段，而是专门处理 `sales-order PATCH hard-cut` 之后仍可能残留的历史负担，目标是回答以下问题：
+
+1. `server/handlers/sales_orders.go` 是否仍保留对历史 PATCH 能力的隐式依赖、漂移注释或死分支。
+2. `server/services/sales_*` 中是否仍存在只为旧 PATCH 路由保留、但现已没有实际调用价值的残留结构。
+3. 当前 `sales-order` 应保留的边界是否已经足够清晰：
+   - 保留内部 command 组织能力
+   - 不恢复公开 `PATCH /sales-orders/:id`
+
+### 2. 本轮范围
+
+范围限定为：
+
+1. `server/handlers/sales_orders.go`
+2. `server/services/sales_*` 中与历史 PATCH 残留直接相关的最小文件集合
+3. 与其直接相关的最小调用面 / 编译面
+
+### 3. 本轮目标
+
+1. 清除已无真实调用价值的历史 PATCH 残留引用。
+2. 清除 hard-cut 后仍可能误导维护者的注释、逻辑分支或边界漂移。
+3. 保证当前保留的是**内部对称 command 抽象**，而不是旧 PATCH 路由的变相回潮。
+4. 让 `sales-order` 的现行边界在代码与文档层面保持一致。
+
+### 4. 明确不做的事
+
+1. 不恢复 `PATCH /sales-orders/:id` 路由。
+2. 不重新引入公开 `PatchSalesOrderRequest` HTTP 契约。
 3. 不回滚此前已确认的 sales order hard-cut 设计。
+4. 不把本轮扩散为新的 `trading` 整域改造任务。
+
+### 5. 潜在风险
+
+1. 若清理判断不准确，可能误删当前内部 command 复用点。
+2. 若把“残留清理”理解为“能力回滚”，会破坏当前 hard-cut 边界。
+3. 若只改代码不改记录，仍会留下文档/实现不一致的问题。
+
+### 6. 验证策略
+
+至少执行：
+
+1. `go test ./handlers -run "Sales|Trading" -count=1`
+2. `go test ./services -run "Sales|Trading" -count=1`
+3. 必要时补 `npx tsc --noEmit`
+
+### 7. 本轮完成标准
+
+满足以下条件才算本轮完成：
+
+1. `sales_orders` 相关历史 PATCH 残留已清理干净。
+2. `sales-order` 的现行边界已清晰固定：保留内部 command，继续不暴露公开 PATCH。
+3. `walkthrough.md` 完整记录清理范围、保留边界与验证结果。
 
 ---
 

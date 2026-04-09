@@ -123,7 +123,8 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME,
-			category TEXT
+			category TEXT,
+			min_stock REAL DEFAULT 0
 		)`,
 		`CREATE TABLE purchase_orders (
 			id TEXT PRIMARY KEY NOT NULL,

@@ -52,7 +52,7 @@ func ExecuteCustomerTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, services.MapCustomerToResponse(*result))
 }
 
 func ExecuteSupplierTransactionHandler(c *gin.Context) {
@@ -96,5 +96,5 @@ func ExecuteSupplierTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, services.MapSupplierToResponse(*result))
 }

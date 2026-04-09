@@ -104,3 +104,72 @@ func TestGetShipmentHistoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	require.Equal(t, "WH_A", response.Items[0].SourceCategory)
 	require.Equal(t, "COMMITTED", response.Items[0].Status)
 }
+
+func TestGetInventoryValuationHandlerReturnsAggregatedValue(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at, category, min_stock)
+		VALUES (?, ?, ?, ?, ?)
+	`, materialID, now, now, "RAW", 0).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+		       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		uuid.NewString(), now, now, materialID, "Copper Wire", "MAT-VAL-001", 10.0, 100.0, 10.0, "WH_A", "B-VAL-001", "KG",
+		uuid.NewString(), now, now, materialID, "Copper Wire", "MAT-VAL-001", 5.0, 55.5, 11.1, "WH_B", "B-VAL-002", "KG",
+	).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/inventory/valuation", nil)
+
+	GetInventoryValuationHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryValuationResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, 155.5, response.TotalValue)
+}
+
+func TestGetInventoryAlertSummaryHandlerReturnsLowStockCount(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	materialLow := uuid.NewString()
+	materialHealthy := uuid.NewString()
+	materialNoStock := uuid.NewString()
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at, category, min_stock)
+		VALUES (?, ?, ?, ?, ?),
+		       (?, ?, ?, ?, ?),
+		       (?, ?, ?, ?, ?)
+	`,
+		materialLow, now, now, "RAW", 10.0,
+		materialHealthy, now, now, "RAW", 2.0,
+		materialNoStock, now, now, "RAW", 4.0,
+	).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+		       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		uuid.NewString(), now, now, materialLow, "Low Stock", "MAT-LOW-001", 7.0, 70.0, 10.0, "WH_A", "B-LOW-001", "KG",
+		uuid.NewString(), now, now, materialHealthy, "Healthy Stock", "MAT-OK-001", 5.0, 50.0, 10.0, "WH_A", "B-OK-001", "KG",
+	).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/inventory/alerts/summary", nil)
+
+	GetInventoryAlertSummaryHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryAlertSummaryResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.EqualValues(t, 2, response.AlertCount)
+}

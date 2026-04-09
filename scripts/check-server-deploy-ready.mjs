@@ -62,7 +62,31 @@ expectIncludes(
 )
 expectIncludes(
   deployProdSh,
-  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build --remove-orphans db redis app watchdog nginx_lb',
+  'DEFAULT_SERVICES=(db redis search-engine app nginx_lb)',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'FULL_BUILD_SERVICES=(db redis search-engine app watchdog nginx_lb)',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --remove-orphans db redis nginx_lb',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build search-engine app',
+  files.deployProdSh,
+  failures
+)
+expectIncludes(
+  deployProdSh,
+  'docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --build --remove-orphans "${FULL_BUILD_SERVICES[@]}"',
   files.deployProdSh,
   failures
 )

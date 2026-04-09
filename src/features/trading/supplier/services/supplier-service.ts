@@ -7,6 +7,8 @@ import {
   ensureObjectResponse,
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { toSupplierApiDTO, toSupplierContract, toSupplierContracts } from '../adapters/supplier-api-adapter'
+import { type SupplierApiDTO, type SupplierListApiResponseDTO } from '../contracts/supplier-api-dto'
 import { type Supplier } from '../../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
@@ -59,32 +61,18 @@ export interface SupplierSavePayload {
 }
 
 export const getSuppliers = async (): Promise<Supplier[]> => {
-  const raw = await apiFetch<Supplier[]>('/suppliers?options=true')
-  const checkedRaw = ensureArrayResponse<Supplier>(raw, 'SupplierService.getSuppliers')
-
-  return checkedRaw.map((supplier) => ({
-    ...supplier,
-    mainProducts:
-      typeof supplier.mainProducts === 'string'
-        ? JSON.parse(supplier.mainProducts)
-        : (supplier.mainProducts ?? []),
-  }))
+  const raw = await apiFetch<SupplierApiDTO[]>('/suppliers?options=true')
+  return toSupplierContracts(ensureArrayResponse<SupplierApiDTO>(raw, 'SupplierService.getSuppliers'))
 }
 
 export const getSupplierList = async (): Promise<SupplierListResponse> => {
   const context = 'SupplierService.getSupplierList'
-  const res = await apiFetch<SupplierListResponse>('/suppliers')
-  const objectResponse = ensureObjectResponse<SupplierListResponse & Record<string, unknown>>(
+  const res = await apiFetch<SupplierListApiResponseDTO>('/suppliers')
+  const objectResponse = ensureObjectResponse<SupplierListApiResponseDTO & Record<string, unknown>>(
     res,
     context
   )
-  const items = ensureArrayField<Supplier>(objectResponse, 'items', context).map((supplier) => ({
-    ...supplier,
-    mainProducts:
-      typeof supplier.mainProducts === 'string'
-        ? JSON.parse(supplier.mainProducts)
-        : (supplier.mainProducts ?? []),
-  }))
+  const items = toSupplierContracts(ensureArrayField<SupplierApiDTO>(objectResponse, 'items', context))
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
@@ -116,27 +104,26 @@ export const executeSupplierTransaction = async <TPayload>(
   supplierId: string,
   request: SupplierTransactionRequest<TPayload>
 ): Promise<Supplier> => {
-  const res = await apiFetch<Supplier>(`/suppliers/${supplierId}/transactions`, {
+  const res = await apiFetch<SupplierApiDTO>(`/suppliers/${supplierId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return ensureObjectResponse<Supplier & Record<string, unknown>>(
-    res,
-    'SupplierService.executeSupplierTransaction'
-  ) as Supplier
+  return toSupplierContract(
+    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
+      res,
+      'SupplierService.executeSupplierTransaction'
+    ) as SupplierApiDTO
+  )
 }
 
 export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>): Promise<Supplier> => {
-  const payload = {
-    ...supplier,
-    mainProducts: supplier.mainProducts ? JSON.stringify(supplier.mainProducts) : '[]',
-  }
-
-  const res = await apiFetch<Supplier>('/suppliers', {
+  const res = await apiFetch<SupplierApiDTO>('/suppliers', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(toSupplierApiDTO({ ...supplier, id: '', version: 1 } as Supplier)),
   })
-  return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'SupplierService.createSupplier') as Supplier
+  return toSupplierContract(
+    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.createSupplier') as SupplierApiDTO
+  )
 }
 
 export const deleteSupplier = async (id: string): Promise<void> => {
@@ -214,9 +201,11 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
     metadata: { id, version },
   }
 
-  const res = await apiFetch<Supplier>(`/suppliers/${id}`, {
+  const res = await apiFetch<SupplierApiDTO>(`/suppliers/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return ensureObjectResponse<Supplier & Record<string, unknown>>(res, 'SupplierService.patchSupplier') as Supplier
+  return toSupplierContract(
+    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.patchSupplier') as SupplierApiDTO
+  )
 }

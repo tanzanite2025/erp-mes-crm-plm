@@ -50,11 +50,11 @@ func GetLogisticsRecordsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    records,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, services.LogisticsRecordListResponse{
+		Items:    services.MapLogisticsRecordsToResponse(records),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -66,7 +66,7 @@ func GetLogisticsRecordHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[VALIDATION] 记录不找到"})
 		return
 	}
-	c.JSON(http.StatusOK, record)
+	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))
 }
 
 // SaveLogisticsRecordHandler 保存或更新物流记录
@@ -143,7 +143,11 @@ func SaveLogisticsRecordHandler(c *gin.Context) {
 				return
 			}
 		}
-		c.JSON(http.StatusOK, existing)
+		if err := db.DB.First(&existing, "id = ?", existing.ID).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新后加载失败"})
+			return
+		}
+		c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(existing))
 	} else {
 		// 创建逻辑前增加唯一性检查
 		var duplicate models.LogisticsRecord
@@ -175,7 +179,7 @@ func SaveLogisticsRecordHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建失败"})
 			return
 		}
-		c.JSON(http.StatusOK, input)
+		c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(input))
 	}
 }
 
@@ -236,7 +240,12 @@ func UpdateLogisticsStatusHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, record)
+	if err := db.DB.First(&record, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新后加载失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))
 }
 
 func DeleteLogisticsRecordHandler(c *gin.Context) {

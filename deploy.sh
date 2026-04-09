@@ -49,18 +49,21 @@ git clean -fd \
   -e logs
 
 echo -e "${CYAN}>>> [STAGE 2/4] Install deps and build frontend...${NC}"
-if command -v pnpm >/dev/null 2>&1; then
-  pnpm install --frozen-lockfile
-  pnpm build
-else
-  echo -e "${YELLOW}Warning: pnpm not found, fallback to npm.${NC}"
-  if [[ -f package-lock.json ]]; then
-    npm ci
+PNPM_CMD=(pnpm)
+if ! command -v pnpm >/dev/null 2>&1; then
+  if command -v corepack >/dev/null 2>&1; then
+    echo -e "${YELLOW}>>> pnpm not found, bootstrapping via corepack (pnpm@10.33.0)...${NC}"
+    corepack prepare pnpm@10.33.0 --activate
+    PNPM_CMD=(corepack pnpm)
   else
-    npm install
+    echo -e "${RED}ERR: pnpm is required for this repository (npm fallback removed).${NC}"
+    echo -e "${YELLOW}Install pnpm or enable corepack, then retry deploy.${NC}"
+    exit 1
   fi
-  npm run build
 fi
+
+"${PNPM_CMD[@]}" install --frozen-lockfile
+"${PNPM_CMD[@]}" build
 
 echo -e "${CYAN}>>> [STAGE 2.5/4] Publish frontend release atomically...${NC}"
 chmod +x ./scripts/publish-frontend-release.sh

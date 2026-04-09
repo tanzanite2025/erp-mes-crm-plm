@@ -27,6 +27,8 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	inventoryGroup := authorized.Group("")
 	inventoryGroup.Use(warehouseAccess)
 	inventoryGroup.GET("/inventory", handlers.GetInventoryHandler)
+	inventoryGroup.GET("/inventory/valuation", handlers.GetInventoryValuationHandler)
+	inventoryGroup.GET("/inventory/alerts/summary", handlers.GetInventoryAlertSummaryHandler)
 	inventoryGroup.PATCH("/inventory/:id", adjustmentUpdate, handlers.PatchInventoryHandler)
 	inventoryGroup.GET("/inventory/inbound", handlers.GetInboundHistoryHandler)
 	inventoryGroup.POST("/inventory/inbound", inboundRecord, handlers.RecordInboundHandler)

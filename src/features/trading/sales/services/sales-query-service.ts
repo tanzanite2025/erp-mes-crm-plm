@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type SalesOrder } from '../../data/schema'
+import { toSalesOrderContract, toSalesOrderListPageContract, type PaginatedSalesOrders } from '../adapters/sales-order-api-adapter'
+import { type SalesOrderApiDTO, type SalesOrderListPageApiDTO } from '../contracts/sales-order-api-dto'
 
 export interface PaginatedResponse<T> {
   items: T[]
@@ -18,7 +19,7 @@ export type GetSalesOrdersOptions = {
 
 export const getSalesOrders = async (
   options: GetSalesOrdersOptions = {}
-): Promise<PaginatedResponse<SalesOrder>> => {
+): Promise<PaginatedSalesOrders> => {
   const { page = 1, pageSize = 50, withLines = false, status } = options
 
   const params = new URLSearchParams({
@@ -33,42 +34,38 @@ export const getSalesOrders = async (
     params.set('status', status.join(','))
   }
 
-  const res = await apiFetch<PaginatedResponse<SalesOrder>>(`/sales-orders?${params.toString()}`)
-  return ensureObjectResponse<PaginatedResponse<SalesOrder> & Record<string, unknown>>(
-    res,
-    'SalesQueryService.getSalesOrders'
-  ) as PaginatedResponse<SalesOrder>
+  const res = await apiFetch<SalesOrderListPageApiDTO>(`/sales-orders?${params.toString()}`)
+  return toSalesOrderListPageContract(
+    ensureObjectResponse<SalesOrderListPageApiDTO & Record<string, unknown>>(
+      res,
+      'SalesQueryService.getSalesOrders'
+    ) as SalesOrderListPageApiDTO
+  )
 }
 
-export const getSalesOrderById = async (id: string): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrder>(`/sales-orders/${id}`)
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(
+export const getSalesOrderById = async (id: string) => {
+  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${id}`)
+  return toSalesOrderContract(ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
     res,
     'SalesQueryService.getSalesOrderById'
-  ) as SalesOrder
+  ) as SalesOrderApiDTO)
 }
 
-export const getSalesOrderByNo = async (orderNo: string): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrder>(`/sales-orders/by-no/${orderNo}`)
-  return ensureObjectResponse<SalesOrder & Record<string, unknown>>(
+export const getSalesOrderByNo = async (orderNo: string) => {
+  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/by-no/${orderNo}`)
+  return toSalesOrderContract(ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
     res,
     'SalesQueryService.getSalesOrderByNo'
-  ) as SalesOrder
+  ) as SalesOrderApiDTO)
 }
 
-/**
- * [BACKEND-AGGREGATION] 获取客户产品统计数据
- */
-export const getCustomerProductStats = async (params: { customerId?: string } = {}): Promise<any> => {
+export const getCustomerProductStats = async (params: { customerId?: string } = {}): Promise<Record<string, unknown>> => {
   const query = params.customerId ? `?customerId=${params.customerId}` : ''
-  const res = await apiFetch(`/sales-orders/analytics/customer-product-stats${query}`)
-  return ensureObjectResponse(res, 'SalesQueryService.getCustomerProductStats')
+  const res = await apiFetch<Record<string, unknown>>(`/sales-orders/analytics/customer-product-stats${query}`)
+  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getCustomerProductStats') as Record<string, unknown>
 }
 
-/**
- * [BACKEND-AGGREGATION] 获取全局产品排行榜
- */
-export const getGlobalProductRanking = async (limit: number = 10): Promise<any> => {
-  const res = await apiFetch(`/sales-orders/analytics/global-product-ranking?limit=${limit}`)
-  return ensureObjectResponse(res, 'SalesQueryService.getGlobalProductRanking')
+export const getGlobalProductRanking = async (limit: number = 10): Promise<Record<string, unknown>> => {
+  const res = await apiFetch<Record<string, unknown>>(`/sales-orders/analytics/global-product-ranking?limit=${limit}`)
+  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getGlobalProductRanking') as Record<string, unknown>
 }

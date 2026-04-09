@@ -7,6 +7,8 @@ import {
   ensureObjectResponse,
 } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { toCustomerApiDTO, toCustomerContract, toCustomerContracts } from '../adapters/customer-api-adapter'
+import { type CustomerApiDTO, type CustomerListApiResponseDTO } from '../contracts/customer-api-dto'
 import { type Customer } from '../../data/schema'
 
 export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
@@ -59,18 +61,18 @@ export interface CustomerSavePayload {
 }
 
 export const getCustomers = async (): Promise<Customer[]> => {
-  const res = await apiFetch<Customer[]>('/customers?options=true')
-  return ensureArrayResponse<Customer>(res, 'CustomerService.getCustomers')
+  const res = await apiFetch<CustomerApiDTO[]>('/customers?options=true')
+  return toCustomerContracts(ensureArrayResponse<CustomerApiDTO>(res, 'CustomerService.getCustomers'))
 }
 
 export const getCustomerList = async (): Promise<CustomerListResponse> => {
   const context = 'CustomerService.getCustomerList'
-  const res = await apiFetch<CustomerListResponse>('/customers')
-  const objectResponse = ensureObjectResponse<CustomerListResponse & Record<string, unknown>>(
+  const res = await apiFetch<CustomerListApiResponseDTO>('/customers')
+  const objectResponse = ensureObjectResponse<CustomerListApiResponseDTO & Record<string, unknown>>(
     res,
     context
   )
-  const items = ensureArrayField<Customer>(objectResponse, 'items', context)
+  const items = toCustomerContracts(ensureArrayField<CustomerApiDTO>(objectResponse, 'items', context))
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
@@ -102,22 +104,26 @@ export const executeCustomerTransaction = async <TPayload>(
   customerId: string,
   request: CustomerTransactionRequest<TPayload>
 ): Promise<Customer> => {
-  const res = await apiFetch<Customer>(`/customers/${customerId}/transactions`, {
+  const res = await apiFetch<CustomerApiDTO>(`/customers/${customerId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return ensureObjectResponse<Customer & Record<string, unknown>>(
-    res,
-    'CustomerService.executeCustomerTransaction'
-  ) as Customer
+  return toCustomerContract(
+    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
+      res,
+      'CustomerService.executeCustomerTransaction'
+    ) as CustomerApiDTO
+  )
 }
 
 export const createCustomer = async (customer: Omit<Customer, 'id' | 'version'>): Promise<Customer> => {
-  const res = await apiFetch<Customer>('/customers', {
+  const res = await apiFetch<CustomerApiDTO>('/customers', {
     method: 'POST',
-    body: JSON.stringify(customer),
+    body: JSON.stringify(toCustomerApiDTO({ ...customer, id: '', version: 1 } as Customer)),
   })
-  return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'CustomerService.createCustomer') as Customer
+  return toCustomerContract(
+    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer') as CustomerApiDTO
+  )
 }
 
 export const deleteCustomer = async (id: string): Promise<void> => {
@@ -195,9 +201,11 @@ export const patchCustomer = async (id: string, delta: DeltaSet, version: number
     metadata: { id, version },
   }
 
-  const res = await apiFetch<Customer>(`/customers/${id}`, {
+  const res = await apiFetch<CustomerApiDTO>(`/customers/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return ensureObjectResponse<Customer & Record<string, unknown>>(res, 'CustomerService.patchCustomer') as Customer
+  return toCustomerContract(
+    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer') as CustomerApiDTO
+  )
 }

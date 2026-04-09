@@ -27,7 +27,7 @@ func GetEmployeesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch employees"})
 		return
 	}
-	c.JSON(http.StatusOK, mapEmployeeResponses(employees))
+	c.JSON(http.StatusOK, employees)
 }
 
 func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
@@ -240,7 +240,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapEmployeeResponse(refreshed))
+	c.JSON(http.StatusOK, refreshed)
 }
 
 func PreviewEmployeeImportHandler(c *gin.Context) {

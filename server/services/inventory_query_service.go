@@ -1,10 +1,10 @@
 package services
 
 import (
+	"log"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
-	"log"
 )
 
 // RebuildSearchIndex 全量重构搜索引擎索引情况情况总量针对。
@@ -110,4 +110,71 @@ func ListShipmentHistory(page, pageSize int) InventoryShipmentHistoryResponse {
 		Page:     page,
 		PageSize: pageSize,
 	}
+}
+
+func GetInventoryValuation() (InventoryValuationResponse, error) {
+	var totalValue float64
+	if err := db.DB.Model(&models.Inventory{}).
+		Select("COALESCE(SUM(total_value), 0)").
+		Scan(&totalValue).Error; err != nil {
+		return InventoryValuationResponse{}, err
+	}
+
+	return InventoryValuationResponse{
+		TotalValue: totalValue,
+	}, nil
+}
+
+func GetInventoryAlertSummary() (InventoryAlertSummaryResponse, error) {
+	type materialMinStock struct {
+		ID       string
+		MinStock float64
+	}
+	type materialStock struct {
+		MaterialID string
+		Quantity   float64
+	}
+
+	var trackedMaterials []materialMinStock
+	if err := db.DB.Model(&models.Material{}).
+		Select("id, min_stock").
+		Where("min_stock > ?", 0).
+		Find(&trackedMaterials).Error; err != nil {
+		return InventoryAlertSummaryResponse{}, err
+	}
+
+	if len(trackedMaterials) == 0 {
+		return InventoryAlertSummaryResponse{AlertCount: 0}, nil
+	}
+
+	materialIDs := make([]string, 0, len(trackedMaterials))
+	for _, material := range trackedMaterials {
+		materialIDs = append(materialIDs, material.ID)
+	}
+
+	var stocks []materialStock
+	if err := db.DB.Model(&models.Inventory{}).
+		Select("material_id, COALESCE(SUM(quantity), 0) AS quantity").
+		Where("material_id IN ?", materialIDs).
+		Group("material_id").
+		Scan(&stocks).Error; err != nil {
+		return InventoryAlertSummaryResponse{}, err
+	}
+
+	stockMap := make(map[string]float64, len(stocks))
+	for _, stock := range stocks {
+		stockMap[stock.MaterialID] = stock.Quantity
+	}
+
+	var alertCount int64
+	for _, material := range trackedMaterials {
+		currentStock := stockMap[material.ID]
+		if currentStock < material.MinStock {
+			alertCount++
+		}
+	}
+
+	return InventoryAlertSummaryResponse{
+		AlertCount: alertCount,
+	}, nil
 }

@@ -9,6 +9,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/dependencies"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -86,16 +87,6 @@ type BulkSyncUserRequest struct {
 	EmployeeID  string `json:"employeeId"`
 }
 
-type UserOptionResponse struct {
-	ID         string `json:"id"`
-	Username   string `json:"username"`
-	EmployeeID string `json:"employeeId,omitempty"`
-	FirstName  string `json:"firstName,omitempty"`
-	LastName   string `json:"lastName,omitempty"`
-	Role       string `json:"role,omitempty"`
-	Status     string `json:"status,omitempty"`
-}
-
 func isLikelyBcryptHash(value string) bool {
 	return strings.HasPrefix(value, "$2a$") || strings.HasPrefix(value, "$2b$") || strings.HasPrefix(value, "$2y$")
 }
@@ -120,86 +111,55 @@ func hashUserPassword(raw string) (string, error) {
 func GetUsersHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
 
 	isOptions := c.Query("options") == "true"
 	username := c.Query("username")
 	statuses := c.QueryArray("status")
 	roles := c.QueryArray("role")
 
-	query := db.DB.Model(&models.User{})
-	if username != "" {
-		query = query.Where("username LIKE ?", "%"+username+"%")
-	}
-	if len(statuses) > 0 {
-		normalizedStatuses := make([]string, 0, len(statuses))
-		for _, status := range statuses {
-			normalized := strings.ToLower(strings.TrimSpace(status))
-			if normalized != "" {
-				normalizedStatuses = append(normalizedStatuses, normalized)
-			}
-		}
-		if len(normalizedStatuses) > 0 {
-			query = query.Where("status IN ?", normalizedStatuses)
+	normalizedStatuses := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		normalized := strings.ToLower(strings.TrimSpace(status))
+		if normalized != "" {
+			normalizedStatuses = append(normalizedStatuses, normalized)
 		}
 	}
-	if len(roles) > 0 {
-		normalizedRoles := make([]string, 0, len(roles))
-		for _, role := range roles {
-			normalized := strings.TrimSpace(role)
-			if normalized != "" {
-				normalizedRoles = append(normalizedRoles, normalized)
-			}
+
+	normalizedRoles := make([]string, 0, len(roles))
+	for _, role := range roles {
+		normalized := strings.TrimSpace(role)
+		if normalized != "" {
+			normalizedRoles = append(normalizedRoles, normalized)
 		}
-		if len(normalizedRoles) > 0 {
-			query = query.Where("role IN ?", normalizedRoles)
-		}
+	}
+
+	queryInput := services.UserQuery{
+		Page:     page,
+		PageSize: pageSize,
+		Options:  isOptions,
+		Username: username,
+		Statuses: normalizedStatuses,
+		Roles:    normalizedRoles,
 	}
 
 	if isOptions {
-		var users []models.User
-		if err := query.Find(&users).Error; err != nil {
+		options, err := services.ListUserOptions(queryInput)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch test users"})
 			return
-		}
-
-		options := make([]UserOptionResponse, 0, len(users))
-		for _, user := range users {
-			options = append(options, UserOptionResponse{
-				ID:         user.ID,
-				Username:   user.Username,
-				EmployeeID: user.EmployeeID,
-				FirstName:  user.FirstName,
-				LastName:   user.LastName,
-				Role:       user.Role,
-				Status:     user.Status,
-			})
 		}
 
 		c.JSON(http.StatusOK, options)
 		return
 	}
 
-	var total int64
-	query.Count(&total)
-
-	var items []models.User
-	if err := query.Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
+	response, err := services.ListUsers(queryInput)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch paginated users"})
 		return
 	}
 
-	c.JSON(http.StatusOK, UserListResponse{
-		Items:    mapUsersToResponse(items),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	})
+	c.JSON(http.StatusOK, response)
 }
 
 // BulkSyncUsersHandler 鎵归噺鍚屾鐢ㄦ埛 (鏁版嵁鎶㈡晳)

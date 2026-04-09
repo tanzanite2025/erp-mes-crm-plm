@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
-	"time"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -17,89 +18,23 @@ import (
 func GetCustomersHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
-
 	isOptions := c.Query("options") == "true"
-	query := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
-
-	if isOptions {
-		var customers []models.Customer
-		if err := query.Order("name asc").Find(&customers).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "[SERVER] 获取客户选项失败: " + err.Error(),
-				"code":  "CUSTOMER_OPTIONS_FETCH_FAILED",
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, mapCustomersToResponse(customers))
-		return
-	}
-
-	statsBaseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
-	var total int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
-			"code":  "CUSTOMER_STATS_FETCH_FAILED",
-		})
-		return
-	}
-
-	var active int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
-			"code":  "CUSTOMER_STATS_FETCH_FAILED",
-		})
-		return
-	}
-
-	startOfMonth := time.Now().UTC()
-	startOfMonth = time.Date(startOfMonth.Year(), startOfMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
-
-	var newThisMonth int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("created_at >= ?", startOfMonth).Count(&newThisMonth).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
-			"code":  "CUSTOMER_STATS_FETCH_FAILED",
-		})
-		return
-	}
-
-	var items []models.Customer
-	if err := query.Order("name asc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
+	response, err := services.ListCustomers(services.CustomerListQuery{
+		Page:     page,
+		PageSize: pageSize,
+		Options:  isOptions,
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[SERVER] 获取客户列表失败: " + err.Error(),
 			"code":  "CUSTOMER_LIST_FETCH_FAILED",
 		})
 		return
 	}
-
-	response := CustomerListHandlerResponse{
-		Items:    mapCustomersToResponse(items),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Metadata: services.CustomerListMetadata{
-			Pagination: services.PartnerListPaginationMeta{
-				Total:    total,
-				Page:     page,
-				PageSize: pageSize,
-			},
-			Stats: services.CustomerListStats{
-				Total:        total,
-				Active:       active,
-				NewThisMonth: newThisMonth,
-			},
-		},
+	if isOptions {
+		c.JSON(http.StatusOK, response.Items)
+		return
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 
@@ -113,27 +48,9 @@ func SaveCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	input := mapCustomerRequestToModel(req)
-
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if input.ID != "" {
-			var existing models.Customer
-			if err := tx.Where("id = ?", input.ID).First(&existing).Error; err == nil {
-				if input.Version != existing.Version {
-					return ErrVersionConflict
-				}
-
-				input.Version = existing.Version + 1
-				return tx.Model(&existing).Select("*").Updates(input).Error
-			}
-		}
-
-		input.Version = 1
-		return tx.Create(&input).Error
-	})
-
+	response, err := services.SaveCustomer(services.SaveCustomerRequest(req), middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP())
 	if err != nil {
-		if err == ErrVersionConflict {
+		if errors.Is(err, services.ErrCustomerTransactionVersionConflict) || err == ErrVersionConflict {
 			respondVersionConflict(c)
 			return
 		}
@@ -145,7 +62,7 @@ func SaveCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, mapCustomerToResponse(input))
+	c.JSON(http.StatusOK, response)
 }
 
 func PatchCustomerHandler(c *gin.Context) {
@@ -167,7 +84,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	updates := make(map[string]interface{})
+	patch := services.PatchCustomerRequest{ID: id, Version: int(req.Metadata.Version)}
 	for key, raw := range req.Delta {
 		valueRaw, err := extractDeltaNewValue(raw)
 		if err != nil {
@@ -188,7 +105,22 @@ func PatchCustomerHandler(c *gin.Context) {
 				})
 				return
 			}
-			updates[key] = value
+			switch key {
+			case "name":
+				patch.Name = &value
+			case "code":
+				patch.Code = &value
+			case "contactPerson":
+				patch.ContactPerson = &value
+			case "contactPhone":
+				patch.ContactPhone = &value
+			case "email":
+				patch.Email = &value
+			case "address":
+				patch.Address = &value
+			case "status":
+				patch.Status = &value
+			}
 		case "creditLimit", "balance":
 			var value float64
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -198,25 +130,17 @@ func PatchCustomerHandler(c *gin.Context) {
 				})
 				return
 			}
-			updates[key] = value
+			if key == "creditLimit" {
+				patch.CreditLimit = &value
+			} else {
+				patch.Balance = &value
+			}
 		}
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var existing models.Customer
-		if err := tx.Where("id = ? AND is_deleted = ?", id, false).First(&existing).Error; err != nil {
-			return err
-		}
-		if req.Metadata.Version != int64(existing.Version) {
-			return ErrVersionConflict
-		}
-
-		updates["version"] = existing.Version + 1
-		return tx.Model(&existing).Updates(updates).Error
-	})
-
+	response, err := services.PatchCustomer(patch, middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP())
 	if err != nil {
-		if err == ErrVersionConflict {
+		if errors.Is(err, services.ErrCustomerTransactionVersionConflict) || err == ErrVersionConflict {
 			respondVersionConflict(c)
 			return
 		}
@@ -227,17 +151,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		})
 		return
 	}
-
-	var customer models.Customer
-	if err := db.DB.Where("id = ?", id).First(&customer).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "[SERVER] 获取更新后的客户失败: " + err.Error(),
-			"code":  "CUSTOMER_PATCH_FETCH_FAILED",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, mapCustomerToResponse(customer))
+	c.JSON(http.StatusOK, response)
 }
 
 func DeleteCustomerHandler(c *gin.Context) {

@@ -1,4 +1,158 @@
 - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+- [ ] 633. 冻结本轮范围，规划 `sales_orders PATCH` 历史残留清理（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `sales_orders PATCH` hard-cut 后的历史残留，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是在不恢复公开 `PATCH /sales-orders/:id` 路由的前提下，清理 `sales_orders` 相关残留引用、编译面和文档/约定漂移。
+  - [ ] 本轮规划必须严格限制在 `sales_orders.go` 及其最小直接调用面，不重新扩大到新的交易域改造任务。
+
+- [ ] 634. 拆解 `sales_orders PATCH` 历史残留清理范围
+  - [ ] 复核 `server/handlers/sales_orders.go` 中是否仍存在对已 hard-cut PATCH 能力的隐式依赖、注释漂移或错误分支残留。
+  - [ ] 复核 `server/services/sales_*` 中是否仍存在仅为历史 PATCH 路由保留、但现已无实际调用价值的残留引用。
+  - [ ] 明确哪些内部对称 patch/command 抽象应保留，哪些属于多余历史负担需要清理。
+  - [ ] 保证清理完成后，`sales-order` 的现行边界是：保留内部 command 组织能力，但不暴露公开 PATCH 路由。
+
+- [ ] 635. 明确本轮风险与验证口径
+  - [ ] 风险包括：误删当前内部 command 复用点、误破坏 `ORDER_SAVE` 主链、误把 hard-cut 清理做成能力回滚、以及注释/文档与实际代码再次不一致。
+  - [ ] 验证至少覆盖：`go test ./handlers -run "Sales|Trading" -count=1`、`go test ./services -run "Sales|Trading" -count=1`，必要时补最小前端 `tsc --noEmit` 回归。
+  - [ ] 完成后需更新 `walkthrough.md`，记录清理范围、保留边界与验证结果。
+
+- [ ] 636. 等待你批准 `sales_orders PATCH` 历史残留清理计划
+  - [ ] 批准前不修改 `server/handlers/sales_orders.go`、`server/services/sales_*` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际残留清理执行。
+
+- [ ] 629. 冻结本轮范围，规划 `trading` 第四段：sales 对称 patch 包装与写入模式统一（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `trading` 第四段，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是在第三段已完成 `purchase-order patch` assembler 下沉的基础上，评估并补齐 `sales-order` 的对称 patch / command 包装，进一步统一 `sales / purchase` 的写入组织方式。
+  - [ ] 本轮规划必须聚焦订单写入模式统一，不重新扩大到新的前端页面、读取链或其他子域。
+
+- [ ] 630. 拆解 `trading` 第四段后端闭环范围
+  - [ ] 评估 `sales-order` 当前是否需要恢复或补充对称 patch command 包装，以与 `purchase-order patch` 的 service 边界保持一致。
+  - [ ] 明确 `sales-order` 如不做 PATCH 路由，也是否需要最小的 patch assembler / snapshot 更新包装，以支撑统一 command 模式。
+  - [ ] 对比 `sales_order_command_service.go` 与 `purchase_order_command_service.go`，收敛重复的保存 / patch payload builder、snapshot mapper 与错误映射约定。
+  - [ ] 明确哪些差异是业务必需，哪些只是历史演进残留，并在代码或文档中显式固定。
+
+- [ ] 631. 明确 `trading` 第四段风险与验证口径
+  - [ ] 风险包括：错误引入销售单 PATCH 语义歧义、破坏现有 hard-cut 边界、sales/purchase 强行抽象导致复杂度上升、以及 command service 之间公共逻辑抽取过度。
+  - [ ] 验证至少覆盖：后端相关 handler / service 测试或最小编译验证，以及必要时的前端 `tsc --noEmit` 回归验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录统一策略、保留差异与验证结果。
+
+- [ ] 632. 等待你批准 `trading` 第四段计划
+  - [ ] 批准前不修改 `server/services/sales_*`、`server/services/purchase_*`、`server/handlers/sales_orders.go` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际第四段执行。
+
+- [ ] 625. 冻结本轮范围，规划 `trading` 第三段：patch 展开与写入主链继续下沉（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `trading` 第三段，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是在第二段已完成 command service 下沉的基础上，继续把 `purchase-order` 的 patch delta 展开与必要的写入前组装逻辑从 handler 下沉到 service，并评估 `sales-order` 是否需要补统一 patch / command 包装。
+  - [ ] 本轮规划必须聚焦订单写入主链剩余的 handler 残留逻辑，不重新扩大到新的前端页面或其他子域。
+
+- [ ] 626. 拆解 `trading` 第三段后端闭环范围
+  - [ ] 收口 `server/handlers/purchase_orders.go` 中 `PatchPurchaseOrderHandler` 的 delta 展开、字段解释与 patch request 组装职责。
+  - [ ] 评估 `sales-order` 是否需要补充统一 patch / command 包装，避免 `trading` 两类订单在写入编排层继续分化。
+  - [ ] 明确 `extractDeltaNewValue`、字段白名单校验、完整 request 回填与 transaction payload 组装在 service 层的归属边界。
+  - [ ] 保证 handler 最终只保留 request 绑定、最小参数校验、错误码映射和 service DTO 返回。
+
+- [ ] 627. 明确 `trading` 第三段风险与验证口径
+  - [ ] 风险包括：delta 字段解释迁移后的字段遗漏、patch request 回填不完整、`ORDER_SAVE` payload 组装差异、以及 purchase/sales 写入模式继续不一致。
+  - [ ] 验证至少覆盖：后端相关 handler / service 测试或最小编译验证，以及必要时的前端 `tsc --noEmit` 回归验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录下沉范围、职责变化与验证结果。
+
+- [ ] 628. 等待你批准 `trading` 第三段计划
+  - [ ] 批准前不修改 `server/handlers/purchase_orders.go`、`server/services/purchase_*`、`server/services/sales_*` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际第三段执行。
+
+- [ ] 621. 冻结本轮范围，规划 `trading` 第二段：订单 handler 编排下沉（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `trading` 第二段，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是在已完成前端 `API DTO + adapter` 与 `logistics` DTO 出口收口的基础上，继续把 `sales-order / purchase-order` 的订单保存与 patch 编排从 handler 下沉到更清晰的 service / command 边界。
+  - [ ] 本轮规划必须聚焦订单主链编排层，不把范围重新扩大到新的前端页面或无关子域。
+
+- [ ] 622. 拆解 `trading` 第二段后端闭环范围
+  - [ ] 收口 `server/handlers/sales_orders.go` 中 `SaveSalesOrderHandler` 的事务编排、物料校验、工作流挂接和版本处理职责。
+  - [ ] 收口 `server/handlers/purchase_orders.go` 中 `SavePurchaseOrderHandler` 与 `PatchPurchaseOrderHandler` 的事务编排、物料校验、版本处理和工作流桥接职责。
+  - [ ] 复核 `sales_transaction_service.go` / `purchase_transaction_service.go` 与新增 command service 之间的职责边界，避免出现“transaction service 已存在、handler 仍继续手搓统一保存事务”的双轨状态。
+  - [ ] 明确 `lines`、`workflowInstanceId`、版本校验、工作流缺失容错在 service 层的统一入口。
+
+- [ ] 623. 明确 `trading` 第二段风险与验证口径
+  - [ ] 风险包括：订单保存语义与 transaction 语义冲突、工作流实例创建时机变化、`lines` Replace 行为回归，以及乐观锁版本推进不一致。
+  - [ ] 验证至少覆盖：后端相关 handler / service 测试或最小编译验证，以及前端 `tsc --noEmit` 回归验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录编排下沉范围、职责边界变化与验证结果。
+
+- [ ] 624. 等待你批准 `trading` 第二段计划
+  - [ ] 批准前不修改 `server/handlers/sales_orders.go`、`server/handlers/purchase_orders.go`、`server/services/sales_*`、`server/services/purchase_*` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际编排下沉执行。
+
+- [ ] 616. 冻结本轮范围，规划 `trading` 整域 DTO 闭环（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `trading` 整域，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是把 `sales-order / purchase-order / logistics` 从“局部 DTO 样板已存在、但后端主链与前端 contract / adapter 仍不均衡”推进到可执行的整域闭环计划。
+  - [ ] 本轮规划必须同时覆盖后端五层链路与前端 `contract / adapter` 收口，不允许只挑某个订单子接口做补丁式修复。
+
+- [ ] 617. 拆解 `trading` 后端闭环范围
+  - [ ] 收口 `sales-order` 的 list / detail / save / transaction / patch 主链，避免 service 边界仍存在 `models.*` 外泄或 handler 直编排残留。
+  - [ ] 收口 `purchase-order` 的 list / detail / save / transaction / patch 主链，复核其 DTO 与 workflow 桥接返回是否一致。
+  - [ ] 评估 `logistics` 与订单详情/列表的 DTO 一致性，明确是否纳入本轮核心主链或仅做受影响最小联动。
+  - [ ] 梳理 `trading` 域的 response / list response / transaction payload / mapper 结构，明确统一 service DTO 出口。
+
+- [ ] 618. 拆解 `trading` 前端闭环范围
+  - [ ] 为 `sales-order` 与 `purchase-order` 定义独立 API DTO、页面 contract 与 adapter / gateway 边界。
+  - [ ] 替换订单前端 service 当前 `apiFetch<SalesOrder>` / `apiFetch<PurchaseOrder>` 一类类型化直连方式。
+  - [ ] 明确列表、详情、保存、patch、transaction、对话框回显等主要消费面，避免页面继续直接依赖后端实体 shape。
+
+- [ ] 619. 明确 `trading` 本轮风险与验证口径
+  - [ ] 风险包括：订单行项目结构兼容、workflow_instance_id / evidences / lines 等复杂字段映射兼容、交易型 transaction payload 回归，以及多页面复用下的隐式依赖。
+  - [ ] 验证至少覆盖：后端相关 service / handler 的最小测试或编译验证，以及前端相关模块的类型检查 / 单测或最小编译验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录闭环范围、映射策略、风险点与验证结果。
+
+- [ ] 620. 等待你批准 `trading` 整域 DTO 计划
+  - [ ] 批准前不修改 `server/handlers/*trading*`、`server/services/*transaction*`、`src/features/trading/**` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际 DTO 收口执行。
+
+- [ ] 611. 冻结本轮范围，规划 `users` 读取链 DTO 收口与前端 `contract / adapter` 闭环（2026-04-09，待批准）
+  - [ ] 本轮聚焦 `users` 的读取链，不在你批准前直接修改业务代码，只更新 `task.md` 与 `implementation_plan.md`。
+  - [ ] 本轮目标是把 `users` 从“写入链已局部净化、读取链仍以 `[]models.User` 为中间载体、前端仍直连接口类型”推进到可执行的闭环计划。
+  - [ ] 本轮规划必须同时覆盖后端 query/list/options 读取链与前端 `contract / adapter` 收口，不允许只修后端或只修前端半边。
+
+- [ ] 612. 拆解 `users` 后端读取链闭环范围
+  - [ ] 收口 `GetUsersHandler` 的列表 / options 读取主链，不再以 `[]models.User` 作为公开返回事实链。
+  - [ ] 复核 `CreateUserRequest` / `UpdateUserRequest` / `ReplaceUserRequest` 之外的 query/list response 契约，补齐 service DTO / mapper。
+  - [ ] 评估 `users` 读取链是否需要新增独立 service 承接层，避免 handler 持续直接承担主要 query 编排职责。
+
+- [ ] 613. 拆解 `users` 前端 `contract / adapter` 闭环范围
+  - [ ] 为 `users` 前端定义独立 API DTO、页面 contract 与 adapter / gateway 边界。
+  - [ ] 替换 `user-api.ts` 或其等价服务当前 `apiFetch<User>` / `apiFetch<User[]>` 一类类型化直连方式。
+  - [ ] 明确用户列表、选项、详情及相关下拉/弹窗消费面，避免页面继续直接依赖后端实体 shape。
+
+- [ ] 614. 明确 `users` 本轮风险与验证口径
+  - [ ] 风险包括：用户列表字段兼容、角色/状态字段的读取展示回归、options 消费面兼容，以及前端用户管理页面的隐式依赖。
+  - [ ] 验证至少覆盖：后端相关 service / handler 的最小测试或编译验证，以及前端相关模块的类型检查 / 单测或最小编译验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录读取链闭环范围、映射策略与验证结果。
+
+- [ ] 615. 等待你批准 `users` 读取链 DTO 计划
+  - [ ] 批准前不修改 `server/handlers/users.go`、`src/features/users/**` 及其直接相关业务代码。
+  - [ ] 只有在你确认规划后，才进入实际 DTO 收口执行。
+
+- [ ] 606. 冻结本轮范围，规划 `partner`（`customers / suppliers`）整域 DTO 闭环（2026-04-09，待批准）
+  - [ ] 本轮从 `partner` 整域开始，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是把 `customers / suppliers` 从“handler request / response 已有、service 边界与前端 contract 仍半接入”推进到可执行的整域闭环计划。
+  - [ ] 本轮规划必须同时覆盖后端五层链路与前端 contract / adapter 收口，不允许只做 `customers` 或 `suppliers` 的单点补丁。
+
+- [ ] 607. 拆解 `partner` 后端闭环范围
+  - [ ] 收口 `customers` 的 service 公共边界，避免 handler 直接编排 DB 与 entity 覆盖式更新成为对外主链事实。
+  - [ ] 收口 `suppliers` 的 service 公共边界，避免当前仅有 request 上浮、但未形成完整域 service DTO 的状态继续固化。
+  - [ ] 复核 `save / patch / list / options` 的 request / response / patch 契约，补齐 mapper 与 service DTO 主链。
+  - [ ] 评估并治理 `Select("*").Updates(input)` 一类实体覆盖式更新链，避免 DTO 入口后仍回退到实体直通更新语义。
+
+- [ ] 608. 拆解 `partner` 前端闭环范围
+  - [ ] 为 `customers` 与 `suppliers` 定义独立 API DTO、页面 contract 与 adapter / gateway 边界。
+  - [ ] 替换客户/供应商前端 service 当前 `apiFetch<Customer>` / `apiFetch<Supplier>` 一类类型化直连方式。
+  - [ ] 明确列表、选项、保存、patch 等主要消费面，避免页面继续直接依赖后端实体 shape。
+
+- [ ] 609. 明确 `partner` 本轮风险与验证口径
+  - [ ] 风险包括：客户/供应商列表与 options 兼容、patch 差量协议字段兼容、更新链从实体覆盖改为 DTO 主链后的行为回归。
+  - [ ] 验证至少覆盖：后端相关 service / handler 的最小测试或编译验证，以及前端相关模块的类型检查 / 单测或最小编译验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录闭环范围、映射策略、风险点与验证结果。
+
+- [ ] 610. 等待你批准 `partner` 整域闭环计划
+  - [ ] 批准前不修改 `server/handlers/customers.go`、`server/handlers/suppliers.go`、`server/services/partner*`、`src/features/trading/customer/**`、`src/features/trading/supplier/**` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际 DTO 收口执行。
+
 - [ ] 601. 冻结本轮范围，规划 `org-personnel` 整域 DTO 闭环（2026-04-09，待批准）
   - [ ] 本轮从 `org-personnel` 开始，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
   - [ ] 本轮目标是把 `org-personnel` 从“save / bulk sync 已 DTO 化、list / tree / patch 与前端仍半接入”推进到可执行的整域闭环计划。

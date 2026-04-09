@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -39,10 +38,8 @@ const queryClient = new QueryClient({
       onError: (error) => {
         handleServerError(error)
 
-        if (error instanceof AxiosError) {
-          if (error.response?.status === 304) {
-            toast.error('Content not modified!')
-          }
+        if (getErrorStatus(error) === 304) {
+          toast.error('Content not modified!')
         }
       },
     },

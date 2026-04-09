@@ -1,6 +1,8 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { toOrgNodeApiDTO, toOrgNodeContract, toOrgNodeContracts } from '../adapters/org-api-adapter'
+import { type OrgNodeApiDTO } from '../contracts/org-api-dto'
 import { type OrgNode } from '../data/org-schema'
 
 /**
@@ -11,17 +13,18 @@ export class OrgService {
      * Fetch complete organization tree
      */
     static async getOrgTree(): Promise<OrgNode[]> {
-        const data = await apiFetch<OrgNode[]>('/org/tree')
-        return ensureArrayResponse<OrgNode>(data, 'Organization tree')
+        const data = await apiFetch<OrgNodeApiDTO[]>('/org/tree')
+        const items = ensureArrayResponse<OrgNodeApiDTO>(data, 'Organization tree')
+        return toOrgNodeContracts(items)
     }
 
     /**
      * Save organization node (Create or Update)
      */
     static async saveOrgNode(node: OrgNode): Promise<OrgNode> {
-        const data = await apiFetch<OrgNode>('/org', {
+        const data = await apiFetch<OrgNodeApiDTO>('/org', {
             method: 'POST',
-            body: JSON.stringify(node)
+            body: JSON.stringify(toOrgNodeApiDTO(node))
         })
         
         if (!data) {
@@ -29,7 +32,9 @@ export class OrgService {
         }
 
         window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'))
-        return ensureObjectResponse<OrgNode>(data, 'OrgService.saveOrgNode')
+        return toOrgNodeContract(
+            ensureObjectResponse<OrgNodeApiDTO & Record<string, unknown>>(data, 'OrgService.saveOrgNode') as OrgNodeApiDTO
+        )
     }
 
     /**
@@ -52,12 +57,14 @@ export class OrgService {
             metadata: { id, version }
         };
 
-        const res = await apiFetch<OrgNode>(`/org/${id}`, {
+        const res = await apiFetch<OrgNodeApiDTO>(`/org/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(payload)
         });
 
         window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'));
-        return ensureObjectResponse<OrgNode>(res, 'OrgService.patchOrgNode');
+        return toOrgNodeContract(
+            ensureObjectResponse<OrgNodeApiDTO & Record<string, unknown>>(res, 'OrgService.patchOrgNode') as OrgNodeApiDTO
+        );
     }
 }

@@ -1,5 +1,5 @@
 # --- Stage 1: Build ---
-FROM golang:alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ENV CGO_ENABLED=0 \
     GOOS=linux \

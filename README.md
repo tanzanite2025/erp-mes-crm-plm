@@ -21,6 +21,8 @@ This system bridges complex industrial workflows with cloud-native architecture,
 
 ## Local Development
 ```bash
+corepack enable
+corepack prepare pnpm@10.33.0 --activate
 pnpm install
 pnpm dev
 ```

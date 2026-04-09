@@ -30,6 +30,7 @@ server/search-engine/target/
 *.sw?
 .gemini/
 .playwright-cli/
+.corepack/
 .vs/
 .tanstack/
 .tanzanite/

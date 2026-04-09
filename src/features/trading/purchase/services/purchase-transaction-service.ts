@@ -2,6 +2,8 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
+import { toPurchaseOrderContract } from '../adapters/purchase-order-api-adapter'
+import { type PurchaseOrderApiDTO } from '../contracts/purchase-order-api-dto'
 
 export const PURCHASE_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
 export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
@@ -53,14 +55,16 @@ export const executePurchaseOrderTransaction = async <TPayload>(
   orderId: string,
   request: PurchaseOrderTransactionRequest<TPayload>
 ): Promise<PurchaseOrder> => {
-  const res = await apiFetch<PurchaseOrder>(`/purchase/orders/${orderId}/transactions`, {
+  const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${orderId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return ensureObjectResponse<PurchaseOrder & Record<string, unknown>>(
-    res,
-    'PurchaseTransactionService.executePurchaseOrderTransaction'
-  ) as PurchaseOrder
+  return toPurchaseOrderContract(
+    ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
+      res,
+      'PurchaseTransactionService.executePurchaseOrderTransaction'
+    ) as PurchaseOrderApiDTO
+  )
 }
 
 export const changePurchaseOrderExpectedDate = async (

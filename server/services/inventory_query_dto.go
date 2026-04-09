@@ -41,3 +41,11 @@ type InventoryShipmentHistoryResponse struct {
 	Page     int                               `json:"page"`
 	PageSize int                               `json:"pageSize"`
 }
+
+type InventoryValuationResponse struct {
+	TotalValue float64 `json:"totalValue"`
+}
+
+type InventoryAlertSummaryResponse struct {
+	AlertCount int64 `json:"alertCount"`
+}
