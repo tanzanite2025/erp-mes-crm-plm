@@ -1,5 +1,5 @@
 import { TraceService } from '@/features/dashboard/services/trace-service'
-import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
+import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import type { DashboardSummary } from './prompt-builder'
 
 /**
@@ -20,7 +20,7 @@ export const aiContextService = {
     }
 
     // 2. 状态告警聚合 (从通知中心状态获取)
-    const messages = useNotificationStore.getState().messages
+    const messages = NotificationGateway.getMessages()
     const alerts = {
       critical: messages.filter((m) => m.priority === 'critical').length,
       error: messages.filter((m) => m.priority === 'error').length,
@@ -55,7 +55,7 @@ export const aiContextService = {
   /**
    * 注入局部页面上下文 (用于深度分析，如特定的工单或 BOM)
    */
-  async injectLocalContext(title: string, data: Record<string, any>): Promise<Partial<DashboardSummary>> {
+  async injectLocalContext(title: string, data: Record<string, unknown>): Promise<Partial<DashboardSummary>> {
     return {
       localContext: {
         title,

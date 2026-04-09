@@ -4,11 +4,30 @@ import { getErrorStatus, isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
 import { router } from '@/lib/router'
-import { translate, AppLocale, DEFAULT_LOCALE } from '@/locales'
+import { translate, DEFAULT_LOCALE, type AppLocale, type TranslationKey } from '@/locales'
 import { getCookie } from '@/lib/cookies'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
 
 const logger = createLogger('handleServerError')
+
+export interface ServerErrorDisplayAction {
+  label: string
+  onClick: () => void
+}
+
+export interface ServerErrorPresentation {
+  message: string
+  action?: ServerErrorDisplayAction
+  duration?: number
+  status?: number | undefined
+}
+
+const FORBIDDEN_SUBTITLE_KEY: TranslationKey = 'errors.forbidden.subtitle'
+const INVALID_CREDENTIALS_KEY: TranslationKey = 'common.auth.signInForm.invalidCredentials'
+const API_NOT_READY_KEY: TranslationKey = 'common.auth.signInForm.apiNotReady'
+const TIMEOUT_KEY: TranslationKey = 'common.auth.signInForm.timeout'
+const EMPTY_NO_DATA_KEY: TranslationKey = 'common.empty.noData'
+const SERVER_ERROR_KEY: TranslationKey = 'common.auth.signInForm.serverError'
 
 export function isConflictError(error: unknown) {
   if (!error || typeof error !== 'object') return false
@@ -17,7 +36,7 @@ export function isConflictError(error: unknown) {
   return false
 }
 
-export function handleServerError(error: unknown) {
+export function getServerErrorPresentation(error: unknown): ServerErrorPresentation {
   const status = getErrorStatus(error)
   let errorMessage = error instanceof Error ? error.message : String(error)
   
@@ -40,56 +59,50 @@ export function handleServerError(error: unknown) {
   if (actionMetadata) {
     const msg = translate(locale, actionMetadata.messageKey)
     if (actionMetadata.actionLabelKey && actionMetadata.target) {
-      toast.error(msg, {
-        duration: 8000, // 稍微延长显示时间
+      const navigationTarget = actionMetadata.target
+      return {
+        message: msg,
+        duration: 8000,
+        status,
         action: {
           label: translate(locale, actionMetadata.actionLabelKey),
           onClick: () => {
             logger.info('Action triggered', { target: actionMetadata.target })
-            // 尝试直接使用 navigate
-            router.navigate({ to: actionMetadata.target as any })
+            router.navigate({ to: navigationTarget })
               .then(() => logger.info('Navigation successful'))
               .catch((err) => logger.error('Navigation failed', err))
-          }
-        }
-      })
-    } else {
-      toast.error(msg)
+          },
+        },
+      }
     }
-    return
+    return { message: msg, status }
   }
 
   // --- 2. UI 层分支处理 (i18n 化) ---
 
   if (isForbiddenError(error)) {
-    toast.error(translate(locale, 'errors.forbidden.subtitle' as any))
-    return
+    return { message: translate(locale, FORBIDDEN_SUBTITLE_KEY), status }
   }
 
   // 默认冲突逻辑 (如果没有被 Registry 命中)
   if (isConflictError(error)) {
-    toast.error(translate(locale, 'common.auth.signInForm.invalidCredentials' as any)) // or another generic
-    // Note: The previous hardcoded '数据已被更新' is better suited for a generic conflict key
-    return
+    return { message: translate(locale, INVALID_CREDENTIALS_KEY), status }
   }
 
   // 熔断器 / 超时 / 异常状态
   if (errorMessage.includes('[CIRCUIT_BREAKER]')) {
-    toast.error(translate(locale, 'common.auth.signInForm.apiNotReady' as any))
-    return
+    return { message: translate(locale, API_NOT_READY_KEY), status }
   }
 
   if (errorMessage.includes('[TIMEOUT]')) {
-    toast.error(translate(locale, 'common.auth.signInForm.timeout' as any))
-    return
+    return { message: translate(locale, TIMEOUT_KEY), status }
   }
 
   if (status === 204) {
-    toast.error(translate(locale, 'common.empty.noData' as any))
-    return
+    return { message: translate(locale, EMPTY_NO_DATA_KEY), status }
   }
 
-  let errMsg = translate(locale, 'common.auth.signInForm.serverError' as any, { status: status || '???' })
+  let errMsg = translate(locale, SERVER_ERROR_KEY, { status: status || '???' })
 
   if (error instanceof AxiosError) {
     errMsg = error.response?.data.title || error.message
@@ -97,6 +110,22 @@ export function handleServerError(error: unknown) {
     errMsg = error.message
   }
 
-  toast.error(errMsg)
+  return { message: errMsg, status }
+}
+
+export function showServerErrorToast(presentation: ServerErrorPresentation) {
+  if (presentation.action) {
+    toast.error(presentation.message, {
+      duration: presentation.duration,
+      action: presentation.action,
+    })
+    return
+  }
+
+  toast.error(presentation.message)
+}
+
+export function handleServerError(error: unknown) {
+  showServerErrorToast(getServerErrorPresentation(error))
 }
 

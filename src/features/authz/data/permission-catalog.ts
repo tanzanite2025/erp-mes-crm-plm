@@ -12,11 +12,11 @@ export type MenuPermissionDefinition = {
   rootPath: string
 }
 
-export const PERMISSION_VERSION = '1.0.0'
+export const PERMISSION_VERSION = '1.1.0'
 
 /**
  * 权限清单（Permission Catalog）
- * 系统权限的单一真实源。
+ * 系统菜单权限的单一真实源。
  */
 export const MENU_PERMISSIONS = {
   dashboard: {
@@ -33,10 +33,17 @@ export const MENU_PERMISSIONS = {
     icon: 'Warehouse',
     rootPath: '/warehouse',
   },
+  mrp: {
+    id: 'menu_mrp',
+    label: '\u8bbf\u95ee\uff1aMRP',
+    desc: '\u5141\u8bb8\u8fdb\u5165 MRP \u6a21\u5757',
+    icon: 'Gauge',
+    rootPath: '/mrp',
+  },
   trading: {
     id: 'menu_trading',
-    label: '访问：采销管理',
-    desc: '允许进入采购与销售',
+    label: '访问：购销 / MRP',
+    desc: '允许进入 Trading、Purchase 与 MRP 模块页面',
     icon: 'ShoppingBag',
     rootPath: '/trading',
   },
@@ -115,6 +122,7 @@ export const MENU_PERMISSIONS = {
 export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS> = {
   '/dashboard': 'dashboard',
   '/warehouse': 'warehouse',
+  '/mrp': 'mrp',
   '/trading': 'trading',
   '/purchase': 'trading',
   '/engineering': 'engineering',

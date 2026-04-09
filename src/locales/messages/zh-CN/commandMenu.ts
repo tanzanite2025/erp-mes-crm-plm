@@ -26,6 +26,7 @@ export const commandMenu = {
     systemSettings: '系统配置',
     orgPersonnelCenter: '人事账号中心',
     warehouse: '成品仓库',
+    mrp: 'MRP',
     trading: '贸销管理',
     basicSettings: '基础配置',
     terminalConfig: '终端配置',

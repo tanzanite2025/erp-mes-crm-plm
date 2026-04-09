@@ -5,6 +5,7 @@
 export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "menu_dashboard",
   "menu_warehouse",
+  "menu_mrp",
   "menu_trading",
   "menu_org",
   "menu_engineering",
@@ -59,7 +60,9 @@ export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "action_equipment_loan_manage",
   "action_equipment_telemetry_update",
   "action_approval_config_manage",
-  "action_approval_review"
+  "action_approval_review",
+  "action_system_workflow_manage",
+  "action_system_workflow_review"
 ] as const
 
 export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
@@ -70,6 +73,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "perm_manage",
   "menu_dashboard",
   "menu_warehouse",
+  "menu_mrp",
   "menu_trading",
   "menu_org",
   "menu_engineering",
@@ -118,6 +122,8 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "action_equipment_telemetry_update",
   "action_approval_config_manage",
   "action_approval_review",
+  "action_system_workflow_manage",
+  "action_system_workflow_review",
   "menu_pda"
 ] as const
 

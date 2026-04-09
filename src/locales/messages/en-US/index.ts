@@ -5,6 +5,7 @@ import { fileUploader } from './fileUploader'
 import { commandMenu } from './commandMenu'
 import { sidebar } from './sidebar'
 import { basicSettings } from './basicSettings'
+import { mrp } from './mrp'
 import { trading } from './trading'
 import { orgPersonnel } from './orgPersonnel'
 import { purchase } from './purchase'
@@ -37,6 +38,7 @@ export const enUSMessages = {
   commandMenu,
   sidebar,
   basicSettings,
+  mrp,
   trading,
   orgPersonnel,
   purchase,

@@ -1,5 +1,4 @@
 import type { QueryClient, QueryKey, UseMutationOptions } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { failLoudly } from './safe-catch'
 
 interface BuildMutationOptionsArgs<TData, TError, TVariables, TContext> {
@@ -7,7 +6,6 @@ interface BuildMutationOptionsArgs<TData, TError, TVariables, TContext> {
   onError?: UseMutationOptions<TData, TError, TVariables, TContext>['onError']
   onSuccess?: UseMutationOptions<TData, TError, TVariables, TContext>['onSuccess']
   queryClient: QueryClient
-  successMessage?: string
   /** 异常上报的来源标识，用于日志定位。默认 'MutationAction' */
   scope?: string
 }
@@ -17,7 +15,6 @@ export function buildMutationOptions<TData = unknown, TError = Error, TVariables
   onError,
   onSuccess,
   queryClient,
-  successMessage,
   scope = 'MutationAction',
 }: BuildMutationOptionsArgs<TData, TError, TVariables, TContext>): Pick<
   UseMutationOptions<TData, TError, TVariables, TContext>,
@@ -33,17 +30,13 @@ export function buildMutationOptions<TData = unknown, TError = Error, TVariables
         failLoudly(err, scope, { silentUI: true })
         onError(...args)
       } else {
-        failLoudly(err, scope)
+        failLoudly(err, scope, { silentUI: true })
       }
     },
     onSuccess: async (data, variables, onMutateResult, context) => {
       await Promise.all(
         invalidateQueryKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey }))
       )
-
-      if (successMessage) {
-        toast.success(successMessage)
-      }
 
       await onSuccess?.(data, variables, onMutateResult, context)
     },

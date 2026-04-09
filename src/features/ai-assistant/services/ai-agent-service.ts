@@ -6,10 +6,14 @@ import {
   type AgentSessionType 
 } from './prompt-builder'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AiAgentService')
+
+export interface AgentServiceState {
+  hasUnread: boolean
+  lastError: string | null
+}
 
 export interface AgentSettings {
   dailyEnabled: boolean
@@ -43,6 +47,7 @@ class AiAgentService {
   private hasUnread = false
   private lastInsight = ''
   private lastType: AgentSessionType = 'AM_REVIEW'
+  private lastError: string | null = null
   private onStatusChange: (() => void) | null = null
 
   subscribe(callback: () => void) {
@@ -59,6 +64,22 @@ class AiAgentService {
 
   getLastType() {
     return this.lastType ?? 'AM_REVIEW'
+  }
+
+  getLastError() {
+    return this.lastError
+  }
+
+  clearLastError() {
+    this.lastError = null
+    this.onStatusChange?.()
+  }
+
+  getState(): AgentServiceState {
+    return {
+      hasUnread: this.hasUnread,
+      lastError: this.lastError,
+    }
   }
 
   markAsRead() {
@@ -120,6 +141,11 @@ class AiAgentService {
     }
   }
 
+  private getErrorMessage(error: unknown) {
+    if (error instanceof Error) return error.message
+    return '未知错误'
+  }
+
   private async executeAgentTask(type: AgentSessionType, id: string) {
     if (this.isRunning) return
     this.isRunning = true
@@ -146,10 +172,10 @@ class AiAgentService {
       if (!id.startsWith('FORCE_')) {
         await this.markRunComplete(type, id)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Critical failure during task execution', error)
-      // [FAIL_LOUDLY]: 向用户通报背景任务异常
-      toast.error(`[AI 任务异常] 场景: ${type}，详情: ${error?.message || '未知错误'}`)
+      this.lastError = `[AI 任务异常] 场景: ${type}，详情: ${this.getErrorMessage(error)}`
+      this.onStatusChange?.()
     } finally {
       this.isRunning = false
     }

@@ -9,9 +9,20 @@ import (
 )
 
 func registerWorkflowRoutes(authorized *gin.RouterGroup) {
-	workflowRead := middleware.RequirePermissions(authz.MenuApproval)
-	workflowDefineManage := middleware.RequirePermissions(authz.ActionApprovalConfigManage)
-	workflowTaskReview := middleware.RequirePermissions(authz.ActionApprovalReview)
+	workflowRead := middleware.RequirePermissions(
+		authz.MenuSystem,
+		authz.MenuApproval,
+		authz.ActionSystemWorkflowManage,
+		authz.ActionSystemWorkflowReview,
+	)
+	workflowDefineManage := middleware.RequirePermissions(
+		authz.ActionSystemWorkflowManage,
+		authz.ActionApprovalConfigManage,
+	)
+	workflowTaskReview := middleware.RequirePermissions(
+		authz.ActionSystemWorkflowReview,
+		authz.ActionApprovalReview,
+	)
 
 	workflows := authorized.Group("/workflows")
 	{

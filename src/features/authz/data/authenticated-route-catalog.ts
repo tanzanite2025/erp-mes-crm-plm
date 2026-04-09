@@ -2,6 +2,7 @@
 // Do not edit manually.
 
 export const AUTHENTICATED_ROUTE_PATHS = [
+  "/system-management/workflow-definition",
   "/finance-management/currency-rates",
   "/finance-management/payment-terms",
   "/system-management/ai-capability",
@@ -38,7 +39,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/basic-settings/units",
   "/engineering/products",
   "/engineering-db/specs",
-  "/trading/requirements",
   "/trading/sales-orders",
   "/dashboard/analytics",
   "/engineering/changes",
@@ -69,6 +69,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/warehouse/reports",
   "/approval/configs",
   "/approval/history",
+  "/mrp/requirements",
   "/personnel/rights",
   "/quality/formulas",
   "/engineering/bom",
@@ -102,5 +103,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/purchase",
   "/quality",
   "/trading",
+  "/mrp",
   "/"
 ] as const

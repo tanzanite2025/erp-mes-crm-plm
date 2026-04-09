@@ -18,6 +18,7 @@ import { AiMessageItem } from './ai-message-item'
 import { aiActionBus } from '../services/ai-action-bus'
 import { type DashboardSummary } from '../services/ai-service'
 import { type ActionItem } from '../utils/tag-parser'
+import { toast } from 'sonner'
 
 type AiRouteTarget = Parameters<ReturnType<typeof useNavigate>>[0]['to']
 
@@ -81,7 +82,7 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
     };
 
     const handleExecuteAction = (action: ActionItem) => {
-        aiActionBus.dispatch(
+        const result = aiActionBus.dispatch(
             action,
             (to) => {
                 onOpenChange(false)
@@ -91,6 +92,9 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                 void sendMessage(`[CMD_AUTO] 执行分析指令: ${action.label}\nPayload: ${cmd}`)
             }
         )
+        if (!result.ok && result.errorMessage) {
+            toast.error(result.errorMessage)
+        }
     }
 
     const handleSend = () => {

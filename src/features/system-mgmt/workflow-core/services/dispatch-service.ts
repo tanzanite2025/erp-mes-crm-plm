@@ -1,17 +1,50 @@
-import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
+import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
+import { type SystemMessage } from '@/features/system-mgmt/notifications/types'
 import { type WorkflowNode, type StandardCommand } from '../data/schema'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { createLogger } from '@/lib/logger'
 import { RoutingService } from '../services/routing-service'
-import { toast } from 'sonner'
 
 const logger = createLogger('DispatchService')
+
+type DispatchMetadata = Record<string, unknown>
+
+interface DispatchContext {
+  orderId: string
+  orderNo: string
+  productName?: string
+  [key: string]: unknown
+}
+
+interface OrderSnapshot {
+  id: string
+  orderNo: string
+  status: string
+  createdBy?: string
+  approval?: {
+    manager?: string
+  }
+  lines?: Array<{
+    productModel?: string
+    claimedBy?: string
+  }>
+  [key: string]: unknown
+}
+
+function getMetadataRecord(metadata: SystemMessage['metadata'] | undefined): DispatchMetadata {
+  return metadata && typeof metadata === 'object' ? metadata : {}
+}
+
+function getMetadataString(metadata: DispatchMetadata, key: string): string | undefined {
+  const value = metadata[key]
+  return typeof value === 'string' ? value : undefined
+}
 
 /**
  * 助手方法：解析模板中的变量 [Key] -> value
  */
-function resolveTemplate(template: string, metadata: Record<string, any> = {}) {
+function resolveTemplate(template: string, metadata: DispatchMetadata = {}) {
   if (!template) return ''
   return template.replace(/\[(\w+)\]/g, (match, key) => {
     return metadata[key] !== undefined ? String(metadata[key]) : match
@@ -27,8 +60,8 @@ export const DispatchService = {
     /**
      * 执行节点指令列表 (智能解析版本)
      */
-    dispatchCommands: async (node: WorkflowNode, context: { orderId: string; orderNo: string; productName?: string; [key: string]: any }) => {
-        const addMessage = useNotificationStore.getState().addMessage
+    dispatchCommands: async (node: WorkflowNode, context: DispatchContext) => {
+        const addMessage = NotificationGateway.addMessage
         
         // --- 核心变更：对接后端事实源 ---
         const stdCommands = await RoutingService.getCommands().catch(() => [] as StandardCommand[])
@@ -70,14 +103,13 @@ export const DispatchService = {
      */
     scanAndRetroactiveDispatch: async (
         nodes: WorkflowNode[], 
-        orders: any[]
+        orders: OrderSnapshot[]
     ) => {
-        const store = useNotificationStore.getState()
-        const addMessage = store.addMessage
+        const addMessage = NotificationGateway.addMessage
         const stdCommands = await RoutingService.getCommands().catch(() => [] as StandardCommand[])
         
         const processedKey = 'xdfc_processed_dispatched_ids'
-        let processedIds = await StorageService.getItem<string[]>(processedKey) || []
+        const processedIds = await StorageService.getItem<string[]>(processedKey) || []
         let newCount = 0
         const now = Date.now()
 
@@ -93,10 +125,12 @@ export const DispatchService = {
                    for (const cmdId of (node.commands || [])) {
                        const uniqueKey = `${order.id}_${cmdId}`
                        
-                       const isAlreadyInList = store.messages.some(m => (m.metadata as any)?.uniqueKey === uniqueKey && !m.isRead && !m.isArchived)
+                        const isAlreadyInList = NotificationGateway.hasMessage(
+                            (m) => getMetadataString(getMetadataRecord(m.metadata), 'uniqueKey') === uniqueKey && !m.isRead && !m.isArchived
+                        )
                        if (isAlreadyInList) continue
 
-                       const lastDismissed = store.dismissedKeys[uniqueKey]
+                        const lastDismissed = NotificationGateway.getDismissedAt(uniqueKey)
                        if (lastDismissed && (now - lastDismissed < 60000)) {
                            continue
                        }
@@ -130,8 +164,10 @@ export const DispatchService = {
 
                    if ((node.commands || []).length === 0) {
                        const fallbackKey = `${order.id}_${node.id}_fallback`
-                       const isAlreadyInList = store.messages.some(m => (m.metadata as any)?.uniqueKey === fallbackKey && !m.isRead)
-                       const lastDismissed = store.dismissedKeys[fallbackKey]
+                        const isAlreadyInList = NotificationGateway.hasMessage(
+                            (m) => getMetadataString(getMetadataRecord(m.metadata), 'uniqueKey') === fallbackKey && !m.isRead
+                        )
+                        const lastDismissed = NotificationGateway.getDismissedAt(fallbackKey)
                        if (!isAlreadyInList && !(lastDismissed && (now - lastDismissed < 60000))) {
                            addMessage({
                                type: 'ORDER_EVENT',
@@ -151,7 +187,6 @@ export const DispatchService = {
 
         if (newCount > 0) {
             await StorageService.setItem(processedKey, processedIds)
-            toast.success(`扫描完成：已为 ${newCount} 项存量业务补偿了通知`)
         }
         return newCount
     },
@@ -160,7 +195,7 @@ export const DispatchService = {
      * 发送特定类型的通知
      */
     sendNotification: (title: string, content: string, roles?: string[], actionUrl?: string) => {
-        const addMessage = useNotificationStore.getState().addMessage
+        const addMessage = NotificationGateway.addMessage
         addMessage({
             type: 'SYSTEM_NOTICE',
             title,
@@ -176,13 +211,12 @@ export const DispatchService = {
      */
     scanByRules: async (
         rules: NotificationRule[],
-        orders: any[]
+        orders: OrderSnapshot[]
     ) => {
-        const store = useNotificationStore.getState()
-        const addMessage = store.addMessage
+        const addMessage = NotificationGateway.addMessage
         const stdCommands = await RoutingService.getCommands().catch(() => [] as StandardCommand[])
         const processedKey = 'xdfc_processed_dispatched_ids'
-        let processedIds = await StorageService.getItem<string[]>(processedKey) || []
+        const processedIds = await StorageService.getItem<string[]>(processedKey) || []
         let newCount = 0
         const now = Date.now()
 
@@ -194,18 +228,13 @@ export const DispatchService = {
                 
                 for (const segment of rule.segments) {
                     if (segment.resolveOnStatuses?.includes(order.status)) {
-                        const hasRelatedUnread = store.messages.some(
-                            m => (m.metadata as any)?.OrderId === order.id &&
-                                 (m.metadata as any)?.SegmentId === segment.id &&
+                        const hasRelatedUnread = NotificationGateway.hasMessage(
+                            m => getMetadataString(getMetadataRecord(m.metadata), 'OrderId') === order.id &&
+                                 getMetadataString(getMetadataRecord(m.metadata), 'SegmentId') === segment.id &&
                                  !m.isRead && !m.isArchived
                         )
                         if (hasRelatedUnread) {
-                            store.messages.forEach(m => {
-                                if ((m.metadata as any)?.OrderId === order.id && 
-                                    (m.metadata as any)?.SegmentId === segment.id) {
-                                    store.archiveMessage(m.id)
-                                }
-                            })
+                            NotificationGateway.archiveByOrderAndSegment(order.id, segment.id)
                             logger.info(`订单 ${order.orderNo} 进入 ${order.status}，分支「${segment.title}」相关通知已归档`)
                         }
                     }
@@ -239,12 +268,12 @@ export const DispatchService = {
                     if (segment.commandIds.length > 0) {
                         for (const cmdId of segment.commandIds) {
                             const uniqueKey = `${order.id}_${segment.id}_${cmdId}`
-                            const isAlreadyInList = store.messages.some(
-                                m => (m.metadata as any)?.uniqueKey === uniqueKey &&
+                            const isAlreadyInList = NotificationGateway.hasMessage(
+                                (m) => getMetadataString(getMetadataRecord(m.metadata), 'uniqueKey') === uniqueKey &&
                                     !m.isRead && !m.isArchived
                             )
                             if (isAlreadyInList) continue
-                            const lastDismissed = store.dismissedKeys[uniqueKey]
+                            const lastDismissed = NotificationGateway.getDismissedAt(uniqueKey)
                             if (lastDismissed && (now - lastDismissed < 60000)) continue
 
                             const cmdTemplate = stdCommands.find(c => c.id === cmdId)
@@ -266,11 +295,11 @@ export const DispatchService = {
                         }
                     } else {
                         const fallbackKey = `${order.id}_${segment.id}_fallback`
-                        const isAlreadyInList = store.messages.some(
-                            m => (m.metadata as any)?.uniqueKey === fallbackKey &&
+                        const isAlreadyInList = NotificationGateway.hasMessage(
+                            (m) => getMetadataString(getMetadataRecord(m.metadata), 'uniqueKey') === fallbackKey &&
                                 !m.isRead && !m.isArchived
                         )
-                        const lastDismissed = store.dismissedKeys[fallbackKey]
+                        const lastDismissed = NotificationGateway.getDismissedAt(fallbackKey)
                         if (!isAlreadyInList && !(lastDismissed && (now - lastDismissed < 60000))) {
                             addMessage({
                                 type: 'ORDER_EVENT',

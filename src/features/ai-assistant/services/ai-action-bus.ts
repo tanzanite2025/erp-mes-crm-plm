@@ -1,5 +1,4 @@
 import { isValidRoute } from './ai-protocol-validator'
-import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AiActionBus')
@@ -15,6 +14,11 @@ export interface ActionPayload {
   value: string
 }
 
+export interface ActionDispatchResult {
+  ok: boolean
+  errorMessage?: string
+}
+
 export const aiActionBus = {
   /**
    * 执行动作
@@ -26,22 +30,28 @@ export const aiActionBus = {
     payload: ActionPayload, 
     navigate: (route: string) => void,
     onCommand: (cmd: string) => void
-  ): void {
+  ): ActionDispatchResult {
     const { type, label, value } = payload
 
     // 1. 安全验证
     if (type === 'ACT') {
       if (!isValidRoute(value)) {
         logger.error(`Blocked invalid route: ${value}`)
-        toast.error(`[安全拦截] 极光助手生成的路径无效或超出权限范围: ${value}`)
-        return
+        return {
+          ok: false,
+          errorMessage: `[安全拦截] 极光助手生成的路径无效或超出权限范围: ${value}`,
+        }
       }
       
       logger.info(`Navigating to: ${value} (${label})`)
       navigate(value)
+      return { ok: true }
     } else if (type === 'CMD') {
       logger.info(`Executing command: ${value}`)
       onCommand(value)
+      return { ok: true }
     }
+
+    return { ok: false, errorMessage: `[AI 动作异常] 未知动作类型: ${type satisfies never}` }
   }
 }

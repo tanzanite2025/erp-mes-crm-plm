@@ -15,6 +15,7 @@ export const sidebar = {
     dashboard: 'Dashboard',
     warehouse: 'Warehouse',
     salesManagement: 'Sales Management',
+    mrp: 'MRP',
     purchaseManagement: 'Purchase Management',
     productEngineering: 'Product Engineering',
     materialArchive: 'Material Archive',

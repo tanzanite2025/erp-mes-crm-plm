@@ -33,7 +33,7 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
       <div className='flex items-center gap-2 px-1'>
         <ShieldAlert className='size-4 text-amber-500' />
         <h3 className='text-xs font-black uppercase tracking-wider text-amber-600'>
-          {t('trading.requirements.mold.title')}
+          {t('mrp.requirements.mold.title')}
         </h3>
       </div>
 
@@ -49,14 +49,14 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
                   <div className='flex items-center gap-2'>
                     <span className='text-sm font-black text-slate-800'>{alert.modelName}</span>
                     <Badge variant='outline' className='text-[10px] font-bold border-amber-200 text-amber-700 bg-amber-50'>
-                      {t('trading.requirements.mold.orderDemand', { count: alert.totalQty })}
+                      {t('mrp.requirements.mold.orderDemand', { count: alert.totalQty })}
                     </Badge>
                   </div>
                   <p className='text-[11px] font-medium text-slate-500'>
-                    {t('trading.requirements.mold.totalRemaining', { count: alert.totalRemaining })}
+                    {t('mrp.requirements.mold.totalRemaining', { count: alert.totalRemaining })}
                     {alert.shortage > 0 && (
                       <span className='text-red-500 ml-1 font-black underline'>
-                        ({t('trading.requirements.mold.shortage', { count: alert.shortage })})
+                        ({t('mrp.requirements.mold.shortage', { count: alert.shortage })})
                       </span>
                     )}
                   </p>
@@ -86,7 +86,7 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
               <div className='px-4 py-2 bg-red-50 border-t border-red-100 flex items-center gap-2'>
                 <ThermometerSnowflake className='size-3 text-red-500' />
                 <span className='text-[10px] font-bold text-red-600'>
-                  {t('trading.requirements.mold.insufficient')}
+                  {t('mrp.requirements.mold.insufficient')}
                 </span>
               </div>
             )}

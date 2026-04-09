@@ -22,7 +22,7 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
   const buckets = [
     {
       key: 'inventory',
-      label: t('trading.requirements.list.buckets.inventory'),
+      label: t('mrp.requirements.list.buckets.inventory'),
       value: item.inventoryQty,
       icon: Box,
       color: 'text-blue-600',
@@ -30,7 +30,7 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
     },
     {
       key: 'locked',
-      label: t('trading.requirements.list.buckets.locked'),
+      label: t('mrp.requirements.list.buckets.locked'),
       value: item.lockedQty,
       icon: Lock,
       color: 'text-amber-600',
@@ -39,7 +39,7 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
     },
     {
       key: 'purchase',
-      label: t('trading.requirements.list.buckets.purchase'),
+      label: t('mrp.requirements.list.buckets.purchase'),
       value: item.onWayPurchaseQty,
       icon: Truck,
       color: 'text-indigo-600',
@@ -47,7 +47,7 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
     },
     {
       key: 'wip',
-      label: t('trading.requirements.list.buckets.wip'),
+      label: t('mrp.requirements.list.buckets.wip'),
       value: item.wipQty,
       icon: Factory,
       color: 'text-muted-foreground/40',
@@ -77,14 +77,14 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
                   </span>
                   {bucket.isPending && (
                     <span className='text-[8px] opacity-40 font-normal italic ml-0.5'>
-                      [{t('trading.requirements.list.pendingIntegration')}]
+                      [{t('mrp.requirements.list.pendingIntegration')}]
                     </span>
                   )}
                 </div>
               </TooltipTrigger>
               <TooltipContent side='top' className='text-[10px] font-black uppercase'>
                 {bucket.label}: {bucket.value} {item.unit}
-                {bucket.isPending ? ` (${t('trading.requirements.list.pendingIntegrationHint')})` : ''}
+                {bucket.isPending ? ` (${t('mrp.requirements.list.pendingIntegrationHint')})` : ''}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -94,7 +94,7 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
       <div className='flex items-center gap-2'>
         <div className='h-px flex-1 bg-gradient-to-r from-muted via-muted/50 to-transparent' />
         <div className='text-[9px] font-black uppercase italic text-muted-foreground/60 flex items-center gap-1.5'>
-          <span>{t('trading.requirements.list.totalSupplyLabel')}:</span>
+          <span>{t('mrp.requirements.list.totalSupplyLabel')}:</span>
           <span className='text-primary text-[11px] non-italic'>
             {item.totalSupply} {item.unit}
           </span>
@@ -104,25 +104,25 @@ export function SupplyAnalysisDetails({ item, className }: SupplyAnalysisDetails
                 <HelpCircle className='size-2.5 cursor-help opacity-40 hover:opacity-100 transition-opacity' />
               </TooltipTrigger>
               <TooltipContent className='max-w-[220px] text-[10px] font-bold p-3 leading-relaxed'>
-                <div>{t('trading.requirements.list.formulaTitle')}</div>
+                <div>{t('mrp.requirements.list.formulaTitle')}</div>
                 <div>
-                  {t('trading.requirements.list.formulaLineUsable', {
+                  {t('mrp.requirements.list.formulaLineUsable', {
                     inventory: item.inventoryQty,
                     locked: item.lockedQty,
                   })}
                 </div>
                 <div>
-                  {t('trading.requirements.list.formulaLinePurchase', {
+                  {t('mrp.requirements.list.formulaLinePurchase', {
                     purchase: item.onWayPurchaseQty,
                   })}
                 </div>
                 <div>
-                  {t('trading.requirements.list.formulaLineWip', {
+                  {t('mrp.requirements.list.formulaLineWip', {
                     wip: item.wipQty,
                   })}
                 </div>
                 <div>
-                  {t('trading.requirements.list.formulaLineTotal', {
+                  {t('mrp.requirements.list.formulaLineTotal', {
                     total: item.totalSupply,
                     unit: item.unit,
                   })}

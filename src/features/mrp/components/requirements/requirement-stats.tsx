@@ -17,25 +17,25 @@ export function RequirementStats({ stats }: RequirementStatsProps) {
 
   const items = [
     {
-      label: t('trading.requirements.stats.pendingOrders'),
+      label: t('mrp.requirements.stats.pendingOrders'),
       value: stats.activeOrderCount,
-      sub: t('trading.requirements.stats.pendingOrdersSub'),
+      sub: t('mrp.requirements.stats.pendingOrdersSub'),
       icon: FileText,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
     },
     {
-      label: t('trading.requirements.stats.materials'),
+      label: t('mrp.requirements.stats.materials'),
       value: stats.totalMaterials,
-      sub: t('trading.requirements.stats.materialsSub'),
+      sub: t('mrp.requirements.stats.materialsSub'),
       icon: Package2,
       color: 'text-primary',
       bg: 'bg-primary/10',
     },
     {
-      label: t('trading.requirements.stats.missingBom'),
+      label: t('mrp.requirements.stats.missingBom'),
       value: stats.missingBOMCount,
-      sub: t('trading.requirements.stats.missingBomSub'),
+      sub: t('mrp.requirements.stats.missingBomSub'),
       icon: AlertCircle,
       color: stats.missingBOMCount > 0 ? 'text-amber-500' : 'text-emerald-500',
       bg: stats.missingBOMCount > 0 ? 'bg-amber-500/10' : 'bg-emerald-500/10',

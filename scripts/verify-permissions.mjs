@@ -91,18 +91,28 @@ const routePermissionsGeneratorModulePath = path.resolve(
   projectRoot,
   'src/features/authz/data/route-permissions-generator.ts',
 )
+const routePermissionRegistryModulePath = path.resolve(
+  projectRoot,
+  'src/features/authz/data/route-permission-registry.ts',
+)
 
 const { PERMISSION_VERSION, exportPermissionCatalog, migratePermissions } = loadTsModule(
   permissionCatalogModulePath,
 )
+const { ROUTE_PERMISSION_ENTRIES } = loadTsModule(routePermissionRegistryModulePath)
 const {
-  ROUTE_PERMISSION_ENTRIES,
   clearRoutePermissionsCache,
   getPermissionsWithCache,
 } = loadTsModule(routePermissionsGeneratorModulePath)
 
 const catalog = exportPermissionCatalog()
 const entries = ROUTE_PERMISSION_ENTRIES
+
+if (!Array.isArray(entries)) {
+  throw new Error(
+    '[verify-permissions] ROUTE_PERMISSION_ENTRIES is unavailable or malformed. Check route-permission-registry exports.',
+  )
+}
 
 console.log('=== Permission Catalog Check ===')
 console.log(`Permission version: ${PERMISSION_VERSION}`)

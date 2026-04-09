@@ -46,7 +46,7 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
             <span className='text-[9px] ml-0.5 text-muted-foreground/50 font-medium'>{requirement.unit}</span>
           </span>
           <span className='text-[8px] text-muted-foreground/40 font-bold'>
-            {t('trading.requirements.list.usableStockHint', {
+            {t('mrp.requirements.list.usableStockHint', {
               inventory: requirement.inventoryQty,
               locked: requirement.lockedQty,
             })}
@@ -68,7 +68,7 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
             </span>
             {requirement.packaging && (
               <div className='text-[9px] font-bold text-amber-600/80 bg-amber-50 px-1 rounded border border-amber-100/50 mt-0.5 shadow-sm'>
-                {t('trading.requirements.list.packagingAtLeast', {
+                {t('mrp.requirements.list.packagingAtLeast', {
                   count: requirement.packaging.packQty,
                   unit: requirement.packaging.packUnit,
                 })}
@@ -76,12 +76,12 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
             )}
             <div className='flex items-center gap-0.5 text-[8px] font-black text-rose-400 uppercase mt-1'>
               <AlertTriangle className='size-2' />
-              {t('trading.requirements.list.needPurchase')}
+              {t('mrp.requirements.list.needPurchase')}
             </div>
           </div>
         ) : (
           <Badge variant='outline' className='text-[10px] font-black px-1.5 py-0 rounded bg-green-50 border-green-200 text-green-600 border-dashed'>
-            {t('trading.requirements.list.sufficient')}
+            {t('mrp.requirements.list.sufficient')}
           </Badge>
         )}
       </TableCell>
@@ -96,12 +96,12 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
             </div>
             <span className='text-[9px] text-muted-foreground/50 font-bold whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]'>
               {requirement.packaging.direction === 'reverse'
-                ? t('trading.requirements.export.packagingFormulaReverse', {
+                ? t('mrp.requirements.export.packagingFormulaReverse', {
                     unit: requirement.unit,
                     factor: requirement.packaging.factor,
                     packUnit: requirement.packaging.packUnit,
                   })
-                : t('trading.requirements.export.packagingFormulaForward', {
+                : t('mrp.requirements.export.packagingFormulaForward', {
                     unit: requirement.unit,
                     factor: requirement.packaging.factor,
                     packUnit: requirement.packaging.packUnit,
@@ -116,13 +116,13 @@ export function RequirementRow({ requirement }: RequirementRowProps) {
         <div className='flex flex-col items-end gap-1'>
           <div className='flex items-center gap-1.5'>
             <span className={cn('text-[9px] font-black uppercase tracking-tighter', isShortage ? 'text-amber-600' : 'text-green-600')}>
-              {isShortage ? t('trading.requirements.list.pendingPrep') : t('trading.requirements.list.ready')}
+              {isShortage ? t('mrp.requirements.list.pendingPrep') : t('mrp.requirements.list.ready')}
             </span>
             <div className={cn('size-1.5 rounded-full', isShortage ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)] animate-pulse' : 'bg-green-500')} />
           </div>
           <div className='flex flex-wrap gap-1 justify-end'>
             <span className='text-[8px] font-bold text-muted-foreground/40 whitespace-nowrap'>
-              {t('trading.requirements.list.sourceOrders', { count: requirement.sourceOrders.length })}
+              {t('mrp.requirements.list.sourceOrders', { count: requirement.sourceOrders.length })}
             </span>
           </div>
         </div>

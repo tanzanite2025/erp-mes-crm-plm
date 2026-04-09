@@ -1,4 +1,92 @@
 - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+- [ ] 587. 冻结本轮范围，规划“DTO 全局接入审计与分级治理”（2026-04-09，待批准）
+  - [ ] 本轮聚焦“如何以全局方式审计 DTO 接入现状并形成统一治理规则”，不扩散为逐个接口立即补 DTO 的执行轮。
+  - [ ] 当前目标不是只找单一缺失点，而是识别仓库内 `handler -> service -> model -> frontend contract` 的 DTO 分层现状、缺口模式与高风险区域。
+  - [ ] 在你批准前，本阶段只更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码、不开始批量补 DTO。
+
+- [ ] 588. 固化当前 DTO 现状的已确认事实链
+  - [ ] 代码扫描已确认，仓库内并非“完全无 DTO”或“完全统一 DTO”，而是存在多种并存形态。
+  - [ ] `server/services/production_dto.go`、`server/services/production_process_dto.go` 已体现较完整的 DTO 分层：存在请求/响应 DTO 与 model 映射函数。
+  - [ ] `server/handlers/customers.go` 仍存在 `ShouldBindJSON(&input)` 直接绑定 `models.Customer`，并在保存后直接 `c.JSON(http.StatusOK, input)` 返回实体，说明部分链路仍是模型直通。
+  - [ ] `server/handlers` 下大量文件仍存在 `ShouldBindJSON` / `BindJSON` 分布，说明 DTO 接入现状需要按全局规则分级盘点，而不是靠个案记忆判断。
+
+- [ ] 589. 明确本轮 DTO 全局审计的目标产物
+  - [ ] 形成一套 DTO 审计框架：定义什么算“已接入 DTO”、什么算“半接入”、什么算“未接入/伪 DTO”。
+  - [ ] 形成面向全仓的审计维度：请求入站、服务入参、服务出参、响应出站、前端 contract/type 五层。
+  - [ ] 形成风险分级口径：哪些模块优先治理、哪些问题属于高危直通、哪些属于可延后优化。
+  - [ ] 为后续真正执行时提供可批量推进的清单与验收标准，而不是继续零散补洞。
+
+- [ ] 590. 明确 DTO 审计前的关键设计约束
+  - [ ] DTO 审计不能只看“有没有 `*DTO` 命名”，还要看是否真正隔离了数据库 model、是否存在显式映射与独立契约。
+  - [ ] 需要区分“合法的领域输入结构体”与“把 `models.*` 改名成 request/response 壳子”的伪 DTO，避免统计失真。
+  - [ ] 审计范围必须覆盖后端入站/出站，也要覆盖前端 service/type 是否直接耦合后端实体字段，避免只做后端半边治理。
+  - [ ] 本轮不直接引入一刀切强制重构；先建立全局口径、分类结果与推进顺序，再决定批准后的执行范围。
+
+- [ ] 591. 明确待批准后的实施顺序与验收口径
+  - [ ] 批准后先产出 DTO 全量清单与分级表，再按高风险模块优先推进，而不是随机逐文件修补。
+  - [ ] 批准后优先处理“请求直接绑定 model / 响应直接回传 model / 前端直接吃实体结构”这三类高风险链路。
+  - [ ] 完成阶段性治理后，至少验证：新增接口遵循统一 DTO 规则、重点模块不再模型直通、文档与审计结果可持续复用。
+
+- [ ] 582. 冻结本轮范围，规划“正式 notification gateway 抽象收口”（2026-04-09，待批准）
+  - [ ] 本轮聚焦通知域的正式 gateway 抽象，目标是阻止 `service / lib / 跨域模块` 继续直接把 `notification-store` 当作基础设施 API 使用。
+  - [ ] 本轮不扩散到通知中心 UI 改版、不扩散到工作流规则产品设计重做，也不顺手重写整个通知域数据结构。
+  - [ ] 在你批准前，本阶段只更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+
+- [ ] 583. 固化当前 notification gateway 已确认事实链
+  - [ ] 第二批 Service Purity 已确认：`sales-service.ts` 与 `ai-context-service.ts` 原先都直接依赖 `notification-store`，目前已开始通过 `notification-service` 中的桥接函数收口。
+  - [ ] `workflow-core/services/dispatch-service.ts` 仍直接调用 `useNotificationStore.getState()` 完成通知写入与扫描去重，说明通知域的正式接入边界仍未形成单一入口。
+  - [ ] `notification-service.ts` 当前同时承担通知路由、规则匹配、消息写入、局部桥接函数等职责，但还不是一个明确分层的 gateway。
+  - [ ] 因此，当前问题已从“是否直接 toast”进一步演进为“通知能力是否有正式基础设施边界”，这是 Service Purity 后续必须继续收口的根因点。
+
+- [ ] 584. 明确本轮 notification gateway 目标
+  - [ ] 建立正式 `notification gateway`，作为通知读写、归档、消息快照访问的统一基础设施入口。
+  - [ ] 让业务 service/hook 不再直接依赖 `useNotificationStore.getState()` 或 store 内部结构细节。
+  - [ ] 区分“通知基础设施访问”“通知规则编排”“通知 UI 展示”三层职责，避免继续混在同一文件中增长。
+  - [ ] 为后续继续纯化 `workflow-core`、`ai-assistant`、`sales` 等模块提供稳定依赖面。
+
+- [ ] 585. 明确实施前关键设计约束
+  - [ ] gateway 必须是基础设施边界，不应反过来吸收业务规则；工作流路由匹配、规则解释等领域逻辑不能全部塞进 gateway 里造成新一层上帝对象。
+  - [ ] 需要区分“读接口”与“写接口”：读取消息快照、归档订单消息、写入消息、批量同步消息不应继续通过裸 store 状态对象暴露。
+  - [ ] 迁移时要优先兼容现有调用方，避免一次性强切导致通知链路失效或消息状态异常。
+  - [ ] 在你批准前，本阶段只沉淀方案、涉及文件、风险与验收口径，不直接开始代码改造。
+
+- [ ] 586. 明确待批准后的实施顺序与验证口径
+  - [ ] 批准后先抽出 `notification gateway` 文件或分层接口，再迁移 `sales-service`、`ai-context-service`、`dispatch-service` 等调用方。
+  - [ ] 迁移后让 `notification-service.ts` 更聚焦于规则驱动分发，而不是继续兼任所有 store 访问入口。
+  - [ ] 完成后至少验证：业务模块不再直接依赖 `notification-store`；通知读写通过 gateway 统一承接；`tsc --noEmit` 继续通过；现有通知扫描/归档链路不回归。
+
+ - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+- [ ] 577. 冻结本轮范围，规划“Service 纯净化（Service Purity）治理”（2026-04-09，待批准）
+  - [ ] 本轮聚焦前端 `service / lib / 数据访问封装` 中混入 `toast / notification / message` 等 UI 副作用的问题，不扩散到无关业务重构。
+  - [ ] 当前核心问题不是某个提示文案不优雅，而是底层数据层与表现层职责边界错位，已经影响可复用性、可测试性与多环境运行能力。
+  - [ ] 在你批准前，本阶段只更新 `task.md` 与 `implementation_plan.md`，不直接修改前端业务代码。
+
+- [ ] 578. 固化当前 Service Purity 已确认事实链
+  - [ ] 代码扫描已确认，问题不只存在于个别业务 `service`，共享基础设施层也存在直接触发 UI 提示的模式。
+  - [ ] `src/features/system-mgmt/workflow-core/services/dispatch-service.ts` 当前直接导入 `toast`，在追溯扫描补偿后直接决定成功提示形式。
+  - [ ] `src/lib/react-query-mutation.ts` 当前把 `successMessage` 直接绑定为 `toast.success(...)`，说明通用 mutation 基础设施也在替调用方决定 UI 呈现。
+  - [ ] `src/lib/handle-server-error.ts` 当前直接依赖 `toast` 与路由跳转，说明错误处理层同时承担了“错误归因 / 日志上报 / UI 呈现 / 交互跳转”多重职责。
+  - [ ] 这意味着问题根因不是“少数 service 写法不规范”，而是项目内已形成“底层能力默认顺带做 UI 提示”的架构惯性。
+
+- [ ] 579. 明确本轮治理目标
+  - [ ] Service 层只负责返回数据、抛出错误或返回结构化结果，不再直接调用浏览器 UI 提示能力。
+  - [ ] Hook / mutation 编排层负责把 Service 返回的成功或失败结果翻译为 `toast` 等 UI 反馈。
+  - [ ] Component 层只负责具体交互触发与展示，不继续向下沉淀新的 UI 副作用到 `service` 或通用 `lib`。
+  - [ ] 为后续 Node 脚本、测试、后台任务或非浏览器运行场景复用这些数据访问能力提供可运行前提。
+
+- [ ] 580. 明确实施前关键设计约束
+  - [ ] 不能只逐个删 `toast` 导入了事；必须同步明确“成功反馈由谁负责、错误提示由谁负责、结构化错误如何上传递”的统一分层规则。
+  - [ ] 要区分真正的 `service purity` 问题与 Hook 层合理的 UI 反馈职责，避免把所有提示都错误地下沉或上浮。
+  - [ ] 对 `handle-server-error`、`react-query-mutation` 这类共享层改造时，要优先抽象为“纯错误解析 / 纯 mutation 辅助”，不能继续在基础设施里耦合具体 UI 实现。
+  - [ ] 若执行中发现现有大量页面直接依赖共享层自动 toast 行为，需要先补兼容迁移策略，再逐步收口，避免一次性破坏整站反馈体验。
+  - [ ] 在你批准前，本阶段只沉淀方案、涉及文件、风险与验证口径，不直接开始代码改造。
+
+- [ ] 581. 明确待批准后的实施顺序与验证口径
+  - [ ] 批准后先盘点所有 `service / lib` 直接依赖 UI 提示的入口，并区分“业务 service”“共享 mutation 辅助”“错误处理基础设施”三类。
+  - [ ] 先定义纯错误/result 契约与 UI 反馈承载层，再改造共享层，最后回收业务 service 中残留的 `toast` 直接调用。
+  - [ ] 完成后至少验证：Service 在无浏览器 UI 环境下可被安全调用；成功/失败提示仍能在 Hook 或 Component 层正常出现；错误日志与用户提示不再强耦合在同一底层函数内。
+
+ - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
 - [ ] 567. 冻结本轮范围，规划“销售订单保存路径后端收敛为单一入口”（2026-04-09，待批准）
   - [ ] 本轮聚焦 `sales-order` 保存链的领域编排收口，不扩散到 `purchase`、客户/供应商档案或新的事务语义扩面。
   - [ ] 当前核心问题不是 UI 计算性能，而是前端承担了“事务路由器”职责，根据 delta 与行差异自行判定调用哪条 mutation。

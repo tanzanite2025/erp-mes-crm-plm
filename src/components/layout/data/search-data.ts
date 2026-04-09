@@ -156,11 +156,11 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'xsdd',
   },
   {
-    id: 'tab-trading-requirements',
-    href: '/trading/requirements',
-    titleKey: 'trading.tabs.requirements',
-    parentKey: 'commandMenu.parents.trading',
-    keywords: ['requirements', 'part', '料号需求'],
+    id: 'tab-mrp-requirements',
+    href: '/mrp/requirements',
+    titleKey: 'mrp.tabs.requirements',
+    parentKey: 'commandMenu.parents.mrp',
+    keywords: ['requirements', 'part', 'mrp', '料号需求'],
     pinyin: 'lhxq',
   },
   {
@@ -387,10 +387,10 @@ const actionConfigs: CommandItemConfig[] = [
   },
   {
     id: 'action-create-requirement',
-    href: '/trading/requirements?action=create',
+    href: '/mrp/requirements?action=create',
     titleKey: 'commandMenu.items.createRequirement',
-    parentKey: 'commandMenu.parents.trading',
-    keywords: ['requirement', 'part', 'new', '发起需求', '料号'],
+    parentKey: 'commandMenu.parents.mrp',
+    keywords: ['requirement', 'part', 'mrp', 'new', '发起需求', '料号'],
     pinyin: 'fqxq',
   },
 

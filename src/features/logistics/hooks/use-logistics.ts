@@ -89,7 +89,9 @@ export function useLogisticsMutations() {
     >({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
-      successMessage: t('trading.logistics.toasts.updateStatusSuccess'),
+      onSuccess: () => {
+        toast.success(t('trading.logistics.toasts.updateStatusSuccess'))
+      },
     }),
     onError: (err: Error) => {
       toast.error(t('trading.logistics.toasts.updateStatusFailed', { message: err.message }))
@@ -101,7 +103,9 @@ export function useLogisticsMutations() {
     ...buildMutationOptions<void, Error, string>({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
-      successMessage: t('trading.logistics.toasts.deleteSuccess'),
+      onSuccess: () => {
+        toast.success(t('trading.logistics.toasts.deleteSuccess'))
+      },
     }),
     onError: (err: Error) => {
       toast.error(t('trading.logistics.toasts.deleteFailed', { message: err.message }))

@@ -99,10 +99,10 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                 <div className='flex items-center gap-4 mt-0.5'>
                   <span className='text-[10px] font-bold text-muted-foreground/40 flex items-center gap-1 uppercase'>
                     <ShoppingCart className='size-3' />
-                    {t('trading.requirements.selectionTree.orderLines', { count: order.lines.length })}
+                    {t('mrp.requirements.selectionTree.orderLines', { count: order.lines.length })}
                   </span>
                   <span className='text-[10px] font-bold text-muted-foreground/40 flex items-center gap-1 uppercase'>
-                    {t('trading.requirements.selectionTree.deliveryDate', { date: order.deliveryDate })}
+                    {t('mrp.requirements.selectionTree.deliveryDate', { date: order.deliveryDate })}
                   </span>
                 </div>
               </div>
@@ -140,11 +140,11 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                               </div>
                               <div className='flex items-center gap-4 pl-4'>
                                 <span className='text-[10px] font-black text-slate-200 uppercase tracking-[0.2em] bg-slate-100 px-1.5 py-0.5 rounded'>
-                                  {t('trading.requirements.selectionTree.productCodeLabel')}: {line.productCode}
+                                  {t('mrp.requirements.selectionTree.productCodeLabel')}: {line.productCode}
                                 </span>
                                 <div className='size-1 rounded-full bg-slate-200' />
                                 <span className='text-[9px] font-bold text-slate-300'>
-                                  {t('trading.requirements.selectionTree.productModelLabel')}: {line.productModel}
+                                  {t('mrp.requirements.selectionTree.productModelLabel')}: {line.productModel}
                                 </span>
                               </div>
                             </div>
@@ -166,12 +166,12 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                           {!productBOM ? (
                             <div className='text-[9px] font-bold text-amber-500/60 uppercase flex items-center gap-1.5 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10'>
                               <div className='size-1.5 rounded-full bg-amber-500 animate-pulse' />
-                              {t('trading.requirements.selectionTree.noBom')}
+                              {t('mrp.requirements.selectionTree.noBom')}
                             </div>
                           ) : (
                             <>
                               <div className='text-[9px] font-black uppercase text-muted-foreground/30 tracking-[0.2em] mb-2 flex items-center justify-between'>
-                                {t('trading.requirements.selectionTree.bomPreview', { count: productBOM.items.length })}
+                                {t('mrp.requirements.selectionTree.bomPreview', { count: productBOM.items.length })}
                                 <ExternalLink className='size-3 cursor-pointer hover:text-primary transition-colors' />
                               </div>
                               <div className='grid grid-cols-2 gap-2'>
@@ -180,7 +180,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                                     <div className='flex flex-col min-w-0'>
                                       <span className='text-[10px] font-black truncate'>{item.materialName}</span>
                                       <span className='text-[8px] font-bold text-muted-foreground/50 uppercase'>
-                                        {item.section || t('trading.requirements.selectionTree.otherSection')}
+                                        {item.section || t('mrp.requirements.selectionTree.otherSection')}
                                       </span>
                                     </div>
                                     <span className='text-[10px] font-black text-primary tabular-nums'>
@@ -190,7 +190,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                                 ))}
                                 {productBOM.items.length > 4 && (
                                   <div className='col-span-2 text-center py-1 bg-muted/10 rounded-lg text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest'>
-                                    {t('trading.requirements.selectionTree.moreComponents', { count: productBOM.items.length - 4 })}
+                                    {t('mrp.requirements.selectionTree.moreComponents', { count: productBOM.items.length - 4 })}
                                   </div>
                                 )}
                               </div>
@@ -215,20 +215,20 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
             </div>
             <div className='flex flex-col'>
               <span className='text-[12px] font-black tracking-tight leading-none'>
-                {t('trading.requirements.selectionTree.selectedCount', { count: selectedKeys.length })}
+                {t('mrp.requirements.selectionTree.selectedCount', { count: selectedKeys.length })}
               </span>
               <span className='text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest'>
-                {t('trading.requirements.selectionTree.analyzeReady')}
+                {t('mrp.requirements.selectionTree.analyzeReady')}
               </span>
             </div>
           </div>
 
           <div className='flex items-center gap-2 pr-2'>
             <button onClick={() => onSelectionChange([])} className='h-10 px-4 rounded-2xl text-[11px] font-black uppercase hover:bg-white/5 transition-colors'>
-              {t('trading.requirements.selectionTree.cancel')}
+              {t('mrp.requirements.selectionTree.cancel')}
             </button>
             <button onClick={onAnalyze} className='h-10 px-6 rounded-2xl bg-white text-[#0F172A] text-[11px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-xl'>
-              {t('trading.requirements.selectionTree.analyze')}
+              {t('mrp.requirements.selectionTree.analyze')}
             </button>
           </div>
         </div>

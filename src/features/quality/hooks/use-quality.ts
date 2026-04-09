@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { handleServerError } from '@/lib/handle-server-error'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import type { Standard } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -47,7 +49,10 @@ export function useQualityMutations() {
         ...buildMutationOptions<void, Error, { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }>({
             queryClient,
             invalidateQueryKeys: [['quality_standards']],
-            successMessage: t('quality.hooks.saveStandardSuccess'),
+            onError: handleServerError,
+            onSuccess: () => {
+                toast.success(t('quality.hooks.saveStandardSuccess'))
+            },
         }),
     })
 
@@ -57,7 +62,10 @@ export function useQualityMutations() {
         ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
             queryClient,
             invalidateQueryKeys: [['quality_tasks'], ['quality_abnormalities']],
-            successMessage: t('quality.inspection.toast.submitted'),
+            onError: handleServerError,
+            onSuccess: () => {
+                toast.success(t('quality.inspection.toast.submitted'))
+            },
         }),
     })
 

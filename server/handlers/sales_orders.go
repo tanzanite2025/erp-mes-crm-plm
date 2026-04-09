@@ -266,6 +266,10 @@ func SaveSalesOrderHandler(c *gin.Context) {
 			requesterID,
 		)
 		if err != nil {
+			if errors.Is(err, services.ErrWorkflowDefinitionMissing) {
+				// 工作流定义尚未配置时允许先保存销售订单，后续可补挂流程。
+				return nil
+			}
 			return err
 		}
 
@@ -276,10 +280,6 @@ func SaveSalesOrderHandler(c *gin.Context) {
 	if err != nil {
 		if err == ErrVersionConflict {
 			respondVersionConflict(c)
-			return
-		}
-		if errors.Is(err, services.ErrWorkflowDefinitionMissing) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "未找到可用流程定义，请先配置并启用销售单工作流"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存订单失败: " + err.Error()})

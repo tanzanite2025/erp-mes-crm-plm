@@ -7,6 +7,7 @@ import { aiAgentService } from '../services/ai-agent-service'
 import { DailyInsightModal } from './daily-insight-modal'
 import { useAiPermissions } from '../hooks/use-ai-permissions'
 import { useAiVoice } from '../hooks/use-ai-voice'
+import { toast } from 'sonner'
 
 /**
  * AI 极光分析按钮 (V4.1 架构纯化版)
@@ -37,7 +38,14 @@ export function AiTrigger() {
 
     // Agent 状态同步
     useEffect(() => {
-        const updateStatus = () => setHasUnread(aiAgentService.getHasUnread())
+        const updateStatus = () => {
+            const state = aiAgentService.getState()
+            setHasUnread(state.hasUnread)
+            if (state.lastError) {
+                toast.error(state.lastError)
+                aiAgentService.clearLastError()
+            }
+        }
         aiAgentService.subscribe(updateStatus)
         updateStatus()
         

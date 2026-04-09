@@ -113,7 +113,7 @@ export const systemManagement = {
     note: '* 审计数据会随着角色与权限变更实时刷新，确保权限视图与实际授权状态保持同步。',
     modules: {
       warehouse: '仓储',
-      trading: '贸易',
+      trading: '贸易 / MRP',
       engineering: '工程',
       quality: '质量',
       production: '生产',

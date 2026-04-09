@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type StandardCommand } from '../data/schema'
 import { type NotificationRule } from '../data/notification-rule-schema'
 
@@ -32,7 +33,7 @@ export const RoutingService = {
   },
 
   /** 局部更新指令配置 (SDRTS) */
-  patchCommand: async (id: string, delta: any, version: number): Promise<StandardCommand> => {
+  patchCommand: async (id: string, delta: DeltaSet, version: number): Promise<StandardCommand> => {
     return apiFetch<StandardCommand>(`/system/routing/commands/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
@@ -65,7 +66,7 @@ export const RoutingService = {
   },
 
   /** 局部更新通知规则 (SDRTS) */
-  patchRule: async (id: string, delta: any, version: number): Promise<NotificationRule> => {
+  patchRule: async (id: string, delta: DeltaSet, version: number): Promise<NotificationRule> => {
     return apiFetch<NotificationRule>(`/system/routing/rules/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),

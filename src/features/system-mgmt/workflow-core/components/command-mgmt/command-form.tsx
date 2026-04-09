@@ -15,6 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { type StandardCommand } from '../../data/schema'
 
+type CommandFormInput = Omit<StandardCommand, 'id' | 'createdAt'>
+type BindTypeValue = CommandFormInput['bindType']
+type NodeTypeValue = NonNullable<CommandFormInput['nodeType']>
+
 interface CommandFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -24,9 +28,7 @@ interface CommandFormProps {
 
 export function CommandForm({ open, onOpenChange, initialData, onSave }: CommandFormProps) {
   const { t } = useLanguage()
-  const { register, handleSubmit, setValue, reset, watch } = useForm<
-    Omit<StandardCommand, 'id' | 'createdAt'>
-  >({
+  const { register, handleSubmit, setValue, reset, watch } = useForm<CommandFormInput>({
     defaultValues: {
       actionType: 'NOTIFY',
       bindType: 'GLOBAL',
@@ -63,7 +65,7 @@ export function CommandForm({ open, onOpenChange, initialData, onSave }: Command
     })
   }, [initialData, open, reset])
 
-  const onSubmit = (data: Omit<StandardCommand, 'id' | 'createdAt'>) => {
+  const onSubmit = (data: CommandFormInput) => {
     onSave(data)
   }
 
@@ -97,7 +99,7 @@ export function CommandForm({ open, onOpenChange, initialData, onSave }: Command
               <Label className='text-[10px] font-black uppercase text-muted-foreground'>
                 {t('workflowCore.commands.form.fields.bindType')}
               </Label>
-              <Select value={watch('bindType')} onValueChange={(value) => setValue('bindType', value as any)}>
+              <Select value={watch('bindType')} onValueChange={(value) => setValue('bindType', value as BindTypeValue)}>
                 <SelectTrigger className='h-10 rounded-xl font-bold text-xs'>
                   <SelectValue placeholder={t('workflowCore.commands.form.placeholders.bindType')} />
                 </SelectTrigger>
@@ -117,7 +119,7 @@ export function CommandForm({ open, onOpenChange, initialData, onSave }: Command
               </Label>
               <Select
                 value={watch('nodeType') || 'NONE'}
-                onValueChange={(value) => setValue('nodeType', value === 'NONE' ? undefined : (value as any))}
+                onValueChange={(value) => setValue('nodeType', value === 'NONE' ? undefined : (value as NodeTypeValue))}
               >
                 <SelectTrigger className='h-10 rounded-xl border-primary/20 bg-primary/5 font-bold text-xs text-primary'>
                   <SelectValue placeholder={t('workflowCore.commands.form.placeholders.nodeType')} />

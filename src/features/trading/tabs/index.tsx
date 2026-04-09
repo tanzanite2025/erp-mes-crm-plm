@@ -2,7 +2,6 @@ import { Users } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 import { useLanguage } from '@/context/language-provider'
 import { LogisticsMgmt as LogisticsMgmtView } from '@/features/logistics/components/logistics-mgmt'
-import { PartRequirements as MrpPartRequirements } from '@/features/mrp/pages/part-requirements'
 import { CustomerList } from '../components/customer-list'
 import { SalesOrderList } from '../components/sales-order-list-fixed'
 
@@ -36,5 +35,3 @@ export function LogisticsMgmt() {
     </div>
   )
 }
-
-export const PartRequirements = MrpPartRequirements

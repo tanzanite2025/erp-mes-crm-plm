@@ -1,5 +1,27 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-09 Notification Gateway 硬切（Phase 1）
+
+### 变更概览
+- 新增 `src/features/system-mgmt/notifications/notification-gateway.ts`，作为通知读写、归档、快照访问、批量同步的统一基础设施边界。
+- 首批调用方完成迁移并切到 gateway：
+  - `src/features/trading/sales/services/sales-service.ts`
+  - `src/features/ai-assistant/services/ai-context-service.ts`
+  - `src/features/system-mgmt/workflow-core/services/dispatch-service.ts`
+- `notification-service.ts` 移除桥接式 store 访问导出：
+  - `getNotificationStateSnapshot`
+  - `getNotificationMessages`
+  - `archiveNotificationsByOrderId`
+- `notification-service.ts` 内部通知读写/归档改为经由 `NotificationGateway`，职责收口到“规则分发与编排”。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+node scripts/verify-permissions.mjs
+```
+结果：通过。
+
 ## 专项：生产 `uploads/backups` 目录权限防回归固化（2026-04-09）
 
 ### 背景
@@ -445,9 +467,103 @@ pnpm exec tsc --noEmit
 
 结果：通过。
 
+## 2026-04-09 Service 纯净化（Service Purity）第一批治理
+
+### 变更概述
+- 共享错误处理链纯化：
+  - `src/lib/handle-server-error.ts`
+  - 拆出 `getServerErrorPresentation(...)` 与 `showServerErrorToast(...)`
+  - `handleServerError(...)` 保留为兼容 UI 适配入口，不再把“错误解析”和“错误展示”硬绑成单一实现点。
+- 共享异常出口纯化：
+  - `src/lib/safe-catch.ts`
+  - 改为先走纯错误解析，再由 UI 展示适配函数负责 toast，降低底层工具对单一 UI 实现的耦合。
+- 共享 mutation 辅助纯化：
+  - `src/lib/react-query-mutation.ts`
+  - 移除默认 `successMessage -> toast.success(...)` 行为。
+  - 默认失败路径改为仅做日志上报，不再由底层工具自动决定 UI 提示。
+- 首批 Hook 显式承接成功提示：
+  - `src/features/quality/hooks/use-quality.ts`
+  - `src/features/logistics/hooks/use-logistics.ts`
+  - 成功提示已上浮到 Hook `onSuccess`，失败提示继续由调用方显式处理。
+- 业务 Service 越权清理：
+  - `src/features/system-mgmt/workflow-core/services/dispatch-service.ts`
+  - 移除 service 内 `toast.success(...)`，保持扫描函数只返回 `newCount`。
+  - `src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts`
+  - 扫描完成提示已上浮到 Hook 层，根据 `scannedCount` 决定是否 toast。
+- AI 相关 Service 越权清理：
+  - `src/features/ai-assistant/services/ai-action-bus.ts`
+  - 改为返回结构化 `ActionDispatchResult`，不再在 service 内直接 toast。
+  - `src/features/ai-assistant/services/ai-agent-service.ts`
+  - 不再在后台任务 service 内直接 toast，改为维护 `lastError` 状态并通知订阅方。
+  - `src/features/ai-assistant/components/daily-insight-modal.tsx`
+  - 接住 `ActionDispatchResult.errorMessage` 并在组件层 toast。
+  - `src/features/ai-assistant/components/ai-trigger.tsx`
+  - 监听 `aiAgentService` 状态，在组件层消费并清理 `lastError`。
+  - `src/components/config-drawer.tsx`
+  - 手动 `forceRun(...)` 的失败反馈由 UI 层显式承接。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+
+### 本轮结论
+- `Service / lib` 这条主链已经开始从“底层顺带做 UI 提示”收口到“底层返回事实，Hook / Component 决定提示”。
+- `handle-server-error` 与 `react-query-mutation` 两个高扩散共享层已完成第一步纯化，为后续继续治理其他业务模块提供了统一样板。
+- `dispatch-service` 与 AI 相关 service 的直接 toast 越权已被移除，提示职责已上浮到对应 Hook / Component。
+
+### 遗留说明
+- `workflow-core` 相关文件仍存在一批既有 `any` 类型 lint，属于该模块原有类型债，不是本轮 Service Purity 改造引入的新问题。
+- 当前 `tsc --noEmit` 已通过；未对与本轮目标无关的 Tailwind 建议类 warning 做额外处理。
+
+## 2026-04-09 Service 纯净化（Service Purity）第二批治理
+
+### 变更概述
+- `workflow-core` 关键类型债收口：
+  - `src/features/system-mgmt/workflow-core/services/routing-service.ts`
+  - `patchCommand(...)` / `patchRule(...)` 已从 `any` 切换为 `DeltaSet`。
+  - `src/features/system-mgmt/workflow-core/services/dispatch-service.ts`
+  - 新增 `DispatchContext`、`OrderSnapshot`、metadata 读取辅助函数，核心扫描逻辑不再直接依赖多处 `any`。
+  - 已将 `uniqueKey / OrderId / SegmentId` 等关键元数据访问改为显式字符串提取函数，降低通知扫描链路的隐式类型漂移。
+- `workflow-core` Hook / 组件类型债收口：
+  - `src/features/system-mgmt/workflow-core/hooks/use-notification-rules.ts`
+  - `addRule(...)` 已使用明确的 `NotificationRuleCreateInput`，去掉新增链路中的 `as any`。
+  - `src/features/system-mgmt/workflow-core/components/command-mgmt/command-form.tsx`
+  - 表单层 `bindType` / `nodeType` 的 `setValue(...)` 已改为消费 `StandardCommand` 对应字段类型，去掉显式 `any`。
+- 通知跨域桥接收口：
+  - `src/features/system-mgmt/notifications/notification-service.ts`
+  - 新增 `getNotificationMessages()` 与 `archiveNotificationsByOrderId(...)` 作为通知读写桥接入口。
+  - 让其他 service 不再直接把 `useNotificationStore.getState()` 当作跨域基础设施 API 使用。
+- 更多 service/lib 子域边界收口：
+  - `src/features/trading/sales/services/sales-service.ts`
+  - 删除销售单后归档通知，已改为调用 `archiveNotificationsByOrderId(...)`。
+  - `src/features/ai-assistant/services/ai-context-service.ts`
+  - AI 上下文采集读取通知消息，已改为调用 `getNotificationMessages()`。
+  - 同时将 `injectLocalContext(...)` 的输入从 `Record<string, any>` 收口为 `Record<string, unknown>`。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+
+### 本轮结论
+- 第二批治理已把 `workflow-core` 中最影响继续推进的关键 `any` 和通知扫描元数据访问收口到可维护状态。
+- 通知能力已开始从“各处 service 直接碰 Zustand store”收口为“通过 notification-service 桥接函数访问”，降低了跨域状态耦合扩散风险。
+- `sales-service` 与 `ai-context-service` 已不再直接依赖 `notification-store`，符合 `Service Purity` 中“底层 service 不直接绑状态容器细节”的目标。
+
+### 遗留说明
+- `dispatch-service.ts` 仍保留对通知写入能力的直接依赖，这是当前通知编排链路的领域事实源接入点，后续若继续纯化可再抽出更正式的 notification gateway。
+- `notification-service.ts` 与 `notification-store.ts` 仍存在部分历史 `any` / 兼容性占位字段，属于通知域自己的存量类型债，当前未扩散为整域重构。
+- 当前 `tsc --noEmit` 已通过；未处理与本轮目标无关的 Tailwind 建议类 warning。
+
 ### 本轮结论
 - Trading 侧 `requirements` 旧组件兼容壳已完成物理清理。
 - 当前 `requirements` 视图层只保留 `MRP` 新模块实现，结构进一步收敛。
+- `src/features/trading/tabs/index.tsx` 中遗留的 `PartRequirements` 兼容导出已移除，Trading tabs 不再承担该页面转发职责。
 
 ## 2026-04-09 旧 requirements 组件归属收口
 
@@ -1154,7 +1270,7 @@ go test ./handlers -run "CustomersHandlerReturnsMetadataStats|SuppliersHandlerRe
   - `src/features/trading/services/requirement-core-service.ts` 改为转发到 `@/features/mrp/services/requirement-core-service`
   - `src/features/trading/services/requirement-service.ts` 改为兼容导出 `RequirementCoreService`
   - `src/features/trading/services/requirement-export-service.ts` 改为转发到 `@/features/mrp/services/requirement-export-service`
-  - `src/features/trading/tabs/index.tsx` 中的 `PartRequirements` 改为兼容导出 `MRP` 页面实现
+  - `src/features/trading/tabs/index.tsx` 当时曾保留 `PartRequirements` 兼容导出，后续已在 `2026-04-09` 清理移除
 
 ### 本轮边界
 - 本轮只迁移 MRP 自有前端层：`requirements` 的 `data / services / hooks / components / page`。
@@ -1175,7 +1291,126 @@ pnpm exec tsc --noEmit
 ### 本轮结论
 - `MRP` 已不再只是空目录，而是形成了最小可承载的前端领域骨架。
 - `/trading/requirements` 现已由 `MRP` 新模块实际承载，但对现有 URL 与调用方保持兼容。
-- Trading 旧路径已保留兼容导出，为下一阶段继续收口 schema、导航与长期宿主职责提供了平滑过渡基础。
+- Trading 旧路径中的 `tabs/index.tsx -> PartRequirements` 兼容导出已完成阶段性收口；其余兼容层仍可按引用面继续清理。
+
+## 2026-04-09 删除 Trading 侧剩余 requirements 兼容层
+
+### 变更概述
+- 继续按“无引用即删除”原则，清理 Trading 侧残留的 `requirements` 兼容层与历史快照：
+  - `src/features/trading/data/requirement-schema.ts`
+  - `src/features/trading/hooks/use-requirements.ts`
+  - `src/features/trading/services/requirement-core-service.ts`
+  - `src/features/trading/services/requirement-export-service.ts`
+  - `src/features/trading/services/requirement-service.ts`
+  - `src/features/trading/services/requirement-export-service.ts.txt`
+  - `src/features/trading/services/requirement-service.ts.txt`
+- 删除依据：
+  - `src` 范围内已无任何代码继续引用上述 Trading 路径；
+  - 当前真实 schema / hook / service 实现均已归属到 `src/features/mrp/**`；
+  - `.txt` 文件仅为旧实现快照，不参与当前构建与运行链路。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+
+### 本轮结论
+- Trading 侧 `requirements` 的 schema / hook / service 兼容壳已完成物理清理。
+- `requirements` 领域的前端实现与消费入口现已统一收敛到 `src/features/mrp/**`。
+
+## 2026-04-09 清理 Trading -> MRP 最后一层显式转发壳
+
+### 变更概述
+- 对 `src/features/trading/**` 做了进一步盘点，按文件内容扫描所有直接指向 `src/features/mrp/**` 的兼容转发。
+- 盘点结果显示仅剩一处显式 Trading -> MRP 转发壳：
+  - `src/features/trading/hooks/use-mold-status.ts`
+- 该文件仅执行：
+  - `export { useMoldStatus } from '@/features/mrp/hooks/use-mold-status'`
+  - `export type { MoldAlert } from '@/features/mrp/hooks/use-mold-status'`
+- 同时确认 `src` 范围内已无任何代码继续通过 Trading 路径引用该 hook，因此执行物理删除。
+
+### 验证
+- 代码搜索结果表明：删除后 `src/features/trading/**` 内已不再存在直接指向 `src/features/mrp/**` 的显式转发文件。
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+
+### 本轮结论
+- Trading -> MRP 的显式兼容转发壳已完成清零。
+- 当前 `MRP` 相关实现已不再通过 Trading feature 做代码层转发，边界进一步明确。
+
+## 2026-04-09 提升 MRP 为独立前端模块入口
+
+### 变更概述
+- 新增 `MRP` 独立前端模块骨架：
+  - `src/features/mrp/module.tsx`
+  - `src/features/mrp/tabs.ts`
+- 新增独立路由树：
+  - `src/routes/_authenticated/mrp/route.tsx`
+  - `src/routes/_authenticated/mrp/route.lazy.tsx`
+  - `src/routes/_authenticated/mrp/index.tsx`
+  - `src/routes/_authenticated/mrp/requirements.tsx`
+  - `src/routes/_authenticated/mrp/requirements.lazy.tsx`
+- 新增独立访问路径：
+  - `/mrp` -> 重定向到 `/mrp/requirements`
+  - `/mrp/requirements` -> 直接承载 `src/features/mrp/pages/part-requirements.tsx`
+- 将旧入口改为兼容跳转：
+  - `src/routes/_authenticated/trading/requirements.tsx` 现统一重定向到 `/mrp/requirements`
+  - `src/routes/_authenticated/trading/requirements.lazy.tsx` 不再直接挂载 MRP 页面组件
+- 同步拆除 Trading 模块内的 requirements tab：
+  - `src/features/trading/tabs.ts` 中移除 `requirements`
+- 为新模块补齐系统级入口：
+  - 侧边栏新增 `MRP` 入口
+  - 命令面板搜索项与快捷动作改为指向 `/mrp/requirements`
+  - `authenticated-route-catalog`、AI 协议允许路由、菜单权限映射中补入 `/mrp`
+- 权限策略采取最小破坏方案：
+  - `/mrp` 当前暂复用 Trading 菜单权限，避免本轮引入权限回归
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+
+### 本轮结论
+- `MRP` 已拥有独立的前端模块入口、路由树与导航入口，不再只是 Trading 模块中的一个语义附属页。
+- `/trading/requirements` 仍可访问，但已退化为兼容入口；结构性宿主已切换为 `/mrp/requirements`。
+
+## 2026-04-09 收口 MRP 语义层残留
+
+### 变更概述
+- 清理 Trading locale 中已无引用的旧 `requirements` 文案：
+  - `src/locales/messages/en-US/trading.ts`
+  - `src/locales/messages/zh-CN/trading.ts`
+- 这意味着 `requirements` 页面的文案宿主已完全收敛到：
+  - `src/locales/messages/en-US/mrp.ts`
+  - `src/locales/messages/zh-CN/mrp.ts`
+- 收口权限语义残留：
+  - `src/features/authz/data/permission-catalog.ts` 中将 `menu_trading` 的标签/说明更新为同时覆盖 `Trading、Purchase、MRP`
+  - 显式注释 `/mrp -> menu_trading` 为“继承授权”关系，而非隐式同模块
+- 同步修正权限审计视图中的展示语义：
+  - `src/locales/messages/en-US/systemManagement.ts`
+  - `src/locales/messages/zh-CN/systemManagement.ts`
+  - 审计矩阵里的 `menu_trading` 现展示为 `Trading / MRP`
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+```
+- 结果：通过。
+- 搜索确认：
+  - `src` 范围内已无 `trading.requirements`
+  - `src` 范围内已无 `trading.tabs.requirements`
+
+### 本轮结论
+- `MRP` 页面文案命名空间已不再依赖 Trading locale。
+- `/mrp` 的权限语义已从“默默复用 Trading”收口为“显式继承 Trading 菜单授权”，为后续后端单独下发 `menu_mrp` 契约保留了清晰升级点。
 
 ## 2026-04-09 MRP schema 归属收口
 

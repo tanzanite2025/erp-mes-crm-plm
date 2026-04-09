@@ -1,5 +1,5 @@
 import { createLogger } from './logger'
-import { handleServerError } from './handle-server-error'
+import { getServerErrorPresentation, showServerErrorToast } from './handle-server-error'
 
 const logger = createLogger('SafeCatch')
 
@@ -29,7 +29,7 @@ export function failLoudly(
 
   // UI 层报错（调用项目已有的标准化错误处理器）
   if (!silentUI) {
-    handleServerError(error)
+    showServerErrorToast(getServerErrorPresentation(error))
   }
 }
 

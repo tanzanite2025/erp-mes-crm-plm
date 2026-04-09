@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from '../services/dispatch-service'
@@ -7,6 +8,8 @@ import { RoutingService } from '../services/routing-service'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 
 const logger = createLogger('NotificationRules')
+
+type NotificationRuleCreateInput = Omit<NotificationRule, 'id' | 'createdAt'>
 
 /**
  * 通知规则管理 Hook (V2: 后端裁决架构)
@@ -36,7 +39,10 @@ export function useNotificationRules() {
         try {
             const orders = await getSalesOrders()
             // 扫描任务目前依然由前端驱动
-            await DispatchService.scanByRules(latestRules, orders.items)
+            const scannedCount = await DispatchService.scanByRules(latestRules, orders.items)
+            if (scannedCount > 0) {
+                toast.success(`扫描完成：已为 ${scannedCount} 项存量业务补偿了通知`)
+            }
         } catch (err) {
             logger.error('追溯扫描失败', err)
         }
@@ -46,8 +52,8 @@ export function useNotificationRules() {
 
     const addRule = useCallback(async (ruleData: Omit<NotificationRule, 'id' | 'createdAt' | 'version'>) => {
         try {
-            const ruleWithVersion = { ...ruleData, version: 1 }
-            const newRule = await RoutingService.saveRule(ruleWithVersion as any)
+            const ruleWithVersion: NotificationRuleCreateInput = { ...ruleData, version: 1 }
+            const newRule = await RoutingService.saveRule(ruleWithVersion)
             setRules(prev => [...prev, newRule])
             await triggerScan([...rules, newRule])
         } catch (err) {

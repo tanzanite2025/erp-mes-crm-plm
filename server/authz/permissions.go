@@ -3,6 +3,7 @@ package authz
 const (
 	MenuDashboard   = "menu_dashboard"
 	MenuWarehouse   = "menu_warehouse"
+	MenuMrp         = "menu_mrp"
 	MenuTrading     = "menu_trading"
 	MenuOrg         = "menu_org"
 	MenuEngineering = "menu_engineering"
@@ -73,6 +74,8 @@ const (
 const (
 	ActionApprovalConfigManage = "action_approval_config_manage"
 	ActionApprovalReview       = "action_approval_review"
+	ActionSystemWorkflowManage = "action_system_workflow_manage"
+	ActionSystemWorkflowReview = "action_system_workflow_review"
 )
 
 var AdminFallbackPermissions = []string{
@@ -83,6 +86,7 @@ var AdminFallbackPermissions = []string{
 	PermissionManage,
 	MenuDashboard,
 	MenuWarehouse,
+	MenuMrp,
 	MenuTrading,
 	MenuOrg,
 	MenuEngineering,
@@ -131,6 +135,7 @@ var AdminFallbackPermissions = []string{
 	ActionEquipmentTelemetryUpdate,
 	ActionApprovalConfigManage,
 	ActionApprovalReview,
+	ActionSystemWorkflowManage,
+	ActionSystemWorkflowReview,
 	MenuPDA,
 }
-

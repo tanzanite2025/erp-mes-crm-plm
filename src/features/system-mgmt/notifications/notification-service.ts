@@ -1,16 +1,34 @@
-import { useNotificationStore } from './notification-store'
+import { NotificationGateway } from './notification-gateway'
 import { createLogger } from '@/lib/logger'
-import { NotificationType, NotificationPriority } from './types'
+import { type NotificationType, type NotificationPriority, type SystemMessage } from './types'
 import { type StandardCommand } from '../workflow-core/data/schema'
 import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
 import { RoutingService } from '../workflow-core/services/routing-service'
 
 const logger = createLogger('NotificationService')
 
+type NotificationMetadata = Record<string, unknown>
+
+function getMetadataRecord(metadata: SystemMessage['metadata'] | undefined): NotificationMetadata {
+  return metadata && typeof metadata === 'object' ? metadata : {}
+}
+
+function getMetadataString(metadata: NotificationMetadata, key: string): string | undefined {
+  const value = metadata[key]
+  return typeof value === 'string' ? value : undefined
+}
+
+function getNestedManager(metadata: NotificationMetadata): string | undefined {
+  const approval = metadata.approval
+  if (!approval || typeof approval !== 'object') return undefined
+  const manager = (approval as Record<string, unknown>).manager
+  return typeof manager === 'string' ? manager : undefined
+}
+
 /**
  * 助手方法：解析模板中的变量 [Key] -> value
  */
-export function resolveTemplate(template: string, metadata: Record<string, any> = {}) {
+export function resolveTemplate(template: string, metadata: Record<string, unknown> = {}) {
   if (!template) return ''
   return template.replace(/\[(\w+)\]/g, (match, key) => {
     return metadata[key] !== undefined ? String(metadata[key]) : match
@@ -36,11 +54,9 @@ export const NotificationService = {
       priority?: NotificationPriority
       targetRoles?: string[]
       actionUrl?: string
-      metadata?: Record<string, any>
+      metadata?: NotificationMetadata
     }
   ) => {
-    const store = useNotificationStore.getState()
-    
     // ─── 核心变更：对接后端事实源 ───
     const [rules, stdCommands] = await Promise.all([
         RoutingService.getRules().catch(() => [] as NotificationRule[]),
@@ -65,7 +81,7 @@ export const NotificationService = {
     for (const rule of activeRules) {
         for (const segment of rule.segments) {
             
-            const metadata: Record<string, any> = {
+            const metadata: NotificationMetadata = {
                 ...data.metadata,
                 RuleId: rule.id,
                 SegmentId: segment.id,
@@ -81,14 +97,12 @@ export const NotificationService = {
             }
 
             if (data.targetStatus && segment.resolveOnStatuses?.includes(data.targetStatus)) {
-                const orderId = metadata.orderId || metadata.OrderId || metadata.id
+                const orderId = getMetadataString(metadata, 'orderId') || getMetadataString(metadata, 'OrderId') || getMetadataString(metadata, 'id')
                 if (orderId) {
-                    store.messages.forEach(m => {
-                        if ((m.metadata as any)?.OrderId === orderId && 
-                            (m.metadata as any)?.SegmentId === segment.id &&
-                            !m.isArchived) {
-                            store.archiveMessage(m.id)
-                        }
+                    NotificationGateway.archiveWhere((m) => {
+                        const messageMetadata = getMetadataRecord(m.metadata)
+                        return getMetadataString(messageMetadata, 'OrderId') === orderId && 
+                            getMetadataString(messageMetadata, 'SegmentId') === segment.id
                     })
                 }
             }
@@ -101,9 +115,9 @@ export const NotificationService = {
             let dynamicRoles: string[] = []
             if (segment.dynamicRoleField) {
                 const fieldMap: Record<string, () => string | undefined> = {
-                    'claimedBy': () => data.metadata?.claimedBy,
-                    'createdBy': () => data.metadata?.createdBy,
-                    'approval.manager': () => data.metadata?.approval?.manager,
+                    'claimedBy': () => getMetadataString(data.metadata || {}, 'claimedBy'),
+                    'createdBy': () => getMetadataString(data.metadata || {}, 'createdBy'),
+                    'approval.manager': () => getNestedManager(data.metadata || {}),
                 }
                 const resolved = fieldMap[segment.dynamicRoleField]?.()
                 if (resolved) dynamicRoles = [resolved]
@@ -116,7 +130,7 @@ export const NotificationService = {
                     const uniqueKey = `${metadata.orderId || metadata.OrderId || metadata.id || 'sys'}_${segment.id}_${cmdId}`
 
                     if (cmd) {
-                        store.addMessage({
+                        NotificationGateway.addMessage({
                             type,
                             title: cmd.title,
                             content: resolveTemplate(cmd.content, metadata),
@@ -132,7 +146,7 @@ export const NotificationService = {
                 }
             } else if (data.content) {
                 const uniqueKey = `${metadata.orderId || metadata.OrderId || metadata.id || 'sys'}_${segment.id}_fallback`
-                store.addMessage({
+                NotificationGateway.addMessage({
                     type,
                     title: data.title || segment.title,
                     content: data.content,

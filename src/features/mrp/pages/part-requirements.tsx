@@ -27,14 +27,14 @@ export function PartRequirements() {
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <PageHeader
         icon={Search}
-        title={t('trading.requirements.pageTitle')}
-        description={t('trading.requirements.pageDescription')}
+        title={t('mrp.requirements.pageTitle')}
+        description={t('mrp.requirements.pageDescription')}
       />
 
       <div className='p-1 h-full flex flex-col'>
         <div className='mb-4 px-2 pt-3'>
           <p className='text-[11px] font-bold text-muted-foreground/50 uppercase tracking-tight'>
-            {t('trading.requirements.helperText')}
+            {t('mrp.requirements.helperText')}
           </p>
         </div>
 

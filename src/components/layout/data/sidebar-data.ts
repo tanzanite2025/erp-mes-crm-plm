@@ -71,6 +71,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/trading'),
       },
       {
+        titleKey: 'sidebar.items.mrp',
+        url: '/mrp',
+        icon: Gauge,
+        permissionId: permissionIdForPath('/mrp'),
+      },
+      {
         titleKey: 'sidebar.items.purchaseManagement',
         url: '/purchase',
         icon: Truck,

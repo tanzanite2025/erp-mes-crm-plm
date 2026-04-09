@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
-import { aiAgentService, AgentSettings } from '@/features/ai-assistant/services/ai-agent-service'
+import { aiAgentService, type AgentSettings } from '@/features/ai-assistant/services/ai-agent-service'
 import { toast } from 'sonner'
 import { useSidebar } from './ui/sidebar'
 
@@ -114,7 +114,12 @@ function AgentConfigSection() {
 
   const handleForceRun = async () => {
     toast.info(t('configDrawer.agent.toasts.running'))
-    await aiAgentService.forceRun('AM_REVIEW')
+    try {
+      await aiAgentService.forceRun('AM_REVIEW')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '未知错误'
+      toast.error(`[AI 任务异常] ${message}`)
+    }
   }
 
   if (!settings) return null

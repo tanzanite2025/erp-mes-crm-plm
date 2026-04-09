@@ -11,9 +11,10 @@ const logger = createLogger('AiProtocolValidator')
 const ALLOWED_ROUTES = [
   '/',
   '/dashboard',
+  '/mrp',
+  '/mrp/requirements',
   '/trading/sales-orders',
   '/trading/customers',
-  '/trading/requirements',
   '/engineering/products',
   '/engineering-db/parts',
   '/warehouse/stock',

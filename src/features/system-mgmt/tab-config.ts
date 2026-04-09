@@ -1,8 +1,14 @@
 import type { TabItem } from '@/components/module-tabs'
 
 export const systemManagementTabs: TabItem[] = [
-  { key: 'status', label: '系统状态', href: '/system-management' },
-  { key: 'routing', label: '消息路由', href: '/system-management/routing' },
-  { key: 'ai-capability', label: 'AI 能力管控', href: '/system-management/ai-capability' },
-  { key: 'audit-engine', label: '审计引擎', href: '/system-management/audit-engine' },
+  { key: 'status', label: 'System Status', href: '/system-management' },
+  { key: 'routing', label: 'Message Routing', href: '/system-management/routing' },
+  {
+    key: 'workflow-definition',
+    label: 'Sales Workflow',
+    href: '/system-management/workflow-definition',
+  },
+  { key: 'ai-capability', label: 'AI Capability', href: '/system-management/ai-capability' },
+  { key: 'audit-engine', label: 'Audit Engine', href: '/system-management/audit-engine' },
 ]
+

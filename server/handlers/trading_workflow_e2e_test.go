@@ -261,7 +261,7 @@ func TestSavePurchaseOrderHandlerReturnsBadRequestWhenWorkflowDefinitionMissing(
 	require.Equal(t, int64(0), count)
 }
 
-func TestSaveSalesOrderHandlerReturnsBadRequestWhenWorkflowDefinitionMissing(t *testing.T) {
+func TestSaveSalesOrderHandlerAllowsSaveWhenWorkflowDefinitionMissing(t *testing.T) {
 	testDB := setupTradingWorkflowHandlerTestDB(t)
 
 	payload := `{"orderNo":"SO-E2E-NEG-001","orderName":"Sample SO","customerName":"Customer A","currency":"CNY","amount":700,"lines":[]}`
@@ -276,10 +276,18 @@ func TestSaveSalesOrderHandlerReturnsBadRequestWhenWorkflowDefinitionMissing(t *
 
 	SaveSalesOrderHandler(ctx)
 
-	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
-	require.Contains(t, recorder.Body.String(), "未找到可用流程定义")
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.SalesOrderResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "SO-E2E-NEG-001", response.OrderNo)
+	require.Empty(t, response.WorkflowInstanceID)
 
 	var count int64
 	require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("order_no = ?", "SO-E2E-NEG-001").Count(&count).Error)
-	require.Equal(t, int64(0), count)
+	require.Equal(t, int64(1), count)
+
+	var persisted models.SalesOrder
+	require.NoError(t, testDB.Where("order_no = ?", "SO-E2E-NEG-001").First(&persisted).Error)
+	require.Empty(t, persisted.WorkflowInstanceID)
 }

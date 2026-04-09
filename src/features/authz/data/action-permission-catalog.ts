@@ -97,6 +97,31 @@ const systemActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_system',
     routeBindings: ['POST /users/sync', 'POST /roles', 'DELETE /roles/:id', 'POST /system/configs', 'POST /org', 'POST /org/sync', 'DELETE /org/:id', 'POST /employees', 'PATCH /employees/status', 'POST /employees/sync', 'DELETE /employees/:id'],
   },
+  {
+    id: 'action_system_workflow_manage',
+    label: '系统：工作流定义维护',
+    desc: '允许查看与维护系统工作流定义，并创建流程实例。',
+    category: 'action',
+    parentId: 'menu_system',
+    routeBindings: [
+      'GET /workflows/definitions',
+      'POST /workflows/definitions',
+      'GET /workflows/instances',
+      'POST /workflows/instances',
+    ],
+  },
+  {
+    id: 'action_system_workflow_review',
+    label: '系统：工作流任务审核',
+    desc: '允许查看与处理工作流任务。',
+    category: 'action',
+    parentId: 'menu_system',
+    routeBindings: [
+      'GET /workflows/tasks',
+      'PATCH /workflows/tasks/:id/approve',
+      'PATCH /workflows/tasks/:id/reject',
+    ],
+  },
 ]
 
 const warehouseActions: LegacyActionPermissionEntry[] = [
@@ -407,8 +432,6 @@ const approvalActions: LegacyActionPermissionEntry[] = [
       'GET /approvals/configs',
       'POST /approvals/configs',
       'DELETE /approvals/configs/:id',
-      'POST /workflows/definitions',
-      'POST /workflows/instances',
     ],
   },
   {
@@ -420,8 +443,6 @@ const approvalActions: LegacyActionPermissionEntry[] = [
     routeBindings: [
       'GET /approvals/my',
       'PATCH /approvals/:id/approve',
-      'PATCH /workflows/tasks/:id/approve',
-      'PATCH /workflows/tasks/:id/reject',
     ],
   },
 ]

@@ -25,13 +25,13 @@ export const RequirementCoreService = {
   },
 
   getUniqueProductsSummary(data: MaterialRequirement[], locale: AppLocale): string {
-    const separator = translate(locale, 'trading.requirements.export.separator')
+    const separator = translate(locale, 'mrp.requirements.export.separator')
     const uniqueProducts = Array.from(
       new Set(data.flatMap((item) => item.sourceOrders.map((order) => order.productName)))
     )
 
     if (uniqueProducts.length > 3) {
-      return `${uniqueProducts.slice(0, 3).join(separator)} ${translate(locale, 'trading.requirements.export.productsMore', { count: uniqueProducts.length - 3 })}`
+      return `${uniqueProducts.slice(0, 3).join(separator)} ${translate(locale, 'mrp.requirements.export.productsMore', { count: uniqueProducts.length - 3 })}`
     }
     return uniqueProducts.join(separator)
   },
@@ -42,12 +42,12 @@ export const RequirementCoreService = {
     const { packQty, packUnit, factor, direction } = item.packaging
     const formula =
       direction === 'reverse'
-        ? translate(locale, 'trading.requirements.export.packagingFormulaReverse', {
+        ? translate(locale, 'mrp.requirements.export.packagingFormulaReverse', {
             unit: item.unit,
             factor,
             packUnit,
           })
-        : translate(locale, 'trading.requirements.export.packagingFormulaForward', {
+        : translate(locale, 'mrp.requirements.export.packagingFormulaForward', {
             unit: item.unit,
             factor,
             packUnit,
@@ -58,11 +58,11 @@ export const RequirementCoreService = {
 
   formatShortage(item: MaterialRequirement, locale: AppLocale): string {
     if (item.effectiveGap <= 0) {
-      return translate(locale, 'trading.requirements.export.shortageEnough')
+      return translate(locale, 'mrp.requirements.export.shortageEnough')
     }
 
     if (item.packaging) {
-      return translate(locale, 'trading.requirements.export.shortageWithPack', {
+      return translate(locale, 'mrp.requirements.export.shortageWithPack', {
         gap: item.effectiveGap.toFixed(1),
         unit: item.unit,
         packQty: item.packaging.packQty,

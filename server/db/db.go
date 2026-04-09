@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -75,6 +76,68 @@ func hardenSeedAdminRole() {
 		  AND (role IS NULL OR length(btrim(role)) = 0)
 	`).Error; err != nil {
 		log.Fatal("Failed to harden seed admin role:", err)
+	}
+}
+
+func ensureDefaultAdminRoleTemplate() {
+	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
+		return
+	}
+
+	fallbackPermissions := authz.DeduplicatePermissionIDs(authz.AdminFallbackPermissions)
+	serializedFallbackPermissions, err := json.Marshal(fallbackPermissions)
+	if err != nil {
+		log.Fatal("Failed to serialize admin fallback permissions:", err)
+	}
+
+	var adminRole models.Role
+	err = DB.Unscoped().Where("LOWER(role_id) = ?", "admin").First(&adminRole).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		created := models.Role{
+			RoleID:      "admin",
+			Label:       "Admin",
+			Color:       "bg-red-500/10 text-red-600 border-red-200",
+			Permissions: string(serializedFallbackPermissions),
+		}
+		if createErr := DB.Create(&created).Error; createErr != nil {
+			log.Fatal("Failed to create default admin role template:", createErr)
+		}
+		return
+	}
+	if err != nil {
+		log.Fatal("Failed to query admin role template:", err)
+	}
+
+	currentPermissions := authz.ParsePermissionIDs(adminRole.Permissions)
+	mergedPermissions := authz.DeduplicatePermissionIDs(append(currentPermissions, fallbackPermissions...))
+	serializedMergedPermissions, err := json.Marshal(mergedPermissions)
+	if err != nil {
+		log.Fatal("Failed to serialize merged admin permissions:", err)
+	}
+
+	needsUpdate := adminRole.Permissions != string(serializedMergedPermissions)
+	if strings.TrimSpace(adminRole.Label) == "" || strings.TrimSpace(adminRole.Color) == "" || adminRole.DeletedAt.Valid {
+		needsUpdate = true
+	}
+	if !needsUpdate {
+		return
+	}
+
+	updates := map[string]interface{}{
+		"permissions": string(serializedMergedPermissions),
+	}
+	if strings.TrimSpace(adminRole.Label) == "" {
+		updates["label"] = "Admin"
+	}
+	if strings.TrimSpace(adminRole.Color) == "" {
+		updates["color"] = "bg-red-500/10 text-red-600 border-red-200"
+	}
+	if adminRole.DeletedAt.Valid {
+		updates["deleted_at"] = nil
+	}
+
+	if updateErr := DB.Unscoped().Model(&adminRole).Updates(updates).Error; updateErr != nil {
+		log.Fatal("Failed to align default admin role template:", updateErr)
 	}
 }
 
@@ -301,6 +364,7 @@ func InitDB(dsn string) {
 		DB.Create(&superRole)
 		fmt.Println("Initial role 'admin' created with full permissions.")
 	}
+	ensureDefaultAdminRoleTemplate()
 
 	// 4. 闁煎浜滄慨鈺呭触鐏炵虎鍔勯柡浣哄瀹撲胶鈧稒顨呴崥鈧紒澶婄Т閻?(Seed)
 	fmt.Println("Migrating database schemas completed. Seeding system dictionary...")

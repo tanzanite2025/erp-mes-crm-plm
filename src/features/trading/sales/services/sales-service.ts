@@ -1,4 +1,4 @@
-import { useNotificationStore } from '@/features/system-mgmt/notifications/notification-store'
+import { NotificationGateway } from '@/features/system-mgmt/notifications/notification-gateway'
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
@@ -14,7 +14,7 @@ export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {
   await apiFetch<void>(`/sales-orders/${id}`, { method: 'DELETE' })
-  useNotificationStore.getState().archiveByOrderId(id)
+  NotificationGateway.archiveByOrderId(id)
 }
 
 export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {

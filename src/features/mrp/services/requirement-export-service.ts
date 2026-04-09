@@ -8,7 +8,7 @@ export const RequirementExportService = {
   async exportToExcel(data: MaterialRequirement[], locale: AppLocale) {
     const { default: ExcelJS } = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
-    const sheet = workbook.addWorksheet(translate(locale, 'trading.requirements.export.sheetName'))
+    const sheet = workbook.addWorksheet(translate(locale, 'mrp.requirements.export.sheetName'))
 
     sheet.columns = [
       { width: 12, key: 'section' },
@@ -38,23 +38,23 @@ export const RequirementExportService = {
 
     sheet.mergeCells('A1:A3')
     const logoCell = sheet.getCell('A1')
-    logoCell.value = translate(locale, 'trading.requirements.export.logo')
+    logoCell.value = translate(locale, 'mrp.requirements.export.logo')
     logoCell.font = { bold: true, size: 14 }
     logoCell.alignment = centerAlignment
     logoCell.border = thinBorder
 
     sheet.mergeCells('B1:E3')
     const titleCell = sheet.getCell('B1')
-    titleCell.value = translate(locale, 'trading.requirements.export.title')
+    titleCell.value = translate(locale, 'mrp.requirements.export.title')
     titleCell.font = { bold: true, size: 18 }
     titleCell.alignment = centerAlignment
     titleCell.border = thinBorder
 
     const today = new Date().toLocaleDateString(locale === 'zh-CN' ? 'zh-CN' : 'en-CA').replace(/\//g, '-')
 
-    sheet.getCell('I1').value = translate(locale, 'trading.requirements.export.docCode')
-    sheet.getCell('I2').value = translate(locale, 'trading.requirements.export.version')
-    sheet.getCell('I3').value = translate(locale, 'trading.requirements.export.effectiveDate')
+    sheet.getCell('I1').value = translate(locale, 'mrp.requirements.export.docCode')
+    sheet.getCell('I2').value = translate(locale, 'mrp.requirements.export.version')
+    sheet.getCell('I3').value = translate(locale, 'mrp.requirements.export.effectiveDate')
     sheet.getCell('J2').value = 'A1'
     sheet.getCell('J3').value = today
 
@@ -69,7 +69,7 @@ export const RequirementExportService = {
 
     sheet.mergeCells('A4:J4')
     const descCell = sheet.getCell('A4')
-    descCell.value = translate(locale, 'trading.requirements.export.description', {
+    descCell.value = translate(locale, 'mrp.requirements.export.description', {
       products: productList,
       count: data.length,
     })
@@ -82,16 +82,16 @@ export const RequirementExportService = {
     const headerRow = sheet.getRow(5)
     headerRow.height = 25
     headerRow.values = [
-      translate(locale, 'trading.requirements.export.headers.section'),
-      translate(locale, 'trading.requirements.export.headers.code'),
-      translate(locale, 'trading.requirements.export.headers.name'),
-      translate(locale, 'trading.requirements.export.headers.spec'),
-      translate(locale, 'trading.requirements.export.headers.unit'),
-      translate(locale, 'trading.requirements.export.headers.total'),
-      translate(locale, 'trading.requirements.export.headers.inventory'),
-      translate(locale, 'trading.requirements.export.headers.gap'),
-      translate(locale, 'trading.requirements.export.headers.packaging'),
-      translate(locale, 'trading.requirements.export.headers.remark'),
+      translate(locale, 'mrp.requirements.export.headers.section'),
+      translate(locale, 'mrp.requirements.export.headers.code'),
+      translate(locale, 'mrp.requirements.export.headers.name'),
+      translate(locale, 'mrp.requirements.export.headers.spec'),
+      translate(locale, 'mrp.requirements.export.headers.unit'),
+      translate(locale, 'mrp.requirements.export.headers.total'),
+      translate(locale, 'mrp.requirements.export.headers.inventory'),
+      translate(locale, 'mrp.requirements.export.headers.gap'),
+      translate(locale, 'mrp.requirements.export.headers.packaging'),
+      translate(locale, 'mrp.requirements.export.headers.remark'),
     ]
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: 'FF000000' } }
@@ -106,7 +106,7 @@ export const RequirementExportService = {
     sections.forEach((sectionName, sectionIndex) => {
       sheet.mergeCells(`A${currentRowNum}:J${currentRowNum}`)
       const sectionHeader = sheet.getCell(`A${currentRowNum}`)
-      sectionHeader.value = translate(locale, 'trading.requirements.export.sectionTitle', {
+      sectionHeader.value = translate(locale, 'mrp.requirements.export.sectionTitle', {
         section: sectionName,
         date: today,
       })
@@ -171,14 +171,14 @@ export const RequirementExportService = {
 
     sheet.mergeCells(`A${startFooterRow}:B${startFooterRow}`)
     const deptCell = sheet.getCell(`A${startFooterRow}`)
-    deptCell.value = translate(locale, 'trading.requirements.export.issueDept')
+    deptCell.value = translate(locale, 'mrp.requirements.export.issueDept')
     deptCell.border = thinBorder
     deptCell.alignment = centerAlignment
     deptCell.font = { size: 9 }
 
     sheet.mergeCells(`C${startFooterRow}:J${startFooterRow}`)
     const infoCell = sheet.getCell(`C${startFooterRow}`)
-    infoCell.value = translate(locale, 'trading.requirements.export.recipientInfo')
+    infoCell.value = translate(locale, 'mrp.requirements.export.recipientInfo')
     infoCell.border = thinBorder
     infoCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
     infoCell.font = { size: 9, italic: true }
@@ -187,16 +187,16 @@ export const RequirementExportService = {
     const signRow = sheet.getRow(signRowNum)
     signRow.height = 30
     signRow.values = [
-      translate(locale, 'trading.requirements.export.proofread'),
+      translate(locale, 'mrp.requirements.export.proofread'),
       '',
-      translate(locale, 'trading.requirements.export.review'),
+      translate(locale, 'mrp.requirements.export.review'),
       '',
-      translate(locale, 'trading.requirements.export.preparedBy'),
-      '',
-      '',
+      translate(locale, 'mrp.requirements.export.preparedBy'),
       '',
       '',
-      translate(locale, 'trading.requirements.export.preparedDate', { date: today }),
+      '',
+      '',
+      translate(locale, 'mrp.requirements.export.preparedDate', { date: today }),
     ]
     signRow.eachCell((cell, colNumber) => {
       cell.border = thinBorder
@@ -209,7 +209,7 @@ export const RequirementExportService = {
     const url = window.URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = translate(locale, 'trading.requirements.export.fileName', {
+    anchor.download = translate(locale, 'mrp.requirements.export.fileName', {
       date: new Date().toISOString().split('T')[0],
     })
     anchor.click()

@@ -15,6 +15,7 @@ export const sidebar = {
     dashboard: '仪表盘',
     warehouse: '仓储',
     salesManagement: '销售管理',
+    mrp: 'MRP',
     purchaseManagement: '采购管理',
     productEngineering: '产品工程管理',
     materialArchive: '物料档案',

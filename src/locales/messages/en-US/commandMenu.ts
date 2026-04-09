@@ -26,6 +26,7 @@ export const commandMenu = {
     systemSettings: 'System Settings',
     orgPersonnelCenter: 'Personnel & Accounts',
     warehouse: 'Warehouse',
+    mrp: 'MRP',
     trading: 'Trading Management',
     basicSettings: 'Basic Settings',
     terminalConfig: 'Terminal Config',

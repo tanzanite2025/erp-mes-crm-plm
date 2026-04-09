@@ -38,21 +38,21 @@ export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, sel
               <div className='space-y-1'>
                 <div className='flex items-center gap-4'>
                   <div className='px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] italic border border-primary/20'>
-                    {t('trading.requirements.drawer.badge')}
+                    {t('mrp.requirements.drawer.badge')}
                   </div>
                   <SheetTitle className='text-3xl font-black tracking-tighter italic uppercase'>
-                    {t('trading.requirements.drawer.title')}
+                    {t('mrp.requirements.drawer.title')}
                   </SheetTitle>
                 </div>
                 <SheetDescription className='text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest pl-1'>
-                  {t('trading.requirements.drawer.description', { count: selectedCount })}
+                  {t('mrp.requirements.drawer.description', { count: selectedCount })}
                 </SheetDescription>
               </div>
 
               <div className='flex items-center gap-2 pr-6'>
                 <Button variant='outline' size='sm' className='rounded-full h-11 px-6 text-[11px] font-black uppercase gap-2 border-2 border-dashed border-muted/50 hover:bg-muted/5' onClick={() => window.print()}>
                   <Printer className='size-4' />
-                  {t('trading.requirements.drawer.printList')}
+                  {t('mrp.requirements.drawer.printList')}
                 </Button>
                 <Button
                   size='sm'
@@ -60,8 +60,8 @@ export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, sel
                   onClick={async () => {
                     try {
                       await RequirementExportService.exportToExcel(data, locale)
-                      toast.success(t('trading.requirements.drawer.exportSuccess'), {
-                        description: t('trading.requirements.drawer.exportSuccessDescription'),
+                      toast.success(t('mrp.requirements.drawer.exportSuccess'), {
+                        description: t('mrp.requirements.drawer.exportSuccessDescription'),
                       })
                     } catch (error) {
                       failLoudly(error, 'RequirementDrawer.exportToExcel')
@@ -69,7 +69,7 @@ export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, sel
                   }}
                 >
                   <Download className='size-4' />
-                  {t('trading.requirements.drawer.exportExcel')}
+                  {t('mrp.requirements.drawer.exportExcel')}
                 </Button>
               </div>
             </div>
@@ -84,12 +84,12 @@ export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, sel
             <div className='flex items-center gap-4'>
               <span className='flex items-center gap-1.5 uppercase'>
                 <div className='size-1.5 rounded-full bg-primary' />
-                {t('trading.requirements.drawer.realtimeNotice')}
+                {t('mrp.requirements.drawer.realtimeNotice')}
               </span>
             </div>
             <div className='flex items-center gap-3'>
               <Share2 className='size-3 hover:text-primary cursor-pointer transition-colors' />
-              <span>{t('trading.requirements.drawer.shareLink')}</span>
+              <span>{t('mrp.requirements.drawer.shareLink')}</span>
             </div>
           </div>
         </div>
