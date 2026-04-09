@@ -42,18 +42,18 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
   return (
     <AlertDialog {...actions}>
       <AlertDialogContent className={cn(
-        'rounded-[32px] border-none shadow-2xl p-0 overflow-hidden w-[95vw] sm:max-w-[420px]',
+        'rounded-[32px] border-none shadow-2xl p-0 overflow-hidden w-[95vw] sm:max-w-[520px]',
         className
       )}>
         <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
         
         <div className='relative p-6 md:p-8'>
           <AlertDialogHeader className='text-start space-y-4'>
-            <AlertDialogTitle className='text-base md:text-lg font-black tracking-tighter uppercase italic'>
+            <AlertDialogTitle className='text-base md:text-lg font-black tracking-tight leading-tight whitespace-normal break-words [overflow-wrap:anywhere]'>
               {title}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className='text-[11px] md:text-[12px] font-bold text-muted-foreground/60 leading-relaxed'>
+              <div className='text-[11px] md:text-[12px] font-bold text-muted-foreground/60 leading-relaxed whitespace-normal break-words [overflow-wrap:anywhere]'>
                 {desc}
               </div>
             </AlertDialogDescription>
@@ -61,10 +61,10 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           
           {children && <div className='mt-6'>{children}</div>}
 
-          <AlertDialogFooter className='mt-8 flex flex-row items-center justify-end gap-3'>
+          <AlertDialogFooter className='mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end'>
             <AlertDialogCancel 
               disabled={isLoading}
-              className='flex-1 h-11 rounded-full hover:bg-muted font-black text-[10px] uppercase tracking-widest transition-colors border-none bg-muted/30 shadow-none'
+              className='w-full sm:flex-1 min-w-0 min-h-11 h-auto rounded-full px-4 py-3 hover:bg-muted font-black text-[11px] tracking-[0.12em] whitespace-normal break-words [overflow-wrap:anywhere] text-center leading-tight transition-colors border-none bg-muted/30 shadow-none'
             >
               {cancelBtnText ?? 'Cancel'}
             </AlertDialogCancel>
@@ -73,7 +73,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
               onClick={handleConfirm}
               disabled={disabled || isLoading}
               className={cn(
-                'flex-1 h-11 rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 text-white',
+                'w-full sm:flex-1 min-w-0 min-h-11 h-auto rounded-full px-4 py-3 font-black text-[11px] tracking-[0.12em] whitespace-normal break-words [overflow-wrap:anywhere] text-center leading-tight transition-all active:scale-95 text-white',
                 !destructive && 'bg-primary shadow-lg shadow-primary/20 hover:bg-primary/90'
               )}
             >

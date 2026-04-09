@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"math"
 	"testing"
 	"xdfc-server/models"
@@ -9,20 +8,20 @@ import (
 
 func TestSalesOrderRecalculateAuthorityCosts(t *testing.T) {
 	tests := []struct {
-		name     string
-		lines    []models.SalesOrderLine
-		wantQty  float64
-		wantAmt  float64
+		name    string
+		lines   []models.SalesOrderLine
+		wantQty float64
+		wantAmt float64
 	}{
 		{
-			name: "Basic rounding",
-			lines: []models.SalesOrderLine{{Qty: 1.333, Price: 10}}, // 1.333 * 10 = 13.33
+			name:    "Basic rounding",
+			lines:   []models.SalesOrderLine{{Qty: 1.333, Price: 10}}, // 1.333 * 10 = 13.33
 			wantQty: 1.333,
 			wantAmt: 13.33,
 		},
 		{
-			name: "Precision boundary 0.5 up",
-			lines: []models.SalesOrderLine{{Qty: 1, Price: 0.125}}, // 1 * 0.125 = 0.125 -> 0.13
+			name:    "Precision boundary 0.5 up",
+			lines:   []models.SalesOrderLine{{Qty: 1, Price: 0.125}}, // 1 * 0.125 = 0.125 -> 0.13
 			wantQty: 1.0,
 			wantAmt: 0.13,
 		},
@@ -48,7 +47,7 @@ func TestSalesOrderRecalculateAuthorityCosts(t *testing.T) {
 			if order.Amount != tt.wantAmt {
 				t.Errorf("got Amount %v, want %v", order.Amount, tt.wantAmt)
 			}
-			
+
 			// Verify lines
 			for i, line := range order.Lines {
 				expectedLineAmt := math.Round(tt.lines[i].Qty*tt.lines[i].Price*100) / 100

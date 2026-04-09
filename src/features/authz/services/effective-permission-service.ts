@@ -63,10 +63,13 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
       const sameRoles = areStringArraysEqualAsSet(nextRoleIds, currentUser.role)
       const currentPermissions = toUniquePermissionIds(currentUser.permissions || [])
       const samePermissions = areStringArraysEqualAsSet(currentPermissions, normalizedPermissions)
+      const nextEmployeeId = profile.employeeId?.trim() || undefined
+      const sameEmployeeId = (currentUser.employeeId || '').trim() === (nextEmployeeId || '')
 
-      if (!sameRoles || !samePermissions) {
+      if (!sameRoles || !samePermissions || !sameEmployeeId) {
         state.setUser({
           ...currentUser,
+          employeeId: nextEmployeeId,
           role: nextRoleIds,
           permissions: normalizedPermissions,
         }, 'profile_sync')
@@ -75,6 +78,7 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
       state.setUser({
         id: profile.id,
         accountNo: profile.employeeId || profile.id,
+        employeeId: profile.employeeId?.trim() || undefined,
         email: profile.email || '',
         username: profile.username,
         role: nextRoleIds,

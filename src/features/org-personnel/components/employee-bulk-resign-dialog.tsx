@@ -76,7 +76,7 @@ export function EmployeeBulkResignDialog<TData>({
             isLoading={isSubmitting}
             cancelBtnText={t('common.actions.cancel' as any)}
             title={
-                <>
+                <span className='text-start leading-tight whitespace-normal break-words [overflow-wrap:anywhere]'>
                     <UserX
                         className='me-2 inline-block'
                         size={18}
@@ -84,7 +84,7 @@ export function EmployeeBulkResignDialog<TData>({
                     {t('orgPersonnel.list.bulk.resignDialog.title' as any, {
                         count: selectedRows.length,
                     })}
-                </>
+                </span>
             }
             desc={
                 <div className='flex flex-col gap-6 text-start animate-in fade-in duration-500'>
@@ -93,7 +93,7 @@ export function EmployeeBulkResignDialog<TData>({
                     </p>
 
                     <Label className='flex flex-col items-start gap-3'>
-                        <span className='text-[10px] font-black uppercase tracking-widest opacity-50'>
+                        <span className='text-[10px] font-black tracking-[0.14em] opacity-50 whitespace-normal break-words [overflow-wrap:anywhere]'>
                             {t('orgPersonnel.list.bulk.resignDialog.confirmWordLabel' as any, {
                                 word: CONFIRM_WORD,
                             })}
@@ -113,11 +113,11 @@ export function EmployeeBulkResignDialog<TData>({
                         variant='destructive'
                         className='border-dashed rounded-[20px] bg-destructive/5 border-destructive/20'
                     >
-                        <AlertTitle className='text-[10px] font-black uppercase tracking-widest flex items-center gap-2'>
+                        <AlertTitle className='text-[11px] font-black tracking-[0.12em] whitespace-normal break-words [overflow-wrap:anywhere] flex items-center gap-2'>
                             <AlertTriangle className='size-3.5' />
                             {t('orgPersonnel.list.bulk.resignDialog.warningTitle' as any)}
                         </AlertTitle>
-                        <AlertDescription className='text-[9px] font-bold uppercase tracking-widest opacity-70 mt-1 leading-normal'>
+                        <AlertDescription className='text-[11px] font-semibold leading-relaxed opacity-70 mt-1 whitespace-normal break-words [overflow-wrap:anywhere]'>
                             {t('orgPersonnel.list.bulk.resignDialog.warningDesc' as any)}
                         </AlertDescription>
                     </Alert>

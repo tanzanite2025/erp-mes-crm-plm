@@ -17,6 +17,7 @@ type LegacyAuthPersistShape = {
 export interface AuthUser {
   id: string
   accountNo: string
+  employeeId?: string
   email: string
   username: string
   role: string[]

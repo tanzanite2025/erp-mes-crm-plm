@@ -183,6 +183,7 @@ export function UserAuthForm({
           setUser({
             id: result.user.id,
             accountNo: result.user.employeeId || result.user.id,
+            employeeId: result.user.employeeId?.trim() || undefined,
             email: result.user.email || data.email,
             username: result.user.username,
             role: effectiveRoleIds,

@@ -640,3 +640,143 @@ go test ./handlers ./routes ./services -run Purchase
 - 采购头部供应商主体切换已具备独立 transaction 语义；
 - `purchase` 编辑弹窗对纯供应商主体切换与混合编辑的分流边界清晰；
 - 当前无需重复补码，可直接视为本轮治理项已完成并已完成验证收尾。
+
+## 请假管理模块闭环（仅本人申请）
+
+### 本轮完成内容
+- 前端身份链补齐：`AuthUser` 新增 `employeeId`，登录成功与 `/auth/snapshot` 同步流程都会将当前用户绑定的员工档案 ID 写入 store，解决“仅本人申请”场景下前端拿不到员工身份的问题。
+- 后端请假 authority 链路补齐：新增 `server/services/leave_service.go`、`server/handlers/leave_handlers.go`、`server/routes/routes_leave.go`，正式提供 `GET /leaves/my`、`GET /leaves/stats`、`POST /leaves/preview`、`POST /leaves`、`POST /leaves/:id/cancel`。
+- 后端严格限定“仅本人申请”：服务层通过当前登录用户 `userId -> users.employee_id -> employees.id` 解析员工身份，创建与试算均以后端解析出的本人员工档案为准，不信任前端传入 `employeeId`。
+- 后端权威试算 `durationDays`：新增请假试算逻辑，由后端依据开始/结束时间统一计算请假天数，前端不再提交终裁后的 `durationDays`。
+- 前端新增独立提交链路：`leave-service.ts` 对齐新的后端契约；新增 `use-submit-leave-request.ts`；新增 `components/leave-action-dialog.tsx`，将表单、试算、提交、刷新职责隔离。
+- 请假页面闭环：`leave-management.tsx` 现在可打开“新建请假申请”对话框，提交成功后自动刷新“我的请假记录”和统计卡片。
+
+### 关键实现边界
+- 本轮仅支持“本人申请”，未实现代他人申请入口。
+- `employeeId` 以后端身份绑定为准，前端仅消费，不参与授权裁决。
+- `durationDays` 由后端 authority 试算返回，前端只做展示。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./routes ./services
+```
+
+结果：通过。
+
+### 本轮结论
+请假管理模块已从只读 mock 页面推进为“仅本人申请”的真实闭环：
+
+- 当前登录用户可基于已绑定的员工档案发起请假申请；
+- 提交前可调用后端权威试算获取请假天数；
+- 提交成功后列表与统计即时刷新；
+- 后端已具备正式路由、身份约束与最小撤销能力，前后端契约已对齐。
+
+## 请假管理模块回归补强
+
+### 本轮完成内容
+- 新增 `server/services/leave_service_test.go`，覆盖请假服务的核心边界：
+  - 当前登录用户绑定员工档案后，试算结果必须返回本人 `employeeId` 与 `employeeName`；
+  - 创建请假申请时，记录必须以本人身份落库，并保持 `PENDING` 状态；
+  - 其他员工不得撤销非本人请假申请；
+  - 统计接口需正确聚合 `pending/approved/rejected` 数量，并仅累计本人已批准工日。
+- 新增 `server/handlers/leave_handlers_test.go`，覆盖处理器层关键契约：
+  - 未登录/缺少 `userId` 上下文时，请假试算返回 `401`；
+  - 请假创建成功时，返回体需包含新建记录 ID、本人 `employeeId`、`employeeName`、`PENDING` 状态及正确 `durationDays`。
+- 修复 `server/services/leave_service.go` 的隐式数据库默认值依赖：创建请假申请时改为应用层生成 ID，不再依赖数据库默认 UUID。这样既兼容现有 Postgres，也避免 SQLite 测试环境下记录 ID 为空的问题。
+- 为避免 SQLite 与 Postgres 方言差异导致误报，本轮新增测试全部采用“手工建最小表结构”的方式，而不是直接对带 `gen_random_uuid()` 默认值的模型执行 `AutoMigrate`。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run Leave
+go test ./handlers ./routes ./services
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+请假管理模块不仅完成了“仅本人申请”功能闭环，也补齐了自动化回归兜底：
+
+- 关键业务约束已通过测试固化；
+- 请假记录创建不再隐式依赖数据库默认主键生成；
+- 前后端闭环在编译与后端回归层面均已验证通过。
+
+## 请假管理前端交互细化
+
+### 本轮完成内容
+- 新增 `src/features/org-personnel/hooks/use-cancel-leave-request.ts`，将请假撤销能力单独封装为独立 hook，统一负责：
+  - 调用 `LeaveService.cancelLeaveRequest(...)`；
+  - 成功后失效“我的请假记录”和“请假统计”查询；
+  - 统一 toast 成功/失败反馈。
+- 增强 `src/features/org-personnel/tabs/leave-management.tsx` 的展示层：
+  - 将请假状态从后端枚举值映射为中文文案：`待审批 / 已通过 / 已拒绝 / 已撤销`；
+  - 为不同状态补充更清晰的 Badge 视觉区分；
+  - 将请假类型从英文枚举映射为中文文案；
+  - 将 `startTime / endTime` 统一格式化为 `zh-CN` 本地可读时间；
+  - 对 `PENDING` 状态记录显示“撤销申请”按钮，并在请求处理中显示“撤销中...”。
+
+### 本轮设计约束
+- 本轮未引入前端权限硬拦截；“是否允许撤销”继续以后端校验为准。
+- 本轮只优化展示层与交互接线，不改变后端接口结构与时间传输事实。
+- 后端排班/节假日 authority 算法升级按本轮决策暂缓，未在本次执行中落地。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+请假管理页面已从“最小闭环”提升到更可用的正式交互态：
+
+- 列表状态与请假类型不再直接暴露原始枚举；
+- 时间信息对业务用户更可读；
+- 待审批请假单已具备撤销入口，且撤销后能回到真实后端状态。
+
+## 请假列表筛选、排序与详情展示
+
+### 本轮完成内容
+- 将请假列表的展示工具从页面内联逻辑中抽离到 `src/features/org-personnel/data/leave-display.ts`：
+  - 统一维护请假状态中文映射；
+  - 统一维护请假类型中文映射；
+  - 统一维护时间格式化；
+  - 新增基于现有列表数据的筛选与排序派生函数。
+- 新增 `src/features/org-personnel/components/leave-list-toolbar.tsx`：
+  - 支持按状态筛选；
+  - 支持按请假类型筛选；
+  - 支持按开始时间正序 / 倒序排序。
+- 新增 `src/features/org-personnel/components/leave-detail-dialog.tsx`：
+  - 可查看员工姓名与员工 ID；
+  - 可查看请假类型、状态、开始时间、结束时间、工日与请假事由；
+  - 与列表摘要使用同一套状态/类型/时间显示逻辑，避免展示漂移。
+- 增强 `src/features/org-personnel/tabs/leave-management.tsx`：
+  - 页面负责维护筛选条件、排序条件与当前选中详情记录；
+  - 列表渲染改为使用派生后的 `visibleLeaves`；
+  - 新增“查看详情”入口；
+  - 在筛选后无结果时显示独立空态；
+  - 保持现有撤销按钮与撤销刷新链路不变。
+
+### 本轮设计约束
+- 本轮继续基于现有 `LeaveService.getMyLeaveRequests()` 返回的数据完成增强，未扩展新的后端查询参数。
+- 排序使用当前稳定存在的 `startTime` 字段，不依赖假设一定存在的其他时间事实。
+- 详情展示采用独立 Dialog 组件，避免把列表卡片继续膨胀为复杂明细面板。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+请假管理页面已进一步具备“可浏览、可定位、可查看明细”的列表体验：
+
+- 用户可以按状态和类型快速筛选请假记录；
+- 用户可以按开始时间切换排序方式；
+- 用户可以查看每条请假记录的完整详情，而不必依赖列表摘要信息。

@@ -37,3 +37,23 @@ export const leaveRequestSchema = z.object({
 })
 
 export type LeaveRequest = z.infer<typeof leaveRequestSchema>
+
+export const leavePreviewSchema = z.object({
+  employeeId: z.string(),
+  employeeName: z.string().optional(),
+  leaveType: leaveTypeSchema,
+  startTime: z.string(),
+  endTime: z.string(),
+  durationDays: z.number().min(0.5),
+})
+
+export type LeavePreview = z.infer<typeof leavePreviewSchema>
+
+export const leaveCreateFormSchema = z.object({
+  leaveType: leaveTypeSchema,
+  startTime: z.string().min(1),
+  endTime: z.string().min(1),
+  reason: z.string().min(1, 'orgPersonnel.validation.leaveReasonRequired'),
+})
+
+export type LeaveCreateForm = z.infer<typeof leaveCreateFormSchema>

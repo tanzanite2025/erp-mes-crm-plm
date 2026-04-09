@@ -25,7 +25,7 @@ export function EmployeeMultiDeleteDialog<TData>({
     onDelete,
 }: EmployeeMultiDeleteDialogProps<TData>) {
     const { t } = useLanguage()
-    const CONFIRM_WORD = t('common.delete' as any) || 'DELETE'
+    const CONFIRM_WORD = t('common.actions.delete' as any) || 'DELETE'
     const [value, setValue] = useState('')
 
     const selectedRows = table.getFilteredSelectedRowModel().rows
@@ -62,7 +62,7 @@ export function EmployeeMultiDeleteDialog<TData>({
             handleConfirm={handleDelete}
             disabled={value.trim() !== CONFIRM_WORD}
             title={
-                <span className='text-destructive text-start uppercase'>
+                <span className='text-destructive text-start leading-tight whitespace-normal break-words [overflow-wrap:anywhere]'>
                     <AlertTriangle
                         className='me-1 inline-block stroke-destructive'
                         size={18}
@@ -77,7 +77,7 @@ export function EmployeeMultiDeleteDialog<TData>({
                     </p>
 
                     <Label className='my-4 flex flex-col items-start gap-2'>
-                        <span className='text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.list.bulk.deleteDialog.confirmWordLabel' as any, { word: CONFIRM_WORD })}</span>
+                        <span className='text-[10px] font-black tracking-[0.14em] opacity-60 whitespace-normal break-words [overflow-wrap:anywhere]'>{t('orgPersonnel.list.bulk.deleteDialog.confirmWordLabel' as any, { word: CONFIRM_WORD })}</span>
                         <Input
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
@@ -87,10 +87,10 @@ export function EmployeeMultiDeleteDialog<TData>({
                     </Label>
 
                     <Alert variant='destructive'>
-                        <AlertTitle className='text-[10px] font-black uppercase tracking-widest'>
+                        <AlertTitle className='text-[11px] font-black tracking-[0.12em] whitespace-normal break-words [overflow-wrap:anywhere]'>
                             {t('orgPersonnel.list.bulk.deleteDialog.warningTitle' as any)}
                         </AlertTitle>
-                        <AlertDescription className='text-[9px] font-bold uppercase tracking-widest opacity-80'>
+                        <AlertDescription className='text-[11px] font-semibold leading-relaxed opacity-80 whitespace-normal break-words [overflow-wrap:anywhere]'>
                             {t('orgPersonnel.list.bulk.deleteDialog.warningDesc' as any)}
                         </AlertDescription>
                     </Alert>
@@ -98,7 +98,7 @@ export function EmployeeMultiDeleteDialog<TData>({
             }
             confirmText={t('orgPersonnel.list.bulk.deleteDialog.submit' as any)}
             destructive
-            cancelBtnText={t('common.cancel' as any)}
+            cancelBtnText={t('common.actions.cancel' as any)}
         />
     )
 }
