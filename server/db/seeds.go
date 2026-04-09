@@ -3,8 +3,8 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"xdfc-server/models"
 	"gorm.io/gorm"
+	"xdfc-server/models"
 )
 
 // SeedDictionary 执行系统字典初始化 (可在 InitDB 中调用)
@@ -100,7 +100,7 @@ func SeedDictionary(database *gorm.DB) error {
 			if err := tx.Unscoped().Where("code = ?", g.Code).Limit(1).Find(&existing).Error; err != nil {
 				return fmt.Errorf("failed to query group %s: %w", g.Code, err)
 			}
-			
+
 			if existing.ID == "" {
 				// 记录完全不存在，新建
 				if err := tx.Create(&g).Error; err != nil {
@@ -127,30 +127,35 @@ func SeedDictionary(database *gorm.DB) error {
 
 			var existing models.DictEntry
 			optsJSON, _ := json.Marshal(se.Options)
-			
+
 			// 使用 Limit(1).Find 识别记录，防止日志噪音
 			if err := tx.Unscoped().Where("code = ?", se.Code).Limit(1).Find(&existing).Error; err != nil {
 				return fmt.Errorf("failed to query entry %s: %w", se.Code, err)
 			}
 
 			if existing.ID != "" {
-				// 记录已存在（或在回收站），执行全量更新并确保恢复 deleted_at
-				if err := tx.Unscoped().Model(&existing).Updates(map[string]interface{}{
-					"group_id":   group.ID,
-					"label":      se.Label,
-					"options":    optsJSON,
-					"deleted_at": nil,
-					"active":     true,
-				}).Error; err != nil {
-					return fmt.Errorf("failed to update entry %s: %w", se.Code, err)
+				// 根因治理: Seed 只负责“补齐缺失/恢复被删记录”，不覆盖已有业务维护值
+				if existing.DeletedAt.Valid {
+					if err := tx.Unscoped().Model(&existing).Updates(map[string]interface{}{
+						"deleted_at": nil,
+						"active":     true,
+						"is_system":  true,
+					}).Error; err != nil {
+						return fmt.Errorf("failed to reactivate entry %s: %w", se.Code, err)
+					}
+				} else if !existing.IsSystem {
+					// 对历史数据做一次对齐: 标记为系统项，但保持原有 label/options 不变
+					if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
+						return fmt.Errorf("failed to align entry %s system flag: %w", se.Code, err)
+					}
 				}
 			} else {
 				// 记录完全不存在，新建
 				if err := tx.Create(&models.DictEntry{
-					GroupID: group.ID,
-					Label:   se.Label,
-					Code:    se.Code,
-					Options: optsJSON,
+					GroupID:  group.ID,
+					Label:    se.Label,
+					Code:     se.Code,
+					Options:  optsJSON,
 					IsSystem: true,
 				}).Error; err != nil {
 					return fmt.Errorf("failed to create entry %s: %w", se.Code, err)

@@ -122,12 +122,12 @@ func TestSaveEquipmentPartnerRequestBinding(t *testing.T) {
 func TestPatchDrawingDeltaRequestBinding(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	payload := services.DeltaHandlerRequest{
+	payload := services.SDRTSDeltaHandlerRequest{
 		Op: "PATCH",
 		Delta: map[string]json.RawMessage{
 			"status": json.RawMessage(`{"o":"DRAFT","n":"ACTIVE"}`),
 		},
-		Metadata: services.DeltaMetadata{
+		Metadata: services.SDRTSDeltaMetadata{
 			ID:      "drawing-1",
 			Version: 2,
 		},
@@ -142,7 +142,7 @@ func TestPatchDrawingDeltaRequestBinding(t *testing.T) {
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 
-	var bound services.DeltaHandlerRequest
+	var bound services.SDRTSDeltaHandlerRequest
 	err = ctx.ShouldBindJSON(&bound)
 	require.NoError(t, err)
 	require.Equal(t, payload.Op, bound.Op)

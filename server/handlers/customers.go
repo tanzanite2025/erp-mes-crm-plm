@@ -150,7 +150,7 @@ func SaveCustomerHandler(c *gin.Context) {
 
 func PatchCustomerHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[VALIDATION] 客户更新数据格式错误: " + err.Error(),
@@ -207,7 +207,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		if err := tx.Where("id = ? AND is_deleted = ?", id, false).First(&existing).Error; err != nil {
 			return err
 		}
-		if req.Metadata.Version != existing.Version {
+		if req.Metadata.Version != int64(existing.Version) {
 			return ErrVersionConflict
 		}
 

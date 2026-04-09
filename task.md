@@ -1,4 +1,36 @@
 - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+- [ ] 595. 清理 sales_orders PATCH 硬切后的残留引用（2026-04-09，待确认）
+  - [ ] 范围限定为 `server/handlers/sales_orders.go` 及其直接受影响的最小调用面。
+  - [ ] 目标是移除对已删除 `PatchSalesOrderRequest` / `MapPatchSalesOrderRequestToModel` 的残留引用，恢复 `handlers` 包编译。
+  - [ ] 本轮不重开销售单 PATCH 语义，不回滚 hard-cut 设计，只做残留清理。
+  - [ ] 完成后需补 `walkthrough.md` 记录并重新验证 `go test ./handlers -run ^$`。
+
+- [ ] 596. 冻结本轮范围，规划“按模块 / 五层链路输出 DTO 现状总表”（2026-04-09，待批准）
+  - [ ] 本轮聚焦把当前 DTO 治理现状整理为一份可执行的全局总表，不直接进入新的业务代码改造。
+  - [ ] 本轮目标是按模块与五层链路统一回答“哪些链路已完整 DTO 化、哪些仍半接入、哪些仍直通/伪 DTO”。
+  - [ ] 在你批准前，本阶段只更新 `task.md` 与 `implementation_plan.md`，不直接修改前后端业务代码。
+
+- [ ] 597. 固化当前 DTO 现状总表规划的已确认事实链
+  - [ ] 当前仓库已完成 DTO 审计口径建立，并已执行三批后端 DTO 治理，但尚未形成覆盖全模块的总表。
+  - [ ] 当前后端已存在 A 级样板、B/C 级已治理链路与局部 service DTO 收口事实，但前端 contract / adapter 闭环仍明显不均衡。
+  - [ ] 因此，下一步不能继续只按零散文件推进，而需要先把模块级现状、链路断点与优先级统一映射出来。
+
+- [ ] 598. 明确本轮 DTO 现状总表的目标产物
+  - [ ] 输出一份按模块组织的 DTO 现状总表，每个模块都按“HTTP 入站 / service 边界 / 持久化模型 / HTTP 出站 / 前端契约消费”五层记录现状。
+  - [ ] 为每个模块给出统一等级判断（A/B/C/D）以及关键证据，避免继续凭印象判断完成度。
+  - [ ] 在总表基础上产出下一轮整体收口顺序，而不是继续随机挑接口修补。
+
+- [ ] 599. 明确实施前关键设计约束
+  - [ ] 总表不能只统计有没有 `DTO` / `Request` / `Response` 命名，必须结合 mapper、service 签名、handler 绑定目标与前端 contract 形态综合判断。
+  - [ ] 总表必须同时覆盖后端与前端，避免只列后端 handler 而遗漏前端仍直接消费实体结构的漂移风险。
+  - [ ] 收口顺序必须以链路风险、影响面、样板复用价值为依据，不能退化为“哪个文件最近改过就先做哪个”。
+  - [ ] 在你批准前，本阶段只沉淀总表结构、模块范围、排序规则与产出形式，不直接开始新一轮 DTO 代码改造。
+
+- [ ] 600. 明确待批准后的执行顺序与验收口径
+  - [ ] 批准后先编制 DTO 现状总表，再基于总表确定下一轮优先治理模块，而不是先改代码后补台账。
+  - [ ] 总表至少覆盖核心业务域、共享基础设施域与前端主要消费域，并为每个模块标注五层状态、综合等级、主要问题与建议动作。
+  - [ ] 完成后至少验证：总表可直接支撑下一轮治理排期；收口顺序有明确依据；`walkthrough.md` 可据此持续记录后续每轮推进结果。
+
 - [x] 594. 执行第三批 DTO 治理（2026-04-09，已完成）
   - [x] 第三批范围已覆盖 `server/services/organization_service.go`、`server/services/org_personnel_patch_service.go`、`server/handlers/org_handlers.go`、`server/handlers/employee_handlers.go`、`server/handlers/org_bulk_sync_handlers.go`。
   - [x] 已优先收口 `organization_service / org-personnel` 的 service 边界：`SaveOrganization`、`SaveEmployee`、`BulkSyncOrganizations`、`BulkSyncEmployees` 不再公开暴露 `models.Organization` / `models.Employee` 作为保存与批量同步契约。

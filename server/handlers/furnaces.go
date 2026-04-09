@@ -173,7 +173,7 @@ func SaveFurnaceHandler(c *gin.Context) {
 // PatchFurnaceHandler 局部更新炉台 (差分更新支持)
 func PatchFurnaceHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input services.DeltaHandlerRequest
+	var input services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
 		return

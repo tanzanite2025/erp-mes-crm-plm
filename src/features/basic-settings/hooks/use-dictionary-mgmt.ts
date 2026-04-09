@@ -4,68 +4,67 @@ import { useLanguage } from '@/context/language-provider'
 import { type DictionaryEntry, type DictionaryGroup } from '../data/schema'
 import { DictionaryCoreService } from '../services/dictionary-core-service'
 import { DictionaryMaintenanceService } from '../services/dictionary-maintenance-service'
-import { createDraftEntry, createNewGroup, filterEntries } from '../utils/dictionary-mgmt-utils'
+import { createDraftEntry, filterEntries } from '../utils/dictionary-mgmt-utils'
+
+function buildGroupCode(name: string) {
+    const base = name
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+    return `${base || 'GROUP'}_${Date.now()}`
+}
 
 export function useDictionaryMgmt() {
     const { t } = useLanguage()
-    
-    // 核心状态自治
+    const showActionError = (err: unknown) => {
+        const message = err instanceof Error ? err.message : '操作失败，请稍后重试'
+        toast.error(message)
+    }
+
     const [groups, setGroups] = useState<DictionaryGroup[]>([])
     const [entries, setEntries] = useState<DictionaryEntry[]>([])
     const [activeGroupId, setActiveGroupId] = useState<string>('')
     const [searchTerm, setSearchTerm] = useState('')
     const [isSyncing, setIsSyncing] = useState(false)
-    
-    // 弹窗与编辑状态
     const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<DictionaryEntry | null>(null)
 
-    // 1. 初始化与数据刷新逻辑
-    const refreshData = useCallback(async (silent = false) => {
-        if (!silent) setIsSyncing(true)
-        try {
-            await DictionaryCoreService.init()
-            const initialGroups = DictionaryCoreService.getGroups()
-            const initialEntries = DictionaryCoreService.getEntries()
-            
-            setGroups(initialGroups)
-            setEntries(initialEntries)
-            
-            // 如果没有激活分组，默认选中第一个
-            if (initialGroups.length > 0 && !activeGroupId) {
-                setActiveGroupId(initialGroups[0].id)
-            }
-        } finally {
-            if (!silent) setIsSyncing(false)
+    const applySnapshot = useCallback(() => {
+        const nextGroups = DictionaryCoreService.getGroups()
+        const nextEntries = DictionaryCoreService.getEntries()
+        setGroups(nextGroups)
+        setEntries(nextEntries)
+        if (nextGroups.length > 0 && !activeGroupId) {
+            setActiveGroupId(nextGroups[0].id)
         }
     }, [activeGroupId])
 
+    const refreshData = useCallback(async (silent = false, forceReload = false) => {
+        if (!silent) setIsSyncing(true)
+        try {
+            if (forceReload) {
+                await DictionaryCoreService.refresh()
+            } else {
+                await DictionaryCoreService.init()
+            }
+            applySnapshot()
+        } finally {
+            if (!silent) setIsSyncing(false)
+        }
+    }, [applySnapshot])
+
     useEffect(() => {
-        void refreshData()
-        
-        const handleUpdate = () => void refreshData(true)
+        void refreshData(false, true)
+
+        const handleUpdate = () => applySnapshot()
         window.addEventListener('xdfc_dictionary_updated', handleUpdate)
         return () => window.removeEventListener('xdfc_dictionary_updated', handleUpdate)
-    }, [refreshData])
+    }, [applySnapshot, refreshData])
 
-    // 2. 派生状态
     const filteredEntries = useMemo(() => {
         return filterEntries(entries, activeGroupId, searchTerm)
     }, [entries, activeGroupId, searchTerm])
-
-    // 3. 业务操作封装
-    
-    // 保存分组
-    const saveGroups = async (newGroups: DictionaryGroup[]) => {
-        setGroups(newGroups)
-        await DictionaryMaintenanceService.saveGroups(newGroups)
-    }
-
-    // 保存字典项
-    const saveEntries = async (newEntries: DictionaryEntry[]) => {
-        setEntries(newEntries)
-        await DictionaryMaintenanceService.saveEntries(newEntries)
-    }
 
     const handleSyncSystem = async () => {
         setIsSyncing(true)
@@ -84,11 +83,19 @@ export function useDictionaryMgmt() {
 
     const handleAddGroup = async () => {
         const name = window.prompt(t('basicSettings.dictionaryActions.prompts.newGroup'))
-        if (name) {
-            const newGroup = createNewGroup(name)
-            await saveGroups([...groups, newGroup])
-            setActiveGroupId(newGroup.id)
+        if (!name) return
+
+        try {
+            const created = await DictionaryMaintenanceService.createGroup({
+                name,
+                code: buildGroupCode(name),
+                active: true,
+            })
+            await refreshData(true)
+            setActiveGroupId(created.id)
             toast.success(t('basicSettings.dictionaryActions.toasts.groupCreated', { name }))
+        } catch (err) {
+            showActionError(err)
         }
     }
 
@@ -97,26 +104,37 @@ export function useDictionaryMgmt() {
         if (!group) return
 
         if (window.confirm(t('basicSettings.dictionaryActions.prompts.deleteGroup', { name: group.name }))) {
-            const newGroups = groups.filter((item) => item.id !== groupId)
-            const newEntries = entries.filter((item) => item.groupId !== groupId)
+            try {
+                await DictionaryMaintenanceService.deleteGroup(group.code)
+                await refreshData(true)
 
-            await Promise.all([saveGroups(newGroups), saveEntries(newEntries)])
-
-            if (activeGroupId === groupId && newGroups.length > 0) {
-                setActiveGroupId(newGroups[0].id)
+                if (activeGroupId === groupId) {
+                    const remainingGroups = DictionaryCoreService.getGroups()
+                    setActiveGroupId(remainingGroups[0]?.id ?? '')
+                }
+                toast.success(t('basicSettings.dictionaryActions.toasts.groupDeleted', { name: group.name }))
+            } catch (err) {
+                showActionError(err)
             }
-            toast.success(t('basicSettings.dictionaryActions.toasts.groupDeleted', { name: group.name }))
         }
     }
 
     const handleEditGroup = async (group: DictionaryGroup) => {
         const newName = window.prompt(t('basicSettings.dictionaryActions.prompts.renameGroup'), group.name)
-        if (newName && newName !== group.name) {
-            const newGroups = groups.map((item) =>
-                item.id === group.id ? { ...item, name: newName } : item
-            )
-            await saveGroups(newGroups)
+        if (!newName || newName === group.name) return
+        try {
+            if (!group.updatedAt) {
+                throw new Error('Missing group version for conflict-safe update')
+            }
+
+            await DictionaryMaintenanceService.patchGroup(group.code, {
+                name: newName,
+                version: group.updatedAt,
+            })
+            await refreshData(true)
             toast.success(t('basicSettings.dictionaryActions.toasts.groupUpdated'))
+        } catch (err) {
+            showActionError(err)
         }
     }
 
@@ -131,27 +149,58 @@ export function useDictionaryMgmt() {
     }
 
     const handleConfirmEntry = async (data: DictionaryEntry) => {
-        if (editingEntry && editingEntry.id !== '') {
-            await saveEntries(entries.map((item) => (item.id === editingEntry.id ? data : item)))
-            toast.success(t('basicSettings.dictionaryActions.toasts.entryUpdated', { label: data.label }))
-        } else {
-            const newEntry = { ...data, id: crypto.randomUUID() }
-            await saveEntries([...entries, newEntry])
-            toast.success(t('basicSettings.dictionaryActions.toasts.entryCreated', { label: data.label }))
+        try {
+            if (editingEntry && editingEntry.id !== '') {
+                if (!editingEntry.code || !editingEntry.updatedAt) {
+                    throw new Error('Missing entry code/version for conflict-safe update')
+                }
+                await DictionaryMaintenanceService.patchEntry(editingEntry.code, {
+                    label: data.label,
+                    description: data.description,
+                    options: (data.options ?? []) as any[],
+                    sortOrder: data.sortOrder,
+                    active: data.active,
+                    version: editingEntry.updatedAt,
+                })
+                toast.success(t('basicSettings.dictionaryActions.toasts.entryUpdated', { label: data.label }))
+            } else {
+                await DictionaryMaintenanceService.createEntry({
+                    groupId: data.groupId,
+                    label: data.label,
+                    code: data.code || `ATTR_${Date.now()}`,
+                    description: data.description,
+                    options: (data.options ?? []) as any[],
+                    sortOrder: data.sortOrder,
+                    active: data.active,
+                })
+                toast.success(t('basicSettings.dictionaryActions.toasts.entryCreated', { label: data.label }))
+            }
+
+            await refreshData(true)
+            setIsEntryDialogOpen(false)
+            setEditingEntry(null)
+        } catch (err) {
+            showActionError(err)
+            throw err
         }
-        setIsEntryDialogOpen(false)
-        setEditingEntry(null)
     }
 
     const handleDeleteEntry = async (entryId: string) => {
+        const entry = entries.find((item) => item.id === entryId)
+        if (!entry?.code) return
+
         if (window.confirm(t('basicSettings.dictionaryActions.prompts.deleteEntry'))) {
-            await saveEntries(entries.filter((entry) => entry.id !== entryId))
-            toast.info(t('basicSettings.dictionaryActions.toasts.entryDeleted'))
+            try {
+                await DictionaryMaintenanceService.deleteEntry(entry.code)
+                await refreshData(true)
+                toast.info(t('basicSettings.dictionaryActions.toasts.entryDeleted'))
+            } catch (err) {
+                showActionError(err)
+            }
         }
     }
 
     return {
-        // 状态
         groups,
         activeGroupId,
         setActiveGroupId,
@@ -162,8 +211,6 @@ export function useDictionaryMgmt() {
         isEntryDialogOpen,
         setIsEntryDialogOpen,
         editingEntry,
-        
-        // 操作
         handleSyncSystem,
         handleAddGroup,
         handleDeleteGroup,
@@ -172,6 +219,6 @@ export function useDictionaryMgmt() {
         handleEditEntry,
         handleConfirmEntry,
         handleDeleteEntry,
-        refreshData
+        refreshData,
     }
 }

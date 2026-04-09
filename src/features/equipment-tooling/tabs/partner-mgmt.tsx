@@ -62,7 +62,7 @@ export function PartnerMgmt() {
 
     const handleEdit = (partner: EquipmentPartner) => {
         runConfirmedAction({
-            permission: 'action_equipment_partner_manage',
+            permission: 'action_equipment_partner_update',
             onAction: () => {
                 setEditingPartner(partner)
                 setIsDialogOpen(true)

@@ -64,7 +64,7 @@ func SaveOrgHandler(c *gin.Context) {
 
 func PatchOrgHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization patch payload"})
 		return
@@ -76,7 +76,7 @@ func PatchOrgHandler(c *gin.Context) {
 
 	patch := services.PatchOrganizationRequest{
 		ID:              id,
-		ExpectedVersion: req.Metadata.Version,
+		ExpectedVersion: int(req.Metadata.Version),
 		DeltaKeys:       servicesDeltaKeys(req.Delta),
 	}
 	for key, raw := range req.Delta {

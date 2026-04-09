@@ -1,5 +1,11 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  ensureArrayField,
+  ensureArrayResponse,
+  ensureNumberField,
+  ensureObjectField,
+  ensureObjectResponse,
+} from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Customer } from '../../data/schema'
 
@@ -18,13 +24,13 @@ export interface CustomerListResponse {
   total: number
   page: number
   pageSize: number
-  metadata?: {
-    pagination?: {
-      total?: number
-      page?: number
-      pageSize?: number
+  metadata: {
+    pagination: {
+      total: number
+      page: number
+      pageSize: number
     }
-    stats?: Partial<CustomerListStats>
+    stats: CustomerListStats
   }
 }
 
@@ -58,16 +64,37 @@ export const getCustomers = async (): Promise<Customer[]> => {
 }
 
 export const getCustomerList = async (): Promise<CustomerListResponse> => {
+  const context = 'CustomerService.getCustomerList'
   const res = await apiFetch<CustomerListResponse>('/customers')
   const objectResponse = ensureObjectResponse<CustomerListResponse & Record<string, unknown>>(
     res,
-    'CustomerService.getCustomerList'
+    context
   )
-  const items = ensureArrayField<Customer>(objectResponse, 'items', 'CustomerService.getCustomerList')
+  const items = ensureArrayField<Customer>(objectResponse, 'items', context)
+  const total = ensureNumberField(objectResponse, 'total', context)
+  const page = ensureNumberField(objectResponse, 'page', context)
+  const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
+  const metadata = ensureObjectField<Record<string, unknown>>(objectResponse, 'metadata', context)
+  const pagination = ensureObjectField<Record<string, unknown>>(metadata, 'pagination', context)
+  const stats = ensureObjectField<Record<string, unknown>>(metadata, 'stats', context)
 
   return {
-    ...objectResponse,
     items,
+    total,
+    page,
+    pageSize,
+    metadata: {
+      pagination: {
+        total: ensureNumberField(pagination, 'total', context),
+        page: ensureNumberField(pagination, 'page', context),
+        pageSize: ensureNumberField(pagination, 'pageSize', context),
+      },
+      stats: {
+        total: ensureNumberField(stats, 'total', context),
+        active: ensureNumberField(stats, 'active', context),
+        newThisMonth: ensureNumberField(stats, 'newThisMonth', context),
+      },
+    },
   }
 }
 

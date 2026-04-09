@@ -151,7 +151,7 @@ func SavePurchaseOrderHandler(c *gin.Context) {
 // PatchPurchaseOrderHandler 局部更新采购订单
 func PatchPurchaseOrderHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
 		return
@@ -184,7 +184,7 @@ func PatchPurchaseOrderHandler(c *gin.Context) {
 		Note:               patch.Note,
 		WorkflowInstanceID: patch.WorkflowInstanceID,
 		IsDeleted:          patch.IsDeleted,
-		Version:            req.Metadata.Version,
+		Version:            int(req.Metadata.Version),
 		Lines:              make([]services.PurchaseOrderLineRequest, 0, len(patch.Lines)),
 	}
 	for _, line := range patch.Lines {

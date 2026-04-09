@@ -98,15 +98,6 @@ export const DrawingService = {
         return ensureObjectResponse<MoldDrawing>(res, 'DrawingService.patchDrawing')
     },
 
-    async updateDrawing(id: string, updates: Partial<MoldDrawing>): Promise<void> {
-        await apiFetch(`/drawings/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(updates)
-        })
-
-        window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
-    },
-
     async deleteDrawing(id: string): Promise<void> {
         await apiFetch(`/drawings/${id}`, {
             method: 'DELETE'

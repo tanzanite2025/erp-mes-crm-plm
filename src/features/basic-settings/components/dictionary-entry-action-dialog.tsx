@@ -29,7 +29,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 interface DictionaryEntryActionDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onConfirm: (data: DictionaryEntry) => void
+    onConfirm: (data: DictionaryEntry) => Promise<void> | void
     editData?: DictionaryEntry | null
     groupId: string
 }
@@ -87,7 +87,7 @@ export function DictionaryEntryActionDialog({
         }
     }, [open, editData, groupId, form])
 
-    const onSubmit = (data: DictionaryEntry) => {
+    const onSubmit = async (data: DictionaryEntry) => {
         // 解析批量选项
         const lines = bulkOptions.split('\n').filter(line => line.trim() !== '')
         const parsedOptions: DictionaryOption[] = lines.map(line => {
@@ -98,11 +98,15 @@ export function DictionaryEntryActionDialog({
             return { label: line.trim(), value: line.trim().toUpperCase() }
         })
 
-        onConfirm({
-            ...data,
-            options: parsedOptions
-        })
-        onOpenChange(false)
+        try {
+            await onConfirm({
+                ...data,
+                options: parsedOptions,
+            })
+            onOpenChange(false)
+        } catch {
+            // 失败提示由业务层统一处理
+        }
     }
 
     return (
@@ -161,6 +165,7 @@ export function DictionaryEntryActionDialog({
                                                 <Input 
                                                     placeholder='如：TIRE_TYPE' 
                                                     className="h-12 rounded-2xl border-none bg-muted/40 font-mono text-[10px] font-black"
+                                                    disabled={!!editData}
                                                     {...field} 
                                                 />
                                             </FormControl>

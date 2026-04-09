@@ -68,8 +68,6 @@ const UNBOUND_ROUTE_EXCLUSION_KEYS = new Set([
   'POST /piecework/teams',
   'DELETE /piecework/teams/:id',
   'POST /piecework/rates',
-  'POST /experimental/categories',
-  'DELETE /experimental/categories/:id',
 ])
 
 function resolveTsModulePath(fromFile, specifier) {

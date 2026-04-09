@@ -16,7 +16,7 @@ function findActiveTab(pathname: string, tabs: TabItem[]): TabItem | undefined {
         .find((tab) => pathname === tab.href || pathname.startsWith(tab.href + '/'))
 }
 
-export function ModuleTabbedLayout({ tabs, children, actions }: ModuleTabbedLayoutProps) {
+export function ModuleTabbedLayout({ tabs, children, actions, title }: ModuleTabbedLayoutProps) {
     const { pathname } = useLocation()
     const visibleTabs = tabs
 
@@ -41,6 +41,13 @@ export function ModuleTabbedLayout({ tabs, children, actions }: ModuleTabbedLayo
             {/* 3. 主内容区域 - 由于 Header 已经被 ModuleTabs 抵销，此处移除主内容区的 pt-14/16 避免留白过大 */}
             <Main className='flex-1 overflow-y-auto pt-0 pb-5'>
                 <div className='flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit'>
+                    {title ? (
+                        <div className='px-1 pt-3 pb-2'>
+                            <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
+                                {title}
+                            </p>
+                        </div>
+                    ) : null}
                     {children}
                 </div>
             </Main>

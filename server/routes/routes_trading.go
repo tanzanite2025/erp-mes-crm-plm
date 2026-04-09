@@ -25,6 +25,8 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesGroup := authorized.Group("/sales-orders")
 	salesGroup.Use(tradingAccess)
 	salesGroup.GET("", handlers.GetSalesOrdersHandler)
+	salesGroup.GET("/analytics/customer-product-stats", handlers.GetSalesOrderCustomerProductStatsHandler)
+	salesGroup.GET("/analytics/global-product-ranking", handlers.GetSalesOrderGlobalProductRankingHandler)
 	salesGroup.GET("/:id", handlers.GetSalesOrderHandler)
 	salesGroup.GET("/by-no/:orderNo", handlers.GetSalesOrderByNoHandler)
 	salesGroup.POST("", salesOrderManage, handlers.SaveSalesOrderHandler)

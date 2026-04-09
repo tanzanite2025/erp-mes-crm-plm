@@ -1,20 +1,8 @@
 package services
 
 import (
-	"encoding/json"
 	"time"
 )
-
-type PatchMetadata struct {
-	ID      string `json:"id"`
-	Version int    `json:"version"`
-}
-
-type PatchDeltaHandlerRequest struct {
-	Op       string                     `json:"op"`
-	Delta    map[string]json.RawMessage `json:"delta"`
-	Metadata PatchMetadata              `json:"metadata"`
-}
 
 type SaveSupplierRequest struct {
 	ID            string  `json:"id"`

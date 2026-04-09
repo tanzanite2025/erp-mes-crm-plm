@@ -41,6 +41,9 @@ func SetupRoutes(r *gin.Engine) {
 		tradingLogisticsStatus := middleware.RequirePermissions(authz.ActionTradingLogisticsStatusUpdate)
 		tradingLogisticsDelete := middleware.RequirePermissions(authz.ActionTradingLogisticsDelete)
 		tradingProviderManage := middleware.RequirePermissions(authz.ActionTradingLogisticsProviderManage)
+		materialUpdate := middleware.RequirePermissions(authz.ActionMaterialUpdate)
+		labCategoryCreate := middleware.RequirePermissions(authz.ActionLabExperimentalCategoryCreate)
+		labCategoryDelete := middleware.RequirePermissions(authz.ActionLabExperimentalCategoryDelete)
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
@@ -53,7 +56,7 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			materialGroup.GET("", handlers.GetMaterialsHandler)
 			materialGroup.POST("", adminOnly, handlers.SaveMaterialHandler)
-			materialGroup.PATCH("/:id", adminOnly, handlers.PatchMaterialHandler)
+			materialGroup.PATCH("/:id", materialUpdate, handlers.PatchMaterialHandler)
 			materialGroup.DELETE("/:id", adminOnly, handlers.DeleteMaterialHandler)
 			materialGroup.POST("/sync", adminOnly, handlers.BulkSyncMaterialsHandler)
 		}
@@ -93,8 +96,12 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			dictGroup.GET("/groups", handlers.GetDictGroupsHandler)
 			dictGroup.POST("/groups", adminOnly, handlers.SaveDictGroupHandler)
+			dictGroup.PATCH("/groups/:code", adminOnly, handlers.PatchDictGroupHandler)
+			dictGroup.DELETE("/groups/:code", adminOnly, handlers.DeleteDictGroupHandler)
 			dictGroup.GET("/entries", handlers.GetDictEntriesHandler)
 			dictGroup.POST("/entries", adminOnly, handlers.SaveDictEntryHandler)
+			dictGroup.PATCH("/entries/:code", adminOnly, handlers.PatchDictEntryHandler)
+			dictGroup.DELETE("/entries/:code", adminOnly, handlers.DeleteDictEntryHandler)
 			dictGroup.POST("/sync", adminOnly, handlers.SyncDictionaryHandler)
 			dictGroup.POST("/bulk-sync", adminOnly, handlers.BulkSyncDictionaryHandler)
 		}
@@ -216,8 +223,8 @@ func SetupRoutes(r *gin.Engine) {
 		labExpGroup.Use(qualityAccess)
 		{
 			labExpGroup.GET("/categories", handlers.GetExpCategoriesHandler)
-			labExpGroup.POST("/categories", adminOnly, handlers.SaveExpCategoryHandler)
-			labExpGroup.DELETE("/categories/:id", adminOnly, handlers.DeleteExpCategoryHandler)
+			labExpGroup.POST("/categories", labCategoryCreate, handlers.SaveExpCategoryHandler)
+			labExpGroup.DELETE("/categories/:id", labCategoryDelete, handlers.DeleteExpCategoryHandler)
 			labExpGroup.GET("/equipment", handlers.GetExpEquipmentHandler)
 			labExpGroup.POST("/equipment", handlers.SaveExpEquipmentHandler)
 			labExpGroup.GET("/tasks", handlers.GetExpTasksHandler)

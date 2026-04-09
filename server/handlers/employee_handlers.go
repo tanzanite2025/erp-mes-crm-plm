@@ -72,7 +72,7 @@ func SaveEmployeeHandler(c *gin.Context) {
 
 func PatchEmployeeHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee patch payload: " + err.Error()})
 		return
@@ -84,7 +84,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 
 	patch := services.PatchEmployeeRequest{
 		ID:              id,
-		ExpectedVersion: req.Metadata.Version,
+		ExpectedVersion: int(req.Metadata.Version),
 		DeltaKeys:       servicesDeltaKeys(req.Delta),
 	}
 	for key, raw := range req.Delta {

@@ -45,7 +45,11 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	require.Equal(t, "RAW", response.Items[0].MaterialCategory)
 	require.Equal(t, "WH_A", response.Items[0].CategoryCode)
 	require.Equal(t, "KG", response.Items[0].UOM)
-	require.Equal(t, 1, response.Items[0].Version)
+	expectedVersion := int(response.Items[0].LastUpdated.UnixMilli())
+	if expectedVersion < 1 {
+		expectedVersion = 1
+	}
+	require.Equal(t, expectedVersion, response.Items[0].Version)
 	require.WithinDuration(t, now, response.Items[0].LastUpdated, time.Second)
 }
 

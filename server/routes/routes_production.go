@@ -11,13 +11,14 @@ import (
 func registerProductionRoutes(authorized *gin.RouterGroup) {
 	productionAccess := middleware.RequirePermissions(authz.MenuProdConfig)
 	adminOnly := middleware.RequirePermissions(authz.PermissionManage)
+	productionLineUpdate := middleware.RequirePermissions(authz.ActionProductionLineUpdate)
 
 	productionGroup := authorized.Group("/production")
 	productionGroup.Use(productionAccess)
 	{
 		productionGroup.GET("/lines", handlers.GetProductionLinesHandler)
 		productionGroup.POST("/lines", adminOnly, handlers.SaveProductionLineHandler)
-		productionGroup.PATCH("/lines/:id", adminOnly, handlers.PatchProductionLineHandler)
+		productionGroup.PATCH("/lines/:id", productionLineUpdate, handlers.PatchProductionLineHandler)
 		productionGroup.DELETE("/lines/:id", adminOnly, handlers.DeleteProductionLineHandler)
 		productionGroup.GET("/processes", handlers.GetProcessStepsHandler)
 		productionGroup.POST("/processes", adminOnly, handlers.SaveProcessStepHandler)

@@ -21,6 +21,32 @@ export function ensureObjectResponse<T extends Record<string, unknown>>(
   return value as T
 }
 
+export function ensureObjectField<T extends Record<string, unknown>>(
+  value: Record<string, unknown>,
+  fieldName: string,
+  context: string,
+): T {
+  const fieldValue = value[fieldName]
+  if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected "${fieldName}" to be an object.`)
+  }
+
+  return fieldValue as T
+}
+
+export function ensureNumberField(
+  value: Record<string, unknown>,
+  fieldName: string,
+  context: string,
+): number {
+  const fieldValue = value[fieldName]
+  if (typeof fieldValue !== 'number' || Number.isNaN(fieldValue)) {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected "${fieldName}" to be a number.`)
+  }
+
+  return fieldValue
+}
+
 export function ensureArrayField<T>(
   value: unknown,
   fieldName: string,

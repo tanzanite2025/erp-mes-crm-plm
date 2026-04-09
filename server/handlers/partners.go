@@ -117,7 +117,7 @@ func SaveEquipmentPartnerHandler(c *gin.Context) {
 // PatchEquipmentPartnerHandler 差分更新流转单位
 func PatchEquipmentPartnerHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input services.DeltaHandlerRequest
+	var input services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
 		return

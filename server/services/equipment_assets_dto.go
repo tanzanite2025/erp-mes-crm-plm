@@ -1,18 +1,5 @@
 package services
 
-import "encoding/json"
-
-type DeltaMetadata struct {
-	ID      string `json:"id"`
-	Version int64  `json:"version"`
-}
-
-type DeltaHandlerRequest struct {
-	Op       string                     `json:"op"`
-	Delta    map[string]json.RawMessage `json:"delta"`
-	Metadata DeltaMetadata              `json:"metadata"`
-}
-
 type SaveMoldRequest struct {
 	ID                   string  `json:"id"`
 	SN                   string  `json:"sn"`

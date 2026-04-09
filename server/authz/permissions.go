@@ -29,6 +29,7 @@ const (
 const (
 	ActionWarehouseInboundRecord     = "action_warehouse_inbound_record"
 	ActionWarehouseShipmentRecord    = "action_warehouse_shipment_record"
+	ActionWarehouseShipmentUpdate    = "action_inventory_shipment_update"
 	ActionWarehouseShipmentCommit    = "action_warehouse_shipment_commit"
 	ActionWarehouseShipmentVoid      = "action_warehouse_shipment_void"
 	ActionWarehouseTransfer          = "action_warehouse_transfer"
@@ -37,6 +38,7 @@ const (
 	ActionWarehouseCategoryManage    = "action_warehouse_category_manage"
 	ActionWarehouseStocktakeManage   = "action_warehouse_stocktake_manage"
 	ActionWarehouseAdjustmentSubmit  = "action_warehouse_adjustment_submit"
+	ActionWarehouseAdjustmentUpdate  = "action_inventory_adjustment_update"
 	ActionWarehouseAdjustmentExecute = "action_warehouse_adjustment_execute"
 )
 
@@ -63,12 +65,34 @@ const (
 	ActionEquipmentMoldManage      = "action_equipment_mold_manage"
 	ActionEquipmentMoldSync        = "action_equipment_mold_sync"
 	ActionEquipmentDrawingManage   = "action_equipment_drawing_manage"
+	ActionEquipmentDrawingUpdate   = "action_equipment_drawing_update"
 	ActionEquipmentDrawingDelete   = "action_equipment_drawing_delete"
 	ActionEquipmentFurnaceManage   = "action_equipment_furnace_manage"
 	ActionEquipmentFurnaceSync     = "action_equipment_furnace_sync"
 	ActionEquipmentPartnerManage   = "action_equipment_partner_manage"
+	ActionEquipmentPartnerUpdate   = "action_equipment_partner_update"
 	ActionEquipmentLoanManage      = "action_equipment_loan_manage"
 	ActionEquipmentTelemetryUpdate = "action_equipment_telemetry_update"
+)
+
+const (
+	ActionMaterialUpdate = "action_material_update"
+)
+
+const (
+	ActionLabExperimentalCategoryCreate = "action_lab_experimental_category_create"
+	ActionLabExperimentalCategoryDelete = "action_lab_experimental_category_delete"
+)
+
+const (
+	ActionOrgProfileUpdate      = "action_org_profile_update"
+	ActionEmployeeUpdate        = "action_employee_update"
+	ActionEmployeeImportPreview = "action_employee_import_preview"
+	ActionEmployeeImportCommit  = "action_employee_import_commit"
+)
+
+const (
+	ActionProductionLineUpdate = "action_production_line_update"
 )
 
 const (
@@ -99,6 +123,7 @@ var AdminFallbackPermissions = []string{
 	MenuApproval,
 	ActionWarehouseInboundRecord,
 	ActionWarehouseShipmentRecord,
+	ActionWarehouseShipmentUpdate,
 	ActionWarehouseShipmentCommit,
 	ActionWarehouseShipmentVoid,
 	ActionWarehouseTransfer,
@@ -107,6 +132,7 @@ var AdminFallbackPermissions = []string{
 	ActionWarehouseCategoryManage,
 	ActionWarehouseStocktakeManage,
 	ActionWarehouseAdjustmentSubmit,
+	ActionWarehouseAdjustmentUpdate,
 	ActionWarehouseAdjustmentExecute,
 	ActionTradingSalesOrderManage,
 	ActionTradingSalesOrderDelete,
@@ -127,12 +153,22 @@ var AdminFallbackPermissions = []string{
 	ActionEquipmentMoldManage,
 	ActionEquipmentMoldSync,
 	ActionEquipmentDrawingManage,
+	ActionEquipmentDrawingUpdate,
 	ActionEquipmentDrawingDelete,
 	ActionEquipmentFurnaceManage,
 	ActionEquipmentFurnaceSync,
 	ActionEquipmentPartnerManage,
+	ActionEquipmentPartnerUpdate,
 	ActionEquipmentLoanManage,
 	ActionEquipmentTelemetryUpdate,
+	ActionMaterialUpdate,
+	ActionLabExperimentalCategoryCreate,
+	ActionLabExperimentalCategoryDelete,
+	ActionOrgProfileUpdate,
+	ActionEmployeeUpdate,
+	ActionEmployeeImportPreview,
+	ActionEmployeeImportCommit,
+	ActionProductionLineUpdate,
 	ActionApprovalConfigManage,
 	ActionApprovalReview,
 	ActionSystemWorkflowManage,

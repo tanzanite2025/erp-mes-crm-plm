@@ -64,21 +64,29 @@ export function DictionaryEntryManagerDialog({
     description = '维护系统中的选项列表。' 
 }: DictionaryEntryManagerDialogProps) {
     const [options, setOptions] = useState<DictionaryOption[]>([])
+    const [entryVersion, setEntryVersion] = useState<string | null>(null)
     const [editingOption, setEditingOption] = useState<DictionaryOption | null>(null)
     const [isAddOpen, setIsAddOpen] = useState(false)
 
     // 加载数据
     useEffect(() => {
         if (open) {
-            setOptions([...DictionaryCoreService.getOptions(entryCode)])
+            const entry = DictionaryCoreService.getEntryByCode(entryCode)
+            setOptions([...(entry?.options as DictionaryOption[] ?? [])])
+            setEntryVersion(entry?.updatedAt ?? null)
         }
     }, [open, entryCode])
 
     const saveOptions = async (newOptions: DictionaryOption[]) => {
-        await DictionaryMaintenanceService.updateEntry(entryCode, newOptions)
-        setOptions(newOptions)
-        // 触发全局更新
-        window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
+        if (!entryVersion) {
+            throw new Error('Missing entry version for conflict-safe update')
+        }
+        const updated = await DictionaryMaintenanceService.patchEntry(entryCode, {
+            options: newOptions,
+            version: entryVersion,
+        })
+        setOptions((updated.options as DictionaryOption[]) ?? [])
+        setEntryVersion(updated.updatedAt ?? null)
         toast.success('配置已更新')
     }
 
@@ -94,7 +102,10 @@ export function DictionaryEntryManagerDialog({
 
     const handleDelete = (val: string) => {
         if (confirm('确定要删除该选项吗？')) {
-            saveOptions(options.filter(o => o.value !== val))
+            void saveOptions(options.filter(o => o.value !== val)).catch((err) => {
+                const message = err instanceof Error ? err.message : '保存失败，请稍后重试'
+                toast.error(message)
+            })
         }
     }
 
@@ -197,12 +208,17 @@ export function DictionaryEntryManagerDialog({
                 open={isAddOpen}
                 onOpenChange={setIsAddOpen}
                 initialData={editingOption}
-                onSubmit={(data) => {
+                onSubmit={async (data) => {
                     const next = editingOption 
                         ? options.map(o => o.value === editingOption.value ? data : o)
                         : [...options, data]
-                    saveOptions(next)
-                    setIsAddOpen(false)
+                    try {
+                        await saveOptions(next)
+                        setIsAddOpen(false)
+                    } catch (err) {
+                        const message = err instanceof Error ? err.message : '保存失败，请稍后重试'
+                        toast.error(message)
+                    }
                 }}
             />
         </>
@@ -213,7 +229,7 @@ function OptionActionDialog({ open, onOpenChange, initialData, onSubmit }: {
     open: boolean, 
     onOpenChange: (open: boolean) => void,
     initialData: DictionaryOption | null,
-    onSubmit: (data: DictionaryOption) => void
+    onSubmit: (data: DictionaryOption) => Promise<void> | void
 }) {
     const form = useForm<z.infer<typeof optionSchema>>({
         resolver: zodResolver(optionSchema),

@@ -331,6 +331,254 @@ DTO 的目标是建立边界、裁剪契约、隔离内部模型，而不是单�
 3. `org-personnel` 主链形成 service DTO + handler DTO 的双层边界。
 4. `walkthrough.md` 明确记录 service DTO 收口方案与验证口径。
 
+## 19. sales_orders PATCH 残留清理（待确认）
+
+该轮不是新的 DTO 扩面，而是为销售单 hard-cut 做最小残留清理，范围限定为：
+
+1. `server/handlers/sales_orders.go`
+2. 与其直接相关的最小调用面 / 编译面
+
+### 目标
+
+1. 清除对已删除 `services.PatchSalesOrderRequest` 的残留引用。
+2. 清除对已删除 `services.MapPatchSalesOrderRequestToModel` 的残留引用。
+3. 恢复 `go test ./handlers -run ^$` 的编译通过前提。
+
+### 明确不做的事
+
+1. 不恢复 `PATCH /sales-orders/:id` 路由。
+2. 不重新引入 sales order PATCH DTO。
+3. 不回滚此前已确认的 sales order hard-cut 设计。
+
+---
+
+# 按模块 / 五层链路输出 DTO 现状总表实施计划
+
+日期：2026-04-09  
+状态：待批准
+
+## 1. 目标
+
+本轮目标不是继续直接挑几个接口补 DTO，而是先产出一份**按模块组织、按五层链路展开**的 DTO 现状总表，用统一格式回答以下问题：
+
+1. 当前哪些模块已经形成较完整 DTO 链。
+2. 哪些模块只完成了 handler 或 service 的局部收口，仍属于半接入态。
+3. 哪些模块仍存在 model 直通或伪 DTO 风险。
+4. 下一轮整体收口应按什么顺序推进，才能避免再次回到补丁式治理。
+
+本轮需要沉淀的是一份**可直接支撑后续排期与分批执行的全局总表规范**，而不是立即进入新一轮代码修改。
+
+## 2. 当前已确认事实
+
+### 2.1 DTO 治理已从“是否存在样板”进入“是否覆盖全局”阶段
+
+当前已确认：
+
+1. DTO 审计口径、五层链路模型与 A/B/C/D 分级规则已经建立。
+2. 后端已经完成三批治理，覆盖了 C 级 handler 样板、B 级半接入链和部分 service 边界收口。
+3. 前端局部已经存在 `contract / adapter / gateway` 样板，但尚未形成全仓一致模式。
+
+因此，当前问题已不再是“有没有做 DTO”，而是“DTO 做到哪些模块、卡在哪一层、下一轮该先收哪一批”。
+
+### 2.2 当前缺的不是新规则，而是可执行的模块级台账
+
+虽然现有文档已经定义了 DTO 的判断标准，但仍缺少一份统一总表来承接：
+
+1. 模块名称与所属域。
+2. 五层链路现状。
+3. 当前综合等级。
+4. 关键证据与断点。
+5. 建议动作与优先级。
+
+没有这份总表，后续执行仍容易退化为“看到哪个文件就先改哪个文件”。
+
+## 3. 总表的组织方式
+
+### 3.1 总表按“模块”而不是按“单文件”组织
+
+总表主键不应是单个文件名，而应是**业务模块 / 子域模块**，例如：
+
+1. `production-topology`
+2. `workflow`
+3. `quality`
+4. `warehouse`
+5. `partner`（customers / suppliers）
+6. `users`
+7. `org-personnel`
+8. `trading`（sales-order / purchase-order）
+9. `finance`（voucher 等）
+
+必要时可在模块下再标注关键文件，但总表不应退化为逐文件清单。
+
+### 3.2 每个模块统一按五层链路填写
+
+每个模块都应至少包含以下五列：
+
+1. **HTTP 入站层**
+  - 是否仍直接绑定 `models.*`
+  - 是否存在独立 request / handler DTO
+2. **service 边界层**
+  - public service 入参/出参是否仍暴露 `models.*`
+  - 是否存在 service request / response DTO
+3. **持久化 / 模型层**
+  - model 是否仍被复用为 API contract
+  - 更新链是否仍存在实体覆盖式直通
+4. **HTTP 出站层**
+  - 是否仍直接回传 `model / []model`
+  - 是否存在独立 response / list response
+5. **前端契约消费层**
+  - 是否存在 API DTO / contract / adapter / gateway
+  - 页面是否仍直接消费后端实体形态
+
+## 4. 总表输出字段建议
+
+建议总表至少包含以下列：
+
+1. `模块`
+2. `所属域`
+3. `HTTP 入站`
+4. `service 边界`
+5. `持久化/模型`
+6. `HTTP 出站`
+7. `前端契约消费`
+8. `综合等级`
+9. `关键证据`
+10. `主要断点`
+11. `建议动作`
+12. `下一轮优先级`
+
+其中：
+
+### 4.1 综合等级
+
+沿用现有 A/B/C/D：
+
+1. **A**：五层基本闭环，可作为样板。
+2. **B**：局部 DTO 化，但仍有明显断点。
+3. **C**：存在 model 直通主链，应优先治理。
+4. **D**：存在伪 DTO 风险，需要去伪存真。
+
+### 4.2 关键证据
+
+必须记录真实证据，而不是抽象判断，例如：
+
+1. `ShouldBindJSON(&models.Customer)`
+2. `c.JSON(..., items)` 且 `items` 为 `[]models.Supplier`
+3. `SaveOrganization(input models.Organization)`
+4. `apiFetch<Employee[]>('/employees')` 且无 adapter / contract 分层
+
+### 4.3 主要断点
+
+用于回答“这个模块为什么还没闭环”，例如：
+
+1. handler 已 DTO 化，但 service 仍暴露 model。
+2. service 已 DTO 化，但前端仍直接吃实体结构。
+3. 前端已有 contract，但后端响应仍直接回传 model。
+
+## 5. 模块分组建议
+
+为避免总表过散，建议先按域分组：
+
+### 5.1 后端核心业务域
+
+1. `production-topology`
+2. `workflow`
+3. `quality`
+4. `warehouse`
+5. `partner`（customers / suppliers）
+6. `users`
+7. `org-personnel`
+8. `trading`（sales-order / purchase-order）
+9. `finance`（voucher 等）
+
+### 5.2 前端核心消费域
+
+1. `org-personnel`
+2. `trading`
+3. `scan-platform / wheel-trace`
+4. `system-management`
+5. 其他直接消费 API 的 feature 域
+
+### 5.3 共享基础设施 / 契约域
+
+1. `src/lib/api-client.ts` 及相关 fetch contract 使用方式
+2. `server/services/*_dto.go` / `*_mapper.go` 的样板分布
+3. 前端 `contracts / adapters / gateway / schema` 的样板分布
+
+## 6. 下一轮整体收口顺序的排序规则
+
+下一轮优先级不应按“最近改过什么”决定，而应按以下四个维度排序：
+
+### 6.1 第一优先：主链是否仍存在 model 直通
+
+以下模式优先级最高：
+
+1. 入站直接 `ShouldBindJSON(&models.X)`。
+2. 出站直接 `c.JSON(..., model)` 或 `[]models.X`。
+3. public service 直接暴露 `models.*`。
+
+### 6.2 第二优先：是否具备样板复用价值
+
+优先选择能形成整域复制样板的模块，例如：
+
+1. `org-personnel` 这类已进入 service DTO 阶段的模块。
+2. `partner / users` 这类可继续从 handler DTO 延伸到 service / frontend contract 的模块。
+3. `wheel-trace` 这类可作为前端 contract / adapter 样板的模块。
+
+### 6.3 第三优先：前后端漂移风险是否高
+
+若后端已收口但前端仍直接消费实体结构，或前端已做 contract 但后端仍直返实体，应提高优先级，因为这类模块最容易产生双边漂移。
+
+### 6.4 第四优先：改造破坏面是否可控
+
+在高风险模块中，优先选择：
+
+1. 边界清晰。
+2. 调用面可识别。
+3. 可沿已有样板推进。
+
+避免一开始就选择跨域过广、缺少样板承接的大模块做硬切。
+
+## 7. 待批准后的建议执行步骤
+
+### Step 1：编制 DTO 现状总表
+
+按模块填完整体台账，至少覆盖核心后端域、前端主要消费域与共享契约域。
+
+### Step 2：给出模块级排序结果
+
+为每个模块标记：
+
+1. 当前综合等级。
+2. 当前主要断点。
+3. 建议动作。
+4. 下一轮优先级。
+
+### Step 3：确定下一轮治理范围
+
+从总表中选择最值得优先推进的一批模块，要求该批次不是随机组合，而是符合统一排序规则。
+
+## 8. 风险与注意事项
+
+### 8.1 总表如果只列后端，会再次失真
+
+如果只记录 handler / service，而不记录前端 contract 与 adapter 现状，最终仍会高估 DTO 完成度。
+
+### 8.2 总表如果按文件而不按模块，会失去治理意义
+
+DTO 的问题是链路问题，不是单文件问题；若退化为文件列表，会无法指导下一轮整域收口。
+
+### 8.3 排序如果不基于统一规则，会再次回到补丁式推进
+
+若没有风险、漂移、样板复用、破坏面四个维度，后续很容易再次变成“哪个最顺手就先改哪个”。
+
+## 9. 批准后的最小验收标准
+
+1. 产出一份按模块 / 五层链路组织的 DTO 现状总表。
+2. 每个核心模块都有综合等级、关键证据、主要断点与建议动作。
+3. 下一轮整体收口顺序具备明确的排序依据，而不是凭经验口头判断。
+4. 总表可直接作为后续 `walkthrough.md` 与分批治理计划的依据。
+
 ---
 
 # 正式 notification gateway 抽象收口实施计划

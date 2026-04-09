@@ -25,15 +25,24 @@ export function OrdersAnalysisTab() {
   })
   
   const { data: globalRanking, isLoading: isRankingLoading } = useGlobalProductRanking(10)
-
-  // 提取客户选项进行筛选
+  // Build customer options for filter dropdown
   const customerOptions = useMemo(() => {
     if (!analytics) return []
     return [
-      { label: t('common.all' as any) || '全部', value: 'all' },
+      { label: t('common.all' as any) || 'All', value: 'all' },
       ...analytics.map(c => ({ label: c.customerName, value: c.customerId }))
     ]
   }, [analytics, t])
+
+  const globalVolume = useMemo(
+    () => globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0) || 0,
+    [globalRanking]
+  )
+
+  const analyzedLines = useMemo(
+    () => analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0) || 0,
+    [analytics]
+  )
 
   if (isAnalyticsLoading || isRankingLoading) {
     return <div className="p-8 space-y-4"><Skeleton className="h-48 w-full rounded-[32px]" /></div>
@@ -41,7 +50,7 @@ export function OrdersAnalysisTab() {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 mt-4">
-      {/* 头部统计卡片 */}
+      {/* Header KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-[32px] border-dashed bg-blue-500/5 p-6 border-blue-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">
@@ -66,8 +75,8 @@ export function OrdersAnalysisTab() {
             {t('trading.analytics.globalVolume')}
           </p>
           <h3 className="text-3xl font-black tracking-tighter italic">
-            {/* [UI-DISPLAY-ONLY]: 仅汇总当前排行榜 Top 10 的数量。全域总量应取自后端 Metadata */}
-            {useMemo(() => globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0) || 0, [globalRanking]).toLocaleString()}
+            {/* [UI-DISPLAY-ONLY]: Summarizes only the currently loaded Top 10 list. */}
+            {globalVolume.toLocaleString()}
           </h3>
           <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
             {t('trading.analytics.globalVolumeDesc')}
@@ -82,8 +91,8 @@ export function OrdersAnalysisTab() {
             {t('trading.analytics.analyzedLines')}
           </p>
           <h3 className="text-3xl font-black tracking-tighter italic">
-            {/* [UI-DISPLAY-ONLY]: 仅汇总当前已加载客户的订单数。系统全量指标需由后端聚合提供 */}
-            {useMemo(() => analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0) || 0, [analytics])}
+            {/* [UI-DISPLAY-ONLY]: Summarizes only currently loaded customer orders. */}
+            {analyzedLines}
           </h3>
           <p className="text-[8px] font-mono mt-2 opacity-50 uppercase tracking-widest">
             {t('trading.analytics.analyzedLinesDesc')}
@@ -91,9 +100,9 @@ export function OrdersAnalysisTab() {
         </Card>
       </div>
 
-      {/* 核心分析交互区 */}
+      {/* Core analysis area */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* 左侧：排行列表 */}
+        {/* Left: per-customer ranking list */}
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-between pb-2 border-b border-dashed border-muted/50">
             <h2 className="text-lg font-black tracking-tighter italic uppercase flex items-center gap-2">
@@ -158,7 +167,7 @@ export function OrdersAnalysisTab() {
           </div>
         </div>
 
-        {/* 右侧：全域热点排行榜 */}
+        {/* Right: global hotlist ranking */}
         <div className="w-full lg:w-[320px] space-y-6">
           <div className="flex items-center gap-2 pb-2 border-b border-dashed border-muted/50">
             <TrendingUp className="size-4 text-emerald-500" />

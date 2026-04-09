@@ -273,7 +273,7 @@ func SaveMoldHandler(c *gin.Context) {
 // PatchMoldHandler 差分更新 (解决全量保存开销风险)
 func PatchMoldHandler(c *gin.Context) {
 	id := c.Param("id")
-	var input services.DeltaHandlerRequest
+	var input services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的更新数据"})
 		return

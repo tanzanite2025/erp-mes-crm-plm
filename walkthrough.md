@@ -1,5 +1,71 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-09 DTO 现状总表（按模块 / 五层链路）
+
+### 本轮目标
+- 在既有 DTO 审计框架基础上，进一步沉淀一份可执行的模块级现状总表。
+- 总表统一按五层链路记录：`HTTP 入站`、`service 边界`、`持久化/模型`、`HTTP 出站`、`前端契约消费`。
+- 本轮不直接进入新的 DTO 代码改造，而是先给出可支撑下一轮排期的全局台账与优先级排序。
+
+### 总表
+
+| 模块 | 所属域 | HTTP 入站 | service 边界 | 持久化/模型 | HTTP 出站 | 前端契约消费 | 综合等级 | 关键证据 | 主要断点 | 建议动作 | 下一轮优先级 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `production-topology` | 后端生产域 | 已使用 `services.SaveProductionLineHandlerRequest` / `PatchProductionLineHandlerRequest` | `ProductionService` 已暴露 `SaveProductionLineRequest` / `PatchProductionLineRequest` / `ProductionLineDTO` | model 已主要收敛到 service / repository 内部 | `GetProductionLinesHandler` 返回 `services.ProductionLinesResponse`，save/patch 返回 `ProductionLineDTO` | 前端消费侧尚未在本轮发现对应 contract / adapter 样板 | **A-** | `production_topology_handlers.go` 中 `ShouldBindJSON(&input)` 绑定的是 service request；`production_service.go` 中存在 `mapProductionLineToDTO` / `mapProductionLineDTOToModel` | 后端主链基本闭环，但前端消费层未见系统化 contract 证据 | 后续补前端 query contract / adapter，避免生产域只完成后端半边 | 中 |
+| `workflow` | 后端工作流域 | 已具备独立 request struct | `workflow_dto.go` 提供 `SaveWorkflowDefinitionRequest`、`CreateWorkflowInstanceRequest`、`WorkflowTaskDecisionRequest` | model 通过 `workflow_mapper.go` 转成 response | 已具备 `WorkflowDefinitionResponse` / `WorkflowInstanceResponse` / `WorkflowTaskResponse` | 前端消费层未在本轮发现同等级 contract / adapter 样板 | **A-** | `workflow_dto.go` + `workflow_mapper.go` | 后端 DTO 完整度高，但前端契约层证据不足 | 优先补前端工作流消费侧 contract / adapter，形成前后端闭环 | 中 |
+| `quality` | 后端质量域 | 首批已从 `models.*` 直绑收口为 handler DTO | service 边界未在本轮发现完整统一 DTO 样板 | 持久化层仍以 model 为事实源，但不再直接裸露到 handler | 已从实体集合直返收口为 response | 前端质量只读服务仍偏 `apiFetch<T>` 直连模式 | **B** | 首批 DTO 治理记录；`src/features/quality/services/quality-core-service.ts` 属于直接 `apiFetch` 服务 | handler 已样板化，但 service / frontend 未形成闭环 | 下一轮若进入质量域，应从 service 边界与前端 contract 同时补齐 | 中 |
+| `warehouse-category` | 后端仓储域 | 首批已从 `models.WarehouseCategory` 直绑收口为 request DTO | service DTO 样板未在本轮发现成体系铺开 | 持久化仍由 model 驱动 | 列表/保存已改为 response DTO | 前端仓储服务仍以 `apiFetch<T>` 为主 | **B** | 首批 DTO 治理记录；`inventory-core-service.ts` 为直接 `apiFetch` 风格 | handler 已收口，service 与前端仍偏半接入 | 下一轮可与 `quality` 合并处理为“首批 handler 样板后的 service/frontend 收口” | 中 |
+| `customers` | partner 域 | `SaveCustomerHandler` 已绑定 `CustomerRequest`，patch 也使用显式 delta request | 未见独立 customer service DTO 边界，handler 内仍直接编排 DB | `SaveCustomerHandler` 仍有 `tx.Model(&existing).Select("*").Updates(input)` | list/options/save/patch 已使用 response DTO | 前端客户服务仍以 `apiFetch<Customer>` / schema 直连为主 | **B-** | `customers.go` 中 `ShouldBindJSON(&req)`、`mapCustomerRequestToModel(req)` 与 `Select("*").Updates(input)` 并存 | handler 已收口，但 service 缺位、更新链仍是实体覆盖式、前端仍未脱离实体 shape | 适合作为下一轮“从 handler DTO 过渡到 service DTO + frontend contract”的重点模块 | 高 |
+| `suppliers` | partner 域 | `SaveSupplierHandler` 绑定 `services.SaveSupplierRequest`，patch 使用 `services.PatchSupplierRequest` | save/patch request 已上浮到 service package，但 service 公开边界未形成完整域服务承接 | `SaveSupplierHandler` 仍有 `Select("*").Updates(input)` | list/options/save/patch 已用 response DTO | 前端供应商服务仍以 `apiFetch<Supplier>` 直连为主 | **B-** | `suppliers.go` 中 `ShouldBindJSON(&req)` + `services.MapSaveSupplierRequestToModel(req)` + `Select("*").Updates(input)` | request/response 已有，但 service 域边界未闭环，持久化仍是实体覆盖式，前端未 contract 化 | 与 `customers` 作为同一 partner 收口批次推进收益最高 | 高 |
+| `users` | 用户域 | 已具备 `CreateUserRequest` / `UpdateUserRequest` / `ReplaceUserRequest` / `BulkSyncUserRequest` | service 层并未形成独立 user service DTO 边界，主要逻辑仍在 handler | 查询中间态仍直接使用 `[]models.User` | 列表与写操作响应已切到 `UserListResponse` / `UserResponse` / option response | 前端 `src/features/users/services/user-api.ts` 仍偏接口类型直连 | **B** | `users.go` 中 `var items []models.User`、`c.JSON(http.StatusOK, UserListResponse{...})` 并存 | 响应已收口，但读取主链和 service 边界仍未解耦；前端未建立 adapter | 适合作为“读取链 DTO 化 + frontend contract 收口”的中高优先级模块 | 中高 |
+| `org-personnel` | 组织人事域 | save/bulk sync 已接入 handler DTO | `SaveOrganization` / `SaveEmployee` / bulk sync 已 DTO 化；但 `ListOrganizationTree() ([]*models.Organization, error)`、`ListEmployees() ([]models.Employee, error)`、patch 仍暴露 model | model 仍在 tree/list/patch 主链中作为公开返回或中间契约 | save 响应已有 `OrganizationSaveResponse` / `EmployeeSaveResponse`，但 list/tree/patch 未完全统一 | 前端 `employee-core-service.ts` 直接 `apiFetch<Employee[]>('/employees')`、`apiFetch<Employee>(...)`；未见 API DTO -> contract adapter | **B-** | `organization_service.go` 中 `ListOrganizationTree() ([]*models.Organization, error)`、`ListEmployees() ([]models.Employee, error)`；`org_personnel_dto.go` 中 save DTO 已完整；前端 `employee-core-service.ts` 直接吃 `Employee` | 这是当前最典型的“双层断点”：后端 save 链已收口，但 list/patch 仍泄漏 model，前端也仍直吃实体 | 建议作为下一轮第一优先，完成 org-personnel 整域闭环：list/tree/patch DTO + frontend contract / adapter | **最高** |
+| `sales-order` | 交易域 | 已具备 `SaveSalesOrderRequest` / snapshot request | service DTO 与 mapper 已形成样板 | model 与 DTO 映射显式存在 | `SalesOrderResponse` / `SalesOrderListResponse` 完整 | 前端 `sales-service.ts` 仍直接 `apiFetch<SalesOrder>`，以 `data/schema` 中实体形态作为事实源 | **A-/B+** | `sales_order_dto.go` 中 request/response 完整；`sales-service.ts` 中 `apiFetch<SalesOrder>('/sales-orders', ...)` | 后端是强样板，但前端仍未 contract / adapter 化 | 下一轮不必重做后端，应优先用 sales-order 建立交易域前端 contract / adapter 样板 | 高 |
+| `purchase-order` | 交易域 | 已具备 `SavePurchaseOrderRequest` / `PatchPurchaseOrderRequest` / receipt request | service DTO 样板完整 | model 到 response 的分层明确 | `PurchaseOrderResponse` / `PurchaseOrderListResponse` / `ConfirmPurchaseReceiptResponse` 完整 | 前端 `purchase-service.ts` 仍直接 `apiFetch<PurchaseOrder>` / `PaginatedResponse<PurchaseOrder>` | **A-/B+** | `purchase_order_dto.go` 完整；`purchase-service.ts` 中 `apiFetch<PurchaseOrder>`、`apiFetch<PaginatedResponse<PurchaseOrder>>` | 后端完整度高，前端仍是类型化直连 | 与 `sales-order` 合并为交易域前端 contract 收口批次 | 高 |
+| `voucher` | 财务域 | 查询参数已存在 `FinancialVoucherQueryRequest` | service DTO 已存在，但本轮未见更完整命令侧服务边界样板 | model 通过 mapper 转 response | `FinancialVoucherResponse` / `ClearingEntryResponse` 已存在 | 前端财务消费侧未在本轮发现同等级契约样板 | **A-/B+** | `voucher_dto.go` / `voucher_mapper.go` | 后端读取链较清晰，但前端与更深层服务边界仍需复核 | 可作为 finance 样板保留，优先级低于 org-personnel / trading / partner | 中低 |
+| `wheel-trace` | 扫码平台 / 前端契约样板域 | 前端通过 gateway 组装 request DTO | 以前端 use-case / gateway contract 为边界，而非页面直接调接口 | API DTO 与页面 contract 显式分层 | `WheelTraceLookupApiResponseDTO` 经 `toWheelTraceLookupResponseContract` 转换 | 已具备 `contracts + adapters + gateway + response contract` 完整样板 | **A** | `wheel-trace-api-dto.ts`、`api-wheel-trace-gateway.ts` | 该模块主要缺的是后端对应链路是否同样达到同等级样板，本轮前端样板已足够成熟 | 建议将其作为前端 contract / adapter 的复制模板，横向推广到 trading / org-personnel | 高（作为样板，不是作为问题模块） |
+| `共享契约域` | 跨域基础设施 | 无统一入站概念 | 后端已存在 `*_dto.go` / `*_mapper.go` 分布；前端缺统一 API DTO 约束 | model 是否泄漏取决于各域实现 | 响应规则分散在各域 | 前端整体仍以 `apiFetch<T>` + schema 直连为主，只有少数模块有 contract / adapter | **B/C 混合** | `server/services` 下存在 14 个 `*_dto.go` 与 8 个 `*_mapper.go`；`src` 侧大量 service 直接 `apiFetch<T>` | 后端样板已丰富，但前端没有形成统一准入规则，导致全仓闭环不均衡 | 下一轮需要补“前端 contract / adapter 准入规则”，否则 DTO 会长期停留在后端半边 | **最高（规则层）** |
+
+### 综合判断
+- 当前 DTO 治理已经完成了“全局审计规则 + 三批后端治理 + 局部前端样板”的前半段。
+- 当前最突出的断点不是“完全没有 DTO”，而是**模块闭环程度严重不均衡**：
+  - 后端生产 / workflow / trading / voucher 已有 A 级或接近 A 级样板。
+  - `customers` / `suppliers` / `users` / `org-personnel` 处于典型 B 级或 B-：handler 已收口，但 service 或前端仍未闭环。
+  - 前端除了 `wheel-trace` 这类样板外，大多数 feature 仍停留在 `apiFetch<T>` 直接消费实体形态的阶段。
+
+### 下一轮整体收口顺序
+
+#### 第一优先：`org-personnel` 整域闭环
+- 原因：当前最典型地同时暴露了两个断点：
+  - 后端 `ListOrganizationTree` / `ListEmployees` / patch 仍泄漏 `models.*`
+  - 前端 `employee-core-service.ts` 仍直接消费 `Employee`
+- 目标：把 `org-personnel` 做成首个“handler DTO + service DTO + list/tree DTO + frontend contract / adapter”完整样板。
+
+#### 第二优先：`partner`（`customers` + `suppliers`）
+- 原因：
+  - handler request / response 已经铺好
+  - 仍残留 `Select("*").Updates(input)` 这类实体覆盖式更新
+  - 前端客户/供应商服务仍未脱离实体 shape
+- 目标：从当前半接入态升级为真正的 service DTO + frontend contract 闭环。
+
+#### 第三优先：`trading` 前端 contract 收口（`sales-order` + `purchase-order`）
+- 原因：
+  - 后端 DTO 样板已经成熟
+  - 前端仍直接 `apiFetch<SalesOrder>` / `apiFetch<PurchaseOrder>`
+- 目标：不再重复改后端，而是以交易域作为前端 API DTO / contract / adapter 的复制样板。
+
+#### 第四优先：`users` 读取链与前端 contract 收口
+- 原因：响应已收口，但读取主链仍大量以 `[]models.User` 为中间载体，前端也未形成 adapter。
+- 目标：完成 query/list 主链的 DTO 化，并与前端用户域契约对齐。
+
+#### 第五优先：规则层收口（共享契约域）
+- 原因：如果前端继续允许默认 `apiFetch<T>` 直接吃实体结构，后续每个模块都可能重新漂移。
+- 目标：沉淀前端新增接口的 contract / adapter 准入样板，避免 DTO 永远停留在后端半边。
+
+### 本轮结论
+- 这份总表已经可以直接支撑下一轮 DTO 治理排期。
+- 下一轮不建议再从零散 handler 开始，而应转向**按模块闭环**推进。
+- 若只做单点补丁，最容易再次回到“后端局部 DTO 化、前端继续直吃实体”的半完成状态。
+
 ## 2026-04-09 第三批 DTO 治理（organization_service / org-personnel）
 
 ### 变更概述

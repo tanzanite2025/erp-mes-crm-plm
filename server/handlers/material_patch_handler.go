@@ -12,7 +12,7 @@ import (
 
 func PatchMaterialHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid material patch payload: " + err.Error()})
 		return
@@ -24,7 +24,7 @@ func PatchMaterialHandler(c *gin.Context) {
 
 	patch := services.PatchMaterialRequest{
 		ID:              id,
-		ExpectedVersion: req.Metadata.Version,
+		ExpectedVersion: int(req.Metadata.Version),
 		DeltaKeys:       servicesDeltaKeys(req.Delta),
 	}
 	for key, raw := range req.Delta {

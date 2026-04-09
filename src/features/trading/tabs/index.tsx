@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react'
+import { ShoppingCart, Users } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 import { useLanguage } from '@/context/language-provider'
 import { LogisticsMgmt as LogisticsMgmtView } from '@/features/logistics/components/logistics-mgmt'
@@ -21,9 +21,18 @@ export function CustomerMgmt() {
 }
 
 export function SalesOrders() {
+  const { t } = useLanguage()
+
   return (
-    <div className='animate-in fade-in duration-700'>
-      <SalesOrderList />
+    <div className='flex min-h-0 flex-1 flex-col gap-8 animate-in fade-in duration-700'>
+      <PageHeader
+        icon={ShoppingCart}
+        title={t('tradingSalesOrder.tabs.title')}
+        description={t('tradingSalesOrder.dialog.description')}
+      />
+      <div className='flex min-h-0 flex-1'>
+        <SalesOrderList />
+      </div>
     </div>
   )
 }

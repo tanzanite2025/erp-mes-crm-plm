@@ -142,6 +142,14 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     routeBindings: ['POST /inventory/shipment'],
   },
   {
+    id: 'action_inventory_shipment_update',
+    label: 'Inventory: update shipment draft',
+    desc: 'Allow updating shipment draft records before commit/void.',
+    category: 'action',
+    parentId: 'menu_warehouse',
+    routeBindings: ['PATCH /inventory/shipment/:id'],
+  },
+  {
     id: 'action_warehouse_shipment_commit',
     label: '仓储：提交出库',
     desc: '允许提交并确认出库单。',
@@ -204,6 +212,14 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     category: 'action',
     parentId: 'menu_warehouse',
     routeBindings: ['POST /stocktakes/:taskId/post-adjustment'],
+  },
+  {
+    id: 'action_inventory_adjustment_update',
+    label: 'Inventory: update inventory adjustment',
+    desc: 'Allow patching inventory records through SDRTS adjustment flow.',
+    category: 'action',
+    parentId: 'menu_warehouse',
+    routeBindings: ['PATCH /inventory/:id'],
   },
   {
     id: 'action_warehouse_adjustment_execute',
@@ -372,6 +388,14 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
     routeBindings: ['POST /drawings'],
   },
   {
+    id: 'action_equipment_drawing_update',
+    label: 'Equipment: update drawing',
+    desc: 'Allow patching mold drawing metadata and status.',
+    category: 'action',
+    parentId: 'menu_equipment',
+    routeBindings: ['PATCH /drawings/:id'],
+  },
+  {
     id: 'action_equipment_drawing_delete',
     label: '设备工装：删除图纸',
     desc: '允许删除模具图纸。',
@@ -402,6 +426,14 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
     category: 'action',
     parentId: 'menu_equipment',
     routeBindings: ['POST /equipment-partners', 'DELETE /equipment-partners/:id'],
+  },
+  {
+    id: 'action_equipment_partner_update',
+    label: 'Equipment: update partner',
+    desc: 'Allow patching equipment partner master data.',
+    category: 'action',
+    parentId: 'menu_equipment',
+    routeBindings: ['PATCH /equipment-partners/:id'],
   },
   {
     id: 'action_equipment_loan_manage',
@@ -447,12 +479,92 @@ const approvalActions: LegacyActionPermissionEntry[] = [
   },
 ]
 
+const engineeringActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_material_update',
+    label: 'Engineering: update material',
+    desc: 'Allow patching material master records through SDRTS updates.',
+    category: 'action',
+    parentId: 'menu_engineering',
+    routeBindings: ['PATCH /materials/:id'],
+  },
+]
+
+const qualityActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_lab_experimental_category_create',
+    label: 'Quality: create experimental category',
+    desc: 'Allow creating laboratory experimental categories.',
+    category: 'action',
+    parentId: 'menu_quality',
+    routeBindings: ['POST /labs/experimental/categories'],
+  },
+  {
+    id: 'action_lab_experimental_category_delete',
+    label: 'Quality: delete experimental category',
+    desc: 'Allow deleting laboratory experimental categories.',
+    category: 'action',
+    parentId: 'menu_quality',
+    routeBindings: ['DELETE /labs/experimental/categories/:id'],
+  },
+]
+
+const orgActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_org_profile_update',
+    label: 'Org: update organization profile',
+    desc: 'Allow patching organization profile metadata.',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: ['PATCH /org/:id'],
+  },
+  {
+    id: 'action_employee_update',
+    label: 'Org: update employee profile',
+    desc: 'Allow patching employee profile metadata.',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: ['PATCH /employees/:id'],
+  },
+  {
+    id: 'action_employee_import_preview',
+    label: 'Org: preview employee import',
+    desc: 'Allow running employee import preview.',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: ['POST /employees/import/preview'],
+  },
+  {
+    id: 'action_employee_import_commit',
+    label: 'Org: commit employee import',
+    desc: 'Allow committing employee import batches.',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: ['POST /employees/import/commit'],
+  },
+]
+
+const productionActions: LegacyActionPermissionEntry[] = [
+  {
+    id: 'action_production_line_update',
+    label: 'Production: update line topology',
+    desc: 'Allow patching production line topology snapshots.',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['PATCH /production/lines/:id'],
+  },
+]
+
 export const ACTION_PERMISSION_CATALOG: Record<string, ActionPermissionEntry[]> =
   normalizeActionPermissionCatalog({
     system: systemActions,
     warehouse: warehouseActions,
     trading: tradingActions,
+    engineering: engineeringActions,
+    quality: qualityActions,
     equipment: equipmentActions,
+    org: orgActions,
+    production: productionActions,
     approval: approvalActions,
   })
 

@@ -1,28 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-    Plus,
-    Search,
-    Trash2,
-    Edit2,
-    Database,
-} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Plus, Search, Trash2, Edit2, Database } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import {
-    type DictionaryEntry,
-} from '../data/schema'
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip'
-
+import { type DictionaryEntry, type DictionaryOption } from '../data/schema'
 import { DictionaryCoreService } from '../services/dictionary-core-service'
 import { DictionaryMaintenanceService } from '../services/dictionary-maintenance-service'
 import { DictionaryEntryActionDialog } from './dictionary-entry-action-dialog'
@@ -39,30 +24,43 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
     const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<DictionaryEntry | null>(null)
 
-    // 初始化加载与事件监听
+    const applySnapshot = () => setEntries(DictionaryCoreService.getEntries())
+
     useEffect(() => {
-        const refreshData = () => {
-            const currentEntries = DictionaryCoreService.getEntries()
-            setEntries(currentEntries)
+        const refreshData = async () => {
+            await DictionaryCoreService.init()
+            applySnapshot()
         }
 
-        // 异步初始化
-        DictionaryCoreService.init().then(refreshData)
-
-        // 监听全局更新事件
-        window.addEventListener('xdfc_dictionary_updated', refreshData)
-        return () => window.removeEventListener('xdfc_dictionary_updated', refreshData)
+        void refreshData()
+        window.addEventListener('xdfc_dictionary_updated', applySnapshot)
+        return () => window.removeEventListener('xdfc_dictionary_updated', applySnapshot)
     }, [groupId])
 
-    const saveEntries = async (newEntries: DictionaryEntry[]) => {
-        setEntries(newEntries)
-        await DictionaryMaintenanceService.saveEntries(newEntries)
-        // 显式触发全局刷新 (Service 内部也会发，这里双保险)
-        window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
-    }
+    const filteredEntries = useMemo(() => {
+        const keyword = searchTerm.toLowerCase()
+        return entries
+            .filter((entry) => entry.groupId === groupId)
+            .filter((entry) => {
+                if (entry.label.toLowerCase().includes(keyword)) return true
+                return (entry.options || []).some((opt) => {
+                    const option = typeof opt === 'string' ? opt : opt.label
+                    return option.toLowerCase().includes(keyword)
+                })
+            })
+    }, [entries, groupId, searchTerm])
 
     const handleAddEntry = () => {
-        setEditingEntry(null)
+        setEditingEntry({
+            id: '',
+            groupId,
+            label: '',
+            code: `ATTR_${Date.now()}`,
+            description: '',
+            options: [],
+            sortOrder: 0,
+            active: true,
+        } as DictionaryEntry)
         setIsEntryDialogOpen(true)
     }
 
@@ -71,31 +69,43 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
         setIsEntryDialogOpen(true)
     }
 
-    const handleConfirmEntry = (data: DictionaryEntry) => {
-        if (editingEntry) {
-            saveEntries(entries.map(e => e.id === editingEntry.id ? data : e))
-            toast.success(`属性 “${data.label}” 已更新`)
+    const handleConfirmEntry = async (data: DictionaryEntry) => {
+        if (editingEntry?.id) {
+            if (!editingEntry.code || !editingEntry.updatedAt) {
+                throw new Error('Missing entry version for conflict-safe update')
+            }
+            await DictionaryMaintenanceService.patchEntry(editingEntry.code, {
+                label: data.label,
+                description: data.description,
+                options: (data.options ?? []) as DictionaryOption[],
+                sortOrder: data.sortOrder,
+                active: data.active,
+                version: editingEntry.updatedAt,
+            })
+            toast.success(`属性“${data.label}”已更新`)
         } else {
-            saveEntries([...entries, data])
-            toast.success(`属性 “${data.label}” 已添加`)
+            await DictionaryMaintenanceService.createEntry({
+                groupId,
+                label: data.label,
+                code: data.code || `ATTR_${Date.now()}`,
+                description: data.description,
+                options: (data.options ?? []) as DictionaryOption[],
+                sortOrder: data.sortOrder,
+                active: data.active,
+            })
+            toast.success(`属性“${data.label}”已添加`)
         }
     }
 
-    const handleDeleteEntry = (entryId: string) => {
+    const handleDeleteEntry = async (entryId: string) => {
+        const entry = entries.find((item) => item.id === entryId)
+        if (!entry?.code) return
+
         if (confirm('确定要删除该属性定义吗？')) {
-            saveEntries(entries.filter(e => e.id !== entryId))
+            await DictionaryMaintenanceService.deleteEntry(entry.code)
             toast.info('字典项已移除')
         }
     }
-
-    const filteredEntries = entries
-        .filter(e => e.groupId === groupId)
-        .filter(e =>
-            e.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (e.options || []).some((opt: any) =>
-                (typeof opt === 'string' ? opt : opt.label).toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        )
 
     return (
         <div className='space-y-4'>
@@ -112,7 +122,7 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
                         <div className='relative flex-1 max-w-sm'>
                             <Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground' />
                             <Input
-                                placeholder="搜索属性或选项..."
+                                placeholder='搜索属性或选项...'
                                 className='pl-9 h-9 bg-background'
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -125,67 +135,31 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
 
                     <div className='grid grid-cols-1 divide-y bg-card'>
                         {filteredEntries.length > 0 ? (
-                            filteredEntries.map(entry => (
-                                <div key={entry.id} className='flex items-center justify-between p-4 hover:bg-muted/5 transition-colors group cursor-default'>
-                                    <div className='flex items-center gap-4'>
-                                        <div className='size-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold shrink-0'>
-                                            {entry.label.charAt(0).toUpperCase()}
+                            filteredEntries.map((entry) => (
+                                <div key={entry.id} className='flex items-center justify-between p-4 hover:bg-muted/5 transition-colors group'>
+                                    <div className='space-y-2'>
+                                        <div className='text-sm font-semibold text-foreground flex items-center gap-2'>
+                                            {entry.label}
+                                            <span className='text-[10px] text-muted-foreground font-mono font-normal py-0.5 px-1.5 bg-muted rounded'>
+                                                {entry.code || 'NO_CODE'}
+                                            </span>
                                         </div>
-                                        <div className='space-y-1.5'>
-                                            <div className='text-sm font-semibold text-foreground flex items-center gap-2'>
-                                                {entry.label}
-                                                <span className='text-[10px] text-muted-foreground font-mono font-normal py-0.5 px-1.5 bg-muted rounded'>
-                                                    {entry.code || 'NO_CODE'}
-                                                </span>
-                                            </div>
-                                            <div className='flex flex-wrap gap-1.5'>
-                                                {(entry.options || []).map((opt, idx) => {
-                                                    const label = typeof opt === 'string' ? opt : opt.label
-                                                    const val = typeof opt === 'string' ? opt.toUpperCase() : opt.value
-                                                    return (
-                                                        <TooltipProvider key={idx}>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Badge
-                                                                        variant='secondary'
-                                                                        className='bg-blue-500/5 text-blue-600 dark:text-blue-200 dark:bg-blue-400/10 border-blue-200/50 dark:border-blue-800/10 py-0.5 px-2 text-[11px] font-normal'
-                                                                    >
-                                                                        {label}
-                                                                    </Badge>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent className='text-[10px] bg-slate-900 text-white'>
-                                                                    代码键值: <span className='font-mono font-bold'>{val}</span>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    )
-                                                })}
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    onClick={() => handleEditEntry(entry)}
-                                                    className='h-5 px-1.5 text-[10px] text-muted-foreground hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity'
-                                                >
-                                                    <Edit2 className='size-2.5 mr-0.5' /> 编辑选项
-                                                </Button>
-                                            </div>
+                                        <div className='flex flex-wrap gap-1.5'>
+                                            {(entry.options || []).map((opt, idx) => {
+                                                const label = typeof opt === 'string' ? opt : opt.label
+                                                return (
+                                                    <Badge key={idx} variant='secondary' className='text-[11px] font-normal'>
+                                                        {label}
+                                                    </Badge>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                     <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => handleEditEntry(entry)}
-                                            className='size-8 text-slate-400 hover:text-blue-600'
-                                        >
+                                        <Button variant='ghost' size='icon' onClick={() => handleEditEntry(entry)}>
                                             <Edit2 className='size-3.5' />
                                         </Button>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => handleDeleteEntry(entry.id)}
-                                            className='size-8 text-slate-400 hover:text-rose-600'
-                                        >
+                                        <Button variant='ghost' size='icon' onClick={() => void handleDeleteEntry(entry.id)}>
                                             <Trash2 className='size-3.5' />
                                         </Button>
                                     </div>

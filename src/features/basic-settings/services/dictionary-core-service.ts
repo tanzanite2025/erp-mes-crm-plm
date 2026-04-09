@@ -44,6 +44,11 @@ class DictionaryCoreServiceImpl {
         return this.init()
     }
 
+    async refresh(): Promise<void> {
+        this.isInitialized = false
+        await this.init()
+    }
+
     private async loadFromBackend(): Promise<void> {
         try {
             const [rawGroups, rawEntries] = await Promise.all([
@@ -139,10 +144,26 @@ class DictionaryCoreServiceImpl {
         return this.groups
     }
 
+    getGroupById(groupId: string): DictionaryGroup | undefined {
+        return this.groups.find((group) => group.id === groupId)
+    }
+
+    getGroupByCode(groupCode: string): DictionaryGroup | undefined {
+        return this.groups.find((group) => group.code === groupCode)
+    }
+
     getEntries(groupId?: string): DictionaryEntry[] {
         return groupId 
             ? this.entries.filter(e => e.groupId === groupId)
             : this.entries
+    }
+
+    getEntryById(entryId: string): DictionaryEntry | undefined {
+        return this.entries.find((entry) => entry.id === entryId)
+    }
+
+    getEntryByCode(entryCode: string): DictionaryEntry | undefined {
+        return this.entries.find((entry) => entry.code === entryCode)
     }
 
     /**

@@ -1,5 +1,11 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  ensureArrayField,
+  ensureArrayResponse,
+  ensureNumberField,
+  ensureObjectField,
+  ensureObjectResponse,
+} from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
 
@@ -18,13 +24,13 @@ export interface SupplierListResponse {
   total: number
   page: number
   pageSize: number
-  metadata?: {
-    pagination?: {
-      total?: number
-      page?: number
-      pageSize?: number
+  metadata: {
+    pagination: {
+      total: number
+      page: number
+      pageSize: number
     }
-    stats?: Partial<SupplierListStats>
+    stats: SupplierListStats
   }
 }
 
@@ -66,22 +72,43 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
 }
 
 export const getSupplierList = async (): Promise<SupplierListResponse> => {
+  const context = 'SupplierService.getSupplierList'
   const res = await apiFetch<SupplierListResponse>('/suppliers')
   const objectResponse = ensureObjectResponse<SupplierListResponse & Record<string, unknown>>(
     res,
-    'SupplierService.getSupplierList'
+    context
   )
-  const items = ensureArrayField<Supplier>(objectResponse, 'items', 'SupplierService.getSupplierList').map((supplier) => ({
+  const items = ensureArrayField<Supplier>(objectResponse, 'items', context).map((supplier) => ({
     ...supplier,
     mainProducts:
       typeof supplier.mainProducts === 'string'
         ? JSON.parse(supplier.mainProducts)
         : (supplier.mainProducts ?? []),
   }))
+  const total = ensureNumberField(objectResponse, 'total', context)
+  const page = ensureNumberField(objectResponse, 'page', context)
+  const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
+  const metadata = ensureObjectField<Record<string, unknown>>(objectResponse, 'metadata', context)
+  const pagination = ensureObjectField<Record<string, unknown>>(metadata, 'pagination', context)
+  const stats = ensureObjectField<Record<string, unknown>>(metadata, 'stats', context)
 
   return {
-    ...objectResponse,
     items,
+    total,
+    page,
+    pageSize,
+    metadata: {
+      pagination: {
+        total: ensureNumberField(pagination, 'total', context),
+        page: ensureNumberField(pagination, 'page', context),
+        pageSize: ensureNumberField(pagination, 'pageSize', context),
+      },
+      stats: {
+        total: ensureNumberField(stats, 'total', context),
+        active: ensureNumberField(stats, 'active', context),
+        pendingReview: ensureNumberField(stats, 'pendingReview', context),
+      },
+    },
   }
 }
 

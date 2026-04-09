@@ -127,7 +127,7 @@ func SaveSupplierHandler(c *gin.Context) {
 // PatchSupplierHandler 局部更新供应商
 func PatchSupplierHandler(c *gin.Context) {
 	id := c.Param("id")
-	var req services.PatchDeltaHandlerRequest
+	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 供应商更新数据格式错误: " + err.Error()})
 		return
@@ -140,7 +140,7 @@ func PatchSupplierHandler(c *gin.Context) {
 
 	var patch services.PatchSupplierRequest
 	patch.ID = id
-	patch.Version = req.Metadata.Version
+	patch.Version = int(req.Metadata.Version)
 
 	for key, raw := range req.Delta {
 		valueRaw, err := extractDeltaNewValue(raw)

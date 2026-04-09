@@ -1,90 +1,132 @@
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
-import { DictionaryEntry, DictionaryGroup } from '../data/schema'
 import { DictionaryCoreService } from './dictionary-core-service'
+import { type DictionaryEntry, type DictionaryGroup, type DictionaryOption } from '../data/schema'
 
 const logger = createLogger('DictionaryMaintenanceService')
 
-/**
- * DictionaryMaintenanceService - 字典维护与同步服务
- * 职责: 负责字典数据的增删改 (POST/PATCH) 以及系统级同步。
- * 遵循 [Backend Authority] 核心哲学，维护操作后需强制重新加载或原子更新。
- */
+interface CreateGroupPayload {
+    name: string
+    code: string
+    description?: string
+    active?: boolean
+}
+
+interface PatchGroupPayload {
+    name?: string
+    description?: string
+    active?: boolean
+    version: string
+}
+
+interface CreateEntryPayload {
+    groupId: string
+    label: string
+    code: string
+    description?: string
+    options?: DictionaryOption[]
+    sortOrder?: number
+    active?: boolean
+}
+
+interface PatchEntryPayload {
+    label?: string
+    description?: string
+    options?: DictionaryOption[]
+    sortOrder?: number
+    active?: boolean
+    version: string
+}
+
+const normalizeCode = (code: string) => code.trim().toUpperCase()
+
+async function refreshDictionarySnapshot() {
+    await DictionaryCoreService.refresh()
+}
+
 export const DictionaryMaintenanceService = {
-    /**
-     * 更新单个字典项的选项
-     */
-    async updateEntry(entryCode: string, options: any[]): Promise<void> {
-        const entry = DictionaryCoreService.getEntries().find((item) => item.code === entryCode)
-        if (!entry) throw new Error(`[CRITICAL] Dictionary entry ${entryCode} not found for update`)
-
-        const updatedEntry = { ...entry, options }
-
-        try {
-            await apiFetch('/dictionary/entries', {
-                method: 'POST',
-                body: JSON.stringify(updatedEntry),
-            })
-            
-            // 变更后重新初始化 CoreService 以保证数据最终一致性
-            await DictionaryCoreService.init()
-            window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
-        } catch (err) {
-            logger.error('Update entry failed', err)
-            throw err
-        }
+    async createGroup(payload: CreateGroupPayload): Promise<DictionaryGroup> {
+        const created = await apiFetch<DictionaryGroup>('/dictionary/groups', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: payload.name.trim(),
+                code: normalizeCode(payload.code),
+                description: payload.description ?? '',
+                active: payload.active ?? true,
+            }),
+        })
+        await refreshDictionarySnapshot()
+        return created
     },
 
-    /**
-     * 批量保存字典组
-     */
-    async saveGroups(groups: DictionaryGroup[]): Promise<void> {
-        try {
-            for (const group of groups) {
-                await apiFetch('/dictionary/groups', { 
-                    method: 'POST', 
-                    body: JSON.stringify(group) 
-                })
-            }
-            await DictionaryCoreService.init()
-            window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
-        } catch (err) {
-            logger.error('Save groups failed', err)
-            throw err
-        }
+    async patchGroup(groupCode: string, payload: PatchGroupPayload): Promise<DictionaryGroup> {
+        const updated = await apiFetch<DictionaryGroup>(`/dictionary/groups/${encodeURIComponent(normalizeCode(groupCode))}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                name: payload.name,
+                description: payload.description,
+                active: payload.active,
+                version: payload.version,
+            }),
+        })
+        await refreshDictionarySnapshot()
+        return updated
     },
 
-    /**
-     * 批量保存字典项
-     */
-    async saveEntries(entries: DictionaryEntry[]): Promise<void> {
-        try {
-            for (const entry of entries) {
-                await apiFetch('/dictionary/entries', { 
-                    method: 'POST', 
-                    body: JSON.stringify(entry) 
-                })
-            }
-            await DictionaryCoreService.init()
-            window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
-        } catch (err) {
-            logger.error('Save entries failed', err)
-            throw err
-        }
+    async deleteGroup(groupCode: string): Promise<void> {
+        await apiFetch(`/dictionary/groups/${encodeURIComponent(normalizeCode(groupCode))}`, {
+            method: 'DELETE',
+        })
+        await refreshDictionarySnapshot()
     },
 
-    /**
-     * 系统级字典同步 (离线/云端一致性触发器)
-     */
+    async createEntry(payload: CreateEntryPayload): Promise<DictionaryEntry> {
+        const created = await apiFetch<DictionaryEntry>('/dictionary/entries', {
+            method: 'POST',
+            body: JSON.stringify({
+                groupId: payload.groupId,
+                label: payload.label.trim(),
+                code: normalizeCode(payload.code),
+                description: payload.description ?? '',
+                options: payload.options ?? [],
+                sortOrder: payload.sortOrder ?? 0,
+                active: payload.active ?? true,
+            }),
+        })
+        await refreshDictionarySnapshot()
+        return created
+    },
+
+    async patchEntry(entryCode: string, payload: PatchEntryPayload): Promise<DictionaryEntry> {
+        const updated = await apiFetch<DictionaryEntry>(`/dictionary/entries/${encodeURIComponent(normalizeCode(entryCode))}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                label: payload.label,
+                description: payload.description,
+                options: payload.options,
+                sortOrder: payload.sortOrder,
+                active: payload.active,
+                version: payload.version,
+            }),
+        })
+        await refreshDictionarySnapshot()
+        return updated
+    },
+
+    async deleteEntry(entryCode: string): Promise<void> {
+        await apiFetch(`/dictionary/entries/${encodeURIComponent(normalizeCode(entryCode))}`, {
+            method: 'DELETE',
+        })
+        await refreshDictionarySnapshot()
+    },
+
     async syncSystemDictionary(): Promise<void> {
         try {
             await apiFetch('/dictionary/sync', { method: 'POST' })
-            // 同步后彻底重置 CoreService
-            await DictionaryCoreService.init()
-            window.dispatchEvent(new CustomEvent('xdfc_dictionary_updated'))
+            await refreshDictionarySnapshot()
         } catch (err) {
             logger.error('System sync failed', err)
             throw err
         }
-    }
+    },
 }

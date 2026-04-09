@@ -73,13 +73,23 @@ export function DrawingMgmt() {
     }, [drawings, searchTerm])
 
     const openCreateDialog = () => {
-        setEditingDrawing(null)
-        setIsDialogOpen(true)
+        void runConfirmedAction({
+            permission: 'action_equipment_drawing_manage',
+            onAction: () => {
+                setEditingDrawing(null)
+                setIsDialogOpen(true)
+            }
+        })
     }
 
     const openEditDialog = (drawing: MoldDrawing) => {
-        setEditingDrawing(drawing)
-        setIsDialogOpen(true)
+        void runConfirmedAction({
+            permission: 'action_equipment_drawing_update',
+            onAction: () => {
+                setEditingDrawing(drawing)
+                setIsDialogOpen(true)
+            }
+        })
     }
 
     const handleViewLogs = async (drawing: MoldDrawing) => {
@@ -136,15 +146,18 @@ export function DrawingMgmt() {
         link.click()
     }
 
-    const handleToggleStatus = (id: string, currentStatus?: MoldDrawing['status']) => {
+    const handleToggleStatus = (drawing: MoldDrawing) => {
         void runConfirmedAction({
-            permission: 'action_equipment_drawing_delete',
-            confirmKey: currentStatus === 'ACTIVE' 
+            permission: 'action_equipment_drawing_update',
+            confirmKey: drawing.status === 'ACTIVE' 
                 ? 'equipmentTooling.drawings.tooltips.obsolete' 
                 : 'equipmentTooling.drawings.tooltips.activate',
             onAction: async () => {
-                const nextStatus: MoldDrawing['status'] = currentStatus === 'ACTIVE' ? 'OBSOLETE' : 'ACTIVE'
-                await DrawingService.updateDrawing(id, { status: nextStatus })
+                const nextStatus: MoldDrawing['status'] = drawing.status === 'ACTIVE' ? 'OBSOLETE' : 'ACTIVE'
+                const delta: DeltaSet = {
+                    status: { o: drawing.status ?? 'DRAFT', n: nextStatus }
+                }
+                await DrawingService.patchDrawing(drawing.id, delta, drawing.sysVersion || 1)
                 toast.success(
                     nextStatus === 'ACTIVE'
                         ? t('equipmentTooling.drawings.toast.statusActive')
@@ -211,7 +224,7 @@ export function DrawingMgmt() {
                                 size='icon'
                                 className='size-8 rounded-xl hover:bg-rose-50 text-rose-500'
                                 title={drawing.status === 'ACTIVE' ? t('equipmentTooling.drawings.tooltips.obsolete') : t('equipmentTooling.drawings.tooltips.activate')}
-                                onClick={() => handleToggleStatus(drawing.id, drawing.status)}
+                                onClick={() => handleToggleStatus(drawing)}
                             >
                                 {drawing.status === 'ACTIVE' ? <Trash2 className='size-4' /> : <RotateCcw className='size-4 text-emerald-500' />}
                             </Button>

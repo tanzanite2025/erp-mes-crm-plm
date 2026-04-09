@@ -157,7 +157,7 @@ export function SalesOrderList() {
   }
 
   return (
-    <div className='flex h-[calc(100vh-220px)] gap-6 overflow-hidden animate-in fade-in duration-700'>
+    <div className='flex min-h-0 flex-1 gap-6 overflow-hidden animate-in fade-in duration-700'>
       {/* Master View (List) */}
       <div className={cn(
         'flex flex-col gap-6 transition-all duration-500',
