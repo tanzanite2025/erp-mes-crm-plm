@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 	"xdfc-server/models"
@@ -14,6 +15,7 @@ import (
 )
 
 const (
+	SalesTransactionIntentOrderSave                = "ORDER_SAVE"
 	SalesTransactionIntentClassificationTypeChange = "ORDER_CLASSIFICATION_TYPE_CHANGE"
 	SalesTransactionIntentCustomerChange           = "ORDER_CUSTOMER_CHANGE"
 	SalesTransactionIntentDeliveryDateChange       = "ORDER_DELIVERY_DATE_CHANGE"
@@ -40,6 +42,237 @@ type SalesOrderTransactionRequest struct {
 	ActorID         string          `json:"actorId"`
 	ExpectedVersion int             `json:"expectedVersion"`
 	Payload         json.RawMessage `json:"payload"`
+}
+
+type SalesOrderSavePayload struct {
+	Delta     map[string]json.RawMessage `json:"delta"`
+	FinalData PatchSalesOrderRequest     `json:"finalData"`
+	Operator  string                     `json:"operator"`
+}
+
+func salesOrderLineStructureChanged(previousLines []models.SalesOrderLine, nextLines []models.SalesOrderLine) bool {
+	previousLineNos := make([]int, 0, len(previousLines))
+	for _, line := range previousLines {
+		previousLineNos = append(previousLineNos, line.LineNo)
+	}
+	nextLineNos := make([]int, 0, len(nextLines))
+	for _, line := range nextLines {
+		nextLineNos = append(nextLineNos, line.LineNo)
+	}
+	slices.Sort(previousLineNos)
+	slices.Sort(nextLineNos)
+	if len(previousLineNos) != len(nextLineNos) {
+		return true
+	}
+	for index := range previousLineNos {
+		if previousLineNos[index] != nextLineNos[index] {
+			return true
+		}
+	}
+	return false
+}
+
+func salesOrderPureLineAdd(previousLines []models.SalesOrderLine, nextLines []models.SalesOrderLine) bool {
+	if len(nextLines) <= len(previousLines) {
+		return false
+	}
+	previousByLineNo := make(map[int]models.SalesOrderLine, len(previousLines))
+	for _, line := range previousLines {
+		previousByLineNo[line.LineNo] = line
+	}
+	addedCount := 0
+	for _, line := range nextLines {
+		previousLine, ok := previousByLineNo[line.LineNo]
+		if !ok {
+			addedCount++
+			continue
+		}
+		previousJSON, _ := json.Marshal(previousLine)
+		nextJSON, _ := json.Marshal(line)
+		if string(previousJSON) != string(nextJSON) {
+			return false
+		}
+	}
+	return addedCount > 0
+}
+
+func salesOrderPureLineRemove(previousLines []models.SalesOrderLine, nextLines []models.SalesOrderLine) bool {
+	if len(nextLines) >= len(previousLines) {
+		return false
+	}
+	nextByLineNo := make(map[int]models.SalesOrderLine, len(nextLines))
+	for _, line := range nextLines {
+		nextByLineNo[line.LineNo] = line
+	}
+	removedCount := 0
+	for _, line := range previousLines {
+		nextLine, ok := nextByLineNo[line.LineNo]
+		if !ok {
+			removedCount++
+			continue
+		}
+		nextJSON, _ := json.Marshal(nextLine)
+		previousJSON, _ := json.Marshal(line)
+		if string(previousJSON) != string(nextJSON) {
+			return false
+		}
+	}
+	return removedCount > 0
+}
+
+func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
+	payload, err := parseSalesOrderSavePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := strings.TrimSpace(payload.Operator)
+	if operator == "" {
+		operator = strings.TrimSpace(input.Operator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(input.ActorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+
+	deltaKeys := make([]string, 0, len(payload.Delta))
+	for key := range payload.Delta {
+		deltaKeys = append(deltaKeys, key)
+	}
+	if len(deltaKeys) == 0 {
+		return nil, fmt.Errorf("%w: delta is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	nextOrder := MapPatchSalesOrderRequestToModel(payload.FinalData)
+	nextLines := nextOrder.Lines
+	if nextLines == nil {
+		nextLines = []models.SalesOrderLine{}
+	}
+
+	isCustomerOnlyChange := true
+	isLinesOnlyChange := true
+	isClassificationTypeOnlyChange := true
+	isDeliveryDateOnlyChange := true
+	isStatusFlowOnlyChange := true
+	isPurchaseOrderNoOnlyChange := true
+	isRequirementsOnlyChange := true
+	for _, key := range deltaKeys {
+		if key != "customerId" && key != "customerName" {
+			isCustomerOnlyChange = false
+		}
+		if key != "lines" && key != "quantity" && key != "amount" {
+			isLinesOnlyChange = false
+		}
+		if key != "classification" && key != "type" && key != "barcode" {
+			isClassificationTypeOnlyChange = false
+		}
+		if key != "deliveryDate" {
+			isDeliveryDateOnlyChange = false
+		}
+		if key != "status" && key != "statusNote" {
+			isStatusFlowOnlyChange = false
+		}
+		if key != "purchaseOrderNo" {
+			isPurchaseOrderNoOnlyChange = false
+		}
+		if key != "requirements" {
+			isRequirementsOnlyChange = false
+		}
+	}
+
+	if isCustomerOnlyChange {
+		derivedPayload, _ := json.Marshal(SalesOrderCustomerChangePayload{
+			CustomerID:   payload.FinalData.CustomerID,
+			CustomerName: payload.FinalData.CustomerName,
+			Operator:     operator,
+		})
+		return executeOrderCustomerChangeTx(tx, current, ExecuteSalesOrderTransactionInput{
+			OrderID:         input.OrderID,
+			Intent:          SalesTransactionIntentCustomerChange,
+			ActorID:         input.ActorID,
+			Operator:        operator,
+			ExpectedVersion: input.ExpectedVersion,
+			Payload:         derivedPayload,
+			IP:              input.IP,
+		})
+	}
+
+	if isLinesOnlyChange {
+		if !salesOrderLineStructureChanged(current.Lines, nextLines) {
+			derivedPayload, _ := json.Marshal(SalesOrderLineContentChangePayload{Lines: payload.FinalData.Lines, Operator: operator})
+			return executeOrderLineContentChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderLineContentChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+		}
+		if salesOrderPureLineAdd(current.Lines, nextLines) {
+			derivedPayload, _ := json.Marshal(SalesOrderLineAddPayload{Lines: payload.FinalData.Lines, Operator: operator})
+			return executeOrderLineAddTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderLineAdd, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+		}
+		if salesOrderPureLineRemove(current.Lines, nextLines) {
+			derivedPayload, _ := json.Marshal(SalesOrderLineRemovePayload{Lines: payload.FinalData.Lines, Operator: operator})
+			return executeOrderLineRemoveTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderLineRemove, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+		}
+		derivedPayload, _ := json.Marshal(SalesOrderLinesChangePayload{Lines: payload.FinalData.Lines, Operator: operator})
+		return executeOrderLinesChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderLinesChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	if isClassificationTypeOnlyChange {
+		derivedPayload, _ := json.Marshal(SalesOrderClassificationTypeChangePayload{Classification: payload.FinalData.Classification, Type: payload.FinalData.Type, Barcode: payload.FinalData.Barcode, Operator: operator})
+		return executeOrderClassificationTypeChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentClassificationTypeChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	if isDeliveryDateOnlyChange {
+		derivedPayload, _ := json.Marshal(SalesOrderDeliveryDateChangePayload{DeliveryDate: payload.FinalData.DeliveryDate, Operator: operator})
+		return executeOrderDeliveryDateChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentDeliveryDateChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	if isStatusFlowOnlyChange {
+		if strings.TrimSpace(payload.FinalData.Status) == "Canceled" {
+			derivedPayload, _ := json.Marshal(SalesOrderCancelPayload{Operator: operator, Reason: payload.FinalData.StatusNote})
+			return executeOrderCancelTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderCancel, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+		}
+		derivedPayload, _ := json.Marshal(SalesOrderStatusTransitionPayload{Status: payload.FinalData.Status, StatusNote: payload.FinalData.StatusNote, Operator: operator})
+		return executeOrderStatusTransitionTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentStatusTransition, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	if isPurchaseOrderNoOnlyChange {
+		derivedPayload, _ := json.Marshal(SalesOrderPurchaseOrderNoChangePayload{PurchaseOrderNo: payload.FinalData.PurchaseOrderNo, Operator: operator})
+		return executeOrderPurchaseOrderNoChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentPurchaseOrderNoChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	if isRequirementsOnlyChange {
+		derivedPayload, _ := json.Marshal(SalesOrderRequirementsChangePayload{Requirements: payload.FinalData.Requirements, Operator: operator})
+		return executeOrderRequirementsChangeTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentRequirementsChange, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+
+	for _, line := range nextOrder.Lines {
+		if strings.TrimSpace(line.ProductID) != "" {
+			var product models.Product
+			if err := tx.Where("id = ?", line.ProductID).First(&product).Error; err != nil {
+				var material models.Material
+				if errM := tx.Where("id = ?", line.ProductID).First(&material).Error; errM != nil {
+					return nil, errors.New("[CRITICAL_DATA_INTEGRITY] 订单保存失败：明细行物料 ID " + line.ProductID + " 不存在")
+				}
+			}
+		}
+	}
+
+	nextOrder.ID = current.ID
+	nextOrder.Version = current.Version + 1
+	nextOrder.UpdatedBy = operator
+	if err := tx.Model(current).Updates(nextOrder).Error; err != nil {
+		return nil, err
+	}
+	if err := tx.Model(current).Association("Lines").Replace(nextOrder.Lines); err != nil {
+		return nil, err
+	}
+	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
+		return nil, err
+	}
+	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+	return current, nil
 }
 
 func executeOrderLineRemoveTx(tx *gorm.DB, current *models.SalesOrder, input ExecuteSalesOrderTransactionInput) (*models.SalesOrder, error) {
@@ -971,7 +1204,7 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 	}
 
 	intent := strings.TrimSpace(input.Intent)
-	if intent != SalesTransactionIntentClassificationTypeChange && intent != SalesTransactionIntentCustomerChange && intent != SalesTransactionIntentDeliveryDateChange && intent != SalesTransactionIntentNameChange && intent != SalesTransactionIntentPurchaseOrderNoChange && intent != SalesTransactionIntentRequirementsChange && intent != SalesTransactionIntentOrderLineAdd && intent != SalesTransactionIntentOrderLineRemove && intent != SalesTransactionIntentOrderLineContentChange && intent != SalesTransactionIntentOrderLinesChange && intent != SalesTransactionIntentOrderLineClaim && intent != SalesTransactionIntentStatusTransition && intent != SalesTransactionIntentOrderCancel {
+	if intent != SalesTransactionIntentOrderSave && intent != SalesTransactionIntentClassificationTypeChange && intent != SalesTransactionIntentCustomerChange && intent != SalesTransactionIntentDeliveryDateChange && intent != SalesTransactionIntentNameChange && intent != SalesTransactionIntentPurchaseOrderNoChange && intent != SalesTransactionIntentRequirementsChange && intent != SalesTransactionIntentOrderLineAdd && intent != SalesTransactionIntentOrderLineRemove && intent != SalesTransactionIntentOrderLineContentChange && intent != SalesTransactionIntentOrderLinesChange && intent != SalesTransactionIntentOrderLineClaim && intent != SalesTransactionIntentStatusTransition && intent != SalesTransactionIntentOrderCancel {
 		return nil, ErrSalesTransactionUnsupportedIntent
 	}
 
@@ -985,6 +1218,8 @@ func executeSalesOrderTransactionTx(tx *gorm.DB, input ExecuteSalesOrderTransact
 	}
 
 	switch intent {
+	case SalesTransactionIntentOrderSave:
+		return executeOrderUnifiedSaveTx(tx, &current, input)
 	case SalesTransactionIntentClassificationTypeChange:
 		return executeOrderClassificationTypeChangeTx(tx, &current, input)
 	case SalesTransactionIntentCustomerChange:
@@ -1274,6 +1509,27 @@ func parseSalesOrderLineClaimPayload(raw json.RawMessage) (SalesOrderLineClaimPa
 		return SalesOrderLineClaimPayload{}, fmt.Errorf("%w: lineNos is required", ErrSalesTransactionInvalidPayload)
 	}
 
+	return payload, nil
+}
+
+func parseSalesOrderSavePayload(raw json.RawMessage) (SalesOrderSavePayload, error) {
+	if len(raw) == 0 {
+		return SalesOrderSavePayload{}, fmt.Errorf("%w: payload is required", ErrSalesTransactionInvalidPayload)
+	}
+
+	var payload SalesOrderSavePayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return SalesOrderSavePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
+	}
+	if payload.FinalData.ID == "" {
+		return SalesOrderSavePayload{}, fmt.Errorf("%w: finalData.id is required", ErrSalesTransactionInvalidPayload)
+	}
+	if len(payload.Delta) == 0 {
+		return SalesOrderSavePayload{}, fmt.Errorf("%w: delta is required", ErrSalesTransactionInvalidPayload)
+	}
+	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+		return SalesOrderSavePayload{}, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, err)
+	}
 	return payload, nil
 }
 

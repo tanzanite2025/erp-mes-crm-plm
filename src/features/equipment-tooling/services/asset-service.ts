@@ -12,6 +12,7 @@ export class AssetService {
     static getGroupNames = MoldCoreService.getGroupNames.bind(MoldCoreService)
     static saveMolds = MoldMaintenanceService.saveMolds.bind(MoldMaintenanceService)
     static checkMoldCapacity = MoldTransactionService.checkMoldCapacity.bind(MoldTransactionService)
+    static checkMoldCapacityAlerts = MoldTransactionService.checkMoldCapacityAlerts.bind(MoldTransactionService)
     static checkLinkIntegrity = MoldCoreService.checkLinkIntegrity.bind(MoldCoreService)
 
     static getFurnaces = FurnaceService.getFurnaces.bind(FurnaceService)

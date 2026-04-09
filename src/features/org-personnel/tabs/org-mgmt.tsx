@@ -56,6 +56,25 @@ export function OrgMgmt() {
   const cancelText = locale === 'zh-CN' ? '取消' : 'Cancel'
   const confirmDeleteText = locale === 'zh-CN' ? '确认删除' : 'Confirm Delete'
   const showLoadingState = isLoading && orgData.length === 0
+  const canCreateChild = selectedNode?.type !== 'team'
+  const addChildHint = locale === 'zh-CN'
+    ? '三级生产单元为末级，不允许继续新增下级。'
+    : 'Third-level production units are terminal and cannot have children.'
+  const orgLevelHint = locale === 'zh-CN'
+    ? '组织层级固定为：一级单位 -> 二级部门 -> 三级生产单元。人员管理中的“部门”字段只关联二级部门。'
+    : 'Organization hierarchy is fixed as Level 1 -> Level 2 department -> Level 3 production unit. Personnel departments only map to level-2 departments.'
+
+  const getOrgLevelBadge = (type: OrgNode['type']) => {
+    if (locale !== 'zh-CN') {
+      if (type === 'company') return 'Level 1'
+      if (type === 'department') return 'Level 2'
+      return 'Level 3'
+    }
+
+    if (type === 'company') return '一级单位'
+    if (type === 'department') return '二级部门'
+    return '三级生产单元'
+  }
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -63,7 +82,7 @@ export function OrgMgmt() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700 p-1 md:p-2'>
-      <IndustrialHeader 
+      <IndustrialHeader
         icon={Users}
         title={t('orgPersonnel.org.title')}
         description={t('orgPersonnel.org.subtitle')}
@@ -75,6 +94,10 @@ export function OrgMgmt() {
             </div>
         }
       />
+
+      <div className='rounded-[24px] border border-dashed border-blue-200 bg-blue-50/70 px-5 py-4 text-blue-900 shadow-sm'>
+        <p className='text-[12px] font-bold leading-relaxed'>{orgLevelHint}</p>
+      </div>
 
       {loadError && (
         <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50/80 px-5 py-4 text-amber-900 shadow-sm'>
@@ -96,7 +119,6 @@ export function OrgMgmt() {
       )}
 
       <div className='flex-1 flex flex-col md:flex-row gap-6 overflow-hidden min-h-[600px]'>
-        {/* 左侧组织树 */}
         <Card className='w-full md:w-[320px] flex flex-col shrink-0 overflow-hidden rounded-[24px] border-dashed bg-muted/5 shadow-inner border-muted/50'>
           <CardHeader className='px-6 py-4 border-b border-dashed border-muted/50 flex flex-row items-center justify-between space-y-0'>
             <CardTitle className='text-sm font-black tracking-tighter italic uppercase'>
@@ -134,7 +156,6 @@ export function OrgMgmt() {
           </CardContent>
         </Card>
 
-        {/* 右侧节点详情 */}
         <div className='flex-1 flex flex-col gap-6 overflow-hidden min-w-0'>
           {showLoadingState ? (
             <div className='flex-1 flex items-center justify-center border border-dashed border-muted/50 rounded-[24px] bg-muted/5'>
@@ -150,11 +171,7 @@ export function OrgMgmt() {
                         {selectedNode.name}
                       </CardTitle>
                       <Badge variant='outline' className='rounded-full bg-blue-600/10 text-blue-600 border-none px-3 h-5 text-[9px] font-black uppercase italic'>
-                        {selectedNode.type === 'company'
-                          ? t('orgPersonnel.org.nodeTypes.root')
-                          : selectedNode.type === 'department'
-                            ? t('orgPersonnel.org.nodeTypes.dept')
-                            : t('orgPersonnel.org.nodeTypes.team')}
+                        {getOrgLevelBadge(selectedNode.type)}
                       </Badge>
                     </div>
                     <CardDescription className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-40'>
@@ -166,7 +183,7 @@ export function OrgMgmt() {
                       variant='ghost'
                       size='sm'
                       className='h-9 rounded-full border border-dashed border-muted-foreground/20 hover:bg-background transition-all font-black text-[10px] uppercase tracking-widest px-5'
-                      onClick={() => { setDialogMode('edit'); setDialogOpen(true); }}
+                      onClick={() => { setDialogMode('edit'); setDialogOpen(true) }}
                     >
                       <Edit className='mr-2 size-3.5' /> {t('orgPersonnel.org.editData')}
                     </Button>
@@ -174,7 +191,9 @@ export function OrgMgmt() {
                       variant='ghost'
                       size='sm'
                       className='h-9 rounded-full border border-dashed border-muted-foreground/20 hover:bg-background transition-all font-black text-[10px] uppercase tracking-widest px-5'
-                      onClick={() => { setDialogMode('add'); setDialogOpen(true); }}
+                      onClick={() => { setDialogMode('add'); setDialogOpen(true) }}
+                      disabled={!canCreateChild}
+                      title={!canCreateChild ? addChildHint : undefined}
                     >
                       <Plus className='mr-2 size-4' /> {t('orgPersonnel.org.addChild')}
                     </Button>
@@ -214,11 +233,15 @@ export function OrgMgmt() {
                     <div className='rounded-2xl bg-background px-6 py-5 text-sm font-medium text-slate-600 leading-relaxed border border-dashed border-muted/50 shadow-inner min-h-[100px]'>
                       {selectedNode.description || t('orgPersonnel.org.noDescription')}
                     </div>
+                    {!canCreateChild && (
+                      <div className='rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-[11px] font-bold text-amber-800'>
+                        {addChildHint}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* 关联详情分类卡片 */}
               <div className='grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden'>
                 <Card className='flex flex-col overflow-hidden rounded-[24px] border-dashed bg-muted/5 shadow-inner border-muted/50'>
                   <CardHeader className='px-6 py-4 flex flex-row items-center justify-between border-b border-dashed border-muted/50 shrink-0'>
@@ -238,7 +261,10 @@ export function OrgMgmt() {
                                 </div>
                                 <div>
                                   <p className='text-sm font-black italic text-slate-700'>{child.name}</p>
-                                  <p className='text-[10px] font-black uppercase tracking-widest opacity-40'>{child.manager || 'NO_MANAGER'}</p>
+                                  <p className='text-[10px] font-black uppercase tracking-widest opacity-40'>
+                                    {getOrgLevelBadge(child.type)}
+                                    {child.manager ? ` / ${child.manager}` : ''}
+                                  </p>
                                 </div>
                               </div>
                               <Button
@@ -328,7 +354,7 @@ export function OrgMgmt() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         currentRow={dialogMode === 'edit' ? selectedNode || undefined : undefined}
-        parentId={dialogMode === 'add' ? selectedNode?.id : undefined}
+        parentNode={dialogMode === 'add' ? selectedNode || undefined : undefined}
         onSubmit={handleOrgSubmit}
       />
 

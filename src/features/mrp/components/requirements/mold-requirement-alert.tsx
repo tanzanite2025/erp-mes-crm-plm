@@ -39,10 +39,7 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
 
       <div className='grid gap-3'>
         {alerts.map((alert) => (
-          <Card
-            key={alert.modelName}
-            className='overflow-hidden border-amber-100 bg-gradient-to-br from-amber-50/50 to-white shadow-sm'
-          >
+          <Card key={alert.modelName} className='overflow-hidden border-amber-100 bg-gradient-to-br from-amber-50/50 to-white shadow-sm'>
             <div className='flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4'>
               <div className='flex items-start gap-3'>
                 <div className='p-2.5 rounded-xl bg-amber-100 text-amber-600 mt-1'>
@@ -51,10 +48,7 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
                 <div className='space-y-1'>
                   <div className='flex items-center gap-2'>
                     <span className='text-sm font-black text-slate-800'>{alert.modelName}</span>
-                    <Badge
-                      variant='outline'
-                      className='text-[10px] font-bold border-amber-200 text-amber-700 bg-amber-50'
-                    >
+                    <Badge variant='outline' className='text-[10px] font-bold border-amber-200 text-amber-700 bg-amber-50'>
                       {t('trading.requirements.mold.orderDemand', { count: alert.totalQty })}
                     </Badge>
                   </div>
@@ -71,23 +65,15 @@ export function MoldRequirementAlert({ models }: MoldRequirementAlertProps) {
 
               <div className='flex flex-wrap gap-2'>
                 {alert.criticalMolds.map((mold, index) => (
-                  <div
-                    key={index}
-                    className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-amber-100 shadow-sm'
-                  >
+                  <div key={index} className='inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-amber-100 shadow-sm'>
                     <Settings2 className='size-3 text-slate-400' />
                     <span className='text-[10px] font-bold text-slate-600'>{mold.sn}</span>
                     <div className='h-3 w-px bg-slate-100' />
                     <div className='flex items-center gap-1'>
                       <div className='w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden'>
-                        <div
-                          className={`h-full rounded-full ${mold.health < 10 ? 'bg-red-500' : 'bg-amber-500'}`}
-                          style={{ width: `${mold.health}%` }}
-                        />
+                        <div className={`h-full rounded-full ${mold.health < 10 ? 'bg-red-500' : 'bg-amber-500'}`} style={{ width: `${mold.health}%` }} />
                       </div>
-                      <span
-                        className={`text-[9px] font-black ${mold.health < 10 ? 'text-red-500' : 'text-amber-600'}`}
-                      >
+                      <span className={`text-[9px] font-black ${mold.health < 10 ? 'text-red-500' : 'text-amber-600'}`}>
                         {mold.health}%
                       </span>
                     </div>

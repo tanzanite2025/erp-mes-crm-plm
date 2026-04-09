@@ -37,8 +37,24 @@ func GetSuppliersHandler(c *gin.Context) {
 		return
 	}
 
+	statsBaseQuery := db.DB.Model(&models.Supplier{}).Where("is_deleted = ?", false)
 	var total int64
-	query.Count(&total)
+	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
+		return
+	}
+
+	var active int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
+		return
+	}
+
+	var pendingReview int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "OnReview").Count(&pendingReview).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取供应商统计失败: " + err.Error()})
+		return
+	}
 
 	var items []models.Supplier
 	if err := query.Order("name asc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
@@ -46,12 +62,26 @@ func GetSuppliersHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-	})
+	response := services.SupplierListResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Metadata: services.SupplierListMetadata{
+			Pagination: services.PartnerListPaginationMeta{
+				Total:    total,
+				Page:     page,
+				PageSize: pageSize,
+			},
+			Stats: services.SupplierListStats{
+				Total:         total,
+				Active:        active,
+				PendingReview: pendingReview,
+			},
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // SaveSupplierHandler 新增或更新供应商
@@ -100,6 +130,11 @@ func PatchSupplierHandler(c *gin.Context) {
 	var req services.PatchDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 供应商更新数据格式错误: " + err.Error()})
+		return
+	}
+
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "email", "address", "status", "rating"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid supplier delta: " + err.Error()})
 		return
 	}
 

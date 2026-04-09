@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
+
+func inventoryVersionForTest(ts time.Time) int {
+	version := ts.UnixMilli()
+	if version < 1 {
+		return 1
+	}
+	return int(version)
+}
 
 func setupInventoryCommandHandlerTestDB(t *testing.T) {
 	t.Helper()
@@ -98,6 +107,16 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			account_code TEXT NOT NULL,
 			amount REAL NOT NULL,
 			memo TEXT
+		)`,
+		`CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
 		)`,
 		`CREATE TABLE materials (
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
@@ -238,6 +257,35 @@ func TestRecordInboundHandlerBindsPurchaseReceiptAssociationAndUpdatesStatus(t *
 	require.Equal(t, "Awaiting", status)
 }
 
+func TestPatchInventoryHandlerReturnsRealVersionedResponse(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	materialID := uuid.NewString()
+	now := time.Now().Add(-2 * time.Second).UTC()
+	recordID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, recordID, now, now, materialID, "Tube", "MAT-001", 10.0, 50.0, 5.0, "WH_A", "B-001", "PCS").Error)
+
+	payload := `{"op":"PATCH","delta":{"quantity":{"o":10,"n":12},"totalValue":{"o":50,"n":60}},"metadata":{"id":"` + recordID + `","version":` + strconv.Itoa(inventoryVersionForTest(now)) + `}}`
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/inventory/"+recordID, strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: recordID}}
+	ctx.Request = request
+
+	PatchInventoryHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryItemResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, 12.0, response.Quantity)
+	require.Equal(t, 60.0, response.TotalValue)
+	require.Greater(t, response.Version, inventoryVersionForTest(now))
+}
+
 func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdateStatus(t *testing.T) {
 	setupInventoryCommandHandlerTestDB(t)
 
@@ -277,6 +325,33 @@ func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdate
 	var status string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM sales_orders WHERE id = ?`, "so-handler-1").Scan(&status).Error)
 	require.Equal(t, "InProgress", status)
+}
+
+func TestPatchShipmentHandlerReturnsConflictForStaleVersion(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now().Add(-2 * time.Second).UTC()
+	shipmentID := uuid.NewString()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO shipment_records (id, created_at, updated_at, material_id, material_name, material_code, quantity, source_category, batch_no, order_no, status, shipment_date, operator, remarks)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, shipmentID, now, now, materialID, "Tube", "MAT-001", 3.0, "WH_A", "B-001", "SO-001", "DRAFT", now, "tester", "draft").Error)
+
+	payload := `{"op":"PATCH","delta":{"remarks":{"o":"draft","n":"changed"}},"metadata":{"id":"` + shipmentID + `","version":1}}`
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/inventory/shipment/"+shipmentID, strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: shipmentID}}
+	ctx.Request = request
+
+	PatchShipmentHandler(ctx)
+	require.Equal(t, http.StatusConflict, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "CONFLICT", response["code"])
 }
 
 func TestReconcileInventoryHandlerReturnsNamedStatusResponse(t *testing.T) {

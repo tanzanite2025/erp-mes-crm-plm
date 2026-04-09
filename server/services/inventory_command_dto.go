@@ -123,6 +123,7 @@ type InventoryShipmentRecordResponse struct {
 	Remarks          string    `json:"remarks"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
+	Version          int       `json:"version"`
 }
 
 type VoidShipmentRequest struct {

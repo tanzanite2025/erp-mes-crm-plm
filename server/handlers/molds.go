@@ -74,6 +74,39 @@ func GetMoldHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, mold)
 }
 
+func GetMoldCapacityHandler(c *gin.Context) {
+	groupName := c.Query("groupName")
+	requestedQty, err := strconv.Atoi(c.DefaultQuery("requestedQty", "0"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] requestedQty must be a valid integer"})
+		return
+	}
+
+	result, err := services.CheckMoldCapacity(groupName, requestedQty)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to calculate mold capacity: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func CheckMoldCapacityAlertsHandler(c *gin.Context) {
+	var input []services.MoldCapacityCheckRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid mold capacity alert payload: " + err.Error()})
+		return
+	}
+
+	alerts, err := services.CheckMoldCapacityAlerts(input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to calculate mold capacity alerts: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, alerts)
+}
+
 func buildMoldUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
 	updates := make(map[string]interface{})
 	for key, raw := range payload {

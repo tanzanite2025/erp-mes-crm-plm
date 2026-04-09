@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -73,9 +75,11 @@ func mergeInventoryForSync(existing *models.Inventory, incoming models.Inventory
 }
 
 var (
-	ErrShipmentNotFound = errors.New("shipment not found")
-	ErrShipmentNotDraft = errors.New("only DRAFT shipment can be committed")
-	ErrVoidInProgress   = errors.New("void shipment in progress")
+	ErrShipmentNotFound              = errors.New("shipment not found")
+	ErrShipmentNotDraft              = errors.New("only DRAFT shipment can be committed")
+	ErrVoidInProgress                = errors.New("void shipment in progress")
+	ErrInventoryPatchVersionConflict = errors.New("inventory patch version conflict")
+	ErrShipmentPatchVersionConflict  = errors.New("shipment patch version conflict")
 )
 
 const inventoryValueTolerance = 1e-9
@@ -88,7 +92,151 @@ type TransferInventoryInput struct {
 	BatchNo      string
 }
 
+func optimisticVersionFromTimestamps(updatedAt time.Time, createdAt time.Time) int {
+	versionTime := updatedAt
+	if versionTime.IsZero() {
+		versionTime = createdAt
+	}
+	if versionTime.IsZero() {
+		return 1
+	}
+	version := versionTime.UnixMilli()
+	if version < 1 {
+		return 1
+	}
+	return int(version)
+}
+
+func auditDeltaKeys(deltaKeys []string) json.RawMessage {
+	diff, _ := json.Marshal(map[string]any{
+		"deltaKeys": deltaKeys,
+	})
+	return diff
+}
+
+func PatchInventoryRecord(id string, patch PatchInventoryRequest, deltaKeys []string, operator string, ip string) (models.Inventory, error) {
+	var updated models.Inventory
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var inventory models.Inventory
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&inventory, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if patch.Version != optimisticVersionFromTimestamps(inventory.UpdatedAt, inventory.CreatedAt) {
+			return ErrInventoryPatchVersionConflict
+		}
+
+		ApplyPatchInventoryRequestToModel(&inventory, patch)
+		if inventory.Quantity < 0 {
+			return errors.New("[CRITICAL_LOGIC_ERROR] inventory quantity cannot be negative")
+		}
+		if inventory.TotalValue < 0 {
+			return errors.New("[CRITICAL_LOGIC_ERROR] inventory total value cannot be negative")
+		}
+		if inventory.AverageUnitCost < 0 {
+			return errors.New("[CRITICAL_LOGIC_ERROR] inventory unit cost cannot be negative")
+		}
+		if strings.TrimSpace(inventory.MaterialID) == "" || strings.TrimSpace(inventory.CategoryCode) == "" {
+			return errors.New("[CRITICAL_DATA_INTEGRITY] inventory material and category are required")
+		}
+
+		if err := tx.Model(&inventory).Updates(inventoryUpdateMap(inventory)).Error; err != nil {
+			return err
+		}
+		if err := tx.First(&inventory, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+			Module:   "Inventory",
+			TargetID: inventory.ID,
+			Action:   "INVENTORY_SAVE",
+			Diff:     auditDeltaKeys(deltaKeys),
+			Operator: strings.TrimSpace(operator),
+			IP:       strings.TrimSpace(ip),
+		}); err != nil {
+			return err
+		}
+
+		updated = inventory
+		return nil
+	})
+	if err != nil {
+		return models.Inventory{}, err
+	}
+
+	return updated, nil
+}
+
+func PatchShipmentDraftRecord(id string, patch PatchShipmentRequest, deltaKeys []string, operator string, ip string) (models.ShipmentRecord, error) {
+	var updated models.ShipmentRecord
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var shipment models.ShipmentRecord
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&shipment, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if shipment.Status != "DRAFT" {
+			return ErrShipmentNotDraft
+		}
+		if patch.Version != optimisticVersionFromTimestamps(shipment.UpdatedAt, shipment.CreatedAt) {
+			return ErrShipmentPatchVersionConflict
+		}
+
+		ApplyPatchShipmentRequestToModel(&shipment, patch)
+		if shipment.Quantity <= 0 {
+			return errors.New("[CRITICAL_LOGIC_ERROR] shipment quantity must be greater than zero")
+		}
+		if strings.TrimSpace(shipment.MaterialID) == "" || strings.TrimSpace(shipment.SourceCategory) == "" {
+			return errors.New("[CRITICAL_DATA_INTEGRITY] shipment material and source category are required")
+		}
+
+		if err := tx.Model(&shipment).Updates(map[string]any{
+			"material_id":         shipment.MaterialID,
+			"material_name":       shipment.MaterialName,
+			"material_code":       shipment.MaterialCode,
+			"sales_order_id":      shipment.SalesOrderID,
+			"sales_order_line_id": shipment.SalesOrderLineID,
+			"quantity":            shipment.Quantity,
+			"source_category":     shipment.SourceCategory,
+			"batch_no":            shipment.BatchNo,
+			"order_no":            shipment.OrderNo,
+			"shipment_date":       shipment.ShipmentDate,
+			"operator":            shipment.Operator,
+			"remarks":             shipment.Remarks,
+		}).Error; err != nil {
+			return err
+		}
+		if err := tx.First(&shipment, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+			Module:   "Shipment",
+			TargetID: shipment.ID,
+			Action:   "SHIPMENT_SAVE",
+			Diff:     auditDeltaKeys(deltaKeys),
+			Operator: strings.TrimSpace(operator),
+			IP:       strings.TrimSpace(ip),
+		}); err != nil {
+			return err
+		}
+
+		updated = shipment
+		return nil
+	})
+	if err != nil {
+		return models.ShipmentRecord{}, err
+	}
+
+	return updated, nil
+}
+
 func CreateShipmentDraft(shipment *models.ShipmentRecord) error {
+	if strings.TrimSpace(shipment.Status) == "" {
+		shipment.Status = "DRAFT"
+	}
 	return db.DB.Create(shipment).Error
 }
 

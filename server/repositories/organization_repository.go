@@ -87,9 +87,9 @@ func (GormOrganizationRepository) ListEmployees(database *gorm.DB) ([]models.Emp
 	var employees []models.Employee
 	err := database.Table("employees").
 		Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
-		Joins("LEFT JOIN organizations ON employees.dept_id = organizations.id::text").
-		Joins("LEFT JOIN production_lines ON employees.line_id = production_lines.id::text").
-		Joins("LEFT JOIN process_steps ON employees.process_id = process_steps.id::text").
+		Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
+		Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
+		Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
 		Where("employees.deleted_at IS NULL").
 		Order("employees.created_at desc").
 		Find(&employees).Error

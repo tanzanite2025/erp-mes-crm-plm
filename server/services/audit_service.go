@@ -30,7 +30,7 @@ func (defaultAuditLogger) Write(tx *gorm.DB, entry AuditEntry) error {
 		return nil
 	}
 
-	module := strings.TrimSpace(entry.Module)
+	module := normalizeAuditModule(entry.Module)
 	targetID := strings.TrimSpace(entry.TargetID)
 	action := strings.TrimSpace(entry.Action)
 	if module == "" || targetID == "" || action == "" {

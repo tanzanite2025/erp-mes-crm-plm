@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react'
 import { AuditStamp } from '@/components/common/audit-stamp'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type SalesOrder } from '../../data/schema'
 
 interface SalesOrderDetailActivityProps {
@@ -32,7 +33,7 @@ export function SalesOrderDetailActivity({
 
       <div className='relative ml-1 space-y-8'>
         <AuditStamp
-          module='sales-order'
+          module={AUDIT_MODULES.salesOrder}
           targetId={order.id}
           createdBy={order.createdBy}
           createdAt={order.createdAt}

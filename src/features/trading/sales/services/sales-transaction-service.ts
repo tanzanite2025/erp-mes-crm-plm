@@ -1,7 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
 
+export const SALES_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
 export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE = 'ORDER_CLASSIFICATION_TYPE_CHANGE'
 export const SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE = 'ORDER_CUSTOMER_CHANGE'
 export const SALES_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
@@ -92,6 +94,12 @@ export interface SalesOrderCancelPayload {
   reason?: string
 }
 
+export interface SalesOrderSavePayload {
+  delta: DeltaSet
+  finalData: SalesOrder
+  operator: string
+}
+
 export const executeSalesOrderTransaction = async <TPayload>(
   orderId: string,
   request: SalesOrderTransactionRequest<TPayload>
@@ -104,6 +112,28 @@ export const executeSalesOrderTransaction = async <TPayload>(
     res,
     'SalesTransactionService.executeSalesOrderTransaction'
   ) as SalesOrder
+}
+
+export const saveSalesOrderTransaction = async (
+  orderId: string,
+  params: {
+    delta: DeltaSet
+    finalData: SalesOrder
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<SalesOrder> => {
+  return executeSalesOrderTransaction<SalesOrderSavePayload>(orderId, {
+    intent: SALES_TRANSACTION_INTENT_ORDER_SAVE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      delta: params.delta,
+      finalData: params.finalData,
+      operator: params.operator,
+    },
+  })
 }
 
 export const claimSalesOrderLines = async (

@@ -73,7 +73,7 @@ export const orgPersonnel = {
     description: '上传由人力资源部维护的 Excel 员工花名册。系统会严格校验工作表名称和全量表头，避免误修改后导入造成数据偏差。',
     downloadTemplate: '下载标准模板',
     clickToUpload: '点击或拖拽文件上传',
-    support: '支持 .xlsx, .xls 格式（最大 10MB）',
+    support: '支持 .xlsx 格式（最大 10MB）',
     parseFailed: '文件读取失败，请检查是否为标准 Excel 文件。',
     auditFailed: '合规审计未通过',
     retry: '重试',

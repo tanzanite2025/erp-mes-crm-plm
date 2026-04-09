@@ -12,10 +12,12 @@ import (
 )
 
 const (
+	CustomerTransactionIntentSave           = "CUSTOMER_SAVE"
 	CustomerTransactionIntentIdentityChange = "CUSTOMER_IDENTITY_CHANGE"
-	CustomerTransactionIntentStatusChange = "CUSTOMER_STATUS_CHANGE"
+	CustomerTransactionIntentStatusChange   = "CUSTOMER_STATUS_CHANGE"
+	SupplierTransactionIntentSave           = "SUPPLIER_SAVE"
 	SupplierTransactionIntentIdentityChange = "SUPPLIER_IDENTITY_CHANGE"
-	SupplierTransactionIntentStatusChange = "SUPPLIER_STATUS_CHANGE"
+	SupplierTransactionIntentStatusChange   = "SUPPLIER_STATUS_CHANGE"
 )
 
 var (
@@ -43,6 +45,43 @@ type IdentityChangePayload struct {
 	Code     string `json:"code"`
 	Name     string `json:"name"`
 	Operator string `json:"operator"`
+}
+
+type CustomerSaveSnapshot struct {
+	Name          string  `json:"name"`
+	Code          string  `json:"code"`
+	ContactPerson string  `json:"contactPerson"`
+	ContactPhone  string  `json:"contactPhone"`
+	Email         string  `json:"email"`
+	Address       string  `json:"address"`
+	Status        string  `json:"status"`
+	CreditLimit   float64 `json:"creditLimit"`
+	Balance       float64 `json:"balance"`
+}
+
+type CustomerSavePayload struct {
+	Delta     map[string]json.RawMessage `json:"delta"`
+	FinalData CustomerSaveSnapshot       `json:"finalData"`
+	Operator  string                     `json:"operator"`
+}
+
+type SupplierSaveSnapshot struct {
+	Name          string   `json:"name"`
+	Code          string   `json:"code"`
+	Category      string   `json:"category"`
+	MainProducts  []string `json:"mainProducts"`
+	ContactPerson string   `json:"contactPerson"`
+	ContactPhone  string   `json:"contactPhone"`
+	Email         string   `json:"email"`
+	Address       string   `json:"address"`
+	Status        string   `json:"status"`
+	Rating        float64  `json:"rating"`
+}
+
+type SupplierSavePayload struct {
+	Delta     map[string]json.RawMessage `json:"delta"`
+	FinalData SupplierSaveSnapshot       `json:"finalData"`
+	Operator  string                     `json:"operator"`
 }
 
 type ExecuteCustomerTransactionInput struct {
@@ -92,6 +131,340 @@ func parseIdentityChangePayload(payload json.RawMessage) (IdentityChangePayload,
 	return input, nil
 }
 
+func parseCustomerSavePayload(payload json.RawMessage) (CustomerSavePayload, error) {
+	var input CustomerSavePayload
+	if err := json.Unmarshal(payload, &input); err != nil {
+		return CustomerSavePayload{}, fmt.Errorf("%w: %v", ErrCustomerTransactionInvalidPayload, err)
+	}
+	if len(input.Delta) == 0 {
+		return CustomerSavePayload{}, fmt.Errorf("%w: delta is required", ErrCustomerTransactionInvalidPayload)
+	}
+	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "contactPerson", "contactPhone", "email", "address", "status", "creditLimit", "balance"); err != nil {
+		return CustomerSavePayload{}, fmt.Errorf("%w: %v", ErrCustomerTransactionInvalidPayload, err)
+	}
+	input.Operator = strings.TrimSpace(input.Operator)
+	input.FinalData.Name = strings.TrimSpace(input.FinalData.Name)
+	input.FinalData.Code = strings.TrimSpace(input.FinalData.Code)
+	input.FinalData.ContactPerson = strings.TrimSpace(input.FinalData.ContactPerson)
+	input.FinalData.ContactPhone = strings.TrimSpace(input.FinalData.ContactPhone)
+	input.FinalData.Email = strings.TrimSpace(input.FinalData.Email)
+	input.FinalData.Address = strings.TrimSpace(input.FinalData.Address)
+	input.FinalData.Status = strings.TrimSpace(input.FinalData.Status)
+	return input, nil
+}
+
+func parseSupplierSavePayload(payload json.RawMessage) (SupplierSavePayload, error) {
+	var input SupplierSavePayload
+	if err := json.Unmarshal(payload, &input); err != nil {
+		return SupplierSavePayload{}, fmt.Errorf("%w: %v", ErrSupplierTransactionInvalidPayload, err)
+	}
+	if len(input.Delta) == 0 {
+		return SupplierSavePayload{}, fmt.Errorf("%w: delta is required", ErrSupplierTransactionInvalidPayload)
+	}
+	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "email", "address", "status", "rating"); err != nil {
+		return SupplierSavePayload{}, fmt.Errorf("%w: %v", ErrSupplierTransactionInvalidPayload, err)
+	}
+	input.Operator = strings.TrimSpace(input.Operator)
+	input.FinalData.Name = strings.TrimSpace(input.FinalData.Name)
+	input.FinalData.Code = strings.TrimSpace(input.FinalData.Code)
+	input.FinalData.Category = strings.TrimSpace(input.FinalData.Category)
+	input.FinalData.ContactPerson = strings.TrimSpace(input.FinalData.ContactPerson)
+	input.FinalData.ContactPhone = strings.TrimSpace(input.FinalData.ContactPhone)
+	input.FinalData.Email = strings.TrimSpace(input.FinalData.Email)
+	input.FinalData.Address = strings.TrimSpace(input.FinalData.Address)
+	input.FinalData.Status = strings.TrimSpace(input.FinalData.Status)
+	return input, nil
+}
+
+func resolvePartnerOperator(payloadOperator string, inputOperator string, actorID string) string {
+	operator := strings.TrimSpace(payloadOperator)
+	if operator == "" {
+		operator = strings.TrimSpace(inputOperator)
+	}
+	if operator == "" {
+		operator = strings.TrimSpace(actorID)
+	}
+	if operator == "" {
+		operator = "unknown"
+	}
+	return operator
+}
+
+func customerStatusSupported(status string) bool {
+	return status == "Active" || status == "Inactive" || status == "Pending"
+}
+
+func supplierStatusSupported(status string) bool {
+	return status == "Active" || status == "Inactive" || status == "OnReview"
+}
+
+func extractDeltaKeys(delta map[string]json.RawMessage) []string {
+	keys := make([]string, 0, len(delta))
+	for key := range delta {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func customerStatusOnlyDelta(deltaKeys []string) bool {
+	if len(deltaKeys) == 0 {
+		return false
+	}
+	for _, key := range deltaKeys {
+		if key != "status" {
+			return false
+		}
+	}
+	return true
+}
+
+func customerIdentityOnlyDelta(deltaKeys []string) bool {
+	if len(deltaKeys) == 0 {
+		return false
+	}
+	for _, key := range deltaKeys {
+		if key != "code" && key != "name" {
+			return false
+		}
+	}
+	return true
+}
+
+func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input ExecuteCustomerTransactionInput) (*models.Customer, error) {
+	payload, err := parseCustomerSavePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := resolvePartnerOperator(payload.Operator, input.Operator, input.ActorID)
+	deltaKeys := extractDeltaKeys(payload.Delta)
+
+	if customerStatusOnlyDelta(deltaKeys) {
+		derivedPayload, _ := json.Marshal(StatusChangePayload{
+			Status:   payload.FinalData.Status,
+			Operator: operator,
+		})
+		return executeCustomerStatusChangeTx(tx, current, ExecuteCustomerTransactionInput{
+			CustomerID:      input.CustomerID,
+			Intent:          CustomerTransactionIntentStatusChange,
+			ActorID:         input.ActorID,
+			Operator:        operator,
+			ExpectedVersion: input.ExpectedVersion,
+			Payload:         derivedPayload,
+			IP:              input.IP,
+		})
+	}
+
+	if customerIdentityOnlyDelta(deltaKeys) {
+		derivedPayload, _ := json.Marshal(IdentityChangePayload{
+			Code:     payload.FinalData.Code,
+			Name:     payload.FinalData.Name,
+			Operator: operator,
+		})
+		return executeCustomerIdentityChangeTx(tx, current, ExecuteCustomerTransactionInput{
+			CustomerID:      input.CustomerID,
+			Intent:          CustomerTransactionIntentIdentityChange,
+			ActorID:         input.ActorID,
+			Operator:        operator,
+			ExpectedVersion: input.ExpectedVersion,
+			Payload:         derivedPayload,
+			IP:              input.IP,
+		})
+	}
+
+	if payload.FinalData.Code == "" || payload.FinalData.Name == "" {
+		return nil, fmt.Errorf("%w: code and name must not be empty", ErrCustomerTransactionInvalidPayload)
+	}
+	if !customerStatusSupported(payload.FinalData.Status) {
+		return nil, fmt.Errorf("%w: unsupported customer status", ErrCustomerTransactionInvalidPayload)
+	}
+
+	if payload.FinalData.Code != strings.TrimSpace(current.Code) {
+		var duplicateCount int64
+		if err := tx.Model(&models.Customer{}).
+			Where("code = ? AND id <> ? AND is_deleted = ?", payload.FinalData.Code, current.ID, false).
+			Count(&duplicateCount).Error; err != nil {
+			return nil, err
+		}
+		if duplicateCount > 0 {
+			return nil, fmt.Errorf("%w: duplicated customer code", ErrCustomerTransactionInvalidPayload)
+		}
+	}
+
+	nextVersion := current.Version + 1
+	if err := tx.Model(current).Updates(map[string]any{
+		"name":           payload.FinalData.Name,
+		"code":           payload.FinalData.Code,
+		"contact_person": payload.FinalData.ContactPerson,
+		"contact_phone":  payload.FinalData.ContactPhone,
+		"email":          payload.FinalData.Email,
+		"address":        payload.FinalData.Address,
+		"status":         payload.FinalData.Status,
+		"credit_limit":   payload.FinalData.CreditLimit,
+		"balance":        payload.FinalData.Balance,
+		"version":        nextVersion,
+	}).Error; err != nil {
+		return nil, err
+	}
+
+	current.Name = payload.FinalData.Name
+	current.Code = payload.FinalData.Code
+	current.ContactPerson = payload.FinalData.ContactPerson
+	current.ContactPhone = payload.FinalData.ContactPhone
+	current.Email = payload.FinalData.Email
+	current.Address = payload.FinalData.Address
+	current.Status = payload.FinalData.Status
+	current.CreditLimit = payload.FinalData.CreditLimit
+	current.Balance = payload.FinalData.Balance
+	current.Version = nextVersion
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          CustomerTransactionIntentSave,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"deltaKeys": deltaKeys,
+			"status":    current.Status,
+			"code":      current.Code,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "Customer",
+		TargetID: current.ID,
+		Action:   CustomerTransactionIntentSave,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
+func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input ExecuteSupplierTransactionInput) (*models.Supplier, error) {
+	payload, err := parseSupplierSavePayload(input.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	operator := resolvePartnerOperator(payload.Operator, input.Operator, input.ActorID)
+	deltaKeys := extractDeltaKeys(payload.Delta)
+
+	if customerStatusOnlyDelta(deltaKeys) {
+		derivedPayload, _ := json.Marshal(StatusChangePayload{
+			Status:   payload.FinalData.Status,
+			Operator: operator,
+		})
+		return executeSupplierStatusChangeTx(tx, current, ExecuteSupplierTransactionInput{
+			SupplierID:      input.SupplierID,
+			Intent:          SupplierTransactionIntentStatusChange,
+			ActorID:         input.ActorID,
+			Operator:        operator,
+			ExpectedVersion: input.ExpectedVersion,
+			Payload:         derivedPayload,
+			IP:              input.IP,
+		})
+	}
+
+	if customerIdentityOnlyDelta(deltaKeys) {
+		derivedPayload, _ := json.Marshal(IdentityChangePayload{
+			Code:     payload.FinalData.Code,
+			Name:     payload.FinalData.Name,
+			Operator: operator,
+		})
+		return executeSupplierIdentityChangeTx(tx, current, ExecuteSupplierTransactionInput{
+			SupplierID:      input.SupplierID,
+			Intent:          SupplierTransactionIntentIdentityChange,
+			ActorID:         input.ActorID,
+			Operator:        operator,
+			ExpectedVersion: input.ExpectedVersion,
+			Payload:         derivedPayload,
+			IP:              input.IP,
+		})
+	}
+
+	if payload.FinalData.Code == "" || payload.FinalData.Name == "" {
+		return nil, fmt.Errorf("%w: code and name must not be empty", ErrSupplierTransactionInvalidPayload)
+	}
+	if !supplierStatusSupported(payload.FinalData.Status) {
+		return nil, fmt.Errorf("%w: unsupported supplier status", ErrSupplierTransactionInvalidPayload)
+	}
+
+	if payload.FinalData.Code != strings.TrimSpace(current.Code) {
+		var duplicateCount int64
+		if err := tx.Model(&models.Supplier{}).
+			Where("code = ? AND id <> ? AND is_deleted = ?", payload.FinalData.Code, current.ID, false).
+			Count(&duplicateCount).Error; err != nil {
+			return nil, err
+		}
+		if duplicateCount > 0 {
+			return nil, fmt.Errorf("%w: duplicated supplier code", ErrSupplierTransactionInvalidPayload)
+		}
+	}
+
+	mainProductsJSON, err := json.Marshal(payload.FinalData.MainProducts)
+	if err != nil {
+		return nil, fmt.Errorf("%w: invalid mainProducts", ErrSupplierTransactionInvalidPayload)
+	}
+
+	nextVersion := current.Version + 1
+	if err := tx.Model(current).Updates(map[string]any{
+		"name":           payload.FinalData.Name,
+		"code":           payload.FinalData.Code,
+		"category":       payload.FinalData.Category,
+		"main_products":  string(mainProductsJSON),
+		"contact_person": payload.FinalData.ContactPerson,
+		"contact_phone":  payload.FinalData.ContactPhone,
+		"email":          payload.FinalData.Email,
+		"address":        payload.FinalData.Address,
+		"status":         payload.FinalData.Status,
+		"rating":         payload.FinalData.Rating,
+		"version":        nextVersion,
+	}).Error; err != nil {
+		return nil, err
+	}
+
+	current.Name = payload.FinalData.Name
+	current.Code = payload.FinalData.Code
+	current.Category = payload.FinalData.Category
+	current.MainProducts = string(mainProductsJSON)
+	current.ContactPerson = payload.FinalData.ContactPerson
+	current.ContactPhone = payload.FinalData.ContactPhone
+	current.Email = payload.FinalData.Email
+	current.Address = payload.FinalData.Address
+	current.Status = payload.FinalData.Status
+	current.Rating = payload.FinalData.Rating
+	current.Version = nextVersion
+
+	auditDiff, _ := json.Marshal(map[string]any{
+		"intent":          SupplierTransactionIntentSave,
+		"actorId":         strings.TrimSpace(input.ActorID),
+		"operator":        operator,
+		"expectedVersion": input.ExpectedVersion,
+		"nextVersion":     current.Version,
+		"payload": map[string]any{
+			"deltaKeys": deltaKeys,
+			"status":    current.Status,
+			"code":      current.Code,
+		},
+	})
+	if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "Supplier",
+		TargetID: current.ID,
+		Action:   SupplierTransactionIntentSave,
+		Diff:     auditDiff,
+		Operator: operator,
+		IP:       strings.TrimSpace(input.IP),
+	}); err != nil {
+		return nil, err
+	}
+
+	return current, nil
+}
+
 func ExecuteCustomerTransaction(input ExecuteCustomerTransactionInput) (*models.Customer, error) {
 	var response *models.Customer
 	err := defaultServiceRuntime().txManager.WithinTransaction(func(tx *gorm.DB) error {
@@ -123,6 +496,8 @@ func executeCustomerTransactionTx(tx *gorm.DB, input ExecuteCustomerTransactionI
 	}
 
 	switch strings.TrimSpace(input.Intent) {
+	case CustomerTransactionIntentSave:
+		return executeCustomerUnifiedSaveTx(tx, &current, input)
 	case CustomerTransactionIntentIdentityChange:
 		return executeCustomerIdentityChangeTx(tx, &current, input)
 	case CustomerTransactionIntentStatusChange:
@@ -174,10 +549,11 @@ func executeCustomerIdentityChangeTx(tx *gorm.DB, current *models.Customer, inpu
 		return nil, fmt.Errorf("%w: duplicated customer code", ErrCustomerTransactionInvalidPayload)
 	}
 
+	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
 		"code":    nextCode,
 		"name":    nextName,
-		"version": current.Version + 1,
+		"version": nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
@@ -185,7 +561,7 @@ func executeCustomerIdentityChangeTx(tx *gorm.DB, current *models.Customer, inpu
 	beforeName := current.Name
 	current.Code = nextCode
 	current.Name = nextName
-	current.Version = current.Version + 1
+	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{
 		"intent":          CustomerTransactionIntentIdentityChange,
@@ -241,14 +617,15 @@ func executeCustomerStatusChangeTx(tx *gorm.DB, current *models.Customer, input 
 		return nil, fmt.Errorf("%w: customer status unchanged", ErrCustomerTransactionInvalidPayload)
 	}
 
+	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
 		"status":  status,
-		"version": current.Version + 1,
+		"version": nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
 	current.Status = status
-	current.Version = current.Version + 1
+	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{
 		"intent":          CustomerTransactionIntentStatusChange,
@@ -305,6 +682,8 @@ func executeSupplierTransactionTx(tx *gorm.DB, input ExecuteSupplierTransactionI
 	}
 
 	switch strings.TrimSpace(input.Intent) {
+	case SupplierTransactionIntentSave:
+		return executeSupplierUnifiedSaveTx(tx, &current, input)
 	case SupplierTransactionIntentIdentityChange:
 		return executeSupplierIdentityChangeTx(tx, &current, input)
 	case SupplierTransactionIntentStatusChange:
@@ -356,10 +735,11 @@ func executeSupplierIdentityChangeTx(tx *gorm.DB, current *models.Supplier, inpu
 		return nil, fmt.Errorf("%w: duplicated supplier code", ErrSupplierTransactionInvalidPayload)
 	}
 
+	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
 		"code":    nextCode,
 		"name":    nextName,
-		"version": current.Version + 1,
+		"version": nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
@@ -367,7 +747,7 @@ func executeSupplierIdentityChangeTx(tx *gorm.DB, current *models.Supplier, inpu
 	beforeName := current.Name
 	current.Code = nextCode
 	current.Name = nextName
-	current.Version = current.Version + 1
+	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{
 		"intent":          SupplierTransactionIntentIdentityChange,
@@ -423,14 +803,15 @@ func executeSupplierStatusChangeTx(tx *gorm.DB, current *models.Supplier, input 
 		return nil, fmt.Errorf("%w: supplier status unchanged", ErrSupplierTransactionInvalidPayload)
 	}
 
+	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
 		"status":  status,
-		"version": current.Version + 1,
+		"version": nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
 	current.Status = status
-	current.Version = current.Version + 1
+	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{
 		"intent":          SupplierTransactionIntentStatusChange,

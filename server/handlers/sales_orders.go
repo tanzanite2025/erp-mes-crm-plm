@@ -306,6 +306,11 @@ func PatchSalesOrderHandler(c *gin.Context) {
 		return
 	}
 
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid sales order delta: " + err.Error()})
+		return
+	}
+
 	current := services.MapSalesOrderToResponse(existing)
 	patchReq := services.PatchSalesOrderRequest{
 		ID:                 current.ID,

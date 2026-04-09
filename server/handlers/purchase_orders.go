@@ -156,6 +156,10 @@ func PatchPurchaseOrderHandler(c *gin.Context) {
 		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentTerm", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+		respondPurchaseOrderError(c, http.StatusBadRequest, "invalid purchase order delta: "+err.Error())
+		return
+	}
 
 	var existing models.PurchaseOrder
 	if err := db.DB.Preload("Lines").First(&existing, "id = ?", id).Error; err != nil {

@@ -2,6 +2,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
+import { type TranslationKey } from '@/locales'
 import { type Employee } from '../data/schema'
 import {
     calculatePersonnelWorkYears,
@@ -14,7 +15,9 @@ function renderDateCell(value: string | undefined) {
     return <div className='font-mono text-[11px] uppercase font-medium tracking-tight'>{formatted}</div>
 }
 
-export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
+type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+
+export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     {
         id: 'select',
         header: ({ table }) => (
@@ -52,7 +55,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
     {
         accessorKey: 'staffId',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.staffId' as any)} />
+            <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.staffId')} />
         ),
         cell: ({ row }) => {
             const staffId = row.getValue('staffId') as string
@@ -232,7 +235,7 @@ export const getEmployeeColumns = (t: any): ColumnDef<Employee>[] => [
     {
         accessorKey: 'id',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title={t('orgPersonnel.org.systemId' as any)} />
+            <DataTableColumnHeader column={column} title={t('orgPersonnel.org.systemId')} />
         ),
         cell: ({ row }) => {
             const id = row.getValue('id') as string

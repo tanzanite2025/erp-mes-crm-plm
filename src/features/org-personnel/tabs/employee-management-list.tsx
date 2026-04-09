@@ -340,7 +340,7 @@ export function EmployeeManagementList() {
                     <div className='relative w-[240px] md:w-[280px] shrink-0'>
                         <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30' />
                         <Input
-                            placeholder={t('orgPersonnel.list.searchPlaceholder' as any)}
+                            placeholder={t('orgPersonnel.list.searchPlaceholder')}
                             value={searchValue}
                             onChange={(e) => setSearchValue(e.target.value)}
                             className='h-12 w-full pl-11 pr-10 rounded-[18px] border border-dashed border-muted bg-muted/10 font-bold text-sm shadow-none transition-all focus-visible:bg-background focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/20 placeholder:text-muted-foreground/20'
@@ -358,8 +358,8 @@ export function EmployeeManagementList() {
                     </div>
                     <DataTableFacetedFilter
                         column={table.getColumn('status')}
-                        title={t('orgPersonnel.list.filterStatus' as any)}
-                        subtitle={t('orgPersonnel.list.filterFiltering' as any)}
+                        title={t('orgPersonnel.list.filterStatus')}
+                        subtitle={t('orgPersonnel.list.filterFiltering')}
                         variant='industrial'
                         options={[
                             {
@@ -411,9 +411,13 @@ export function EmployeeManagementList() {
                     >
                         <div className='flex items-center gap-1'>
                             <FileSpreadsheet className='size-3 text-blue-600' />
-                            <span className='text-[10px] font-black tracking-tighter'>{t('orgPersonnel.list.importOneClick')}</span>
+                            <span className='text-[10px] font-black tracking-tighter'>
+                                {locale === 'zh-CN' ? '批量同步' : 'Batch sync'}
+                            </span>
                         </div>
-                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('orgPersonnel.list.importsOk')}</span>
+                        <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>
+                            {locale === 'zh-CN' ? '新增 / 更新' : 'add / update'}
+                        </span>
                     </Button>
                     <Button
                         onClick={() => {
@@ -527,7 +531,7 @@ export function EmployeeManagementList() {
                 onStatusChange={handleBulkStatusChange}
                 onEdit={(items) => {
                     if (items.length > 1) {
-                        toast.info(t('orgPersonnel.org.employeeDialog.actionInProgress' as any))
+                        toast.info(locale === 'zh-CN' ? '正在批量处理中...' : 'Bulk action in progress...')
                     }
                     if (items.length > 0) {
                         handleEditRow(items[0])

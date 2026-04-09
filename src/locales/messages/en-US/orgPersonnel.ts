@@ -71,7 +71,7 @@ export const orgPersonnel = {
     description: 'Upload the Excel employee roster maintained by HR. The system strictly validates the worksheet name and full header set to avoid data drift caused by accidental edits.',
     downloadTemplate: 'Download Standard Template',
     clickToUpload: 'Click or drag a file to upload',
-    support: 'Supports .xlsx and .xls files (max 10MB)',
+    support: 'Supports .xlsx files (max 10MB)',
     parseFailed: 'Failed to read the file. Please check whether it is a standard Excel file.',
     auditFailed: 'Compliance Audit Failed',
     retry: 'Retry',

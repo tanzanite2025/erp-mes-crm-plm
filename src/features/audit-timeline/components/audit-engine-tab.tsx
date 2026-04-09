@@ -3,59 +3,48 @@ import {
   Activity, 
   AlertTriangle,
   CheckCircle2,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/context/language-provider';
+import { AUDIT_ENGINE_MODULE_IDS, type AuditEngineModuleId } from '../data/audit-modules';
+import { useAuditEngineStats } from '../hooks/use-audit-engine-stats';
+import { type AuditEngineModuleStats } from '../types';
 
 interface ModuleStatus {
-  id: 'trading' | 'finance' | 'equipment' | 'engineering' | 'warehouse';
+  id: AuditEngineModuleId;
   status: 'HEALTHY' | 'ALERT' | 'CRITICAL';
   coverage: number;
+  logCoverage: number;
+  entryCoverage: number;
   lastEvent?: string;
   connected: boolean;
 }
 
-const MODULES: ModuleStatus[] = [
-  { 
-    id: 'trading', 
-    status: 'HEALTHY', 
-    coverage: 100, 
-    lastEvent: '2026-04-06 11:32:45',
-    connected: true 
-  },
-  { 
-    id: 'finance', 
-    status: 'CRITICAL', 
-    coverage: 0, 
-    connected: false 
-  },
-  { 
-    id: 'equipment', 
-    status: 'CRITICAL', 
-    coverage: 0, 
-    connected: false 
-  },
-  { 
-    id: 'engineering', 
-    status: 'CRITICAL', 
-    coverage: 0, 
-    connected: false 
-  },
-  { 
-    id: 'warehouse', 
-    status: 'CRITICAL', 
-    coverage: 0, 
-    connected: false 
-  },
-];
+type AuditEngineStatusKey = 'healthy' | 'alert' | 'critical'
+
+function buildModuleView(stats: AuditEngineModuleStats | undefined, id: AuditEngineModuleId): ModuleStatus {
+  return {
+    id,
+    connected: stats?.connected ?? false,
+    coverage: stats?.coverage ?? 0,
+    logCoverage: stats?.logCoverage ?? 0,
+    entryCoverage: stats?.entryCoverage ?? 0,
+    status: stats?.status ?? 'CRITICAL',
+    lastEvent: stats?.lastEvent || undefined,
+  }
+}
 
 export function AuditEngineTab() {
   const { t } = useLanguage();
-  const connectedCount = MODULES.filter(m => m.connected).length;
-  const totalCount = MODULES.length;
+  const { data, isLoading } = useAuditEngineStats()
+  const statsMap = new Map((data?.modules ?? []).map((module) => [module.id, module]))
+  const modules = AUDIT_ENGINE_MODULE_IDS.map((id) => buildModuleView(statsMap.get(id), id))
+  const connectedCount = modules.filter(m => m.connected).length;
+  const totalCount = modules.length;
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
@@ -108,8 +97,16 @@ export function AuditEngineTab() {
       </div>
 
       {/* Grid Section */}
+      {isLoading ? (
+        <div className='flex min-h-[240px] items-center justify-center rounded-[24px] border border-dashed border-muted/50 bg-muted/5'>
+          <div className='flex items-center gap-3 text-muted-foreground'>
+            <Loader2 className='size-4 animate-spin' />
+            <span className='text-[10px] font-black uppercase tracking-widest'>AUDIT ENGINE LOADING</span>
+          </div>
+        </div>
+      ) : (
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {MODULES.map((module) => (
+        {modules.map((module) => (
           <div 
             key={module.id}
             className={cn(
@@ -136,7 +133,7 @@ export function AuditEngineTab() {
                   module.status === 'CRITICAL' && "bg-rose-500/10 text-rose-600 animate-pulse"
                 )}
               >
-                {t(`systemManagement.auditEngine.status.${module.status.toLowerCase()}` as any)}
+                {t(`systemManagement.auditEngine.status.${module.status.toLowerCase() as AuditEngineStatusKey}`)}
               </Badge>
             </div>
 
@@ -163,17 +160,17 @@ export function AuditEngineTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div className='p-2 rounded-xl bg-muted/20 border border-dashed border-muted flex flex-col gap-1'>
                   <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
-                    {t('systemManagement.auditEngine.metrics.hotStorage')}
+                    LOG COVERAGE
                   </span>
                   <span className='text-[8px] font-mono'>
-                    {t('systemManagement.auditEngine.metrics.days')}
+                    {module.logCoverage.toFixed(0)}%
                   </span>
                 </div>
                 <div className='p-2 rounded-xl bg-muted/20 border border-dashed border-muted flex flex-col gap-1'>
                   <span className='text-[10px] font-black uppercase tracking-widest opacity-40'>
-                    {t('systemManagement.auditEngine.metrics.latency')}
+                    ENTRY COVERAGE
                   </span>
-                  <span className='text-[8px] font-mono'>~120MS</span>
+                  <span className='text-[8px] font-mono'>{module.entryCoverage.toFixed(0)}%</span>
                 </div>
               </div>
             </div>
@@ -194,10 +191,11 @@ export function AuditEngineTab() {
             </div>
 
             {/* Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         ))}
       </div>
+      )}
 
       {/* Footer Info */}
       <div className="p-6 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 flex items-start gap-4">

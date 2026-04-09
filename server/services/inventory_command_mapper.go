@@ -178,5 +178,6 @@ func MapShipmentRecordToResponse(record models.ShipmentRecord) InventoryShipment
 		Remarks:          record.Remarks,
 		CreatedAt:        record.CreatedAt,
 		UpdatedAt:        record.UpdatedAt,
+		Version:          optimisticVersionFromTimestamps(record.UpdatedAt, record.CreatedAt),
 	}
 }

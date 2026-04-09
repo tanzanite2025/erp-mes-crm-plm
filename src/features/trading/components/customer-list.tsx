@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { AuditStamp } from '@/components/common/audit-stamp'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,12 +25,14 @@ import {
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { CustomerActionDialog } from './customer-action-dialog'
-import { useCustomerMutations, useGetCustomers } from '../customer'
+import { useCustomerMutations, useGetCustomerList } from '../customer'
 
 export function CustomerList() {
   const { locale, t } = useLanguage()
@@ -39,15 +42,26 @@ export function CustomerList() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [showDeleted, setShowDeleted] = useState(false)
   const {
-    data: customers = [],
+    data: customerList,
     isLoading,
     isError,
     error,
     refetch,
-  } = useGetCustomers()
-  const { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation } = useCustomerMutations()
+  } = useGetCustomerList()
+  const user = useAuthStore((state) => state.user)
+  const { createMutation, saveMutation, deleteMutation } = useCustomerMutations()
   const loadFailedLabel =
     locale === 'zh-CN' ? '客户数据加载失败，请稍后重试' : 'Failed to load customer data. Please try again.'
+  const customers = customerList?.items ?? []
+  const customerStats = customerList?.metadata?.stats
+  const customerStatsAvailable =
+    typeof customerStats?.total === 'number' &&
+    typeof customerStats?.active === 'number' &&
+    typeof customerStats?.newThisMonth === 'number'
+  const customerStatsMissingLabel =
+    locale === 'zh-CN'
+      ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
+      : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
@@ -74,37 +88,15 @@ export function CustomerList() {
 
   const handleSaveCustomer = (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_customer_manage')) return
-    
+
     if (payload.isPatch && payload.delta && selectedCustomer) {
-      const deltaKeys = Object.keys(payload.delta)
-      const isStatusOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status')
-      const isIdentityOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'code' || key === 'name')
-
-      if (isStatusOnlyChange) {
-        statusChangeMutation.mutate({
-          id: selectedCustomer.id,
-          status: payload.data.status || selectedCustomer.status,
-          operator: 'Unknown',
-          expectedVersion: selectedCustomer.version,
-        })
-        return
-      }
-
-      if (isIdentityOnlyChange) {
-        identityChangeMutation.mutate({
-          id: selectedCustomer.id,
-          code: payload.data.code,
-          name: payload.data.name,
-          operator: 'Unknown',
-          expectedVersion: selectedCustomer.version,
-        })
-        return
-      }
-
-      patchMutation.mutate({
+      saveMutation.mutate({
         id: selectedCustomer.id,
         delta: payload.delta,
-        version: selectedCustomer.version
+        finalData: payload.data as Customer,
+        operator: user?.accountNo || 'Unknown',
+        actorId: user?.id,
+        expectedVersion: selectedCustomer.version,
       })
     } else {
       createMutation.mutate(payload.data as Omit<Customer, 'id' | 'version'>)
@@ -204,6 +196,12 @@ export function CustomerList() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+      {!customerStatsAvailable && (
+        <div className='rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-xs font-bold text-amber-800'>
+          {customerStatsMissingLabel}
+        </div>
+      )}
+
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6'>
         <div className='p-5 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted/50 flex flex-col justify-between h-32 sm:h-36 relative overflow-hidden group'>
           <div className='absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity'>
@@ -214,7 +212,7 @@ export function CustomerList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums'>
-              {customers.length}
+              {customerStatsAvailable ? customerStats.total : '—'}
             </span>
             <div className='p-2 bg-primary/10 rounded-xl'>
               <Building2 className='size-5 text-primary' />
@@ -231,7 +229,7 @@ export function CustomerList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums text-emerald-500'>
-              {customers.filter((customer) => customer.status === 'Active').length}
+              {customerStatsAvailable ? customerStats.active : '—'}
             </span>
             <div className='p-2 bg-emerald-500/10 rounded-xl'>
               <User className='size-5 text-emerald-500' />
@@ -248,12 +246,7 @@ export function CustomerList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums text-primary'>
-              +
-              {customers.filter((customer) => {
-                const oneMonthAgo = new Date()
-                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-                return new Date(customer.createdAt) > oneMonthAgo
-              }).length}
+              {customerStatsAvailable ? `+${customerStats.newThisMonth}` : '—'}
             </span>
             <div className='px-3 py-1 bg-primary text-primary-foreground rounded-full text-[8px] font-black uppercase tracking-widest'>
               {t('trading.customers.stats.newBadge')}
@@ -406,6 +399,15 @@ export function CustomerList() {
                   </Button>
                 </div>
               </CardContent>
+              <AuditStamp
+                module={AUDIT_MODULES.customer}
+                targetId={customer.id}
+                createdBy={customer.createdBy}
+                createdAt={customer.createdAt}
+                updatedBy={customer.updatedBy}
+                updatedAt={customer.updatedAt}
+                className='border-primary/10 pt-2'
+              />
             </Card>
           ))}
         </div>

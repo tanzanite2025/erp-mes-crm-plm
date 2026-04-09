@@ -1,1553 +1,938 @@
-# implementation plan
-  
-## “请假列表增强”实施规划（2026-04-09，待批准）
+# Audit Engine 实施主计划
 
-### 一、问题概述
-当前请假管理页面已经具备：
+日期：2026-04-09  
+状态：待批准
 
-1. 请假申请提交；
-2. 列表与统计刷新；
-3. 状态中文化、时间格式化；
-4. 待审批请假单撤销入口。
+## 1. 目标
 
-但从“可浏览、可检索、可查看详情”的角度看，列表仍偏原始：
+# MRP 独立模块化迁移实施计划
 
-1. 没有筛选；
-2. 没有显式排序控制；
-3. 没有详情展示入口；
-4. 用户只能在摘要卡片上扫读，难以高效定位或查看某条请假记录的完整信息。
+日期：2026-04-09  
+状态：待批准
 
-因此，本轮目标不是再改业务规则，而是把请假列表从“可显示”提升到“可浏览、可定位、可查看明细”。
+## 1. 目标
 
-### 二、已确认事实链
+本轮目标不是单纯给 `src/features/mrp` 补几个空目录，而是把当前仍以 Trading 功能点形态存在的 MRP，逐步提升为一个具备独立前端分层、独立事实源边界和独立演进能力的领域模块。
 
-#### A. 当前列表事实源已足够支撑第一阶段增强
-`LeaveService.getMyLeaveRequests()` 当前返回的记录已包含：
+本轮需要达成四个结果：
 
-1. `id`
-2. `employeeId` / `employeeName`
-3. `leaveType`
-4. `startTime` / `endTime`
-5. `durationDays`
-6. `reason`
-7. `status`
+1. 明确当前 MRP 功能在前端的真实散落位置与宿主关系。
+2. 设计 MRP 作为独立模块的目标目录与分层边界。
+3. 设计一条渐进迁移路径，避免一次性重写全部 Trading 相关代码。
+4. 保证迁移完成后，MRP 不再长期依赖 Trading 作为领域宿主。
 
-这意味着本轮在不新增后端接口的前提下，已经可以先完成：
+## 2. 当前已确认事实
 
-1. 状态筛选；
-2. 类型筛选；
-3. 时间排序；
-4. 详情弹层展示。
+### 2.1 MRP 当前尚未具备完整模块骨架
 
-#### B. 当前 UI 逻辑开始集中到 `leave-management.tsx`
-请假页目前已经承担：
+当前已确认：
 
-1. 列表查询；
-2. 统计查询；
-3. 新建请假弹窗开关；
-4. 撤销动作接线；
-5. 状态/类型/时间展示映射。
+1. `src/features/mrp/services` 为空目录。
+2. `src/features/mrp/data` 为空目录。
 
-如果本轮继续把筛选、排序、详情展示全部直接堆到当前文件，后续会再次走向“大页组件堆逻辑”的老路。
+这意味着 MRP 目前还没有成型的前端 service/data 层，不应被误判为“已经是独立模块，只差补功能”。
 
-因此本轮建议继续保持物理隔离：
+### 2.2 当前 MRP 更接近 Trading 体系内功能点
 
-1. 将列表工具条或筛选状态提取为独立显示层；
-2. 将详情展示提取为独立组件；
-3. `leave-management.tsx` 保持页面编排职责，而不是吞掉全部实现细节。
+从现有目录结构判断，MRP 当前更像是：
 
-### 三、本轮规划目标
+1. 挂靠在 Trading 业务中的一组页面/功能点。
+2. 仍借用或依赖其他领域现有 schema、query、mutation、页面入口。
+3. 没有独立的模块入口与契约层。
 
-#### A. 列表筛选
-优先支持：
+因此，迁移的本质是“从功能点抽离成模块”，而不是“在既有模块中再补几个文件”。
 
-1. 按状态筛选：
-   - 全部
-   - 待审批
-   - 已通过
-   - 已拒绝
-   - 已撤销
-2. 视 UI 密度评估是否同时支持按请假类型筛选：
-   - 全部类型
-   - 年假 / 病假 / 事假 / 婚假 / 产假 / 丧假 / 其他
+## 3. 核心设计原则
 
-#### B. 列表排序
-建议至少提供一个明确默认规则与一个可切换规则：
+### 3.1 先定义边界，再迁移代码
 
-1. 默认：按开始时间或创建时间倒序，优先显示最新相关记录；
-2. 可选：按开始时间正序，便于查看未来/历史请假安排。
+本轮不能直接把若干文件机械移动到 `mrp/` 目录下就算完成。
 
-在当前接口未显式返回 `updatedAt` 的前提下，应选择当前已有字段可稳定支持的排序依据，避免前端猜测不存在的事实。
+需要先明确：
 
-#### C. 详情展示
-建议新增独立详情组件，例如：
+1. 哪些能力属于 MRP 自有领域。
+2. 哪些能力属于 Trading 或其他共享领域。
+3. 哪些东西应该抽到共享层，而不是被 MRP 和 Trading 各自复制。
 
-1. `leave-detail-dialog.tsx`
+### 3.2 独立模块必须具备最小分层闭环
 
-展示内容至少包括：
+MRP 若要成为正式模块，至少要有：
 
-1. 员工姓名 / 员工 ID
-2. 请假类型
-3. 状态
-4. 开始时间 / 结束时间
-5. 请假工日
-6. 请假事由
-7. 必要时显示创建时间（若现有数据中稳定存在）
+1. `data`：类型、schema、常量、DTO/adapter。
+2. `services`：API 调用与后端契约封装。
+3. `hooks`：query/mutation 与页面动作编排。
+4. `components`：模块内部可复用视图组件。
+5. 模块入口：路由页、index 导出、权限入口或导航承载位。
 
-详情入口应尽量明确，不建议要求用户点击整块卡片才“猜”到有弹层。
+如果没有这些分层，只是把页面放进 `mrp` 目录，不足以称为独立模块。
 
-### 四、建议实施路线
+### 3.3 迁移必须渐进，不要求一步到位
 
-#### A. 先做前端派生数据层
-建议在页面或独立 hook 中构建“筛选 + 排序后的派生列表”，输入为原始 `leaves`，输出为：
+MRP 从 Trading 中抽离，适合按阶段进行：
 
-1. 当前筛选条件；
-2. 当前排序条件；
-3. 处理后的 `visibleLeaves`。
+1. 先建立模块骨架与兼容导出。
+2. 再逐步迁移 data/service/hook。
+3. 最后收口页面入口与 Trading 侧旧依赖。
 
-这样可避免把过滤、排序、渲染循环全部混在 JSX 内部。
+这样能降低回归风险，也更容易验证每一阶段是否真正完成边界收口。
 
-#### B. 详情展示独立组件化
-建议新增单独详情组件，而不是把卡片内容无限向下展开：
+## 4. 建议目标结构
 
-1. 列表项只保留摘要；
-2. 点击“查看详情”或同等明确入口时打开 Dialog；
-3. Dialog 内展示完整字段，必要时保留撤销按钮的上下文，但不重复实现撤销逻辑本身。
+### 4.1 建议的 MRP 模块骨架
 
-#### C. 保持现有撤销与刷新链路不变
-本轮不改后端、不改撤销语义，只要求：
+建议目标目录至少包括：
 
-1. 被筛选或排序后的列表仍能正常撤销；
-2. 撤销成功后重新计算派生列表；
-3. 详情弹层中的状态展示与列表摘要保持一致。
+1. `src/features/mrp/data`
+2. `src/features/mrp/services`
+3. `src/features/mrp/hooks`
+4. `src/features/mrp/components`
+5. `src/features/mrp/pages` 或当前项目约定的路由承载目录
+6. `src/features/mrp/index.ts`
 
-### 五、风险与待确认项
-1. 当前若不抽离筛选/详情组件，`leave-management.tsx` 会再次膨胀；
-2. 当前接口若未稳定返回 `createdAt`，则排序应基于 `startTime` 或其他确定字段，而不是假设存在“申请时间”；
-3. 详情展示若后续需要审批链信息、审批意见等，可能超出本轮现有字段范围；
-4. 若同时加入过多筛选项，会让当前简洁页面头部变得拥挤，因此本轮应坚持“最小可用筛选”。
+### 4.2 每层职责建议
 
-### 六、本轮不做的事情
-1. 不先扩展后端查询参数；
-2. 不把列表增强扩展成完整审批中心；
-3. 不在前端本地复制更多业务状态机；
-4. 不在批准前直接修改业务代码；
-5. 不让详情展示依赖额外接口请求作为首选实现。
+- `data`
+  - MRP 自有 schema
+  - 视图模型/接口定义
+  - API DTO adapter
+- `services`
+  - MRP 读写接口调用
+  - 响应解析与错误映射
+- `hooks`
+  - query/mutation
+  - 模块动作编排
+- `components`
+  - 清单、详情、动作面板、局部视图组件
+- `pages/entry`
+  - 页面级容器
+  - 路由与权限接入点
 
-### 七、涉及文件（预估）
-- `src/features/org-personnel/tabs/leave-management.tsx`
-- `src/features/org-personnel/components/leave-detail-dialog.tsx`（新增，预估）
-- `src/features/org-personnel/components/leave-list-toolbar.tsx`（新增，预估）
-- `src/features/org-personnel/hooks/use-cancel-leave-request.ts`
-- 如需要，可新增列表派生 hook（预估）
-- `walkthrough.md`
+## 5. 建议迁移阶段
 
-### 八、实施后验证口径
-完成后至少应满足：
-
-1. 用户可按状态筛选请假列表；
-2. 列表具有明确稳定的排序结果；
-3. 每条请假记录都可打开详情查看完整信息；
-4. 筛选、排序、详情展示不破坏现有撤销交互；
-5. `pnpm exec tsc --noEmit` 通过，并在 `walkthrough.md` 记录本轮增强结果。
+### Phase 1：盘点当前 MRP 散落点
 
-## “请假管理二阶段升级”实施规划（2026-04-09，待批准）
-
-### 一、问题概述
-上一轮已把“请假管理”从只读样板推进为“仅本人申请”的真实闭环，但当前仍停留在“最小可用版”，还存在两类明显缺口：
+- 目标：
+  1. 找出 MRP 当前真实页面、服务调用、schema、hooks、组件、路由入口。
+  2. 列出哪些仍在 Trading 内，哪些已经在 `mrp` 目录中，哪些在共享层。
 
-1. 前端交互仍偏原始：
-   - 状态直接展示后端枚举值；
-   - 开始/结束时间直接展示原始字符串；
-   - 列表中没有待审批记录的撤销入口；
-2. 后端请假时长 authority 仍偏弱：
-   - `server/services/leave_service.go` 当前通过 `calculateLeaveDurationDays(...)` 按自然时间差粗粒度取整；
-   - 尚未将排班、工作日、节假日、休息日等规则纳入权威裁决。
+### Phase 2：建立模块骨架与兼容层
 
-因此，本轮不是“再 polish 一下 UI”这么简单，而是要同时补齐：
+- 目标：
+  1. 创建正式 `mrp` 分层目录。
+  2. 先放入最小 schema/service/hook 骨架。
+  3. 通过 re-export 或兼容层降低迁移期破坏面。
 
-1. 用户侧可感知的交互完整性；
-2. 后端 authority 计算的规则可信度。
+### Phase 3：迁移领域事实源
 
-### 二、已确认事实链
+- 目标：
+  1. 将 MRP 自有 schema 从 Trading 或其他目录迁入 `mrp/data`。
+  2. 将 MRP 自有 API 调用迁入 `mrp/services`。
+  3. 将页面对这些事实源的依赖改为走 MRP 自己的 hooks。
 
-#### A. 前端闭环已存在，但展示层仍较粗糙
-当前仓库中请假模块已经具备：
-
-1. `LeaveActionDialog` 提交请假申请；
-2. `use-submit-leave-request.ts` 统一处理 preview / submit / query 刷新；
-3. 请假列表与统计卡片已能在提交后自动刷新；
-4. 后端已提供 `POST /leaves/:id/cancel`。
-
-但页面仍缺：
-
-1. 状态中文映射；
-2. 时间格式化展示；
-3. 待审批请假记录的撤销按钮与交互反馈。
-
-这部分属于交互层完善，不改变业务语义，但能直接提升模块可用性。
-
-#### B. 后端时长 authority 当前仍是“最小可用算法”
-当前 `calculateLeaveDurationDays(...)` 的规则是：
-
-1. 计算 `endTime - startTime` 的自然小时差；
-2. 按 0.5 天向上取整；
-3. 最小不少于 0.5 天。
-
-这适合作为第一阶段闭环兜底，但不适合作为长期 authority 规则，因为它无法回答：
-
-1. 节假日是否计入请假；
-2. 周末/休息日是否计入请假；
-3. 员工是否存在个体排班差异；
-4. 半天/跨日请假是否应按工作时段而非自然时长计算。
-
-#### C. 当前仓库内未直接发现请假可复用的现成排班/节假日 authority 服务
-通过本轮代码检索，当前已确认：
-
-1. 请假模块自身还未接入任何节假日 / 排班 / 班次服务；
-2. 仓库中暂未直接发现“现成且已被业务正式使用”的请假时长 authority 计算入口；
-3. 这意味着本轮算法升级不能建立在“系统里肯定已经有了”这一假设上。
-
-因此，真正的实施关键不是直接改 `calculateLeaveDurationDays(...)`，而是先定义：
-
-1. 事实源来自哪里；
-2. 当事实源不完整时如何降级；
-3. 如何避免把短期规则写死在 `leave_service.go` 中再次形成技术债。
-
-### 三、本轮规划目标
-本轮规划目标拆为两部分：
-
-#### A. 前端交互细化
-1. 将请假状态映射为中文展示；
-2. 将请假起止时间格式化为用户可读的本地时间；
-3. 对 `PENDING` 状态请假单显示“撤销”按钮；
-4. 撤销成功后统一刷新“我的请假记录”和统计卡片；
-5. 撤销失败时给出明确反馈，但最终裁决仍以后端返回为准。
-
-#### B. 后端 authority 升级
-1. 将请假时长计算从“自然时间差”升级为“工作日/排班/节假日裁决”；
-2. 尽量复用既有权威数据源；
-3. 若无现成数据源，则明确新增最小配置模型或最小日历服务，而不是把规则散落在请假服务内；
-4. preview 与 create 必须继续共用同一套 authority 算法，避免试算与落库漂移。
-
-### 四、建议实施路线
-
-#### A. 先收口 authority 事实源，再落算法
-本轮真正高风险点不在 UI，而在“排班/节假日事实从哪里来”。建议实施时按以下优先级推进：
-
-1. 先确认现有仓库中是否已有：
-   - 企业工作日历；
-   - 节假日配置；
-   - 班次 / 排班规则；
-   - 员工级或部门级工作制度；
-2. 若存在正式事实源，则优先通过独立 service 复用；
-3. 若不存在，则定义最小新切口，例如：
-   - 企业节假日 / 补班日配置；
-   - 默认工作日制度（如周一到周五）；
-   - 员工后续可扩展的排班钩子；
-4. 在事实源方案明确前，不直接把复杂条件判断塞回 `leave_service.go`。
-
-#### B. 将请假时长算法抽出为独立 authority 组件
-建议不要继续让 `leave_service.go` 直接持有全部计算细节，而是考虑拆出类似：
-
-1. `server/services/leave_duration_authority.go`
-2. 或 `server/services/leave_calendar_service.go`
-
-职责：
-
-1. 接收员工、开始/结束时间、请假类型；
-2. 基于工作日历/节假日/排班判断实际计假天数；
-3. 返回：
-   - `durationDays`
-   - 命中的规则说明（如后续需要前端展示）
-
-这样可避免“请假创建服务”与“日历规则服务”继续耦合在一个文件内。
-
-#### C. 前端只做展示增强与撤销接线
-在后端 authority 算法稳定后，前端侧建议只做以下增强：
+### Phase 4：收口页面入口与旧宿主依赖
 
-1. 在 `leave-management.tsx` 或对应显示层增加状态中文映射；
-2. 对时间展示做格式化，而不改变 API 传输事实；
-3. 在 `PENDING` 状态记录上增加“撤销”按钮；
-4. 新增独立撤销 hook 或在现有 hook 中补 mutation，但仍保持“hook - service - UI”分层；
-5. 成功后统一失效：
-   - `['personnel', 'leaves', 'my']`
-   - `['personnel', 'leaves', 'stats', 'my']`
+- 目标：
+  1. 让 MRP 页面入口、模块 index、导航/权限承载位完成独立化。
+  2. 清理 Trading 中仅因历史原因保留的 MRP 宿主代码。
+  3. 明确哪些共享能力保留在共享层，而不是继续挂在 Trading 中。
 
-### 五、风险与待确认项
-1. 当前仓库内未直接发现可复用的现成排班/节假日 authority 数据源，这是本轮最大不确定性；
-2. 如果现有系统完全没有正式节假日/排班事实源，则本轮算法升级的真实范围会扩大，可能需要先引入最小工作日历模型；
-3. 若直接在请假服务中硬编码“周末不计假 / 工作日计假”等规则，虽然能短期落地，但会形成新的 authority 技术债；
-4. 前端撤销按钮只是交互入口，不能把“是否允许撤销”的业务规则下放到前端判断；
-5. 若后续决定引入日历配置模型，还需评估是否会影响现有统计口径与历史请假记录重算策略。
+## 6. 涉及文件（预估）
 
-### 六、本轮不做的事情
-1. 不直接扩散到完整考勤模块建设；
-2. 不在前端自行裁决排班/节假日规则；
-3. 不在批准前直接修改业务代码；
-4. 不把“撤销”做成前端本地乐观删除；
-5. 不在尚未确认事实源前就承诺复杂班次算法全部落地。
+前端侧可能涉及：
 
-### 七、涉及文件（预估）
-- `src/features/org-personnel/tabs/leave-management.tsx`
-- `src/features/org-personnel/components/leave-action-dialog.tsx`（如需展示更丰富 preview 文案）
-- `src/features/org-personnel/hooks/use-submit-leave-request.ts`
-- `src/features/org-personnel/services/leave-service.ts`
-- `server/services/leave_service.go`
-- `server/handlers/leave_handlers.go`
-- `server/services/leave_duration_authority.go`（新增，预估）
-- 与节假日/工作日历/排班相关的后端模型或 service 文件（待确认是否新增）
-- `walkthrough.md`
+1. `src/features/mrp/**`
+2. `src/features/trading/**` 中当前承载 MRP 的页面、hooks、service、schema
+3. 相关 route / sidebar / permission 配置文件
+4. 共享 schema / api client / permission 绑定文件
 
-### 八、实施后验证口径
-完成后至少应满足：
+文档侧：
 
-1. 请假列表状态不再直接显示英文枚举，而是清晰中文状态；
-2. 请假起止时间以用户可读格式展示；
-3. `PENDING` 状态请假记录可发起撤销，并在成功后刷新列表与统计；
-4. 请假时长 preview / create 继续保持同一套 authority 规则；
-5. 时长计算已接入工作日/节假日/排班事实源，或至少已有明确的最小事实源模型而非自然时间差兜底；
-6. `pnpm exec tsc --noEmit` 与相关 Go 测试通过，并在 `walkthrough.md` 记录本轮升级结果。
+1. `task.md`
+2. `implementation_plan.md`
+3. `walkthrough.md`
 
-## “请假申请功能闭环”实施规划（2026-04-09，待批准）
+## 7. 风险与注意事项
 
-### 一、问题概述
-当前代码审查已确认：`/personnel/leave` 对应的“请假管理”模块仍停留在半成品样板阶段，现状是“读链路存在、写链路缺失”。
+### 7.1 假独立风险
 
-具体表现为：
+如果只补空目录或只移动页面，不同步迁移 schema/service/hook，MRP 仍然会继续依赖 Trading 作为真正宿主，形成“目录独立、架构未独立”的假象。
 
-1. `src/features/org-personnel/tabs/leave-management.tsx` 仅展示“我的请假记录”和统计卡片；
-2. 头部“新建请假申请”按钮无 `onClick`、无 Dialog、无表单、无提交 mutation；
-3. `src/features/org-personnel/services/leave-service.ts` 已存在 `submitLeaveRequest(...)`，但没有任何前端调用方；
-4. 页面当前也没有人员搜索/选择能力，导致 `employeeId` 这一关键字段在 UI 层没有来源；
-5. 路由仍包裹在 `FeatureSandbox` 中，说明该功能尚未形成正式生产闭环。
+### 7.2 复制粘贴式拆分风险
 
-这说明当前断点不在单个按钮，而在“服务能力已部分存在，但 Hook/UI/交互协议未接通”的整条写链路。
+如果为了快而直接复制 Trading 代码到 MRP，短期看像完成抽离，长期则会造成两套平行逻辑、两份 schema、两套接口适配器同时漂移。
 
-### 二、已确认事实链
+### 7.3 路由与权限边界风险
 
-#### A. 前端页面仅实现读取
-当前 `leave-management.tsx` 做了两件事：
+即使内部代码抽离完成，如果路由入口、权限绑定、菜单承载仍然依附 Trading，MRP 的模块边界仍然不完整。
 
-1. `useQuery(['personnel', 'leaves', 'my'], () => LeaveService.getMyLeaveRequests())`
-2. `useQuery(['personnel', 'leaves', 'stats', 'my'], () => LeaveService.getLeaveStats())`
+## 8. 批准后的最小验收标准
 
-页面没有：
+1. MRP 拥有正式模块骨架，而不只是空目录。
+2. MRP 自有 schema / services / hooks 不再长期散落在 Trading 中。
+3. 迁移过程保留兼容层，避免一次性打断现有页面可用性。
+4. Trading 不再承担 MRP 的长期领域宿主职责。
+5. `walkthrough.md` 记录迁移阶段、兼容策略与验证结果。
 
-1. `useMutation`
-2. 提交表单状态
-3. 打开/关闭对话框状态
-4. 与人员档案相关的查询逻辑
+---
 
-因此当前模块本质上仍是只读样板页。
+# 销售订单保存路径后端收敛为单一入口实施计划
 
-#### B. 服务层存在基础提交入口，但契约尚未完整对齐 UI
-`LeaveService.submitLeaveRequest(...)` 当前接收：
+日期：2026-04-09  
+状态：待批准
 
-1. `employeeId`
-2. `leaveType`
-3. `startTime`
-4. `endTime`
-5. `durationDays`
-6. `reason`
+## 1. 目标
 
-并在创建请假记录后尝试触发审批流。这说明：
+本轮目标不是继续优化前端 `delta` 计算细节，而是把“根据变更语义选择哪条事务路径”的职责从前端 UI 层移回后端。前端不应继续充当销售订单保存链的事务路由器。
 
-1. 后端至少已有基础请假提交接口；
-2. 现有前端没有消费它；
-3. `durationDays` 当前仍在前后端契约中出现，需要确认其是否应该继续由前端传入最终值。
+本轮需要达成四个结果：
 
-#### C. 当前最大架构风险不是“没弹窗”，而是 authority 边界不清
-从现有注释与页面意图看，项目已经在请假统计上强调 `[BACKEND-AUTHORITY]`。如果本轮只在前端补一个简单表单并本地计算：
+1. 前端保存动作不再根据 `delta` / 行差异 / 字段组合决定调用哪条后端 mutation。
+2. 后端提供单一销售订单保存入口，由后端裁决变更属于客户变更、状态变更、行增删改还是通用更新。
+3. 现有并发控制与版本冲突语义继续保留，不因入口收口而退化为粗暴全量覆盖。
+4. 为后续 `purchase` 或其他交易单据复制同类模式提供统一样板。
 
-1. `durationDays = end - start`
-2. 再直接提交到后端
+## 2. 当前已确认事实
 
-那么会把排班、节假日、跨时段请假规则等本应由后端裁决的逻辑错误地下放到前端。这种修法会让功能“看起来能用”，但长期一定继续漂移。
+### 2.1 当前前端承担了领域编排职责
 
-因此本轮应优先把“请假时长如何得出”定义为后端权威问题，而不是 UI 算法问题。
+当前销售订单保存链中，前端并不只是“提交表单结果”，而是在保存前先分析：
 
-### 三、本轮实施目标
-本轮规划的目标不是单纯补出一个弹窗，而是把请假申请链路补成可上线的最小闭环：
+1. `delta` 中改了哪些字段。
+2. 行项目是否发生结构变化。
+3. 行变化属于新增、删除还是内容更新。
+4. 是否命中客户字段变化、状态字段变化等特殊分支。
 
-1. 用户可以从请假页面发起一次真实可提交的请假申请；
-2. 表单可选择请假类型、时间范围、原因，并在需要时选择人员；
-3. 请假时长由后端权威试算/确认，不由前端本地终裁；
-4. 提交成功后，“我的请假记录”和统计卡片同步刷新到真实状态；
-5. 整个交互链路保持物理隔离，尽量通过新增独立组件 / hook / service 文件完成，而不是把大量逻辑堆进 `leave-management.tsx`。
-
-### 四、最小实施路线
+随后，前端再根据这些业务判断去选择具体 mutation。
 
-#### A. 新增请假申请交互层
-建议新增独立组件，例如：
-
-1. `src/features/org-personnel/components/leave-action-dialog.tsx`
-2. 由 `leave-management.tsx` 仅负责：
-   - 打开对话框
-   - 渲染按钮
-   - 接收成功回调后触发 query 刷新
+这已经不是展示层工作，而是典型的领域规则编排。
 
-Dialog 负责：
-
-1. 表单字段收集
-2. 基础校验
-3. 提交态 / 错误态 / 成功态展示
-
-这样可以避免把页面列表、统计、提交表单三类职责继续混在一个 tab 文件中。
-
-#### B. 新增独立 hook 收口写链路
-建议新增独立 hook，例如：
-
-1. `src/features/org-personnel/hooks/use-leave-action-dialog.ts`
-2. 或 `src/features/org-personnel/hooks/use-submit-leave-request.ts`
-
-职责为：
+### 2.2 当前问题不是一个 if/else 能否工作，而是谁在裁决
 
-1. 调用请假试算接口（若存在/新增）
-2. 调用 `LeaveService.submitLeaveRequest(...)`
-3. 处理提交中的 query 失效：
-   - `['personnel', 'leaves', 'my']`
-   - `['personnel', 'leaves', 'stats', 'my']`
-4. 统一错误映射与成功反馈
+即使当前前端分流逻辑在若干场景下能工作，它仍然存在结构性问题：
 
-这样可避免 UI 组件直接编排多段异步逻辑。
+1. 事务语义散落在 UI / hook 中，而不是集中在后端服务层。
+2. 前端规则一旦与后端真实约束分叉，就会产生“前端命中 A 路径、后端其实需要 B 裁决”的漂移。
+3. 后续若继续扩变更类型，只会让 UI 层 `if/else` 更长、更脆弱、更难验证。
 
-#### C. 人员发现能力优先复用现有人事主数据服务
-由于请假提交结构要求 `employeeId`，但当前页面没有人员来源，建议优先复用现有员工档案查询能力，而不是在请假模块内复制一套“人名列表 mock 数据”。
+因此，这个问题的根因不是“某个分支写得不够好”，而是职责边界放错了层。
 
-具体策略：
+## 3. 核心设计原则
 
-1. 先检索现有 `employee-core-service` / `EmployeeQuery` / 员工选择器能力；
-2. 若项目已存在可复用查询接口，则在 `LeaveActionDialog` 中以搜索/下拉形式接入；
-3. 若当前业务语义确认“普通员工只能为自己申请”，则可默认绑定当前用户对应员工档案，并把人员选择器降为只读展示；
-4. 若支持 HR / 主管代提，则必须保留正式人员搜索选择能力。
+### 3.1 前端提交事实，后端裁决语义
 
-这里的关键不是 UI 形式，而是先确认“谁能替谁申请”的业务语义，再决定字段是否可编辑。
+前端应该提交：
 
-#### D. 请假天数改为后端权威试算
-当前 `leaveRequestSchema` 要求 `durationDays`，但项目现有设计已经在统计层强调后端权威，因此建议按以下方向收口：
+1. 原始变更集（若仍保留 delta 作为技术输入）。
+2. 或最终快照（若保存接口以最终状态为主）。
+3. 并发控制元数据（如 `version` / `expectedVersion`）。
 
-1. 前端只提交原始事实：
-   - `employeeId`
-   - `leaveType`
-   - `startTime`
-   - `endTime`
-   - `reason`
-2. 后端新增或复用“请假试算 / 确认”接口，返回：
-   - 权威 `durationDays`
-   - 必要的规则提示（如跨节假日、半天、排班冲突）
-3. 前端在提交前展示试算结果，但不自行计算最终值；
-4. 最终创建时由后端再次基于同一规则落库，避免“试算结果”和“落库结果”脱节。
+后端根据这些输入决定：
 
-如果当前后端尚无试算接口，那么它应成为实施阶段的先决任务，而不是让前端先用简单日期差顶上。
+1. 属于哪种业务变更类型。
+2. 需要执行哪些内部事务路径。
+3. 是否允许该变更发生。
 
-#### E. 提交成功后的数据一致性
-请假申请提交成功后，前端必须做真实刷新，而不是只在本地数组里插入一条记录。
+### 3.2 单一入口不等于退回全量覆盖保存
 
-建议：
+本轮收口目标不是把所有语义揉成一个不透明的“大而全 Save”。
 
-1. 统一失效“我的请假记录”和“请假统计”两个 query；
-2. 让页面重新读取后端结果；
-3. 若审批发起为异步链路，则 UI 以实际返回状态为准，不自行猜测最终审批态。
+后端内部仍可保持：
 
-### 五、实施顺序建议
-若你批准进入执行，建议按以下顺序推进：
+1. 状态迁移校验。
+2. 客户变更的专项约束。
+3. 行增删改的显式处理。
+4. 版本冲突与防腐校验。
 
-1. 先确认业务语义：是否允许代他人申请；
-2. 盘点并接入现有员工查询/选择能力；
-3. 盘点后端是否已有请假时长试算接口；若无，先补后端；
-4. 新增 `LeaveActionDialog` 与独立 hook，接通写链路；
-5. 接入 query 刷新与提交反馈；
-6. 做最小联调验证并更新 `walkthrough.md`。
+但这些判定与分派应由后端统一完成，而不是由前端决定走哪个路由。
 
-### 六、本轮不做的事情
-1. 不在批准前直接修改请假业务代码；
-2. 不把“请假管理”顺手扩展成完整审批中心重构；
-3. 不在前端自行实现排班/节假日/半天算法；
-4. 不复制一套新的员工主数据维护逻辑到请假模块；
-5. 不为了快速可见而只补按钮点击和假弹窗。
+### 3.3 保留并发保护主链
 
-### 七、涉及文件（预估）
-- `src/features/org-personnel/tabs/leave-management.tsx`
-- `src/features/org-personnel/services/leave-service.ts`
-- `src/features/org-personnel/data/leave-request-schema.ts`
-- `src/features/org-personnel/components/leave-action-dialog.tsx`（新增，预估）
-- `src/features/org-personnel/hooks/use-submit-leave-request.ts`（新增，预估）
-- 现有员工查询/选择相关 service 或 selector 文件（待进一步定位）
-- 如后端缺失试算能力，则还会涉及 `server/handlers`、`server/services`、`server/routes` 中的请假相关文件
-- `walkthrough.md`
+无论最终请求契约是“delta + version”还是“snapshot + version”，都必须保留现有版本冲突语义，不能为了前端简化而削弱后端乐观锁。
 
-### 八、风险与待确认项
-1. 当前尚未确认“代他人申请”是否属于正式需求，这会直接影响人员选择器是否必做；
-2. 当前尚未确认后端是否已有请假时长试算接口，若没有，则前端实施不能独立闭环；
-3. `submitLeaveRequest(...)` 当前在前端创建成功后再单独触发审批，需进一步核实后端是否已保证事务一致性，避免出现“请假记录已创建但审批未接通”的中间态；
-4. `FeatureSandbox` 是否仍要保留，需要在实施阶段结合模块成熟度判断，但不应成为本轮首要阻塞项。
+## 4. 建议实施形态
 
-### 九、实施后验证口径
-完成后至少应满足：
+### 4.1 对前端的收口目标
 
-1. 点击“新建请假申请”可打开真实表单，而非纯视觉占位；
-2. 表单能完成最小有效提交，并形成真实请假记录；
-3. 若业务要求允许代提，可正确搜索/选择员工并提交对应 `employeeId`；
-4. `durationDays` 以服务端权威结果为准，而非前端简单日期差；
-5. 提交成功后，列表与统计能通过真实 query 刷新反映新状态；
-6. 相关前后端最小验证通过，并在 `walkthrough.md` 记录实施结果。
-
-## `sales` 事务编排下沉与并发写收口规划（2026-04-09，待确认）
-
-### 一、问题概述
-本轮审查确认 `sales` 域当前仍存在两类架构问题：
-
-1. `src/features/trading/components/sales-order-action-dialog.tsx` 在 UI 层承担了交易编排职责；
-2. `src/features/trading/services/order-delivery-service.ts` 保留了前端 read-modify-write 式的交付进度回写链路。
-
-这两类问题共同说明：虽然 `sales` 域已经补入多条 transaction mutation 与基础 version 冲突保护，但“事务意图如何判定”与“交付增量如何裁决”还没有完全从前端剥离。
-
-### 二、已确认事实链
-
-#### A. UI 编排泄露已成立
-`sales-order-action-dialog.tsx` 当前在保存时并不只是“提交表单”，而是：
-
-1. 先 `commit()` 拿到 delta；
-2. 在组件内判断 `isCustomerOnlyChange`、`isLinesOnlyChange`、`isClassificationTypeOnlyChange`、`isDeliveryDateOnlyChange`、`isStatusFlowOnlyChange` 等条件；
-3. 对行编辑再细分 `hasLineStructureChange`、`isPureLineAdd`、`isPureLineRemove`；
-4. 最终由 UI 决定调用 `customerChangeMutation`、`lineAddMutation`、`lineRemoveMutation`、`linesChangeMutation` 或 `patchMutation`。
-
-这意味着“哪种修改命中哪种 transaction intent”的规则仍沉在 UI 组件内，而不是统一收口到 orchestration/service 层。
-
-#### B. 并发写风险边界需要更准确表述
-当前并不能简单说 `sales` 全链路缺乏乐观锁：
-
-1. `src/features/trading/sales/services/sales-service.ts` 的 `patchSalesOrder(...)` 会把 `version` 放进 payload metadata；
-2. 后端 `server/handlers/sales_orders.go` 会校验版本不一致并返回统一的 `409 CONFLICT`；
-3. 因此主 patch 链路已经具备基础 optimistic locking 保护。
-
-但同时，`order-delivery-service.ts` 仍存在更危险的遗留模式：
-
-1. 先按 `orderNo` 拉订单快照；
-2. 在前端内存中累加 `deliveredQty`；
-3. 在前端推导行状态与订单状态；
-4. 再以整单保存方式回写。
-
-这条链路属于典型的前端 authority / read-modify-write，若仍被正式入口调用，会绕开显式 transaction intent，并带来脏写覆盖与状态漂移风险。
-
-### 三、本轮规划目标
-本轮先沉淀改造方案，不直接并发改造 `sales` 全域：
-
-1. 把 `sales-order-action-dialog.tsx` 的 delta 分类与 mutation 分发下沉到单一 orchestration/service hook；
-2. 让 UI 退回“提交结果 + 展示反馈”的职责，不再维护事务路由规则；
-3. 将交付进度更新收敛为显式事务意图，由后端基于版本与数据库快照做原子裁决；
-4. 在完成收敛前，不继续向 UI 组件中追加新的 `if/else` transaction 分流。
-
-### 四、最小实施路线
-
-#### A. 收口前端 orchestration
-优先切口：
-
-1. 新建或扩展单一 `sales` orchestration 层；
-2. 输入为：
-   - 当前订单快照
-   - `commit()` 生成的 delta
-   - 预处理后的 `finalData`
-3. 输出为：
-   - 应调用的 transaction mutation / patch mutation
-   - 对应 payload
-
-这样可以先把交易编排从 UI 中移出，而不立即改变现有后端契约。
-
-#### B. 收口交付增量更新
-对 `order-delivery-service.ts` 做单独收口：
-
-1. 先确认该文件是否仍被引用；
-2. 若已无引用，则将其移出正式导出面或删除；
-3. 若仍有引用，则需要为“交付数量变更”建立显式 transaction intent；
-4. 由后端基于订单当前版本和真实快照完成：
-   - deliveredQty 增量更新
-   - 行状态推导
-   - 订单状态聚合
-
-#### C. 保持现有 version 冲突语义
-无论 orchestration 下沉到哪一层，都必须保留：
-
-1. 前端提交 `version` / `expectedVersion`；
-2. 后端发现版本不一致时返回 `409 CONFLICT`；
-3. 前端统一按冲突场景提示“刷新后重试”；
-4. 不得为追求 UI 简化而回退到无版本的整单回写。
-
-### 五、本轮不做的事情
-1. 不直接并发重构 `purchase` 侧同类问题；
-2. 不在本轮同时新增多个新的 `sales` transaction intent；
-3. 不把所有现有 patch 路径一次性迁走；
-4. 不先改后端事务实现，再回头找前端入口；
-5. 不在尚未确认引用关系前贸然删除 `order-delivery-service.ts`。
-
-### 六、涉及文件
-- `src/features/trading/components/sales-order-action-dialog.tsx`
-- `src/features/trading/sales/hooks/use-sales-transactions.ts`
-- `src/features/trading/sales/services/sales-service.ts`
-- `src/features/trading/sales/services/sales-transaction-service.ts`
-- `src/features/trading/services/order-delivery-service.ts`
-- `server/handlers/sales_orders.go`
+建议前端保存链收口为：
+
+1. 表单层负责产出原始表单结果。
+2. 若仍需要技术层 `delta`，仅作为变更事实输入，不作为事务路由依据。
+3. `use-sales-order-save.ts` 只调用单一保存 mutation。
+4. 删除 `sales-order-save-plan.ts` 这类“按领域语义分流后端 mutation”的职责，或将其降级为纯技术差异构造工具。
+
+### 4.2 对后端的收口目标
+
+建议后端增加或收口为单一保存入口：
+
+1. 接收前端原始变更集/最终快照。
+2. 在服务层内部识别本次变更语义。
+3. 根据语义调用相应内部事务处理逻辑。
+4. 统一输出成功结果或冲突/校验错误。
+
+### 4.3 对现有交易事务服务的兼容要求
+
+如果现有后端已经有若干显式 transaction service（客户变更、状态迁移、行增删改），本轮不必强行删掉这些内部能力。
+
+更合理的做法是：
+
+1. 保留内部细分服务。
+2. 新增一个上层 orchestration/save service。
+3. 由这个后端上层服务做唯一裁决与分派。
+
+这样既能收口前端职责，也不会一次性打碎既有事务语义实现。
+
+## 5. 建议实施顺序
+
+### Step 1：盘点当前前端保存路由规则
+
+- 重点文件：
+  1. `sales-order-save-plan.ts`
+  2. `use-sales-order-save.ts`
+  3. 销售订单表单/保存相关 hook 与 dialog 文件
+- 目标：
+  1. 列清当前前端到底在判定哪些业务语义。
+  2. 确认哪些判断只是技术差异构造，哪些已经是领域分派。
+
+### Step 2：盘点当前后端保存/事务入口
+
+- 重点文件：
+  1. 销售订单 routes / handlers
+  2. sales transaction service
+  3. 相关 patch/save handler 与 service
+- 目标：
+  1. 确认后端当前已有的细分事务能力。
+  2. 确认最合适的单一入口承载位。
+
+### Step 3：定义统一保存请求契约
+
+- 目标：
+  1. 明确前端提交字段。
+  2. 明确版本控制字段。
+  3. 明确后端内部如何从请求识别变更语义。
+
+### Step 4：后端先收口，再移除前端事务路由
+
+- 目标：
+  1. 先让后端单入口可正确裁决。
+  2. 再把前端 save hook 收缩为单调用。
+  3. 最后删除或降级 UI 层业务路由规则。
+
+## 6. 涉及文件（预估）
+
+前端侧可能涉及：
+
+1. `sales-order-save-plan.ts`
+2. `use-sales-order-save.ts`
+3. `sales-order-action-dialog.tsx`
+4. 相关 form hook / mutation hook 文件
+
+后端侧可能涉及：
+
+1. sales order routes / handlers
+2. `server/services/sales_transaction_service.go`
+3. 相关 patch/save/orchestration service 文件
+4. 对应 handler/service 测试文件
+
+文档侧：
+
+1. `task.md`
+2. `walkthrough.md`
+
+## 7. 风险与注意事项
+
+### 7.1 契约切换风险
+
+如果前端当前已经深度依赖多条 mutation 的成功回包语义，本轮需要先确认新单入口的响应结构如何兼容，避免 UI 成功后状态刷新异常。
+
+### 7.2 事务语义退化风险
+
+如果实现方式不当，所谓“单一入口”可能退化成一个无法审计、无法细分约束的粗粒度保存接口。这是本轮必须避免的反模式。
+
+### 7.3 版本治理风险
+
+前端去路由器化后，仍必须保证后端对并发写的冲突判定不变；否则会把架构问题从“职责错位”变成“数据一致性退化”。
+
+## 8. 批准后的最小验收标准
+
+1. 前端保存链不再根据业务语义选择不同 mutation。
+2. 后端存在单一销售订单保存入口，负责语义裁决与内部事务分派。
+3. 客户变更、状态变更、行增删改与通用更新仍能正确处理。
+4. `409/CONFLICT` 等版本冲突语义保持不变。
+5. `walkthrough.md` 记录本轮契约调整、实现切口与验证结果。
+
+---
+
+# 客户/供应商列表统计下沉到后端 metadata/stats 实施计划
+
+日期：2026-04-09  
+状态：待批准
+
+## 1. 目标
+
+本轮目标不是优化前端“重计算”性能，而是把客户/供应商列表页头部统计卡片的事实来源收口到后端，避免未来在分页、权限过滤、软删除、默认筛选或数据隔离规则变化后出现静默失真。
+
+本轮需要达成四个结果：
+
+1. `customer` 列表接口返回列表数据时，同时返回 `metadata.stats`。
+2. `supplier` 列表接口返回列表数据时，同时返回 `metadata.stats`。
+3. 前端客户/供应商统计卡片只消费后端统计，不再基于当前取回的列表数据自行推导总盘子数字。
+4. 为后续服务端分页与更严格的数据裁剪预留统一响应承载位，而不是到时再次破坏响应契约。
+
+## 2. 当前已确认事实
+
+### 2.1 客户统计卡片当前现状
+
+当前 `customer-list.tsx` 中的“总数 / 活跃数 / 本月新增”来自前端对已获取客户列表再次过滤计数。
+
+这意味着它现在隐式依赖一个前提：前端拿到的数据就是完整且未被裁剪的真实全集。
+
+### 2.2 供应商统计卡片当前现状
+
+当前 `supplier-list.tsx` 中的“总数 / 活跃数 / 审核中”同样来自前端对已获取供应商列表再次过滤计数。
+
+它与客户页存在相同问题：当前实现不是绝对错误，但缺少可持续的权威口径保障。
+
+### 2.3 当前实现的结构性风险
+
+只要未来出现以下任一变化，前端卡片数字就可能悄悄偏离真实结果：
+
+1. 列表切为服务端分页。
+2. 接口增加权限过滤或部门数据隔离。
+3. 后端对软删除、归档、冻结状态的默认排除口径发生变化。
+4. 前端为了性能只请求局部列表或默认筛选后的结果集。
+
+因此，本轮应该尽快把“统计属于谁裁决”这个问题收口到后端。
+
+## 3. 核心设计原则
+
+### 3.1 统计与列表必须同源
+
+后端返回的 `stats` 必须与当前列表查询使用同一组过滤前提和同一事实源。
+
+不能出现：
+
+1. 列表按 A 条件查。
+2. 统计按 B 条件单独算。
+
+否则只是把问题从前端漂移转移成接口内部漂移。
+
+### 3.2 响应结构要为后续分页预留位置
+
+即使本轮接口尚未正式分页，也建议统一收口为：
+
+1. `data`：当前列表记录。
+2. `metadata.stats`：当前查询上下文下的统计。
+3. `metadata.pagination`：分页信息承载位，可先按现状最小提供或暂留兼容结构。
+
+这样后续如果进入服务端分页，不需要再次推翻页面消费方式。
+
+### 3.3 前端不再保留兜底重算主链
+
+前端头部卡片应以服务端返回为唯一主事实源。
+
+若 `stats` 缺失，应显式暴露为接口契约缺口，而不是悄悄回退到本地重算，避免问题被掩盖。
+
+## 4. 建议接口形态
+
+### 4.1 客户列表示意
+
+建议客户列表响应统一为如下语义结构：
+
+1. `data`: 客户列表数组。
+2. `metadata.stats.total`: 当前查询口径下客户总数。
+3. `metadata.stats.active`: 当前查询口径下活跃客户数。
+4. `metadata.stats.newThisMonth`: 当前查询口径下本月新增客户数。
+
+### 4.2 供应商列表示意
+
+建议供应商列表响应统一为如下语义结构：
+
+1. `data`: 供应商列表数组。
+2. `metadata.stats.total`: 当前查询口径下供应商总数。
+3. `metadata.stats.active`: 当前查询口径下活跃供应商数。
+4. `metadata.stats.pendingReview`: 当前查询口径下审核中供应商数。
+
+### 4.3 统计口径说明
+
+这里的“当前查询口径”指的是：
+
+1. 与该列表接口当前实际应用的过滤条件一致。
+2. 与该调用上下文可见的数据权限一致。
+3. 与后端当前对软删除、归档、状态裁剪的默认规则一致。
+
+也就是说，这些统计不是“当前页记录数”，而是“当前查询上下文下的后端权威统计”。
+
+## 5. 建议实施顺序
+
+### Step 1：盘点现有 customer / supplier 列表接口与前端消费点
+
+- 目标：确认当前后端 handler/service/response DTO 与前端 service/hook/list 页面之间的真实契约。
+- 重点文件：
+  1. `customer-list.tsx`
+  2. `supplier-list.tsx`
+  3. 对应 front-end service / hook 文件
+  4. 对应后端 routes / handlers / services 文件
+
+### Step 2：后端补齐 `metadata.stats`
+
+- 目标：让客户/供应商列表接口在返回列表数据时同时返回统计。
+- 要求：
+  1. 统计使用与列表一致的过滤上下文。
+  2. 不新增第二条脱节的统计查询口径。
+  3. 若客户与供应商存在共用列表响应封装，可优先抽成共享结构。
+
+### Step 3：前端收口为只读后端统计
+
+- 目标：移除客户/供应商头部卡片对本地列表数组的业务总数推导依赖。
+- 要求：
+  1. 页面改为消费 service 返回的 `metadata.stats`。
+  2. 类型定义同步升级。
+  3. 若接口异常缺少 `stats`，应显式进入缺失态，而不是继续本地猜测。
+
+### Step 4：补最小验证
+
+- 后端验证重点：
+  1. 列表接口返回 `data + metadata.stats`。
+  2. 统计字段与预期状态口径一致。
+- 前端验证重点：
+  1. 页面卡片读取后端响应字段。
+  2. 不再依赖当前列表数组本地过滤得出总数卡片。
+
+## 6. 涉及文件（预估）
+
+前端侧可能涉及：
+
+1. `customer-list.tsx`
+2. `supplier-list.tsx`
+3. 对应的 service 文件
+4. 对应的 hook / query key / response type 文件
+
+后端侧可能涉及：
+
+1. customer 列表 route / handler / service / repository 相关文件
+2. supplier 列表 route / handler / service / repository 相关文件
+3. 若当前项目存在统一列表响应结构定义，需同步升级该结构
+
+文档侧：
+
+1. `task.md`
+2. `walkthrough.md`
+
+## 7. 风险与注意事项
+
+### 7.1 统计口径分叉风险
+
+如果 customer / supplier 的列表查询逻辑本身已经分散在多个 service 或 query helper 中，本轮最大的风险不是代码量，而是统计条件与列表条件不一致。
+
+因此实施时必须先找到真正的单一列表查询入口，避免只在 handler 层临时拼一份统计逻辑。
+
+### 7.2 响应契约兼容风险
+
+如果当前前端大量地方直接假设接口返回就是数组，本轮需要谨慎确认 customer / supplier service 是否只被单一列表页消费。
+
+若存在多个消费方，可能需要采用兼容式 service 封装，而不是直接粗暴改变所有调用方预期。
+
+### 7.3 未来分页兼容风险
+
+如果本轮只追加裸 `stats` 字段、不预留统一 `metadata` 承载位，那么后续上分页时仍会再次破坏契约。
+
+因此建议本轮一次把承载结构收好。
+
+## 8. 批准后的最小验收标准
+
+1. 客户列表页统计卡片来自后端 `metadata.stats`。
+2. 供应商列表页统计卡片来自后端 `metadata.stats`。
+3. 前端不再通过当前已取回数组自行推导“总数 / 活跃 / 本月新增 / 审核中”作为主事实源。
+4. 接口结构为后续分页演进保留统一 `metadata` 承载位。
+5. `walkthrough.md` 记录本轮统计口径、涉及接口与验证结果。
+
+---
+
+## 以下为既有主计划（保留）
+
+本轮不再并行推进多份相互重叠的 audit-engine 子方案，而是收敛为一份主计划，按依赖顺序分阶段实施。
+
+核心目标只有四个：
+
+1. 先把 `Trading` 做成真实可验证的审计接入样板。
+2. 再把 audit-engine 从前端静态判断升级为后端真实统计驱动。
+3. 然后在卡片中展示“为什么是 HEALTHY / ALERT / CRITICAL”。
+4. 最后再扩面补齐 `Customer / Supplier / Employee / ProductionLine` 等真实入口。
+
+## 2. 当前已确认事实
+
+### 2.1 audit-engine 当前存在的主要问题
+
+当前 `/system-management/audit-engine` 的问题不是“完全没有能力”，而是“能力已经部分存在，但缺少统一口径与清晰表达”：
+
+1. 页面状态仍有明显前端静态派生痕迹。
+2. 后端已经存在真实 `AuditLog` 写入，但前端入口覆盖并不完整。
+3. 模块状态、实体状态、时间线入口状态之间还没有建立单一事实源。
+4. 用户能看到结果，但很难知道原因，更不知道下一步该补哪里。
+
+### 2.2 当前最成熟的样板是 Trading
+
+目前最适合作为第一阶段样板的是 `Trading`，原因如下：
+
+1. 已有前端 `AuditStamp` / `DataTimeline` 相关承载能力。
+2. 销售单、采购单已有后端审计写入基础。
+3. 问题点集中且明确，主要是 module 命名契约、时间线命中、入口统一。
+4. 比起其他模块，Trading 更容易形成“真实入口 + 真实日志 + 看板反映”的闭环。
+
+### 2.3 后续待补的真实入口对象
+
+在样板之外，已确认后端存在审计写入、但前端真实入口仍不完整或未统一的对象至少包括：
+
+1. `Customer`
+2. `Supplier`
+3. `Employee`
+4. `ProductionLine`
+
+其中前三类更适合优先纳入后续扩面；`ProductionLine` 是否纳入，要以页面是否存在稳定承载位为前提，不强行硬接。
+
+## 3. 总体实施顺序
+
+本计划按以下固定顺序推进：
+
+1. `Phase 1`：Trading 样板接入收口
+2. `Phase 2`：真实统计升级
+3. `Phase 3`：卡片原因展示增强
+4. `Phase 4`：真实入口扩面补齐
+
+原则上不跳步。
+
+原因是：
+
+1. 如果没有样板闭环，后面的统计规则很容易失真。
+2. 如果没有真实统计，卡片原因展示就会再次变成前端猜测。
+3. 如果先扩面再收口底座，后续每个模块都会重复踩同样的问题。
+
+## 4. Phase 1：Trading 样板接入收口
+
+### 4.1 目标
+
+把 `SalesOrder` 和 `PurchaseOrder` 打通为一条真实、稳定、可验证的审计链路：
+
+1. 前端有统一入口。
+2. 后端有真实日志。
+3. `/audit/timeline` 能稳定命中。
+4. audit-engine 能据此表达真实状态，而不是静态假象。
+
+### 4.2 实施内容
+
+1. 统一 Trading 相关审计 module 命名。
+2. 收口 `AuditStamp`、`DataTimeline`、详情页入口使用的 module 值。
+3. 对齐后端写入和前端查询使用的 canonical module。
+4. 先打通 `SalesOrder`，再复制到 `PurchaseOrder`。
+5. 明确 Trading 在 audit-engine 中的状态计算依据，不再直接依赖硬编码 `connected: true`。
+
+### 4.3 文件级实施步骤
+
+#### Step 1：锁定 Trading 的前端 canonical module 常量
+
+- 文件：`src/features/audit-timeline/data/audit-modules.ts`
+- 动作：
+  1. 确认 `sales-order`、`purchase-order` 是 Trading 唯一允许使用的前端 module 值。
+  2. 清理散落的手写字符串，统一改为消费 `AUDIT_MODULES.salesOrder`、`AUDIT_MODULES.purchaseOrder`。
+- 目标：
+  1. 前端不再混用 `SalesOrder`、`PurchaseOrder` 等别名。
+  2. 所有 Trading 时间线入口都从同一常量源取值。
+
+#### Step 2：收口销售单详情页审计入口
+
+- 文件：`src/features/trading/components/parts/sales-order-detail-activity.tsx`
+- 动作：
+  1. 确认销售单详情活动区只通过 `AUDIT_MODULES.salesOrder` 打开时间线。
+  2. 若存在其他销售单审计入口，统一到该 canonical 值。
+- 目标：
+  1. 销售单详情页所有时间线查询口径完全一致。
+
+#### Step 3：收口采购单详情页审计入口
+
+- 文件：`src/features/trading/components/purchase/purchase-order-detail.tsx`
+- 动作：
+  1. 确认采购单详情页 `AuditStamp` 只通过 `AUDIT_MODULES.purchaseOrder` 打开时间线。
+  2. 若采购单还有其他侧栏、弹层或活动区入口，也统一到该 canonical 值。
+- 目标：
+  1. 采购单链路与销售单链路在前端语义和接入方式上保持对称。
+
+#### Step 4：收紧通用审计组件的 module 类型
+
+- 文件：`src/components/common/audit-stamp.tsx`
+- 文件：`src/features/audit-timeline/components/data-timeline.tsx`
+- 文件：`src/features/audit-timeline/hooks/use-audit-timeline.ts`
+- 动作：
+  1. 将 `module: string` 逐步收口为前端统一 audit module 类型。
+  2. 保证审计组件不再作为任意字符串透传层。
+- 目标：
+  1. 后续业务页面不能再随意写入新的 module 字符串。
+  2. Trading 样板形成“入口常量 -> 组件类型 -> 查询参数”同一口径。
+
+#### Step 5：确认后端落库前统一 module 归一化
+
+- 文件：`server/services/audit_service.go`
+- 文件：`server/services/audit_modules.go`
+- 动作：
+  1. 确认 `defaultAuditLogger.Write()` 是 Trading 审计日志统一落库入口。
+  2. 确认所有写入在落库前都会经过 `normalizeAuditModule()` 归一。
+- 目标：
+  1. 数据库存量和新增数据最终都沉淀到 canonical module。
+  2. 后续统计不再依赖多套 module 名称并行存在。
+
+#### Step 6：核对销售/采购事务服务的写入路径
+
+- 文件：`server/services/sales_transaction_service.go`
+- 文件：`server/services/purchase_transaction_service.go`
+- 动作：
+  1. 逐处检查 `AuditEntry{ Module: ... }` 的传值。
+  2. 明确哪些仍是兼容输入，哪些已经使用 canonical 值。
+- 目标：
+  1. 业务层可兼容旧值，但最终输出口径统一。
+  2. 为后续彻底去别名做好准备。
+
+#### Step 7：保留 timeline alias 查询，但明确其职责是历史兼容
+
+- 文件：`server/handlers/audit_handlers.go`
+- 文件：`server/services/audit_modules.go`
+- 动作：
+  1. 保留 `ExpandAuditModuleAliasesForQuery()` 的兼容能力。
+  2. 在实现和文档中明确：alias 查询只用于历史数据兼容，不是长期主路径。
+- 目标：
+  1. Phase 1 结束后，新链路不依赖 alias 才能命中。
+  2. 历史日志仍可被现有时间线查询命中。
+
+#### Step 8：补最小闭环验证
+
+- 前端重点文件：
+  1. `src/components/common/audit-stamp.tsx`
+  2. `src/features/audit-timeline/hooks/use-audit-timeline.ts`
+- 后端重点文件：
+  1. `server/handlers/audit_handlers.go`
+  2. `server/services/audit_modules.go`
+  3. Trading 相关 transaction service test 文件
+- 动作：
+  1. 覆盖 canonical module 查询命中 canonical 日志。
+  2. 覆盖 canonical module 查询命中历史 alias 日志。
+  3. 覆盖销售单、采购单详情页入口传值正确。
+- 目标：
+  1. Trading 样板具备可回归、可验证的闭环。
+
+#### Step 9：将收口结果记录进 walkthrough
+
+- 文件：`walkthrough.md`
+- 动作：
+  1. 记录 Trading canonical module 最终定义。
+  2. 记录销售单、采购单真实入口位置。
+  3. 记录 alias 兼容策略和后续清理方向。
+- 目标：
+  1. 为 Phase 2 的真实统计升级提供清晰输入。
+
+### 4.4 涉及文件
+
+- `src/features/audit-timeline/components/data-timeline.tsx`
+- `src/features/audit-timeline/hooks/use-audit-timeline.ts`
+- `src/features/audit-timeline/data/audit-modules.ts`
+- `src/components/common/audit-stamp.tsx`
+- `src/features/trading/components/parts/sales-order-detail-activity.tsx`
+- `src/features/trading/components/purchase/purchase-order-detail.tsx`
+- `server/handlers/audit_handlers.go`
+- `server/services/audit_service.go`
+- `server/services/audit_modules.go`
 - `server/services/sales_transaction_service.go`
-
-### 七、实施前核实项
-1. 确认 `order-delivery-service.ts` 当前是否还有正式调用入口；
-2. 确认新的 orchestration 层落点是 hook、service 还是独立 orchestrator；
-3. 确认 UI 下沉后是否保留 `useSalesOrderMutations()` 作为执行层，还是进一步收口；
-4. 确认交付增量最终是复用已有 transaction service，还是新增专门 intent。
-
-### 八、后续验证口径
-实施后至少应满足：
-
-1. `sales-order-action-dialog.tsx` 不再承担大段 delta 分类与 mutation 分发逻辑；
-2. UI 不再直接裁决“行新增 / 行删除 / 行内容修改 / 客户变更 / 状态变更”命中哪条事务主链；
-3. `order-delivery-service.ts` 不再存在可被正式入口使用的前端 authority 回写链路；
-4. `sales` 域现有 `409 CONFLICT` 乐观锁语义保持不变；
-5. `pnpm exec tsc --noEmit` 与对应后端最小测试仍通过。
-
-## 生产环境图片上传 `Disk write failed` 根因锁定与专项修复规划（2026-04-09，待批准）
-
-### 一、问题概述
-当前生产环境销售订单图片上传失败，前端直接收到：
-
-1. `POST /sales-orders/evidence/upload`
-2. `500 Disk write failed`
-
-结合现有后端实现，`server/handlers/evidence_handler.go` 的上传流程为：
-
-1. 读取上传原始字节；
-2. 调用 Rust `search-engine` 执行图像处理；
-3. 进行 Redis pHash 查重；
-4. 对非重复图片执行：
-   - `os.MkdirAll("uploads", 0755)`
-   - `os.WriteFile(filepath.Join("uploads", fileName), webpBytes, 0644)`
-
-因此 `Disk write failed` 只会在 Go 本地写盘阶段返回，不是 Rust 直接返回的错误。
-
-### 二、已确认事实链
-当前已经拿到的高价值事实如下：
-
-1. `server/deploy-prod.sh` 的目录准备与容器启动链已经执行，说明不是“部署脚本完全没跑”；
-2. 生产宿主机当前目录已确认是 `/var/www/erp/server`；
-3. 宿主机 `./uploads` 已存在，但权限是 `drwxr-xr-x root root`，也就是 `root:root 755`；
-4. 生产磁盘空间与 inode 均正常，当前不再优先怀疑磁盘打满；
-5. 生产 `app` 当前有两个副本，之前 `docker exec -it $(docker compose ps -q app) ...` 失败，是因为命令替换返回了两个容器 ID，不是新的故障点；
-6. `server/Dockerfile` 已明确 `app` 运行时使用非 root 用户 `xdfcuser:xdfcgroup`；
-7. `server/docker-compose.yml` 已明确将宿主机 `./uploads` 挂载到容器内 `/app/uploads`。
-
-### 三、当前高概率根因判断
-基于上面的事实链，当前可以将根因高概率锁定为：
-
-1. 容器内 `app` 不是以 root 运行，而是以普通用户 `xdfcuser` 运行；
-2. 宿主机 `server/uploads` 当前是 `root:root 755`；
-3. 该目录挂载进入容器后，普通用户只有读/执行权限，没有写权限；
-4. Go 在 `os.WriteFile(...)` 写入 `/app/uploads` 对应挂载目录时失败，前端因此收到 `Disk write failed`。
-
-这条证据链已经足够解释当前现象。虽然还没有直接截到生产日志里的 `permission denied` 原文，但现有事实与该结论高度一致，因此本轮规划按“宿主机挂载目录权限与容器运行用户不匹配”收口。
-
-### 四、专项修复目标
-本专项不再继续泛化排查，而是拆成两层：
-
-1. A 层先恢复生产上传能力，让宿主机 `server/uploads` 对容器内 `xdfcuser` 可写；
-2. B 层再做长期防回归，把运行目录权限准备逻辑固化到部署路径，避免后续部署再次生成不可写目录；
-3. 不把容器改回 root 作为默认解法；
-4. 不采用 `chmod 777` 作为长期方案；
-5. 不扩散到 Rust 版本、图像处理逻辑、前端上传协议或本地 DEV `/uploads` 代理。
-
-### 五、推荐实施方案
-
-#### A. 生产恢复动作
-目标是先恢复线上上传，不改变当前容器架构：
-
-1. 保持 `app` 继续以非 root 用户运行；
-2. 在生产宿主机上修正 `server/uploads` 的属主/属组/权限，使其与容器运行用户可写要求对齐；
-3. 优先采用“对齐目录归属 + 最小必要写权限”的方案，而不是开放世界可写权限；
-4. 实施前需要明确容器内 `xdfcuser` 的实际 UID/GID，避免宿主机只改名字、不改到正确身份映射。
-
-#### B. 部署链固化动作
-当前 `server/deploy-prod.sh` 只有：
-
-- `mkdir -p ./uploads ./backups ./postgres_data`
-
-但没有补齐目录归属或权限，因此后续部署仍可能重新留下 `root:root 755` 的挂载目录。长期修复应为：
-
-1. 在 `mkdir -p` 之后补充运行目录权限准备逻辑；
-2. 至少覆盖 `./uploads`，必要时一并审视 `./backups`；
-3. 保证“目录存在”与“容器内应用用户可写”同时成立；
-4. 避免把历史数据迁移逻辑与权限修复逻辑混在一起导致行为不透明。
-
-#### C. 可选增强项
-如果在实施时发现当前代码仍然长期依赖相对路径 `uploads`，可评估后续增强，但不纳入本专项首刀：
-
-1. 为上传目录引入显式配置，减少对工作目录的隐式依赖；
-2. 在应用启动时增加上传目录可写性检查与更清晰的日志；
-3. 将“权限错误”暴露为更可诊断的服务端日志，而不是只有前端 `Disk write failed`。
-
-### 六、当前不做的事情
-1. 不先修改 Rust 版本；
-2. 不先修改 Rust 图像处理代码；
-3. 不先修改前端上传逻辑；
-4. 不先调整 `app` 为 root 运行；
-5. 不在未经批准前直接对生产执行 `chown`、`chmod`、`docker compose up` 等实际变更。
-
-### 七、涉及文件
-- `server/Dockerfile`
-- `server/docker-compose.yml`
-- `server/deploy-prod.sh`
-- `server/handlers/evidence_handler.go`
-- `walkthrough.md`
-
-### 八、实施后验证口径
-完成后至少应满足：
-
-1. 生产环境重新上传图片时，不再返回 `500 Disk write failed`；
-2. 上传后的 WebP 文件可在生产 `server/uploads` 目录中实际看到；
-3. 浏览器可通过生产 `/uploads/{fileName}` 正常访问该图片；
-4. `app` 日志中不再出现 `Failed to write to physical storage`，或至少不再出现权限相关写盘失败；
-5. 后续再次执行 `server/deploy-prod.sh` 后，不会重新把 `uploads` 留成容器不可写状态。
-
-## 本地 DEV `/uploads` 访问链补齐（2026-04-08，待确认）
-
-### 一、问题概述
-当前图片上传核心链已经恢复：
-
-1. Go 后端上传接口可成功返回；
-2. Rust `search-engine` 可成功完成图片处理；
-3. 后端会返回 `ev-*.webp` 文件名；
-4. 前端会通过 `getStaticEvidenceUrl(...)` 将其拼成 `/uploads/{fileName}` 用于预览。
-
-但本地 DEV 环境下，浏览器实际请求的是：
-
-1. `http://127.0.0.1:5173/uploads/ev-*.webp`
-2. `vite.config.ts` 当前只代理 `/api`，未代理 `/uploads`
-3. 导致 `/uploads/*` 请求落到 Vite Dev Server，而不是后端 / 本地 Nginx
-4. 表现为 Network 中 `200 OK`，但 `<img>` 预览破图
-
-这意味着当前本地开发环境与生产环境在静态上传资源访问语义上不一致，后续任何依赖 `/uploads/` 回显的功能都可能在 DEV 中出现“假失败 / 假坏图”，形成验证盲区。
-
-### 二、修复目标
-本轮只补本地 DEV 静态上传资源访问链，不改生产部署语义：
-
-1. 让本地 DEV 的 `/uploads/*` 请求也能命中真实后端资源提供方；
-2. 保持前端现有 `getStaticEvidenceUrl(...)` 与上传返回结构不变；
-3. 不修改生产 Nginx、`docker-compose.yml`、Go 上传接口或 Rust 图像处理逻辑；
-4. 让本地图片上传后的预览行为尽量与生产保持一致。
-
-### 三、最小实施方案
-
-#### A. 补齐 Vite 开发代理
-文件：`vite.config.ts`
-
-1. 保留现有 `/api` 代理配置；
-2. 新增 `/uploads` 代理配置；
-3. `/uploads` 代理目标与 `/api` 统一复用现有 `VITE_PROXY_TARGET`；
-4. 不额外新增新的环境变量，避免本地地址源再次分叉。
-
-#### B. 保持前端 URL 拼装逻辑不变
-文件：`src/lib/url-utils.ts`
-
-本轮不修改该文件，原因是：
-
-1. 当前 `/uploads/{fileName}` 语义已经与生产站点保持一致；
-2. 问题不在 URL 拼装，而在 DEV 请求没有被正确转发；
-3. 若改为在前端硬编码不同 DEV URL，反而会让本地与生产再次分叉。
-
-### 四、风险与注意事项
-1. 不能破坏现有 `/api` 代理链；
-2. 不能为了修本地预览而改变生产访问语义；
-3. 不能引入新的独立上传资源基地址配置，否则后续仍可能漂移；
-4. 若本地 `VITE_PROXY_TARGET` 再次被错误指到非资源提供方，`/uploads` 仍会失败，因此本轮仍默认它应指向真实后端入口（当前为 `http://localhost:8080`）。
-
-### 五、涉及文件
-- `vite.config.ts`
-- `walkthrough.md`
-
-### 六、验证口径
-完成后至少应满足：
-
-1. 本地上传成功后，浏览器对 `/uploads/ev-*.webp` 的请求不再落到 Vite 回退响应；
-2. 本地预览可正常显示上传后的 WebP 图片；
-3. `/api` 现有代理行为不受影响；
-4. `walkthrough.md` 补充本轮 DEV `/uploads` 访问链修复结果。
-
-## 图片上传 pHash 运行时解码失败的长期稳定修复（2026-04-08，待确认）
-
-### 一、问题概述
-当前图片上传链已经确认命中正确的本地后端与 Rust 服务，但上传仍返回 `500 Image processing failed`。最新运行日志显示：
-
-1. Go 后端请求 `search-engine` 成功发出；
-2. Rust 返回 `400`，正文为 `Failed to decode image for perceptual hash`；
-3. `server/search-engine/src/processor.rs` 当前实现存在两次解码：
-   - `image::load_from_memory(raw_data)`
-   - `img_hash::image::load_from_memory(raw_data)`
-4. 第一次解码可成功用于尺寸读取与 WebP 编码，第二次解码却可能失败，说明当前并非“图片本身不可解”，而是“双解码 + 不同 crate 解码路径”带来的运行时兼容性分叉。
-
-### 二、修复目标
-本轮不做补丁式兜底，而是直接切到长期稳定方案：
-
-1. 建立单次权威解码流程；
-2. 让 pHash、宽高读取、WebP 编码共享同一份已解码图像数据；
-3. 降低后续 `image` / `img_hash` 版本漂移导致的运行时分叉风险；
-4. 保持现有对外接口、端口、返回结构不变。
-
-### 三、长期稳定实施方案
-
-#### A. 单次权威解码
-1. 在 `process_image(raw_data)` 入口只保留一次原始字节解码；
-2. 将解码结果立即转换为稳定、明确的像素表示（如 `RGBA8` 或其他单一内部格式）；
-3. 后续所有图像处理步骤都基于这份统一的内存图像数据进行。
-
-#### B. 统一 pHash 输入
-1. 不再让 `img_hash` 直接对 `raw_data` 再走一遍独立解码；
-2. 改为从已解码图像/统一像素缓冲构造 `img_hash` 可接受的图像对象；
-3. 确保 pHash 计算与 WebP 编码面对的是同一份像素事实来源。
-
-#### C. 依赖收敛作为配套，而非主解
-1. 如现有 `img_hash` API 对直接接收统一像素对象支持不足，再评估最小范围的依赖调整；
-2. 依赖调整仅用于配合单解码管线落地，不能继续维持“两个 crate 各解各的”结构；
-3. 若需调整依赖，必须继续保证 Docker 构建链可通过。
-
-### 四、风险与注意事项
-1. pHash 计算输入路径变化后，历史哈希值分布可能与旧实现存在轻微差异，需要确认是否仍满足当前查重容忍度；
-2. 不能破坏现有 WebP 编码输出与上传响应结构；
-3. 不能为了兼容单一图片样本而引入新的双路径逻辑，否则后续仍会复发；
-4. 若涉及依赖调整，需要同时复核 `docker compose build search-engine`。
-
-### 五、涉及文件
-- `server/search-engine/src/processor.rs`
-- `server/search-engine/Cargo.toml`（如需要配套收敛依赖）
-- `server/search-engine/Cargo.lock`（如依赖发生变化）
-- `walkthrough.md`
-
-### 六、验证口径
-1. 在本地 DEV 环境下重新上传当前失败图片，接口不再返回 `500`；
-2. Go 后端日志不再出现 `Failed to decode image for perceptual hash`；
-3. Rust 服务能稳定完成：尺寸读取、pHash 生成、WebP 编码；
-4. 如修改了依赖，`docker compose build search-engine` 仍需通过。
-
-## `search-engine` Docker 构建链修复（2026-04-08，待确认）
-
-### 一、问题概述
-本地执行 `docker compose build search-engine` 失败，真实根因并非业务代码，而是 Rust 构建链老化：
-
-1. `server/search-engine/Dockerfile` 当前 builder 镜像为 `rust:1.75-alpine`；
-2. 构建日志显示依赖链中的 `time-core` 需要支持 `edition2024` 的 Cargo；
-3. 当前 Dockerfile 只复制 `Cargo.toml`，未复制仓库中已存在的 `Cargo.lock`，导致依赖解析可能漂移到新版本；
-4. 因此本地 DEV 一键启动链虽然已补齐 `search-engine`，但实际仍会卡在镜像构建阶段。
-
-### 二、修复目标
-1. 恢复 `search-engine` 在本地 Docker/Compose 下的可构建性；
-2. 不修改图像处理接口与运行时行为；
-3. 锁定依赖解析，避免再次因为上游包漂移导致构建失败。
-
-### 三、最小实施方案
-
-#### A. 升级 Rust builder
-1. 将 `rust:1.75-alpine` 升级到较新的稳定 Alpine Rust 镜像；
-2. 保持运行层仍为轻量 Alpine，不改变最终镜像职责。
-
-#### B. 纳入 `Cargo.lock`
-1. 在依赖预构建阶段同时复制 `Cargo.toml` 与 `Cargo.lock`；
-2. 让 Docker 依赖缓存与仓库锁文件对齐；
-3. 降低后续构建对 crates.io 最新解析结果的敏感度。
-
-### 四、风险与注意事项
-1. Rust builder 升级后，部分依赖编译时间可能变化，但这是可接受成本；
-2. 不能破坏当前二阶段 Docker 构建结构；
-3. 需要用实际 `docker compose build search-engine` 复核结果。
-
-### 五、涉及文件
-- `server/search-engine/Dockerfile`
-- `server/search-engine/Cargo.lock`
-- `walkthrough.md`
-
-### 六、验证口径
-1. `docker compose build search-engine` 成功；
-2. `pnpm run dev:stack` 不再卡在 `cargo build --release` 的 `edition2024` 解析错误；
-3. 文档同步记录根因与修复方式。
-
-## 本地 DEV 一键启动链补齐（2026-04-08，待确认）
-
-### 一、问题概述
-当前本地开发链存在入口割裂：
-
-1. 前端 `pnpm dev` 只启动 Vite；
-2. `server/dev-up.ps1` 当前只启动 `db/redis/app/nginx_lb/watchdog`；
-3. 图片上传链依赖的 Rust `search-engine` 未被纳入本地 DEV 启动流程；
-4. 因此开发者即使看见前后端都在运行，图片上传仍可能因为缺少图像处理服务而稳定失败。
-
-### 二、修复目标
-本轮只补本地开发启动体验，不改业务语义：
-
-1. 复用现有 `server/dev-up.ps1`，把 `search-engine` 纳入启动流程；
-2. 在根目录提供清晰的快捷脚本入口，减少手工切目录；
-3. 让本地 DEV 对图片上传链具备完整依赖。
-
-### 三、最小实施方案
-
-#### A. `server/dev-up.ps1`
-1. 保持现有 `db/redis` 健康检查与本地凭据自愈逻辑；
-2. 在应用层服务启动阶段，把 `search-engine` 与 `app/nginx_lb/watchdog` 一起启动；
-3. 终端输出中补充 `search-engine` 已纳入本地栈的信息。
-
-#### B. 根目录 `package.json`
-1. 新增本地快捷入口，例如 `dev:stack`；
-2. 该入口直接调用 `server/dev-up.ps1`；
-3. 保持原有 `dev` 仅启动前端 Vite 的语义不变，避免影响既有使用习惯。
-
-### 四、风险与注意事项
-1. 不应破坏现有 `-ResetDb` 的安全行为；
-2. 不应让根目录 `dev` 脚本语义突然变化；
-3. 需要保持为 Windows 本地环境友好的调用方式；
-4. 文档需要明确区分“只开前端”与“拉起完整本地栈”。
-
-### 五、涉及文件
-- `server/dev-up.ps1`
-- `package.json`
-- `walkthrough.md`
-
-### 六、验证口径
-完成后至少应满足：
-
-1. 执行新的本地快捷入口后，`search-engine` 会与其他 DEV 依赖一起启动；
-2. 本地图片上传链不再因为缺少 Rust 图像处理服务而天然失败；
-3. `walkthrough.md` 记录新的本地使用方式。
-
-## `search-engine` 纳入生产部署链修复（2026-04-08，待确认）
-
-### 一、问题概述
-当前顶层部署命令虽然会同步代码并执行 `server/deploy-prod.sh`，但实际默认部署路径仅重建 Go `app`，并未把 Rust 图像处理服务 `server/search-engine` 纳入生产编排。因此：
-
-1. `server/search-engine/src/processor.rs` 的修复不会随默认部署自动发布；
-2. 生产环境若仍依赖旧的 Rust 进程或宿主机 `localhost:8081` 假设，可能继续表现为旧问题；
-3. 现有 `docker-compose.yml` 已纳入 `watchdog`，但未纳入图片上传实际依赖的 `search-engine`。
-
-### 二、修复目标
-本轮只修部署链，确保 Rust 图像处理服务成为正式的生产组成部分：
-
-1. `docker-compose.yml` 新增 `search-engine` 服务；
-2. `app` 显式通过环境变量访问 `http://search-engine:8081`；
-3. `deploy-prod.sh` 默认部署路径把 `search-engine` 一起构建与启动；
-4. 不破坏现有 `uploads/backups/postgres_data` 等运行时目录保护逻辑。
-
-### 三、最小实施方案
-
-#### A. `docker-compose.yml`
-1. 新增 `search-engine` 服务：
-   - `build: ./search-engine`
-   - 容器内监听 `8081`
-   - `restart: always`
-2. `app` 增加环境变量：
-   - `SEARCH_ENGINE_URL=http://search-engine:8081`
-3. `app.depends_on` 增加对 `search-engine` 的依赖。
-
-#### B. `deploy-prod.sh`
-1. 默认 `app` 部署路径中，把 `search-engine` 与 `app` 一起 `up --build`；
-2. `--full-build` 路径应包含 `search-engine`；
-3. `--no-build` 快速路径也应保证 `search-engine` 被启动，而不是遗漏。
-
-### 四、风险与注意事项
-1. 不能因为加入新服务而漏掉现有 `db/redis/nginx_lb/watchdog` 语义；
-2. 不能继续依赖宿主机 `localhost:8081`，否则容器内 Go 服务会指向错误位置；
-3. 需要控制为最小改动，不扩散到 Nginx 站点配置或无关业务模块；
-4. 若生产机首次构建 `search-engine` 较慢，属于预期现象。
-
-### 五、涉及文件
-- `server/docker-compose.yml`
-- `server/deploy-prod.sh`
-- 如需补说明，则同步 `walkthrough.md`
-
-### 六、验证口径
-完成后至少应满足：
-
-1. 默认执行 `./deploy.sh` 时，`search-engine` 会随生产部署一起构建/启动；
-2. Go `app` 会通过容器内地址访问 Rust 图像处理服务；
-3. 新的 Rust 图像处理修复具备真正发布到服务器的路径；
-4. `walkthrough.md` 记录本轮部署链修复与后续使用方式。
-
-## 销售订单图片上传 `500 Image processing failed` 修复（2026-04-08，待确认）
-
-### 一、问题概述
-在上一轮修复上传路径漂移后，销售订单图片上传已能命中后端接口，但当前继续在图像处理链报：
-
-1. 前端 `apiFetch` 对 `/sales-orders/evidence/upload` 返回 `500`；
-2. 后端统一响应 `Image processing failed`；
-3. 当前失败发生在 `HandleEvidenceUpload(...)` 调用 `services.GlobalSearchClient.ProcessImage(rawData)` 期间；
-4. 该错误先于 Redis 查重与磁盘写入，因此不是 Redis 去重或落盘失败导致；
-5. 若是大小超限，现有逻辑应返回 `413`，因此本次 `500` 也不是文件体积超限主因。
-
-### 二、当前根因判断
-当前代码表明，Rust `/v1/process-image` 中真正可能失败的高风险点只有两类：
-
-1. `image::load_from_memory(raw_data)` 解码失败；
-2. `webp::Encoder::from_image(&img)` 创建 WebP 编码器失败。
-
-结合常见截图格式与当前错误口径，优先怀疑：
-
-- Rust 图像处理链对部分 `DynamicImage` 输入格式的 WebP 编码兼容性不足；
-- 其次才是个别图片解码失败。
-
-### 三、修复目标
-本轮不做前端规避，不把问题继续吞成笼统提示，而是从底层修复并提高可观测性：
-
-1. Go 侧需要尽量保留 Rust 返回的真实错误上下文；
-2. Rust 侧需要把输入图像显式转换为稳定像素格式后再执行 WebP 编码；
-3. 继续保留既有 10MB 限制、Redis 去重降级逻辑与磁盘落盘链路；
-4. 不扩大到 WebSocket 通知链或其他搜索索引业务。
-
-### 四、最小实施方案
-
-#### A. Go 侧
-1. 调整 `SearchServiceClient.ProcessImage(...)`：
-   - 读取 Rust 非 200 响应体；
-   - 将状态码与 Rust 真实错误文本一并包装返回；
-   - 让后端日志能区分“解码失败”与“WebP 编码失败”。
-2. `HandleEvidenceUpload(...)` 仍对前端保持稳定错误口径，但服务端日志必须带上真实底层原因。
-
-#### B. Rust 侧
-1. 在 `processor.rs` 中不再直接把 `DynamicImage` 原样喂给 `Encoder::from_image(...)`；
-2. 显式将图像转换为稳定的 `RGBA8` 或等价兼容格式后再编码；
-3. 保持 pHash 计算仍基于已解码图像；
-4. 为解码失败与编码失败提供清晰错误消息。
-
-### 五、风险与注意事项
-1. 不能因为修复 WebP 编码兼容性而放松文件大小限制；
-2. 不能把 Rust 真实错误直接原样暴露给前端用户，但应保留在后端日志；
-3. 不能把 Redis 未初始化场景重新变成阻断上传的强依赖；
-4. 需要避免改动搜索索引 `/v1/index`、`/v1/search` 正常链路。
-
-### 六、涉及文件
-- `server/services/search_client.go`
-- `server/handlers/evidence_handler.go`
-- `server/search-engine/src/processor.rs`
-- 如需最小验证，可能涉及 `server/search-engine/Cargo.toml` 或现有测试/命令
-
-### 七、验证口径
-完成后至少应满足：
-
-1. 常见截图上传不再因为 WebP 编码链直接返回 `500 Image processing failed`；
-2. 若 Rust 仍失败，Go 日志中能直接看到更具体的底层错误；
-3. 现有前后端编译/最小验证通过；
-4. `walkthrough.md` 补充本轮根因、修复方式与验证结果。
-
-## 销售订单图片上传报错排查（2026-04-08，待确认）
-
-### 一、问题概述
-当前在“建立订单”的图片上传链路中，前端控制台已出现：
-
-1. `/trading/sales-orders/evidence/upload` 请求返回 `404 Not Found`；
-2. UI 出现 `Evidence upload failed [API_ERROR] 404 Not Found`；
-3. 页面同时出现“存储服务同步失败”提示；
-4. 控制台还存在 WebSocket `1006` 断开日志。
-
-本轮首先要判断：
-
-- 主失败是否就是“上传接口不存在 / 未注册 / 路径不匹配”；
-- “存储服务同步失败”是否只是并行背景任务告警，而非本次上传主因；
-- Redis 未就绪或 Rust 服务异常是否真实参与了这条上传主链。
-
-### 二、排查目标
-本轮只做根因分析，不直接修改业务代码。
-
-需要回答三个问题：
-
-1. 前端上传调用的真实接口路径是什么，是否拼接正确；
-2. 后端是否存在该上传 handler / route，以及是否已注册到主路由；
-3. Redis、Rust、WebSocket、存储同步服务分别在该链路中承担什么角色，和当前 `404` 是否存在直接因果关系。
-
-### 三、排查方法
-建议按以下顺序确认：
-
-1. 检查前端 `order-evidence-manager` 与相关 service，确认上传 URL、请求方法、触发前提；
-2. 检查后端 `sales-orders` 相关 handlers / routes，确认是否存在 `evidence/upload` 路由；
-3. 搜索“存储服务同步失败”提示来源，确认其对应的后端服务与异常口径；
-4. 搜索 Redis 与 Rust 搜索服务在订单附件 / 证据上传链路中的调用点，判断是否实际参与；
-5. 若确认后端无该路由，则优先判定为接口未实现或前后端契约漂移，而不是 Redis / Rust 问题。
-
-### 四、风险与判断原则
-1. `404 Not Found` 通常优先指向“路由不存在 / 反向代理未转发 / 路径拼错”，优先级高于存储、Redis、Rust 内部异常；
-2. 若 Redis 或 Rust 真正故障，常见表征更接近 `500`、`502`、`503` 或业务错误体，而不是稳定的 `404`；
-3. WebSocket `1006` 更可能影响通知体验，不应在没有代码证据前直接认定为上传失败主因；
-4. 若确认是前后端契约漂移，应从接口定义与路由注册层修复，不做前端规避性补丁。
-
-### 五、涉及文件（预估）
-- `src/features/trading/...order-evidence-manager...`
-- `src/lib/api-client.ts`
-- `server/routes/...sales...`
-- `server/handlers/...sales...`
-- 与“存储服务同步失败”提示相关的前后端文件
-- 如有实际调用，再补充 Redis / Rust 相关服务文件
-
-### 六、待你确认的边界
-请确认是否按以下边界继续：
-
-1. 本轮先只做代码级根因分析；
-2. 不直接开始修复上传接口；
-3. 先明确 `404` 与 Redis / Rust / WebSocket 的真实关系；
-4. 输出结论后，再由你决定是否进入修复阶段。
-
-## `error-action-registry` / `translate` 类型对齐修复（2026-04-08，已完成）
-
-### 执行结果摘要（2026-04-08，已完成）
-已完成本次部署构建失败修复：
-
-1. 根因定位为 `handle-server-error.ts` 将 `ErrorActionMetadata.messageKey` / `actionLabelKey` 作为普通 `string` 传入 `translate(...)`；
-2. `src/lib/error-action-registry.ts` 已引入 `TranslationKey`；
-3. `messageKey` 已收紧为 `TranslationKey`；
-4. `actionLabelKey` 已收紧为 `TranslationKey | undefined`；
-5. 验证通过：`pnpm exec tsc --noEmit`。
-
-## `error-action-registry` / `translate` 类型对齐修复（2026-04-08，进行中）
-
-### 一、问题概述
-部署构建失败点位于 `src/lib/handle-server-error.ts`：
-
-```ts
-translate(locale, actionMetadata.messageKey)
-translate(locale, actionMetadata.actionLabelKey)
-```
-
-其中 `translate` 的第二个参数要求是 `TranslationKey`，但 `src/lib/error-action-registry.ts` 当前把 `messageKey` / `actionLabelKey` 声明为普通 `string`，导致 `tsc` 在构建阶段报 `TS2345`。
-
-### 二、最小修复策略
-本轮采用最小修复：
-
-1. 在 `src/lib/error-action-registry.ts` 中引入 `TranslationKey`；
-2. 将 `messageKey` 类型收紧为 `TranslationKey`；
-3. 将 `actionLabelKey` 类型收紧为 `TranslationKey | undefined`；
-4. 不在 `handle-server-error.ts` 中继续扩大 `as any` 范围；
-5. 保持注册表定义期即完成 i18n key 合法性校验。
-
-### 三、验证要求
-执行：
-
-```bash
-pnpm exec tsc --noEmit
-```
-
-目标：
-
-1. `handle-server-error.ts` 中 `translate(...)` 不再报 `TS2345`；
-2. 前端构建链恢复可通过状态。
-
-## `customer / supplier`：核心标识字段变更事务化（2026-04-08，已完成）
-
-### 执行结果摘要（2026-04-08，已完成）
-已完成 `customer / supplier` 第二批主数据 TDO 接入，且验证通过：
-
-1. 后端 `partner_transaction_service.go` 已新增：`CUSTOMER_IDENTITY_CHANGE`、`SUPPLIER_IDENTITY_CHANGE`；
-2. transaction payload 已限定为 `code` / `name`；
-3. transaction 已复用版本控制、存在性校验、`code` 唯一性校验与审计日志；
-4. 前端 `customer-service.ts` / `supplier-service.ts` 已新增 identity transaction 请求；
-5. 前端 hooks 已新增 `identityChangeMutation`；
-6. `customer-list.tsx` / `supplier-list.tsx` 已在纯 `code` / `name` 变更时优先命中显式 transaction；
-7. 混合档案编辑继续保留在现有 `patch` 链中；
-8. 验证通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
-
-## `customer / supplier`：核心标识字段变更事务化（2026-04-08，待确认）
-
-### 一、目标
-在已完成 `customer.status` / `supplier.status` 第一批主数据 TDO 接入后，继续推进第二批更高语义密度的主数据动作：主体核心标识字段变更。
-
-本轮目标不是把普通档案编辑全部事务化，而是只挑选真正代表“主体身份识别”的字段建立显式 intent，并保留现有 `patch` 作为普通维护型修改的安全兜底。
-
-### 二、候选字段与语义边界
-
-#### A. `customer`
-建议优先只纳入：
-
-1. `code`
-2. `name`
-
-理由：
-
-- 二者直接影响客户主体识别、检索、展示与审计语义；
-- 相比联系人、电话、邮箱、地址，更容易被稳定表达为单一业务动作；
-- 更适合作为显式 transaction intent，而不是继续与普通档案字段混在通用 `patch` 中。
-
-建议 intent## 2. 隔离开发策略 (Sandbox Strategy)
-> [!IMPORTANT]
-> 为了响应“坏掉也不影响其他功能”的要求，我们将采取以下极简耦合方案：
-
-1. **物理隔离**：所有新功能代码（Service、Schema、UI）均存放在独立文件中，严禁修改现有的 `employee-core-service.ts` 或核心 Hooks。
-2. **逻辑沙箱**：
-   - 在 `tabs.ts` 中仅作为静态入口注册。
-   - UI 组件将使用 `React.lazy` 异步加载，并包裹在 `SafeTabBoundary` 中。即使新页签代码发生运行时崩溃，也会被局限在页签内部，不影响整个“人员管理”模块的使用。
-   - 请假审批逻辑将作为插件式 Service 接入，不干扰原有的员工入职/转正流。
-
-## 3. 核心功能设计
-B. `supplier`
-建议优先只纳入：
-
-1. `code`
-2. `name`
-
-理由：
-
-- 二者直接影响供应商主体识别、搜索命中、下游引用与审计语义；
-- 相比分类、联系人、电话、主营产品，更接近稳定的主体身份字段；
-- 适合用单一 transaction intent 表达。
-
-建议 intent 颗粒：
-
-1. `SUPPLIER_IDENTITY_CHANGE`
-   - 允许 payload 包含 `code`、`name`
-   - 可覆盖纯 `code`、纯 `name`、`code + name` 三类主体标识变更
-
-不纳入本轮：
-
-- `category`
-- `mainProducts`
-- `contactPerson`
-- `contactPhone`
-- `email`
-- `address`
-- `rating`
-- `status`
-
-### 三、前端分流建议
-前端建议只在以下条件命中显式 transaction：
-
-1. 编辑对象已存在；
-2. delta 仅包含 `code`、`name`；
-3. 不混入其他普通档案字段；
-4. 提交时仍携带版本号，由后端负责最终裁决。
-
-其余情况：
-
-- 新建继续走现有 create；
-- 混合档案编辑继续保留在 `patch`；
-- 前端不新增任何自定义唯一性猜测逻辑。
-
-### 四、后端职责
-后端若执行本轮实现，建议承担：
-
-1. 新增 customer / supplier 身份字段变更 transaction service；
-2. 明确 payload 只允许 `code`、`name`；
-3. 复用现有唯一性校验、存在性校验、乐观锁、审计日志与引用约束；
-4. 若 `code` 或 `name` 在下游存在额外联动要求，由后端统一裁决，不前移到前端；
-5. 返回最新实体快照，保证前端缓存可直接刷新。
-
-### 五、风险评估
-本轮风险高于状态事务化，主要在于：
-
-1. `code` 可能具备唯一性约束；
-2. `name` 可能被 UI 检索、打印文案、订单快照或外部同步引用；
-3. 若历史单据保存的是冗余快照字段，需确认“改主数据名称”是否允许只影响未来显示；
-4. 若 `code` 被外部系统当作对接键，需确认是否允许修改；
-5. 若后端当前仅在通用 save / patch 中处理唯一性，需先抽出可复用业务裁决，再接 transaction。
-
-### 六、涉及文件（预估）
-- `src/features/trading/customer/services/customer-service.ts`
-- `src/features/trading/customer/hooks/use-customer.ts`
-- `src/features/trading/supplier/services/supplier-service.ts`
-- `src/features/trading/supplier/hooks/use-supplier.ts`
-- `src/features/trading/components/customer-list.tsx`
-- `src/features/trading/components/supplier-list.tsx`
-- `server/services/partner_transaction_service.go`
-- `server/handlers/partner_transaction_handlers.go`
-- 如需复用唯一性/映射逻辑，可能涉及现有 customer / supplier save/patch 相关文件
-
-### 七、建议确认边界
-建议你确认以下边界后再进入代码阶段：
-
-1. 本轮只处理 `customer.code` / `customer.name` / `supplier.code` / `supplier.name`；
-2. 纯 `code`、纯 `name`、`code + name` 走显式 transaction；
-3. 混入其他字段时继续回落 `patch`；
-4. 不新增前端唯一性判断，完全以后端裁决为准；
-5. 完成后通过 `pnpm exec tsc --noEmit` 与 `go test ./handlers ./routes ./services -run "Customer|Supplier"` 验证。
-
-## `trading/customer` / `trading/supplier`：主数据 TDO 接入（2026-04-08，已完成）
-
-### 执行结果摘要（2026-04-08，已完成）
-已完成 `trading/customer` / `trading/supplier` 第一批主数据 TDO 接入，且验证通过：
-
-1. 后端新增 customer / supplier 状态变更 transaction 服务与 handler；
-2. 新增交易路由：`POST /customers/:id/transactions`、`POST /suppliers/:id/transactions`；
-3. 前端 `customer-service.ts` / `supplier-service.ts` 已新增状态变更 transaction 请求；
-4. 前端 hooks 已新增 `statusChangeMutation`；
-5. `customer-list.tsx` / `supplier-list.tsx` 已在纯 `status` 变更场景下优先走显式 transaction；
-6. `customer-action-dialog.tsx` 已补最小状态编辑入口；
-7. 普通 customer / supplier 混合档案编辑仍继续保留在 `patch` 链中；
-8. 已补齐 `customer` 原有前端依赖但后端缺失的 `PATCH /customers/:id` 兜底链；
-9. 验证通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run "Customer|Supplier"`。
-
-## `trading/customer` / `trading/supplier`：主数据 TDO 接入（2026-04-08，待确认）
-
-### 一、目标
-在已完成 `sales` / `purchase` 订单域局部事务化后，优先回到主数据域，补齐 `trading/customer` 与 `trading/supplier` 当前仍以 CRUD + `patch` 为主的编辑链路，为高频、单语义主数据动作建立显式 TDO 入口。
-
-本轮目标：
-
-1. 先盘点 customer / supplier 现有编辑入口、字段与后端裁决能力；
-2. 只选择稳定、单语义、可审计的主数据动作建立 transaction intent；
-3. 不把普通档案混合编辑强行包装成 transaction；
-4. 继续保留 `patch` 作为未覆盖维护场景的安全兜底；
-5. 复用后端主数据校验，不由前端猜测启停、唯一性或状态规则。
-
-### 二、现状判断
-当前确认到：
-
-1. `trading/customer` 当前主要暴露 `create` / `patch` / `delete`；
-2. `trading/supplier` 当前主要暴露 `create` / `patch` / `delete`；
-3. 两者前端尚未形成类似 `sales-transaction-service.ts` / `purchase-transaction-service.ts` 的显式 transaction service；
-4. 两者当前也未形成编辑弹窗中的纯语义分流规则；
-5. 因此这两块是当前全局最明确仍未接稳 TDO 的主数据模块。
-
-### 三、建议方案
-建议把本轮拆成两个并行但边界独立的子专项：
-
-#### A. `customer` 主数据 TDO
-优先候选动作：
-
-1. 客户主体启停；
-2. 客户核心标识字段变更；
-3. 客户归档 / 禁用；
-
-约束：
-
-- 仅处理可稳定表达为单一业务动作的场景；
-- 若一次编辑混入多个普通档案字段，则继续保留在 `patch`；
-- 若后端已存在唯一性、引用关系、禁删限制，必须复用原规则。
-
-#### B. `supplier` 主数据 TDO
-优先候选动作：
-
-1. 供应商主体启停；
-2. 供应商核心标识字段变更；
-3. 供应商归档 / 禁用；
-
-约束：
-
-- 仅处理可稳定表达为单一业务动作的场景；
-- 若一次编辑混入多个普通档案字段，则继续保留在 `patch`；
-- 若后端已存在唯一性、引用关系、禁删限制，必须复用原规则。
-
-### 四、前后端职责
-
-#### 后端
-1. 为 customer / supplier 增补显式 transaction handler 或等价业务入口；
-2. 为每个 intent 限定 payload 结构与允许字段；
-3. 复用现有存在性、唯一性、启停、引用约束等主数据校验；
-4. 写审计日志并返回最新实体快照。
-
-#### 前端
-1. 为 customer / supplier 增加独立 transaction service；
-2. 在对应 hooks 中补充 mutation；
-3. 若存在编辑对话框，则对纯语义动作做显式分流；
-4. 普通混合档案编辑继续保留在现有 `patchMutation`。
-
-### 五、涉及文件（预估）
-- `src/features/trading/customer/hooks/use-customer.ts`
-- `src/features/trading/customer/services/customer-service.ts`
-- `src/features/trading/supplier/hooks/use-supplier.ts`
-- `src/features/trading/supplier/services/supplier-service.ts`
-- `server/handlers/...customer...`
-- `server/handlers/...supplier...`
-- `server/services/...customer...`
-- `server/services/...supplier...`
-
-### 六、风险与注意事项
-1. 主数据模块常含唯一性与引用约束，必须先确认后端裁决位置，避免前端自造规则；
-2. 不能把普通档案 patch 伪装成 transaction，避免 TDO 退化为空壳；
-3. customer / supplier 可能已有被订单、库存、工作流引用的删除限制，本轮必须优先复用已有约束；
-4. 若发现后端尚无可复用语义入口，本轮需先补后端裁决，再接前端分流。
-
-### 七、待你确认的实施边界
-请确认是否按以下边界执行：
-
-1. 本轮优先只做 `trading/customer` 与 `trading/supplier`；
-2. 只为单语义、高频主数据动作接入 TDO，不强拆普通混合档案编辑；
-3. customer / supplier 的普通维护型混合修改继续保留在 `patch`；
-4. 完成后通过 `tsc` 与 `Customer|Supplier` 相关 Go 测试验证，并同步 `walkthrough.md`。
-
-## `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，已完成）
-
-### 执行结果摘要（2026-04-08，已完成）
-已确认 `purchase` 头部第二刀——供应商主体变更事务化——已在当前仓库中落地并验证通过：
-
-1. 前端 `purchase-transaction-service.ts` 已存在 `ORDER_SUPPLIER_CHANGE` 与供应商主体事务请求函数；
-2. 前端 `use-purchase-orders.ts` 已存在 `supplierChangeMutation`；
-3. `purchase-order-action-dialog.tsx` 已在纯 `supplierId` / `supplierName` 变更场景下优先走显式 transaction；
-4. 后端 `purchase_transaction_service.go` 已存在 `PurchaseTransactionIntentSupplierChange` 与 `executePurchaseOrderSupplierChangeTx(...)`；
-5. 后端已复用供应商存在性校验、版本控制、审计与快照返回；
-6. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Purchase`。
-
-## `purchase` 头部第二刀：供应商主体变更事务化（2026-04-08，待确认）
-
-### 一、目标
-在已完成 `purchase` 的 `expectedDate` 事务化与行级三类基础事务后，继续压缩采购订单编辑中的 `patchMutation` 承担面，但本轮只处理一个稳定头部语义：供应商主体切换。
-
-本轮目标：
-
-1. 只处理 `supplierId` / `supplierName` 的纯头部变更；
-2. 不并发处理 `expectedDate`、其他头部字段、收货状态或任何行级变更；
-3. 继续避免 transaction 退化为 `patch` 包装壳；
-4. 保持 `patch` 作为未覆盖编辑的安全兜底。
-
-### 二、建议方案
-建议新增更窄语义 intent：
-
-- `ORDER_SUPPLIER_CHANGE`
-
-payload 建议仅承载：
-
-- `supplierId`
-- `supplierName`
-- `operator`
-
-语义约束为：
-
-1. 只表达采购订单供应商主体切换；
-2. 不允许混入其他头部字段修改；
-3. 不允许混入任何行级修改；
-4. 更新后返回最新采购订单快照并写入审计。
-
-### 三、前后端职责
-
-#### 后端
-1. 在 `purchase_transaction_service.go` 中新增 `ORDER_SUPPLIER_CHANGE`；
-2. 校验 payload 只包含供应商主体字段；
-3. 复用现有供应商数据源完成存在性 / 可用性 / 名称一致性校验（如当前已有）；
-4. 更新 `supplier_id` / `supplier_name`；
-5. 写入审计日志并返回最新采购订单快照。
-
-#### 前端
-1. 在 `purchase-transaction-service.ts` 中新增供应商主体事务请求函数；
-2. 在 `use-purchase-orders.ts` 中新增对应 mutation；
-3. 在 `purchase-order-action-dialog.tsx` 中新增纯 `supplierId` / `supplierName` 变更分流；
-4. 若混入其他字段，则继续保留在现有 transaction / `patchMutation`。
-
-### 四、涉及文件
 - `server/services/purchase_transaction_service.go`
-- `src/features/trading/purchase/services/purchase-transaction-service.ts`
-- `src/features/trading/purchase/hooks/use-purchase-orders.ts`
-- `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+- `walkthrough.md`
 
-### 五、风险与注意事项
-1. 若当前采购编辑中切换供应商会联动其他派生字段，本轮必须避免把附带变化误判为纯供应商主体切换；
-2. 若后端当前对供应商停用、删除、名称漂移存在强校验，本轮必须复用现有规则，不得前端猜测；
-3. 本轮不得破坏已落地的：
-   - `ORDER_DELIVERY_DATE_CHANGE`
-   - `ORDER_LINE_CONTENT_CHANGE`
-   - `ORDER_LINE_ADD`
-   - `ORDER_LINE_REMOVE`
-4. `patch` 兜底链路必须保留。
+### 4.5 验收标准
 
-### 六、待你确认的实施边界
-请确认是否按以下边界执行：
+1. 销售单详情页能打开真实时间线。
+2. 采购单详情页能打开真实时间线。
+3. 前后端不再出现 `sales-order` / `SalesOrder` 这类漂移。
+4. Trading 的状态能由真实链路支撑。
 
-1. 本轮只实现 `purchase` 的供应商主体变更事务化；
-2. 仅当 delta 仅包含 `supplierId` / `supplierName` 时，才走该 transaction；
-3. 若混入其他头部字段或行级字段，则不进入该 intent；
-4. 其余采购订单编辑继续留在现有 transaction / `patch` 链中。
+## 5. Phase 2：真实统计升级
 
-## `sales`：`status` / `statusNote` 联动重构（2026-04-08，已完成）
+### 5.1 目标
 
-### 执行结果摘要（2026-04-08，已完成）
-已完成 `sales` 的 `status` / `statusNote` 联动重构：
+将 audit-engine 从“前端静态模块数组派生”升级为“后端真实统计结果驱动”。
 
-1. 已补 `sales` 编辑弹窗中的 `statusNote` 最小编辑入口；
-2. 已在 `sales-order-action-dialog.tsx` 中新增 `status` / `statusNote` 组合分流；
-3. 当 delta 仅涉及 `status` / `statusNote` 时，统一优先走显式状态 transaction，而不是回落 `patchMutation`；
-4. 其中目标状态为 `Canceled` 时继续走 `cancelMutation`，其余状态语义继续走 `statusTransitionMutation`；
-5. 详情页状态按钮与编辑弹窗现在共享同一条状态语义主链；
-6. 验证已通过：`pnpm exec tsc --noEmit`、`go test ./handlers ./routes ./services -run Sales`。
+### 5.2 统一统计口径
 
-## `sales`：`status` / `statusNote` 联动重构（2026-04-08，待确认）
+建议建立一套统一统计模型，至少包含：
 
-### 一、目标
-在已完成 `sales` 的 `requirements`、`orderName`、`purchaseOrderNo` 事务化后，继续压缩 `sales` 头部 `patchMutation` 的承担面，并梳理 `status` / `statusNote` 当前混合承载的语义边界。
+1. `targetEntities`
+2. `loggedEntities`
+3. `entryEntities`
+4. `connectedEntities`
+5. `logCoverage`
+6. `entryCoverage`
+7. `status`
+8. `lastEvent`
 
-本轮目标：
+其中：
 
-1. 梳理并收敛 `status` / `statusNote` 的 transaction 语义；
-2. 明确“纯状态切换”“纯状态备注修改”“状态与备注同时修改”三类场景的归属；
-3. 不并发处理 `orderName`、`purchaseOrderNo`、`requirements`、交期、客户、分类/类型或任何行级变更；
-4. 避免详情页状态按钮链路与编辑弹窗保存链路出现语义分叉；
-5. 保持 `patch` 作为未覆盖编辑的安全兜底。
+1. `loggedEntities` 表示已有真实日志的实体集合。
+2. `entryEntities` 表示已有真实时间线入口的实体集合。
+3. `connectedEntities` 表示同时具备日志和入口的实体集合。
 
-### 二、现状判断
-当前 `statusNote` 已存在于：
+### 5.3 实施内容
 
-1. 前端 `SalesOrder` schema；
-2. 表单默认值与初始化逻辑；
-3. 详情展示；
-4. 后端 patch 解析；
-5. 现有 `ORDER_STATUS_TRANSITION` transaction payload。
+1. 建立实体到业务模块的统一映射。
+2. 建立后端 audit-engine 聚合服务或聚合统计函数。
+3. 提供 audit-engine 专用 stats 接口，作为页面唯一数据源。
+4. 替换前端原有静态 `MODULES` 推导逻辑。
 
-进一步确认到：
+### 5.4 涉及文件
 
-- 当前后端唯一已落地的状态语义 transaction 是 `ORDER_STATUS_TRANSITION`；
-- 详情页状态按钮直接走 `ORDER_STATUS_TRANSITION`；
-- 编辑弹窗当前没有对 `status` / `statusNote` 做专门分流，仍可能回落 `patch`；
-- 因此本轮重点不是补字段，而是重整状态语义边界与前后端分流规则。
+- `src/features/audit-timeline/components/audit-engine-tab.tsx`
+- `src/features/audit-timeline/hooks/use-audit-timeline.ts`
+- `src/features/audit-timeline/data/audit-modules.ts`
+- `server/handlers/audit_handlers.go`
+- `server/services/audit_modules.go`
+- 如有需要，新增 audit-engine 聚合 service
 
-### 三、建议方案
-建议按以下语义分层重构：
+### 5.5 验收标准
 
-#### 方案基线
-1. `纯 status` 修改：继续走 `ORDER_STATUS_TRANSITION`；
-2. `status + statusNote` 同时修改：继续走 `ORDER_STATUS_TRANSITION`；
-3. `纯 statusNote` 修改：二选一
-   - 方案 A：新增 `ORDER_STATUS_NOTE_CHANGE`，把纯备注修改从 patch 中剥离；
-   - 方案 B：仍统一走 `ORDER_STATUS_TRANSITION`，但前端显式分流到该 transaction，而非落回 patch。
+1. audit-engine 页面数字来自后端 stats，而不是前端静态数组。
+2. 模块状态能同时反映“有日志”和“有入口”两个维度。
+3. 实体到模块的映射集中维护，不再散落多处。
 
-#### 当前建议
-优先建议 **方案 B**：
+## 6. Phase 3：卡片原因展示增强
 
-1. 保持后端状态语义入口收敛在 `ORDER_STATUS_TRANSITION`；
-2. 放宽其语义，使其支持“status 不变但 statusNote 改变”的显式 transaction；
-3. 前端编辑弹窗新增 `status` / `statusNote` 识别分流：
-   - 纯 `statusNote` 改变时，也走 `statusTransitionMutation`；
-   - 同时修改 `status` 与 `statusNote` 时，仍走 `statusTransitionMutation`；
-   - 混入其他字段时，不进入本轮链路；
-4. 这样可避免新建 `ORDER_STATUS_NOTE_CHANGE` 与现有状态按钮链路产生重复语义。
+### 6.1 目标
 
-### 四、前后端职责
+让模块卡片不仅告诉用户“结果是什么”，还告诉用户“为什么是这个结果”。
 
-#### 后端
-1. 在 `sales_transaction_service.go` 中审查并必要时调整 `ORDER_STATUS_TRANSITION` 的 payload 校验与 unchanged 判定；
-2. 明确允许“status 不变但 statusNote 变化”的 transaction 语义；
-3. 保持 `status_note` 更新、版本控制、审计与快照返回逻辑一致；
-4. 如发现现有 `ORDER_STATUS_TRANSITION` 语义无法安全承载纯备注修改，再回退到新增 `ORDER_STATUS_NOTE_CHANGE` 的备选方案。
+### 6.2 展示原则
 
-#### 前端
-1. 在 `sales-order-action-dialog.tsx` 中新增 `status` / `statusNote` 的组合分流；
-2. 纯 `statusNote` 修改时，优先走显式 transaction，而不是 `patchMutation`；
-3. 同时修改 `status` 与 `statusNote` 时，继续走 `statusTransitionMutation`；
-4. 复核 `sales-transaction-service.ts` 与 `use-sales-transactions.ts` 是否需要补充更清晰的调用封装；
-5. 若混入其他字段，则继续保留在现有 transaction / `patchMutation`。
+原因展示属于展示层增强，不重新发明统计逻辑，必须严格消费 Phase 2 的真实 stats。
 
-### 五、涉及文件
-- `server/services/sales_transaction_service.go`
-- `src/features/trading/sales/services/sales-transaction-service.ts`
-- `src/features/trading/sales/hooks/use-sales-transactions.ts`
-- `src/features/trading/components/sales-order-action-dialog.tsx`
-- `src/features/trading/components/sales-order-detail.tsx`
-- `src/features/trading/components/parts/sales-order-detail-header.tsx`
+建议最小展示分组：
 
-### 六、风险与注意事项
-1. `statusNote` 当前已被现有状态流转 transaction 使用，本轮最核心风险是让详情页按钮链路与编辑弹窗链路出现不同语义；
-2. 若引入新 intent，容易与 `ORDER_STATUS_TRANSITION` 重叠，因此优先保持单一状态入口；
-3. 本轮必须验证“状态不变、仅备注变化”不会被误判为 unchanged；
-4. 本轮不得破坏已落地的：
-   - `ORDER_CUSTOMER_CHANGE`
-   - `ORDER_CLASSIFICATION_TYPE_CHANGE`
-   - `ORDER_DELIVERY_DATE_CHANGE`
-   - `ORDER_REQUIREMENTS_CHANGE`
-   - `ORDER_NAME_CHANGE`
-   - `ORDER_PURCHASE_ORDER_NO_CHANGE`
-   - `ORDER_STATUS_TRANSITION`
-5. `patch` 兜底链路必须保留。
+1. `已闭环实体`
+2. `只有日志`
+3. `已有入口`
 
-### 七、待你确认的实施边界
-请确认是否按以下边界执行：
+对应关系：
 
-1. 本轮处理 `sales` 的 `status` / `statusNote` 联动语义重构；
-2. 优先保持单一状态 transaction 入口，以 `ORDER_STATUS_TRANSITION` 为核心收敛；
-3. 纯 `statusNote` 修改时，不再落回 `patch`，而是走显式状态 transaction；
-4. 同时修改 `status` 与 `statusNote` 时，继续走现有状态 transaction；
-5. 若混入其他头部字段或行级字段，则不进入本轮重构范围；
-6. 其余销售订单编辑继续留在现有 transaction / `patch` 链中。
+1. `已闭环实体` = `connectedEntities`
+2. `只有日志` = `loggedEntities - connectedEntities`
+3. `已有入口` = `entryEntities - connectedEntities`
 
+### 6.3 交互要求
+
+1. 卡片保持紧凑，不变成详情页。
+2. 每组只展示少量代表项，可控制数量。
+3. 空分组不展示。
+4. `HEALTHY` 优先强调已闭环实体。
+5. `ALERT` 优先强调缺口原因。
+6. `CRITICAL` 保持简洁，避免噪音堆叠。
+
+### 6.4 涉及文件
+
+- `src/features/audit-timeline/components/audit-engine-tab.tsx`
+- 如有需要，新增 audit-engine 展示辅助函数文件
+- `walkthrough.md`
+
+### 6.5 验收标准
+
+1. `ALERT` 模块能明确展示缺口来自“只有日志”还是“已有入口”。
+2. `HEALTHY` 模块能展示已闭环实体。
+3. 原因展示完全基于后端真实统计结果。
+
+## 7. Phase 4：真实入口扩面补齐
+
+### 7.1 目标
+
+在已有底座和展示稳定后，再扩面补齐更多真实审计入口。
+
+优先顺序建议为：
+
+1. `Customer`
+2. `Supplier`
+3. `Employee`
+4. `ProductionLine`（条件成立才纳入）
+
+### 7.2 纳入原则
+
+只有满足以下条件的页面，才进入本阶段：
+
+1. 已有稳定详情区、侧栏、弹层或信息卡承载位。
+2. 已有或可稳定获取 `createdAt / updatedAt / createdBy / updatedBy` 等元数据。
+3. 接入 `AuditStamp` 不会破坏页面语义或布局。
+
+### 7.3 对 `ProductionLine` 的特别要求
+
+`ProductionLine` 不强制本轮纳入。
+
+只有在确认存在自然承载位时才接入；如果当前页面主要是高交互配置器、缺少稳定详情位，则明确记录“本轮暂缓”，而不是硬塞入口。
+
+### 7.4 涉及文件
+
+- `src/features/trading/components/customer-*`
+- `src/features/purchase/**/*supplier*.tsx`
+- `src/features/org-personnel/tabs/employee-mgmt.tsx` 或相关员工详情承载文件
+- `src/features/production-shared/**/*line*`
+- `src/components/common/audit-stamp.tsx`
+- `src/features/audit-timeline/data/audit-modules.ts`
+- `walkthrough.md`
+
+### 7.5 验收标准
+
+1. `Customer / Supplier / Employee` 至少优先对象能打开真实时间线。
+2. 新入口使用的 module 与后端 canonical module 保持一致。
+3. 扩面后 audit-engine 的 `entryCoverage` 能真实提升。
+4. 若 `ProductionLine` 暂缓，必须明确写明暂缓原因。
+
+## 8. 范围边界
+
+本轮明确不做以下事项：
+
+1. 不把 audit-engine 扩展成完整 BI 或审计分析平台。
+2. 不引入第二套时间线体系或第二套 audit 组件。
+3. 不在没有承载位的页面上硬塞入口。
+4. 不在批准前直接改动大范围业务页面。
+5. 不继续保留“看似权威、实则静态”的状态表达。
+
+## 9. 风险与待确认项
+
+### 9.1 统计与归属风险
+
+1. `Employee`、`ProductionLine` 这类实体的业务模块归属可能存在语义争议。
+2. 如实体到模块映射分散维护，后续仍会继续漂移。
+
+### 9.2 命名与兼容风险
+
+1. 若直接修改后端 `AuditLog.Module` 写入口径，需要确认是否影响历史数据查询。
+2. 若短期兼容旧值与新值，必须控制兼容期限，避免长期双口径。
+
+### 9.3 UI 承载风险
+
+1. 某些页面虽然有列表，但没有适合承载 `AuditStamp` 的位置。
+2. 某些页面模型未完整携带审计元数据，可能需要先补基础字段。
+
+### 9.4 展示密度风险
+
+1. 若卡片原因展示实体过多，卡片高度会失控。
+2. 若没有显示优先级，`HEALTHY / ALERT / CRITICAL` 语义会被噪音稀释。
+
+## 10. 推荐执行决策
+
+如果只批准一个主方向，建议批准以下顺序：
+
+1. 先执行 `Phase 1` 和 `Phase 2`
+2. 验证真实链路和真实统计稳定
+3. 再执行 `Phase 3`
+4. 最后按优先级进入 `Phase 4`
+
+这也是当前最安全、最容易收口、最不容易返工的路线。
+
+## 11. 完成后统一验收口径
+
+整轮完成后至少应满足：
+
+1. Trading 成为真实可验证的审计接入样板。
+2. audit-engine 模块状态由后端真实统计驱动。
+3. 模块卡片能解释状态成因，而不是只给结果。
+4. `Customer / Supplier / Employee` 至少优先对象具备真实时间线入口。
+5. `pnpm exec tsc --noEmit` 与必要的 Go 验证通过。
+6. `walkthrough.md` 明确记录本轮范围、结果、暂缓项与原因。

@@ -3,12 +3,20 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Customer } from '../../data/schema'
-import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomers, patchCustomer } from '../services/customer-service'
+import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
     queryKey: ['customers'],
     queryFn: getCustomers,
+    ...options,
+  })
+}
+
+export const useGetCustomerList = (options = {}) => {
+  return useQuery({
+    queryKey: ['customers', 'list'],
+    queryFn: getCustomerList,
     ...options,
   })
 }
@@ -42,6 +50,7 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.created'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -55,6 +64,33 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+    },
+    onError: (error) => {
+      toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
+    },
+  })
+
+  const saveMutation = useMutation({
+    mutationFn: ({
+      id,
+      delta,
+      finalData,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      id: string
+      delta: DeltaSet
+      finalData: Customer
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => saveCustomer(id, { delta, finalData, operator, expectedVersion, actorId }),
+    onSuccess: () => {
+      toast.success(t('trading.customers.toasts.updated'))
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -78,6 +114,7 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -103,6 +140,7 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -114,11 +152,12 @@ export const useCustomerMutations = () => {
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.deleted'))
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.deleteFailed'))
     },
   })
 
-  return { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
+  return { createMutation, saveMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation }
 }

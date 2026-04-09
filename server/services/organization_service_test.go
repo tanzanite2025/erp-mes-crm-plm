@@ -175,6 +175,111 @@ func TestOrganizationServiceDeleteOrganizationRejectsEmployees(t *testing.T) {
 	require.ErrorIs(t, err, ErrOrganizationHasEmployees)
 }
 
+func TestOrganizationServiceSaveOrganizationRejectsInvalidRootType(t *testing.T) {
+	service := NewOrganizationService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		&fakeOrganizationRepository{},
+	)
+
+	_, err := service.SaveOrganization(models.Organization{
+		Name: "Production Unit A",
+		Type: "team",
+	})
+
+	require.ErrorIs(t, err, ErrOrganizationHierarchyInvalid)
+}
+
+func TestOrganizationServiceSaveOrganizationRejectsMissingParent(t *testing.T) {
+	parentID := "missing-parent"
+	service := NewOrganizationService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		&fakeOrganizationRepository{},
+	)
+
+	_, err := service.SaveOrganization(models.Organization{
+		Name:     "Manufacturing",
+		Type:     "department",
+		ParentID: &parentID,
+	})
+
+	require.ErrorIs(t, err, ErrOrganizationParentNotFound)
+}
+
+func TestOrganizationServiceSaveOrganizationRejectsInvalidChildType(t *testing.T) {
+	parentID := "org-root"
+	repo := &fakeOrganizationRepository{
+		foundOrganization: true,
+		existingOrg: models.Organization{
+			BaseModel: models.BaseModel{ID: parentID},
+			Type:      "company",
+		},
+	}
+	service := NewOrganizationService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		repo,
+	)
+
+	_, err := service.SaveOrganization(models.Organization{
+		Name:     "Workshop Unit",
+		Type:     "team",
+		ParentID: &parentID,
+	})
+
+	require.ErrorIs(t, err, ErrOrganizationHierarchyInvalid)
+}
+
+func TestOrganizationServiceSaveOrganizationRejectsFourthLevel(t *testing.T) {
+	parentID := "team-parent"
+	repo := &fakeOrganizationRepository{
+		foundOrganization: true,
+		existingOrg: models.Organization{
+			BaseModel: models.BaseModel{ID: parentID},
+			Type:      "team",
+		},
+	}
+	service := NewOrganizationService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		repo,
+	)
+
+	_, err := service.SaveOrganization(models.Organization{
+		Name:     "Too Deep",
+		Type:     "team",
+		ParentID: &parentID,
+	})
+
+	require.ErrorIs(t, err, ErrOrganizationDepthExceeded)
+}
+
+func TestOrganizationServiceSaveOrganizationAcceptsDepartmentUnderCompany(t *testing.T) {
+	parentID := "org-root"
+	repo := &fakeOrganizationRepository{
+		foundOrganization: true,
+		existingOrg: models.Organization{
+			BaseModel: models.BaseModel{ID: parentID},
+			Type:      "company",
+		},
+	}
+	service := NewOrganizationService(
+		fakeTransactionManager{},
+		&fakeAuditLogger{},
+		repo,
+	)
+
+	_, err := service.SaveOrganization(models.Organization{
+		Name:     "Manufacturing",
+		Type:     "department",
+		ParentID: &parentID,
+	})
+
+	require.NoError(t, err)
+	require.True(t, repo.saveOrgHit)
+}
+
 func TestOrganizationServiceBulkUpdateEmployeeStatusNormalizesIDs(t *testing.T) {
 	repo := &fakeOrganizationRepository{}
 	service := NewOrganizationService(

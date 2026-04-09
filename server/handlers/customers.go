@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/services"
@@ -40,8 +41,36 @@ func GetCustomersHandler(c *gin.Context) {
 		return
 	}
 
+	statsBaseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
 	var total int64
-	query.Count(&total)
+	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
+			"code":  "CUSTOMER_STATS_FETCH_FAILED",
+		})
+		return
+	}
+
+	var active int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
+			"code":  "CUSTOMER_STATS_FETCH_FAILED",
+		})
+		return
+	}
+
+	startOfMonth := time.Now().UTC()
+	startOfMonth = time.Date(startOfMonth.Year(), startOfMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
+
+	var newThisMonth int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("created_at >= ?", startOfMonth).Count(&newThisMonth).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] 获取客户统计失败: " + err.Error(),
+			"code":  "CUSTOMER_STATS_FETCH_FAILED",
+		})
+		return
+	}
 
 	var items []models.Customer
 	if err := query.Order("name asc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
@@ -52,12 +81,26 @@ func GetCustomersHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-	})
+	response := services.CustomerListResponse{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Metadata: services.CustomerListMetadata{
+			Pagination: services.PartnerListPaginationMeta{
+				Total:    total,
+				Page:     page,
+				PageSize: pageSize,
+			},
+			Stats: services.CustomerListStats{
+				Total:        total,
+				Active:       active,
+				NewThisMonth: newThisMonth,
+			},
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func SaveCustomerHandler(c *gin.Context) {
@@ -109,6 +152,14 @@ func PatchCustomerHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[VALIDATION] 客户更新数据格式错误: " + err.Error(),
+			"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
+		})
+		return
+	}
+
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "contactPerson", "contactPhone", "email", "address", "status", "creditLimit", "balance"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[VALIDATION] customer delta is invalid: " + err.Error(),
 			"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
 		})
 		return

@@ -27,18 +27,24 @@ type MrpRequirementPackaging struct {
 }
 
 type MrpRequirementItem struct {
-	MaterialID    string                      `json:"materialId"`
-	MaterialCode  string                      `json:"materialCode"`
-	MaterialName  string                      `json:"materialName"`
-	MaterialSpec  string                      `json:"materialSpec"`
-	Section       string                      `json:"section"`
-	TotalRequired float64                     `json:"totalRequired"`
-	InventoryQty  float64                     `json:"inventoryQty"`
-	ShortageGap   float64                     `json:"shortageGap"`
-	Unit          string                      `json:"unit"`
-	SourceOrders  []MrpRequirementSourceOrder `json:"sourceOrders"`
-	HasBOM        bool                        `json:"hasBOM"`
-	Packaging     *MrpRequirementPackaging    `json:"packaging,omitempty"`
+	MaterialID       string                      `json:"materialId"`
+	MaterialCode     string                      `json:"materialCode"`
+	MaterialName     string                      `json:"materialName"`
+	MaterialSpec     string                      `json:"materialSpec"`
+	Section          string                      `json:"section"`
+	TotalRequired    float64                     `json:"totalRequired"`
+	InventoryQty     float64                     `json:"inventoryQty"`
+	LockedQty        float64                     `json:"lockedQty"`
+	OnWayPurchaseQty float64                     `json:"onWayPurchaseQty"`
+	WipQty           float64                     `json:"wipQty"`
+	UsableStock      float64                     `json:"usableStock"`
+	TotalSupply      float64                     `json:"totalSupply"`
+	EffectiveGap     float64                     `json:"effectiveGap"`
+	ShortageGap      float64                     `json:"shortageGap"`
+	Unit             string                      `json:"unit"`
+	SourceOrders     []MrpRequirementSourceOrder `json:"sourceOrders"`
+	HasBOM           bool                        `json:"hasBOM"`
+	Packaging        *MrpRequirementPackaging    `json:"packaging,omitempty"`
 }
 
 type MrpAnalyzedModel struct {
@@ -184,17 +190,23 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 						}
 					}
 					req = &MrpRequirementItem{
-						MaterialID:    materialID,
-						MaterialCode:  strings.ToUpper(resolveMRPMaterialCode(mInfo, materialID)),
-						MaterialName:  resolveMRPMaterialName(mInfo, materialID),
-						MaterialSpec:  resolveMRPMaterialSpec(mInfo),
-						Section:       section,
-						TotalRequired: 0,
-						InventoryQty:  inventoryQty,
-						ShortageGap:   0,
-						Unit:          resolveMRPUnit(mInfo, bomItem.Unit),
-						SourceOrders:  make([]MrpRequirementSourceOrder, 0),
-						HasBOM:        true,
+						MaterialID:       materialID,
+						MaterialCode:     strings.ToUpper(resolveMRPMaterialCode(mInfo, materialID)),
+						MaterialName:     resolveMRPMaterialName(mInfo, materialID),
+						MaterialSpec:     resolveMRPMaterialSpec(mInfo),
+						Section:          section,
+						TotalRequired:    0,
+						InventoryQty:     inventoryQty,
+						LockedQty:        0,
+						OnWayPurchaseQty: 0,
+						WipQty:           0,
+						UsableStock:      0,
+						TotalSupply:      0,
+						EffectiveGap:     0,
+						ShortageGap:      0,
+						Unit:             resolveMRPUnit(mInfo, bomItem.Unit),
+						SourceOrders:     make([]MrpRequirementSourceOrder, 0),
+						HasBOM:           true,
 					}
 					requirementMap[compositeKey] = req
 				}
@@ -229,6 +241,9 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 
 	requirements := make([]MrpRequirementItem, 0, len(requirementMap))
 	for _, req := range requirementMap {
+		req.UsableStock = maxMRPFloat(0, req.InventoryQty-req.LockedQty)
+		req.TotalSupply = req.UsableStock + req.OnWayPurchaseQty + req.WipQty
+		req.EffectiveGap = maxMRPFloat(0, req.TotalRequired-req.TotalSupply)
 		req.ShortageGap = maxMRPFloat(0, req.TotalRequired-req.InventoryQty)
 		for _, rule := range rules {
 			if rule.MaterialID != req.MaterialID {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { AuditStamp } from '@/components/common/audit-stamp'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import {
@@ -24,17 +25,19 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { type Employee } from '../data/schema'
-import { type OrgNode } from '../data/org-schema'
-import { OrgService } from '../services/org-service'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { type DeltaSet } from '@/lib/delta/types'
+import { type TranslationKey } from '@/locales'
 import {
     PERSONNEL_FORM_FIELDS,
     type PersonnelFormFieldConfig,
     type PersonnelFormFieldKey,
     type PersonnelSelectOption,
 } from '../config/personnel-archive-columns'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { type DeltaSet } from '@/lib/delta/types'
+import { type OrgNode } from '../data/org-schema'
+import { type Employee } from '../data/schema'
+import { OrgService } from '../services/org-service'
 
 type EmployeeForm = Record<PersonnelFormFieldKey, string> & {
     id?: string
@@ -97,24 +100,28 @@ export function EmployeeActionDialog({
     onOpenChange,
     onSubmit,
 }: EmployeeActionDialogProps) {
-    const { t } = useLanguage()
+    const { locale, t } = useLanguage()
     const isEdit = !!currentRow
     const [dynamicDepts, setDynamicDepts] = useState<PersonnelSelectOption[]>([])
-
-    // SDRTS: Delta 追踪器
+    const deptFieldLabel = locale === 'zh-CN' ? '部门' : 'Department'
+    const deptFieldHint = locale === 'zh-CN'
+        ? '这里的“部门”强关联组织管理中的二级部门，不可选择三级生产单元。'
+        : 'This department field must map to a level-2 department from Organization Management, not a level-3 production unit.'
+    const getColumnLabel = (key: PersonnelFormFieldKey) => t(`orgPersonnel.excel.columns.${key}` as TranslationKey)
+    const getOptionLabel = (label: string) => (label.includes('.') ? t(label as TranslationKey) : label)
     const initialFormValues = useMemo(() => buildFormValues(currentRow), [currentRow])
     const { data: deltaProxy, tracker } = useDeltaTracker(initialFormValues, open)
 
     const formSchema = z.object({
         id: z.string().optional(),
-        staffId: z.string().trim().min(1, t('orgPersonnel.employeeDialog.errors.staffId' as any)),
-        name: z.string().trim().min(1, t('orgPersonnel.employeeDialog.errors.name' as any)),
-        deptId: z.string().trim().min(1, t('orgPersonnel.employeeDialog.errors.deptId' as any)),
+        staffId: z.string().trim().min(1, t('orgPersonnel.org.employeeDialog.errors.staffId')),
+        name: z.string().trim().min(1, t('orgPersonnel.org.employeeDialog.errors.name')),
+        deptId: z.string().trim().min(1, t('orgPersonnel.org.employeeDialog.errors.deptId')),
         phone: z.string(),
         emergencyPhone: z.string(),
         gender: z.string(),
         joinedDate: z.string(),
-        status: z.string().trim().min(1, t('orgPersonnel.employeeDialog.errors.status' as any)),
+        status: z.string().trim().min(1, t('orgPersonnel.org.employeeDialog.errors.status')),
         age: z.string(),
         idCard: z.string(),
         birthday: z.string(),
@@ -142,7 +149,7 @@ export function EmployeeActionDialog({
             const flattenDepts = (nodes: OrgNode[]): PersonnelSelectOption[] => {
                 let results: PersonnelSelectOption[] = []
                 nodes.forEach(node => {
-                    if (node.type === 'department' || node.type === 'team') {
+                    if (node.type === 'department') {
                         results.push({ label: node.name, value: node.id })
                     }
                     if (node.children) {
@@ -155,16 +162,15 @@ export function EmployeeActionDialog({
             setDynamicDepts(flattenDepts(orgData))
         }
 
-        loadDynamicData()
+        void loadDynamicData()
     }, [open])
 
     useEffect(() => {
         if (!open) return
         form.reset(initialFormValues)
-    }, [initialFormValues, form, open])
+    }, [form, initialFormValues, open])
 
     const onSubmitHandler = (values: EmployeeForm) => {
-        // SDRTS: 同步 RHF 数据到 Proxy 用于增量计算
         Object.assign(deltaProxy, values)
         const delta = tracker.commit()
         const isDirty = Object.keys(delta).length > 0
@@ -175,7 +181,7 @@ export function EmployeeActionDialog({
         }
 
         if (isEdit && values.version === undefined) {
-             throw new Error('[CRITICAL] Missing version for SDRTS Patch operation on Employee ID: ' + (values.id || 'Unknown'));
+            throw new Error(`[CRITICAL] Missing version for SDRTS Patch operation on Employee ID: ${values.id || 'Unknown'}`)
         }
 
         const nextEmployee: Partial<Employee> = {
@@ -194,9 +200,7 @@ export function EmployeeActionDialog({
             ;(nextEmployee as Record<string, unknown>)[field.key] = normalizedValue
         })
 
-        // 发送给父组件进行 SDRTS 或全量处理
         onSubmit?.(nextEmployee as Employee, isEdit, isEdit ? delta : undefined)
-        
         form.reset(defaultValues)
         onOpenChange(false)
     }
@@ -214,11 +218,22 @@ export function EmployeeActionDialog({
             <DialogContent className='sm:max-w-3xl rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden bg-background'>
                 <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
                     <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
-                        {isEdit ? t('orgPersonnel.org.employeeDialog.editTitle' as any) : t('orgPersonnel.org.employeeDialog.createTitle' as any)}
+                        {isEdit ? t('orgPersonnel.org.employeeDialog.editTitle') : t('orgPersonnel.org.employeeDialog.createTitle')}
                     </DialogTitle>
                     <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
-                        {isEdit ? t('orgPersonnel.org.employeeDialog.editDesc' as any) : t('orgPersonnel.org.employeeDialog.createDesc' as any)}
+                        {isEdit ? t('orgPersonnel.org.employeeDialog.editDesc') : t('orgPersonnel.org.employeeDialog.createDesc')}
                     </DialogDescription>
+                    {isEdit && currentRow && (
+                        <AuditStamp
+                            module={AUDIT_MODULES.employee}
+                            targetId={currentRow.id}
+                            createdBy={currentRow.createdBy}
+                            createdAt={currentRow.createdAt}
+                            updatedBy={currentRow.updatedBy}
+                            updatedAt={currentRow.updatedAt}
+                            className='mt-4 border-primary/10'
+                        />
+                    )}
                 </DialogHeader>
 
                 <Form {...form}>
@@ -236,7 +251,7 @@ export function EmployeeActionDialog({
                                     render={({ field }) => (
                                         <FormItem className={`space-y-1 ${fieldConfig.span === 2 ? 'col-span-2' : ''}`}>
                                             <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                                                {t(`orgPersonnel.excel.columns.${fieldConfig.key}` as any)}
+                                                {fieldConfig.key === 'deptId' ? deptFieldLabel : getColumnLabel(fieldConfig.key)}
                                             </FormLabel>
                                             {fieldConfig.input === 'select' ? (
                                                 <div className='pt-1'>
@@ -244,10 +259,10 @@ export function EmployeeActionDialog({
                                                         isControlled
                                                         value={field.value}
                                                         onValueChange={field.onChange}
-                                                        placeholder={t(`orgPersonnel.excel.columns.${fieldConfig.key}` as any)}
+                                                        placeholder={fieldConfig.key === 'deptId' ? deptFieldLabel : getColumnLabel(fieldConfig.key)}
                                                         items={resolveFieldOptions(fieldConfig, dynamicDepts).map(opt => ({
                                                             ...opt,
-                                                            label: opt.label.includes('.') ? t(opt.label as any) : opt.label
+                                                            label: getOptionLabel(opt.label),
                                                         }))}
                                                         className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs'
                                                     />
@@ -256,11 +271,16 @@ export function EmployeeActionDialog({
                                                 <FormControl>
                                                     <Input
                                                         type={fieldConfig.input}
-                                                        placeholder={t(`orgPersonnel.excel.columns.${fieldConfig.key}` as any)}
+                                                        placeholder={fieldConfig.key === 'deptId' ? deptFieldLabel : getColumnLabel(fieldConfig.key)}
                                                         className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs px-4 focus-visible:ring-primary/20 transition-all'
                                                         {...field}
                                                     />
                                                 </FormControl>
+                                            )}
+                                            {fieldConfig.key === 'deptId' && (
+                                                <p className='text-[10px] leading-relaxed text-muted-foreground'>
+                                                    {deptFieldHint}
+                                                </p>
                                             )}
                                             <FormMessage />
                                         </FormItem>
@@ -277,7 +297,7 @@ export function EmployeeActionDialog({
                         form='employee-form'
                         className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
                     >
-                        {t('orgPersonnel.org.employeeDialog.submit' as any)}
+                        {t('orgPersonnel.org.employeeDialog.submit')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

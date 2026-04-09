@@ -421,6 +421,165 @@ go test ./services -run ^$
 
 结果：通过。
 
+## 2026-04-09 删除 7 个旧 requirements 组件兼容壳
+
+### 变更概述
+- 物理删除以下 Trading 侧旧组件壳文件：
+  - `src/features/trading/components/requirements/mold-requirement-alert.tsx`
+  - `src/features/trading/components/requirements/requirement-drawer.tsx`
+  - `src/features/trading/components/requirements/requirement-list.tsx`
+  - `src/features/trading/components/requirements/requirement-row.tsx`
+  - `src/features/trading/components/requirements/requirement-stats.tsx`
+  - `src/features/trading/components/requirements/selection-tree.tsx`
+  - `src/features/trading/components/requirements/supply-analysis-details.tsx`
+- 删除依据：
+  - 当前真实页面实现已经完全切换到 `src/features/mrp/components/requirements/*`
+  - 对旧 Trading 组件路径的外部消费已清零
+  - 删除不影响当前 `/trading/requirements` 路由与模块入口
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- Trading 侧 `requirements` 旧组件兼容壳已完成物理清理。
+- 当前 `requirements` 视图层只保留 `MRP` 新模块实现，结构进一步收敛。
+
+## 2026-04-09 旧 requirements 组件归属收口
+
+### 变更概述
+- 盘点 `src/features/trading/components/requirements/*` 的现状后，确认当前真实页面实现已经由 `MRP` 新模块承载。
+- 因此将以下旧组件统一收口为兼容导出：
+  - `mold-requirement-alert.tsx`
+  - `requirement-drawer.tsx`
+  - `requirement-list.tsx`
+  - `requirement-row.tsx`
+  - `requirement-stats.tsx`
+  - `selection-tree.tsx`
+  - `supply-analysis-details.tsx`
+- 上述文件现在均转发到：
+  - `@/features/mrp/components/requirements/*`
+
+### 本轮结论
+- `Trading/components/requirements/*` 已不再承载真实实现，只保留历史兼容入口职责。
+- `requirements` 视图层的真实归属已进一步收口到 `MRP` 模块。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+## 2026-04-09 customer/supplier 列表接口响应显式 DTO 化
+
+### 变更概述
+- 新增 `server/services/partner_list_dto.go`：
+  - `PartnerListPaginationMeta`
+  - `CustomerListStats`
+  - `SupplierListStats`
+  - `CustomerListMetadata`
+  - `SupplierListMetadata`
+  - `CustomerListResponse`
+  - `SupplierListResponse`
+- 调整 `server/handlers/customers.go`：
+  - 将列表响应从 `gin.H` 匿名拼装改为显式 `services.CustomerListResponse`。
+- 调整 `server/handlers/suppliers.go`：
+  - 将列表响应从 `gin.H` 匿名拼装改为显式 `services.SupplierListResponse`。
+
+### 设计收口
+- 继续保留现有前端兼容字段：`items / total / page / pageSize / metadata.pagination / metadata.stats`。
+- 这次改动只把响应契约从匿名 map 收口为显式 struct，不改变接口字段名与现有消费方式。
+- 后续如果再补 customer/supplier 相关测试或响应字段，可以直接围绕 DTO 结构扩展，而不是继续散落在 handler 的 `gin.H` 中。
+
+### 验证
+执行：
+```bash
+go test ./handlers ./services -run "Customer|Supplier|Partner"
+```
+
+结果：通过。
+
+### 补充清理：移除销售订单前端事务路由遗留代码
+- 已物理删除以下前端事务路由遗留文件：
+  - `src/features/trading/hooks/sales-order-save-plan.ts`
+  - `src/features/trading/hooks/sales-order-save-executor.ts`
+- 复核结果：仓库内已无 `buildSalesOrderSavePlan`、`executeSalesOrderSavePlan`、`sales-order-save-plan`、`sales-order-save-executor` 剩余引用，且 `pnpm exec tsc --noEmit` 继续通过。
+
+补充执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+## 2026-04-09 销售订单保存路径后端收敛为单一入口
+
+### 变更概述
+- 前端 `src/features/trading/hooks/use-sales-order-save.ts`：
+  - 编辑保存不再根据 `delta` 内容、行结构差异和状态字段组合自行选择不同 mutation；
+  - 现统一调用 `saveMutation`，仅提交 `delta + finalData + expectedVersion`。
+- 前端 `src/features/trading/sales/services/sales-transaction-service.ts`：
+  - 新增 `SALES_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'`；
+  - 新增 `saveSalesOrderTransaction()`，统一走 `/sales-orders/:id/transactions`。
+- 前端 `src/features/trading/sales/hooks/use-sales-transactions.ts`：
+  - 新增 `saveMutation`，封装统一销售订单保存事务调用；
+  - 保留既有细分 mutation，避免其他非本轮主链场景被强行打断。
+- 后端 `server/services/sales_transaction_service.go`：
+  - 新增 `SalesTransactionIntentOrderSave`；
+  - 新增 `SalesOrderSavePayload`；
+  - 新增 `executeOrderUnifiedSaveTx()`，由后端根据 `delta + finalData` 在服务层内部判定：
+    - 客户变更
+    - 分类/型号/条码变更
+    - 交期变更
+    - 状态迁移/作废
+    - 采购单号变更
+    - requirements 变更
+    - 行内容变更 / 行新增 / 行删除 / 全量行变更
+    - 以及通用 patch 场景
+  - 对外单一入口，内部继续复用既有细分事务实现。
+
+### 设计收口
+- 前端不再充当“事务路由器”，不再根据领域语义决定调用哪条后端 mutation。
+- 后端成为唯一的业务语义裁决方；若内部仍需细分事务处理，只在服务层内部完成分派。
+- 继续保留 `expectedVersion` / 版本冲突语义，没有为了入口统一退回到粗暴全量覆盖保存。
+
+### 保留项
+- `sales-order-save-plan.ts` 与 `sales-order-save-executor.ts` 本轮已不再是主保存链依赖；
+- 为降低本轮删除风险，暂未强行物理删除，可作为后续文档化清理项处理。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./services -run "SalesOrder|SalesTransaction"
+```
+
+结果：通过。
+
+### 补充收口：前端 metadata.stats 缺失态显式提示
+- 增强 `src/features/trading/components/customer-list.tsx`：
+  - 当 `metadata.stats.total / active / newThisMonth` 任一缺失时，在统计卡片上方显示中文/英文显式提示；
+  - 统计卡片数字降为占位符 `—`；
+  - 不再回退到前端基于当前列表数组的本地重算。
+- 增强 `src/features/trading/components/supplier-list.tsx`：
+  - 当 `metadata.stats.total / active / pendingReview` 任一缺失时，在统计卡片上方显示中文/英文显式提示；
+  - 统计卡片数字降为占位符 `—`；
+  - 不再回退到前端基于当前列表数组的本地重算。
+- 这样即使后端契约异常退化，列表主体仍可继续浏览，但统计区会明确暴露“契约缺失”，而不是静默给出错误数字。
+
+补充执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
 另执行：
 
 ```bash
@@ -780,3 +939,261 @@ pnpm exec tsc --noEmit
 - 用户可以按状态和类型快速筛选请假记录；
 - 用户可以按开始时间切换排序方式；
 - 用户可以查看每条请假记录的完整详情，而不必依赖列表摘要信息。
+
+## Trading 审计样板接入
+
+### 本轮完成内容
+- 新增后端审计模块收口文件 `server/services/audit_modules.go`：
+  - 为 `sales-order` / `purchase-order` 建立统一 canonical module 值；
+  - 为历史值 `SalesOrder` / `PurchaseOrder` 建立别名映射；
+  - 为查询层提供别名展开能力。
+- 增强 `server/services/audit_service.go`：
+  - `defaultAuditLogger.Write(...)` 在落库前统一规范化 `AuditEntry.Module`；
+  - 新产生的 Trading 审计日志统一写入 canonical module 值。
+- 增强 `server/handlers/audit_handlers.go`：
+  - `/audit/timeline` 查询从“单值精确匹配”调整为“按 canonical module + 历史别名集合兼容查询”；
+  - 确保旧数据与新数据在 Trading 样板接入期间都可被时间线正常命中。
+- 新增前端统一模块文件 `src/features/audit-timeline/data/audit-modules.ts`：
+  - 输出 `AUDIT_MODULES`；
+  - 输出 audit-engine 的模块接入配置骨架。
+- 增强 Trading 前端详情页：
+  - `sales-order-detail-activity.tsx` 改为使用统一 `AUDIT_MODULES.salesOrder`；
+  - `purchase-order-detail.tsx` 新增 `AuditStamp`，补齐采购单详情时间线入口，并使用 `AUDIT_MODULES.purchaseOrder`。
+- 收口 `src/features/audit-timeline/components/audit-engine-tab.tsx`：
+  - 从静态手写 `MODULES` 切到基于 `AUDIT_ENGINE_MODULE_STATUS` 派生；
+  - Trading 现在由“已接入样板实体列表”驱动状态表达，而不是裸写 `connected: true` 假象。
+
+### 本轮设计约束
+- 本轮优先做兼容式收口：既统一新写入口径，也兼容历史 `SalesOrder` / `PurchaseOrder` 数据查询。
+- 本轮只把 Trading 做成“真实可验证样板”，未扩展到 Finance / Engineering / Warehouse / Equipment 全量接入。
+- 本轮未新建第二套审计查询接口，继续复用 `/audit/timeline` 与既有 `AuditStamp` / `DataTimeline` 组件。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./services -run Audit -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+Trading 已从“看板宣称已接入”推进为“具备真实可验证审计链路的样板模块”：
+
+- 销售单与采购单详情均具备统一的审计时间线入口；
+- Trading 审计查询不再受新旧 module 命名漂移直接阻断；
+- audit-engine 中的 Trading 状态已开始建立在可维护事实映射上。
+
+## audit-engine 真实统计升级
+
+### 本轮完成内容
+- 扩展后端审计注册表 `server/services/audit_modules.go`：
+  - 为 `sales-order`、`purchase-order`、`customer`、`supplier`、`employee`、`production-line` 建立 canonical module 与历史别名归一化；
+  - 新增实体到业务模块的集中映射；
+  - 新增 `EntryIntegrated` 标记，沉淀“真实入口覆盖”事实；
+  - 新增 audit-engine 聚合结果结构定义。
+- 增强 `server/handlers/audit_handlers.go`：
+  - 保持 `/audit/timeline` 的 Trading 兼容查询能力；
+  - 新增 `GET /audit/engine/stats`，基于注册表与 `audit_logs` 聚合模块级真实统计；
+  - 输出每个模块的目标实体数、日志覆盖数、入口覆盖数、综合覆盖率、状态与最近事件时间。
+- 增强 `server/routes/routes.go`：
+  - 注册 `/audit/engine/stats` 路由。
+- 收口前端审计类型与 hook：
+  - `src/features/audit-timeline/types.ts` 新增 `AuditEngineModuleStats` / `AuditEngineStatsResponse`；
+  - 新增 `src/features/audit-timeline/hooks/use-audit-engine-stats.ts`；
+  - `DiffItem` 中原有 `any` 已收口为 `unknown`。
+- 收口 `src/features/audit-timeline/components/audit-engine-tab.tsx`：
+  - 页面改为消费后端真实统计结果；
+  - `connectedCount`、模块状态、覆盖率、最近事件时间均来自 `/audit/engine/stats`；
+  - 新增 loading 态；
+  - 模块卡片中显式展示 `LOG COVERAGE` 与 `ENTRY COVERAGE`，可区分“部分接入”和“完全未接入”。
+
+### 本轮设计约束
+- 本轮以“后端聚合结果”为权威源，前端不再自行裁决模块真实接入状态。
+- 本轮采用“日志覆盖 + 入口覆盖”双维度统计，而非单纯看是否存在日志或是否挂了入口。
+- 本轮仍基于受控注册表表达入口覆盖，未尝试动态扫描整个前端代码库来发现入口。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./services -run Audit -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+audit-engine 已从“配置驱动表达”升级为“基于真实日志 / 真实入口统计”的看板：
+
+- 模块连接数量不再来自静态数组；
+- Trading 现在能同时体现“有日志 + 有入口”的真实接入状态；
+- Engineering / Equipment 等存在“有日志但无入口”的模块，会被看板识别为部分接入，而不是被简单误判为未接入。
+
+## audit-engine 真实入口补齐（方案A）
+
+### 本轮完成内容
+- 扩展前端审计 module 常量 `src/features/audit-timeline/data/audit-modules.ts`：
+  - 新增 `customer`、`supplier`、`employee` canonical module 值；
+  - 供各业务页面挂接真实入口时统一复用。
+- 同步更新后端审计注册表 `server/services/audit_modules.go`：
+  - 将 `Customer`、`Supplier`、`Employee` 的 `EntryIntegrated` 标记改为 `true`；
+  - 保持 `ProductionLine` 仍为 `false`，用于真实统计继续反映“有日志无入口”现状。
+- 增强 `src/features/trading/components/customer-list.tsx`：
+  - 在客户卡片信息区补充 `AuditStamp`；
+  - 使用 `AUDIT_MODULES.customer` + 客户 `id` 打开真实时间线。
+- 增强 `src/features/trading/components/supplier-list.tsx`：
+  - 在供应商卡片信息区补充 `AuditStamp`；
+  - 使用 `AUDIT_MODULES.supplier` + 供应商 `id` 打开真实时间线。
+- 增强 `src/features/org-personnel/data/schema.ts`：
+  - 为员工前端数据模型补充可选的 `createdAt / updatedAt / createdBy / updatedBy` 字段。
+- 增强 `src/features/org-personnel/components/employee-action-dialog.tsx`：
+  - 在编辑弹层头部补充 `AuditStamp`；
+  - 使用 `AUDIT_MODULES.employee` + 员工 `id` 打开真实时间线；
+  - 仅在编辑场景展示，不对新建场景强行注入半残入口。
+
+### 本轮设计约束
+- 本轮继续复用既有 `AuditStamp` / `DataTimeline`，不新建第二套入口组件。
+- 入口仅挂在现有自然承载位：客户卡片、供应商卡片、员工编辑弹层头部。
+- `ProductionLine` 本轮暂未纳入，因为当前更偏结构化树/工艺配置视图，缺少稳定且自然的详情承载位；若强行接入，会引入伪详情语义。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers ./services -run Audit -count=1
+```
+
+结果：通过。
+
+### 本轮结论
+方案A已把 `Customer`、`Supplier`、`Employee` 从“有日志无入口”的部分接入继续推进到更完整的前端可见接入状态：
+
+- 用户现在可以在对应业务页面直接打开这些实体的审计时间线；
+- 后端真实统计中的 `entryCoverage` 将随之提升；
+- `ProductionLine` 仍保留为后续单独评估项，而不是在本轮被强行塞入不合适的入口。
+
+## 2026-04-09 客户/供应商列表统计下沉到后端 metadata/stats
+
+### 变更概述
+- 后端 `server/handlers/customers.go`：
+  - 为 `GET /customers` 增加 `metadata.pagination` 与 `metadata.stats` 返回；
+  - 统计口径覆盖 `total / active / newThisMonth`；
+  - 保留既有 `items / total / page / pageSize` 根字段，避免现有调用方被立即打断。
+- 后端 `server/handlers/suppliers.go`：
+  - 为 `GET /suppliers` 增加 `metadata.pagination` 与 `metadata.stats` 返回；
+  - 统计口径覆盖 `total / active / pendingReview`；
+  - 同样保留既有根字段兼容结构。
+- 前端 `src/features/trading/customer/services/customer-service.ts` / `hooks/use-customer.ts`：
+  - 保留 `getCustomers()` 作为 `options=true` 选项数组接口；
+  - 新增 `getCustomerList()` / `useGetCustomerList()` 作为列表页对象响应入口；
+  - mutations 同时失效 `['customers']` 与 `['customers', 'list']`。
+- 前端 `src/features/trading/supplier/services/supplier-service.ts` / `hooks/use-supplier.ts`：
+  - 保留 `getSuppliers()` 作为 `options=true` 选项数组接口；
+  - 新增 `getSupplierList()` / `useGetSupplierList()` 作为列表页对象响应入口；
+  - mutations 同时失效 `['suppliers']` 与 `['suppliers', 'list']`。
+- 前端 `src/features/trading/components/customer-list.tsx`：
+  - 列表页切换为消费 `useGetCustomerList()`；
+  - 头部卡片改为读取后端 `metadata.stats.total / active / newThisMonth`。
+- 前端 `src/features/trading/components/supplier-list.tsx`：
+  - 列表页切换为消费 `useGetSupplierList()`；
+  - 头部卡片改为读取后端 `metadata.stats.total / active / pendingReview`。
+
+### 设计收口
+- 客户/供应商下拉选项与列表页统计不再共用同一响应语义：
+  - 选项场景继续消费纯数组；
+  - 列表场景消费对象响应与后端统计。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./handlers -run "Customer|Supplier"
+```
+
+结果：通过。
+
+### 补充回归：handler 级 metadata.stats 字段断言
+- 新增 `server/handlers/partner_list_stats_handler_test.go`：
+  - `TestGetCustomersHandlerReturnsMetadataStats`
+  - `TestGetSuppliersHandlerReturnsMetadataStats`
+- 覆盖点：
+  - 列表接口返回 `metadata.pagination`；
+  - 列表接口返回 `metadata.stats`；
+  - 客户统计断言 `total / active / newThisMonth`；
+  - 供应商统计断言 `total / active / pendingReview`；
+  - 逻辑删除记录不会混入统计总数。
+
+补充执行：
+```bash
+go test ./handlers -run "CustomersHandlerReturnsMetadataStats|SuppliersHandlerReturnsMetadataStats|Customer|Supplier"
+```
+
+结果：通过。
+
+## 2026-04-09 MRP Phase 1 独立模块骨架迁移
+
+### 变更概述
+- 新建 `src/features/mrp` 正式模块骨架：
+  - `data/requirement-schema.ts`
+  - `services/requirement-core-service.ts`
+  - `services/requirement-service.ts`
+  - `services/requirement-export-service.ts`
+  - `hooks/use-requirements.ts`
+  - `hooks/use-mold-status.ts`
+  - `components/requirements/*`
+  - `pages/part-requirements.tsx`
+  - `index.ts`
+- 将 MRP 需求分析页面的真实实现迁入 `src/features/mrp/pages/part-requirements.tsx`：
+  - 模块页面容器不再继续以内联方式挂在 `src/features/trading/tabs/index.tsx` 中维护。
+- 保持现有 URL 不变：
+  - `src/routes/_authenticated/trading/requirements.lazy.tsx` 仍承载 `/trading/requirements`
+  - 但页面组件已切换为 `@/features/mrp/pages/part-requirements`
+- 保留 Trading 旧路径兼容层：
+  - `src/features/trading/hooks/use-requirements.ts` 改为转发到 `@/features/mrp/hooks/use-requirements`
+  - `src/features/trading/hooks/use-mold-status.ts` 改为转发到 `@/features/mrp/hooks/use-mold-status`
+  - `src/features/trading/services/requirement-core-service.ts` 改为转发到 `@/features/mrp/services/requirement-core-service`
+  - `src/features/trading/services/requirement-service.ts` 改为兼容导出 `RequirementCoreService`
+  - `src/features/trading/services/requirement-export-service.ts` 改为转发到 `@/features/mrp/services/requirement-export-service`
+  - `src/features/trading/tabs/index.tsx` 中的 `PartRequirements` 改为兼容导出 `MRP` 页面实现
+
+### 本轮边界
+- 本轮只迁移 MRP 自有前端层：`requirements` 的 `data / services / hooks / components / page`。
+- 本轮未改动 `/trading/requirements` URL，不在这一阶段强行切换导航与路由语义。
+- 本轮继续复用：
+  - `Trading` 的销售订单事实源
+  - `Engineering` 的 BOM 服务
+  - 现有国际化 key 与 API 契约
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `MRP` 已不再只是空目录，而是形成了最小可承载的前端领域骨架。
+- `/trading/requirements` 现已由 `MRP` 新模块实际承载，但对现有 URL 与调用方保持兼容。
+- Trading 旧路径已保留兼容导出，为下一阶段继续收口 schema、导航与长期宿主职责提供了平滑过渡基础。
+
+## 2026-04-09 MRP schema 归属收口
+
+### 变更概述
+- 将 `src/features/trading/data/requirement-schema.ts` 收口为纯兼容导出：
+  - `export type { MaterialRequirement, MrpStats } from '@/features/mrp/data/requirement-schema'`
+- 这意味着 `MaterialRequirement` 与 `MrpStats` 的权威定义已统一归属到：
+  - `src/features/mrp/data/requirement-schema.ts`
+- `Trading` 目录下残留的 requirements 旧组件仍可继续通过兼容层获取相同类型，不会立即中断旧引用。
+
+### 本轮结论
+- MRP 的 schema 权威归属已从 `Trading` 收回到 `MRP`。
+- `Trading` 的 `requirement-schema` 现在只承担向后兼容职责，不再是事实源。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。

@@ -1,10 +1,32 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Customer } from '../../data/schema'
 
 export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'CUSTOMER_IDENTITY_CHANGE'
+export const CUSTOMER_TRANSACTION_INTENT_SAVE = 'CUSTOMER_SAVE'
+
+export interface CustomerListStats {
+  total: number
+  active: number
+  newThisMonth: number
+}
+
+export interface CustomerListResponse {
+  items: Customer[]
+  total: number
+  page: number
+  pageSize: number
+  metadata?: {
+    pagination?: {
+      total?: number
+      page?: number
+      pageSize?: number
+    }
+    stats?: Partial<CustomerListStats>
+  }
+}
 
 export interface CustomerTransactionRequest<TPayload> {
   intent: string
@@ -24,9 +46,29 @@ export interface CustomerIdentityChangePayload {
   operator: string
 }
 
+export interface CustomerSavePayload {
+  delta: DeltaSet
+  finalData: Customer
+  operator: string
+}
+
 export const getCustomers = async (): Promise<Customer[]> => {
   const res = await apiFetch<Customer[]>('/customers?options=true')
   return ensureArrayResponse<Customer>(res, 'CustomerService.getCustomers')
+}
+
+export const getCustomerList = async (): Promise<CustomerListResponse> => {
+  const res = await apiFetch<CustomerListResponse>('/customers')
+  const objectResponse = ensureObjectResponse<CustomerListResponse & Record<string, unknown>>(
+    res,
+    'CustomerService.getCustomerList'
+  )
+  const items = ensureArrayField<Customer>(objectResponse, 'items', 'CustomerService.getCustomerList')
+
+  return {
+    ...objectResponse,
+    items,
+  }
 }
 
 export const executeCustomerTransaction = async <TPayload>(
@@ -92,6 +134,28 @@ export const changeCustomerIdentity = async (
     payload: {
       code: params.code,
       name: params.name,
+      operator: params.operator,
+    },
+  })
+}
+
+export const saveCustomer = async (
+  customerId: string,
+  params: {
+    delta: DeltaSet
+    finalData: Customer
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<Customer> => {
+  return executeCustomerTransaction<CustomerSavePayload>(customerId, {
+    intent: CUSTOMER_TRANSACTION_INTENT_SAVE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      delta: params.delta,
+      finalData: params.finalData,
       operator: params.operator,
     },
   })

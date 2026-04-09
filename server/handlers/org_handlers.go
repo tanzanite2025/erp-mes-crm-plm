@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetOrgTreeHandler(c *gin.Context) {
@@ -14,7 +18,7 @@ func GetOrgTreeHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organization tree"})
 		return
 	}
-	c.JSON(http.StatusOK, tree)
+	c.JSON(http.StatusOK, mapOrganizationTreeResponse(tree))
 }
 
 func SaveOrgHandler(c *gin.Context) {
@@ -30,11 +34,155 @@ func SaveOrgHandler(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization name already exists under the same parent"})
 			return
 		}
+		if err == services.ErrOrganizationParentNotFound {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization parent does not exist"})
+			return
+		}
+		if err == services.ErrOrganizationHierarchyInvalid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization hierarchy is invalid for the selected parent"})
+			return
+		}
+		if err == services.ErrOrganizationDepthExceeded {
+			c.JSON(http.StatusConflict, gin.H{"error": "Organization depth exceeds the supported three levels"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save organization"})
 		return
 	}
 
-	c.JSON(http.StatusOK, organization)
+	if loadedTree, err := services.ListOrganizationTree(); err == nil {
+		for _, node := range loadedTree {
+			if response := findOrganizationResponse(node, organization.ID); response != nil {
+				c.JSON(http.StatusOK, response)
+				return
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, mapOrganizationResponse(&organization))
+}
+
+func PatchOrgHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.PatchDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization patch payload"})
+		return
+	}
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "parentId", "manager", "description", "type", "linkedArchitecture"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization delta: " + err.Error()})
+		return
+	}
+
+	patch := services.PatchOrganizationRequest{
+		ID:              id,
+		ExpectedVersion: req.Metadata.Version,
+		DeltaKeys:       servicesDeltaKeys(req.Delta),
+	}
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization delta payload: " + err.Error()})
+			return
+		}
+
+		switch key {
+		case "name":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization name payload"})
+				return
+			}
+			patch.Name = &value
+		case "parentId":
+			patch.ParentIDSet = true
+			if string(valueRaw) == "null" {
+				patch.ParentID = nil
+				continue
+			}
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization parentId payload"})
+				return
+			}
+			value = strings.TrimSpace(value)
+			if value == "" {
+				patch.ParentID = nil
+			} else {
+				patch.ParentID = &value
+			}
+		case "manager":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization manager payload"})
+				return
+			}
+			patch.Manager = &value
+		case "description":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization description payload"})
+				return
+			}
+			patch.Description = &value
+		case "type":
+			var value string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization type payload"})
+				return
+			}
+			patch.Type = &value
+		case "linkedArchitecture":
+			patch.LinkedArchitecture = append(json.RawMessage(nil), valueRaw...)
+			patch.LinkedArchitectureSet = true
+		}
+	}
+
+	refreshed, err := services.PatchOrganization(patch)
+	if err != nil {
+		if errors.Is(err, services.ErrOrganizationPatchVersionConflict) {
+			respondVersionConflict(c)
+			return
+		}
+		switch err {
+		case services.ErrOrganizationNameConflict:
+			c.JSON(http.StatusConflict, gin.H{"error": "Organization name already exists under the same parent"})
+			return
+		case services.ErrOrganizationParentNotFound:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization parent does not exist"})
+			return
+		case services.ErrOrganizationHierarchyInvalid:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Organization hierarchy is invalid for the selected parent"})
+			return
+		case services.ErrOrganizationDepthExceeded:
+			c.JSON(http.StatusConflict, gin.H{"error": "Organization depth exceeds the supported three levels"})
+			return
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "organization not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to patch organization"})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapOrganizationResponse(&refreshed))
+}
+
+func findOrganizationResponse(node *models.Organization, targetID string) gin.H {
+	if node == nil {
+		return nil
+	}
+	if node.ID == targetID {
+		response := mapOrganizationResponse(node)
+		return response
+	}
+	for _, child := range node.Children {
+		if found := findOrganizationResponse(child, targetID); found != nil {
+			return found
+		}
+	}
+	return nil
 }
 
 func DeleteOrgHandler(c *gin.Context) {

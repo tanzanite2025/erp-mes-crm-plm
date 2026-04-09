@@ -45,27 +45,16 @@ export function RequirementStats({ stats }: RequirementStatsProps) {
   return (
     <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
       {items.map((item, index) => (
-        <Card
-          key={index}
-          className='border border-dashed border-muted/50 shadow-inner bg-muted/5 backdrop-blur-sm overflow-hidden group hover:bg-white hover:shadow-xl transition-all duration-500 rounded-[24px]'
-        >
+        <Card key={index} className='border border-dashed border-muted/50 shadow-inner bg-muted/5 backdrop-blur-sm overflow-hidden group hover:bg-white hover:shadow-xl transition-all duration-500 rounded-[24px]'>
           <CardContent className='p-5 flex items-center gap-4'>
-            <div
-              className={`size-12 rounded-2xl ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}
-            >
+            <div className={`size-12 rounded-2xl ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
               <item.icon className={`size-6 ${item.color}`} />
             </div>
             <div className='flex flex-col'>
-              <span className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic'>
-                {item.label}
-              </span>
+              <span className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic'>{item.label}</span>
               <div className='flex items-baseline gap-2'>
-                <span className='text-3xl font-black tabular-nums tracking-tighter italic'>
-                  {item.value.toLocaleString()}
-                </span>
-                <span className='text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest'>
-                  {item.sub}
-                </span>
+                <span className='text-3xl font-black tabular-nums tracking-tighter italic'>{item.value.toLocaleString()}</span>
+                <span className='text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest'>{item.sub}</span>
               </div>
             </div>
           </CardContent>

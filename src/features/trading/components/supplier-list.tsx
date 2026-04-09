@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { AuditStamp } from '@/components/common/audit-stamp'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,29 +29,42 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useAuthStore } from '@/stores/auth-store'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { SupplierActionDialog } from './supplier-action-dialog'
-import { useGetSuppliers, useSupplierMutations } from '../supplier'
+import { useGetSupplierList, useSupplierMutations } from '../supplier'
 import { cn } from '@/lib/utils'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 
 export function SupplierList() {
-  const { t } = useLanguage()
+  const { locale, t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | 'All'>('All')
   const {
-    data: suppliers = [],
+    data: supplierList,
     isLoading,
     isError,
     error,
     refetch,
-  } = useGetSuppliers()
-  const { createMutation, patchMutation, statusChangeMutation, identityChangeMutation, deleteMutation } = useSupplierMutations()
+  } = useGetSupplierList()
+  const user = useAuthStore((state) => state.user)
+  const { createMutation, saveMutation, deleteMutation } = useSupplierMutations()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
+  const suppliers = supplierList?.items ?? []
+  const supplierStats = supplierList?.metadata?.stats
+  const supplierStatsAvailable =
+    typeof supplierStats?.total === 'number' &&
+    typeof supplierStats?.active === 'number' &&
+    typeof supplierStats?.pendingReview === 'number'
+  const supplierStatsMissingLabel =
+    locale === 'zh-CN'
+      ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
+      : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
 
   const filteredSuppliers = (suppliers || []).filter((supplier) => {
     const matchesSearch =
@@ -77,37 +91,15 @@ export function SupplierList() {
 
   const handleSaveSupplier = (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_supplier_manage')) return
-    
+
     if (payload.isPatch && payload.delta && selectedSupplier) {
-      const deltaKeys = Object.keys(payload.delta)
-      const isStatusOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'status')
-      const isIdentityOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'code' || key === 'name')
-
-      if (isStatusOnlyChange) {
-        statusChangeMutation.mutate({
-          id: selectedSupplier.id,
-          status: payload.data.status || selectedSupplier.status,
-          operator: 'Unknown',
-          expectedVersion: selectedSupplier.version,
-        })
-        return
-      }
-
-      if (isIdentityOnlyChange) {
-        identityChangeMutation.mutate({
-          id: selectedSupplier.id,
-          code: payload.data.code,
-          name: payload.data.name,
-          operator: 'Unknown',
-          expectedVersion: selectedSupplier.version,
-        })
-        return
-      }
-
-      patchMutation.mutate({
+      saveMutation.mutate({
         id: selectedSupplier.id,
         delta: payload.delta,
-        version: selectedSupplier.version
+        finalData: payload.data as Supplier,
+        operator: user?.accountNo || 'Unknown',
+        actorId: user?.id,
+        expectedVersion: selectedSupplier.version,
       })
     } else {
       createMutation.mutate(payload.data as Omit<Supplier, 'id' | 'version'>)
@@ -195,6 +187,12 @@ export function SupplierList() {
 
   return (
     <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
+      {!supplierStatsAvailable && (
+        <div className='rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-xs font-bold text-amber-800'>
+          {supplierStatsMissingLabel}
+        </div>
+      )}
+
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6'>
         <div className='p-5 md:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted/50 flex flex-col justify-between h-32 md:h-36 relative overflow-hidden group'>
           <div className='absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity'>
@@ -205,7 +203,7 @@ export function SupplierList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl md:text-4xl font-black italic tracking-tighter tabular-nums'>
-              {suppliers.length}
+              {supplierStatsAvailable ? supplierStats.total : '—'}
             </span>
             <div className='p-1.5 md:p-2 bg-primary/10 rounded-xl'>
               <Building2 className='size-4 md:size-5 text-primary' />
@@ -221,7 +219,7 @@ export function SupplierList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl md:text-4xl font-black italic tracking-tighter tabular-nums text-emerald-500'>
-              {suppliers.filter((supplier) => supplier.status === 'Active').length}
+              {supplierStatsAvailable ? supplierStats.active : '—'}
             </span>
             <div className='p-1.5 md:p-2 bg-emerald-500/10 rounded-xl'>
               <Star className='size-4 md:size-5 text-emerald-500' />
@@ -237,7 +235,7 @@ export function SupplierList() {
           </span>
           <div className='flex items-end justify-between relative'>
             <span className='text-3xl md:text-4xl font-black italic tracking-tighter tabular-nums text-amber-500'>
-              {suppliers.filter((supplier) => supplier.status === 'OnReview').length}
+              {supplierStatsAvailable ? supplierStats.pendingReview : '—'}
             </span>
             <div className='p-1.5 md:p-2 bg-amber-500/10 rounded-xl'>
               <Box className='size-4 md:size-5 text-amber-500' />
@@ -448,6 +446,16 @@ export function SupplierList() {
                     <ExternalLink className='ms-2 size-3 opacity-50' />
                   </Button>
                 </div>
+
+                <AuditStamp
+                  module={AUDIT_MODULES.supplier}
+                  targetId={supplier.id}
+                  createdBy={supplier.createdBy}
+                  createdAt={supplier.createdAt}
+                  updatedBy={supplier.updatedBy}
+                  updatedAt={supplier.updatedAt}
+                  className='border-primary/10 pt-2'
+                />
               </CardContent>
             </Card>
           ))}

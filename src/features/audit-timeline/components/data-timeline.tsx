@@ -10,6 +10,7 @@ import {
   Hash,
 } from 'lucide-react';
 import { useAuditTimeline } from '../hooks/use-audit-timeline';
+import { type AuditModuleValue } from '../data/audit-modules';
 import {
   Sheet,
   SheetContent,
@@ -20,7 +21,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DataTimelineProps {
-  module: string;
+  module: AuditModuleValue;
   targetId: string;
   targetName?: string;
   open: boolean;

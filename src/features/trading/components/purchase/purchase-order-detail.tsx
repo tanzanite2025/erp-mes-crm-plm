@@ -1,10 +1,12 @@
 import { AlertCircle, CheckCheck, Loader2, Package, Trash2, Truck } from 'lucide-react'
 import { useState } from 'react'
+import { AuditStamp } from '@/components/common/audit-stamp'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type PurchaseOrder } from '../../data/schema'
 import { canReceivePurchaseOrder, getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
@@ -214,6 +216,18 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                 </span>
               </div>
             </div>
+          </Card>
+
+          <Card className='rounded-[32px] border-none p-6 shadow-sm'>
+            <AuditStamp
+              module={AUDIT_MODULES.purchaseOrder}
+              targetId={order.id}
+              createdBy={order.createdBy}
+              createdAt={order.createdAt}
+              updatedBy={order.updatedBy}
+              updatedAt={order.updatedAt}
+              className='border-primary/10'
+            />
           </Card>
 
           <Button

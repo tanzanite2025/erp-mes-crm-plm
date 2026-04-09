@@ -11,11 +11,14 @@ import (
 )
 
 var (
-	ErrOrganizationNameConflict = errors.New("organization name conflict")
-	ErrOrganizationHasChildren  = errors.New("organization has child departments")
-	ErrOrganizationHasEmployees = errors.New("organization has employees")
-	ErrInvalidEmployeeStatus    = errors.New("invalid employee status")
-	ErrEmptyEmployeeIDs         = errors.New("employee ids cannot be empty")
+	ErrOrganizationNameConflict     = errors.New("organization name conflict")
+	ErrOrganizationHasChildren      = errors.New("organization has child departments")
+	ErrOrganizationHasEmployees     = errors.New("organization has employees")
+	ErrOrganizationParentNotFound   = errors.New("organization parent not found")
+	ErrOrganizationHierarchyInvalid = errors.New("organization hierarchy invalid")
+	ErrOrganizationDepthExceeded    = errors.New("organization depth exceeded")
+	ErrInvalidEmployeeStatus        = errors.New("invalid employee status")
+	ErrEmptyEmployeeIDs             = errors.New("employee ids cannot be empty")
 )
 
 type OrganizationService struct {
@@ -68,6 +71,14 @@ func SaveEmployee(input models.Employee) (models.Employee, error) {
 	return defaultOrganizationService.SaveEmployee(input)
 }
 
+func PatchOrganization(input PatchOrganizationRequest) (models.Organization, error) {
+	return defaultOrganizationService.PatchOrganization(input)
+}
+
+func PatchEmployee(input PatchEmployeeRequest) (models.Employee, error) {
+	return defaultOrganizationService.PatchEmployee(input)
+}
+
 func DeleteEmployees(ids []string) error {
 	return defaultOrganizationService.DeleteEmployees(ids)
 }
@@ -113,6 +124,10 @@ func (s *OrganizationService) ListOrganizationTree() ([]*models.Organization, er
 }
 
 func (s *OrganizationService) SaveOrganization(input models.Organization) (models.Organization, error) {
+	if err := s.validateOrganizationHierarchy(&input); err != nil {
+		return models.Organization{}, err
+	}
+
 	nameExists, err := s.repository.OrganizationNameExists(s.txManager.DB(), input.Name, input.ParentID, input.ID)
 	if err != nil {
 		return models.Organization{}, err
@@ -128,6 +143,62 @@ func (s *OrganizationService) SaveOrganization(input models.Organization) (model
 	}
 
 	return input, nil
+}
+
+func (s *OrganizationService) validateOrganizationHierarchy(input *models.Organization) error {
+	return s.validateOrganizationHierarchyWithDB(s.txManager.DB(), input)
+}
+
+func (s *OrganizationService) validateOrganizationHierarchyWithDB(database *gorm.DB, input *models.Organization) error {
+	normalizedType := strings.TrimSpace(input.Type)
+	normalizedID := strings.TrimSpace(input.ID)
+
+	if input.ParentID == nil || strings.TrimSpace(*input.ParentID) == "" {
+		if normalizedType == "" {
+			input.Type = "company"
+			return nil
+		}
+		if normalizedType != "company" {
+			return ErrOrganizationHierarchyInvalid
+		}
+		return nil
+	}
+
+	parentID := strings.TrimSpace(*input.ParentID)
+	if normalizedID != "" && parentID == normalizedID {
+		return ErrOrganizationHierarchyInvalid
+	}
+
+	parent, found, err := s.repository.GetOrganizationByID(database, parentID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return ErrOrganizationParentNotFound
+	}
+
+	expectedType := ""
+	switch strings.TrimSpace(parent.Type) {
+	case "company":
+		expectedType = "department"
+	case "department":
+		expectedType = "team"
+	case "team":
+		return ErrOrganizationDepthExceeded
+	default:
+		return ErrOrganizationHierarchyInvalid
+	}
+
+	if normalizedType == "" {
+		input.Type = expectedType
+		return nil
+	}
+
+	if normalizedType != expectedType {
+		return ErrOrganizationHierarchyInvalid
+	}
+
+	return nil
 }
 
 func (s *OrganizationService) DeleteOrganization(id string) error {

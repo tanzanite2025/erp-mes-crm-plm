@@ -44,6 +44,7 @@ func SetupRoutes(r *gin.Engine) {
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
+		authorized.GET("/audit/engine/stats", handlers.GetAuditEngineStatsHandler)
 		authorized.POST("/assets/upload", handlers.UploadAssetHandler)
 		authorized.POST("/ai/proxy", middleware.AIPolicyGuard(), middleware.AIProxyIngressGuard(), handlers.AiProxyHandler)
 
@@ -52,6 +53,7 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			materialGroup.GET("", handlers.GetMaterialsHandler)
 			materialGroup.POST("", adminOnly, handlers.SaveMaterialHandler)
+			materialGroup.PATCH("/:id", adminOnly, handlers.PatchMaterialHandler)
 			materialGroup.DELETE("/:id", adminOnly, handlers.DeleteMaterialHandler)
 			materialGroup.POST("/sync", adminOnly, handlers.BulkSyncMaterialsHandler)
 		}

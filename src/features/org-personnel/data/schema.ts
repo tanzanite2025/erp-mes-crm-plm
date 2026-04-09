@@ -22,6 +22,10 @@ export const employeeSchema = z.object({
     deptName: z.string().optional(),
     lineName: z.string().optional(),
     processName: z.string().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    createdBy: z.string().optional(),
+    updatedBy: z.string().optional(),
     version: z.number().default(1),
 })
 

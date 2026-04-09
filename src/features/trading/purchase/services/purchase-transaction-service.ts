@@ -1,7 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
 
+export const PURCHASE_TRANSACTION_INTENT_ORDER_SAVE = 'ORDER_SAVE'
 export const PURCHASE_TRANSACTION_INTENT_DELIVERY_DATE_CHANGE = 'ORDER_DELIVERY_DATE_CHANGE'
 export const PURCHASE_TRANSACTION_INTENT_SUPPLIER_CHANGE = 'ORDER_SUPPLIER_CHANGE'
 export const PURCHASE_TRANSACTION_INTENT_ORDER_LINE_ADD = 'ORDER_LINE_ADD'
@@ -41,6 +43,12 @@ export interface PurchaseOrderLineRemovePayload {
   operator: string
 }
 
+export interface PurchaseOrderSavePayload {
+  delta: DeltaSet
+  finalData: PurchaseOrder
+  operator: string
+}
+
 export const executePurchaseOrderTransaction = async <TPayload>(
   orderId: string,
   request: PurchaseOrderTransactionRequest<TPayload>
@@ -70,6 +78,28 @@ export const changePurchaseOrderExpectedDate = async (
     expectedVersion: params.expectedVersion,
     payload: {
       expectedDate: params.expectedDate,
+      operator: params.operator,
+    },
+  })
+}
+
+export const savePurchaseOrder = async (
+  orderId: string,
+  params: {
+    delta: DeltaSet
+    finalData: PurchaseOrder
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<PurchaseOrder> => {
+  return executePurchaseOrderTransaction<PurchaseOrderSavePayload>(orderId, {
+    intent: PURCHASE_TRANSACTION_INTENT_ORDER_SAVE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      delta: params.delta,
+      finalData: params.finalData,
       operator: params.operator,
     },
   })

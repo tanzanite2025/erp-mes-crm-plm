@@ -1,10 +1,32 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
 export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'SUPPLIER_IDENTITY_CHANGE'
+export const SUPPLIER_TRANSACTION_INTENT_SAVE = 'SUPPLIER_SAVE'
+
+export interface SupplierListStats {
+  total: number
+  active: number
+  pendingReview: number
+}
+
+export interface SupplierListResponse {
+  items: Supplier[]
+  total: number
+  page: number
+  pageSize: number
+  metadata?: {
+    pagination?: {
+      total?: number
+      page?: number
+      pageSize?: number
+    }
+    stats?: Partial<SupplierListStats>
+  }
+}
 
 export interface SupplierTransactionRequest<TPayload> {
   intent: string
@@ -24,18 +46,32 @@ export interface SupplierIdentityChangePayload {
   operator: string
 }
 
-type SupplierListMeta = {
-  total?: number
-  page?: number
-  pageSize?: number
+export interface SupplierSavePayload {
+  delta: DeltaSet
+  finalData: Supplier
+  operator: string
 }
 
 export const getSuppliers = async (): Promise<Supplier[]> => {
-  const raw = await apiFetch<Supplier[]>('/suppliers')
+  const raw = await apiFetch<Supplier[]>('/suppliers?options=true')
   const checkedRaw = ensureArrayResponse<Supplier>(raw, 'SupplierService.getSuppliers')
-  const supplierListMeta = raw as Supplier[] & SupplierListMeta
 
-  const result = checkedRaw.map((supplier) => ({
+  return checkedRaw.map((supplier) => ({
+    ...supplier,
+    mainProducts:
+      typeof supplier.mainProducts === 'string'
+        ? JSON.parse(supplier.mainProducts)
+        : (supplier.mainProducts ?? []),
+  }))
+}
+
+export const getSupplierList = async (): Promise<SupplierListResponse> => {
+  const res = await apiFetch<SupplierListResponse>('/suppliers')
+  const objectResponse = ensureObjectResponse<SupplierListResponse & Record<string, unknown>>(
+    res,
+    'SupplierService.getSupplierList'
+  )
+  const items = ensureArrayField<Supplier>(objectResponse, 'items', 'SupplierService.getSupplierList').map((supplier) => ({
     ...supplier,
     mainProducts:
       typeof supplier.mainProducts === 'string'
@@ -43,15 +79,10 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
         : (supplier.mainProducts ?? []),
   }))
 
-  if (supplierListMeta.total !== undefined) {
-    Object.assign(result, {
-      total: supplierListMeta.total,
-      page: supplierListMeta.page,
-      pageSize: supplierListMeta.pageSize,
-    })
+  return {
+    ...objectResponse,
+    items,
   }
-
-  return result
 }
 
 export const executeSupplierTransaction = async <TPayload>(
@@ -122,6 +153,28 @@ export const changeSupplierIdentity = async (
     payload: {
       code: params.code,
       name: params.name,
+      operator: params.operator,
+    },
+  })
+}
+
+export const saveSupplier = async (
+  supplierId: string,
+  params: {
+    delta: DeltaSet
+    finalData: Supplier
+    operator: string
+    actorId?: string
+    expectedVersion: number
+  }
+): Promise<Supplier> => {
+  return executeSupplierTransaction<SupplierSavePayload>(supplierId, {
+    intent: SUPPLIER_TRANSACTION_INTENT_SAVE,
+    actorId: params.actorId,
+    expectedVersion: params.expectedVersion,
+    payload: {
+      delta: params.delta,
+      finalData: params.finalData,
       operator: params.operator,
     },
   })

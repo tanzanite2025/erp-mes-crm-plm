@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
-import { changePurchaseOrderExpectedDate, changePurchaseOrderLineAdd, changePurchaseOrderLineContent, changePurchaseOrderLineRemove, changePurchaseOrderSupplier } from '../services/purchase-transaction-service'
+import { changePurchaseOrderExpectedDate, changePurchaseOrderLineAdd, changePurchaseOrderLineContent, changePurchaseOrderLineRemove, changePurchaseOrderSupplier, savePurchaseOrder } from '../services/purchase-transaction-service'
 import {
   confirmPurchaseReceipt,
   createPurchaseOrder,
@@ -37,6 +37,30 @@ export const usePurchaseOrderMutations = () => {
 
   const createMutation = useMutation({
     mutationFn: (data: Omit<PurchaseOrder, 'id' | 'version'>) => createPurchaseOrder(data),
+    onSuccess: (data) => {
+      toast.success(t('purchase.orders.toasts.saved'))
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+    },
+    onError: handleServerError,
+  })
+
+  const saveMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      delta,
+      finalData,
+      operator,
+      expectedVersion,
+      actorId,
+    }: {
+      orderId: string
+      delta: DeltaSet
+      finalData: PurchaseOrder
+      operator: string
+      expectedVersion: number
+      actorId?: string
+    }) => savePurchaseOrder(orderId, { delta, finalData, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       toast.success(t('purchase.orders.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
@@ -188,5 +212,5 @@ export const usePurchaseOrderMutations = () => {
     onError: handleServerError,
   })
 
-  return { createMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation, supplierChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
+  return { createMutation, saveMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation, supplierChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
 }

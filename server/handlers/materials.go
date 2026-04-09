@@ -104,7 +104,7 @@ func GetMaterialsHandler(c *gin.Context) {
 	}
 
 	response := gin.H{
-		"data":     materials,
+		"data":     mapMaterialResponses(materials),
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
@@ -156,7 +156,7 @@ func SaveMaterialHandler(c *gin.Context) {
 	}
 
 	incrMaterialCacheVersion() // 触发器：使所有查询缓存基于命名空间失效
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapMaterialResponse(input))
 }
 
 // BulkSyncMaterialsHandler 批量同步物料 (数据抢救)

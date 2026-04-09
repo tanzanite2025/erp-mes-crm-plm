@@ -3,6 +3,7 @@ import { History } from 'lucide-react'
 import { auditUtils } from '@/lib/audit-utils'
 import { cn } from '@/lib/utils'
 import { DataTimeline } from '@/features/audit-timeline/components/data-timeline'
+import { type AuditModuleValue } from '@/features/audit-timeline/data/audit-modules'
 
 interface AuditStampProps {
   createdBy?: string
@@ -10,7 +11,7 @@ interface AuditStampProps {
   updatedBy?: string
   updatedAt?: string
   className?: string
-  module?: string
+  module?: AuditModuleValue
   targetId?: string
 }
 

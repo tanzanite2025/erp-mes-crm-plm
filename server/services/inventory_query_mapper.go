@@ -19,7 +19,7 @@ func MapInventoryToResponse(item models.Inventory, materialCategory string) Inve
 		CategoryCode:     item.CategoryCode,
 		BatchNo:          item.BatchNo,
 		UOM:              item.UOM,
-		Version:          1,
+		Version:          optimisticVersionFromTimestamps(item.UpdatedAt, item.CreatedAt),
 	}
 }
 

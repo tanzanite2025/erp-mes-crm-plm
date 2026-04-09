@@ -124,6 +124,19 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_clearing_entries_deleted_at ON clearing_entries(deleted_at)`).Error)
 
 	require.NoError(t, testDB.Exec(`
+		CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)
+	`).Error)
+
+	require.NoError(t, testDB.Exec(`
 		CREATE TABLE materials (
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
 			created_at DATETIME,

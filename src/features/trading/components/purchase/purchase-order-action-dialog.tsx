@@ -67,7 +67,7 @@ export function PurchaseOrderActionDialog({
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit } =
     usePurchaseOrderForm(activeOrder, open)
 
-  const { createMutation, patchMutation, expectedDateChangeMutation, supplierChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation } = usePurchaseOrderMutations()
+  const { createMutation, saveMutation } = usePurchaseOrderMutations()
 
   const handleSave = async () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -82,116 +82,18 @@ export function PurchaseOrderActionDialog({
           return
         }
 
-        const deltaKeys = Object.keys(delta)
-        const isExpectedDateOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'expectedDate')
-        const isSupplierOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'supplierId' || key === 'supplierName')
-        const isLinesOnlyChange = deltaKeys.length > 0 && deltaKeys.every((key) => key === 'lines' || key === 'amount')
-        const hasLineStructureChange = (() => {
-          if (!activeOrder || !isLinesOnlyChange) return false
-          const previousLineNos = (activeOrder.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
-          const nextLineNos = (formData.lines || []).map((line) => line.lineNo).sort((a, b) => a - b)
-          if (previousLineNos.length !== nextLineNos.length) return true
-          return previousLineNos.some((lineNo, index) => lineNo !== nextLineNos[index])
-        })()
-        const isPureLineAdd = (() => {
-          if (!activeOrder || !isLinesOnlyChange || !hasLineStructureChange) return false
-          const previousLines = activeOrder.lines || []
-          const nextLines = formData.lines || []
-          if (nextLines.length <= previousLines.length) return false
-
-          const previousByLineNo = new Map(previousLines.map((line) => [line.lineNo, line]))
-          let addedCount = 0
-
-          for (const line of nextLines) {
-            const previousLine = previousByLineNo.get(line.lineNo)
-            if (!previousLine) {
-              addedCount++
-              continue
-            }
-
-            if (JSON.stringify(previousLine) !== JSON.stringify(line)) {
-              return false
-            }
-          }
-
-          return addedCount > 0
-        })()
-        const isPureLineRemove = (() => {
-          if (!activeOrder || !isLinesOnlyChange || !hasLineStructureChange) return false
-          const previousLines = activeOrder.lines || []
-          const nextLines = formData.lines || []
-          if (nextLines.length >= previousLines.length) return false
-
-          const nextByLineNo = new Map(nextLines.map((line) => [line.lineNo, line]))
-          let removedCount = 0
-
-          for (const line of previousLines) {
-            const nextLine = nextByLineNo.get(line.lineNo)
-            if (!nextLine) {
-              removedCount++
-              continue
-            }
-
-            if (JSON.stringify(nextLine) !== JSON.stringify(line)) {
-              return false
-            }
-          }
-
-          return removedCount > 0
-        })()
-
         if (activeOrder.version === undefined || activeOrder.version === null) {
           throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${activeOrder.id}`)
         }
 
-        if (isExpectedDateOnlyChange) {
-          await expectedDateChangeMutation.mutateAsync({
-            orderId: activeOrder.id,
-            expectedDate: formData.expectedDate || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: activeOrder.version,
-          })
-        } else if (isSupplierOnlyChange) {
-          await supplierChangeMutation.mutateAsync({
-            orderId: activeOrder.id,
-            supplierId: formData.supplierId || '',
-            supplierName: formData.supplierName || '',
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: activeOrder.version,
-          })
-        } else if (isPureLineAdd) {
-          await lineAddMutation.mutateAsync({
-            orderId: activeOrder.id,
-            lines: formData.lines || [],
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: activeOrder.version,
-          })
-        } else if (isPureLineRemove) {
-          await lineRemoveMutation.mutateAsync({
-            orderId: activeOrder.id,
-            lines: formData.lines || [],
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: activeOrder.version,
-          })
-        } else if (isLinesOnlyChange && !hasLineStructureChange) {
-          await lineContentChangeMutation.mutateAsync({
-            orderId: activeOrder.id,
-            lines: formData.lines || [],
-            operator: user?.accountNo || 'Unknown',
-            actorId: user?.id,
-            expectedVersion: activeOrder.version,
-          })
-        } else {
-          await patchMutation.mutateAsync({
-            id: activeOrder.id,
-            delta,
-            version: activeOrder.version,
-          })
-        }
+        await saveMutation.mutateAsync({
+          orderId: activeOrder.id,
+          delta,
+          finalData: formData,
+          operator: user?.accountNo || 'Unknown',
+          actorId: user?.id,
+          expectedVersion: activeOrder.version,
+        })
       } else {
         // 新建采购单
         await createMutation.mutateAsync(formData)

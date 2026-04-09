@@ -30,13 +30,72 @@ type OrgForm = {
 
 type OrgActionDialogProps = {
     currentRow?: OrgNode
-    parentId?: string
+    parentNode?: OrgNode
     open: boolean
     onOpenChange: (open: boolean) => void
     onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }, isPatch?: boolean, delta?: DeltaSet) => void
 }
 
-function getOrgFormDefaults(currentRow?: OrgNode, parentId?: string): OrgForm {
+function inferOrgTypeFromParent(parentNode?: OrgNode): OrgForm['type'] {
+    if (!parentNode) return 'company'
+    if (parentNode.type === 'company') return 'department'
+    return 'team'
+}
+
+function getOrgTypeLabel(type: OrgForm['type'], locale: string) {
+    if (locale !== 'zh-CN') {
+        if (type === 'company') return 'Level 1 / Company or HQ'
+        if (type === 'department') return 'Level 2 / Department'
+        return 'Level 3 / Production Unit'
+    }
+
+    if (type === 'company') return '一级单位 / 分公司 / 总部'
+    if (type === 'department') return '二级部门'
+    return '三级生产单元'
+}
+
+function getOrgTypeHint(
+    isEdit: boolean,
+    currentRow: OrgNode | undefined,
+    parentNode: OrgNode | undefined,
+    locale: string
+) {
+    if (locale !== 'zh-CN') {
+        if (isEdit) {
+            return currentRow?.parentId
+                ? 'This node level is locked and cannot be changed to another hierarchy type directly.'
+                : 'The top-level organization type is locked and cannot be changed directly.'
+        }
+
+        if (!parentNode) {
+            return 'No parent selected. A new level-1 organization will be created.'
+        }
+
+        if (parentNode.type === 'company') {
+            return `The selected parent "${parentNode.name}" is level 1, so the new child will be created as a level-2 department.`
+        }
+
+        return `The selected parent "${parentNode.name}" is level 2, so the new child will be created as a level-3 production unit.`
+    }
+
+    if (isEdit) {
+        return currentRow?.parentId
+            ? '当前节点层级已锁定，不能直接改成其他层级类型。'
+            : '一级单位层级已锁定，不能直接改成其他层级类型。'
+    }
+
+    if (!parentNode) {
+        return '未选择父级节点时，将创建一级单位。'
+    }
+
+    if (parentNode.type === 'company') {
+        return `当前选中的是一级单位“${parentNode.name}”，新建子项会自动识别为二级部门。`
+    }
+
+    return `当前选中的是二级部门“${parentNode.name}”，新建子项会自动识别为三级生产单元。`
+}
+
+function getOrgFormDefaults(currentRow?: OrgNode, parentNode?: OrgNode): OrgForm {
     if (currentRow) {
         return {
             name: currentRow.name,
@@ -50,29 +109,31 @@ function getOrgFormDefaults(currentRow?: OrgNode, parentId?: string): OrgForm {
     return {
         name: '',
         manager: '',
-        type: parentId ? 'department' : 'company',
+        type: inferOrgTypeFromParent(parentNode),
         description: '',
     }
 }
 
 type OrgActionDialogFormProps = {
     currentRow?: OrgNode
-    parentId?: string
+    parentNode?: OrgNode
     isEdit: boolean
     open: boolean
     onSubmit?: (data: Partial<OrgNode> & OrgForm & { id?: string; parentId?: string }, isPatch?: boolean, delta?: DeltaSet) => void
     onOpenChange: (open: boolean) => void
     t: ReturnType<typeof useLanguage>['t']
+    locale: string
 }
 
 function OrgActionDialogForm({
     currentRow,
-    parentId,
+    parentNode,
     isEdit,
     open,
     onSubmit,
     onOpenChange,
     t,
+    locale,
 }: OrgActionDialogFormProps) {
     const formSchema = z.object({
         name: z.string().min(1, t('orgPersonnel.org.dialog.nameRequired')),
@@ -81,8 +142,9 @@ function OrgActionDialogForm({
         description: z.string().optional(),
     })
 
-    const initialValues = useMemo(() => getOrgFormDefaults(currentRow, parentId), [currentRow, parentId])
+    const initialValues = useMemo(() => getOrgFormDefaults(currentRow, parentNode), [currentRow, parentNode])
     const { data: deltaProxy, tracker } = useDeltaTracker(initialValues, open)
+    const typeHint = getOrgTypeHint(isEdit, currentRow, parentNode, locale)
 
     const form = useForm<OrgForm>({
         resolver: zodResolver(formSchema),
@@ -90,7 +152,6 @@ function OrgActionDialogForm({
     })
 
     function handleFormSubmit(values: OrgForm) {
-        // SDRTS: 同步 RHF 数据到 Proxy 用于增量追踪
         Object.assign(deltaProxy, values)
         const delta = tracker.commit()
         const isDirty = Object.keys(delta).length > 0
@@ -102,15 +163,12 @@ function OrgActionDialogForm({
 
         const nodeData = {
             ...(isEdit && currentRow ? { id: currentRow.id } : {}),
-            parentId: isEdit && currentRow ? currentRow.parentId : parentId,
+            parentId: isEdit && currentRow ? currentRow.parentId : parentNode?.id,
             ...values,
         }
 
-        if (onSubmit) {
-            onSubmit(nodeData, isEdit, isEdit ? delta : undefined)
-        }
-
-        form.reset(getOrgFormDefaults(currentRow, parentId))
+        onSubmit?.(nodeData, isEdit, isEdit ? delta : undefined)
+        form.reset(getOrgFormDefaults(currentRow, parentNode))
         onOpenChange(false)
     }
 
@@ -147,16 +205,19 @@ function OrgActionDialogForm({
                             <FormLabel className='col-span-2 text-end text-[10px] font-black uppercase tracking-widest opacity-60'>{t('orgPersonnel.org.dialog.typeLabel')}</FormLabel>
                             <div className='col-span-4'>
                                 <SelectDropdown
-                                    defaultValue={field.value}
+                                    value={field.value}
                                     onValueChange={field.onChange}
-                                    placeholder={t('orgPersonnel.org.dialog.typePlaceholder')}
+                                    placeholder={locale === 'zh-CN' ? '自动识别层级类型' : 'Auto-detected hierarchy type'}
                                     items={[
-                                        { label: t('orgPersonnel.org.dialog.types.company'), value: 'company' },
-                                        { label: t('orgPersonnel.org.dialog.types.department'), value: 'department' },
-                                        { label: t('orgPersonnel.org.dialog.types.team'), value: 'team' },
+                                        { label: getOrgTypeLabel(field.value, locale), value: field.value },
                                     ]}
+                                    disabled
+                                    isControlled
                                 />
                             </div>
+                            <p className='col-span-4 col-start-3 text-[10px] leading-relaxed text-muted-foreground'>
+                                {typeHint}
+                            </p>
                             <FormMessage className='col-span-4 col-start-3 text-[10px] font-bold' />
                         </FormItem>
                     )}
@@ -202,14 +263,14 @@ function OrgActionDialogForm({
 
 export function OrgActionDialog({
     currentRow,
-    parentId,
+    parentNode,
     open,
     onOpenChange,
     onSubmit,
 }: OrgActionDialogProps) {
-    const { t } = useLanguage()
+    const { locale, t } = useLanguage()
     const isEdit = !!currentRow
-    const formKey = `${currentRow?.id ?? 'create'}:${parentId ?? 'root'}`
+    const formKey = `${currentRow?.id ?? 'create'}:${parentNode?.id ?? 'root'}`
     const shellClasses = buildActionDialogShellClasses({
         content: 'sm:max-w-lg',
         header: 'text-start',
@@ -239,12 +300,13 @@ export function OrgActionDialog({
                 <OrgActionDialogForm
                     key={formKey}
                     currentRow={currentRow}
-                    parentId={parentId}
+                    parentNode={parentNode}
                     isEdit={isEdit}
                     open={open}
                     onSubmit={onSubmit}
                     onOpenChange={onOpenChange}
                     t={t}
+                    locale={locale}
                 />
             ) : null}
         </ActionDialogShell>

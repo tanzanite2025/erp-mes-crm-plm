@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -18,6 +19,10 @@ func PatchInventoryHandler(c *gin.Context) {
 	var req services.PatchInventoryHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory patch payload: "+err.Error())
+		return
+	}
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "materialSpec", "quantity", "totalValue", "averageUnitCost", "categoryCode", "batchNo", "uom"); err != nil {
+		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory delta: "+err.Error())
 		return
 	}
 
@@ -108,24 +113,22 @@ func PatchInventoryHandler(c *gin.Context) {
 		}
 	}
 
-	services.ApplyPatchInventoryRequestToModel(&inventory, patch)
-	if err := db.DB.Model(&inventory).Updates(map[string]any{
-		"material_id":       inventory.MaterialID,
-		"material_name":     inventory.MaterialName,
-		"material_code":     inventory.MaterialCode,
-		"material_spec":     inventory.MaterialSpec,
-		"quantity":          inventory.Quantity,
-		"total_value":       inventory.TotalValue,
-		"average_unit_cost": inventory.AverageUnitCost,
-		"category_code":     inventory.CategoryCode,
-		"batch_no":          inventory.BatchNo,
-		"uom":               inventory.UOM,
-	}).Error; err != nil {
+	deltaKeys := make([]string, 0, len(req.Delta))
+	for key := range req.Delta {
+		deltaKeys = append(deltaKeys, key)
+	}
+
+	updated, err := services.PatchInventoryRecord(id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
+	if err != nil {
+		if errors.Is(err, services.ErrInventoryPatchVersionConflict) {
+			respondVersionConflict(c)
+			return
+		}
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_PATCH_FAILED", "[SERVER] failed to patch inventory: "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, inventory)
+	c.JSON(http.StatusOK, services.MapInventoryToResponse(updated, ""))
 }
 
 // PatchShipmentHandler updates a DRAFT shipment record via SDRTS delta payload.
@@ -134,6 +137,10 @@ func PatchShipmentHandler(c *gin.Context) {
 	var req services.PatchInventoryHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_SHIPMENT_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid shipment patch payload: "+err.Error())
+		return
+	}
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "salesOrderId", "salesOrderLineId", "quantity", "sourceCategory", "batchNo", "orderNo", "shipmentDate", "operator", "remarks"); err != nil {
+		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_SHIPMENT_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid shipment delta: "+err.Error())
 		return
 	}
 
@@ -242,26 +249,25 @@ func PatchShipmentHandler(c *gin.Context) {
 		}
 	}
 
-	services.ApplyPatchShipmentRequestToModel(&shipment, patch)
-	if err := db.DB.Model(&shipment).Updates(map[string]any{
-		"material_id":         shipment.MaterialID,
-		"material_name":       shipment.MaterialName,
-		"material_code":       shipment.MaterialCode,
-		"sales_order_id":      shipment.SalesOrderID,
-		"sales_order_line_id": shipment.SalesOrderLineID,
-		"quantity":            shipment.Quantity,
-		"source_category":     shipment.SourceCategory,
-		"batch_no":            shipment.BatchNo,
-		"order_no":            shipment.OrderNo,
-		"shipment_date":       shipment.ShipmentDate,
-		"operator":            shipment.Operator,
-		"remarks":             shipment.Remarks,
-	}).Error; err != nil {
-		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_SHIPMENT_PATCH_FAILED", "[SERVER] failed to patch shipment: "+err.Error())
+	deltaKeys := make([]string, 0, len(req.Delta))
+	for key := range req.Delta {
+		deltaKeys = append(deltaKeys, key)
+	}
+
+	updated, err := services.PatchShipmentDraftRecord(id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrShipmentPatchVersionConflict):
+			respondVersionConflict(c)
+		case errors.Is(err, services.ErrShipmentNotDraft):
+			respondInventoryError(c, http.StatusBadRequest, "INVENTORY_SHIPMENT_NOT_DRAFT", "only DRAFT shipment can be patched")
+		default:
+			respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_SHIPMENT_PATCH_FAILED", "[SERVER] failed to patch shipment: "+err.Error())
+		}
 		return
 	}
 
-	c.JSON(http.StatusOK, services.MapShipmentRecordToResponse(shipment))
+	c.JSON(http.StatusOK, services.MapShipmentRecordToResponse(updated))
 }
 
 // RecordInboundHandler records inbound flow and updates inventory atomically.
