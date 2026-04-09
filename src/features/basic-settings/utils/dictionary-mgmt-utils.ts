@@ -37,6 +37,8 @@ export function createDraftEntry(activeGroupId: string): DictionaryEntry {
         label: '',
         active: true,
         sortOrder: 1,
-        groupId: activeGroupId
-    } as DictionaryEntry
+        groupId: activeGroupId,
+        options: [],
+        isSystem: false
+    }
 }

@@ -1,4 +1,29 @@
 - [ ] 510. 冻结本轮范围，修复图片上传在 pHash 阶段的运行时解码失败（2026-04-08，待确认）
+- [ ] 601. 冻结本轮范围，规划 `org-personnel` 整域 DTO 闭环（2026-04-09，待批准）
+  - [ ] 本轮从 `org-personnel` 开始，但在你批准前仅更新 `task.md` 与 `implementation_plan.md`，不直接修改业务代码。
+  - [ ] 本轮目标是把 `org-personnel` 从“save / bulk sync 已 DTO 化、list / tree / patch 与前端仍半接入”推进到可执行的整域闭环计划。
+  - [ ] 本轮规划必须同时覆盖后端五层链路与前端 contract / adapter 收口，不允许只做 handler 或 service 单点补丁。
+
+- [ ] 602. 拆解 `org-personnel` 后端闭环范围
+  - [ ] 收口 `ListOrganizationTree`，不再公开返回 `[]*models.Organization`。
+  - [ ] 收口 `ListEmployees`，不再公开返回 `[]models.Employee`。
+  - [ ] 复核 `PatchOrganization` / `PatchEmployee` 出入参，补齐 patch 链 DTO 边界。
+  - [ ] 明确 handler -> service DTO -> mapper -> model -> response DTO 的完整链路，并列出涉及文件。
+
+- [ ] 603. 拆解 `org-personnel` 前端闭环范围
+  - [ ] 为 `org-personnel` 定义独立 API DTO、页面 contract 与 adapter / gateway 边界。
+  - [ ] 替换 `employee-core-service.ts` 当前 `apiFetch<Employee[]>` / `apiFetch<Employee>` 的类型化直连方式。
+  - [ ] 视组织树消费面需要，补齐 organization tree 的前端 contract 映射，避免页面继续依赖后端实体形态。
+
+- [ ] 604. 明确 `org-personnel` 本轮风险与验证口径
+  - [ ] 风险包括：组织树递归结构映射、employee 列表字段兼容、patch 语义与现有页面依赖的回归风险。
+  - [ ] 验证至少覆盖：`go test ./services -run "Organization|Employee" -count=1`，以及前端相关模块的类型检查 / 单测或最小编译验证。
+  - [ ] 完成后需更新 `walkthrough.md`，记录闭环范围、映射策略与验证结果。
+
+- [ ] 605. 等待你批准 `org-personnel` 整域闭环计划
+  - [ ] 批准前不修改 `server/services/organization_service.go`、`server/handlers/*org*`、`src/features/org-personnel/**` 等业务代码。
+  - [ ] 只有在你确认规划后，才进入实际 DTO 收口执行。
+
 - [ ] 595. 清理 sales_orders PATCH 硬切后的残留引用（2026-04-09，待确认）
   - [ ] 范围限定为 `server/handlers/sales_orders.go` 及其直接受影响的最小调用面。
   - [ ] 目标是移除对已删除 `PatchSalesOrderRequest` / `MapPatchSalesOrderRequestToModel` 的残留引用，恢复 `handlers` 包编译。

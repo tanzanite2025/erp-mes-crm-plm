@@ -331,7 +331,113 @@ DTO 的目标是建立边界、裁剪契约、隔离内部模型，而不是单�
 3. `org-personnel` 主链形成 service DTO + handler DTO 的双层边界。
 4. `walkthrough.md` 明确记录 service DTO 收口方案与验证口径。
 
-## 19. sales_orders PATCH 残留清理（待确认）
+## 19. `org-personnel` 整域 DTO 闭环实施计划（待确认）
+
+日期：2026-04-09  
+状态：待批准
+
+### 1. 目标
+
+本轮不再把 `org-personnel` 当作单个 handler / service 文件修补，而是按整域闭环推进，目标是一次性回答并落地以下问题：
+
+1. 后端 `list / tree / save / patch / bulk sync` 是否全部通过独立 DTO 边界暴露。
+2. `organization_service` 是否彻底停止以 `models.Organization` / `models.Employee` 作为公开 service 契约。
+3. 前端 `org-personnel` 页面与 service 是否停止直接消费实体 shape，改为 `API DTO -> contract -> adapter/gateway` 的显式转换链。
+4. `org-personnel` 是否可以成为下一轮可复制到 `partner`、`users`、`trading` 的整域闭环样板。
+
+### 2. 当前已确认断点
+
+#### 2.1 后端断点
+
+当前已确认：
+
+1. `SaveOrganization` / `SaveEmployee` / `BulkSyncOrganizations` / `BulkSyncEmployees` 已完成 service DTO 化。
+2. 但 `ListOrganizationTree() ([]*models.Organization, error)` 仍直接公开组织实体树。
+3. `ListEmployees() ([]models.Employee, error)` 仍直接公开员工实体集合。
+4. `PatchOrganization` / `PatchEmployee` 当前仍需复核其出入参边界，避免 patch 链继续把 model 作为公开契约。
+
+#### 2.2 前端断点
+
+当前已确认：
+
+1. `src/features/org-personnel/services/employee-core-service.ts` 仍直接 `apiFetch<Employee[]>('/employees')` 与 `apiFetch<Employee>(...)`。
+2. `org-personnel` 尚未像 `wheel-trace` 一样形成独立的 `contracts + adapters + gateway` 样板。
+3. 这意味着即使后端 save 链已收口，前端仍可能继续锁死在后端实体字段形态上。
+
+### 3. 本轮闭环范围
+
+#### 3.1 后端范围
+
+计划覆盖：
+
+1. `server/services/organization_service.go`
+2. `server/services/org_personnel_dto.go`
+3. `server/services/org_personnel_patch_service.go`
+4. `server/handlers/org_handlers.go`
+5. `server/handlers/employee_handlers.go`
+6. `server/handlers/org_personnel_dto.go`
+7. 与上述链路直接相关的 mapper / response helper 最小调用面
+
+后端目标：
+
+1. 新增或补齐 organization tree / employee list / patch 的 service response DTO。
+2. 让 `organization_service` 的公开 list / tree / patch 签名不再暴露 `models.*`。
+3. 让 handlers 统一绑定 handler DTO，并仅通过 service DTO 与服务层交互。
+4. 保持 repository / DB 层继续以 model 作为内部持久化事实源，但不再向上游泄漏。
+
+#### 3.2 前端范围
+
+计划覆盖：
+
+1. `src/features/org-personnel/services/employee-core-service.ts`
+2. `src/features/org-personnel/services/org-service.ts`
+3. `src/features/org-personnel/data/*`
+4. `src/features/org-personnel` 下新增的 `contracts` / `adapters` / `gateway` 最小文件集合
+5. 与组织树、员工列表直接相关的调用面
+
+前端目标：
+
+1. 定义 `org-personnel` 的 API DTO，而不是继续直接复用页面 schema。
+2. 定义页面 / 领域 contract，隔离后端字段演进对页面的直接冲击。
+3. 通过 adapter / gateway 将 `apiFetch` 返回值转换为 contract，再由页面消费。
+4. 以 `wheel-trace` 为参考样板，但只复制必要结构，不扩大范围。
+
+### 4. 设计原则
+
+1. 不把 DTO 命名包装成“伪 DTO”；必须存在显式 mapper / adapter 才算真正闭环。
+2. 不在 service 边界继续暴露 `models.Organization` / `models.Employee`。
+3. 不让前端页面直接依赖后端实体 shape，即使 TypeScript 类型名不同也不算完成。
+4. 不扩大到 `leave-service`、`piecework` 等不属于本轮主链的邻接模块，除非编译面强依赖。
+
+### 5. 潜在风险
+
+1. 组织树存在递归 children 结构，映射时要避免遗漏层级字段或引入空 children 兼容问题。
+2. 员工列表当前可能被多个页面直接复用，若 DTO / contract 字段裁剪不当，容易造成前端隐式回归。
+3. patch 链路如果同时涉及 delta metadata 与响应模型切换，需要重点核对乐观锁与错误码兼容。
+4. 前端若存在表格列或筛选逻辑直接依赖 `Employee` / `Organization` schema，需要同步检查消费面。
+
+### 6. 验证策略
+
+后端至少执行：
+
+1. `go test ./services -run "Organization|Employee" -count=1`
+2. 若 handlers 编译面允许，再补 `go test ./handlers -run "Org|Employee" -count=1` 或最小编译验证
+
+前端至少执行：
+
+1. `tsc --noEmit` 或项目既有等价类型检查命令
+2. 若 `org-personnel` 存在相关测试，则执行最小相关测试集
+
+### 7. 本轮完成标准
+
+满足以下条件才算 `org-personnel` 整域闭环完成：
+
+1. 后端 `list / tree / save / patch / bulk sync` 主链全部通过 DTO 边界暴露。
+2. `organization_service` 不再公开返回 `models.Organization` / `models.Employee`。
+3. 前端 `org-personnel` 不再以 `apiFetch<Employee>` / `apiFetch<Organization>` 直接消费实体结构。
+4. `walkthrough.md` 完整记录变更范围、映射策略与验证结果。
+
+## 20. sales_orders PATCH 残留清理（待确认）
 
 该轮不是新的 DTO 扩面，而是为销售单 hard-cut 做最小残留清理，范围限定为：
 

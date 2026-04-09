@@ -60,7 +60,8 @@ export function DictionarySubEditor({ groupId, title, description }: DictionaryS
             options: [],
             sortOrder: 0,
             active: true,
-        } as DictionaryEntry)
+            isSystem: false,
+        })
         setIsEntryDialogOpen(true)
     }
 
