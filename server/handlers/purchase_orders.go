@@ -5,9 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"xdfc-server/db"
 	"xdfc-server/middleware"
-	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -25,37 +23,28 @@ func GetPurchaseOrdersHandler(c *gin.Context) {
 		pageSize = 50
 	}
 
-	var orders []models.PurchaseOrder
-	var total int64
-
-	db.DB.Model(&models.PurchaseOrder{}).Where("is_deleted = ?", false).Count(&total)
-
-	if err := db.DB.Where("is_deleted = ?", false).
-		Order("updated_at desc").
-		Limit(pageSize).
-		Offset((page - 1) * pageSize).
-		Find(&orders).Error; err != nil {
+	response, err := services.ListPurchaseOrders(services.PurchaseOrderListQuery{
+		Page:     page,
+		PageSize: pageSize,
+		Deleted:  false,
+	})
+	if err != nil {
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, services.PurchaseOrderListResponse{
-		Items:    services.MapPurchaseOrdersToListItems(orders),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	})
+	c.JSON(http.StatusOK, response)
 }
 
 // GetPurchaseOrderHandler 获取单个采购订单
 func GetPurchaseOrderHandler(c *gin.Context) {
 	id := c.Param("id")
-	var order models.PurchaseOrder
-	if err := db.DB.Preload("Lines").First(&order, "id = ?", id).Error; err != nil {
+	response, err := services.GetPurchaseOrderByID(id)
+	if err != nil {
 		respondPurchaseOrderError(c, http.StatusNotFound, "采购订单不存在")
 		return
 	}
-	c.JSON(http.StatusOK, services.MapPurchaseOrderToResponse(order))
+	c.JSON(http.StatusOK, response)
 }
 
 // SavePurchaseOrderHandler 保存/更新采购订单
@@ -161,7 +150,7 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 // DeletePurchaseOrderHandler 删除采购订单 (逻辑删除)
 func DeletePurchaseOrderHandler(c *gin.Context) {
 	id := c.Param("id")
-	if err := db.DB.Model(&models.PurchaseOrder{}).Where("id = ?", id).Update("is_deleted", true).Error; err != nil {
+	if err := services.DeletePurchaseOrder(id); err != nil {
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -179,25 +168,15 @@ func GetDeletedPurchaseOrdersHandler(c *gin.Context) {
 		pageSize = 50
 	}
 
-	var orders []models.PurchaseOrder
-	var total int64
-
-	// 仅查询已标记为删除的订单
-	db.DB.Model(&models.PurchaseOrder{}).Where("is_deleted = ?", true).Count(&total)
-
-	if err := db.DB.Preload("Lines").Where("is_deleted = ?", true).
-		Order("updated_at desc").
-		Limit(pageSize).
-		Offset((page - 1) * pageSize).
-		Find(&orders).Error; err != nil {
+	response, err := services.ListPurchaseOrders(services.PurchaseOrderListQuery{
+		Page:     page,
+		PageSize: pageSize,
+		Deleted:  true,
+	})
+	if err != nil {
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, services.PurchaseOrderListResponse{
-		Items:    services.MapPurchaseOrdersToListItems(orders),
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	})
+	c.JSON(http.StatusOK, response)
 }

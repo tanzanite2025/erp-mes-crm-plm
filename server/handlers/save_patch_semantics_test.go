@@ -8,6 +8,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -145,7 +146,7 @@ func TestSaveSalesOrderForBulkSyncPreservesRequirementsAndWorkflowInstanceOnSpar
 
 	testDB := db.DB
 
-	err := saveSalesOrderForBulkSync(testDB, &models.SalesOrder{
+	err := services.SaveSalesOrderForBulkSync(testDB, &models.SalesOrder{
 		ID:           orderID,
 		OrderNo:      "SO-001",
 		OrderName:    "Updated",

@@ -1,0 +1,570 @@
+package services
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+	"xdfc-server/db"
+	"xdfc-server/models"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+var (
+	ErrMaterialVersionConflict = errors.New("material version conflict")
+	ErrMaterialInInventory     = errors.New("material still has inventory quantity")
+	ErrMaterialLinkedSales     = errors.New("material linked by sales order line")
+	ErrMaterialLinkedBOM       = errors.New("material linked by bom")
+	ErrMaterialLinkedPurchase  = errors.New("material linked by purchase order line")
+
+	ErrStocktakeTaskNotFound          = errors.New("stocktake task not found")
+	ErrStocktakeTaskStatusUnsupported = errors.New("stocktake task status is unsupported")
+	ErrPDAScanInvalidPayload          = errors.New("invalid pda scan payload")
+	ErrPDAScanTaskStatusConflict      = errors.New("stocktake task status conflict")
+	ErrPDAScanUnknownMaterial         = errors.New("unknown material code")
+
+	ErrAdjustmentPendingExists       = errors.New("pending adjustment already exists")
+	ErrAdjustmentApprovalConfigMiss  = errors.New("approval config missing for adjustment")
+	ErrAdjustmentNotFound            = errors.New("inventory adjustment not found")
+	ErrAdjustmentAlreadyExecuted     = errors.New("inventory adjustment already executed")
+	ErrAdjustmentTaskInvalidStatus   = errors.New("adjustment task status is unsupported")
+)
+
+type MaterialListQuery struct {
+	Category string
+	Search   string
+	Page     int
+	PageSize int
+}
+
+type MaterialOptionItem struct {
+	ID       string `json:"id"`
+	Code     string `json:"code"`
+	Name     string `json:"name"`
+	Spec     string `json:"spec"`
+	UOM      string `json:"uom"`
+	Category string `json:"category"`
+	Status   string `json:"status"`
+}
+
+type SaveMaterialInput models.Material
+type BulkSyncMaterialInput models.Material
+
+type BulkSyncMaterialsRequest struct {
+	Materials     []BulkSyncMaterialInput `json:"materials"`
+	GlobalVersion int                     `json:"globalVersion"`
+}
+
+type CreateStocktakeTaskInput struct {
+	Title                 string `json:"title" binding:"required"`
+	WarehouseCategoryCode string `json:"warehouseCategoryCode" binding:"required"`
+	Remarks               string `json:"remarks"`
+}
+
+type PDAScanSubmitRequest struct {
+	TaskID       string  `json:"taskId" binding:"required"`
+	MaterialCode string  `json:"materialCode" binding:"required"`
+	BatchNo      string  `json:"batchNo"`
+	ScannedQty   float64 `json:"scannedQty"`
+	ScannerID    string  `json:"scannerId"`
+}
+
+type PDASyncScanRequest struct {
+	TaskID       string    `json:"taskId"`
+	MaterialCode string    `json:"materialCode"`
+	BatchNo      string    `json:"batchNo"`
+	ScannedQty   float64   `json:"scannedQty"`
+	ScanTime     time.Time `json:"scanTime"`
+}
+
+type PDASyncFailure struct {
+	Index        int     `json:"index"`
+	TaskID       string  `json:"taskId"`
+	MaterialCode string  `json:"materialCode"`
+	BatchNo      string  `json:"batchNo"`
+	ScannedQty   float64 `json:"scannedQty"`
+	Error        string  `json:"error"`
+}
+
+type PDASyncResult struct {
+	Count        int              `json:"count"`
+	SuccessCount int              `json:"successCount"`
+	FailedCount  int              `json:"failedCount"`
+	Failures     []PDASyncFailure `json:"failures"`
+	Message      string           `json:"message"`
+}
+
+type PDAScanPayload struct {
+	TaskID       string
+	MaterialCode string
+	BatchNo      string
+	ScannedQty   float64
+	ScanTime     *time.Time
+}
+
+func buildMaterialBaseQuery(category string, search string) *gorm.DB {
+	query := db.DB.Model(&models.Material{})
+	if category != "" && category != "ALL" {
+		query = query.Where("category = ?", category)
+	}
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where("name ILIKE ? OR code ILIKE ?", searchPattern, searchPattern)
+	}
+	return query
+}
+
+func ListMaterialOptions(category string, search string) ([]MaterialOptionItem, error) {
+	query := buildMaterialBaseQuery(strings.TrimSpace(category), strings.TrimSpace(search))
+	var options []MaterialOptionItem
+	if err := query.Order("code asc").Select("id, code, name, spec, uom, category, status").Find(&options).Error; err != nil {
+		return nil, err
+	}
+	return options, nil
+}
+
+func ListMaterials(query MaterialListQuery) ([]models.Material, int64, error) {
+	page := query.Page
+	pageSize := query.PageSize
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+
+	tx := buildMaterialBaseQuery(strings.TrimSpace(query.Category), strings.TrimSpace(query.Search))
+	var total int64
+	if err := tx.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var materials []models.Material
+	if err := tx.Order("code asc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&materials).Error; err != nil {
+		return nil, 0, err
+	}
+	return materials, total, nil
+}
+
+func SaveMaterial(input SaveMaterialInput) (models.Material, error) {
+	modelInput := models.Material(input)
+	var saved models.Material
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if modelInput.ID != "" {
+			var existing models.Material
+			if err := tx.Where("id = ?", modelInput.ID).First(&existing).Error; err == nil {
+				modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
+				if modelInput.Version != existing.Version {
+					return ErrMaterialVersionConflict
+				}
+				modelInput.Version = existing.Version + 1
+				if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
+					return err
+				}
+				return tx.Where("id = ?", existing.ID).First(&saved).Error
+			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+
+		modelInput.MasterDataControl.Normalize("R1")
+		modelInput.Version = 1
+		if err := tx.Create(&modelInput).Error; err != nil {
+			return err
+		}
+		saved = modelInput
+		return nil
+	})
+	if err != nil {
+		return models.Material{}, err
+	}
+	return saved, nil
+}
+
+func BulkSyncMaterials(input BulkSyncMaterialsRequest) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		for _, in := range input.Materials {
+			material := models.Material(in)
+			material.MasterDataControl.Normalize("R1")
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "code"}},
+				UpdateAll: true,
+			}).Create(&material).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func DeleteMaterial(id string) error {
+	var invCount int64
+	if err := db.DB.Model(&models.Inventory{}).Where("material_id = ? AND quantity > 0", id).Count(&invCount).Error; err != nil {
+		return err
+	}
+	if invCount > 0 {
+		return ErrMaterialInInventory
+	}
+
+	var salesCount int64
+	if err := db.DB.Model(&models.SalesOrderLine{}).Where("product_id = ?", id).Count(&salesCount).Error; err != nil {
+		return err
+	}
+	if salesCount > 0 {
+		return ErrMaterialLinkedSales
+	}
+
+	var bomCount int64
+	if err := db.DB.Model(&models.BOMItem{}).Where("material_id = ?", id).Count(&bomCount).Error; err != nil {
+		return err
+	}
+	if bomCount > 0 {
+		return ErrMaterialLinkedBOM
+	}
+
+	var purchaseCount int64
+	if err := db.DB.Model(&models.PurchaseOrderLine{}).Where("material_id = ?", id).Count(&purchaseCount).Error; err != nil {
+		return err
+	}
+	if purchaseCount > 0 {
+		return ErrMaterialLinkedPurchase
+	}
+
+	return db.DB.Delete(&models.Material{}, "id = ?", id).Error
+}
+
+func ListStocktakeTasks() ([]models.StocktakeTask, error) {
+	var tasks []models.StocktakeTask
+	if err := db.DB.Order("created_at desc").Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func CreateStocktakeTask(input CreateStocktakeTaskInput, username string) error {
+	now := time.Now()
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		task := models.StocktakeTask{
+			Title:                 input.Title,
+			WarehouseCategoryCode: input.WarehouseCategoryCode,
+			Status:                "IN_PROGRESS",
+			CreatedBy:             username,
+			StartTime:             &now,
+			Remarks:               input.Remarks,
+		}
+		if err := tx.Create(&task).Error; err != nil {
+			return err
+		}
+
+		var inventory []models.Inventory
+		if err := tx.Where("category_code = ?", input.WarehouseCategoryCode).Find(&inventory).Error; err != nil {
+			return err
+		}
+		if len(inventory) == 0 {
+			return errors.New("所选仓库类别下没有可盘点的实物库存")
+		}
+
+		for _, inv := range inventory {
+			item := models.StocktakeItem{
+				TaskID:       task.ID,
+				MaterialID:   inv.MaterialID,
+				MaterialCode: inv.MaterialCode,
+				MaterialName: inv.MaterialName,
+				BatchNo:      inv.BatchNo,
+				TheoryQty:    inv.Quantity,
+				ActualQty:    0,
+				UOM:          inv.UOM,
+			}
+			if err := tx.Create(&item).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func ListStocktakeItems(taskID string) ([]models.StocktakeItem, error) {
+	var items []models.StocktakeItem
+	if err := db.DB.Where("task_id = ?", taskID).Find(&items).Error; err != nil {
+		return nil, err
+	}
+	for i := range items {
+		items[i].Difference = items[i].ActualQty - items[i].TheoryQty
+	}
+	return items, nil
+}
+
+func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {
+	taskID := strings.TrimSpace(scan.TaskID)
+	materialCode := strings.ToUpper(strings.TrimSpace(scan.MaterialCode))
+	batchNo := strings.TrimSpace(scan.BatchNo)
+
+	if taskID == "" || materialCode == "" {
+		return fmt.Errorf("%w: taskId/materialCode is required", ErrPDAScanInvalidPayload)
+	}
+	if scan.ScannedQty <= 0 {
+		return fmt.Errorf("%w: scannedQty must be greater than 0", ErrPDAScanInvalidPayload)
+	}
+
+	scanTime := time.Now()
+	if scan.ScanTime != nil && !scan.ScanTime.IsZero() {
+		scanTime = scan.ScanTime.UTC()
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var task models.StocktakeTask
+		if err := tx.Select("id", "status").Where("id = ?", taskID).First(&task).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("%w: %s", ErrStocktakeTaskNotFound, taskID)
+			}
+			return err
+		}
+		if task.Status != "IN_PROGRESS" {
+			return fmt.Errorf("%w: %s", ErrPDAScanTaskStatusConflict, task.Status)
+		}
+
+		var item models.StocktakeItem
+		err := tx.Where("task_id = ? AND material_code = ? AND batch_no = ?", taskID, materialCode, batchNo).First(&item).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			var material models.Material
+			if err := tx.Where("code = ?", materialCode).First(&material).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("%w: %s", ErrPDAScanUnknownMaterial, materialCode)
+				}
+				return err
+			}
+
+			newItem := models.StocktakeItem{
+				TaskID:       taskID,
+				MaterialID:   material.ID,
+				MaterialCode: material.Code,
+				MaterialName: material.Name,
+				BatchNo:      batchNo,
+				TheoryQty:    0,
+				ActualQty:    scan.ScannedQty,
+				UOM:          material.UOM,
+				ScannerID:    scannerID,
+				ScanTime:     &scanTime,
+			}
+			return tx.Create(&newItem).Error
+		}
+		if err != nil {
+			return err
+		}
+
+		updates := map[string]interface{}{
+			"actual_qty": gorm.Expr("actual_qty + ?", scan.ScannedQty),
+			"scan_time":  scanTime,
+		}
+		if scannerID != "" {
+			updates["scanner_id"] = scannerID
+		}
+		return tx.Model(&models.StocktakeItem{}).Where("id = ?", item.ID).Updates(updates).Error
+	})
+}
+
+func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, error) {
+	if len(scans) == 0 {
+		return PDASyncResult{}, fmt.Errorf("%w: sync list is empty", ErrPDAScanInvalidPayload)
+	}
+
+	result := PDASyncResult{
+		Count:    len(scans),
+		Failures: make([]PDASyncFailure, 0),
+	}
+
+	for idx, scan := range scans {
+		currentScanTime := scan.ScanTime
+		err := SubmitPDAScan(pdaScanPayload{
+			TaskID:       scan.TaskID,
+			MaterialCode: scan.MaterialCode,
+			BatchNo:      scan.BatchNo,
+			ScannedQty:   scan.ScannedQty,
+			ScanTime:     &currentScanTime,
+		}, scannerID)
+
+		if err != nil {
+			result.Failures = append(result.Failures, PDASyncFailure{
+				Index:        idx,
+				TaskID:       scan.TaskID,
+				MaterialCode: scan.MaterialCode,
+				BatchNo:      scan.BatchNo,
+				ScannedQty:   scan.ScannedQty,
+				Error:        err.Error(),
+			})
+			continue
+		}
+		result.SuccessCount++
+	}
+
+	result.FailedCount = len(result.Failures)
+	result.Message = "离线数据同步完成"
+	if result.FailedCount > 0 {
+		result.Message = "离线数据部分同步失败，请修复后重试"
+	}
+	return result, nil
+}
+
+func SubmitPDAScanRequest(input PDAScanSubmitRequest, scannerID string) error {
+	return SubmitPDAScan(PDAScanPayload{
+		TaskID:       scan.TaskID,
+		MaterialCode: input.MaterialCode,
+		BatchNo:      input.BatchNo,
+		ScannedQty:   input.ScannedQty,
+	}, scannerID)
+}
+
+func SubmitAdjustmentApproval(taskID string, username string) error {
+	var task models.StocktakeTask
+	if err := db.DB.First(&task, "id = ?", taskID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrStocktakeTaskNotFound
+		}
+		return err
+	}
+
+	if task.Status != "IN_PROGRESS" && task.Status != "COMPLETED" {
+		return ErrAdjustmentTaskInvalidStatus
+	}
+
+	var existCount int64
+	if err := db.DB.Model(&models.InventoryAdjustment{}).Where("task_id = ? AND status = ?", taskID, "PENDING").Count(&existCount).Error; err != nil {
+		return err
+	}
+	if existCount > 0 {
+		return ErrAdjustmentPendingExists
+	}
+
+	var items []models.StocktakeItem
+	if err := db.DB.Where("task_id = ?", taskID).Find(&items).Error; err != nil {
+		return err
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		adjustment := models.InventoryAdjustment{
+			TaskID:       taskID,
+			AdjustmentNo: GenerateAdjustmentNo(tx),
+			Type:         "STOCKTAKE",
+			Status:       "PENDING",
+			CreatedBy:    username,
+			TotalItems:   len(items),
+			Reason:       fmt.Sprintf("盘点任务 [%s] 的盈亏自动调账申请", task.Title),
+		}
+		if err := tx.Create(&adjustment).Error; err != nil {
+			return err
+		}
+
+		for _, item := range items {
+			diff := item.ActualQty - item.TheoryQty
+			if diff == 0 {
+				continue
+			}
+
+			adjItem := models.InventoryAdjustmentItem{
+				AdjustmentID: adjustment.ID,
+				MaterialID:   item.MaterialID,
+				MaterialCode: item.MaterialCode,
+				MaterialName: item.MaterialName,
+				CategoryCode: task.WarehouseCategoryCode,
+				BatchNo:      item.BatchNo,
+				TheoryQty:    item.TheoryQty,
+				ActualQty:    item.ActualQty,
+				DiffQty:      diff,
+				UOM:          item.UOM,
+			}
+			if err := tx.Create(&adjItem).Error; err != nil {
+				return err
+			}
+		}
+
+		var config models.ApprovalConfig
+		if err := tx.Where("module = ? AND action = ?", "Warehouse", "ADJUST").First(&config).Error; err != nil {
+			return ErrAdjustmentApprovalConfigMiss
+		}
+
+		var user models.User
+		_ = tx.Where("username = ?", username).First(&user).Error
+		approval := models.ApprovalRequest{
+			ConfigID:    config.ID,
+			RequesterID: user.ID,
+			TargetID:    adjustment.ID,
+			Reason:      adjustment.Reason,
+			Module:      "Warehouse",
+			Action:      "ADJUST",
+			Status:      "PENDING",
+		}
+		return tx.Create(&approval).Error
+	})
+}
+
+func GenerateAdjustmentNo(tx *gorm.DB) string {
+	dateStr := time.Now().Format("20060102")
+	var count int64
+	tx.Model(&models.InventoryAdjustment{}).Where("adjustment_no LIKE ?", "ADJUST-"+dateStr+"-%").Count(&count)
+	return fmt.Sprintf("ADJUST-%s-%03d", dateStr, count+1)
+}
+
+func ExecuteAdjustment(id string) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var adj models.InventoryAdjustment
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").First(&adj, "id = ?", id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrAdjustmentNotFound
+			}
+			return err
+		}
+		if adj.Status == "EXECUTED" {
+			return ErrAdjustmentAlreadyExecuted
+		}
+
+		for _, item := range adj.Items {
+			var inv models.Inventory
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("material_id = ? AND category_code = ? AND batch_no = ?", item.MaterialID, item.CategoryCode, item.BatchNo).
+				First(&inv).Error
+
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				inv = models.Inventory{
+					MaterialID:   item.MaterialID,
+					MaterialCode: item.MaterialCode,
+					MaterialName: item.MaterialName,
+					CategoryCode: item.CategoryCode,
+					BatchNo:      item.BatchNo,
+					Quantity:     item.ActualQty,
+				}
+				if err := tx.Create(&inv).Error; err != nil {
+					return err
+				}
+				continue
+			}
+			if err != nil {
+				return err
+			}
+
+			if err := tx.Model(&inv).Update("quantity", item.ActualQty).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Model(&adj).Update("status", "EXECUTED").Error; err != nil {
+			return err
+		}
+		if adj.TaskID != "" {
+			if err := tx.Model(&models.StocktakeTask{}).Where("id = ?", adj.TaskID).Update("status", "ADJUSTED").Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func ListAdjustmentHistory() ([]models.InventoryAdjustment, error) {
+	var adjustments []models.InventoryAdjustment
+	if err := db.DB.Order("created_at desc").Find(&adjustments).Error; err != nil {
+		return nil, err
+	}
+	return adjustments, nil
+}
