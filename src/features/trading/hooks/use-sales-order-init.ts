@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
+import {
+  DEFAULT_SALES_ORDER_CLASSIFICATION,
+  DEFAULT_SALES_ORDER_TYPE,
+  getSalesOrderClassificationExt,
+} from '../data/sales-order-options'
 
 export function useSalesOrderInit(
   initialOrder: SalesOrder | null | undefined,
@@ -17,16 +21,16 @@ export function useSalesOrderInit(
         return
       }
 
-      const defaultClass = 'GENERAL'
-      const classOpt = DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === defaultClass)
-      const initialBarcode = await numberingService.previewContractBarcode(classOpt?.ext || 'GS')
-      const typeOpt = DictionaryCoreService.getOptions('ORDER_TYPE')[0]
+      const defaultClass = DEFAULT_SALES_ORDER_CLASSIFICATION
+      const initialBarcode = await numberingService.previewContractBarcode(
+        getSalesOrderClassificationExt(defaultClass)
+      )
 
       setFormData({
         orderName: '',
         customerName: '',
         customerId: '',
-        type: typeOpt?.value || '',
+        type: DEFAULT_SALES_ORDER_TYPE,
         currency: 'CNY',
         classification: defaultClass,
         orderDate: new Date().toISOString().split('T')[0],

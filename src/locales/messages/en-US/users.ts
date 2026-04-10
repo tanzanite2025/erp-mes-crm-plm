@@ -30,9 +30,28 @@ export const users = {
   actions: {
     addUser: 'Add User NEW_USER',
     addAdmin: 'Create Admin ADD_ROOT',
+    manageRoles: 'Manage Roles',
     invite: 'Invite Selected Users',
     activate: 'Activate Selected Users',
     deactivate: 'Deactivate Selected Users',
+  },
+  roleBindings: {
+    title: 'Role Binding Matrix',
+    subtitle: 'Manage role bindings for {{username}}',
+    loading: 'Loading role bindings...',
+    empty: 'No role bindings found',
+    labels: {
+      primary: 'Primary',
+      secondary: 'Secondary',
+    },
+    actions: {
+      add: 'Add Role Binding',
+      remove: 'Remove',
+      setPrimary: 'Set Primary',
+    },
+    placeholders: {
+      role: 'Select a role to add',
+    },
   },
   status: {
     active: 'Active',
@@ -131,6 +150,9 @@ export const users = {
     deactivateSuccess: '{{count}} users deactivated successfully',
     switchAdminSuccess: 'Root privileges successfully escalated',
     switchAdminFailed: 'Permission switch failed',
+    roleBindingAdded: 'Role binding added',
+    roleBindingRemoved: 'Role binding removed',
+    roleBindingPrimarySet: 'Primary role switched',
     noActionableUsers: 'Selected users are system-protected, action aborted',
     skippedProtected: 'Automatically skipped {{count}} system-protected core accounts',
   },

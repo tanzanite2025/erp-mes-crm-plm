@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 	"xdfc-server/db"
@@ -80,6 +81,21 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 			deleted_at DATETIME
 		);
 		`,
+		`
+		CREATE TABLE user_roles (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			role_id TEXT NOT NULL,
+			is_primary BOOLEAN,
+			start_date DATE,
+			end_date DATE,
+			status TEXT,
+			source TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME
+		);
+		`,
 	}
 	for _, statement := range schema {
 		if err := testDB.Exec(statement).Error; err != nil {
@@ -136,6 +152,30 @@ func seedUser(t *testing.T, testDB *gorm.DB, user models.User) {
 
 	if err := testDB.Create(&user).Error; err != nil {
 		t.Fatalf("seed user %s failed: %v", user.ID, err)
+	}
+}
+
+func seedUserRole(t *testing.T, testDB *gorm.DB, userID string, roleID string, isPrimary bool, status string, updatedAt time.Time) {
+	t.Helper()
+
+	if strings.TrimSpace(status) == "" {
+		status = "active"
+	}
+	userRole := models.UserRole{
+		BaseModel: models.BaseModel{
+			ID:        userID + "-" + roleID + "-binding",
+			CreatedAt: updatedAt.Add(-time.Minute),
+			UpdatedAt: updatedAt,
+		},
+		UserID:    userID,
+		RoleID:    roleID,
+		IsPrimary: isPrimary,
+		StartDate: updatedAt,
+		Status:    status,
+		Source:    "test",
+	}
+	if err := testDB.Create(&userRole).Error; err != nil {
+		t.Fatalf("seed user role %s for %s failed: %v", roleID, userID, err)
 	}
 }
 
@@ -228,5 +268,35 @@ func TestResolveEffectiveAccessProfileForUserReflectsUpdatedDepartmentRolePermis
 	}
 	if !containsAll(updatedProfile.Permissions, "menu_system") {
 		t.Fatalf("expected updated department role permissions, got %#v", updatedProfile.Permissions)
+	}
+}
+
+func TestResolveEffectiveAccessProfileForUserPrimaryRoleComesFromUserRoleBinding(t *testing.T) {
+	testDB := setupEffectiveAccessTestDB(t)
+	seedRole(t, testDB, "legacy_role", `["menu_org"]`, time.Unix(100, 0))
+	seedRole(t, testDB, "ops_manager", `["menu_system"]`, time.Unix(200, 0))
+
+	seedUser(t, testDB, models.User{
+		ID:       "user-primary-role",
+		Username: "primary-role-user",
+		Password: "hashed",
+		Role:     "legacy_role",
+		Status:   "active",
+	})
+	seedUserRole(t, testDB, "user-primary-role", "ops_manager", true, "active", time.Unix(300, 0))
+
+	profile := ResolveEffectiveAccessProfileForUser(models.User{
+		ID:   "user-primary-role",
+		Role: "legacy_role",
+	})
+
+	if profile.PrimaryRoleID != "ops_manager" {
+		t.Fatalf("expected primary role from user_roles binding, got %s", profile.PrimaryRoleID)
+	}
+	if len(profile.EffectiveRoles) == 0 || profile.EffectiveRoles[0] != "ops_manager" {
+		t.Fatalf("expected effective roles to start with binding primary role, got %#v", profile.EffectiveRoles)
+	}
+	if !containsAll(profile.EffectiveRoles, "ops_manager", "legacy_role") {
+		t.Fatalf("expected both binding and legacy roles in effective roles, got %#v", profile.EffectiveRoles)
 	}
 }

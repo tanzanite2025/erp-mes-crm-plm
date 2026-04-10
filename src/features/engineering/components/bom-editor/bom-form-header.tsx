@@ -23,13 +23,12 @@ interface BOMFormHeaderProps {
   form: UseFormReturn<BOM>
   products: Product[]
   changeOrders: ChangeOrder[]
-  dictEntries: unknown[]
   isEdit: boolean
 }
 
 const toDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 
-export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdit }: BOMFormHeaderProps) {
+export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
 
   const changeOrderItems = changeOrders.map((changeOrder) => ({
@@ -54,7 +53,7 @@ export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdi
         type: 'select',
         placeholder: t('engineering.bomArchive.form.productPlaceholder'),
         items: products.map((product) => ({
-          label: formatProductDisplayName(product, dictEntries),
+          label: formatProductDisplayName(product),
           value: product.id,
         })),
       },
@@ -148,21 +147,32 @@ export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdi
     onChange(changeOrderId)
 
     const selected = changeOrders.find((changeOrder) => changeOrder.id === changeOrderId)
-    if (!selected) return
+    if (!selected) {
+      form.setValue('changeOrderNo', '', { shouldDirty: true })
+      return
+    }
 
     if (!form.getValues('productId') && selected.productId) {
       form.setValue('productId', selected.productId, { shouldDirty: true })
     }
 
     form.setValue('changeOrderNo', selected.changeOrderNo || '', { shouldDirty: true })
-    form.setValue('changeType', selected.changeType || 'ECO', { shouldDirty: true })
-    form.setValue('siteCode', selected.siteCode || '', { shouldDirty: true })
-    form.setValue('isDefaultSite', selected.isDefaultSite ?? !selected.siteCode, { shouldDirty: true })
-    form.setValue('revisionNo', selected.revisionNo || form.getValues('revisionNo') || 'R1', {
-      shouldDirty: true,
-    })
-    form.setValue('effectiveFrom', toDateInput(selected.effectiveFrom), { shouldDirty: true })
-    form.setValue('effectiveTo', toDateInput(selected.effectiveTo), { shouldDirty: true })
+    if (selected.changeType) {
+      form.setValue('changeType', selected.changeType, { shouldDirty: true })
+    }
+    if (selected.siteCode !== undefined) {
+      form.setValue('siteCode', selected.siteCode || '', { shouldDirty: true })
+      form.setValue('isDefaultSite', selected.isDefaultSite ?? !selected.siteCode, { shouldDirty: true })
+    }
+    if (selected.revisionNo) {
+      form.setValue('revisionNo', selected.revisionNo, { shouldDirty: true })
+    }
+    if (selected.effectiveFrom) {
+      form.setValue('effectiveFrom', toDateInput(selected.effectiveFrom), { shouldDirty: true })
+    }
+    if (selected.effectiveTo) {
+      form.setValue('effectiveTo', toDateInput(selected.effectiveTo), { shouldDirty: true })
+    }
   }
 
   return (
@@ -198,7 +208,7 @@ export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdi
                       }}
                       items={fieldConfig.items}
                       placeholder={fieldConfig.placeholder}
-                      className='!h-11 w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner'
+                      className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner'
                       disabled={
                         (isEdit && fieldConfig.name === 'productId') ||
                         (fieldConfig.name === 'changeOrderId' && changeOrderItems.length === 0)
@@ -214,7 +224,7 @@ export function BOMFormHeader({ form, products, changeOrders, dictEntries, isEdi
                         readOnly={fieldConfig.readOnly}
                         placeholder={fieldConfig.placeholder}
                         className={cn(
-                          '!h-11 rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
+                          'h-11! rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
                           fieldConfig.className
                         )}
                       />

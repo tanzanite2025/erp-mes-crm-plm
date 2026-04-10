@@ -22,7 +22,7 @@ type Material struct {
 	Description        string          `gorm:"type:text" json:"description"`
 	Images             json.RawMessage `gorm:"type:jsonb" json:"images"`
 	Status             string          `gorm:"size:20;default:'Active'" json:"status"`
-	Version            int             `gorm:"default:1" json:"_v"`
+	Version            int             `gorm:"default:1" json:"version"`
 }
 
 func (Material) TableName() string {

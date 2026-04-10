@@ -8,11 +8,13 @@ type OptionItem = {
 export function resolveCurrentCategoryLabel(
     category: MaterialCategory | undefined,
     options: OptionItem[],
-    categoryLabels: Record<string, string>
+    categoryLabels: Record<string, string>,
+    allLabel: string = 'All Materials',
+    fallbackLabel: string = 'Material'
 ) {
-    if (!category || category === 'all') return '全部物料'
+    if (!category || category === 'all') return allLabel
     const opt = options.find(o => o.value === category)
-    return opt ? opt.label : (categoryLabels[category] || '物料')
+    return opt ? opt.label : (categoryLabels[category] || fallbackLabel)
 }
 
 export function resolveMaterialCategoryLabel(category: string | undefined, options: OptionItem[]) {
@@ -22,3 +24,4 @@ export function resolveMaterialCategoryLabel(category: string | undefined, optio
 export function isConflictImportError(message: string) {
     return message.includes('[CONFLICT]')
 }
+

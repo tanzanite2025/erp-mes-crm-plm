@@ -3,7 +3,6 @@ export const basicSettings = {
     dmNumbering: 'DM号码',
     units: '单位管理',
     sequences: '业务编号',
-    dictionary: '参数字典',
     enterprise: '企业信息',
     security: '安全设置',
   },
@@ -91,25 +90,6 @@ export const basicSettings = {
       conflict: '数据已被更新，请刷新后重试',
       saveFailed: '保存失败：{{message}}',
       unknown: '未知错误',
-    },
-  },
-  dictionaryActions: {
-    prompts: {
-      newGroup: '请输入新字典分组名称（如：包装方式）',
-      deleteGroup: '确定要删除分组“{{name}}”吗？\n删除后该分组下的所有字典项也将同步移除。',
-      renameGroup: '请输入新的分组名称',
-      deleteEntry: '确定要删除该属性定义吗？',
-    },
-    toasts: {
-      groupCreated: '分组“{{name}}”已创建',
-      groupDeleted: '分组“{{name}}”已删除',
-      groupUpdated: '分组名称已更新',
-      entryUpdated: '属性“{{label}}”已更新',
-      entryCreated: '属性“{{label}}”已添加',
-      entryDeleted: '字典项已移除',
-      syncLoading: '正在同步系统内置字典种子并刷新缓存...',
-      syncSuccess: '系统字典同步成功',
-      syncFailed: '同步失败：{{message}}',
     },
   },
   appearanceMapping: {

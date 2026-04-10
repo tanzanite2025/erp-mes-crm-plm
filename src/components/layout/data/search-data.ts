@@ -236,14 +236,6 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'ywbh',
   },
   {
-    id: 'tab-basic-dictionary',
-    href: '/basic-settings/dictionary',
-    titleKey: 'commandMenu.items.dictionary',
-    parentKey: 'commandMenu.parents.basicSettings',
-    keywords: ['dictionary', 'parameter', '参数'],
-    pinyin: 'cszd',
-  },
-  {
     id: 'tab-basic-enterprise',
     href: '/basic-settings/enterprise',
     titleKey: 'commandMenu.items.enterprise',

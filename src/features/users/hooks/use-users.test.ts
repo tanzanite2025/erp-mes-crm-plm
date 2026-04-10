@@ -6,9 +6,10 @@ const { useQueryMock, useMutationMock, useQueryClientMock } = vi.hoisted(() => (
   useQueryClientMock: vi.fn(),
 }))
 
-const { fetchUsersMock, fetchUserOptionsMock } = vi.hoisted(() => ({
+const { fetchUsersMock, fetchUserOptionsMock, fetchUserRoleBindingsMock } = vi.hoisted(() => ({
   fetchUsersMock: vi.fn(),
   fetchUserOptionsMock: vi.fn(),
+  fetchUserRoleBindingsMock: vi.fn(),
 }))
 
 vi.mock('@tanstack/react-query', () => ({
@@ -20,10 +21,14 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('../services/user-api', () => ({
   fetchUsers: fetchUsersMock,
   fetchUserOptions: fetchUserOptionsMock,
+  fetchUserRoleBindings: fetchUserRoleBindingsMock,
   createUser: vi.fn(),
   patchUser: vi.fn(),
   replaceUser: vi.fn(),
   deleteUser: vi.fn(),
+  setUserPrimaryRole: vi.fn(),
+  addUserRoleBinding: vi.fn(),
+  removeUserRoleBinding: vi.fn(),
 }))
 
 vi.mock('@/lib/handle-server-error', () => ({
@@ -34,7 +39,7 @@ vi.mock('@/lib/react-query-mutation', () => ({
   buildMutationOptions: vi.fn(() => ({})),
 }))
 
-import { useUserOptionsQuery, useUsersQuery } from './use-users'
+import { useUserOptionsQuery, useUserRoleBindingsQuery, useUsersQuery } from './use-users'
 
 describe('use-users hooks regression', () => {
   beforeEach(() => {
@@ -43,6 +48,7 @@ describe('use-users hooks regression', () => {
     useQueryClientMock.mockReset()
     fetchUsersMock.mockReset()
     fetchUserOptionsMock.mockReset()
+    fetchUserRoleBindingsMock.mockReset()
     useQueryMock.mockImplementation((options: unknown) => options)
   })
 
@@ -76,5 +82,26 @@ describe('use-users hooks regression', () => {
 
     expect(fetchUserOptionsMock).toHaveBeenCalledWith(params)
     expect(result).toEqual([{ id: 'u-1', username: 'ops-user' }])
+  })
+
+  it('useUserRoleBindingsQuery wires per-user query key and fetchUserRoleBindings queryFn', async () => {
+    useUserRoleBindingsQuery('u-9', true)
+
+    expect(useQueryMock).toHaveBeenCalledTimes(1)
+    const queryOptions = useQueryMock.mock.calls[0]?.[0]
+    expect(queryOptions?.queryKey).toEqual(['users', 'role-bindings', 'u-9'])
+    expect(queryOptions?.enabled).toBe(true)
+
+    fetchUserRoleBindingsMock.mockResolvedValue({
+      userId: 'u-9',
+      username: 'dylan',
+      primaryRoleId: 'ops_manager',
+      effectiveRoles: ['ops_manager'],
+      roleBindings: [],
+    })
+    const result = await queryOptions?.queryFn()
+
+    expect(fetchUserRoleBindingsMock).toHaveBeenCalledWith('u-9')
+    expect(result.primaryRoleId).toBe('ops_manager')
   })
 })

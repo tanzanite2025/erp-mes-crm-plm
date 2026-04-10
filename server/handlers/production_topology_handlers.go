@@ -47,7 +47,7 @@ func SaveProductionLineHandler(c *gin.Context) {
 }
 
 func PatchProductionLineHandler(c *gin.Context) {
-	var input services.PatchProductionLineHandlerRequest
+	var input services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

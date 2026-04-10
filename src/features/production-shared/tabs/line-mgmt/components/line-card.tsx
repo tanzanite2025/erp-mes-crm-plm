@@ -69,12 +69,22 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
   const {
     handleApplyTemplate,
     handleAddSegment,
-    handleAddProcess,
+    handleAddJobCategory,
+    handleAddStation,
     handleUpdateSegment,
-    handleUpdateProcess,
+    handleUpdateJobCategory,
+    handleUpdateStation,
     handleRemoveSegment,
-    handleRemoveProcess
+    handleRemoveJobCategory,
+    handleRemoveStation,
   } = useLineTopology(line, handleTopologyUpdate)
+
+  const segmentCount = line.segments?.length || 0
+  const jobCategoryCount = line.segments?.reduce((count, segment) => count + (segment.jobCategories?.length || 0), 0) || 0
+  const stationCount = line.segments?.reduce(
+    (count, segment) => count + (segment.jobCategories || []).reduce((segmentCount, jobCategory) => segmentCount + (jobCategory.stations?.length || 0), 0),
+    0
+  ) || 0
 
   const handleAuthConfirm = (password: string) => {
     if (pendingAction === 'edit') {
@@ -180,10 +190,11 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
               {t('orgPersonnel.lineMgmt.card.hierarchy')}
             </p>
             <div className='flex items-center gap-1.5'>
-              <span className='text-[11px] font-black font-mono text-slate-600 dark:text-slate-300'>
+                <span className='text-[11px] font-black font-mono text-slate-600 dark:text-slate-300'>
                 {t('orgPersonnel.lineMgmt.card.hierarchyStats', { 
-                  segments: line.segments?.length || 0, 
-                  jobs: line.segments?.flatMap(s => s.processes || []).length || 0 
+                  segments: segmentCount,
+                  jobs: jobCategoryCount,
+                  stations: stationCount,
                 })}
               </span>
             </div>
@@ -214,9 +225,12 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                       segment={segment}
                       onUpdateName={handleUpdateSegment}
                       onRemove={handleRemoveSegment}
-                      onAddProcess={handleAddProcess}
-                      onUpdateProcessName={handleUpdateProcess}
-                      onRemoveProcess={handleRemoveProcess}
+                      onAddJobCategory={handleAddJobCategory}
+                      onUpdateJobCategoryName={handleUpdateJobCategory}
+                      onRemoveJobCategory={handleRemoveJobCategory}
+                      onAddStation={handleAddStation}
+                      onUpdateStation={handleUpdateStation}
+                      onRemoveStation={handleRemoveStation}
                     />
                 ))}
 

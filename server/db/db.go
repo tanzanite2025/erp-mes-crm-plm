@@ -64,6 +64,149 @@ func ensurePackagingRuleMaterialUniqueIndex() {
 	}
 }
 
+func defaultProductAttributeOptions() []models.ProductAttributeOption {
+	return []models.ProductAttributeOption{
+		{CategoryKey: "techSeries", Value: "NORMAL", LabelZh: "常规系列", LabelEn: "Standard Series", Description: "常温常规工艺系列", SortOrder: 10, Active: true},
+		{CategoryKey: "techSeries", Value: "HIGHTG", LabelZh: "高温系列", LabelEn: "High TG Series", Description: "高温工艺系列", SortOrder: 20, Active: true},
+		{CategoryKey: "tireType", Value: "Hooked", LabelZh: "有钩", LabelEn: "Hooked", Description: "有钩车圈类型", SortOrder: 10, Active: true},
+		{CategoryKey: "tireType", Value: "Hookless", LabelZh: "无钩", LabelEn: "Hookless", Description: "无钩车圈类型", SortOrder: 20, Active: true},
+		{CategoryKey: "tireType", Value: "Tubular", LabelZh: "管胎", LabelEn: "Tubular", Description: "管胎车圈类型", SortOrder: 30, Active: true},
+		{CategoryKey: "brakeType", Value: "Disc", LabelZh: "碟刹", LabelEn: "Disc", Description: "碟刹制动类型", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "STD", LabelZh: "标准版", LabelEn: "Standard", Description: "标准版本等级", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "Lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化版本等级", SortOrder: 20, Active: true},
+		{CategoryKey: "versionLevel", Value: "Ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻版本等级", SortOrder: 30, Active: true},
+		{CategoryKey: "versionLevel", Value: "Reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型版本等级", SortOrder: 40, Active: true},
+	}
+}
+
+func defaultProductAttributeCategories() []models.ProductAttributeCategory {
+	return []models.ProductAttributeCategory{
+		{Key: "techSeries", NameZh: "工艺系列", NameEn: "Technical Series", Description: "产品工艺系列分类", SortOrder: 10, Active: true},
+		{Key: "tireType", NameZh: "轮圈类型", NameEn: "Rim Type", Description: "产品轮圈类型分类", SortOrder: 20, Active: true},
+		{Key: "brakeType", NameZh: "制动类型", NameEn: "Brake Type", Description: "产品制动类型分类", SortOrder: 30, Active: true},
+		{Key: "versionLevel", NameZh: "版本等级", NameEn: "Version Level", Description: "产品版本等级分类", SortOrder: 40, Active: true},
+	}
+}
+
+func ensureDefaultProductAttributeCategories() {
+	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeCategory{}) {
+		return
+	}
+
+	for _, category := range defaultProductAttributeCategories() {
+		var existing models.ProductAttributeCategory
+		err := DB.Where("key = ?", category.Key).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			item := category
+			item.MasterDataControl.Normalize("R1")
+			item.Version = 1
+			if err := DB.Create(&item).Error; err != nil {
+				log.Fatal("[CRITICAL] Failed to seed default product attribute category: ", err)
+			}
+			continue
+		}
+
+		if err != nil {
+			log.Fatal("[CRITICAL] Failed to query default product attribute category: ", err)
+		}
+	}
+}
+
+func ensureDefaultProductAttributeOptions() {
+	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeOption{}) {
+		return
+	}
+
+	for _, option := range defaultProductAttributeOptions() {
+		var existing models.ProductAttributeOption
+		err := DB.Where("category = ? AND value = ?", option.CategoryKey, option.Value).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			item := option
+			item.MasterDataControl.Normalize("R1")
+			item.Version = 1
+			if err := DB.Create(&item).Error; err != nil {
+				log.Fatal("[CRITICAL] Failed to seed default product attribute option: ", err)
+			}
+			continue
+		}
+
+		if err != nil {
+			log.Fatal("[CRITICAL] Failed to query default product attribute option: ", err)
+		}
+	}
+}
+
+func ensureDefaultWarehouseCategories() {
+	if DB == nil || !DB.Migrator().HasTable(&models.WarehouseCategory{}) {
+		return
+	}
+
+	for _, category := range models.DefaultWarehouseCategories {
+		var existing models.WarehouseCategory
+		err := DB.Where("code = ?", category.Code).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			item := category
+			if createErr := DB.Create(&item).Error; createErr != nil {
+				log.Fatal("[CRITICAL] Failed to seed default warehouse category: ", createErr)
+			}
+			continue
+		}
+
+		if err != nil {
+			log.Fatal("[CRITICAL] Failed to query default warehouse category: ", err)
+		}
+
+		updates := map[string]interface{}{}
+		if !existing.IsSystem {
+			updates["is_system"] = true
+		}
+		if existing.Name == "" {
+			updates["name"] = category.Name
+		}
+		if existing.SortOrder == 0 {
+			updates["sort_order"] = category.SortOrder
+		}
+		if !existing.AllowInbound && !existing.AllowShipment && !existing.AllowStocktake &&
+			!existing.AllowPurchaseReceipt && !existing.DefaultForProductInbound &&
+			!existing.DefaultForMaterialInbound && !existing.DefaultForPurchaseReceipt {
+			updates["allow_inbound"] = category.AllowInbound
+			updates["allow_shipment"] = category.AllowShipment
+			updates["allow_stocktake"] = category.AllowStocktake
+			updates["allow_purchase_receipt"] = category.AllowPurchaseReceipt
+			updates["default_for_product_inbound"] = category.DefaultForProductInbound
+			updates["default_for_material_inbound"] = category.DefaultForMaterialInbound
+			updates["default_for_purchase_receipt"] = category.DefaultForPurchaseReceipt
+		}
+
+		if len(updates) == 0 {
+			continue
+		}
+		if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
+			log.Fatal("[CRITICAL] Failed to align default warehouse category: ", updateErr)
+		}
+	}
+
+	ensureWarehouseCategoryDefaultFlag("default_for_product_inbound", "FINISHED")
+	ensureWarehouseCategoryDefaultFlag("default_for_material_inbound", "MATERIAL")
+	ensureWarehouseCategoryDefaultFlag("default_for_purchase_receipt", "MATERIAL")
+}
+
+func ensureWarehouseCategoryDefaultFlag(column string, code string) {
+	var count int64
+	if err := DB.Model(&models.WarehouseCategory{}).Where(column+" = ?", true).Count(&count).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to verify warehouse category default flag: ", err)
+	}
+	if count > 0 {
+		return
+	}
+
+	if err := DB.Model(&models.WarehouseCategory{}).
+		Where("code = ?", code).
+		Update(column, true).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to backfill warehouse category default flag: ", err)
+	}
+}
+
 func hardenSeedAdminRole() {
 	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
 		return
@@ -182,20 +325,61 @@ func ensureUserIntegrityConstraints() {
 	}
 }
 
-// InitDB 闁告帗绻傞～鎰板礌閺嶃劍娈堕柟璇″枛缁ㄨ鲸娼婚悙鏉戝
+func ensureUserRolePrimaryUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.UserRole{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_user_primary_unique
+		ON user_roles (user_id)
+		WHERE deleted_at IS NULL AND is_primary = true;
+	`).Error; err != nil {
+		log.Fatal("Failed to enforce unique primary role per user:", err)
+	}
+}
+
+func logLocalDbAuthHint(dsn string, err error) {
+	if err == nil {
+		return
+	}
+
+	message := strings.ToLower(err.Error())
+	if !strings.Contains(message, "password authentication failed") &&
+		!strings.Contains(message, "failed sasl auth") &&
+		!strings.Contains(message, "sqlstate 28p01") {
+		return
+	}
+
+	normalizedDSN := strings.ToLower(strings.TrimSpace(dsn))
+	if !strings.Contains(normalizedDSN, "127.0.0.1") &&
+		!strings.Contains(normalizedDSN, "localhost") &&
+		!strings.Contains(normalizedDSN, "@db:5432") &&
+		!strings.Contains(normalizedDSN, "host=db") {
+		return
+	}
+
+	log.Printf("[DEV_HINT] DATABASE_URL credentials were rejected by the local Postgres instance.")
+	log.Printf("[DEV_HINT] Current local dev conventions use xdfc_local_dev_password for xdfc_admin.")
+	log.Printf("[DEV_HINT] If server/postgres_data was initialized with different credentials before, rebuild it with:")
+	log.Printf("[DEV_HINT]   powershell -ExecutionPolicy Bypass -File .\\server\\dev-up.ps1 -ResetDb")
+}
+
+// InitDB initializes the database connection and schema.
 func InitDB(dsn string) {
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
+		logLocalDbAuthHint(dsn, err)
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// 注册全局审计对比钩子
+	// Register global audit hooks.
 	audit.RegisterHooks(DB)
-	// 启动后台审计归档任务
+	// Start background audit archiver task.
 	audit.StartArchiver(DB)
-
-	// 闁煎浜滄慨鈺傛交娴ｇ洅鈺冩偘閵娧呮尝闁?	fmt.Println("Migrating database schemas...")
+	// Migrating database schemas.
+	fmt.Println("Migrating database schemas...")
 	failOnDuplicatePackagingRules()
 
 	err = DB.AutoMigrate(
@@ -209,8 +393,6 @@ func InitDB(dsn string) {
 		&models.ShipmentRecord{},
 		&models.PrintBatch{},
 		&models.Sequence{},
-		&models.DictGroup{},
-		&models.DictEntry{},
 		&models.ProductType{},
 		&models.LogisticsRecord{},
 		&models.Product{},
@@ -225,6 +407,10 @@ func InitDB(dsn string) {
 		&models.JobCategory{},
 		&models.Station{},
 		&models.EngineeringSpec{},
+		&models.ProductAttributeCategory{},
+		&models.ProductAttributeOption{},
+		&models.ProductTypeAttributeBinding{},
+		&models.ProductAttributeValue{},
 		&models.Unit{},
 		&models.ProductTemplate{},
 		&models.Mold{},
@@ -253,39 +439,48 @@ func InitDB(dsn string) {
 		&models.PaymentTerm{},
 		&models.TaxRate{},
 		&models.Role{},
+		&models.OrgUnit{},
+		&models.ProductionUnit{},
+		&models.OrgProductionMapping{},
+		&models.Position{},
+		&models.EmployeeAssignment{},
+		&models.OrgDefaultRole{},
+		&models.PositionRole{},
+		&models.UserRole{},
+		&models.EmployeeRole{},
 		&models.ProductionPlan{},
 		&models.ProductionTask{},
 
-		// 妫ｅ唭?閻庡湱鍋ら悰娆愮▔椤撶偟濡?(Experimental Center)
+		// 婵犵妲呴崑鎾跺緤娴犲鑸?闂傚倷娴囬褎顨ョ粙鍖¤€块梺顒€绉寸壕濠氭煏閸繍妲归柛瀣戠换娑㈠幢濡搫顫庨梺宕囩帛濮婂綊濡甸崟顖氱閻犻缚妗ㄩ幋閿嬬節?(Experimental Center)
 		&models.ExpCategory{},
 		&models.ExpEquipment{},
 		&models.ExpTask{},
 		&models.ExpReport{},
 
-		// 妫ｅ啯绀夐柨?閻犳劑鍔戦崳铏圭不閿涘嫭鍊?(Quality Management)
+		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矌閻棗顭块懜闈涘闁?闂傚倷娴囧畷鍨叏閻㈢绀夐柟杈剧畱缁€澶愭煙鏉堝墽鐣遍梻鍌ゅ灦閺屟嗙疀閹剧纭€婵炴垶鎸哥粔褰掑蓟閵娿儮妲堟俊顖欒娴犻箖姊?(Quality Management)
 		&models.InspectionStandard{},
 		&models.InspectionTask{},
 		&models.QualityAbnormality{},
 
-		// 妫ｅ啯灏?閻犱讲鈧弶顐界€规悶鍎寸粊?(Piecework Management)
+		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍ㄧ矆閻?闂傚倷娴囧畷鍨叏瀹曞洦濯奸柡灞诲劚閻掑灚銇勯幒鍡椾壕閻庢鍠栭悥濂搞€侀弴銏″仼閻忕偟顭堟禍楣冩偡濞嗗繐顏柛瀣█閺屾稒鎯旈埥鍡楁缂?(Piecework Management)
 		&models.Team{},
 		&models.PieceworkRate{},
 		&models.PieceworkRecord{},
 
-		// 妫ｅ啯顔?閻犙冨妤犲洭姊介崟顐㈩潱濞ｅ洠鍓濇导?(Asset Metadata)
+		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍剱閺?闂傚倷娴囧畷鍨叏瀹ュ绀冩い顓熷灣鏉╂ê鈹戞幊閸婃鎱ㄩ弶鎳ㄦ椽顢橀悜鍡樼稁婵炲濮撮鍛矆鐎ｎ偁浜滈柟鎵虫櫅閻掔儤绻涢懝浼村摵缂佺粯鐩弫鎰板川椤旂虎妲洪梻浣告啞閹歌崵鎹㈤崘顏佸亾?(Asset Metadata)
 		&models.EquipmentPartner{},
 		&models.MoldDrawing{},
 		&models.MoldDrawingLog{},
 
-		// 闁虫寧鐟辩粭?缂侇垵宕电划娲焻濮樿鲸鏆忛梺鏉跨Ф閻?(System Configs)
+		// 闂傚倸鍊峰ù鍥р枍閺囩姭鍋撶粭娑樻处閸嬶繝寮堕崼姘珖缂?缂傚倸鍊搁崐椋庢閿熺姴鍨傞梻鍫熺〒閺嗭箓鏌ｉ姀銈嗘锭闁搞劍绻冪换娑橆啅椤旇崵鍑归梺缁樺笧缁垶骞堥妸銉庣喖宕稿Δ鈧幗鐢告⒑閸濆嫭顥滅紒缁樏～蹇撁洪鍕獓闁荤姵浜介崜閬嶅Χ婢跺鍘?(System Configs)
 		&models.SystemConfig{},
 
-		// 妫ｅ啯顔?闁绘せ鏅滅粊锕傚箳閵娾斁鍋撴担绋跨厬 (Logistics Push - Hot-Pluggable)
-		// 闁告鍘栨繛鍥ㄧ閵夈倗鐟撻悶娑栧姀缁鸿偐绮旂拠灞備杭閻犳劑鍎荤槐婵囩▔瀹ュ懎顨涢柛婵嗙Т閸欑偓鎷呭▎鎰暡闁哄牆顦慨娑㈡嚄?		&models.DeliveryOrder{},
+		// 婵犵妲呴崑鎾跺緤娴犲鐤い鏍剱閺?闂傚倸鍊烽懗鍓佸垝椤栫偛桅婵炴垯鍨归悿鐐節婵犲倹鍣介柣顓炵墦閺屻劑寮撮悙娴嬪亾閸濄儳涓嶉柟鎯板Г閻撳繐鈹戦悙闈涗壕闁哄缍婇弻娑氣偓锝庡亝鐏忎即鏌熷畡鐗堝櫧缂侇喗鐟ч幑鍕Ω閵夈儳鐣?(Logistics Push - Hot-Pluggable)
+		// 闂傚倸鍊风粈渚€骞夐敓鐘偓鍐川閺夋垵鍋嶉梺鍝勭Р閸斿海绮绘ィ鍐╃厱闁靛绲芥俊鎸庛亜閳哄啫鍘撮柡灞炬礃瀵板嫰宕煎┑鍐ㄤ壕婵°倕鎳忛崑锟犳煙閸撗呭笡闁稿濮电换娑㈠箣閻愰潧鈪规繝娈垮枓閸嬫挾绱撻崒娆戠獢缂傚倹宀稿畷鎴﹀箛椤旂厧鐏婇梺鍝勫暙閸婂湱鈧碍宀搁幃姗€鎮欓幓鎺嗗亾閻戣棄绾фい鎾卞灪閻撶喖鏌ｅΟ鍝勬毐濠殿喖鍊块弻娑欐償閵堝懎鎯炲┑鈥冲级閸旀洟鍩為幋锕€鐐婇柍鍦亾閻忓啴鏌ｆ惔锛勭暛闁稿酣浜堕獮濠冩償閵婏絺鍋撻崘銊㈡闁靛骏绱曢崢鍗炩攽閻樼粯娑ф俊顐ｇ☉閻☆參姊绘担鍛婂暈闁荤啙鍥х；闁规崘顕х粻顖炴煕濞戝崬骞愰柡瀣叄閺岀喖鏌囬敃鈧晶濠氭煛閸☆厾绡€婵﹥妞藉畷顐﹀礋椤撶儐鏆俊鐐€х€靛矂宕归柆宥呯疄闁靛鍎Σ鍫ユ煏韫囧ň鍋撻搹顐ゆ殸?		&models.DeliveryOrder{},
 		&models.DeliveryTrackingDetail{},
 		&models.LogisticsAPIProvider{},
 
-		// 系统与工作流配置 (System & Workflow)
+		// 缂備緡鍨靛畷鐢靛垝閻戞鈻旈幖绮光偓鑼煑婵炶揪绲剧划宥囩矈閿曞倹鐓€鐎广儱娲ㄩ弸?(System & Workflow)
 		&models.EnterpriseConfig{},
 		&models.StandardCommand{},
 		&models.NotificationRule{},
@@ -294,16 +489,15 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
-	// --- 身份对齐迁移 (v8.7) ---
+	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
 	DB.Exec("UPDATE users SET role = 'admin' WHERE role = 'superadmin'")
 	DB.Exec("UPDATE roles SET role_id = 'admin' WHERE role_id = 'superadmin'")
 	hardenSeedAdminRole()
 	ensureUserIntegrityConstraints()
+	ensureUserRolePrimaryUniqueIndex()
 
 	ensurePackagingRuleMaterialUniqueIndex()
 	fmt.Println("Database migration completed.")
-
-	// 4. Tune database connection pool.
 	sqlDB, err := DB.DB()
 	if err == nil {
 		sqlDB.SetMaxIdleConns(10)
@@ -312,7 +506,7 @@ func InitDB(dsn string) {
 		fmt.Println("Database connection pool tuned: MaxIdle=10, MaxOpen=100")
 	}
 
-	// 3. 初始化 Seed
+	// 3. 闂佸憡甯楃换鍌烇綖閹版澘绀?Seed
 	var count int64
 	DB.Model(&models.User{}).Count(&count)
 	if count == 0 {
@@ -365,21 +559,11 @@ func InitDB(dsn string) {
 		fmt.Println("Initial role 'admin' created with full permissions.")
 	}
 	ensureDefaultAdminRoleTemplate()
+	ensureDefaultProductAttributeCategories()
+	ensureDefaultProductAttributeOptions()
+	ensureDefaultWarehouseCategories()
 
-	// 4. 闁煎浜滄慨鈺呭触鐏炵虎鍔勯柡浣哄瀹撲胶鈧稒顨呴崥鈧紒澶婄Т閻?(Seed)
-	fmt.Println("Migrating database schemas completed. Seeding system dictionary...")
-
-	// 妫ｅ啯鐦?鐎殿喖鎼慨蹇撱€掗崨顖涘€為柨娑欐皑婢у潡鎮堕崱妯盒梻鍕╁€栭悾顐︽偩濞嗘垶鐣遍柍銉︾矊閻牗鎷呭浣插亾濠靛浂娲ら煫?	DB.Where("code = ?", "EMPLOYEE_POSITION").Delete(&models.DictEntry{})
-	DB.Where("code = ?", "PERSONNEL").Delete(&models.DictGroup{})
-
-	// 濞ｅ浂鍠楅婊堟晬濮樺崬绠涢柛?SeedDictionary 闁革负鍔岄幃鎾寸▔閳ь剚绋夐鍕樁闁挎稑娼恇闁挎稑顦崬鎾晬瀹€鈧ú鍧楀箳閵夈劎娈堕柣顫妼瀹撳棝宕?	fmt.Println("Calling SeedDictionary...")
-	if err := SeedDictionary(DB); err != nil {
-		fmt.Printf("[ERROR] Failed to seed dictionary: %v\n", err)
-	} else {
-		fmt.Println("System dictionary seeded successfully.")
-	}
-
-	// 6. 闁告帗绻傞～鎰寲閼姐倗鍩犻柛娆忓€归弳?Seed
+	// 6. 闂傚倸鍊风粈渚€骞夐敍鍕殰婵°倕鍟畷鏌ユ煕瀹€鈧崕鎴犵礊閺嶎厽鐓欓梺顓ㄧ畱閺嬫盯鎮楅崹顐ゅ弨闁哄被鍊栭幈銊╁箛椤戣棄浜炬俊銈呮噹閺勩儵鏌ｅΟ鑲╁笡闁绘挻娲樼换娑㈠幢濡ゅ啰顔囬梺閫炲苯澧紓宥咃工椤?Seed
 	var configCount int64
 	DB.Model(&models.SystemConfig{}).Where("key = ?", "topology_auth_password").Count(&configCount)
 	if configCount == 0 {

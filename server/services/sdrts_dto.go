@@ -4,8 +4,9 @@ import "encoding/json"
 
 // SDRTSDeltaMetadata is the canonical metadata envelope for SDRTS delta payloads.
 type SDRTSDeltaMetadata struct {
-	ID      string `json:"id"`
-	Version int64  `json:"version"`
+	ID       string `json:"id"`
+	Version  int64  `json:"version"`
+	AuthCode string `json:"authCode,omitempty"`
 }
 
 // SDRTSDeltaHandlerRequest is the canonical handler-level envelope for SDRTS delta updates.

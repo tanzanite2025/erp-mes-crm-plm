@@ -110,6 +110,7 @@ export function createEquipmentPartnerSchema(t?: EquipmentToolingTranslate) {
         address: z.string().optional(),
         version: z.number().default(1),
         createdAt: z.string(),
+        updatedAt: z.string().optional(),
     })
 }
 

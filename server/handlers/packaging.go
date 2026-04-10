@@ -31,12 +31,12 @@ func GetPackagingRulesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取包装规则失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, rules)
+	c.JSON(http.StatusOK, mapPackagingRuleResponses(rules))
 }
 
 func packagingRuleConflictResponse(c *gin.Context) {
 	c.JSON(http.StatusConflict, gin.H{
-		"error": "[BUSINESS_RULE_VIOLATION] 同一物料仅允许存在一条拼装换算规则",
+		"error": "[BUSINESS_RULE_VIOLATION] 同一物料仅允许存在一条包装换算规则",
 		"code":  "PACKAGING_RULE_DUPLICATE_MATERIAL",
 	})
 }
@@ -120,7 +120,7 @@ func SavePackagingRuleHandler(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, input)
+	c.JSON(http.StatusOK, mapPackagingRuleResponse(input))
 }
 
 // DeletePackagingRuleHandler 删除包装换算规则

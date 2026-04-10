@@ -56,14 +56,12 @@ func TestSaveProductionLineHandlerRequestBinding(t *testing.T) {
 func TestPatchProductionLineHandlerRequestBinding(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	payload := services.PatchProductionLineHandlerRequest{
+	payload := services.SDRTSDeltaHandlerRequest{
 		Op: "PATCH",
-		Delta: services.PatchProductionLineDeltaDTO{
-			Segments: &services.DeltaItemDTO{
-				New: json.RawMessage(`[{"id":"segment-1","name":"Segment A","sortOrder":1,"processes":[]}]`),
-			},
+		Delta: map[string]json.RawMessage{
+			"segments": json.RawMessage(`{"o":[],"n":[{"id":"segment-1","name":"Segment A","sortOrder":1,"jobCategories":[]}]}`),
 		},
-		Metadata: services.PatchProductionLineMetadata{
+		Metadata: services.SDRTSDeltaMetadata{
 			ID:       "line-1",
 			Version:  3,
 			AuthCode: "622575",
@@ -79,15 +77,14 @@ func TestPatchProductionLineHandlerRequestBinding(t *testing.T) {
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 
-	var bound services.PatchProductionLineHandlerRequest
+	var bound services.SDRTSDeltaHandlerRequest
 	err = ctx.ShouldBindJSON(&bound)
 	require.NoError(t, err)
 	require.Equal(t, payload.Op, bound.Op)
 	require.Equal(t, payload.Metadata.ID, bound.Metadata.ID)
 	require.Equal(t, payload.Metadata.Version, bound.Metadata.Version)
 	require.Equal(t, payload.Metadata.AuthCode, bound.Metadata.AuthCode)
-	require.NotNil(t, bound.Delta.Segments)
-	require.NotNil(t, bound.Delta.Segments.New)
+	require.Contains(t, bound.Delta, "segments")
 }
 
 func TestSaveEquipmentPartnerRequestBinding(t *testing.T) {

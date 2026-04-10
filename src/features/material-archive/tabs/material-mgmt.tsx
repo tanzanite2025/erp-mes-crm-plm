@@ -5,10 +5,11 @@ import {
 } from '@tanstack/react-table'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { DataTablePagination } from '@/components/data-table/pagination'
+import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { MaterialUpsertDialog } from '../components/material-upsert-dialog'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { type MaterialCategory, materialCategoryLabels } from '../data/schema'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { resolveCurrentCategoryLabel } from '../utils/material-mgmt-utils'
 import { useMaterialMgmtActions } from '../hooks/use-material-mgmt-actions'
 import { useMaterialMgmtData } from '../hooks/use-material-mgmt-data'
@@ -22,6 +23,7 @@ interface MaterialMgmtProps {
 }
 
 export function MaterialMgmt({ category }: MaterialMgmtProps) {
+    const { t, locale } = useLanguage()
     const {
         queryClient,
         searchTerm,
@@ -36,11 +38,17 @@ export function MaterialMgmt({ category }: MaterialMgmtProps) {
         deleteMutation
     } = useMaterialMgmtData({ category })
 
-    // 动态获取分类标签
+    // Resolve category label from module-owned category options.
     const currentCategoryLabel = useMemo(() => {
-        const options = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
-        return resolveCurrentCategoryLabel(category, options, materialCategoryLabels)
-    }, [category])
+        const options = getMaterialCategoryOptions(locale)
+        return resolveCurrentCategoryLabel(
+            category,
+            options,
+            materialCategoryLabels,
+            t('materialArchive.layout.tabs.all'),
+            t('materialArchive.columns.unknownCategory')
+        )
+    }, [category, locale, t])
 
     const {
         isDialogOpen,
@@ -118,3 +126,4 @@ export function MaterialMgmt({ category }: MaterialMgmtProps) {
         </div>
     )
 }
+

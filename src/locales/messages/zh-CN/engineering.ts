@@ -1,6 +1,7 @@
 export const engineering = {
   tabs: {
     products: '产品管理',
+    productAttributes: '产品属性配置',
     bom: 'BOM 配方',
     changes: 'ECO / ECN',
     templates: '产品模板',

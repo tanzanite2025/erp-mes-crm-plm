@@ -32,15 +32,15 @@ func GetProductsHandler(c *gin.Context) {
 	}
 
 	if isOptions {
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, toProductApiDTOs(items))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, ProductListPageApiDTO{
+		Items:    toProductApiDTOs(items),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -55,11 +55,11 @@ func GetProductHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to fetch product: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, product)
+	c.JSON(http.StatusOK, toProductApiDTO(product))
 }
 
 func SaveProductHandler(c *gin.Context) {
-	var input services.SaveProductInput
+	var input services.SaveProductAPIRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product payload: " + err.Error()})
 		return
@@ -80,7 +80,55 @@ func SaveProductHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, saved)
+	c.JSON(http.StatusOK, toProductApiDTO(saved))
+}
+
+func PatchProductHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product patch payload: " + err.Error()})
+		return
+	}
+
+	saved, err := services.PatchProduct(id, int(req.Metadata.Version), req.Delta)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrProductVersionConflict):
+			respondVersionConflict(c)
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product delta: " + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, toProductApiDTO(saved))
+}
+
+func DeleteProductHandler(c *gin.Context) {
+	id := c.Param("id")
+	if err := services.DeleteProduct(id); err != nil {
+		switch {
+		case errors.Is(err, services.ErrProductInUse):
+			c.JSON(http.StatusForbidden, gin.H{"error": "[BUSINESS_RULE_VIOLATION] product is still referenced by downstream records"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product: " + err.Error()})
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func GetNextProductCodeHandler(c *gin.Context) {
+	typeID := c.Query("typeId")
+	nextCode, err := services.GetNextProductModelCode(typeID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] failed to allocate next product model code: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"nextCode": nextCode})
 }
 
 func BulkSyncProductsHandler(c *gin.Context) {
@@ -88,7 +136,7 @@ func BulkSyncProductsHandler(c *gin.Context) {
 		return
 	}
 
-	var input []services.BulkSyncProductInput
+	var input services.BulkSyncProductsAPIPayload
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid bulk product payload: " + err.Error()})
 		return
@@ -99,5 +147,5 @@ func BulkSyncProductsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(input)})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(input.Products)})
 }

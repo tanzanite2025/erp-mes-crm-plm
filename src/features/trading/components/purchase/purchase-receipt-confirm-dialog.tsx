@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Calendar, CheckCheck, Package, Tag, Warehouse } from 'lucide-react'
 import {
   Dialog,
@@ -20,7 +20,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import { WarehouseCategoryCoreService, type WarehouseCategoryOption } from '@/features/warehouse/services/warehouse-category-core-service'
+import {
+  filterWarehouseCategoriesByScene,
+  getDefaultWarehouseCategoryCode,
+} from '@/features/warehouse/utils/warehouse-category-config'
 import { type PurchaseOrder } from '../../data/schema'
 import type { ConfirmPurchaseReceiptPayload } from '../../purchase'
 
@@ -68,7 +72,7 @@ function buildDefaultReceiptLines(order: PurchaseOrder | undefined): ReceiptLine
         purchasePrice: line.price || 0,
         // [UI-SUGGESTED-ID]: 默认批次号仅供建议，权威唯一 ID 将在入库事务提及时生成。
         batchNo: `${order.orderNo || 'PO'}-L${line.lineNo}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
-        targetCategory: line.materialId ? 'MATERIAL' : '',
+        targetCategory: '',
       }
     })
     .filter((line): line is ReceiptLineFormItem => line !== null)
@@ -86,15 +90,34 @@ function PurchaseReceiptConfirmDialogBody({
   isSubmitting: boolean
 }) {
   const { t } = useLanguage()
-  const warehouseCategories = useMemo(
-    () => (DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') || []) as Array<{ value: string; label: string }>,
-    []
-  )
+  const [warehouseCategories, setWarehouseCategories] = useState<WarehouseCategoryOption[]>([])
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().slice(0, 10))
   const [remarks, setRemarks] = useState(t('purchase.orders.detailReceiptAutoRemarks'))
   const [lines, setLines] = useState<ReceiptLineFormItem[]>(() => buildDefaultReceiptLines(order))
 
   const editableLines = useMemo(() => lines.filter((line) => line.remainingQty > 0), [lines])
+
+  useEffect(() => {
+    let isActive = true
+
+    void WarehouseCategoryCoreService.getCategoryOptions().then((options) => {
+      if (isActive) {
+        const filteredOptions = filterWarehouseCategoriesByScene(options, 'purchase-receipt')
+        const defaultCategoryCode = getDefaultWarehouseCategoryCode(options, 'purchase-receipt', 'MATERIAL')
+        setWarehouseCategories(filteredOptions)
+        setLines((prev) =>
+          prev.map((line) => ({
+            ...line,
+            targetCategory: line.targetCategory || defaultCategoryCode,
+          }))
+        )
+      }
+    })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const updateLine = (purchaseOrderLineId: number, patch: Partial<ReceiptLineFormItem>) => {
     setLines((prev) =>

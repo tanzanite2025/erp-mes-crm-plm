@@ -13,13 +13,12 @@ import { BOMPrintTemplate } from '@/features/print-mgmt/components/templates/bom
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { type BOM, type Product } from '../../data/schema'
 import { formatProductDisplayName, getProductAttributes } from '../../utils/product-utils'
-import { type Material } from '@/features/material-archive/data/schema'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
 
 interface BOMPreviewProps {
   bom: BOM
   products: Product[]
-  materials: Material[]
-  dictEntries: any[]
+  materials: MaterialOption[]
   onBack: () => void
 }
 
@@ -27,14 +26,13 @@ export function BOMPreview({
   bom,
   products,
   materials,
-  dictEntries,
   onBack,
 }: BOMPreviewProps) {
   const { t } = useLanguage()
   const printRef = useRef<HTMLDivElement>(null)
-  const product = products.find((entry) => entry.id === bom.productId)
+  const product = bom.product || products.find((entry) => entry.id === bom.productId)
   const productName = product
-    ? formatProductDisplayName(product, dictEntries)
+    ? formatProductDisplayName(product)
     : t('printMgmt.bomPreview.unknownProduct')
 
   const printItems = bom.items.map((item) => ({
@@ -74,7 +72,15 @@ export function BOMPreview({
   return (
     <div className='space-y-6 p-6'>
       <div className='hidden'>
-        <BOMPrintTemplate ref={printRef} productName={productName} items={printItems} />
+        <BOMPrintTemplate
+          ref={printRef}
+          productName={productName}
+          bomNo={bom.bomNo}
+          bomDisplayVersion={bom.bomDisplayVersion}
+          revisionNo={bom.revisionNo}
+          changeOrderNo={bom.changeOrderNo}
+          items={printItems}
+        />
       </div>
 
       <div className='flex items-center justify-between'>
@@ -85,7 +91,7 @@ export function BOMPreview({
           <div>
             <div className='flex flex-wrap items-center gap-2'>
               <h3 className='text-xl font-bold'>{bom.bomNo}</h3>
-              <Badge className='bg-blue-600'>{bom.bomVersion}</Badge>
+              <Badge className='bg-blue-600'>{bom.bomDisplayVersion}</Badge>
               {bom.revisionNo && <Badge variant='outline'>{bom.revisionNo}</Badge>}
               {bom.siteCode && <Badge variant='outline'>{bom.siteCode}</Badge>}
               <Badge variant='outline'>
@@ -94,7 +100,7 @@ export function BOMPreview({
             </div>
             <div className='mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground'>
               <span className='text-slate-500'>{t('printMgmt.bomPreview.productLabel')}:</span>
-              <span className='font-bold text-slate-900'>{product?.name}</span>
+              <span className='font-bold text-slate-900'>{productName}</span>
               <span className='font-mono text-xs text-slate-500'>
                 {bom.changeOrderNo || t('printMgmt.bomPreview.noEcoEcn')}
               </span>
@@ -106,7 +112,7 @@ export function BOMPreview({
               <div className='flex items-center gap-1.5'>
                 {product &&
                   (() => {
-                    const attrs = getProductAttributes(product, dictEntries)
+                    const attrs = getProductAttributes(product)
                     return (
                       <>
                         <Badge
@@ -145,7 +151,7 @@ export function BOMPreview({
         </div>
       </div>
 
-      <BOMDetailTable items={bom.items} materials={materials} dictEntries={dictEntries} />
+      <BOMDetailTable items={bom.items} materials={materials} />
     </div>
   )
 }

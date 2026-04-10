@@ -27,13 +27,54 @@ pnpm install
 pnpm dev
 ```
 
-## Local Docker Dev (Windows, Isolated from Production DB)
-This project includes a one-click local Docker startup script that uses `server/.env.dev` and targets only the local compose services (`db`, `redis`, `app`, `nginx_lb`, `watchdog`).
+## Local Development Modes
+Use one of these two modes and avoid mixing them on the same ports.
 
-First run:
+### Mode A: Production-Consistent Local Stack
+This is the closest match to the VPS deployment model.
+
+Run the full Docker business stack:
+```bash
+pnpm run dev:stack:full
+```
+
+Then run the frontend against the same `localhost:8080` entrypoint used by the local load balancer:
+```bash
+pnpm dev
+```
+
+Flow:
+- `frontend -> nginx_lb:8080 -> app -> search-engine/db/redis`
+
+Use this mode when you want behavior that matches production as closely as possible.
+
+### Mode B: Host Go Hot-Debug Mode
+This mode keeps Docker for core dependencies but runs the Go API on the host with non-production ports so it never collides with the production-consistent entrypoint.
+
+Core services:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1
 ```
+
+Or via package script:
+```bash
+pnpm run dev:stack
+```
+
+Then start the host-side debug processes:
+```bash
+pnpm run dev:server:debug
+pnpm run dev:frontend:debug
+```
+
+Ports in this mode:
+- Frontend proxy target: `http://localhost:18080`
+- Host Go API: `http://localhost:18080`
+- Host-accessible search engine: `http://localhost:18081`
+- `localhost:8080` remains reserved for the production-consistent Docker entrypoint
+
+Flow:
+- `frontend(vite) -> host go api:18080 -> search-engine:18081/db/redis`
 
 If your existing local `server/postgres_data` was initialized with different credentials, run:
 ```powershell
@@ -41,8 +82,12 @@ powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -ResetDb
 ```
 
 Notes:
+- Do not run host Go on `8080`; reserve that port for the Docker load balancer.
+- `server/.env.dev` should stay production-consistent for Dockerized app routing.
+- Host Go hot-debug mode overrides `PORT` and `SEARCH_ENGINE_URL` at runtime instead of editing `server/.env.dev`.
 - This flow is for local dev only and should never point to production database endpoints.
-- The script starts `db + redis`, verifies DB credentials, then starts business containers to avoid crash-restart loops.
+- Backend env has a single source of truth: `server/.env.dev`
+- Root `.env.local` is frontend-only and should keep only `VITE_*` variables.
 
 ## Pre-Deploy Check (Important)
 Before pushing production changes, run:

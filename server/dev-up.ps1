@@ -1,5 +1,7 @@
 param(
-    [switch]$ResetDb
+    [switch]$ResetDb,
+    [switch]$InfraOnly,
+    [switch]$FullStack
 )
 
 $ErrorActionPreference = "Stop"
@@ -103,6 +105,10 @@ function Reset-LocalDbVolume {
     New-Item -ItemType Directory -Path $dbDataDir | Out-Null
 }
 
+if ($InfraOnly -and $FullStack) {
+    throw "Choose either -InfraOnly or -FullStack, not both."
+}
+
 if (-not (Test-Path -LiteralPath $envFile)) {
     if (-not (Test-Path -LiteralPath $envExampleFile)) {
         throw "Missing template: $envExampleFile"
@@ -139,8 +145,8 @@ foreach ($pair in $envMap.GetEnumerator()) {
     Set-Item -Path ("Env:" + $pair.Key) -Value $pair.Value
 }
 
-Write-Step "Starting db + redis with local-only dev env..."
-Invoke-Compose @("up", "-d", "db", "redis")
+Write-Step "Starting db + redis + search-engine with local-only dev env..."
+Invoke-Compose @("up", "-d", "db", "redis", "search-engine")
 Wait-DbHealthy
 
 $pgUser = $envMap["POSTGRES_USER"]
@@ -165,7 +171,23 @@ if (-not (Test-DbCredentials -PgUser $pgUser -PgPassword $pgPassword -PgDb $pgDb
     }
 }
 
-Write-Step "Starting app + nginx_lb + watchdog..."
+if (-not $FullStack) {
+    $modeLabel = if ($InfraOnly) { "InfraOnly" } else { "Default stable mode" }
+    Write-Step "$modeLabel enabled. Leaving local stack at db + redis + search-engine."
+    Write-Host "  Postgres: localhost:5432 (container: xdfc-postgres)"
+    Write-Host "  Redis: localhost:16379 (container: xdfc-redis)"
+    Write-Host "  Search Engine: localhost:18081 (container port: 8081)"
+    Write-Host ""
+    Write-Host "Next step:"
+    Write-Host "  pnpm run dev:server:debug"
+    Write-Host "  pnpm run dev:frontend:debug"
+    Write-Host ""
+    Write-Host "For full Docker business services, rerun with:"
+    Write-Host "  powershell -ExecutionPolicy Bypass -File .\\server\\dev-up.ps1 -FullStack"
+    return
+}
+
+Write-Step "FullStack enabled. Starting search-engine + app + nginx_lb + watchdog..."
 Invoke-Compose @("up", "-d", "--build", "search-engine", "app", "nginx_lb", "watchdog")
 
 Write-Step "Done. Local stack is ready."

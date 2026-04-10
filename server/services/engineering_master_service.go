@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -19,7 +20,9 @@ var (
 	ErrChangeOrderVersionConflict = errors.New("change order version conflict")
 	ErrChangeOrderLinkedToBOM     = errors.New("change order linked to bom")
 
-	ErrBOMIDRequired = errors.New("bom id is required")
+	ErrBOMIDRequired         = errors.New("bom id is required")
+	ErrBOMActiveConflict     = errors.New("active bom conflict")
+	ErrBOMDeleteLockedActive = errors.New("active bom delete locked")
 )
 
 type EngineeringSpecListQuery struct {
@@ -351,6 +354,7 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 		if err := tx.Order("created_at desc").Find(&boms).Error; err != nil {
 			return nil, 0, err
 		}
+		hydrateBOMDerivedFields(boms)
 		return boms, int64(len(boms)), nil
 	}
 
@@ -361,6 +365,7 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 
 	var items []models.BOM
 	if err := tx.
+		Preload("Product").
 		Preload("ChangeOrder").
 		Preload("Items").
 		Preload("Items.Substitutes").
@@ -371,12 +376,14 @@ func ListBOMs(query BOMListQuery) ([]models.BOM, int64, error) {
 		Find(&items).Error; err != nil {
 		return nil, 0, err
 	}
+	hydrateBOMDerivedFields(items)
 	return items, total, nil
 }
 
 func GetBOMByID(id string) (models.BOM, error) {
 	var bom models.BOM
 	if err := db.DB.
+		Preload("Product").
 		Preload("ChangeOrder").
 		Preload("Items").
 		Preload("Items.Substitutes").
@@ -384,7 +391,21 @@ func GetBOMByID(id string) (models.BOM, error) {
 		First(&bom, "id = ?", id).Error; err != nil {
 		return models.BOM{}, err
 	}
+	bom.DisplayVersion = resolveBOMDisplayVersion(bom)
 	return bom, nil
+}
+
+func resolveBOMDisplayVersion(bom models.BOM) string {
+	if strings.TrimSpace(bom.VersionText) != "" {
+		return bom.VersionText
+	}
+	return "V1.0"
+}
+
+func hydrateBOMDerivedFields(items []models.BOM) {
+	for idx := range items {
+		items[idx].DisplayVersion = resolveBOMDisplayVersion(items[idx])
+	}
 }
 
 func validateBOMReferences(tx *gorm.DB, input *models.BOM) error {
@@ -451,27 +472,55 @@ func mergeBOMFromChangeOrder(input *models.BOM, order *models.ChangeOrder, defau
 		return
 	}
 
-	if strings.TrimSpace(input.ChangeOrderNo) == "" {
-		input.ChangeOrderNo = order.ChangeOrderNo
-	}
-	if strings.TrimSpace(input.ChangeType) == "" || input.ChangeType == "MANUAL" {
-		input.ChangeType = order.ChangeType
-	}
-	if strings.TrimSpace(input.SiteCode) == "" {
-		input.SiteCode = order.SiteCode
-		input.IsDefaultSite = order.IsDefaultSite
-	}
-	if strings.TrimSpace(input.RevisionNo) == "" {
-		input.RevisionNo = order.RevisionNo
-	}
-	if input.EffectiveFrom == nil {
-		input.EffectiveFrom = order.EffectiveFrom
-	}
-	if input.EffectiveTo == nil {
-		input.EffectiveTo = order.EffectiveTo
-	}
+	input.ChangeOrderNo = order.ChangeOrderNo
+	input.ChangeType = order.ChangeType
+	input.SiteCode = order.SiteCode
+	input.IsDefaultSite = order.IsDefaultSite
+	input.RevisionNo = order.RevisionNo
+	input.EffectiveFrom = order.EffectiveFrom
+	input.EffectiveTo = order.EffectiveTo
 
 	input.MasterDataControl.Normalize(defaultRevision)
+}
+
+func normalizeBOMItems(items []models.BOMItem) []models.BOMItem {
+	for idx := range items {
+		unitUsage := items[idx].UnitUsage
+		wastagePercent := items[idx].WastagePercent
+		items[idx].StandardUsage = unitUsage * (1 + wastagePercent/100)
+		if items[idx].StandardUsage < 0 {
+			items[idx].StandardUsage = 0
+		}
+	}
+	return items
+}
+
+func validateUniqueActiveBOM(tx *gorm.DB, input *models.BOM) error {
+	if strings.TrimSpace(input.ProductID) == "" || strings.TrimSpace(input.Status) != "active" {
+		return nil
+	}
+
+	query := tx.Model(&models.BOM{}).
+		Where("product_id = ? AND status = ?", input.ProductID, "active")
+	if strings.TrimSpace(input.ID) != "" {
+		query = query.Where("id <> ?", input.ID)
+	}
+
+	var activeCount int64
+	if err := query.Count(&activeCount).Error; err != nil {
+		return err
+	}
+	if activeCount > 0 {
+		return fmt.Errorf("%w: product %s already has another active BOM", ErrBOMActiveConflict, input.ProductID)
+	}
+	return nil
+}
+
+func generateBOMNo(tx *gorm.DB) string {
+	dateStr := time.Now().Format("20060102")
+	var count int64
+	tx.Model(&models.BOM{}).Where("bom_no LIKE ?", "BOM-"+dateStr+"-%").Count(&count)
+	return fmt.Sprintf("BOM-%s-%03d", dateStr, count+1)
 }
 
 func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
@@ -504,13 +553,20 @@ func SaveBOM(input SaveBOMInput) (models.BOM, error) {
 	var saved models.BOM
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		modelInput.Items = normalizeBOMItems(modelInput.Items)
 		if err := validateBOMReferences(tx, &modelInput); err != nil {
+			return err
+		}
+		if err := validateUniqueActiveBOM(tx, &modelInput); err != nil {
 			return err
 		}
 
 		defaultRevision := modelInput.VersionText
 		if strings.TrimSpace(defaultRevision) == "" {
 			defaultRevision = "V1.0"
+		}
+		if strings.TrimSpace(modelInput.RevisionNo) == "" {
+			modelInput.RevisionNo = "R1"
 		}
 
 		var linkedChangeOrder *models.ChangeOrder
@@ -552,6 +608,9 @@ func SaveBOM(input SaveBOMInput) (models.BOM, error) {
 		mergeBOMFromChangeOrder(&modelInput, linkedChangeOrder, defaultRevision)
 		items := modelInput.Items
 		modelInput.Items = nil
+		if strings.TrimSpace(modelInput.BOMNo) == "" {
+			modelInput.BOMNo = generateBOMNo(tx)
+		}
 		if err := tx.Create(&modelInput).Error; err != nil {
 			return err
 		}
@@ -568,6 +627,7 @@ func SaveBOM(input SaveBOMInput) (models.BOM, error) {
 	if err != nil {
 		return models.BOM{}, err
 	}
+	saved.DisplayVersion = resolveBOMDisplayVersion(saved)
 	return saved, nil
 }
 
@@ -580,6 +640,17 @@ func DeleteBOM(id string) error {
 		var bom models.BOM
 		if err := tx.Where("id = ?", id).First(&bom).Error; err != nil {
 			return err
+		}
+		if strings.TrimSpace(bom.Status) == "active" {
+			var activeCount int64
+			if err := tx.Model(&models.BOM{}).
+				Where("product_id = ? AND status = ?", bom.ProductID, "active").
+				Count(&activeCount).Error; err != nil {
+				return err
+			}
+			if activeCount <= 1 {
+				return fmt.Errorf("%w: cannot delete the only active BOM for product %s", ErrBOMDeleteLockedActive, bom.ProductID)
+			}
 		}
 		if err := tx.Where("bom_id = ?", id).Delete(&models.BOMItem{}).Error; err != nil {
 			return err

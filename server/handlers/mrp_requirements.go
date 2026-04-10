@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"xdfc-server/services"
@@ -24,7 +25,11 @@ func GetMrpRequirementsHandler(c *gin.Context) {
 		SelectedKeys: selectedKeys,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取 MRP 需求分析失败"})
+		if errors.Is(err, services.ErrBOMActiveConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[CRITICAL_BOM_SELECTION] " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to analyze MRP requirements: " + err.Error()})
 		return
 	}
 

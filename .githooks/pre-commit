@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+echo "[pre-commit] verify zh-CN locale encoding"
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm run verify:zh-cn-encoding
+else
+  corepack pnpm run verify:zh-cn-encoding
+fi

@@ -31,6 +31,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesGroup.GET("/by-no/:orderNo", handlers.GetSalesOrderByNoHandler)
 	salesGroup.POST("", salesOrderManage, handlers.SaveSalesOrderHandler)
 	salesGroup.POST("/:id/transactions", salesOrderManage, handlers.ExecuteSalesOrderTransactionHandler)
+	salesGroup.PATCH("/:id", salesOrderManage, handlers.PatchSalesOrderHandler)
 	salesGroup.DELETE("/:id", salesOrderDelete, handlers.DeleteSalesOrderHandler)
 	salesGroup.POST("/sync", salesOrderSync, handlers.BulkSyncSalesOrdersHandler)
 	salesGroup.POST("/evidence/upload", handlers.HandleEvidenceUpload)

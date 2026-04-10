@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type MasterDataSearchResult, InventoryCoreService } from '../services/inventory-core-service'
 import { type ShipmentRecord } from '../services/inventory-transaction-service'
 import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
+import { WarehouseCategoryCoreService } from '../services/warehouse-category-core-service'
 import { type WarehouseCategoryOption } from './shipment-hook-types'
+import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
 
 export function useShipmentBootstrap() {
   const { t } = useLanguage()
@@ -23,7 +24,7 @@ export function useShipmentBootstrap() {
 
       const [recentHistory, categories, allMasterData, thresholds] = await Promise.all([
         InventoryCoreService.getShipmentHistory(),
-        Promise.resolve(DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[]),
+        WarehouseCategoryCoreService.getCategoryOptions() as Promise<WarehouseCategoryOption[]>,
         InventoryCoreService.searchMasterData(''),
         InventoryMaintenanceService.getAlertThresholds(),
       ])
@@ -33,7 +34,7 @@ export function useShipmentBootstrap() {
       }
 
       setHistory(recentHistory)
-      setWarehouseCategories(categories)
+      setWarehouseCategories(filterWarehouseCategoriesByScene(categories, 'shipment'))
       setAlertThresholds(thresholds)
 
       const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}

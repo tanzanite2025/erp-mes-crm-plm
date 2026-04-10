@@ -34,7 +34,13 @@ func GetFurnacesHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取炉台选项失败: " + err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, furnaces)
+		c.JSON(http.StatusOK, gin.H{
+			"items":    mapFurnaceResponses(furnaces),
+			"total":    len(furnaces),
+			"page":     1,
+			"pageSize": len(furnaces),
+			"version":  furnaceListVersion(furnaces),
+		})
 		return
 	}
 
@@ -48,36 +54,12 @@ func GetFurnacesHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
+		"items":    mapFurnaceResponses(items),
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
+		"version":  furnaceListVersion(items),
 	})
-}
-
-func buildFurnaceUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
-	updates := make(map[string]interface{})
-	for key, raw := range payload {
-		switch key {
-		case "sn", "name", "type", "status", "location", "description":
-			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "maxTemp", "currentTemp":
-			var value float64
-			if err := json.Unmarshal(raw, &value); err != nil {
-				return nil, err
-			}
-			updates[key] = value
-		case "id", "createdAt", "updatedAt", "createdBy", "updatedBy":
-			// Skip metadata handled by server
-		default:
-			// IGNORED
-		}
-	}
-	return updates, nil
 }
 
 func saveFurnaceRecord(furnace *models.Furnace) error {
@@ -105,14 +87,6 @@ func saveFurnaceRecord(furnace *models.Furnace) error {
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 
-func patchFurnaceRecord(id string, updates map[string]interface{}) error {
-	var existing models.Furnace
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return err
-	}
-	return db.DB.Model(&existing).Updates(updates).Error
-}
-
 func buildFurnacePatchUpdates(delta map[string]json.RawMessage) (map[string]interface{}, error) {
 	updates := make(map[string]interface{})
 	for key, raw := range delta {
@@ -127,12 +101,18 @@ func buildFurnacePatchUpdates(delta map[string]json.RawMessage) (map[string]inte
 				return nil, err
 			}
 			updates[key] = value
-		case "maxTemp", "currentTemp":
+		case "maxTemp":
 			var value float64
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
-			updates[key] = value
+			updates["max_temp"] = value
+		case "currentTemp":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				return nil, err
+			}
+			updates["current_temp"] = value
 		}
 	}
 	return updates, nil
@@ -167,7 +147,11 @@ func SaveFurnaceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存炉台资产失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, furnace)
+	if err := db.DB.First(&furnace, "id = ?", furnace.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取保存后的炉台失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, mapFurnaceResponse(furnace))
 }
 
 // PatchFurnaceHandler 局部更新炉台 (差分更新支持)
@@ -193,12 +177,13 @@ func PatchFurnaceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新炉台属性失败: " + err.Error()})
 		return
 	}
+
 	var furnace models.Furnace
 	if err := db.DB.First(&furnace, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的炉台失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, furnace)
+	c.JSON(http.StatusOK, mapFurnaceResponse(furnace))
 }
 
 // UpdateFurnaceTelemetryHandler 更新炉台遥测 (温度)
@@ -237,15 +222,13 @@ func BulkSyncFurnacesHandler(c *gin.Context) {
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, f := range furnaces {
-			if f.ID != "" {
-				// 更新模式：局部同步，保护审计标签
-				if err := tx.Model(&models.Furnace{}).Where("id = ?", f.ID).Omit("CreatedAt", "CreatedBy").Updates(&f).Error; err != nil {
+		for _, furnace := range furnaces {
+			if furnace.ID != "" {
+				if err := tx.Model(&models.Furnace{}).Where("id = ?", furnace.ID).Omit("CreatedAt", "CreatedBy").Updates(&furnace).Error; err != nil {
 					return err
 				}
 			} else {
-				// 新增模式
-				if err := tx.Create(&f).Error; err != nil {
+				if err := tx.Create(&furnace).Error; err != nil {
 					return err
 				}
 			}

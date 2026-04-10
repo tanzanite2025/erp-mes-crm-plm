@@ -2,79 +2,79 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type EquipmentPartner } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { type EquipmentPartner } from '../data/schema'
+import {
+  toEquipmentPartnerContract,
+  toEquipmentPartnerContracts,
+  toSaveEquipmentPartnerApiDTO,
+} from '../adapters/equipment-partner-api-adapter'
+import {
+  type DeleteEquipmentPartnerApiDTO,
+  type EquipmentPartnerApiDTO,
+} from '../contracts/equipment-partner-api-dto'
 
-/**
- * EquipmentPartnerService - 管理模具流转单位 (工厂、供应商等 - 已同步至后端)
- */
+function broadcastPartnerUpdate() {
+  window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
+}
+
 export class EquipmentPartnerService {
-    /**
-     * 获取所有单位
-     */
-    static async getPartners(): Promise<EquipmentPartner[]> {
-        const data = await apiFetch<EquipmentPartner[]>('/equipment-partners')
-        return ensureArrayResponse<EquipmentPartner>(data, 'Equipment partners')
+  static async getPartners(): Promise<EquipmentPartner[]> {
+    const data = await apiFetch<EquipmentPartnerApiDTO[]>('/equipment-partners')
+    return toEquipmentPartnerContracts(
+      ensureArrayResponse<EquipmentPartnerApiDTO>(data, 'EquipmentPartnerService.getPartners')
+    )
+  }
+
+  static async upsertPartner(partner: Partial<EquipmentPartner>): Promise<EquipmentPartner> {
+    const res = await apiFetch<EquipmentPartnerApiDTO>('/equipment-partners', {
+      method: 'POST',
+      body: JSON.stringify(toSaveEquipmentPartnerApiDTO(partner)),
+    })
+
+    const saved = toEquipmentPartnerContract(
+      ensureObjectResponse<EquipmentPartnerApiDTO & Record<string, unknown>>(
+        res,
+        'EquipmentPartnerService.upsertPartner'
+      ) as EquipmentPartnerApiDTO
+    )
+
+    broadcastPartnerUpdate()
+    return saved
+  }
+
+  static async deletePartner(id: string): Promise<void> {
+    const res = await apiFetch<DeleteEquipmentPartnerApiDTO>(`/equipment-partners/${id}`, {
+      method: 'DELETE',
+    })
+
+    ensureObjectResponse<DeleteEquipmentPartnerApiDTO & Record<string, unknown>>(
+      res,
+      'EquipmentPartnerService.deletePartner'
+    )
+    broadcastPartnerUpdate()
+  }
+
+  static async patchPartner(id: string, delta: DeltaSet, version: number): Promise<EquipmentPartner> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version },
     }
 
-    /**
-     * 保存所有单位 (批量)
-     */
-    static async savePartners(partners: EquipmentPartner[]) {
-        await apiFetch('/equipment-partners/batch', {
-            method: 'POST',
-            body: JSON.stringify(partners)
-        })
-        window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
-    }
+    const res = await apiFetch<EquipmentPartnerApiDTO>(`/equipment-partners/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
 
-    /**
-     * 添加或更新单位
-     */
-    static async upsertPartner(partner: Partial<EquipmentPartner>): Promise<EquipmentPartner> {
-        const res = await apiFetch<EquipmentPartner>('/equipment-partners', {
-            method: 'POST',
-            body: JSON.stringify(partner)
-        })
+    const saved = toEquipmentPartnerContract(
+      ensureObjectResponse<EquipmentPartnerApiDTO & Record<string, unknown>>(
+        res,
+        'EquipmentPartnerService.patchPartner'
+      ) as EquipmentPartnerApiDTO
+    )
 
-        if (!res) {
-            throw new Error('[CRITICAL_DATA_PATH] Upsert partner failed, returned no data.')
-        }
-
-        window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
-        return ensureObjectResponse<EquipmentPartner>(res, 'EquipmentPartnerService.upsertPartner')
-    }
-
-    /**
-     * 删除单位
-     */
-    static async deletePartner(id: string) {
-        await apiFetch(`/equipment-partners/${id}`, {
-            method: 'DELETE'
-        })
-        window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
-    }
-
-    /**
-     * 局部更新合作伙伴信息 (SDRTS 结构化差量更新)
-     */
-    static async patchPartner(id: string, delta: DeltaSet, version: number): Promise<EquipmentPartner> {
-        const payload: DeltaPayload = {
-            op: 'PATCH',
-            delta,
-            metadata: { id, version }
-        }
-
-        const res = await apiFetch<EquipmentPartner>(`/equipment-partners/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(payload)
-        })
-
-        if (!res) {
-            throw new Error(`[CRITICAL_DATA_PATH] Patch partner ${id} failed, returned no data.`)
-        }
-
-        window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
-        return ensureObjectResponse<EquipmentPartner>(res, 'EquipmentPartnerService.patchPartner')
-    }
+    broadcastPartnerUpdate()
+    return saved
+  }
 }

@@ -1,47 +1,50 @@
 import { apiFetch } from '@/lib/api-client'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  toPackagingRuleContract,
+  toPackagingRuleContracts,
+  toSavePackagingRuleApiDTO,
+} from '../adapters/packaging-api-adapter'
+import { type PackagingRuleApiDTO } from '../contracts/packaging-api-dto'
 import { type PackagingRule } from '../data/schema'
 
-/**
- * 包装换算规则服务 (已同步至后端)
- */
 export const packagingService = {
-    /**
-     * 获取全量换算规则
-     */
-    async getRules(): Promise<PackagingRule[]> {
-        const data = await apiFetch<PackagingRule[]>('/packaging')
-        if (!data) throw new Error('[CRITICAL] 未能从后端获取包装换算规则')
-        return data
-    },
+  async getRules(): Promise<PackagingRule[]> {
+    const data = await apiFetch<PackagingRuleApiDTO[]>('/packaging')
+    return toPackagingRuleContracts(
+      ensureArrayResponse<PackagingRuleApiDTO>(data, 'packagingService.getRules')
+    )
+  },
 
-    /**
-     * 根据物料 ID 获取规则
-     */
-    async getRuleByMaterialId(materialId: string): Promise<PackagingRule | null> {
-        // 后端应支持按 materialId 过滤
-        return apiFetch<PackagingRule | null>(`/packaging?materialId=${materialId}`)
-    },
+  async getRuleByMaterialId(materialId: string): Promise<PackagingRule | null> {
+    const data = await apiFetch<PackagingRuleApiDTO[]>(`/packaging?materialId=${materialId}`)
+    const rules = toPackagingRuleContracts(
+      ensureArrayResponse<PackagingRuleApiDTO>(data, 'packagingService.getRuleByMaterialId')
+    )
+    return rules[0] || null
+  },
 
-    /**
-     * 保存/更新规则
-     */
-    async saveRule(rule: Partial<PackagingRule>): Promise<PackagingRule> {
-        const result = await apiFetch<PackagingRule>('/packaging', {
-            method: 'POST',
-            body: JSON.stringify(rule)
-        })
-        
-        window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
-        return result
-    },
+  async saveRule(rule: Partial<PackagingRule>): Promise<PackagingRule> {
+    const result = await apiFetch<PackagingRuleApiDTO>('/packaging', {
+      method: 'POST',
+      body: JSON.stringify(toSavePackagingRuleApiDTO(rule)),
+    })
 
-    /**
-     * 删除规则
-     */
-    async deleteRule(id: string): Promise<void> {
-        await apiFetch(`/packaging/${id}`, {
-            method: 'DELETE'
-        })
-        window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
-    }
+    const saved = toPackagingRuleContract(
+      ensureObjectResponse<PackagingRuleApiDTO & Record<string, unknown>>(
+        result,
+        'packagingService.saveRule'
+      ) as PackagingRuleApiDTO
+    )
+
+    window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
+    return saved
+  },
+
+  async deleteRule(id: string): Promise<void> {
+    await apiFetch(`/packaging/${id}`, {
+      method: 'DELETE',
+    })
+    window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
+  },
 }

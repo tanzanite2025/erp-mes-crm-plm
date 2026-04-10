@@ -10,9 +10,13 @@ import (
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load(".env.dev", "../.env.dev", "../../server/.env.dev")
+
 	// 1. 优先使用环境变量，否则回退到本地默认开发配置
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" || strings.Contains(dsn, "@db:") {

@@ -34,13 +34,13 @@ type packagingRuleRecord struct {
 }
 
 func loadEnv() {
-	_ = godotenv.Load(".env.local", "../.env.local", "../../.env.local")
+	_ = godotenv.Load(".env.dev", "../.env.dev", "../../server/.env.dev")
 }
 
 func mustOpenDB() *gorm.DB {
 	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	if dsn == "" {
-		log.Fatal("[CRITICAL] DATABASE_URL is required. Please export it or place it in .env.local before running this cleanup.")
+		log.Fatal("[CRITICAL] DATABASE_URL is required. Please export it or place it in server/.env.dev before running this cleanup.")
 	}
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

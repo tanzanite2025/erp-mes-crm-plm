@@ -40,15 +40,17 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { toast } from 'sonner'
 import { InventoryTransactionService, type InboundRecord } from '../services/inventory-transaction-service'
 import { InventoryCoreService, type MasterDataSearchResult } from '../services/inventory-core-service'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import {
+    WarehouseCategoryCoreService,
+    type WarehouseCategoryOption,
+} from '../services/warehouse-category-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-
-type WarehouseCategoryOption = {
-    value: string
-    label: string
-}
+import {
+    filterWarehouseCategoriesByScene,
+    getDefaultWarehouseCategoryCode,
+} from '../utils/warehouse-category-config'
 
 const DEFAULT_INBOUND_DATA = {
     quantity: 1,
@@ -79,7 +81,7 @@ export default function ProductInbound() {
             setError(null)
             const [recentHistory, categories] = await Promise.all([
                 InventoryCoreService.getInboundHistory(),
-                Promise.resolve(DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY') as WarehouseCategoryOption[])
+                WarehouseCategoryCoreService.getCategoryOptions()
             ])
             setHistory(recentHistory)
             setWarehouseCategories(categories)
@@ -125,7 +127,8 @@ export default function ProductInbound() {
         setSelectedItem(item)
         
         // 直接操作 Proxy 数据
-        formData.targetCategory = item.category || 'MATERIAL'
+        const scene = item.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
+        formData.targetCategory = getDefaultWarehouseCategoryCode(warehouseCategories, scene, item.category)
         formData.batchNo = `P${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`
         formData.quantity = 1
         formData.entryDate = new Date().toISOString().slice(0, 10)
@@ -145,6 +148,8 @@ export default function ProductInbound() {
         try {
             await InventoryTransactionService.recordInbound({
                 materialId: selectedItem.id,
+                materialName: selectedItem.name,
+                materialCode: selectedItem.code,
                 quantity: formData.quantity,
                 purchasePrice: 0,
                 batchNo: formData.batchNo,
@@ -168,6 +173,13 @@ export default function ProductInbound() {
     if (isForbiddenError(error)) {
         return <ForbiddenState />
     }
+
+    const selectableWarehouseCategories = selectedItem
+        ? filterWarehouseCategoriesByScene(
+            warehouseCategories,
+            selectedItem.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
+        )
+        : warehouseCategories
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
@@ -344,7 +356,7 @@ export default function ProductInbound() {
                                             <SelectValue placeholder={t('warehouse.inbound.dialog.selectArea')} />
                                         </SelectTrigger>
                                         <SelectContent className='rounded-xl shadow-2xl border-none p-1.5 md:p-2'>
-                                            {warehouseCategories.map(cat => (
+                                            {selectableWarehouseCategories.map(cat => (
                                                 <SelectItem key={cat.value} value={cat.value} className='rounded-lg font-black uppercase text-[8px] md:text-[10px] tracking-widest py-2 md:py-2.5'>
                                                     {cat.label}
                                                 </SelectItem>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
     Plus,
     Search,
@@ -9,11 +9,13 @@ import {
     Database,
     CheckCircle2,
     Warehouse,
-    Package
+    Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import {
     Dialog,
@@ -24,7 +26,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { ForbiddenState } from '@/components/forbidden-state'
-// Removed unused PageHeader
 import { isForbiddenError } from '@/lib/error-status'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -38,16 +39,32 @@ import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { useWarehouseCategory } from '../hooks/use-warehouse-category'
 import { type WarehouseCategory as Category } from '../services/warehouse-category-core-service'
 
+type CategoryFormState = Omit<Category, 'id' | 'version'>
+
+const DEFAULT_FORM_DATA: CategoryFormState = {
+    name: '',
+    code: '',
+    description: '',
+    isSystem: false,
+    active: true,
+    sortOrder: 0,
+    allowInbound: true,
+    allowShipment: true,
+    allowStocktake: true,
+    allowPurchaseReceipt: false,
+    defaultForProductInbound: false,
+    defaultForMaterialInbound: false,
+    defaultForPurchaseReceipt: false,
+}
+
 export default function WarehouseCategory() {
     const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
-    
-    // 【归一化 Hook 接入】
-    const { 
-        categories, 
-        isError: loadError, 
-        createCategory, 
-        patchCategory, 
+    const {
+        categories,
+        error: loadError,
+        createCategory,
+        patchCategory,
         deleteCategory,
         isActionLoading
     } = useWarehouseCategory()
@@ -55,21 +72,38 @@ export default function WarehouseCategory() {
     const [searchTerm, setSearchTerm] = useState('')
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [formData, setFormData] = useState({ name: '', code: '', description: '' })
+    const [formData, setFormData] = useState<CategoryFormState>(DEFAULT_FORM_DATA)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<{ id: string, name: string } | null>(null)
 
     const handleAdd = () => {
         if (!allowsAction('action_warehouse_category_manage')) return
         setEditingCategory(null)
-        setFormData({ name: '', code: '', description: '' })
+        setFormData({
+            ...DEFAULT_FORM_DATA,
+            sortOrder: categories.length + 1,
+        })
         setIsDialogOpen(true)
     }
 
     const handleEdit = (category: Category) => {
         if (!allowsAction('action_warehouse_category_manage')) return
         setEditingCategory(category)
-        setFormData({ name: category.name, code: category.code, description: category.description || '' })
+        setFormData({
+            name: category.name,
+            code: category.code,
+            description: category.description || '',
+            isSystem: category.isSystem,
+            active: category.active,
+            sortOrder: category.sortOrder,
+            allowInbound: category.allowInbound,
+            allowShipment: category.allowShipment,
+            allowStocktake: category.allowStocktake,
+            allowPurchaseReceipt: category.allowPurchaseReceipt,
+            defaultForProductInbound: category.defaultForProductInbound,
+            defaultForMaterialInbound: category.defaultForMaterialInbound,
+            defaultForPurchaseReceipt: category.defaultForPurchaseReceipt,
+        })
         setIsDialogOpen(true)
     }
 
@@ -93,22 +127,54 @@ export default function WarehouseCategory() {
         }
     }
 
+    const updateForm = (patch: Partial<CategoryFormState>) => {
+        setFormData((prev) => {
+            const next = { ...prev, ...patch }
+
+            if (!next.allowInbound) {
+                next.defaultForProductInbound = false
+                next.defaultForMaterialInbound = false
+            }
+            if (!next.allowPurchaseReceipt) {
+                next.defaultForPurchaseReceipt = false
+            }
+            if (!next.active) {
+                next.defaultForProductInbound = false
+                next.defaultForMaterialInbound = false
+                next.defaultForPurchaseReceipt = false
+            }
+            if (next.defaultForProductInbound || next.defaultForMaterialInbound) {
+                next.allowInbound = true
+                next.active = true
+            }
+            if (next.defaultForPurchaseReceipt) {
+                next.allowPurchaseReceipt = true
+                next.active = true
+            }
+
+            return next
+        })
+    }
+
     const handleSave = async () => {
         if (!allowsAction('action_warehouse_category_manage')) return
-        if (!formData.name || !formData.code) {
+        if (!formData.name.trim() || !formData.code.trim()) {
             toast.error(t('warehouse.category.toast.formIncomplete'))
             return
         }
 
         try {
             if (editingCategory) {
-                // SDRTS 差量更新模式
                 const tracker = trackDelta(editingCategory)
                 const draft = tracker.data as Category
-                Object.assign(draft, formData)
+                Object.assign(draft, {
+                    ...formData,
+                    name: formData.name.trim(),
+                    code: formData.code.trim().toUpperCase(),
+                    description: formData.description.trim(),
+                })
                 const delta = tracker.commit()
 
-                // 幂等性：无变动则直接关闭
                 if (Object.keys(delta).length === 0) {
                     setIsDialogOpen(false)
                     return
@@ -116,19 +182,19 @@ export default function WarehouseCategory() {
 
                 await patchCategory({ id: editingCategory.id, delta, version: editingCategory.version })
             } else {
-                // 原子创建模式
                 const newCategory: Omit<Category, 'id' | 'version'> = {
                     ...formData,
+                    name: formData.name.trim(),
+                    code: formData.code.trim().toUpperCase(),
+                    description: formData.description.trim(),
                     isSystem: false,
-                    active: true,
-                    sortOrder: 0
                 }
                 await createCategory(newCategory)
             }
-            
+
             setIsDialogOpen(false)
         } catch (error) {
-            if (isConflictError(error)) {
+            if (editingCategory && isConflictError(error)) {
                 toast.error(t('warehouse.category.toast.staleData'))
                 return
             }
@@ -136,10 +202,11 @@ export default function WarehouseCategory() {
         }
     }
 
-    const filteredCategories = categories.filter((cat) =>
+    const filteredCategories = useMemo(() => categories.filter((cat) =>
         cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.code.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+        cat.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (cat.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+    ), [categories, searchTerm])
 
     if (isForbiddenError(loadError)) {
         return <ForbiddenState />
@@ -153,7 +220,7 @@ export default function WarehouseCategory() {
                     <div className='flex items-center gap-3 text-primary relative z-10'>
                         <Warehouse className='size-5' />
                         <h2 className='text-xl font-black uppercase italic tracking-tighter'>
-                            {t('warehouse.category.title')} / CATEGORY_REGISTRY
+                            {t('warehouse.category.title')} / WAREHOUSE_BASE_SETUP
                         </h2>
                     </div>
                     <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 relative z-10'>
@@ -182,50 +249,113 @@ export default function WarehouseCategory() {
                     </div>
                 </div>
 
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
                     {filteredCategories.length > 0 ? (
-                        filteredCategories.map((cat) => (
-                            <div
-                                key={cat.id}
-                                className='group relative bg-background rounded-[24px] border border-muted/60 p-6 transition-all hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 hover:border-blue-500/50'
-                            >
-                                <div className='flex items-start justify-between'>
-                                    <div className='flex items-center gap-4'>
-                                        <div className='size-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 border border-blue-500/20 shadow-inner group-hover:scale-105 transition-transform'>
-                                            <Warehouse className='size-6' />
-                                        </div>
-                                        <div className='space-y-0.5'>
-                                            <h4 className='text-lg font-black text-slate-800 tracking-tighter uppercase italic'>
-                                                {cat.name}
-                                            </h4>
-                                            <Badge className='text-[8px] font-black uppercase tracking-widest bg-muted/50 text-muted-foreground/40 border-none h-4 px-2 rounded-full'>
-                                                {t('warehouse.category.codeLabel')}: {cat.code}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                    <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => handleEdit(cat)}
-                                            className='size-9 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all'
-                                        >
-                                            <Edit2 className='size-4' />
-                                        </Button>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => handleDeleteClick(cat.id, cat.isSystem, cat.name)}
-                                            className='size-9 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all'
-                                        >
-                                            <Trash2 className='size-4' />
-                                        </Button>
-                                    </div>
-                                </div>
+                        filteredCategories.map((cat) => {
+                            const scopeTags = [
+                                cat.allowInbound ? t('warehouse.category.card.scopeInbound') : null,
+                                cat.allowShipment ? t('warehouse.category.card.scopeShipment') : null,
+                                cat.allowStocktake ? t('warehouse.category.card.scopeStocktake') : null,
+                                cat.allowPurchaseReceipt ? t('warehouse.category.card.scopePurchaseReceipt') : null,
+                            ].filter(Boolean)
 
-                                <div className='mt-8 pt-6 border-t border-dashed border-muted/80'>
-                                    <div className='text-[10px] font-black font-mono text-muted-foreground/30 uppercase tracking-widest flex items-center justify-between'>
-                                        {t('warehouse.category.permissionLevel')}
+                            const defaultTags = [
+                                cat.defaultForProductInbound ? t('warehouse.category.card.defaultProductInbound') : null,
+                                cat.defaultForMaterialInbound ? t('warehouse.category.card.defaultMaterialInbound') : null,
+                                cat.defaultForPurchaseReceipt ? t('warehouse.category.card.defaultPurchaseReceipt') : null,
+                            ].filter(Boolean)
+
+                            return (
+                                <div
+                                    key={cat.id}
+                                    className='group relative bg-background rounded-[24px] border border-muted/60 p-6 transition-all hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-0.5 hover:border-blue-500/50'
+                                >
+                                    <div className='flex items-start justify-between gap-4'>
+                                        <div className='flex items-center gap-4 min-w-0'>
+                                            <div className='size-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 border border-blue-500/20 shadow-inner group-hover:scale-105 transition-transform shrink-0'>
+                                                <Warehouse className='size-6' />
+                                            </div>
+                                            <div className='space-y-1 min-w-0'>
+                                                <div className='flex items-center gap-2 flex-wrap'>
+                                                    <h4 className='text-lg font-black text-slate-800 tracking-tighter uppercase italic truncate'>
+                                                        {cat.name}
+                                                    </h4>
+                                                    <Badge className={cn(
+                                                        'text-[8px] font-black uppercase tracking-widest border-none h-5 px-2 rounded-full',
+                                                        cat.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground/60'
+                                                    )}>
+                                                        {cat.active ? t('warehouse.category.card.enabled') : t('warehouse.category.card.disabled')}
+                                                    </Badge>
+                                                </div>
+                                                <Badge className='text-[8px] font-black uppercase tracking-widest bg-muted/50 text-muted-foreground/70 border-none h-4 px-2 rounded-full'>
+                                                    {t('warehouse.category.codeLabel')}: {cat.code}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0'>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                onClick={() => handleEdit(cat)}
+                                                className='size-9 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all'
+                                            >
+                                                <Edit2 className='size-4' />
+                                            </Button>
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                onClick={() => handleDeleteClick(cat.id, cat.isSystem, cat.name)}
+                                                className='size-9 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all'
+                                            >
+                                                <Trash2 className='size-4' />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <p className='mt-4 text-[11px] leading-5 text-muted-foreground min-h-10'>
+                                        {cat.description || t('warehouse.category.card.noDescription')}
+                                    </p>
+
+                                    <div className='mt-5 space-y-3'>
+                                        <div className='space-y-2'>
+                                            <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                                                {t('warehouse.category.card.scopeTitle')}
+                                            </div>
+                                            <div className='flex flex-wrap gap-2'>
+                                                {scopeTags.length > 0 ? scopeTags.map((scope) => (
+                                                    <Badge key={scope} className='bg-blue-500/10 text-blue-600 border-none h-5 px-2 rounded-full text-[8px] font-black uppercase tracking-widest'>
+                                                        {scope}
+                                                    </Badge>
+                                                )) : (
+                                                    <Badge className='bg-muted text-muted-foreground/60 border-none h-5 px-2 rounded-full text-[8px] font-black uppercase tracking-widest'>
+                                                        {t('warehouse.category.card.noScope')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className='space-y-2'>
+                                            <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                                                {t('warehouse.category.card.defaultTitle')}
+                                            </div>
+                                            <div className='flex flex-wrap gap-2'>
+                                                {defaultTags.length > 0 ? defaultTags.map((rule) => (
+                                                    <Badge key={rule} className='bg-amber-500/10 text-amber-600 border-none h-5 px-2 rounded-full text-[8px] font-black uppercase tracking-widest'>
+                                                        {rule}
+                                                    </Badge>
+                                                )) : (
+                                                    <Badge className='bg-muted text-muted-foreground/60 border-none h-5 px-2 rounded-full text-[8px] font-black uppercase tracking-widest'>
+                                                        {t('warehouse.category.card.noDefault')}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className='mt-6 pt-5 border-t border-dashed border-muted/80 flex items-center justify-between'>
+                                        <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/30'>
+                                            {t('warehouse.category.permissionLevel')}
+                                        </div>
                                         <span className={cn(
                                             'px-2 py-0.5 rounded-sm font-black text-[8px]',
                                             cat.isSystem ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'
@@ -236,14 +366,14 @@ export default function WarehouseCategory() {
                                         </span>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            )
+                        })
                     ) : (
                         <div className='col-span-full py-32 flex flex-col items-center justify-center text-center'>
                             <div className='relative mb-6'>
                                 <Database className='size-20 opacity-5' />
                                 <div className='absolute inset-0 flex items-center justify-center'>
-                                    <Package className='size-8 opacity-10 animate-pulse' />
+                                    <Settings2 className='size-8 opacity-10 animate-pulse' />
                                 </div>
                             </div>
                             <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>{t('warehouse.category.empty')}</p>
@@ -253,7 +383,7 @@ export default function WarehouseCategory() {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className='w-[95vw] sm:max-w-[480px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
+                <DialogContent className='w-[95vw] sm:max-w-[720px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
                     <div className='absolute inset-0 bg-linear-to-br from-blue-600/5 via-transparent pointer-events-none' />
 
                     <div className='relative p-5 md:p-8'>
@@ -266,30 +396,139 @@ export default function WarehouseCategory() {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className='space-y-4 md:space-y-6'>
-                            <div className='space-y-2 md:space-y-3'>
-                                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
-                                    {t('warehouse.category.dialog.nameLabel')}
-                                </Label>
-                                <Input
-                                    id='name'
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder={t('warehouse.category.dialog.namePlaceholder')}
-                                    className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-bold px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner text-xs md:text-sm'
-                                />
+                        <div className='space-y-6'>
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6'>
+                                <div className='space-y-2 md:space-y-3'>
+                                    <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                                        {t('warehouse.category.dialog.nameLabel')}
+                                    </Label>
+                                    <Input
+                                        id='name'
+                                        value={formData.name}
+                                        onChange={(e) => updateForm({ name: e.target.value })}
+                                        placeholder={t('warehouse.category.dialog.namePlaceholder')}
+                                        className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-bold px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner text-xs md:text-sm'
+                                    />
+                                </div>
+                                <div className='space-y-2 md:space-y-3'>
+                                    <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                                        {t('warehouse.category.dialog.codeLabel')}
+                                    </Label>
+                                    <Input
+                                        id='code'
+                                        value={formData.code}
+                                        onChange={(e) => updateForm({ code: e.target.value.toUpperCase() })}
+                                        placeholder={t('warehouse.category.dialog.codePlaceholder')}
+                                        className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner'
+                                    />
+                                </div>
                             </div>
-                            <div className='space-y-2 md:space-y-3'>
-                                <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
-                                    {t('warehouse.category.dialog.codeLabel')}
-                                </Label>
-                                <Input
-                                    id='code'
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    placeholder={t('warehouse.category.dialog.codePlaceholder')}
-                                    className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner'
-                                />
+
+                            <div className='grid grid-cols-1 md:grid-cols-[1fr_140px] gap-4 md:gap-6'>
+                                <div className='space-y-2 md:space-y-3'>
+                                    <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                                        {t('warehouse.category.dialog.descriptionLabel')}
+                                    </Label>
+                                    <Textarea
+                                        value={formData.description}
+                                        onChange={(e) => updateForm({ description: e.target.value })}
+                                        placeholder={t('warehouse.category.dialog.descriptionPlaceholder')}
+                                        className='min-h-[96px] rounded-xl bg-muted/50 border-none font-medium px-4 py-3 focus-visible:ring-blue-600 shadow-inner text-xs md:text-sm resize-none'
+                                    />
+                                </div>
+                                <div className='space-y-2 md:space-y-3'>
+                                    <Label className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block'>
+                                        {t('warehouse.category.dialog.sortOrderLabel')}
+                                    </Label>
+                                    <Input
+                                        type='number'
+                                        value={formData.sortOrder}
+                                        onChange={(e) => updateForm({ sortOrder: Number(e.target.value) || 0 })}
+                                        placeholder='0'
+                                        className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner'
+                                    />
+                                    <div className='flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3'>
+                                        <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                                            {t('warehouse.category.dialog.activeLabel')}
+                                        </span>
+                                        <Switch
+                                            checked={formData.active}
+                                            onCheckedChange={(checked) => updateForm({ active: checked })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
+                                <div className='rounded-2xl border border-dashed border-blue-500/20 bg-blue-500/5 p-4 md:p-5 space-y-4'>
+                                    <div>
+                                        <h4 className='text-[11px] font-black uppercase tracking-widest text-blue-700'>
+                                            {t('warehouse.category.dialog.scopeTitle')}
+                                        </h4>
+                                        <p className='text-[10px] text-blue-700/60 mt-1'>
+                                            {t('warehouse.category.dialog.scopeDescription')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-3'>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.allowInboundLabel')}
+                                            </span>
+                                            <Switch checked={formData.allowInbound} onCheckedChange={(checked) => updateForm({ allowInbound: checked })} />
+                                        </div>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.allowShipmentLabel')}
+                                            </span>
+                                            <Switch checked={formData.allowShipment} onCheckedChange={(checked) => updateForm({ allowShipment: checked })} />
+                                        </div>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.allowStocktakeLabel')}
+                                            </span>
+                                            <Switch checked={formData.allowStocktake} onCheckedChange={(checked) => updateForm({ allowStocktake: checked })} />
+                                        </div>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.allowPurchaseReceiptLabel')}
+                                            </span>
+                                            <Switch checked={formData.allowPurchaseReceipt} onCheckedChange={(checked) => updateForm({ allowPurchaseReceipt: checked })} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className='rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/5 p-4 md:p-5 space-y-4'>
+                                    <div>
+                                        <h4 className='text-[11px] font-black uppercase tracking-widest text-amber-700'>
+                                            {t('warehouse.category.dialog.defaultRuleTitle')}
+                                        </h4>
+                                        <p className='text-[10px] text-amber-700/60 mt-1'>
+                                            {t('warehouse.category.dialog.defaultRuleDescription')}
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-3'>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.defaultProductInboundLabel')}
+                                            </span>
+                                            <Switch checked={formData.defaultForProductInbound} onCheckedChange={(checked) => updateForm({ defaultForProductInbound: checked })} />
+                                        </div>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.defaultMaterialInboundLabel')}
+                                            </span>
+                                            <Switch checked={formData.defaultForMaterialInbound} onCheckedChange={(checked) => updateForm({ defaultForMaterialInbound: checked })} />
+                                        </div>
+                                        <div className='flex items-center justify-between rounded-xl bg-background/80 px-4 py-3'>
+                                            <span className='text-[10px] font-black uppercase tracking-widest text-slate-600'>
+                                                {t('warehouse.category.dialog.defaultPurchaseReceiptLabel')}
+                                            </span>
+                                            <Switch checked={formData.defaultForPurchaseReceipt} onCheckedChange={(checked) => updateForm({ defaultForPurchaseReceipt: checked })} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -205,38 +205,5 @@ export const basicSettingsZhCNOverrides = {
         modeLabel: '模式',
       },
     },
-    dictionary: {
-      page: {
-        title: '参数字典原子中心',
-        description: 'PARAMETER_DICTIONARY / 定义全站通用的业务参数与行业特性，实现元数据驱动的灵活扩展',
-        actions: {
-          sync: 'RE-SEED / 恢复系统项',
-          syncing: 'SYNCING...',
-          addGroup: 'ADD_GROUP / 新增分组',
-        },
-      },
-      empty: {
-        title: '数据链路初始化异常',
-        description: 'DATABASE_CONNECTION_IDLE / 未检测到任何字典分组。这通常是由于系统初次启动时缓存时序导致，请尝试手动同步。',
-        action: 'RECOVERY_SYNC / 立即尝试恢复',
-      },
-      search: {
-        placeholder: '在 {{group}} 中搜索... SCAN_ENTRY',
-      },
-      actions: {
-        addEntry: 'ADD_ENTRY / 创建项',
-      },
-      group: {
-        config: 'SCHEMA_CONFIG / 分组配置',
-        rename: 'RENAME_GROUP / 重命名',
-        purge: 'PURGE_GROUP / 删除此分组',
-      },
-      entry: {
-        noCode: 'NO_META_CODE',
-        noOptions: 'NO_OPTIONS_DEFINED',
-        addOption: '+ ADD_OPTION',
-        emptyList: '该分组下暂无字典明细 / EMPTY_SET',
-      },
-    },
   },
 } as const

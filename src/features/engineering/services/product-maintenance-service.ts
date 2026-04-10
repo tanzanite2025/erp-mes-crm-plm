@@ -2,68 +2,69 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload } from '@/lib/delta/types'
+import {
+  buildProductDelta,
+  toBulkSyncProductsApiDTO,
+  toProductApiDTO,
+  toProductContract,
+} from '../adapters/product-api-adapter'
+import { type ProductApiDTO } from '../contracts/product-api-dto'
 import { type Product } from '../data/schema'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
-/**
- * ProductMaintenanceService - 产品档案维护与 SDRTS 协议服务
- * 职责: 负责产品档案的物理修正、批量同步及数据清洗。
- */
 export const ProductMaintenanceService = {
-    /**
-     * 创建产品档案 (TDO: PRODUCT_REGISTRATION)
-     */
-    async createProduct(product: Partial<Product>): Promise<Product> {
-        const res = await apiFetch<Product>('/engineering/products', {
-            method: 'POST',
-            body: JSON.stringify({
-                ...product,
-                metadata: { intent: 'PRODUCT_REGISTRATION' }
-            })
-        })
-        return ensureObjectResponse<Product>(res, 'ProductMaintenanceService.createProduct')
-    },
+  async createProduct(product: Partial<Product>): Promise<Product> {
+    const res = await apiFetch<ProductApiDTO>('/engineering/products', {
+      method: 'POST',
+      body: JSON.stringify(toProductApiDTO({ ...product, id: '', version: 1 })),
+    })
+    return toProductContract(
+      ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
+        res,
+        'ProductMaintenanceService.createProduct'
+      ) as ProductApiDTO
+    )
+  },
 
-    /**
-     * SDRTS: 增量更新产品档案 (TDO: PRODUCT_ARCHIVE_REPAIR)
-     */
-    async patchProduct(id: string, delta: DeltaSet, version: number): Promise<Product> {
-        const payload: DeltaPayload = {
-            op: 'PATCH',
-            delta,
-            metadata: { 
-                id, 
-                version,
-                intent: 'PRODUCT_ARCHIVE_REPAIR'
-            }
-        }
-        const res = await apiFetch<Product>(`/engineering/products/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(payload)
-        })
-        return ensureObjectResponse<Product>(res, 'ProductMaintenanceService.patchProduct')
-    },
-
-    /**
-     * 批量同步产品档案 (原子化分发)
-     */
-    async bulkSyncProducts(products: Product[]): Promise<{ status: string; count: number }> {
-        return apiFetch<{ status: string; count: number }>('/engineering/products/bulk', {
-            method: 'POST',
-            body: JSON.stringify({
-                products,
-                metadata: { intent: 'BULK_PRODUCT_SYNC' }
-            })
-        })
-    },
-
-    /**
-     * 删除产品档案 (逻辑或物理)
-     */
-    async deleteProduct(id: string): Promise<void> {
-        return apiFetch(`/engineering/products/${id}`, {
-            method: 'DELETE'
-            // 移除 body 以提高后端兼容性
-        })
+  async patchProduct(id: string, product: Partial<Product>): Promise<Product> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta: buildProductDelta(product),
+      metadata: {
+        id,
+        version: product.version ?? 0,
+      },
     }
+
+    const res = await apiFetch<ProductApiDTO>(`/engineering/products/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    return toProductContract(
+      ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
+        res,
+        'ProductMaintenanceService.patchProduct'
+      ) as ProductApiDTO
+    )
+  },
+
+  async saveProduct(product: Partial<Product>): Promise<Product> {
+    if (product.id) {
+      return this.patchProduct(product.id, product)
+    }
+    return this.createProduct(product)
+  },
+
+  async bulkSyncProducts(products: Product[]): Promise<{ status: string; count: number }> {
+    return apiFetch<{ status: string; count: number }>('/engineering/products/sync', {
+      method: 'POST',
+      body: JSON.stringify(toBulkSyncProductsApiDTO(products)),
+    })
+  },
+
+  async deleteProduct(id: string): Promise<void> {
+    return apiFetch(`/engineering/products/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }

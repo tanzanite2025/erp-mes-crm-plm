@@ -1,6 +1,8 @@
 import { Hash } from 'lucide-react'
+import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import { useLanguage } from '@/context/language-provider'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { type Material } from '../data/schema'
 import { resolveMaterialCategoryLabel } from '../utils/material-mgmt-utils'
 
@@ -11,6 +13,9 @@ interface MaterialMobileListProps {
 }
 
 export function MaterialMobileList({ isLoading, materials, onEdit }: MaterialMobileListProps) {
+    const { locale } = useLanguage()
+    const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
+
     return (
         <div className='md:hidden flex flex-col gap-4'>
             {isLoading ? (
@@ -28,7 +33,7 @@ export function MaterialMobileList({ isLoading, materials, onEdit }: MaterialMob
                     >
                         <div className='absolute top-0 right-0 p-2'>
                             <Badge variant='outline' className='text-[8px] font-black uppercase tracking-widest bg-primary/5 border-none text-primary/60 rounded-full h-4'>
-                                {resolveMaterialCategoryLabel(m.category, DictionaryCoreService.getOptions('MATERIAL_CATEGORY'))}
+                                {resolveMaterialCategoryLabel(m.category, categoryOptions)}
                             </Badge>
                         </div>
 

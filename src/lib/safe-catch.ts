@@ -4,19 +4,12 @@ import { getServerErrorPresentation, showServerErrorToast } from './handle-serve
 const logger = createLogger('SafeCatch')
 
 /**
- * Fail-Loudly 核心异常拦截函数。
- *
- * 该函数是全项目异步操作的最终异常出口。
- * 调用此函数意味着异常已被明确处理（日志 + UI 反馈），不会再被遗漏。
- *
- * @param error   - 捕获到的异常对象
- * @param scope   - 来源标识（如 "StocktakeMgmt.onConfirmAdjustment"）
- * @param options - 配置选项
- *   - silentUI: 如果为 true，仅后台上报，不弹出用户可见的 Toast。适用于：
- *     1. JSON 解析 fallback（如 dictionary-service 的多重 parse）
- *     2. 后台低优先级同步（如 cloud-sync）
- *     默认 false，即弹 Toast + 后台上报。
- */
+ * Fail-Loudly 鏍稿績寮傚父鎷︽埅鍑芥暟銆? *
+ * 璇ュ嚱鏁版槸鍏ㄩ」鐩紓姝ユ搷浣滅殑鏈€缁堝紓甯稿嚭鍙ｃ€? * 璋冪敤姝ゅ嚱鏁版剰鍛崇潃寮傚父宸茶鏄庣‘澶勭悊锛堟棩蹇?+ UI 鍙嶉锛夛紝涓嶄細鍐嶈閬楁紡銆? *
+ * @param error   - 鎹曡幏鍒扮殑寮傚父瀵硅薄
+ * @param scope   - 鏉ユ簮鏍囪瘑锛堝 "StocktakeMgmt.onConfirmAdjustment"锛? * @param options - 閰嶇疆閫夐」
+ *   - silentUI: 濡傛灉涓?true锛屼粎鍚庡彴涓婃姤锛屼笉寮瑰嚭鐢ㄦ埛鍙鐨?Toast銆傞€傜敤浜庯細
+ *     1. JSON 瑙ｆ瀽 fallback锛堝 service-layer 鐨勫閲?parse锛? *     2. 鍚庡彴浣庝紭鍏堢骇鍚屾锛堝 cloud-sync锛? *     榛樿 false锛屽嵆寮?Toast + 鍚庡彴涓婃姤銆? */
 export function failLoudly(
   error: unknown,
   scope: string,
@@ -24,24 +17,21 @@ export function failLoudly(
 ): void {
   const { silentUI = false } = options
 
-  // 强制后台报警 — 这是 Fail Loudly 的核心契约
-  logger.error(`[FAIL_LOUDLY] ${scope}`, error)
+  // 寮哄埗鍚庡彴鎶ヨ 鈥?杩欐槸 Fail Loudly 鐨勬牳蹇冨绾?  logger.error(`[FAIL_LOUDLY] ${scope}`, error)
 
-  // UI 层报错（调用项目已有的标准化错误处理器）
+  // UI 灞傛姤閿欙紙璋冪敤椤圭洰宸叉湁鐨勬爣鍑嗗寲閿欒澶勭悊鍣級
   if (!silentUI) {
     showServerErrorToast(getServerErrorPresentation(error))
   }
 }
 
 /**
- * 安全异步执行包装器。
+ * 瀹夊叏寮傛鎵ц鍖呰鍣ㄣ€? *
+ * 灏嗕竴涓?async 鎿嶄綔鍖呰鎴?涓嶅彲鑳介潤榛樺け璐?鐨勭増鏈細
+ * - 鎴愬姛 鈫?杩斿洖缁撴灉
+ * - 澶辫触 鈫?璋冪敤 failLoudly 瀹屾垚闂幆锛岃繑鍥?undefined
  *
- * 将一个 async 操作包装成"不可能静默失败"的版本：
- * - 成功 → 返回结果
- * - 失败 → 调用 failLoudly 完成闭环，返回 undefined
- *
- * 适用于不希望在 UI 组件中写 try/catch 的场景。
- *
+ * 閫傜敤浜庝笉甯屾湜鍦?UI 缁勪欢涓啓 try/catch 鐨勫満鏅€? *
  * @example
  * ```ts
  * const result = await safeAsync(
@@ -49,7 +39,7 @@ export function failLoudly(
  *   'StockMgmt.reconcile'
  * )
  * if (result !== undefined) {
- *   toast.success('对账完成')
+ *   toast.success('瀵硅处瀹屾垚')
  * }
  * ```
  */
@@ -65,3 +55,4 @@ export async function safeAsync<T>(
     return undefined
   }
 }
+

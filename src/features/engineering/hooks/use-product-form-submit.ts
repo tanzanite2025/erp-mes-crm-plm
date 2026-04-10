@@ -11,7 +11,6 @@ import {
   ensureSkuUnique,
   type ProductVariantSelection,
 } from '../utils/product-form-utils'
-import { type useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 interface UseProductFormSubmitParams {
   currentRow?: Product
@@ -21,8 +20,7 @@ interface UseProductFormSubmitParams {
   selectedVariants: ProductVariantSelection[]
   setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Product | Product[], isPatch?: boolean, delta?: any) => Promise<void> | void
-  deltaTracker: ReturnType<typeof useDeltaTracker<Product>>
+  onSubmit?: (data: Product | Product[]) => Promise<void> | void
 }
 
 export function useProductFormSubmit({
@@ -34,7 +32,6 @@ export function useProductFormSubmit({
   setSelectedVariants,
   onOpenChange,
   onSubmit,
-  deltaTracker,
 }: UseProductFormSubmitParams) {
   const { t } = useLanguage()
 
@@ -55,6 +52,7 @@ export function useProductFormSubmit({
   }
 
   const handleFormSubmit = async (values: Product) => {
+    const selectedType = productTypes.find((type) => type.id === values.typeId)
     const allProducts = (await ProductCoreService.getProducts()) || []
     const existingSkuMap = new Map<string, string>()
 
@@ -98,7 +96,6 @@ export function useProductFormSubmit({
         { id: 'batch-save' }
       )
 
-      const selectedType = productTypes.find((type) => type.id === values.typeId)
       const typeCode = selectedType?.code || 'X'
 
       try {
@@ -131,7 +128,7 @@ export function useProductFormSubmit({
       const finalData = buildSingleVariantProduct(
         values,
         variant,
-        productTypes.find((type) => type.id === values.typeId)?.code || 'X'
+        selectedType?.code || 'X'
       )
 
       if (!validateSkuUnique([finalData])) return
@@ -144,16 +141,7 @@ export function useProductFormSubmit({
       )
     } else {
       if (!validateSkuUnique([values])) return
-      
-      if (isEdit && currentRow) {
-        // SDRTS: 增量更新逻辑
-        const delta = deltaTracker.commit()
-        if (Object.keys(delta).length > 0) {
-          if (onSubmit) await onSubmit(values, true, delta)
-        }
-      } else {
-        if (onSubmit) await onSubmit(values)
-      }
+      if (onSubmit) await onSubmit(values)
 
       toast.success(
         isEdit

@@ -29,6 +29,7 @@ func registerEquipmentRoutes(authorized *gin.RouterGroup) {
 	moldGroup.GET("/dashboard/stats", handlers.GetAssetDashboardStatsHandler)
 	moldGroup.GET("/capacity", handlers.GetMoldCapacityHandler)
 	moldGroup.POST("/capacity-alerts", handlers.CheckMoldCapacityAlertsHandler)
+	moldGroup.GET("/check-sn", handlers.CheckMoldDuplicateSNHandler)
 	moldGroup.GET("", handlers.GetMoldsHandler)
 	moldGroup.GET("/:id", handlers.GetMoldHandler)
 	moldGroup.POST("", moldManage, handlers.SaveMoldHandler)

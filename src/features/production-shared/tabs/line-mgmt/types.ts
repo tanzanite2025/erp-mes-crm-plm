@@ -5,6 +5,33 @@ export interface ProcessStep {
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown>
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface Station {
+  id: string
+  categoryId?: string
+  code?: string
+  name: string
+  description?: string
+  sortOrder?: number
+  attributes?: Record<string, unknown>
+  processes: ProcessStep[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface JobCategory {
+  id: string
+  segmentId?: string
+  name: string
+  description?: string
+  sortOrder?: number
+  attributes?: Record<string, unknown>
+  stations: Station[]
+  createdAt?: string
   updatedAt?: string
 }
 
@@ -14,7 +41,7 @@ export interface Segment {
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown>
-  processes: ProcessStep[]
+  jobCategories: JobCategory[]
   updatedAt?: string
 }
 

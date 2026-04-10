@@ -1,6 +1,5 @@
 import { MoldCoreService } from './mold-core-service'
 import { MoldTransactionService } from './mold-transaction-service'
-import { MoldMaintenanceService } from './mold-maintenance-service'
 import { FurnaceService } from './furnace-service'
 import { MoldLoanService } from './mold-loan-service'
 
@@ -10,13 +9,10 @@ import { MoldLoanService } from './mold-loan-service'
 export class AssetService {
     static getMolds = MoldCoreService.getMolds.bind(MoldCoreService)
     static getGroupNames = MoldCoreService.getGroupNames.bind(MoldCoreService)
-    static saveMolds = MoldMaintenanceService.saveMolds.bind(MoldMaintenanceService)
     static checkMoldCapacity = MoldTransactionService.checkMoldCapacity.bind(MoldTransactionService)
     static checkMoldCapacityAlerts = MoldTransactionService.checkMoldCapacityAlerts.bind(MoldTransactionService)
-    static checkLinkIntegrity = MoldCoreService.checkLinkIntegrity.bind(MoldCoreService)
 
     static getFurnaces = FurnaceService.getFurnaces.bind(FurnaceService)
-    static saveFurnaces = FurnaceService.saveFurnaces.bind(FurnaceService)
 
     static getLoans = MoldLoanService.getLoans.bind(MoldLoanService)
     static lendMold = MoldLoanService.createLoan.bind(MoldLoanService)

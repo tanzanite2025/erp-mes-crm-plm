@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import type { SalesOrder } from '../data/schema'
+import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
 
 interface SalesOrderMasterProps {
@@ -38,7 +38,7 @@ export function SalesOrderMaster({
   onEdit,
   onDelete,
 }: SalesOrderMasterProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   return (
     <div className='w-full overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
@@ -82,8 +82,7 @@ export function SalesOrderMaster({
               orders.map((order) => {
                 const active = order.id === selectedId
                 const classification =
-                  DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === order.classification)
-                    ?.label ||
+                  getSalesOrderClassificationLabel(order.classification, locale) ||
                   order.classification ||
                   '-'
 

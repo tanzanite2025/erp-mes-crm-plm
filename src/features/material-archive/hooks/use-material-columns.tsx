@@ -4,7 +4,7 @@ import { Settings2, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { type Material, type MaterialCategory } from '../data/schema'
 import { resolveMaterialCategoryLabel } from '../utils/material-mgmt-utils'
 
@@ -15,7 +15,8 @@ interface UseMaterialColumnsParams {
 }
 
 export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialColumnsParams) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
+  const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
 
 
   return useMemo<ColumnDef<Material>[]>(() => {
@@ -119,7 +120,7 @@ export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialCo
         cell: ({ row }) => {
           const resolved = resolveMaterialCategoryLabel(
             row.original.category,
-            DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
+            categoryOptions
           )
 
           const categoryLabel =
@@ -179,5 +180,5 @@ export function useMaterialColumns({ category, onEdit, onDelete }: UseMaterialCo
     })
 
     return columns
-  }, [category, onDelete, onEdit, t])
+  }, [category, categoryOptions, onDelete, onEdit, t])
 }

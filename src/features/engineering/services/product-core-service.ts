@@ -2,59 +2,74 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { toProductArrayContract, toProductContract, toProductListContract } from '../adapters/product-api-adapter'
+import {
+  type ProductApiDTO,
+  type ProductListPageApiDTO,
+  type ProductNextCodeApiDTO,
+} from '../contracts/product-api-dto'
 import { type Product } from '../data/schema'
+import { getProductAttributeSummary } from '../utils/product-attribute-utils'
 
-/**
- * ProductCoreService - 产品档案核心查询服务
- * 职责: 负责产品列表、详情检索及 UI 显示格式化。
- */
 export const ProductCoreService = {
-    /**
-     * 分页/选项 获取产品列表
-     */
-    async getProducts(params?: { isOptions?: boolean; page?: number; pageSize?: number }): Promise<Product[]> {
-        let qs = ''
-        if (params?.isOptions) {
-            qs = '?options=true'
-        } else if (params?.page) {
-            qs = `?page=${params.page}&pageSize=${params.pageSize || 50}`
-        }
-        // 移除导致 500 的强制默认选项
-        const res = await apiFetch<Product[]>('/engineering/products' + qs)
-        return ensureArrayResponse<Product>(res, 'ProductCoreService.getProducts')
-    },
+  async getProducts(params?: { isOptions?: boolean; page?: number; pageSize?: number }): Promise<Product[]> {
+    const useOptions = params?.isOptions ?? !params?.page
+    let qs = ''
 
-    /**
-     * 获取单个产品详情
-     */
-    async getProductById(id: string): Promise<Product> {
-        const res = await apiFetch<Product>(`/engineering/products/${id}`)
-        return ensureObjectResponse<Product & Record<string, unknown>>(res, 'ProductCoreService.getProductById') as Product
-    },
+    if (useOptions) {
+      qs = '?options=true'
+    } else if (params?.page) {
+      qs = `?page=${params.page}&pageSize=${params.pageSize || 50}`
+    }
 
-    /**
-     * 格式化产品展示名称 (系统标准实现)
-     */
-    formatDisplay(product: any): string {
-        if (!product) return 'NULL_PRODUCT'
-        
-        const { name, sku, techSeries, brakeType, versionLevel } = product
-        const details = [techSeries, brakeType, versionLevel].filter(Boolean).join('/')
-        
-        if (details) {
-            return `${name} (${details})`
-        }
-        
+    if (useOptions) {
+      const res = await apiFetch<ProductApiDTO[]>(`/engineering/products${qs}`)
+      return toProductArrayContract(
+        ensureArrayResponse<ProductApiDTO>(res, 'ProductCoreService.getProducts.options')
+      )
+    }
+
+    const res = await apiFetch<ProductListPageApiDTO>(`/engineering/products${qs}`)
+    return toProductListContract(
+      ensureObjectResponse<ProductListPageApiDTO & Record<string, unknown>>(
+        res,
+        'ProductCoreService.getProducts.page'
+      ) as ProductListPageApiDTO
+    )
+  },
+
+  async getProductById(id: string): Promise<Product> {
+    const res = await apiFetch<ProductApiDTO>(`/engineering/products/${id}`)
+    return toProductContract(
+      ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
+        res,
+        'ProductCoreService.getProductById'
+      ) as ProductApiDTO
+    )
+  },
+
+  formatDisplay(product: Partial<Product> | null | undefined): string {
+    if (!product) return 'NULL_PRODUCT'
+
+    const { name, sku } = product
+    const { series, brake, version } = getProductAttributeSummary(product as Product)
+    const details = [series, brake, version].filter(Boolean).join('/')
+
+    if (details) {
+      return `${name} (${details})`
+    }
+
     return name || sku || 'UNNAMED'
   },
 
-  /**
-   * 获取下一个可用的产品分类型号编码 (权威发号)
-   * [BACKEND-AUTHORITY]: 严禁前端拉取全量产品列表进行自增计算，必须由后端原子化发号。
-   */
   async getNextCode(typeId: string): Promise<string> {
-    const res = await apiFetch<{ nextCode: string }>(`/engineering/products/next-code?typeId=${typeId}`)
-    const data = ensureObjectResponse<{ nextCode: string }>(res, 'ProductCoreService.getNextCode')
+    const res = await apiFetch<ProductNextCodeApiDTO>(
+      `/engineering/products/next-code?typeId=${typeId}`
+    )
+    const data = ensureObjectResponse<ProductNextCodeApiDTO>(
+      res,
+      'ProductCoreService.getNextCode'
+    )
     return data.nextCode
-  }
+  },
 }

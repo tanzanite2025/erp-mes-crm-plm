@@ -6,6 +6,7 @@ import { type MaterialRequirement, type MrpStats } from '../data/requirement-sch
 type MrpRequirementsResponse = {
   requirements: MaterialRequirement[]
   stats: MrpStats
+  errorMessage?: string
 }
 
 export const RequirementCoreService = {

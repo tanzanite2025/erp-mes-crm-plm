@@ -1,9 +1,5 @@
 import { type MasterDataSearchResult } from '../services/inventory-core-service'
-
-export interface WarehouseCategoryOption {
-  value: string
-  label: string
-}
+export type { WarehouseCategoryOption } from '../services/warehouse-category-core-service'
 
 export const DEFAULT_SHIPMENT_FORM_DATA = {
   quantity: 1,

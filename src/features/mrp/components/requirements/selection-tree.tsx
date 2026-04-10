@@ -11,6 +11,7 @@ import { createLogger } from '@/lib/logger'
 import { type BOM } from '@/features/engineering/data/schema'
 import { bomService } from '@/features/engineering/services/bom-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
+import { RequirementStageAlert } from './requirement-stage-alert'
 
 const logger = createLogger('SelectionTree')
 
@@ -26,6 +27,16 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
   const [expandedOrders, setExpandedOrders] = useState<string[]>([])
   const [expandedProducts, setExpandedProducts] = useState<string[]>([])
   const [boms, setBoms] = useState<BOM[]>([])
+
+  const selectedMissingBomCount = selectedKeys.reduce((count, key) => {
+    const [orderNo, rawLineNo] = key.split('-')
+    const lineNo = Number(rawLineNo)
+    const order = orders.find((entry) => entry.orderNo === orderNo)
+    const line = order?.lines.find((entry) => entry.lineNo === lineNo)
+    if (!line) return count
+    const productBOM = boms.find((bom) => bom.productId === line.productId)
+    return productBOM ? count : count + 1
+  }, 0)
 
   useEffect(() => {
     const loadBOMs = async () => {
@@ -164,10 +175,11 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                       {isProductExpanded && (
                         <div className='px-14 pb-5 space-y-2 animate-in fade-in duration-300'>
                           {!productBOM ? (
-                            <div className='text-[9px] font-bold text-amber-500/60 uppercase flex items-center gap-1.5 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10'>
-                              <div className='size-1.5 rounded-full bg-amber-500 animate-pulse' />
-                              {t('mrp.requirements.selectionTree.noBom')}
-                            </div>
+                            <RequirementStageAlert
+                              tone='warning'
+                              title={t('mrp.requirements.selectionTree.noBomTitle')}
+                              description={t('mrp.requirements.selectionTree.noBom')}
+                            />
                           ) : (
                             <>
                               <div className='text-[9px] font-black uppercase text-muted-foreground/30 tracking-[0.2em] mb-2 flex items-center justify-between'>
@@ -218,7 +230,9 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
                 {t('mrp.requirements.selectionTree.selectedCount', { count: selectedKeys.length })}
               </span>
               <span className='text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest'>
-                {t('mrp.requirements.selectionTree.analyzeReady')}
+                {selectedMissingBomCount > 0
+                  ? t('mrp.requirements.selectionTree.blockedByMissingBom', { count: selectedMissingBomCount })
+                  : t('mrp.requirements.selectionTree.analyzeReady')}
               </span>
             </div>
           </div>
@@ -227,7 +241,11 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
             <button onClick={() => onSelectionChange([])} className='h-10 px-4 rounded-2xl text-[11px] font-black uppercase hover:bg-white/5 transition-colors'>
               {t('mrp.requirements.selectionTree.cancel')}
             </button>
-            <button onClick={onAnalyze} className='h-10 px-6 rounded-2xl bg-white text-[#0F172A] text-[11px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-xl'>
+            <button
+              onClick={onAnalyze}
+              disabled={selectedMissingBomCount > 0}
+              className='h-10 px-6 rounded-2xl bg-white text-[#0F172A] text-[11px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-xl disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:scale-100'
+            >
               {t('mrp.requirements.selectionTree.analyze')}
             </button>
           </div>

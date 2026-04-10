@@ -67,26 +67,272 @@ func ResolveDepartmentBoundRoleID(employeeID string) (string, error) {
 func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user models.User) EffectiveAccessProfile {
 	explicitRoleID := strings.TrimSpace(user.Role)
 	employeeID := strings.TrimSpace(user.EmployeeID)
-	profile := EffectiveAccessProfile{
-		PrimaryRoleID: explicitRoleID,
-		EmployeeID:    employeeID,
+	profile := EffectiveAccessProfile{EmployeeID: employeeID}
+
+	boundRoleIDs := resolveBoundRoleIDs(user)
+	legacyRoleIDs := make([]string, 0, 2)
+
+	// Legacy fallback: keep old department-derived roles only when the new binding path
+	// has not yielded any role yet.
+	if len(boundRoleIDs) == 0 {
+		legacyRoleIDs = appendUniqueRoleIDs(legacyRoleIDs, resolveDepartmentRoleIDs(employeeID)...)
 	}
 
-	if explicitRoleID != "" {
-		profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, explicitRoleID)
+	primaryRoleID := resolvePrimaryRoleID(user)
+	if primaryRoleID == "" && len(boundRoleIDs) > 0 {
+		primaryRoleID = strings.TrimSpace(boundRoleIDs[0])
+	}
+	if primaryRoleID == "" && len(legacyRoleIDs) > 0 {
+		primaryRoleID = strings.TrimSpace(legacyRoleIDs[0])
+	}
+	if primaryRoleID == "" && explicitRoleID != "" {
+		primaryRoleID = explicitRoleID
 	}
 
-	if len(profile.EffectiveRoles) == 0 && employeeID != "" {
-		profile.PrimaryRoleID = ""
+	profile.PrimaryRoleID = primaryRoleID
+	if primaryRoleID != "" {
+		profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, primaryRoleID)
 	}
+	profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, boundRoleIDs...)
+	profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, explicitRoleID)
+	profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, legacyRoleIDs...)
 
-	profile.EffectiveRoles = appendUniqueRoleIDs(profile.EffectiveRoles, resolveDepartmentRoleIDs(employeeID)...)
+	if strings.TrimSpace(profile.PrimaryRoleID) == "" && len(profile.EffectiveRoles) > 0 {
+		profile.PrimaryRoleID = strings.TrimSpace(profile.EffectiveRoles[0])
+	}
 
 	for _, roleID := range profile.EffectiveRoles {
 		profile.Permissions = appendUniquePermissionIDs(profile.Permissions, resolvePermissionsForRole(roleID))
 	}
 
 	return profile
+}
+
+func resolvePrimaryRoleID(user models.User) string {
+	if db.DB == nil {
+		return ""
+	}
+
+	userID := strings.TrimSpace(user.ID)
+	if userID == "" || !hasTable(db.DB, "user_roles") {
+		return ""
+	}
+
+	var row roleBindingRow
+	if err := db.DB.Table("user_roles").
+		Select("role_id").
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NULL").
+		Where("COALESCE(is_primary, false) = true").
+		Where("LOWER(COALESCE(status, 'active')) = ?", "active").
+		Where("(start_date IS NULL OR start_date <= CURRENT_DATE)").
+		Where("(end_date IS NULL OR end_date >= CURRENT_DATE)").
+		Order("updated_at DESC").
+		Take(&row).Error; err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(row.RoleID)
+}
+
+func resolveBoundRoleIDs(user models.User) []string {
+	if db.DB == nil {
+		return nil
+	}
+
+	resolved := make([]string, 0, 8)
+	userID := strings.TrimSpace(user.ID)
+	if userID != "" {
+		resolved = appendUniqueRoleIDs(resolved, resolveUserBoundRoleIDs(db.DB, userID)...)
+	}
+
+	employeeRef := strings.TrimSpace(user.EmployeeID)
+	if employeeRef == "" {
+		return resolved
+	}
+
+	employeeRecordID, err := resolveEmployeeRecordID(db.DB, employeeRef)
+	if err != nil || employeeRecordID == "" {
+		return resolved
+	}
+
+	resolved = appendUniqueRoleIDs(resolved, resolveEmployeeBoundRoleIDs(db.DB, employeeRecordID)...)
+
+	positionIDs, orgUnitIDs := resolveAssignmentScopeIDs(db.DB, employeeRecordID)
+	resolved = appendUniqueRoleIDs(resolved, resolvePositionBoundRoleIDs(db.DB, positionIDs)...)
+	resolved = appendUniqueRoleIDs(resolved, resolveOrgDefaultBoundRoleIDs(db.DB, orgUnitIDs)...)
+
+	return resolved
+}
+
+func hasTable(tx *gorm.DB, tableName string) bool {
+	if tx == nil || strings.TrimSpace(tableName) == "" {
+		return false
+	}
+	return tx.Migrator().HasTable(tableName)
+}
+
+func resolveEmployeeRecordID(tx *gorm.DB, employeeID string) (string, error) {
+	normalizedEmployeeID := strings.TrimSpace(employeeID)
+	if tx == nil || normalizedEmployeeID == "" {
+		return "", nil
+	}
+
+	var employee models.Employee
+	queryByID := tx.Select("id").Where("id = ?", normalizedEmployeeID).First(&employee)
+	if queryByID.Error == nil {
+		return strings.TrimSpace(employee.ID), nil
+	}
+	if queryByID.Error != nil && queryByID.Error != gorm.ErrRecordNotFound {
+		return "", queryByID.Error
+	}
+
+	queryByStaffID := tx.Select("id").Where("LOWER(staff_id) = ?", strings.ToLower(normalizedEmployeeID)).First(&employee)
+	if queryByStaffID.Error == nil {
+		return strings.TrimSpace(employee.ID), nil
+	}
+	if queryByStaffID.Error != nil && queryByStaffID.Error != gorm.ErrRecordNotFound {
+		return "", queryByStaffID.Error
+	}
+
+	return "", nil
+}
+
+type roleBindingRow struct {
+	RoleID string `gorm:"column:role_id"`
+}
+
+func resolveUserBoundRoleIDs(tx *gorm.DB, userID string) []string {
+	if tx == nil || strings.TrimSpace(userID) == "" || !hasTable(tx, "user_roles") {
+		return nil
+	}
+
+	var rows []roleBindingRow
+	if err := tx.Table("user_roles").
+		Select("role_id").
+		Where("user_id = ?", strings.TrimSpace(userID)).
+		Where("deleted_at IS NULL").
+		Where("LOWER(COALESCE(status, 'active')) = ?", "active").
+		Where("(start_date IS NULL OR start_date <= CURRENT_DATE)").
+		Where("(end_date IS NULL OR end_date >= CURRENT_DATE)").
+		Order("is_primary DESC, updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil
+	}
+
+	resolved := make([]string, 0, len(rows))
+	for _, row := range rows {
+		resolved = appendUniqueRoleIDs(resolved, row.RoleID)
+	}
+	return resolved
+}
+
+func resolveEmployeeBoundRoleIDs(tx *gorm.DB, employeeRecordID string) []string {
+	if tx == nil || strings.TrimSpace(employeeRecordID) == "" || !hasTable(tx, "employee_roles") {
+		return nil
+	}
+
+	var rows []roleBindingRow
+	if err := tx.Table("employee_roles").
+		Select("role_id").
+		Where("employee_id = ?", strings.TrimSpace(employeeRecordID)).
+		Where("deleted_at IS NULL").
+		Where("LOWER(COALESCE(status, 'active')) = ?", "active").
+		Where("(start_date IS NULL OR start_date <= CURRENT_DATE)").
+		Where("(end_date IS NULL OR end_date >= CURRENT_DATE)").
+		Order("updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil
+	}
+
+	resolved := make([]string, 0, len(rows))
+	for _, row := range rows {
+		resolved = appendUniqueRoleIDs(resolved, row.RoleID)
+	}
+	return resolved
+}
+
+type assignmentScopeRow struct {
+	PositionID *string `gorm:"column:position_id"`
+	OrgUnitID  *string `gorm:"column:org_unit_id"`
+}
+
+func resolveAssignmentScopeIDs(tx *gorm.DB, employeeRecordID string) ([]string, []string) {
+	if tx == nil || strings.TrimSpace(employeeRecordID) == "" || !hasTable(tx, "employee_assignments") {
+		return nil, nil
+	}
+
+	var rows []assignmentScopeRow
+	if err := tx.Table("employee_assignments").
+		Select("position_id", "org_unit_id").
+		Where("employee_id = ?", strings.TrimSpace(employeeRecordID)).
+		Where("deleted_at IS NULL").
+		Where("LOWER(COALESCE(status, 'active')) IN ?", []string{"active", "on_leave"}).
+		Where("(start_date IS NULL OR start_date <= CURRENT_DATE)").
+		Where("(end_date IS NULL OR end_date >= CURRENT_DATE)").
+		Order("is_primary DESC, updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil, nil
+	}
+
+	positionIDs := make([]string, 0, len(rows))
+	orgUnitIDs := make([]string, 0, len(rows))
+	for _, row := range rows {
+		if row.PositionID != nil {
+			positionIDs = appendUniqueStringIDs(positionIDs, *row.PositionID)
+		}
+		if row.OrgUnitID != nil {
+			orgUnitIDs = appendUniqueStringIDs(orgUnitIDs, *row.OrgUnitID)
+		}
+	}
+
+	return positionIDs, orgUnitIDs
+}
+
+func resolvePositionBoundRoleIDs(tx *gorm.DB, positionIDs []string) []string {
+	if tx == nil || len(positionIDs) == 0 || !hasTable(tx, "position_roles") {
+		return nil
+	}
+
+	var rows []roleBindingRow
+	if err := tx.Table("position_roles").
+		Select("role_id").
+		Where("position_id IN ?", positionIDs).
+		Where("deleted_at IS NULL").
+		Where("COALESCE(is_active, true) = true").
+		Order("updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil
+	}
+
+	resolved := make([]string, 0, len(rows))
+	for _, row := range rows {
+		resolved = appendUniqueRoleIDs(resolved, row.RoleID)
+	}
+	return resolved
+}
+
+func resolveOrgDefaultBoundRoleIDs(tx *gorm.DB, orgUnitIDs []string) []string {
+	if tx == nil || len(orgUnitIDs) == 0 || !hasTable(tx, "org_default_roles") {
+		return nil
+	}
+
+	var rows []roleBindingRow
+	if err := tx.Table("org_default_roles").
+		Select("role_id").
+		Where("org_unit_id IN ?", orgUnitIDs).
+		Where("deleted_at IS NULL").
+		Where("COALESCE(is_active, true) = true").
+		Order("updated_at DESC").
+		Find(&rows).Error; err != nil {
+		return nil
+	}
+
+	resolved := make([]string, 0, len(rows))
+	for _, row := range rows {
+		resolved = appendUniqueRoleIDs(resolved, row.RoleID)
+	}
+	return resolved
 }
 
 func resolveDepartmentRoleIDs(employeeID string) []string {
@@ -369,6 +615,39 @@ func appendUniqueRoleIDs(existing []string, additions ...string) []string {
 
 	for _, roleID := range additions {
 		normalized := strings.TrimSpace(roleID)
+		if normalized == "" {
+			continue
+		}
+		key := strings.ToLower(normalized)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, normalized)
+	}
+
+	return result
+}
+
+func appendUniqueStringIDs(existing []string, additions ...string) []string {
+	seen := make(map[string]struct{}, len(existing)+len(additions))
+	result := make([]string, 0, len(existing)+len(additions))
+
+	for _, item := range existing {
+		normalized := strings.TrimSpace(item)
+		if normalized == "" {
+			continue
+		}
+		key := strings.ToLower(normalized)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, normalized)
+	}
+
+	for _, item := range additions {
+		normalized := strings.TrimSpace(item)
 		if normalized == "" {
 			continue
 		}

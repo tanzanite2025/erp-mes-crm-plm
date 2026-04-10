@@ -23,13 +23,13 @@ async fn main() -> Result<()> {
         .map_err(|_| anyhow!("DATABASE_URL is required for watchdog startup"))?;
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://redis:6379".to_string());
 
-    println!("[WATCHDOG] XDFC 极致监控哨兵已启动 (Rust Engine)");
+    println!("[WATCHDOG] XDFC 鏋佽嚧鐩戞帶鍝ㄥ叺宸插惎鍔?(Rust Engine)");
     println!(
-        "[WATCHDOG] 目标数据库: {}",
+        "[WATCHDOG] 鐩爣鏁版嵁搴? {}",
         database_url.split('@').last().unwrap_or("unknown")
     );
 
-    // 1. 初始化资源连接池
+    // 1. 鍒濆鍖栬祫婧愯繛鎺ユ睜
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
@@ -41,24 +41,22 @@ async fn main() -> Result<()> {
 
     let mut last_anomaly_count = -1i32;
 
-    // 2. 哨兵主审计循环
     loop {
         match perform_audit(&pool).await {
             Ok(current_status) => {
                 let current_count = current_status.anomalies.len() as i32;
 
-                // 只有在状态发生“漂移”时，才更新 Redis 并广播信号
                 if current_count != last_anomaly_count {
                     println!(
-                        "[WATCHDOG][SIGNAL] 系统状态从 {} 漂移至 {}，同步至总线...",
+                        "[WATCHDOG][SIGNAL] 绯荤粺鐘舵€佷粠 {} 婕傜Щ鑷?{}锛屽悓姝ヨ嚦鎬荤嚎...",
                         last_anomaly_count, current_count
                     );
 
-                    // A. 写入 Redis KV 缓存供 Go 后端读取
+                    // A. 鍐欏叆 Redis KV 缂撳瓨渚?Go 鍚庣璇诲彇
                     let json = serde_json::to_string(&current_status)?;
                     let _: () = con.set("global:integrity:status", json).await?;
 
-                    // B. 发布实时的 PubSub 刷新指令
+                    // B. 鍙戝竷瀹炴椂鐨?PubSub 鍒锋柊鎸囦护
                     let signal = serde_json::json!({
                         "type": "SYSTEM_STATUS_CHANGE",
                         "ts": chrono::Utc::now().timestamp(),
@@ -72,8 +70,7 @@ async fn main() -> Result<()> {
                 }
             }
             Err(e) => {
-                eprintln!("[WATCHDOG][ERROR] 审计任务由于物理故障中断: {}", e);
-                // 发生查询错误时（如 DB 宕机），推播 DATABASE_QUERY_BUSY 状态
+                eprintln!("[WATCHDOG][ERROR] 瀹¤浠诲姟鐢变簬鐗╃悊鏁呴殰涓柇: {}", e);
                 let busy_status = IntegrityResult {
                     anomalies: vec!["DATABASE_QUERY_BUSY".to_string()],
                     details: vec![format!("Probe Failed: {}", e)],
@@ -85,39 +82,19 @@ async fn main() -> Result<()> {
             }
         }
 
-        // 工业级采样频率：每 15 秒执行一次全链路指纹溯源
+        // 宸ヤ笟绾ч噰鏍烽鐜囷細姣?15 绉掓墽琛屼竴娆″叏閾捐矾鎸囩汗婧簮
         sleep(Duration::from_secs(15)).await;
     }
 }
 
-/// 执行深度指纹审计
+/// 鎵ц娣卞害鎸囩汗瀹¤
 async fn perform_audit(pool: &sqlx::PgPool) -> Result<IntegrityResult> {
     let mut result = IntegrityResult::default();
 
-    // --- 巡检项 1: 核心业务元数据指纹 (Fingerprint Rule) ---
-    let golden_groups = vec!["MATERIALS", "ENGINEERING", "TRADING", "PRODUCT"];
-    for code in golden_groups {
-        let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM dict_groups WHERE code = $1 AND deleted_at IS NULL",
-        )
-        .bind(code)
-        .fetch_one(pool)
-        .await?;
-
-        if count == 0 {
-            result
-                .anomalies
-                .push("SYSTEM_DICTIONARY_FINGERPRINT_LOST".to_string());
-            result
-                .details
-                .push(format!("Missing Golden Group: {}", code));
-        }
-    }
-
-    // --- 巡检项 2: 基础设施环境探针 (Infrastructure Rule) ---
+    // --- Infrastructure Rule ---
     let dirs = vec!["uploads", "backups"];
     for d in dirs {
-        // Rust 的 FS 探测几乎零开销
+        // Rust 鐨?FS 鎺㈡祴鍑犱箮闆跺紑閿€
         if !std::path::Path::new(d).exists() {
             let _ = std::fs::create_dir_all(d);
         }
@@ -135,3 +112,5 @@ async fn perform_audit(pool: &sqlx::PgPool) -> Result<IntegrityResult> {
 
     Ok(result)
 }
+
+

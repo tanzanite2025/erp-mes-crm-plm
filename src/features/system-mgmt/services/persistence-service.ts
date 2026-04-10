@@ -1,19 +1,8 @@
 'use client'
 
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { createLogger } from '@/lib/logger'
-import { useAuthStore } from '@/stores/auth-store'
 
 const logger = createLogger('PersistenceService')
-
-function normalizePermissionIds(permissionIds: unknown): string[] {
-  if (!Array.isArray(permissionIds)) return []
-  return permissionIds.map((permissionId) => String(permissionId).trim().toLowerCase()).filter(Boolean)
-}
-
-function hasAnyPermission(permissionIds: string[], required: string[]): boolean {
-  return required.some((permissionId) => permissionIds.includes(permissionId))
-}
 
 export const PersistenceService = {
   _isLocalInitialized: false,
@@ -35,20 +24,6 @@ export const PersistenceService = {
     try {
       logger.info('Starting parallel cloud sync')
 
-      const currentUser = useAuthStore.getState().user
-      const permissionIds = normalizePermissionIds(currentUser?.permissions)
-      const canInitDictionary =
-        permissionIds.includes('superadmin') ||
-        hasAnyPermission(permissionIds, ['menu_settings', 'menu_engineering', 'menu_trading', 'menu_org'])
-
-      if (canInitDictionary) {
-        DictionaryCoreService.init().then(() => {
-          logger.info('Dictionary background loaded')
-        })
-      } else {
-        logger.info('Dictionary background skipped for current permission set')
-      }
-
       logger.info('High-priority initialization detached and running in background')
     } catch (error) {
       logger.error('Cloud sync failure', error)
@@ -60,7 +35,7 @@ export const PersistenceService = {
     logger.warn('Manual reset restricted in Cloud-only mode')
   },
 
-  saveLocal: (key: string, data: any) => {
+  saveLocal: (key: string, data: unknown) => {
     try {
       localStorage.setItem(key, JSON.stringify(data))
     } catch (error) {
@@ -68,7 +43,7 @@ export const PersistenceService = {
     }
   },
 
-  getLocal: (key: string): any => {
+  getLocal: (key: string): unknown => {
     try {
       const data = localStorage.getItem(key)
       return data ? JSON.parse(data) : null

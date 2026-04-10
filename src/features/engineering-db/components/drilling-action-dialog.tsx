@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { FileUploader } from '@/components/file-uploader'
 import { type DrillingPlan } from '../data/schema'
+import { LACING_PATTERN_OPTIONS, STANDARD_HOLE_COUNT_OPTIONS } from '../data/drilling-options'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -181,7 +181,7 @@ export function DrillingActionDialog({
               <SelectDropdown
                 defaultValue={formData.lacingPattern}
                 onValueChange={(val) => { formData.lacingPattern = val }}
-                items={DictionaryCoreService.getOptions('LACING_PATTERN')}
+                items={LACING_PATTERN_OPTIONS}
                 placeholder='选择编织模式'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />
@@ -191,7 +191,7 @@ export function DrillingActionDialog({
               <SelectDropdown
                 defaultValue={formData.standardHoles}
                 onValueChange={(val) => { formData.standardHoles = val }}
-                items={DictionaryCoreService.getOptions('HOLE_COUNT')}
+                items={STANDARD_HOLE_COUNT_OPTIONS}
                 placeholder='选择孔数'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />

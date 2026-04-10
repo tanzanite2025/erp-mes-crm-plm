@@ -18,7 +18,7 @@ func GetEquipmentPartnersHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取流转单位失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, partners)
+	c.JSON(http.StatusOK, mapEquipmentPartnerResponses(partners))
 }
 
 func buildPartnerUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
@@ -111,7 +111,11 @@ func SaveEquipmentPartnerHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存流转单位失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, partner)
+	if err := db.DB.First(&partner, "id = ?", partner.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 鑾峰彇淇濆瓨鍚庣殑娴佽浆鍗曚綅澶辫触: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, mapEquipmentPartnerResponse(partner))
 }
 
 // PatchEquipmentPartnerHandler 差分更新流转单位
@@ -139,7 +143,7 @@ func PatchEquipmentPartnerHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的流转单位失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, partner)
+	c.JSON(http.StatusOK, mapEquipmentPartnerResponse(partner))
 }
 
 // DeleteEquipmentPartnerHandler 删除流转单位

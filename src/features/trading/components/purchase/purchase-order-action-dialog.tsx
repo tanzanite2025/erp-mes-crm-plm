@@ -11,7 +11,7 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
-import { type Material } from '@/features/material-archive/data/schema'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder } from '../../data/schema'
@@ -43,7 +43,7 @@ export function PurchaseOrderActionDialog({
   const activeOrder = summaryOrder ? detailedOrder || summaryOrder : null
 
   const [units, setUnits] = useState<Unit[]>([])
-  const [materials, setMaterials] = useState<Material[]>([])
+  const [materials, setMaterials] = useState<MaterialOption[]>([])
   const [isMetaLoading, setIsMetaLoading] = useState(true)
 
   useEffect(() => {

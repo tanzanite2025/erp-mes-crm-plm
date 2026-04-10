@@ -88,9 +88,7 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
     let dynamicTimeout = 30000; 
     
     // 识别初始化/发现阶段的请求 (这些请求耗时不稳定，但不应轻易触发熔断)
-    const isDiscoveryRequest = 
-        endpoint.includes('/dictionary/groups') || 
-        endpoint.includes('/dictionary/entries') ||
+    const isDiscoveryRequest =
         endpoint.includes('/engineering/products') ||
         endpoint.includes('/logistics') ||
         endpoint.includes('/health');

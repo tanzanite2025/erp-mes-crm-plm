@@ -9,7 +9,17 @@ vi.mock('@/lib/api-client', () => ({
   apiFetch: apiFetchMock,
 }))
 
-import { createUser, fetchUserOptions, fetchUsers, patchUser, replaceUser } from './user-api'
+import {
+  addUserRoleBinding,
+  createUser,
+  fetchUserOptions,
+  fetchUserRoleBindings,
+  fetchUsers,
+  patchUser,
+  removeUserRoleBinding,
+  replaceUser,
+  setUserPrimaryRole,
+} from './user-api'
 
 describe('user-api contract regression', () => {
   beforeEach(() => {
@@ -141,6 +151,70 @@ describe('user-api contract regression', () => {
         role: 'ops_manager',
         employeeId: 'EMP-5',
       }),
+    })
+  })
+
+  it('fetchUserRoleBindings requests user role binding matrix', async () => {
+    apiFetchMock.mockResolvedValue({
+      userId: 'u-6',
+      username: 'alice',
+      primaryRoleId: 'ops_manager',
+      effectiveRoles: ['ops_manager', 'finance_manager'],
+      roleBindings: [
+        { roleId: 'ops_manager', isPrimary: true, status: 'active' },
+        { roleId: 'finance_manager', isPrimary: false, status: 'inactive' },
+      ],
+    })
+
+    const result = await fetchUserRoleBindings('u-6')
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-6/roles')
+    expect(result.userId).toBe('u-6')
+    expect(result.primaryRoleId).toBe('ops_manager')
+    expect(result.roleBindings).toHaveLength(2)
+  })
+
+  it('setUserPrimaryRole sends PATCH contract', async () => {
+    apiFetchMock.mockResolvedValue({ id: 'u-7', role: 'finance_manager', status: 'active', username: 'bob' })
+
+    await setUserPrimaryRole('u-7', 'finance_manager')
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/primary-role', {
+      method: 'PATCH',
+      body: JSON.stringify({ role: 'finance_manager' }),
+    })
+  })
+
+  it('addUserRoleBinding sends POST contract', async () => {
+    apiFetchMock.mockResolvedValue({
+      userId: 'u-8',
+      username: 'carol',
+      primaryRoleId: 'ops_manager',
+      effectiveRoles: ['ops_manager', 'finance_manager'],
+      roleBindings: [],
+    })
+
+    await addUserRoleBinding('u-8', { role: 'finance_manager', source: 'manual' })
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-8/roles', {
+      method: 'POST',
+      body: JSON.stringify({ role: 'finance_manager', source: 'manual' }),
+    })
+  })
+
+  it('removeUserRoleBinding sends DELETE contract', async () => {
+    apiFetchMock.mockResolvedValue({
+      userId: 'u-9',
+      username: 'dylan',
+      primaryRoleId: 'ops_manager',
+      effectiveRoles: ['ops_manager'],
+      roleBindings: [],
+    })
+
+    await removeUserRoleBinding('u-9', 'finance_manager')
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-9/roles/finance_manager', {
+      method: 'DELETE',
     })
   })
 })

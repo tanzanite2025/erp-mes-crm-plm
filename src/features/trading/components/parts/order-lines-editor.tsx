@@ -2,7 +2,6 @@ import { ImageIcon, Layers, Package, Plus, Scissors, Settings2, Trash2 } from 'l
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type Product } from '@/features/engineering/data/schema'
 import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
@@ -13,7 +12,6 @@ type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
   products: Product[]
-  dictEntries: DictionaryEntry[]
   units: Unit[]
   drillingOptions: { label: string; value: string }[]
   labelingOptions: { label: string; value: string }[]
@@ -49,7 +47,6 @@ function getCurrencySymbol(currency?: string) {
 export function OrderLinesEditor({
   lines,
   products,
-  dictEntries,
   units,
   drillingOptions,
   labelingOptions,
@@ -71,7 +68,7 @@ export function OrderLinesEditor({
     onLineChange(index, 'productId', productId, {
       productModel: product.sku,
       productCode: product.sku,
-      specification: formatProductDisplayName(product, dictEntries),
+      specification: formatProductDisplayName(product),
       uom: 'PCS',
     })
   }
@@ -138,7 +135,7 @@ export function OrderLinesEditor({
                     <option value=''>{t('tradingSalesOrder.linesEditor.selectDesktop')}</option>
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
-                        {formatProductDisplayName(product, dictEntries)}
+                        {formatProductDisplayName(product)}
                       </option>
                     ))}
                   </select>
@@ -256,7 +253,7 @@ export function OrderLinesEditor({
                   <option value=''>{t('tradingSalesOrder.linesEditor.selectProduct')}</option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id}>
-                      {formatProductDisplayName(product, dictEntries)}
+                      {formatProductDisplayName(product)}
                     </option>
                   ))}
                 </select>

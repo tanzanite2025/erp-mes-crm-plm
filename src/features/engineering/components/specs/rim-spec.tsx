@@ -3,21 +3,18 @@
 import type { UseFormReturn } from 'react-hook-form'
 import { ListChecks } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { SelectDropdown } from '@/components/select-dropdown'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { type Product } from '../../data/schema'
+import { getProductAttributeSummary } from '../../utils/product-attribute-utils'
 
 interface RimSpecFormProps {
   form: UseFormReturn<Product>
   options: {
-    tireType: Array<{ label: string; value: string }>
-    brakeType: Array<{ label: string; value: string }>
-    techSeries: Array<{ label: string; value: string }>
-    versionLevel: Array<{ label: string; value: string }>
+    versionCategoryOptions: Array<{ label: string; value: string }>
   }
   selectedVariants: { level: string; weight: number | undefined }[]
   onVariantToggle: (level: string, checked: boolean) => void
@@ -43,7 +40,7 @@ export function RimSpecForm({
           {t('engineering.specForms.rim.subtitle')}
         </Badge>
       </div>
-      <div className='grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2'>
+      <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2'>
         <FormField
           control={form.control}
           name='depth'
@@ -111,58 +108,6 @@ export function RimSpecForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name='tireType'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-blue-600/70'>{t('engineering.specForms.rim.tireType')}</FormLabel>
-              <SelectDropdown
-                value={field.value}
-                onValueChange={field.onChange}
-                items={options.tireType}
-                placeholder={t('engineering.specForms.rim.selectPlaceholder')}
-                isControlled
-                className='h-8 w-full bg-background/50'
-              />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name='brakeType'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-blue-600/70'>{t('engineering.specForms.rim.brakeType')}</FormLabel>
-              <SelectDropdown
-                value={field.value}
-                onValueChange={field.onChange}
-                items={options.brakeType}
-                placeholder={t('engineering.specForms.rim.selectPlaceholder')}
-                isControlled
-                className='h-8 w-full bg-background/50'
-              />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='techSeries'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className='text-blue-600/70'>{t('engineering.specForms.rim.techSeries')}</FormLabel>
-              <SelectDropdown
-                value={field.value}
-                onValueChange={field.onChange}
-                items={options.techSeries}
-                placeholder={t('engineering.specForms.rim.selectPlaceholder')}
-                isControlled
-                className='h-8 w-full bg-background/50'
-              />
-            </FormItem>
-          )}
-        />
       </div>
 
       <div className='p-2 bg-blue-600/5 rounded-xl border border-blue-600/10 space-y-2'>
@@ -174,7 +119,7 @@ export function RimSpecForm({
         </div>
 
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1'>
-          {options.versionLevel.map((option) => {
+          {options.versionCategoryOptions.map((option) => {
             const isSelected = selectedVariants.some((variant) => variant.level === option.value)
             const variant = selectedVariants.find((entry) => entry.level === option.value)
 
@@ -230,6 +175,7 @@ export function RimSpecForm({
 
 export function RimSpecOverview({ product }: { product: Product }) {
   const { t } = useLanguage()
+  const { tireType } = getProductAttributeSummary(product)
 
   return (
     <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group'>
@@ -284,7 +230,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
           {t('engineering.specForms.rim.overviewBadge')}
         </span>
         <span className='text-lg font-black text-white uppercase tracking-tighter italic leading-none'>
-          {product.tireType || 'NULL'}
+          {tireType}
         </span>
       </div>
     </div>

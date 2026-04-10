@@ -69,6 +69,10 @@ func SaveBOMHandler(c *gin.Context) {
 
 	saved, err := services.SaveBOM(input)
 	if err != nil {
+		if errors.Is(err, services.ErrBOMActiveConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[VALIDATION] failed to save BOM: " + err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save BOM: " + err.Error()})
 		return
 	}
@@ -82,6 +86,10 @@ func DeleteBOMHandler(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, services.ErrBOMIDRequired) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] BOM ID is required"})
+			return
+		}
+		if errors.Is(err, services.ErrBOMDeleteLockedActive) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[LOCKED_ASSET] failed to delete BOM: " + err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete BOM: " + err.Error()})

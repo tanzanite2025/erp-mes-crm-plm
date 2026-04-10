@@ -73,6 +73,21 @@ type mrpSelectedLine struct {
 	LineNo  int
 }
 
+func buildActiveBOMIndex(boms []models.BOM) (map[string]*models.BOM, error) {
+	index := make(map[string]*models.BOM, len(boms))
+	for idx := range boms {
+		productID := strings.TrimSpace(boms[idx].ProductID)
+		if productID == "" {
+			continue
+		}
+		if existing, ok := index[productID]; ok {
+			return nil, fmt.Errorf("[CRITICAL] multiple active BOMs detected for product %s: %s and %s", productID, existing.ID, boms[idx].ID)
+		}
+		index[productID] = &boms[idx]
+	}
+	return index, nil
+}
+
 func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsResponse, error) {
 	selected := make(map[string]mrpSelectedLine, len(params.SelectedKeys))
 	for _, key := range params.SelectedKeys {
@@ -104,6 +119,10 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 	if err := db.DB.Select("id", "product_id", "status").Preload("Items", func(tx *gorm.DB) *gorm.DB {
 		return tx.Select("id", "bom_id", "section", "material_id", "unit", "standard_usage")
 	}).Where("status = ?", "active").Find(&boms).Error; err != nil {
+		return MrpRequirementsResponse{}, err
+	}
+	bomIndex, err := buildActiveBOMIndex(boms)
+	if err != nil {
 		return MrpRequirementsResponse{}, err
 	}
 
@@ -151,13 +170,7 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 			}
 			modelQtyMap[modelName] += line.Qty
 
-			var productBOM *models.BOM
-			for idx := range boms {
-				if boms[idx].ProductID == line.ProductID {
-					productBOM = &boms[idx]
-					break
-				}
-			}
+			productBOM := bomIndex[line.ProductID]
 			if productBOM == nil {
 				productsMissingBOM[modelName] = struct{}{}
 				continue

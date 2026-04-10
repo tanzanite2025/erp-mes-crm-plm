@@ -6,16 +6,14 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
-import { type DictionaryEntry, type DictionaryOption } from '@/features/basic-settings/data/schema'
+import { getProductAttributeSummary } from '../utils/product-attribute-utils'
+
 import { type TranslationKey } from '@/locales'
 import { type Product, type ProductType } from '../data/schema'
-
-type DictionaryEntryOption = string | DictionaryOption
 
 type EngineeringSidebarProps = {
     products: Product[]
     types: ProductType[]
-    dictEntries: DictionaryEntry[]
     selectedProductId: string | null
     onSelectProduct: (id: string) => void
     onAddProduct: () => void
@@ -26,7 +24,6 @@ type EngineeringSidebarProps = {
 export function EngineeringSidebar({
     products,
     types,
-    dictEntries,
     selectedProductId,
     onSelectProduct,
     onAddProduct,
@@ -36,12 +33,10 @@ export function EngineeringSidebar({
     const { t } = useLanguage()
     const [searchTerm, setSearchTerm] = useState('')
 
-    const getOptionValue = (option: DictionaryEntryOption) => typeof option === 'string' ? option : option.value
 
-    const getOptionLabel = (option: DictionaryEntryOption) => typeof option === 'string' ? option : option.label
 
     // 字典映射工具函数
-    const getDictLabel = (key: string, value: string) => {
+    const getDictLabel = (value: string) => {
         if (!value) return '-'
 
         // 1. 优先从 i18n 语言包获取翻译 (支持 Disc, Rim, STD 等)
@@ -51,10 +46,7 @@ export function EngineeringSidebar({
         if (localized !== translationKey) return localized
 
         // 2. 备选字典反查
-        const entry = dictEntries?.find((e) => e.label === key || e.code === key)
-        const option = entry?.options?.find((o) => getOptionValue(o) === value)
-        if (!option) return value
-        return getOptionLabel(option)
+        return value
     }
 
     const filteredProducts = useMemo(() => {
@@ -215,7 +207,7 @@ export function EngineeringSidebar({
                                                                 {t('engineering.productMgmt.specLabel')}: {product.depth || '-'}X{product.widthExternal || '-'}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-orange-600/10 text-orange-600'}`}>
-                                                                {getDictLabel('BRAKE_TYPE', product.brakeType || '')}
+                                                                {getDictLabel(getProductAttributeSummary(product).brake || '')}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-emerald-600/10 text-emerald-600'}`}>
                                                                 {product.weight ? `${product.weight}G` : '- G'}

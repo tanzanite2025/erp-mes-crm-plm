@@ -60,7 +60,10 @@ func GetMaterialsHandler(c *gin.Context) {
 			return
 		}
 
-		response := gin.H{"data": options, "version": ver}
+		response := MaterialOptionsApiDTO{
+			Items:   toMaterialOptionApiDTOs(options),
+			Version: ver,
+		}
 		if db.RDB != nil {
 			if jsonBytes, err := json.Marshal(response); err == nil {
 				db.RDB.Set(ctx, cacheKey, jsonBytes, 0)
@@ -70,7 +73,7 @@ func GetMaterialsHandler(c *gin.Context) {
 		return
 	}
 
-	materials, total, err := services.ListMaterials(services.MaterialListQuery{
+	materials, total, err := services.ListMaterials(services.MaterialListPageQuery{
 		Category: category,
 		Search:   search,
 		Page:     page,
@@ -81,12 +84,12 @@ func GetMaterialsHandler(c *gin.Context) {
 		return
 	}
 
-	response := gin.H{
-		"data":     mapMaterialResponses(materials),
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-		"version":  ver,
+	response := MaterialListPageApiDTO{
+		Items:    toMaterialApiDTOs(materials),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Version:  ver,
 	}
 	if db.RDB != nil {
 		if jsonBytes, err := json.Marshal(response); err == nil {
@@ -98,7 +101,7 @@ func GetMaterialsHandler(c *gin.Context) {
 
 // SaveMaterialHandler 新增或更新物料
 func SaveMaterialHandler(c *gin.Context) {
-	var input services.SaveMaterialInput
+	var input services.SaveMaterialAPIRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 物料数据格式错误: " + err.Error()})
 		return
@@ -115,7 +118,7 @@ func SaveMaterialHandler(c *gin.Context) {
 	}
 
 	incrMaterialCacheVersion()
-	c.JSON(http.StatusOK, mapMaterialResponse(saved))
+	c.JSON(http.StatusOK, toMaterialApiDTO(saved))
 }
 
 // BulkSyncMaterialsHandler 批量同步物料 (数据抢救)
@@ -124,7 +127,7 @@ func BulkSyncMaterialsHandler(c *gin.Context) {
 		return
 	}
 
-	var input services.BulkSyncMaterialsRequest
+	var input services.BulkSyncMaterialsAPIPayload
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 批量同步数据错误: " + err.Error()})
 		return

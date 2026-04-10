@@ -1,8 +1,11 @@
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { type SalesOrder, type OrderEvidence } from '../../data/schema'
+import {
+  getSalesOrderClassificationLabel,
+  getSalesOrderTypeLabel,
+} from '../../data/sales-order-options'
 import { ImageIcon, Loader2 } from 'lucide-react'
 
 function InfoRow({
@@ -87,25 +90,19 @@ function getCurrencyPrefix(currency?: string) {
 }
 
 export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
 
   return (
     <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-6 py-5 shadow-inner'>
       <div className='grid grid-cols-2 gap-x-4 gap-y-2.5 md:grid-cols-4 lg:grid-cols-6'>
         <InfoRow
           label={t('tradingSalesOrder.detail.info.orderType')}
-          value={
-            DictionaryCoreService.getOptions('ORDER_TYPE').find((item) => item.value === order.type)?.label ||
-            order.type
-          }
+          value={getSalesOrderTypeLabel(order.type, locale) || order.type}
         />
         <InfoRow label={t('tradingSalesOrder.detail.info.currency')} value={order.currency} />
         <InfoRow
           label={t('tradingSalesOrder.detail.info.classification')}
-          value={
-            DictionaryCoreService.getOptions('ORDER_CLASSIFICATION')
-              .find((item) => item.value === order.classification)?.label || order.classification
-          }
+          value={getSalesOrderClassificationLabel(order.classification, locale) || order.classification}
         />
         <InfoRow label={t('tradingSalesOrder.detail.info.orderDate')} value={order.orderDate} />
         <InfoRow

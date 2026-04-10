@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,36 +26,42 @@ var (
 	ErrPDAScanTaskStatusConflict      = errors.New("stocktake task status conflict")
 	ErrPDAScanUnknownMaterial         = errors.New("unknown material code")
 
-	ErrAdjustmentPendingExists       = errors.New("pending adjustment already exists")
-	ErrAdjustmentApprovalConfigMiss  = errors.New("approval config missing for adjustment")
-	ErrAdjustmentNotFound            = errors.New("inventory adjustment not found")
-	ErrAdjustmentAlreadyExecuted     = errors.New("inventory adjustment already executed")
-	ErrAdjustmentTaskInvalidStatus   = errors.New("adjustment task status is unsupported")
+	ErrAdjustmentPendingExists      = errors.New("pending adjustment already exists")
+	ErrAdjustmentApprovalConfigMiss = errors.New("approval config missing for adjustment")
+	ErrAdjustmentNotFound           = errors.New("inventory adjustment not found")
+	ErrAdjustmentAlreadyExecuted    = errors.New("inventory adjustment already executed")
+	ErrAdjustmentTaskInvalidStatus  = errors.New("adjustment task status is unsupported")
 )
 
-type MaterialListQuery struct {
-	Category string
-	Search   string
-	Page     int
-	PageSize int
-}
-
-type MaterialOptionItem struct {
-	ID       string `json:"id"`
-	Code     string `json:"code"`
-	Name     string `json:"name"`
-	Spec     string `json:"spec"`
-	UOM      string `json:"uom"`
-	Category string `json:"category"`
-	Status   string `json:"status"`
-}
-
-type SaveMaterialInput models.Material
-type BulkSyncMaterialInput models.Material
-
-type BulkSyncMaterialsRequest struct {
-	Materials     []BulkSyncMaterialInput `json:"materials"`
-	GlobalVersion int                     `json:"globalVersion"`
+func toMaterialModel(input SaveMaterialAPIRequest) models.Material {
+	return models.Material{
+		BaseModel: models.BaseModel{
+			ID: input.ID,
+		},
+		MasterDataControl: models.MasterDataControl{
+			RevisionNo:    input.RevisionNo,
+			EffectiveFrom: input.EffectiveFrom,
+			EffectiveTo:   input.EffectiveTo,
+			ChangeType:    input.ChangeType,
+			ChangeOrderNo: input.ChangeOrderNo,
+			SiteCode:      input.SiteCode,
+			IsDefaultSite: input.IsDefaultSite,
+		},
+		Code:               input.Code,
+		Name:               input.Name,
+		Category:           input.Category,
+		Spec:               input.Spec,
+		InternalDimensions: append(json.RawMessage(nil), input.InternalDimensions...),
+		ExternalDimensions: append(json.RawMessage(nil), input.ExternalDimensions...),
+		UOM:                input.UOM,
+		MinStock:           input.MinStock,
+		CostPrice:          input.CostPrice,
+		SupplierID:         input.SupplierID,
+		Description:        input.Description,
+		Images:             append(json.RawMessage(nil), input.Images...),
+		Status:             input.Status,
+		Version:            input.Version,
+	}
 }
 
 type CreateStocktakeTaskInput struct {
@@ -116,16 +123,16 @@ func buildMaterialBaseQuery(category string, search string) *gorm.DB {
 	return query
 }
 
-func ListMaterialOptions(category string, search string) ([]MaterialOptionItem, error) {
+func ListMaterialOptions(category string, search string) ([]MaterialOptionQueryResult, error) {
 	query := buildMaterialBaseQuery(strings.TrimSpace(category), strings.TrimSpace(search))
-	var options []MaterialOptionItem
-	if err := query.Order("code asc").Select("id, code, name, spec, uom, category, status").Find(&options).Error; err != nil {
+	var options []MaterialOptionQueryResult
+	if err := query.Order("code asc").Select("id, code, name, spec, uom, category, status, cost_price").Find(&options).Error; err != nil {
 		return nil, err
 	}
 	return options, nil
 }
 
-func ListMaterials(query MaterialListQuery) ([]models.Material, int64, error) {
+func ListMaterials(query MaterialListPageQuery) ([]models.Material, int64, error) {
 	page := query.Page
 	pageSize := query.PageSize
 	if page < 1 {
@@ -148,8 +155,8 @@ func ListMaterials(query MaterialListQuery) ([]models.Material, int64, error) {
 	return materials, total, nil
 }
 
-func SaveMaterial(input SaveMaterialInput) (models.Material, error) {
-	modelInput := models.Material(input)
+func SaveMaterial(input SaveMaterialAPIRequest) (models.Material, error) {
+	modelInput := toMaterialModel(input)
 	var saved models.Material
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
@@ -184,10 +191,10 @@ func SaveMaterial(input SaveMaterialInput) (models.Material, error) {
 	return saved, nil
 }
 
-func BulkSyncMaterials(input BulkSyncMaterialsRequest) error {
+func BulkSyncMaterials(input BulkSyncMaterialsAPIPayload) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range input.Materials {
-			material := models.Material(in)
+			material := toMaterialModel(in)
 			material.MasterDataControl.Normalize("R1")
 			if err := tx.Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "code"}},
@@ -264,7 +271,7 @@ func CreateStocktakeTask(input CreateStocktakeTaskInput, username string) error 
 			return err
 		}
 		if len(inventory) == 0 {
-			return errors.New("所选仓库类别下没有可盘点的实物库存")
+			return errors.New("no inventory found under selected warehouse category")
 		}
 
 		for _, inv := range inventory {
@@ -378,7 +385,7 @@ func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, 
 
 	for idx, scan := range scans {
 		currentScanTime := scan.ScanTime
-		err := SubmitPDAScan(pdaScanPayload{
+		err := SubmitPDAScan(PDAScanPayload{
 			TaskID:       scan.TaskID,
 			MaterialCode: scan.MaterialCode,
 			BatchNo:      scan.BatchNo,
@@ -401,16 +408,16 @@ func SyncPDAScans(scans []PDASyncScanRequest, scannerID string) (PDASyncResult, 
 	}
 
 	result.FailedCount = len(result.Failures)
-	result.Message = "离线数据同步完成"
+	result.Message = "offline scan sync completed"
 	if result.FailedCount > 0 {
-		result.Message = "离线数据部分同步失败，请修复后重试"
+		result.Message = "offline scan sync partially failed, please fix and retry"
 	}
 	return result, nil
 }
 
 func SubmitPDAScanRequest(input PDAScanSubmitRequest, scannerID string) error {
 	return SubmitPDAScan(PDAScanPayload{
-		TaskID:       scan.TaskID,
+		TaskID:       input.TaskID,
 		MaterialCode: input.MaterialCode,
 		BatchNo:      input.BatchNo,
 		ScannedQty:   input.ScannedQty,
@@ -451,7 +458,7 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 			Status:       "PENDING",
 			CreatedBy:    username,
 			TotalItems:   len(items),
-			Reason:       fmt.Sprintf("盘点任务 [%s] 的盈亏自动调账申请", task.Title),
+			Reason:       fmt.Sprintf("stocktake task [%s] auto adjustment request", task.Title),
 		}
 		if err := tx.Create(&adjustment).Error; err != nil {
 			return err
@@ -563,7 +570,7 @@ func ExecuteAdjustment(id string) error {
 
 func ListAdjustmentHistory() ([]models.InventoryAdjustment, error) {
 	var adjustments []models.InventoryAdjustment
-	if err := db.DB.Order("created_at desc").Find(&adjustments).Error; err != nil {
+	if err := db.DB.Preload("Items").Order("created_at desc").Find(&adjustments).Error; err != nil {
 		return nil, err
 	}
 	return adjustments, nil

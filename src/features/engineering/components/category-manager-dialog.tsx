@@ -216,7 +216,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
 
   const handleFormSubmit = async (formData: Partial<ProductType>) => {
     try {
-      const saved = await ProductTypeService.saveProductType(formData)
+      const saved = await ProductTypeService.saveProductType(formData, currentRow)
       const updated = currentRow
         ? data.map((item) => (item.id === saved.id ? saved : item))
         : [...data, saved]

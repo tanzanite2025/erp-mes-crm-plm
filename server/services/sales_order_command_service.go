@@ -22,6 +22,7 @@ type PatchSalesOrderCommand struct {
 	OrderID  string
 	Snapshot SalesOrderSnapshotRequest
 	Delta    map[string]json.RawMessage
+	DeltaReq SDRTSDeltaHandlerRequest
 	ActorID  string
 	Operator string
 	IP       string
@@ -66,17 +67,27 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 
 func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error) {
 	orderID := strings.TrimSpace(command.OrderID)
+	snapshot := command.Snapshot
+	delta := command.Delta
+	if len(command.DeltaReq.Delta) > 0 {
+		assembled, err := BuildSalesOrderPatchRequest(orderID, command.DeltaReq)
+		if err != nil {
+			return SalesOrderResponse{}, err
+		}
+		snapshot = assembled.Snapshot
+		delta = assembled.Delta
+	}
 	if orderID == "" {
 		return SalesOrderResponse{}, fmt.Errorf("sales order id is required")
 	}
-	if command.Snapshot.ID == "" {
+	if snapshot.ID == "" {
 		return SalesOrderResponse{}, fmt.Errorf("sales order snapshot id is required")
 	}
-	if len(command.Delta) == 0 {
+	if len(delta) == 0 {
 		return SalesOrderResponse{}, fmt.Errorf("sales order delta is required")
 	}
 
-	payload, err := BuildSalesOrderSavePayload(command.Snapshot, command.Delta, strings.TrimSpace(command.Operator))
+	payload, err := BuildSalesOrderSavePayload(snapshot, delta, strings.TrimSpace(command.Operator))
 	if err != nil {
 		return SalesOrderResponse{}, err
 	}
@@ -86,10 +97,115 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 		Intent:          SalesTransactionIntentOrderSave,
 		ActorID:         strings.TrimSpace(command.ActorID),
 		Operator:        strings.TrimSpace(command.Operator),
-		ExpectedVersion: command.Snapshot.Version,
+		ExpectedVersion: snapshot.Version,
 		Payload:         payload,
 		IP:              strings.TrimSpace(command.IP),
 	})
+}
+
+func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+		return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta: %w", err)
+	}
+
+	existing, err := GetSalesOrderByID(strings.TrimSpace(orderID))
+	if err != nil {
+		return PatchSalesOrderCommand{}, err
+	}
+
+	snapshot := MapSalesOrderResponseToSnapshot(existing)
+	snapshot.Version = int(req.Metadata.Version)
+
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s: %w", key, err)
+		}
+		switch key {
+		case "orderNo":
+			if err := json.Unmarshal(valueRaw, &snapshot.OrderNo); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "orderName":
+			if err := json.Unmarshal(valueRaw, &snapshot.OrderName); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "customerName":
+			if err := json.Unmarshal(valueRaw, &snapshot.CustomerName); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "customerId":
+			if err := json.Unmarshal(valueRaw, &snapshot.CustomerID); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "type":
+			if err := json.Unmarshal(valueRaw, &snapshot.Type); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "currency":
+			if err := json.Unmarshal(valueRaw, &snapshot.Currency); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "classification":
+			if err := json.Unmarshal(valueRaw, &snapshot.Classification); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "status":
+			if err := json.Unmarshal(valueRaw, &snapshot.Status); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "statusNote":
+			if err := json.Unmarshal(valueRaw, &snapshot.StatusNote); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "amount":
+			if err := json.Unmarshal(valueRaw, &snapshot.Amount); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "quantity":
+			if err := json.Unmarshal(valueRaw, &snapshot.Quantity); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "orderDate":
+			if err := json.Unmarshal(valueRaw, &snapshot.OrderDate); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "deliveryDate":
+			if err := json.Unmarshal(valueRaw, &snapshot.DeliveryDate); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "purchaseOrderNo":
+			if err := json.Unmarshal(valueRaw, &snapshot.PurchaseOrderNo); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "barcode":
+			if err := json.Unmarshal(valueRaw, &snapshot.Barcode); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "requirements":
+			if err := json.Unmarshal(valueRaw, &snapshot.Requirements); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "workflowInstanceId":
+			if err := json.Unmarshal(valueRaw, &snapshot.WorkflowInstanceID); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "isDeleted":
+			if err := json.Unmarshal(valueRaw, &snapshot.IsDeleted); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "lines":
+			if err := json.Unmarshal(valueRaw, &snapshot.Lines); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		}
+	}
+
+	return PatchSalesOrderCommand{
+		OrderID:  strings.TrimSpace(orderID),
+		Snapshot: snapshot,
+		Delta:    req.Delta,
+	}, nil
 }
 
 func createSalesOrderTx(input models.SalesOrder, originalID, requesterID string) (*models.SalesOrder, error) {

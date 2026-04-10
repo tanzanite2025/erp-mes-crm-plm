@@ -54,6 +54,25 @@ export default defineConfig(
       ],
       // Prevent duplicate imports from the same module
       'no-duplicate-imports': 'error',
+      // Keep dictionary usage scoped to basic-settings only.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/dictionary-core-service'],
+              message:
+                'DictionaryCoreService is compatibility-only. Use module-owned metadata/read APIs in business modules.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/features/basic-settings/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   {

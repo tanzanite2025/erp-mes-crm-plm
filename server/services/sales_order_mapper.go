@@ -120,6 +120,34 @@ func mapSalesOrderLineToResponse(line models.SalesOrderLine) SalesOrderLineRespo
 	}
 }
 
+func mapSalesOrderLineResponseToRequest(line SalesOrderLineResponse) SalesOrderLineRequest {
+	return SalesOrderLineRequest{
+		ID:             line.ID,
+		LineNo:         line.LineNo,
+		ProductID:      line.ProductID,
+		ProductModel:   line.ProductModel,
+		ProductCode:    line.ProductCode,
+		Specification:  line.Specification,
+		Description:    line.Description,
+		Qty:            line.Qty,
+		UOM:            line.UOM,
+		Price:          line.Price,
+		Amount:         line.Amount,
+		DeliveredQty:   line.DeliveredQty,
+		CustomerPartNo: line.CustomerPartNo,
+		JobNo:          line.JobNo,
+		Note:           line.Note,
+		DrillingPlanID: line.DrillingPlanID,
+		LabelingPlanID: line.LabelingPlanID,
+		HoleCount:      line.HoleCount,
+		Route:          line.Route,
+		OrderDate:      line.OrderDate,
+		Status:         line.Status,
+		ClaimedBy:      line.ClaimedBy,
+		ClaimedAt:      line.ClaimedAt,
+	}
+}
+
 func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
 	lines := make([]SalesOrderLineResponse, 0, len(order.Lines))
 	for _, line := range order.Lines {
@@ -146,6 +174,37 @@ func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
 		WorkflowInstanceID: order.WorkflowInstanceID,
 		CreatedAt:          order.CreatedAt,
 		UpdatedAt:          order.UpdatedAt,
+		UpdatedBy:          order.UpdatedBy,
+		IsDeleted:          order.IsDeleted,
+		Version:            order.Version,
+		Lines:              lines,
+	}
+}
+
+func MapSalesOrderResponseToSnapshot(order SalesOrderResponse) SalesOrderSnapshotRequest {
+	lines := make([]SalesOrderLineRequest, 0, len(order.Lines))
+	for _, line := range order.Lines {
+		lines = append(lines, mapSalesOrderLineResponseToRequest(line))
+	}
+	return SalesOrderSnapshotRequest{
+		ID:                 order.ID,
+		OrderNo:            order.OrderNo,
+		OrderName:          order.OrderName,
+		CustomerName:       order.CustomerName,
+		CustomerID:         order.CustomerID,
+		Type:               order.Type,
+		Currency:           order.Currency,
+		Classification:     order.Classification,
+		Status:             order.Status,
+		StatusNote:         order.StatusNote,
+		Amount:             order.Amount,
+		Quantity:           order.Quantity,
+		OrderDate:          order.OrderDate,
+		DeliveryDate:       order.DeliveryDate,
+		PurchaseOrderNo:    order.PurchaseOrderNo,
+		Barcode:            order.Barcode,
+		Requirements:       order.Requirements,
+		WorkflowInstanceID: order.WorkflowInstanceID,
 		UpdatedBy:          order.UpdatedBy,
 		IsDeleted:          order.IsDeleted,
 		Version:            order.Version,

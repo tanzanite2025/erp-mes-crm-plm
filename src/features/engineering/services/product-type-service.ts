@@ -2,69 +2,82 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type ProductType } from '../data/schema'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
+import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
+import { type ProductType } from '../data/schema'
 
 /**
- * ProductTypeService - 产品类型管理服务
- * 职责: 负责产品分类(ProductType)的定义、维护与增量更新。
+ * ProductTypeService - unified full-save service for product types.
  */
 export const ProductTypeService = {
-    /**
-     * 获取产品类型列表
-     */
-    async getProductTypes(params?: { isOptions?: boolean; page?: number; pageSize?: number }): Promise<ProductType[]> {
-        let qs = ''
-        if (params?.isOptions) {
-            qs = '?options=true'
-        } else if (params?.page) {
-            qs = `?page=${params.page}&pageSize=${params.pageSize || 50}`
-        }
-        // 移除导致 500 的默认强制选项
-        const res = await apiFetch<ProductType[]>(`/engineering/product-types${qs}`)
-        return ensureArrayResponse<ProductType>(res, 'ProductTypeService.getProductTypes')
-    },
-
-    /**
-     * 保存/创建产品类型 (TDO: TYPE_REGISTRATION)
-     */
-    async saveProductType(type: Partial<ProductType>): Promise<ProductType> {
-        const res = await apiFetch<ProductType>('/engineering/product-types', {
-            method: 'POST',
-            body: JSON.stringify({
-                ...type,
-                metadata: { intent: 'TYPE_REGISTRATION' }
-            })
-        })
-        return ensureObjectResponse<ProductType>(res, 'ProductTypeService.saveProductType')
-    },
-
-    /**
-     * SDRTS: 增量更新产品类型 (TDO: TYPE_DEFINITION_UPDATE)
-     */
-    async patchProductType(id: string, delta: DeltaSet, version: number): Promise<ProductType> {
-        const payload: DeltaPayload = {
-            op: 'PATCH',
-            delta,
-            metadata: { 
-                id, 
-                version,
-                intent: 'TYPE_DEFINITION_UPDATE'
-            }
-        }
-        const res = await apiFetch<ProductType>(`/engineering/product-types/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(payload)
-        })
-        return ensureObjectResponse<ProductType>(res, 'ProductTypeService.patchProductType')
-    },
-
-    /**
-     * 删除产品类型
-     */
-    async deleteProductType(id: string): Promise<void> {
-        return apiFetch(`/engineering/product-types/${id}`, {
-            method: 'DELETE'
-        })
+  async getProductTypes(params?: {
+    isOptions?: boolean
+    page?: number
+    pageSize?: number
+  }): Promise<ProductType[]> {
+    let qs = ''
+    if (params?.isOptions) {
+      qs = '?options=true'
+    } else if (params?.page) {
+      qs = `?page=${params.page}&pageSize=${params.pageSize || 50}`
     }
+
+    if (params?.isOptions) {
+      const res = await apiFetch<ProductTypeApiDTO[]>(`/engineering/product-types${qs}`)
+      return toProductTypeArrayContract(
+        ensureArrayResponse<ProductTypeApiDTO>(res, 'ProductTypeService.getProductTypes.options')
+      )
+    }
+
+    const res = await apiFetch<ProductTypeListPageApiDTO>(`/engineering/product-types${qs}`)
+    return toProductTypeListContract(
+      ensureObjectResponse<ProductTypeListPageApiDTO & Record<string, unknown>>(
+        res,
+        'ProductTypeService.getProductTypes.page'
+      ) as ProductTypeListPageApiDTO
+    )
+  },
+
+  async createProductType(type: Partial<ProductType>): Promise<ProductType> {
+    const res = await apiFetch<ProductTypeApiDTO>('/engineering/product-types', {
+      method: 'POST',
+      body: JSON.stringify(toProductTypeApiDTO({ ...type, id: '', version: 1 })),
+    })
+    return toProductTypeContract(
+      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(res, 'ProductTypeService.createProductType') as ProductTypeApiDTO
+    )
+  },
+
+  async patchProductType(id: string, delta: DeltaSet, version: number): Promise<ProductType> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version },
+    }
+    const res = await apiFetch<ProductTypeApiDTO>(`/engineering/product-types/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    return toProductTypeContract(
+      ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(res, 'ProductTypeService.patchProductType') as ProductTypeApiDTO
+    )
+  },
+
+  async saveProductType(type: Partial<ProductType>, current?: ProductType): Promise<ProductType> {
+    if (current?.id) {
+      const delta = buildProductTypeDelta(current, type)
+      if (Object.keys(delta).length === 0) {
+        return { ...current, ...type }
+      }
+      return this.patchProductType(current.id, delta, current.version)
+    }
+    return this.createProductType(type)
+  },
+
+  async deleteProductType(id: string): Promise<void> {
+    return apiFetch(`/engineering/product-types/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }

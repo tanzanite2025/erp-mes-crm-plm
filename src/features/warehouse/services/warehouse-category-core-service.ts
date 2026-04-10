@@ -1,26 +1,35 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  toWarehouseCategoryContracts,
+  toWarehouseCategoryOptionContracts,
+  type WarehouseCategory,
+  type WarehouseCategoryOption,
+} from '../adapters/warehouse-api-adapter'
+import {
+  type WarehouseCategoryListPageApiDTO,
+  type WarehouseCategoryOptionApiDTO,
+} from '../contracts/warehouse-api-dto'
 
-export interface WarehouseCategory {
-    id: string
-    name: string
-    code: string
-    description?: string
-    isSystem: boolean
-    active: boolean
-    sortOrder: number
-    version: number // SDRTS 乐观锁
-}
+export type { WarehouseCategory, WarehouseCategoryOption } from '../adapters/warehouse-api-adapter'
 
-/**
- * WarehouseCategoryCoreService - 仓库分类核心查询服务情况情况总量针对。
- */
 export const WarehouseCategoryCoreService = {
-    /**
-     * 获取全量仓库分类列表
-     */
-    getCategories: async (): Promise<WarehouseCategory[]> => {
-        const res = await apiFetch<WarehouseCategory[]>('/warehouse/categories')
-        return ensureArrayResponse<WarehouseCategory>(res, 'WarehouseCategoryCoreService.getCategories')
-    }
+  getCategoryList: async (): Promise<WarehouseCategory[]> => {
+    const res = await apiFetch<WarehouseCategoryListPageApiDTO>('/warehouse/categories')
+    const response = ensureObjectResponse<WarehouseCategoryListPageApiDTO & Record<string, unknown>>(
+      res,
+      'WarehouseCategoryCoreService.getCategoryList'
+    )
+    return toWarehouseCategoryContracts(response.items ?? [])
+  },
+
+  getCategoryOptions: async (): Promise<WarehouseCategoryOption[]> => {
+    const res = await apiFetch<WarehouseCategoryOptionApiDTO[]>('/warehouse/categories/options')
+    return toWarehouseCategoryOptionContracts(
+      ensureArrayResponse<WarehouseCategoryOptionApiDTO>(
+        res,
+        'WarehouseCategoryCoreService.getCategoryOptions'
+      )
+    )
+  },
 }

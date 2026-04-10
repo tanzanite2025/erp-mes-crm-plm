@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
@@ -24,7 +25,7 @@ type SaveProductionLineRequest struct {
 
 type PatchProductionLineRequest struct {
 	ID       string
-	Delta    PatchProductionLineDeltaDTO
+	Delta    map[string]json.RawMessage
 	Version  int64
 	AuthCode string
 	Operator string
@@ -144,9 +145,18 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			return ErrProductionTopologyUnauthorized
 		}
 
-		segmentIDs, processIDs := collectProductionAssociationIDs(line.Segments)
+		segmentIDs, categoryIDs, stationIDs, stationProcessIDs := collectProductionAssociationIDs(line.Segments)
 		if line.ID != "" {
-			if err := s.repository.DeleteSegmentProcessMappingsNotIn(tx, line.ID, processIDs); err != nil {
+			if err := s.repository.DeleteSegmentProcessMappingsNotIn(tx, line.ID, nil); err != nil {
+				return err
+			}
+			if err := s.repository.DeleteStationProcessMappingsNotIn(tx, line.ID, stationProcessIDs); err != nil {
+				return err
+			}
+			if err := s.repository.DeleteStationsNotIn(tx, line.ID, stationIDs); err != nil {
+				return err
+			}
+			if err := s.repository.DeleteJobCategoriesNotIn(tx, line.ID, categoryIDs); err != nil {
 				return err
 			}
 			if err := s.repository.DeleteLineSegmentsNotIn(tx, line.ID, segmentIDs); err != nil {
@@ -191,43 +201,44 @@ func (s *ProductionService) PatchProductionLine(req PatchProductionLineRequest) 
 	})
 }
 
-func applyProductionLineDelta(line *ProductionLineDTO, delta PatchProductionLineDeltaDTO, version int64) error {
+func applyProductionLineDelta(line *ProductionLineDTO, delta map[string]json.RawMessage, version int64) error {
 	line.Version = version
 
-	if delta.Code != nil {
-		if err := unmarshalDeltaItemNewValue(delta.Code, &line.Code); err != nil {
-			return err
-		}
+	if err := validateSupportedTopLevelDeltaKeys(delta, "code", "name", "description", "isActive", "segments"); err != nil {
+		return fmt.Errorf("invalid production line delta: %w", err)
 	}
-	if delta.Name != nil {
-		if err := unmarshalDeltaItemNewValue(delta.Name, &line.Name); err != nil {
-			return err
+
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return fmt.Errorf("invalid production line delta item: %w", err)
 		}
-	}
-	if delta.Description != nil {
-		if err := unmarshalDeltaItemNewValue(delta.Description, &line.Description); err != nil {
-			return err
-		}
-	}
-	if delta.IsActive != nil {
-		if err := unmarshalDeltaItemNewValue(delta.IsActive, &line.IsActive); err != nil {
-			return err
-		}
-	}
-	if delta.Segments != nil {
-		if err := unmarshalDeltaItemNewValue(delta.Segments, &line.Segments); err != nil {
-			return err
+
+		switch key {
+		case "code":
+			if err := json.Unmarshal(valueRaw, &line.Code); err != nil {
+				return err
+			}
+		case "name":
+			if err := json.Unmarshal(valueRaw, &line.Name); err != nil {
+				return err
+			}
+		case "description":
+			if err := json.Unmarshal(valueRaw, &line.Description); err != nil {
+				return err
+			}
+		case "isActive":
+			if err := json.Unmarshal(valueRaw, &line.IsActive); err != nil {
+				return err
+			}
+		case "segments":
+			if err := json.Unmarshal(valueRaw, &line.Segments); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
-}
-
-func unmarshalDeltaItemNewValue[T any](item *DeltaItemDTO, target *T) error {
-	if item == nil || item.New == nil {
-		return nil
-	}
-	return json.Unmarshal(item.New, target)
 }
 
 func (s *ProductionService) DeleteProductionLine(id string, operator string, ip string) error {
@@ -263,6 +274,10 @@ func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (Process
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		if err := s.repository.SaveProcessStep(tx, &step); err != nil {
 			return err
+		}
+
+		if strings.TrimSpace(req.StationID) == "" {
+			return nil
 		}
 
 		return s.repository.AppendProcessToStation(tx, req.StationID, step.ID)
@@ -305,20 +320,32 @@ func (s *ProductionService) ListStationMappings() (StationProcessMappingsRespons
 	return MapStationMappingsToResponse(mappings), nil
 }
 
-func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string) {
+func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string, []string, []string) {
 	var segmentIDs []string
-	var processIDs []string
+	var categoryIDs []string
+	var stationIDs []string
+	var stationProcessIDs []string
 
 	for _, segment := range segments {
 		if segment.ID != "" && !strings.HasPrefix(segment.ID, "temp-") {
 			segmentIDs = append(segmentIDs, segment.ID)
 		}
-		for _, process := range segment.Processes {
-			if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
-				processIDs = append(processIDs, process.ID)
+		for _, category := range segment.JobCategories {
+			if category.ID != "" && !strings.HasPrefix(category.ID, "temp-") {
+				categoryIDs = append(categoryIDs, category.ID)
+			}
+			for _, station := range category.Stations {
+				if station.ID != "" && !strings.HasPrefix(station.ID, "temp-") {
+					stationIDs = append(stationIDs, station.ID)
+				}
+				for _, process := range station.Processes {
+					if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
+						stationProcessIDs = append(stationProcessIDs, process.ID)
+					}
+				}
 			}
 		}
 	}
 
-	return segmentIDs, processIDs
+	return segmentIDs, categoryIDs, stationIDs, stationProcessIDs
 }

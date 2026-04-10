@@ -1,8 +1,18 @@
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { toUserContract, toUserListPageContract, toUserOptionContracts } from '../adapters/user-api-adapter'
-import { type UserApiDTO, type UserListPageApiDTO, type UserOptionApiDTO } from '../contracts/user-api-dto'
+import {
+  toUserContract,
+  toUserListPageContract,
+  toUserOptionContracts,
+  toUserRoleBindingsResponseContract,
+} from '../adapters/user-api-adapter'
+import {
+  type UserApiDTO,
+  type UserListPageApiDTO,
+  type UserOptionApiDTO,
+  type UserRoleBindingsApiDTO,
+} from '../contracts/user-api-dto'
 
 export interface CreateUserPayload {
   username: string
@@ -37,6 +47,11 @@ export interface UserReplacePayload {
   status: string
   role: string
   employeeId?: string
+}
+
+export interface UserRoleBindingUpsertPayload {
+  role: string
+  source?: string
 }
 
 type UsersQueryValue = string | number | boolean | null | undefined | string[]
@@ -162,4 +177,49 @@ export const verifyAdminChallenge = async (passcode: string) => {
     method: 'POST',
     body: JSON.stringify({ passcode }),
   })
+}
+
+export const fetchUserRoleBindings = async (id: string) => {
+  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles`)
+  return toUserRoleBindingsResponseContract(
+    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.fetchUserRoleBindings',
+    ) as UserRoleBindingsApiDTO,
+  )
+}
+
+export const setUserPrimaryRole = async (id: string, role: string) => {
+  const res = await apiFetch<UserApiDTO>(`/users/${id}/primary-role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  })
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.setUserPrimaryRole') as UserApiDTO,
+  )
+}
+
+export const addUserRoleBinding = async (id: string, payload: UserRoleBindingUpsertPayload) => {
+  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return toUserRoleBindingsResponseContract(
+    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.addUserRoleBinding',
+    ) as UserRoleBindingsApiDTO,
+  )
+}
+
+export const removeUserRoleBinding = async (id: string, roleId: string) => {
+  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles/${encodeURIComponent(roleId)}`, {
+    method: 'DELETE',
+  })
+  return toUserRoleBindingsResponseContract(
+    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.removeUserRoleBinding',
+    ) as UserRoleBindingsApiDTO,
+  )
 }

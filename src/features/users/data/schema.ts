@@ -53,3 +53,32 @@ export const userListPageSchema = z.object({
 export type UserListPage = z.infer<typeof userListPageSchema>
 
 export const userOptionListSchema = z.array(userOptionSchema)
+
+const nullableDateSchema = z.preprocess((value) => {
+  if (value === null || value === undefined || value === '') {
+    return undefined
+  }
+  return value
+}, z.coerce.date().optional())
+
+const userRoleBindingSchema = z.object({
+  bindingId: z.string().optional(),
+  roleId: z.string(),
+  roleLabel: z.string().optional(),
+  roleColor: z.string().optional(),
+  isPrimary: z.boolean(),
+  status: z.string(),
+  source: z.string().optional(),
+  startDate: nullableDateSchema,
+  endDate: nullableDateSchema,
+})
+export type UserRoleBinding = z.infer<typeof userRoleBindingSchema>
+
+export const userRoleBindingsResponseSchema = z.object({
+  userId: z.string(),
+  username: z.string(),
+  primaryRoleId: z.string(),
+  effectiveRoles: z.array(z.string()),
+  roleBindings: z.array(userRoleBindingSchema),
+})
+export type UserRoleBindingsResponse = z.infer<typeof userRoleBindingsResponseSchema>

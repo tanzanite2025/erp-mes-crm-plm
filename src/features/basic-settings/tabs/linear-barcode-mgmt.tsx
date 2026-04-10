@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Product } from '@/features/engineering/data/schema'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
@@ -107,7 +106,6 @@ export function LinearBarcodeMgmt() {
 
     try {
       const savedProducts = await ProductCoreService.getProducts()
-      await DictionaryCoreService.init()
       const savedAppearance = await StorageService.getItem<AppearanceMapping>(APPEARANCE_MAPPING_KEY)
 
       setAppearanceMapping(savedAppearance || DEFAULT_APPEARANCE_MAPPING)

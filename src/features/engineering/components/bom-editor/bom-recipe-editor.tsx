@@ -3,7 +3,7 @@ import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 import { SegmentedTabs } from '@/components/segmented-tabs'
 import { Tabs } from '@/components/ui/tabs'
-import { type Material } from '../../../material-archive/data/schema'
+import { type MaterialOption } from '../../../material-archive/data/schema'
 import { BOM_SECTIONS, BOM_SECTION_MATERIAL_TYPE_MAP } from '../../constants/bom-sections'
 import { type BOM } from '../../data/schema'
 import { ItemTable } from './item-table'
@@ -12,7 +12,7 @@ import { SummaryPanel } from './summary-panel'
 interface BOMRecipeEditorProps {
   form: UseFormReturn<BOM>
   fields: Array<{ id: string }>
-  materials: Material[]
+  materials: MaterialOption[]
   append: (obj: BOM['items'][number]) => void
   remove: (index: number) => void
 }

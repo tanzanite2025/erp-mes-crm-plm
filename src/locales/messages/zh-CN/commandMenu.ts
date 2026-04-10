@@ -79,7 +79,6 @@ export const commandMenu = {
     dmNumbering: 'DM号码',
     units: '单位管理',
     sequences: '业务编号',
-    dictionary: '参数字典',
     enterprise: '企业信息',
     security: '安全设置',
     engineeringProducts: '产品工程 / 型号管理',

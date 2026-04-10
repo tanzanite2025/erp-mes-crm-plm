@@ -36,3 +36,23 @@ export interface UserListPageApiDTO {
   page: number
   pageSize: number
 }
+
+export interface UserRoleBindingApiDTO {
+  bindingId?: string
+  roleId: string
+  roleLabel?: string
+  roleColor?: string
+  isPrimary: boolean
+  status: string
+  source?: string
+  startDate?: string
+  endDate?: string
+}
+
+export interface UserRoleBindingsApiDTO {
+  userId: string
+  username: string
+  primaryRoleId: string
+  effectiveRoles: string[]
+  roleBindings: UserRoleBindingApiDTO[]
+}

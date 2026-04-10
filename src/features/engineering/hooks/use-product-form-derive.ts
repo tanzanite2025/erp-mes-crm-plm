@@ -2,7 +2,6 @@ import { useEffect, useMemo } from 'react'
 import { type UseFormReturn, useWatch } from 'react-hook-form'
 import { type Product, type ProductType } from '../data/schema'
 import { ProductCoreService } from '../services/product-core-service'
-import { getEffectiveTemplate } from '../components/specs'
 import { deriveSku } from '../utils/product-form-utils'
 
 interface UseProductFormDeriveParams {
@@ -22,7 +21,6 @@ export function useProductFormDerive({
 
     const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
     const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
-    const watchedTemplateKey = useWatch({ control: form.control, name: 'templateKey' })
     const allValues = useWatch({ control: form.control })
 
     useEffect(() => {
@@ -44,20 +42,6 @@ export function useProductFormDerive({
     }, [watchedTypeId, isEdit, open, form])
 
     useEffect(() => {
-        if (isEdit || !watchedTypeId) return
-        const updateTemplate = async () => {
-            const type = productTypes.find(t => t.id === watchedTypeId)
-            if (type) {
-                const tpl = await getEffectiveTemplate(type)
-                if (tpl && tpl.componentKey !== watchedTemplateKey) {
-                    form.setValue('templateKey', tpl.componentKey)
-                }
-            }
-        }
-        updateTemplate()
-    }, [watchedTypeId, isEdit, productTypes, watchedTemplateKey, form])
-
-    useEffect(() => {
         if (isEdit || !open) return
         const selectedType = productTypes.find(t => t.id === watchedTypeId)
         const typeCode = selectedType?.code || ''
@@ -75,7 +59,6 @@ export function useProductFormDerive({
 
     return {
         dynamicTypes,
-        watchedTemplateKey,
         specSummary
     }
 }

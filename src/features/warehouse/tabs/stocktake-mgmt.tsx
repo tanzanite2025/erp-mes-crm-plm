@@ -20,9 +20,10 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
 
 import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
-import { useWarehouseCategory } from '../hooks/use-warehouse-category'
+import { useWarehouseCategoryOptions } from '../hooks/use-warehouse-category'
 import { type StocktakeItem, type StocktakeTask } from '../services/stocktake-core-service'
 import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
+import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
 
 export function StocktakeMgmt() {
     const { allowsAction } = useNonBlockingPermissionActions()
@@ -38,7 +39,8 @@ export function StocktakeMgmt() {
         isCreating 
     } = useStocktake()
 
-    const { categories } = useWarehouseCategory()
+    const { data: categories = [] } = useWarehouseCategoryOptions()
+    const stocktakeCategories = filterWarehouseCategoriesByScene(categories, 'stocktake')
 
     const [selectedTask, setSelectedTask] = useState<StocktakeTask | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -66,7 +68,7 @@ export function StocktakeMgmt() {
     const postAdjustmentMutation = useMutation({
         mutationFn: (taskId: string) => InventoryMaintenanceService.submitAdjustmentForApproval(taskId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['stocktake-tasks'] })
+            queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })
             toast.success(t('warehouse.stocktake.toast.postSuccess'))
         },
         onError: (err: Error) => {
@@ -167,12 +169,12 @@ export function StocktakeMgmt() {
                                                 <SelectValue placeholder={t('warehouse.stocktake.createDialog.selectCategory')} />
                                             </SelectTrigger>
                                             <SelectContent className='rounded-xl shadow-2xl border-none p-1 md:p-2'>
-                                                {categories?.length === 0 ? (
+                                                {stocktakeCategories.length === 0 ? (
                                                     <SelectItem value='_' disabled className='text-[9px] md:text-[10px]'>
                                                         {t('warehouse.stocktake.createDialog.noCategories')}
                                                     </SelectItem>
                                                 ) : (
-                                                    categories?.map((cat: { code: string, name: string }) => (
+                                                    stocktakeCategories.map((cat: { code: string, name: string }) => (
                                                         <SelectItem key={cat.code} value={cat.code} className='rounded-lg font-black uppercase text-[9px] md:text-[10px] tracking-widest py-2 md:py-2.5'>
                                                             {cat.name} ({cat.code})
                                                         </SelectItem>

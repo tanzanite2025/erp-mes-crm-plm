@@ -8,7 +8,7 @@ import { BOMPreview } from '../components/bom-mgmt/bom-preview'
 import { BOMTable } from '../components/bom-mgmt/bom-table'
 import { BOMToolbar } from '../components/bom-mgmt/bom-toolbar'
 import { useBOMData } from '../hooks/use-bom-data'
-import { type BOM } from '../data/schema'
+import { type BOM, type BOMItem } from '../data/schema'
 
 export function BOMMgmt() {
   const { t } = useLanguage()
@@ -16,7 +16,6 @@ export function BOMMgmt() {
     data,
     products,
     materials,
-    dictEntries,
     isLoading,
     saveBOM,
     deleteBOM,
@@ -27,7 +26,7 @@ export function BOMMgmt() {
   const [open, setOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<BOM | undefined>(undefined)
   const [previewBOM, setPreviewBOM] = useState<BOM | null>(null)
-  const [initialItems, setInitialItems] = useState<unknown[] | undefined>(undefined)
+  const [initialItems, setInitialItems] = useState<Array<Partial<BOMItem>> | undefined>(undefined)
   const [initialProductId, setInitialProductId] = useState<string | undefined>(undefined)
 
   const handleUploadExcel = async (file: File) => {
@@ -51,7 +50,6 @@ export function BOMMgmt() {
         bom={previewBOM}
         products={products}
         materials={materials}
-        dictEntries={dictEntries}
         onBack={() => setPreviewBOM(null)}
       />
     )
@@ -84,7 +82,6 @@ export function BOMMgmt() {
       <BOMTable
         data={data}
         products={products}
-        dictEntries={dictEntries}
         isLoading={isLoading}
         onPreview={setPreviewBOM}
         onEdit={(bom) => {

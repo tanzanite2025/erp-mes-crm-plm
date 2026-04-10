@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"xdfc-server/models"
@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetProductTypesHandler 获取所有产品分类 (树形结构，支持顶层分页)
 func GetProductTypesHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
@@ -28,7 +27,7 @@ func GetProductTypesHandler(c *gin.Context) {
 		Options:  isOptions,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取分类列表失败: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to list product types: " + err.Error()})
 		return
 	}
 
@@ -45,49 +44,60 @@ func GetProductTypesHandler(c *gin.Context) {
 	})
 }
 
-// SaveProductTypeHandler 保存单个产品分类
 func SaveProductTypeHandler(c *gin.Context) {
-	payload, body, err := decodeJSONBodyMap(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 JSON 映射"})
-		return
-	}
-
-	if rawID, ok := payload["id"]; ok && string(rawID) != "null" && string(rawID) != `""` {
-		var id string
-		if err := json.Unmarshal(rawID, &id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
-			return
-		}
-		updates, err := services.BuildProductTypeUpdates(payload)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		saved, err := services.PatchProductType(id, updates)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存分类失败: " + err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, saved)
-		return
-	}
-
 	var pt models.ProductType
-	if err := json.Unmarshal(body, &pt); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 分类格式错误"})
+	if err := c.ShouldBindJSON(&pt); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product type payload: " + err.Error()})
 		return
 	}
 
+	pt.ID = ""
 	saved, err := services.CreateProductType(pt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建分类失败: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to create product type: " + err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, saved)
 }
 
-// SyncProductTypesHandler 批量同步产品分类 (用于初始化/迁移)
+func PatchProductTypeHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product type patch payload: " + err.Error()})
+		return
+	}
+
+	updates, err := services.BuildProductTypeUpdates(req.Delta)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product type delta: " + err.Error()})
+		return
+	}
+
+	saved, err := services.PatchProductType(id, int(req.Metadata.Version), updates)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrProductTypeVersionConflict):
+			c.JSON(http.StatusConflict, gin.H{"error": "version conflict", "code": "VERSION_CONFLICT"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to patch product type: " + err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, saved)
+}
+
+func DeleteProductTypeHandler(c *gin.Context) {
+	id := c.Param("id")
+	if err := services.DeleteProductType(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product type: " + err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func SyncProductTypesHandler(c *gin.Context) {
 	var types []services.SyncProductTypeInput
 	if err := c.ShouldBindJSON(&types); err != nil {
@@ -96,9 +106,9 @@ func SyncProductTypesHandler(c *gin.Context) {
 	}
 
 	if err := services.SyncProductTypes(types); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 批量同步分类失败: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to sync product types: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "分类同步成功", "count": len(types)})
+	c.JSON(http.StatusOK, gin.H{"message": "product types synced", "count": len(types)})
 }

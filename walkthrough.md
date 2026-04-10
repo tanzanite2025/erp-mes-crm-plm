@@ -1,5 +1,382 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-10 产品工程“产品属性配置”TAB 实施
+
+### 变更概述
+- 本轮按已批准方案执行，在 `产品工程管理` 下新增一个与 `产品管理` 同级的 `产品属性配置` TAB。
+- 该 TAB 的边界严格限制为**工程域自有产品属性配置**，本轮只纳入：
+  - `techSeries`
+  - `tireType`
+  - `brakeType`
+  - `versionLevel`
+- 明确**不纳入**：
+  - `engineeringSpecId`
+  - `moldGroup`
+  - `templateKey`
+- 本轮目标不是重建公共字典，而是为工程模块补齐自己的产品属性元数据维护入口。
+
+### 实际改动
+
+#### 1. 新增工程域产品属性配置后端主数据链
+- 新增 `server/models/product_attribute_option.go`
+  - 建立 `product_attribute_options` 实体，承载产品属性分类、值、显示名称、排序、启用状态等字段。
+- 新增 `server/services/product_attribute_option_service.go`
+  - 提供产品属性项列表、创建、更新、删除能力。
+- 新增 `server/handlers/product_attribute_option.go`
+  - 暴露工程域产品属性配置的 HTTP handler。
+- 更新 `server/routes/routes.go`
+  - 新增：
+    - `GET /engineering/product-attribute-options`
+    - `POST /engineering/product-attribute-options`
+    - `DELETE /engineering/product-attribute-options/:id`
+- 更新 `server/db/db.go`
+  - 将 `ProductAttributeOption` 接入 `AutoMigrate`。
+
+#### 2. 新增前端“产品属性配置”TAB 与页面
+- 更新 `src/features/engineering/tab-config.ts`
+  - 新增 `product-attributes` 同级 TAB。
+- 新增 `src/routes/_authenticated/engineering/product-attributes.lazy.tsx`
+  - 建立新 TAB 的路由入口。
+- 新增 `src/features/engineering/tabs/product-attributes-mgmt.tsx`
+  - 提供产品属性项的列表、筛选、新增、编辑、删除界面。
+- 新增 `src/features/engineering/services/product-attribute-option-service.ts`
+  - 提供前端对 `product-attribute-options` 接口的读取与保存能力。
+
+#### 3. 将产品表单切换到新属性配置数据链
+- 更新 `src/features/engineering/data/schema.ts`
+  - 新增 `ProductAttributeCategory` 与 `ProductAttributeOption` 前端类型定义。
+- 更新 `src/features/engineering/hooks/use-product-form-init.ts`
+  - 将 `techSeries`、`tireType`、`brakeType`、`versionLevel` 的选项来源，从前端本地常量切换为 `ProductAttributeOptionService.getProductAttributeOptions()`。
+  - 保留兼容兜底：当新主数据表尚未初始化时，暂时回退到既有本地常量，避免产品表单因空配置完全失效。
+
+#### 4. 更新工程模块文案
+- 更新 `src/locales/messages/zh-CN/engineering.ts`
+  - 新增 `engineering.tabs.productAttributes` 中文文案。
+- 更新 `src/locales/messages/en-US/engineering.ts`
+  - 新增 `engineering.tabs.productAttributes` 英文文案。
+
+### 本轮效果
+- `产品工程管理` 现在拥有了自己的 `产品属性配置` TAB，不再依赖前端硬编码来长期维护产品属性下拉项。
+- `新增型号` 表单的以下字段已经切到工程域自己的属性配置链：
+  - `techSeries`
+  - `tireType`
+  - `brakeType`
+  - `versionLevel`
+- 模具、规格、资产等其他域的数据仍保持各自所有权，未被混入该 TAB。
+
+### 当前说明
+- 由于本轮重点是先打通工程域主链，`product-meta-options.ts` 暂时保留为兼容兜底来源，后续在完成初始数据导入后可再评估是否彻底移除。
+- 本轮尚未在文档中附加截图；待你在界面侧确认展示和联动后，可补录截图或录屏。
+
+### 首批默认数据初始化（追加）
+- 本轮继续为 `product_attribute_options` 增加首批默认数据初始化，覆盖以下 4 类工程域产品属性：
+  - `techSeries`
+  - `tireType`
+  - `brakeType`
+  - `versionLevel`
+- 初始化策略采用“缺失即补”的幂等方式：
+  - 启动时检查 `category + value`
+  - 若不存在则插入默认项
+  - 若已存在则保持现状，不覆盖用户后续在新 TAB 中的人工维护
+- 默认数据当前包括：
+  - `techSeries`: `NORMAL`, `HIGHTG`
+  - `tireType`: `Hooked`, `Hookless`, `Tubular`
+  - `brakeType`: `Disc`
+  - `versionLevel`: `STD`, `Lightweight`, `Ultralight`, `Reinforced`
+
+### 追加改动
+- 更新 `server/db/db.go`
+  - 新增产品属性默认数据定义与 `ensureDefaultProductAttributeOptions()`
+  - 在后端启动初始化阶段执行幂等补齐
+- 更新 `task.md`
+  - 记录产品属性首批默认数据初始化执行项
+- 更新 `implementation_plan.md`
+  - 记录默认数据初始化策略与边界
+
+### 追加验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 方向 B 重构（追加）
+- 根据追加确认，本轮已将原“固定四类槽位 + 动态值”的过渡实现升级为方向 B：**分类定义 + 分类项定义**。
+- 当前语义调整为：
+  - 分类名由你维护
+  - 分类项归属于分类
+  - 界面显示使用中英文名称
+  - `techSeries / tireType / brakeType / versionLevel` 仅保留为内部 key 与现有产品表单消费位的锚点
+
+#### 方向 B 后端改动
+- 新增 `server/models/product_attribute_category.go`
+  - 建立 `product_attribute_categories` 模型，用于承载分类定义。
+- 更新 `server/models/product_attribute_option.go`
+  - 将属性项调整为以 `categoryKey` 归属分类。
+  - 中文显示名字段切换为 `labelZh`。
+- 新增 `server/services/product_attribute_category_service.go`
+  - 提供分类定义的列表、创建、更新、删除能力。
+- 新增 `server/handlers/product_attribute_category.go`
+  - 提供分类定义接口入口。
+- 更新 `server/routes/routes.go`
+  - 新增：
+    - `GET /engineering/product-attribute-categories`
+    - `POST /engineering/product-attribute-categories`
+    - `DELETE /engineering/product-attribute-categories/:id`
+- 更新 `server/db/db.go`
+  - 接入 `ProductAttributeCategory` 的 `AutoMigrate`
+  - 启动时幂等初始化默认分类定义与默认分类项
+
+#### 方向 B 前端改动
+- 更新 `src/features/engineering/data/schema.ts`
+  - 将 `ProductAttributeCategory` 升级为分类定义对象
+  - 将 `ProductAttributeOption` 升级为使用 `categoryKey / labelZh`
+  - 保留 `KnownProductAttributeCategoryKey` 作为现有四个消费位的内部锚点类型
+- 新增 `src/features/engineering/services/product-attribute-category-service.ts`
+  - 前端分类定义服务
+- 更新 `src/features/engineering/services/product-attribute-option-service.ts`
+  - 改为按 `categoryKey` 查询分类项
+- 更新 `src/features/engineering/tabs/product-attributes-mgmt.tsx`
+  - 页面改为两层结构：
+    - 分类定义管理
+    - 当前分类下分类项管理
+  - 页面不再把技术 key 当作最终业务分类名显示
+- 更新 `src/features/engineering/hooks/use-product-form-init.ts`
+  - 产品表单继续读取现有四个消费位，但读取链已对齐为 `categoryKey / labelZh`
+
+#### 当前效果
+- 产品属性配置页现在支持：
+  - 自定义分类名
+  - 自定义分类项
+  - 中英文名称分别维护
+- 产品表单仍能兼容当前四个既有产品属性字段：
+  - `techSeries`
+  - `tireType`
+  - `brakeType`
+  - `versionLevel`
+- 这样既满足“分类可配置”，又避免一次性把产品表单扩展到任意新字段自动生成，控制了本轮改造边界。
+
+#### 方向 B 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit --pretty false
+cd server && go test ./...
+```
+- 结果：通过。
+
+#### 产品属性配置页样式对齐（追加）
+- 根据追加反馈，本轮继续对 `src/features/engineering/tabs/product-attributes-mgmt.tsx` 做了**仅视觉层**的样式回归，不改动任何业务逻辑。
+- 本轮主要调整：
+  - 将页面头部改为与工程模块一致的标题信息块风格
+  - 将分类统计卡改为更接近系统统一的边框、底色、字号与强调色体系
+  - 将“分类定义 / 分类项定义”两个区域切换为统一卡片容器结构
+  - 对齐表头、按钮、间距与操作区的视觉语言
+- 本轮明确未改动：
+  - 分类定义与分类项定义的数据模型
+  - 前后端接口
+  - 字段命名
+  - 页面交互语义与操作流程
+
+#### 样式对齐验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit --pretty false
+```
+- 结果：通过。
+
+#### 产品属性配置页样式纠偏（二次追加）
+- 根据界面复核结果，本轮继续对 `src/features/engineering/tabs/product-attributes-mgmt.tsx` 做了第二轮样式纠偏，重点修正“已对齐但仍显突兀”的问题。
+- 本轮主要修正：
+  - 降低“分类定义 / 分类项定义”区块标题的视觉层级，避免强于页面主页眉
+  - 将区块头部的主操作按钮从过强的强调样式调整为更接近系统默认按钮语言
+  - 将两个弹窗的标题区、输入框、下拉框、说明区和底部按钮统一到工程模块现有弹窗风格
+- 本轮仍然未改动：
+  - 数据模型
+  - 前后端接口
+  - 字段语义
+  - 页面交互逻辑
+
+#### 二次纠偏验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit --pretty false
+```
+- 结果：通过。
+
+#### 产品属性配置页字体基线对齐（继续追加）
+- 针对界面复核中“看起来几乎没有变化”的反馈，本轮重新读取工程模块现有页面的真实字体基线，重点对比了页眉标题、描述文案、区块标题与 `italic` 用法。
+- 本轮确认并对齐的基线：
+  - 页眉标题采用 `font-black + tracking-tighter + italic`，并保留响应式字号层级
+  - 页眉描述采用更小的辅助字号与 `uppercase + tracking-widest`
+  - 区块标题采用与系统一致的 `text-sm + font-black + italic`
+  - 区块副标题与主按钮文案统一为小字号大写辅助风格
+- 本轮效果：
+  - “产品属性配置”页眉与工程模块现有页眉的视觉张力重新对齐
+  - “分类定义 / 分类项定义”不再停留在普通正文级标题样式，而是切回系统区块标题风格
+  - 区块说明文案与按钮文案的字体层级明显收敛到系统现有页面基线
+
+#### 字体基线对齐验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit --pretty false
+```
+- 结果：通过。
+
+#### 产品属性配置页空状态提示对齐（继续追加）
+- 继续补齐表格空状态提示的字体层级，对以下文案完成样式统一：
+  - `暂无分类定义`
+  - `当前分类下暂无分类项`
+- 处理方式：将两处空状态提示统一切换为工程模块常见的辅助文案风格，即小字号、粗体、大写字距和较弱前景色，而不再使用默认正文文本样式。
+
+#### 空状态提示验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit --pretty false
+```
+- 结果：通过。
+
+## 2026-04-10 字典系统残留第一批最小清理
+
+### 变更概述
+- 本轮按已批准的方案 A 执行，但严格限制在**最小清理**范围：
+  - 清理参数字典的前端死文案与 overrides 残留
+  - 不进入业务模块改造
+  - **明确排除 `UNIT / 单位管理`**，避免与全局例外边界混淆
+
+### 核查结论
+
+#### 1. `UNIT / 单位管理` 已确认是独立链路，不属于本轮退场对象
+- 当前 `UNIT` 前端通过 `src/features/basic-settings/services/unit-service.ts` 读取 `/basic/units`。
+- `trading`、`material-archive`、`basic-settings` 等模块仍直接依赖 `unitService.getUnits()`。
+- 因此本轮不对 `UNIT` 的代码、路由、接口和文案做退场处理。
+
+#### 2. 参数字典运行主链已基本退场
+- `basic-settings` 当前实际 tabs 仅包含：
+  - `dm-numbering`
+  - `linear-barcode`
+  - `units`
+  - `sequences`
+  - `enterprise`
+  - `security`
+- 当前路由 `src/routes/_authenticated/basic-settings/*` 中也不存在 `dictionary` 子路由。
+- 本轮未检出前端业务主链对 `/dictionary/*` 的直接消费。
+
+#### 3. 当前残留主要收敛为壳层残留
+- 本轮确认的主要残留为：
+  - locale 中的 `dictionary` / `dictionaryActions` 文案
+  - `basic-settings` overrides 中的废弃 `dictionary` 覆盖块
+  - 零引用静态数据文件：`src/data/data-dictionary.ts`、`src/types/data-dict.ts`
+  - 废弃脚本：`server/scripts/check_dict.go`
+
+### 实际清理
+
+#### 1. 清理 `basicSettings` locale 中的参数字典死文案
+- 更新 `src/locales/messages/zh-CN/basicSettings.ts`
+  - 删除 `tabs.dictionary`
+  - 删除 `dictionaryActions`
+- 更新 `src/locales/messages/en-US/basicSettings.ts`
+  - 删除 `tabs.dictionary`
+  - 删除 `dictionaryActions`
+
+#### 2. 清理 `commandMenu` locale 中的参数字典残留入口文案
+- 更新 `src/locales/messages/zh-CN/commandMenu.ts`
+  - 删除 `items.dictionary`
+- 更新 `src/locales/messages/en-US/commandMenu.ts`
+  - 删除 `items.dictionary`
+
+#### 3. 清理 `basic-settings` overrides 中废弃的 `dictionary` 覆盖块
+- 更新 `src/locales/overrides/basic-settings.zh-CN.ts`
+  - 删除 `basicSettings.dictionary`
+- 更新 `src/locales/overrides/basic-settings.en-US.ts`
+  - 删除 `basicSettings.dictionary`
+
+#### 4. 物理删除零引用残留文件
+- 已删除：
+  - `src/data/data-dictionary.ts`
+  - `src/types/data-dict.ts`
+  - `server/scripts/check_dict.go`
+
+### 验证
+- 执行代码检索确认：
+  - `dictionaryActions`
+  - `commandMenu.items.dictionary`
+  - `basicSettings.tabs.dictionary`
+  - `Parameter Dictionary` / `参数字典` / `Dictionary Atomic Center`
+  均未再检出剩余引用。
+- 执行零引用核查确认：
+  - `initialDataDictionary` / `DataDictionaryItem` / `check_dict` 未再检出有效代码引用
+  - `src/data/data-dictionary.ts`、`src/types/data-dict.ts`、`server/scripts/check_dict.go` 已不存在于仓库中
+
+### 本轮结论
+- 参数字典在前端可见层面的残留主链已进一步清空。
+- 当前项目状态更接近：
+  - `UNIT` 独立保留
+  - 参数字典主体已退场
+  - 零引用死文件与废弃脚本已完成物理删除
+
+## 2026-04-09 `WAREHOUSE_CATEGORY` 报错修复：仓库分类单源漂移
+
+### 变更概述
+- 本轮不是补一个新的系统字典 entry，而是排查并修复 `WAREHOUSE_CATEGORY` 报错背后的**单源漂移**。
+- 初始现象是前端在以下调用点执行 `DictionaryCoreService.getOptions('WAREHOUSE_CATEGORY')` 时抛出 critical error：
+  - `src/features/warehouse/hooks/use-shipment-bootstrap.ts`
+  - `src/features/warehouse/tabs/product-inbound.tsx`
+  - `src/features/trading/components/purchase/purchase-receipt-confirm-dialog.tsx`
+
+### 根因确认
+
+#### 1. `WAREHOUSE_CATEGORY` 不是当前仓库分类的权威事实源
+- 继续向下排查后确认：仓库分类在项目里本来就有正式业务主数据链路：
+  - 模型：`server/models/warehouse.go` 中 `WarehouseCategory`
+  - 预置：`DefaultWarehouseCategories`
+  - 接口：`GET /warehouse/categories`
+  - handler：`server/handlers/warehouse_category.go`
+- 这说明仓库分类的权威来源本来就是 `warehouse_categories` 业务实体，而不是字典系统。
+
+#### 2. 报错本质是前端接错单源
+- 本轮最终确认，问题不是“后端漏 seed 了一个必须存在的字典 entry”。
+- 真正的问题是：部分仓储/采购收货页面把仓库分类误接到了 `DictionaryCoreService`，导致一旦字典系统里不存在 `WAREHOUSE_CATEGORY`，前端就直接 fail loudly。
+
+### 实际修复
+
+#### 1. 在仓库分类核心服务中补统一 options 出口
+- 更新 `src/features/warehouse/services/warehouse-category-core-service.ts`
+- 新增：
+  - `WarehouseCategoryOption`
+  - `getCategoryOptions()`
+- 处理方式：
+  - 读取 `/warehouse/categories`
+  - 过滤 `active` 分类
+  - 映射为 `{ value: code, label: name }`
+
+#### 2. 将误接字典系统的调用面切回业务主数据
+- 更新 `src/features/warehouse/hooks/use-shipment-bootstrap.ts`
+  - 改为通过 `WarehouseCategoryCoreService.getCategoryOptions()` 加载出货页分类选项
+- 更新 `src/features/warehouse/tabs/product-inbound.tsx`
+  - 改为通过 `WarehouseCategoryCoreService.getCategoryOptions()` 加载入库页分类选项
+- 更新 `src/features/trading/components/purchase/purchase-receipt-confirm-dialog.tsx`
+  - 删除 `DictionaryCoreService` 依赖
+  - 改为通过 `WarehouseCategoryCoreService.getCategoryOptions()` 异步加载采购收货目标仓库分类
+
+### 本轮效果
+- 仓库分类相关页面不再依赖一个并不存在的 `WAREHOUSE_CATEGORY` 字典 entry。
+- 仓储与采购收货流程重新对齐到 `warehouse_categories` 这一真实业务主数据单源。
+- `DictionaryCoreService` 的 fail-loudly 行为被保留，用于继续暴露真正的错误接线，而不是被静默吞掉。
+
+### 验证
+执行：
+```bash
+pnpm exec tsc --noEmit
+```
+
+结果：通过。
+
+### 本轮结论
+- `WAREHOUSE_CATEGORY` 报错已完成根因修复。
+- 最终修复方向不是“补字典”，而是“纠正错误单源”。
+- 后续若再遇到类似“页面把业务主数据当字典读取”的问题，应优先检查是否存在主数据单源漂移，而不是先在字典系统中补重复定义。
+
 ## 2026-04-09 `sales_orders PATCH` 历史残留清理
 
 ### 变更概述
@@ -52,6 +429,677 @@ go test ./services -run "Sales|Trading" -count=1
   - 保留内部 command 组织能力
   - 不恢复公开 `PATCH /sales-orders/:id`
 - 后续若再审视该处，不应再把当前内部 command 抽象误判为 hard-cut 失败或旧 PATCH 回潮。
+
+## 2026-04-10 产品属性纯动态化主链收口
+
+### 变更概述
+- 本轮继续按已确认方向推进，将产品属性主链从固定字段消费切到 `ProductType -> 属性分类绑定 -> Product.attributeValues[]` 的纯动态模型。
+- 本轮重点不再是补模型骨架，而是完成前后端主消费链收口，确保产品新建、编辑、展示与摘要读取都优先走动态属性值。
+
+### 实际改动
+
+#### 1. 后端动态属性链已纳入产品主服务
+- 已通过新增模型与服务，将以下关系接入后端主链：
+  - `ProductTypeAttributeBinding`
+  - `ProductAttributeValue`
+- 产品保存、查询、列表与批量同步已统一支持 `attributeValues[]` 的写入、替换与回显。
+- 路由、handler、service、AutoMigrate 已接通，产品类型可绑定属性分类，产品实例可动态保存分类值。
+
+#### 2. 前端产品表单已切换为按产品类型动态渲染属性区
+- 更新产品表单初始化链：
+  - 按 `typeId` 动态加载属性分类、属性项、绑定关系
+  - 切换产品类型时刷新绑定结果
+  - 编辑场景按 `attributeValues[]` 回显动态属性值
+- 新增并接入 `DynamicAttributeSection`：
+  - 按绑定顺序渲染动态分类下拉
+  - 写入时仅更新 `attributeValues`，避免整表 `reset` 带来的状态抖动
+
+#### 3. 前端旧固定字段主消费面已替换为动态摘要读取
+- 以下主消费位已改为从 `attributeValues[]` 派生读取，而不是直接读取固定字段：
+  - `product-action-dialog`
+  - `use-product-form`
+  - `use-product-form-init`
+  - `product-form-utils`
+  - `product-core-service`
+  - `product-utils`
+  - `engineering-sidebar`
+  - `use-product-columns`
+  - `rim-spec` 概览区与版本矩阵联动
+- `versionLevel` 现已作为动态分类值参与 SKU 派生与多版本批量构建，不再作为主链固定事实字段写入。
+
+#### 4. 默认草稿与展示摘要已对齐动态承载
+- 产品默认草稿已补齐 `attributeValues: []`。
+- 展示摘要统一通过 `getProductAttributeSummary()` 从动态属性值派生：
+  - `series`
+  - `brake`
+  - `version`
+  - `tireType`
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- 产品属性前后端主链已完成纯动态化收口。
+- 当前保留在 schema 中的固定字段仅作为过渡兼容壳层存在，不再作为产品属性主链事实来源。
+- 后续若继续收尾，可再单独评估：
+  - schema 层固定字段的最终退场
+  - 旧数据迁移脚本/补录策略的进一步显式化
+
+## 2026-04-10 产品属性兼容壳层与无效锚点清理
+
+### 变更概述
+- 在完成产品属性纯动态化主链后，本轮继续清理会制造歧义的历史兼容层，目标是避免后续把旧固定字段误认成正式模型。
+- 本轮只清理“已经无业务价值的壳层”，同时保留仍需存在的动态分类内部编码，并收敛其表达方式。
+
+### 实际改动
+
+#### 1. 删除前端 schema 中无效的固定属性字段壳层
+- 更新 `src/features/engineering/data/schema.ts`
+- 已删除 `Product` schema 中以下固定字段定义：
+  - `tireType`
+  - `brakeType`
+  - `techSeries`
+  - `versionLevel`
+- 这些字段已不再作为产品属性主链事实来源，保留只会继续制造“固定字段仍有效”的误解。
+
+#### 2. 删除未使用的分类 key 类型壳层
+- 更新 `src/features/engineering/data/schema.ts`
+- 已删除未再使用的：
+  - `knownProductAttributeCategoryKeySchema`
+  - `KnownProductAttributeCategoryKey`
+
+#### 3. 将仍需存在的分类 key 收敛为动态分类内部编码常量
+- 更新 `src/features/engineering/utils/product-attribute-utils.ts`
+- 新增 `PRODUCT_ATTRIBUTE_CATEGORY_KEYS`，集中承载当前仍需使用的动态分类内部编码：
+  - `series -> techSeries`
+  - `tireType -> tireType`
+  - `brake -> brakeType`
+  - `version -> versionLevel`
+- 同步将以下消费位改为引用该常量，而不是继续散落硬编码字符串：
+  - `use-product-form-init.ts`
+  - `product-form-utils.ts`
+  - `product-action-dialog.tsx`
+  - `product-attribute-utils.ts`
+
+#### 4. 收敛版本矩阵 props 语义，避免继续表现为固定字段
+- 更新 `src/features/engineering/components/specs/rim-spec.tsx`
+- 更新 `src/features/engineering/components/product-action-dialog.tsx`
+- 将 `SpecComponent` 传入的版本选项 props 从：
+  - `versionLevel`
+  收敛为：
+  - `versionCategoryOptions`
+- 这样版本矩阵仍能消费“版本分类”这一动态分类，但不再表现得像固定产品字段。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- 无业务价值的固定字段壳层已从前端 schema 中清理。
+- 仍需保留的 `techSeries / tireType / brakeType / versionLevel` 现已被收敛为动态分类内部编码，而不是固定产品字段语义。
+- 当前动态产品属性主链的表达更加单一，后续歧义成本明显降低。
+
+## 2026-04-10 产品弹窗模板解析失败显式报错修复
+
+### 变更概述
+- 在模板主链收敛为 `ProductType.templateId -> ProductTemplate.componentKey` 后，本轮继续补齐错误暴露能力。
+- 目标是禁止产品弹窗在模板解析异常时静默退化为“模板待定”，要求界面直接暴露错误并阻断提交。
+
+### 实际改动
+
+#### 1. 为模板解析新增专属错误状态
+- 更新 `src/features/engineering/components/product-action-dialog.tsx`
+- 新增 `templateResolveError` 状态，用于承载模板绑定解析失败信息。
+
+#### 2. 将模板解析改为显式失败路径
+- 更新 `src/features/engineering/components/product-action-dialog.tsx`
+- 对 `getEffectiveTemplate()` 增加显式 `try/catch`。
+- 现在会区分以下场景：
+  - 未选择产品类型：清空模板状态，不报错
+  - 选中的产品类型在当前上下文不存在：显式报错
+  - 产品类型未绑定模板：按正常“无模板”路径处理，不报错
+  - 产品类型绑定了模板，但模板无法解析：显式报错
+  - 模板接口请求异常：显式报错
+
+#### 3. 在界面中高亮展示模板链路错误
+- 更新 `src/features/engineering/components/product-action-dialog.tsx`
+- 新增红色错误提示块：
+  - 标题：`Template Binding Broken`
+  - 内容直接展示模板解析失败原因
+  - 提示用户修复产品类型模板绑定或同步后端模板接口版本
+
+#### 4. 模板解析失败时阻断提交
+- 更新 `src/features/engineering/components/product-action-dialog.tsx`
+- 提交按钮禁用条件从只依赖 `metadataInitError`，扩展为：
+  - `metadataInitError || templateResolveError`
+- 这样模板链路异常时，用户无法继续提交产品数据。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- 产品弹窗在模板解析失败时已不再静默掩盖问题。
+- 用户现在可以直接看到模板链路哪里出错。
+- 模板异常状态下的保存提交已被阻断。
+
+## 2026-04-10 BOM 主链漏洞修复与 MRP / 采购影响面收口
+
+### 变更概述
+- 本轮目标不是扩展 BOM 功能，而是优先修复会直接污染 MRP / 采购需求的主链漏洞。
+- 修复范围聚焦：
+  - BOM 列表前后端协议对齐
+  - BOM 编辑保存链闭环
+  - BOM 唯一有效版本约束
+  - `standardUsage` 后端权威化
+  - MRP 禁止在多个 active BOM 时静默选取第一个
+  - 删除唯一 active BOM 的保护
+
+### 实际改动
+
+#### 1. 对齐 BOM 列表读取协议
+- 更新 `src/features/engineering/services/bom-service.ts`
+- 将 `getBOMs()` 改为显式解析分页响应的 `items` 字段，而不是把 `/engineering/bom` 响应误当作 `BOM[]`。
+
+#### 2. 统一 BOM 编辑保存链到现有 POST Save
+- 更新：
+  - `src/features/engineering/services/bom-service.ts`
+  - `src/features/engineering/hooks/use-bom-data.ts`
+  - `src/features/engineering/components/bom-action-dialog.tsx`
+  - `src/features/engineering/hooks/use-bom-form.ts`
+- 移除了前端对未落地 `PATCH /engineering/bom/:id` 主链的依赖。
+- BOM 编辑和新建现在统一走 `POST /engineering/bom`，确保编辑可真实落库。
+
+#### 3. 收紧 BOM 表单类型链
+- 更新：
+  - `src/features/engineering/components/bom-action-dialog.tsx`
+  - `src/features/engineering/hooks/use-bom-form.ts`
+- 收敛 `initialItems` 类型。
+- 去掉已无实际用途的 `deltaTracker` 依赖。
+- 改用显式 `UseFormReturn<BOM>` 与 `Resolver<BOM>`，并将 `selectedProductId` 切到 `useWatch()`，避免空 `watch()` 副作用警告。
+
+#### 4. 将 `standardUsage` 收回后端权威计算
+- 更新 `server/services/engineering_master_service.go`
+- 新增 `normalizeBOMItems()`。
+- 在 `SaveBOM()` 内统一按：
+
+`standardUsage = unitUsage * (1 + wastagePercent / 100)`
+
+进行权威重算，防止 BOM 核心用量继续由前端事实化。
+
+#### 5. 增加同产品唯一 active BOM 约束
+- 更新 `server/services/engineering_master_service.go`
+- 新增 `validateUniqueActiveBOM()`。
+- 当同一 `productId` 下已存在另一份 `active` BOM 时，保存直接返回冲突错误。
+
+#### 6. 删除唯一 active BOM 时显式阻断
+- 更新：
+  - `server/services/engineering_master_service.go`
+  - `server/handlers/bom.go`
+- 删除前会校验该 BOM 是否为当前产品唯一的 `active` BOM。
+- 若是唯一有效 BOM，则返回 `409` 冲突并标记为 `LOCKED_ASSET`，避免破坏下游需求链。
+
+#### 7. MRP 不再静默选取“第一个 active BOM”
+- 更新 `server/services/mrp_requirements.go`
+- 新增 `buildActiveBOMIndex()`。
+- 当同一产品出现多个 `active` BOM 时，MRP 直接返回显式错误，而不是依赖数据库返回顺序静默命中。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- BOM 列表读取协议已与前端消费方式对齐。
+- BOM 编辑保存链已闭环，不再依赖未实现的 patch 路由。
+- `standardUsage` 已改由后端统一重算。
+- 同产品多个 active BOM 会在保存或 MRP 计算阶段被显式拦截。
+- 删除唯一 active BOM 已被阻断，减少对采购 / MRP 下游的破坏面。
+
+## 2026-04-10 BOM 第二轮治理：编号、导入边界与版本字段语义收紧
+
+### 变更概述
+- 本轮是在 BOM 主链 P0 / P1 收口后继续推进的 P2 治理。
+- 目标不是扩展 BOM 功能，而是进一步收紧以下边界：
+  - `bomNo` 权威来源
+  - BOM 导入对物料主数据的副作用
+  - BOM 表单中业务版本与修订号的默认语义
+
+### 实际改动
+
+#### 1. `bomNo` 改由后端权威生成
+- 更新：
+  - `server/services/engineering_master_service.go`
+  - `src/features/engineering/hooks/use-bom-form.ts`
+  - `src/features/engineering/data/schema.ts`
+- 新增 `generateBOMNo()`，新建 BOM 时若未传 `bomNo`，由后端统一按日期序列生成。
+- 前端新建 BOM 不再随机拼接编号，只接收后端返回的正式编号。
+
+#### 2. 收紧 BOM 导入自动建料边界
+- 更新 `src/features/engineering/hooks/use-bom-data.ts`
+- 当 Excel 中解析出物料主数据行时，当前流程不再静默调用物料保存服务。
+- 现在会：
+  - 记录英文错误日志
+  - 直接阻断导入
+  - 给出中文错误提示，要求先到物料档案中显式维护这些物料后再导入 BOM
+
+#### 3. 收敛 BOM 业务版本与修订号默认语义
+- 更新 `src/features/engineering/hooks/use-bom-form.ts`
+- `bomVersion` 继续作为 BOM 业务版本显示字段，默认 `V1.0`。
+- `revisionNo` 默认改回 `R1`，不再与 `bomVersion` 混用。
+- 编辑态若后端未返回修订号，也不再回退为 `bomVersion`，避免语义串线。
+
+#### 4. 放宽创建态对 `bomNo` 的前端校验
+- 更新 `src/features/engineering/data/schema.ts`
+- `bomNo` 在创建态允许为空，由后端生成并返回。
+- 避免前端因缺少本地随机编号而阻止新建流程。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- 新建 BOM 的编号来源已经收回后端。
+- BOM 导入不会再静默污染物料主数据。
+- `bomVersion` 与 `revisionNo` 的默认语义比上一轮更清晰。
+- 本轮治理未破坏现有前后端主链与测试结果。
+
+## 2026-04-10 BOM 相关链路治理：列表 / 详情 / 预览 / 打印 / DTO 口径收口
+
+### 变更概述
+- 本轮目标不是继续扩展 BOM 功能，而是治理 BOM 周边链路的一致性问题。
+- 重点收口：
+  - 后端 BOM 返回的事实字段完整度
+  - 列表 / 预览 / 打印对产品与版本信息的展示口径
+  - 详情页对 `standardUsage` 的消费方式
+  - 导入初始项与表单链之间的类型边界
+
+### 实际改动
+
+#### 1. BOM 查询结果补齐 `Product`
+- 更新 `server/services/engineering_master_service.go`
+- 在 `ListBOMs()` 与 `GetBOMByID()` 中补充 `Preload("Product")`。
+- 这样前端 BOM 相关页面可优先消费后端返回的 `bom.product`，减少再从全量产品列表中二次补链。
+
+#### 2. BOM schema 显式补充 `product`
+- 更新 `src/features/engineering/data/schema.ts`
+- 在 `bomSchema` 中新增可选 `product: productSchema.optional()`。
+- 使列表、预览、详情等链路可以在类型层直接承接后端已返回的产品对象。
+
+#### 3. 列表与预览优先消费后端返回的产品对象
+- 更新：
+  - `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+  - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+- 现在优先使用 `bom.product`，仅在缺失时才回退到外部 `products` 列表查找。
+- 减少页面层因二次查找失败导致的“未知产品”展示漂移。
+
+#### 4. 打印模板元信息与预览口径对齐
+- 更新 `src/features/print-mgmt/components/templates/bom-print-template.tsx`
+- 打印模板新增并消费：
+  - `bomNo`
+  - `bomVersion`
+  - `revisionNo`
+  - `changeOrderNo`
+- 让 BOM 打印标题区与预览区对编号 / 版本 / 修订号的表达更加一致。
+
+#### 5. 详情页不再前端兜底重算 `standardUsage`
+- 更新 `src/features/engineering/components/bom-detail-table.tsx`
+- 详情表中的标准用量现在直接展示后端返回值，不再按前端公式重新推导。
+- 避免展示层再次制造“事实来源”。
+
+#### 6. 收紧导入初始项类型边界
+- 更新 `src/features/engineering/tabs/bom-mgmt.tsx`
+- `initialItems` 从 `unknown[]` 收敛为 `Array<Partial<BOMItem>>`。
+- 使导入结果进入 BOM 表单链时的类型边界更明确。
+
+#### 7. 顺手清理 `bom-detail-table.tsx` 中的历史 `any`
+- 更新 `src/features/engineering/components/bom-detail-table.tsx`
+- 移除了旧翻译 key 调用上的 `as any` 残留，避免这类页面继续成为链路治理中的噪音源。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- BOM 查询返回的数据事实更完整，前端不再必须自行补产品对象。
+- 列表、预览、打印对 BOM 编号 / 版本 / 产品显示的口径更加一致。
+- 详情页已不再前端兜底重算 `standardUsage`。
+- 导入到表单的类型边界进一步收紧。
+
+## 2026-04-10 BOM 字段归一化与 MRP / 采购展示链治理
+
+### 变更概述
+- 本轮目标不是修改 BOM 核心计算逻辑，而是继续收紧：
+  - BOM 与 Change Order / Product 的字段派生边界
+  - MRP 前端对 BOM 显式异常的暴露方式
+- 重点原则：后端明确报错时，前端不得再把问题吞掉或模糊化。
+
+### 实际改动
+
+#### 1. MRP handler 不再把 BOM 异常压成统一模糊错误
+- 更新 `server/handlers/mrp_requirements.go`
+- 当后端检测到 BOM 选择冲突时，现返回：
+  - `409`
+  - `"[CRITICAL_BOM_SELECTION] ..."`
+- 其他异常也会返回包含原始错误内容的服务器错误消息，便于前端与用户定位问题来源。
+
+#### 2. MRP 前端服务与 hook 保留错误原文
+- 更新：
+  - `src/features/mrp/services/requirement-core-service.ts`
+  - `src/features/mrp/hooks/use-requirements.ts`
+- 服务层显式允许响应中携带 `errorMessage`。
+- 计算失败时：
+  - 清空旧的 `requirements`
+  - 重置 `stats`
+  - 保留后端错误消息
+- 避免 UI 继续展示上一次成功计算的旧结果。
+
+#### 3. MRP 抽屉直接展示 BOM / MRP 错误
+- 更新：
+  - `src/features/mrp/pages/part-requirements.tsx`
+  - `src/features/mrp/components/requirements/requirement-drawer.tsx`
+- 当 MRP 计算失败时，抽屉不再仅展示空列表。
+- 现在会直接显示错误面板，将后端返回的 BOM / MRP 异常消息暴露给用户。
+
+#### 4. BOM 表单减少对 Change Order 的页面级补链
+- 更新 `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+- 选择 Change Order 时，只有当变更单字段真实存在时才覆盖：
+  - `changeType`
+  - `siteCode`
+  - `revisionNo`
+  - `effectiveFrom`
+  - `effectiveTo`
+- 不再默认用页面层兜底值去覆盖 BOM 自身字段。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- MRP 前端不会再把后端返回的 BOM 选择异常吞成模糊失败。
+- BOM 计算失败时，用户现在可以直接看到问题原因。
+- BOM 表单对 Change Order 的字段覆盖边界进一步收紧。
+
+## 2026-04-10 BOM 后端字段归一化与 MRP 异常空态统一
+
+### 变更概述
+- 本轮继续沿着“后端为事实来源、前端负责展示”的原则收口。
+- 重点不再是 BOM 计算本身，而是：
+  - BOM 关联 Change Order 后的关键字段是否仍会漂移
+  - MRP 页面是否能区分“分析失败”与“分析完成但结果为空”
+
+### 实际改动
+
+#### 1. BOM 关联 Change Order 时后端统一同步关键字段
+- 更新 `server/services/engineering_master_service.go`
+- `mergeBOMFromChangeOrder()` 现在在 BOM 已关联 Change Order 时，统一同步以下字段：
+  - `changeOrderNo`
+  - `changeType`
+  - `siteCode`
+  - `isDefaultSite`
+  - `revisionNo`
+  - `effectiveFrom`
+  - `effectiveTo`
+- 这样可以进一步减少这些字段在前端页面层被再次补链、保留旧值或发生漂移的机会。
+
+#### 2. MRP 抽屉显式区分错误态、分析后空结果态与正常结果态
+- 更新：
+  - `src/features/mrp/components/requirements/requirement-drawer.tsx`
+  - `src/locales/messages/zh-CN/mrp.ts`
+  - `src/locales/messages/en-US/mrp.ts`
+- 当前逻辑分为三类：
+  1. **错误态**：直接显示 BOM / MRP 错误面板
+  2. **分析后空结果态**：显示“本次分析未生成任何物料需求明细”的专用提示
+  3. **正常结果态**：正常展示需求列表
+- 避免“分析其实出了问题或结果异常为空”时，被误当作普通无数据界面。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- BOM 关联 Change Order 后，关键主数据字段更加以后端结果为准。
+- MRP 页面能够更清楚地区分错误态与异常空态。
+- BOM 异常进一步减少被包装成普通空结果的可能。
+
+## 2026-04-10 BOM DTO 收敛与 MRP 提示口径统一
+
+### 变更概述
+- 本轮重点不再是扩展新能力，而是继续降低展示链理解成本与提示分叉。
+- 主要目标：
+  - 给 BOM 前端主消费链补统一版本显示入口
+  - 让 MRP `selection-tree` 与分析抽屉对 BOM 问题给出更一致的提示
+  - 顺手清理已知低成本 warning，减少治理噪音
+
+### 实际改动
+
+#### 1. BOM 前端主消费链补统一显示版本字段
+- 更新：
+  - `src/features/engineering/data/schema.ts`
+  - `src/features/engineering/hooks/use-bom-form.ts`
+  - `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+  - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+- 新增 `bomDisplayVersion` 作为前端主展示链可优先消费的版本字段。
+- 当前列表、预览、打印入口均优先使用 `bomDisplayVersion`，不存在时再回退 `bomVersion`。
+- 这一步不是删除历史字段，而是先减少前端主链对多版本字段并行理解的负担。
+
+#### 2. 统一 MRP `selection-tree` 与抽屉对 BOM 缺失的提示口径
+- 更新：
+  - `src/features/mrp/components/requirements/selection-tree.tsx`
+  - `src/locales/messages/zh-CN/mrp.ts`
+  - `src/locales/messages/en-US/mrp.ts`
+- `selection-tree` 中的缺失 BOM 提示现在采用更明确的错误卡片样式与文案层级。
+- 中文 / 英文文案也改为更明确表达“当前无法进入物料分析”，与抽屉中的异常 / 空结果表达更接近。
+
+#### 3. 清理已知样式 warning
+- 更新 `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+- 将 `!h-11` 调整为 `h-11!`，消除已知样式 warning。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- BOM 前端主消费链对版本字段的理解进一步收敛。
+- MRP `selection-tree` 与分析抽屉对 BOM 问题的提示口径更一致。
+- 本轮涉及文件中的已知样式 warning 已清理。
+
+## 2026-04-10 BOM DTO 单源化与 MRP 阶段提示统一
+
+### 变更概述
+- 本轮继续沿着“后端提供事实、前端负责展示”的边界收口。
+- 重点是把前端已经补出的稳定展示字段尽量收回后端提供，并让 MRP 在不同阶段对 BOM 问题的提示更可区分。
+
+### 实际改动
+
+#### 1. 后端开始直接返回 `bomDisplayVersion`
+- 更新：
+  - `server/models/product.go`
+  - `server/services/engineering_master_service.go`
+- BOM 模型新增仅用于响应的 `bomDisplayVersion` 字段。
+- 在以下路径中统一填充：
+  - `ListBOMs()`
+  - `GetBOMByID()`
+  - `SaveBOM()` 返回值
+- 目前后端会基于 `VersionText` 统一生成 `bomDisplayVersion`，减少前端继续本地补推断。
+
+#### 2. MRP 在选择前阶段即可阻断“缺失可用 BOM”的分析请求
+- 更新：
+  - `src/features/mrp/components/requirements/selection-tree.tsx`
+  - `src/locales/messages/zh-CN/mrp.ts`
+  - `src/locales/messages/en-US/mrp.ts`
+- 现在会统计已选生产项中缺失可用 BOM 的数量。
+- 若存在缺失：
+  - 底部分析条显示阻断原因
+  - “分析需求 / Analyze Demand”按钮直接禁用
+- 这样用户可以在分析前就知道问题属于“前置缺失”，而不是等到分析后才发现异常。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- `bomDisplayVersion` 已开始由后端直接提供，BOM DTO 更接近单源化。
+- MRP 页面现在可以更明确地区分“选择前就缺少可用 BOM”的阶段性问题。
+- BOM 到 MRP 的提示链路比上一轮更接近完整的阶段闭环。
+
+## 2026-04-10 BOM DTO 最终单源化与 MRP 三阶段提示模板统一
+
+### 变更概述
+- 本轮继续做尾段收口，目标不是新增能力，而是让 BOM 展示字段与 MRP 阶段提示更接近最终统一表达。
+- 重点包括：
+  - 让打印链也统一围绕 `bomDisplayVersion` 消费
+  - 让 MRP 三阶段提示更接近同一套标题/正文模板
+
+### 实际改动
+
+#### 1. BOM 打印链进一步统一到 `bomDisplayVersion`
+- 更新：
+  - `src/features/print-mgmt/components/templates/bom-print-template.tsx`
+  - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+- `BOMPrintTemplateProps` 将 `bomVersion` 收敛为 `bomDisplayVersion`。
+- 预览页在传递打印参数时，也直接传入 `bomDisplayVersion`。
+- 这样列表、预览、打印三条主展示链对 BOM 版本字段的主消费口径进一步统一。
+
+#### 2. MRP 三阶段提示补统一标题/正文模板
+- 更新：
+  - `src/locales/messages/zh-CN/mrp.ts`
+  - `src/locales/messages/en-US/mrp.ts`
+  - `src/features/mrp/components/requirements/selection-tree.tsx`
+  - `src/features/mrp/components/requirements/requirement-drawer.tsx`
+- 新增并统一使用：
+  - 选择前缺 BOM 的标题文案
+  - 分析失败的标题 / 说明文案
+- 当前三阶段提示已更接近同一套结构：
+  1. **选择前缺 BOM**：阻断分析
+  2. **分析失败**：直接展示错误来源
+  3. **分析后空结果**：提示异常空态并引导检查 BOM / 物料主数据
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### 当前结论
+- BOM 打印链对版本字段的主消费口径进一步收敛。
+- MRP 三阶段提示在标题、正文与阶段语义上更统一。
+- BOM DTO 与 MRP 提示链已经进入尾段收口状态。
+
+## 2026-04-10 前端旧版本字段审计、MRP 三阶段提示抽象与 BOM P2 封板评估
+
+### 变更概述
+- 本轮不是继续扩展 BOM P2，而是做最后的质量收口：
+  - 审计前端主链是否还残留直接读取旧版本字段
+  - 将 MRP 三阶段提示抽成统一小组件
+  - 输出 BOM P2 是否可正式封板的结论
+
+### 实际改动
+
+#### 1. 前端旧版本字段残留审计结果
+- 审查范围：`src/features/engineering/**/*` 与 `src/features/print-mgmt/**/*`
+- 结论：
+  - **未发现** BOM 主展示链仍直接依赖后端 `_v / version` 数值字段的情况。
+  - 剩余出现的 `revisionNo` 属于**业务修订号语义**，不是应被清除的历史脏字段。
+  - 本轮已进一步收紧：
+    - `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+    - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+    - `src/features/print-mgmt/components/templates/bom-print-template.tsx`
+  - 这些主展示链现在进一步围绕后端返回的 `bomDisplayVersion` 消费。
+
+#### 2. MRP 三阶段提示已抽成统一小组件
+- 新增：
+  - `src/features/mrp/components/requirements/requirement-stage-alert.tsx`
+- 复用到：
+  - `selection-tree.tsx`
+  - `requirement-drawer.tsx`
+- 统一覆盖三类阶段问题：
+  1. **选择前缺少可用 BOM**
+  2. **分析失败**
+  3. **分析后空结果**
+- 这样后续如果要继续调整提示样式或模板，不再需要分别修改多个重复卡片结构。
+
+### 验证
+- 执行：
+```bash
+pnpm exec tsc --noEmit
+go test ./...
+```
+- 结果：通过。
+
+### BOM P2 封板评估结论
+
+#### 结论
+- **建议：BOM P2 可以正式封板。**
+
+#### 依据
+1. **主链风险已收口**
+   - BOM 创建 / 保存 / 查询 / 删除主链已稳定。
+   - Active BOM 冲突已由后端裁决。
+   - `bomNo` 已改为后端权威生成。
+
+2. **事实来源已明显后移到后端**
+   - `bomDisplayVersion` 已由后端直接提供。
+   - BOM 与 Change Order 关键字段联动已由后端同步。
+   - 前端对 `standardUsage` 等关键事实不再二次制造来源。
+
+3. **MRP 下游对 BOM 问题的暴露已成闭环**
+   - 选择前缺 BOM：直接阻断
+   - 分析失败：直接报错
+   - 分析后空结果：显式提示异常空态
+
+4. **验证已连续通过**
+   - 多轮 `pnpm exec tsc --noEmit` 通过
+   - 多轮 `go test ./...` 通过
+
+#### 仍存在但不阻塞封板的项
+- 仍可继续做少量**低风险体验优化**，例如：
+  - 文案微调
+  - 展示组件细节统一
+  - 局部抽象进一步解耦
+- 这些更适合作为 **P2 后续优化**，而不是继续阻塞本轮正式封板。
 
 ## 2026-04-09 `trading` 第四段：sales 对称 patch 包装与写入模式统一
 
@@ -2495,3 +3543,272 @@ Result:
   - `unbound_backend_routes: 19 -> 12`
   - `invalid_route_bindings: 1 -> 0`
 - remaining 12 unbound routes are pre-existing non-sales residuals.
+
+## 2026-04-11 `watchdog` Rust 构建失败修复
+
+### 变更概述
+- 本轮目标是修复 `server/watchdog` 在 Docker 构建阶段执行 `cargo build --release` 时的 Rust 编译错误。
+- 实际阻塞点不是 Go app，而是 `watchdog/src/main.rs` 出现 `unexpected closing delimiter: '}'`。
+- 本轮采取最小修复原则，只调整 `main.rs` 的块结构，不扩展到无关服务。
+
+### 根因分析
+- `server/watchdog/src/main.rs` 中主循环前存在一段损坏文本，把原本应独立存在的 `loop {` 吞进了同一行。
+- 结果导致：
+  - `match perform_audit(&pool).await { ... }` 没有处在正确的循环块内。
+  - 末尾 `sleep(Duration::from_secs(15)).await;` 与对应闭合 `}` 的层级关系失衡。
+  - Rust 编译器最终在 `Err` 分支附近将问题表现为 `unexpected closing delimiter`。
+
+### 修复内容
+- 更新文件：`server/watchdog/src/main.rs`
+- 修复动作：
+  - 恢复独立的 `loop { ... }` 主循环结构。
+  - 去除同类损坏文本对 `if current_count != last_anomaly_count {` 和 `let busy_status = IntegrityResult { ... }` 所在行的结构污染。
+- 本轮未改动 watchdog 的业务语义，只修复语法与块层级。
+
+### 验证结果
+- 在 `server/watchdog` 目录执行：`cargo build --release`
+- 结果：**通过**。
+- 当前仅剩一个非阻塞警告：`perform_audit(pool: &sqlx::PgPool)` 的参数 `pool` 暂未使用。
+
+### 结论
+- `watchdog` 单体 Rust 编译链已经恢复。
+- 本轮未继续执行整条 `docker compose up -d --build ...`，因为当前计划优先验证首个失败点已修复，避免把新的独立问题与本次语法根因混在一起。
+
+## 2026-04-11 - 物料档案模块治理（前端第一阶段：MaterialOption 收敛）
+
+### 本轮目标
+- 在不改动后端接口行为的前提下，先收敛 `/materials?options=true` 这条前端主链的语义边界。
+- 解决“轻量 options DTO 被 adapter 补齐成完整 `Material`”导致的类型混用问题，降低后续治理风险。
+
+### 变更内容
+- 更新文件：
+  - `src/features/material-archive/data/schema.ts`
+  - `src/features/material-archive/adapters/material-api-adapter.ts`
+  - `src/features/material-archive/services/material-core-service.ts`
+  - `src/features/material-archive/components/material-assembly-manager.tsx`
+  - `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+  - `src/features/trading/components/purchase/parts/purchase-order-lines-editor.tsx`
+  - `src/features/engineering/hooks/use-bom-form.ts`
+  - `src/features/engineering/hooks/use-bom-data.ts`
+  - `src/features/engineering/components/bom-detail-table.tsx`
+  - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+  - `src/features/engineering/components/bom-editor/bom-item-row.tsx`
+  - `src/features/engineering/components/bom-editor/item-table.tsx`
+  - `src/features/engineering/components/bom-editor/bom-recipe-editor.tsx`
+  - `src/features/engineering/services/excel-service.ts`
+  - `src/features/engineering/services/bom-excel-exporter.ts`
+  - `src/features/engineering/services/bom-excel-parser.ts`
+- 修复动作：
+  - 新增 `MaterialOption` 轻量类型，用于承载物料 options / 下拉字典场景。
+  - 调整 `toMaterialOptionContract()` 与 `toMaterialOptionContracts()`，不再把 options DTO 填充为完整 `Material`。
+  - 调整 `MaterialCoreService.getMaterialOptions()` 返回值为 `Promise<MaterialOption[]>`。
+  - 同步收敛 BOM、采购、装配管理和 BOM Excel 模板导出链上的消费类型，使其与轻量 options 语义一致。
+  - 补平收敛过程中的显式类型问题，移除局部 `any`，保证前端类型链可通过检查。
+
+### 风险控制
+- 本轮未修改后端 handler / service / route，也未改变 `/materials?options=true` 的接口字段结构。
+- 旧 `material-service.ts` 当前在 `src` 主链无现役引用，继续保留为运行时硬阻断壳，避免在未做全量回归前进行激进删除。
+- 本轮保留 `version/_v` 兼容壳与后端 `gin.H` / model 复用问题，作为后续阶段处理项。
+
+### 验证结果
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料档案模块前端第一阶段收敛已完成，`getMaterialOptions()` 主链已从“完整 Material 伪装”切换为明确的轻量 `MaterialOption` 语义。
+- 后续如继续治理，建议下一阶段转向后端 material 输入输出 DTO 收敛，以及 `version/_v` 兼容壳的移除窗口评估。
+
+## 2026-04-11 - 物料档案模块治理（第二阶段：后端 DTO 与兼容壳第一轮收敛）
+
+### 本轮目标
+- 在不改变物料接口业务语义的前提下，先收敛后端 material 主链上的弱类型响应与输入 DTO / 持久化模型耦合问题。
+- 明确 `version` 与 `_v` 的当前兼容关系，避免后续继续在 handler 层分散扩散。
+
+### 变更内容
+- 更新文件：
+  - `server/handlers/material_response_helpers.go`
+  - `server/handlers/materials.go`
+  - `server/services/warehouse_master_service.go`
+- 修复动作：
+  - 将物料单体、列表、options 成功响应从 `gin.H` 收敛为明确的 typed DTO。
+  - 将 `version` 与 `_v` 的双字段兼容输出集中到统一映射层维护。
+  - 将 `SaveMaterialInput` 与 `BulkSyncMaterialInput` 从 `models.Material` 直接别名改为显式输入 DTO。
+  - 新增集中转换函数，将保存/批量同步请求 DTO 映射为 `models.Material`，避免继续把持久化模型直接暴露为请求契约。
+
+### 风险控制
+- 本轮未删除 `_v` 字段，仅将其降级为兼容别名，避免破坏仍可能存在的历史消费面。
+- 本轮未修改前端物料主链 contract，也未改动 `/materials` 的字段语义，只做后端契约层收敛。
+- 本轮未物理删除旧 `material-service.ts`，继续保持保守处理。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料档案模块第二阶段的第一轮后端治理已完成：后端响应已从弱类型 `gin.H` 向明确 DTO 收敛，请求输入也已与 `models.Material` 解耦。
+- 当前 `version/_v` 仍保持兼容双写输出，但已被收口到统一映射层，后续可以在补足接口回归验证后评估正式弃用 `_v`。
+
+## 2026-04-11 - 物料档案模块治理（第三阶段：`_v` 兼容壳直接移除）
+
+### 本轮目标
+- 将物料模块中的 `_v` 兼容壳直接移除，明确 `version` 为唯一主链版本语义。
+- 保证物料前端主链、后端接口与 patch 版本控制在移除 `_v` 后仍保持稳定。
+
+### 变更内容
+- 更新文件：
+  - `server/models/material.go`
+  - `server/handlers/material_response_helpers.go`
+  - `server/handlers/personnel_material_patch_handlers_test.go`
+  - `src/features/material-archive/contracts/material-api-dto.ts`
+  - `src/features/material-archive/adapters/material-api-adapter.ts`
+- 修复动作：
+  - 将 `models.Material.Version` 的 JSON tag 从 `_v` 统一为 `version`。
+  - 从物料 response helper 的 DTO 中移除 `_v` 兼容字段，仅保留 `version`。
+  - 从物料前端 API DTO 与 adapter 中移除 `_v` 兼容定义与兜底读取逻辑。
+  - 同步更新物料 patch handler 测试，仅断言 `version` 新契约。
+
+### 风险控制
+- 本轮仅处理物料模块，不扩展到采购、销售、供应商等仍使用 `_v` 的其他领域模块。
+- 本轮未改动 patch 请求协议，仍保持 `metadata.version` 不变。
+- 先完成代码搜索与测试断言同步，再执行直接移除，避免出现“实现已变、测试仍按旧契约”的不一致状态。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料模块中的 `_v` 兼容壳已直接移除，`version` 已成为唯一正式版本语义。
+- 其他领域模块若后续需要做同类治理，可按“先收口响应 DTO，再同步测试，再移除兼容字段”的顺序分阶段推进。
+
+## 2026-04-11 - 物料档案模块治理（第四阶段：DTO 命名与语义对齐）
+
+### 本轮目标
+- 在不改变物料接口字段的前提下，进一步收敛后端 DTO 命名与前端 contract 的语义层次。
+- 让 response DTO、request DTO、service input 与持久化模型的职责边界更直观，降低后续维护歧义。
+
+### 变更内容
+- 更新文件：
+  - `server/handlers/material_response_helpers.go`
+  - `server/handlers/materials.go`
+  - `server/handlers/material_patch_handler.go`
+  - `server/services/warehouse_master_service.go`
+- 修复动作：
+  - 将后端物料响应 DTO 命名收敛为 `MaterialApiDTO`、`MaterialOptionApiDTO`、`MaterialListPageApiDTO`、`MaterialOptionsApiDTO`。
+  - 将响应映射函数命名同步收敛为 `toMaterialApiDTO*` 与 `toMaterialOptionApiDTO*`。
+  - 将服务层输入 DTO 命名收敛为 `SaveMaterialAPIRequest`、`BulkSyncMaterialAPIRequest`、`BulkSyncMaterialsAPIPayload`。
+  - 同步更新 handler 对新命名的引用，保持 JSON 字段与接口行为不变。
+
+### 风险控制
+- 本轮仅做命名与分层对齐，不改变物料接口字段结构。
+- 本轮未调整前端 contract 内容，也未改动 patch 协议与业务流程。
+- 对于可能引发连锁编译错误的类型重命名，采用“小步改名 -> 编译验证 -> 补齐引用”的方式控制风险。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料模块的后端 DTO 命名已与前端 contract 语义层次更好对齐。
+- 当前物料链路已经形成较清晰分层：前端 contract / 后端 response DTO / 后端 request DTO / 服务输入转换 / 持久化模型，各层边界明显优于治理前。
+
+## 2026-04-11 - 物料档案模块治理（第五阶段：服务层命名继续收敛）
+
+### 本轮目标
+- 继续收敛物料服务层内部命名，使查询参数与查询结果的职责表达更清晰。
+- 在不改变 HTTP 契约与业务行为的前提下，减少服务层类型名中的“中间态 / 临时结构”感。
+
+### 变更内容
+- 更新文件：
+  - `server/services/warehouse_master_service.go`
+  - `server/handlers/material_response_helpers.go`
+  - `server/handlers/materials.go`
+- 修复动作：
+  - 将 `MaterialOptionItem` 重命名为 `MaterialOptionQueryResult`，明确其为服务层查询结果。
+  - 将 `MaterialListQuery` 重命名为 `MaterialListPageQuery`，明确其为分页查询参数。
+  - 同步更新 handler 与 response helper 中对这些类型的引用。
+
+### 风险控制
+- 本轮仅收敛服务层命名，不改变 JSON 字段、接口结构与业务逻辑。
+- 仅选择引用面明确、职责清晰的两个命名做收敛，避免扩大重构面。
+- 采用“改类型名 -> 补齐引用 -> 编译验证”的方式控制连锁风险。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料服务层命名已进一步形成更明确的 query / result 语义边界。
+- 当前物料模块的命名层次已基本形成：前端 contract、后端 HTTP DTO、服务层 request/query/result、持久化 model，各层职责较为清晰。
+
+## 2026-04-11 - 物料档案模块治理（第六阶段：拆分独立 dto/query 文件）
+
+### 本轮目标
+- 将物料模块中散落在 handler / service 文件内的类型定义拆到独立文件。
+- 在不改变接口与业务行为的前提下，让 handler / service 主文件职责更加聚焦。
+
+### 变更内容
+- 新增文件：
+  - `server/handlers/material_api_dto.go`
+  - `server/services/material_service_types.go`
+- 更新文件：
+  - `server/handlers/material_response_helpers.go`
+  - `server/services/warehouse_master_service.go`
+- 修复动作：
+  - 将物料 handler 侧 response dto 迁移到独立 `material_api_dto.go`。
+  - 将物料 service 侧 `request / query / result` 类型迁移到独立 `material_service_types.go`。
+  - 从原 helper / service 主文件中删除重复类型定义，只保留逻辑实现与引用。
+
+### 风险控制
+- 本轮保持在既有 package 内部拆分，没有引入跨 package 抽象，避免循环依赖。
+- 拆分粒度控制为两组文件：handler response dto 与 service types，避免碎片化过度。
+- 迁移完成后立即执行后端编译测试与前端类型检查，及时发现残留引用问题。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料模块已完成从“同文件混放逻辑 + 类型定义”向“逻辑文件 + 独立 dto/query 文件”的结构收敛。
+- 当前物料模块的文件结构、命名层次与职责边界都已明显优于治理前，后续若继续推进，可以把 mapper 也进一步物理拆分。
+
+## 2026-04-11 - 物料档案模块治理（第七阶段：继续拆分 mapper 文件）
+
+### 本轮目标
+- 将物料 handler 层 mapper 按职责继续拆分，使完整物料映射与物料 options 映射各自落到独立文件。
+- 在不改变 package、函数签名与接口行为的前提下，继续提升物料 handler 层的结构清晰度。
+
+### 变更内容
+- 新增文件：
+  - `server/handlers/material_mapper.go`
+  - `server/handlers/material_option_mapper.go`
+- 更新文件：
+  - `server/handlers/material_response_helpers.go`
+- 修复动作：
+  - 将 `toMaterialApiDTO / toMaterialApiDTOs` 迁移到 `material_mapper.go`。
+  - 将 `toMaterialOptionApiDTO / toMaterialOptionApiDTOs` 迁移到 `material_option_mapper.go`。
+  - 原 `material_response_helpers.go` 迁移后不再承载具体映射逻辑，当前仅保留包声明空壳。
+
+### 风险控制
+- 本轮仅做同 package 内部物理拆分，没有改变 DTO、handler 或 service 的调用链。
+- mapper 拆分粒度控制为两类职责，没有继续细分为更碎的文件，避免过度拆分。
+- 迁移完成后立即执行后端测试与前端类型检查，确保无残留引用问题。
+
+### 验证结果
+- 在 `server` 目录执行：`go test ./...`
+- 结果：**通过**。
+- 在项目根目录执行：`pnpm exec tsc --noEmit`
+- 结果：**通过**。
+
+### 结论
+- 物料 handler 层已形成更明确的“dto 文件 + material mapper + material option mapper”结构。
+- `material_response_helpers.go` 已不再承载实质逻辑，可作为后续清理候选，但本轮未主动删除以避免扩大改动面。

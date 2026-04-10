@@ -26,10 +26,10 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
+import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
 import { ProductTypeService } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('ProductTypeActionDialog')
 
@@ -42,7 +42,7 @@ type ProductTypeActionDialogProps = {
   currentRow?: ProductType
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Partial<ProductType>, isPatch?: boolean, delta?: any) => void | Promise<void>
+  onSubmit?: (data: Partial<ProductType>) => void | Promise<void>
 }
 
 const CODE_RULES = [
@@ -78,12 +78,10 @@ export function ProductTypeActionDialog({
       templateId: 'none',
       description: '',
       active: true,
+      sortOrder: 0,
       createdAt: new Date().toISOString(),
+      version: 1,
     },
-  })
-
-  const deltaTracker = useDeltaTracker<ProductType>(currentRow || ({} as ProductType), {
-    enabled: isEdit,
   })
 
   const categoryName = form.watch('name')
@@ -109,11 +107,10 @@ export function ProductTypeActionDialog({
           parentId: currentRow.parentId || 'root',
           templateId: currentRow.templateId || 'none',
         })
-        deltaTracker.reset(currentRow)
         return
       }
 
-      const defaultValues = {
+      form.reset({
         id: '',
         parentId: 'root',
         name: '',
@@ -121,10 +118,10 @@ export function ProductTypeActionDialog({
         templateId: 'none',
         description: '',
         active: true,
+        sortOrder: 0,
         createdAt: new Date().toISOString(),
-      } as ProductType
-      form.reset(defaultValues)
-      deltaTracker.reset(defaultValues)
+        version: 1,
+      })
     }
 
     if (open) void loadInitialData()
@@ -139,35 +136,18 @@ export function ProductTypeActionDialog({
       ['ROAD', 'MTB', 'GRAVEL'].includes(currentCode) ||
       currentCode.includes('-')
 
-    if (canAutofill) {
-      const tokens = CODE_RULES.flatMap((rule) =>
-        rule.aliases.some((alias) => normalizedName.includes(alias)) ? [rule.code] : []
-      )
+    if (!canAutofill) return
 
-      if (tokens.length > 0) {
-        form.setValue('code', Array.from(new Set(tokens)).join('-'), {
-          shouldValidate: true,
-        })
-      }
-    }
+    const tokens = CODE_RULES.flatMap((rule) =>
+      rule.aliases.some((alias) => normalizedName.includes(alias)) ? [rule.code] : []
+    )
 
-    if (normalizedName.includes('圈') || normalizedName.includes('rim')) {
-      const rimTemplate = allTemplates.find((template) => template.componentKey === 'RIM')
-      if (rimTemplate) form.setValue('templateId', rimTemplate.id)
-      return
+    if (tokens.length > 0) {
+      form.setValue('code', Array.from(new Set(tokens)).join('-'), {
+        shouldValidate: true,
+      })
     }
-
-    if (normalizedName.includes('把立') || normalizedName.includes('stem')) {
-      const stemTemplate = allTemplates.find((template) => template.componentKey === 'STEM')
-      if (stemTemplate) form.setValue('templateId', stemTemplate.id)
-      return
-    }
-
-    if (normalizedName.includes('前叉') || normalizedName.includes('fork')) {
-      const forkTemplate = allTemplates.find((template) => template.componentKey === 'FORK')
-      if (forkTemplate) form.setValue('templateId', forkTemplate.id)
-    }
-  }, [allTemplates, categoryName, currentCode, form, isEdit])
+  }, [categoryName, currentCode, form, isEdit])
 
   const excludedIds = useMemo(() => {
     if (!isEdit || !currentRow) return new Set<string>()
@@ -191,6 +171,11 @@ export function ProductTypeActionDialog({
     [allTypes, excludedIds]
   )
 
+  const localizedTemplates = useMemo(
+    () => localizeTemplateDefinitions(allTemplates, t),
+    [allTemplates, t]
+  )
+
   const handleFormSubmit = async (values: ProductTypeForm) => {
     setIsSubmitting(true)
 
@@ -203,15 +188,7 @@ export function ProductTypeActionDialog({
         templateId: values.templateId === 'none' ? undefined : values.templateId || undefined,
       }
 
-      if (isEdit && currentRow) {
-        // SDRTS: 增量更新逻辑
-        const delta = deltaTracker.commit()
-        if (Object.keys(delta).length > 0) {
-          if (onSubmit) await onSubmit(submissionData, true, delta)
-        }
-      } else {
-        if (onSubmit) await onSubmit(submissionData)
-      }
+      if (onSubmit) await onSubmit(submissionData)
     } finally {
       setIsSubmitting(false)
     }
@@ -241,6 +218,7 @@ export function ProductTypeActionDialog({
           >
             <input type='hidden' {...form.register('id')} />
             <input type='hidden' {...form.register('createdAt')} />
+            <input type='hidden' {...form.register('version')} />
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2'>
               <FormField
@@ -343,7 +321,7 @@ export function ProductTypeActionDialog({
                           label: t('engineering.categoryArchive.dialog.templateNone'),
                           value: 'none',
                         },
-                        ...allTemplates.map((template) => ({
+                        ...localizedTemplates.map((template) => ({
                           label: template.name,
                           value: template.id,
                         })),

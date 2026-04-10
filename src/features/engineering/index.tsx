@@ -19,17 +19,13 @@ import { ProductMaintenanceService } from './services/product-maintenance-servic
 import { ProductTypeService } from './services/product-type-service'
 import { EngineeringSidebar } from './components/engineering-sidebar'
 import { CategoryManagerDialog } from './components/category-manager-dialog'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { isForbiddenError } from '@/lib/error-status'
-
-type DictionaryEntry = ReturnType<typeof DictionaryCoreService.getEntries>[number]
 
 export function Engineering() {
     const { t } = useLanguage()
     // 基础数据状态
     const [products, setProducts] = useState<Product[]>([])
     const [types, setTypes] = useState<ProductType[]>([])
-    const [dictEntries, setDictEntries] = useState<DictionaryEntry[]>([])
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
     // 弹窗控制
     const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
@@ -54,16 +50,10 @@ export function Engineering() {
         setTypes(typs || [])
     }, [])
 
-    const refreshDicts = useCallback(async () => {
-        await DictionaryCoreService.init()
-        setDictEntries(DictionaryCoreService.getEntries())
-    }, [])
-
     const loadAllData = useCallback(async () => {
         setIsLoading(true)
         try {
             setError(null)
-            await DictionaryCoreService.init()
             const [prds, typs] = await Promise.all([
                 ProductCoreService.getProducts(),
                 ProductTypeService.getProductTypes()
@@ -72,7 +62,6 @@ export function Engineering() {
             const nextProducts = prds || []
             setProducts(nextProducts)
             setTypes(typs || [])
-            setDictEntries(DictionaryCoreService.getEntries())
 
             setSelectedProductId(prev => {
                 if (nextProducts.length === 0) return null
@@ -94,14 +83,12 @@ export function Engineering() {
 
         window.addEventListener('xdfc_products_data_updated', refreshProducts)
         window.addEventListener('xdfc_product_types_data_updated', refreshTypes)
-        window.addEventListener('xdfc_dictionary_updated', refreshDicts)
         return () => {
             globalThis.clearTimeout(timer)
             window.removeEventListener('xdfc_products_data_updated', refreshProducts)
             window.removeEventListener('xdfc_product_types_data_updated', refreshTypes)
-            window.removeEventListener('xdfc_dictionary_updated', refreshDicts)
         }
-    }, [loadAllData, refreshDicts, refreshProducts, refreshTypes])
+    }, [loadAllData, refreshProducts, refreshTypes])
 
     const selectedProduct = products.find(p => p.id === selectedProductId)
 
@@ -123,7 +110,7 @@ export function Engineering() {
         const incoming = Array.isArray(data) ? data : [data]
         
         for (const item of incoming) {
-            await ProductMaintenanceService.createProduct(item)
+            await ProductMaintenanceService.saveProduct(item)
         }
 
         window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
@@ -148,7 +135,6 @@ export function Engineering() {
                 <EngineeringSidebar
                     products={products}
                     types={types}
-                    dictEntries={dictEntries}
                     selectedProductId={selectedProductId}
                     onSelectProduct={setSelectedProductId}
                     onAddProduct={handleAddProduct}

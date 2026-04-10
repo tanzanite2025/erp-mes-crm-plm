@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { createLogger } from '@/lib/logger'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
-import { type Material } from '../../material-archive/data/schema'
-import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/schema'
+import { type MaterialOption } from '../../material-archive/data/schema'
+import { bomSchema, type BOM, type BOMItem, type ChangeOrder, type Product } from '../data/schema'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
 const logger = createLogger('useBOMForm')
 
 interface UseBOMFormProps {
   currentRow?: BOM
-  initialItems?: any[]
+  initialItems?: Array<Partial<BOMItem>>
   initialProductId?: string
   open: boolean
   isEdit: boolean
@@ -24,19 +22,18 @@ const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) :
 
 export function useBOMForm({ currentRow, initialItems, initialProductId, open, isEdit }: UseBOMFormProps) {
   const [products, setProducts] = useState<Product[]>([])
-  const [materials, setMaterials] = useState<Material[]>([])
-  const [dictEntries, setDictEntries] = useState<any[]>([])
+  const [materials, setMaterials] = useState<MaterialOption[]>([])
   const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([])
 
   const form = useForm<BOM>({
-    resolver: zodResolver(bomSchema) as any,
+    resolver: zodResolver(bomSchema) as Resolver<BOM>,
     defaultValues: {
       id: '',
       bomNo: '',
       productId: '',
       changeOrderId: '',
       bomVersion: 'V1.0',
-      revisionNo: 'V1.0',
+      revisionNo: 'R1',
       changeType: 'MANUAL',
       isDefaultSite: true,
       status: 'active',
@@ -46,24 +43,12 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     },
   })
 
-  const deltaTracker = useDeltaTracker<BOM>(currentRow || ({} as BOM), {
-    enabled: isEdit,
-  })
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'items',
   })
 
-  const selectedProductId = form.watch('productId')
-
-  useEffect(() => {
-    const subscription = form.watch(async () => {
-      // [REMOVED] standardUsage 响应式计算已迁移至后端 Authority 引擎
-      // [REMOVED] bomVersion 自动步进逻辑已迁移至后端
-    })
-    return () => subscription.unsubscribe()
-  }, [form, isEdit])
+  const selectedProductId = useWatch({ control: form.control, name: 'productId' })
 
   useEffect(() => {
     if (!open) return
@@ -113,18 +98,17 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
         const [storedProducts, allMaterials] = await Promise.all([
           ProductCoreService.getProducts(),
           MaterialCoreService.getMaterialOptions(),
-          DictionaryCoreService.init(),
         ])
 
         setProducts(storedProducts || [])
         setMaterials(allMaterials || [])
-        setDictEntries(DictionaryCoreService.getEntries() || [])
 
         if (isEdit && currentRow) {
                 const data = {
                     ...currentRow,
+                    bomDisplayVersion: currentRow.bomDisplayVersion || currentRow.bomVersion,
                     changeOrderId: currentRow.changeOrderId || '',
-                    revisionNo: currentRow.revisionNo || currentRow.bomVersion,
+                    revisionNo: currentRow.revisionNo || 'R1',
                     changeType: currentRow.changeType || 'MANUAL',
                     isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
                     effectiveFrom: formatDateInput(currentRow.effectiveFrom),
@@ -136,7 +120,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
                     })),
                 } as BOM
                 form.reset(data)
-                deltaTracker.reset(data)
           return
         }
 
@@ -145,11 +128,12 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
         const data = {
           id: '',
-          bomNo: `BOM-${new Date().getFullYear()}${(Math.random() * 1000).toFixed(0).padStart(4, '0')}`,
+          bomNo: '',
           productId: initialProductId || '',
           changeOrderId: '',
           bomVersion: initialVersion,
-          revisionNo: initialVersion,
+          bomDisplayVersion: initialVersion,
+          revisionNo: 'R1',
           changeType: 'MANUAL',
           isDefaultSite: true,
           status: 'active',
@@ -162,7 +146,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           createdAt: new Date().toISOString(),
         } as BOM
         form.reset(data)
-        deltaTracker.reset(data)
       } catch (error) {
         logger.error('BOM form load data failed', error)
       }
@@ -180,18 +163,12 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       setMaterials(nextMaterials || [])
     }
 
-    const handleDictsUpdate = async () => {
-      setDictEntries(DictionaryCoreService.getEntries() || [])
-    }
-
     window.addEventListener('xdfc_products_data_updated', handleProductsUpdate)
     window.addEventListener('xdfc_materials_updated', handleMaterialsUpdate)
-    window.addEventListener('xdfc_dictionary_updated', handleDictsUpdate)
 
     return () => {
       window.removeEventListener('xdfc_products_data_updated', handleProductsUpdate)
       window.removeEventListener('xdfc_materials_updated', handleMaterialsUpdate)
-      window.removeEventListener('xdfc_dictionary_updated', handleDictsUpdate)
     }
   }, [currentRow, form, initialItems, initialProductId, isEdit, open])
 
@@ -202,8 +179,6 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     remove,
     products,
     materials,
-    dictEntries,
     changeOrders,
-    deltaTracker,
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Thermometer, Trash2, Edit2, Zap, MapPin } from 'lucide-react'
+import { Plus, Search, Thermometer, Edit2, Zap, MapPin } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,7 +26,7 @@ export function FurnaceMgmt() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingFurnace, setEditingFurnace] = useState<Furnace | null>(null)
 
-  const saveFurnaces = (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
+  const saveFurnace = (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) => {
     updateFurnaces(furnace, isPatch, delta)
   }
 
@@ -36,7 +36,7 @@ export function FurnaceMgmt() {
       onAction: () => {
         setEditingFurnace(null)
         setIsDialogOpen(true)
-      }
+      },
     })
   }
 
@@ -46,19 +46,7 @@ export function FurnaceMgmt() {
       onAction: () => {
         setEditingFurnace(furnace)
         setIsDialogOpen(true)
-      }
-    })
-  }
-
-  const handleDeleteFurnace = (id: string) => {
-    runConfirmedAction({
-      permission: 'action_equipment_furnace_manage',
-      confirmKey: 'equipmentTooling.furnaces.confirm.remove',
-      onAction: () => {
-        // 此处删除暂不涉及 Delta，维持原样
-        updateFurnaces(furnaces.filter((f) => f.id !== id) as any)
-        toast.info(t('equipmentTooling.furnaces.toast.removed'))
-      }
+      },
     })
   }
 
@@ -66,9 +54,13 @@ export function FurnaceMgmt() {
     runConfirmedAction({
       permission: 'action_equipment_furnace_manage',
       onAction: async () => {
-        await saveFurnaces(data, isPatch, delta)
-        toast.success(editingFurnace ? t('equipmentTooling.furnaces.toast.updated') : t('equipmentTooling.furnaces.toast.created'))
-      }
+        await saveFurnace(data, isPatch, delta)
+        toast.success(
+          editingFurnace
+            ? t('equipmentTooling.furnaces.toast.updated')
+            : t('equipmentTooling.furnaces.toast.created')
+        )
+      },
     })
   }
 
@@ -89,12 +81,12 @@ export function FurnaceMgmt() {
     }
   }
 
-  const filteredFurnaces = furnaces.filter((f) => {
+  const filteredFurnaces = furnaces.filter((furnace) => {
     const keyword = searchTerm.toLowerCase()
     return (
-      f.sn.toLowerCase().includes(keyword) ||
-      f.name.toLowerCase().includes(keyword) ||
-      f.type.toLowerCase().includes(keyword)
+      furnace.sn.toLowerCase().includes(keyword) ||
+      furnace.name.toLowerCase().includes(keyword) ||
+      furnace.type.toLowerCase().includes(keyword)
     )
   })
 
@@ -164,14 +156,6 @@ export function FurnaceMgmt() {
                       onClick={() => handleEditFurnace(furnace)}
                     >
                       <Edit2 className='size-3.5' />
-                    </Button>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='size-8 rounded-xl hover:bg-rose-50 hover:text-rose-500 transition-colors'
-                      onClick={() => handleDeleteFurnace(furnace.id)}
-                    >
-                      <Trash2 className='size-3.5' />
                     </Button>
                   </div>
                 </div>

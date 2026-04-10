@@ -11,7 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import type { ProductionLine } from '../line-mgmt/types'
-import { productionResourceService } from '../../services/production-resource-service'
+import {
+  PRODUCTION_LINES_UPDATED_EVENT,
+  PRODUCTION_PROCESSES_UPDATED_EVENT,
+  productionResourceService,
+} from '../../services/production-resource-service'
+import { ProcessLibraryPanel } from './components/process-library-panel.tsx'
 import { WorkArchitectureTree } from './components/work-architecture-tree.tsx'
 
 const logger = createLogger('WorkArchitecture')
@@ -48,11 +53,13 @@ export function WorkArchitecture() {
       void loadData()
     }
 
-    window.addEventListener('xdfc_production_lines_v2_updated', handleSync)
+    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
+    window.addEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleSync)
 
     return () => {
       globalThis.clearTimeout(timer)
-      window.removeEventListener('xdfc_production_lines_v2_updated', handleSync)
+      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
+      window.removeEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleSync)
     }
   }, [loadData])
 
@@ -91,6 +98,8 @@ export function WorkArchitecture() {
           />
         </div>
       </div>
+
+      <ProcessLibraryPanel />
 
       <div className='flex-1 space-y-6 overflow-y-auto'>
         {isLoading && lines.length === 0 ? (

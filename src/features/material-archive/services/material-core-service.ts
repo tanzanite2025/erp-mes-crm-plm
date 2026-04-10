@@ -1,23 +1,28 @@
-import { type Material } from '../data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  toMaterialListPageContract,
+  toMaterialOptionContracts,
+} from '../adapters/material-api-adapter'
+import type {
+  MaterialListPageApiDTO,
+  MaterialOptionsResponseApiDTO,
+} from '../contracts/material-api-dto'
+import { type Material, type MaterialOption } from '../data/schema'
 
-/**
- * MaterialCoreService: 专注于物料档案的只读查询与数据聚合
- * 遵循 [Backend Authority] 核心哲学：前端仅提供响应式展示，逻辑校验在后端终结。
- */
 export const MaterialCoreService = {
-  /**
-   * 获取物料选项列表 (用于下拉选择)
-   */
-  async getMaterialOptions(): Promise<Material[]> {
-    const res = await apiFetch<Material[]>('/materials?options=true')
-    return ensureArrayResponse<Material>(res, 'MaterialCoreService.getMaterialOptions')
+  async getMaterialOptions(): Promise<MaterialOption[]> {
+    const res = await apiFetch<MaterialOptionsResponseApiDTO>('/materials?options=true')
+    const checked = ensureObjectResponse<MaterialOptionsResponseApiDTO & Record<string, unknown>>(
+      res,
+      'MaterialCoreService.getMaterialOptions'
+    )
+
+    return toMaterialOptionContracts(
+      ensureArrayResponse(checked.items, 'MaterialCoreService.getMaterialOptions.items')
+    )
   },
 
-  /**
-   * 获取分页物料列表 (基础查询)
-   */
   async getMaterials(
     category?: string,
     page: number = 1,
@@ -28,9 +33,6 @@ export const MaterialCoreService = {
     return { data, total }
   },
 
-  /**
-   * 获取物料列表及其全局快照版本 (用于 Excel 导出锁定或并发校验)
-   */
   async getMaterialsWithVersion(
     category?: string,
     page: number = 1,
@@ -43,18 +45,17 @@ export const MaterialCoreService = {
     params.append('pageSize', pageSize.toString())
     if (search) params.append('search', search)
 
-    const endpoint = `/materials?${params.toString()}`
-
-    const res = await apiFetch<{ data: Material[]; total: number; version: string }>(endpoint)
-    const checked = ensureObjectResponse<{ data: Material[]; total: number; version: string } & Record<string, unknown>>(
+    const res = await apiFetch<MaterialListPageApiDTO>(`/materials?${params.toString()}`)
+    const checked = ensureObjectResponse<MaterialListPageApiDTO & Record<string, unknown>>(
       res,
       'MaterialCoreService.getMaterialsWithVersion'
     )
+    const pageResult = toMaterialListPageContract(checked)
 
     return {
-      data: checked.data,
-      total: checked.total || 0,
-      version: checked.version || '1',
+      data: pageResult.items,
+      total: pageResult.total || 0,
+      version: pageResult.version || '1',
     }
   },
 }

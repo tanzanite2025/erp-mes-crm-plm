@@ -1,6 +1,7 @@
 'use client'
 
 import { Layers } from 'lucide-react'
+import { type UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,16 +19,16 @@ import {
 import { Input } from '@/components/ui/input'
 import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMRecipeEditor } from './bom-editor/bom-recipe-editor'
-import { type BOM } from '../data/schema'
+import { type BOM, type BOMItem } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
 
 type BOMActionDialogProps = {
   currentRow?: BOM
-  initialItems?: any[]
+  initialItems?: Array<Partial<BOMItem>>
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: BOM, isPatch?: boolean, delta?: any) => void | Promise<void>
+  onSubmit?: (data: BOM) => void | Promise<void>
 }
 
 export function BOMActionDialog({
@@ -40,23 +41,17 @@ export function BOMActionDialog({
 }: BOMActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, products, materials, dictEntries, changeOrders, deltaTracker } = useBOMForm({
+  const { form, fields, append, remove, products, materials, changeOrders } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
     open,
     isEdit,
   })
+  const typedForm = form as UseFormReturn<BOM>
 
   const handleFormSubmit = async (data: BOM) => {
-    if (isEdit && currentRow) {
-      const delta = deltaTracker.commit()
-      if (Object.keys(delta).length > 0) {
-        if (onSubmit) await onSubmit(data, true, delta)
-      }
-    } else {
-      if (onSubmit) await onSubmit(data)
-    }
+    if (onSubmit) await onSubmit(data)
     onOpenChange(false)
   }
 
@@ -65,7 +60,7 @@ export function BOMActionDialog({
       <DialogContent className='max-w-[98vw] sm:max-w-[95vw] h-[98vh] max-h-[98vh] p-0 gap-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
         <DialogHeader className='p-4 sm:p-6 pb-2 text-start flex-none relative'>
           <DialogTitle className='flex items-center gap-2 sm:gap-3 text-base sm:text-xl font-black tracking-tighter uppercase italic pr-8'>
-            <Layers className='size-5 sm:size-6 text-blue-600 stroke-[3] shrink-0' />
+            <Layers className='size-5 sm:size-6 text-blue-600 stroke-3 shrink-0' />
             <span className='truncate sm:whitespace-normal'>
               {isEdit
                 ? t('engineering.bomArchive.dialog.editTitle')
@@ -73,22 +68,21 @@ export function BOMActionDialog({
             </span>
           </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
+        <Form {...typedForm}>
           <form
             id='bom-form'
-            onSubmit={form.handleSubmit(handleFormSubmit)}
+            onSubmit={typedForm.handleSubmit(handleFormSubmit)}
             className='p-3 sm:p-4 pt-0 space-y-3 flex flex-col flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/10 scrollbar-track-transparent'
           >
             <BOMFormHeader
-              form={form}
+              form={typedForm}
               products={products}
               changeOrders={changeOrders}
-              dictEntries={dictEntries}
               isEdit={isEdit}
             />
 
             <BOMRecipeEditor
-              form={form}
+              form={typedForm}
               fields={fields}
               materials={materials}
               append={append}

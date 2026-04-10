@@ -5,15 +5,10 @@ import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
 
 export function resolveSubmitRole(params: {
-  currentRow?: User
-  isEmployeeBoundRoleLocked: boolean
   roleFromForm: string
 }) {
-  const { currentRow, isEmployeeBoundRoleLocked, roleFromForm } = params
-
-  return isEmployeeBoundRoleLocked
-    ? (currentRow?.role || roleFromForm).trim()
-    : roleFromForm.trim()
+  const { roleFromForm } = params
+  return roleFromForm.trim()
 }
 
 /**

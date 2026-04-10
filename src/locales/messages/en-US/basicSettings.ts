@@ -4,7 +4,6 @@ export const basicSettings = {
     linearBarcode: 'Linear Barcode',
     units: 'Unit Management',
     sequences: 'Business Sequences',
-    dictionary: 'Parameter Dictionary',
     enterprise: 'Enterprise Info',
     security: 'Security Settings',
   },
@@ -252,26 +251,6 @@ export const basicSettings = {
       minLength: 'Authorization code must be at least 4 characters long',
       saved: 'Security authorization code updated',
       saveFailed: 'Update failed. Please try again.',
-    },
-  },
-  dictionaryActions: {
-    prompts: {
-      newGroup: 'Enter a new dictionary group name (for example: Packaging Type)',
-      deleteGroup:
-        'Are you sure you want to delete group "{{name}}"?\nAll dictionary entries under this group will also be removed.',
-      renameGroup: 'Enter the new group name',
-      deleteEntry: 'Are you sure you want to delete this attribute definition?',
-    },
-    toasts: {
-      groupCreated: 'Group "{{name}}" created',
-      groupDeleted: 'Group "{{name}}" deleted',
-      groupUpdated: 'Group name updated',
-      entryUpdated: 'Attribute "{{label}}" updated',
-      entryCreated: 'Attribute "{{label}}" added',
-      entryDeleted: 'Dictionary entry removed',
-      syncLoading: 'Syncing built-in dictionary seeds and refreshing cache...',
-      syncSuccess: 'System dictionary sync completed successfully',
-      syncFailed: 'Sync failed: {{message}}',
     },
   },
   appearanceMapping: {

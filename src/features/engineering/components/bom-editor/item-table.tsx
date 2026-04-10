@@ -13,14 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { type Material } from '../../../material-archive/data/schema'
+import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOM } from '../../data/schema'
 import { BOMItemRow } from './bom-item-row'
 
 interface ItemTableProps {
   form: UseFormReturn<BOM>
   renderFields: Array<{ field: { id: string }; index: number }>
-  materials: Material[]
+  materials: MaterialOption[]
   onRemove: (index: number) => void
   onAdd: () => void
 }

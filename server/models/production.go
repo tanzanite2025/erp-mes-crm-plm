@@ -31,12 +31,12 @@ type ProductionLine struct {
 // LineSegment 生产线工段
 type LineSegment struct {
 	BaseModel
-	LineID      string          `gorm:"type:uuid;index;not null" json:"lineId"`
-	Name        string          `gorm:"size:255;not null" json:"name"`
-	Description string          `gorm:"type:text" json:"description"`
-	SortOrder   int             `gorm:"default:0" json:"sortOrder"`
-	Attributes  json.RawMessage `gorm:"type:jsonb" json:"attributes"`
-	Processes   []ProcessStep   `gorm:"many2many:line_segment_process_mappings;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"processes"`
+	LineID        string          `gorm:"type:uuid;index;not null" json:"lineId"`
+	Name          string          `gorm:"size:255;not null" json:"name"`
+	Description   string          `gorm:"type:text" json:"description"`
+	SortOrder     int             `gorm:"default:0" json:"sortOrder"`
+	Attributes    json.RawMessage `gorm:"type:jsonb" json:"attributes"`
+	JobCategories []JobCategory `gorm:"foreignKey:SegmentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"jobCategories"`
 }
 
 // JobCategory 职能岗位类别

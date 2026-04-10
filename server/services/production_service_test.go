@@ -47,6 +47,18 @@ func (r *fakeProductionRepository) DeleteSegmentProcessMappingsNotIn(database *g
 	return nil
 }
 
+func (r *fakeProductionRepository) DeleteStationProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
+	return nil
+}
+
+func (r *fakeProductionRepository) DeleteStationsNotIn(database *gorm.DB, lineID string, stationIDs []string) error {
+	return nil
+}
+
+func (r *fakeProductionRepository) DeleteJobCategoriesNotIn(database *gorm.DB, lineID string, categoryIDs []string) error {
+	return nil
+}
+
 func (r *fakeProductionRepository) DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error {
 	return nil
 }
@@ -230,18 +242,14 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 			LineID:    "line-1",
 			Name:      "新工段",
 			SortOrder: 0,
-			Processes: []ProcessStepDTO{},
 		},
 	})
 	require.NoError(t, err)
 
 	line, err := service.PatchProductionLine(PatchProductionLineRequest{
 		ID: "line-1",
-		Delta: PatchProductionLineDeltaDTO{
-			Segments: &DeltaItemDTO{
-				Old: json.RawMessage(`[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"processes":[]}]`),
-				New: segmentsRaw,
-			},
+		Delta: map[string]json.RawMessage{
+			"segments": json.RawMessage(`{"o":[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"jobCategories":[]}],"n":` + string(segmentsRaw) + `}`),
 		},
 		Version:  3,
 		AuthCode: "expected",

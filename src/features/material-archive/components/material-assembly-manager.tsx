@@ -47,7 +47,7 @@ import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
-import { type Material, type PackagingRule } from '../data/schema'
+import { type MaterialOption, type PackagingRule } from '../data/schema'
 import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
@@ -64,7 +64,7 @@ function buildRelation(rule: Partial<PackagingRule> | null) {
 export function MaterialAssemblyManager() {
   const { t } = useLanguage()
   const [rules, setRules] = useState<PackagingRule[]>([])
-  const [materials, setMaterials] = useState<Material[]>([])
+  const [materials, setMaterials] = useState<MaterialOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -72,7 +72,7 @@ export function MaterialAssemblyManager() {
   const [editingRule, setEditingRule] = useState<Partial<PackagingRule> | null>(null)
 
   const materialMap = useMemo(() => {
-    const map = new Map<string, Material>()
+    const map = new Map<string, MaterialOption>()
     materials.forEach((material) => map.set(material.id, material))
     return map
   }, [materials])

@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { 
     Table, 
     TableBody, 
@@ -9,21 +10,23 @@ import {
 } from '@/components/ui/table'
 import { type BOMItem } from '../data/schema'
 import { Badge } from '@/components/ui/badge'
-import { type Material } from '../../material-archive/data/schema'
+import { getMaterialCategoryOptions } from '@/features/material-archive/data/material-category-options'
+import { type MaterialOption } from '../../material-archive/data/schema'
+import { resolveMaterialCategoryLabel } from '@/features/material-archive/utils/material-mgmt-utils'
 import { Layers, Database, ChevronRight, Hash } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 
 interface BOMDetailTableProps {
     items: BOMItem[]
-    materials?: Material[]
-    dictEntries?: any[]
+    materials?: MaterialOption[]
 }
 
-export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMDetailTableProps) {
-    const { t } = useLanguage()
+export function BOMDetailTable({ items, materials = [] }: BOMDetailTableProps) {
+    const { t, locale } = useLanguage()
+    const materialCategoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
     // 按工段分组
     const groupedItems: Record<string, BOMItem[]> = items.reduce((acc, item) => {
-        const section = item.section || t('engineering.productMgmt.bom.unclassified' as any)
+        const section = item.section || t('engineering.productMgmt.bom.unclassified')
         if (!acc[section]) acc[section] = []
         acc[section].push(item)
         return acc
@@ -41,7 +44,7 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                         <div className='flex items-center gap-2 px-1'>
                             <div className='h-4 w-1 bg-blue-600 rounded-full' />
                             <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 italic'>
-                                {t('engineering.productMgmt.bom.processNode' as any)}: <span className='text-blue-600'>{section}</span>
+                                {t('engineering.productMgmt.bom.processNode')}: <span className='text-blue-600'>{section}</span>
                             </h4>
                         </div>
 
@@ -49,16 +52,11 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                         <div className='space-y-3'>
                             {groupedItems[section].map((item) => {
                                 const material = materials.find(m => m.id === item.materialId)
-                                const materialType = (() => {
-                                    const categoryEntry = dictEntries.find(d => d.code === 'MATERIAL_CATEGORY')
-                                    if (categoryEntry && categoryEntry.options) {
-                                        const option = categoryEntry.options.find((opt: any) => 
-                                            (typeof opt === 'string' ? opt : opt.value) === material?.category
-                                        )
-                                        if (option) return typeof option === 'string' ? option : option.label
-                                    }
-                                    return material?.category || item.materialType || t('engineering.productMgmt.bom.auxiliary' as any)
-                                })()
+                                const materialType =
+                                    resolveMaterialCategoryLabel(material?.category, materialCategoryOptions) ||
+                                    material?.category ||
+                                    item.materialType ||
+                                    t('engineering.productMgmt.bom.auxiliary')
 
                                 return (
                                     <div 
@@ -69,7 +67,7 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                                         <div className='flex justify-between items-start gap-3'>
                                             <div className='flex flex-col gap-0.5 overflow-hidden'>
                                                 <span className='font-black text-xs text-slate-800 uppercase tracking-tight truncate'>
-                                                    {item.materialName || t('engineering.productMgmt.bom.unknown' as any)}
+                                                    {item.materialName || t('engineering.productMgmt.bom.unknown')}
                                                 </span>
                                                 <span className='font-mono text-[8px] text-muted-foreground/40 uppercase tracking-widest truncate'>
                                                     {item.materialId}
@@ -83,17 +81,17 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                                         {/* 第二行: 用量核心数据 */}
                                         <div className='grid grid-cols-2 gap-2 bg-blue-600/5 rounded-xl p-3 border border-blue-600/10'>
                                             <div className='flex flex-col'>
-                                                <span className='text-[7px] font-black text-blue-800/40 uppercase tracking-widest'>{t('engineering.productMgmt.bom.unitUsage' as any)}</span>
+                                                <span className='text-[7px] font-black text-blue-800/40 uppercase tracking-widest'>{t('engineering.productMgmt.bom.unitUsage')}</span>
                                                 <div className='flex items-baseline gap-1'>
                                                     <span className='text-sm font-black italic tabular-nums text-blue-700'>{item.unitUsage?.toFixed(4)}</span>
                                                     <span className='text-[7px] font-black text-blue-800/40 uppercase'>{item.unit}</span>
                                                 </div>
                                             </div>
                                             <div className='flex flex-col border-l border-blue-600/10 pl-3'>
-                                                <span className='text-[7px] font-black text-blue-800/40 uppercase tracking-widest'>{t('engineering.productMgmt.bom.stdUsage' as any)}</span>
+                                                <span className='text-[7px] font-black text-blue-800/40 uppercase tracking-widest'>{t('engineering.productMgmt.bom.stdUsage')}</span>
                                                 <div className='flex items-baseline gap-1'>
                                                     <span className='text-sm font-black italic tabular-nums text-blue-700'>
-                                                        {(item.standardUsage || (item.unitUsage * (1 + (item.wastagePercent || 0) / 100))).toFixed(4)}
+                                                        {(item.standardUsage || 0).toFixed(4)}
                                                     </span>
                                                     <span className='text-[7px] font-black text-blue-800/40 uppercase'>{item.unit}</span>
                                                 </div>
@@ -108,15 +106,15 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                                             </div>
                                             <div className='flex items-center gap-2'>
                                                 <Hash className='size-2.5 text-muted-foreground/30' />
-                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight'>{t('engineering.productMgmt.bom.loss' as any)}: {item.wastagePercent}%</span>
+                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight'>{t('engineering.productMgmt.bom.loss')}: {item.wastagePercent}%</span>
                                             </div>
                                             <div className='flex items-center gap-2'>
                                                 <ChevronRight className='size-2.5 text-muted-foreground/30' />
-                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight'>{t('engineering.productMgmt.bom.price' as any)}: ¥{item.unitPrice?.toFixed(2)}</span>
+                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight'>{t('engineering.productMgmt.bom.price')}: ¥{item.unitPrice?.toFixed(2)}</span>
                                             </div>
                                             <div className='flex items-center gap-2'>
                                                 <Database className='size-2.5 text-muted-foreground/30' />
-                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight truncate'>{t('engineering.productMgmt.bom.path' as any)}: {item.supplyChannel || 'DEFAULT'}</span>
+                                                <span className='text-[9px] font-black text-muted-foreground/60 uppercase tracking-tight truncate'>{t('engineering.productMgmt.bom.path')}: {item.supplyChannel || 'DEFAULT'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -129,7 +127,7 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                 {items.length === 0 && (
                     <div className='h-48 text-center bg-muted/5 rounded-[32px] border border-dashed border-muted/50 flex flex-col items-center justify-center gap-4 opacity-20'>
                          <Layers className="size-16" />
-                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">{t('engineering.productMgmt.bom.noData' as any)}</p>
+                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">{t('engineering.productMgmt.bom.noData')}</p>
                     </div>
                 )}
             </div>
@@ -139,17 +137,17 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                 <Table>
                     <TableHeader className='bg-muted/30 border-b border-dashed border-muted'>
                         <TableRow className='hover:bg-transparent'>
-                            <TableHead className='w-[100px] text-center border-r font-black text-[10px] uppercase tracking-widest text-muted-foreground/40 italic'>{t('engineering.productMgmt.bom.headerProcess' as any)}</TableHead>
-                            <TableHead className='w-[120px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerCode' as any)}</TableHead>
-                            <TableHead className='min-w-[150px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerName' as any)}</TableHead>
-                            <TableHead className='min-w-[150px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerSpec' as any)}</TableHead>
-                            <TableHead className='w-[60px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerUnit' as any)}</TableHead>
-                            <TableHead className='w-[80px] text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerPrice' as any)}</TableHead>
-                            <TableHead className='w-[100px] text-right font-black text-[10px] uppercase tracking-widest text-blue-600 italic bg-blue-500/5'>{t('engineering.productMgmt.bom.headerUsage' as any)}</TableHead>
-                            <TableHead className='w-[80px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerLoss' as any)}</TableHead>
-                            <TableHead className='w-[100px] text-right font-black text-[10px] uppercase tracking-widest bg-blue-600/10 text-blue-700 italic border-l border-dashed border-blue-200'>{t('engineering.productMgmt.bom.headerStdUsage' as any)}</TableHead>
-                            <TableHead className='w-[100px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerType' as any)}</TableHead>
-                            <TableHead className='w-[100px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerChannel' as any)}</TableHead>
+                            <TableHead className='w-[100px] text-center border-r font-black text-[10px] uppercase tracking-widest text-muted-foreground/40 italic'>{t('engineering.productMgmt.bom.headerProcess')}</TableHead>
+                            <TableHead className='w-[120px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerCode')}</TableHead>
+                            <TableHead className='min-w-[150px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerName')}</TableHead>
+                            <TableHead className='min-w-[150px] font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerSpec')}</TableHead>
+                            <TableHead className='w-[60px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerUnit')}</TableHead>
+                            <TableHead className='w-[80px] text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerPrice')}</TableHead>
+                            <TableHead className='w-[100px] text-right font-black text-[10px] uppercase tracking-widest text-blue-600 italic bg-blue-500/5'>{t('engineering.productMgmt.bom.headerUsage')}</TableHead>
+                            <TableHead className='w-[80px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerLoss')}</TableHead>
+                            <TableHead className='w-[100px] text-right font-black text-[10px] uppercase tracking-widest bg-blue-600/10 text-blue-700 italic border-l border-dashed border-blue-200'>{t('engineering.productMgmt.bom.headerStdUsage')}</TableHead>
+                            <TableHead className='w-[100px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerType')}</TableHead>
+                            <TableHead className='w-[100px] text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground/40'>{t('engineering.productMgmt.bom.headerChannel')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -178,23 +176,20 @@ export function BOMDetailTable({ items, materials = [], dictEntries = [] }: BOMD
                                         <Badge variant='outline' className='text-[8px] h-3.5 px-1 font-black bg-muted/20 border-none rounded-full'>{item.wastagePercent}%</Badge>
                                     </td>
                                     <td className='px-4 py-3 text-right text-[12px] font-black text-blue-700 bg-blue-600/10 italic tabular-nums border-l border-dashed border-blue-200'>
-                                        {(item.standardUsage || (item.unitUsage * (1 + (item.wastagePercent || 0) / 100))).toFixed(6)}
+                                        {(item.standardUsage || 0).toFixed(6)}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <Badge variant='outline' className='text-[8px] font-black uppercase tracking-widest h-4 px-2 border-none bg-slate-100 text-slate-500 rounded-full shrink-0'>
                                             {(() => {
                                                 const material = materials.find(m => m.id === item.materialId)
                                                 if (material) {
-                                                    const categoryEntry = dictEntries.find(d => d.code === 'MATERIAL_CATEGORY')
-                                                    if (categoryEntry && categoryEntry.options) {
-                                                        const option = categoryEntry.options.find((opt: any) => 
-                                                            (typeof opt === 'string' ? opt : opt.value) === material.category
-                                                        )
-                                                        if (option) return typeof option === 'string' ? option : option.label
-                                                    }
-                                                    return material.category || t('engineering.productMgmt.bom.auxiliary' as any)
+                                                    return (
+                                                        resolveMaterialCategoryLabel(material.category, materialCategoryOptions) ||
+                                                        material.category ||
+                                                        t('engineering.productMgmt.bom.auxiliary')
+                                                    )
                                                 }
-                                                return item.materialType || t('engineering.productMgmt.bom.auxiliary' as any)
+                                                return item.materialType || t('engineering.productMgmt.bom.auxiliary')
                                             })()}
                                         </Badge>
                                     </td>

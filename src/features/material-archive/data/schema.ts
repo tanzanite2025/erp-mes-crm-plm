@@ -31,6 +31,19 @@ export const dimensionsSchema = z.object({
 
 export type MaterialDimensions = z.infer<typeof dimensionsSchema>
 
+export const materialOptionSchema = z.object({
+  id: z.string(),
+  code: z.string().min(1, 'Material code is required'),
+  name: z.string().min(1, 'Material name is required'),
+  category: materialCategorySchema,
+  spec: z.string().optional(),
+  uom: z.string().min(1, 'Unit is required').default('pcs'),
+  status: z.enum(['Active', 'Inactive', 'Archived']).default('Active'),
+  costPrice: z.number().min(0).optional(),
+})
+
+export type MaterialOption = z.infer<typeof materialOptionSchema>
+
 export const materialSchema = z.object({
   id: z.string(),
   code: z.string().min(1, 'Material code is required'),

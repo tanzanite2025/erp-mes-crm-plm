@@ -10,11 +10,13 @@ import { useLanguage } from '@/context/language-provider'
 import { RequirementList } from './requirement-list'
 import { MoldRequirementAlert } from './mold-requirement-alert'
 import { RequirementExportService } from '../../services/requirement-export-service'
+import { RequirementStageAlert } from './requirement-stage-alert'
 
 interface RequirementDrawerProps {
   isOpen: boolean
   onClose: () => void
   data: MaterialRequirement[]
+  errorMessage?: string
   stats: {
     analyzedModels: { modelName: string; totalQty: number }[]
   }
@@ -22,8 +24,9 @@ interface RequirementDrawerProps {
   selectedCount: number
 }
 
-export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, selectedCount }: RequirementDrawerProps) {
+export function RequirementDrawer({ isOpen, onClose, data, errorMessage, stats, isLoading, selectedCount }: RequirementDrawerProps) {
   const { locale, t } = useLanguage()
+  const isAnalyzedButEmpty = !isLoading && !errorMessage && selectedCount > 0 && data.length === 0
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -76,8 +79,25 @@ export function RequirementDrawer({ isOpen, onClose, data, stats, isLoading, sel
           </div>
 
           <div className='flex-1 overflow-y-auto p-6 custom-scrollbar [scrollbar-gutter:stable]'>
-            <MoldRequirementAlert models={stats.analyzedModels} />
-            <RequirementList data={data} isLoading={isLoading} />
+            {errorMessage ? (
+              <RequirementStageAlert
+                tone='error'
+                title={t('mrp.requirements.drawer.stageErrorTitle')}
+                description={t('mrp.requirements.drawer.stageErrorDescription')}
+                details={errorMessage}
+              />
+            ) : isAnalyzedButEmpty ? (
+              <RequirementStageAlert
+                tone='warning'
+                title={t('mrp.requirements.drawer.emptyAnalyzedTitle')}
+                description={t('mrp.requirements.drawer.emptyAnalyzedDescription')}
+              />
+            ) : (
+              <>
+                <MoldRequirementAlert models={stats.analyzedModels} />
+                <RequirementList data={data} isLoading={isLoading} />
+              </>
+            )}
           </div>
 
           <div className='px-6 py-4 bg-white border-t flex items-center justify-between text-[10px] font-bold text-muted-foreground/40'>

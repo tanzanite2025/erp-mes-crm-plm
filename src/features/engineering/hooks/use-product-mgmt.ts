@@ -79,13 +79,11 @@ export function useProductMgmt() {
         })
     }, [activeSubTab, activeTab, data, productTypes])
 
-    const handleFormSubmit = async (formData: Product | Product[], isPatch?: boolean, delta?: any) => {
+    const handleFormSubmit = async (formData: Product | Product[]) => {
         if (Array.isArray(formData)) {
             await ProductMaintenanceService.bulkSyncProducts(formData)
-        } else if (isPatch && formData.id && delta) {
-            await ProductMaintenanceService.patchProduct(formData.id, delta, formData.version || 1)
         } else {
-            await ProductMaintenanceService.createProduct(formData)
+            await ProductMaintenanceService.saveProduct(formData)
         }
         window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
     }

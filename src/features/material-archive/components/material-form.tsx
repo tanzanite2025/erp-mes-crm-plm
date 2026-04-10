@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Control, UseFormReturn } from 'react-hook-form'
 import { Box, Settings2, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
@@ -21,8 +21,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { UnitActionDialog } from '../../basic-settings/components/unit-action-dialog'
-import { DictionaryCoreService } from '../../basic-settings/services/dictionary-core-service'
 import { unitService, type Unit } from '../../basic-settings/services/unit-service'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { type Material } from '../data/schema'
 
 interface MaterialFormProps {
@@ -31,10 +31,10 @@ interface MaterialFormProps {
 }
 
 export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [isUnitMgmtOpen, setIsUnitMgmtOpen] = useState(false)
   const [units, setUnits] = useState<Unit[]>([])
-  const categoryOptions = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
+  const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
 
   useEffect(() => {
     const loadUnits = async () => {

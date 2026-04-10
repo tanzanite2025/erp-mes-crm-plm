@@ -183,5 +183,5 @@ func PatchMaterialHandler(c *gin.Context) {
 	}
 
 	incrMaterialCacheVersion()
-	c.JSON(http.StatusOK, mapMaterialResponse(updated))
+	c.JSON(http.StatusOK, toMaterialApiDTO(updated))
 }

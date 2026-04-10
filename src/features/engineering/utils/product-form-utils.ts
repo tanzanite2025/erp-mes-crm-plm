@@ -1,4 +1,5 @@
 import { type Product } from '../data/schema'
+import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS, upsertAttributeValue } from './product-attribute-utils'
 
 export interface ProductVariantSelection {
     level: string
@@ -27,17 +28,13 @@ export function buildDefaultProductValues(
         depth: undefined,
         widthInternal: undefined,
         widthExternal: undefined,
-        tireType: undefined,
         weight: undefined,
-        brakeType: '',
-        techSeries: '',
-        versionLevel: '',
         image: '',
         restrictions: [],
         moldGroup: '',
         description: '',
         status: 'Active',
-        templateKey: '',
+        attributeValues: [],
         createdAt: new Date().toISOString(),
         length: undefined,
         angle: undefined,
@@ -83,14 +80,16 @@ export function buildBatchProducts(
     selectedVariants: ProductVariantSelection[],
     typeCode: string
 ): Product[] {
-    return selectedVariants.map(variant => ({
-        ...values,
-        id: '',
-        versionLevel: variant.level,
-        weight: variant.weight,
-        sku: deriveSku(typeCode, values.modelCode, variant.level),
-        createdAt: new Date().toISOString()
-    }))
+    return selectedVariants.map(variant => {
+        const nextValues = upsertAttributeValue(values, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version, variant.level)
+        return {
+            ...nextValues,
+            id: '',
+            weight: variant.weight,
+            sku: deriveSku(typeCode, values.modelCode, variant.level),
+            createdAt: new Date().toISOString()
+        }
+    })
 }
 
 export function buildSingleVariantProduct(
@@ -98,9 +97,9 @@ export function buildSingleVariantProduct(
     variant: ProductVariantSelection,
     typeCode: string
 ): Product {
+    const nextValues = upsertAttributeValue(values, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version, variant.level)
     return {
-        ...values,
-        versionLevel: variant.level,
+        ...nextValues,
         weight: variant.weight,
         sku: deriveSku(typeCode, values.modelCode, variant.level)
     }

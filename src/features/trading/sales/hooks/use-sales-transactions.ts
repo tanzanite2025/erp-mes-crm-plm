@@ -5,8 +5,8 @@ import { NotificationService } from '@/features/system-mgmt/notifications/notifi
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
-import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, saveSalesOrderTransaction, transitionSalesOrderStatus } from '../services/sales-transaction-service'
-import { createSalesOrder, deleteSalesOrder } from '../services/sales-service'
+import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
+import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
 
 export const useSalesOrderMutations = () => {
   const { t } = useLanguage()
@@ -54,7 +54,12 @@ export const useSalesOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => saveSalesOrderTransaction(orderId, { delta, finalData, operator, expectedVersion, actorId }),
+    }) => {
+      void finalData
+      void operator
+      void actorId
+      return patchSalesOrder(orderId, delta, expectedVersion)
+    },
     onSuccess: (data) => {
       toast.success(t('tradingSalesOrder.toasts.saved'))
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] })

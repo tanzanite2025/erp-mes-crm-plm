@@ -40,7 +40,7 @@ export function useStockMgmt() {
 
     const categoriesQuery = useQuery({
         queryKey: ['warehouse_categories'],
-        queryFn: () => WarehouseCategoryCoreService.getCategories()
+        queryFn: () => WarehouseCategoryCoreService.getCategoryList()
     })
 
     // UI & Filter states

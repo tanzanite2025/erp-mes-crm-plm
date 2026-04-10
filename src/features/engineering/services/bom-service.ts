@@ -1,7 +1,13 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type BOM } from '../data/schema'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+
+type BOMListResponse = {
+    items: BOM[]
+    total: number
+    page: number
+    pageSize: number
+}
 
 /**
  * BOM 配方清单服务层
@@ -13,7 +19,8 @@ export const bomService = {
      */
     async getBOMs(productId?: string): Promise<BOM[]> {
         const url = productId ? `/engineering/bom?productId=${productId}` : '/engineering/bom'
-        return apiFetch<BOM[]>(url)
+        const response = await apiFetch<BOMListResponse>(url)
+        return Array.isArray(response.items) ? response.items : []
     },
 
     /**
@@ -32,22 +39,6 @@ export const bomService = {
             body: JSON.stringify(bom),
         })
         return ensureObjectResponse<BOM>(res, 'BOMService.saveBOM')
-    },
-
-    /**
-     * SDRTS: 增量更新 BOM 配方
-     */
-    async patchBOM(id: string, delta: DeltaSet, version: number): Promise<BOM> {
-        const payload: DeltaPayload = {
-            op: 'PATCH',
-            delta,
-            metadata: { id, version }
-        }
-        const res = await apiFetch<BOM>(`/engineering/bom/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(payload)
-        })
-        return ensureObjectResponse<BOM>(res, 'BOMService.patchBOM')
     },
 
     /**

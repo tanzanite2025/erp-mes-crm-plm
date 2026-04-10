@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { type Product, type ProductProcessRouting, type ProductProcessRoutingNode } from '../../data/schema'
 import { createProductRoutingDraft } from '../../utils/default-builders'
 import { getStoredProcesses, type ProcessStep } from '@/features/production-shared/tabs/work-architecture/components/process-utils'
+import { PRODUCTION_PROCESSES_UPDATED_EVENT } from '@/features/production-shared/services/production-resource-service'
 
 interface ProductRoutingViewProps {
     product: Product
@@ -52,7 +53,21 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
                 }))
             }
         }
-        loadProcesses()
+        void loadProcesses()
+
+        if (typeof window === 'undefined') {
+            return
+        }
+
+        const handleProcessesUpdated = () => {
+            void loadProcesses()
+        }
+
+        window.addEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+
+        return () => {
+            window.removeEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

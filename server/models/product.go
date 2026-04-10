@@ -17,6 +17,7 @@ type ProductType struct {
 	SortOrder   int           `json:"sortOrder"`
 	CreatedAt   time.Time     `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt   time.Time     `gorm:"autoUpdateTime" json:"updatedAt"`
+	Version     int           `gorm:"default:1" json:"_v"`
 	Children    []ProductType `gorm:"foreignKey:ParentID" json:"children,omitempty"`
 }
 
@@ -28,50 +29,52 @@ func (ProductType) TableName() string {
 type Product struct {
 	BaseModel
 	MasterDataControl
-	SKU               string          `gorm:"size:100;uniqueIndex;not null" json:"sku"`
-	Name              string          `gorm:"size:255;not null" json:"name"`
-	ModelCode         string          `gorm:"size:10" json:"modelCode"`
-	TypeID            string          `gorm:"type:uuid" json:"typeId"`
-	Depth             float64         `json:"depth"`
-	WidthInternal     float64         `json:"widthInternal"`
-	WidthExternal     float64         `json:"widthExternal"`
-	TireType          string          `gorm:"size:50" json:"tireType"`
-	BrakeType         string          `gorm:"size:50" json:"brakeType"`
-	TechSeries        string          `gorm:"size:50" json:"techSeries"`
-	VersionLevel      string          `gorm:"size:50" json:"versionLevel"`
-	Weight            float64         `json:"weight"`
-	Length            float64         `json:"length"`
-	Angle             float64         `json:"angle"`
-	Clamp             string          `gorm:"size:50" json:"clamp"`
-	Offset            float64         `json:"offset"`
-	AxleCrown         float64         `json:"axleCrown"`
-	Steerer           string          `gorm:"size:50" json:"steerer"`
-	Image             string          `json:"image"`
-	Restrictions      []byte          `gorm:"type:jsonb;serializer:json" json:"restrictions"`
-	MoldGroup         string          `gorm:"size:100" json:"moldGroup"`
-	Description       string          `gorm:"type:text" json:"description"`
-	EngineeringSpecID string          `gorm:"type:uuid;index" json:"engineeringSpecId"`
-	TechnicalSpecs    json.RawMessage `gorm:"column:technical_specs;type:jsonb;serializer:json" json:"techSpecs"`
-	BarcodeConfig     []byte          `gorm:"type:jsonb;serializer:json" json:"barcodeConfig"`
-	Attachments       []byte          `gorm:"type:jsonb;serializer:json" json:"attachments"`
-	Status            string          `gorm:"size:20;default:'Active'" json:"status"`
-	TemplateKey       string          `gorm:"size:50" json:"templateKey"`
-	Version           int             `gorm:"default:1" json:"_v"`
+	SKU               string                  `gorm:"size:100;uniqueIndex;not null" json:"sku"`
+	Name              string                  `gorm:"size:255;not null" json:"name"`
+	ModelCode         string                  `gorm:"size:10" json:"modelCode"`
+	TypeID            string                  `gorm:"type:uuid" json:"typeId"`
+	Depth             float64                 `json:"depth"`
+	WidthInternal     float64                 `json:"widthInternal"`
+	WidthExternal     float64                 `json:"widthExternal"`
+	TireType          string                  `gorm:"size:50" json:"tireType"`
+	BrakeType         string                  `gorm:"size:50" json:"brakeType"`
+	TechSeries        string                  `gorm:"size:50" json:"techSeries"`
+	VersionLevel      string                  `gorm:"size:50" json:"versionLevel"`
+	Weight            float64                 `json:"weight"`
+	Length            float64                 `json:"length"`
+	Angle             float64                 `json:"angle"`
+	Clamp             string                  `gorm:"size:50" json:"clamp"`
+	Offset            float64                 `json:"offset"`
+	AxleCrown         float64                 `json:"axleCrown"`
+	Steerer           string                  `gorm:"size:50" json:"steerer"`
+	Image             string                  `json:"image"`
+	Restrictions      []byte                  `gorm:"type:jsonb;serializer:json" json:"restrictions"`
+	MoldGroup         string                  `gorm:"size:100" json:"moldGroup"`
+	Description       string                  `gorm:"type:text" json:"description"`
+	EngineeringSpecID string                  `gorm:"type:uuid;index" json:"engineeringSpecId"`
+	AttributeValues   []ProductAttributeValue `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"attributeValues,omitempty"`
+	TechnicalSpecs    json.RawMessage         `gorm:"column:technical_specs;type:jsonb;serializer:json" json:"techSpecs"`
+	BarcodeConfig     []byte                  `gorm:"type:jsonb;serializer:json" json:"barcodeConfig"`
+	Attachments       []byte                  `gorm:"type:jsonb;serializer:json" json:"attachments"`
+	Status            string                  `gorm:"size:20;default:'Active'" json:"status"`
+	TemplateKey       string                  `gorm:"-" json:"templateKey,omitempty"`
+	Version           int                     `gorm:"default:1" json:"_v"`
 }
 
 // BOM 閰嶆柟娓呭崟妯″瀷
 type BOM struct {
 	BaseModel
 	MasterDataControl
-	BOMNo         string       `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
-	ProductID     string       `gorm:"type:uuid;index;not null" json:"productId"`
-	Product       *Product     `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	ChangeOrderID *string      `gorm:"type:uuid;index" json:"changeOrderId"`
-	ChangeOrder   *ChangeOrder `gorm:"foreignKey:ChangeOrderID" json:"changeOrder,omitempty"`
-	VersionText   string       `gorm:"size:20;default:'V1.0'" json:"version"`
-	Status        string       `gorm:"size:20;default:'active'" json:"status"`
-	Items         []BOMItem    `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
-	Description   string       `gorm:"type:text" json:"description"`
+	BOMNo          string       `gorm:"size:50;uniqueIndex;not null" json:"bomNo"`
+	ProductID      string       `gorm:"type:uuid;index;not null" json:"productId"`
+	Product        *Product     `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	ChangeOrderID  *string      `gorm:"type:uuid;index" json:"changeOrderId"`
+	ChangeOrder    *ChangeOrder `gorm:"foreignKey:ChangeOrderID" json:"changeOrder,omitempty"`
+	VersionText    string       `gorm:"size:20;default:'V1.0'" json:"version"`
+	DisplayVersion string       `gorm:"-" json:"bomDisplayVersion,omitempty"`
+	Status         string       `gorm:"size:20;default:'active'" json:"status"`
+	Items          []BOMItem    `gorm:"foreignKey:BOMID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"items"`
+	Description    string       `gorm:"type:text" json:"description"`
 }
 
 // BOMItem BOM 鏄庣粏琛屾ā鍨?

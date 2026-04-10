@@ -73,39 +73,6 @@ export const basicSettingsEnUSOverrides = {
         modeLabel: 'Mode',
       },
     },
-    dictionary: {
-      page: {
-        title: 'Dictionary Atomic Center',
-        description: 'PARAMETER_DICTIONARY / Define universal business parameters and industry features.',
-        actions: {
-          sync: 'RE-SEED / Sync System',
-          syncing: 'SYNCING...',
-          addGroup: 'ADD_GROUP / Create Group',
-        },
-      },
-      empty: {
-        title: 'Data Link Init Error',
-        description: 'DATABASE_CONNECTION_IDLE / No groups detected. Try manual sync.',
-        action: 'RECOVERY_SYNC / Try Recovery',
-      },
-      search: {
-        placeholder: 'Search in {{group}}... SCAN_ENTRY',
-      },
-      actions: {
-        addEntry: 'ADD_ENTRY / Create Entry',
-      },
-      group: {
-        config: 'SCHEMA_CONFIG / Configuration',
-        rename: 'RENAME_GROUP / Rename',
-        purge: 'PURGE_GROUP / Delete Group',
-      },
-      entry: {
-        noCode: 'NO_META_CODE',
-        noOptions: 'NO_OPTIONS_DEFINED',
-        addOption: '+ ADD_OPTION',
-        emptyList: 'No entries in this group / EMPTY_SET',
-      },
-    },
     linearBarcode: {
       dialog: {
         segmentLabel: 'Segment',

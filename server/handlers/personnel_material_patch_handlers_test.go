@@ -212,11 +212,9 @@ func TestPatchMaterialHandlerReturnsVersionedResponse(t *testing.T) {
 		ID      string `json:"id"`
 		Name    string `json:"name"`
 		Version int    `json:"version"`
-		Legacy  int    `json:"_v"`
 	}
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.Equal(t, materialID, response.ID)
 	require.Equal(t, "Tube Plus", response.Name)
 	require.Equal(t, 3, response.Version)
-	require.Equal(t, 3, response.Legacy)
 }

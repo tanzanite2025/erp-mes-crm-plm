@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/dependencies"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
 
@@ -91,7 +92,18 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	primaryRoleID := strings.TrimSpace(user.Role)
+	accessProfile := dependencies.ResolveEffectiveAccessProfileForUser(user)
+	primaryRoleID := strings.TrimSpace(accessProfile.PrimaryRoleID)
+	effectiveRolePayload := make([]string, 0, len(accessProfile.EffectiveRoles))
+	for _, roleID := range accessProfile.EffectiveRoles {
+		normalizedRoleID := strings.TrimSpace(roleID)
+		if normalizedRoleID != "" {
+			effectiveRolePayload = append(effectiveRolePayload, normalizedRoleID)
+		}
+	}
+	if primaryRoleID == "" && len(effectiveRolePayload) > 0 {
+		primaryRoleID = effectiveRolePayload[0]
+	}
 	rolePayload := []string{}
 	if primaryRoleID != "" {
 		rolePayload = []string{primaryRoleID}
@@ -134,7 +146,7 @@ func LoginHandler(c *gin.Context) {
 			"email":          user.Email,
 			"employeeId":     user.EmployeeID,
 			"role":           rolePayload,
-			"effectiveRoles": rolePayload,
+			"effectiveRoles": effectiveRolePayload,
 			"permissions":    []string{}, // 登录时不预载业务权限，由前端背景同步完成
 		},
 	})

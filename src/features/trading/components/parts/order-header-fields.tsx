@@ -1,10 +1,14 @@
+import { useMemo } from 'react'
 import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
 import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type Customer, type SalesOrder } from '../../data/schema'
+import {
+  getSalesOrderClassificationOptions,
+  getSalesOrderTypeOptions,
+} from '../../data/sales-order-options'
 import { OrderEvidenceManager } from './order-evidence-manager'
 
 type SalesOrderFormState = Partial<SalesOrder>
@@ -23,8 +27,10 @@ export function OrderHeaderFields({
   customers,
   onClassificationChange,
 }: OrderHeaderFieldsProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const allowedEditStatuses = ['Draft', 'Pending']
+  const typeOptions = useMemo(() => getSalesOrderTypeOptions(locale), [locale])
+  const classificationOptions = useMemo(() => getSalesOrderClassificationOptions(locale), [locale])
 
   return (
     <section className='space-y-3'>
@@ -108,7 +114,7 @@ export function OrderHeaderFields({
               value={formData.type}
               onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
             >
-              {DictionaryCoreService.getOptions('ORDER_TYPE').map((option) => (
+              {typeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -125,7 +131,7 @@ export function OrderHeaderFields({
               value={formData.classification}
               onChange={(e) => onClassificationChange(e.target.value)}
             >
-              {DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').map((option) => (
+              {classificationOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

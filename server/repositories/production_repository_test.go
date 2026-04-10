@@ -151,7 +151,19 @@ func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *tes
 			{
 				BaseModel: models.BaseModel{ID: "segment-2"},
 				Name:      "Segment 1",
-				Processes: []models.ProcessStep{process},
+				JobCategories: []models.JobCategory{
+					{
+						BaseModel: models.BaseModel{ID: "job-2"},
+						Name:      "Job Category 1",
+						Stations: []models.Station{
+							{
+								BaseModel: models.BaseModel{ID: "station-2"},
+								Name:      "Station 1",
+								Processes: []models.ProcessStep{process},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -162,6 +174,8 @@ func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *tes
 	require.NoError(t, err)
 	require.Len(t, lines, 1)
 	require.Len(t, lines[0].Segments, 1)
-	require.Len(t, lines[0].Segments[0].Processes, 1)
-	require.Equal(t, process.ID, lines[0].Segments[0].Processes[0].ID)
+	require.Len(t, lines[0].Segments[0].JobCategories, 1)
+	require.Len(t, lines[0].Segments[0].JobCategories[0].Stations, 1)
+	require.Len(t, lines[0].Segments[0].JobCategories[0].Stations[0].Processes, 1)
+	require.Equal(t, process.ID, lines[0].Segments[0].JobCategories[0].Stations[0].Processes[0].ID)
 }

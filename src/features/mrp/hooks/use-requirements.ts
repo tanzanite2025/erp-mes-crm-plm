@@ -11,6 +11,17 @@ const logger = createLogger('useRequirements')
 
 export type { MaterialRequirement }
 
+type RequirementsError = {
+  message: string
+}
+
+const toRequirementsError = (error: unknown): RequirementsError => {
+  if (error instanceof Error) {
+    return { message: error.message }
+  }
+  return { message: '[CRITICAL] Unknown MRP requirements error' }
+}
+
 export function useRequirements() {
   const [requirements, setRequirements] = useState<MaterialRequirement[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -86,7 +97,14 @@ export function useRequirements() {
         setStats(result.stats)
         setError(null)
       } catch (calculateError) {
-        setError(calculateError)
+        setRequirements([])
+        setStats({
+          totalMaterials: 0,
+          missingBOMCount: 0,
+          activeOrderCount: 0,
+          analyzedModels: [],
+        })
+        setError(toRequirementsError(calculateError))
         logger.error('Failed to calculate requirements from backend', calculateError)
       } finally {
         setIsLoading(false)

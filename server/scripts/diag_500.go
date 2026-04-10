@@ -7,12 +7,16 @@ import (
 	"os"
 	"xdfc-server/db"
 	"xdfc-server/models"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load(".env.dev", "../.env.dev", "../../server/.env.dev")
+
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "host=127.0.0.1 user=xdfc_admin password=Wang622575_secure_db dbname=xdfc_official port=5432 sslmode=disable"
+		dsn = "host=127.0.0.1 user=xdfc_admin password=xdfc_local_dev_password dbname=xdfc_official port=5432 sslmode=disable"
 	}
 
 	db.InitDB(dsn)

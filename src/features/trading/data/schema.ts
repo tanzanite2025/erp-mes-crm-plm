@@ -34,7 +34,7 @@ export interface Supplier extends BaseEntity {
 
 export type SalesOrderStatus = 'Draft' | 'Pending' | 'InProgress' | 'Done' | 'Canceled'
 
-export type SalesOrderType = string // 字典引用：订单模式 (TRADING/ORDER_TYPE)
+export type SalesOrderType = string // 交易模块订单模式枚举
 
 export interface SalesOrderLine {
     id?: number
@@ -90,8 +90,8 @@ export interface SalesOrder extends BaseEntity {
     customerName: string
     customerId?: string // 引用客户 ID
     type: SalesOrderType
-    currency: string // 字典引用：货币类别
-    classification: string // 字典引用：订单分类 (TRADING/ORDER_CLASSIFICATION)
+    currency: string // 货币类别
+    classification: string // 交易模块订单分类枚举
     status: SalesOrderStatus
     statusNote?: string // 弃用：建议使用 evidences
     evidences?: OrderEvidence[]

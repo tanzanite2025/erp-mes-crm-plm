@@ -17,7 +17,7 @@ export function useStocktake() {
 
     // 发起新盘点
     const createMutation = useMutation({
-        mutationFn: (data: { title: string, warehouseCategoryCode: string, remarks?: string }) => 
+        mutationFn: (data: { title: string, warehouseCategoryCode: string, remarks?: string }) =>
             StocktakeMaintenanceService.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })

@@ -13,10 +13,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Search, LayoutGrid, GitCommit } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { ProductionLine } from '@/features/production-shared/tabs/line-mgmt/types'
-
-const LINE_STORAGE_KEY = 'xdfc_production_lines_v2'
+import {
+  PRODUCTION_LINES_UPDATED_EVENT,
+  productionResourceService,
+} from '@/features/production-shared/services/production-resource-service'
 
 interface ProductionSelectorProps {
   open: boolean
@@ -32,11 +33,33 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
   const [localSelected, setLocalSelected] = useState<string[]>(selectedItems.map(i => i.id))
 
   useEffect(() => {
-    if (open) {
-      StorageService.getItem<ProductionLine[]>(LINE_STORAGE_KEY).then(data => {
-        setLines(data || [])
-      })
-      setLocalSelected(selectedItems.map(i => i.id))
+    if (!open) {
+      return
+    }
+
+    let active = true
+
+    const loadLines = async () => {
+      const data = await productionResourceService.getLines()
+      if (!active) {
+        return
+      }
+
+      setLines(data || [])
+    }
+
+    void loadLines()
+    setLocalSelected(selectedItems.map(i => i.id))
+
+    const handleLinesUpdated = () => {
+      void loadLines()
+    }
+
+    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleLinesUpdated)
+
+    return () => {
+      active = false
+      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleLinesUpdated)
     }
   }, [open, selectedItems])
 

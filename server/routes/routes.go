@@ -64,8 +64,12 @@ func SetupRoutes(r *gin.Engine) {
 		engineeringGroup := authorized.Group("/engineering")
 		engineeringGroup.Use(engineeringAccess)
 		{
+			engineeringGroup.GET("/products/next-code", handlers.GetNextProductCodeHandler)
 			engineeringGroup.GET("/products", handlers.GetProductsHandler)
+			engineeringGroup.GET("/products/:id", handlers.GetProductHandler)
 			engineeringGroup.POST("/products", adminOnly, handlers.SaveProductHandler)
+			engineeringGroup.PATCH("/products/:id", adminOnly, handlers.PatchProductHandler)
+			engineeringGroup.DELETE("/products/:id", adminOnly, handlers.DeleteProductHandler)
 			engineeringGroup.POST("/products/sync", adminOnly, handlers.BulkSyncProductsHandler)
 			engineeringGroup.GET("/bom", handlers.GetBOMsHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
@@ -78,32 +82,32 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				templateGroup.GET("", handlers.GetProductTemplatesHandler)
 				templateGroup.POST("", adminOnly, handlers.SaveProductTemplateHandler)
+				templateGroup.PATCH("/:id", adminOnly, handlers.PatchProductTemplateHandler)
+				templateGroup.DELETE("/:id", adminOnly, handlers.DeleteProductTemplateHandler)
 				templateGroup.POST("/sync", adminOnly, handlers.SyncProductTemplatesHandler)
 			}
 
 			engineeringGroup.GET("/product-types", handlers.GetProductTypesHandler)
 			engineeringGroup.POST("/product-types", adminOnly, handlers.SaveProductTypeHandler)
+			engineeringGroup.PATCH("/product-types/:id", adminOnly, handlers.PatchProductTypeHandler)
+			engineeringGroup.DELETE("/product-types/:id", adminOnly, handlers.DeleteProductTypeHandler)
 			engineeringGroup.POST("/product-types/sync", adminOnly, handlers.SyncProductTypesHandler)
+			engineeringGroup.GET("/product-type-attribute-bindings", handlers.GetProductTypeAttributeBindingsHandler)
+			engineeringGroup.POST("/product-type-attribute-bindings", adminOnly, handlers.SaveProductTypeAttributeBindingHandler)
+			engineeringGroup.PATCH("/product-type-attribute-bindings/:id", adminOnly, handlers.PatchProductTypeAttributeBindingHandler)
+			engineeringGroup.POST("/product-type-attribute-bindings/sync", adminOnly, handlers.SyncProductTypeAttributeBindingsHandler)
+			engineeringGroup.DELETE("/product-type-attribute-bindings/:id", adminOnly, handlers.DeleteProductTypeAttributeBindingHandler)
+			engineeringGroup.GET("/product-attribute-categories", handlers.GetProductAttributeCategoriesHandler)
+			engineeringGroup.POST("/product-attribute-categories", adminOnly, handlers.SaveProductAttributeCategoryHandler)
+			engineeringGroup.DELETE("/product-attribute-categories/:id", adminOnly, handlers.DeleteProductAttributeCategoryHandler)
+			engineeringGroup.GET("/product-attribute-options", handlers.GetProductAttributeOptionsHandler)
+			engineeringGroup.POST("/product-attribute-options", adminOnly, handlers.SaveProductAttributeOptionHandler)
+			engineeringGroup.DELETE("/product-attribute-options/:id", adminOnly, handlers.DeleteProductAttributeOptionHandler)
 			engineeringGroup.GET("/specs", handlers.GetEngineeringSpecsHandler)
 			engineeringGroup.GET("/specs/:id", handlers.GetEngineeringSpecHandler)
 			engineeringGroup.POST("/specs", adminOnly, handlers.SaveEngineeringSpecHandler)
 			engineeringGroup.POST("/specs/sync", adminOnly, handlers.BulkSyncEngineeringSpecsHandler)
 			engineeringGroup.DELETE("/specs/:id", adminOnly, handlers.DeleteEngineeringSpecHandler)
-		}
-
-		dictGroup := authorized.Group("/dictionary")
-		dictGroup.Use(middleware.RequirePermissions(authz.MenuSettings, authz.MenuEngineering, authz.MenuTrading, authz.MenuOrg))
-		{
-			dictGroup.GET("/groups", handlers.GetDictGroupsHandler)
-			dictGroup.POST("/groups", adminOnly, handlers.SaveDictGroupHandler)
-			dictGroup.PATCH("/groups/:code", adminOnly, handlers.PatchDictGroupHandler)
-			dictGroup.DELETE("/groups/:code", adminOnly, handlers.DeleteDictGroupHandler)
-			dictGroup.GET("/entries", handlers.GetDictEntriesHandler)
-			dictGroup.POST("/entries", adminOnly, handlers.SaveDictEntryHandler)
-			dictGroup.PATCH("/entries/:code", adminOnly, handlers.PatchDictEntryHandler)
-			dictGroup.DELETE("/entries/:code", adminOnly, handlers.DeleteDictEntryHandler)
-			dictGroup.POST("/sync", adminOnly, handlers.SyncDictionaryHandler)
-			dictGroup.POST("/bulk-sync", adminOnly, handlers.BulkSyncDictionaryHandler)
 		}
 
 		logisticsGroup := authorized.Group("/logistics")
@@ -251,8 +255,12 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 func registerUserRoutes(authorized *gin.RouterGroup) {
 	authorized.GET("/users", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUsersHandler)
+	authorized.GET("/users/:id/roles", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUserRoleBindingsHandler)
+	authorized.POST("/users/:id/roles", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.AddUserRoleBindingHandler)
+	authorized.DELETE("/users/:id/roles/:roleId", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.RemoveUserRoleBindingHandler)
 	authorized.POST("/users", middleware.RequirePermissions(authz.PermissionUserCreate), handlers.CreateUserHandler)
 	authorized.PATCH("/users/:id", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.PatchUserHandler)
+	authorized.PATCH("/users/:id/primary-role", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.SetUserPrimaryRoleHandler)
 	authorized.PUT("/users/:id", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.ReplaceUserHandler)
 	authorized.DELETE("/users/:id", middleware.RequirePermissions(authz.PermissionUserDelete), handlers.DeleteUserHandler)
 	authorized.POST("/users/sync", middleware.RequirePermissions(authz.PermissionManage), handlers.BulkSyncUsersHandler)

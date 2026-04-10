@@ -26,7 +26,8 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
-import { INITIAL_TEMPLATES, SPEC_COMPONENTS } from '../components/specs'
+import { SPEC_COMPONENTS } from '../components/specs'
+import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { type ProductTemplate } from '../data/schema'
 import { productTemplateService } from '../services/product-template-service'
 import { createProductTemplateDraft } from '../utils/default-builders'
@@ -53,57 +54,9 @@ export function TemplateMgmt() {
     [t]
   )
 
-  const localizedInitialTemplates = useMemo<ProductTemplate[]>(
-    () =>
-      INITIAL_TEMPLATES.map((template) => {
-        if (template.code === 'RIM_STD') {
-          return {
-            ...template,
-            version: template.version,
-            name: t('engineering.templateMgmt.presets.RIM_STD.name'),
-            description: t('engineering.templateMgmt.presets.RIM_STD.description'),
-          }
-        }
-
-        if (template.code === 'STEM_STD') {
-          return {
-            ...template,
-            version: template.version,
-            name: t('engineering.templateMgmt.presets.STEM_STD.name'),
-            description: t('engineering.templateMgmt.presets.STEM_STD.description'),
-          }
-        }
-
-        if (template.code === 'FORK_STD') {
-          return {
-            ...template,
-            version: template.version,
-            name: t('engineering.templateMgmt.presets.FORK_STD.name'),
-            description: t('engineering.templateMgmt.presets.FORK_STD.description'),
-          }
-        }
-
-        return {
-          ...template,
-          version: template.version,
-        }
-      }),
-    [t]
-  )
-
   const displayTemplates = useMemo(
-    () =>
-      templates.map((template) => {
-        const localizedPreset = localizedInitialTemplates.find((item) => item.code === template.code)
-        return localizedPreset
-          ? {
-              ...template,
-              name: localizedPreset.name,
-              description: localizedPreset.description,
-            }
-          : template
-      }),
-    [localizedInitialTemplates, templates]
+    () => localizeTemplateDefinitions(templates, t),
+    [t, templates]
   )
 
   const loadData = useCallback(async () => {
@@ -163,22 +116,6 @@ export function TemplateMgmt() {
     }
   }
 
-  const handleInitialize = async () => {
-    try {
-      toast.loading(t('engineering.templateMgmt.toasts.initLoading'), { id: 'init-tpl' })
-      await productTemplateService.sync(localizedInitialTemplates)
-      toast.success(t('engineering.templateMgmt.toasts.initSuccess'), { id: 'init-tpl' })
-      window.dispatchEvent(new CustomEvent('xdfc_product_templates_data_updated'))
-    } catch (error) {
-      toast.error(
-        t('engineering.templateMgmt.toasts.initFailed', {
-          message: getErrorMessage(error),
-        }),
-        { id: 'init-tpl' }
-      )
-    }
-  }
-
   const handleSubmit = async () => {
     if (!editingTemplate?.name || !editingTemplate?.code) {
       toast.error(t('engineering.templateMgmt.toasts.required'))
@@ -187,7 +124,7 @@ export function TemplateMgmt() {
 
     try {
       const isEdit = Boolean(editingTemplate.id)
-      await productTemplateService.saveTemplate(editingTemplate)
+      await productTemplateService.saveTemplate(editingTemplate, templates.find((item) => item.id === editingTemplate.id))
       toast.success(
         isEdit
           ? t('engineering.templateMgmt.toasts.saveUpdated')
@@ -230,24 +167,13 @@ export function TemplateMgmt() {
             {t('engineering.templateMgmt.status.synced')}
           </span>
         </div>
-        <div className='flex flex-col gap-2 sm:flex-row sm:gap-3'>
-          {displayTemplates.length === 0 && (
-            <Button
-              variant='outline'
-              onClick={handleInitialize}
-              className='h-11 rounded-full border-dashed border-blue-600/30 px-6 text-[10px] font-black uppercase tracking-widest text-blue-600 transition-all hover:bg-blue-600/5'
-            >
-              {t('engineering.templateMgmt.actions.repair')}
-            </Button>
-          )}
-          <Button
-            onClick={handleAdd}
-            className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
-          >
-            <Plus className='mr-2 size-4' />
-            {t('engineering.templateMgmt.actions.create')}
-          </Button>
-        </div>
+        <Button
+          onClick={handleAdd}
+          className='h-11 rounded-full bg-blue-600 px-8 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-500/20 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95'
+        >
+          <Plus className='mr-2 size-4' />
+          {t('engineering.templateMgmt.actions.create')}
+        </Button>
       </div>
 
       {displayTemplates.length === 0 ? (

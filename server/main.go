@@ -24,6 +24,29 @@ import (
 	zlog "github.com/rs/zerolog/log"
 )
 
+func loadBackendEnv() {
+	candidates := []string{
+		".env.dev",
+		"server/.env.dev",
+	}
+
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err != nil {
+			continue
+		}
+
+		if err := godotenv.Load(candidate); err != nil {
+			log.Printf("[WARN] Failed to load backend env from %s: %v", candidate, err)
+			return
+		}
+
+		log.Printf("[READY] Loaded backend env from %s", candidate)
+		return
+	}
+
+	log.Printf("[INFO] .env.dev not found, using system environment variables.")
+}
+
 func logMonitoringBootstrapSummary(ginMode, webhookToken string) {
 	tokenLoaded := strings.TrimSpace(webhookToken) != ""
 	log.Printf("[MONITORING_SUMMARY] mode=%s", ginMode)
@@ -173,9 +196,7 @@ func runCronWithDistributedLock(jobName, lockKey string, lockTTL time.Duration, 
 }
 
 func main() {
-	if err := godotenv.Load("../.env.local"); err != nil {
-		log.Printf("[INFO] .env.local not found in project root, using system environment variables.")
-	}
+	loadBackendEnv()
 
 	middleware.InitJwt()
 	services.InitSearchClient()

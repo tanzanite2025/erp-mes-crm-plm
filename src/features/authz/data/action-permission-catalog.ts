@@ -211,7 +211,7 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
     desc: '允许维护仓库分类主数据。',
     category: 'action',
     parentId: 'menu_warehouse',
-    routeBindings: ['POST /warehouse/categories', 'DELETE /warehouse/categories/:id'],
+    routeBindings: ['POST /warehouse/categories', 'PATCH /warehouse/categories/:id', 'DELETE /warehouse/categories/:id'],
   },
   {
     id: 'action_warehouse_stocktake_manage',
@@ -254,7 +254,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑销售订单。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /sales-orders', 'POST /sales-orders/:id/transactions'],
+    routeBindings: ['POST /sales-orders', 'POST /sales-orders/:id/transactions', 'PATCH /sales-orders/:id'],
   },
   {
     id: 'action_trading_sales_order_delete',

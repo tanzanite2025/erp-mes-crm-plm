@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
@@ -35,9 +36,11 @@ func GetMoldsHandler(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"molds":   molds,
-			"data":    molds,
-			"version": time.Now().Unix(),
+			"items":    mapMoldResponses(molds),
+			"total":    len(molds),
+			"page":     1,
+			"pageSize": len(molds),
+			"version":  moldListVersion(molds),
 		})
 		return
 	}
@@ -53,13 +56,11 @@ func GetMoldsHandler(c *gin.Context) {
 
 	// 兼容前端特定遗留版本的字段名及版本号需求
 	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"molds":    items,
-		"data":     items,
+		"items":    mapMoldResponses(items),
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
-		"version":  time.Now().Unix(),
+		"version":  moldListVersion(items),
 	})
 }
 
@@ -71,7 +72,29 @@ func GetMoldHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "[SERVER] 模具不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, mold)
+	c.JSON(http.StatusOK, mapMoldResponse(mold))
+}
+
+func CheckMoldDuplicateSNHandler(c *gin.Context) {
+	sn := strings.TrimSpace(c.Query("sn"))
+	excludeID := strings.TrimSpace(c.Query("excludeId"))
+	if sn == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] sn is required"})
+		return
+	}
+
+	query := db.DB.Model(&models.Mold{}).Where("sn = ?", sn)
+	if excludeID != "" {
+		query = query.Where("id <> ?", excludeID)
+	}
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to check duplicate mold sn: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"duplicate": count > 0})
 }
 
 func GetMoldCapacityHandler(c *gin.Context) {
@@ -267,7 +290,11 @@ func SaveMoldHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存模具资产失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, mold)
+	if err := db.DB.First(&mold, "id = ?", mold.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 鑾峰彇淇濆瓨鍚庣殑妯″叿澶辫触: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, mapMoldResponse(mold))
 }
 
 // PatchMoldHandler 差分更新 (解决全量保存开销风险)
@@ -298,7 +325,7 @@ func PatchMoldHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取更新后的模具失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, mold)
+	c.JSON(http.StatusOK, mapMoldResponse(mold))
 }
 
 // UpdateTelemetryHandler 更新遥测数据

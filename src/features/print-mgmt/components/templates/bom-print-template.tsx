@@ -15,12 +15,16 @@ export interface BOMPrintItem {
 }
 
 export interface BOMPrintTemplateProps {
+  bomNo: string
+  bomDisplayVersion?: string
+  revisionNo?: string
+  changeOrderNo?: string
   productName: string
   items: BOMPrintItem[]
 }
 
 export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps>(
-  ({ productName, items = [] }, ref) => {
+  ({ bomNo, bomDisplayVersion, revisionNo, changeOrderNo, productName, items = [] }, ref) => {
     const { locale, t } = useLanguage()
     const today = new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
       year: 'numeric',
@@ -74,9 +78,14 @@ export const BOMPrintTemplate = forwardRef<HTMLDivElement, BOMPrintTemplateProps
               </td>
               <td rowSpan={3} className='font-bold text-2xl' style={{ width: '55%' }}>
                 {productName} - {t('printMgmt.bomTemplate.titleSuffix')}
+                <div className='mt-2 text-sm font-mono'>
+                  {bomNo}
+                  {bomDisplayVersion ? ` / ${bomDisplayVersion}` : ''}
+                  {revisionNo ? ` / ${revisionNo}` : ''}
+                </div>
               </td>
               <td style={{ width: '15%' }}>{t('printMgmt.bomTemplate.documentCode')}</td>
-              <td style={{ width: '15%' }} />
+              <td style={{ width: '15%' }}>{changeOrderNo || '-'}</td>
             </tr>
             <tr>
               <td>{t('printMgmt.bomTemplate.version')}</td>

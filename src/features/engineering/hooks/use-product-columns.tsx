@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { type Product, type ProductType } from '../data/schema'
 import { ProductMaintenanceService } from '../services/product-maintenance-service'
+import { getProductAttributeSummary } from '../utils/product-attribute-utils'
 import { toast } from 'sonner'
 
 export function useProductColumns(
@@ -43,7 +44,8 @@ export function useProductColumns(
         {
             header: t('engineering.productArchive.columns.coreSpecs'),
             cell: ({ row }) => {
-                const { depth, widthExternal, tireType, weight, restrictions } = row.original
+                const { depth, widthExternal, weight, restrictions } = row.original
+                const { tireType } = getProductAttributeSummary(row.original)
 
                 return (
                     <div className='flex flex-col gap-2'>

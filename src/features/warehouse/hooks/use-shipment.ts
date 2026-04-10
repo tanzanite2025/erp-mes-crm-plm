@@ -14,6 +14,10 @@ import { useShipmentBootstrap } from './use-shipment-bootstrap'
 import { useShipmentFormState } from './use-shipment-form-state'
 import { useShipmentInventoryContext } from './use-shipment-inventory-context'
 import { useShipmentSearch } from './use-shipment-search'
+import {
+  filterWarehouseCategoriesByScene,
+  getDefaultWarehouseCategoryCode,
+} from '../utils/warehouse-category-config'
 
 export function useShipment() {
   const { locale, t } = useLanguage()
@@ -36,7 +40,13 @@ export function useShipment() {
   const openShipmentForm = useCallback((item: MasterDataSearchResult) => {
     if (!allowsAction('action_warehouse_shipment_record')) return
     shipmentForm.openShipmentForm(item)
-  }, [allowsAction, shipmentForm])
+    const allowedCategories = filterWarehouseCategoriesByScene(shipmentBootstrap.warehouseCategories, 'shipment')
+    const defaultSourceCategory =
+      getDefaultWarehouseCategoryCode(allowedCategories, 'shipment', item.category) ||
+      allowedCategories[0]?.code ||
+      ''
+    shipmentForm.setFormData({ sourceCategory: defaultSourceCategory })
+  }, [allowsAction, shipmentBootstrap.warehouseCategories, shipmentForm])
 
   const resolveSalesOrderBinding = useCallback(async (
     selectedItem: MasterDataSearchResult,
@@ -105,6 +115,8 @@ export function useShipment() {
 
       await InventoryTransactionService.recordShipment({
         materialId: selectedItem.id,
+        materialName: selectedItem.name,
+        materialCode: selectedItem.code,
         salesOrderId: binding.salesOrderId || undefined,
         salesOrderLineId: binding.salesOrderLineId || undefined,
         quantity: formData.quantity,

@@ -87,13 +87,11 @@ export function UsersActionDialog({
     dynamicRoles,
     t,
   })
-  const { selectedEmployeeDeptRoleId, isEmployeeBoundRoleLocked, handleEmployeeSync } = useUsersActionDialogSync({
+  const { handleEmployeeSync } = useUsersActionDialogSync({
     employees,
-    currentRow,
     dynamicRoles,
     form,
     isEdit,
-    t,
   })
 
   // 【生命周期治理】确保 Dialog 开启或数据源变更时，表单状态彻底同步
@@ -139,18 +137,7 @@ export function UsersActionDialog({
   })
 
   const onSubmit = (values: UserForm) => {
-    if (!isEdit && values.employeeId && !selectedEmployeeDeptRoleId) {
-      form.setError('role', {
-        type: 'manual',
-        message: t('users.validation.employeeDeptRoleRequired'),
-      })
-      toast.error(t('users.validation.employeeDeptRoleRequired'))
-      return
-    }
-
     const resolvedRole = resolveSubmitRole({
-      currentRow,
-      isEmployeeBoundRoleLocked,
       roleFromForm: values.role,
     })
 
@@ -378,7 +365,6 @@ export function UsersActionDialog({
                         value={field.value}
                         onValueChange={field.onChange}
                         placeholder={roleFieldPlaceholder}
-                        disabled={isEmployeeBoundRoleLocked}
                         options={combinedRoleOptions}
                       />
                     </div>

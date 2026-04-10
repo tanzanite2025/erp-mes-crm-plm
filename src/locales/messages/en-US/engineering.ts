@@ -1,6 +1,7 @@
 export const engineering = {
   tabs: {
     products: 'Product Management',
+    productAttributes: 'Product Attributes',
     bom: 'BOM Recipes',
     changes: 'ECO / ECN',
     templates: 'Product Templates',

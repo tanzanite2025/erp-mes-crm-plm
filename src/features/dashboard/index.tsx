@@ -22,6 +22,10 @@ import {
 import type { ProductionLine, Segment } from '../production-shared/tabs/line-mgmt/types'
 import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 import { useLanguage } from '@/context/language-provider'
+import {
+  PRODUCTION_LINES_UPDATED_EVENT,
+  productionResourceService,
+} from '@/features/production-shared/services/production-resource-service'
 
 const Overview = lazy(() => import('./components/overview').then((m) => ({ default: m.Overview })))
 const SystemEvents = lazy(() => import('./components/system-events').then((m) => ({ default: m.SystemEvents })))
@@ -30,10 +34,9 @@ const Analytics = lazy(() => import('./components/analytics').then((m) => ({ def
 const OrdersProgress = lazy(() => import('./components/orders-progress').then((m) => ({ default: m.OrdersProgress })))
 
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
-const LINE_STORAGE_KEY = 'xdfc_production_lines_v2'
 
 async function getStoredSegments(): Promise<(Segment & { lineName: string })[]> {
-  const lines = (await StorageService.getItem<ProductionLine[]>(LINE_STORAGE_KEY)) || []
+  const lines = await productionResourceService.getLines()
 
   return lines.flatMap((line) =>
     (line.segments || []).map((seg) => ({
@@ -75,7 +78,7 @@ export function Dashboard() {
 
     const handleSync = (event?: Event) => {
       const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
-      if (key && key !== LINE_STORAGE_KEY && key !== VISIBLE_SEGMENTS_KEY) {
+      if (key && key !== VISIBLE_SEGMENTS_KEY) {
         return
       }
       void syncDashboardState()
@@ -83,11 +86,13 @@ export function Dashboard() {
 
     window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
     window.addEventListener('xdfc_storage_initialized', handleSync)
+    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
 
     return () => {
       active = false
       window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
       window.removeEventListener('xdfc_storage_initialized', handleSync)
+      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
     }
   }, [])
 

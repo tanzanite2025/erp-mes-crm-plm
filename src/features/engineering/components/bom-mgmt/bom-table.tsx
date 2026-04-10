@@ -29,7 +29,6 @@ import { getProductAttributes } from '../../utils/product-utils'
 interface BOMTableProps {
   data: BOM[]
   products: Product[]
-  dictEntries: unknown[]
   isLoading: boolean
   onPreview: (bom: BOM) => void
   onEdit: (bom: BOM) => void
@@ -39,7 +38,6 @@ interface BOMTableProps {
 export function BOMTable({
   data,
   products,
-  dictEntries,
   isLoading,
   onPreview,
   onEdit,
@@ -60,7 +58,7 @@ export function BOMTable({
             <span className='font-mono font-bold leading-tight'>{row.original.bomNo}</span>
             <div className='mt-0.5 flex flex-wrap items-center gap-2'>
               <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
-                {row.original.bomVersion}
+                {row.original.bomDisplayVersion}
               </Badge>
               {row.original.revisionNo && (
                 <Badge variant='outline' className='h-4 border-amber-200 bg-amber-50 px-1 py-0 text-[10px] text-amber-700'>
@@ -80,12 +78,12 @@ export function BOMTable({
     {
       header: t('engineering.bomArchive.table.product'),
       cell: ({ row }) => {
-        const product = products.find((entry) => entry.id === row.original.productId)
+        const product = row.original.product || products.find((entry) => entry.id === row.original.productId)
         if (!product) {
           return <span className='italic text-muted-foreground'>{t('engineering.bomArchive.table.unknownProduct')}</span>
         }
 
-        const attrs = getProductAttributes(product, dictEntries)
+        const attrs = getProductAttributes(product)
 
         return (
           <div className='flex flex-col gap-1 py-1'>

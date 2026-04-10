@@ -11,38 +11,9 @@ type TranslationFn<T extends string = string> = (
   params?: Record<string, string | number>
 ) => string
 
-export const INITIAL_TEMPLATES: ProductTemplate[] = [
-  {
-    id: '787d558d-71b5-4a5d-a602-990a986f1e2c',
-    name: 'Rim Physical Spec Template',
-    code: 'RIM_STD',
-    componentKey: 'RIM',
-    description: 'Standard geometry template for rim products.',
-    active: true,
-    version: 1,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '8e88e89f-8671-460c-8f4b-09257e8cc49a',
-    name: 'Stem Physical Spec Template',
-    code: 'STEM_STD',
-    componentKey: 'STEM',
-    description: 'Physical spec template for stems and related components.',
-    active: true,
-    version: 1,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'c2c1a8d0-6f9a-4c28-98e7-789a695e1234',
-    name: 'Fork Physical Spec Template',
-    code: 'FORK_STD',
-    componentKey: 'FORK',
-    description: 'Parameter definition template for composite forks.',
-    active: true,
-    version: 1,
-    createdAt: new Date().toISOString(),
-  },
-]
+type TemplateBoundType = {
+  templateId?: string | null
+}
 
 export const SPEC_COMPONENTS = {
   RIM: {
@@ -88,27 +59,15 @@ export function getLocalizedSpecComponents<T extends string>(t: TranslationFn<T>
   }
 }
 
-export async function getEffectiveTemplate(type?: { templateId?: string | null; name?: string | null }) {
-  const templates = (await productTemplateService.getTemplates()) || INITIAL_TEMPLATES
+export function resolveTemplateFromType(
+  templates: ProductTemplate[],
+  type?: TemplateBoundType
+): ProductTemplate | null {
+  if (!type?.templateId) return null
+  return templates.find((template) => template.id === type.templateId) || null
+}
 
-  if (type?.templateId) {
-    const found = templates.find((template) => template.id === type.templateId)
-    if (found) return found
-  }
-
-  const typeName = type?.name?.toLowerCase() || ''
-
-  if (typeName.includes('圈') || typeName.includes('rim')) {
-    return templates.find((template) => template.componentKey === 'RIM') || INITIAL_TEMPLATES[0]
-  }
-
-  if (typeName.includes('把立') || typeName.includes('stem')) {
-    return templates.find((template) => template.componentKey === 'STEM') || INITIAL_TEMPLATES[1]
-  }
-
-  if (typeName.includes('前叉') || typeName.includes('fork')) {
-    return templates.find((template) => template.componentKey === 'FORK') || INITIAL_TEMPLATES[2]
-  }
-
-  return null
+export async function getEffectiveTemplate(type?: TemplateBoundType) {
+  const templates = await productTemplateService.getTemplates()
+  return resolveTemplateFromType(templates, type)
 }

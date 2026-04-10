@@ -12,8 +12,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { type DictionaryEntry } from '@/features/basic-settings/data/schema'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
@@ -40,20 +38,17 @@ export function SalesOrderActionDialog({
   const { allowsAction } = useNonBlockingPermissionActions()
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
-  const [dictEntries, setDictEntries] = useState<DictionaryEntry[]>([])
   const [units, setUnits] = useState<Unit[]>([])
   const [drillingOptions, setDrillingOptions] = useState<{ label: string; value: string }[]>([])
   const [labelingOptions, setLabelingOptions] = useState<{ label: string; value: string }[]>([])
 
   useEffect(() => {
     const loadMetadata = async () => {
-      await DictionaryCoreService.init()
       const [unitList, drillingList, labelingList] = await Promise.all([
         unitService.getUnits(),
         ProductionDBService.getDrilling(),
         ProductionDBService.getLabeling(),
       ])
-      setDictEntries(DictionaryCoreService.getEntries())
 
       // Fail loudly if critical metadata is unavailable; the editor cannot recover safely.
       if (!unitList) throw new Error('[CRITICAL] Metadata missing: Units')
@@ -67,20 +62,14 @@ export function SalesOrderActionDialog({
 
     loadMetadata()
 
-    const handleDictsUpdate = async () => {
-      setDictEntries(DictionaryCoreService.getEntries())
-    }
-
     const handleUnitsUpdate = async () => {
       const unitList = await unitService.getUnits()
       setUnits(unitList || [])
     }
 
-    window.addEventListener('xdfc_dictionary_updated', handleDictsUpdate)
     window.addEventListener('xdfc_units_updated', handleUnitsUpdate)
 
     return () => {
-      window.removeEventListener('xdfc_dictionary_updated', handleDictsUpdate)
       window.removeEventListener('xdfc_units_updated', handleUnitsUpdate)
     }
   }, [])
@@ -147,7 +136,6 @@ export function SalesOrderActionDialog({
           <OrderLinesEditor
             lines={formData.lines || []}
             products={products}
-            dictEntries={dictEntries}
             units={units}
             drillingOptions={drillingOptions}
             labelingOptions={labelingOptions}

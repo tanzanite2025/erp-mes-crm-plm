@@ -1,5 +1,11 @@
-import type { User, UserListPage, UserOption } from '../data/schema'
-import type { UserApiDTO, UserListPageApiDTO, UserOptionApiDTO } from '../contracts/user-api-dto'
+import type { User, UserListPage, UserOption, UserRoleBinding, UserRoleBindingsResponse } from '../data/schema'
+import type {
+  UserApiDTO,
+  UserListPageApiDTO,
+  UserOptionApiDTO,
+  UserRoleBindingApiDTO,
+  UserRoleBindingsApiDTO,
+} from '../contracts/user-api-dto'
 
 export function toUserContract(dto: UserApiDTO): User {
   return {
@@ -66,5 +72,29 @@ export function toUserApiDTO(contract: User): UserApiDTO {
     createdAt: contract.createdAt?.toISOString(),
     updatedAt: contract.updatedAt?.toISOString(),
     version: contract.version,
+  }
+}
+
+export function toUserRoleBindingContract(dto: UserRoleBindingApiDTO): UserRoleBinding {
+  return {
+    bindingId: dto.bindingId,
+    roleId: dto.roleId,
+    roleLabel: dto.roleLabel,
+    roleColor: dto.roleColor,
+    isPrimary: dto.isPrimary,
+    status: dto.status,
+    source: dto.source,
+    startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+    endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+  }
+}
+
+export function toUserRoleBindingsResponseContract(dto: UserRoleBindingsApiDTO): UserRoleBindingsResponse {
+  return {
+    userId: dto.userId,
+    username: dto.username,
+    primaryRoleId: dto.primaryRoleId,
+    effectiveRoles: Array.isArray(dto.effectiveRoles) ? dto.effectiveRoles : [],
+    roleBindings: (dto.roleBindings || []).map(toUserRoleBindingContract),
   }
 }

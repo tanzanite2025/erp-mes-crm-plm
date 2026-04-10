@@ -8,6 +8,7 @@ export interface ProcessStep {
     sortOrder: number
     isActive: boolean
     createdAt: string
+    updatedAt?: string
 }
 
 export async function getStoredProcesses(): Promise<ProcessStep[]> {

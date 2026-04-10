@@ -7,9 +7,13 @@ import (
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load(".env.dev", "../.env.dev", "../../.env.dev", "../../server/.env.dev")
+
 	// 1. DSN 自动适配 (Docker 环境 vs 本地宿主机)
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" || strings.Contains(dsn, "@db:") {
@@ -23,7 +27,7 @@ func main() {
 
 	// 3. 执行物理删除 (针对 CASHIER/cashier 精准爆破)
 	fmt.Println("[CRITICAL] Starting target data purging: [role ~* cashier]...")
-	
+
 	result := db.DB.Unscoped().Where("role ILIKE ?", "cashier").Delete(&models.User{})
 	if result.Error != nil {
 		log.Fatalf("[ERROR] Failed to purge dirty data: %v", result.Error)

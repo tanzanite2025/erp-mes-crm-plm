@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { type FieldErrors, useWatch } from 'react-hook-form'
 import { Box } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -16,11 +17,13 @@ import {
 import { Form } from '@/components/ui/form'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { getLocalizedSpecComponents } from './specs'
+import { getEffectiveTemplate, getLocalizedSpecComponents } from './specs'
 import { ProductBasicInfo } from './product/product-basic-info'
+import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { useProductForm } from '../hooks/use-product-form'
-import { type Product, type ProductType } from '../data/schema'
+import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
+import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 
 const logger = createLogger('ProductActionDialog')
 
@@ -28,12 +31,31 @@ interface ProductActionDialogProps {
   currentRow?: Product
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Product | Product[]) => void
+  onSubmit?: (data: Product | Product[]) => void | Promise<void>
   productTypes?: ProductType[]
 }
 
+function getFirstErrorPath(errors: FieldErrors<Product>, prefix = ''): string | null {
+  for (const [key, value] of Object.entries(errors)) {
+    if (!value) continue
+
+    const nextPath = prefix ? `${prefix}.${key}` : key
+
+    if (typeof value === 'object' && 'message' in value && value.message) {
+      return nextPath
+    }
+
+    if (typeof value === 'object') {
+      const nestedPath = getFirstErrorPath(value as FieldErrors<Product>, nextPath)
+      if (nestedPath) return nestedPath
+    }
+  }
+
+  return null
+}
+
 export function ProductActionDialog(props: ProductActionDialogProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const specComponents = getLocalizedSpecComponents(t)
   const {
     currentRow,
@@ -47,19 +69,22 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     form,
     isEdit,
     dynamicTypes,
-    tireTypeOptions,
-    brakeTypeOptions,
-    techSeriesOptions,
+    attributeCategories,
+    attributeOptions,
+    attributeBindings,
     versionLevelOptions,
     moldOptions,
     specOptions,
+    metadataInitError,
     selectedVariants,
-    watchedTemplateKey,
     specSummary,
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,
   } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit })
+  const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
+  const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)
+  const [templateResolveError, setTemplateResolveError] = useState<string | null>(null)
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -77,9 +102,92 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     reader.readAsDataURL(file)
   }
 
-  const templateKey = watchedTemplateKey as keyof typeof specComponents | undefined
-  const activeSpec = templateKey ? specComponents[templateKey] : null
+  useEffect(() => {
+    let cancelled = false
+
+    const resolveBoundTemplate = async () => {
+      if (!watchedTypeId) {
+        if (!cancelled) {
+          setBoundTemplate(null)
+          setTemplateResolveError(null)
+        }
+        return
+      }
+
+      const selectedType = productTypes.find((type) => type.id === watchedTypeId)
+      if (!selectedType) {
+        if (!cancelled) {
+          setBoundTemplate(null)
+          setTemplateResolveError(`Template binding resolution failed: product type ${watchedTypeId} was not found in the current dialog context.`)
+        }
+        logger.error('Template binding resolution failed: product type was not found in dialog context', {
+          watchedTypeId,
+        })
+        return
+      }
+
+      if (!selectedType.templateId) {
+        if (!cancelled) {
+          setBoundTemplate(null)
+          setTemplateResolveError(null)
+        }
+        return
+      }
+
+      try {
+        const template = await getEffectiveTemplate(selectedType)
+        if (cancelled) return
+
+        if (!template) {
+          const message = `Template binding resolution failed: product type ${selectedType.name} (${selectedType.id}) references template ${selectedType.templateId}, but that template could not be resolved.`
+          setBoundTemplate(null)
+          setTemplateResolveError(message)
+          logger.error('Template binding resolution failed: referenced template could not be resolved', {
+            productTypeId: selectedType.id,
+            templateId: selectedType.templateId,
+          })
+          return
+        }
+
+        setBoundTemplate(template)
+        setTemplateResolveError(null)
+      } catch (error) {
+        if (cancelled) return
+
+        const message = error instanceof Error
+          ? `Template binding resolution failed: ${error.message}`
+          : 'Template binding resolution failed: unknown error while loading template metadata.'
+        setBoundTemplate(null)
+        setTemplateResolveError(message)
+        logger.error('Template binding resolution failed while loading template metadata', error)
+      }
+    }
+
+    void resolveBoundTemplate()
+
+    return () => {
+      cancelled = true
+    }
+  }, [productTypes, watchedTypeId])
+
+  const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
+  const activeSpec = componentKey ? specComponents[componentKey] : null
   const SpecComponent = activeSpec?.form
+  const submissionBlocked = Boolean(metadataInitError || templateResolveError)
+  const errorLabelMap: Record<string, string> = {
+    typeId: t('engineering.productMgmt.form.category'),
+    modelCode: t('engineering.productMgmt.form.modelCode'),
+    name: t('engineering.productMgmt.form.prodName'),
+    sku: t('engineering.productMgmt.form.sku'),
+    engineeringSpecId: t('engineering.productMgmt.form.spec'),
+    moldGroup: t('engineering.productMgmt.form.mold'),
+    description: t('engineering.productMgmt.form.memo'),
+    barcodeConfig: t('engineering.productMgmt.barcode.configTitle'),
+    'barcodeConfig.appearanceCode': t('engineering.productMgmt.barcode.appearanceCodeLabel'),
+    'barcodeConfig.holes': t('engineering.productMgmt.barcode.holesLabel'),
+    'barcodeConfig.serialNumber': t('engineering.productMgmt.barcode.serialLabel'),
+    attachments: t('engineering.productMgmt.attachments.uploadTitle'),
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,8 +209,15 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             <form
               id='product-form'
               onSubmit={form.handleSubmit(handleFormSubmit, (errors) => {
+                const firstErrorPath = getFirstErrorPath(errors)
+                const invalidFieldLabel = firstErrorPath ? errorLabelMap[firstErrorPath] ?? firstErrorPath : null
+
                 logger.error('Form validation failed', errors)
-                toast.error(t('engineering.productMgmt.dialog.validationError'))
+                toast.error(
+                  invalidFieldLabel
+                    ? `${t('engineering.productMgmt.dialog.validationError')}: ${invalidFieldLabel}`
+                    : t('engineering.productMgmt.dialog.validationError')
+                )
               })}
               className='space-y-6'
             >
@@ -114,6 +229,40 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 specOptions={specOptions}
                 moldOptions={moldOptions}
                 isEdit={isEdit}
+                templateLabel={activeSpec?.label}
+              />
+
+              {metadataInitError ? (
+                <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900'>
+                  <div className='text-[10px] font-black uppercase tracking-widest'>Metadata Link Broken</div>
+                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                    {metadataInitError}
+                  </p>
+                  <p className='mt-1 text-[10px] font-medium opacity-80'>
+                    Restart the backend on `http://localhost:8080` so the template, dynamic attribute category, and binding endpoints come from the same server version.
+                  </p>
+                </div>
+              ) : null}
+
+              {templateResolveError ? (
+                <div className='rounded-[24px] border border-dashed border-red-300 bg-red-50 px-4 py-3 text-red-900'>
+                  <div className='text-[10px] font-black uppercase tracking-widest'>Template Binding Broken</div>
+                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                    {templateResolveError}
+                  </p>
+                  <p className='mt-1 text-[10px] font-medium opacity-80'>
+                    Fix the selected product type template binding or restart the backend with the latest template endpoints before saving this product.
+                  </p>
+                </div>
+              ) : null}
+
+              <DynamicAttributeSection
+                form={form}
+                locale={locale}
+                categories={attributeCategories}
+                options={attributeOptions}
+                bindings={attributeBindings}
+                excludeCategoryKeys={[PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version]}
               />
 
               {SpecComponent ? (
@@ -129,10 +278,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   <SpecComponent
                     form={form}
                     options={{
-                      tireType: tireTypeOptions,
-                      brakeType: brakeTypeOptions,
-                      techSeries: techSeriesOptions,
-                      versionLevel: versionLevelOptions,
+                      versionCategoryOptions: versionLevelOptions,
                     }}
                     selectedVariants={selectedVariants}
                     onVariantToggle={handleVariantToggle}
@@ -182,6 +328,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
           <Button
             type='submit'
             form='product-form'
+            disabled={submissionBlocked}
             className={`h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl ${
               selectedVariants.length > 1
                 ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30'

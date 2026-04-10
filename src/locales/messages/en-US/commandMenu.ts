@@ -79,7 +79,6 @@ export const commandMenu = {
     dmNumbering: 'DM Numbering',
     units: 'Unit Management',
     sequences: 'Business Sequences',
-    dictionary: 'Parameter Dictionary',
     enterprise: 'Enterprise Info',
     security: 'Security Settings',
     engineeringProducts: 'Product Engineering / Models',

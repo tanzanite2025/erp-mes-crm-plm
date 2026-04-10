@@ -6,10 +6,8 @@ import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
-import { MaterialMaintenanceService } from '../../material-archive/services/material-maintenance-service'
-import { type Material } from '../../material-archive/data/schema'
+import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOM, type Product } from '../data/schema'
 import { bomService } from '../services/bom-service'
 import { ExcelService } from '../services/excel-service'
@@ -21,8 +19,7 @@ export function useBOMData() {
   const { t } = useLanguage()
   const [data, setData] = useState<BOM[]>([])
   const [products, setProducts] = useState<Product[]>([])
-  const [materials, setMaterials] = useState<Material[]>([])
-  const [dictEntries, setDictEntries] = useState<unknown[]>([])
+  const [materials, setMaterials] = useState<MaterialOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const categoryMap = useMemo(
@@ -40,16 +37,14 @@ export function useBOMData() {
     setIsLoading(true)
 
     try {
-      const [boms, loadedProducts, _, loadedMaterials] = await Promise.all([
+      const [boms, loadedProducts, loadedMaterials] = await Promise.all([
         bomService.getBOMs(),
         ProductCoreService.getProducts(),
-        DictionaryCoreService.init(),
         MaterialCoreService.getMaterialOptions(),
       ])
 
       setData(boms || [])
       setProducts(loadedProducts || [])
-      setDictEntries(DictionaryCoreService.getEntries() || [])
       setMaterials(loadedMaterials || [])
     } catch (error) {
       logger.error('BOM data load error', error)
@@ -78,13 +73,9 @@ export function useBOMData() {
   )
 
   const saveBOM = useCallback(
-    async (bom: Partial<BOM>, isPatch?: boolean, delta?: any) => {
+    async (bom: Partial<BOM>) => {
       try {
-        if (isPatch && bom.id && delta) {
-          await bomService.patchBOM(bom.id, delta, bom.version || 1)
-        } else {
-          await bomService.saveBOM(bom)
-        }
+        await bomService.saveBOM(bom)
         await refreshAll()
         toast.success(t('engineering.bomArchive.toasts.saveSuccess'))
         return true
@@ -120,19 +111,16 @@ export function useBOMData() {
     void refreshAll()
 
     const handleProductsUpdate = () => void refreshAll()
-    const handleDictsUpdate = () => setDictEntries(DictionaryCoreService.getEntries() || [])
     const handleMaterialsUpdate = async () => {
       const loadedMaterials = await MaterialCoreService.getMaterialOptions()
       setMaterials(loadedMaterials || [])
     }
 
     window.addEventListener('xdfc_products_data_updated', handleProductsUpdate)
-    window.addEventListener('xdfc_dictionary_updated', handleDictsUpdate)
     window.addEventListener('xdfc_materials_updated', handleMaterialsUpdate)
 
     return () => {
       window.removeEventListener('xdfc_products_data_updated', handleProductsUpdate)
-      window.removeEventListener('xdfc_dictionary_updated', handleDictsUpdate)
       window.removeEventListener('xdfc_materials_updated', handleMaterialsUpdate)
     }
   }, [refreshAll])
@@ -142,7 +130,7 @@ export function useBOMData() {
 
     try {
       const loadedMaterials = await MaterialCoreService.getMaterialOptions()
-      await ExcelService.generateBOMTemplate(loadedMaterials || [], products, dictEntries)
+      await ExcelService.generateBOMTemplate(loadedMaterials || [], products)
       toast.success(t('engineering.bomArchive.toasts.downloadSuccess'), { id: loadingId })
     } catch (error) {
       logger.error('Template generation error', error)
@@ -196,15 +184,17 @@ export function useBOMData() {
       }
 
       if (extractedMaterials && extractedMaterials.length > 0) {
-        const sanitizedMaterials = extractedMaterials.filter(
-          (material) => material.name && material.code && material.id
-        )
-        await MaterialMaintenanceService.saveMaterials(sanitizedMaterials)
+        logger.error('BOM import blocked: extracted workbook contains material master data rows that require explicit maintenance flow', {
+          extractedMaterialCount: extractedMaterials.length,
+        })
+        toast.error(t('engineering.bomArchive.toasts.parseFailed'), { id: loadingId })
+        toast.error('BOM 导入已阻断：检测到物料主数据行，请先在物料档案中显式维护这些物料后再导入 BOM。')
+        return null
       }
 
       const latestMaterials = (await MaterialCoreService.getMaterialOptions()) || []
       const processedItems = validItems.map((item) => {
-        const material = latestMaterials.find((entry: Material) => entry.id === item.materialId)
+        const material = latestMaterials.find((entry) => entry.id === item.materialId)
 
         return {
           id: crypto.randomUUID(),
@@ -246,7 +236,6 @@ export function useBOMData() {
     data,
     products,
     materials,
-    dictEntries,
     isLoading,
     persistData,
     saveBOM,

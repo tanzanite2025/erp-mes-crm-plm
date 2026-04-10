@@ -5,7 +5,7 @@ import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { type Material } from '@/features/material-archive/data/schema'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrderLine } from '../../../data/schema'
 
@@ -14,7 +14,7 @@ type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
 interface PurchaseOrderLinesEditorProps {
   lines: PurchaseOrderLine[]
   units: Unit[]
-  materials: Material[]
+  materials: MaterialOption[]
   isLoading?: boolean
   currency: string
   onAddLine: () => void

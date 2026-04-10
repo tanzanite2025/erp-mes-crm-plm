@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
 import { type SalesOrder } from '../data/schema'
+import { getSalesOrderClassificationExt } from '../data/sales-order-options'
 import { validateSalesOrder } from '../utils/sales-order-validator'
 import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
@@ -61,8 +61,9 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
 
   // 3. 状态切换：分类变更
   const handleClassificationChange = useCallback(async (value: string) => {
-    const classOpt = DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find((item) => item.value === value)
-    const newBarcode = await numberingService.previewContractBarcode(classOpt?.ext || 'GS')
+    const newBarcode = await numberingService.previewContractBarcode(
+      getSalesOrderClassificationExt(value)
+    )
 
     setFormData((prev) => ({
       ...prev,
@@ -83,12 +84,10 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
 
   // 5. 保存前置准备
   const prepareToSave = async () => {
-    const classOpt = DictionaryCoreService.getOptions('ORDER_CLASSIFICATION').find(
-      (item) => item.value === formData.classification
-    )
-    
     if (!initialOrder) {
-      const barcode = await numberingService.generateContractBarcode(classOpt?.ext || 'GS')
+      const barcode = await numberingService.generateContractBarcode(
+        getSalesOrderClassificationExt(formData.classification)
+      )
       setFormData((prev) => ({
         ...prev,
         barcode,

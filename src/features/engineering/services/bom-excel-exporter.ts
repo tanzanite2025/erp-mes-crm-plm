@@ -1,14 +1,12 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
-import type { Borders, DataValidation } from 'exceljs'
-import { type Material } from '../../material-archive/data/schema'
+import type { Borders, DataValidation, Workbook } from 'exceljs'
+import { type MaterialOption } from '../../material-archive/data/schema'
 import { type Product } from '../data/schema'
 import { formatProductDisplayName } from '../utils/product-utils'
 import { BOM_EXCEL_LIMITS, BOM_EXCEL_LOCK_PASSWORDS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { escapeFormula } from './bom-excel-security'
 
-export type BOMTemplateDictEntries = Parameters<typeof formatProductDisplayName>[1]
-
-const downloadWorkbook = async (workbook: any, fileName: string) => {
+const downloadWorkbook = async (workbook: Workbook, fileName: string) => {
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const url = window.URL.createObjectURL(blob)
@@ -25,9 +23,8 @@ const downloadWorkbook = async (workbook: any, fileName: string) => {
  * 预埋隐藏档案库以支撑下拉与 VLOOKUP (包含物料和产品双重字典)
  */
 export const generateBOMTemplate = async (
-  materials: Material[],
+  materials: MaterialOption[],
   products: Product[],
-  dictEntries: BOMTemplateDictEntries = [],
 ) => {
   const { default: ExcelJS } = await loadExcelJS()
   const workbook = new ExcelJS.Workbook()
@@ -65,7 +62,7 @@ export const generateBOMTemplate = async (
       rowData.m_category = m.category
     }
     if (p) {
-      rowData.p_combo = escapeFormula(`[${p.sku}] ${formatProductDisplayName(p, dictEntries)}`)
+      rowData.p_combo = escapeFormula(`[${p.sku}] ${formatProductDisplayName(p)}`)
       rowData.p_id = p.id
     }
 

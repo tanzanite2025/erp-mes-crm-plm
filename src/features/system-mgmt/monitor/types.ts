@@ -1,5 +1,5 @@
 export const SYSTEM_ANOMALY_KEYS = {
-  DICTIONARY_MISSING: 'system_anomaly_dictionary_missing',
+  FILESYSTEM_PERMISSION_DENIED: 'system_anomaly_fs_permission',
 } as const;
 
 export type SystemAnomalyType = keyof typeof SYSTEM_ANOMALY_KEYS;

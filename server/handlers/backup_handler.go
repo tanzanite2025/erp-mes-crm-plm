@@ -45,8 +45,8 @@ func PerformModularBackup() error {
 		log.Printf("[BACKUP][ERROR] uploads archive failed: %v", err)
 	}
 
-	if err := copyFile("../.env.local", filepath.Join(currentBackupDir, ".env.local")); err != nil {
-		log.Printf("[BACKUP][INFO] skipped .env.local copy: %v", err)
+	if err := copyFile(".env.dev", filepath.Join(currentBackupDir, ".env.dev")); err != nil {
+		log.Printf("[BACKUP][INFO] skipped .env.dev copy: %v", err)
 	}
 
 	go asyncRemoteSync(currentBackupDir)

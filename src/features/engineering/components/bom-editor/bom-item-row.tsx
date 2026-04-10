@@ -1,14 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { UseFormReturn } from 'react-hook-form'
+import type { UseFormReturn } from 'react-hook-form'
 import { Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Combobox } from '@/components/ui/combobox'
-import { type Material } from '../../../material-archive/data/schema'
+import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOM, type BOMSubstitute } from '../../data/schema'
 import { BOM_SECTION_CATEGORY_MAP } from '../../constants/bom-sections'
 import { MaterialUsageService } from '../../services/material-usage-service'
@@ -16,14 +16,18 @@ import { MaterialUsageService } from '../../services/material-usage-service'
 interface BOMItemRowProps {
   form: UseFormReturn<BOM>
   index: number
-  materials: Material[]
+  materials: MaterialOption[]
   onRemove: (index: number) => void
   measureElement?: (el: HTMLElement | null) => void
   dataIndex?: number
 }
 
+type EnrichedMaterialOption = MaterialOption & {
+  usageStats: Awaited<ReturnType<typeof MaterialUsageService.getStageUsageStats>>
+}
+
 export function BOMItemRow({ form, index, materials, onRemove, measureElement, dataIndex }: BOMItemRowProps) {
-  const [enrichedMaterials, setEnrichedMaterials] = React.useState<any[]>([])
+  const [enrichedMaterials, setEnrichedMaterials] = React.useState<EnrichedMaterialOption[]>([])
   const currentSection = form.watch(`items.${index}.section`)
   const primaryMaterialId = form.watch(`items.${index}.materialId`)
   const substitutes = form.watch(`items.${index}.substitutes`) || []
@@ -68,7 +72,7 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
   }, [currentSection, enrichedMaterials])
 
   const setSubstitutes = (nextSubstitutes: BOMSubstitute[]) => {
-    form.setValue(`items.${index}.substitutes`, nextSubstitutes as any, {
+    form.setValue(`items.${index}.substitutes`, nextSubstitutes, {
       shouldDirty: true,
       shouldTouch: true,
     })

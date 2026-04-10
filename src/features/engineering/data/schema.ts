@@ -33,10 +33,6 @@ export const productSchema = z.object({
   depth: z.number().optional(),
   widthInternal: z.number().optional(),
   widthExternal: z.number().optional(),
-  tireType: z.string().optional(),
-  brakeType: z.string().optional(),
-  techSeries: z.string().optional(),
-  versionLevel: z.string().optional(),
   weight: z.number().optional(),
   length: z.number().optional(),
   angle: z.number().optional(),
@@ -49,6 +45,14 @@ export const productSchema = z.object({
   moldGroup: z.string().optional(),
   description: z.string().optional(),
   engineeringSpecId: z.string().optional(),
+  attributeValues: z.array(z.object({
+    id: z.string().optional(),
+    productId: z.string().optional(),
+    categoryKey: z.string().min(1, 'Category key is required'),
+    optionValue: z.string().min(1, 'Option value is required'),
+    sortOrder: z.number().default(0),
+    version: z.number().default(1),
+  })).default([]),
   techSpecs: z.any().optional(),
   barcodeConfig: barcodeConfigSchema.optional(),
   attachments: z.array(z.object({
@@ -96,6 +100,76 @@ export const productTypeSchema = z.object({
 
 export type ProductType = z.infer<typeof productTypeSchema>
 
+export const productTypeAttributeBindingSchema = z.object({
+  id: z.string(),
+  productTypeId: z.string().min(1, 'Product type is required'),
+  categoryKey: z.string().min(1, 'Category key is required'),
+  sortOrder: z.number().default(0),
+  required: z.boolean().default(false),
+  active: z.boolean().default(true),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  version: z.number().default(1),
+})
+
+export type ProductTypeAttributeBinding = z.infer<typeof productTypeAttributeBindingSchema>
+
+export const productAttributeValueSchema = z.object({
+  id: z.string().optional(),
+  productId: z.string().optional(),
+  categoryKey: z.string().min(1, 'Category key is required'),
+  optionValue: z.string().min(1, 'Option value is required'),
+  sortOrder: z.number().default(0),
+  version: z.number().default(1),
+})
+
+export type ProductAttributeValue = z.infer<typeof productAttributeValueSchema>
+
+export const productAttributeCategorySchema = z.object({
+  id: z.string(),
+  key: z.string().min(1, 'Category key is required'),
+  nameZh: z.string().min(1, 'Chinese category name is required'),
+  nameEn: z.string().optional(),
+  description: z.string().optional(),
+  sortOrder: z.number().default(0),
+  active: z.boolean().default(true),
+  revisionNo: z.string().optional(),
+  effectiveFrom: z.string().nullable().optional(),
+  effectiveTo: z.string().nullable().optional(),
+  changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
+  changeOrderNo: z.string().optional(),
+  siteCode: z.string().optional(),
+  isDefaultSite: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  version: z.number().default(1),
+})
+
+export type ProductAttributeCategory = z.infer<typeof productAttributeCategorySchema>
+
+export const productAttributeOptionSchema = z.object({
+  id: z.string(),
+  categoryKey: z.string().min(1, 'Category key is required'),
+  value: z.string().min(1, 'Value is required'),
+  labelZh: z.string().min(1, 'Chinese label is required'),
+  labelEn: z.string().optional(),
+  description: z.string().optional(),
+  sortOrder: z.number().default(0),
+  active: z.boolean().default(true),
+  revisionNo: z.string().optional(),
+  effectiveFrom: z.string().nullable().optional(),
+  effectiveTo: z.string().nullable().optional(),
+  changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
+  changeOrderNo: z.string().optional(),
+  siteCode: z.string().optional(),
+  isDefaultSite: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  version: z.number().default(1),
+})
+
+export type ProductAttributeOption = z.infer<typeof productAttributeOptionSchema>
+
 export const changeOrderSchema = z.object({
   id: z.string(),
   title: z.string().min(1, 'Change order title is required'),
@@ -135,11 +209,13 @@ export const bomItemSchema = z.object({
 
 export const bomSchema = z.object({
   id: z.string(),
-  bomNo: z.string().min(1, 'BOM number is required'),
+  bomNo: z.string().default(''),
   productId: z.string().min(1, 'Product is required'),
+  product: productSchema.optional(),
   changeOrderId: z.string().optional(),
   changeOrder: changeOrderSchema.optional(),
   bomVersion: z.string().min(1, 'Version is required').default('V1.0'),
+  bomDisplayVersion: z.string().optional(),
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
   items: z.array(bomItemSchema).default([]),
   description: z.string().optional(),

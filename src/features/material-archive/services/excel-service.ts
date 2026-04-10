@@ -2,9 +2,9 @@ import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import { type Material } from '../data/schema'
+import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { packagingService } from './packaging-service'
 import { unitService } from '../../basic-settings/services/unit-service'
-import { DictionaryCoreService } from '../../basic-settings/services/dictionary-core-service'
 import { MaterialCoreService } from './material-core-service'
 
 const DICT_SHEET_NAME = '__MATERIAL_DICTIONARY__'
@@ -76,7 +76,7 @@ export const MaterialExcelService = {
     const configSheet = workbook.addWorksheet(CONFIG_SHEET_NAME, { state: 'veryHidden' })
 
     const units = await unitService.getUnits()
-    const categories = DictionaryCoreService.getOptions('MATERIAL_CATEGORY')
+    const categories = getMaterialCategoryOptions(locale)
 
     dictSheet.columns = [
       { header: 'Unit_Name', key: 'u_name' },

@@ -43,7 +43,9 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 
 	categoryGroup := inventoryGroup.Group("/warehouse/categories")
 	categoryGroup.GET("", handlers.GetWarehouseCategoriesHandler)
+	categoryGroup.GET("/options", handlers.GetWarehouseCategoryOptionsHandler)
 	categoryGroup.POST("", categoryManage, handlers.SaveWarehouseCategoryHandler)
+	categoryGroup.PATCH("/:id", categoryManage, handlers.PatchWarehouseCategoryHandler)
 	categoryGroup.DELETE("/:id", categoryManage, handlers.DeleteWarehouseCategoryHandler)
 
 	stocktakeGroup := inventoryGroup.Group("/stocktakes")

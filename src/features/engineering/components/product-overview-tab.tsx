@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
-import { SPEC_COMPONENTS, getEffectiveTemplate } from './specs'
-import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
+import { SPEC_COMPONENTS } from './specs'
+import { type Product, type ProductType } from '../data/schema'
 import { ProductTypeService } from '../services/product-type-service'
 
 type ProductOverviewTabProps = {
@@ -18,7 +18,6 @@ type ProductOverviewTabProps = {
 export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps) {
     const { t } = useLanguage()
     const [categoryType, setCategoryType] = useState<ProductType | null>(null)
-    const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -26,11 +25,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
             setIsLoading(true)
             try {
                 const types = await ProductTypeService.getProductTypes()
-                const type = types.find((entry) => entry.id === product.typeId) || null
-                setCategoryType(type)
-                
-                const tpl = await getEffectiveTemplate(type ?? undefined)
-                setBoundTemplate(tpl)
+                setCategoryType(types.find((entry) => entry.id === product.typeId) || null)
             } finally {
                 setIsLoading(false)
             }
@@ -53,7 +48,8 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
             )
         }
 
-        if (!boundTemplate) {
+        const componentKey = product.templateKey as keyof typeof SPEC_COMPONENTS | undefined
+        if (!componentKey) {
             return (
                 <div className='flex items-center gap-4 p-4 rounded-2xl bg-muted/20 border border-dashed shadow-sm'>
                         <div className='flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-around gap-4 sm:gap-2 px-2'>
@@ -79,17 +75,11 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
             )
         }
 
-        const componentKey = boundTemplate.componentKey as keyof typeof SPEC_COMPONENTS
         const SpecOverview = SPEC_COMPONENTS[componentKey]?.overview
         if (!SpecOverview) return null
 
         return (
             <div className='relative'>
-                {!categoryType?.templateId && (
-                    <div className='absolute -top-3 left-6 z-10 px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-full shadow-sm animate-bounce'>
-                        {t('engineering.productMgmt.smartIdentify')}: {boundTemplate.name}
-                    </div>
-                )}
                 <SpecOverview product={product} />
             </div>
         )

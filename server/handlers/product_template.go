@@ -64,6 +64,42 @@ func SaveProductTemplateHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, saved)
 }
 
+func PatchProductTemplateHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product template patch payload: " + err.Error()})
+		return
+	}
+
+	updates, err := services.BuildProductTemplateUpdates(req.Delta)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product template delta: " + err.Error()})
+		return
+	}
+
+	saved, err := services.PatchProductTemplate(id, int(req.Metadata.Version), updates)
+	if err != nil {
+		if errors.Is(err, services.ErrProductTemplateVersionConflict) {
+			respondVersionConflict(c)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to patch product template: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, saved)
+}
+
+func DeleteProductTemplateHandler(c *gin.Context) {
+	id := c.Param("id")
+	if err := services.DeleteProductTemplate(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product template: " + err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func SyncProductTemplatesHandler(c *gin.Context) {
 	var input []services.BulkSyncProductTemplateInput
 	if err := c.ShouldBindJSON(&input); err != nil {

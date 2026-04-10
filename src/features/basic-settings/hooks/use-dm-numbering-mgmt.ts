@@ -10,7 +10,6 @@ import { parseDMCode } from '../utils/dm-parser'
 import { toBase36 } from '../utils/dm-utils'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
-import { DictionaryCoreService } from '@/features/basic-settings/services/dictionary-core-service'
 import { type ProductType, type Product } from '@/features/engineering/data/schema'
 import type { TranslationKey } from '@/locales'
 
@@ -106,8 +105,6 @@ export function useDMNumberingMgmt() {
                 ProductTypeService.getProductTypes(),
                 ProductCoreService.getProducts()
             ])
-            const savedAppearance = await DictionaryCoreService.init().then(() => null) 
-            if (savedAppearance) setAppearanceMapping(savedAppearance)
             if (savedTypes) setProductTypes(savedTypes)
             if (savedProducts) setProducts(savedProducts)
         } catch (error) {

@@ -91,3 +91,98 @@ func TestPatchInventoryHandlerRejectsNestedDeltaPath(t *testing.T) {
 	require.Equal(t, "INVENTORY_PATCH_VALIDATION_FAILED", response.Code)
 	require.Contains(t, response.Error, "nested delta path is not supported")
 }
+
+func TestPatchSalesOrderHandlerRejectsNestedDeltaPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderID := uuid.NewString()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/sales-orders/"+orderID, strings.NewReader(`{"op":"PATCH","delta":{"customer.meta.name":{"o":"Acme","n":"Beta"}},"metadata":{"id":"`+orderID+`","version":2}}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: orderID}}
+	ctx.Request = request
+
+	PatchSalesOrderHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response["error"], "nested delta path is not supported")
+}
+
+func TestPatchProductTypeHandlerRejectsNestedDeltaPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	typeID := uuid.NewString()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/engineering/product-types/"+typeID, strings.NewReader(`{"op":"PATCH","delta":{"template.meta.id":{"o":null,"n":"tpl-1"}},"metadata":{"id":"`+typeID+`","version":2}}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: typeID}}
+	ctx.Request = request
+
+	PatchProductTypeHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response["error"], "nested delta path is not supported")
+}
+
+func TestPatchProductTemplateHandlerRejectsNestedDeltaPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	templateID := uuid.NewString()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/engineering/templates/"+templateID, strings.NewReader(`{"op":"PATCH","delta":{"component.meta.key":{"o":"GENERAL","n":"RIM"}},"metadata":{"id":"`+templateID+`","version":2}}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: templateID}}
+	ctx.Request = request
+
+	PatchProductTemplateHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response["error"], "nested delta path is not supported")
+}
+
+func TestPatchProductTypeAttributeBindingHandlerRejectsNestedDeltaPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	bindingID := uuid.NewString()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/engineering/product-type-attribute-bindings/"+bindingID, strings.NewReader(`{"op":"PATCH","delta":{"binding.meta.key":{"o":"version","n":"weight"}},"metadata":{"id":"`+bindingID+`","version":2}}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: bindingID}}
+	ctx.Request = request
+
+	PatchProductTypeAttributeBindingHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response["error"], "nested delta path is not supported")
+}
+
+func TestPatchProductHandlerRejectsNestedDeltaPath(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	productID := uuid.NewString()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/engineering/products/"+productID, strings.NewReader(`{"op":"PATCH","delta":{"barcodeConfig.model.code":{"o":"01","n":"02"}},"metadata":{"id":"`+productID+`","version":2}}`))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: productID}}
+	ctx.Request = request
+
+	PatchProductHandler(ctx)
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Contains(t, response["error"], "nested delta path is not supported")
+}

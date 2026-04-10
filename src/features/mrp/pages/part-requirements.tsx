@@ -51,6 +51,7 @@ export function PartRequirements() {
           isOpen={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}
           data={requirements}
+          errorMessage={error && !isForbiddenError(error) && error instanceof Error ? error.message : typeof error === 'object' && error && 'message' in error ? String((error as { message: unknown }).message) : undefined}
           stats={stats}
           isLoading={isLoading}
           selectedCount={selectedKeys.length}

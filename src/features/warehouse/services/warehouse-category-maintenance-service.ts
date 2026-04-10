@@ -1,30 +1,47 @@
 import { apiFetch } from '@/lib/api-client'
-import { type WarehouseCategory } from './warehouse-category-core-service'
+import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaSet } from '@/lib/delta/types'
+import {
+  toWarehouseCategoryApiDTO,
+  toWarehouseCategoryContract,
+  type WarehouseCategory,
+} from '../adapters/warehouse-api-adapter'
+import { type WarehouseCategoryApiDTO } from '../contracts/warehouse-api-dto'
 
-/**
- * WarehouseCategoryMaintenanceService - 负责仓库分类的创建、修改（SDRTS）与删除情况情况总量针对。
- */
 export const WarehouseCategoryMaintenanceService = {
-    /** 仅用于新建分类 */
-    async createCategory(category: Omit<WarehouseCategory, 'id' | 'version'>): Promise<void> {
-        return apiFetch('/warehouse/categories', {
-            method: 'POST',
-            body: JSON.stringify(category)
-        })
-    },
+  async createCategory(
+    category: Omit<WarehouseCategory, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+  ): Promise<WarehouseCategory> {
+    const res = await apiFetch<WarehouseCategoryApiDTO>('/warehouse/categories', {
+      method: 'POST',
+      body: JSON.stringify(toWarehouseCategoryApiDTO(category)),
+    })
 
-    /** 局部更新分类 (SDRTS) */
-    async patchCategory(id: string, delta: any, version: number): Promise<void> {
-        return apiFetch(`/warehouse/categories/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } })
-        })
-    },
+    return toWarehouseCategoryContract(
+      ensureObjectResponse<WarehouseCategoryApiDTO & Record<string, unknown>>(
+        res,
+        'WarehouseCategoryMaintenanceService.createCategory'
+      ) as WarehouseCategoryApiDTO
+    )
+  },
 
-    /** 物理删除分类 */
-    async deleteCategory(id: string): Promise<void> {
-        return apiFetch(`/warehouse/categories/${id}`, {
-            method: 'DELETE'
-        })
-    }
+  async patchCategory(id: string, delta: DeltaSet, version: number): Promise<WarehouseCategory> {
+    const res = await apiFetch<WarehouseCategoryApiDTO>(`/warehouse/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ op: 'PATCH', delta, metadata: { id, version } }),
+    })
+
+    return toWarehouseCategoryContract(
+      ensureObjectResponse<WarehouseCategoryApiDTO & Record<string, unknown>>(
+        res,
+        'WarehouseCategoryMaintenanceService.patchCategory'
+      ) as WarehouseCategoryApiDTO
+    )
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    return apiFetch(`/warehouse/categories/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }

@@ -1,0 +1,144 @@
+package services
+
+import (
+	"encoding/json"
+	"errors"
+	"strings"
+	"xdfc-server/db"
+	"xdfc-server/models"
+
+	"gorm.io/gorm"
+)
+
+type ProductAttributeCategoryListQuery struct {
+	ActiveOnly bool
+}
+
+func normalizeProductAttributeCategory(input *models.ProductAttributeCategory) {
+	input.Key = strings.TrimSpace(input.Key)
+	input.NameZh = strings.TrimSpace(input.NameZh)
+	input.NameEn = strings.TrimSpace(input.NameEn)
+	input.Description = strings.TrimSpace(input.Description)
+	input.MasterDataControl.Normalize("R1")
+}
+
+func defaultProductAttributeCategories() []models.ProductAttributeCategory {
+	return []models.ProductAttributeCategory{
+		{Key: "techSeries", NameZh: "工艺系列", NameEn: "Technical Series", Description: "产品工艺系列分类", SortOrder: 10, Active: true},
+		{Key: "tireType", NameZh: "轮圈类型", NameEn: "Rim Type", Description: "产品轮圈类型分类", SortOrder: 20, Active: true},
+		{Key: "brakeType", NameZh: "制动类型", NameEn: "Brake Type", Description: "产品制动类型分类", SortOrder: 30, Active: true},
+		{Key: "versionLevel", NameZh: "版本等级", NameEn: "Version Level", Description: "产品版本等级分类", SortOrder: 40, Active: true},
+	}
+}
+
+func ListProductAttributeCategories(query ProductAttributeCategoryListQuery) ([]models.ProductAttributeCategory, error) {
+	tx := db.DB.Model(&models.ProductAttributeCategory{})
+	if query.ActiveOnly {
+		tx = tx.Where("active = ?", true)
+	}
+
+	var items []models.ProductAttributeCategory
+	if err := tx.Order("sort_order asc").Order("name_zh asc").Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func CreateProductAttributeCategory(input models.ProductAttributeCategory) (models.ProductAttributeCategory, error) {
+	normalizeProductAttributeCategory(&input)
+	input.Version = 1
+	if err := db.DB.Create(&input).Error; err != nil {
+		return models.ProductAttributeCategory{}, err
+	}
+	return input, nil
+}
+
+func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
+	updates := make(map[string]interface{})
+	for key, raw := range payload {
+		switch key {
+		case "key", "nameZh", "nameEn", "description", "revisionNo", "changeType", "changeOrderNo", "siteCode":
+			var value string
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return nil, err
+			}
+			switch key {
+			case "nameZh":
+				updates["name_zh"] = strings.TrimSpace(value)
+			case "nameEn":
+				updates["name_en"] = strings.TrimSpace(value)
+			default:
+				updates[key] = strings.TrimSpace(value)
+			}
+		case "sortOrder", "version":
+			var value int
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return nil, err
+			}
+			if key == "sortOrder" {
+				updates["sort_order"] = value
+			} else {
+				updates[key] = value
+			}
+		case "active", "isDefaultSite":
+			var value bool
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return nil, err
+			}
+			updates[key] = value
+		case "id", "createdAt", "updatedAt", "metadata":
+		default:
+		}
+	}
+	return updates, nil
+}
+
+func PatchProductAttributeCategory(id string, updates map[string]interface{}) (models.ProductAttributeCategory, error) {
+	var existing models.ProductAttributeCategory
+	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+		return models.ProductAttributeCategory{}, err
+	}
+	if err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&existing).Updates(updates).Error; err != nil {
+			return err
+		}
+		return tx.First(&existing, "id = ?", id).Error
+	}); err != nil {
+		return models.ProductAttributeCategory{}, err
+	}
+	return existing, nil
+}
+
+func DeleteProductAttributeCategory(id string) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var category models.ProductAttributeCategory
+		if err := tx.First(&category, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&models.ProductAttributeOption{}, "category = ?", category.Key).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&category).Error
+	})
+}
+
+func SeedDefaultProductAttributeCategories(tx *gorm.DB) error {
+	for _, category := range defaultProductAttributeCategories() {
+		item := category
+		normalizeProductAttributeCategory(&item)
+		item.Version = 1
+
+		var existing models.ProductAttributeCategory
+		err := tx.Where("key = ?", item.Key).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := tx.Create(&item).Error; err != nil {
+				return err
+			}
+			continue
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

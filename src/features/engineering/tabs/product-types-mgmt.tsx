@@ -259,13 +259,9 @@ export function ProductTypesMgmt() {
     return <ForbiddenState />
   }
 
-  const handleFormSubmit = async (formData: Partial<ProductType>, isPatch?: boolean, delta?: any) => {
+  const handleFormSubmit = async (formData: Partial<ProductType>) => {
     try {
-      if (isPatch && formData.id && delta) {
-        await ProductTypeService.patchProductType(formData.id, delta, formData.version || 1)
-      } else {
-        await ProductTypeService.saveProductType(formData)
-      }
+      await ProductTypeService.saveProductType(formData, currentRow)
       window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
       toast.success(t('engineering.categoryArchive.toasts.saveSuccess'))
       setOpen(false)
