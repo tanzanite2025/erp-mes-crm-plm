@@ -240,6 +240,8 @@ export interface InventoryAdjustmentApiDTO {
   createdBy: string
   approvedBy?: string
   approvedAt?: string | null
+  executedBy?: string
+  executedAt?: string | null
   totalItems: number
   items?: InventoryAdjustmentItemApiDTO[]
 }

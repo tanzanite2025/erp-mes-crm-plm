@@ -14,6 +14,10 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
+import {
+  type AuditStatusDisplayMeta,
+  AuditStatusDisplay,
+} from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,9 +43,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { isForbiddenError } from '@/lib/error-status'
+import { auditUtils } from '@/lib/audit-utils'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
-import { getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
+import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import type { OrderEvidence, PurchaseOrder } from '../../data/schema'
 import {
   type PurchaseReturnRecord,
@@ -93,6 +98,62 @@ function createEmptyLineDraft(): ReturnLineDraft {
   }
 }
 
+function formatStatusText(status: string) {
+  return status
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatusDisplayMeta {
+  const normalized = status.trim().toUpperCase()
+
+  if (normalized === 'DRAFT' || normalized === 'CREATED' || normalized === 'OPEN') {
+    return {
+      label: locale === 'zh-CN' ? '已登记' : 'Created',
+      className: 'bg-amber-500/10 text-amber-600 border-amber-200',
+      dotClassName: 'bg-amber-500',
+    }
+  }
+
+  if (
+    normalized === 'SUBMITTED' ||
+    normalized === 'CONFIRMED' ||
+    normalized === 'POSTED' ||
+    normalized === 'COMPLETED' ||
+    normalized === 'CLOSED' ||
+    normalized === 'RETURNED'
+  ) {
+    return {
+      label:
+        locale === 'zh-CN'
+          ? normalized === 'SUBMITTED'
+            ? '已提交'
+            : '已完成'
+          : normalized === 'SUBMITTED'
+            ? 'Submitted'
+            : 'Completed',
+      className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
+      dotClassName: 'bg-emerald-500',
+    }
+  }
+
+  if (normalized === 'CANCELED' || normalized === 'CANCELLED' || normalized === 'VOID' || normalized === 'REJECTED') {
+    return {
+      label: locale === 'zh-CN' ? '已取消' : 'Canceled',
+      className: 'bg-rose-500/10 text-rose-600 border-rose-200',
+      dotClassName: 'bg-rose-500',
+    }
+  }
+
+  return {
+    label: formatStatusText(status),
+    className: 'bg-muted/30 text-muted-foreground border-muted/20',
+    dotClassName: 'bg-muted-foreground',
+  }
+}
+
 function EvidencePreviewGrid({ evidences }: { evidences?: OrderEvidence[] }) {
   if (!evidences || evidences.length === 0) return null
 
@@ -118,7 +179,7 @@ function EvidencePreviewGrid({ evidences }: { evidences?: OrderEvidence[] }) {
 }
 
 export function PurchaseOrderReturns() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
   const ordersQuery = useGetPurchaseOrders(1, 100)
   const returnsQuery = useGetPurchaseReturns(1, 100)
@@ -421,7 +482,7 @@ export function PurchaseOrderReturns() {
     return <ForbiddenState />
   }
 
-  const selectedStatusMeta = selectedOrder ? getPurchaseStatusMeta(selectedOrder.status) : null
+  const selectedStatusMeta = selectedOrder ? getPurchaseStatusDisplayMeta(selectedOrder.status, t) : null
 
   return (
     <div className='space-y-6'>
@@ -882,13 +943,11 @@ export function PurchaseOrderReturns() {
                         </p>
                       </div>
                       {supplierGroup.groups.map((statusGroup) => {
-                        const orderStatusMeta = getPurchaseStatusMeta(statusGroup.status)
+                        const orderStatusMeta = getPurchaseStatusDisplayMeta(statusGroup.status, t)
                         return (
                           <div key={`${supplierGroup.supplierName}-${statusGroup.status}`} className='space-y-2'>
                             <div className='flex items-center gap-2 px-1'>
-                              <Badge className={orderStatusMeta?.color}>
-                                {getPurchaseStatusLabel(statusGroup.status, t)}
-                              </Badge>
+                              <AuditStatusDisplay meta={orderStatusMeta} />
                               <span className='text-[10px] font-bold text-muted-foreground'>
                                 {statusGroup.orders.length}
                               </span>
@@ -966,9 +1025,7 @@ export function PurchaseOrderReturns() {
                     </CardDescription>
                   </div>
                   <div className='flex items-center gap-3'>
-                    <Badge className={selectedStatusMeta?.color}>
-                      {getPurchaseStatusLabel(selectedOrder.status, t)}
-                    </Badge>
+                    {selectedStatusMeta ? <AuditStatusDisplay meta={selectedStatusMeta} /> : null}
                     <Button
                       onClick={() => {
                         if (!allowsAction('action_trading_purchase_order_manage')) return
@@ -1141,9 +1198,7 @@ export function PurchaseOrderReturns() {
                           <div>
                             <div className='flex items-center gap-3'>
                               <p className='text-[13px] font-black'>{record.returnNo}</p>
-                              <Badge className='border-rose-500/20 bg-rose-500/10 text-rose-600'>
-                                {record.status}
-                              </Badge>
+                              <AuditStatusDisplay meta={getPurchaseReturnStatusMeta(record.status, locale)} />
                               {record.issueCategory ? (
                                 <Badge variant='outline' className='border-amber-500/20 bg-amber-500/5 text-amber-700'>
                                   {record.issueCategory}
@@ -1161,7 +1216,7 @@ export function PurchaseOrderReturns() {
                             </p>
                             {record.operator ? (
                               <p className='mt-1 text-[10px] text-muted-foreground'>
-                                {t('purchase.orders.returns.operator')}: {record.operator}
+                                {t('purchase.orders.returns.operator')}: {auditUtils.formatOperatorName(record.operator) || record.operator}
                               </p>
                             ) : null}
                             <div className='mt-3 flex justify-end gap-2'>

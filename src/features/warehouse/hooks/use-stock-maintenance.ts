@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { StocktakeCoreService } from '../services/stocktake-core-service'
-import { StocktakeMaintenanceService, type PDAScanPayload } from '../services/stocktake-maintenance-service'
 import { toast } from 'sonner'
+import { StocktakeCoreService, StocktakeMaintenanceService, type PDAScanPayload } from '../stocktake'
 
 /**
  * useStocktake - 封装盘点任务的管理与同步逻辑情况情况总量针对。
@@ -23,8 +22,9 @@ export function useStocktake() {
             queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })
             toast.success('盘点任务已发起情况情况总量针对。')
         },
-        onError: (error: any) => {
-            toast.error('发起盘点失败: ' + error.message)
+        onError: (error: unknown) => {
+            const message = error instanceof Error ? error.message : 'unknown error'
+            toast.error('发起盘点失败: ' + message)
         }
     })
 

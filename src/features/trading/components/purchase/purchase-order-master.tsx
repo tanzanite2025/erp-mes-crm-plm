@@ -8,6 +8,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
 import { type PurchaseOrder } from '../../data/schema'
-import { canEditPurchaseOrder, getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
+import { canEditPurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 
 interface PurchaseOrderMasterProps {
   orders: PurchaseOrder[]
@@ -29,16 +30,10 @@ interface PurchaseOrderMasterProps {
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useLanguage()
-  const meta = getPurchaseStatusMeta(status)
+  const meta = getPurchaseStatusDisplayMeta(status, t)
   if (!meta) return null
 
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter ${meta.color}`}
-    >
-      {getPurchaseStatusLabel(status, t)}
-    </span>
-  )
+  return <AuditStatusDisplay meta={meta} badgeClassName='px-2 py-0.5' />
 }
 
 function useOverdue(date?: string, status?: string) {

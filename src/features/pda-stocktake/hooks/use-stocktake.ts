@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { StocktakeCoreService, type StocktakeItem } from '@/features/warehouse/services/stocktake-core-service'
-import { StocktakeMaintenanceService } from '@/features/warehouse/services/stocktake-maintenance-service'
+import { type DeltaSet } from '@/lib/delta/types'
+import { StocktakeCoreService, StocktakeMaintenanceService, type StocktakeItem } from '@/features/warehouse/stocktake'
 
 type ApiMutationError = Error & {
   status?: number
@@ -33,7 +33,7 @@ export function useStocktakeMutations() {
   const queryClient = useQueryClient()
 
   const patchItemMutation = useMutation({
-    mutationFn: ({ id, delta, version }: { id: string; delta: any; version: number; taskId: string }) =>
+    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number; taskId: string }) =>
       StocktakeMaintenanceService.pdaPatchItem(id, delta, version),
     onMutate: async ({ id, delta, taskId }) => {
       await queryClient.cancelQueries({ queryKey: ['pda_stocktake_items', taskId] })

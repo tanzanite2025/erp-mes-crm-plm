@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, PackageSearch, RefreshCw, Send, AlertCircle, History, Database, Search } from 'lucide-react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/layout/page-header'
 import { Input } from '@/components/ui/input'
@@ -22,9 +22,9 @@ import { auditUtils } from '@/lib/audit-utils'
 
 import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
 import { useWarehouseCategoryOptions } from '../hooks/use-warehouse-category'
-import { type StocktakeItem, type StocktakeTask } from '../services/stocktake-core-service'
-import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
+import { StocktakeMaintenanceService, type StocktakeItem, type StocktakeTask } from '../stocktake'
 import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
+import { getStocktakeStatusMeta } from '../utils/warehouse-status-display'
 
 export function StocktakeMgmt() {
     const { allowsAction } = useNonBlockingPermissionActions()
@@ -61,13 +61,13 @@ export function StocktakeMgmt() {
                 remarks: formData.get('remarks') as string
             })
             setIsCreateOpen(false)
-        } catch (error) {
+        } catch (_error) {
             // Already handled in hook toast
         }
     }
 
     const postAdjustmentMutation = useMutation({
-        mutationFn: (taskId: string) => InventoryMaintenanceService.submitAdjustmentForApproval(taskId),
+        mutationFn: (taskId: string) => StocktakeMaintenanceService.submitAdjustmentForApproval(taskId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })
             toast.success(t('warehouse.stocktake.toast.postSuccess'))
@@ -90,21 +90,6 @@ export function StocktakeMgmt() {
             setAdjustmentConfirmOpen(false)
         } catch (error) {
             failLoudly(error, 'StocktakeMgmt.onConfirmAdjustment', { silentUI: true })
-        }
-    }
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-muted text-muted-foreground/60 border-none h-5 px-3 rounded-full'>{t('warehouse.stocktake.status.draft')}</Badge>
-            case 'IN_PROGRESS':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 border-none h-5 px-3 rounded-full'>{t('warehouse.stocktake.status.inProgress')}</Badge>
-            case 'COMPLETED':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border-none h-5 px-3 rounded-full'>{t('warehouse.stocktake.status.completed')}</Badge>
-            case 'ADJUSTED':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border-none h-5 px-3 rounded-full'>{t('warehouse.stocktake.status.adjusted')}</Badge>
-            default:
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-muted text-muted-foreground h-5 px-3 rounded-full'>{status}</Badge>
         }
     }
 
@@ -249,7 +234,10 @@ export function StocktakeMgmt() {
                                                 {task.title}
                                             </h4>
                                             <div className='scale-75 origin-top-right'>
-                                                {getStatusBadge(task.status)}
+                                                <AuditStatusDisplay
+                                                    meta={getStocktakeStatusMeta(t, task.status)}
+                                                    badgeClassName='h-5 px-3'
+                                                />
                                             </div>
                                         </div>
                                         <div className='flex items-center gap-4 mt-4 pt-4 border-t border-dashed border-muted/50'>
@@ -322,9 +310,9 @@ export function StocktakeMgmt() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className='py-2 md:py-2.5'>
-                                                        <Badge variant='outline' className='font-black text-[7px] md:text-[8px] uppercase tracking-widest bg-white border-none shadow-sm h-3.5 px-1.5 md:px-2 rounded-full whitespace-nowrap'>
+                                                        <span className='inline-flex h-3.5 items-center rounded-full bg-white px-1.5 md:px-2 font-black text-[7px] md:text-[8px] uppercase tracking-widest shadow-sm whitespace-nowrap'>
                                                             {item.batchNo || t('warehouse.stocktake.noBatch')}
-                                                        </Badge>
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell className='text-right py-2 md:py-2.5 font-mono text-[10px] md:text-[11px] font-bold text-slate-400 whitespace-nowrap'>
                                                         {item.theoryQty} <span className='text-[7px] uppercase tracking-tighter'>{item.uom}</span>

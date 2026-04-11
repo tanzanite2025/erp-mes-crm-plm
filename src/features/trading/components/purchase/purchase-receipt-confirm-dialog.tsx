@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar, CheckCheck, Package, Tag, Warehouse } from 'lucide-react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import {
   getDefaultWarehouseCategoryCode,
 } from '@/features/warehouse/utils/warehouse-category-config'
 import { type PurchaseOrder } from '../../data/schema'
+import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import type { ConfirmPurchaseReceiptPayload } from '../../purchase'
 
 interface ReceiptLineFormItem {
@@ -94,6 +96,7 @@ function PurchaseReceiptConfirmDialogBody({
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().slice(0, 10))
   const [remarks, setRemarks] = useState(t('purchase.orders.detailReceiptAutoRemarks'))
   const [lines, setLines] = useState<ReceiptLineFormItem[]>(() => buildDefaultReceiptLines(order))
+  const statusMeta = getPurchaseStatusDisplayMeta(order.status, t)
 
   const editableLines = useMemo(() => lines.filter((line) => line.remainingQty > 0), [lines])
 
@@ -156,10 +159,18 @@ function PurchaseReceiptConfirmDialogBody({
   return (
     <div className='relative p-5 md:p-8 space-y-6 max-h-[85vh] overflow-y-auto'>
       <DialogHeader className='text-left'>
-        <DialogTitle className='flex items-center gap-2 text-base md:text-lg font-black uppercase tracking-widest'>
-          <CheckCheck className='size-5 text-primary' />
-          {t('purchase.orders.detailConfirmReceipt')}
-        </DialogTitle>
+        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+          <DialogTitle className='flex items-center gap-2 text-base md:text-lg font-black uppercase tracking-widest'>
+            <CheckCheck className='size-5 text-primary' />
+            {t('purchase.orders.detailConfirmReceipt')}
+          </DialogTitle>
+          <div className='flex items-center gap-3'>
+            <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              {order.orderNo}
+            </span>
+            <AuditStatusDisplay meta={statusMeta} />
+          </div>
+        </div>
         <DialogDescription className='text-[11px] font-bold text-muted-foreground'>
           {t('purchase.orders.receiptDialogDescription')}
         </DialogDescription>

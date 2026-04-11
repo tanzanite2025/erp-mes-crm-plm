@@ -1,9 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { Layers, User, Clock, MoreHorizontal } from 'lucide-react'
 import { type Standard } from '../data/schema'
 import { useLanguage } from '@/context/language-provider'
-import { formatQualityActorName, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
+import { formatQualityActorName, getQualityAuditMeta, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
 
 interface QualityStandardsMobileViewProps {
     standards: Standard[]
@@ -16,13 +17,14 @@ export function QualityStandardsMobileView({
     onViewDetail, 
     onEdit 
 }: QualityStandardsMobileViewProps) {
-    const { t } = useLanguage()
+    const { t, locale } = useLanguage()
 
     return (
         <div className="grid grid-cols-1 gap-4">
             {standards.map((standard: Standard) => {
                 const statusMeta = getStatusMeta(t, standard.status)
                 const operatorName = formatQualityActorName(standard.operator)
+                const auditMeta = getQualityAuditMeta(locale, standard.status, standard.auditor)
 
                 return (
                     <Card
@@ -53,12 +55,13 @@ export function QualityStandardsMobileView({
                             </div>
 
                             <div className="flex items-center justify-between pt-3 border-t border-dashed border-muted/20">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${statusMeta.className}`}>
                                             <div className={`size-1 rounded-full ${statusMeta.dotClassName}`} />
                                             <span className="text-[8px] font-black uppercase tracking-widest italic">{statusMeta.label}</span>
                                         </div>
+                                        <AuditStatusDisplay meta={auditMeta} italic />
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-1">
@@ -71,6 +74,13 @@ export function QualityStandardsMobileView({
                                                 {standard.operateTime ? new Date(standard.operateTime).toLocaleDateString() : '-'}
                                             </span>
                                         </div>
+                                        <AuditStatusDisplay
+                                            meta={auditMeta}
+                                            className="mt-1"
+                                            showBadge={false}
+                                            showNote
+                                            noteVariant="text"
+                                        />
                                     </div>
                                 </div>
 

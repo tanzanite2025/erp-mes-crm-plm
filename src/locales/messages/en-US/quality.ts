@@ -83,10 +83,17 @@ export const quality = {
       detail: {
         title: 'Standard Details',
         subtitle: 'Quality Standard Details',
+        auditTitle: 'Audit Trail',
+        auditHint: 'Shows the current standard owner, last update, and review confirmation for quality traceability.',
+        auditPending: 'Pending Review',
         fields: {
           code: 'Standard Code',
           name: 'Standard Name',
           type: 'Standard Type',
+          operator: 'Owner',
+          operateTime: 'Updated At',
+          auditor: 'Reviewer',
+          auditTime: 'Reviewed At',
         },
         table: {
           item: 'Inspection Item',

@@ -12,6 +12,7 @@ import {
 import { type WarehouseCategoryOption } from '../../category/data/schema'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
 import { type ShipmentRecord } from '../data/schema'
+import { ShipmentCoreService } from '../services/shipment-core-service'
 
 export function useShipmentBootstrap() {
   const { t } = useLanguage()
@@ -26,7 +27,7 @@ export function useShipmentBootstrap() {
       setError(null)
 
       const [recentHistory, categories, allMasterData, thresholds] = await Promise.all([
-        InventoryCoreService.getShipmentHistory(),
+        ShipmentCoreService.getShipmentHistory(),
         WarehouseCategoryCoreService.getCategoryOptions(),
         InventoryCoreService.searchMasterData(''),
         InventoryMaintenanceService.getAlertThresholds(),
@@ -41,7 +42,7 @@ export function useShipmentBootstrap() {
       setAlertThresholds(thresholds)
 
       const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}
-      allMasterData.forEach((item) => {
+      allMasterData.forEach((item: MasterDataSearchResult) => {
         nextMasterDataMap[item.id] = item
       })
       setMasterDataMap(nextMasterDataMap)

@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CheckCircle2,
-  Clock,
   History as HistoryIcon,
   Search,
-  ShieldAlert,
-  ShieldCheck,
 } from 'lucide-react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -21,7 +17,7 @@ import {
 } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { cn } from '@/lib/utils'
+import { getApprovalStatusMeta } from '../approval-i18n'
 import { ApprovalService, type ApprovalRequest } from '../services/approval-service'
 
 export function ApprovalHistory() {
@@ -59,11 +55,6 @@ export function ApprovalHistory() {
     (value: string): Parameters<typeof t>[0] => `approval.actions.${value.toLowerCase()}` as Parameters<typeof t>[0],
     []
   )
-  const getStatusKey = useCallback(
-    (value: string): Parameters<typeof t>[0] => `approval.status.${value.toLowerCase()}` as Parameters<typeof t>[0],
-    []
-  )
-
   const filteredHistory = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
     if (!query) return requests
@@ -82,51 +73,6 @@ export function ApprovalHistory() {
       )
     })
   }, [getActionKey, getModuleKey, requests, searchTerm, t])
-
-  const getStatusBadge = (status: string) => {
-    const baseStyle = 'h-5 gap-1 border-none px-2 py-0 text-[10px] font-black uppercase tracking-widest'
-    const label = t(getStatusKey(status))
-
-    switch (status) {
-      case 'APPROVED':
-        return (
-          <Badge className={cn(baseStyle, 'bg-emerald-50 text-emerald-600')}>
-            <ShieldCheck className='size-2.5' />
-            {label}
-          </Badge>
-        )
-      case 'APPROVED_L1':
-        return (
-          <Badge className={cn(baseStyle, 'bg-primary/10 text-primary')}>
-            <ShieldCheck className='size-2.5' />
-            {label}
-          </Badge>
-        )
-      case 'REJECTED':
-        return (
-          <Badge variant='destructive' className={cn(baseStyle, 'bg-destructive/10 text-destructive')}>
-            <ShieldAlert className='size-2.5' />
-            {label}
-          </Badge>
-        )
-      case 'CONSUMED':
-        return (
-          <Badge variant='outline' className={cn(baseStyle, 'bg-muted/50 text-muted-foreground')}>
-            <CheckCircle2 className='size-2.5' />
-            {label}
-          </Badge>
-        )
-      case 'EXPIRED':
-        return (
-          <Badge variant='outline' className={cn(baseStyle, 'bg-muted/30 text-muted-foreground/60')}>
-            <Clock className='size-2.5' />
-            {label}
-          </Badge>
-        )
-      default:
-        return <Badge variant='secondary' className={baseStyle}>{label}</Badge>
-    }
-  }
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -217,7 +163,12 @@ export function ApprovalHistory() {
                   <TableCell className='text-xs font-medium'>
                     {req.requester?.username || t('approval.labels.unknownUser')}
                   </TableCell>
-                  <TableCell>{getStatusBadge(req.status)}</TableCell>
+                  <TableCell>
+                    <AuditStatusDisplay
+                      meta={getApprovalStatusMeta(t, req.status)}
+                      badgeClassName='h-5 px-2 py-0'
+                    />
+                  </TableCell>
                   <TableCell>
                     {req.authCode ? (
                       <code className='rounded border border-primary/10 bg-primary/5 px-2 py-1 font-mono text-[13px] font-black text-primary'>

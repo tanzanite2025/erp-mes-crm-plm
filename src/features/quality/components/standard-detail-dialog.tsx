@@ -14,11 +14,13 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { type Standard, type StandardItem, type LevelConfig } from '../data/schema'
-import { ClipboardCheck, Hash, Layers, Info, MoveHorizontal, Inbox, ShieldCheck, Plus, Check } from 'lucide-react'
+import { ClipboardCheck, Hash, Layers, Info, MoveHorizontal, Inbox, ShieldCheck, Plus, Check, User, Clock3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import * as React from 'react'
 import { useLanguage } from '@/context/language-provider'
+import { formatQualityActorName, formatQualityDateTime, getQualityAuditMeta } from '../utils/quality-utils'
 
 function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string) {
     const normalized = type?.toUpperCase()
@@ -46,10 +48,25 @@ export function StandardDetailDialog({
     onOpenChange,
     standard,
 }: StandardDetailDialogProps) {
-    const { t } = useLanguage()
+    const { t, locale } = useLanguage()
     if (!standard) return null
 
     const hasItems = standard.items && standard.items.length > 0
+    const operatorName = formatQualityActorName(standard.operator)
+    const auditorName = formatQualityActorName(standard.auditor)
+    const operateTimeText = formatQualityDateTime(standard.operateTime)
+    const auditTimeText = formatQualityDateTime(standard.auditTime)
+    const auditMeta = getQualityAuditMeta(locale, standard.status, standard.auditor)
+    const auditTitle = locale === 'zh-CN' ? '审核履历' : 'Audit Trail'
+    const auditHint =
+        locale === 'zh-CN'
+            ? '展示当前标准的制单、更新时间与审核确认信息，便于质量追溯与版本核对。'
+            : 'Shows the current standard owner, last update, and review confirmation for quality traceability.'
+    const operatorLabel = locale === 'zh-CN' ? '制单人' : 'Owner'
+    const operateTimeLabel = locale === 'zh-CN' ? '更新时间' : 'Updated At'
+    const auditorLabel = locale === 'zh-CN' ? '审核人' : 'Reviewer'
+    const auditTimeLabel = locale === 'zh-CN' ? '审核时间' : 'Reviewed At'
+    const auditPendingText = locale === 'zh-CN' ? '待审核' : 'Pending Review'
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,6 +101,50 @@ export function StandardDetailDialog({
                         <InfoCard icon={Hash} label={t('quality.standards.dialog.detail.fields.code')} value={standard.code} />
                         <InfoCard icon={Layers} label={t('quality.standards.dialog.detail.fields.name')} value={standard.name} className="sm:col-span-2" />
                         <InfoCard icon={Info} label={t('quality.standards.dialog.detail.fields.type')} value={getTypeLabel(t, standard.type)} highlight />
+                    </div>
+
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-background/50 p-4 lg:p-5 shadow-inner">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">
+                                    {auditTitle}
+                                </p>
+                                <p className="mt-1 text-[10px] font-medium leading-5 text-muted-foreground/60">
+                                    {auditHint}
+                                </p>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
+                                <Badge variant="outline" className="w-fit rounded-full border-dashed bg-muted/20 px-3 py-1 text-[9px] font-black uppercase tracking-widest">
+                                    {getStatusLabel(t, standard.status)}
+                                </Badge>
+                                <AuditStatusDisplay meta={auditMeta} />
+                            </div>
+                        </div>
+
+                        <AuditStatusDisplay meta={auditMeta} showNote className="mt-3" />
+
+                        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <InfoCard
+                                icon={User}
+                                label={operatorLabel}
+                                value={operatorName || t('quality.common.system')}
+                            />
+                            <InfoCard
+                                icon={Clock3}
+                                label={operateTimeLabel}
+                                value={operateTimeText || '-'}
+                            />
+                            <InfoCard
+                                icon={ShieldCheck}
+                                label={auditorLabel}
+                                value={auditorName || auditPendingText}
+                            />
+                            <InfoCard
+                                icon={Clock3}
+                                label={auditTimeLabel}
+                                value={auditTimeText || '-'}
+                            />
+                        </div>
                     </div>
                 </div>
 

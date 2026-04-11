@@ -1,6 +1,10 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Plus, Loader2, ClipboardList } from 'lucide-react'
 import { Route } from '@/routes/_authenticated/purchase/orders'
+import {
+  type AuditStatusDisplayMeta,
+  AuditStatusDisplay,
+} from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,7 +21,7 @@ import { PurchaseOrderDetail } from './purchase-order-detail'
 import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
-import { getPurchaseStatusLabel } from '../../data/purchase-status'
+import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 
 const logger = createLogger('PurchaseOrderList')
@@ -205,6 +209,12 @@ export function PurchaseOrderList() {
     }
   }
 
+  const allStatusMeta: AuditStatusDisplayMeta = {
+    label: t('purchase.orders.all'),
+    className: 'bg-muted/30 text-muted-foreground border-muted/20',
+    dotClassName: 'bg-muted-foreground/60',
+  }
+
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <div className='flex flex-col md:flex-row items-center justify-between gap-4 px-2'>
@@ -220,17 +230,30 @@ export function PurchaseOrderList() {
         <div className='flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto'>
           <div className='flex items-center gap-1 p-1.5 bg-muted/30 rounded-2xl border border-dashed overflow-x-auto max-w-full font-bold w-full sm:w-auto no-scrollbar'>
             {['ALL', 'Draft', 'Sent', 'Awaiting', 'Received', 'Canceled'].map((status) => (
+              (() => {
+                const meta =
+                  status === 'ALL'
+                    ? allStatusMeta
+                    : getPurchaseStatusDisplayMeta(status, t)
+                const isActive = statusFilter === status
+
+                return (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 text-[9px] font-black uppercase tracking-tighter rounded-xl transition-all whitespace-nowrap ${
-                  statusFilter === status
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground hover:bg-muted opacity-60 hover:opacity-100'
+                className={`rounded-xl px-1.5 py-1 transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-background shadow-md ring-1 ring-primary/10'
+                    : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
                 }`}
               >
-                {status === 'ALL' ? t('purchase.orders.all') : getPurchaseStatusLabel(status, t)}
+                <AuditStatusDisplay
+                  meta={meta}
+                  badgeClassName={`px-3 py-1.5 ${isActive ? '' : 'shadow-none'}`}
+                />
               </button>
+                )
+              })()
             ))}
           </div>
           <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>

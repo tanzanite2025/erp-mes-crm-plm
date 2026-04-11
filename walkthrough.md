@@ -1133,6 +1133,630 @@
 2. 旧 `inventory-*` 服务文件的角色已进一步明确为兼容兜底层。
 3. 后续新增库存基础能力调用，应默认走新 `warehouse/inventory`，避免再写回双路结构。
 
+## 2026-04-11 warehouse 第四阶段：`stocktake` 第一批拆分
+
+### 本轮目标
+
+按第四阶段规划，先建立 `stocktake` 子域骨架，并完成第一批最低风险的数据链迁移：
+
+1. `data / contracts / adapters`
+2. 盘点核心查询服务
+3. 盘点基础维护服务（创建、PDA 扫描/批量同步/差量更新）
+4. 旧 `stocktake-*` 入口兼容转发层
+
+### 已新增 `stocktake` 子域骨架
+
+新增目录与文件：
+
+1. `src/features/warehouse/stocktake/data/schema.ts`
+2. `src/features/warehouse/stocktake/contracts/stocktake-api-dto.ts`
+3. `src/features/warehouse/stocktake/adapters/stocktake-api-adapter.ts`
+4. `src/features/warehouse/stocktake/services/stocktake-core-service.ts`
+5. `src/features/warehouse/stocktake/services/stocktake-maintenance-service.ts`
+6. `src/features/warehouse/stocktake/index.ts`
+
+### 已迁移能力
+
+#### A. 领域类型与 DTO
+
+已从旧 `warehouse` 平面层收拢到新 `stocktake` 子域：
+
+1. `StocktakeTask`
+2. `StocktakeItem`
+3. `StocktakeCreateInput`
+4. `PDAScanPayload`
+5. `PDABulkSyncResponse`
+6. `WarehouseCommandAck`
+
+#### B. 核心服务
+
+已迁移到新 `stocktake` 子域：
+
+1. `StocktakeCoreService.getTasks`
+2. `StocktakeCoreService.getItems`
+3. `StocktakeMaintenanceService.create`
+4. `StocktakeMaintenanceService.pdaSubmitScan`
+5. `StocktakeMaintenanceService.pdaBulkSync`
+6. `StocktakeMaintenanceService.pdaPatchItem`
+
+### 旧入口兼容收口
+
+已将以下旧服务文件收口为兼容转发层：
+
+1. `src/features/warehouse/services/stocktake-core-service.ts`
+2. `src/features/warehouse/services/stocktake-maintenance-service.ts`
+
+当前策略与此前 `shipment / inventory` 一致：
+
+1. 新 `warehouse/stocktake` 承接真实实现
+2. 旧 `stocktake-*` 文件继续保留导出兼容性
+3. 暂不删除旧入口
+
+### 第一批已切换消费方
+
+#### A. 已切到新 `stocktake` 子域入口
+
+1. `src/features/warehouse/hooks/use-stock-maintenance.ts`
+2. `src/features/warehouse/tabs/stocktake-mgmt.tsx`（仅盘点类型来源切换）
+3. `src/features/pda-stocktake/hooks/use-stocktake.ts`
+
+#### B. 本轮明确保留不动的兼容职责
+
+1. `stocktake-mgmt.tsx` 中 `InventoryMaintenanceService.submitAdjustmentForApproval`
+
+该调用仍属于盘点后续调整审批链路，当前继续留在旧兼容层，避免在第一批拆分中把审批链路一并卷入。
+
+### 验证
+
+已执行：
+
+- `pnpm exec eslint src/features/warehouse/stocktake src/features/warehouse/services/stocktake-core-service.ts src/features/warehouse/services/stocktake-maintenance-service.ts src/features/warehouse/hooks/use-stock-maintenance.ts src/features/warehouse/tabs/stocktake-mgmt.tsx src/features/pda-stocktake/hooks/use-stocktake.ts`
+- `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 `eslint` 通过。
+2. 前端类型检查通过。
+
+### 当前阶段结论
+
+`stocktake` 第四阶段第一批拆分已完成当前最低风险范围：
+
+1. 新 `stocktake` 子域骨架已建立。
+2. 任务/明细/PDA 基础数据链已迁入新子域。
+3. 旧 `stocktake-*` 入口已收口为兼容转发层。
+4. 调整审批等更复杂链路仍保留在后续阶段处理。
+
+## 2026-04-11 warehouse 第四阶段补充：`stocktake` 第二批消费方切换排查
+
+### 本轮目标
+
+在 `stocktake` 第一批拆分完成后，继续显式搜索剩余仍直接引用旧 `stocktake-core-service / stocktake-maintenance-service` 平面入口的低风险调用点，并在必要时完成第二批切换。
+
+### 已执行排查
+
+本轮重点搜索了以下旧平面入口：
+
+1. `stocktake-core-service`
+2. `stocktake-maintenance-service`
+
+同时补充检查了：
+
+1. 相对路径引用
+2. 绝对别名路径引用
+3. `StocktakeCoreService / StocktakeMaintenanceService` 的剩余消费点
+
+### 排查结果
+
+当前未发现剩余直接走旧 `stocktake-*` 平面入口的低风险调用点。
+
+现有命中点主要分为两类：
+
+1. 新 `warehouse/stocktake` 子域自身的真实实现与统一出口
+2. 旧 `stocktake-*` 兼容转发层自身
+
+直接消费方（如 `warehouse/hooks/use-stock-maintenance.ts`、`warehouse/tabs/stocktake-mgmt.tsx`、`pda-stocktake/hooks/use-stocktake.ts`）当前都已经走新 `warehouse/stocktake` 子域入口。
+
+### 本轮执行结果
+
+由于未发现新增可切换的低风险命中点，本轮没有新增业务代码修改。
+
+### 当前阶段结论
+
+`stocktake` 第二批消费方切换在当前低风险范围内已经自然收口：
+
+1. 旧 `stocktake-*` 平面入口当前主要只剩兼容层角色。
+2. 直接消费面已基本统一到新 `warehouse/stocktake` 子域入口。
+3. 若继续推进，下一步更适合转向“调整审批链路如何从旧兼容层中独立收口”的专项规划，而不是继续做空转式消费方清理。
+
+## 2026-04-11 warehouse 第四阶段补充：`inventory / stocktake` 旧兼容层一致性清理
+
+### 本轮目标
+
+在进入下一个专项前，对 `inventory / stocktake` 已保留的旧兼容层做一次一致性收口，固定“新入口默认、旧入口仅兼容兜底”的规则，避免后续继续从旧 `services/*` 写回。
+
+### 已执行排查
+
+本轮重点检查了以下一致性问题：
+
+1. 是否仍有基础类型继续从旧 `services/inventory-*` 或 `services/stocktake-*` 获取
+2. 是否仍有跨模块调用把旧兼容层误当作默认服务入口
+3. 是否存在会误导后续开发继续走旧入口的低风险残留点
+
+### 实际命中点与处理
+
+本轮实际命中并收口的低风险点：
+
+1. `src/features/logistics/components/logistics-action-dialog.tsx`
+   - 原先从旧 `services/inventory-core-service` 获取发货历史查询能力
+   - 原先从旧 `services/inventory-transaction-service` 获取 `ShipmentRecord` 类型
+   - 现已统一切到新 `shipment` 子域入口：
+     - `ShipmentCoreService`
+     - `ShipmentRecord`
+
+该点属于典型“旧兼容层误导性依赖”：语义上是发货历史能力，却仍绕经旧 `inventory` 平面层。
+
+### 顺手修正
+
+在收口该文件时，同时修复了 `logistics-action-dialog.tsx` 中默认表单值类型过窄的问题：
+
+1. 将 `initialValues` 统一为 `SaveLogisticsRecordInput`
+2. 补齐默认对象中的 `lastLocation / version / isDeleted` 字段
+3. 消除可选字段访问时的类型错误
+
+### 验证
+
+已执行：
+
+- `pnpm exec eslint src/features/logistics/components/logistics-action-dialog.tsx`
+- `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 `eslint` 通过。
+2. 前端类型检查通过。
+
+### 当前阶段结论
+
+`inventory / stocktake` 旧兼容层一致性清理已完成当前低风险范围：
+
+1. 新子域入口的默认口径进一步固定。
+2. 旧 `services/*` 兼容层的误导性低风险依赖又减少了一处。
+3. 下一步更适合进入“调整审批链路专项规划”，而不是继续做分散式兼容层清扫。
+
+## 2026-04-11 warehouse 第四阶段补充：调整审批链路第一步收口
+
+### 本轮目标
+
+在不改动 `approval` 主流程、不重排调整执行与历史查询归属的前提下，先完成“提交调整审批”入口的语义归位：让盘点提交审批从 `stocktake` 子域进入，而不是继续默认挂在旧 `InventoryMaintenanceService` 上。
+
+### 已执行排查
+
+本轮先显式核对了调整审批链路当前分布：
+
+1. `stocktake-mgmt.tsx` 仍通过旧 `InventoryMaintenanceService.submitAdjustmentForApproval(taskId)` 提交盘点调整审批
+2. `InventoryMaintenanceService.submitAdjustmentForApproval` 直接调用 `/stocktakes/{taskId}/post-adjustment`
+3. `adjustment-history.tsx` 仍消费旧 `InventoryMaintenanceService.getAdjustmentHistory / executeAdjustment`
+
+由此可确认：当前最适合先收口的是“盘点提交审批入口”，而不是同时牵动调整历史、执行或审批主流程。
+
+### 已完成改动
+
+1. 在 `src/features/warehouse/stocktake/services/stocktake-maintenance-service.ts` 新增：
+   - `StocktakeMaintenanceService.submitAdjustmentForApproval(taskId)`
+
+2. 在 `src/features/warehouse/services/inventory-maintenance-service.ts` 中，将：
+   - `submitAdjustmentForApproval`
+   - 收口为对 `StocktakeMaintenanceService.submitAdjustmentForApproval` 的兼容转发
+
+3. 在 `src/features/warehouse/tabs/stocktake-mgmt.tsx` 中，将：
+   - 提交调整审批的 mutation
+   - 从旧 `InventoryMaintenanceService` 切换到新 `StocktakeMaintenanceService`
+
+### 本轮刻意未改动的部分
+
+本轮保持不动：
+
+1. `adjustment-history.tsx` 的调整历史查询
+2. `InventoryMaintenanceService.executeAdjustment`
+3. `approval` 主流程本体
+
+原因是本轮只做“入口语义归位”，避免把审批内核或库存执行职责一并卷入。
+
+### 验证
+
+已执行：
+
+- `pnpm exec eslint src/features/warehouse/stocktake/services/stocktake-maintenance-service.ts src/features/warehouse/services/inventory-maintenance-service.ts src/features/warehouse/tabs/stocktake-mgmt.tsx`
+- `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 `eslint` 通过。
+2. 前端类型检查通过。
+
+### 当前阶段结论
+
+调整审批链路已完成第一步低风险收口：
+
+1. 盘点提交审批入口已归位到 `stocktake` 子域语义。
+2. 旧 `InventoryMaintenanceService.submitAdjustmentForApproval` 已退化为兼容转发层。
+3. 调整历史、执行与审批主流程仍保持原位，等待后续专项继续收口。
+
+## 2026-04-11 warehouse 第四阶段补充：调整历史与执行边界第一步收口（方向 A）
+
+### 本轮目标
+
+在不改后端接口、不重写 approval 主流程、不直接建设完整 `adjustment` 子域的前提下，先把“调整历史查询 / 调整执行 / 打印类型来源”从旧 `inventory-maintenance-service` 的默认语义中剥离出来。
+
+### 已执行排查
+
+本轮显式核对了当前方向 A 的实际命中面：
+
+1. `adjustment-history.tsx` 是 `getAdjustmentHistory / executeAdjustment` 的直接消费者
+2. `AdjustmentPrint` 通过旧 `inventory-maintenance-service` 获取 `InventoryAdjustment` 类型
+3. 当前没有发现更多分散消费者
+
+由此可判断：本轮最适合的最小改动，是建立一个轻量 `adjustment` 入口，统一承接调整读写语义，同时保留旧兼容层转发。
+
+### 已完成改动
+
+1. 新增轻量调整入口：
+   - `src/features/warehouse/adjustment/index.ts`
+   - `src/features/warehouse/adjustment/services/adjustment-service.ts`
+
+2. 在新入口中明确承接：
+   - `AdjustmentService.getHistory()`
+   - `AdjustmentService.execute(id)`
+   - `InventoryAdjustment / AdjustmentItem` 类型导出
+
+3. 将 `src/features/warehouse/tabs/adjustment-history.tsx` 切到新入口：
+   - 查询改走 `AdjustmentService.getHistory()`
+   - 执行改走 `AdjustmentService.execute()`
+   - `InventoryAdjustment` 类型改从 `../adjustment` 获取
+
+4. 将 `src/features/warehouse/components/adjustment-print.tsx` 的类型来源切到新入口：
+   - `InventoryAdjustment` 改从 `../adjustment` 获取
+
+5. 将旧 `src/features/warehouse/services/inventory-maintenance-service.ts` 中的：
+   - `getAdjustmentHistory`
+   - `executeAdjustment`
+   - 收口为对 `AdjustmentService` 的兼容转发
+
+### 本轮刻意未改动的部分
+
+本轮保持不动：
+
+1. 调整相关后端接口路径
+2. 审批通过后的底层执行逻辑
+3. 完整独立 `adjustment` 子域建设
+
+原因是本轮只做方向 A 的第一步低风险边界收口：先统一入口语义与类型来源，再决定后续是否继续独立演进。
+
+### 验证
+
+已执行：
+
+- `pnpm exec eslint src/features/warehouse/adjustment/index.ts src/features/warehouse/adjustment/services/adjustment-service.ts src/features/warehouse/tabs/adjustment-history.tsx src/features/warehouse/components/adjustment-print.tsx src/features/warehouse/services/inventory-maintenance-service.ts`
+- `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 `eslint` 通过。
+2. 前端类型检查通过。
+
+### 当前阶段结论
+
+方向 A 已完成第一步低风险收口：
+
+1. 调整历史查询与执行已有独立且更准确的轻量入口语义。
+2. `AdjustmentPrint` 与 `adjustment-history.tsx` 不再继续从旧 `inventory-maintenance-service` 获取 `InventoryAdjustment` 类型。
+3. 旧 `InventoryMaintenanceService.getAdjustmentHistory / executeAdjustment` 已退化为兼容转发层。
+4. 是否继续演进为完整 `adjustment` 边界，可留待后续专项再判断。
+
+## 2026-04-11 warehouse 第四阶段补充：`adjustment` 是否继续演进为正式独立边界（方向 A2）
+
+### 本轮目标
+
+在方向 A 第一阶段已经建立轻量 `adjustment` 入口后，判断当前是否应继续推进为更正式的独立边界，而不是仅凭结构整洁诉求继续扩张。
+
+### 已执行排查
+
+本轮重点排查了以下信号：
+
+1. `adjustment` 当前消费者数量与分布
+2. 是否已有额外类型 / 状态映射 / formatter / selector 向 `adjustment` 聚集
+3. approval 回流执行链是否已把 `adjustment` 当成稳定中间对象
+
+### 实际发现
+
+#### 1. 消费者仍然很少
+
+当前 `adjustment` 直接消费面主要只有：
+
+1. `src/features/warehouse/tabs/adjustment-history.tsx`
+2. `src/features/warehouse/components/adjustment-print.tsx`
+3. 旧 `src/features/warehouse/services/inventory-maintenance-service.ts` 中的兼容转发
+
+没有发现更多页面、hooks 或跨模块组件开始集中消费 `adjustment`。
+
+#### 2. 类型与工具尚未出现明显聚集
+
+当前 `adjustment` 虽然已经拥有：
+
+1. `InventoryAdjustment / AdjustmentItem` 类型出口
+2. 查询与执行入口
+
+但尚未出现这些信号：
+
+1. adjustment 专属 formatter
+2. adjustment 专属 selector / hooks
+3. adjustment 专属 adapter / DTO 独立扩张
+4. 多页面共享的 adjustment 展示组件族
+
+这说明它当前仍属于“轻量显式边界”，还没有进入“事实子域已形成”的阶段。
+
+#### 3. approval 回流执行链证据仍然偏弱
+
+本轮看到的执行信号主要仍集中在：
+
+1. `POST /warehouse/adjustments/:id/execute`
+2. `action_warehouse_adjustment_execute` 权限定义
+3. 调整记录页面中的执行按钮与状态展示
+
+但目前还没有足够证据表明前端已经围绕“审批通过但未执行 / 执行失败 / 重试 / 回滚 / 编排审计”形成稳定的 adjustment 中间层模型。
+
+换句话说，当前更大的复杂度仍在“approval 回流执行链待进一步拆清”，而不在 `adjustment` 页面层本身。
+
+### 本轮结论
+
+基于当前证据，**结论是：暂时保持轻量 `adjustment` 入口，不继续升级为更正式的独立边界。**
+
+原因如下：
+
+1. 当前消费者数量仍少，扩张信号不足。
+2. adjustment 相关类型、格式化逻辑与组件族尚未形成明显聚集。
+3. approval -> adjustment execute -> inventory 的回流执行链边界还未完全厘清，过早正式独立可能会让结构先行于真实复杂度。
+4. 当前“轻量入口 + 明确兼容转发”已经能较好覆盖现阶段需求。
+
+### 建议的后续触发条件
+
+若后续出现以下任一类情况，再考虑进入“正式独立边界第一步”更合适：
+
+1. 新增调整详情页、筛选页、统计视图或更多 adjustment 专属组件
+2. 出现执行失败、重试、回滚、批量执行等更复杂命令语义
+3. approval 回流与 adjustment 执行之间需要独立审计视图或编排逻辑
+4. adjustment 开始拥有独立 formatter / selector / adapter / hook 聚集
+
+### 当前阶段结论
+
+`adjustment` 当前已经**值得被显式命名**，但**还不值得立刻升级成更正式的独立边界**。现阶段最合理的策略，是维持轻量入口，等待 approval 回流执行链进一步厘清或消费面明显扩张后再决定是否升级。
+
+## 2026-04-11 warehouse 第四阶段补充：审批回流执行链边界判断（方向 B）
+
+### 本轮目标
+
+显式排查并明确 `approval -> adjustment execute -> inventory` 的职责止点，判断当前是否存在 approval 侧直连库存执行、或 inventory 侧混入过多审批/编排语义的问题。
+
+### 已执行排查
+
+本轮重点核对了以下链路：
+
+1. 前端 approval 页面与 guard 是否直接触发 `executeAdjustment`
+2. `AdjustmentService.execute()` 与旧 `InventoryMaintenanceService.executeAdjustment()` 的实际职责位置
+3. 后端调账执行接口与最终库存落库逻辑
+4. 调账审批提交与审批通过之间的边界位置
+
+### 实际发现
+
+#### 1. approval 侧当前没有发现前端直连执行调账或库存落库
+
+当前 `src/features/approval/tabs/approval-requests.tsx` 的核心动作仍是：
+
+1. `ApprovalService.approveRequest(id, { status: 'APPROVED' | 'REJECTED' })`
+2. 刷新审批请求列表
+
+没有发现该页面在审批通过后直接调用：
+
+1. `AdjustmentService.execute()`
+2. `InventoryMaintenanceService.executeAdjustment()`
+3. 任意库存落库接口
+
+`src/features/approval/components/approval-guard.tsx` 也主要负责：
+
+1. 发起审批请求
+2. 校验授权码
+3. 通过 `onApproved` 回调放行调用方自身动作
+
+但当前并未发现它被用在“调账执行”这条链路上。
+
+#### 2. `adjustment execute` 当前已经是独立于 approval 的显式命令入口
+
+当前执行调账的前端入口已集中在：
+
+1. `src/features/warehouse/tabs/adjustment-history.tsx`
+2. `src/features/warehouse/adjustment/services/adjustment-service.ts`
+
+其中：
+
+1. 页面负责选择 `APPROVED` 状态的调账单并触发执行按钮
+2. `AdjustmentService.execute(id)` 负责调用 `POST /warehouse/adjustments/{id}/execute`
+3. 旧 `InventoryMaintenanceService.executeAdjustment` 已仅作兼容转发
+
+这说明在前端语义上，`adjustment execute` 已经具备相对独立的命令边界，而不是 approval 的内联动作。
+
+#### 3. inventory 的实际职责主要落在后端最终写库阶段
+
+后端 `server/handlers/adjustment.go` 中：
+
+1. `SubmitAdjustmentApprovalHandler` 负责提交调账审批
+2. `ExecuteAdjustmentHandler` 负责执行调账
+
+真正的库存落库发生在：
+
+1. `server/services/warehouse_master_service.go -> ExecuteAdjustment(id)`
+
+该方法当前承担：
+
+1. 加载调整单与调整项
+2. 逐条更新或创建库存记录
+3. 更新调账单状态为 `EXECUTED`
+4. 若存在 `taskId`，同步将盘点任务状态更新为 `ADJUSTED`
+
+这说明 `inventory` 在当前链路中主要承担的是**最终库存写库与一致性更新职责**，并未看到 approval 主流程直接侵入这些细节。
+
+#### 4. 当前真正未完全拆清的，是“审批通过结果如何治理执行窗口”，而不是执行调用方向本身
+
+目前已能确认：
+
+1. approval 负责审批结果
+2. adjustment 页面/服务负责显式执行入口
+3. inventory 负责最终落库
+
+但尚未进一步明确的，是：
+
+1. 审批通过后谁来约束“何时可执行”
+2. 是否需要“已批准未执行 / 执行失败 / 重试”这类更明确的中间状态治理
+3. adjustment execute 后续是否需要承接更多执行编排职责
+
+换句话说，当前边界问题更多是**状态治理深度**，而不是**调用方向混乱**。
+
+### 本轮结论
+
+基于当前证据，结论如下：
+
+1. `approval` 的职责止点应停在“审批裁决与授权结果”。
+2. `adjustment execute` 当前已经是较合理的独立命令入口，负责承接可执行调账单。
+3. `inventory` 当前应继续只承担最终库存落库与一致性更新职责。
+
+因此，当前链路更接近：
+
+`approval (裁决)` -> `adjustment execute (执行命令入口)` -> `inventory (最终落库)`
+
+### 本轮是否需要新增代码收口
+
+本轮判断结果是：**暂时不需要新增代码收口。**
+
+原因如下：
+
+1. 当前未发现 approval 侧直连库存执行的错误调用方向。
+2. `adjustment execute` 在前端已经有明确入口，旧兼容层也已退化为转发。
+3. 当前更适合后续继续排查“执行状态治理”而不是再次做结构迁移。
+
+### 建议下一步
+
+若继续推进，更适合的下一步是围绕“执行状态治理”继续细化，而不是立即再做边界重构，例如：
+
+1. 是否需要明确“已批准未执行”与“执行失败”状态
+2. 是否需要在 adjustment 层承接重试/回滚等执行编排语义
+3. 是否需要补充 approval 结果与调账执行之间的审计可见性
+
+### 当前阶段结论
+
+方向 B 的结论是：当前 `approval -> adjustment execute -> inventory` 的主边界方向总体已经成立，暂无明显错误调用方向需要立即修正。后续更值得深入的是“执行状态治理与审计编排”，而不是继续做当前层级的边界搬移。
+
+## 2026-04-11 warehouse 第四阶段补充：调账执行状态治理排查
+
+### 本轮目标
+
+排查当前调账执行链的状态表达与审计可见性缺口，判断下一步更适合：
+
+1. 先补审计可见性
+2. 还是最小新增 `EXECUTE_FAILED` 等执行失败状态
+
+### 已执行排查
+
+本轮重点核对了以下对象：
+
+1. `InventoryAdjustmentStatus` 的前后端定义与使用位置
+2. 执行失败当前在前后端的实际表现
+3. 已有批准/执行审计字段是否完整
+4. 页面层是否能看见批准人与执行人、批准时间与执行时间
+
+### 实际发现
+
+#### 1. 当前状态枚举仍然很小
+
+当前 `InventoryAdjustmentStatus` 仅包含：
+
+1. `PENDING`
+2. `APPROVED`
+3. `REJECTED`
+4. `EXECUTED`
+
+这说明当前系统还没有把执行失败、重试、回滚等治理动作编码进正式状态模型。
+
+#### 2. 已有批准审计字段，但没有对应执行审计字段
+
+当前已确认存在：
+
+1. `approvedBy`
+2. `approvedAt`
+
+但未发现对应的：
+
+1. `executedBy`
+2. `executedAt`
+
+这意味着“谁批准了”已有一定可见性，但“谁执行了、何时执行”的链路目前并不完整。
+
+#### 3. 执行失败当前更像接口报错，而不是持久化治理状态
+
+当前后端执行失败主要表现为：
+
+1. `ExecuteAdjustmentHandler` 返回错误
+2. 前端 `AdjustmentService.execute()` 调用失败后，由页面 toast 呈现错误
+
+目前没有发现：
+
+1. `EXECUTE_FAILED` 之类的正式状态
+2. 持久化的失败原因字段
+3. 页面可追踪的失败历史记录
+
+因此，当前失败治理更像“瞬时错误反馈”，而不是“可审计、可追踪的执行状态”。
+
+#### 4. 当前最大的缺口是审计可见性，而不是状态机复杂度不足
+
+结合当前结构，最明显的问题并不是状态太少，而是：
+
+1. 批准结果与执行结果之间的链路可见性不完整
+2. 执行人、执行时间缺失
+3. 失败是否发生过、为何失败、是否需要重试，当前缺少可追踪载体
+
+换句话说，当前阶段最先缺的不是更多枚举值，而是**治理信息的可见性与留痕**。
+
+### 本轮结论
+
+基于当前证据，本轮结论是：**下一步应优先补审计可见性，而不是立刻新增复杂执行状态机。**
+
+更具体地说：
+
+1. 短期内不建议直接引入完整重试/回滚/部分执行状态模型。
+2. 应优先评估是否补齐 `executedBy / executedAt` 等最小执行审计字段。
+3. 在补足审计可见性后，再判断是否确实有必要最小新增 `EXECUTE_FAILED`。
+
+### 当前是否需要立即改代码
+
+本轮判断结果是：**暂时不直接改代码，先以治理结论归档。**
+
+原因如下：
+
+1. 当前缺口已经明确，但最合理的下一步属于新的最小实现任务。
+2. 若直接在本轮同时加字段、加状态、改页面，容易扩大范围。
+3. 更稳妥的方式是下一轮围绕“执行审计字段最小补齐”单独执行。
+
+### 建议下一步
+
+下一轮最适合的最小任务是：
+
+1. 排查后端 `inventory_adjustments` 是否适合最小补充 `executedBy / executedAt`
+2. 若可行，则前后端同步补齐类型、DTO 与页面展示
+3. 补齐后，再判断是否需要新增 `EXECUTE_FAILED`
+
+### 当前阶段结论
+
+执行状态治理当前最合理的路线是：先补“谁执行了、何时执行、执行结果如何可见”的审计可见性，再决定是否进入最小失败状态治理，而不是现在就扩张复杂执行状态机。
+
 ## 2026-04-11 实验中心侧边栏收敛为单入口
 
 ### 本轮目标

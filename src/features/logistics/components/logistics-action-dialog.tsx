@@ -14,8 +14,7 @@ import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
 import { useGetSalesOrders } from '@/features/trading/sales'
-import { InventoryCoreService } from '@/features/warehouse/services/inventory-core-service'
-import { type ShipmentRecord } from '@/features/warehouse/services/inventory-transaction-service'
+import { ShipmentCoreService, type ShipmentRecord } from '@/features/warehouse/shipment'
 import { getCarrierLabelKey, type LogisticsRecord, type SaveLogisticsRecordInput } from '../data/schema'
 import { useLogisticsMutations } from '../hooks/use-logistics'
 import { getPreferredCarriers } from '../utils/carriers'
@@ -42,7 +41,7 @@ export function LogisticsActionDialog({
   const { data } = useGetSalesOrders(1, 1000, { enabled: open })
   const salesOrders = useMemo(() => data?.items ?? [], [data?.items])
   
-  const initialValues = useMemo(() => {
+  const initialValues = useMemo<SaveLogisticsRecordInput>(() => {
     if (record) return record
     return {
         orderNo: defaultOrderNo,
@@ -53,7 +52,10 @@ export function LogisticsActionDialog({
         contactPerson: '',
         contactPhone: '',
         shipmentId: defaultShipmentId || '',
+        lastLocation: '',
         events: [],
+        version: 1,
+        isDeleted: false,
     }
   }, [record, defaultOrderNo, defaultShipmentId])
 
@@ -99,7 +101,7 @@ export function LogisticsActionDialog({
 
       setIsLoadingShipments(true)
       try {
-        const history = await InventoryCoreService.getShipmentHistory()
+        const history = await ShipmentCoreService.getShipmentHistory()
         const filtered = history.filter(
           (shipment: ShipmentRecord) => shipment.orderNo === formData.orderNo && shipment.status === 'COMMITTED'
         )

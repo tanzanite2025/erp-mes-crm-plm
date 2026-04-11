@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
 
-import { type InventoryAdjustment } from '../services/inventory-maintenance-service'
+import { type InventoryAdjustment } from '../adjustment'
 
 interface Props {
   data: InventoryAdjustment
@@ -12,6 +12,8 @@ interface Props {
 export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   const { t } = useLanguage()
   const reporterName = auditUtils.formatOperatorName(data.createdBy) || data.createdBy
+  const approvedName = data.approvedBy ? auditUtils.formatOperatorName(data.approvedBy) || data.approvedBy : t('warehouse.adjustment.audit.empty')
+  const executedName = data.executedBy ? auditUtils.formatOperatorName(data.executedBy) || data.executedBy : t('warehouse.adjustment.audit.empty')
 
   return (
     <div ref={ref} className='p-8 bg-white text-black print:p-0 w-full max-w-[800px] mx-auto'>
@@ -33,6 +35,10 @@ export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }
         </div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.reporter')}:</span> {reporterName}</div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.createdAt')}:</span> {format(new Date(data.createdAt), 'yyyy-MM-dd HH:mm')}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.approvedBy')}:</span> {approvedName}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.approvedAt')}:</span> {data.approvedAt ? format(new Date(data.approvedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.executedBy')}:</span> {executedName}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.executedAt')}:</span> {data.executedAt ? format(new Date(data.executedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</div>
       </div>
 
       <table className='w-full border-collapse border border-black text-xs mb-8'>

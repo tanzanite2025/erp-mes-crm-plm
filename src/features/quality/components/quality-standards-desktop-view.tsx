@@ -7,10 +7,11 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { Layers, Eye, MoreHorizontal } from 'lucide-react'
 import { type Standard } from '../data/schema'
 import { useLanguage } from '@/context/language-provider'
-import { formatQualityActorName, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
+import { formatQualityActorName, getQualityAuditMeta, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
 
 interface QualityStandardsDesktopViewProps {
     standards: Standard[]
@@ -23,7 +24,7 @@ export function QualityStandardsDesktopView({
     onViewDetail, 
     onEdit 
 }: QualityStandardsDesktopViewProps) {
-    const { t } = useLanguage()
+    const { t, locale } = useLanguage()
 
     return (
         <div className="relative rounded-[32px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner flex flex-col">
@@ -45,6 +46,7 @@ export function QualityStandardsDesktopView({
                         {standards.map((standard: Standard) => {
                             const statusMeta = getStatusMeta(t, standard.status)
                             const operatorName = formatQualityActorName(standard.operator)
+                            const auditMeta = getQualityAuditMeta(locale, standard.status, standard.auditor)
 
                             return (
                                 <TableRow
@@ -77,17 +79,25 @@ export function QualityStandardsDesktopView({
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <div className="flex items-center justify-center">
+                                        <div className="flex flex-col items-center justify-center gap-1.5">
                                             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${statusMeta.className}`}>
                                                 <div className={`size-1.5 rounded-full ${statusMeta.dotClassName}`} />
                                                 <span className="text-[8px] font-black uppercase tracking-widest">{statusMeta.label}</span>
                                             </div>
+                                            <AuditStatusDisplay meta={auditMeta} />
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-0.5">
                                             <span className="text-[10px] font-black text-slate-600 uppercase whitespace-nowrap">{operatorName || t('quality.common.system')}</span>
                                             <span className="text-[8px] font-mono text-muted-foreground/40 tabular-nums">{standard.operateTime ? new Date(standard.operateTime).toLocaleString() : '-'}</span>
+                                            <AuditStatusDisplay
+                                                meta={auditMeta}
+                                                showBadge={false}
+                                                showNote
+                                                noteVariant="text"
+                                                noteClassName="whitespace-nowrap"
+                                            />
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right pr-8">

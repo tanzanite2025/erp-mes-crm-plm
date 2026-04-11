@@ -604,8 +604,9 @@ func GenerateAdjustmentNo(tx *gorm.DB) string {
 	return fmt.Sprintf("ADJUST-%s-%03d", dateStr, count+1)
 }
 
-func ExecuteAdjustment(id string) error {
+func ExecuteAdjustment(id string, username string) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
 		var adj models.InventoryAdjustment
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Items").First(&adj, "id = ?", id).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -646,7 +647,11 @@ func ExecuteAdjustment(id string) error {
 			}
 		}
 
-		if err := tx.Model(&adj).Update("status", "EXECUTED").Error; err != nil {
+		if err := tx.Model(&adj).Updates(map[string]interface{}{
+			"status":      "EXECUTED",
+			"executed_by": username,
+			"executed_at": now,
+		}).Error; err != nil {
 			return err
 		}
 		if adj.TaskID != "" {

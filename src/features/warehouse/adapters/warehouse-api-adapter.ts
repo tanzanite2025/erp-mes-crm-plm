@@ -556,6 +556,8 @@ export interface InventoryAdjustment {
   createdBy: string
   approvedBy?: string
   approvedAt?: string
+  executedBy?: string
+  executedAt?: string
   totalItems: number
   items?: AdjustmentItem[]
 }
@@ -595,6 +597,8 @@ export function toInventoryAdjustmentContract(dto: InventoryAdjustmentApiDTO): I
     createdBy: dto.createdBy,
     approvedBy: dto.approvedBy,
     approvedAt: dto.approvedAt || undefined,
+    executedBy: dto.executedBy,
+    executedAt: dto.executedAt || undefined,
     totalItems: dto.totalItems,
     items: dto.items ? toAdjustmentItemContracts(dto.items) : undefined,
   }

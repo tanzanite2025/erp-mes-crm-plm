@@ -1,8 +1,8 @@
 import { AlertCircle, CheckCheck, Loader2, Package, Printer, Trash2, Truck } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useReactToPrint } from 'react-to-print'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AuditStamp } from '@/components/common/audit-stamp'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -10,7 +10,7 @@ import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type PurchaseOrder } from '../../data/schema'
-import { canReceivePurchaseOrder, getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
+import { canReceivePurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { OrderEvidenceGallery } from '../parts/order-evidence-gallery'
 import { PurchaseOrderEvidencePrint } from './purchase-order-evidence-print'
@@ -67,7 +67,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
     setIsReceiptDialogOpen(true)
   }
 
-  const statusMeta = getPurchaseStatusMeta(order.status)
+  const statusMeta = getPurchaseStatusDisplayMeta(order.status, t)
   const hasReceivableLines = order.lines.some(
     (line) => ((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0)) > 0 && !!line.id
   )
@@ -106,7 +106,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
           <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
             {t('purchase.orders.detailStats.status')}
           </p>
-          <Badge className={statusMeta?.color}>{getPurchaseStatusLabel(order.status, t)}</Badge>
+          <AuditStatusDisplay meta={statusMeta} />
         </Card>
         <Card className='rounded-[28px] border-none bg-muted/30 p-4'>
           <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>

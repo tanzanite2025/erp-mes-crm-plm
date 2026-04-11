@@ -3,13 +3,15 @@ import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
   toWarehouseCategoryContracts,
   toWarehouseCategoryOptionContracts,
-  type WarehouseCategory,
-  type WarehouseCategoryOption,
 } from '../adapters/warehouse-category-api-adapter'
 import {
   type WarehouseCategoryListPageApiDTO,
   type WarehouseCategoryOptionApiDTO,
 } from '../contracts/warehouse-category-api-dto'
+import {
+  type WarehouseCategory,
+  type WarehouseCategoryOption,
+} from '../data/schema'
 
 export type { WarehouseCategory, WarehouseCategoryOption } from '../data/schema'
 

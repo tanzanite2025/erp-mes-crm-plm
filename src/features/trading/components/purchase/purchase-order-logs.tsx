@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
+import { AuditStatusDisplay, type AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   History,
@@ -18,8 +18,54 @@ import { isForbiddenError } from '@/lib/error-status'
 import { getDeletedPurchaseOrders } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
 
+interface PurchaseLogTagMeta {
+  label: string
+  className: string
+}
+
+function getDeletedOrderStatusMeta(locale: string): AuditStatusDisplayMeta {
+  return {
+    label: locale === 'zh-CN' ? '已归档删除' : 'Archived Delete',
+    className: 'bg-rose-50 text-rose-600 border-rose-200',
+    dotClassName: 'bg-rose-500',
+  }
+}
+
+function getPurchaseLogTagMeta(locale: string, kind: 'archive' | 'risk' | 'metric' | 'health'): PurchaseLogTagMeta {
+  switch (kind) {
+    case 'archive':
+      return {
+        label: locale === 'zh-CN' ? '归档标签' : 'Archive Tag',
+        className: 'bg-rose-500/10 text-rose-600 border border-rose-200',
+      }
+    case 'risk':
+      return {
+        label: locale === 'zh-CN' ? '风险提示' : 'Risk Tag',
+        className: 'bg-amber-500/10 text-amber-600 border border-amber-200',
+      }
+    case 'metric':
+      return {
+        label: locale === 'zh-CN' ? '指标标签' : 'Metric Tag',
+        className: 'bg-blue-500/10 text-blue-600 border border-blue-200',
+      }
+    case 'health':
+      return {
+        label: locale === 'zh-CN' ? '健康提示' : 'Health Tag',
+        className: 'bg-emerald-500/10 text-emerald-600 border border-emerald-200',
+      }
+  }
+}
+
+function PurchaseLogTag({ meta }: { meta: PurchaseLogTagMeta }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest ${meta.className}`}>
+      {meta.label}
+    </span>
+  )
+}
+
 export function PurchaseOrderLogs() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -82,9 +128,12 @@ export function PurchaseOrderLogs() {
             <Trash2 className='size-12' />
           </div>
           <CardHeader className='pb-2'>
-            <CardTitle className='text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
-              {t('purchase.logs.canceledOrders')}
-            </CardTitle>
+            <div className='flex items-center justify-between gap-3'>
+              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
+                {t('purchase.logs.canceledOrders')}
+              </CardTitle>
+              <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'archive')} />
+            </div>
           </CardHeader>
           <CardContent>
             <p className='text-3xl font-black italic tracking-tighter text-rose-600'>{orders.length}</p>
@@ -99,9 +148,12 @@ export function PurchaseOrderLogs() {
             <DollarSign className='size-12' />
           </div>
           <CardHeader className='pb-2'>
-            <CardTitle className='text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
-              {t('purchase.logs.voidedValue')}
-            </CardTitle>
+            <div className='flex items-center justify-between gap-3'>
+              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
+                {t('purchase.logs.voidedValue')}
+              </CardTitle>
+              <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'risk')} />
+            </div>
           </CardHeader>
           <CardContent>
             <p className='text-3xl font-black italic tracking-tighter text-amber-600'>
@@ -118,9 +170,12 @@ export function PurchaseOrderLogs() {
             <History className='size-12' />
           </div>
           <CardHeader className='pb-2'>
-            <CardTitle className='text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
-              {t('purchase.logs.auditFrequency')}
-            </CardTitle>
+            <div className='flex items-center justify-between gap-3'>
+              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
+                {t('purchase.logs.auditFrequency')}
+              </CardTitle>
+              <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'metric')} />
+            </div>
           </CardHeader>
           <CardContent>
             <p className='text-3xl font-black italic tracking-tighter text-blue-600'>
@@ -137,9 +192,12 @@ export function PurchaseOrderLogs() {
             <TrendingUp className='size-12' />
           </div>
           <CardHeader className='pb-2'>
-            <CardTitle className='text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
-              {t('purchase.logs.healthStatus')}
-            </CardTitle>
+            <div className='flex items-center justify-between gap-3'>
+              <CardTitle className='text-[10px] font-black uppercase tracking-widest text-emerald-600/60'>
+                {t('purchase.logs.healthStatus')}
+              </CardTitle>
+              <PurchaseLogTag meta={getPurchaseLogTagMeta(locale, 'health')} />
+            </div>
           </CardHeader>
           <CardContent>
             <p className='text-3xl font-black italic tracking-tighter text-emerald-600'>98.2%</p>
@@ -188,12 +246,7 @@ export function PurchaseOrderLogs() {
                             </p>
                           </div>
                         </div>
-                        <Badge
-                          variant='outline'
-                          className='rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-rose-500/30 text-rose-600 bg-rose-50'
-                        >
-                          {t('purchase.logs.hardDeleted')}
-                        </Badge>
+                        <AuditStatusDisplay meta={getDeletedOrderStatusMeta(locale)} badgeClassName='px-4 py-1' />
                       </div>
                       <div className='grid grid-cols-3 gap-4'>
                         <div>

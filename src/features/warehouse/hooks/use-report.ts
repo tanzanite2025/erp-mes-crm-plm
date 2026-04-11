@@ -9,7 +9,7 @@ import {
     type InboundRecord,
     type MasterDataSearchResult,
 } from '../inventory'
-import { type ShipmentRecord } from '../shipment'
+import { ShipmentCoreService, type ShipmentRecord } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 
 const logger = createLogger('useWarehouseReport')
@@ -32,7 +32,7 @@ export function useReport() {
             setError(null)
             const [inbound, shipment, masterList] = await Promise.all([
                 InventoryCoreService.getInboundHistory(),
-                InventoryCoreService.getShipmentHistory(),
+                ShipmentCoreService.getShipmentHistory(),
                 InventoryCoreService.searchMasterData('')
             ])
 

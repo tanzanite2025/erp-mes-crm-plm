@@ -1,18 +1,14 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureObjectResponse } from '@/lib/api-response'
+import { AdjustmentService } from '../adjustment'
 import { InventoryMaintenanceService as InventoryDomainMaintenanceService } from '../inventory'
+import { StocktakeMaintenanceService } from '../stocktake'
 import {
-  toInventoryAdjustmentContracts,
   toShipmentRecordContract,
-  toWarehouseCommandAckContract,
-  type InventoryAdjustment,
   type ShipmentRecord,
-  type WarehouseCommandAck,
 } from '../adapters/warehouse-api-adapter'
 import {
-  type InventoryAdjustmentApiDTO,
   type InventoryShipmentRecordApiDTO,
-  type WarehouseCommandAckApiDTO,
 } from '../contracts/warehouse-api-dto'
 
 export interface ReconcileResult {
@@ -43,42 +39,11 @@ export const InventoryMaintenanceService = {
     return record
   },
 
-  submitAdjustmentForApproval: async (taskId: string): Promise<WarehouseCommandAck> => {
-    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/stocktakes/${taskId}/post-adjustment`, {
-      method: 'POST',
-      body: JSON.stringify({ metadata: { intent: 'STOCK_ADJUSTMENT_SUBMIT' } }),
-    })
+  submitAdjustmentForApproval: StocktakeMaintenanceService.submitAdjustmentForApproval,
 
-    return toWarehouseCommandAckContract(
-      ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryMaintenanceService.submitAdjustmentForApproval'
-      ) as WarehouseCommandAckApiDTO
-    )
-  },
+  getAdjustmentHistory: AdjustmentService.getHistory,
 
-  getAdjustmentHistory: async (): Promise<InventoryAdjustment[]> => {
-    const res = await apiFetch<InventoryAdjustmentApiDTO[]>('/warehouse/adjustments')
-    return toInventoryAdjustmentContracts(
-      ensureArrayResponse<InventoryAdjustmentApiDTO>(
-        res,
-        'InventoryMaintenanceService.getAdjustmentHistory'
-      )
-    )
-  },
-
-  executeAdjustment: async (id: string): Promise<WarehouseCommandAck> => {
-    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/warehouse/adjustments/${id}/execute`, {
-      method: 'POST',
-      body: JSON.stringify({ metadata: { intent: 'STOCK_ADJUSTMENT_EXECUTE' } }),
-    })
-    return toWarehouseCommandAckContract(
-      ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryMaintenanceService.executeAdjustment'
-      ) as WarehouseCommandAckApiDTO
-    )
-  },
+  executeAdjustment: AdjustmentService.execute,
 
   patchInventory: InventoryDomainMaintenanceService.patchInventory,
 

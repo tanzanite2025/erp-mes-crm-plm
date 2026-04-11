@@ -1,16 +1,17 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import {
+  type ShipmentRecordCreateInput,
   toShipmentRecordApiDTO,
   toShipmentRecordContract,
-  type ShipmentRecord,
 } from '../adapters/shipment-api-adapter'
 import { type InventoryShipmentRecordApiDTO } from '../contracts/shipment-api-dto'
+import { type ShipmentRecord } from '../data/schema'
 
 export type { ShipmentRecord, ShipmentStatus } from '../data/schema'
 
 export const ShipmentTransactionService = {
-  recordShipment: async (data: Omit<ShipmentRecord, 'id'>): Promise<ShipmentRecord> => {
+  recordShipment: async (data: ShipmentRecordCreateInput): Promise<ShipmentRecord> => {
     const res = await apiFetch<InventoryShipmentRecordApiDTO>('/inventory/shipment', {
       method: 'POST',
       body: JSON.stringify({

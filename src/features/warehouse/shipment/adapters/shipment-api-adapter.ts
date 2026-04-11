@@ -1,6 +1,11 @@
 import type { InventoryShipmentRecordApiDTO } from '../contracts/shipment-api-dto'
 import type { ShipmentRecord } from '../data/schema'
 
+export type ShipmentRecordCreateInput = Omit<
+  ShipmentRecord,
+  'id' | 'createdAt' | 'updatedAt' | 'version'
+>
+
 function toDateOnlyString(value?: string): string {
   if (!value) return ''
   return value.slice(0, 10)
@@ -34,8 +39,8 @@ export function toShipmentRecordContracts(dtos: InventoryShipmentRecordApiDTO[])
 }
 
 export function toShipmentRecordApiDTO(
-  contract: Omit<ShipmentRecord, 'id' | 'createdAt' | 'updatedAt'>
-): Omit<InventoryShipmentRecordApiDTO, 'id' | 'createdAt' | 'updatedAt'> {
+  contract: ShipmentRecordCreateInput
+): Omit<InventoryShipmentRecordApiDTO, 'id' | 'createdAt' | 'updatedAt' | 'version'> {
   return {
     materialId: contract.materialId,
     materialName: contract.materialName,
@@ -51,6 +56,5 @@ export function toShipmentRecordApiDTO(
     shipmentDate: contract.shipmentDate,
     operator: contract.operator,
     remarks: contract.remarks,
-    version: contract.version,
   }
 }

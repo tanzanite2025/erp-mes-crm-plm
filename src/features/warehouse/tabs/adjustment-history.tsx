@@ -5,9 +5,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { RefreshCw, FileText, Printer, CheckCircle2, History, Search } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/page-header'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -19,7 +20,8 @@ import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { AdjustmentPrint } from '../components/adjustment-print'
-import { InventoryMaintenanceService, type InventoryAdjustment } from '../services/inventory-maintenance-service'
+import { AdjustmentService, type InventoryAdjustment } from '../adjustment'
+import { getAdjustmentStatusMeta } from '../utils/warehouse-status-display'
 
 export function AdjustmentHistory() {
     const queryClient = useQueryClient()
@@ -31,7 +33,7 @@ export function AdjustmentHistory() {
 
     const { data: adjustments, isLoading, error, refetch } = useQuery({
         queryKey: ['inventory-adjustments'],
-        queryFn: () => InventoryMaintenanceService.getAdjustmentHistory()
+        queryFn: () => AdjustmentService.getHistory()
     })
 
     const handlePrint = () => {
@@ -39,7 +41,7 @@ export function AdjustmentHistory() {
     }
 
     const executeMutation = useMutation({
-        mutationFn: (id: string) => InventoryMaintenanceService.executeAdjustment(id),
+        mutationFn: (id: string) => AdjustmentService.execute(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] })
             toast.success(t('warehouse.adjustment.toast.executeSuccess'))
@@ -62,21 +64,6 @@ export function AdjustmentHistory() {
     }
 
     const executeConfirmDesc = `${adjToExecute?.adjustmentNo || ''} - ${t('warehouse.stock.toast.reconcileConfirm')}`
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PENDING':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border-none h-5 px-3 rounded-full'>{t('warehouse.adjustment.status.pending')}</Badge>
-            case 'APPROVED':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 border-none h-5 px-3 rounded-full'>{t('warehouse.adjustment.status.approved')}</Badge>
-            case 'EXECUTED':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border-none h-5 px-3 rounded-full'>{t('warehouse.adjustment.status.executed')}</Badge>
-            case 'REJECTED':
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 border-none h-5 px-3 rounded-full'>{t('warehouse.adjustment.status.rejected')}</Badge>
-            default:
-                return <Badge className='text-[9px] font-black uppercase tracking-widest bg-muted text-muted-foreground h-5 px-3 rounded-full'>{status}</Badge>
-        }
-    }
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -150,10 +137,29 @@ export function AdjustmentHistory() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className='font-black text-[11px] md:text-[12px] text-slate-500 uppercase tracking-tight whitespace-nowrap'>{adj.totalItems}</TableCell>
-                                        <TableCell>{getStatusBadge(adj.status)}</TableCell>
-                                        <TableCell className='py-2 md:py-2.5 font-bold text-[10px] md:text-[11px] text-slate-600 whitespace-nowrap'>{ownerName}</TableCell>
+                                        <TableCell>
+                                            <AuditStatusDisplay
+                                                meta={getAdjustmentStatusMeta(t, adj.status)}
+                                                badgeClassName='h-5 px-3'
+                                            />
+                                        </TableCell>
+                                        <TableCell className='py-2 md:py-2.5 whitespace-nowrap'>
+                                            <div className='flex flex-col gap-1'>
+                                                <span className='font-bold text-[10px] md:text-[11px] text-slate-600'>{ownerName}</span>
+                                                <span className='text-[8px] md:text-[9px] text-muted-foreground/50'>
+                                                    {t('warehouse.adjustment.audit.approvedBy')}: {adj.approvedBy || t('warehouse.adjustment.audit.empty')}
+                                                </span>
+                                                <span className='text-[8px] md:text-[9px] text-muted-foreground/50'>
+                                                    {t('warehouse.adjustment.audit.executedBy')}: {adj.executedBy || t('warehouse.adjustment.audit.empty')}
+                                                </span>
+                                            </div>
+                                        </TableCell>
                                         <TableCell className='py-2 md:py-2.5 font-mono text-[8px] md:text-[9px] text-muted-foreground/40 whitespace-nowrap'>
-                                            {format(new Date(adj.createdAt), 'yyyy-MM-dd HH:mm')}
+                                            <div className='flex flex-col gap-1'>
+                                                <span>{format(new Date(adj.createdAt), 'yyyy-MM-dd HH:mm')}</span>
+                                                <span>{t('warehouse.adjustment.audit.approvedAt')}: {adj.approvedAt ? format(new Date(adj.approvedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</span>
+                                                <span>{t('warehouse.adjustment.audit.executedAt')}: {adj.executedAt ? format(new Date(adj.executedAt), 'yyyy-MM-dd HH:mm') : t('warehouse.adjustment.audit.empty')}</span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className='pr-5 md:pr-8 py-2 md:py-2.5 text-right space-x-2 whitespace-nowrap'>
                                             {adj.status === 'APPROVED' && (

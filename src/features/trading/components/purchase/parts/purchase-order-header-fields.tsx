@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,7 +12,7 @@ import { PaymentTermCoreService } from '@/features/finance/services/payment-term
 import { type Currency, type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
 import { createLogger } from '@/lib/logger'
 import { type OrderEvidence, type PurchaseOrder, type Supplier } from '../../../data/schema'
-import { getPurchaseStatusLabel } from '../../../data/purchase-status'
+import { getPurchaseStatusDisplayMeta } from '../../../data/purchase-status'
 
 const logger = createLogger('PurchaseOrderHeaderFields')
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
@@ -93,6 +94,7 @@ export function PurchaseOrderHeaderFields({
           rate: effectiveExchangeRate.toFixed(4),
           base: baseCurrencyCode,
         })
+  const statusMeta = getPurchaseStatusDisplayMeta(formData.status || 'Draft', t)
 
   return (
     <section className='space-y-4'>
@@ -158,11 +160,9 @@ export function PurchaseOrderHeaderFields({
           <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60'>
             {t('purchase.orders.headerFields.status')}
           </Label>
-          <Input
-            value={getPurchaseStatusLabel(formData.status || 'Draft', t)}
-            disabled
-            className='h-10 rounded-2xl border-none bg-white/50 font-black text-primary shadow-sm'
-          />
+          <div className='flex h-10 items-center rounded-2xl border-none bg-white/50 px-3 shadow-sm'>
+            <AuditStatusDisplay meta={statusMeta} />
+          </div>
         </div>
       </div>
 

@@ -128,7 +128,6 @@ export function useShipment() {
         remarks: formData.remarks,
         sourceCategory: formData.sourceCategory,
         status,
-        version: 1,
       })
 
       toast.success(

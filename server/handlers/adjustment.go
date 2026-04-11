@@ -35,7 +35,7 @@ func SubmitAdjustmentApprovalHandler(c *gin.Context) {
 // ExecuteAdjustmentHandler 执行调账
 func ExecuteAdjustmentHandler(c *gin.Context) {
 	id := c.Param("id")
-	err := services.ExecuteAdjustment(id)
+	err := services.ExecuteAdjustment(id, middleware.GetSafeUsername(c))
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrAdjustmentNotFound):

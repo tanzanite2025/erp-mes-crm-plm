@@ -1,3 +1,4 @@
+export { ShipmentCoreService } from './services/shipment-core-service'
 export { ShipmentTransactionService } from './services/shipment-transaction-service'
 export { useShipment } from './hooks/use-shipment'
 export { useShipmentBootstrap } from './hooks/use-shipment-bootstrap'

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, Check, History as HistoryIcon, Lock, Shield } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,8 +11,12 @@ import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { useAuthStore } from '@/stores/auth-store'
-import { cn } from '@/lib/utils'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import {
+  getApprovalActionLabel,
+  getApprovalModuleLabel,
+  getApprovalStatusMeta,
+} from '../approval-i18n'
 import { ApprovalService, type ApprovalRequest } from '../services/approval-service'
 import { DeltaPreview } from '../components/delta-preview'
 
@@ -82,10 +87,6 @@ export function ApprovalRequests() {
     [currentUserId, requests]
   )
 
-  const getModuleKey = (value: string): Parameters<typeof t>[0] => `approval.modules.${value.toLowerCase()}` as Parameters<typeof t>[0]
-  const getActionKey = (value: string): Parameters<typeof t>[0] => `approval.actions.${value.toLowerCase()}` as Parameters<typeof t>[0]
-  const getStatusKey = (value: string): Parameters<typeof t>[0] => `approval.status.${value.toLowerCase()}` as Parameters<typeof t>[0]
-
   if (isForbiddenError(error)) {
     return <ForbiddenState />
   }
@@ -127,17 +128,23 @@ export function ApprovalRequests() {
                     variant='outline'
                     className='h-5 rounded-full border-none bg-primary/10 px-2 py-0 text-[8px] font-black uppercase text-primary'
                   >
-                    {t(getModuleKey(req.module))}
+                    {getApprovalModuleLabel(t, req.module)}
                   </Badge>
-                  <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                    {t('approval.labels.createdAt')}: {new Date(req.createdAt).toLocaleString(locale)}
-                  </span>
+                  <div className='flex items-center gap-3'>
+                    <AuditStatusDisplay
+                      meta={getApprovalStatusMeta(t, req.status)}
+                      badgeClassName='h-5 px-2 py-0'
+                    />
+                    <span className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                      {t('approval.labels.createdAt')}: {new Date(req.createdAt).toLocaleString(locale)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className='space-y-4'>
                   <h4 className='flex items-center gap-2 text-base font-black uppercase italic tracking-tighter'>
                     <Lock className='size-4 text-primary' />
-                    {t(getActionKey(req.action))}
+                    {getApprovalActionLabel(t, req.action)}
                   </h4>
 
                   <div className='rounded-[20px] border border-dashed border-muted-foreground/10 bg-muted/5 p-5 text-xs font-bold leading-relaxed text-muted-foreground/80 shadow-inner'>
@@ -238,27 +245,17 @@ export function ApprovalRequests() {
               <tr key={req.id} className='h-16 border-b transition-colors last:border-0 hover:bg-muted/5'>
                 <td className='px-6'>
                   <div className='text-xs font-black'>
-                    {t(getModuleKey(req.module))} - {t(getActionKey(req.action))}
+                    {getApprovalModuleLabel(t, req.module)} - {getApprovalActionLabel(t, req.action)}
                   </div>
                   <div className='text-[10px] font-mono text-muted-foreground/60'>
                     ID: {req.targetId}
                   </div>
                 </td>
                 <td className='px-6'>
-                  <Badge
-                    className={cn(
-                      'h-5 px-2 py-0 text-[10px] font-black uppercase tracking-widest',
-                      req.status === 'APPROVED'
-                        ? 'border-emerald-100 bg-emerald-50 text-emerald-600'
-                        : req.status === 'APPROVED_L1'
-                          ? 'border-primary/20 bg-primary/10 text-primary'
-                          : req.status === 'REJECTED'
-                            ? 'border-destructive/10 bg-destructive/5 text-destructive'
-                            : 'border-transparent bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {t(getStatusKey(req.status))}
-                  </Badge>
+                  <AuditStatusDisplay
+                    meta={getApprovalStatusMeta(t, req.status)}
+                    badgeClassName='h-5 px-2 py-0'
+                  />
                 </td>
                 <td className='px-6'>
                   {req.authCode ? (

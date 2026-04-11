@@ -1,4 +1,5 @@
 import type { TranslationKey } from '@/locales'
+import type { AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
 
 export type PurchaseOrderStatus = 'Draft' | 'Sent' | 'Awaiting' | 'Received' | 'Canceled'
 
@@ -72,4 +73,50 @@ export function getPurchaseStatusLabel(
   const translationKey = PURCHASE_STATUS_TRANSLATION_KEYS[status as PurchaseOrderStatus]
   if (translationKey && translate) return translate(translationKey)
   return getPurchaseStatusMeta(status).label
+}
+
+export function getPurchaseStatusDisplayMeta(
+  status: string,
+  translate?: (key: TranslationKey, params?: Record<string, string | number>) => string
+): AuditStatusDisplayMeta {
+  const label = getPurchaseStatusLabel(status, translate)
+
+  switch (status as PurchaseOrderStatus) {
+    case 'Draft':
+      return {
+        label,
+        className: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+        dotClassName: 'bg-slate-500',
+      }
+    case 'Sent':
+      return {
+        label,
+        className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+        dotClassName: 'bg-blue-500',
+      }
+    case 'Awaiting':
+      return {
+        label,
+        className: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+        dotClassName: 'bg-amber-500',
+      }
+    case 'Received':
+      return {
+        label,
+        className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+        dotClassName: 'bg-emerald-500',
+      }
+    case 'Canceled':
+      return {
+        label,
+        className: 'bg-red-500/10 text-rose-600 border-red-500/20',
+        dotClassName: 'bg-rose-500',
+      }
+    default:
+      return {
+        label,
+        className: 'bg-muted/10 text-muted-foreground border-muted/20',
+        dotClassName: 'bg-muted-foreground',
+      }
+  }
 }
