@@ -66,4 +66,21 @@
 
 ---
 
+### 5.5 前端
+- **主方向**: 前端状态治理以“响应式数据总线”为主方向，但该总线仅是状态传播层，不能替代后端权威、Workflow 或 Service 边界。
+- **技术落点**: 默认采用 `React Query + Zustand + typed domain event bus` 组合，而非将所有状态混入单一 Store 或以组件内手工 `dispatchEvent` 维持同步。
+- **增量补充**: 高实时链路可使用 `WebSocket / SSE -> invalidateQueries` 或局部 cache patch 作为补充，但不得引入第二套业务真相源。
+- **远端真相归属**: 所有来自服务端的实体列表、详情、分页结果、权限裁决结果与可重取数据，默认由 `React Query` 负责读取、缓存、失效与重取。除非有明确说明，禁止以 `Zustand` 或自定义全局对象长期持有这些服务端真相副本。
+- **本地状态归属**: `Zustand` 仅用于本地 UI / 会话 / 临时交互态，例如弹窗开关、表格筛选、视图模式、选中项、短生命周期草稿或界面偏好。不得用 `Zustand` 取代 Query Cache 管理服务端权威实体。
+- **事件总线边界**: `typed domain event bus` 仅用于轻量同步、query invalidation、局部视图联动、WebSocket 事件桥接与非事务型前端响应。严禁将 event bus 作为复杂业务编排中心，严禁以事件链替代显式的领域命令与工作流。
+- **与 Workflow 的关系**: 涉及跨模块裁决、长事务、语义事务、审批流或需要审计语义还原的操作，仍必须走 `StandardCommand`、`RoutingService`、`DispatchService` 或明确的 Workflow Command。event bus 只能消费这些流程的结果，不能取代这些流程本身。
+- **与 Services 的关系**: 为保持 `5.2` 的去副作用化原则，`services/` 目录中的代码只负责请求、DTO 适配与 SDRTS / TDO 协议封装。严禁在 Service 中直接触发 Toast、Notification、bus emit、跨模块刷新或其他状态副作用。
+- **副作用承载位置**: query invalidation、bus emit、toast、局部 store patch 等副作用，必须位于 Hook 层、`useMutation().onSuccess`、`DispatchService`、Workflow 结果处理器或 WebSocket bridge 中统一编排。
+- **流式更新定位**: `WebSocket / SSE` 是响应式数据总线的增量输入源，而不是新的权威读模型。默认优先策略应为 `invalidateQueries`、`setQueryData` 或最小范围局部同步，而不是绕过现有 DTO / Query / Workflow 边界直接散落更新。
+- **兼容性要求**: 任何前端状态治理改造都必须同时满足：
+  - 不削弱“后端权威”
+  - 不破坏 `services/` 去副作用化
+  - 不绕开 `Workflow / DispatchService / StandardCommand`
+  - 不回退到无类型、字符串散落的全局事件广播模式
+
 > **警告**: 任何违反上述 DTO 规范、SDRTS 协议或 **TDO 事务封装** 的代码生成行为均被视为“损坏（Broken Block）”，AI 必须在生成前自检是否符合此文档。

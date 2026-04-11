@@ -5,8 +5,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
 import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
+import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
 import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
-import { type Currency, type PaymentTerm } from '@/features/finance/data/schema'
+import { type Currency, type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
 import { createLogger } from '@/lib/logger'
 import { type PurchaseOrder, type Supplier } from '../../../data/schema'
 import { getPurchaseStatusLabel } from '../../../data/purchase-status'
@@ -27,17 +28,20 @@ export function PurchaseOrderHeaderFields({
 }: PurchaseOrderHeaderFieldsProps) {
   const { t } = useLanguage()
   const [currencies, setCurrencies] = useState<Currency[]>([])
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([])
 
   useEffect(() => {
     const loadFinanceData = async () => {
       try {
-        const [currencyData, paymentTermData] = await Promise.all([
+        const [currencyData, paymentMethodData, paymentTermData] = await Promise.all([
           CurrencyCoreService.getCurrencies(),
+          PaymentMethodCoreService.getPaymentMethods(),
           PaymentTermCoreService.getPaymentTerms(),
         ])
         setCurrencies(currencyData)
-        setPaymentTerms(paymentTermData)
+        setPaymentMethods(paymentMethodData.filter((item) => item.status === 'Active'))
+        setPaymentTerms(paymentTermData.filter((item) => item.status === 'Active'))
       } catch (error) {
         logger.error('Failed to load finance data', error)
       }
@@ -62,6 +66,30 @@ export function PurchaseOrderHeaderFields({
     label: paymentTerm.name,
     value: paymentTerm.code,
   }))
+
+  const paymentMethodOptions = paymentMethods.map((paymentMethod) => ({
+    label: paymentMethod.name,
+    value: paymentMethod.code,
+  }))
+
+  const baseCurrency = currencies.find((currency) => currency.isBase) ?? null
+  const selectedCurrency = currencies.find((currency) => currency.code === formData.currency) ?? null
+  const baseCurrencyCode = baseCurrency?.code || 'CNY'
+  const selectedCurrencyCode = formData.currency || selectedCurrency?.code || baseCurrencyCode
+  const effectiveExchangeRate =
+    typeof formData.exchangeRate === 'number' && Number.isFinite(formData.exchangeRate)
+      ? formData.exchangeRate
+      : selectedCurrency?.rate ?? 1
+  const exchangeRateText =
+    selectedCurrencyCode === baseCurrencyCode
+      ? t('purchase.orders.headerFields.exchangeRateBaseLocked', {
+          currency: selectedCurrencyCode,
+        })
+      : t('purchase.orders.headerFields.exchangeRatePair', {
+          currency: selectedCurrencyCode,
+          rate: effectiveExchangeRate.toFixed(4),
+          base: baseCurrencyCode,
+        })
 
   return (
     <section className='space-y-4'>
@@ -103,13 +131,24 @@ export function PurchaseOrderHeaderFields({
           <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
             {t('purchase.orders.headerFields.exchangeRate')}
           </Label>
-          <Input
-            type='number'
-            step='0.0001'
-            value={formData.exchangeRate}
-            onChange={(e) => handleHeaderChange('exchangeRate', Number(e.target.value))}
-            className='h-10 rounded-2xl border-none bg-background font-black text-emerald-600 shadow-sm'
-          />
+          <div className='space-y-2'>
+            <Input
+              readOnly
+              value={effectiveExchangeRate.toFixed(4)}
+              className='h-10 rounded-2xl border-none bg-background font-black text-emerald-600 shadow-sm'
+            />
+            <div className='space-y-1 pl-1'>
+              <p className='text-[9px] font-bold tracking-wide text-muted-foreground/70'>
+                {t('purchase.orders.headerFields.exchangeRateAuto')}
+              </p>
+              <p className='text-[9px] font-bold tracking-wide text-muted-foreground/70'>
+                {t('purchase.orders.headerFields.exchangeRateBase', { base: baseCurrencyCode })}
+              </p>
+              <p className='text-[9px] font-bold tracking-wide text-emerald-600'>
+                {exchangeRateText}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className='space-y-1.5'>
@@ -124,7 +163,7 @@ export function PurchaseOrderHeaderFields({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 rounded-[32px] border border-dashed border-primary/10 bg-primary/5 p-5 md:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-4 rounded-[32px] border border-dashed border-primary/10 bg-primary/5 p-5 md:grid-cols-4'>
         <div className='space-y-1.5'>
           <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60'>
             {t('purchase.orders.headerFields.expectedArrival')}
@@ -139,13 +178,34 @@ export function PurchaseOrderHeaderFields({
 
         <div className='space-y-1.5'>
           <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60'>
+            {t('purchase.orders.headerFields.paymentMethod')}
+          </Label>
+          <SelectDropdown
+            placeholder={t('purchase.orders.headerFields.paymentMethodPlaceholder')}
+            items={paymentMethodOptions}
+            defaultValue={formData.paymentMethod}
+            onValueChange={(value) => {
+              const selected = paymentMethods.find((item) => item.code === value)
+              handleHeaderChange('paymentMethod', value)
+              handleHeaderChange('paymentMethodName', selected?.name ?? '')
+            }}
+            className='h-10 rounded-2xl bg-background font-bold'
+          />
+        </div>
+
+        <div className='space-y-1.5'>
+          <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60'>
             {t('purchase.orders.headerFields.paymentTerm')}
           </Label>
           <SelectDropdown
             placeholder={t('purchase.orders.headerFields.paymentTermPlaceholder')}
             items={paymentTermOptions}
             defaultValue={formData.paymentTerm}
-            onValueChange={(value) => handleHeaderChange('paymentTerm', value)}
+            onValueChange={(value) => {
+              const selected = paymentTerms.find((item) => item.code === value)
+              handleHeaderChange('paymentTerm', value)
+              handleHeaderChange('paymentTermName', selected?.name ?? '')
+            }}
             className='h-10 rounded-2xl bg-background font-bold'
           />
         </div>

@@ -13,11 +13,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Search, LayoutGrid, GitCommit } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import { ProductionLine } from '@/features/production-shared/tabs/line-mgmt/types'
-import {
-  PRODUCTION_LINES_UPDATED_EVENT,
-  productionResourceService,
-} from '@/features/production-shared/services/production-resource-service'
+import type { ProductionLine } from '@/features/production-shared/data/production-line'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
 
 interface ProductionSelectorProps {
   open: boolean
@@ -40,26 +38,29 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
     let active = true
 
     const loadLines = async () => {
-      const data = await productionResourceService.getLines()
+      const data = await productionLinesService.getLines()
       if (!active) {
         return
       }
 
       setLines(data || [])
+      setLocalSelected(selectedItems.map(i => i.id))
     }
 
     void loadLines()
-    setLocalSelected(selectedItems.map(i => i.id))
 
     const handleLinesUpdated = () => {
       void loadLines()
     }
-
-    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleLinesUpdated)
+    const unsubscribe = productionResourceSync.subscribe((event) => {
+      if (event.kind === 'lines') {
+        handleLinesUpdated()
+      }
+    })
 
     return () => {
       active = false
-      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleLinesUpdated)
+      unsubscribe()
     }
   }, [open, selectedItems])
 
@@ -96,16 +97,16 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-md rounded-[32px] border-none shadow-2xl overflow-hidden p-0'>
         <DialogHeader className='p-8 bg-muted/10 border-b border-dashed border-muted/50'>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>{t('orgPersonnel.org.productionSelector.title' as any)}</DialogTitle>
+          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>{t('orgPersonnel.org.productionSelector.title')}</DialogTitle>
           <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
-            {t('orgPersonnel.org.productionSelector.desc' as any)}
+            {t('orgPersonnel.org.productionSelector.desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className='relative mx-8 my-4'>
           <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
           <Input 
-            placeholder={t('orgPersonnel.org.productionSelector.searchPlaceholder' as any)} 
+            placeholder={t('orgPersonnel.org.productionSelector.searchPlaceholder')} 
             className='pl-9 h-11 rounded-2xl bg-muted/50 border-none font-bold text-xs' 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -149,8 +150,8 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
         </ScrollArea>
 
         <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50'>
-          <Button variant='outline' onClick={() => onOpenChange(false)} className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed'>{t('common.cancel' as any)}</Button>
-          <Button onClick={handleSave} className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20'>{t('orgPersonnel.org.productionSelector.submit' as any)}</Button>
+          <Button variant='outline' onClick={() => onOpenChange(false)} className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed'>{t('common.actions.cancel')}</Button>
+          <Button onClick={handleSave} className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20'>{t('orgPersonnel.org.productionSelector.submit')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

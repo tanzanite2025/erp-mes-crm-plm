@@ -19,13 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { ProductionLine, Segment } from '../production-shared/tabs/line-mgmt/types'
+import type { ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 import { useLanguage } from '@/context/language-provider'
-import {
-  PRODUCTION_LINES_UPDATED_EVENT,
-  productionResourceService,
-} from '@/features/production-shared/services/production-resource-service'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
 
 const Overview = lazy(() => import('./components/overview').then((m) => ({ default: m.Overview })))
 const SystemEvents = lazy(() => import('./components/system-events').then((m) => ({ default: m.SystemEvents })))
@@ -36,7 +34,7 @@ const OrdersProgress = lazy(() => import('./components/orders-progress').then((m
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 
 async function getStoredSegments(): Promise<(Segment & { lineName: string })[]> {
-  const lines = await productionResourceService.getLines()
+  const lines = await productionLinesService.getLines()
 
   return lines.flatMap((line) =>
     (line.segments || []).map((seg) => ({
@@ -86,13 +84,17 @@ export function Dashboard() {
 
     window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
     window.addEventListener('xdfc_storage_initialized', handleSync)
-    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
+    const unsubscribe = productionResourceSync.subscribe((event) => {
+      if (event.kind === 'lines') {
+        handleSync()
+      }
+    })
 
     return () => {
       active = false
       window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
       window.removeEventListener('xdfc_storage_initialized', handleSync)
-      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
+      unsubscribe()
     }
   }, [])
 

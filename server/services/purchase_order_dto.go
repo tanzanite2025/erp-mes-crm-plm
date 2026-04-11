@@ -61,7 +61,10 @@ type SavePurchaseOrderRequest struct {
 	Amount             float64                    `json:"amount"`
 	ExchangeRate       float64                    `json:"exchangeRate"`
 	Purchaser          string                     `json:"purchaser"`
+	PaymentMethod      string                     `json:"paymentMethod"`
+	PaymentMethodName  string                     `json:"paymentMethodName"`
 	PaymentTerm        string                     `json:"paymentTerm"`
+	PaymentTermName    string                     `json:"paymentTermName"`
 	Note               string                     `json:"note"`
 	WorkflowInstanceID string                     `json:"workflowInstanceId"`
 	IsDeleted          bool                       `json:"isDeleted"`
@@ -81,7 +84,10 @@ type PatchPurchaseOrderRequest struct {
 	Amount             float64                    `json:"amount"`
 	ExchangeRate       float64                    `json:"exchangeRate"`
 	Purchaser          string                     `json:"purchaser"`
+	PaymentMethod      string                     `json:"paymentMethod"`
+	PaymentMethodName  string                     `json:"paymentMethodName"`
 	PaymentTerm        string                     `json:"paymentTerm"`
+	PaymentTermName    string                     `json:"paymentTermName"`
 	Note               string                     `json:"note"`
 	WorkflowInstanceID string                     `json:"workflowInstanceId"`
 	IsDeleted          bool                       `json:"isDeleted"`
@@ -116,7 +122,10 @@ type PurchaseOrderResponse struct {
 	Amount             float64                     `json:"amount"`
 	ExchangeRate       float64                     `json:"exchangeRate"`
 	Purchaser          string                      `json:"purchaser"`
+	PaymentMethod      string                      `json:"paymentMethod"`
+	PaymentMethodName  string                      `json:"paymentMethodName"`
 	PaymentTerm        string                      `json:"paymentTerm"`
+	PaymentTermName    string                      `json:"paymentTermName"`
 	Note               string                      `json:"note"`
 	WorkflowInstanceID string                      `json:"workflowInstanceId"`
 	CreatedAt          time.Time                   `json:"createdAt"`
@@ -138,7 +147,10 @@ type PurchaseOrderListItemResponse struct {
 	Amount             float64   `json:"amount"`
 	ExchangeRate       float64   `json:"exchangeRate"`
 	Purchaser          string    `json:"purchaser"`
+	PaymentMethod      string    `json:"paymentMethod"`
+	PaymentMethodName  string    `json:"paymentMethodName"`
 	PaymentTerm        string    `json:"paymentTerm"`
+	PaymentTermName    string    `json:"paymentTermName"`
 	Note               string    `json:"note"`
 	WorkflowInstanceID string    `json:"workflowInstanceId"`
 	CreatedAt          time.Time `json:"createdAt"`

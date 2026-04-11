@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"xdfc-server/services"
 
@@ -13,7 +15,7 @@ import (
 func GetCurrencies(c *gin.Context) {
 	currencies, err := services.ListCurrencies()
 	if err != nil {
-		respondFinanceServer(c, "获取币种列表失败", err)
+		respondFinanceServer(c, "Failed to load currencies", err)
 		return
 	}
 	c.JSON(http.StatusOK, currencies)
@@ -22,7 +24,7 @@ func GetCurrencies(c *gin.Context) {
 func SaveCurrency(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
 	if err != nil {
-		respondFinanceValidation(c, "币种数据格式错误", err)
+		respondFinanceValidation(c, "Invalid currency payload", err)
 		return
 	}
 
@@ -30,11 +32,11 @@ func SaveCurrency(c *gin.Context) {
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
-			respondFinanceValidation(c, "币种数据格式错误", err)
+			respondFinanceValidation(c, "Invalid currency payload", err)
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			respondFinanceCritical(c, http.StatusNotFound, "币种不存在", nil)
+			respondFinanceCritical(c, http.StatusNotFound, "Currency not found", nil)
 		default:
-			respondFinanceServer(c, "保存币种失败", err)
+			respondFinanceServer(c, "Failed to save currency", err)
 		}
 		return
 	}
@@ -45,7 +47,7 @@ func SaveCurrency(c *gin.Context) {
 func GetPaymentTerms(c *gin.Context) {
 	terms, err := services.ListPaymentTerms()
 	if err != nil {
-		respondFinanceServer(c, "获取账期列表失败", err)
+		respondFinanceServer(c, "Failed to load payment terms", err)
 		return
 	}
 	c.JSON(http.StatusOK, terms)
@@ -54,7 +56,7 @@ func GetPaymentTerms(c *gin.Context) {
 func SavePaymentTerm(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
 	if err != nil {
-		respondFinanceValidation(c, "账期数据格式错误", err)
+		respondFinanceValidation(c, "Invalid payment term payload", err)
 		return
 	}
 
@@ -62,11 +64,11 @@ func SavePaymentTerm(c *gin.Context) {
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
-			respondFinanceValidation(c, "账期数据格式错误", err)
+			respondFinanceValidation(c, "Invalid payment term payload", err)
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			respondFinanceCritical(c, http.StatusNotFound, "账期不存在", nil)
+			respondFinanceCritical(c, http.StatusNotFound, "Payment term not found", nil)
 		default:
-			respondFinanceServer(c, "保存账期失败", err)
+			respondFinanceServer(c, "Failed to save payment term", err)
 		}
 		return
 	}
@@ -74,10 +76,100 @@ func SavePaymentTerm(c *gin.Context) {
 	c.JSON(http.StatusOK, term)
 }
 
+func PatchPaymentTerm(c *gin.Context) {
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondFinanceValidation(c, "Invalid payment term patch payload", err)
+		return
+	}
+
+	payload, err := buildFinancePatchPayloadMap(c.Param("id"), req.Delta)
+	if err != nil {
+		respondFinanceValidation(c, "Invalid payment term patch payload", err)
+		return
+	}
+
+	term, err := services.SavePaymentTermFromJSON(payload, nil)
+	if err != nil {
+		switch {
+		case isFinanceValidationError(err):
+			respondFinanceValidation(c, "Invalid payment term patch payload", err)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			respondFinanceCritical(c, http.StatusNotFound, "Payment term not found", nil)
+		default:
+			respondFinanceServer(c, "Failed to patch payment term", err)
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, term)
+}
+
+func GetPaymentMethods(c *gin.Context) {
+	methods, err := services.ListPaymentMethods()
+	if err != nil {
+		respondFinanceServer(c, "Failed to load payment methods", err)
+		return
+	}
+	c.JSON(http.StatusOK, methods)
+}
+
+func SavePaymentMethod(c *gin.Context) {
+	payload, body, err := decodeJSONBodyMap(c)
+	if err != nil {
+		respondFinanceValidation(c, "Invalid payment method payload", err)
+		return
+	}
+
+	method, err := services.SavePaymentMethodFromJSON(payload, body)
+	if err != nil {
+		switch {
+		case isFinanceValidationError(err):
+			respondFinanceValidation(c, "Invalid payment method payload", err)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			respondFinanceCritical(c, http.StatusNotFound, "Payment method not found", nil)
+		default:
+			respondFinanceServer(c, "Failed to save payment method", err)
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, method)
+}
+
+func PatchPaymentMethod(c *gin.Context) {
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondFinanceValidation(c, "Invalid payment method patch payload", err)
+		return
+	}
+
+	payload, err := buildFinancePatchPayloadMap(c.Param("id"), req.Delta)
+	if err != nil {
+		respondFinanceValidation(c, "Invalid payment method patch payload", err)
+		return
+	}
+
+	method, err := services.SavePaymentMethodFromJSON(payload, nil)
+	if err != nil {
+		switch {
+		case isFinanceValidationError(err):
+			respondFinanceValidation(c, "Invalid payment method patch payload", err)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			respondFinanceCritical(c, http.StatusNotFound, "Payment method not found", nil)
+		default:
+			respondFinanceServer(c, "Failed to patch payment method", err)
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, method)
+}
+
 func GetTaxRates(c *gin.Context) {
 	rates, err := services.ListTaxRates()
 	if err != nil {
-		respondFinanceServer(c, "获取税率列表失败", err)
+		respondFinanceServer(c, "Failed to load tax rates", err)
 		return
 	}
 	c.JSON(http.StatusOK, rates)
@@ -86,7 +178,7 @@ func GetTaxRates(c *gin.Context) {
 func SaveTaxRate(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
 	if err != nil {
-		respondFinanceValidation(c, "税率数据格式错误", err)
+		respondFinanceValidation(c, "Invalid tax rate payload", err)
 		return
 	}
 
@@ -94,11 +186,11 @@ func SaveTaxRate(c *gin.Context) {
 	if err != nil {
 		switch {
 		case isFinanceValidationError(err):
-			respondFinanceValidation(c, "税率数据格式错误", err)
+			respondFinanceValidation(c, "Invalid tax rate payload", err)
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			respondFinanceCritical(c, http.StatusNotFound, "税率不存在", nil)
+			respondFinanceCritical(c, http.StatusNotFound, "Tax rate not found", nil)
 		default:
-			respondFinanceServer(c, "保存税率失败", err)
+			respondFinanceServer(c, "Failed to save tax rate", err)
 		}
 		return
 	}
@@ -108,7 +200,7 @@ func SaveTaxRate(c *gin.Context) {
 
 func SetBaseCurrency(c *gin.Context) {
 	if err := services.SetBaseCurrency(c.Param("id")); err != nil {
-		respondFinanceServer(c, "切换基础币种失败", err)
+		respondFinanceServer(c, "Failed to switch base currency", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "System base currency updated successfully"})
@@ -116,28 +208,37 @@ func SetBaseCurrency(c *gin.Context) {
 
 func SeedFinanceData(c *gin.Context) {
 	if err := services.SeedFinanceData(); err != nil {
-		respondFinanceServer(c, "初始化财务基础数据失败", err)
+		respondFinanceServer(c, "Failed to seed finance data", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Finance data seeded successfully"})
 }
 
+func RunExchangeRateSync() (int, error) {
+	return services.SyncExchangeRatesFromEnv()
+}
+
+func respondExchangeRateSyncError(c *gin.Context, err error) {
+	if c == nil {
+		return
+	}
+
+	switch {
+	case errors.Is(err, services.ErrExchangeRateAPIKeyMissing):
+		respondFinanceCritical(c, http.StatusInternalServerError, "Exchange rate sync configuration missing: EXCHANGERATE_API_KEY is not set", nil)
+	case errors.Is(err, services.ErrExchangeRateBaseMissing):
+		respondFinanceCritical(c, http.StatusNotFound, "System base currency is not configured", nil)
+	case errors.Is(err, services.ErrExchangeRateAPIStatus):
+		respondFinanceServerWithStatus(c, http.StatusBadGateway, "Exchange rate service returned an abnormal response", err)
+	default:
+		respondFinanceServer(c, "Exchange rate sync failed", err)
+	}
+}
+
 func SyncExchangeRates(c *gin.Context) {
-	count, err := services.SyncExchangeRatesFromEnv()
+	count, err := RunExchangeRateSync()
 	if err != nil {
-		if c == nil {
-			return
-		}
-		switch {
-		case errors.Is(err, services.ErrExchangeRateAPIKeyMissing):
-			respondFinanceCritical(c, http.StatusInternalServerError, "汇率同步配置缺失: EXCHANGERATE_API_KEY 未设置", nil)
-		case errors.Is(err, services.ErrExchangeRateBaseMissing):
-			respondFinanceCritical(c, http.StatusNotFound, "系统基础币种未配置", nil)
-		case errors.Is(err, services.ErrExchangeRateAPIStatus):
-			respondFinanceServerWithStatus(c, http.StatusBadGateway, "汇率服务返回异常状态", nil)
-		default:
-			respondFinanceServer(c, "汇率同步失败", err)
-		}
+		respondExchangeRateSyncError(c, err)
 		return
 	}
 
@@ -181,5 +282,27 @@ func isFinanceValidationError(err error) bool {
 		strings.Contains(msg, "unexpected end") ||
 		strings.Contains(msg, "unsupported currency field") ||
 		strings.Contains(msg, "unsupported payment term field") ||
+		strings.Contains(msg, "unsupported payment method field") ||
 		strings.Contains(msg, "unsupported tax rate field")
+}
+
+func buildFinancePatchPayloadMap(idRaw string, delta map[string]json.RawMessage) (map[string]json.RawMessage, error) {
+	id, err := strconv.Atoi(strings.TrimSpace(idRaw))
+	if err != nil || id <= 0 {
+		return nil, errors.New("invalid finance master id")
+	}
+
+	payload := map[string]json.RawMessage{
+		"id": json.RawMessage(strconv.Itoa(id)),
+	}
+
+	for key, raw := range delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
+		payload[key] = valueRaw
+	}
+
+	return payload, nil
 }

@@ -10,12 +10,9 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
-import type { ProductionLine } from '../line-mgmt/types'
-import {
-  PRODUCTION_LINES_UPDATED_EVENT,
-  PRODUCTION_PROCESSES_UPDATED_EVENT,
-  productionResourceService,
-} from '../../services/production-resource-service'
+import type { ProductionLine } from '../../data/production-line'
+import { productionLinesService } from '../../services/production-lines-service'
+import { productionResourceSync } from '../../services/production-resource-sync'
 import { ProcessLibraryPanel } from './components/process-library-panel.tsx'
 import { WorkArchitectureTree } from './components/work-architecture-tree.tsx'
 
@@ -33,7 +30,7 @@ export function WorkArchitecture() {
 
     try {
       setError(null)
-      const data = await productionResourceService.getLines()
+      const data = await productionLinesService.getLines()
       setLines(data || [])
     } catch (loadError) {
       setError(loadError)
@@ -52,14 +49,15 @@ export function WorkArchitecture() {
     const handleSync = () => {
       void loadData()
     }
-
-    window.addEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
-    window.addEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleSync)
+    const unsubscribe = productionResourceSync.subscribe((event) => {
+      if (event.kind === 'lines' || event.kind === 'processes') {
+        handleSync()
+      }
+    })
 
     return () => {
       globalThis.clearTimeout(timer)
-      window.removeEventListener(PRODUCTION_LINES_UPDATED_EVENT, handleSync)
-      window.removeEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleSync)
+      unsubscribe()
     }
   }, [loadData])
 

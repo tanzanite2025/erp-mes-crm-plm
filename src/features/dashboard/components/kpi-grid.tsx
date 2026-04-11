@@ -7,9 +7,23 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { useTraceStats } from '../hooks/use-trace-stats'
 
+function renderPendingConnection(label: string) {
+    return (
+        <>
+            <div className='text-base md:text-lg font-black tracking-tighter text-muted-foreground/70'>
+                {label}
+            </div>
+            <p className='text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tight mt-1'>
+                {label}
+            </p>
+        </>
+    )
+}
+
 export function KpiGrid() {
     const { t } = useLanguage()
     const { stats, loading } = useTraceStats()
+    const pendingLabel = t('dashboard.page.pendingConnection.label')
 
     if (loading || !stats) {
         return (
@@ -48,12 +62,16 @@ export function KpiGrid() {
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
-                    <div className='text-xl md:text-2xl font-black tracking-tighter text-emerald-700'>
-                        {stats.wip.toLocaleString()} <span className='text-[10px] uppercase font-black text-emerald-600/40 ml-1'>{t('dashboard.page.kpi.wip.unit')}</span>
-                    </div>
-                    <p className='text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tight mt-1'>
-                        {t('dashboard.page.kpi.wip.description')}
-                    </p>
+                    {stats.availability.wip.connected ? (
+                        <>
+                            <div className='text-xl md:text-2xl font-black tracking-tighter text-emerald-700'>
+                                {stats.wip.toLocaleString()} <span className='text-[10px] uppercase font-black text-emerald-600/40 ml-1'>{t('dashboard.page.kpi.wip.unit')}</span>
+                            </div>
+                            <p className='text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tight mt-1'>
+                                {t('dashboard.page.kpi.wip.description')}
+                            </p>
+                        </>
+                    ) : renderPendingConnection(pendingLabel)}
                 </CardContent>
             </Card>
 
@@ -81,15 +99,21 @@ export function KpiGrid() {
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
-                    <div className='text-xl md:text-2xl font-black tracking-tighter text-rose-600'>
-                        {stats.scrap} <span className='text-[10px] uppercase font-black text-rose-500/40 ml-1'>{t('dashboard.page.kpi.scrap.unit')}</span>
-                    </div>
-                    <div className='flex items-center gap-1.5 mt-1'>
-                        <span className='size-1 rounded-full bg-rose-500 animate-pulse' />
-                        <p className='text-[9px] font-bold text-rose-600/50 uppercase tracking-tight'>
-                            {t('dashboard.page.kpi.scrap.delta', { value: stats.scrapDelta })}
-                        </p>
-                    </div>
+                    {stats.availability.scrap.connected ? (
+                        <>
+                            <div className='text-xl md:text-2xl font-black tracking-tighter text-rose-600'>
+                                {stats.scrap} <span className='text-[10px] uppercase font-black text-rose-500/40 ml-1'>{t('dashboard.page.kpi.scrap.unit')}</span>
+                            </div>
+                            <div className='flex items-center gap-1.5 mt-1'>
+                                <span className='size-1 rounded-full bg-rose-500 animate-pulse' />
+                                <p className='text-[9px] font-bold text-rose-600/50 uppercase tracking-tight'>
+                                    {stats.availability.scrapDelta.connected
+                                        ? t('dashboard.page.kpi.scrap.delta', { value: stats.scrapDelta })
+                                        : pendingLabel}
+                                </p>
+                            </div>
+                        </>
+                    ) : renderPendingConnection(pendingLabel)}
                 </CardContent>
             </Card>
 
@@ -116,12 +140,18 @@ export function KpiGrid() {
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
-                    <div className='text-xl md:text-2xl font-black tracking-tighter text-amber-600'>
-                        {stats.gapOrders} <span className='text-[10px] uppercase font-black text-amber-600/40 ml-1'>{t('dashboard.page.kpi.gap.unit')}</span>
-                    </div>
-                    <p className='text-[9px] font-bold text-amber-600/50 uppercase tracking-tight mt-1'>
-                        {t('dashboard.page.kpi.gap.description', { value: stats.gapDescription })}
-                    </p>
+                    {stats.availability.gapOrders.connected ? (
+                        <>
+                            <div className='text-xl md:text-2xl font-black tracking-tighter text-amber-600'>
+                                {stats.gapOrders} <span className='text-[10px] uppercase font-black text-amber-600/40 ml-1'>{t('dashboard.page.kpi.gap.unit')}</span>
+                            </div>
+                            <p className='text-[9px] font-bold text-amber-600/50 uppercase tracking-tight mt-1'>
+                                {stats.availability.gapDescription.connected
+                                    ? t('dashboard.page.kpi.gap.description', { value: stats.gapDescription })
+                                    : pendingLabel}
+                            </p>
+                        </>
+                    ) : renderPendingConnection(pendingLabel)}
                 </CardContent>
             </Card>
 
@@ -147,12 +177,16 @@ export function KpiGrid() {
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 px-4 md:px-5'>
-                    <div className='text-xl md:text-2xl font-black tracking-tighter text-blue-700'>
-                        {stats.totalSn.toLocaleString()} <span className='text-[10px] font-black text-blue-600/40 ml-1 uppercase'>{t('dashboard.page.kpi.activation.unit')}</span>
-                    </div>
-                    <p className='text-[9px] font-bold text-blue-600/40 uppercase tracking-tight mt-1'>
-                        {t('dashboard.page.kpi.activation.description')}
-                    </p>
+                    {stats.availability.totalSn.connected ? (
+                        <>
+                            <div className='text-xl md:text-2xl font-black tracking-tighter text-blue-700'>
+                                {stats.totalSn.toLocaleString()} <span className='text-[10px] font-black text-blue-600/40 ml-1 uppercase'>{t('dashboard.page.kpi.activation.unit')}</span>
+                            </div>
+                            <p className='text-[9px] font-bold text-blue-600/40 uppercase tracking-tight mt-1'>
+                                {t('dashboard.page.kpi.activation.description')}
+                            </p>
+                        </>
+                    ) : renderPendingConnection(pendingLabel)}
                 </CardContent>
             </Card>
         </div>

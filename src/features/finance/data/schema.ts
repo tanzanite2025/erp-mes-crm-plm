@@ -29,8 +29,27 @@ export const PaymentTermSchema = z.object({
   description: z.string().optional(),
   installments: z.string().optional(), // 存储为 JSON 字符串，后端解析
   isDefault: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+  isSystem: z.boolean().default(false),
   status: z.enum(['Active', 'Inactive']).default('Active'),
   version: z.number().int().default(1),
 })
 
 export type PaymentTerm = z.infer<typeof PaymentTermSchema>
+
+/**
+ * 支付方式 Schema (Payment Method)
+ */
+export const PaymentMethodSchema = z.object({
+  id: z.number().optional(),
+  code: z.string().min(1).toUpperCase(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  isDefault: z.boolean().default(false),
+  sortOrder: z.number().int().default(0),
+  isSystem: z.boolean().default(false),
+  status: z.enum(['Active', 'Inactive']).default('Active'),
+  version: z.number().int().default(1),
+})
+
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>

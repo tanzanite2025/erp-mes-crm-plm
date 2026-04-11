@@ -39,6 +39,10 @@ export interface SalesOrderApiDTO {
   quantity: number
   orderDate: string
   deliveryDate: string
+  paymentMethod?: string
+  paymentMethodName?: string
+  paymentTerm?: string
+  paymentTermName?: string
   purchaseOrderNo?: string
   barcode?: string
   requirements?: string

@@ -53,6 +53,12 @@ export const purchase = {
     searchPlaceholder: '搜索单号/供应商...',
     addOrder: '建立采购单',
     all: '全部',
+    filters: {
+      paymentMethod: '支付方式',
+      paymentTerm: '结算方式',
+      allPaymentMethods: '全部支付方式',
+      allPaymentTerms: '全部结算方式',
+    },
     loading: '同步采购订单数据中...',
     prevPage: '上一页',
     nextPage: '下一页',

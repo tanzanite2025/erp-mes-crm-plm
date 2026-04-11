@@ -137,6 +137,18 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	if order.Currency == "" {
 		order.Currency = existing.Currency
 	}
+	if order.PaymentMethod == "" {
+		order.PaymentMethod = existing.PaymentMethod
+	}
+	if order.PaymentMethodName == "" {
+		order.PaymentMethodName = existing.PaymentMethodName
+	}
+	if order.PaymentTerm == "" {
+		order.PaymentTerm = existing.PaymentTerm
+	}
+	if order.PaymentTermName == "" {
+		order.PaymentTermName = existing.PaymentTermName
+	}
 	if order.Classification == "" {
 		order.Classification = existing.Classification
 	}
@@ -178,6 +190,10 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 		"customer_id":          order.CustomerID,
 		"type":                 order.Type,
 		"currency":             order.Currency,
+		"payment_method":       order.PaymentMethod,
+		"payment_method_name":  order.PaymentMethodName,
+		"payment_term":         order.PaymentTerm,
+		"payment_term_name":    order.PaymentTermName,
 		"classification":       order.Classification,
 		"status":               order.Status,
 		"status_note":          order.StatusNote,

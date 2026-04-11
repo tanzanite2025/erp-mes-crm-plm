@@ -205,14 +205,26 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
               </div>
               <div className='flex items-center justify-between'>
                 <span className='text-[11px] font-bold text-muted-foreground'>
+                  {t('purchase.orders.detailFields.paymentMethod')}
+                </span>
+                <span
+                  className={`text-[11px] font-black ${
+                    !order.paymentMethod && !order.paymentMethodName ? 'font-medium italic text-muted-foreground/30' : ''
+                  }`}
+                >
+                  {order.paymentMethodName || order.paymentMethod || t('purchase.orders.detailFields.paymentMethodUnset')}
+                </span>
+              </div>
+              <div className='flex items-center justify-between'>
+                <span className='text-[11px] font-bold text-muted-foreground'>
                   {t('purchase.orders.detailFields.paymentTerm')}
                 </span>
                 <span
                   className={`text-[11px] font-black ${
-                    !order.paymentTerm ? 'font-medium italic text-muted-foreground/30' : ''
+                    !order.paymentTerm && !order.paymentTermName ? 'font-medium italic text-muted-foreground/30' : ''
                   }`}
                 >
-                  {order.paymentTerm || t('purchase.orders.detailFields.paymentTermUnset')}
+                  {order.paymentTermName || order.paymentTerm || t('purchase.orders.detailFields.paymentTermUnset')}
                 </span>
               </div>
             </div>

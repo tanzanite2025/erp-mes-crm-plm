@@ -298,3 +298,84 @@
     - [ ] 以 `WebSocket / SSE -> invalidateQueries` 作为高实时场景补充。
     - [ ] 暂不将 `Server Components / RSC` 作为当前主轴。
   - [ ] 写入已有 `GEMINI.MD`；若工作区内不存在该文件，则先向用户确认正确路径或是否允许新建。
+
+- [ ] 665. 补强 `GEMINI.md` 第 5.5 节边界说明，避免误伤整体架构匹配（2026-04-11，待确认）
+  - [ ] 保留 `5.5 前端` 既有主方向，不推翻“响应式数据总线”结论。
+  - [ ] 增补详细约束，明确以下边界：
+    - [ ] `React Query` 负责远端真相、缓存、失效与重取。
+    - [ ] `Zustand` 仅负责本地 UI / 会话 / 临时交互态，不承载服务端权威真相副本。
+    - [ ] `typed domain event bus` 仅用于轻量同步、query invalidation、局部视图联动。
+    - [ ] 严禁以 event bus 替代 `Workflow / DispatchService / StandardCommand`。
+    - [ ] 严禁在 `services/` 中直接触发状态总线或跨模块刷新。
+    - [ ] `WebSocket / SSE` 仅作为高实时链路的增量补充。
+  - [ ] 文案需与 `5.2 服务层去副作用化`、`5.4 Workflow 优先`、`1. 后端权威` 保持一致。
+  - [ ] 用户确认后再修改 `GEMINI.md` 正文。
+
+- [ ] 666. 规划最小 typed event bus + React Query invalidation PoC（2026-04-11，待确认）
+  - [ ] 选定单一 PoC 场景，优先使用现有 `xdfc_product_types_data_updated` 链路。
+  - [ ] 明确 PoC 目标：
+    - [ ] 用 typed event bus 替代裸字符串 `dispatchEvent` / `addEventListener`。
+    - [ ] 用 `React Query invalidateQueries` 替代组件内手工整页 reload。
+    - [ ] 保持 `services/` 无副作用，不引入对 `Workflow` 的绕行。
+  - [ ] 明确 PoC 最小涉及面：
+    - [ ] 新增轻量 typed event bus 封装。
+    - [ ] 为产品类型查询补齐统一 query key / query hook。
+    - [ ] 在产品类型保存成功后由 Hook / onSuccess 统一触发 invalidation 与必要事件传播。
+    - [ ] 将单个消费方从 `window.addEventListener` 切换到新机制，避免一次性全局改造。
+  - [ ] 明确验证标准：
+    - [ ] 产品类型新增 / 编辑 / 删除后，列表自动刷新。
+    - [ ] 不再依赖裸 `window.dispatchEvent('xdfc_product_types_data_updated')`。
+    - [ ] 前端类型检查通过。
+    - [ ] 若补测试，则优先补事件总线或 hook 层最小单测。
+  - [ ] 用户确认后再实施代码改动。
+
+- [ ] 667. 修复首页仪表盘 `/dashboard/stats` 404，补齐权威聚合接口并收紧数据来源（2026-04-11，待确认）
+  - [x] 已确认前端首页 `KpiGrid -> useTraceStats -> TraceService.getDashboardStats()` 当前请求的是 `GET /api/v1/dashboard/stats`。
+  - [x] 已确认 `apiFetch` 会统一追加 `/api/v1` 前缀，因此当前 404 不是代理猜测问题，而是后端路由实际缺失。
+  - [x] 已确认后端当前仅存在 `GET /api/v1/molds/dashboard/stats`，其返回的是资产看板数据，不是首页 KPI 所需的 `TraceStats` 结构。
+  - [x] 已确认本轮不接受“前端改路径到 `/molds/dashboard/stats`”或“用资产接口字段硬映射首页 KPI”的兜底方案。
+  - [x] 已根据你最新要求将方案调整为“两步走”：第一步只接入已有明确后端权威来源的指标；尚未接通真实主链的指标在 UI 上明确标记为“待连接”，禁止显示成看似已接通但实际为空的数据。
+  - [ ] 待你确认后执行：
+    - [ ] 第一步：在后端补齐 `GET /api/v1/dashboard/stats` 首页权威聚合接口，并仅返回当前已有明确后端权威来源的指标。
+    - [ ] 第一步：前端首页消费该接口时，对尚未接通真实主链的指标显示“待连接”状态，不伪装为空值、零值或正常数据。
+    - [ ] 第二步：待 SN 打印/激活等真实主链接通后，再把 `totalSn` 等待连接指标正式接入首页权威接口与 UI。
+    - [ ] 明确首页 KPI 字段 `wip / scrap / scrapDelta / gapOrders / gapDescription / totalSn / productionFunnel` 的真实数据来源与分阶段接入边界。
+    - [ ] 保持前端首页仅消费该权威接口，不再混用资产看板接口冒充首页聚合数据。
+    - [ ] 为首页仪表盘补充最小必要的后端测试与前端类型验证，确保接口存在且结构稳定。
+    - [ ] 完成验证后更新 `walkthrough.md`，记录根因、数据来源与修复结果。
+- [ ] 668. 修复 `/materials?options=true` 脏缓存导致的响应契约异常（2026-04-11，进行中）
+  - [x] 已确认“采购状态只有草稿”与 `MaterialCoreService.getMaterialOptions.items expected an array response` 不是同一个根因
+  - [x] 已确认采购弹窗状态字段当前为只读展示，新建采购单默认状态为 `Draft`
+  - [x] 已确认后端 `MaterialOptionsApiDTO` 当前 JSON tag 仍为 `items`
+  - [x] 已在 `server/handlers/materials.go` 为 Redis 命中的物料缓存增加结构校验；若缓存 payload 不是当前契约，则删除脏缓存并回源重建
+  - [x] 已补充 `server/handlers/materials_cache_test.go` 回归测试，覆盖 options/list 两类缓存结构的有效性判断
+  - [x] 已执行验证：`go test ./handlers -run Material -count=1`
+  - [x] 已抓取现场 Redis key：`materials:1:cat::search::options:true:page:1:size:20`
+  - [x] 已确认现场 options 缓存实际值为 `{"data":[],"version":"1"}`，不是当前契约要求的 `{ "items": [] }`
+  - [x] 已确认现场普通列表缓存也仍为旧结构：`{"data":[],"page":1,"pageSize":20,"total":0,"version":"1"}`
+  - [x] 已确认相关 Redis key TTL 为 `-1`，属于永久缓存，不会自然过期
+  - [x] 已确认旧提交 `9e34ee9` 的 `server/handlers/materials.go` 曾使用 `gin.H{"data": ..., "version": ver}` 写入同一命名空间 key
+  - [x] 已确认当前运行中的 `server-app-1` 容器创建时间早于将 handler 切换到 `items` 契约的提交 `00bd46a`，现场镜像大概率仍运行旧代码
+  - [ ] 后续操作待定：重建/重启 app 容器并清理 `materials:*` 缓存，或在部署包含自愈逻辑的新版本后再执行一次缓存收口
+
+ - [ ] 669. 明确采购单“状态仅草稿”是否属于产品设计约束（2026-04-11，待确认）
+   - [x] 已确认 `purchase-order-header-fields.tsx` 将状态实现为只读 `Input`
+   - [x] 已确认 `use-purchase-order-form.ts` 为新建采购单默认写入 `status: 'Draft'`
+   - [ ] 待业务/产品确认：新建单据时是否允许手动切换状态，还是维持“新建仅草稿，后续独立流转”
+
+- [ ] 670. 盘点当前“架构收拢”剩余模块并形成优先级清单（2026-04-11，待确认）
+  - [x] 已读取 `GEMINI.md`，确认收拢原则以“后端权威 / services 去副作用化 / 子域物理隔离 / Workflow 优先”为准。
+
+- [ ] 671. 推进 `production-shared` 第二阶段去副作用化与 typed bus / invalidation 收口（2026-04-11，待确认）
+  - [ ] 补充第二阶段规划：明确 service 内副作用迁出范围、typed bus 宿主位置、query invalidation 边界。
+  - [ ] 将 `production-shared` 三类子域 service 从 `window.dispatchEvent(...)` 中解耦，改为纯数据读写入口。
+  - [ ] 设计并落地 `production-shared` 的 typed domain event bus / invalidation 协调层。
+  - [ ] 替换当前直接监听生产资源裸事件的消费方为新协调入口。
+  - [ ] 完成第二阶段最小验证并更新 `walkthrough.md`。
+
+- [ ] 672. 为 `production-shared` 引入明确的 query key / invalidation 约定（2026-04-11，待确认）
+  - [ ] 补充第三阶段规划：明确 production-shared 域内 query key 命名方案与 invalidation 触发边界。
+  - [ ] 为 lines / processes / mappings 建立统一 query key 工厂或常量入口。
+  - [ ] 设计 typed sync 与 React Query invalidation 的协作关系，避免双重刷新。
+  - [ ] 替换第一批消费者到统一 query key / invalidation 约定入口。
+  - [ ] 完成第三阶段最小验证并更新 `walkthrough.md`。

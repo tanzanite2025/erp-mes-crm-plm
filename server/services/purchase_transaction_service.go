@@ -272,7 +272,10 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 		"amount":               nextOrder.Amount,
 		"exchange_rate":        nextOrder.ExchangeRate,
 		"purchaser":            nextOrder.Purchaser,
+		"payment_method":       nextOrder.PaymentMethod,
+		"payment_method_name":  nextOrder.PaymentMethodName,
 		"payment_term":         nextOrder.PaymentTerm,
+		"payment_term_name":    nextOrder.PaymentTermName,
 		"note":                 nextOrder.Note,
 		"workflow_instance_id": nextOrder.WorkflowInstanceID,
 		"is_deleted":           nextOrder.IsDeleted,
@@ -872,7 +875,7 @@ func parsePurchaseOrderSavePayload(raw json.RawMessage) (PurchaseOrderSavePayloa
 	if len(payload.Delta) == 0 {
 		return PurchaseOrderSavePayload{}, fmt.Errorf("%w: delta is required", ErrPurchaseTransactionInvalidPayload)
 	}
-	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentTerm", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PurchaseOrderSavePayload{}, fmt.Errorf("%w: %v", ErrPurchaseTransactionInvalidPayload, err)
 	}
 

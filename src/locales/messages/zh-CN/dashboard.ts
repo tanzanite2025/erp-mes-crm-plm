@@ -29,6 +29,10 @@ export const dashboard = {
       cancel: '取消',
       save: '保存配置',
     },
+    pendingConnection: {
+      label: '待连接',
+      description: '该指标真实数据链尚未接通',
+    },
     kpi: {
       wip: {
         title: '实时在制品',

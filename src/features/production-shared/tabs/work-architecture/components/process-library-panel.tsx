@@ -12,11 +12,12 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  PRODUCTION_PROCESSES_UPDATED_EVENT,
-  productionResourceService,
-} from '../../../services/production-resource-service'
-import type { ProcessStep } from './process-utils'
+import { createLogger } from '@/lib/logger'
+import { productionProcessesService } from '../../../services/production-processes-service'
+import { productionResourceSync } from '../../../services/production-resource-sync'
+import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
+
+const logger = createLogger('ProcessLibraryPanel')
 
 interface ProcessFormState {
   id: string
@@ -70,11 +71,11 @@ export function ProcessLibraryPanel() {
     setIsLoading(true)
 
     try {
-      const data = await productionResourceService.getSteps()
+      const data = await productionProcessesService.getSteps()
       setProcesses(data || [])
     } catch (error) {
       toast.error('加载全局工序池失败')
-      console.error('Failed to load production processes', error)
+      logger.error('Failed to load production processes', error)
     } finally {
       setIsLoading(false)
     }
@@ -83,18 +84,17 @@ export function ProcessLibraryPanel() {
   useEffect(() => {
     void loadProcesses()
 
-    if (typeof window === 'undefined') {
-      return
-    }
-
     const handleProcessesUpdated = () => {
       void loadProcesses()
     }
-
-    window.addEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+    const unsubscribe = productionResourceSync.subscribe((event) => {
+      if (event.kind === 'processes') {
+        handleProcessesUpdated()
+      }
+    })
 
     return () => {
-      window.removeEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+      unsubscribe()
     }
   }, [loadProcesses])
 
@@ -129,7 +129,7 @@ export function ProcessLibraryPanel() {
     setIsSaving(true)
 
     try {
-      await productionResourceService.saveStep({
+      await productionProcessesService.saveStep({
         id: formState.id,
         code: formState.code.trim(),
         name: formState.name.trim(),
@@ -138,11 +138,12 @@ export function ProcessLibraryPanel() {
         isActive: formState.isActive,
         createdAt: formState.createdAt,
       })
+      productionResourceSync.emitProcessesUpdated()
       toast.success(formState.id ? '工序已更新' : '工序已创建')
       setIsDialogOpen(false)
     } catch (error) {
       toast.error(formState.id ? '更新工序失败' : '创建工序失败')
-      console.error('Failed to save production process', error)
+      logger.error('Failed to save production process', error)
     } finally {
       setIsSaving(false)
     }
@@ -156,12 +157,13 @@ export function ProcessLibraryPanel() {
     setIsDeleting(true)
 
     try {
-      await productionResourceService.deleteStep(pendingDelete.id)
+      await productionProcessesService.deleteStep(pendingDelete.id)
+      productionResourceSync.emitProcessesUpdated()
       toast.success(`已删除工序 ${pendingDelete.name}`)
       setPendingDelete(null)
     } catch (error) {
       toast.error('删除工序失败')
-      console.error('Failed to delete production process', error)
+      logger.error('Failed to delete production process', error)
     } finally {
       setIsDeleting(false)
     }

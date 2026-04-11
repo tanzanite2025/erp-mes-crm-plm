@@ -46,6 +46,7 @@ func SetupRoutes(r *gin.Engine) {
 		labCategoryDelete := middleware.RequirePermissions(authz.ActionLabExperimentalCategoryDelete)
 
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
+		authorized.GET("/dashboard/stats", middleware.RequirePermissions(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
 		authorized.GET("/audit/engine/stats", handlers.GetAuditEngineStatsHandler)
 		authorized.POST("/assets/upload", handlers.UploadAssetHandler)

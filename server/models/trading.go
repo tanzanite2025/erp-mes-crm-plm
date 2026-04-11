@@ -13,6 +13,10 @@ type SalesOrder struct {
 	CustomerID         string           `gorm:"size:100" json:"customerId"`
 	Type               string           `gorm:"size:50" json:"type"`
 	Currency           string           `gorm:"size:20" json:"currency"`
+	PaymentMethod      string           `gorm:"size:50" json:"paymentMethod"`
+	PaymentMethodName  string           `gorm:"size:100" json:"paymentMethodName"`
+	PaymentTerm        string           `gorm:"size:50" json:"paymentTerm"`
+	PaymentTermName    string           `gorm:"size:100" json:"paymentTermName"`
 	Classification     string           `gorm:"size:50" json:"classification"`
 	Status             string           `gorm:"size:50;default:'Draft'" json:"status"`
 	StatusNote         string           `json:"statusNote"`
@@ -110,7 +114,10 @@ type PurchaseOrder struct {
 	Amount             float64             `json:"amount"`
 	ExchangeRate       float64             `gorm:"default:1.0" json:"exchangeRate"`
 	Purchaser          string              `gorm:"size:100" json:"purchaser"`
-	PaymentTerm        string              `gorm:"size:255" json:"paymentTerm"`
+	PaymentMethod      string              `gorm:"size:50" json:"paymentMethod"`
+	PaymentMethodName  string              `gorm:"size:100" json:"paymentMethodName"`
+	PaymentTerm        string              `gorm:"size:50" json:"paymentTerm"`
+	PaymentTermName    string              `gorm:"size:100" json:"paymentTermName"`
 	Note               string              `gorm:"type:text" json:"note"`
 	WorkflowInstanceID string              `gorm:"size:100;index" json:"workflowInstanceId"`
 	Lines              []PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`

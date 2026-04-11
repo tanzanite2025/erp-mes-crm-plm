@@ -40,7 +40,10 @@ const DEFAULT_PURCHASE_ORDER: Partial<PurchaseOrder> = {
     lines: [],
     amount: 0,
     purchaser: '',
+    paymentMethod: '',
+    paymentMethodName: '',
     paymentTerm: '',
+    paymentTermName: '',
     note: '',
     version: 1,
 }
@@ -92,15 +95,42 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     useEffect(() => {
         if (!open || initialOrder) return
 
-        const newId = `PO${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
-        setFormData((prev) => ({
-            ...prev,
-            id: newId,
-            orderNo: newId,
-            orderDate: new Date().toISOString().split('T')[0],
-            purchaser: purchaserName,
-            lines: [{ ...emptyLine, lineNo: 1 } as PurchaseOrderLine],
-        }))
+        let cancelled = false
+
+        const initializeNewOrder = async () => {
+            const newId = `PO${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
+            const defaultCurrency = DEFAULT_PURCHASE_ORDER.currency || 'CNY'
+            let defaultExchangeRate = DEFAULT_PURCHASE_ORDER.exchangeRate ?? 1
+
+            try {
+                const currencies = await CurrencyCoreService.getCurrencies()
+                const matchedCurrency = currencies.find((currency: Currency) => currency.code === defaultCurrency)
+                if (matchedCurrency) {
+                    defaultExchangeRate = matchedCurrency.rate
+                }
+            } catch (error) {
+                logger.error('Failed to hydrate default purchase exchange rate', error)
+            }
+
+            if (cancelled) return
+
+            setFormData((prev) => ({
+                ...prev,
+                id: newId,
+                orderNo: newId,
+                orderDate: new Date().toISOString().split('T')[0],
+                purchaser: purchaserName,
+                currency: defaultCurrency,
+                exchangeRate: defaultExchangeRate,
+                lines: [{ ...emptyLine, lineNo: 1 } as PurchaseOrderLine],
+            }))
+        }
+
+        void initializeNewOrder()
+
+        return () => {
+            cancelled = true
+        }
     }, [open, initialOrder, purchaserName, setFormData])
 
     const handleAddLine = useCallback(() => {

@@ -27,7 +27,10 @@ export interface PurchaseOrderApiDTO {
   purchaser: string
   currency: string
   exchangeRate?: number
+  paymentMethod?: string
+  paymentMethodName?: string
   paymentTerm?: string
+  paymentTermName?: string
   note?: string
   workflowInstanceId?: string
   isDeleted?: boolean

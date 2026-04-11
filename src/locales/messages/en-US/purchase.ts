@@ -53,6 +53,12 @@ export const purchase = {
     searchPlaceholder: 'Search order no. / supplier...',
     addOrder: 'Create Purchase Order',
     all: 'All',
+    filters: {
+      paymentMethod: 'Payment Method',
+      paymentTerm: 'Payment Term',
+      allPaymentMethods: 'All Payment Methods',
+      allPaymentTerms: 'All Payment Terms',
+    },
     loading: 'Synchronizing purchase order data...',
     prevPage: 'Prev Page',
     nextPage: 'Next Page',

@@ -111,6 +111,14 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
           highlight
         />
         <InfoRow
+          label={t('tradingSalesOrder.detail.info.paymentMethod')}
+          value={order.paymentMethodName || order.paymentMethod}
+        />
+        <InfoRow
+          label={t('tradingSalesOrder.detail.info.paymentTerm')}
+          value={order.paymentTermName || order.paymentTerm}
+        />
+        <InfoRow
           label={t('tradingSalesOrder.detail.info.contractAmount')}
           value={`${getCurrencyPrefix(order.currency)}${order.amount?.toLocaleString() || '0.00'}`}
         />

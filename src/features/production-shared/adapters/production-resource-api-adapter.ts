@@ -1,11 +1,5 @@
-import type { ProcessStep as ArchitectureProcessStep } from '../tabs/work-architecture/components/process-utils'
-import type {
-  JobCategory,
-  ProductionLine,
-  Segment,
-  ProcessStep as LineProcessStep,
-  Station,
-} from '../tabs/line-mgmt/types'
+import type { ProductionLine, ProductionJobCategory, ProductionSegment, ProductionStation } from '../data/production-line'
+import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionJobCategoryApiDTO,
   ProductionLineApiDTO,
@@ -19,7 +13,7 @@ import type {
   StationMappingsResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
 
-function toLineProcessContract(dto: ProductionProcessStepApiDTO): LineProcessStep {
+function toLineProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
   return {
     id: dto.id,
     code: dto.code || '',
@@ -32,22 +26,11 @@ function toLineProcessContract(dto: ProductionProcessStepApiDTO): LineProcessSte
   }
 }
 
-export function toArchitectureProcessContract(
-  dto: ProductionProcessStepApiDTO
-): ArchitectureProcessStep {
-  return {
-    id: dto.id,
-    code: dto.code || '',
-    name: dto.name,
-    description: dto.description || '',
-    sortOrder: dto.sortOrder || 0,
-    isActive: dto.isActive ?? true,
-    createdAt: dto.createdAt || '',
-    updatedAt: dto.updatedAt || '',
-  }
+export function toProductionProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
+  return toLineProcessContract(dto)
 }
 
-function toStationContract(dto: ProductionStationApiDTO): Station {
+function toStationContract(dto: ProductionStationApiDTO): ProductionStation {
   return {
     id: dto.id,
     categoryId: dto.categoryId || '',
@@ -62,7 +45,7 @@ function toStationContract(dto: ProductionStationApiDTO): Station {
   }
 }
 
-function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): JobCategory {
+function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobCategory {
   return {
     id: dto.id,
     segmentId: dto.segmentId || '',
@@ -76,7 +59,7 @@ function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): JobCategory {
   }
 }
 
-function toSegmentContract(dto: ProductionLineSegmentApiDTO): Segment {
+function toSegmentContract(dto: ProductionLineSegmentApiDTO): ProductionSegment {
   return {
     id: dto.id,
     name: dto.name,
@@ -108,15 +91,15 @@ export function toProductionLineContracts(dto: ProductionLinesResponseApiDTO): P
 
 export function toProductionProcessContracts(
   dto: ProductionProcessStepsResponseApiDTO
-): ArchitectureProcessStep[] {
-  return (dto.items || []).map(toArchitectureProcessContract)
+): ProductionProcessStep[] {
+  return (dto.items || []).map(toProductionProcessContract)
 }
 
 export function toStationMappingsContract(dto: StationMappingsResponseApiDTO): Record<string, string[]> {
   return dto.items || {}
 }
 
-function toProcessApiDTO(process: LineProcessStep): ProductionProcessStepApiDTO {
+function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepApiDTO {
   return {
     id: process.id,
     code: process.code || '',
@@ -129,7 +112,7 @@ function toProcessApiDTO(process: LineProcessStep): ProductionProcessStepApiDTO 
   }
 }
 
-function toStationApiDTO(station: Station): ProductionStationApiDTO {
+function toStationApiDTO(station: ProductionStation): ProductionStationApiDTO {
   return {
     id: station.id,
     categoryId: station.categoryId || '',
@@ -144,7 +127,7 @@ function toStationApiDTO(station: Station): ProductionStationApiDTO {
   }
 }
 
-function toJobCategoryApiDTO(category: JobCategory): ProductionJobCategoryApiDTO {
+function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCategoryApiDTO {
   return {
     id: category.id,
     segmentId: category.segmentId || '',
@@ -158,7 +141,7 @@ function toJobCategoryApiDTO(category: JobCategory): ProductionJobCategoryApiDTO
   }
 }
 
-function toSegmentApiDTO(segment: Segment): ProductionLineSegmentApiDTO {
+function toSegmentApiDTO(segment: ProductionSegment): ProductionLineSegmentApiDTO {
   return {
     id: segment.id,
     name: segment.name,
@@ -189,7 +172,7 @@ export function toSaveProductionLineApiDTO(
 }
 
 export function toSaveProductionProcessStepApiDTO(
-  step: ArchitectureProcessStep,
+  step: ProductionProcessStep,
   stationId?: string
 ): SaveProductionProcessStepApiDTO {
   return {

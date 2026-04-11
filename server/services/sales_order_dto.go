@@ -36,6 +36,10 @@ type SaveSalesOrderRequest struct {
 	CustomerID         string                  `json:"customerId"`
 	Type               string                  `json:"type"`
 	Currency           string                  `json:"currency"`
+	PaymentMethod      string                  `json:"paymentMethod"`
+	PaymentMethodName  string                  `json:"paymentMethodName"`
+	PaymentTerm        string                  `json:"paymentTerm"`
+	PaymentTermName    string                  `json:"paymentTermName"`
 	Classification     string                  `json:"classification"`
 	Status             string                  `json:"status"`
 	StatusNote         string                  `json:"statusNote"`
@@ -61,6 +65,10 @@ type SalesOrderSnapshotRequest struct {
 	CustomerID         string                  `json:"customerId"`
 	Type               string                  `json:"type"`
 	Currency           string                  `json:"currency"`
+	PaymentMethod      string                  `json:"paymentMethod"`
+	PaymentMethodName  string                  `json:"paymentMethodName"`
+	PaymentTerm        string                  `json:"paymentTerm"`
+	PaymentTermName    string                  `json:"paymentTermName"`
 	Classification     string                  `json:"classification"`
 	Status             string                  `json:"status"`
 	StatusNote         string                  `json:"statusNote"`
@@ -112,6 +120,10 @@ type SalesOrderResponse struct {
 	CustomerID         string                   `json:"customerId"`
 	Type               string                   `json:"type"`
 	Currency           string                   `json:"currency"`
+	PaymentMethod      string                   `json:"paymentMethod"`
+	PaymentMethodName  string                   `json:"paymentMethodName"`
+	PaymentTerm        string                   `json:"paymentTerm"`
+	PaymentTermName    string                   `json:"paymentTermName"`
 	Classification     string                   `json:"classification"`
 	Status             string                   `json:"status"`
 	StatusNote         string                   `json:"statusNote"`
@@ -139,6 +151,10 @@ type SalesOrderListItemResponse struct {
 	CustomerID         string                   `json:"customerId"`
 	Type               string                   `json:"type"`
 	Currency           string                   `json:"currency"`
+	PaymentMethod      string                   `json:"paymentMethod"`
+	PaymentMethodName  string                   `json:"paymentMethodName"`
+	PaymentTerm        string                   `json:"paymentTerm"`
+	PaymentTermName    string                   `json:"paymentTermName"`
 	Classification     string                   `json:"classification"`
 	Status             string                   `json:"status"`
 	StatusNote         string                   `json:"statusNote"`

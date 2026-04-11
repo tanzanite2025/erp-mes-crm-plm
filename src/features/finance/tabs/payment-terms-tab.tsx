@@ -124,13 +124,24 @@ export function PaymentTermsTab() {
                                         return translatedDesc.includes('finance.paymentTerms.card.descriptions') ? (term.description || t('finance.paymentTerms.card.emptyDescription')) : translatedDesc
                                     })()}
                                 </div>
-                                <div className='flex items-center gap-2'>
+                                <div className='flex flex-wrap items-center gap-2'>
                                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${term.isDefault ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground opacity-50'}`}>
                                         {term.isDefault
                                             ? t('finance.paymentTerms.card.defaultBadge')
                                             : t('finance.paymentTerms.card.optionalBadge')}
                                     </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${term.status === 'Active' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'}`}>
+                                        {term.status === 'Active' ? t('finance.paymentTerms.status.active') : t('finance.paymentTerms.status.inactive')}
+                                    </span>
+                                    {term.isSystem ? (
+                                        <span className='px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 border border-blue-500/20'>
+                                            {t('finance.paymentTerms.card.systemBadge')}
+                                        </span>
+                                    ) : null}
                                 </div>
+                                <p className='text-[8px] font-black tracking-widest uppercase text-muted-foreground/40'>
+                                    {t('finance.paymentTerms.card.sortOrder', { sortOrder: term.sortOrder ?? 0 })}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>

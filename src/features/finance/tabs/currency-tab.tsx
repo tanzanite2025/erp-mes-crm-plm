@@ -28,6 +28,9 @@ export function CurrencyTab() {
         setIsDialogOpen(true)
     }
 
+    const baseCurrency = currencies.find((currency) => currency.isBase) ?? null
+    const baseCurrencyCode = baseCurrency?.code || 'CNY'
+
     return (
         <div className='space-y-6 animate-in fade-in duration-700'>
             <IndustrialHeader 
@@ -136,6 +139,11 @@ export function CurrencyTab() {
                                         }`}>
                                             {!curr.isBase && curr.rate === 1 ? '?' : curr.rate.toFixed(curr.precision)}
                                         </span>
+                                        <p className='mt-1 text-[9px] font-bold tracking-wide text-muted-foreground/60'>
+                                            {curr.isBase
+                                                ? `1 ${curr.code} = 1.0000 ${baseCurrencyCode}`
+                                                : `1 ${curr.code} = ${curr.rate.toFixed(Math.max(curr.precision, 4))} ${baseCurrencyCode}`}
+                                        </p>
                                     </div>
                                     <div className='text-right'>
                                         <span className='text-2xl font-black opacity-10 italic'>{curr.symbol}</span>

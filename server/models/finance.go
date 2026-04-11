@@ -22,7 +22,24 @@ type PaymentTerm struct {
 	Description string    `gorm:"type:text" json:"description"`
 	Installment string    `gorm:"type:jsonb" json:"installments"`
 	IsDefault   bool      `gorm:"default:false" json:"isDefault"`
+	SortOrder   int       `gorm:"default:0" json:"sortOrder"`
+	IsSystem    bool      `gorm:"default:false" json:"isSystem"`
 	Status      string    `gorm:"size:20;default:'Active'" json:"status"`
+	Version     int       `gorm:"default:1" json:"version"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type PaymentMethod struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Code        string    `gorm:"size:50;uniqueIndex;not null" json:"code"`
+	Name        string    `gorm:"size:100;not null" json:"name"`
+	Description string    `gorm:"type:text" json:"description"`
+	IsDefault   bool      `gorm:"default:false" json:"isDefault"`
+	SortOrder   int       `gorm:"default:0" json:"sortOrder"`
+	IsSystem    bool      `gorm:"default:false" json:"isSystem"`
+	Status      string    `gorm:"size:20;default:'Active'" json:"status"`
+	Version     int       `gorm:"default:1" json:"version"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }

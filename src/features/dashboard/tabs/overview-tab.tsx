@@ -14,12 +14,20 @@ import {
 } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { type Segment } from '@/features/production-shared/tabs/line-mgmt/types'
+import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
 
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 const logger = createLogger('DashboardOverviewTab')
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return 'Failed to load production lines'
+}
 
 /**
  * 核心逻辑重构：从后端拉取产线并展平为工段列表
@@ -27,7 +35,7 @@ const logger = createLogger('DashboardOverviewTab')
  */
 async function fetchRemoteSegments(): Promise<(Segment & { lineName: string })[]> {
   try {
-    const lines = await productionResourceService.getLines()
+    const lines = await productionLinesService.getLines()
 
     return lines.flatMap((line) =>
       (line.segments || []).map((segment) => ({
@@ -67,8 +75,8 @@ export function DashboardOverviewTab() {
         setVisibleSegmentIds(defaults)
         await StorageService.setItem(VISIBLE_SEGMENTS_KEY, defaults)
       }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load production lines')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -97,7 +105,7 @@ export function DashboardOverviewTab() {
       <div className='flex flex-col items-center justify-center h-64 gap-3 animate-in fade-in duration-500'>
         <Loader2 className='size-8 animate-spin text-primary opacity-60' />
         <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-          {t('common.loading' as any)}
+          {t('common.actions.loading')}
         </p>
       </div>
     )
@@ -120,7 +128,7 @@ export function DashboardOverviewTab() {
           onClick={() => loadData()}
           className='rounded-full h-9 px-8 text-[10px] font-black uppercase tracking-widest border-destructive/20 text-destructive hover:bg-destructive/10'
         >
-          {t('common.retry' as any)}
+          {t('common.actions.retry')}
         </Button>
       </div>
     )
@@ -214,7 +222,7 @@ export function DashboardOverviewTab() {
                 onClick={() => handleSaveConfig(visibleSegmentIds)}
                 className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest'
               >
-                {t('common.confirm' as any)}
+                {t('common.actions.save')}
               </Button>
             </DialogFooter>
           </div>

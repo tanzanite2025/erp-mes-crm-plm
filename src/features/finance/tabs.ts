@@ -7,6 +7,12 @@ type TranslateFn = (key: TranslationKey, params?: Record<string, string | number
 export function getFinanceTabs(t: TranslateFn): TabItem[] {
   return [
     {
+      key: 'payment-methods',
+      label: t('finance.layout.tabs.paymentMethods'),
+      href: '/finance-management/payment-methods',
+      permissionId: generatePermissionId('tab', '/finance-management/payment-methods'),
+    },
+    {
       key: 'payment-terms',
       label: t('finance.layout.tabs.paymentTerms'),
       href: '/finance-management/payment-terms',

@@ -44,7 +44,8 @@ import { type EmployeeStatus } from '../services/employee-service'
 import { EmployeeCoreService } from '../services/employee-core-service'
 import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
 import { OrgService } from '../services/org-service'
-import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
 import { type OrgNode } from '../data/org-schema'
 import { type DeltaSet } from '@/lib/delta/types'
 
@@ -90,8 +91,8 @@ export function EmployeeManagementList() {
         try {
             const [orgData, lineData, prcData] = await Promise.all([
                 OrgService.getOrgTree(),
-                productionResourceService.getLines(),
-                productionResourceService.getSteps(),
+                productionLinesService.getLines(),
+                productionProcessesService.getSteps(),
             ])
 
             const newMap: Record<string, string> = {}
@@ -107,8 +108,12 @@ export function EmployeeManagementList() {
             lineData.forEach((line) => {
                 newMap[line.id] = line.name
                 line.segments.forEach((seg) => {
-                    seg.processes.forEach((process) => {
-                        newMap[process.id] = process.name
+                    seg.jobCategories.forEach((category) => {
+                        category.stations.forEach((station) => {
+                            station.processes.forEach((process) => {
+                                newMap[process.id] = process.name
+                            })
+                        })
                     })
                 })
             })

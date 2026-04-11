@@ -3,6 +3,7 @@ export const finance = {
     title: 'Financial Configuration Center',
     subtitle: 'Core Financial Parameters & Dictionary Management',
     tabs: {
+      paymentMethods: 'Payment Methods Dictionary',
       paymentTerms: 'Payment Terms Dictionary',
       currencyRates: 'Currency Rate Center',
       taxation: 'Tax Configuration Center',
@@ -57,6 +58,7 @@ export const finance = {
       loadFailed: 'Failed to load currencies',
       syncSuccess: 'Sync successful: Updated {{count}} currencies',
       syncFailed: 'Sync failed. Check network or API Key',
+      syncBusy: 'Exchange rate sync is already running',
       saveSuccessUpdated: 'Currency updated',
       saveSuccessCreated: 'Currency added',
       setBaseSuccess: 'System base currency switched successfully',
@@ -150,6 +152,11 @@ export const finance = {
       namePlaceholder: 'e.g. Net 30 Days',
       descriptionLabel: 'Description / Details',
       descriptionPlaceholder: 'Enter contract details, including payment milestones, discount ratios, and breach notes...',
+      sortOrderLabel: 'Sort Order',
+      statusLabel: 'Status',
+      defaultHint: 'Use this as the preferred settlement term in order dialogs.',
+      codeLockedHint: 'Codes are locked after creation to keep historical documents searchable and stable.',
+      systemHint: 'This is a system preset. Keep the code stable and disable it instead of deleting it.',
       save: 'Save Settlement Plan',
     },
     card: {
@@ -157,6 +164,8 @@ export const finance = {
       emptyDescription: 'No contractual details provided...',
       defaultBadge: 'PRIMARY_PROTOCOL',
       optionalBadge: 'OPTIONAL_PROTOCOL',
+      systemBadge: 'SYSTEM_PRESET',
+      sortOrder: 'SORT: {{sortOrder}}',
       labels: {
         COD: 'Cash on Delivery',
         PREPAY: 'Full Prepayment',
@@ -170,6 +179,10 @@ export const finance = {
         NET30: 'Full settlement required within 30 calendar days of statement verification and reconciliation.',
       },
     },
+    status: {
+      active: 'Active',
+      inactive: 'Inactive',
+    },
     guard: {
       title: 'Finance Guard',
       content:
@@ -179,8 +192,57 @@ export const finance = {
     },
     toast: {
       loadFailed: 'Failed to load payment terms',
+      formIncomplete: 'Please complete the code and name',
       saveSuccessCreated: 'Payment term created',
       saveSuccessUpdated: 'Payment term updated',
+      conflict: 'Data was updated elsewhere. Please refresh and retry',
+      saveFailed: 'Save failed',
+    },
+  },
+  paymentMethods: {
+    page: {
+      title: 'Payment Method Dictionary',
+      subtitle: 'Manage the payment channels used across purchase and sales orders',
+      refresh: 'Refresh Config',
+      add: 'New Method',
+    },
+    dialog: {
+      editTitle: 'Edit Payment Method',
+      createTitle: 'Create Payment Method',
+      codeLabel: 'Code / Method Code',
+      codePlaceholder: 'e.g. CASH, BANK_TRANSFER',
+      nameLabel: 'Name / Method Name',
+      namePlaceholder: 'e.g. Bank Transfer',
+      descriptionLabel: 'Description / Details',
+      descriptionPlaceholder: 'Describe how this payment method should be used in business scenarios...',
+      sortOrderLabel: 'Sort Order',
+      statusLabel: 'Status',
+      defaultHint: 'Use this as the preferred payment method in order dialogs.',
+      codeLockedHint: 'Codes are locked after creation to keep historical documents searchable and stable.',
+      systemHint: 'This is a system preset. Keep the code stable and disable it instead of deleting it.',
+      save: 'Save Payment Method',
+    },
+    card: {
+      emptyDescription: 'No description provided...',
+      defaultBadge: 'PRIMARY_METHOD',
+      optionalBadge: 'OPTIONAL_METHOD',
+      systemBadge: 'SYSTEM_PRESET',
+      sortOrder: 'SORT: {{sortOrder}}',
+    },
+    status: {
+      active: 'Active',
+      inactive: 'Inactive',
+    },
+    guard: {
+      title: 'Master Data Guard',
+      content:
+        'Payment methods are shared by purchase and sales orders. Built-in methods can be renamed or disabled, but keeping the fixed code stable preserves historical order snapshots.',
+    },
+    toast: {
+      loadFailed: 'Failed to load payment methods',
+      formIncomplete: 'Please complete the code and name',
+      saveSuccessCreated: 'Payment method created',
+      saveSuccessUpdated: 'Payment method updated',
       conflict: 'Data was updated elsewhere. Please refresh and retry',
       saveFailed: 'Save failed',
     },

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"xdfc-server/db"
@@ -15,6 +16,55 @@ import (
 )
 
 var ctx = context.Background()
+
+func jsonFieldIsArray(payload map[string]json.RawMessage, field string) bool {
+	raw, ok := payload[field]
+	if !ok {
+		return false
+	}
+
+	var items []json.RawMessage
+	return json.Unmarshal(raw, &items) == nil
+}
+
+func jsonFieldIsString(payload map[string]json.RawMessage, field string) bool {
+	raw, ok := payload[field]
+	if !ok {
+		return false
+	}
+
+	var value string
+	return json.Unmarshal(raw, &value) == nil
+}
+
+func jsonFieldIsNumber(payload map[string]json.RawMessage, field string) bool {
+	raw, ok := payload[field]
+	if !ok {
+		return false
+	}
+
+	var value float64
+	return json.Unmarshal(raw, &value) == nil
+}
+
+func isValidMaterialCachePayload(cached []byte, isOptions bool) bool {
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal(cached, &payload); err != nil {
+		return false
+	}
+
+	if !jsonFieldIsArray(payload, "items") || !jsonFieldIsString(payload, "version") {
+		return false
+	}
+
+	if isOptions {
+		return true
+	}
+
+	return jsonFieldIsNumber(payload, "total") &&
+		jsonFieldIsNumber(payload, "page") &&
+		jsonFieldIsNumber(payload, "pageSize")
+}
 
 func getMaterialCacheVersion() string {
 	if db.RDB == nil {
@@ -48,8 +98,14 @@ func GetMaterialsHandler(c *gin.Context) {
 
 	if db.RDB != nil {
 		if cached, err := db.RDB.Get(ctx, cacheKey).Result(); err == nil {
-			c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(cached))
-			return
+			cachedBytes := []byte(cached)
+			if isValidMaterialCachePayload(cachedBytes, isOptions) {
+				c.Data(http.StatusOK, "application/json; charset=utf-8", cachedBytes)
+				return
+			}
+
+			log.Printf("[CACHE_INVALID] Dropping stale materials cache key=%s options=%v", cacheKey, isOptions)
+			_ = db.RDB.Del(ctx, cacheKey).Err()
 		}
 	}
 

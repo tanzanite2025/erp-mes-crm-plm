@@ -59,6 +59,12 @@ export function SalesOrderMaster({
                 {t('tradingSalesOrder.master.columns.totalQuantity')}
               </th>
               <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                {t('tradingSalesOrder.master.columns.paymentMethod')}
+              </th>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                {t('tradingSalesOrder.master.columns.paymentTerm')}
+              </th>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.deliveryDeadline')}
               </th>
               <th className='px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
@@ -69,7 +75,7 @@ export function SalesOrderMaster({
           <tbody>
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className='py-20'>
+                <td colSpan={8} className='py-20'>
                   <div className='flex flex-col items-center justify-center opacity-30 grayscale'>
                     <div className='mb-4 size-12 animate-pulse rounded-full border-2 border-dashed border-primary' />
                     <p className='text-[10px] font-black uppercase tracking-[0.2em]'>
@@ -153,6 +159,26 @@ export function SalesOrderMaster({
                             </p>
                           </div>
                         )}
+                      </div>
+                    </td>
+                    <td className='px-4 py-3'>
+                      <div className='flex flex-col'>
+                        <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
+                          {order.paymentMethodName || order.paymentMethod || '-'}
+                        </span>
+                        <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                          {order.paymentMethod || '--'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className='px-4 py-3'>
+                      <div className='flex flex-col'>
+                        <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
+                          {order.paymentTermName || order.paymentTerm || '-'}
+                        </span>
+                        <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                          {order.paymentTerm || '--'}
+                        </span>
                       </div>
                     </td>
                     <td className='px-4 py-3'>

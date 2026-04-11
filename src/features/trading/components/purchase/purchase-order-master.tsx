@@ -89,6 +89,12 @@ export function PurchaseOrderMaster({
                 {t('purchase.orders.columns.exchangeRate')}
               </th>
               <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                {t('purchase.orders.columns.paymentMethod')}
+              </th>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                {t('purchase.orders.columns.paymentTerm')}
+              </th>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
                 {t('purchase.orders.columns.contractAmount')}
               </th>
               <th className='px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
@@ -170,6 +176,26 @@ export function PurchaseOrderMaster({
                       </span>
                       <span className='text-[8px] font-black uppercase tracking-widest opacity-30'>
                         {t('purchase.orders.baseCurrency')}
+                      </span>
+                    </div>
+                  </td>
+                  <td className='px-4 py-3'>
+                    <div className='flex flex-col'>
+                      <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
+                        {order.paymentMethodName || order.paymentMethod || t('purchase.orders.notSet')}
+                      </span>
+                      <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                        {order.paymentMethod || '--'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className='px-4 py-3'>
+                    <div className='flex flex-col'>
+                      <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
+                        {order.paymentTermName || order.paymentTerm || t('purchase.orders.notSet')}
+                      </span>
+                      <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                        {order.paymentTerm || '--'}
                       </span>
                     </div>
                   </td>
@@ -304,6 +330,25 @@ export function PurchaseOrderMaster({
                     <span className='text-[9px] font-bold uppercase text-muted-foreground opacity-40'>
                       ID: {order.supplierId}
                     </span>
+                  </div>
+                </div>
+
+                <div className='grid grid-cols-2 gap-3 rounded-2xl border border-dashed border-primary/10 bg-primary/5 px-3 py-2'>
+                  <div className='space-y-1'>
+                    <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                      {t('purchase.orders.columns.paymentMethod')}
+                    </p>
+                    <p className='truncate text-[10px] font-black text-foreground/80'>
+                      {order.paymentMethodName || order.paymentMethod || t('purchase.orders.notSet')}
+                    </p>
+                  </div>
+                  <div className='space-y-1'>
+                    <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                      {t('purchase.orders.columns.paymentTerm')}
+                    </p>
+                    <p className='truncate text-[10px] font-black text-foreground/80'>
+                      {order.paymentTermName || order.paymentTerm || t('purchase.orders.notSet')}
+                    </p>
                   </div>
                 </div>
 

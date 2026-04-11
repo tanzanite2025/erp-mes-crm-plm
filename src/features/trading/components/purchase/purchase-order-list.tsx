@@ -4,9 +4,14 @@ import { Route } from '@/routes/_authenticated/purchase/orders'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
+import { type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
+import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
+import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
+import { createLogger } from '@/lib/logger'
 import { PurchaseOrderMaster } from './purchase-order-master'
 import { PurchaseOrderDetail } from './purchase-order-detail'
 import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
@@ -14,6 +19,8 @@ import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
 import { getPurchaseStatusLabel } from '../../data/purchase-status'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+
+const logger = createLogger('PurchaseOrderList')
 
 export function PurchaseOrderList() {
   const { t } = useLanguage()
@@ -31,6 +38,10 @@ export function PurchaseOrderList() {
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
   const [searchTerm, setSearchTerm] = useState(search || '')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
+  const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
+  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([])
   const navigate = Route.useNavigate()
 
   useEffect(() => {
@@ -56,16 +67,88 @@ export function PurchaseOrderList() {
     }
   }, [search, detailId])
 
+  useEffect(() => {
+    const loadFinanceFilters = async () => {
+      try {
+        const [paymentMethodData, paymentTermData] = await Promise.all([
+          PaymentMethodCoreService.getPaymentMethods(),
+          PaymentTermCoreService.getPaymentTerms(),
+        ])
+        setPaymentMethods(paymentMethodData)
+        setPaymentTerms(paymentTermData)
+      } catch (error) {
+        logger.error('Failed to load purchase order filter options', error)
+      }
+    }
+
+    void loadFinanceFilters()
+  }, [])
+
+  const paymentMethodOptions = useMemo(() => {
+    const entries = new Map<string, string>()
+
+    paymentMethods.forEach((item) => {
+      if (item.code) entries.set(item.code, item.name || item.code)
+    })
+
+    orders.forEach((order) => {
+      if (order.paymentMethod) {
+        entries.set(
+          order.paymentMethod,
+          order.paymentMethodName || entries.get(order.paymentMethod) || order.paymentMethod
+        )
+      }
+    })
+
+    return Array.from(entries.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([value, label]) => ({ value, label }))
+  }, [orders, paymentMethods])
+
+  const paymentTermOptions = useMemo(() => {
+    const entries = new Map<string, string>()
+
+    paymentTerms.forEach((item) => {
+      if (item.code) entries.set(item.code, item.name || item.code)
+    })
+
+    orders.forEach((order) => {
+      if (order.paymentTerm) {
+        entries.set(
+          order.paymentTerm,
+          order.paymentTermName || entries.get(order.paymentTerm) || order.paymentTerm
+        )
+      }
+    })
+
+    return Array.from(entries.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([value, label]) => ({ value, label }))
+  }, [orders, paymentTerms])
+
   const filteredOrders = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+
     return (orders || []).filter((order: PurchaseOrder) => {
       const matchesSearch =
-        (order.orderNo?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-        (order.supplierName?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+        normalizedSearch.length === 0 ||
+        [
+          order.orderNo,
+          order.supplierName,
+          order.paymentMethod,
+          order.paymentMethodName,
+          order.paymentTerm,
+          order.paymentTermName,
+        ].some((value) => (value?.toLowerCase() ?? '').includes(normalizedSearch))
 
       const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter
-      return matchesSearch && matchesStatus
+      const matchesPaymentMethod =
+        paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
+      const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
+
+      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
     })
-  }, [orders, searchTerm, statusFilter])
+  }, [orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
 
   const selectedOrder = useMemo(
     () =>
@@ -150,6 +233,32 @@ export function PurchaseOrderList() {
               </button>
             ))}
           </div>
+          <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+            <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-2xl border-dashed bg-background/80 font-bold shadow-sm'>
+              <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
+            </SelectTrigger>
+            <SelectContent className='rounded-2xl'>
+              <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentMethods')}</SelectItem>
+              {paymentMethodOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={paymentTermFilter} onValueChange={setPaymentTermFilter}>
+            <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-2xl border-dashed bg-background/80 font-bold shadow-sm'>
+              <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
+            </SelectTrigger>
+            <SelectContent className='rounded-2xl'>
+              <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentTerms')}</SelectItem>
+              {paymentTermOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             size='sm'
             className='h-11 w-full sm:w-auto px-8 rounded-full shadow-xl shadow-primary/20 bg-primary font-black text-[10px] uppercase tracking-widest gap-2 active:scale-95 transition-all'

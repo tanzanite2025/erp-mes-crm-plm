@@ -91,6 +91,10 @@ export interface SalesOrder extends BaseEntity {
     customerId?: string // 引用客户 ID
     type: SalesOrderType
     currency: string // 货币类别
+    paymentMethod?: string
+    paymentMethodName?: string
+    paymentTerm?: string
+    paymentTermName?: string
     classification: string // 交易模块订单分类枚举
     status: SalesOrderStatus
     statusNote?: string // 弃用：建议使用 evidences
@@ -147,7 +151,10 @@ export interface PurchaseOrder extends BaseEntity {
     purchaser: string // 采购员
     currency: string
     exchangeRate?: number
+    paymentMethod?: string
+    paymentMethodName?: string
     paymentTerm?: string
+    paymentTermName?: string
     note?: string
     lines: PurchaseOrderLine[]
     workflowInstanceId?: string // 统一工作流引擎桥接关键链

@@ -94,7 +94,7 @@ func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderRespons
 }
 
 func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchPurchaseOrderRequest, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentTerm", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PatchPurchaseOrderRequest{}, fmt.Errorf("invalid purchase order delta: %w", err)
 	}
 
@@ -116,7 +116,10 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 		Amount:             patch.Amount,
 		ExchangeRate:       patch.ExchangeRate,
 		Purchaser:          patch.Purchaser,
+		PaymentMethod:      patch.PaymentMethod,
+		PaymentMethodName:  patch.PaymentMethodName,
 		PaymentTerm:        patch.PaymentTerm,
+		PaymentTermName:    patch.PaymentTermName,
 		Note:               patch.Note,
 		WorkflowInstanceID: patch.WorkflowInstanceID,
 		IsDeleted:          patch.IsDeleted,
@@ -186,9 +189,21 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 			if err := json.Unmarshal(valueRaw, &patchReq.Purchaser); err != nil {
 				return PatchPurchaseOrderRequest{}, fmt.Errorf("purchaser 字段错误")
 			}
+		case "paymentMethod":
+			if err := json.Unmarshal(valueRaw, &patchReq.PaymentMethod); err != nil {
+				return PatchPurchaseOrderRequest{}, fmt.Errorf("paymentMethod 字段错误")
+			}
+		case "paymentMethodName":
+			if err := json.Unmarshal(valueRaw, &patchReq.PaymentMethodName); err != nil {
+				return PatchPurchaseOrderRequest{}, fmt.Errorf("paymentMethodName 字段错误")
+			}
 		case "paymentTerm":
 			if err := json.Unmarshal(valueRaw, &patchReq.PaymentTerm); err != nil {
 				return PatchPurchaseOrderRequest{}, fmt.Errorf("paymentTerm 字段错误")
+			}
+		case "paymentTermName":
+			if err := json.Unmarshal(valueRaw, &patchReq.PaymentTermName); err != nil {
+				return PatchPurchaseOrderRequest{}, fmt.Errorf("paymentTermName 字段错误")
 			}
 		case "note":
 			if err := json.Unmarshal(valueRaw, &patchReq.Note); err != nil {
@@ -270,7 +285,10 @@ func MapSavePurchaseOrderRequestToPatchRequest(input SavePurchaseOrderRequest) P
 		Amount:             input.Amount,
 		ExchangeRate:       input.ExchangeRate,
 		Purchaser:          input.Purchaser,
+		PaymentMethod:      input.PaymentMethod,
+		PaymentMethodName:  input.PaymentMethodName,
 		PaymentTerm:        input.PaymentTerm,
+		PaymentTermName:    input.PaymentTermName,
 		Note:               input.Note,
 		WorkflowInstanceID: input.WorkflowInstanceID,
 		IsDeleted:          input.IsDeleted,

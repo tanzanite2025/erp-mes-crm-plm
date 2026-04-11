@@ -294,8 +294,8 @@ func main() {
 	_, err := c.AddFunc("0 11 * * *", func() {
 		runCronWithDistributedLock("exchange-rates-daily", handlers.ExchangeRatesSyncLockKey, handlers.ExchangeRatesSyncLockTTL, func() error {
 			log.Println("[CRON] 触发每日汇率同步任务...")
-			handlers.SyncExchangeRates(nil)
-			return nil
+			_, err := handlers.RunExchangeRateSync()
+			return err
 		})
 	})
 	if err != nil {

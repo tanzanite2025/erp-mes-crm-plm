@@ -47,6 +47,11 @@ export function CurrencyActionDialog({
 }: CurrencyActionDialogProps) {
     const { t } = useLanguage()
     const isEdit = !!editingCurrency
+    const baseCurrency = useMemo(
+        () => currencies.find(currency => currency.isBase) ?? null,
+        [currencies]
+    )
+    const baseCurrencyCode = baseCurrency?.code || 'CNY'
     
     const shellClasses = buildActionDialogShellClasses({
         content: 'max-w-[95vw] sm:max-w-[500px] rounded-[32px]',
@@ -251,6 +256,9 @@ export function CurrencyActionDialog({
                                 {t('finance.currencyRates.dialog.manualRateWarning')}
                             </p>
                         )}
+                        <p className='text-[9px] font-bold text-muted-foreground/70 pl-1 tracking-wide'>
+                            {`1 ${formData.code || 'CUR'} = ${(formData.rate ?? 1).toFixed(4)} ${baseCurrencyCode}`}
+                        </p>
                     </div>
                 ) : (
                     <div className='p-5 rounded-2xl bg-amber-500/5 border border-dashed border-amber-500/20 flex gap-4 items-start'>

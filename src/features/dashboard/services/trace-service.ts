@@ -1,6 +1,20 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 
+export interface TraceMetricAvailability {
+    connected: boolean
+}
+
+export interface TraceStatsAvailability {
+    wip: TraceMetricAvailability
+    scrap: TraceMetricAvailability
+    scrapDelta: TraceMetricAvailability
+    gapOrders: TraceMetricAvailability
+    gapDescription: TraceMetricAvailability
+    totalSn: TraceMetricAvailability
+    productionFunnel: TraceMetricAvailability
+}
+
 export interface TraceStats {
     wip: number
     scrap: number
@@ -9,6 +23,7 @@ export interface TraceStats {
     gapDescription: string
     totalSn: number 
     productionFunnel: { name: string, value: number }[]
+    availability: TraceStatsAvailability
 }
 
 export const TraceService = {

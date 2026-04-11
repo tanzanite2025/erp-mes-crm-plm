@@ -104,7 +104,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 }
 
 func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta: %w", err)
 	}
 
@@ -144,6 +144,22 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 			}
 		case "currency":
 			if err := json.Unmarshal(valueRaw, &snapshot.Currency); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "paymentMethod":
+			if err := json.Unmarshal(valueRaw, &snapshot.PaymentMethod); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "paymentMethodName":
+			if err := json.Unmarshal(valueRaw, &snapshot.PaymentMethodName); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "paymentTerm":
+			if err := json.Unmarshal(valueRaw, &snapshot.PaymentTerm); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "paymentTermName":
+			if err := json.Unmarshal(valueRaw, &snapshot.PaymentTermName); err != nil {
 				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
 			}
 		case "classification":
@@ -295,6 +311,10 @@ func MapSaveSalesOrderRequestToSnapshot(input SaveSalesOrderRequest) SalesOrderS
 		CustomerID:         input.CustomerID,
 		Type:               input.Type,
 		Currency:           input.Currency,
+		PaymentMethod:      input.PaymentMethod,
+		PaymentMethodName:  input.PaymentMethodName,
+		PaymentTerm:        input.PaymentTerm,
+		PaymentTermName:    input.PaymentTermName,
 		Classification:     input.Classification,
 		Status:             input.Status,
 		StatusNote:         input.StatusNote,

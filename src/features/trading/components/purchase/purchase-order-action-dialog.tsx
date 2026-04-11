@@ -108,7 +108,10 @@ export function PurchaseOrderActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[92vh] max-w-[calc(100%-1rem)] overflow-y-auto rounded-[32px] border-none p-0 shadow-2xl lg:max-w-[1100px]'>
+      <DialogContent
+        showCloseButton={false}
+        className='max-h-[92vh] max-w-[calc(100%-1rem)] overflow-y-auto rounded-[32px] border-none p-0 shadow-2xl lg:max-w-[1100px]'
+      >
         <div className='sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-8 py-4 backdrop-blur-sm'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2 text-lg font-black uppercase tracking-tighter text-slate-900 italic dark:text-white lg:text-xl'>

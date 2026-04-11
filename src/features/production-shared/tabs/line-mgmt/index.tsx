@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { LineList } from './components/line-list'
-import { type ProductionLine } from './types'
-import { productionResourceService } from '../../services/production-resource-service'
+import type { ProductionLine } from '../../data/production-line'
+import { productionLinesService } from '../../services/production-lines-service'
+import { productionResourceSync } from '../../services/production-resource-sync'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
@@ -27,7 +28,7 @@ export function LineMgmt() {
     setIsLoading(true)
     try {
       setError(null)
-      const data = await productionResourceService.getLines()
+      const data = await productionLinesService.getLines()
       setLines(data || [])
     } catch (loadError) {
       setError(loadError)
@@ -59,11 +60,11 @@ export function LineMgmt() {
       setLines(prev => prev.map(l => {
         if (l.id !== id) return l
         // 根据 Delta 进行局部状态回写 (乐观更新)
-        const updated = { ...l }
-        ;(Object.entries(delta) as [string, any][]).forEach(([path, item]) => {
+        const updated: ProductionLine & Record<string, unknown> = { ...l }
+        Object.entries(delta).forEach(([path, item]) => {
           // 此处暂不处理深度路径，仅处理一级字段（产线主表基本是一级）
           if (!path.includes('.')) {
-            (updated as any)[path] = item.n
+            updated[path] = item.n
           }
         })
         return updated
@@ -80,16 +81,17 @@ export function LineMgmt() {
     try {
       if (isUpdate) {
         const { id, delta, version } = payload
-        const saved = await productionResourceService.patchLine(id, delta, version, authCode)
+        const saved = await productionLinesService.patchLine(id, delta, version, authCode)
         setLines(prev => prev.map(l => l.id === id ? saved : l))
       } else {
         const { data: line } = payload
         const lineToSave = { ...line, id: '' } // 触发后端生成 UUID
-        const saved = await productionResourceService.saveLine(lineToSave, authCode)
+        const saved = await productionLinesService.saveLine(lineToSave, authCode)
         // 同步服务端生成的真实 ID
         setLines(prev => prev.map(l => l.name === line.name && l.id.startsWith('temp-') ? saved : l))
       }
       
+      productionResourceSync.emitLinesUpdated()
       toast.success(t('orgPersonnel.lineMgmt.list.updateSuccess'))
       // 关键加固：保存成功后延迟全量刷新一次数据，确保嵌套关系同步
       await loadData()
@@ -111,7 +113,8 @@ export function LineMgmt() {
 
   const handleDeleteLine = async (id: string) => {
     try {
-      await productionResourceService.deleteLine(id)
+      await productionLinesService.deleteLine(id)
+      productionResourceSync.emitLinesUpdated()
       await loadData()
     } catch (error) {
       failLoudly(error, 'LineMgmt.handleDeleteLine')

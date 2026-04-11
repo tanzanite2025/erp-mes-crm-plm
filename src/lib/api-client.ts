@@ -185,7 +185,12 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
             // 候选包装路径：items (标准分页) 或 data (标准响应包装)
             const wrapperKey = ('items' in data) ? 'items' : (('data' in data) ? 'data' : null);
             
-            if (wrapperKey && Array.isArray((data as any)[wrapperKey])) {
+            const shouldCreateHybridArray =
+                wrapperKey === 'items' &&
+                Array.isArray((data as any)[wrapperKey]) &&
+                typeof (data as Record<string, unknown>).total === 'number';
+
+            if (shouldCreateHybridArray) {
                 const wrappedData = data as Record<string, unknown>;
                 const primaryArray = Array.isArray(wrappedData[wrapperKey]) ? wrappedData[wrapperKey] as unknown[] : [];
                 

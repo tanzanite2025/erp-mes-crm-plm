@@ -8,8 +8,9 @@ import { Plus, ArrowDown, Activity, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { type Product, type ProductProcessRouting, type ProductProcessRoutingNode } from '../../data/schema'
 import { createProductRoutingDraft } from '../../utils/default-builders'
-import { getStoredProcesses, type ProcessStep } from '@/features/production-shared/tabs/work-architecture/components/process-utils'
-import { PRODUCTION_PROCESSES_UPDATED_EVENT } from '@/features/production-shared/services/production-resource-service'
+import type { ProductionProcessStep as ProcessStep } from '@/features/production-shared/data/production-process'
+import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
+import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
 
 interface ProductRoutingViewProps {
     product: Product
@@ -24,7 +25,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
 
     useEffect(() => {
         const loadProcesses = async () => {
-            const processes = await getStoredProcesses()
+            const processes = await productionProcessesService.getSteps()
             setGlobalProcessResourcePool(processes)
             // Initial mock data if empty
             if (currentBlueprint.routeNodes.length === 0 && processes.length >= 2) {
@@ -62,11 +63,14 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
         const handleProcessesUpdated = () => {
             void loadProcesses()
         }
-
-        window.addEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+        const unsubscribe = productionResourceSync.subscribe((event) => {
+            if (event.kind === 'processes') {
+                handleProcessesUpdated()
+            }
+        })
 
         return () => {
-            window.removeEventListener(PRODUCTION_PROCESSES_UPDATED_EVENT, handleProcessesUpdated)
+            unsubscribe()
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

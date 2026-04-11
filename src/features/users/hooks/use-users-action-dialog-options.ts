@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 import { type Employee } from '@/features/org-personnel/data/schema'
 import { OrgService } from '@/features/org-personnel/services/org-service'
-import { productionResourceService } from '@/features/production-shared/services/production-resource-service'
+import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
+import type { ProductionLine } from '@/features/production-shared/data/production-line'
+import type { ProductionProcessStep } from '@/features/production-shared/data/production-process'
 import { type Role } from '@/features/system-mgmt/data/role-schema'
 import { type UserOption } from '../data/schema'
 import { type EmployeeOption, type TranslateFn } from '../components/users-action-dialog.shared'
@@ -34,8 +37,8 @@ export function useUsersActionDialogOptions({
     Promise.all([
       EmployeeCoreService.getEmployees(),
       OrgService.getOrgTree(),
-      productionResourceService.getLines(),
-      productionResourceService.getSteps(),
+      productionLinesService.getLines(),
+      productionProcessesService.getSteps(),
     ]).then(([data, orgData, lineData, prcData]) => {
       if (isCancelled || !data) return
 
@@ -49,16 +52,20 @@ export function useUsersActionDialogOptions({
 
       flattenOrg(orgData)
 
-      lineData.forEach((line: any) => {
+      lineData.forEach((line: ProductionLine) => {
         nameMap[line.id] = line.name
-        line.segments.forEach((seg: any) => {
-          seg.processes.forEach((process: any) => {
-            nameMap[process.id] = process.name
+        line.segments.forEach((seg) => {
+          seg.jobCategories.forEach((category) => {
+            category.stations.forEach((station) => {
+              station.processes.forEach((process) => {
+                nameMap[process.id] = process.name
+              })
+            })
           })
         })
       })
 
-      prcData.forEach((p: any) => {
+      prcData.forEach((p: ProductionProcessStep) => {
         nameMap[p.id] = p.name
       })
 

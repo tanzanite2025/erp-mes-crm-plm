@@ -29,6 +29,10 @@ export const dashboard = {
       cancel: 'Cancel',
       save: 'Save Configuration',
     },
+    pendingConnection: {
+      label: 'Pending Connection',
+      description: 'The real data pipeline for this metric is not connected yet',
+    },
     kpi: {
       wip: {
         title: 'Real-time WIP',

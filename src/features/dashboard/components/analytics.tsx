@@ -11,6 +11,8 @@ import { useTraceStats } from '../hooks/use-trace-stats'
 import { Info, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 
+type FunnelStageKey = 'pending' | 'inprogress' | 'done' | 'delivered'
+
 export function Analytics() {
   const { t } = useLanguage()
   const { molds } = useAssets()
@@ -44,11 +46,10 @@ export function Analytics() {
                 {t('dashboard.page.analytics.states.syncing')}
               </p>
             </div>
-          ) : stats?.productionFunnel ? (
+          ) : stats?.availability.productionFunnel.connected && stats.productionFunnel.length > 0 ? (
             <SimpleBarList
               items={stats.productionFunnel.map((item) => {
-                // 增加防御性映射，处理可能存在的旧版本硬编码标签或缓存数据
-                const stageMap: Record<string, string> = {
+                const stageMap: Record<string, FunnelStageKey> = {
                   '待下发 (PENDING)': 'pending',
                   '生产阶段 (PRODUCTION)': 'inprogress',
                   '已交库 (COMPLETED)': 'done',
@@ -58,17 +59,17 @@ export function Analytics() {
                   'done': 'done',
                   'delivered': 'delivered'
                 }
-                const key = stageMap[item.name] || item.name
+                const key = stageMap[item.name] ?? 'pending'
                 
                 return {
                   ...item,
-                  name: t(`dashboard.page.analytics.funnel.stages.${key}` as any)
+                  name: t(`dashboard.page.analytics.funnel.stages.${key}`)
                 }
               })}
               barClass='bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.3)] h-3 rounded-full'
               valueFormatter={(n) => `${n} ${t('dashboard.page.analytics.units.order')}`}
             />
-          ) : (
+          ) : stats?.availability.productionFunnel.connected ? (
             <div className='py-12 text-center border-2 border-dashed rounded-[24px] border-muted/40 bg-muted/5'>
                <Info className='size-10 text-muted-foreground/20 mx-auto mb-3' />
                <p className='text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest'>
@@ -76,6 +77,16 @@ export function Analytics() {
                </p>
                <p className='text-[9px] text-muted-foreground/20 mt-1 uppercase italic'>
                  {t('dashboard.page.analytics.states.waitingOrder')}
+               </p>
+            </div>
+          ) : (
+            <div className='py-12 text-center border-2 border-dashed rounded-[24px] border-muted/40 bg-muted/5'>
+               <Info className='size-10 text-muted-foreground/20 mx-auto mb-3' />
+               <p className='text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest'>
+                 {t('dashboard.page.pendingConnection.label')}
+               </p>
+               <p className='text-[9px] text-muted-foreground/20 mt-1 uppercase italic'>
+                 {t('dashboard.page.pendingConnection.description')}
                </p>
             </div>
           )}

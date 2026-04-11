@@ -436,6 +436,7 @@ func InitDB(dsn string) {
 		&models.PurchaseOrder{},
 		&models.PurchaseOrderLine{},
 		&models.Currency{},
+		&models.PaymentMethod{},
 		&models.PaymentTerm{},
 		&models.TaxRate{},
 		&models.Role{},
