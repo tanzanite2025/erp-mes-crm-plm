@@ -20,10 +20,25 @@ function isMergeableRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+type DeepMerge<T, U> = {
+  [K in keyof T | keyof U]:
+    K extends keyof U
+      ? K extends keyof T
+        ? T[K] extends Record<string, unknown>
+          ? U[K] extends Record<string, unknown>
+            ? DeepMerge<T[K], U[K]>
+            : U[K]
+          : U[K]
+        : U[K]
+      : K extends keyof T
+        ? T[K]
+        : never
+}
+
 function deepMerge<T extends Record<string, unknown>, U extends Record<string, unknown>>(
   base: T,
   override: U
-): T & U {
+): DeepMerge<T, U> {
   const result: Record<string, unknown> = { ...base }
 
   for (const [key, value] of Object.entries(override)) {
@@ -35,7 +50,7 @@ function deepMerge<T extends Record<string, unknown>, U extends Record<string, u
     result[key] = value
   }
 
-  return result as T & U
+  return result as DeepMerge<T, U>
 }
 
 const zhCNMessages = deepMerge(baseZhCNMessages, purchaseZhCNOverrides)

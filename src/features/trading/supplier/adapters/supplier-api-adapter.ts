@@ -31,8 +31,8 @@ export function toSupplierContract(dto: SupplierApiDTO): Supplier {
     address: dto.address,
     status: dto.status,
     rating: dto.rating,
-    createdAt: dto.createdAt,
-    updatedAt: dto.updatedAt,
+    createdAt: dto.createdAt ?? '',
+    updatedAt: dto.updatedAt ?? '',
     isDeleted: dto.isDeleted ?? false,
     version: dto._v ?? 1,
   }

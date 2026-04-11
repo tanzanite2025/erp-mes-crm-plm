@@ -390,6 +390,7 @@ export interface StocktakeItem {
   uom: string
   scannerId?: string
   scanTime?: string
+  version: number
 }
 
 export interface StocktakeCreateInput {
@@ -463,6 +464,7 @@ export function toStocktakeItemContract(dto: StocktakeItemApiDTO): StocktakeItem
     uom: dto.uom,
     scannerId: dto.scannerId,
     scanTime: dto.scanTime || undefined,
+    version: dto.version ?? 1,
   }
 }
 

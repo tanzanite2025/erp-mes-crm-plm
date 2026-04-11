@@ -30,7 +30,7 @@ export function useDMNumberingMgmt() {
     const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
     const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
 
-    const [appearanceMapping, setAppearanceMapping] = useState<any>(null)
+    const [appearanceMapping] = useState<any>(null)
     const [productTypes, setProductTypes] = useState<ProductType[]>([])
     const [products, setProducts] = useState<Product[]>([])
     

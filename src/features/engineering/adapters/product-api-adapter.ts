@@ -1,5 +1,5 @@
 import { type DeltaSet } from '@/lib/delta/types'
-import { type Product, type ProductAttributeValue } from '../data/schema'
+import { barcodeConfigSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type BulkSyncProductsApiDTO,
   type ProductApiDTO,
@@ -33,6 +33,11 @@ function toAttachmentArray(value: unknown): Product['attachments'] {
   return Array.isArray(value) ? (value as Product['attachments']) : []
 }
 
+function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
+  const parsed = barcodeConfigSchema.safeParse(value)
+  return parsed.success ? parsed.data : undefined
+}
+
 export function toProductContract(dto: ProductApiDTO): Product {
   return {
     id: dto.id,
@@ -57,10 +62,7 @@ export function toProductContract(dto: ProductApiDTO): Product {
     engineeringSpecId: dto.engineeringSpecId,
     attributeValues: (dto.attributeValues ?? []).map(toProductAttributeValueContract),
     techSpecs: dto.techSpecs,
-    barcodeConfig:
-      dto.barcodeConfig && typeof dto.barcodeConfig === 'object'
-        ? dto.barcodeConfig
-        : undefined,
+    barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
     attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
     templateKey: dto.templateKey,

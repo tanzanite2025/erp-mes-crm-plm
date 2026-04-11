@@ -14,6 +14,7 @@ export const employeeSchema = z.object({
     bankName: z.string().optional(),
     education: z.string().optional(),
     age: z.number().optional(),
+    station: z.string().optional(),
     status: z.enum(['active', 'resigned', 'on-leave']),
     joinedDate: z.string().optional(),
     deptId: z.string().optional(),

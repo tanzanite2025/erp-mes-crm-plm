@@ -264,3 +264,117 @@
 3. 第一批生产资源消费者不再直接依赖裸事件字符串完成刷新。
 4. 如需兼容旧事件，也已经被收敛到单点桥接位置。
 5. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。
+
+### 14. `production-shared` 第三阶段：query key / invalidation 约定
+
+日期：2026-04-11  
+状态：待批准
+
+#### 14.1 背景
+
+第二阶段已经完成：
+
+1. `production-shared` 三类子域 service 去副作用化。
+2. 新增 `production-resource-sync.ts`，统一承接 typed sync / 兼容桥。
+3. 第一批监听方已经从裸事件字符串迁移到统一同步入口。
+
+但目前仍缺一个缓存层面的正式约定：
+
+4. `production-shared` 域内尚无明确的 query key 命名规范。
+5. invalidation 还没有统一工厂 / helper，后续一旦接入更多 Query 场景，容易出现多套 key 命名和多处散落 `invalidateQueries(...)`。
+6. typed sync 与 React Query 缓存失效的职责边界还没有正式定义。
+
+#### 14.2 本轮目标
+
+本轮目标不是把整个 `production-shared` 全量改成 React Query，而是先建立**正式约定**：
+
+1. 为 `lines / processes / mappings` 建立统一 query key 命名入口。
+2. 为 `production-shared` 域建立统一 invalidation helper / hook，避免直接散落调用 `queryClient.invalidateQueries(...)`。
+3. 明确 typed sync 与 query invalidation 的职责分工。
+4. 优先让第一批已收口消费者或相关 action handler 可以复用统一约定，为后续 Query 化迁移做好基础设施。
+
+#### 14.3 执行边界
+
+1. 本轮只建立 `production-shared` 域内 query key / invalidation 约定，不扩展为全站 query key 平台。
+2. 本轮不要求把所有生产资源读取立即全量切换到 `useQuery`。
+3. 本轮优先做“命名统一 + invalidation 单点化”，而不是大规模页面重写。
+4. 本轮不重做 `dashboard`、`engineering`、`org-personnel`、`users` 页面结构，只替换它们对 `production-shared` 缓存失效的调用方式（若已有需要）。
+
+#### 14.4 约定方向
+
+建议新增以下稳定入口：
+
+1. **query key 工厂**
+   - 宿主建议：`src/features/production-shared/data/production-resource-query-keys.ts`
+   - 至少提供：
+     - `productionResourceQueryKeys.all()`
+     - `productionResourceQueryKeys.lines()`
+     - `productionResourceQueryKeys.processes()`
+     - `productionResourceQueryKeys.mappings()`
+
+2. **invalidation helper / hook**
+   - 宿主建议：
+     - `src/features/production-shared/hooks/use-production-resource-invalidation.ts`
+     - 或 `src/features/production-shared/services/production-resource-invalidation.ts`
+   - 职责：统一调用 `queryClient.invalidateQueries(...)`，而不是由页面自己拼 key。
+
+3. **sync 与 Query 的职责边界**
+   - typed sync：负责描述“资源已经发生变化”这一域事件语义。
+   - invalidation：负责让使用 React Query 的消费者丢弃旧缓存并重新拉取。
+   - 两者可协作，但不能互相替代、也不能双重散落实现。
+
+#### 14.5 实施步骤
+
+1. **先定义 `production-shared` query key 工厂**
+   - 统一 lines / processes / mappings 的 query key 结构。
+   - 要求 key 命名稳定、可预测、可复用。
+
+2. **建立统一 invalidation 入口**
+   - 统一封装：
+     - invalidate lines
+     - invalidate processes
+     - invalidate mappings
+     - 必要时 invalidate all production resources
+   - 要求页面和 action handler 不直接散落写原始 query key。
+
+3. **明确 sync 与 invalidation 的协作方式**
+   - 约定：
+     - mutation 成功后，谁负责 `emit`
+     - 谁负责 `invalidate`
+     - 哪些纯监听方只需 sync，哪些 Query 消费方需要 invalidation
+   - 目标是避免“同一次更新触发两轮重复刷新”。
+
+4. **替换第一批调用点到统一约定**
+   - 优先检查：
+     - `production-shared` 域内 action handler
+     - 已接入 queryClient 的生产资源相关消费者
+   - 若当前未全量使用 Query，则先把 helper 建好并在直接相关调用点中落地最小使用示例。
+
+5. **为后续 Query 化迁移保留统一挂点**
+   - 后续若将 lines / processes / mappings 全量迁入 `useQuery`，应直接复用本轮的 query key 工厂与 invalidation helper，而不是重新发明命名规则。
+
+#### 14.6 风险与注意事项
+
+1. **假约定风险**
+   - 如果只是增加几个常量文件，但调用点仍各自直接手写 key，约定会失效。
+   - 控制方式：至少让第一批直接相关调用点改用统一入口。
+
+2. **双重刷新风险**
+   - 同时 `emit` + `invalidate` + 页面主动 `loadData()` 容易造成重复请求。
+   - 控制方式：明确每类消费者使用哪一种同步机制，避免无差别叠加。
+
+3. **范围膨胀风险**
+   - query key / invalidation 很容易继续膨胀成全站 Query 平台改造。
+   - 控制方式：本轮仅限 `production-shared` 域。
+
+4. **过早 Query 化风险**
+   - 若本轮强行把所有页面读取都迁成 `useQuery`，会超过“约定先行”的最小边界。
+   - 控制方式：先建立 query key / invalidation 统一入口，再逐步迁移读取方式。
+
+#### 14.7 完成标准
+
+1. `production-shared` 域内已有统一 query key 工厂。
+2. `production-shared` 域内已有统一 invalidation 入口。
+3. typed sync 与 query invalidation 的职责边界已通过代码结构体现。
+4. 第一批直接相关调用点已开始复用统一约定，而不是散落硬编码 query key。
+5. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。

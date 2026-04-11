@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
   toPDABulkSyncResponseContract,
   toPDAScanPayloadApiDTO,
@@ -63,6 +64,30 @@ export const StocktakeMaintenanceService = {
         res,
         'StocktakeMaintenanceService.pdaBulkSync'
       ) as PDABulkSyncResponseApiDTO
+    )
+  },
+
+  async pdaPatchItem(id: string, delta: DeltaSet, version: number): Promise<WarehouseCommandAck> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: {
+        id,
+        version,
+        intent: 'PDA_STOCKTAKE_PATCH',
+      },
+    }
+
+    const res = await apiFetch<WarehouseCommandAckApiDTO>(`/stocktakes/items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+
+    return toWarehouseCommandAckContract(
+      ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(
+        res,
+        'StocktakeMaintenanceService.pdaPatchItem'
+      ) as WarehouseCommandAckApiDTO
     )
   },
 }

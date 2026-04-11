@@ -28,7 +28,7 @@ function normalizeCurrencies(data: Currency[]): Currency[] {
     const hasBase = data.some(currency => currency.isBase)
     const hasCNY = data.some(currency => currency.code === fallbackCNYCurrency.code)
 
-    const normalized = hasCNY
+    const normalized: Currency[] = hasCNY
         ? data.map(currency => {
             if (hasBase || currency.code !== fallbackCNYCurrency.code) {
                 return currency
@@ -38,7 +38,7 @@ function normalizeCurrencies(data: Currency[]): Currency[] {
                 ...currency,
                 isBase: true,
                 rate: 1,
-                status: 'Active',
+                status: 'Active' as const,
             }
         })
         : [

@@ -171,7 +171,7 @@ export default function WarehouseCategory() {
                     ...formData,
                     name: formData.name.trim(),
                     code: formData.code.trim().toUpperCase(),
-                    description: formData.description.trim(),
+                    description: (formData.description ?? '').trim(),
                 })
                 const delta = tracker.commit()
 
@@ -186,7 +186,7 @@ export default function WarehouseCategory() {
                     ...formData,
                     name: formData.name.trim(),
                     code: formData.code.trim().toUpperCase(),
-                    description: formData.description.trim(),
+                    description: (formData.description ?? '').trim(),
                     isSystem: false,
                 }
                 await createCategory(newCategory)

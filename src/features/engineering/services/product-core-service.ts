@@ -66,10 +66,10 @@ export const ProductCoreService = {
     const res = await apiFetch<ProductNextCodeApiDTO>(
       `/engineering/products/next-code?typeId=${typeId}`
     )
-    const data = ensureObjectResponse<ProductNextCodeApiDTO>(
+    const data = ensureObjectResponse<ProductNextCodeApiDTO & Record<string, unknown>>(
       res,
       'ProductCoreService.getNextCode'
-    )
+    ) as ProductNextCodeApiDTO
     return data.nextCode
   },
 }

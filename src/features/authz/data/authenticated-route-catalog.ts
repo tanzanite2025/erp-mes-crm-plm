@@ -3,6 +3,7 @@
 
 export const AUTHENTICATED_ROUTE_PATHS = [
   "/system-management/workflow-definition",
+  "/finance-management/payment-methods",
   "/finance-management/currency-rates",
   "/finance-management/payment-terms",
   "/system-management/ai-capability",

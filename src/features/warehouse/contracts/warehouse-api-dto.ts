@@ -169,6 +169,7 @@ export interface StocktakeItemApiDTO {
   uom: string
   scannerId?: string
   scanTime?: string | null
+  version?: number
 }
 
 export interface WarehouseCommandAckApiDTO {

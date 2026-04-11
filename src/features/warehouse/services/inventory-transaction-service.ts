@@ -7,7 +7,6 @@ import {
   toShipmentRecordContract,
   type InboundRecord,
   type ShipmentRecord,
-  type ShipmentStatus,
 } from '../adapters/warehouse-api-adapter'
 import {
   type InventoryInboundRecordApiDTO,

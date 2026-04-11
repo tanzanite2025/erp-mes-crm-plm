@@ -6,7 +6,7 @@ function toLinkedArchitectureContract(items?: OrgLinkedArchitectureApiDTO[] | nu
     return undefined
   }
 
-  return items.map((item) => ({
+  return items.map((item: OrgLinkedArchitectureApiDTO) => ({
     type: item.type,
     id: item.id,
     name: item.name,
@@ -35,7 +35,7 @@ export function toOrgNodeApiDTO(contract: OrgNode): OrgNodeApiDTO {
     manager: contract.manager?.trim() || undefined,
     description: contract.description?.trim() || undefined,
     type: contract.type,
-    linkedArchitecture: contract.linkedArchitecture?.map((item) => ({
+    linkedArchitecture: contract.linkedArchitecture?.map((item: NonNullable<OrgNode['linkedArchitecture']>[number]) => ({
       type: item.type,
       id: item.id,
       name: item.name,

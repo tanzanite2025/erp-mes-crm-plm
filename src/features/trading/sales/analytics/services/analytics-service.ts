@@ -32,7 +32,7 @@ export const SalesAnalyticsService = {
   getCustomerProductStats: async (params: { customerId?: string } = {}): Promise<CustomerAnalytics[]> => {
     // 调用后端聚合接口，禁止前端拉取全量订单进行累加
     const data = await getCustomerProductStats(params)
-    return data as CustomerAnalytics[]
+    return data as unknown as CustomerAnalytics[]
   },
 
   /**
@@ -42,6 +42,6 @@ export const SalesAnalyticsService = {
   getGlobalProductRanking: async (limit: number = 10): Promise<ProductStat[]> => {
     // 调用后端聚合接口
     const data = await getGlobalProductRanking(limit)
-    return data as ProductStat[]
+    return data as unknown as ProductStat[]
   }
 }

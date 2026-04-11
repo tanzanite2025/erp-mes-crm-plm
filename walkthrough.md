@@ -225,3 +225,113 @@
 3. 第一批监听方已从裸事件字符串切换到统一同步入口。
 4. 旧 `window` 事件已收敛为单点兼容桥，而不是分散在多个 service / 页面中。
 5. 为后续引入更明确的 invalidation 规则、query key 约定和模块级 hook 编排留下了清晰边界。
+
+## 2026-04-11 `production-shared` 第三阶段 query key / invalidation 约定
+
+### 本轮目标
+
+在第二阶段 typed sync 收口基础上，继续为 `production-shared` 建立正式缓存约定，重点解决以下问题：
+
+1. `production-shared` 域内缺少统一的 query key 命名入口。
+2. invalidation 没有统一 helper，后续容易出现散落的 `invalidateQueries(...)` 与多套命名。
+3. typed sync 与 React Query 缓存失效之间虽然已经有边界意识，但尚未真正通过统一代码入口体现。
+
+### 已执行变更
+
+#### 1. 新增 query key 工厂
+
+新增：
+
+- `src/features/production-shared/data/production-resource-query-keys.ts`
+
+作用：
+
+1. 统一定义 `production-shared` 域内 query key：
+   - `all()`
+   - `lines()`
+   - `processes()`
+   - `mappings()`
+2. 让后续生产资源相关 Query / invalidation 不再散落硬编码 key。
+
+#### 2. 新增 invalidation 统一入口
+
+新增：
+
+- `src/features/production-shared/services/production-resource-invalidation.ts`
+
+作用：
+
+1. 提供 `registerProductionResourceQueryClient(queryClient)`。
+2. 提供统一失效入口：
+   - `invalidateAll()`
+   - `invalidateLines()`
+   - `invalidateProcesses()`
+   - `invalidateMappings()`
+3. 将 `invalidateQueries(...)` 收口到单点，而不是由页面和 action handler 自己拼 query key。
+
+#### 3. 将 production-shared 与全局 QueryClient 接通
+
+调整：
+
+- `src/main.tsx`
+
+结果：
+
+1. 在应用启动阶段注册 `production-shared` 域的 `queryClient`。
+2. 使 `production-resource-invalidation.ts` 可以拿到真实 QueryClient 实例，执行正式 invalidation。
+
+#### 4. 将 typed sync 与 invalidation 协作关系落到单点
+
+调整：
+
+- `src/features/production-shared/services/production-resource-sync.ts`
+
+结果：
+
+1. `productionResourceSync.emit(...)` 在单点内同时承接：
+   - typed bus 通知
+   - 兼容旧 window 事件桥接
+   - 对应 query key invalidation
+2. 现在 typed sync 表达“资源变化语义”，而 invalidation 表达“缓存应失效并重拉”，两者通过统一单点协作，而不是分散耦合。
+
+#### 5. 第一批调用点开始复用统一约定
+
+当前直接相关调用点：
+
+- `src/features/production-shared/tabs/line-mgmt/index.tsx`
+- `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+
+结果：
+
+1. 这两个 action handler 继续只显式调用 `productionResourceSync.emit*Updated()`。
+2. 它们不再需要自己手写 `invalidateQueries(...)` 或拼 query key。
+3. query invalidation 已通过 `productionResourceSync -> productionResourceInvalidation -> productionResourceQueryKeys` 这条单一路径完成。
+
+### 本轮未做
+
+1. 未把 `production-shared` 全量读取迁成 `useQuery`。
+2. 未扩展为全站 query key 平台。
+3. 未顺手改造所有消费页面为 React Query 读取模式。
+4. `mappings` 当前仍未检出明确前端 mutation 调用点，本轮先完成 query key / invalidation 约定基础设施与单点挂接，不盲目扩散修改。
+
+### 验证
+
+已执行：
+
+- `pnpm exec tsc --noEmit`
+- `pnpm exec eslint src/features/production-shared/data/production-resource-query-keys.ts src/features/production-shared/services/production-resource-invalidation.ts src/features/production-shared/services/production-resource-sync.ts src/features/production-shared/tabs/line-mgmt/index.tsx src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx src/main.tsx`
+
+结果：
+
+1. `tsc --noEmit` 通过。
+2. 本轮目标文件 `eslint` 通过。
+
+### 当前阶段结论
+
+`production-shared` 第三阶段最小约定已完成：
+
+1. `production-shared` 域内已有统一 query key 工厂。
+2. `production-shared` 域内已有统一 invalidation 入口。
+3. typed sync 与 query invalidation 的职责边界已经通过代码结构正式体现。
+4. 第一批直接相关调用点已经开始复用统一约定，而不是散落硬编码 query key。
+5. 为后续将 lines / processes / mappings 逐步迁入 `useQuery` 留下了稳定的命名与失效规则基础。

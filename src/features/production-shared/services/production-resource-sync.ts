@@ -1,3 +1,5 @@
+import { productionResourceInvalidation } from './production-resource-invalidation'
+
 export type ProductionResourceKind = 'lines' | 'processes' | 'mappings'
 
 export interface ProductionResourceSyncEvent {
@@ -31,10 +33,27 @@ function emitLegacyWindowEvent(kind: ProductionResourceKind): void {
   window.dispatchEvent(new CustomEvent(getLegacyEventName(kind), { detail: { kind } }))
 }
 
+async function invalidateProductionResource(kind: ProductionResourceKind): Promise<void> {
+  switch (kind) {
+    case 'lines':
+      await productionResourceInvalidation.invalidateLines()
+      return
+    case 'processes':
+      await productionResourceInvalidation.invalidateProcesses()
+      return
+    case 'mappings':
+      await productionResourceInvalidation.invalidateMappings()
+      return
+    default:
+      await productionResourceInvalidation.invalidateAll()
+  }
+}
+
 export const productionResourceSync = {
   emit: (event: ProductionResourceSyncEvent): void => {
     productionResourceListeners.forEach((listener) => listener(event))
     emitLegacyWindowEvent(event.kind)
+    void invalidateProductionResource(event.kind)
   },
 
   subscribe: (listener: (event: ProductionResourceSyncEvent) => void): (() => void) => {
