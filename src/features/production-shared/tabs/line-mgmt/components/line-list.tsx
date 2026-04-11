@@ -60,13 +60,6 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
 
   const handleDialogConfirm = (payload: { type: 'CREATE'; data: ProductionLine } | { type: 'UPDATE'; id: string; delta: DeltaSet; version: number }) => {
     onUpdate(payload, pendingEditAuthCode)
-    
-    if (payload.type === 'CREATE') {
-      toast.success(t('orgPersonnel.lineMgmt.list.addSuccess'))
-    } else {
-      toast.success(t('orgPersonnel.lineMgmt.list.updateSuccess'))
-    }
-    
     setPendingEditAuthCode(undefined)
     setIsDialogOpen(false)
   }

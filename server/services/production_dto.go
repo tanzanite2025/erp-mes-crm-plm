@@ -22,29 +22,16 @@ type ProcessStepDTO struct {
 	IsActive    bool      `json:"isActive"`
 }
 
-type StationDTO struct {
+type JobCategoryDTO struct {
 	ID          string           `json:"id"`
 	CreatedAt   time.Time        `json:"createdAt"`
 	UpdatedAt   time.Time        `json:"updatedAt"`
-	CategoryID  string           `json:"categoryId"`
-	Code        string           `json:"code"`
+	SegmentID   string           `json:"segmentId"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	SortOrder   int              `json:"sortOrder"`
 	Attributes  json.RawMessage  `json:"attributes"`
 	Processes   []ProcessStepDTO `json:"processes"`
-}
-
-type JobCategoryDTO struct {
-	ID          string       `json:"id"`
-	CreatedAt   time.Time    `json:"createdAt"`
-	UpdatedAt   time.Time    `json:"updatedAt"`
-	SegmentID   string       `json:"segmentId"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	SortOrder   int          `json:"sortOrder"`
-	Attributes  json.RawMessage `json:"attributes"`
-	Stations    []StationDTO `json:"stations"`
 }
 
 type LineSegmentDTO struct {
@@ -107,52 +94,10 @@ func mapProcessStepDTOToModel(step ProcessStepDTO) models.ProcessStep {
 	}
 }
 
-func mapStationToDTO(station models.Station) StationDTO {
-	processes := make([]ProcessStepDTO, 0, len(station.Processes))
-	for _, process := range station.Processes {
-		processes = append(processes, mapProcessStepToDTO(process))
-	}
-
-	return StationDTO{
-		ID:          station.ID,
-		CreatedAt:   station.CreatedAt,
-		UpdatedAt:   station.UpdatedAt,
-		CategoryID:  station.CategoryID,
-		Code:        station.Code,
-		Name:        station.Name,
-		Description: station.Description,
-		SortOrder:   station.SortOrder,
-		Attributes:  cloneRawMessage(station.Attributes),
-		Processes:   processes,
-	}
-}
-
-func mapStationDTOToModel(station StationDTO) models.Station {
-	processes := make([]models.ProcessStep, 0, len(station.Processes))
-	for _, process := range station.Processes {
-		processes = append(processes, mapProcessStepDTOToModel(process))
-	}
-
-	return models.Station{
-		BaseModel: models.BaseModel{
-			ID:        station.ID,
-			CreatedAt: station.CreatedAt,
-			UpdatedAt: station.UpdatedAt,
-		},
-		CategoryID:  station.CategoryID,
-		Code:        station.Code,
-		Name:        station.Name,
-		Description: station.Description,
-		SortOrder:   station.SortOrder,
-		Attributes:  cloneRawMessage(station.Attributes),
-		Processes:   processes,
-	}
-}
-
 func mapJobCategoryToDTO(category models.JobCategory) JobCategoryDTO {
-	stations := make([]StationDTO, 0, len(category.Stations))
-	for _, station := range category.Stations {
-		stations = append(stations, mapStationToDTO(station))
+	processes := make([]ProcessStepDTO, 0, len(category.Processes))
+	for _, process := range category.Processes {
+		processes = append(processes, mapProcessStepToDTO(process))
 	}
 
 	return JobCategoryDTO{
@@ -164,14 +109,14 @@ func mapJobCategoryToDTO(category models.JobCategory) JobCategoryDTO {
 		Description: category.Description,
 		SortOrder:   category.SortOrder,
 		Attributes:  cloneRawMessage(category.Attributes),
-		Stations:    stations,
+		Processes:   processes,
 	}
 }
 
 func mapJobCategoryDTOToModel(category JobCategoryDTO) models.JobCategory {
-	stations := make([]models.Station, 0, len(category.Stations))
-	for _, station := range category.Stations {
-		stations = append(stations, mapStationDTOToModel(station))
+	processes := make([]models.ProcessStep, 0, len(category.Processes))
+	for _, process := range category.Processes {
+		processes = append(processes, mapProcessStepDTOToModel(process))
 	}
 
 	return models.JobCategory{
@@ -185,7 +130,7 @@ func mapJobCategoryDTOToModel(category JobCategoryDTO) models.JobCategory {
 		Description: category.Description,
 		SortOrder:   category.SortOrder,
 		Attributes:  cloneRawMessage(category.Attributes),
-		Stations:    stations,
+		Processes:   processes,
 	}
 }
 

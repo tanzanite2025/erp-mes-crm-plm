@@ -47,7 +47,6 @@ type PatchEmployeeRequest struct {
 	BankName        *string
 	Education       *string
 	Age             *int
-	Station         *string
 	Status          *string
 	JoinedDate      *time.Time
 	JoinedDateSet   bool
@@ -181,9 +180,6 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 		}
 		if input.Age != nil {
 			current.Age = *input.Age
-		}
-		if input.Station != nil {
-			current.Station = strings.TrimSpace(*input.Station)
 		}
 		if input.Status != nil {
 			current.Status = strings.TrimSpace(*input.Status)

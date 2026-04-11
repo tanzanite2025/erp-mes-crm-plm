@@ -700,3 +700,368 @@
 3. `displayedLines` 已由 Query data + overlay 派生得出。
 4. create / update / delete 成功后的默认收口策略已明确为优先 `setQueryData`。
 5. 为后续再评估何时对复杂场景按需 `invalidate` 留下了更稳定的结构基础。
+
+## 2026-04-11 `line-mgmt` 第三阶段：mutation orchestration 抽离到 domain hook
+
+### 本轮目标
+
+在第二阶段 `Query cache + optimistic overlay` 模型稳定后，继续收口 `line-mgmt` 的 mutation orchestration，重点解决以下问题：
+
+1. `line-mgmt/index.tsx` 仍同时持有 Query cache 写回、overlay、toast、sync emit 与错误处理，页面组件职责过重。
+2. `LineList` 在 dialog 确认时会提前弹成功 toast，而页面层在服务端成功后又会再弹一次，存在成功提示过早与重复提示风险。
+3. `line-mgmt` 成功分支虽然已优先 `setQueryData`，但 `emitLinesUpdated()` 仍会默认触发同一 query 的 invalidate，形成冗余重拉。
+
+### 已执行变更
+
+#### 1. 新增 `line-mgmt` domain hook
+
+新增：
+
+- `src/features/production-shared/tabs/line-mgmt/hooks/use-line-mgmt-lines.ts`
+
+作用：
+
+1. 将 `useProductionLinesQuery()`、overlay 状态、`displayedLines` 组装、create / update / delete mutation orchestration 收口到单一 hook。
+2. 统一管理：
+   - `pendingCreates`
+   - `pendingUpdates`
+   - `pendingDeletes`
+3. 将 `setQueryData`、成功/失败清理、toast、sync emit 从页面组件中前移到领域 hook。
+
+#### 2. 页面入口降回渲染层
+
+调整：
+
+- `src/features/production-shared/tabs/line-mgmt/index.tsx`
+
+结果：
+
+1. 页面入口现在只负责：
+   - `ForbiddenState`
+   - loading 态
+   - `LineList` 渲染
+2. 页面组件不再直接持有 mutation 细节与 overlay 编排。
+
+#### 3. 修正成功 toast 的归位
+
+调整：
+
+- `src/features/production-shared/tabs/line-mgmt/components/line-list.tsx`
+
+结果：
+
+1. `LineList` 不再在 dialog 确认瞬间直接弹 create / update 成功 toast。
+2. create / update 成功提示统一改为以服务端成功返回为准。
+3. 避免“请求失败但 UI 已先宣布成功”的假象。
+
+#### 4. 为 sync 层补充“跳过 invalidate”能力
+
+调整：
+
+- `src/features/production-shared/services/production-resource-sync.ts`
+
+结果：
+
+1. `productionResourceSync.emit(...)` 新增可选 `invalidate` 开关。
+2. `line-mgmt` 在 create / update / delete 成功后，当前改为：
+   - 先 `setQueryData`
+   - 再 `emitLinesUpdated({ invalidate: false })`
+3. 由于当前 line 相关 Query 消费方已经共享同一个 `lines` query cache，`setQueryData(lines)` 已足以同步这些页面，无需立刻对同一 query 再做一次 invalidate。
+4. legacy window 兼容广播仍然保留，没有回退到散落事件实现。
+
+### 本轮未做
+
+1. 未扩展 `skip invalidate` 规则到 `process-library-panel` 等其他 mutation 页面。
+2. 未对复杂嵌套 patch 场景补充更细的“按需 invalidate”判定规则。
+3. 未新增 line-mgmt 自动化测试，仅完成类型与 lint 验证。
+
+### 验证
+
+已执行：
+
+- `pnpm exec tsc --noEmit`
+- `pnpm exec eslint src/features/production-shared/services/production-resource-sync.ts src/features/production-shared/tabs/line-mgmt/index.tsx src/features/production-shared/tabs/line-mgmt/components/line-list.tsx src/features/production-shared/tabs/line-mgmt/hooks/use-line-mgmt-lines.ts`
+
+结果：
+
+1. `tsc --noEmit` 通过。
+2. 本轮目标文件 `eslint` 通过。
+
+### 当前阶段结论
+
+`line-mgmt` 第三阶段 mutation orchestration 收口已完成：
+
+1. 页面组件已从“状态 + 副作用中心”降回渲染入口。
+2. create / update / delete 的 optimistic overlay、Query cache 写回与错误清理已收口到独立 domain hook。
+3. create / update 成功 toast 已回归服务端确认边界，不再提前宣布成功。
+4. `line-mgmt` 已避免对同一 `lines` query 执行默认 `setQueryData + invalidate` 双做。
+5. 为下一步继续定义复杂 patch 场景的按需 invalidate 规则，留下了更清晰的挂点。
+
+## 2026-04-11 `line-mgmt` 第四阶段：复杂嵌套 patch 的按需 invalidate 规则
+
+### 本轮目标
+
+在第三阶段 hook 化基础上，继续补齐 `line-mgmt` update 场景里的“按需 invalidate”规则，重点解决以下问题：
+
+1. 当前是否属于复杂 patch，仍主要靠“路径里有没有 `.`”间接判断，无法覆盖顶层结构化字段更新。
+2. 拓扑编辑这类更新虽然业务上属于复杂嵌套变更，但实际提交时可能表现为顶层 `segments` 字段整体替换。
+3. 若继续把这类更新与简单标量字段一视同仁，就会混淆 optimistic overlay 与成功后重校正边界。
+
+### 已执行变更
+
+#### 1. 将复杂 patch 判定收口为显式规则
+
+调整：
+
+- `src/features/production-shared/tabs/line-mgmt/hooks/use-line-mgmt-lines.ts`
+
+结果：
+
+1. 新增 `isStructuredValue(...)`。
+2. 新增 `isComplexLineDeltaEntry(...)`。
+3. 新增 `shouldInvalidateAfterUpdate(...)`。
+4. 当前 line update 的“复杂 patch”定义为：
+   - delta path 含 `.` 的深层路径
+   - `o / n` 任一侧为对象或数组等结构化值
+
+#### 2. 让 optimistic overlay 与 invalidate 使用同一判定源
+
+结果：
+
+1. `canApplyOptimisticDelta(...)` 现在改为复用复杂 patch 判定。
+2. 简单标量字段更新：
+   - 允许 optimistic overlay
+   - 成功后默认 `setQueryData`
+   - 默认不额外 invalidate
+3. 复杂嵌套 patch 更新：
+   - 不再走 optimistic overlay
+   - 仍先用服务端返回值 `setQueryData`
+   - 再通过 `emitLinesUpdated({ invalidate: true })` 触发按需重校正
+
+#### 3. 将 `segments` 这类顶层结构化 patch 纳入规则
+
+结果：
+
+1. 即使 patch 路径本身只是顶层 `segments`，只要值为数组/对象，也会被识别为复杂 patch。
+2. 这使拓扑编辑、模板应用、层级增删改等结构化更新不再误落到“简单字段更新”分支。
+3. 规则不依赖具体字段名白名单，后续若 line 顶层继续引入结构化字段，也能沿用同一套判定。
+
+### 本轮未做
+
+1. 未把同类按需 invalidate 规则扩展到 `process-library-panel` 等其他资源 mutation。
+2. 未对复杂 patch 再做更细的资源级局部 invalidation，当前仍使用 lines 域级重校正。
+3. 未新增自动化测试，仅完成类型与 lint 验证。
+
+### 验证
+
+已执行：
+
+- `pnpm exec tsc --noEmit`
+- `pnpm exec eslint src/features/production-shared/tabs/line-mgmt/hooks/use-line-mgmt-lines.ts`
+
+结果：
+
+1. `tsc --noEmit` 通过。
+2. 目标文件 `eslint` 通过。
+
+### 当前阶段结论
+
+`line-mgmt` 复杂嵌套 patch 的按需 invalidate 规则已落地：
+
+1. 简单标量字段更新继续走“overlay + `setQueryData`”的轻量路径。
+2. 复杂结构化更新现在会自动切换到“`setQueryData` + 按需 invalidate”路径。
+3. `segments` 这类顶层结构化 patch 已不再被误判为简单更新。
+4. optimistic overlay 与 invalidate 现在共享同一套复杂度判定来源。
+5. 为后续继续把同类规则推广到其他资源域留下了稳定模式。
+
+## 2026-04-11 将同类按需 invalidate 规则推广到 `process-library-panel`
+
+### 本轮目标
+
+将 `line-mgmt` 已建立的“先 `setQueryData`，复杂结构再按需 invalidate”模式推广到 `process-library-panel` 这条 mutation 链，重点解决以下问题：
+
+1. `process-library-panel.tsx` 之前直接在组件内持有 `saveStep / deleteStep / emitProcessesUpdated / toast`，副作用边界分散。
+2. 保存成功后总是 `emitProcessesUpdated()`，没有区分是否真的需要再做一次 query 重校正。
+3. `process-library-panel` 已经使用 `useProductionProcessesQuery()` 作为主读取入口，但 mutation 成功后还没有正式接入统一的 Query cache patch 策略。
+
+### 已执行变更
+
+#### 1. 新增 process library domain hook
+
+新增：
+
+- `src/features/production-shared/tabs/work-architecture/hooks/use-process-library-processes.ts`
+
+作用：
+
+1. 统一承接：
+   - `useProductionProcessesQuery()`
+   - `setQueryData(processes)`
+   - `saveProcess(...)`
+   - `deleteProcess(...)`
+2. 将保存/删除成功后的 toast、logger、sync emit 从面板组件中前移到 hook。
+3. 让 `process-library-panel` 自身只保留表单、搜索、弹窗与 loading UI。
+
+#### 2. 引入 process 实体级“复杂度判定”
+
+结果：
+
+1. 新增 `shouldInvalidateAfterProcessSave(step)`。
+2. 当前规则定义为：只要 process 实体上存在结构化字段值（对象/数组），就视为复杂保存场景。
+3. 当前 `process-library-panel` 编辑的字段基本都是标量，因此大多数保存会命中轻量路径。
+4. 若后续 process 资源重新引入 `attributes` 等结构化字段，这套规则可直接复用。
+
+#### 3. 保存成功后的同步策略改为显式分流
+
+结果：
+
+1. `saveProcess(...)` 成功后先用返回实体执行 `setQueryData`。
+2. 简单 process save：
+   - `emitProcessesUpdated({ invalidate: false })`
+3. 复杂 process save：
+   - `emitProcessesUpdated({ invalidate: true })`
+4. 由于当前 process 相关页面已共享同一 `processes` query cache，简单场景无需再立刻重拉同一 query。
+
+#### 4. 删除链路同步接入 Query cache patch
+
+结果：
+
+1. 删除成功后会先从 Query cache 中移除对应 process。
+2. 然后再执行 `emitProcessesUpdated({ invalidate: false })`。
+3. `process-library-panel` 不再依赖“删除成功后一定整页重拉”来完成当前视图同步。
+
+#### 5. 面板组件降回 UI 编排层
+
+调整：
+
+- `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+
+结果：
+
+1. 面板组件不再直接调用 `productionProcessesService`。
+2. 面板组件不再直接决定何时 `emitProcessesUpdated()`。
+3. 当前组件只负责：
+   - 搜索过滤
+   - 表单状态
+   - dialog / delete confirm UI
+   - 调用 hook 暴露的 save/delete 动作
+
+### 本轮未做
+
+1. 未将 `process-library-panel` 进一步改造成 optimistic overlay 模式。
+2. 未扩展到岗位内部 process mutation 或 mappings 相关链路。
+3. 未新增自动化测试，仅完成类型与 lint 验证。
+
+### 验证
+
+已执行：
+
+- `pnpm exec tsc --noEmit`
+- `pnpm exec eslint src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx src/features/production-shared/tabs/work-architecture/hooks/use-process-library-processes.ts`
+
+结果：
+
+1. `tsc --noEmit` 通过。
+2. 目标文件 `eslint` 通过。
+
+### 当前阶段结论
+
+`process-library-panel` 已接入与 `line-mgmt` 同类的按需 invalidate 规则：
+
+1. process save/delete 已不再把 mutation 副作用散落在面板组件中。
+2. 简单 process 保存现在默认走 `setQueryData` 优先路径。
+3. 结构化 process 保存已预留“按需 invalidate”分支。
+4. 删除链路已改为 `setQueryData + emitProcessesUpdated({ invalidate: false })`。
+5. 为后续继续把同类规则推广到岗位 process / mappings 链路留下了稳定模式。
+
+## 2026-04-11 将同类规则推广到岗位内部 process 能力映射 mutation 链
+
+### 本轮目标
+
+继续把同类 cache patch / 按需 invalidate 规则推广到岗位内部 process 编辑链。排查后确认：
+
+1. 当前仓库里还没有独立落地的岗位-process 编辑 UI 组件。
+2. 真实的写入链路在 `productionMappingsService.assignProcessCapability()` 与 `removeProcessCapability()`。
+3. 这条链路会同时影响：
+   - `mappings` query
+   - `lines` query 中岗位下嵌套的 `processes`
+
+### 已执行变更
+
+#### 1. 新增岗位-process capability domain hook
+
+新增：
+
+- `src/features/production-shared/tabs/work-architecture/hooks/use-job-category-process-capabilities.ts`
+
+作用：
+
+1. 提供：
+   - `assignProcessCapability(stationId, processId)`
+   - `removeProcessCapability(stationId, processId)`
+2. 统一承接：
+   - mappings cache patch
+   - lines cache patch
+   - toast
+   - logger
+   - `emitMappingsUpdated(...)`
+
+#### 2. 明确这条链路属于“跨资源嵌套写入”
+
+结果：
+
+1. 岗位-process 能力分配/移除不会只影响单个平面资源。
+2. 它既改岗位->process 的嵌套拓扑展示，也改独立 mappings 资源。
+3. 因此当前默认规则明确为：
+   - 先 patch 当前可定位的 cache
+   - 再 `emitMappingsUpdated({ invalidate: true })`
+
+#### 3. 本地优先 patch `mappings` 与 `lines` cache
+
+结果：
+
+1. assign 时会：
+   - 将 `processId` 写入 `mappings` query cache
+   - 若能从 `processes` query cache 解析出完整 process 实体，则同时补入对应岗位的 `line.segments[*].jobCategories[*].processes`
+2. remove 时会：
+   - 从 `mappings` query cache 中移除对应 `processId`
+   - 同时从目标岗位的嵌套 `processes` 中移除对应 process
+3. 这样即使后续仍要 invalidate，当前已加载页面也能先拿到一份即时更新后的本地结果。
+
+#### 4. 对“本地无法完整 patch”的情况显式记录
+
+结果：
+
+1. 若 assign 时找不到：
+   - 目标 process 的全局实体
+   - 目标岗位在当前 lines cache 中的位置
+2. hook 会记录 `warn`，并依赖后续 invalidate 回到服务端最终态。
+3. 这避免了静默失败或假装本地 patch 已完整成功。
+
+### 本轮未做
+
+1. 未新增岗位-process 编辑 UI，本轮只先把真实 mutation 链收口成可复用 hook。
+2. 未把 `work-architecture` 当前展示层改造成直接消费 `mappings` query。
+3. 未新增自动化测试，仅完成类型与 lint 验证。
+
+### 验证
+
+已执行：
+
+- `pnpm exec tsc --noEmit`
+- `pnpm exec eslint src/features/production-shared/tabs/work-architecture/hooks/use-job-category-process-capabilities.ts`
+
+结果：
+
+1. `tsc --noEmit` 通过。
+2. 目标文件 `eslint` 通过。
+
+### 当前阶段结论
+
+岗位内部 process 能力映射 mutation 链已具备与前两条链路一致的收口模式：
+
+1. 真实 mutation 边界已从 service 直接调用提升为独立 domain hook。
+2. 当前写入被明确归类为跨资源嵌套变更，而不是简单平面更新。
+3. hook 会优先 patch `mappings` 与 `lines` cache，再统一触发 `emitMappingsUpdated({ invalidate: true })`。
+4. 即时 UI 响应与服务端最终重校正两层边界已经同时具备。
+5. 后续若接入岗位-process 编辑 UI，可直接复用这条已收口的 mutation 链。

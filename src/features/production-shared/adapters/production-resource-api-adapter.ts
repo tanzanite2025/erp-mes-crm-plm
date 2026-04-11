@@ -1,4 +1,4 @@
-import type { ProductionLine, ProductionJobCategory, ProductionSegment, ProductionStation } from '../data/production-line'
+import type { ProductionLine, ProductionJobCategory, ProductionSegment } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
 import type {
   ProductionJobCategoryApiDTO,
@@ -7,10 +7,8 @@ import type {
   ProductionLinesResponseApiDTO,
   ProductionProcessStepApiDTO,
   ProductionProcessStepsResponseApiDTO,
-  ProductionStationApiDTO,
   SaveProductionLineApiDTO,
   SaveProductionProcessStepApiDTO,
-  StationMappingsResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
 
 function toLineProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
@@ -30,21 +28,6 @@ export function toProductionProcessContract(dto: ProductionProcessStepApiDTO): P
   return toLineProcessContract(dto)
 }
 
-function toStationContract(dto: ProductionStationApiDTO): ProductionStation {
-  return {
-    id: dto.id,
-    categoryId: dto.categoryId || '',
-    code: dto.code || '',
-    name: dto.name,
-    description: dto.description || '',
-    sortOrder: dto.sortOrder || 0,
-    attributes: dto.attributes || undefined,
-    processes: (dto.processes || []).map(toLineProcessContract),
-    createdAt: dto.createdAt || '',
-    updatedAt: dto.updatedAt || '',
-  }
-}
-
 function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobCategory {
   return {
     id: dto.id,
@@ -53,7 +36,7 @@ function toJobCategoryContract(dto: ProductionJobCategoryApiDTO): ProductionJobC
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
     attributes: dto.attributes || undefined,
-    stations: (dto.stations || []).map(toStationContract),
+    processes: (dto.processes || []).map(toLineProcessContract),
     createdAt: dto.createdAt || '',
     updatedAt: dto.updatedAt || '',
   }
@@ -95,10 +78,6 @@ export function toProductionProcessContracts(
   return (dto.items || []).map(toProductionProcessContract)
 }
 
-export function toStationMappingsContract(dto: StationMappingsResponseApiDTO): Record<string, string[]> {
-  return dto.items || {}
-}
-
 function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepApiDTO {
   return {
     id: process.id,
@@ -112,21 +91,6 @@ function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepA
   }
 }
 
-function toStationApiDTO(station: ProductionStation): ProductionStationApiDTO {
-  return {
-    id: station.id,
-    categoryId: station.categoryId || '',
-    code: station.code || '',
-    name: station.name,
-    description: station.description || '',
-    sortOrder: station.sortOrder || 0,
-    attributes: station.attributes || null,
-    processes: (station.processes || []).map(toProcessApiDTO),
-    createdAt: station.createdAt || '',
-    updatedAt: station.updatedAt || '',
-  }
-}
-
 function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCategoryApiDTO {
   return {
     id: category.id,
@@ -135,7 +99,7 @@ function toJobCategoryApiDTO(category: ProductionJobCategory): ProductionJobCate
     description: category.description || '',
     sortOrder: category.sortOrder || 0,
     attributes: category.attributes || null,
-    stations: (category.stations || []).map(toStationApiDTO),
+    processes: (category.processes || []).map(toProcessApiDTO),
     createdAt: category.createdAt || '',
     updatedAt: category.updatedAt || '',
   }
@@ -172,8 +136,7 @@ export function toSaveProductionLineApiDTO(
 }
 
 export function toSaveProductionProcessStepApiDTO(
-  step: ProductionProcessStep,
-  stationId?: string
+  step: ProductionProcessStep
 ): SaveProductionProcessStepApiDTO {
   return {
     id: step.id,
@@ -184,6 +147,5 @@ export function toSaveProductionProcessStepApiDTO(
     isActive: step.isActive ?? true,
     createdAt: step.createdAt || '',
     updatedAt: step.updatedAt || '',
-    stationId,
   }
 }

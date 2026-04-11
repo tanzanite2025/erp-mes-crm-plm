@@ -25,10 +25,8 @@ type ProductionTask struct {
 	ID          string     `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
 	PlanID      string     `gorm:"type:uuid;index;not null" json:"planId"`
 	BatchNo     string     `gorm:"size:50;index" json:"batchNo"`
-	ProcessID   string     `gorm:"size:36" json:"processId"`   // 对应 ProcessStep.ID
+	ProcessID   string     `gorm:"size:36" json:"processId"` // 对应 ProcessStep.ID
 	ProcessName string     `gorm:"size:100" json:"processName"`
-	StationID   string     `gorm:"size:36" json:"stationId"`   // 对应 Station.ID
-	StationName string     `gorm:"size:100" json:"stationName"`
 	TargetQty   float64    `gorm:"not null" json:"targetQty"`
 	ActualQty   float64    `gorm:"default:0" json:"actualQty"`
 	Status      string     `gorm:"size:20;default:'PENDING'" json:"status"` // PENDING, RUNNING, DONE, HOLD

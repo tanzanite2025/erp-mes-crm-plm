@@ -77,7 +77,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee patch payload: " + err.Error()})
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "idCard", "phone", "emergencyPhone", "address", "bankCard", "bankName", "education", "age", "station", "status", "joinedDate", "deptId", "lineId", "processId"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "idCard", "phone", "emergencyPhone", "address", "bankCard", "bankName", "education", "age", "status", "joinedDate", "deptId", "lineId", "processId"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee delta: " + err.Error()})
 		return
 	}
@@ -180,13 +180,6 @@ func PatchEmployeeHandler(c *gin.Context) {
 				return
 			}
 			patch.Age = &value
-		case "station":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee station payload"})
-				return
-			}
-			patch.Station = &value
 		case "status":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {

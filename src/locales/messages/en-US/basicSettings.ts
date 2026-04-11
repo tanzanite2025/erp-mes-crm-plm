@@ -19,7 +19,6 @@ export const basicSettings = {
       lineMgmt: 'Line Management',
       sectionMgmt: 'Section Management',
       groupMgmt: 'Group Management',
-      stationMgmt: 'Station Management',
       routingMgmt: 'Routing Management',
       specialRoutingMgmt: 'Special Routing',
       warehouseMgmt: 'Warehouse Management',

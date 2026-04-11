@@ -45,18 +45,6 @@ func setupProductionRepositoryTestDB(t *testing.T) *gorm.DB {
 			sort_order INTEGER,
 			attributes BLOB
 		)`,
-		`CREATE TABLE stations (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			category_id TEXT NOT NULL,
-			code TEXT,
-			name TEXT,
-			description TEXT,
-			sort_order INTEGER,
-			attributes BLOB
-		)`,
 		`CREATE TABLE process_steps (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -68,12 +56,8 @@ func setupProductionRepositoryTestDB(t *testing.T) *gorm.DB {
 			sort_order INTEGER,
 			is_active BOOLEAN
 		)`,
-		`CREATE TABLE line_segment_process_mappings (
-			line_segment_id TEXT NOT NULL,
-			process_step_id TEXT NOT NULL
-		)`,
-		`CREATE TABLE station_process_mappings (
-			station_id TEXT NOT NULL,
+		`CREATE TABLE job_category_process_mappings (
+			job_category_id TEXT NOT NULL,
 			process_step_id TEXT NOT NULL
 		)`,
 	)
@@ -100,7 +84,7 @@ func TestGormProductionRepositoryBumpProductionLineVersion(t *testing.T) {
 	require.Equal(t, int64(3), stored.Version)
 }
 
-func TestGormProductionRepositoryAppendProcessToStationLoadsProcesses(t *testing.T) {
+func TestGormProductionRepositoryAppendProcessToJobCategoryLoadsProcesses(t *testing.T) {
 	repo := NewProductionRepository()
 	testDB := setupProductionRepositoryTestDB(t)
 
@@ -109,27 +93,39 @@ func TestGormProductionRepositoryAppendProcessToStationLoadsProcesses(t *testing
 		SegmentID: "segment-1",
 		Name:      "Category 1",
 	}
-	station := models.Station{
-		BaseModel:  models.BaseModel{ID: "station-1"},
-		CategoryID: job.ID,
-		Name:       "Station 1",
-	}
 	process := models.ProcessStep{
 		BaseModel: models.BaseModel{ID: "step-1"},
 		Code:      "P-01",
 		Name:      "Polish",
 	}
 	require.NoError(t, testDB.Create(&job).Error)
-	require.NoError(t, testDB.Create(&station).Error)
 	require.NoError(t, testDB.Create(&process).Error)
 
-	require.NoError(t, repo.AppendProcessToStation(testDB, station.ID, process.ID))
+	require.NoError(t, repo.AppendProcessToJobCategory(testDB, job.ID, process.ID))
 
-	stations, err := repo.ListStationsWithProcesses(testDB)
+	line := models.ProductionLine{
+		BaseModel: models.BaseModel{ID: "line-1"},
+		Code:      "L-01",
+		Name:      "Line 1",
+		Segments: []models.LineSegment{
+			{
+				BaseModel: models.BaseModel{ID: "segment-1"},
+				LineID:    "line-1",
+				Name:      "Segment 1",
+				JobCategories: []models.JobCategory{
+					job,
+				},
+			},
+		},
+	}
+	require.NoError(t, testDB.Create(&line).Error)
+	require.NoError(t, testDB.Create(&line.Segments[0]).Error)
+
+	lines, err := repo.ListProductionLines(testDB)
 	require.NoError(t, err)
-	require.Len(t, stations, 1)
-	require.Len(t, stations[0].Processes, 1)
-	require.Equal(t, process.ID, stations[0].Processes[0].ID)
+	require.Len(t, lines, 1)
+	require.Len(t, lines[0].Segments[0].JobCategories[0].Processes, 1)
+	require.Equal(t, process.ID, lines[0].Segments[0].JobCategories[0].Processes[0].ID)
 }
 
 func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *testing.T) {
@@ -155,13 +151,7 @@ func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *tes
 					{
 						BaseModel: models.BaseModel{ID: "job-2"},
 						Name:      "Job Category 1",
-						Stations: []models.Station{
-							{
-								BaseModel: models.BaseModel{ID: "station-2"},
-								Name:      "Station 1",
-								Processes: []models.ProcessStep{process},
-							},
-						},
+						Processes: []models.ProcessStep{process},
 					},
 				},
 			},
@@ -175,7 +165,6 @@ func TestGormProductionRepositorySaveProductionLinePersistsNestedTopology(t *tes
 	require.Len(t, lines, 1)
 	require.Len(t, lines[0].Segments, 1)
 	require.Len(t, lines[0].Segments[0].JobCategories, 1)
-	require.Len(t, lines[0].Segments[0].JobCategories[0].Stations, 1)
-	require.Len(t, lines[0].Segments[0].JobCategories[0].Stations[0].Processes, 1)
-	require.Equal(t, process.ID, lines[0].Segments[0].JobCategories[0].Stations[0].Processes[0].ID)
+	require.Len(t, lines[0].Segments[0].JobCategories[0].Processes, 1)
+	require.Equal(t, process.ID, lines[0].Segments[0].JobCategories[0].Processes[0].ID)
 }

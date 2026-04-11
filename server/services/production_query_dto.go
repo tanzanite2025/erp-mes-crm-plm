@@ -8,8 +8,6 @@ type ProductionTaskResponse struct {
 	BatchNo     string     `json:"batchNo"`
 	ProcessID   string     `json:"processId"`
 	ProcessName string     `json:"processName"`
-	StationID   string     `json:"stationId"`
-	StationName string     `json:"stationName"`
 	TargetQty   float64    `json:"targetQty"`
 	ActualQty   float64    `json:"actualQty"`
 	Status      string     `json:"status"`

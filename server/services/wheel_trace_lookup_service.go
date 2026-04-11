@@ -29,9 +29,6 @@ type WheelTraceStage struct {
 	ProcessID    string `json:"processId,omitempty"`
 	ProcessCode  string `json:"processCode,omitempty"`
 	ProcessName  string `json:"processName,omitempty"`
-	StationID    string `json:"stationId,omitempty"`
-	StationCode  string `json:"stationCode,omitempty"`
-	StationName  string `json:"stationName,omitempty"`
 	TeamID       string `json:"teamId,omitempty"`
 	TeamName     string `json:"teamName,omitempty"`
 	OperatorID   string `json:"operatorId,omitempty"`
@@ -47,7 +44,6 @@ type WheelTraceTimelineNode struct {
 	Type         string `json:"type"`
 	SegmentName  string `json:"segmentName,omitempty"`
 	ProcessName  string `json:"processName,omitempty"`
-	StationName  string `json:"stationName,omitempty"`
 	OperatorName string `json:"operatorName,omitempty"`
 	Status       string `json:"status,omitempty"`
 }
@@ -75,9 +71,6 @@ type wheelTraceRouteAnchor struct {
 	ProcessID    string
 	ProcessCode  string
 	ProcessName  string
-	StationID    string
-	StationCode  string
-	StationName  string
 	TeamID       string
 	TeamName     string
 	OperatorName string
@@ -150,9 +143,6 @@ func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult,
 			ProcessID:    anchor.ProcessID,
 			ProcessCode:  anchor.ProcessCode,
 			ProcessName:  anchor.ProcessName,
-			StationID:    anchor.StationID,
-			StationCode:  anchor.StationCode,
-			StationName:  anchor.StationName,
 			TeamID:       anchor.TeamID,
 			TeamName:     anchor.TeamName,
 			OperatorName: anchor.OperatorName,
@@ -166,11 +156,10 @@ func LookupWheelTrace(request WheelTraceLookupRequest) (*WheelTraceLookupResult,
 				ID:           parsed.RawCode + "-route-anchor",
 				Time:         now.Format(time.RFC3339),
 				Title:        "已匹配生产路线锚点",
-				Description:  "根据当前启用的生产拓扑，返回一条可落地的工段、工序、站点锚点，供追溯页先行展示。",
+				Description:  "根据当前启用的生产拓扑，返回一条可落地的工段与工序锚点，供追溯页先行展示。",
 				Type:         "production",
 				SegmentName:  anchor.SegmentName,
 				ProcessName:  anchor.ProcessName,
-				StationName:  anchor.StationName,
 				OperatorName: anchor.OperatorName,
 				Status:       "partial",
 			})
@@ -198,10 +187,7 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 		Preload("Segments.JobCategories", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
-		Preload("Segments.JobCategories.Stations", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
-		Preload("Segments.JobCategories.Stations.Processes", func(tx *gorm.DB) *gorm.DB {
+		Preload("Segments.JobCategories.Processes", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
 		Find(&lines).Error
@@ -213,33 +199,30 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 	for _, line := range lines {
 		for _, segment := range line.Segments {
 			for _, category := range segment.JobCategories {
-				for _, station := range category.Stations {
-					if len(station.Processes) == 0 {
-						continue
-					}
+				if len(category.Processes) == 0 {
+					continue
+				}
 
-					process := station.Processes[0]
-					anchor = &wheelTraceRouteAnchor{
-						LineID:      line.ID,
-						LineCode:    line.Code,
-						LineName:    line.Name,
-						SegmentID:   segment.ID,
-						SegmentName: segment.Name,
-						ProcessID:   process.ID,
-						ProcessCode: process.Code,
-						ProcessName: process.Name,
-					}
+				process := category.Processes[0]
+				anchor = &wheelTraceRouteAnchor{
+					LineID:      line.ID,
+					LineCode:    line.Code,
+					LineName:    line.Name,
+					SegmentID:   segment.ID,
+					SegmentName: segment.Name,
+					ProcessID:   process.ID,
+					ProcessCode: process.Code,
+					ProcessName: process.Name,
+				}
 
-					team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
-					if teamErr != nil {
-						return nil, teamErr
-					}
-					if team != nil {
-						anchor.TeamID = team.ID
-						anchor.TeamName = team.Name
-						anchor.OperatorName = team.Operator
-					}
-					break
+				team, teamErr := resolveWheelTraceTeam(anchor.SegmentName, anchor.ProcessName)
+				if teamErr != nil {
+					return nil, teamErr
+				}
+				if team != nil {
+					anchor.TeamID = team.ID
+					anchor.TeamName = team.Name
+					anchor.OperatorName = team.Operator
 				}
 				if anchor != nil {
 					break

@@ -39,7 +39,6 @@ export const workflowCore = {
     },
     bindTypes: {
       section: 'SECTION / Section Only',
-      station: 'STATION / Station Only',
       role: 'ROLE / Active Role Only',
       global: 'GLOBAL / Available Everywhere',
     },

@@ -1,15 +1,17 @@
 import { productionResourceInvalidation } from './production-resource-invalidation'
 
-export type ProductionResourceKind = 'lines' | 'processes' | 'mappings'
+export type ProductionResourceKind = 'lines' | 'processes'
 
 export interface ProductionResourceSyncEvent {
   kind: ProductionResourceKind
 }
 
+export interface ProductionResourceSyncEmitOptions {
+  invalidate?: boolean
+}
+
 export const PRODUCTION_LINES_UPDATED_EVENT = 'xdfc_production_lines_v2_updated'
 export const PRODUCTION_PROCESSES_UPDATED_EVENT = 'xdfc_production_processes_updated'
-export const PRODUCTION_MAPPINGS_UPDATED_EVENT = 'xdfc_production_mappings_updated'
-
 const productionResourceListeners = new Set<(event: ProductionResourceSyncEvent) => void>()
 
 function getLegacyEventName(kind: ProductionResourceKind): string {
@@ -18,8 +20,6 @@ function getLegacyEventName(kind: ProductionResourceKind): string {
       return PRODUCTION_LINES_UPDATED_EVENT
     case 'processes':
       return PRODUCTION_PROCESSES_UPDATED_EVENT
-    case 'mappings':
-      return PRODUCTION_MAPPINGS_UPDATED_EVENT
     default:
       return PRODUCTION_LINES_UPDATED_EVENT
   }
@@ -41,19 +41,18 @@ async function invalidateProductionResource(kind: ProductionResourceKind): Promi
     case 'processes':
       await productionResourceInvalidation.invalidateProcesses()
       return
-    case 'mappings':
-      await productionResourceInvalidation.invalidateMappings()
-      return
     default:
       await productionResourceInvalidation.invalidateAll()
   }
 }
 
 export const productionResourceSync = {
-  emit: (event: ProductionResourceSyncEvent): void => {
+  emit: (event: ProductionResourceSyncEvent, options?: ProductionResourceSyncEmitOptions): void => {
     productionResourceListeners.forEach((listener) => listener(event))
     emitLegacyWindowEvent(event.kind)
-    void invalidateProductionResource(event.kind)
+    if (options?.invalidate !== false) {
+      void invalidateProductionResource(event.kind)
+    }
   },
 
   subscribe: (listener: (event: ProductionResourceSyncEvent) => void): (() => void) => {
@@ -64,15 +63,11 @@ export const productionResourceSync = {
     }
   },
 
-  emitLinesUpdated: (): void => {
-    productionResourceSync.emit({ kind: 'lines' })
+  emitLinesUpdated: (options?: ProductionResourceSyncEmitOptions): void => {
+    productionResourceSync.emit({ kind: 'lines' }, options)
   },
 
-  emitProcessesUpdated: (): void => {
-    productionResourceSync.emit({ kind: 'processes' })
-  },
-
-  emitMappingsUpdated: (): void => {
-    productionResourceSync.emit({ kind: 'mappings' })
+  emitProcessesUpdated: (options?: ProductionResourceSyncEmitOptions): void => {
+    productionResourceSync.emit({ kind: 'processes' }, options)
   },
 }

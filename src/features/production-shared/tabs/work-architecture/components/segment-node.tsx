@@ -87,7 +87,7 @@ export function SegmentNode({ segment }: SegmentNodeProps) {
         )}
 
         {jobCategories.length === 0 && (
-          <span className='ml-1 text-[10px] italic text-muted-foreground/30'>(未配置岗位/站点)</span>
+          <span className='ml-1 text-[10px] italic text-muted-foreground/30'>(未配置岗位)</span>
         )}
       </div>
 

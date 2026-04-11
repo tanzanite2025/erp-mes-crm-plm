@@ -24,10 +24,10 @@ export const productionProcessesService = {
     return toProductionProcessContracts(checked)
   },
 
-  saveStep: async (step: ProductionProcessStep, stationId?: string): Promise<ProductionProcessStep> => {
+  saveStep: async (step: ProductionProcessStep): Promise<ProductionProcessStep> => {
     const res = await apiFetch<ProductionProcessStepApiDTO>('/production/processes', {
       method: 'POST',
-      body: JSON.stringify(toSaveProductionProcessStepApiDTO(step, stationId)),
+      body: JSON.stringify(toSaveProductionProcessStepApiDTO(step)),
     })
 
     const saved = toProductionProcessContract(

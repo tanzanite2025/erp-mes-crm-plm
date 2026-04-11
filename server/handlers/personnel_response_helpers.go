@@ -37,7 +37,6 @@ func mapEmployeeResponse(employee models.Employee) gin.H {
 		"bankName":       employee.BankName,
 		"education":      employee.Education,
 		"age":            employee.Age,
-		"station":        employee.Station,
 		"status":         employee.Status,
 		"joinedDate":     employee.JoinedDate,
 		"deptId":         employee.DeptID,

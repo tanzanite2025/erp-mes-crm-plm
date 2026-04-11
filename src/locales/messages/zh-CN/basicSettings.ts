@@ -18,7 +18,6 @@ export const basicSettings = {
       lineMgmt: '产线管理',
       sectionMgmt: '区段管理',
       groupMgmt: '组别管理',
-      stationMgmt: '站点管理',
       routingMgmt: '途程管理',
       specialRoutingMgmt: '特殊途程',
       warehouseMgmt: '仓库管理',

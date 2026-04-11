@@ -20,7 +20,7 @@ func TestBulkSyncSummaryBuildersExposeSensitivityLayers(t *testing.T) {
 	}
 
 	employeeSummary := buildEmployeeBulkSyncSummary(
-		1, 2, 3, 4, 5, 6,
+		1, 2, 3, 5, 6,
 		[]string{"emp-1:active->disabled"},
 		[]string{"emp-1:dept-a->dept-b"},
 	)

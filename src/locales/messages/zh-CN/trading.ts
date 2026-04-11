@@ -107,7 +107,7 @@ export const trading = {
     quickUpdateDefault: '货物已到达分拣中心',
     quickUpdateLocation: '分拣中心',
     timelineEmpty: '暂无物流轨迹',
-    unknownSite: '未知站点',
+    unknownSite: '未知位置',
     pagination: {
       prev: '上一页',
       next: '下一页',

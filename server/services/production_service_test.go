@@ -24,12 +24,11 @@ func (m fakeTransactionManager) WithinTransaction(fn func(tx *gorm.DB) error) er
 type fakeProductionRepository struct {
 	existingLine          models.ProductionLine
 	lines                 []models.ProductionLine
-	stations              []models.Station
 	saveProductionLineHit bool
 	savedLine             models.ProductionLine
 	saveProcessStepHit    bool
 	savedStep             models.ProcessStep
-	appendedStationID     string
+	appendedJobCategoryID string
 	appendedProcessID     string
 	deletedLineID         string
 	bumpVersionResult     bool
@@ -43,15 +42,7 @@ func (r *fakeProductionRepository) GetProductionLineByID(database *gorm.DB, id s
 	return r.existingLine, nil
 }
 
-func (r *fakeProductionRepository) DeleteSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	return nil
-}
-
-func (r *fakeProductionRepository) DeleteStationProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	return nil
-}
-
-func (r *fakeProductionRepository) DeleteStationsNotIn(database *gorm.DB, lineID string, stationIDs []string) error {
+func (r *fakeProductionRepository) DeleteJobCategoryProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
 	return nil
 }
 
@@ -99,18 +90,14 @@ func (r *fakeProductionRepository) DeleteProcessStep(database *gorm.DB, id strin
 	return nil
 }
 
-func (r *fakeProductionRepository) AppendProcessToStation(database *gorm.DB, stationID string, processID string) error {
-	r.appendedStationID = stationID
+func (r *fakeProductionRepository) AppendProcessToJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
+	r.appendedJobCategoryID = jobCategoryID
 	r.appendedProcessID = processID
 	return nil
 }
 
-func (r *fakeProductionRepository) RemoveProcessFromStation(database *gorm.DB, stationID string, processID string) error {
+func (r *fakeProductionRepository) RemoveProcessFromJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
 	return nil
-}
-
-func (r *fakeProductionRepository) ListStationsWithProcesses(database *gorm.DB) ([]models.Station, error) {
-	return r.stations, nil
 }
 
 type fakeSystemConfigRepository struct {
@@ -222,7 +209,7 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 				{
 					BaseModel: models.BaseModel{ID: "segment-1"},
 					LineID:    "line-1",
-					Name:      "旧工段",
+					Name:      "Old Segment",
 					SortOrder: 0,
 				},
 			},
@@ -240,7 +227,7 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 		{
 			ID:        "segment-2",
 			LineID:    "line-1",
-			Name:      "新工段",
+			Name:      "New Segment",
 			SortOrder: 0,
 		},
 	})
@@ -249,7 +236,7 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 	line, err := service.PatchProductionLine(PatchProductionLineRequest{
 		ID: "line-1",
 		Delta: map[string]json.RawMessage{
-			"segments": json.RawMessage(`{"o":[{"id":"segment-1","lineId":"line-1","name":"旧工段","sortOrder":0,"jobCategories":[]}],"n":` + string(segmentsRaw) + `}`),
+			"segments": json.RawMessage(`{"o":[{"id":"segment-1","lineId":"line-1","name":"Old Segment","sortOrder":0,"jobCategories":[]}],"n":` + string(segmentsRaw) + `}`),
 		},
 		Version:  3,
 		AuthCode: "expected",
@@ -262,10 +249,10 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 	require.Equal(t, int64(4), line.Version)
 	require.Len(t, repo.savedLine.Segments, 1)
 	require.Equal(t, "segment-2", repo.savedLine.Segments[0].ID)
-	require.Equal(t, "新工段", repo.savedLine.Segments[0].Name)
+	require.Equal(t, "New Segment", repo.savedLine.Segments[0].Name)
 }
 
-func TestProductionServiceSaveProcessStepAppendsStationMapping(t *testing.T) {
+func TestProductionServiceSaveProcessStepPersistsProcess(t *testing.T) {
 	repo := &fakeProductionRepository{}
 	service := NewProductionService(
 		fakeTransactionManager{},
@@ -279,33 +266,17 @@ func TestProductionServiceSaveProcessStepAppendsStationMapping(t *testing.T) {
 			ID:   "step-1",
 			Name: "Polish",
 		},
-		StationID: "station-1",
-		Operator:  "tester",
-		IP:        "127.0.0.1",
+		Operator: "tester",
+		IP:       "127.0.0.1",
 	})
 
 	require.NoError(t, err)
 	require.True(t, repo.saveProcessStepHit)
-	require.Equal(t, "station-1", repo.appendedStationID)
-	require.Equal(t, step.ID, repo.appendedProcessID)
+	require.Equal(t, "step-1", step.ID)
 }
 
-func TestProductionServiceListStationMappingsBuildsMap(t *testing.T) {
-	repo := &fakeProductionRepository{
-		stations: []models.Station{
-			{
-				BaseModel: models.BaseModel{ID: "station-1"},
-				Processes: []models.ProcessStep{
-					{BaseModel: models.BaseModel{ID: "step-1"}},
-					{BaseModel: models.BaseModel{ID: "step-2"}},
-				},
-			},
-			{
-				BaseModel: models.BaseModel{ID: "station-2"},
-				Processes: []models.ProcessStep{},
-			},
-		},
-	}
+func TestProductionServiceAssignProcessToJobCategory(t *testing.T) {
+	repo := &fakeProductionRepository{}
 	service := NewProductionService(
 		fakeTransactionManager{},
 		&fakeAuditLogger{},
@@ -313,11 +284,16 @@ func TestProductionServiceListStationMappingsBuildsMap(t *testing.T) {
 		fakeSystemConfigRepository{},
 	)
 
-	mappings, err := service.ListStationMappings()
+	err := service.AssignProcessToJobCategory(JobCategoryProcessMappingRequest{
+		JobCategoryID: "job-1",
+		ProcessID:     "step-1",
+		Operator:      "tester",
+		IP:            "127.0.0.1",
+	})
 
 	require.NoError(t, err)
-	require.Equal(t, []string{"step-1", "step-2"}, mappings["station-1"])
-	require.Empty(t, mappings["station-2"])
+	require.Equal(t, "job-1", repo.appendedJobCategoryID)
+	require.Equal(t, "step-1", repo.appendedProcessID)
 }
 
 func TestProductionServiceDeleteProductionLineWritesAudit(t *testing.T) {

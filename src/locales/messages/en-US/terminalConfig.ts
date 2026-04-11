@@ -27,7 +27,7 @@ export const terminalConfig = {
       description:
         'Covers access instructions and parameter templates for barcode scanners, fixed scan heads, and scan modules.',
       summary:
-        'Scanner integration is best standardized as HID enter mode or explicit serial protocol templates, so forms, production station pages, and PDA scanning can all share the same contract.',
+        'Scanner integration is best standardized as HID enter mode or explicit serial protocol templates, so forms, production pages, and PDA scanning can all share the same contract.',
     },
     downloads: {
       title: 'Driver Downloads',
@@ -117,7 +117,7 @@ export const terminalConfig = {
           fixedHeadTemplate: {
             title: 'Fixed Scan Head Serial Template',
             target: 'Serial / Network Scan Head',
-            note: 'Designed for production-station or automated trigger-based collection scenarios.',
+            note: 'Designed for production or automated trigger-based collection scenarios.',
           },
         },
       },
@@ -192,7 +192,7 @@ export const terminalConfig = {
     sceneOptions: {
       general: 'General Ingest',
       stocktake: 'Stocktake Bridge',
-      production: 'Production Station',
+      production: 'Production',
       traceability: 'Quality Traceability',
     },
     routing: {

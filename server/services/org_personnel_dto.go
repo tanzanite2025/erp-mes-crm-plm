@@ -52,7 +52,6 @@ type EmployeeSaveRequest struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -88,7 +87,6 @@ type EmployeeListItemResponse struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -116,7 +114,6 @@ type EmployeeSaveResponse struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -143,7 +140,6 @@ type BulkSyncEmployeeRequest struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -204,7 +200,6 @@ func MapEmployeeSaveRequestToModel(input EmployeeSaveRequest) models.Employee {
 		BankName:       input.BankName,
 		Education:      input.Education,
 		Age:            input.Age,
-		Station:        input.Station,
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,
@@ -264,7 +259,6 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		BankName:       model.BankName,
 		Education:      model.Education,
 		Age:            model.Age,
-		Station:        model.Station,
 		Status:         model.Status,
 		JoinedDate:     model.JoinedDate,
 		DeptID:         model.DeptID,
@@ -302,7 +296,6 @@ func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
 		BankName:       model.BankName,
 		Education:      model.Education,
 		Age:            model.Age,
-		Station:        model.Station,
 		Status:         model.Status,
 		JoinedDate:     model.JoinedDate,
 		DeptID:         model.DeptID,
@@ -331,7 +324,6 @@ func MapBulkSyncEmployeeRequestToModel(input BulkSyncEmployeeRequest) models.Emp
 		BankName:       input.BankName,
 		Education:      input.Education,
 		Age:            input.Age,
-		Station:        input.Station,
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,

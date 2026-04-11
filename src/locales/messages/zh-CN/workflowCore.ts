@@ -38,7 +38,6 @@ export const workflowCore = {
     },
     bindTypes: {
       section: 'SECTION / 仅工段',
-      station: 'STATION / 仅站点',
       role: 'ROLE / 仅角色激活',
       global: 'GLOBAL / 全局通用',
     },

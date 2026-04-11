@@ -33,17 +33,16 @@ type PatchProductionLineRequest struct {
 }
 
 type SaveProcessStepRequest struct {
-	Step      ProcessStepDTO
-	StationID string
-	Operator  string
-	IP        string
+	Step     ProcessStepDTO
+	Operator string
+	IP       string
 }
 
-type StationProcessMappingRequest struct {
-	StationID string
-	ProcessID string
-	Operator  string
-	IP        string
+type JobCategoryProcessMappingRequest struct {
+	JobCategoryID string
+	ProcessID     string
+	Operator      string
+	IP            string
 }
 
 type ProductionService struct {
@@ -104,16 +103,12 @@ func DeleteProcessStep(id string, operator string, ip string) error {
 	return defaultProductionService.DeleteProcessStep(id, operator, ip)
 }
 
-func AssignProcessToStation(req StationProcessMappingRequest) error {
-	return defaultProductionService.AssignProcessToStation(req)
+func AssignProcessToJobCategory(req JobCategoryProcessMappingRequest) error {
+	return defaultProductionService.AssignProcessToJobCategory(req)
 }
 
-func RemoveProcessFromStation(req StationProcessMappingRequest) error {
-	return defaultProductionService.RemoveProcessFromStation(req)
-}
-
-func ListStationMappings() (StationProcessMappingsResponse, error) {
-	return defaultProductionService.ListStationMappings()
+func RemoveProcessFromJobCategory(req JobCategoryProcessMappingRequest) error {
+	return defaultProductionService.RemoveProcessFromJobCategory(req)
 }
 
 func (s *ProductionService) ListProductionLines() ([]ProductionLineDTO, error) {
@@ -145,15 +140,9 @@ func (s *ProductionService) SaveProductionLine(req SaveProductionLineRequest) (P
 			return ErrProductionTopologyUnauthorized
 		}
 
-		segmentIDs, categoryIDs, stationIDs, stationProcessIDs := collectProductionAssociationIDs(line.Segments)
+		segmentIDs, categoryIDs, categoryProcessIDs := collectProductionAssociationIDs(line.Segments)
 		if line.ID != "" {
-			if err := s.repository.DeleteSegmentProcessMappingsNotIn(tx, line.ID, nil); err != nil {
-				return err
-			}
-			if err := s.repository.DeleteStationProcessMappingsNotIn(tx, line.ID, stationProcessIDs); err != nil {
-				return err
-			}
-			if err := s.repository.DeleteStationsNotIn(tx, line.ID, stationIDs); err != nil {
+			if err := s.repository.DeleteJobCategoryProcessMappingsNotIn(tx, line.ID, categoryProcessIDs); err != nil {
 				return err
 			}
 			if err := s.repository.DeleteJobCategoriesNotIn(tx, line.ID, categoryIDs); err != nil {
@@ -272,15 +261,7 @@ func (s *ProductionService) ListProcessSteps() ([]ProcessStepDTO, error) {
 func (s *ProductionService) SaveProcessStep(req SaveProcessStepRequest) (ProcessStepDTO, error) {
 	step := mapProcessStepDTOToModel(req.Step)
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		if err := s.repository.SaveProcessStep(tx, &step); err != nil {
-			return err
-		}
-
-		if strings.TrimSpace(req.StationID) == "" {
-			return nil
-		}
-
-		return s.repository.AppendProcessToStation(tx, req.StationID, step.ID)
+		return s.repository.SaveProcessStep(tx, &step)
 	})
 	return mapProcessStepToDTO(step), err
 }
@@ -291,40 +272,22 @@ func (s *ProductionService) DeleteProcessStep(id string, operator string, ip str
 	})
 }
 
-func (s *ProductionService) AssignProcessToStation(req StationProcessMappingRequest) error {
+func (s *ProductionService) AssignProcessToJobCategory(req JobCategoryProcessMappingRequest) error {
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.AppendProcessToStation(tx, req.StationID, req.ProcessID)
+		return s.repository.AppendProcessToJobCategory(tx, req.JobCategoryID, req.ProcessID)
 	})
 }
 
-func (s *ProductionService) RemoveProcessFromStation(req StationProcessMappingRequest) error {
+func (s *ProductionService) RemoveProcessFromJobCategory(req JobCategoryProcessMappingRequest) error {
 	return s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.RemoveProcessFromStation(tx, req.StationID, req.ProcessID)
+		return s.repository.RemoveProcessFromJobCategory(tx, req.JobCategoryID, req.ProcessID)
 	})
 }
 
-func (s *ProductionService) ListStationMappings() (StationProcessMappingsResponse, error) {
-	stations, err := s.repository.ListStationsWithProcesses(s.txManager.DB())
-	if err != nil {
-		return nil, err
-	}
-
-	mappings := make(map[string][]string, len(stations))
-	for _, station := range stations {
-		processIDs := make([]string, 0, len(station.Processes))
-		for _, process := range station.Processes {
-			processIDs = append(processIDs, process.ID)
-		}
-		mappings[station.ID] = processIDs
-	}
-	return MapStationMappingsToResponse(mappings), nil
-}
-
-func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string, []string, []string) {
+func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, []string, []string) {
 	var segmentIDs []string
 	var categoryIDs []string
-	var stationIDs []string
-	var stationProcessIDs []string
+	var categoryProcessIDs []string
 
 	for _, segment := range segments {
 		if segment.ID != "" && !strings.HasPrefix(segment.ID, "temp-") {
@@ -334,18 +297,13 @@ func collectProductionAssociationIDs(segments []models.LineSegment) ([]string, [
 			if category.ID != "" && !strings.HasPrefix(category.ID, "temp-") {
 				categoryIDs = append(categoryIDs, category.ID)
 			}
-			for _, station := range category.Stations {
-				if station.ID != "" && !strings.HasPrefix(station.ID, "temp-") {
-					stationIDs = append(stationIDs, station.ID)
-				}
-				for _, process := range station.Processes {
-					if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
-						stationProcessIDs = append(stationProcessIDs, process.ID)
-					}
+			for _, process := range category.Processes {
+				if process.ID != "" && !strings.HasPrefix(process.ID, "temp-") {
+					categoryProcessIDs = append(categoryProcessIDs, process.ID)
 				}
 			}
 		}
 	}
 
-	return segmentIDs, categoryIDs, stationIDs, stationProcessIDs
+	return segmentIDs, categoryIDs, categoryProcessIDs
 }

@@ -41,7 +41,7 @@ export const scanPlatform = {
       addToHomeScreenLabel: 'Add to Home Screen',
       notes: [
         'It already uses the real backend lookup API and currently returns barcode parsing, product matching, and production topology anchors.',
-        'When real station-pass records are added later, only the backend data source needs to expand without rebuilding the standalone shell.',
+        'When real production-pass records are added later, only the backend data source needs to expand without rebuilding the standalone shell.',
       ],
     },
   },

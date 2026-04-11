@@ -109,10 +109,8 @@ export function EmployeeManagementList() {
                 newMap[line.id] = line.name
                 line.segments.forEach((seg) => {
                     seg.jobCategories.forEach((category) => {
-                        category.stations.forEach((station) => {
-                            station.processes.forEach((process) => {
-                                newMap[process.id] = process.name
-                            })
+                        category.processes.forEach((process) => {
+                            newMap[process.id] = process.name
                         })
                     })
                 })

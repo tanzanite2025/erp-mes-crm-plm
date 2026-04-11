@@ -10,9 +10,7 @@ import (
 type ProductionRepository interface {
 	ListProductionLines(database *gorm.DB) ([]models.ProductionLine, error)
 	GetProductionLineByID(database *gorm.DB, id string) (models.ProductionLine, error)
-	DeleteSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
-	DeleteStationProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
-	DeleteStationsNotIn(database *gorm.DB, lineID string, stationIDs []string) error
+	DeleteJobCategoryProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error
 	DeleteJobCategoriesNotIn(database *gorm.DB, lineID string, categoryIDs []string) error
 	DeleteLineSegmentsNotIn(database *gorm.DB, lineID string, segmentIDs []string) error
 	BumpProductionLineVersion(database *gorm.DB, id string, version int64) (bool, error)
@@ -21,9 +19,8 @@ type ProductionRepository interface {
 	ListProcessSteps(database *gorm.DB) ([]models.ProcessStep, error)
 	SaveProcessStep(database *gorm.DB, step *models.ProcessStep) error
 	DeleteProcessStep(database *gorm.DB, id string) error
-	AppendProcessToStation(database *gorm.DB, stationID string, processID string) error
-	RemoveProcessFromStation(database *gorm.DB, stationID string, processID string) error
-	ListStationsWithProcesses(database *gorm.DB) ([]models.Station, error)
+	AppendProcessToJobCategory(database *gorm.DB, jobCategoryID string, processID string) error
+	RemoveProcessFromJobCategory(database *gorm.DB, jobCategoryID string, processID string) error
 }
 
 type GormProductionRepository struct{}
@@ -52,10 +49,7 @@ func preloadProductionLineHierarchy(database *gorm.DB) *gorm.DB {
 		Preload("Segments.JobCategories", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("sort_order asc")
 		}).
-		Preload("Segments.JobCategories.Stations", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("sort_order asc")
-		}).
-		Preload("Segments.JobCategories.Stations.Processes", func(tx *gorm.DB) *gorm.DB {
+		Preload("Segments.JobCategories.Processes", func(tx *gorm.DB) *gorm.DB {
 			return tx.Distinct(
 				"process_steps.id",
 				"process_steps.created_at",
@@ -70,37 +64,15 @@ func preloadProductionLineHierarchy(database *gorm.DB) *gorm.DB {
 		})
 }
 
-func (GormProductionRepository) DeleteSegmentProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	query := database.Table("line_segment_process_mappings").Where(
-		"line_segment_id IN (SELECT id FROM line_segments WHERE line_id = ?)",
+func (GormProductionRepository) DeleteJobCategoryProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
+	query := database.Table("job_category_process_mappings").Where(
+		"job_category_id IN (SELECT job_categories.id FROM job_categories JOIN line_segments ON line_segments.id = job_categories.segment_id WHERE line_segments.line_id = ?)",
 		lineID,
 	)
 	if len(processIDs) > 0 {
 		query = query.Not("process_step_id IN ?", processIDs)
 	}
 	return query.Delete(nil).Error
-}
-
-func (GormProductionRepository) DeleteStationProcessMappingsNotIn(database *gorm.DB, lineID string, processIDs []string) error {
-	query := database.Table("station_process_mappings").Where(
-		"station_id IN (SELECT stations.id FROM stations JOIN job_categories ON job_categories.id = stations.category_id JOIN line_segments ON line_segments.id = job_categories.segment_id WHERE line_segments.line_id = ?)",
-		lineID,
-	)
-	if len(processIDs) > 0 {
-		query = query.Not("process_step_id IN ?", processIDs)
-	}
-	return query.Delete(nil).Error
-}
-
-func (GormProductionRepository) DeleteStationsNotIn(database *gorm.DB, lineID string, stationIDs []string) error {
-	query := database.Where(
-		"category_id IN (SELECT job_categories.id FROM job_categories JOIN line_segments ON line_segments.id = job_categories.segment_id WHERE line_segments.line_id = ?)",
-		lineID,
-	)
-	if len(stationIDs) > 0 {
-		query = query.Not("id IN ?", stationIDs)
-	}
-	return query.Delete(&models.Station{}).Error
 }
 
 func (GormProductionRepository) DeleteJobCategoriesNotIn(database *gorm.DB, lineID string, categoryIDs []string) error {
@@ -200,27 +172,15 @@ func saveLineSegmentHierarchy(tx *gorm.DB, segment *models.LineSegment, lineID s
 		category.SegmentID = segment.ID
 
 		categoryToSave := *category
-		categoryToSave.Stations = nil
+		categoryToSave.Processes = nil
 		if err := tx.Save(&categoryToSave).Error; err != nil {
 			return err
 		}
 
 		category.ID = categoryToSave.ID
-		for stationIndex := range category.Stations {
-			station := &category.Stations[stationIndex]
-			station.CategoryID = category.ID
-
-			stationToSave := *station
-			stationToSave.Processes = nil
-			if err := tx.Save(&stationToSave).Error; err != nil {
-				return err
-			}
-
-			station.ID = stationToSave.ID
-			stationModel := models.Station{BaseModel: models.BaseModel{ID: station.ID}}
-			if err := tx.Model(&stationModel).Association("Processes").Replace(station.Processes); err != nil {
-				return err
-			}
+		categoryModel := models.JobCategory{BaseModel: models.BaseModel{ID: category.ID}}
+		if err := tx.Model(&categoryModel).Association("Processes").Replace(category.Processes); err != nil {
+			return err
 		}
 	}
 
@@ -245,20 +205,14 @@ func (GormProductionRepository) DeleteProcessStep(database *gorm.DB, id string) 
 	return database.Delete(&models.ProcessStep{}, "id = ?", id).Error
 }
 
-func (GormProductionRepository) AppendProcessToStation(database *gorm.DB, stationID string, processID string) error {
-	station := models.Station{BaseModel: models.BaseModel{ID: stationID}}
+func (GormProductionRepository) AppendProcessToJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
+	jobCategory := models.JobCategory{BaseModel: models.BaseModel{ID: jobCategoryID}}
 	process := models.ProcessStep{BaseModel: models.BaseModel{ID: processID}}
-	return database.Model(&station).Association("Processes").Append(&process)
+	return database.Model(&jobCategory).Association("Processes").Append(&process)
 }
 
-func (GormProductionRepository) RemoveProcessFromStation(database *gorm.DB, stationID string, processID string) error {
-	station := models.Station{BaseModel: models.BaseModel{ID: stationID}}
+func (GormProductionRepository) RemoveProcessFromJobCategory(database *gorm.DB, jobCategoryID string, processID string) error {
+	jobCategory := models.JobCategory{BaseModel: models.BaseModel{ID: jobCategoryID}}
 	process := models.ProcessStep{BaseModel: models.BaseModel{ID: processID}}
-	return database.Model(&station).Association("Processes").Delete(&process)
-}
-
-func (GormProductionRepository) ListStationsWithProcesses(database *gorm.DB) ([]models.Station, error) {
-	var stations []models.Station
-	err := database.Preload("Processes").Find(&stations).Error
-	return stations, err
+	return database.Model(&jobCategory).Association("Processes").Delete(&process)
 }

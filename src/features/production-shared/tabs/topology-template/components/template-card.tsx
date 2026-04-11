@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Copy, Edit2, Layout, MapPin, MoreVertical, Plus, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, Edit2, Layout, MoreVertical, Plus, Trash2, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import type { JobCategory, Station, TopologyTemplate } from '../../line-mgmt/types'
+import type { JobCategory, TopologyTemplate } from '../../line-mgmt/types'
 import { useLanguage } from '@/context/language-provider'
 
 interface TemplateCardProps {
@@ -28,10 +28,6 @@ interface TemplateCardProps {
   onEdit: (template: TopologyTemplate) => void
   onDelete: (id: string) => void
   onUpdate: (updatedTemplate: TopologyTemplate) => void
-}
-
-function createStationCode(index: number): string {
-  return `ST-${String(index).padStart(2, '0')}`
 }
 
 export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateCardProps) {
@@ -59,46 +55,12 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
         segmentId,
         name: t('orgPersonnel.topologyTemplateMgmt.card.defaultJobCategory', { index: jobCategories.length + 1 }),
         sortOrder: jobCategories.length,
-        stations: [],
+        processes: [],
       }
 
       return {
         ...segment,
         jobCategories: [...jobCategories, nextJobCategory],
-      }
-    })
-
-    onUpdate({ ...template, segments: updatedSegments })
-  }
-
-  const handleAddStation = (segmentId: string, jobCategoryId: string) => {
-    const updatedSegments = (template.segments || []).map((segment) => {
-      if (segment.id !== segmentId) {
-        return segment
-      }
-
-      return {
-        ...segment,
-        jobCategories: (segment.jobCategories || []).map((jobCategory) => {
-          if (jobCategory.id !== jobCategoryId) {
-            return jobCategory
-          }
-
-          const stations = jobCategory.stations || []
-          const nextStation: Station = {
-            id: crypto.randomUUID(),
-            categoryId: jobCategoryId,
-            code: createStationCode(stations.length + 1),
-            name: t('orgPersonnel.topologyTemplateMgmt.card.defaultStation', { index: stations.length + 1 }),
-            sortOrder: stations.length,
-            processes: [],
-          }
-
-          return {
-            ...jobCategory,
-            stations: [...stations, nextStation],
-          }
-        }),
       }
     })
 
@@ -124,30 +86,6 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
     onUpdate({ ...template, segments: updatedSegments })
   }
 
-  const handleRemoveStation = (segmentId: string, jobCategoryId: string, stationId: string) => {
-    const updatedSegments = (template.segments || []).map((segment) => {
-      if (segment.id !== segmentId) {
-        return segment
-      }
-
-      return {
-        ...segment,
-        jobCategories: (segment.jobCategories || []).map((jobCategory) => {
-          if (jobCategory.id !== jobCategoryId) {
-            return jobCategory
-          }
-
-          return {
-            ...jobCategory,
-            stations: (jobCategory.stations || []).filter((station) => station.id !== stationId),
-          }
-        }),
-      }
-    })
-
-    onUpdate({ ...template, segments: updatedSegments })
-  }
-
   const handleUpdateSegment = (segmentId: string, name: string) => {
     const updatedSegments = (template.segments || []).map((segment) =>
       segment.id === segmentId ? { ...segment, name } : segment
@@ -166,34 +104,6 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
         jobCategories: (segment.jobCategories || []).map((jobCategory) =>
           jobCategory.id === jobCategoryId ? { ...jobCategory, name } : jobCategory
         ),
-      }
-    })
-
-    onUpdate({ ...template, segments: updatedSegments })
-  }
-
-  const handleUpdateStation = (segmentId: string, jobCategoryId: string, stationId: string, updates: Pick<Station, 'code' | 'name'>) => {
-    const updatedSegments = (template.segments || []).map((segment) => {
-      if (segment.id !== segmentId) {
-        return segment
-      }
-
-      return {
-        ...segment,
-        jobCategories: (segment.jobCategories || []).map((jobCategory) => {
-          if (jobCategory.id !== jobCategoryId) {
-            return jobCategory
-          }
-
-          return {
-            ...jobCategory,
-            stations: (jobCategory.stations || []).map((station) =>
-              station.id === stationId
-                ? { ...station, code: updates.code?.trim() || undefined, name: updates.name }
-                : station
-            ),
-          }
-        }),
       }
     })
 
@@ -334,70 +244,20 @@ export function TemplateCard({ template, onEdit, onDelete, onUpdate }: TemplateC
                       </div>
 
                       <div className='flex flex-col gap-3 pl-2'>
-                        {(jobCategory.stations || []).length === 0 ? (
+                        {(jobCategory.processes || []).length === 0 ? (
                           <p className='text-[10px] italic text-muted-foreground/45'>
-                            {t('orgPersonnel.lineMgmt.editor.noStations')}
+                            {t('orgPersonnel.lineMgmt.editor.noProcesses')}
                           </p>
                         ) : (
-                          (jobCategory.stations || []).map((station) => (
-                            <div key={station.id} className='group/station flex w-full items-center gap-2 rounded-[20px] border border-muted/25 bg-muted/10 px-3 py-2 transition-all hover:border-orange-300/20 hover:bg-muted/15'>
-                              <MapPin className='size-4 shrink-0 text-orange-500/80' />
-                              <span className='shrink-0 text-[9px] font-bold uppercase tracking-widest text-orange-600/35'>[{t('orgPersonnel.topologyTemplateMgmt.card.station')}]</span>
-                              <Input
-                                value={station.code || ''}
-                                onChange={(event) => handleUpdateStation(segment.id, jobCategory.id, station.id, { code: event.target.value, name: station.name })}
-                                placeholder={t('orgPersonnel.lineMgmt.editor.stationCodePlaceholder')}
-                                className='h-8 w-28 border-transparent bg-white/80 px-2 text-[11px] font-mono tracking-wider dark:bg-white/10'
-                              />
-                              <Input
-                                value={station.name}
-                                onChange={(event) => handleUpdateStation(segment.id, jobCategory.id, station.id, { code: station.code, name: event.target.value })}
-                                placeholder={t('orgPersonnel.lineMgmt.editor.stationNamePlaceholder')}
-                                className='h-8 min-w-0 flex-1 border-transparent bg-white/80 px-2 text-[11px] font-bold tracking-tight dark:bg-white/10'
-                              />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <button
-                                    type='button'
-                                    className='flex size-7 shrink-0 items-center justify-center text-rose-300 opacity-0 transition-opacity hover:text-rose-500 group-hover/station:opacity-100'
-                                  >
-                                    <X className='size-4' />
-                                  </button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className='rounded-[32px] border-none bg-white/95 shadow-2xl backdrop-blur-xl'>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle className='text-lg font-black tracking-tighter text-slate-900'>
-                                      {t('orgPersonnel.topologyTemplateMgmt.card.deleteStationTitle')}
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription className='px-1 text-[11px] font-medium uppercase tracking-wider leading-relaxed text-slate-500'>
-                                      {t('orgPersonnel.topologyTemplateMgmt.card.deleteStationDesc', { name: station.name })}
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter className='gap-2'>
-                                    <AlertDialogCancel className='h-10 rounded-full border-none bg-slate-100 text-[10px] font-bold uppercase tracking-widest'>
-                                      {t('orgPersonnel.lineMgmt.dialog.cancel')}
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleRemoveStation(segment.id, jobCategory.id, station.id)}
-                                      className='h-10 rounded-full bg-rose-500 text-[10px] font-bold uppercase tracking-widest'
-                                    >
-                                      {t('orgPersonnel.lineMgmt.topology.authVerify')}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                          (jobCategory.processes || []).map((process) => (
+                            <div key={process.id} className='flex w-full items-center gap-2 rounded-[20px] border border-muted/25 bg-muted/10 px-3 py-2 text-[11px] font-bold text-slate-600'>
+                              <span className='shrink-0 rounded-full border border-orange-100 bg-orange-50 px-2 py-1 font-mono text-[10px] text-orange-700'>
+                                {process.code || 'NO-CODE'}
+                              </span>
+                              <span className='truncate'>{process.name}</span>
                             </div>
                           ))
                         )}
-
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='h-9 gap-2 rounded-[24px] border border-dashed border-orange-200 bg-white/30 text-[10px] font-black uppercase tracking-[0.2em] text-orange-600/50 shadow-sm transition-all hover:bg-white hover:text-orange-600 active:scale-95'
-                          onClick={() => handleAddStation(segment.id, jobCategory.id)}
-                        >
-                          <Plus className='size-3.5' /> {t('orgPersonnel.topologyTemplateMgmt.card.addStation')}
-                        </Button>
                       </div>
                     </div>
                   ))}

@@ -9,8 +9,6 @@ func mapProductionTaskToResponse(task models.ProductionTask) ProductionTaskRespo
 		BatchNo:     task.BatchNo,
 		ProcessID:   task.ProcessID,
 		ProcessName: task.ProcessName,
-		StationID:   task.StationID,
-		StationName: task.StationName,
 		TargetQty:   task.TargetQty,
 		ActualQty:   task.ActualQty,
 		Status:      task.Status,

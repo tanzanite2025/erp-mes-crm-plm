@@ -51,7 +51,6 @@ func setupEmployeeImportSQLiteDB(t *testing.T) *gorm.DB {
 			bank_name TEXT,
 			education TEXT,
 			age INTEGER,
-			station TEXT,
 			status TEXT,
 			joined_date DATETIME,
 			dept_id TEXT,
@@ -161,7 +160,6 @@ func TestCommitEmployeeImportPreservesNonTemplateFieldsOnUpdate(t *testing.T) {
 		StaffID:   "A001",
 		Name:      "Alice Old",
 		DeptID:    "dept-1",
-		Station:   "Station-A",
 		LineID:    "line-1",
 		ProcessID: "process-1",
 		Status:    "active",
@@ -190,7 +188,6 @@ func TestCommitEmployeeImportPreservesNonTemplateFieldsOnUpdate(t *testing.T) {
 	require.Equal(t, "resigned", employee.Status)
 	require.Equal(t, "13800000000", employee.Phone)
 	require.Equal(t, "New Address", employee.Address)
-	require.Equal(t, "Station-A", employee.Station)
 	require.Equal(t, "line-1", employee.LineID)
 	require.Equal(t, "process-1", employee.ProcessID)
 }

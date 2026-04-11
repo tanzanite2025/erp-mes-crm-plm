@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStationProcessMappingHandlerRequestBinding(t *testing.T) {
+func TestJobCategoryProcessMappingHandlerRequestBinding(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	payload := services.StationProcessMappingHandlerRequest{
-		StationID: "station-1",
-		ProcessID: "step-1",
+	payload := services.JobCategoryProcessMappingHandlerRequest{
+		JobCategoryID: "job-1",
+		ProcessID:     "step-1",
 	}
 
 	body, err := json.Marshal(payload)
@@ -28,9 +28,9 @@ func TestStationProcessMappingHandlerRequestBinding(t *testing.T) {
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 
-	var bound services.StationProcessMappingHandlerRequest
+	var bound services.JobCategoryProcessMappingHandlerRequest
 	err = ctx.ShouldBindJSON(&bound)
 	require.NoError(t, err)
-	require.Equal(t, payload.StationID, bound.StationID)
+	require.Equal(t, payload.JobCategoryID, bound.JobCategoryID)
 	require.Equal(t, payload.ProcessID, bound.ProcessID)
 }

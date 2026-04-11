@@ -50,7 +50,7 @@ Implemented in this phase:
 ## Phase 3: Cleanup
 
 - Remove ordinary use of `users.role` from frontend authorization logic.
-- Remove station-based role recommendation from user management.
+- Remove legacy role recommendation from user management.
 - Replace string-parsed role IDs with structured role metadata:
   - `role_type`
   - `binding_id`

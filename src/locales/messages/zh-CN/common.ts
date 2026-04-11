@@ -72,14 +72,14 @@ export const common = {
       serverError: '服务响应异常：{{status}}',
       serverErrorDescription: '如果问题持续出现，请记录请求编号 {{requestId}} 并查看后端日志。',
       timeout: '登录请求超时，请检查网络连接。',
-      timeoutHint: '建议先用无痕窗口或清理当前站点数据后再试，同时确认当前域名到服务器的链路稳定。',
+      timeoutHint: '建议先用无痕窗口或清理当前浏览器数据后再试，同时确认当前域名到服务器的链路稳定。',
       deployMismatch:
         '前端运行在 {{currentHost}}，但 API 仍指向 {{apiHost}}，请检查环境变量 VITE_API_BASE_URL。',
       deployMismatchHint: '这通常是构建环境变量或访问入口不一致造成的。',
       networkError:
         '网络请求失败：{{error}}。请检查后端 ALLOWED_ORIGIN 是否包含当前域名。',
       networkHint:
-        '可以先查看浏览器控制台中的 [AUTH_DIAG] 日志，然后尝试无痕窗口、禁用扩展或清理站点数据。',
+        '可以先查看浏览器控制台中的 [AUTH_DIAG] 日志，然后尝试无痕窗口、禁用扩展或清理浏览器数据。',
       offlineHint: '检测到当前浏览器处于离线状态，请先恢复网络后再试。',
       rateLimited: '当前网络登录尝试过于频繁，请稍后再试。',
       rateLimitedDescription: '系统已暂时限制当前网络的登录请求，请大约 {{seconds}} 秒后再试。',

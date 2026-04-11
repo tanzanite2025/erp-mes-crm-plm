@@ -5,7 +5,6 @@ import { productionResourceQueryOptions } from '../data/production-resource-quer
 
 type ProductionLinesQueryOptions = Omit<UseQueryOptions<ProductionLine[], Error>, 'queryKey' | 'queryFn'>
 type ProductionProcessesQueryOptions = Omit<UseQueryOptions<ProductionProcessStep[], Error>, 'queryKey' | 'queryFn'>
-type ProductionMappingsQueryOptions = Omit<UseQueryOptions<Record<string, string[]>, Error>, 'queryKey' | 'queryFn'>
 
 export function useProductionLinesQuery(options?: ProductionLinesQueryOptions) {
   return useQuery({
@@ -17,13 +16,6 @@ export function useProductionLinesQuery(options?: ProductionLinesQueryOptions) {
 export function useProductionProcessesQuery(options?: ProductionProcessesQueryOptions) {
   return useQuery({
     ...productionResourceQueryOptions.processes(),
-    ...options,
-  })
-}
-
-export function useProductionMappingsQuery(options?: ProductionMappingsQueryOptions) {
-  return useQuery({
-    ...productionResourceQueryOptions.mappings(),
     ...options,
   })
 }

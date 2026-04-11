@@ -56,7 +56,6 @@ func setupLeaveServiceTestDB(t *testing.T) *gorm.DB {
 			bank_name TEXT,
 			education TEXT,
 			age INTEGER,
-			station TEXT,
 			status TEXT,
 			joined_date DATETIME,
 			dept_id TEXT,

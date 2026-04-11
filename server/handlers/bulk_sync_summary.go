@@ -38,10 +38,10 @@ func buildOrgBulkSyncSummary(created, parentChanged, typeChanged, managerChanged
 	})
 }
 
-func buildEmployeeBulkSyncSummary(created, statusChanged, deptChanged, stationChanged, lineChanged, processChanged int, statusSamples, deptSamples []string) string {
+func buildEmployeeBulkSyncSummary(created, statusChanged, deptChanged, lineChanged, processChanged int, statusSamples, deptSamples []string) string {
 	base := fmt.Sprintf(
-		"sensitivity=HIGH created=%d status_changed=%d dept_changed=%d station_changed=%d line_changed=%d process_changed=%d",
-		created, statusChanged, deptChanged, stationChanged, lineChanged, processChanged,
+		"sensitivity=HIGH created=%d status_changed=%d dept_changed=%d line_changed=%d process_changed=%d",
+		created, statusChanged, deptChanged, lineChanged, processChanged,
 	)
 	return formatSummaryWithSamples(base, map[string][]string{
 		"status_samples": statusSamples,

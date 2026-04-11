@@ -405,7 +405,6 @@ func InitDB(dsn string) {
 		&models.ProductionLine{},
 		&models.LineSegment{},
 		&models.JobCategory{},
-		&models.Station{},
 		&models.EngineeringSpec{},
 		&models.ProductAttributeCategory{},
 		&models.ProductAttributeOption{},

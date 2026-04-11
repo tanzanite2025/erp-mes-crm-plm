@@ -12,7 +12,6 @@ export interface EmployeeApiDTO {
   bankName?: string
   education?: string
   age?: number
-  station?: string
   status: 'active' | 'resigned' | 'on-leave'
   joinedDate?: string | null
   deptId?: string

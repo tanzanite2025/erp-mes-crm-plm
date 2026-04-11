@@ -33,11 +33,4 @@ export const productionResourceInvalidation = {
       invalidateQueryKey(productionResourceQueryClient, productionResourceQueryKeys.processes()),
     ])
   },
-
-  invalidateMappings: async (): Promise<void> => {
-    await Promise.all([
-      invalidateQueryKey(productionResourceQueryClient, productionResourceQueryKeys.all()),
-      invalidateQueryKey(productionResourceQueryClient, productionResourceQueryKeys.mappings()),
-    ])
-  },
 }

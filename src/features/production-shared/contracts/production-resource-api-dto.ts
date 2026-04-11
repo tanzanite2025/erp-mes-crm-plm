@@ -21,19 +21,6 @@ export interface ProductionLineSegmentApiDTO {
   updatedAt?: string
 }
 
-export interface ProductionStationApiDTO {
-  id: string
-  categoryId?: string
-  code?: string
-  name: string
-  description?: string
-  sortOrder?: number
-  attributes?: Record<string, unknown> | null
-  processes: ProductionProcessStepApiDTO[]
-  createdAt?: string
-  updatedAt?: string
-}
-
 export interface ProductionJobCategoryApiDTO {
   id: string
   segmentId?: string
@@ -41,7 +28,7 @@ export interface ProductionJobCategoryApiDTO {
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown> | null
-  stations: ProductionStationApiDTO[]
+  processes: ProductionProcessStepApiDTO[]
   createdAt?: string
   updatedAt?: string
 }
@@ -66,10 +53,6 @@ export interface ProductionProcessStepsResponseApiDTO {
   items: ProductionProcessStepApiDTO[]
 }
 
-export interface StationMappingsResponseApiDTO {
-  items: Record<string, string[]>
-}
-
 export interface ProductionMessageApiDTO {
   message: string
 }
@@ -78,11 +61,4 @@ export interface SaveProductionLineApiDTO extends ProductionLineApiDTO {
   authCode?: string
 }
 
-export interface SaveProductionProcessStepApiDTO extends ProductionProcessStepApiDTO {
-  stationId?: string
-}
-
-export interface StationProcessMappingApiDTO {
-  stationId: string
-  processId: string
-}
+export type SaveProductionProcessStepApiDTO = ProductionProcessStepApiDTO

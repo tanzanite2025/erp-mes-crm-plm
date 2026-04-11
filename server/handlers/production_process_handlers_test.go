@@ -22,7 +22,6 @@ func TestSaveProcessStepHandlerRequestBinding(t *testing.T) {
 			SortOrder: 1,
 			IsActive:  true,
 		},
-		StationID: "station-1",
 	}
 
 	body, err := json.Marshal(payload)
@@ -40,5 +39,4 @@ func TestSaveProcessStepHandlerRequestBinding(t *testing.T) {
 	require.Equal(t, payload.ID, bound.ID)
 	require.Equal(t, payload.Code, bound.Code)
 	require.Equal(t, payload.Name, bound.Name)
-	require.Equal(t, payload.StationID, bound.StationID)
 }

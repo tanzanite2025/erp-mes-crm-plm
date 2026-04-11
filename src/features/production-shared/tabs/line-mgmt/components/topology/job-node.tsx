@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react'
-import { Check, BriefcaseBusiness, MoreVertical, Plus, ShieldCheck, X } from 'lucide-react'
+import { Check, BriefcaseBusiness, MoreVertical, ShieldCheck, X } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,20 +7,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import type { JobCategory, Station } from '../../types'
+import type { JobCategory } from '../../types'
 import { SecurityAuthDialog } from './security-auth-dialog'
 import { useLanguage } from '@/context/language-provider'
-import { StationNode } from './station-node'
 
 interface JobNodeProps {
   segmentId: string
   jobCategory: JobCategory
   onUpdateName: (segmentId: string, jobCategoryId: string, name: string) => void
   onRemove: (segmentId: string, jobCategoryId: string) => void
-  onAddStation: (segmentId: string, jobCategoryId: string) => void
-  onUpdateStation: (segmentId: string, jobCategoryId: string, stationId: string, updates: Pick<Station, 'code' | 'name'>) => void
-  onRemoveStation: (segmentId: string, jobCategoryId: string, stationId: string) => void
 }
 
 export const JobNode = memo(({
@@ -28,9 +23,6 @@ export const JobNode = memo(({
   jobCategory,
   onUpdateName,
   onRemove,
-  onAddStation,
-  onUpdateStation,
-  onRemoveStation,
 }: JobNodeProps) => {
   const { t } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
@@ -65,7 +57,7 @@ export const JobNode = memo(({
     setIsEditing(false)
   }
 
-  const stations = jobCategory.stations || []
+  const processes = jobCategory.processes || []
 
   return (
     <div className='group/job-category relative flex h-auto min-h-0 w-full flex-col items-start rounded-[24px] border border-muted/30 bg-background/80 shadow-sm backdrop-blur-sm transition-all hover:border-blue-400/20 hover:shadow-md dark:bg-white/4'>
@@ -134,31 +126,22 @@ export const JobNode = memo(({
         </div>
 
         <div className='mt-2 flex w-full flex-col gap-3 pl-2'>
-          {stations.length === 0 ? (
+          {processes.length === 0 ? (
             <p className='text-[10px] italic text-muted-foreground/45'>
-              {t('orgPersonnel.lineMgmt.editor.noStations')}
+              {t('orgPersonnel.lineMgmt.editor.noProcesses')}
             </p>
           ) : (
-            stations.map((station) => (
-              <StationNode
-                key={station.id}
-                segmentId={segmentId}
-                jobCategoryId={jobCategory.id}
-                station={station}
-                onUpdateStation={onUpdateStation}
-                onRemove={onRemoveStation}
-              />
-            ))
+            <div className='flex flex-wrap gap-2'>
+              {processes.map((process) => (
+                <span
+                  key={process.id}
+                  className='rounded-full border border-blue-100 bg-blue-50/70 px-2.5 py-1 text-[10px] font-mono tracking-wider text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200'
+                >
+                  {process.name}
+                </span>
+              ))}
+            </div>
           )}
-
-          <Button
-            variant='ghost'
-            size='sm'
-            className='h-9 gap-2 rounded-[20px] border border-dashed border-blue-100 bg-background/60 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600/55 transition-all hover:bg-white hover:text-blue-600 active:scale-95 dark:border-blue-400/15 dark:bg-white/4 dark:hover:bg-blue-500/10'
-            onClick={() => onAddStation(segmentId, jobCategory.id)}
-          >
-            <Plus className='size-3.5' /> {t('orgPersonnel.lineMgmt.editor.addStation')}
-          </Button>
         </div>
       </div>
 

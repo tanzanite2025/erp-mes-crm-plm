@@ -70,19 +70,16 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
     handleApplyTemplate,
     handleAddSegment,
     handleAddJobCategory,
-    handleAddStation,
     handleUpdateSegment,
     handleUpdateJobCategory,
-    handleUpdateStation,
     handleRemoveSegment,
     handleRemoveJobCategory,
-    handleRemoveStation,
   } = useLineTopology(line, handleTopologyUpdate)
 
   const segmentCount = line.segments?.length || 0
   const jobCategoryCount = line.segments?.reduce((count, segment) => count + (segment.jobCategories?.length || 0), 0) || 0
-  const stationCount = line.segments?.reduce(
-    (count, segment) => count + (segment.jobCategories || []).reduce((segmentCount, jobCategory) => segmentCount + (jobCategory.stations?.length || 0), 0),
+  const processCount = line.segments?.reduce(
+    (count, segment) => count + (segment.jobCategories || []).reduce((segmentCount, jobCategory) => segmentCount + (jobCategory.processes?.length || 0), 0),
     0
   ) || 0
 
@@ -194,7 +191,7 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                 {t('orgPersonnel.lineMgmt.card.hierarchyStats', { 
                   segments: segmentCount,
                   jobs: jobCategoryCount,
-                  stations: stationCount,
+                  processes: processCount,
                 })}
               </span>
             </div>
@@ -228,9 +225,6 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                       onAddJobCategory={handleAddJobCategory}
                       onUpdateJobCategoryName={handleUpdateJobCategory}
                       onRemoveJobCategory={handleRemoveJobCategory}
-                      onAddStation={handleAddStation}
-                      onUpdateStation={handleUpdateStation}
-                      onRemoveStation={handleRemoveStation}
                     />
                 ))}
 

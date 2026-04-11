@@ -1,18 +1,5 @@
 import type { ProductionProcessStep } from './production-process'
 
-export interface ProductionStation {
-  id: string
-  categoryId?: string
-  code?: string
-  name: string
-  description?: string
-  sortOrder?: number
-  attributes?: Record<string, unknown>
-  processes: ProductionProcessStep[]
-  createdAt?: string
-  updatedAt?: string
-}
-
 export interface ProductionJobCategory {
   id: string
   segmentId?: string
@@ -20,7 +7,7 @@ export interface ProductionJobCategory {
   description?: string
   sortOrder?: number
   attributes?: Record<string, unknown>
-  stations: ProductionStation[]
+  processes: ProductionProcessStep[]
   createdAt?: string
   updatedAt?: string
 }

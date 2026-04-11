@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import type { Segment, Station } from '../../types'
+import type { Segment } from '../../types'
 import { JobNode } from './job-node'
 
 interface SegmentNodeProps {
@@ -19,9 +19,6 @@ interface SegmentNodeProps {
   onAddJobCategory: (segmentId: string) => void
   onUpdateJobCategoryName: (segmentId: string, jobCategoryId: string, name: string) => void
   onRemoveJobCategory: (segmentId: string, jobCategoryId: string) => void
-  onAddStation: (segmentId: string, jobCategoryId: string) => void
-  onUpdateStation: (segmentId: string, jobCategoryId: string, stationId: string, updates: Pick<Station, 'code' | 'name'>) => void
-  onRemoveStation: (segmentId: string, jobCategoryId: string, stationId: string) => void
 }
 
 export const SegmentNode = memo(({
@@ -31,9 +28,6 @@ export const SegmentNode = memo(({
   onAddJobCategory,
   onUpdateJobCategoryName,
   onRemoveJobCategory,
-  onAddStation,
-  onUpdateStation,
-  onRemoveStation,
 }: SegmentNodeProps) => {
   const { t } = useLanguage()
   const [isEditing, setIsEditing] = useState(false)
@@ -130,9 +124,6 @@ export const SegmentNode = memo(({
             jobCategory={jobCategory}
             onUpdateName={onUpdateJobCategoryName}
             onRemove={onRemoveJobCategory}
-            onAddStation={onAddStation}
-            onUpdateStation={onUpdateStation}
-            onRemoveStation={onRemoveStation}
           />
         ))}
 

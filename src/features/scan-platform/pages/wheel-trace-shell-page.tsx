@@ -144,7 +144,7 @@ export function WheelTraceShellPage({ autoPromptInstall = false }: WheelTraceShe
               Current Stage
             </CardTitle>
             <CardDescription className='text-[10px] md:text-[11px] font-medium text-muted-foreground/70'>
-              当前工段、工序、站点与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
+              当前工段、工序与班组快照已经来自真实接口。没有真实过站记录时，会返回配置推断的锚点并附带提示。
             </CardDescription>
           </CardHeader>
           <CardContent className='grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]'>

@@ -42,7 +42,6 @@ type EmployeeSaveHandlerRequest struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -64,7 +63,6 @@ type BulkSyncEmployeeHandlerRequest struct {
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
-	Station        string     `json:"station"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
 	DeptID         string     `json:"deptId"`
@@ -130,7 +128,6 @@ func mapEmployeeSaveServiceResponseToResponse(input services.EmployeeSaveRespons
 		"bankName":       input.BankName,
 		"education":      input.Education,
 		"age":            input.Age,
-		"station":        input.Station,
 		"status":         input.Status,
 		"joinedDate":     input.JoinedDate,
 		"deptId":         input.DeptID,
@@ -160,7 +157,6 @@ func mapEmployeeSaveHandlerRequestToService(input EmployeeSaveHandlerRequest) se
 		BankName:       input.BankName,
 		Education:      input.Education,
 		Age:            input.Age,
-		Station:        input.Station,
 		Status:         input.Status,
 		JoinedDate:     input.JoinedDate,
 		DeptID:         input.DeptID,
@@ -186,7 +182,6 @@ func mapBulkSyncEmployeeHandlerRequestsToService(input []BulkSyncEmployeeHandler
 			BankName:       item.BankName,
 			Education:      item.Education,
 			Age:            item.Age,
-			Station:        item.Station,
 			Status:         item.Status,
 			JoinedDate:     item.JoinedDate,
 			DeptID:         item.DeptID,

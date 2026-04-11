@@ -394,16 +394,44 @@
   - [ ] 校正 dashboard 与 storage event、production invalidation 的协作关系，避免重复刷新。
   - [ ] 完成第五阶段最小验证并更新 `walkthrough.md`。
 
-- [ ] 675. 分阶段推进 `line-mgmt/index.tsx` 收口，第一阶段先处理乐观 UI（2026-04-11，待确认）
-  - [ ] 补充第六阶段规划：明确 line-mgmt 第一阶段只处理乐观 UI、失败回滚与成功后同步边界。
-  - [ ] 盘点当前 line-mgmt 的临时态写入、局部回写、失败回滚与全量 reload 混用问题。
-  - [ ] 收口 line-mgmt 第一阶段乐观 UI：明确本地临时态与后端确认态的切换规则。
-  - [ ] 暂不在本阶段强推整页 Query 化，待乐观 UI 稳定后再进入下一步。
-  - [ ] 完成第六阶段第一步最小验证并更新 `walkthrough.md`。
+- [x] 675. 分阶段推进 `line-mgmt/index.tsx` 收口，第一阶段先处理乐观 UI（2026-04-11，已完成）
+  - [x] 补充第六阶段规划：明确 line-mgmt 第一阶段只处理乐观 UI、失败回滚与成功后同步边界。
+  - [x] 盘点当前 line-mgmt 的临时态写入、局部回写、失败回滚与全量 reload 混用问题。
+  - [x] 收口 line-mgmt 第一阶段乐观 UI：明确本地临时态与后端确认态的切换规则。
+  - [x] 暂不在本阶段强推整页 Query 化，待乐观 UI 稳定后再进入下一步。
+  - [x] 完成第六阶段第一步最小验证并更新 `walkthrough.md`。
 
-- [ ] 676. 推进 `line-mgmt/index.tsx` 第二阶段：Query cache 主真相 + optimistic overlay 短期覆盖层（2026-04-11，待确认）
-  - [ ] 补充第六阶段第二步规划：明确 Query cache 作为主真相、optimistic overlay 作为短期覆盖层的模型。
-  - [ ] 设计 line-mgmt 的 displayedLines 组装方式，区分 query data、overlay 与本地 UI 状态。
-  - [ ] 明确 create / update / delete 成功时分别使用 `setQueryData` 还是 `invalidate` 的策略。
-  - [ ] 明确 overlay 的清理、回滚、与域级 invalidation 的协作边界。
-  - [ ] 完成第六阶段第二步最小验证并更新 `walkthrough.md`。
+- [x] 676. 推进 `line-mgmt/index.tsx` 第二阶段：Query cache 主真相 + optimistic overlay 短期覆盖层（2026-04-11，已完成）
+  - [x] 补充第六阶段第二步规划：明确 Query cache 作为主真相、optimistic overlay 作为短期覆盖层的模型。
+  - [x] 设计 line-mgmt 的 displayedLines 组装方式，区分 query data、overlay 与本地 UI 状态。
+  - [x] 明确 create / update / delete 成功时分别使用 `setQueryData` 还是 `invalidate` 的策略。
+  - [x] 明确 overlay 的清理、回滚、与域级 invalidation 的协作边界。
+  - [x] 完成第六阶段第二步最小验证并更新 `walkthrough.md`。
+
+- [x] 677. 继续收口 `line-mgmt` mutation orchestration：抽离 domain hook / mutation helper（2026-04-11，已完成）
+  - [x] 将 `line-mgmt/index.tsx` 中的 Query cache 写回、overlay、toast、sync emit 与失败分支清理抽离到独立 domain hook。
+  - [x] 页面入口仅保留 `Forbidden` / loading / `LineList` 渲染，移除页面组件对 mutation 细节的直接持有。
+  - [x] 修正 create / update 对话框确认后提前弹成功 toast 的问题，统一以服务端成功为准。
+  - [x] 为 `productionResourceSync.emit*Updated()` 增加可选跳过 invalidate 的能力，避免 `line-mgmt` 在 `setQueryData` 后立刻重复拉取同一 query。
+  - [x] 完成最小验证并更新 `walkthrough.md`。
+
+- [x] 678. 为 `line-mgmt` 建立复杂嵌套 patch 的按需 invalidate 规则（2026-04-11，已完成）
+  - [x] 将 line update 的成功后同步策略抽象为显式规则，而不是继续散落在页面或调用点中。
+  - [x] 将“复杂 patch”定义收口为：深层路径或结构化值（对象/数组）变更。
+  - [x] 对复杂 patch 关闭 optimistic overlay，并在 `setQueryData` 后补充 `emitLinesUpdated({ invalidate: true })`。
+  - [x] 对简单标量字段更新继续保持 `setQueryData` 优先且默认不额外 invalidate。
+  - [x] 完成最小验证并更新 `walkthrough.md`。
+
+- [x] 679. 将同类按需 invalidate 规则推广到 `process-library-panel` mutation 链（2026-04-11，已完成）
+  - [x] 新增 process library domain hook，收口 `useQuery`、`setQueryData`、toast、sync emit 与删除/保存 mutation。
+  - [x] 将 process save 的复杂度判定定义为：实体存在结构化字段值时补充 invalidate。
+  - [x] 简单 process save 保持 `setQueryData` 优先且默认不额外 invalidate。
+  - [x] delete 继续走 `setQueryData + emitProcessesUpdated({ invalidate: false })`。
+  - [x] 完成最小验证并更新 `walkthrough.md`。
+
+- [x] 680. 将同类规则推广到岗位内部 process 能力映射 mutation 链（2026-04-11，已完成）
+  - [x] 确认当前仓库里尚无独立岗位-process 编辑 UI，实际 mutation 链位于 `productionMappingsService.assign/removeProcessCapability`。
+  - [x] 新增岗位-process capability domain hook，统一承接 mappings/lines cache patch、toast、logger 与 sync emit。
+  - [x] 将岗位-process capability 写入明确归类为跨资源嵌套写入，默认在 cache patch 后补充 `emitMappingsUpdated({ invalidate: true })`。
+  - [x] 在本地可定位时同时 patch `mappings` 与 `lines` query cache，减少 UI 等待感。
+  - [x] 完成最小验证并更新 `walkthrough.md`。

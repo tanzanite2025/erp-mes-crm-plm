@@ -3,20 +3,34 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ListTree, Pencil, Plus, Trash2, Workflow } from 'lucide-react'
 import { toast } from 'sonner'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
-import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
-import { productionProcessesService } from '../../../services/production-processes-service'
-import { productionResourceSync } from '../../../services/production-resource-sync'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
+import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
 
 const logger = createLogger('ProcessLibraryPanel')
 
@@ -65,15 +79,15 @@ export function ProcessLibraryPanel() {
   const [isSaving, setIsSaving] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<ProcessStep | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { data: processes, isLoading, error } = useProductionProcessesQuery()
-  const availableProcesses = useMemo(() => processes ?? [], [processes])
+  const { processes, isLoading, error, saveProcess, deleteProcess } = useProcessLibraryProcesses()
+  const availableProcesses = useMemo(() => processes, [processes])
 
   useEffect(() => {
     if (!error) {
       return
     }
 
-    toast.error('加载全局工序池失败')
+    toast.error('Failed to load global process library')
     logger.error('Failed to load production processes', error)
   }, [error])
 
@@ -101,14 +115,14 @@ export function ProcessLibraryPanel() {
 
   const handleSave = async () => {
     if (!formState.code.trim() || !formState.name.trim()) {
-      toast.error('工序编码和工序名称不能为空')
+      toast.error('Process code and name are required')
       return
     }
 
     setIsSaving(true)
 
     try {
-      await productionProcessesService.saveStep({
+      await saveProcess({
         id: formState.id,
         code: formState.code.trim(),
         name: formState.name.trim(),
@@ -117,12 +131,9 @@ export function ProcessLibraryPanel() {
         isActive: formState.isActive,
         createdAt: formState.createdAt,
       })
-      productionResourceSync.emitProcessesUpdated()
-      toast.success(formState.id ? '工序已更新' : '工序已创建')
       setIsDialogOpen(false)
-    } catch (error) {
-      toast.error(formState.id ? '更新工序失败' : '创建工序失败')
-      logger.error('Failed to save production process', error)
+    } catch {
+      // Errors are already surfaced by the domain hook.
     } finally {
       setIsSaving(false)
     }
@@ -136,13 +147,10 @@ export function ProcessLibraryPanel() {
     setIsDeleting(true)
 
     try {
-      await productionProcessesService.deleteStep(pendingDelete.id)
-      productionResourceSync.emitProcessesUpdated()
-      toast.success(`已删除工序 ${pendingDelete.name}`)
+      await deleteProcess(pendingDelete)
       setPendingDelete(null)
-    } catch (error) {
-      toast.error('删除工序失败')
-      logger.error('Failed to delete production process', error)
+    } catch {
+      // Errors are already surfaced by the domain hook.
     } finally {
       setIsDeleting(false)
     }
@@ -268,12 +276,12 @@ export function ProcessLibraryPanel() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className='max-w-2xl rounded-[32px] border-none p-0 shadow-2xl'>
-          <div className='p-8 space-y-6'>
+          <div className='space-y-6 p-8'>
             <DialogHeader className='space-y-1 text-left'>
               <DialogTitle className='text-lg font-black tracking-tighter italic text-slate-800'>
                 {formState.id ? 'Edit Process Resource' : 'Create Process Resource'}
               </DialogTitle>
-              <DialogDescription className='text-[10px] font-black tracking-widest uppercase opacity-60'>
+              <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
                 GLOBAL PROCESS LIBRARY ENTRY
               </DialogDescription>
             </DialogHeader>

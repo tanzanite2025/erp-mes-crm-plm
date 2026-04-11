@@ -56,10 +56,8 @@ export function useUsersActionDialogOptions({
         nameMap[line.id] = line.name
         line.segments.forEach((seg) => {
           seg.jobCategories.forEach((category) => {
-            category.stations.forEach((station) => {
-              station.processes.forEach((process) => {
-                nameMap[process.id] = process.name
-              })
+            category.processes.forEach((process) => {
+              nameMap[process.id] = process.name
             })
           })
         })
