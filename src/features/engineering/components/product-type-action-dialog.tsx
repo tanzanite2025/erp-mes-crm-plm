@@ -28,8 +28,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
-import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
+import { ProductTypeService } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
+import { type SaveProductTypeInput } from '../mutation-types'
 
 const logger = createLogger('ProductTypeActionDialog')
 

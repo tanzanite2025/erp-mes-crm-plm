@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type Material, type MaterialCategory } from '../data/schema'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '../query-keys'
 import { MaterialCoreService } from '../services/material-core-service'
 import { MaterialMaintenanceService } from '../services/material-maintenance-service'
-import { type DeltaSet } from '@/lib/delta/types'
 
 type MaterialListResponse = {
   data?: Material[]
@@ -26,11 +27,7 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const {
-    data: qData,
-    error,
-    isLoading,
-  } = useQuery<MaterialListResponse>({
+  const { data: qData, error, isLoading } = useQuery<MaterialListResponse>({
     queryKey: [
       'material-archive',
       category,
@@ -50,6 +47,12 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
   const materials = qData?.data || []
   const totalCount = qData?.total || 0
 
+  const invalidateMaterialQueries = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['material-archive'] }),
+      queryClient.invalidateQueries({ queryKey: MATERIAL_OPTIONS_QUERY_KEY }),
+    ])
+
   const upsertMutation = useMutation({
     mutationFn: async ({
       data,
@@ -65,42 +68,39 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       }
       return MaterialMaintenanceService.saveMaterial(data)
     },
-    onSuccess: (updatedMaterial, { isPatch }) => {
-      queryClient.invalidateQueries({ queryKey: ['material-archive'] })
-      // 同步全局事件，确保相关模块联动
-      window.dispatchEvent(new CustomEvent('xdfc_materials_updated', { detail: updatedMaterial }))
-      toast.success(isPatch ? '物料档案已更新 (SDRTS Patch)' : '物料档案已同步')
+    onSuccess: async (_updatedMaterial, { isPatch }) => {
+      await invalidateMaterialQueries()
+      toast.success(isPatch ? '物料档案已更新' : '物料档案已保存')
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => MaterialMaintenanceService.deleteMaterial(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material-archive'] })
-      window.dispatchEvent(new CustomEvent('xdfc_materials_updated'))
-      toast.success('物料已移除')
+    onSuccess: async () => {
+      await invalidateMaterialQueries()
+      toast.success('物料已删除')
     },
   })
 
-    useEffect(() => {
-        const handleRefresh = () => {
-            queryClient.invalidateQueries({ queryKey: ['material-archive'] })
-        }
-        window.addEventListener('xdfc_storage_initialized', handleRefresh)
-        return () => window.removeEventListener('xdfc_storage_initialized', handleRefresh)
-    }, [queryClient])
-
-    return {
-        queryClient,
-        searchTerm,
-        setSearchTerm,
-        pagination,
-        setPagination,
-        error,
-        isLoading,
-        filteredMaterials: materials,
-        totalCount,
-        upsertMutation,
-        deleteMutation
+  useEffect(() => {
+    const handleRefresh = () => {
+      void queryClient.invalidateQueries({ queryKey: ['material-archive'] })
     }
+    window.addEventListener('xdfc_storage_initialized', handleRefresh)
+    return () => window.removeEventListener('xdfc_storage_initialized', handleRefresh)
+  }, [queryClient])
+
+  return {
+    queryClient,
+    searchTerm,
+    setSearchTerm,
+    pagination,
+    setPagination,
+    error,
+    isLoading,
+    filteredMaterials: materials,
+    totalCount,
+    upsertMutation,
+    deleteMutation,
+  }
 }

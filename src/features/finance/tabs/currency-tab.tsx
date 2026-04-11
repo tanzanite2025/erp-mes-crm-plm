@@ -45,10 +45,12 @@ export function CurrencyTab() {
                 isRefreshing={isLoading}
                 rightContent={
                     <div className='flex items-center gap-2'>
-                         <Button 
+                        <Button 
                             variant='outline' 
                             size='sm' 
-                            onClick={handleSync}
+                            onClick={() => {
+                                void handleSync()
+                            }}
                             disabled={isSyncing}
                             className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed bg-emerald-500/5 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10'
                         >

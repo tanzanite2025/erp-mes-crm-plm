@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     getCoreRowModel,
@@ -36,28 +37,67 @@ import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { toast } from 'sonner'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { ENGINEERING_DB_DRILLING_QUERY_KEY } from '../query-keys'
 
 export function DrillingTab() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const [data, setData] = useState<DrillingPlan[]>([])
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/drilling' })
     const { data: products = [] } = useGetProducts()
     const [searchTerm, setSearchTerm] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<DrillingPlan | undefined>(undefined)
 
     const productMap = useMemo(() => {
         const map = new Map<string, (typeof products)[0]>()
-        products.forEach(p => map.set(p.id, p))
+        products.forEach((product) => map.set(product.id, product))
         return map
     }, [products])
-    
+
     const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
     const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
     const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
     const [previewFile, setPreviewFile] = useState<{ url: string; name: string; sku?: string } | null>(null)
+
+    const { data = [], isLoading } = useQuery({
+        queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
+        queryFn: () => ProductionDBService.getDrilling(),
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async (params: {
+            data: DrillingPlan
+            isPatch: boolean
+            delta?: any
+            version?: number
+        }) => {
+            const { data: formData, isPatch, delta, version } = params
+            if (isPatch && delta) {
+                await ProductionDBService.patchDrilling(formData.id, delta, version!)
+                return
+            }
+            await ProductionDBService.saveDrillingItem(formData)
+        },
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
+            setOpen(false)
+            setCurrentRow(undefined)
+            toast.success(
+                variables.isPatch
+                    ? t('engineering.drilling.toasts.updateSuccess')
+                    : t('engineering.drilling.toasts.saveSuccess')
+            )
+        },
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => ProductionDBService.deleteDrilling(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
+            toast.success(t('engineering.drilling.toasts.deleteSuccess'))
+        },
+    })
 
     useEffect(() => {
         return () => {
@@ -67,21 +107,8 @@ export function DrillingTab() {
         }
     }, [previewFile?.url])
 
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true)
-            try {
-                const drilings = await ProductionDBService.getDrilling()
-                setData(drilings)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [])
-
     const filteredData = useMemo(() => {
-        return data.filter(item => {
+        return data.filter((item) => {
             const product = productMap.get(item.productId)
             const searchStr = searchTerm.toLowerCase()
             return item.name.toLowerCase().includes(searchStr) ||
@@ -94,36 +121,38 @@ export function DrillingTab() {
         const lowerExt = ext?.toLowerCase()
         const isCAD = ['dwg', 'dxf', 'stp', 'step'].includes(lowerExt || '')
         const Icon = isCAD ? FileCode : FileText
-        const colorClass = isCAD ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' : 
+        const colorClass = isCAD ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' :
                          'text-indigo-500 bg-indigo-500/10 border-indigo-500/20'
         return { Icon, colorClass, isCAD }
     }
 
     const handlePreview = async (item: DrillingPlan) => {
-        if (item.fileUrl) {
-            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
-            if (!resolvedUrl) {
-                toast.error(t('engineering.drilling.toasts.unResolved'))
-                return
-            }
-            const product = productMap.get(item.productId)
-            const ext = item.fileExtension?.toLowerCase()
-            
-            setPreviewFile({
-                url: resolvedUrl,
-                name: item.name,
-                sku: product?.sku
-            })
-
-            if (['dwg', 'dxf', 'stp', 'step'].includes(ext || '')) {
-                setCadPreviewOpen(true)
-            } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
-                setExcelPreviewOpen(true)
-            } else {
-                setPdfPreviewOpen(true)
-            }
-        } else {
+        if (!item.fileUrl) {
             toast.error(t('engineering.drilling.toasts.noFile'))
+            return
+        }
+
+        const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
+        if (!resolvedUrl) {
+            toast.error(t('engineering.drilling.toasts.unResolved'))
+            return
+        }
+
+        const product = productMap.get(item.productId)
+        const ext = item.fileExtension?.toLowerCase()
+
+        setPreviewFile({
+            url: resolvedUrl,
+            name: item.name,
+            sku: product?.sku
+        })
+
+        if (['dwg', 'dxf', 'stp', 'step'].includes(ext || '')) {
+            setCadPreviewOpen(true)
+        } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+            setExcelPreviewOpen(true)
+        } else {
+            setPdfPreviewOpen(true)
         }
     }
 
@@ -202,17 +231,14 @@ export function DrillingTab() {
                     <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
                     <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                    <Button 
-                        variant='ghost' 
-                        size='icon' 
-                        className='size-8 rounded-full text-destructive hover:bg-destructive/10' 
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-8 rounded-full text-destructive hover:bg-destructive/10'
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.drilling.toasts.deleteConfirm',
                             onAction: async () => {
-                                const newData = data.filter(p => p.id !== row.original.id)
-                                setData(newData)
-                                await ProductionDBService.saveDrilling(newData)
-                                toast.success(t('engineering.drilling.toasts.deleteSuccess'))
+                                await deleteMutation.mutateAsync(row.original.id)
                             }
                         })}
                     >
@@ -231,35 +257,17 @@ export function DrillingTab() {
         getSortedRowModel: getSortedRowModel(),
     })
 
-    const handleSave = async (params: { 
-        data: DrillingPlan; 
-        isPatch: boolean; 
-        delta?: any; 
-        version?: number 
+    const handleSave = async (params: {
+        data: DrillingPlan
+        isPatch: boolean
+        delta?: any
+        version?: number
     }) => {
-        const { data: formData, isPatch, delta, version } = params
-
-        // 更新本地状态
-        setData(prev => {
-            const exists = prev.find(p => p.id === formData.id)
-            if (exists) {
-                return prev.map(p => p.id === formData.id ? formData : p)
-            }
-            return [formData, ...prev]
-        })
-
-        if (isPatch && delta) {
-            await ProductionDBService.patchDrilling(formData.id, delta, version!)
-            toast.success(t('engineering.drilling.toasts.updateSuccess'))
-        } else {
-            await ProductionDBService.saveDrilling([formData])
-            toast.success(t('engineering.drilling.toasts.saveSuccess'))
-        }
+        await saveMutation.mutateAsync(params)
     }
 
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-            {/* 响应式工业页眉 */}
             <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
                 <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
                 <div className='flex items-center gap-2 text-indigo-600'>
@@ -277,26 +285,24 @@ export function DrillingTab() {
                 </div>
             </div>
 
-            {/* 功能操作行 - 响应式堆叠 */}
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
                 <div className='relative w-full sm:w-96 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-indigo-600 transition-colors' />
-                    <Input 
+                    <Input
                         placeholder={t('engineering.drilling.placeholders.search')}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-indigo-600/20 w-full'
                     />
                 </div>
-                <Button 
-                    onClick={() => { setCurrentRow(undefined); setOpen(true); }} 
+                <Button
+                    onClick={() => { setCurrentRow(undefined); setOpen(true); }}
                     className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
                 >
                     <Plus className='size-4' /> {t('engineering.drilling.table.upload')}
                 </Button>
             </div>
 
-            {/* Desktop Table View */}
             <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
                 <CardContent className='p-0'>
                     <Table>
@@ -316,8 +322,8 @@ export function DrillingTab() {
                                 <TableRow><TableCell colSpan={columns.length} className='h-64 text-center'>{t('common.status.syncing')}</TableCell></TableRow>
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
-                                    <TableRow 
-                                        key={row.id} 
+                                    <TableRow
+                                        key={row.id}
                                         onClick={() => handlePreview(row.original)}
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
@@ -339,7 +345,6 @@ export function DrillingTab() {
                 </CardContent>
             </Card>
 
-            {/* Mobile Card View */}
             <div className='md:hidden flex flex-col gap-4'>
                 {isLoading ? (
                     <div className='p-12 text-center text-[10px] font-black italic uppercase text-muted-foreground animate-pulse'>{t('engineering.drilling.placeholders.mobileLoading')}</div>
@@ -351,7 +356,7 @@ export function DrillingTab() {
                         const info = getIconInfo(item.fileExtension)
                         const Icon = info.Icon
                         return (
-                            <div 
+                            <div
                                 key={item.id}
                                 onClick={() => handlePreview(item)}
                                 className={cn(
@@ -362,7 +367,7 @@ export function DrillingTab() {
                                 <div className='absolute top-0 right-0 p-4 opacity-10'>
                                     <Icon className={cn('size-16', info.colorClass.split(' ')[0])} />
                                 </div>
-                                
+
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
                                         <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', info.colorClass)}>
@@ -400,19 +405,16 @@ export function DrillingTab() {
                                         <div className='flex items-center gap-1'>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={(e) => { e.stopPropagation(); handlePreview(item); }}><Eye className='size-4' /></Button>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={(e) => { e.stopPropagation(); setCurrentRow(item); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                                            <Button 
-                                                variant='ghost' 
-                                                size='icon' 
-                                                className='size-8 rounded-full text-destructive/40' 
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                className='size-8 rounded-full text-destructive/40'
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     runConfirmedAction({
                                                         confirmKey: 'engineering.drilling.toasts.deleteConfirm',
                                                         onAction: async () => {
-                                                            const newData = data.filter(p => p.id !== item.id)
-                                                            setData(newData)
-                                                            await ProductionDBService.saveDrilling(newData)
-                                                            toast.success(t('engineering.drilling.toasts.deleteSuccess'))
+                                                            await deleteMutation.mutateAsync(item.id)
                                                         }
                                                     })
                                                 }}
@@ -432,7 +434,13 @@ export function DrillingTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <DrillingActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
+            <DrillingActionDialog
+                open={open}
+                onOpenChange={setOpen}
+                currentRow={currentRow}
+                onSave={handleSave}
+                isLoading={saveMutation.isPending}
+            />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <ExcelViewerDialog open={excelPreviewOpen} onOpenChange={setExcelPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />

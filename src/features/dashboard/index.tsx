@@ -74,19 +74,16 @@ export function Dashboard() {
     }
 
     window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
-    window.addEventListener('xdfc_storage_initialized', handleSync)
 
     return () => {
       active = false
       window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
-      window.removeEventListener('xdfc_storage_initialized', handleSync)
     }
   }, [segments])
 
   const handleSaveConfig = async (ids: string[]) => {
     setVisibleSegmentIds(ids)
     await StorageService.setItem(VISIBLE_SEGMENTS_KEY, ids)
-    window.dispatchEvent(new CustomEvent('xdfc_dashboard_visible_segments_updated'))
     setIsConfigOpen(false)
   }
 

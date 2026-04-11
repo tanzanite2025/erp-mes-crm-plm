@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     getCoreRowModel,
@@ -36,21 +37,21 @@ import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { ENGINEERING_DB_LABELING_QUERY_KEY } from '../query-keys'
 
 export function LabelingTab() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const [data, setData] = useState<LabelingDraft[]>([])
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/labeling' })
     const { data: products = [] } = useGetProducts()
     const [searchTerm, setSearchTerm] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<LabelingDraft | undefined>(undefined)
 
     const productMap = useMemo(() => {
         const map = new Map<string, (typeof products)[0]>()
-        products.forEach(p => map.set(p.id, p))
+        products.forEach((product) => map.set(product.id, product))
         return map
     }, [products])
 
@@ -58,6 +59,45 @@ export function LabelingTab() {
     const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
     const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
     const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
+
+    const { data = [], isLoading } = useQuery({
+        queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
+        queryFn: () => ProductionDBService.getLabeling(),
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async (params: {
+            data: LabelingDraft
+            isPatch: boolean
+            delta?: any
+            version?: number
+        }) => {
+            const { data: formData, isPatch, delta, version } = params
+            if (isPatch && delta) {
+                await ProductionDBService.patchLabeling(formData.id, delta, version!)
+                return
+            }
+            await ProductionDBService.saveLabelingItem(formData)
+        },
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_LABELING_QUERY_KEY })
+            setOpen(false)
+            setCurrentRow(undefined)
+            toast.success(
+                variables.isPatch
+                    ? t('engineering.labeling.toasts.updateSuccess')
+                    : t('engineering.labeling.toasts.saveSuccess')
+            )
+        },
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => ProductionDBService.deleteLabeling(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_LABELING_QUERY_KEY })
+            toast.success(t('engineering.labeling.toasts.deleteSuccess'))
+        },
+    })
 
     useEffect(() => {
         return () => {
@@ -67,21 +107,8 @@ export function LabelingTab() {
         }
     }, [previewFile?.url])
 
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true)
-            try {
-                const labelings = await ProductionDBService.getLabeling()
-                setData(labelings)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        loadData()
-    }, [])
-
     const filteredData = useMemo(() => {
-        return data.filter(item => {
+        return data.filter((item) => {
             const product = productMap.get(item.productId || '')
             const searchStr = searchTerm.toLowerCase()
             return item.name.toLowerCase().includes(searchStr) ||
@@ -94,10 +121,10 @@ export function LabelingTab() {
         const lowerExt = ext?.toLowerCase()
         const isCAD = ['dwg', 'dxf', 'stp', 'step'].includes(lowerExt || '')
         const mainIcon = isCAD ? FileCode : FileText
-        
+
         let TypeIcon = PenTool
         let typeColor = 'text-teal-500 bg-teal-500/10 border-teal-500/20'
-        
+
         if (type === 'Water') {
             TypeIcon = Droplets
             typeColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20'
@@ -113,30 +140,32 @@ export function LabelingTab() {
     }
 
     const handlePreview = async (item: LabelingDraft) => {
-        if (item.fileUrl) {
-            const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
-            if (!resolvedUrl) {
-                toast.error(t('engineering.labeling.toasts.unResolved'))
-                return
-            }
-            const product = productMap.get(item.productId || '')
-            const ext = item.fileExtension?.toLowerCase()
-            
-            setPreviewFile({
-                url: resolvedUrl,
-                name: item.name,
-                sku: product?.sku
-            })
-
-            if (['dwg', 'dxf', 'stp', 'step', 'rvt'].includes(ext || '')) {
-                setCadPreviewOpen(true)
-            } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
-                setExcelPreviewOpen(true)
-            } else {
-                setPdfPreviewOpen(true)
-            }
-        } else {
+        if (!item.fileUrl) {
             toast.error(t('engineering.labeling.toasts.noFile'))
+            return
+        }
+
+        const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
+        if (!resolvedUrl) {
+            toast.error(t('engineering.labeling.toasts.unResolved'))
+            return
+        }
+
+        const product = productMap.get(item.productId || '')
+        const ext = item.fileExtension?.toLowerCase()
+
+        setPreviewFile({
+            url: resolvedUrl,
+            name: item.name,
+            sku: product?.sku,
+        })
+
+        if (['dwg', 'dxf', 'stp', 'step', 'rvt'].includes(ext || '')) {
+            setCadPreviewOpen(true)
+        } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+            setExcelPreviewOpen(true)
+        } else {
+            setPdfPreviewOpen(true)
         }
     }
 
@@ -159,8 +188,8 @@ export function LabelingTab() {
                                     {row.original.fileExtension || 'PDF'}
                                 </Badge>
                                 <span className='text-[10px] text-muted-foreground/60 font-medium uppercase'>
-                                    {row.original.type === 'Water' ? t('engineering.labeling.types.water') : 
-                                     row.original.type === 'Paint' ? t('engineering.labeling.types.paint') : 
+                                    {row.original.type === 'Water' ? t('engineering.labeling.types.water') :
+                                     row.original.type === 'Paint' ? t('engineering.labeling.types.paint') :
                                      row.original.type === 'Laser' ? t('engineering.labeling.types.laser') : t('engineering.labeling.types.other')}
                                 </span>
                             </div>
@@ -205,17 +234,14 @@ export function LabelingTab() {
                     <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-teal-500/10 hover:text-teal-500' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
                     <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                    <Button 
-                        variant='ghost' 
-                        size='icon' 
-                        className='size-8 rounded-full text-destructive hover:bg-destructive/10' 
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        className='size-8 rounded-full text-destructive hover:bg-destructive/10'
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.labeling.toasts.deleteConfirm',
                             onAction: async () => {
-                                const newData = data.filter(p => p.id !== row.original.id)
-                                setData(newData)
-                                await ProductionDBService.saveLabeling(newData)
-                                toast.success(t('engineering.labeling.toasts.deleteSuccess'))
+                                await deleteMutation.mutateAsync(row.original.id)
                             }
                         })}
                     >
@@ -234,35 +260,17 @@ export function LabelingTab() {
         getSortedRowModel: getSortedRowModel(),
     })
 
-    const handleSave = async (params: { 
-        data: LabelingDraft; 
-        isPatch: boolean; 
-        delta?: any; 
-        version?: number 
+    const handleSave = async (params: {
+        data: LabelingDraft
+        isPatch: boolean
+        delta?: any
+        version?: number
     }) => {
-        const { data: formData, isPatch, delta, version } = params
-
-        // 更新本地状态
-        setData(prev => {
-            const exists = prev.find(p => p.id === formData.id)
-            if (exists) {
-                return prev.map(p => p.id === formData.id ? formData : p)
-            }
-            return [formData, ...prev]
-        })
-
-        if (isPatch && delta) {
-            await ProductionDBService.patchLabeling(formData.id, delta, version!)
-            toast.success(t('engineering.labeling.toasts.updateSuccess'))
-        } else {
-            await ProductionDBService.saveLabeling([formData])
-            toast.success(t('engineering.labeling.toasts.saveSuccess'))
-        }
+        await saveMutation.mutateAsync(params)
     }
 
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-            {/* 响应式收官页眉 */}
             <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
                 <div className='absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent pointer-events-none' />
                 <div className='flex items-center gap-2 text-teal-600'>
@@ -280,26 +288,24 @@ export function LabelingTab() {
                 </div>
             </div>
 
-            {/* 响应式功能操作行 */}
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
                 <div className='relative w-full sm:w-96 group'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-teal-600 transition-colors' />
-                    <Input 
+                    <Input
                         placeholder={t('engineering.labeling.placeholders.search')}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-teal-500/20 w-full'
                     />
                 </div>
-                <Button 
-                    onClick={() => { setCurrentRow(undefined); setOpen(true); }} 
+                <Button
+                    onClick={() => { setCurrentRow(undefined); setOpen(true); }}
                     className='w-full sm:w-auto bg-teal-600 hover:bg-teal-700 shadow-xl shadow-teal-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
                 >
                     <Plus className='size-4' /> {t('engineering.labeling.table.upload')}
                 </Button>
             </div>
 
-            {/* Desktop Table View */}
             <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
                 <CardContent className='p-0'>
                     <Table>
@@ -319,8 +325,8 @@ export function LabelingTab() {
                                 <TableRow><TableCell colSpan={columns.length} className='h-64 text-center'>{t('common.status.syncing')}</TableCell></TableRow>
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
-                                    <TableRow 
-                                        key={row.id} 
+                                    <TableRow
+                                        key={row.id}
                                         onClick={() => handlePreview(row.original)}
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
@@ -342,7 +348,6 @@ export function LabelingTab() {
                 </CardContent>
             </Card>
 
-            {/* Mobile Card View */}
             <div className='md:hidden flex flex-col gap-4'>
                 {isLoading ? (
                     <div className='p-12 text-center text-[10px] font-black italic uppercase text-muted-foreground animate-pulse'>{t('engineering.labeling.placeholders.mobileLoading')}</div>
@@ -355,7 +360,7 @@ export function LabelingTab() {
                         const Icon = info.mainIcon
                         const TypeIcon = info.TypeIcon
                         return (
-                            <div 
+                            <div
                                 key={item.id}
                                 onClick={() => handlePreview(item)}
                                 className={cn(
@@ -366,7 +371,7 @@ export function LabelingTab() {
                                 <div className='absolute top-0 right-0 p-4 opacity-10'>
                                     <Icon className={cn('size-16', info.typeColor.split(' ')[0])} />
                                 </div>
-                                
+
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
                                         <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', info.typeColor)}>
@@ -385,8 +390,8 @@ export function LabelingTab() {
                                         <div className='flex flex-wrap items-center gap-2 mt-3 font-black uppercase tracking-widest'>
                                             <div className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px]', info.typeColor)}>
                                                 <TypeIcon className='size-3 opacity-40' />
-                                                {item.type === 'Water' ? t('engineering.labeling.types.water') : 
-                                                 item.type === 'Paint' ? t('engineering.labeling.types.paint') : 
+                                                {item.type === 'Water' ? t('engineering.labeling.types.water') :
+                                                 item.type === 'Paint' ? t('engineering.labeling.types.paint') :
                                                  item.type === 'Laser' ? t('engineering.labeling.types.laser') : t('engineering.labeling.types.other')}
                                             </div>
                                             <div className='size-1 rounded-full bg-muted-foreground/20' />
@@ -405,19 +410,16 @@ export function LabelingTab() {
                                         <div className='flex items-center gap-1'>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={(e) => { e.stopPropagation(); handlePreview(item); }}><Eye className='size-4' /></Button>
                                             <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={(e) => { e.stopPropagation(); setCurrentRow(item); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                                            <Button 
-                                                variant='ghost' 
-                                                size='icon' 
-                                                className='size-8 rounded-full text-destructive/40' 
+                                            <Button
+                                                variant='ghost'
+                                                size='icon'
+                                                className='size-8 rounded-full text-destructive/40'
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     runConfirmedAction({
                                                         confirmKey: 'engineering.labeling.toasts.deleteConfirm',
                                                         onAction: async () => {
-                                                            const newData = data.filter(p => p.id !== item.id)
-                                                            setData(newData)
-                                                            await ProductionDBService.saveLabeling(newData)
-                                                            toast.success(t('engineering.labeling.toasts.deleteSuccess'))
+                                                            await deleteMutation.mutateAsync(item.id)
                                                         }
                                                     })
                                                 }}
@@ -437,7 +439,13 @@ export function LabelingTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <LabelingActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
+            <LabelingActionDialog
+                open={open}
+                onOpenChange={setOpen}
+                currentRow={currentRow}
+                onSave={handleSave}
+                isLoading={saveMutation.isPending}
+            />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <ExcelViewerDialog open={excelPreviewOpen} onOpenChange={setExcelPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />

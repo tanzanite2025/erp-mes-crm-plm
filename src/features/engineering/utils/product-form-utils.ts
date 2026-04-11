@@ -43,6 +43,7 @@ export function buildDefaultProductValues(
         axleCrown: undefined,
         steerer: '',
         engineeringSpecId: '',
+        attachments: [],
         version: includeVersion ? 1 : 1,
     }
 }

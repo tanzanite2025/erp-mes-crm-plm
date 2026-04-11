@@ -10,7 +10,7 @@ import { useLanguage } from '@/context/language-provider'
 
 export function AssetDashboard() {
     const { t } = useLanguage()
-    const { data: stats, isLoading, isError, refetch } = useAssetDashboard()
+    const { data: stats, isLoading, isError, refresh } = useAssetDashboard()
 
     const getActivityStatusLabel = (status: 'ACTIVE' | 'RETURNED' | 'OVERDUE') => {
         if (status === 'RETURNED') {
@@ -49,7 +49,7 @@ export function AssetDashboard() {
                 </div>
                 <Button
                     variant='outline'
-                    onClick={() => refetch()}
+                    onClick={() => void refresh()}
                     className='rounded-full h-10 px-8 border-rose-500/30 text-rose-600 font-bold text-[10px] uppercase hover:bg-rose-500 hover:text-white transition-all'
                 >
                     <RotateCcw className='mr-2 size-3' /> {t('equipmentTooling.dashboard.error.retry')}

@@ -39,6 +39,10 @@ export const ProductionDBService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
+  saveDrillingItem: async (item: DrillingPlan) => {
+    await ProductionDBService.saveDrilling([item])
+  },
+
   patchDrilling: async (id: string, delta: DeltaSet, version: number) => {
     const mappedDelta: any = {}
     Object.entries(delta).forEach(([path, value]) => {
@@ -52,6 +56,10 @@ export const ProductionDBService = {
     }
     
     await engineeringSpecService.patchSpec(id, payload.delta, version)
+  },
+
+  deleteDrilling: async (id: string) => {
+    await engineeringSpecService.deleteSpec(id)
   },
 
   // --- Labeling (贴标方案) ---
@@ -86,6 +94,10 @@ export const ProductionDBService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
+  saveLabelingItem: async (item: LabelingDraft) => {
+    await ProductionDBService.saveLabeling([item])
+  },
+
   patchLabeling: async (id: string, delta: DeltaSet, version: number) => {
     const mappedDelta: any = {}
     Object.entries(delta).forEach(([path, value]) => {
@@ -99,5 +111,9 @@ export const ProductionDBService = {
     }
 
     await engineeringSpecService.patchSpec(id, payload.delta, version)
+  },
+
+  deleteLabeling: async (id: string) => {
+    await engineeringSpecService.deleteSpec(id)
   }
 }

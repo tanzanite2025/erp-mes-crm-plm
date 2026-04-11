@@ -8,6 +8,8 @@ import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contr
 import { type ProductType } from '../data/schema'
 import { type SaveProductTypeInput } from '../mutation-types'
 
+export type { SaveProductTypeInput } from '../mutation-types'
+
 /**
  * ProductTypeService - unified full-save service for product types.
  */

@@ -10,6 +10,7 @@ import {
   toProductContract,
 } from '../adapters/product-api-adapter'
 import { type ProductApiDTO } from '../contracts/product-api-dto'
+import { type Product } from '../data/schema'
 import { type SaveProductInput } from '../mutation-types'
 
 const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'

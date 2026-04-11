@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   flexRender,
   getCoreRowModel,
@@ -49,6 +50,7 @@ import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption, type PackagingRule } from '../data/schema'
 import { type SavePackagingRuleInput } from '../adapters/packaging-api-adapter'
+import { MATERIAL_OPTIONS_QUERY_KEY, PACKAGING_RULES_QUERY_KEY } from '../query-keys'
 import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
@@ -66,13 +68,43 @@ function buildRelation(rule: PackagingRuleDraft | null) {
 
 export function MaterialAssemblyManager() {
   const { t } = useLanguage()
-  const [rules, setRules] = useState<PackagingRule[]>([])
-  const [materials, setMaterials] = useState<MaterialOption[]>([])
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isComboboxOpen, setIsComboboxOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(null)
+
+  const { data: rules = [], isLoading: isRulesLoading } = useQuery({
+    queryKey: PACKAGING_RULES_QUERY_KEY,
+    queryFn: () => packagingService.getRules(),
+  })
+
+  const { data: materials = [], isLoading: isMaterialsLoading } = useQuery({
+    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+    queryFn: () => MaterialCoreService.getMaterialOptions(),
+  })
+
+  const saveRuleMutation = useMutation({
+    mutationFn: (rule: SavePackagingRuleInput) => packagingService.saveRule(rule),
+    onSuccess: (savedRule) => {
+      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current = []) =>
+        current.some((rule) => rule.id === savedRule.id)
+          ? current.map((rule) => (rule.id === savedRule.id ? savedRule : rule))
+          : [...current, savedRule]
+      )
+    },
+  })
+
+  const deleteRuleMutation = useMutation({
+    mutationFn: (id: string) => packagingService.deleteRule(id),
+    onSuccess: (_result, deletedId) => {
+      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current = []) =>
+        current.filter((rule) => rule.id !== deletedId)
+      )
+    },
+  })
+
+  const isLoading = isRulesLoading || isMaterialsLoading
 
   const materialMap = useMemo(() => {
     const map = new Map<string, MaterialOption>()
@@ -104,27 +136,6 @@ export function MaterialAssemblyManager() {
     [editingRule?.materialId, materialMap]
   )
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true)
-
-      try {
-        const [allRules, allMaterials] = await Promise.all([
-          packagingService.getRules(),
-          MaterialCoreService.getMaterialOptions(),
-        ])
-        setRules(allRules)
-        setMaterials(allMaterials)
-      } catch (error) {
-        failLoudly(error, 'MaterialAssemblyManager.loadData')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    void loadData()
-  }, [t])
-
   const handleSave = async () => {
     const factor = editingRule?.conversionFactor
     const isFactorValid = typeof factor === 'number' && Number.isFinite(factor) && factor > 0
@@ -139,19 +150,12 @@ export function MaterialAssemblyManager() {
       materialId: editingRule.materialId,
       packUnit: editingRule.packUnit,
       baseUnit: editingRule.baseUnit,
-      conversionFactor: editingRule.conversionFactor,
+      conversionFactor: factor,
       direction: editingRule.direction,
     }
 
     try {
-      const saved = await packagingService.saveRule(ruleToSave)
-
-      setRules((current) =>
-        ruleToSave.id
-          ? current.map((rule) => (rule.id === saved.id ? saved : rule))
-          : [...current, saved]
-      )
-
+      await saveRuleMutation.mutateAsync(ruleToSave)
       toast.success(t('materialArchive.assemblyManager.toasts.saveSuccess'))
       setIsDialogOpen(false)
       setEditingRule(null)
@@ -179,8 +183,7 @@ export function MaterialAssemblyManager() {
     if (!window.confirm(t('materialArchive.assemblyManager.toasts.deleteConfirm'))) return
 
     try {
-      await packagingService.deleteRule(id)
-      setRules((current) => current.filter((rule) => rule.id !== id))
+      await deleteRuleMutation.mutateAsync(id)
       toast.success(t('materialArchive.assemblyManager.toasts.deleteSuccess'))
     } catch (error) {
       failLoudly(error, 'MaterialAssemblyManager.handleDelete')

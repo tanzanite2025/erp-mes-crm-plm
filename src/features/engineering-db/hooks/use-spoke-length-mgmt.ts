@@ -1,138 +1,130 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { SpokeService } from '../services/spoke-service'
-import { hubService } from '../services/hub-service'
-import { nippleService } from '../services/nipple-service'
+import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { type SpokeLength } from '../data/schema'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { SpokeService } from '../services/spoke-service'
+import { hubService } from '../services/hub-service'
+import { nippleService } from '../services/nipple-service'
+import {
+  ENGINEERING_DB_HUBS_QUERY_KEY,
+  ENGINEERING_DB_NIPPLES_QUERY_KEY,
+  ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
+} from '../query-keys'
 
 export function useSpokeLengthMgmt() {
-    const { t } = useLanguage()
-    const [data, setData] = useState<SpokeLength[]>([])
-    const { data: products = [] } = useGetProducts()
-    const [hubs, setHubs] = useState<Hub[]>([])
-    const [nipples, setNipples] = useState<Nipple[]>([])
-    
-    const [searchTerm, setSearchTerm] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
+  const { t } = useLanguage()
+  const queryClient = useQueryClient()
+  const { data: products = [] } = useGetProducts()
+  const [searchTerm, setSearchTerm] = useState('')
 
-    const loadAllData = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const [spokeData, hubData, nippleData] = await Promise.all([
-                SpokeService.getSpokeLength(),
-                hubService.getHubs(),
-                nippleService.getNipples()
-            ])
-            setData(spokeData)
-            setHubs(hubData)
-            setNipples(nippleData)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
+  const { data = [], isLoading: isSpokeLengthsLoading } = useQuery({
+    queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
+    queryFn: () => SpokeService.getSpokeLength(),
+  })
 
-    useEffect(() => {
-        void loadAllData()
+  const { data: hubs = [], isLoading: isHubsLoading } = useQuery({
+    queryKey: ENGINEERING_DB_HUBS_QUERY_KEY,
+    queryFn: () => hubService.getHubs(),
+  })
 
-        const handleUpdate = () => {
-            void loadAllData()
-        }
+  const { data: nipples = [], isLoading: isNipplesLoading } = useQuery({
+    queryKey: ENGINEERING_DB_NIPPLES_QUERY_KEY,
+    queryFn: () => nippleService.getNipples(),
+  })
 
-        window.addEventListener('xdfc_spoke_lengths_data_updated', handleUpdate)
-        return () => {
-            window.removeEventListener('xdfc_spoke_lengths_data_updated', handleUpdate)
-        }
-    }, [loadAllData])
-
-    const productMap = useMemo(() => {
-        const map = new Map<string, any>()
-        products.forEach(p => map.set(p.id, p))
-        return map
-    }, [products])
-
-    const hubMap = useMemo(() => {
-        const map = new Map<string, Hub>()
-        hubs.forEach(h => map.set(h.id, h))
-        return map
-    }, [hubs])
-
-    const nippleMap = useMemo(() => {
-        const map = new Map<string, Nipple>()
-        nipples.forEach(n => map.set(n.id, n))
-        return map
-    }, [nipples])
-
-    const filteredData = useMemo(() => {
-        return data.filter(item => {
-            const product = productMap.get(item.productId)
-            const hub = hubMap.get(item.hubId || '')
-            const nipple = nippleMap.get(item.nippleId || '')
-            const searchStr = searchTerm.toLowerCase()
-            
-            return item.name.toLowerCase().includes(searchStr) ||
-                   (product?.sku || '').toLowerCase().includes(searchStr) ||
-                   (hub?.name || '').toLowerCase().includes(searchStr) ||
-                   (nipple?.name || '').toLowerCase().includes(searchStr) ||
-                   (item.material || '').toLowerCase().includes(searchStr)
-        })
-    }, [data, productMap, hubMap, nippleMap, searchTerm])
-
-    const handleDelete = async (item: SpokeLength) => {
-        if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm'))) return
-        
-        try {
-            const newData = data.filter(p => p.id !== item.id)
-            setData(newData)
-            await SpokeService.saveSpokeLength(newData)
-            window.dispatchEvent(new CustomEvent('xdfc_spoke_lengths_data_updated'))
-            toast.success(t('engineering.spokeLength.toasts.deleteSuccess'))
-        } catch (error) {
-            toast.error(t('common.status.error' as any))
-        }
-    }
-
-    const handleSave = async (params: { 
-        data: SpokeLength; 
-        isPatch: boolean; 
-        delta?: any; 
-        version?: number 
+  const saveMutation = useMutation({
+    mutationFn: async (params: {
+      data: SpokeLength
+      isPatch: boolean
+      delta?: any
+      version?: number
     }) => {
-        const { data: formData, isPatch, delta, version } = params
-        
-        // 更新本地状态
-        setData(prev => {
-            const exists = prev.find(p => p.id === formData.id)
-            if (exists) {
-                return prev.map(p => p.id === formData.id ? formData : p)
-            }
-            return [formData, ...prev]
-        })
+      const { data: formData, isPatch, delta, version } = params
+      if (isPatch && delta) {
+        await SpokeService.patchSpokeLength(formData.id, delta, version!)
+        return
+      }
 
-        if (isPatch && delta) {
-            await SpokeService.patchSpokeLength(formData.id, delta, version!)
-        } else {
-            // 注意：这里由于 service 原有设计限制，包装成数组传递
-            await SpokeService.saveSpokeLength([formData])
-        }
-        
-        window.dispatchEvent(new CustomEvent('xdfc_spoke_lengths_data_updated'))
-    }
+      await SpokeService.saveSpokeLengthItem(formData)
+    },
+  })
 
-    return {
-        data,
-        filteredData,
-        isLoading,
-        searchTerm,
-        setSearchTerm,
-        productMap,
-        hubMap,
-        nippleMap,
-        handleDelete,
-        handleSave,
-        refresh: loadAllData
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => SpokeService.deleteSpokeLength(id),
+  })
+
+  const isLoading = isSpokeLengthsLoading || isHubsLoading || isNipplesLoading
+
+  const productMap = useMemo(() => {
+    const map = new Map<string, any>()
+    products.forEach((product) => map.set(product.id, product))
+    return map
+  }, [products])
+
+  const hubMap = useMemo(() => {
+    const map = new Map<string, Hub>()
+    hubs.forEach((hub) => map.set(hub.id, hub))
+    return map
+  }, [hubs])
+
+  const nippleMap = useMemo(() => {
+    const map = new Map<string, Nipple>()
+    nipples.forEach((nipple) => map.set(nipple.id, nipple))
+    return map
+  }, [nipples])
+
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const product = productMap.get(item.productId)
+      const hub = hubMap.get(item.hubId || '')
+      const nipple = nippleMap.get(item.nippleId || '')
+      const searchStr = searchTerm.toLowerCase()
+
+      return item.name.toLowerCase().includes(searchStr) ||
+        (product?.sku || '').toLowerCase().includes(searchStr) ||
+        (hub?.name || '').toLowerCase().includes(searchStr) ||
+        (nipple?.name || '').toLowerCase().includes(searchStr) ||
+        (item.material || '').toLowerCase().includes(searchStr)
+    })
+  }, [data, productMap, hubMap, nippleMap, searchTerm])
+
+  const handleDelete = async (item: SpokeLength) => {
+    if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm'))) return
+
+    try {
+      await deleteMutation.mutateAsync(item.id)
+      await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
+      toast.success(t('engineering.spokeLength.toasts.deleteSuccess'))
+    } catch (error) {
+      toast.error(t('common.status.error' as any))
     }
+  }
+
+  const handleSave = async (params: {
+    data: SpokeLength
+    isPatch: boolean
+    delta?: any
+    version?: number
+  }) => {
+    await saveMutation.mutateAsync(params)
+    await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
+  }
+
+  return {
+    data,
+    filteredData,
+    isLoading,
+    searchTerm,
+    setSearchTerm,
+    productMap,
+    hubMap,
+    nippleMap,
+    handleDelete,
+    handleSave,
+    refresh: () => queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY }),
+  }
 }

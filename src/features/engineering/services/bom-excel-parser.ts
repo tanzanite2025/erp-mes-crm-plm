@@ -1,6 +1,4 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
-import { type MaterialOption } from '../../material-archive/data/schema'
-import { type BOMItem } from '../data/schema'
 import { type BOMItemDraft, type MaterialOptionDraft } from '../mutation-types'
 import { BOM_DEFAULT_SECTION, BOM_EXCEL_LIMITS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { safelyGetCellValue, validateBOMFileSize, validateBOMWorkbookSheetCount } from './bom-excel-security'

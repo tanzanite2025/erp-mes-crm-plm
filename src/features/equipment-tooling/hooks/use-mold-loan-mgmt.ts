@@ -87,7 +87,7 @@ export function useMoldLoanMgmt() {
             }
             return AssetService.borrowMold(loanBase, moldData)
         },
-        onSuccess: (_result, variables) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
             queryClient.invalidateQueries({ queryKey: ['molds'] })
             toast.success(currentRow ? 'Record updated.' : 'Record created.')

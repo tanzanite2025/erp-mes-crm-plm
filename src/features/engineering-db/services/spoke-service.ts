@@ -43,6 +43,10 @@ export const SpokeService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
+  saveSpokeLengthItem: async (item: SpokeLength) => {
+    await SpokeService.saveSpokeLength([item])
+  },
+
   /**
    * 局部更新辐条记录 (SDRTS Delta Protocol)
    * 事务意图: SPOKE_SPEC_ADJUSTMENT
@@ -64,5 +68,9 @@ export const SpokeService = {
     }
 
     await engineeringSpecService.patchSpec(id, payload.delta, version)
-  }
+  },
+
+  deleteSpokeLength: async (id: string) => {
+    await engineeringSpecService.deleteSpec(id)
+  },
 }

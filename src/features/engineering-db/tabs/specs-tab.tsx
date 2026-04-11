@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     getCoreRowModel,
@@ -28,14 +29,14 @@ import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { ENGINEERING_DB_SPECS_QUERY_KEY } from '../query-keys'
 
 export function SpecsTab() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const [data, setData] = useState<TechnicalSpec[]>([])
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/specs' })
     const [searchTerm, setSearchTerm] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<TechnicalSpec | undefined>(undefined)
 
@@ -52,18 +53,46 @@ export function SpecsTab() {
         }
     }, [previewFile?.url])
 
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true)
-            try {
-                const specs = await SpecsService.getSpecs()
-                setData(specs)
-            } finally {
-                setIsLoading(false)
+    const { data = [], isLoading } = useQuery({
+        queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
+        queryFn: () => SpecsService.getSpecs(),
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async (params: {
+            data: TechnicalSpec
+            isPatch: boolean
+            delta?: any
+            version?: number
+        }) => {
+            const { data: formData, isPatch, delta, version } = params
+
+            if (isPatch && delta) {
+                await SpecsService.patchSpec(formData.id, delta, version!)
+                return
             }
-        }
-        loadData()
-    }, [])
+
+            await SpecsService.saveSpec(formData)
+        },
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPECS_QUERY_KEY })
+            setOpen(false)
+            setCurrentRow(undefined)
+            toast.success(
+                variables.isPatch
+                    ? t('engineering.specs.toasts.updateSuccess')
+                    : t('engineering.specs.toasts.saveSuccess')
+            )
+        },
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => SpecsService.deleteSpec(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPECS_QUERY_KEY })
+            toast.success(t('engineering.specs.toasts.deleteSuccess'))
+        },
+    })
 
     const filteredData = useMemo(() => {
         return data.filter(item => 
@@ -179,9 +208,7 @@ export function SpecsTab() {
                                     return
                                 }
                                 try {
-                                    await SpecsService.deleteSpec(row.original.id)
-                                    setData(prev => prev.filter(p => p.id !== row.original.id))
-                                    toast.success(t('engineering.specs.toasts.deleteSuccess'))
+                                    await deleteMutation.mutateAsync(row.original.id)
                                 } catch (error) {
                                     const message = error instanceof Error ? error.message : t('engineering.specs.toasts.deleteFailed')
                                     toast.error(message)
@@ -212,15 +239,7 @@ export function SpecsTab() {
     }) => {
         const { data: formData, isPatch, delta, version } = params
         
-        if (isPatch && delta) {
-            await SpecsService.patchSpec(formData.id, delta, version!)
-            setData(prev => prev.map(p => (p.id === formData.id ? formData : p)))
-            toast.success(t('engineering.specs.toasts.updateSuccess'))
-        } else {
-            const saved = await SpecsService.saveSpec(formData)
-            setData(prev => [saved, ...prev])
-            toast.success(t('engineering.specs.toasts.saveSuccess'))
-        }
+        await saveMutation.mutateAsync({ data: formData, isPatch, delta, version })
     }
 
     return (
@@ -382,9 +401,7 @@ export function SpecsTab() {
                                                                 return
                                                             }
                                                             try {
-                                                                await SpecsService.deleteSpec(item.id)
-                                                                setData(prev => prev.filter(p => p.id !== item.id))
-                                                                toast.success(t('engineering.specs.toasts.deleteSuccess'))
+                                                                await deleteMutation.mutateAsync(item.id)
                                                             } catch (error) {
                                                                 const message = error instanceof Error ? error.message : t('engineering.specs.toasts.deleteFailed')
                                                                 toast.error(message)
@@ -408,7 +425,13 @@ export function SpecsTab() {
                 <DataTablePagination table={table} />
             </div>
 
-            <SpecActionDialog open={open} onOpenChange={setOpen} currentRow={currentRow} onSave={handleSave} />
+            <SpecActionDialog
+                open={open}
+                onOpenChange={setOpen}
+                currentRow={currentRow}
+                onSave={handleSave}
+                isLoading={saveMutation.isPending}
+            />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} />
             <ExcelViewerDialog open={excelPreviewOpen} onOpenChange={setExcelPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} />

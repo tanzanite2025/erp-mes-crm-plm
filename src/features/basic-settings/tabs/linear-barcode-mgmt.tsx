@@ -14,11 +14,10 @@ import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
-import { type Product } from '@/features/engineering/data/schema'
-import { ProductCoreService } from '@/features/engineering/services/product-core-service'
+import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 import { DMRuleConfigDialog } from '../components/dm-rule-config-dialog'
 import { AppearanceActionDialog, type AppearanceMapping } from '../components/appearance-action-dialog'
 import { DMRulesTable } from '../components/dm-rules-table'
@@ -67,7 +66,7 @@ export function LinearBarcodeMgmt() {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
   const [appearanceMapping, setAppearanceMapping] = useState<AppearanceMapping | null>(null)
-  const [products, setProducts] = useState<Product[]>([])
+  const { data: products = [] } = useGetProducts()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [mockInputs, setMockInputs] = useState<LinearBarcodeMockInputs>(createDefaultLinearBarcodeMockInputs)
@@ -101,15 +100,13 @@ export function LinearBarcodeMgmt() {
       ? t('basicSettings.linearBarcode.page.badges.saving')
       : t('basicSettings.linearBarcode.page.badges.synced')
 
-  const loadSharedMappings = useCallback(async () => {
+  const loadAppearanceMapping = useCallback(async () => {
     if (typeof window === 'undefined') return
 
     try {
-      const savedProducts = await ProductCoreService.getProducts()
       const savedAppearance = await StorageService.getItem<AppearanceMapping>(APPEARANCE_MAPPING_KEY)
 
       setAppearanceMapping(savedAppearance || DEFAULT_APPEARANCE_MAPPING)
-      if (savedProducts) setProducts(savedProducts)
     } catch (error) {
       logger.error('Failed to load shared mappings', error)
       setAppearanceMapping(DEFAULT_APPEARANCE_MAPPING)
@@ -137,22 +134,22 @@ export function LinearBarcodeMgmt() {
   }, [])
 
   useEffect(() => {
-    loadSharedMappings()
+    void loadAppearanceMapping()
     void loadProtocolConfig()
 
-    const handleSync = () => loadSharedMappings()
-    window.addEventListener('xdfc_appearance_mapping_updated', handleSync)
-    window.addEventListener('xdfc_products_data_updated', handleSync)
-    window.addEventListener('xdfc_storage_initialized', handleSync)
-    window.addEventListener('xdfc_storage_updated', handleSync)
+    const handleSync = (event?: Event) => {
+      const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
+      if (key && key !== APPEARANCE_MAPPING_KEY) {
+        return
+      }
+      void loadAppearanceMapping()
+    }
+    window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
 
     return () => {
-      window.removeEventListener('xdfc_appearance_mapping_updated', handleSync)
-      window.removeEventListener('xdfc_products_data_updated', handleSync)
-      window.removeEventListener('xdfc_storage_initialized', handleSync)
-      window.removeEventListener('xdfc_storage_updated', handleSync)
+      window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
     }
-  }, [loadProtocolConfig, loadSharedMappings])
+  }, [loadAppearanceMapping, loadProtocolConfig])
 
   useEffect(() => {
     if (!products.length) return

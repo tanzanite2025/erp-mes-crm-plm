@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FilePlus, Search, FileText, Download, Trash2, Edit2, FileIcon, Tag, RotateCcw, History, User, Clock } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,44 +21,36 @@ import { cn } from '@/lib/utils'
 import { isConflictError } from '@/lib/handle-server-error'
 import { DrawingService } from '../services/drawing-service'
 import { MoldCoreService } from '../services/mold-core-service'
-import { type MoldDrawing, type Mold, type MoldDrawingLog } from '../data/schema'
+import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
 
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DrawingActionDialog } from '../components/drawing-action-dialog'
 import { type DeltaSet } from '@/lib/delta/types'
+import { MOLDS_QUERY_KEY } from '../hooks/use-assets'
+
+const MOLD_DRAWINGS_QUERY_KEY = ['equipment-tooling', 'drawings'] as const
 
 export function DrawingMgmt() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const [drawings, setDrawings] = useState<MoldDrawing[]>([])
-    const [molds, setMolds] = useState<Mold[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isLogOpen, setIsLogOpen] = useState(false)
     const [currentLogs, setCurrentLogs] = useState<MoldDrawingLog[]>([])
     const [selectedDrawing, setSelectedDrawing] = useState<MoldDrawing | null>(null)
     const [editingDrawing, setEditingDrawing] = useState<MoldDrawing | null>(null)
-    const [error, setError] = useState<unknown>(null)
-
-    const loadData = async () => {
-        setError(null)
-        try {
-            const [drawingRecords, moldRecords] = await Promise.all([
-                DrawingService.getDrawings(),
-                MoldCoreService.getMolds(),
-            ])
-            setDrawings(drawingRecords)
-            setMolds(moldRecords)
-        } catch (err) {
-            setError(err)
-        }
-    }
-
-    useEffect(() => {
-        loadData()
-    }, [])
+    const { data: drawings = [], error: drawingsError } = useQuery({
+        queryKey: MOLD_DRAWINGS_QUERY_KEY,
+        queryFn: () => DrawingService.getDrawings(),
+    })
+    const { data: molds = [], error: moldsError } = useQuery({
+        queryKey: MOLDS_QUERY_KEY,
+        queryFn: () => MoldCoreService.getMolds(),
+    })
+    const error = drawingsError ?? moldsError
 
     const filteredDrawings = useMemo(() => {
         const keyword = searchTerm.trim().toLowerCase()
@@ -115,11 +107,11 @@ export function DrawingMgmt() {
             }
             return DrawingService.addDrawing(data)
         },
-        onSuccess: () => {
+        onSuccess: async () => {
             toast.success(editingDrawing ? t('equipmentTooling.drawings.toast.updated') : t('equipmentTooling.drawings.toast.created'))
             setIsDialogOpen(false)
             setEditingDrawing(null)
-            loadData()
+            await queryClient.invalidateQueries({ queryKey: MOLD_DRAWINGS_QUERY_KEY })
         },
         onError: (error: any) => {
             if (isConflictError(error)) {
@@ -163,7 +155,7 @@ export function DrawingMgmt() {
                         ? t('equipmentTooling.drawings.toast.statusActive')
                         : t('equipmentTooling.drawings.toast.statusObsolete')
                 )
-                await loadData()
+                await queryClient.invalidateQueries({ queryKey: MOLD_DRAWINGS_QUERY_KEY })
             }
         })
     }

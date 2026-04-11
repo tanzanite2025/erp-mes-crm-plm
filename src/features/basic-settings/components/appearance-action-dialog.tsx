@@ -68,7 +68,6 @@ export function AppearanceActionDialog({ open, onOpenChange }: AppearanceActionD
     await StorageService.setItem(APPEARANCE_MAPPING_KEY, mapping)
     toast.success(t('basicSettings.appearanceMapping.toasts.saved'))
     onOpenChange(false)
-    window.dispatchEvent(new Event('xdfc_appearance_mapping_updated'))
   }
 
   const handleReset = () => {

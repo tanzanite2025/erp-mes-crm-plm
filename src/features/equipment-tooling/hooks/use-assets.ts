@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { type Mold, type Furnace, type MoldLoan } from '../data/schema'
+import { type Mold, type Furnace } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { AssetService } from '../services/asset-service'
 import { MoldTransactionService } from '../services/mold-transaction-service'
@@ -17,6 +17,15 @@ export const MOLD_LOANS_QUERY_KEY = ['moldLoans'] as const
 
 export function useAssets() {
   const queryClient = useQueryClient()
+  const reloadMolds = () => queryClient.invalidateQueries({ queryKey: MOLDS_QUERY_KEY })
+  const reloadFurnaces = () => queryClient.invalidateQueries({ queryKey: FURNACES_QUERY_KEY })
+  const reloadLoans = () => queryClient.invalidateQueries({ queryKey: MOLD_LOANS_QUERY_KEY })
+  const reloadAll = () =>
+    Promise.all([
+      reloadMolds(),
+      reloadFurnaces(),
+      reloadLoans(),
+    ])
 
   const moldsQuery = useQuery({
     queryKey: MOLDS_QUERY_KEY,
@@ -115,14 +124,9 @@ export function useAssets() {
       moldMutation.mutateAsync({ mold, isPatch, delta }),
     updateFurnaces: (furnace: Furnace, isPatch?: boolean, delta?: DeltaSet) =>
       furnaceMutation.mutateAsync({ furnace, isPatch, delta }),
-    reloadMolds: moldsQuery.refetch,
-    reloadFurnaces: furnacesQuery.refetch,
-    reloadLoans: loansQuery.refetch,
-    reloadAll: () =>
-      Promise.all([
-        moldsQuery.refetch(),
-        furnacesQuery.refetch(),
-        loansQuery.refetch(),
-      ]),
+    reloadMolds,
+    reloadFurnaces,
+    reloadLoans,
+    reloadAll,
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     getCoreRowModel,
@@ -25,32 +26,58 @@ import { HubActionDialog } from '../components/hub-action-dialog'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import { ENGINEERING_DB_HUBS_QUERY_KEY } from '../query-keys'
 
 export function HubsTab() {
     const { t } = useLanguage()
+    const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const [data, setData] = useState<Hub[]>([])
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/hubs' })
     const [searchTerm, setSearchTerm] = useState('')
-    const [isLoading, setIsLoading] = useState(true)
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<Hub | undefined>(undefined)
     
     const [imagePreviewOpen, setImagePreviewOpen] = useState(false)
     const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null)
 
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true)
-            try {
-                const results = await hubService.getHubs()
-                setData(results)
-            } finally {
-                setIsLoading(false)
+    const { data = [], isLoading } = useQuery({
+        queryKey: ENGINEERING_DB_HUBS_QUERY_KEY,
+        queryFn: () => hubService.getHubs(),
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async (params: {
+            data: Hub
+            isPatch: boolean
+            delta?: any
+            version?: number
+        }) => {
+            const { data: nextData, isPatch, delta, version } = params
+            if (isPatch && delta) {
+                await hubService.patchHub(nextData.id, delta, version!)
+                return
             }
-        }
-        loadData()
-    }, [])
+            await hubService.saveHub(nextData)
+        },
+        onSuccess: async (_result, variables) => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_HUBS_QUERY_KEY })
+            setOpen(false)
+            setCurrentRow(undefined)
+            toast.success(
+                variables.isPatch
+                    ? t('engineering.hubs.toasts.updateSuccess')
+                    : t('engineering.hubs.toasts.saveSuccess')
+            )
+        },
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => hubService.deleteHub(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_HUBS_QUERY_KEY })
+            toast.success(t('engineering.hubs.toasts.deleteSuccess'))
+        },
+    })
 
     const filteredData = useMemo(() => {
         return data.filter(item => {
@@ -124,10 +151,8 @@ export function HubsTab() {
                         className='size-8 rounded-full text-destructive' 
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.hubs.toasts.deleteConfirm',
-                            onAction: () => {
-                                hubService.deleteHub(row.original.id)
-                                setData(data.filter(p => p.id !== row.original.id))
-                                toast.success(t('engineering.hubs.toasts.deleteSuccess'))
+                            onAction: async () => {
+                                await deleteMutation.mutateAsync(row.original.id)
                             }
                         })}
                     >
@@ -195,16 +220,9 @@ export function HubsTab() {
                 onOpenChange={setOpen} 
                 currentRow={currentRow} 
                 onSave={({ data: val, isPatch, delta, version }) => {
-                    const newData = currentRow ? data.map(d => d.id === val.id ? val : d) : [val, ...data]
-                    setData(newData)
-                    if (isPatch && delta) {
-                        hubService.patchHub(val.id, delta, version!)
-                        toast.success(t('engineering.hubs.toasts.updateSuccess'))
-                    } else {
-                        hubService.saveHub(val)
-                        toast.success(t('engineering.hubs.toasts.saveSuccess'))
-                    }
-                }} 
+                    void saveMutation.mutateAsync({ data: val, isPatch, delta, version })
+                }}
+                isLoading={saveMutation.isPending}
             />
             
             <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>

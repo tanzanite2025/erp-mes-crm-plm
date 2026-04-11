@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Settings, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KpiGrid } from '@/features/dashboard/components/kpi-grid'
@@ -15,8 +15,8 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
-import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
+import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
+import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 const logger = createLogger('DashboardOverviewTab')
@@ -29,67 +29,66 @@ function getErrorMessage(error: unknown): string {
   return 'Failed to load production lines'
 }
 
-/**
- * 核心逻辑重构：从后端拉取产线并展平为工段列表
- * 遵循“后端权威”原则，彻底移除本地 LINE_STORAGE_KEY。
- */
-async function fetchRemoteSegments(): Promise<(Segment & { lineName: string })[]> {
-  try {
-    const lines = await productionLinesService.getLines()
-
-    return lines.flatMap((line) =>
-      (line.segments || []).map((segment) => ({
-        ...segment,
-        lineName: line.name,
-      })),
-    )
-  } catch (error) {
-    logger.error('Failed to fetch production lines', error)
-    throw error // 向上抛出以触发 Fail Loudly
-  }
-}
-
 export function DashboardOverviewTab() {
   const { t } = useLanguage()
-  const [segments, setSegments] = useState<(Segment & { lineName: string })[]>([])
   const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
   const [isConfigOpen, setIsConfigOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: lines = [], isLoading: loading, error, refetch } = useProductionLinesQuery()
 
-  const loadData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const allSegments = await fetchRemoteSegments()
-      setSegments(allSegments)
-
-      const saved = await StorageService.getItem<string[]>(VISIBLE_SEGMENTS_KEY)
-      if (saved) {
-        setVisibleSegmentIds(saved)
-        return
-      }
-
-      if (allSegments.length > 0) {
-        const defaults = allSegments.slice(0, 5).map((segment) => segment.id)
-        setVisibleSegmentIds(defaults)
-        await StorageService.setItem(VISIBLE_SEGMENTS_KEY, defaults)
-      }
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
+  const segments = useMemo<(Segment & { lineName: string })[]>(
+    () =>
+      lines.flatMap((line) =>
+        (line.segments || []).map((segment) => ({
+          ...segment,
+          lineName: line.name,
+        })),
+      ),
+    [lines],
+  )
 
   useEffect(() => {
-    void loadData()
-  }, [])
+    let active = true
+
+    const syncVisibleSegments = async () => {
+      try {
+        const saved = await StorageService.getItem<string[]>(VISIBLE_SEGMENTS_KEY)
+        if (!active) return
+
+        if (saved) {
+          setVisibleSegmentIds(saved)
+          return
+        }
+
+        if (segments.length > 0) {
+          const defaults = segments.slice(0, 5).map((segment) => segment.id)
+          setVisibleSegmentIds(defaults)
+          await StorageService.setItem(VISIBLE_SEGMENTS_KEY, defaults)
+        }
+      } catch (storageError) {
+        logger.error('Failed to sync dashboard segments config', storageError)
+      }
+    }
+
+    void syncVisibleSegments()
+
+    const handleSync = (event?: Event) => {
+      const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
+      if (key && key !== VISIBLE_SEGMENTS_KEY) {
+        return
+      }
+      void syncVisibleSegments()
+    }
+
+    window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
+    return () => {
+      active = false
+      window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
+    }
+  }, [segments])
 
   const handleSaveConfig = async (ids: string[]) => {
     setVisibleSegmentIds(ids)
     await StorageService.setItem(VISIBLE_SEGMENTS_KEY, ids)
-    window.dispatchEvent(new CustomEvent('xdfc_dashboard_visible_segments_updated'))
     setIsConfigOpen(false)
   }
 
@@ -120,12 +119,12 @@ export function DashboardOverviewTab() {
             [CRITICAL] Backend Connectivity Failure
           </h3>
           <p className='text-[10px] font-bold text-destructive/60 uppercase tracking-widest'>
-            {error}
+            {getErrorMessage(error)}
           </p>
         </div>
-        <Button 
-          variant='outline' 
-          onClick={() => loadData()}
+        <Button
+          variant='outline'
+          onClick={() => void refetch()}
           className='rounded-full h-9 px-8 text-[10px] font-black uppercase tracking-widest border-destructive/20 text-destructive hover:bg-destructive/10'
         >
           {t('common.actions.retry')}
@@ -168,7 +167,7 @@ export function DashboardOverviewTab() {
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogContent className='sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden bg-background'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-          
+
           <div className='relative p-8 space-y-6'>
             <DialogHeader className='text-left space-y-1.5'>
               <DialogTitle className='text-lg font-black tracking-tighter italic uppercase text-slate-800'>
@@ -185,8 +184,8 @@ export function DashboardOverviewTab() {
                   <div
                     key={segment.id}
                     className={`flex items-center space-x-3 p-3 border-dashed border-2 rounded-2xl transition-all cursor-pointer group ${
-                      visibleSegmentIds.includes(segment.id) 
-                        ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/10' 
+                      visibleSegmentIds.includes(segment.id)
+                        ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/10'
                         : 'bg-muted/5 border-muted/40 hover:border-muted/80'
                     }`}
                     onClick={() => {
@@ -196,11 +195,13 @@ export function DashboardOverviewTab() {
                       setVisibleSegmentIds(newIds)
                     }}
                   >
-                    <div className={`size-5 rounded-lg flex items-center justify-center border-2 transition-all ${
-                      visibleSegmentIds.includes(segment.id)
-                        ? 'bg-primary border-primary'
-                        : 'bg-transparent border-muted-foreground/20 group-hover:border-muted-foreground/40'
-                    }`}>
+                    <div
+                      className={`size-5 rounded-lg flex items-center justify-center border-2 transition-all ${
+                        visibleSegmentIds.includes(segment.id)
+                          ? 'bg-primary border-primary'
+                          : 'bg-transparent border-muted-foreground/20 group-hover:border-muted-foreground/40'
+                      }`}
+                    >
                       {visibleSegmentIds.includes(segment.id) && <Check className='size-3 text-white' />}
                     </div>
                     <div className='flex flex-col min-w-0'>

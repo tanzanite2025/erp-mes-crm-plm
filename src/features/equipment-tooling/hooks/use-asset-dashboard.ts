@@ -1,42 +1,47 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api-client'
 
 export interface AssetDashboardActivity {
-    moldSn: string
-    toFactory: string
-    contactPerson: string
-    loanDate: string
-    status: 'ACTIVE' | 'RETURNED' | 'OVERDUE'
+  moldSn: string
+  toFactory: string
+  contactPerson: string
+  loanDate: string
+  status: 'ACTIVE' | 'RETURNED' | 'OVERDUE'
 }
 
 export interface AssetDashboardData {
-    moldStats: {
-        total: number
-        idle: number
-        inUse: number
-        maintenance: number
-        fault: number
-    }
-    furnaceStats: {
-        total: number
-        idle: number
-        running: number
-        fault: number
-    }
-    healthVectors: {
-        avgLifeConsumpt: number
-        alertCount: number
-    }
-    recentActivities: AssetDashboardActivity[]
+  moldStats: {
+    total: number
+    idle: number
+    inUse: number
+    maintenance: number
+    fault: number
+  }
+  furnaceStats: {
+    total: number
+    idle: number
+    running: number
+    fault: number
+  }
+  healthVectors: {
+    avgLifeConsumpt: number
+    alertCount: number
+  }
+  recentActivities: AssetDashboardActivity[]
 }
 
-/**
- * useAssetDashboard - 获取资产中心工业级看板聚合数据
- */
+export const ASSET_DASHBOARD_QUERY_KEY = ['asset_dashboard_stats'] as const
+
 export function useAssetDashboard() {
-    return useQuery<AssetDashboardData>({
-        queryKey: ['asset_dashboard_stats'],
-        queryFn: () => apiFetch('/molds/dashboard/stats'),
-        refetchInterval: 1000 * 30, // 30秒自动刷新
-    })
+  const queryClient = useQueryClient()
+  const query = useQuery<AssetDashboardData>({
+    queryKey: ASSET_DASHBOARD_QUERY_KEY,
+    queryFn: () => apiFetch('/molds/dashboard/stats'),
+    refetchInterval: 1000 * 30,
+  })
+
+  return {
+    ...query,
+    refresh: () => queryClient.invalidateQueries({ queryKey: ASSET_DASHBOARD_QUERY_KEY }),
+  }
 }

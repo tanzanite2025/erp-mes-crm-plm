@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
@@ -8,9 +9,10 @@ import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entr
 import { DM_RULES_CONFIG, type DMRuleSegment } from '../data/dm-rules-config'
 import { parseDMCode } from '../utils/dm-parser'
 import { toBase36 } from '../utils/dm-utils'
-import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { ProductTypeService } from '@/features/engineering/services/product-type-service'
-import { type ProductType, type Product } from '@/features/engineering/data/schema'
+import { type ProductType } from '@/features/engineering/data/schema'
+import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { PRODUCT_TYPES_QUERY_KEY } from '@/features/engineering/query-keys'
 import type { TranslationKey } from '@/locales'
 
 const logger = createLogger('useDMNumberingMgmt')
@@ -31,8 +33,11 @@ export function useDMNumberingMgmt() {
     const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
 
     const [appearanceMapping] = useState<any>(null)
-    const [productTypes, setProductTypes] = useState<ProductType[]>([])
-    const [products, setProducts] = useState<Product[]>([])
+    const { data: products = [] } = useGetProducts()
+    const { data: productTypes = [] } = useQuery<ProductType[]>({
+        queryKey: PRODUCT_TYPES_QUERY_KEY,
+        queryFn: () => ProductTypeService.getProductTypes(),
+    })
     
     // Simulation states
     const [mockInputs, setMockInputs] = useState({
@@ -97,37 +102,6 @@ export function useDMNumberingMgmt() {
         { label: `11${t('common.units.month' as TranslationKey)} (N)`, value: 'N' }, 
         { label: `12${t('common.units.month' as TranslationKey)} (D)`, value: 'D' },
     ], [t])
-
-    // Data handling
-    const loadSharedMappings = useCallback(async () => {
-        try {
-            const [savedTypes, savedProducts] = await Promise.all([
-                ProductTypeService.getProductTypes(),
-                ProductCoreService.getProducts()
-            ])
-            if (savedTypes) setProductTypes(savedTypes)
-            if (savedProducts) setProducts(savedProducts)
-        } catch (error) {
-            logger.error('[FAIL_LOUDLY] useDMNumberingMgmt.loadSharedMappings', error)
-        }
-    }, [])
-
-    useEffect(() => {
-        void loadSharedMappings()
-        const handleSync = () => { void loadSharedMappings() }
-        window.addEventListener('xdfc_appearance_mapping_updated', handleSync)
-        window.addEventListener('xdfc_product_types_data_updated', handleSync)
-        window.addEventListener('xdfc_products_data_updated', handleSync)
-        window.addEventListener('xdfc_storage_initialized', handleSync)
-        window.addEventListener('xdfc_storage_updated', handleSync)
-        return () => {
-            window.removeEventListener('xdfc_appearance_mapping_updated', handleSync)
-            window.removeEventListener('xdfc_product_types_data_updated', handleSync)
-            window.removeEventListener('xdfc_products_data_updated', handleSync)
-            window.removeEventListener('xdfc_storage_initialized', handleSync)
-            window.removeEventListener('xdfc_storage_updated', handleSync)
-        }
-    }, [loadSharedMappings])
 
     // Helper: Model to Category synchronization
     const getModelCategoryCode = useCallback((modelCode: string) => {

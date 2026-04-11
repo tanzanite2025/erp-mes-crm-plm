@@ -36,7 +36,8 @@ import { type Product, type ProductType } from '../data/schema'
 import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
 import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { ProductCoreService } from '../services/product-core-service'
-import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
+import { ProductTypeService } from '../services/product-type-service'
+import { type SaveProductTypeInput } from '../mutation-types'
 import {
   buildChildTypeCountMap,
   buildOrderedProductTypes,
