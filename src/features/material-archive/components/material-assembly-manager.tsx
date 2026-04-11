@@ -52,7 +52,9 @@ import { type SavePackagingRuleInput } from '../adapters/packaging-api-adapter'
 import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
-function buildRelation(rule: Partial<PackagingRule> | null) {
+type PackagingRuleDraft = Partial<SavePackagingRuleInput> & Pick<SavePackagingRuleInput, 'direction'>
+
+function buildRelation(rule: PackagingRuleDraft | null) {
   const factor = rule?.conversionFactor ?? '?'
   const packUnit = rule?.packUnit || '?'
   const baseUnit = rule?.baseUnit || '?'
@@ -70,7 +72,7 @@ export function MaterialAssemblyManager() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isComboboxOpen, setIsComboboxOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<SavePackagingRuleInput | null>(null)
+  const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(null)
 
   const materialMap = useMemo(() => {
     const map = new Map<string, MaterialOption>()
@@ -132,11 +134,20 @@ export function MaterialAssemblyManager() {
       return
     }
 
+    const ruleToSave: SavePackagingRuleInput = {
+      id: editingRule.id,
+      materialId: editingRule.materialId,
+      packUnit: editingRule.packUnit,
+      baseUnit: editingRule.baseUnit,
+      conversionFactor: editingRule.conversionFactor,
+      direction: editingRule.direction,
+    }
+
     try {
-      const saved = await packagingService.saveRule(editingRule)
+      const saved = await packagingService.saveRule(ruleToSave)
 
       setRules((current) =>
-        editingRule.id
+        ruleToSave.id
           ? current.map((rule) => (rule.id === saved.id ? saved : rule))
           : [...current, saved]
       )
@@ -459,7 +470,7 @@ export function MaterialAssemblyManager() {
                               value={`${material.name} ${material.code} ${material.spec || ''}`}
                               onSelect={() => {
                                 setEditingRule({
-                                  ...editingRule,
+                                  ...(editingRule ?? { direction: 'forward' }),
                                   materialId: material.id,
                                   baseUnit: material.uom || '',
                                 })
@@ -519,7 +530,11 @@ export function MaterialAssemblyManager() {
                       className='h-12 rounded-2xl border-none bg-muted/50 font-bold shadow-sm'
                       value={editingRule?.packUnit || ''}
                       onChange={(event) =>
-                        setEditingRule({ ...editingRule, packUnit: event.target.value })
+                        setEditingRule((current) =>
+                          current
+                            ? { ...current, packUnit: event.target.value }
+                            : { direction: 'forward', packUnit: event.target.value }
+                        )
                       }
                     />
                   </div>
@@ -554,10 +569,10 @@ export function MaterialAssemblyManager() {
                     size='sm'
                     className='h-7 rounded-full border border-dashed border-primary/20 px-4 text-[10px] font-black tracking-widest transition-all hover:bg-primary/10 hover:text-primary'
                     onClick={() =>
-                      setEditingRule({
-                        ...editingRule,
-                        direction: editingRule?.direction === 'forward' ? 'reverse' : 'forward',
-                      })
+                      setEditingRule((current) => ({
+                        ...(current ?? { direction: 'forward' }),
+                        direction: current?.direction === 'forward' ? 'reverse' : 'forward',
+                      }))
                     }
                   >
                     <ArrowRightLeft className='size-3' />
@@ -575,10 +590,10 @@ export function MaterialAssemblyManager() {
                         value={editingRule?.conversionFactor ?? 1}
                         onChange={(event) => {
                           const value = Number.parseFloat(event.target.value)
-                          setEditingRule({
-                            ...editingRule,
+                          setEditingRule((current) => ({
+                            ...(current ?? { direction: 'forward' }),
                             conversionFactor: Number.isNaN(value) ? 0 : value,
-                          })
+                          }))
                         }}
                       />
                     </div>

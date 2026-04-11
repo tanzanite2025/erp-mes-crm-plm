@@ -1,14 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Settings2, ArrowUpDown, FileText, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { SPEC_COMPONENTS } from './specs'
-import { type Product, type ProductType } from '../data/schema'
+import { type Product } from '../data/schema'
+import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
 import { ProductTypeService } from '../services/product-type-service'
+import { getProductAttributes } from '../utils/product-utils'
 
 type ProductOverviewTabProps = {
     product: Product
@@ -17,21 +20,16 @@ type ProductOverviewTabProps = {
 
 export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps) {
     const { t } = useLanguage()
-    const [categoryType, setCategoryType] = useState<ProductType | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-
-    useEffect(() => {
-        const loadTemplateData = async () => {
-            setIsLoading(true)
-            try {
-                const types = await ProductTypeService.getProductTypes()
-                setCategoryType(types.find((entry) => entry.id === product.typeId) || null)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-        loadTemplateData()
-    }, [product.typeId])
+    const productTypesQuery = useQuery({
+        queryKey: PRODUCT_TYPES_QUERY_KEY,
+        queryFn: () => ProductTypeService.getProductTypes(),
+    })
+    const productView = useMemo(() => getProductAttributes(product), [product])
+    const categoryType = useMemo(
+        () => (productTypesQuery.data ?? []).find((entry) => entry.id === product.typeId) || null,
+        [product.typeId, productTypesQuery.data]
+    )
+    const isLoading = productTypesQuery.isLoading
 
     const renderTechnicalRibbon = () => {
         if (isLoading) {
@@ -110,7 +108,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
                     <div className='flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
                         <div className='flex items-center gap-1.5'>
                             <span className='opacity-40'>{t('engineering.productMgmt.skuIdLabel')}:</span>
-                            <span className='font-mono font-bold text-slate-800 bg-muted/50 px-2 py-0.5 rounded'>#{product.sku}</span>
+                            <span className='font-mono font-bold text-slate-800 bg-muted/50 px-2 py-0.5 rounded'>#{productView.sku}</span>
                         </div>
                         <div className='w-px h-3 bg-muted-foreground/20' />
                         <div className='flex items-center gap-1.5'>
@@ -121,7 +119,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
                 </div>
                 <div className='flex flex-col items-start sm:items-end gap-2'>
                     <Badge variant='secondary' className='h-7 sm:h-8 px-4 sm:px-6 rounded-full text-[9px] sm:text-[10px] font-black bg-blue-600/5 border-none uppercase tracking-widest text-blue-600 italic shadow-inner'>
-                        {t('engineering.productMgmt.typeRefLabel')} / {product.sku.split('-')[0] || t('engineering.productMgmt.genericTypeRef')}
+                        {t('engineering.productMgmt.typeRefLabel')} / {productView.sku.split('-')[0] || t('engineering.productMgmt.genericTypeRef')}
                     </Badge>
                 </div>
             </div>

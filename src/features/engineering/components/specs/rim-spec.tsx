@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { type Product } from '../../data/schema'
-import { getProductAttributeSummary } from '../../utils/product-attribute-utils'
+import { getProductAttributes } from '../../utils/product-utils'
 
 interface RimSpecFormProps {
   form: UseFormReturn<Product>
@@ -175,7 +175,7 @@ export function RimSpecForm({
 
 export function RimSpecOverview({ product }: { product: Product }) {
   const { t } = useLanguage()
-  const { tireType } = getProductAttributeSummary(product)
+  const productView = getProductAttributes(product)
 
   return (
     <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted transition-all hover:bg-muted/10 group'>
@@ -230,7 +230,7 @@ export function RimSpecOverview({ product }: { product: Product }) {
           {t('engineering.specForms.rim.overviewBadge')}
         </span>
         <span className='text-lg font-black text-white uppercase tracking-tighter italic leading-none'>
-          {tireType}
+          {productView.tireType}
         </span>
       </div>
     </div>

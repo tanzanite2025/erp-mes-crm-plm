@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
 import { type BOM, type ChangeOrder, type Product } from '../../data/schema'
-import { formatProductDisplayName } from '../../utils/product-utils'
+import { getProductAttributes } from '../../utils/product-utils'
 
 type FormFieldConfig = {
   name: keyof BOM | string
@@ -30,6 +31,14 @@ const toDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 
 export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
+  const productItems = useMemo(
+    () =>
+      products.map((product) => ({
+        label: getProductAttributes(product).displayName,
+        value: product.id,
+      })),
+    [products]
+  )
 
   const changeOrderItems = changeOrders.map((changeOrder) => ({
     label: `${changeOrder.changeOrderNo} / ${changeOrder.title}`,
@@ -52,10 +61,7 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
         colSpan: 'col-span-full sm:col-span-5',
         type: 'select',
         placeholder: t('engineering.bomArchive.form.productPlaceholder'),
-        items: products.map((product) => ({
-          label: formatProductDisplayName(product),
-          value: product.id,
-        })),
+        items: productItems,
       },
       {
         name: 'bomVersion',

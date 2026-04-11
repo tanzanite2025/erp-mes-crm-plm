@@ -1,9 +1,10 @@
 import { toast } from 'sonner'
+import { type TranslationKey } from '@/locales'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
 import { DEFAULT_PURCHASE_ORDER, EMPTY_PURCHASE_ORDER_LINE } from './purchase-order-form-defaults'
 
-type PurchaseOrderTranslate = (key: string) => string
+type PurchaseOrderTranslate = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 export function createNewPurchaseOrderDraft(purchaserName: string, exchangeRate: number): Partial<PurchaseOrder> {
   const now = new Date()
