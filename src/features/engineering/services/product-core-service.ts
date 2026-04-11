@@ -48,7 +48,7 @@ export const ProductCoreService = {
     )
   },
 
-  formatDisplay(product: Partial<Product> | null | undefined): string {
+  formatDisplay(product: Product | null | undefined): string {
     if (!product) return 'NULL_PRODUCT'
 
     const { name, sku } = product

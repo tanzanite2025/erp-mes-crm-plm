@@ -164,7 +164,7 @@ export function useProductFormInit({
                     setSelectedVariants([{ level: versionLevel, weight: draftRow.weight || 0 }])
                 }
             } else if (open) {
-                const defaultValues = buildDefaultProductValues({ includeVersion: false }) as Product
+                const defaultValues = buildDefaultProductValues({ includeVersion: false })
                 form.reset(defaultValues)
             }
         }

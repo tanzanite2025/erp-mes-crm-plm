@@ -1,30 +1,18 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Plus, Loader2, ClipboardList } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Route } from '@/routes/_authenticated/purchase/orders'
-import {
-  type AuditStatusDisplayMeta,
-  AuditStatusDisplay,
-} from '@/components/common/audit-status-display'
+import { PurchaseOrderListToolbar } from './purchase-order-list-toolbar'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { PurchaseOrderDetailSheet } from './purchase-order-detail-sheet'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
-import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
-import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
-import { createLogger } from '@/lib/logger'
 import { PurchaseOrderMaster } from './purchase-order-master'
-import { PurchaseOrderDetail } from './purchase-order-detail'
 import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
-import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-
-const logger = createLogger('PurchaseOrderList')
+import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
 
 export function PurchaseOrderList() {
   const { t } = useLanguage()
@@ -44,8 +32,6 @@ export function PurchaseOrderList() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([])
   const navigate = Route.useNavigate()
 
   useEffect(() => {
@@ -71,64 +57,7 @@ export function PurchaseOrderList() {
     }
   }, [search, detailId])
 
-  useEffect(() => {
-    const loadFinanceFilters = async () => {
-      try {
-        const [paymentMethodData, paymentTermData] = await Promise.all([
-          PaymentMethodCoreService.getPaymentMethods(),
-          PaymentTermCoreService.getPaymentTerms(),
-        ])
-        setPaymentMethods(paymentMethodData)
-        setPaymentTerms(paymentTermData)
-      } catch (error) {
-        logger.error('Failed to load purchase order filter options', error)
-      }
-    }
-
-    void loadFinanceFilters()
-  }, [])
-
-  const paymentMethodOptions = useMemo(() => {
-    const entries = new Map<string, string>()
-
-    paymentMethods.forEach((item) => {
-      if (item.code) entries.set(item.code, item.name || item.code)
-    })
-
-    orders.forEach((order) => {
-      if (order.paymentMethod) {
-        entries.set(
-          order.paymentMethod,
-          order.paymentMethodName || entries.get(order.paymentMethod) || order.paymentMethod
-        )
-      }
-    })
-
-    return Array.from(entries.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentMethods])
-
-  const paymentTermOptions = useMemo(() => {
-    const entries = new Map<string, string>()
-
-    paymentTerms.forEach((item) => {
-      if (item.code) entries.set(item.code, item.name || item.code)
-    })
-
-    orders.forEach((order) => {
-      if (order.paymentTerm) {
-        entries.set(
-          order.paymentTerm,
-          order.paymentTermName || entries.get(order.paymentTerm) || order.paymentTerm
-        )
-      }
-    })
-
-    return Array.from(entries.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentTerms])
+  const { paymentMethodOptions, paymentTermOptions } = usePurchaseOrderFilterOptions(orders)
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
@@ -209,89 +138,21 @@ export function PurchaseOrderList() {
     }
   }
 
-  const allStatusMeta: AuditStatusDisplayMeta = {
-    label: t('purchase.orders.all'),
-    className: 'bg-muted/30 text-muted-foreground border-muted/20',
-    dotClassName: 'bg-muted-foreground/60',
-  }
-
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <div className='flex flex-col md:flex-row items-center justify-between gap-4 px-2'>
-        <div className='relative w-full md:w-80'>
-          <ClipboardList className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
-          <Input
-            placeholder={t('purchase.orders.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className='pl-11 h-12 text-[11px] font-bold rounded-2xl border-none bg-muted/50 focus:bg-background transition-all shadow-inner w-full'
-          />
-        </div>
-        <div className='flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto'>
-          <div className='flex items-center gap-1 p-1.5 bg-muted/30 rounded-2xl border border-dashed overflow-x-auto max-w-full font-bold w-full sm:w-auto no-scrollbar'>
-            {['ALL', 'Draft', 'Sent', 'Awaiting', 'Received', 'Canceled'].map((status) => (
-              (() => {
-                const meta =
-                  status === 'ALL'
-                    ? allStatusMeta
-                    : getPurchaseStatusDisplayMeta(status, t)
-                const isActive = statusFilter === status
-
-                return (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`rounded-xl px-1.5 py-1 transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-background shadow-md ring-1 ring-primary/10'
-                    : 'opacity-65 hover:bg-muted/60 hover:opacity-100'
-                }`}
-              >
-                <AuditStatusDisplay
-                  meta={meta}
-                  badgeClassName={`px-3 py-1.5 ${isActive ? '' : 'shadow-none'}`}
-                />
-              </button>
-                )
-              })()
-            ))}
-          </div>
-          <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-            <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-2xl border-dashed bg-background/80 font-bold shadow-sm'>
-              <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl'>
-              <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentMethods')}</SelectItem>
-              {paymentMethodOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={paymentTermFilter} onValueChange={setPaymentTermFilter}>
-            <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-2xl border-dashed bg-background/80 font-bold shadow-sm'>
-              <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
-            </SelectTrigger>
-            <SelectContent className='rounded-2xl'>
-              <SelectItem value='ALL'>{t('purchase.orders.filters.allPaymentTerms')}</SelectItem>
-              {paymentTermOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            size='sm'
-            className='h-11 w-full sm:w-auto px-8 rounded-full shadow-xl shadow-primary/20 bg-primary font-black text-[10px] uppercase tracking-widest gap-2 active:scale-95 transition-all'
-            onClick={handleAddOrder}
-          >
-            <Plus className='h-4 w-4' />
-            {t('purchase.orders.addOrder')}
-          </Button>
-        </div>
-      </div>
+      <PurchaseOrderListToolbar
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        paymentMethodFilter={paymentMethodFilter}
+        paymentTermFilter={paymentTermFilter}
+        paymentMethodOptions={paymentMethodOptions}
+        paymentTermOptions={paymentTermOptions}
+        onSearchTermChange={setSearchTerm}
+        onStatusFilterChange={setStatusFilter}
+        onPaymentMethodFilterChange={setPaymentMethodFilter}
+        onPaymentTermFilterChange={setPaymentTermFilter}
+        onAddOrder={handleAddOrder}
+      />
 
       <div className='flex flex-col gap-4 bg-background/50 rounded-[32px] border border-dashed border-muted/50 p-2 shadow-sm'>
         <PurchaseOrderMaster
@@ -340,21 +201,13 @@ export function PurchaseOrderList() {
         )}
       </div>
 
-      <Sheet open={isDetailOpen} onOpenChange={handleOpenChange}>
-        <SheetContent side='bottom' className='w-full h-[60vh] overflow-y-auto p-0 pt-2 rounded-t-[32px] border-t-2 shadow-2xl'>
-          <SheetHeader className='px-6 pb-2 border-b border-dashed'>
-            <div className='flex items-center gap-2'>
-              <div className='size-2 rounded-full bg-primary animate-pulse' />
-              <SheetTitle className='text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground'>
-                {t('purchase.orders.detailTitle')}
-              </SheetTitle>
-            </div>
-          </SheetHeader>
-          <div className='p-2'>
-            <PurchaseOrderDetail order={selectedOrder} onDelete={handleDeleteOrder} />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <PurchaseOrderDetailSheet
+        open={isDetailOpen}
+        order={selectedOrder}
+        title={t('purchase.orders.detailTitle')}
+        onOpenChange={handleOpenChange}
+        onDelete={handleDeleteOrder}
+      />
 
       <PurchaseOrderActionDialog
         open={isActionDialogOpen}

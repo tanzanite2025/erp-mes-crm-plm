@@ -16,7 +16,7 @@ interface BuildDefaultProductValuesOptions {
 
 export function buildDefaultProductValues(
     options: BuildDefaultProductValuesOptions = {}
-): Partial<Product> {
+): Product {
     const { includeVersion = true } = options
 
     return {
@@ -43,7 +43,7 @@ export function buildDefaultProductValues(
         axleCrown: undefined,
         steerer: '',
         engineeringSpecId: '',
-        ...(includeVersion ? { version: 1 } : {})
+        version: includeVersion ? 1 : 1,
     }
 }
 

@@ -1,14 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
-import { type MaterialOption } from '../../material-archive/data/schema'
-import { type BOM, type Product } from '../data/schema'
+import { type BOMItemDraft, type SaveBOMInput } from '../mutation-types'
+import { useBOMWriteActions } from './use-bom-write-actions'
+import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { bomService } from '../services/bom-service'
 import { ExcelService } from '../services/excel-service'
 import { ProductCoreService } from '../services/product-core-service'
@@ -17,10 +20,24 @@ const logger = createLogger('useBOMData')
 
 export function useBOMData() {
   const { t } = useLanguage()
-  const [data, setData] = useState<BOM[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [materials, setMaterials] = useState<MaterialOption[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const bomsQuery = useQuery({
+    queryKey: BOMS_QUERY_KEY,
+    queryFn: () => bomService.getBOMs(),
+  })
+  const materialsQuery = useQuery({
+    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+    queryFn: () => MaterialCoreService.getMaterialOptions(),
+  })
+  const productsQuery = useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: () => ProductCoreService.getProducts(),
+  })
+  const { saveBOM: persistBOM, deleteBOM: removeBOM } = useBOMWriteActions()
+  const data = bomsQuery.data ?? []
+  const materials = materialsQuery.data ?? []
+  const products = productsQuery.data ?? []
+  const isLoading = bomsQuery.isLoading || materialsQuery.isLoading || productsQuery.isLoading
 
   const categoryMap = useMemo(
     () => ({
@@ -33,104 +50,58 @@ export function useBOMData() {
     [t]
   )
 
-  const refreshAll = useCallback(async () => {
-    setIsLoading(true)
-
-    try {
-      const [boms, loadedProducts, loadedMaterials] = await Promise.all([
-        bomService.getBOMs(),
-        ProductCoreService.getProducts(),
-        MaterialCoreService.getMaterialOptions(),
-      ])
-
-      setData(boms || [])
-      setProducts(loadedProducts || [])
-      setMaterials(loadedMaterials || [])
-    } catch (error) {
-      logger.error('BOM data load error', error)
+  useEffect(() => {
+    if (bomsQuery.error) {
+      logger.error('BOM data load error', bomsQuery.error)
       toast.error(t('engineering.bomArchive.toasts.loadFailed'))
-    } finally {
-      setIsLoading(false)
     }
-  }, [t])
-
-  const persistData = useCallback(
-    async (newDataOrId: BOM[] | string) => {
-      if (typeof newDataOrId === 'string') {
-        try {
-          await bomService.deleteBOM(newDataOrId)
-          await refreshAll()
-          toast.success(t('engineering.bomArchive.toasts.deleteSuccess'))
-        } catch (error) {
-          failLoudly(error, 'useBOMData.persistData.delete')
-        }
-        return
-      }
-
-      await refreshAll()
-    },
-    [refreshAll, t]
-  )
-
-  const saveBOM = useCallback(
-    async (bom: Partial<BOM>) => {
-      try {
-        await bomService.saveBOM(bom)
-        await refreshAll()
-        toast.success(t('engineering.bomArchive.toasts.saveSuccess'))
-        return true
-      } catch (error) {
-        if (isConflictError(error)) {
-          toast.error(t('engineering.bomArchive.toasts.conflict'))
-          return false
-        }
-
-        toast.error(t('engineering.bomArchive.toasts.saveFailed'))
-        return false
-      }
-    },
-    [refreshAll, t]
-  )
-
-  const deleteBOM = useCallback(
-    async (id: string) => {
-      try {
-        await bomService.deleteBOM(id)
-        await refreshAll()
-        toast.success(t('engineering.bomArchive.toasts.deleteSuccess'))
-        return true
-      } catch (error) {
-        failLoudly(error, 'useBOMData.deleteBOM')
-        return false
-      }
-    },
-    [refreshAll, t]
-  )
+  }, [bomsQuery.error, t])
 
   useEffect(() => {
-    void refreshAll()
-
-    const handleProductsUpdate = () => void refreshAll()
-    const handleMaterialsUpdate = async () => {
-      const loadedMaterials = await MaterialCoreService.getMaterialOptions()
-      setMaterials(loadedMaterials || [])
+    if (materialsQuery.error) {
+      logger.error('BOM materials load error', materialsQuery.error)
+      toast.error(t('engineering.bomArchive.toasts.loadFailed'))
     }
+  }, [materialsQuery.error, t])
 
-    window.addEventListener('xdfc_products_data_updated', handleProductsUpdate)
-    window.addEventListener('xdfc_materials_updated', handleMaterialsUpdate)
+  const saveBOM = async (bom: SaveBOMInput) => {
+    try {
+      await persistBOM(bom)
+      toast.success(t('engineering.bomArchive.toasts.saveSuccess'))
+      return true
+    } catch (error) {
+      if (isConflictError(error)) {
+        toast.error(t('engineering.bomArchive.toasts.conflict'))
+        return false
+      }
 
-    return () => {
-      window.removeEventListener('xdfc_products_data_updated', handleProductsUpdate)
-      window.removeEventListener('xdfc_materials_updated', handleMaterialsUpdate)
+      toast.error(t('engineering.bomArchive.toasts.saveFailed'))
+      return false
     }
-  }, [refreshAll])
+  }
+
+  const deleteBOM = async (id: string) => {
+    try {
+      await removeBOM(id)
+      toast.success(t('engineering.bomArchive.toasts.deleteSuccess'))
+      return true
+    } catch (error) {
+      failLoudly(error, 'useBOMData.deleteBOM')
+      return false
+    }
+  }
 
   const downloadTemplate = async () => {
     const loadingId = toast.loading(t('engineering.bomArchive.toasts.downloadLoading'))
 
     try {
-      const loadedMaterials = await MaterialCoreService.getMaterialOptions()
-      await ExcelService.generateBOMTemplate(loadedMaterials || [], products)
+      const loadedMaterials =
+        (await queryClient.fetchQuery({
+          queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+          queryFn: () => MaterialCoreService.getMaterialOptions(),
+        })) ?? []
+
+      await ExcelService.generateBOMTemplate(loadedMaterials, products)
       toast.success(t('engineering.bomArchive.toasts.downloadSuccess'), { id: loadingId })
     } catch (error) {
       logger.error('Template generation error', error)
@@ -154,7 +125,7 @@ export function useBOMData() {
       }
 
       const { bomItemSchema } = await import('../data/schema')
-      const validItems: Array<Partial<BOM['items'][number]>> = []
+      const validItems: BOMItemDraft[] = []
       const errors: string[] = []
 
       parsedItems.forEach((item, index) => {
@@ -184,15 +155,23 @@ export function useBOMData() {
       }
 
       if (extractedMaterials && extractedMaterials.length > 0) {
-        logger.error('BOM import blocked: extracted workbook contains material master data rows that require explicit maintenance flow', {
-          extractedMaterialCount: extractedMaterials.length,
-        })
+        logger.error(
+          'BOM import blocked: extracted workbook contains material master data rows that require explicit maintenance flow',
+          {
+            extractedMaterialCount: extractedMaterials.length,
+          }
+        )
         toast.error(t('engineering.bomArchive.toasts.parseFailed'), { id: loadingId })
-        toast.error('BOM 导入已阻断：检测到物料主数据行，请先在物料档案中显式维护这些物料后再导入 BOM。')
+        toast.error('BOM 瀵煎叆宸查樆鏂細妫€娴嬪埌鐗╂枡涓绘暟鎹锛岃鍏堝湪鐗╂枡妗ｆ涓樉寮忕淮鎶ょ繖浜涚墿鏂欏悗鍐嶅鍏?BOM銆?')
         return null
       }
 
-      const latestMaterials = (await MaterialCoreService.getMaterialOptions()) || []
+      const latestMaterials =
+        (await queryClient.fetchQuery({
+          queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+          queryFn: () => MaterialCoreService.getMaterialOptions(),
+        })) ?? []
+
       const processedItems = validItems.map((item) => {
         const material = latestMaterials.find((entry) => entry.id === item.materialId)
 
@@ -237,7 +216,6 @@ export function useBOMData() {
     products,
     materials,
     isLoading,
-    persistData,
     saveBOM,
     deleteBOM,
     downloadTemplate,

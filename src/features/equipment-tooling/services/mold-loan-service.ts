@@ -52,8 +52,6 @@ export class MoldLoanService {
             throw new Error('[CRITICAL_DATA_PATH] Create mold loan failed, returned no data.')
         }
 
-        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
-        window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
         return ensureObjectResponse<MoldLoan>(newLoan, 'MoldLoanService.createLoan')
     }
 
@@ -68,8 +66,6 @@ export class MoldLoanService {
             body: JSON.stringify({ loan, moldData })
         })
 
-        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
-        window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
         return ensureObjectResponse<MoldBorrowRecordResponse & Record<string, unknown>>(res, 'MoldLoanService.createBorrowRecord') as MoldBorrowRecordResponse
     }
 
@@ -82,8 +78,6 @@ export class MoldLoanService {
             method: 'POST'
         })
         
-        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
-        window.dispatchEvent(new CustomEvent('xdfc_molds_updated'))
     }
 
     /**
@@ -93,7 +87,6 @@ export class MoldLoanService {
         await apiFetch(`/mold-loans/${loanId}`, {
             method: 'DELETE'
         })
-        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
     }
 
     /**
@@ -115,7 +108,6 @@ export class MoldLoanService {
             throw new Error(`[CRITICAL_DATA_PATH] Patch mold loan ${loanId} failed, returned no data.`)
         }
 
-        window.dispatchEvent(new CustomEvent('xdfc_mold_loans_updated'))
         return ensureObjectResponse<MoldLoan>(res, 'MoldLoanService.patchLoan')
     }
 }

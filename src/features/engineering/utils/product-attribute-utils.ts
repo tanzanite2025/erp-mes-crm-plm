@@ -60,8 +60,8 @@ export function getOptionLabel(
 
 export function getProductAttributeSummary(product: Product) {
   return {
-    version: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version) || 'STD',
-    series: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) || 'NORMAL',
+    version: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version) || 'std',
+    series: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.series) || 'normal',
     brake: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.brake) || 'UNKNOWN',
     tireType: getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.tireType) || 'NULL',
   }

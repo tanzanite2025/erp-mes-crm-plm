@@ -48,6 +48,7 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption, type PackagingRule } from '../data/schema'
+import { type SavePackagingRuleInput } from '../adapters/packaging-api-adapter'
 import { MaterialCoreService } from '../services/material-core-service'
 import { packagingService } from '../services/packaging-service'
 
@@ -69,7 +70,7 @@ export function MaterialAssemblyManager() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isComboboxOpen, setIsComboboxOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<Partial<PackagingRule> | null>(null)
+  const [editingRule, setEditingRule] = useState<SavePackagingRuleInput | null>(null)
 
   const materialMap = useMemo(() => {
     const map = new Map<string, MaterialOption>()
@@ -132,7 +133,7 @@ export function MaterialAssemblyManager() {
     }
 
     try {
-      const saved = await packagingService.saveRule(editingRule as PackagingRule)
+      const saved = await packagingService.saveRule(editingRule)
 
       setRules((current) =>
         editingRule.id

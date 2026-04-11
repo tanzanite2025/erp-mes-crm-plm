@@ -4,6 +4,15 @@ import type {
   SaveEquipmentPartnerApiDTO,
 } from '../contracts/equipment-partner-api-dto'
 
+export type SaveEquipmentPartnerInput = {
+  id?: string
+  name: string
+  type: EquipmentPartner['type']
+  contactPerson?: string
+  phone?: string
+  address?: string
+}
+
 function optimisticVersionFromTimestamps(updatedAt?: string, createdAt?: string): number {
   const versionSource = updatedAt || createdAt
   if (!versionSource) return 1
@@ -32,12 +41,12 @@ export function toEquipmentPartnerContracts(dtos: EquipmentPartnerApiDTO[]): Equ
 }
 
 export function toSaveEquipmentPartnerApiDTO(
-  contract: Partial<EquipmentPartner>
+  contract: SaveEquipmentPartnerInput
 ): SaveEquipmentPartnerApiDTO {
   return {
     id: contract.id || undefined,
-    name: contract.name || '',
-    type: contract.type || 'EXTERNAL',
+    name: contract.name,
+    type: contract.type,
     contactPerson: contract.contactPerson || '',
     phone: contract.phone || '',
     address: contract.address || '',

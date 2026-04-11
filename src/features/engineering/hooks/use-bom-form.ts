@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useFieldArray, useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
-import { type MaterialOption } from '../../material-archive/data/schema'
 import { bomSchema, type BOM, type BOMItem, type ChangeOrder, type Product } from '../data/schema'
+import { type BOMItemDraft } from '../mutation-types'
+import { CHANGE_ORDERS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
 
@@ -12,7 +15,7 @@ const logger = createLogger('useBOMForm')
 
 interface UseBOMFormProps {
   currentRow?: BOM
-  initialItems?: Array<Partial<BOMItem>>
+  initialItems?: BOMItemDraft[]
   initialProductId?: string
   open: boolean
   isEdit: boolean
@@ -21,10 +24,6 @@ interface UseBOMFormProps {
 const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 
 export function useBOMForm({ currentRow, initialItems, initialProductId, open, isEdit }: UseBOMFormProps) {
-  const [products, setProducts] = useState<Product[]>([])
-  const [materials, setMaterials] = useState<MaterialOption[]>([])
-  const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([])
-
   const form = useForm<BOM>({
     resolver: zodResolver(bomSchema) as Resolver<BOM>,
     defaultValues: {
@@ -50,59 +49,54 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
   const selectedProductId = useWatch({ control: form.control, name: 'productId' })
 
+  const productsQuery = useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: () => ProductCoreService.getProducts(),
+    enabled: open,
+  })
+  const changeOrdersQuery = useQuery({
+    queryKey: [...CHANGE_ORDERS_QUERY_KEY, selectedProductId || 'all', 'options'],
+    queryFn: () =>
+      changeOrderService.getChangeOrders({
+        isOptions: true,
+        productId: selectedProductId || undefined,
+      }),
+    enabled: open,
+  })
+  const materialsQuery = useQuery({
+    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+    queryFn: () => MaterialCoreService.getMaterialOptions(),
+    enabled: open,
+  })
+  const products = productsQuery.data ?? []
+  const changeOrders = (changeOrdersQuery.data ?? []) as ChangeOrder[]
+  const materials = materialsQuery.data ?? []
+
+  useEffect(() => {
+    if (changeOrdersQuery.error) {
+      logger.error('BOM form load change orders failed', changeOrdersQuery.error)
+    }
+  }, [changeOrdersQuery.error])
+
+  useEffect(() => {
+    if (materialsQuery.error) {
+      logger.error('BOM form load materials failed', materialsQuery.error)
+    }
+  }, [materialsQuery.error])
+
   useEffect(() => {
     if (!open) return
-
-    let cancelled = false
-
-    const loadChangeOrders = async () => {
-      try {
-        const orders = await changeOrderService.getChangeOrders({
-          isOptions: true,
-          productId: selectedProductId || undefined,
-        })
-
-        if (!cancelled) {
-          setChangeOrders(orders || [])
-          const currentChangeOrderId = form.getValues('changeOrderId')
-          if (currentChangeOrderId && !orders.some((order) => order.id === currentChangeOrderId)) {
-            form.setValue('changeOrderId', '', { shouldDirty: true })
-          }
-        }
-      } catch (error) {
-        logger.error('BOM form load change orders failed', error)
-        if (!cancelled) {
-          setChangeOrders([])
-        }
-      }
+    const currentChangeOrderId = form.getValues('changeOrderId')
+    if (currentChangeOrderId && !changeOrders.some((order) => order.id === currentChangeOrderId)) {
+      form.setValue('changeOrderId', '', { shouldDirty: true })
     }
-
-    loadChangeOrders()
-
-    const handleChangeOrdersUpdate = () => {
-      loadChangeOrders()
-    }
-
-    window.addEventListener('xdfc_change_orders_updated', handleChangeOrdersUpdate)
-    return () => {
-      cancelled = true
-      window.removeEventListener('xdfc_change_orders_updated', handleChangeOrdersUpdate)
-    }
-  }, [form, open, selectedProductId])
+  }, [changeOrders, form, open])
 
   useEffect(() => {
     const loadInitData = async () => {
       if (!open) return
 
       try {
-        const [storedProducts, allMaterials] = await Promise.all([
-          ProductCoreService.getProducts(),
-          MaterialCoreService.getMaterialOptions(),
-        ])
-
-        setProducts(storedProducts || [])
-        setMaterials(allMaterials || [])
-
         if (isEdit && currentRow) {
                 const data = {
                     ...currentRow,
@@ -151,25 +145,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       }
     }
 
-    loadInitData()
-
-    const handleProductsUpdate = async () => {
-      const nextProducts = await ProductCoreService.getProducts()
-      setProducts(nextProducts || [])
-    }
-
-    const handleMaterialsUpdate = async () => {
-      const nextMaterials = await MaterialCoreService.getMaterialOptions()
-      setMaterials(nextMaterials || [])
-    }
-
-    window.addEventListener('xdfc_products_data_updated', handleProductsUpdate)
-    window.addEventListener('xdfc_materials_updated', handleMaterialsUpdate)
-
-    return () => {
-      window.removeEventListener('xdfc_products_data_updated', handleProductsUpdate)
-      window.removeEventListener('xdfc_materials_updated', handleMaterialsUpdate)
-    }
+    void loadInitData()
   }, [currentRow, form, initialItems, initialProductId, isEdit, open])
 
   return {

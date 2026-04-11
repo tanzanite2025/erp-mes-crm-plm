@@ -10,6 +10,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { Combobox } from '@/components/ui/combobox'
 import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOM, type BOMSubstitute } from '../../data/schema'
+import { type BOMSubstitutePatch } from '../../mutation-types'
 import { BOM_SECTION_CATEGORY_MAP } from '../../constants/bom-sections'
 import { MaterialUsageService } from '../../services/material-usage-service'
 
@@ -28,6 +29,10 @@ type EnrichedMaterialOption = MaterialOption & {
 
 export function BOMItemRow({ form, index, materials, onRemove, measureElement, dataIndex }: BOMItemRowProps) {
   const [enrichedMaterials, setEnrichedMaterials] = React.useState<EnrichedMaterialOption[]>([])
+  const materialMap = React.useMemo(
+    () => new Map(materials.map((material) => [material.id, material])),
+    [materials]
+  )
   const currentSection = form.watch(`items.${index}.section`)
   const primaryMaterialId = form.watch(`items.${index}.materialId`)
   const substitutes = form.watch(`items.${index}.substitutes`) || []
@@ -102,7 +107,7 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
     )
   }
 
-  const updateSubstitute = (substituteIndex: number, patch: Partial<BOMSubstitute>) => {
+  const updateSubstitute = (substituteIndex: number, patch: BOMSubstitutePatch) => {
     setSubstitutes(
       substitutes.map((substitute: BOMSubstitute, idx: number) =>
         idx === substituteIndex ? { ...substitute, ...patch } : substitute
@@ -127,7 +132,7 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
                   value={field.value}
                   onValueChange={(value) => {
                     field.onChange(value)
-                    const material = materials.find((entry) => entry.id === value)
+                    const material = materialMap.get(value)
                     if (material) {
                       form.setValue(`items.${index}.materialName`, material.name)
                       form.setValue(`items.${index}.materialSpec`, material.spec || '')

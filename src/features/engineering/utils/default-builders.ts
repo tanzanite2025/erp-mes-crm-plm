@@ -1,6 +1,12 @@
 import { type ChangeOrder, type Product, type ProductProcessRouting, type ProductTemplate } from '../data/schema'
+import {
+    type ChangeOrderDraftOverrides,
+    type ProductDraftOverrides,
+    type ProductRoutingDraftOverrides,
+    type ProductTemplateDraftOverrides,
+} from '../mutation-types'
 
-export function createProductDraft(overrides: Partial<Product> = {}): Partial<Product> {
+export function createProductDraft(overrides: ProductDraftOverrides = {}): Product {
     return {
         id: '',
         sku: '',
@@ -30,7 +36,7 @@ export function createProductDraft(overrides: Partial<Product> = {}): Partial<Pr
     }
 }
 
-export function createProductTemplateDraft(overrides: Partial<ProductTemplate> = {}): ProductTemplate {
+export function createProductTemplateDraft(overrides: ProductTemplateDraftOverrides = {}): ProductTemplate {
     return {
         id: '',
         name: '',
@@ -44,7 +50,7 @@ export function createProductTemplateDraft(overrides: Partial<ProductTemplate> =
     }
 }
 
-export function createChangeOrderDraft(overrides: Partial<ChangeOrder> = {}): ChangeOrder {
+export function createChangeOrderDraft(overrides: ChangeOrderDraftOverrides = {}): ChangeOrder {
     return {
         id: '',
         title: '',
@@ -64,7 +70,7 @@ export function createChangeOrderDraft(overrides: Partial<ChangeOrder> = {}): Ch
     }
 }
 
-export function createProductRoutingDraft(overrides: Partial<ProductProcessRouting> = {}): ProductProcessRouting {
+export function createProductRoutingDraft(overrides: ProductRoutingDraftOverrides = {}): ProductProcessRouting {
     return {
         targetProductId: '',
         versionControlTag: 'V1.0.0.Draft',

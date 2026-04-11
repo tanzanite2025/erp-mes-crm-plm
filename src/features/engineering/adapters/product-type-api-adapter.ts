@@ -1,6 +1,7 @@
 import { type DeltaSet } from '@/lib/delta/types'
 import { type ProductType } from '../data/schema'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
+import { type SaveProductTypeInput } from '../mutation-types'
 
 export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
   return {
@@ -39,7 +40,7 @@ export function toProductTypeListContract(dto: ProductTypeListPageApiDTO): Produ
   return toProductTypeArrayContract(dto.items)
 }
 
-export function toProductTypeApiDTO(type: Partial<ProductType>): ProductTypeApiDTO {
+export function toProductTypeApiDTO(type: SaveProductTypeInput): ProductTypeApiDTO {
   return {
     id: type.id || '',
     parentId: type.parentId ?? null,
@@ -65,7 +66,7 @@ const PRODUCT_TYPE_PATCH_FIELDS: Array<keyof ProductType> = [
   'sortOrder',
 ]
 
-export function buildProductTypeDelta(current: ProductType, next: Partial<ProductType>): DeltaSet {
+export function buildProductTypeDelta(current: ProductType, next: SaveProductTypeInput): DeltaSet {
   const delta: DeltaSet = {}
 
   for (const field of PRODUCT_TYPE_PATCH_FIELDS) {

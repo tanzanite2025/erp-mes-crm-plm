@@ -21,10 +21,11 @@ import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMRecipeEditor } from './bom-editor/bom-recipe-editor'
 import { type BOM, type BOMItem } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
+import { type BOMItemDraft } from '../mutation-types'
 
 type BOMActionDialogProps = {
   currentRow?: BOM
-  initialItems?: Array<Partial<BOMItem>>
+  initialItems?: BOMItemDraft[]
   initialProductId?: string
   open: boolean
   onOpenChange: (open: boolean) => void

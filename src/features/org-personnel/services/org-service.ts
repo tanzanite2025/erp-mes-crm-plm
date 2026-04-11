@@ -31,7 +31,6 @@ export class OrgService {
             throw new Error('[CRITICAL_DATA_PATH] Save organization node returned no data for: ' + (node.id || 'NEW_NODE'))
         }
 
-        window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'))
         return toOrgNodeContract(
             ensureObjectResponse<OrgNodeApiDTO & Record<string, unknown>>(data, 'OrgService.saveOrgNode') as OrgNodeApiDTO
         )
@@ -44,7 +43,6 @@ export class OrgService {
         await apiFetch(`/org/${id}`, {
             method: 'DELETE'
         })
-        window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'))
     }
 
     /**
@@ -62,7 +60,6 @@ export class OrgService {
             body: JSON.stringify(payload)
         });
 
-        window.dispatchEvent(new CustomEvent('xdfc_org_structure_data_updated'));
         return toOrgNodeContract(
             ensureObjectResponse<OrgNodeApiDTO & Record<string, unknown>>(res, 'OrgService.patchOrgNode') as OrgNodeApiDTO
         );

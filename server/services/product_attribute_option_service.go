@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -19,26 +20,42 @@ type SaveProductAttributeOptionInput models.ProductAttributeOption
 
 func defaultProductAttributeOptions() []models.ProductAttributeOption {
 	return []models.ProductAttributeOption{
-		{CategoryKey: "techSeries", Value: "NORMAL", LabelZh: "常规系列", LabelEn: "Standard Series", Description: "常温常规工艺系列", SortOrder: 10, Active: true},
-		{CategoryKey: "techSeries", Value: "HIGHTG", LabelZh: "高温系列", LabelEn: "High TG Series", Description: "高温工艺系列", SortOrder: 20, Active: true},
-		{CategoryKey: "tireType", Value: "Hooked", LabelZh: "有钩", LabelEn: "Hooked", Description: "有钩车圈类型", SortOrder: 10, Active: true},
-		{CategoryKey: "tireType", Value: "Hookless", LabelZh: "无钩", LabelEn: "Hookless", Description: "无钩车圈类型", SortOrder: 20, Active: true},
-		{CategoryKey: "tireType", Value: "Tubular", LabelZh: "管胎", LabelEn: "Tubular", Description: "管胎车圈类型", SortOrder: 30, Active: true},
-		{CategoryKey: "brakeType", Value: "Disc", LabelZh: "碟刹", LabelEn: "Disc", Description: "碟刹制动类型", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "STD", LabelZh: "标准版", LabelEn: "Standard", Description: "标准版本等级", SortOrder: 10, Active: true},
-		{CategoryKey: "versionLevel", Value: "Lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化版本等级", SortOrder: 20, Active: true},
-		{CategoryKey: "versionLevel", Value: "Ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻版本等级", SortOrder: 30, Active: true},
-		{CategoryKey: "versionLevel", Value: "Reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型版本等级", SortOrder: 40, Active: true},
+		{CategoryKey: "techSeries", Value: "normal", LabelZh: "常规系列", LabelEn: "Standard Series", Description: "常温常规工艺系列", SortOrder: 10, Active: true},
+		{CategoryKey: "techSeries", Value: "high-tg", LabelZh: "高温系列", LabelEn: "High TG Series", Description: "高温工艺系列", SortOrder: 20, Active: true},
+		{CategoryKey: "tireType", Value: "hooked", LabelZh: "有钩", LabelEn: "Hooked", Description: "有钩车圈类型", SortOrder: 10, Active: true},
+		{CategoryKey: "tireType", Value: "hookless", LabelZh: "无钩", LabelEn: "Hookless", Description: "无钩车圈类型", SortOrder: 20, Active: true},
+		{CategoryKey: "tireType", Value: "tubular", LabelZh: "管胎", LabelEn: "Tubular", Description: "管胎车圈类型", SortOrder: 30, Active: true},
+		{CategoryKey: "brakeType", Value: "disc", LabelZh: "碟刹", LabelEn: "Disc", Description: "碟刹制动类型", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "std", LabelZh: "标准版", LabelEn: "Standard", Description: "标准版本等级", SortOrder: 10, Active: true},
+		{CategoryKey: "versionLevel", Value: "lightweight", LabelZh: "轻量版", LabelEn: "Lightweight", Description: "轻量化版本等级", SortOrder: 20, Active: true},
+		{CategoryKey: "versionLevel", Value: "ultralight", LabelZh: "超轻版", LabelEn: "Ultralight", Description: "超轻版本等级", SortOrder: 30, Active: true},
+		{CategoryKey: "versionLevel", Value: "reinforced", LabelZh: "加强版", LabelEn: "Reinforced", Description: "加强型版本等级", SortOrder: 40, Active: true},
 	}
 }
 
 func normalizeProductAttributeOption(input *models.ProductAttributeOption) {
 	input.CategoryKey = strings.TrimSpace(input.CategoryKey)
-	input.Value = strings.TrimSpace(input.Value)
+	input.Value = normalizeProductAttributeMachineValue(input.Value)
 	input.LabelZh = strings.TrimSpace(input.LabelZh)
 	input.LabelEn = strings.TrimSpace(input.LabelEn)
 	input.Description = strings.TrimSpace(input.Description)
 	input.MasterDataControl.Normalize("R1")
+}
+
+func ensureProductAttributeOptionValueAvailable(tx *gorm.DB, categoryKey string, nextValue string, excludeID string) error {
+	var items []models.ProductAttributeOption
+	if err := tx.Select("id", "category", "value").Where("category = ?", categoryKey).Find(&items).Error; err != nil {
+		return err
+	}
+	for _, item := range items {
+		if excludeID != "" && item.ID == excludeID {
+			continue
+		}
+		if sameProductAttributeMachineValue(item.Value, nextValue) {
+			return fmt.Errorf("[VALIDATION] 产品属性分类项值重复")
+		}
+	}
+	return nil
 }
 
 func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]models.ProductAttributeOption, error) {
@@ -59,6 +76,12 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 
 func CreateProductAttributeOption(input models.ProductAttributeOption) (models.ProductAttributeOption, error) {
 	normalizeProductAttributeOption(&input)
+	if input.Value == "" || !isValidProductAttributeMachineValue(input.Value) {
+		return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 产品属性分类项机器值格式无效")
+	}
+	if err := ensureProductAttributeOptionValueAvailable(db.DB, input.CategoryKey, input.Value, ""); err != nil {
+		return models.ProductAttributeOption{}, err
+	}
 	input.Version = 1
 	if err := db.DB.Create(&input).Error; err != nil {
 		return models.ProductAttributeOption{}, err
@@ -78,6 +101,8 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 			switch key {
 			case "categoryKey":
 				updates["category"] = strings.TrimSpace(value)
+			case "value":
+				updates[key] = normalizeProductAttributeMachineValue(value)
 			case "labelZh":
 				updates["label"] = strings.TrimSpace(value)
 			default:
@@ -127,6 +152,20 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 func PatchProductAttributeOption(id string, updates map[string]interface{}) (models.ProductAttributeOption, error) {
 	var existing models.ProductAttributeOption
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+		return models.ProductAttributeOption{}, err
+	}
+	if nextCategory, ok := updates["category"].(string); ok && nextCategory != existing.CategoryKey {
+		return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类项归属分类不允许修改")
+	}
+	if nextValue, ok := updates["value"].(string); ok {
+		if nextValue == "" || !isValidProductAttributeMachineValue(nextValue) {
+			return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 产品属性分类项机器值格式无效")
+		}
+		if nextValue != existing.Value {
+			return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类项机器值不允许修改")
+		}
+	}
+	if err := ensureProductAttributeOptionValueAvailable(db.DB, existing.CategoryKey, existing.Value, id); err != nil {
 		return models.ProductAttributeOption{}, err
 	}
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {

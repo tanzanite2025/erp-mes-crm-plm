@@ -5,6 +5,7 @@ import { buildProductTemplateDelta, toProductTemplateApiDTO, toProductTemplateCo
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
 
 import { type ProductTemplate } from '../data/schema'
+import { type SaveProductTemplateInput } from '../mutation-types'
 
 export { type ProductTemplate }
 
@@ -39,7 +40,7 @@ export const productTemplateService = {
     return templateRequest
   },
 
-  createTemplate: async (template: Partial<ProductTemplate>): Promise<ProductTemplate> => {
+  createTemplate: async (template: SaveProductTemplateInput): Promise<ProductTemplate> => {
     const saved = await apiFetch<ProductTemplateApiDTO>('/engineering/templates', {
       method: 'POST',
       body: JSON.stringify(toProductTemplateApiDTO({ ...template, id: '', version: 1 })),
@@ -53,7 +54,7 @@ export const productTemplateService = {
     )
   },
 
-  patchTemplate: async (current: ProductTemplate, next: Partial<ProductTemplate>): Promise<ProductTemplate> => {
+  patchTemplate: async (current: ProductTemplate, next: SaveProductTemplateInput): Promise<ProductTemplate> => {
     const delta = buildProductTemplateDelta(current, next)
     if (Object.keys(delta).length === 0) {
       return { ...current, ...next }
@@ -62,7 +63,7 @@ export const productTemplateService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: current.id, version: current.version },
+      metadata: { id: current.id, version: current.version, intent: 'ENGINEERING_PRODUCT_TEMPLATE_UPDATE' },
     }
     const saved = await apiFetch<ProductTemplateApiDTO>(`/engineering/templates/${current.id}`, {
       method: 'PATCH',
@@ -77,7 +78,7 @@ export const productTemplateService = {
     )
   },
 
-  saveTemplate: async (template: Partial<ProductTemplate>, current?: ProductTemplate): Promise<ProductTemplate> => {
+  saveTemplate: async (template: SaveProductTemplateInput, current?: ProductTemplate): Promise<ProductTemplate> => {
     if (current?.id) {
       return productTemplateService.patchTemplate(current, template)
     }

@@ -3,8 +3,8 @@ import { Activity, Key, LayoutDashboard, ShieldCheck, Users } from 'lucide-react
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
-import { fetchUsers as fetchUsersApi } from '@/features/users/services/user-api'
 import { type User } from '@/features/users/data/schema'
+import { fetchUsers as fetchUsersApi } from '@/features/users/services/user-api'
 import { isForbiddenError } from '@/lib/error-status'
 import { useRoles } from '../hooks/use-roles'
 
@@ -14,7 +14,7 @@ const PermStatsCharts = lazy(() =>
 
 export function PermStatsTab() {
   const { t } = useLanguage()
-  const { roles, permissions } = useRoles()
+  const { roles, permissions, error: rolesError } = useRoles()
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -75,7 +75,16 @@ export function PermStatsTab() {
     }
   }, [roles, permissions, allUsers, t])
 
-  if (isForbiddenError(error)) {
+  const coreCoverage = useMemo(() => {
+    if (!stats || stats.totalRoles === 0) return 0
+    const totalModuleRoles = stats.moduleCoverage.reduce((total, item) => total + item.roles, 0)
+    const baseCount = stats.totalRoles * stats.moduleCoverage.length
+    return Math.round((totalModuleRoles / baseCount) * 100)
+  }, [stats])
+
+  const pageError = error ?? rolesError
+
+  if (isForbiddenError(pageError)) {
     return <ForbiddenState />
   }
 
@@ -86,15 +95,6 @@ export function PermStatsTab() {
       </div>
     )
   }
-
-  // [UI-DERIVED-METRIC]: 核心覆盖率指标 (由前端推导，仅供 UI 参考)
-  // 全域系统安全审计指标应由后端 API /authz/audit/coverage 提供权威数据。
-  const coreCoverage = useMemo(() => {
-    if (!stats || stats.totalRoles === 0) return 0
-    const totalModuleRoles = stats.moduleCoverage.reduce((total, item) => total + item.roles, 0)
-    const baseCount = stats.totalRoles * stats.moduleCoverage.length
-    return Math.round((totalModuleRoles / baseCount) * 100)
-  }, [stats])
 
   return (
     <div className='animate-in fade-in flex flex-col gap-8 duration-700'>

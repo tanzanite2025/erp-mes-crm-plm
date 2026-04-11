@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { ChevronLeft, Printer } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
@@ -12,7 +12,7 @@ import { BOMDetailTable } from '../bom-detail-table'
 import { BOMPrintTemplate } from '@/features/print-mgmt/components/templates/bom-print-template'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { type BOM, type Product } from '../../data/schema'
-import { formatProductDisplayName, getProductAttributes } from '../../utils/product-utils'
+import { getProductAttributes } from '../../utils/product-utils'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 
 interface BOMPreviewProps {
@@ -30,10 +30,13 @@ export function BOMPreview({
 }: BOMPreviewProps) {
   const { t } = useLanguage()
   const printRef = useRef<HTMLDivElement>(null)
-  const product = bom.product || products.find((entry) => entry.id === bom.productId)
-  const productName = product
-    ? formatProductDisplayName(product)
-    : t('printMgmt.bomPreview.unknownProduct')
+  const productMap = useMemo(
+    () => new Map(products.map((entry) => [entry.id, entry])),
+    [products]
+  )
+  const product = bom.product || productMap.get(bom.productId)
+  const productView = product ? getProductAttributes(product) : null
+  const productName = productView?.displayName || t('printMgmt.bomPreview.unknownProduct')
 
   const printItems = bom.items.map((item) => ({
     section: item.section || t('printMgmt.bomPreview.defaultSection'),
@@ -110,36 +113,32 @@ export function BOMPreview({
                   : t('printMgmt.bomPreview.noEffectiveDate')}
               </span>
               <div className='flex items-center gap-1.5'>
-                {product &&
-                  (() => {
-                    const attrs = getProductAttributes(product)
-                    return (
-                      <>
-                        <Badge
-                          variant='secondary'
-                          className='border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-50'
-                        >
-                          {attrs.version}
-                        </Badge>
-                        <Badge
-                          variant='outline'
-                          className='border-slate-200 bg-slate-50 text-slate-600'
-                        >
-                          {attrs.series}
-                        </Badge>
-                        <Badge
-                          variant='outline'
-                          className='border-slate-200 bg-slate-50 text-slate-600'
-                        >
-                          {attrs.brake}
-                        </Badge>
-                        <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500'>
-                          {product.sku}
-                        </span>
-                        <span className='text-xs font-medium text-slate-400'>{attrs.weight}</span>
-                      </>
-                    )
-                  })()}
+                {productView && (
+                  <>
+                    <Badge
+                      variant='secondary'
+                      className='border-indigo-100 bg-indigo-50 text-indigo-700 hover:bg-indigo-50'
+                    >
+                      {productView.version}
+                    </Badge>
+                    <Badge
+                      variant='outline'
+                      className='border-slate-200 bg-slate-50 text-slate-600'
+                    >
+                      {productView.series}
+                    </Badge>
+                    <Badge
+                      variant='outline'
+                      className='border-slate-200 bg-slate-50 text-slate-600'
+                    >
+                      {productView.brake}
+                    </Badge>
+                    <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500'>
+                      {productView.sku}
+                    </span>
+                    <span className='text-xs font-medium text-slate-400'>{productView.weight}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>

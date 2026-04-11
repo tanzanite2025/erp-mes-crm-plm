@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type ProductAttributeCategory } from '../data/schema'
+import { type SaveProductAttributeCategoryInput } from '../mutation-types'
 
 export const ProductAttributeCategoryService = {
   async getProductAttributeCategories(params?: {
@@ -18,7 +19,7 @@ export const ProductAttributeCategoryService = {
   },
 
   async saveProductAttributeCategory(
-    category: Partial<ProductAttributeCategory>
+    category: SaveProductAttributeCategoryInput
   ): Promise<ProductAttributeCategory> {
     const res = await apiFetch<ProductAttributeCategory>('/engineering/product-attribute-categories', {
       method: 'POST',

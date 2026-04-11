@@ -1,5 +1,6 @@
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOMItem, type Product } from '../data/schema'
+import { type BOMItemDraft, type MaterialOptionDraft } from '../mutation-types'
 import { generateBOMTemplate } from './bom-excel-exporter'
 import { parseBOMExcel as parseBOMExcelFile } from './bom-excel-parser'
 
@@ -9,9 +10,9 @@ export const ExcelService = {
   },
 
   async parseBOMExcel(file: File): Promise<{
-    items: Partial<BOMItem>[]
+    items: BOMItemDraft[]
     productId?: string
-    materials?: Partial<MaterialOption>[]
+    materials?: MaterialOptionDraft[]
   }> {
     return parseBOMExcelFile(file)
   },

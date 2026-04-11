@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Coins, Edit2, Anchor, Globe2 } from 'lucide-react'
-import { type Currency } from '../services/finance-service'
 import { useLanguage } from '@/context/language-provider'
 import { useCurrencies } from '../hooks/use-currencies'
 import { CurrencyActionDialog } from '../components/currency-action-dialog'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { IndustrialActionBar } from '@/components/uds/industrial-action-bar'
+import { type Currency } from '../data/schema'
 
 export function CurrencyTab() {
     const { t } = useLanguage()
@@ -17,7 +17,8 @@ export function CurrencyTab() {
         isSyncing, 
         loadData, 
         handleSync, 
-        handleSetBase 
+        handleSetBase,
+        invalidateCurrencies,
     } = useCurrencies()
 
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -183,7 +184,7 @@ export function CurrencyTab() {
                 onOpenChange={setIsDialogOpen}
                 editingCurrency={editingCurrency}
                 currencies={currencies}
-                onSuccess={loadData}
+                onSuccess={invalidateCurrencies}
             />
         </div>
     )

@@ -1,6 +1,7 @@
 import { type DeltaSet } from '@/lib/delta/types'
 import { type ProductTemplate } from '../data/schema'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
+import { type SaveProductTemplateInput } from '../mutation-types'
 
 export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTemplate {
   return {
@@ -15,7 +16,7 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
   }
 }
 
-export function toProductTemplateApiDTO(template: Partial<ProductTemplate>): ProductTemplateApiDTO {
+export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {
   return {
     id: template.id || '',
     name: template.name || '',
@@ -36,7 +37,7 @@ const PRODUCT_TEMPLATE_PATCH_FIELDS: Array<keyof ProductTemplate> = [
   'active',
 ]
 
-export function buildProductTemplateDelta(current: ProductTemplate, next: Partial<ProductTemplate>): DeltaSet {
+export function buildProductTemplateDelta(current: ProductTemplate, next: SaveProductTemplateInput): DeltaSet {
   const delta: DeltaSet = {}
   for (const field of PRODUCT_TEMPLATE_PATCH_FIELDS) {
     const currentValue = current[field] ?? null

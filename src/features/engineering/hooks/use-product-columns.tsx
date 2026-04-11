@@ -1,21 +1,29 @@
+import { useMemo } from 'react'
 import { Box, Edit, Trash2 } from 'lucide-react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { type Product, type ProductType } from '../data/schema'
-import { ProductMaintenanceService } from '../services/product-maintenance-service'
-import { getProductAttributeSummary } from '../utils/product-attribute-utils'
+import { useProductWriteActions } from './use-product-write-actions'
+import { getProductAttributes } from '../utils/product-utils'
 import { toast } from 'sonner'
 
 export function useProductColumns(
     t: (key: string, options?: any) => string,
     productTypes: ProductType[],
-    onEdit: (product: Product) => void,
-    onDeleteSuccess: () => void
+    onEdit: (product: Product) => void
 ): ColumnDef<Product>[] {
+    const { deleteProduct } = useProductWriteActions()
     const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : '')
+    const typeNameMap = useMemo(
+        () =>
+            new Map(
+                productTypes.map((type) => [type.id, type.name])
+            ),
+        [productTypes]
+    )
 
-    return [
+    return useMemo(() => [
         {
             accessorKey: 'sku',
             header: t('engineering.productArchive.columns.product'),
@@ -33,7 +41,7 @@ export function useProductColumns(
                         <div className='flex items-center gap-2 mt-0.5'>
                             <span className='text-xs text-muted-foreground'>{row.original.name}</span>
                             <Badge variant='secondary' className='text-[10px] h-4 px-1 py-0 bg-slate-100 text-slate-600 border-none'>
-                                {productTypes.find((type) => type.id === row.original.typeId)?.name ||
+                                {typeNameMap.get(row.original.typeId) ||
                                     t('engineering.productArchive.filters.uncategorized')}
                             </Badge>
                         </div>
@@ -44,23 +52,23 @@ export function useProductColumns(
         {
             header: t('engineering.productArchive.columns.coreSpecs'),
             cell: ({ row }) => {
-                const { depth, widthExternal, weight, restrictions } = row.original
-                const { tireType } = getProductAttributeSummary(row.original)
+                const { restrictions } = row.original
+                const productView = getProductAttributes(row.original)
 
                 return (
                     <div className='flex flex-col gap-2'>
                         <div className='flex gap-1 flex-wrap'>
                             <Badge variant='outline' className='bg-blue-50 text-blue-700 border-blue-200'>
-                                {depth}mm
+                                {row.original.depth}mm
                             </Badge>
                             <Badge variant='outline' className='bg-slate-50 text-slate-700 border-slate-200'>
-                                {widthExternal}mm
+                                {row.original.widthExternal}mm
                             </Badge>
                             <Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200'>
-                                {tireType}
+                                {productView.tireType}
                             </Badge>
                             <Badge variant='outline' className='bg-rose-50 text-rose-700 border-rose-200'>
-                                {weight}g
+                                {productView.weight}
                             </Badge>
                         </div>
                         {restrictions && restrictions.length > 0 && (
@@ -106,10 +114,8 @@ export function useProductColumns(
                             if (!confirmed) return
 
                             try {
-                                await ProductMaintenanceService.deleteProduct(row.original.id)
-                                window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
+                                await deleteProduct(row.original.id)
                                 toast.success(t('engineering.productArchive.toasts.deleteSuccess'))
-                                onDeleteSuccess()
                             } catch (error) {
                                 toast.error(
                                     t('engineering.productArchive.toasts.deleteFailed', {
@@ -124,5 +130,5 @@ export function useProductColumns(
                 </div>
             ),
         },
-    ]
+    ], [deleteProduct, onEdit, t, typeNameMap])
 }

@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type ProductAttributeOption } from '../data/schema'
+import { type SaveProductAttributeOptionInput } from '../mutation-types'
 
 export const ProductAttributeOptionService = {
   async getProductAttributeOptions(params?: {
@@ -20,7 +21,7 @@ export const ProductAttributeOptionService = {
   },
 
   async saveProductAttributeOption(
-    option: Partial<ProductAttributeOption>
+    option: SaveProductAttributeOptionInput
   ): Promise<ProductAttributeOption> {
     const res = await apiFetch<ProductAttributeOption>('/engineering/product-attribute-options', {
       method: 'POST',

@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type BOM } from '../data/schema'
+import { type SaveBOMInput } from '../mutation-types'
 
 type BOMListResponse = {
     items: BOM[]
@@ -33,7 +34,7 @@ export const bomService = {
     /**
      * 保存或更新 BOM
      */
-    async saveBOM(bom: Partial<BOM>): Promise<BOM> {
+    async saveBOM(bom: SaveBOMInput): Promise<BOM> {
         const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',
             body: JSON.stringify(bom),

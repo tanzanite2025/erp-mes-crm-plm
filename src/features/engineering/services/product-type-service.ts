@@ -6,10 +6,13 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
+import { type SaveProductTypeInput } from '../mutation-types'
 
 /**
  * ProductTypeService - unified full-save service for product types.
  */
+const PRODUCT_TYPE_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_TYPE_UPDATE'
+
 export const ProductTypeService = {
   async getProductTypes(params?: {
     isOptions?: boolean
@@ -39,7 +42,7 @@ export const ProductTypeService = {
     )
   },
 
-  async createProductType(type: Partial<ProductType>): Promise<ProductType> {
+  async createProductType(type: SaveProductTypeInput): Promise<ProductType> {
     const res = await apiFetch<ProductTypeApiDTO>('/engineering/product-types', {
       method: 'POST',
       body: JSON.stringify(toProductTypeApiDTO({ ...type, id: '', version: 1 })),
@@ -53,7 +56,7 @@ export const ProductTypeService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id, version },
+      metadata: { id, version, intent: PRODUCT_TYPE_PATCH_INTENT_SAVE },
     }
     const res = await apiFetch<ProductTypeApiDTO>(`/engineering/product-types/${id}`, {
       method: 'PATCH',
@@ -64,7 +67,7 @@ export const ProductTypeService = {
     )
   },
 
-  async saveProductType(type: Partial<ProductType>, current?: ProductType): Promise<ProductType> {
+  async saveProductType(type: SaveProductTypeInput, current?: ProductType): Promise<ProductType> {
     if (current?.id) {
       const delta = buildProductTypeDelta(current, type)
       if (Object.keys(delta).length === 0) {

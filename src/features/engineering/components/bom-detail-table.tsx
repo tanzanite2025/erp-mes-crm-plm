@@ -24,6 +24,7 @@ interface BOMDetailTableProps {
 export function BOMDetailTable({ items, materials = [] }: BOMDetailTableProps) {
     const { t, locale } = useLanguage()
     const materialCategoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
+    const materialMap = useMemo(() => new Map(materials.map((material) => [material.id, material])), [materials])
     // 按工段分组
     const groupedItems: Record<string, BOMItem[]> = items.reduce((acc, item) => {
         const section = item.section || t('engineering.productMgmt.bom.unclassified')
@@ -51,7 +52,7 @@ export function BOMDetailTable({ items, materials = [] }: BOMDetailTableProps) {
                         {/* 物料卡片列表 */}
                         <div className='space-y-3'>
                             {groupedItems[section].map((item) => {
-                                const material = materials.find(m => m.id === item.materialId)
+                                const material = materialMap.get(item.materialId)
                                 const materialType =
                                     resolveMaterialCategoryLabel(material?.category, materialCategoryOptions) ||
                                     material?.category ||
@@ -181,7 +182,7 @@ export function BOMDetailTable({ items, materials = [] }: BOMDetailTableProps) {
                                     <td className='px-4 py-3 text-center'>
                                         <Badge variant='outline' className='text-[8px] font-black uppercase tracking-widest h-4 px-2 border-none bg-slate-100 text-slate-500 rounded-full shrink-0'>
                                             {(() => {
-                                                const material = materials.find(m => m.id === item.materialId)
+                                                const material = materialMap.get(item.materialId)
                                                 if (material) {
                                                     return (
                                                         resolveMaterialCategoryLabel(material.category, materialCategoryOptions) ||

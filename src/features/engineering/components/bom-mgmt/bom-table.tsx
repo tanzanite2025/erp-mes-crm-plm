@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -44,6 +45,10 @@ export function BOMTable({
   onDelete,
 }: BOMTableProps) {
   const { t } = useLanguage()
+  const productMap = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products]
+  )
 
   const columns: ColumnDef<BOM>[] = [
     {
@@ -78,31 +83,31 @@ export function BOMTable({
     {
       header: t('engineering.bomArchive.table.product'),
       cell: ({ row }) => {
-        const product = row.original.product || products.find((entry) => entry.id === row.original.productId)
+        const product = row.original.product || productMap.get(row.original.productId)
         if (!product) {
           return <span className='italic text-muted-foreground'>{t('engineering.bomArchive.table.unknownProduct')}</span>
         }
 
-        const attrs = getProductAttributes(product)
+        const productView = getProductAttributes(product)
 
         return (
           <div className='flex flex-col gap-1 py-1'>
             <div className='flex items-center gap-2'>
-              <span className='text-sm font-bold leading-tight text-slate-800'>{attrs.name}</span>
+              <span className='text-sm font-bold leading-tight text-slate-800'>{productView.name}</span>
               <Badge className='h-4 border-indigo-100 bg-indigo-50 px-1 text-[10px] font-medium text-indigo-700 hover:bg-indigo-50'>
-                {attrs.version}
+                {productView.version}
               </Badge>
             </div>
             <div className='flex items-center gap-1.5'>
               <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
-                {attrs.series}
+                {productView.series}
               </Badge>
               <Badge variant='outline' className='h-3.5 border-slate-200 bg-slate-50 px-1 text-[9px] font-normal text-slate-500'>
-                {attrs.brake}
+                {productView.brake}
               </Badge>
-              <span className='ml-1 text-[10px] text-muted-foreground'>{attrs.weight}</span>
+              <span className='ml-1 text-[10px] text-muted-foreground'>{productView.weight}</span>
             </div>
-            <span className='font-mono text-[10px] text-muted-foreground/60'>{product.sku}</span>
+            <span className='font-mono text-[10px] text-muted-foreground/60'>{productView.sku}</span>
           </div>
         )
       },

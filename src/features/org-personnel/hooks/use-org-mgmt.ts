@@ -65,15 +65,6 @@ export function useOrgMgmt() {
 
   useEffect(() => {
     void loadData()
-
-    const handleSync = () => {
-      void loadData()
-    }
-    window.addEventListener('xdfc_org_structure_data_updated', handleSync)
-
-    return () => {
-      window.removeEventListener('xdfc_org_structure_data_updated', handleSync)
-    }
   }, [loadData])
 
   const handleOrgSubmit = async (data: OrgNode, isPatch?: boolean, delta?: DeltaSet) => {

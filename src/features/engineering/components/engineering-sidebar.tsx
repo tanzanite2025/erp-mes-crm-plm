@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
-import { getProductAttributeSummary } from '../utils/product-attribute-utils'
+import { getProductAttributes } from '../utils/product-utils'
 
 import { type TranslationKey } from '@/locales'
 import { type Product, type ProductType } from '../data/schema'
@@ -55,6 +55,23 @@ export function EngineeringSidebar({
             p.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
     }, [products, searchTerm])
+
+    const productsByType = useMemo(() => {
+        const grouped = new Map<string, Product[]>()
+
+        filteredProducts.forEach((product) => {
+            const list = grouped.get(product.typeId) || []
+            list.push(product)
+            grouped.set(product.typeId, list)
+        })
+
+        return grouped
+    }, [filteredProducts])
+
+    const productViewMap = useMemo(
+        () => new Map(filteredProducts.map((product) => [product.id, getProductAttributes(product)])),
+        [filteredProducts]
+    )
 
     // 层级化整理品类 (递归排序并计算深度) - 性能优化 O(N)
     const sortedTypes = useMemo(() => {
@@ -130,7 +147,7 @@ export function EngineeringSidebar({
             <ScrollArea className='flex-1 border-t'>
                 <div className='px-4 sm:px-6 bg-muted/5 min-h-full py-4 space-y-4'>
                     {sortedTypes.map(type => {
-                        const typeProducts = filteredProducts.filter(p => p.typeId === type.id)
+                        const typeProducts = productsByType.get(type.id) || []
                         if (typeProducts.length === 0 && searchTerm) return null
 
                         return (
@@ -157,7 +174,10 @@ export function EngineeringSidebar({
                                 {/* 型号垂直双列列表 */}
                                 <div className='flex flex-col gap-1 pl-4'>
                                     {typeProducts.length > 0 ? (
-                                        typeProducts.map(product => (
+                                        typeProducts.map(product => {
+                                                const productView = productViewMap.get(product.id) || getProductAttributes(product)
+
+                                                return (
                                                 <div
                                                     key={product.id}
                                                     className={`grid grid-cols-[64px_1fr] xs:grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] items-center gap-3 xs:gap-4 sm:gap-6 p-3 sm:p-4 rounded-[24px] cursor-pointer transition-all border-2 border-dashed ${selectedProductId === product.id
@@ -178,11 +198,11 @@ export function EngineeringSidebar({
                                                     </div>
 
                                                     {/* 第 2 列：信息集中对齐 */}
-                                                    <div className='flex flex-col gap-1.5 min-w-0 relative group/card-info'>
-                                                        <div className='flex items-center justify-between gap-4'>
-                                                            <p className='text-sm sm:text-[16px] font-black truncate tracking-tight uppercase leading-none italic'>
-                                                                {product.name}
-                                                            </p>
+                                                        <div className='flex flex-col gap-1.5 min-w-0 relative group/card-info'>
+                                                            <div className='flex items-center justify-between gap-4'>
+                                                                <p className='text-sm sm:text-[16px] font-black truncate tracking-tight uppercase leading-none italic'>
+                                                                    {productView.name}
+                                                                </p>
                                                             <div className='flex items-center gap-2 shrink-0'>
                                                                 <Button
                                                                     variant='ghost'
@@ -204,13 +224,13 @@ export function EngineeringSidebar({
                                                         {/* 规格透出 */}
                                                         <div className='flex items-center flex-wrap gap-1.5'>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-blue-600/10 text-blue-600'}`}>
-                                                                {t('engineering.productMgmt.specLabel')}: {product.depth || '-'}X{product.widthExternal || '-'}
+                                                                {t('engineering.productMgmt.specLabel')}: {productView.sizeLabel}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-orange-600/10 text-orange-600'}`}>
-                                                                {getDictLabel(getProductAttributeSummary(product).brake || '')}
+                                                                {getDictLabel(productView.brake || '')}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-emerald-600/10 text-emerald-600'}`}>
-                                                                {product.weight ? `${product.weight}G` : '- G'}
+                                                                {productView.weightUppercase}
                                                             </div>
                                                         </div>
                                                         <div className='flex items-center flex-wrap gap-1 min-h-5'>
@@ -228,7 +248,8 @@ export function EngineeringSidebar({
                                                         </div>
                                                     </div>
                                                 </div>
-                                        ))
+                                                )
+                                        })
                                     ) : (
                                         <Button
                                             variant='ghost'

@@ -19,7 +19,7 @@ export function useMoldLoanMgmt() {
     const { runConfirmedAction } = useConfirmedActionFlow()
     const queryClient = useQueryClient()
     const homeFactory = t('equipmentTooling.loans.defaults.homeFactory')
-    
+
     const [loans, setLoans] = useState<MoldLoan[]>([])
     const [molds, setMolds] = useState<Mold[]>([])
     const [partners, setPartners] = useState<EquipmentPartner[]>([])
@@ -57,47 +57,46 @@ export function useMoldLoanMgmt() {
     }
 
     const mutation = useMutation({
-        mutationFn: async ({ 
-            data, 
-            isPatch, 
-            delta 
-        }: { 
-            data: MoldLoan; 
-            isPatch?: boolean; 
-            delta?: DeltaSet 
+        mutationFn: async ({
+            data,
+            isPatch,
+            delta,
+        }: {
+            data: MoldLoan
+            isPatch?: boolean
+            delta?: DeltaSet
         }) => {
             if (isPatch && delta) {
                 return MoldLoanService.patchLoan(data.id, delta, data.version)
             }
             if (mode === 'LEND') {
                 return AssetService.lendMold(data)
-            } else {
-                // 构造借入模式需要的两部分数据
-                const { maxCycles, currentCycles, maintenanceThreshold, ...loanBase } = data
-                const moldData = {
-                    sn: data.moldSn,
-                    name: data.moldName,
-                    maxCycles: maxCycles || 1000,
-                    currentCycles: currentCycles || 0,
-                    maintenanceThreshold: maintenanceThreshold || 800,
-                    totalLifeCycles: currentCycles || 0,
-                    description: `借入自 ${data.fromFactory}`,
-                    isAlerted: false,
-                    version: 1
-                }
-                return AssetService.borrowMold(loanBase, moldData)
             }
+
+            const { maxCycles, currentCycles, maintenanceThreshold, ...loanBase } = data
+            const moldData = {
+                sn: data.moldSn,
+                name: data.moldName,
+                maxCycles: maxCycles || 1000,
+                currentCycles: currentCycles || 0,
+                maintenanceThreshold: maintenanceThreshold || 800,
+                totalLifeCycles: currentCycles || 0,
+                description: `Borrowed from ${data.fromFactory}`,
+                isAlerted: false,
+                version: 1,
+            }
+            return AssetService.borrowMold(loanBase, moldData)
         },
-        onSuccess: () => {
+        onSuccess: (_result, variables) => {
             queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
             queryClient.invalidateQueries({ queryKey: ['molds'] })
-            toast.success(currentRow ? '记录已更新' : '记录已创建')
+            toast.success(currentRow ? 'Record updated.' : 'Record created.')
             setIsOpen(false)
             void loadData()
         },
-        onError: (error: unknown) => {
-            toast.error(error instanceof Error ? error.message : '操作失败')
-        }
+        onError: (mutationError: unknown) => {
+            toast.error(mutationError instanceof Error ? mutationError.message : 'Operation failed')
+        },
     })
 
     const handleDialogSubmit = (data: MoldLoan, isPatch?: boolean, delta?: DeltaSet) => {
@@ -121,6 +120,8 @@ export function useMoldLoanMgmt() {
             confirmKey: 'equipmentTooling.loans.confirm.return',
             onAction: async () => {
                 await MoldLoanService.returnMold(loanId)
+                queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
+                queryClient.invalidateQueries({ queryKey: ['molds'] })
                 toast.success(t('equipmentTooling.loans.toast.returned'))
                 await loadData()
             },
@@ -143,6 +144,6 @@ export function useMoldLoanMgmt() {
         handleDialogSubmit,
         handleReturn,
         error,
-        homeFactory
+        homeFactory,
     }
 }

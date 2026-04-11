@@ -6,6 +6,7 @@ import {
   type ProductAttributeValueApiDTO,
   type ProductListPageApiDTO,
 } from '../contracts/product-api-dto'
+import { type SaveProductInput } from '../mutation-types'
 
 function toProductAttributeValueContract(dto: ProductAttributeValueApiDTO): ProductAttributeValue {
   return {
@@ -86,7 +87,7 @@ export function toProductListContract(dto: ProductListPageApiDTO): Product[] {
   return toProductArrayContract(dto.items)
 }
 
-export function toProductApiDTO(product: Partial<Product>): ProductApiDTO {
+export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
   return {
     id: product.id || '',
     sku: product.sku || '',
@@ -160,7 +161,7 @@ const PRODUCT_PATCH_FIELDS: Array<keyof Product> = [
   'isDefaultSite',
 ]
 
-export function buildProductDelta(next: Partial<Product>): DeltaSet {
+export function buildProductDelta(next: SaveProductInput): DeltaSet {
   const delta: DeltaSet = {}
 
   for (const field of PRODUCT_PATCH_FIELDS) {

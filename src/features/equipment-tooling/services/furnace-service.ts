@@ -15,10 +15,6 @@ import {
 } from '../contracts/equipment-furnace-api-dto'
 import { type Furnace } from '../data/schema'
 
-function broadcastFurnaceUpdate() {
-  window.dispatchEvent(new CustomEvent('xdfc_furnaces_updated'))
-}
-
 export class FurnaceService {
   static async getFurnaces(): Promise<Furnace[]> {
     const res = await apiFetch<FurnaceListPageApiDTO>('/furnaces')
@@ -45,7 +41,6 @@ export class FurnaceService {
       ) as FurnaceApiDTO
     )
 
-    broadcastFurnaceUpdate()
     return saved
   }
 
@@ -59,7 +54,6 @@ export class FurnaceService {
       res,
       'FurnaceService.updateTelemetry'
     )
-    broadcastFurnaceUpdate()
   }
 
   static async patchFurnace(furnaceId: string, delta: DeltaSet, version?: number): Promise<Furnace> {
@@ -81,7 +75,6 @@ export class FurnaceService {
       ) as FurnaceApiDTO
     )
 
-    broadcastFurnaceUpdate()
     return saved
   }
 }

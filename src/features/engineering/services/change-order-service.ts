@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { type ChangeOrder } from '../data/schema'
+import { type SaveChangeOrderInput } from '../mutation-types'
 
 interface GetChangeOrdersParams {
   isOptions?: boolean
@@ -20,7 +21,7 @@ export const changeOrderService = {
     return apiFetch<ChangeOrder[]>(`/engineering/change-orders${query ? `?${query}` : ''}`)
   },
 
-  async saveChangeOrder(changeOrder: Partial<ChangeOrder>): Promise<ChangeOrder> {
+  async saveChangeOrder(changeOrder: SaveChangeOrderInput): Promise<ChangeOrder> {
     return apiFetch<ChangeOrder>('/engineering/change-orders', {
       method: 'POST',
       body: JSON.stringify(changeOrder),

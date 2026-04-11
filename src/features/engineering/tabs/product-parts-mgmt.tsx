@@ -57,8 +57,7 @@ export function ProductPartsMgmt() {
     (product) => {
       setCurrentRow(product)
       setOpen(true)
-    },
-    refresh
+    }
   )
 
   const table = useReactTable({

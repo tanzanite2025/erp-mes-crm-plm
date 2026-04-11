@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   flexRender,
   getCoreRowModel,
@@ -31,83 +32,46 @@ import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from '../components/product-type-action-dialog'
 import { type Product, type ProductType } from '../data/schema'
+import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
+import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { ProductCoreService } from '../services/product-core-service'
-import { ProductTypeService } from '../services/product-type-service'
+import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
+import {
+  buildChildTypeCountMap,
+  buildOrderedProductTypes,
+  buildProductCountByType,
+  buildProductTypeMap,
+} from '../utils/product-type-tree'
 
 const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : '')
 const logger = createLogger('ProductTypesMgmt')
 
 export function ProductTypesMgmt() {
   const { t } = useLanguage()
-  const [data, setData] = useState<ProductType[]>([])
   const [open, setOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<ProductType | undefined>(undefined)
-  const [error, setError] = useState<unknown>(null)
-
-  const loadData = useCallback(async () => {
-    try {
-      setError(null)
-      const stored = await ProductTypeService.getProductTypes()
-      setData(stored || [])
-    } catch (loadError) {
-      setError(loadError)
-      logger.error('Failed to load product types', loadError)
-    }
-  }, [])
+  const { saveProductType, deleteProductType } = useProductTypeWriteActions()
+  const productTypesQuery = useQuery({
+    queryKey: PRODUCT_TYPES_QUERY_KEY,
+    queryFn: () => ProductTypeService.getProductTypes(),
+  })
+  const productsQuery = useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: () => ProductCoreService.getProducts(),
+  })
+  const data = productTypesQuery.data ?? []
+  const products = productsQuery.data ?? []
+  const error = productTypesQuery.error ?? productsQuery.error
 
   useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      void loadData()
-    }, 0)
+    if (!error) return
+    logger.error('Failed to load product types', error)
+  }, [error])
 
-    window.addEventListener('xdfc_product_types_data_updated', loadData)
-    return () => {
-      globalThis.clearTimeout(timer)
-      window.removeEventListener('xdfc_product_types_data_updated', loadData)
-    }
-  }, [loadData])
-
-  const displayData = useMemo(() => {
-    if (!data.length) return []
-
-    const childrenMap = new Map<string, ProductType[]>()
-    const roots: ProductType[] = []
-
-    data.forEach((item) => {
-      if (!item.parentId) {
-        roots.push(item)
-        return
-      }
-
-      const children = childrenMap.get(item.parentId) || []
-      children.push(item)
-      childrenMap.set(item.parentId, children)
-    })
-
-    const result: ProductType[] = []
-    const processedIds = new Set<string>()
-
-    roots.forEach((root) => {
-      result.push(root)
-      processedIds.add(root.id)
-
-      const children = childrenMap.get(root.id) || []
-      children.forEach((child) => {
-        result.push(child)
-        processedIds.add(child.id)
-      })
-    })
-
-    data.forEach((item) => {
-      if (!processedIds.has(item.id)) {
-        result.push(item)
-      }
-    })
-
-    return result
-  }, [data])
-
-  const typeMap = useMemo(() => new Map(data.map((item) => [item.id, item])), [data])
+  const displayData = useMemo(() => buildOrderedProductTypes(data), [data])
+  const typeMap = useMemo(() => buildProductTypeMap(data), [data])
+  const productCountByType = useMemo(() => buildProductCountByType(products as Product[]), [products])
+  const childTypeCountMap = useMemo(() => buildChildTypeCountMap(data), [data])
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -203,10 +167,7 @@ export function ProductTypesMgmt() {
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
 
-              const products = await ProductCoreService.getProducts()
-              const relatedCount = (products as Product[]).filter(
-                (product) => product.typeId === row.original.id
-              ).length
+              const relatedCount = productCountByType.get(row.original.id) ?? 0
 
               if (relatedCount > 0) {
                 toast.error(
@@ -217,19 +178,18 @@ export function ProductTypesMgmt() {
                 return
               }
 
-              const childCategories = data.filter((type) => type.parentId === row.original.id)
-              if (childCategories.length > 0) {
+              const childCategoriesCount = childTypeCountMap.get(row.original.id) ?? 0
+              if (childCategoriesCount > 0) {
                 toast.error(
                   t('engineering.categoryArchive.toasts.hasChildren', {
-                    count: childCategories.length,
+                    count: childCategoriesCount,
                   })
                 )
                 return
               }
 
               try {
-                await ProductTypeService.deleteProductType(row.original.id)
-                window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
+                await deleteProductType(row.original.id)
                 toast.success(t('engineering.categoryArchive.toasts.deleteSuccess'))
               } catch (error) {
                 toast.error(
@@ -259,10 +219,9 @@ export function ProductTypesMgmt() {
     return <ForbiddenState />
   }
 
-  const handleFormSubmit = async (formData: Partial<ProductType>) => {
+  const handleFormSubmit = async (formData: SaveProductTypeInput) => {
     try {
-      await ProductTypeService.saveProductType(formData, currentRow)
-      window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
+      await saveProductType({ formData, currentRow })
       toast.success(t('engineering.categoryArchive.toasts.saveSuccess'))
       setOpen(false)
     } catch (error) {

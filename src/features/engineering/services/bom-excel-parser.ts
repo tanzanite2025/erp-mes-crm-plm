@@ -1,13 +1,14 @@
 import { loadExcelJS } from '@/lib/lazy-vendors'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { type BOMItem } from '../data/schema'
+import { type BOMItemDraft, type MaterialOptionDraft } from '../mutation-types'
 import { BOM_DEFAULT_SECTION, BOM_EXCEL_LIMITS, BOM_EXCEL_SHEETS } from './bom-excel-contract'
 import { safelyGetCellValue, validateBOMFileSize, validateBOMWorkbookSheetCount } from './bom-excel-security'
 
 export interface ParsedBOMExcelResult {
-  items: Partial<BOMItem>[]
+  items: BOMItemDraft[]
   productId?: string
-  materials?: Partial<MaterialOption>[]
+  materials?: MaterialOptionDraft[]
 }
 
 /**
@@ -35,7 +36,7 @@ export const parseBOMExcel = async (file: File): Promise<ParsedBOMExcelResult> =
     workbook.getWorksheet(BOM_EXCEL_SHEETS.archive) || workbook.getWorksheet(BOM_EXCEL_SHEETS.legacyArchive)
   const comboToIdMap = new Map<string, string>()
   const productComboToIdMap = new Map<string, string>()
-  const extractedMaterials: Partial<MaterialOption>[] = []
+  const extractedMaterials: MaterialOptionDraft[] = []
   let archiveRowExceeded = false
 
   if (archiveSheet) {
@@ -88,7 +89,7 @@ export const parseBOMExcel = async (file: File): Promise<ParsedBOMExcelResult> =
   const mainSheet = workbook.getWorksheet(BOM_EXCEL_SHEETS.main) || workbook.getWorksheet(1)
   if (!mainSheet) return { items: [] }
 
-  const items: Partial<BOMItem>[] = []
+  const items: BOMItemDraft[] = []
   let resolvedProductId: string | undefined
   let mainRowExceeded = false
 

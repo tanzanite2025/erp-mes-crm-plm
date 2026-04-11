@@ -15,7 +15,7 @@ import { Star, RefreshCcw, Coins } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { CurrencyMaintenanceService } from '../services/currency-maintenance-service'
+import { CurrencyMaintenanceService, type CreateCurrencyPayload } from '../services/currency-maintenance-service'
 import { type Currency } from '../data/schema'
 import { PRESET_CURRENCIES } from '../data/currency-constants'
 import { isConflictError } from '@/lib/handle-server-error'
@@ -25,7 +25,7 @@ interface CurrencyActionDialogProps {
     onOpenChange: (open: boolean) => void
     editingCurrency: Currency | null
     currencies: Currency[]
-    onSuccess: () => void
+    onSuccess: () => Promise<unknown> | unknown
 }
 
 const DEFAULT_CURRENCY: Partial<Currency> = {
@@ -87,16 +87,24 @@ export function CurrencyActionDialog({
                 }
                 await CurrencyMaintenanceService.patchCurrency(editingCurrency.id, delta, editingCurrency.version)
             } else {
-                await CurrencyMaintenanceService.saveCurrency(data)
+                const createPayload: CreateCurrencyPayload = {
+                    code: data.code,
+                    name: data.name,
+                    symbol: data.symbol,
+                    rate: data.rate,
+                    precision: data.precision,
+                    status: data.status,
+                    isBase: data.isBase,
+                }
+                await CurrencyMaintenanceService.saveCurrency(createPayload)
             }
             
             toast.success(isPatch 
                 ? t('finance.currencyRates.toast.saveSuccessUpdated') 
                 : t('finance.currencyRates.toast.saveSuccessCreated'))
             
-            window.dispatchEvent(new CustomEvent('xdfc_currencies_data_updated'))
+            await onSuccess()
             onOpenChange(false)
-            onSuccess()
         } catch (error) {
             if (isConflictError(error)) {
                 toast.error(t('finance.paymentTerms.toast.conflict'))

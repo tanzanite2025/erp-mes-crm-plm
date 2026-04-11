@@ -1,4 +1,120 @@
 
+- [ ] 703. purchase：第二阶段收口规划（`usePurchaseOrderForm` / 写操作边界）（2026-04-12，待确认）
+  - [x] 已确认 `purchase` 方向 A 第一轮 UI 容器拆分已完成，并已通过 `eslint` / `tsc` 验证。
+  - [x] 已确认下一阶段不再优先继续拆页面壳，而是进入采购单编辑主链的状态与写操作边界收口。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认下一阶段优先关注的热点包括：
+    - [x] `src/features/trading/hooks/use-purchase-order-form.ts`
+    - [x] `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+    - [x] `src/features/trading/purchase/services/purchase-transaction-service.ts`
+  - [x] 已确认当前阶段的主要问题包括：
+    - [x] `usePurchaseOrderForm` 同时承载默认值初始化、头部字段编辑、行编辑、金额汇总、校验与提交前整理，职责过于集中。
+    - [x] `usePurchaseOrderMutations` 同时承载 create / save / delete / receive 等写操作入口，后续继续扩张风险较高。
+    - [x] `purchase-transaction-service.ts` 虽已有 intent 分层，但仍偏平铺，后续扩张会继续提高维护成本。
+  - [x] 已确认下一阶段的推荐顺序为：
+    - [x] 先拆 `usePurchaseOrderForm`
+    - [x] 再评估 `usePurchaseOrderMutations` 分组
+    - [x] 最后再决定是否继续拆 `purchase-transaction-service.ts`
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接改后端接口语义
+    - [x] 不联动重写采购单 DTO / adapter
+    - [x] 不提前处理 `features/purchase` 与 `features/trading` 的宿主目录归属
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 拆分 `usePurchaseOrderForm`，把头部字段、行编辑、金额汇总、校验 / commit 职责进一步收口
+    - [ ] 评估并按低风险方式收口 `usePurchaseOrderMutations` 的写操作分组
+    - [ ] 视复杂度决定是否继续拆 `purchase-transaction-service.ts`
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 702. purchase：模块分析与下一步收口规划（2026-04-11，待确认）
+  - [x] 已确认本轮先做 `purchase` 模块分析，不直接修改业务代码。
+  - [x] 已确认模块入口主要位于：
+    - [x] `src/features/purchase/tabs/index.tsx`
+    - [x] `src/features/trading/components/purchase/**`
+    - [x] `src/features/trading/purchase/**`
+  - [x] 已确认当前 purchase 的主页面结构为：
+    - [x] `PurchaseOrders()` 负责头部与二级 Tabs（orders / logs / returns）
+    - [x] `PurchaseOrderList` 承担订单列表、筛选、详情联动、弹窗开关等容器职责
+    - [x] `PurchaseOrderActionDialog` 承担新建/编辑采购单的主弹窗壳
+    - [x] `usePurchaseOrderForm` 承担表单状态、默认值、行增删改、预览计算与校验
+  - [x] 已确认当前最重、最值得下一步优先收口的热点包括：
+    - [x] `src/features/trading/components/purchase/purchase-order-list.tsx`
+    - [x] `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+    - [x] `src/features/trading/hooks/use-purchase-order-form.ts`
+    - [x] `src/features/trading/purchase/hooks/use-purchase-orders.ts`
+    - [x] `src/features/trading/purchase/services/purchase-transaction-service.ts`
+  - [x] 已确认当前 purchase 存在的结构特征：
+    - [x] 路由/页面宿主在 `features/purchase`
+    - [x] 真实业务实现大多仍压在 `features/trading/purchase` 与 `features/trading/components/purchase`
+    - [x] 列表层、弹窗层、表单 hook、transaction service 分层已开始出现，但边界还不够干净
+  - [x] 已确认当前最可能的下一步低风险入口不是重写整个 purchase，而是先收口采购单主链。
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 方向 A：先拆 `PurchaseOrderList` / `PurchaseOrderActionDialog`，把页面容器、表单壳、元数据加载进一步解耦
+    - [ ] 方向 B：先收口 `usePurchaseOrderForm` + `purchase-transaction-service`，把采购单编辑链路的状态与事务意图边界理顺
+    - [ ] 方向 C：先梳理 `purchase` 与 `trading` 的宿主边界，为后续模块归属调整做准备
+
+- [ ] 701. engineering：`/engineering/product-attributes` 历史 `option.value` 统一迁移（2026-04-11，待确认）
+  - [x] 已确认当前方向是在已完成方向 A 的前提下，继续推进历史 `option.value` 的统一迁移，而不是继续扩大到 `category.key` 全链迁移。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码或数据库数据。
+  - [x] 已确认当前本地库扫描结论：
+    - [x] `product_attribute_options` 当前无大小写混用冲突
+    - [x] `product_attribute_options` 当前无规范化后撞值冲突
+    - [x] `product_attribute_values` 当前为空表，暂无历史 `option_value` 引用负担
+  - [x] 已确认本轮规划目标包括：
+    - [x] 写清历史 `option.value` 的目标映射表
+    - [x] 明确代码收口范围（前端字典消费、后端默认种子、保存边界）
+    - [x] 明确数据收口范围（`product_attribute_options` 与 `product_attribute_values`）
+    - [x] 明确验证范围与回归重点
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不顺手推进 `category.key` 全链迁移
+    - [x] 不在未确认映射表前直接批量更新数据库
+    - [x] 不把本轮扩大为产品主链整体重构
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 按映射表统一历史 `product_attribute_options.value`
+    - [ ] 如目标库存在引用数据，则同步收口 `product_attribute_values.option_value`
+    - [ ] 同步调整默认种子值与前后端消费链的默认机器值
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 700. engineering：`/engineering/product-attributes` 机器值长期规范化治理（2026-04-11，待确认）
+  - [x] 已确认当前问题不只是视觉一致性，而是 `category.key` 与 `option.value` 作为机器值时，若缺少统一规范，后期容易在搜索、筛选、精确匹配、导入导出与统计中形成隐性问题。
+  - [x] 已确认本轮目标是做**长期最稳**的治理方案，而不是只补一个输入框层面的临时小修。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `category.key` 与 `option.value` 的长期机器值规范
+    - [x] 明确输入层自动规范化、保存层强校验、存量数据治理三层策略
+    - [x] 明确前端页面、service、后端接口/持久化各层的最小联动范围
+    - [x] 明确如何防止“只差大小写/空格/符号”的重复值继续进入系统
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不只做输入时自动转小写后就结束
+    - [x] 不只修当前页面展示，不处理保存边界
+    - [x] 不在未评估存量数据冲突前直接静默清洗线上数据
+  - [x] 已在执行前排查到一项重要复杂度：`category.key` 已被产品表单、动态属性渲染、产品保存链路与后端 DTO 直接依赖，已不只是本管理页局部字段。
+  - [x] 已确认这意味着“把现有 `category.key` 全量改成新 slug”会升级为跨前后端主链迁移，不适合在未再次确认边界的情况下直接展开。
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 先确认执行方向：
+      - [ ] 方向 A：保持现有 `category.key` 作为稳定兼容标识，仅对新增 key 建立严格格式约束，并优先把 `option.value` 做完整机器值收口
+      - [ ] 方向 B：正式推进 `category.key` 全链迁移，同步改前后端消费点、产品属性值与相关默认值
+    - [ ] 按确认方向实施机器值规范化、保存校验、服务端边界收口与冲突排查
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 699. engineering：`/engineering/product-attributes` 先拆分再按 `GEMINI.md` 对齐样式（2026-04-11，待确认）
+  - [x] 已确认目标页面为 `src/features/engineering/tabs/product-attributes-mgmt.tsx`。
+  - [x] 已确认当前问题不只是样式不一致，还包括单文件过长、嵌套过深，继续在原文件直接改样式风险较高。
+  - [x] 已确认新的执行顺序应调整为：**先拆分文件，再做样式对齐**。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `product-attributes-mgmt.tsx` 的可拆分块
+    - [x] 明确拆分后哪些逻辑仍保留在页面容器层
+    - [x] 明确拆分后再做样式对齐的最小路径
+    - [x] 明确验证范围与风险控制
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不改服务层逻辑
+    - [x] 不改 DTO / 数据结构
+    - [x] 不扩大为 engineering 其它页面整站视觉改造
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 先拆分 `product-attributes-mgmt.tsx` 为更小的页面局部组件
+    - [ ] 在拆分后的结构上继续做样式对齐
+    - [ ] 执行定向验证并更新 walkthrough.md
+
 - [ ] 698. warehouse 第四阶段补充：最小评估 `EXECUTE_FAILED`（2026-04-11，待确认）
   - [x] 已确认在执行审计字段最小补齐完成后，下一步进入 `EXECUTE_FAILED` 的最小评估。
   - [x] 已确认本轮目标是判断是否有必要引入 `EXECUTE_FAILED`，而不是直接展开完整执行状态机建设。

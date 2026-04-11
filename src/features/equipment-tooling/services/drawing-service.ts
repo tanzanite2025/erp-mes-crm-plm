@@ -16,10 +16,6 @@ import {
   type MoldDrawingLogApiDTO,
 } from '../contracts/equipment-drawing-api-dto'
 
-function broadcastDrawingUpdate() {
-  window.dispatchEvent(new CustomEvent('xdfc_drawings_updated'))
-}
-
 export const DrawingService = {
   async getDrawings(): Promise<MoldDrawing[]> {
     const data = await apiFetch<MoldDrawingApiDTO[]>('/drawings')
@@ -48,7 +44,6 @@ export const DrawingService = {
       ) as MoldDrawingApiDTO
     )
 
-    broadcastDrawingUpdate()
     return saved
   },
 
@@ -71,7 +66,6 @@ export const DrawingService = {
       ) as MoldDrawingApiDTO
     )
 
-    broadcastDrawingUpdate()
     return saved
   },
 
@@ -84,7 +78,6 @@ export const DrawingService = {
       res,
       'DrawingService.deleteDrawing'
     )
-    broadcastDrawingUpdate()
   },
 
   async getDrawingsByMold(moldSn: string): Promise<MoldDrawing[]> {

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   flexRender,
   getCoreRowModel,
@@ -31,9 +32,16 @@ import {
 import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from './product-type-action-dialog'
-import { type ProductType } from '../data/schema'
+import { type Product, type ProductType } from '../data/schema'
+import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
+import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { ProductCoreService } from '../services/product-core-service'
-import { ProductTypeService } from '../services/product-type-service'
+import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
+import {
+  buildChildTypeCountMap,
+  buildOrderedProductTypes,
+  buildProductCountByType,
+} from '../utils/product-type-tree'
 
 interface CategoryManagerDialogProps {
   open: boolean
@@ -44,66 +52,25 @@ const getErrorMessage = (error: unknown) => (error instanceof Error ? error.mess
 
 export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDialogProps) {
   const { t } = useLanguage()
-  const [data, setData] = useState<ProductType[]>([])
   const [actionOpen, setActionOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<ProductType | undefined>(undefined)
+  const { saveProductType, deleteProductType } = useProductTypeWriteActions()
+  const productTypesQuery = useQuery({
+    queryKey: PRODUCT_TYPES_QUERY_KEY,
+    queryFn: () => ProductTypeService.getProductTypes(),
+    enabled: open,
+  })
+  const productsQuery = useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: () => ProductCoreService.getProducts(),
+    enabled: open,
+  })
+  const data = productTypesQuery.data ?? []
+  const products = productsQuery.data ?? []
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!open) return
-      const stored = await ProductTypeService.getProductTypes()
-      setData(stored || [])
-    }
-
-    void loadData()
-  }, [open])
-
-  const displayData = useMemo(() => {
-    if (!data.length) return []
-
-    const uniqueMap = new Map<string, ProductType>()
-
-    data.forEach((item) => {
-      if (item?.id && !uniqueMap.has(item.id)) {
-        uniqueMap.set(item.id, item)
-      }
-    })
-
-    const cleanData = Array.from(uniqueMap.values())
-    const childrenMap = new Map<string, ProductType[]>()
-    const roots: ProductType[] = []
-
-    cleanData.forEach((item) => {
-      if (!item.parentId) {
-        roots.push(item)
-        return
-      }
-
-      const siblings = childrenMap.get(item.parentId) || []
-      siblings.push(item)
-      childrenMap.set(item.parentId, siblings)
-    })
-
-    const result: ProductType[] = []
-    const processedIds = new Set<string>()
-
-    roots.forEach((root) => {
-      result.push(root)
-      processedIds.add(root.id)
-
-      const children = childrenMap.get(root.id) || []
-      children.forEach((child) => {
-        result.push(child)
-        processedIds.add(child.id)
-      })
-    })
-
-    cleanData.forEach((item) => {
-      if (!processedIds.has(item.id)) result.push(item)
-    })
-
-    return result
-  }, [data])
+  const displayData = useMemo(() => buildOrderedProductTypes(data, true), [data])
+  const productCountByType = useMemo(() => buildProductCountByType(products as Product[]), [products])
+  const childTypeCountMap = useMemo(() => buildChildTypeCountMap(data), [data])
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -165,8 +132,7 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
 
-              const products = await ProductCoreService.getProducts()
-              const relatedCount = products.filter((product) => product.typeId === row.original.id).length
+              const relatedCount = productCountByType.get(row.original.id) ?? 0
               if (relatedCount > 0) {
                 toast.error(
                   t('engineering.categoryArchive.toasts.relatedProducts', {
@@ -176,20 +142,18 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
                 return
               }
 
-              const childCategories = data.filter((type) => type.parentId === row.original.id)
-              if (childCategories.length > 0) {
+              const childCategoriesCount = childTypeCountMap.get(row.original.id) ?? 0
+              if (childCategoriesCount > 0) {
                 toast.error(
                   t('engineering.categoryArchive.toasts.hasChildren', {
-                    count: childCategories.length,
+                    count: childCategoriesCount,
                   })
                 )
                 return
               }
 
               try {
-                await ProductTypeService.deleteProductType(row.original.id)
-                setData((prev) => prev.filter((item) => item.id !== row.original.id))
-                window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
+                await deleteProductType(row.original.id)
                 toast.success(t('engineering.categoryArchive.toasts.deleteSuccess'))
               } catch (error) {
                 toast.error(
@@ -214,15 +178,9 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
     getPaginationRowModel: getPaginationRowModel(),
   })
 
-  const handleFormSubmit = async (formData: Partial<ProductType>) => {
+  const handleFormSubmit = async (formData: SaveProductTypeInput) => {
     try {
-      const saved = await ProductTypeService.saveProductType(formData, currentRow)
-      const updated = currentRow
-        ? data.map((item) => (item.id === saved.id ? saved : item))
-        : [...data, saved]
-
-      setData(updated)
-      window.dispatchEvent(new CustomEvent('xdfc_product_types_data_updated'))
+      await saveProductType({ formData, currentRow })
       toast.success(t('engineering.categoryArchive.toasts.saveSuccess'))
       setActionOpen(false)
     } catch (error) {

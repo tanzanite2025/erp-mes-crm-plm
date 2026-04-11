@@ -110,12 +110,12 @@ export const generateBOMTemplate = async (
 
   // --- 3. 预渲染交互槽位 ---
   const maxArchiveRow = Math.max(materials.length, products.length) + 1
-  const defaultBorder: Partial<Borders> = {
+  const defaultBorder = {
     top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
     left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
     bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
     right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-  }
+  } satisfies Pick<Borders, 'top' | 'left' | 'bottom' | 'right'>
 
   for (let i = 2; i <= BOM_EXCEL_LIMITS.templateRows; i++) {
     const row = sheet.getRow(i)

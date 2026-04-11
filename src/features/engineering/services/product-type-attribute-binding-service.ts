@@ -10,6 +10,7 @@ import {
 } from '../adapters/product-type-attribute-binding-api-adapter'
 import { type ProductTypeAttributeBindingApiDTO } from '../contracts/product-type-attribute-binding-api-dto'
 import { type ProductTypeAttributeBinding } from '../data/schema'
+import { type SaveProductTypeAttributeBindingInput } from '../mutation-types'
 
 export const ProductTypeAttributeBindingService = {
   async getProductTypeAttributeBindings(params?: {
@@ -30,7 +31,7 @@ export const ProductTypeAttributeBindingService = {
   },
 
   async createProductTypeAttributeBinding(
-    binding: Partial<ProductTypeAttributeBinding>
+    binding: SaveProductTypeAttributeBindingInput
   ): Promise<ProductTypeAttributeBinding> {
     const res = await apiFetch<ProductTypeAttributeBindingApiDTO>('/engineering/product-type-attribute-bindings', {
       method: 'POST',
@@ -46,7 +47,7 @@ export const ProductTypeAttributeBindingService = {
 
   async patchProductTypeAttributeBinding(
     current: ProductTypeAttributeBinding,
-    next: Partial<ProductTypeAttributeBinding>
+    next: SaveProductTypeAttributeBindingInput
   ): Promise<ProductTypeAttributeBinding> {
     const delta = buildProductTypeAttributeBindingDelta(current, next)
     if (Object.keys(delta).length === 0) {
@@ -55,7 +56,7 @@ export const ProductTypeAttributeBindingService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: current.id, version: current.version },
+      metadata: { id: current.id, version: current.version, intent: 'ENGINEERING_PRODUCT_TYPE_ATTRIBUTE_BINDING_UPDATE' },
     }
     const res = await apiFetch<ProductTypeAttributeBindingApiDTO>(`/engineering/product-type-attribute-bindings/${current.id}`, {
       method: 'PATCH',
@@ -70,7 +71,7 @@ export const ProductTypeAttributeBindingService = {
   },
 
   async saveProductTypeAttributeBinding(
-    binding: Partial<ProductTypeAttributeBinding>,
+    binding: SaveProductTypeAttributeBindingInput,
     current?: ProductTypeAttributeBinding
   ): Promise<ProductTypeAttributeBinding> {
     if (current?.id) {
@@ -81,7 +82,7 @@ export const ProductTypeAttributeBindingService = {
 
   async syncProductTypeAttributeBindings(
     productTypeId: string,
-    bindings: Partial<ProductTypeAttributeBinding>[]
+    bindings: SaveProductTypeAttributeBindingInput[]
   ): Promise<{ message: string; count: number }> {
     return apiFetch<{ message: string; count: number }>('/engineering/product-type-attribute-bindings/sync', {
       method: 'POST',

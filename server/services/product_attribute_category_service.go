@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -15,11 +16,27 @@ type ProductAttributeCategoryListQuery struct {
 }
 
 func normalizeProductAttributeCategory(input *models.ProductAttributeCategory) {
-	input.Key = strings.TrimSpace(input.Key)
+	input.Key = normalizeProductAttributeMachineValue(input.Key)
 	input.NameZh = strings.TrimSpace(input.NameZh)
 	input.NameEn = strings.TrimSpace(input.NameEn)
 	input.Description = strings.TrimSpace(input.Description)
 	input.MasterDataControl.Normalize("R1")
+}
+
+func ensureProductAttributeCategoryKeyAvailable(tx *gorm.DB, nextKey string, excludeID string) error {
+	var items []models.ProductAttributeCategory
+	if err := tx.Select("id", "key").Find(&items).Error; err != nil {
+		return err
+	}
+	for _, item := range items {
+		if excludeID != "" && item.ID == excludeID {
+			continue
+		}
+		if sameProductAttributeMachineValue(item.Key, nextKey) {
+			return fmt.Errorf("[VALIDATION] 产品属性分类编码重复")
+		}
+	}
+	return nil
 }
 
 func defaultProductAttributeCategories() []models.ProductAttributeCategory {
@@ -46,6 +63,12 @@ func ListProductAttributeCategories(query ProductAttributeCategoryListQuery) ([]
 
 func CreateProductAttributeCategory(input models.ProductAttributeCategory) (models.ProductAttributeCategory, error) {
 	normalizeProductAttributeCategory(&input)
+	if input.Key == "" || !isValidProductAttributeMachineValue(input.Key) {
+		return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 产品属性分类编码格式无效")
+	}
+	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, input.Key, ""); err != nil {
+		return models.ProductAttributeCategory{}, err
+	}
 	input.Version = 1
 	if err := db.DB.Create(&input).Error; err != nil {
 		return models.ProductAttributeCategory{}, err
@@ -63,6 +86,8 @@ func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (m
 				return nil, err
 			}
 			switch key {
+			case "key":
+				updates[key] = normalizeProductAttributeMachineValue(value)
 			case "nameZh":
 				updates["name_zh"] = strings.TrimSpace(value)
 			case "nameEn":
@@ -96,6 +121,17 @@ func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (m
 func PatchProductAttributeCategory(id string, updates map[string]interface{}) (models.ProductAttributeCategory, error) {
 	var existing models.ProductAttributeCategory
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+		return models.ProductAttributeCategory{}, err
+	}
+	if nextKey, ok := updates["key"].(string); ok {
+		if nextKey == "" || !isValidProductAttributeMachineValue(nextKey) {
+			return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 产品属性分类编码格式无效")
+		}
+		if nextKey != existing.Key {
+			return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类编码不允许修改")
+		}
+	}
+	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, existing.Key, id); err != nil {
 		return models.ProductAttributeCategory{}, err
 	}
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {

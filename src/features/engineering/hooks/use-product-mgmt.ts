@@ -1,50 +1,36 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
 import { ProductCoreService } from '../services/product-core-service'
-import { ProductMaintenanceService } from '../services/product-maintenance-service'
 import { ProductTypeService } from '../services/product-type-service'
-import { type Product, type ProductType } from '../data/schema'
+import { type Product } from '../data/schema'
+import { useProductWriteActions } from './use-product-write-actions'
+import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 
 const logger = createLogger('useProductMgmt')
 
 export function useProductMgmt() {
-    const [data, setData] = useState<Product[]>([])
-    const [productTypes, setProductTypes] = useState<ProductType[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<string>('all')
     const [activeSubTab, setActiveSubTab] = useState<string>('all')
-
-    const loadAllData = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const [storedProducts, storedTypes] = await Promise.all([
-                ProductCoreService.getProducts(),
-                ProductTypeService.getProductTypes(),
-            ])
-            setData(storedProducts || [])
-            setProductTypes(storedTypes || [])
-        } catch (error) {
-            logger.error('Failed to load product archive data', error)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
+    const queryClient = useQueryClient()
+    const { saveProducts, syncProducts } = useProductWriteActions()
+    const productsQuery = useQuery({
+        queryKey: PRODUCTS_QUERY_KEY,
+        queryFn: () => ProductCoreService.getProducts(),
+    })
+    const productTypesQuery = useQuery({
+        queryKey: PRODUCT_TYPES_QUERY_KEY,
+        queryFn: () => ProductTypeService.getProductTypes(),
+    })
+    const data = productsQuery.data ?? []
+    const productTypes = productTypesQuery.data ?? []
+    const isLoading = productsQuery.isLoading || productsQuery.isFetching || productTypesQuery.isLoading || productTypesQuery.isFetching
 
     useEffect(() => {
-        void loadAllData()
-        
-        const handleUpdate = () => {
-             void loadAllData()
+        if (productsQuery.error || productTypesQuery.error) {
+            logger.error('Failed to load product archive data', productsQuery.error ?? productTypesQuery.error)
         }
-
-        window.addEventListener('xdfc_products_data_updated', handleUpdate)
-        window.addEventListener('xdfc_product_types_data_updated', handleUpdate)
-
-        return () => {
-            window.removeEventListener('xdfc_products_data_updated', handleUpdate)
-            window.removeEventListener('xdfc_product_types_data_updated', handleUpdate)
-        }
-    }, [loadAllData])
+    }, [productTypesQuery.error, productsQuery.error])
 
     useEffect(() => {
         setActiveSubTab('all')
@@ -81,11 +67,17 @@ export function useProductMgmt() {
 
     const handleFormSubmit = async (formData: Product | Product[]) => {
         if (Array.isArray(formData)) {
-            await ProductMaintenanceService.bulkSyncProducts(formData)
+            await syncProducts(formData)
         } else {
-            await ProductMaintenanceService.saveProduct(formData)
+            await saveProducts([formData])
         }
-        window.dispatchEvent(new CustomEvent('xdfc_products_data_updated'))
+    }
+
+    const refresh = async () => {
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY }),
+            queryClient.invalidateQueries({ queryKey: PRODUCT_TYPES_QUERY_KEY }),
+        ])
     }
 
     return {
@@ -100,6 +92,6 @@ export function useProductMgmt() {
         subLevelTypes,
         filteredProducts,
         handleFormSubmit,
-        refresh: loadAllData
+        refresh,
     }
 }

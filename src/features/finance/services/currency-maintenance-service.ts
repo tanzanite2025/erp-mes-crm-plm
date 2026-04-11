@@ -3,6 +3,9 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 import { type Currency } from '../data/schema'
 
+export type CreateCurrencyPayload = Omit<Currency, 'id' | 'version'>
+export const CURRENCY_PATCH_INTENT_SAVE = 'FINANCE_CURRENCY_UPDATE'
+
 /**
  * CurrencyMaintenanceService: 币种维护服务
  * 职责：处理 POST/PATCH 以及外部汇率同步事务。
@@ -11,7 +14,7 @@ export const CurrencyMaintenanceService = {
   /**
    * 保存/创建币种
    */
-  async saveCurrency(data: Partial<Currency>): Promise<Currency> {
+  async saveCurrency(data: CreateCurrencyPayload): Promise<Currency> {
     const res = await apiFetch<Currency>('/finance/currencies', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -26,7 +29,7 @@ export const CurrencyMaintenanceService = {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: String(id), version }
+      metadata: { id: String(id), version, intent: CURRENCY_PATCH_INTENT_SAVE }
     };
 
     const res = await apiFetch<Currency>(`/finance/currencies/${id}`, {

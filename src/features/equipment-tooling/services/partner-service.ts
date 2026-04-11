@@ -5,6 +5,7 @@ import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type EquipmentPartner } from '../data/schema'
 import {
+  type SaveEquipmentPartnerInput,
   toEquipmentPartnerContract,
   toEquipmentPartnerContracts,
   toSaveEquipmentPartnerApiDTO,
@@ -14,10 +15,6 @@ import {
   type EquipmentPartnerApiDTO,
 } from '../contracts/equipment-partner-api-dto'
 
-function broadcastPartnerUpdate() {
-  window.dispatchEvent(new CustomEvent('xdfc_partners_updated'))
-}
-
 export class EquipmentPartnerService {
   static async getPartners(): Promise<EquipmentPartner[]> {
     const data = await apiFetch<EquipmentPartnerApiDTO[]>('/equipment-partners')
@@ -26,7 +23,7 @@ export class EquipmentPartnerService {
     )
   }
 
-  static async upsertPartner(partner: Partial<EquipmentPartner>): Promise<EquipmentPartner> {
+  static async upsertPartner(partner: SaveEquipmentPartnerInput): Promise<EquipmentPartner> {
     const res = await apiFetch<EquipmentPartnerApiDTO>('/equipment-partners', {
       method: 'POST',
       body: JSON.stringify(toSaveEquipmentPartnerApiDTO(partner)),
@@ -39,7 +36,6 @@ export class EquipmentPartnerService {
       ) as EquipmentPartnerApiDTO
     )
 
-    broadcastPartnerUpdate()
     return saved
   }
 
@@ -52,7 +48,6 @@ export class EquipmentPartnerService {
       res,
       'EquipmentPartnerService.deletePartner'
     )
-    broadcastPartnerUpdate()
   }
 
   static async patchPartner(id: string, delta: DeltaSet, version: number): Promise<EquipmentPartner> {
@@ -74,7 +69,6 @@ export class EquipmentPartnerService {
       ) as EquipmentPartnerApiDTO
     )
 
-    broadcastPartnerUpdate()
     return saved
   }
 }

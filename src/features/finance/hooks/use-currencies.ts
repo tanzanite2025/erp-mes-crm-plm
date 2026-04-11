@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
@@ -7,6 +8,7 @@ import { CurrencyMaintenanceService } from '../services/currency-maintenance-ser
 import { type Currency } from '../data/schema'
 
 const logger = createLogger('useCurrencies')
+export const CURRENCIES_QUERY_KEY = ['finance', 'currencies'] as const
 
 type SyncApiError = Error & {
     status?: number
@@ -53,49 +55,22 @@ function normalizeCurrencies(data: Currency[]): Currency[] {
 }
 
 export function useCurrencies() {
+    const queryClient = useQueryClient()
     const { t } = useLanguage()
-    const [currencies, setCurrencies] = useState<Currency[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [isSyncing, setIsSyncing] = useState(false)
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const data = await CurrencyCoreService.getCurrencies()
-            setCurrencies(normalizeCurrencies(data))
-        } catch (error) {
-            logger.error('Failed to load currencies data in useCurrencies hook', error)
-            toast.error(t('finance.currencyRates.toast.loadFailed'))
-            throw error
-        } finally {
-            setIsLoading(false)
-        }
-    }, [t])
+    const currenciesQuery = useQuery({
+        queryKey: CURRENCIES_QUERY_KEY,
+        queryFn: () => CurrencyCoreService.getCurrencies(),
+        select: normalizeCurrencies,
+    })
 
-    useEffect(() => {
-        void loadData()
-
-        const handleUpdate = () => {
-            void loadData()
-        }
-
-        window.addEventListener('xdfc_currencies_data_updated', handleUpdate)
-        return () => {
-            window.removeEventListener('xdfc_currencies_data_updated', handleUpdate)
-        }
-    }, [loadData])
-
-    const handleSync = async () => {
-        if (isSyncing) {
-            return
-        }
-
-        setIsSyncing(true)
-        try {
-            const res = await CurrencyMaintenanceService.syncCurrencies()
+    const syncMutation = useMutation({
+        mutationFn: () => CurrencyMaintenanceService.syncCurrencies(),
+        onSuccess: async (res) => {
+            await queryClient.invalidateQueries({ queryKey: CURRENCIES_QUERY_KEY })
             toast.success(t('finance.currencyRates.toast.syncSuccess', { count: res.count }))
-            window.dispatchEvent(new CustomEvent('xdfc_currencies_data_updated'))
-        } catch (error) {
+        },
+        onError: (error: unknown) => {
             logger.error('Failed to sync exchange rates', error)
 
             const syncError = error as SyncApiError
@@ -103,7 +78,7 @@ export function useCurrencies() {
                 const busyMessage = t('finance.currencyRates.toast.syncBusy')
                 toast.error(
                     busyMessage === 'finance.currencyRates.toast.syncBusy'
-                        ? '汇率同步正在进行中，请稍后再试'
+                        ? 'Exchange rate sync is already running. Please try again shortly.'
                         : busyMessage
                 )
                 return
@@ -114,28 +89,40 @@ export function useCurrencies() {
                 : ''
 
             toast.error(message || t('finance.currencyRates.toast.syncFailed'))
-        } finally {
-            setIsSyncing(false)
-        }
-    }
+        },
+    })
+
+    const setBaseMutation = useMutation({
+        mutationFn: (id: number) => CurrencyMaintenanceService.setBaseCurrency(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: CURRENCIES_QUERY_KEY })
+            toast.success(t('finance.currencyRates.toast.setBaseSuccess'))
+        },
+        onError: () => {
+            toast.error(t('finance.currencyRates.toast.setBaseFailed'))
+        },
+    })
 
     const handleSetBase = async (id: number) => {
         if (!window.confirm(t('finance.currencyRates.confirm.setBase'))) return
-        try {
-            await CurrencyMaintenanceService.setBaseCurrency(id)
-            toast.success(t('finance.currencyRates.toast.setBaseSuccess'))
-            window.dispatchEvent(new CustomEvent('xdfc_currencies_data_updated'))
-        } catch (error) {
-            toast.error(t('finance.currencyRates.toast.setBaseFailed'))
-        }
+        await setBaseMutation.mutateAsync(id)
     }
 
+    const invalidateCurrencies = () => queryClient.invalidateQueries({ queryKey: CURRENCIES_QUERY_KEY })
+
+    useEffect(() => {
+        if (!currenciesQuery.error) return
+        logger.error('Failed to load currencies data in useCurrencies hook', currenciesQuery.error)
+        toast.error(t('finance.currencyRates.toast.loadFailed'))
+    }, [currenciesQuery.error, t])
+
     return {
-        currencies,
-        isLoading,
-        isSyncing,
-        loadData,
-        handleSync,
-        handleSetBase
+        currencies: currenciesQuery.data ?? [],
+        isLoading: currenciesQuery.isLoading,
+        isSyncing: syncMutation.isPending,
+        loadData: currenciesQuery.refetch,
+        handleSync: syncMutation.mutateAsync,
+        handleSetBase,
+        invalidateCurrencies,
     }
 }

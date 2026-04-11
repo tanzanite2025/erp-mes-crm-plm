@@ -1,6 +1,7 @@
 import { type DeltaSet } from '@/lib/delta/types'
 import { type ProductTypeAttributeBinding } from '../data/schema'
 import { type ProductTypeAttributeBindingApiDTO } from '../contracts/product-type-attribute-binding-api-dto'
+import { type SaveProductTypeAttributeBindingInput } from '../mutation-types'
 
 export function toProductTypeAttributeBindingContract(
   dto: ProductTypeAttributeBindingApiDTO
@@ -19,7 +20,7 @@ export function toProductTypeAttributeBindingContract(
 }
 
 export function toProductTypeAttributeBindingApiDTO(
-  binding: Partial<ProductTypeAttributeBinding>
+  binding: SaveProductTypeAttributeBindingInput
 ): ProductTypeAttributeBindingApiDTO {
   return {
     id: binding.id || '',
@@ -44,7 +45,7 @@ const PRODUCT_TYPE_ATTRIBUTE_BINDING_PATCH_FIELDS: Array<keyof ProductTypeAttrib
 
 export function buildProductTypeAttributeBindingDelta(
   current: ProductTypeAttributeBinding,
-  next: Partial<ProductTypeAttributeBinding>
+  next: SaveProductTypeAttributeBindingInput
 ): DeltaSet {
   const delta: DeltaSet = {}
   for (const field of PRODUCT_TYPE_ATTRIBUTE_BINDING_PATCH_FIELDS) {

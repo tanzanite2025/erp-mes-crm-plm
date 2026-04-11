@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { GitBranchPlus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -31,6 +32,9 @@ import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { type ChangeOrder, type Product } from '../data/schema'
+import { useChangeOrderWriteActions } from '../hooks/use-change-order-write-actions'
+import { type ChangeOrderDraftOverrides } from '../mutation-types'
+import { CHANGE_ORDERS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
 import { createChangeOrderDraft } from '../utils/default-builders'
@@ -41,7 +45,7 @@ const EMPTY_ORDER: ChangeOrder = createChangeOrderDraft()
 
 const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 
-const normalizeOrder = (order?: Partial<ChangeOrder> | null): ChangeOrder => ({
+const normalizeOrder = (order?: ChangeOrderDraftOverrides | null): ChangeOrder => ({
   ...EMPTY_ORDER,
   ...order,
   changeOrderNo: order?.changeOrderNo || '',
@@ -60,47 +64,35 @@ const normalizeOrder = (order?: Partial<ChangeOrder> | null): ChangeOrder => ({
 
 export function ChangeOrdersTab() {
   const { t } = useLanguage()
-  const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([])
-  const [products, setProducts] = useState<Product[]>([])
   const [open, setOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<ChangeOrder>(EMPTY_ORDER)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<unknown>(null)
+  const { saveChangeOrder, deleteChangeOrder } = useChangeOrderWriteActions()
+
+  const changeOrdersQuery = useQuery({
+    queryKey: CHANGE_ORDERS_QUERY_KEY,
+    queryFn: () => changeOrderService.getChangeOrders(),
+  })
+
+  const productsQuery = useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: () => ProductCoreService.getProducts(),
+  })
+
+  const changeOrders = changeOrdersQuery.data ?? []
+  const products = productsQuery.data ?? []
+  const isLoading = changeOrdersQuery.isLoading || productsQuery.isLoading
+  const error = changeOrdersQuery.error ?? productsQuery.error
 
   const productNameMap = useMemo(
     () => Object.fromEntries(products.map((product) => [product.id, `${product.sku} / ${product.name}`])),
     [products]
   )
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      setError(null)
-      const [orders, productList] = await Promise.all([
-        changeOrderService.getChangeOrders(),
-        ProductCoreService.getProducts(),
-      ])
-      setChangeOrders(orders || [])
-      setProducts(productList || [])
-    } catch (loadError) {
-      setError(loadError)
-      logger.error('Failed to load change orders', loadError)
-      toast.error(t('engineering.changeOrders.toasts.loadFailed'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
-
   useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      void loadData()
-    }, 0)
-    window.addEventListener('xdfc_change_orders_updated', loadData)
-    return () => {
-      globalThis.clearTimeout(timer)
-      window.removeEventListener('xdfc_change_orders_updated', loadData)
-    }
-  }, [loadData])
+    if (!error) return
+    logger.error('Failed to load change orders', error)
+    toast.error(t('engineering.changeOrders.toasts.loadFailed'))
+  }, [error, t])
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -120,8 +112,7 @@ export function ChangeOrdersTab() {
     if (!confirm(t('engineering.changeOrders.actions.deleteConfirm'))) return
 
     try {
-      await changeOrderService.deleteChangeOrder(id)
-      window.dispatchEvent(new CustomEvent('xdfc_change_orders_updated'))
+      await deleteChangeOrder(id)
       toast.success(t('engineering.changeOrders.toasts.deleteSuccess'))
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : t('engineering.changeOrders.toasts.deleteFailed'))
@@ -135,7 +126,7 @@ export function ChangeOrdersTab() {
     }
 
     try {
-      await changeOrderService.saveChangeOrder({
+      await saveChangeOrder({
         ...editingOrder,
         productId: editingOrder.productId?.trim() || undefined,
         siteCode: editingOrder.siteCode?.trim().toUpperCase() || '',
@@ -145,7 +136,6 @@ export function ChangeOrdersTab() {
         effectiveTo: editingOrder.effectiveTo || undefined,
       })
       setOpen(false)
-      window.dispatchEvent(new CustomEvent('xdfc_change_orders_updated'))
       toast.success(t('engineering.changeOrders.toasts.saveSuccess'))
     } catch (error) {
       if (isConflictError(error)) {

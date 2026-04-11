@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
-import { ProductTypeService } from '../services/product-type-service'
+import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
 
 const logger = createLogger('ProductTypeActionDialog')
@@ -42,7 +42,7 @@ type ProductTypeActionDialogProps = {
   currentRow?: ProductType
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Partial<ProductType>) => void | Promise<void>
+  onSubmit?: (data: SaveProductTypeInput) => void | Promise<void>
 }
 
 const CODE_RULES = [
@@ -180,7 +180,7 @@ export function ProductTypeActionDialog({
     setIsSubmitting(true)
 
     try {
-      const submissionData: Partial<ProductType> = {
+      const submissionData: SaveProductTypeInput = {
         ...values,
         id: values.id || currentRow?.id,
         createdAt: values.createdAt || currentRow?.createdAt || new Date().toISOString(),

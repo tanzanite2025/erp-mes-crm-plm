@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { LayoutTemplate, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -29,6 +30,8 @@ import { isConflictError } from '@/lib/handle-server-error'
 import { SPEC_COMPONENTS } from '../components/specs'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { type ProductTemplate } from '../data/schema'
+import { useProductTemplateWriteActions } from '../hooks/use-product-template-write-actions'
+import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
 import { productTemplateService } from '../services/product-template-service'
 import { createProductTemplateDraft } from '../utils/default-builders'
 
@@ -39,10 +42,15 @@ function getErrorMessage(error: unknown) {
 
 export function TemplateMgmt() {
   const { t } = useLanguage()
-  const [templates, setTemplates] = useState<ProductTemplate[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<Partial<ProductTemplate> | null>(null)
-  const [error, setError] = useState<unknown>(null)
+  const [editingTemplate, setEditingTemplate] = useState<ProductTemplate | null>(null)
+  const { saveTemplate, deleteTemplate } = useProductTemplateWriteActions()
+  const templatesQuery = useQuery({
+    queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
+    queryFn: () => productTemplateService.getTemplates(),
+  })
+  const templates = templatesQuery.data ?? []
+  const error = templatesQuery.error
 
   const componentLabels = useMemo(
     () => ({
@@ -59,32 +67,14 @@ export function TemplateMgmt() {
     [t, templates]
   )
 
-  const loadData = useCallback(async () => {
-    try {
-      setError(null)
-      const stored = await productTemplateService.getTemplates()
-      setTemplates(stored || [])
-    } catch (loadError) {
-      setError(loadError)
-      toast.error(
-        t('engineering.templateMgmt.toasts.loadFailed', {
-          message: getErrorMessage(loadError),
-        })
-      )
-    }
-  }, [t])
-
   useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      void loadData()
-    }, 0)
-
-    window.addEventListener('xdfc_product_templates_data_updated', loadData)
-    return () => {
-      globalThis.clearTimeout(timer)
-      window.removeEventListener('xdfc_product_templates_data_updated', loadData)
-    }
-  }, [loadData])
+    if (!error) return
+    toast.error(
+      t('engineering.templateMgmt.toasts.loadFailed', {
+        message: getErrorMessage(error),
+      })
+    )
+  }, [error, t])
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
@@ -104,8 +94,7 @@ export function TemplateMgmt() {
     if (!window.confirm(t('engineering.templateMgmt.confirms.delete'))) return
 
     try {
-      await productTemplateService.deleteTemplate(id)
-      window.dispatchEvent(new CustomEvent('xdfc_product_templates_data_updated'))
+      await deleteTemplate(id)
       toast.success(t('engineering.templateMgmt.toasts.deleteSuccess'))
     } catch (error) {
       toast.error(
@@ -124,13 +113,15 @@ export function TemplateMgmt() {
 
     try {
       const isEdit = Boolean(editingTemplate.id)
-      await productTemplateService.saveTemplate(editingTemplate, templates.find((item) => item.id === editingTemplate.id))
+      await saveTemplate({
+        formData: editingTemplate,
+        currentRow: templates.find((item) => item.id === editingTemplate.id),
+      })
       toast.success(
         isEdit
           ? t('engineering.templateMgmt.toasts.saveUpdated')
           : t('engineering.templateMgmt.toasts.saveCreated')
       )
-      window.dispatchEvent(new CustomEvent('xdfc_product_templates_data_updated'))
       setIsDialogOpen(false)
     } catch (error) {
       if (isConflictError(error)) {

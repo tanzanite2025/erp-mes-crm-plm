@@ -10,10 +10,12 @@ import {
   toProductContract,
 } from '../adapters/product-api-adapter'
 import { type ProductApiDTO } from '../contracts/product-api-dto'
-import { type Product } from '../data/schema'
+import { type SaveProductInput } from '../mutation-types'
+
+const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'
 
 export const ProductMaintenanceService = {
-  async createProduct(product: Partial<Product>): Promise<Product> {
+  async createProduct(product: SaveProductInput): Promise<Product> {
     const res = await apiFetch<ProductApiDTO>('/engineering/products', {
       method: 'POST',
       body: JSON.stringify(toProductApiDTO({ ...product, id: '', version: 1 })),
@@ -26,13 +28,14 @@ export const ProductMaintenanceService = {
     )
   },
 
-  async patchProduct(id: string, product: Partial<Product>): Promise<Product> {
+  async patchProduct(id: string, product: SaveProductInput): Promise<Product> {
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta: buildProductDelta(product),
       metadata: {
         id,
         version: product.version ?? 0,
+        intent: PRODUCT_PATCH_INTENT_SAVE,
       },
     }
 
@@ -48,14 +51,14 @@ export const ProductMaintenanceService = {
     )
   },
 
-  async saveProduct(product: Partial<Product>): Promise<Product> {
+  async saveProduct(product: SaveProductInput): Promise<Product> {
     if (product.id) {
       return this.patchProduct(product.id, product)
     }
     return this.createProduct(product)
   },
 
-  async bulkSyncProducts(products: Product[]): Promise<{ status: string; count: number }> {
+  async bulkSyncProducts(products: SaveProductInput[]): Promise<{ status: string; count: number }> {
     return apiFetch<{ status: string; count: number }>('/engineering/products/sync', {
       method: 'POST',
       body: JSON.stringify(toBulkSyncProductsApiDTO(products)),

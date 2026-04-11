@@ -16,6 +16,14 @@ import {
   type PaginatedResponse,
 } from '../services/purchase-service'
 
+function invalidatePurchaseOrderQueries(queryClient: ReturnType<typeof useQueryClient>, orderId?: string) {
+  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+
+  if (orderId) {
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders', orderId] })
+  }
+}
+
 export const useGetPurchaseOrders = (page = 1, pageSize = 50) => {
   return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
     queryKey: ['purchase-orders', page, pageSize],
@@ -34,13 +42,25 @@ export const useGetPurchaseOrderDetail = (id: string) => {
 export const usePurchaseOrderMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
+  const handleSavedSuccess = (orderId?: string) => {
+    toast.success(t('purchase.orders.toasts.saved'))
+    invalidatePurchaseOrderQueries(queryClient, orderId)
+  }
+
+  const handleDeletedSuccess = () => {
+    toast.success(t('purchase.orders.toasts.voided'))
+    invalidatePurchaseOrderQueries(queryClient)
+  }
+
+  const handleConfirmReceiptSuccess = (orderId?: string) => {
+    toast.success(t('purchase.orders.toasts.receiptConfirmed'))
+    invalidatePurchaseOrderQueries(queryClient, orderId)
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: Omit<PurchaseOrder, 'id' | 'version'>) => createPurchaseOrder(data),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -62,9 +82,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => savePurchaseOrder(orderId, { delta, finalData, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -86,9 +104,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => changePurchaseOrderSupplier(orderId, { supplierId, supplierName, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -108,9 +124,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => changePurchaseOrderLineRemove(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -130,9 +144,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => changePurchaseOrderLineAdd(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -152,9 +164,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => changePurchaseOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -163,9 +173,7 @@ export const usePurchaseOrderMutations = () => {
     mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number }) =>
       patchPurchaseOrder(id, delta, version),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -185,9 +193,7 @@ export const usePurchaseOrderMutations = () => {
       actorId?: string
     }) => changePurchaseOrderExpectedDate(orderId, { expectedDate, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.id] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -195,8 +201,7 @@ export const usePurchaseOrderMutations = () => {
   const deleteMutation = useMutation({
     mutationFn: deletePurchaseOrder,
     onSuccess: () => {
-      toast.success(t('purchase.orders.toasts.voided'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      handleDeletedSuccess()
     },
     onError: handleServerError,
   })
@@ -205,12 +210,36 @@ export const usePurchaseOrderMutations = () => {
     mutationFn: ({ id, payload }: { id: string; payload: ConfirmPurchaseReceiptPayload }) =>
       confirmPurchaseReceipt(id, payload),
     onSuccess: (data) => {
-      toast.success(t('purchase.orders.toasts.receiptConfirmed'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.purchaseOrder.id] })
+      handleConfirmReceiptSuccess(data.purchaseOrder.id)
     },
     onError: handleServerError,
   })
 
-  return { createMutation, saveMutation, patchMutation, deleteMutation, confirmReceiptMutation, expectedDateChangeMutation, supplierChangeMutation, lineContentChangeMutation, lineAddMutation, lineRemoveMutation }
+  const createSaveMutations = {
+    createMutation,
+    saveMutation,
+    patchMutation,
+    deleteMutation,
+  }
+
+  const lineEditMutations = {
+    lineAddMutation,
+    lineRemoveMutation,
+    lineContentChangeMutation,
+  }
+
+  const workflowMutations = {
+    supplierChangeMutation,
+    expectedDateChangeMutation,
+    confirmReceiptMutation,
+  }
+
+  return {
+    ...createSaveMutations,
+    ...lineEditMutations,
+    ...workflowMutations,
+    createSaveMutations,
+    lineEditMutations,
+    workflowMutations,
+  }
 }

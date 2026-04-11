@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
+  type SavePackagingRuleInput,
   toPackagingRuleContract,
   toPackagingRuleContracts,
   toSavePackagingRuleApiDTO,
@@ -24,7 +25,7 @@ export const packagingService = {
     return rules[0] || null
   },
 
-  async saveRule(rule: Partial<PackagingRule>): Promise<PackagingRule> {
+  async saveRule(rule: SavePackagingRuleInput): Promise<PackagingRule> {
     const result = await apiFetch<PackagingRuleApiDTO>('/packaging', {
       method: 'POST',
       body: JSON.stringify(toSavePackagingRuleApiDTO(rule)),
@@ -36,8 +37,6 @@ export const packagingService = {
         'packagingService.saveRule'
       ) as PackagingRuleApiDTO
     )
-
-    window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
     return saved
   },
 
@@ -45,6 +44,5 @@ export const packagingService = {
     await apiFetch(`/packaging/${id}`, {
       method: 'DELETE',
     })
-    window.dispatchEvent(new CustomEvent('xdfc_packaging_updated'))
   },
 }

@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useLanguage } from '@/context/language-provider'
 import { type Product, type BarcodeConfig } from '../data/schema'
+import { type BarcodeConfigUpdates } from '../mutation-types'
 import { BarcodeService } from '@/features/print-mgmt/services/barcode-service'
 import { PrintRecordService } from '@/features/print-mgmt/services/print-record-service'
 import { toast } from 'sonner'
@@ -52,7 +53,7 @@ export function ProductBarcodeTab({ product, onUpdateProduct }: ProductBarcodeTa
         }
     })
 
-    const updateConfig = useCallback((updates: Partial<BarcodeConfig>) => {
+    const updateConfig = useCallback((updates: BarcodeConfigUpdates) => {
         setConfig(prev => ({ ...prev, ...updates }))
     }, [])
 
