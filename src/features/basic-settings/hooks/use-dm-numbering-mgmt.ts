@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
@@ -14,8 +13,6 @@ import { type ProductType } from '@/features/engineering/data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { PRODUCT_TYPES_QUERY_KEY } from '@/features/engineering/query-keys'
 import type { TranslationKey } from '@/locales'
-
-const logger = createLogger('useDMNumberingMgmt')
 
 export function useDMNumberingMgmt() {
     const { t } = useLanguage()
