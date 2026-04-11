@@ -75,7 +75,8 @@ export function useJobCategoryProcessCapabilities() {
       toast.success('Process capability added')
     } catch (error) {
       toast.error('Failed to add process capability')
-      logger.error('Failed to assign process capability to job category', error, {
+      logger.error('Failed to assign process capability to job category', {
+        error,
         jobCategoryId,
         processId,
       })
@@ -96,7 +97,8 @@ export function useJobCategoryProcessCapabilities() {
       toast.success('Process capability removed')
     } catch (error) {
       toast.error('Failed to remove process capability')
-      logger.error('Failed to remove process capability from job category', error, {
+      logger.error('Failed to remove process capability from job category', {
+        error,
         jobCategoryId,
         processId,
       })
