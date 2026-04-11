@@ -47,6 +47,7 @@ export const orgPersonnel = {
       staffId: '工号',
       name: '姓名',
       deptId: '部门',
+      position: '岗位',
       phone: '电话',
       emergencyPhone: '紧急联系人电话',
       gender: '性别',
@@ -64,6 +65,7 @@ export const orgPersonnel = {
     sample: {
       name: '示例人员（导入前请删除本行）',
       dept: '行政部',
+      position: '操作员',
       address: '福建省福州市示例地址 1 号',
       bankName: '中国工商银行',
     },

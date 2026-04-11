@@ -277,6 +277,7 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			price REAL,
 			amount REAL,
 			received_qty REAL,
+			returned_qty REAL,
 			status TEXT
 		)
 	`).Error)
@@ -696,9 +697,9 @@ func TestRecordInboundAppliesPurchaseReceiptProgressAndRecalculatesPurchaseOrder
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-inbound-1", "PO-IN-001", "Sent", "CNY", 50.0, 1.0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, qty, uom, price, amount, received_qty, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, 1, "po-inbound-1", 1, materialID, 10.0, "PCS", 5.0, 50.0, 3.0, "Open").Error)
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, qty, uom, price, amount, received_qty, returned_qty, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-inbound-1", 1, materialID, 10.0, "PCS", 5.0, 50.0, 3.0, 0.0, "Open").Error)
 
 	err := RecordInbound(&models.InboundRecord{
 		MaterialID:          materialID,

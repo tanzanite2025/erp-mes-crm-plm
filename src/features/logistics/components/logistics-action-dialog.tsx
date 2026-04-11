@@ -16,8 +16,8 @@ import { useLanguage } from '@/context/language-provider'
 import { useGetSalesOrders } from '@/features/trading/sales'
 import { InventoryCoreService } from '@/features/warehouse/services/inventory-core-service'
 import { type ShipmentRecord } from '@/features/warehouse/services/inventory-transaction-service'
+import { getCarrierLabelKey, type LogisticsRecord, type SaveLogisticsRecordInput } from '../data/schema'
 import { useLogisticsMutations } from '../hooks/use-logistics'
-import { type LogisticsRecord, getCarrierLabelKey } from '../types'
 import { getPreferredCarriers } from '../utils/carriers'
 import { inferCarrierFromTrackingNo } from '../utils/tracking-no'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
@@ -40,7 +40,7 @@ export function LogisticsActionDialog({
   const { t } = useLanguage()
   const { saveMutation } = useLogisticsMutations()
   const { data } = useGetSalesOrders(1, 1000, { enabled: open })
-  const salesOrders = data?.items || []
+  const salesOrders = useMemo(() => data?.items ?? [], [data?.items])
   
   const initialValues = useMemo(() => {
     if (record) return record
@@ -138,11 +138,37 @@ export function LogisticsActionDialog({
         return
     }
 
-    await saveMutation.mutateAsync({
-        data: formData as Partial<LogisticsRecord>,
-        isPatch: isEdit,
-        delta: isEdit ? delta : undefined
-    })
+    if (isEdit && record?.id) {
+      await saveMutation.mutateAsync({
+        mode: 'patch',
+        patchInput: {
+          id: record.id,
+          version: record.version,
+          delta,
+        },
+      })
+    } else {
+      await saveMutation.mutateAsync({
+        mode: 'create',
+        createInput: {
+          orderNo: formData.orderNo,
+          salesOrderId: formData.salesOrderId,
+          purchaseOrderId: formData.purchaseOrderId,
+          productId: formData.productId,
+          shipmentId: formData.shipmentId,
+          type: formData.type,
+          carrier: formData.carrier,
+          trackingNo: formData.trackingNo,
+          status: formData.status,
+          lastLocation: formData.lastLocation,
+          contactPerson: formData.contactPerson,
+          contactPhone: formData.contactPhone,
+          events: formData.events,
+          version: formData.version,
+          isDeleted: formData.isDeleted,
+        } satisfies SaveLogisticsRecordInput,
+      })
+    }
     onOpenChange(false)
   }
 

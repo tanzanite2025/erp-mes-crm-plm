@@ -3,7 +3,7 @@ import { createLogger } from '@/lib/logger'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { toEmployeeApiDTO, toEmployeeContract } from '../adapters/employee-api-adapter'
-import { type EmployeeApiDTO } from '../contracts/employee-api-dto'
+import { type EmployeeApiDTO, type EmployeeAssignmentCommandApiDTO } from '../contracts/employee-api-dto'
 import { type Employee } from '../data/schema'
 import { EmployeeCoreService } from './employee-core-service'
 
@@ -105,6 +105,56 @@ export const EmployeeMaintenanceService = {
         'EmployeeMaintenanceService.patchEmployee'
       ) as EmployeeApiDTO
     )
+  },
+
+  changeEmployeeOrgUnit: async (id: string, orgUnitId: string, expectedVersion?: number): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/change-org-unit`, {
+      method: 'POST',
+      body: JSON.stringify({
+        orgUnitId,
+        expectedVersion,
+      }),
+    })
+
+    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+      res,
+      'EmployeeMaintenanceService.changeEmployeeOrgUnit'
+    ) as EmployeeAssignmentCommandApiDTO
+
+    return toEmployeeContract(payload.employee)
+  },
+
+  changeEmployeePosition: async (id: string, positionId: string, expectedVersion?: number): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/change-position`, {
+      method: 'POST',
+      body: JSON.stringify({
+        positionId,
+        expectedVersion,
+      }),
+    })
+
+    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+      res,
+      'EmployeeMaintenanceService.changeEmployeePosition'
+    ) as EmployeeAssignmentCommandApiDTO
+
+    return toEmployeeContract(payload.employee)
+  },
+
+  clearEmployeePosition: async (id: string, expectedVersion?: number): Promise<Employee> => {
+    const res = await apiFetch<EmployeeAssignmentCommandApiDTO>(`/employees/${id}/clear-position`, {
+      method: 'POST',
+      body: JSON.stringify({
+        expectedVersion,
+      }),
+    })
+
+    const payload = ensureObjectResponse<EmployeeAssignmentCommandApiDTO & Record<string, unknown>>(
+      res,
+      'EmployeeMaintenanceService.clearEmployeePosition'
+    ) as EmployeeAssignmentCommandApiDTO
+
+    return toEmployeeContract(payload.employee)
   },
 }
 

@@ -20,6 +20,7 @@ import {
 import { PageHeader } from '@/components/layout/page-header'
 import { useLanguage } from '@/context/language-provider'
 import type { InspectionFormula } from '../data/schema'
+import { formatQualityActorName } from '../utils/quality-utils'
 
 function normalizeFormulaStatus(status?: string) {
   const normalized = status?.toUpperCase()
@@ -105,7 +106,9 @@ export function QualityFormulas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredFormulas.map((formula, index) => (
+              {filteredFormulas.map((formula, index) => {
+                const operatorName = formatQualityActorName(formula.operator)
+                return (
                 <TableRow
                   key={formula.id}
                   className="group border-b border-dashed border-muted/50 hover:bg-white/80 cursor-pointer transition-all h-16"
@@ -151,7 +154,7 @@ export function QualityFormulas() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="size-3 text-muted-foreground/30" />
-                      <span className="text-[10px] font-black uppercase">{formula.operator}</span>
+                      <span className="text-[10px] font-black uppercase">{operatorName || t('quality.common.system')}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -169,7 +172,8 @@ export function QualityFormulas() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </div>

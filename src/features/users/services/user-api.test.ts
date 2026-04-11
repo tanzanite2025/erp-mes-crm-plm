@@ -11,6 +11,7 @@ vi.mock('@/lib/api-client', () => ({
 
 import {
   addUserRoleBinding,
+  bindUserEmployee,
   createUser,
   fetchUserOptions,
   fetchUserRoleBindings,
@@ -19,6 +20,7 @@ import {
   removeUserRoleBinding,
   replaceUser,
   setUserPrimaryRole,
+  unbindUserEmployee,
 } from './user-api'
 
 describe('user-api contract regression', () => {
@@ -182,6 +184,27 @@ describe('user-api contract regression', () => {
     expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/primary-role', {
       method: 'PATCH',
       body: JSON.stringify({ role: 'finance_manager' }),
+    })
+  })
+
+  it('bindUserEmployee sends command contract', async () => {
+    apiFetchMock.mockResolvedValue({ id: 'u-7', employeeId: 'EMP-7', status: 'active', username: 'bob' })
+
+    await bindUserEmployee('u-7', 'EMP-7')
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/bind-employee', {
+      method: 'POST',
+      body: JSON.stringify({ employeeId: 'EMP-7' }),
+    })
+  })
+
+  it('unbindUserEmployee sends command contract', async () => {
+    apiFetchMock.mockResolvedValue({ id: 'u-7', employeeId: undefined, status: 'active', username: 'bob' })
+
+    await unbindUserEmployee('u-7')
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/unbind-employee', {
+      method: 'POST',
     })
   })
 

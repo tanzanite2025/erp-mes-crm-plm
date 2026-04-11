@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Layers, Eye, MoreHorizontal } from 'lucide-react'
 import { type Standard } from '../data/schema'
 import { useLanguage } from '@/context/language-provider'
-import { getTypeLabel, getStatusMeta } from '../utils/quality-utils'
+import { formatQualityActorName, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
 
 interface QualityStandardsDesktopViewProps {
     standards: Standard[]
@@ -44,6 +44,7 @@ export function QualityStandardsDesktopView({
                     <TableBody>
                         {standards.map((standard: Standard) => {
                             const statusMeta = getStatusMeta(t, standard.status)
+                            const operatorName = formatQualityActorName(standard.operator)
 
                             return (
                                 <TableRow
@@ -85,7 +86,7 @@ export function QualityStandardsDesktopView({
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-0.5">
-                                            <span className="text-[10px] font-black text-slate-600 uppercase whitespace-nowrap">{standard.operator || t('quality.common.system')}</span>
+                                            <span className="text-[10px] font-black text-slate-600 uppercase whitespace-nowrap">{operatorName || t('quality.common.system')}</span>
                                             <span className="text-[8px] font-mono text-muted-foreground/40 tabular-nums">{standard.operateTime ? new Date(standard.operateTime).toLocaleString() : '-'}</span>
                                         </div>
                                     </TableCell>

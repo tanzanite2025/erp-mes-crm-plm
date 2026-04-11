@@ -40,7 +40,16 @@
     title: '角色绑定管理',
     subtitle: '管理 {{username}} 的角色绑定关系',
     loading: '正在加载角色绑定...',
+    accessLoading: '正在加载访问画像...',
     empty: '暂无角色绑定',
+    summary: {
+      title: '访问画像',
+      primaryRole: '主角色',
+      effectiveRoles: '生效角色',
+      permissions: '权限数',
+      diagnostics: '诊断',
+      none: '无',
+    },
     labels: {
       primary: '主角色',
       secondary: '次角色',

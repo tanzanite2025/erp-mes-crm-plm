@@ -5,6 +5,7 @@ export type PersonnelArchiveColumnKey =
     | 'staffId'
     | 'name'
     | 'deptId'
+    | 'position'
     | 'phone'
     | 'emergencyPhone'
     | 'gender'
@@ -39,6 +40,7 @@ export const PERSONNEL_ARCHIVE_COLUMNS: PersonnelArchiveColumn[] = [
     { key: 'staffId', header: 'orgPersonnel.excel.columns.staffId', width: 16, required: true, importable: true },
     { key: 'name', header: 'orgPersonnel.excel.columns.name', width: 14, required: true, importable: true },
     { key: 'deptId', header: 'orgPersonnel.excel.columns.deptId', width: 18, required: true, importable: true },
+    { key: 'position', header: 'orgPersonnel.excel.columns.position', width: 18, importable: true },
     { key: 'phone', header: 'orgPersonnel.excel.columns.phone', width: 18, importable: true },
     { key: 'emergencyPhone', header: 'orgPersonnel.excel.columns.emergencyPhone', width: 20, importable: true },
     { key: 'gender', header: 'orgPersonnel.excel.columns.gender', width: 10, importable: true, type: 'list', options: ['男', '女'] },
@@ -263,6 +265,8 @@ export function getPersonnelArchiveValue(
             return rowIndex + 1
         case 'deptId':
             return employee.deptId && nameMap[employee.deptId] ? nameMap[employee.deptId] : employee.deptId || ''
+        case 'position':
+            return employee.positionName || employee.positionId || ''
         case 'joinedDate':
             return formatPersonnelDate(employee.joinedDate)
         case 'workYears':

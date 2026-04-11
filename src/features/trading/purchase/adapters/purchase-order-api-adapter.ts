@@ -27,6 +27,7 @@ function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrde
     amount: dto.amount,
     expectedDate: dto.expectedDate,
     receivedQty: dto.receivedQty,
+    returnedQty: dto.returnedQty ?? 0,
     status: dto.status as PurchaseOrderLine['status'],
     note: dto.note,
   }
@@ -46,6 +47,7 @@ function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineAp
     amount: line.amount,
     expectedDate: line.expectedDate,
     receivedQty: line.receivedQty,
+    returnedQty: line.returnedQty,
     status: line.status,
     note: line.note,
   }
@@ -73,7 +75,8 @@ export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder
     isDeleted: dto.isDeleted ?? false,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
+    evidences: dto.evidences ?? [],
     lines: (dto.lines ?? []).map(toPurchaseOrderLineContract),
   }
 }
@@ -100,7 +103,8 @@ export function toPurchaseOrderApiDTO(order: PurchaseOrder): PurchaseOrderApiDTO
     isDeleted: order.isDeleted,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
-    _v: order.version,
+    version: order.version,
+    evidences: order.evidences ?? [],
     lines: (order.lines ?? []).map(toPurchaseOrderLineApiDTO),
   }
 }

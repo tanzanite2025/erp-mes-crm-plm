@@ -13,7 +13,7 @@ import { EmployeeCoreService } from '@/features/org-personnel/services/employee-
 
 type UseUsersActionDialogOptionsParams = {
   open: boolean
-  isEdit: boolean
+  currentRow?: UserOption
   usersData?: UserOption[]
   dynamicRoles: Role[]
   t: TranslateFn
@@ -21,7 +21,7 @@ type UseUsersActionDialogOptionsParams = {
 
 export function useUsersActionDialogOptions({
   open,
-  isEdit,
+  currentRow,
   usersData,
   dynamicRoles,
   t,
@@ -30,7 +30,7 @@ export function useUsersActionDialogOptions({
   const [rawOrgNodes, setRawOrgNodes] = useState<OrgNode[]>([])
 
   useEffect(() => {
-    if (!(open && !isEdit)) return
+    if (!open) return
 
     let isCancelled = false
 
@@ -67,17 +67,39 @@ export function useUsersActionDialogOptions({
         nameMap[p.id] = p.name
       })
 
+      const currentEmployeeRef = (currentRow?.employeeId || '').trim()
       const existingEmployeeIds = new Set(
-        usersData?.map((u) => u.employeeId).filter(Boolean) || []
+        (usersData?.map((u) => u.employeeId).filter(Boolean) || [])
+          .filter((employeeId) => String(employeeId).trim() !== currentEmployeeRef)
       )
 
       const nextEmployees = data
-        .filter((emp: Employee) => !existingEmployeeIds.has(emp.id))
+        .filter((emp: Employee) => {
+          if (!existingEmployeeIds.has(emp.id)) return true
+          const staffID = (emp.staffId || '').trim()
+          return staffID !== '' && !existingEmployeeIds.has(staffID)
+        })
         .map((emp: Employee) => ({
           label: buildEmployeeDisplayLabel(emp, nameMap, t),
           value: emp.id,
           raw: emp,
         }))
+
+      if (currentEmployeeRef) {
+        const currentEmployee = data.find((emp: Employee) => {
+          return emp.id === currentEmployeeRef || (emp.staffId || '').trim() === currentEmployeeRef
+        })
+        if (currentEmployee) {
+          const alreadyIncluded = nextEmployees.some((option) => option.value === currentEmployeeRef)
+          if (!alreadyIncluded) {
+            nextEmployees.unshift({
+              label: buildEmployeeDisplayLabel(currentEmployee, nameMap, t),
+              value: currentEmployeeRef,
+              raw: currentEmployee,
+            })
+          }
+        }
+      }
 
       setRawOrgNodes(orgData)
       setEmployees(nextEmployees)
@@ -86,7 +108,7 @@ export function useUsersActionDialogOptions({
     return () => {
       isCancelled = true
     }
-  }, [open, isEdit, usersData, t])
+  }, [open, currentRow?.employeeId, usersData, t])
 
   const combinedRoleOptions = useMemo(() => {
     const options = dynamicRoles.map(({ label, id }) => ({

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { type User, type UserListPage, type UserOption, type UserRoleBindingsResponse } from '../data/schema'
+import { type User, type UserAccessSnapshot, type UserListPage, type UserOption, type UserRoleBindingsResponse } from '../data/schema'
 import * as userApi from '../services/user-api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
@@ -12,6 +12,7 @@ type UsersQueryParams = Record<string, UsersQueryValue>
 
 export const USERS_QUERY_KEY = ['users'] as const
 export const USER_ROLE_BINDINGS_QUERY_KEY = ['users', 'role-bindings'] as const
+export const USER_ACCESS_SNAPSHOT_QUERY_KEY = ['users', 'access-snapshot'] as const
 
 export const useUsersQuery = (params: UsersQueryParams = {}) => {
   return useQuery<UserListPage>({
@@ -32,6 +33,15 @@ export const useUserRoleBindingsQuery = (userId: string | undefined, enabled = t
   return useQuery<UserRoleBindingsResponse>({
     queryKey: [...USER_ROLE_BINDINGS_QUERY_KEY, normalizedUserID],
     queryFn: () => userApi.fetchUserRoleBindings(normalizedUserID),
+    enabled: enabled && normalizedUserID.length > 0,
+  })
+}
+
+export const useUserAccessSnapshotQuery = (userId: string | undefined, enabled = true) => {
+  const normalizedUserID = (userId || '').trim()
+  return useQuery<UserAccessSnapshot>({
+    queryKey: [...USER_ACCESS_SNAPSHOT_QUERY_KEY, normalizedUserID],
+    queryFn: () => userApi.fetchUserAccessSnapshot(normalizedUserID),
     enabled: enabled && normalizedUserID.length > 0,
   })
 }
@@ -94,7 +104,25 @@ export const useUserMutations = () => {
     mutationFn: ({ id, role }: { id: string; role: string }) => userApi.setUserPrimaryRole(id, role),
     ...buildMutationOptions<User, unknown, { id: string; role: string }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onError: handleServerError,
+    }),
+  })
+
+  const bindEmployeeMutation = useMutation({
+    mutationFn: ({ id, employeeId }: { id: string; employeeId: string }) => userApi.bindUserEmployee(id, employeeId),
+    ...buildMutationOptions<User, unknown, { id: string; employeeId: string }>({
+      queryClient,
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      onError: handleServerError,
+    }),
+  })
+
+  const unbindEmployeeMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => userApi.unbindUserEmployee(id),
+    ...buildMutationOptions<User, unknown, { id: string }>({
+      queryClient,
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
@@ -104,7 +132,7 @@ export const useUserMutations = () => {
       userApi.addUserRoleBinding(id, payload),
     ...buildMutationOptions<UserRoleBindingsResponse, unknown, { id: string; payload: UserRoleBindingUpsertPayload }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
@@ -113,7 +141,7 @@ export const useUserMutations = () => {
     mutationFn: ({ id, roleId }: { id: string; roleId: string }) => userApi.removeUserRoleBinding(id, roleId),
     ...buildMutationOptions<UserRoleBindingsResponse, unknown, { id: string; roleId: string }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
@@ -124,6 +152,8 @@ export const useUserMutations = () => {
     replaceMutation,
     deleteMutation,
     setPrimaryRoleMutation,
+    bindEmployeeMutation,
+    unbindEmployeeMutation,
     addRoleBindingMutation,
     removeRoleBindingMutation,
   }

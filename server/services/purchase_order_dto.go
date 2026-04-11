@@ -16,7 +16,7 @@ type SaveSupplierRequest struct {
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
 	Rating        float64 `json:"rating"`
-	Version       int     `json:"_v"`
+	Version       int     `json:"version"`
 }
 
 type PatchSupplierRequest struct {
@@ -46,6 +46,7 @@ type PurchaseOrderLineRequest struct {
 	Price         float64 `json:"price"`
 	Amount        float64 `json:"amount"`
 	ReceivedQty   float64 `json:"receivedQty"`
+	ReturnedQty   float64 `json:"returnedQty"`
 	Status        string  `json:"status"`
 }
 
@@ -66,9 +67,10 @@ type SavePurchaseOrderRequest struct {
 	PaymentTerm        string                     `json:"paymentTerm"`
 	PaymentTermName    string                     `json:"paymentTermName"`
 	Note               string                     `json:"note"`
+	Evidences          []OrderEvidencePayload     `json:"evidences"`
 	WorkflowInstanceID string                     `json:"workflowInstanceId"`
 	IsDeleted          bool                       `json:"isDeleted"`
-	Version            int                        `json:"_v"`
+	Version            int                        `json:"version"`
 	Lines              []PurchaseOrderLineRequest `json:"lines"`
 }
 
@@ -89,9 +91,10 @@ type PatchPurchaseOrderRequest struct {
 	PaymentTerm        string                     `json:"paymentTerm"`
 	PaymentTermName    string                     `json:"paymentTermName"`
 	Note               string                     `json:"note"`
+	Evidences          []OrderEvidencePayload     `json:"evidences"`
 	WorkflowInstanceID string                     `json:"workflowInstanceId"`
 	IsDeleted          bool                       `json:"isDeleted"`
-	Version            int                        `json:"_v"`
+	Version            int                        `json:"version"`
 	Lines              []PurchaseOrderLineRequest `json:"lines"`
 }
 
@@ -107,6 +110,7 @@ type PurchaseOrderLineResponse struct {
 	Price         float64 `json:"price"`
 	Amount        float64 `json:"amount"`
 	ReceivedQty   float64 `json:"receivedQty"`
+	ReturnedQty   float64 `json:"returnedQty"`
 	Status        string  `json:"status"`
 }
 
@@ -127,36 +131,38 @@ type PurchaseOrderResponse struct {
 	PaymentTerm        string                      `json:"paymentTerm"`
 	PaymentTermName    string                      `json:"paymentTermName"`
 	Note               string                      `json:"note"`
+	Evidences          []OrderEvidencePayload      `json:"evidences"`
 	WorkflowInstanceID string                      `json:"workflowInstanceId"`
 	CreatedAt          time.Time                   `json:"createdAt"`
 	UpdatedAt          time.Time                   `json:"updatedAt"`
 	IsDeleted          bool                        `json:"isDeleted"`
-	Version            int                         `json:"_v"`
+	Version            int                         `json:"version"`
 	Lines              []PurchaseOrderLineResponse `json:"lines"`
 }
 
 type PurchaseOrderListItemResponse struct {
-	ID                 string    `json:"id"`
-	OrderNo            string    `json:"orderNo"`
-	SupplierID         string    `json:"supplierId"`
-	SupplierName       string    `json:"supplierName"`
-	OrderDate          string    `json:"orderDate"`
-	ExpectedDate       string    `json:"expectedDate"`
-	Status             string    `json:"status"`
-	Currency           string    `json:"currency"`
-	Amount             float64   `json:"amount"`
-	ExchangeRate       float64   `json:"exchangeRate"`
-	Purchaser          string    `json:"purchaser"`
-	PaymentMethod      string    `json:"paymentMethod"`
-	PaymentMethodName  string    `json:"paymentMethodName"`
-	PaymentTerm        string    `json:"paymentTerm"`
-	PaymentTermName    string    `json:"paymentTermName"`
-	Note               string    `json:"note"`
-	WorkflowInstanceID string    `json:"workflowInstanceId"`
-	CreatedAt          time.Time `json:"createdAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
-	IsDeleted          bool      `json:"isDeleted"`
-	Version            int       `json:"_v"`
+	ID                 string                 `json:"id"`
+	OrderNo            string                 `json:"orderNo"`
+	SupplierID         string                 `json:"supplierId"`
+	SupplierName       string                 `json:"supplierName"`
+	OrderDate          string                 `json:"orderDate"`
+	ExpectedDate       string                 `json:"expectedDate"`
+	Status             string                 `json:"status"`
+	Currency           string                 `json:"currency"`
+	Amount             float64                `json:"amount"`
+	ExchangeRate       float64                `json:"exchangeRate"`
+	Purchaser          string                 `json:"purchaser"`
+	PaymentMethod      string                 `json:"paymentMethod"`
+	PaymentMethodName  string                 `json:"paymentMethodName"`
+	PaymentTerm        string                 `json:"paymentTerm"`
+	PaymentTermName    string                 `json:"paymentTermName"`
+	Note               string                 `json:"note"`
+	Evidences          []OrderEvidencePayload `json:"evidences"`
+	WorkflowInstanceID string                 `json:"workflowInstanceId"`
+	CreatedAt          time.Time              `json:"createdAt"`
+	UpdatedAt          time.Time              `json:"updatedAt"`
+	IsDeleted          bool                   `json:"isDeleted"`
+	Version            int                    `json:"version"`
 }
 
 type PurchaseOrderListResponse struct {

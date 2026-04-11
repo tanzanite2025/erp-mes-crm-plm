@@ -19,7 +19,7 @@ import { ShieldCheck, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { getCategoryIcon } from '../utils/stock-utils'
-import { type InventoryView } from '../services/inventory-core-service'
+import { type InventoryView } from '../inventory'
 
 interface StockMgmtCategorySectionProps {
     category: { code: string, name: string }

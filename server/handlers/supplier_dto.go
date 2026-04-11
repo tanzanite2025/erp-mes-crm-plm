@@ -21,7 +21,7 @@ type SupplierResponse struct {
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 	IsDeleted     bool      `json:"isDeleted"`
-	Version       int       `json:"_v"`
+	Version       int       `json:"version"`
 }
 
 type SupplierListHandlerResponse struct {
@@ -45,7 +45,7 @@ type BulkSyncSupplierRequest struct {
 	Status        string  `json:"status"`
 	Rating        float64 `json:"rating"`
 	IsDeleted     bool    `json:"isDeleted"`
-	Version       int     `json:"_v"`
+	Version       int     `json:"version"`
 }
 
 func mapBulkSyncSupplierRequestToModel(input BulkSyncSupplierRequest) models.Supplier {

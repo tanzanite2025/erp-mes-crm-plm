@@ -1,3 +1,5 @@
+import type { OrderEvidence } from '../../data/schema'
+
 export interface SalesOrderLineApiDTO {
   id?: number
   lineNo: number
@@ -51,7 +53,8 @@ export interface SalesOrderApiDTO {
   updatedAt: string
   updatedBy?: string
   isDeleted?: boolean
-  _v?: number
+  version?: number
+  evidences?: OrderEvidence[]
   lines: SalesOrderLineApiDTO[]
 }
 

@@ -282,6 +282,10 @@ type ReplaceUserRequest struct {
 	EmployeeID  string `json:"employeeId"`
 }
 
+type BindUserEmployeeRequest struct {
+	EmployeeID string `json:"employeeId" binding:"required"`
+}
+
 type SetPrimaryRoleRequest struct {
 	Role string `json:"role" binding:"required"`
 }
@@ -558,6 +562,7 @@ func GetUserRoleBindingsHandler(c *gin.Context) {
 var (
 	errUserRoleBindingNotFound        = errors.New("user role binding not found")
 	errCannotRemovePrimaryRoleBinding = errors.New("cannot remove primary role binding")
+	errBindEmployeeTargetNotFound     = errors.New("employee binding target not found")
 )
 
 func normalizeRoleBindingSource(source string) string {
@@ -924,6 +929,105 @@ func RemoveUserRoleBindingHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+// BindUserEmployeeHandler binds an account to an employee identity and synchronizes mirrored role bindings.
+func BindUserEmployeeHandler(c *gin.Context) {
+	userID := strings.TrimSpace(c.Param("id"))
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] user id is required"})
+		return
+	}
+
+	var input BindUserEmployeeRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	employeeRef := strings.TrimSpace(input.EmployeeID)
+	if employeeRef == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] employeeId cannot be empty"})
+		return
+	}
+
+	var updatedUser models.User
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var user models.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, "id = ?", userID).Error; err != nil {
+			return err
+		}
+
+		resolvedEmployeeID, err := resolveEmployeeRecordIDForRoleBinding(tx, employeeRef)
+		if err != nil {
+			return err
+		}
+		if strings.TrimSpace(resolvedEmployeeID) == "" {
+			return errBindEmployeeTargetNotFound
+		}
+
+		previousUser := user
+		if err := tx.Model(&user).Update("employee_id", employeeRef).Error; err != nil {
+			return err
+		}
+		if err := tx.First(&updatedUser, "id = ?", userID).Error; err != nil {
+			return err
+		}
+
+		return syncAccountRoleBindings(tx, &previousUser, updatedUser)
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, errBindEmployeeTargetNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] employee does not exist"})
+			return
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to bind employee"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, mapUserToResponse(updatedUser))
+}
+
+// UnbindUserEmployeeHandler unbinds an account from an employee identity and deactivates mirrored employee bindings.
+func UnbindUserEmployeeHandler(c *gin.Context) {
+	userID := strings.TrimSpace(c.Param("id"))
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] user id is required"})
+		return
+	}
+
+	var updatedUser models.User
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var user models.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&user, "id = ?", userID).Error; err != nil {
+			return err
+		}
+
+		previousUser := user
+		if err := tx.Model(&user).Update("employee_id", "").Error; err != nil {
+			return err
+		}
+		if err := tx.First(&updatedUser, "id = ?", userID).Error; err != nil {
+			return err
+		}
+
+		return syncAccountRoleBindings(tx, &previousUser, updatedUser)
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unbind employee"})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapUserToResponse(updatedUser))
 }
 
 func BulkSyncUsersHandler(c *gin.Context) {

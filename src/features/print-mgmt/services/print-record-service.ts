@@ -11,13 +11,46 @@ export interface PrintBatch {
     activatedCount: number  // 已核验激活数量
     status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
     createdAt: string
-    _v: number              // 乐观锁版本号
+    version: number
+}
+
+interface PrintBatchApiDTO {
+    id: string
+    batchNo: string
+    templateName: string
+    productId?: string
+    bomId?: string
+    quantity: number
+    activatedCount: number
+    status: 'Printed' | 'PartiallyActivated' | 'Activated' | 'Scrapped'
+    createdAt: string
+    _v?: number
+    version?: number
 }
 
 import { ensureObjectResponse } from '@/lib/api-response'
 import { apiFetch } from '@/lib/api-client'
 
 const UPDATE_EVENT = 'xdfc_print_batches_updated'
+
+function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
+    return {
+        id: dto.id,
+        batchNo: dto.batchNo,
+        templateName: dto.templateName,
+        productId: dto.productId,
+        bomId: dto.bomId,
+        quantity: dto.quantity,
+        activatedCount: dto.activatedCount,
+        status: dto.status,
+        createdAt: dto.createdAt,
+        version: dto.version ?? dto._v ?? 1,
+    }
+}
+
+function toPrintBatchContracts(dtos: PrintBatchApiDTO[]): PrintBatch[] {
+    return dtos.map(toPrintBatchContract)
+}
 
 /**
  * 打印记录服务 - 负责批次管理与激活统计 (已对接后端 & 鲁棒性加固)
@@ -27,7 +60,8 @@ export const PrintRecordService = {
      * 获取所有打印批次
      */
     async getBatches(): Promise<PrintBatch[]> {
-        return apiFetch<PrintBatch[]>('/print-batches')
+        const res = await apiFetch<PrintBatchApiDTO[]>('/print-batches')
+        return toPrintBatchContracts(res)
     },
 
     /**
@@ -47,25 +81,36 @@ export const PrintRecordService = {
         templateName: string
         quantity: number
     }): Promise<{ batch: PrintBatch, sn: string }> {
-        return apiFetch<{ batch: PrintBatch, sn: string }>('/print-batches/atomic-print', {
+        const res = await apiFetch<{ batch: PrintBatchApiDTO, sn: string }>('/print-batches/atomic-print', {
             method: 'POST',
             body: JSON.stringify(data)
         })
+        const checked = ensureObjectResponse<{ batch: PrintBatchApiDTO, sn: string } & Record<string, unknown>>(
+            res,
+            'PrintRecordService.atomicPrint'
+        ) as { batch: PrintBatchApiDTO, sn: string }
+        return {
+            batch: toPrintBatchContract(checked.batch),
+            sn: checked.sn,
+        }
     },
 
     /**
      * 新增打印批次 (BatchNo 由后端通过事务安全生成)
      */
-    async addBatch(batch: Omit<PrintBatch, 'id' | 'createdAt' | 'batchNo' | 'activatedCount' | 'status' | '_v'>): Promise<PrintBatch> {
-        // 【加固】BatchNo 不再由前端提前计算，防止并发碰撞
-        // 后端 handle 会在保存时自动生成 P-YYYYMMDD-XXX 格式编号
-        const newBatch = await apiFetch<PrintBatch>('/print-batches', {
+    async addBatch(batch: Omit<PrintBatch, 'id' | 'createdAt' | 'batchNo' | 'activatedCount' | 'status' | 'version'>): Promise<PrintBatch> {
+        const res = await apiFetch<PrintBatchApiDTO>('/print-batches', {
             method: 'POST',
             body: JSON.stringify(batch)
         })
 
         window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
-        return newBatch
+        return toPrintBatchContract(
+            ensureObjectResponse<PrintBatchApiDTO & Record<string, unknown>>(
+                res,
+                'PrintRecordService.addBatch'
+            ) as PrintBatchApiDTO
+        )
     },
 
     /**
@@ -75,7 +120,7 @@ export const PrintRecordService = {
      * @param version 当前客户端持有的版本号 (用于乐观锁)
      */
     async activate(id: string, count: number, version: number): Promise<PrintBatch | null> {
-        const updated = await apiFetch<PrintBatch>(`/print-batches/${id}/activate`, {
+        const res = await apiFetch<PrintBatchApiDTO>(`/print-batches/${id}/activate`, {
             method: 'POST',
             body: JSON.stringify({ 
                 count,
@@ -84,7 +129,12 @@ export const PrintRecordService = {
         })
 
         window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
-        return updated
+        return toPrintBatchContract(
+            ensureObjectResponse<PrintBatchApiDTO & Record<string, unknown>>(
+                res,
+                'PrintRecordService.activate'
+            ) as PrintBatchApiDTO
+        )
     },
 
     /**

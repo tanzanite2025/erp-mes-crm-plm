@@ -143,6 +143,9 @@ export function PurchaseOrderActionDialog({
             formData={formData}
             handleHeaderChange={handleHeaderChange}
             suppliers={suppliers}
+            onEvidencesChange={(evidences) => {
+              handleHeaderChange('evidences', evidences)
+            }}
           />
 
           <PurchaseOrderLinesEditor

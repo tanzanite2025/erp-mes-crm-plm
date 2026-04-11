@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Layers, User, Clock, MoreHorizontal } from 'lucide-react'
 import { type Standard } from '../data/schema'
 import { useLanguage } from '@/context/language-provider'
-import { getTypeLabel, getStatusMeta } from '../utils/quality-utils'
+import { formatQualityActorName, getTypeLabel, getStatusMeta } from '../utils/quality-utils'
 
 interface QualityStandardsMobileViewProps {
     standards: Standard[]
@@ -22,6 +22,7 @@ export function QualityStandardsMobileView({
         <div className="grid grid-cols-1 gap-4">
             {standards.map((standard: Standard) => {
                 const statusMeta = getStatusMeta(t, standard.status)
+                const operatorName = formatQualityActorName(standard.operator)
 
                 return (
                     <Card
@@ -62,7 +63,7 @@ export function QualityStandardsMobileView({
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-1">
                                             <User className="size-2.5 text-muted-foreground/40" />
-                                            <span className="text-[9px] font-black text-slate-500 uppercase">{standard.operator || t('quality.common.system')}</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase">{operatorName || t('quality.common.system')}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Clock className="size-2.5 text-muted-foreground/40" />

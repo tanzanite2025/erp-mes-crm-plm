@@ -20,6 +20,7 @@ import { useGetQualityTasks, useGetInspectionStats, useQualityMutations, type Qu
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
+import { formatQualityActorName } from '../utils/quality-utils'
 
 export function QualityInspection() {
     const { t } = useLanguage()
@@ -93,7 +94,9 @@ export function QualityInspection() {
                 </div>
             ) : (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                    {tasks.map((task: QualityTask) => (
+                    {tasks.map((task: QualityTask) => {
+                        const inspectorName = formatQualityActorName(task.inspector)
+                        return (
                         <Card
                             key={task.id}
                             className={cn(
@@ -152,7 +155,7 @@ export function QualityInspection() {
                                         <span className='text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest'>{t('quality.inspection.page.executor')}</span>
                                         <div className='flex items-center gap-1.5'>
                                             <User className='size-3 text-muted-foreground/30' />
-                                            <span className='text-[10px] font-black uppercase'>{task.inspector || t('quality.inspection.page.unassigned')}</span>
+                                            <span className='text-[10px] font-black uppercase'>{inspectorName || t('quality.inspection.page.unassigned')}</span>
                                         </div>
                                     </div>
                                     {task.result === 'PENDING' && (
@@ -170,7 +173,8 @@ export function QualityInspection() {
                                 </div>
                             </CardContent>
                         </Card>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
         </div>

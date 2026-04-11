@@ -39,7 +39,16 @@ export const users = {
     title: 'Role Binding Matrix',
     subtitle: 'Manage role bindings for {{username}}',
     loading: 'Loading role bindings...',
+    accessLoading: 'Loading access snapshot...',
     empty: 'No role bindings found',
+    summary: {
+      title: 'Access Snapshot',
+      primaryRole: 'Primary Role',
+      effectiveRoles: 'Effective Roles',
+      permissions: 'Permissions',
+      diagnostics: 'Diagnostics',
+      none: 'None',
+    },
     labels: {
       primary: 'Primary',
       secondary: 'Secondary',

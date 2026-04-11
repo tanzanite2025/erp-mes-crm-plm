@@ -80,9 +80,11 @@ type Employee struct {
 	DeptID         string     `gorm:"size:36" json:"deptId"`
 	LineID         string     `gorm:"size:36" json:"lineId"`
 	ProcessID      string     `gorm:"size:36" json:"processId"`
+	PositionID     string     `gorm:"->" json:"positionId"`
 	DeptName       string     `gorm:"->" json:"deptName"`
 	LineName       string     `gorm:"->" json:"lineName"`
 	ProcessName    string     `gorm:"->" json:"processName"`
+	PositionName   string     `gorm:"->" json:"positionName"`
 }
 
 // Team stores team definitions.

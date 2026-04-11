@@ -58,7 +58,7 @@ export function PrintRecords() {
             return
         }
 
-        await PrintRecordService.activate(selectedBatch.id, verifyCount, selectedBatch._v)
+        await PrintRecordService.activate(selectedBatch.id, verifyCount, selectedBatch.version)
         toast.success(t('printMgmt.records.toasts.verifySuccess', { count: verifyCount }))
         setIsVerifyOpen(false)
     }

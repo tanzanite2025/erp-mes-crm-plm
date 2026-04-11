@@ -12,7 +12,7 @@ export interface CustomerApiDTO {
   createdAt?: string
   updatedAt?: string
   isDeleted?: boolean
-  _v?: number
+  version?: number
 }
 
 export interface CustomerListApiResponseDTO {

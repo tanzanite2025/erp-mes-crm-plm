@@ -36,7 +36,7 @@ import { createLogger } from '@/lib/logger'
 import { EmployeeActionDialog } from '../components/employee-action-dialog'
 import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
 import { EmployeeBulkActions } from '../components/employee-bulk-actions'
-import { getEmployeeColumns } from '../components/employee-columns'
+import { getEmployeeColumns, UNASSIGNED_POSITION_FILTER_VALUE } from '../components/employee-columns'
 import { type Employee } from '../data/schema'
 import { employees as initialData } from '../data/employees'
 import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
@@ -69,6 +69,7 @@ export function EmployeeManagementList() {
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
         id: false,
+        positionName: true,
     })
     const [nameMap, setNameMap] = useState<Record<string, string>>({})
     const [recentResignSnapshot, setRecentResignSnapshot] = useState<RecentResignSnapshot | null>(null)
@@ -249,12 +250,35 @@ export function EmployeeManagementList() {
     const handleUpdateEmployee = async (finalEmp: Employee, isPatch?: boolean, delta?: DeltaSet) => {
         try {
             if (isPatch && delta && finalEmp.id) {
-                // 执行增量更新
-                await EmployeeMaintenanceService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
+                const nextDeptId = finalEmp.deptId?.trim() || ''
+                const previousDeptId = currentRow?.deptId?.trim() || ''
+                const deptChanged = nextDeptId !== previousDeptId
+                const nextPositionId = finalEmp.positionId?.trim() || ''
+                const previousPositionId = currentRow?.positionId?.trim() || ''
+                const positionChanged = nextPositionId !== previousPositionId
+                const patchDelta = Object.fromEntries(
+                    Object.entries(delta).filter(([key]) => key !== 'deptId' && key !== 'positionId')
+                )
+
+                if (Object.keys(patchDelta).length > 0) {
+                    await EmployeeMaintenanceService.patchEmployee(finalEmp.id, patchDelta, finalEmp.version || 1)
+                }
+                if (deptChanged && nextDeptId) {
+                    await EmployeeMaintenanceService.changeEmployeeOrgUnit(finalEmp.id, nextDeptId)
+                }
+                if (positionChanged && nextPositionId) {
+                    await EmployeeMaintenanceService.changeEmployeePosition(finalEmp.id, nextPositionId)
+                } else if (positionChanged && previousPositionId) {
+                    await EmployeeMaintenanceService.clearEmployeePosition(finalEmp.id)
+                }
                 toast.success(t('orgPersonnel.list.saveUpdated'))
             } else {
                 // 执行全量保存 (创建新员工)
-                await EmployeeMaintenanceService.saveEmployee(finalEmp)
+                const createdEmployee = await EmployeeMaintenanceService.saveEmployee(finalEmp)
+                const nextPositionId = finalEmp.positionId?.trim() || ''
+                if (nextPositionId) {
+                    await EmployeeMaintenanceService.changeEmployeePosition(createdEmployee.id, nextPositionId)
+                }
                 toast.success(t('orgPersonnel.list.saveCreated'))
             }
             await loadData()
@@ -294,6 +318,26 @@ export function EmployeeManagementList() {
         }
         return [...baseColumns, actionColumn]
     }, [t])
+
+    const positionFilterOptions = useMemo(() => {
+        const options = new Map<string, string>()
+
+        data.forEach((employee) => {
+            const rawValue = employee.positionName || employee.positionId || UNASSIGNED_POSITION_FILTER_VALUE
+            const rawLabel = employee.positionName || employee.positionId || 'Unassigned'
+            if (!options.has(rawValue)) {
+                options.set(rawValue, rawLabel)
+            }
+        })
+
+        return Array.from(options.entries())
+            .map(([value, label]) => ({ value, label }))
+            .sort((a, b) => {
+                if (a.value === UNASSIGNED_POSITION_FILTER_VALUE) return -1
+                if (b.value === UNASSIGNED_POSITION_FILTER_VALUE) return 1
+                return a.label.localeCompare(b.label)
+            })
+    }, [data])
 
     const table = useReactTable({
         data,
@@ -381,6 +425,13 @@ export function EmployeeManagementList() {
                                 icon: Clock,
                             },
                         ]}
+                    />
+                    <DataTableFacetedFilter
+                        column={table.getColumn('positionName')}
+                        title='Position Filter'
+                        subtitle='POSITION'
+                        variant='industrial'
+                        options={positionFilterOptions}
                     />
                     <DataTableViewOptions table={table} variant='industrial' />
                 </div>

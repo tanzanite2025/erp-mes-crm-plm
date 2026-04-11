@@ -57,7 +57,7 @@ function buildDefaultReceiptLines(order: PurchaseOrder | undefined): ReceiptLine
 
   return (order.lines || [])
     .map((line) => {
-      const remainingQty = Math.max((line.qty || 0) - (line.receivedQty || 0), 0)
+      const remainingQty = Math.max((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0), 0)
       if (!line.id || remainingQty <= 0) return null
       return {
         purchaseOrderLineId: line.id,
@@ -208,6 +208,9 @@ function PurchaseReceiptConfirmDialogBody({
                   {t('purchase.orders.receiptDialogRemainingQty')} [PREVIEW]
                 </div>
                 <div className='text-[12px] font-black text-primary'>{line.remainingQty}</div>
+                <div className='mt-1 text-[9px] font-bold text-rose-500/80'>
+                  {t('purchase.orders.returns.alreadyReturned')}: {order.lines.find((item) => item.id === line.purchaseOrderLineId)?.returnedQty || 0}
+                </div>
               </div>
             </div>
 

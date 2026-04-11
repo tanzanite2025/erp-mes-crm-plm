@@ -4,9 +4,8 @@ import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
-import { InventoryCoreService, type InventoryView } from '../services/inventory-core-service'
-import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
-import { WarehouseCategoryCoreService } from '../services/warehouse-category-core-service'
+import { WarehouseCategoryCoreService } from '../category'
+import { InventoryCoreService, InventoryMaintenanceService, type InventoryView } from '../inventory'
 
 /**
  * useStockMgmt - 深度重构后的库存管理 Hook 情况情况总量针对。

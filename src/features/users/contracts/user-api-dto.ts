@@ -56,3 +56,14 @@ export interface UserRoleBindingsApiDTO {
   effectiveRoles: string[]
   roleBindings: UserRoleBindingApiDTO[]
 }
+
+export interface UserAccessSnapshotApiDTO {
+  userId: string
+  username: string
+  employeeId?: string
+  primaryRoleId: string
+  effectiveRoles: string[]
+  permissions: string[]
+  diagnostics?: string[]
+  roleBindings: UserRoleBindingApiDTO[]
+}

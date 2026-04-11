@@ -18,6 +18,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
+import { auditUtils } from '@/lib/audit-utils'
 
 import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
 import { useWarehouseCategoryOptions } from '../hooks/use-warehouse-category'
@@ -230,7 +231,9 @@ export function StocktakeMgmt() {
                             </div>
                         ) : (
                             <div className='space-y-4'>
-                                {tasks?.map((task) => (
+                                {tasks?.map((task) => {
+                                    const creatorName = auditUtils.formatOperatorName(task.createdBy) || task.createdBy
+                                    return (
                                     <div
                                         key={task.id}
                                         onClick={() => setSelectedTask(task)}
@@ -256,11 +259,12 @@ export function StocktakeMgmt() {
                                             </div>
                                             <div className='flex flex-col ml-auto text-right'>
                                                 <span className='text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest'>{t('warehouse.stocktake.creator')}</span>
-                                                <span className='text-[10px] font-black text-slate-500'>{task.createdBy}</span>
+                                                <span className='text-[10px] font-black text-slate-500'>{creatorName}</span>
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </ScrollArea>

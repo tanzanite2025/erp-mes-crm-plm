@@ -92,9 +92,11 @@ type EmployeeListItemResponse struct {
 	DeptID         string     `json:"deptId"`
 	LineID         string     `json:"lineId"`
 	ProcessID      string     `json:"processId"`
+	PositionID     string     `json:"positionId"`
 	DeptName       string     `json:"deptName"`
 	LineName       string     `json:"lineName"`
 	ProcessName    string     `json:"processName"`
+	PositionName   string     `json:"positionName"`
 	CreatedAt      time.Time  `json:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt"`
 	Version        int        `json:"version"`
@@ -119,11 +121,26 @@ type EmployeeSaveResponse struct {
 	DeptID         string     `json:"deptId"`
 	LineID         string     `json:"lineId"`
 	ProcessID      string     `json:"processId"`
+	PositionID     string     `json:"positionId"`
 	DeptName       string     `json:"deptName"`
 	LineName       string     `json:"lineName"`
 	ProcessName    string     `json:"processName"`
+	PositionName   string     `json:"positionName"`
 	CreatedAt      time.Time  `json:"createdAt"`
 	UpdatedAt      time.Time  `json:"updatedAt"`
+}
+
+type PositionListItemResponse struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Code        string    `json:"code"`
+	OrgUnitID   *string   `json:"orgUnitId,omitempty"`
+	OrgUnitName string    `json:"orgUnitName"`
+	Status      string    `json:"status"`
+	SortOrder   int       `json:"sortOrder"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Version     int       `json:"version"`
 }
 
 type BulkSyncEmployeeRequest struct {
@@ -264,9 +281,11 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		DeptID:         model.DeptID,
 		LineID:         model.LineID,
 		ProcessID:      model.ProcessID,
+		PositionID:     model.PositionID,
 		DeptName:       model.DeptName,
 		LineName:       model.LineName,
 		ProcessName:    model.ProcessName,
+		PositionName:   model.PositionName,
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,
 		Version:        optimisticVersionFromTimestamps(model.UpdatedAt, model.CreatedAt),
@@ -301,12 +320,37 @@ func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
 		DeptID:         model.DeptID,
 		LineID:         model.LineID,
 		ProcessID:      model.ProcessID,
+		PositionID:     model.PositionID,
 		DeptName:       model.DeptName,
 		LineName:       model.LineName,
 		ProcessName:    model.ProcessName,
+		PositionName:   model.PositionName,
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,
 	}
+}
+
+func MapPositionToListItemResponse(model models.Position) PositionListItemResponse {
+	return PositionListItemResponse{
+		ID:          model.ID,
+		Name:        model.Name,
+		Code:        model.Code,
+		OrgUnitID:   cloneStringPointer(model.OrgUnitID),
+		OrgUnitName: model.OrgUnitName,
+		Status:      model.Status,
+		SortOrder:   model.SortOrder,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+		Version:     optimisticVersionFromTimestamps(model.UpdatedAt, model.CreatedAt),
+	}
+}
+
+func MapPositionsToListItemResponse(models []models.Position) []PositionListItemResponse {
+	items := make([]PositionListItemResponse, 0, len(models))
+	for _, model := range models {
+		items = append(items, MapPositionToListItemResponse(model))
+	}
+	return items
 }
 
 func MapBulkSyncEmployeeRequestToModel(input BulkSyncEmployeeRequest) models.Employee {

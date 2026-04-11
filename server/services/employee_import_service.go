@@ -36,15 +36,17 @@ const (
 )
 
 type EmployeeImportPreviewItem struct {
-	RowNumber int    `json:"rowNumber,omitempty"`
-	StaffID   string `json:"staffId"`
-	Name      string `json:"name"`
-	DeptID    string `json:"deptId,omitempty"`
-	DeptName  string `json:"deptName,omitempty"`
-	Phone     string `json:"phone,omitempty"`
-	Gender    string `json:"gender,omitempty"`
-	Status    string `json:"status,omitempty"`
-	Action    string `json:"action,omitempty"`
+	RowNumber    int    `json:"rowNumber,omitempty"`
+	StaffID      string `json:"staffId"`
+	Name         string `json:"name"`
+	DeptID       string `json:"deptId,omitempty"`
+	DeptName     string `json:"deptName,omitempty"`
+	PositionID   string `json:"positionId,omitempty"`
+	PositionName string `json:"positionName,omitempty"`
+	Phone        string `json:"phone,omitempty"`
+	Gender       string `json:"gender,omitempty"`
+	Status       string `json:"status,omitempty"`
+	Action       string `json:"action,omitempty"`
 }
 
 type EmployeeImportPreviewResponse struct {
@@ -84,29 +86,32 @@ type employeeImportSnapshot struct {
 }
 
 type employeeImportResolvedRow struct {
-	rowNumber       int
-	employee        models.Employee
-	deptDisplayName string
-	action          string
+	rowNumber         int
+	employee          models.Employee
+	deptDisplayName   string
+	positionSpecified bool
+	action            string
 }
 
 type employeeImportDraftRow struct {
-	rowNumber      int
-	staffID        string
-	name           string
-	deptName       string
-	phone          string
-	emergencyPhone string
-	gender         string
-	joinedDate     *time.Time
-	status         string
-	age            int
-	idCard         string
-	birthday       *time.Time
-	address        string
-	bankCard       string
-	bankName       string
-	education      string
+	rowNumber         int
+	staffID           string
+	name              string
+	deptName          string
+	positionName      string
+	positionSpecified bool
+	phone             string
+	emergencyPhone    string
+	gender            string
+	joinedDate        *time.Time
+	status            string
+	age               int
+	idCard            string
+	birthday          *time.Time
+	address           string
+	bankCard          string
+	bankName          string
+	education         string
 }
 
 var employeeImportPreviewStore = struct {
@@ -132,6 +137,7 @@ var employeeImportHeaderCandidates = []struct {
 	{key: "staffId", required: true, headers: []string{"工号", "Staff ID"}},
 	{key: "name", required: true, headers: []string{"姓名", "Name"}},
 	{key: "deptId", required: true, headers: []string{"部门", "Department"}},
+	{key: "position", headers: []string{"岗位", "Position"}},
 	{key: "phone", headers: []string{"电话", "Phone"}},
 	{key: "emergencyPhone", headers: []string{"紧急联系人电话", "Emergency Contact Phone"}},
 	{key: "gender", headers: []string{"性别", "Gender"}},
@@ -192,8 +198,12 @@ func (s *OrganizationService) PreviewEmployeeImport(fileName string, reader io.R
 	if err != nil {
 		return EmployeeImportPreviewResponse{}, err
 	}
+	positionMap, ambiguousPositionNames, err := s.buildEmployeeImportPositionMap()
+	if err != nil {
+		return EmployeeImportPreviewResponse{}, err
+	}
 
-	importedRows, err := parseEmployeeImportRows(rows[1:], headerIndex, deptMap, ambiguousDeptNames)
+	importedRows, err := parseEmployeeImportRows(rows[1:], headerIndex, deptMap, ambiguousDeptNames, positionMap, ambiguousPositionNames)
 	if err != nil {
 		return EmployeeImportPreviewResponse{}, err
 	}
@@ -279,6 +289,23 @@ func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportReq
 			if err := s.repository.SaveEmployee(tx, &employeeToSave); err != nil {
 				return err
 			}
+			if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, employeeToSave, "employee_import_commit", ""); err != nil {
+				return err
+			}
+			if row.positionSpecified {
+				var nextPositionID *string
+				if strings.TrimSpace(row.employee.PositionID) != "" {
+					nextPositionID = stringPointer(row.employee.PositionID)
+				}
+				if _, err := applyPrimaryAssignmentPosition(tx, employeeToSave, nextPositionID, "employee_import_commit", ""); err != nil {
+					return err
+				}
+			}
+			if s.roleSnapshotSynchronizer != nil {
+				if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, employeeToSave); err != nil {
+					return err
+				}
+			}
 			if s.auditLogger != nil {
 				if err := s.auditLogger.Write(tx, AuditEntry{
 					Module:   "Employee",
@@ -356,15 +383,17 @@ func buildEmployeeImportPreviewItems(rows []employeeImportResolvedRow) []Employe
 	items := make([]EmployeeImportPreviewItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, EmployeeImportPreviewItem{
-			RowNumber: row.rowNumber,
-			StaffID:   row.employee.StaffID,
-			Name:      row.employee.Name,
-			DeptID:    row.employee.DeptID,
-			DeptName:  row.deptDisplayName,
-			Phone:     row.employee.Phone,
-			Gender:    row.employee.Gender,
-			Status:    row.employee.Status,
-			Action:    row.action,
+			RowNumber:    row.rowNumber,
+			StaffID:      row.employee.StaffID,
+			Name:         row.employee.Name,
+			DeptID:       row.employee.DeptID,
+			DeptName:     row.deptDisplayName,
+			PositionID:   row.employee.PositionID,
+			PositionName: row.employee.PositionName,
+			Phone:        row.employee.Phone,
+			Gender:       row.employee.Gender,
+			Status:       row.employee.Status,
+			Action:       row.action,
 		})
 	}
 	return items
@@ -374,14 +403,16 @@ func buildEmployeeImportMissingItems(employees []models.Employee) []EmployeeImpo
 	items := make([]EmployeeImportPreviewItem, 0, len(employees))
 	for _, employee := range employees {
 		items = append(items, EmployeeImportPreviewItem{
-			StaffID:  employee.StaffID,
-			Name:     employee.Name,
-			DeptID:   employee.DeptID,
-			DeptName: employee.DeptName,
-			Phone:    employee.Phone,
-			Gender:   employee.Gender,
-			Status:   employee.Status,
-			Action:   "missing",
+			StaffID:      employee.StaffID,
+			Name:         employee.Name,
+			DeptID:       employee.DeptID,
+			DeptName:     employee.DeptName,
+			PositionID:   employee.PositionID,
+			PositionName: employee.PositionName,
+			Phone:        employee.Phone,
+			Gender:       employee.Gender,
+			Status:       employee.Status,
+			Action:       "missing",
 		})
 	}
 	return items
@@ -453,6 +484,8 @@ func parseEmployeeImportRows(
 	headerIndex map[string]int,
 	deptMap map[string]string,
 	ambiguousDeptNames map[string]struct{},
+	positionMap map[string]string,
+	ambiguousPositionNames map[string]struct{},
 ) ([]employeeImportResolvedRow, error) {
 	seenStaffIDs := map[string]int{}
 	errorsFound := make([]string, 0)
@@ -478,6 +511,10 @@ func parseEmployeeImportRows(
 			bankCard:       strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "bankCard")),
 			bankName:       strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "bankName")),
 			education:      normalizeEmployeeImportEducation(getEmployeeImportCell(row, headerIndex, "education")),
+		}
+		if positionValue, ok := getEmployeeImportCellWithPresence(row, headerIndex, "position"); ok {
+			draft.positionSpecified = true
+			draft.positionName = strings.TrimSpace(positionValue)
 		}
 
 		if draft.staffID == "" {
@@ -506,6 +543,20 @@ func parseEmployeeImportRows(
 		if !matched {
 			errorsFound = append(errorsFound, fmt.Sprintf("row %d: department [%s] could not be matched to a level-2 department", lineNumber, draft.deptName))
 			continue
+		}
+		resolvedPositionID := ""
+		if draft.positionSpecified && draft.positionName != "" {
+			normalizedPosition := normalizeEmployeeImportLookup(draft.positionName)
+			if _, duplicated := ambiguousPositionNames[normalizedPosition]; duplicated {
+				errorsFound = append(errorsFound, fmt.Sprintf("row %d: position [%s] is ambiguous", lineNumber, draft.positionName))
+				continue
+			}
+			positionID, matched := positionMap[normalizedPosition]
+			if !matched {
+				errorsFound = append(errorsFound, fmt.Sprintf("row %d: position [%s] could not be matched", lineNumber, draft.positionName))
+				continue
+			}
+			resolvedPositionID = positionID
 		}
 
 		if ageValue := strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "age")); ageValue != "" {
@@ -549,8 +600,11 @@ func parseEmployeeImportRows(
 				BankCard:       draft.bankCard,
 				BankName:       draft.bankName,
 				Education:      draft.education,
+				PositionID:     resolvedPositionID,
+				PositionName:   draft.positionName,
 			},
-			deptDisplayName: draft.deptName,
+			deptDisplayName:   draft.deptName,
+			positionSpecified: draft.positionSpecified,
 		})
 	}
 
@@ -597,6 +651,55 @@ func (s *OrganizationService) buildEmployeeImportDeptMap() (map[string]string, m
 	}
 
 	return deptMap, ambiguous, nil
+}
+
+func (s *OrganizationService) buildEmployeeImportPositionMap() (map[string]string, map[string]struct{}, error) {
+	positions, err := s.repository.ListPositions(s.txManager.DB())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	positionMap := make(map[string]string)
+	ambiguous := make(map[string]struct{})
+	for _, position := range positions {
+		positionID := strings.TrimSpace(position.ID)
+		if positionID == "" {
+			continue
+		}
+
+		registerEmployeeImportPositionLookup(positionMap, ambiguous, positionID, positionID, false)
+		registerEmployeeImportPositionLookup(positionMap, ambiguous, position.Code, positionID, false)
+		registerEmployeeImportPositionLookup(positionMap, ambiguous, position.Name, positionID, true)
+	}
+
+	return positionMap, ambiguous, nil
+}
+
+func registerEmployeeImportPositionLookup(
+	lookup map[string]string,
+	ambiguous map[string]struct{},
+	rawKey string,
+	positionID string,
+	allowAmbiguous bool,
+) {
+	normalizedKey := normalizeEmployeeImportLookup(rawKey)
+	normalizedPositionID := strings.TrimSpace(positionID)
+	if normalizedKey == "" || normalizedPositionID == "" {
+		return
+	}
+
+	if existing, exists := lookup[normalizedKey]; exists && existing != normalizedPositionID {
+		if allowAmbiguous {
+			ambiguous[normalizedKey] = struct{}{}
+			delete(lookup, normalizedKey)
+		}
+		return
+	}
+	if _, exists := ambiguous[normalizedKey]; exists {
+		return
+	}
+
+	lookup[normalizedKey] = normalizedPositionID
 }
 
 func mergeImportedEmployee(existing models.Employee, imported models.Employee) models.Employee {
@@ -676,8 +779,20 @@ func getEmployeeImportCell(row []string, headerIndex map[string]int, key string)
 	return row[index]
 }
 
+func getEmployeeImportCellWithPresence(row []string, headerIndex map[string]int, key string) (string, bool) {
+	index, ok := headerIndex[key]
+	if !ok || index < 0 || index >= len(row) {
+		return "", false
+	}
+	return row[index], true
+}
+
 func normalizeEmployeeImportHeader(value string) string {
 	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(value), " ", ""), "\n", ""), "\r", ""))
+}
+
+func normalizeEmployeeImportLookup(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func parseEmployeeImportDate(value string) (*time.Time, error) {

@@ -9,6 +9,8 @@ export type EmployeeImportPreviewItem = {
   name: string
   deptId?: string
   deptName?: string
+  positionId?: string
+  positionName?: string
   phone?: string
   gender?: string
   status?: EmployeeStatus

@@ -82,3 +82,15 @@ export const userRoleBindingsResponseSchema = z.object({
   roleBindings: z.array(userRoleBindingSchema),
 })
 export type UserRoleBindingsResponse = z.infer<typeof userRoleBindingsResponseSchema>
+
+export const userAccessSnapshotSchema = z.object({
+  userId: z.string(),
+  username: z.string(),
+  employeeId: z.string().optional(),
+  primaryRoleId: z.string(),
+  effectiveRoles: z.array(z.string()),
+  permissions: z.array(z.string()),
+  diagnostics: z.array(z.string()).optional(),
+  roleBindings: z.array(userRoleBindingSchema),
+})
+export type UserAccessSnapshot = z.infer<typeof userAccessSnapshotSchema>

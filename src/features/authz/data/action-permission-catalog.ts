@@ -326,7 +326,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许创建或编辑采购订单。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['POST /purchase/orders', 'POST /purchase/orders/:id/transactions', 'PATCH /purchase/orders/:id', 'POST /purchase/orders/:id/confirm-receipt'],
+    routeBindings: ['POST /purchase/orders', 'POST /purchase/orders/:id/transactions', 'PATCH /purchase/orders/:id', 'POST /purchase/orders/:id/confirm-receipt', 'POST /purchase/orders/:id/returns'],
   },
   {
     id: 'action_trading_purchase_order_delete',

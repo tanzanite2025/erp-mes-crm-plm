@@ -1,5 +1,13 @@
-import type { User, UserListPage, UserOption, UserRoleBinding, UserRoleBindingsResponse } from '../data/schema'
 import type {
+  User,
+  UserAccessSnapshot,
+  UserListPage,
+  UserOption,
+  UserRoleBinding,
+  UserRoleBindingsResponse,
+} from '../data/schema'
+import type {
+  UserAccessSnapshotApiDTO,
   UserApiDTO,
   UserListPageApiDTO,
   UserOptionApiDTO,
@@ -95,6 +103,19 @@ export function toUserRoleBindingsResponseContract(dto: UserRoleBindingsApiDTO):
     username: dto.username,
     primaryRoleId: dto.primaryRoleId,
     effectiveRoles: Array.isArray(dto.effectiveRoles) ? dto.effectiveRoles : [],
+    roleBindings: (dto.roleBindings || []).map(toUserRoleBindingContract),
+  }
+}
+
+export function toUserAccessSnapshotContract(dto: UserAccessSnapshotApiDTO): UserAccessSnapshot {
+  return {
+    userId: dto.userId,
+    username: dto.username,
+    employeeId: dto.employeeId,
+    primaryRoleId: dto.primaryRoleId,
+    effectiveRoles: Array.isArray(dto.effectiveRoles) ? dto.effectiveRoles : [],
+    permissions: Array.isArray(dto.permissions) ? dto.permissions : [],
+    diagnostics: Array.isArray(dto.diagnostics) ? dto.diagnostics : [],
     roleBindings: (dto.roleBindings || []).map(toUserRoleBindingContract),
   }
 }

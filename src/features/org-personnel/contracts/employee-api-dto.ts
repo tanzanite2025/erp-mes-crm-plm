@@ -17,10 +17,30 @@ export interface EmployeeApiDTO {
   deptId?: string
   lineId?: string
   processId?: string
+  positionId?: string
   deptName?: string
   lineName?: string
   processName?: string
+  positionName?: string
   createdAt?: string
   updatedAt?: string
   version?: number
+}
+
+export interface EmployeeAssignmentCommandApiDTO {
+  employee: EmployeeApiDTO
+  assignment: {
+    assignmentId: string
+    employeeId: string
+    orgUnitId?: string
+    positionId?: string
+    productionUnitId?: string
+    assignmentType: string
+    isPrimary: boolean
+    startDate: string
+    endDate?: string | null
+    status: string
+    source: string
+    remarks?: string
+  }
 }

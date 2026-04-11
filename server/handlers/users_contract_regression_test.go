@@ -369,3 +369,46 @@ func TestGetAuthSnapshotHandlerDoesNotFallbackEffectiveRolesFromRoleContext(t *t
 	require.Equal(t, []any{"finance_manager"}, payload["role"])
 	require.Nil(t, payload["effectiveRoles"])
 }
+
+func TestGetUserAccessSnapshotHandlerReturnsSnapshotWithLegacyFallback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	userID := uuid.NewString()
+	require.NoError(t, db.DB.Create(&models.Role{
+		BaseModel:   models.BaseModel{ID: uuid.NewString()},
+		RoleID:      "finance_manager",
+		Label:       "finance_manager",
+		Permissions: `["user_view"]`,
+	}).Error)
+	seedRegressionUser(t, models.User{
+		ID:         userID,
+		Username:   "access-user",
+		Password:   "$2a$11$abcdefghijklmnopqrstuv",
+		Email:      "access@example.com",
+		Role:       "finance_manager",
+		Status:     "active",
+		EmployeeID: "EMP-ACCESS",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	})
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/users/"+userID+"/access", nil)
+	ctx.Params = gin.Params{{Key: "id", Value: userID}}
+
+	GetUserAccessSnapshotHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &payload))
+	require.Equal(t, userID, payload["userId"])
+	require.Equal(t, "access-user", payload["username"])
+	require.Equal(t, "finance_manager", payload["primaryRoleId"])
+	require.Contains(t, payload["effectiveRoles"].([]any), "finance_manager")
+	require.Contains(t, payload["permissions"].([]any), "user_view")
+	roleBindings := payload["roleBindings"].([]any)
+	require.NotEmpty(t, roleBindings)
+}

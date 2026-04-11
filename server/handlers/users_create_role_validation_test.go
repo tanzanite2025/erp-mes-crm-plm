@@ -196,6 +196,31 @@ func performRemoveUserRoleBindingRequest(userID string, roleID string, currentRo
 	return recorder
 }
 
+func performBindUserEmployeeRequest(userID string, requestBody string, currentRole string) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/users/"+userID+"/bind-employee", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx.Request = req
+	ctx.Params = gin.Params{{Key: "id", Value: userID}}
+	ctx.Set("role", currentRole)
+	BindUserEmployeeHandler(ctx)
+	return recorder
+}
+
+func performUnbindUserEmployeeRequest(userID string, currentRole string) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/users/"+userID+"/unbind-employee", nil)
+
+	ctx.Request = req
+	ctx.Params = gin.Params{{Key: "id", Value: userID}}
+	ctx.Set("role", currentRole)
+	UnbindUserEmployeeHandler(ctx)
+	return recorder
+}
+
 func TestCreateUserHandlerRejectsUnknownRole(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	setupCreateUserHandlerTestDB(t)
@@ -789,4 +814,124 @@ func TestRemoveUserRoleBindingHandlerRejectsPrimaryRoleBinding(t *testing.T) {
 	recorder := performRemoveUserRoleBindingRequest(userID, "ops_manager", "admin")
 	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
 	require.Contains(t, recorder.Body.String(), "cannot remove primary role binding")
+}
+
+func TestBindUserEmployeeHandlerBindsEmployeeAndMirrorsPrimaryRole(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCreateUserHandlerTestDB(t)
+
+	require.NoError(t, db.DB.Create(&models.Role{
+		BaseModel: models.BaseModel{ID: "role-bind-ops"},
+		RoleID:    "ops_manager",
+		Label:     "Ops Manager",
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.Employee{
+		BaseModel: models.BaseModel{ID: "emp-bind-1"},
+		StaffID:   "EMP-BIND-1",
+		Name:      "Binder",
+		DeptID:    "dept-ops",
+	}).Error)
+
+	userID := "user-bind-employee"
+	require.NoError(t, db.DB.Create(&models.User{
+		ID:       userID,
+		Username: "bind-user",
+		Password: "$2a$11$abcdefghijklmnopqrstuv",
+		Role:     "ops_manager",
+		Status:   "active",
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.UserRole{
+		BaseModel: models.BaseModel{ID: "user-bind-primary"},
+		UserID:    userID,
+		RoleID:    "ops_manager",
+		IsPrimary: true,
+		Status:    "active",
+		Source:    "from_user_account",
+	}).Error)
+
+	recorder := performBindUserEmployeeRequest(userID, `{"employeeId":"EMP-BIND-1"}`, "admin")
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var user models.User
+	require.NoError(t, db.DB.First(&user, "id = ?", userID).Error)
+	require.Equal(t, "EMP-BIND-1", user.EmployeeID)
+
+	type employeeRoleRow struct {
+		EmployeeID string
+		RoleID     string
+		IsPrimary  bool
+		Status     string
+		Source     string
+	}
+	var roleRow employeeRoleRow
+	require.NoError(t, db.DB.Table("employee_roles").
+		Select("employee_id, role_id, is_primary, status, source").
+		Where("employee_id = ?", "emp-bind-1").
+		First(&roleRow).Error)
+	require.Equal(t, "ops_manager", roleRow.RoleID)
+	require.True(t, roleRow.IsPrimary)
+	require.Equal(t, "active", strings.ToLower(strings.TrimSpace(roleRow.Status)))
+	require.Equal(t, "from_user_account", roleRow.Source)
+}
+
+func TestUnbindUserEmployeeHandlerClearsBindingAndDeactivatesMirroredRole(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCreateUserHandlerTestDB(t)
+
+	require.NoError(t, db.DB.Create(&models.Role{
+		BaseModel: models.BaseModel{ID: "role-unbind-ops"},
+		RoleID:    "ops_manager",
+		Label:     "Ops Manager",
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.Employee{
+		BaseModel: models.BaseModel{ID: "emp-unbind-1"},
+		StaffID:   "EMP-UNBIND-1",
+		Name:      "Unbinder",
+		DeptID:    "dept-ops",
+	}).Error)
+
+	userID := "user-unbind-employee"
+	require.NoError(t, db.DB.Create(&models.User{
+		ID:         userID,
+		Username:   "unbind-user",
+		Password:   "$2a$11$abcdefghijklmnopqrstuv",
+		Role:       "ops_manager",
+		Status:     "active",
+		EmployeeID: "EMP-UNBIND-1",
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.UserRole{
+		BaseModel: models.BaseModel{ID: "user-unbind-primary"},
+		UserID:    userID,
+		RoleID:    "ops_manager",
+		IsPrimary: true,
+		Status:    "active",
+		Source:    "from_user_account",
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.EmployeeRole{
+		BaseModel:  models.BaseModel{ID: "employee-unbind-primary"},
+		EmployeeID: "emp-unbind-1",
+		RoleID:     "ops_manager",
+		IsPrimary:  true,
+		Status:     "active",
+		Source:     "from_user_account",
+	}).Error)
+
+	recorder := performUnbindUserEmployeeRequest(userID, "admin")
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var user models.User
+	require.NoError(t, db.DB.First(&user, "id = ?", userID).Error)
+	require.Equal(t, "", user.EmployeeID)
+
+	type employeeRoleRow struct {
+		IsPrimary bool
+		Status    string
+	}
+	var roleRow employeeRoleRow
+	require.NoError(t, db.DB.Table("employee_roles").
+		Select("is_primary, status").
+		Where("employee_id = ? AND role_id = ?", "emp-unbind-1", "ops_manager").
+		First(&roleRow).Error)
+	require.False(t, roleRow.IsPrimary)
+	require.Equal(t, "inactive", strings.ToLower(strings.TrimSpace(roleRow.Status)))
 }

@@ -21,13 +21,16 @@ func recalculatePurchaseOrderStatus(order *models.PurchaseOrder) (string, error)
 		return currentStatus, nil
 	}
 
-	hasReceipt := false
+	hasProgress := false
 	allReceived := true
 	for _, line := range order.Lines {
 		if line.ReceivedQty > purchaseReceiptTolerance {
-			hasReceipt = true
+			hasProgress = true
 		}
-		if line.Qty-line.ReceivedQty > purchaseReceiptTolerance {
+		if line.ReturnedQty > purchaseReceiptTolerance {
+			hasProgress = true
+		}
+		if line.Qty-line.ReceivedQty-line.ReturnedQty > purchaseReceiptTolerance {
 			allReceived = false
 		}
 	}
@@ -35,7 +38,7 @@ func recalculatePurchaseOrderStatus(order *models.PurchaseOrder) (string, error)
 	if allReceived {
 		return "Received", nil
 	}
-	if hasReceipt {
+	if hasProgress {
 		return "Awaiting", nil
 	}
 	if currentStatus == "Draft" {

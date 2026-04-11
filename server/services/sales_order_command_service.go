@@ -104,7 +104,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 }
 
 func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta: %w", err)
 	}
 
@@ -202,6 +202,10 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 			if err := json.Unmarshal(valueRaw, &snapshot.Requirements); err != nil {
 				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
 			}
+		case "evidences":
+			if err := json.Unmarshal(valueRaw, &snapshot.Evidences); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
 		case "workflowInstanceId":
 			if err := json.Unmarshal(valueRaw, &snapshot.WorkflowInstanceID); err != nil {
 				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
@@ -286,7 +290,7 @@ func buildSalesOrderSaveDelta(request SaveSalesOrderRequest) map[string]json.Raw
 	delete(raw, "id")
 	delete(raw, "updatedBy")
 	delete(raw, "workflowInstanceId")
-	delete(raw, "_v")
+	delete(raw, "version")
 	return raw
 }
 
@@ -325,6 +329,7 @@ func MapSaveSalesOrderRequestToSnapshot(input SaveSalesOrderRequest) SalesOrderS
 		PurchaseOrderNo:    input.PurchaseOrderNo,
 		Barcode:            input.Barcode,
 		Requirements:       input.Requirements,
+		Evidences:          input.Evidences,
 		WorkflowInstanceID: input.WorkflowInstanceID,
 		UpdatedBy:          input.UpdatedBy,
 		IsDeleted:          input.IsDeleted,

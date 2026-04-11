@@ -3,10 +3,13 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 
-import { InventoryCoreService } from '../services/inventory-core-service'
-import { InventoryMaintenanceService } from '../services/inventory-maintenance-service'
-import { type InboundRecord, type ShipmentRecord } from '../services/inventory-transaction-service'
-import { type MasterDataSearchResult } from '../services/inventory-core-service'
+import {
+    InventoryCoreService,
+    InventoryMaintenanceService,
+    type InboundRecord,
+    type MasterDataSearchResult,
+} from '../inventory'
+import { type ShipmentRecord } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 
 const logger = createLogger('useWarehouseReport')

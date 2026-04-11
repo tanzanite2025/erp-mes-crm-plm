@@ -82,6 +82,9 @@ export interface OrderEvidence {
     url: string
     name: string
     uploadedAt: string
+    note?: string
+    location?: string
+    defectPart?: string
 }
 
 export interface SalesOrder extends BaseEntity {
@@ -136,6 +139,7 @@ export interface PurchaseOrderLine {
     amount: number
     expectedDate: string
     receivedQty: number
+    returnedQty: number
     status: PurchaseOrderStatus
     note?: string
 }
@@ -145,6 +149,7 @@ export interface PurchaseOrder extends BaseEntity {
     supplierName: string
     supplierId: string // 引用供应商 ID
     status: PurchaseOrderStatus
+    evidences?: OrderEvidence[]
     amount: number
     orderDate: string
     expectedDate: string

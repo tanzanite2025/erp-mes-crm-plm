@@ -1,6 +1,7 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { useLanguage } from '@/context/language-provider'
+import { auditUtils } from '@/lib/audit-utils'
 
 import { type InventoryAdjustment } from '../services/inventory-maintenance-service'
 
@@ -10,6 +11,7 @@ interface Props {
 
 export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   const { t } = useLanguage()
+  const reporterName = auditUtils.formatOperatorName(data.createdBy) || data.createdBy
 
   return (
     <div ref={ref} className='p-8 bg-white text-black print:p-0 w-full max-w-[800px] mx-auto'>
@@ -29,7 +31,7 @@ export const AdjustmentPrint = React.forwardRef<HTMLDivElement, Props>(({ data }
             ? t('warehouse.adjustment.printDocument.typeStocktake')
             : t('warehouse.adjustment.printDocument.typeManual')}
         </div>
-        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.reporter')}:</span> {data.createdBy}</div>
+        <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.reporter')}:</span> {reporterName}</div>
         <div><span className='font-bold'>{t('warehouse.adjustment.printDocument.createdAt')}:</span> {format(new Date(data.createdAt), 'yyyy-MM-dd HH:mm')}</div>
       </div>
 

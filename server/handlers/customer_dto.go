@@ -18,7 +18,7 @@ type CustomerRequest struct {
 	CreditLimit   float64 `json:"creditLimit"`
 	Balance       float64 `json:"balance"`
 	IsDeleted     bool    `json:"isDeleted"`
-	Version       int     `json:"_v"`
+	Version       int     `json:"version"`
 }
 
 type CustomerResponse struct {
@@ -35,7 +35,7 @@ type CustomerResponse struct {
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 	IsDeleted     bool      `json:"isDeleted"`
-	Version       int       `json:"_v"`
+	Version       int       `json:"version"`
 }
 
 type CustomerListHandlerResponse struct {
@@ -58,7 +58,7 @@ type BulkSyncCustomerRequest struct {
 	CreditLimit   float64 `json:"creditLimit"`
 	Balance       float64 `json:"balance"`
 	IsDeleted     bool    `json:"isDeleted"`
-	Version       int     `json:"_v"`
+	Version       int     `json:"version"`
 }
 
 func mapCustomerRequestToModel(input CustomerRequest) models.Customer {

@@ -1,4 +1,5 @@
 import { useLanguage } from '@/context/language-provider'
+import { auditUtils } from '@/lib/audit-utils'
 
 export function getTypeLabel(t: ReturnType<typeof useLanguage>['t'], type?: string) {
     const normalized = type?.toUpperCase()
@@ -31,4 +32,13 @@ export function getStatusMeta(t: ReturnType<typeof useLanguage>['t'], status?: s
         className: 'bg-amber-500/5 border border-amber-500/10 text-amber-600',
         dotClassName: 'bg-amber-500',
     }
+}
+
+export function formatQualityActorName(rawName?: string) {
+    if (!rawName) return undefined
+
+    const normalized = auditUtils.formatOperatorName(rawName)
+    if (!normalized || normalized === 'SYSTEM_AUTO') return undefined
+
+    return normalized
 }

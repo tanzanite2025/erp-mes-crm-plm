@@ -200,6 +200,14 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 		if err := s.repository.SaveEmployee(tx, &current); err != nil {
 			return err
 		}
+		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, current, "legacy_employee_patch", ""); err != nil {
+			return err
+		}
+		if s.roleSnapshotSynchronizer != nil {
+			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, current); err != nil {
+				return err
+			}
+		}
 		if s.auditLogger != nil {
 			if err := s.auditLogger.Write(tx, AuditEntry{
 				Module:   "Employee",
@@ -211,13 +219,9 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 			}
 		}
 
-		return tx.Table("employees").
-			Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
-			Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
-			Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
-			Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
-			Where("employees.id = ?", current.ID).
-			First(&updated).Error
+		var err error
+		updated, err = loadEmployeeAggregate(tx, current.ID)
+		return err
 	})
 	if err != nil {
 		return EmployeeListItemResponse{}, err

@@ -21,8 +21,8 @@ import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/trading/logistics'
+import { getCarrierLabelKey, logisticsStatuses, type LogisticsRecord } from '../data/schema'
 import { useGetLogistics, useGetLogisticsDetail, useLogisticsMutations } from '../hooks/use-logistics'
-import { getCarrierLabelKey, logisticsStatuses, type LogisticsRecord } from '../types'
 import { LogisticsActionDialog } from './logistics-action-dialog'
 import { LogisticsTimeline } from './logistics-timeline'
 
@@ -94,11 +94,16 @@ export function LogisticsMgmt() {
     )
     if (!description) return
 
+    const targetRecord = records.find((record) => record.id === id)
+    if (!targetRecord) return
+
     updateStatusMutation.mutate({
       id,
       status: 'InTransit',
       location: t('trading.logistics.quickUpdateLocation'),
       description,
+      currentVersion: targetRecord.version,
+      currentEvents: targetRecord.events,
     })
   }
 

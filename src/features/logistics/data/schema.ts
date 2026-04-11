@@ -1,5 +1,4 @@
 import type { TranslationKey } from '@/locales'
-import { type BaseEntity } from '@/types/base'
 
 export type LogisticsStatus = 'Pending' | 'InTransit' | 'Delivered' | 'Exception' | 'Canceled'
 
@@ -13,22 +12,66 @@ export interface LogisticsEvent {
   status: LogisticsStatus
 }
 
-export interface LogisticsRecord extends BaseEntity {
+export interface LogisticsRecord {
+  id: string
   orderNo: string
-  shipmentId?: string
   salesOrderId?: string
+  purchaseOrderId?: string
   productId?: string
+  shipmentId?: string
   type: LogisticsType
   carrier: string
   trackingNo: string
   status: LogisticsStatus
-  estimatedArrival?: string
   lastLocation?: string
   contactPerson?: string
   contactPhone?: string
   events: LogisticsEvent[]
   version: number
   isDeleted: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LogisticsListPage {
+  items: LogisticsRecord[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface SaveLogisticsRecordInput {
+  id?: string
+  orderNo: string
+  salesOrderId?: string
+  purchaseOrderId?: string
+  productId?: string
+  shipmentId?: string
+  type: LogisticsType
+  carrier: string
+  trackingNo: string
+  status: LogisticsStatus
+  lastLocation?: string
+  contactPerson?: string
+  contactPhone?: string
+  events: LogisticsEvent[]
+  version?: number
+  isDeleted?: boolean
+}
+
+export interface UpdateLogisticsStatusInput {
+  id: string
+  status: LogisticsStatus
+  location: string
+  description: string
+}
+
+export interface UpdateLogisticsStatusPayload {
+  status: string
+  location: string
+  description: string
+  events: unknown[]
+  version: number
 }
 
 export const logisticsStatuses: Array<{

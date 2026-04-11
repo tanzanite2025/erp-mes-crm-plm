@@ -38,12 +38,8 @@ import { NonBlockingPermissionBoundary } from '@/components/permission-passthrou
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 
 import { toast } from 'sonner'
-import { InventoryTransactionService, type InboundRecord } from '../services/inventory-transaction-service'
-import { InventoryCoreService, type MasterDataSearchResult } from '../services/inventory-core-service'
-import {
-    WarehouseCategoryCoreService,
-    type WarehouseCategoryOption,
-} from '../services/warehouse-category-core-service'
+import { WarehouseCategoryCoreService, type WarehouseCategoryOption } from '../category'
+import { InventoryCoreService, InventoryTransactionService, type InboundRecord, type MasterDataSearchResult } from '../inventory'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'

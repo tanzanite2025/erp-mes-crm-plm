@@ -94,7 +94,7 @@ func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderRespons
 }
 
 func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchPurchaseOrderRequest, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PatchPurchaseOrderRequest{}, fmt.Errorf("invalid purchase order delta: %w", err)
 	}
 
@@ -121,6 +121,7 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 		PaymentTerm:        patch.PaymentTerm,
 		PaymentTermName:    patch.PaymentTermName,
 		Note:               patch.Note,
+		Evidences:          patch.Evidences,
 		WorkflowInstanceID: patch.WorkflowInstanceID,
 		IsDeleted:          patch.IsDeleted,
 		Version:            int(req.Metadata.Version),
@@ -139,6 +140,7 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 			Price:         line.Price,
 			Amount:        line.Amount,
 			ReceivedQty:   line.ReceivedQty,
+			ReturnedQty:   line.ReturnedQty,
 			Status:        line.Status,
 		})
 	}
@@ -208,6 +210,10 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 		case "note":
 			if err := json.Unmarshal(valueRaw, &patchReq.Note); err != nil {
 				return PatchPurchaseOrderRequest{}, fmt.Errorf("note 字段错误")
+			}
+		case "evidences":
+			if err := json.Unmarshal(valueRaw, &patchReq.Evidences); err != nil {
+				return PatchPurchaseOrderRequest{}, fmt.Errorf("evidences 字段错误")
 			}
 		case "workflowInstanceId":
 			if err := json.Unmarshal(valueRaw, &patchReq.WorkflowInstanceID); err != nil {
@@ -290,6 +296,7 @@ func MapSavePurchaseOrderRequestToPatchRequest(input SavePurchaseOrderRequest) P
 		PaymentTerm:        input.PaymentTerm,
 		PaymentTermName:    input.PaymentTermName,
 		Note:               input.Note,
+		Evidences:          input.Evidences,
 		WorkflowInstanceID: input.WorkflowInstanceID,
 		IsDeleted:          input.IsDeleted,
 		Version:            input.Version,
@@ -303,7 +310,7 @@ func buildPurchaseOrderSaveDelta(request SavePurchaseOrderRequest) map[string]js
 	_ = json.Unmarshal(payload, &raw)
 	delete(raw, "id")
 	delete(raw, "workflowInstanceId")
-	delete(raw, "_v")
+	delete(raw, "version")
 	return raw
 }
 
@@ -313,6 +320,6 @@ func buildPurchaseOrderPatchDelta(request PatchPurchaseOrderRequest) map[string]
 	_ = json.Unmarshal(payload, &raw)
 	delete(raw, "id")
 	delete(raw, "workflowInstanceId")
-	delete(raw, "_v")
+	delete(raw, "version")
 	return raw
 }

@@ -6,10 +6,11 @@ const { useQueryMock, useMutationMock, useQueryClientMock } = vi.hoisted(() => (
   useQueryClientMock: vi.fn(),
 }))
 
-const { fetchUsersMock, fetchUserOptionsMock, fetchUserRoleBindingsMock } = vi.hoisted(() => ({
+const { fetchUsersMock, fetchUserOptionsMock, fetchUserRoleBindingsMock, fetchUserAccessSnapshotMock } = vi.hoisted(() => ({
   fetchUsersMock: vi.fn(),
   fetchUserOptionsMock: vi.fn(),
   fetchUserRoleBindingsMock: vi.fn(),
+  fetchUserAccessSnapshotMock: vi.fn(),
 }))
 
 vi.mock('@tanstack/react-query', () => ({
@@ -22,10 +23,13 @@ vi.mock('../services/user-api', () => ({
   fetchUsers: fetchUsersMock,
   fetchUserOptions: fetchUserOptionsMock,
   fetchUserRoleBindings: fetchUserRoleBindingsMock,
+  fetchUserAccessSnapshot: fetchUserAccessSnapshotMock,
   createUser: vi.fn(),
   patchUser: vi.fn(),
   replaceUser: vi.fn(),
   deleteUser: vi.fn(),
+  bindUserEmployee: vi.fn(),
+  unbindUserEmployee: vi.fn(),
   setUserPrimaryRole: vi.fn(),
   addUserRoleBinding: vi.fn(),
   removeUserRoleBinding: vi.fn(),
@@ -49,6 +53,7 @@ describe('use-users hooks regression', () => {
     fetchUsersMock.mockReset()
     fetchUserOptionsMock.mockReset()
     fetchUserRoleBindingsMock.mockReset()
+    fetchUserAccessSnapshotMock.mockReset()
     useQueryMock.mockImplementation((options: unknown) => options)
   })
 

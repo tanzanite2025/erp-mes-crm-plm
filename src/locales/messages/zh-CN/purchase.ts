@@ -73,6 +73,7 @@ export const purchase = {
     detailAmount: '行金额',
     detailReceivedQty: '已收数量',
     detailConfirmReceipt: '确认收货',
+    detailPrintEvidence: '打印订单照片附件',
     detailDelete: '作废订单',
     detailReceiptAutoRemarks: '采购订单页人工确认收货',
     detailStats: {
@@ -88,6 +89,7 @@ export const purchase = {
       paymentTerm: '付款条件',
       paymentTermUnset: '未设置',
     },
+    detailEvidenceTitle: '采购合同凭据',
     receiptDialogDescription: '逐行确认本次收货数量、批次号与目标仓位后提交。',
     receiptDialogDate: '收货日期',
     receiptDialogRemarks: '收货备注',

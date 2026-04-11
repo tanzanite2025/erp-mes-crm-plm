@@ -3,11 +3,13 @@ import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
   toUserContract,
+  toUserAccessSnapshotContract,
   toUserListPageContract,
   toUserOptionContracts,
   toUserRoleBindingsResponseContract,
 } from '../adapters/user-api-adapter'
 import {
+  type UserAccessSnapshotApiDTO,
   type UserApiDTO,
   type UserListPageApiDTO,
   type UserOptionApiDTO,
@@ -186,6 +188,35 @@ export const fetchUserRoleBindings = async (id: string) => {
       res,
       'UserApi.fetchUserRoleBindings',
     ) as UserRoleBindingsApiDTO,
+  )
+}
+
+export const fetchUserAccessSnapshot = async (id: string) => {
+  const res = await apiFetch<UserAccessSnapshotApiDTO>(`/users/${id}/access`)
+  return toUserAccessSnapshotContract(
+    ensureObjectResponse<UserAccessSnapshotApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.fetchUserAccessSnapshot',
+    ) as UserAccessSnapshotApiDTO,
+  )
+}
+
+export const bindUserEmployee = async (id: string, employeeId: string) => {
+  const res = await apiFetch<UserApiDTO>(`/users/${id}/bind-employee`, {
+    method: 'POST',
+    body: JSON.stringify({ employeeId }),
+  })
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.bindUserEmployee') as UserApiDTO,
+  )
+}
+
+export const unbindUserEmployee = async (id: string) => {
+  const res = await apiFetch<UserApiDTO>(`/users/${id}/unbind-employee`, {
+    method: 'POST',
+  })
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.unbindUserEmployee') as UserApiDTO,
   )
 }
 

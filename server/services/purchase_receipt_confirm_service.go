@@ -100,7 +100,7 @@ func ConfirmPurchaseReceipt(input ConfirmPurchaseReceiptInput) (ConfirmPurchaseR
 			if materialID == "" || materialID != strings.TrimSpace(orderLine.MaterialID) {
 				return errors.New("material id does not match purchase order line")
 			}
-			remaining := orderLine.Qty - orderLine.ReceivedQty
+			remaining := orderLine.Qty - orderLine.ReceivedQty - orderLine.ReturnedQty
 			if lineInput.Quantity > remaining+purchaseReceiptTolerance {
 				return errors.New("receipt quantity exceeds remaining quantity")
 			}

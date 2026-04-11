@@ -16,7 +16,9 @@ type EffectiveAccessProfile struct {
 	EmployeeID     string
 }
 
-type EffectiveAccessService struct{}
+type EffectiveAccessService struct {
+	tx *gorm.DB
+}
 
 var menuPermissionByScopePrefix = []struct {
 	prefix string
@@ -50,35 +52,59 @@ func NewEffectiveAccessService() *EffectiveAccessService {
 	return &EffectiveAccessService{}
 }
 
+func NewEffectiveAccessServiceWithDB(tx *gorm.DB) *EffectiveAccessService {
+	return &EffectiveAccessService{tx: tx}
+}
+
 var defaultEffectiveAccessService = NewEffectiveAccessService()
 
 func ResolveEffectiveAccessProfileForUser(user models.User) EffectiveAccessProfile {
 	return defaultEffectiveAccessService.ResolveEffectiveAccessProfileForUser(user)
 }
 
+func ResolveEffectiveAccessProfileForUserWithDB(tx *gorm.DB, user models.User) EffectiveAccessProfile {
+	return NewEffectiveAccessServiceWithDB(tx).ResolveEffectiveAccessProfileForUser(user)
+}
+
 func ResolvePermissionsForRole(roleID string) []string {
-	return resolvePermissionsForRole(roleID)
+	return resolvePermissionsForRoleWithDB(db.DB, roleID)
+}
+
+func ResolvePermissionsForRoleWithDB(tx *gorm.DB, roleID string) []string {
+	return resolvePermissionsForRoleWithDB(tx, roleID)
 }
 
 func ResolveDepartmentBoundRoleID(employeeID string) (string, error) {
-	return resolveDepartmentBoundRoleID(employeeID)
+	return resolveDepartmentBoundRoleIDWithDB(db.DB, employeeID)
+}
+
+func ResolveDepartmentBoundRoleIDWithDB(tx *gorm.DB, employeeID string) (string, error) {
+	return resolveDepartmentBoundRoleIDWithDB(tx, employeeID)
+}
+
+func (s *EffectiveAccessService) database() *gorm.DB {
+	if s != nil && s.tx != nil {
+		return s.tx
+	}
+	return db.DB
 }
 
 func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user models.User) EffectiveAccessProfile {
+	tx := s.database()
 	explicitRoleID := strings.TrimSpace(user.Role)
 	employeeID := strings.TrimSpace(user.EmployeeID)
 	profile := EffectiveAccessProfile{EmployeeID: employeeID}
 
-	boundRoleIDs := resolveBoundRoleIDs(user)
+	boundRoleIDs := resolveBoundRoleIDs(tx, user)
 	legacyRoleIDs := make([]string, 0, 2)
 
 	// Legacy fallback: keep old department-derived roles only when the new binding path
 	// has not yielded any role yet.
 	if len(boundRoleIDs) == 0 {
-		legacyRoleIDs = appendUniqueRoleIDs(legacyRoleIDs, resolveDepartmentRoleIDs(employeeID)...)
+		legacyRoleIDs = appendUniqueRoleIDs(legacyRoleIDs, resolveDepartmentRoleIDs(tx, employeeID)...)
 	}
 
-	primaryRoleID := resolvePrimaryRoleID(user)
+	primaryRoleID := resolvePrimaryRoleID(tx, user)
 	if primaryRoleID == "" && len(boundRoleIDs) > 0 {
 		primaryRoleID = strings.TrimSpace(boundRoleIDs[0])
 	}
@@ -102,24 +128,24 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 	}
 
 	for _, roleID := range profile.EffectiveRoles {
-		profile.Permissions = appendUniquePermissionIDs(profile.Permissions, resolvePermissionsForRole(roleID))
+		profile.Permissions = appendUniquePermissionIDs(profile.Permissions, resolvePermissionsForRoleWithDB(tx, roleID))
 	}
 
 	return profile
 }
 
-func resolvePrimaryRoleID(user models.User) string {
-	if db.DB == nil {
+func resolvePrimaryRoleID(tx *gorm.DB, user models.User) string {
+	if tx == nil {
 		return ""
 	}
 
 	userID := strings.TrimSpace(user.ID)
-	if userID == "" || !hasTable(db.DB, "user_roles") {
+	if userID == "" || !hasTable(tx, "user_roles") {
 		return ""
 	}
 
 	var row roleBindingRow
-	if err := db.DB.Table("user_roles").
+	if err := tx.Table("user_roles").
 		Select("role_id").
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -135,15 +161,15 @@ func resolvePrimaryRoleID(user models.User) string {
 	return strings.TrimSpace(row.RoleID)
 }
 
-func resolveBoundRoleIDs(user models.User) []string {
-	if db.DB == nil {
+func resolveBoundRoleIDs(tx *gorm.DB, user models.User) []string {
+	if tx == nil {
 		return nil
 	}
 
 	resolved := make([]string, 0, 8)
 	userID := strings.TrimSpace(user.ID)
 	if userID != "" {
-		resolved = appendUniqueRoleIDs(resolved, resolveUserBoundRoleIDs(db.DB, userID)...)
+		resolved = appendUniqueRoleIDs(resolved, resolveUserBoundRoleIDs(tx, userID)...)
 	}
 
 	employeeRef := strings.TrimSpace(user.EmployeeID)
@@ -151,16 +177,16 @@ func resolveBoundRoleIDs(user models.User) []string {
 		return resolved
 	}
 
-	employeeRecordID, err := resolveEmployeeRecordID(db.DB, employeeRef)
+	employeeRecordID, err := resolveEmployeeRecordID(tx, employeeRef)
 	if err != nil || employeeRecordID == "" {
 		return resolved
 	}
 
-	resolved = appendUniqueRoleIDs(resolved, resolveEmployeeBoundRoleIDs(db.DB, employeeRecordID)...)
+	resolved = appendUniqueRoleIDs(resolved, resolveEmployeeBoundRoleIDs(tx, employeeRecordID)...)
 
-	positionIDs, orgUnitIDs := resolveAssignmentScopeIDs(db.DB, employeeRecordID)
-	resolved = appendUniqueRoleIDs(resolved, resolvePositionBoundRoleIDs(db.DB, positionIDs)...)
-	resolved = appendUniqueRoleIDs(resolved, resolveOrgDefaultBoundRoleIDs(db.DB, orgUnitIDs)...)
+	positionIDs, orgUnitIDs := resolveAssignmentScopeIDs(tx, employeeRecordID)
+	resolved = appendUniqueRoleIDs(resolved, resolvePositionBoundRoleIDs(tx, positionIDs)...)
+	resolved = appendUniqueRoleIDs(resolved, resolveOrgDefaultBoundRoleIDs(tx, orgUnitIDs)...)
 
 	return resolved
 }
@@ -174,7 +200,7 @@ func hasTable(tx *gorm.DB, tableName string) bool {
 
 func resolveEmployeeRecordID(tx *gorm.DB, employeeID string) (string, error) {
 	normalizedEmployeeID := strings.TrimSpace(employeeID)
-	if tx == nil || normalizedEmployeeID == "" {
+	if tx == nil || normalizedEmployeeID == "" || !hasTable(tx, "employees") {
 		return "", nil
 	}
 
@@ -335,13 +361,13 @@ func resolveOrgDefaultBoundRoleIDs(tx *gorm.DB, orgUnitIDs []string) []string {
 	return resolved
 }
 
-func resolveDepartmentRoleIDs(employeeID string) []string {
+func resolveDepartmentRoleIDs(tx *gorm.DB, employeeID string) []string {
 	normalizedEmployeeID := strings.TrimSpace(employeeID)
-	if db.DB == nil || normalizedEmployeeID == "" {
+	if tx == nil || normalizedEmployeeID == "" {
 		return nil
 	}
 
-	deptID, err := resolveEmployeeDeptID(db.DB, normalizedEmployeeID)
+	deptID, err := resolveEmployeeDeptID(tx, normalizedEmployeeID)
 	if err != nil || deptID == "" {
 		return nil
 	}
@@ -351,7 +377,7 @@ func resolveDepartmentRoleIDs(employeeID string) []string {
 		return nil
 	}
 
-	roleIDs, err := resolveOrgRoleFamilyIDs(db.DB, orgRolePrefix)
+	roleIDs, err := resolveOrgRoleFamilyIDs(tx, orgRolePrefix)
 	if err != nil {
 		return nil
 	}
@@ -359,13 +385,13 @@ func resolveDepartmentRoleIDs(employeeID string) []string {
 	return roleIDs
 }
 
-func resolveDepartmentBoundRoleID(employeeID string) (string, error) {
+func resolveDepartmentBoundRoleIDWithDB(tx *gorm.DB, employeeID string) (string, error) {
 	normalizedEmployeeID := strings.TrimSpace(employeeID)
-	if db.DB == nil || normalizedEmployeeID == "" {
+	if tx == nil || normalizedEmployeeID == "" {
 		return "", nil
 	}
 
-	deptID, err := resolveEmployeeDeptID(db.DB, normalizedEmployeeID)
+	deptID, err := resolveEmployeeDeptID(tx, normalizedEmployeeID)
 	if err != nil || deptID == "" {
 		return "", err
 	}
@@ -375,7 +401,7 @@ func resolveDepartmentBoundRoleID(employeeID string) (string, error) {
 		return "", nil
 	}
 
-	roleIDs, err := resolveOrgRoleFamilyIDs(db.DB, orgRolePrefix)
+	roleIDs, err := resolveOrgRoleFamilyIDs(tx, orgRolePrefix)
 	if err != nil {
 		return "", err
 	}
@@ -394,7 +420,7 @@ func resolveDepartmentBoundRoleID(employeeID string) (string, error) {
 }
 
 func resolveEmployeeDeptID(tx *gorm.DB, employeeID string) (string, error) {
-	if tx == nil {
+	if tx == nil || !hasTable(tx, "employees") {
 		return "", nil
 	}
 
@@ -430,7 +456,7 @@ func buildOrgRolePrefixFromDeptID(deptID string) string {
 }
 
 func resolveOrgRoleFamilyIDs(tx *gorm.DB, familyPrefix string) ([]string, error) {
-	if tx == nil {
+	if tx == nil || !hasTable(tx, "roles") {
 		return nil, nil
 	}
 
@@ -457,7 +483,7 @@ func resolveOrgRoleFamilyIDs(tx *gorm.DB, familyPrefix string) ([]string, error)
 
 func resolveRoleRecordByID(tx *gorm.DB, roleID string) (*models.Role, error) {
 	normalizedRoleID := strings.TrimSpace(roleID)
-	if tx == nil || normalizedRoleID == "" {
+	if tx == nil || normalizedRoleID == "" || !hasTable(tx, "roles") {
 		return nil, nil
 	}
 
@@ -472,7 +498,7 @@ func resolveRoleRecordByID(tx *gorm.DB, roleID string) (*models.Role, error) {
 	return &role, nil
 }
 
-func resolvePermissionsForRole(roleID string) []string {
+func resolvePermissionsForRoleWithDB(tx *gorm.DB, roleID string) []string {
 	normalizedRoleID := strings.TrimSpace(roleID)
 	if normalizedRoleID == "" {
 		return nil
@@ -480,18 +506,20 @@ func resolvePermissionsForRole(roleID string) []string {
 
 	orgRolePrefix := getOrgRoleFamilyPrefix(normalizedRoleID)
 
-	if db.DB != nil {
+	if tx != nil {
 		if orgRolePrefix != "" {
-			if familyPermissions, err := resolveOrgRoleFamilyPermissions(db.DB, orgRolePrefix); err == nil && len(familyPermissions) > 0 {
+			if familyPermissions, err := resolveOrgRoleFamilyPermissions(tx, orgRolePrefix); err == nil && len(familyPermissions) > 0 {
 				return expandPermissionScope(familyPermissions)
 			}
 		}
 
-		var role models.Role
-		if err := db.DB.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error; err == nil {
-			parsedPermissions := authz.ParsePermissionIDs(role.Permissions)
-			if len(parsedPermissions) > 0 {
-				return expandPermissionScope(parsedPermissions)
+		if hasTable(tx, "roles") {
+			var role models.Role
+			if err := tx.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error; err == nil {
+				parsedPermissions := authz.ParsePermissionIDs(role.Permissions)
+				if len(parsedPermissions) > 0 {
+					return expandPermissionScope(parsedPermissions)
+				}
 			}
 		}
 	}
@@ -513,7 +541,7 @@ func getOrgRoleFamilyPrefix(roleID string) string {
 }
 
 func resolveOrgRoleFamilyPermissions(tx *gorm.DB, familyPrefix string) ([]string, error) {
-	if tx == nil {
+	if tx == nil || !hasTable(tx, "roles") {
 		return nil, nil
 	}
 

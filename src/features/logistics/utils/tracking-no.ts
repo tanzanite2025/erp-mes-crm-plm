@@ -1,4 +1,4 @@
-import { commonCarriers } from '../types'
+import { commonCarriers } from '../data/schema'
 
 const carrierLookup = {
   sf: commonCarriers[0] || '顺丰速运',

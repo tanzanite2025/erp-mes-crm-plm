@@ -17,7 +17,7 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
 import { type User } from '../data/schema'
-import { useUserMutations, useUserRoleBindingsQuery } from '../hooks/use-users'
+import { useUserAccessSnapshotQuery, useUserMutations, useUserRoleBindingsQuery } from '../hooks/use-users'
 
 type UsersRoleBindingsDialogProps = {
   currentRow?: User
@@ -40,6 +40,10 @@ export function UsersRoleBindingsDialog({
     isLoading,
     refetch,
   } = useUserRoleBindingsQuery(userID, open && userID.length > 0)
+  const {
+    data: accessSnapshot,
+    isLoading: isAccessLoading,
+  } = useUserAccessSnapshotQuery(userID, open && userID.length > 0)
 
   const {
     setPrimaryRoleMutation,
@@ -171,6 +175,68 @@ export function UsersRoleBindingsDialog({
             >
               {t('users.roleBindings.actions.add')}
             </Button>
+          </div>
+
+          <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
+            <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>
+              {t('users.roleBindings.summary.title')}
+            </div>
+            {isAccessLoading ? (
+              <div className='text-xs text-muted-foreground'>
+                {t('users.roleBindings.accessLoading')}
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs'>
+                <div className='space-y-1'>
+                  <div className='font-semibold text-muted-foreground'>
+                    {t('users.roleBindings.summary.primaryRole')}
+                  </div>
+                  <div className='font-mono'>
+                    {accessSnapshot?.primaryRoleId || t('users.roleBindings.summary.none')}
+                  </div>
+                </div>
+                <div className='space-y-1'>
+                  <div className='font-semibold text-muted-foreground'>
+                    {t('users.roleBindings.summary.permissions')}
+                  </div>
+                  <div className='font-mono'>
+                    {String(accessSnapshot?.permissions.length || 0)}
+                  </div>
+                </div>
+                <div className='space-y-1'>
+                  <div className='font-semibold text-muted-foreground'>
+                    {t('users.roleBindings.summary.effectiveRoles')}
+                  </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {(accessSnapshot?.effectiveRoles || []).length > 0 ? (
+                      accessSnapshot?.effectiveRoles.map((roleId) => (
+                        <Badge key={roleId} variant='outline'>
+                          {roleId}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className='font-mono'>{t('users.roleBindings.summary.none')}</span>
+                    )}
+                  </div>
+                </div>
+                <div className='space-y-1'>
+                  <div className='font-semibold text-muted-foreground'>
+                    {t('users.roleBindings.summary.diagnostics')}
+                  </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {(accessSnapshot?.diagnostics || []).length > 0 ? (
+                      accessSnapshot?.diagnostics?.map((item) => (
+                        <Badge key={item} variant='secondary'>
+                          {item}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className='font-mono'>{t('users.roleBindings.summary.none')}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className='space-y-2'>

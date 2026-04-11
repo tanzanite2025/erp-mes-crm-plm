@@ -16,7 +16,7 @@ export function toCustomerContract(dto: CustomerApiDTO): Customer {
     createdAt: dto.createdAt ?? '',
     updatedAt: dto.updatedAt ?? '',
     isDeleted: dto.isDeleted ?? false,
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
   }
 }
 
@@ -39,6 +39,6 @@ export function toCustomerApiDTO(contract: Customer): CustomerApiDTO {
     createdAt: contract.createdAt,
     updatedAt: contract.updatedAt,
     isDeleted: contract.isDeleted,
-    _v: contract.version,
+    version: contract.version,
   }
 }

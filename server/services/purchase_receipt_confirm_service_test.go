@@ -30,9 +30,9 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-confirm-1", "PO-CONFIRM-001", "Awaiting", "CNY", 88.0, 1.0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, 1, "po-confirm-1", 1, materialID, "MAT-001", "Material 001", "Spec", 10.0, "PCS", 8.8, 88.0, 0.0, "Open").Error)
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-confirm-1", 1, materialID, "MAT-001", "Material 001", "Spec", 10.0, "PCS", 8.8, 88.0, 0.0, 0.0, "Open").Error)
 
 	result, err := ConfirmPurchaseReceipt(ConfirmPurchaseReceiptInput{
 		PurchaseOrderID: "po-confirm-1",

@@ -1,8 +1,17 @@
-import { AppLocale, translate } from '@/locales'
+import { translate, type AppLocale } from '@/locales'
+import { createLogger } from '@/lib/logger'
 import { loadExcelJS } from '@/lib/lazy-vendors'
 
-import { MasterDataSearchResult } from './inventory-core-service'
-import { InboundRecord, ShipmentRecord } from './inventory-transaction-service'
+import { type InboundRecord, type MasterDataSearchResult } from '../inventory'
+import { type ShipmentRecord } from '../shipment'
+
+interface WorkbookBufferWriter {
+    xlsx: {
+        writeBuffer(): Promise<ArrayBuffer>
+    }
+}
+
+const logger = createLogger('WarehouseExportService')
 
 export const WarehouseExportService = {
     async exportInbound(
@@ -46,7 +55,10 @@ export const WarehouseExportService = {
         data.forEach((item) => {
             const master = masterDataMap[item.materialId]
             if (!master) {
-                console.error(`[EXPORT_INTEGRITY] Material/Product ID ${item.materialId} not found in masterDataMap while exporting Inbound.`)
+                logger.error('Export integrity check failed while exporting inbound', {
+                    materialId: item.materialId,
+                    exportType: 'inbound'
+                })
             }
             sheet.addRow([
                 item.entryDate,
@@ -116,7 +128,10 @@ export const WarehouseExportService = {
         data.forEach((item) => {
             const master = masterDataMap[item.materialId]
             if (!master) {
-                console.error(`[EXPORT_INTEGRITY] Material/Product ID ${item.materialId} not found in masterDataMap while exporting Shipment.`)
+                logger.error('Export integrity check failed while exporting shipment', {
+                    materialId: item.materialId,
+                    exportType: 'shipment'
+                })
             }
             sheet.addRow([
                 item.shipmentDate,
@@ -139,7 +154,7 @@ export const WarehouseExportService = {
         )
     },
 
-    async download(workbook: any, filename: string) {
+    async download(workbook: WorkbookBufferWriter, filename: string) {
         try {
             const buffer = await workbook.xlsx.writeBuffer()
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -150,7 +165,7 @@ export const WarehouseExportService = {
             a.click()
             window.URL.revokeObjectURL(url)
         } catch (error) {
-            console.error('[EXPORT_DOWNLOAD_FAILED] Excel download execution failed:', error)
+            logger.error('Excel download execution failed', { error, filename })
             throw error
         }
     }

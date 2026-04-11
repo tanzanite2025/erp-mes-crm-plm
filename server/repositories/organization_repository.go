@@ -17,6 +17,7 @@ type OrganizationRepository interface {
 	CountEmployeesByDeptID(database *gorm.DB, deptID string) (int64, error)
 	DeleteOrganization(database *gorm.DB, id string) error
 	ListEmployees(database *gorm.DB) ([]models.Employee, error)
+	ListPositions(database *gorm.DB) ([]models.Position, error)
 	BulkUpdateEmployeeStatus(database *gorm.DB, ids []string, status string) (int64, error)
 	SaveEmployee(database *gorm.DB, employee *models.Employee) error
 	DeleteEmployees(database *gorm.DB, ids []string) error
@@ -85,15 +86,46 @@ func (GormOrganizationRepository) DeleteOrganization(database *gorm.DB, id strin
 
 func (GormOrganizationRepository) ListEmployees(database *gorm.DB) ([]models.Employee, error) {
 	var employees []models.Employee
-	err := database.Table("employees").
-		Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
+	selectClause := "employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name"
+	query := database.Table("employees").
+		Select(selectClause).
 		Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
 		Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
-		Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
+		Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)")
+
+	if database != nil && database.Migrator().HasTable("employee_assignments") {
+		query = query.
+			Select(selectClause+", employee_assignments.position_id as position_id").
+			Joins("LEFT JOIN employee_assignments ON employee_assignments.employee_id = employees.id AND employee_assignments.deleted_at IS NULL AND employee_assignments.is_primary = ?", true)
+		if database.Migrator().HasTable("positions") {
+			query = query.
+				Select(selectClause + ", employee_assignments.position_id as position_id, positions.name as position_name").
+				Joins("LEFT JOIN positions ON employee_assignments.position_id = positions.id AND positions.deleted_at IS NULL")
+		}
+	}
+
+	err := query.
 		Where("employees.deleted_at IS NULL").
 		Order("employees.created_at desc").
 		Find(&employees).Error
 	return employees, err
+}
+
+func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Position, error) {
+	if database == nil || !database.Migrator().HasTable("positions") {
+		return []models.Position{}, nil
+	}
+
+	var positions []models.Position
+	err := database.Table("positions").
+		Select("positions.*, organizations.name as org_unit_name").
+		Joins("LEFT JOIN organizations ON positions.org_unit_id = CAST(organizations.id AS TEXT)").
+		Where("positions.deleted_at IS NULL").
+		Order("CASE WHEN positions.status = 'active' THEN 0 ELSE 1 END").
+		Order("positions.sort_order asc").
+		Order("positions.name asc").
+		Find(&positions).Error
+	return positions, err
 }
 
 func (GormOrganizationRepository) BulkUpdateEmployeeStatus(database *gorm.DB, ids []string, status string) (int64, error) {

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchase Print Preview</title>
+    <style>
+      body {
+        margin: 0;
+        background: #d7dbe0;
+        font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      }
+
+      #root {
+        padding: 24px 0 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import React from 'react'
+      import { createRoot } from 'react-dom/client'
+      import { LanguageProvider } from '/src/context/language-provider.tsx'
+      import { PurchaseOrderEvidencePrint } from '/src/features/trading/components/purchase/purchase-order-evidence-print.tsx'
+      import { PurchaseReturnPrint } from '/src/features/trading/components/purchase/purchase-return-print.tsx'
+
+      const sharedEvidences = Array.from({ length: 4 }, (_, index) => ({
+        id: `ev-${index + 1}`,
+        url: '/images/shadcn-admin.png',
+        name: `evidence-${index + 1}.png`,
+        uploadedAt: new Date(Date.UTC(2026, 3, 11, 1 + index, 20)).toISOString(),
+        note: index % 2 === 0 ? '外箱压痕，标签需回看' : '批次标识已拍照留档',
+        location: index % 2 === 0 ? '收货区左侧托盘' : '外箱正面',
+        defectPart: index % 2 === 0 ? '箱角' : '标签区',
+      }))
+
+      const order = {
+        id: 'po-preview',
+        orderNo: 'PO-20260411-001',
+        supplierName: '昆山示例供应商有限公司',
+        supplierId: 'sup-1',
+        status: 'Awaiting',
+        evidences: sharedEvidences,
+        amount: 25680,
+        orderDate: '2026-04-08',
+        expectedDate: '2026-04-12',
+        purchaser: '王采购',
+        currency: 'CNY',
+        lines: [
+          {
+            id: 1,
+            lineNo: 1,
+            materialId: 'mat-1',
+            materialName: '不锈钢片',
+            materialCode: 'SS-01',
+            specification: '0.8mm',
+            qty: 1200,
+            uom: 'PCS',
+            price: 4.2,
+            amount: 5040,
+            expectedDate: '2026-04-12',
+            receivedQty: 300,
+            returnedQty: 50,
+            status: 'Awaiting',
+          },
+        ],
+        note: '供应商要求随附现场照片用于对账与异常回传',
+        isDeleted: false,
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      const returnRecord = {
+        id: 'ret-preview',
+        returnNo: 'PR-20260411-001',
+        purchaseOrderId: 'po-preview',
+        purchaseOrderNo: order.orderNo,
+        supplierName: order.supplierName,
+        returnDate: new Date().toISOString(),
+        issueCategory: '外观异常',
+        reason: '外箱挤压导致来料存在碰伤风险',
+        remarks: '供应商确认回收并重发',
+        operator: '王采购',
+        totalQuantity: 120,
+        totalAmount: 504,
+        evidences: sharedEvidences,
+        lines: [
+          {
+            id: 'line-1',
+            lineNo: 1,
+            materialCode: 'SS-01',
+            materialName: '不锈钢片',
+            specification: '0.8mm',
+            quantity: 80,
+            uom: 'PCS',
+            price: 4.2,
+            amount: 336,
+            issueCategory: '包装破损',
+            reason: '纸箱塌陷并混入污渍',
+            evidences: sharedEvidences.slice(0, 2),
+          },
+          {
+            id: 'line-2',
+            lineNo: 2,
+            materialCode: 'SS-02',
+            materialName: '铝片',
+            specification: '1.0mm',
+            quantity: 40,
+            uom: 'PCS',
+            price: 4.2,
+            amount: 168,
+            issueCategory: '标签异常',
+            reason: '标签模糊，批次无法识别',
+            evidences: sharedEvidences.slice(2, 4),
+          },
+        ],
+      }
+
+      function PreviewPage() {
+        return React.createElement(
+          LanguageProvider,
+          null,
+          React.createElement(
+            'div',
+            { style: { display: 'grid', gap: '24px', justifyItems: 'center' } },
+            React.createElement(PurchaseOrderEvidencePrint, { order }),
+            React.createElement(PurchaseReturnPrint, { record: returnRecord }),
+          ),
+        )
+      }
+
+      createRoot(document.getElementById('root')).render(React.createElement(PreviewPage))
+    </script>
+  </body>
+  </html>

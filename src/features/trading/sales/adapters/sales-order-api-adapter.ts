@@ -92,7 +92,8 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     updatedAt: dto.updatedAt,
     updatedBy: dto.updatedBy,
     isDeleted: dto.isDeleted,
-    version: dto._v ?? 1,
+    version: dto.version ?? 1,
+    evidences: dto.evidences ?? [],
     lines: (dto.lines ?? []).map(toSalesOrderLineContract),
   }
 }
@@ -125,7 +126,8 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     updatedAt: order.updatedAt,
     updatedBy: order.updatedBy,
     isDeleted: order.isDeleted,
-    _v: order.version,
+    version: order.version,
+    evidences: order.evidences ?? [],
     lines: (order.lines ?? []).map(toSalesOrderLineApiDTO),
   }
 }

@@ -68,6 +68,7 @@ func mapPurchaseOrderLineRequestToModel(line PurchaseOrderLineRequest) models.Pu
 		Price:         line.Price,
 		Amount:        line.Amount,
 		ReceivedQty:   line.ReceivedQty,
+		ReturnedQty:   line.ReturnedQty,
 		Status:        line.Status,
 	}
 }
@@ -94,6 +95,7 @@ func MapSavePurchaseOrderRequestToModel(input SavePurchaseOrderRequest) models.P
 		PaymentTerm:        input.PaymentTerm,
 		PaymentTermName:    input.PaymentTermName,
 		Note:               input.Note,
+		Evidences:          encodeOrderEvidences(input.Evidences),
 		WorkflowInstanceID: input.WorkflowInstanceID,
 		IsDeleted:          input.IsDeleted,
 		Version:            input.Version,
@@ -123,6 +125,7 @@ func MapPatchPurchaseOrderRequestToModel(input PatchPurchaseOrderRequest) models
 		PaymentTerm:        input.PaymentTerm,
 		PaymentTermName:    input.PaymentTermName,
 		Note:               input.Note,
+		Evidences:          encodeOrderEvidences(input.Evidences),
 		WorkflowInstanceID: input.WorkflowInstanceID,
 		IsDeleted:          input.IsDeleted,
 		Version:            input.Version,
@@ -143,6 +146,7 @@ func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine) PurchaseOrder
 		Price:         line.Price,
 		Amount:        line.Amount,
 		ReceivedQty:   line.ReceivedQty,
+		ReturnedQty:   line.ReturnedQty,
 		Status:        line.Status,
 	}
 }
@@ -169,6 +173,7 @@ func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderRespons
 		PaymentTerm:        order.PaymentTerm,
 		PaymentTermName:    order.PaymentTermName,
 		Note:               order.Note,
+		Evidences:          decodeOrderEvidences(order.Evidences),
 		WorkflowInstanceID: order.WorkflowInstanceID,
 		CreatedAt:          order.CreatedAt,
 		UpdatedAt:          order.UpdatedAt,
@@ -198,6 +203,7 @@ func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder) []PurchaseOrder
 			PaymentTerm:        order.PaymentTerm,
 			PaymentTermName:    order.PaymentTermName,
 			Note:               order.Note,
+			Evidences:          decodeOrderEvidences(order.Evidences),
 			WorkflowInstanceID: order.WorkflowInstanceID,
 			CreatedAt:          order.CreatedAt,
 			UpdatedAt:          order.UpdatedAt,

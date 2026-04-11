@@ -1,23 +1,19 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { InventoryMaintenanceService as InventoryDomainMaintenanceService } from '../inventory'
 import {
   toInventoryAdjustmentContracts,
-  toInventoryRecordContract,
   toShipmentRecordContract,
   toWarehouseCommandAckContract,
   type InventoryAdjustment,
-  type InventoryRecord,
   type ShipmentRecord,
   type WarehouseCommandAck,
 } from '../adapters/warehouse-api-adapter'
 import {
   type InventoryAdjustmentApiDTO,
-  type InventoryItemApiDTO,
   type InventoryShipmentRecordApiDTO,
   type WarehouseCommandAckApiDTO,
 } from '../contracts/warehouse-api-dto'
-import { InventoryCoreService } from './inventory-core-service'
 
 export interface ReconcileResult {
   totalItems: number
@@ -25,20 +21,10 @@ export interface ReconcileResult {
 }
 
 export type { AdjustmentItem, InventoryAdjustment } from '../adapters/warehouse-api-adapter'
+export type { InventoryRecord } from '../inventory'
 
 export const InventoryMaintenanceService = {
-  reconcileInventory: async (): Promise<ReconcileResult> => {
-    const res = await apiFetch<ReconcileResult>('/inventory/reconcile', {
-      method: 'POST',
-      body: JSON.stringify({ metadata: { intent: 'STOCK_RECONCILIATION' } }),
-    })
-    const result = ensureObjectResponse<ReconcileResult & Record<string, unknown>>(
-      res,
-      'InventoryMaintenanceService.reconcileInventory'
-    ) as ReconcileResult
-    InventoryCoreService.broadcastUpdate()
-    return result
-  },
+  reconcileInventory: InventoryDomainMaintenanceService.reconcileInventory,
 
   deleteShipmentRecord: async (id: string, approvalId?: string): Promise<ShipmentRecord> => {
     const res = await apiFetch<InventoryShipmentRecordApiDTO>(`/inventory/shipment/${id}/void`, {
@@ -54,7 +40,6 @@ export const InventoryMaintenanceService = {
         'InventoryMaintenanceService.deleteShipmentRecord'
       ) as InventoryShipmentRecordApiDTO
     )
-    InventoryCoreService.broadcastUpdate()
     return record
   },
 
@@ -87,7 +72,6 @@ export const InventoryMaintenanceService = {
       method: 'POST',
       body: JSON.stringify({ metadata: { intent: 'STOCK_ADJUSTMENT_EXECUTE' } }),
     })
-    InventoryCoreService.broadcastUpdate()
     return toWarehouseCommandAckContract(
       ensureObjectResponse<WarehouseCommandAckApiDTO & Record<string, unknown>>(
         res,
@@ -96,37 +80,9 @@ export const InventoryMaintenanceService = {
     )
   },
 
-  patchInventory: async (id: string, delta: DeltaSet, version: number): Promise<InventoryRecord> => {
-    const payload: DeltaPayload = {
-      op: 'PATCH',
-      delta,
-      metadata: {
-        id,
-        version,
-        intent: 'PHYSICAL_STOCK_ADJUSTMENT',
-      },
-    }
+  patchInventory: InventoryDomainMaintenanceService.patchInventory,
 
-    const res = await apiFetch<InventoryItemApiDTO>(`/inventory/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    })
+  setAlertThreshold: InventoryDomainMaintenanceService.setAlertThreshold,
 
-    InventoryCoreService.broadcastUpdate()
-    return toInventoryRecordContract(
-      ensureObjectResponse<InventoryItemApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryMaintenanceService.patchInventory'
-      ) as InventoryItemApiDTO
-    )
-  },
-
-  setAlertThreshold: async (materialId: string, minQty: number): Promise<void> => {
-    console.warn('[MAINTENANCE] setAlertThreshold is not yet synced to backend storage', { materialId, minQty })
-    InventoryCoreService.broadcastUpdate()
-  },
-
-  getAlertThresholds: async (): Promise<Record<string, number>> => {
-    return {}
-  },
+  getAlertThresholds: InventoryDomainMaintenanceService.getAlertThresholds,
 }

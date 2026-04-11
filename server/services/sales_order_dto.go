@@ -50,10 +50,11 @@ type SaveSalesOrderRequest struct {
 	PurchaseOrderNo    string                  `json:"purchaseOrderNo"`
 	Barcode            string                  `json:"barcode"`
 	Requirements       string                  `json:"requirements"`
+	Evidences          []OrderEvidencePayload  `json:"evidences"`
 	WorkflowInstanceID string                  `json:"workflowInstanceId"`
 	UpdatedBy          string                  `json:"updatedBy"`
 	IsDeleted          bool                    `json:"isDeleted"`
-	Version            int                     `json:"_v"`
+	Version            int                     `json:"version"`
 	Lines              []SalesOrderLineRequest `json:"lines"`
 }
 
@@ -79,10 +80,11 @@ type SalesOrderSnapshotRequest struct {
 	PurchaseOrderNo    string                  `json:"purchaseOrderNo"`
 	Barcode            string                  `json:"barcode"`
 	Requirements       string                  `json:"requirements"`
+	Evidences          []OrderEvidencePayload  `json:"evidences"`
 	WorkflowInstanceID string                  `json:"workflowInstanceId"`
 	UpdatedBy          string                  `json:"updatedBy"`
 	IsDeleted          bool                    `json:"isDeleted"`
-	Version            int                     `json:"_v"`
+	Version            int                     `json:"version"`
 	Lines              []SalesOrderLineRequest `json:"lines"`
 }
 
@@ -134,12 +136,13 @@ type SalesOrderResponse struct {
 	PurchaseOrderNo    string                   `json:"purchaseOrderNo"`
 	Barcode            string                   `json:"barcode"`
 	Requirements       string                   `json:"requirements"`
+	Evidences          []OrderEvidencePayload   `json:"evidences"`
 	WorkflowInstanceID string                   `json:"workflowInstanceId"`
 	CreatedAt          time.Time                `json:"createdAt"`
 	UpdatedAt          time.Time                `json:"updatedAt"`
 	UpdatedBy          string                   `json:"updatedBy"`
 	IsDeleted          bool                     `json:"isDeleted"`
-	Version            int                      `json:"_v"`
+	Version            int                      `json:"version"`
 	Lines              []SalesOrderLineResponse `json:"lines"`
 }
 
@@ -165,12 +168,13 @@ type SalesOrderListItemResponse struct {
 	PurchaseOrderNo    string                   `json:"purchaseOrderNo"`
 	Barcode            string                   `json:"barcode"`
 	Requirements       string                   `json:"requirements"`
+	Evidences          []OrderEvidencePayload   `json:"evidences"`
 	WorkflowInstanceID string                   `json:"workflowInstanceId"`
 	CreatedAt          time.Time                `json:"createdAt"`
 	UpdatedAt          time.Time                `json:"updatedAt"`
 	UpdatedBy          string                   `json:"updatedBy"`
 	IsDeleted          bool                     `json:"isDeleted"`
-	Version            int                      `json:"_v"`
+	Version            int                      `json:"version"`
 	Lines              []SalesOrderLineResponse `json:"lines,omitempty"`
 }
 

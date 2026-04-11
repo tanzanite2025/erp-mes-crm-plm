@@ -13,6 +13,7 @@ type Position struct {
 	Status           string  `gorm:"size:20;not null;default:'active'" json:"status"`
 	SortOrder        int     `gorm:"not null;default:0" json:"sortOrder"`
 	Metadata         string  `gorm:"type:jsonb;not null;default:'{}'" json:"metadata"`
+	OrgUnitName      string  `gorm:"->" json:"orgUnitName"`
 }
 
 func (Position) TableName() string {

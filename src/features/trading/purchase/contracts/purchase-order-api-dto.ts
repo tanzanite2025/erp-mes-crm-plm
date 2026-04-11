@@ -1,3 +1,5 @@
+import type { OrderEvidence } from '../../data/schema'
+
 export interface PurchaseOrderLineApiDTO {
   id?: number
   lineNo: number
@@ -11,6 +13,7 @@ export interface PurchaseOrderLineApiDTO {
   amount: number
   expectedDate: string
   receivedQty: number
+  returnedQty: number
   status: string
   note?: string
 }
@@ -36,7 +39,8 @@ export interface PurchaseOrderApiDTO {
   isDeleted?: boolean
   createdAt: string
   updatedAt: string
-  _v?: number
+  version?: number
+  evidences?: OrderEvidence[]
   lines: PurchaseOrderLineApiDTO[]
 }
 

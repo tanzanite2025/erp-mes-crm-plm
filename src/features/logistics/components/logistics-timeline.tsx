@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { AlertCircle, CheckCircle2, Clock, MapPin, Truck } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
-import { LogisticsStatus, logisticsStatuses, type LogisticsEvent } from '../types'
+import { type LogisticsEvent, type LogisticsStatus, logisticsStatuses } from '../data/schema'
 
 interface LogisticsTimelineProps {
   events: LogisticsEvent[]
@@ -22,7 +22,7 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
   if (events.length === 0) {
     return (
       <div className='py-20 flex flex-col items-center justify-center space-y-3 opacity-30'>
-        <Truck className='size-10 stroke-[1]' />
+        <Truck className='size-10 stroke-1' />
         <p className='text-[10px] font-black uppercase tracking-widest'>
           {t('trading.logistics.timelineEmpty')}
         </p>
@@ -31,7 +31,7 @@ export function LogisticsTimeline({ events }: LogisticsTimelineProps) {
   }
 
   return (
-    <div className='relative pl-4 space-y-6 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[1.5px] before:bg-gradient-to-b before:from-primary/40 before:via-muted before:to-transparent'>
+    <div className='relative pl-4 space-y-6 before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[1.5px] before:bg-linear-to-b before:from-primary/40 before:via-muted before:to-transparent'>
       {events.map((event, index) => {
         const statusMeta = logisticsStatuses.find((status) => status.value === event.status)
 

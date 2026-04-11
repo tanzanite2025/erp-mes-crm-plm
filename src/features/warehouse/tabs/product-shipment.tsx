@@ -7,10 +7,7 @@ import { Route } from '@/routes/_authenticated/warehouse/shipment'
 import { useLanguage } from '@/context/language-provider'
 import { PageHeader } from '@/components/layout/page-header'
 import { isForbiddenError } from '@/lib/error-status'
-import { useShipment } from '../hooks/use-shipment'
-import { ShipmentSearch } from '../components/shipment-search'
-import { ShipmentHistory } from '../components/shipment-history'
-import { ShipmentDialog } from '../components/shipment-dialog'
+import { ShipmentDialog, ShipmentHistory, ShipmentSearch, useShipment } from '../shipment'
 
 export default function ProductShipment() {
     const { t } = useLanguage()

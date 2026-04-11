@@ -46,7 +46,7 @@ type SaveCustomerRequest struct {
 	CreditLimit   float64 `json:"creditLimit"`
 	Balance       float64 `json:"balance"`
 	IsDeleted     bool    `json:"isDeleted"`
-	Version       int     `json:"_v"`
+	Version       int     `json:"version"`
 }
 
 type PatchCustomerRequest struct {
@@ -77,7 +77,7 @@ type CustomerResponse struct {
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 	IsDeleted     bool      `json:"isDeleted"`
-	Version       int       `json:"_v"`
+	Version       int       `json:"version"`
 }
 
 type CustomerListResponse struct {
@@ -103,7 +103,7 @@ type SupplierResponse struct {
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 	IsDeleted     bool      `json:"isDeleted"`
-	Version       int       `json:"_v"`
+	Version       int       `json:"version"`
 }
 
 type SupplierListResponse struct {

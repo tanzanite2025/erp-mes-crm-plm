@@ -10,7 +10,7 @@ import { DataTableRowActions } from './data-table-row-actions'
 import { callTypes, roles } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import { type OrgNode } from '@/features/org-personnel/data/org-schema'
-import { resolveRoleLabel } from '../utils/role-resolver'
+import { buildRoleDisplayText } from '../utils/role-display'
 import { isSuperAdmin } from '../utils/user-utils'
 
 const userStatusTranslationKeys: Record<
@@ -153,7 +153,9 @@ export function getUsersColumns(
       cell: ({ row }) => {
         const { role, resolvedRole, roleInfo } = row.original
         const displayRoleId = resolvedRole || role
-        const label = resolveRoleLabel(displayRoleId, dynamicRoles, orgNodes)
+        const label =
+          buildRoleDisplayText([displayRoleId], dynamicRoles, { orgNodes, dedupe: false }) ||
+          displayRoleId
         const userType = roles.find(({ value }) => value === displayRoleId)
 
         return (

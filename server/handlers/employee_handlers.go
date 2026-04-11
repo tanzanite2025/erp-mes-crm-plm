@@ -30,6 +30,15 @@ func GetEmployeesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, employees)
 }
 
+func GetPositionsHandler(c *gin.Context) {
+	positions, err := services.ListPositions()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch positions"})
+		return
+	}
+	c.JSON(http.StatusOK, positions)
+}
+
 func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
 	var input bulkUpdateEmployeeStatusRequest
 	if err := c.ShouldBindJSON(&input); err != nil {

@@ -36,8 +36,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 
-import { useWarehouseCategory } from '../hooks/use-warehouse-category'
-import { type WarehouseCategory as Category } from '../services/warehouse-category-core-service'
+import { useWarehouseCategory, type WarehouseCategory as Category } from '../category'
 
 type CategoryFormState = Omit<Category, 'id' | 'version'>
 
@@ -216,7 +215,7 @@ export default function WarehouseCategory() {
         <>
             <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
                 <div className='flex flex-col gap-1 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-8 relative overflow-hidden'>
-                    <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
+                    <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
                     <div className='flex items-center gap-3 text-primary relative z-10'>
                         <Warehouse className='size-5' />
                         <h2 className='text-xl font-black uppercase italic tracking-tighter'>

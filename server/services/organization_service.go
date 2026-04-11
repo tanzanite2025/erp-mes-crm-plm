@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"strings"
+	"xdfc-server/dependencies"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
 
@@ -22,20 +23,23 @@ var (
 )
 
 type OrganizationService struct {
-	txManager   transactionManager
-	auditLogger auditLogger
-	repository  repositories.OrganizationRepository
+	txManager                transactionManager
+	auditLogger              auditLogger
+	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer
+	repository               repositories.OrganizationRepository
 }
 
 func NewOrganizationService(
 	txManager transactionManager,
 	auditLogger auditLogger,
+	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer,
 	repository repositories.OrganizationRepository,
 ) *OrganizationService {
 	return &OrganizationService{
-		txManager:   txManager,
-		auditLogger: auditLogger,
-		repository:  repository,
+		txManager:                txManager,
+		auditLogger:              auditLogger,
+		roleSnapshotSynchronizer: roleSnapshotSynchronizer,
+		repository:               repository,
 	}
 }
 
@@ -44,6 +48,7 @@ var defaultOrganizationRuntime = defaultServiceRuntime()
 var defaultOrganizationService = NewOrganizationService(
 	defaultOrganizationRuntime.txManager,
 	defaultOrganizationRuntime.auditLogger,
+	dependencies.NewRoleSnapshotSynchronizer(),
 	repositories.NewOrganizationRepository(),
 )
 
@@ -61,6 +66,10 @@ func DeleteOrganization(id string) error {
 
 func ListEmployees() ([]EmployeeListItemResponse, error) {
 	return defaultOrganizationService.ListEmployees()
+}
+
+func ListPositions() ([]PositionListItemResponse, error) {
+	return defaultOrganizationService.ListPositions()
 }
 
 func BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {
@@ -230,6 +239,14 @@ func (s *OrganizationService) ListEmployees() ([]EmployeeListItemResponse, error
 	return MapEmployeesToListItemResponse(employees), nil
 }
 
+func (s *OrganizationService) ListPositions() ([]PositionListItemResponse, error) {
+	positions, err := s.repository.ListPositions(s.txManager.DB())
+	if err != nil {
+		return nil, err
+	}
+	return MapPositionsToListItemResponse(positions), nil
+}
+
 func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
@@ -263,13 +280,17 @@ func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeS
 		if err := s.repository.SaveEmployee(tx, &model); err != nil {
 			return err
 		}
-		return tx.Table("employees").
-			Select("employees.*, organizations.name as dept_name, production_lines.name as line_name, process_steps.name as process_name").
-			Joins("LEFT JOIN organizations ON employees.dept_id = CAST(organizations.id AS TEXT)").
-			Joins("LEFT JOIN production_lines ON employees.line_id = CAST(production_lines.id AS TEXT)").
-			Joins("LEFT JOIN process_steps ON employees.process_id = CAST(process_steps.id AS TEXT)").
-			Where("employees.id = ?", model.ID).
-			First(&refreshed).Error
+		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, model, "legacy_employee_save", ""); err != nil {
+			return err
+		}
+		if s.roleSnapshotSynchronizer != nil {
+			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, model); err != nil {
+				return err
+			}
+		}
+		var err error
+		refreshed, err = loadEmployeeAggregate(tx, model.ID)
+		return err
 	}); err != nil {
 		return EmployeeSaveResponse{}, err
 	}
@@ -340,6 +361,14 @@ func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest)
 
 			if err := s.repository.SaveEmployee(tx, &employee); err != nil {
 				return err
+			}
+			if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, employee, "legacy_employee_bulk_sync", ""); err != nil {
+				return err
+			}
+			if s.roleSnapshotSynchronizer != nil {
+				if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, employee); err != nil {
+					return err
+				}
 			}
 			if s.auditLogger != nil {
 				action := "Create"

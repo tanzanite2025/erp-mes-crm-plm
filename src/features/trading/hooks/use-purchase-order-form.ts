@@ -24,6 +24,8 @@ const emptyLine: Partial<PurchaseOrderLine> = {
     price: 0,
     amount: 0,
     uom: 'PCS',
+    receivedQty: 0,
+    returnedQty: 0,
     status: 'Draft',
     expectedDate: new Date().toISOString().split('T')[0],
 }
@@ -45,6 +47,7 @@ const DEFAULT_PURCHASE_ORDER: Partial<PurchaseOrder> = {
     paymentTerm: '',
     paymentTermName: '',
     note: '',
+    evidences: [],
     version: 1,
 }
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"xdfc-server/db"
+	"xdfc-server/dependencies"
 	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
@@ -110,12 +111,17 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		accessProfile := ResolveEffectiveAccessProfileForUser(user)
-		contextRoleID := strings.TrimSpace(accessProfile.PrimaryRoleID)
+		accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to resolve account access"})
+			c.Abort()
+			return
+		}
+		contextRoleID := strings.TrimSpace(accessSnapshot.PrimaryRoleID)
 
-		effectiveRoles := accessProfile.EffectiveRoles
+		effectiveRoles := accessSnapshot.EffectiveRoles
 
-		resolvedPermissions := accessProfile.Permissions
+		resolvedPermissions := accessSnapshot.Permissions
 
 		c.Set("userId", user.ID)
 		c.Set("username", user.Username)
@@ -123,6 +129,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("effectiveRoles", effectiveRoles)
 		c.Set("permissions", resolvedPermissions)
 		c.Set("status", user.Status)
+		c.Set("accessSnapshot", accessSnapshot)
 
 		c.Next()
 	}

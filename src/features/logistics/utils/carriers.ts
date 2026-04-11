@@ -1,4 +1,4 @@
-import { commonCarriers } from '../types'
+import { commonCarriers } from '../data/schema'
 
 function uniqueCarriers(carriers: string[]) {
   return carriers.filter((carrier, index) => carriers.indexOf(carrier) === index)

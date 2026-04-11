@@ -1,4 +1,314 @@
 
+- [ ] 689. warehouse 第四阶段：stocktake 子域拆分规划（2026-04-11，待确认）
+  - [x] 已确认 `inventory` 当前低风险收口已完成到可接受边界，下一步进入 `stocktake` 子域规划。
+  - [x] 已确认本轮目标是规划 `stocktake` 子域拆分，而不是直接执行业务代码迁移。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `stocktake` 子域的领域边界、类型归属与统一入口
+    - [x] 明确与 `inventory / warehouse-category / pda` 的依赖关系
+    - [x] 明确旧 `stocktake-core-service / stocktake-execution-service / stocktake-report-service / stocktake-pda-service` 的渐进收口路径
+    - [x] 明确本阶段不联动重写 `inventory` 与 `shipment` 已完成的边界
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接执行 `stocktake` 业务代码迁移
+    - [x] 不一次性重构整个仓储剩余模块
+    - [x] 不删除旧 `stocktake-*` 入口
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 建立 `stocktake` 子域的目标目录与分层边界
+    - [ ] 规划第一批优先迁移的 `data / contracts / adapters / services`
+    - [ ] 明确验证范围与兼容策略
+
+- [ ] 688. warehouse 第三阶段补充：inventory 第一批兜底一致性清理规划（2026-04-11，待确认）
+  - [x] 已确认 `inventory` 第一批与第二批消费方切换已完成当前低风险范围，但仍存在“兼容兜底 + 新入口并存”带来的口径不一致风险。
+  - [x] 已确认本轮目标是先做一致性收口规划，避免后续继续同时写新旧两路，而不是立即扩大到 `stocktake` 子域执行。
+  - [x] 已确认本轮先做一致性清理规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `inventory` 第一批/第二批拆分后哪些入口应被视为统一新入口
+    - [x] 明确哪些旧 `inventory-*` 服务仅保留兼容兜底职责
+    - [x] 明确哪些第一批遗留调用仍可能形成“双路写法”并应统一
+    - [x] 明确后续新增调用应禁止继续引用旧平面入口
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不删除旧兼容层文件
+    - [x] 不扩大为 `stocktake` 或整个 `warehouse` 的统一重写
+    - [x] 不在未统一边界前继续盲目推进更多批次迁移
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 排查第一批遗留的双路入口与不一致导入点
+    - [ ] 统一低风险调用到新 `warehouse/inventory` 入口
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 687. warehouse 第三阶段补充：inventory 第二批消费方切换规划（2026-04-11，待确认）
+  - [x] 已确认 `inventory` 第三阶段第一批拆分与 `inventory-maintenance-service` 收口已完成到当前低风险边界。
+  - [x] 已确认本轮目标是继续排查剩余仍走旧 `inventory-*` 平面入口的低风险调用，并完成第二批消费方切换。
+  - [x] 已确认本轮先做第二批消费方切换规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 识别仍直接引用旧 `inventory-core-service / inventory-maintenance-service / inventory-transaction-service` 平面入口的调用点
+    - [x] 评估这些调用点是否适合直接切到 `warehouse/inventory` 子域统一入口
+    - [x] 明确第二批切换的最小范围与兼容策略
+    - [x] 保持当前不联动改造 `stocktake` 子域主体结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大为整个 `warehouse` 全量 import 清理
+    - [x] 不删除旧 `inventory-*` 兼容入口
+    - [x] 不把本轮演化为 `stocktake` 子域拆分执行
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 检索并列出仍使用旧 `inventory-*` 平面入口的低风险调用点
+    - [ ] 完成第二批消费方切换
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 686. warehouse 第三阶段补充：inventory-maintenance-service 收口规划（2026-04-11，待确认）
+  - [x] 已确认 `inventory` 第三阶段第一批拆分已完成，当前下一步优先收口 `inventory-maintenance-service`。
+  - [x] 已确认本轮目标是继续迁移**库存基础维护能力**到新 `inventory` 子域，而不是扩大到 `shipment / stocktake` 业务重构。
+  - [x] 已确认本轮先做 `inventory-maintenance-service` 收口规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确哪些维护能力属于 `inventory` 基础子域（如库存修正、阈值、重算等）
+    - [x] 明确哪些能力暂时留在旧兼容层（如发货作废、盘点审批/调整历史）
+    - [x] 明确第一批继续切换的低风险消费方
+    - [x] 保持旧入口兼容，不直接删除旧服务文件
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不联动改造 `stocktake` 主体结构
+    - [x] 不把发货作废逻辑重新塞回 `inventory` 子域
+    - [x] 不扩大为整个 `warehouse` maintenance 体系重写
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 继续收口 `inventory-maintenance-service` 的库存基础维护能力到新 `inventory` 子域
+    - [ ] 保留非库存基础职责在旧兼容层
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 685. warehouse 第三阶段：inventory 子域拆分规划（2026-04-11，待确认）
+  - [x] 已确认 `shipment` 第二阶段及其补充收口已完成到当前低风险边界，当前可以进入 `inventory` 第三阶段规划。
+  - [x] 已确认本轮目标是规划 `inventory` 子域拆分，而不是直接执行业务代码改造。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `inventory` 子域的领域边界、类型归属与入口职责
+    - [x] 明确与 `shipment / stocktake / warehouse-category` 的依赖边界
+    - [x] 明确旧 `inventory-core-service / inventory-maintenance-service / inventory-transaction-service` 的渐进收口路径
+    - [x] 明确本阶段不联动改造 `stocktake / logistics` 主体结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接执行 `inventory` 业务代码迁移
+    - [x] 不一次性拆分整个 `warehouse` 剩余模块
+    - [x] 不删除旧 `inventory` 入口
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 建立 `inventory` 子域的目标目录与分层边界
+    - [ ] 规划第一批优先迁移的 `data / contracts / adapters / services / hooks`
+    - [ ] 明确验证范围与兼容策略
+
+- [ ] 684. warehouse 第二阶段补充：warehouse-export-service 历史 lint 清理规划（2026-04-11，待确认）
+  - [x] 已确认 `shipment` 间接依赖清理已完成，当前剩余最明显的历史问题集中在 `warehouse-export-service.ts`。
+  - [x] 已确认本轮优先采用方向 A：单独处理 `warehouse-export-service.ts` 的历史 lint，而不是立即进入 `inventory` 第三阶段。
+  - [x] 已确认本轮先做 `warehouse-export-service.ts` 清理规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 处理 `no-console` 问题
+    - [x] 处理 `@typescript-eslint/no-explicit-any` 问题
+    - [x] 评估导出下载职责边界，避免继续堆积技术债
+    - [x] 保持导出行为不变，不影响报表导出功能
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大到整个 `warehouse` 共享服务统一重构
+    - [x] 不联动修改 `inventory / shipment / stocktake` 业务流程
+    - [x] 不把本轮演化为导出基础设施全面重写
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 清理 `warehouse-export-service.ts` 的 `console` 与 `any`
+    - [ ] 在不改变行为的前提下收紧导出下载相关类型与错误处理
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 683. warehouse 第二阶段补充：shipment 间接依赖清理规划（2026-04-11，待确认）
+  - [x] 已确认 `shipment` 第二批直接消费方排查已完成，当前需要继续检查是否仍有聚合 helper / service 间接依赖旧 `shipment` 兼容层。
+  - [x] 已确认本轮目标是继续做更深层的间接依赖清理，而不是立即进入 `inventory` 第三阶段。
+  - [x] 已确认本轮先做间接依赖清理规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 识别 `warehouse` 范围内是否存在通过聚合 helper / service / barrel 间接引用旧 `shipment` 平面兼容层的路径
+    - [x] 评估这些间接依赖是否适合切换到 `warehouse/shipment` 子域统一入口
+    - [x] 明确最小可执行清理范围及兼容策略
+    - [x] 保持当前不联动改造 `inventory / logistics / stocktake` 主体结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大为整个 `warehouse` 架构层统一重排
+    - [x] 不提前删除旧 `shipment` 兼容层
+    - [x] 不演化为跨子域公共抽象重构
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 检索并列出仍通过聚合 helper / service / barrel 间接依赖旧 `shipment` 兼容层的路径
+    - [ ] 按最小范围完成可安全替换的间接依赖清理
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 682. warehouse 第二阶段补充：shipment 第二批消费方排查与切换规划（2026-04-11，待确认）
+  - [x] 已确认 `shipment` 第一批 UI 消费面收口已完成，当前需要继续排查是否仍有页面或组件直接引用旧 `shipment` 平面入口。
+  - [x] 已确认本轮目标是继续做第二批消费方切换，而不是立即进入 `inventory` 第三阶段。
+  - [x] 已确认本轮先做排查与切换规划，不直接修改业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 识别仍直接引用旧 `warehouse/hooks/use-shipment*`、`warehouse/components/shipment-*`、`inventory-transaction-service` 发货入口的页面或组件
+    - [x] 评估这些调用点是否适合切换到 `warehouse/shipment` 子域统一入口
+    - [x] 明确第二批切换的最小范围及兼容策略
+    - [x] 保持当前不联动改造 `inventory / logistics / stocktake`
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大为整个 `warehouse` 全量 import 清理
+    - [x] 不直接删除旧 `shipment` 平面兼容入口
+    - [x] 不把本轮演化为后续子域的统一大重构
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 检索并列出仍引用旧 `shipment` 平面入口的实际调用点
+    - [ ] 按最小范围完成第二批消费方切换
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 681. warehouse 第二阶段补充：shipment UI 消费面迁移规划（2026-04-11，待确认）
+  - [x] 已确认第二阶段 `shipment` 的领域类型、事务入口与 hooks 已迁入独立子域，当前剩余的主要收口点在 UI 消费面。
+  - [x] 已确认本轮优先采用方向 A：继续补 `shipment` 组件迁移，而不是立即进入 `inventory` 第三阶段规划。
+  - [x] 已确认本轮先做 `shipment` UI 消费面迁移规划，不直接修改组件代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `shipment-dialog / shipment-history / shipment-search / product-shipment.tsx` 的迁移边界
+    - [x] 明确哪些类型与 hook 入口应从旧 `warehouse` 平面目录切换到 `warehouse/shipment`
+    - [x] 明确旧组件入口是否保留兼容转发层
+    - [x] 保持当前不联动改造 `inventory / logistics` 主体结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大到 `inventory` 第三阶段
+    - [x] 不同时处理 `stocktake`
+    - [x] 不把本轮演化为整个 `warehouse` UI 全量搬迁
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 迁移 `shipment-search / shipment-history / shipment-dialog` 到新子域入口
+    - [ ] 迁移 `product-shipment.tsx` 到新子域消费面
+    - [ ] 如有必要，为旧组件入口保留兼容转发层
+
+- [ ] 680. warehouse 第二阶段：shipment 子域拆分规划（2026-04-11，待确认）
+  - [x] 已确认 `warehouse-category` 第一阶段已完成，可以作为仓储子域拆分模板继续推进下一阶段。
+  - [x] 已确认第二阶段优先选择 `shipment`，因为它与 `sales / logistics` 耦合最高，且复杂度低于 `stocktake`。
+  - [x] 已确认本轮先做 `shipment` 子域拆分规划，不直接修改 `shipment` 业务代码。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `shipment` 子域的领域类型、API DTO、adapter、service、hook、components 边界
+    - [x] 明确与 `sales / logistics / inventory` 的依赖边界
+    - [x] 明确旧 `inventory-transaction-service / use-shipment* / components/shipment-*` 的逐步收口路径
+    - [x] 明确本阶段不触碰 `stocktake` 与 `inventory` 主体结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接搬迁所有 shipment 组件
+    - [x] 不一次性拆分整个 inventory 交易链
+    - [x] 不联动改造 logistics 模块
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 建立 `warehouse/shipment` 独立子域目录骨架
+    - [ ] 先迁移 shipment 的 data/contracts/adapters/services/hooks
+    - [ ] 旧入口先保留兼容转发层，降低迁移风险
+
+- [ ] 679. warehouse 子域拆分规划：先规划后执行（2026-04-11，待确认）
+  - [x] 已确认 `warehouse` 当前不是单一稳定 feature，而是至少同时承载 `warehouse-category / inventory / shipment / stocktake` 多个业务子域。
+  - [x] 已确认当前核心问题不在单个字段或单个 service，而在于 `contracts/warehouse-api-dto.ts` 与 `adapters/warehouse-api-adapter.ts` 已承担多个子域的聚合职责。
+  - [x] 已确认本轮不直接做整体小修，也不立即进入代码重构，而是先完成**子域拆分规划**。
+  - [x] 已确认本轮规划目标包括：
+    - [x] 明确 `warehouse-category / inventory / shipment / stocktake` 的子域边界
+    - [x] 明确每个子域未来的 `data / contracts / adapters / services / hooks / components` 归属
+    - [x] 明确哪些旧 service / hook / adapter 将被逐步退役
+    - [x] 明确第一阶段应该先拆哪个子域，避免一次性大重构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接修改 `warehouse` 业务代码
+    - [x] 不立即拆分 `warehouse-api-dto.ts` 与 `warehouse-api-adapter.ts`
+    - [x] 不把本轮演化为大规模目录搬迁
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 按规划优先拆分 `warehouse-category` 子域，作为仓储域拆分模板
+    - [ ] 再评估 `shipment` 子域是否作为第二阶段收口对象
+    - [ ] 最后再处理复杂度最高的 `stocktake` 子域
+
+- [ ] 678. logistics 低风险整洁化：根导出收口 + 状态更新 payload 命名化（2026-04-11，待确认）
+  - [x] 已确认当前 `logistics` 主链分层已基本稳定，暂不需要继续扩大为新一轮结构重构。
+  - [x] 已确认本轮只做低风险整洁化，不改业务行为、不改接口语义、不改保存/状态更新流程。
+  - [x] 已确认当前可以优化的点仅限两处：
+    - [x] 补 `src/features/logistics/index.ts` 作为根导出收口
+    - [x] 为 `logistics-service.ts` 中状态更新请求 payload 提供明确命名类型
+  - [x] 已确认当前不做以下事项：
+    - [x] 不继续拆更多 command 文件
+    - [x] 不改 `hooks / services / components` 的调用语义
+    - [x] 不把本轮演化为物流模块二次重构
+  - [ ] 待你确认后执行：
+    - [ ] 新增 `src/features/logistics/index.ts`，统一导出组件、hooks 与核心 schema 类型
+    - [ ] 将状态更新 payload 提升为命名类型，并替换 service 内联对象类型
+    - [ ] 如有必要，仅做最小范围 import 路径收口，不额外扩散修改面
+    - [ ] 执行目标文件 `eslint` / `tsc` 校验，并更新 `walkthrough.md`
+
+- [ ] 677. 收口 sales / purchase 的 `_v -> version` 前后端契约语义（2026-04-11，待确认）
+  - [x] 已确认当前 `sales / purchase` 前端虽然已有相对成熟的 `contract -> adapter -> service -> hook -> component` 主链，但版本字段正式传输口径仍是 `_v`。
+  - [x] 已确认当前 `_v` 仍残留在以下正式链路：
+    - [x] 后端模型 `server/models/trading.go` 中 `SalesOrder.Version` / `PurchaseOrder.Version`
+    - [x] 后端 DTO `server/services/sales_order_dto.go` / `server/services/purchase_order_dto.go`
+    - [x] 前端 DTO `src/features/trading/sales/contracts/sales-order-api-dto.ts` / `src/features/trading/purchase/contracts/purchase-order-api-dto.ts`
+    - [x] 前端 adapter `sales-order-api-adapter.ts` / `purchase-order-api-adapter.ts`
+  - [x] 已确认本轮虽然涉及订单明细、附件、工作流保存链相关 DTO，但本轮目标仍然只限于**版本字段语义统一**，不重构订单流程本身。
+  - [x] 已确认本轮目标不是保留 `_v <-> version` 双轨兼容，而是把 `sales / purchase` 的正式契约收口为统一 `version`。
+  - [ ] 待你确认后执行：
+    - [ ] 将 `SalesOrder` / `PurchaseOrder` 的后端模型 JSON tag 从 `_v` 收口到 `version`。
+    - [ ] 同步调整 `sales_order_dto.go` / `purchase_order_dto.go` 等后端 DTO，只保留 `version`。
+    - [ ] 同步调整前端 `sales / purchase` API DTO 与 adapter，只保留 `version`。
+    - [ ] 审查订单保存、Patch、确认收货、工作流相关链路，避免残留 `_v` 口径继续外溢。
+    - [ ] 本轮不改订单工作流语义、不改附件闭环逻辑、不做交易域整体重构。
+    - [ ] 执行前端 `eslint` / `tsc` 与后端定向 `go test`，并更新 `walkthrough.md`。
+
+- [ ] 676. 收口 customer / supplier 的 `_v -> version` 前后端契约语义（2026-04-11，待确认）
+  - [x] 已确认当前 `customer / supplier` 链路虽然前端已有 `contract -> adapter -> service -> hook -> component` 基本分层，但前后端正式传输口径仍是 `_v`。
+  - [x] 已确认当前问题不是单个前端 adapter 字段名，而是以下整条链路都在继续暴露 `_v`：
+    - [x] 后端模型 `server/models/trading.go`
+    - [x] 后端 handler DTO `server/handlers/customer_dto.go` / `server/handlers/supplier_dto.go`
+    - [x] 前端 DTO `src/features/trading/customer/contracts/customer-api-dto.ts` / `src/features/trading/supplier/contracts/supplier-api-dto.ts`
+    - [x] 前端 adapter `customer-api-adapter.ts` / `supplier-api-adapter.ts`
+  - [x] 已确认本轮目标不是继续在前端做 `_v <-> version` 双读双写兼容，而是明确把 `customer / supplier` 收口为统一 `version` 语义。
+  - [x] 已确认本轮涉及前后端契约，因此不属于“只改前端”的轻量补丁，需要将模型、handler DTO、前端 DTO 与 adapter 一次对齐。
+  - [ ] 待你确认后执行：
+    - [ ] 将 `customer / supplier` 的后端输出 DTO 与请求 DTO 从 `_v` 收口到 `version`。
+    - [ ] 同步调整前端 `customer / supplier` 的 API DTO 与 adapter，只保留 `version` 语义。
+    - [ ] 审查 `customers.go` / `suppliers.go`、对应 services 以及批量同步入口，避免残留 `_v` 口径继续外溢。
+    - [ ] 若必须变更 `server/models/trading.go` 的 JSON tag，则同步评估是否会影响其他消费方，并在本轮一起收口。
+    - [ ] 执行前端 `eslint` / `tsc` 与必要的后端定向测试，并更新 `walkthrough.md`。
+
+- [ ] 675. 将 logistics 收敛到 DTO + adapter + service + hook 的单一稳定链（2026-04-11，待确认）
+  - [x] 已确认当前 `src/features/logistics/` 仍是典型旧结构：只有 `types.ts + services/logistics-service.ts + hooks/use-logistics.ts + components/*`，缺少独立 `contracts / adapters / data` 分层。
+  - [x] 已确认当前 `logistics-service.ts` 直接以 `LogisticsRecord` 作为 API 输入/输出主类型，且仍混有事件解析、状态更新编排、弱边界保存等旧式写法。
+  - [x] 已确认当前 `use-logistics.ts` 仍以 `Partial<LogisticsRecord>` 驱动保存 mutation，说明 hook 层与 service 层之间还没有稳定的 command / payload 边界。
+  - [x] 已确认你本轮的新要求是：**不做兼容双轨**，而是直接把 logistics 收敛到一条稳定主链。
+  - [x] 已确认本轮目标不是继续对旧 `types.ts` 方案打补丁，而是明确建立并切换到新的主链：
+    - [x] `contracts`：定义 logistics API DTO。
+    - [x] `adapters`：完成 DTO <-> contract 映射。
+    - [x] `data`：承载前端领域 contract / schema。
+    - [x] `services`：仅负责请求与协议封装。
+    - [x] `hooks`：仅消费 contract，并承接 query invalidation / toast 等副作用。
+  - [ ] 待你确认后执行：
+    - [ ] 为 `logistics` 新增 `contracts/logistics-api-dto.ts`、`adapters/logistics-api-adapter.ts`、`data/schema.ts` 等稳定分层文件。
+    - [ ] 将旧 `types.ts` 从主数据链中退出，仅在确有必要时保留极少量纯展示常量；若不再需要则一并移除。
+    - [ ] 重写 `services/logistics-service.ts`，使其只面向 DTO / payload / adapter，不再直接以 `LogisticsRecord` 作为 API 原始输入输出。
+    - [ ] 重写 `hooks/use-logistics.ts`，去掉 `Partial<LogisticsRecord>` 保存边界，改为显式 create / patch / status-update command 输入。
+    - [ ] 同步修正 `components/logistics-*` 的消费链，只消费新的 contract，不再直接依赖旧 `types.ts` 主链。
+    - [ ] 本轮不保留“新旧并存”的兼容壳；重构完成后只允许一条 logistics 稳定链继续存在。
+    - [ ] 执行目标文件 `eslint`、`pnpm exec tsc --noEmit`，必要时补充定向回归，并在 `walkthrough.md` 记录此次 logistics 架构收敛结果。
+
+- [ ] 674. 优先补齐“差一点”的架构对齐项，降低漏审风险（2026-04-11，待确认）
+  - [x] 已基于 `GEMINI.md` 完成首轮审计，确认当前最值得先补的不是大规模重构，而是几类“已接近目标架构、但还存在明显漏口”的模块与边界问题。
+  - [x] 已确认本轮目标应优先选择**低风险、边界清晰、容易因漏审继续扩散**的项，而不是直接启动 `purchase / labs / logistics` 这类尚未成域的大改造。
+  - [x] 已识别当前“差一点”的高优先补齐对象主要包括：
+    - [x] `warehouse`：整体分层已基本成型，但仍残留 `services/` 内事件广播、副作用边界不净、个别 Hook 过重等问题。
+    - [x] 交易/主数据中仍残留的 `_v/version` 历史兼容壳与 DTO 语义不完全统一问题。
+    - [x] 个别模块中 service 直接返回原始 JSON 或局部弱类型输入（如 `Partial<T>`）的旧写法，存在继续被复制的风险。
+  - [x] 已确认本轮**不进入**下列高破坏性范围，避免把“先补齐漏口”演化成大规模重构：
+    - [x] 不重做 `purchase` 为完整独立子域。
+    - [x] 不重做 `labs` 的整体模块结构。
+    - [x] 不整体重构 `logistics` 为全新的 DTO / adapter / workflow 完整域模型。
+  - [ ] 待你确认后执行：
+    - [ ] 第一优先：清理 `warehouse` 中明显违反 `GEMINI.md` 的轻量边界问题，例如 service 内事件广播、局部副作用承载位置不当、可抽离的大 Hook 编排片段。
+    - [ ] 第二优先：继续审查并收口“已接近完成”的 DTO / version 兼容壳问题，优先处理已经具备 contract / adapter / service 主链的模块，避免 `_v` 一类历史口径继续外溢。
+    - [ ] 第三优先：识别并修正少量最容易被后续复制的旧式 service 写法，例如 `Partial<T>` 保存、service 直传原始 JSON、service 层承担本应上移的轻度编排。
+    - [ ] 每完成一项，都执行最小验证并更新 `walkthrough.md`，确保这些“边角架构债”不会因为缺少记录再次回流。
+
+- [ ] 673. 评估物资采购合同弹窗复用销售订单图片上传能力的落地方案（2026-04-11，待确认）
+  - [x] 已确认采购创建/编辑弹窗入口为 `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`，头部表单由 `PurchaseOrderHeaderFields` 承载，目前仅包含供应商、币种、汇率、付款方式/账期、采购员、备注等字段，没有任何图片/附件区块。
+  - [x] 已确认采购前端主链 `PurchaseOrder` / `PurchaseOrderApiDTO` / `toPurchaseOrderApiDTO` 当前都**没有** `evidences / attachments / images` 一类字段，因此采购侧缺的不是单个 UI 控件，而是完整数据字段与契约。
+  - [x] 已确认销售侧现有图片上传能力由独立组件 `src/features/trading/components/parts/order-evidence-manager.tsx` 承担，组件内部直连 `POST /sales-orders/evidence/upload`，前端表单字段为 `SalesOrder.evidences[]`。
+  - [x] 已确认销售侧当前“上传图片”能力仍是**部分闭环**：前端 schema 与弹窗展示已消费 `evidences`，但后端 `SalesOrder` 模型、`SaveSalesOrderRequest`、`SalesOrderResponse` 与 patch/save 支持字段中尚未看到 `evidences` 持久化字段，说明现有销售图片更像“上传能力 + 前端表单字段”，并未形成稳定的订单级后端落库主链。
+  - [x] 已确认后端现有上传接口 `server/handlers/evidence_handler.go` 负责图片处理、WebP 压缩、pHash 查重与服务器磁盘目录 `uploads/` 持久化；这部分是当前最明确可复用的底层上传能力。
+  - [ ] 待你确认后执行：
+    - [ ] 先决定本轮目标是否是“采购侧复用销售现有上传体验并真正补齐订单级持久化闭环”，而不是只在采购弹窗里临时塞一个上传按钮。
+    - [ ] 若执行，应优先抽离/泛化 `OrderEvidenceManager` 为采购/销售可共用组件，避免复制一份采购专用上传组件。
+    - [ ] 同步为采购单补齐前端 `PurchaseOrder` schema、采购 DTO、adapter 与后端模型/请求/响应中的附件字段，形成真实闭环。
+    - [ ] 评估是否顺手修正销售订单现有 `evidences` 未完整落库的问题，避免把当前半闭环实现再复制到采购链路。
+    - [ ] 保持底层上传接口能力优先复用现有 `HandleEvidenceUpload` 及服务器磁盘目录存储，不重新造一套上传基础设施。
+    - [ ] 执行前需先明确采购图片的业务语义：是“合同凭证/附件”，还是沿用销售侧的“订单凭据 evidences”语义；避免命名与后续模型演化再次分叉。
+
+- [ ] 672. 规划实验中心侧边栏收敛为单入口，进入后承载现有 3 个 TAB（2026-04-11，待确认）
+  - [x] 已确认当前 `实验设备`、`实验测试`、`实验报告` 并不是 3 个独立模块，而是同属 `/labs/experimental/*` 路由树下的 3 个子页。
+  - [x] 已确认当前已存在统一的实验中心布局页：`src/features/labs/experimental/pages/layout.tsx` 使用 `ModuleTabbedLayout` 挂载这 3 个 TAB。
+  - [x] 已确认 `/labs/experimental/` 根路由当前会重定向到 `/labs/experimental/equipment`，说明系统本身已经具备“统一入口 -> 默认 TAB”能力。
+  - [x] 已确认当前侧边栏臃肿的根因不是页面结构，而是 `src/components/layout/data/sidebar-data.ts` 仍把同一实验中心拆成 3 条菜单项暴露。
+  - [x] 已确认当前这 3 条侧边栏菜单虽然 URL 不同，但 `permissionId` 实际都来自同一 menu root 映射 `/labs -> menu_quality`，不利于后续将“菜单入口”与“TAB 权限”分层表达。
+  - [ ] 待你确认后执行：
+    - [ ] 将实验中心侧边栏从 3 条子菜单收敛为 1 条统一入口菜单。
+    - [ ] 统一入口点击后进入现有 `/labs/experimental` 模块，并保持内部 `实验设备 / 实验测试 / 实验报告` 3 个 TAB 不变。
+    - [ ] 评估统一入口名称，优先复用 `实验中心`，避免在侧边栏再并列出现 3 个同级名称。
+    - [ ] 保持现有实验中心页面、数据链与 3 个 TAB 路由不变，避免把“导航收敛”扩大成业务重构。
+    - [ ] 明确菜单权限与 TAB 权限的分层：侧边栏统一入口代表 menu 级访问，3 个现有 TAB 继续保留各自 tab/page 权限承载能力。
+    - [ ] 变更后执行前端类型检查与必要的权限/导航回归，并在 `walkthrough.md` 记录本轮导航收敛结果。
+
 - [ ] 642. 评估“产品工程管理”是否新增产品属性配置同级 TAB（2026-04-10，待批准）
   - [x] 已确认工程模块当前公开 TAB 为：`products`、`bom`、`changes`、`templates`；路由层存在新增同级 TAB 的自然挂载点（`src/features/engineering/tab-config.ts` 与 `src/routes/_authenticated/engineering/*`）。
   - [x] 已确认“新增型号”相关下拉来源目前并不统一：
@@ -430,8 +740,8 @@
   - [x] 完成最小验证并更新 `walkthrough.md`。
 
 - [x] 680. 将同类规则推广到岗位内部 process 能力映射 mutation 链（2026-04-11，已完成）
-  - [x] 确认当前仓库里尚无独立岗位-process 编辑 UI，实际 mutation 链位于 `productionMappingsService.assign/removeProcessCapability`。
-  - [x] 新增岗位-process capability domain hook，统一承接 mappings/lines cache patch、toast、logger 与 sync emit。
-  - [x] 将岗位-process capability 写入明确归类为跨资源嵌套写入，默认在 cache patch 后补充 `emitMappingsUpdated({ invalidate: true })`。
-  - [x] 在本地可定位时同时 patch `mappings` 与 `lines` query cache，减少 UI 等待感。
+  - [x] 确认当前仓库里尚无独立岗位-process 编辑 UI，实际 mutation 链位于 `productionJobCategoryCapabilitiesService.assign/removeProcessCapability`。
+  - [x] 新增岗位-process capability domain hook，统一承接 `lines` cache patch、toast、logger 与 sync emit。
+  - [x] 将岗位-process capability 写入明确归类为跨资源嵌套写入，默认在 cache patch 后补充 `emitLinesUpdated({ invalidate: true })`。
+  - [x] 在本地可定位时优先 patch `lines` query cache，减少 UI 等待感。
   - [x] 完成最小验证并更新 `walkthrough.md`。

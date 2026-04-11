@@ -404,7 +404,7 @@ export function ImportPersonnelDialog({
                             <span className='w-[100px] shrink-0 font-bold text-primary'>{row.staffId || '-'}</span>
                             <span className='w-[80px] shrink-0 font-bold text-slate-700'>{row.name || '-'}</span>
                             <span className='w-[80px] shrink-0'>{row.gender || '-'}</span>
-                            <span className='truncate'>{row.phone || row.deptName || '-'}</span>
+                            <span className='truncate'>{[row.deptName, row.positionName, row.phone].filter(Boolean).join(' / ') || '-'}</span>
                           </div>
                         ))}
                       </div>

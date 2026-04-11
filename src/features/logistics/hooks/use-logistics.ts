@@ -3,9 +3,27 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import { isConflictError } from '@/lib/handle-server-error'
+import { toUpdateLogisticsStatusApiDTO } from '../adapters/logistics-api-adapter'
+import type { LogisticsEvent, LogisticsRecord, SaveLogisticsRecordInput, UpdateLogisticsStatusInput } from '../data/schema'
 import { logisticsService } from '../services/logistics-service'
-import { type LogisticsRecord, type LogisticsStatus } from '../types'
 import { type DeltaSet } from '@/lib/delta/types'
+
+interface PatchLogisticsRecordInput {
+  id: string
+  version: number
+  delta: DeltaSet
+}
+
+interface SaveLogisticsMutationInput {
+  mode: 'create' | 'patch'
+  createInput?: SaveLogisticsRecordInput
+  patchInput?: PatchLogisticsRecordInput
+}
+
+interface UpdateLogisticsStatusMutationInput extends UpdateLogisticsStatusInput {
+  currentVersion: number
+  currentEvents: LogisticsEvent[]
+}
 
 export const LOGISTICS_KEYS = {
   all: ['logistics'] as const,
@@ -34,31 +52,22 @@ export function useLogisticsMutations() {
   const queryClient = useQueryClient()
 
   const saveMutation = useMutation({
-    mutationFn: ({
-      data,
-      isPatch,
-      delta,
-    }: {
-      data: Partial<LogisticsRecord>
-      isPatch?: boolean
-      delta?: DeltaSet
-    }) => {
-      if (isPatch && delta && data.id) {
-        return logisticsService.patchLogistics(data.id, delta, data.version || 1)
+    mutationFn: (input: SaveLogisticsMutationInput) => {
+      if (input.mode === 'patch' && input.patchInput) {
+        return logisticsService.patchLogistics(input.patchInput.id, input.patchInput.delta, input.patchInput.version)
       }
-      return logisticsService.saveRecord(data)
+
+      if (input.mode === 'create' && input.createInput) {
+        return logisticsService.saveRecord(input.createInput)
+      }
+
+      throw new Error('[CRITICAL] Invalid logistics save mutation input')
     },
-    ...buildMutationOptions<
-      LogisticsRecord,
-      Error,
-      { data: Partial<LogisticsRecord>; isPatch?: boolean; delta?: DeltaSet }
-    >({
+    ...buildMutationOptions<LogisticsRecord, Error, SaveLogisticsMutationInput>({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
-      onSuccess: (_, { isPatch }) => {
-        toast.success(isPatch ? t('trading.logistics.toasts.saveSuccess') : t('trading.logistics.toasts.saveSuccess'))
-        // Note: Currently using the same message, but we could differentiate if needed.
-        // This satisfies the 'isPatch is never read' warning.
+      onSuccess: () => {
+        toast.success(t('trading.logistics.toasts.saveSuccess'))
       },
     }),
     onError: (err: Error) => {
@@ -71,22 +80,12 @@ export function useLogisticsMutations() {
   })
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-      location,
-      description,
-    }: {
-      id: string
-      status: LogisticsStatus
-      location: string
-      description: string
-    }) => logisticsService.updateStatus(id, status, location, description),
-    ...buildMutationOptions<
-      LogisticsRecord,
-      Error,
-      { id: string; status: LogisticsStatus; location: string; description: string }
-    >({
+    mutationFn: (input: UpdateLogisticsStatusMutationInput) =>
+      logisticsService.updateStatus(
+        input.id,
+        toUpdateLogisticsStatusApiDTO(input, input.currentVersion, input.currentEvents)
+      ),
+    ...buildMutationOptions<LogisticsRecord, Error, UpdateLogisticsStatusMutationInput>({
       queryClient,
       invalidateQueryKeys: [LOGISTICS_KEYS.all],
       onSuccess: () => {

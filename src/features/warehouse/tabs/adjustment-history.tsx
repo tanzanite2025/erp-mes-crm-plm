@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
+import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
@@ -138,7 +139,9 @@ export function AdjustmentHistory() {
                                             <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/30'>{t('warehouse.adjustment.empty')}</p>
                                         </TableCell>
                                     </TableRow>
-                                ) : adjustments?.map((adj: InventoryAdjustment) => (
+                                ) : adjustments?.map((adj: InventoryAdjustment) => {
+                                    const ownerName = auditUtils.formatOperatorName(adj.createdBy) || adj.createdBy
+                                    return (
                                     <TableRow key={adj.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
                                         <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-amber-600 transition-colors truncate max-w-[120px]'>{adj.adjustmentNo}</TableCell>
                                         <TableCell>
@@ -148,7 +151,7 @@ export function AdjustmentHistory() {
                                         </TableCell>
                                         <TableCell className='font-black text-[11px] md:text-[12px] text-slate-500 uppercase tracking-tight whitespace-nowrap'>{adj.totalItems}</TableCell>
                                         <TableCell>{getStatusBadge(adj.status)}</TableCell>
-                                        <TableCell className='py-2 md:py-2.5 font-bold text-[10px] md:text-[11px] text-slate-600 whitespace-nowrap'>{adj.createdBy}</TableCell>
+                                        <TableCell className='py-2 md:py-2.5 font-bold text-[10px] md:text-[11px] text-slate-600 whitespace-nowrap'>{ownerName}</TableCell>
                                         <TableCell className='py-2 md:py-2.5 font-mono text-[8px] md:text-[9px] text-muted-foreground/40 whitespace-nowrap'>
                                             {format(new Date(adj.createdAt), 'yyyy-MM-dd HH:mm')}
                                         </TableCell>
@@ -173,7 +176,8 @@ export function AdjustmentHistory() {
                                             </Button>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     </ScrollArea>

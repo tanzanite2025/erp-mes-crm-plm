@@ -38,11 +38,15 @@ import {
 import { type OrgNode } from '../data/org-schema'
 import { type Employee } from '../data/schema'
 import { OrgService } from '../services/org-service'
+import { PositionService } from '../services/position-service'
+
+const UNASSIGNED_POSITION_VALUE = '__UNASSIGNED_POSITION__'
 
 type EmployeeForm = Record<PersonnelFormFieldKey, string> & {
     id?: string
     lineId: string
     processId: string
+    positionId: string
     version?: number
 }
 
@@ -63,6 +67,7 @@ function buildDefaultValues(): EmployeeForm {
         id: '',
         lineId: 'none',
         processId: '',
+        positionId: '',
     }
 }
 
@@ -80,6 +85,7 @@ function buildFormValues(employee?: Employee): EmployeeForm {
 
     values.lineId = employee.lineId || defaults.lineId
     values.processId = employee.processId || defaults.processId
+    values.positionId = employee.positionId || defaults.positionId
 
     return values
 }
@@ -103,12 +109,18 @@ export function EmployeeActionDialog({
     const { locale, t } = useLanguage()
     const isEdit = !!currentRow
     const [dynamicDepts, setDynamicDepts] = useState<PersonnelSelectOption[]>([])
-    const deptFieldLabel = locale === 'zh-CN' ? '部门' : 'Department'
-    const deptFieldHint = locale === 'zh-CN'
-        ? '这里的“部门”强关联组织管理中的二级部门，不可选择三级生产单元。'
-        : 'This department field must map to a level-2 department from Organization Management, not a level-3 production unit.'
+    const [positionOptions, setPositionOptions] = useState<PersonnelSelectOption[]>([])
     const getColumnLabel = (key: PersonnelFormFieldKey) => t(`orgPersonnel.excel.columns.${key}` as TranslationKey)
     const getOptionLabel = (label: string) => (label.includes('.') ? t(label as TranslationKey) : label)
+    const deptFieldLabel = getColumnLabel('deptId')
+    const deptFieldHint = locale === 'zh-CN'
+        ? '这里的“部门”必须映射到组织管理中的二级部门，不能直接选择三级生产单元。'
+        : 'This department field must map to a level-2 department from Organization Management, not a level-3 production unit.'
+    const positionFieldLabel = locale === 'zh-CN' ? '岗位' : 'Position'
+    const positionFieldHint = locale === 'zh-CN'
+        ? '岗位来自统一岗位主数据；如需解绑，请选择“无岗位”。'
+        : 'Positions come from the unified position directory. Choose "No position" to clear the current assignment.'
+    const noPositionLabel = locale === 'zh-CN' ? '无岗位' : 'No position'
     const initialFormValues = useMemo(() => buildFormValues(currentRow), [currentRow])
     const { data: deltaProxy, tracker } = useDeltaTracker(initialFormValues, open)
 
@@ -131,6 +143,7 @@ export function EmployeeActionDialog({
         education: z.string(),
         lineId: z.string(),
         processId: z.string(),
+        positionId: z.string(),
     })
 
     const defaultValues = useMemo(() => buildDefaultValues(), [])
@@ -144,7 +157,10 @@ export function EmployeeActionDialog({
         if (!open) return
 
         const loadDynamicData = async () => {
-            const orgData = await OrgService.getOrgTree()
+            const [orgData, positions] = await Promise.all([
+                OrgService.getOrgTree(),
+                PositionService.getPositions(),
+            ])
 
             const flattenDepts = (nodes: OrgNode[]): PersonnelSelectOption[] => {
                 let results: PersonnelSelectOption[] = []
@@ -160,10 +176,17 @@ export function EmployeeActionDialog({
             }
 
             setDynamicDepts(flattenDepts(orgData))
+            setPositionOptions([
+                { label: noPositionLabel, value: UNASSIGNED_POSITION_VALUE },
+                ...positions.map(position => ({
+                    label: position.orgUnitName ? `${position.name} / ${position.orgUnitName}` : position.name,
+                    value: position.id,
+                })),
+            ])
         }
 
         void loadDynamicData()
-    }, [open])
+    }, [noPositionLabel, open])
 
     useEffect(() => {
         if (!open) return
@@ -188,6 +211,7 @@ export function EmployeeActionDialog({
             id: values.id || '',
             lineId: values.lineId,
             processId: values.processId,
+            positionId: values.positionId === UNASSIGNED_POSITION_VALUE ? undefined : values.positionId.trim() || undefined,
             version: values.version,
         }
 
@@ -287,6 +311,31 @@ export function EmployeeActionDialog({
                                     )}
                                 />
                             ))}
+                            <FormField
+                                control={form.control}
+                                name='positionId'
+                                render={({ field }) => (
+                                    <FormItem className='space-y-1'>
+                                        <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                                            {positionFieldLabel}
+                                        </FormLabel>
+                                        <div className='pt-1'>
+                                            <SelectDropdown
+                                                isControlled
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                placeholder={positionFieldLabel}
+                                                items={positionOptions}
+                                                className='h-11 rounded-2xl bg-muted/50 border-none shadow-inner font-bold text-xs'
+                                            />
+                                        </div>
+                                        <p className='text-[10px] leading-relaxed text-muted-foreground'>
+                                            {positionFieldHint}
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </form>
                 </Form>

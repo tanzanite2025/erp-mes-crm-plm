@@ -1,5 +1,6 @@
-import { AlertCircle, CheckCheck, Loader2, Package, Trash2, Truck } from 'lucide-react'
-import { useState } from 'react'
+import { AlertCircle, CheckCheck, Loader2, Package, Printer, Trash2, Truck } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useReactToPrint } from 'react-to-print'
 import { AuditStamp } from '@/components/common/audit-stamp'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,8 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { type PurchaseOrder } from '../../data/schema'
 import { canReceivePurchaseOrder, getPurchaseStatusLabel, getPurchaseStatusMeta } from '../../data/purchase-status'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
+import { OrderEvidenceGallery } from '../parts/order-evidence-gallery'
+import { PurchaseOrderEvidencePrint } from './purchase-order-evidence-print'
 import { PurchaseReceiptConfirmDialog } from './purchase-receipt-confirm-dialog'
 
 interface PurchaseOrderDetailProps {
@@ -24,7 +27,12 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
   const { data: detailedOrder, isLoading: isDetailLoading } = useGetPurchaseOrderDetail(initialOrder?.id || '')
   const { confirmReceiptMutation } = usePurchaseOrderMutations()
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
   const order = detailedOrder || initialOrder
+  const reactToPrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: order ? `${order.orderNo}_purchase_evidence` : 'purchase_evidence',
+  })
 
   if (isDetailLoading) {
     return (
@@ -60,11 +68,16 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
   }
 
   const statusMeta = getPurchaseStatusMeta(order.status)
-  const hasReceivableLines = order.lines.some((line) => ((line.qty || 0) - (line.receivedQty || 0)) > 0 && !!line.id)
+  const hasReceivableLines = order.lines.some(
+    (line) => ((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0)) > 0 && !!line.id
+  )
   const canConfirmReceipt = canReceivePurchaseOrder(order.status) && hasReceivableLines
+  const hasEvidencePhotos = (order.evidences?.length || 0) > 0
 
   return (
     <div className='mx-auto max-w-5xl space-y-6 p-4 pb-20 md:space-y-8 md:p-6'>
+      <div className='hidden'>{order ? <PurchaseOrderEvidencePrint ref={printRef} order={order} /> : null}</div>
+
       <PurchaseReceiptConfirmDialog
         open={isReceiptDialogOpen}
         onOpenChange={setIsReceiptDialogOpen}
@@ -170,6 +183,9 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                     <p className='text-[8px] font-bold uppercase text-muted-foreground opacity-40 md:text-[10px]'>
                       {t('purchase.orders.detailReceivedQty')}
                     </p>
+                    <p className='mt-1 text-[8px] font-bold uppercase text-rose-500/80 md:text-[9px]'>
+                      {t('purchase.orders.returns.alreadyReturned')}: {line.returnedQty || 0}
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -228,6 +244,12 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                 </span>
               </div>
             </div>
+
+            <OrderEvidenceGallery
+              evidences={order.evidences || []}
+              titleKey='purchase.orders.detailEvidenceTitle'
+              fallbackTitle='Purchase Evidence'
+            />
           </Card>
 
           <Card className='rounded-[32px] border-none p-6 shadow-sm'>
@@ -241,6 +263,16 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
               className='border-primary/10'
             />
           </Card>
+
+          <Button
+            variant='outline'
+            className='w-full rounded-[24px] py-6 text-[11px] font-black'
+            disabled={!hasEvidencePhotos}
+            onClick={() => reactToPrint()}
+          >
+            <Printer className='mr-2 size-4' />
+            {t('purchase.orders.detailPrintEvidence')}
+          </Button>
 
           <Button
             className='w-full rounded-[24px] py-6 text-[11px] font-black shadow-lg shadow-primary/10'

@@ -17,6 +17,8 @@ function renderDateCell(value: string | undefined) {
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
+export const UNASSIGNED_POSITION_FILTER_VALUE = '__UNASSIGNED_POSITION__'
+
 export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
     {
         id: 'select',
@@ -79,6 +81,42 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
         meta: { viewLabel: t('orgPersonnel.excel.columns.name') },
     },
     {
+        id: 'positionName',
+        accessorFn: (row) => row.positionName || row.positionId || UNASSIGNED_POSITION_FILTER_VALUE,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
+        filterFn: (row, id, filterValue) => {
+            const filters = Array.isArray(filterValue) ? filterValue : []
+            if (filters.length === 0) return true
+            return filters.includes(row.getValue(id))
+        },
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title='Position' />
+        ),
+        cell: ({ row }) => {
+            const employee = row.original
+            const positionLabel = employee.positionName || employee.positionId || ''
+
+            if (!positionLabel) {
+                return (
+                    <Badge
+                        variant='outline'
+                        className='rounded-full h-5 text-[8px] font-black tracking-widest border-none px-2 bg-slate-500/10 text-slate-500'
+                    >
+                        Unassigned
+                    </Badge>
+                )
+            }
+
+            return (
+                <div className='max-w-[140px] truncate font-bold text-slate-700' title={positionLabel}>
+                    {positionLabel}
+                </div>
+            )
+        },
+        meta: { viewLabel: 'Position' },
+    },
+    {
         accessorKey: 'deptId',
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.deptId')} />
@@ -116,9 +154,11 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
         cell: ({ row }) => {
             const gender = row.getValue('gender') as string
             if (!gender) return <div className='opacity-30'>-</div>
+            const normalizedGender = gender.trim().toLowerCase()
+            const isFemale = gender === '女' || normalizedGender === 'female'
             return (
                 <Badge variant='outline' className='font-bold h-5 text-[9px] px-2 rounded-full border-muted/50'>
-                    {gender === '男' ? t('orgPersonnel.excel.gender.male') : t('orgPersonnel.excel.gender.female')}
+                    {isFemale ? t('orgPersonnel.excel.gender.female') : t('orgPersonnel.excel.gender.male')}
                 </Badge>
             )
         },

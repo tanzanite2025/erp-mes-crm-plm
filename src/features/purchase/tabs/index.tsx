@@ -5,6 +5,7 @@ import { useLanguage } from '@/context/language-provider'
 import { SupplierList } from '@/features/trading/components/supplier-list'
 import { PurchaseOrderList } from '@/features/trading/components/purchase/purchase-order-list'
 import { PurchaseOrderLogs } from '@/features/trading/components/purchase/purchase-order-logs'
+import { PurchaseOrderReturns } from '@/features/trading/components/purchase/purchase-order-returns'
 
 export function SupplierMgmt() {
   const { t } = useLanguage()
@@ -46,6 +47,12 @@ export function PurchaseOrders() {
           >
             {t('purchase.orders.tabLogs')}
           </TabsTrigger>
+          <TabsTrigger
+            value='returns'
+            className='h-9 rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg'
+          >
+            {t('purchase.orders.tabReturns')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value='orders' className='mt-0'>
@@ -54,6 +61,10 @@ export function PurchaseOrders() {
 
         <TabsContent value='logs' className='mt-0'>
           <PurchaseOrderLogs />
+        </TabsContent>
+
+        <TabsContent value='returns' className='mt-0'>
+          <PurchaseOrderReturns />
         </TabsContent>
       </Tabs>
     </div>

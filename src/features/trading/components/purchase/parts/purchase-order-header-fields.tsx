@@ -4,12 +4,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
+import { OrderEvidenceManager } from '@/features/trading/components/parts/order-evidence-manager'
 import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
 import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
 import { type Currency, type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
 import { createLogger } from '@/lib/logger'
-import { type PurchaseOrder, type Supplier } from '../../../data/schema'
+import { type OrderEvidence, type PurchaseOrder, type Supplier } from '../../../data/schema'
 import { getPurchaseStatusLabel } from '../../../data/purchase-status'
 
 const logger = createLogger('PurchaseOrderHeaderFields')
@@ -19,12 +20,14 @@ interface PurchaseOrderHeaderFieldsProps {
   formData: Partial<PurchaseOrder>
   handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
   suppliers: Supplier[]
+  onEvidencesChange: (evidences: OrderEvidence[]) => void
 }
 
 export function PurchaseOrderHeaderFields({
   formData,
   handleHeaderChange,
   suppliers,
+  onEvidencesChange,
 }: PurchaseOrderHeaderFieldsProps) {
   const { t } = useLanguage()
   const [currencies, setCurrencies] = useState<Currency[]>([])
@@ -227,6 +230,15 @@ export function PurchaseOrderHeaderFields({
           value={formData.note}
           onChange={(e) => handleHeaderChange('note', e.target.value)}
           className='min-h-[80px] resize-none rounded-2xl border-none bg-background p-4 font-bold shadow-sm'
+        />
+      </div>
+
+      <div className='rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-5'>
+        <OrderEvidenceManager
+          evidences={formData.evidences || []}
+          onChange={onEvidencesChange}
+          disabled={false}
+          uploadPath='/purchase/evidence/upload'
         />
       </div>
     </section>

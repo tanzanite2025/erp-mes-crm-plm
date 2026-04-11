@@ -1,4 +1,4 @@
-import { type WarehouseCategoryOption } from '../services/warehouse-category-core-service'
+import { type WarehouseCategoryOption } from '../category/data/schema'
 
 export type WarehouseCategoryScene =
   | 'product-inbound'

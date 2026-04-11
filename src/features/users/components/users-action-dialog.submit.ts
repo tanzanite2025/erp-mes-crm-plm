@@ -29,7 +29,6 @@ export function buildUserDelta(params: {
   draft.firstName = values.firstName.trim()
   draft.lastName = values.lastName.trim()
   draft.role = resolvedRole
-  draft.employeeId = values.employeeId?.trim() || currentRow.employeeId || undefined
   
   if (values.password && values.password.trim()) {
     draft.password = values.password.trim()

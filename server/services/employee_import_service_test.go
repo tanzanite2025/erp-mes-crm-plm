@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -56,6 +57,43 @@ func setupEmployeeImportSQLiteDB(t *testing.T) *gorm.DB {
 			dept_id TEXT,
 			line_id TEXT,
 			process_id TEXT
+		);
+	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE positions (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT NOT NULL,
+			code TEXT,
+			org_unit_id TEXT,
+			production_unit_id TEXT,
+			category TEXT,
+			level INTEGER,
+			is_managerial BOOLEAN,
+			status TEXT,
+			sort_order INTEGER,
+			metadata TEXT
+		);
+	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE employee_assignments (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			employee_id TEXT NOT NULL,
+			org_unit_id TEXT,
+			position_id TEXT,
+			production_unit_id TEXT,
+			assignment_type TEXT,
+			is_primary BOOLEAN,
+			start_date DATETIME,
+			end_date DATETIME,
+			status TEXT,
+			source TEXT,
+			remarks TEXT
 		);
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE TABLE production_lines (id TEXT PRIMARY KEY, name TEXT);`).Error)
@@ -148,6 +186,32 @@ func TestPreviewEmployeeImportBuildsAuthoritativeDiff(t *testing.T) {
 	require.NotEmpty(t, preview.PreviewToken)
 }
 
+func TestPreviewEmployeeImportIncludesResolvedPosition(t *testing.T) {
+	testDB := setupEmployeeImportSQLiteDB(t)
+	require.NoError(t, testDB.Create(&models.Organization{
+		BaseModel: models.BaseModel{ID: "dept-1"},
+		Name:      "Administration",
+		Type:      "department",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Position{
+		BaseModel: models.BaseModel{ID: "position-1"},
+		Name:      "Operator",
+		Code:      "OPERATOR",
+		Status:    "active",
+	}).Error)
+
+	workbook := buildEmployeeImportWorkbook(t, [][]string{
+		{"No.", "Staff ID", "Name", "Department", "Position", "Phone", "Emergency Contact Phone", "Gender", "Join Date", "Employment Status", "Age", "ID Card No.", "Birthday", "Home Address", "Bank Card", "Bank Name", "Education"},
+		{"1", "A001", "Alice New", "Administration", "Operator", "13800000000", "", "Female", "2024-01-02", "Active", "30", "", "", "", "", "", "Bachelor"},
+	})
+
+	preview, err := PreviewEmployeeImport("personnel.xlsx", bytes.NewReader(workbook.Bytes()))
+	require.NoError(t, err)
+	require.Len(t, preview.PreviewRows, 1)
+	require.Equal(t, "position-1", preview.PreviewRows[0].PositionID)
+	require.Equal(t, "Operator", preview.PreviewRows[0].PositionName)
+}
+
 func TestCommitEmployeeImportPreservesNonTemplateFieldsOnUpdate(t *testing.T) {
 	testDB := setupEmployeeImportSQLiteDB(t)
 	require.NoError(t, testDB.Create(&models.Organization{
@@ -190,4 +254,96 @@ func TestCommitEmployeeImportPreservesNonTemplateFieldsOnUpdate(t *testing.T) {
 	require.Equal(t, "New Address", employee.Address)
 	require.Equal(t, "line-1", employee.LineID)
 	require.Equal(t, "process-1", employee.ProcessID)
+}
+
+func TestCommitEmployeeImportSyncsPositionThroughAssignmentChain(t *testing.T) {
+	testDB := setupEmployeeImportSQLiteDB(t)
+	require.NoError(t, testDB.Create(&models.Organization{
+		BaseModel: models.BaseModel{ID: "dept-1"},
+		Name:      "Administration",
+		Type:      "department",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Position{
+		BaseModel: models.BaseModel{ID: "position-1"},
+		Name:      "Operator",
+		Code:      "OPERATOR",
+		Status:    "active",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Position{
+		BaseModel: models.BaseModel{ID: "position-2"},
+		Name:      "Inspector",
+		Code:      "INSPECTOR",
+		Status:    "active",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.Employee{
+		BaseModel: models.BaseModel{ID: "emp-1"},
+		StaffID:   "A001",
+		Name:      "Alice Old",
+		DeptID:    "dept-1",
+		Status:    "active",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.EmployeeAssignment{
+		BaseModel:      models.BaseModel{ID: "assign-1"},
+		EmployeeID:     "emp-1",
+		OrgUnitID:      stringPointer("dept-1"),
+		PositionID:     stringPointer("position-1"),
+		AssignmentType: "regular",
+		IsPrimary:      true,
+		StartDate:      mustParseTime(t, "2024-01-01T00:00:00Z"),
+		Status:         "active",
+		Source:         "seed",
+	}).Error)
+
+	workbook := buildEmployeeImportWorkbook(t, [][]string{
+		{"No.", "Staff ID", "Name", "Department", "Position", "Phone", "Emergency Contact Phone", "Gender", "Join Date", "Employment Status", "Age", "ID Card No.", "Birthday", "Home Address", "Bank Card", "Bank Name", "Education"},
+		{"1", "A001", "Alice New", "Administration", "", "13800000000", "", "Female", "2024-01-02", "Active", "30", "", "", "", "", "", "Bachelor"},
+		{"2", "A002", "Bob", "Administration", "Inspector", "13900000000", "", "Male", "2024-03-01", "Active", "28", "", "", "", "", "", "Bachelor"},
+	})
+
+	preview, err := PreviewEmployeeImport("personnel.xlsx", bytes.NewReader(workbook.Bytes()))
+	require.NoError(t, err)
+
+	result, err := CommitEmployeeImport(CommitEmployeeImportRequest{
+		PreviewToken: preview.PreviewToken,
+		Mode:         EmployeeImportModeSync,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, result.Count)
+	require.Equal(t, 1, result.Created)
+	require.Equal(t, 1, result.Updated)
+
+	var clearedAssignment struct {
+		PositionID *string
+		Source     string
+	}
+	require.NoError(t, testDB.Table("employee_assignments").
+		Select("position_id, source").
+		Where("employee_id = ? AND is_primary = ?", "emp-1", true).
+		Scan(&clearedAssignment).Error)
+	require.Nil(t, clearedAssignment.PositionID)
+	require.Equal(t, "employee_import_commit", clearedAssignment.Source)
+
+	var created models.Employee
+	require.NoError(t, testDB.Where("staff_id = ?", "A002").First(&created).Error)
+
+	var createdAssignment struct {
+		PositionID string
+		OrgUnitID  string
+		Source     string
+	}
+	require.NoError(t, testDB.Table("employee_assignments").
+		Select("position_id, org_unit_id, source").
+		Where("employee_id = ? AND is_primary = ?", created.ID, true).
+		Scan(&createdAssignment).Error)
+	require.Equal(t, "position-2", createdAssignment.PositionID)
+	require.Equal(t, "dept-1", createdAssignment.OrgUnitID)
+	require.Equal(t, "employee_import_commit", createdAssignment.Source)
+}
+
+func mustParseTime(t *testing.T, value string) time.Time {
+	t.Helper()
+
+	parsed, err := time.Parse(time.RFC3339, value)
+	require.NoError(t, err)
+	return parsed
 }

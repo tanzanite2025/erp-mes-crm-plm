@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertCircle, CloudUpload, ImageIcon, Loader2, Trash2 } from 'lucide-react'
+import { AlertCircle, CloudUpload, GripVertical, ImageIcon, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
@@ -12,6 +13,7 @@ interface OrderEvidenceManagerProps {
   evidences: OrderEvidence[]
   onChange: (evidences: OrderEvidence[]) => void
   disabled?: boolean
+  uploadPath?: string
 }
 
 /**
@@ -23,9 +25,12 @@ export function OrderEvidenceManager({
   evidences = [],
   onChange,
   disabled = false,
+  uploadPath = '/sales-orders/evidence/upload',
 }: OrderEvidenceManagerProps) {
   const { t } = useLanguage()
   const [uploading, setUploading] = useState(false)
+  const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(null)
+  const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(null)
 
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +58,7 @@ export function OrderEvidenceManager({
             name: string
             uploadedAt: string
             isDuplicate: boolean
-          }>('/sales-orders/evidence/upload', {
+          }>(uploadPath, {
             method: 'POST',
             body: formData,
           })
@@ -83,12 +88,29 @@ export function OrderEvidenceManager({
         if (e.target) e.target.value = ''
       }
     },
-    [evidences, onChange, t]
+    [evidences, onChange, t, uploadPath]
   )
 
   const removeEvidence = (id: string) => {
     const filtered = evidences.filter((ev) => ev.id !== id)
     onChange(filtered)
+  }
+
+  const updateEvidence = (id: string, patch: Partial<OrderEvidence>) => {
+    onChange(evidences.map((ev) => (ev.id === id ? { ...ev, ...patch } : ev)))
+  }
+
+  const reorderEvidences = (activeId: string, overId: string) => {
+    if (activeId === overId) return
+
+    const activeIndex = evidences.findIndex((ev) => ev.id === activeId)
+    const overIndex = evidences.findIndex((ev) => ev.id === overId)
+    if (activeIndex < 0 || overIndex < 0) return
+
+    const next = [...evidences]
+    const [active] = next.splice(activeIndex, 1)
+    next.splice(overIndex, 0, active)
+    onChange(next)
   }
 
   return (
@@ -112,48 +134,100 @@ export function OrderEvidenceManager({
         )}
       >
         {/* 指向统一寻址中台的预览矩阵 */}
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+        <div className='grid gap-4 md:grid-cols-2'>
           {evidences.map((ev) => (
             <div
               key={ev.id}
-              className='group/item relative aspect-square overflow-hidden rounded-2xl border bg-background shadow-sm transition-all hover:shadow-md'
-            >
-              {ev.url ? (
-                <img
-                  src={getStaticEvidenceUrl(ev.url)}
-                  alt={ev.name}
-                  className='size-full object-cover transition-transform duration-500 group-hover/item:scale-110'
-                />
-              ) : (
-                <div className='flex size-full items-center justify-center bg-muted/20'>
-                  <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
-                </div>
+              className={cn(
+                'group/item rounded-2xl border bg-background p-3 shadow-sm transition-all hover:shadow-md',
+                dragOverEvidenceId === ev.id && draggingEvidenceId !== ev.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border'
               )}
+              onDragOver={(e) => {
+                if (!draggingEvidenceId || disabled) return
+                e.preventDefault()
+                if (dragOverEvidenceId !== ev.id) {
+                  setDragOverEvidenceId(ev.id)
+                }
+              }}
+              onDrop={(e) => {
+                if (!draggingEvidenceId || disabled) return
+                e.preventDefault()
+                reorderEvidences(draggingEvidenceId, ev.id)
+                setDraggingEvidenceId(null)
+                setDragOverEvidenceId(null)
+              }}
+            >
+              <div className='relative overflow-hidden rounded-2xl border bg-muted/10'>
+                {ev.url ? (
+                  <img
+                    src={getStaticEvidenceUrl(ev.url)}
+                    alt={ev.name}
+                    className='h-40 w-full object-cover transition-transform duration-500 group-hover/item:scale-105'
+                  />
+                ) : (
+                  <div className='flex h-40 items-center justify-center bg-muted/20'>
+                    <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
+                  </div>
+                )}
 
-              {/* 交互遮罩与管理 */}
-              <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover/item:opacity-100'>
-                <Button
-                  variant='destructive'
-                  size='icon'
-                  className='h-8 w-8 rounded-full shadow-lg'
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeEvidence(ev.id)
-                  }}
-                  disabled={disabled}
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-                <p className='mt-2 truncate px-2 text-[8px] font-bold text-white uppercase tracking-tighter w-full text-center'>
-                  {ev.name}
-                </p>
+                {!disabled ? (
+                  <div
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggingEvidenceId(ev.id)
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/plain', ev.id)
+                    }}
+                    onDragEnd={() => {
+                      setDraggingEvidenceId(null)
+                      setDragOverEvidenceId(null)
+                    }}
+                    className='absolute left-2 top-2 flex size-8 cursor-move items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover/item:opacity-100'
+                    aria-label='drag to reorder evidence'
+                  >
+                    <GripVertical className='size-4' />
+                  </div>
+                ) : null}
+
+                {!disabled ? (
+                  <Button
+                    variant='destructive'
+                    size='icon'
+                    className='absolute right-2 top-2 h-8 w-8 rounded-full shadow-lg opacity-0 transition-opacity group-hover/item:opacity-100'
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeEvidence(ev.id)
+                    }}
+                    disabled={disabled}
+                  >
+                    <Trash2 className='size-4' />
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className='mt-3 space-y-2'>
+                <p className='truncate text-[10px] font-bold text-muted-foreground'>{ev.name}</p>
+                <div className='space-y-1'>
+                  <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                    {t('tradingSalesOrder.detail.evidenceNoteLabel')}
+                  </p>
+                  <Input
+                    value={ev.note || ''}
+                    onChange={(e) => updateEvidence(ev.id, { note: e.target.value })}
+                    placeholder={t('tradingSalesOrder.detail.evidenceNotePlaceholder')}
+                    className='h-9 rounded-xl bg-background text-xs shadow-none'
+                    disabled={disabled}
+                  />
+                </div>
               </div>
             </div>
           ))}
 
           {/* 工业级上传触发单元 */}
           {!disabled && evidences.length < 10 && (
-            <div className='relative aspect-square'>
+            <div className='relative min-h-[240px]'>
               <input
                 type='file'
                 className='absolute inset-0 z-10 cursor-pointer opacity-0'
@@ -162,7 +236,7 @@ export function OrderEvidenceManager({
                 multiple
                 disabled={uploading}
               />
-              <div className='flex size-full flex-col items-center justify-center space-y-2 rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5'>
+              <div className='flex h-full min-h-[240px] flex-col items-center justify-center space-y-2 rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5'>
                 {uploading ? (
                   <Loader2 className='size-6 animate-spin text-primary' />
                 ) : (
@@ -193,7 +267,7 @@ export function OrderEvidenceManager({
       <div className='flex items-center gap-2 px-1'>
         <div className='size-1 rounded-full bg-primary/40' />
         <p className='text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest'>
-          {t('tradingSalesOrder.detail.evidenceHint')}
+          {t('tradingSalesOrder.detail.evidenceHint')} · {t('tradingSalesOrder.detail.evidenceSortHint')}
         </p>
       </div>
     </div>

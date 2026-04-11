@@ -45,6 +45,7 @@ export const orgPersonnel = {
       staffId: 'Staff ID',
       name: 'Name',
       deptId: 'Department',
+      position: 'Position',
       phone: 'Phone',
       emergencyPhone: 'Emergency Contact Phone',
       gender: 'Gender',
@@ -62,6 +63,7 @@ export const orgPersonnel = {
     sample: {
       name: 'Sample Employee (remove before import)',
       dept: 'Administration',
+      position: 'Operator',
       address: 'Sample Address No. 1, Fuzhou, Fujian',
       bankName: 'Industrial and Commercial Bank of China',
     },
@@ -231,6 +233,7 @@ export const orgPersonnel = {
       editDesc: 'Update the core archive data for this staff member.',
       createDesc: 'Record a new entry for joining personnel here. Data fields are aligned with archive templates.',
       submit: 'Save & Submit SAVE_ARCHIVE',
+      noPosition: 'No Position',
       errors: {
         staffId: 'Staff ID is required.',
         name: 'Name is required.',

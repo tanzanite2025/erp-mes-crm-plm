@@ -256,9 +256,12 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 
 func registerUserRoutes(authorized *gin.RouterGroup) {
 	authorized.GET("/users", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUsersHandler)
+	authorized.GET("/users/:id/access", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUserAccessSnapshotHandler)
 	authorized.GET("/users/:id/roles", middleware.RequirePermissions(authz.MenuOrg, authz.PermissionUserView), handlers.GetUserRoleBindingsHandler)
 	authorized.POST("/users/:id/roles", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.AddUserRoleBindingHandler)
 	authorized.DELETE("/users/:id/roles/:roleId", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.RemoveUserRoleBindingHandler)
+	authorized.POST("/users/:id/bind-employee", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.BindUserEmployeeHandler)
+	authorized.POST("/users/:id/unbind-employee", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.UnbindUserEmployeeHandler)
 	authorized.POST("/users", middleware.RequirePermissions(authz.PermissionUserCreate), handlers.CreateUserHandler)
 	authorized.PATCH("/users/:id", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.PatchUserHandler)
 	authorized.PATCH("/users/:id/primary-role", middleware.RequirePermissions(authz.PermissionUserEdit), handlers.SetUserPrimaryRoleHandler)

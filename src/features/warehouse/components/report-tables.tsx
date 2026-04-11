@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge'
 import { useLanguage } from '@/context/language-provider'
+import { auditUtils } from '@/lib/audit-utils'
 import { cn } from '@/lib/utils'
-import { MasterDataSearchResult } from '../services/inventory-core-service'
-import { InboundRecord, ShipmentRecord } from '../services/inventory-transaction-service'
+import { type InboundRecord, type MasterDataSearchResult } from '../inventory'
+import { type ShipmentRecord } from '../shipment'
 
 interface InboundTableProps {
     data: InboundRecord[]
@@ -33,6 +34,7 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
                     ) : (
                         data.map(item => {
                             const master = masterDataMap[item.materialId]
+                            const operatorName = auditUtils.formatOperatorName(item.operator) || item.operator
                             return (
                                 <tr key={item.id} className='hover:bg-blue-500/5 transition-all group border-b border-dashed border-muted/30 last:border-none'>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] text-muted-foreground/40 tracking-tighter whitespace-nowrap'>{item.entryDate}</td>
@@ -50,7 +52,7 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
                                         <Badge variant='outline' className='bg-white border-none shadow-sm text-slate-500 text-[7px] md:text-[8px] font-black uppercase tracking-widest h-3.5 md:h-4 px-1.5 md:px-2 rounded-full'>{item.targetCategory}</Badge>
                                     </td>
-                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{item.operator}</td>
+                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
                                 </tr>
                             )
                         })
@@ -96,6 +98,7 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
                     ) : (
                         data.map(item => {
                             const master = masterDataMap[item.materialId]
+                            const operatorName = auditUtils.formatOperatorName(item.operator) || item.operator
                             const status = statusConfig[item.status] || {
                                 label: t('warehouse.reports.shipmentTable.statusFallback', { status: item.status }),
                                 className: 'bg-slate-100 text-slate-600'
@@ -125,7 +128,7 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
                                             {status.label}
                                         </Badge>
                                     </td>
-                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{item.operator}</td>
+                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
                                 </tr>
                             )
                         })

@@ -33,6 +33,9 @@ export const tradingSalesOrder = {
     evidenceTitle: '订单凭据',
     evidencePlaceholder: '暂无凭据图片',
     evidenceHint: '支持多张截图上传，点击可管理（最大 10MB）',
+    evidenceSortHint: '拖动左上角手柄可调整打印与展示顺序',
+    evidenceNoteLabel: '图片备注',
+    evidenceNotePlaceholder: '例如：客户签字页、邮件截图、包装外观',
     info: {
       orderNo: '订单编号',
       orderName: '订单名称',

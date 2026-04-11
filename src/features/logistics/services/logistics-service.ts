@@ -1,120 +1,96 @@
 import { apiFetch } from '@/lib/api-client'
-import { createLogger } from '@/lib/logger'
-import { type LogisticsRecord, type LogisticsStatus, type LogisticsEvent } from '../types'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { ensureObjectResponse } from '@/lib/api-response'
-
-const logger = createLogger('LogisticsService')
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import {
+  toLogisticsListPageContract,
+  toLogisticsRecordContract,
+  toSaveLogisticsRecordApiDTO,
+} from '../adapters/logistics-api-adapter'
+import type { LogisticsListPageApiDTO, LogisticsRecordApiDTO } from '../contracts/logistics-api-dto'
+import type { LogisticsListPage, LogisticsRecord, SaveLogisticsRecordInput, UpdateLogisticsStatusPayload } from '../data/schema'
 
 class LogisticsService {
-    /**
-     * 获取物流记录 (已支持分页)
-     */
-    async getRecords(page = 1, pageSize = 50): Promise<{ items: LogisticsRecord[], total: number }> {
-        return apiFetch<{ items: LogisticsRecord[], total: number }>(`/logistics?page=${page}&pageSize=${pageSize}`)
+  async getRecords(page = 1, pageSize = 50): Promise<LogisticsListPage> {
+    const res = await apiFetch<LogisticsListPageApiDTO>(`/logistics?page=${page}&pageSize=${pageSize}`)
+    return toLogisticsListPageContract(
+      ensureObjectResponse<LogisticsListPageApiDTO & Record<string, unknown>>(
+        res,
+        'LogisticsService.getRecords'
+      ) as LogisticsListPageApiDTO
+    )
+  }
+
+  async getRecordById(id: string): Promise<LogisticsRecord> {
+    const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}`)
+    return toLogisticsRecordContract(
+      ensureObjectResponse<LogisticsRecordApiDTO & Record<string, unknown>>(
+        res,
+        `LogisticsService.getRecordById(${id})`
+      ) as LogisticsRecordApiDTO
+    )
+  }
+
+  async getRecordsByOrderNo(orderNo: string): Promise<LogisticsRecord[]> {
+    const res = await apiFetch<LogisticsListPageApiDTO>(`/logistics?orderNo=${encodeURIComponent(orderNo)}`)
+    return toLogisticsListPageContract(
+      ensureObjectResponse<LogisticsListPageApiDTO & Record<string, unknown>>(
+        res,
+        'LogisticsService.getRecordsByOrderNo'
+      ) as LogisticsListPageApiDTO
+    ).items
+  }
+
+  async saveRecord(data: SaveLogisticsRecordInput): Promise<LogisticsRecord> {
+    const res = await apiFetch<LogisticsRecordApiDTO>('/logistics', {
+      method: 'POST',
+      body: JSON.stringify(toSaveLogisticsRecordApiDTO(data)),
+    })
+    return toLogisticsRecordContract(
+      ensureObjectResponse<LogisticsRecordApiDTO & Record<string, unknown>>(
+        res,
+        'LogisticsService.saveRecord'
+      ) as LogisticsRecordApiDTO
+    )
+  }
+
+  async deleteRecord(id: string): Promise<void> {
+    await apiFetch(`/logistics/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async patchLogistics(id: string, delta: DeltaSet, version: number): Promise<LogisticsRecord> {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: { id, version },
     }
 
-    /**
-     * 获取单条物流详情
-     */
-    async getRecordById(id: string): Promise<LogisticsRecord | undefined> {
-        try {
-            return await apiFetch<LogisticsRecord>(`/logistics/${id}`)
-        } catch (error) {
-            logger.error(`[FAIL_LOUDLY] LogisticsService.getRecordById(${id})`, error)
-            return undefined
-        }
-    }
+    const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
 
-    /**
-     * 按订单号获取物流记录
-     */
-    async getRecordsByOrderNo(orderNo: string): Promise<LogisticsRecord[]> {
-        return apiFetch<LogisticsRecord[]>(`/logistics?orderNo=${encodeURIComponent(orderNo)}`)
-    }
+    return toLogisticsRecordContract(
+      ensureObjectResponse<LogisticsRecordApiDTO & Record<string, unknown>>(
+        res,
+        'LogisticsService.patchLogistics'
+      ) as LogisticsRecordApiDTO
+    )
+  }
 
-    /**
-     * 保存或更新物流记录 (后端驱动)
-     */
-    async saveRecord(data: Partial<LogisticsRecord>): Promise<LogisticsRecord> {
-        // 后端逻辑：如果带有 ID 则更新，否则创建
-        return apiFetch<LogisticsRecord>('/logistics', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
-    }
-
-    /**
-     * 更新物流状态并追加事件 (原子化更新)
-     */
-    async updateStatus(id: string, status: LogisticsStatus, location: string, description: string): Promise<LogisticsRecord> {
-        // 先获取当前记录以获取事件流
-        const record = await this.getRecordById(id)
-        if (!record) throw new Error('Record not found')
-
-        const now = new Date().toISOString()
-        const newEvent: LogisticsEvent = {
-            id: '',
-            time: now,
-            location,
-            description,
-            status
-        }
-
-        // 解析并追加
-        let currentEvents: LogisticsEvent[] = []
-        if (record.events) {
-            try {
-                currentEvents = typeof record.events === 'string' 
-                    ? JSON.parse(record.events) 
-                    : (Array.isArray(record.events) ? record.events : [])
-            } catch (e) {
-                logger.error('Failed to parse events', e)
-                currentEvents = []
-            }
-        }
-
-        const updatedEvents = [newEvent, ...currentEvents]
-
-        return apiFetch<LogisticsRecord>(`/logistics/${id}/status`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-                status,
-                location,
-                description,
-                events: updatedEvents, // 直接传数组，apiFetch 会序列化为 JSON 数组
-                version: record.version // 传递乐观锁版本
-            })
-        })
-    }
-
-    /**
-     * 逻辑删除记录
-     */
-    async deleteRecord(id: string): Promise<void> {
-        await apiFetch(`/logistics/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
-    /**
-     * SDRTS: 增量 Patch 物流记录
-     */
-    async patchLogistics(id: string, delta: DeltaSet, version: number): Promise<LogisticsRecord> {
-        const payload: DeltaPayload = {
-            op: 'PATCH',
-            delta,
-            metadata: { id, version }
-        }
-
-        const res = await apiFetch<LogisticsRecord>(`/logistics/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(payload)
-        })
-
-        const checked = ensureObjectResponse<LogisticsRecord & Record<string, unknown>>(res, 'LogisticsService.patchLogistics')
-        return checked as LogisticsRecord
-    }
+  async updateStatus(id: string, payload: UpdateLogisticsStatusPayload): Promise<LogisticsRecord> {
+    const res = await apiFetch<LogisticsRecordApiDTO>(`/logistics/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+    return toLogisticsRecordContract(
+      ensureObjectResponse<LogisticsRecordApiDTO & Record<string, unknown>>(
+        res,
+        'LogisticsService.updateStatus'
+      ) as LogisticsRecordApiDTO
+    )
+  }
 }
 
 export const logisticsService = new LogisticsService()
