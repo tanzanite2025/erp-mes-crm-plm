@@ -4,9 +4,9 @@ import { type DeltaSet } from '@/lib/delta/types'
 import {
   toWarehouseCategoryApiDTO,
   toWarehouseCategoryContract,
-  type WarehouseCategory,
 } from '../adapters/warehouse-category-api-adapter'
 import { type WarehouseCategoryApiDTO } from '../contracts/warehouse-category-api-dto'
+import type { WarehouseCategory } from '../data/schema'
 
 export const WarehouseCategoryMaintenanceService = {
   async createCategory(

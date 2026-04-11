@@ -1757,6 +1757,103 @@
 
 执行状态治理当前最合理的路线是：先补“谁执行了、何时执行、执行结果如何可见”的审计可见性，再决定是否进入最小失败状态治理，而不是现在就扩张复杂执行状态机。
 
+## 2026-04-11 warehouse 第四阶段补充：执行审计字段最小补齐
+
+### 本轮目标
+
+按最小范围补齐调账执行审计字段，使调账记录能够同时表达：
+
+1. 谁批准了 / 何时批准
+2. 谁执行了 / 何时执行
+
+且不引入新的执行状态枚举，不扩大为完整执行状态机改造。
+
+### 已完成改动
+
+#### 1. 后端模型与执行路径
+
+已完成：
+
+1. `server/models/adjustment.go`
+   - 为 `InventoryAdjustment` 增加：
+     - `executedBy`
+     - `executedAt`
+
+2. `server/handlers/adjustment.go`
+   - `ExecuteAdjustmentHandler` 现在将当前用户名传递到服务层
+
+3. `server/services/warehouse_master_service.go`
+   - `ExecuteAdjustment(id, username)` 在执行成功时写入：
+     - `status = EXECUTED`
+     - `executed_by`
+     - `executed_at`
+
+#### 2. 前端类型口径
+
+已完成：
+
+1. `src/features/warehouse/contracts/warehouse-api-dto.ts`
+   - 为 `InventoryAdjustmentApiDTO` 增加：
+     - `executedBy`
+     - `executedAt`
+
+2. `src/features/warehouse/adapters/warehouse-api-adapter.ts`
+   - 为 `InventoryAdjustment` contract 增加：
+     - `executedBy`
+     - `executedAt`
+   - 适配器同步映射这两个字段
+
+#### 3. 前端页面与打印展示
+
+已完成：
+
+1. `src/features/warehouse/tabs/adjustment-history.tsx`
+   - 在现有列表中最小补充：
+     - 审批人 / 执行人
+     - 审批时间 / 执行时间
+
+2. `src/features/warehouse/components/adjustment-print.tsx`
+   - 在打印视图中补充：
+     - 审批人 / 审批时间
+     - 执行人 / 执行时间
+
+3. `src/locales/messages/zh-CN/warehouse.ts`
+4. `src/locales/messages/en-US/warehouse.ts`
+   - 补充审计字段展示文案
+
+### 本轮刻意未改动的部分
+
+本轮保持不动：
+
+1. `InventoryAdjustmentStatus` 枚举
+2. `EXECUTE_FAILED` 等失败状态扩展
+3. 重试 / 回滚 / 部分执行等执行状态机能力
+
+原因是本轮只做“执行可见性最小补齐”，不扩大为复杂状态治理。
+
+### 验证
+
+已执行：
+
+- `pnpm exec eslint src/features/warehouse/contracts/warehouse-api-dto.ts src/features/warehouse/adapters/warehouse-api-adapter.ts src/features/warehouse/tabs/adjustment-history.tsx src/features/warehouse/components/adjustment-print.tsx src/locales/messages/zh-CN/warehouse.ts src/locales/messages/en-US/warehouse.ts`
+- `pnpm exec tsc --noEmit`
+- `go test ./handlers ./services -run Adjustment`
+
+结果：
+
+1. 前端 `eslint` 通过。
+2. 前端类型检查通过。
+3. 后端相关 package 编译检查通过。
+
+### 当前阶段结论
+
+执行审计可见性已完成当前最小闭环：
+
+1. 后端已能记录执行人和执行时间。
+2. 前端类型口径已同步。
+3. 列表与打印视图已能展示批准/执行审计信息。
+4. 下一步若继续推进，才适合评估是否需要最小新增 `EXECUTE_FAILED`。
+
 ## 2026-04-11 实验中心侧边栏收敛为单入口
 
 ### 本轮目标

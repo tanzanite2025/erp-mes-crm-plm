@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Camera, CloudUpload, GripVertical, ImageIcon, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'

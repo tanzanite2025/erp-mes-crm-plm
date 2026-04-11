@@ -84,7 +84,6 @@ export function UsersActionDialog({
 
   const { employees, combinedRoleOptions } = useUsersActionDialogOptions({
     open,
-    isEdit,
     currentRow,
     usersData: userOptions,
     dynamicRoles,
