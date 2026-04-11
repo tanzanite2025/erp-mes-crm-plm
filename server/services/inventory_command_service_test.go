@@ -137,6 +137,43 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 	`).Error)
 
 	require.NoError(t, testDB.Exec(`
+		CREATE TABLE stocktake_tasks (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			title TEXT,
+			warehouse_category_code TEXT,
+			status TEXT,
+			created_by TEXT,
+			start_time DATETIME,
+			end_time DATETIME,
+			remarks TEXT
+		)
+	`).Error)
+	require.NoError(t, testDB.Exec(`CREATE INDEX idx_stocktake_tasks_deleted_at ON stocktake_tasks(deleted_at)`).Error)
+
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE stocktake_items (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			task_id TEXT NOT NULL,
+			material_id TEXT NOT NULL,
+			material_code TEXT,
+			material_name TEXT,
+			batch_no TEXT,
+			theory_qty REAL DEFAULT 0,
+			actual_qty REAL DEFAULT 0,
+			uom TEXT,
+			scanner_id TEXT,
+			scan_time DATETIME
+		)
+	`).Error)
+	require.NoError(t, testDB.Exec(`CREATE INDEX idx_stocktake_items_deleted_at ON stocktake_items(deleted_at)`).Error)
+
+	require.NoError(t, testDB.Exec(`
 		CREATE TABLE materials (
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
 			created_at DATETIME,
@@ -806,4 +843,105 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 	require.Equal(t, "kg", persisted.UOM)
 	require.InDelta(t, 15.0, persisted.Quantity, 0.000001)
 	require.InDelta(t, 120.0, persisted.TotalValue, 0.000001)
+}
+
+func TestPatchStocktakeItemUpdatesActualQtyAndAuditFields(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now().Add(-2 * time.Second).UTC()
+	taskID := "stocktake-task-1"
+	itemID := "stocktake-item-1"
+	materialID := uuid.NewString()
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO stocktake_tasks (id, created_at, updated_at, title, warehouse_category_code, status, created_by)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, taskID, now, now, "Task", "WH_A", "IN_PROGRESS", "alice").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO stocktake_items (id, created_at, updated_at, task_id, material_id, material_code, material_name, batch_no, theory_qty, actual_qty, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, itemID, now, now, taskID, materialID, "MAT-001", "Copper Wire", "B-001", 10.0, 8.0, "kg").Error)
+
+	version := optimisticVersionFromTimestamps(now, now)
+	actualQty := 12.0
+	updated, err := PatchStocktakeItem(itemID, PatchStocktakeItemRequest{
+		ID:        itemID,
+		ActualQty: &actualQty,
+		Version:   version,
+	}, []string{"actualQty"}, "scanner-a", "127.0.0.1")
+	require.NoError(t, err)
+	require.Equal(t, itemID, updated.ID)
+	require.InDelta(t, 12.0, updated.ActualQty, 0.000001)
+	require.InDelta(t, 2.0, updated.Difference, 0.000001)
+	require.Equal(t, "scanner-a", updated.ScannerID)
+	require.NotNil(t, updated.ScanTime)
+	require.Greater(t, optimisticVersionFromTimestamps(updated.UpdatedAt, updated.CreatedAt), version)
+
+	type persistedRow struct {
+		ActualQty float64
+		ScannerID string
+		ScanTime  *time.Time
+		UpdatedAt time.Time
+	}
+	var row persistedRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT actual_qty, scanner_id, scan_time, updated_at
+		FROM stocktake_items
+		WHERE id = ?
+	`, itemID).Scan(&row).Error)
+	require.InDelta(t, 12.0, row.ActualQty, 0.000001)
+	require.Equal(t, "scanner-a", row.ScannerID)
+	require.NotNil(t, row.ScanTime)
+	require.True(t, row.UpdatedAt.After(now))
+}
+
+func TestPatchStocktakeItemRejectsStaleVersion(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now().UTC()
+	taskID := "stocktake-task-2"
+	itemID := "stocktake-item-2"
+	materialID := uuid.NewString()
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO stocktake_tasks (id, created_at, updated_at, title, warehouse_category_code, status, created_by)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, taskID, now, now, "Task", "WH_A", "IN_PROGRESS", "alice").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO stocktake_items (id, created_at, updated_at, task_id, material_id, material_code, material_name, batch_no, theory_qty, actual_qty, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, itemID, now, now, taskID, materialID, "MAT-002", "Steel", "B-002", 5.0, 5.0, "pcs").Error)
+
+	actualQty := 6.0
+	_, err := PatchStocktakeItem(itemID, PatchStocktakeItemRequest{
+		ID:        itemID,
+		ActualQty: &actualQty,
+		Version:   optimisticVersionFromTimestamps(now, now) - 1,
+	}, []string{"actualQty"}, "scanner-b", "127.0.0.1")
+	require.ErrorIs(t, err, ErrStocktakeItemPatchVersionConflict)
+
+	type persistedRow struct {
+		ActualQty float64
+	}
+	var row persistedRow
+	require.NoError(t, db.DB.Raw(`SELECT actual_qty FROM stocktake_items WHERE id = ?`, itemID).Scan(&row).Error)
+	require.InDelta(t, 5.0, row.ActualQty, 0.000001)
 }

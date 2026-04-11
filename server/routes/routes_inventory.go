@@ -51,6 +51,7 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	stocktakeGroup := inventoryGroup.Group("/stocktakes")
 	stocktakeGroup.GET("", handlers.GetStocktakeTasksHandler)
 	stocktakeGroup.POST("", stocktakeManage, handlers.CreateStocktakeTaskHandler)
+	stocktakeGroup.PATCH("/items/:id", stocktakeManage, handlers.PatchStocktakeItemHandler)
 	stocktakeGroup.GET("/:id/items", handlers.GetStocktakeItemsHandler)
 	stocktakeGroup.POST("/:taskId/post-adjustment", adjustmentSubmit, handlers.SubmitAdjustmentApprovalHandler)
 

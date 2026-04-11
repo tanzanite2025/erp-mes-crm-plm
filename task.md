@@ -379,3 +379,31 @@
   - [ ] 设计 typed sync 与 React Query invalidation 的协作关系，避免双重刷新。
   - [ ] 替换第一批消费者到统一 query key / invalidation 约定入口。
   - [ ] 完成第三阶段最小验证并更新 `walkthrough.md`。
+
+- [ ] 673. 将 `production-shared` 核心读取逐步迁移到 `useQuery`（2026-04-11，待确认）
+  - [ ] 补充第四阶段规划：明确首批迁移的读取入口、query key 复用方式与保留的非 Query 消费边界。
+  - [ ] 为 lines / processes / mappings 设计最小读取 hooks 或 query options 入口。
+  - [ ] 迁移第一批核心读取场景到 `useQuery`，避免继续使用手写 `loadData()` + 本地 effect 拉取。
+  - [ ] 校正与 typed sync / invalidation / 乐观 UI 的协作关系，避免重复请求与静默兜底。
+  - [ ] 完成第四阶段最小验证并更新 `walkthrough.md`。
+
+- [ ] 674. 将 `dashboard/index.tsx` 纳入 `production-shared` Query 化收口（2026-04-11，待确认）
+  - [ ] 补充第五阶段规划：明确 dashboard 对 production lines / segments 的读取边界与本地存储状态边界。
+  - [ ] 复用既有 production-shared query hooks / query key 约定，替换 dashboard 内同类主数据手写拉取。
+  - [ ] 保留 dashboard 自身本地存储配置与 UI 状态，不扩散改造范围到 line-mgmt。
+  - [ ] 校正 dashboard 与 storage event、production invalidation 的协作关系，避免重复刷新。
+  - [ ] 完成第五阶段最小验证并更新 `walkthrough.md`。
+
+- [ ] 675. 分阶段推进 `line-mgmt/index.tsx` 收口，第一阶段先处理乐观 UI（2026-04-11，待确认）
+  - [ ] 补充第六阶段规划：明确 line-mgmt 第一阶段只处理乐观 UI、失败回滚与成功后同步边界。
+  - [ ] 盘点当前 line-mgmt 的临时态写入、局部回写、失败回滚与全量 reload 混用问题。
+  - [ ] 收口 line-mgmt 第一阶段乐观 UI：明确本地临时态与后端确认态的切换规则。
+  - [ ] 暂不在本阶段强推整页 Query 化，待乐观 UI 稳定后再进入下一步。
+  - [ ] 完成第六阶段第一步最小验证并更新 `walkthrough.md`。
+
+- [ ] 676. 推进 `line-mgmt/index.tsx` 第二阶段：Query cache 主真相 + optimistic overlay 短期覆盖层（2026-04-11，待确认）
+  - [ ] 补充第六阶段第二步规划：明确 Query cache 作为主真相、optimistic overlay 作为短期覆盖层的模型。
+  - [ ] 设计 line-mgmt 的 displayedLines 组装方式，区分 query data、overlay 与本地 UI 状态。
+  - [ ] 明确 create / update / delete 成功时分别使用 `setQueryData` 还是 `invalidate` 的策略。
+  - [ ] 明确 overlay 的清理、回滚、与域级 invalidation 的协作边界。
+  - [ ] 完成第六阶段第二步最小验证并更新 `walkthrough.md`。

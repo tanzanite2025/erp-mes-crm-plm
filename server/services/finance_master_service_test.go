@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -20,6 +21,7 @@ func setupFinanceMasterServiceTestDB(t *testing.T) *gorm.DB {
 	testDB, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())), &gorm.Config{})
 	require.NoError(t, err)
 	require.NoError(t, testDB.AutoMigrate(&models.Currency{}))
+	require.NoError(t, testDB.AutoMigrate(&models.PaymentTerm{}))
 	return testDB
 }
 
@@ -226,4 +228,81 @@ func TestSyncExchangeRatesTreatsNon200AsUpstreamError(t *testing.T) {
 	require.Error(t, err)
 	require.True(t, errors.Is(err, ErrExchangeRateAPIStatus))
 	require.Contains(t, err.Error(), "http 429")
+}
+
+func TestListPaymentTermsSeedsDefaultsWithValidInstallmentJSON(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupFinanceMasterServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	terms, err := ListPaymentTerms()
+	require.NoError(t, err)
+	require.NotEmpty(t, terms)
+
+	var cod models.PaymentTerm
+	require.NoError(t, testDB.Where("code = ?", "COD").First(&cod).Error)
+	require.Equal(t, "[]", cod.Installment)
+}
+
+func TestNormalizePaymentTermInstallmentDefaultsBlankAndPreservesJSON(t *testing.T) {
+	require.Equal(t, "[]", normalizePaymentTermInstallment(""))
+	require.Equal(t, "[]", normalizePaymentTermInstallment("   "))
+	normalized := normalizePaymentTermInstallment(` [{"percentage":30,"delayDays":0}] `)
+	var installments []map[string]int
+	require.NoError(t, json.Unmarshal([]byte(normalized), &installments))
+	require.Len(t, installments, 1)
+	require.Equal(t, 30, installments[0]["percentage"])
+	require.Equal(t, 0, installments[0]["delayDays"])
+	require.Equal(t, `"legacy note"`, normalizePaymentTermInstallment("legacy note"))
+}
+
+func TestEnsureFinanceDictionaryCompatibilityCreatesPaymentMethodsAndBackfillsTerms(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupFinanceMasterServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	require.NoError(t, testDB.Create(&models.PaymentTerm{
+		Code:        " custom30 ",
+		Name:        " Custom 30 ",
+		Description: "  legacy note  ",
+		Installment: "",
+		Status:      "",
+		Version:     0,
+	}).Error)
+
+	require.NoError(t, EnsureFinanceDictionaryCompatibility())
+
+	require.True(t, testDB.Migrator().HasTable(&models.PaymentMethod{}))
+
+	var custom models.PaymentTerm
+	require.NoError(t, testDB.Where("code = ?", "CUSTOM30").First(&custom).Error)
+	require.Equal(t, "Custom 30", custom.Name)
+	require.Equal(t, "legacy note", custom.Description)
+	require.Equal(t, "[]", custom.Installment)
+	require.Equal(t, "Active", custom.Status)
+	require.Equal(t, 1, custom.Version)
+
+	var cod models.PaymentTerm
+	require.NoError(t, testDB.Where("code = ?", "COD").First(&cod).Error)
+	require.True(t, cod.IsSystem)
+
+	var cash models.PaymentMethod
+	require.NoError(t, testDB.Where("code = ?", "CASH").First(&cash).Error)
+	require.True(t, cash.IsSystem)
+	require.Equal(t, "Active", cash.Status)
+	require.Equal(t, 1, cash.Version)
 }

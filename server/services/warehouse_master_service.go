@@ -20,11 +20,13 @@ var (
 	ErrMaterialLinkedBOM       = errors.New("material linked by bom")
 	ErrMaterialLinkedPurchase  = errors.New("material linked by purchase order line")
 
-	ErrStocktakeTaskNotFound          = errors.New("stocktake task not found")
-	ErrStocktakeTaskStatusUnsupported = errors.New("stocktake task status is unsupported")
-	ErrPDAScanInvalidPayload          = errors.New("invalid pda scan payload")
-	ErrPDAScanTaskStatusConflict      = errors.New("stocktake task status conflict")
-	ErrPDAScanUnknownMaterial         = errors.New("unknown material code")
+	ErrStocktakeTaskNotFound             = errors.New("stocktake task not found")
+	ErrStocktakeTaskStatusUnsupported    = errors.New("stocktake task status is unsupported")
+	ErrStocktakeItemNotFound             = errors.New("stocktake item not found")
+	ErrStocktakeItemPatchVersionConflict = errors.New("stocktake item patch version conflict")
+	ErrPDAScanInvalidPayload             = errors.New("invalid pda scan payload")
+	ErrPDAScanTaskStatusConflict         = errors.New("stocktake task status conflict")
+	ErrPDAScanUnknownMaterial            = errors.New("unknown material code")
 
 	ErrAdjustmentPendingExists      = errors.New("pending adjustment already exists")
 	ErrAdjustmentApprovalConfigMiss = errors.New("approval config missing for adjustment")
@@ -302,6 +304,94 @@ func ListStocktakeItems(taskID string) ([]models.StocktakeItem, error) {
 		items[i].Difference = items[i].ActualQty - items[i].TheoryQty
 	}
 	return items, nil
+}
+
+func PatchStocktakeItem(id string, patch PatchStocktakeItemRequest, deltaKeys []string, operator string, ip string) (models.StocktakeItem, error) {
+	var updated models.StocktakeItem
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var item models.StocktakeItem
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&item, "id = ?", id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrStocktakeItemNotFound
+			}
+			return err
+		}
+
+		if patch.Version != optimisticVersionFromTimestamps(item.UpdatedAt, item.CreatedAt) {
+			return ErrStocktakeItemPatchVersionConflict
+		}
+
+		var task models.StocktakeTask
+		if err := tx.Select("id", "status").Where("id = ?", item.TaskID).First(&task).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrStocktakeTaskNotFound
+			}
+			return err
+		}
+		if task.Status != "IN_PROGRESS" && task.Status != "COMPLETED" {
+			return ErrStocktakeTaskStatusUnsupported
+		}
+
+		updates := make(map[string]any)
+		if patch.ActualQty != nil {
+			if *patch.ActualQty < 0 {
+				return errors.New("[CRITICAL_LOGIC_ERROR] stocktake actual quantity cannot be negative")
+			}
+			updates["actual_qty"] = *patch.ActualQty
+		}
+
+		effectiveScannerID := patch.ScannerID
+		if patch.ActualQty != nil && effectiveScannerID == nil {
+			trimmedOperator := strings.TrimSpace(operator)
+			if trimmedOperator != "" {
+				effectiveScannerID = &trimmedOperator
+			}
+		}
+		if effectiveScannerID != nil {
+			updates["scanner_id"] = strings.TrimSpace(*effectiveScannerID)
+		}
+
+		effectiveScanTime := patch.ScanTime
+		if patch.ActualQty != nil && effectiveScanTime == nil {
+			now := time.Now().UTC()
+			effectiveScanTime = &now
+		}
+		if patch.ScanTime != nil || patch.ActualQty != nil {
+			updates["scan_time"] = effectiveScanTime
+		}
+
+		if len(updates) == 0 {
+			return errors.New("[VALIDATION] no stocktake fields to update")
+		}
+
+		if err := tx.Model(&item).Updates(updates).Error; err != nil {
+			return err
+		}
+		if err := tx.First(&item, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+			Module:   "Stocktake",
+			TargetID: item.ID,
+			Action:   "STOCKTAKE_ITEM_PATCH",
+			Diff:     auditDeltaKeys(deltaKeys),
+			Operator: strings.TrimSpace(operator),
+			IP:       strings.TrimSpace(ip),
+		}); err != nil {
+			return err
+		}
+
+		updated = item
+		return nil
+	})
+	if err != nil {
+		return models.StocktakeItem{}, err
+	}
+
+	updated.Difference = updated.ActualQty - updated.TheoryQty
+	return updated, nil
 }
 
 func SubmitPDAScan(scan PDAScanPayload, scannerID string) error {

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { Check, LayoutDashboard, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
@@ -20,10 +20,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import type { ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
+import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 import { useLanguage } from '@/context/language-provider'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
-import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
 
 const Overview = lazy(() => import('./components/overview').then((m) => ({ default: m.Overview })))
 const SystemEvents = lazy(() => import('./components/system-events').then((m) => ({ default: m.SystemEvents })))
@@ -33,70 +32,56 @@ const OrdersProgress = lazy(() => import('./components/orders-progress').then((m
 
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 
-async function getStoredSegments(): Promise<(Segment & { lineName: string })[]> {
-  const lines = await productionLinesService.getLines()
-
-  return lines.flatMap((line) =>
-    (line.segments || []).map((seg) => ({
-      ...seg,
-      lineName: line.name,
-    }))
-  )
-}
-
 export function Dashboard() {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('overview')
-  const [segments, setSegments] = useState<(Segment & { lineName: string })[]>([])
   const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
   const [isConfigOpen, setIsConfigOpen] = useState(false)
+  const { data: lines } = useProductionLinesQuery()
+  const segments = useMemo<(Segment & { lineName: string })[]>(() => {
+    return (lines ?? []).flatMap((line) =>
+      (line.segments || []).map((seg) => ({
+        ...seg,
+        lineName: line.name,
+      }))
+    )
+  }, [lines])
 
   useEffect(() => {
     let active = true
 
-    const syncDashboardState = async () => {
-      const allSegments = await getStoredSegments()
-      if (!active) return
-
-      setSegments(allSegments)
-
+    const syncVisibleSegments = async () => {
       const saved = await StorageService.getItem<string[]>(VISIBLE_SEGMENTS_KEY)
       if (!active) return
 
       if (saved) {
         setVisibleSegmentIds(saved)
-      } else if (allSegments.length > 0) {
-        const defaults = allSegments.slice(0, 5).map((s) => s.id)
+      } else if (segments.length > 0) {
+        const defaults = segments.slice(0, 5).map((s) => s.id)
         setVisibleSegmentIds(defaults)
         await StorageService.setItem(VISIBLE_SEGMENTS_KEY, defaults)
       }
     }
 
-    void syncDashboardState()
+    void syncVisibleSegments()
 
     const handleSync = (event?: Event) => {
       const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
       if (key && key !== VISIBLE_SEGMENTS_KEY) {
         return
       }
-      void syncDashboardState()
+      void syncVisibleSegments()
     }
 
     window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
     window.addEventListener('xdfc_storage_initialized', handleSync)
-    const unsubscribe = productionResourceSync.subscribe((event) => {
-      if (event.kind === 'lines') {
-        handleSync()
-      }
-    })
 
     return () => {
       active = false
       window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
       window.removeEventListener('xdfc_storage_initialized', handleSync)
-      unsubscribe()
     }
-  }, [])
+  }, [segments])
 
   const handleSaveConfig = async (ids: string[]) => {
     setVisibleSegmentIds(ids)

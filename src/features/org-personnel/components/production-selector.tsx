@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -13,9 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Search, LayoutGrid, GitCommit } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import type { ProductionLine } from '@/features/production-shared/data/production-line'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
-import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
+import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 
 interface ProductionSelectorProps {
   open: boolean
@@ -26,43 +24,18 @@ interface ProductionSelectorProps {
 
 export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }: ProductionSelectorProps) {
   const { t } = useLanguage()
-  const [lines, setLines] = useState<ProductionLine[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [localSelected, setLocalSelected] = useState<string[]>(selectedItems.map(i => i.id))
+  const { data: lines } = useProductionLinesQuery({ enabled: open })
+  const availableLines = useMemo(() => lines ?? [], [lines])
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    let active = true
-
-    const loadLines = async () => {
-      const data = await productionLinesService.getLines()
-      if (!active) {
-        return
-      }
-
-      setLines(data || [])
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       setLocalSelected(selectedItems.map(i => i.id))
     }
 
-    void loadLines()
-
-    const handleLinesUpdated = () => {
-      void loadLines()
-    }
-    const unsubscribe = productionResourceSync.subscribe((event) => {
-      if (event.kind === 'lines') {
-        handleLinesUpdated()
-      }
-    })
-
-    return () => {
-      active = false
-      unsubscribe()
-    }
-  }, [open, selectedItems])
+    onOpenChange(nextOpen)
+  }
 
   const toggleSelection = (id: string) => {
     setLocalSelected(prev => 
@@ -73,7 +46,7 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
   const handleSave = () => {
     const newSelection: { type: 'line' | 'segment', id: string, name: string }[] = []
     
-    lines.forEach(line => {
+    availableLines.forEach(line => {
       if (localSelected.includes(line.id)) {
         newSelection.push({ type: 'line', id: line.id, name: line.name })
       }
@@ -85,16 +58,16 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
     })
 
     onSave(newSelection)
-    onOpenChange(false)
+    handleDialogOpenChange(false)
   }
 
-  const filteredLines = lines.filter(l => 
+  const filteredLines = availableLines.filter(l => 
     l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.segments?.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className='max-w-md rounded-[32px] border-none shadow-2xl overflow-hidden p-0'>
         <DialogHeader className='p-8 bg-muted/10 border-b border-dashed border-muted/50'>
           <DialogTitle className='text-lg font-black tracking-tighter italic uppercase'>{t('orgPersonnel.org.productionSelector.title')}</DialogTitle>
@@ -150,7 +123,7 @@ export function ProductionSelector({ open, onOpenChange, selectedItems, onSave }
         </ScrollArea>
 
         <DialogFooter className='p-6 bg-muted/5 border-t border-dashed border-muted/50'>
-          <Button variant='outline' onClick={() => onOpenChange(false)} className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed'>{t('common.actions.cancel')}</Button>
+          <Button variant='outline' onClick={() => handleDialogOpenChange(false)} className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed'>{t('common.actions.cancel')}</Button>
           <Button onClick={handleSave} className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20'>{t('orgPersonnel.org.productionSelector.submit')}</Button>
         </DialogFooter>
       </DialogContent>

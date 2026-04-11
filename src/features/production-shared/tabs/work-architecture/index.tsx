@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LayoutGrid, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -10,9 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
-import type { ProductionLine } from '../../data/production-line'
-import { productionLinesService } from '../../services/production-lines-service'
-import { productionResourceSync } from '../../services/production-resource-sync'
+import { useProductionLinesQuery } from '../../hooks/use-production-resources'
 import { ProcessLibraryPanel } from './components/process-library-panel.tsx'
 import { WorkArchitectureTree } from './components/work-architecture-tree.tsx'
 
@@ -20,48 +18,20 @@ const logger = createLogger('WorkArchitecture')
 
 export function WorkArchitecture() {
   const { t } = useLanguage()
-  const [lines, setLines] = useState<ProductionLine[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-
-  const loadData = useCallback(async () => {
-    setIsLoading(true)
-
-    try {
-      setError(null)
-      const data = await productionLinesService.getLines()
-      setLines(data || [])
-    } catch (loadError) {
-      setError(loadError)
-      logger.error('Failed to load production lines from backend', loadError)
-      toast.error(t('productionShared.workArchitecture.loadFailed'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
+  const { data: lines, isLoading, error } = useProductionLinesQuery()
+  const availableLines = lines ?? []
 
   useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      void loadData()
-    }, 0)
-
-    const handleSync = () => {
-      void loadData()
+    if (!error) {
+      return
     }
-    const unsubscribe = productionResourceSync.subscribe((event) => {
-      if (event.kind === 'lines' || event.kind === 'processes') {
-        handleSync()
-      }
-    })
 
-    return () => {
-      globalThis.clearTimeout(timer)
-      unsubscribe()
-    }
-  }, [loadData])
+    logger.error('Failed to load production lines from backend', error)
+    toast.error(t('productionShared.workArchitecture.loadFailed'))
+  }, [error, t])
 
-  const filteredLines = lines.filter(
+  const filteredLines = availableLines.filter(
     (line) =>
       line.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       line.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -100,7 +70,7 @@ export function WorkArchitecture() {
       <ProcessLibraryPanel />
 
       <div className='flex-1 space-y-6 overflow-y-auto'>
-        {isLoading && lines.length === 0 ? (
+        {isLoading && availableLines.length === 0 ? (
           <div className='space-y-4'>
             {[1, 2, 3].map((item) => (
               <div

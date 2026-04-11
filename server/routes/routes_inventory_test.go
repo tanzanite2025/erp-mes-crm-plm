@@ -32,3 +32,22 @@ func TestRegisterInventoryRoutesRegistersSummaryEndpoints(t *testing.T) {
 	require.True(t, hasValuation, "expected GET /api/v1/inventory/valuation to be registered with GetInventoryValuationHandler")
 	require.True(t, hasAlertSummary, "expected GET /api/v1/inventory/alerts/summary to be registered with GetInventoryAlertSummaryHandler")
 }
+
+func TestRegisterInventoryRoutesRegistersStocktakePatchEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	r := gin.New()
+	api := r.Group("/api/v1")
+	authorized := api.Group("")
+
+	registerInventoryRoutes(authorized)
+
+	var hasStocktakePatch bool
+	for _, route := range r.Routes() {
+		if route.Method == "PATCH" && route.Path == "/api/v1/stocktakes/items/:id" {
+			hasStocktakePatch = strings.Contains(route.Handler, "PatchStocktakeItemHandler")
+		}
+	}
+
+	require.True(t, hasStocktakePatch, "expected PATCH /api/v1/stocktakes/items/:id to be registered with PatchStocktakeItemHandler")
+}

@@ -1,7 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { StocktakeCoreService, type StocktakeItem } from '@/features/warehouse/services/stocktake-core-service'
 import { StocktakeMaintenanceService } from '@/features/warehouse/services/stocktake-maintenance-service'
-import { toast } from 'sonner'
+
+type ApiMutationError = Error & {
+  status?: number
+  isConflict?: boolean
+}
+
+function isVersionConflictError(error: unknown): error is ApiMutationError {
+  if (!error || typeof error !== 'object') return false
+  const candidate = error as ApiMutationError
+  return candidate.isConflict === true || candidate.status === 409
+}
 
 export function useGetStocktakeTasks() {
   return useQuery({
@@ -25,7 +36,6 @@ export function useStocktakeMutations() {
     mutationFn: ({ id, delta, version }: { id: string; delta: any; version: number; taskId: string }) =>
       StocktakeMaintenanceService.pdaPatchItem(id, delta, version),
     onMutate: async ({ id, delta, taskId }) => {
-      // 乐观更新 (Optimistic UI) - SDRTS 核心体验
       await queryClient.cancelQueries({ queryKey: ['pda_stocktake_items', taskId] })
       const previousItems = queryClient.getQueryData<StocktakeItem[]>(['pda_stocktake_items', taskId])
 
@@ -33,18 +43,21 @@ export function useStocktakeMutations() {
         queryClient.setQueryData<StocktakeItem[]>(
           ['pda_stocktake_items', taskId],
           previousItems.map((item) => {
-            if (item.id === id) {
-              // 应用 Delta 变更，并乐观增加版次（SDRTS 并发防护）
-              const newItem = { ...item, version: item.version + 1 }
-              Object.keys(delta).forEach((key) => {
-                const change = delta[key]
-                if (change && typeof change === 'object' && 'n' in change) {
-                  (newItem as any)[key] = change.n
-                }
-              })
-              return newItem
+            if (item.id !== id) return item
+
+            const newItem = { ...item, version: item.version + 1 }
+            Object.keys(delta).forEach((key) => {
+              const change = delta[key]
+              if (change && typeof change === 'object' && 'n' in change) {
+                ;(newItem as Record<string, unknown>)[key] = change.n
+              }
+            })
+
+            if (typeof newItem.actualQty === 'number' && typeof newItem.theoryQty === 'number') {
+              newItem.difference = newItem.actualQty - newItem.theoryQty
             }
-            return item
+
+            return newItem
           })
         )
       }
@@ -55,6 +68,21 @@ export function useStocktakeMutations() {
       if (context?.previousItems) {
         queryClient.setQueryData(['pda_stocktake_items', variables.taskId], context.previousItems)
       }
+
+      if (isVersionConflictError(err)) {
+        queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
+        toast.error('该盘点项已被其他人更新，请刷新后重试', {
+          description: '系统已开始重新拉取最新盘点明细。',
+          action: {
+            label: '立即刷新',
+            onClick: () => {
+              queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
+            },
+          },
+        })
+        return
+      }
+
       toast.error('同步失败: ' + err.message)
     },
     onSuccess: (_, variables) => {

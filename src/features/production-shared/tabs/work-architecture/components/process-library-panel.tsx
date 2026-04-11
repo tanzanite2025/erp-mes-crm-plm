@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ListTree, Pencil, Plus, Trash2, Workflow } from 'lucide-react'
 import { toast } from 'sonner'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
+import { useProductionProcessesQuery } from '../../../hooks/use-production-resources'
 import { productionProcessesService } from '../../../services/production-processes-service'
 import { productionResourceSync } from '../../../services/production-resource-sync'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
@@ -58,57 +59,35 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
 }
 
 export function ProcessLibraryPanel() {
-  const [processes, setProcesses] = useState<ProcessStep[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formState, setFormState] = useState<ProcessFormState>(createEmptyProcessState())
   const [isSaving, setIsSaving] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<ProcessStep | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  const loadProcesses = useCallback(async () => {
-    setIsLoading(true)
-
-    try {
-      const data = await productionProcessesService.getSteps()
-      setProcesses(data || [])
-    } catch (error) {
-      toast.error('加载全局工序池失败')
-      logger.error('Failed to load production processes', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const { data: processes, isLoading, error } = useProductionProcessesQuery()
+  const availableProcesses = useMemo(() => processes ?? [], [processes])
 
   useEffect(() => {
-    void loadProcesses()
-
-    const handleProcessesUpdated = () => {
-      void loadProcesses()
+    if (!error) {
+      return
     }
-    const unsubscribe = productionResourceSync.subscribe((event) => {
-      if (event.kind === 'processes') {
-        handleProcessesUpdated()
-      }
-    })
 
-    return () => {
-      unsubscribe()
-    }
-  }, [loadProcesses])
+    toast.error('加载全局工序池失败')
+    logger.error('Failed to load production processes', error)
+  }, [error])
 
   const filteredProcesses = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
     if (!keyword) {
-      return processes
+      return availableProcesses
     }
 
-    return processes.filter((process) => {
+    return availableProcesses.filter((process) => {
       const haystack = [process.code, process.name, process.description].join(' ').toLowerCase()
       return haystack.includes(keyword)
     })
-  }, [processes, searchTerm])
+  }, [availableProcesses, searchTerm])
 
   const openCreateDialog = () => {
     setFormState(createEmptyProcessState())
@@ -206,13 +185,13 @@ export function ProcessLibraryPanel() {
               />
             </div>
             <Badge variant='outline' className='h-8 rounded-full px-3 font-mono text-[10px]'>
-              {filteredProcesses.length} / {processes.length}
+              {filteredProcesses.length} / {availableProcesses.length}
             </Badge>
           </div>
         </CardHeader>
 
         <CardContent className='space-y-3 p-4'>
-          {isLoading && processes.length === 0 ? (
+          {isLoading && availableProcesses.length === 0 ? (
             <div className='space-y-3'>
               {[1, 2, 3].map((item) => (
                 <div key={item} className='rounded-[20px] border border-dashed border-muted/50 p-4'>

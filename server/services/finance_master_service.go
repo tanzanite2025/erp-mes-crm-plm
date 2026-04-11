@@ -279,6 +279,26 @@ func SeedFinanceData() error {
 	return seedDefaultTaxRates(db.DB)
 }
 
+func EnsureFinanceDictionaryCompatibility() error {
+	if db.DB == nil {
+		return errors.New("database not initialized")
+	}
+
+	if err := db.DB.AutoMigrate(&models.PaymentMethod{}, &models.PaymentTerm{}); err != nil {
+		return err
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := normalizeExistingPaymentTerms(tx); err != nil {
+			return err
+		}
+		if err := normalizeExistingPaymentMethods(tx); err != nil {
+			return err
+		}
+		return ensureDefaultFinanceDictionariesTx(tx)
+	})
+}
+
 func SyncExchangeRatesFromEnv() (int, error) {
 	apiKey := strings.TrimSpace(os.Getenv("EXCHANGERATE_API_KEY"))
 	if apiKey == "" {
@@ -409,10 +429,10 @@ func buildPaymentTermUpdates(payload map[string]json.RawMessage) (map[string]int
 		case "installments":
 			var value string
 			if err := json.Unmarshal(raw, &value); err == nil {
-				updates["installment"] = value
+				updates["installment"] = normalizePaymentTermInstallment(value)
 				continue
 			}
-			updates["installment"] = string(raw)
+			updates["installment"] = normalizePaymentTermInstallment(string(raw))
 		case "isDefault":
 			var value bool
 			if err := json.Unmarshal(raw, &value); err != nil {
@@ -688,57 +708,96 @@ func defaultPaymentMethods() []models.PaymentMethod {
 
 func ensureDefaultPaymentTerms() error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, term := range defaultPaymentTerms() {
-			var existing models.PaymentTerm
-			err := tx.Where("code = ?", term.Code).First(&existing).Error
-			switch {
-			case errors.Is(err, gorm.ErrRecordNotFound):
-				item := term
-				if err := tx.Create(&item).Error; err != nil {
-					return err
-				}
-			case err != nil:
-				return err
-			case !existing.IsSystem:
-				if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+		return ensureDefaultFinanceDictionariesTx(tx)
 	})
 }
 
 func ensureDefaultPaymentMethods() error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, method := range defaultPaymentMethods() {
-			var existing models.PaymentMethod
-			err := tx.Where("code = ?", method.Code).First(&existing).Error
-			switch {
-			case errors.Is(err, gorm.ErrRecordNotFound):
-				item := method
-				if err := tx.Create(&item).Error; err != nil {
-					return err
-				}
-			case err != nil:
+		return ensureDefaultFinanceDictionariesTx(tx)
+	})
+}
+
+func ensureDefaultFinanceDictionariesTx(tx *gorm.DB) error {
+	if err := ensureDefaultPaymentMethodsTx(tx); err != nil {
+		return err
+	}
+	return ensureDefaultPaymentTermsTx(tx)
+}
+
+func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
+	for _, term := range defaultPaymentTerms() {
+		var existing models.PaymentTerm
+		err := tx.Where("code = ?", term.Code).First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			item := term
+			normalizePaymentTerm(&item)
+			if err := tx.Create(&item).Error; err != nil {
 				return err
-			case !existing.IsSystem:
-				if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
-					return err
-				}
+			}
+		case err != nil:
+			return err
+		case !existing.IsSystem:
+			if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
+				return err
 			}
 		}
-		return nil
-	})
+	}
+	return nil
+}
+
+func ensureDefaultPaymentMethodsTx(tx *gorm.DB) error {
+	for _, method := range defaultPaymentMethods() {
+		var existing models.PaymentMethod
+		err := tx.Where("code = ?", method.Code).First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			item := method
+			normalizePaymentMethod(&item)
+			if err := tx.Create(&item).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		case !existing.IsSystem:
+			if err := tx.Model(&existing).Update("is_system", true).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func normalizePaymentTerm(term *models.PaymentTerm) {
 	term.Code = strings.ToUpper(strings.TrimSpace(term.Code))
 	term.Name = strings.TrimSpace(term.Name)
 	term.Description = strings.TrimSpace(term.Description)
+	term.Installment = normalizePaymentTermInstallment(term.Installment)
 	if term.Status == "" {
 		term.Status = "Active"
 	}
+}
+
+func normalizePaymentTermInstallment(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "[]"
+	}
+
+	var payload any
+	if err := json.Unmarshal([]byte(trimmed), &payload); err == nil {
+		normalized, marshalErr := json.Marshal(payload)
+		if marshalErr == nil {
+			return string(normalized)
+		}
+	}
+
+	quoted, err := json.Marshal(trimmed)
+	if err != nil {
+		return "[]"
+	}
+	return string(quoted)
 }
 
 func normalizePaymentMethod(method *models.PaymentMethod) {
@@ -748,6 +807,108 @@ func normalizePaymentMethod(method *models.PaymentMethod) {
 	if method.Status == "" {
 		method.Status = "Active"
 	}
+}
+
+func normalizeExistingPaymentTerms(tx *gorm.DB) error {
+	var terms []models.PaymentTerm
+	if err := tx.Find(&terms).Error; err != nil {
+		return err
+	}
+
+	for _, term := range terms {
+		updates := map[string]interface{}{}
+		normalizedCode := strings.ToUpper(strings.TrimSpace(term.Code))
+		normalizedName := strings.TrimSpace(term.Name)
+		normalizedDescription := strings.TrimSpace(term.Description)
+		normalizedInstallment := normalizePaymentTermInstallment(term.Installment)
+		normalizedStatus := strings.TrimSpace(term.Status)
+		if normalizedStatus == "" {
+			normalizedStatus = "Active"
+		}
+		normalizedVersion := term.Version
+		if normalizedVersion <= 0 {
+			normalizedVersion = 1
+		}
+
+		if term.Code != normalizedCode {
+			updates["code"] = normalizedCode
+		}
+		if term.Name != normalizedName {
+			updates["name"] = normalizedName
+		}
+		if term.Description != normalizedDescription {
+			updates["description"] = normalizedDescription
+		}
+		if term.Installment != normalizedInstallment {
+			updates["installment"] = normalizedInstallment
+		}
+		if term.Status != normalizedStatus {
+			updates["status"] = normalizedStatus
+		}
+		if term.Version != normalizedVersion {
+			updates["version"] = normalizedVersion
+		}
+
+		if len(updates) == 0 {
+			continue
+		}
+		if err := tx.Model(&term).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func normalizeExistingPaymentMethods(tx *gorm.DB) error {
+	if !tx.Migrator().HasTable(&models.PaymentMethod{}) {
+		return nil
+	}
+
+	var methods []models.PaymentMethod
+	if err := tx.Find(&methods).Error; err != nil {
+		return err
+	}
+
+	for _, method := range methods {
+		updates := map[string]interface{}{}
+		normalizedCode := strings.ToUpper(strings.TrimSpace(method.Code))
+		normalizedName := strings.TrimSpace(method.Name)
+		normalizedDescription := strings.TrimSpace(method.Description)
+		normalizedStatus := strings.TrimSpace(method.Status)
+		if normalizedStatus == "" {
+			normalizedStatus = "Active"
+		}
+		normalizedVersion := method.Version
+		if normalizedVersion <= 0 {
+			normalizedVersion = 1
+		}
+
+		if method.Code != normalizedCode {
+			updates["code"] = normalizedCode
+		}
+		if method.Name != normalizedName {
+			updates["name"] = normalizedName
+		}
+		if method.Description != normalizedDescription {
+			updates["description"] = normalizedDescription
+		}
+		if method.Status != normalizedStatus {
+			updates["status"] = normalizedStatus
+		}
+		if method.Version != normalizedVersion {
+			updates["version"] = normalizedVersion
+		}
+
+		if len(updates) == 0 {
+			continue
+		}
+		if err := tx.Model(&method).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func seedDefaultTaxRates(tx *gorm.DB) error {

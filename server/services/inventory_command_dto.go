@@ -48,6 +48,14 @@ type PatchShipmentRequest struct {
 	Version          int
 }
 
+type PatchStocktakeItemRequest struct {
+	ID        string
+	ActualQty *float64
+	ScannerID *string
+	ScanTime  *time.Time
+	Version   int
+}
+
 type RecordInboundRequest struct {
 	MaterialID          string    `json:"materialId"`
 	MaterialName        string    `json:"materialName"`

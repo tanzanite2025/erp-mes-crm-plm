@@ -378,3 +378,482 @@
 3. typed sync 与 query invalidation 的职责边界已通过代码结构体现。
 4. 第一批直接相关调用点已开始复用统一约定，而不是散落硬编码 query key。
 5. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。
+
+### 15. `production-shared` 第四阶段：核心读取迁移到 `useQuery`
+
+日期：2026-04-11  
+状态：待批准
+
+#### 15.1 背景
+
+第三阶段已经完成：
+
+1. `production-shared` 域内已有统一 query key 工厂。
+2. `production-shared` 域内已有统一 invalidation 入口。
+3. `productionResourceSync` 已在单点中与 invalidation 协作。
+
+但当前核心读取仍以手写 `loadData()` + `useEffect()` 为主，存在以下问题：
+
+4. 读取缓存策略不一致，页面各自维护 loading / error / refresh 逻辑。
+5. 与 query key / invalidation 的既有约定还没有真正闭环。
+6. 后续如果继续保留大量本地拉取 effect，会削弱第三阶段刚建立的 query key / invalidation 价值。
+
+#### 15.2 本轮目标
+
+本轮目标不是把 `production-shared` 所有页面一次性重写，而是将**核心读取**迁到 `useQuery`：
+
+1. 为 lines / processes / mappings 提供稳定的 query options 或最小 hooks 入口。
+2. 将第一批最核心、最直接的读取场景改为 React Query 驱动。
+3. 让读取逻辑正式复用第三阶段的 query key / invalidation 约定。
+4. 保持后端权威与 Fail Loudly，不用空数组 / 空对象静默掩盖读取失败。
+
+#### 15.3 执行边界
+
+1. 本轮仅处理 `production-shared` 域内核心读取，不扩展到全站所有模块。
+2. 本轮优先迁移读取，不大幅改写写入链路；mutation 仍复用现有 service + sync + invalidation。
+3. 本轮不重做页面 UI 结构，只替换数据读取方式。
+4. 本轮允许保留少量临时本地状态（如搜索、选择、对话框开关），但资源主数据读取应转交 Query。
+
+#### 15.4 建议落点
+
+建议新增以下稳定入口：
+
+1. **query options 工厂**
+   - 宿主建议：`src/features/production-shared/data/production-resource-query-options.ts`
+   - 至少提供：
+     - `productionResourceQueryOptions.lines()`
+     - `productionResourceQueryOptions.processes()`
+     - `productionResourceQueryOptions.mappings()`
+
+2. **最小读取 hooks（如需要）**
+   - 宿主建议：`src/features/production-shared/hooks/use-production-resources.ts`
+   - 封装 `useQuery(...)`，减少页面层重复写法。
+
+#### 15.5 首批迁移建议
+
+优先级建议如下：
+
+1. `src/features/production-shared/tabs/work-architecture/index.tsx`
+   - 当前显式读取 production lines，属于核心展示入口。
+
+2. `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+   - 当前显式读取 production processes，同时已经是 mutation 发起点之一。
+
+3. `src/features/org-personnel/components/production-selector.tsx`
+   - 读取 production lines，适合作为跨模块 Query 消费示例。
+
+4. `src/features/engineering/components/product/product-routing-view.tsx`
+   - 读取 production processes，适合作为第二个跨模块 Query 消费示例。
+
+说明：
+
+5. `dashboard/index.tsx` 可视情况后置，因为它还夹杂本地存储、可见 segment 配置等额外状态。
+6. `line-mgmt/index.tsx` 当前以乐观 UI + 手动局部回写为主，宜先保持写入链路稳定，再逐步过渡读取模式。
+
+#### 15.6 实施步骤
+
+1. **定义 query options / hooks 入口**
+   - 让 lines / processes / mappings 的读取逻辑统一基于第三阶段 query key 工厂。
+   - `queryFn` 继续调用现有纯 service。
+
+2. **迁移首批核心读取页面**
+   - 用 `useQuery(...)` 替换手写 `loadData()` + `useEffect()` 拉取。
+   - 保留页面内 UI 状态，但去掉资源主数据的重复本地拉取状态机。
+
+3. **校正与 sync / invalidation 的关系**
+   - Query 消费者以 invalidation 触发重拉为主。
+   - 非 Query 消费者若暂未迁移，可暂时保留 sync 订阅。
+   - 避免 Query 页面同时再手写“收到 sync 后 `loadData()`”的双重刷新。
+
+4. **保持 Fail Loudly**
+   - 读取失败不允许用 `[]` / `{}` 伪装成功。
+   - 应保持显式 loading / error 分支，遵守后端权威与可见失败原则。
+
+5. **为后续全量迁移保留统一模式**
+   - 第四阶段完成后，后续页面若继续迁移，只能复用这轮的 query options / hooks / invalidation 约定，不再新增平行实现。
+
+#### 15.7 风险与注意事项
+
+1. **双重刷新风险**
+   - 若 Query 页面保留旧 `sync.subscribe -> loadData()`，再叠加 invalidation，会产生重复请求。
+   - 控制方式：迁成 Query 的页面应移除对应手动拉取 effect。
+
+2. **乐观 UI 回退风险**
+   - `line-mgmt` 这类页面既有乐观更新又有手动回写，若仓促迁移读取，可能打乱现有交互。
+   - 控制方式：先迁纯读取消费者，后迁含重写入状态管理的页面。
+
+3. **静默兜底风险**
+   - 迁移时若为了“兼容”而对 Query 数据使用默认 `[]`，会违反 Fail Loudly 原则。
+   - 控制方式：明确错误分支，不用默认空值掩盖失败。
+
+4. **范围膨胀风险**
+   - 一旦开始迁 Query，很容易顺手改太多页面。
+   - 控制方式：只做首批核心读取，不扩成全站数据层重写。
+
+#### 15.8 完成标准
+
+1. `production-shared` 域内已有统一读取 query options / hooks 入口。
+2. 第一批核心读取页面已改为 `useQuery` 驱动。
+3. 已迁移页面不再依赖手写 `loadData()` + `useEffect()` 执行同类资源主数据拉取。
+4. 已迁移页面与 typed sync / invalidation 的关系清晰，不产生明显重复刷新。
+5. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。
+
+### 16. `dashboard/index.tsx` Query 化收口
+
+日期：2026-04-11  
+状态：待批准
+
+#### 16.1 背景
+
+第四阶段已经完成：
+
+1. `production-shared` 域内已有统一 query options / hooks。
+2. 首批 4 个核心读取页面已迁到 `useQuery`。
+3. `dashboard/index.tsx` 仍保留手写资源拉取与 storage event 混合刷新逻辑。
+
+当前 `dashboard/index.tsx` 的特殊点在于：
+
+4. 它既依赖 `production lines / segments`，也依赖本地存储中的可见 segment 配置。
+5. 若简单迁成 Query，但不拆分 production resources 与 local storage 的边界，容易出现重复刷新和职责混乱。
+
+#### 16.2 本轮目标
+
+本轮目标是把 `dashboard/index.tsx` 纳入 `production-shared` Query 化收口，而不是重写整个 dashboard：
+
+1. 将 dashboard 对 production lines / segments 的读取切换到 React Query。
+2. 继续复用既有 `production-shared` query hooks / query key / invalidation 约定。
+3. 保留 dashboard 自身本地存储配置（如 visible segments）为本地状态，不强行塞进 Query。
+4. 明确 storage event 与 production resources invalidation 的协作边界。
+
+#### 16.3 执行边界
+
+1. 本轮仅处理 `dashboard/index.tsx`，不扩展到 `line-mgmt/index.tsx`。
+2. 本轮只重构读取侧，不重写 dashboard 下游各 tab 的业务逻辑。
+3. 本轮不移除 `VISIBLE_SEGMENTS_KEY` 与现有本地存储机制。
+4. 本轮不扩展为 dashboard 全量状态平台化改造。
+
+#### 16.4 技术方向
+
+1. **production resources 读取**
+   - 改为复用 `useProductionLinesQuery()` 或相应 query options。
+   - dashboard 内对 line / segment 的派生数据改由 Query 数据计算得出。
+
+2. **本地存储状态读取**
+   - `VISIBLE_SEGMENTS_KEY` 仍由 StorageService / local state 维护。
+   - storage event 仍只服务本地配置同步，而不是承担 production resource 刷新职责。
+
+3. **刷新协作关系**
+   - production lines 更新：由第三阶段 invalidation 触发 Query 重拉。
+   - visible segments 更新：由 storage event / local state 更新处理。
+   - 避免同一次生产资源变化再通过 dashboard 内部手动 `syncDashboardState()` 重拉 production lines。
+
+#### 16.5 实施步骤
+
+1. **拆分 dashboard 内两类状态来源**
+   - 生产资源：React Query。
+   - 可见 segment 配置：本地存储 + local state。
+
+2. **替换 production lines 拉取逻辑**
+   - 移除 dashboard 内同类 `loadData()` / `syncDashboardState()` 对 production resources 的直接拉取。
+   - 保留对本地存储可见 segment 配置的更新逻辑。
+
+3. **以派生计算替代混合刷新**
+   - 从 Query 返回的 production lines 计算 segment 列表。
+   - 将 visible segment ids 应用于派生结果，而不是在多个 effect 中交替刷新。
+
+4. **校正事件监听边界**
+   - storage event 继续监听，用于 visible segment 配置变化。
+   - 不再监听 production resource 事件来手动拉取同类主数据。
+
+#### 16.6 风险与注意事项
+
+1. **双重刷新风险**
+   - 若 dashboard 同时保留 production resource 手动拉取和 Query invalidation，会造成重复请求。
+   - 控制方式：迁移后仅保留 storage 配置同步 effect。
+
+2. **本地配置串扰风险**
+   - 如果把 visible segments 和 production lines 混成同一 Query 状态，会削弱 dashboard 原有交互。
+   - 控制方式：明确“服务端主数据”和“本地用户偏好”分层。
+
+3. **范围膨胀风险**
+   - dashboard 下游 tab 组件较多，容易顺手扩大改动面。
+   - 控制方式：只处理 `dashboard/index.tsx` 的数据读取编排层。
+
+#### 16.7 完成标准
+
+1. `dashboard/index.tsx` 对 production lines / segments 的主数据读取已切换到 `useQuery`。
+2. `dashboard/index.tsx` 不再通过手写 effect 拉取同类 production resources。
+3. storage event 仅承担本地配置同步职责，不再与 production resources 刷新混用。
+4. 保持 dashboard 现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。
+
+### 17. `line-mgmt/index.tsx` 分阶段收口：第一阶段先处理乐观 UI
+
+日期：2026-04-11  
+状态：待批准
+
+#### 17.1 背景
+
+当前 `line-mgmt/index.tsx` 已具备部分乐观 UI 行为，但仍存在边界不清的问题：
+
+1. 更新时会先本地回写，再请求后端。
+2. 创建时会先插入 `temp-*` 临时行，再等待服务端返回真实实体。
+3. 失败时统一 `await loadData()` 回滚，成功后也会再次 `await loadData()` 做二次校正。
+4. 乐观态、本地临时态、服务端确认态、全量 reload 目前混在一起，后续若直接继续 Query 化，容易放大复杂度。
+
+因此需要先把 `line-mgmt` 的乐观 UI 单独收口，再决定下一步是否迁 Query。
+
+#### 17.2 分阶段策略
+
+**阶段 17A：乐观 UI 收口（本轮）**
+
+1. 明确哪些变更是允许乐观展示的。
+2. 明确创建/更新/删除三类操作的本地临时态规则。
+3. 明确失败回滚与成功后二次校正的触发条件。
+4. 保持现有读取模式，不在本阶段强推整页 Query 化。
+
+**阶段 17B：读取 Query 化评估（后续）**
+
+1. 在乐观 UI 边界稳定后，再评估是否将 `line-mgmt` 读取切到 `useQuery`。
+2. 重点考虑 optimistic local state 与 Query cache 谁作为页面主真相来源。
+
+**阶段 17C：mutation / cache 协作优化（后续）**
+
+1. 如有必要，再将局部回写、回滚、invalidation 与 optimistic cache 做更细颗粒收口。
+
+#### 17.3 本轮目标（仅阶段 17A）
+
+本轮只处理 `line-mgmt/index.tsx` 的乐观 UI，不直接推进 Query 化：
+
+1. 盘点当前创建/更新/删除三类操作的 optimistic 行为。
+2. 明确临时态与服务端确认态切换规则。
+3. 明确失败回滚策略，避免“看似乐观、实则全量重刷兜底”带来的边界模糊。
+4. 保持与第二、第三阶段的 sync / invalidation 约定兼容。
+
+#### 17.4 执行边界
+
+1. 本轮只处理 `line-mgmt/index.tsx`。
+2. 本轮不把整个页面切到 `useQuery`。
+3. 本轮不改造 `dashboard`、`work-architecture`、`production-selector`、`product-routing-view`。
+4. 本轮不改动 SDRTS 协议本身，只调整前端 optimistic orchestration。
+
+#### 17.5 重点问题
+
+1. **创建操作**
+   - 当前通过 `temp-*` id 插入临时项。
+   - 需明确：
+     - 临时项的最小字段集合
+     - 成功后如何稳定替换为服务端真实实体
+     - 失败后如何精准移除临时项
+
+2. **更新操作**
+   - 当前按 delta 做本地局部回写。
+   - 需明确：
+     - 哪些字段允许直接乐观展示
+     - 哪些嵌套结构不能只靠浅层 patch 假定成功
+     - 成功后是否仍必须全量 reload，还是只在必要时校正
+
+3. **删除操作**
+   - 当前删除后再全量 reload。
+   - 需评估是否先本地移除再失败回滚，或继续保守模式。
+
+4. **与 invalidation 的协作**
+   - line-mgmt 当前 mutation 成功后已经 `emitLinesUpdated()`。
+   - 需明确：
+     - 乐观 UI 页面本地态如何与域级 invalidation 共存
+     - 避免一边 optimistic local state、一边立即全量重刷导致体验和结构互相打架
+
+#### 17.6 实施步骤
+
+1. **先盘点现状**
+   - 标出 create / update / delete 当前各自的 optimistic 行为。
+
+2. **明确本地临时态模型**
+   - 为临时创建项、局部更新项建立清晰规则。
+
+3. **收口成功/失败分支**
+   - 成功时：只有必要时才做二次校正。
+   - 失败时：做精确回滚，不依赖模糊的大范围刷新兜底。
+
+4. **保留与后续 Query 化的兼容面**
+   - 本轮不切 Query，但代码结构要方便下一阶段继续迁移。
+
+#### 17.7 风险与注意事项
+
+1. **假乐观 UI 风险**
+   - 如果最终仍然主要依赖成功/失败后的全量 reload，乐观 UI 就只是表象。
+   - 控制方式：尽量把回滚和确认边界写清，而不是继续依赖统一重刷兜底。
+
+2. **嵌套结构错配风险**
+   - 生产线包含 segments / jobCategories / stations，多层嵌套很容易让浅层 optimistic patch 失真。
+   - 控制方式：第一阶段优先收口允许乐观展示的字段范围，不盲目扩展到复杂嵌套路径。
+
+3. **过早 Query 化风险**
+   - 如果在乐观 UI 还没理顺时继续把读取切到 Query，复杂度会叠加。
+   - 控制方式：先稳住阶段 17A，再进入 17B。
+
+#### 17.8 完成标准（阶段 17A）
+
+1. `line-mgmt/index.tsx` 的 create / update / delete optimistic 行为边界已清晰。
+2. 本地临时态、服务端确认态、失败回滚的切换规则已通过代码结构体现。
+3. 成功/失败分支不再过度依赖模糊的全量 reload 兜底。
+4. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。
+
+### 18. `line-mgmt/index.tsx` 第二阶段：Query cache 主真相 + optimistic overlay 短期覆盖层
+
+日期：2026-04-11  
+状态：待批准
+
+#### 18.1 背景
+
+阶段 17A 已完成：
+
+1. `line-mgmt/index.tsx` 的乐观 UI 基础边界已经收口。
+2. create / update / delete 已具备更明确的本地临时态、确认态与失败回滚规则。
+
+但当前页面仍然以本地 `lines` state 为主，而不是以 Query cache 为主真相来源，这会带来以下问题：
+
+3. 后续若继续推进 Query 化，本地 state 与 Query cache 很容易形成两套长期并存的数据真相。
+4. 现有 invalidation 体系虽已存在，但 `line-mgmt` 还未真正把它作为“服务端最终确认态”的唯一刷新通道。
+5. 如果不进一步收口，后续 optimistic 行为与 Query 刷新会互相打架。
+
+#### 18.2 本轮目标
+
+本轮目标是正式建立 `line-mgmt` 第二阶段模型：
+
+1. **`Query cache` 作为页面主真相来源**。
+2. **`optimistic overlay` 作为短期覆盖层**，只承载尚未确认的本地临时变更。
+3. 页面展示数据改为：`displayedLines = applyOverlay(queryLines, overlay)`。
+4. 明确 `create / update / delete` 成功时哪些优先 `setQueryData`，哪些需要 `invalidate`。
+
+#### 18.3 执行边界
+
+1. 本轮仅处理 `line-mgmt/index.tsx`。
+2. 本轮不扩展到 `dashboard`、`work-architecture`、`production-selector` 等页面。
+3. 本轮不重构 SDRTS 协议，不改动后端接口。
+4. 本轮只建立 `Query cache + optimistic overlay` 的前端编排模型。
+
+#### 18.4 数据模型建议
+
+建议将 `line-mgmt` 页面状态拆为三层：
+
+1. **Query cache（主真相）**
+   - 来源：`useProductionLinesQuery()`
+   - 含义：服务端最后确认的生产线数据
+
+2. **optimistic overlay（短期覆盖层）**
+   - 含义：当前尚未由服务端确认的本地变更
+   - 建议至少区分：
+     - `pendingCreates`
+     - `pendingUpdates`
+     - `pendingDeletes`
+
+3. **displayedLines（展示层）**
+   - 由 `queryLines + overlay` 计算得出
+   - 页面 UI 只消费 `displayedLines`
+
+#### 18.5 overlay 设计原则
+
+1. overlay 必须是**短生命周期**的。
+2. overlay 必须可按操作粒度清理，而不是依赖全量刷新消失。
+3. overlay 不应成为新的长期主状态容器。
+4. Query cache 始终表示“后端最后确认的数据”。
+
+#### 18.6 create / update / delete 成功策略
+
+##### A. create 成功
+
+建议：**优先 `setQueryData`**
+
+原因：
+
+1. 后端 `saveLine(...)` 返回完整 `ProductionLine` 实体。
+2. 可以直接将真实实体写回 Query cache，并移除对应临时创建 overlay。
+3. 无需默认立即 `invalidate`，避免刚创建完就重复请求。
+
+补充：
+
+4. 若后端未来在创建后还会联动补齐复杂嵌套，再按需追加一次 `invalidate`，而不是默认总是双做。
+
+##### B. update 成功
+
+建议：**默认优先 `setQueryData`，复杂嵌套场景保留按需 `invalidate`**
+
+原因：
+
+1. `patchLine(...)` 当前也返回完整 `ProductionLine` 实体。
+2. 对一级字段和服务端已完整返回的场景，直接 `setQueryData` 最稳定。
+3. 若后续确认某些 patch 会联动深层嵌套并且返回值不足以覆盖真实最终态，再针对该类更新增加 `invalidate`。
+
+补充：
+
+4. 不建议 update 成功默认 `setQueryData + invalidate` 双做。
+
+##### C. delete 成功
+
+建议：**优先 `setQueryData` 删除对应实体**
+
+原因：
+
+1. 删除操作成功后，目标实体已不存在。
+2. 最直接的确认方式就是从 Query cache 中移除它。
+3. 无需默认立即 `invalidate`。
+
+补充：
+
+4. 若删除会联动影响父级聚合统计或拓扑衍生字段，可按需补充局部 invalidation，而不是默认总刷。
+
+#### 18.7 `emit`、`setQueryData`、`invalidate` 的分工
+
+1. **`setQueryData`**
+   - 用于 mutation 成功后的本地确认落地
+   - 优先服务 `line-mgmt` 自身这类 Query 页面
+
+2. **`invalidate`**
+   - 用于后端最终态可能超出当前返回值、或其他 Query 页面需要重拉时
+   - 应按需使用，而不是默认所有 mutation 都触发
+
+3. **`emitLinesUpdated()`**
+   - 保留域事件语义
+   - 服务于兼容桥或非 Query 消费者
+   - 已迁为 Query 的页面自身不应再依赖 `emit -> subscribe -> loadData()` 刷新自己
+
+#### 18.8 实施步骤
+
+1. **将主真相切换到 Query cache**
+   - 为 `line-mgmt` 接入 `useProductionLinesQuery()`。
+
+2. **引入 overlay 层**
+   - 用本地 overlay 承载未确认的 create / update / delete。
+
+3. **实现 `displayedLines` 组装**
+   - 统一由 query data + overlay 派生，而不是同时维护两套完整 `lines` 数组。
+
+4. **为三类 mutation 明确成功收口方式**
+   - create：默认 `setQueryData`
+   - update：默认 `setQueryData`，复杂嵌套按需 `invalidate`
+   - delete：默认 `setQueryData`
+
+5. **为失败分支清理 overlay**
+   - 失败时只撤销对应 overlay，不污染 Query cache。
+
+#### 18.9 风险与注意事项
+
+1. **双状态打架风险**
+   - 若继续保留完整本地 `lines` 作为主状态，同时又引入 Query cache，会形成两套真相。
+   - 控制方式：本轮明确 Query cache 是主真相，overlay 只做短期覆盖。
+
+2. **双重刷新风险**
+   - 若成功后既 `setQueryData` 又立刻无差别 `invalidate`，会造成重复请求和闪动。
+   - 控制方式：默认优先 `setQueryData`，仅在必要时才补 `invalidate`。
+
+3. **overlay 泄漏风险**
+   - 如果 overlay 清理不彻底，会让临时态长期残留。
+   - 控制方式：所有 mutation 都必须带可定位的 overlay 标识，并在成功/失败时精确清理。
+
+#### 18.10 完成标准
+
+1. `line-mgmt/index.tsx` 已明确以 Query cache 作为主真相来源。
+2. `optimistic overlay` 已作为短期覆盖层而不是长期主状态存在。
+3. `displayedLines` 已由 Query data + overlay 派生得出。
+4. create / update / delete 成功时的 `setQueryData` / `invalidate` 策略已通过代码结构明确体现。
+5. 保持现有功能可运行，并完成最小验证与 `walkthrough.md` 更新。

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,87 +8,64 @@ import { Plus, ArrowDown, Activity, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { type Product, type ProductProcessRouting, type ProductProcessRoutingNode } from '../../data/schema'
 import { createProductRoutingDraft } from '../../utils/default-builders'
-import type { ProductionProcessStep as ProcessStep } from '@/features/production-shared/data/production-process'
-import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
-import { productionResourceSync } from '@/features/production-shared/services/production-resource-sync'
+import { useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
 
 interface ProductRoutingViewProps {
     product: Product
 }
 
 export function ProductRoutingView({ product }: ProductRoutingViewProps) {
-    const [globalProcessResourcePool, setGlobalProcessResourcePool] = useState<ProcessStep[]>([])
     // Mock a current routing state, later to be hooked up with real backend query
     const [currentBlueprint, setCurrentBlueprint] = useState<ProductProcessRouting>(createProductRoutingDraft({
         targetProductId: product.id,
     }))
+    const { data: globalProcessResourcePool } = useProductionProcessesQuery()
+    const availableProcesses = useMemo(() => globalProcessResourcePool ?? [], [globalProcessResourcePool])
+    const displayedRouteNodes = useMemo(() => {
+        if (currentBlueprint.routeNodes.length > 0 || availableProcesses.length < 2) {
+            return currentBlueprint.routeNodes
+        }
 
-    useEffect(() => {
-        const loadProcesses = async () => {
-            const processes = await productionProcessesService.getSteps()
-            setGlobalProcessResourcePool(processes)
-            // Initial mock data if empty
-            if (currentBlueprint.routeNodes.length === 0 && processes.length >= 2) {
-                setCurrentBlueprint(prev => ({
-                    ...prev,
-                    routeNodes: [
-                        {
-                            id: crypto.randomUUID(),
-                            sequenceNumber: 10,
-                            processStepId: processes[0].id,
-                            processStepName: processes[0].name,
-                            standardTimeValueInSeconds: 360,
-                            requiredJobCategoryTitle: '核心制造组',
-                            qualityInspectionRequired: false,
-                        },
-                        {
-                            id: crypto.randomUUID(),
-                            sequenceNumber: 20,
-                            processStepId: processes[1].id,
-                            processStepName: processes[1].name,
-                            standardTimeValueInSeconds: 120,
-                            requiredJobCategoryTitle: '外观检视组',
-                            qualityInspectionRequired: true,
-                        }
-                    ]
-                }))
+        return [
+            {
+                id: crypto.randomUUID(),
+                sequenceNumber: 10,
+                processStepId: availableProcesses[0].id,
+                processStepName: availableProcesses[0].name,
+                standardTimeValueInSeconds: 360,
+                requiredJobCategoryTitle: '核心制造组',
+                qualityInspectionRequired: false,
+            },
+            {
+                id: crypto.randomUUID(),
+                sequenceNumber: 20,
+                processStepId: availableProcesses[1].id,
+                processStepName: availableProcesses[1].name,
+                standardTimeValueInSeconds: 120,
+                requiredJobCategoryTitle: '外观检视组',
+                qualityInspectionRequired: true,
             }
-        }
-        void loadProcesses()
-
-        if (typeof window === 'undefined') {
-            return
-        }
-
-        const handleProcessesUpdated = () => {
-            void loadProcesses()
-        }
-        const unsubscribe = productionResourceSync.subscribe((event) => {
-            if (event.kind === 'processes') {
-                handleProcessesUpdated()
-            }
-        })
-
-        return () => {
-            unsubscribe()
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        ]
+    }, [availableProcesses, currentBlueprint.routeNodes])
+    const sortedDisplayedRouteNodes = useMemo(
+        () => [...displayedRouteNodes].sort((a, b) => a.sequenceNumber - b.sequenceNumber),
+        [displayedRouteNodes]
+    )
 
     const handleSimulateAddNode = () => {
-        if (globalProcessResourcePool.length === 0) {
+        if (availableProcesses.length === 0) {
             toast.error('全局工序库为空，请先在拓扑管理中定义标准工序。')
             return
         }
         const newNode: ProductProcessRoutingNode = {
             id: crypto.randomUUID(),
-            sequenceNumber: (currentBlueprint.routeNodes.length + 1) * 10,
-            processStepId: globalProcessResourcePool[0].id,
-            processStepName: globalProcessResourcePool[0].name,
+            sequenceNumber: (displayedRouteNodes.length + 1) * 10,
+            processStepId: availableProcesses[0].id,
+            processStepName: availableProcesses[0].name,
             standardTimeValueInSeconds: 0,
             qualityInspectionRequired: false
         }
-        setCurrentBlueprint(prev => ({ ...prev, routeNodes: [...prev.routeNodes, newNode] }))
+        setCurrentBlueprint(prev => ({ ...prev, routeNodes: [...displayedRouteNodes, newNode] }))
         toast.info('挂载了新的空白前置节点，请填写具体指引')
     }
 
@@ -121,7 +98,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
                 </div>
 
                 <div className='pl-8 pt-4 space-y-4'>
-                    {currentBlueprint.routeNodes.sort((a,b) => a.sequenceNumber - b.sequenceNumber).map((node, index) => (
+                    {sortedDisplayedRouteNodes.map((node, index) => (
                         <div key={node.id} className='relative group'>
                             <div className='absolute -left-[45px] top-4 flex size-5 items-center justify-center rounded-full bg-white border-2 border-slate-300 text-[10px] font-black text-slate-500 shadow-sm transition-colors group-hover:border-blue-500 group-hover:text-blue-600'>
                                 {(index + 1).toString().padStart(2, '0')}
@@ -156,7 +133,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
                                 </div>
                             </Card>
 
-                            {index !== currentBlueprint.routeNodes.length - 1 && (
+                            {index !== sortedDisplayedRouteNodes.length - 1 && (
                                 <div className='absolute -left-[35px] bottom-[-24px] z-10'>
                                      <ArrowDown className='size-3 text-slate-300' />
                                 </div>
