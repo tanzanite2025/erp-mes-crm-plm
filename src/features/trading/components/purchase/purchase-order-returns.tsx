@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,
   ClipboardMinus,
@@ -106,7 +106,7 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
 
   if (normalized === 'DRAFT' || normalized === 'CREATED' || normalized === 'OPEN') {
     return {
-      label: locale === 'zh-CN' ? '已登�? : 'Created',
+      label: locale === 'zh-CN' ? '已创建' : 'Created',
       className: 'bg-amber-500/10 text-amber-600 border-amber-200',
       dotClassName: 'bg-amber-500',
     }
@@ -124,8 +124,8 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
       label:
         locale === 'zh-CN'
           ? normalized === 'SUBMITTED'
-            ? '已提�?
-            : '已完�?
+            ? '已提交'
+            : '已完成'
           : normalized === 'SUBMITTED'
             ? 'Submitted'
             : 'Completed',
@@ -136,7 +136,7 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
 
   if (normalized === 'CANCELED' || normalized === 'CANCELLED' || normalized === 'VOID' || normalized === 'REJECTED') {
     return {
-      label: locale === 'zh-CN' ? '已取�? : 'Canceled',
+      label: locale === 'zh-CN' ? '已取消' : 'Canceled',
       className: 'bg-rose-500/10 text-rose-600 border-rose-200',
       dotClassName: 'bg-rose-500',
     }
@@ -498,8 +498,8 @@ const resetDialog = () => {
                   {t('purchase.orders.returns.draftSummary')}
                 </p>
                 <p className='mt-1 text-[10px] font-bold text-muted-foreground'>
-                  {t('purchase.orders.returns.selectedLines')}: {draftSummary.selectedLines} ·{' '}
-                  {t('purchase.orders.returns.totalQty')}: {formatMetric(draftSummary.totalQty)} ·{' '}
+                  {t('purchase.orders.returns.selectedLines')}: {draftSummary.selectedLines} 路{' '}
+                  {t('purchase.orders.returns.totalQty')}: {formatMetric(draftSummary.totalQty)} 路{' '}
                   {t('purchase.orders.returns.estimatedAmount')}: {formatMetric(draftSummary.totalAmount)}
                 </p>
               </div>
@@ -865,7 +865,7 @@ const resetDialog = () => {
                       {t('purchase.orders.returns.selectedOrder')}
                     </CardTitle>
                     <CardDescription className='mt-1 text-[11px] font-bold text-muted-foreground'>
-                      {selectedOrder.orderNo} · {selectedOrder.supplierName}
+                      {selectedOrder.orderNo} 路 {selectedOrder.supplierName}
                     </CardDescription>
                   </div>
                   <div className='flex items-center gap-3'>
@@ -1045,7 +1045,7 @@ const resetDialog = () => {
                               ) : null}
                             </div>
                             <p className='mt-1 text-[11px] font-bold text-muted-foreground'>
-                              {record.purchaseOrderNo} · {record.supplierName}
+                              {record.purchaseOrderNo} 路 {record.supplierName}
                             </p>
                           </div>
                           <div className='text-right text-[11px] font-bold text-muted-foreground'>
@@ -1144,6 +1144,7 @@ const resetDialog = () => {
     </div>
   )
 }
+
 
 
 
