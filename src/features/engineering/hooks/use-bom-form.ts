@@ -13,6 +13,7 @@ import { type BOMItemDraft } from '../mutation-types'
 import { CHANGE_ORDERS_QUERY_KEY, productOptionsQueryKey } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
+import { normalizeEngineeringBomVersion } from '../utils/product-code-normalization'
 
 const logger = createLogger('useBOMForm')
 
@@ -31,7 +32,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       bomNo: '',
       productId: '',
       changeOrderId: '',
-      bomVersion: 'V1.0',
+      bomVersion: normalizeEngineeringBomVersion('V1.0'),
       revisionNo: 'R1',
       changeType: 'MANUAL',
       isDefaultSite: true,
@@ -145,7 +146,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
         }
 
         // [REMOVED] 前端不再预计算初始版本号；创建时的初始值应由后端保存链路分配或通过 DTO 返回。
-        const initialVersion = currentRow?.bomVersion || 'V1.0'
+        const initialVersion = normalizeEngineeringBomVersion(currentRow?.bomVersion || 'V1.0')
 
         const data = {
           id: '',

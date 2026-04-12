@@ -29,9 +29,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
 import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
+import {
+  normalizeProductionProcessStepCode,
+  normalizeProductionProcessStepEntity,
+} from '../../../utils/production-code-normalization'
 
 const logger = createLogger('ProcessLibraryPanel')
 
@@ -62,14 +65,16 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
     return createEmptyProcessState()
   }
 
+  const normalized = normalizeProductionProcessStepEntity(process)
+
   return {
-    id: process.id,
-    code: normalizeMachineCode(process.code),
-    name: process.name,
-    description: process.description || '',
-    sortOrder: process.sortOrder || 0,
-    isActive: process.isActive ?? true,
-    createdAt: process.createdAt || '',
+    id: normalized.id,
+    code: normalized.code || '',
+    name: normalized.name,
+    description: normalized.description || '',
+    sortOrder: normalized.sortOrder || 0,
+    isActive: normalized.isActive ?? true,
+    createdAt: normalized.createdAt || '',
   }
 }
 
@@ -115,7 +120,7 @@ export function ProcessLibraryPanel() {
   }
 
   const handleSave = async () => {
-    if (!normalizeMachineCode(formState.code) || !formState.name.trim()) {
+    if (!normalizeProductionProcessStepCode(formState.code) || !formState.name.trim()) {
       toast.error('Process code and name are required')
       return
     }
@@ -123,15 +128,15 @@ export function ProcessLibraryPanel() {
     setIsSaving(true)
 
     try {
-      await saveProcess({
+      await saveProcess(normalizeProductionProcessStepEntity({
         id: formState.id,
-        code: normalizeMachineCode(formState.code),
+        code: formState.code,
         name: formState.name.trim(),
         description: formState.description.trim(),
         sortOrder: Number.isFinite(formState.sortOrder) ? formState.sortOrder : 0,
         isActive: formState.isActive,
         createdAt: formState.createdAt,
-      })
+      }))
       setIsDialogOpen(false)
     } catch {
       // Errors are already surfaced by the domain hook.
@@ -293,7 +298,7 @@ export function ProcessLibraryPanel() {
                 <Input
                   value={formState.code}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, code: normalizeMachineCode(event.target.value) }))
+                    setFormState((prev) => ({ ...prev, code: normalizeProductionProcessStepCode(event.target.value) }))
                   }
                   placeholder='e.g. PROC-ANODIZE'
                   className='h-11 rounded-2xl'

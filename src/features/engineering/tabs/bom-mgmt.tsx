@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Layers } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { normalizeBomNo, normalizeBomVersion } from '@/lib/codecs/code-normalization'
 import { type DeltaSet } from '@/lib/delta/types'
 import { BOMActionDialog } from '../components/bom-action-dialog'
 import { BOMPreview } from '../components/bom-mgmt/bom-preview'
@@ -12,6 +11,7 @@ import { BOMToolbar } from '../components/bom-mgmt/bom-toolbar'
 import { useBOMData } from '../hooks/use-bom-data'
 import { type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
+import { normalizeBOMInput } from '../utils/product-code-normalization'
 
 export function BOMMgmt() {
   const { t } = useLanguage()
@@ -43,11 +43,7 @@ export function BOMMgmt() {
   }
 
   const handleFormSubmit = async (formData: BOM, delta?: DeltaSet) => {
-    const normalizedFormData: BOM = {
-      ...formData,
-      bomNo: normalizeBomNo(formData.bomNo),
-      bomVersion: normalizeBomVersion(formData.bomVersion),
-    }
+    const normalizedFormData = normalizeBOMInput(formData)
     if (currentRow) {
       if (!delta || Object.keys(delta).length === 0) {
         setOpen(false)

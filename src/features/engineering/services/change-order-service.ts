@@ -1,24 +1,13 @@
 import { apiFetch } from '@/lib/api-client'
-import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { type ChangeOrder } from '../data/schema'
 import { type SaveChangeOrderInput } from '../mutation-types'
+import { normalizeChangeOrderInput } from '../utils/product-code-normalization'
 
 interface GetChangeOrdersParams {
   isOptions?: boolean
   productId?: string
   changeType?: 'ECO' | 'ECN'
   status?: 'draft' | 'released' | 'obsolete'
-}
-
-function normalizeChangeOrderInput(changeOrder: SaveChangeOrderInput): SaveChangeOrderInput {
-  const normalizedSiteCode = normalizeSiteCode(changeOrder.siteCode)
-  return {
-    ...changeOrder,
-    changeOrderNo: normalizeChangeOrderNo(changeOrder.changeOrderNo),
-    siteCode: normalizedSiteCode,
-    revisionNo: normalizeRevisionNo(changeOrder.revisionNo),
-    isDefaultSite: normalizedSiteCode === '' || Boolean(changeOrder.isDefaultSite),
-  }
 }
 
 export const changeOrderService = {

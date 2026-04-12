@@ -1,5 +1,1185 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-13 - fix：应收 / 应付页面样式纠偏与演示残留清理
+
+### 本轮目标
+
+修正应收 / 应付页面“功能已落地但视觉仍像演示壳层”的问题：让两个页面回到通用工业风样式体系，并删除“骨架已建立”演示卡片与 mock / placeholder 残留文案。
+
+### 实现细节
+
+1. **应收页面样式对齐**
+   - 更新 `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - 统计卡片改为工业风样式：
+     - `rounded-[32px]`
+     - `border-dashed`
+     - `italic + font-black` 标题数字层级
+   - 列表卡片改为通用工业风容器：
+     - 顶部说明栏使用虚线分隔与 muted 背景
+     - 卡片内容区去掉多余默认内边距
+
+2. **应付页面样式对齐**
+   - 更新 `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+   - 与应收页面保持同构样式：
+     - 统计卡片风格一致
+     - 列表卡片风格一致
+     - 字体层级、圆角、边框风格一致
+
+3. **删除演示卡片残留**
+   - 删除应收页底部“销售应收骨架已建立”演示卡片
+   - 删除应付页底部“采购应付骨架已建立”演示卡片
+
+4. **清理本地化中的 mock / placeholder 文案**
+   - 更新 `src/locales/messages/zh-CN/trading.ts`
+   - 更新 `src/locales/messages/zh-CN/purchase.ts`
+   - 更新 `src/locales/messages/en-US/trading.ts`
+   - 更新 `src/locales/messages/en-US/purchase.ts`
+   - 删除：
+     - `placeholderTitle`
+     - `placeholderDescription`
+   - 把 `tableDescription` 改为真实页面语义，不再强调 mock 验证阶段
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未重做表格字段结构
+2. 未扩展新的业务动作按钮
+3. 未新增新的 mock 回退逻辑
+4. 若后续真实数据异常，仍应按系统既有加载/错误链路处理，而不是重新显示演示卡片
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把应收 / 应付页面从“过渡演示页面”纠偏为“真实业务页面”视觉语义：样式已回到通用工业风体系，演示卡片已移除，mock / placeholder 残留文案已清理。当前页面展示更符合 `GEMINI.md` 的后端权威与 fail loudly 原则，也不再向用户传达“这里只是演示壳层”的错误信号。
+
+### 补充修正：表格表头与说明区字体继续纠偏
+
+根据后续视觉检查，继续收紧了应收 / 应付列表区域里“默认表格字体感过强”的问题：
+
+1. 表格说明区改为更贴近系统通用列表页的说明层级：
+   - `text-[11px] md:text-sm`
+   - `leading-6`
+   - `text-muted-foreground/80`
+
+2. 表格表头改为工业风小号高字重标题：
+   - `text-[10px]`
+   - `font-black`
+   - `uppercase`
+   - `tracking-widest`
+   - `text-muted-foreground/60`
+
+3. 表格正文单元格补齐统一间距与字重：
+   - `px-4 md:px-6`
+   - `py-3`
+   - 首列 `font-medium`
+   - 金额列 `tabular-nums`
+
+本次补充修正后，应收 / 应付两页的列表卡片顶部说明区、表头字体、正文层级已经更接近系统中其它工业风列表页的表现。
+
+补充验证：
+
+1. `pnpm exec tsc --noEmit`
+   - 通过
+
+### 补充修正：应收 / 应付清单卡片说明文字对齐正常卡片辅助说明
+
+根据继续核对，进一步把应收 / 应付“清单卡片”里的说明文字收口到系统中更常见的卡片辅助说明样式：
+
+1. 使用：
+   - `text-[10px] md:text-[11px]`
+   - `font-medium`
+   - `leading-5`
+   - `text-muted-foreground/70`
+
+2. 作用范围：
+   - `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+
+3. 目的：
+   - 让“查看应收/应付台账余额、账龄状态...”这类卡片说明文字，不再显得过大或过硬，而是回到系统里普通卡片说明文本的视觉档位。
+
+## 2026-04-13 - feat：独立搜索弹窗式台账选择器
+
+### 本轮目标
+
+在远程搜索、筛选、排序与动态币种来源都已经具备之后，继续把台账选择从 allocation 行内控件提升为独立搜索弹窗，降低表单行内控件堆叠复杂度，并为后续更丰富的候选展示留出空间。
+
+### 实现细节
+
+1. **新增可复用独立搜索弹窗组件**
+   - 新增 `src/features/trading/components/ledger-search-dialog.tsx`
+   - 弹窗内部承载：
+     - 关键词搜索
+     - 状态筛选
+     - 动态币种筛选
+     - 金额区间筛选
+     - 排序字段 / 排序方向
+     - 候选列表单选
+   - 交互模型采用：
+     - 单选后确认
+     - 支持取消关闭
+     - 不点击即回填
+
+2. **应收详情弹层接入弹窗触发入口**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 每条 allocation 行改为：
+     - 展示当前已选台账文本
+     - 点击“选择台账”打开独立弹窗
+   - 详情弹层额外维护：
+     - 当前正在编辑的 `sequenceNo`
+     - 弹窗开关状态
+   - 确认后只回填当前目标行 `ledgerId`
+
+3. **应付详情弹层接入弹窗触发入口**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 行为与应收侧保持一致：
+     - 行内最小展示
+     - 弹窗中完成搜索、筛选、排序与选择确认
+     - 回填当前目标 allocation 行
+
+4. **复用现有搜索 authority**
+   - 本轮没有新增后端接口
+   - 继续复用既有：
+     - 远程搜索接口
+     - 结构化筛选
+     - 服务端排序
+     - finance currency authority 动态币种来源
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前仅支持单选后确认，不支持多选
+2. 当前不支持批量回填多个 allocation 行
+3. 当前未扩成分页结果表格
+4. 当前仍不是完整对账工作台
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 台账选择从“表单行内控件”推进到“独立搜索弹窗”阶段。当前 allocation 行只负责展示当前值与触发选择动作，复杂的搜索、筛选、排序与候选承载都被收口到独立弹窗中，交互边界更清晰，也更适合后续继续增强候选展示能力。
+
+## 2026-04-13 - feat：币种下拉切换为系统动态来源
+
+### 本轮目标
+
+在状态/币种字典化下拉已经落地后，继续把币种从“本地常量字典”提升为“系统真实 authority 动态来源”，避免后续因为硬编码常量遗漏财务配置中的真实币种。
+
+### authority 判定结果
+
+本轮确认系统内现成币种 authority 已存在，无需新造接口：
+
+1. **后端 authority**
+   - `server/services/finance_master_service.go`
+   - `ListCurrencies()`
+
+2. **前端只读服务**
+   - `src/features/finance/services/currency-core-service.ts`
+   - `CurrencyCoreService.getCurrencies()`
+
+3. **前端可复用资源 hook**
+   - `src/features/trading/hooks/use-trading-finance-resources.ts`
+   - 已支持 `includeCurrencies: true` 读取币种列表
+
+因此本轮直接复用现有 finance currency authority，而不是继续维护 AR/AP 本地币种副本。
+
+### 实现细节
+
+1. **应收详情弹层接入动态币种来源**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 复用 `useTradingFinanceResources({ includeCurrencies: true })`
+   - 币种下拉改为动态渲染 `currencies`
+   - 仅展示 `Active` 币种
+
+2. **应付详情弹层接入动态币种来源**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 复用 `useTradingFinanceResources({ includeCurrencies: true })`
+   - 币种下拉改为动态渲染 `currencies`
+   - 仅展示 `Active` 币种
+
+3. **失败兜底策略**
+   - 动态币种加载中：显示“币种字典加载中”
+   - 动态币种为空且非 loading：禁用币种下拉，并显示“币种字典加载失败，请稍后重试”
+   - 明确不再静默退回本地硬编码币种常量，避免用户误以为仍是系统真实配置
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 状态下拉仍保持本地受控枚举
+2. 当前币种展示使用 `code`，未额外拼接名称/符号
+3. 当前未额外新增币种专用错误边界组件，仅在表单内做轻量提示
+4. 当前未修改后端 AR/AP search 语义，仍只按传入 `currency` 过滤
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 台账搜索里的币种筛选从“本地常量字典”切换为“系统 finance currency authority 动态来源”。当前行为更符合系统真实配置，也更不容易因为后续新增币种或财务配置调整而遗漏同步。下一步若继续推进，更值得做的是币种下拉展示名称/符号增强，以及独立搜索弹窗阶段的交互升级。
+
+## 2026-04-13 - feat：状态/币种字典化下拉 + 服务端排序
+
+### 本轮目标
+
+在远程搜索筛选增强之后，继续提升台账选择器的可控性与结果可预测性：把状态/币种筛选从自由输入升级为字典化下拉，并让后端 search 接口支持受控排序。
+
+### 实现细节
+
+1. **后端 search query 增加排序参数**
+   - 更新 `server/services/ar_ap_dto.go`
+   - `LedgerSearchQuery` 新增：
+     - `SortBy`
+     - `SortOrder`
+
+2. **后端 handler 解析排序参数**
+   - 更新 `server/handlers/ar_ap_handlers.go`
+   - 应收 / 应付 search handler 现支持解析：
+     - `sortBy`
+     - `sortOrder`
+
+3. **后端 search service 增加排序白名单**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 新增排序字段白名单：
+     - `updated_at`
+     - `outstanding_amount`
+     - `ledger_no`
+   - 默认排序：
+     - `updated_at desc`
+   - 当前排序方向支持：
+     - `asc`
+     - `desc`
+
+4. **前端 search query key 扩展排序参数**
+   - 更新 `src/features/trading/query-keys.ts`
+   - 把 `sortBy / sortOrder` 纳入 search query key，避免缓存串用
+
+5. **前端 search service / hook 扩展排序参数**
+   - 更新 `src/features/trading/receivables/services/receivables-query-service.ts`
+   - 更新 `src/features/trading/payables/services/payables-query-service.ts`
+   - 更新 `src/features/trading/receivables/hooks/use-receivables.ts`
+   - 更新 `src/features/trading/payables/hooks/use-payables.ts`
+
+6. **前端详情弹层接入字典化下拉与排序控件**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前新增/升级控件：
+     - 状态 `Select`
+     - 币种 `Select`
+     - 排序字段 `Select`
+     - 排序方向 `Select`
+
+7. **独立搜索弹窗明确延期**
+   - 本轮不实现独立搜索弹窗
+   - 该项保留到下一阶段，避免与当前筛选/排序增强混做造成交互结构大改
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 状态 / 币种候选仍是本地最小字典，不引入新的远程字典源
+2. 排序字段采用白名单，不支持任意列排序
+3. 当前仍未扩成独立搜索弹窗
+4. 当前仍未扩成分页结果表格
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run "ArAp|^$"`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端定向校验通过。
+2. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把远程搜索式台账选择器从“基础筛选增强”推进到“可控筛选 + 可控排序”的阶段。当前 AR/AP allocation 选择器已经具备：关键词远程搜索、状态/币种字典化下拉、金额区间筛选、服务端排序，以及远程候选优先展示。下一阶段更适合单独推进独立搜索弹窗，而不是继续在当前弹层内堆叠更多交互控件。
+
+## 2026-04-13 - feat：远程搜索筛选增强
+
+### 本轮目标
+
+在真正的远程搜索式台账选择器已经落地后，继续增强最常用的结构化筛选能力，让搜索结果在中等规模数据下更快收敛，而不把选择器扩成复杂查询工作台。
+
+### 实现细节
+
+1. **后端 search query 增加结构化筛选参数**
+   - 更新 `server/services/ar_ap_dto.go`
+   - `LedgerSearchQuery` 新增：
+     - `Currency`
+     - `OutstandingMin`
+     - `OutstandingMax`
+
+2. **后端 handler 解析筛选参数**
+   - 更新 `server/handlers/ar_ap_handlers.go`
+   - 应收 / 应付 search handler 现支持解析：
+     - `status`
+     - `currency`
+     - `outstandingMin`
+     - `outstandingMax`
+
+3. **后端 search service 增加筛选逻辑**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 当前过滤语义：
+     - `status` 精确匹配
+     - `currency` 精确匹配
+     - `outstandingMin >=`
+     - `outstandingMax <=`
+
+4. **前端 query key 扩展为结构化筛选缓存键**
+   - 更新 `src/features/trading/query-keys.ts`
+   - 把 `keyword / status / currency / outstandingMin / outstandingMax` 全部纳入 search query key
+
+5. **前端 search service / hook 改为结构化参数版本**
+   - 更新 `src/features/trading/receivables/services/receivables-query-service.ts`
+   - 更新 `src/features/trading/payables/services/payables-query-service.ts`
+   - 更新 `src/features/trading/receivables/hooks/use-receivables.ts`
+   - 更新 `src/features/trading/payables/hooks/use-payables.ts`
+
+6. **前端详情弹层接入轻量筛选 UI**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前新增筛选项：
+     - 状态
+     - 币种
+     - 未结最小值
+     - 未结最大值
+   - 继续保留：
+     - 关键词 debounce 搜索
+     - 远程候选优先展示
+     - 本地列表映射兜底
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前筛选仍是轻量结构化参数，不是高级 DSL
+2. 当前状态 / 币种筛选仍使用简单输入，不是受控字典下拉
+3. 当前未扩成独立搜索弹窗或结果表格
+4. 当前仍未补服务端排序策略配置
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run "ArAp|^$"`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端定向校验通过。
+2. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把远程搜索式台账选择器从“只有关键词搜索”推进到“支持常用结构化筛选”的阶段。当前 AR/AP allocation 选择器已经具备：关键词远程搜索、状态筛选、币种筛选、金额区间筛选，以及远程候选优先展示。后续如果继续推进，更值得做的是状态/币种字典化下拉、结果分页、服务端排序与独立搜索弹窗，而不是继续扩增原始输入框数量。
+
+## 2026-04-13 - feat：真正远程搜索式台账选择器落地
+
+### 本轮目标
+
+在客户端过滤版台账选择器已经可用的基础上，继续把 allocation 编辑器升级为真正的远程搜索式台账选择器：后端提供 search API，前端以 debounce 方式远程查询候选项，不再把已加载列表缓存作为唯一候选来源。
+
+### 实现细节
+
+1. **后端新增应收 / 应付台账 search DTO**
+   - 更新 `server/services/ar_ap_dto.go`
+   - 新增：
+     - `LedgerSearchQuery`
+     - `LedgerSearchCandidateResponse`
+     - `LedgerSearchResponse`
+
+2. **后端新增应收 / 应付台账 search service**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 新增：
+     - `SearchReceivableLedgers()`
+     - `SearchPayableLedgers()`
+   - 支持：
+     - `keyword`
+     - `page`
+     - `pageSize`
+     - `status`
+   - 当前搜索字段：
+     - 应收：`ledger_no / customer_name`
+     - 应付：`ledger_no / supplier_name`
+
+3. **后端新增 search handler 与 route**
+   - 更新 `server/handlers/ar_ap_handlers.go`
+   - 更新 `server/routes/routes_ar_ap.go`
+   - 新增接口：
+     - `GET /receivables/search`
+     - `GET /payables/search`
+
+4. **后端路由校验同步补充**
+   - 更新 `server/routes/routes_ar_ap_test.go`
+   - 断言 search 路由已注册
+
+5. **前端新增远程搜索 DTO / service / hook**
+   - 更新 `src/features/trading/query-keys.ts`
+   - 更新 `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+   - 更新 `src/features/trading/payables/contracts/payable-api-dto.ts`
+   - 更新 `src/features/trading/receivables/services/receivables-query-service.ts`
+   - 更新 `src/features/trading/payables/services/payables-query-service.ts`
+   - 更新 `src/features/trading/receivables/hooks/use-receivables.ts`
+   - 更新 `src/features/trading/payables/hooks/use-payables.ts`
+
+6. **前端详情弹层接入 debounce 远程搜索**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前行为：
+     - 输入搜索词后 300ms debounce
+     - 关键词长度达到阈值后触发远程查询
+     - 选择器优先展示远程返回候选项
+     - 本地列表仍作为回退展示映射来源
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前远程搜索仍使用简单关键词匹配，不是高级条件组合查询
+2. 当前仍未扩为独立搜索弹窗或分页表格选择器
+3. 当前候选展示仍以最小字段为主，不返回完整 detail payload
+4. 当前本地列表映射逻辑仍保留，作为过渡与兜底
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run "ArAp|^$"`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端路由 / handler 定向校验通过。
+2. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP allocation 选择器从“本地过滤版搜索”推进到“真正远程搜索式选择器”的阶段。当前详情弹层已经具备：allocation 编辑、历史分组展示、目标台账展示名映射、历史筛选，以及后端 search API 支撑的 debounce 远程台账选择能力。后续如果继续推进，更值得做的是 search 结果分页、状态筛选、选择器独立弹窗，以及彻底移除对本地列表映射的过渡依赖。
+
+## 2026-04-13 - feat：搜索式台账选择器 + allocation 历史筛选
+
+### 本轮目标
+
+在已经具备台账选择器和 allocation 历史分组展示之后，继续提升可用性：为台账选择器补客户端搜索能力，并为 allocation 历史补筛选能力，降低数据量上来后的操作成本。
+
+### 实现细节
+
+1. **应收台账选择器增加搜索过滤**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 新增 `ledgerSearchTerm`
+   - 当前可按以下信息过滤台账候选：
+     - 单据编号
+     - 客户名称
+     - 未收金额
+
+2. **应付台账选择器增加搜索过滤**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 新增 `ledgerSearchTerm`
+   - 当前可按以下信息过滤台账候选：
+     - 单据编号
+     - 供应商名称
+     - 未付金额
+
+3. **allocation 历史增加筛选词**
+   - 应收 / 应付详情弹层均新增 `historySearchTerm`
+   - 当前可按以下信息筛选历史分组：
+     - `recordNo`
+     - `recordDate`
+     - 目标台账展示名
+     - `remark`
+     - `allocatedAmount`
+
+4. **保持客户端过滤，不改后端 authority**
+   - 本轮搜索与筛选均基于当前已加载数据做前端过滤
+   - 不引入新的后端搜索接口
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前搜索仍是客户端过滤，不是远程搜索
+2. 当前选择器还不是弹出式搜索面板，仅是在现有弹层内增加搜索输入
+3. 当前历史筛选未补高级条件组合，仅支持单关键词过滤
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 弹层从“基本可用”推进到“中等数据量下仍可操作”的阶段。当前详情弹层已经同时具备：allocation 编辑、台账选择器、按记录号分组的历史展示、目标台账展示名映射、客户端搜索与历史筛选。后续如果继续推进，更适合进入远程搜索、筛选持久化和专门对账工作台阶段，而不是继续堆叠基础弹层能力。
+
+## 2026-04-13 - feat：allocation 历史按记录号分组 + 目标台账展示名映射
+
+### 本轮目标
+
+在已经具备 allocation 历史基础展示之后，继续把历史区域从“平铺底层字段”提升成更接近业务阅读的模式：按 `recordNo` 分组，并把目标台账从 `ledgerId` 映射为可读展示名。
+
+### 实现细节
+
+1. **后端 detail 数据继续对齐历史展示需求**
+   - 更新 `server/services/ar_ap_dto.go`
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 保持 detail 输出包含：
+     - `receiptRecords / paymentRecords`
+     - `allocations`
+   - 让前端能够基于 `receiptRecordId / paymentRecordId` 做历史分组
+
+2. **应收历史按记录号分组展示**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 当前行为：
+     - 以 `receiptRecord` 为分组头
+     - 每组下展示对应 allocations
+
+3. **应付历史按记录号分组展示**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前行为：
+     - 以 `paymentRecord` 为分组头
+     - 每组下展示对应 allocations
+
+4. **目标台账展示名映射**
+   - 前端使用现有列表数据 + 当前详情台账信息构造显示映射
+   - 当前展示格式：
+     - 单据编号
+     - 往来方名称
+     - 当前未结金额
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前展示名映射仍依赖前端已加载列表数据，不是后端直接回传的完整 displayName
+2. 当前历史分组仍在详情弹层内展示，未拆为专门的对账历史页
+3. 当前未补 allocation 历史的筛选 / 搜索 / 展开折叠能力
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 allocation 历史从“技术字段列表”推进到“按记录号分组、可读展示目标台账”的阶段。当前 AR/AP 详情弹层已经同时具备：allocation 编辑、台账选择器、历史展示和按记录分组的阅读能力。后续如果继续推进，更值得做的是搜索式台账选择器、历史筛选与更完整的对账工作台，而不是再补基础可读性。
+
+## 2026-04-13 - feat：allocation 历史明细展示接入
+
+### 本轮目标
+
+在已经具备 allocation 编辑与提交能力后，继续补上 allocation 历史明细展示，让应收 / 应付详情弹层不仅能“登记分摊”，也能直接看到“已经如何分摊过”。
+
+### 实现细节
+
+1. **后端 detail response 增加 allocations**
+   - 更新 `server/services/ar_ap_dto.go`
+   - `ReceivableLedgerDetailResponse / PayableLedgerDetailResponse` 新增 `allocations`
+
+2. **后端 detail 查询预加载 settlement mappings**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 当前 detail 查询已预加载：
+     - `ReceiptRecords / PaymentRecords`
+     - `SettlementMappings`
+   - detail 映射时同步输出 allocation 历史明细
+
+3. **前端 detail DTO 对齐 allocations**
+   - 更新 `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+   - 更新 `src/features/trading/payables/contracts/payable-api-dto.ts`
+
+4. **应收详情弹层展示 allocation 历史**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 当前展示字段：
+     - `sequenceNo`
+     - `ledgerId`
+     - `allocatedAmount`
+     - `remark`
+
+5. **应付详情弹层展示 allocation 历史**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前展示字段：
+     - `sequenceNo`
+     - `ledgerId`
+     - `allocatedAmount`
+     - `remark`
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前历史明细以 allocation 基础字段展示为主，尚未补目标台账名称映射
+2. 当前仍未把 allocation 历史和具体 `recordNo` 做更细粒度的分组展示
+3. 当前仍未扩成专门的对账明细页
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run "CreateReceiptRecordHandler|CreatePaymentRecordHandler|^$"`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端定向校验通过。
+2. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 详情弹层从“只能录入 allocation”推进到“既能录入，也能查看 allocation 历史”的阶段。当前闭环已经覆盖：台账列表、详情读取、allocation 编辑、台账选择器、allocation 历史展示。后续更自然的增强点将是 allocation 历史按记录号分组、目标台账展示名映射，以及搜索式台账选择器，而不是再补基础骨架。
+
+## 2026-04-13 - feat：allocation 编辑器接入台账选择器
+
+### 本轮目标
+
+在前端已经支持多条 allocation 编辑之后，继续把 `ledgerId` 的手工输入替换为台账选择器，降低误填风险并改善核销分摊录入体验。
+
+### 实现细节
+
+1. **应收分摊行接入台账选择器**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 复用 `useGetReceivables()` 列表结果生成可选项
+   - 分摊行中的 `ledgerId` 从手工输入改为选择器
+
+2. **应付分摊行接入台账选择器**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 复用 `useGetPayables()` 列表结果生成可选项
+   - 分摊行中的 `ledgerId` 从手工输入改为选择器
+
+3. **当前选择器展示信息**
+   - 每个选项展示：
+     - 单据编号
+     - 往来方名称
+     - 当前未结金额
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前选择器仍基于已有列表数据，不是独立搜索弹窗
+2. 当前未补模糊搜索 / 远程筛选能力
+3. 当前 allocation 历史展示仍未单独展开
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 allocation 编辑器从“可编辑但仍需手填 ledgerId”推进到“可直接选择目标台账”的阶段。这样当前 AR/AP 的核销分摊体验已经具备基本可用性，后续更值得继续推进的是搜索式台账选择器、allocation 历史明细展示，以及更完整的对账交互，而不是再回退到原始输入模式。
+
+## 2026-04-13 - feat：前端多条 allocation 编辑器接入
+
+### 本轮目标
+
+在后端已经切换到 `record + allocations` authority 后，把应收 / 应付详情弹层从“单金额兼容层”升级为真正可编辑多条 allocation 的前端模式，支持录入多笔分摊行并提交真实 `allocations[]`。
+
+### 实现细节
+
+1. **应收详情弹层升级为 allocation 编辑器**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 当前支持：
+     - 多条分摊行
+     - 新增分摊行
+     - 删除分摊行
+     - 编辑 `ledgerId / allocatedAmount / remark`
+     - 计算分摊合计并按真实 `allocations[]` 提交
+
+2. **应付详情弹层升级为 allocation 编辑器**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前支持：
+     - 多条分摊行
+     - 新增分摊行
+     - 删除分摊行
+     - 编辑 `ledgerId / allocatedAmount / remark`
+     - 计算分摊合计并按真实 `allocations[]` 提交
+
+3. **基础前端校验**
+   - 提交前要求：
+     - 至少存在一条 allocation
+     - allocation 合计金额大于 0
+     - 每条分摊行具备 `ledgerId`
+     - 每条分摊行金额大于 0
+
+4. **保持 authority 在后端**
+   - 前端当前只做输入编排与合计提示
+   - 最终金额守恒、超额校验、非法状态校验仍由后端裁决
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前分摊目标 ledger 仍以手工输入 `ledgerId` 为主，还未做专门的台账选择器
+2. 当前仍是详情弹层内编辑，不是完整对账工作台
+3. 当前未补 allocation 历史明细的专门展示区域
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把前端从“单条 allocation 兼容模式”推进到“可编辑多条 allocation 的真实分摊输入模式”。这样 AR/AP 在当前阶段已经形成了从后端 allocation authority 到前端分摊编辑器的完整闭环，后续若继续推进，更合理的重点将是台账选择器、allocation 历史展示与更完整的对账交互，而不是再回退到单金额登记模型。
+
+## 2026-04-13 - feat：SettlementAllocation 核销分摊阶段落地（后端 authority + 前端兼容层）
+
+### 本轮目标
+
+在已有 AR/AP 最小登记骨架的基础上，继续把“单台账直接回写”的临时模式升级为 `SettlementAllocation` 核销分摊模式，确保登记记录与实际核销关系可审计、可扩展，并先为现有前端补一层兼容包装，避免接口升级后页面失效。
+
+### 实现细节
+
+1. **后端登记 DTO 升级为 `record + allocations`**
+   - 更新 `server/services/ar_ap_dto.go`
+   - 新增：
+     - `SettlementAllocationRequest`
+     - `SettlementAllocationResponse`
+   - `CreateReceiptRecordRequest / CreatePaymentRecordRequest` 新增 `allocations`
+   - `CreateReceiptRecordResponse / CreatePaymentRecordResponse` 新增 `allocations`
+
+2. **后端正式落地 `SettlementAllocation` 写入逻辑**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 当前登记流程已升级为：
+     - 创建 `ReceiptRecord / PaymentRecord`
+     - 校验 allocation 明细
+     - 创建 `SettlementAllocation`
+     - 同事务回写 ledger 的 `settledAmount / outstandingAmount / status / version`
+
+3. **新增 allocation 级校验**
+   - 当前已覆盖：
+     - `allocations` 不能为空
+     - allocation 合计必须等于 `record.amount`
+     - allocation 金额不得超过目标 ledger 当前 `outstandingAmount`
+     - 已结清 / 已作废 / 已取消 ledger 不允许继续分摊
+
+4. **handler 错误映射补齐**
+   - 更新 `server/handlers/ar_ap_handlers.go`
+   - 对以下错误返回 400：
+     - 分摊明细为空
+     - 合计不一致
+     - 超额分摊
+     - 非法台账状态
+
+5. **新增 AR/AP handler 负向测试**
+   - 新增 `server/handlers/ar_ap_handlers_test.go`
+   - 覆盖：
+     - 金额与 allocation 合计不一致
+     - 超额分摊
+     - 已结清台账重复分摊
+   - 测试数据库采用手工建表，绕开 SQLite 对 `uuid DEFAULT gen_random_uuid()` 的 DDL 兼容问题
+
+6. **前端增加 allocation 兼容层**
+   - 更新：
+     - `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+     - `src/features/trading/payables/contracts/payable-api-dto.ts`
+     - `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+     - `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前行为：
+     - 现有“单金额登记”会自动包装为单条 allocation 请求
+     - 不需要立即推翻现有详情弹层交互
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 后端已进入 allocation authority 模式，但前端仍只是单条 allocation 兼容层
+2. 当前前端尚未支持多条 allocation 手工编辑
+3. 当前仍未进入完整对账工作台
+4. 当前仍未补并发锁 / 乐观锁级的更严格核销冲突保护
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers -run "CreateReceiptRecordHandler|CreatePaymentRecordHandler"`
+2. `go test ./handlers ./routes ./db -run "CreateReceiptRecordHandler|CreatePaymentRecordHandler|^$"`
+3. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. AR/AP handler 负向测试通过。
+2. 后端 routes/db 定向校验通过。
+3. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 从“登记后直接回写单台账”的临时骨架推进到“登记记录 + allocation 分摊 + 台账同事务回写”的正式方向。虽然前端还只是单条 allocation 兼容模式，但后端 authority 已经切换到可继续扩展多台账核销的结构上，下一阶段只需要把前端弹层升级为真正可编辑多条 allocation 的模式，而不需要再推翻后端模型。
+
+## 2026-04-13 - feat：前端应收 / 应付详情弹层与最小登记入口接入
+
+### 本轮目标
+
+在后端已经具备 AR/AP 详情读取与登记骨架接口之后，继续把前端页面从“只能看列表”推进到“可查看详情并登记一笔最小收款 / 付款”的阶段，但仍然不进入完整核销分摊界面。
+
+### 实现细节
+
+1. **补充前端 detail / settlement contracts**
+   - 更新 `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+   - 更新 `src/features/trading/payables/contracts/payable-api-dto.ts`
+   - 新增详情 DTO 与收款 / 付款登记 DTO
+
+2. **补充 query key**
+   - 更新 `src/features/trading/query-keys.ts`
+   - 新增：
+     - `receivableDetail(id)`
+     - `payableDetail(id)`
+
+3. **补充详情与登记 services**
+   - 新增 `src/features/trading/receivables/services/receivable-ledger-detail-service.ts`
+   - 新增 `src/features/trading/payables/services/payable-ledger-detail-service.ts`
+   - 当前支持：
+     - 读取详情
+     - 提交最小收款 / 付款登记
+
+4. **补充详情与登记 hooks**
+   - 新增 `src/features/trading/receivables/hooks/use-receivable-ledger-detail.ts`
+   - 新增 `src/features/trading/payables/hooks/use-payable-ledger-detail.ts`
+   - 登记成功后自动失效列表与详情缓存
+
+5. **新增独立详情弹层组件**
+   - 新增 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 新增 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当前弹层能力：
+     - 展示台账基础信息
+     - 展示历史收款 / 付款记录
+     - 提交一笔最小登记
+
+6. **页面接线**
+   - 更新 `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - 更新 `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+   - 当前行为：
+     - 点击列表行打开详情弹层
+     - 在弹层中提交最小登记
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前 UI 仍是最小详情弹层，不是完整详情页
+2. 当前登记表单仅提交金额、日期、参考号等基础字段
+3. 仍未进入 allocation 核销分摊 UI
+4. 仍未补账龄分析专用视图与完整错误原因映射
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 前端从“只读列表”推进到“列表 + 详情弹层 + 最小收款/付款登记”的阶段。这样后续如果继续推进，只需要在现有 detail / mutation 结构上继续扩展 allocation、核销分摊与更完整的详情展示，而不需要再推翻当前的低耦合子域组织。
+
+## 2026-04-13 - feat：AR/AP 详情读取与收款/付款登记骨架
+
+### 本轮目标
+
+在已经具备独立 ledger 模型与列表级只读接口的基础上，继续向前推进 AR/AP 的详情读取能力，以及最小收款/付款登记骨架，但仍然不进入完整 allocation 核销算法和复杂财务闭环。
+
+### 实现细节
+
+1. **补充 AR/AP 详情 DTO**
+   - 更新 `server/services/ar_ap_dto.go`
+   - 新增：
+     - `ReceivableLedgerDetailResponse`
+     - `PayableLedgerDetailResponse`
+     - `ReceiptRecordResponse`
+     - `PaymentRecordResponse`
+     - `CreateReceiptRecordRequest/Response`
+     - `CreatePaymentRecordRequest/Response`
+
+2. **补充详情查询服务**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 新增：
+     - `GetReceivableLedgerByID(...)`
+     - `GetPayableLedgerByID(...)`
+
+3. **补充最小收款/付款登记骨架**
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 新增：
+     - `CreateReceiptRecord(...)`
+     - `CreatePaymentRecord(...)`
+   - 当前行为：
+     - 新建 `ReceiptRecord / PaymentRecord`
+     - 回写 ledger 的 `settledAmount / outstandingAmount / status / version`
+     - 返回登记后的 ledger 详情与记录对象
+
+4. **补充 handler 与 route**
+   - 更新 `server/handlers/ar_ap_handlers.go`
+   - 更新 `server/routes/routes_ar_ap.go`
+   - 更新 `server/routes/routes_ar_ap_test.go`
+   - 当前新增接口：
+     - `GET /api/v1/receivables/:id`
+     - `GET /api/v1/payables/:id`
+     - `POST /api/v1/receivables/:id/receipts`
+     - `POST /api/v1/payables/:id/payments`
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 已有详情读取接口，但前端尚未扩写详情弹层或登记表单
+2. 已有最小收款/付款登记骨架，但仍未实现 `SettlementAllocation` 分摊算法
+3. 当前登记逻辑是“单台账直接回写 settled/outstanding”的骨架实现
+4. 账龄仍是骨架级派生，不代表完整账龄分析已完成
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run ^$`
+
+结果：
+
+1. 后端定向编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 从“只有列表级只读接口”推进到“具备详情读取与最小登记骨架”的阶段。当前后端已经具备继续往登记表单、详情面板和 allocation 核销逻辑扩展的结构基础，但还没有把本轮扩大为完整财务闭环。
+
+## 2026-04-13 - feat：独立 AR/AP 后端模型骨架与真实只读接口接入
+
+### 本轮目标
+
+在完成严格后端规划确认后，正式落地独立 AR/AP 后端主模型骨架，并提供最小真实只读接口，避免继续把前端页面长期挂在 mock 数据上。
+
+### 实现细节
+
+1. **新增独立 AR/AP 后端模型骨架**
+   - 新增 `server/models/ar_ap_ledger.go`
+   - 落地：
+     - `ReceivableLedger`
+     - `PayableLedger`
+     - `ReceiptRecord`
+     - `PaymentRecord`
+     - `SettlementAllocation`
+
+2. **接入数据库迁移**
+   - 更新 `server/db/db.go`
+   - 将上述 AR/AP 模型加入 `AutoMigrate`
+
+3. **新增后端 DTO 与查询服务**
+   - 新增 `server/services/ar_ap_dto.go`
+   - 新增 `server/services/ar_ap_query_service.go`
+   - 当前提供：
+     - 分页列表响应
+     - 汇总字段响应
+     - 独立 ledger 查询映射
+
+4. **新增后端 handler 与 route**
+   - 新增 `server/handlers/ar_ap_handlers.go`
+   - 新增 `server/routes/routes_ar_ap.go`
+   - 新增 `server/routes/routes_ar_ap_test.go`
+   - 更新 `server/routes/routes.go`
+   - 当前新增只读接口：
+     - `GET /api/v1/receivables`
+     - `GET /api/v1/payables`
+
+5. **前端切换为真实 API**
+   - 更新 `src/features/trading/receivables/services/receivables-query-service.ts`
+   - 更新 `src/features/trading/payables/services/payables-query-service.ts`
+   - 从 mock service 切换到真实 `/receivables` / `/payables` 请求
+
+6. **前后端 contract 对齐**
+   - 后端当前列表项已按前端现有 `documentNo / invoiceAmount / receivedAmount / paidAmount / outstandingAmount / agingBucket / status` 结构输出
+   - 这样可以在不重写前端表格组件的前提下先完成真实接口接入
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 已落地独立 ledger / settlement 模型骨架，但尚未实现完整写流程
+2. 当前只提供列表级只读接口，不包含详情、登记、核销写接口
+3. `agingBucket` 当前仍是骨架级派生字段，不代表最终账龄引擎已完成
+4. 当前没有把订单或 voucher 继续包装成 AR/AP 主模型，而是转为独立表语义
+
+### 验证结果
+
+已执行：
+
+1. `go test ./handlers ./routes ./db -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端定向编译校验通过。
+2. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 从“前端独立子域壳层”推进到“后端独立模型 + 真实只读接口”的阶段。最关键的变化是：应收 / 应付终于不再依赖订单或 voucher 的语义挪用，而是拥有了独立 ledger 入口。下一阶段如果继续推进，优先级应是补详情接口、收款/付款记录写入、以及 allocation 级核销逻辑，而不是继续在前端扩展 mock 或临时拼装 authority。
+
+## 2026-04-13 - feat：销售应收 / 采购应付只读查询壳层接入
+
+### 本轮目标
+
+在上一轮完成 Tab、路由和独立子域骨架之后，继续把 AR/AP 页面升级为可读的只读查询壳层，但仍然不进入真实后端 AR/AP authority、收款/付款登记或核销写操作。
+
+### 实现细节
+
+1. **为销售应收建立只读查询分层**
+   - 新增 `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+   - 新增 `src/features/trading/receivables/adapters/receivable-api-adapter.ts`
+   - 新增 `src/features/trading/receivables/services/receivables-query-service.ts`
+   - 新增 `src/features/trading/receivables/hooks/use-receivables.ts`
+
+2. **为采购应付建立只读查询分层**
+   - 新增 `src/features/trading/payables/contracts/payable-api-dto.ts`
+   - 新增 `src/features/trading/payables/adapters/payable-api-adapter.ts`
+   - 新增 `src/features/trading/payables/services/payables-query-service.ts`
+   - 新增 `src/features/trading/payables/hooks/use-payables.ts`
+
+3. **接入 query key**
+   - 更新 `src/features/trading/query-keys.ts`
+   - 新增 `receivables()` 与 `payables()`，保持与现有 trading 查询缓存模式一致
+
+4. **页面从占位升级为只读视图**
+   - 更新 `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - 更新 `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+   - 页面当前展示：
+     - 汇总卡片
+     - 只读表格
+     - 当前阶段说明区
+
+5. **补齐文案 key**
+   - 更新 `src/locales/messages/zh-CN/trading.ts`
+   - 更新 `src/locales/messages/en-US/trading.ts`
+   - 更新 `src/locales/messages/zh-CN/purchase.ts`
+   - 更新 `src/locales/messages/en-US/purchase.ts`
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 当前 `receivables / payables` service 使用前端 mock 数据
+2. 只读页面用于验证低耦合 contracts / adapters / hooks / queryKey 组织方式
+3. 未引入真实后端 AR/AP handler / service / dto / route
+4. 未新增收款、付款、核销、账龄重算等写逻辑
+5. 未让前端按订单数据自行推导 authority，只是临时展示 mock 聚合结果
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把 AR/AP 从“仅有空页面”推进到“具备 contracts / adapters / services / hooks / queryKeys / page view 的只读结构壳层”。这样后续如果后端补齐真实 AR/AP 查询接口，只需要替换 service 层与 DTO 即可，不需要再回头重做页面和子域组织。同时页面仍然保持低耦合，没有把应收 / 应付查询逻辑塞进销售订单页或采购订单页。
+
+## 2026-04-13 - feat：销售应收 / 采购应付低耦合骨架接入
+
+### 本轮目标
+
+在不进入 AR/AP 真实业务实现的前提下，先把销售应收与采购应付的模块骨架接入现有销售管理 / 采购管理 Tab 宿主，确保后续可以在独立子域内继续演进，而不是把逻辑直接塞进销售订单页或采购订单页。
+
+### 实现细节
+
+1. **销售管理新增应收 Tab**
+   - 更新 `src/features/trading/tabs.ts`
+   - 新增 `/trading/receivables` 页签入口
+
+2. **采购管理新增应付 Tab**
+   - 更新 `src/features/purchase/tabs.ts`
+   - 新增 `/purchase/payables` 页签入口
+
+3. **建立独立子域页面骨架**
+   - 新增 `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - 新增 `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+   - 页面当前只承载模块标题、说明和占位内容，不接真实 AR/AP 查询或写操作
+
+4. **接入文件路由骨架**
+   - 新增 `src/routes/_authenticated/trading/receivables.tsx`
+   - 新增 `src/routes/_authenticated/trading/receivables.lazy.tsx`
+   - 新增 `src/routes/_authenticated/purchase/payables.tsx`
+   - 新增 `src/routes/_authenticated/purchase/payables.lazy.tsx`
+
+5. **补齐中英文文案**
+   - 更新 `src/locales/messages/zh-CN/trading.ts`
+   - 更新 `src/locales/messages/en-US/trading.ts`
+   - 更新 `src/locales/messages/zh-CN/purchase.ts`
+   - 更新 `src/locales/messages/en-US/purchase.ts`
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有接入真实 AR/AP 后端查询
+2. 没有修改现有销售订单 / 采购订单业务逻辑
+3. 没有把 AR/AP 暂时塞进 `finance-management`
+4. 没有在前端自行计算余额、账龄、逾期或核销状态
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步已经把“销售里挂应收、采购里挂应付”的最小接入层搭起来了，同时保持了物理隔离：入口仍在业务模块中，但页面与后续逻辑的承载位置已经拆到独立子域目录。下一阶段如果继续推进，应优先补只读查询契约与列表/统计视图，而不是把 AR/AP 状态和聚合逻辑回写到订单页面内部。
+
 ### 实现细节（BOM 导入 authority 收口）
 
 1. **停止在前端解析阶段生成 `standardUsage`**
@@ -1069,6 +2249,378 @@
 
 1. TypeScript 编译校验通过。
 
+## 2026-04-13 - impl：BOM / ECO 控制字段接入全局码规范化
+
+### 本轮目标
+
+将 engineering 中 BOM / ECO 的控制字段收口到统一 helper，重点覆盖：
+
+1. `bomNo`
+2. `bomVersion`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/tabs/bom-mgmt.tsx`
+4. `src/features/engineering/services/bom-service.ts`
+
+### 实现细节
+
+1. **扩展 BOM / ECO 控制字段统一 helper**
+   - 在 `product-code-normalization.ts` 中新增：
+     - `normalizeEngineeringBomNo(...)`
+     - `normalizeEngineeringBomVersion(...)`
+     - `normalizeBOMInput(...)`
+   - 明确将 `bomNo / bomVersion` 作为 BOM/ECO 控制字段治理，而不是继续散落直接调用 lib codec
+
+2. **收口 BOM 默认值与初始化值**
+   - `use-bom-form.ts` 中：
+     - 默认值里的 `bomVersion` 改为复用 `normalizeEngineeringBomVersion('V1.0')`
+     - 初始化值里的 `bomVersion` 也改为统一 helper
+
+3. **收口提交前 payload 边界**
+   - `bom-mgmt.tsx` 中：
+     - 提交前不再手动调用 `normalizeBomNo / normalizeBomVersion`
+     - 改为统一复用 `normalizeBOMInput(...)`
+
+4. **收口 service 保存边界**
+   - `bom-service.ts` 中：
+     - `sanitizeBOMInput(...)` 先统一走 `normalizeBOMInput(...)`
+     - 不再只做 `bomNo / bomVersion` 的局部 trim
+
+### 当前阶段结论
+
+这一步把 `bomNo / bomVersion` 从“schema 有约束、form 有默认值、提交前和 service 又各自手动处理”的分散状态，收口成了 BOM/ECO 控制字段统一 helper。现在默认值、初始化值、提交前 payload、service 保存边界已经共享同一套口径，不需要继续在 `use-bom-form / bom-mgmt / bom-service` 之间重复拼接同一套规则。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-13 - impl：Product / ChangeOrder 变更控制字段接入全局码规范化
+
+### 本轮目标
+
+将 engineering 域内的变更控制字段收口到统一 helper，重点覆盖：
+
+1. `revisionNo`
+2. `siteCode`
+3. `changeOrderNo`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/utils/default-builders.ts`
+3. `src/features/engineering/hooks/use-change-order-write-actions.ts`
+4. `src/features/engineering/services/change-order-service.ts`
+5. `src/features/engineering/tabs/change-orders.tsx`
+6. `src/features/engineering/adapters/product-api-adapter.ts`
+
+### 实现细节
+
+1. **扩展 engineering 控制字段统一 helper**
+   - 在 `product-code-normalization.ts` 中新增：
+     - `normalizeEngineeringRevisionNo(...)`
+     - `normalizeEngineeringSiteCode(...)`
+     - `normalizeEngineeringChangeOrderNo(...)`
+     - `normalizeChangeOrderInput(...)`
+     - `normalizeChangeOrderEntity(...)`
+   - 同时让 `normalizeSaveProductInput(...)` 也纳入：
+     - `revisionNo`
+     - `siteCode`
+     - `changeOrderNo`
+
+2. **收口 ChangeOrder draft 初始化边界**
+   - `default-builders.ts` 中：
+     - `createChangeOrderDraft(...)` 改为复用 `normalizeChangeOrderEntity(...)`
+     - `buildChangeOrderDraft(...)` 改为复用 engineering 控制字段 helper
+
+3. **收口 ChangeOrder 输入与保存边界**
+   - `change-orders.tsx` 中：
+     - `changeOrderNo / siteCode / revisionNo` 输入改为复用 engineering 控制字段 helper
+     - 保存前 payload 组装改为复用 `normalizeChangeOrderInput(...)`
+
+4. **去重 write actions 重复规范化**
+   - `use-change-order-write-actions.ts` 不再重复做 `changeOrderNo / siteCode / revisionNo` 规范化
+   - 直接交给 service / helper 处理
+
+5. **收口 ChangeOrder service 保存边界**
+   - `change-order-service.ts` 删除本地散落 normalize 实现
+   - 改为直接复用 `normalizeChangeOrderInput(...)`
+
+6. **让 Product 侧复用同一套控制字段 helper**
+   - `product-api-adapter.ts` 中：
+     - Product 的 `revisionNo / siteCode / changeOrderNo` DTO 入出边界
+     - 改为统一复用 engineering 控制字段 helper
+
+### 当前阶段结论
+
+这一步把 `revisionNo / siteCode / changeOrderNo` 从“lib codec 可用，但 tab、draft、write actions、service、adapter 各自散落调用”收口成了 engineering 域内统一控制字段 helper。现在 `ChangeOrder` 与 `Product` 已经共享同一套控制字段边界，不需要继续在不同层次重复粘贴相同的 normalize 逻辑。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-13 - impl：717 Product 主数据链路接入全局码规范化
+
+### 本轮目标
+
+将 `Product` 主数据链路中的三类字段按语义分型收口到统一 helper，重点覆盖：
+
+1. `Product.sku`
+2. `Product.modelCode`
+3. `Product.templateKey`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/utils/product-form-utils.ts`
+3. `src/features/engineering/hooks/use-product-form-derive.ts`
+4. `src/features/engineering/components/product/product-basic-info.tsx`
+5. `src/features/engineering/adapters/product-api-adapter.ts`
+6. `src/features/engineering/services/product-maintenance-service.ts`
+
+### 实现细节
+
+1. **扩展 Product 主数据统一 helper**
+   - 在 `product-code-normalization.ts` 中新增：
+     - `normalizeProductSkuValue(...)`
+     - `normalizeProductModelCodeValue(...)`
+     - `normalizeProductTemplateKeyValue(...)`
+     - `deriveNormalizedProductSku(...)`
+     - `normalizeSaveProductInput(...)`
+   - 明确区分：
+     - 业务编码：`sku`
+     - 固定数字码：`modelCode`
+     - 稳定引用键：`templateKey`
+
+2. **收口 Product 输入与展示边界**
+   - `product-basic-info.tsx` 中：
+     - `modelCode` 输入改为复用 `normalizeProductModelCodeValue(...)`
+     - `sku` 展示改为复用 `normalizeProductSkuValue(...)`
+
+3. **收口 SKU 派生链路**
+   - `product-form-utils.ts` 中：
+     - 默认值里的 `modelCode / templateKey` 改为统一 helper
+     - `deriveSku(...)` 改为复用 `deriveNormalizedProductSku(...)`
+     - `ensureSkuUnique(...)` 改为基于统一规范后的 SKU 比较
+   - `use-product-form-derive.ts` 中：
+     - authority engine 回填的 `modelCode` 改为统一 helper
+     - `skuPreview` 改为统一 helper + 派生 helper
+
+4. **收口 DTO 边界**
+   - `product-api-adapter.ts` 中：
+     - API -> contract 的 `sku / modelCode / templateKey` 改为复用 Product helper
+     - contract -> API DTO 前先走 `normalizeSaveProductInput(...)`
+
+5. **收口保存边界**
+   - `product-maintenance-service.ts` 中：
+     - `createProduct(...)`
+     - `patchProduct(...)`
+     - `saveProduct(...)`
+     - `bulkSyncProducts(...)`
+   - 全部在 service 边界先统一走 `normalizeSaveProductInput(...)`
+
+### 当前阶段结论
+
+这一步把 `Product` 主数据链路的 `sku / modelCode / templateKey` 从“输入层、派生层、adapter、service 各自做一点”收口成了统一的领域 helper。现在这三类字段已经不再依赖散落的通用 codec 调用，而是通过 `engineering/product-code-normalization.ts` 形成清晰一致的 Product 主数据边界。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-12 - impl：714 生产共享资源模块接入全局码规范化
+
+### 本轮目标
+
+将 `production-shared` 中已经存在但分散的机器码处理逻辑收口为领域内部统一 helper，重点覆盖：
+
+1. `ProductionLine.code`
+2. `ProductionProcessStep.code`
+
+### 本轮修改文件
+
+1. `src/features/production-shared/utils/production-code-normalization.ts`
+2. `src/features/production-shared/services/production-lines-service.ts`
+3. `src/features/production-shared/services/production-processes-service.ts`
+4. `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+5. `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+6. `src/features/production-shared/tabs/line-mgmt/components/line-dialog.tsx`
+
+### 实现细节
+
+1. **新增 production-shared 统一 helper**
+   - 新增 `production-code-normalization.ts`
+   - 提供：
+     - `normalizeProductionLineCode(...)`
+     - `normalizeProductionProcessStepCode(...)`
+     - `normalizeProductionLineEntity(...)`
+     - `normalizeProductionProcessStepEntity(...)`
+
+2. **收口 service 保存边界**
+   - `production-lines-service.ts` 改为复用 `normalizeProductionLineEntity(...)`
+   - `production-processes-service.ts` 改为复用 `normalizeProductionProcessStepEntity(...)`
+
+3. **收口 adapter DTO 边界**
+   - `production-resource-api-adapter.ts` 不再直接调用通用 `normalizeMachineCode`
+   - line / process 的 DTO 入出边界统一复用 production-shared helper
+
+4. **收口 process 输入边界**
+   - `process-library-panel.tsx` 的：
+     - 编辑态回填
+     - 输入时规范化
+     - 提交前组装
+   - 全部统一复用 `normalizeProductionProcessStepCode(...)` / `normalizeProductionProcessStepEntity(...)`
+
+5. **收口 line 输入边界**
+   - `line-dialog.tsx` 的：
+     - 编辑态回填
+     - 新建态初始值
+     - 自动生成 code
+   - 统一复用 `normalizeProductionLineCode(...)` / `normalizeProductionLineEntity(...)`
+   - 同时修复该文件对 `useDeltaTracker(...).data` 的直接修改问题，改为通过本地 `setForm(...)` 封装更新
+
+### 当前阶段结论
+
+这一步把 `production-shared` 里原本分散在 service、adapter、process form、line dialog 的机器码处理逻辑收成了模块内部统一入口。这样 `ProductionLine.code` 与 `ProductionProcessStep.code` 的输入边界、保存边界、DTO 边界已经对齐到同一套 production-shared helper，不需要继续在各文件散落补 `normalizeMachineCode(...)`。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-12 - impl：715 工程属性值模块接入全局码规范化
+
+### 本轮目标
+
+将工程属性值模块现有的 `product-attribute-machine-value` 规则从“多处散落重复调用”收口为更清晰的领域边界，重点覆盖：
+
+1. `ProductAttributeCategory.key`
+2. `ProductAttributeOption.value`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-attribute-machine-value.ts`
+2. `src/features/engineering/components/product-attributes/product-attribute-category-dialog.tsx`
+3. `src/features/engineering/components/product-attributes/product-attribute-option-dialog.tsx`
+4. `src/features/engineering/services/product-attribute-category-service.ts`
+5. `src/features/engineering/services/product-attribute-option-service.ts`
+6. `src/features/engineering/hooks/use-product-attribute-write-actions.ts`
+7. `src/features/engineering/tabs/product-attributes-mgmt.tsx`
+
+### 实现细节
+
+1. **扩展属性值专用 helper**
+   - 在 `product-attribute-machine-value.ts` 中新增：
+     - `normalizeProductAttributeCategoryInputKey(...)`
+     - `normalizeProductAttributeOptionInputValue(...)`
+     - `buildProductAttributeCategorySaveInput(...)`
+     - `buildProductAttributeOptionSaveInput(...)`
+     - `findProductAttributeOptionConflictInCategory(...)`
+   - 明确把“输入态规范化”“保存态规范化”“按分类冲突判断”放到统一模块中
+
+2. **收口 dialog 输入边界**
+   - category dialog 改为复用 `normalizeProductAttributeCategoryInputKey(...)`
+   - option dialog 改为复用 `normalizeProductAttributeOptionInputValue(...)`
+   - 不再在组件里直接散落调用基础 normalize 函数
+
+3. **收口 service 保存边界**
+   - category service 改为复用 `buildProductAttributeCategorySaveInput(...)`
+   - option service 改为复用 `buildProductAttributeOptionSaveInput(...)`
+
+4. **去重 write actions 重复规范化**
+   - `use-product-attribute-write-actions.ts` 不再重复对 payload 做机器值规范化
+   - 直接把原始 payload 交给 service 的统一 helper 处理
+
+5. **收口 tab 层散落逻辑**
+   - `product-attributes-mgmt.tsx` 中：
+     - 新建 category / option 时复用输入态 helper
+     - 保存前 payload 组装改为复用保存态 helper
+     - option 冲突判断改为复用 `findProductAttributeOptionConflictInCategory(...)`
+   - 同时顺手修正了 `categories/options` 的稳定引用，以及避免在 effect 中同步 `setState` 的问题
+
+### 当前阶段结论
+
+这一步并没有替换掉工程属性值模块现有的小写机器值规则，而是把它正式提升为模块内部的单一权威入口。现在属性值链路的输入态、保存态、冲突判断与页面 payload 组装已经基本对齐，避免继续在 dialog、tab、write actions、service 之间重复散落同一套规则。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-12 - impl：716 第二批遗漏边界补齐
+
+### 本轮目标
+
+补齐 `716` 第一批之后仍残留的 template 侧遗漏边界：
+
+1. 新建草稿入口
+2. sync 保存边界
+3. `template-mgmt.tsx` 的稳定引用小缺口
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/default-builders.ts`
+2. `src/features/engineering/services/product-template-service.ts`
+3. `src/features/engineering/tabs/template-mgmt.tsx`
+
+### 实现细节
+
+1. **补齐 template 草稿入口**
+   - `createProductTemplateDraft()` 改为复用 `normalizeProductTemplateEntity(...)`
+   - 这样新建态初始值也统一经过 engineering 内部 helper
+
+2. **补齐 template sync 保存边界**
+   - `productTemplateService.sync(...)` 发送前改为先执行：
+     - `templates.map(normalizeProductTemplateInput)`
+   - 避免批量同步链路绕过 `code / componentKey` 规范化
+
+3. **收口稳定引用小缺口**
+   - `template-mgmt.tsx` 中将 `templatesQuery.data ?? []` 改为 `useMemo(...)`
+   - 避免继续制造 hook 依赖不稳定 warning
+
+### 当前阶段结论
+
+`716` 第二批没有继续扩大范围，而是把 template 这条链路最后几个遗漏口补完整：从草稿创建，到页面编辑，再到 sync 保存，已经都能经过 engineering 内部统一 helper。这样 `716` 这条主线就从“第一批样板收口”推进到了更完整的边界闭环。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
 ### 当前阶段结论
 
 这一步把 `engineering-db` 当前最明显的类型断裂点收口到了两条主线：
@@ -1106,3 +2658,71 @@
 ### 当前阶段结论
 
 这次 follow-up 属于典型的“修掉上一批错误后露出的下一个编译断点”。当前已经按最小边界清除 `linear-barcode-mgmt.tsx` 的未使用类型导入，并确认完整 TypeScript 编译重新通过。
+
+## 2026-04-12 - impl：716 工程 template / product type 模块接入全局码规范化（第一批）
+
+### 本轮目标
+
+恢复此前已规划的 `716` 主线，先把工程主数据里更核心的标识字段边界收口：
+
+1. `ProductTemplate.code`
+2. `ProductTemplate.componentKey`
+3. `ProductType.code`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/tabs/template-mgmt.tsx`
+3. `src/features/engineering/hooks/use-product-template-write-actions.ts`
+4. `src/features/engineering/services/product-template-service.ts`
+5. `src/features/engineering/adapters/product-template-api-adapter.ts`
+6. `src/features/engineering/components/product-type-action-dialog.tsx`
+7. `src/features/engineering/services/product-type-service.ts`
+8. `src/features/engineering/adapters/product-type-api-adapter.ts`
+
+### 实现细节
+
+1. **新增 engineering 内部统一规范化 helper**
+   - 新增 `product-code-normalization.ts`
+   - 提供：
+     - `normalizeEngineeringTemplateCode(...)`
+     - `normalizeEngineeringTemplateComponentKey(...)`
+     - `normalizeProductTemplateInput(...)`
+     - `normalizeProductTemplateEntity(...)`
+     - `normalizeEngineeringProductTypeCode(...)`
+     - `normalizeProductTypeInput(...)`
+     - `normalizeProductTypeEntity(...)`
+
+2. **收口 template 输入边界与保存边界**
+   - `template-mgmt.tsx` 不再直接散落调用 `normalizeMachineCode` / `normalizeComponentKey`
+   - 改为复用统一 helper 处理：
+     - 编辑态回填
+     - 输入时规范化
+     - 提交前规范化
+   - `use-product-template-write-actions.ts`、`product-template-service.ts`、`product-template-api-adapter.ts` 统一复用同一 helper，避免继续重复拼装规则
+
+3. **收口 product type 输入边界与保存边界**
+   - `product-type-action-dialog.tsx` 改为复用统一 helper 处理：
+     - 编辑态回填
+     - 自动生成 code
+     - 手输 code
+     - 提交前规范化
+   - `product-type-service.ts`、`product-type-api-adapter.ts` 也统一改为复用同一 helper
+
+### 当前阶段结论
+
+这一步没有去重写整条工程主数据链路，而是先把 `template / product type` 中原本散落在页面、dialog、service、adapter 里的码规范化逻辑抽成了 engineering 内部统一 helper。这样做的收益是：
+
+1. 工程主数据核心标识字段开始具备单一规范入口
+2. 输入边界与保存边界不再各自拼一套局部规则
+3. 后续若继续推进 `715` / `714`，可以沿用同样的“领域内 helper + 边界接入”模式
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。

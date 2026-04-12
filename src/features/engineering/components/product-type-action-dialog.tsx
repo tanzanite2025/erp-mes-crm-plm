@@ -26,12 +26,15 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
 import { ProductTypeService } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
 import { type SaveProductTypeInput } from '../mutation-types'
+import {
+  normalizeEngineeringProductTypeCode,
+  normalizeProductTypeEntity,
+} from '../utils/product-code-normalization'
 
 const logger = createLogger('ProductTypeActionDialog')
 
@@ -105,8 +108,7 @@ export function ProductTypeActionDialog({
 
       if (isEdit && currentRow) {
         form.reset({
-          ...currentRow,
-          code: normalizeMachineCode(currentRow.code),
+          ...normalizeProductTypeEntity(currentRow),
           parentId: currentRow.parentId || 'root',
           templateId: currentRow.templateId || 'none',
         })
@@ -146,7 +148,7 @@ export function ProductTypeActionDialog({
     )
 
     if (tokens.length > 0) {
-      form.setValue('code', normalizeMachineCode(Array.from(new Set(tokens)).join('-')), {
+      form.setValue('code', normalizeEngineeringProductTypeCode(Array.from(new Set(tokens)).join('-')), {
         shouldValidate: true,
       })
     }
@@ -184,8 +186,7 @@ export function ProductTypeActionDialog({
 
     try {
       const submissionData: SaveProductTypeInput = {
-        ...values,
-        code: normalizeMachineCode(values.code),
+        ...normalizeProductTypeEntity(values),
         id: values.id || currentRow?.id,
         createdAt: values.createdAt || currentRow?.createdAt || new Date().toISOString(),
         parentId: values.parentId === 'root' ? undefined : values.parentId || undefined,
@@ -285,7 +286,7 @@ export function ProductTypeActionDialog({
                         className='h-12 rounded-2xl bg-muted/50 border-none font-mono font-bold'
                         {...field}
                         value={field.value || ''}
-                        onChange={(event) => field.onChange(normalizeMachineCode(event.target.value))}
+                        onChange={(event) => field.onChange(normalizeEngineeringProductTypeCode(event.target.value))}
                       />
                     </FormControl>
                     <FormMessage />

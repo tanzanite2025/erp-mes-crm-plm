@@ -27,13 +27,17 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
-import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { SPEC_COMPONENTS } from '../components/specs'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { type ProductTemplate } from '../data/schema'
 import { useProductTemplateWriteActions } from '../hooks/use-product-template-write-actions'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
 import { productTemplateService } from '../services/product-template-service'
+import {
+  normalizeEngineeringTemplateCode,
+  normalizeEngineeringTemplateComponentKey,
+  normalizeProductTemplateEntity,
+} from '../utils/product-code-normalization'
 import { createProductTemplateDraft } from '../utils/default-builders'
 
 function getErrorMessage(error: unknown) {
@@ -50,7 +54,7 @@ export function TemplateMgmt() {
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
     queryFn: () => productTemplateService.getTemplates(),
   })
-  const templates = templatesQuery.data ?? []
+  const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data])
   const error = templatesQuery.error
 
   const componentLabels = useMemo(
@@ -87,11 +91,7 @@ export function TemplateMgmt() {
   }
 
   const handleEdit = (template: ProductTemplate) => {
-    setEditingTemplate({
-      ...template,
-      code: normalizeMachineCode(template.code),
-      componentKey: normalizeComponentKey(template.componentKey) as ProductTemplate['componentKey'],
-    })
+    setEditingTemplate(normalizeProductTemplateEntity(template))
     setIsDialogOpen(true)
   }
 
@@ -111,7 +111,7 @@ export function TemplateMgmt() {
   }
 
   const handleSubmit = async () => {
-    if (!editingTemplate?.name || !normalizeMachineCode(editingTemplate?.code)) {
+    if (!editingTemplate?.name || !normalizeEngineeringTemplateCode(editingTemplate?.code)) {
       toast.error(t('engineering.templateMgmt.toasts.required'))
       return
     }
@@ -119,11 +119,7 @@ export function TemplateMgmt() {
     try {
       const isEdit = Boolean(editingTemplate.id)
       await saveTemplate({
-        formData: {
-          ...editingTemplate,
-          code: normalizeMachineCode(editingTemplate.code),
-          componentKey: normalizeComponentKey(editingTemplate.componentKey) as ProductTemplate['componentKey'],
-        },
+        formData: normalizeProductTemplateEntity(editingTemplate),
         currentRow: templates.find((item) => item.id === editingTemplate.id),
       })
       toast.success(
@@ -303,7 +299,7 @@ export function TemplateMgmt() {
                 value={editingTemplate?.code || ''}
                 onChange={(event) =>
                   setEditingTemplate((prev) =>
-                    prev ? { ...prev, code: normalizeMachineCode(event.target.value) } : null
+                    prev ? { ...prev, code: normalizeEngineeringTemplateCode(event.target.value) } : null
                   )
                 }
               />
@@ -319,7 +315,7 @@ export function TemplateMgmt() {
                     prev
                       ? {
                           ...prev,
-                          componentKey: normalizeComponentKey(value) as ProductTemplate['componentKey'],
+                          componentKey: normalizeEngineeringTemplateComponentKey(value),
                         }
                       : null
                   )

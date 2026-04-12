@@ -30,7 +30,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
-import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { type ChangeOrder } from '../data/schema'
@@ -39,6 +38,12 @@ import { CHANGE_ORDERS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
 import { buildChangeOrderDraft } from '../utils/default-builders'
+import {
+  normalizeChangeOrderInput,
+  normalizeEngineeringChangeOrderNo,
+  normalizeEngineeringRevisionNo,
+  normalizeEngineeringSiteCode,
+} from '../utils/product-code-normalization'
 
 const logger = createLogger('ChangeOrdersTab')
 
@@ -128,16 +133,12 @@ export function ChangeOrdersTab() {
     }
 
     try {
-      await saveChangeOrder({
+      await saveChangeOrder(normalizeChangeOrderInput({
         ...editingOrder,
         productId: editingOrder.productId?.trim() || undefined,
-        changeOrderNo: normalizeChangeOrderNo(editingOrder.changeOrderNo),
-        siteCode: normalizeSiteCode(editingOrder.siteCode),
-        revisionNo: normalizeRevisionNo(editingOrder.revisionNo),
-        isDefaultSite: !normalizeSiteCode(editingOrder.siteCode) || editingOrder.isDefaultSite,
         effectiveFrom: editingOrder.effectiveFrom || undefined,
         effectiveTo: editingOrder.effectiveTo || undefined,
-      })
+      }))
       setOpen(false)
       toast.success(t('engineering.changeOrders.toasts.saveSuccess'))
     } catch (error) {
@@ -284,7 +285,7 @@ export function ChangeOrdersTab() {
                 onChange={(event) =>
                   setEditingOrder((prev) => ({
                     ...prev,
-                    changeOrderNo: normalizeChangeOrderNo(event.target.value),
+                    changeOrderNo: normalizeEngineeringChangeOrderNo(event.target.value),
                   }))
                 }
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner'
@@ -359,7 +360,7 @@ export function ChangeOrdersTab() {
               <Input
                 value={editingOrder.siteCode || ''}
                 onChange={(event) => {
-                  const normalizedSiteCode = normalizeSiteCode(event.target.value)
+                  const normalizedSiteCode = normalizeEngineeringSiteCode(event.target.value)
                   setEditingOrder((prev) => ({
                     ...prev,
                     siteCode: normalizedSiteCode,
@@ -377,7 +378,7 @@ export function ChangeOrdersTab() {
                 onChange={(event) =>
                   setEditingOrder((prev) => ({
                     ...prev,
-                    revisionNo: normalizeRevisionNo(event.target.value),
+                    revisionNo: normalizeEngineeringRevisionNo(event.target.value),
                   }))
                 }
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner'

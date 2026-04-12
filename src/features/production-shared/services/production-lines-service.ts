@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import {
   toProductionLineContract,
   toProductionLineContracts,
@@ -13,6 +12,7 @@ import type {
   ProductionMessageApiDTO,
 } from '../contracts/production-resource-api-dto'
 import type { ProductionLine } from '../data/production-line'
+import { normalizeProductionLineEntity } from '../utils/production-code-normalization'
 
 export { PRODUCTION_LINES_UPDATED_EVENT } from './production-resource-sync'
 
@@ -31,10 +31,7 @@ export const productionLinesService = {
   },
 
   saveLine: async (line: ProductionLine, authCode?: string): Promise<ProductionLine> => {
-    const normalizedLine: ProductionLine = {
-      ...line,
-      code: normalizeMachineCode(line.code),
-    }
+    const normalizedLine = normalizeProductionLineEntity(line)
     const payload: SaveLinePayload = authCode ? { ...normalizedLine, authCode } : normalizedLine
     const res = await apiFetch<ProductionLineApiDTO>('/production/lines', {
       method: 'POST',

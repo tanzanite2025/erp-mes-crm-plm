@@ -9,7 +9,10 @@ import { type Product, type ProductType } from '../../data/schema'
 
 import { ImageIcon, X } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
+import {
+  normalizeProductModelCodeValue,
+  normalizeProductSkuValue,
+} from '../../utils/product-code-normalization'
 
 interface ProductBasicInfoProps {
     form: UseFormReturn<Product>
@@ -130,7 +133,7 @@ export function ProductBasicInfo({
                                         maxLength={2}
                                         readOnly={isEdit}
                                         onChange={(e) => {
-                                            field.onChange(normalizeModelCode(e.target.value))
+                                            field.onChange(normalizeProductModelCodeValue(e.target.value))
                                         }}
                                     />
                                 </FormControl>
@@ -209,7 +212,7 @@ export function ProductBasicInfo({
                                     <Input
                                         className='h-[42px] w-full text-[11px] bg-muted/20 border-none text-slate-400 cursor-not-allowed rounded-2xl font-mono px-4'
                                         {...field}
-                                        value={normalizeSku(isEdit ? field.value : skuPreview)}
+                                        value={normalizeProductSkuValue(isEdit ? field.value : skuPreview)}
                                         readOnly
                                         tabIndex={-1}
                                         placeholder={t('engineering.productMgmt.form.skuPlaceholder')}

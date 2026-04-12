@@ -1,9 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload } from '@/lib/delta/types'
-import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { buildProductTemplateDelta, toProductTemplateApiDTO, toProductTemplateContract } from '../adapters/product-template-api-adapter'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
+import { normalizeProductTemplateInput } from '../utils/product-code-normalization'
 
 import { type ProductTemplate } from '../data/schema'
 import { type SaveProductTemplateInput } from '../mutation-types'
@@ -16,14 +16,6 @@ let templateRequest: Promise<ProductTemplate[]> | null = null
 function invalidateTemplateCache() {
   templateCache = null
   templateRequest = null
-}
-
-function normalizeProductTemplateInput(template: SaveProductTemplateInput): SaveProductTemplateInput {
-  return {
-    ...template,
-    code: normalizeMachineCode(template.code),
-    componentKey: normalizeComponentKey(template.componentKey) as SaveProductTemplateInput['componentKey'],
-  }
 }
 
 export const productTemplateService = {
@@ -104,9 +96,10 @@ export const productTemplateService = {
   },
 
   sync: async (templates: ProductTemplate[]) => {
+    const normalizedTemplates = templates.map(normalizeProductTemplateInput)
     const result = await apiFetch<{ count: number }>('/engineering/templates/sync', {
       method: 'POST',
-      body: JSON.stringify(templates),
+      body: JSON.stringify(normalizedTemplates),
     })
     invalidateTemplateCache()
     return result

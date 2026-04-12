@@ -1,9 +1,9 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { type ProductType } from '../data/schema'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type SaveProductTypeInput } from '../mutation-types'
+import { normalizeEngineeringProductTypeCode } from '../utils/product-code-normalization'
 
 export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
   return {
@@ -11,7 +11,7 @@ export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
     parentId: dto.parentId || undefined,
     templateId: dto.templateId || undefined,
     name: dto.name,
-    code: normalizeMachineCode(dto.code),
+    code: normalizeEngineeringProductTypeCode(dto.code),
     description: dto.description || undefined,
     active: dto.active,
     sortOrder: dto.sortOrder ?? 0,
@@ -48,7 +48,7 @@ export function toProductTypeApiDTO(type: SaveProductTypeInput): ProductTypeApiD
     parentId: type.parentId ?? null,
     templateId: type.templateId ?? null,
     name: type.name || '',
-    code: normalizeMachineCode(type.code),
+    code: normalizeEngineeringProductTypeCode(type.code),
     description: type.description || '',
     active: type.active ?? true,
     sortOrder: type.sortOrder ?? 0,

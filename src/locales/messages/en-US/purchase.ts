@@ -3,6 +3,7 @@ export const purchase = {
     title: 'Purchase Management',
     suppliers: 'Suppliers',
     orders: 'Purchase Orders',
+    payables: 'Payables',
     logistics: 'Purchase Logistics',
   },
   suppliers: {
@@ -171,6 +172,25 @@ export const purchase = {
     deletionRatio: 'Deletion Ratio',
     complianceNote: 'Compliance Note',
     complianceText: 'Voiding purchase orders must follow the approval flow. System logs retain only the final status changes.',
+  },
+  payables: {
+    title: 'Purchase Payables',
+    description: 'Payables entry point for the purchase domain, reserved for payment progress, aging, and reconciliation views.',
+    summaryTotal: 'Outstanding Payables',
+    summaryOverdue: 'Overdue Amount',
+    summaryPending: 'Pending Payments',
+    tableTitle: 'Payables List',
+    tableDescription: 'Review payable ledgers, aging status, and open the detail dialog for payment registration and allocation.',
+    columns: {
+      documentNo: 'Document No.',
+      supplierName: 'Supplier',
+      invoiceAmount: 'Invoice Amount',
+      paidAmount: 'Paid',
+      outstandingAmount: 'Outstanding',
+      dueDate: 'Due Date',
+      agingBucket: 'Aging',
+      status: 'Status',
+    },
   },
   logistics: {
     title: 'Purchase Logistics',

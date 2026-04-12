@@ -4,7 +4,7 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type ProductAttributeOption } from '../data/schema'
 import { type SaveProductAttributeOptionInput } from '../mutation-types'
-import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
+import { buildProductAttributeOptionSaveInput } from '../utils/product-attribute-machine-value'
 
 export const ProductAttributeOptionService = {
   async getProductAttributeOptions(params?: {
@@ -24,11 +24,7 @@ export const ProductAttributeOptionService = {
   async saveProductAttributeOption(
     option: SaveProductAttributeOptionInput
   ): Promise<ProductAttributeOption> {
-    const normalizedOption: SaveProductAttributeOptionInput = {
-      ...option,
-      categoryKey: normalizeProductAttributeMachineValue(option.categoryKey),
-      value: normalizeProductAttributeMachineValue(option.value),
-    }
+    const normalizedOption = buildProductAttributeOptionSaveInput(option)
     const res = await apiFetch<ProductAttributeOption>('/engineering/product-attribute-options', {
       method: 'POST',
       body: JSON.stringify({

@@ -1,6 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import {
   toProductionProcessContracts,
   toProductionProcessContract,
@@ -12,6 +11,7 @@ import type {
   ProductionProcessStepsResponseApiDTO,
 } from '../contracts/production-resource-api-dto'
 import type { ProductionProcessStep } from '../data/production-process'
+import { normalizeProductionProcessStepEntity } from '../utils/production-code-normalization'
 
 export { PRODUCTION_PROCESSES_UPDATED_EVENT } from './production-resource-sync'
 
@@ -26,10 +26,7 @@ export const productionProcessesService = {
   },
 
   saveStep: async (step: ProductionProcessStep): Promise<ProductionProcessStep> => {
-    const normalizedStep: ProductionProcessStep = {
-      ...step,
-      code: normalizeMachineCode(step.code),
-    }
+    const normalizedStep = normalizeProductionProcessStepEntity(step)
     const res = await apiFetch<ProductionProcessStepApiDTO>('/production/processes', {
       method: 'POST',
       body: JSON.stringify(toSaveProductionProcessStepApiDTO(normalizedStep)),

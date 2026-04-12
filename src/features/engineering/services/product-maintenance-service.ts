@@ -13,12 +13,13 @@ import {
 import { type ProductApiDTO } from '../contracts/product-api-dto'
 import { type Product } from '../data/schema'
 import { type SaveProductInput } from '../mutation-types'
+import { normalizeSaveProductInput } from '../utils/product-code-normalization'
 
 const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'
 
 export const ProductMaintenanceService = {
   async createProduct(product: SaveProductInput): Promise<Product> {
-    const payload: SaveProductInput = { ...product, id: '', version: 1 }
+    const payload = normalizeSaveProductInput({ ...product, id: '', version: 1 })
     const res = await apiFetch<ProductApiDTO>('/engineering/products', {
       method: 'POST',
       body: JSON.stringify(toProductApiDTO(payload)),
@@ -32,7 +33,8 @@ export const ProductMaintenanceService = {
   },
 
   async patchProduct(current: Product, product: SaveProductInput): Promise<Product> {
-    const delta = buildProductDelta(current, product)
+    const normalizedProduct = normalizeSaveProductInput(product)
+    const delta = buildProductDelta(current, normalizedProduct)
     if (Object.keys(delta).length === 0) {
       return current
     }
@@ -64,19 +66,22 @@ export const ProductMaintenanceService = {
   },
 
   async saveProduct(product: SaveProductInput, current?: Product): Promise<Product> {
-    if (product.id) {
+    const normalizedProduct = normalizeSaveProductInput(product)
+
+    if (normalizedProduct.id) {
       if (!current) {
-        throw new Error(`[CRITICAL] Missing current product baseline for SDRTS patch on ${product.id}`)
+        throw new Error(`[CRITICAL] Missing current product baseline for SDRTS patch on ${normalizedProduct.id}`)
       }
-      return this.patchProduct(current, product)
+      return this.patchProduct(current, normalizedProduct)
     }
-    return this.createProduct(product)
+    return this.createProduct(normalizedProduct)
   },
 
   async bulkSyncProducts(products: SaveProductInput[]): Promise<{ status: string; count: number }> {
+    const normalizedProducts = products.map((product) => normalizeSaveProductInput(product))
     return apiFetch<{ status: string; count: number }>('/engineering/products/sync', {
       method: 'POST',
-      body: JSON.stringify(toBulkSyncProductsApiDTO(products)),
+      body: JSON.stringify(toBulkSyncProductsApiDTO(normalizedProducts)),
     })
   },
 

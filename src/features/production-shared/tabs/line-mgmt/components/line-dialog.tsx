@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ProductionLine } from '../types'
+import type { ProductionLine } from '../types'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
+import {
+  normalizeProductionLineCode,
+  normalizeProductionLineEntity,
+} from '../../../utils/production-code-normalization'
 
 interface LineDialogProps {
   isOpen: boolean
@@ -39,8 +43,8 @@ export function LineDialog({ isOpen, onOpenChange, editingLine, lines, onConfirm
 
   // 1. 初始化数据模板
   const initialData = useMemo<ProductionLine>(() => {
-    if (editingLine) return editingLine
-    return {
+    if (editingLine) return normalizeProductionLineEntity(editingLine)
+    return normalizeProductionLineEntity({
       id: '',
       code: '',
       name: '',
@@ -50,12 +54,21 @@ export function LineDialog({ isOpen, onOpenChange, editingLine, lines, onConfirm
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       segments: [],
-    }
+    })
   }, [editingLine])
 
   // 2. 引入 Delta Tracker 引擎
   const tracker = useDeltaTracker(initialData, isOpen)
   const { data: form, commit, isDirty } = tracker
+
+  const setForm = useCallback((updater: ProductionLine | ((prev: ProductionLine) => ProductionLine)) => {
+    if (typeof updater === 'function') {
+      const next = updater(form)
+      Object.assign(form, next)
+    } else {
+      Object.assign(form, updater)
+    }
+  }, [form])
 
   // 3. 自动生成编号逻辑
   const generateLineCode = (name: string) => {
@@ -72,15 +85,15 @@ export function LineDialog({ isOpen, onOpenChange, editingLine, lines, onConfirm
     const nextIndex = lines.length + 1
     const suffix = nextIndex.toString().padStart(3, '0')
 
-    return `${prefix.toLowerCase()}-${suffix}`
+    return normalizeProductionLineCode(`${prefix.toLowerCase()}-${suffix}`)
   }
 
   const handleNameChange = (val: string) => {
-    form.name = val
-    // 仅在新增模式下自动生成编号
-    if (!editingLine && val.trim()) {
-      form.code = generateLineCode(val)
-    }
+    setForm((prev) => ({
+      ...prev,
+      name: val,
+      code: !editingLine && val.trim() ? generateLineCode(val) : prev.code,
+    }))
   }
 
   const handleConfirm = () => {
@@ -165,7 +178,7 @@ export function LineDialog({ isOpen, onOpenChange, editingLine, lines, onConfirm
               placeholder={t('orgPersonnel.lineMgmt.dialog.descPlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/20 transition-all font-medium'
               value={form.description}
-              onChange={(e) => (form.description = e.target.value)}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
             />
           </div>
         </div>

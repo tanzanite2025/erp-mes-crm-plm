@@ -1,6 +1,27 @@
 export const tradingQueryKeys = {
   customers: (): readonly ['customers'] => ['customers'],
   customerList: (): readonly ['customers', 'list'] => ['customers', 'list'],
+  payableDetail: (id: string): readonly ['payables', string] => ['payables', id],
+  payableSearch: (
+    keyword: string,
+    status: string,
+    currency: string,
+    outstandingMin: string,
+    outstandingMax: string,
+    sortBy: string,
+    sortOrder: string
+  ): readonly ['payables', 'search', string, string, string, string, string, string, string] => [
+    'payables',
+    'search',
+    keyword,
+    status,
+    currency,
+    outstandingMin,
+    outstandingMax,
+    sortBy,
+    sortOrder,
+  ],
+  payables: (): readonly ['payables'] => ['payables'],
   purchaseOrderDetail: (id: string): readonly ['purchase-orders', string] => ['purchase-orders', id],
   purchaseOrders: (
     page: number,
@@ -12,6 +33,27 @@ export const tradingQueryKeys = {
     pageSize: number
   ): readonly ['purchase-returns', number, number] => ['purchase-returns', page, pageSize],
   purchaseReturnsRoot: (): readonly ['purchase-returns'] => ['purchase-returns'],
+  receivableDetail: (id: string): readonly ['receivables', string] => ['receivables', id],
+  receivableSearch: (
+    keyword: string,
+    status: string,
+    currency: string,
+    outstandingMin: string,
+    outstandingMax: string,
+    sortBy: string,
+    sortOrder: string
+  ): readonly ['receivables', 'search', string, string, string, string, string, string, string] => [
+    'receivables',
+    'search',
+    keyword,
+    status,
+    currency,
+    outstandingMin,
+    outstandingMax,
+    sortBy,
+    sortOrder,
+  ],
+  receivables: (): readonly ['receivables'] => ['receivables'],
   salesOrdersRoot: (): readonly ['sales-orders'] => ['sales-orders'],
   salesOrders: (
     page: number,

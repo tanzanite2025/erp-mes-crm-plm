@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -25,10 +25,15 @@ import {
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import {
+  buildProductAttributeCategorySaveInput,
+  buildProductAttributeOptionSaveInput,
   findProductAttributeMachineValueConflict,
+  findProductAttributeOptionConflictInCategory,
   getProductAttributeMachineValueFormatHint,
   isValidProductAttributeMachineValue,
   normalizeProductAttributeMachineValue,
+  normalizeProductAttributeCategoryInputKey,
+  normalizeProductAttributeOptionInputValue,
 } from '../utils/product-attribute-machine-value'
 
 const EMPTY_CATEGORY_FORM: SaveProductAttributeCategoryInput = {
@@ -80,30 +85,26 @@ export function ProductAttributesMgmt() {
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
     queryFn: () => ProductAttributeOptionService.getProductAttributeOptions(),
   })
-  const categories = categoriesQuery.data ?? []
-  const options = optionsQuery.data ?? []
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
+  const options = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data])
   const error = categoriesQuery.error ?? optionsQuery.error
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      setSelectedCategoryKey('')
-      return
-    }
-
-    setSelectedCategoryKey((prev) =>
-      prev && categories.some((item) => item.key === prev) ? prev : categories[0].key
-    )
-  }, [categories])
+  const effectiveSelectedCategoryKey = useMemo(() => {
+    if (categories.length === 0) return ''
+    return selectedCategoryKey && categories.some((item) => item.key === selectedCategoryKey)
+      ? selectedCategoryKey
+      : categories[0].key
+  }, [categories, selectedCategoryKey])
 
   const selectedCategory = useMemo(
-    () => categories.find((item) => item.key === selectedCategoryKey) || null,
-    [categories, selectedCategoryKey]
+    () => categories.find((item) => item.key === effectiveSelectedCategoryKey) || null,
+    [categories, effectiveSelectedCategoryKey]
   )
 
   const filteredOptions = useMemo(() => {
-    if (!selectedCategoryKey) return []
-    return options.filter((item) => item.categoryKey === selectedCategoryKey)
-  }, [options, selectedCategoryKey])
+    if (!effectiveSelectedCategoryKey) return []
+    return options.filter((item) => item.categoryKey === effectiveSelectedCategoryKey)
+  }, [options, effectiveSelectedCategoryKey])
 
   const optionCountByCategory = useMemo(() => {
     const counts = new Map<string, number>()
@@ -127,7 +128,7 @@ export function ProductAttributesMgmt() {
   }
 
   const openCreateCategory = () => {
-    setCurrentCategory(EMPTY_CATEGORY_FORM)
+    setCurrentCategory(normalizeProductAttributeCategoryInputKey(EMPTY_CATEGORY_FORM))
     setCategoryDialogOpen(true)
   }
 
@@ -137,11 +138,11 @@ export function ProductAttributesMgmt() {
   }
 
   const openCreateOption = () => {
-    if (!selectedCategoryKey) {
+    if (!effectiveSelectedCategoryKey) {
       toast.error(locale === 'zh-CN' ? '请先创建并选择分类' : 'Please create and select a category first')
       return
     }
-    setCurrentOption({ ...EMPTY_OPTION_FORM, categoryKey: selectedCategoryKey })
+    setCurrentOption(normalizeProductAttributeOptionInputValue({ ...EMPTY_OPTION_FORM, categoryKey: effectiveSelectedCategoryKey }))
     setOptionDialogOpen(true)
   }
 
@@ -174,13 +175,10 @@ export function ProductAttributesMgmt() {
       return
     }
 
-    const nextCategory: SaveProductAttributeCategoryInput = {
+    const nextCategory = buildProductAttributeCategorySaveInput({
       ...currentCategory,
       key: currentCategory.id ? currentCategory.key : normalizedKey,
-      nameZh: currentCategory.nameZh?.trim(),
-      nameEn: currentCategory.nameEn?.trim(),
-      description: currentCategory.description?.trim(),
-    }
+    })
 
     try {
       await saveCategory(nextCategory)
@@ -204,25 +202,22 @@ export function ProductAttributesMgmt() {
       return
     }
 
-    const optionConflict = options.find((item) => {
-      if (currentOption.id && item.id === currentOption.id) {
-        return false
-      }
-      return item.categoryKey === currentOption.categoryKey && normalizeProductAttributeMachineValue(item.value) === normalizedValue
-    })
+    const optionConflict = findProductAttributeOptionConflictInCategory(
+      options,
+      currentOption.categoryKey,
+      normalizedValue,
+      currentOption.id
+    )
     if (optionConflict) {
       toast.error(locale === 'zh-CN' ? '该分类下的分类项值重复，请使用新的机器值' : 'Option value already exists in this category. Please use a different machine value.')
       return
     }
 
-    const nextOption: SaveProductAttributeOptionInput = {
+    const nextOption = buildProductAttributeOptionSaveInput({
       ...currentOption,
       categoryKey: currentOption.categoryKey,
       value: currentOption.id ? currentOption.value : normalizedValue,
-      labelZh: currentOption.labelZh?.trim(),
-      labelEn: currentOption.labelEn?.trim(),
-      description: currentOption.description?.trim(),
-    }
+    })
 
     try {
       await saveOption(nextOption)
@@ -265,7 +260,7 @@ export function ProductAttributesMgmt() {
 
       <ProductAttributeSummaryGrid
         categories={groupedCounts}
-        selectedCategoryKey={selectedCategoryKey}
+        selectedCategoryKey={effectiveSelectedCategoryKey}
         locale={locale}
         getLocalizedCategoryName={getLocalizedCategoryName}
         onSelectCategory={setSelectedCategoryKey}

@@ -1,3 +1,1468 @@
+### 1. plan：销售应收 / 采购应付低耦合 Tab 架构演进
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前系统已经具备：
+
+1. 销售管理模块级 Tab 宿主：`src/features/trading/tabs.ts`
+2. 采购管理模块级 Tab 宿主：`src/features/purchase/tabs.ts`
+3. 财务基础配置模块：`src/features/finance/tabs.ts`
+4. 后端财务凭证骨架：`server/models/finance_voucher.go`
+
+但当前仍缺少：
+
+1. 销售应收（AR）业务视图
+2. 采购应付（AP）业务视图
+3. 独立于订单页与凭证骨架之外的 AR/AP 领域边界
+
+本轮目标不是立即编码，而是先确定一个满足以下要求的演进方案：
+
+1. 销售管理内新增 `应收` Tab
+2. 采购管理内新增 `应付` Tab
+3. 代码物理隔离，尽量避免与现有销售单 / 采购单页面耦合
+4. 为后续财务一体化留出演进空间
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前入口结构已经支持低风险 Tab 注入
+
+现状表明：
+
+1. 销售管理当前通过 `getTradingTabs(t)` 组织模块页签
+2. 采购管理当前通过 `getPurchaseTabs(t)` 组织模块页签
+3. 采购模块宿主 `src/features/purchase/index.tsx` 已采用 `ModuleTabbedLayout`
+
+这意味着新增 `应收 / 应付` Tab 在壳层接入上是顺势扩展，而不是结构性重写。
+
+##### 1.2.2 当前 `finance-management` 不适合作为 AR/AP 首落点
+
+当前 `src/features/finance/tabs.ts` 主要承载：
+
+1. `payment-methods`
+2. `payment-terms`
+3. `currency-rates`
+4. `taxation`
+
+其职责更接近财务基础配置中心，而不是业务往来结算中心。
+
+因此本轮不建议：
+
+1. 直接把销售应收 / 采购应付页面挂进 `finance-management`
+2. 让业务往来页面与支付方式、账期、税率配置混在同一层级
+
+##### 1.2.3 当前 `voucher` 只能作为相邻能力，不能直接替代 AR/AP 主模型
+
+当前后端已有：
+
+1. `FinancialVoucher`
+2. `ClearingEntry`
+3. `GET /api/v1/vouchers` 只读查询骨架
+
+但其语义更接近：
+
+1. 会计凭证头
+2. 会计分录明细
+3. 业务事件触发后的财务结果
+
+而不是：
+
+1. 应收主记录
+2. 应付主记录
+3. 结算状态与账龄过程
+
+因此本轮结论是：
+
+1. `voucher` 可以作为后续关联能力
+2. 但不应直接被拿来充当 AR/AP 的 source of truth
+
+#### 1.3 推荐实施策略
+
+##### 1.3.1 入口挂业务模块，代码隔离为独立子域
+
+推荐方案：
+
+1. 在销售管理中新增 `应收` Tab
+2. 在采购管理中新增 `应付` Tab
+3. 但实现代码不写入现有 `sales-orders` / `purchase-order-*` 文件
+
+##### 1.3.2 第一阶段目录建议
+
+第一阶段更建议采用：
+
+1. `src/features/trading/receivables/`
+2. `src/features/trading/payables/`
+
+并在子域内拆分：
+
+1. `contracts/`
+2. `adapters/`
+3. `services/`
+4. `hooks/`
+5. `components/`
+6. `tabs/` 或 `routes/`
+
+这样做的目的，是让 Tab 页面只承担宿主与编排职责，而不是成为新的巨型文件。
+
+##### 1.3.3 数据 authority 边界
+
+本轮推荐明确以下边界：
+
+1. 前端不计算应收余额
+2. 前端不计算应付余额
+3. 前端不计算账龄 / 逾期
+4. 订单模块不拥有 AR/AP 状态机
+5. AR/AP 需由后端输出权威聚合字段
+
+##### 1.3.4 与订单、财务、凭证的关系
+
+建议关系模型为：
+
+1. 订单：来源单据
+2. AR/AP：业务往来记录
+3. Voucher：会计结果
+
+三者应保持关联，而不是互相替代。
+
+#### 1.4 预计涉及文件
+
+若后续进入实施，预计优先涉及：
+
+1. `src/features/trading/tabs.ts`
+2. `src/features/purchase/tabs.ts`
+3. `src/features/trading/receivables/**`
+4. `src/features/trading/payables/**`
+5. `src/routes/_authenticated/trading/**`
+6. `src/routes/_authenticated/purchase/**`
+7. 可能新增后端 AR/AP 查询 handler / service / dto / route 文件
+
+若后端暂未落地完整写操作，本阶段更适合先做只读查询与统计视图。
+
+#### 1.4A 当前后端 authority 缺口（新增）
+
+在继续推进“真实后端 AR/AP 查询接口”时，新增排查发现当前后端虽然已经具备：
+
+1. 销售单 / 采购单主数据
+2. `PaymentTerm` / `PaymentMethod` 基础配置
+3. `FinancialVoucher` / `ClearingEntry` 凭证结果模型
+
+但仍然缺少以下关键领域对象：
+
+1. 独立 `Receivable` 主记录
+2. 独立 `Payable` 主记录
+3. 收款登记记录
+4. 付款登记记录
+5. 核销 / 结算过程记录
+
+这意味着当前如果直接实现“真实 AR/AP API”，会面临一个语义风险：
+
+1. 把订单误当 AR/AP 主模型
+2. 把 voucher 误当 AR/AP 主模型
+3. 把支付条款配置误当成业务往来余额 authority
+
+以上三种做法都不符合本方案最初确立的边界。
+
+#### 1.4B 严格后端模型建议（新增）
+
+若要让 AR/AP 成为真正可演进的后端 authority，建议至少拆出三层模型：
+
+##### 1.4B.1 往来主记录层
+
+1. `ReceivableLedger` 或等价应收主表
+2. `PayableLedger` 或等价应付主表
+
+建议核心字段包括：
+
+1. `id`
+2. `ledgerNo`
+3. `sourceType`
+4. `sourceRefId`
+5. `counterpartyId`
+6. `counterpartyName`
+7. `currency`
+8. `originalAmount`
+9. `settledAmount`
+10. `outstandingAmount`
+11. `dueDate`
+12. `status`
+13. `version`
+
+其中：
+
+1. `sourceType/sourceRefId` 用于关联订单、入库、出库或后续其他业务来源
+2. `outstandingAmount` 应由后端按结算记录聚合得出
+3. `status` 应由后端根据余额与结算进度控制，而不是前端拼装
+
+##### 1.4B.2 结算记录层
+
+1. `ReceiptRecord` 收款记录
+2. `PaymentRecord` 付款记录
+
+建议核心字段包括：
+
+1. `id`
+2. `recordNo`
+3. `ledgerId`
+4. `amount`
+5. `currency`
+6. `paymentMethod`
+7. `paymentTerm`
+8. `recordDate`
+9. `status`
+10. `referenceNo`
+
+其职责是表达：
+
+1. 实际收了多少钱
+2. 实际付了多少钱
+3. 发生在什么时候
+4. 当前是否已确认 / 已冲销 / 已作废
+
+##### 1.4B.3 核销关联层
+
+若未来允许一笔收款对应多笔应收，或一笔付款对应多笔应付，则建议再增加：
+
+1. `SettlementAllocation`
+2. 或等价的核销分摊明细表
+
+建议职责包括：
+
+1. 记录 `ledgerId`
+2. 记录 `receiptRecordId / paymentRecordId`
+3. 记录分配金额
+4. 记录冲销顺序 / 备注 / 操作人
+
+这样才能支持后续：
+
+1. 部分核销
+2. 多单合并结算
+3. 一单多次收款 / 付款
+4. 可审计的账龄与余额回溯
+
+#### 1.4C 与 voucher 的正确关系（新增）
+
+在严格模型下，建议职责关系明确为：
+
+1. 订单：来源单据
+2. AR/AP Ledger：业务往来余额 authority
+3. Receipt / Payment / Allocation：结算过程 authority
+4. Voucher：会计记账结果
+
+也就是说：
+
+1. voucher 可以引用 ledger 或 settlement record
+2. 但 voucher 不应反向充当 ledger 本身
+3. 账龄、逾期、未结余额应优先从 ledger + settlement 聚合，而不是从 voucher 倒推
+
+#### 1.4D 过渡方案的使用前提（新增）
+
+若业务必须先尽快提供“可看的真实接口”，则可以讨论一个**临时后端投影视图**方案，但必须同时满足以下前提：
+
+1. 明确标注该接口是 `projection` 或 `snapshot`
+2. 明确它不是最终 AR/AP authority 模型
+3. 不允许把该投影视图继续扩写为写接口基础
+4. 后续一旦独立 ledger 落地，projection 接口必须迁移到底层真实 AR/AP 模型
+
+换言之，投影视图只能是临时桥接层，不能成为事实上的永久主模型。
+
+#### 1.4E 方案 A：SettlementAllocation 核销分摊阶段（新增）
+
+在已经落地：
+
+1. `ReceivableLedger / PayableLedger`
+2. `ReceiptRecord / PaymentRecord`
+3. 列表 / 详情 / 最小登记骨架
+
+之后，下一阶段若选择 **方案 A**，则重点不再是继续增加“单台账直接回写 settledAmount”的简单登记，而是把登记记录与实际核销分摊关系拆开，正式引入 `SettlementAllocation`。
+
+##### 1.4E.1 本阶段目标
+
+本阶段目标应明确为：
+
+1. 一笔 `ReceiptRecord` 可以分摊到多笔 `ReceivableLedger`
+2. 一笔 `PaymentRecord` 可以分摊到多笔 `PayableLedger`
+3. 分摊结果必须在一个事务中同时回写：
+   - allocation 明细
+   - ledger settled / outstanding
+   - ledger status
+4. 前端不再只提交“金额”，而是提交“登记记录 + allocation 明细”复合请求
+
+##### 1.4E.2 推荐请求语义
+
+建议把登记接口升级为：
+
+1. `CreateReceiptRecordRequest`
+   - 记录头字段
+   - `allocations[]`
+2. `CreatePaymentRecordRequest`
+   - 记录头字段
+   - `allocations[]`
+
+其中 allocation 项建议至少包括：
+
+1. `ledgerId`
+2. `allocatedAmount`
+3. `sequenceNo`
+4. `remark`
+
+这样可以避免当前“接口 URL 中已有 ledgerId，body 只传一个 amount”把登记与核销绑定死在单台账模型上。
+
+##### 1.4E.3 核心校验规则
+
+后端本阶段建议至少强制以下校验：
+
+1. `allocations` 不能为空
+2. 每条 `allocatedAmount > 0`
+3. `sum(allocations.allocatedAmount) == record.amount`
+4. 每个目标 ledger 必须存在且方向匹配
+5. 已结清 / 已作废 ledger 不允许再分摊
+6. 单条 allocation 不得超过该 ledger 当前 `outstandingAmount`
+7. 同一请求内若重复引用同一 ledger，应先聚合再校验，或直接判为非法
+
+##### 1.4E.4 同事务回写规则
+
+推荐事务步骤为：
+
+1. 创建 `ReceiptRecord / PaymentRecord`
+2. 创建所有 `SettlementAllocation`
+3. 按 allocation 聚合回写目标 ledger：
+   - `settledAmount += allocated`
+   - `outstandingAmount -= allocated`
+   - 按结果重算 `status`
+   - `version++`
+4. 若任一步失败，整体回滚
+
+##### 1.4E.5 状态与余额规则
+
+推荐本阶段状态规则：
+
+1. `outstandingAmount == 0` -> `SETTLED`
+2. `0 < outstandingAmount < originalAmount` -> `PARTIAL`
+3. 若先前已是 `OVERDUE` 且仍未结清 -> 维持 `OVERDUE`
+4. 不允许分摊后出现负数 `outstandingAmount`
+
+##### 1.4E.6 前端阶段边界
+
+前端本阶段建议只做**最小 allocation 编辑入口**：
+
+1. 允许在收款 / 付款弹层中编辑 allocation 列表
+2. 允许手工选择目标 ledger 与分摊金额
+3. 不在本阶段扩成完整对账工作台
+4. 不在前端计算最终权威余额，只展示后端回包结果
+
+##### 1.4E.7 风险与控制
+
+本阶段新增风险包括：
+
+1. **重复回写风险**
+   - 若同时保留旧的“单台账直接回写”路径与新的 allocation 路径，容易双写或语义混乱
+
+2. **金额不守恒风险**
+   - 若记录金额与 allocation 合计不一致，将直接破坏余额 authority
+
+3. **并发核销风险**
+   - 若两个请求同时分摊同一 ledger，可能导致 outstanding 被透支
+
+控制策略：
+
+1. 进入 allocation 阶段后，旧的单台账登记接口应收敛或转发为 allocation 单条明细模式
+2. 所有 allocation 写入必须在事务内完成
+3. 后端必须以最新 outstanding 为准做校验，必要时增加锁或版本防护
+
+##### 1.4E.8 推荐实施顺序
+
+建议实现顺序为：
+
+1. 改造后端请求 DTO 为 `record + allocations`
+2. 改造后端 service，真正落 `SettlementAllocation`
+3. 增加负向测试：
+   - amount 与 allocation 合计不一致
+   - allocation 超额
+   - ledger 不存在
+   - 已结清 ledger 重复分摊
+4. 最后再改前端弹层为 allocation 编辑模式
+
+#### 1.4F 远程搜索式台账选择器阶段（新增）
+
+在已经完成：
+
+1. allocation 编辑器
+2. 台账选择器
+3. allocation 历史按记录号分组
+4. 客户端搜索与历史筛选
+
+之后，下一阶段若继续提升可用性，重点不应再停留在“前端对已加载列表做过滤”，而应转向真正的远程搜索式台账选择器。
+
+##### 1.4F.1 本阶段目标
+
+本阶段目标建议明确为：
+
+1. 后端提供应收 / 应付 ledger 的远程搜索能力
+2. 前端在 allocation 选择器中使用 debounce 远程查询
+3. 候选项返回最小展示字段，不再强依赖前端全量列表缓存
+4. 保持既有收款 / 付款登记接口与 allocation 事务语义不变
+
+##### 1.4F.2 推荐接口形态
+
+推荐两种可选路径，优先建议 **独立 search 接口**：
+
+1. `GET /receivables/search`
+2. `GET /payables/search`
+
+建议查询参数至少包括：
+
+1. `keyword`
+2. `page`
+3. `pageSize`
+4. 必要时增加 `status`
+
+不建议直接复用现有列表接口承担完整远程搜索选择器职责，否则容易把列表页查询语义和选择器候选语义继续绑死在一起。
+
+##### 1.4F.3 推荐候选字段
+
+远程搜索候选项建议至少返回：
+
+1. `id`
+2. `documentNo`
+3. `partnerName`
+   - 应收为 `customerName`
+   - 应付为 `supplierName`
+4. `outstandingAmount`
+5. `status`
+6. `currency`
+
+必要时可额外返回：
+
+1. `dueDate`
+2. `sourceType`
+
+但本阶段不建议返回完整 detail payload，避免选择器接口被扩成详情接口替身。
+
+##### 1.4F.4 前端交互建议
+
+前端本阶段建议行为：
+
+1. 在 allocation 行中输入搜索词
+2. 经过 debounce 后触发远程请求
+3. 根据返回候选项展示：
+   - 单据编号
+   - 往来方
+   - 未结金额
+4. 选中后仅把 `ledgerId` 写入 allocation 行，同时保留展示名
+
+为避免误触发与频繁请求，建议：
+
+1. 搜索词长度达到阈值后再请求（如 2 字符）
+2. 输入为空时不主动请求，或只展示当前已选项
+3. 对重复关键词做最小缓存或依赖 React Query 缓存
+
+##### 1.4F.5 与当前实现的兼容边界
+
+本阶段建议保持：
+
+1. 不删除现有客户端过滤逻辑，优先作为兜底或过渡
+2. 不修改 allocation 历史分组展示的数据结构
+3. 不改变 `CreateReceiptRecord / CreatePaymentRecord` 的请求体
+4. 不顺手扩成完整“对账弹窗 + 分页候选表格”模式
+
+##### 1.4F.6 风险与控制
+
+本阶段新增风险包括：
+
+1. **接口语义分裂风险**
+   - 若列表接口与搜索接口字段不一致，前端容易出现两套展示映射
+
+2. **请求风暴风险**
+   - 若不做 debounce / 最小输入长度控制，输入过程中会产生高频请求
+
+3. **候选项 authority 漂移风险**
+   - 若候选项仍依赖前端缓存拼装展示名，而不是以后端返回最小展示字段为准，会继续保留展示漂移
+
+控制策略建议：
+
+1. 搜索接口返回统一候选结构
+2. 前端统一使用远程候选 DTO 做展示
+3. 搜索输入启用 debounce 与最小关键词阈值
+4. 保持登记提交仍只以 `ledgerId + allocatedAmount` 为权威入参
+
+##### 1.4F.7 推荐实施顺序
+
+建议实现顺序为：
+
+1. 新增后端 receivable / payable search DTO 与 service 查询
+2. 增加 handler 与 route 注册
+3. 补定向测试：
+   - 空关键词行为
+   - 关键词过滤
+   - 分页结果
+4. 前端新增远程搜索 hook / service
+5. 前端把当前选择器从本地过滤切到 debounce 远程查询
+6. 最后更新 walkthrough.md 与验证记录
+
+#### 1.4G 方向 1：远程搜索筛选增强（新增）
+
+在真正的远程搜索式台账选择器已经落地之后，下一阶段若继续增强，优先级更高的不是再改选择器形态，而是补足最常用的结构化筛选能力。
+
+##### 1.4G.1 本阶段目标
+
+本阶段目标建议明确为：
+
+1. 后端 search 接口支持更细粒度筛选条件
+2. 前端远程选择器可直接设置常用筛选
+3. 搜索结果在中等规模数据下更稳定、更可控
+4. 不改变现有 allocation 提交语义
+
+##### 1.4G.2 推荐筛选参数
+
+建议本阶段优先支持：
+
+1. `status`
+2. `currency`
+3. `outstandingMin`
+4. `outstandingMax`
+
+其中：
+
+1. `status` 用于限制只看 `OPEN / PARTIAL / OVERDUE / SETTLED`
+2. `currency` 用于跨币种场景快速收窄候选
+3. `outstandingMin / outstandingMax` 用于控制金额范围
+
+本阶段不建议直接上复杂表达式查询，避免把简单选择器提前扩成查询工作台。
+
+##### 1.4G.3 后端改动建议
+
+后端建议改动：
+
+1. 扩展 `LedgerSearchQuery`
+   - 增加 `Currency`
+   - 增加 `OutstandingMin`
+   - 增加 `OutstandingMax`
+2. 扩展 `SearchReceivableLedgers()`
+3. 扩展 `SearchPayableLedgers()`
+4. handler 解析并透传上述 query 参数
+
+过滤语义建议：
+
+1. `status` 精确匹配
+2. `currency` 精确匹配
+3. `outstandingMin` 使用 `>=`
+4. `outstandingMax` 使用 `<=`
+
+##### 1.4G.4 前端改动建议
+
+前端建议改动：
+
+1. 远程搜索 hook / service 接受结构化搜索参数，而不只是 `keyword`
+2. 详情弹层新增轻量筛选 UI：
+   - 状态下拉
+   - 币种输入或下拉
+   - 金额最小值
+   - 金额最大值
+3. 继续保留 debounce 关键词查询
+4. React Query key 需要纳入筛选参数，避免缓存串用
+
+##### 1.4G.5 风险与控制
+
+本阶段新增风险包括：
+
+1. **筛选状态膨胀风险**
+   - 若筛选字段过多，弹层会开始逼近“搜索面板”复杂度
+
+2. **缓存串用风险**
+   - 若 query key 未完整纳入筛选参数，可能导致候选结果错用缓存
+
+3. **参数解析不一致风险**
+   - 前后端若对空字符串、0、未传值的语义不一致，容易出现筛选偏差
+
+控制策略建议：
+
+1. 本轮仅支持最常用 4 个筛选项
+2. Query key 显式纳入全部筛选参数
+3. 后端对空值做统一归一化处理
+4. 金额区间校验保持宽松但可预测
+
+##### 1.4G.6 推荐实施顺序
+
+建议实现顺序为：
+
+1. 扩展后端 `LedgerSearchQuery` 与 search service 过滤逻辑
+2. 扩展 handler query 参数解析
+3. 增加后端定向测试：
+   - `status` 过滤
+   - `currency` 过滤
+   - `outstandingMin / outstandingMax` 过滤
+4. 扩展前端 search DTO / service / hook 参数结构
+5. 在应收 / 应付详情弹层接入筛选 UI
+6. 最后执行 `tsc --noEmit` 并更新 `walkthrough.md`
+
+#### 1.4H 下一阶段台账选择器增强：字典化下拉 + 服务端排序（新增）
+
+在远程搜索筛选增强已经完成之后，下一阶段更适合优先补足“可控输入”和“结果顺序可控”两件事，而不是马上切到独立搜索弹窗。
+
+##### 1.4H.1 分阶段建议
+
+建议拆分为：
+
+1. **本阶段**
+   - 状态 / 币种字典化下拉
+   - 服务端排序
+
+2. **下一阶段**
+   - 独立搜索弹窗
+
+原因是：前两项仍属于当前远程搜索选择器的自然增强，而独立弹窗会显著扩大交互状态、布局和结果承载复杂度。
+
+##### 1.4H.2 本阶段目标
+
+本阶段目标建议明确为：
+
+1. 把状态筛选从自由文本升级为受控下拉
+2. 把币种筛选从自由文本升级为受控下拉或受控候选集
+3. 后端 search 接口支持排序字段与排序方向
+4. 前端可显式切换排序方式，并保持远程查询缓存正确隔离
+
+##### 1.4H.3 状态 / 币种下拉建议
+
+建议本阶段采用轻量字典化方式：
+
+1. 状态候选
+   - `OPEN`
+   - `PARTIAL`
+   - `OVERDUE`
+   - `SETTLED`
+
+2. 币种候选
+   - 先以当前业务最常见币种集为主（如 `CNY`）
+   - 若项目已有统一币种字典，可直接复用
+
+本阶段不建议为此单独引入新的基础配置中心查询链路，避免把小增强升级成跨域改造。
+
+##### 1.4H.4 服务端排序建议
+
+后端 search 接口建议增加：
+
+1. `sortBy`
+2. `sortOrder`
+
+推荐首批允许字段：
+
+1. `updated_at`
+2. `outstanding_amount`
+3. `ledger_no`
+
+推荐排序方向：
+
+1. `asc`
+2. `desc`
+
+默认策略建议保持：
+
+1. `updated_at desc`
+
+并对可排序字段做白名单控制，避免将任意字段直接暴露为排序入口。
+
+##### 1.4H.5 前端改动建议
+
+前端建议改动：
+
+1. 详情弹层中的状态 / 币种筛选改为 `Select`
+2. 新增排序字段选择
+3. 新增排序方向选择
+4. Query key 纳入：
+   - `keyword`
+   - `status`
+   - `currency`
+   - `outstandingMin`
+   - `outstandingMax`
+   - `sortBy`
+   - `sortOrder`
+
+##### 1.4H.6 风险与控制
+
+本阶段新增风险包括：
+
+1. **字典来源漂移风险**
+   - 若状态/币种候选定义在多个文件，后续容易出现 UI 与后端枚举不一致
+
+2. **排序语义漂移风险**
+   - 若前后端对 `sortBy` 命名不统一，容易导致排序失效或默认回退
+
+3. **交互拥挤风险**
+   - 若在当前弹层顶部堆叠过多控件，可读性会下降
+
+控制策略建议：
+
+1. 前后端共识排序字段白名单
+2. 状态候选以 ledger 状态常量为准
+3. 币种候选先保持最小集合
+4. 保持独立搜索弹窗延期到下一阶段，不在本轮同时做大改
+
+##### 1.4H.7 独立搜索弹窗的处理建议
+
+独立搜索弹窗建议留到下一阶段，原因包括：
+
+1. 需要新的交互容器与打开/关闭状态管理
+2. 可能引入结果分页表格与行选择确认机制
+3. 会改变当前 allocation 行的交互路径
+
+因此本阶段不建议与排序/下拉一起做，避免把一次增强变成整套搜索工作台重构。
+
+#### 1.4I 币种下拉切换为系统动态来源（新增）
+
+在状态 / 币种字典化下拉已经落地之后，当前新的明确问题是：币种若继续停留在本地常量实现，会有和系统真实财务/字典配置脱节的风险。因此该项需要单独提升为专项治理，而不是继续视为“前端便利常量”。
+
+##### 1.4I.1 本阶段目标
+
+本阶段目标建议明确为：
+
+1. 找到系统内币种的真实 authority 来源
+2. 前端币种下拉改为动态读取该 authority
+3. 在字典加载失败或暂不可用时，提供明确兜底策略
+4. 不把整个 AR/AP 选择器流程绑死在静态币种常量上
+
+##### 1.4I.2 authority 判定原则
+
+本阶段必须先确认以下问题：
+
+1. 币种 authority 是财务块配置，还是主数据/字典配置
+2. 项目中是否已经存在可复用的币种接口或 hook
+3. 该来源是否具备：
+   - 权限保护
+   - 稳定返回结构
+   - 可缓存读取语义
+
+若系统内已经有统一币种来源，应优先复用，不再维护 AR/AP 本地常量副本。
+
+##### 1.4I.3 前端接入建议
+
+前端建议改动：
+
+1. 新增或复用“获取系统币种列表”的 service / hook
+2. 币种 `Select` 动态渲染选项
+3. 默认保留“全部币种”选项
+4. 若动态字典加载失败：
+   - 明确展示失败状态
+   - 允许用户继续使用不依赖币种筛选的搜索流程，避免整块不可用
+
+##### 1.4I.4 兜底策略建议
+
+本阶段建议明确兜底策略，而不是静默失败：
+
+1. **最佳情况**：动态字典加载成功，正常展示币种下拉
+2. **退化情况**：动态字典失败时，币种下拉禁用并提示“币种字典加载失败”
+3. **禁止做法**：失败后悄悄退回硬编码常量，并让用户误以为仍是系统真实配置
+
+也就是说，本阶段更重要的是保证语义正确，而不是无痕伪装成“似乎正常”。
+
+##### 1.4I.5 风险与控制
+
+本阶段新增风险包括：
+
+1. **authority 误判风险**
+   - 若接错币种来源，后续仍会出现系统配置与 AR/AP 选择器不一致
+
+2. **跨模块耦合风险**
+   - 若直接把 AR/AP 组件强耦合到某个财务大模块实现细节，后续复用性会变差
+
+3. **可用性回退风险**
+   - 若动态字典加载失败后没有明确兜底，选择器可能变得不可解释
+
+控制策略建议：
+
+1. 优先复用已有稳定字典接口 / hook
+2. 保持 AR/AP 侧只依赖“币种列表契约”，不依赖财务页面内部实现
+3. 对失败态做显式处理，不使用静默本地常量冒充系统配置
+
+##### 1.4I.6 推荐实施顺序
+
+建议实现顺序为：
+
+1. 定位现有系统币种 authority 与可复用接口
+2. 在前端新增/复用币种列表 hook
+3. 替换 AR/AP 详情弹层中的本地币种常量下拉
+4. 增加失败态 / 禁用态处理
+5. 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+#### 1.4J 独立搜索弹窗式台账选择器（新增）
+
+在远程搜索、筛选、排序与动态币种来源都已经具备之后，下一阶段更适合把“台账选择”从表单行内控件提升为独立搜索弹窗。这样可以避免继续在 allocation 行里堆叠过多控件，并为后续更复杂的候选展示留出空间。
+
+##### 1.4J.1 本阶段目标
+
+本阶段目标建议明确为：
+
+1. allocation 行可以通过独立入口打开台账搜索弹窗
+2. 弹窗内部承载远程搜索、筛选、排序与候选展示
+3. 用户确认单个候选后，将其回填到当前 allocation 行
+4. 不改变现有 allocation 提交协议
+
+##### 1.4J.2 推荐交互模型
+
+建议本阶段采用：
+
+1. **单选后确认**
+   - 用户先在弹窗中选择一条候选
+   - 再点击“确认选择”回填
+
+2. **非点击即回填**
+   - 避免用户浏览结果时误触导致 allocation 行被立即改写
+
+3. **可安全取消**
+   - 用户关闭弹窗时，不应影响当前 allocation 行已有值
+
+##### 1.4J.3 组件拆分建议
+
+建议拆为：
+
+1. 独立弹窗组件
+   - 如 `ledger-search-dialog.tsx` 或按应收/应付拆分的对等组件
+
+2. 详情弹层中的行内触发入口
+   - 当前 allocation 行不再直接承载完整搜索控件
+   - 改为“选择台账”按钮或触发器
+
+3. 结果展示区
+   - 建议使用表格或列表，展示：
+     - 台账编号
+     - 往来方
+     - 币种
+     - 未结金额
+     - 状态
+
+##### 1.4J.4 数据流建议
+
+建议数据流为：
+
+1. 详情弹层记录“当前正在编辑的 allocation 行序号”
+2. 打开弹窗时，把当前选中的 `ledgerId` 传给弹窗作为初始选中项
+3. 弹窗内部维护搜索词、筛选条件、排序条件与临时选中项
+4. 用户点击确认后：
+   - 回填当前 allocation 行的 `ledgerId`
+   - 关闭弹窗
+
+##### 1.4J.5 与当前实现的兼容边界
+
+本阶段建议保持：
+
+1. 不删除后端现有 search / filter / sort 能力
+2. 不修改 allocation 请求体结构
+3. 不在本轮实现多选
+4. 不在本轮实现批量回填多个 allocation 行
+5. 不把弹窗扩成完整对账工作台
+
+##### 1.4J.6 风险与控制
+
+本阶段新增风险包括：
+
+1. **状态管理复杂化风险**
+   - 弹窗打开状态、当前编辑行、临时选中项同时存在，容易串状态
+
+2. **回填误写风险**
+   - 若没有记录清楚“当前正在编辑的是哪一行”，可能把结果写错行
+
+3. **交互冗余风险**
+   - 若同时保留完整行内搜索器和完整弹窗搜索器，体验会重复且混乱
+
+控制策略建议：
+
+1. 详情弹层显式保存当前目标 `sequenceNo`
+2. 弹窗内部只维护临时选中项，不直接写外层 state
+3. 本轮优先以弹窗为主入口，行内仅保留最小展示与触发动作
+
+##### 1.4J.7 推荐实施顺序
+
+建议实现顺序为：
+
+1. 抽取独立搜索弹窗组件
+2. 抽取弹窗内部搜索/筛选/排序状态
+3. 在应收 / 应付详情弹层中接入行内触发入口
+4. 打通“打开弹窗 -> 选择 -> 确认 -> 回填 -> 关闭”的回填链路
+5. 最后执行 `pnpm exec tsc --noEmit` 并更新 `walkthrough.md`
+
+#### 1.4K 应收 / 应付页面样式纠偏与演示残留清理（新增）
+
+在功能链路逐步补齐之后，当前新增暴露的问题是：应收 / 应付两个页面仍保留早期“骨架已建立”的演示卡片，且整体视觉风格没有完全对齐项目中的通用工业风页面。这会直接造成“功能已完成但页面仍像演示壳层”的错误感知，因此需要单独作为纠偏阶段处理。
+
+##### 1.4K.1 当前问题确认
+
+目前已确认残留包括：
+
+1. `src/features/trading/receivables/tabs/sales-receivables-tab.tsx`
+   - 仍保留“销售应收骨架已建立”演示卡片
+
+2. `src/features/trading/payables/tabs/purchase-payables-tab.tsx`
+   - 仍保留“采购应付骨架已建立”演示卡片
+
+3. 本地化文案残留：
+   - `src/locales/messages/zh-CN/trading.ts`
+   - `src/locales/messages/zh-CN/purchase.ts`
+   - 以及对应英文文案中的 mock / placeholder 描述
+
+##### 1.4K.2 本阶段目标
+
+本阶段目标建议明确为：
+
+1. 应收 / 应付两个页面样式与其他通用页面完全对齐
+2. 删除演示卡片与“骨架已建立”过渡文案
+3. 删除 mock / placeholder 残留描述
+4. 保持页面以真实数据页面语义呈现，而非演示壳层语义
+
+##### 1.4K.3 视觉对齐要求
+
+本阶段应遵循 `GEMINI.md` 中的 UI 视觉规范（UDS 1.0）：
+
+1. 标题层级与字体风格对齐通用页面
+2. 卡片圆角、虚线边框、留白与阴影层级对齐
+3. 页面容器、统计卡片与列表区域的工业感风格统一
+4. 不再出现“临时演示块”式的大段说明卡片
+
+如项目中已有更成熟的标准页（例如使用统一 header / industrial header / action bar / card 结构的页面），应优先按现有成熟页面对齐，而不是自行再造第三种风格。
+
+##### 1.4K.4 清理范围建议
+
+建议清理：
+
+1. 页面底部演示卡片块
+2. locales 中的 `placeholderTitle`
+3. locales 中的 `placeholderDescription`
+4. locales 中仍在强调“当前使用 mock 数据结构验证边界”的描述文案
+
+同时应将表格区域说明改为真实页面语义，而不是开发阶段说明语义。
+
+##### 1.4K.5 风险与控制
+
+本阶段新增风险包括：
+
+1. **伪完成感风险**
+   - 若只删卡片但保留 mock/placeholder 语义文案，页面仍会传达错误状态
+
+2. **样式漂移风险**
+   - 若只对齐应收而应付未完全镜像，两个页面仍会出现视觉割裂
+
+3. **静默兜底风险**
+   - 若删除演示卡片后又改成静默空白页，会违反 `GEMINI.md` 的 fail loudly 原则
+
+控制策略建议：
+
+1. 应收 / 应付两个页面同步改造、同步验收
+2. 删除演示卡片的同时清理对应文案残留
+3. 若真实数据异常，保留明确错误或加载状态，不再用演示卡片伪装正常
+
+##### 1.4K.6 推荐实施顺序
+
+建议实现顺序为：
+
+1. 对齐应收 / 应付 tab 页容器、统计卡片和列表卡片样式
+2. 删除两个页面中的演示卡片块
+3. 清理本地化文案中的 mock / placeholder 残留
+4. 执行 `pnpm exec tsc --noEmit`
+5. 更新 `walkthrough.md`
+
+#### 1.5 风险与控制策略
+
+当前主要风险包括：
+
+1. **订单页耦合风险**
+   - 若直接把应收 / 应付写进现有订单大文件，会迅速形成新的复杂热点
+
+2. **领域错位风险**
+   - 若直接把 AR/AP 塞进 `finance-management`，会把基础配置中心与业务结算中心混在一起
+
+3. **authority 漂移风险**
+   - 若前端自行按订单金额推导余额、账龄、逾期，会重复过去的 authority 问题
+
+4. **后端语义偷换风险**
+   - 若在没有 ledger / settlement record 的情况下，直接把订单或 voucher 包装成正式 AR/AP API，会把临时结构偷换成长期主模型
+
+控制策略：
+
+1. Tab 只做宿主，不承载重聚合逻辑
+2. AR/AP 独立建子域目录
+3. 先只做只读查询链路，再评估收款/付款/核销写动作
+4. 后端若无独立 AR/AP 契约，不强行用 `voucher` 充当主模型
+5. 若必须走过渡接口，显式命名为 projection，并在规划层先确认
+
+#### 1.6 非目标边界
+
+本轮不做：
+
+1. 不直接修改现有销售单 / 采购单业务逻辑
+2. 不把 AR/AP 首版直接并入 `finance-management`
+3. 不在前端用订单金额拼装应收 / 应付 authority
+4. 不在本轮顺手实现核销、付款登记、账龄分析完整闭环
+5. 不把本轮扩大成整套财务中心重构
+
+#### 1.7 当前阶段结论
+
+当前更合理的演进方式，不是把“应收 / 应付”当成现有订单页里的附属面板，也不是直接把它们塞进 `finance-management`。更稳妥的路线是：入口继续挂在销售 / 采购业务模块中，但代码物理隔离为独立 AR/AP 子域；订单仍是来源单据，凭证仍是会计结果，而 AR/AP 作为中间的业务往来层单独建模。这样既满足“销售里有应收、采购里有应付”的使用习惯，也能最大程度避免后续实现时把订单页面继续做厚。
+
+进一步说，在已经开始尝试推进真实后端接口之后，当前新增发现是：后端还没有独立 AR/AP authority 所需的 ledger / settlement / allocation 三层模型。因此下一阶段不宜直接编码“正式 AR/AP API”，而应先把严格后端模型规划补齐并再次确认。等你确认之后，再决定第一版是直接落独立 AR/AP 表，还是接受一个被明确定义为 projection 的临时过渡接口。
+
+### 1. plan：BOM / ECO 控制字段接入全局码规范化
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+在完成：
+
+1. `717` Product 主数据字段 `sku / modelCode / templateKey` 收口
+2. `718` Product / ChangeOrder 变更控制字段 `revisionNo / siteCode / changeOrderNo` 收口
+
+之后，下一条最自然的相邻主线是继续收口 BOM/ECO 中的控制字段。本轮聚焦：
+
+1. `bomNo`
+2. `bomVersion`
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前已经存在的规则
+
+当前并不是完全没有规则，底层已经提供：
+
+1. `normalizeBomNo(...)`
+2. `normalizeBomVersion(...)`
+3. `deriveBomDisplayVersion(...)`
+
+并且已有部分边界接入：
+
+1. `schema.ts` 中 `bomVersion` 已有 `V1.0` 格式约束
+2. `use-bom-form.ts` 已在初始化值中使用 `bomVersion: 'V1.0'`
+3. `bom-mgmt.tsx` 提交前已手动规范化 `bomNo / bomVersion`
+4. `bom-service.ts` 已在保存边界做 trim 清洗
+
+##### 1.2.2 当前主要缺口
+
+当前真实问题不是“缺少规则”，而是“控制字段边界分散”：
+
+1. `bom-mgmt.tsx` 里提交前再次手动调用 `normalizeBomNo / normalizeBomVersion`
+2. `bom-service.ts` 当前仍以 trim 为主，没有提升为 BOM/ECO 控制字段统一 helper
+3. `use-bom-form.ts` 的默认值 / 初始化值与最终保存边界之间还没有共享统一 helper
+4. `bom-form-header.tsx` 当前主要是表单展示与 change order 回填，本轮不应顺手把整张表单一起重构
+
+#### 1.3 推荐实施策略
+
+本轮建议继续沿用前几轮的收口方式：
+
+1. 为 engineering 的 BOM/ECO 控制字段抽统一 helper
+2. 将 `bomNo / bomVersion` 作为一组控制字段治理，而不是粗暴归入普通 machine code
+3. 让 BOM 的默认值、初始化值、提交前 payload、service 保存边界统一复用该 helper
+4. 保持 `bomVersion` 的 `V1.0` 控制格式与显示语义，不破坏现有 displayVersion 口径
+
+#### 1.4 涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/utils/product-code-normalization.ts` 或相邻 engineering helper 文件
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/tabs/bom-mgmt.tsx`
+4. `src/features/engineering/services/bom-service.ts`
+5. 如必要再补 BOM 默认 builder / adapter 相关文件
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不扩到 BOM items / substitutes 的更大范围治理
+2. 不处理整个 BOM 表单所有控制字段
+3. 不顺手改 `ChangeOrder / Product` 已完成链路
+4. 不清理无关样式 warning
+
+#### 1.6 当前阶段结论
+
+`bomNo / bomVersion` 现在也属于“已有规则但没有领域入口”的状态。下一步最合理的方式，不是继续在 `use-bom-form / bom-mgmt / bom-service` 里散落补 `normalizeBomNo / normalizeBomVersion`，而是把它们提升成 engineering 域里的 BOM/ECO 控制字段 helper，让默认值、初始化值、保存边界统一共用一套口径。
+
+### 1. plan：Product / ChangeOrder 变更控制字段接入全局码规范化
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+在完成：
+
+1. `714` 生产共享资源机器码收口
+2. `715` 工程属性值机器值收口
+3. `716` 工程 template / product type 机器码收口
+4. `717` Product 主数据字段 `sku / modelCode / templateKey` 收口
+
+之后，下一条最自然的相邻主线是继续收口 engineering 中的**变更控制字段**。本轮聚焦：
+
+1. `revisionNo`
+2. `siteCode`
+3. `changeOrderNo`
+
+这些字段同时存在于：
+
+1. `Product`
+2. `ChangeOrder`
+3. 相邻的 BOM 表单引用链路
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前已经存在的规则
+
+当前并不是完全没有规则，底层已经提供：
+
+1. `normalizeRevisionNo(...)`
+2. `normalizeSiteCode(...)`
+3. `normalizeChangeOrderNo(...)`
+
+并且已有部分边界接入：
+
+1. `change-order-service.ts` 保存前已做规范化
+2. `default-builders.ts` 中 ChangeOrder draft 初始化已做规范化
+3. `product-api-adapter.ts` 中 Product DTO 边界已做规范化
+
+##### 1.2.2 当前主要缺口
+
+当前真实问题不是“缺少规则”，而是“控制字段边界分散”：
+
+1. `change-orders.tsx` 的输入层与保存前 payload 组装仍直接散落调用 lib codec
+2. `use-change-order-write-actions.ts` 又重复做了一层规范化
+3. Product 侧虽然已有 adapter 兜底，但还没有提升成 engineering 领域统一 helper
+4. BOM 表单目前主要是 trim 语义，不应在本轮顺手混入同一实施范围
+
+#### 1.3 推荐实施策略
+
+本轮建议延续前几轮的收口方式：
+
+1. 为 engineering 控制字段抽统一 helper
+2. 将 `revisionNo / siteCode / changeOrderNo` 作为一组“控制字段”治理，而不是粗暴归入普通 machine code
+3. 让 ChangeOrder 的 draft、输入边界、write actions、service 保存边界统一复用该 helper
+4. 让 Product 现有 adapter / 保存边界继续切到同一套 helper，避免直接散落调 lib codec
+
+#### 1.4 涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/utils/default-builders.ts`
+2. `src/features/engineering/tabs/change-orders.tsx`
+3. `src/features/engineering/hooks/use-change-order-write-actions.ts`
+4. `src/features/engineering/services/change-order-service.ts`
+5. `src/features/engineering/utils/product-code-normalization.ts` 或相邻 engineering helper 文件
+6. `src/features/engineering/adapters/product-api-adapter.ts`
+
+如实施时发现 Product 保存链路还有更权威 service 边界，也可最小补齐，但不扩散到无关 BOM 主线。
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不扩到 BOM 表单整体治理
+2. 不改 `title / description / name` 等展示或自由文本字段
+3. 不处理后端 handler / DTO 测试主线
+4. 不顺手清理无关样式 warning
+
+#### 1.6 当前阶段结论
+
+`Product / ChangeOrder` 的变更控制字段现在更像是“已有规则但没有领域入口”。下一步最合理的方式，不是继续在 tab、hook、service、adapter 里散落补 `normalizeRevisionNo / normalizeSiteCode / normalizeChangeOrderNo`，而是把它们正式提升为 engineering 控制字段 helper，让 Product 与 ChangeOrder 共享同一套边界口径。
+
+### 1. plan：714 生产共享资源模块接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在完成：
+
+1. `716` 工程 template / product type 机器码收口
+2. `715` 工程属性值机器值收口
+
+之后，当前“码规范化收口”主线的下一个自然模块是 `production-shared`。本轮关注的核心字段仍然是：
+
+1. `ProductionLine.code`
+2. `ProductionProcessStep.code`
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前已经存在的部分规范化边界
+
+当前并不是完全没有规范化，以下文件已经直接调用了 `normalizeMachineCode`：
+
+1. `src/features/production-shared/services/production-lines-service.ts`
+2. `src/features/production-shared/services/production-processes-service.ts`
+3. `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+
+##### 1.2.2 当前主要缺口
+
+当前更本质的问题不是“缺少规则”，而是“production-shared 模块内部缺少统一领域入口”：
+
+1. service 层做一次 `normalizeMachineCode`
+2. adapter 层再做一次 `normalizeMachineCode`
+3. `process-library-panel.tsx` 的输入、回填、提交前继续散落调用 `normalizeMachineCode`
+
+这意味着：
+
+1. 规则虽然存在
+2. 但边界没有像 `716` / `715` 一样收成领域内部 helper
+3. 后续若继续扩展 line / process 的更多入口，仍会重复复制规则
+
+#### 1.3 推荐实施策略
+
+本轮建议做与前两轮一致的收口方式：
+
+1. 在 `production-shared` 内新增统一 helper
+2. 为 `ProductionLine.code` / `ProductionProcessStep.code` 提供统一规范入口
+3. 让输入边界、service 保存边界、adapter DTO 边界统一复用该 helper
+4. 先只处理 `line.code / step.code`，不扩展到 `name / description / attributes`
+
+#### 1.4 涉及文件
+
+预计优先涉及：
+
+1. `src/features/production-shared/services/production-lines-service.ts`
+2. `src/features/production-shared/services/production-processes-service.ts`
+3. `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+4. `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+
+如实施中发现 `line` 的表单入口或 hook 调用方还有更权威边界，可按同主线最小补齐，但不扩散到无关 production 子模块。
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不处理 `production-resource-sync`
+2. 不扩展到 `name / description / attributes` 等非机器码字段
+3. 不顺手清理无关 UI / 样式 warning
+4. 不并行推进其他模块
+
+#### 1.6 当前阶段结论
+
+`714` 当前最合理的推进方式，不是再到处补 `normalizeMachineCode(...)`，而是像 `716` / `715` 一样，把 production-shared 中已存在但分散的机器码处理逻辑收成领域内部统一 helper。这样能让 line / process 的输入边界、保存边界、adapter 边界形成清晰一致的单一入口。
+
+### 1. plan：715 工程属性值模块接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+此前 `715` 已经作为候选主线被规划过，目标是把工程属性值模块的机器值字段纳入更稳定的规范化边界：
+
+1. `ProductAttributeCategory.key`
+2. `ProductAttributeOption.value`
+
+本次重新复核后，确认这个模块并不是完全没有规则，而是已经存在一套专用机器值规范。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前已有的专用规则
+
+模块内已经存在：
+
+1. `src/features/engineering/utils/product-attribute-machine-value.ts`
+
+其规则与此前 `716` 使用的大写机器码不同，特征包括：
+
+1. 允许小写字母、数字、连字符
+2. 空格与下划线折叠为 `-`
+3. 非法字符替换为 `-`
+4. 连续 `-` 折叠
+5. 最终统一为小写
+
+##### 1.2.2 当前问题本质：边界分散而非规则缺失
+
+当前这套规则已经出现在多个位置：
+
+1. `product-attribute-category-dialog.tsx` 输入时规范化 `key`
+2. `product-attribute-option-dialog.tsx` 输入时规范化 `value`
+3. `product-attribute-category-service.ts` 保存前规范化 `key`
+4. `product-attribute-option-service.ts` 保存前规范化 `categoryKey / value`
+5. `use-product-attribute-write-actions.ts` 再次重复规范化
+6. `product-attributes-mgmt.tsx` 还散落着校验、冲突判断、以及新建/编辑分支处理
+
+因此当前最主要的问题不是“没接入规则”，而是：
+
+1. 输入边界
+2. 保存边界
+3. 页面级校验/冲突检查
+
+三者还没有收成更清晰的统一入口。
+
+#### 1.3 推荐实施策略
+
+本轮建议继续保留 `product-attribute-machine-value` 这套专用规则，但把它收成工程属性值领域内更清晰的 helper 分层：
+
+1. 抽 category / option 的输入态规范 helper
+2. 抽 category / option 的保存态规范 helper
+3. 去重 `use-product-attribute-write-actions.ts` 中与 service 重复的规范化
+4. 收口 `product-attributes-mgmt.tsx` 中散落的新建态规范化、冲突判断与 payload 组装
+
+#### 1.4 涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/utils/product-attribute-machine-value.ts`
+2. `src/features/engineering/components/product-attributes/product-attribute-category-dialog.tsx`
+3. `src/features/engineering/components/product-attributes/product-attribute-option-dialog.tsx`
+4. `src/features/engineering/services/product-attribute-category-service.ts`
+5. `src/features/engineering/services/product-attribute-option-service.ts`
+6. `src/features/engineering/hooks/use-product-attribute-write-actions.ts`
+7. `src/features/engineering/tabs/product-attributes-mgmt.tsx`
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不把属性值专用规则粗暴替换为 `normalizeMachineCode`
+2. 不改 `labelZh / labelEn / name` 等展示字段
+3. 不扩散到非属性值 engineering 子模块
+4. 不同时推进 `714`
+
+#### 1.6 当前阶段结论
+
+`715` 现在最值得做的不是“补一个新的 normalize 函数”，而是把已经存在的 `product-attribute-machine-value` 规则正式收成工程属性值模块内部的清晰边界：输入态、保存态、冲突判断、payload 组装统一对齐，避免继续在 dialog、tab、write actions、service 之间重复散落。
+
+### 1. plan：716 第二批遗漏边界补齐
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+`716` 第一批已经完成 engineering 内部统一 helper 的抽取，并让以下链路接入：
+
+1. `template-mgmt.tsx`
+2. `use-product-template-write-actions.ts`
+3. `product-template-service.ts`
+4. `product-template-api-adapter.ts`
+5. `product-type-action-dialog.tsx`
+6. `product-type-service.ts`
+7. `product-type-api-adapter.ts`
+
+因此第二批目标不再是重做整条链路，而是补齐仍遗漏的边界与小型稳定性缺口。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前已基本完成的边界
+
+目前已确认 `ProductType.code` 相关高风险边界已经基本收口：
+
+1. dialog 输入边界
+2. 自动生成 code
+3. 提交前处理
+4. service 保存边界
+5. adapter DTO 边界
+
+当前暂未发现新的同等级高风险缺口。
+
+##### 1.2.2 第二批仍应补齐的遗漏点
+
+目前仍值得补齐的点主要集中在 `template`：
+
+1. `createProductTemplateDraft()` 新建草稿入口尚未显式复用 engineering 内部 helper
+2. `productTemplateService.sync(...)` 尚未统一规范 `code / componentKey` 后再发送
+3. `template-mgmt.tsx` 中 `templatesQuery.data ?? []` 仍会制造非稳定依赖 warning，可顺手收口为更稳定的引用
+
+#### 1.3 推荐实施策略
+
+本轮建议做最小补齐：
+
+1. 让 template draft builder 直接产出已规范化的初始值
+2. 让 template sync 发送前统一走 helper
+3. 把 `template-mgmt.tsx` 的 `templates` 引用稳定性顺手收口
+
+#### 1.4 涉及文件
+
+预计涉及：
+
+1. `src/features/engineering/utils/default-builders.ts`
+2. `src/features/engineering/services/product-template-service.ts`
+3. `src/features/engineering/tabs/template-mgmt.tsx`
+
+如发现 `template` 草稿创建权威点不在上述文件，再按同主线最小补齐，但不扩散到其他 engineering 子模块。
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不继续扩大到 `715` / `714`
+2. 不对 `product type` 已稳定边界重复改造
+3. 不顺手清理无关样式 warning
+4. 不重构 template UI 结构
+
+#### 1.6 当前阶段结论
+
+`716` 第二批更适合定义为“遗漏边界补齐”，而不是“新一轮大改造”。当前最有价值的补齐点集中在 template 新建草稿入口与 sync 保存边界，只要把这两个口也统一接到 engineering helper，上下游边界就会更完整。
+
+### 1. plan：恢复架构收口主线排查
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在第四十二轮至第四十四轮的架构收口过程中，已经先后完成或推进了：
+
+1. Version Guard 单源
+2. Service 出口 Runtime Contract 统一模式（首批样板）
+3. Go 测试 Schema 基线收口（首批 trading helper 样板）
+
+其后又临时处理了一组 TypeScript 编译阻塞，因此原本待继续推进的架构收口主线被打断。当前需要先重新确认：下一条最值得恢复实施的主线是哪一条。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前仍待继续推进的候选主线
+
+当前代码库中，已经有规划但尚未继续实施的主要候选包括：
+
+1. `716. architecture：工程 template / product type 模块接入全局码规范化`
+2. `715. architecture：工程属性值模块接入全局码规范化`
+3. `714. architecture：生产共享资源模块接入全局码规范化`
+
+##### 1.2.2 下一条最高优先级建议
+
+当前建议优先恢复 `716`，即：
+
+1. `ProductTemplate.code`
+2. `ProductType.code`
+3. `ProductTemplate.componentKey`
+
+这条主线比 `715` / `714` 更适合作为当前下一步，原因包括：
+
+1. 它更靠近工程主数据入口，而不是更下游子结构
+2. 当前已经存在局部散落规则（如页面内 `toUpperCase()`、基于名称派生 token），说明问题已真实存在但未收口
+3. 这些字段本身更像核心标识字段，统一规范化后收益更大
+4. 做完 `716` 后，再扩到 `715` / `714` 也更容易形成一致规则
+
+#### 1.3 推荐实施顺序
+
+建议按既有 `716` 规划继续推进：
+
+1. 先收口 template 页面输入边界
+2. 再收口 template service / adapter / write actions 保存边界
+3. 最后收口 product type dialog / service / adapter 保存边界
+
+#### 1.4 涉及文件范围（首批）
+
+预计优先涉及：
+
+1. `src/features/engineering/tabs/template-mgmt.tsx`
+2. `src/features/engineering/hooks/use-product-template-write-actions.ts`
+3. `src/features/engineering/components/product-type-action-dialog.tsx`
+4. `src/features/engineering/services/product-type-service.ts`
+5. `src/features/engineering/adapters/product-type-api-adapter.ts`
+
+如实施中发现 `template` 对应 service / adapter 另有更权威边界，可按同主线最小补齐，但不扩散到无关 engineering 子模块。
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不同时并行推进 `715` / `714`
+2. 不把 engineering 全模块字段一次性纳入规范化
+3. 不改 `name / description` 等展示字段
+4. 不顺带改无关 schema / adapter 风格问题
+
+#### 1.6 当前阶段结论
+
+当前最合理的恢复路径，是继续此前已经明确过的“码规范化收口”大方向，但把下一步优先级明确落在 `716`：先统一工程 template / product type 的核心标识字段边界，再根据结果评估是否继续推进 `715` 与 `714`。
+
 ### 1. plan：basic-settings 单点 TypeScript 编译阻塞修复
 
 日期：2026-04-12  

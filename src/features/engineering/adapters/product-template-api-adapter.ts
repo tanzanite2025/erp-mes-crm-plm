@@ -1,16 +1,19 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
-import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { type ProductTemplate } from '../data/schema'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
 import { type SaveProductTemplateInput } from '../mutation-types'
+import {
+  normalizeEngineeringTemplateCode,
+  normalizeEngineeringTemplateComponentKey,
+} from '../utils/product-code-normalization'
 
 export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTemplate {
   return {
     id: dto.id,
     name: dto.name,
-    code: normalizeMachineCode(dto.code),
-    componentKey: normalizeComponentKey(dto.componentKey) as ProductTemplate['componentKey'],
+    code: normalizeEngineeringTemplateCode(dto.code),
+    componentKey: normalizeEngineeringTemplateComponentKey(dto.componentKey),
     description: dto.description || '',
     active: dto.active,
     createdAt: dto.createdAt || new Date().toISOString(),
@@ -22,8 +25,8 @@ export function toProductTemplateApiDTO(template: SaveProductTemplateInput): Pro
   return {
     id: template.id || '',
     name: template.name || '',
-    code: normalizeMachineCode(template.code),
-    componentKey: normalizeComponentKey(template.componentKey) as ProductTemplateApiDTO['componentKey'],
+    code: normalizeEngineeringTemplateCode(template.code),
+    componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
     description: template.description || '',
     active: template.active ?? true,
     createdAt: template.createdAt,

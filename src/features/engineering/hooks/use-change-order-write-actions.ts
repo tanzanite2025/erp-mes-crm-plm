@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { type SaveChangeOrderInput } from '../mutation-types'
 import { CHANGE_ORDERS_QUERY_KEY } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
@@ -9,12 +8,7 @@ export function useChangeOrderWriteActions() {
 
   const saveChangeOrderMutation = useMutation({
     mutationFn: (changeOrder: SaveChangeOrderInput) =>
-      changeOrderService.saveChangeOrder({
-        ...changeOrder,
-        changeOrderNo: normalizeChangeOrderNo(changeOrder.changeOrderNo),
-        siteCode: normalizeSiteCode(changeOrder.siteCode),
-        revisionNo: normalizeRevisionNo(changeOrder.revisionNo),
-      }),
+      changeOrderService.saveChangeOrder(changeOrder),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CHANGE_ORDERS_QUERY_KEY })
     },

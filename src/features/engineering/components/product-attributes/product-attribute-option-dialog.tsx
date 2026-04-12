@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { type ProductAttributeCategory } from '../../data/schema'
 import { type SaveProductAttributeOptionInput } from '../../mutation-types'
-import { normalizeProductAttributeMachineValue } from '../../utils/product-attribute-machine-value'
+import { normalizeProductAttributeOptionInputValue } from '../../utils/product-attribute-machine-value'
 
 interface ProductAttributeOptionDialogProps {
   locale: string
@@ -58,7 +58,7 @@ export function ProductAttributeOptionDialog({
           </div>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>{locale === 'zh-CN' ? '值' : 'Value'}</Label>
-            <Input className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner disabled:cursor-not-allowed disabled:opacity-70' value={option.value || ''} disabled={Boolean(option.id)} onChange={(event) => onOptionChange((prev) => ({ ...prev, value: normalizeProductAttributeMachineValue(event.target.value) }))} />
+            <Input className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner disabled:cursor-not-allowed disabled:opacity-70' value={option.value || ''} disabled={Boolean(option.id)} onChange={(event) => onOptionChange((prev) => normalizeProductAttributeOptionInputValue({ ...prev, value: event.target.value }))} />
           </div>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>{locale === 'zh-CN' ? '中文名称' : 'Chinese label'}</Label>

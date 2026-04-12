@@ -3,6 +3,7 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { bomListSchema, bomSchema, type BOM, type BOMList } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
+import { normalizeBOMInput } from '../utils/product-code-normalization'
 
 const saveBOMSchema = bomSchema.omit({ bomDisplayVersion: true })
 
@@ -19,10 +20,9 @@ function trimToNull(value?: string | null) {
 }
 
 function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
+    const normalizedData = normalizeBOMInput(data)
     return saveBOMSchema.parse({
-        ...data,
-        bomNo: data.bomNo.trim(),
-        bomVersion: data.bomVersion.trim(),
+        ...normalizedData,
         description: trimToUndefined(data.description),
         revisionNo: trimToUndefined(data.revisionNo),
         changeOrderNo: trimToUndefined(data.changeOrderNo),

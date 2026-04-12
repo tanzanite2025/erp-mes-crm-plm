@@ -1,6 +1,11 @@
 import { type Product } from '../data/schema'
-import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS, upsertAttributeValue } from './product-attribute-utils'
+import {
+  deriveNormalizedProductSku,
+  normalizeProductModelCodeValue,
+  normalizeProductSkuValue,
+  normalizeProductTemplateKeyValue,
+} from './product-code-normalization'
 
 export interface ProductVariantSelection {
     level: string
@@ -24,7 +29,7 @@ export function buildDefaultProductValues(
         id: '',
         sku: '',
         name: '',
-        modelCode: '01',
+        modelCode: normalizeProductModelCodeValue('01'),
         typeId: '',
         depth: undefined,
         widthInternal: undefined,
@@ -46,17 +51,12 @@ export function buildDefaultProductValues(
         engineeringSpecId: '',
         attachments: [],
         version: includeVersion ? 1 : 1,
+        templateKey: normalizeProductTemplateKeyValue(''),
     }
 }
 
 export function deriveSku(typeCode: string, modelCode: string, versionLevel?: string): string {
-    const normalizedTypeCode = normalizeSku(typeCode)
-    const normalizedModelCode = normalizeModelCode(modelCode)
-    const normalizedVersionLevel = normalizeSku(versionLevel)
-    if (versionLevel) {
-        return normalizeSku(`${normalizedTypeCode}-${normalizedModelCode}-${normalizedVersionLevel}`)
-    }
-    return normalizeSku(`${normalizedTypeCode}-${normalizedModelCode}`)
+    return deriveNormalizedProductSku(typeCode, modelCode, versionLevel)
 }
 
 export function ensureSkuUnique(
@@ -65,7 +65,7 @@ export function ensureSkuUnique(
 ): SkuValidationResult {
     const seen = new Set<string>()
     for (const product of productsToSave) {
-        const sku = normalizeSku(product.sku)
+        const sku = normalizeProductSkuValue(product.sku)
         if (!sku) {
             return { ok: false, reason: 'EMPTY' }
         }

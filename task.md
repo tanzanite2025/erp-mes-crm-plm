@@ -1,3 +1,370 @@
+- [ ] 778. plan：BOM / ECO 控制字段接入全局码规范化（2026-04-13，待确认）
+  - [x] 已确认本轮最明确的控制字段包括：
+    - [x] `bomNo`
+    - [x] `bomVersion`
+
+- [ ] 779. plan：销售应收 / 采购应付低耦合 Tab 架构演进（2026-04-13，待确认）
+  - [x] 已确认本轮目标是**先做架构分析与规划**，不直接进入业务代码实现。
+  - [x] 已确认当前前端模块入口具备低风险 Tab 注入点：
+    - [x] `src/features/trading/tabs.ts`
+    - [x] `src/features/purchase/tabs.ts`
+    - [x] `src/features/purchase/index.tsx`
+  - [x] 已确认当前 `finance-management` 更偏财务基础配置中心，而非应收 / 应付业务宿主：
+    - [x] `src/features/finance/tabs.ts` 当前主要包含 `payment-methods / payment-terms / currency-rates / taxation`
+    - [x] 现阶段不宜把销售应收 / 采购应付首落点直接塞进 `finance-management`
+  - [x] 已确认后端已有财务凭证骨架，但尚不足以直接替代应收 / 应付领域模型：
+    - [x] `server/models/finance_voucher.go`
+    - [x] `server/services/voucher_dto.go`
+    - [x] `voucher` 更接近会计结果，不应直接充当 AR/AP 主记录
+  - [x] 已确认推荐方向是“入口挂业务模块，代码物理隔离为独立子域”：
+    - [x] 销售管理新增 `应收` Tab
+    - [x] 采购管理新增 `应付` Tab
+    - [x] 但实现代码不写进现有 `sales-orders` / `purchase orders` 大文件
+  - [x] 已确认第一阶段更适合的目录归属为：
+    - [x] `src/features/trading/receivables/`
+    - [x] `src/features/trading/payables/`
+    - [x] 保持按财务子域方式拆分 `contracts / adapters / services / hooks / components / tabs`
+  - [x] 已确认本轮关键架构边界：
+    - [x] 前端不计算应收余额 / 应付余额 / 账龄 / 逾期
+    - [x] 订单模块不拥有 AR/AP 状态机
+    - [x] `voucher` 只作为后续关联能力，不直接替代 AR/AP 领域对象
+  - [x] 已确认本轮优先涉及的是规划与后续实施边界，而不是立即编码：
+    - [x] Tab 注入点规划
+    - [x] 路由命名规划
+    - [x] 目录拆分规划
+    - [x] 后端契约边界规划
+  - [x] 已确认本轮非目标边界：
+    - [x] 不直接修改现有销售单 / 采购单业务逻辑
+    - [x] 不把 AR/AP 暂时强塞进 `finance-management`
+    - [x] 不让前端用订单金额自行拼凑应收 / 应付 authority
+    - [x] 不在本轮顺手实现核销、付款登记、账龄分析全套功能
+  - [x] 已确认当前后端 authority 存在关键缺口，不能直接进入“真实 AR/AP 查询接口”实现：
+    - [x] 当前没有独立 `Receivable` / `Payable` 主记录
+    - [x] 当前没有收款记录 / 付款记录主模型
+    - [x] 当前没有核销 / 结算过程模型
+    - [x] 当前 `PaymentTerm / PaymentMethod` 只是基础配置，不等于 AR/AP 业务账
+    - [x] 当前 `FinancialVoucher / ClearingEntry` 仍只是会计结果，不适合作为 AR/AP authority
+  - [x] 已确认在上述缺口未补齐前，不应直接把订单或 voucher 强行包装成“正式 AR/AP 主模型”
+  - [x] 已确认当前下一阶段采用 **方案 A：先做 `SettlementAllocation` 核销分摊**，而不是先做订单自动生成台账。
+  - [x] 已确认本阶段需要先补规划，再进入代码实现，避免直接把当前“单台账直接回写 settled/outstanding”的骨架误扩成长期模型。
+  - [x] 已确认本阶段核心问题不再是“能不能登记收款/付款”，而是“登记金额如何正确分摊到一个或多个 ledger，并保持余额 authority 可审计”。
+  - [x] 已确认 `SettlementAllocation` 本阶段至少要覆盖以下场景边界：
+    - [x] 单笔收款 -> 单笔应收
+    - [x] 单笔收款 -> 多笔应收
+    - [x] 单笔付款 -> 多笔应付
+    - [x] 部分核销
+    - [x] 已结清台账不可重复分摊
+  - [x] 已确认本阶段优先仍以**后端 authority**为主，前端只做最小分摊入口，不在前端自行计算核销结果。
+  - [x] 已确认本阶段新增关键待决策点：
+    - [x] 分摊顺序是严格手工指定，还是允许后端按默认顺序补齐剩余金额
+    - [x] 登记总金额与 allocation 明细金额不一致时，后端应直接拒绝
+    - [x] 是否允许超额分摊到超过 `outstandingAmount` 的 ledger（当前建议不允许）
+    - [x] allocation 落库后，ledger 的 `settledAmount / outstandingAmount / status` 必须由后端同事务回写
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 补充 `SettlementAllocation` 分摊规则、同事务回写策略与错误边界
+    - [ ] 确认登记接口是否升级为“record + allocations”复合请求，而不是继续只传单一金额
+    - [ ] 确认前端只提供最小 allocation 编辑入口，不扩成完整对账工作台
+    - [ ] 待规划再次批准后，再进入 allocation 级代码实现
+  - [x] 已确认当前前端已经具备：
+    - [x] 多条 allocation 编辑器
+    - [x] 台账选择器
+    - [x] allocation 历史按记录号分组展示
+    - [x] 目标台账展示名映射
+    - [x] 客户端搜索与历史筛选
+  - [x] 已确认当前新的主要瓶颈不再是“能不能筛选”，而是“台账候选是否仍过度依赖前端已加载列表缓存”。
+  - [x] 已确认下一阶段若继续推进，应切到 **真正的远程搜索式台账选择器**，而不是继续堆叠客户端过滤。
+  - [x] 已确认本阶段推荐目标：
+    - [x] 新增应收 / 应付 ledger 远程搜索能力
+    - [x] 前端选择器改为 debounce 远程查询
+    - [x] 返回最小候选字段，不再强依赖全量列表缓存
+  - [x] 已确认本阶段建议最小候选字段至少包括：
+    - [x] `id`
+    - [x] `documentNo`
+    - [x] `partnerName`（应收为客户、应付为供应商）
+    - [x] `outstandingAmount`
+    - [x] `status`
+    - [x] `currency`
+  - [x] 已确认本阶段边界：
+    - [x] 不扩成完整对账工作台
+    - [x] 不在本轮顺手做高级筛选 DSL
+    - [x] 不引入前端 authority 余额判断
+    - [x] 不修改既有收款 / 付款登记事务语义
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 后端新增或扩展 ledger 搜索接口，支持关键词 + 分页 + 方向隔离
+    - [ ] 前端弹层接入 debounce 远程搜索式台账选择器
+    - [ ] 前端从“依赖已加载列表映射展示名”逐步切到“直接使用远程候选返回字段”
+    - [ ] 执行定向后端测试与前端 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+  - [x] 已确认当前真正的远程搜索式台账选择器已经落地，下一阶段更自然的增强点是“搜索筛选增强”，而不是再次重做选择器形态。
+  - [x] 已确认本阶段推荐增强项：
+    - [x] `status` 筛选
+    - [x] `currency` 筛选
+    - [x] `outstandingAmount` 区间/阈值筛选
+  - [x] 已确认本阶段目标不是做通用 DSL，而是补足远程搜索最常用的结构化筛选条件。
+  - [x] 已确认本阶段建议保持后端 search 接口为 authority，前端只负责传递筛选条件与展示结果。
+  - [x] 已确认本阶段边界：
+    - [x] 不扩成高级查询构建器
+    - [x] 不在本轮顺手支持任意字段组合表达式
+    - [x] 不修改 allocation 提交协议
+    - [x] 不扩成独立分页搜索弹窗
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 后端为 receivables/payables search 接口增加 `status / currency / outstandingMin / outstandingMax` 过滤能力
+    - [ ] 前端远程搜索选择器增加对应筛选 UI 与请求参数
+    - [ ] 执行后端定向测试与前端 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+  - [x] 已确认在筛选增强之后，台账选择器下一阶段最自然的 3 个方向为：
+    - [x] 状态 / 币种字典化下拉
+    - [x] 服务端排序
+    - [x] 独立搜索弹窗
+  - [x] 已确认这 3 项不宜无差别并入同一轮大改，推荐拆为两层：
+    - [x] **本阶段**：状态 / 币种字典化下拉 + 服务端排序
+    - [x] **下一阶段**：独立搜索弹窗
+  - [x] 已确认拆分原因：
+    - [x] 状态 / 币种字典化下拉与服务端排序仍属于当前远程搜索器的自然增强
+    - [x] 独立搜索弹窗会改变交互结构、状态管理与布局复杂度，风险明显更高
+  - [x] 已确认本阶段推荐目标：
+    - [x] 把状态 / 币种从自由输入升级为可控下拉
+    - [x] 后端 search 接口支持排序字段与排序方向
+    - [x] 前端选择器支持排序切换并保持远程查询缓存一致性
+  - [x] 已确认本阶段边界：
+    - [x] 不在本轮顺手实现独立搜索弹窗
+    - [x] 不扩成分页结果表格
+    - [x] 不引入复杂多列排序
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 后端为 receivables/payables search 接口增加排序参数
+    - [ ] 前端把状态 / 币种筛选改为字典化下拉
+    - [ ] 前端增加排序选择并纳入 query key
+    - [ ] 执行后端定向测试与前端 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+  - [x] 已确认当前币种下拉若继续使用本地常量，存在后续遗漏真实系统币种配置的风险，不应视为最终方案。
+  - [x] 已确认本阶段需要专门把币种下拉改为**系统动态读取财务 / 字典来源**。
+  - [x] 已确认本阶段目标：
+    - [x] 找到系统内真实币种 authority
+    - [x] 前端币种下拉改为动态来源
+    - [x] 失败时提供可控兜底，避免搜索器整块不可用
+  - [x] 已确认本阶段边界：
+    - [x] 状态下拉仍可保持本地受控枚举
+    - [x] 不在本轮顺手改独立搜索弹窗
+    - [x] 不引入新的财务中心重构
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 定位系统币种 authority 与可复用接口/字典来源
+    - [ ] 将 AR/AP 台账搜索币种下拉改为动态来源
+    - [ ] 处理动态字典加载失败的兜底与禁用策略
+    - [ ] 执行定向校验并更新 `walkthrough.md`
+  - [x] 已确认下一阶段要专门实现 **独立搜索弹窗式台账选择器**。
+  - [x] 已确认本阶段目标：
+    - [x] allocation 行通过独立入口打开台账搜索弹窗
+    - [x] 弹窗内承载远程搜索、筛选与排序
+    - [x] 选中后回填当前 allocation 行的 `ledgerId`
+  - [x] 已确认本阶段推荐交互：
+    - [x] 采用**单选后确认**，而不是点击即回填
+    - [x] 弹窗内展示清晰候选列表，而不是继续塞在原表单行内
+    - [x] 允许关闭弹窗而不影响当前 allocation 行已有值
+  - [x] 已确认本阶段边界：
+    - [x] 不在本轮顺手实现多选
+    - [x] 不在本轮做批量回填多个 allocation 行
+    - [x] 不把弹窗扩成完整对账工作台
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 新增独立搜索弹窗组件与行内触发入口
+    - [ ] 在弹窗内接入远程搜索、筛选、排序与单选确认
+    - [ ] 选中后回填 allocation 行并关闭弹窗
+    - [ ] 执行前端 TypeScript 校验并更新 `walkthrough.md`
+  - [x] 已确认当前应收 / 应付两个页面仍残留过渡期演示卡片，且整体视觉未完全对齐其他通用页面规范，属于需要优先纠偏的问题。
+  - [x] 已确认当前明确残留包括：
+    - [x] 应收页“销售应收骨架已建立”演示卡片
+    - [x] 应付页“采购应付骨架已建立”演示卡片
+    - [x] locales 中与 mock / placeholder 相关的演示文案
+  - [x] 已确认本阶段目标：
+    - [x] 让应收 / 应付页面字体、边框、圆角、标题层级与其他通用页面完全对齐
+    - [x] 删除页面中的演示卡片与过渡期 mock/placeholder 文案
+    - [x] 保持真实数据链路，不再让页面继续表现为“演示壳层”
+  - [x] 已确认本阶段边界：
+    - [x] 不在本轮顺手重做业务字段或表格结构
+    - [x] 不新增新的 mock 回退逻辑
+    - [x] 若真实数据失败，应遵守 `GEMINI.md` 的 fail loudly 原则，而不是再显示演示卡片兜底
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 对齐应收 / 应付页面的通用字体与工业风样式
+    - [ ] 删除两个页面中的演示卡片
+    - [ ] 删除对应 locales 中的 mock / placeholder 文案
+    - [ ] 执行前端 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 778. plan：BOM / ECO 控制字段接入全局码规范化（2026-04-13，待确认）
+  - [x] 已确认本轮最明确的控制字段包括：
+    - [x] `bomNo`
+    - [x] `bomVersion`
+  - [x] 已确认当前并非完全未规范化，而是已存在部分规则和局部边界：
+    - [x] `src/lib/codecs/code-normalization.ts` 已提供 `normalizeBomNo / normalizeBomVersion / deriveBomDisplayVersion`
+    - [x] `src/features/engineering/data/schema.ts` 已对 `bomVersion` 施加 `V1.0` 格式约束，并对 `bomNo / bomVersion` 做 trim
+    - [x] `src/features/engineering/services/bom-service.ts` 已在保存边界做 trim 清洗
+    - [x] `src/features/engineering/tabs/bom-mgmt.tsx` 提交前已手动规范化 `bomNo / bomVersion`
+    - [x] `src/features/engineering/hooks/use-bom-form.ts` 已在初始化时提供 `bomVersion: 'V1.0'`
+  - [x] 已确认当前真实问题不是“没有规则”，而是“控制字段边界分散”：
+    - [x] `bom-mgmt.tsx` 保存前再次手动调用 `normalizeBomNo / normalizeBomVersion`
+    - [x] `bom-service.ts` 当前仍只做 trim，没有提升为 BOM/ECO 控制字段统一 helper
+    - [x] `use-bom-form.ts` 的默认值 / 初始化值与最终保存边界之间尚未共享统一 helper
+    - [x] `bom-form-header.tsx` 当前主要承担展示与 change order 回填，不宜在本轮顺手扩成整表单治理
+  - [x] 已确认本轮推荐方向：
+    - [x] 为 engineering 的 BOM/ECO 控制字段抽统一 helper
+    - [x] 收口 BOM 默认值、初始化值、提交前 payload、service 保存边界
+    - [x] 保持 `bomVersion` 的 `V1.0` 控制格式，不粗暴改成普通 machine code 语义
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/engineering/utils/product-code-normalization.ts` 或相邻 engineering helper 文件
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
+    - [x] `src/features/engineering/services/bom-service.ts`
+    - [x] 必要时补充 BOM 默认 builder / adapter 相关文件
+  - [x] 已确认本轮非目标边界：
+    - [x] 不扩到 BOM items / substitutes 的更大范围治理
+    - [x] 不处理整个 BOM 表单所有控制字段
+    - [x] 不顺手改 ChangeOrder / Product 已完成链路
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 抽取 BOM/ECO 控制字段统一 helper
+    - [ ] 收口 BOM 默认值、初始化值、提交前 payload、service 保存边界
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 777. plan：Product / ChangeOrder 变更控制字段接入全局码规范化（2026-04-13，待确认）
+  - [x] 已确认本轮最明确的控制字段包括：
+    - [x] `revisionNo`
+    - [x] `siteCode`
+    - [x] `changeOrderNo`
+  - [x] 已确认当前并非完全未规范化，而是已存在部分规则和局部边界：
+    - [x] `src/lib/codecs/code-normalization.ts` 已提供 `normalizeRevisionNo / normalizeSiteCode / normalizeChangeOrderNo`
+    - [x] `src/features/engineering/services/change-order-service.ts` 已在保存边界做一层规范化
+    - [x] `src/features/engineering/utils/default-builders.ts` 已在 ChangeOrder draft 初始化时做一层规范化
+    - [x] `src/features/engineering/adapters/product-api-adapter.ts` 已在 Product DTO 边界做一层规范化
+  - [x] 已确认当前真实问题不是“没有规则”，而是“控制字段边界分散”：
+    - [x] `change-orders.tsx` 输入层与保存前再次散落调用 `normalizeRevisionNo / normalizeSiteCode / normalizeChangeOrderNo`
+    - [x] `use-change-order-write-actions.ts` 又重复做了一层规范化
+    - [x] Product 当前主要只在 adapter / service 层兜底，尚未形成 Product/ChangeOrder 共用的领域 helper
+    - [x] BOM 相关字段仍主要是 trim，当前不宜并入本轮实施
+  - [x] 已确认本轮推荐方向：
+    - [x] 为 engineering 控制字段抽统一 helper
+    - [x] 收口 ChangeOrder 的 draft、输入边界、write actions、service 保存边界
+    - [x] 让 Product 继续复用同一套控制字段 helper，而不是散落直接调 lib codec
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/engineering/utils/default-builders.ts`
+    - [x] `src/features/engineering/tabs/change-orders.tsx`
+    - [x] `src/features/engineering/hooks/use-change-order-write-actions.ts`
+    - [x] `src/features/engineering/services/change-order-service.ts`
+    - [x] `src/features/engineering/utils/product-code-normalization.ts` 或相邻 engineering helper 文件
+    - [x] `src/features/engineering/adapters/product-api-adapter.ts`
+  - [x] 已确认本轮非目标边界：
+    - [x] 不扩到 BOM 表单整体治理
+    - [x] 不改 `title / description / name` 等展示或自由文本字段
+    - [x] 不处理后端 handler / DTO 测试主线
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 抽取 engineering 控制字段统一 helper
+    - [ ] 收口 ChangeOrder 输入、draft、write actions、service 保存边界
+    - [ ] 让 Product 侧 adapter / 保存边界统一复用控制字段 helper
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 776. plan：714 生产共享资源模块接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认当前 `ProductionLine.code / ProductionProcessStep.code` 并非完全未规范化，而是已有部分边界接入：
+    - [x] `src/features/production-shared/services/production-lines-service.ts`
+    - [x] `src/features/production-shared/services/production-processes-service.ts`
+    - [x] `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+  - [x] 已确认当前主要问题不是“没有规则”，而是“生产共享资源模块内部缺少统一领域入口”：
+    - [x] service 层在做 `normalizeMachineCode`
+    - [x] adapter 层也在做 `normalizeMachineCode`
+    - [x] `process-library-panel.tsx` 输入、回填、提交前仍散落调用 `normalizeMachineCode`
+  - [x] 已确认本轮最明确的机器码字段仍是：
+    - [x] `ProductionLine.code`
+    - [x] `ProductionProcessStep.code`
+  - [x] 已确认本轮推荐方向：
+    - [x] 为 production-shared 抽领域内部统一 helper
+    - [x] 让 line / process 的输入边界、service 保存边界、adapter DTO 边界统一复用该 helper
+    - [x] 先不碰 `production-resource-sync` 与其他非机器码字段
+  - [x] 已确认本轮更适合优先实施的文件范围：
+    - [x] `src/features/production-shared/services/production-lines-service.ts`
+    - [x] `src/features/production-shared/services/production-processes-service.ts`
+    - [x] `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+    - [x] `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+  - [x] 已确认本轮非目标边界：
+    - [x] 不处理 `production-resource-sync`
+    - [x] 不扩展到 `name / description / attributes`
+    - [x] 不顺手清理无关 UI / 样式 warning
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 抽取 production-shared 领域内部统一 helper
+    - [ ] 收口 line / process 的输入边界、service 保存边界与 adapter DTO 边界
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 775. plan：715 工程属性值模块接入全局码规范化（2026-04-12，待确认）
+  - [x] 已复核当前 `ProductAttributeCategory.key` / `ProductAttributeOption.value` 并非完全未规范化，而是已经有模块内专用规则：
+    - [x] `src/features/engineering/utils/product-attribute-machine-value.ts`
+  - [x] 已确认当前真实问题不是“缺少规则”，而是“规则边界分散”：
+    - [x] category dialog 输入边界已直接调用 `normalizeProductAttributeMachineValue`
+    - [x] option dialog 输入边界已直接调用 `normalizeProductAttributeMachineValue`
+    - [x] category service 保存边界再次规范化 `key`
+    - [x] option service 保存边界再次规范化 `categoryKey / value`
+    - [x] `use-product-attribute-write-actions.ts` 又重复做了一层规范化
+    - [x] `product-attributes-mgmt.tsx` 还散落着校验、冲突判断与新建态/编辑态分支处理
+  - [x] 已确认本轮推荐方向仍然不是切到通用 `normalizeMachineCode`，而是：
+    - [x] 继续保留 `product-attribute-machine-value` 这套属性值专用规则
+    - [x] 但把它收成工程属性值领域内更清晰的单一入口
+  - [x] 已确认本轮更适合优先收口的点包括：
+    - [x] category / option 的输入态 helper
+    - [x] category / option 的保存态 helper
+    - [x] write actions 中重复规范化的去重
+    - [x] `product-attributes-mgmt.tsx` 中新建态机器值与冲突判断的统一化
+  - [x] 已确认本轮非目标边界：
+    - [x] 不把属性值规则粗暴替换为 `normalizeMachineCode`
+    - [x] 不改 `labelZh / labelEn / name` 等展示字段
+    - [x] 不扩散到非属性值 engineering 子模块
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 为工程属性值模块抽统一输入/保存 helper
+    - [ ] 去重 write actions / tab 中的重复规范化逻辑
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 774. plan：716 第二批遗漏边界补齐（2026-04-12，待确认）
+  - [x] 已复核 `716` 第一批后当前主保存边界基本已统一到 engineering 内部 helper：
+    - [x] `template-mgmt.tsx`
+    - [x] `use-product-template-write-actions.ts`
+    - [x] `product-template-service.ts`
+    - [x] `product-template-api-adapter.ts`
+    - [x] `product-type-action-dialog.tsx`
+    - [x] `product-type-service.ts`
+    - [x] `product-type-api-adapter.ts`
+  - [x] 已确认第二批仍值得补齐的遗漏边界包括：
+    - [x] `createProductTemplateDraft()` 新建草稿入口尚未显式复用 engineering 内部 helper
+    - [x] `productTemplateService.sync(...)` 尚未统一规范 `code / componentKey` 后再发送
+    - [x] `template-mgmt.tsx` 中 `templatesQuery.data ?? []` 仍会制造非稳定依赖 warning，可在本轮顺手收口
+  - [x] 已确认第二批暂未发现新的高风险 `product type` 保存边界缺口：
+    - [x] dialog 输入
+    - [x] 提交前处理
+    - [x] service 保存
+    - [x] adapter DTO 边界
+    - [x] 均已接入统一 helper
+  - [x] 已确认本轮最小实施边界：
+    - [x] 只补 `template` 剩余遗漏边界与相关稳定性小缺口
+    - [x] 不扩展到 `715` / `714`
+    - [x] 不继续重构无关 UI 或样式 warning
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 补齐 `template` 草稿入口与 sync 保存边界
+    - [ ] 执行定向 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+
+- [ ] 773. plan：恢复架构收口主线排查（2026-04-12，待确认）
+  - [x] 已确认当前不宜再新开完全陌生主题，而应优先恢复此前已规划、但被编译阻塞打断的架构收口项。
+  - [x] 已复核当前仍待继续推进的主要候选包括：
+    - [x] `716. architecture：工程 template / product type 模块接入全局码规范化`
+    - [x] `715. architecture：工程属性值模块接入全局码规范化`
+    - [x] `714. architecture：生产共享资源模块接入全局码规范化`
+  - [x] 已确认下一条最高优先级更适合落在 `716`，原因包括：
+    - [x] `ProductTemplate.code / ProductType.code / ProductTemplate.componentKey` 更接近工程主数据核心标识字段
+    - [x] 当前已有局部散落规则（如 `toUpperCase()` / 名称派生 token），但尚未形成统一边界
+    - [x] 相比先做 `715` / `714`，`716` 更靠近工程主数据入口，公共能力收益更高
+  - [x] 已确认本轮推荐实施顺序：
+    - [x] 先收口 template 页面输入边界
+    - [x] 再收口 template service / adapter / write actions 保存边界
+    - [x] 最后收口 product type dialog / service / adapter 保存边界
+  - [x] 已确认本轮非目标边界：
+    - [x] 不同时并行推进 `715` / `714`
+    - [x] 不把 engineering 全模块字段一次性拉进规范化
+    - [x] 不改展示字段（如 `name / description`）
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 以 `716` 为主线进入代码实施
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
 - [ ] 772. plan：basic-settings 单点 TypeScript 编译阻塞修复（2026-04-12，待确认）
   - [x] 已确认新增阻塞点不再是 `engineering-db` 主链路，而是 `basic-settings` 中的单点编译错误：
     - [x] `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`

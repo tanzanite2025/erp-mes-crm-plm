@@ -3,11 +3,11 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
 import { type SaveProductTypeInput } from '../mutation-types'
+import { normalizeProductTypeInput as normalizeEngineeringProductTypeInput } from '../utils/product-code-normalization'
 
 export type { SaveProductTypeInput } from '../mutation-types'
 
@@ -17,10 +17,7 @@ export type { SaveProductTypeInput } from '../mutation-types'
 const PRODUCT_TYPE_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_TYPE_UPDATE'
 
 function normalizeProductTypeInput(type: SaveProductTypeInput): SaveProductTypeInput {
-  return {
-    ...type,
-    code: normalizeMachineCode(type.code),
-  }
+  return normalizeEngineeringProductTypeInput(type)
 }
 
 export const ProductTypeService = {

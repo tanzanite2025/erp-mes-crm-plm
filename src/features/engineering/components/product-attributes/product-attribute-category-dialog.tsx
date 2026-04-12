@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { type SaveProductAttributeCategoryInput } from '../../mutation-types'
-import { normalizeProductAttributeMachineValue } from '../../utils/product-attribute-machine-value'
+import { normalizeProductAttributeCategoryInputKey } from '../../utils/product-attribute-machine-value'
 
 interface ProductAttributeCategoryDialogProps {
   locale: string
@@ -39,7 +39,7 @@ export function ProductAttributeCategoryDialog({
         <div className='grid grid-cols-1 gap-5 px-8 py-8 sm:grid-cols-2'>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>{locale === 'zh-CN' ? '分类编码' : 'Category key'}</Label>
-            <Input className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner disabled:cursor-not-allowed disabled:opacity-70' value={category.key || ''} disabled={Boolean(category.id)} onChange={(event) => onCategoryChange((prev) => ({ ...prev, key: normalizeProductAttributeMachineValue(event.target.value) }))} />
+            <Input className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner disabled:cursor-not-allowed disabled:opacity-70' value={category.key || ''} disabled={Boolean(category.id)} onChange={(event) => onCategoryChange((prev) => normalizeProductAttributeCategoryInputKey({ ...prev, key: event.target.value }))} />
           </div>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>{locale === 'zh-CN' ? '中文名称' : 'Chinese name'}</Label>

@@ -1,6 +1,5 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
-import { normalizeChangeOrderNo, normalizeModelCode, normalizeRevisionNo, normalizeSiteCode, normalizeSku, normalizeTemplateKey } from '@/lib/codecs/code-normalization'
 import { barcodeConfigSchema, productSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type BulkSyncProductsApiDTO,
@@ -9,6 +8,15 @@ import {
   type ProductListPageApiDTO,
 } from '../contracts/product-api-dto'
 import { type SaveProductInput } from '../mutation-types'
+import {
+  normalizeEngineeringChangeOrderNo,
+  normalizeEngineeringRevisionNo,
+  normalizeEngineeringSiteCode,
+  normalizeProductModelCodeValue,
+  normalizeProductSkuValue,
+  normalizeProductTemplateKeyValue,
+  normalizeSaveProductInput,
+} from '../utils/product-code-normalization'
 
 function toProductAttributeValueContract(dto: ProductAttributeValueApiDTO): ProductAttributeValue {
   return {
@@ -44,9 +52,9 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
 export function toProductContract(dto: ProductApiDTO): Product {
   return productSchema.parse({
     id: dto.id,
-    sku: normalizeSku(dto.sku),
+    sku: normalizeProductSkuValue(dto.sku),
     name: dto.name,
-    modelCode: normalizeModelCode(dto.modelCode),
+    modelCode: normalizeProductModelCodeValue(dto.modelCode),
     typeId: dto.typeId,
     depth: dto.depth,
     widthInternal: dto.widthInternal,
@@ -68,15 +76,15 @@ export function toProductContract(dto: ProductApiDTO): Product {
     barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
     attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
-    templateKey: normalizeTemplateKey(dto.templateKey),
+    templateKey: normalizeProductTemplateKeyValue(dto.templateKey),
     createdAt: dto.createdAt ?? '',
     version: dto._v ?? 1,
-    revisionNo: normalizeRevisionNo(dto.revisionNo),
+    revisionNo: normalizeEngineeringRevisionNo(dto.revisionNo),
     effectiveFrom: dto.effectiveFrom ?? undefined,
     effectiveTo: dto.effectiveTo ?? undefined,
     changeType: dto.changeType,
-    changeOrderNo: normalizeChangeOrderNo(dto.changeOrderNo),
-    siteCode: normalizeSiteCode(dto.siteCode),
+    changeOrderNo: normalizeEngineeringChangeOrderNo(dto.changeOrderNo),
+    siteCode: normalizeEngineeringSiteCode(dto.siteCode),
     isDefaultSite: dto.isDefaultSite,
   })
 }
@@ -90,42 +98,43 @@ export function toProductListContract(dto: ProductListPageApiDTO): Product[] {
 }
 
 export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
+  const normalizedProduct = normalizeSaveProductInput(product)
   return {
-    id: product.id || '',
-    sku: normalizeSku(product.sku),
-    name: product.name || '',
-    modelCode: normalizeModelCode(product.modelCode),
-    typeId: product.typeId || '',
-    depth: product.depth,
-    widthInternal: product.widthInternal,
-    widthExternal: product.widthExternal,
-    weight: product.weight,
-    length: product.length,
-    angle: product.angle,
-    clamp: product.clamp,
-    offset: product.offset,
-    axleCrown: product.axleCrown,
-    steerer: product.steerer,
-    image: product.image,
-    restrictions: product.restrictions ?? [],
-    moldGroup: product.moldGroup,
-    description: product.description,
-    engineeringSpecId: product.engineeringSpecId || '',
-    attributeValues: (product.attributeValues ?? []).map(toProductAttributeValueApiDTO),
-    techSpecs: product.techSpecs,
-    barcodeConfig: product.barcodeConfig,
-    attachments: product.attachments ?? [],
-    status: product.status ?? 'Active',
-    templateKey: normalizeTemplateKey(product.templateKey),
-    revisionNo: normalizeRevisionNo(product.revisionNo),
-    effectiveFrom: product.effectiveFrom ?? null,
-    effectiveTo: product.effectiveTo ?? null,
-    changeType: product.changeType,
-    changeOrderNo: normalizeChangeOrderNo(product.changeOrderNo),
-    siteCode: normalizeSiteCode(product.siteCode),
-    isDefaultSite: product.isDefaultSite,
-    createdAt: product.createdAt,
-    _v: product.version ?? 1,
+    id: normalizedProduct.id || '',
+    sku: normalizeProductSkuValue(normalizedProduct.sku),
+    name: normalizedProduct.name || '',
+    modelCode: normalizeProductModelCodeValue(normalizedProduct.modelCode),
+    typeId: normalizedProduct.typeId || '',
+    depth: normalizedProduct.depth,
+    widthInternal: normalizedProduct.widthInternal,
+    widthExternal: normalizedProduct.widthExternal,
+    weight: normalizedProduct.weight,
+    length: normalizedProduct.length,
+    angle: normalizedProduct.angle,
+    clamp: normalizedProduct.clamp,
+    offset: normalizedProduct.offset,
+    axleCrown: normalizedProduct.axleCrown,
+    steerer: normalizedProduct.steerer,
+    image: normalizedProduct.image,
+    restrictions: normalizedProduct.restrictions ?? [],
+    moldGroup: normalizedProduct.moldGroup,
+    description: normalizedProduct.description,
+    engineeringSpecId: normalizedProduct.engineeringSpecId || '',
+    attributeValues: (normalizedProduct.attributeValues ?? []).map(toProductAttributeValueApiDTO),
+    techSpecs: normalizedProduct.techSpecs,
+    barcodeConfig: normalizedProduct.barcodeConfig,
+    attachments: normalizedProduct.attachments ?? [],
+    status: normalizedProduct.status ?? 'Active',
+    templateKey: normalizeProductTemplateKeyValue(normalizedProduct.templateKey),
+    revisionNo: normalizeEngineeringRevisionNo(normalizedProduct.revisionNo),
+    effectiveFrom: normalizedProduct.effectiveFrom ?? null,
+    effectiveTo: normalizedProduct.effectiveTo ?? null,
+    changeType: normalizedProduct.changeType,
+    changeOrderNo: normalizeEngineeringChangeOrderNo(normalizedProduct.changeOrderNo),
+    siteCode: normalizeEngineeringSiteCode(normalizedProduct.siteCode),
+    isDefaultSite: normalizedProduct.isDefaultSite,
+    createdAt: normalizedProduct.createdAt,
+    _v: normalizedProduct.version ?? 1,
   }
 }
 

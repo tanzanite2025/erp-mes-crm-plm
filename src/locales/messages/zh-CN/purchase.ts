@@ -3,6 +3,7 @@ export const purchase = {
     title: '采购管理',
     suppliers: '供应厂商',
     orders: '采购订单',
+    payables: '应付',
     logistics: '采购物流',
   },
   suppliers: {
@@ -141,6 +142,25 @@ export const purchase = {
     deletionRatio: '作废占比',
     complianceNote: '合规提示',
     complianceText: '采购订单的作废必须伴随审批流程。系统日志仅记录最终状态变更。',
+  },
+  payables: {
+    title: '采购应付',
+    description: '面向采购业务的应付账款入口，后续承接付款进度、账龄与对账视图。',
+    summaryTotal: '应付余额',
+    summaryOverdue: '逾期金额',
+    summaryPending: '待付笔数',
+    tableTitle: '应付清单',
+    tableDescription: '查看应付台账余额、账龄状态，并进入明细弹层执行付款登记与分摊。',
+    columns: {
+      documentNo: '单据编号',
+      supplierName: '供应商',
+      invoiceAmount: '开票金额',
+      paidAmount: '已付金额',
+      outstandingAmount: '未付金额',
+      dueDate: '到期日',
+      agingBucket: '账龄',
+      status: '状态',
+    },
   },
   logistics: {
     title: '采购物流监控',

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { type UseFormReturn, useWatch } from 'react-hook-form'
-import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
 import { getServerErrorPresentation } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { type Product, type ProductType } from '../data/schema'
 import { ProductCoreService } from '../services/product-core-service'
 import { deriveSku } from '../utils/product-form-utils'
+import {
+  normalizeProductModelCodeValue,
+  normalizeProductSkuValue,
+} from '../utils/product-code-normalization'
 
 const logger = createLogger('useProductFormDerive')
 
@@ -45,7 +48,7 @@ export function useProductFormDerive({
                 setNextCodeDeriveError(null)
                 const currentVal = form.getValues('modelCode')
                 if (!currentVal || currentVal === '01' || currentVal === '') {
-                    form.setValue('modelCode', normalizeModelCode(nextCode))
+                    form.setValue('modelCode', normalizeProductModelCodeValue(nextCode))
                 }
             } catch (error) {
                 logger.error('Failed to derive next product code from authority engine', error)
@@ -57,7 +60,7 @@ export function useProductFormDerive({
 
     const skuPreview = useMemo(() => {
         if (isEdit) {
-            return normalizeSku(form.getValues('sku'))
+            return normalizeProductSkuValue(form.getValues('sku'))
         }
 
         if (!open) return ''
@@ -67,7 +70,7 @@ export function useProductFormDerive({
         if (!typeCode) return ''
 
         // SKU preview is UI-only. The persisted SKU must be issued and normalized by the backend.
-        return normalizeSku(deriveSku(typeCode, normalizeModelCode(watchedModelCode || '01')))
+        return normalizeProductSkuValue(deriveSku(typeCode, normalizeProductModelCodeValue(watchedModelCode || '01')))
     }, [form, isEdit, open, productTypes, watchedModelCode, watchedTypeId])
 
     const specPreviewSummary = useMemo(() => {
