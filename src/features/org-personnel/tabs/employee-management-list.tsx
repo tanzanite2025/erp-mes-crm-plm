@@ -158,7 +158,8 @@ export function EmployeeManagementList() {
 
         setIsUndoingRecentResign(true)
         try {
-            const updated = await EmployeeMaintenanceService.updateEmployeesStatus(idsToRestore, 'active')
+            const result = await EmployeeMaintenanceService.updateEmployeesStatus(idsToRestore, 'active')
+            const updated = result.updated
             await refreshEmployees()
             setRowSelection({})
 
@@ -460,7 +461,7 @@ export function EmployeeManagementList() {
                                         colSpan={table.getAllColumns().length}
                                         className='h-24 text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'
                                     >
-                                        {isLoading ? t('common.status.loading') : t('orgPersonnel.list.empty')}
+                                        {isLoading ? t('common.actions.loading') : t('orgPersonnel.list.empty')}
                                     </TableCell>
                                 </TableRow>
                             )}

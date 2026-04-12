@@ -1,11 +1,11 @@
 import { ClipboardCheck, PackagePlus, ScanLine } from 'lucide-react'
 import type { QuickActionDefinition } from '../types'
 
-export const quickActionRegistry: QuickActionDefinition[] = [
+const quickActionRegistryEntries = [
   {
     id: 'warehouse_inbound_scan',
-    title: '入库扫描',
-    description: '直接进入入库扫描态，搜索后快速登记入库。',
+    title: 'Inbound Scan',
+    description: 'Open warehouse inbound scanning mode directly for rapid receiving.',
     icon: PackagePlus,
     to: '/warehouse/inbound',
     search: { mode: 'scan' },
@@ -15,8 +15,8 @@ export const quickActionRegistry: QuickActionDefinition[] = [
   },
   {
     id: 'warehouse_shipment_scan',
-    title: '出库扫描',
-    description: '直接进入出库扫描态，快速开始出库登记。',
+    title: 'Shipment Scan',
+    description: 'Open warehouse shipment scanning mode directly for rapid outbound processing.',
     icon: ScanLine,
     to: '/warehouse/shipment',
     search: { mode: 'scan' },
@@ -26,8 +26,8 @@ export const quickActionRegistry: QuickActionDefinition[] = [
   },
   {
     id: 'warehouse_stocktake_scan',
-    title: '盘点扫描',
-    description: '直接进入 PDA 盘点扫描模式。',
+    title: 'Stocktake Scan',
+    description: 'Open PDA stocktake scanning mode directly.',
     icon: ClipboardCheck,
     to: '/warehouse/stocktake',
     search: { mode: 'scan' },
@@ -35,4 +35,8 @@ export const quickActionRegistry: QuickActionDefinition[] = [
     enabled: true,
     sortOrder: 30,
   },
-].sort((left, right) => left.sortOrder - right.sortOrder)
+] satisfies QuickActionDefinition[]
+
+export const quickActionRegistry: QuickActionDefinition[] = [...quickActionRegistryEntries].sort(
+  (left, right) => left.sortOrder - right.sortOrder
+)

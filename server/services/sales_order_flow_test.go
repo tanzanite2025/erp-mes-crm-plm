@@ -20,66 +20,7 @@ func setupSalesOrderFlowTestDB(t *testing.T) *gorm.DB {
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE sales_orders (
-			id TEXT PRIMARY KEY NOT NULL,
-			order_no TEXT,
-			order_name TEXT,
-			customer_name TEXT,
-			customer_id TEXT,
-			type TEXT,
-			currency TEXT,
-			payment_method TEXT,
-			payment_method_name TEXT,
-			payment_term TEXT,
-			payment_term_name TEXT,
-			classification TEXT,
-			status TEXT,
-			status_note TEXT,
-			amount REAL,
-			quantity REAL,
-			order_date TEXT,
-			delivery_date TEXT,
-			purchase_order_no TEXT,
-			barcode TEXT,
-			requirements TEXT,
-			workflow_instance_id TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			updated_by TEXT,
-			is_deleted BOOLEAN DEFAULT FALSE,
-			version INTEGER DEFAULT 1
-		)
-	`).Error)
-
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE sales_order_lines (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			sales_order_id TEXT,
-			line_no INTEGER,
-			product_id TEXT,
-			product_model TEXT,
-			product_code TEXT,
-			specification TEXT,
-			description TEXT,
-			qty REAL,
-			uom TEXT,
-			price REAL,
-			amount REAL,
-			delivered_qty REAL,
-			customer_part_no TEXT,
-			job_no TEXT,
-			note TEXT,
-			drilling_plan_id TEXT,
-			labeling_plan_id TEXT,
-			hole_count INTEGER,
-			route TEXT,
-			order_date TEXT,
-			status TEXT,
-			claimed_by TEXT,
-			claimed_at TEXT
-		)
-	`).Error)
+	applyTradingTestSchema(t, testDB, tradingTestSchemaOptions{includeSales: true})
 
 	return testDB
 }

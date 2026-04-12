@@ -23,7 +23,7 @@ export type PersonnelArchiveColumnKey =
 
 export type PersonnelArchiveColumn = {
     key: PersonnelArchiveColumnKey
-    header: string
+    header: TranslationKey
     width: number
     required?: boolean
     importable?: boolean
@@ -110,7 +110,10 @@ export function getPersonnelColumnConfig(key: PersonnelArchiveColumnKey) {
 type PersonnelTranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 export function getPersonnelColumnLabel(key: PersonnelArchiveColumnKey, t?: PersonnelTranslateFn): string {
-    const headerKey = getPersonnelColumnConfig(key)?.header || key
+    const headerKey = getPersonnelColumnConfig(key)?.header
+    if (!headerKey) {
+        return key
+    }
     return t ? t(headerKey) : headerKey
 }
 

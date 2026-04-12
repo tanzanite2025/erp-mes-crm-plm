@@ -72,63 +72,7 @@ func setupPurchaseTransactionTestDB(t *testing.T) *gorm.DB {
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_materials_deleted_at ON materials(deleted_at)`).Error)
 
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE purchase_orders (
-			id TEXT PRIMARY KEY NOT NULL,
-			order_no TEXT,
-			supplier_id TEXT,
-			supplier_name TEXT,
-			order_date TEXT,
-			expected_date TEXT,
-			status TEXT,
-			currency TEXT,
-			amount REAL,
-			exchange_rate REAL,
-			purchaser TEXT,
-			payment_method TEXT,
-			payment_method_name TEXT,
-			payment_term TEXT,
-			payment_term_name TEXT,
-			note TEXT,
-			workflow_instance_id TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			is_deleted BOOLEAN DEFAULT FALSE,
-			version INTEGER DEFAULT 1
-		)
-	`).Error)
-
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE purchase_order_lines (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			purchase_order_id TEXT,
-			line_no INTEGER,
-			material_id TEXT,
-			material_code TEXT,
-			material_name TEXT,
-			specification TEXT,
-			qty REAL,
-			uom TEXT,
-			price REAL,
-			amount REAL,
-			received_qty REAL,
-			status TEXT,
-			version INTEGER DEFAULT 1
-		)
-	`).Error)
-
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE audit_logs (
-			id TEXT PRIMARY KEY NOT NULL,
-			module TEXT,
-			target_id TEXT,
-			action TEXT,
-			diff TEXT,
-			operator TEXT,
-			ip TEXT,
-			created_at DATETIME
-		)
-	`).Error)
+	applyTradingTestSchema(t, testDB, tradingTestSchemaOptions{includePurchase: true, includeAuditLog: true})
 
 	return testDB
 }
@@ -159,24 +103,25 @@ func seedPurchaseTransactionBaseData(t *testing.T, testDB *gorm.DB) {
 		Status:    "Active",
 	}).Error)
 	require.NoError(t, testDB.Create(&models.PurchaseOrder{
-		ID:           "po-1",
-		OrderNo:      "PO-001",
-		SupplierID:   "sup-1",
-		SupplierName: "Supplier A",
-		OrderDate:    "2026-04-01",
-		ExpectedDate: "2026-04-10",
-		Status:       "Draft",
-		Currency:     "CNY",
-		Amount:       100,
-		ExchangeRate: 1,
-		Purchaser:    "Alice",
-		PaymentMethod: "BANK_TRANSFER",
+		ID:                "po-1",
+		OrderNo:           "PO-001",
+		SupplierID:        "sup-1",
+		SupplierName:      "Supplier A",
+		OrderDate:         "2026-04-01",
+		ExpectedDate:      "2026-04-10",
+		Status:            "Draft",
+		Currency:          "CNY",
+		Amount:            100,
+		ExchangeRate:      1,
+		Purchaser:         "Alice",
+		PaymentMethod:     "BANK_TRANSFER",
 		PaymentMethodName: "Bank Transfer",
-		PaymentTerm:  "30D",
-		PaymentTermName: "Net 30",
-		Note:         "initial",
-		Version:      3,
-		IsDeleted:    false,
+		PaymentTerm:       "30D",
+		PaymentTermName:   "Net 30",
+		Note:              "initial",
+		Evidences:         json.RawMessage("[]"),
+		Version:           3,
+		IsDeleted:         false,
 	}).Error)
 	require.NoError(t, testDB.Create(&models.PurchaseOrderLine{
 		PurchaseOrderID: "po-1",
@@ -210,23 +155,23 @@ func TestExecutePurchaseOrderTransactionOrderSaveRoutesSupplierOnlyDelta(t *test
 			"supplierName": json.RawMessage(`{"o":"Supplier A","n":"Supplier B"}`),
 		},
 		FinalData: PatchPurchaseOrderRequest{
-			ID:           "po-1",
-			OrderNo:      "PO-001",
-			SupplierID:   "sup-2",
-			SupplierName: "Supplier B",
-			OrderDate:    "2026-04-01",
-			ExpectedDate: "2026-04-10",
-			Status:       "Draft",
-			Currency:     "CNY",
-			Amount:       100,
-			ExchangeRate: 1,
-			Purchaser:    "Alice",
-			PaymentMethod: "BANK_TRANSFER",
+			ID:                "po-1",
+			OrderNo:           "PO-001",
+			SupplierID:        "sup-2",
+			SupplierName:      "Supplier B",
+			OrderDate:         "2026-04-01",
+			ExpectedDate:      "2026-04-10",
+			Status:            "Draft",
+			Currency:          "CNY",
+			Amount:            100,
+			ExchangeRate:      1,
+			Purchaser:         "Alice",
+			PaymentMethod:     "BANK_TRANSFER",
 			PaymentMethodName: "Bank Transfer",
-			PaymentTerm:  "30D",
-			PaymentTermName: "Net 30",
-			Note:         "initial",
-			Version:      3,
+			PaymentTerm:       "30D",
+			PaymentTermName:   "Net 30",
+			Note:              "initial",
+			Version:           3,
 			Lines: []PurchaseOrderLineRequest{
 				{
 					ID:            1,
@@ -285,23 +230,23 @@ func TestExecutePurchaseOrderTransactionOrderSaveFallsBackToUnifiedSaveForMixedD
 			"purchaser":    json.RawMessage(`{"o":"Alice","n":"Bob"}`),
 		},
 		FinalData: PatchPurchaseOrderRequest{
-			ID:           "po-1",
-			OrderNo:      "PO-001",
-			SupplierID:   "sup-1",
-			SupplierName: "Supplier A",
-			OrderDate:    "2026-04-01",
-			ExpectedDate: "2026-04-20",
-			Status:       "Draft",
-			Currency:     "CNY",
-			Amount:       999,
-			ExchangeRate: 1,
-			Purchaser:    "Bob",
-			PaymentMethod: "BANK_TRANSFER",
+			ID:                "po-1",
+			OrderNo:           "PO-001",
+			SupplierID:        "sup-1",
+			SupplierName:      "Supplier A",
+			OrderDate:         "2026-04-01",
+			ExpectedDate:      "2026-04-20",
+			Status:            "Draft",
+			Currency:          "CNY",
+			Amount:            999,
+			ExchangeRate:      1,
+			Purchaser:         "Bob",
+			PaymentMethod:     "BANK_TRANSFER",
 			PaymentMethodName: "Bank Transfer",
-			PaymentTerm:  "30D",
-			PaymentTermName: "Net 30",
-			Note:         "mixed",
-			Version:      3,
+			PaymentTerm:       "30D",
+			PaymentTermName:   "Net 30",
+			Note:              "mixed",
+			Version:           3,
 			Lines: []PurchaseOrderLineRequest{
 				{
 					ID:            1,
