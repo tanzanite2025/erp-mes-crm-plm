@@ -119,9 +119,7 @@ export function useProductFormSubmit({
       }
 
       toast.success(
-        submitPayload.mode === 'edit'
-          ? t('engineering.productArchive.toasts.updateSuccess')
-          : t('engineering.productArchive.toasts.createSingleSuccess')
+        t('engineering.productArchive.toasts.createSingleSuccess')
       )
     }
 

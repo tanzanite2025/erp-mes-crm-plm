@@ -957,3 +957,61 @@
 ### 当前阶段结论
 
 这一步把第四十三轮的统一模式在 `CustomerService` 与 `SupplierService` 两条样板链路中跑通：adapter 继续只负责映射，而 runtime schema 防线统一收口到 service 出口。这样既降低了 DTO Integrity 审计复杂度，也为后续把同类模式扩展到更多 trading / maintenance service 提供了明确模板。
+
+## 2026-04-12 - plan/impl：第四十四轮 Go 测试 Schema 基线收口（trading helper 样板）
+
+### 本轮目标
+
+落地第四十四轮的第一批 Go 测试 Schema 基线收口：
+
+1. 抽共享 trading test schema helper
+2. 先接入少量样板测试文件
+3. 验证能否减少重复手写 `CREATE TABLE` 与列漂移补丁
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `server/services/trading_test_schema_helper_test.go`
+2. `server/services/sales_order_flow_test.go`
+3. `server/services/purchase_transaction_service_test.go`
+
+### 实现细节
+
+1. **新增 trading test schema helper**
+   - 新增 `applyTradingTestSchema(...)`
+   - 当前支持按选项收口：
+     - `sales_orders`
+     - `sales_order_lines`
+     - `purchase_orders`
+     - `purchase_order_lines`
+     - `audit_logs`
+
+2. **接入 SalesOrder 样板测试**
+   - `sales_order_flow_test.go` 不再手写 `sales_orders` / `sales_order_lines`
+   - 改为复用 `applyTradingTestSchema(t, testDB, tradingTestSchemaOptions{includeSales: true})`
+
+3. **接入 PurchaseTransaction 样板测试**
+   - `purchase_transaction_service_test.go` 不再手写 `purchase_orders` / `purchase_order_lines` / `audit_logs`
+   - 改为复用 `applyTradingTestSchema(t, testDB, tradingTestSchemaOptions{includePurchase: true, includeAuditLog: true})`
+
+4. **在样板实施中反向补齐 helper 基线缺口**
+   - 首次定向测试暴露出共享 helper 对真实模型覆盖不完整：
+     - `purchase_orders` 缺少 `evidences`
+     - `purchase_order_lines` 缺少 `returned_qty`
+   - 随后已将这些列补入 helper
+   - 同时在 `purchase_transaction_service_test.go` 的 seed 中显式写入 `Evidences: json.RawMessage("[]")`，避免 SQLite 默认值回读为 `string` 导致 `json.RawMessage` 扫描失败
+
+### 测试与验证
+
+已执行：
+
+1. `go test ./services -run "SalesOrderFlow|PurchaseOrderTransaction|PurchaseOrderReceiptConfirmation"`
+
+结果：
+
+1. 定向 Go 测试通过。
+
+### 当前阶段结论
+
+这一步把第四十四轮的第一批收口模式跑通：交易测试中重复出现的 `sales_orders` / `purchase_orders` 相关建表 SQL 已经开始向共享 helper 收口，`sales_order_flow_test.go` 与 `purchase_transaction_service_test.go` 也已经完成样板接入。更重要的是，这次实施验证了共享 helper 的真正价值：一旦 helper 不完整，问题会集中暴露在一个地方，然后通过补齐公共基线即可同时避免后续更多测试继续复制错误 schema。

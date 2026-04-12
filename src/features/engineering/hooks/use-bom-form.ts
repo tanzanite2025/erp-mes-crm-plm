@@ -6,6 +6,7 @@ import { createLogger } from '@/lib/logger'
 import { failLoudly } from '@/lib/safe-catch'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
+import { type MaterialOption } from '../../material-archive/data/schema'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
 import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
@@ -95,12 +96,12 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
   const materials = useMemo(() => {
     if (materialsQuery.data) return materialsQuery.data
-    if (materialsQuery.isPending) return [] as BOMItemDraft[]
+    if (materialsQuery.isPending) return [] as MaterialOption[]
     const error = materialsQuery.error instanceof Error
       ? materialsQuery.error
       : new Error('[CRITICAL] Missing BOM form materials query data')
     failLoudly(error, 'useBOMForm.materials')
-    return [] as BOMItemDraft[]
+    return [] as MaterialOption[]
   }, [materialsQuery.data, materialsQuery.error, materialsQuery.isPending])
 
   useEffect(() => {

@@ -8,13 +8,16 @@ import {
     PERSONNEL_TEMPLATE_COLUMNS,
     PERSONNEL_TEMPLATE_SHEET_NAME,
     PERSONNEL_EXPORT_SHEET_NAME,
-    PersonnelArchiveColumn,
     PersonnelArchiveColumnKey,
     getPersonnelArchiveValue,
     normalizePersonnelHeader,
 } from '../config/personnel-archive-columns'
 
 const PERSONNEL_EDITABLE_ROW_COUNT = 300
+
+type LocalizedPersonnelArchiveColumn = Omit<(typeof PERSONNEL_TEMPLATE_COLUMNS)[number], 'header'> & {
+    header: string
+}
 
 type MapExcelOptions = {
     skipDeptResolution?: boolean
@@ -81,7 +84,7 @@ function getPersonnelEducationLabels(locale: AppLocale) {
     ]
 }
 
-function getLocalizedPersonnelColumns(locale: AppLocale): PersonnelArchiveColumn[] {
+function getLocalizedPersonnelColumns(locale: AppLocale): LocalizedPersonnelArchiveColumn[] {
     const genderLabels = getPersonnelGenderLabels(locale)
     const statusLabels = getPersonnelStatusLabels(locale)
     const educationLabels = getPersonnelEducationLabels(locale)

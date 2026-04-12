@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type Product } from '../data/schema'
-import { type SaveProductOperation } from '../mutation-types'
+import { type SaveProductInput, type SaveProductOperation } from '../mutation-types'
 import { PRODUCTS_QUERY_KEY } from '../query-keys'
 import { ProductMaintenanceService } from '../services/product-maintenance-service'
 

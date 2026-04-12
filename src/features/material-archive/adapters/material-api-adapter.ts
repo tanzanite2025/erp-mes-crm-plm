@@ -2,11 +2,11 @@ import type { Material, MaterialDimensions, MaterialOption } from '../data/schem
 import type {
   BulkSyncMaterialsApiDTO,
   MaterialApiDTO,
-  MaterialDimensionsApiDTO,
   MaterialListPageApiDTO,
   MaterialOptionApiDTO,
   SaveMaterialApiDTO,
 } from '../contracts/material-api-contract'
+import type { MaterialDimensionsApiDTO } from '../contracts/material-api-contract'
 
 export interface MaterialListPageContract {
   items: Material[]
