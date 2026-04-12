@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Ruler, Tag, Info, Save, Box, Nut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
 
 type SpokeLengthFormState = SpokeLengthInput & { id?: string; createdAt?: string }
+type SpokeLengthFormUpdater = SpokeLengthFormState | ((prev: SpokeLengthFormState) => SpokeLengthFormState)
 
 interface SpokeLengthActionDialogProps {
   currentRow?: SpokeLength | null
@@ -31,6 +32,7 @@ interface SpokeLengthActionDialogProps {
   onOpenChange: (open: boolean) => void
   onSave: (params: {
     data: SpokeLengthInput
+    recordId?: string
     isPatch: boolean
     delta?: DeltaSet
     version?: number
@@ -93,6 +95,22 @@ export function SpokeLengthActionDialog({
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
+  const setFormData = useCallback((updater: SpokeLengthFormUpdater) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
+
+  const updateField = useCallback(<K extends keyof SpokeLengthFormState>(field: K, value: SpokeLengthFormState[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }, [setFormData])
+
   const handleSave = async () => {
     const parsed = spokeLengthInputSchema.safeParse(formData)
     if (!parsed.success) {
@@ -110,6 +128,7 @@ export function SpokeLengthActionDialog({
 
       await onSave({
         data: payload,
+        recordId: currentRow.id,
         isPatch: true,
         delta,
         version: currentRow.version,
@@ -181,9 +200,7 @@ export function SpokeLengthActionDialog({
               placeholder='例如：DT-SWISS-29er-Rear'
               className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-blue-500/20'
               value={formData.name}
-              onChange={(e) => {
-                formData.name = e.target.value
-              }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2 text-blue-600'>
@@ -192,9 +209,7 @@ export function SpokeLengthActionDialog({
             </Label>
             <SelectDropdown
               defaultValue={formData.productId}
-              onValueChange={(value) => {
-                formData.productId = value
-              }}
+              onValueChange={(value) => updateField('productId', value)}
               items={products.map((product) => ({
                 label: `${product.sku} | ${product.name}`,
                 value: product.id,
@@ -212,9 +227,7 @@ export function SpokeLengthActionDialog({
               placeholder='例如：298'
               className='h-12 rounded-2xl border-none bg-background px-5 font-mono text-sm font-black shadow-sm'
               value={formData.length}
-              onChange={(e) => {
-                formData.length = e.target.value
-              }}
+              onChange={(e) => updateField('length', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -223,9 +236,7 @@ export function SpokeLengthActionDialog({
               placeholder='例如：SUS304 / Steel'
               className='h-12 rounded-2xl border-none bg-background px-5 text-sm font-bold shadow-sm'
               value={formData.material}
-              onChange={(e) => {
-                formData.material = e.target.value
-              }}
+              onChange={(e) => updateField('material', e.target.value)}
             />
           </div>
         </div>
@@ -241,9 +252,7 @@ export function SpokeLengthActionDialog({
               </Label>
               <SelectDropdown
                 defaultValue={formData.hubId}
-                onValueChange={(value) => {
-                  formData.hubId = value
-                }}
+                onValueChange={(value) => updateField('hubId', value)}
                 items={hubs.map((hub) => ({
                   label: `${hub.brand} ${hub.name}`,
                   value: hub.id,
@@ -258,9 +267,7 @@ export function SpokeLengthActionDialog({
               </Label>
               <SelectDropdown
                 defaultValue={formData.nippleId}
-                onValueChange={(value) => {
-                  formData.nippleId = value
-                }}
+                onValueChange={(value) => updateField('nippleId', value)}
                 items={nipples.map((nipple) => ({
                   label: `${nipple.brand} ${nipple.name}`,
                   value: nipple.id,
@@ -280,8 +287,11 @@ export function SpokeLengthActionDialog({
             value={formData.fileUrl}
             accept='image/*,.pdf'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              setFormData((prev) => ({
+                ...prev,
+                fileUrl: url,
+                fileExtension: ext || prev.fileExtension,
+              }))
             }}
           />
         </div>

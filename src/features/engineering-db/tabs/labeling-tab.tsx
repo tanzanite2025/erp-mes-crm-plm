@@ -36,6 +36,7 @@ import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
+import type { DeltaSet } from '@/lib/delta/types'
 import { ENGINEERING_DB_LABELING_QUERY_KEY } from '../query-keys'
 import { useEngineeringDbProductLookup } from '../hooks/use-engineering-db-product-lookup'
 import {
@@ -76,13 +77,14 @@ export function LabelingTab() {
     const saveMutation = useMutation({
         mutationFn: async (params: {
             data: LabelingDraftInput
+            recordId?: string
             isPatch: boolean
-            delta?: any
+            delta?: DeltaSet
             version?: number
         }) => {
-            const { data: formData, isPatch, delta, version } = params
-            if (isPatch && delta) {
-                await ProductionDBService.patchLabeling(formData.id, delta, version!)
+            const { data: formData, recordId, isPatch, delta, version } = params
+            if (isPatch && delta && recordId) {
+                await ProductionDBService.patchLabeling(recordId, delta, version!)
                 return
             }
             await ProductionDBService.saveLabelingItem(formData)
@@ -263,8 +265,9 @@ export function LabelingTab() {
 
     const handleSave = async (params: {
         data: LabelingDraftInput
+        recordId?: string
         isPatch: boolean
-        delta?: any
+        delta?: DeltaSet
         version?: number
     }) => {
         await saveMutation.mutateAsync(params)

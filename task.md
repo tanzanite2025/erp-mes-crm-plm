@@ -1,3 +1,26 @@
+- [ ] 771. plan：engineering-db TypeScript 类型报错修复（2026-04-12，待确认）
+  - [x] 已确认当前报错集中在 `engineering-db` 模块的 schema / service / hook / tab 调用边界不一致：
+    - [x] `src/features/engineering-db/hooks/use-spoke-length-mgmt.ts`
+    - [x] `src/features/engineering-db/services/hub-service.ts`
+    - [x] `src/features/engineering-db/services/nipple-service.ts`
+    - [x] `src/features/engineering-db/tabs/labeling-tab.tsx`
+    - [x] `src/features/engineering-db/data/hub-schema.ts`
+    - [x] `src/features/engineering-db/data/nipple-schema.ts`
+  - [x] 已确认首个根因：编辑态代码把 `Input` 类型对象当成包含 `id` 的已存在实体使用：
+    - [x] `use-spoke-length-mgmt.ts` 中 `formData` 类型为 `SpokeLengthInput`，但 patch 时读取了 `formData.id`
+    - [x] `labeling-tab.tsx` 报错形态与此一致，属于“输入态对象被当成可 patch 记录”问题
+  - [x] 已确认第二个根因：service 出口返回的对象构造不满足 schema 必填字段：
+    - [x] `hub-service.ts` 返回值与 `hubSchema` 的必填 `name` 不一致
+    - [x] `nipple-service.ts` 返回值与 `nippleSchema` 的必填 `name` 不一致
+  - [x] 已确认本轮最小修复边界：
+    - [x] 区分“新建输入态”和“编辑持久化实体态”，避免直接从 `Input` 类型读取 `id`
+    - [x] 让 `hubService` / `nippleService` 的返回映射显式满足对应 schema 必填字段
+    - [x] 仅修复截图中已暴露的类型错误，不顺带扩散重构整个 engineering-db
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 修改 `engineering-db` 相关类型与 service 映射
+    - [ ] 执行定向 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+
 - [ ] 770. plan：第四十四轮 Go 测试 Schema 基线收口（2026-04-12，待确认）
    - [x] 已确认当前 Go 测试里高频重复、最容易漂移的表组主要包括：
      - [x] `sales_orders` / `sales_order_lines`

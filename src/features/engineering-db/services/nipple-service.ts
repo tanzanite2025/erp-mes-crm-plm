@@ -1,18 +1,26 @@
-import { Nipple, nippleSchema } from '../data/nipple-schema'
+import { nippleSchema, type Nipple } from '../data/nipple-schema'
 import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 
 export const nippleService = {
   getNipples: async (): Promise<Nipple[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('NIPPLE_DATA')
-      return raw.map(s => ({
-        ...s.nippleData,
-        id: s.id,
-        version: s._v,
-        createdAt: s.createdAt || new Date().toISOString()
-      })).filter(item => nippleSchema.safeParse(item).success)
-    } catch (e) {
-      console.error('Failed to get nipples from cloud', e)
+	    return raw.flatMap((s) => {
+	      const parsed = nippleSchema.safeParse({
+	        id: s.id,
+	        name: s.nippleData?.name ?? s.name,
+	        brand: s.nippleData?.brand,
+	        material: s.nippleData?.material,
+	        length: s.nippleData?.length,
+	        color: s.nippleData?.color,
+	        fileUrl: s.nippleData?.fileUrl,
+	        fileExtension: s.nippleData?.fileExtension,
+	        version: s._v ?? 1,
+	        createdAt: s.createdAt || new Date().toISOString(),
+	      })
+	      return parsed.success ? [parsed.data] : []
+	    })
+    } catch {
       return []
     }
   },
@@ -30,8 +38,8 @@ export const nippleService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
-  patchNipple: async (id: string, delta: any, version: number) => {
-    const mappedDelta: any = {}
+  patchNipple: async (id: string, delta: Record<string, unknown>, version: number) => {
+    const mappedDelta: Record<string, unknown> = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`nippleData.${path}`] = value
     })

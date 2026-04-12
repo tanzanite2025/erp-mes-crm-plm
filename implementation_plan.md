@@ -1,3 +1,99 @@
+### 1. plan：engineering-db TypeScript 类型报错修复
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前 `engineering-db` 模块出现多处 TypeScript 类型报错，报错主要集中在：
+
+1. 编辑态表单 / hook 把 `Input` 类型当成已存在实体使用
+2. service 返回对象与 runtime schema 的必填字段不一致
+3. tab 层 patch 调用继续依赖“输入态对象自带 `id`”的旧假设
+
+从截图可见，当前至少已暴露：
+
+1. `use-spoke-length-mgmt.ts` 访问 `formData.id`
+2. `hub-service.ts` 返回结果不满足 `hubSchema`
+3. `nipple-service.ts` 返回结果不满足 `nippleSchema`
+4. `labeling-tab.tsx` 在 patch 场景中访问输入态对象上的 `id`
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 输入态与实体态混用
+
+当前部分代码把 `*Input` 类型既当“新建表单输入”使用，又当“编辑现有记录”使用。这会导致：
+
+1. `Input` 类型本身未定义 `id`
+2. patch 场景却直接读取 `formData.id`
+3. TypeScript 在严格模式下正确报错
+
+这类问题当前已经在：
+
+1. `src/features/engineering-db/hooks/use-spoke-length-mgmt.ts`
+2. `src/features/engineering-db/tabs/labeling-tab.tsx`
+
+被实锤。
+
+##### 1.2.2 service 返回映射未显式满足 schema
+
+`hubService.getHubs()` 与 `nippleService.getNipples()` 当前把 `engineeringSpecService.getSpecs(...)` 的返回结果直接展开到对象上，再拼接 `id` / `version` / `createdAt`。但现有返回类型没有向 TypeScript 明确保证 `name` 一定存在，因此：
+
+1. `hubSchema` 要求 `name: string`
+2. `nippleSchema` 要求 `name: string`
+3. service 返回值被推断为缺少必填 `name` 的对象数组
+4. 最终与 `Promise<Hub[]>` / `Promise<Nipple[]>` 冲突
+
+#### 1.3 推荐修复策略
+
+本轮建议做最小、直接、可验证的修复：
+
+##### 1.3.1 修复编辑态 patch 参数来源
+
+原则：
+
+1. patch 场景优先从当前记录 `currentRow` / 已持久化对象读取 `id`
+2. 不再从 `*Input` 类型对象读取 `id`
+3. 如确有需要，显式定义“编辑表单态”类型，而不是污染 `Input`
+
+##### 1.3.2 修复 service 出口对象构造
+
+原则：
+
+1. `hubService` / `nippleService` 返回值必须显式构造 `name`
+2. 返回对象结构应直接对齐 `hubSchema` / `nippleSchema`
+3. 过滤逻辑保留，但不能依赖模糊推断来满足 `Promise<Hub[]>` / `Promise<Nipple[]>`
+
+#### 1.4 涉及文件
+
+预计涉及：
+
+1. `src/features/engineering-db/hooks/use-spoke-length-mgmt.ts`
+2. `src/features/engineering-db/tabs/labeling-tab.tsx`
+3. `src/features/engineering-db/services/hub-service.ts`
+4. `src/features/engineering-db/services/nipple-service.ts`
+
+如在实施中发现相同模式的极少量同类文件，可做同模式最小补齐，但不扩成全面重构。
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不重构整个 `engineering-db` 数据建模体系
+2. 不顺带统一所有 `Input` / `Entity` 类型命名
+3. 不对无关模块进行大面积 schema 调整
+
+#### 1.6 验证方式
+
+建议执行：
+
+1. 定向 TypeScript 校验，至少覆盖截图中的报错文件
+2. 如项目已有统一校验命令，则在影响可控时执行一次 `tsc --noEmit`
+
+#### 1.7 当前阶段结论
+
+当前可以先按“修输入态 / 实体态边界 + 修 service 返回映射”这两条主线做最小收口。这样既能直接解决截图中的 `id` / `name` 报错，也不会把这次修复扩成对整个 `engineering-db` 的大规模重构。
+
 ### 1. audit：第十五轮审计修复（工龄权威下沉 + PII 脱敏权限裁决 + 语言契约收口）
 
 日期：2026-04-12  

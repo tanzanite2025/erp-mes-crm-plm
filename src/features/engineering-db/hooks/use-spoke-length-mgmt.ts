@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import type { DeltaSet } from '@/lib/delta/types'
 import { type SpokeLength, type SpokeLengthInput } from '../data/schema'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
@@ -48,13 +49,14 @@ export function useSpokeLengthMgmt() {
   const saveMutation = useMutation({
     mutationFn: async (params: {
       data: SpokeLengthInput
+      recordId?: string
       isPatch: boolean
-      delta?: any
+      delta?: DeltaSet
       version?: number
     }) => {
-      const { data: formData, isPatch, delta, version } = params
-      if (isPatch && delta) {
-        await SpokeService.patchSpokeLength(formData.id, delta, version!)
+      const { data: formData, recordId, isPatch, delta, version } = params
+      if (isPatch && delta && recordId) {
+        await SpokeService.patchSpokeLength(recordId, delta, version!)
         return
       }
 
@@ -119,15 +121,16 @@ export function useSpokeLengthMgmt() {
       await deleteMutation.mutateAsync(item.id)
       await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
       toast.success(t('engineering.spokeLength.toasts.deleteSuccess'))
-    } catch (error) {
-      toast.error(t('common.status.error' as any))
+    } catch (_error) {
+      toast.error('操作失败')
     }
   }
 
   const handleSave = async (params: {
     data: SpokeLengthInput
+    recordId?: string
     isPatch: boolean
-    delta?: any
+    delta?: DeltaSet
     version?: number
   }) => {
     await saveMutation.mutateAsync(params)

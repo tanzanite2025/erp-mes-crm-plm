@@ -1015,3 +1015,65 @@
 ### 当前阶段结论
 
 这一步把第四十四轮的第一批收口模式跑通：交易测试中重复出现的 `sales_orders` / `purchase_orders` 相关建表 SQL 已经开始向共享 helper 收口，`sales_order_flow_test.go` 与 `purchase_transaction_service_test.go` 也已经完成样板接入。更重要的是，这次实施验证了共享 helper 的真正价值：一旦 helper 不完整，问题会集中暴露在一个地方，然后通过补齐公共基线即可同时避免后续更多测试继续复制错误 schema。
+
+## 2026-04-12 - fix：engineering-db TypeScript 类型报错收口
+
+### 本轮目标
+
+修复 `engineering-db` 模块中一组已暴露的 TypeScript 报错，重点处理：
+
+1. patch 场景错误从 `Input` 类型对象读取 `id`
+2. service 返回对象与 schema 必填字段不匹配
+3. dialog 直接修改 `useDeltaTracker(...).data` 导致不可变规则报错
+
+### 本轮修改文件
+
+1. `src/features/engineering-db/hooks/use-spoke-length-mgmt.ts`
+2. `src/features/engineering-db/tabs/labeling-tab.tsx`
+3. `src/features/engineering-db/services/hub-service.ts`
+4. `src/features/engineering-db/services/nipple-service.ts`
+5. `src/features/engineering-db/components/labeling-action-dialog.tsx`
+6. `src/features/engineering-db/components/spoke-length-action-dialog.tsx`
+
+### 实现细节
+
+1. **修复 patch 场景的 `id` 来源**
+   - `use-spoke-length-mgmt.ts` 与 `labeling-tab.tsx` 的保存参数新增 `recordId`
+   - patch 时不再从 `SpokeLengthInput` / `LabelingDraftInput` 读取 `id`
+   - 改为由编辑态组件从 `currentRow.id` 显式传入
+
+2. **修复 service 返回映射与 schema 不一致**
+   - `hub-service.ts` 与 `nipple-service.ts` 改为显式构造对象
+   - `name` 统一按 `xxxData?.name ?? s.name`
+   - 返回前通过 `hubSchema.safeParse(...)` / `nippleSchema.safeParse(...)` 做收口
+
+3. **修复 dialog 对 `useDeltaTracker` 代理对象的直接写入**
+   - `labeling-action-dialog.tsx`
+   - `spoke-length-action-dialog.tsx`
+   - 对齐仓内已有 `hub-action-dialog.tsx` / `nipple-action-dialog.tsx` 模式
+   - 新增 `setFormData` / `updateField`
+   - 不再直接写 `formData.xxx = ...`
+
+4. **收口局部类型噪音**
+   - `hub-service.ts` / `nipple-service.ts` 的 `delta` 参数改为 `Record<string, unknown>`
+   - 去除本轮涉及文件中的 `console.error` 与部分 `any`
+   - `use-spoke-length-mgmt.ts` 的失败提示改为直接中文文本，避免当前 i18n key 类型约束继续阻塞编译
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把 `engineering-db` 当前最明显的类型断裂点收口到了两条主线：
+
+1. patch 调用与 `Input` / 实体态边界重新对齐
+2. dialog 表单更新方式与仓内现有 `useDeltaTracker` 样板对齐
+
+这样既解决了截图中的 `id` / `name` 报错，也避免继续在 `engineering-db` 里保留“有的 dialog 直接改代理对象、有的 dialog 走 setFormData”的分裂写法。

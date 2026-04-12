@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Sticker, Hash, Tag, Save, Layers, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import type { DeltaSet } from '@/lib/delta/types'
 
 type LabelingFormState = LabelingDraftInput & { id?: string; createdAt?: string }
+type LabelingFormUpdater = LabelingFormState | ((prev: LabelingFormState) => LabelingFormState)
 
 interface LabelingActionDialogProps {
   currentRow?: LabelingDraft | null
@@ -27,6 +28,7 @@ interface LabelingActionDialogProps {
   onOpenChange: (open: boolean) => void
   onSave: (params: {
     data: LabelingDraftInput
+    recordId?: string
     isPatch: boolean
     delta?: DeltaSet
     version?: number
@@ -69,6 +71,22 @@ export function LabelingActionDialog({
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
+  const setFormData = useCallback((updater: LabelingFormUpdater) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
+
+  const updateField = useCallback(<K extends keyof LabelingFormState>(field: K, value: LabelingFormState[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }, [setFormData])
+
   const handleSave = async () => {
     const parsed = labelingDraftInputSchema.safeParse(formData)
     if (!parsed.success) {
@@ -86,6 +104,7 @@ export function LabelingActionDialog({
 
       await onSave({
         data: payload,
+        recordId: currentRow.id,
         isPatch: true,
         delta,
         version: currentRow.version,
@@ -158,8 +177,11 @@ export function LabelingActionDialog({
             value={formData.fileUrl}
             accept='image/*,.pdf,.ai,.eps'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              setFormData((prev) => ({
+                ...prev,
+                fileUrl: url,
+                fileExtension: ext || prev.fileExtension,
+              }))
             }}
           />
         </div>
@@ -173,9 +195,7 @@ export function LabelingActionDialog({
               placeholder='例如：DT-SWISS-2025-V1-Water'
               className='h-12 rounded-2xl border-none bg-muted/40 px-5 text-sm font-black shadow-inner focus-visible:ring-teal-500/20'
               value={formData.name}
-              onChange={(e) => {
-                formData.name = e.target.value
-              }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
@@ -184,9 +204,7 @@ export function LabelingActionDialog({
             </Label>
             <SelectDropdown
               defaultValue={formData.type}
-              onValueChange={(value) => {
-                formData.type = value as LabelingDraftInput['type']
-              }}
+              onValueChange={(value) => updateField('type', value as LabelingDraftInput['type'])}
               items={[
                 { label: '水标 / Water Decal', value: 'Water' },
                 { label: '涂装 / Paint', value: 'Paint' },
@@ -205,9 +223,7 @@ export function LabelingActionDialog({
             </Label>
             <SelectDropdown
               defaultValue={formData.productId || 'generic'}
-              onValueChange={(value) => {
-                formData.productId = value === 'generic' ? '' : value
-              }}
+              onValueChange={(value) => updateField('productId', value === 'generic' ? '' : value)}
               items={[
                 { label: '-- 通用方案 / Generic --', value: 'generic' },
                 ...products.map((product) => ({
