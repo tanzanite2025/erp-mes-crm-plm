@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -47,7 +46,7 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	var input models.ProductAttributeCategory
+	var input services.SaveProductAttributeCategoryInput
 	if err := json.Unmarshal(body, &input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 产品属性分类格式错误"})
 		return

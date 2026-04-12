@@ -1,6 +1,7 @@
 import { type Dispatch, type SetStateAction } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { toast } from 'sonner'
+import { normalizeSku } from '@/lib/codecs/code-normalization'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { type Product, type ProductType } from '../data/schema'
@@ -58,7 +59,7 @@ export function useProductFormSubmit({
 
     for (const product of allProducts) {
       if (currentRow && product.id === currentRow.id) continue
-      if (product.sku) existingSkuMap.set(product.sku, product.id)
+      if (product.sku) existingSkuMap.set(normalizeSku(product.sku), product.id)
     }
 
     const validateSkuUnique = (productsToSave: Product[]) => {

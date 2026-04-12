@@ -1,4 +1,6 @@
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { type ProductTemplate } from '../data/schema'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
 import { type SaveProductTemplateInput } from '../mutation-types'
@@ -7,8 +9,8 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
   return {
     id: dto.id,
     name: dto.name,
-    code: dto.code,
-    componentKey: dto.componentKey,
+    code: normalizeMachineCode(dto.code),
+    componentKey: normalizeComponentKey(dto.componentKey) as ProductTemplate['componentKey'],
     description: dto.description || '',
     active: dto.active,
     createdAt: dto.createdAt || new Date().toISOString(),
@@ -20,8 +22,8 @@ export function toProductTemplateApiDTO(template: SaveProductTemplateInput): Pro
   return {
     id: template.id || '',
     name: template.name || '',
-    code: template.code || '',
-    componentKey: (template.componentKey || 'GENERAL') as ProductTemplateApiDTO['componentKey'],
+    code: normalizeMachineCode(template.code),
+    componentKey: normalizeComponentKey(template.componentKey) as ProductTemplateApiDTO['componentKey'],
     description: template.description || '',
     active: template.active ?? true,
     createdAt: template.createdAt,
@@ -40,12 +42,8 @@ const PRODUCT_TEMPLATE_PATCH_FIELDS: Array<keyof ProductTemplate> = [
 export function buildProductTemplateDelta(current: ProductTemplate, next: SaveProductTemplateInput): DeltaSet {
   const delta: DeltaSet = {}
   for (const field of PRODUCT_TEMPLATE_PATCH_FIELDS) {
-    const currentValue = current[field] ?? null
-    const nextValue = (next[field] ?? null) as ProductTemplate[typeof field] | null
-    if (JSON.stringify(currentValue) === JSON.stringify(nextValue)) {
-      continue
-    }
-    delta[field] = { o: currentValue, n: nextValue }
+    const fieldDelta = buildFlattenDelta(current[field], next[field], { basePath: String(field) })
+    Object.assign(delta, fieldDelta)
   }
   return delta
 }

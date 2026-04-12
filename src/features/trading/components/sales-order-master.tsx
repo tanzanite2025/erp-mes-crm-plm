@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
 import { auditUtils } from '@/lib/audit-utils'
+import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '../data/schema'
 import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
@@ -25,7 +26,7 @@ function StatusBadge({ status }: { status: string }) {
   const { t } = useLanguage()
   const meta = getSalesStatusMeta(status)
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase ${meta.color}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-black uppercase italic ${meta.color}`}>
       {getSalesStatusLabel(status, t)}
     </span>
   )
@@ -46,28 +47,28 @@ export function SalesOrderMaster({
         <table className='min-w-full border-separate border-spacing-y-1.5 text-sm'>
           <thead className='sticky top-0 z-10 bg-background/80 backdrop-blur-md'>
             <tr>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.orderStatus')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.customer')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.classificationDate')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.totalQuantity')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.paymentMethod')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.paymentTerm')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.deliveryDeadline')}
               </th>
-              <th className='px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-center text-[10px] font-black uppercase italic tracking-widest text-muted-foreground/50'>
                 {t('tradingSalesOrder.master.columns.actions')}
               </th>
             </tr>
@@ -107,7 +108,7 @@ export function SalesOrderMaster({
                           <StatusBadge status={order.status} />
                         </div>
                         <div className='mt-0.5 flex items-center gap-1.5 opacity-40'>
-                          <span className='text-[8px] font-black uppercase tracking-widest'>
+                          <span className='text-[8px] font-black uppercase italic tracking-widest'>
                             {t('tradingSalesOrder.master.auditor')}:
                           </span>
                           <span className='max-w-[80px] truncate text-[9px] font-bold'>
@@ -121,7 +122,7 @@ export function SalesOrderMaster({
                     </td>
                     <td className='px-4 py-3'>
                       <div className='flex flex-col'>
-                        <span className='text-[10px] font-black uppercase tracking-tight text-primary/80'>
+                        <span className='text-[10px] font-black uppercase italic tracking-tight text-primary/80'>
                           {classification}
                         </span>
                         <span className='mt-0.5 font-mono text-[10px] text-muted-foreground'>
@@ -136,27 +137,27 @@ export function SalesOrderMaster({
                         </span>
                         {order.status !== 'Draft' && (
                           <div className='flex flex-col gap-1'>
-                            <div className='h-1.5 w-full max-w-[60px] overflow-hidden rounded-full bg-muted shadow-inner'>
-                              <div
-                                className='h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] transition-all duration-1000'
-                                style={{
-                                  width: `${Math.min(
-                                    100,
-                                    // [UI-DERIVED-PREVIEW]: 由于 SalesOrder 实体当前缺失 header 级的 deliveredQty 汇总
-                                    // 我们暂时在 UI 层通过聚合子行数据得出。
-                                    // [CRITICAL]: 严禁静默过滤，如果 order.lines 缺失，此百分比将失去权威性。
-                                    (() => {
-                                      if (!order.lines) return 0;
-                                      const totalDelivered = order.lines.reduce((acc, line) => acc + Number(line.deliveredQty || 0), 0);
-                                      return (totalDelivered / (order.quantity || 1)) * 100;
-                                    })()
-                                  )}%`,
-                                }}
-                              />
-                            </div>
-                            <p className='text-[7px] font-black opacity-20 uppercase tracking-tighter'>
-                              {t('tradingSalesOrder.master.fulfillmentCalculatedInUI')}
-                            </p>
+                            {typeof order.fulfillmentRate === 'number' ? (
+                              <div className='h-1.5 w-full max-w-[60px] overflow-hidden rounded-full bg-muted shadow-inner'>
+                                <div
+                                  className='h-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] transition-all duration-1000'
+                                  style={{
+                                    width: `${Math.min(100, Math.max(0, order.fulfillmentRate))}%`,
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                {(() => {
+                                  const error = new Error('[CRITICAL] Missing fulfillmentRate from sales order DTO')
+                                  failLoudly(error, 'SalesOrderMaster.fulfillmentRate')
+                                  return null
+                                })()}
+                                <span className='text-[9px] font-black uppercase italic tracking-widest text-muted-foreground/30'>
+                                  --
+                                </span>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -166,7 +167,7 @@ export function SalesOrderMaster({
                         <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
                           {order.paymentMethodName || order.paymentMethod || '-'}
                         </span>
-                        <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                        <span className='text-[8px] font-mono uppercase italic text-muted-foreground/40'>
                           {order.paymentMethod || '--'}
                         </span>
                       </div>
@@ -176,7 +177,7 @@ export function SalesOrderMaster({
                         <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
                           {order.paymentTermName || order.paymentTerm || '-'}
                         </span>
-                        <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                        <span className='text-[8px] font-mono uppercase italic text-muted-foreground/40'>
                           {order.paymentTerm || '--'}
                         </span>
                       </div>
@@ -189,7 +190,7 @@ export function SalesOrderMaster({
                         {order.status !== 'Done' &&
                           order.status !== 'Canceled' &&
                           isBefore(parseISO(order.deliveryDate), startOfDay(new Date())) && (
-                            <span className='inline-flex items-center gap-0.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[8px] font-black uppercase text-rose-600 animate-pulse'>
+                            <span className='inline-flex items-center gap-0.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[8px] font-black uppercase italic text-rose-600 animate-pulse'>
                               {t('tradingSalesOrder.master.overdue')}
                             </span>
                           )}

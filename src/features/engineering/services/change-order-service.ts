@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { type ChangeOrder } from '../data/schema'
 import { type SaveChangeOrderInput } from '../mutation-types'
 
@@ -7,6 +8,17 @@ interface GetChangeOrdersParams {
   productId?: string
   changeType?: 'ECO' | 'ECN'
   status?: 'draft' | 'released' | 'obsolete'
+}
+
+function normalizeChangeOrderInput(changeOrder: SaveChangeOrderInput): SaveChangeOrderInput {
+  const normalizedSiteCode = normalizeSiteCode(changeOrder.siteCode)
+  return {
+    ...changeOrder,
+    changeOrderNo: normalizeChangeOrderNo(changeOrder.changeOrderNo),
+    siteCode: normalizedSiteCode,
+    revisionNo: normalizeRevisionNo(changeOrder.revisionNo),
+    isDefaultSite: normalizedSiteCode === '' || Boolean(changeOrder.isDefaultSite),
+  }
 }
 
 export const changeOrderService = {
@@ -22,9 +34,10 @@ export const changeOrderService = {
   },
 
   async saveChangeOrder(changeOrder: SaveChangeOrderInput): Promise<ChangeOrder> {
+    const normalizedChangeOrder = normalizeChangeOrderInput(changeOrder)
     return apiFetch<ChangeOrder>('/engineering/change-orders', {
       method: 'POST',
-      body: JSON.stringify(changeOrder),
+      body: JSON.stringify(normalizedChangeOrder),
     })
   },
 

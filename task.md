@@ -1,3 +1,546 @@
+- [ ] 732. architecture：selectedVariants 初始化规则收口（2026-04-12，待确认）
+  - [x] 已确认问题入口位于：
+    - [x] `src/features/engineering/hooks/use-product-form.ts`
+    - [x] `src/features/engineering/hooks/use-product-form-init.ts`
+    - [x] `src/features/engineering/utils/product-form-utils.ts`
+  - [x] 已确认当前 `selectedVariants` 初始化规则分散在多个 `useEffect` / 条件分支：
+    - [x] 非编辑态 + metadata 加载完成后，如果当前为空，则默认取首个 `versionLevelOptions`
+    - [x] 编辑态打开时，从 `currentRow.attributeValues.versionLevel + currentRow.weight` 重新组装
+    - [x] 弹窗关闭时，再额外清空 `selectedVariants`
+  - [x] 已确认这类逻辑直接决定多版本产品（`Version Level / Weight`）的初始态，不应继续散落在副作用里
+  - [x] 已确认当前已有可复用的数据结构基础：
+    - [x] `ProductVariantSelection`
+    - [x] `buildDefaultProductValues`
+    - [x] `getAttributeValue`
+  - [x] 已确认当前缺口：
+    - [x] 没有统一的 Product 初始化命令对象
+    - [x] 没有单一来源负责同时产出 `form default/reset values` 与 `selectedVariants initial state`
+  - [x] 已确认推荐收口方向：
+    - [x] 新增 `ProductCommand.composeInitialState()`（或同职责命令模块）
+    - [x] 将以下职责统一收口：
+      - [x] create 场景默认表单值
+      - [x] edit 场景基于 `currentRow` 的表单初始值
+      - [x] create/edit 场景的 `selectedVariants` 初始值
+      - [x] 默认首个 `versionLevel` 的选取策略
+  - [x] 已确认推荐第一轮实施边界：
+    - [x] 先只收口 `selectedVariants` 与表单初始态
+    - [x] 不顺手改提交逻辑 `buildBatchProducts / buildSingleVariantProduct`
+    - [x] 不扩到服务层或后端 DTO
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 新增 ProductCommand（或等价命令模块）
+    - [ ] 让 `use-product-form` / `use-product-form-init` 改为调用统一初始态组合函数
+    - [ ] 执行定向 `eslint` / `tsc` 校验并更新 `walkthrough.md`
+
+- [ ] 731. architecture：ChangeOrder 负向 handler 测试规划（2026-04-12，待确认）
+  - [x] 已确认本轮目标是为 `ChangeOrder` 补负向 handler 测试，而不是继续扩 DTO 范围
+  - [x] 已确认当前优先锁定的两类失败语义：
+    - [x] `400 validation`
+    - [x] `409 version conflict`
+  - [x] 已确认推荐复用现有测试文件：
+    - [x] `server/handlers/change_orders_test.go`
+  - [x] 已确认本轮最关键的测试目标 1：
+    - [x] `SaveChangeOrderHandler` 在缺少必填字段时返回 `400`
+    - [x] 重点覆盖：
+      - [x] `changeOrderNo` 为空
+      - [x] `title` 为空
+    - [x] 断言响应信息仍包含当前 validation 语义：
+      - [x] `change order number and title are required`
+  - [x] 已确认本轮最关键的测试目标 2：
+    - [x] `SaveChangeOrderHandler` 在 JSON 非法或绑定失败时返回 `400`
+    - [x] 断言响应信息包含：
+      - [x] `invalid change order payload`
+  - [x] 已确认本轮最关键的测试目标 3：
+    - [x] `SaveChangeOrderHandler` 在版本冲突时返回 `409`
+    - [x] 采用已 seed 记录 + 过期 `version` 的方式触发冲突
+    - [x] 锁定 handler 当前 conflict 分支不要回退成泛化 `500`
+  - [x] 已确认当前推荐实施顺序：
+    - [x] **先补 validation 400 测试**
+    - [x] **再补 invalid payload 400 测试**
+    - [x] **最后补 version conflict 409 测试**
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 在 `server/handlers/change_orders_test.go` 追加负向测试
+    - [ ] 执行 `go test ./handlers -run "ChangeOrder"`
+    - [ ] 更新 `walkthrough.md`
+
+- [ ] 730. architecture：ChangeOrder 响应分层定向测试规划（2026-04-12，待确认）
+  - [x] 已确认当前 `server/handlers` 与 `server/routes` 下暂无现成的 `ChangeOrder` 专项测试文件
+  - [x] 已确认本轮测试更适合优先落在 handler 层，而不是前端或更大范围集成层
+  - [x] 已确认推荐新增测试文件：
+    - [x] `server/handlers/change_orders_test.go`
+  - [x] 已确认本轮最关键的测试目标 1：
+    - [x] `GetChangeOrdersHandler` 在 `options=true` 时返回最小字段集
+    - [x] 断言返回 JSON 中存在：
+      - [x] `id / changeOrderNo / title / changeType / productId / siteCode / isDefaultSite / revisionNo / effectiveFrom / effectiveTo / status / _v`
+    - [x] 断言返回 JSON 中**不包含**：
+      - [x] `product`
+      - [x] `description`
+      - [x] `createdAt`
+      - [x] `updatedAt`
+  - [x] 已确认本轮最关键的测试目标 2：
+    - [x] `GetChangeOrdersHandler` 在普通列表场景继续返回分页结构
+    - [x] 断言分页响应包含：
+      - [x] `items / total / page / pageSize`
+    - [x] 断言 item 继续允许较丰满字段出口（至少保留当前 list DTO 结构）
+  - [x] 已确认本轮最关键的测试目标 3：
+    - [x] `SaveChangeOrderHandler` 保存成功后继续返回 `ChangeOrderApiDTO`
+    - [x] 断言响应中保留当前兼容字段，例如：
+      - [x] `description`
+      - [x] `createdAt`
+      - [x] `_v`
+  - [x] 已确认当前推荐实施顺序：
+    - [x] **先补 handler 定向测试**
+    - [x] **优先锁 options 最小字段集与 save/list 兼容出口**
+    - [x] 如有必要再决定是否补 route 层冒烟校验
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 新增 `server/handlers/change_orders_test.go`
+    - [ ] 实现 options/list/save 三类定向断言
+    - [ ] 执行 `go test ./handlers -run "ChangeOrder"` 并更新 `walkthrough.md`
+
+- [ ] 729. architecture：ChangeOrder 响应 DTO 细分评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `server/handlers/change_orders.go`
+    - [x] `server/handlers/change_order_api_dto.go`
+    - [x] `server/handlers/change_order_mapper.go`
+    - [x] `server/services/engineering_master_service.go`
+    - [x] `src/features/engineering/services/change-order-service.ts`
+    - [x] `src/features/engineering/tabs/change-orders.tsx`
+    - [x] `src/features/engineering/data/schema.ts`
+  - [x] 已确认前端当前对 `ChangeOrder` 的真实读取重心：
+    - [x] 主要读取 `id / changeOrderNo / title / productId / status / description / createdAt / version`
+    - [x] 同时通过 `masterDataControlSchema` 读取 `changeType / siteCode / revisionNo / effectiveFrom / effectiveTo / isDefaultSite`
+    - [x] 当前前端**并未真实依赖** `changeOrder.product` 嵌套对象
+  - [x] 已确认当前后端 options/list/save 的差异来源：
+    - [x] options 查询不 preload `Product`
+    - [x] list/save 查询可能 preload `Product`
+    - [x] 但前端 schema 本身并未声明 `product` 字段
+    - [x] 因此当前 `product` 更像后端兼容透出字段，而不是前端契约字段
+  - [x] 已确认最小 `ChangeOrderOptionsApiDTO` 候选字段集应包括：
+    - [x] `id`
+    - [x] `changeOrderNo`
+    - [x] `title`
+    - [x] `status`
+    - [x] `changeType`
+    - [x] `productId`
+    - [x] `revisionNo`
+    - [x] `siteCode`
+    - [x] `isDefaultSite`
+    - [x] `effectiveFrom`
+    - [x] `effectiveTo`
+    - [x] `_v`
+  - [x] 已确认 list/detail DTO 当前建议：
+    - [x] **先继续共用一个 `ChangeOrderApiDTO`**
+    - [x] 暂不继续拆 detail DTO
+    - [x] 仅把 options 与 list/save 显式分开即可获得主要收益
+  - [x] 已确认当前推荐推进顺序：
+    - [x] **先新增 `ChangeOrderOptionsApiDTO` 与 options mapper**
+    - [x] **保留 `ChangeOrderApiDTO` 作为 list/save 共用 DTO**
+    - [x] `product` 字段仅保留在 list/save DTO，不进入 options DTO
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 为 `ChangeOrder` 新增 options DTO / mapper
+    - [ ] 让 `options=true` 分支返回最小字段集
+    - [ ] 保持 list/save 继续返回现有 `ChangeOrderApiDTO`
+    - [ ] 执行定向 Go 校验并更新 `walkthrough.md`
+
+- [ ] 728. architecture：engineering 次级候选响应 DTO / patch contract 评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `server/handlers/change_orders.go`
+    - [x] `server/services/engineering_master_service.go`
+    - [x] `server/handlers/product_attribute_category.go`
+    - [x] `server/handlers/product_attribute_option.go`
+  - [x] 已确认 `ChangeOrder` 当前返回口径现状：
+    - [x] list + options 均直接返回 `models.ChangeOrder`
+    - [x] save 也直接返回 `models.ChangeOrder`
+    - [x] list 非 options 场景额外 `Preload("Product")`
+    - [x] options 场景不 preload `Product`
+    - [x] 因而当前更像“同一响应模型在不同场景返回字段丰满度不同”，而不是显式区分 option DTO / detail DTO
+  - [x] 已确认 `ChangeOrder` 当前 patch/save 语义现状：
+    - [x] 当前没有单独的 `PatchChangeOrder()` 路径
+    - [x] save 仍承担 create + update 全量保存职责
+    - [x] 因此当前更需要先明确响应 DTO 边界，而不是立即扩一套 patch contract
+  - [x] 已确认 `ChangeOrder` 最值得推进的方向：
+    - [x] 为 list/save/options 统一一个显式响应 DTO 或至少统一 mapper 入口
+    - [x] 明确哪些字段属于 options 必需字段、哪些属于列表/详情附加字段
+    - [x] 在不改变现有字段名的前提下，先把“响应层从模型直出”改为“响应 DTO 映射出口”
+  - [x] 已确认 `ProductAttributeCategory / ProductAttributeOption` 当前响应层判断：
+    - [x] 当前没有明显派生字段或只读展示字段混入响应模型的问题
+    - [x] list / create / patch 目前都直接返回模型，但字段复杂度较低
+    - [x] 短期内维持现状的收益/成本比更高
+    - [x] 如需继续治理，更适合作为后续统一 mapper 风格的整理项，而非当前优先任务
+  - [x] 已确认当前推荐下一步顺序：
+    - [x] **优先处理 `ChangeOrder` 响应 DTO 映射出口**
+    - [x] `ProductAttributeCategory / ProductAttributeOption` 暂维持当前响应模型直出
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 为 `ChangeOrder` 新增显式响应 DTO / mapper，并统一 list/save/options 的出口
+    - [ ] 保持现有返回字段兼容，避免影响前端读取
+    - [ ] 执行定向 Go 校验并更新 `walkthrough.md`
+
+- [ ] 727. architecture：engineering 次级候选后端 DTO 收口评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `server/handlers/change_orders.go`
+    - [x] `server/handlers/product_attribute_category.go`
+    - [x] `server/handlers/product_attribute_option.go`
+    - [x] `server/services/engineering_master_service.go`
+    - [x] `server/services/product_attribute_category_service.go`
+    - [x] `server/services/product_attribute_option_service.go`
+    - [x] `server/models/change_order.go`
+    - [x] `server/models/product_attribute_category.go`
+    - [x] `server/models/product_attribute_option.go`
+  - [x] 已确认当前后端问题强度排序：
+    - [x] **最高优先级：`ChangeOrder`**
+    - [x] **中优先级：`ProductAttributeCategory`**
+    - [x] **中优先级：`ProductAttributeOption`**
+  - [x] 已确认 `ChangeOrder` 的主要问题：
+    - [x] `SaveChangeOrderInput` 仍直接别名为 `models.ChangeOrder`
+    - [x] `SaveChangeOrderHandler` 直接绑定 `services.SaveChangeOrderInput`
+    - [x] `SaveChangeOrder()` 直接 `models.ChangeOrder(input)` 后入库
+    - [x] GET 返回阶段直接回传 `models.ChangeOrder`，尚未建立独立响应 DTO
+    - [x] 当前属于“请求 DTO / 内部保存输入 / 响应模型”三者混用
+  - [x] 已确认 `ProductAttributeCategory` 的主要问题：
+    - [x] create 路径 `SaveProductAttributeCategoryHandler` 仍直接把请求体反序列化到 `models.ProductAttributeCategory`
+    - [x] `CreateProductAttributeCategory()` 直接接收 `models.ProductAttributeCategory`
+    - [x] patch 路径虽然已改为 `map[string]interface{}` 差分更新，但 create 路径仍是模型直绑
+    - [x] 当前未发现明确派生展示字段被误当作可写字段，问题核心是“模型直绑输入”
+  - [x] 已确认 `ProductAttributeOption` 的主要问题：
+    - [x] `SaveProductAttributeOptionInput` 仍直接别名为 `models.ProductAttributeOption`
+    - [x] create 路径 `SaveProductAttributeOptionHandler` 仍直接反序列化到 `models.ProductAttributeOption`
+    - [x] `CreateProductAttributeOption()` 直接接收 `models.ProductAttributeOption`
+    - [x] patch 路径已有字段白名单，但 create 路径与 save input 仍偏宽
+  - [x] 已确认当前推荐推进顺序：
+    - [x] **先做 `ChangeOrder`**：收益最高，混用程度最接近 Product 收口前状态
+    - [x] **再做 `ProductAttributeCategory / ProductAttributeOption`**：以 create 输入 DTO 收口为主，不必大改响应层
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 先收口 `ChangeOrder` 的后端 save input / handler 绑定 / service 输入边界
+    - [ ] 再最小收口 `ProductAttributeCategory / ProductAttributeOption` 的 create 输入 DTO
+    - [ ] 执行定向 Go 校验并更新 `walkthrough.md`
+
+- [ ] 726. architecture：Product `templateKey` 字段角色收口评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `server/models/product.go`
+    - [x] `server/services/product_master_service.go`
+    - [x] `server/handlers/product_api_dto.go`
+    - [x] `server/handlers/product_mapper.go`
+  - [x] 已确认当前字段事实：
+    - [x] `models.Product.TemplateKey` 使用 `gorm:"-"`，**不落库**
+    - [x] `templateKey` 当前由 `applyDerivedTemplateKeys()` 在读取与保存返回阶段派生
+    - [x] `applyDerivedTemplateKeys()` 通过 `Product.TypeID -> ProductType.TemplateID -> ProductTemplate.ComponentKey` 计算结果
+  - [x] 已确认当前保存链路现状：
+    - [x] `SaveProductAPIRequest` 已不再直接参与内部模型保存映射
+    - [x] `ProductWriteInput` 当前本身不包含 `templateKey`
+    - [x] `BuildProductPatchInput()` 的 delta 白名单中也**不包含** `templateKey`
+    - [x] `BulkSyncProducts()` 当前也不会把 `templateKey` 写入 `models.Product`
+  - [x] 已确认当前真正剩余的问题点：
+    - [x] `ProductApiDTO` 仍保留 `templateKey` 作为响应兼容字段
+    - [x] 外部 `SaveProductAPIRequest` 当前并未显式出现 `templateKey`，但仍需要决定是否在整个 Product 契约层明确声明其为只读/响应字段
+    - [x] 当前更像是“字段角色声明不够显式”，而不是“仍被误写入数据库”
+  - [x] 已确认推荐下一步方向：
+    - [x] 明确将 `templateKey` 视为 Product 响应兼容字段，不纳入任何保存/PATCH/bulk sync 输入模型
+    - [x] 保留 `ProductApiDTO` 中的 `templateKey` 输出，避免影响前端展示兼容
+    - [x] 视需要补充后端输入 DTO / 注释式约束 / 测试，证明 `templateKey` 不属于可写字段
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 进一步显式化 Product 输入模型中“无 `templateKey` 可写语义”的边界
+    - [ ] 视需要补充定向校验或测试，证明 `templateKey` 仅来自派生
+    - [ ] 更新 `walkthrough.md`
+
+- [ ] 725. architecture：Product 后端保存链路 DTO 收口评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `server/handlers/products.go`
+    - [x] `server/services/product_service_types.go`
+    - [x] `server/services/product_master_service.go`
+    - [x] `server/handlers/product_api_dto.go`
+    - [x] `server/models/product.go`
+  - [x] 已确认当前后端相对健康的部分包括：
+    - [x] `SaveProductHandler` 没有直接 `ShouldBindJSON` 到 `models.Product`
+    - [x] 后端已经存在单独的 `SaveProductAPIRequest`
+    - [x] 后端响应也已经存在单独的 `ProductApiDTO`
+  - [x] 已确认当前后端仍存在的主要问题包括：
+    - [x] `SaveProductAPIRequest` 仍同时承担请求 DTO 与内部 service 宽输入 DTO 角色
+    - [x] `toProductAPIRequest(model)` 会把当前完整 `models.Product` 映回 `SaveProductAPIRequest`，再用于 PATCH 合成输入
+    - [x] `BuildProductPatchInput()` 仍以 `SaveProductAPIRequest` 作为 patch 合成目标
+    - [x] `BulkSyncProducts()` 仍直接对 `SaveProductAPIRequest` 批量转 `models.Product`
+  - [x] 已确认当前字段层面的重要事实：
+    - [x] `models.Product.TemplateKey` 是 `gorm:"-"` 派生响应字段，但当前 `SaveProductAPIRequest` / `ProductApiDTO` 都保留了 `templateKey`
+    - [x] `attachments / techSpecs / attributeValues / barcodeConfig` 当前属于真实可写聚合字段，并非单纯展示字段
+    - [x] 当前最像 `bomDisplayVersion` 的风险点不是前端，而是后端 PATCH/保存仍混用同一宽 DTO
+  - [x] 已确认推荐下一步方向：
+    - [x] 将 Product 后端请求 DTO 进一步拆成“外部 API 输入 DTO”与“内部保存输入 DTO”
+    - [x] 让 `BuildProductPatchInput()` 合成更明确的 Product write input，而不是继续回写到 `SaveProductAPIRequest`
+    - [x] 继续保留 `ProductApiDTO` 作为响应 DTO，不在本轮重构响应契约
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 `SaveProductAPIRequest` 的职责，拆分 Product write input
+    - [ ] 对齐 `SaveProduct / BuildProductPatchInput / BulkSyncProducts` 的输入模型
+    - [ ] 保持现有 `ProductApiDTO` 响应口径不变并执行定向验证、更新 `walkthrough.md`
+
+- [ ] 724. architecture：engineering 请求 DTO / 响应 DTO 进一步分离评估（2026-04-12，待确认）
+  - [x] 已确认当前重点排查范围包括：
+    - [x] `src/features/engineering/mutation-types.ts`
+    - [x] `src/features/engineering/services/*`
+    - [x] `src/features/engineering/adapters/*`
+    - [x] `src/features/engineering/data/schema.ts`
+  - [x] 已确认当前相对健康的链路包括：
+    - [x] `BOM`：已将 `SaveBOMInput` 从 `BOM` 收口为 `Omit<BOM, 'bomDisplayVersion'>`
+    - [x] `ProductType`：已使用 `SaveProductTypeInput` + `product-type-api-adapter.ts` 做请求/响应转换
+    - [x] `ProductTemplate`：已使用 `SaveProductTemplateInput` + `product-template-api-adapter.ts` 做请求/响应转换
+  - [x] 已确认当前最值得优先继续排查的候选包括：
+    - [x] `SaveProductInput = Product`
+    - [x] `ProductMaintenanceService` 仍直接以 `Product` 作为保存输入，再通过 adapter 转 DTO
+    - [x] `productSchema` 中仍包含 `templateKey`、`attachments`、`attributeValues` 等响应/展示/聚合字段，需要判断是否全部都属于可写字段
+    - [x] `ProductAttributeCategory / ProductAttributeOption` 虽已用 `Omit<id|version>`，但仍直接复用 schema 类型，需要确认是否还混入纯响应字段
+    - [x] `ChangeOrder` 目前使用 `SaveChangeOrderInput`，但仍需确认后端是否存在输入模型与响应模型混用
+  - [x] 已确认当前阶段暂未发现明显高风险的派生展示字段问题：
+    - [x] `ProductType` / `ProductTemplate` 已通过 adapter 显式区分 `_v` 与领域字段
+    - [x] 本轮更像是要继续治理 **Product 主数据链路** 的请求/响应混用
+  - [x] 已确认推荐下一步方向：
+    - [x] 优先评估 `SaveProductInput = Product` 是否应拆成更明确的 Product write contract
+    - [x] 再视结果决定是否继续治理 `ProductAttributeCategory / ProductAttributeOption / ChangeOrder`
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 先收口 Product 主数据链路的 save input / API adapter / service 输入边界
+    - [ ] 再评估属性分类、属性选项、ChangeOrder 是否需要同类 DTO 分离
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 723. architecture：BOM `bomDisplayVersion` 后端依赖收口评估（2026-04-12，待确认）
+  - [x] 已确认当前主要排查点包括：
+    - [x] `server/models/product.go`
+    - [x] `server/services/engineering_master_service.go`
+    - [x] `server/handlers/bom.go`
+    - [x] `src/features/engineering/services/bom-service.ts`
+  - [x] 已确认后端当前事实：
+    - [x] `models.BOM.DisplayVersion` 使用 `gorm:"-"`，**不落库**
+    - [x] 后端真实持久化字段是 `VersionText`（JSON 映射为 `version`）
+    - [x] `GetBOMByID / ListBOMs / SaveBOM` 都会通过 `resolveBOMDisplayVersion()` / `hydrateBOMDerivedFields()` 在返回前派生 `bomDisplayVersion`
+    - [x] `SaveBOMHandler` 仍会接收前端传来的 `bomDisplayVersion`，因为 `SaveBOMInput` 仍直接使用 `models.BOM`
+  - [x] 已确认后端当前业务判定：
+    - [x] 未发现 `bomDisplayVersion` 参与数据库查询条件
+    - [x] 未发现 `bomDisplayVersion` 参与唯一性判断
+    - [x] 未发现 `bomDisplayVersion` 参与锁定/状态流转/引用校验
+    - [x] 当前它本质上是**响应阶段派生字段**，不是业务判定字段
+  - [x] 已确认当前遗留冗余点：
+    - [x] 前端 `bom-service.ts` 仍会把 `bomDisplayVersion` 一并提交给后端
+    - [x] 后端 `SaveBOMInput` 仍复用完整 `models.BOM`，因此请求体层面仍容纳这个派生字段
+  - [x] 已确认推荐下一步方向：
+    - [x] 前端提交 payload 中继续弱化或移除 `bomDisplayVersion`
+    - [x] 后端将 `SaveBOMInput` 从 `models.BOM` 拆成更明确的输入 DTO，避免把派生响应字段继续暴露为可提交字段
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口前端 save payload，不再主动提交 `bomDisplayVersion`
+    - [ ] 评估并收口后端 `SaveBOMInput` / handler 绑定口径
+    - [ ] 保留后端响应阶段 `bomDisplayVersion` 派生，避免破坏现有展示兼容
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 722. architecture：BOM/ECO 生效日期 schema 约束显式化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `BOM.effectiveFrom`
+    - [x] `BOM.effectiveTo`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/data/schema.ts`
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+    - [x] `src/features/engineering/services/bom-service.ts`
+  - [x] 已确认当前现状：
+    - [x] `effectiveFrom / effectiveTo` 已通过公共函数统一到 `YYYY-MM-DD`
+    - [x] 但 schema 层目前尚未显式限制日期格式
+    - [x] 这意味着 UI / service 已收口，而 schema 仍缺少最终契约表达
+  - [x] 已确认本轮目标不是新增更多日期字段治理，而是补齐 **schema 契约表达**：
+    - [x] 明确是否允许空字符串
+    - [x] 明确非空时必须满足 `YYYY-MM-DD`
+    - [x] 保持与当前 form input type=`date` 和 service 口径一致
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩到其它模块的日期字段
+    - [x] 不引入重型日期库
+    - [x] 不改写后端日期存储策略
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 在 `schema.ts` 为 `effectiveFrom / effectiveTo` 增加显式日期格式约束
+    - [ ] 视需要调整 `use-bom-form.ts / bom-form-header.tsx / bom-service.ts` 以对齐 schema
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 721. architecture：BOM/ECO 生命周期与生效控制字段治理（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `BOM.changeType`
+    - [x] `BOM.status`
+    - [x] `BOM.effectiveFrom`
+    - [x] `BOM.effectiveTo`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/data/schema.ts`
+    - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/services/bom-service.ts`
+    - [x] `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+    - [x] `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+  - [x] 已确认这批字段与此前几批不同：
+    - [x] `changeType / status` 更接近稳定枚举控制字段
+    - [x] `effectiveFrom / effectiveTo` 更接近日期生效边界字段
+  - [x] 已确认当前现状：
+    - [x] `changeType` 目前在 BOM 表头可选，且选择 change order 时会被回填
+    - [x] `status` 目前在 BOM 表头可选，但未见额外统一治理逻辑
+    - [x] `effectiveFrom / effectiveTo` 目前通过 `slice(0, 10)` 在表单中做日期输入转换
+    - [x] 这些字段目前更多依赖 schema/select/date input 的局部约束，而非独立语义治理
+  - [x] 已确认当前不优先纳入的字段包括：
+    - [x] `items`
+    - [x] `substitutes`
+    - [x] `standardUsage`
+    - [x] `description`
+    - [x] `productId / changeOrderId`（属于引用关联字段，当前问题不在 normalization）
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 评估 `changeType / status` 是否需要稳定枚举规范收口
+    - [ ] 评估 `effectiveFrom / effectiveTo` 是否需要统一日期边界格式化入口
+    - [ ] 收口 form / service / table / preview 的读取与展示口径
+    - [ ] 如有必要补 schema / type / adapter 边界
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 720. architecture：BOM/ECO display version 单一来源治理（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `BOM.bomDisplayVersion`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/components/bom-action-dialog.tsx`
+    - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
+    - [x] `src/features/engineering/services/bom-service.ts`
+    - [x] `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+    - [x] `src/features/engineering/data/schema.ts`
+  - [x] 已确认当前现状：
+    - [x] `bomDisplayVersion` 当前被当成持久化字段参与保存
+    - [x] `bomDisplayVersion` 目前在多处由 `bomVersion` 派生后再回写
+    - [x] 列表展示优先读取 `row.original.bomDisplayVersion`
+    - [x] `bomDisplayVersion` 当前不是用户直接编辑字段
+  - [x] 已确认当前最关键的问题不是大小写，而是**单一来源漂移**：
+    - [x] `bomVersion`
+    - [x] `bomDisplayVersion`
+    - [x] 保存边界派生逻辑
+    - [x] UI 展示读取逻辑
+    - [x] patch / delta 提交口径
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不继续扩大到 `description / items / substitutes / standardUsage`
+    - [x] 不擅自改写后端版本演进算法
+    - [x] 不把所有工艺版本标签一起并入同一批
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 明确 `bomDisplayVersion` 是派生字段还是独立持久化字段
+    - [ ] 若选择派生字段，收口 form / dialog / bom-mgmt / bom-service 的重复回写
+    - [ ] 统一 table / preview 等展示层的读取口径
+    - [ ] 视结果补 schema / type / delta 边界
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 719. architecture：BOM/ECO 控制字段接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `BOM.bomNo`
+    - [x] `BOM.bomVersion`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+    - [x] `src/features/engineering/components/bom-action-dialog.tsx`
+    - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
+    - [x] `src/features/engineering/services/bom-service.ts`
+    - [x] `src/features/engineering/data/schema.ts`
+  - [x] 已确认这批字段不能粗暴套同一条规则：
+    - [x] `bomNo` 更接近业务编号 / 配方单号
+    - [x] `bomVersion` 更接近稳定版本标签，当前语义类似 `V1.0`
+  - [x] 已确认当前已有局部规则：
+    - [x] `use-bom-form.ts` 默认值直接写死 `bomVersion: 'V1.0'`
+    - [x] `use-bom-form.ts` 新建时 `initialVersion` 直接回退到 `currentRow?.bomVersion || 'V1.0'`
+    - [x] `bom-form-header.tsx` 中 `bomNo` 可编辑但未见显式规范化
+    - [x] `bom-form-header.tsx` 中 `bomVersion` 只读展示但未见显式规范化
+    - [x] `bom-service.ts` 保存边界当前基本直传 `data`
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不改 `description / items / substitutes / standardUsage` 等非控制字段
+    - [x] 不重写 BOM 版本演进策略，只补格式规范化边界
+    - [x] 不扩大到所有工艺版本号字段
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 `use-bom-form.ts / bom-form-header.tsx` 的表单初始化与输入展示边界
+    - [ ] 评估并收口 `bom-service.ts` 的保存边界
+    - [ ] 评估 `bom-mgmt.tsx / bom-action-dialog.tsx` 是否存在提交前兜底缺口
+    - [ ] 如有必要补 schema / adapter 口径一致性
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 718. architecture：Product/ChangeOrder 变更控制字段接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `revisionNo`
+    - [x] `siteCode`
+    - [x] `changeOrderNo`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/tabs/change-orders.tsx`
+    - [x] `src/features/engineering/utils/default-builders.ts`
+    - [x] `src/features/engineering/adapters/product-api-adapter.ts`
+    - [x] `src/features/engineering/hooks/use-change-order-write-actions.ts`
+    - [x] `src/features/engineering/services/change-order-service.ts`
+    - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+  - [x] 已确认这批字段不能粗暴套同一条规则：
+    - [x] `siteCode` 更接近稳定大写站点码
+    - [x] `changeOrderNo` 更接近大写业务单号
+    - [x] `revisionNo` 更接近版本修订号，应保留类似 `R1 / R2` 的格式语义
+  - [x] 已确认当前已有局部规则：
+    - [x] `change-orders.tsx` 中 `changeOrderNo` 输入直接 `toUpperCase()`
+    - [x] `change-orders.tsx` 中 `siteCode` 输入直接 `toUpperCase()`
+    - [x] `change-orders.tsx` 保存前对 `siteCode` 做 `trim().toUpperCase()`，对 `revisionNo` 做 `trim()`
+    - [x] `product-api-adapter.ts` 中 `revisionNo / siteCode / changeOrderNo` 目前基本直传
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不改 `effectiveFrom / effectiveTo / description / title` 等非机器字段
+    - [x] 不擅自改写 `revisionNo` 的业务格式，只做最小规范收口
+    - [x] 不扩大到所有 BOM / ChangeOrder 文本字段
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 `change-orders.tsx` 输入边界与保存边界
+    - [ ] 评估并收口 `change-order-service.ts / use-change-order-write-actions.ts`
+    - [ ] 收口 `product-api-adapter.ts` 中 Product 侧变更控制字段的 DTO 出入口兜底
+    - [ ] 评估 `bom-form-header.tsx / use-bom-form.ts` 是否需要同步口径
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 717. architecture：Product 主数据链路接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `Product.sku`
+    - [x] `Product.modelCode`
+    - [x] `Product.templateKey`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/components/product/product-basic-info.tsx`
+    - [x] `src/features/engineering/hooks/use-product-form-derive.ts`
+    - [x] `src/features/engineering/hooks/use-product-form-submit.ts`
+    - [x] `src/features/engineering/utils/product-form-utils.ts`
+    - [x] `src/features/engineering/adapters/product-api-adapter.ts`
+  - [x] 已确认这批字段不能粗暴套同一条规则：
+    - [x] `sku` 更接近大写业务编码
+    - [x] `modelCode` 更接近固定 2 位数字码
+    - [x] `templateKey` 更接近稳定引用键 / 程序键
+  - [x] 已确认当前已有局部规则：
+    - [x] `modelCode` 在表单输入中会做 `replace(/\D/g, '').slice(0, 2)`
+    - [x] `sku` 由 `deriveSku(typeCode, modelCode, versionLevel)` 派生，但保存边界未见统一兜底
+    - [x] `templateKey` 在 adapter 中基本直传，尚未显式规范化
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不改 `name / description / restrictions` 等非机器字段
+    - [x] 不回头改已完成的 `attributeValues` 小写 slug 规则
+    - [x] 不在未明确后端约束前擅自重写 SKU 生成业务语义
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 product 基础信息表单输入边界
+    - [ ] 收口 `deriveSku / buildBatchProducts / buildSingleVariantProduct` 等派生链路
+    - [ ] 收口 `product-api-adapter` 的 DTO 出入口兜底
+    - [ ] 如有必要评估 `ProductCoreService` 保存边界是否补最终规范化
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 716. architecture：engineering template/type 机器值接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的候选字段包括：
+    - [x] `ProductTemplate.code`
+    - [x] `ProductTemplate.componentKey`
+    - [x] `ProductType.code`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/tabs/template-mgmt.tsx`
+    - [x] `src/features/engineering/services/product-template-service.ts`
+    - [x] `src/features/engineering/adapters/product-template-api-adapter.ts`
+    - [x] `src/features/engineering/hooks/use-product-template-write-actions.ts`
+    - [x] `src/features/engineering/components/product-type-action-dialog.tsx`
+    - [x] `src/features/engineering/services/product-type-service.ts`
+    - [x] `src/features/engineering/adapters/product-type-api-adapter.ts`
+  - [x] 已确认字段语义需要分型处理，而不是粗暴套一条规则：
+    - [x] `ProductTemplate.code` 更接近大写机器码
+    - [x] `ProductType.code` 更接近大写机器码
+    - [x] `ProductTemplate.componentKey` 更接近受限枚举键，应做稳定大写键收口
+  - [x] 已确认当前已存在局部散落规则：
+    - [x] `template-mgmt.tsx` 中 `code` 输入直接 `toUpperCase()`
+    - [x] `product-type-action-dialog.tsx` 中存在基于名称自动拼接大写 token 的逻辑，但输入边界未统一兜底
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不把 `name / description` 等展示字段纳入大小写清洗
+    - [x] 不把 engineering 全部 schema 字段一次性并入 normalization
+    - [x] 不改 `Product.attributeValues` 这条已完成的工程属性值链路规则
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 template 页面输入边界
+    - [ ] 收口 template service / adapter / write actions 保存边界
+    - [ ] 收口 product type dialog / service / adapter 保存边界
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
 - [ ] 715. architecture：工程属性值模块接入全局码规范化（2026-04-12，待确认）
   - [x] 已确认本轮最明确的机器值字段包括：
     - [x] `ProductAttributeCategory.key`

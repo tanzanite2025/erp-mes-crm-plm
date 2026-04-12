@@ -1,3 +1,5 @@
+import { toast } from 'sonner'
+import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '../data/schema'
 
 interface UseSalesOrderDetailActionsParams {
@@ -44,6 +46,16 @@ export function useSalesOrderDetailActions({
   operator,
   actorId,
 }: UseSalesOrderDetailActionsParams) {
+  const ensureClaimActor = () => {
+    if (!actorId || !operator || operator === 'Unknown') {
+      const error = new Error('[CRITICAL] Missing claim actor for sales order')
+      failLoudly(error, 'SalesOrderDetail.claimActor')
+      toast.error('缺少有效的认领操作人')
+      return false
+    }
+    return true
+  }
+
   const handleMutateStatus = (payload: Partial<SalesOrder>) => {
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
@@ -76,6 +88,7 @@ export function useSalesOrderDetailActions({
   const handleClaimModel = (model: string) => {
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
+    if (!ensureClaimActor()) return
 
     const lineNos = order.lines
       .filter((line) => line.productModel === model && !line.claimedBy)
@@ -92,6 +105,7 @@ export function useSalesOrderDetailActions({
   const handleClaimLine = (lineNo: number) => {
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
+    if (!ensureClaimActor()) return
 
     claimMutation.mutate({
       orderId: order.id,

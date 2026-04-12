@@ -94,6 +94,7 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     isDeleted: dto.isDeleted,
     version: dto.version ?? 1,
     evidences: dto.evidences ?? [],
+    fulfillmentRate: dto.fulfillmentRate,
     lines: (dto.lines ?? []).map(toSalesOrderLineContract),
   }
 }

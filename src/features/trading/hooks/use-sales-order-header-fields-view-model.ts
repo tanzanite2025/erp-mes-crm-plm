@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { type Customer, type SalesOrder } from '../data/schema'
+import type { AppLocale } from '@/locales'
 import {
   getSalesOrderClassificationOptions,
   getSalesOrderTypeOptions,
@@ -14,7 +15,7 @@ interface PaymentOption {
 }
 
 interface SalesOrderHeaderFieldsViewModelOptions {
-  locale: string
+  locale: AppLocale
   customers: Customer[]
   paymentMethods: PaymentOption[]
   paymentTerms: PaymentOption[]

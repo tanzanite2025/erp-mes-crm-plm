@@ -9,6 +9,7 @@ import { type Product, type ProductType } from '../../data/schema'
 
 import { ImageIcon, X } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
 
 interface ProductBasicInfoProps {
     form: UseFormReturn<Product>
@@ -122,12 +123,12 @@ export function ProductBasicInfo({
                                     <Input
                                         className={`h-[42px] w-full text-[13px] font-mono font-black rounded-2xl border-none bg-muted/40 px-4 ${isEdit ? 'opacity-50' : 'focus-visible:ring-blue-400 transition-all focus:bg-background'}`}
                                         {...field}
+                                        value={field.value || '01'}
                                         placeholder={t('engineering.productMgmt.form.modelCodePlaceholder')}
                                         maxLength={2}
                                         readOnly={isEdit}
                                         onChange={(e) => {
-                                            const next = e.target.value.replace(/\D/g, '').slice(0, 2)
-                                            field.onChange(next)
+                                            field.onChange(normalizeModelCode(e.target.value))
                                         }}
                                     />
                                 </FormControl>
@@ -206,6 +207,7 @@ export function ProductBasicInfo({
                                     <Input
                                         className='h-[42px] w-full text-[11px] bg-muted/20 border-none text-slate-400 cursor-not-allowed rounded-2xl font-mono px-4'
                                         {...field}
+                                        value={normalizeSku(field.value)}
                                         readOnly
                                         tabIndex={-1}
                                         placeholder={t('engineering.productMgmt.form.skuPlaceholder')}

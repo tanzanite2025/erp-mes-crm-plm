@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { type ProductTemplate } from '../data/schema'
 import { type SaveProductTemplateInput } from '../mutation-types'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
@@ -14,7 +15,14 @@ export function useProductTemplateWriteActions() {
 
   const saveTemplateMutation = useMutation({
     mutationFn: ({ formData, currentRow }: SaveProductTemplateParams) =>
-      productTemplateService.saveTemplate(formData, currentRow),
+      productTemplateService.saveTemplate(
+        {
+          ...formData,
+          code: normalizeMachineCode(formData.code),
+          componentKey: normalizeComponentKey(formData.componentKey) as SaveProductTemplateInput['componentKey'],
+        },
+        currentRow
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: PRODUCT_TEMPLATES_QUERY_KEY })
     },

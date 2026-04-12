@@ -7,6 +7,7 @@ import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { AppLocale, DEFAULT_LOCALE, translate } from '@/locales'
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type OrgNode } from '../data/org-schema'
 import { personnelQueryKeys } from '../query-keys'
@@ -109,12 +110,9 @@ export function useOrgMgmt() {
         throw new Error('Missing selected organization node')
       }
 
-      const delta: DeltaSet = {
-        linkedArchitecture: {
-          o: selectedNode.linkedArchitecture || [],
-          n: items,
-        },
-      }
+      const delta: DeltaSet = buildFlattenDelta(selectedNode.linkedArchitecture || [], items, {
+        basePath: 'linkedArchitecture',
+      })
 
       return OrgService.patchOrgNode(selectedNode.id, delta, selectedNode.version || 1)
     },

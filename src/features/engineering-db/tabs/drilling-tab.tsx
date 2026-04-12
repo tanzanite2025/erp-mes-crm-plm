@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
-import { type DrillingPlan } from '../data/schema'
+import { type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { ProductionDBService } from '../services/production-db-service'
 import { FileResolverService } from '../services/file-resolver-service'
 import { DrillingActionDialog } from '../components/drilling-action-dialog'
@@ -72,14 +72,15 @@ export function DrillingTab() {
 
     const saveMutation = useMutation({
         mutationFn: async (params: {
-            data: DrillingPlan
+            data: DrillingPlanInput
             isPatch: boolean
             delta?: any
             version?: number
         }) => {
             const { data: formData, isPatch, delta, version } = params
             if (isPatch && delta) {
-                await ProductionDBService.patchDrilling(formData.id, delta, version!)
+                if (!currentRow?.id) return
+                await ProductionDBService.patchDrilling(currentRow.id, delta, version!)
                 return
             }
             await ProductionDBService.saveDrillingItem(formData)

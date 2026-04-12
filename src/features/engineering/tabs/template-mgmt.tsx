@@ -27,6 +27,7 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
+import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { SPEC_COMPONENTS } from '../components/specs'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { type ProductTemplate } from '../data/schema'
@@ -86,7 +87,11 @@ export function TemplateMgmt() {
   }
 
   const handleEdit = (template: ProductTemplate) => {
-    setEditingTemplate(template)
+    setEditingTemplate({
+      ...template,
+      code: normalizeMachineCode(template.code),
+      componentKey: normalizeComponentKey(template.componentKey) as ProductTemplate['componentKey'],
+    })
     setIsDialogOpen(true)
   }
 
@@ -106,7 +111,7 @@ export function TemplateMgmt() {
   }
 
   const handleSubmit = async () => {
-    if (!editingTemplate?.name || !editingTemplate?.code) {
+    if (!editingTemplate?.name || !normalizeMachineCode(editingTemplate?.code)) {
       toast.error(t('engineering.templateMgmt.toasts.required'))
       return
     }
@@ -114,7 +119,11 @@ export function TemplateMgmt() {
     try {
       const isEdit = Boolean(editingTemplate.id)
       await saveTemplate({
-        formData: editingTemplate,
+        formData: {
+          ...editingTemplate,
+          code: normalizeMachineCode(editingTemplate.code),
+          componentKey: normalizeComponentKey(editingTemplate.componentKey) as ProductTemplate['componentKey'],
+        },
         currentRow: templates.find((item) => item.id === editingTemplate.id),
       })
       toast.success(
@@ -294,7 +303,7 @@ export function TemplateMgmt() {
                 value={editingTemplate?.code || ''}
                 onChange={(event) =>
                   setEditingTemplate((prev) =>
-                    prev ? { ...prev, code: event.target.value.toUpperCase() } : null
+                    prev ? { ...prev, code: normalizeMachineCode(event.target.value) } : null
                   )
                 }
               />
@@ -307,7 +316,12 @@ export function TemplateMgmt() {
                 value={editingTemplate?.componentKey || 'GENERAL'}
                 onValueChange={(value) =>
                   setEditingTemplate((prev) =>
-                    prev ? { ...prev, componentKey: value as ProductTemplate['componentKey'] } : null
+                    prev
+                      ? {
+                          ...prev,
+                          componentKey: normalizeComponentKey(value) as ProductTemplate['componentKey'],
+                        }
+                      : null
                   )
                 }
               >

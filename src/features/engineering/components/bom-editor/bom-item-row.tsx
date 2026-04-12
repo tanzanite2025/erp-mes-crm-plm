@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Combobox } from '@/components/ui/combobox'
+import { failLoudly } from '@/lib/safe-catch'
 import { type MaterialOption } from '../../../material-archive/data/schema'
 import { type BOM, type BOMSubstitute } from '../../data/schema'
 import { type BOMSubstitutePatch } from '../../mutation-types'
@@ -35,7 +36,13 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
   )
   const currentSection = form.watch(`items.${index}.section`)
   const primaryMaterialId = form.watch(`items.${index}.materialId`)
-  const substitutes = form.watch(`items.${index}.substitutes`) || []
+  const substitutesValue = form.watch(`items.${index}.substitutes`)
+  if (!Array.isArray(substitutesValue)) {
+    const error = new Error(`[CRITICAL] Missing substitutes array for BOM item ${index}`)
+    failLoudly(error, 'BOMItemRow.substitutes')
+    throw error
+  }
+  const substitutes = substitutesValue
 
   React.useEffect(() => {
     let cancelled = false
@@ -59,7 +66,12 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
   }, [materials])
 
   const sortedMaterials = React.useMemo(() => {
-    const allowedCategories = BOM_SECTION_CATEGORY_MAP[currentSection] || []
+    const allowedCategories = BOM_SECTION_CATEGORY_MAP[currentSection]
+    if (!allowedCategories) {
+      const error = new Error(`[CRITICAL] Missing BOM section mapping for ${currentSection}`)
+      failLoudly(error, 'BOMItemRow.section')
+      throw error
+    }
 
     return enrichedMaterials
       .map((material) => {
@@ -133,20 +145,23 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
                   onValueChange={(value) => {
                     field.onChange(value)
                     const material = materialMap.get(value)
-                    if (material) {
-                      form.setValue(`items.${index}.materialName`, material.name)
-                      form.setValue(`items.${index}.materialSpec`, material.spec || '')
-                      form.setValue(`items.${index}.unit`, material.uom)
-                      if (material.costPrice) {
-                        form.setValue(`items.${index}.unitPrice`, material.costPrice)
-                      }
+                    if (!material) {
+                      const error = new Error(`[CRITICAL] Missing material option for id ${value}`)
+                      failLoudly(error, 'BOMItemRow.materialLookup')
+                      throw error
+                    }
+                    form.setValue(`items.${index}.materialName`, material.name)
+                    form.setValue(`items.${index}.materialSpec`, material.spec)
+                    form.setValue(`items.${index}.unit`, material.uom)
+                    if (typeof material.costPrice === 'number' && !Number.isNaN(material.costPrice)) {
+                      form.setValue(`items.${index}.unitPrice`, material.costPrice)
                     }
                   }}
                   options={sortedMaterials.map((material) => ({
                     label: `${material.name}${material.labelSuffix}`,
                     value: material.id,
                     keywords: `${material.code} ${material.name} ${material.spec}`,
-                    secondaryLabel: material.spec || 'No spec',
+                    secondaryLabel: material.spec,
                     tertiaryLabel: material.code,
                     usageStats: material.usageStats,
                   }))}
@@ -198,7 +213,7 @@ export function BOMItemRow({ form, index, materials, onRemove, measureElement, d
                                 label: material.name,
                                 value: material.id,
                                 keywords: `${material.code} ${material.name} ${material.spec}`,
-                                secondaryLabel: material.spec || 'No spec',
+                                secondaryLabel: material.spec,
                                 tertiaryLabel: material.code,
                               }))}
                             placeholder='Select substitute...'

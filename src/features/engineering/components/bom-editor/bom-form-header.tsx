@@ -5,11 +5,15 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
+import { failLoudly } from '@/lib/safe-catch'
+import { normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomNo, normalizeBomStatus, normalizeBomVersion, normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { type BOM, type ChangeOrder, type Product } from '../../data/schema'
 import { getProductAttributes } from '../../utils/product-utils'
 
+type FormFieldName = keyof BOM | string
+
 type FormFieldConfig = {
-  name: keyof BOM | string
+  name: FormFieldName
   label: string
   colSpan: string
   type: 'input' | 'select'
@@ -27,8 +31,6 @@ interface BOMFormHeaderProps {
   isEdit: boolean
 }
 
-const toDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
-
 export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
   const productItems = useMemo(
@@ -41,7 +43,7 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
   )
 
   const changeOrderItems = changeOrders.map((changeOrder) => ({
-    label: `${changeOrder.changeOrderNo} / ${changeOrder.title}`,
+    label: `${normalizeChangeOrderNo(changeOrder.changeOrderNo)} / ${changeOrder.title}`,
     value: changeOrder.id,
   }))
 
@@ -154,31 +156,71 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
 
     const selected = changeOrders.find((changeOrder) => changeOrder.id === changeOrderId)
     if (!selected) {
-      form.setValue('changeOrderNo', '', { shouldDirty: true })
-      return
+      const error = new Error(`[CRITICAL] Missing change order for id ${changeOrderId}`)
+      failLoudly(error, 'BOMFormHeader.changeOrderLookup')
+      throw error
     }
 
     if (!form.getValues('productId') && selected.productId) {
       form.setValue('productId', selected.productId, { shouldDirty: true })
     }
 
-    form.setValue('changeOrderNo', selected.changeOrderNo || '', { shouldDirty: true })
+    if (!selected.changeOrderNo) {
+      const error = new Error('[CRITICAL] Missing changeOrderNo for selected change order')
+      failLoudly(error, 'BOMFormHeader.changeOrderNo')
+      throw error
+    }
+    form.setValue('changeOrderNo', normalizeChangeOrderNo(selected.changeOrderNo), { shouldDirty: true })
     if (selected.changeType) {
-      form.setValue('changeType', selected.changeType, { shouldDirty: true })
+      form.setValue('changeType', normalizeBomChangeType(selected.changeType), { shouldDirty: true })
     }
     if (selected.siteCode !== undefined) {
-      form.setValue('siteCode', selected.siteCode || '', { shouldDirty: true })
-      form.setValue('isDefaultSite', selected.isDefaultSite ?? !selected.siteCode, { shouldDirty: true })
+      const normalizedSiteCode = normalizeSiteCode(selected.siteCode)
+      form.setValue('siteCode', normalizedSiteCode, { shouldDirty: true })
+      form.setValue('isDefaultSite', selected.isDefaultSite ?? !normalizedSiteCode, { shouldDirty: true })
     }
     if (selected.revisionNo) {
-      form.setValue('revisionNo', selected.revisionNo, { shouldDirty: true })
+      form.setValue('revisionNo', normalizeRevisionNo(selected.revisionNo), { shouldDirty: true })
     }
     if (selected.effectiveFrom) {
-      form.setValue('effectiveFrom', toDateInput(selected.effectiveFrom), { shouldDirty: true })
+      form.setValue('effectiveFrom', normalizeBomEffectiveDate(selected.effectiveFrom), { shouldDirty: true })
     }
     if (selected.effectiveTo) {
-      form.setValue('effectiveTo', toDateInput(selected.effectiveTo), { shouldDirty: true })
+      form.setValue('effectiveTo', normalizeBomEffectiveDate(selected.effectiveTo), { shouldDirty: true })
     }
+  }
+
+  const getNormalizedFieldValue = (name: FormFieldName, value: string | undefined) => {
+    if (name === 'bomNo') return normalizeBomNo(value)
+    if (name === 'bomVersion') return normalizeBomVersion(value)
+    if (name === 'changeType') return normalizeBomChangeType(value)
+    if (name === 'status') return normalizeBomStatus(value)
+    if (name === 'effectiveFrom' || name === 'effectiveTo') return normalizeBomEffectiveDate(value)
+    return value ?? ''
+  }
+
+  const handleNormalizedFieldChange = (name: FormFieldName, value: string, onChange: (value: string) => void) => {
+    if (name === 'bomNo') {
+      onChange(normalizeBomNo(value))
+      return
+    }
+    if (name === 'bomVersion') {
+      onChange(normalizeBomVersion(value))
+      return
+    }
+    if (name === 'changeType') {
+      onChange(normalizeBomChangeType(value))
+      return
+    }
+    if (name === 'status') {
+      onChange(normalizeBomStatus(value))
+      return
+    }
+    if (name === 'effectiveFrom' || name === 'effectiveTo') {
+      onChange(normalizeBomEffectiveDate(value))
+      return
+    }
+    onChange(value)
   }
 
   return (
@@ -204,13 +246,13 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
 
                   {fieldConfig.type === 'select' ? (
                     <SelectDropdown
-                      value={(field.value as string | undefined) ?? ''}
+                      value={getNormalizedFieldValue(fieldConfig.name, field.value as string | undefined)}
                       onValueChange={(value) => {
                         if (fieldConfig.name === 'changeOrderId') {
                           handleChangeOrderSelection(value, field.onChange)
                           return
                         }
-                        field.onChange(value)
+                        handleNormalizedFieldChange(fieldConfig.name, value, field.onChange)
                       }}
                       items={fieldConfig.items}
                       placeholder={fieldConfig.placeholder}
@@ -225,10 +267,13 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                     <FormControl>
                       <Input
                         {...field}
-                        value={(field.value as string | undefined) ?? ''}
+                        value={getNormalizedFieldValue(fieldConfig.name, field.value as string | undefined)}
                         type={fieldConfig.inputType ?? 'text'}
                         readOnly={fieldConfig.readOnly}
                         placeholder={fieldConfig.placeholder}
+                        onChange={(event) => {
+                          handleNormalizedFieldChange(fieldConfig.name, event.target.value, field.onChange)
+                        }}
                         className={cn(
                           'h-11! rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
                           fieldConfig.className

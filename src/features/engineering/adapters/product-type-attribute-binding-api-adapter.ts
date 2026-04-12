@@ -1,3 +1,4 @@
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type ProductTypeAttributeBinding } from '../data/schema'
 import { type ProductTypeAttributeBindingApiDTO } from '../contracts/product-type-attribute-binding-api-dto'
@@ -49,12 +50,8 @@ export function buildProductTypeAttributeBindingDelta(
 ): DeltaSet {
   const delta: DeltaSet = {}
   for (const field of PRODUCT_TYPE_ATTRIBUTE_BINDING_PATCH_FIELDS) {
-    const currentValue = current[field] ?? null
-    const nextValue = (next[field] ?? null) as ProductTypeAttributeBinding[typeof field] | null
-    if (JSON.stringify(currentValue) === JSON.stringify(nextValue)) {
-      continue
-    }
-    delta[field] = { o: currentValue, n: nextValue }
+    const fieldDelta = buildFlattenDelta(current[field], next[field], { basePath: String(field) })
+    Object.assign(delta, fieldDelta)
   }
   return delta
 }

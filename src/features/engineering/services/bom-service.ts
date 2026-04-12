@@ -1,5 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomNo, normalizeBomStatus, normalizeBomVersion } from '@/lib/codecs/code-normalization'
 import { type BOM } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 
@@ -8,6 +10,19 @@ type BOMListResponse = {
     total: number
     page: number
     pageSize: number
+}
+
+function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
+    const { ...rest } = data
+    return {
+        ...rest,
+        bomNo: normalizeBomNo(data.bomNo),
+        bomVersion: normalizeBomVersion(data.bomVersion),
+        changeType: normalizeBomChangeType(data.changeType),
+        status: normalizeBomStatus(data.status),
+        effectiveFrom: normalizeBomEffectiveDate(data.effectiveFrom),
+        effectiveTo: normalizeBomEffectiveDate(data.effectiveTo),
+    }
 }
 
 /**
@@ -21,7 +36,11 @@ export const bomService = {
     async getBOMs(productId?: string): Promise<BOM[]> {
         const url = productId ? `/engineering/bom?productId=${productId}` : '/engineering/bom'
         const response = await apiFetch<BOMListResponse>(url)
-        return Array.isArray(response.items) ? response.items : []
+        const checked = ensureObjectResponse<BOMListResponse & Record<string, unknown>>(
+            response,
+            'BOMService.getBOMs'
+        )
+        return ensureArrayResponse(checked.items, 'BOMService.getBOMs.items')
     },
 
     /**
@@ -34,10 +53,25 @@ export const bomService = {
     /**
      * 保存或更新 BOM
      */
-    async saveBOM(bom: SaveBOMInput): Promise<BOM> {
+    async saveBOM(params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }): Promise<BOM> {
+        const { data, isPatch, delta } = params
+        const normalizedData = normalizeBOMInput(data)
+        if (isPatch && data.id && delta) {
+            const payload: DeltaPayload = {
+                op: 'PATCH',
+                delta,
+                metadata: { id: normalizedData.id, version: normalizedData.version },
+            }
+            const res = await apiFetch<BOM>(`/engineering/bom/${normalizedData.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            })
+            return ensureObjectResponse<BOM>(res, 'BOMService.patchBOM')
+        }
+
         const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',
-            body: JSON.stringify(bom),
+            body: JSON.stringify(normalizedData),
         })
         return ensureObjectResponse<BOM>(res, 'BOMService.saveBOM')
     },

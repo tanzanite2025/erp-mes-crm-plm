@@ -3,17 +3,17 @@ import { type UseFormReturn } from 'react-hook-form'
 import { type Product, type ProductAttributeCategory, type ProductAttributeOption, type ProductType, type ProductTypeAttributeBinding } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { buildDefaultProductValues, type ProductVariantSelection } from '../utils/product-form-utils'
+import { type ProductVariantSelection } from '../utils/product-form-utils'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import { ProductTypeAttributeBindingService } from '../services/product-type-attribute-binding-service'
-import { getAttributeValue, PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { useLanguage } from '@/context/language-provider'
 import { isNotFoundError } from '@/lib/error-status'
-import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
+import { ProductCommand } from '../commands/product-command'
 
 type OptionItem = { label: string; value: string }
-const logger = createLogger('useProductFormInit')
 
 function toLocalizedOptionLabel(
     locale: string,
@@ -70,43 +70,16 @@ export function useProductFormInit({
     useEffect(() => {
         let cancelled = false
 
-        const resolveOptionalArray = async <T,>(promise: Promise<T[]>, resourceName: string): Promise<T[]> => {
-            try {
-                return await promise
-            } catch (error) {
-                if (isNotFoundError(error)) {
-                    if (!cancelled) {
-                        setMetadataInitError(PRODUCT_METADATA_UNAVAILABLE_MESSAGE)
-                    }
-                    logger.warn(`${resourceName} endpoint is unavailable; falling back to an empty list`, {
-                        resourceName,
-                    })
-                    return []
-                }
-
-                throw error
-            }
-        }
-
         const loadDictData = async () => {
             if (!open) return
             setMetadataInitError(null)
 
             try {
                 const [nextCategories, nextOptions, nextBindings] = await Promise.all([
-                    resolveOptionalArray(
-                        ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
-                        'product attribute categories'
-                    ),
-                    resolveOptionalArray(
-                        ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
-                        'product attribute options'
-                    ),
+                    ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+                    ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
                     watchedTypeId
-                        ? resolveOptionalArray(
-                            ProductTypeAttributeBindingService.getProductTypeAttributeBindings({ productTypeId: watchedTypeId, activeOnly: true }),
-                            'product type attribute bindings'
-                        )
+                        ? ProductTypeAttributeBindingService.getProductTypeAttributeBindings({ productTypeId: watchedTypeId, activeOnly: true })
                         : Promise.resolve([]),
                 ])
 
@@ -129,18 +102,26 @@ export function useProductFormInit({
                 setMoldOptions(groups.map(group => ({ label: group, value: group })))
                 setSpecOptions(specs.map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id })))
 
-                const weights = resolvedVersionLevelOptions
-                if (!isEdit && selectedVariants.length === 0 && weights.length > 0) {
-                    const currentWeight = form.getValues('weight')
-                    setSelectedVariants([{ level: weights[0].value, weight: currentWeight }])
+                if (!isEdit && selectedVariants.length === 0) {
+                    const initialState = ProductCommand.composeInitialState({
+                        isEdit,
+                        currentRow,
+                        versionLevelOptions: resolvedVersionLevelOptions,
+                        baseValues: form.getValues(),
+                    })
+                    setSelectedVariants(initialState.selectedVariants)
                 }
             } catch (error) {
                 if (cancelled) return
 
+                failLoudly(error, 'useProductFormInit.loadDictData')
                 setMetadataInitError(
-                    error instanceof Error ? error.message : 'Failed to initialize product form metadata.'
+                    isNotFoundError(error)
+                        ? PRODUCT_METADATA_UNAVAILABLE_MESSAGE
+                        : error instanceof Error
+                            ? error.message
+                            : 'Failed to initialize product form metadata.'
                 )
-                logger.error('Failed to initialize product form dictionaries', error)
             }
         }
 
@@ -149,27 +130,22 @@ export function useProductFormInit({
         return () => {
             cancelled = true
         }
-    }, [open, isEdit, form, locale, selectedVariants.length, setSelectedVariants, watchedTypeId])
+    }, [open, isEdit, currentRow, form, locale, selectedVariants.length, setSelectedVariants, watchedTypeId])
 
     useEffect(() => {
         const initForm = async () => {
-            if (open && isEdit && currentRow) {
-                const draftRow: Product & { techSpecId?: string } = { ...currentRow }
-                if (!draftRow.engineeringSpecId && draftRow.techSpecId) {
-                    draftRow.engineeringSpecId = draftRow.techSpecId
-                }
-                form.reset(draftRow)
-                const versionLevel = getAttributeValue(draftRow, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
-                if (versionLevel) {
-                    setSelectedVariants([{ level: versionLevel, weight: draftRow.weight || 0 }])
-                }
-            } else if (open) {
-                const defaultValues = buildDefaultProductValues({ includeVersion: false })
-                form.reset(defaultValues)
+            if (open) {
+                const initialState = ProductCommand.composeInitialState({
+                    isEdit,
+                    currentRow,
+                    versionLevelOptions,
+                })
+                form.reset(initialState.formValues)
+                setSelectedVariants(initialState.selectedVariants)
             }
         }
         initForm()
-    }, [open, isEdit, currentRow, productTypes, form, setSelectedVariants])
+    }, [open, isEdit, currentRow, productTypes, form, setSelectedVariants, versionLevelOptions])
 
     useEffect(() => {
         if (!open) {

@@ -16,7 +16,45 @@ type ProductAttributeOptionListQuery struct {
 	ActiveOnly  bool
 }
 
-type SaveProductAttributeOptionInput models.ProductAttributeOption
+type SaveProductAttributeOptionInput struct {
+	ID            string `json:"id"`
+	CategoryKey   string `json:"categoryKey"`
+	Value         string `json:"value"`
+	LabelZh       string `json:"labelZh"`
+	LabelEn       string `json:"labelEn"`
+	Description   string `json:"description"`
+	SortOrder     int    `json:"sortOrder"`
+	Active        bool   `json:"active"`
+	RevisionNo    string `json:"revisionNo"`
+	ChangeType    string `json:"changeType"`
+	ChangeOrderNo string `json:"changeOrderNo"`
+	SiteCode      string `json:"siteCode"`
+	IsDefaultSite bool   `json:"isDefaultSite"`
+	Version       int    `json:"version"`
+}
+
+func toProductAttributeOptionModel(input SaveProductAttributeOptionInput) models.ProductAttributeOption {
+	return models.ProductAttributeOption{
+		BaseModel: models.BaseModel{
+			ID: input.ID,
+		},
+		MasterDataControl: models.MasterDataControl{
+			RevisionNo:    input.RevisionNo,
+			ChangeType:    input.ChangeType,
+			ChangeOrderNo: input.ChangeOrderNo,
+			SiteCode:      input.SiteCode,
+			IsDefaultSite: input.IsDefaultSite,
+		},
+		CategoryKey: input.CategoryKey,
+		Value:       input.Value,
+		LabelZh:     input.LabelZh,
+		LabelEn:     input.LabelEn,
+		Description: input.Description,
+		SortOrder:   input.SortOrder,
+		Active:      input.Active,
+		Version:     input.Version,
+	}
+}
 
 func defaultProductAttributeOptions() []models.ProductAttributeOption {
 	return []models.ProductAttributeOption{
@@ -74,19 +112,20 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 	return items, nil
 }
 
-func CreateProductAttributeOption(input models.ProductAttributeOption) (models.ProductAttributeOption, error) {
-	normalizeProductAttributeOption(&input)
-	if input.Value == "" || !isValidProductAttributeMachineValue(input.Value) {
+func CreateProductAttributeOption(input SaveProductAttributeOptionInput) (models.ProductAttributeOption, error) {
+	modelInput := toProductAttributeOptionModel(input)
+	normalizeProductAttributeOption(&modelInput)
+	if modelInput.Value == "" || !isValidProductAttributeMachineValue(modelInput.Value) {
 		return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 产品属性分类项机器值格式无效")
 	}
-	if err := ensureProductAttributeOptionValueAvailable(db.DB, input.CategoryKey, input.Value, ""); err != nil {
+	if err := ensureProductAttributeOptionValueAvailable(db.DB, modelInput.CategoryKey, modelInput.Value, ""); err != nil {
 		return models.ProductAttributeOption{}, err
 	}
-	input.Version = 1
-	if err := db.DB.Create(&input).Error; err != nil {
+	modelInput.Version = 1
+	if err := db.DB.Create(&modelInput).Error; err != nil {
 		return models.ProductAttributeOption{}, err
 	}
-	return input, nil
+	return modelInput, nil
 }
 
 func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {

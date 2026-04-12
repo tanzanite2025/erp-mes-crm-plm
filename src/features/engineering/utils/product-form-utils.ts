@@ -1,4 +1,5 @@
 import { type Product } from '../data/schema'
+import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS, upsertAttributeValue } from './product-attribute-utils'
 
 export interface ProductVariantSelection {
@@ -49,10 +50,13 @@ export function buildDefaultProductValues(
 }
 
 export function deriveSku(typeCode: string, modelCode: string, versionLevel?: string): string {
+    const normalizedTypeCode = normalizeSku(typeCode)
+    const normalizedModelCode = normalizeModelCode(modelCode)
+    const normalizedVersionLevel = normalizeSku(versionLevel)
     if (versionLevel) {
-        return `${typeCode}-${modelCode}-${versionLevel}`
+        return normalizeSku(`${normalizedTypeCode}-${normalizedModelCode}-${normalizedVersionLevel}`)
     }
-    return `${typeCode}-${modelCode}`
+    return normalizeSku(`${normalizedTypeCode}-${normalizedModelCode}`)
 }
 
 export function ensureSkuUnique(
@@ -61,7 +65,7 @@ export function ensureSkuUnique(
 ): SkuValidationResult {
     const seen = new Set<string>()
     for (const product of productsToSave) {
-        const sku = product.sku || ''
+        const sku = normalizeSku(product.sku)
         if (!sku) {
             return { ok: false, reason: 'EMPTY' }
         }
@@ -87,7 +91,7 @@ export function buildBatchProducts(
             ...nextValues,
             id: '',
             weight: variant.weight,
-            sku: deriveSku(typeCode, values.modelCode, variant.level),
+            sku: deriveSku(typeCode, normalizeModelCode(values.modelCode), variant.level),
             createdAt: new Date().toISOString()
         }
     })
@@ -102,6 +106,6 @@ export function buildSingleVariantProduct(
     return {
         ...nextValues,
         weight: variant.weight,
-        sku: deriveSku(typeCode, values.modelCode, variant.level)
+        sku: deriveSku(typeCode, normalizeModelCode(values.modelCode), variant.level)
     }
 }

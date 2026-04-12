@@ -110,6 +110,7 @@ export interface SalesOrder extends BaseEntity {
     barcode?: string
     requirements?: string
     lines: SalesOrderLine[]
+    fulfillmentRate?: number
     workflowInstanceId?: string // 统一工作流引擎桥接关键链
     version: number // SDRTS 乐观锁
 }

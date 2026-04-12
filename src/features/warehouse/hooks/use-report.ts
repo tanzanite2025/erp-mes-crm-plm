@@ -6,10 +6,9 @@ import { createLogger } from '@/lib/logger'
 import {
     InventoryCoreService,
     InventoryMaintenanceService,
-    type InboundRecord,
     type MasterDataSearchResult,
 } from '../inventory'
-import { ShipmentCoreService, type ShipmentRecord } from '../shipment'
+import { ShipmentCoreService } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 import { warehouseQueryKeys } from '../query-keys'
 

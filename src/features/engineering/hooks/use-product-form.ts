@@ -5,10 +5,8 @@ import { productSchema, type Product, type ProductType } from '../data/schema'
 import { useProductFormInit } from './use-product-form-init'
 import { useProductFormSubmit } from './use-product-form-submit'
 import { useProductFormDerive } from './use-product-form-derive'
-import {
-  buildDefaultProductValues,
-  type ProductVariantSelection,
-} from '../utils/product-form-utils'
+import { type ProductVariantSelection } from '../utils/product-form-utils'
+import { ProductCommand } from '../commands/product-command'
 
 interface UseProductFormProps {
   currentRow?: Product
@@ -27,10 +25,11 @@ export function useProductForm({
 }: UseProductFormProps) {
   const isEdit = !!currentRow
   const [selectedVariants, setSelectedVariants] = useState<ProductVariantSelection[]>([])
+  const initialState = ProductCommand.composeInitialState({ isEdit, currentRow })
 
   const form = useForm<Product>({
     resolver: zodResolver(productSchema) as Resolver<Product>,
-    defaultValues: buildDefaultProductValues({ includeVersion: true }),
+    defaultValues: initialState.formValues,
   })
 
   const {

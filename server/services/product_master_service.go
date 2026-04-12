@@ -212,7 +212,7 @@ func GetProductByID(id string) (models.Product, error) {
 	return items[0], nil
 }
 
-func SaveProduct(input SaveProductAPIRequest) (models.Product, error) {
+func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) {
 	modelInput := toProductModel(input)
 	var saved models.Product
 
@@ -291,7 +291,11 @@ func SaveProduct(input SaveProductAPIRequest) (models.Product, error) {
 	return saved, nil
 }
 
-func BuildProductPatchInput(id string, version int, payload map[string]json.RawMessage) (SaveProductAPIRequest, error) {
+func SaveProduct(input SaveProductAPIRequest) (models.Product, error) {
+	return saveProductFromWriteInput(toProductWriteInput(input))
+}
+
+func BuildProductPatchInput(id string, version int, payload map[string]json.RawMessage) (ProductWriteInput, error) {
 	if err := validateSupportedTopLevelDeltaKeys(
 		payload,
 		"sku",
@@ -330,22 +334,22 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		"siteCode",
 		"isDefaultSite",
 	); err != nil {
-		return SaveProductAPIRequest{}, err
+		return ProductWriteInput{}, err
 	}
 
 	current, err := GetProductByID(id)
 	if err != nil {
-		return SaveProductAPIRequest{}, err
+		return ProductWriteInput{}, err
 	}
 
-	input := toProductAPIRequest(current)
+	input := toProductWriteInput(toProductAPIRequest(current))
 	input.ID = id
 	input.Version = version
 
 	for key, raw := range payload {
 		valueRaw, err := extractDeltaNewValue(raw)
 		if err != nil {
-			return SaveProductAPIRequest{}, err
+			return ProductWriteInput{}, err
 		}
 
 		switch key {
@@ -457,7 +461,7 @@ func BuildProductPatchInput(id string, version int, payload map[string]json.RawM
 		}
 
 		if err != nil {
-			return SaveProductAPIRequest{}, err
+			return ProductWriteInput{}, err
 		}
 	}
 
@@ -485,13 +489,13 @@ func PatchProduct(id string, version int, payload map[string]json.RawMessage) (m
 	if err != nil {
 		return models.Product{}, err
 	}
-	return SaveProduct(input)
+	return saveProductFromWriteInput(input)
 }
 
 func BulkSyncProducts(input BulkSyncProductsAPIPayload) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, in := range input.Products {
-			product := toProductModel(in)
+			product := toProductModel(toProductWriteInput(in))
 			product.EngineeringSpecID = normalizeEngineeringSpecID(product.EngineeringSpecID)
 			product.AttributeValues = normalizeProductAttributeValues(product.AttributeValues)
 			if product.EngineeringSpecID != "" {

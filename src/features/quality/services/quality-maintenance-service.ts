@@ -4,7 +4,6 @@ import { type DeltaSet, type DeltaPayload } from '@/lib/delta/types'
 
 export interface ExecuteInspectionPayload {
     id: string
-    result: 'PASS' | 'FAIL'
     remarks?: string
 }
 

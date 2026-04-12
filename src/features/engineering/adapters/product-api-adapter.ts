@@ -1,4 +1,6 @@
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { normalizeChangeOrderNo, normalizeModelCode, normalizeRevisionNo, normalizeSiteCode, normalizeSku, normalizeTemplateKey } from '@/lib/codecs/code-normalization'
 import { barcodeConfigSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type BulkSyncProductsApiDTO,
@@ -42,9 +44,9 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
 export function toProductContract(dto: ProductApiDTO): Product {
   return {
     id: dto.id,
-    sku: dto.sku,
+    sku: normalizeSku(dto.sku),
     name: dto.name,
-    modelCode: dto.modelCode || '01',
+    modelCode: normalizeModelCode(dto.modelCode),
     typeId: dto.typeId,
     depth: dto.depth,
     widthInternal: dto.widthInternal,
@@ -66,15 +68,15 @@ export function toProductContract(dto: ProductApiDTO): Product {
     barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
     attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
-    templateKey: dto.templateKey,
+    templateKey: normalizeTemplateKey(dto.templateKey),
     createdAt: dto.createdAt ?? '',
     version: dto._v ?? 1,
-    revisionNo: dto.revisionNo,
+    revisionNo: normalizeRevisionNo(dto.revisionNo),
     effectiveFrom: dto.effectiveFrom ?? undefined,
     effectiveTo: dto.effectiveTo ?? undefined,
     changeType: dto.changeType,
-    changeOrderNo: dto.changeOrderNo,
-    siteCode: dto.siteCode,
+    changeOrderNo: normalizeChangeOrderNo(dto.changeOrderNo),
+    siteCode: normalizeSiteCode(dto.siteCode),
     isDefaultSite: dto.isDefaultSite,
   }
 }
@@ -90,9 +92,9 @@ export function toProductListContract(dto: ProductListPageApiDTO): Product[] {
 export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
   return {
     id: product.id || '',
-    sku: product.sku || '',
+    sku: normalizeSku(product.sku),
     name: product.name || '',
-    modelCode: product.modelCode || '01',
+    modelCode: normalizeModelCode(product.modelCode),
     typeId: product.typeId || '',
     depth: product.depth,
     widthInternal: product.widthInternal,
@@ -114,20 +116,20 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
     barcodeConfig: product.barcodeConfig,
     attachments: product.attachments ?? [],
     status: product.status ?? 'Active',
-    templateKey: product.templateKey,
-    revisionNo: product.revisionNo,
+    templateKey: normalizeTemplateKey(product.templateKey),
+    revisionNo: normalizeRevisionNo(product.revisionNo),
     effectiveFrom: product.effectiveFrom ?? null,
     effectiveTo: product.effectiveTo ?? null,
     changeType: product.changeType,
-    changeOrderNo: product.changeOrderNo,
-    siteCode: product.siteCode,
+    changeOrderNo: normalizeChangeOrderNo(product.changeOrderNo),
+    siteCode: normalizeSiteCode(product.siteCode),
     isDefaultSite: product.isDefaultSite,
     createdAt: product.createdAt,
     _v: product.version ?? 1,
   }
 }
 
-const PRODUCT_PATCH_FIELDS: Array<keyof Product> = [
+const PRODUCT_PATCH_FIELDS: Array<keyof SaveProductInput> = [
   'sku',
   'name',
   'modelCode',
@@ -152,6 +154,7 @@ const PRODUCT_PATCH_FIELDS: Array<keyof Product> = [
   'barcodeConfig',
   'attachments',
   'status',
+  'templateKey',
   'revisionNo',
   'effectiveFrom',
   'effectiveTo',
@@ -159,6 +162,8 @@ const PRODUCT_PATCH_FIELDS: Array<keyof Product> = [
   'changeOrderNo',
   'siteCode',
   'isDefaultSite',
+  'createdAt',
+  'version',
 ]
 
 export function buildProductDelta(next: SaveProductInput): DeltaSet {
@@ -168,10 +173,8 @@ export function buildProductDelta(next: SaveProductInput): DeltaSet {
     if (!(field in next)) {
       continue
     }
-    delta[field] = {
-      o: null,
-      n: next[field] ?? null,
-    }
+    const fieldDelta = buildFlattenDelta(undefined, next[field], { basePath: String(field) })
+    Object.assign(delta, fieldDelta)
   }
 
   return delta

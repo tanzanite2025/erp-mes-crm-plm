@@ -8,6 +8,7 @@ import { LineDialog } from './line-dialog'
 import type { ProductionLine } from '../types'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
 
 interface LineListProps {
@@ -45,10 +46,11 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
   const handleToggleActive = (id: string) => {
     const line = lines.find((l) => l.id === id)
     if (line) {
+        const delta = buildFlattenDelta(line.isActive, !line.isActive, { basePath: 'isActive' })
         onUpdate({ 
           type: 'UPDATE', 
           id, 
-          delta: { isActive: { o: line.isActive, n: !line.isActive } }, 
+          delta, 
           version: line.version 
         })
     }

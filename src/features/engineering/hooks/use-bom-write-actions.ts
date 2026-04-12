@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { type DeltaSet } from '@/lib/delta/types'
 import { type SaveBOMInput } from '../mutation-types'
 import { BOMS_QUERY_KEY } from '../query-keys'
 import { bomService } from '../services/bom-service'
@@ -7,7 +8,8 @@ export function useBOMWriteActions() {
   const queryClient = useQueryClient()
 
   const saveBOMMutation = useMutation({
-    mutationFn: (bom: SaveBOMInput) => bomService.saveBOM(bom),
+    mutationFn: (params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }) =>
+      bomService.saveBOM(params),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
     },

@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomStatus } from '@/lib/codecs/code-normalization'
 import { cn } from '@/lib/utils'
 import { type BOM, type Product } from '../../data/schema'
 import { getProductAttributes } from '../../utils/product-utils'
@@ -63,7 +64,7 @@ export function BOMTable({
             <span className='font-mono font-bold leading-tight'>{row.original.bomNo}</span>
             <div className='mt-0.5 flex flex-wrap items-center gap-2'>
               <Badge variant='outline' className='h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-600'>
-                {row.original.bomDisplayVersion}
+                {deriveBomDisplayVersion(row.original.bomVersion || row.original.bomDisplayVersion)}
               </Badge>
               {row.original.revisionNo && (
                 <Badge variant='outline' className='h-4 border-amber-200 bg-amber-50 px-1 py-0 text-[10px] text-amber-700'>
@@ -146,23 +147,28 @@ export function BOMTable({
     },
     {
       header: t('engineering.bomArchive.table.change'),
-      cell: ({ row }) => (
-        <div className='flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide'>
-          <span className='text-slate-700'>{row.original.changeType || t('engineering.bomArchive.form.manual')}</span>
-          <span className='font-mono text-muted-foreground'>{row.original.changeOrderNo || '-'}</span>
-          <span className='text-muted-foreground'>
-            {row.original.effectiveFrom
-              ? t('engineering.bomArchive.table.fromDate', { date: row.original.effectiveFrom })
-              : t('engineering.bomArchive.table.noEffectiveDate')}
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const changeType = normalizeBomChangeType(row.original.changeType)
+        const effectiveFrom = normalizeBomEffectiveDate(row.original.effectiveFrom)
+
+        return (
+          <div className='flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide'>
+            <span className='text-slate-700'>{changeType || t('engineering.bomArchive.form.manual')}</span>
+            <span className='font-mono text-muted-foreground'>{row.original.changeOrderNo || '-'}</span>
+            <span className='text-muted-foreground'>
+              {effectiveFrom
+                ? t('engineering.bomArchive.table.fromDate', { date: effectiveFrom })
+                : t('engineering.bomArchive.table.noEffectiveDate')}
+            </span>
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'status',
       header: t('engineering.bomArchive.table.status'),
       cell: ({ row }) => {
-        const status = row.original.status
+        const status = normalizeBomStatus(row.original.status)
         const config = {
           draft: {
             label: t('engineering.bomArchive.status.draft'),
@@ -263,7 +269,7 @@ export function BOMTable({
                   <TableRow>
                     <TableCell colSpan={columns.length} className='h-48 text-center sm:h-64'>
                       <div className='flex flex-col items-center justify-center gap-3 opacity-40'>
-                        <Layers className='size-10 text-muted-foreground stroke-[1] sm:size-12' />
+                        <Layers className='size-10 text-muted-foreground stroke-1 sm:size-12' />
                         <p className='px-8 text-[10px] font-semibold uppercase tracking-widest italic sm:text-sm'>
                           {t('engineering.bomArchive.table.empty')}
                         </p>

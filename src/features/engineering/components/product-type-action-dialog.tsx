@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
 import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
 import { ProductTypeService } from '../services/product-type-service'
@@ -105,6 +106,7 @@ export function ProductTypeActionDialog({
       if (isEdit && currentRow) {
         form.reset({
           ...currentRow,
+          code: normalizeMachineCode(currentRow.code),
           parentId: currentRow.parentId || 'root',
           templateId: currentRow.templateId || 'none',
         })
@@ -144,7 +146,7 @@ export function ProductTypeActionDialog({
     )
 
     if (tokens.length > 0) {
-      form.setValue('code', Array.from(new Set(tokens)).join('-'), {
+      form.setValue('code', normalizeMachineCode(Array.from(new Set(tokens)).join('-')), {
         shouldValidate: true,
       })
     }
@@ -183,6 +185,7 @@ export function ProductTypeActionDialog({
     try {
       const submissionData: SaveProductTypeInput = {
         ...values,
+        code: normalizeMachineCode(values.code),
         id: values.id || currentRow?.id,
         createdAt: values.createdAt || currentRow?.createdAt || new Date().toISOString(),
         parentId: values.parentId === 'root' ? undefined : values.parentId || undefined,
@@ -281,6 +284,8 @@ export function ProductTypeActionDialog({
                         placeholder={t('engineering.categoryArchive.dialog.codePlaceholder')}
                         className='h-12 rounded-2xl bg-muted/50 border-none font-mono font-bold'
                         {...field}
+                        value={field.value || ''}
+                        onChange={(event) => field.onChange(normalizeMachineCode(event.target.value))}
                       />
                     </FormControl>
                     <FormMessage />

@@ -1,4 +1,6 @@
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { type ProductType } from '../data/schema'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type SaveProductTypeInput } from '../mutation-types'
@@ -9,7 +11,7 @@ export function toProductTypeContract(dto: ProductTypeApiDTO): ProductType {
     parentId: dto.parentId || undefined,
     templateId: dto.templateId || undefined,
     name: dto.name,
-    code: dto.code,
+    code: normalizeMachineCode(dto.code),
     description: dto.description || undefined,
     active: dto.active,
     sortOrder: dto.sortOrder ?? 0,
@@ -46,7 +48,7 @@ export function toProductTypeApiDTO(type: SaveProductTypeInput): ProductTypeApiD
     parentId: type.parentId ?? null,
     templateId: type.templateId ?? null,
     name: type.name || '',
-    code: type.code || '',
+    code: normalizeMachineCode(type.code),
     description: type.description || '',
     active: type.active ?? true,
     sortOrder: type.sortOrder ?? 0,
@@ -70,12 +72,10 @@ export function buildProductTypeDelta(current: ProductType, next: SaveProductTyp
   const delta: DeltaSet = {}
 
   for (const field of PRODUCT_TYPE_PATCH_FIELDS) {
-    const currentValue = current[field] ?? null
-    const nextValue = (next[field] ?? null) as ProductType[typeof field] | null
-    if (JSON.stringify(currentValue) === JSON.stringify(nextValue)) {
-      continue
-    }
-    delta[field] = { o: currentValue, n: nextValue }
+    const fieldDelta = buildFlattenDelta(current[field], next[field], {
+      basePath: String(field),
+    })
+    Object.assign(delta, fieldDelta)
   }
 
   return delta

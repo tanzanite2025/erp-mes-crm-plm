@@ -39,7 +39,6 @@ export function QualityInspection() {
     const handleQuickPass = (taskId: string) => {
         executeInspectionMutation.mutate({
             id: taskId,
-            result: 'PASS',
             remarks: t('quality.inspection.page.quickPassRemark'),
         })
     }

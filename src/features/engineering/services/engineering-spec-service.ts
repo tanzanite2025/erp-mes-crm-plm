@@ -25,6 +25,11 @@ export interface EngineeringSpec {
   _v: number;
 }
 
+export type EngineeringSpecInput = Omit<EngineeringSpec, 'id' | 'code'> & {
+  id?: string;
+  code?: string;
+}
+
 export const engineeringSpecService = {
   getSpecs: async (type?: string): Promise<EngineeringSpec[]> => {
     const url = type ? `/engineering/specs?type=${type}` : '/engineering/specs';
@@ -35,7 +40,7 @@ export const engineeringSpecService = {
     return apiFetch<EngineeringSpec>(`/engineering/specs/${id}`);
   },
 
-  saveSpec: async (spec: EngineeringSpec): Promise<EngineeringSpec> => {
+  saveSpec: async (spec: EngineeringSpecInput): Promise<EngineeringSpec> => {
     return apiFetch<EngineeringSpec>('/engineering/specs', {
       method: 'POST',
       body: JSON.stringify(spec),

@@ -321,7 +321,7 @@ export function LinearBarcodeMgmt() {
         sequenceRuleKey={protocolConfig.sequenceRuleKey}
       />
 
-      <div className='bg-background/40 p-6 lg:p-8 rounded-4xl border border-white/5 flex items-start gap-6'>
+      <div className='bg-background/40 p-6 lg:p-8 rounded-[32px] border border-white/5 flex items-start gap-6'>
         <div className='p-4 bg-primary/10 rounded-2xl'>
           <Barcode className='size-6 text-primary' />
         </div>
@@ -345,7 +345,7 @@ export function LinearBarcodeMgmt() {
       <AppearanceActionDialog open={isAppearanceDialogOpen} onOpenChange={setIsAppearanceDialogOpen} />
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <DialogContent className='max-w-2xl bg-background border-border p-0 rounded-4xl overflow-hidden shadow-2xl'>
+      <DialogContent className='max-w-2xl bg-background border-border p-0 rounded-[32px] overflow-hidden shadow-2xl'>
           <div className='absolute inset-0 bg-linear-to-b from-rose-500/5 via-transparent to-transparent pointer-events-none' />
           <div className='relative p-8'>
             <DialogHeader className='mb-6'>

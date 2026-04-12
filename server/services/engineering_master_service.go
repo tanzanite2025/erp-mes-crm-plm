@@ -50,8 +50,86 @@ type BOMListQuery struct {
 
 type SaveEngineeringSpecInput models.EngineeringSpec
 type BulkSyncEngineeringSpecInput models.EngineeringSpec
-type SaveChangeOrderInput models.ChangeOrder
-type SaveBOMInput models.BOM
+
+type SaveChangeOrderInput struct {
+	ID            string     `json:"id"`
+	ChangeOrderNo string     `json:"changeOrderNo"`
+	Title         string     `json:"title"`
+	ChangeType    string     `json:"changeType"`
+	ProductID     *string    `json:"productId"`
+	SiteCode      string     `json:"siteCode"`
+	IsDefaultSite bool       `json:"isDefaultSite"`
+	RevisionNo    string     `json:"revisionNo"`
+	EffectiveFrom *time.Time `json:"effectiveFrom"`
+	EffectiveTo   *time.Time `json:"effectiveTo"`
+	Status        string     `json:"status"`
+	Description   string     `json:"description"`
+	Version       int        `json:"version"`
+}
+
+func toChangeOrderModel(input SaveChangeOrderInput) models.ChangeOrder {
+	return models.ChangeOrder{
+		BaseModel: models.BaseModel{
+			ID: input.ID,
+		},
+		ChangeOrderNo: input.ChangeOrderNo,
+		Title:         input.Title,
+		ChangeType:    input.ChangeType,
+		ProductID:     input.ProductID,
+		SiteCode:      input.SiteCode,
+		IsDefaultSite: input.IsDefaultSite,
+		RevisionNo:    input.RevisionNo,
+		EffectiveFrom: input.EffectiveFrom,
+		EffectiveTo:   input.EffectiveTo,
+		Status:        input.Status,
+		Description:   input.Description,
+		Version:       input.Version,
+	}
+}
+
+type SaveBOMInput struct {
+	ID            string           `json:"id"`
+	BOMNo         string           `json:"bomNo"`
+	ProductID     string           `json:"productId"`
+	ChangeOrderID *string          `json:"changeOrderId"`
+	VersionText   string           `json:"version"`
+	Status        string           `json:"status"`
+	Items         []models.BOMItem `json:"items"`
+	Description   string           `json:"description"`
+	Version       int              `json:"_v"`
+	RevisionNo    string           `json:"revisionNo"`
+	EffectiveFrom *time.Time       `json:"effectiveFrom"`
+	EffectiveTo   *time.Time       `json:"effectiveTo"`
+	ChangeType    string           `json:"changeType"`
+	ChangeOrderNo string           `json:"changeOrderNo"`
+	SiteCode      string           `json:"siteCode"`
+	IsDefaultSite bool             `json:"isDefaultSite"`
+}
+
+func (input SaveBOMInput) toModel() models.BOM {
+	model := models.BOM{
+		BaseModel: models.BaseModel{
+			ID: input.ID,
+		},
+		MasterDataControl: models.MasterDataControl{
+			RevisionNo:    input.RevisionNo,
+			EffectiveFrom: input.EffectiveFrom,
+			EffectiveTo:   input.EffectiveTo,
+			ChangeType:    input.ChangeType,
+			ChangeOrderNo: input.ChangeOrderNo,
+			SiteCode:      input.SiteCode,
+			IsDefaultSite: input.IsDefaultSite,
+		},
+		BOMNo:         input.BOMNo,
+		ProductID:     input.ProductID,
+		ChangeOrderID: input.ChangeOrderID,
+		VersionText:   input.VersionText,
+		Status:        input.Status,
+		Items:         input.Items,
+		Description:   input.Description,
+	}
+	return model
+}
 
 func ListEngineeringSpecs(query EngineeringSpecListQuery) ([]models.EngineeringSpec, int64, error) {
 	page := query.Page
@@ -270,7 +348,7 @@ func ListChangeOrders(query ChangeOrderListQuery) ([]models.ChangeOrder, int64, 
 }
 
 func SaveChangeOrder(input SaveChangeOrderInput) (models.ChangeOrder, error) {
-	modelInput := models.ChangeOrder(input)
+	modelInput := toChangeOrderModel(input)
 	normalizeChangeOrder(&modelInput)
 	var saved models.ChangeOrder
 
@@ -549,7 +627,7 @@ func saveBOMItems(tx *gorm.DB, bomID string, items []models.BOMItem) error {
 }
 
 func SaveBOM(input SaveBOMInput) (models.BOM, error) {
-	modelInput := models.BOM(input)
+	modelInput := input.toModel()
 	var saved models.BOM
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {

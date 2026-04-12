@@ -5,10 +5,11 @@ import {
   getSalesOrderTypeLabel,
 } from '../data/sales-order-options'
 import type { SalesOrder } from '../data/schema'
+import type { AppLocale } from '@/locales'
 
 interface UseSalesOrderDetailSummaryViewModelParams {
   order: SalesOrder
-  locale: string
+  locale: AppLocale
   t: (key: string) => string
 }
 
@@ -36,7 +37,10 @@ export function useSalesOrderDetailSummaryViewModel({
 }: UseSalesOrderDetailSummaryViewModelParams) {
   return useMemo(() => {
     const infoRows = [
-      { label: t('tradingSalesOrder.detail.info.orderType'), value: getSalesOrderTypeLabel(order.type, locale) || order.type },
+      {
+        label: t('tradingSalesOrder.detail.info.orderType'),
+        value: getSalesOrderTypeLabel(order.type, locale) || order.type,
+      },
       { label: t('tradingSalesOrder.detail.info.currency'), value: order.currency },
       {
         label: t('tradingSalesOrder.detail.info.classification'),

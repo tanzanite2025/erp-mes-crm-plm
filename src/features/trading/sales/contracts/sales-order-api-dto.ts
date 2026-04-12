@@ -55,6 +55,7 @@ export interface SalesOrderApiDTO {
   isDeleted?: boolean
   version?: number
   evidences?: OrderEvidence[]
+  fulfillmentRate?: number
   lines: SalesOrderLineApiDTO[]
 }
 

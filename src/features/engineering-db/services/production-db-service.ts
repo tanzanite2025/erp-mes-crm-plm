@@ -1,5 +1,5 @@
-import { type DrillingPlan, type LabelingDraft, drillingPlanSchema, labelingDraftSchema } from '../data/schema'
-import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
+import { type DrillingPlan, type DrillingPlanInput, type LabelingDraft, drillingPlanSchema, labelingDraftSchema } from '../data/schema'
+import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 /**
@@ -24,13 +24,11 @@ export const ProductionDBService = {
     }
   },
 
-  saveDrilling: async (data: DrillingPlan[]) => {
+  saveDrilling: async (data: DrillingPlanInput[]) => {
     if (data.length === 0) return;
     const item = data[0];
-    const spec: EngineeringSpec = {
-      id: item.id,
+    const spec: EngineeringSpecInput = {
       name: item.name,
-      code: item.id,
       type: 'DRILLING_PLAN',
       active: true,
       drillingData: item,
@@ -39,7 +37,7 @@ export const ProductionDBService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
-  saveDrillingItem: async (item: DrillingPlan) => {
+  saveDrillingItem: async (item: DrillingPlanInput) => {
     await ProductionDBService.saveDrilling([item])
   },
 

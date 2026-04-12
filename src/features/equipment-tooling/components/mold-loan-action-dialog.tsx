@@ -87,9 +87,9 @@ export function MoldLoanActionDialog({
             status: 'ACTIVE' as const,
             remarks: '',
             photoUrl: '',
-            maxCycles: 1000,
-            currentCycles: 0,
-            maintenanceThreshold: 800,
+            maxCycles: undefined,
+            currentCycles: undefined,
+            maintenanceThreshold: undefined,
             version: 1,
             createdAt: new Date().toISOString(),
         }

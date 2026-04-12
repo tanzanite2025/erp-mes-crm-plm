@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload } from '@/lib/delta/types'
+import { normalizeComponentKey, normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { buildProductTemplateDelta, toProductTemplateApiDTO, toProductTemplateContract } from '../adapters/product-template-api-adapter'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
 
@@ -15,6 +16,14 @@ let templateRequest: Promise<ProductTemplate[]> | null = null
 function invalidateTemplateCache() {
   templateCache = null
   templateRequest = null
+}
+
+function normalizeProductTemplateInput(template: SaveProductTemplateInput): SaveProductTemplateInput {
+  return {
+    ...template,
+    code: normalizeMachineCode(template.code),
+    componentKey: normalizeComponentKey(template.componentKey) as SaveProductTemplateInput['componentKey'],
+  }
 }
 
 export const productTemplateService = {
@@ -41,9 +50,10 @@ export const productTemplateService = {
   },
 
   createTemplate: async (template: SaveProductTemplateInput): Promise<ProductTemplate> => {
+    const normalizedTemplate = normalizeProductTemplateInput(template)
     const saved = await apiFetch<ProductTemplateApiDTO>('/engineering/templates', {
       method: 'POST',
-      body: JSON.stringify(toProductTemplateApiDTO({ ...template, id: '', version: 1 })),
+      body: JSON.stringify(toProductTemplateApiDTO({ ...normalizedTemplate, id: '', version: 1 })),
     })
     invalidateTemplateCache()
     return toProductTemplateContract(
@@ -55,9 +65,10 @@ export const productTemplateService = {
   },
 
   patchTemplate: async (current: ProductTemplate, next: SaveProductTemplateInput): Promise<ProductTemplate> => {
-    const delta = buildProductTemplateDelta(current, next)
+    const normalizedNext = normalizeProductTemplateInput(next)
+    const delta = buildProductTemplateDelta(current, normalizedNext)
     if (Object.keys(delta).length === 0) {
-      return { ...current, ...next }
+      return { ...current, ...normalizedNext }
     }
 
     const payload: DeltaPayload = {
@@ -80,9 +91,9 @@ export const productTemplateService = {
 
   saveTemplate: async (template: SaveProductTemplateInput, current?: ProductTemplate): Promise<ProductTemplate> => {
     if (current?.id) {
-      return productTemplateService.patchTemplate(current, template)
+      return productTemplateService.patchTemplate(current, normalizeProductTemplateInput(template))
     }
-    return productTemplateService.createTemplate(template)
+    return productTemplateService.createTemplate(normalizeProductTemplateInput(template))
   },
 
   deleteTemplate: async (id: string): Promise<void> => {

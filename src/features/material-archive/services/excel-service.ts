@@ -1,5 +1,7 @@
+import { z } from 'zod'
 import { type AppLocale, translate } from '@/locales'
 import { loadExcelJS } from '@/lib/lazy-vendors'
+import { failLoudly } from '@/lib/safe-catch'
 import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import { type Material } from '../data/schema'
 import { getMaterialCategoryOptions } from '../data/material-category-options'
@@ -59,6 +61,19 @@ function getCellValue(cell: Cell) {
 	}
 	return unescapeFormula(value.toString().trim())
 }
+
+const materialExcelRowSchema = z.object({
+  id: z.string().min(1, 'Material id is required'),
+  version: z.number().optional(),
+  code: z.string().min(1, 'Material code is required'),
+  name: z.string().min(1, 'Material name is required'),
+  spec: z.string().optional(),
+  category: z.string().min(1, 'Material category is required'),
+  uom: z.string().min(1, 'Material unit is required'),
+  description: z.string().optional(),
+})
+
+const materialExcelSchema = z.array(materialExcelRowSchema)
 
 export const MaterialExcelService = {
   async exportMaterials(
@@ -297,6 +312,17 @@ export const MaterialExcelService = {
       })
     })
 
-    return { materials, globalSnapshotVersion }
+    const parsed = materialExcelSchema.safeParse(materials)
+    if (!parsed.success) {
+      const error = new Error(
+        `[CRITICAL] Invalid material excel rows: ${parsed.error.issues
+          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+          .join('; ')}`
+      )
+      failLoudly(error, 'MaterialExcelService.parseMaterialExcel')
+      throw error
+    }
+
+    return { materials: parsed.data, globalSnapshotVersion }
   },
 }

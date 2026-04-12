@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type EquipmentPartner, type Mold, type MoldLoan } from '../data/schema'
 import { MoldLoanService } from '../services/mold-loan-service'
@@ -11,8 +11,29 @@ import { AssetService } from '../services/asset-service'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
+import { MOLD_LOANS_QUERY_KEY, MOLDS_QUERY_KEY } from './use-assets'
 
 export type LoanMode = 'LEND' | 'BORROW'
+const EQUIPMENT_PARTNERS_QUERY_KEY = ['equipmentPartners'] as const
+
+function requireNumber(value: number | undefined, context: string) {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        const error = new Error(`[CRITICAL] Missing ${context}`)
+        failLoudly(error, 'useMoldLoanMgmt.requireNumber')
+        throw error
+    }
+    return value
+}
+
+function requireString(value: string | undefined, context: string) {
+    if (!value) {
+        const error = new Error(`[CRITICAL] Missing ${context}`)
+        failLoudly(error, 'useMoldLoanMgmt.requireString')
+        throw error
+    }
+    return value
+}
 
 export function useMoldLoanMgmt() {
     const { t } = useLanguage()
@@ -20,30 +41,57 @@ export function useMoldLoanMgmt() {
     const queryClient = useQueryClient()
     const homeFactory = t('equipmentTooling.loans.defaults.homeFactory')
 
-    const [loans, setLoans] = useState<MoldLoan[]>([])
-    const [molds, setMolds] = useState<Mold[]>([])
-    const [partners, setPartners] = useState<EquipmentPartner[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [mode, setMode] = useState<LoanMode>('LEND')
     const [currentRow, setCurrentRow] = useState<MoldLoan | null>(null)
-    const [error, setError] = useState<unknown>(null)
 
-    const loadData = useCallback(async () => {
-        setError(null)
-        try {
-            const [loanRecords, moldRecords, partnerRecords] = await Promise.all([
-                MoldLoanService.getLoans(),
-                MoldCoreService.getMolds(),
-                EquipmentPartnerService.getPartners(),
-            ])
-            setLoans(loanRecords)
-            setMolds(moldRecords.filter((mold: Mold) => mold.status === 'IDLE' || mold.status === 'LENT_OUT'))
-            setPartners(partnerRecords)
-        } catch (err) {
-            setError(err)
+    const loansQuery = useQuery({
+        queryKey: MOLD_LOANS_QUERY_KEY,
+        queryFn: () => MoldLoanService.getLoans(),
+    })
+
+    const moldsQuery = useQuery({
+        queryKey: MOLDS_QUERY_KEY,
+        queryFn: () => MoldCoreService.getMolds(),
+    })
+
+    const partnersQuery = useQuery({
+        queryKey: EQUIPMENT_PARTNERS_QUERY_KEY,
+        queryFn: () => EquipmentPartnerService.getPartners(),
+    })
+
+    const loans = useMemo(() => {
+        if (loansQuery.isLoading) return []
+        if (!loansQuery.data) {
+            const error = new Error('[CRITICAL] Mold loans missing after load')
+            failLoudly(error, 'useMoldLoanMgmt.loans')
+            throw error
         }
-    }, [])
+        return loansQuery.data
+    }, [loansQuery.data, loansQuery.isLoading])
+
+    const molds = useMemo(() => {
+        if (moldsQuery.isLoading) return []
+        if (!moldsQuery.data) {
+            const error = new Error('[CRITICAL] Molds missing after load')
+            failLoudly(error, 'useMoldLoanMgmt.molds')
+            throw error
+        }
+        return moldsQuery.data.filter((mold: Mold) => mold.status === 'IDLE' || mold.status === 'LENT_OUT')
+    }, [moldsQuery.data, moldsQuery.isLoading])
+
+    const partners = useMemo(() => {
+        if (partnersQuery.isLoading) return []
+        if (!partnersQuery.data) {
+            const error = new Error('[CRITICAL] Equipment partners missing after load')
+            failLoudly(error, 'useMoldLoanMgmt.partners')
+            throw error
+        }
+        return partnersQuery.data
+    }, [partnersQuery.data, partnersQuery.isLoading])
+
+    const error = loansQuery.error ?? moldsQuery.error ?? partnersQuery.error
 
     const handleAddClick = (initialMode: LoanMode = 'LEND') => {
         setMode(initialMode)
@@ -74,25 +122,27 @@ export function useMoldLoanMgmt() {
             }
 
             const { maxCycles, currentCycles, maintenanceThreshold, ...loanBase } = data
+            const resolvedMaxCycles = requireNumber(maxCycles, 'mold maxCycles')
+            const resolvedCurrentCycles = requireNumber(currentCycles, 'mold currentCycles')
+            const resolvedMaintenanceThreshold = requireNumber(maintenanceThreshold, 'mold maintenanceThreshold')
             const moldData = {
-                sn: data.moldSn,
-                name: data.moldName,
-                maxCycles: maxCycles || 1000,
-                currentCycles: currentCycles || 0,
-                maintenanceThreshold: maintenanceThreshold || 800,
-                totalLifeCycles: currentCycles || 0,
-                description: `Borrowed from ${data.fromFactory}`,
+                sn: requireString(data.moldSn, 'mold sn'),
+                name: requireString(data.moldName, 'mold name'),
+                maxCycles: resolvedMaxCycles,
+                currentCycles: resolvedCurrentCycles,
+                maintenanceThreshold: resolvedMaintenanceThreshold,
+                totalLifeCycles: resolvedCurrentCycles,
+                description: `Borrowed from ${requireString(data.fromFactory, 'source factory')}`,
                 isAlerted: false,
                 version: 1,
             }
             return AssetService.borrowMold(loanBase, moldData)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
-            queryClient.invalidateQueries({ queryKey: ['molds'] })
+            queryClient.invalidateQueries({ queryKey: MOLD_LOANS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: MOLDS_QUERY_KEY })
             toast.success(currentRow ? 'Record updated.' : 'Record created.')
             setIsOpen(false)
-            void loadData()
         },
         onError: (mutationError: unknown) => {
             toast.error(mutationError instanceof Error ? mutationError.message : 'Operation failed')
@@ -120,10 +170,9 @@ export function useMoldLoanMgmt() {
             confirmKey: 'equipmentTooling.loans.confirm.return',
             onAction: async () => {
                 await MoldLoanService.returnMold(loanId)
-                queryClient.invalidateQueries({ queryKey: ['moldLoans'] })
-                queryClient.invalidateQueries({ queryKey: ['molds'] })
+                queryClient.invalidateQueries({ queryKey: MOLD_LOANS_QUERY_KEY })
+                queryClient.invalidateQueries({ queryKey: MOLDS_QUERY_KEY })
                 toast.success(t('equipmentTooling.loans.toast.returned'))
-                await loadData()
             },
         })
     }

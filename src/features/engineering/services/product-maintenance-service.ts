@@ -17,9 +17,10 @@ const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'
 
 export const ProductMaintenanceService = {
   async createProduct(product: SaveProductInput): Promise<Product> {
+    const payload: SaveProductInput = { ...product, id: '', version: 1 }
     const res = await apiFetch<ProductApiDTO>('/engineering/products', {
       method: 'POST',
-      body: JSON.stringify(toProductApiDTO({ ...product, id: '', version: 1 })),
+      body: JSON.stringify(toProductApiDTO(payload)),
     })
     return toProductContract(
       ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(

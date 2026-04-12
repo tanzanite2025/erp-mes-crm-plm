@@ -1,3 +1,2699 @@
+### 1. architecture：selectedVariants 初始化规则收口
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前产品表单中，`selectedVariants` 决定的是多版本产品的初始化与提交口径，尤其关联：
+
+1. `Version Level`
+2. `Weight`
+3. create / edit 两类打开场景下的默认形态
+
+但目前这部分初始化逻辑并没有单一来源，而是散落在 `use-product-form-init.ts` 的多个 `useEffect` 分支中。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `selectedVariants` 状态定义在：
+   - `src/features/engineering/hooks/use-product-form.ts`
+
+2. 主要初始化分支位于：
+   - `src/features/engineering/hooks/use-product-form-init.ts`
+
+3. 当前分散规则至少包括：
+   - metadata 加载后，非编辑态且 `selectedVariants` 为空时，默认选中首个 `versionLevelOptions`
+   - 编辑态打开时，从 `currentRow` 的 `versionLevel + weight` 重新回填
+   - 弹窗关闭时再手动清空 `selectedVariants`
+
+4. 当前已有的通用基础能力位于：
+   - `src/features/engineering/utils/product-form-utils.ts`
+   - `src/features/engineering/utils/product-attribute-utils.ts`
+
+#### 1.3 问题本质
+
+这不是单纯的 hooks 代码分散，而是**产品多版本核心初始化规则缺少统一命令入口**。其风险在于：
+
+1. create / edit 初始态来源不一致
+2. 默认首个版本的选择规则被埋在副作用里，不易复用与测试
+3. 后续如果 `Version Level / Weight` 规则再变化，需要在多个 effect 中同步修改，容易漏改
+
+#### 1.4 推荐方案
+
+建议新增统一命令模块，职责形态可命名为：
+
+1. `ProductCommand.composeInitialState()`
+
+推荐职责：
+
+1. 输入：
+   - `isEdit`
+   - `currentRow`
+   - `versionLevelOptions`
+   - 其它初始化必需上下文
+
+2. 输出：
+   - `formValues`
+   - `selectedVariants`
+
+3. 统一负责：
+   - create 场景默认表单值
+   - edit 场景表单 reset 值
+   - create 场景默认 `selectedVariants`
+   - edit 场景从 `currentRow` 推导 `selectedVariants`
+   - 默认首个 `versionLevel` 的选取策略
+
+#### 1.5 推荐落点
+
+建议新增独立文件，而不是继续堆在 hooks 内部。这里我遵循你之前“能解耦尽量拆文件”的偏好。
+
+推荐候选：
+
+1. `src/features/engineering/commands/product-command.ts`
+
+或若希望更贴近表单域：
+
+1. `src/features/engineering/commands/product-form-command.ts`
+
+#### 1.6 第一轮实施边界
+
+本轮建议只收口初始化，不扩大范围：
+
+1. 收口 `form default/reset values`
+2. 收口 `selectedVariants initial state`
+3. 调整 `use-product-form` / `use-product-form-init` 调用方式
+
+本轮不做：
+
+1. 不顺手重写 `buildBatchProducts`
+2. 不改 `handleVariantToggle / updateVariantWeight`
+3. 不改后端 DTO / 服务层
+
+#### 1.7 风险与控制策略
+
+1. **create 与 edit 初始态不兼容的风险**
+   - 如果统一函数只适配一种场景，另一种场景可能回归。
+   - 控制策略：统一函数显式区分 create / edit 输入条件。
+
+2. **过早把提交逻辑也卷入的风险**
+   - 若一次性把初始化与提交都改掉，影响面会扩大。
+   - 控制策略：第一轮只收口 initial state，不动 submit path。
+
+3. **默认版本选择策略变化引发业务感知变化的风险**
+   - 当前 create 场景默认取首个版本选项，如果位置改变但策略变化，用户会感知到差异。
+   - 控制策略：第一轮仅搬迁逻辑，不改变策略。
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 新增 ProductCommand（或等价命令模块）
+2. 提供 `composeInitialState()`
+3. 让 `use-product-form` / `use-product-form-init` 改为消费统一初始态结果
+4. 保持现有默认首个版本选择策略不变
+5. 执行定向 `eslint` / `tsc`
+6. 更新 `walkthrough.md`
+
+#### 1.9 当前阶段结论
+
+`selectedVariants` 当前的问题不在于某一行条件判断，而在于**产品多版本初始化规则缺少单一来源**。最合适的修法不是继续在 `useEffect` 里叠补丁，而是引入 `ProductCommand.composeInitialState()` 一类的统一命令入口，把 create/edit 的表单初始态与 `selectedVariants` 初始态一起收口。
+
+### 1. architecture：ChangeOrder 负向 handler 测试规划
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+`ChangeOrder` 当前已经完成：
+
+1. 保存输入 DTO 收口
+2. 响应 DTO / mapper 收口
+3. `options=true` 最小字段集分层
+4. 成功路径 handler 定向测试
+
+下一步最值得补齐的是**失败路径护栏**，优先锁定 `SaveChangeOrderHandler` 的 validation 与 conflict 语义，避免后续演进时把它们回退成不稳定的 `500` 或模糊错误响应。
+
+#### 1.2 本轮测试范围
+
+本轮只聚焦：
+
+1. `SaveChangeOrderHandler`
+
+不扩展到：
+
+1. `GetChangeOrdersHandler` 负向查询参数校验
+2. `DeleteChangeOrderHandler` 冲突语义
+3. 前端调用层
+
+#### 1.3 推荐测试位置
+
+建议继续复用：
+
+1. `server/handlers/change_orders_test.go`
+
+原因：
+
+1. 同一文件已经覆盖成功路径与响应分层
+2. 负向用例继续放在这里，便于集中表达 `ChangeOrder` handler contract
+
+#### 1.4 核心测试目标
+
+##### A. 缺少必填字段时返回 `400 validation`
+
+建议覆盖：
+
+1. `changeOrderNo` 为空
+2. `title` 为空
+
+断言：
+
+1. 返回状态码为 `400`
+2. 响应包含：
+   - `change order number and title are required`
+
+##### B. 非法 JSON / 绑定失败时返回 `400 validation`
+
+建议覆盖：
+
+1. 传入非法 JSON
+2. 或构造无法绑定的 payload
+
+断言：
+
+1. 返回状态码为 `400`
+2. 响应包含：
+   - `invalid change order payload`
+
+##### C. 版本冲突时返回 `409`
+
+建议覆盖：
+
+1. 先 seed 一条已有 `ChangeOrder`
+2. 再以过期 `version` 调用 `SaveChangeOrderHandler`
+3. 触发 `services.ErrChangeOrderVersionConflict`
+
+断言：
+
+1. 返回状态码为 `409`
+2. 维持当前统一 conflict 响应分支
+3. 不回退成泛化 `500`
+
+#### 1.5 实施方式建议
+
+1. **validation 400**
+   - 直接构造最小请求体
+   - 刻意置空 `changeOrderNo` 或 `title`
+
+2. **invalid payload 400**
+   - 直接发送不合法 JSON 字符串
+
+3. **version conflict 409**
+   - 复用当前测试文件里的 seed 基建
+   - 使用存在记录的真实 `id`
+   - 提交明显过期的 `version`
+
+#### 1.6 风险与控制策略
+
+1. **测试过度依赖错误文案细节的风险**
+   - 若把完整错误串全部写死，后续轻微调整文案会导致不必要失败。
+   - 控制策略：只锁关键子串与状态码。
+
+2. **版本冲突构造不稳定的风险**
+   - 若测试没有正确 seed 当前 version，可能误测成成功更新。
+   - 控制策略：明确 seed 一个已存在版本，再提交过期 version。
+
+3. **继续扩大范围的风险**
+   - 若顺手补 delete/query 等其它负向测试，会让本轮范围失控。
+   - 控制策略：本轮仅补 `SaveChangeOrderHandler` 三类负向断言。
+
+#### 1.7 明确不动范围
+
+本轮不做：
+
+1. 不改 handler 逻辑
+2. 不改服务层版本冲突实现
+3. 不改响应 DTO
+4. 不扩到其它 engineering 模块
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 在 `server/handlers/change_orders_test.go` 追加 validation 400 测试
+2. 追加 invalid payload 400 测试
+3. 追加 version conflict 409 测试
+4. 执行 `go test ./handlers -run "ChangeOrder"`
+5. 更新 `walkthrough.md`
+
+#### 1.9 当前阶段结论
+
+当前 `ChangeOrder` 的成功路径与响应分层已经有了测试护栏，下一步最划算的工作是把 `SaveChangeOrderHandler` 的失败路径也锁住，特别是 `400 validation` 与 `409 version conflict` 两类高价值语义。这样可以让这条链路从“成功/响应有保障”进一步提升到“关键失败语义也有保障”。
+
+### 1. architecture：ChangeOrder 响应分层定向测试规划
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+`ChangeOrder` 当前已经完成三步收口：
+
+1. 保存输入 DTO 显式化
+2. 通用响应 DTO / mapper 显式化
+3. `options=true` 场景独立最小字段集 DTO
+
+为了避免后续改动把这层边界再次模糊化，当前最有价值的下一步是补定向测试，把响应分层契约锁住。
+
+#### 1.2 当前测试现状
+
+当前排查结果显示：
+
+1. `server/handlers` 下暂无 `ChangeOrder` 专项测试文件
+2. `server/routes` 下也暂无对应 route 测试
+
+因此本轮最合理的切入点是：
+
+1. **先补 handler 层定向测试**
+
+#### 1.3 推荐测试位置
+
+建议新增：
+
+1. `server/handlers/change_orders_test.go`
+
+原因：
+
+1. 这轮要验证的是**返回 JSON 契约分层**
+2. handler 层最适合直接断言响应体字段是否存在/缺失
+3. 成本低于 route 层全链路冒烟，且更聚焦
+
+#### 1.4 核心测试目标
+
+##### A. `options=true` 返回最小字段集
+
+建议覆盖：
+
+1. 调用 `GetChangeOrdersHandler`
+2. 请求带上 `?options=true`
+3. 断言响应 item 包含：
+   - `id`
+   - `changeOrderNo`
+   - `title`
+   - `changeType`
+   - `productId`
+   - `siteCode`
+   - `isDefaultSite`
+   - `revisionNo`
+   - `effectiveFrom`
+   - `effectiveTo`
+   - `status`
+   - `_v`
+4. 断言响应 item **不包含**：
+   - `product`
+   - `description`
+   - `createdAt`
+   - `updatedAt`
+
+##### B. 普通列表继续返回分页 + 较丰满 DTO
+
+建议覆盖：
+
+1. 调用 `GetChangeOrdersHandler`
+2. 不带 `options=true`
+3. 断言响应结构仍为：
+   - `items`
+   - `total`
+   - `page`
+   - `pageSize`
+4. 断言 `items[0]` 仍可包含 list DTO 的较丰满字段，例如：
+   - `description`
+   - `createdAt`
+   - `_v`
+
+##### C. 保存成功仍返回 `ChangeOrderApiDTO`
+
+建议覆盖：
+
+1. 调用 `SaveChangeOrderHandler`
+2. 传入最小合法保存请求
+3. 断言响应仍保留当前兼容字段，例如：
+   - `description`
+   - `createdAt`
+   - `_v`
+
+#### 1.5 风险与控制策略
+
+1. **测试写得过度依赖实现细节的风险**
+   - 如果把所有字段和值都写死，后续小调整会导致测试过脆。
+   - 控制策略：本轮只锁字段存在/缺失与核心结构，不锁无关细节。
+
+2. **测试范围过大导致建桩复杂的风险**
+   - 若一开始就上 route + DB 全链路，会拉高成本。
+   - 控制策略：先在 handler 层构建最小可验证场景。
+
+3. **遗漏 save/list 兼容出口的风险**
+   - 只测 options 会让 list/save 未来仍有回归空间。
+   - 控制策略：至少补一条 list 与一条 save 正向断言。
+
+#### 1.6 明确不动范围
+
+本轮不做：
+
+1. 不改 `ChangeOrder` DTO 结构
+2. 不改前端 schema 或调用逻辑
+3. 不顺手扩到 `ProductAttributeCategory / ProductAttributeOption`
+
+#### 1.7 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 新增 `server/handlers/change_orders_test.go`
+2. 先补 `options=true` 最小字段集断言
+3. 再补 list 分页结构兼容断言
+4. 再补 save 成功响应兼容断言
+5. 执行 `go test ./handlers -run "ChangeOrder"`
+6. 更新 `walkthrough.md`
+
+#### 1.8 当前阶段结论
+
+当前 `ChangeOrder` 的契约治理已经有了比较清晰的形状，下一步最划算的工作不是继续扩大 DTO 拆分，而是**用 handler 定向测试把现有响应分层锁住**。这样能显著降低后续回归风险，也能为后面继续细化 detail DTO 提供更稳的护栏。
+
+### 1. architecture：ChangeOrder 响应 DTO 细分评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+`ChangeOrder` 已经完成了两步基础收口：
+
+1. 输入层不再直接围绕模型别名保存
+2. 响应层已从模型直出切换到 `ChangeOrderApiDTO` / mapper 出口
+
+下一步值得评估的是：是否需要继续把 `options` 与 `list/save` 的响应语义显式拆开。
+
+#### 1.2 排查结果
+
+本轮重点排查了：
+
+1. `server/handlers/change_orders.go`
+2. `server/handlers/change_order_api_dto.go`
+3. `server/handlers/change_order_mapper.go`
+4. `server/services/engineering_master_service.go`
+5. `src/features/engineering/services/change-order-service.ts`
+6. `src/features/engineering/tabs/change-orders.tsx`
+7. `src/features/engineering/data/schema.ts`
+
+#### 1.3 前端当前真实依赖
+
+从前端 schema 与页面读取口径看，当前 `ChangeOrder` 的真实契约重心主要集中在：
+
+1. `id`
+2. `changeOrderNo`
+3. `title`
+4. `productId`
+5. `status`
+6. `description`
+7. `createdAt`
+8. `version / _v`
+9. 以及来自 `masterDataControlSchema` 的：
+   - `changeType`
+   - `siteCode`
+   - `revisionNo`
+   - `effectiveFrom`
+   - `effectiveTo`
+   - `isDefaultSite`
+
+同时确认到：
+
+1. **当前前端并未真实依赖 `changeOrder.product` 嵌套对象**
+
+#### 1.4 当前 options / list/save 差异的本质
+
+当前三种返回场景中，真正的差异主要来自查询方式，而不是前端契约要求：
+
+1. `options=true` 时不 preload `Product`
+2. list / save 场景可能 preload `Product`
+
+但由于前端 schema 并未声明 `product` 字段，因此：
+
+1. `product` 更像**后端兼容透出字段**
+2. 而不是当前前端必须依赖的正式字段
+
+#### 1.5 推荐的 DTO 细分策略
+
+当前最合适的细分方式不是一步拆成 options / list / detail 三套，而是：
+
+1. **先拆 `options DTO`**
+2. **list 与 save 继续共用现有 `ChangeOrderApiDTO`**
+
+原因：
+
+1. options 场景的最小字段集已经很清晰
+2. list 与 save 当前字段语义仍高度一致
+3. detail DTO 目前没有足够收益支持继续细分
+
+#### 1.6 `ChangeOrderOptionsApiDTO` 最小字段集建议
+
+建议 options DTO 只保留：
+
+1. `id`
+2. `changeOrderNo`
+3. `title`
+4. `status`
+5. `changeType`
+6. `productId`
+7. `revisionNo`
+8. `siteCode`
+9. `isDefaultSite`
+10. `effectiveFrom`
+11. `effectiveTo`
+12. `_v`
+
+这里刻意**不包含**：
+
+1. `product`
+2. `description`
+3. `createdAt`
+4. `updatedAt`
+
+因为这些字段对 options 语义不是必须项。
+
+#### 1.7 `ChangeOrderApiDTO` 当前建议
+
+对现有 `ChangeOrderApiDTO` 的建议是：
+
+1. 继续作为 list / save 共用 DTO
+2. 暂不再继续拆 detail DTO
+3. `product` 仅保留在这个较丰满的 DTO 中
+
+#### 1.8 推荐方案
+
+##### A. 新增 `ChangeOrderOptionsApiDTO`
+
+优先位置：
+
+1. `server/handlers/change_order_api_dto.go`
+2. `server/handlers/change_order_mapper.go`
+3. `server/handlers/change_orders.go`
+
+目标：
+
+1. 为 `options=true` 建立显式最小字段集
+2. 避免 options 场景继续共享过于丰满的 DTO
+
+##### B. 保持 list/save 继续共用 `ChangeOrderApiDTO`
+
+目标：
+
+1. 不扩大到 detail DTO
+2. 保持现有字段兼容
+3. 继续允许 `product` 作为 list/save 的兼容透出字段
+
+#### 1.9 风险与控制策略
+
+1. **前端 options 调用兼容风险**
+   - 若误删前端实际依赖字段，会影响下拉选择或回填。
+   - 控制策略：options DTO 仅去除当前已确认未依赖字段。
+
+2. **过度细分风险**
+   - 若继续把 list/save/detail 全拆开，会让当前收益不足。
+   - 控制策略：本轮仅拆 options DTO。
+
+3. **后端 mapper 复杂度上涨风险**
+   - DTO 数量增加后需要维护更多 mapper。
+   - 控制策略：只新增一套 options mapper，保持最小增量。
+
+#### 1.10 明确不动范围
+
+本轮不做：
+
+1. 不新增 `ChangeOrderDetailApiDTO`
+2. 不调整前端 schema / 页面字段读取
+3. 不触碰 `ProductAttributeCategory / ProductAttributeOption` 响应层
+
+#### 1.11 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 为 `ChangeOrder` 新增 `ChangeOrderOptionsApiDTO`
+2. 新增 options mapper
+3. 让 `options=true` 分支返回最小字段集
+4. 保持 list/save 继续走 `ChangeOrderApiDTO`
+5. 执行定向 Go 校验并更新 `walkthrough.md`
+
+#### 1.12 当前阶段结论
+
+当前最合理的下一步不是继续把 `ChangeOrder` 全量拆成多套复杂 DTO，而是**只把 options 场景先显式瘦身**：让 `options` 走最小字段集，让 `list/save` 继续走现有较丰满 DTO。这样能继续提升契约清晰度，同时把范围和回归风险控制在很低水平。
+
+### 1. architecture：engineering 次级候选响应 DTO / patch contract 评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在完成 engineering 次级候选的后端输入收口后，下一步自然的问题是：
+
+1. `ChangeOrder` 是否还需要继续收口响应 DTO
+2. `ChangeOrder` 是否需要单独拆 patch contract
+3. `ProductAttributeCategory / ProductAttributeOption` 的响应层是否也需要同步治理
+
+#### 1.2 排查结果
+
+本轮重点排查了：
+
+1. `server/handlers/change_orders.go`
+2. `server/services/engineering_master_service.go`
+3. `server/handlers/product_attribute_category.go`
+4. `server/handlers/product_attribute_option.go`
+
+#### 1.3 `ChangeOrder` 响应口径现状
+
+当前 `ChangeOrder` 的返回口径有一个比较清晰但尚未显式化的特点：
+
+1. list / options / save 均直接返回：
+   - `models.ChangeOrder`
+
+2. 但不同场景返回的“丰满度”其实不一致：
+   - options 场景：不 preload `Product`
+   - 列表场景：会 preload `Product`
+   - save 场景：保存完成后也 preload `Product`
+
+这意味着当前问题并不是字段名已经失控，而是：
+
+1. **同一个模型被不同场景直接回传，但字段完整度依赖查询路径隐式决定**
+
+#### 1.4 `ChangeOrder` patch / save 语义现状
+
+当前 `ChangeOrder` 并没有像 Product / BOM 那样的独立 patch 合成路径：
+
+1. 没有单独的 `PatchChangeOrder()`
+2. 当前 `SaveChangeOrder()` 仍承担 create + update 的统一保存职责
+
+因此，当前最值得继续推进的并不是立即扩一套 patch contract，而是：
+
+1. **先把响应 DTO / 响应映射出口显式化**
+
+#### 1.5 `ProductAttributeCategory / ProductAttributeOption` 响应层判断
+
+当前这两条链路虽然也仍直接返回模型，但与 `ChangeOrder` 相比有两个差异：
+
+1. 字段复杂度更低
+2. 当前没有明显的派生字段 / 只读展示字段 / preload 丰满度差异问题
+
+所以它们目前更像：
+
+1. 风格上还没统一到 DTO mapper
+2. 但业务风险并不高
+
+也因此，短期内继续重构它们的响应层，收益不如优先处理 `ChangeOrder`。
+
+#### 1.6 当前结论
+
+当前更推荐的推进策略是：
+
+1. **优先为 `ChangeOrder` 建立显式响应 DTO / mapper 出口**
+2. **暂不为 `ChangeOrder` 新建 patch contract**
+3. **`ProductAttributeCategory / ProductAttributeOption` 响应层暂维持现状**
+
+#### 1.7 推荐方案
+
+##### A. `ChangeOrder`：补响应 DTO / mapper 出口
+
+优先位置：
+
+1. `server/handlers/change_orders.go`
+2. `server/services/engineering_master_service.go`
+3. 如有必要，新增 `server/handlers/change_order_api_dto.go` 或同类 mapper 文件
+
+目标：
+
+1. 为 `ChangeOrder` 建立显式响应 DTO
+2. list / options / save 都从统一 mapper 出口返回
+3. 在不改变字段名的前提下，明确各场景返回语义
+
+##### B. `ChangeOrder`：暂缓 patch contract
+
+原因：
+
+1. 当前系统没有独立 patch handler / patch service 结构
+2. 直接扩 patch contract 会引入更大范围的 API 行为设计
+3. 当前优先级不如先把响应层稳定下来
+
+##### C. `ProductAttributeCategory / ProductAttributeOption`：响应层暂不动
+
+目标：
+
+1. 继续保持当前响应兼容
+2. 只在后续若统一全模块 mapper 风格时再纳入整理
+
+#### 1.8 风险与控制策略
+
+1. **`ChangeOrder` 前端读取兼容风险**
+   - 如果响应 DTO 改字段名，会直接影响前端页面。
+   - 控制策略：本轮只改响应出口形态，不改字段名。
+
+2. **options / list 字段差异被过度收窄风险**
+   - 若为了统一 DTO 而错误移除 `Product` 等字段，可能影响现有列表显示。
+   - 控制策略：统一 mapper 出口，但允许不同场景按现有数据源决定字段是否为空，不强求完全同态。
+
+3. **范围扩张风险**
+   - 若在 `ChangeOrder` 响应层治理时顺手扩大到属性模块，性价比不高。
+   - 控制策略：本轮只优先做 `ChangeOrder`。
+
+#### 1.9 明确不动范围
+
+本轮不做：
+
+1. 不为 `ChangeOrder` 新增独立 patch API
+2. 不重构 `ProductAttributeCategory / ProductAttributeOption` 的响应 DTO
+3. 不改前端现有字段读取逻辑
+
+#### 1.10 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 为 `ChangeOrder` 新增显式响应 DTO / mapper
+2. 统一 list / options / save 的响应出口
+3. 保持字段兼容
+4. 执行定向 Go 校验并更新 `walkthrough.md`
+
+#### 1.11 当前阶段结论
+
+当前 engineering 次级候选中，**最值得继续推进的是 `ChangeOrder` 的响应 DTO 显式化**；相比之下，`ProductAttributeCategory / ProductAttributeOption` 的响应层暂时维持现状更划算。这样既能延续契约治理的一致性，又不会把范围扩大到收益不足的地方。
+
+### 1. architecture：engineering 次级候选后端 DTO 收口评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 Product 与 BOM 两条主链路完成多轮 DTO / 派生字段 / write contract 收口之后，engineering 模块当前剩余的次级候选主要集中在：
+
+1. `ChangeOrder`
+2. `ProductAttributeCategory`
+3. `ProductAttributeOption`
+
+这三条链路此前前端已做过一定程度的输入边界收口，但后端尚未完全对齐。
+
+#### 1.2 排查结果
+
+本轮重点排查了：
+
+1. `server/handlers/change_orders.go`
+2. `server/handlers/product_attribute_category.go`
+3. `server/handlers/product_attribute_option.go`
+4. `server/services/engineering_master_service.go`
+5. `server/services/product_attribute_category_service.go`
+6. `server/services/product_attribute_option_service.go`
+7. `server/models/change_order.go`
+8. `server/models/product_attribute_category.go`
+9. `server/models/product_attribute_option.go`
+
+#### 1.3 问题强度排序
+
+当前建议优先级如下：
+
+1. **最高优先级：`ChangeOrder`**
+2. **中优先级：`ProductAttributeCategory`**
+3. **中优先级：`ProductAttributeOption`**
+
+#### 1.4 `ChangeOrder` 现状判断
+
+当前 `ChangeOrder` 的混用程度最高，主要体现在：
+
+1. `SaveChangeOrderInput` 仍直接定义为：
+   - `type SaveChangeOrderInput models.ChangeOrder`
+
+2. `SaveChangeOrderHandler` 直接绑定：
+   - `services.SaveChangeOrderInput`
+
+3. `SaveChangeOrder()` 内部直接：
+   - `models.ChangeOrder(input)`
+
+4. `GetChangeOrdersHandler` / `SaveChangeOrderHandler` 返回阶段直接回传：
+   - `models.ChangeOrder`
+
+这意味着它当前仍处于：
+
+1. 请求 DTO
+2. 内部保存输入
+3. 响应模型
+
+三者高度混用的状态，和 Product 收口前非常接近。
+
+#### 1.5 `ProductAttributeCategory` 现状判断
+
+`ProductAttributeCategory` 当前的问题主要集中在 create 输入路径：
+
+1. `SaveProductAttributeCategoryHandler` 在 create 分支中仍把请求体直接反序列化到：
+   - `models.ProductAttributeCategory`
+
+2. `CreateProductAttributeCategory()` 也直接接收：
+   - `models.ProductAttributeCategory`
+
+3. patch 路径虽然已经走：
+   - `BuildProductAttributeCategoryUpdates()`
+   - `PatchProductAttributeCategory()`
+   这意味着部分输入边界已经有字段白名单意识
+
+当前还未发现明显的派生展示字段误写问题，因此它更像是：
+
+1. **create 路径仍模型直绑**
+
+而不是整条链路都需要像 Product 一样做三层分离。
+
+#### 1.6 `ProductAttributeOption` 现状判断
+
+`ProductAttributeOption` 的问题介于 `ChangeOrder` 与 `Category` 之间：
+
+1. `SaveProductAttributeOptionInput` 仍直接定义为：
+   - `type SaveProductAttributeOptionInput models.ProductAttributeOption`
+
+2. create 路径 handler 仍直接反序列化到：
+   - `models.ProductAttributeOption`
+
+3. `CreateProductAttributeOption()` 直接接收：
+   - `models.ProductAttributeOption`
+
+4. patch 路径已有白名单更新逻辑，因此问题主要集中在 create 输入 DTO 偏宽
+
+#### 1.7 当前结论
+
+三者都还有后端 DTO 收口空间，但收益并不完全相同：
+
+1. **`ChangeOrder` 值得优先做完整收口**
+   - 因为它仍处于明显的请求/保存/响应混用状态
+
+2. **`ProductAttributeCategory / ProductAttributeOption` 更适合做最小收口**
+   - 重点放在 create 输入 DTO 去模型直绑
+   - 暂不值得扩大到完整响应 DTO 改造
+
+#### 1.8 推荐方案
+
+##### A. `ChangeOrder`：完整度更高的后端输入收口
+
+优先位置：
+
+1. `server/services/engineering_master_service.go`
+2. `server/handlers/change_orders.go`
+
+目标：
+
+1. 让 `SaveChangeOrderInput` 不再直接别名 `models.ChangeOrder`
+2. 明确区分外部 save input 与内部保存模型
+3. 保持当前返回结构兼容，必要时暂不独立拆响应 DTO
+
+##### B. `ProductAttributeCategory`：最小 create 输入收口
+
+优先位置：
+
+1. `server/handlers/product_attribute_category.go`
+2. `server/services/product_attribute_category_service.go`
+
+目标：
+
+1. create 路径不再直接绑定 `models.ProductAttributeCategory`
+2. 定义更明确的 create/save input
+3. patch 路径先保持现有字段白名单逻辑不变
+
+##### C. `ProductAttributeOption`：最小 create 输入收口
+
+优先位置：
+
+1. `server/handlers/product_attribute_option.go`
+2. `server/services/product_attribute_option_service.go`
+
+目标：
+
+1. create 路径不再直接绑定 `models.ProductAttributeOption`
+2. 收口 `SaveProductAttributeOptionInput`，避免继续作为模型别名
+3. patch 路径继续复用现有字段白名单
+
+#### 1.9 风险与控制策略
+
+1. **`ChangeOrder` 返回结构回归风险**
+   - 当前 handler 直接返回 `models.ChangeOrder`。
+   - 控制策略：本轮优先只收口输入层，不强推响应 DTO 重构。
+
+2. **属性模块 create / patch 语义割裂风险**
+   - create 若改 DTO，而 patch 仍保留 map 更新，可能出现风格不一致。
+   - 控制策略：接受这种阶段性不一致，以最小收益优先；后续若需要再统一。
+
+3. **范围扩张风险**
+   - 若同时把三条链路都按 Product 规格完整重构，性价比不高。
+   - 控制策略：按优先级分层处理，`ChangeOrder` 做得更完整，属性模块只做 create 输入收口。
+
+#### 1.10 明确不动范围
+
+本轮不做：
+
+1. 不全面重构 `ChangeOrder` 响应 DTO
+2. 不顺手改 Product / BOM 已稳定链路
+3. 不改前端现有字段名与展示读取逻辑
+
+#### 1.11 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 `ChangeOrder` 的后端 save input / handler 绑定 / service 输入边界
+2. 再最小收口 `ProductAttributeCategory / ProductAttributeOption` 的 create 输入 DTO
+3. 保持现有响应口径尽量稳定
+4. 执行定向 Go 校验并更新 `walkthrough.md`
+
+#### 1.12 当前阶段结论
+
+当前 engineering 的次级候选后端 DTO 治理中，**`ChangeOrder` 是最值得优先推进的下一站**；`ProductAttributeCategory / ProductAttributeOption` 则更适合做“去模型直绑”的最小收口。这样可以在控制范围的前提下，继续延续 Product/BOM 已建立的契约治理节奏。
+
+### 1. architecture：Product `templateKey` 字段角色收口评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+Product 主数据链路目前已经完成两步治理：
+
+1. 前端 `SaveProductInput` 已从完整 `Product` 收口为更明确的 write contract
+2. 后端已经把 `SaveProductAPIRequest` 与内部 `ProductWriteInput` 区分开
+
+在此基础上，下一步最自然的细化点，就是把 `templateKey` 这个字段的角色彻底讲清楚：
+
+1. 它是否仍有机会被当作可写字段
+2. 它是否应被明确界定为“仅响应兼容字段”
+
+#### 1.2 排查结果
+
+本轮重点排查了：
+
+1. `server/models/product.go`
+2. `server/services/product_master_service.go`
+3. `server/handlers/product_api_dto.go`
+4. `server/handlers/product_mapper.go`
+
+已确认的事实如下：
+
+1. **`templateKey` 当前不落库**
+   - `models.Product.TemplateKey` 使用：
+     - `gorm:"-"`
+   - 说明它从模型层面就不是持久化字段。
+
+2. **`templateKey` 当前来自派生逻辑，而不是保存输入**
+   - `applyDerivedTemplateKeys()` 会在读取与保存返回前对产品集合进行派生
+   - 派生路径为：
+     - `Product.TypeID`
+     - `ProductType.TemplateID`
+     - `ProductTemplate.ComponentKey`
+
+3. **当前内部保存链路已经基本排除了 `templateKey` 的写入语义**
+   - `ProductWriteInput` 当前不包含 `templateKey`
+   - `BuildProductPatchInput()` 的 delta 白名单不包含 `templateKey`
+   - `BulkSyncProducts()` 也不会把 `templateKey` 映射进 `models.Product`
+
+4. **当前保留 `templateKey` 的位置主要在响应层**
+   - `ProductApiDTO` 仍包含 `templateKey`
+   - handler mapper 也会把 `product.TemplateKey` 回传给前端
+   - 因此，它目前更像一个“响应兼容字段”，而不是写入字段
+
+#### 1.3 当前结论
+
+`templateKey` 当前已经基本满足“只读/派生字段”的事实状态，但角色声明还不够显式。
+
+也就是说，当前问题已经不再是：
+
+1. `templateKey` 真的会被写入数据库
+
+而是：
+
+1. 它虽然实际上是派生字段，但在契约语义上还没有被明确表达为“仅响应兼容字段”
+
+#### 1.4 推荐方案
+
+推荐按“显式声明，而非大规模重构”的方式推进：
+
+##### A. 输入层进一步显式化
+
+优先位置：
+
+1. `server/services/product_service_types.go`
+2. `server/services/product_master_service.go`
+
+目标：
+
+1. 确保所有 Product 输入模型都不包含 `templateKey`
+2. 明确任何保存 / PATCH / bulk sync 路径都不接受该字段的写入语义
+
+##### B. 响应层保持兼容
+
+优先位置：
+
+1. `server/handlers/product_api_dto.go`
+2. `server/handlers/product_mapper.go`
+
+目标：
+
+1. 保留 `templateKey` 输出
+2. 继续让前端展示层平滑读取该派生值
+
+##### C. 验证层补强（按收益决定）
+
+可选位置：
+
+1. `server/services` 或 `server/handlers` 的定向测试
+
+目标：
+
+1. 用测试证明 `templateKey` 仅来自派生
+2. 避免后续有人把它重新塞回输入 DTO 或 patch 白名单
+
+#### 1.5 风险与控制策略
+
+1. **误删前端兼容字段风险**
+   - 如果过度收口，可能影响当前前端展示直接读取 `templateKey`。
+   - 控制策略：本轮只收口输入语义，不动响应输出。
+
+2. **测试成本与收益不匹配风险**
+   - 当前事实已经较清晰，若新增测试过重，收益可能不高。
+   - 控制策略：只在能低成本证明“不可写”时补充测试。
+
+3. **语义过度设计风险**
+   - 该字段当前已经基本安全，若大动干戈重构整套 Product 响应契约，收益不足。
+   - 控制策略：只做“角色显式化”，不做大规模 contract 重排。
+
+#### 1.6 明确不动范围
+
+本轮不做：
+
+1. 不删除 `ProductApiDTO.templateKey`
+2. 不重构前端 `Product` 展示读取逻辑
+3. 不扩到 `ChangeOrder / ProductAttributeOption / ProductAttributeCategory`
+
+#### 1.7 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 复核并显式声明所有 Product 输入模型均不含 `templateKey`
+2. 视收益决定是否补充一个定向校验/测试
+3. 保持响应兼容输出不变
+4. 更新 `walkthrough.md`
+
+#### 1.8 当前阶段结论
+
+`templateKey` 当前的事实角色已经很明确：**它是派生响应字段，而非保存字段**。下一步最值得做的不是大改，而是把这个事实在 Product 契约边界上再显式化一步，防止后续回归到“看起来像可写字段”的模糊状态。
+
+### 1. architecture：Product 后端保存链路 DTO 收口评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+前端 Product 主数据链路已经完成第一步 write contract 收口：
+
+1. `SaveProductInput` 不再直接等于完整 `Product`
+2. `product-api-adapter.ts` 与 `product-maintenance-service.ts` 已围绕 write contract 工作
+
+接下来最自然的下一步，就是让后端 Product 保存链路继续对齐，避免前端收窄了输入边界，但后端仍长期停留在“宽 DTO 混用”的结构。
+
+#### 1.2 后端排查结果
+
+本轮重点排查了：
+
+1. `server/handlers/products.go`
+2. `server/services/product_service_types.go`
+3. `server/services/product_master_service.go`
+4. `server/handlers/product_api_dto.go`
+5. `server/models/product.go`
+
+已确认的事实如下：
+
+1. **当前后端已经优于最原始的模型直绑方案**
+   - `SaveProductHandler` 绑定的是：
+     - `services.SaveProductAPIRequest`
+   - 而不是直接绑定：
+     - `models.Product`
+
+2. **后端已经存在独立响应 DTO**
+   - `handlers/product_api_dto.go` 中定义了：
+     - `ProductApiDTO`
+   - 因此当前问题不在“完全没有 DTO”，而在 DTO 职责仍然偏宽。
+
+3. **当前后端的主要结构问题在于：同一个宽 DTO 被多处复用**
+   - `SaveProductAPIRequest` 同时承担：
+     - 外部请求 DTO
+     - service 层宽输入 DTO
+     - PATCH 合成目标 DTO
+   - `BuildProductPatchInput()` 会先把当前产品转回 `SaveProductAPIRequest`，再在这个宽 DTO 上叠 delta
+   - `BulkSyncProducts()` 也直接批量消费 `SaveProductAPIRequest`
+
+4. **字段层面的关键判断**
+   - `models.Product.TemplateKey` 是：
+     - `gorm:"-"`
+   - 它属于派生响应字段
+   - 但 `ProductApiDTO` 与 `SaveProductAPIRequest` 当前都保留了 `templateKey`
+   - 这说明后端当前仍未完全把“派生响应字段”与“可写输入字段”明确区分。
+
+5. **不是所有聚合字段都该被收掉**
+   - `attachments`
+   - `techSpecs`
+   - `attributeValues`
+   - `barcodeConfig`
+   当前仍属于真实可写聚合字段，而非纯展示字段。
+
+#### 1.3 当前结论
+
+Product 后端保存链路当前的主要问题，不是“直接把 `models.Product` 当请求体”，而是：
+
+1. `SaveProductAPIRequest` 的职责过宽
+2. PATCH / Save / BulkSync 仍共用这一个宽 DTO
+3. 派生字段 `templateKey` 仍夹在请求/响应边界中，没有彻底完成角色收口
+
+因此，当前最值得做的不是重构整个 Product API，而是把：
+
+1. **外部 API 输入 DTO**
+2. **内部 Product write input**
+
+进一步分开。
+
+#### 1.4 推荐方案
+
+推荐这一步按“请求 DTO / 内部 write input / 响应 DTO 三段分层”推进：
+
+##### A. 外部 API 输入层
+
+优先位置：
+
+1. `server/services/product_service_types.go`
+2. `server/handlers/products.go`
+
+目标：
+
+1. 保留现有 HTTP 请求契约兼容
+2. 但不再让 `SaveProductAPIRequest` 同时承担所有内部职责
+
+##### B. 内部保存输入层
+
+优先位置：
+
+1. `server/services/product_service_types.go`
+2. `server/services/product_master_service.go`
+
+目标：
+
+1. 定义更明确的 Product write input
+2. 让 `SaveProduct()` / `BulkSyncProducts()` 接收这个内部 write input 或先转换到该输入
+3. 让 `BuildProductPatchInput()` 合成该 write input，而不是继续回写到 `SaveProductAPIRequest`
+
+##### C. 响应层
+
+优先位置：
+
+1. `server/handlers/product_api_dto.go`
+2. `toProductApiDTO(...)`
+
+目标：
+
+1. 暂不重构 `ProductApiDTO`
+2. 保持现有响应契约稳定
+3. 本轮只解决输入边界问题，不顺手扩大到响应 contract 清洗
+
+#### 1.5 风险与控制策略
+
+1. **PATCH 与 Save 语义漂移风险**
+   - 当前 `BuildProductPatchInput()` 依赖把现有实体反向映回 `SaveProductAPIRequest`。
+   - 控制策略：新增明确 write input 后，PATCH 仍沿用同一字段白名单，只替换合成目标类型。
+
+2. **BulkSync 行为回归风险**
+   - `BulkSyncProducts()` 当前直接消费 `SaveProductAPIRequest` 列表。
+   - 控制策略：保持外部 payload 不变，仅在 service 内部转换到 write input。
+
+3. **templateKey 角色误判风险**
+   - `templateKey` 是派生字段，但可能仍被部分前端链路传入。
+   - 控制策略：本轮优先弱化其内部写入语义，而不是立即删除外部兼容字段。
+
+#### 1.6 明确不动范围
+
+本轮不做：
+
+1. 不重构整个 Product 响应 DTO
+2. 不同步扩到 ChangeOrder / ProductAttributeOption / ProductAttributeCategory
+3. 不改变现有前端 Product HTTP 请求字段名
+
+#### 1.7 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先定义 Product 后端内部 write input
+2. 再让 `SaveProduct()` / `BulkSyncProducts()` / `BuildProductPatchInput()` 对齐到该输入
+3. 保持 `ProductApiDTO` 与现有 handler 响应不变
+4. 执行定向验证并更新 `walkthrough.md`
+
+#### 1.8 当前阶段结论
+
+当前 Product 主数据链路已经在前端完成第一步收口，下一步最值得做的是继续收口后端输入层：不是推翻现有 `SaveProductAPIRequest` 与 `ProductApiDTO`，而是把**HTTP 输入 DTO 与内部 Product write input 明确分开**，从而真正完成前后端契约边界的一致化。
+
+### 1. architecture：engineering 请求 DTO / 响应 DTO 进一步分离评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在最近几轮治理中，engineering 已经完成了多批“字段语义收口”：
+
+1. machine code normalization
+2. BOM 控制字段规范化
+3. `bomDisplayVersion` 的请求/响应口径分离
+
+接下来最自然的方向，不再是单点字段处理，而是继续排查 engineering 内部是否还存在更底层的结构问题：
+
+1. 请求 DTO 与响应 DTO 混用
+2. 完整领域模型直接兼作保存输入
+3. 聚合/展示字段被默认视为可写字段
+
+#### 1.2 本轮排查结果
+
+本轮重点排查了：
+
+1. `src/features/engineering/mutation-types.ts`
+2. `src/features/engineering/services/*`
+3. `src/features/engineering/adapters/*`
+4. `src/features/engineering/data/schema.ts`
+
+目前可以分成三类情况：
+
+##### A. 已经相对健康的链路
+
+1. **BOM**
+   - `SaveBOMInput` 已经从完整 `BOM` 收口为 `Omit<BOM, 'bomDisplayVersion'>`
+   - 前端保存边界与后端输入 DTO 已开始分离
+
+2. **ProductType**
+   - 已通过：
+     - `SaveProductTypeInput`
+     - `product-type-api-adapter.ts`
+   - 实现请求/响应转换
+
+3. **ProductTemplate**
+   - 已通过：
+     - `SaveProductTemplateInput`
+     - `product-template-api-adapter.ts`
+   - 实现请求/响应转换
+
+##### B. 最值得优先继续治理的候选
+
+1. **Product 主数据链路**
+   - 当前 `mutation-types.ts` 中：
+     - `SaveProductInput = Product`
+   - 这意味着完整 `Product` 领域/响应模型仍被直接当作保存输入类型。
+
+2. **ProductMaintenanceService**
+   - 当前依旧以 `SaveProductInput` 作为保存输入
+   - 再由 `product-api-adapter.ts` 转成 API DTO
+   - 虽然 adapter 已存在，但输入边界仍然偏宽，容易把不应写入的字段一并视为可写。
+
+3. **productSchema**
+   - 目前 `Product` 上仍包含多个需要再次分型判断的字段：
+     - `templateKey`
+     - `attachments`
+     - `attributeValues`
+     - `techSpecs`
+   - 这些字段中，有些可能是聚合响应字段，有些是可写字段，有些可能需要专门 write contract 才能表达清楚。
+
+##### C. 次优先候选
+
+1. **ProductAttributeCategory / ProductAttributeOption**
+   - 当前虽然已经使用：
+     - `Omit<id | version>`
+   - 但整体仍直接复用 schema 类型，后续仍值得确认是否混入纯响应字段。
+
+2. **ChangeOrder**
+   - 当前前端使用 `SaveChangeOrderInput`
+   - 输入边界比 Product 更清晰
+   - 但后续仍可确认前后端是否还存在输入模型/响应模型混用。
+
+#### 1.3 当前判断
+
+当前最值得优先治理的不是再回到 BOM，而是：
+
+1. **Product 主数据链路**
+
+原因是：
+
+1. `SaveProductInput = Product` 仍然是明显的完整模型直通输入。
+2. Product 是 engineering 的上游主数据，一旦输入边界过宽，会把问题带到模板、属性值、条码配置等多个子链路。
+3. 相比之下，`ProductType / ProductTemplate / BOM` 已经有更明显的输入/输出分层迹象。
+
+#### 1.4 推荐方案
+
+推荐按“先主链路，后周边”的顺序推进：
+
+##### 第一步：Product 主数据链路 DTO 分离
+
+优先位置：
+
+1. `src/features/engineering/mutation-types.ts`
+2. `src/features/engineering/adapters/product-api-adapter.ts`
+3. `src/features/engineering/services/product-maintenance-service.ts`
+
+目标：
+
+1. 将 `SaveProductInput = Product` 改为更明确的 Product write contract
+2. 明确哪些字段属于真正可写字段
+3. 让 adapter 明确承担读写转换，而不是只做“宽模型转窄 DTO”的技术桥接
+
+##### 第二步：属性值链路复核
+
+优先位置：
+
+1. `product-attribute-category-service.ts`
+2. `product-attribute-option-service.ts`
+3. 对应 `mutation-types.ts`
+
+目标：
+
+1. 确认当前 schema 复用是否已经足够安全
+2. 若仍混入纯响应字段，再做次级 DTO 分离
+
+##### 第三步：ChangeOrder 复核
+
+优先位置：
+
+1. `change-order-service.ts`
+2. 对应后端 `SaveChangeOrderInput`
+
+目标：
+
+1. 判断是否仍存在输入/响应模型混用
+2. 仅在有明确收益时再扩展范围
+
+#### 1.5 风险与控制策略
+
+1. **Product 写入字段过多的风险**
+   - Product 聚合字段多，一次性全拆容易扩大范围。
+   - 控制策略：只先定义 write contract，不顺手重构所有响应 contract。
+
+2. **Adapter 过载风险**
+   - 当前 adapter 已承担较多转换职责。
+   - 控制策略：本轮只让 adapter 更明确地区分 write DTO 与 read contract，不增加无关逻辑。
+
+3. **范围扩散风险**
+   - 容易从 Product 一路扩到 attribute/template/type/change-order。
+   - 控制策略：若进入实施，先只做 Product 主链路；其它候选仅做复核，不默认实施。
+
+#### 1.6 明确不动范围
+
+本轮不做：
+
+1. 不重构整个 engineering contract 目录结构
+2. 不扩到 production / authz / dashboard 等其它模块
+3. 不顺手改动无明确问题的 `ProductType / ProductTemplate / BOM` 读写链路
+
+#### 1.7 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 Product 主数据链路的 write contract
+2. 再检查 `product-api-adapter.ts` 与 `product-maintenance-service.ts` 的输入边界是否同步变清晰
+3. 再做属性值链路与 ChangeOrder 的轻量复核
+4. 执行定向验证并更新 `walkthrough.md`
+
+#### 1.8 当前阶段结论
+
+当前这条治理线已经从“单字段规范化”进入“契约边界清理”。下一步最值得做的是优先收口 **Product 主数据链路**，因为它仍然保留着最明显的“完整响应模型直接充当保存输入”的结构性问题。
+
+### 1. architecture：BOM `bomDisplayVersion` 后端依赖收口评估
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+前端已经完成 `bomDisplayVersion` 的单一来源治理：
+
+1. 展示层优先从 `bomVersion` 派生
+2. form / dialog / page 不再重复主动回写 `bomDisplayVersion`
+
+但还剩一个关键问题没有确认：
+
+1. 后端是否真的需要把 `bomDisplayVersion` 视作可提交字段
+2. 还是它本质上只是一个响应阶段派生字段
+
+#### 1.2 后端排查结果
+
+本轮已排查的关键文件包括：
+
+1. `server/models/product.go`
+2. `server/services/engineering_master_service.go`
+3. `server/handlers/bom.go`
+4. `src/features/engineering/services/bom-service.ts`
+
+已确认的事实如下：
+
+1. `models.BOM.DisplayVersion` 在后端模型中声明为：
+   - `gorm:"-"`
+   - 说明它**不参与数据库持久化**。
+
+2. 后端真实持久化的版本字段是：
+   - `VersionText`
+   - JSON 映射名为 `version`
+
+3. 后端在多个返回路径中都会派生 `bomDisplayVersion`：
+   - `GetBOMByID()`
+   - `ListBOMs()`
+   - `SaveBOM()`
+   - 通过：
+     - `resolveBOMDisplayVersion()`
+     - `hydrateBOMDerivedFields()`
+
+4. 后端当前没有把 `bomDisplayVersion` 用于：
+   - 查询过滤
+   - 唯一性判断
+   - active 冲突判断
+   - 变更单引用校验
+   - 锁定/状态流转
+
+5. `SaveBOMHandler` 仍会接收该字段的根本原因不是业务需要，而是：
+   - `SaveBOMInput` 直接别名到 `models.BOM`
+   - 因而请求体结构自然容纳了 `DisplayVersion`
+
+#### 1.3 当前结论
+
+到目前为止，可以明确判断：
+
+1. `bomDisplayVersion` 在后端属于**响应阶段派生字段**
+2. 它不是数据库持久化字段
+3. 它也不是业务判定字段
+
+因此，当前真正的冗余点是：
+
+1. 前端 `bom-service.ts` 仍在提交 payload 中带上它
+2. 后端 `SaveBOMInput` 仍复用完整模型，导致派生字段继续暴露为“可提交字段”
+
+#### 1.4 推荐收口方向
+
+推荐下一步按“请求/响应分离”的方式收口：
+
+##### A. 前端请求层
+
+优先位置：
+
+1. `src/features/engineering/services/bom-service.ts`
+
+目标：
+
+1. 不再主动提交 `bomDisplayVersion`
+2. 继续保留前端展示层对响应 `bomDisplayVersion` 的兼容读取
+
+##### B. 后端输入 DTO 层
+
+优先位置：
+
+1. `server/services/engineering_master_service.go`
+2. 必要时联动 `server/handlers/bom.go`
+
+目标：
+
+1. 将 `SaveBOMInput` 从 `models.BOM` 拆成更明确的输入 DTO
+2. 让请求字段只包含真正可写字段
+3. 保留 `models.BOM.DisplayVersion` 作为响应派生字段
+
+##### C. 响应层
+
+优先位置：
+
+1. `resolveBOMDisplayVersion()`
+2. `hydrateBOMDerivedFields()`
+
+目标：
+
+1. 暂不删除
+2. 保持现有前端兼容与展示稳定
+
+#### 1.5 风险与控制策略
+
+1. **请求契约变更风险**
+   - 若后端绑定模型直接切 DTO，可能影响现有前端 payload。
+   - 控制策略：先收口前端，再让后端 DTO 兼容已有可写字段，避免一次性扩大改动。
+
+2. **版本字段映射风险**
+   - 后端当前持久化字段叫 `VersionText`，JSON 名却是 `version`，前端字段又叫 `bomVersion`。
+   - 控制策略：本轮只处理 `bomDisplayVersion` 的可写性，不顺手重构 `version` 命名体系。
+
+3. **展示兼容风险**
+   - 若直接移除响应中的 `bomDisplayVersion`，可能影响尚未统一的旧读路径。
+   - 控制策略：本轮只弱化请求口径，继续保留响应派生字段。
+
+#### 1.6 明确不动范围
+
+本轮不做：
+
+1. 不重构 BOM `version` / `VersionText` 命名体系
+2. 不扩到 ChangeOrder / Product 侧 DTO 结构治理
+3. 不删除后端响应中的 `bomDisplayVersion`
+
+#### 1.7 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口前端 `bom-service.ts`，不再主动提交 `bomDisplayVersion`
+2. 再评估并收口后端 `SaveBOMInput` 的输入 DTO
+3. 保留 `resolveBOMDisplayVersion()` / `hydrateBOMDerivedFields()` 作为响应兼容层
+4. 执行定向验证并更新 `walkthrough.md`
+
+#### 1.8 当前阶段结论
+
+后端排查已经足够明确：`bomDisplayVersion` 不是持久化字段，也不是业务判定字段，而是响应阶段派生字段。下一步最值得做的不是删除展示兼容，而是把**请求口径和响应口径进一步分离**，从而彻底弱化 `bomDisplayVersion` 的“可写字段”身份。
+
+### 1. architecture：BOM/ECO 生效日期 schema 约束显式化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在上一轮中，BOM/ECO 侧的生效日期字段已经完成了前端口径统一：
+
+1. `effectiveFrom`
+2. `effectiveTo`
+
+当前已通过公共函数 `normalizeBomEffectiveDate()` 收口为 `YYYY-MM-DD` 边界字符串，并且已同步到：
+
+1. form 初始化
+2. 表单输入
+3. 保存边界
+4. table / preview 展示
+
+但 schema 层目前仍缺少一条明确契约：
+
+1. 空值是否允许
+2. 非空时是否必须满足 `YYYY-MM-DD`
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/data/schema.ts`
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+4. `src/features/engineering/services/bom-service.ts`
+
+已确认的现状包括：
+
+1. `effectiveFrom / effectiveTo` 当前通过前端公共函数被裁剪到 `YYYY-MM-DD`。
+2. `bom-form-header.tsx` 中对应字段使用 `input type='date'`。
+3. schema 目前仅继承自 BOM 结构字段，没有进一步显式表达日期格式约束。
+4. 因此前端 UI 语义已经稳定，但 schema 仍未成为最终的格式守门人。
+
+#### 1.3 本轮目标
+
+本轮目标非常聚焦：
+
+1. 在 `schema.ts` 中显式表达 `effectiveFrom / effectiveTo` 的日期格式契约。
+
+更具体地说，需要明确：
+
+1. 空字符串允许通过
+2. 非空字符串必须满足 `YYYY-MM-DD`
+
+#### 1.4 推荐方案
+
+推荐在 `schema.ts` 中为日期字段引入一个轻量级的日期字符串 schema，例如：
+
+1. `trim()`
+2. 允许空字符串
+3. 非空时匹配 `^\\d{4}-\\d{2}-\\d{2}$`
+
+这样做的好处是：
+
+1. 与当前 `input type='date'` 的浏览器输入语义一致
+2. 与 `normalizeBomEffectiveDate()` 的输出一致
+3. 不需要引入重型日期库
+
+#### 1.5 推荐结构分层
+
+##### A. Schema 层
+
+优先位置：
+
+1. `data/schema.ts`
+
+职责：
+
+1. 成为日期格式的最终守门人。
+2. 明确空值与非空格式规则。
+
+##### B. 对齐层
+
+优先位置：
+
+1. `use-bom-form.ts`
+2. `bom-form-header.tsx`
+3. `bom-service.ts`
+
+职责：
+
+1. 确认已有前端规范函数与 schema 规则完全一致。
+2. 若有偏差，仅做最小对齐，不扩大范围。
+
+#### 1.6 明确不动范围
+
+本轮不扩到：
+
+1. 其它模块的日期字段
+2. 后端日期存储或解析策略
+3. 其它 BOM 头字段
+4. routing / item / substitute 内部时间字段
+
+#### 1.7 风险与控制策略
+
+1. **历史数据兼容风险**
+   - 若已有数据包含完整 ISO 字符串，schema 直接收紧后可能影响回填。
+   - 控制策略：继续保留前端初始化层的 `normalizeBomEffectiveDate()`，先把回填值裁剪到 `YYYY-MM-DD` 再进入表单。
+
+2. **浏览器输入差异风险**
+   - `input type='date'` 理论上返回 `YYYY-MM-DD`，但仍应以 schema 明确契约。
+   - 控制策略：以 schema 作为最后守门人，UI 只做顺向对齐。
+
+3. **范围扩散风险**
+   - 容易把问题扩大到所有日期字段。
+   - 控制策略：本轮只限制 `BOM.effectiveFrom / BOM.effectiveTo`。
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先在 `schema.ts` 中定义 BOM 生效日期字段的格式约束。
+2. 再核对 `use-bom-form.ts / bom-form-header.tsx / bom-service.ts` 是否需要最小对齐。
+3. 执行定向验证并更新 `walkthrough.md`。
+
+#### 1.9 当前阶段结论
+
+方向 A 的最合理落点已经明确：下一步不是再扩大控制字段范围，而是把 `effectiveFrom / effectiveTo` 已经形成的前端统一口径，进一步**下沉到 schema 契约层**，让日期格式要求变成显式且可验证的模型约束。
+
+### 1. architecture：BOM/ECO 生命周期与生效控制字段治理
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 内已经完成：
+
+1. 属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）
+2. template/type 机器字段链路（`ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`）
+3. Product 主数据链路（`sku / modelCode / templateKey`）
+4. Product / ChangeOrder / BOM 共用的变更控制字段（`revisionNo / siteCode / changeOrderNo`）
+5. BOM/ECO 控制字段（`bomNo / bomVersion`）
+6. `bomDisplayVersion` 单一来源治理
+
+继续往下盘点 BOM/ECO 侧字段时，最明确的下一批已经不再是编号/版本类字段，而是：
+
+1. `changeType`
+2. `status`
+3. `effectiveFrom`
+4. `effectiveTo`
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/data/schema.ts`
+2. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+3. `src/features/engineering/hooks/use-bom-form.ts`
+4. `src/features/engineering/services/bom-service.ts`
+5. `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+6. `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+
+已确认的现状包括：
+
+1. `changeType` 当前在 BOM 表头通过下拉可选，且在选择 change order 时会被自动回填。
+2. `status` 当前在 BOM 表头通过下拉可选，也在列表中承担生命周期展示语义。
+3. `effectiveFrom / effectiveTo` 当前依赖 `slice(0, 10)` 的局部日期输入转换。
+4. 这批字段目前主要依赖 schema/select/date input 的局部约束，尚未被作为一组独立语义字段治理。
+
+#### 1.3 本轮结论
+
+这批字段值得进入下一轮治理，但它们不应被混入已有的 code normalization 规则，而应按字段职责拆成两类：
+
+##### A. 生命周期枚举控制字段
+
+适用字段：
+
+1. `changeType`
+2. `status`
+
+推荐方向：
+
+1. 明确稳定枚举集合
+2. 统一 UI / form / save / display 的取值口径
+3. 避免局部字符串直写继续扩散
+
+##### B. 生效日期边界字段
+
+适用字段：
+
+1. `effectiveFrom`
+2. `effectiveTo`
+
+推荐方向：
+
+1. 统一日期输入格式化入口
+2. 保持 form 输入值、保存值、展示值之间一致
+3. 明确是否只接受 `YYYY-MM-DD` 还是允许完整 ISO 再截断
+
+#### 1.4 当前推荐方向
+
+更推荐把这批字段视为：
+
+1. **控制语义字段治理**
+
+而不是：
+
+1. 普通字符串 normalization
+
+原因：
+
+1. `changeType / status` 的核心问题是稳定枚举和生命周期语义。
+2. `effectiveFrom / effectiveTo` 的核心问题是日期边界与格式一致性。
+3. 它们和 `bomNo / bomVersion`、`revisionNo / siteCode / changeOrderNo` 属于不同分型。
+
+#### 1.5 推荐结构分层
+
+##### A. 表单输入与回填层
+
+优先位置：
+
+1. `bom-form-header.tsx`
+2. `use-bom-form.ts`
+
+职责：
+
+1. 统一 `changeType / status` 的默认值与可选值来源。
+2. 统一 `effectiveFrom / effectiveTo` 的输入格式转换。
+
+##### B. 保存边界层
+
+优先位置：
+
+1. `bom-service.ts`
+
+职责：
+
+1. 保证最终提交 payload 与 form 语义一致。
+2. 避免日期字段在 create / patch 中出现不同格式。
+
+##### C. 展示层
+
+优先位置：
+
+1. `bom-table.tsx`
+2. `bom-preview.tsx`
+
+职责：
+
+1. 统一生命周期状态展示。
+2. 统一生效日期展示与空值兜底。
+
+##### D. Schema / 契约层
+
+优先位置：
+
+1. `data/schema.ts`
+2. 如有必要，再评估 `mutation-types.ts`
+
+职责：
+
+1. 让枚举与日期边界在 schema 层表达更清晰。
+2. 限制局部字符串随意扩张。
+
+#### 1.6 明确不动范围
+
+本轮不扩到：
+
+1. `items`
+2. `substitutes`
+3. `standardUsage`
+4. `description`
+5. `productId / changeOrderId`
+
+原因：
+
+1. 这些字段不属于当前最明确的 BOM/ECO 控制语义字段。
+2. `productId / changeOrderId` 的问题更偏引用关系，而不是 normalization / control semantics。
+
+#### 1.7 风险与控制策略
+
+1. **枚举扩散风险**
+   - 若 `changeType / status` 继续依赖局部字符串常量，会继续造成表单、服务、展示层漂移。
+   - 控制策略：统一枚举来源与取值口径。
+
+2. **日期格式漂移风险**
+   - `effectiveFrom / effectiveTo` 目前使用局部 `slice(0, 10)`，容易造成输入/展示/存储格式不一致。
+   - 控制策略：收拢统一日期边界格式化入口。
+
+3. **范围扩散风险**
+   - 这批字段容易把问题扩大到所有日期或状态字段。
+   - 控制策略：本轮只聚焦 BOM/ECO 头部字段，不扩到 routing、item 或其它模块。
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先明确 `changeType / status` 的稳定枚举口径。
+2. 再明确 `effectiveFrom / effectiveTo` 的统一日期输入/展示格式。
+3. 再收口 `bom-form-header.tsx / use-bom-form.ts`。
+4. 再收口 `bom-service.ts` 与 table/preview 展示口径。
+5. 执行定向验证并更新 `walkthrough.md`。
+
+#### 1.9 当前阶段结论
+
+继续排查后，BOM/ECO 侧最明确、最值得纳入下一批治理的字段已经比较清晰：
+
+1. `changeType`
+2. `status`
+3. `effectiveFrom`
+4. `effectiveTo`
+
+这批字段的核心不是大小写，而是**生命周期枚举语义**与**生效日期边界语义**。如果继续推进，应该按这一分型来做，而不是简单复用已有的 machine code 或 business code normalization 模式。
+
+### 1. architecture：BOM/ECO display version 单一来源治理
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 内已经完成：
+
+1. 属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）
+2. template/type 机器字段链路（`ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`）
+3. Product 主数据链路（`sku / modelCode / templateKey`）
+4. Product / ChangeOrder / BOM 共用的变更控制字段（`revisionNo / siteCode / changeOrderNo`）
+5. BOM/ECO 控制字段（`bomNo / bomVersion`）
+
+在这之后，BOM/ECO 侧最值得优先治理的问题已经不再是单个字段的大小写，而是：
+
+1. `bomDisplayVersion` 是否应该继续被视为独立持久化字段
+2. 还是应该被收拢为从 `bomVersion` 派生出来的展示字段
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/hooks/use-bom-form.ts`
+2. `src/features/engineering/components/bom-action-dialog.tsx`
+3. `src/features/engineering/tabs/bom-mgmt.tsx`
+4. `src/features/engineering/services/bom-service.ts`
+5. `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+6. `src/features/engineering/data/schema.ts`
+
+已确认的现状包括：
+
+1. `bomDisplayVersion` 当前在 form 初始化时会从 `bomVersion` 派生后回填。
+2. `bomActionDialog.tsx` 与 `bom-mgmt.tsx` 提交前都会再次把 `bomDisplayVersion` 从 `bomVersion` 派生后回写。
+3. `bom-service.ts` 保存边界也会继续把 `bomDisplayVersion` 从 `bomVersion` 派生后回写。
+4. `bom-table.tsx` 列表展示当前优先直接读取 `row.original.bomDisplayVersion`。
+5. `bomDisplayVersion` 当前不是用户直接编辑字段。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，核心目标不应再是“给 `bomDisplayVersion` 增加 another normalization function”，而应是先决定其**单一来源策略**。
+
+##### A. 方案一：继续保留为持久化字段
+
+含义：
+
+1. 后端/前端仍允许 `bomDisplayVersion` 独立存储
+2. 但必须明确谁是唯一派生责任方
+
+优点：
+
+1. 兼容已有数据结构
+2. 对现有展示层影响较小
+
+缺点：
+
+1. 很容易继续出现 `bomVersion !== bomDisplayVersion` 的漂移
+2. 前端多个边界重复回写的复杂度仍然存在
+
+##### B. 方案二：收拢为派生字段
+
+含义：
+
+1. `bomDisplayVersion` 不再作为需要四处主动写入的字段
+2. 展示层统一从 `bomVersion` 派生
+
+优点：
+
+1. 单一来源清晰
+2. patch / delta / service / form 初始化链路会明显简化
+
+缺点：
+
+1. 需要确认后端当前是否依赖该字段持久化
+2. 需要统一列表、详情、编辑态的读取策略
+
+#### 1.4 当前推荐方向
+
+从当前代码现状看，更推荐把 `bomDisplayVersion` 定义为**派生字段**，而不是继续作为“处处回写的半持久化字段”。
+
+原因：
+
+1. 它不是用户直接编辑字段。
+2. 当前所有写入点几乎都只是把 `bomVersion` 再复制一遍。
+3. 继续保留多点回写只会增加 `delta` 与保存边界的漂移风险。
+
+#### 1.5 推荐结构分层
+
+##### A. 表单与提交层
+
+优先位置：
+
+1. `use-bom-form.ts`
+2. `bom-action-dialog.tsx`
+3. `bom-mgmt.tsx`
+
+职责：
+
+1. 明确提交时是否还需要主动携带 `bomDisplayVersion`。
+2. 若选择派生字段，则移除重复回写。
+
+##### B. 保存层
+
+优先位置：
+
+1. `bom-service.ts`
+
+职责：
+
+1. 明确 `bomDisplayVersion` 是否仍应出现在保存 payload 中。
+2. 若仍保留，则只能有一个唯一派生入口。
+
+##### C. 展示层
+
+优先位置：
+
+1. `bom-table.tsx`
+2. 其它 BOM preview / details 展示文件
+
+职责：
+
+1. 若选择派生字段，展示层应统一优先从 `bomVersion` 派生，而不是依赖一个可能陈旧的 `bomDisplayVersion`。
+
+##### D. Schema / 类型层
+
+优先位置：
+
+1. `data/schema.ts`
+2. `mutation-types.ts`
+
+职责：
+
+1. 若 `bomDisplayVersion` 不是真正的业务输入字段，应重新评估它在 schema/type 中的定位。
+
+#### 1.6 明确不动范围
+
+本轮不扩到：
+
+1. `description`
+2. `items`
+3. `substitutes`
+4. `standardUsage`
+5. 其它工艺路线或 routing 版本号
+
+#### 1.7 风险与控制策略
+
+1. **后端契约依赖风险**
+   - 若后端当前明确依赖 `bomDisplayVersion` 持久化，前端不能擅自完全移除。
+   - 控制策略：先按“前端单一来源治理”实施，必要时保留兼容字段，但只保留一个派生入口。
+
+2. **展示层回归风险**
+   - 列表/预览若仍优先读旧字段，可能出现显示值与编辑值不一致。
+   - 控制策略：统一展示层优先级。
+
+3. **delta 漂移风险**
+   - 若 `bomDisplayVersion` 继续在多个边界被改写，会干扰 patch diff。
+   - 控制策略：减少重复回写点，尽量让 delta 只围绕真正业务输入字段产生。
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先明确 `bomDisplayVersion` 的字段角色（派生 vs 持久化）。
+2. 再收口 `use-bom-form.ts / bom-action-dialog.tsx / bom-mgmt.tsx` 的重复回写。
+3. 再收口 `bom-service.ts` 的唯一派生入口或 payload 出口策略。
+4. 最后统一 `bom-table.tsx` 等展示层读取口径。
+5. 执行定向验证并更新 `walkthrough.md`。
+
+#### 1.9 当前阶段结论
+
+下一步最值得推进的不是再增加一个新的版本字段 normalization，而是围绕 `bomDisplayVersion` 做**单一来源治理**。这一步如果做对，可以显著降低 BOM/ECO 侧 form、delta、save、table 展示之间的重复回写和契约漂移风险。
+
+### 1. architecture：BOM/ECO 控制字段接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 内已经完成：
+
+1. 属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）
+2. template/type 机器字段链路（`ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`）
+3. Product 主数据链路（`sku / modelCode / templateKey`）
+4. Product / ChangeOrder / BOM 共用的变更控制字段（`revisionNo / siteCode / changeOrderNo`）
+
+之后，下一批最自然的字段是 BOM/ECO 自己的控制字段：
+
+1. `bomNo`
+2. `bomVersion`
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/hooks/use-bom-form.ts`
+2. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+3. `src/features/engineering/components/bom-action-dialog.tsx`
+4. `src/features/engineering/tabs/bom-mgmt.tsx`
+5. `src/features/engineering/services/bom-service.ts`
+6. `src/features/engineering/data/schema.ts`
+
+已确认的现状包括：
+
+1. `use-bom-form.ts` 默认值直接写死 `bomVersion: 'V1.0'`。
+2. `use-bom-form.ts` 新建时 `initialVersion` 直接回退到 `currentRow?.bomVersion || 'V1.0'`。
+3. `bom-form-header.tsx` 中 `bomNo` 可编辑，但未见显式规范化。
+4. `bom-form-header.tsx` 中 `bomVersion` 只读展示，但未见显式规范化。
+5. `bom-service.ts` 保存边界当前基本直传 `data`。
+6. `bomSchema` 仅要求 `bomVersion` 非空，并未给出更明确的格式规范。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应继续采用“按字段职责分型”的方式，而不是把 `bomNo / bomVersion` 粗暴并入此前某一条通用 uppercase 规则。
+
+##### A. 业务编号
+
+适用字段：
+
+1. `bomNo`
+
+推荐方向：
+
+1. trim
+2. 如后端未限定其它字符语义，优先做最小化大写收口
+3. 不改写现有单号结构，只做规范化
+
+##### B. 版本标签
+
+适用字段：
+
+1. `bomVersion`
+
+推荐方向：
+
+1. trim
+2. 保持类似 `V1.0` 的稳定格式语义
+3. 如需统一大小写，仅做最小化大写收口，不引入复杂版本重写逻辑
+
+#### 1.4 推荐结构分层
+
+##### A. 表单初始化与输入展示层
+
+优先位置：
+
+1. `use-bom-form.ts`
+2. `bom-form-header.tsx`
+
+职责：
+
+1. `bomVersion` 的默认值、编辑态回填、只读展示与最终保存口径一致。
+2. `bomNo` 若允许手工录入，应进入状态前走统一最小规范化。
+
+##### B. 提交与保存边界层
+
+优先位置：
+
+1. `bom-action-dialog.tsx`
+2. `bom-mgmt.tsx`
+3. `bom-service.ts`
+
+职责：
+
+1. 即便 UI 层漏掉，也能在保存前统一规范 `bomNo / bomVersion`。
+2. patch 与 create 两条链路尽量保持同一口径。
+
+##### C. Schema / 契约层
+
+优先位置：
+
+1. `data/schema.ts`
+2. 若后续存在 BOM adapter，再继续评估
+
+职责：
+
+1. 让 `bomVersion` 的格式语义至少在前端 schema 层有清晰表达。
+2. 避免默认值、UI 展示值与最终提交值出现漂移。
+
+#### 1.5 与前几批规则的关系
+
+当前已经形成的规则类型包括：
+
+1. 大写机器码
+2. 小写 slug 机器值
+3. 稳定大写枚举键 / 引用键
+4. 固定格式数字码
+5. 变更控制字段
+
+而本轮进一步补充的是：
+
+1. BOM 业务编号
+2. BOM 版本标签
+
+这说明 normalization 正在从 Product 主数据与 ChangeOrder 控制字段，继续扩展到 ECO/BOM 自己的版本控制语义。
+
+#### 1.6 推荐实施范围
+
+第一批建议只收口：
+
+1. `bomNo`
+2. `bomVersion`
+
+原因：
+
+1. 语义明确。
+2. 已存在默认值或展示约束。
+3. 与 BOM 行项目内容、描述字段边界清晰。
+
+#### 1.7 明确不动范围
+
+本轮不扩到：
+
+1. `description`
+2. `items`
+3. `substitutes`
+4. `standardUsage`
+5. 其它工艺或路线版本字段
+
+原因：
+
+1. 它们不属于 BOM/ECO 当前最明确的控制字段。
+2. 若混入这些字段，会明显扩大风险面。
+
+#### 1.8 风险与控制策略
+
+1. **误改 BOM 版本语义风险**
+   - `bomVersion` 可能不仅仅是大写文本，而带有约定格式（如 `V1.0`）。
+   - 控制策略：先做最小 trim/大写收口，不重写版本演进逻辑。
+
+2. **业务编号生成语义不清风险**
+   - `bomNo` 当前可能允许手输，也可能未来由后端生成。
+   - 控制策略：在未确认后端生成规则前，仅补最小规范化边界。
+
+3. **create / patch 口径不一致风险**
+   - 当前 `bom-service.ts` 同时承载 POST 与 PATCH。
+   - 控制策略：保存边界一次性收口，避免 create/patch 分裂。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 `use-bom-form.ts` 与 `bom-form-header.tsx`。
+2. 再收口 `bom-service.ts` 的保存边界。
+3. 再评估 `bom-mgmt.tsx / bom-action-dialog.tsx` 是否需要提交前兜底。
+4. 如有必要，再补 `schema` 或其它契约层口径。
+5. 执行定向验证并更新 `walkthrough.md`。
+
+#### 1.10 当前阶段结论
+
+`bomNo / bomVersion` 是当前最适合继续推进的一组 BOM/ECO 控制字段。它们既不属于自由文本，也不完全等同于此前的 machine code 或 change control 字段，因此应继续按语义分型治理，并在 BOM 表单初始化、展示、保存边界之间保持统一口径，避免后续继续依赖散落的默认值与局部展示规则。
+
+### 1. architecture：Product/ChangeOrder 变更控制字段接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 内已经完成：
+
+1. 属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）
+2. template/type 机器字段链路（`ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`）
+3. Product 主数据链路（`sku / modelCode / templateKey`）
+
+之后，下一批最自然的字段不再是展示字段，而是 Product 与 ChangeOrder/BOM 共享的变更控制字段：
+
+1. `revisionNo`
+2. `siteCode`
+3. `changeOrderNo`
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/tabs/change-orders.tsx`
+2. `src/features/engineering/utils/default-builders.ts`
+3. `src/features/engineering/adapters/product-api-adapter.ts`
+4. `src/features/engineering/hooks/use-change-order-write-actions.ts`
+5. `src/features/engineering/services/change-order-service.ts`
+6. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+7. `src/features/engineering/hooks/use-bom-form.ts`
+
+已确认的现状包括：
+
+1. `change-orders.tsx` 中 `changeOrderNo` 输入直接 `toUpperCase()`。
+2. `change-orders.tsx` 中 `siteCode` 输入直接 `toUpperCase()`。
+3. `change-orders.tsx` 保存前对 `siteCode` 做了 `trim().toUpperCase()`，对 `revisionNo` 做了 `trim()`。
+4. `product-api-adapter.ts` 中 `revisionNo / siteCode / changeOrderNo` 当前基本直传。
+5. `default-builders.ts` 与 `use-bom-form.ts` 已为 `revisionNo` 约定默认值 `R1`，说明其格式语义已相对稳定。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应继续采用“按字段职责分型”的方式，而不是把三者粗暴合并为统一 uppercase 规则。
+
+##### A. 稳定大写站点码
+
+适用字段：
+
+1. `siteCode`
+
+推荐方向：
+
+1. trim
+2. 统一大写
+3. 保持空值时与 `isDefaultSite` 的现有语义兼容
+
+##### B. 大写业务单号
+
+适用字段：
+
+1. `changeOrderNo`
+
+推荐方向：
+
+1. trim
+2. 统一大写
+3. 不改写现有单号结构，仅做规范化
+
+##### C. 修订号
+
+适用字段：
+
+1. `revisionNo`
+
+推荐方向：
+
+1. trim
+2. 保持类似 `R1 / R2` 的业务格式语义
+3. 若需做大小写统一，优先选择最小化的大写收口，而不是引入复杂重写规则
+
+#### 1.4 推荐结构分层
+
+##### A. 输入边界层
+
+优先位置：
+
+1. `change-orders.tsx`
+2. `bom-form-header.tsx`
+
+职责：
+
+1. `changeOrderNo / siteCode` 输入与当前局部 `toUpperCase()` 逻辑统一到公共规范函数。
+2. `revisionNo` 输入保留业务格式，但进入状态前也应走统一最小规范化。
+
+##### B. 保存边界层
+
+优先位置：
+
+1. `change-order-service.ts`
+2. `use-change-order-write-actions.ts`
+
+职责：
+
+1. 即便 UI 层漏掉，也能在提交前统一规范 `revisionNo / siteCode / changeOrderNo`。
+2. 保证 mutation 入口与 service 保存边界口径一致。
+
+##### C. 协议与共用主数据层
+
+优先位置：
+
+1. `product-api-adapter.ts`
+2. `use-bom-form.ts`（若需补默认口径）
+
+职责：
+
+1. Product 侧 `revisionNo / siteCode / changeOrderNo` 的 DTO 出入口保持统一口径。
+2. 避免 Product / ChangeOrder / BOM 三条链路各自漂移。
+
+#### 1.5 与前几批规则的关系
+
+当前已经形成的规则类型包括：
+
+1. 大写机器码
+2. 小写 slug 机器值
+3. 稳定大写枚举键 / 引用键
+4. 固定格式数字码
+
+而本轮进一步补充的是：
+
+1. 站点码
+2. 业务单号
+3. 修订号
+
+这说明 normalization 体系已经从“码字段大小写处理”进一步扩展到“工程主数据控制字段契约治理”。
+
+#### 1.6 推荐实施范围
+
+第一批建议只收口：
+
+1. `siteCode`
+2. `changeOrderNo`
+3. `revisionNo`
+
+原因：
+
+1. 语义明确。
+2. 已存在局部散落规则。
+3. 与标题、描述、生效日期等字段边界清晰。
+
+#### 1.7 明确不动范围
+
+本轮不扩到：
+
+1. `title`
+2. `description`
+3. `effectiveFrom`
+4. `effectiveTo`
+5. 其它自由文本字段
+
+原因：
+
+1. 这些字段不是明确机器字段。
+2. 若把日期或说明文案纳入同类规则，会明显扩大风险面。
+
+#### 1.8 风险与控制策略
+
+1. **误改修订号业务语义风险**
+   - `revisionNo` 可能不仅仅是大写文本，还带有约定格式（如 `R1`）。
+   - 控制策略：先做最小 trim/大写收口，不引入复杂格式重写。
+
+2. **默认站点语义漂移风险**
+   - `siteCode` 与 `isDefaultSite` 当前存在联动。
+   - 控制策略：规范化时保留“空站点码 => 默认站点”的既有语义。
+
+3. **Product / ChangeOrder / BOM 口径不一致风险**
+   - 这些字段同时出现在多个链路上，若只改一处会造成继续漂移。
+   - 控制策略：至少同步评估输入层、service 层、adapter 层与 BOM 关联读取层。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 `change-orders.tsx` 的输入与提交边界。
+2. 再收口 `change-order-service.ts` 与 `use-change-order-write-actions.ts`。
+3. 再收口 `product-api-adapter.ts` 的 DTO 出入口。
+4. 最后评估 `bom-form-header.tsx / use-bom-form.ts` 是否需要同步口径补齐。
+5. 执行定向验证并更新 `walkthrough.md`。
+
+#### 1.10 当前阶段结论
+
+`revisionNo / siteCode / changeOrderNo` 是当前最适合继续推进的一组 engineering 变更控制字段。它们不属于展示文案，也不完全等同于此前的 machine code，因此应继续按语义分型治理，并在 ChangeOrder、Product、BOM 三条相邻链路上保持统一收口，避免后续再出现控制字段契约漂移。
+
+### 1. architecture：Product 主数据链路接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 内已完成：
+
+1. 属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）
+2. template/type 机器字段链路（`ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`）
+
+之后，下一批仍属于 engineering 主数据域、且字段语义明确的候选点，是 `Product` 本体上的：
+
+1. `sku`
+2. `modelCode`
+3. `templateKey`
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/components/product/product-basic-info.tsx`
+2. `src/features/engineering/hooks/use-product-form-derive.ts`
+3. `src/features/engineering/hooks/use-product-form-submit.ts`
+4. `src/features/engineering/utils/product-form-utils.ts`
+5. `src/features/engineering/adapters/product-api-adapter.ts`
+
+已确认的现状包括：
+
+1. `modelCode` 在 UI 输入层已有明确规则：仅允许数字，并限制为 2 位。
+2. `sku` 在前端主要通过 `deriveSku(typeCode, modelCode, versionLevel)` 派生。
+3. `sku` 的唯一性校验已存在，但当前是基于值比较，不是统一规范化后的比较。
+4. `templateKey` 当前在 schema / adapter 中存在，但未见显式 normalization 收口。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应继续采用“按字段语义分型”的方式，而不是把三者粗暴合并为一个 normalize 规则。
+
+##### A. 业务编码
+
+适用字段：
+
+1. `Product.sku`
+
+推荐方向：
+
+1. trim
+2. 统一大写
+3. 保持派生格式（如 `TYPECODE-01-V1`）不被意外破坏
+
+##### B. 固定数字码
+
+适用字段：
+
+1. `Product.modelCode`
+
+推荐方向：
+
+1. 仅保留数字
+2. 截断到 2 位
+3. 必要时在派生/保存边界补默认值（如 `01`）
+
+##### C. 稳定引用键
+
+适用字段：
+
+1. `Product.templateKey`
+
+推荐方向：
+
+1. trim
+2. 统一大写
+3. 保持为引用键语义，不做 slug 化
+
+#### 1.4 推荐结构分层
+
+##### A. 输入边界层
+
+优先位置：
+
+1. `product-basic-info.tsx`
+2. 若其它 product 编辑组件也能输入这些字段，需要补充盘点
+
+职责：
+
+1. `modelCode` 保持 2 位数字约束。
+2. `sku` 若允许手工录入，需确认是否应统一大写。
+3. `templateKey` 若存在可编辑入口，需要按稳定大写键处理。
+
+##### B. 派生链路层
+
+优先位置：
+
+1. `use-product-form-derive.ts`
+2. `product-form-utils.ts`
+
+职责：
+
+1. `deriveSku` 输出值要与最终保存边界口径一致。
+2. `buildBatchProducts / buildSingleVariantProduct` 中对 `sku` 的生成需要统一规范。
+3. SKU 唯一性校验最好基于统一规范后的值进行比较。
+
+##### C. 协议与保存边界层
+
+优先位置：
+
+1. `product-api-adapter.ts`
+2. 若保存链路中有 `ProductCoreService` 或其它 service 边界，也应继续评估
+
+职责：
+
+1. API -> contract 与 contract -> API DTO 的 `sku / modelCode / templateKey` 保持统一口径。
+2. 即便 UI 或前端派生逻辑变动，也不会把脏值直接送进保存链路。
+
+#### 1.5 与前几批规则的关系
+
+当前已形成的规则类型包括：
+
+1. 大写机器码
+2. 小写 slug 机器值
+3. 稳定大写枚举键
+
+而本轮 `Product` 主数据链路进一步引入：
+
+1. 固定数字码（`modelCode`）
+2. 大写业务编码（`sku`）
+3. 稳定引用键（`templateKey`）
+
+这意味着 normalization 体系已经不应再被理解为“单一 uppercase/lowercase 规则”，而是按字段职责分族治理。
+
+#### 1.6 推荐实施范围
+
+第一批建议只收口：
+
+1. `Product.sku`
+2. `Product.modelCode`
+3. `Product.templateKey`
+
+原因：
+
+1. 都是 `Product` 本体上的明确机器字段。
+2. 已存在局部派生或格式约束。
+3. 与展示字段、属性值字段边界清晰。
+
+#### 1.7 明确不动范围
+
+本轮不扩到：
+
+1. `name`
+2. `description`
+3. `restrictions`
+4. `attributeValues`
+5. 其它自由文本字段
+
+原因：
+
+1. 这些字段不属于明确机器字段。
+2. `attributeValues` 已按上一批“小写 slug 机器值”独立收口，不应混改。
+
+#### 1.8 风险与控制策略
+
+1. **误改 SKU 业务语义风险**
+   - `sku` 不只是一个展示字段，还与唯一性校验、批量派生直接相关。
+   - 控制策略：不改 SKU 的业务拼接规则，只补规范化边界。
+
+2. **数字码与大写码混淆风险**
+   - `modelCode` 是固定数字码，不能误用大写机器码规则。
+   - 控制策略：为 `modelCode` 保持数字专用规则。
+
+3. **templateKey 漂移风险**
+   - 若继续直传，未来不同入口可能写出大小写不一致的引用键。
+   - 控制策略：在 adapter / 保存边界补统一大写键兜底。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 `product-basic-info.tsx` 的输入边界。
+2. 再收口 `use-product-form-derive.ts` 与 `product-form-utils.ts` 的 SKU 派生链路。
+3. 再收口 `product-api-adapter.ts` 的 DTO 出入口。
+4. 如有必要，再补 `ProductCoreService` 或其它保存边界。
+5. 最后执行定向验证并更新 `walkthrough.md`。
+
+#### 1.10 当前阶段结论
+
+`Product` 主数据链路是当前最自然的下一步，但它不是简单地“继续 uppercase”。它同时包含业务编码、数字码、引用键三类不同语义的机器字段。因此，下一步最合理的方式是继续按分型治理推进 `sku / modelCode / templateKey`，先统一输入、派生、adapter 与保存边界，再决定是否继续向更广的 Product 字段扩展。
+
+### 1. architecture：engineering template/type 机器值接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 engineering 的属性值链路（`ProductAttributeCategory.key / ProductAttributeOption.value`）已经收口后，下一批仍留在 engineering 内部、且字段语义较明确的候选点是：
+
+1. `ProductTemplate.code`
+2. `ProductTemplate.componentKey`
+3. `ProductType.code`
+
+这几个字段都属于“机器值 / 程序键 / 内部代码”范畴，但它们的规则并不完全相同，因此仍需要**分型处理**。
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/tabs/template-mgmt.tsx`
+2. `src/features/engineering/services/product-template-service.ts`
+3. `src/features/engineering/adapters/product-template-api-adapter.ts`
+4. `src/features/engineering/hooks/use-product-template-write-actions.ts`
+5. `src/features/engineering/components/product-type-action-dialog.tsx`
+6. `src/features/engineering/services/product-type-service.ts`
+7. `src/features/engineering/adapters/product-type-api-adapter.ts`
+
+已确认的现状包括：
+
+1. `template-mgmt.tsx` 中 `code` 输入直接做了 `toUpperCase()`，说明它目前被当作大写码处理。
+2. `ProductTemplate.componentKey` 目前来自受限选择项（如 `GENERAL` / `RIM` / `FORK`），属于稳定枚举键，不是自由文本。
+3. `product-type-action-dialog.tsx` 中已有基于名称自动拼接大写 token 的逻辑，但没有把 `code` 输入边界与保存边界统一收口。
+4. `product-template` 与 `product-type` 的 adapter / service 层仍基本直传 `code / componentKey`。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应把这批字段拆成两类处理：
+
+##### A. 大写机器码
+
+适用字段：
+
+1. `ProductTemplate.code`
+2. `ProductType.code`
+
+推荐规则：
+
+1. trim
+2. 必要时清理空白
+3. 统一转大写
+
+##### B. 稳定大写枚举键
+
+适用字段：
+
+1. `ProductTemplate.componentKey`
+
+推荐规则：
+
+1. trim
+2. 统一转大写
+3. 保持受限键集合语义，不引入 slug 化
+
+#### 1.4 推荐结构分层
+
+##### A. 输入边界层
+
+优先位置：
+
+1. `template-mgmt.tsx`
+2. `product-type-action-dialog.tsx`
+
+职责：
+
+1. `template.code` 输入时统一按大写机器码规范收口。
+2. `productType.code` 输入与自动生成 token 逻辑保持同一规范口径。
+3. `componentKey` 保持受限选择，但进入状态前仍做统一大写键收口。
+
+##### B. 服务保存边界层
+
+优先位置：
+
+1. `product-template-service.ts`
+2. `product-type-service.ts`
+
+职责：
+
+1. 在保存前对 `code / componentKey` 做最终规范化兜底。
+2. 避免未来更换 UI 入口后重新漏掉。
+
+##### C. 适配层与写动作层
+
+优先位置：
+
+1. `product-template-api-adapter.ts`
+2. `product-type-api-adapter.ts`
+3. `use-product-template-write-actions.ts`
+4. 若存在 `product-type` 的 write actions，也需评估是否一起收口
+
+职责：
+
+1. 保证 contract <-> DTO 的码字段口径一致。
+2. 保证 mutation 入口与 service 保存边界一致。
+
+#### 1.5 与上一批 engineering 属性值链路的区别
+
+上一批 engineering 属性值链路是：
+
+1. `ProductAttributeCategory.key`
+2. `ProductAttributeOption.value`
+
+它们采用的是**小写 slug 风格机器值**。
+
+而本轮的：
+
+1. `ProductTemplate.code`
+2. `ProductType.code`
+3. `ProductTemplate.componentKey`
+
+更接近：
+
+1. 大写机器码
+2. 大写枚举键
+
+因此，本轮不应复用 `product-attribute-machine-value.ts`，而应回到大写码 / 大写键语义。
+
+#### 1.6 推荐实施范围
+
+第一批建议只收口：
+
+1. `ProductTemplate.code`
+2. `ProductTemplate.componentKey`
+3. `ProductType.code`
+
+原因：
+
+1. 语义清晰。
+2. 已存在局部大小写处理，说明团队已默认其为机器字段。
+3. 与 `name / description / label` 等展示字段边界清晰。
+
+#### 1.7 明确不动范围
+
+本轮不扩到：
+
+1. `name`
+2. `description`
+3. `Product.attributeValues`
+4. 其它自由文本字段
+
+原因：
+
+1. 这些字段不是明确的码或程序键。
+2. `Product.attributeValues` 已按上一批“小写 slug 风格机器值”独立收口，不应被混改。
+
+#### 1.8 风险与控制策略
+
+1. **误混规则风险**
+   - 若把 `componentKey` 或 `template/type code` 套进工程属性的小写 slug 规则，会破坏现有大写语义。
+   - 控制策略：显式区分“大写机器码/枚举键”和“小写 slug 机器值”两类规则。
+
+2. **只改页面不改保存边界风险**
+   - 若只改 `template-mgmt` 或 `dialog`，未来其它入口仍可能绕过。
+   - 控制策略：service / adapter / write actions 一并评估。
+
+3. **自动生成 code 与手输 code 漂移风险**
+   - `product-type-action-dialog` 已有自动拼 token 逻辑，若不统一输入与保存边界，手输值可能与自动值规则不一致。
+   - 控制策略：让自动生成与手输都落到同一规范函数上。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 先收口 `template-mgmt.tsx` 与 `product-type-action-dialog.tsx` 的输入边界。
+2. 再收口 `product-template-service.ts` 与 `product-type-service.ts` 的保存边界。
+3. 再收口 `product-template-api-adapter.ts`、`product-type-api-adapter.ts` 与 `use-product-template-write-actions.ts`。
+4. 最后执行定向验证并更新 `walkthrough.md`。
+
+#### 1.10 当前阶段结论
+
+engineering 下一批最合理的目标不是继续横向扩大到所有 schema 字段，而是继续沿着“明确机器字段”推进到 `ProductTemplate.code / ProductTemplate.componentKey / ProductType.code`。这一批与上一轮工程属性值不同，应该按“大写机器码 + 大写枚举键”分型处理，再分别在输入层、保存边界、adapter、write actions 上做统一收口。
+
 ### 1. architecture：工程属性值模块接入全局码规范化
 
 日期：2026-04-12  

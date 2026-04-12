@@ -24,6 +24,7 @@ import { MoldCoreService } from '../services/mold-core-service'
 import { type MoldDrawing, type MoldDrawingLog } from '../data/schema'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { useLanguage } from '@/context/language-provider'
+import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DrawingActionDialog } from '../components/drawing-action-dialog'
@@ -146,9 +147,7 @@ export function DrawingMgmt() {
                 : 'equipmentTooling.drawings.tooltips.activate',
             onAction: async () => {
                 const nextStatus: MoldDrawing['status'] = drawing.status === 'ACTIVE' ? 'OBSOLETE' : 'ACTIVE'
-                const delta: DeltaSet = {
-                    status: { o: drawing.status ?? 'DRAFT', n: nextStatus }
-                }
+                const delta = buildFlattenDelta(drawing.status ?? 'DRAFT', nextStatus, { basePath: 'status' })
                 await DrawingService.patchDrawing(drawing.id, delta, drawing.sysVersion || 1)
                 toast.success(
                     nextStatus === 'ACTIVE'

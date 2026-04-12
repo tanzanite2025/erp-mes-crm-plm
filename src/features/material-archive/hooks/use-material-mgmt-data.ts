@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
 import { type Material, type MaterialCategory } from '../data/schema'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../query-keys'
 import { MaterialCoreService } from '../services/material-core-service'
@@ -44,8 +45,25 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       ),
   })
 
-  const materials = qData?.data || []
-  const totalCount = qData?.total || 0
+  const materials = useMemo(() => {
+    if (isLoading) return []
+    if (!qData?.data) {
+      const error = new Error('[CRITICAL] Material list is missing after load')
+      failLoudly(error, 'useMaterialMgmtData.materials')
+      throw error
+    }
+    return qData.data
+  }, [isLoading, qData?.data])
+
+  const totalCount = useMemo(() => {
+    if (isLoading) return 0
+    if (typeof qData?.total !== 'number' || Number.isNaN(qData.total)) {
+      const error = new Error('[CRITICAL] Material total count is missing after load')
+      failLoudly(error, 'useMaterialMgmtData.totalCount')
+      throw error
+    }
+    return qData.total
+  }, [isLoading, qData?.total])
 
   const invalidateMaterialQueries = () =>
     Promise.all([

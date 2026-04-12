@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
 import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
@@ -14,6 +15,13 @@ export type { SaveProductTypeInput } from '../mutation-types'
  * ProductTypeService - unified full-save service for product types.
  */
 const PRODUCT_TYPE_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_TYPE_UPDATE'
+
+function normalizeProductTypeInput(type: SaveProductTypeInput): SaveProductTypeInput {
+  return {
+    ...type,
+    code: normalizeMachineCode(type.code),
+  }
+}
 
 export const ProductTypeService = {
   async getProductTypes(params?: {
@@ -45,9 +53,10 @@ export const ProductTypeService = {
   },
 
   async createProductType(type: SaveProductTypeInput): Promise<ProductType> {
+    const normalizedType = normalizeProductTypeInput(type)
     const res = await apiFetch<ProductTypeApiDTO>('/engineering/product-types', {
       method: 'POST',
-      body: JSON.stringify(toProductTypeApiDTO({ ...type, id: '', version: 1 })),
+      body: JSON.stringify(toProductTypeApiDTO({ ...normalizedType, id: '', version: 1 })),
     })
     return toProductTypeContract(
       ensureObjectResponse<ProductTypeApiDTO & Record<string, unknown>>(res, 'ProductTypeService.createProductType') as ProductTypeApiDTO
@@ -70,14 +79,15 @@ export const ProductTypeService = {
   },
 
   async saveProductType(type: SaveProductTypeInput, current?: ProductType): Promise<ProductType> {
+    const normalizedType = normalizeProductTypeInput(type)
     if (current?.id) {
-      const delta = buildProductTypeDelta(current, type)
+      const delta = buildProductTypeDelta(current, normalizedType)
       if (Object.keys(delta).length === 0) {
-        return { ...current, ...type }
+        return { ...current, ...normalizedType }
       }
       return this.patchProductType(current.id, delta, current.version)
     }
-    return this.createProductType(type)
+    return this.createProductType(normalizedType)
   },
 
   async deleteProductType(id: string): Promise<void> {

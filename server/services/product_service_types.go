@@ -55,6 +55,46 @@ type SaveProductAPIRequest struct {
 	Version           int                               `json:"version"`
 }
 
+type ProductWriteInput struct {
+	ID                string
+	SKU               string
+	Name              string
+	ModelCode         string
+	TypeID            string
+	Depth             float64
+	WidthInternal     float64
+	WidthExternal     float64
+	TireType          string
+	BrakeType         string
+	TechSeries        string
+	VersionLevel      string
+	Weight            float64
+	Length            float64
+	Angle             float64
+	Clamp             string
+	Offset            float64
+	AxleCrown         float64
+	Steerer           string
+	Image             string
+	Restrictions      []string
+	MoldGroup         string
+	Description       string
+	EngineeringSpecID string
+	AttributeValues   []ProductAttributeValueAPIRequest
+	TechSpecs         json.RawMessage
+	BarcodeConfig     json.RawMessage
+	Attachments       json.RawMessage
+	Status            string
+	RevisionNo        string
+	EffectiveFrom     *time.Time
+	EffectiveTo       *time.Time
+	ChangeType        string
+	ChangeOrderNo     string
+	SiteCode          string
+	IsDefaultSite     bool
+	Version           int
+}
+
 type BulkSyncProductsAPIPayload struct {
 	Products      []SaveProductAPIRequest `json:"products"`
 	GlobalVersion int                     `json:"globalVersion,omitempty"`
@@ -110,7 +150,49 @@ func toProductAttributeValueAPIRequests(items []models.ProductAttributeValue) []
 	return result
 }
 
-func toProductModel(input SaveProductAPIRequest) models.Product {
+func toProductWriteInput(input SaveProductAPIRequest) ProductWriteInput {
+	return ProductWriteInput{
+		ID:                input.ID,
+		SKU:               input.SKU,
+		Name:              input.Name,
+		ModelCode:         input.ModelCode,
+		TypeID:            input.TypeID,
+		Depth:             input.Depth,
+		WidthInternal:     input.WidthInternal,
+		WidthExternal:     input.WidthExternal,
+		TireType:          input.TireType,
+		BrakeType:         input.BrakeType,
+		TechSeries:        input.TechSeries,
+		VersionLevel:      input.VersionLevel,
+		Weight:            input.Weight,
+		Length:            input.Length,
+		Angle:             input.Angle,
+		Clamp:             input.Clamp,
+		Offset:            input.Offset,
+		AxleCrown:         input.AxleCrown,
+		Steerer:           input.Steerer,
+		Image:             input.Image,
+		Restrictions:      append([]string(nil), input.Restrictions...),
+		MoldGroup:         input.MoldGroup,
+		Description:       input.Description,
+		EngineeringSpecID: input.EngineeringSpecID,
+		AttributeValues:   append([]ProductAttributeValueAPIRequest(nil), input.AttributeValues...),
+		TechSpecs:         cloneProductRawMessage(input.TechSpecs),
+		BarcodeConfig:     cloneProductRawMessage(input.BarcodeConfig),
+		Attachments:       cloneProductRawMessage(input.Attachments),
+		Status:            input.Status,
+		RevisionNo:        input.RevisionNo,
+		EffectiveFrom:     input.EffectiveFrom,
+		EffectiveTo:       input.EffectiveTo,
+		ChangeType:        input.ChangeType,
+		ChangeOrderNo:     input.ChangeOrderNo,
+		SiteCode:          input.SiteCode,
+		IsDefaultSite:     input.IsDefaultSite,
+		Version:           input.Version,
+	}
+}
+
+func toProductModel(input ProductWriteInput) models.Product {
 	return models.Product{
 		BaseModel: models.BaseModel{
 			ID: input.ID,

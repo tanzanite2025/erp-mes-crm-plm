@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { useLanguage } from '@/context/language-provider'
+import { failLoudly } from '@/lib/safe-catch'
 import { type BOM } from '../../data/schema'
 
 interface SummaryPanelProps {
@@ -13,12 +14,32 @@ interface SummaryPanelProps {
 export function SummaryPanel({ fields, form, sections, onSectionClick }: SummaryPanelProps) {
   const { t } = useLanguage()
 
+  const resolveItemValue = (index: number) => {
+    const item = form.getValues(`items.${index}`)
+    if (!item) {
+      const error = new Error(`[CRITICAL] Missing BOM item at index ${index}`)
+      failLoudly(error, 'SummaryPanel.item')
+      throw error
+    }
+    if (typeof item.standardUsage !== 'number' || Number.isNaN(item.standardUsage)) {
+      const error = new Error(`[CRITICAL] Missing standardUsage at index ${index}`)
+      failLoudly(error, 'SummaryPanel.standardUsage')
+      throw error
+    }
+    if (typeof item.unitPrice !== 'number' || Number.isNaN(item.unitPrice)) {
+      const error = new Error(`[CRITICAL] Missing unitPrice at index ${index}`)
+      failLoudly(error, 'SummaryPanel.unitPrice')
+      throw error
+    }
+    return item
+  }
+
   // [PREVIEW-ONLY-VALUATION]: BOM 成本预览 (仅供参考)
-  // [BACKEND-AUTHORITY]: 权威财务价值(成本、毛利)应由后端 BRP/MRP 核心试算接口返回
+  // [BACKEND-AUTHORITY]: 权威财务价值/成本/毛利应由后端 BRP/MRP 核心计算接口返回
   const totalCost = useMemo(() => {
     return fields.reduce((acc, _, i) => {
-        const item = form.getValues(`items.${i}`)
-        return acc + (item.standardUsage || 0) * (item.unitPrice || 0)
+      const item = resolveItemValue(i)
+      return acc + item.standardUsage * item.unitPrice
     }, 0)
   }, [fields, form])
 
@@ -45,7 +66,7 @@ export function SummaryPanel({ fields, form, sections, onSectionClick }: Summary
             {t('engineering.bomArchive.summary.totalCost')}
           </div>
           <div className='mt-2 break-all text-2xl font-black uppercase italic tracking-tighter text-emerald-600 sm:text-3xl'>
-            ¥{totalCost.toFixed(2)}
+            楼{totalCost.toFixed(2)}
           </div>
         </div>
         <div className='group rounded-[24px] border border-dashed border-orange-200 bg-orange-50 p-4 shadow-inner transition-all hover:bg-white sm:p-5'>
@@ -71,8 +92,8 @@ export function SummaryPanel({ fields, form, sections, onSectionClick }: Summary
               if (!item) return acc
 
               const actualIndex = fields.indexOf(item)
-              const value = form.getValues(`items.${actualIndex}`)
-              return acc + (value.standardUsage || 0) * (value.unitPrice || 0)
+              const value = resolveItemValue(actualIndex)
+              return acc + value.standardUsage * value.unitPrice
             }, 0)
 
             return (
@@ -90,7 +111,7 @@ export function SummaryPanel({ fields, form, sections, onSectionClick }: Summary
                     {sectionItems.length} {t('engineering.bomArchive.summary.itemsUnit')}
                   </span>
                   <span className='w-[70px] text-right font-mono font-black text-emerald-600 group-hover/row:text-white'>
-                    ¥{sectionCost.toFixed(1)}
+                    楼{sectionCost.toFixed(1)}
                   </span>
                 </div>
               </div>

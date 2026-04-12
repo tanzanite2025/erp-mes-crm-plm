@@ -50,7 +50,7 @@ export function SalesOrderDetail({
     claimMutation,
     statusTransitionMutation,
     cancelMutation,
-    operator: user?.accountNo || 'Unknown',
+    operator: user?.accountNo ?? '',
     actorId: user?.id,
   })
 
@@ -93,7 +93,7 @@ export function SalesOrderDetail({
       <SalesOrderDetailItemsCard
         order={order}
         isClaimAction={isClaimAction}
-        claimOperator={user?.accountNo || 'Unknown'}
+        claimOperator={user?.accountNo ?? ''}
         onClaimModel={handleClaimModel}
         onClaimLine={handleClaimLine}
         onPreview={handlePreview}

@@ -6,6 +6,7 @@ import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
+import { deriveBomDisplayVersion, normalizeBomChangeType, normalizeBomEffectiveDate } from '@/lib/codecs/code-normalization'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BOMDetailTable } from '../bom-detail-table'
@@ -37,6 +38,9 @@ export function BOMPreview({
   const product = bom.product || productMap.get(bom.productId)
   const productView = product ? getProductAttributes(product) : null
   const productName = productView?.displayName || t('printMgmt.bomPreview.unknownProduct')
+  const bomDisplayVersion = deriveBomDisplayVersion(bom.bomVersion || bom.bomDisplayVersion)
+  const bomChangeType = normalizeBomChangeType(bom.changeType)
+  const effectiveFrom = normalizeBomEffectiveDate(bom.effectiveFrom)
 
   const printItems = bom.items.map((item) => ({
     section: item.section || t('printMgmt.bomPreview.defaultSection'),
@@ -79,7 +83,7 @@ export function BOMPreview({
           ref={printRef}
           productName={productName}
           bomNo={bom.bomNo}
-          bomDisplayVersion={bom.bomDisplayVersion}
+          bomDisplayVersion={bomDisplayVersion}
           revisionNo={bom.revisionNo}
           changeOrderNo={bom.changeOrderNo}
           items={printItems}
@@ -94,11 +98,11 @@ export function BOMPreview({
           <div>
             <div className='flex flex-wrap items-center gap-2'>
               <h3 className='text-xl font-bold'>{bom.bomNo}</h3>
-              <Badge className='bg-blue-600'>{bom.bomDisplayVersion}</Badge>
+              <Badge className='bg-blue-600'>{bomDisplayVersion}</Badge>
               {bom.revisionNo && <Badge variant='outline'>{bom.revisionNo}</Badge>}
               {bom.siteCode && <Badge variant='outline'>{bom.siteCode}</Badge>}
               <Badge variant='outline'>
-                {bom.changeType || t('printMgmt.bomPreview.defaultChangeType')}
+                {bomChangeType || t('printMgmt.bomPreview.defaultChangeType')}
               </Badge>
             </div>
             <div className='mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground'>
@@ -108,8 +112,8 @@ export function BOMPreview({
                 {bom.changeOrderNo || t('printMgmt.bomPreview.noEcoEcn')}
               </span>
               <span className='text-xs text-slate-500'>
-                {bom.effectiveFrom
-                  ? t('printMgmt.bomPreview.effectivePrefix', { date: bom.effectiveFrom })
+                {effectiveFrom
+                  ? t('printMgmt.bomPreview.effectivePrefix', { date: effectiveFrom })
                   : t('printMgmt.bomPreview.noEffectiveDate')}
               </span>
               <div className='flex items-center gap-1.5'>

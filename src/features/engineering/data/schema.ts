@@ -1,9 +1,16 @@
 import { z } from 'zod'
 
+const optionalControlDateSchema = z
+  .string()
+  .trim()
+  .regex(/^$|^\d{4}-\d{2}-\d{2}$/, 'Date must follow YYYY-MM-DD format')
+  .nullable()
+  .optional()
+
 export const masterDataControlSchema = z.object({
   revisionNo: z.string().optional(),
-  effectiveFrom: z.string().nullable().optional(),
-  effectiveTo: z.string().nullable().optional(),
+  effectiveFrom: optionalControlDateSchema,
+  effectiveTo: optionalControlDateSchema,
   changeType: z.enum(['MANUAL', 'ECO', 'ECN']).optional(),
   changeOrderNo: z.string().optional(),
   siteCode: z.string().optional(),
@@ -209,12 +216,12 @@ export const bomItemSchema = z.object({
 
 export const bomSchema = z.object({
   id: z.string(),
-  bomNo: z.string().default(''),
+  bomNo: z.string().trim().default(''),
   productId: z.string().min(1, 'Product is required'),
   product: productSchema.optional(),
   changeOrderId: z.string().optional(),
   changeOrder: changeOrderSchema.optional(),
-  bomVersion: z.string().min(1, 'Version is required').default('V1.0'),
+  bomVersion: z.string().trim().regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format').default('V1.0'),
   bomDisplayVersion: z.string().optional(),
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
   items: z.array(bomItemSchema).default([]),

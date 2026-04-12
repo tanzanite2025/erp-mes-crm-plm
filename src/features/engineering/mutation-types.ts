@@ -14,7 +14,11 @@ import {
 } from './data/schema'
 import { type MaterialOption } from '../material-archive/data/schema'
 
-export type SaveProductInput = Product
+export type SaveProductInput = Omit<Product, 'id' | 'version' | 'createdAt'> & {
+  id?: string
+  version?: number
+  createdAt?: string
+}
 
 export type SaveProductTypeInput = Omit<ProductType, 'id' | 'version'> & {
   id?: string
@@ -46,7 +50,7 @@ export type SaveProductTypeAttributeBindingInput = Omit<ProductTypeAttributeBind
   version?: number
 }
 
-export type SaveBOMInput = BOM
+export type SaveBOMInput = Omit<BOM, 'bomDisplayVersion'>
 
 export type ProductDraftOverrides = { [K in keyof Product]?: Product[K] }
 export type ChangeOrderDraftOverrides = { [K in keyof ChangeOrder]?: ChangeOrder[K] }

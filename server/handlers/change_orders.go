@@ -35,15 +35,15 @@ func GetChangeOrdersHandler(c *gin.Context) {
 	}
 
 	if isOptions {
-		c.JSON(http.StatusOK, items)
+		c.JSON(http.StatusOK, toChangeOrderOptionsApiDTOs(items))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items":    items,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
+	c.JSON(http.StatusOK, ChangeOrderListPageApiDTO{
+		Items:    toChangeOrderApiDTOs(items),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -69,7 +69,7 @@ func SaveChangeOrderHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, saved)
+	c.JSON(http.StatusOK, toChangeOrderApiDTO(saved))
 }
 
 func DeleteChangeOrderHandler(c *gin.Context) {

@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
+import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { createLogger } from '@/lib/logger'
 import { type ChangeOrder } from '../data/schema'
 import { useChangeOrderWriteActions } from '../hooks/use-change-order-write-actions'
@@ -42,20 +43,22 @@ import { createChangeOrderDraft } from '../utils/default-builders'
 const logger = createLogger('ChangeOrdersTab')
 
 const EMPTY_ORDER: ChangeOrder = createChangeOrderDraft()
+const EMPTY_CHANGE_ORDERS: ChangeOrder[] = []
+const EMPTY_PRODUCTS: Awaited<ReturnType<typeof ProductCoreService.getProducts>> = []
 
 const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
 
 const normalizeOrder = (order?: ChangeOrderDraftOverrides | null): ChangeOrder => ({
   ...EMPTY_ORDER,
   ...order,
-  changeOrderNo: order?.changeOrderNo || '',
+  changeOrderNo: normalizeChangeOrderNo(order?.changeOrderNo),
   title: order?.title || '',
   productId: order?.productId || '',
   status: order?.status || 'draft',
   description: order?.description || '',
-  siteCode: order?.siteCode || '',
-  revisionNo: order?.revisionNo || 'R1',
-  isDefaultSite: order?.isDefaultSite ?? !(order?.siteCode || '').trim(),
+  siteCode: normalizeSiteCode(order?.siteCode),
+  revisionNo: normalizeRevisionNo(order?.revisionNo),
+  isDefaultSite: order?.isDefaultSite ?? !normalizeSiteCode(order?.siteCode),
   effectiveFrom: formatDateInput(order?.effectiveFrom),
   effectiveTo: formatDateInput(order?.effectiveTo),
   createdAt: order?.createdAt || new Date().toISOString(),
@@ -78,8 +81,8 @@ export function ChangeOrdersTab() {
     queryFn: () => ProductCoreService.getProducts(),
   })
 
-  const changeOrders = changeOrdersQuery.data ?? []
-  const products = productsQuery.data ?? []
+  const changeOrders = changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS
+  const products = productsQuery.data ?? EMPTY_PRODUCTS
   const isLoading = changeOrdersQuery.isLoading || productsQuery.isLoading
   const error = changeOrdersQuery.error ?? productsQuery.error
 
@@ -129,9 +132,10 @@ export function ChangeOrdersTab() {
       await saveChangeOrder({
         ...editingOrder,
         productId: editingOrder.productId?.trim() || undefined,
-        siteCode: editingOrder.siteCode?.trim().toUpperCase() || '',
-        revisionNo: editingOrder.revisionNo?.trim() || 'R1',
-        isDefaultSite: !(editingOrder.siteCode || '').trim() || editingOrder.isDefaultSite,
+        changeOrderNo: normalizeChangeOrderNo(editingOrder.changeOrderNo),
+        siteCode: normalizeSiteCode(editingOrder.siteCode),
+        revisionNo: normalizeRevisionNo(editingOrder.revisionNo),
+        isDefaultSite: !normalizeSiteCode(editingOrder.siteCode) || editingOrder.isDefaultSite,
         effectiveFrom: editingOrder.effectiveFrom || undefined,
         effectiveTo: editingOrder.effectiveTo || undefined,
       })
@@ -278,7 +282,12 @@ export function ChangeOrdersTab() {
               <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('engineering.changeOrders.fields.orderNo')}</Label>
               <Input
                 value={editingOrder.changeOrderNo || ''}
-                onChange={(event) => setEditingOrder((prev) => ({ ...prev, changeOrderNo: event.target.value.toUpperCase() }))}
+                onChange={(event) =>
+                  setEditingOrder((prev) => ({
+                    ...prev,
+                    changeOrderNo: normalizeChangeOrderNo(event.target.value),
+                  }))
+                }
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner'
                 placeholder={t('engineering.changeOrders.placeholders.orderNo')}
               />
@@ -350,7 +359,14 @@ export function ChangeOrdersTab() {
               <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('engineering.changeOrders.fields.siteCode')}</Label>
               <Input
                 value={editingOrder.siteCode || ''}
-                onChange={(event) => setEditingOrder((prev) => ({ ...prev, siteCode: event.target.value.toUpperCase(), isDefaultSite: event.target.value.trim() === '' }))}
+                onChange={(event) => {
+                  const normalizedSiteCode = normalizeSiteCode(event.target.value)
+                  setEditingOrder((prev) => ({
+                    ...prev,
+                    siteCode: normalizedSiteCode,
+                    isDefaultSite: normalizedSiteCode === '',
+                  }))
+                }}
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner'
                 placeholder={t('engineering.changeOrders.placeholders.siteCode')}
               />
@@ -359,7 +375,12 @@ export function ChangeOrdersTab() {
               <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{t('engineering.changeOrders.fields.revision')}</Label>
               <Input
                 value={editingOrder.revisionNo || ''}
-                onChange={(event) => setEditingOrder((prev) => ({ ...prev, revisionNo: event.target.value }))}
+                onChange={(event) =>
+                  setEditingOrder((prev) => ({
+                    ...prev,
+                    revisionNo: normalizeRevisionNo(event.target.value),
+                  }))
+                }
                 className='h-11 rounded-2xl border-none bg-muted/50 font-mono font-bold shadow-inner'
                 placeholder={t('engineering.changeOrders.placeholders.revision')}
               />

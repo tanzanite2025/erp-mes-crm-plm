@@ -1,8 +1,12 @@
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn, useWatch } from 'react-hook-form'
+import { normalizeModelCode, normalizeSku } from '@/lib/codecs/code-normalization'
+import { createLogger } from '@/lib/logger'
 import { type Product, type ProductType } from '../data/schema'
 import { ProductCoreService } from '../services/product-core-service'
 import { deriveSku } from '../utils/product-form-utils'
+
+const logger = createLogger('useProductFormDerive')
 
 interface UseProductFormDeriveParams {
     isEdit: boolean
@@ -32,10 +36,10 @@ export function useProductFormDerive({
                 const nextCode = await ProductCoreService.getNextCode(watchedTypeId)
                 const currentVal = form.getValues('modelCode')
                 if (!currentVal || currentVal === '01' || currentVal === '') {
-                    form.setValue('modelCode', nextCode)
+                    form.setValue('modelCode', normalizeModelCode(nextCode))
                 }
             } catch (error) {
-                console.error('[CRITICAL] Failed to derive next product code from authority engine', error)
+                logger.error('Failed to derive next product code from authority engine', error)
             }
         }
         deriveNextCode()
@@ -47,9 +51,9 @@ export function useProductFormDerive({
         const typeCode = selectedType?.code || ''
         // [UI-PREVIEW]: SKU 前端自动派生仅供交互参考
         // [BACKEND-AUTHORITY]: 物理 SKU 的最终合法性必须由后端在保存阶段进行冲突检查与确认。
-        const generatedSku = deriveSku(typeCode, watchedModelCode || '01')
+        const generatedSku = deriveSku(typeCode, normalizeModelCode(watchedModelCode || '01'))
         if (generatedSku && !isEdit && generatedSku !== form.getValues('sku')) {
-            form.setValue('sku', generatedSku, { shouldDirty: true })
+            form.setValue('sku', normalizeSku(generatedSku), { shouldDirty: true })
         }
     }, [watchedTypeId, watchedModelCode, isEdit, open, productTypes, form])
 

@@ -1,13 +1,13 @@
 'use client'
 
 import { useMemo } from 'react'
-import { CircleDot, Hash, Tag, Info, Save, Grid3X3, FileType } from 'lucide-react'
+import { CircleDot, Tag, Info, Save, Grid3X3, FileType } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { FileUploader } from '@/components/file-uploader'
-import { type DrillingPlan } from '../data/schema'
+import { drillingPlanInputSchema, type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { LACING_PATTERN_OPTIONS, STANDARD_HOLE_COUNT_OPTIONS } from '../data/drilling-options'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
@@ -15,12 +15,14 @@ import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
 
+type DrillingFormState = DrillingPlanInput & { id?: string; createdAt?: string }
+
 interface DrillingActionDialogProps {
   currentRow?: DrillingPlan | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave: (params: { 
-    data: DrillingPlan; 
+    data: DrillingPlanInput; 
     isPatch: boolean; 
     delta?: any; 
     version?: number 
@@ -28,14 +30,13 @@ interface DrillingActionDialogProps {
   isLoading?: boolean
 }
 
-const DEFAULT_DRILLING: Partial<DrillingPlan> = {
+const DEFAULT_DRILLING: DrillingPlanInput = {
   name: '',
   productId: '',
   lacingPattern: '',
   standardHoles: '',
   fileUrl: '',
   fileExtension: 'pdf',
-  version: 1,
 }
 
 export function DrillingActionDialog({
@@ -57,22 +58,22 @@ export function DrillingActionDialog({
   })
 
   const isEdit = !!currentRow
-  const initialFormData = useMemo(() => {
+  const initialFormData = useMemo<DrillingFormState>(() => {
     if (currentRow) return currentRow
     return { 
-      ...DEFAULT_DRILLING, 
-      id: `DRL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      createdAt: new Date().toISOString() 
-    } as DrillingPlan
+      ...DEFAULT_DRILLING
+    }
   }, [currentRow, open])
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
   const handleSave = () => {
-    if (!formData.name || !formData.productId) {
-      toast.error('请填写规范名称与关联产品')
+    const parsed = drillingPlanInputSchema.safeParse(formData)
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? '请填写钻孔方案必填项')
       return
     }
+    const payload = parsed.data
 
     if (isEdit && currentRow) {
       const delta = tracker.commit()
@@ -81,13 +82,13 @@ export function DrillingActionDialog({
         return
       }
       onSave({ 
-        data: formData, 
+        data: payload, 
         isPatch: true, 
         delta, 
         version: currentRow.version 
       })
     } else {
-      onSave({ data: formData, isPatch: false })
+      onSave({ data: payload, isPatch: false })
     }
   }
 
@@ -100,10 +101,10 @@ export function DrillingActionDialog({
           <div className='p-2 bg-indigo-500/10 rounded-xl'>
             <CircleDot className='size-5 text-indigo-500' />
           </div>
-          {isEdit ? '编辑钻孔方案' : '建立编织准则'}
+          {isEdit ? '缂栬緫閽诲瓟鏂规' : '寤虹珛缂栫粐鍑嗗垯'}
         </>
       )}
-      description="COMPONENT_MASTER_DRILLING / 定义轮圈钻孔偏位、编织交叉模式及孔数标准。"
+      description="COMPONENT_MASTER_DRILLING / 瀹氫箟杞湀閽诲瓟鍋忎綅銆佺紪缁囦氦鍙夋ā寮忓強瀛旀暟鏍囧噯銆?"
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
       bodyClassName={shellClasses.body}
@@ -122,7 +123,7 @@ export function DrillingActionDialog({
               onClick={() => onOpenChange(false)} 
               className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
             >
-              取消 / CANCEL
+              鍙栨秷 / CANCEL
             </Button>
             <Button 
               disabled={isLoading || (isEdit && !isDirty())}
@@ -130,7 +131,7 @@ export function DrillingActionDialog({
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-indigo-600/20 active:scale-95 transition-all gap-2"
             >
               {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
-              同步存档 / SYNC_ARCHIVE
+              鍚屾瀛樻。 / SYNC_ARCHIVE
             </Button>
           </div>
         </>
@@ -139,14 +140,14 @@ export function DrillingActionDialog({
       <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
 
       <div className='grid gap-8 relative'>
-        {/* 核心标识组 */}
+        {/* 鏍稿績鏍囪瘑缁?*/}
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <Tag className='size-3' /> 方案名称 / PLAN_NAME
+              <Tag className='size-3' /> 鏂规鍚嶇О / PLAN_NAME
             </Label>
             <Input
-              placeholder='例如: 2X-Cross-Standard-32H'
+              placeholder='渚嬪: 2X-Cross-Standard-32H'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
               value={formData.name}
               onChange={(e) => { formData.name = e.target.value }}
@@ -154,55 +155,55 @@ export function DrillingActionDialog({
           </div>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <FileType className='size-3' /> 关联成品 SKU / PRODUCT_REF
+              <FileType className='size-3' /> 鍏宠仈鎴愬搧 SKU / PRODUCT_REF
             </Label>
             <SelectDropdown
               defaultValue={formData.productId}
               onValueChange={(val) => { formData.productId = val }}
               items={products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
-              placeholder='选择适配的产品'
+              placeholder='閫夋嫨閫傞厤鐨勪骇鍝?'
               className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
             />
           </div>
         </div>
 
-        {/* 技术规格组 */}
+        {/* 鎶€鏈鏍肩粍 */}
         <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
           <div className='flex items-center justify-between'>
             <p className='text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600/70 flex items-center gap-2'>
-              <Grid3X3 className='size-3' /> 钻孔技术参数 / DRILLING_SPECS
+              <Grid3X3 className='size-3' /> 閽诲瓟鎶€鏈弬鏁?/ DRILLING_SPECS
             </p>
             <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
           </div>
 
           <div className='grid grid-cols-2 gap-6'>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>编织模式 / LACING_PATTERN</Label>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>缂栫粐妯″紡 / LACING_PATTERN</Label>
               <SelectDropdown
                 defaultValue={formData.lacingPattern}
                 onValueChange={(val) => { formData.lacingPattern = val }}
                 items={LACING_PATTERN_OPTIONS}
-                placeholder='选择编织模式'
+                placeholder='閫夋嫨缂栫粐妯″紡'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />
             </div>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>标准孔数 / HOLE_COUNT</Label>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>鏍囧噯瀛旀暟 / HOLE_COUNT</Label>
               <SelectDropdown
                 defaultValue={formData.standardHoles}
                 onValueChange={(val) => { formData.standardHoles = val }}
                 items={STANDARD_HOLE_COUNT_OPTIONS}
-                placeholder='选择孔数'
+                placeholder='閫夋嫨瀛旀暟'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />
             </div>
           </div>
         </div>
 
-        {/* 附件上传 */}
+        {/* 闄勪欢涓婁紶 */}
         <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
           <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
-            <Info className='size-3' /> 钻孔工程图纸 / ENGINEERING_DWG
+            <Info className='size-3' /> 閽诲瓟宸ョ▼鍥剧焊 / ENGINEERING_DWG
           </Label>
           <FileUploader 
             value={formData.fileUrl} 
@@ -216,14 +217,12 @@ export function DrillingActionDialog({
 
         <div className='grid grid-cols-2 gap-6 opacity-40 grayscale pointer-events-none'>
            <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>系统编码 / INTERNAL_ID</Label>
-            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id} />
+            <Label className='text-[10px] font-black uppercase tracking-widest'>绯荤粺缂栫爜 / INTERNAL_ID</Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id ?? '--'} />
           </div>
           <div className='space-y-2'>
-             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <Hash className='size-3' /> 数据版本 / DATA_VERSION
-            </Label>
-            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={`REV.${formData.version ?? 1}`} />
+            <Label className='text-[10px] font-black uppercase tracking-widest'>鏍囧噯鑾峰彇鏃堕棿 / CREATED_AT</Label>
+            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.createdAt ?? '--'} />
           </div>
         </div>
       </div>

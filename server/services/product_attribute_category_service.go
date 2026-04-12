@@ -15,6 +15,44 @@ type ProductAttributeCategoryListQuery struct {
 	ActiveOnly bool
 }
 
+type SaveProductAttributeCategoryInput struct {
+	ID            string `json:"id"`
+	Key           string `json:"key"`
+	NameZh        string `json:"nameZh"`
+	NameEn        string `json:"nameEn"`
+	Description   string `json:"description"`
+	SortOrder     int    `json:"sortOrder"`
+	Active        bool   `json:"active"`
+	RevisionNo    string `json:"revisionNo"`
+	ChangeType    string `json:"changeType"`
+	ChangeOrderNo string `json:"changeOrderNo"`
+	SiteCode      string `json:"siteCode"`
+	IsDefaultSite bool   `json:"isDefaultSite"`
+	Version       int    `json:"version"`
+}
+
+func toProductAttributeCategoryModel(input SaveProductAttributeCategoryInput) models.ProductAttributeCategory {
+	return models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{
+			ID: input.ID,
+		},
+		MasterDataControl: models.MasterDataControl{
+			RevisionNo:    input.RevisionNo,
+			ChangeType:    input.ChangeType,
+			ChangeOrderNo: input.ChangeOrderNo,
+			SiteCode:      input.SiteCode,
+			IsDefaultSite: input.IsDefaultSite,
+		},
+		Key:         input.Key,
+		NameZh:      input.NameZh,
+		NameEn:      input.NameEn,
+		Description: input.Description,
+		SortOrder:   input.SortOrder,
+		Active:      input.Active,
+		Version:     input.Version,
+	}
+}
+
 func normalizeProductAttributeCategory(input *models.ProductAttributeCategory) {
 	input.Key = normalizeProductAttributeMachineValue(input.Key)
 	input.NameZh = strings.TrimSpace(input.NameZh)
@@ -61,19 +99,20 @@ func ListProductAttributeCategories(query ProductAttributeCategoryListQuery) ([]
 	return items, nil
 }
 
-func CreateProductAttributeCategory(input models.ProductAttributeCategory) (models.ProductAttributeCategory, error) {
-	normalizeProductAttributeCategory(&input)
-	if input.Key == "" || !isValidProductAttributeMachineValue(input.Key) {
+func CreateProductAttributeCategory(input SaveProductAttributeCategoryInput) (models.ProductAttributeCategory, error) {
+	modelInput := toProductAttributeCategoryModel(input)
+	normalizeProductAttributeCategory(&modelInput)
+	if modelInput.Key == "" || !isValidProductAttributeMachineValue(modelInput.Key) {
 		return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 产品属性分类编码格式无效")
 	}
-	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, input.Key, ""); err != nil {
+	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, modelInput.Key, ""); err != nil {
 		return models.ProductAttributeCategory{}, err
 	}
-	input.Version = 1
-	if err := db.DB.Create(&input).Error; err != nil {
+	modelInput.Version = 1
+	if err := db.DB.Create(&modelInput).Error; err != nil {
 		return models.ProductAttributeCategory{}, err
 	}
-	return input, nil
+	return modelInput, nil
 }
 
 func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {

@@ -34,6 +34,8 @@ export const drillingPlanSchema = z.object({
 })
 
 export type DrillingPlan = z.infer<typeof drillingPlanSchema>
+export const drillingPlanInputSchema = drillingPlanSchema.omit({ id: true, createdAt: true })
+export type DrillingPlanInput = z.input<typeof drillingPlanInputSchema>
 
 export const labelingDraftSchema = z.object({
   id: z.string(),
