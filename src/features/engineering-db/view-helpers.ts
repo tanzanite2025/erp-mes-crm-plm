@@ -9,10 +9,11 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
+import type { TranslationKey } from '@/locales'
 
 type EngineeringDbCategory = 'SPEC' | 'DRILLING' | 'LABELING'
 type LabelingType = 'Water' | 'Paint' | 'Laser' | 'Other'
-type TranslationFn = (key: string) => string
+type TranslationFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 export type EngineeringDbPreviewKind = 'excel' | 'cad' | 'pdf'
 
