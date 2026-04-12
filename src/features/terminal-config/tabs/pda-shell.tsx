@@ -159,9 +159,13 @@ export function PDAShellTab() {
 
   const currentSceneLabel = getSceneLabel(currentScene)
 
-  const refreshQueue = useCallback(() => {
-    setQueue(listPDAShellRetryQueue())
-    setSceneGroups(listPDAShellRetryQueueByScene())
+  const refreshQueue = useCallback(async () => {
+    const [nextQueue, nextSceneGroups] = await Promise.all([
+      listPDAShellRetryQueue(),
+      listPDAShellRetryQueueByScene(),
+    ])
+    setQueue(nextQueue)
+    setSceneGroups(nextSceneGroups)
   }, [])
 
   useEffect(() => {
@@ -197,7 +201,12 @@ export function PDAShellTab() {
     }
 
     void loadConfig()
-    refreshQueue()
+    void refreshQueue().catch((error) => {
+      if (active) {
+        setPageError(error)
+      }
+      logger.error('Failed to load PDA retry queue', error)
+    })
 
     return () => {
       active = false
@@ -260,7 +269,7 @@ export function PDAShellTab() {
     async (targetScene?: string) => {
       if (retryLockRef.current || !getOnlineState()) return
 
-      const queuedItems = listPDAShellRetryQueue()
+      const queuedItems = await listPDAShellRetryQueue()
       if (!queuedItems.length) return
 
       const normalizedScene = normalizeSceneKey(targetScene, '')
@@ -282,7 +291,7 @@ export function PDAShellTab() {
 
           try {
             await pdaIngestService.ingest(item.payload)
-            removePDAShellRetry(item.id)
+            await removePDAShellRetry(item.id)
             setLastMessage(
               t('terminalConfig.pdaShell.status.retrySuccess', {
                 code: item.payload.rawCode,
@@ -291,7 +300,7 @@ export function PDAShellTab() {
             setStatusTone('success')
             vibrate(35)
           } catch (error) {
-            updatePDAShellRetry({
+            await updatePDAShellRetry({
               ...item,
               attempts: item.attempts + 1,
               lastTriedAt: new Date().toISOString(),
@@ -302,7 +311,7 @@ export function PDAShellTab() {
       } finally {
         retryLockRef.current = false
         setIsRetrying(false)
-        refreshQueue()
+        await refreshQueue()
       }
     },
     [refreshQueue, t]
@@ -372,10 +381,10 @@ export function PDAShellTab() {
         toast.success(t('terminalConfig.pdaShell.toast.scanCollected'), {
           description: response.parsed.shortTag,
         })
-        refreshQueue()
+        await refreshQueue()
       } catch (error) {
         const message = error instanceof Error ? error.message : 'ingest failed'
-        const queued = enqueuePDAShellRetry(payload, message)
+        const queued = await enqueuePDAShellRetry(payload, message)
         setLastMessage(
           queued.duplicateCount > 1
             ? t('terminalConfig.pdaShell.status.duplicateQueued', {
@@ -391,7 +400,7 @@ export function PDAShellTab() {
         lastAutoSubmittedRef.current = normalized
         vibrate([80, 50, 80])
         toast.error(t('terminalConfig.pdaShell.toast.submitQueued'), { description: message })
-        refreshQueue()
+        await refreshQueue()
       } finally {
         setIsSubmitting(false)
       }
@@ -650,8 +659,10 @@ export function PDAShellTab() {
                   className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
                   variant='outline'
                   onClick={() => {
-                    clearPDAShellRetryQueue(currentScene)
-                    refreshQueue()
+                    void (async () => {
+                      await clearPDAShellRetryQueue(currentScene)
+                      await refreshQueue()
+                    })()
                     toast.success(
                       t('terminalConfig.pdaShell.toast.clearSceneQueue', {
                         scene: currentSceneLabel,
@@ -668,8 +679,10 @@ export function PDAShellTab() {
                   className='h-11 rounded-full px-6 text-[11px] font-black uppercase tracking-widest'
                   variant='outline'
                   onClick={() => {
-                    clearPDAShellRetryQueue()
-                    refreshQueue()
+                    void (async () => {
+                      await clearPDAShellRetryQueue()
+                      await refreshQueue()
+                    })()
                     toast.success(t('terminalConfig.pdaShell.toast.clearAllQueue'))
                   }}
                   disabled={!queue.length}
@@ -770,8 +783,10 @@ export function PDAShellTab() {
                         variant='ghost'
                         className='rounded-full text-[10px] font-black uppercase tracking-widest'
                         onClick={() => {
-                          removePDAShellRetry(item.id)
-                          refreshQueue()
+                          void (async () => {
+                            await removePDAShellRetry(item.id)
+                            await refreshQueue()
+                          })()
                         }}
                       >
                         {t('terminalConfig.pdaShell.actions.drop')}

@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
-import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '../data/schema'
+import { requireTradingCommandActor } from '../utils/command-actor'
 
 interface UseSalesOrderDetailActionsParams {
   order?: SalesOrder
@@ -46,14 +46,13 @@ export function useSalesOrderDetailActions({
   operator,
   actorId,
 }: UseSalesOrderDetailActionsParams) {
-  const ensureClaimActor = () => {
-    if (!actorId || !operator || operator === 'Unknown') {
-      const error = new Error('[CRITICAL] Missing claim actor for sales order')
-      failLoudly(error, 'SalesOrderDetail.claimActor')
-      toast.error('缺少有效的认领操作人')
-      return false
+  const ensureCommandActor = (scope: string) => {
+    try {
+      return requireTradingCommandActor({ operator, actorId }, scope)
+    } catch {
+      toast.error('缂哄皯鏈夋晥鐨勪氦鏄撴搷浣滀汉')
+      return null
     }
-    return true
   }
 
   const handleMutateStatus = (payload: Partial<SalesOrder>) => {
@@ -63,24 +62,29 @@ export function useSalesOrderDetailActions({
     const nextStatus = payload.status
     const nextStatusNote = payload.statusNote
     if (!nextStatus) return
+
+    const actor = ensureCommandActor('SalesOrderDetail.handleMutateStatus')
+    if (!actor) return
+
     if (nextStatus === 'Canceled') {
       cancelMutation.mutate({
         orderId: order.id,
         reason: nextStatusNote,
-        operator,
-        actorId,
+        operator: actor.operator,
+        actorId: actor.actorId,
         expectedVersion: order.version,
       })
       return
     }
+
     if (nextStatus === order.status && (nextStatusNote ?? '') === (order.statusNote ?? '')) return
 
     statusTransitionMutation.mutate({
       orderId: order.id,
       status: nextStatus,
       statusNote: nextStatusNote,
-      operator,
-      actorId,
+      operator: actor.operator,
+      actorId: actor.actorId,
       expectedVersion: order.version,
     })
   }
@@ -88,16 +92,19 @@ export function useSalesOrderDetailActions({
   const handleClaimModel = (model: string) => {
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
-    if (!ensureClaimActor()) return
+
+    const actor = ensureCommandActor('SalesOrderDetail.handleClaimModel')
+    if (!actor) return
 
     const lineNos = order.lines
       .filter((line) => line.productModel === model && !line.claimedBy)
       .map((line) => line.lineNo)
+
     claimMutation.mutate({
       orderId: order.id,
       lineNos,
-      operator,
-      actorId,
+      operator: actor.operator,
+      actorId: actor.actorId,
       expectedVersion: order.version,
     })
   }
@@ -105,13 +112,15 @@ export function useSalesOrderDetailActions({
   const handleClaimLine = (lineNo: number) => {
     if (!order) return
     if (!allowsAction('action_trading_sales_order_manage')) return
-    if (!ensureClaimActor()) return
+
+    const actor = ensureCommandActor('SalesOrderDetail.handleClaimLine')
+    if (!actor) return
 
     claimMutation.mutate({
       orderId: order.id,
       lineNos: [lineNo],
-      operator,
-      actorId,
+      operator: actor.operator,
+      actorId: actor.actorId,
       expectedVersion: order.version,
     })
   }

@@ -7,6 +7,8 @@ import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '../../data/schema'
 import { useSalesOrderLinesEditorViewModel } from '../../hooks/use-sales-order-lines-editor-view-model'
 
+type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
+
 interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
   products: Product[]

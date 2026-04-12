@@ -1,3 +1,28 @@
+- [ ] 770. plan：第四十四轮 Go 测试 Schema 基线收口（2026-04-12，待确认）
+   - [x] 已确认当前 Go 测试里高频重复、最容易漂移的表组主要包括：
+     - [x] `sales_orders` / `sales_order_lines`
+     - [x] `purchase_orders` / `purchase_order_lines`
+     - [x] `inventory` / `inbound_records` / `shipment_records`
+     - [x] `audit_logs`
+   - [x] 已确认这些表组分散出现在多个测试 setup 中：
+     - [x] `server/services/inventory_command_service_test.go`
+     - [x] `server/handlers/inventory_command_handlers_test.go`
+     - [x] `server/services/sales_order_flow_test.go`
+     - [x] `server/services/purchase_transaction_service_test.go`
+   - [x] 已确认已发生过真实 schema 漂移，说明继续手写复制会持续产生补丁成本：
+     - [x] 最近已修过 `sales_order_flow_test.go` 的 payment 相关缺失列
+   - [x] 已确认首批共享 helper 的最小边界建议：
+     - [x] 先抽 trading test schema helper（`sales_orders` / `sales_order_lines` / `purchase_orders` / `purchase_order_lines` / `audit_logs`）
+     - [x] 暂不一次性收口 inventory / workflow / mrp 全部测试表
+   - [x] 已确认推荐实施策略：
+     - [x] 先做共享 helper / builder
+     - [x] 再让 1-2 个测试文件接入样板 helper
+     - [x] 验证模式稳定后再扩散
+   - [ ] 待你确认后执行下一阶段：
+     - [ ] 进入第四十四轮代码实施
+     - [ ] 先抽 trading test schema helper 并接入少量测试样板
+     - [ ] 执行定向 Go 测试并更新 `walkthrough.md`
+
 - [ ] 769. plan：第四十三轮 Service 出口 Runtime Contract 统一模式（2026-04-12，待确认）
    - [x] 已确认统一职责边界目标：
      - [x] adapter 负责 DTO -> contract 映射

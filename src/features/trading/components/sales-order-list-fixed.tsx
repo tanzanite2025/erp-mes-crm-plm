@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
 import { useSalesOrderListViewModel } from '../hooks/use-sales-order-list-view-model'
 import { useTradingFinanceFilterOptions } from '../hooks/use-trading-finance-resources'
+import { requireTradingCommandActor } from '../utils/command-actor'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderDetail } from './sales-order-detail'
@@ -106,10 +107,14 @@ export function SalesOrderList() {
           deleteMutation.mutate(id)
           return
         }
+        const actor = requireTradingCommandActor(
+          { operator: user?.accountNo, actorId: user?.id },
+          'SalesOrderList.handleDeleteOrder',
+        )
         cancelMutation.mutate({
           orderId: id,
-          operator: user?.accountNo || 'Unknown',
-          actorId: user?.id,
+          operator: actor.operator,
+          actorId: actor.actorId,
           expectedVersion: order.version,
         })
       }

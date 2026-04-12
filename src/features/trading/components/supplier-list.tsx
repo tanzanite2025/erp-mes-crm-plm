@@ -36,6 +36,7 @@ import { type DeltaSet } from '@/lib/delta/types'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
+import { requireTradingCommandActor } from '../utils/command-actor'
 import { SupplierActionDialog } from './supplier-action-dialog'
 import { useGetSupplierList, useSupplierMutations } from '../supplier'
 import { cn } from '@/lib/utils'
@@ -95,12 +96,16 @@ export function SupplierList() {
     if (!allowsAction('action_trading_supplier_manage')) return
 
     if (payload.isPatch && payload.delta && selectedSupplier) {
+      const actor = requireTradingCommandActor(
+        { operator: user?.accountNo, actorId: user?.id },
+        'SupplierList.handleSaveSupplier',
+      )
       saveMutation.mutate({
         id: selectedSupplier.id,
         delta: payload.delta,
         finalData: payload.data as Supplier,
-        operator: user?.accountNo || 'Unknown',
-        actorId: user?.id,
+        operator: actor.operator,
+        actorId: actor.actorId,
         expectedVersion: selectedSupplier.version,
       })
     } else {
@@ -452,9 +457,7 @@ export function SupplierList() {
                 <AuditStamp
                   module={AUDIT_MODULES.supplier}
                   targetId={supplier.id}
-                  createdBy={supplier.createdBy}
                   createdAt={supplier.createdAt}
-                  updatedBy={supplier.updatedBy}
                   updatedAt={supplier.updatedAt}
                   className='border-primary/10 pt-2'
                 />

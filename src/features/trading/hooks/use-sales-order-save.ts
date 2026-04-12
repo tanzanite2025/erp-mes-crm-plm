@@ -3,6 +3,7 @@ import { auditUtils } from '@/lib/audit-utils'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder } from '../data/schema'
+import { requireTradingCommandActor } from '../utils/command-actor'
 import { useSalesOrderMutations } from '../sales'
 
 interface UseSalesOrderSaveOptions {
@@ -21,8 +22,6 @@ export function useSalesOrderSave({
   onSaved,
 }: UseSalesOrderSaveOptions) {
   const user = useAuthStore((state) => state.user)
-  const operator = user?.accountNo || 'Unknown'
-  const actorId = user?.id
 
   const {
     createMutation,
@@ -53,12 +52,16 @@ export function useSalesOrderSave({
         return
       }
 
+      const actor = requireTradingCommandActor(
+        { operator: user?.accountNo, actorId: user?.id },
+        'useSalesOrderSave.handleSave',
+      )
       await saveMutation.mutateAsync({
         orderId: order.id,
         delta,
         finalData,
-        operator,
-        actorId,
+        operator: actor.operator,
+        actorId: actor.actorId,
         expectedVersion: order.version,
       })
 
@@ -67,14 +70,14 @@ export function useSalesOrderSave({
       // Mutation onError handlers already surface the failure to the user.
     }
   }, [
-    actorId,
     commit,
     createMutation,
     onSaved,
-    operator,
     order,
     prepareToSave,
     saveMutation,
+    user?.accountNo,
+    user?.id,
     validate,
   ])
 

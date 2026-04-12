@@ -1,4 +1,5 @@
 import type { PDAIngestRequest } from './pda-ingest-service'
+import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { createLogger } from '@/lib/logger'
 import {
   normalizeDeviceCode,
@@ -30,10 +31,6 @@ export interface PDAIngestRetrySceneGroup {
   count: number
   duplicateCount: number
   latestQueuedAt?: string
-}
-
-function canUseStorage() {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
 function buildDedupeKey(payload: PDAIngestRequest) {
@@ -72,45 +69,72 @@ function normalizeRetryItem(item: Partial<PDAIngestRetryItem> & { payload?: PDAI
   } satisfies PDAIngestRetryItem
 }
 
-function readQueue(): PDAIngestRetryItem[] {
-  if (!canUseStorage()) return []
+function isLegacyStorageAvailable() {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
 
-  try {
-    const raw = window.localStorage.getItem(PDA_SHELL_QUEUE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.map((item) => {
-        if (!item) throw new Error("[CRITICAL] PDA Queue Item is null during normalization");
-        return normalizeRetryItem(item)
-    })
-  } catch (error) {
-    logger.error('Failed to read retry queue', error)
+function parseStoredQueue(raw: unknown, context: string) {
+  if (raw == null) {
     return []
   }
-}
 
-function writeQueue(queue: PDAIngestRetryItem[]) {
-  if (!canUseStorage()) return
-
-  try {
-    window.localStorage.setItem(PDA_SHELL_QUEUE_KEY, JSON.stringify(queue))
-  } catch (error) {
-    logger.error('Failed to write retry queue', error)
+  if (!Array.isArray(raw)) {
+    throw new Error(`[CRITICAL] ${context} expected an array queue payload`)
   }
+
+  return raw.map((item) => {
+    if (!item || typeof item !== 'object') {
+      throw new Error(`[CRITICAL] ${context} encountered an invalid PDA queue item`)
+    }
+
+    return normalizeRetryItem(item as Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest })
+  })
 }
 
-export function listPDAShellRetryQueue(scene?: string): PDAIngestRetryItem[] {
-  const queue = readQueue()
+async function migrateLegacyQueueIfNeeded() {
+  if (!isLegacyStorageAvailable()) {
+    return null
+  }
+
+  const legacyRaw = window.localStorage.getItem(PDA_SHELL_QUEUE_KEY)
+  if (!legacyRaw) {
+    return null
+  }
+
+  const migratedQueue = parseStoredQueue(JSON.parse(legacyRaw), 'PDAShellQueue.migrateLegacyQueueIfNeeded')
+  await StorageService.setItem(PDA_SHELL_QUEUE_KEY, migratedQueue)
+  window.localStorage.removeItem(PDA_SHELL_QUEUE_KEY)
+  logger.info('Migrated PDA shell retry queue from localStorage to IndexedDB', {
+    count: migratedQueue.length,
+  })
+  return migratedQueue
+}
+
+async function readQueue() {
+  const stored = await StorageService.getItem<unknown>(PDA_SHELL_QUEUE_KEY)
+  if (stored !== null) {
+    return parseStoredQueue(stored, 'PDAShellQueue.readQueue')
+  }
+
+  const migratedQueue = await migrateLegacyQueueIfNeeded()
+  return migratedQueue ?? []
+}
+
+async function writeQueue(queue: PDAIngestRetryItem[]) {
+  await StorageService.setItem(PDA_SHELL_QUEUE_KEY, queue)
+}
+
+export async function listPDAShellRetryQueue(scene?: string): Promise<PDAIngestRetryItem[]> {
+  const queue = await readQueue()
   if (!scene) return queue
   const normalizedScene = normalizeSceneKey(scene)
   return queue.filter((item) => item.scene === normalizedScene)
 }
 
-export function listPDAShellRetryQueueByScene(): PDAIngestRetrySceneGroup[] {
+export async function listPDAShellRetryQueueByScene(): Promise<PDAIngestRetrySceneGroup[]> {
   const sceneMap = new Map<string, PDAIngestRetrySceneGroup>()
 
-  for (const item of readQueue()) {
+  for (const item of await readQueue()) {
     const current = sceneMap.get(item.scene)
     if (!current) {
       sceneMap.set(item.scene, {
@@ -134,17 +158,17 @@ export function listPDAShellRetryQueueByScene(): PDAIngestRetrySceneGroup[] {
   )
 }
 
-export function enqueuePDAShellRetry(
+export async function enqueuePDAShellRetry(
   payload: PDAIngestRequest,
   lastError?: string
-): PDAIngestRetryItem {
-  const queue = readQueue()
+): Promise<PDAIngestRetryItem> {
+  const queue = await readQueue()
   const normalizedPayload: PDAIngestRequest = {
     ...payload,
-    scene: normalizeScene(payload.scene),
-    rawCode: (payload.rawCode || '').trim().toUpperCase(),
-    deviceId: (payload.deviceId || '').trim().toUpperCase(),
-    materialCode: (payload.materialCode || '').trim().toUpperCase(),
+    scene: normalizeSceneKey(payload.scene),
+    rawCode: normalizeMachineCode(payload.rawCode),
+    deviceId: normalizeDeviceCode(payload.deviceId),
+    materialCode: normalizeMaterialCode(payload.materialCode),
   }
   const dedupeKey = buildDedupeKey(normalizedPayload)
   const existing = queue.find((item) => item.dedupeKey === dedupeKey)
@@ -159,7 +183,7 @@ export function enqueuePDAShellRetry(
       duplicateCount: existing.duplicateCount + 1,
     })
     const nextQueue = [nextItem, ...queue.filter((item) => item.id !== existing.id)].slice(0, 100)
-    writeQueue(nextQueue)
+    await writeQueue(nextQueue)
     return nextItem
   }
 
@@ -172,29 +196,29 @@ export function enqueuePDAShellRetry(
   })
 
   queue.unshift(item)
-  writeQueue(queue.slice(0, 100))
+  await writeQueue(queue.slice(0, 100))
   return item
 }
 
-export function updatePDAShellRetry(item: PDAIngestRetryItem) {
+export async function updatePDAShellRetry(item: PDAIngestRetryItem) {
   const normalized = normalizeRetryItem(item)
-  const queue = readQueue()
+  const queue = await readQueue()
   const next = queue.map((current) => (current.id === normalized.id ? normalized : current))
-  writeQueue(next)
+  await writeQueue(next)
 }
 
-export function removePDAShellRetry(id: string) {
-  const queue = readQueue()
-  writeQueue(queue.filter((item) => item.id !== id))
+export async function removePDAShellRetry(id: string) {
+  const queue = await readQueue()
+  await writeQueue(queue.filter((item) => item.id !== id))
 }
 
-export function clearPDAShellRetryQueue(scene?: string) {
+export async function clearPDAShellRetryQueue(scene?: string) {
   if (!scene) {
-    writeQueue([])
+    await writeQueue([])
     return
   }
 
-  const normalizedScene = normalizeScene(scene)
-  const queue = readQueue()
-  writeQueue(queue.filter((item) => item.scene !== normalizedScene))
+  const normalizedScene = normalizeSceneKey(scene)
+  const queue = await readQueue()
+  await writeQueue(queue.filter((item) => item.scene !== normalizedScene))
 }

@@ -3,6 +3,109 @@
 日期：2026-04-12  
 状态：待批准
 
+### 1. plan：第四十四轮 Go 测试 Schema 基线收口
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第四十四轮承接第四十二轮架构收口的第三优先级：Go 测试 Schema 基线收口。
+
+当前后端 Go 测试存在大量手写 `CREATE TABLE` SQL，已经出现：
+
+1. 同一批表在多个测试 setup 中重复定义
+2. 字段新增后某个测试文件漏改
+3. schema 漂移靠逐点补丁修复
+
+#### 1.2 当前排查结论
+
+当前已经确认高频重复、且最容易漂移的表组主要包括：
+
+1. `sales_orders` / `sales_order_lines`
+2. `purchase_orders` / `purchase_order_lines`
+3. `inventory` / `inbound_records` / `shipment_records`
+4. `audit_logs`
+
+这些表组当前散落在多个测试 setup 中，例如：
+
+1. `server/services/inventory_command_service_test.go`
+2. `server/handlers/inventory_command_handlers_test.go`
+3. `server/services/sales_order_flow_test.go`
+4. `server/services/purchase_transaction_service_test.go`
+
+并且已经发生过真实漂移：
+
+1. `sales_order_flow_test.go` 曾缺少 `payment_method` / `payment_method_name` / `payment_term` / `payment_term_name`
+2. 这说明“复制一份 SQL 再改一点”的模式会持续制造补丁成本
+
+#### 1.3 推荐首批收口范围
+
+##### 1.3.1 首批 helper 边界
+
+本轮建议先聚焦 trading 相关测试表，抽最小共享 helper：
+
+1. `sales_orders`
+2. `sales_order_lines`
+3. `purchase_orders`
+4. `purchase_order_lines`
+5. `audit_logs`
+
+原因：
+
+1. 这批表已经在多个 test setup 中重复出现
+2. 刚发生过真实列漂移
+3. 更适合作为第一批 schema baseline helper 样板
+
+##### 1.3.2 暂不纳入首批
+
+本轮暂不一次性收口：
+
+1. `inventory` / `shipment_records` / `inbound_records`
+2. `workflow_*` 表
+3. `mrp_requirements_test.go` 的专用简化表
+
+这些可以在 trading helper 跑通后再考虑第二批。
+
+#### 1.4 推荐实施顺序
+
+本轮建议：
+
+1. 新增共享 trading test schema helper / builder
+2. 先让 1-2 个测试文件接入该 helper 作为样板
+3. 通过定向 Go 测试验证 helper 可用后，再决定是否继续扩散
+
+#### 1.5 第一轮样板建议
+
+本轮建议优先接入：
+
+1. `server/services/sales_order_flow_test.go`
+2. `server/services/purchase_transaction_service_test.go`
+
+原因：
+
+1. 边界清晰
+2. 交易表组集中
+3. 更容易验证 helper 对 `sales_orders` / `purchase_orders` 的覆盖能力
+
+#### 1.6 第一轮实施边界
+
+本轮建议：
+
+1. 先收 trading test schema helper
+2. 只接入少量样板测试文件
+3. 验证 helper 稳定后再扩到 inventory / workflow 测试
+
+本轮不做：
+
+1. 不一次性重写所有 Go 测试 setup
+2. 不急于统一所有领域的测试 schema
+3. 不把 AutoMigrate 与手写 SQL 改造同时推进
+
+#### 1.7 当前阶段结论
+
+第四十四轮当前已经明确：Go 测试 Schema 基线收口应先从 trading 相关的高频重复表组入手，抽共享 test schema helper，并只让少量样板测试文件先接入。当前最值得作为第一批样板的，是 `sales_order_flow_test.go` 与 `purchase_transaction_service_test.go`；等 trading helper 跑通后，再考虑是否把 inventory / workflow 的测试基线继续纳入第二批收口。
+
 ### 1. plan：第四十三轮 Service 出口 Runtime Contract 统一模式
 
 日期：2026-04-12  

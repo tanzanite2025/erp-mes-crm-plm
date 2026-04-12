@@ -33,6 +33,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { tradingQueryKeys } from '../query-keys'
+import { requireTradingCommandActor } from '../utils/command-actor'
 import { CustomerActionDialog } from './customer-action-dialog'
 import { useCustomerMutations, useGetCustomerList } from '../customer'
 
@@ -92,12 +93,16 @@ export function CustomerList() {
     if (!allowsAction('action_trading_customer_manage')) return
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
+      const actor = requireTradingCommandActor(
+        { operator: user?.accountNo, actorId: user?.id },
+        'CustomerList.handleSaveCustomer',
+      )
       saveMutation.mutate({
         id: selectedCustomer.id,
         delta: payload.delta,
         finalData: payload.data as Customer,
-        operator: user?.accountNo || 'Unknown',
-        actorId: user?.id,
+        operator: actor.operator,
+        actorId: actor.actorId,
         expectedVersion: selectedCustomer.version,
       })
     } else {
@@ -404,9 +409,7 @@ export function CustomerList() {
               <AuditStamp
                 module={AUDIT_MODULES.customer}
                 targetId={customer.id}
-                createdBy={customer.createdBy}
                 createdAt={customer.createdAt}
-                updatedBy={customer.updatedBy}
                 updatedAt={customer.updatedAt}
                 className='border-primary/10 pt-2'
               />

@@ -8,6 +8,7 @@ import { useGetSuppliers } from '../../supplier'
 import { usePurchaseOrderForm } from '../../hooks/use-purchase-order-form'
 import { usePurchaseOrderDialogResources } from '../../hooks/use-purchase-order-dialog-resources'
 import { usePurchaseOrderSavePreparation } from '../../hooks/use-purchase-order-save-preparation'
+import { requireTradingCommandActor } from '../../utils/command-actor'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 import { PurchaseOrderActionDialogShell } from './purchase-order-action-dialog-shell'
@@ -54,12 +55,16 @@ export function PurchaseOrderActionDialog({
       if (saveExecution.mode === 'noop') {
           onOpenChange(false)
       } else if (saveExecution.mode === 'update') {
+        const actor = requireTradingCommandActor(
+          { operator: user?.accountNo, actorId: user?.id },
+          'PurchaseOrderActionDialog.handleSave',
+        )
         await saveMutation.mutateAsync({
           orderId: saveExecution.orderId,
           delta: saveExecution.delta,
           finalData: saveExecution.finalData,
-          operator: user?.accountNo || 'Unknown',
-          actorId: user?.id,
+          operator: actor.operator,
+          actorId: actor.actorId,
           expectedVersion: saveExecution.expectedVersion,
         })
       } else {
