@@ -1,19 +1,24 @@
 import { useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { productSchema, type Product, type ProductType } from '../data/schema'
+import { productDraftSchema, type Product, type ProductType } from '../data/schema'
 import { useProductFormInit } from './use-product-form-init'
 import { useProductFormSubmit } from './use-product-form-submit'
 import { useProductFormDerive } from './use-product-form-derive'
 import { type ProductVariantSelection } from '../utils/product-form-utils'
 import { ProductCommand } from '../commands/product-command'
 
+export interface ProductSubmitPayload {
+  products: Product[]
+  currentRow?: Product
+}
+
 interface UseProductFormProps {
   currentRow?: Product
   open: boolean
   productTypes: ProductType[]
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Product | Product[]) => Promise<void> | void
+  onSubmit?: (payload: ProductSubmitPayload) => Promise<void> | void
 }
 
 export function useProductForm({
@@ -28,7 +33,7 @@ export function useProductForm({
   const initialState = ProductCommand.composeInitialState({ isEdit, currentRow })
 
   const form = useForm<Product>({
-    resolver: zodResolver(productSchema) as Resolver<Product>,
+    resolver: zodResolver(productDraftSchema) as Resolver<Product>,
     defaultValues: initialState.formValues,
   })
 
@@ -50,7 +55,7 @@ export function useProductForm({
     setSelectedVariants,
   })
 
-  const { dynamicTypes, specSummary } = useProductFormDerive({
+  const { dynamicTypes, specPreviewSummary, skuPreview, nextCodeDeriveError } = useProductFormDerive({
     isEdit,
     open,
     form,
@@ -79,8 +84,10 @@ export function useProductForm({
     moldOptions,
     specOptions,
     metadataInitError,
+    nextCodeDeriveError,
+    skuPreview,
     selectedVariants,
-    specSummary,
+    specPreviewSummary,
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,

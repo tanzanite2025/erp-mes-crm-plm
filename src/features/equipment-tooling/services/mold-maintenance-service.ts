@@ -7,8 +7,16 @@ import { type Mold } from '../data/schema'
 import { toMoldContract } from '../adapters/equipment-mold-api-adapter'
 import { type MoldApiDTO } from '../contracts/equipment-mold-api-dto'
 
+function containsTopLevelStatusDelta(delta: DeltaSet): boolean {
+  return Object.prototype.hasOwnProperty.call(delta, 'status')
+}
+
 export const MoldMaintenanceService = {
   async patchMold(moldId: string, delta: DeltaSet, version: number): Promise<Mold> {
+    if (containsTopLevelStatusDelta(delta)) {
+      throw new Error('[CRITICAL] Mold status transition must use a dedicated transaction command, not MoldMaintenanceService.patchMold().')
+    }
+
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,

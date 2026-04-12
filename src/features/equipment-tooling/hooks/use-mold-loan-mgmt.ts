@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { type EquipmentPartner, type Mold, type MoldLoan } from '../data/schema'
+import { type Mold, type MoldLoan } from '../data/schema'
 import { MoldLoanService } from '../services/mold-loan-service'
 import { MoldCoreService } from '../services/mold-core-service'
 import { EquipmentPartnerService } from '../services/partner-service'
@@ -121,20 +121,14 @@ export function useMoldLoanMgmt() {
                 return AssetService.lendMold(data)
             }
 
-            const { maxCycles, currentCycles, maintenanceThreshold, ...loanBase } = data
+            const { maxCycles, currentCycles, ...loanBase } = data
             const resolvedMaxCycles = requireNumber(maxCycles, 'mold maxCycles')
             const resolvedCurrentCycles = requireNumber(currentCycles, 'mold currentCycles')
-            const resolvedMaintenanceThreshold = requireNumber(maintenanceThreshold, 'mold maintenanceThreshold')
             const moldData = {
                 sn: requireString(data.moldSn, 'mold sn'),
                 name: requireString(data.moldName, 'mold name'),
                 maxCycles: resolvedMaxCycles,
                 currentCycles: resolvedCurrentCycles,
-                maintenanceThreshold: resolvedMaintenanceThreshold,
-                totalLifeCycles: resolvedCurrentCycles,
-                description: `Borrowed from ${requireString(data.fromFactory, 'source factory')}`,
-                isAlerted: false,
-                version: 1,
             }
             return AssetService.borrowMold(loanBase, moldData)
         },

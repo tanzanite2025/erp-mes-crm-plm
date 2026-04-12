@@ -1,3 +1,4 @@
+import { type TranslationKey } from '@/locales'
 import { type Employee } from '../data/schema'
 
 export type PersonnelArchiveColumnKey =
@@ -106,9 +107,11 @@ export function getPersonnelColumnConfig(key: PersonnelArchiveColumnKey) {
     return PERSONNEL_ARCHIVE_COLUMNS.find(column => column.key === key)
 }
 
-export function getPersonnelColumnLabel(key: PersonnelArchiveColumnKey, t?: any): string {
+type PersonnelTranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+
+export function getPersonnelColumnLabel(key: PersonnelArchiveColumnKey, t?: PersonnelTranslateFn): string {
     const headerKey = getPersonnelColumnConfig(key)?.header || key
-    return t ? t(headerKey as any) : headerKey
+    return t ? t(headerKey) : headerKey
 }
 
 function buildColumnOptions(key: PersonnelArchiveColumnKey): PersonnelSelectOption[] {
@@ -229,17 +232,17 @@ export function formatPersonnelDate(value?: string | null): string {
     return value.split('T')[0]
 }
 
-export function getPersonnelStatusLabel(status?: string, t?: any): string {
-    if (status === 'resigned') return t ? t('orgPersonnel.excel.statuses.resigned' as any) : 'resigned'
-    if (status === 'on-leave') return t ? t('orgPersonnel.excel.statuses.onLeave' as any) : 'on-leave'
-    return t ? t('orgPersonnel.excel.statuses.active' as any) : 'active'
+export function getPersonnelStatusLabel(status?: string, t?: PersonnelTranslateFn): string {
+    if (status === 'resigned') return t ? t('orgPersonnel.excel.statuses.resigned') : 'resigned'
+    if (status === 'on-leave') return t ? t('orgPersonnel.excel.statuses.onLeave') : 'on-leave'
+    return t ? t('orgPersonnel.excel.statuses.active') : 'active'
 }
 
 /**
  * [UI-PREVIEW-VALUE]: 前端工龄计算仅用于 UI 即时展示反馈
  * [BACKEND-AUTHORITY]: 权威工龄核算属于后端 PersonnelService/BRP 范畴，涉及节假日、入职节点及特殊政策。
  */
-export function calculatePersonnelWorkYears(joinedDate?: string | null): string {
+export function previewPersonnelWorkYears(joinedDate?: string | null): string {
     const normalized = formatPersonnelDate(joinedDate)
     if (!normalized) return ''
 
@@ -270,7 +273,7 @@ export function getPersonnelArchiveValue(
         case 'joinedDate':
             return formatPersonnelDate(employee.joinedDate)
         case 'workYears':
-            return calculatePersonnelWorkYears(employee.joinedDate)
+            return previewPersonnelWorkYears(employee.joinedDate)
         case 'status':
             return getPersonnelStatusLabel(employee.status)
         case 'birthday':

@@ -1,10 +1,14 @@
+import type { TranslationKey } from '@/locales'
+
 interface SalesOrderDetailColumn {
   key: string
   className: string
   label: string
 }
 
-export function useSalesOrderDetailTableColumns(t: (key: string) => string): SalesOrderDetailColumn[] {
+export function useSalesOrderDetailTableColumns(
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
+): SalesOrderDetailColumn[] {
   return [
     {
       key: 'no',

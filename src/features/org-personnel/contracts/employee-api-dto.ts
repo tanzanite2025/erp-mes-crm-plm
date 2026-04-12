@@ -6,14 +6,17 @@ export interface EmployeeApiDTO {
   gender?: string
   birthday?: string | null
   idCard?: string
+  maskedIdCard?: string
   emergencyPhone?: string
   address?: string
   bankCard?: string
+  maskedBankCard?: string
   bankName?: string
   education?: string
   age?: number
   status: 'active' | 'resigned' | 'on-leave'
   joinedDate?: string | null
+  workYears?: string
   deptId?: string
   lineId?: string
   processId?: string

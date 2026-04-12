@@ -1,10 +1,11 @@
 import type { SalesOrder } from '../data/schema'
+import type { TranslationKey } from '@/locales'
 
 interface UseSalesOrderDetailHeaderViewModelParams {
   order: SalesOrder
   isClaimAction: boolean
   activeCommandTitle?: string
-  t: (key: string) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
 }
 
 export function useSalesOrderDetailHeaderViewModel({

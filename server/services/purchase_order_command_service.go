@@ -130,6 +130,7 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 	for _, line := range patch.Lines {
 		patchReq.Lines = append(patchReq.Lines, PurchaseOrderLineRequest{
 			ID:            line.ID,
+			Version:       line.Version,
 			LineNo:        line.LineNo,
 			MaterialID:    line.MaterialID,
 			MaterialCode:  line.MaterialCode,

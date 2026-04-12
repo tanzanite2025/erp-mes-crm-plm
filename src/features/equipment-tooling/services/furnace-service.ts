@@ -15,6 +15,10 @@ import {
 } from '../contracts/equipment-furnace-api-dto'
 import { type Furnace } from '../data/schema'
 
+function containsTopLevelStatusDelta(delta: DeltaSet): boolean {
+  return Object.prototype.hasOwnProperty.call(delta, 'status')
+}
+
 export class FurnaceService {
   static async getFurnaces(): Promise<Furnace[]> {
     const res = await apiFetch<FurnaceListPageApiDTO>('/furnaces')
@@ -57,10 +61,14 @@ export class FurnaceService {
   }
 
   static async patchFurnace(furnaceId: string, delta: DeltaSet, version?: number): Promise<Furnace> {
+    if (containsTopLevelStatusDelta(delta)) {
+      throw new Error('[CRITICAL] Furnace status transition must use a dedicated transaction command, not FurnaceService.patchFurnace().')
+    }
+
     const payload: DeltaPayload = {
       op: 'PATCH',
       delta,
-      metadata: { id: furnaceId, version },
+      metadata: { id: furnaceId, version, intent: 'ASSET_PROFILE_UPDATE' },
     }
 
     const res = await apiFetch<FurnaceApiDTO>(`/furnaces/${furnaceId}`, {

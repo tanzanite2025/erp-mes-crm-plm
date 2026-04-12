@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { failLoudly } from '@/lib/safe-catch'
 import { WarehouseCategoryCoreService } from '../../category'
 import {
   InventoryCoreService,
@@ -50,19 +51,69 @@ export function useShipmentBootstrap() {
     toast.error(t('warehouse.errors.queryFailed'))
   }, [error, t])
 
-  const history = useMemo(() => historyQuery.data ?? ([] as ShipmentRecord[]), [historyQuery.data])
-  const warehouseCategories = useMemo(
-    () => filterWarehouseCategoriesByScene(categoriesQuery.data ?? ([] as WarehouseCategoryOption[]), 'shipment'),
-    [categoriesQuery.data],
-  )
-  const alertThresholds = useMemo(() => thresholdsQuery.data ?? {}, [thresholdsQuery.data])
+  const history = useMemo(() => {
+    if (historyQuery.isLoading) return [] as ShipmentRecord[]
+    if (!historyQuery.data) {
+      const lookupError =
+        historyQuery.error instanceof Error
+          ? historyQuery.error
+          : new Error('[CRITICAL] Shipment history missing after load')
+      failLoudly(lookupError, 'useShipmentBootstrap.history')
+      throw lookupError
+    }
+    return historyQuery.data
+  }, [historyQuery.data, historyQuery.error, historyQuery.isLoading])
+
+  const warehouseCategories = useMemo(() => {
+    if (categoriesQuery.isLoading) return [] as WarehouseCategoryOption[]
+    if (!categoriesQuery.data) {
+      const lookupError =
+        categoriesQuery.error instanceof Error
+          ? categoriesQuery.error
+          : new Error('[CRITICAL] Shipment warehouse categories missing after load')
+      failLoudly(lookupError, 'useShipmentBootstrap.categories')
+      throw lookupError
+    }
+
+    const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data, 'shipment')
+    if (filteredCategories.length === 0) {
+      const lookupError = new Error('[CRITICAL] No warehouse categories allowed for shipment scene')
+      failLoudly(lookupError, 'useShipmentBootstrap.categories')
+      throw lookupError
+    }
+
+    return filteredCategories
+  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
+
+  const alertThresholds = useMemo(() => {
+    if (thresholdsQuery.isLoading) return {}
+    if (!thresholdsQuery.data) {
+      const lookupError =
+        thresholdsQuery.error instanceof Error
+          ? thresholdsQuery.error
+          : new Error('[CRITICAL] Shipment alert thresholds missing after load')
+      failLoudly(lookupError, 'useShipmentBootstrap.thresholds')
+      throw lookupError
+    }
+    return thresholdsQuery.data
+  }, [thresholdsQuery.data, thresholdsQuery.error, thresholdsQuery.isLoading])
   const masterDataMap = useMemo(() => {
+    if (masterDataQuery.isLoading) return {}
+    if (!masterDataQuery.data) {
+      const lookupError =
+        masterDataQuery.error instanceof Error
+          ? masterDataQuery.error
+          : new Error('[CRITICAL] Shipment master data missing after load')
+      failLoudly(lookupError, 'useShipmentBootstrap.masterData')
+      throw lookupError
+    }
+
     const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}
-    ;(masterDataQuery.data ?? []).forEach((item: MasterDataSearchResult) => {
+    masterDataQuery.data.forEach((item: MasterDataSearchResult) => {
       nextMasterDataMap[item.id] = item
     })
     return nextMasterDataMap
-  }, [masterDataQuery.data])
+  }, [masterDataQuery.data, masterDataQuery.error, masterDataQuery.isLoading])
 
   return {
     history,

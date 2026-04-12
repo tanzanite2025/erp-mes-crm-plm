@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { CircleDot, Tag, Info, Save, Grid3X3, FileType } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { FileUploader } from '@/components/file-uploader'
+import type { DeltaSet } from '@/lib/delta/types'
 import { drillingPlanInputSchema, type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { LACING_PATTERN_OPTIONS, STANDARD_HOLE_COUNT_OPTIONS } from '../data/drilling-options'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
@@ -16,6 +17,7 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { toast } from 'sonner'
 
 type DrillingFormState = DrillingPlanInput & { id?: string; createdAt?: string }
+type DrillingFormUpdater = DrillingFormState | ((prev: DrillingFormState) => DrillingFormState)
 
 interface DrillingActionDialogProps {
   currentRow?: DrillingPlan | null
@@ -24,7 +26,7 @@ interface DrillingActionDialogProps {
   onSave: (params: { 
     data: DrillingPlanInput; 
     isPatch: boolean; 
-    delta?: any; 
+    delta?: DeltaSet; 
     version?: number 
   }) => void
   isLoading?: boolean
@@ -46,7 +48,7 @@ export function DrillingActionDialog({
   onSave,
   isLoading,
 }: DrillingActionDialogProps) {
-  const { data: products = [] } = useGetProducts()
+  const { data: products = [] } = useGetProducts({ mode: 'options' })
   
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
@@ -63,9 +65,25 @@ export function DrillingActionDialog({
     return { 
       ...DEFAULT_DRILLING
     }
-  }, [currentRow, open])
+  }, [currentRow])
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
+
+  const setFormData = useCallback((updater: DrillingFormUpdater) => {
+    if (typeof updater === 'function') {
+      const next = updater(formData)
+      Object.assign(formData, next)
+    } else {
+      Object.assign(formData, updater)
+    }
+  }, [formData])
+
+  const updateField = useCallback(<K extends keyof DrillingFormState>(field: K, value: DrillingFormState[K]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }, [setFormData])
 
   const handleSave = () => {
     const parsed = drillingPlanInputSchema.safeParse(formData)
@@ -101,10 +119,10 @@ export function DrillingActionDialog({
           <div className='p-2 bg-indigo-500/10 rounded-xl'>
             <CircleDot className='size-5 text-indigo-500' />
           </div>
-          {isEdit ? '缂栬緫閽诲瓟鏂规' : '寤虹珛缂栫粐鍑嗗垯'}
+          {isEdit ? '编辑钻孔方案' : '建立钻孔基准'}
         </>
       )}
-      description="COMPONENT_MASTER_DRILLING / 瀹氫箟杞湀閽诲瓟鍋忎綅銆佺紪缁囦氦鍙夋ā寮忓強瀛旀暟鏍囧噯銆?"
+      description="COMPONENT_MASTER_DRILLING / 定义轮圈钻孔方案、编织模式与标准孔数基准。"
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}
       bodyClassName={shellClasses.body}
@@ -123,7 +141,7 @@ export function DrillingActionDialog({
               onClick={() => onOpenChange(false)} 
               className="font-black text-[10px] uppercase tracking-widest rounded-full px-6"
             >
-              鍙栨秷 / CANCEL
+              取消 / CANCEL
             </Button>
             <Button 
               disabled={isLoading || (isEdit && !isDirty())}
@@ -131,7 +149,7 @@ export function DrillingActionDialog({
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-widest px-10 h-11 rounded-full shadow-xl shadow-indigo-600/20 active:scale-95 transition-all gap-2"
             >
               {isLoading ? <span className="animate-spin size-4 border-2 border-current border-t-transparent rounded-full" /> : <Save className="size-4" />}
-              鍚屾瀛樻。 / SYNC_ARCHIVE
+              同步存档 / SYNC_ARCHIVE
             </Button>
           </div>
         </>
@@ -140,88 +158,88 @@ export function DrillingActionDialog({
       <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
 
       <div className='grid gap-8 relative'>
-        {/* 鏍稿績鏍囪瘑缁?*/}
+        {/* 核心标识组 */}
         <div className='grid grid-cols-2 gap-6'>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <Tag className='size-3' /> 鏂规鍚嶇О / PLAN_NAME
+              <Tag className='size-3' /> 方案名称 / PLAN_NAME
             </Label>
             <Input
-              placeholder='渚嬪: 2X-Cross-Standard-32H'
+              placeholder='例如: 2X-Cross-Standard-32H'
               className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
               value={formData.name}
-              onChange={(e) => { formData.name = e.target.value }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
           <div className='space-y-2'>
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <FileType className='size-3' /> 鍏宠仈鎴愬搧 SKU / PRODUCT_REF
+              <FileType className='size-3' /> 关联成品 SKU / PRODUCT_REF
             </Label>
             <SelectDropdown
               defaultValue={formData.productId}
-              onValueChange={(val) => { formData.productId = val }}
+              onValueChange={(val) => updateField('productId', val)}
               items={products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
-              placeholder='閫夋嫨閫傞厤鐨勪骇鍝?'
+              placeholder='选择适配的产品 SKU'
               className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
             />
           </div>
         </div>
 
-        {/* 鎶€鏈鏍肩粍 */}
+        {/* 技术规格组 */}
         <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
           <div className='flex items-center justify-between'>
             <p className='text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600/70 flex items-center gap-2'>
-              <Grid3X3 className='size-3' /> 閽诲瓟鎶€鏈弬鏁?/ DRILLING_SPECS
+              <Grid3X3 className='size-3' /> 钻孔技术参数 / DRILLING_SPECS
             </p>
             <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
           </div>
 
           <div className='grid grid-cols-2 gap-6'>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>缂栫粐妯″紡 / LACING_PATTERN</Label>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>编织模式 / LACING_PATTERN</Label>
               <SelectDropdown
                 defaultValue={formData.lacingPattern}
-                onValueChange={(val) => { formData.lacingPattern = val }}
+                onValueChange={(val) => updateField('lacingPattern', val)}
                 items={LACING_PATTERN_OPTIONS}
-                placeholder='閫夋嫨缂栫粐妯″紡'
+                placeholder='选择编织模式'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />
             </div>
             <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>鏍囧噯瀛旀暟 / HOLE_COUNT</Label>
+              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>标准孔数 / HOLE_COUNT</Label>
               <SelectDropdown
                 defaultValue={formData.standardHoles}
-                onValueChange={(val) => { formData.standardHoles = val }}
+                onValueChange={(val) => updateField('standardHoles', val)}
                 items={STANDARD_HOLE_COUNT_OPTIONS}
-                placeholder='閫夋嫨瀛旀暟'
+                placeholder='选择孔数'
                 className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
               />
             </div>
           </div>
         </div>
 
-        {/* 闄勪欢涓婁紶 */}
+        {/* 附件上传 */}
         <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
           <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
-            <Info className='size-3' /> 閽诲瓟宸ョ▼鍥剧焊 / ENGINEERING_DWG
+            <Info className='size-3' /> 钻孔工程图纸 / ENGINEERING_DWG
           </Label>
           <FileUploader 
             value={formData.fileUrl} 
             accept='.pdf,.dwg,.dxf,.stp,.step'
             onChange={(url, ext) => {
-              formData.fileUrl = url
-              if (ext) formData.fileExtension = ext
+              updateField('fileUrl', url)
+              if (ext) updateField('fileExtension', ext)
             }}
           />
         </div>
 
         <div className='grid grid-cols-2 gap-6 opacity-40 grayscale pointer-events-none'>
            <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>绯荤粺缂栫爜 / INTERNAL_ID</Label>
+            <Label className='text-[10px] font-black uppercase tracking-widest'>系统编码 / INTERNAL_ID</Label>
             <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id ?? '--'} />
           </div>
           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>鏍囧噯鑾峰彇鏃堕棿 / CREATED_AT</Label>
+            <Label className='text-[10px] font-black uppercase tracking-widest'>创建时间 / CREATED_AT</Label>
             <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.createdAt ?? '--'} />
           </div>
         </div>

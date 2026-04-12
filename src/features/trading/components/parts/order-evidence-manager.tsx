@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { apiFetch } from '@/lib/api-client'
+import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { type OrderEvidence } from '../../data/schema'
@@ -81,7 +82,7 @@ export function OrderEvidenceManager({
         onChange(newEvidences)
         toast.success(t('tradingSalesOrder.toasts.saved'))
       } catch (error) {
-        console.error('Evidence upload failed', error)
+        failLoudly(error, 'OrderEvidenceManager.handleFileUpload', { silentUI: true })
         toast.error(t('tradingSalesOrder.fileUploader.toasts.saveFailed'))
       } finally {
         setUploading(false)

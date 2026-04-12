@@ -134,6 +134,7 @@ type PurchaseOrder struct {
 type PurchaseOrderLine struct {
 	ID              uint    `gorm:"primaryKey" json:"id"`
 	PurchaseOrderID string  `gorm:"type:uuid;index" json:"-"`
+	Version         int     `gorm:"default:1" json:"version"`
 	LineNo          int     `json:"lineNo"`
 	MaterialID      string  `json:"materialId"`
 	MaterialCode    string  `json:"materialCode"`

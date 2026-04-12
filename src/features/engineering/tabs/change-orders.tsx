@@ -32,38 +32,19 @@ import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
 import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
 import { type ChangeOrder } from '../data/schema'
 import { useChangeOrderWriteActions } from '../hooks/use-change-order-write-actions'
-import { type ChangeOrderDraftOverrides } from '../mutation-types'
 import { CHANGE_ORDERS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
-import { createChangeOrderDraft } from '../utils/default-builders'
+import { buildChangeOrderDraft } from '../utils/default-builders'
 
 const logger = createLogger('ChangeOrdersTab')
 
-const EMPTY_ORDER: ChangeOrder = createChangeOrderDraft()
-const EMPTY_CHANGE_ORDERS: ChangeOrder[] = []
-const EMPTY_PRODUCTS: Awaited<ReturnType<typeof ProductCoreService.getProducts>> = []
+const EMPTY_ORDER: ChangeOrder = buildChangeOrderDraft()
 
 const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
-
-const normalizeOrder = (order?: ChangeOrderDraftOverrides | null): ChangeOrder => ({
-  ...EMPTY_ORDER,
-  ...order,
-  changeOrderNo: normalizeChangeOrderNo(order?.changeOrderNo),
-  title: order?.title || '',
-  productId: order?.productId || '',
-  status: order?.status || 'draft',
-  description: order?.description || '',
-  siteCode: normalizeSiteCode(order?.siteCode),
-  revisionNo: normalizeRevisionNo(order?.revisionNo),
-  isDefaultSite: order?.isDefaultSite ?? !normalizeSiteCode(order?.siteCode),
-  effectiveFrom: formatDateInput(order?.effectiveFrom),
-  effectiveTo: formatDateInput(order?.effectiveTo),
-  createdAt: order?.createdAt || new Date().toISOString(),
-  version: order?.version ?? 1,
-})
 
 export function ChangeOrdersTab() {
   const { t } = useLanguage()
@@ -81,8 +62,26 @@ export function ChangeOrdersTab() {
     queryFn: () => ProductCoreService.getProducts(),
   })
 
-  const changeOrders = changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS
-  const products = productsQuery.data ?? EMPTY_PRODUCTS
+  const changeOrders = useMemo(() => {
+    if (changeOrdersQuery.isLoading) return []
+    if (!changeOrdersQuery.data) {
+      const error = new Error('[CRITICAL] Change order list is missing after load')
+      failLoudly(error, 'ChangeOrdersTab.changeOrders')
+      throw error
+    }
+    return changeOrdersQuery.data
+  }, [changeOrdersQuery.data, changeOrdersQuery.isLoading])
+  const products = useMemo(() => {
+    if (productsQuery.isLoading) return []
+    if (!productsQuery.data) {
+      const error = productsQuery.error instanceof Error
+        ? productsQuery.error
+        : new Error('[CRITICAL] Product scope options are missing after load')
+      failLoudly(error, 'ChangeOrdersTab.products')
+      throw error
+    }
+    return productsQuery.data
+  }, [productsQuery.data, productsQuery.error, productsQuery.isLoading])
   const isLoading = changeOrdersQuery.isLoading || productsQuery.isLoading
   const error = changeOrdersQuery.error ?? productsQuery.error
 
@@ -102,12 +101,12 @@ export function ChangeOrdersTab() {
   }
 
   const handleAdd = () => {
-    setEditingOrder(normalizeOrder())
+    setEditingOrder(buildChangeOrderDraft())
     setOpen(true)
   }
 
   const handleEdit = (order: ChangeOrder) => {
-    setEditingOrder(normalizeOrder(order))
+    setEditingOrder(buildChangeOrderDraft(order))
     setOpen(true)
   }
 

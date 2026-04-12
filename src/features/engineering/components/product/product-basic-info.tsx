@@ -19,6 +19,7 @@ interface ProductBasicInfoProps {
     specOptions: { label: string; value: string }[]
     moldOptions: { label: string; value: string }[]
     isEdit: boolean
+    skuPreview: string
     templateLabel?: string
 }
 
@@ -34,6 +35,7 @@ export function ProductBasicInfo({
     specOptions,
     moldOptions,
     isEdit,
+    skuPreview,
     templateLabel
 }: ProductBasicInfoProps) {
     const { t } = useLanguage()
@@ -207,7 +209,7 @@ export function ProductBasicInfo({
                                     <Input
                                         className='h-[42px] w-full text-[11px] bg-muted/20 border-none text-slate-400 cursor-not-allowed rounded-2xl font-mono px-4'
                                         {...field}
-                                        value={normalizeSku(field.value)}
+                                        value={normalizeSku(isEdit ? field.value : skuPreview)}
                                         readOnly
                                         tabIndex={-1}
                                         placeholder={t('engineering.productMgmt.form.skuPlaceholder')}

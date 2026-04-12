@@ -19,6 +19,7 @@ const (
 	PurchaseTransactionIntentOrderLineAdd           = "ORDER_LINE_ADD"
 	PurchaseTransactionIntentOrderLineRemove        = "ORDER_LINE_REMOVE"
 	PurchaseTransactionIntentOrderLineContentChange = "ORDER_LINE_CONTENT_CHANGE"
+	PurchaseTransactionIntentReceiptConfirm         = "PURCHASE_CONFIRM"
 )
 
 var (
@@ -420,6 +421,23 @@ type PurchaseOrderLineRemovePayload struct {
 	Operator string                     `json:"operator"`
 }
 
+type PurchaseOrderReceiptConfirmLinePayload struct {
+	PurchaseOrderLineID uint    `json:"purchaseOrderLineId"`
+	OrderLineVersion    int     `json:"orderLineVersion"`
+	MaterialID          string  `json:"materialId"`
+	Quantity            float64 `json:"quantity"`
+	PurchasePrice       float64 `json:"purchasePrice"`
+	BatchNo             string  `json:"batchNo"`
+	TargetCategory      string  `json:"targetCategory"`
+}
+
+type PurchaseOrderReceiptConfirmPayload struct {
+	Operator    string                                   `json:"operator"`
+	Remarks     string                                   `json:"remarks"`
+	ReceiptDate string                                   `json:"receiptDate"`
+	Lines       []PurchaseOrderReceiptConfirmLinePayload `json:"lines"`
+}
+
 type ExecutePurchaseOrderTransactionInput struct {
 	OrderID         string
 	Intent          string
@@ -454,7 +472,7 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 	}
 
 	intent := strings.TrimSpace(input.Intent)
-	if intent != PurchaseTransactionIntentOrderSave && intent != PurchaseTransactionIntentExpectedDateChange && intent != PurchaseTransactionIntentSupplierChange && intent != PurchaseTransactionIntentOrderLineAdd && intent != PurchaseTransactionIntentOrderLineRemove && intent != PurchaseTransactionIntentOrderLineContentChange {
+	if intent != PurchaseTransactionIntentOrderSave && intent != PurchaseTransactionIntentExpectedDateChange && intent != PurchaseTransactionIntentSupplierChange && intent != PurchaseTransactionIntentOrderLineAdd && intent != PurchaseTransactionIntentOrderLineRemove && intent != PurchaseTransactionIntentOrderLineContentChange && intent != PurchaseTransactionIntentReceiptConfirm {
 		return nil, ErrPurchaseTransactionUnsupportedIntent
 	}
 
@@ -463,7 +481,7 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 		return nil, err
 	}
 
-	if input.ExpectedVersion != current.Version {
+	if input.ExpectedVersion != 0 && input.ExpectedVersion != current.Version {
 		return nil, ErrPurchaseTransactionVersionConflict
 	}
 
@@ -483,6 +501,38 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 	default:
 		return nil, ErrPurchaseTransactionUnsupportedIntent
 	}
+}
+
+func ParsePurchaseOrderReceiptConfirmPayload(raw json.RawMessage) (PurchaseOrderReceiptConfirmPayload, error) {
+	if len(raw) == 0 {
+		return PurchaseOrderReceiptConfirmPayload{}, fmt.Errorf("%w: payload is required", ErrPurchaseTransactionInvalidPayload)
+	}
+
+	var payload PurchaseOrderReceiptConfirmPayload
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return PurchaseOrderReceiptConfirmPayload{}, fmt.Errorf("%w: %v", ErrPurchaseTransactionInvalidPayload, err)
+	}
+	if len(payload.Lines) == 0 {
+		return PurchaseOrderReceiptConfirmPayload{}, fmt.Errorf("%w: lines is required", ErrPurchaseTransactionInvalidPayload)
+	}
+
+	return payload, nil
+}
+
+func mapReceiptConfirmPayloadLines(lines []PurchaseOrderReceiptConfirmLinePayload) []ConfirmPurchaseReceiptLineInput {
+	items := make([]ConfirmPurchaseReceiptLineInput, 0, len(lines))
+	for _, line := range lines {
+		items = append(items, ConfirmPurchaseReceiptLineInput{
+			PurchaseOrderLineID: line.PurchaseOrderLineID,
+			OrderLineVersion:    line.OrderLineVersion,
+			MaterialID:          line.MaterialID,
+			Quantity:            line.Quantity,
+			PurchasePrice:       line.PurchasePrice,
+			BatchNo:             line.BatchNo,
+			TargetCategory:      line.TargetCategory,
+		})
+	}
+	return items
 }
 
 func executePurchaseOrderLineRemoveTx(tx *gorm.DB, current *models.PurchaseOrder, input ExecutePurchaseOrderTransactionInput) (*models.PurchaseOrder, error) {

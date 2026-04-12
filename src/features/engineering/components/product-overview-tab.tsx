@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
+import { failLoudly } from '@/lib/safe-catch'
 import { SPEC_COMPONENTS } from './specs'
 import { type Product } from '../data/schema'
 import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
@@ -25,11 +26,34 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
         queryFn: () => ProductTypeService.getProductTypes(),
     })
     const productView = useMemo(() => getProductAttributes(product), [product])
+    const isLoading = productTypesQuery.isLoading
+
+    if (productTypesQuery.isError) {
+        const error = productTypesQuery.error instanceof Error
+            ? productTypesQuery.error
+            : new Error('[CRITICAL] Product type lookup query failed in product overview')
+        failLoudly(error, 'ProductOverviewTab.productTypes')
+        throw error
+    }
+
+    if (!isLoading && !productTypesQuery.data) {
+        const error = new Error(`[CRITICAL] Missing product types lookup for product overview ${product.id}`)
+        failLoudly(error, 'ProductOverviewTab.productTypes')
+        throw error
+    }
+
     const categoryType = useMemo(
-        () => (productTypesQuery.data ?? []).find((entry) => entry.id === product.typeId) || null,
+        () => productTypesQuery.data?.find((entry) => entry.id === product.typeId) || null,
         [product.typeId, productTypesQuery.data]
     )
-    const isLoading = productTypesQuery.isLoading
+
+    if (!isLoading && !categoryType) {
+        const error = new Error(
+            `[CRITICAL] Missing product type ${product.typeId} for product overview ${product.id}`
+        )
+        failLoudly(error, 'ProductOverviewTab.categoryType')
+        throw error
+    }
 
     const renderTechnicalRibbon = () => {
         if (isLoading) {
@@ -51,20 +75,20 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
             return (
                 <div className='flex items-center gap-4 p-4 rounded-2xl bg-muted/20 border border-dashed shadow-sm'>
                         <div className='flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-around gap-4 sm:gap-2 px-2'>
-                         <div className='flex flex-col gap-1'>
-                            <span className='text-[8px] sm:text-[10px] text-muted-foreground font-black uppercase tracking-widest'>{t('engineering.productMgmt.coreCategory')}</span>
-                            <span className='text-lg sm:text-xl font-black text-foreground'>{categoryType?.name || t('engineering.productMgmt.genericParts')}</span>
+                         <div className='flex min-h-[52px] flex-col justify-center gap-1'>
+                            <span className='text-[8px] sm:text-[10px] italic text-muted-foreground font-black uppercase tracking-widest'>{t('engineering.productMgmt.coreCategory')}</span>
+                            <span className='text-lg sm:text-xl font-black italic text-foreground'>{categoryType!.name}</span>
                         </div>
                         <div className='hidden sm:block w-px h-8 bg-muted' />
-                         <div className='flex flex-col gap-1'>
-                            <span className='text-[8px] sm:text-[10px] text-muted-foreground font-black uppercase tracking-widest'>{t('engineering.productMgmt.estimatedWeight')}</span>
+                         <div className='flex min-h-[52px] flex-col justify-center gap-1'>
+                            <span className='text-[8px] sm:text-[10px] italic text-muted-foreground font-black uppercase tracking-widest'>{t('engineering.productMgmt.estimatedWeight')}</span>
                             <div className='flex items-baseline gap-1'>
-                                <span className='text-xl sm:text-2xl font-mono font-black text-foreground'>{product.weight || '-'}</span>
+                                <span className='text-xl sm:text-2xl font-mono font-black italic text-foreground'>{product.weight || '-'}</span>
                                 <span className='text-[10px] font-bold opacity-40'>g</span>
                             </div>
                         </div>
                         <div className='hidden sm:block w-px h-8 bg-muted' />
-                        <div className='flex items-center gap-2 text-muted-foreground/40 italic text-[10px] font-bold uppercase tracking-tighter'>
+                        <div className='flex min-h-[52px] items-center gap-2 text-muted-foreground/40 italic text-[10px] font-bold uppercase tracking-tighter'>
                             <Settings2 className='size-3' />
                             {t('engineering.productMgmt.genericSpecMode')}
                         </div>
@@ -119,7 +143,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
                 </div>
                 <div className='flex flex-col items-start sm:items-end gap-2'>
                     <Badge variant='secondary' className='h-7 sm:h-8 px-4 sm:px-6 rounded-full text-[9px] sm:text-[10px] font-black bg-blue-600/5 border-none uppercase tracking-widest text-blue-600 italic shadow-inner'>
-                        {t('engineering.productMgmt.typeRefLabel')} / {productView.sku.split('-')[0] || t('engineering.productMgmt.genericTypeRef')}
+                        {t('engineering.productMgmt.typeRefLabel')} / {isLoading ? '...' : categoryType!.code}
                     </Badge>
                 </div>
             </div>
@@ -131,7 +155,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
             <Card className='rounded-[24px] border-2 border-dashed border-rose-500/20 bg-rose-500/[0.02] shadow-none overflow-hidden hover:bg-rose-500/[0.05] transition-all group'>
                 <div className='px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8'>
                      <div className='flex flex-col gap-1 shrink-0'>
-                        <div className='px-3 py-1 bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md shadow-lg shadow-rose-500/20'>
+                        <div className='px-3 py-1 bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest italic rounded-md shadow-lg shadow-rose-500/20'>
                             {t('engineering.productMgmt.riskConstraints')}
                         </div>
                     </div>
@@ -155,7 +179,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
                     <div className='h-px flex-1 bg-muted-foreground/10 border-t border-dashed' />
                      <div className='flex items-center gap-2'>
                         <ArrowUpDown className='size-3' />
-                        <span className='text-[10px] uppercase font-black tracking-widest'>{t('engineering.productMgmt.archiveLog')}</span>
+                        <span className='text-[10px] uppercase font-black tracking-widest italic'>{t('engineering.productMgmt.archiveLog')}</span>
                     </div>
                     <div className='h-px flex-1 bg-muted-foreground/10 border-t border-dashed' />
                 </div>

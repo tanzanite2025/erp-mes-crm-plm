@@ -4,10 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type TranslationKey } from '@/locales'
 import { type Employee } from '../data/schema'
-import {
-    calculatePersonnelWorkYears,
-    formatPersonnelDate,
-} from '../config/personnel-archive-columns'
+import { formatPersonnelDate } from '../config/personnel-archive-columns'
 
 function renderDateCell(value: string | undefined) {
     const formatted = formatPersonnelDate(value)
@@ -91,7 +88,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
             return filters.includes(row.getValue(id))
         },
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Position' />
+            <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.position')} />
         ),
         cell: ({ row }) => {
             const employee = row.original
@@ -103,7 +100,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
                         variant='outline'
                         className='rounded-full h-5 text-[8px] font-black tracking-widest border-none px-2 bg-slate-500/10 text-slate-500'
                     >
-                        Unassigned
+                        {t('orgPersonnel.list.unassigned')}
                     </Badge>
                 )
             }
@@ -114,7 +111,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
                 </div>
             )
         },
-        meta: { viewLabel: 'Position' },
+        meta: { viewLabel: t('orgPersonnel.excel.columns.position') },
     },
     {
         accessorKey: 'deptId',
@@ -178,8 +175,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.workYears')} />
         ),
         cell: ({ row }) => {
-            const joinedDate = row.getValue('joinedDate') as string | undefined
-            const workYears = calculatePersonnelWorkYears(joinedDate)
+            const workYears = row.original.workYears
             return <div className='font-mono text-[10px]'>{workYears || '-'}</div>
         },
         enableSorting: false,
@@ -229,7 +225,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.idCard')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.getValue('idCard') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.original.maskedIdCard || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.idCard') },
     },
     {
@@ -253,7 +249,7 @@ export const getEmployeeColumns = (t: TranslateFn): ColumnDef<Employee>[] => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title={t('orgPersonnel.excel.columns.bankCard')} />
         ),
-        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.getValue('bankCard') || '-'}</div>,
+        cell: ({ row }) => <div className='font-mono text-[11px] text-muted-foreground font-medium'>{row.original.maskedBankCard || '-'}</div>,
         meta: { viewLabel: t('orgPersonnel.excel.columns.bankCard') },
     },
     {

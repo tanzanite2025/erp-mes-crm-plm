@@ -128,7 +128,7 @@ func PatchInventoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, services.MapInventoryToResponse(updated, ""))
+	c.JSON(http.StatusOK, services.MapInventoryToResponse(updated, "", 0))
 }
 
 // PatchShipmentHandler updates a DRAFT shipment record via SDRTS delta payload.

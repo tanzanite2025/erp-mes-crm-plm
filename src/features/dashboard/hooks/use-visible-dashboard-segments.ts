@@ -4,6 +4,7 @@ import { StorageService } from '@/features/system-mgmt/services/storage-service'
 
 const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 const VISIBLE_SEGMENTS_QUERY_KEY = ['dashboard', 'visible-segments'] as const
+const EMPTY_VISIBLE_SEGMENT_IDS: string[] = []
 
 export function useVisibleDashboardSegments(segmentIds: string[]) {
   const queryClient = useQueryClient()
@@ -24,7 +25,7 @@ export function useVisibleDashboardSegments(segmentIds: string[]) {
     })
   }, [query.data, queryClient, segmentIds])
 
-  const visibleSegmentIds = query.data ?? []
+  const visibleSegmentIds = query.data ?? EMPTY_VISIBLE_SEGMENT_IDS
 
   const saveVisibleSegmentIds = async (ids: string[]) => {
     await StorageService.setItem(VISIBLE_SEGMENTS_KEY, ids)

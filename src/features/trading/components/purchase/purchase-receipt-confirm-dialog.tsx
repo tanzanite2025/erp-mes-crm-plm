@@ -21,10 +21,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import { failLoudly } from '@/lib/safe-catch'
 import { WarehouseCategoryCoreService, type WarehouseCategoryOption } from '@/features/warehouse/services/warehouse-category-core-service'
 import {
   filterWarehouseCategoriesByScene,
-  getDefaultWarehouseCategoryCode,
 } from '@/features/warehouse/utils/warehouse-category-config'
 import { type PurchaseOrder } from '../../data/schema'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
@@ -32,6 +32,7 @@ import type { ConfirmPurchaseReceiptPayload } from '../../purchase'
 
 interface ReceiptLineFormItem {
   purchaseOrderLineId: number
+  orderLineVersion: number
   materialId: string
   lineNo: number
   materialName: string
@@ -61,8 +62,12 @@ function buildDefaultReceiptLines(order: PurchaseOrder | undefined): ReceiptLine
     .map((line) => {
       const remainingQty = Math.max((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0), 0)
       if (!line.id || remainingQty <= 0) return null
+      if (line.version == null) {
+        throw new Error(`[CRITICAL] Missing purchase order line version for receipt confirmation on line ${line.id}`)
+      }
       return {
         purchaseOrderLineId: line.id,
+        orderLineVersion: line.version,
         materialId: line.materialId,
         lineNo: line.lineNo,
         materialName: line.materialName,
@@ -80,6 +85,26 @@ function buildDefaultReceiptLines(order: PurchaseOrder | undefined): ReceiptLine
     .filter((line): line is ReceiptLineFormItem => line !== null)
 }
 
+function resolvePurchaseReceiptCategoryLookup(options: WarehouseCategoryOption[]) {
+  const filteredOptions = filterWarehouseCategoriesByScene(options, 'purchase-receipt')
+  if (filteredOptions.length === 0) {
+    throw new Error('[CRITICAL] Missing warehouse categories for purchase receipt scene')
+  }
+
+  const defaultCategory =
+    filteredOptions.find((category) => category.code === 'MATERIAL') ??
+    filteredOptions.find((category) => category.defaultForPurchaseReceipt)
+
+  if (!defaultCategory) {
+    throw new Error('[CRITICAL] Missing default warehouse category for purchase receipt scene')
+  }
+
+  return {
+    filteredOptions,
+    defaultCategoryCode: defaultCategory.code,
+  }
+}
+
 function PurchaseReceiptConfirmDialogBody({
   order,
   onOpenChange,
@@ -93,6 +118,8 @@ function PurchaseReceiptConfirmDialogBody({
 }) {
   const { t } = useLanguage()
   const [warehouseCategories, setWarehouseCategories] = useState<WarehouseCategoryOption[]>([])
+  const [isWarehouseCategoryLoading, setIsWarehouseCategoryLoading] = useState(true)
+  const [warehouseCategoryLookupError, setWarehouseCategoryLookupError] = useState<Error | null>(null)
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().slice(0, 10))
   const [remarks, setRemarks] = useState(t('purchase.orders.detailReceiptAutoRemarks'))
   const [lines, setLines] = useState<ReceiptLineFormItem[]>(() => buildDefaultReceiptLines(order))
@@ -103,10 +130,16 @@ function PurchaseReceiptConfirmDialogBody({
   useEffect(() => {
     let isActive = true
 
-    void WarehouseCategoryCoreService.getCategoryOptions().then((options) => {
-      if (isActive) {
-        const filteredOptions = filterWarehouseCategoriesByScene(options, 'purchase-receipt')
-        const defaultCategoryCode = getDefaultWarehouseCategoryCode(options, 'purchase-receipt', 'MATERIAL')
+    setIsWarehouseCategoryLoading(true)
+    setWarehouseCategoryLookupError(null)
+
+    void (async () => {
+      try {
+        const options = await WarehouseCategoryCoreService.getCategoryOptions()
+        const { filteredOptions, defaultCategoryCode } = resolvePurchaseReceiptCategoryLookup(options)
+
+        if (!isActive) return
+
         setWarehouseCategories(filteredOptions)
         setLines((prev) =>
           prev.map((line) => ({
@@ -114,13 +147,30 @@ function PurchaseReceiptConfirmDialogBody({
             targetCategory: line.targetCategory || defaultCategoryCode,
           }))
         )
+      } catch (error) {
+        const resolvedError =
+          error instanceof Error
+            ? error
+            : new Error('[CRITICAL] Warehouse category lookup failed for purchase receipt dialog')
+        failLoudly(resolvedError, 'PurchaseReceiptConfirmDialog.warehouseCategories')
+
+        if (!isActive) return
+        setWarehouseCategoryLookupError(resolvedError)
+      } finally {
+        if (isActive) {
+          setIsWarehouseCategoryLoading(false)
+        }
       }
-    })
+    })()
 
     return () => {
       isActive = false
     }
   }, [])
+
+  if (warehouseCategoryLookupError) {
+    throw warehouseCategoryLookupError
+  }
 
   const updateLine = (purchaseOrderLineId: number, patch: Partial<ReceiptLineFormItem>) => {
     setLines((prev) =>
@@ -136,15 +186,30 @@ function PurchaseReceiptConfirmDialogBody({
   }
 
   const handleConfirm = () => {
+    if (isWarehouseCategoryLoading) return
+
     const normalizedLines = editableLines
-      .map((line) => ({
-        purchaseOrderLineId: line.purchaseOrderLineId,
-        materialId: line.materialId,
-        quantity: Math.min(Math.max(line.quantity || 0, 0), line.remainingQty),
-        purchasePrice: Math.max(line.purchasePrice || 0, 0),
-        batchNo: line.batchNo.trim(),
-        targetCategory: line.targetCategory.trim(),
-      }))
+      .map((line) => {
+        const requestedQuantity = Number(line.quantity)
+        if (!Number.isFinite(requestedQuantity) || requestedQuantity < 0) {
+          throw new Error(`[CRITICAL] Invalid receipt quantity for purchase order line ${line.purchaseOrderLineId}`)
+        }
+
+        const purchasePrice = Number(line.purchasePrice)
+        if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
+          throw new Error(`[CRITICAL] Invalid purchase price for purchase order line ${line.purchaseOrderLineId}`)
+        }
+
+        return {
+          purchaseOrderLineId: line.purchaseOrderLineId,
+          orderLineVersion: line.orderLineVersion,
+          materialId: line.materialId,
+          quantity: requestedQuantity,
+          purchasePrice,
+          batchNo: line.batchNo.trim(),
+          targetCategory: line.targetCategory.trim(),
+        }
+      })
       .filter((line) => line.quantity > 0 && line.targetCategory)
 
     if (normalizedLines.length === 0) return
@@ -260,6 +325,7 @@ function PurchaseReceiptConfirmDialogBody({
                 <Select
                   value={line.targetCategory}
                   onValueChange={(value) => updateLine(line.purchaseOrderLineId, { targetCategory: value })}
+                  disabled={isWarehouseCategoryLoading}
                 >
                   <SelectTrigger className='h-10 rounded-xl'>
                     <SelectValue placeholder={t('purchase.orders.receiptDialogSelectCategory')} />
@@ -282,7 +348,11 @@ function PurchaseReceiptConfirmDialogBody({
         <Button variant='ghost' onClick={() => onOpenChange(false)} className='rounded-2xl'>
           {t('purchase.orders.receiptDialogCancel')}
         </Button>
-        <Button onClick={handleConfirm} disabled={isSubmitting || editableLines.length === 0} className='rounded-2xl'>
+        <Button
+          onClick={handleConfirm}
+          disabled={isSubmitting || isWarehouseCategoryLoading || editableLines.length === 0}
+          className='rounded-2xl'
+        >
           {isSubmitting ? t('purchase.orders.receiptDialogSubmitting') : t('purchase.orders.receiptDialogSubmit')}
         </Button>
       </div>

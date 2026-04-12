@@ -32,17 +32,12 @@ import {
 import { isConflictError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from './product-type-action-dialog'
-import { type Product, type ProductType } from '../data/schema'
+import { type ProductType } from '../data/schema'
 import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
-import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
-import { ProductCoreService } from '../services/product-core-service'
+import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
 import { ProductTypeService } from '../services/product-type-service'
 import { type SaveProductTypeInput } from '../mutation-types'
-import {
-  buildChildTypeCountMap,
-  buildOrderedProductTypes,
-  buildProductCountByType,
-} from '../utils/product-type-tree'
+import { buildOrderedProductTypes } from '../utils/product-type-tree'
 
 interface CategoryManagerDialogProps {
   open: boolean
@@ -61,17 +56,9 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
     queryFn: () => ProductTypeService.getProductTypes(),
     enabled: open,
   })
-  const productsQuery = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts(),
-    enabled: open,
-  })
-  const data = productTypesQuery.data ?? []
-  const products = productsQuery.data ?? []
+  const data = productTypesQuery.data
 
-  const displayData = useMemo(() => buildOrderedProductTypes(data, true), [data])
-  const productCountByType = useMemo(() => buildProductCountByType(products as Product[]), [products])
-  const childTypeCountMap = useMemo(() => buildChildTypeCountMap(data), [data])
+  const displayData = useMemo(() => (data ? buildOrderedProductTypes(data, true) : []), [data])
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -132,26 +119,6 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
             onClick={async () => {
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
-
-              const relatedCount = productCountByType.get(row.original.id) ?? 0
-              if (relatedCount > 0) {
-                toast.error(
-                  t('engineering.categoryArchive.toasts.relatedProducts', {
-                    count: relatedCount,
-                  })
-                )
-                return
-              }
-
-              const childCategoriesCount = childTypeCountMap.get(row.original.id) ?? 0
-              if (childCategoriesCount > 0) {
-                toast.error(
-                  t('engineering.categoryArchive.toasts.hasChildren', {
-                    count: childCategoriesCount,
-                  })
-                )
-                return
-              }
 
               try {
                 await deleteProductType(row.original.id)
@@ -240,7 +207,19 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows?.length ? (
+                {productTypesQuery.isPending ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className='h-32 text-center text-muted-foreground font-black uppercase tracking-widest text-[10px]'>
+                      {t('engineering.categoryArchive.empty.loading')}
+                    </TableCell>
+                  </TableRow>
+                ) : productTypesQuery.isError ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className='h-32 text-center text-destructive font-black uppercase tracking-widest text-[10px]'>
+                      {t('engineering.categoryArchive.toasts.loadFailed')}
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} className='h-14 group hover:bg-muted/30 transition-all border-b border-dashed border-muted/50'>
                       {row.getVisibleCells().map((cell) => (

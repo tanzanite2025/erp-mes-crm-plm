@@ -1,3 +1,3253 @@
+### 1. audit：第十五轮审计修复（工龄权威下沉 + PII 脱敏权限裁决 + 语言契约收口）
+
+日期：2026-04-12  
+状态：待批准
+
+### 1. plan：第四十三轮 Service 出口 Runtime Contract 统一模式
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第四十三轮承接第四十二轮架构收口的第二优先级：Service 出口 Runtime Contract 统一模式。
+
+当前已经出现三种并存模式：
+
+1. adapter 内部直接 parse
+2. service 出口 parse
+3. 只有 adapter 映射，没有 runtime schema 防线
+
+这会导致：
+
+1. DTO Integrity 审计成本持续升高
+2. service / adapter 责任边界不清
+3. 同一类问题难以形成统一 code review 规则
+
+#### 1.2 本轮目标
+
+本轮目标是把“新收口链路”的模式统一为：
+
+1. adapter 负责 DTO -> contract 映射
+2. service 出口负责 `schema.parse(...)`
+3. 对既有稳定链路不做一刀切全面迁移
+
+#### 1.3 推荐实施对象
+
+##### 1.3.1 首批样板链路
+
+本轮建议优先从以下链路中选择 1-2 条样板实施：
+
+1. `src/features/trading/customer/services/customer-service.ts`
+2. `src/features/trading/supplier/services/supplier-service.ts`
+
+说明：
+
+1. 这两条链路当前更接近“ensureResponse + adapter 纯映射”模式
+2. 风险清晰，边界相对集中
+3. 已完成的 `StocktakeCoreService` 可作为 service 出口 parse 样板参考
+
+##### 1.3.2 已有样板参考
+
+当前可复用参考链路：
+
+1. `StocktakeCoreService`
+   - 已采用 service 出口 parse
+2. 这可以作为新模式的实施模板，而不是再回到 adapter 内补 parse
+
+#### 1.4 推荐实施顺序
+
+本轮建议：
+
+1. 先为选中的领域补 `data/schema.ts` 中缺失的 runtime schema
+2. 再在 service 出口统一执行 `schema.parse(...)`
+3. adapter 保持纯映射职责不变
+
+#### 1.5 职责边界
+
+本轮建议明确：
+
+1. **adapter**：
+   - 只负责 DTO -> contract 映射
+   - 不再新增 parse 职责
+
+2. **service**：
+   - 负责 `ensureObjectResponse / ensureArrayResponse`
+   - 负责 `schema.parse(...)`
+   - 作为进入 UI 前的最终 runtime contract 防线
+
+#### 1.6 第一轮实施边界
+
+本轮建议：
+
+1. 只选择 1-2 条样板链路
+2. 样板优先选择 Customer / Supplier 中边界更小的链路
+3. 验证模式可用后再逐步扩散
+
+本轮不做：
+
+1. 不一次性改全仓所有 service
+2. 不回头全面重写已稳定运行的 parse 链路
+3. 不把 Runtime Contract 改造与 Version Guard / Go 测试基线 helper 同轮并行铺开
+
+#### 1.7 当前阶段结论
+
+第四十三轮当前已经明确：Service 出口 Runtime Contract 的统一模式应该以“adapter 只映射、service 出口 parse”为目标边界推进，并通过少量样板链路先跑通模式，而不是一次性全仓重构。当前最适合进入第一轮样板化实施的链路是 `CustomerService` 与 `SupplierService`，而 `StocktakeCoreService` 已经可以作为统一模式的参考样板。
+
+### 1. plan：第四十二轮架构收口规划（Version Guard / Runtime Contract / Test Schema Baseline）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+经过前四十轮审计与实施，问题已经不再主要是单点 bug，而是多处重复暴露同一类架构缺口：
+
+1. `version` 锁字段在多个模块反复出现静默兜底或断言不一致
+2. Service 出口的 runtime schema 防线在不同模块模式分裂
+3. Go 后端测试大量手写建表 SQL，持续出现测试 schema 漂移
+
+因此当前阶段应从“继续补丁”切换为“收口公共能力”。
+
+#### 1.2 本轮最高优先级目标
+
+本轮聚焦三项最高优先级架构能力：
+
+1. **Version Guard 单源**
+2. **Service 出口 Runtime Contract 统一模式**
+3. **Go 测试 Schema 基线收口**
+
+#### 1.3 目标一：Version Guard 单源
+
+##### 1.3.1 目标
+
+把核心实体 PATCH / 保存链路里的 `version` 校验从“各模块各自处理”收口为公共约束：
+
+1. 核心写操作必须显式要求 `version`
+2. 缺失版本必须 fail loud
+3. 禁止 `?? 0` / `|| 0` 静默兜底
+
+##### 1.3.2 推荐实现方向
+
+本轮建议：
+
+1. 抽公共 helper / invariant：
+   - 例如统一的 `assertVersionForPatch(...)` / `buildVersionedPatchMetadata(...)` 这类能力
+2. 让维护型 service 与事务型 service 统一走一套写前断言模式
+3. 后续 code review 只接受 fail loud，不接受默认值降级
+
+##### 1.3.3 预期收益
+
+1. 降低 version 漏传/兜底重复发生概率
+2. 降低 patch/save 链路风格分裂
+3. 为后续模块提供可复用写操作模板
+
+#### 1.4 目标二：Service 出口 Runtime Contract 统一模式
+
+##### 1.4.1 目标
+
+把 frontend service 出口的数据契约收口为统一模式，避免：
+
+1. 有些链路在 adapter 内 parse
+2. 有些链路在 service 出口 parse
+3. 有些链路完全没有 parse
+
+##### 1.4.2 推荐实现方向
+
+本轮建议：
+
+1. 优先统一为：
+   - adapter 负责 DTO -> contract 映射
+   - service 出口负责 `schema.parse(...)`
+2. 对已存在 parse 的链路不立即全面改造，但新收口链路遵循统一模式
+3. 对高风险 service 出口逐步补齐 schema 与 parse
+
+##### 1.4.3 预期收益
+
+1. 降低 DTO Integrity 审计成本
+2. 让 service 责任边界更清晰
+3. 避免 runtime schema 防线分布混乱
+
+#### 1.5 目标三：Go 测试 Schema 基线收口
+
+##### 1.5.1 目标
+
+降低 Go 测试中手写 `CREATE TABLE` 的重复与漂移：
+
+1. 避免每个测试文件各维护一套 `sales_orders` / `inventory` / `purchase_orders` SQL
+2. 降低模型字段新增后测试基线漏改的概率
+
+##### 1.5.2 推荐实现方向
+
+本轮建议：
+
+1. 优先抽共享 test schema helper / builder
+2. 先从重复频次最高、漂移最频繁的表开始收口
+3. 不急于一次性全切 AutoMigrate，优先降低重复 SQL 维护成本
+
+##### 1.5.3 预期收益
+
+1. 减少测试基线列漂移补丁
+2. 降低后端测试维护成本
+3. 提高测试 schema 与真实模型的一致性
+
+#### 1.6 推荐实施顺序
+
+本轮建议按以下顺序推进：
+
+1. **先做 Version Guard 单源**
+2. **再做 Service 出口 Runtime Contract 统一模式**
+3. **最后做 Go 测试 Schema 基线 helper**
+
+原因：
+
+1. Version Guard 直接影响数据正确性与并发安全
+2. Runtime Contract 直接影响前端稳定性与坏 DTO 穿透风险
+3. Test Schema 收口更偏中期维护成本优化
+
+#### 1.7 第一轮实施边界
+
+本轮建议：
+
+1. 先做最小可落地公共 helper / 约束
+2. 选择少量已知问题链路作为接入样板
+3. 验证 helper/模式本身是否稳定，再逐步扩散
+
+本轮不做：
+
+1. 不一次性重构所有维护型 service
+2. 不一次性补全全仓所有 service parse
+3. 不一次性改造所有 Go 测试 schema
+
+#### 1.8 当前阶段结论
+
+第四十二轮当前已经明确：系统已进入应优先收口公共架构能力，而不是继续主要依赖补丁推进的阶段。本轮最高优先级应落在三项能力上：Version Guard 单源、Service 出口 Runtime Contract 统一模式、Go 测试 Schema 基线收口。其中最先应实施的是 Version Guard 公共约束，再以少量链路样板推动 Runtime Contract 和测试基线的后续收口。
+
+### 1. plan：第四十轮 SalesOrder 后端测试基线 `payment_method` 列漂移修复
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第四十轮关注的是 `SalesOrder` 后端测试基线中的 `payment_method` 列漂移，而不是生产业务字段新增：
+
+1. 当前业务代码已经在使用 `payment_method` / `payment_method_name`
+2. 需要确认问题是否只发生在测试建表基线
+3. 若是测试基线缺列，应按最小边界补齐测试 schema
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `server/services/sales_order_flow_test.go`
+   - `setupSalesOrderFlowTestDB(...)` 里手写的 `sales_orders` 测试表当前缺少：
+     - `payment_method`
+     - `payment_method_name`
+     - `payment_term`
+     - `payment_term_name`
+
+2. 生产写链路当前已经稳定依赖这些列：
+   - `server/services/order_master_service.go`
+   - `SaveSalesOrderForBulkSync(...)` 的 `updates` 明确包含：
+     - `payment_method`
+     - `payment_method_name`
+     - `payment_term`
+     - `payment_term_name`
+
+3. DTO / mapper 也已同步这些字段：
+   - `server/services/sales_order_dto.go`
+   - `server/services/sales_order_mapper.go`
+
+4. 其它测试基线已能证明这不是生产字段漂移，而是单个测试建表落后：
+   - `server/services/inventory_command_service_test.go` 中的 `sales_orders` 建表已经包含 payment 相关列
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **Test schema drift**：测试文件里的手写建表 SQL 落后于当前业务模型
+2. **Not a production contract bug**：这不是生产 handler/service 的字段契约错误，而是测试基线缺列
+
+#### 1.4 推荐方案
+
+##### 1.4.1 sales_order_flow_test.go
+
+本轮建议必做：
+
+1. 在 `sales_orders` 测试建表中补齐：
+   - `payment_method`
+   - `payment_method_name`
+   - `payment_term`
+   - `payment_term_name`
+
+##### 1.4.2 修复边界
+
+本轮建议：
+
+1. 只修测试基线 SQL
+2. 不改生产模型
+3. 不改 handler / service 业务逻辑
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **最小修复**：只补 `sales_order_flow_test.go` 缺失列
+2. **验证**：执行定向 Go 测试
+
+本轮不做：
+
+1. 不对 `SalesOrder` 整条生产链路做重构
+2. 不在无证据前修改 DTO / mapper / model
+3. 不把测试基线问题误判成线上业务契约问题
+
+#### 1.6 当前阶段结论
+
+第四十轮当前已经明确：`SalesOrder` 后端测试基线里的 `payment_method` 列漂移根因是 `server/services/sales_order_flow_test.go` 中手写 `sales_orders` 测试表缺少 payment 相关列，而业务代码本身早已稳定读写这些字段。正确修复方向应是最小化补齐测试建表 SQL，并通过定向 Go 测试验证，而不是去改生产模型或业务服务。
+
+### 1. audit：第三十九轮物料维护版本锁审计（Material Maintenance Audit）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十九轮关注 `material-maintenance-service.ts` 的版本锁完整性：
+
+1. PATCH 写路径是否强制要求 `version`
+2. 是否存在 `?? 0 / || 0` 等静默兜底
+3. 上游调用链是否其实已经掌握基线版本
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/material-archive/services/material-maintenance-service.ts`
+   - `patchMaterial(id, delta, version)` 当前直接构造：
+     - `metadata: { id, version }`
+   - 当前未发现 `version ?? 0`、`version || 0` 或其它静默降级
+
+2. 上游调用链已经有显式版本断言：
+   - `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+   - 在 PATCH 前会检查：
+     - `typeof data.version !== 'number'`
+     - `Number.isNaN(data.version)`
+   - 一旦缺失会：
+     - `failLoudly(...)`
+     - `throw error`
+
+3. 当前物料维护返回链路也已具备 runtime schema 防线：
+   - `material-maintenance-service.ts` 中的 `parseMaterial(...)`
+   - 内部执行：
+     - `materialApiDTOSchema.parse(...)`
+   - `saveMaterial(...)` 与 `patchMaterial(...)` 都复用该 parse
+
+4. 相邻 adapter 当前也未见会侵蚀 PATCH 版本锁的实锤默认值：
+   - `toSaveMaterialApiDTO(...)` 只是透传：
+     - `version: material.version`
+   - 当前未见类似 `version ?? 0`
+
+#### 1.3 问题本质
+
+这轮真实情况分为两类：
+
+1. **Version guard already exists**：PATCH 写路径当前已有显式版本强制校验
+2. **Reported risk does not apply here**：你描述的版本锁削弱模式不适用于当前物料维护链路
+
+#### 1.4 推荐方案
+
+##### 1.4.1 material-maintenance-service.ts
+
+本轮建议：
+
+1. 保持当前 PATCH 版本传递逻辑
+2. 不为不存在的问题追加无意义整改
+
+##### 1.4.2 后续审计方向
+
+本轮建议：
+
+1. 如需继续推进，应转查那些仍存在 `version` 默认值或未做前置断言的维护 service
+2. 不把已具备 fail loud 的链路误判成锁失效风险
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **非实锤项不动**：当前不修改 `material-maintenance-service.ts`
+2. **可选后续**：如要继续，可转查其它维护 service 的版本锁边界
+
+本轮不做：
+
+1. 不在当前已具备版本断言的链路上重复加防线
+2. 不把 false alarm 扩写成代码整改任务
+3. 不在没有证据前泛化为整个物料模块并发锁体系问题
+
+#### 1.6 当前阶段结论
+
+第三十九轮当前已经明确：`material-maintenance-service.ts` 的 PATCH 写路径已经具备 version 强制校验，不存在你描述的 `?? 0 / || 0` 型静默降级问题。上游 `use-material-mgmt-data.ts` 也已经在发 PATCH 前做了 fail loud 断言，同时返回链路还复用了 `materialApiDTOSchema.parse(...)`。因此这轮在当前物料维护链路上的准确结论应是 false alarm；若后续继续推进，应把注意力转向其它真正削弱了 version 契约的维护 service。
+
+### 1. audit：第三十八轮运行时未定义错误审计（Critical Reference Error / use-product-form-derive）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十八轮关注 `use-product-form-derive.ts` 是否存在运行时引用错误：
+
+1. 是否直接调用了 `React.useState`
+2. 但文件头部没有导入 `React`
+3. 从而导致 hook 一挂载就白屏
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-product-form-derive.ts`
+   - 文件顶部当前是：
+     - `import { useEffect, useMemo, useState } from 'react'`
+   - 因而 `useState` 已经被显式导入
+
+2. 文件内部当前调用也不是 `React.useState(...)`
+   - 实际使用的是：
+     - `const [nextCodeDeriveError, setNextCodeDeriveError] = useState<string | null>(null)`
+
+3. 同文件当前也没有其它 `React.` 命名空间调用
+
+4. 因此这轮的真实结论是：
+   - 当前代码与风险描述并不一致
+   - 在 `use-product-form-derive.ts` 上未发现会导致 `React is not defined` 的现存实锤问题
+
+#### 1.3 问题本质
+
+这轮真实情况分为两类：
+
+1. **Import is already correct**：`useState` 已被正确导入
+2. **Reported scenario does not match current file**：所描述的 `React.useState` 未导入问题不适用于当前工作区版本
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-product-form-derive.ts
+
+本轮建议：
+
+1. 保持当前实现
+2. 不为不存在的问题追加无意义修复
+
+##### 1.4.2 若后续仍有白屏
+
+本轮建议：
+
+1. 优先核对浏览器/控制台报错堆栈
+2. 对照当前工作区文件内容确认是否为旧代码、未保存缓存或其它 hook 引用错误
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **非实锤项不动**：当前不修改 `use-product-form-derive.ts`
+2. **可选后续**：如要继续，可转查其它真实 runtime reference error 链路
+
+本轮不做：
+
+1. 不在已正确导入 `useState` 的文件上做无效修复
+2. 不把 false alarm 扩写成代码整改任务
+3. 不在没有堆栈证据前泛化为整个工程 hook 体系问题
+
+#### 1.6 当前阶段结论
+
+第三十八轮当前已经明确：`use-product-form-derive.ts` 并不存在“调用 `React.useState` 但未导入 `React`”的现存问题。当前文件已经正确从 `react` 导入 `useState`，且内部也并未使用 `React.useState` 命名空间调用。因此这轮在当前工作区代码上应判定为 false alarm；若后续仍观测到白屏，应优先依据真实堆栈继续定位其它运行时引用错误。
+
+### 1. audit：第三十七轮 DTO Integrity Gap 扩展审计（Candidate Service Exits）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十七轮是在第三十六轮 false alarm 基础上继续往外扩展：
+
+1. 跳过已确认有 `schema.parse(...)` 的产品维护链路
+2. 转审其它真正可能缺少 runtime schema 防线的 service 出口
+3. 优先找最小闭环的实锤候选，而不是一次性扩成全仓排查
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/warehouse/stocktake/services/stocktake-core-service.ts`
+   - `getTasks()` / `getItems()` 当前是：
+     - `ensureArrayResponse(...)`
+     - `toStocktakeTaskContracts(...) / toStocktakeItemContracts(...)`
+   - 当前未见 service 出口 parse
+
+2. `src/features/trading/customer/services/customer-service.ts`
+   - `getCustomers()` 当前是：
+     - `ensureArrayResponse(...)`
+     - `toCustomerContracts(...)`
+   - 当前未见 runtime schema.parse
+
+3. `src/features/trading/supplier/services/supplier-service.ts`
+   - `getSuppliers()` / `executeSupplierTransaction(...)` 当前都依赖 adapter 转换
+   - 当前未见 runtime schema.parse
+
+4. 这些候选链路对应的 adapter 当前更接近纯映射：
+   - `customer-api-adapter.ts`
+   - `supplier-api-adapter.ts`
+   - `stocktake-api-adapter.ts`
+   - 当前主要是字段映射与默认值，不像 `toProductContract(...)` 那样内置 schema.parse
+
+#### 1.3 问题本质
+
+这轮真实情况分为两类：
+
+1. **Real candidate exits found**：已经找到数条更符合“adapter-only mapping”模式的 service 出口
+2. **Need a smallest-closure choice**：下一阶段不应同时改多个领域，而应先选一条最小闭环链路落地
+
+#### 1.4 推荐方案
+
+##### 1.4.1 候选优先级
+
+本轮建议：
+
+1. 优先审 `StocktakeCoreService`
+2. 其次是 `CustomerService`
+3. 再其次是 `SupplierService`
+
+原因：
+
+1. 仓储模块近期已在连续做 runtime contract 收口
+2. 更适合沿用已有库存/盘点审计上下文继续最小补强
+
+##### 1.4.2 实施边界
+
+本轮建议：
+
+1. 只从一条链路挑选最小闭环实锤项
+2. 为对应 contract 建 schema 或复用现有 schema
+3. 在 service 出口或 adapter 内建立明确 parse 防线
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **优先单点突破**：先选一条 service 出口实施
+2. **不多域同时开工**：避免 Customer / Supplier / Stocktake 一次性混改
+
+本轮不做：
+
+1. 不把所有候选链路同时补 parse
+2. 不在没有 schema 设计前直接批量塞 `parse(...)`
+3. 不把扩展审计误推进成全局 DTO Integrity 重构
+
+#### 1.6 当前阶段结论
+
+第三十七轮当前已经明确：真正更像 DTO Integrity Gap 的链路不在产品维护，而在一些仍然采用“ensureResponse + adapter 纯映射”模式的 service 出口上。当前最值得优先推进的候选是 `StocktakeCoreService`，其次是 `CustomerService` 与 `SupplierService`。下一阶段应从其中选择一条最小闭环链路落地 runtime schema 防线，而不是一次性把多个领域全部展开。
+
+### 1. audit：第三十六轮 DTO Integrity Gap 审计（Product Maintenance Service）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十六轮关注产品维护 Service 的 DTO 完整性风险：
+
+1. `product-maintenance-service.ts` 是否仅依赖 adapter 映射
+2. create / patch / save 返回链路是否缺少 runtime parse
+3. `Product` 当前是否已经具备可复用的 schema 防线
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/services/product-maintenance-service.ts`
+   - `createProduct(...)` 返回前会调用 `toProductContract(...)`
+   - `patchProduct(...)` 返回前会调用 `toProductContract(...)`
+   - `saveProduct(...)` 只是复用这两条链路
+
+2. `src/features/engineering/adapters/product-api-adapter.ts`
+   - `toProductContract(...)` 并不是纯字段映射
+   - 其内部直接执行了 `productSchema.parse(...)`
+
+3. `src/features/engineering/data/schema.ts`
+   - 当前已经定义 `productSchema`
+   - 因而产品维护返回值实际上已经过 runtime schema 校验
+
+4. 因此这轮在产品维护链路上的真实结论是：
+   - 当前未发现“Service 只依赖 adapter 转换、没有 runtime parse”这一实锤问题
+   - 更准确地说，这是一次 false alarm
+
+#### 1.3 问题本质
+
+这轮真实情况分为两类：
+
+1. **Runtime validation already exists**：`toProductContract(...)` 内部已执行 `productSchema.parse(...)`
+2. **Risk description does not apply here**：你描述的 DTO 穿透风险成立于“adapter 只映射、不 parse”的链路，但产品维护链路并不符合这一前提
+
+#### 1.4 推荐方案
+
+##### 1.4.1 ProductMaintenanceService
+
+本轮建议：
+
+1. 保持当前返回链路
+2. 不为不存在的问题追加一层重复 parse
+
+##### 1.4.2 后续 DTO Integrity 审计方向
+
+本轮建议：
+
+1. 继续优先排查那些 adapter 内部**没有** schema.parse 的 service 出口
+2. 不把已有 parse 的链路误判成 integrity gap
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **非实锤项不动**：本轮不修改 `ProductMaintenanceService`
+2. **可选后续**：如要继续推进，可转审其它真正缺失 runtime schema 的 service
+
+本轮不做：
+
+1. 不在已有 `productSchema.parse(...)` 的链路上重复加 parse
+2. 不把 false alarm 扩写成代码整改任务
+3. 不在没有证据前泛化为整个 engineering 模块 DTO Integrity 全面重构
+
+#### 1.6 当前阶段结论
+
+第三十六轮当前已经明确：`ProductMaintenanceService` 并不存在“由于只依赖 adapter 而导致 DTO 穿透”的实锤缺口，因为它的返回链路最终会进入 `toProductContract(...)`，而该函数内部已经执行 `productSchema.parse(...)`。因此这轮在产品维护链路上的准确结论应是 false alarm；如果后续继续推进 DTO Integrity 审计，应把注意力转向那些 adapter 确实只做映射、没有 runtime schema 防线的 service 出口。
+
+### 1. audit：第三十五轮版本兜底风险审计（Version Fallback Risk / Product Patch）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十五轮关注产品维护 PATCH 写路径中的版本锁完整性：
+
+1. `product-maintenance-service.ts` 是否对 `version` 做了静默兜底
+2. 编辑态写链路是否本来已持有基线版本却没有强制使用
+3. 相邻 adapter 是否也存在类似默认值语义
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/services/product-maintenance-service.ts`
+   - `patchProduct(current, product)` 当前构造 PATCH metadata 时写的是：
+     - `version: product.version ?? 0`
+   - 这属于对版本号的静默降级
+
+2. 该问题对并发锁是高风险的：
+   - `version` 是 PATCH 并发冲突判定的核心契约
+   - 把缺失版本降级成 `0` 可能让后端收到伪合法版本值
+   - 具体后果取决于后端实现，但风险包括：
+     - 误判为合法写入
+     - 跳过校验
+     - 写覆盖
+
+3. 当前真实问题并不是前端拿不到版本：
+   - `saveProduct(product, current?)` 的编辑态已经要求 `current`
+   - `patchProduct(current, product)` 也已经拿到了 `current: Product`
+   - 因而 service 层至少掌握一个可信版本来源，不应继续 `?? 0`
+
+4. 相邻代码还存在一个需要后续复核的版本默认值点：
+   - `src/features/engineering/adapters/product-api-adapter.ts`
+   - `toProductApiDTO(...)._v = product.version ?? 1`
+   - 但当前最明确、最危险的实锤仍然是 PATCH metadata 的 `version ?? 0`
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Silent version downgrade**：PATCH metadata 把缺失版本降级为 `0`
+2. **Lock contract erosion**：并发锁所需版本契约被 service 层悄悄削弱
+3. **Version source already exists**：编辑态实际上已有 `current.version` 可用，不该再兜底
+
+#### 1.4 推荐方案
+
+##### 1.4.1 product-maintenance-service.ts
+
+本轮建议必做：
+
+1. 去掉 `version ?? 0`
+2. 对 PATCH 写路径强制断言版本必须存在
+3. 缺失版本时直接 fail loud
+
+##### 1.4.2 version 来源
+
+本轮建议：
+
+1. 优先使用 `current.version` 作为 PATCH 基线版本
+2. 或者在调用边界明确要求 `product.version` 必填
+3. 但不能再用静默默认值代替
+
+##### 1.4.3 product-api-adapter.ts
+
+本轮建议：
+
+1. 复核 `_v = product.version ?? 1` 是否只用于 create / bulk sync
+2. 若该默认值会进入核心 PATCH/并发锁路径，也应同步收口
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口 `product-maintenance-service.ts` 的 PATCH 版本兜底
+2. **必做**：让缺失版本直接失败，而不是降级
+3. **复核项**：检查 adapter `_v` 默认值是否也需同步治理
+
+本轮不做：
+
+1. 不对整个 engineering 模块所有 version 字段一次性大重构
+2. 不在没有证据前批量修改所有 `?? 0 / ?? 1`
+3. 不引入新的前端推测版本逻辑
+
+#### 1.6 当前阶段结论
+
+第三十五轮当前已经明确：`product-maintenance-service.ts` 中 `version: product.version ?? 0` 是一个实锤的并发锁降级点。它的问题不在于“有没有版本”，而在于 service 层明明位于编辑态写链路、也已经拿到了 `current` 基线，却仍然选择用 `0` 对缺失版本做静默兜底。下一阶段应优先把这条 PATCH 写路径改成强制断言版本存在，并在必要时继续复核相邻 adapter 的 `_v` 默认值是否也会侵蚀并发锁契约。
+
+### 1. plan：第三十四轮 Reservation 模型实现规划（Reservation Model Implementation）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十四轮开始把第三十三轮已经确认的 Reservation source of truth 落成可执行实现规划：
+
+1. 建 Reservation 模型 / 表结构
+2. 建 Reservation 生命周期
+3. 将 Reservation 聚合接入 Inventory query
+4. 让前端只读消费 `reserved` 与 `availableQty`
+
+#### 1.2 当前规划结论
+
+当前已经确认：
+
+1. Reservation 模型最小字段面应至少包含：
+   - `materialId`
+   - `categoryCode`
+   - `batchNo`
+   - `quantity`
+   - `status`
+   - `sourceType`
+   - `sourceId`
+   - 生命周期时间戳（如创建、释放、核销、失效）
+
+2. Reservation 生命周期必须作为独立状态机处理：
+   - reserve
+   - release
+   - consume
+   - expire / cancel
+
+3. Inventory 查询侧的目标输出已明确：
+   - `onHand`
+   - `reserved`
+   - `availableQty = onHand - reserved`
+
+4. 前端仅承担消费接入：
+   - Inventory DTO 扩展字段
+   - adapter / schema 接入
+   - 不新增任何公式计算
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Need a new source-of-truth model**：必须新增 Reservation 模型，而不是继续借用 shipment
+2. **Need an explicit lifecycle**：预留不是静态数字，必须有状态迁移
+3. **Need aggregate integration**：最终要把 Reservation 聚合接到 Inventory query 上
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Reservation 模型
+
+本轮建议必做：
+
+1. 设计 Reservation 后端 model 与表结构
+2. 明确索引维度（物料、仓类、批次、状态、来源单据）
+
+##### 1.4.2 Reservation 生命周期
+
+本轮建议必做：
+
+1. 明确何时创建 reservation
+2. 明确何时释放 / 核销 / 失效
+3. 明确每种状态是否计入 `reserved`
+
+##### 1.4.3 Inventory 聚合接入
+
+本轮建议必做：
+
+1. `onHand` 先来自当前库存余额
+2. `reserved` 来自 Reservation 聚合
+3. `availableQty = onHand - reserved`
+4. 由 query / dto / mapper 输出给前端
+
+##### 1.4.4 前端消费接入
+
+本轮建议：
+
+1. 扩展前端 `InventoryItemApiDTO`
+2. adapter / schema 接入新增字段
+3. 前端只读消费，不补公式
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **先建 Reservation source of truth**
+2. **再做 Inventory 聚合输出**
+3. **最后做前端消费接入**
+
+本轮不做：
+
+1. 不让 `ShipmentRecord` 回退承担 reservation 语义
+2. 不在前端补任何 `reserved` / `availableQty` 公式
+3. 不跳过生命周期设计直接拼装查询字段
+
+#### 1.6 当前阶段结论
+
+第三十四轮当前已经明确：如果要把 `availableQty = onHand - reserved` 做成真正可上线的权威契约，就必须先落地 Reservation 模型本身，再通过生命周期与聚合查询把 `reserved` 变成后端可审计数字，最后才把它暴露给前端消费。换句话说，下一阶段已经不再是“要不要做”，而是“按什么最小闭环、什么顺序去做”。
+
+### 1. plan：第三十三轮 reserved 来源定义规划（Reservation Source of Truth）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十三轮是在第三十二轮来源规划基础上，把 `reserved` 的来源正式落锤：
+
+1. `reserved` 采用独立 Reservation 模型 / 预留表
+2. `ShipmentRecord` 不承担 `reserved` 权威语义
+3. 后续 `availableQty = onHand - reserved` 必须建立在该 Reservation source of truth 之上
+
+#### 1.2 当前规划结论
+
+当前已经确认：
+
+1. `reserved` 的权威来源不再尝试复用出库流水：
+   - `ShipmentRecord` 继续只表达出库事务
+   - 不再承载库存预留状态
+
+2. 后续最小实现闭环应基于独立 Reservation 模型展开：
+   - Reservation model / table
+   - Reservation query / aggregation
+   - Inventory query DTO / mapper 输出 `reserved`
+   - 再进一步输出 `availableQty`
+
+3. 这也意味着当前 architecture choice 已明确：
+   - 牺牲一部分“最小改动”
+   - 换取 `reserved` 语义的长期可审计性与可维护性
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **Reservation source is now defined**：`reserved` 来源已明确为独立 Reservation 模型
+2. **Implementation surface is larger but cleaner**：实现面会变大，但语义边界会更干净
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Reservation 模型
+
+本轮建议必做：
+
+1. 设计 Reservation 表 / 模型
+2. 明确字段（物料、仓类/批次、数量、状态、来源单据、生命周期时间戳等）
+
+##### 1.4.2 Reservation 生命周期
+
+本轮建议必做：
+
+1. 明确 reservation 的创建条件
+2. 明确释放 / 核销 / 失效条件
+3. 明确它与 shipment / inventory 的关系边界
+
+##### 1.4.3 Inventory 聚合输出
+
+本轮建议：
+
+1. `onHand` 先锚定为当前库存余额
+2. `reserved` 来自 Reservation 聚合
+3. `availableQty = onHand - reserved`
+4. 由后端 query / dto / mapper 输出，前端只消费
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **先做 Reservation source of truth**
+2. **再做 Inventory 查询聚合扩展**
+3. **最后做前端消费接入**
+
+本轮不做：
+
+1. 不让 `ShipmentRecord` 继续兼任预留语义
+2. 不在前端补任何 `reserved` 或 `availableQty` 公式
+3. 不跳过 reservation 生命周期设计直接拼 DTO 字段
+
+#### 1.6 当前阶段结论
+
+第三十三轮当前已经明确：`reserved` 的来源定义已经落锤为独立 Reservation 模型，这意味着库存预留从现在开始不应再借道 `ShipmentRecord` 或任何流水对象来勉强承载。下一步正确方向是围绕 Reservation source of truth 设计模型、生命周期和聚合查询，再由后端权威输出 `reserved` 与 `availableQty`，最后才让前端消费。
+
+### 1. plan：第三十二轮 reserved / onHand 来源规划（Backend Inventory Source of Truth）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十二轮不是直接实现 `availableQty`，而是先解决其两个上游来源字段：
+
+1. `onHand` 从哪里来
+2. `reserved` 从哪里来
+
+因为你已经确认：`availableQty = onHand - reserved`
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `server/models/inventory.go`
+   - 当前库存模型只有 `Quantity`
+   - 没有 `OnHand`、`Reserved`、`AvailableQty`
+
+2. `server/models/ShipmentRecord`
+   - 当前只有 `Quantity`、`Status` 等流水字段
+   - 还不足以稳定承接“预留量”权威语义
+
+3. `server/services/inventory_command_service.go`
+   - 当前也未暴露单独的 reservation / hold / allocate 语义对象
+
+4. 因此当前最稳妥的判断是：
+   - `onHand` 只能先从现有库存余额字段 `Inventory.Quantity` 明确命名得出
+   - `reserved` 当前没有可靠、独立、可审计的权威来源
+
+5. 这也意味着：
+   - 不能简单用 `ShipmentRecord` 反推 `reserved`
+   - 否则会把“流水记录”误当成“库存预留状态”，造成语义漂移
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **onHand has a conservative source**：当前可最保守地锚定到 `Inventory.Quantity`
+2. **reserved source is missing**：当前没有稳定的后端 reservation source of truth
+
+#### 1.4 推荐方案
+
+##### 1.4.1 onHand
+
+本轮建议：
+
+1. 若继续推进，可先把 `onHand` 明确定义为当前库存余额字段
+2. 该定义需在 DTO 语义上显式化，而不是前后端默认脑补
+
+##### 1.4.2 reserved
+
+本轮建议必做：
+
+1. 先定义 `reserved` 的业务来源
+2. 明确它是否来自预留表、已提交未出库占用、或其它业务对象
+3. 在来源未落地前，不实现 `availableQty`
+
+##### 1.4.3 availableQty
+
+本轮建议：
+
+1. 只有在 `onHand` 与 `reserved` 都有权威来源后，才实现 `availableQty = onHand - reserved`
+2. 前端仍然只消费，不补公式
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **先定来源，后写字段**
+2. **ShipmentRecord 不直接充当 reserved 的权威来源**
+3. **未落地 reserved 前，不进入 availableQty 代码实现**
+
+本轮不做：
+
+1. 不直接用 shipment 流水倒推出 reserved
+2. 不在前端实现 `availableQty = onHand - reserved`
+3. 不在缺少 reservation 语义模型时硬加伪字段
+
+#### 1.6 当前阶段结论
+
+第三十二轮当前已经明确：`availableQty` 之所以还不能安全实现，根因不在 DTO，而在其上游来源字段并未建立。当前 `onHand` 还可以保守锚定到 `Inventory.Quantity`，但 `reserved` 目前没有可靠的后端权威来源；`ShipmentRecord` 作为流水对象也不足以直接承担该语义。因此下一步必须先确认 `reserved` 的真实来源，再谈 `availableQty` 的代码落地，否则只会生成新的伪契约。
+
+### 1. plan：第三十一轮 availableQty 后端实现规划（Backend availableQty Contract）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十一轮不是直接编码，而是基于第三十轮审计结果，为 `availableQty` 的后端权威实现确定最小边界：
+
+1. 后端当前没有 `availableQty`
+2. 前端当前也没有重算 `availableQty`
+3. 当前业务定义已确认：`availableQty = onHand - reserved`
+
+#### 1.2 当前规划结论
+
+当前已经确认：
+
+1. 若要实现 `availableQty`，最小改造面应是：
+   - `server/services/inventory_query_dto.go`
+   - `server/services/inventory_query_mapper.go`
+   - `server/services/inventory_query_service.go`
+   - 前端 `src/features/warehouse/inventory/contracts/inventory-api-dto.ts`
+   - 前端 `src/features/warehouse/inventory/adapters/inventory-api-adapter.ts`
+   - 必要时前端 `data/schema.ts`
+
+2. 当前真正的实现前提是：
+   - 后端库存模型目前只有 `Quantity`
+   - 当前未见 `Reserved` / `OnHand` 字段
+   - 因而要实现 `availableQty = onHand - reserved`，必须先补足 `onHand` 与 `reserved` 的后端语义来源
+
+3. 这意味着第三十一轮的首要任务已经从“确认语义”转为“落地语义”：
+   - 明确 `onHand` 的后端来源
+   - 明确 `reserved` 的后端来源
+   - 在 query / dto / mapper 中显式输出 `availableQty`
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **Implementation path is known**：后端与前端需要改哪些文件已经明确
+2. **Data-source chain is unresolved**：虽然语义已确认，但 `onHand` 与 `reserved` 的后端来源链路尚未落地
+
+#### 1.4 推荐方案
+
+##### 1.4.1 先补后端数据来源链路
+
+本轮建议必做：
+
+1. 明确 `onHand` 的来源（是否等于当前库存余额字段，还是需要独立查询）
+2. 明确 `reserved` 的来源（是否已有预留表/占用逻辑，或需新增计算链路）
+
+##### 1.4.2 若定义为后端新增权威字段
+
+本轮建议：
+
+1. 后端 query 层生成 `onHand`、`reserved`、`availableQty`
+2. DTO 与 mapper 显式输出这些字段
+3. 前端 DTO / adapter / schema 只做消费接入，不做公式计算
+
+##### 1.4.3 前端消费边界
+
+本轮建议：
+
+1. 前端只消费后端返回的 `availableQty`
+2. 不在前端临时实现 `availableQty = onHand - reserved`
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **先补数据来源链路，后补 DTO 与消费面**
+2. **只做最小闭环**：query / dto / mapper / frontend consume
+3. **前端不补公式**
+
+本轮不做：
+
+1. 不在未确认 `reserved` 来源前拍脑袋写假字段
+2. 不在前端临时实现 `availableQty = onHand - reserved`
+3. 不把当前规划阶段误推进成无依据代码实现
+
+#### 1.6 当前阶段结论
+
+第三十一轮当前已经明确：`availableQty` 的业务定义已经落锤为 `onHand - reserved`，但现有后端模型和查询链路还没有 `onHand` / `reserved` 这两个权威来源字段。因此下一步不是直接往 DTO 上硬塞一个 `availableQty`，而是先补齐后端数据来源、再扩展 query / dto / mapper，最后让前端只读消费。这样才能避免把一个看似简单的字段，做成前端补公式或后端拍脑袋造值的伪契约。
+
+### 1. audit：第三十轮后端 DTO 契约审计（Backend Inventory DTO / availableQty）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第三十轮沿着上一轮 false alarm 继续往后追一层：
+
+1. 后端库存 DTO 是否已经提供 `availableQty`
+2. 后端 query / mapper 是否已经计算 `availableQty`
+3. 后端库存模型是否已经具备 `reserved` / `availableQty` / `onHand` 等字段基础
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `server/services/inventory_query_dto.go`
+   - `InventoryItemResponse` 当前没有 `availableQty`
+   - 也没有 `reserved`、`onHand` 等等价权威派生字段
+
+2. `server/services/inventory_query_service.go`
+   - `ListInventory(...)` 当前只是查询 `models.Inventory` 并补充物料分类映射
+   - 没有库存可用量派生计算
+
+3. `server/services/inventory_query_mapper.go`
+   - `MapInventoryToResponse(...)` 当前只是字段映射
+   - 没有 `availableQty` 或 `onHand - reserved` 的后端派生逻辑
+
+4. `server/models/inventory.go`
+   - 当前库存模型只有 `Quantity`、`TotalValue`、`AverageUnitCost` 等基础余额字段
+   - 没有 `Reserved`、`AvailableQty` 等字段
+
+5. 因此这轮真实结论是：
+   - 前端当前没有重算 `availableQty`
+   - 后端当前也没有提供 `availableQty` 权威字段
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **Frontend false alarm confirmed**：当前没有前端重算 `availableQty`
+2. **Backend contract not yet present**：后端当前也尚未提供 `availableQty` 这类权威派生字段
+
+#### 1.4 推荐方案
+
+##### 1.4.1 当前实现边界
+
+本轮建议：
+
+1. 保留“当前前后端都未实现 `availableQty`”的真实结论
+2. 不在没有业务确认前虚构前端或后端整改
+
+##### 1.4.2 若业务确实需要 availableQty
+
+本轮建议：
+
+1. 由后端在 query / dto / mapper 链路显式提供 `availableQty`
+2. 必要时同时明确 `reserved` 与 `onHand` 的语义来源
+3. 前端只消费权威字段，不补公式
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **非实锤项不动**：当前不直接新增 `availableQty` 字段实现
+2. **可选后续**：如你确认业务需要，再进入后端 availableQty 契约与实现规划
+
+本轮不做：
+
+1. 不在前端新增 `availableQty = onHand - reserved`
+2. 不在缺少业务确认前直接改后端库存模型与 DTO
+3. 不把当前审计结论误写成“已发现前端或后端现存 bug”
+
+#### 1.6 当前阶段结论
+
+第三十轮当前已经明确：`availableQty` 这类库存派生字段当前既没有在前端被重算，也没有在后端作为权威 DTO 字段被提供。因此这轮的真实结论不是“发现了可用库存字段被错误计算”，而是“该契约当前尚未存在”。如果后续业务确实需要 `availableQty`，正确方向只能是后端先定义并输出权威字段，前端再消费，而不是让前端或 adapter 临时补公式。
+
+### 1. audit：第二十九轮 Inventory Core 审计（Computed Field Authority / availableQty）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十九轮关注 Inventory Core 是否在前端承担库存派生字段：
+
+1. `inventory-core-service.ts` 是否计算 `availableQty`
+2. inventory adapter 是否用 `onHand - reserved` 重算聚合字段
+3. DTO 是否已经返回 `availableQty` 但被前端覆盖
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/warehouse/inventory/services/inventory-core-service.ts`
+   - 当前未看到 `onHand - reserved` 这类前端公式计算
+   - 当前未看到 `availableQty` 的前端重算或覆盖
+
+2. `src/features/warehouse/inventory/adapters/inventory-api-adapter.ts`
+   - `toInventoryRecordContract(...)` 只做原始字段映射
+   - `toInventoryViewContract(...)` 只补充展示字段
+   - 当前没有派生 `availableQty`
+
+3. `src/features/warehouse/inventory/contracts/inventory-api-dto.ts`
+   - `InventoryItemApiDTO` 当前没有 `availableQty`
+   - 因而不存在“后端已返回 availableQty，但前端又重算覆盖”的实锤问题
+
+4. 因此这轮真实结论更接近 false alarm：
+   - 当前未发现 Inventory Core 的前端 computed field leakage
+   - 但这也意味着如果未来 UI 需要 `availableQty`，应由后端显式返回，而不是让前端补公式
+
+#### 1.3 问题本质
+
+这轮真实问题分为两类：
+
+1. **No current frontend recomputation found**：当前未实锤 `availableQty` 前端派生
+2. **Backend DTO contract gap (potential)**：若业务需要 `availableQty`，应由后端 DTO 提供权威字段，而非前端未来自算
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Inventory Core / adapter
+
+本轮建议：
+
+1. 保持当前只做映射，不增加 `availableQty` 前端公式
+2. 保留“当前未发现前端派生泄露”的审计结论
+
+##### 1.4.2 availableQty 契约
+
+本轮建议：
+
+1. 若后续产品或库存页面需要 `availableQty`
+2. 应推动后端在 DTO 中显式返回权威派生字段
+3. 前端只消费，不重算
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **非实锤项不动**：不对 `inventory-core-service.ts` 做虚构整改
+2. **可选后续**：如你继续追这个方向，可转入后端 DTO 契约审计
+
+本轮不做：
+
+1. 不在前端新增 `availableQty = onHand - reserved` 公式
+2. 不对 inventory core / adapter 做无证据改写
+3. 不在当前 false alarm 前提下制造不存在的问题修复
+
+#### 1.6 当前阶段结论
+
+第二十九轮当前已经明确：`inventory-core-service.ts`、inventory adapter 和 DTO 链路里，当前都没有实锤到前端重算 `availableQty` 或用 `onHand - reserved` 推导库存派生字段。因此这轮更准确的结论不是“发现了前端 computed field 泄露”，而是“当前未发现该问题，但若未来业务需要 `availableQty`，必须由后端 DTO 权威提供，前端不得补公式”。
+
+### 1. audit：第二十八轮 DTO 运行时校验缺口（Validation Gap / Inventory Inbound Service）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十八轮关注库存入库 Service 的运行时校验完整性：
+
+1. `inventory-transaction-service.ts` 的 `recordInbound(...)` 是否缺少 runtime schema parse
+2. `toInboundRecordContract(...)` 是否仅做字段映射
+3. `InboundRecord` 当前是否具备 zod 级运行时契约
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+   - `recordInbound(...)` 在拿到响应后只做了 `ensureObjectResponse(...)`
+   - 然后直接走 `toInboundRecordContract(...)`
+   - 当前没有在 Service 出口执行 `inboundRecordSchema.parse(...)`
+
+2. `src/features/warehouse/inventory/adapters/inventory-api-adapter.ts`
+   - `toInboundRecordContract(...)` 当前只是字段映射
+   - 不承担 zod runtime 校验职责
+
+3. `src/features/warehouse/inventory/data/schema.ts`
+   - `InboundRecord` 目前是 TypeScript interface
+   - 当前没有对应的 runtime schema 防线
+
+4. 因此本轮真实问题是 Service 出口缺少最后一道运行时契约校验：
+   - `ensureObjectResponse(...)` 只能保证对象形态
+   - 不能保证字段非空、字段类型和业务契约完整性
+
+5. 该问题会直接影响 UI 链路可靠性：
+   - `product-inbound.tsx` 的入库 mutation 在成功后会继续驱动界面状态收口
+   - 若返回 DTO 存在隐形 `null` 或字段漂移，可能穿透到上层界面逻辑
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Service exit validation gap**：`recordInbound(...)` 出口缺少 runtime parse
+2. **Adapter-only mapping is insufficient**：字段映射不能代替 schema 校验
+3. **Inbound contract has no runtime guard**：`InboundRecord` 当前仅有 TS interface，没有 zod 运行时防线
+
+#### 1.4 推荐方案
+
+##### 1.4.1 InboundRecord runtime schema
+
+本轮建议必做：
+
+1. 为 `InboundRecord` 建立 zod runtime schema
+2. 保持 TS 类型从 schema 推导或与 schema 对齐
+
+##### 1.4.2 inventory-transaction-service.ts
+
+本轮建议必做：
+
+1. 在 `recordInbound(...)` 出口执行 `parse(...)`
+2. 保证进入 UI 逻辑前已经过最后一道运行时契约校验
+
+##### 1.4.3 adapter 边界
+
+本轮建议：
+
+1. 保持 adapter 负责 DTO -> contract 映射
+2. 不把 adapter 混成 runtime schema 替代品
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：补 `InboundRecord` runtime schema
+2. **必做**：在 `recordInbound(...)` 出口补 parse 防线
+3. **非目标**：不在本轮重写整个 inventory adapter 体系
+
+本轮不做：
+
+1. 不对全部 warehouse Service 一次性补全所有 schema parse
+2. 不把整个 inventory 模块做全面 schema 重构
+3. 不在没有证据前扩展到其它非 inbound 事务出口
+
+#### 1.6 当前阶段结论
+
+第二十八轮当前已经明确：库存入库 Service 的问题不是 DTO 转换有没有做，而是 `recordInbound(...)` 在 Service 出口缺少最后一道 runtime schema 防线。当前 `toInboundRecordContract(...)` 只是字段映射，而 `InboundRecord` 也仅是 TypeScript interface，不具备 zod 级运行时校验能力。因此下一阶段应聚焦在为 `InboundRecord` 补 runtime schema 并把 parse 收口到 `recordInbound(...)` 出口，而不是把问题泛化成整个 inventory adapter 体系的全面重写。
+
+### 1. audit：第二十七轮库存调拨并发锁审计（Concurrency Lock Vacuum / Inventory Transfer）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十七轮关注库存调拨动作的并发锁完整性：
+
+1. `inventory-transaction-service.ts` 的 `transferInventory(...)` 是否缺失 `version`
+2. 调拨调用链是否已持有源库存版本但未透传
+3. 库存主实体与 DTO 是否已具备版本字段
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+   - `transferInventory(materialId, quantity, fromCat, toCat)` 当前未接收 `version`
+   - 请求体只包含 `materialId`、`quantity`、`fromCategory`、`toCategory`
+   - 未提交源库存快照版本
+
+2. 前端库存主实体实际上已具备版本字段：
+   - `InventoryRecord.version`
+   - `InventoryItemApiDTO.version`
+
+3. 适配器也没有丢版本：
+   - `toInventoryRecordContract(dto)` 会把 `dto.version` 映射到前端实体
+   - 因此问题不在读取侧，而在调拨写入链路
+
+4. 因此本轮真实问题是并发锁参数在调拨链路中丢失：
+   - 前端不是没有 `version`
+   - 而是 `transferInventory()` 根本没有承接它
+
+5. 该问题属于高危并发锁真空：
+   - 调拨直接改变源库存数量
+   - 若两个并发请求针对同一库存快照发起，且后端没有更强校验，则可能放大库存悬挂风险
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Version omission in transfer request**：调拨写请求未携带源库存版本
+2. **Frontend has version but drops it**：前端实体与 DTO 已有 `version`，但服务层未透传
+3. **Critical concurrency vacuum**：调拨动作缺失并发锁参数，存在库存悬挂与负库存风险
+
+#### 1.4 推荐方案
+
+##### 1.4.1 inventory-transaction-service.ts
+
+本轮建议必做：
+
+1. 为 `transferInventory(...)` 显式补充 `version`
+2. 在请求体中提交源库存快照版本
+3. 将调拨语义从“只凭 materialId + quantity”升级为“基于带版本快照的写操作”
+
+##### 1.4.2 调拨调用链
+
+本轮建议：
+
+1. 从库存记录/库存列表的当前实体中透传 `version`
+2. 避免在中间 hook / dialog / action 层丢失版本信息
+3. 若调用点尚未持有源库存实体，则补齐最小必要读取
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：为调拨服务补齐 `version` 参数与请求载荷
+2. **必做**：收口调拨调用链对源库存版本的透传
+3. **非目标**：不在本轮重构整个库存模块
+
+本轮不做：
+
+1. 不对全部库存写接口一次性做统一重写
+2. 不在没有证据前修改其它非调拨库存事务
+3. 不把前后端整个库存并发模型一次性全面重构
+
+#### 1.6 当前阶段结论
+
+第二十七轮当前已经明确：库存调拨的前端链路并不是拿不到 `version`，而是 `transferInventory()` 在写请求上把 `version` 丢掉了。由于库存记录契约、DTO 和适配器都已经具备 `version` 字段，这个问题本质上是调拨写路径的并发锁漏传；风险等级应定为 [CRITICAL]。下一阶段应聚焦在为调拨服务补齐 `version` 参数并打通调用链透传，而不是泛化成整个库存模块的全面重写。
+
+### 1. audit：第二十六轮逻辑泄露审计（Mold Loan Authority + BOM Core Parameter）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十六轮关注两个重灾区：
+
+1. `use-mold-loan-mgmt.ts`
+2. `use-bom-data.ts`
+
+需要确认前端是否仍在承担：
+
+1. 模具借还核心状态裁定
+2. 模具资产初始化种子语义
+3. BOM 工程核心参数（尤其 `standardUsage`）的前端计算或回填
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-bom-data.ts`
+   - 当前未再看到 `standardUsage` 的前端生成、回填或透传落库
+   - 这部分在前几轮已基本收口
+
+2. `use-bom-data.ts` 当前更真实的职责是：
+   - 结构校验
+   - 物料主数据映射
+   - `materialName` / `materialSpec` / `materialType` 补全
+   - 这些属于映射与展示补全，不是工程核心参数公式计算
+
+3. `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts`
+   - 在借入分支会前端拼装 `moldData`
+   - 包含 `moldSn`、`moldName`、`maxCycles`、`currentCycles`
+   - 因而前端确实参与了“外部模具资产种子数据”组装
+
+4. 模具借还链路中更实锤的 authority 泄露位于 `src/features/equipment-tooling/services/mold-loan-service.ts`
+   - `getLoans()` 会在前端把 `ACTIVE` + 逾期日期 判定成 `OVERDUE`
+   - 这是对借还状态的前端再判定与覆盖
+
+5. 因此这轮真实问题并不对称：
+   - `use-bom-data.ts` 当前更像“已收口后的 false alarm”
+   - 模具借还链路才是仍需继续治理的 authority 泄露重点
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **BOM standardUsage false alarm (current)**：`use-bom-data.ts` 当前未再实锤前端计算 `standardUsage`
+2. **Mold status authority leak**：`MoldLoanService.getLoans()` 在前端动态改写借还状态为 `OVERDUE`
+3. **Mold seed assembly boundary risk**：借入场景仍在前端拼装外部模具种子数据
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-bom-data.ts
+
+本轮建议：
+
+1. 保留“当前未再实锤 `standardUsage` 前端计算”的结论
+2. 不虚构并不存在的 BOM 核心参数整改
+3. 继续保持当前 authority 边界
+
+##### 1.4.2 mold-loan-service.ts
+
+本轮建议必做：
+
+1. 收口 `getLoans()` 对 `status` 的前端动态改写
+2. 由后端权威返回 `ACTIVE / RETURNED / OVERDUE` 等状态
+3. 前端不再根据时间自行覆盖状态字段
+
+##### 1.4.3 use-mold-loan-mgmt.ts
+
+本轮建议：
+
+1. 复核借入模式下 `moldData` 的 authority 边界
+2. 仅保留必要的原始采集字段传递
+3. 避免让前端承担资产初始化语义的最终裁定
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口模具借还状态的前端动态改写
+2. **必做**：最小化借入场景的资产种子数据前端组装
+3. **非实锤项不动**：`use-bom-data.ts` 保持当前实现
+
+本轮不做：
+
+1. 不把整个 equipment-tooling 模块一次性大重构
+2. 不编造不存在的 `standardUsage` 现存问题并重复整改
+3. 不在本轮改造所有资产服务的 authority 契约
+
+#### 1.6 当前阶段结论
+
+第二十六轮当前已经明确：`use-bom-data.ts` 在前几轮之后已基本收口，当前未再实锤前端计算 `standardUsage`；真正仍需继续治理的 logic leakage 主要在模具借还链路，其中最明确的问题是 `MoldLoanService.getLoans()` 仍在前端动态改写 `OVERDUE` 状态，而借入模式下的 `moldData` 组装也需要继续收口 authority 边界。因此下一阶段应聚焦在模具借还状态与借入资产种子语义，而不是回头虚构 BOM 数据钩子的旧问题仍然存在。
+
+### 1. audit：第二十五轮离线持久层整改（Persistence Layer Drift / Dexie Reuse）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十五轮关注的是离线持久层与既有架构的一致性：
+
+1. `persistence-service.ts` 是否仍在使用 `localStorage`
+2. 项目内是否已有可复用的 Dexie / IndexedDB 实现
+3. 当前离线层是否已经具备 `snapshot + pending log + sync meta` 的三层重算骨架
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/system-mgmt/services/persistence-service.ts`
+   - 当前不再直接使用 `localStorage`
+   - 读写链路通过 `StorageService`
+
+2. `src/features/system-mgmt/services/storage-service.ts`
+   - 底层使用原生 `IndexedDB`
+   - 是轻量 key-value 包装层
+   - 文件注释已明确“does not implement version locking”
+
+3. 因此本轮真实问题不是 `localStorage` 残留，而是持久层漂移：
+   - `PersistenceService` 没有接入项目内已经存在的 Dexie 离线架构
+   - 仍在使用另一套轻量 IndexedDB KV 路径
+
+4. 项目内已经存在可复用的 Dexie.js 能力：
+   - `src/offline-sync/storage/dexie-offline-db.ts`
+   - `src/offline-sync/storage/offline-storage.ts`
+
+5. 现有 Dexie 离线层已经具备较完整的三层骨架：
+   - `snapshots`
+   - `pendingDeltas`
+   - `syncMeta`
+   - `conflictRecords`
+
+6. 这些能力已经被离线适配器消费：
+   - 例如 `stocktake-offline-adapter.ts` 已在使用 `OfflineStorage.transaction(...)`
+   - 并通过 `enqueueDelta` / `upsertSyncMeta` 维护离线队列与同步状态
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **LocalStorage false alarm (current)**：`PersistenceService` 当前并未直接使用 `localStorage`
+2. **Persistence layer drift**：系统管理持久层仍绕开现有 Dexie 离线架构
+3. **Dexie reuse opportunity confirmed**：项目内已存在可直接复用的 snapshot / pending log / sync meta / conflict 骨架
+
+#### 1.4 推荐方案
+
+##### 1.4.1 PersistenceService
+
+本轮建议必做：
+
+1. 收口 `PersistenceService` 对轻量 IndexedDB KV 包装层的直接依赖
+2. 将 authority 路径迁移到现有 Dexie / OfflineStorage 能力
+3. 避免继续维护两套并行的离线持久化抽象
+
+##### 1.4.2 Dexie / OfflineStorage 复用
+
+本轮建议：
+
+1. 直接复用 `offlineSyncDb` 与 `OfflineStorage`
+2. 复用 `snapshots` / `pendingDeltas` / `syncMeta` / `conflictRecords` 表
+3. 不重新发明新的 Dexie schema 或第二套离线数据库
+
+##### 1.4.3 StorageService
+
+本轮建议：
+
+1. 将 `StorageService` 降级为非关键轻量 KV 场景
+2. 不再承担需要版本锁、快照语义和 pending log 的关键路径
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：让 `PersistenceService` 对齐现有 Dexie 离线层
+2. **必做**：优先复用 `OfflineStorage`，不重复造轮子
+3. **非目标**：不在本轮重写整个 offline-sync 模块
+
+本轮不做：
+
+1. 不新建第二套 Dexie 数据库
+2. 不做全仓持久层统一大重构
+3. 不把所有轻量 KV 使用点一次性替换
+
+#### 1.6 当前阶段结论
+
+第二十五轮当前已经明确：`PersistenceService` 的问题并不是还在直接使用 `localStorage`，而是它仍绕开项目中已经存在的 Dexie 离线骨架，继续走轻量 IndexedDB KV 包装层。既然当前仓库已经有 `offlineSyncDb` 与 `OfflineStorage`，并且已经具备 `snapshot + pending log + sync meta + conflict` 的能力，下一阶段应聚焦在复用现有 Dexie 架构收口持久层漂移，而不是重新造一套新的离线存储轮子。
+
+### 1. audit：第二十四轮源码损坏审计（Critical Source Corruption / Engineering Core）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十四轮关注的是更高优先级的源码健康风险：
+
+1. `use-bom-data.ts`
+2. `use-bom-form.ts`
+3. `drilling-action-dialog.tsx`
+
+需要确认这些工程核心文件中的乱码究竟是：
+
+1. 注释损坏
+2. 用户消息 / UI 文案损坏
+3. 还是已经触及逻辑常量、字段名、控制流和版本管理可维护性
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-bom-data.ts`
+   - 当前未见大面积乱码
+   - 用户可见提示、导入链路异常消息、控制流文本当前可读
+   - 本文件在之前轮次中已完成乱码 toast 收口
+
+2. `src/features/engineering-db/components/drilling-action-dialog.tsx`
+   - 当前文案、注释、字段标签均已恢复正常可读
+   - 结构、字段名、控制流未见损坏残留
+
+3. `src/features/engineering/hooks/use-bom-form.ts`
+   - 当前仍是最值得警惕的残留污染点
+   - 历史上存在乱码注释问题
+   - 现阶段仍保留 `standardUsage: item.standardUsage || 0` 这类前端降级语义
+   - 因而它不只是“显示层字符问题”，还叠加了逻辑漂移风险
+
+4. 当前未看到乱码直接破坏 import、类型名、字段名或控制流结构：
+   - 问题主要集中在注释、用户消息、UI 文案和局部逻辑残留
+
+5. 但更广义的源码级损坏风险仍然成立：
+   - engineering / engineering-db 范围内已多次出现乱码注释
+   - 出现过乱码 toast
+   - 出现过乱码 UI 文案
+   - 说明历史字符集污染不是单点偶发，而是工程层面曾被错误写入过
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Historical source corruption confirmed**：工程核心域曾真实发生过字符集污染
+2. **Current high-risk residual file**：`use-bom-form.ts` 仍带有残留污染与前端降级语义
+3. **Recovered files should stay stable**：`use-bom-data.ts` 与 `drilling-action-dialog.tsx` 当前已恢复，不应无证据回滚或反复扰动
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-bom-form.ts
+
+本轮建议必做：
+
+1. 对 `use-bom-form.ts` 做一次定向深清洗
+2. 收口历史损坏痕迹
+3. 收口 `standardUsage: item.standardUsage || 0` 这类前端降级语义
+
+##### 1.4.2 engineering / engineering-db 核心文件
+
+本轮建议：
+
+1. 对核心工程文件做一次定向乱码扫描
+2. 逐个确认用户消息、注释、UI 标签是否仍有残留污染
+3. 只修实锤文件，不做整域无差别重写
+
+##### 1.4.3 已恢复文件
+
+本轮建议：
+
+1. 保持 `use-bom-data.ts` 当前实现
+2. 保持 `drilling-action-dialog.tsx` 当前实现
+3. 不对已恢复文件做无证据回滚
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：定向收口 `use-bom-form.ts`
+2. **必做**：做一次关键工程文件乱码清扫
+3. **非实锤项不动**：当前可读且已恢复的文件保持不变
+
+本轮不做：
+
+1. 不把整个工程仓一次性做全量编码迁移
+2. 不在无证据前大范围重写所有 engineering 文件
+3. 不对已恢复正常的文件做重复性改写
+
+#### 1.6 当前阶段结论
+
+第二十四轮当前已经明确：你指出的“源码级物理损坏”风险方向是成立的，但在当前代码状态下，`use-bom-data.ts` 与 `drilling-action-dialog.tsx` 已基本恢复正常；真正仍需要高度警惕和继续收口的核心文件是 `use-bom-form.ts`。因此下一阶段应聚焦在 `use-bom-form.ts` 的残留污染清洗，以及 engineering / engineering-db 关键文件的一次定向乱码审计，而不是对已经恢复的文件做无证据回滚。
+
+### 1. audit：第二十三轮审计修复（Material version lock authority + Excel 映射韧性 + filteredMaterials 影子逻辑核对）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十三轮审计有三个关注点：
+
+1. `use-material-mgmt-data.ts` 是否在 `patchMaterial` 调用中使用 `data.version || 1`
+2. `excel-service.ts` 在大批量物料导入中的字段映射是否具有足够韧性
+3. `use-material-mgmt-data.ts` 中 `filteredMaterials` 是否只是引用重命名而没有额外前端计算
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+   - 当前存在 `MaterialMaintenanceService.patchMaterial(data.id, delta, data.version || 1)`
+   - 当 `data.version` 缺失时，会静默降级到 `1`
+
+2. 该问题是真实的版本 authority 风险：
+   - patch 语义本应要求版本号为强制前置条件
+   - 当前回退到 `1` 会绕开缺失版本的显式失败路径
+   - 会削弱并发冲突与审计链保护
+
+3. `filteredMaterials`
+   - 当前只是 `filteredMaterials: materials`
+   - 未看到额外的筛选、映射、聚合或派生逻辑
+   - 本轮**未实锤**“filteredMaterials 存在影子计算逻辑泄露”
+
+4. 大批量物料导入的真实目标文件是 `src/features/material-archive/services/excel-service.ts`
+
+5. 该文件存在若干导入映射韧性不足点：
+   - `getWorksheetByNames(...) || workbook.getWorksheet(1)` 会在工作表命名失配时退回第一张表，存在误命中风险
+   - `categoryMap.get(categoryLabel) || categoryLabel` 会把未映射的分类标签直接透传
+   - `globalSnapshotVersion` 缺失时默认 `0`
+   - `compositeId` 依赖最后一个 `_` 拆分 `id/version`，对异常格式鲁棒性有限
+
+6. 但该导入链路并非完全黑盒吞错：
+   - 最终仍通过 `materialExcelSchema.safeParse(...)` 校验
+   - 校验失败会 `failLoudly(...)` 并抛错
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Version lock fallback**：物料 patch 在 `version` 缺失时静默回退到 `1`
+2. **Excel mapping resilience gap**：物料导入映射存在工作表定位、分类映射、快照版本和 ID 解析韧性不足
+3. **Filtered materials false alarm (current)**：`filteredMaterials` 当前仅为引用重命名，未实锤影子计算
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-material-mgmt-data.ts
+
+本轮建议必做：
+
+1. 移除 `data.version || 1` 的非权威降级
+2. 当 patch 缺失 `version` 时显式失败
+3. 保持并发锁版本号的强制性
+
+##### 1.4.2 filteredMaterials
+
+本轮建议：
+
+1. 保留“当前仅重命名引用”的结论
+2. 不虚构并不存在的前端影子计算整改
+3. 如无新增需求，保持实现不动
+
+##### 1.4.3 material-archive/services/excel-service.ts
+
+本轮建议：
+
+1. 收紧工作表定位，不再默认退回第一张表
+2. 对分类映射缺失做显式失败，而不是透传原标签
+3. 对 `globalSnapshotVersion` 与 `compositeId` 格式做更明确校验
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口 patchMaterial 调用中的版本 fallback
+2. **必做**：提升 material excel service 的导入映射韧性
+3. **非实锤项不动**：`filteredMaterials` 保持当前实现
+
+本轮不做：
+
+1. 不把整个物料导入体系一次性重构成全新导入平台
+2. 不对 `filteredMaterials` 编造不存在的影子计算整改
+3. 不把所有 material archive hook 一次性全面重写
+
+#### 1.6 当前阶段结论
+
+第二十三轮当前已经明确：`use-material-mgmt-data.ts` 中 `data.version || 1` 是实锤的非权威降级，会破坏版本锁的强制性；`filteredMaterials` 当前只是对 `materials` 的引用重命名，没有额外前端计算；而物料 Excel 导入链路的真实问题则在于 `material-archive/services/excel-service.ts` 的工作表定位、分类映射和快照版本等韧性不足。因此下一阶段应聚焦在版本锁 authority 收口与导入映射显式校验，而不是虚构 `filteredMaterials` 的影子逻辑整改。
+
+### 1. audit：第二十二轮审计修复（Sales Order 摘要 authority + i18n fallback gap + use-products 生命周期审计）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十二轮审计有三个关注点：
+
+1. `sales-order-detail-summary.tsx` / `useSalesOrderDetailSummaryViewModel` 是否前端重算财务汇总数据
+2. `sales-order-detail-summary.tsx` 是否存在 `fallbackTitle='Order Evidence'` 这类英文兜底
+3. `use-products.ts` 的 `staleTime` 是否符合产品数据生命周期契约
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/trading/hooks/use-sales-order-detail-summary-view-model.ts`
+   - 当前未看到 `lines.reduce(...)` 或其它前端重算订单总额逻辑
+   - 金额展示直接读取 `order.amount`
+   - 因此本轮**未实锤**“销售详情摘要 view model 前端重算财务汇总”
+
+2. 销售订单前端预览计算并非不存在，而是位于别处：
+   - `src/features/trading/utils/sales-order-calc.ts` 存在 `previewOrderTotals()`
+   - 注释已明确标注 `[PREVIEW-ONLY]`
+   - 其语义是前端编辑态实时预览，而不是 `sales-order-detail-summary.tsx` 的详情摘要 authority 泄露
+
+3. `src/features/trading/components/parts/sales-order-detail-summary.tsx`
+   - 调用了 `OrderEvidenceGallery`
+   - 显式传入 `fallbackTitle='Order Evidence'`
+
+4. `src/features/trading/components/parts/order-evidence-gallery.tsx`
+   - 当前实现为 `t(titleKey as never) || fallbackTitle`
+   - 默认 `fallbackTitle = 'Order Evidence'`
+   - 这属于 UI 层英文硬编码兜底，命中 i18n fallback gap
+
+5. `src/features/engineering/hooks/use-products.ts`
+   - 当前 `staleTime` 固定为 `5 * 60 * 1000`
+   - 该 hook 已支持 `mode: 'options' | 'page'`
+   - 但缓存时长仍未按模式分化
+
+6. 因此 `use-products.ts` 的真实问题更偏向生命周期边界不清：
+   - 对 options 下拉，5 分钟缓存未必不合理
+   - 对 page 列表模式，沿用相同 `staleTime` 缺少明确的数据存留契约说明
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Summary authority false alarm (current)**：销售详情摘要当前未实锤前端重算财务汇总
+2. **i18n fallback gap**：证据区标题存在英文硬编码兜底 `Order Evidence`
+3. **Product query lifespan ambiguity**：`use-products.ts` 的 options / page 模式未分化 `staleTime`
+
+#### 1.4 推荐方案
+
+##### 1.4.1 sales-order-detail-summary.tsx / view model
+
+本轮建议：
+
+1. 保留“当前未实锤前端重算 totalAmount”的结论
+2. 不虚构并不存在的摘要金额重算整改
+3. 如后续审计扩到编辑态预览，则单独针对 `previewOrderTotals()` 审视边界
+
+##### 1.4.2 i18n fallback
+
+本轮建议必做：
+
+1. 移除 `fallbackTitle='Order Evidence'` 英文兜底
+2. 避免 `t(...) || 'English text'` 这类硬编码 fallback
+3. 若翻译缺失，优先保持空值或显式缺失告警，而不是输出英文硬编码
+
+##### 1.4.3 use-products.ts staleTime
+
+本轮建议：
+
+1. 明确区分 `options` 与 `page` 模式的数据生命周期
+2. 为不同模式提供差异化或可配置的 `staleTime`
+3. 避免把同一缓存时长默认套用到下拉数据和分页列表数据
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口证据区标题的英文兜底
+2. **必做**：为 `use-products.ts` 补模式化 `staleTime` 边界
+3. **非实锤项不动**：不对销售详情摘要编造不存在的金额重算整改
+
+本轮不做：
+
+1. 不把整个销售订单编辑态预览计算体系一次性重构
+2. 不把所有 UI fallback 一次性全项目扫荡
+3. 不在没有实锤前编造 `useSalesOrderDetailSummaryViewModel` 的财务逻辑泄露整改
+
+#### 1.6 当前阶段结论
+
+第二十二轮当前已经明确：`useSalesOrderDetailSummaryViewModel` 本身未实锤前端重算订单总额，当前金额展示直接读取 `order.amount`；真正实锤的问题在于证据区标题仍存在 `Order Evidence` 英文硬编码兜底，以及 `use-products.ts` 在 `options / page` 两种模式下沿用同一个 5 分钟 `staleTime`，缺少清晰的数据生命周期边界。因此下一阶段应聚焦在 i18n fallback 收口与产品查询缓存契约澄清，而不是虚构一个并不存在的销售详情金额重算整改。
+
+### 1. audit：第二十一轮审计修复（BOM 导入公式漂移 + 源码编码损坏 + Drilling 联动 authority 审计）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十一轮审计有三个关注点：
+
+1. `use-bom-data.ts` 的 Excel 导入是否直接采信并入库 `standardUsage`
+2. `use-bom-data.ts` 是否存在字符集损坏的乱码报错块
+3. `drilling-action-dialog.tsx` 的复杂钻孔参数联动逻辑是否仍存在前端 authority 泄露
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-bom-data.ts`
+   - `ExcelService.parseBOMExcel(file)` 返回的 `parsedItems` 含 `standardUsage`
+   - `parseExcel()` 最终组装 `processedItems` 时直接写入 `standardUsage: item.standardUsage`
+   - 当前前端导入链路会把客户端携带的 `standardUsage` 直接带入后续保存输入
+
+2. 该问题是真实的公式 authority 漂移：
+   - Excel 可能由用户手工维护，`standardUsage` 可能来自过时公式或人工错误值
+   - 当前导入流程没有把它降级为“仅采集原始输入，待后端重算”的语义
+
+3. `use-bom-data.ts` 存在实锤源码字符集损坏：
+   - `toast.error('BOM 鐎电厧...')` 乱码报错真实存在
+   - 这既破坏了用户错误提示，也说明源码文件发生编码损坏
+
+4. `src/features/engineering-db/components/drilling-action-dialog.tsx`
+   - 当前主要承担表单录入：方案名称、产品选择、编织模式、孔数、文件上传
+   - 未看到基于几何参数的复杂钻孔权威公式结算逻辑
+   - 当前**未实锤**“钻孔联动 authority 泄露”
+
+5. 但 `drilling-action-dialog.tsx` 当前存在更真实的问题：
+   - 标题、描述、按钮、字段标签存在大面积乱码
+   - 属于源码字符集损坏 / 工程质量阻塞问题
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **StandardUsage import authority drift**：客户端 Excel 中的派生值被直接当作可入库数据透传
+2. **Corrupted source blocker**：`use-bom-data.ts` 和 `drilling-action-dialog.tsx` 都存在字符集损坏
+3. **Drilling authority false alarm (current)**：当前未实锤钻孔联动公式在前端承担权威计算
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-bom-data.ts / BOM Excel 导入
+
+本轮建议必做：
+
+1. 前端导入不再把 `standardUsage` 视为可直接入库的权威值
+2. 导入侧只保留原始采集字段，或明确将 `standardUsage` 降级为待服务端重算
+3. 最终以服务端当前工程配置重新核算 `standardUsage`
+
+##### 1.4.2 源码字符集损坏
+
+本轮建议必做：
+
+1. 修复 `use-bom-data.ts` 中的乱码报错块
+2. 修复 `drilling-action-dialog.tsx` 中的大面积乱码 UI 文案
+3. 恢复源码可读性与用户消息可读性
+
+##### 1.4.3 drilling-action-dialog.tsx
+
+本轮建议：
+
+1. 保留“当前未实锤复杂钻孔公式 authority 泄露”的结论
+2. 不虚构不存在的前端联动公式整改
+3. 仅按真实问题修复字符集损坏，并保持 authority 边界不扩写
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口 BOM Excel 导入对 `standardUsage` 的直接采信
+2. **必做**：修复 `use-bom-data.ts` 的乱码报错块
+3. **必做**：修复 `drilling-action-dialog.tsx` 的字符集损坏
+
+本轮不做：
+
+1. 不把整个 BOM 导入体系一次性扩成完整后端重算引擎重构
+2. 不在没有实锤前编造钻孔联动 authority 泄露整改
+3. 不对 engineering-db 全模块做一次性乱码全域扫荡
+
+#### 1.6 当前阶段结论
+
+第二十一轮当前已经明确：`use-bom-data.ts` 的 Excel 导入链路确实直接采信了客户端的 `standardUsage`，属于隐蔽的公式 authority 漂移；同文件中的乱码报错块也是实锤 blocker；`drilling-action-dialog.tsx` 当前未实锤前端承担钻孔权威公式，但文件本身确实存在大面积字符集损坏。因此下一阶段应聚焦在 BOM 导入 authority 收口与源码编码修复，而不是把范围扩大成未被证实的钻孔联动公式整改。
+
+### 1. audit：第二十轮审计修复（Product Types 静默降级 + Material 分类 authority + UDS 深度核对）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第二十轮审计有三个关注点：
+
+1. `product-types-mgmt.tsx` 是否通过 `data ?? []` 静默建立 `typeMap`
+2. `use-material-mgmt-data.ts` 是否基于 `id` 或 magic value 做特殊分类硬编码
+3. `product-types-mgmt.tsx` 第 248 行附近的 `shadow-inner` / `bg-muted/5` 是否命中 UDS 深度漂移
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/tabs/product-types-mgmt.tsx`
+   - 存在 `const typeMap = useMemo(() => buildProductTypeMap(data ?? []), [data])`
+   - 当查询失败、返回异常或缺失时，会静默建立空 `Map`
+
+2. 该静默路径会影响父级名称展示：
+   - `const parent = row.original.parentId ? typeMap.get(row.original.parentId) : null`
+   - 空 `Map` 会让所有子级回退到 `rootLevel` 展示分支
+   - 属于“失败态伪装成业务空态”的 ZERO TOLERANCE 问题
+
+3. `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+   - 当前未看到按 `id` / magic value 判断“特殊分类”的逻辑
+   - 分类过滤只是把 `category` 传给 `MaterialCoreService.getMaterials(...)`
+   - 当前未实锤前端在数据层偷做特殊分类裁决
+
+4. 材料分类 authority 的更真实现状是：
+   - 模块分类地图仍由前端 `material-category-options.ts` 常量维护
+   - 但这不是 `use-material-mgmt-data.ts` 本轮待审的“按 id 特判”问题本体
+
+5. `src/features/engineering/tabs/product-types-mgmt.tsx` 第 248 行附近
+   - 当前使用 `shadow-inner`
+   - 同时搭配 `bg-muted/5`
+   - 与现有圆角、虚线边框、柔和内阴影的 UDS 深度组合保持一致
+   - 当前未发现“最后 1 像素”的物理深度漂移实锤
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Type map silent fallback**：类目查询失败时，父子层级关系被静默伪装为根级展示
+2. **Material authority false alarm**：`use-material-mgmt-data.ts` 当前未实锤按 `id` 硬编码特殊分类
+3. **UDS depth alignment confirmed**：`shadow-inner + bg-muted/5` 当前未发现需要整改的偏差
+
+#### 1.4 推荐方案
+
+##### 1.4.1 product-types-mgmt.tsx
+
+本轮建议必做：
+
+1. 移除 `typeMap` 的 `data ?? []` 静默降级
+2. 将“父级缺失”和“查询失败”显式区分
+3. 避免把错误态误导为 `rootLevel`
+
+##### 1.4.2 use-material-mgmt-data.ts
+
+本轮建议：
+
+1. 保留“当前未实锤按 `id` 特殊分类硬编码”的结论
+2. 不虚构并不存在的数据层分类判定整改
+3. 如需补充，仅做 authority 注记或保持不动
+
+##### 1.4.3 UDS 深度
+
+本轮建议：
+
+1. 保持 `shadow-inner + bg-muted/5` 当前实现
+2. 不在无证据前做表面化视觉扰动
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：收口 `product-types-mgmt.tsx` 的 `typeMap` 静默降级
+2. **非实锤项不动**：`use-material-mgmt-data.ts` 不做虚构整改
+3. **非实锤项不动**：当前 UDS 深度实现保持不变
+
+本轮不做：
+
+1. 不把整个材料分类体系一次性重构成后端导航/分类平台
+2. 不为 `use-material-mgmt-data.ts` 编造不存在的按 `id` 逻辑修复
+3. 不对已对齐的 UDS 阴影深度做无依据改动
+
+#### 1.6 当前阶段结论
+
+第二十轮当前已经明确：`product-types-mgmt.tsx` 的 `typeMap` 确实存在 `data ?? []` 静默降级，会把失败态误导为根级层级展示；`use-material-mgmt-data.ts` 当前未实锤按 `id` 做特殊分类硬编码；`product-types-mgmt.tsx` 第 248 行附近的 `shadow-inner + bg-muted/5` 也未发现 UDS 偏差。因此下一阶段应聚焦在收口 `typeMap` 的静默 fallback，而不是对未实锤的材料分类逻辑和已对齐的视觉深度做形式主义整改。
+
+### 1. audit：第十九轮审计修复（BOM 注释编码损坏 + 时间 authority 漂移 + use-products 静默降级审计）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十九轮审计有三个关注点：
+
+1. `use-bom-form.ts` 是否存在业务注释编码损坏
+2. `use-bom-form.ts` 是否在前端生成 `createdAt` 这类带审计权重的时间字段
+3. `use-products.ts` 是否存在 `?? []` 静默降级，尤其在大分页/大列表场景下伪装加载失败
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-bom-form.ts`
+   - 存在乱码注释片段，如 `鍓嶇涓嶅啀棰勮...`
+   - 虽不影响运行，但已经破坏业务注记、authority 说明与可维护性
+
+2. `use-bom-form.ts` 当前存在前端生成时间戳：
+   - `initialValues.createdAt = new Date().toISOString()`
+   - 初始化 `data.createdAt = new Date().toISOString()`
+   - 这意味着前端正在参与 BOM 初始态审计时间字段的生成
+
+3. `src/features/engineering/hooks/use-products.ts`
+   - 当前未看到 `?? []` 或等价空数组 fallback
+   - 当前实现只是对 `useQuery(...)` 的直接封装
+
+4. 但 `use-products.ts` 的真实风险并不在“静默降级已发生”，而在于：
+   - `PRODUCTS_QUERY_KEY` 固定复用
+   - `ProductCoreService.getProducts()` 同时承载 options 与分页列表两种模式
+   - 后续一旦列表页和下拉 options 共用该 hook 或共用 key，容易发生缓存语义混叠
+
+#### 1.3 问题本质
+
+这轮真实问题分为三类：
+
+1. **Comment corruption**：BOM 关键业务注释因字符集损坏而丧失可读性
+2. **Timestamp authority drift**：前端本地时钟参与生成 `createdAt` 这类带审计权重的字段
+3. **Query-mode boundary ambiguity**：`use-products.ts` 当前尚未命中 `?? []`，但 query key 与数据模式边界没有明确建模
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-bom-form.ts 注释编码损坏
+
+本轮建议必做：
+
+1. 修复损坏的 BOM 业务注释文本
+2. 恢复原本的 authority / 边界说明可读性
+3. 仅修复明确损坏的业务注记，不顺带大规模改写全部注释
+
+##### 1.4.2 前端 createdAt authority
+
+本轮建议必做：
+
+1. 从 `use-bom-form.ts` 中移除前端生成 `createdAt` 的逻辑
+2. 由后端保存链路 / 数据库 authority 决定审计时间字段
+3. 前端初始态若确需占位，应保持为空或由服务端 DTO 回填，而不是使用本地时间
+
+##### 1.4.3 use-products.ts
+
+本轮建议：
+
+1. 保留“当前未实锤 `?? []` 静默降级”的结论
+2. 补 `use-products.ts` 的 query key / 模式边界建模
+3. 显式区分：
+   - options 查询
+   - 分页列表查询
+4. 避免未来在大分页接入后出现缓存语义混叠或 authority 漂移
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：修复 `use-bom-form.ts` 注释字符集损坏
+2. **必做**：移除 `use-bom-form.ts` 前端生成 `createdAt` 的逻辑
+3. **必做**：最小收口 `use-products.ts` 的 query key / 模式边界
+
+本轮不做：
+
+1. 不把整个 engineering 产品查询体系一次性重构成完整分页平台
+2. 不在没有实锤前虚构 `?? []` 静默降级整改
+3. 不把所有带时间字段的表单一次性全域扫荡式重写
+
+#### 1.6 当前阶段结论
+
+第十九轮当前已经明确：`use-bom-form.ts` 的乱码业务注释是实锤的工程质量问题；同文件中前端生成 `createdAt` 也是明确的时间 authority 漂移；`use-products.ts` 当前未命中你担心的 `?? []` 静默降级，但其 query key 与数据模式边界确实不够清晰。因此下一阶段应聚焦在 BOM 注释修复、移除前端审计时间生成，以及补齐产品查询模式建模，而不是扩成并不存在的静默降级修复工程。
+
+#### 1.1 当前背景
+
+第十五轮审计有三个关注点：
+
+1. 员工工龄是否仍由前端动态计算
+2. 身份证/银行卡是否在无后端权限裁决下直接明文渲染
+3. `employee-columns.tsx` 中是否存在语言契约漂移
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/org-personnel/components/employee-columns.tsx`
+   - 在 `workYears` 列中直接调用 `previewPersonnelWorkYears(joinedDate)`
+   - 不是消费后端返回的权威工龄值
+
+2. `src/features/org-personnel/config/personnel-archive-columns.ts`
+   - `previewPersonnelWorkYears()` 使用 `new Date(joinedDate)` 与 `new Date()` 做时间差
+   - 属于前端基于设备时间的动态推导
+
+3. `src/features/org-personnel/components/employee-columns.tsx`
+   - 直接渲染 `idCard`
+   - 直接渲染 `bankCard`
+
+4. 当前员工前端契约还没有体现脱敏权限裁决：
+   - `employee-api-dto.ts` 中只有 `idCard` / `bankCard`
+   - `data/schema.ts` 中只有 `idCard` / `bankCard`
+   - 未发现 `maskedIdCard` / `maskedBankCard` / `canViewSensitive` 等字段
+
+5. 语言契约违规真实存在：
+   - `employee-columns.tsx` 硬编码 `Unassigned`
+   - `employee-columns.tsx` 硬编码 `Position`
+   - `employee-management-list.tsx` 的岗位筛选 option label 也使用 `Unassigned`
+
+#### 1.3 问题本质
+
+这轮的真实问题分为三类：
+
+1. **Work years authority breach**：工龄属于严谨的人事/财务审计逻辑，不应由前端用本地时间差计算
+2. **PII masking breach**：身份证/银行卡脱敏不应由前端自作主张，必须由后端按权限裁决输出
+3. **Language contract drift**：员工列配置中存在未经过 `t()` 的硬编码英文
+
+#### 1.4 推荐方案
+
+##### 1.4.1 工龄
+
+本轮建议必做：
+
+1. 后端员工列表/详情响应补充权威 `workYears`
+2. 前端表格列直接消费后端 `workYears`
+3. 删除 `previewPersonnelWorkYears()` 在员工列表中的使用
+
+##### 1.4.2 PII 脱敏
+
+本轮建议必做：
+
+1. 后端员工响应增加脱敏后的敏感字段（如 `maskedIdCard` / `maskedBankCard`）
+2. 若需要保留权限语义，也应由后端返回明确裁决结果
+3. 前端列渲染仅展示后端裁决后的字段，不再直接渲染明文 `idCard` / `bankCard`
+
+##### 1.4.3 i18n
+
+本轮建议：
+
+1. 将 `Unassigned` / `Position` 全部切回 `t()`
+2. 如缺词条，则同步补中英文 locale
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：工龄权威下沉到后端 DTO
+2. **必做**：敏感信息脱敏由后端裁决后输出
+3. **必做**：员工列和岗位筛选中的英文硬编码收口到 i18n
+
+本轮不做：
+
+1. 不在前端新增一套“权限脱敏工具”替代后端裁决
+2. 不把所有 org-personnel 页面一次性全部重构
+3. 不把工龄逻辑扩成完整薪资/社保规则引擎重构
+
+#### 1.6 当前阶段结论
+
+第十五轮是实锤问题：员工工龄当前确实仍由前端本地时间动态推导，身份证/银行卡也仍被直接明文渲染，且缺少后端脱敏权限裁决；同时员工列与岗位筛选中还存在 `Unassigned` / `Position` 的语言契约漂移。因此这轮必须采用前后端联动修复，而不能停留在前端补丁层面。
+
+### 1. audit：第十七轮审计修复（底层错误 i18n + BOM 表单 authority 边界 + Sales Master UDS 动效）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十七轮审计有三个关注点：
+
+1. `use-product-form-init.ts` 的关键元数据错误提示是否仍为英文硬编码
+2. `use-bom-form.ts` 是否在前端承担了不应承担的派生字段计算或静默降级
+3. `sales-order-master.tsx` 的 Tab 切换动效是否存在 `duration-700` 这类 UDS 节奏漂移
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/hooks/use-product-form-init.ts`
+   - 存在 `PRODUCT_METADATA_UNAVAILABLE_MESSAGE`
+   - 内容为纯英文硬编码
+   - 在 `isNotFoundError(error)` 分支下直接写入 `metadataInitError`
+
+2. 该问题是真实的 i18n 漂移：
+   - 即便是底层元数据初始化失败，也属于最终可见的用户提示
+   - 中文环境下不应暴露英文错误说明
+
+3. `src/features/engineering/hooks/use-bom-form.ts`
+   - 存在 `productsQuery.data ?? EMPTY_PRODUCTS`
+   - 存在 `changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS`
+   - 存在 `materialsQuery.data ?? EMPTY_MATERIALS`
+   - 当前请求异常会被静默降格为“空选项 / 空材料 / 空变更单”语义
+
+4. `use-bom-form.ts` 当前未发现前端主动计算 `totalAmount`
+   - 没有在 hook 中看到金额累计后回写表单或提交 payload 的逻辑
+   - 本轮暂不支持“前端偷偷累计 BOM 总金额”这一指控
+
+5. `use-bom-form.ts` 当前也未发现前端主动重算 `standardUsage`
+   - 对编辑态仅透传 `currentRow.items[].standardUsage`
+   - 对新建态仅透传 `initialItems[].standardUsage`
+   - 当前更像是沿用外部传入值，而非在 hook 中自行推导公式
+
+6. 但 BOM 表单本轮仍有两个真实风险：
+   - query fallback 静默降级
+   - `standardUsage` 仍以普通数值字段形式进入表单，authority 语义未被明确标注
+
+7. `src/features/trading/components/sales-order-master.tsx`
+   - 已命中 `animate-in fade-in duration-700`
+   - 确实存在交易主视图动效节奏过慢的 UDS 漂移信号
+
+#### 1.3 问题本质
+
+这轮的真实问题分为三类：
+
+1. **Low-level i18n drift**：底层错误提示仍以英文硬编码暴露给中文用户
+2. **BOM form fail-loudly / authority ambiguity**：当前未实锤前端重算派生字段，但存在静默降级和 authority 语义模糊
+3. **Sales master motion drift**：交易主视图 Tab 切换动效节奏偏慢，不符合更克制的 UDS 1.0 体验
+
+#### 1.4 推荐方案
+
+##### 1.4.1 use-product-form-init
+
+本轮建议必做：
+
+1. 删除 `PRODUCT_METADATA_UNAVAILABLE_MESSAGE` 的英文硬编码
+2. 改为通过 `t()` / locale 词条输出中文可读提示
+3. 保留英文日志/错误上下文，但用户面提示必须本土化
+
+##### 1.4.2 use-bom-form
+
+本轮建议必做：
+
+1. 收口 `productsQuery.data ?? ...` / `changeOrdersQuery.data ?? ...` / `materialsQuery.data ?? ...`
+2. 改为显式 loading / error / empty 语义，而非静默空集合
+3. 对 `standardUsage` 补充 authority 边界说明：
+   - 若当前仅作后端返回值承接，应避免让代码语义看起来像“前端权威公式”
+   - 若存在可编辑场景，也应在提交或展示层明确“最终以服务端校准为准”
+
+##### 1.4.3 sales-order-master
+
+本轮建议：
+
+1. 收口 `duration-700` 到更克制的时长
+2. 保持 Trading 主视图 Tab 切换的工业化节奏一致
+3. 不扩散成整页动画体系重构
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：产品元数据关键错误提示切回 i18n
+2. **必做**：BOM 表单去静默 fallback，并最小澄清 `standardUsage` authority 边界
+3. **必做**：销售主视图 Tab 切换动效节奏收口
+
+本轮不做：
+
+1. 不在没有实锤证据的前提下虚构 `totalAmount` 前端计算整改
+2. 不把整个 BOM 编辑器扩成完整服务端结算引擎重构
+3. 不把 Trading 全模块动画体系一次性重写
+
+#### 1.6 当前阶段结论
+
+第十七轮当前已经明确：`use-product-form-init.ts` 的英文硬编码错误提示是实锤 i18n 漂移；`use-bom-form.ts` 当前未发现前端主动重算 `totalAmount` 或 `standardUsage`，但静默 fallback 和 authority 语义模糊仍是实锤问题；`sales-order-master.tsx` 也已命中 `duration-700` 的动效节奏漂移。因此下一阶段应按最小、真实、可验证的边界实施，而不是对并不存在的前端派生公式做形式主义整改。
+
+### 1. audit：第十四轮审计修复（Asset 状态迁移边界 + BOM Zod 契约 + Sales Detail Metadata UDS）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十四轮审计有三个关注点：
+
+1. 资产状态迁移是否被静默降格为普通字段覆盖
+2. BOM service 返回契约是否仍停留在 TypeScript type，而未对齐 Zod runtime contract
+3. Sales detail 金额 metadata 是否存在 UDS 1.0 视觉细节漂移
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/equipment-tooling/services/asset-service.ts`
+   - 当前本身更偏向 façade
+   - 主要导出 `MoldCoreService` / `MoldTransactionService` / `FurnaceService` / `MoldLoanService`
+   - 目前未在 façade 层看到直接通过通用 `patch/save` 覆盖状态字段的证据
+
+2. 资产侧本轮还不能轻率下“已安全”结论：
+   - façade 层干净，不代表底层 transaction/service 没有 shadow update
+   - 下一阶段必须继续沿模具/设备状态迁移链路往下追命令入口
+
+3. `src/features/engineering/services/bom-service.ts`
+   - `BOMListResponse` 仍是 TypeScript type
+   - `getBOMs/getBOMById/saveBOM` 仅使用 `ensureObjectResponse/ensureArrayResponse`
+   - 缺少基于 Zod schema 的 DTO 运行时校验
+
+4. `src/features/trading/hooks/use-sales-order-detail-summary-view-model.ts`
+   - `contractAmount` 当前直接输出拼接后的金额字符串
+   - 已定位金额 metadata 的数据出口
+   - 但最终 UDS 视觉漂移仍需落到 summary 组件实际展示层继续确认
+
+#### 1.3 问题本质
+
+本轮的真实问题分为三类：
+
+1. **Asset authority risk not yet closed**：当前未在 façade 层发现直接违规，但资产状态迁移必须继续追到底层 command/transaction
+2. **BOM type schema gap**：BOM service 仍未以 Zod schema 作为返回契约单源
+3. **Sales metadata aesthetics drift**：金额 metadata 的数据出口已定位，但样式层级仍需落到展示组件做 UDS 收口
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Asset
+
+本轮建议：
+
+1. 继续深查 `MoldTransactionService` / `FurnaceService` 等底层状态迁移入口
+2. 只要发现故障报修、周期核减、停机维护等状态变更由普通 patch/字段覆盖完成，就改为独立事务命令
+3. 如状态变更天然伴随工单/流程，必须把 workflow/ticket 一并纳入命令语义
+
+##### 1.4.2 BOM
+
+本轮建议必做：
+
+1. 新增 `bomApiSchema` / `bomListApiSchema`（或同类命名的 Zod DTO schema）
+2. `getBOMs/getBOMById/saveBOM` 统一基于 schema 做 runtime parse
+3. 不再让 BOM service 仅依赖 TypeScript interface 承担契约职责
+
+##### 1.4.3 Sales Detail Metadata
+
+本轮建议：
+
+1. 找到 `sales-order-detail-summary.tsx` 实际渲染金额 metadata 的样式位置
+2. 对齐金额标签、金额值、辅助 metadata 的字号 / 字重 / 透明度 / 跟踪字距
+3. 保持 UDS 1.0 的层级与工业风一致性，不做无关重构
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **资产侧**：只改真实存在的状态迁移 shadow update，不做想象式 workflow 大改
+2. **BOM 侧**：补齐 Zod schema 与 service runtime contract
+3. **Sales 侧**：只修金额 metadata 的直接展示细节
+
+本轮不做：
+
+1. 不在未找到真实状态迁移违规前，先对 asset-service façade 做形式主义拆改
+2. 不把整个 Engineering DTO 体系一次性全部切到 Zod
+3. 不把 Sales detail 扩成整页视觉重构
+
+#### 1.6 当前阶段结论
+
+第十四轮当前已经明确：BOM service 的 Zod 契约缺口是实锤问题，Sales detail 金额 metadata 的数据出口也已定位；资产侧目前尚未在 façade 层发现直接违规，但不能因此提前判定安全，下一阶段必须继续沿真实状态迁移命令入口向下排查，确保不会把资产状态改变静默降格为普通字段覆盖。
+
+### 1. audit：第十三轮审计修复（Purchase TDO Intent + Engineering 公共出口边界）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十三轮审计有两个关注点：
+
+1. 采购事务中的“确认收货 / 支付申请”是否仍绕过 TDO intent 协议
+2. `engineering/index.tsx` 是否被当作公共 barrel，泄露 internal hooks
+
+本轮排查目标，是把“真实链路缺口”和“文件定位误判”区分清楚，不做想象式整改。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/trading/components/purchase/purchase-order-action-dialog.tsx`
+   - 本身只处理采购单 create / update 保存
+   - 并未直接承载“确认收货 / 支付申请”动作
+
+2. 采购模块真实风险在于事务协议分叉：
+   - 普通采购单保存已经通过 `purchase-transaction-service.ts` 走 `intent`
+   - `confirmPurchaseReceipt(...)` 仍直接 POST 到 `/purchase/orders/:id/confirm-receipt`
+   - 其 `ConfirmPurchaseReceiptPayload` 当前没有显式 `intent`
+
+3. `src/features/engineering/index.tsx`
+   - 当前不是公共 barrel 导出文件
+   - 它是 Engineering 页面组件实现
+   - 未发现其导出 `useProductFormDerive` 等 internal hooks
+
+#### 1.3 问题本质
+
+这轮的真实问题不是“engineering 公共出口已经泄露”，而是：
+
+1. **Purchase transaction intent drift**：普通保存已是 TDO/intent 协议，但“确认收货”仍是独立直接命令接口
+2. **Engineering export leak 当前更接近误报**：没有发现公共入口泄露 internal hook 的事实证据
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Purchase
+
+本轮建议必做：
+
+1. 为采购“确认收货”链路补显式 `intent`
+2. 将其收口到与普通保存一致的 TDO/transaction 语义层
+3. 如同时存在“支付申请”入口，按同样协议一并对齐
+
+##### 1.4.2 Engineering
+
+本轮建议：
+
+1. 明确记录当前未发现公共出口泄露 internal hooks
+2. 不做无效代码改造
+3. 后续新增 barrel 公共入口时，继续限制只暴露 facade / component / contract 级导出
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：采购确认收货 intent/TDO 收口
+2. **按需补充**：排查并对齐支付申请同类入口
+
+本轮不做：
+
+1. 不对并不存在的 engineering export leak 做形式主义清理
+2. 不把整条 purchase 事务体系一次性重构为全新协议层
+
+#### 1.6 当前阶段结论
+
+第十三轮的真实修复重点在采购事务 intent 对齐：普通采购单保存已经具备 TDO intent，而“确认收货”仍停留在直接命令接口，容易让审计语义分叉。Engineering 侧本轮没有发现公共出口泄露 internal hooks，因此只应记录结论并继续守边界，而不是做虚假整改。
+
+### 1. audit：第十一轮审计修复（Change Orders 后端权威边界 + Empty Array Masking + Assets 查询掩盖）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十一轮审计最初包含三类怀疑：
+
+1. `change-orders.tsx` 是否仍在前端生成 `createdAt`
+2. `change-orders.tsx` 是否通过空数组兜底掩盖查询失败
+3. `use-assets.ts` 是否在前端承担逾期判断、维护周期预警等后端权威逻辑
+
+本轮排查目标是区分：
+
+1. **真实的 authority breach / masking**
+2. **并不存在的逻辑泄漏猜测**
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/tabs/change-orders.tsx`
+   - 存在 `createdAt: order?.createdAt || new Date().toISOString()`
+   - 这属于明确的后端权威越界
+
+2. 同文件中还存在：
+   - `const changeOrders = changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS`
+   - 当查询失败或数据缺失时，会把失败语义压扁成空列表
+
+3. `src/features/equipment-tooling/hooks/use-assets.ts`
+   - 当前未发现 overdue 判定、维护周期预警、寿命阈值判断等前端业务逻辑
+   - 因此“资产逻辑泄漏”这条当前更接近排除误报
+
+4. 但 `use-assets.ts` 中存在同类 fail-loudly 不一致：
+   - `molds: moldsQuery.data || []`
+   - `furnaces: furnacesQuery.data || []`
+   - `loans: loansQuery.data || []`
+
+#### 1.3 问题本质
+
+这轮真实问题不是“资产预警公式泄漏”，而是两类更明确的边界问题：
+
+1. **Change Orders authority breach**：前端在生成具法律/审计意义的 `createdAt`
+2. **Empty Array Masking**：前端把查询失败/缺失压成空集合语义
+
+同时，`use-assets.ts` 提醒我们：即便没有逻辑泄漏，也可能有 fail-loudly 不一致，需要最小纳入治理。
+
+#### 1.4 推荐方案
+
+##### 1.4.1 Change Orders
+
+本轮建议必做：
+
+1. 去掉 `createdAt` 的前端 `new Date().toISOString()` 兜底
+2. 收口 `changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS`
+3. 让查询完成但数据缺失的情形显式失败，而不是静默显示空列表
+
+##### 1.4.2 Assets
+
+本轮建议：
+
+1. 记录明确结论：当前未发现逾期判断/维保预警逻辑泄漏
+2. 不做虚构整改
+3. 若本轮允许顺手对齐，可最小收口 `use-assets.ts` 的 query 数据 fallback，使其与 fail-loudly 策略一致
+
+#### 1.5 第一轮实施边界
+
+本轮建议：
+
+1. **必做**：修 `change-orders.tsx`
+2. **可选最小增强**：收口 `use-assets.ts` 的 `query.data || []`
+
+本轮不做：
+
+1. 不虚构并不存在的资产预警公式整改
+2. 不顺手重构整个 Change Orders service / schema 体系
+
+#### 1.6 当前阶段结论
+
+第十一轮的真实修复重点在 `change-orders.tsx`：一是去掉 `createdAt` 的前端权威越界，二是收口空数组兜底。`use-assets.ts` 当前没有发现前端预警逻辑泄漏，但存在与 fail-loudly 不一致的 query fallback，可在不扩大范围的前提下作为同轮最小增强项处理。
+
+### 1. audit：第十轮审计修复（BOM 拓扑权威边界 + Asset 状态机语义事务 + MaterialMgmt 静默 fallback）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第十轮审计原本有三个关注点：
+
+1. BOM 的多级用量汇总与环形依赖检查是否仍留在前端
+2. `AssetService` 是否暴露了直接字段式状态迁移接口
+3. `use-material-mgmt-data.ts` 中是否仍存在 `|| []` 这类静默掩盖
+
+本轮排查的重点，是把“真实缺口”和“误报风险”区分开，不做想象式整改。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `src/features/engineering/services/bom-service.ts`
+   - 当前主要职责是 API 调用与输入规范化
+   - 未发现前端递归拓扑展开、环检测、前端多级用量汇总等逻辑
+   - 因此这一点当前更接近“排除误报”而非真实泄漏
+
+2. `src/features/equipment-tooling/services/asset-service.ts`
+   - 当前未发现 `updateStatus(id, 'MAINTENANCE')` 这类直接字段式状态迁移接口
+   - 现有暴露更多是 facade 级语义入口：
+     - `lendMold`
+     - `borrowMold`
+     - `returnMold`
+     - `updateTelemetry`
+   - 因此当前没有证据支持“状态机越权”已发生
+
+3. `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+   - 仍存在 `const data = materialList?.items || []`
+   - 当 query 已完成但 `materialList` 缺失时，该写法会把异常语义掩盖成空数组
+   - 这是本轮最明确、最应该整改的真实缺口
+
+#### 1.3 问题本质
+
+这轮排查表明：
+
+1. **BOM 与 Asset 目前更像“边界仍需守住”而不是“已经失守”**
+2. **MaterialMgmt 则存在真实的 fail-loudly 缺口**
+
+因此如果贸然把三点都按同等严重度做大改，会制造无效改动；更合理的做法是：
+
+1. 对误报项给出明确“当前未发现”的审计结论
+2. 对真实缺口做最小而明确的修复
+
+#### 1.4 推荐方案
+
+##### 1.4.1 BOM
+
+本轮建议：
+
+1. 记录明确结论：当前未发现前端 BOM 拓扑泄漏
+2. 不做虚假整改
+3. 如顺手增强，只考虑最小补齐 `getBOMById()` 的 runtime contract 一致性，不扩大成整轮 BOM 架构改造
+
+##### 1.4.2 AssetService
+
+本轮建议：
+
+1. 记录明确结论：当前未发现字段式状态机越权接口
+2. 不做代码改造
+3. 后续继续禁止新增 `updateStatus(...)` 这类 API，保持语义事务入口策略
+
+##### 1.4.3 MaterialMgmt
+
+本轮建议：
+
+1. 收口 `use-material-mgmt-data.ts` 中的 `|| []`
+2. 对 query 已完成后数据缺失的情况做显式失败
+3. 保持与此前 BOM / Leaves / Material 主链路一致的 Fail Loudly 策略
+
+#### 1.5 第一轮实施边界
+
+本轮建议只做：
+
+1. 修复 `use-material-mgmt-data.ts` 的静默 fallback
+2. 如必要，最小补 BOM 单点 contract 一致性
+
+本轮不做：
+
+1. 不虚构 BOM 前端拓扑泄漏并重构整条链路
+2. 不对不存在的 Asset 状态机越权做形式主义改动
+3. 不扩大到整个 Material archive 全面治理
+
+#### 1.6 当前阶段结论
+
+第十轮审计的真实结论是：**BOM 拓扑与 Asset 状态机当前没有证据表明已失守；真正需要动手修的是 MaterialMgmt 的静默 fallback。** 下一轮实施应聚焦真实缺口，而不是把“排除误报”误当成“必须整改”的代码任务。
+
+### 1. leave-fix：确认 `/leaves/stats` 与 `/leaves/my` 在崩溃修复后是否仍需单独处理
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+此前请假模块的崩溃修复，核心关注点是：当当前登录用户无法映射到有效员工上下文时，`/leaves/my` 与 `/leaves/stats` 是否都需要分别打补丁，还是应该视为同一根因问题。
+
+这次排查的目标不是再做一遍修复，而是明确：**共同根因是否已经统一收口，以及后续还要不要把这两个接口视为完全同一种故障。**
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. 前端页面层：
+   - `leave-management.tsx` 同时请求：
+     - `LeaveService.getMyLeaveRequests()` -> `/leaves/my`
+     - `LeaveService.getLeaveStats()` -> `/leaves/stats`
+   - 页面当前把两者的 loading 合并为一个 `isLoading`
+
+2. 前端缓存层：
+   - `personnelQueryKeys.leaves.my()` 与 `personnelQueryKeys.leaves.statsMy()` 是分开的 query key
+   - 撤销请假后会同时失效两个 key，说明前端已经承认两者是相关但独立的数据面
+
+3. 后端服务层：
+   - `ListMyLeaveRequests(userID)` 与 `GetMyLeaveStats(userID)` 都先调用 `resolveCurrentEmployeeContext(userID)`
+   - 因此“用户未绑定员工 / 员工不存在 / 未授权”这类故障，对两个接口属于**共同根因**
+
+4. 但两个接口在数据执行阶段仍然不同：
+   - `/leaves/my` 走明细列表查询
+   - `/leaves/stats` 走聚合统计（count / sum）
+
+#### 1.3 结论判断
+
+因此当前可以明确下结论：
+
+1. **根因修复层面**
+   - 不需要再把 `/leaves/my` 与 `/leaves/stats` 当作两套独立的“员工上下文崩溃”问题分别修
+   - 因为它们的共同崩溃前提已经由 `resolveCurrentEmployeeContext` 统一约束
+
+2. **运行观测与降级层面**
+   - 仍然不能把两者当作完全等价接口
+   - 因为后续聚合统计 SQL、count/sum 逻辑、响应结构漂移等问题，仍可能只影响 `/leaves/stats`
+   - 同理，明细列表结构问题也可能只影响 `/leaves/my`
+
+#### 1.4 推荐方案
+
+推荐把这两个接口视为：
+
+1. **共享根因的一组相关接口**
+2. **但保留独立失败语义的数据面**
+
+也就是说：
+
+1. 共同根因继续收口在后端：
+   - `resolveCurrentEmployeeContext`
+   - `writeLeaveServiceError`
+2. 页面体验上不要把两者彻底混成一个状态黑盒
+
+#### 1.5 若继续增强鲁棒性，推荐下一步方向
+
+如果后续要继续做 `leave-management.tsx` 的健壮性增强，建议优先：
+
+1. 把“列表区”和“统计卡片区”拆分为各自可见的错误状态
+2. 避免当前仅通过合并 `isLoading` 掩盖单接口退化
+3. 当 `/leaves/stats` 失败但 `/leaves/my` 成功时，页面应仍能展示请假记录，只让统计卡片降级
+4. 当 `/leaves/my` 失败但 `/leaves/stats` 成功时，页面也应给出对应区域的独立错误提示
+
+#### 1.6 当前阶段结论
+
+`/leaves/my` 与 `/leaves/stats` **在根因修复上不需要继续单独打一遍同类补丁**，因为它们共享同一个员工上下文前提；但**在后续观测、错误语义和降级体验上，仍建议保留单独处理意识**，因为明细查询和聚合统计的失败模式并不相同。
+
+### 1. audit：第八轮审计修复（Mold Dialog 标题 italic + 健康度预览公式边界 + Personnel 展示逻辑碎片化）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第八轮审计聚焦在 UI 规范与“预览公式边界”两类问题：
+
+1. `mold-action-dialog.tsx` 未完全遵守 UDS 1.0 标题规范
+2. Mold 健康度预览虽然已有 UI-PREVIEW 注释，但公式仍直接内联在组件中
+3. Personnel 列定义虽然未出现严重逻辑堆叠，但工龄展示依旧依赖前端推导，需要确认其边界表达是否足够清晰
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `mold-action-dialog.tsx` 中：
+   - `DialogTitle` 当前类名为 `text-lg sm:text-xl font-black tracking-tight uppercase`
+   - 确实缺少 `italic`
+
+2. 同文件中：
+   - `healthPercent` 通过 `((watchedMax - watchedCurrent) / watchedMax) * 100` 直接在组件内计算
+   - 虽有 `[UI-PREVIEW-INDICATOR]` 注释，但组件仍然掌握了具体公式
+
+3. `employee-columns.tsx` 中：
+   - 未发现薪资脱敏逻辑泄露
+   - 工龄展示通过 `calculatePersonnelWorkYears(joinedDate)` 获得
+   - 该函数位于 `personnel-archive-columns.ts`
+   - 并已标注 `[UI-PREVIEW-VALUE]` / `[BACKEND-AUTHORITY]`
+
+#### 1.3 问题本质
+
+这轮问题的本质不是“少一个样式类”这么简单，而是：
+
+1. **UI 规范未被彻底执行**：标题 italic 漏配说明 UDS 约束仍可能在局部漂移
+2. **公式边界仍在组件层**：即使声明为预览，组件内联公式仍容易和后端权威口径分叉
+3. **展示逻辑边界仍需显式表达**：Personnel 侧当前没有严重泄漏，但工龄推导属于高风险的“看似 harmless、实则可能漂移”的前端计算
+
+#### 1.4 推荐方案（Mold Dialog 标题 italic）
+
+建议直接修正 `mold-action-dialog.tsx` 的 `DialogTitle` 类名，补齐 `italic`。
+
+这是一个低风险、应立即对齐的 UDS 1.0 规范项。
+
+#### 1.5 推荐方案（健康度预览公式边界）
+
+建议把 Mold 健康度预览从“组件内联公式”提升为“service/preview 边界”：
+
+1. 优先候选：`AssetService.previewHealthScore(current, max)`
+2. 如果当前后端尚未提供 preview API，第一轮也应至少把公式收口到 service/helper 边界，而不是继续留在组件内
+
+这样做的价值在于：
+
+1. 日后后端若引入温度系数、压力衰减、维护事件权重等规则，变更点更集中
+2. 组件不再直接掌握“看似业务、实则可演化”的公式
+
+#### 1.6 推荐方案（Personnel 工龄展示边界）
+
+当前未发现薪资脱敏问题，因此本轮不应虚构范围扩大。
+
+建议：
+
+1. 保持工龄显示逻辑不再散落在列定义中
+2. 继续强调其 **UI preview only** 角色
+3. 若进入实施，优先评估是否需要把该展示口径进一步上提到 Personnel service / formatter 边界，而不是留在 columns 依赖的 config 函数中
+
+#### 1.7 第一轮实施边界
+
+本轮建议只做：
+
+1. 修正 Mold Dialog 标题 italic
+2. 收口 Mold 健康度预览公式边界
+3. 最小复核 Personnel 工龄展示边界表达
+
+本轮不做：
+
+1. 不虚构或新增不存在的薪资脱敏需求
+2. 不改后端健康度协议，除非已有可复用 preview 入口
+3. 不重构整套 Personnel 列体系
+
+#### 1.8 风险与控制策略
+
+1. **把公式从组件搬到 helper 但仍未真正权威化的风险**
+   - 仅“换个文件放公式”并不能完全解决与后端漂移的问题。
+   - 控制策略：第一轮至少把公式从组件内联中移出；若已有 service 入口则优先接 service。
+
+2. **为不存在问题扩大整改范围的风险**
+   - Personnel 当前没看到薪资脱敏，不应凭审计想象扩大改动。
+   - 控制策略：只处理已经证实存在的工龄展示边界问题。
+
+3. **局部 UDS 修正未形成复用约束的风险**
+   - 单独补 `italic` 容易再次遗漏。
+   - 控制策略：本轮先最小修正；后续可考虑让这类 Dialog Title 复用统一 shell styles。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 修正 `mold-action-dialog.tsx` 标题类名
+2. 评估并收口健康度预览到 service/helper 边界
+3. 最小复核 `employee-columns.tsx` 与 `personnel-archive-columns.ts` 的工龄展示边界
+4. 执行定向 `eslint` / `tsc`
+5. 更新 `walkthrough.md`
+
+#### 1.10 当前阶段结论
+
+第八轮审计的问题都属于“局部实现仍未完全服从统一边界”的表现：一是 UDS 标题规范存在漏配，二是 Mold 健康度公式仍停留在组件层，三是 Personnel 工龄虽然已抽离，但其 UI-preview 性质仍需继续收口和明确。下一轮应优先做**样式规范补齐 + 预览公式脱组件 + 工龄展示边界最小收口**。
+
+### 1. audit：第七轮审计修复（订单日期权威越界 + MaterialMaintenanceService DTO Zod 真空 + SalesOrder 校验职责边界）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第七轮审计聚焦到 Trading / Material 两条边界问题：
+
+1. Sales Order 默认 `orderDate` 仍由前端直接生成
+2. `validateSalesOrder` 的职责边界没有被显式限制，存在未来业务规则继续向前端泄漏的风险
+3. `MaterialMaintenanceService` 主写链路缺少显式 runtime contract
+
+这三项问题都指向同一个原则：**前端不应替后端生成权威业务字段，也不应承载最终业务裁决；service 边界必须对 DTO 契约负责。**
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. Sales Order 默认日期前端生成至少存在 3 个注入点：
+   - `use-sales-order-form.ts` 的 `DEFAULT_ORDER.orderDate`
+   - `use-sales-order-init.ts` 的 create 初始化分支
+   - `trading/data/schema.ts` 中 `EMPTY_SALES_ORDER_LINE.orderDate`
+
+2. 当前写法均为：
+   - `new Date().toISOString().split('T')[0]`
+
+3. `validateSalesOrder` 当前主要仍是 UI 完整性校验：
+   - 状态锁定
+   - customer / deliveryDate 必填
+   - lines 非空
+   - 行项目 `productModel / qty` 基本完整性
+
+4. `MaterialMaintenanceService` 当前情况：
+   - `saveMaterial / patchMaterial` 只做了 `ensureObjectResponse`
+   - `saveMaterials` 对 bulk sync 请求未做显式 runtime parsing
+   - `material-api-dto.ts` 仍是 TypeScript interface，不是 Zod contract
+
+#### 1.3 问题本质
+
+这轮问题的本质不是“前端日期格式不优雅”或“某个 service 少一层 parse”，而是：
+
+1. **权威字段越界**：前端在模拟服务端业务时间
+2. **裁决边界不清**：前端 validator 可能继续变成业务规则容器
+3. **契约边界缺口**：Material 主写链路还没有做到 request/response runtime validation 前移
+
+其风险包括：
+
+1. 跨时区或客户端系统时间异常时，订单日期会漂移
+2. 未来如果把物料配伍、价格波动等规则继续塞进 `validateSalesOrder`，前端会形成“伪业务引擎”
+3. Material 接口结构漂移时，主写链路仍可能以弱约束方式吞掉错误
+
+#### 1.4 推荐方案（Sales Order 默认日期）
+
+建议收口 Sales Order 默认日期来源：
+
+1. 前端不再用 `new Date().toISOString().split('T')[0]` 生成默认 `orderDate`
+2. create 场景默认值改为留空、或仅保留用户可编辑字段的空态
+3. 最终业务日期由：
+   - 用户手动选择并由后端校验
+   - 或后端在保存/创建时按规则分配
+
+第一轮建议优先：
+
+1. 去除前端自动注入默认审计日期
+2. 最小对齐相关默认值结构，避免 UI 因空值崩溃
+
+#### 1.5 推荐方案（`validateSalesOrder` 职责边界）
+
+建议把 `validateSalesOrder` 明确限定为 **UI-only precheck**：
+
+1. 允许保留：
+   - 必填项空值检查
+   - 行项目最小完整性检查
+   - 当前页面是否允许编辑
+2. 不允许继续承载：
+   - 价格波动上限
+   - 物料配伍
+   - 信用额度
+   - 任何必须由后端强制执行的业务裁决
+
+第一轮不必把它重写成复杂框架，但要在命名/注释/调用边界上显式表达其 UI-only 角色。
+
+#### 1.6 推荐方案（MaterialMaintenanceService DTO Zod 真空）
+
+建议为 Material 主写链路补齐 runtime contract：
+
+1. 为 `MaterialApiDTO / SaveMaterialApiDTO / BulkSyncMaterialsApiDTO` 建立 Zod schema
+2. `MaterialMaintenanceService` 在 request/response 边界使用 parser
+3. 让 adapter 层消费已解析的稳定 DTO，而不是承担“半校验半映射”的角色
+
+优先覆盖：
+
+1. `saveMaterial`
+2. `patchMaterial`
+3. `saveMaterials`
+
+#### 1.7 第一轮实施边界
+
+本轮建议只做：
+
+1. 收口 Sales Order 前端默认 `orderDate` 注入点
+2. 明确 `validateSalesOrder` 的 UI-only 边界
+3. 为 MaterialMaintenanceService 主写链路补 runtime contract
+
+本轮不做：
+
+1. 不改后端订单日期协议
+2. 不新增服务端业务规则镜像到前端
+3. 不一次性 Zod 化 Material 全部 list/options/query 读链路
+4. 不顺手重构整个 Trading 表单架构
+
+#### 1.8 风险与控制策略
+
+1. **去掉前端默认日期后 UI 空值兼容的风险**
+   - 某些日期输入组件或展示逻辑可能默认假定 `orderDate` 总存在。
+   - 控制策略：第一轮只去掉自动注入，同时检查 create 初始化与 line 默认值是否能接受空字符串。
+
+2. **把 validator 边界说清但没有真正防漏的风险**
+   - 如果只保留原函数名，后续仍可能有人继续把业务规则塞进去。
+   - 控制策略：在注释、命名或导出边界上明确 UI-only 角色。
+
+3. **Material schema 过宽导致治理价值不足的风险**
+   - 如果 schema 全写成宽松类型，就无法真正防漂移。
+   - 控制策略：优先锁定主写链路的顶层字段与控制字段，渐进收紧。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 清理 Sales Order 默认 `orderDate` 的前端注入点
+2. 最小对齐 create 初始化和 line 默认值
+3. 明确 `validateSalesOrder` 的 UI-only 边界
+4. 为 Material DTO 新增 contract schema / parser
+5. 改造 `MaterialMaintenanceService` 主写链路
+6. 执行定向 `eslint` / `tsc`
+7. 更新 `walkthrough.md`
+
+#### 1.10 当前阶段结论
+
+第七轮审计的三个问题都属于边界治理问题：**前端越过了应有权威边界，或没有在 service 边界显式承担 DTO 契约责任。** 因此下一轮应优先做“默认日期去前端权威化 + validator UI-only 边界显式化 + Material 主写链路 Zod contract 前移”，而不是分散做零碎补丁。
+
+### 1. audit：第六轮审计修复（发号异常静默 + Engineering Spec DTO Zod 真空）
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+第六轮审计暴露了两个同类问题：
+
+1. **发号异常静默**：失败被记录但没有被用户感知
+2. **DTO 运行时校验真空**：Engineering Spec 主读写链路仍大量依赖静态类型与 `any`，缺少 service 边界上的运行时契约
+
+这两个问题虽然表面分属不同模块，但本质上都属于：**边界失败没有在最早可控处被显式表达**。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `use-product-form-derive.ts` 中：
+   - `deriveNextCode()` 调用 `ProductCoreService.getNextCode()`
+   - catch 分支只执行 `logger.error('Failed to derive next product code from authority engine', error)`
+   - 没有 toast
+   - 没有返回错误状态
+   - 没有把失败抬升到 `useProductForm` / dialog 层
+
+2. `engineering-spec-service.ts` 中：
+   - `getSpecs / getSpec / saveSpec / patchSpec / syncSpecs` 基本都是裸 `apiFetch<T>`
+   - `EngineeringSpec` 仅是 TypeScript interface，不是运行时 schema
+   - `specData / drillingData / labelingData / ...` 仍是 `any`
+
+3. `SpecsService` 中：
+   - `getSpecs()` 先把远端数据映射到 `TechnicalSpec`，再用 `technicalSpecSchema.safeParse(...).success` 做过滤
+   - 过滤失败项目会被静默丢弃
+   - 发生异常时直接 `console.error + return []`
+   - `saveSpec / patchSpec` 对请求/响应边界没有完整运行时约束
+
+#### 1.3 问题本质
+
+这轮问题的本质不是“缺一个 toast”或“少写一个 schema”，而是：
+
+1. **失败没有在边界处 Fail Loudly**
+2. **契约没有在 service / adapter 边界被显式验证**
+
+其风险包括：
+
+1. 发号器故障时，用户仍继续填写，错误延迟到保存阶段才暴露
+2. 远端返回结构漂移时，前端会以“静默过滤 / 返回空数组 / any 透传”的形式吞掉问题
+3. 审计上看不到明确失败点，排障成本高
+
+#### 1.4 推荐方案（发号异常静默）
+
+建议把产品发号失败从“仅日志”改为“**日志 + 用户可见状态 + UI 提示**”。
+
+推荐方向：
+
+1. `use-product-form-derive.ts` 暴露：
+   - `nextCodeDeriveError`（或等价命名）
+2. `use-product-form.ts` 继续向上转发该状态
+3. `product-action-dialog.tsx` 在表单内显示发号异常提示
+
+第一轮建议：
+
+1. create 场景发号失败时给出明确中文提示
+2. 仍允许用户看到当前表单，但不能再是“无感失败”
+3. 是否阻断提交，以“仅在编码仍为空/默认值时阻断”为优先候选策略
+
+#### 1.5 推荐方案（Engineering Spec DTO Zod 真空）
+
+建议为 Engineering Spec 主链路补齐显式 runtime contract：
+
+1. 为远端 Engineering Spec DTO 定义 Zod schema
+2. 为 `getSpecs / getSpec / saveSpec / patchSpec` 建立 parser
+3. 在 service / adapter 边界先解析，再把稳定结果交给 `SpecsService`
+
+推荐落点：
+
+1. `src/features/engineering/services/engineering-spec-service.ts`
+2. 若 schema 较多，拆到独立 data/adapter 文件，遵循你之前“尽量解耦拆文件”的偏好
+
+#### 1.6 第一轮实施边界
+
+本轮建议只做：
+
+1. 产品表单发号失败可见化
+2. Engineering Spec 主读写链路 runtime parsing：
+   - `getSpecs`
+   - `getSpec`
+   - `saveSpec`
+   - `patchSpec`
+
+本轮不做：
+
+1. 不扩到所有其它发号入口
+2. 不改后端接口字段
+3. 不顺手重构整个 specs domain 的所有 `any`
+4. 不先做 `syncSpecs` 的全量 schema 细化，除非主链路实现时证明它是阻塞点
+
+#### 1.7 风险与控制策略
+
+1. **发号失败提示过强导致误阻断的风险**
+   - 如果后端只是瞬时失败，完全阻断创建可能影响录入连续性。
+   - 控制策略：第一轮优先“显式提示 + 条件阻断空/默认编码提交”，而不是一刀切禁止。
+
+2. **Engineering Spec schema 过宽仍无法发现漂移的风险**
+   - 若直接把太多字段写成 `z.any()`，runtime contract 形式上存在但价值不足。
+   - 控制策略：先锁定顶层必需字段与主链路控制字段，渐进收紧。
+
+3. **静默过滤改为显式失败后引发现有脏数据暴露的风险**
+   - 某些历史坏数据可能此前被过滤掉，现在会显式报错。
+   - 控制策略：在读取链路提供更明确的错误上下文，必要时区分“单条坏数据”与“整体接口失效”。
+
+#### 1.8 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 改造 `use-product-form-derive.ts`，把发号失败状态显式化
+2. 向 `use-product-form.ts` / dialog 传递并展示该状态
+3. 为 Engineering Spec DTO 定义 runtime schema / parser
+4. 改造 `engineering-spec-service.ts` 的主读写边界
+5. 最小对齐 `SpecsService`，移除“过滤后直接吞掉”的口径
+6. 执行定向 `eslint` / `tsc`
+7. 更新 `walkthrough.md`
+
+#### 1.9 当前阶段结论
+
+第六轮审计的两个问题都指向同一个架构原则：**边界失败必须尽早、显式、可见地暴露出来**。因此下一轮不应只补一个 toast，也不应只加几行 `safeParse(...).success`，而应同时把：
+
+1. 产品发号失败从静默日志提升为用户可见状态
+2. Engineering Spec 的主 DTO 契约前移到 service / adapter 运行时边界
+
+### 1. architecture：ProductCommand 收口 selectedVariants 交互命令
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+目前产品表单已经完成两段命令收口：
+
+1. `composeInitialState()` 负责初始化
+2. `composeSubmitPayload()` 负责编排提交前 payload
+
+但 `selectedVariants` 在**用户交互变更**这一段，仍然主要由 hook 直接操作数组。这意味着同一个领域对象已经有：
+
+1. 初始化命令
+2. 交互变更散落在 hook
+3. 提交前组合命令
+
+命令边界还没有闭环。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `handleVariantToggle` 仍直接写在 `use-product-form-submit.ts` 中，职责包括：
+   - 勾选时按当前表单 `weight` 生成新项
+   - 取消时按 `level` 删除
+   - 默认将新增项追加到末尾
+
+2. `updateVariantWeight` 仍直接写在 `use-product-form-submit.ts` 中，职责包括：
+   - 按 `level` 匹配已有项
+   - 仅更新该项 `weight`
+   - 若未命中则静默不变
+
+3. `variant-matrix-section.tsx` 当前读取方式说明展示层默认依赖：
+   - `level` 唯一
+   - `selectedVariants` 可按 `find/some` 被稳定检索
+
+#### 1.3 问题本质
+
+当前问题不是代码行数，而是**selectedVariants 的状态迁移规则仍不是单一来源**。
+
+其风险在于：
+
+1. 初始态、交互态、提交态分别由不同层解释
+2. 若后续要补去重、顺序、默认重量策略，容易继续散落在 hook 里
+3. hook 既负责状态迁移，又负责提交编排，职责再次变宽
+
+#### 1.4 推荐方案
+
+建议在 `ProductCommand` 增加两类交互命令入口，例如：
+
+1. `ProductCommand.toggleVariantSelection()`
+2. `ProductCommand.updateVariantSelectionWeight()`
+
+推荐输入：
+
+1. 当前 `selectedVariants`
+2. `level`
+3. `checked` / `weight`
+4. 必需时传入 `defaultWeight`
+
+推荐输出：
+
+1. 新的 `selectedVariants`
+
+#### 1.5 建议迁入命令层的职责
+
+第一轮建议只迁入以下内容：
+
+1. 勾选时新 variant 的创建策略
+2. 取消勾选时按 `level` 删除的策略
+3. 按 `level` 更新重量的策略
+4. `level` 唯一与顺序稳定的约束
+
+#### 1.6 第一轮明确不迁入的职责
+
+本轮不建议把以下内容一起改动：
+
+1. `variant-matrix-section.tsx` 的 UI 结构
+2. `useProductForm` 的状态存储方式
+3. reducer / context / 外部状态库
+4. `composeSubmitPayload()` 的输入输出结构
+
+#### 1.7 推荐落地方式
+
+建议：
+
+1. `ProductCommand` 继续作为领域命令入口
+2. hook 只负责：
+   - 从 form 读取当前默认重量
+   - 调用命令层生成下一状态
+   - 通过 `setSelectedVariants` 分发结果
+
+换句话说，这一步是把 hook 从“手写数组变更器”继续收敛成“状态分发器”。
+
+#### 1.8 风险与控制策略
+
+1. **过度抽象简单数组操作的风险**
+   - 如果只是机械搬代码，可能徒增一层间接性。
+   - 控制策略：只在命令层显式表达真正的领域规则（默认重量、唯一性、顺序），不做空泛包装。
+
+2. **与初始化/提交命令边界重叠的风险**
+   - 若状态迁移接口命名或输入设计不清，可能和已有命令职责重叠。
+   - 控制策略：明确区分三段职责：`composeInitialState` / interaction transitions / `composeSubmitPayload`。
+
+3. **未来 UI 交互变化导致命令层过细的风险**
+   - 如果后续 UI 改成表格或批量编辑，命令命名过于贴近当前组件会失去复用性。
+   - 控制策略：命令命名以领域状态迁移为中心，而不是以组件事件名为中心。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 扩展 `ProductCommand`，新增 variant 交互命令
+2. 让其统一返回下一份 `selectedVariants`
+3. 改造 `use-product-form-submit.ts` 调用命令层
+4. 保持组件 props 与 UI 结构不变
+5. 执行定向 `eslint` / `tsc`
+6. 更新 `walkthrough.md`
+
+#### 1.10 当前阶段结论
+
+如果你选择继续做方案A，那么最稳的推进方式不是直接把 `handleVariantToggle / updateVariantWeight` 原样搬家，而是把它们提升为 `selectedVariants` 的**状态迁移命令**。这样 `ProductCommand` 才能真正覆盖产品表单的“初始化、交互、提交”三段核心规则。
+
 ### 1. architecture：ProductCommand 收口提交前组合
 
 日期：2026-04-12  

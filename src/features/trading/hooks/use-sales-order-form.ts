@@ -23,7 +23,7 @@ const DEFAULT_ORDER: Partial<SalesOrder> = {
   paymentTerm: '',
   paymentTermName: '',
   classification: 'GENERAL',
-  orderDate: new Date().toISOString().split('T')[0],
+  orderDate: '',
   deliveryDate: '',
   status: 'Pending',
   purchaseOrderNo: '',

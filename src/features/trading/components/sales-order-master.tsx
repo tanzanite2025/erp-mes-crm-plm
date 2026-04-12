@@ -97,7 +97,7 @@ export function SalesOrderMaster({
                   <tr
                     key={order.id}
                     onClick={() => onSelect(order.id)}
-                    className={`group animate-in cursor-pointer fade-in slide-in-from-left-2 transition-all duration-300 hover:bg-white hover:shadow-md ${
+                    className={`group animate-in cursor-pointer fade-in slide-in-from-left-2 transition-all duration-200 hover:bg-white hover:shadow-md ${
                       active ? 'bg-white shadow-lg ring-1 ring-primary/30' : 'bg-card'
                     }`}
                   >

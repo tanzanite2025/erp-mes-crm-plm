@@ -89,6 +89,11 @@ export const materialArchive = {
     externalTag: 'Logistics',
     unknownCategory: 'Uncategorized',
   },
+  mobile: {
+    loading: 'Synchronizing material archives...',
+    empty: 'No material archives available',
+    internalDimensions: 'INT: {{value}}',
+  },
   form: {
     categoryLabel: '01. Material Category',
     categoryPlaceholder: 'Select a category',
@@ -146,6 +151,10 @@ export const materialArchive = {
     },
     parse: {
       sheetNotFound: 'The worksheet "{{sheetName}}" was not found in the Excel file. Please use the standard template exported by the system.',
+      configSheetNotFound: 'The system config worksheet "{{sheetName}}" was not found in the Excel file. Please re-export the latest standard template before editing.',
+      invalidGlobalVersion: 'The Excel file is missing a valid global material version fingerprint. Please re-export the latest template before importing.',
+      invalidCompositeId: 'The Excel file contains an invalid record key: {{value}}. Do not edit locked columns manually.',
+      categoryMappingMissing: 'The Excel file contains an unknown material category: {{value}}. Please use the template dropdown values.',
     },
   },
 }

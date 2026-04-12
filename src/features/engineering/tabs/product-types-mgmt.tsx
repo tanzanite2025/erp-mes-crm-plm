@@ -29,17 +29,15 @@ import {
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from '../components/product-type-action-dialog'
-import { type Product, type ProductType } from '../data/schema'
+import { type ProductType } from '../data/schema'
 import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
-import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
-import { ProductCoreService } from '../services/product-core-service'
+import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
 import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
 import {
-  buildChildTypeCountMap,
   buildOrderedProductTypes,
-  buildProductCountByType,
   buildProductTypeMap,
 } from '../utils/product-type-tree'
 
@@ -55,23 +53,26 @@ export function ProductTypesMgmt() {
     queryKey: PRODUCT_TYPES_QUERY_KEY,
     queryFn: () => ProductTypeService.getProductTypes(),
   })
-  const productsQuery = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts(),
-  })
-  const data = productTypesQuery.data ?? []
-  const products = productsQuery.data ?? []
-  const error = productTypesQuery.error ?? productsQuery.error
+  const data = productTypesQuery.data
+  const error = productTypesQuery.error
 
   useEffect(() => {
     if (!error) return
     logger.error('Failed to load product types', error)
   }, [error])
 
-  const displayData = useMemo(() => buildOrderedProductTypes(data), [data])
-  const typeMap = useMemo(() => buildProductTypeMap(data), [data])
-  const productCountByType = useMemo(() => buildProductCountByType(products as Product[]), [products])
-  const childTypeCountMap = useMemo(() => buildChildTypeCountMap(data), [data])
+  const resolvedProductTypes = useMemo(() => {
+    if (data) return data
+    if (productTypesQuery.isPending) return [] as ProductType[]
+    const error = productTypesQuery.error instanceof Error
+      ? productTypesQuery.error
+      : new Error('[CRITICAL] Product types are missing after load')
+    failLoudly(error, 'ProductTypesMgmt.productTypes')
+    throw error
+  }, [data, productTypesQuery.error, productTypesQuery.isPending])
+
+  const displayData = useMemo(() => buildOrderedProductTypes(resolvedProductTypes), [resolvedProductTypes])
+  const typeMap = useMemo(() => buildProductTypeMap(resolvedProductTypes), [resolvedProductTypes])
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -108,6 +109,14 @@ export function ProductTypesMgmt() {
     {
       header: t('engineering.categoryArchive.columns.parent'),
       cell: ({ row }) => {
+        if (!row.original.parentId) {
+          return (
+            <span className='text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest italic'>
+              {t('engineering.categoryArchive.labels.rootLevel')}
+            </span>
+          )
+        }
+
         const parent = row.original.parentId ? typeMap.get(row.original.parentId) : null
 
         return parent ? (
@@ -115,8 +124,8 @@ export function ProductTypesMgmt() {
             {parent.name}
           </Badge>
         ) : (
-          <span className='text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest italic'>
-            {t('engineering.categoryArchive.labels.rootLevel')}
+          <span className='text-[9px] text-amber-700/80 font-black uppercase tracking-widest italic'>
+            {t('engineering.categoryArchive.labels.orphanParent')}
           </span>
         )
       },
@@ -167,27 +176,6 @@ export function ProductTypesMgmt() {
               const confirmed = window.confirm(t('engineering.categoryArchive.confirms.delete'))
               if (!confirmed) return
 
-              const relatedCount = productCountByType.get(row.original.id) ?? 0
-
-              if (relatedCount > 0) {
-                toast.error(
-                  t('engineering.categoryArchive.toasts.relatedProducts', {
-                    count: relatedCount,
-                  })
-                )
-                return
-              }
-
-              const childCategoriesCount = childTypeCountMap.get(row.original.id) ?? 0
-              if (childCategoriesCount > 0) {
-                toast.error(
-                  t('engineering.categoryArchive.toasts.hasChildren', {
-                    count: childCategoriesCount,
-                  })
-                )
-                return
-              }
-
               try {
                 await deleteProductType(row.original.id)
                 toast.success(t('engineering.categoryArchive.toasts.deleteSuccess'))
@@ -217,6 +205,21 @@ export function ProductTypesMgmt() {
 
   if (isForbiddenError(error)) {
     return <ForbiddenState />
+  }
+
+  if (productTypesQuery.isError) {
+    return (
+      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+        <PageHeader
+          icon={Tags}
+          title={t('engineering.categoryArchive.header.title')}
+          description={t('engineering.categoryArchive.header.description')}
+        />
+        <div className='rounded-[32px] border border-dashed border-destructive/30 bg-destructive/5 px-6 py-10 text-center text-sm font-black tracking-wide text-destructive'>
+          {t('engineering.categoryArchive.toasts.loadFailed')}
+        </div>
+      </div>
+    )
   }
 
   const handleFormSubmit = async (formData: SaveProductTypeInput) => {
@@ -276,7 +279,13 @@ export function ProductTypesMgmt() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {productTypesQuery.isPending ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-32 text-center text-muted-foreground font-black uppercase tracking-widest text-[10px]'>
+                  {t('engineering.categoryArchive.empty.loading')}
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className='h-16 group hover:bg-muted/30 transition-all border-b border-dashed border-muted/50'>
                   {row.getVisibleCells().map((cell) => (

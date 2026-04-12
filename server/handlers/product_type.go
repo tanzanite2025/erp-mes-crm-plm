@@ -92,7 +92,13 @@ func PatchProductTypeHandler(c *gin.Context) {
 func DeleteProductTypeHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductType(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product type: " + err.Error()})
+		switch {
+		case errors.Is(err, services.ErrProductTypeNotEmpty):
+			c.JSON(http.StatusForbidden, gin.H{"error": "[CRITICAL] BUSINESS_CONSTRAINT_VIOLATION: Category is not empty"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product type: " + err.Error()})
+			return
+		}
 		return
 	}
 	c.Status(http.StatusNoContent)

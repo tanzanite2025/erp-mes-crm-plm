@@ -25,7 +25,9 @@ export const Route = createRootRouteWithContext<{
 
     useEffect(() => {
       // 1. 启动即执行本地存储健康检查 (非阻塞)
-      PersistenceService.initLocalStore();
+      void PersistenceService.initLocalStore().catch((error) => {
+        logger.error('Local persistence bootstrap failed', error)
+      })
 
       // 2. 【路由守卫】仅在非认证页面且检测到非法访客身份时才重定向
       if (!isAuthPage && user && user.accountNo === 'ACC-GUEST') {

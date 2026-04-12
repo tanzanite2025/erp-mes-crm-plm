@@ -1,7 +1,7 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
 import { normalizeChangeOrderNo, normalizeModelCode, normalizeRevisionNo, normalizeSiteCode, normalizeSku, normalizeTemplateKey } from '@/lib/codecs/code-normalization'
-import { barcodeConfigSchema, type Product, type ProductAttributeValue } from '../data/schema'
+import { barcodeConfigSchema, productSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type BulkSyncProductsApiDTO,
   type ProductApiDTO,
@@ -42,7 +42,7 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
 }
 
 export function toProductContract(dto: ProductApiDTO): Product {
-  return {
+  return productSchema.parse({
     id: dto.id,
     sku: normalizeSku(dto.sku),
     name: dto.name,
@@ -78,7 +78,7 @@ export function toProductContract(dto: ProductApiDTO): Product {
     changeOrderNo: normalizeChangeOrderNo(dto.changeOrderNo),
     siteCode: normalizeSiteCode(dto.siteCode),
     isDefaultSite: dto.isDefaultSite,
-  }
+  })
 }
 
 export function toProductArrayContract(items: ProductApiDTO[]): Product[] {
@@ -129,7 +129,7 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
   }
 }
 
-const PRODUCT_PATCH_FIELDS: Array<keyof SaveProductInput> = [
+const PRODUCT_PATCH_FIELDS: Array<keyof ProductApiDTO> = [
   'sku',
   'name',
   'modelCode',
@@ -162,25 +162,22 @@ const PRODUCT_PATCH_FIELDS: Array<keyof SaveProductInput> = [
   'changeOrderNo',
   'siteCode',
   'isDefaultSite',
-  'createdAt',
-  'version',
 ]
 
-export function buildProductDelta(next: SaveProductInput): DeltaSet {
+export function buildProductDelta(current: Product, next: SaveProductInput): DeltaSet {
   const delta: DeltaSet = {}
+  const currentDto = toProductApiDTO(current)
+  const nextDto = toProductApiDTO(next)
 
   for (const field of PRODUCT_PATCH_FIELDS) {
-    if (!(field in next)) {
-      continue
-    }
-    const fieldDelta = buildFlattenDelta(undefined, next[field], { basePath: String(field) })
+    const fieldDelta = buildFlattenDelta(currentDto[field], nextDto[field], { basePath: String(field) })
     Object.assign(delta, fieldDelta)
   }
 
   return delta
 }
 
-export function toBulkSyncProductsApiDTO(products: Product[]): BulkSyncProductsApiDTO {
+export function toBulkSyncProductsApiDTO(products: SaveProductInput[]): BulkSyncProductsApiDTO {
   return {
     products: products.map(toProductApiDTO),
   }

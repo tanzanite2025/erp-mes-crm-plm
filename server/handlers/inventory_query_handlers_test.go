@@ -20,6 +20,26 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	now := time.Now()
 	materialID := uuid.NewString()
 	require.NoError(t, db.DB.Exec(`
+		CREATE TABLE IF NOT EXISTS inventory_reservations (
+			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			material_id TEXT NOT NULL,
+			category_code TEXT NOT NULL,
+			batch_no TEXT,
+			quantity REAL NOT NULL,
+			status TEXT NOT NULL,
+			source_type TEXT NOT NULL,
+			source_id TEXT NOT NULL,
+			reserved_at DATETIME,
+			released_at DATETIME,
+			consumed_at DATETIME,
+			expired_at DATETIME,
+			remarks TEXT
+		)
+	`).Error)
+	require.NoError(t, db.DB.Exec(`
 		INSERT INTO materials (id, created_at, updated_at, category)
 		VALUES (?, ?, ?, ?)
 	`, materialID, now, now, "RAW").Error)
@@ -27,6 +47,10 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, material_spec, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, uuid.NewString(), now, now, materialID, "Copper Wire", "MAT-I-001", "Spec-A", 12.5, 100.0, 8.0, "WH_A", "B-INV-001", "KG").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory_reservations (id, created_at, updated_at, material_id, category_code, batch_no, quantity, status, source_type, source_id, reserved_at, remarks)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, materialID, "WH_A", "B-INV-001", 2.5, "RESERVED", "SALES_ORDER", "so-line-1", now, "hold").Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -45,6 +69,9 @@ func TestGetInventoryHandlerReturnsNamedPagedResponse(t *testing.T) {
 	require.Equal(t, "RAW", response.Items[0].MaterialCategory)
 	require.Equal(t, "WH_A", response.Items[0].CategoryCode)
 	require.Equal(t, "KG", response.Items[0].UOM)
+	require.Equal(t, 12.5, response.Items[0].OnHand)
+	require.Equal(t, 2.5, response.Items[0].Reserved)
+	require.Equal(t, 10.0, response.Items[0].AvailableQty)
 	expectedVersion := int(response.Items[0].LastUpdated.UnixMilli())
 	if expectedVersion < 1 {
 		expectedVersion = 1

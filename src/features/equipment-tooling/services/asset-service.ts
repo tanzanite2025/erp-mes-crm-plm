@@ -12,6 +12,18 @@ export class AssetService {
     static checkMoldCapacity = MoldTransactionService.checkMoldCapacity.bind(MoldTransactionService)
     static checkMoldCapacityAlerts = MoldTransactionService.checkMoldCapacityAlerts.bind(MoldTransactionService)
 
+    /**
+     * [UI-PREVIEW-INDICATOR]: 前端仅消费该预览分数用于即时反馈展示。
+     * [BACKEND-AUTHORITY]: 权威健康评分属于后端 BRP/Asset-Core 核算范畴。
+     */
+    static previewHealthScore(currentCycles: number, maxCycles: number): number {
+        if (!Number.isFinite(maxCycles) || maxCycles <= 0) return 0
+        if (!Number.isFinite(currentCycles)) return 0
+
+        const ratio = ((maxCycles - currentCycles) / maxCycles) * 100
+        return Math.max(0, Math.min(100, Math.round(ratio)))
+    }
+
     static getFurnaces = FurnaceService.getFurnaces.bind(FurnaceService)
 
     static getLoans = MoldLoanService.getLoans.bind(MoldLoanService)

@@ -3,15 +3,12 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder } from '../../data/schema'
 import {
-  toConfirmPurchaseReceiptContract,
   toPurchaseOrderApiDTO,
   toPurchaseOrderContract,
   toPurchaseOrderListPageContract,
-  type ConfirmPurchaseReceiptContract,
   type PaginatedPurchaseOrders,
 } from '../adapters/purchase-order-api-adapter'
 import {
-  type ConfirmPurchaseReceiptResponseApiDTO,
   type PurchaseOrderApiDTO,
   type PurchaseOrderListPageApiDTO,
 } from '../contracts/purchase-order-api-dto'
@@ -21,27 +18,6 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   pageSize: number
-}
-
-export interface ConfirmPurchaseReceiptLinePayload {
-  purchaseOrderLineId: number
-  materialId: string
-  quantity: number
-  purchasePrice: number
-  batchNo: string
-  targetCategory: string
-}
-
-export interface ConfirmPurchaseReceiptPayload {
-  operator?: string
-  remarks?: string
-  receiptDate?: string
-  lines: ConfirmPurchaseReceiptLinePayload[]
-}
-
-export interface ConfirmPurchaseReceiptResponse {
-  purchaseOrder: PurchaseOrder
-  createdInboundRecords: Array<{ id: string }>
 }
 
 export const getPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrders> => {
@@ -88,19 +64,6 @@ export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: n
   })
   return toPurchaseOrderContract(
     ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.patchPurchaseOrder') as PurchaseOrderApiDTO
-  )
-}
-
-export const confirmPurchaseReceipt = async (
-  id: string,
-  payload: ConfirmPurchaseReceiptPayload
-): Promise<ConfirmPurchaseReceiptContract> => {
-  const res = await apiFetch<ConfirmPurchaseReceiptResponseApiDTO>(`/purchase/orders/${id}/confirm-receipt`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-  return toConfirmPurchaseReceiptContract(
-    ensureObjectResponse<ConfirmPurchaseReceiptResponseApiDTO & Record<string, unknown>>(res, 'PurchaseService.confirmPurchaseReceipt') as ConfirmPurchaseReceiptResponseApiDTO
   )
 }
 

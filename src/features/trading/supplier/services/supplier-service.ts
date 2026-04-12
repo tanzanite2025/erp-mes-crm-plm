@@ -9,7 +9,7 @@ import {
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { toSupplierApiDTO, toSupplierContract, toSupplierContracts } from '../adapters/supplier-api-adapter'
 import { type SupplierApiDTO, type SupplierListApiResponseDTO } from '../contracts/supplier-api-dto'
-import { type Supplier } from '../../data/schema'
+import { supplierArraySchema, supplierSchema, type Supplier } from '../../data/schema'
 
 export const SUPPLIER_TRANSACTION_INTENT_STATUS_CHANGE = 'SUPPLIER_STATUS_CHANGE'
 export const SUPPLIER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'SUPPLIER_IDENTITY_CHANGE'
@@ -62,7 +62,9 @@ export interface SupplierSavePayload {
 
 export const getSuppliers = async (): Promise<Supplier[]> => {
   const raw = await apiFetch<SupplierApiDTO[]>('/suppliers?options=true')
-  return toSupplierContracts(ensureArrayResponse<SupplierApiDTO>(raw, 'SupplierService.getSuppliers'))
+  return supplierArraySchema.parse(
+    toSupplierContracts(ensureArrayResponse<SupplierApiDTO>(raw, 'SupplierService.getSuppliers'))
+  )
 }
 
 export const getSupplierList = async (): Promise<SupplierListResponse> => {
@@ -72,7 +74,9 @@ export const getSupplierList = async (): Promise<SupplierListResponse> => {
     res,
     context
   )
-  const items = toSupplierContracts(ensureArrayField<SupplierApiDTO>(objectResponse, 'items', context))
+  const items = supplierArraySchema.parse(
+    toSupplierContracts(ensureArrayField<SupplierApiDTO>(objectResponse, 'items', context))
+  )
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
@@ -108,11 +112,13 @@ export const executeSupplierTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return toSupplierContract(
-    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
-      res,
-      'SupplierService.executeSupplierTransaction'
-    ) as SupplierApiDTO
+  return supplierSchema.parse(
+    toSupplierContract(
+      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(
+        res,
+        'SupplierService.executeSupplierTransaction'
+      ) as SupplierApiDTO
+    )
   )
 }
 
@@ -121,8 +127,10 @@ export const createSupplier = async (supplier: Omit<Supplier, 'id' | 'version'>)
     method: 'POST',
     body: JSON.stringify(toSupplierApiDTO({ ...supplier, id: '', version: 1 } as Supplier)),
   })
-  return toSupplierContract(
-    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.createSupplier') as SupplierApiDTO
+  return supplierSchema.parse(
+    toSupplierContract(
+      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.createSupplier') as SupplierApiDTO
+    )
   )
 }
 
@@ -205,7 +213,9 @@ export const patchSupplier = async (id: string, delta: DeltaSet, version: number
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return toSupplierContract(
-    ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.patchSupplier') as SupplierApiDTO
+  return supplierSchema.parse(
+    toSupplierContract(
+      ensureObjectResponse<SupplierApiDTO & Record<string, unknown>>(res, 'SupplierService.patchSupplier') as SupplierApiDTO
+    )
   )
 }

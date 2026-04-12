@@ -1,4 +1,4 @@
-import type { Mold } from '../data/schema'
+import { moldSchema, type Mold } from '../data/schema'
 import type {
   MoldApiDTO,
   MoldDuplicateCheckApiDTO,
@@ -15,7 +15,7 @@ export interface MoldListPage {
 }
 
 export function toMoldContract(dto: MoldApiDTO): Mold {
-  return {
+  return moldSchema.parse({
     id: dto.id,
     sn: dto.sn,
     name: dto.name,
@@ -23,19 +23,19 @@ export function toMoldContract(dto: MoldApiDTO): Mold {
     currentCycles: dto.currentCycles,
     maintenanceThreshold: dto.maintenanceThreshold,
     totalLifeCycles: dto.totalLifeCycles,
-    groupName: dto.groupName || '',
+    groupName: dto.groupName,
     status: dto.status,
-    location: dto.location || '',
-    description: dto.description || '',
-    isAlerted: dto.isAlerted ?? false,
-    lastCheckedAt: dto.lastCheckedAt || undefined,
-    imageUrl: dto.imageUrl || '',
+    location: dto.location,
+    description: dto.description,
+    isAlerted: dto.isAlerted,
+    lastCheckedAt: dto.lastCheckedAt ?? undefined,
+    imageUrl: dto.imageUrl,
     version: dto.version,
     createdAt: dto.createdAt,
     createdBy: dto.createdBy,
     updatedBy: dto.updatedBy,
     updatedAt: dto.updatedAt,
-  }
+  })
 }
 
 export function toMoldContracts(dtos: MoldApiDTO[]): Mold[] {

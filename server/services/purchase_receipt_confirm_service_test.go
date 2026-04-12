@@ -30,9 +30,9 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-confirm-1", "PO-CONFIRM-001", "Awaiting", "CNY", 88.0, 1.0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, 1, "po-confirm-1", 1, materialID, "MAT-001", "Material 001", "Spec", 10.0, "PCS", 8.8, 88.0, 0.0, 0.0, "Open").Error)
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-confirm-1", 1, materialID, "MAT-001", "Material 001", "Spec", 10.0, "PCS", 8.8, 88.0, 0.0, 0.0, "Open", 1).Error)
 
 	result, err := ConfirmPurchaseReceipt(ConfirmPurchaseReceiptInput{
 		PurchaseOrderID: "po-confirm-1",
@@ -42,6 +42,7 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 		Lines: []ConfirmPurchaseReceiptLineInput{
 			{
 				PurchaseOrderLineID: 1,
+				OrderLineVersion:    1,
 				MaterialID:          materialID,
 				Quantity:            10,
 				PurchasePrice:       8.8,
@@ -70,6 +71,51 @@ func TestConfirmPurchaseReceiptCreatesInboundAndMarksOrderReceived(t *testing.T)
 	require.Equal(t, int64(1), inboundCount)
 }
 
+func TestConfirmPurchaseReceiptReturnsVersionConflictWhenOrderLineVersionStale(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`INSERT INTO materials (id, created_at, updated_at) VALUES (?, ?, ?)`, materialID, now, now).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO purchase_orders (id, order_no, status, currency, amount, exchange_rate, created_at, updated_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "po-confirm-stale", "PO-CONFIRM-STALE", "Awaiting", "CNY", 88.0, 1.0, now, now, false, 1).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-confirm-stale", 1, materialID, "MAT-001", "Material 001", "Spec", 10.0, "PCS", 8.8, 88.0, 0.0, 0.0, "Open", 2).Error)
+
+	result, err := ConfirmPurchaseReceipt(ConfirmPurchaseReceiptInput{
+		PurchaseOrderID: "po-confirm-stale",
+		Operator:        "tester",
+		Remarks:         "manual confirm",
+		ReceiptDate:     now,
+		Lines: []ConfirmPurchaseReceiptLineInput{
+			{
+				PurchaseOrderLineID: 1,
+				OrderLineVersion:    1,
+				MaterialID:          materialID,
+				Quantity:            1,
+				PurchasePrice:       8.8,
+				BatchNo:             "B-CONFIRM-STALE",
+				TargetCategory:      "MATERIAL",
+			},
+		},
+	})
+	require.ErrorIs(t, err, ErrPurchaseTransactionVersionConflict)
+	require.Equal(t, ConfirmPurchaseReceiptResponse{}, result)
+}
+
 func TestConfirmPurchaseReceiptReturnsErrorWhenReceiptDateRawInvalid(t *testing.T) {
 	result, err := ConfirmPurchaseReceipt(ConfirmPurchaseReceiptInput{
 		PurchaseOrderID: "po-invalid-date",
@@ -77,6 +123,7 @@ func TestConfirmPurchaseReceiptReturnsErrorWhenReceiptDateRawInvalid(t *testing.
 		Lines: []ConfirmPurchaseReceiptLineInput{
 			{
 				PurchaseOrderLineID: 1,
+				OrderLineVersion:    1,
 				Quantity:            1,
 				PurchasePrice:       1,
 				TargetCategory:      "MATERIAL",

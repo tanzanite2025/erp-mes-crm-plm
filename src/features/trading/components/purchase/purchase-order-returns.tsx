@@ -228,33 +228,6 @@ export function PurchaseOrderReturns() {
     lineDrafts,
   })
 
-  useEffect(() => {
-    if (!selectedOrderId && selectedOrder) {
-      setSelectedOrderId(selectedOrder.id)
-    }
-  }, [selectedOrder, selectedOrderId])
-
-  useEffect(() => {
-    if (!isDialogOpen || !selectedOrder) return
-    setSelectedOrderId(selectedOrder.id)
-  }, [isDialogOpen, selectedOrder])
-
-  useEffect(() => {
-    if (!selectedOrder) {
-      setLineDrafts({})
-      return
-    }
-
-    setLineDrafts((prev) => {
-      const nextDrafts: Record<number, ReturnLineDraft> = {}
-      getPurchaseOrderPendingLines(selectedOrder).forEach((line) => {
-        if (!line.id) return
-        nextDrafts[line.id] = prev[line.id] ?? createEmptyLineDraft()
-      })
-      return nextDrafts
-    })
-  }, [selectedOrder?.id])
-
   const reactToPrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: recordToPrint ? `${recordToPrint.returnNo}_purchase_return` : 'purchase_return',
@@ -291,7 +264,7 @@ export function PurchaseOrderReturns() {
     onCloseDialog: () => handleOpenChange(false),
   })
 
-const resetDialog = () => {
+  const resetDialog = () => {
     setReturnDate(todayValue())
     setIssueCategory('')
     setReason('')
@@ -300,11 +273,40 @@ const resetDialog = () => {
     setLineDrafts({})
   }
 
+  const hydrateLineDraftsForOrder = (orderId: string) => {
+    const nextOrder = orders.find((order) => order.id === orderId)
+    if (!nextOrder) {
+      setLineDrafts({})
+      return
+    }
+
+    setLineDrafts((prev) => {
+      const nextDrafts: Record<number, ReturnLineDraft> = {}
+      getPurchaseOrderPendingLines(nextOrder).forEach((line) => {
+        if (!line.id) return
+        nextDrafts[line.id] = prev[line.id] ?? createEmptyLineDraft()
+      })
+      return nextDrafts
+    })
+  }
+
+  const handleSelectedOrderChange = (orderId: string) => {
+    setSelectedOrderId(orderId)
+    hydrateLineDraftsForOrder(orderId)
+  }
+
   const handleOpenChange = (open: boolean) => {
     setIsDialogOpen(open)
-    if (!open) {
-      resetDialog()
+    if (open) {
+      const nextOrderId = selectedOrder?.id || eligibleOrders[0]?.id || ''
+      if (nextOrderId) {
+        setSelectedOrderId(nextOrderId)
+        hydrateLineDraftsForOrder(nextOrderId)
+      }
+      return
     }
+
+    resetDialog()
   }
 
 
@@ -397,7 +399,7 @@ const resetDialog = () => {
                 <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
                   {t('purchase.orders.returns.order')}
                 </Label>
-                <Select value={selectedOrder?.id || ''} onValueChange={setSelectedOrderId}>
+                <Select value={selectedOrder?.id || ''} onValueChange={handleSelectedOrderChange}>
                   <SelectTrigger className='h-11 rounded-2xl'>
                     <SelectValue placeholder={t('purchase.orders.returns.selectOrder')} />
                   </SelectTrigger>
@@ -751,7 +753,7 @@ const resetDialog = () => {
               <Button
                 onClick={() => {
                   if (!allowsAction('action_trading_purchase_order_manage')) return
-                  setIsDialogOpen(true)
+                  handleOpenChange(true)
                 }}
                 disabled={eligibleOrders.length === 0}
                 className='rounded-full px-5'
@@ -807,7 +809,7 @@ const resetDialog = () => {
                                 <button
                                   key={order.id}
                                   type='button'
-                                  onClick={() => setSelectedOrderId(order.id)}
+                                  onClick={() => handleSelectedOrderChange(order.id)}
                                   className={cn(
                                     'w-full rounded-[24px] border border-dashed p-4 text-left transition-all',
                                     selectedOrder?.id === order.id
@@ -873,7 +875,7 @@ const resetDialog = () => {
                     <Button
                       onClick={() => {
                         if (!allowsAction('action_trading_purchase_order_manage')) return
-                        setIsDialogOpen(true)
+                        handleOpenChange(true)
                       }}
                       className='rounded-full px-5'
                     >

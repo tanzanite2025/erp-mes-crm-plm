@@ -5,12 +5,12 @@ import {
   getSalesOrderTypeLabel,
 } from '../data/sales-order-options'
 import type { SalesOrder } from '../data/schema'
-import type { AppLocale } from '@/locales'
+import type { AppLocale, TranslationKey } from '@/locales'
 
 interface UseSalesOrderDetailSummaryViewModelParams {
   order: SalesOrder
   locale: AppLocale
-  t: (key: string) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
 }
 
 function getCurrencyPrefix(currency?: string) {
@@ -59,6 +59,7 @@ export function useSalesOrderDetailSummaryViewModel({
       {
         label: t('tradingSalesOrder.detail.info.contractAmount'),
         value: `${getCurrencyPrefix(order.currency)}${order.amount?.toLocaleString() || '0.00'}`,
+        variant: 'amount' as const,
       },
       {
         label: t('tradingSalesOrder.detail.info.totalQuantity'),

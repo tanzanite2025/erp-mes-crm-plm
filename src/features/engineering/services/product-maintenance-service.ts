@@ -3,6 +3,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload } from '@/lib/delta/types'
+import { assertRequiredVersion, buildVersionedPatchMetadata } from '@/lib/version-guard'
 import {
   buildProductDelta,
   toBulkSyncProductsApiDTO,
@@ -30,18 +31,27 @@ export const ProductMaintenanceService = {
     )
   },
 
-  async patchProduct(id: string, product: SaveProductInput): Promise<Product> {
-    const payload: DeltaPayload = {
-      op: 'PATCH',
-      delta: buildProductDelta(product),
-      metadata: {
-        id,
-        version: product.version ?? 0,
-        intent: PRODUCT_PATCH_INTENT_SAVE,
-      },
+  async patchProduct(current: Product, product: SaveProductInput): Promise<Product> {
+    const delta = buildProductDelta(current, product)
+    if (Object.keys(delta).length === 0) {
+      return current
     }
 
-    const res = await apiFetch<ProductApiDTO>(`/engineering/products/${id}`, {
+    const version = assertRequiredVersion(
+      product.version ?? current.version,
+      'ProductMaintenanceService.patchProduct',
+      current.id
+    )
+
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: buildVersionedPatchMetadata(current.id, version, 'ProductMaintenanceService.patchProduct', {
+        intent: PRODUCT_PATCH_INTENT_SAVE,
+      }),
+    }
+
+    const res = await apiFetch<ProductApiDTO>(`/engineering/products/${current.id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     })
@@ -53,9 +63,12 @@ export const ProductMaintenanceService = {
     )
   },
 
-  async saveProduct(product: SaveProductInput): Promise<Product> {
+  async saveProduct(product: SaveProductInput, current?: Product): Promise<Product> {
     if (product.id) {
-      return this.patchProduct(product.id, product)
+      if (!current) {
+        throw new Error(`[CRITICAL] Missing current product baseline for SDRTS patch on ${product.id}`)
+      }
+      return this.patchProduct(current, product)
     }
     return this.createProduct(product)
   },

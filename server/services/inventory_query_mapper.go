@@ -2,7 +2,8 @@ package services
 
 import "xdfc-server/models"
 
-func MapInventoryToResponse(item models.Inventory, materialCategory string) InventoryItemResponse {
+func MapInventoryToResponse(item models.Inventory, materialCategory string, reserved float64) InventoryItemResponse {
+	onHand := item.Quantity
 	return InventoryItemResponse{
 		ID:               item.ID,
 		CreatedAt:        item.CreatedAt,
@@ -13,6 +14,9 @@ func MapInventoryToResponse(item models.Inventory, materialCategory string) Inve
 		MaterialCode:     item.MaterialCode,
 		MaterialCategory: materialCategory,
 		MaterialSpec:     item.MaterialSpec,
+		OnHand:           onHand,
+		Reserved:         reserved,
+		AvailableQty:     onHand - reserved,
 		Quantity:         item.Quantity,
 		TotalValue:       item.TotalValue,
 		AverageUnitCost:  item.AverageUnitCost,
@@ -23,10 +27,10 @@ func MapInventoryToResponse(item models.Inventory, materialCategory string) Inve
 	}
 }
 
-func MapInventoryListToResponse(items []models.Inventory, materialCategoryMap map[string]string) []InventoryItemResponse {
+func MapInventoryListToResponse(items []models.Inventory, materialCategoryMap map[string]string, reservedMap map[string]float64) []InventoryItemResponse {
 	response := make([]InventoryItemResponse, 0, len(items))
 	for _, item := range items {
-		response = append(response, MapInventoryToResponse(item, materialCategoryMap[item.MaterialID]))
+		response = append(response, MapInventoryToResponse(item, materialCategoryMap[item.MaterialID], reservedMap[inventoryReservationKey(item.MaterialID, item.CategoryCode, item.BatchNo)]))
 	}
 	return response
 }

@@ -1,38 +1,54 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { assertRequiredVersion } from '@/lib/version-guard'
 import {
-  toInboundRecordApiDTO,
+  toInboundTDOApiDTO,
   toInboundRecordContract,
 } from '../adapters/inventory-api-adapter'
-import { type InventoryInboundRecordApiDTO } from '../contracts/inventory-api-dto'
-import { type InboundRecord } from '../data/schema'
+import {
+  type CreateInventoryInboundApiDTO,
+  type InventoryInboundRecordApiDTO,
+} from '../contracts/inventory-api-dto'
+import {
+  inboundRecordSchema,
+  inboundTDOSchema,
+  type InboundRecord,
+  type InboundTDO,
+} from '../data/schema'
 
-export type { InboundRecord } from '../data/schema'
+export type { InboundRecord, InboundTDO } from '../data/schema'
 
 export const InventoryTransactionService = {
-  recordInbound: async (data: Omit<InboundRecord, 'id'>): Promise<InboundRecord> => {
-    const res = await apiFetch<InventoryInboundRecordApiDTO>('/inventory/inbound', {
+  recordInbound: async (data: InboundTDO): Promise<InboundRecord> => {
+    const command = inboundTDOSchema.parse(data)
+
+    const res = await apiFetch<InventoryInboundRecordApiDTO | CreateInventoryInboundApiDTO>('/inventory/inbound', {
       method: 'POST',
       body: JSON.stringify({
-        ...toInboundRecordApiDTO(data),
+        ...toInboundTDOApiDTO(command),
         metadata: { intent: 'INBOUND_RECEIPT' },
       }),
     })
 
-    return toInboundRecordContract(
-      ensureObjectResponse<InventoryInboundRecordApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryTransactionService.recordInbound'
-      ) as InventoryInboundRecordApiDTO
+    const contract = toInboundRecordContract(
+      ensureObjectResponse<InventoryInboundRecordApiDTO & Record<string, unknown>>(res, 'InventoryTransactionService.recordInbound') as InventoryInboundRecordApiDTO
     )
+    return inboundRecordSchema.parse(contract)
   },
 
   transferInventory: async (
     materialId: string,
     quantity: number,
     fromCat: string,
-    toCat: string
+    toCat: string,
+    version: number
   ): Promise<void> => {
+    const expectedVersion = assertRequiredVersion(
+      version,
+      'InventoryTransactionService.transferInventory',
+      materialId
+    )
+
     await apiFetch<void>('/inventory/transfer', {
       method: 'POST',
       body: JSON.stringify({
@@ -40,6 +56,7 @@ export const InventoryTransactionService = {
         quantity,
         fromCategory: fromCat,
         toCategory: toCat,
+        version: expectedVersion,
         metadata: { intent: 'INTER_WAREHOUSE_TRANSFER' },
       }),
     })

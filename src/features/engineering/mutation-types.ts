@@ -20,6 +20,11 @@ export type SaveProductInput = Omit<Product, 'id' | 'version' | 'createdAt'> & {
   createdAt?: string
 }
 
+export interface SaveProductOperation {
+  data: SaveProductInput
+  currentRow?: Product
+}
+
 export type SaveProductTypeInput = Omit<ProductType, 'id' | 'version'> & {
   id?: string
   version?: number

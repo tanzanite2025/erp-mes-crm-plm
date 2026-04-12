@@ -483,6 +483,12 @@ export const engineering = {
     syncing: 'Syncing cloud archives...',
     selectPrompt: 'Select a modeling target',
     initiateProject: 'Click a model card in the sidebar to enter the technical dashboard, or use the button above to start a new product modeling project.',
+    metadata: {
+      errorTitle: 'Metadata Link Broken',
+      errorHint: 'Restart the local backend at `http://localhost:8080` so the template, dynamic attribute category, and binding endpoints come from the same server version.',
+      unavailable: 'Critical product metadata services are unavailable. Restart the local backend with the latest server code before creating or editing products.',
+      initFailed: 'Failed to initialize product form metadata.',
+    },
     sidebar: {
       totalProducts: 'Total models: {{count}}',
       addProduct: 'Add Product',
@@ -784,6 +790,7 @@ export const engineering = {
     },
     labels: {
       rootLevel: 'Root Level',
+      orphanParent: 'Parent Missing',
       active: 'Active',
       inactive: 'Inactive',
       noDescription: '-',
@@ -792,12 +799,14 @@ export const engineering = {
       add: 'Add Category',
     },
     empty: {
+      loading: 'Loading category archive...',
       noData: 'No category data found',
     },
     confirms: {
       delete: 'Delete this category?',
     },
     toasts: {
+      loadFailed: 'Failed to load category archive. Please check network or permissions.',
       relatedProducts: 'This category still has {{count}} products. Reassign them first.',
       hasChildren: 'This category still has {{count}} child categories.',
       deleteSuccess: 'Category deleted',

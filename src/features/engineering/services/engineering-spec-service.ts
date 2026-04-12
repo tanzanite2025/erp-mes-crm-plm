@@ -1,69 +1,68 @@
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch } from '@/lib/api-client'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  engineeringSpecApiDTOArraySchema,
+  engineeringSpecApiDTOSchema,
+  engineeringSpecInputSchema,
+  engineeringSpecPatchRequestSchema,
+  type EngineeringSpecApiDTO,
+  type EngineeringSpecInputDTO,
+} from '../contracts/engineering-spec-api-contract'
 
-export interface EngineeringSpec {
-  id: string;
-  name: string;
-  code: string;
-  type: string;
-  description?: string;
-  active: boolean;
-  revisionNo?: string;
-  effectiveFrom?: string | null;
-  effectiveTo?: string | null;
-  changeType?: 'MANUAL' | 'ECO' | 'ECN';
-  changeOrderNo?: string;
-  siteCode?: string;
-  isDefaultSite?: boolean;
-  specData?: any;
-  drillingData?: any;
-  labelingData?: any;
-  spokeLengthData?: any;
-  hubData?: any;
-  nippleData?: any;
-  createdAt?: string;
-  updatedAt?: string;
-  _v: number;
+export type EngineeringSpec = EngineeringSpecApiDTO
+
+export type EngineeringSpecInput = EngineeringSpecInputDTO
+
+function parseEngineeringSpec(item: unknown, scope: string): EngineeringSpec {
+  return engineeringSpecApiDTOSchema.parse(
+    ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+  )
 }
 
-export type EngineeringSpecInput = Omit<EngineeringSpec, 'id' | 'code'> & {
-  id?: string;
-  code?: string;
+function parseEngineeringSpecArray(items: unknown, scope: string): EngineeringSpec[] {
+  return engineeringSpecApiDTOArraySchema.parse(ensureArrayResponse(items, scope))
 }
 
 export const engineeringSpecService = {
   getSpecs: async (type?: string): Promise<EngineeringSpec[]> => {
-    const url = type ? `/engineering/specs?type=${type}` : '/engineering/specs';
-    return apiFetch<EngineeringSpec[]>(url);
+    const url = type ? `/engineering/specs?type=${type}` : '/engineering/specs'
+    const res = await apiFetch<EngineeringSpecApiDTO[]>(url)
+    return parseEngineeringSpecArray(res, 'engineeringSpecService.getSpecs')
   },
 
   getSpec: async (id: string): Promise<EngineeringSpec> => {
-    return apiFetch<EngineeringSpec>(`/engineering/specs/${id}`);
+    const res = await apiFetch<EngineeringSpecApiDTO>(`/engineering/specs/${id}`)
+    return parseEngineeringSpec(res, 'engineeringSpecService.getSpec')
   },
 
   saveSpec: async (spec: EngineeringSpecInput): Promise<EngineeringSpec> => {
-    return apiFetch<EngineeringSpec>('/engineering/specs', {
+    const payload = engineeringSpecInputSchema.parse(spec)
+    const res = await apiFetch<EngineeringSpecApiDTO>('/engineering/specs', {
       method: 'POST',
-      body: JSON.stringify(spec),
-    });
+      body: JSON.stringify(payload),
+    })
+    return parseEngineeringSpec(res, 'engineeringSpecService.saveSpec')
   },
 
-  patchSpec: async (id: string, delta: any, version: number): Promise<EngineeringSpec> => {
-    return apiFetch<EngineeringSpec>(`/engineering/specs/${id}`, {
+  patchSpec: async (id: string, delta: Record<string, unknown>, version: number): Promise<EngineeringSpec> => {
+    const payload = engineeringSpecPatchRequestSchema.parse({ delta, version })
+    const res = await apiFetch<EngineeringSpecApiDTO>(`/engineering/specs/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ delta, version }),
-    });
+      body: JSON.stringify(payload),
+    })
+    return parseEngineeringSpec(res, 'engineeringSpecService.patchSpec')
   },
 
-  syncSpecs: async (specs: any[]): Promise<any> => {
-    return apiFetch<any>('/engineering/specs/sync', {
+  syncSpecs: async (specs: unknown[]): Promise<unknown> => {
+    return apiFetch('/engineering/specs/sync', {
       method: 'POST',
       body: JSON.stringify(specs),
-    });
+    })
   },
 
   deleteSpec: async (id: string): Promise<void> => {
     return apiFetch<void>(`/engineering/specs/${id}`, {
       method: 'DELETE',
-    });
+    })
   }
 };

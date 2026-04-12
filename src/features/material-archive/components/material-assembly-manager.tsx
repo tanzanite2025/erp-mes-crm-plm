@@ -66,6 +66,20 @@ function buildRelation(rule: PackagingRuleDraft | null) {
     : `1 ${packUnit} = ${factor} ${baseUnit}`
 }
 
+function requireMaterialOption(
+  materialMap: Map<string, MaterialOption>,
+  materialId: string,
+  scope: string
+) {
+  const material = materialMap.get(materialId)
+  if (!material) {
+    const error = new Error(`[CRITICAL] Missing material ${materialId} in ${scope}`)
+    failLoudly(error, `MaterialAssemblyManager.${scope}`)
+    throw error
+  }
+  return material
+}
+
 export function MaterialAssemblyManager() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
@@ -74,12 +88,12 @@ export function MaterialAssemblyManager() {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<PackagingRuleDraft | null>(null)
 
-  const { data: rules = [], isLoading: isRulesLoading } = useQuery({
+  const rulesQuery = useQuery({
     queryKey: PACKAGING_RULES_QUERY_KEY,
     queryFn: () => packagingService.getRules(),
   })
 
-  const { data: materials = [], isLoading: isMaterialsLoading } = useQuery({
+  const materialsQuery = useQuery({
     queryKey: MATERIAL_OPTIONS_QUERY_KEY,
     queryFn: () => MaterialCoreService.getMaterialOptions(),
   })
@@ -87,24 +101,51 @@ export function MaterialAssemblyManager() {
   const saveRuleMutation = useMutation({
     mutationFn: (rule: SavePackagingRuleInput) => packagingService.saveRule(rule),
     onSuccess: (savedRule) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current = []) =>
-        current.some((rule) => rule.id === savedRule.id)
+      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) => {
+        if (!current) return [savedRule]
+
+        return current.some((rule) => rule.id === savedRule.id)
           ? current.map((rule) => (rule.id === savedRule.id ? savedRule : rule))
           : [...current, savedRule]
-      )
+      })
     },
   })
 
   const deleteRuleMutation = useMutation({
     mutationFn: (id: string) => packagingService.deleteRule(id),
     onSuccess: (_result, deletedId) => {
-      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current = []) =>
-        current.filter((rule) => rule.id !== deletedId)
+      queryClient.setQueryData<PackagingRule[]>(PACKAGING_RULES_QUERY_KEY, (current) =>
+        current?.filter((rule) => rule.id !== deletedId)
       )
     },
   })
 
-  const isLoading = isRulesLoading || isMaterialsLoading
+  const isLoading = rulesQuery.isLoading || materialsQuery.isLoading
+
+  if (rulesQuery.isError) {
+    failLoudly(rulesQuery.error, 'MaterialAssemblyManager.rules')
+    throw rulesQuery.error
+  }
+
+  if (materialsQuery.isError) {
+    failLoudly(materialsQuery.error, 'MaterialAssemblyManager.materials')
+    throw materialsQuery.error
+  }
+
+  if (!isLoading && !rulesQuery.data) {
+    const error = new Error('[CRITICAL] Missing packaging rules payload in material assembly manager')
+    failLoudly(error, 'MaterialAssemblyManager.rules')
+    throw error
+  }
+
+  if (!isLoading && !materialsQuery.data) {
+    const error = new Error('[CRITICAL] Missing material options payload in material assembly manager')
+    failLoudly(error, 'MaterialAssemblyManager.materials')
+    throw error
+  }
+
+  const rules = isLoading ? [] : rulesQuery.data!
+  const materials = isLoading ? [] : materialsQuery.data!
 
   const materialMap = useMemo(() => {
     const map = new Map<string, MaterialOption>()
@@ -116,25 +157,18 @@ export function MaterialAssemblyManager() {
     const search = searchTerm.trim().toLowerCase()
 
     return rules.filter((rule) => {
-      const material = materialMap.get(rule.materialId)
-      if (!material) return false
+      const material = requireMaterialOption(materialMap, rule.materialId, 'materialLookup')
       if (!search) return true
       return material.name.toLowerCase().includes(search) || material.code.toLowerCase().includes(search)
     })
   }, [materialMap, rules, searchTerm])
 
-  const availableMaterials = useMemo(() => {
-    const existingMaterialIds = new Set(
-      rules.filter((rule) => rule.id !== editingRule?.id).map((rule) => rule.materialId)
-    )
+  const materialOptions = useMemo(() => materials, [materials])
 
-    return materials.filter((material) => !existingMaterialIds.has(material.id))
-  }, [editingRule?.id, materials, rules])
-
-  const selectedMaterial = useMemo(
-    () => (editingRule?.materialId ? materialMap.get(editingRule.materialId) ?? null : null),
-    [editingRule?.materialId, materialMap]
-  )
+  const selectedMaterial = useMemo(() => {
+    if (!editingRule?.materialId || isLoading) return null
+    return requireMaterialOption(materialMap, editingRule.materialId, 'selectedMaterial')
+  }, [editingRule?.materialId, isLoading, materialMap])
 
   const handleSave = async () => {
     const factor = editingRule?.conversionFactor
@@ -200,7 +234,7 @@ export function MaterialAssemblyManager() {
       ),
       cell: ({ row }) => (
         <div className='pl-8 font-mono text-[10px] font-black text-muted-foreground'>
-          {materialMap.get(row.original.materialId)?.code}
+          {requireMaterialOption(materialMap, row.original.materialId, 'tableCode').code}
         </div>
       ),
     },
@@ -213,7 +247,7 @@ export function MaterialAssemblyManager() {
       ),
       cell: ({ row }) => (
         <div className='text-sm font-bold tracking-tight'>
-          {materialMap.get(row.original.materialId)?.name}
+          {requireMaterialOption(materialMap, row.original.materialId, 'tableName').name}
         </div>
       ),
     },
@@ -229,7 +263,7 @@ export function MaterialAssemblyManager() {
           variant='outline'
           className='h-5 rounded-full border-none bg-muted/5 text-[8px] font-black tracking-widest text-muted-foreground/50'
         >
-          {materialMap.get(row.original.materialId)?.uom || row.original.baseUnit}
+          {requireMaterialOption(materialMap, row.original.materialId, 'tableBaseUnit').uom}
         </Badge>
       ),
     },
@@ -268,7 +302,7 @@ export function MaterialAssemblyManager() {
       ),
       cell: ({ row }) => {
         const rule = row.original
-        const currentBaseUnit = materialMap.get(rule.materialId)?.uom || rule.baseUnit
+        const currentBaseUnit = requireMaterialOption(materialMap, rule.materialId, 'tablePreview').uom
         const relation =
           rule.direction === 'reverse'
             ? `1 ${currentBaseUnit} = ${rule.conversionFactor} ${rule.packUnit}`
@@ -290,7 +324,7 @@ export function MaterialAssemblyManager() {
       ),
       cell: ({ row }) => {
         const rule = row.original
-        const currentBaseUnit = materialMap.get(rule.materialId)?.uom || rule.baseUnit
+        const currentBaseUnit = requireMaterialOption(materialMap, rule.materialId, 'tableActions').uom
 
         return (
           <div className='flex items-center justify-end gap-2 pr-8'>
@@ -467,7 +501,7 @@ export function MaterialAssemblyManager() {
                           {t('materialArchive.assemblyManager.dialog.noMaterialFound')}
                         </CommandEmpty>
                         <CommandGroup>
-                          {availableMaterials.slice(0, 50).map((material) => (
+                          {materialOptions.slice(0, 50).map((material) => (
                             <CommandItem
                               key={material.id}
                               value={`${material.name} ${material.code} ${material.spec || ''}`}

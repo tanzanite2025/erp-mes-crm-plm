@@ -340,7 +340,10 @@ func applyInboundToPurchaseOrderTx(tx *gorm.DB, inbound *models.InboundRecord) e
 
 	result := tx.Model(&models.PurchaseOrderLine{}).
 		Where("id = ? AND purchase_order_id = ?", inbound.PurchaseOrderLineID, purchaseOrderID).
-		Update("received_qty", gorm.Expr("received_qty + ?", inbound.Quantity))
+		Updates(map[string]any{
+			"received_qty": gorm.Expr("received_qty + ?", inbound.Quantity),
+			"version":      gorm.Expr("version + 1"),
+		})
 	if result.Error != nil {
 		return result.Error
 	}

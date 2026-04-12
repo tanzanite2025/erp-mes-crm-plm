@@ -18,6 +18,7 @@ var (
 	ErrProductInUse                   = errors.New("product still referenced by downstream records")
 	ErrProductTemplateVersionConflict = errors.New("product template version conflict")
 	ErrProductTypeVersionConflict     = errors.New("product type version conflict")
+	ErrProductTypeNotEmpty            = errors.New("product type is not empty")
 )
 
 type ProductListQuery struct {
@@ -847,7 +848,25 @@ func CreateProductType(input models.ProductType) (models.ProductType, error) {
 }
 
 func DeleteProductType(id string) error {
-	return db.DB.Delete(&models.ProductType{}, "id = ?", id).Error
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var relatedProductCount int64
+		if err := tx.Model(&models.Product{}).Where("type_id = ?", id).Count(&relatedProductCount).Error; err != nil {
+			return err
+		}
+		if relatedProductCount > 0 {
+			return fmt.Errorf("%w: category is not empty because it still has %d related products", ErrProductTypeNotEmpty, relatedProductCount)
+		}
+
+		var childCategoryCount int64
+		if err := tx.Model(&models.ProductType{}).Where("parent_id = ?", id).Count(&childCategoryCount).Error; err != nil {
+			return err
+		}
+		if childCategoryCount > 0 {
+			return fmt.Errorf("%w: category is not empty because it still has %d child categories", ErrProductTypeNotEmpty, childCategoryCount)
+		}
+
+		return tx.Delete(&models.ProductType{}, "id = ?", id).Error
+	})
 }
 
 func SyncProductTypes(inputs []SyncProductTypeInput) error {

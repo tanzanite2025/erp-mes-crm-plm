@@ -1,27 +1,33 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
-import { useMemo } from 'react'
 import { Package2 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
-import { getMaterialCategoryOptions } from '@/features/material-archive/data/material-category-options'
-import { getMaterialStaticTabs } from '@/features/material-archive/tab-config'
+import { getMaterialRouteTabs } from '@/features/material-archive/tab-config'
+import { getMaterialListQueryKey, MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
+import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
 import { useLanguage } from '@/context/language-provider'
 
 export const Route = createFileRoute('/_authenticated/materials')({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+        queryFn: () => MaterialCoreService.getMaterialOptions(),
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: getMaterialListQueryKey('all', 0, 20, ''),
+        queryFn: () => MaterialCoreService.getMaterials('all', 1, 20, ''),
+      }),
+    ])
+
+    return null
+  },
   component: MaterialsLayout,
 })
 
 function MaterialsLayout() {
   const { t, locale } = useLanguage()
-  const tabs = useMemo(() => {
-    const dynamicTabs = getMaterialCategoryOptions(locale).map((opt) => ({
-      key: opt.value.toLowerCase(),
-      label: opt.label,
-      href: `/materials/${opt.value}`,
-    }))
-
-    return [...getMaterialStaticTabs(t), ...dynamicTabs]
-  }, [locale, t])
+  const tabs = getMaterialRouteTabs(locale, t)
 
   return (
     <ModuleTabbedLayout tabs={tabs}>

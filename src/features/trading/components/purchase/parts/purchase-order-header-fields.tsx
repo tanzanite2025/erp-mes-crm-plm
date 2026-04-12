@@ -31,7 +31,6 @@ export function PurchaseOrderHeaderFields({
     paymentTermOptions,
     paymentMethodOptions,
     baseCurrencyCode,
-    selectedCurrencyCode,
     effectiveExchangeRate,
     exchangeRateText,
     statusMeta,

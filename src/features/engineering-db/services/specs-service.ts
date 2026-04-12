@@ -1,6 +1,23 @@
 import { type TechnicalSpec, technicalSpecSchema } from '../data/schema'
 import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
+
+function toTechnicalSpecContract(item: EngineeringSpec): TechnicalSpec {
+  return technicalSpecSchema.parse({
+    ...item.specData,
+    id: item.id,
+    revisionNo: item.revisionNo,
+    effectiveFrom: item.effectiveFrom,
+    effectiveTo: item.effectiveTo,
+    changeType: item.changeType,
+    changeOrderNo: item.changeOrderNo,
+    siteCode: item.siteCode,
+    isDefaultSite: item.isDefaultSite,
+    version: item._v,
+    createdAt: item.createdAt || new Date().toISOString(),
+  })
+}
 
 /**
  * 物料规格服务 (Specs Service)
@@ -13,21 +30,9 @@ export const SpecsService = {
   getSpecs: async (): Promise<TechnicalSpec[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('TECH_SPEC')
-      return raw.map(s => ({
-        ...s.specData,
-        id: s.id,
-        revisionNo: s.revisionNo,
-        effectiveFrom: s.effectiveFrom,
-        effectiveTo: s.effectiveTo,
-        changeType: s.changeType,
-        changeOrderNo: s.changeOrderNo,
-        siteCode: s.siteCode,
-        isDefaultSite: s.isDefaultSite,
-        version: s._v,
-        createdAt: s.createdAt || new Date().toISOString()
-      })).filter(item => technicalSpecSchema.safeParse(item).success)
+      return raw.map(toTechnicalSpecContract)
     } catch (e) {
-      console.error('Failed to get specs from cloud', e)
+      failLoudly(e, 'SpecsService.getSpecs')
       return []
     }
   },
@@ -58,8 +63,8 @@ export const SpecsService = {
     }
 
     const saved = await engineeringSpecService.saveSpec(spec)
-    
-    return {
+
+    return technicalSpecSchema.parse({
       ...(saved.specData || item),
       id: saved.id,
       revisionNo: saved.revisionNo,
@@ -71,7 +76,7 @@ export const SpecsService = {
       isDefaultSite: saved.isDefaultSite,
       version: saved._v,
       createdAt: saved.createdAt || item.createdAt || new Date().toISOString(),
-    }
+    })
   },
 
   /**
@@ -79,7 +84,7 @@ export const SpecsService = {
    * 事务意图: SPEC_DOCUMENT_UPDATE
    */
   patchSpec: async (id: string, delta: DeltaSet, version: number) => {
-    const mappedDelta: any = {}
+    const mappedDelta: DeltaSet = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`specData.${path}`] = value
     })

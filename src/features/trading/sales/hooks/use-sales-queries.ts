@@ -17,7 +17,13 @@ export const useGetSalesOrders = (
 
   return useQuery({
     queryKey: tradingQueryKeys.salesOrders(page, pageSize, normalizedWithLines, normalizedStatus),
-    queryFn: () => getSalesOrders({ page, pageSize, withLines, status }),
+    queryFn: () =>
+      getSalesOrders({
+        page,
+        pageSize,
+        withLines: normalizedWithLines,
+        status: normalizedStatus,
+      }),
     ...queryOptions,
   })
 }

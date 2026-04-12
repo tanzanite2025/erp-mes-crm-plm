@@ -16,6 +16,7 @@ export interface ConfirmPurchaseReceiptContract {
 function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrderLine {
   return {
     id: dto.id,
+    version: dto.version,
     lineNo: dto.lineNo,
     materialId: dto.materialId,
     materialName: dto.materialName,
@@ -36,6 +37,7 @@ function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrde
 function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineApiDTO {
   return {
     id: line.id,
+    version: line.version,
     lineNo: line.lineNo,
     materialId: line.materialId,
     materialName: line.materialName,

@@ -133,7 +133,25 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 		operator = middleware.GetSafeUsername(c)
 	}
 
-	result, err := services.ConfirmPurchaseReceipt(services.MapConfirmPurchaseReceiptRequestToInput(req, purchaseOrderID, operator, req.ReceiptDate))
+	payload, err := services.MarshalPurchaseOrderReceiptConfirmPayload(req, operator)
+	if err != nil {
+		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	parsedPayload, err := services.ParsePurchaseOrderReceiptConfirmPayload(payload)
+	if err != nil {
+		respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	result, err := services.ExecutePurchaseOrderReceiptConfirmation(services.ExecutePurchaseOrderReceiptConfirmationCommand{
+		OrderID:         purchaseOrderID,
+		ActorID:         middleware.GetSafeUserID(c),
+		Operator:        operator,
+		ExpectedVersion: 0,
+		Payload:         parsedPayload,
+		IP:              c.ClientIP(),
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):

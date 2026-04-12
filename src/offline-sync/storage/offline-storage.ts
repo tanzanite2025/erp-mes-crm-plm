@@ -37,12 +37,24 @@ function toConflictRow(conflict: OfflineConflictRecord<unknown>): OfflineConflic
 }
 
 export const OfflineStorage = {
+  async ensureReady() {
+    await offlineSyncDb.open()
+  },
+
   async saveSnapshot(snapshot: OfflineEntitySnapshot<unknown>) {
     await offlineSyncDb.snapshots.put(toSnapshotRow(snapshot))
   },
 
   async getSnapshot(entityType: string, entityId: string) {
     return offlineSyncDb.snapshots.get(buildOfflineEntityKey(entityType, entityId))
+  },
+
+  async listSnapshotsByEntityType(entityType: string) {
+    return offlineSyncDb.snapshots.where({ entityType }).toArray()
+  },
+
+  async removeSnapshot(entityType: string, entityId: string) {
+    await offlineSyncDb.snapshots.delete(buildOfflineEntityKey(entityType, entityId))
   },
 
   async upsertSyncMeta(meta: OfflineSyncMeta) {

@@ -1,36 +1,52 @@
+import { z } from 'zod'
 import { type BaseEntity } from '@/types/base'
 import { type PurchaseOrderStatus, purchaseOrderStatuses } from './purchase-status'
 
 export type CustomerStatus = 'Active' | 'Inactive' | 'Pending'
 
-export interface Customer extends BaseEntity {
-    name: string
-    code: string
-    contactPerson: string
-    contactPhone: string
-    email: string
-    address: string
-    status: CustomerStatus
-    creditLimit: number
-    balance: number
-    version: number // SDRTS 乐观锁
-}
+const baseEntitySchema = z.object({
+    id: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    isDeleted: z.boolean(),
+})
+
+export const customerSchema = baseEntitySchema.extend({
+    name: z.string(),
+    code: z.string(),
+    contactPerson: z.string(),
+    contactPhone: z.string(),
+    email: z.string(),
+    address: z.string(),
+    status: z.enum(['Active', 'Inactive', 'Pending']),
+    creditLimit: z.number(),
+    balance: z.number(),
+    version: z.number(),
+})
+
+export type Customer = z.infer<typeof customerSchema>
+
+export const customerArraySchema = z.array(customerSchema)
 
 export type SupplierStatus = 'Active' | 'Inactive' | 'OnReview'
 
-export interface Supplier extends BaseEntity {
-    name: string
-    code: string
-    category: string
-    mainProducts: string[]
-    contactPerson: string
-    contactPhone: string
-    email: string
-    address: string
-    status: SupplierStatus
-    rating: number
-    version: number // SDRTS 乐观锁
-}
+export const supplierSchema = baseEntitySchema.extend({
+    name: z.string(),
+    code: z.string(),
+    category: z.string(),
+    mainProducts: z.array(z.string()),
+    contactPerson: z.string(),
+    contactPhone: z.string(),
+    email: z.string(),
+    address: z.string(),
+    status: z.enum(['Active', 'Inactive', 'OnReview']),
+    rating: z.number(),
+    version: z.number(),
+})
+
+export type Supplier = z.infer<typeof supplierSchema>
+
+export const supplierArraySchema = z.array(supplierSchema)
 
 export type SalesOrderStatus = 'Draft' | 'Pending' | 'InProgress' | 'Done' | 'Canceled'
 
@@ -72,7 +88,7 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   amount: 0,
   uom: 'PCS',
   status: 'Pending',
-  orderDate: new Date().toISOString().split('T')[0],
+  orderDate: '',
 }
 
 // Removed old manual SalesOrderApproval as it was superseded by Workflow Engine
@@ -129,6 +145,7 @@ export type { PurchaseOrderStatus }
 
 export interface PurchaseOrderLine {
     id?: number
+    version?: number
     lineNo: number
     materialId: string // 引用 Materials 模块的物料 ID
     materialName: string

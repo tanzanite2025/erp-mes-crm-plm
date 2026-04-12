@@ -21,6 +21,19 @@ export function resolveMaterialCategoryLabel(category: string | undefined, optio
     return options.find(o => o.value.toUpperCase() === (category || '').toUpperCase())?.label || category
 }
 
+export function formatMaterialInternalDimensions(
+    dimensions:
+        | {
+              length: number
+              width: number
+              height: number
+          }
+        | undefined
+) {
+    if (!dimensions) return undefined
+    return `${dimensions.length}*${dimensions.width}*${dimensions.height}`
+}
+
 export function isConflictImportError(message: string) {
     return message.includes('[CONFLICT]')
 }

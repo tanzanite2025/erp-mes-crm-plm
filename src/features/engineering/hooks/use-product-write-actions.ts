@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type Product } from '../data/schema'
-import { type SaveProductInput } from '../mutation-types'
+import { type SaveProductOperation } from '../mutation-types'
 import { PRODUCTS_QUERY_KEY } from '../query-keys'
 import { ProductMaintenanceService } from '../services/product-maintenance-service'
 
@@ -8,10 +8,10 @@ export function useProductWriteActions() {
   const queryClient = useQueryClient()
 
   const saveProductsMutation = useMutation({
-    mutationFn: async (products: SaveProductInput[]) => {
+    mutationFn: async (products: SaveProductOperation[]) => {
       const savedProducts: Product[] = []
       for (const product of products) {
-        savedProducts.push(await ProductMaintenanceService.saveProduct(product))
+        savedProducts.push(await ProductMaintenanceService.saveProduct(product.data, product.currentRow))
       }
       return savedProducts
     },

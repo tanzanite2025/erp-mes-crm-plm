@@ -16,6 +16,7 @@ import { ProductOverviewTab } from './components/product-overview-tab'
 import { ProductRoutingView } from './components/product/product-routing-view'
 import { type Product } from './data/schema'
 import { useProductWriteActions } from './hooks/use-product-write-actions'
+import { type ProductSubmitPayload } from './hooks/use-product-form'
 import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from './query-keys'
 import { ProductCoreService } from './services/product-core-service'
 import { ProductTypeService } from './services/product-type-service'
@@ -70,9 +71,13 @@ export function Engineering() {
         setIsProductDialogOpen(true)
     }
 
-    const handleProductSubmit = async (data: Product | Product[]) => {
-        const incoming = Array.isArray(data) ? data : [data]
-        const savedProducts = await saveProducts(incoming)
+    const handleProductSubmit = async ({ products: incoming, currentRow }: ProductSubmitPayload) => {
+        const savedProducts = await saveProducts(
+            incoming.map((product) => ({
+                data: product,
+                currentRow,
+            }))
+        )
 
         if (!editingProduct && savedProducts.length > 0) {
             setSelectedProductId(savedProducts[0].id)

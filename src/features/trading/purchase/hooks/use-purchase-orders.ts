@@ -5,15 +5,13 @@ import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
-import { purchaseOrderHeaderTransactions, purchaseOrderLineTransactions } from '../services/purchase-transaction-service'
+import { executePurchaseOrderReceiptConfirmation, purchaseOrderHeaderTransactions, purchaseOrderLineTransactions, type ConfirmPurchaseReceiptPayload } from '../services/purchase-transaction-service'
 import {
-  confirmPurchaseReceipt,
   createPurchaseOrder,
   deletePurchaseOrder,
   getPurchaseOrderById,
   getPurchaseOrders,
   patchPurchaseOrder,
-  type ConfirmPurchaseReceiptPayload,
   type PaginatedResponse,
 } from '../services/purchase-service'
 
@@ -208,8 +206,15 @@ export const usePurchaseOrderMutations = () => {
   })
 
   const confirmReceiptMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: ConfirmPurchaseReceiptPayload }) =>
-      confirmPurchaseReceipt(id, payload),
+    mutationFn: ({ id, payload, expectedVersion, actorId }: { id: string; payload: ConfirmPurchaseReceiptPayload; expectedVersion: number; actorId?: string }) =>
+      executePurchaseOrderReceiptConfirmation(id, {
+        operator: payload.operator || 'unknown',
+        remarks: payload.remarks,
+        receiptDate: payload.receiptDate,
+        lines: payload.lines,
+        expectedVersion,
+        actorId,
+      }),
     onSuccess: (data) => {
       handleConfirmReceiptSuccess(data.purchaseOrder.id)
     },

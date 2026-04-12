@@ -23,6 +23,26 @@ func (Inventory) TableName() string {
 	return "inventory"
 }
 
+type Reservation struct {
+	BaseModel
+	MaterialID   string     `gorm:"type:uuid;index;not null" json:"materialId"`
+	CategoryCode string     `gorm:"size:50;index;not null" json:"categoryCode"`
+	BatchNo      string     `gorm:"size:100;index" json:"batchNo"`
+	Quantity     float64    `gorm:"not null" json:"quantity"`
+	Status       string     `gorm:"size:50;index;not null" json:"status"`
+	SourceType   string     `gorm:"size:50;index;not null" json:"sourceType"`
+	SourceID     string     `gorm:"size:100;index;not null" json:"sourceId"`
+	ReservedAt   time.Time  `json:"reservedAt"`
+	ReleasedAt   *time.Time `json:"releasedAt,omitempty"`
+	ConsumedAt   *time.Time `json:"consumedAt,omitempty"`
+	ExpiredAt    *time.Time `json:"expiredAt,omitempty"`
+	Remarks      string     `gorm:"type:text" json:"remarks"`
+}
+
+func (Reservation) TableName() string {
+	return "inventory_reservations"
+}
+
 // InboundRecord 入库记录流水
 type InboundRecord struct {
 	BaseModel

@@ -7,6 +7,58 @@ import (
 	"xdfc-server/models"
 )
 
+type reservationAggregateRow struct {
+	MaterialID   string
+	CategoryCode string
+	BatchNo      string
+	Reserved     float64
+}
+
+func inventoryReservationKey(materialID string, categoryCode string, batchNo string) string {
+	return strings.TrimSpace(materialID) + "|" + strings.TrimSpace(categoryCode) + "|" + strings.TrimSpace(batchNo)
+}
+
+func loadReservationTotals(items []models.Inventory) (map[string]float64, error) {
+	keys := make(map[string]reservationAggregateRow, len(items))
+	for _, item := range items {
+		key := inventoryReservationKey(item.MaterialID, item.CategoryCode, item.BatchNo)
+		keys[key] = reservationAggregateRow{
+			MaterialID:   strings.TrimSpace(item.MaterialID),
+			CategoryCode: strings.TrimSpace(item.CategoryCode),
+			BatchNo:      strings.TrimSpace(item.BatchNo),
+		}
+	}
+
+	reservedMap := make(map[string]float64, len(keys))
+	for key := range keys {
+		reservedMap[key] = 0
+	}
+
+	for _, candidate := range keys {
+		if candidate.MaterialID == "" || candidate.CategoryCode == "" {
+			continue
+		}
+
+		var total float64
+		query := db.DB.Model(&models.Reservation{}).
+			Where("material_id = ? AND category_code = ? AND status = ?", candidate.MaterialID, candidate.CategoryCode, "RESERVED")
+
+		if candidate.BatchNo == "" {
+			query = query.Where("(batch_no = '' OR batch_no IS NULL)")
+		} else {
+			query = query.Where("batch_no = ?", candidate.BatchNo)
+		}
+
+		if err := query.Select("COALESCE(SUM(quantity), 0)").Scan(&total).Error; err != nil {
+			return nil, err
+		}
+
+		reservedMap[inventoryReservationKey(candidate.MaterialID, candidate.CategoryCode, candidate.BatchNo)] = total
+	}
+
+	return reservedMap, nil
+}
+
 // RebuildSearchIndex 全量重构搜索引擎索引情况情况总量针对。
 func RebuildSearchIndex() (int, error) {
 	var items []models.Inventory
@@ -72,8 +124,13 @@ func ListInventory(page, pageSize int) (InventoryListResponse, error) {
 		}
 	}
 
+	reservedMap, err := loadReservationTotals(items)
+	if err != nil {
+		return InventoryListResponse{}, err
+	}
+
 	return InventoryListResponse{
-		Items:    MapInventoryListToResponse(items, materialCategoryMap),
+		Items:    MapInventoryListToResponse(items, materialCategoryMap, reservedMap),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

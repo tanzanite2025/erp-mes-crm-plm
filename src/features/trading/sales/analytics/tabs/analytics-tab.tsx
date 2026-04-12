@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function OrdersAnalysisTab() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all')
   
   const { data: analytics, isLoading: isAnalyticsLoading } = useSalesAnalytics({
@@ -29,10 +29,10 @@ export function OrdersAnalysisTab() {
   const customerOptions = useMemo(() => {
     if (!analytics) return []
     return [
-      { label: t('common.all' as any) || 'All', value: 'all' },
-      ...analytics.map(c => ({ label: c.customerName, value: c.customerId }))
+      { label: locale === 'zh-CN' ? '全部' : 'All', value: 'all' },
+      ...analytics.map((customer) => ({ label: customer.customerName, value: customer.customerId }))
     ]
-  }, [analytics, t])
+  }, [analytics, locale])
 
   const globalVolume = useMemo(
     () => globalRanking?.reduce((acc, curr) => acc + curr.totalQty, 0) || 0,

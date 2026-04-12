@@ -483,6 +483,12 @@ export const engineering = {
     syncing: '同步云端档案中...',
     selectPrompt: '请选择建模目标',
     initiateProject: '点击左侧列表中的型号卡片以进入技术看板，或使用上方按钮开启全新的产品建模专案。',
+    metadata: {
+      errorTitle: '元数据链路异常',
+      errorHint: '请重启本地后端 `http://localhost:8080`，确保模板、动态属性分类与绑定接口来自同一版本服务。',
+      unavailable: '关键元数据服务不可用。请使用最新后端代码重启本地服务后，再创建或编辑产品。',
+      initFailed: '初始化产品表单元数据失败。',
+    },
     sidebar: {
       totalProducts: '累计识别型号：{{count}}',
       addProduct: '新增型号',
@@ -783,21 +789,24 @@ export const engineering = {
       actions: '操作',
     },
     labels: {
-      rootLevel: '一级分类',
-      active: '启用',
+      rootLevel: '根级',
+      orphanParent: '父级缺失',
+      active: '启用中',
       inactive: '停用',
-      noDescription: '-',
+      noDescription: '暂无描述',
     },
     buttons: {
       add: '新增分类',
     },
     empty: {
+      loading: '正在加载分类档案...',
       noData: '暂无分类数据',
     },
     confirms: {
       delete: '确认删除该分类吗？',
     },
     toasts: {
+      loadFailed: '加载分类档案失败，请检查网络或权限。',
       relatedProducts: '该分类下还有 {{count}} 个产品，请先处理关联产品。',
       hasChildren: '该分类下还有 {{count}} 个子分类，请先清理子分类。',
       deleteSuccess: '分类已删除',

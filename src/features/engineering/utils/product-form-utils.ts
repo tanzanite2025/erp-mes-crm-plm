@@ -83,7 +83,7 @@ export function ensureSkuUnique(
 export function buildBatchProducts(
     values: Product,
     selectedVariants: ProductVariantSelection[],
-    typeCode: string
+    _typeCode: string
 ): Product[] {
     return selectedVariants.map(variant => {
         const nextValues = upsertAttributeValue(values, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version, variant.level)
@@ -91,7 +91,6 @@ export function buildBatchProducts(
             ...nextValues,
             id: '',
             weight: variant.weight,
-            sku: deriveSku(typeCode, normalizeModelCode(values.modelCode), variant.level),
             createdAt: new Date().toISOString()
         }
     })
@@ -100,12 +99,11 @@ export function buildBatchProducts(
 export function buildSingleVariantProduct(
     values: Product,
     variant: ProductVariantSelection,
-    typeCode: string
+    _typeCode: string
 ): Product {
     const nextValues = upsertAttributeValue(values, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version, variant.level)
     return {
         ...nextValues,
         weight: variant.weight,
-        sku: deriveSku(typeCode, normalizeModelCode(values.modelCode), variant.level)
     }
 }

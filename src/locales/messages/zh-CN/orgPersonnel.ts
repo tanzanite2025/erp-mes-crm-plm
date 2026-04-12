@@ -121,6 +121,12 @@ export const orgPersonnel = {
     noIdFound: '未找到可更新的人员 ID',
     filterStatus: '筛选状态',
     filterFiltering: 'FILTERING',
+    filterPosition: '岗位筛选',
+    filterPositionCode: 'POSITION',
+    unassigned: '未分配',
+    batchSync: '批量同步',
+    batchSyncHint: '新增 / 更新',
+    bulkActionInProgress: '批量操作处理中...',
     searchPlaceholder: '搜索姓名、工号、电话...',
     bulk: {
       entity: '位人员',

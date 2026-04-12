@@ -29,6 +29,37 @@ func ExecutePurchaseOrderTransactionHandler(c *gin.Context) {
 		actorID = middleware.GetSafeUserID(c)
 	}
 
+	if strings.TrimSpace(req.Intent) == services.PurchaseTransactionIntentReceiptConfirm {
+		payload, err := services.ParsePurchaseOrderReceiptConfirmPayload(req.Payload)
+		if err != nil {
+			respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		result, err := services.ExecutePurchaseOrderReceiptConfirmation(services.ExecutePurchaseOrderReceiptConfirmationCommand{
+			OrderID:         orderID,
+			ActorID:         actorID,
+			Operator:        middleware.GetSafeUsername(c),
+			ExpectedVersion: req.ExpectedVersion,
+			Payload:         payload,
+			IP:              c.ClientIP(),
+		})
+		if err != nil {
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				respondPurchaseOrderError(c, http.StatusNotFound, "采购订单不存在")
+			case errors.Is(err, services.ErrPurchaseTransactionVersionConflict):
+				respondVersionConflict(c)
+			default:
+				respondPurchaseOrderError(c, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		c.JSON(http.StatusOK, result)
+		return
+	}
+
 	result, err := services.ExecutePurchaseOrderTransaction(services.ExecutePurchaseOrderTransactionInput{
 		OrderID:         orderID,
 		Intent:          req.Intent,

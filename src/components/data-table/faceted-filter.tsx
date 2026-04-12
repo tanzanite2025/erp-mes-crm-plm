@@ -48,7 +48,7 @@ export function DataTableFacetedFilter<TData, TValue>({
         {variant === 'industrial' ? (
           <Button
             variant='outline'
-            className='h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all px-4 min-w-[105px]'
+            className='h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all px-4 min-w-[105px]'
           >
             <div className='flex items-center gap-1.5'>
               <PlusCircledIcon className='size-3 text-blue-600' />
@@ -106,7 +106,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className='w-[200px] p-0' align='start'>
+      <PopoverContent className='w-[220px] rounded-[24px] border border-dashed border-muted/40 p-0 shadow-2xl' align='start'>
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -117,6 +117,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 return (
                   <CommandItem
                     key={option.value}
+                    className='mx-1 my-0.5 rounded-xl px-3 py-2 text-[10px] font-black tracking-wide'
                     onSelect={() => {
                       if (isSelected) {
                         selectedValues.delete(option.value)
@@ -131,7 +132,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                   >
                     <div
                       className={cn(
-                        'flex size-4 items-center justify-center rounded-sm border border-primary',
+                        'flex size-4 items-center justify-center rounded-xl border border-primary',
                         isSelected
                           ? 'bg-primary text-primary-foreground'
                           : 'opacity-50 [&_svg]:invisible'
@@ -158,7 +159,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandGroup>
                   <CommandItem
                     onSelect={() => column?.setFilterValue(undefined)}
-                    className='justify-center text-center'
+                    className='mx-1 my-1 justify-center rounded-xl px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest'
                   >
                     Clear filters
                   </CommandItem>

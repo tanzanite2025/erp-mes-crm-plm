@@ -7,19 +7,31 @@ function InfoRow({
   label,
   value,
   highlight = false,
+  variant,
 }: {
   label: string
   value?: string | number
   highlight?: boolean
+  variant?: 'amount'
 }) {
+  const isAmount = variant === 'amount'
+
   return (
     <div className='group flex min-w-[80px] flex-col'>
-      <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 transition-colors group-hover:text-primary'>
+      <span className={`uppercase transition-colors group-hover:text-primary ${
+        isAmount
+          ? 'text-[9px] font-black tracking-[0.18em] text-muted-foreground/50'
+          : 'text-[10px] font-black tracking-widest text-muted-foreground/40'
+      }`}>
         {label}
       </span>
       <span
-        className={`truncate text-[12px] font-black tracking-tight ${
-          highlight ? 'text-primary' : 'text-foreground/90'
+        className={`truncate ${
+          isAmount
+            ? 'text-[15px] font-black tracking-tight text-foreground'
+            : 'text-[12px] font-black tracking-tight'
+        } ${
+          highlight ? 'text-primary' : isAmount ? 'text-foreground' : 'text-foreground/90'
         }`}
       >
         {value || '-'}
@@ -45,6 +57,7 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
             label={row.label}
             value={row.value}
             highlight={row.highlight}
+            variant={row.variant}
           />
         ))}
       </div>
@@ -52,7 +65,6 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
       <OrderEvidenceGallery
         evidences={evidences}
         titleKey='tradingSalesOrder.detail.evidenceTitle'
-        fallbackTitle='Order Evidence'
       />
 
       <div className='border-t border-muted-foreground/10 pt-4'>

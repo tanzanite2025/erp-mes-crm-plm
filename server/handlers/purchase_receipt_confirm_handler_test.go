@@ -85,6 +85,16 @@ func setupPurchaseReceiptConfirmHandlerTestDB(t *testing.T) {
 			amount REAL NOT NULL,
 			memo TEXT
 		)`,
+		`CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)`,
 		`CREATE TABLE purchase_orders (
 			id TEXT PRIMARY KEY NOT NULL,
 			order_no TEXT,
@@ -110,7 +120,9 @@ func setupPurchaseReceiptConfirmHandlerTestDB(t *testing.T) {
 			price REAL,
 			amount REAL,
 			received_qty REAL,
-			status TEXT
+			returned_qty REAL,
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)`,
 	}
 
@@ -130,13 +142,13 @@ func TestConfirmPurchaseReceiptHandlerCreatesInboundAndUpdatesOrder(t *testing.T
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-handler-1", "PO-H-001", "Awaiting", "CNY", 50.0, 1.0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, 1, "po-handler-1", 1, materialID, "MAT-H-001", "Handler Material", "Spec", 5.0, "PCS", 10.0, 50.0, 0.0, "Open").Error)
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-handler-1", 1, materialID, "MAT-H-001", "Handler Material", "Spec", 5.0, "PCS", 10.0, 50.0, 0.0, 0.0, "Open", 1).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/purchase/orders/po-handler-1/confirm-receipt", strings.NewReader(`{"remarks":"confirmed by handler","lines":[{"purchaseOrderLineId":1,"materialId":"`+materialID+`","quantity":5,"purchasePrice":10,"batchNo":"B-H-001","targetCategory":"MATERIAL"}]}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/purchase/orders/po-handler-1/confirm-receipt", strings.NewReader(`{"remarks":"confirmed by handler","lines":[{"purchaseOrderLineId":1,"orderLineVersion":1,"materialId":"`+materialID+`","quantity":5,"purchasePrice":10,"batchNo":"B-H-001","targetCategory":"MATERIAL"}]}`))
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 	ctx.Params = gin.Params{{Key: "id", Value: "po-handler-1"}}
@@ -172,13 +184,13 @@ func TestConfirmPurchaseReceiptHandlerReturnsBadRequestWhenReceiptDateInvalid(t 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-handler-invalid-date", "PO-H-002", "Awaiting", "CNY", 50.0, 1.0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, 1, "po-handler-invalid-date", 1, materialID, "MAT-H-002", "Handler Material", "Spec", 5.0, "PCS", 10.0, 50.0, 0.0, "Open").Error)
+		INSERT INTO purchase_order_lines (id, purchase_order_id, line_no, material_id, material_code, material_name, specification, qty, uom, price, amount, received_qty, returned_qty, status, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "po-handler-invalid-date", 1, materialID, "MAT-H-002", "Handler Material", "Spec", 5.0, "PCS", 10.0, 50.0, 0.0, 0.0, "Open", 1).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/purchase/orders/po-handler-invalid-date/confirm-receipt", strings.NewReader(`{"receiptDate":"not-a-rfc3339","lines":[{"purchaseOrderLineId":1,"materialId":"`+materialID+`","quantity":5,"purchasePrice":10,"batchNo":"B-H-002","targetCategory":"MATERIAL"}]}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/purchase/orders/po-handler-invalid-date/confirm-receipt", strings.NewReader(`{"receiptDate":"not-a-rfc3339","lines":[{"purchaseOrderLineId":1,"orderLineVersion":1,"materialId":"`+materialID+`","quantity":5,"purchasePrice":10,"batchNo":"B-H-002","targetCategory":"MATERIAL"}]}`))
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 	ctx.Params = gin.Params{{Key: "id", Value: "po-handler-invalid-date"}}

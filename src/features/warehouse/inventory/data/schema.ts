@@ -1,6 +1,11 @@
+import { z } from 'zod'
+
 export interface InventoryRecord {
   id: string
   materialId: string
+  onHand: number
+  reserved: number
+  availableQty: number
   quantity: number
   totalValue: number
   averageUnitCost: number
@@ -31,23 +36,36 @@ export interface MasterDataSearchResult {
   stock: number
 }
 
-export interface InboundRecord {
-  id: string
-  materialId: string
-  materialName: string
-  materialCode: string
-  purchaseOrderId?: string
-  purchaseOrderLineId?: number
-  quantity: number
-  purchasePrice: number
-  batchNo: string
-  entryDate: string
-  operator: string
-  remarks: string
-  targetCategory: string
-  createdAt?: string
-  updatedAt?: string
-}
+export const inboundTDOSchema = z.object({
+  materialId: z.string().min(1),
+  quantity: z.number().positive(),
+  batchNo: z.string(),
+  entryDate: z.string(),
+  remarks: z.string(),
+  targetCategory: z.string().min(1),
+})
+
+export type InboundTDO = z.infer<typeof inboundTDOSchema>
+
+export const inboundRecordSchema = z.object({
+  id: z.string(),
+  materialId: z.string(),
+  materialName: z.string(),
+  materialCode: z.string(),
+  purchaseOrderId: z.string().optional(),
+  purchaseOrderLineId: z.number().optional(),
+  quantity: z.number(),
+  purchasePrice: z.number(),
+  batchNo: z.string(),
+  entryDate: z.string(),
+  operator: z.string(),
+  remarks: z.string(),
+  targetCategory: z.string(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+})
+
+export type InboundRecord = z.infer<typeof inboundRecordSchema>
 
 export interface InventoryAlertSummary {
   alertCount: number

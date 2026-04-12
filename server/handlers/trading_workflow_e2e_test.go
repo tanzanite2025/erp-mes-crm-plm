@@ -95,7 +95,8 @@ func setupTradingWorkflowHandlerTestDB(t *testing.T) *gorm.DB {
 			price REAL,
 			amount REAL,
 			received_qty REAL,
-			status TEXT
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)`,
 		`CREATE TABLE sales_orders (
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),

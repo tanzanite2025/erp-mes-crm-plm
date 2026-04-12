@@ -1,1726 +1,60 @@
 # 变更记录与验证（walkthrough.md）
 
-## 2026-04-12 - architecture：Product 主数据链路接入全局码规范化
+### 实现细节（BOM 导入 authority 收口）
 
-### 本轮目标
+1. **停止在前端解析阶段生成 `standardUsage`**
+   - `bom-excel-parser.ts` 不再根据 `unitUsage * (1 + wastage / 100)` 生成 `standardUsage`
+   - 导入阶段只保留原始采集字段
 
-在 engineering 属性值链路、template/type 机器字段链路收口后，继续推进 `Product` 本体上的三类明确机器字段：
+2. **停止在导入落地阶段透传 `standardUsage`**
+   - `use-bom-data.ts` 中 `processedItems` 不再写入 `standardUsage`
+   - 同时移除对导入行里 `standardUsage` 的前端校验依赖
 
-1. `Product.sku`
-2. `Product.modelCode`
-3. `Product.templateKey`
+3. **authority 边界明确化**
+   - 这一步把 `standardUsage` 从“客户端可带入的派生结果”降级回“应由服务端当前工程配置重算的值”
 
-这一批继续按字段职责分型处理：
+### 实现细节（源码字符集损坏修复）
 
-1. **大写业务编码**：`sku`
-2. **固定 2 位数字码**：`modelCode`
-3. **稳定大写引用键**：`templateKey`
+1. **修复 `use-bom-data.ts` 的乱码报错块**
+   - 删除损坏的 `toast.error('BOM 鐎电厧...')`
+   - 保留已存在的本地化失败提示 `t('engineering.bomArchive.toasts.parseFailed')`
 
-### 本轮实现
+2. **修复 `drilling-action-dialog.tsx` 的损坏文案**
+   - 标题
+   - 描述
+   - 按钮文案
+   - 标签文案
+   - placeholder 文案
+   - 注释文本
 
-本轮实际涉及的文件包括：
+### 实现细节（Drilling dialog 可维护性收口）
 
-1. `src/lib/codecs/code-normalization.ts`
-2. `src/features/engineering/components/product/product-basic-info.tsx`
-3. `src/features/engineering/utils/product-form-utils.ts`
-4. `src/features/engineering/hooks/use-product-form-derive.ts`
-5. `src/features/engineering/hooks/use-product-form-submit.ts`
-6. `src/features/engineering/adapters/product-api-adapter.ts`
+1. **显式使用产品 options 模式查询**
+   - `useGetProducts({ mode: 'options' })`
 
-### 关键实现点
+2. **同步修复现有表单 immutability / typing 问题**
+   - 引入 `DeltaSet`
+   - 去掉 `delta?: any`
+   - 补 `setFormData / updateField`
+   - 移除 `useMemo` 对 `open` 的多余依赖
 
-1. **公共规范函数**
-   - 在 `code-normalization.ts` 中新增：
-     - `normalizeSku`
-     - `normalizeModelCode`
-     - `normalizeTemplateKey`
-   - 这样 `Product` 主数据链路不再依赖零散的局部 `trim / toUpperCase / regex`。
+3. **保持边界不扩写**
+   - 本轮没有新增钻孔公式联动
+   - 没有把 dialog 扩成钻孔权威计算引擎
 
-2. **输入边界**
-   - `product-basic-info.tsx`
-     - `modelCode` 输入改为统一走 `normalizeModelCode`
-     - `sku` 只读展示值统一走 `normalizeSku`
-   - 保留了 `modelCode` 的 2 位数字约束，但把它显式并入公共 normalization 体系。
+### 明确保留不变的边界
 
-3. **派生链路**
-   - `product-form-utils.ts`
-     - `deriveSku` 统一走 `normalizeSku / normalizeModelCode`
-     - `ensureSkuUnique` 改为基于规范化后的 SKU 比较
-     - `buildBatchProducts / buildSingleVariantProduct` 中的 SKU 派生也统一走规范化
-   - `use-product-form-derive.ts`
-     - 后端发号返回的 `nextCode` 会统一走 `normalizeModelCode`
-     - 自动生成的 SKU 会统一走 `normalizeSku`
-   - `use-product-form-submit.ts`
-     - 现有产品 SKU 去重 Map 改为基于 `normalizeSku` 统一比较
+本轮没有扩大范围：
 
-4. **DTO 出入口兜底**
-   - `product-api-adapter.ts`
-     - API -> contract 时统一规范：
-       - `sku`
-       - `modelCode`
-       - `templateKey`
-     - contract -> API DTO 时同样统一规范以上字段
-     - 同时补齐 `templateKey` 的 patch 字段覆盖，避免保存增量遗漏该引用键
-
-### 规则分型结果
-
-到这一步，engineering 主数据内部已经至少明确出现以下几类 normalization 语义：
-
-1. **小写 slug 机器值**
-   - `ProductAttributeCategory.key`
-   - `ProductAttributeOption.value`
-
-2. **大写机器码 / 业务编码**
-   - `ProductTemplate.code`
-   - `ProductType.code`
-   - `Product.sku`
-
-3. **稳定大写键 / 引用键**
-   - `ProductTemplate.componentKey`
-   - `Product.templateKey`
-
-4. **固定格式数字码**
-   - `Product.modelCode`
-
-这意味着 normalization 已经从“大小写清洗”演进成一套按字段职责分族治理的结构。
-
-### 明确未动范围
-
-本轮没有动以下字段：
-
-1. `name`
-2. `description`
-3. `restrictions`
-4. `attributeValues`
-5. 其它自由文本字段
-
-原因：
-
-1. 它们不属于明确机器字段。
-2. `attributeValues` 已在上一轮按小写 slug 规则独立收口，不应混改。
-
-### 本轮收益
-
-1. `sku` 不再只依赖局部派生函数输出，输入展示、派生、去重校验、DTO 出入口都统一了口径。
-2. `modelCode` 不再只是表单里临时 `replace(/\D/g, '').slice(0, 2)`，而是有了专门的公共数字码规范函数。
-3. `templateKey` 从隐式直传提升为稳定大写引用键，并纳入增量 patch 字段范围。
+1. 没有把 BOM 导入链路一次性改造成完整后端重算平台
+2. 没有在没有实锤前编造钻孔联动 authority 泄露整改
+3. 没有对 engineering-db 全域组件做乱码扫荡式重写
 
 ### 验证结果
 
 已执行：
 
-1. `pnpm exec eslint src/lib/codecs/code-normalization.ts src/features/engineering/components/product/product-basic-info.tsx src/features/engineering/utils/product-form-utils.ts src/features/engineering/hooks/use-product-form-derive.ts src/features/engineering/hooks/use-product-form-submit.ts src/features/engineering/adapters/product-api-adapter.ts`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. ESLint 通过。
-2. TypeScript 类型检查通过。
-
-### 当前结果判断
-
-到这一步，engineering 主数据域的 normalization 已经覆盖到三层：
-
-1. **属性值层**：`key / value`
-2. **模板与类型层**：`template code / componentKey / type code`
-3. **产品主数据层**：`sku / modelCode / templateKey`
-
-下一步若继续推进，最合理的是：
-
-1. 继续盘点 `Product` 及其周边链路中的其它明确机器字段
-2. 评估 `revisionNo / siteCode / changeOrderNo` 这类字段是否也需要按语义分型进入 normalization
-3. 视复杂度决定是否把当前 `code-normalization.ts` 进一步演化为更显式的 normalization family 目录
-
-## 2026-04-12 - architecture：Product/ChangeOrder 变更控制字段接入全局码规范化
-
-### 本轮目标
-
-在 engineering 已完成属性值、template/type、Product 主数据三批收口后，继续推进 Product / ChangeOrder / BOM 共用的一组变更控制字段：
-
-1. `revisionNo`
-2. `siteCode`
-3. `changeOrderNo`
-
-这一批继续按字段职责分型处理：
-
-1. **稳定大写站点码**：`siteCode`
-2. **大写业务单号**：`changeOrderNo`
-3. **修订号**：`revisionNo`
-
-其中 `revisionNo` 本轮只做最小规范收口，不擅自改写 `R1 / R2` 一类业务格式语义。
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/lib/codecs/code-normalization.ts`
-2. `src/features/engineering/tabs/change-orders.tsx`
-3. `src/features/engineering/services/change-order-service.ts`
-4. `src/features/engineering/hooks/use-change-order-write-actions.ts`
-5. `src/features/engineering/adapters/product-api-adapter.ts`
-6. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
-7. `src/features/engineering/hooks/use-bom-form.ts`
-
-### 关键实现点
-
-1. **公共规范函数**
-   - 在 `code-normalization.ts` 中新增：
-     - `normalizeSiteCode`
-     - `normalizeChangeOrderNo`
-     - `normalizeRevisionNo`
-   - 这样这批变更控制字段不再依赖散落的局部 `trim / toUpperCase`。
-
-2. **Change Order 输入与提交边界**
-   - `change-orders.tsx`
-     - `changeOrderNo` 输入改为统一走 `normalizeChangeOrderNo`
-     - `siteCode` 输入改为统一走 `normalizeSiteCode`
-     - `revisionNo` 输入改为统一走 `normalizeRevisionNo`
-     - 编辑态回填 `normalizeOrder()` 也统一复用上述规范函数
-     - `handleSave()` 提交前再次统一规范三者，并保持 `siteCode` 与 `isDefaultSite` 的原有联动语义
-
-3. **保存边界兜底**
-   - `change-order-service.ts`
-     - 新增 `normalizeChangeOrderInput()`
-     - 保存前统一规范 `changeOrderNo / siteCode / revisionNo`
-     - 保持 `siteCode === ''` 时默认站点语义仍成立
-   - `use-change-order-write-actions.ts`
-     - mutation 入口再次兜底统一规范三者
-
-4. **Product DTO 出入口兜底**
-   - `product-api-adapter.ts`
-     - API -> contract 时统一规范：
-       - `revisionNo`
-       - `changeOrderNo`
-       - `siteCode`
-     - contract -> API DTO 时同样统一规范以上字段
-   - 这样 Product 主数据链与 ChangeOrder 侧不会各自继续漂移
-
-5. **BOM 关联链路口径同步**
-   - `bom-form-header.tsx`
-     - 选择 change order 时，回填到 BOM 表头的 `changeOrderNo / siteCode / revisionNo` 统一复用规范函数
-     - change order 下拉展示标签中的 `changeOrderNo` 也统一走规范化
-   - `use-bom-form.ts`
-     - 初始化编辑态/新建态时，对 `revisionNo` 统一走 `normalizeRevisionNo`
-
-### 规则分型结果
-
-到这一步，engineering 域内已经明确形成以下几类 normalization 语义：
-
-1. **小写 slug 机器值**
-   - `ProductAttributeCategory.key`
-   - `ProductAttributeOption.value`
-
-2. **大写机器码 / 业务编码**
-   - `ProductTemplate.code`
-   - `ProductType.code`
-   - `Product.sku`
-
-3. **稳定大写键 / 引用键**
-   - `ProductTemplate.componentKey`
-   - `Product.templateKey`
-
-4. **固定格式数字码**
-   - `Product.modelCode`
-
-5. **变更控制字段**
-   - `siteCode`
-   - `changeOrderNo`
-   - `revisionNo`
-
-这意味着 normalization 已经不只是“码字段大小写清洗”，而是在 engineering 内开始覆盖业务控制字段契约。
-
-### 明确未动范围
-
-本轮没有动以下字段：
-
-1. `title`
-2. `description`
-3. `effectiveFrom`
-4. `effectiveTo`
-5. 其它自由文本字段
-
-原因：
-
-1. 它们不属于明确机器字段。
-2. 将日期或说明文案纳入同类规则会明显扩大风险面。
-
-### 本轮收益
-
-1. `changeOrderNo / siteCode / revisionNo` 不再依赖单页局部 `toUpperCase / trim`。
-2. ChangeOrder、Product、BOM 三条相邻链路对这批控制字段开始共享统一口径。
-3. `siteCode` 与 `isDefaultSite` 的原有业务联动在规范化后仍保持稳定。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint src/lib/codecs/code-normalization.ts src/features/engineering/tabs/change-orders.tsx src/features/engineering/services/change-order-service.ts src/features/engineering/hooks/use-change-order-write-actions.ts src/features/engineering/adapters/product-api-adapter.ts src/features/engineering/components/bom-editor/bom-form-header.tsx src/features/engineering/hooks/use-bom-form.ts`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. TypeScript 类型检查通过。
-2. 目标文件 ESLint 无 error。
-3. 仍存在 2 条既有 hooks warning：
-   - `change-orders.tsx` 的 `useMemo` 依赖提示
-   - `use-bom-form.ts` 的 `useEffect` 依赖提示
-   - 本轮未扩大范围去顺手改动这两处结构性 warning。
-
-### 当前结果判断
-
-到这一步，engineering 内的 normalization 已经从：
-
-1. 属性机器值
-2. 模板/类型机器值
-3. Product 主数据码字段
-
-继续扩展到了：
-
-4. **Product / ChangeOrder / BOM 共用的变更控制字段**
-
-下一步若继续推进，最合理的是：
-
-1. 继续盘点 BOM / ECO 侧其它明确控制字段
-2. 评估 `bomNo / bomVersion` 是否也需要按语义分型进入 normalization
-3. 视复杂度决定是否把当前 normalization 进一步整理成更显式的 family 目录
-
-## 2026-04-12 - engineering：清理 `change-orders.tsx` / `use-bom-form.ts` 的 hooks warning
-
-### 本轮目标
-
-清理上一轮变更控制字段收口后仍保留的 2 条既有 hooks warning，但不扩大到其它业务逻辑重构：
-
-1. `src/features/engineering/tabs/change-orders.tsx`
-2. `src/features/engineering/hooks/use-bom-form.ts`
-
-### 实际变更
-
-1. `change-orders.tsx`
-   - 新增稳定空数组常量：
-     - `EMPTY_CHANGE_ORDERS`
-     - `EMPTY_PRODUCTS`
-   - 将 `query.data ?? []` 改为稳定引用回退，避免 `products` 在 `useMemo` 依赖上每次 render 生成新数组。
-
-2. `use-bom-form.ts`
-   - 新增稳定空数组常量：
-     - `EMPTY_PRODUCTS`
-     - `EMPTY_CHANGE_ORDERS`
-     - `EMPTY_MATERIALS`
-   - 将 `query.data ?? []` 改为稳定引用回退，避免 `changeOrders` 在 `useEffect` 依赖上每次 render 生成新数组。
-
-### 本轮收益
-
-1. 清除了 2 条与稳定默认数组有关的 hooks warning。
-2. 不改业务语义，只做最小结构修正。
-3. 为后续继续做 engineering 域清理时提供了统一的“稳定空集合”处理方式。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint src/features/engineering/tabs/change-orders.tsx src/features/engineering/hooks/use-bom-form.ts`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. 目标文件 ESLint 无 error / warning。
-2. TypeScript 类型检查通过。
-
-## 2026-04-12 - architecture：BOM/ECO 控制字段接入全局码规范化
-
-### 本轮目标
-
-继续扩展 engineering 域内的 normalization，将 BOM/ECO 侧最明确的一组控制字段统一收口：
-
-1. `bomNo`
-2. `bomVersion`
-
-这一批继续按字段职责分型处理：
-
-1. **业务编号**：`bomNo`
-2. **版本标签**：`bomVersion`
-
-其中 `bomVersion` 本轮只做最小规范收口，保留类似 `V1.0` 的格式语义，不擅自改写版本演进策略。
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/lib/codecs/code-normalization.ts`
-2. `src/features/engineering/hooks/use-bom-form.ts`
-3. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
-4. `src/features/engineering/services/bom-service.ts`
-5. `src/features/engineering/components/bom-action-dialog.tsx`
-6. `src/features/engineering/tabs/bom-mgmt.tsx`
-7. `src/features/engineering/data/schema.ts`
-
-### 关键实现点
-
-1. **公共规范函数**
-   - 在 `code-normalization.ts` 中新增：
-     - `normalizeBomNo`
-     - `normalizeBomVersion`
-   - 这样 `bomNo / bomVersion` 不再依赖散落的默认值或局部展示规则。
-
-2. **BOM 表单初始化与回填边界**
-   - `use-bom-form.ts`
-     - 默认值中的 `bomVersion` 改为统一走 `normalizeBomVersion('V1.0')`
-     - 新建态 `bomNo` 改为统一走 `normalizeBomNo('')`
-     - 编辑态回填时统一规范：
-       - `bomNo`
-       - `bomVersion`
-       - `bomDisplayVersion`
-     - 新建态初始化时同样统一规范 `bomVersion / bomDisplayVersion`
-   - 同时修复了本轮中途暴露出的：
-     - `Product` 类型缺失
-     - `version` 缺失
-     - 对 hook 返回值 `deltaProxy` 的非法写入
-
-3. **BOM 表头展示与输入边界**
-   - `bom-form-header.tsx`
-     - `bomNo` 展示与输入统一走 `normalizeBomNo`
-     - `bomVersion` 展示与输入统一走 `normalizeBomVersion`
-   - 即便 `bomVersion` 当前主要是只读展示，也保证表头口径与初始化、保存边界一致。
-
-4. **保存边界兜底**
-   - `bom-service.ts`
-     - 新增 `normalizeBOMInput()`
-     - 保存前统一规范：
-       - `bomNo`
-       - `bomVersion`
-       - `bomDisplayVersion`
-     - create 与 patch 统一复用同一口径
-
-5. **提交前兜底**
-   - `bom-action-dialog.tsx`
-     - 提交前再次统一规范 `bomNo / bomVersion / bomDisplayVersion`
-     - 编辑态继续通过 `deltaProxy + commitDelta()` 计算最终提交差异
-   - `bom-mgmt.tsx`
-     - 上层提交入口也统一规范 `bomNo / bomVersion / bomDisplayVersion`
-     - 编辑态改为直接消费 dialog 传回的 `delta`，避免重复在页面层再算一遍
-
-6. **Schema 格式表达**
-   - `data/schema.ts`
-     - `bomNo` 改为 `trim()`
-     - `bomVersion` 改为：
-       - `trim()`
-       - `regex(/^V[0-9]+(\\.[0-9]+)*$/)`
-     - 这样 `V1.0` 语义在 schema 层也有明确表达
-
-### 规则分型结果
-
-到这一步，engineering 域内已经形成以下几类 normalization 语义：
-
-1. **小写 slug 机器值**
-2. **大写机器码 / 业务编码**
-3. **稳定大写键 / 引用键**
-4. **固定格式数字码**
-5. **变更控制字段**
-6. **BOM/ECO 控制字段**
-
-其中本轮新增的是：
-
-1. `bomNo`
-2. `bomVersion`
-
-这意味着 normalization 已从 Product 与 ChangeOrder，继续扩展到了 BOM/ECO 自身的编号与版本控制语义。
-
-### 明确未动范围
-
-本轮没有动以下字段：
-
-1. `description`
-2. `items`
-3. `substitutes`
-4. `standardUsage`
-5. 其它工艺或路线版本字段
-
-原因：
-
-1. 它们不属于当前最明确的 BOM/ECO 控制字段。
-2. 若把它们混入同批规则，会明显扩大风险面。
-
-### 本轮收益
-
-1. `bomNo / bomVersion / bomDisplayVersion` 开始在初始化、展示、提交、保存四层共享统一口径。
-2. `V1.0` 这类版本格式在 schema 层也有了明确表达。
-3. create 与 patch 两条 BOM 保存链路避免继续各自漂移。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/features/engineering/hooks/use-bom-form.ts" "src/features/engineering/components/bom-action-dialog.tsx" "src/features/engineering/tabs/bom-mgmt.tsx" "src/features/engineering/components/bom-editor/bom-form-header.tsx" "src/features/engineering/services/bom-service.ts" "src/features/engineering/data/schema.ts" "src/lib/codecs/code-normalization.ts"`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. TypeScript 类型检查通过。
-2. 目标文件 ESLint 通过。
-
-### 当前结果判断
-
-到这一步，engineering 内的 normalization 已经从：
-
-1. 属性机器值
-2. 模板/类型机器值
-3. Product 主数据码字段
-4. Product / ChangeOrder / BOM 共用的变更控制字段
-
-继续扩展到了：
-
-5. **BOM / ECO 自身的编号与版本控制字段**
-
-下一步若继续推进，最合理的是：
-
-1. 继续盘点 BOM / ECO 侧是否还有其它明确控制字段
-2. 评估是否需要把 `bomDisplayVersion` 从派生字段进一步收拢为更明确的单一来源策略
-3. 视复杂度决定是否把当前 normalization 继续整理成更显式的 family 目录
-
-## 2026-04-12 - architecture：BOM/ECO `bomDisplayVersion` 单一来源治理
-
-### 本轮目标
-
-在 `bomNo / bomVersion` 已接入 normalization 之后，继续治理 `bomDisplayVersion` 的字段角色与读取口径。当前最关键的问题不再是大小写，而是：
-
-1. `bomDisplayVersion` 在多个边界重复回写
-2. 列表 / 预览 / 打印层又单独读取旧字段
-3. `delta / save / display` 三层之间存在继续漂移风险
-
-因此本轮目标是把 `bomDisplayVersion` 从“多处回写的半持久化字段”收拢成**前端单一来源派生口径**。
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/lib/codecs/code-normalization.ts`
-2. `src/features/engineering/hooks/use-bom-form.ts`
-3. `src/features/engineering/components/bom-action-dialog.tsx`
-4. `src/features/engineering/tabs/bom-mgmt.tsx`
-5. `src/features/engineering/components/bom-mgmt/bom-table.tsx`
-6. `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
-
-### 关键实现点
-
-1. **新增统一派生入口**
-   - 在 `code-normalization.ts` 中新增：
-     - `deriveBomDisplayVersion(bomVersion)`
-   - 当前实现统一复用 `normalizeBomVersion()`，使 `bomDisplayVersion` 在前端语义上明确成为 `bomVersion` 的展示派生结果。
-
-2. **移除 form 初始化层的重复回写**
-   - `use-bom-form.ts`
-     - 编辑态初始化不再主动把 `bomDisplayVersion` 再回写一份
-     - 新建态初始化也不再主动写入 `bomDisplayVersion`
-   - 表单真正的单一业务输入继续收敛在：
-     - `bomNo`
-     - `bomVersion`
-
-3. **移除 dialog / page 提交层的重复回写**
-   - `bom-action-dialog.tsx`
-     - 提交前不再重复构造 `bomDisplayVersion`
-   - `bom-mgmt.tsx`
-     - 页面提交入口同样不再重复构造 `bomDisplayVersion`
-   - 这样 `delta` 计算与编辑态提交不再因为 display 字段复制而制造额外噪音。
-
-4. **统一展示层读取口径**
-   - `bom-table.tsx`
-     - 展示时优先使用：
-       - `deriveBomDisplayVersion(row.original.bomVersion || row.original.bomDisplayVersion)`
-   - `bom-preview.tsx`
-     - 预览显示与打印模板都统一使用：
-       - `deriveBomDisplayVersion(bom.bomVersion || bom.bomDisplayVersion)`
-   - 这意味着前端展示层开始以 `bomVersion` 为主、`bomDisplayVersion` 为兼容回退，而不是继续盲目信任旧字段。
-
-### 当前字段角色判断
-
-在当前前端实现中，`bomDisplayVersion` 已经被收拢成：
-
-1. **展示派生字段**
-
-而不再是：
-
-1. 需要在 form 初始化、dialog 提交、page 提交三层都重复主动写入的字段
-
-### 本轮收益
-
-1. `bomDisplayVersion` 的前端语义明显清晰：它主要来源于 `bomVersion`。
-2. `use-bom-form / bom-action-dialog / bom-mgmt` 三处重复回写被收掉，减少了 `delta` 漂移风险。
-3. table / preview / print 三种展示口径开始统一，避免一个地方显示旧值、另一个地方显示新值。
-
-### 当前仍保留的兼容策略
-
-本轮没有直接粗暴删除 `bomDisplayVersion` 字段，而是采用：
-
-1. **前端派生为主**
-2. **旧字段兼容回退**
-
-这样做的原因是：
-
-1. 需要兼容现有数据结构
-2. 需要避免在未确认后端契约前就擅自移除字段
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/lib/codecs/code-normalization.ts" "src/features/engineering/hooks/use-bom-form.ts" "src/features/engineering/components/bom-action-dialog.tsx" "src/features/engineering/tabs/bom-mgmt.tsx" "src/features/engineering/services/bom-service.ts" "src/features/engineering/components/bom-mgmt/bom-table.tsx" "src/features/engineering/components/bom-mgmt/bom-preview.tsx"`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. TypeScript 类型检查通过。
-2. 目标文件 ESLint 无 error。
-3. 仍保留 1 条既有 warning：
-   - `bom-table.tsx` 中 `useReactTable()` 的 `react-hooks/incompatible-library`
-   - 这是 TanStack Table 的既有兼容性提示，不是本轮新增错误。
-
-### 当前结果判断
-
-到这一步，engineering 内关于 BOM 版本字段的治理已经从：
-
-1. `bomNo / bomVersion` 的 normalization
-
-进一步扩展到了：
-
-2. `bomDisplayVersion` 的前端单一来源治理
-
-下一步若继续推进，最合理的是：
-
-1. 进一步确认后端是否真的需要持久化 `bomDisplayVersion`
-2. 若后端不依赖，继续评估在 schema / mutation-types / save payload 中进一步弱化或移除它
-3. 继续盘点 BOM / ECO 侧是否还有其它明确控制字段值得纳入同类治理
-
-## 2026-04-12 - architecture：BOM/ECO 生命周期与生效控制字段治理
-
-### 本轮目标
-
-继续沿着 BOM/ECO 头部控制字段推进，不再新增编号/版本字段，而是收口两类控制语义：
-
-1. **生命周期枚举控制字段**
-   - `changeType`
-   - `status`
-2. **生效日期边界字段**
-   - `effectiveFrom`
-   - `effectiveTo`
-
-这一批的目标不是 machine code normalization，而是统一：
-
-1. form 初始化
-2. 表单输入
-3. 提交保存边界
-4. table / preview 展示口径
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/lib/codecs/code-normalization.ts`
-2. `src/features/engineering/hooks/use-bom-form.ts`
-3. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
-4. `src/features/engineering/services/bom-service.ts`
-5. `src/features/engineering/components/bom-mgmt/bom-table.tsx`
-6. `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
-
-### 关键实现点
-
-1. **公共规范函数**
-   - 在 `code-normalization.ts` 中新增：
-     - `normalizeBomChangeType`
-     - `normalizeBomStatus`
-     - `normalizeBomEffectiveDate`
-   - 其中：
-     - `changeType` 被收口为稳定枚举：`MANUAL | ECO | ECN`
-     - `status` 被收口为稳定枚举：`draft | active | archived`
-     - `effectiveFrom / effectiveTo` 统一收口为 `YYYY-MM-DD` 边界字符串
-
-2. **表单初始化与回填口径**
-   - `use-bom-form.ts`
-     - 默认值改为统一走：
-       - `normalizeBomChangeType('MANUAL')`
-       - `normalizeBomStatus('active')`
-     - 编辑态回填统一规范：
-       - `changeType`
-       - `status`
-       - `effectiveFrom`
-       - `effectiveTo`
-     - 新建态初始化同样走统一默认口径
-
-3. **表单输入与回填交互口径**
-   - `bom-form-header.tsx`
-     - 选择 change order 后回填 `changeType` 时改为统一走 `normalizeBomChangeType`
-     - 回填 `effectiveFrom / effectiveTo` 时改为统一走 `normalizeBomEffectiveDate`
-     - 新增统一的字段读取与输入处理入口：
-       - `getNormalizedFieldValue`
-       - `handleNormalizedFieldChange`
-     - `changeType / status / effectiveFrom / effectiveTo` 不再依赖局部字符串直写或零散 `slice(0, 10)`
-
-4. **保存边界兜底**
-   - `bom-service.ts`
-     - 保存前统一规范：
-       - `changeType`
-       - `status`
-       - `effectiveFrom`
-       - `effectiveTo`
-   - 这样 create / patch 两条链路继续共享同一口径
-
-5. **展示层读取口径**
-   - `bom-preview.tsx`
-     - 预览页中的 `changeType` 改为统一走 `normalizeBomChangeType`
-     - 预览页中的 `effectiveFrom` 改为统一走 `normalizeBomEffectiveDate`
-   - `bom-table.tsx`
-     - 变更信息列中的 `changeType` 与 `effectiveFrom` 改为统一走公共规范函数
-     - 状态列中的 `status` 改为统一走 `normalizeBomStatus`
-
-### 字段分型结果
-
-到这一步，engineering 内和 BOM 相关的控制字段已经至少形成三种分型：
-
-1. **编号/版本控制字段**
-   - `bomNo`
-   - `bomVersion`
-   - `bomDisplayVersion`
-2. **变更控制字段**
-   - `changeOrderNo`
-   - `siteCode`
-   - `revisionNo`
-3. **生命周期与生效控制字段**
-   - `changeType`
-   - `status`
-   - `effectiveFrom`
-   - `effectiveTo`
-
-这说明当前治理已经不再只是“大小写清洗”，而是在逐步把 engineering 内部不同语义的字段收口成更清晰的 family。
-
-### 本轮收益
-
-1. `changeType / status` 不再依赖局部字符串直写，开始使用稳定枚举入口。
-2. `effectiveFrom / effectiveTo` 不再由多个组件各自 `slice(0, 10)`，开始统一走单一日期边界格式函数。
-3. form / service / table / preview 四层在这批字段上开始共享同一口径。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/lib/codecs/code-normalization.ts" "src/features/engineering/hooks/use-bom-form.ts" "src/features/engineering/components/bom-editor/bom-form-header.tsx" "src/features/engineering/services/bom-service.ts" "src/features/engineering/components/bom-mgmt/bom-table.tsx" "src/features/engineering/components/bom-mgmt/bom-preview.tsx"`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. TypeScript 类型检查通过。
-2. 目标文件 ESLint 无 error。
-3. `bom-table.tsx` 仍保留 1 条既有 warning：
-   - `useReactTable()` 的 `react-hooks/incompatible-library`
-   - 属于 TanStack Table 的既有兼容性提示，不是本轮新增问题。
-
-### 当前结果判断
-
-到这一步，BOM/ECO 头部最明确的一组控制字段已经基本完成首轮治理：
-
-1. 编号与版本控制
-2. display version 单一来源
-3. 生命周期与生效控制
-
-下一步若继续推进，最合理的是：
-
-1. 再确认 schema 层是否要进一步显式表达 `effectiveFrom / effectiveTo` 的日期格式约束
-2. 继续判断后端是否真的需要持久化 `bomDisplayVersion`
-3. 评估 BOM/ECO 侧是否还存在需要单独分型的其它头部控制字段
-
-## 2026-04-12 - architecture：BOM/ECO 生效日期 schema 约束显式化
-
-### 本轮目标
-
-在上一轮已经完成 `effectiveFrom / effectiveTo` 前端统一口径之后，继续把这组日期字段的要求下沉到 schema 层，补齐最终模型契约：
-
-1. 允许空值
-2. 非空时必须满足 `YYYY-MM-DD`
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/features/engineering/data/schema.ts`
-
-### 关键实现点
-
-1. **新增日期控制字段 schema**
-   - 在 `schema.ts` 中新增：
-     - `optionalControlDateSchema`
-   - 规则为：
-     - `trim()`
-     - `nullable()`
-     - `optional()`
-     - `regex(/^$|^\\d{4}-\\d{2}-\\d{2}$/)`
-
-2. **下沉到 masterDataControlSchema**
-   - `effectiveFrom`
-   - `effectiveTo`
-   - 两个字段都改为统一复用 `optionalControlDateSchema`
-
-### 当前契约结果
-
-到这一步，这两个字段在 schema 层的契约已经明确为：
-
-1. `undefined` 允许
-2. `null` 允许
-3. 空字符串允许
-4. 非空字符串必须满足 `YYYY-MM-DD`
-
-这与当前前端其它层的口径保持一致：
-
-1. `input type='date'`
-2. `normalizeBomEffectiveDate()`
-3. `use-bom-form / bom-form-header / bom-service`
-
-### 本轮收益
-
-1. `effectiveFrom / effectiveTo` 不再只是 UI 和 service 层约定，而是成为了显式 schema 契约。
-2. 历史 ISO 字符串仍可通过初始化层先裁剪，再安全进入表单。
-3. 日期边界要求在模型层可被直接验证，不再完全依赖组件实现细节。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/features/engineering/data/schema.ts" "src/features/engineering/hooks/use-bom-form.ts" "src/features/engineering/components/bom-editor/bom-form-header.tsx" "src/features/engineering/services/bom-service.ts"`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. 未见新增业务错误。
-2. 本轮未引入新的已知 lint / type 问题。
-
-### 当前结果判断
-
-到这一步，BOM/ECO 头部控制字段的治理已经进一步从：
-
-1. 前端统一口径
-
-下沉到了：
-
-2. **schema 契约显式表达**
-
-这意味着 `effectiveFrom / effectiveTo` 这组字段已经同时具备：
-
-1. 输入层统一
-2. 保存层统一
-3. 展示层统一
-4. 模型层显式验证
-
-## 2026-04-12 - architecture：BOM `bomDisplayVersion` 请求/响应口径分离
-
-### 本轮目标
-
-在确认 `bomDisplayVersion` 后端本质上只是响应派生字段后，继续把请求口径与响应口径分离：
-
-1. 前端不再主动把 `bomDisplayVersion` 当作可写字段提交
-2. 后端 `SaveBOMInput` 不再通过完整模型隐式接收该字段
-3. 继续保留响应阶段的 `bomDisplayVersion` 派生兼容
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/features/engineering/mutation-types.ts`
-2. `src/features/engineering/services/bom-service.ts`
-3. `server/services/engineering_master_service.go`
-
-### 关键实现点
-
-1. **前端输入类型收口**
-   - `mutation-types.ts`
-   - 将：
-     - `SaveBOMInput = BOM`
-   - 收口为：
-     - `SaveBOMInput = Omit<BOM, 'bomDisplayVersion'>`
-   - 这样 `bomDisplayVersion` 在前端类型层面不再被视为可写提交字段。
-
-2. **前端 save payload 收口**
-   - `bom-service.ts`
-   - `normalizeBOMInput()` 不再构造或附带 `bomDisplayVersion`
-   - 保存时仅提交真正可写字段，例如：
-     - `bomNo`
-     - `bomVersion`
-     - `changeType`
-     - `status`
-     - `effectiveFrom`
-     - `effectiveTo`
-
-3. **后端输入 DTO 收口**
-   - `engineering_master_service.go`
-   - 将：
-     - `type SaveBOMInput models.BOM`
-   - 改为明确的输入 DTO 结构
-   - 这个输入 DTO 只保留真正可写字段，不再通过完整模型隐式容纳 `DisplayVersion`
-   - 同时新增：
-     - `func (input SaveBOMInput) toModel() models.BOM`
-   - 由该函数统一映射到持久化模型
-
-4. **响应兼容层保持不动**
-   - 本轮没有删除：
-     - `resolveBOMDisplayVersion()`
-     - `hydrateBOMDerivedFields()`
-   - 继续保留后端响应里的 `bomDisplayVersion` 派生结果，避免破坏现有前端展示兼容。
-
-### 当前结果判断
-
-到这一步，`bomDisplayVersion` 的角色在前后端都进一步清晰了：
-
-1. **不是可写请求字段**
-2. **不是数据库持久化字段**
-3. **是响应阶段派生字段**
-
-这意味着 BOM 版本相关字段已经形成较清晰的职责分层：
-
-1. `bomVersion` 负责业务版本值
-2. `bomDisplayVersion` 负责兼容展示输出
-
-### 本轮收益
-
-1. 前端 payload 不再继续提交冗余的 display 字段。
-2. 后端输入 DTO 不再通过完整模型把派生响应字段暴露为“可提交字段”。
-3. 请求/响应边界比之前更清晰，后续继续弱化 `bomDisplayVersion` 的历史负担会更安全。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/features/engineering/mutation-types.ts" "src/features/engineering/services/bom-service.ts"`
-2. `pnpm exec tsc --noEmit`
-3. `go test ./services ./handlers -run "BOM|Engineering"`
-
-结果：
-
-1. 前端 TypeScript 检查通过。
-2. 目标前端文件 ESLint 无 error。
-3. 后端 `services / handlers` 定向 Go 校验通过。
-
-### 当前阶段结论
-
-到这一步，`bomDisplayVersion` 已经完成从“前后端都可写的混合字段”向“响应派生字段”的进一步收口。后续如果继续推进，最自然的方向是：
-
-1. 继续盘点是否还有类似“请求 DTO 与响应 DTO 混用”的工程字段
-2. 或进一步评估是否要在后端响应层把 `version` / `bomVersion` 的命名关系整理得更清晰
-
-## 2026-04-12 - architecture：Product 主数据链路 write contract 收口
-
-### 本轮目标
-
-在完成 BOM 请求/响应口径分离后，继续排查 engineering 内部更底层的 DTO 边界问题，并优先收口 Product 主数据链路中最明显的结构性问题：
-
-1. `SaveProductInput = Product`
-
-目标是让 Product 保存输入不再直接复用完整响应/领域模型。
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `src/features/engineering/mutation-types.ts`
-2. `src/features/engineering/adapters/product-api-adapter.ts`
-3. `src/features/engineering/services/product-maintenance-service.ts`
-4. `src/features/engineering/hooks/use-product-write-actions.ts`
-
-### 关键实现点
-
-1. **SaveProductInput 收口为 write contract**
-   - `mutation-types.ts`
-   - 将：
-     - `SaveProductInput = Product`
-   - 收口为：
-     - `Omit<Product, 'id' | 'version' | 'createdAt'> & { id?: string; version?: number; createdAt?: string }`
-   - 这一步的核心意义不是改变行为，而是明确：
-     - 保存输入不是完整响应模型
-     - `id / version / createdAt` 在写入语义上属于单独控制字段
-
-2. **Product adapter 显式围绕 write contract 工作**
-   - `product-api-adapter.ts`
-   - `toProductApiDTO()` 继续负责 write contract 到 API DTO 的转换
-   - `PRODUCT_PATCH_FIELDS` 从 `keyof Product` 收口为 `keyof SaveProductInput`
-   - `buildProductDelta()` 因此不再默认以完整 Product 响应模型为 patch 字段全集
-
-3. **ProductMaintenanceService 输入边界同步收口**
-   - `product-maintenance-service.ts`
-   - `createProduct / patchProduct / saveProduct / bulkSyncProducts` 统一围绕 `SaveProductInput` 工作
-   - create 时显式构造 write payload，再交给 adapter 做 API DTO 转换
-
-4. **写入 hooks 跟随 write contract**
-   - `use-product-write-actions.ts`
-   - `saveProducts` 与 `syncProducts` 的 mutation 输入类型改为 `SaveProductInput[]`
-   - 保持现有页面使用方式不变，只收窄写入边界的类型语义
-
-### 轻量复核结果
-
-本轮还额外轻量复核了：
-
-1. `ProductAttributeCategory`
-2. `ProductAttributeOption`
-3. `ChangeOrder`
-
-当前判断如下：
-
-1. **ProductAttributeCategory / ProductAttributeOption**
-   - 前端已使用 `Omit<id | version>` 作为保存输入
-   - 虽然后端仍存在 `type SaveProductAttributeOptionInput models.ProductAttributeOption` 这类模型别名输入，但本轮尚未发现明确的派生展示字段被当作可写字段问题
-   - 现阶段更像是“后端输入 DTO 仍可进一步精细化”，不是立刻必须处理的高优先级问题
-
-2. **ChangeOrder**
-   - 前端已使用 `SaveChangeOrderInput`
-   - 当前链路中未见类似 `bomDisplayVersion` 这种明确的派生展示字段混入可写请求
-   - 仍可作为后续 DTO 精细化候选，但本轮没有足够收益去扩大范围
-
-因此，本轮决定：
-
-1. **只实施 Product 主链路收口**
-2. 其它三个候选仅记录复核结论，暂不扩大改动
-
-### 本轮收益
-
-1. Product 主数据保存输入不再直接等价于完整 Product 响应模型。
-2. Product adapter 与 ProductMaintenanceService 的职责边界更清晰。
-3. engineering 这条治理线开始从“字段规范化”继续下沉到“写入契约收口”。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint "src/features/engineering/mutation-types.ts" "src/features/engineering/adapters/product-api-adapter.ts" "src/features/engineering/services/product-maintenance-service.ts" "src/features/engineering/hooks/use-product-write-actions.ts"`
-2. `pnpm exec tsc --noEmit`
-
-结果：
-
-1. 目标文件 ESLint 无 error。
-2. TypeScript 类型检查通过。
-
-### 当前阶段结论
-
-到这一步，engineering 内部 DTO 边界治理的优先级已经更清晰：
-
-1. **BOM 请求/响应分离** 已完成
-2. **Product write contract 收口** 已完成
-3. `ProductAttributeCategory / ProductAttributeOption / ChangeOrder` 暂列为次级候选，当前无需扩大实施
-
-## 2026-04-12 - architecture：Product 后端保存链路 DTO 收口
-
-### 本轮目标
-
-在前端 Product write contract 已收口的基础上，继续让后端 Product 保存链路对齐契约边界：
-
-1. 保留现有 HTTP 请求字段兼容
-2. 保留现有 `ProductApiDTO` 响应契约稳定
-3. 将后端内部保存输入从宽 DTO 中进一步剥离出来
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `server/services/product_service_types.go`
-2. `server/services/product_master_service.go`
-
-### 关键实现点
-
-1. **新增内部 ProductWriteInput**
-   - 在 `product_service_types.go` 中新增 `ProductWriteInput`
-   - 它只服务于后端 service 内部写入流程
-   - 目的是把：
-     - 外部 HTTP 输入 DTO
-     - 内部保存输入
-   - 这两层语义明确分开
-
-2. **保留 `SaveProductAPIRequest` 作为外部 HTTP 输入 DTO**
-   - 本轮没有改动 handler 对外绑定类型
-   - `SaveProductHandler` 仍然接收：
-     - `SaveProductAPIRequest`
-   - 这样可以保持现有前端请求兼容
-
-3. **新增 `toProductWriteInput()` 转换**
-   - 将 `SaveProductAPIRequest` 转为内部 `ProductWriteInput`
-   - 后端后续保存、PATCH 合成、批量同步不再直接在 `SaveProductAPIRequest` 上做内部流转
-
-4. **`toProductModel()` 改为只接收 `ProductWriteInput`**
-   - 这样 `models.Product` 的构造只从内部 write input 出发
-   - 不再让外部 HTTP DTO 直接承担内部模型映射职责
-
-5. **保存主路径改为统一走 `saveProductFromWriteInput()`**
-   - 在 `product_master_service.go` 中抽出：
-     - `saveProductFromWriteInput(input ProductWriteInput)`
-   - 然后：
-     - `SaveProduct()` 先把 `SaveProductAPIRequest` 转成 `ProductWriteInput`
-     - 再交给统一保存逻辑
-
-6. **PATCH 合成路径改为围绕 `ProductWriteInput` 工作**
-   - `BuildProductPatchInput()` 返回值由：
-     - `SaveProductAPIRequest`
-   - 改为：
-     - `ProductWriteInput`
-   - 当前 delta 字段白名单保持不变
-   - 只是把 patch 合成目标从宽 DTO 换成更明确的内部 write input
-
-7. **批量同步路径改为先转内部 write input**
-   - `BulkSyncProducts()` 仍接收外部 payload：
-     - `BulkSyncProductsAPIPayload`
-   - 但内部改为：
-     - `SaveProductAPIRequest -> ProductWriteInput -> models.Product`
-   - 从而弱化 `SaveProductAPIRequest` 在 service 内部的职责扩散
-
-### 本轮未扩大范围的部分
-
-本轮刻意保持不动：
-
-1. `ProductApiDTO` 响应契约
-2. handler 对外请求字段名
-3. `templateKey` 的外部兼容字段
-
-原因是本轮的目标是**输入层职责收口**，不是一口气重构整个 Product API 契约。
-
-### 本轮收益
-
-1. 后端 Product 链路已经形成更清晰的三段分层：
-   - HTTP 输入 DTO
-   - 内部 write input
-   - 响应 DTO
-
-2. `SaveProductAPIRequest` 不再继续承担所有内部保存职责。
-
-3. `SaveProduct / BuildProductPatchInput / BulkSyncProducts` 的内部输入语义已统一到同一条 write input 线上。
-
-4. 前端已经收口的 Product write contract，现在在后端也有了更明确的对应层次。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./services ./handlers -run "Product|Engineering"`
-2. `go test ./services ./handlers -run ^$`
-
-结果：
-
-1. Product / Engineering 定向 Go 校验通过。
-2. `services / handlers` 空跑编译校验通过。
-
-### 当前阶段结论
-
-到这一步，Product 主数据链路已经在前后端两侧都完成了第一轮 DTO 边界收口：
-
-1. 前端已不再把完整 `Product` 直接当保存输入
-2. 后端也已不再让 `SaveProductAPIRequest` 继续充当唯一的内部保存模型
-
-这意味着 engineering 这条治理线已经从“字段规范化”继续推进到了“请求/内部写入/响应”三层契约边界的实际落地。
-
-## 2026-04-12 - architecture：Product `templateKey` 字段角色显式化
-
-### 本轮目标
-
-在 Product 主数据链路前后端 DTO 收口的基础上，继续把 `templateKey` 的字段角色讲清楚：
-
-1. 它不是保存字段
-2. 它来自后端派生
-3. 它只作为响应兼容字段保留
-
-### 本轮实现
-
-本轮没有继续扩大业务逻辑改动，而是采用“最小行为变更 + 回归测试补强”的方式落地：
-
-1. 复核后端当前事实：
-   - `models.Product.TemplateKey` 使用 `gorm:"-"`
-   - `ProductWriteInput` 不包含 `templateKey`
-   - `BuildProductPatchInput()` 的白名单不包含 `templateKey`
-   - `BulkSyncProducts()` 也不会写入 `templateKey`
-
-2. 新增定向测试文件：
-   - `server/services/product_master_service_test.go`
-
-### 新增测试点
-
-1. **`BuildProductPatchInput()` 拒绝 `templateKey` delta**
-   - 新增测试：
-     - `TestBuildProductPatchInputRejectsTemplateKeyDelta`
-   - 目的：证明 `templateKey` 不属于 Product PATCH 可写字段白名单
-
-2. **`templateKey` 只来自派生链路**
-   - 新增测试：
-     - `TestApplyDerivedTemplateKeysDerivesFromProductTypeTemplate`
-   - 目的：证明当：
-     - `Product.TypeID`
-     - `ProductType.TemplateID`
-     - `ProductTemplate.ComponentKey`
-   - 建立关联后，`GetProductByID()` 返回的 `TemplateKey` 来自派生，而不是来自保存输入
-
-### 本轮收益
-
-1. `templateKey` 的事实角色被进一步锁定为：
-   - **非持久化字段**
-   - **非可写字段**
-   - **响应派生字段**
-
-2. 后续即使有人误把 `templateKey` 塞回 PATCH 或输入模型，也更容易被测试拦住
-
-3. Product 主链路的 DTO 边界现在不仅靠实现约束，也开始有测试约束兜底
-
-### 验证结果
-
-已执行：
-
-1. `go test ./services -run "Product|TemplateKey"`
-2. `go test ./services ./handlers -run ^$`
-
-结果：
-
-1. `templateKey` 定向服务层测试通过
-2. `services / handlers` 编译校验通过
-
-### 当前阶段结论
-
-到这一步，Product 主数据链路中 `templateKey` 的字段角色已经被进一步显式化：
-
-1. 不落库
-2. 不进入 save / patch / bulk sync 输入模型
-3. 继续保留为后端派生的响应兼容字段
-
-这意味着 Product 这条主链路中最容易产生“看起来像可写、实际上是派生”的边界模糊点，已经基本收口完成。
-
-## 2026-04-12 - architecture：engineering 次级候选后端 DTO 收口
-
-### 本轮目标
-
-在 Product / BOM 主链路已经完成多轮 DTO 收口之后，继续清理 engineering 次级候选中的后端输入边界问题：
-
-1. `ChangeOrder`
-2. `ProductAttributeCategory`
-3. `ProductAttributeOption`
-
-其中本轮优先级是：
-
-1. 先收口 `ChangeOrder`
-2. 再最小收口 `ProductAttributeCategory / ProductAttributeOption` 的 create 输入 DTO
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `server/services/engineering_master_service.go`
-2. `server/services/product_attribute_category_service.go`
-3. `server/services/product_attribute_option_service.go`
-4. `server/handlers/product_attribute_category.go`
-5. `server/handlers/product_attribute_option.go`
-
-### 关键实现点
-
-1. **ChangeOrder 不再直接把 save input 当作模型别名使用**
-   - `engineering_master_service.go`
-   - 将 `SaveChangeOrderInput` 从：
-     - `models.ChangeOrder` 的直接别名
-   - 收口为显式的后端保存输入 DTO
-   - 新增：
-     - `toChangeOrderModel()`
-   - 让 `SaveChangeOrder()` 改为围绕明确输入 DTO 转模型，而不是继续直接类型转换进 `models.ChangeOrder`
-
-2. **ProductAttributeCategory create 路径不再直接绑定模型**
-   - `product_attribute_category_service.go`
-   - 新增显式的：
-     - `SaveProductAttributeCategoryInput`
-     - `toProductAttributeCategoryModel()`
-   - `CreateProductAttributeCategory()` 改为接收 save input，再转换为 `models.ProductAttributeCategory`
-   - `product_attribute_category.go` 中 create 分支也改为绑定 `services.SaveProductAttributeCategoryInput`
-
-3. **ProductAttributeOption create 路径不再继续使用模型别名输入**
-   - `product_attribute_option_service.go`
-   - 将：
-     - `type SaveProductAttributeOptionInput models.ProductAttributeOption`
-   - 收口为显式 struct DTO
-   - 新增：
-     - `toProductAttributeOptionModel()`
-   - `CreateProductAttributeOption()` 改为接收 save input，再转换为模型
-   - `product_attribute_option.go` 中 create 分支改为绑定 `services.SaveProductAttributeOptionInput`
-
-### 本轮刻意不扩大的范围
-
-本轮有意保持以下范围不动：
-
-1. `ChangeOrder` 响应阶段仍保持现有返回结构
-2. `ProductAttributeCategory / ProductAttributeOption` 的 patch 路径继续沿用现有字段白名单逻辑
-3. 不顺手改 Product / BOM 已稳定链路
-
-原因是本轮目标是**后端输入层收口**，而不是再次扩大到完整响应 DTO 重构。
-
-### 本轮收益
-
-1. `ChangeOrder` 已不再继续使用模型别名充当后端保存输入。
-2. `ProductAttributeCategory / ProductAttributeOption` 的 create 路径已去掉模型直绑。
-3. engineering 次级候选的后端输入边界开始向 Product/BOM 已建立的治理方式靠拢。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./services ./handlers -run "ChangeOrder|ProductAttribute"`
-2. `go test ./services ./handlers -run ^$`
-
-结果：
-
-1. ChangeOrder / ProductAttribute 定向 Go 校验通过。
-2. `services / handlers` 编译校验通过。
-
-### 当前阶段结论
-
-到这一步，engineering 内部的 DTO 治理已经从主链路继续推进到次级候选：
-
-1. `ChangeOrder` 已完成后端保存输入收口
-2. `ProductAttributeCategory / ProductAttributeOption` 已完成 create 输入去模型直绑
-3. 当前后续若继续推进，更适合评估是否要统一这些次级链路的响应 DTO 或 patch contract，但这已经不是本轮必须动作
-
-## 2026-04-12 - architecture：ChangeOrder 响应 DTO 显式化
-
-### 本轮目标
-
-在 `ChangeOrder` 输入层已经完成收口的基础上，继续把其响应层从“模型直出”收口到显式 DTO / mapper 出口：
-
-1. 统一 list / options / save 三个出口
-2. 保持现有字段名兼容
-3. 不扩大到独立 patch API
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `server/handlers/change_order_api_dto.go`
-2. `server/handlers/change_order_mapper.go`
-3. `server/handlers/change_orders.go`
-
-### 关键实现点
-
-1. **新增 `ChangeOrderApiDTO`**
-   - 在 `change_order_api_dto.go` 中定义显式响应 DTO
-   - 保持现有字段名不变，包括：
-     - `id`
-     - `changeOrderNo`
-     - `title`
-     - `productId`
-     - `status`
-     - `revisionNo`
-     - `_v`
-   - 同时保留 `product` 的兼容出口；若当前查询场景未 preload，则该字段可为空
-
-2. **新增 `ChangeOrderListPageApiDTO`**
-   - 用类型化分页响应替代匿名 `gin.H`
-   - 明确分页输出结构：
-     - `items`
-     - `total`
-     - `page`
-     - `pageSize`
-
-3. **新增 mapper 出口**
-   - 在 `change_order_mapper.go` 中新增：
-     - `toChangeOrderApiDTO()`
-     - `toChangeOrderApiDTOs()`
-   - 响应映射统一从这里出，避免 handler 继续直接回传 `models.ChangeOrder`
-
-4. **统一 `GetChangeOrdersHandler` 的 list / options 出口**
-   - `options=true` 时改为返回：
-     - `toChangeOrderApiDTOs(items)`
-   - 普通列表分页时改为返回：
-     - `ChangeOrderListPageApiDTO`
-     - 其中 `items` 来自 `toChangeOrderApiDTOs(items)`
-
-5. **统一 `SaveChangeOrderHandler` 的保存返回出口**
-   - 保存成功后改为返回：
-     - `toChangeOrderApiDTO(saved)`
-   - 从而让 save/list/options 三个出口都共享同一响应映射层
-
-### 兼容策略
-
-本轮刻意保持兼容：
-
-1. **不改前端字段名**
-2. **不删除 `product` 字段**
-3. **不强制让 options 与 list 完全同态**
-
-也就是说，当前仍允许：
-
-1. options 场景没有 preload `Product`，因此 `product` 为空
-2. list / save 场景若 preload 了 `Product`，则继续透出该字段
-
-但无论哪种场景，现在都已经改为**通过 DTO / mapper 显式出口返回**，而不是直接从模型直出。
-
-### 本轮收益
-
-1. `ChangeOrder` 的响应层已经不再继续直接暴露 `models.ChangeOrder`。
-2. list / options / save 三条路径已经统一到同一套 DTO 映射出口。
-3. 后续如果要继续治理 `ChangeOrder` 的 options 精简 DTO 或详情 DTO，已经有了稳定入口。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./handlers ./services -run "ChangeOrder"`
-2. `go test ./handlers ./services -run ^$`
-
-结果：
-
-1. ChangeOrder 定向 Go 校验通过。
-2. `handlers / services` 编译校验通过。
-
-### 当前阶段结论
-
-到这一步，`ChangeOrder` 已经完成了两层关键收口：
-
-1. 输入层不再直接围绕模型别名保存
-2. 响应层不再直接模型直出，而是改为显式 DTO / mapper 出口
-
-这意味着 engineering 次级候选里最复杂的一条链路，已经从“请求/保存/响应混用”明显推进到更清晰的契约边界状态。
-
-## 2026-04-12 - architecture：ChangeOrder options DTO 瘦身
-
-### 本轮目标
-
-在 `ChangeOrder` 已经具备统一响应 DTO 出口的基础上，继续把 `options=true` 场景从较丰满的通用 DTO 中分离出来，显式收口为最小字段集：
-
-1. 为 options 建立独立 DTO
-2. 保持 list / save 继续沿用现有 `ChangeOrderApiDTO`
-3. 不改前端字段名与现有读取逻辑
-
-### 本轮实现
-
-本轮实际涉及的文件包括：
-
-1. `server/handlers/change_order_api_dto.go`
-2. `server/handlers/change_order_mapper.go`
-3. `server/handlers/change_orders.go`
-
-### 关键实现点
-
-1. **新增 `ChangeOrderOptionsApiDTO`**
-   - 在 `change_order_api_dto.go` 中新增最小 options DTO
-   - 当前保留字段包括：
-     - `id`
-     - `changeOrderNo`
-     - `title`
-     - `changeType`
-     - `productId`
-     - `siteCode`
-     - `isDefaultSite`
-     - `revisionNo`
-     - `effectiveFrom`
-     - `effectiveTo`
-     - `status`
-     - `_v`
-
-2. **新增 options mapper**
-   - 在 `change_order_mapper.go` 中新增：
-     - `toChangeOrderOptionsApiDTO()`
-     - `toChangeOrderOptionsApiDTOs()`
-   - 让 options 场景不再继续共享较丰满的 `ChangeOrderApiDTO`
-
-3. **收口 `options=true` 分支返回口径**
-   - `change_orders.go` 中将：
-     - `options=true`
-   - 改为返回：
-     - `toChangeOrderOptionsApiDTOs(items)`
-
-4. **保持 list / save 现有口径不变**
-   - 普通列表分页仍返回：
-     - `ChangeOrderListPageApiDTO`
-     - 内部 items 为 `ChangeOrderApiDTO`
-   - 保存成功仍返回：
-     - `ChangeOrderApiDTO`
-
-### 兼容策略
-
-本轮继续保持兼容优先：
-
-1. **不修改字段名**
-2. **不改 list / save DTO**
-3. **不调整前端 schema / service / tab 读取逻辑**
-
-因此，这一步的本质是：
-
-1. 仅让 options 场景显式瘦身
-2. 不改变现有页面主要依赖的 list / save 返回结构
-
-### 本轮收益
-
-1. `ChangeOrder` 的 options 返回语义已经与 list / save 显式分离。
-2. `options=true` 不再继续共享较丰满 DTO，契约意图更清晰。
-3. 后续若需要把 options 用于更轻量的下拉、选择器或缓存层，已经有明确稳定入口。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./handlers ./services -run "ChangeOrder"`
-2. `go test ./handlers ./services -run ^$`
-
-结果：
-
-1. ChangeOrder 定向 Go 校验通过。
-2. `handlers / services` 编译校验通过。
-
-### 当前阶段结论
-
-到这一步，`ChangeOrder` 的响应层已经从“单一 DTO 包打天下”进一步演进为：
-
-1. `options=true` 走最小字段集 DTO
-2. `list / save` 继续走较丰满的通用 DTO
-
-这使得 `ChangeOrder` 的响应语义开始显式分层，同时仍把回归风险控制在很低的范围内。
-
-## 2026-04-12 - architecture：ChangeOrder 响应分层定向测试
-
-### 本轮目标
-
-在 `ChangeOrder` 已经完成响应分层之后，补充最小但关键的 handler 定向测试，把当前契约边界固定下来：
-
-1. 锁定 `options=true` 的最小字段集
-2. 锁定普通 list 分页结构与较丰满 DTO 兼容出口
-3. 锁定 save 成功响应继续返回 `ChangeOrderApiDTO`
-
-### 本轮实现
-
-本轮新增文件：
-
-1. `server/handlers/change_orders_test.go`
-
-### 测试实现点
-
-1. **新增独立的 ChangeOrder handler 测试基建**
-   - 在测试文件内创建最小 SQLite 表结构：
-     - `products`
-     - `change_orders`
-   - 复用 `setupHandlerSQLiteTestDB()` 作为基础设施
-
-2. **覆盖 `options=true` 最小字段集断言**
-   - 新增：
-     - `TestGetChangeOrdersHandlerOptionsReturnsMinimalDTO`
-   - 验证返回 item 包含：
-     - `id`
-     - `changeOrderNo`
-     - `title`
-     - `changeType`
-     - `productId`
-     - `siteCode`
-     - `isDefaultSite`
-     - `revisionNo`
-     - `effectiveFrom`
-     - `effectiveTo`
-     - `status`
-     - `_v`
-   - 同时验证**不包含**：
-     - `product`
-     - `description`
-     - `createdAt`
-     - `updatedAt`
-
-3. **覆盖普通 list 分页结构与兼容字段**
-   - 新增：
-     - `TestGetChangeOrdersHandlerListReturnsPagedDTO`
-   - 验证响应仍包含：
-     - `items`
-     - `total`
-     - `page`
-     - `pageSize`
-   - 同时验证 item 仍保留较丰满 DTO 字段，例如：
-     - `description`
-     - `createdAt`
-     - `updatedAt`
-     - `_v`
-
-4. **覆盖 save 成功响应兼容出口**
-   - 新增：
-     - `TestSaveChangeOrderHandlerReturnsChangeOrderAPIDTO`
-   - 采用**更新成功场景**而不是新建场景：
-     - 复用已 seed 的 change order
-     - 避免 SQLite 测试表对自动主键生成能力的依赖
-   - 验证保存成功后响应仍保留：
-     - `description`
-     - `createdAt`
-     - `updatedAt`
-     - `_v`
-
-### 调整与问题处理
-
-本轮测试实现中间遇到两个测试层问题，并都已收口：
-
-1. **SQLite 测试表不具备业务库的主键自动生成能力**
-   - 直接走新建保存场景时，会触发 `change_orders.id` 非空约束失败
-
-2. **给新建请求手工补 `id` 后，会被服务层识别为更新路径**
-   - 由于对应记录不存在，进一步触发 `record not found`
-
-最终处理方式是：
-
-1. 将 save 测试改为**更新成功场景**
-2. 这样既能验证 handler 的响应 DTO 兼容出口
-3. 又避免把测试耦合到 SQLite 对主键默认值的差异上
-
-### 本轮收益
-
-1. `ChangeOrder` 的响应分层已不再只靠人工约定，而是有测试护栏。
-2. `options=true` 最小字段集与 list/save 兼容出口已被显式锁定。
-3. 后续若有人把 `product` 或其它丰满字段误加回 options 口径，测试会第一时间暴露回归。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./handlers -run "ChangeOrder"`
-
-结果：
-
-1. ChangeOrder handler 定向测试通过。
-
-### 当前阶段结论
-
-到这一步，`ChangeOrder` 已经不仅完成了输入与响应契约收口，也补上了针对响应分层的定向测试护栏。这使得这条 engineering 次级候选链路从“口径逐步收清”进一步进入“已有测试保障可持续演进”的状态。
-
-## 2026-04-12 - architecture：ChangeOrder 负向 handler 测试
-
-### 本轮目标
-
-在 `ChangeOrder` 成功路径与响应分层已有测试护栏的基础上，继续补齐 `SaveChangeOrderHandler` 的关键失败路径：
-
-1. `400 validation`
-2. `400 invalid payload`
-3. `409 version conflict`
-
-### 本轮实现
-
-本轮继续在现有文件中扩展：
-
-1. `server/handlers/change_orders_test.go`
-
-### 测试实现点
-
-1. **覆盖必填字段缺失时的 `400 validation`**
-   - 新增：
-     - `TestSaveChangeOrderHandlerRejectsMissingRequiredFields`
-   - 使用 `changeOrderNo` 为空、`title` 为空的 payload
-   - 验证：
-     - 返回 `400`
-     - 响应包含：
-       - `change order number and title are required`
-
-2. **覆盖非法 JSON / 绑定失败时的 `400 validation`**
-   - 新增：
-     - `TestSaveChangeOrderHandlerRejectsInvalidPayload`
-   - 直接提交非法 JSON
-   - 验证：
-     - 返回 `400`
-     - 响应包含：
-       - `invalid change order payload`
-
-3. **覆盖版本冲突时的 `409` 语义**
-   - 新增：
-     - `TestSaveChangeOrderHandlerReturnsConflictOnVersionMismatch`
-   - 复用已 seed 的 `ChangeOrder`
-   - 通过提交过期 `version` 触发冲突
-   - 验证：
-     - 返回 `409`
-     - 响应包含统一 conflict 文案：
-       - `数据已被更新，请刷新后重试`
-     - 响应包含统一 conflict code：
-       - `CONFLICT`
-
-### 本轮收益
-
-1. `SaveChangeOrderHandler` 的失败路径不再只靠人工约定。
-2. `400 validation` 与 `409 version conflict` 的高价值语义已经被显式锁定。
-3. 后续如果有人误把这些场景退化成泛化 `500`，测试会第一时间暴露回归。
-
-### 验证结果
-
-已执行：
-
-1. `go test ./handlers -run "ChangeOrder"`
-
-结果：
-
-1. ChangeOrder handler 正向 + 负向定向测试通过。
-
-### 当前阶段结论
-
-到这一步，`ChangeOrder` 这条次级候选链路已经同时具备：
-
-1. 输入层契约收口
-2. 响应分层收口
-3. 成功路径测试护栏
-4. 关键失败路径测试护栏
-
-这意味着它已经从“契约逐步显式化”进一步进入“关键成功/失败语义都已有测试保障”的状态。
-
-## 2026-04-12 - architecture：selectedVariants 初始化规则收口
-
-### 本轮目标
-
-收口产品表单里 `selectedVariants` 的初始化规则，避免 `Version Level / Weight` 这类多版本核心数据继续散落在多个 `useEffect` 条件判断里。
-
-### 本轮实现
-
-本轮新增文件：
-
-1. `src/features/engineering/commands/product-command.ts`
-
-本轮修改文件：
-
-1. `src/features/engineering/hooks/use-product-form.ts`
-2. `src/features/engineering/hooks/use-product-form-init.ts`
-
-### 实现细节
-
-1. **新增统一初始化命令入口**
-   - 新增 `ProductCommand.composeInitialState()`
-   - 统一输入：
-     - `isEdit`
-     - `currentRow`
-     - `versionLevelOptions`
-     - `baseValues`
-   - 统一输出：
-     - `formValues`
-     - `selectedVariants`
-
-2. **把 edit 场景初始化从 hooks 条件中抽离**
-   - 原先 edit 场景会在 `use-product-form-init.ts` 内部：
-     - 手工补 `engineeringSpecId`
-     - 再从 `currentRow.attributeValues.versionLevel + currentRow.weight` 组装 `selectedVariants`
-   - 现在这些逻辑统一由 `ProductCommand.composeInitialState()` 负责。
-
-3. **把 create 场景默认首个版本选取策略收口**
-   - 原先 metadata 加载完成后：
-     - 非编辑态
-     - `selectedVariants` 为空
-     - 才在 effect 内默认取第一个 `versionLevelOptions`
-   - 现在改为通过 `composeInitialState()` 统一产出。
-
-4. **让 `use-product-form` 默认值来源与命令入口对齐**
-   - 原先 `useForm` 的 `defaultValues` 直接来自 `buildDefaultProductValues()`。
-   - 现在改为来自 `ProductCommand.composeInitialState()` 的 `formValues`。
-
-5. **让 `use-product-form-init` 只消费统一初始态结果**
-   - 打开弹窗时：
-     - 统一调用 `composeInitialState()`
-     - 同时 reset `formValues`
-     - 同时设置 `selectedVariants`
-   - metadata 加载后仅在 create 且当前为空时，继续复用同一个命令入口补齐默认版本选择。
-
-### 保持不变的边界
-
-本轮刻意没有扩大范围：
-
-1. 没有改 `buildBatchProducts`
-2. 没有改 `buildSingleVariantProduct`
-3. 没有改 `handleVariantToggle / updateVariantWeight`
-4. 没有改后端 DTO 或服务层
-
-### 本轮收益
-
-1. `selectedVariants` 的初始化逻辑终于有了单一来源。
-2. create / edit 的表单初始值与多版本初始值不再分散在多个 effect 中各自维护。
-3. 后续如果 `Version Level / Weight` 的初始化策略再变化，只需要改 `ProductCommand.composeInitialState()`，而不是同步修改多处副作用逻辑。
-
-### 验证结果
-
-已执行：
-
-1. `pnpm exec eslint src/features/engineering/hooks/use-product-form.ts src/features/engineering/hooks/use-product-form-init.ts src/features/engineering/commands/product-command.ts`
+1. `pnpm exec eslint src/features/engineering/hooks/use-bom-data.ts src/features/engineering/services/bom-excel-parser.ts src/features/engineering-db/components/drilling-action-dialog.tsx`
 2. `pnpm exec tsc --noEmit`
 
 结果：
@@ -1730,4 +64,896 @@
 
 ### 当前阶段结论
 
-这一步把 `selectedVariants` 从“分散在 hooks 副作用中的初始化细节”提升为了“由统一命令入口负责的产品初始态规则”。虽然本轮没有继续扩到提交链路，但已经先把最核心、最容易漂移的初始化边界收了回来。
+这一步把第二十一轮的真实问题按最小边界收口：BOM Excel 导入不再把客户端的 `standardUsage` 当作可直接落库的派生值；`use-bom-data.ts` 的乱码报错块已被移除；`drilling-action-dialog.tsx` 的大面积字符集损坏也已恢复可读，同时保持了“当前未实锤钻孔权威公式泄露”的审计结论，没有把本轮扩大成不存在的联动算法整改。
+
+## 2026-04-12 - audit：第二十二轮审计修复（Sales Order 摘要 authority + i18n fallback gap + use-products 生命周期审计）
+
+### 本轮目标
+
+围绕两个实锤问题和一个非实锤点做最小、可验证收口：
+
+1. 收口订单证据区标题的英文硬编码兜底
+2. 为 `use-products.ts` 的 `options / page` 模式补生命周期边界
+3. 保留销售详情摘要金额 authority 的真实审计结论，不虚构不存在的前端重算整改
+
+### 本轮真实结论
+
+1. `useSalesOrderDetailSummaryViewModel` 当前未实锤前端重算订单总额
+2. 证据区标题存在 `Order Evidence` / `Purchase Evidence` 英文硬编码兜底
+3. `use-products.ts` 已支持 `mode: 'options' | 'page'`，但此前仍共用同一个 `staleTime`
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/trading/components/parts/order-evidence-gallery.tsx`
+2. `src/features/trading/components/parts/sales-order-detail-summary.tsx`
+3. `src/features/trading/components/purchase/purchase-order-detail.tsx`
+4. `src/features/engineering/hooks/use-products.ts`
+
+### 实现细节（i18n fallback 收口）
+
+1. **移除 `OrderEvidenceGallery` 内部英文兜底**
+   - 删除 `fallbackTitle?: string`
+   - 删除默认英文值 `Order Evidence`
+   - 删除 `t(titleKey) || fallbackTitle` 这类英文 fallback 路径
+
+2. **收口调用点**
+   - `sales-order-detail-summary.tsx` 不再传 `fallbackTitle='Order Evidence'`
+   - `purchase-order-detail.tsx` 不再传 `fallbackTitle='Purchase Evidence'`
+
+3. **本地化契约明确化**
+   - 标题统一直接走翻译键
+   - 不再允许组件 props 层用英文硬编码兜底
+
+### 实现细节（产品数据生命周期边界）
+
+1. **为 `useGetProducts()` 引入模式化 `staleTime`**
+   - `options`：`5 * 60 * 1000`
+   - `page`：`60 * 1000`
+
+2. **生命周期语义更清晰**
+   - 下拉 options 允许更长缓存
+   - 分页列表模式使用更短缓存，降低旧数据存留时间
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有对 `useSalesOrderDetailSummaryViewModel` 编造不存在的金额重算整改
+2. 没有把销售订单编辑态预览计算体系一次性重构
+3. 没有做全项目 i18n fallback 扫荡式改造
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/trading/components/parts/order-evidence-gallery.tsx src/features/trading/components/parts/sales-order-detail-summary.tsx src/features/trading/components/purchase/purchase-order-detail.tsx src/features/engineering/hooks/use-products.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十二轮的真实问题按最小边界收口：销售订单详情摘要没有被误改成前端金额重算逻辑；订单证据区的英文兜底已经移除；`use-products.ts` 也补上了按 `options / page` 区分的默认 `staleTime` 边界，从而让产品数据缓存语义更清晰，同时避免把本轮扩大成并不存在的财务 authority 整改工程。
+
+## 2026-04-12 - audit：第二十三轮审计修复（Material version lock authority + Excel 映射韧性 + filteredMaterials 影子逻辑核对）
+
+### 本轮目标
+
+围绕两个实锤问题和一个非实锤点做最小、可验证收口：
+
+1. 收口物料 patch 调用中的版本 fallback
+2. 提升物料 Excel 导入的映射韧性
+3. 保留 `filteredMaterials` 当前仅为引用重命名的结论，不虚构前端影子计算整改
+
+### 本轮真实结论
+
+1. `use-material-mgmt-data.ts` 里此前确实存在 `data.version || 1`
+2. `filteredMaterials` 当前只是 `materials` 的引用重命名，未实锤额外前端计算
+3. 物料导入链路的真实问题位于 `material-archive/services/excel-service.ts`
+4. 其问题主要是工作表定位、分类映射、全局版本与复合 ID 解析的韧性不足，而不是完全黑盒吞错
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/material-archive/hooks/use-material-mgmt-data.ts`
+2. `src/features/material-archive/services/excel-service.ts`
+3. `src/locales/messages/zh-CN/materialArchive.ts`
+4. `src/locales/messages/en-US/materialArchive.ts`
+
+### 实现细节（版本锁 authority 收口）
+
+1. **移除 patch 时的非权威版本降级**
+   - `use-material-mgmt-data.ts` 不再使用 `data.version || 1`
+   - 当 patch 缺失 `version` 时：
+     - `failLoudly(...)`
+     - 直接抛错
+
+2. **并发锁语义恢复强制性**
+   - patch 必须携带真实版本号
+   - 前端不再伪造默认版本 `1`
+
+### 实现细节（Excel 映射韧性提升）
+
+1. **收紧配置页校验**
+   - `parseMaterialExcel()` 现在要求 `__SYSTEM_CONFIG__` 必须存在
+   - `GLOBAL_MATERIAL_VERSION` 必须是有效正整数
+
+2. **收紧维护页定位**
+   - 不再默认回退到 `workbook.getWorksheet(1)`
+   - 未找到维护页时显式失败
+
+3. **收紧复合 ID 解析**
+   - 新增 `parseCompositeId()`
+   - 对 `id_version` 格式做显式校验
+   - 无效格式直接失败，不再弱解析
+
+4. **收紧分类映射**
+   - `categoryMap.get(categoryLabel)` 缺失时直接报错
+   - 不再把未映射标签原样透传到导入数据
+
+5. **补齐显式失败词条**
+   - `configSheetNotFound`
+   - `invalidGlobalVersion`
+   - `invalidCompositeId`
+   - `categoryMappingMissing`
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有对 `filteredMaterials` 编造不存在的影子计算整改
+2. 没有把整个物料导入体系一次性重构成全新平台
+3. 没有对 material archive 其它 hooks 做扫荡式重写
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/material-archive/hooks/use-material-mgmt-data.ts src/features/material-archive/services/excel-service.ts src/locales/messages/zh-CN/materialArchive.ts src/locales/messages/en-US/materialArchive.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十三轮的真实问题按最小边界收口：物料 patch 不再在版本缺失时静默降级到 `1`；物料 Excel 导入也从“工作表误命中 + 分类透传 + 版本语义偏弱”的宽松路径收紧为显式校验路径；同时 `filteredMaterials` 保持原样，因为当前并没有证据表明它承担了任何前端影子计算逻辑。
+
+## 2026-04-12 - audit：第二十四轮源码损坏收口（Critical Source Corruption / Engineering Core）
+
+### 本轮目标
+
+围绕源码级损坏风险做最小、可验证收口：
+
+1. 清理 `use-bom-form.ts` 中残留的前端降级语义
+2. 对 engineering / engineering-db 关键文件做一次定向乱码扫描
+3. 保持已恢复正常的核心文件稳定，不做无证据回滚
+
+### 本轮真实结论
+
+1. `use-bom-data.ts` 当前未见新的大面积乱码残留
+2. `drilling-action-dialog.tsx` 当前未见新的大面积乱码残留
+3. `use-bom-form.ts` 是本轮唯一仍需收口的高风险残留点
+4. 当前风险更集中在历史污染残留与前端降级语义，而不是语法结构被字符集损坏破坏
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/engineering/hooks/use-bom-form.ts`
+
+### 实现细节（use-bom-form.ts 残留污染收口）
+
+1. **移除编辑态的 `standardUsage` 前端降级**
+   - 不再使用 `standardUsage: item.standardUsage || 0`
+
+2. **移除初始化态的 `standardUsage` 前端降级**
+   - 不再在 `initialItems` 映射中写入 `standardUsage: item.standardUsage || 0`
+
+3. **authority 边界恢复**
+   - 表单只承接现有数据
+   - 不再在前端因缺失值而主动回填 `0`
+
+### 实现细节（定向乱码扫描）
+
+1. **对 `engineering` 做定向检索**
+   - 未发现新的大面积乱码残留
+
+2. **对 `engineering-db` 做定向检索**
+   - 未发现新的大面积乱码残留
+
+3. **扫描结论**
+   - 当前无需对 `use-bom-data.ts` 与 `drilling-action-dialog.tsx` 做重复性回滚或改写
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有把整个工程仓做全量编码迁移
+2. 没有对已恢复正常的 `use-bom-data.ts` / `drilling-action-dialog.tsx` 做无证据回滚
+3. 没有对 engineering 全域文件做扫荡式重写
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/engineering/hooks/use-bom-form.ts src/features/engineering/hooks/use-bom-data.ts src/features/engineering-db/components/drilling-action-dialog.tsx`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十四轮的真实风险按最小边界收口：`use-bom-form.ts` 中残留的 `standardUsage || 0` 前端降级语义已被移除；对 engineering / engineering-db 的定向扫描也没有再发现新的大面积乱码残留。因此当前更合理的结论不是“所有核心文件仍在持续损坏”，而是“历史字符集污染曾真实存在，当前剩余高风险残留点已继续缩小并完成定向收口”。
+
+## 2026-04-12 - audit：第二十五轮离线持久层收口（Persistence Layer Drift / Dexie Reuse）
+
+### 本轮目标
+
+围绕离线持久层漂移做最小、可验证收口：
+
+1. 让 `PersistenceService` 脱离轻量 IndexedDB KV authority 路径
+2. 复用项目内已有的 `OfflineStorage` / Dexie 骨架
+3. 不重复发明新的 Dexie schema 或第二套离线数据库
+
+### 本轮真实结论
+
+1. `PersistenceService` 当前并不直接使用 `localStorage`
+2. 真实问题是它此前仍绕开现有 Dexie 离线层，走另一套轻量 IndexedDB KV 路径
+3. 项目内已经有现成的 `snapshots + pendingDeltas + syncMeta + conflictRecords` 骨架可复用
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/system-mgmt/services/persistence-service.ts`
+2. `src/offline-sync/storage/offline-storage.ts`
+
+### 实现细节（PersistenceService 对齐 Dexie 骨架）
+
+1. **初始化改为直接检查 Dexie 离线库**
+   - `initLocalStore()` 不再调用轻量 `StorageService`
+   - 改为 `OfflineStorage.ensureReady()`
+
+2. **保存路径改为 snapshot + pending log + sync meta**
+   - `saveLocal()` 现在在事务中：
+     - 读取既有 snapshot
+     - 计算 `baseVersion / nextVersion`
+     - `saveSnapshot(...)`
+     - `enqueueDelta(...)`
+     - `upsertSyncMeta(...)`
+
+3. **删除路径改为 pending log + snapshot 移除 + sync meta 更新**
+   - `deleteLocal()` 不再直接删轻量 KV
+   - 改为在事务中记录 delete delta，并更新离线状态
+
+4. **读取与导出路径改为基于 snapshots**
+   - `getLocal()` 直接读取 `OfflineStorage.getSnapshot(...)`
+   - `getFullDataSnapshot()` 改为聚合 `listSnapshotsByEntityType(...)`
+
+### 实现细节（OfflineStorage 通用能力补齐）
+
+1. **补充 `ensureReady()`**
+   - 供 `PersistenceService` 启动期检测 Dexie 可用性
+
+2. **补充 snapshot 列表与删除能力**
+   - `listSnapshotsByEntityType(...)`
+   - `removeSnapshot(...)`
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有新建第二套 Dexie 数据库
+2. 没有重写整个 `offline-sync` 模块
+3. 没有把所有轻量 KV 使用点一次性替换
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/system-mgmt/services/persistence-service.ts src/offline-sync/storage/offline-storage.ts src/offline-sync/storage/dexie-offline-db.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十五轮的真实问题按最小边界收口：`PersistenceService` 已不再依赖轻量 IndexedDB KV 作为关键 authority 路径，而是直接复用项目现有的 Dexie / `OfflineStorage` 骨架来承接 `snapshot + pending log + sync meta` 语义。这样既对齐了离线重算架构，也避免了重复造轮子和继续维护两套并行的持久层抽象。
+
+## 2026-04-12 - audit：第二十六轮逻辑泄露收口（Mold Loan Authority + BOM Core Parameter）
+
+### 本轮目标
+
+围绕模具借还 authority 与 BOM 核心参数 false alarm 做最小、可验证收口：
+
+1. 收口模具借还状态的前端动态改写
+2. 复核借入场景的资产种子数据边界
+3. 保持 `use-bom-data.ts` 当前已收口的 `standardUsage` 边界，不扩写不存在的问题
+
+### 本轮真实结论
+
+1. `use-bom-data.ts` 当前未再实锤前端计算或回填 `standardUsage`
+2. 模具借还链路的实锤问题在 `MoldLoanService.getLoans()` 的前端 `OVERDUE` 再判定
+3. 借入场景仍需传递 `moldData` 给当前后端接口，但应尽量保持为最小原始采集语义
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/equipment-tooling/services/mold-loan-service.ts`
+2. `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts`
+
+### 实现细节（模具借还状态 authority 收口）
+
+1. **移除 `getLoans()` 的前端状态覆盖**
+   - 不再在前端将 `ACTIVE + expectedReturnDate < now` 改写为 `OVERDUE`
+   - 列表状态统一直接使用后端返回值
+
+2. **authority 边界恢复**
+   - `ACTIVE / RETURNED / OVERDUE` 等借还状态改由后端权威决定
+   - 前端不再自行覆盖状态字段
+
+### 实现细节（借入场景种子数据边界）
+
+1. **保留当前接口必需字段**
+   - `/mold-loans/borrow` 当前仍要求 `loan + moldData`
+   - 因此本轮没有破坏既有接口契约
+
+2. **保持种子数据组装最小化**
+   - `moldData` 仅继续承接当前接口所需的：
+     - `sn`
+     - `name`
+     - `maxCycles`
+     - `currentCycles`
+   - 不额外扩写资产初始化裁定逻辑
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有对 `use-bom-data.ts` 编造不存在的 `standardUsage` 再整改
+2. 没有重构整个 `equipment-tooling` 模块
+3. 没有在本轮改造全部资产服务 authority 契约
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/equipment-tooling/services/mold-loan-service.ts src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts src/features/engineering/hooks/use-bom-data.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十六轮的真实问题按最小边界收口：`use-bom-data.ts` 没有被误改成重复治理的目标；模具借还链路中最明确的 authority 泄露——前端自行把借单状态改写为 `OVERDUE`——已经移除；借入场景的数据组装也保持在当前后端接口要求的最小原始采集范围内，没有继续扩大前端资产初始化语义。
+
+## 2026-04-12 - audit：第二十七轮库存调拨并发锁收口（Concurrency Lock Vacuum / Inventory Transfer）
+
+### 本轮目标
+
+围绕库存调拨写路径的并发锁缺口做最小、可验证收口：
+
+1. 为调拨服务补齐 `version` 参数
+2. 让调拨请求显式提交源库存快照版本
+3. 保持整改范围聚焦在调拨链路，不扩大到整个库存模块
+
+### 本轮真实结论
+
+1. 前端库存主实体与 DTO 本身已经具备 `version`
+2. 真实问题在于 `transferInventory(...)` 写链路此前丢失了 `version`
+3. 这属于高危并发锁缺口，可能放大库存悬挂与负库存风险
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+
+### 实现细节
+
+1. **为调拨服务补齐 `version` 入参**
+   - `transferInventory(...)` 现在显式接收：
+     - `materialId`
+     - `quantity`
+     - `fromCat`
+     - `toCat`
+     - `version`
+
+2. **为调拨请求补齐源库存快照版本**
+   - `/inventory/transfer` 请求体新增：
+     - `version`
+
+3. **并发锁语义恢复**
+   - 调拨动作不再是“只凭物料 ID 与数量”的裸写请求
+   - 而是升级为“基于带版本快照的写操作”
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有重构整个库存模块
+2. 没有对全部库存写接口一次性做统一改造
+3. 没有修改其它非调拨库存事务
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/warehouse/inventory/services/inventory-transaction-service.ts src/features/warehouse/services/inventory-transaction-service.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十七轮的真实问题按最小边界收口：库存调拨写路径已经显式补齐 `version`，从而不再把源库存并发锁快照静默丢在前端服务层。当前这一步至少保证了调拨请求能够把悲观锁所需的版本信息提交到后端，为后端进行冲突判定提供了必要前提，同时避免把整改范围扩大成整个库存事务体系的全面重写。
+
+## 2026-04-12 - audit：第二十八轮 DTO 运行时校验收口（Validation Gap / Inventory Inbound Service）
+
+### 本轮目标
+
+围绕库存入库 Service 出口的 runtime 校验缺口做最小、可验证收口：
+
+1. 为 `InboundRecord` 补齐 runtime schema
+2. 在 `recordInbound(...)` 出口补 `parse(...)`
+3. 保持 adapter 只负责映射，不承担 runtime 契约职责
+
+### 本轮真实结论
+
+1. `recordInbound(...)` 之前只有 DTO -> contract 映射，没有最后一道 runtime parse
+2. `toInboundRecordContract(...)` 只是字段映射，不能代替 schema 校验
+3. `InboundRecord` 之前只有 TypeScript interface，没有 zod 级运行时防线
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/warehouse/inventory/data/schema.ts`
+2. `src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+
+### 实现细节
+
+1. **为 `InboundRecord` 补 runtime schema**
+   - 新增 `inboundRecordSchema`
+   - 并将 `InboundRecord` 类型改为从 schema 推导
+
+2. **在 Service 出口补最后一道 parse 防线**
+   - `recordInbound(...)` 先执行：
+     - `ensureObjectResponse(...)`
+     - `toInboundRecordContract(...)`
+   - 然后新增：
+     - `inboundRecordSchema.parse(contract)`
+
+3. **adapter 边界保持清晰**
+   - `inventory-api-adapter.ts` 继续只负责 DTO -> contract 映射
+   - runtime 契约校验回归 Service 出口负责
+
+### 明确保留不变的边界
+
+本轮没有扩大范围：
+
+1. 没有重写整个 inventory adapter 体系
+2. 没有对全部 warehouse Service 一次性补齐所有 schema parse
+3. 没有扩展到其它非 inbound 事务出口
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec eslint src/features/warehouse/inventory/data/schema.ts src/features/warehouse/inventory/services/inventory-transaction-service.ts src/features/warehouse/inventory/adapters/inventory-api-adapter.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第二十八轮的真实问题按最小边界收口：库存入库 Service 在 DTO 映射之后已经重新补上 `inboundRecordSchema.parse(...)` 这道运行时防线，从而避免后端隐形 `null`、字段漂移或契约不完整的数据直接穿透到 UI。当前整改保持在 `InboundRecord` 与 `recordInbound(...)` 这条最小闭环内，没有把问题泛化成整个 inventory 模块的全面 schema 重构。
+
+## 2026-04-12 - plan/impl：第三十四轮 Reservation 模型最小落地（Reservation Source of Truth + Inventory Aggregate Output）
+
+### 本轮目标
+
+围绕 `availableQty = onHand - reserved` 的后端权威链路做最小、可验证落地：
+
+1. 为 `reserved` 建立独立 Reservation source of truth
+2. 在库存查询中输出 `onHand / reserved / availableQty`
+3. 同步前端 DTO / adapter / schema 只读消费接入
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `server/models/inventory.go`
+2. `server/services/inventory_query_dto.go`
+3. `server/services/inventory_query_mapper.go`
+4. `server/services/inventory_query_service.go`
+5. `server/services/inventory_command_service_test.go`
+6. `server/handlers/inventory_query_handlers_test.go`
+7. `server/handlers/inventory_command_handlers.go`
+8. `src/features/warehouse/inventory/contracts/inventory-api-dto.ts`
+9. `src/features/warehouse/inventory/data/schema.ts`
+10. `src/features/warehouse/inventory/adapters/inventory-api-adapter.ts`
+
+### 实现细节（后端）
+
+1. **新增 Reservation 模型**
+   - 在 `server/models/inventory.go` 新增 `Reservation`
+   - 使用 `inventory_reservations` 作为独立预留表
+   - 明确保留：
+     - 物料
+     - 仓类
+     - 批次
+     - 数量
+     - 状态
+     - 来源单据
+     - 生命周期时间戳
+
+2. **库存查询 DTO 输出权威派生字段**
+   - 在 `server/services/inventory_query_dto.go` 扩展：
+     - `onHand`
+     - `reserved`
+     - `availableQty`
+
+3. **库存查询聚合 Reservation**
+   - 在 `server/services/inventory_query_service.go` 新增 Reservation 聚合逻辑
+   - 当前按 `material_id + category_code + batch_no + status=RESERVED` 聚合 `reserved`
+
+4. **mapper 输出最终权威结果**
+   - 在 `server/services/inventory_query_mapper.go` 中：
+     - `onHand = item.Quantity`
+     - `reserved = Reservation 聚合值`
+     - `availableQty = onHand - reserved`
+
+5. **兼容现有 patch 响应**
+   - `PatchInventoryHandler` 的 mapper 调用补了显式 `reserved=0`
+   - 避免旧响应链路因为新签名中断
+
+### 实现细节（前端）
+
+1. **扩展 DTO 契约**
+   - `InventoryItemApiDTO` 新增：
+     - `onHand`
+     - `reserved`
+     - `availableQty`
+
+2. **扩展前端实体**
+   - `InventoryRecord` 新增：
+     - `onHand`
+     - `reserved`
+     - `availableQty`
+
+3. **adapter 只读消费**
+   - `toInventoryRecordContract(...)` 现在显式映射：
+     - `onHand`
+     - `reserved`
+     - `availableQty`
+   - 没有在前端补任何公式
+
+### 测试与验证
+
+已执行：
+
+1. `go test ./handlers -run TestGetInventoryHandlerReturnsNamedPagedResponse`（在 `server` 目录执行）
+2. `go test ./services -run TestRecordInboundMovingAverageUpdatesInventoryValue`（在 `server` 目录执行）
+3. `pnpm exec eslint src/features/warehouse/inventory/contracts/inventory-api-dto.ts src/features/warehouse/inventory/data/schema.ts src/features/warehouse/inventory/adapters/inventory-api-adapter.ts src/features/warehouse/inventory/services/inventory-core-service.ts`
+4. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. Go handler 定向测试通过。
+2. Go service 定向测试通过。
+3. 定向 ESLint 通过。
+4. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第三十四轮的最小实现闭环落地完成：`reserved` 已经不再依赖 `ShipmentRecord` 语义，而是有了独立 Reservation source of truth；库存查询链路可以后端权威输出 `onHand / reserved / availableQty`；前端也已经切换为只读消费这些字段，没有在客户端补任何公式。当前实现仍然是最小闭环——只触达库存查询聚合与消费契约，没有把整个 Reservation 生命周期接口一次性铺开。
+
+## 2026-04-12 - audit/impl：第三十五轮版本兜底风险收口（Version Fallback Risk / Product Patch）
+
+### 本轮目标
+
+收口产品维护 PATCH 写路径中的版本静默降级：
+
+1. 去掉 `version ?? 0`
+2. 让编辑态 PATCH 缺失版本时直接失败
+3. 复核相邻 adapter 是否需要最小同步修复
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/engineering/services/product-maintenance-service.ts`
+2. `src/features/engineering/adapters/product-api-adapter.ts`
+
+### 实现细节
+
+1. **收口 PATCH 版本静默兜底**
+   - `product-maintenance-service.ts`
+   - 原先：
+     - `metadata.version: product.version ?? 0`
+   - 现在改为：
+     - 优先取 `product.version ?? current.version`
+     - 若版本仍缺失，直接抛出 `[CRITICAL]` 错误
+
+2. **并发锁契约恢复为 fail loud**
+   - 这意味着编辑态 PATCH 不再把缺失版本伪装成 `0`
+   - Service 层会把缺失版本视为硬错误，而不是静默降级
+
+3. **复核 adapter `_v` 默认值**
+   - 当前 `_v: product.version ?? 1` 仍保留
+   - 本轮未把它扩大整改为并发锁问题
+   - 原因：当前 PATCH 并发锁路径由 `DeltaPayload.metadata.version` 独立承载，风险实锤点不在 `_v`
+
+4. **顺手修平一个真实类型边界问题**
+   - `toBulkSyncProductsApiDTO(...)` 的入参类型收口为 `SaveProductInput[]`
+   - 与 `bulkSyncProducts(products: SaveProductInput[])` 的调用保持一致
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec eslint src/features/engineering/services/product-maintenance-service.ts src/features/engineering/adapters/product-api-adapter.ts src/features/engineering/hooks/use-product-write-actions.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第三十五轮的真实风险按最小边界收口完成：产品维护 PATCH 写路径已经不再使用 `version ?? 0` 对缺失版本做静默降级，而是恢复为显式断言版本存在的 fail loud 语义。这样可以避免核心实体修改在并发锁环节被伪合法默认值侵蚀。与此同时，本轮没有把问题泛化成整个 engineering 模块 version 字段的全面重构，只顺手修平了与 bulk sync 相关的一个真实类型边界问题。
+
+## 2026-04-12 - audit/impl：第三十七轮 DTO Integrity Gap 收口（StocktakeCoreService）
+
+### 本轮目标
+
+从第三十七轮候选链路中优先选择 `StocktakeCoreService`，为盘点任务/盘点项查询补 runtime schema 防线：
+
+1. 为 `StocktakeTask` / `StocktakeItem` 建立 zod schema
+2. 在 `StocktakeCoreService` 出口对 adapter 映射结果执行 parse
+3. 保持改动限定在仓储盘点最小闭环内
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/warehouse/stocktake/data/schema.ts`
+2. `src/features/warehouse/stocktake/services/stocktake-core-service.ts`
+
+### 实现细节
+
+1. **补充 Stocktake runtime schema**
+   - 在 `stocktake/data/schema.ts` 中新增：
+     - `stocktakeTaskSchema`
+     - `stocktakeItemSchema`
+     - `stocktakeTaskArraySchema`
+     - `stocktakeItemArraySchema`
+   - 同时让 `StocktakeTask` / `StocktakeItem` 类型从 schema 推导
+
+2. **在 Service 出口执行 parse**
+   - `StocktakeCoreService.getTasks()`
+     - 现在对 `toStocktakeTaskContracts(...)` 结果执行 `stocktakeTaskArraySchema.parse(...)`
+   - `StocktakeCoreService.getItems()`
+     - 现在对 `toStocktakeItemContracts(...)` 结果执行 `stocktakeItemArraySchema.parse(...)`
+
+3. **保持 adapter 只负责映射**
+   - `stocktake-api-adapter.ts` 仍然保持 DTO -> contract 映射职责
+   - runtime schema 防线明确收口在 service 出口
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec eslint src/features/warehouse/stocktake/data/schema.ts src/features/warehouse/stocktake/services/stocktake-core-service.ts src/features/warehouse/stocktake/adapters/stocktake-api-adapter.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第三十七轮的最小闭环收口到 `StocktakeCoreService`：盘点任务与盘点项查询链路不再只是“ensureArrayResponse + adapter 纯映射”，而是在进入 UI 之前增加了明确的 zod runtime schema 防线。当前整改没有扩散到 `CustomerService` 或 `SupplierService`，保持了单链路、最小边界的实现策略。
+
+## 2026-04-12 - plan/impl：第四十轮 SalesOrder 后端测试基线 `payment_method` 列漂移修复
+
+### 本轮目标
+
+修复 `SalesOrder` 后端测试基线中 `sales_orders` 手写建表 SQL 落后于当前业务模型的问题：
+
+1. 补齐 payment 相关缺失列
+2. 保持修复边界只落在测试基线
+3. 通过定向 Go 测试验证
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `server/services/sales_order_flow_test.go`
+
+### 实现细节
+
+1. **补齐 sales_orders 测试表缺失列**
+   - 在 `setupSalesOrderFlowTestDB(...)` 的 `CREATE TABLE sales_orders` 中新增：
+     - `payment_method`
+     - `payment_method_name`
+     - `payment_term`
+     - `payment_term_name`
+
+2. **保持最小修复边界**
+   - 本轮没有修改：
+     - 生产 model
+     - handler
+     - service 业务逻辑
+   - 只修正测试基线与当前业务字段集合的漂移
+
+### 测试与验证
+
+已执行：
+
+1. `go test ./services -run SalesOrder`（在 `server` 目录执行）
+
+结果：
+
+1. 定向 Go 测试通过。
+
+### 当前阶段结论
+
+这一步把 `SalesOrder` 后端测试基线的 `payment_method` 列漂移按最小边界修复完成：根因是 `sales_order_flow_test.go` 里的手写建表 SQL 缺少 payment 相关列，而不是生产业务链路字段契约出错。当前整改仅补齐测试 schema，并通过定向 Go 测试验证通过。
+
+## 2026-04-12 - plan/impl：第四十二轮架构收口第一阶段（Version Guard 单源）
+
+### 本轮目标
+
+先实现第四十二轮三项架构收口中的第一优先级：`Version Guard` 单源。
+
+目标是：
+
+1. 抽出公共 version 断言/helper
+2. 让样板 PATCH / 关键写路径统一走 fail loud 模式
+3. 先接入少量高风险样板链路，验证模式可行
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/lib/version-guard.ts`
+2. `src/features/engineering/services/product-maintenance-service.ts`
+3. `src/features/material-archive/services/material-maintenance-service.ts`
+4. `src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+
+### 实现细节
+
+1. **新增公共 Version Guard helper**
+   - `src/lib/version-guard.ts`
+   - 新增：
+     - `assertRequiredVersion(...)`
+     - `buildVersionedPatchMetadata(...)`
+
+2. **产品维护链路接入 Version Guard**
+   - `product-maintenance-service.ts`
+   - `patchProduct(...)` 改为统一使用：
+     - `assertRequiredVersion(...)`
+     - `buildVersionedPatchMetadata(...)`
+
+3. **物料维护链路接入 Version Guard**
+   - `material-maintenance-service.ts`
+   - `patchMaterial(...)` 改为统一使用：
+     - `assertRequiredVersion(...)`
+     - `buildVersionedPatchMetadata(...)`
+
+4. **库存调拨链路接入 Version Guard**
+   - `inventory-transaction-service.ts`
+   - `transferInventory(...)` 在发请求前先统一执行：
+     - `assertRequiredVersion(...)`
+
+### 当前边界
+
+本轮只做了第一版样板接入，没有一次性改造全仓：
+
+1. 没有同时扩到 `supplier / purchase / sales / warehouse-category`
+2. 还没有进入第二优先级的 Runtime Contract 统一改造
+3. 还没有进入第三优先级的 Go 测试 Schema helper 收口
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec eslint src/lib/version-guard.ts src/features/engineering/services/product-maintenance-service.ts src/features/material-archive/services/material-maintenance-service.ts src/features/warehouse/inventory/services/inventory-transaction-service.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第四十二轮的第一优先级“Version Guard 单源”落成了第一版可复用公共能力：核心写路径的 version 断言与 versioned patch metadata 不再完全散落在各模块内，而是开始收口到公共 helper。当前只在产品、物料、库存三条样板链路中验证模式，目的是先证明这套公共约束稳定可用，再决定是否继续向更多维护型 service 扩散。
+
+## 2026-04-12 - plan/impl：第四十三轮 Service 出口 Runtime Contract 统一模式（Customer / Supplier 样板）
+
+### 本轮目标
+
+落地第四十三轮的首批样板链路，把 Service 出口 Runtime Contract 统一为：
+
+1. adapter 只负责 DTO -> contract 映射
+2. service 出口负责 `schema.parse(...)`
+3. 先在 `CustomerService` 与 `SupplierService` 中验证模式
+
+### 本轮实现
+
+本轮修改文件：
+
+1. `src/features/trading/data/schema.ts`
+2. `src/features/trading/customer/services/customer-service.ts`
+3. `src/features/trading/supplier/services/supplier-service.ts`
+
+### 实现细节
+
+1. **补充 Customer / Supplier runtime schema**
+   - 在 `trading/data/schema.ts` 中新增：
+     - `customerSchema`
+     - `customerArraySchema`
+     - `supplierSchema`
+     - `supplierArraySchema`
+   - 同时让 `Customer` / `Supplier` 类型从 schema 推导
+
+2. **统一 CustomerService 出口 parse**
+   - `getCustomers()` 改为对映射结果执行 `customerArraySchema.parse(...)`
+   - `getCustomerList()` 改为对 `items` 执行 `customerArraySchema.parse(...)`
+   - `executeCustomerTransaction()` / `createCustomer()` / `patchCustomer()` 改为对单条 contract 执行 `customerSchema.parse(...)`
+
+3. **统一 SupplierService 出口 parse**
+   - `getSuppliers()` 改为对映射结果执行 `supplierArraySchema.parse(...)`
+   - `getSupplierList()` 改为对 `items` 执行 `supplierArraySchema.parse(...)`
+   - `executeSupplierTransaction()` / `createSupplier()` / `patchSupplier()` 改为对单条 contract 执行 `supplierSchema.parse(...)`
+
+4. **保持 adapter 纯映射职责不变**
+   - `customer-api-adapter.ts`
+   - `supplier-api-adapter.ts`
+   - 本轮没有把 parse 塞回 adapter，继续保持 DTO -> contract 映射职责
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec eslint src/features/trading/data/schema.ts src/features/trading/customer/services/customer-service.ts src/features/trading/customer/adapters/customer-api-adapter.ts src/features/trading/supplier/services/supplier-service.ts src/features/trading/supplier/adapters/supplier-api-adapter.ts`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 定向 ESLint 通过。
+2. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这一步把第四十三轮的统一模式在 `CustomerService` 与 `SupplierService` 两条样板链路中跑通：adapter 继续只负责映射，而 runtime schema 防线统一收口到 service 出口。这样既降低了 DTO Integrity 审计复杂度，也为后续把同类模式扩展到更多 trading / maintenance service 提供了明确模板。

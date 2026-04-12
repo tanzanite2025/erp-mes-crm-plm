@@ -1,5 +1,6 @@
 import type { TabItem } from '@/components/module-tabs'
-import type { TranslationKey } from '@/locales'
+import type { AppLocale, TranslationKey } from '@/locales'
+import { getMaterialCategoryOptions } from './data/material-category-options'
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
@@ -15,4 +16,14 @@ export function getMaterialPermissionTabs(t: TranslateFn): TabItem[] {
     ...getMaterialStaticTabs(t),
     { key: 'category', label: t('materialArchive.layout.categoryDialogTitle'), href: '/materials/:category' },
   ]
+}
+
+export function getMaterialRouteTabs(locale: AppLocale, t: TranslateFn): TabItem[] {
+  const dynamicTabs = getMaterialCategoryOptions(locale).map((opt) => ({
+    key: opt.value.toLowerCase(),
+    label: opt.label,
+    href: `/materials/${opt.value}`,
+  }))
+
+  return [...getMaterialStaticTabs(t), ...dynamicTabs]
 }

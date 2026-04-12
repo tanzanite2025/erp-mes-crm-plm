@@ -82,9 +82,7 @@ export function MoldActionDialog({
 
     const watchedMax = useWatch({ control: form.control, name: 'maxCycles' }) ?? 0
     const watchedCurrent = useWatch({ control: form.control, name: 'currentCycles' }) ?? 0
-    // [UI-PREVIEW-INDICATOR]: 对话框内的健康百分比仅用于 UI 反馈预览
-    // [BACKEND-AUTHORITY]: 物理资产的权威健康评分属于后端 BRP/Asset-Core 的核算范畴。
-    const healthPercent = Math.max(0, Math.min(100, Math.round(((watchedMax - watchedCurrent) / watchedMax) * 100)))
+    const healthPercent = AssetService.previewHealthScore(watchedCurrent, watchedMax)
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -147,7 +145,7 @@ export function MoldActionDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className='w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
                 <DialogHeader className='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0'>
-                    <DialogTitle className='text-lg sm:text-xl font-black tracking-tight uppercase'>
+                    <DialogTitle className='text-lg sm:text-xl font-black tracking-tight uppercase italic'>
                         {editData ? t('equipmentTooling.molds.dialog.title.edit') : t('equipmentTooling.molds.dialog.title.create')}
                     </DialogTitle>
                     <DialogDescription className='text-[10px] sm:text-xs font-bold text-muted-foreground/60 leading-relaxed mt-2'>

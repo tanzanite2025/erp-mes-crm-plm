@@ -60,7 +60,7 @@ type SidebarSystemAlert = {
 export function NavGroup({ title, items }: NavGroupProps) {
   const { unreadApprovals } = useNotificationStore()
   const pathname = useLocation({ select: (location) => location.pathname })
-  const [userCollapsed, setUserCollapsed] = useState(false)
+  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null)
 
   const shouldWatchSystemAlerts = items.some((item) => isSystemManagementItem(item))
   const { data: systemActiveAlerts = [] } = useQuery({
@@ -78,7 +78,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const systemAlertCount = systemActiveAlerts.length
   const itemsWithBadges = withDynamicBadges(items, unreadApprovals, systemAlertCount)
   const shouldExpandForPath = groupHasActiveItem(pathname, itemsWithBadges)
-  const isExpanded = shouldExpandForPath || !userCollapsed
+  const isExpanded = manualExpanded ?? shouldExpandForPath
 
   return (
     <SidebarGroup>
@@ -90,12 +90,13 @@ export function NavGroup({ title, items }: NavGroupProps) {
           isExpanded && 'bg-sidebar-accent/40 text-sidebar-accent-foreground'
         )}
         onClick={() => {
-          if (shouldExpandForPath) {
-            setUserCollapsed(true)
-            return
-          }
+          setManualExpanded((current) => {
+            if (current === null) {
+              return !shouldExpandForPath
+            }
 
-          setUserCollapsed((current) => !current)
+            return !current
+          })
         }}
       >
         <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-inherit'>

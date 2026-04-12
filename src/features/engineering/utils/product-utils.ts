@@ -23,7 +23,7 @@ export function getProductAttributes(product: Product): ProductViewModel {
   const summary = getProductAttributeSummary(product)
   return {
     name: product.name,
-    sku: product.sku || '',
+    sku: product.sku,
     displayName: formatProductDisplayName(product),
     version: summary.version,
     series: summary.series,

@@ -13,8 +13,9 @@ export interface SalesOrderValidationResult {
 }
 
 /**
- * 销售订单表单校验纯逻辑
- * 不包含 toast 触发，仅返回 isValid 状态与对应的多语言 Key
+ * 销售订单表单 UI 预检纯逻辑
+ * 仅处理前端交互层的最小完整性校验，不承载必须由后端强制执行的业务裁决。
+ * 不包含 toast 触发，仅返回 isValid 状态与对应的多语言 Key。
  */
 export const validateSalesOrder = (
   formData: Partial<SalesOrder>,

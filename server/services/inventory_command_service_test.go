@@ -92,6 +92,28 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_inbound_deleted_at ON inbound_records(deleted_at)`).Error)
 
 	require.NoError(t, testDB.Exec(`
+		CREATE TABLE inventory_reservations (
+			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			material_id TEXT NOT NULL,
+			category_code TEXT NOT NULL,
+			batch_no TEXT,
+			quantity REAL NOT NULL,
+			status TEXT NOT NULL,
+			source_type TEXT NOT NULL,
+			source_id TEXT NOT NULL,
+			reserved_at DATETIME,
+			released_at DATETIME,
+			consumed_at DATETIME,
+			expired_at DATETIME,
+			remarks TEXT
+		)
+	`).Error)
+	require.NoError(t, testDB.Exec(`CREATE INDEX idx_inventory_reservations_deleted_at ON inventory_reservations(deleted_at)`).Error)
+
+	require.NoError(t, testDB.Exec(`
 		CREATE TABLE financial_vouchers (
 			id TEXT PRIMARY KEY NOT NULL,
 			created_at DATETIME,
@@ -278,7 +300,8 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			amount REAL,
 			received_qty REAL,
 			returned_qty REAL,
-			status TEXT
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 

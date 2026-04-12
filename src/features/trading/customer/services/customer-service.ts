@@ -9,7 +9,7 @@ import {
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { toCustomerApiDTO, toCustomerContract, toCustomerContracts } from '../adapters/customer-api-adapter'
 import { type CustomerApiDTO, type CustomerListApiResponseDTO } from '../contracts/customer-api-dto'
-import { type Customer } from '../../data/schema'
+import { customerArraySchema, customerSchema, type Customer } from '../../data/schema'
 
 export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'CUSTOMER_IDENTITY_CHANGE'
@@ -62,7 +62,9 @@ export interface CustomerSavePayload {
 
 export const getCustomers = async (): Promise<Customer[]> => {
   const res = await apiFetch<CustomerApiDTO[]>('/customers?options=true')
-  return toCustomerContracts(ensureArrayResponse<CustomerApiDTO>(res, 'CustomerService.getCustomers'))
+  return customerArraySchema.parse(
+    toCustomerContracts(ensureArrayResponse<CustomerApiDTO>(res, 'CustomerService.getCustomers'))
+  )
 }
 
 export const getCustomerList = async (): Promise<CustomerListResponse> => {
@@ -72,7 +74,9 @@ export const getCustomerList = async (): Promise<CustomerListResponse> => {
     res,
     context
   )
-  const items = toCustomerContracts(ensureArrayField<CustomerApiDTO>(objectResponse, 'items', context))
+  const items = customerArraySchema.parse(
+    toCustomerContracts(ensureArrayField<CustomerApiDTO>(objectResponse, 'items', context))
+  )
   const total = ensureNumberField(objectResponse, 'total', context)
   const page = ensureNumberField(objectResponse, 'page', context)
   const pageSize = ensureNumberField(objectResponse, 'pageSize', context)
@@ -108,11 +112,13 @@ export const executeCustomerTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return toCustomerContract(
-    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
-      res,
-      'CustomerService.executeCustomerTransaction'
-    ) as CustomerApiDTO
+  return customerSchema.parse(
+    toCustomerContract(
+      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
+        res,
+        'CustomerService.executeCustomerTransaction'
+      ) as CustomerApiDTO
+    )
   )
 }
 
@@ -121,8 +127,10 @@ export const createCustomer = async (customer: Omit<Customer, 'id' | 'version'>)
     method: 'POST',
     body: JSON.stringify(toCustomerApiDTO({ ...customer, id: '', version: 1 } as Customer)),
   })
-  return toCustomerContract(
-    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer') as CustomerApiDTO
+  return customerSchema.parse(
+    toCustomerContract(
+      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer') as CustomerApiDTO
+    )
   )
 }
 
@@ -205,7 +213,9 @@ export const patchCustomer = async (id: string, delta: DeltaSet, version: number
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return toCustomerContract(
-    ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer') as CustomerApiDTO
+  return customerSchema.parse(
+    toCustomerContract(
+      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer') as CustomerApiDTO
+    )
   )
 }

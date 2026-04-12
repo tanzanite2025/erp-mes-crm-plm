@@ -8,6 +8,9 @@ export interface InventoryItemApiDTO {
   materialCode: string
   materialCategory: string
   materialSpec: string
+  onHand: number
+  reserved: number
+  availableQty: number
   quantity: number
   totalValue: number
   averageUnitCost: number
@@ -33,6 +36,15 @@ export interface MasterDataSearchResultApiDTO {
   category: string
   sourceModule: 'MATERIAL' | 'PRODUCT'
   stock: number
+}
+
+export interface CreateInventoryInboundApiDTO {
+  materialId: string
+  quantity: number
+  targetCategory: string
+  batchNo: string
+  inboundDate: string
+  remarks: string
 }
 
 export interface InventoryInboundRecordApiDTO {

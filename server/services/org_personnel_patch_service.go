@@ -51,6 +51,8 @@ type PatchEmployeeRequest struct {
 	JoinedDate      *time.Time
 	JoinedDateSet   bool
 	DeptID          *string
+	PositionID      *string
+	PositionIDSet   bool
 	LineID          *string
 	ProcessID       *string
 }
@@ -189,6 +191,20 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 		}
 		if input.DeptID != nil {
 			current.DeptID = strings.TrimSpace(*input.DeptID)
+		}
+		if input.PositionIDSet {
+			if input.PositionID == nil || strings.TrimSpace(*input.PositionID) == "" {
+				current.PositionID = ""
+				if _, err := applyPrimaryAssignmentPosition(tx, current, nil, "employee_patch", ""); err != nil {
+					return err
+				}
+			} else {
+				nextPositionID := strings.TrimSpace(*input.PositionID)
+				current.PositionID = nextPositionID
+				if _, err := applyPrimaryAssignmentPosition(tx, current, stringPointer(nextPositionID), "employee_patch", ""); err != nil {
+					return err
+				}
+			}
 		}
 		if input.LineID != nil {
 			current.LineID = strings.TrimSpace(*input.LineID)

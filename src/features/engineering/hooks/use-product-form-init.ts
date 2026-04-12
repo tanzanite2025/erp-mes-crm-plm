@@ -45,9 +45,6 @@ interface UseProductFormInitParams {
     setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
 }
 
-const PRODUCT_METADATA_UNAVAILABLE_MESSAGE =
-    'Product attribute metadata endpoints are unavailable on the current backend instance. Restart the local backend with the latest server code before creating or editing products.'
-
 export function useProductFormInit({
     open,
     isEdit,
@@ -57,7 +54,7 @@ export function useProductFormInit({
     selectedVariants,
     setSelectedVariants
 }: UseProductFormInitParams) {
-    const { locale } = useLanguage()
+    const { locale, t } = useLanguage()
     const watchedTypeId = form.watch('typeId')
     const [attributeCategories, setAttributeCategories] = useState<ProductAttributeCategory[]>([])
     const [attributeOptions, setAttributeOptions] = useState<ProductAttributeOption[]>([])
@@ -117,10 +114,10 @@ export function useProductFormInit({
                 failLoudly(error, 'useProductFormInit.loadDictData')
                 setMetadataInitError(
                     isNotFoundError(error)
-                        ? PRODUCT_METADATA_UNAVAILABLE_MESSAGE
+                        ? t('engineering.productMgmt.metadata.unavailable')
                         : error instanceof Error
                             ? error.message
-                            : 'Failed to initialize product form metadata.'
+                            : t('engineering.productMgmt.metadata.initFailed')
                 )
             }
         }
@@ -130,7 +127,7 @@ export function useProductFormInit({
         return () => {
             cancelled = true
         }
-    }, [open, isEdit, currentRow, form, locale, selectedVariants.length, setSelectedVariants, watchedTypeId])
+    }, [open, isEdit, currentRow, form, locale, selectedVariants.length, setSelectedVariants, t, watchedTypeId])
 
     useEffect(() => {
         const initForm = async () => {

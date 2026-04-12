@@ -21,7 +21,7 @@ import { getEffectiveTemplate, getLocalizedSpecComponents } from './specs'
 import { ProductBasicInfo } from './product/product-basic-info'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
-import { useProductForm } from '../hooks/use-product-form'
+import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 
@@ -31,7 +31,7 @@ interface ProductActionDialogProps {
   currentRow?: Product
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: Product | Product[]) => void | Promise<void>
+  onSubmit?: (payload: ProductSubmitPayload) => void | Promise<void>
   productTypes?: ProductType[]
 }
 
@@ -76,8 +76,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     moldOptions,
     specOptions,
     metadataInitError,
+    nextCodeDeriveError,
+    skuPreview,
     selectedVariants,
-    specSummary,
+    specPreviewSummary,
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,
@@ -173,7 +175,9 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null
   const SpecComponent = activeSpec?.form
-  const submissionBlocked = Boolean(metadataInitError || templateResolveError)
+  const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
+  const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
+  const submissionBlocked = Boolean(metadataInitError || templateResolveError || issuanceBlocked)
   const errorLabelMap: Record<string, string> = {
     typeId: t('engineering.productMgmt.form.category'),
     modelCode: t('engineering.productMgmt.form.modelCode'),
@@ -221,25 +225,42 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               })}
               className='space-y-6'
             >
-              <ProductBasicInfo
-                form={form}
-                dynamicTypes={dynamicTypes}
+                <ProductBasicInfo
+                  form={form}
+                  dynamicTypes={dynamicTypes}
                 productTypes={productTypes}
                 handleImageUpload={handleImageUpload}
-                specOptions={specOptions}
-                moldOptions={moldOptions}
-                isEdit={isEdit}
-                templateLabel={activeSpec?.label}
-              />
+                  specOptions={specOptions}
+                  moldOptions={moldOptions}
+                  isEdit={isEdit}
+                  skuPreview={skuPreview}
+                  templateLabel={activeSpec?.label}
+                />
 
               {metadataInitError ? (
                 <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900'>
-                  <div className='text-[10px] font-black uppercase tracking-widest'>Metadata Link Broken</div>
+                  <div className='text-[10px] font-black uppercase tracking-widest'>
+                    {t('engineering.productMgmt.metadata.errorTitle')}
+                  </div>
                   <p className='mt-1 text-[11px] font-bold leading-relaxed'>
                     {metadataInitError}
                   </p>
                   <p className='mt-1 text-[10px] font-medium opacity-80'>
-                    Restart the backend on `http://localhost:8080` so the template, dynamic attribute category, and binding endpoints come from the same server version.
+                    {t('engineering.productMgmt.metadata.errorHint')}
+                  </p>
+                </div>
+              ) : null}
+
+              {nextCodeDeriveError ? (
+                <div className='rounded-[24px] border border-dashed border-orange-300 bg-orange-50 px-4 py-3 text-orange-900'>
+                  <div className='text-[10px] font-black uppercase tracking-widest'>Code Issuance Failed</div>
+                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
+                    {nextCodeDeriveError}
+                  </p>
+                  <p className='mt-1 text-[10px] font-medium opacity-80'>
+                    {!isEdit && (!watchedModelCode || watchedModelCode === '01')
+                      ? 'Authority code issuance is unavailable. Resolve the backend issuance error or fill a valid model code before saving.'
+                      : 'Authority code issuance failed. Verify the backend issuer before continuing.'}
                   </p>
                 </div>
               ) : null}
@@ -318,7 +339,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   </Badge>
                 </div>
                 <p className='text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
-                  {specSummary || t('engineering.productArchive.states.unnamed')}
+                  {specPreviewSummary || t('engineering.productArchive.states.unnamed')}
                 </p>
               </div>
             </form>

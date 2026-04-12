@@ -1,8 +1,10 @@
+import type { TranslationKey } from '@/locales'
+
 type DrawingType = 'spec' | 'drilling' | 'labeling'
 
 interface DrawingTitleParams {
   type: DrawingType
-  t: (key: string) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
 }
 
 export function getSalesOrderDrawingTitle({ type, t }: DrawingTitleParams) {

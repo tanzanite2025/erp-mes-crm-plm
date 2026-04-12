@@ -58,6 +58,7 @@ func ApplyPatchSupplierRequestToModel(target *models.Supplier, patch PatchSuppli
 func mapPurchaseOrderLineRequestToModel(line PurchaseOrderLineRequest) models.PurchaseOrderLine {
 	return models.PurchaseOrderLine{
 		ID:            line.ID,
+		Version:       line.Version,
 		LineNo:        line.LineNo,
 		MaterialID:    line.MaterialID,
 		MaterialCode:  line.MaterialCode,
@@ -136,6 +137,7 @@ func MapPatchPurchaseOrderRequestToModel(input PatchPurchaseOrderRequest) models
 func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine) PurchaseOrderLineResponse {
 	return PurchaseOrderLineResponse{
 		ID:            line.ID,
+		Version:       line.Version,
 		LineNo:        line.LineNo,
 		MaterialID:    line.MaterialID,
 		MaterialCode:  line.MaterialCode,
@@ -247,6 +249,7 @@ func MapConfirmPurchaseReceiptRequestToInput(request ConfirmPurchaseReceiptReque
 	for _, line := range request.Lines {
 		lines = append(lines, ConfirmPurchaseReceiptLineInput{
 			PurchaseOrderLineID: line.PurchaseOrderLineID,
+			OrderLineVersion:    line.OrderLineVersion,
 			MaterialID:          line.MaterialID,
 			Quantity:            line.Quantity,
 			PurchasePrice:       line.PurchasePrice,

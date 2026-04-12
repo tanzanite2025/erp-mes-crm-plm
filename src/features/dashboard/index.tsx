@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import { Check, LayoutDashboard, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
@@ -34,6 +34,7 @@ export function Dashboard() {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('overview')
   const [isConfigOpen, setIsConfigOpen] = useState(false)
+  const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<string[] | null>(null)
   const { data: lines } = useProductionLinesQuery()
   const segments = useMemo<(Segment & { lineName: string })[]>(() => {
     return (lines ?? []).flatMap((line) =>
@@ -43,23 +44,32 @@ export function Dashboard() {
       }))
     )
   }, [lines])
+  const segmentIds = useMemo(() => segments.map((segment) => segment.id), [segments])
 
-  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } = useVisibleDashboardSegments(
-    segments.map((segment) => segment.id),
-  )
-  const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
+  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } =
+    useVisibleDashboardSegments(segmentIds)
+  const selectedSegmentIds = draftVisibleSegmentIds ?? savedVisibleSegmentIds
 
-  useEffect(() => {
-    setVisibleSegmentIds(savedVisibleSegmentIds)
-  }, [savedVisibleSegmentIds])
+  const handleConfigOpenChange = (open: boolean) => {
+    setIsConfigOpen(open)
+    if (!open) {
+      setDraftVisibleSegmentIds(null)
+    }
+  }
 
-  const handleSaveConfig = async (ids: string[]) => {
-    await saveVisibleSegmentIds(ids)
+  const handleOpenConfig = () => {
+    setDraftVisibleSegmentIds([...savedVisibleSegmentIds])
+    setIsConfigOpen(true)
+  }
+
+  const handleSaveConfig = async () => {
+    await saveVisibleSegmentIds(selectedSegmentIds)
+    setDraftVisibleSegmentIds(null)
     setIsConfigOpen(false)
   }
 
   const chartData = segments
-    .filter((s) => visibleSegmentIds.includes(s.id))
+    .filter((s) => savedVisibleSegmentIds.includes(s.id))
     .map((s) => ({
       name: s.name,
       total: 0,
@@ -128,10 +138,7 @@ export function Dashboard() {
                         variant='ghost'
                         size='icon'
                         className='size-9 rounded-xl text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
-                        onClick={() => {
-                          setVisibleSegmentIds(savedVisibleSegmentIds)
-                          setIsConfigOpen(true)
-                        }}
+                        onClick={handleOpenConfig}
                       >
                         <Settings className='size-5' />
                       </Button>
@@ -174,7 +181,7 @@ export function Dashboard() {
         </div>
       </Main>
 
-      <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+      <Dialog open={isConfigOpen} onOpenChange={handleConfigOpenChange}>
         <DialogContent className='sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden bg-background'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
           
@@ -193,25 +200,25 @@ export function Dashboard() {
                 <div
                   key={seg.id}
                   className={`flex items-center space-x-3 p-3 border-dashed border-2 rounded-2xl transition-all cursor-pointer group ${
-                    visibleSegmentIds.includes(seg.id) 
+                    selectedSegmentIds.includes(seg.id) 
                       ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/10' 
                       : 'bg-muted/5 border-muted/40 hover:border-muted/80'
                   }`}
                   onClick={() => {
-                    const newIds = visibleSegmentIds.includes(seg.id)
-                      ? visibleSegmentIds.filter((id) => id !== seg.id)
-                      : [...visibleSegmentIds, seg.id]
-                    setVisibleSegmentIds(newIds)
+                    const newIds = selectedSegmentIds.includes(seg.id)
+                      ? selectedSegmentIds.filter((id) => id !== seg.id)
+                      : [...selectedSegmentIds, seg.id]
+                    setDraftVisibleSegmentIds(newIds)
                   }}
                 >
                   <div
                     className={`flex items-center justify-center size-5 rounded-lg border-2 transition-all ${
-                      visibleSegmentIds.includes(seg.id) 
+                      selectedSegmentIds.includes(seg.id) 
                         ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105' 
                         : 'border-muted-foreground/20 bg-background group-hover:border-muted-foreground/40'
                     }`}
                   >
-                    {visibleSegmentIds.includes(seg.id) && <Check className='size-3 stroke-[4]' />}
+                    {selectedSegmentIds.includes(seg.id) && <Check className='size-3 stroke-[4]' />}
                   </div>
                   <div className='flex flex-col overflow-hidden'>
                     <span className='text-[11px] font-black text-slate-700 truncate uppercase tracking-tight'>{seg.name}</span>
@@ -234,13 +241,13 @@ export function Dashboard() {
             <DialogFooter className='sm:justify-end gap-3'>
               <Button 
                 variant='ghost' 
-                onClick={() => setIsConfigOpen(false)}
+                onClick={() => handleConfigOpenChange(false)}
                 className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest bg-muted/30 hover:bg-muted/50 border-none'
               >
                 {t('dashboard.page.segmentDialog.cancel')}
               </Button>
               <Button 
-                onClick={() => handleSaveConfig(visibleSegmentIds)} 
+                onClick={() => void handleSaveConfig()} 
                 className='rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20'
               >
                 {t('dashboard.page.segmentDialog.save')}

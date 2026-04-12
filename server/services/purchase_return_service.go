@@ -198,7 +198,10 @@ func createPurchaseReturnTx(tx *gorm.DB, input CreatePurchaseReturnInput) (Creat
 
 		if err := tx.Model(&models.PurchaseOrderLine{}).
 			Where("id = ? AND purchase_order_id = ?", item.PurchaseOrderLineID, order.ID).
-			Update("returned_qty", gorm.Expr("returned_qty + ?", item.Quantity)).Error; err != nil {
+			Updates(map[string]any{
+				"returned_qty": gorm.Expr("returned_qty + ?", item.Quantity),
+				"version":      gorm.Expr("version + 1"),
+			}).Error; err != nil {
 			return CreatePurchaseReturnResult{}, err
 		}
 	}

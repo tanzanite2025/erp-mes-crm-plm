@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
 import { type Material, type MaterialCategory } from '../data/schema'
-import { MATERIAL_OPTIONS_QUERY_KEY } from '../query-keys'
+import { getMaterialListQueryKey, MATERIAL_OPTIONS_QUERY_KEY } from '../query-keys'
 import { MaterialCoreService } from '../services/material-core-service'
 import { MaterialMaintenanceService } from '../services/material-maintenance-service'
 
@@ -29,13 +29,7 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
   }, [searchTerm])
 
   const { data: qData, error, isLoading } = useQuery<MaterialListResponse>({
-    queryKey: [
-      'material-archive',
-      category,
-      pagination.pageIndex,
-      pagination.pageSize,
-      debouncedSearch,
-    ],
+    queryKey: getMaterialListQueryKey(category, pagination.pageIndex, pagination.pageSize, debouncedSearch),
     queryFn: () =>
       MaterialCoreService.getMaterials(
         category,
@@ -53,7 +47,7 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       throw error
     }
     return qData.data
-  }, [isLoading, qData?.data])
+  }, [isLoading, qData])
 
   const totalCount = useMemo(() => {
     if (isLoading) return 0
@@ -63,7 +57,7 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       throw error
     }
     return qData.total
-  }, [isLoading, qData?.total])
+  }, [isLoading, qData])
 
   const invalidateMaterialQueries = () =>
     Promise.all([
@@ -82,7 +76,12 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       delta?: DeltaSet
     }) => {
       if (isPatch && delta && data.id) {
-        return MaterialMaintenanceService.patchMaterial(data.id, delta, data.version || 1)
+        if (typeof data.version !== 'number' || Number.isNaN(data.version)) {
+          const error = new Error('[CRITICAL] Missing material version for patch operation')
+          failLoudly(error, 'useMaterialMgmtData.patchMaterial')
+          throw error
+        }
+        return MaterialMaintenanceService.patchMaterial(data.id, delta, data.version)
       }
       return MaterialMaintenanceService.saveMaterial(data)
     },

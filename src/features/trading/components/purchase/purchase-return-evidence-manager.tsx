@@ -4,6 +4,7 @@ import { Camera, CloudUpload, GripVertical, ImageIcon, Loader2, Trash2 } from 'l
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-client'
+import { failLoudly } from '@/lib/safe-catch'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
 import type { OrderEvidence } from '../../data/schema'
@@ -94,7 +95,7 @@ export function PurchaseReturnEvidenceManager({
 
       onChange(next)
     } catch (error) {
-      console.error('Purchase return evidence upload failed', error)
+      failLoudly(error, 'PurchaseReturnEvidenceManager.handleSelectedFiles', { silentUI: true })
       toast.error(uploadFailedText)
     } finally {
       setUploading(false)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Settings, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KpiGrid } from '@/features/dashboard/components/kpi-grid'
@@ -13,12 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
-import { createLogger } from '@/lib/logger'
 import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
 import { useVisibleDashboardSegments } from '@/features/dashboard/hooks/use-visible-dashboard-segments'
-
-const logger = createLogger('DashboardOverviewTab')
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -31,6 +28,7 @@ function getErrorMessage(error: unknown): string {
 export function DashboardOverviewTab() {
   const { t } = useLanguage()
   const [isConfigOpen, setIsConfigOpen] = useState(false)
+  const [draftVisibleSegmentIds, setDraftVisibleSegmentIds] = useState<string[] | null>(null)
   const { data: lines = [], isLoading: loading, error, refetch } = useProductionLinesQuery()
 
   const segments = useMemo<(Segment & { lineName: string })[]>(
@@ -43,27 +41,32 @@ export function DashboardOverviewTab() {
       ),
     [lines],
   )
+  const segmentIds = useMemo(() => segments.map((segment) => segment.id), [segments])
 
-  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } = useVisibleDashboardSegments(
-    segments.map((segment) => segment.id),
-  )
-  const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
+  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } =
+    useVisibleDashboardSegments(segmentIds)
+  const selectedSegmentIds = draftVisibleSegmentIds ?? savedVisibleSegmentIds
 
-  useEffect(() => {
-    try {
-      setVisibleSegmentIds(savedVisibleSegmentIds)
-    } catch (storageError) {
-      logger.error('Failed to sync dashboard segments config', storageError)
+  const handleConfigOpenChange = (open: boolean) => {
+    setIsConfigOpen(open)
+    if (!open) {
+      setDraftVisibleSegmentIds(null)
     }
-  }, [savedVisibleSegmentIds])
+  }
 
-  const handleSaveConfig = async (ids: string[]) => {
-    await saveVisibleSegmentIds(ids)
+  const handleOpenConfig = () => {
+    setDraftVisibleSegmentIds([...savedVisibleSegmentIds])
+    setIsConfigOpen(true)
+  }
+
+  const handleSaveConfig = async () => {
+    await saveVisibleSegmentIds(selectedSegmentIds)
+    setDraftVisibleSegmentIds(null)
     setIsConfigOpen(false)
   }
 
   const chartData = segments
-    .filter((segment) => visibleSegmentIds.includes(segment.id))
+    .filter((segment) => savedVisibleSegmentIds.includes(segment.id))
     .map((segment) => ({
       name: segment.name,
       total: 0,
@@ -122,10 +125,7 @@ export function DashboardOverviewTab() {
                 variant='ghost'
                 size='icon'
                 className='size-9 rounded-xl text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
-                onClick={() => {
-                  setVisibleSegmentIds(savedVisibleSegmentIds)
-                  setIsConfigOpen(true)
-                }}
+                onClick={handleOpenConfig}
               >
                 <Settings className='size-5' />
               </Button>
@@ -137,7 +137,7 @@ export function DashboardOverviewTab() {
         </div>
       </div>
 
-      <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+      <Dialog open={isConfigOpen} onOpenChange={handleConfigOpenChange}>
         <DialogContent className='sm:max-w-md rounded-[32px] border-none shadow-2xl p-0 overflow-hidden bg-background'>
           <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
 
@@ -157,25 +157,25 @@ export function DashboardOverviewTab() {
                   <div
                     key={segment.id}
                     className={`flex items-center space-x-3 p-3 border-dashed border-2 rounded-2xl transition-all cursor-pointer group ${
-                      visibleSegmentIds.includes(segment.id)
+                      selectedSegmentIds.includes(segment.id)
                         ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/10'
                         : 'bg-muted/5 border-muted/40 hover:border-muted/80'
                     }`}
                     onClick={() => {
-                      const newIds = visibleSegmentIds.includes(segment.id)
-                        ? visibleSegmentIds.filter((id) => id !== segment.id)
-                        : [...visibleSegmentIds, segment.id]
-                      setVisibleSegmentIds(newIds)
+                      const newIds = selectedSegmentIds.includes(segment.id)
+                        ? selectedSegmentIds.filter((id) => id !== segment.id)
+                        : [...selectedSegmentIds, segment.id]
+                      setDraftVisibleSegmentIds(newIds)
                     }}
                   >
                     <div
                       className={`size-5 rounded-lg flex items-center justify-center border-2 transition-all ${
-                        visibleSegmentIds.includes(segment.id)
+                        selectedSegmentIds.includes(segment.id)
                           ? 'bg-primary border-primary'
                           : 'bg-transparent border-muted-foreground/20 group-hover:border-muted-foreground/40'
                       }`}
                     >
-                      {visibleSegmentIds.includes(segment.id) && <Check className='size-3 text-white' />}
+                      {selectedSegmentIds.includes(segment.id) && <Check className='size-3 text-white' />}
                     </div>
                     <div className='flex flex-col min-w-0'>
                       <span className='text-[11px] font-black uppercase tracking-tighter truncate leading-none'>
@@ -193,7 +193,7 @@ export function DashboardOverviewTab() {
             <DialogFooter className='pt-4 border-t border-dashed'>
               <Button
                 type='submit'
-                onClick={() => handleSaveConfig(visibleSegmentIds)}
+                onClick={() => void handleSaveConfig()}
                 className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest'
               >
                 {t('common.actions.save')}

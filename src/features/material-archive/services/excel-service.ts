@@ -62,6 +62,35 @@ function getCellValue(cell: Cell) {
 	return unescapeFormula(value.toString().trim())
 }
 
+function parseCompositeId(compositeId: string, locale: AppLocale) {
+  const lastUnderscore = compositeId.lastIndexOf('_')
+  if (lastUnderscore <= 0 || lastUnderscore === compositeId.length - 1) {
+    const error = new Error(
+      translate(locale, 'materialArchive.excel.parse.invalidCompositeId', {
+        value: compositeId,
+      })
+    )
+    failLoudly(error, 'MaterialExcelService.parseCompositeId')
+    throw error
+  }
+
+  const id = compositeId.substring(0, lastUnderscore)
+  const versionRaw = compositeId.substring(lastUnderscore + 1)
+  const version = Number(versionRaw)
+
+  if (!Number.isInteger(version) || version <= 0) {
+    const error = new Error(
+      translate(locale, 'materialArchive.excel.parse.invalidCompositeId', {
+        value: compositeId,
+      })
+    )
+    failLoudly(error, 'MaterialExcelService.parseCompositeId')
+    throw error
+  }
+
+  return { id, version }
+}
+
 const materialExcelRowSchema = z.object({
   id: z.string().min(1, 'Material id is required'),
   version: z.number().optional(),
@@ -252,14 +281,28 @@ export const MaterialExcelService = {
     await workbook.xlsx.load(arrayBuffer)
 
     const configSheet = workbook.getWorksheet(CONFIG_SHEET_NAME)
-    let globalSnapshotVersion = 0
-    if (configSheet) {
-      configSheet.eachRow((row: Row) => {
-        const key = row.getCell(1).value?.toString()
-        if (key === 'GLOBAL_MATERIAL_VERSION') {
-          globalSnapshotVersion = Number(row.getCell(2).value)
-        }
-      })
+    let globalSnapshotVersion: number | undefined
+    if (!configSheet) {
+      const error = new Error(
+        translate(locale, 'materialArchive.excel.parse.configSheetNotFound', {
+          sheetName: CONFIG_SHEET_NAME,
+        })
+      )
+      failLoudly(error, 'MaterialExcelService.parseMaterialExcel.configSheet')
+      throw error
+    }
+
+    configSheet.eachRow((row: Row) => {
+      const key = row.getCell(1).value?.toString()
+      if (key === 'GLOBAL_MATERIAL_VERSION') {
+        globalSnapshotVersion = Number(row.getCell(2).value)
+      }
+    })
+
+    if (!Number.isInteger(globalSnapshotVersion) || (globalSnapshotVersion as number) <= 0) {
+      const error = new Error(translate(locale, 'materialArchive.excel.parse.invalidGlobalVersion'))
+      failLoudly(error, 'MaterialExcelService.parseMaterialExcel.globalVersion')
+      throw error
     }
 
     const dictSheet = getWorksheetByNames(workbook, getDictionarySheetNames())
@@ -275,13 +318,15 @@ export const MaterialExcelService = {
       })
     }
 
-    const maintenanceSheet = getWorksheetByNames(workbook, getMaintenanceSheetNames()) || workbook.getWorksheet(1)
+    const maintenanceSheet = getWorksheetByNames(workbook, getMaintenanceSheetNames())
     if (!maintenanceSheet) {
-      throw new Error(
+      const error = new Error(
         translate(locale, 'materialArchive.excel.parse.sheetNotFound', {
           sheetName: translate(locale, 'materialArchive.excel.maintenanceSheetName'),
         })
       )
+      failLoudly(error, 'MaterialExcelService.parseMaterialExcel.maintenanceSheet')
+      throw error
     }
 
     const materials: Partial<Material>[] = []
@@ -292,13 +337,19 @@ export const MaterialExcelService = {
       const compositeId = getCellValue(row.getCell(1))
       if (!compositeId) return
 
-      const lastUnderscore = compositeId.lastIndexOf('_')
-      const id = lastUnderscore !== -1 ? compositeId.substring(0, lastUnderscore) : compositeId
-      const version =
-        lastUnderscore !== -1 ? Number(compositeId.substring(lastUnderscore + 1)) : undefined
+      const { id, version } = parseCompositeId(compositeId, locale)
 
       const categoryLabel = getCellValue(row.getCell(5))
-      const categoryValue = categoryMap.get(categoryLabel) || categoryLabel
+      const categoryValue = categoryMap.get(categoryLabel)
+      if (!categoryValue) {
+        const error = new Error(
+          translate(locale, 'materialArchive.excel.parse.categoryMappingMissing', {
+            value: categoryLabel || '[EMPTY]',
+          })
+        )
+        failLoudly(error, 'MaterialExcelService.parseMaterialExcel.categoryMap')
+        throw error
+      }
 
       materials.push({
         id,

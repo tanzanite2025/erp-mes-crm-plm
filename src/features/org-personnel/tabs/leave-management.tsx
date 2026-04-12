@@ -20,18 +20,29 @@ export default function LeaveManagement() {
   const [sortOrder, setSortOrder] = useState<LeaveSortOrder>('START_DESC')
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null)
   const { cancelLeaveRequest, isCanceling, cancelingLeaveId } = useCancelLeaveRequest()
-  const { data: leaves, isLoading: isLeavesLoading } = useQuery({
+  const {
+    data: leaves,
+    isLoading: isLeavesLoading,
+    isError: isLeavesError,
+    error: leavesError,
+  } = useQuery({
     queryKey: personnelQueryKeys.leaves.my(),
     queryFn: () => LeaveService.getMyLeaveRequests()
   })
 
   // [BACKEND-AUTHORITY]: 获取由后端财务与人事服务精确计算的统计指标
-  const { data: stats, isLoading: isStatsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: isStatsLoading,
+    isError: isStatsError,
+    error: statsError,
+  } = useQuery({
     queryKey: personnelQueryKeys.leaves.statsMy(),
     queryFn: () => LeaveService.getLeaveStats()
   })
 
-  const isLoading = isLeavesLoading || isStatsLoading
+  const isListLoading = isLeavesLoading
+  const isStatsLoadingOnly = isStatsLoading
   const visibleLeaves = getSortedAndFilteredLeaves(leaves ?? [], statusFilter, typeFilter, sortOrder)
 
   const handleCancelLeave = async (leaveId: string) => {
@@ -60,15 +71,29 @@ export default function LeaveManagement() {
       {/* 状态统计概览 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { icon: Clock, label: '待审批', val: stats?.pendingCount ?? 0, color: 'text-amber-500' },
-          { icon: BadgeCheck, label: '已通过', val: stats?.approvedCount ?? 0, color: 'text-emerald-500' },
-          { icon: XCircle, label: '已拒绝', val: stats?.rejectedCount ?? 0, color: 'text-rose-500' },
-          { 
-            icon: Calendar, 
-            label: '累计工日', 
-            // [BACKEND-AUTHORITY]: 权威统计，禁止前端自行累加
-            val: (stats?.totalDays ?? 0).toFixed(1), 
-            color: 'text-primary' 
+          {
+            icon: Clock,
+            label: '待审批',
+            val: isStatsError ? '--' : stats?.pendingCount ?? 0,
+            color: 'text-amber-500'
+          },
+          {
+            icon: BadgeCheck,
+            label: '已通过',
+            val: isStatsError ? '--' : stats?.approvedCount ?? 0,
+            color: 'text-emerald-500'
+          },
+          {
+            icon: XCircle,
+            label: '已拒绝',
+            val: isStatsError ? '--' : stats?.rejectedCount ?? 0,
+            color: 'text-rose-500'
+          },
+          {
+            icon: Calendar,
+            label: '累计工日',
+            val: isStatsError ? '--' : (stats?.totalDays ?? 0).toFixed(1),
+            color: 'text-primary'
           },
         ].map((stat, i) => (
           <Card key={i} className="rounded-2xl p-4 border-dashed bg-muted/5 flex items-center gap-4">
@@ -78,10 +103,21 @@ export default function LeaveManagement() {
              <div>
                 <p className="text-[8px] font-black uppercase tracking-widest opacity-50">{stat.label}</p>
                 <p className="text-lg font-black italic tracking-tighter">{stat.val}</p>
+                {isStatsLoadingOnly ? (
+                  <p className="text-[8px] font-black uppercase tracking-widest opacity-40">同步中</p>
+                ) : null}
              </div>
           </Card>
         ))}
       </div>
+
+      {isStatsError ? (
+        <div className="rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+          <div className="text-[10px] font-black uppercase tracking-widest">统计卡片已降级</div>
+          <p className="mt-1 text-[11px] font-bold leading-relaxed">{statsError instanceof Error ? statsError.message : '请假统计加载失败'}</p>
+          <p className="mt-1 text-[10px] font-medium opacity-80">请假记录列表仍可继续查看；当前仅统计聚合数据暂不可用。</p>
+        </div>
+      ) : null}
 
       {/* 请假列表 */}
       <div className="rounded-[24px] border border-dashed p-6">
@@ -95,8 +131,16 @@ export default function LeaveManagement() {
             onSortOrderChange={setSortOrder}
           />
 
-          {isLoading ? (
+          {isListLoading ? (
             <p className="text-[10px] uppercase font-black tracking-widest animate-pulse">正在同步云端记录...</p>
+          ) : isLeavesError ? (
+            <div className="h-40 flex flex-col items-center justify-center text-rose-600 gap-2 text-center">
+               <FileText className="w-8 h-8 opacity-40" />
+               <p className="text-[10px] font-black uppercase tracking-widest">请假记录暂不可用</p>
+               <p className="max-w-[360px] text-[10px] font-medium text-rose-700/80">
+                 {leavesError instanceof Error ? leavesError.message : '请假记录加载失败'}
+               </p>
+            </div>
           ) : (leaves?.length || 0) === 0 ? (
             <div className="h-40 flex flex-col items-center justify-center text-muted-foreground gap-2">
                <FileText className="w-8 h-8 opacity-20" />

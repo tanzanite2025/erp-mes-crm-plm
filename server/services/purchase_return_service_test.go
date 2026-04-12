@@ -51,7 +51,8 @@ func setupPurchaseReturnServiceTestDB(t *testing.T) *gorm.DB {
 			amount REAL,
 			received_qty REAL,
 			returned_qty REAL,
-			status TEXT
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 

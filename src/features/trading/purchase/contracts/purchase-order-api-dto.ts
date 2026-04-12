@@ -2,6 +2,7 @@ import type { OrderEvidence } from '../../data/schema'
 
 export interface PurchaseOrderLineApiDTO {
   id?: number
+  version?: number
   lineNo: number
   materialId: string
   materialName: string

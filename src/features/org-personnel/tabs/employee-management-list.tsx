@@ -34,6 +34,7 @@ import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
+import { failLoudly } from '@/lib/safe-catch'
 import { EmployeeActionDialog } from '../components/employee-action-dialog'
 import { EmployeeBulkActions } from '../components/employee-bulk-actions'
 import { getEmployeeColumns, UNASSIGNED_POSITION_FILTER_VALUE } from '../components/employee-columns'
@@ -83,7 +84,15 @@ export function EmployeeManagementList() {
         includeProductionResources: true,
     })
 
-    const data = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data])
+    const data = useMemo(() => {
+        if (employeesQuery.isLoading) return []
+        if (!employeesQuery.data) {
+            const error = new Error('[CRITICAL] Employee list is missing after load')
+            failLoudly(error, 'EmployeeManagementList.data')
+            throw error
+        }
+        return employeesQuery.data
+    }, [employeesQuery.data, employeesQuery.isLoading])
     const error = employeesQuery.error ?? lookupError
     const isLoading = employeesQuery.isLoading || isLookupsLoading
 
@@ -110,7 +119,8 @@ export function EmployeeManagementList() {
             throw new Error(t('orgPersonnel.list.noIdFound'))
         }
 
-        const updated = await EmployeeMaintenanceService.updateEmployeesStatus(idsToUpdate, status)
+        const result = await EmployeeMaintenanceService.updateEmployeesStatus(idsToUpdate, status)
+        const updated = result.updated
 
         if (status === 'resigned') {
             const idsToUpdateSet = new Set(idsToUpdate)
@@ -125,7 +135,7 @@ export function EmployeeManagementList() {
             if (recentEmployees.length > 0) {
                 setRecentResignSnapshot({
                     employees: recentEmployees,
-                    operatedAt: new Date().toISOString(),
+                    operatedAt: result.operatedAt,
                 })
             }
         }
@@ -197,34 +207,10 @@ export function EmployeeManagementList() {
     const handleUpdateEmployee = async (finalEmp: Employee, isPatch?: boolean, delta?: DeltaSet) => {
         try {
             if (isPatch && delta && finalEmp.id) {
-                const nextDeptId = finalEmp.deptId?.trim() || ''
-                const previousDeptId = currentRow?.deptId?.trim() || ''
-                const deptChanged = nextDeptId !== previousDeptId
-                const nextPositionId = finalEmp.positionId?.trim() || ''
-                const previousPositionId = currentRow?.positionId?.trim() || ''
-                const positionChanged = nextPositionId !== previousPositionId
-                const patchDelta = Object.fromEntries(
-                    Object.entries(delta).filter(([key]) => key !== 'deptId' && key !== 'positionId')
-                )
-
-                if (Object.keys(patchDelta).length > 0) {
-                    await EmployeeMaintenanceService.patchEmployee(finalEmp.id, patchDelta, finalEmp.version || 1)
-                }
-                if (deptChanged && nextDeptId) {
-                    await EmployeeMaintenanceService.changeEmployeeOrgUnit(finalEmp.id, nextDeptId)
-                }
-                if (positionChanged && nextPositionId) {
-                    await EmployeeMaintenanceService.changeEmployeePosition(finalEmp.id, nextPositionId)
-                } else if (positionChanged && previousPositionId) {
-                    await EmployeeMaintenanceService.clearEmployeePosition(finalEmp.id)
-                }
+                await EmployeeMaintenanceService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
                 toast.success(t('orgPersonnel.list.saveUpdated'))
             } else {
-                const createdEmployee = await EmployeeMaintenanceService.saveEmployee(finalEmp)
-                const nextPositionId = finalEmp.positionId?.trim() || ''
-                if (nextPositionId) {
-                    await EmployeeMaintenanceService.changeEmployeePosition(createdEmployee.id, nextPositionId)
-                }
+                await EmployeeMaintenanceService.saveEmployee(finalEmp)
                 toast.success(t('orgPersonnel.list.saveCreated'))
             }
 
@@ -270,7 +256,7 @@ export function EmployeeManagementList() {
 
         data.forEach((employee) => {
             const rawValue = employee.positionName || employee.positionId || UNASSIGNED_POSITION_FILTER_VALUE
-            const rawLabel = employee.positionName || employee.positionId || 'Unassigned'
+            const rawLabel = employee.positionName || employee.positionId || t('orgPersonnel.list.unassigned')
             if (!options.has(rawValue)) {
                 options.set(rawValue, rawLabel)
             }
@@ -283,7 +269,7 @@ export function EmployeeManagementList() {
                 if (b.value === UNASSIGNED_POSITION_FILTER_VALUE) return 1
                 return a.label.localeCompare(b.label)
             })
-    }, [data])
+    }, [data, t])
 
     const table = useReactTable({
         data,
@@ -336,7 +322,7 @@ export function EmployeeManagementList() {
                             placeholder={t('orgPersonnel.list.searchPlaceholder')}
                             value={searchValue}
                             onChange={(e) => setSearchValue(e.target.value)}
-                            className='h-12 w-full pl-11 pr-10 rounded-[18px] border border-dashed border-muted bg-muted/10 font-bold text-sm shadow-none transition-all focus-visible:bg-background focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/20 placeholder:text-muted-foreground/20'
+                            className='h-12 w-full pl-11 pr-10 rounded-2xl border border-dashed border-muted bg-muted/10 font-bold text-sm shadow-none transition-all focus-visible:bg-background focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/20 placeholder:text-muted-foreground/20'
                         />
                         {searchValue && (
                             <Button
@@ -374,8 +360,8 @@ export function EmployeeManagementList() {
                     />
                     <DataTableFacetedFilter
                         column={table.getColumn('positionName')}
-                        title='Position Filter'
-                        subtitle='POSITION'
+                        title={t('orgPersonnel.list.filterPosition')}
+                        subtitle={t('orgPersonnel.list.filterPositionCode')}
                         variant='industrial'
                         options={positionFilterOptions}
                     />
@@ -385,7 +371,7 @@ export function EmployeeManagementList() {
                     <Button
                         variant='outline'
                         onClick={() => exportPersonnelData(data, nameMap, locale)}
-                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
                     >
                         <div className='flex items-center gap-1'>
                             <Share className='size-3 text-emerald-600' />
@@ -396,7 +382,7 @@ export function EmployeeManagementList() {
                     <Button
                         variant='outline'
                         onClick={() => downloadPersonnelTemplate(locale)}
-                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
                     >
                         <div className='flex items-center gap-1'>
                             <Download className='size-3 text-blue-600' />
@@ -407,16 +393,16 @@ export function EmployeeManagementList() {
                     <Button
                         variant='outline'
                         onClick={() => setImportOpen(true)}
-                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed shadow-sm hover:bg-muted active:scale-95 transition-all bg-blue-500/5 border-blue-200 p-0'
+                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed shadow-sm hover:bg-muted active:scale-95 transition-all bg-blue-500/5 border-blue-200 p-0'
                     >
                         <div className='flex items-center gap-1'>
                             <FileSpreadsheet className='size-3 text-blue-600' />
                             <span className='text-[10px] font-black tracking-tighter'>
-                                Batch sync
+                                {t('orgPersonnel.list.batchSync')}
                             </span>
                         </div>
                         <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>
-                            add / update
+                            {t('orgPersonnel.list.batchSyncHint')}
                         </span>
                     </Button>
                     <Button
@@ -424,7 +410,7 @@ export function EmployeeManagementList() {
                             setCurrentRow(undefined)
                             setOpen(true)
                         }}
-                        className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-500/10 active:scale-95 transition-all p-0'
+                        className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-500/10 active:scale-95 transition-all p-0'
                     >
                         <div className='flex items-center gap-1'>
                             <Plus className='size-3' />
@@ -531,7 +517,7 @@ export function EmployeeManagementList() {
                 onStatusChange={handleBulkStatusChange}
                 onEdit={(items) => {
                     if (items.length > 1) {
-                        toast.info('Bulk action in progress...')
+                        toast.info(t('orgPersonnel.list.bulkActionInProgress'))
                     }
                     if (items.length > 0) {
                         handleEditRow(items[0])

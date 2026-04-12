@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, PackageSearch, RefreshCw, Send, AlertCircle, History, Database, Search } from 'lucide-react'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
@@ -41,8 +41,26 @@ export function StocktakeMgmt() {
         isCreating 
     } = useStocktake()
 
-    const { data: categories = [] } = useWarehouseCategoryOptions()
-    const stocktakeCategories = filterWarehouseCategoriesByScene(categories, 'stocktake')
+    const categoriesQuery = useWarehouseCategoryOptions()
+    const stocktakeCategories = useMemo(() => {
+        if (categoriesQuery.isLoading) return []
+        if (!categoriesQuery.data) {
+            const lookupError = categoriesQuery.error instanceof Error
+                ? categoriesQuery.error
+                : new Error('[CRITICAL] Stocktake warehouse categories missing after load')
+            failLoudly(lookupError, 'StocktakeMgmt.categories')
+            throw lookupError
+        }
+
+        const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data, 'stocktake')
+        if (filteredCategories.length === 0) {
+            const lookupError = new Error('[CRITICAL] No warehouse categories allowed for stocktake scene')
+            failLoudly(lookupError, 'StocktakeMgmt.categories')
+            throw lookupError
+        }
+
+        return filteredCategories
+    }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
 
     const [selectedTask, setSelectedTask] = useState<StocktakeTask | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)

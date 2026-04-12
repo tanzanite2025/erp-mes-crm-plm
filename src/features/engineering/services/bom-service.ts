@@ -1,28 +1,52 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomNo, normalizeBomStatus, normalizeBomVersion } from '@/lib/codecs/code-normalization'
-import { type BOM } from '../data/schema'
+import { bomListSchema, bomSchema, type BOM, type BOMList } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 
-type BOMListResponse = {
-    items: BOM[]
-    total: number
-    page: number
-    pageSize: number
+const saveBOMSchema = bomSchema.omit({ bomDisplayVersion: true })
+
+function trimToUndefined(value?: string) {
+    if (value === undefined) return undefined
+    const trimmed = value.trim()
+    return trimmed === '' ? undefined : trimmed
 }
 
-function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
-    const { ...rest } = data
-    return {
-        ...rest,
-        bomNo: normalizeBomNo(data.bomNo),
-        bomVersion: normalizeBomVersion(data.bomVersion),
-        changeType: normalizeBomChangeType(data.changeType),
-        status: normalizeBomStatus(data.status),
-        effectiveFrom: normalizeBomEffectiveDate(data.effectiveFrom),
-        effectiveTo: normalizeBomEffectiveDate(data.effectiveTo),
-    }
+function trimToNull(value?: string | null) {
+    if (value === undefined || value === null) return null
+    const trimmed = value.trim()
+    return trimmed === '' ? null : trimmed
+}
+
+function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
+    return saveBOMSchema.parse({
+        ...data,
+        bomNo: data.bomNo.trim(),
+        bomVersion: data.bomVersion.trim(),
+        description: trimToUndefined(data.description),
+        revisionNo: trimToUndefined(data.revisionNo),
+        changeOrderNo: trimToUndefined(data.changeOrderNo),
+        siteCode: trimToUndefined(data.siteCode),
+        effectiveFrom: trimToNull(data.effectiveFrom),
+        effectiveTo: trimToNull(data.effectiveTo),
+        items: data.items.map((item) => ({
+            ...item,
+            section: item.section.trim(),
+            materialId: item.materialId.trim(),
+            materialName: trimToUndefined(item.materialName),
+            materialSpec: trimToUndefined(item.materialSpec),
+            unit: item.unit.trim(),
+            materialType: trimToUndefined(item.materialType),
+            supplyChannel: trimToUndefined(item.supplyChannel),
+            substitutes: item.substitutes.map((substitute) => ({
+                ...substitute,
+                id: trimToUndefined(substitute.id),
+                bomItemId: trimToUndefined(substitute.bomItemId),
+                materialId: substitute.materialId.trim(),
+                notes: trimToUndefined(substitute.notes),
+            })),
+        })),
+    })
 }
 
 /**
@@ -35,19 +59,22 @@ export const bomService = {
      */
     async getBOMs(productId?: string): Promise<BOM[]> {
         const url = productId ? `/engineering/bom?productId=${productId}` : '/engineering/bom'
-        const response = await apiFetch<BOMListResponse>(url)
-        const checked = ensureObjectResponse<BOMListResponse & Record<string, unknown>>(
+        const response = await apiFetch<BOMList>(url)
+        const checked = ensureObjectResponse<Record<string, unknown>>(
             response,
             'BOMService.getBOMs'
         )
-        return ensureArrayResponse(checked.items, 'BOMService.getBOMs.items')
+        return bomListSchema.parse(checked).items
     },
 
     /**
      * 获取单个 BOM 详情
      */
     async getBOMById(id: string): Promise<BOM> {
-        return await apiFetch<BOM>(`/engineering/bom/${id}`)
+        const response = await apiFetch<BOM>(`/engineering/bom/${id}`)
+        return bomSchema.parse(
+            ensureObjectResponse<Record<string, unknown>>(response, 'BOMService.getBOMById')
+        )
     },
 
     /**
@@ -55,25 +82,29 @@ export const bomService = {
      */
     async saveBOM(params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }): Promise<BOM> {
         const { data, isPatch, delta } = params
-        const normalizedData = normalizeBOMInput(data)
+        const sanitizedData = sanitizeBOMInput(data)
         if (isPatch && data.id && delta) {
             const payload: DeltaPayload = {
                 op: 'PATCH',
                 delta,
-                metadata: { id: normalizedData.id, version: normalizedData.version },
+                metadata: { id: sanitizedData.id, version: sanitizedData.version },
             }
-            const res = await apiFetch<BOM>(`/engineering/bom/${normalizedData.id}`, {
+            const res = await apiFetch<BOM>(`/engineering/bom/${sanitizedData.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(payload),
             })
-            return ensureObjectResponse<BOM>(res, 'BOMService.patchBOM')
+            return bomSchema.parse(
+                ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.patchBOM')
+            )
         }
 
         const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',
-            body: JSON.stringify(normalizedData),
+            body: JSON.stringify(sanitizedData),
         })
-        return ensureObjectResponse<BOM>(res, 'BOMService.saveBOM')
+        return bomSchema.parse(
+            ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.saveBOM')
+        )
     },
 
     /**

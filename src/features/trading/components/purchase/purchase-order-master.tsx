@@ -36,7 +36,7 @@ function StatusBadge({ status }: { status: string }) {
   return <AuditStatusDisplay meta={meta} badgeClassName='px-2 py-0.5' />
 }
 
-function useOverdue(date?: string, status?: string) {
+function isOrderOverdue(date?: string, status?: string) {
   if (!date || status === 'Received' || status === 'Canceled') return false
   const today = new Date().toISOString().split('T')[0]
   return date < today
@@ -100,7 +100,7 @@ export function PurchaseOrderMaster({
           <tbody>
             {orders.map((order) => {
               const active = order.id === selectedId
-              const isOverdue = useOverdue(order.expectedDate, order.status)
+              const isOverdue = isOrderOverdue(order.expectedDate, order.status)
 
               return (
                 <tr

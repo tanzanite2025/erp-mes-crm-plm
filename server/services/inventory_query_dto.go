@@ -12,6 +12,9 @@ type InventoryItemResponse struct {
 	MaterialCode     string    `json:"materialCode"`
 	MaterialCategory string    `json:"materialCategory"`
 	MaterialSpec     string    `json:"materialSpec"`
+	OnHand           float64   `json:"onHand"`
+	Reserved         float64   `json:"reserved"`
+	AvailableQty     float64   `json:"availableQty"`
 	Quantity         float64   `json:"quantity"`
 	TotalValue       float64   `json:"totalValue"`
 	AverageUnitCost  float64   `json:"averageUnitCost"`

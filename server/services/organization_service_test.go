@@ -422,10 +422,11 @@ func TestOrganizationServiceBulkUpdateEmployeeStatusNormalizesIDs(t *testing.T) 
 		repo,
 	)
 
-	updated, err := service.BulkUpdateEmployeeStatus([]string{" emp-1 ", "", "emp-2"}, "active")
+	result, err := service.BulkUpdateEmployeeStatus([]string{" emp-1 ", "", "emp-2"}, "active")
 
 	require.NoError(t, err)
-	require.Equal(t, int64(2), updated)
+	require.Equal(t, int64(2), result.Updated)
+	require.False(t, result.OperatedAt.IsZero())
 	require.Equal(t, []string{"emp-1", "emp-2"}, repo.updatedIDs)
 	require.Equal(t, "active", repo.updatedStatus)
 }

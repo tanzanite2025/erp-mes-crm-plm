@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder } from '../../data/schema'
 import { canReceivePurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
@@ -24,6 +25,7 @@ interface PurchaseOrderDetailProps {
 export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseOrderDetailProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
+  const user = useAuthStore((state) => state.user)
   const { data: detailedOrder, isLoading: isDetailLoading } = useGetPurchaseOrderDetail(initialOrder?.id || '')
   const { confirmReceiptMutation } = usePurchaseOrderMutations()
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false)
@@ -85,7 +87,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
         isSubmitting={confirmReceiptMutation.isPending}
         onConfirm={(payload) => {
           confirmReceiptMutation.mutate(
-            { id: order.id, payload },
+            { id: order.id, payload, expectedVersion: order.version, actorId: user?.id },
             {
               onSuccess: () => {
                 setIsReceiptDialogOpen(false)
@@ -248,7 +250,6 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
             <OrderEvidenceGallery
               evidences={order.evidences || []}
               titleKey='purchase.orders.detailEvidenceTitle'
-              fallbackTitle='Purchase Evidence'
             />
           </Card>
 

@@ -112,7 +112,8 @@ func setupPurchaseTransactionTestDB(t *testing.T) *gorm.DB {
 			price REAL,
 			amount REAL,
 			received_qty REAL,
-			status TEXT
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 
@@ -179,6 +180,7 @@ func seedPurchaseTransactionBaseData(t *testing.T, testDB *gorm.DB) {
 	}).Error)
 	require.NoError(t, testDB.Create(&models.PurchaseOrderLine{
 		PurchaseOrderID: "po-1",
+		Version:         1,
 		LineNo:          1,
 		MaterialID:      "mat-1",
 		MaterialCode:    "MAT-001",
@@ -342,4 +344,45 @@ func TestExecutePurchaseOrderTransactionOrderSaveFallsBackToUnifiedSaveForMixedD
 	require.Len(t, logs, 1)
 	require.Equal(t, "purchase-order", logs[0].Module)
 	require.Equal(t, PurchaseTransactionIntentOrderSave, logs[0].Action)
+}
+
+func TestExecutePurchaseOrderReceiptConfirmationReturnsVersionConflictWhenOrderLineVersionStale(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupPurchaseTransactionTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+	})
+	seedPurchaseTransactionBaseData(t, testDB)
+
+	require.NoError(t, testDB.Model(&models.PurchaseOrder{}).
+		Where("id = ?", "po-1").
+		Update("status", "Awaiting").Error)
+	require.NoError(t, testDB.Model(&models.PurchaseOrderLine{}).
+		Where("purchase_order_id = ? AND line_no = ?", "po-1", 1).
+		Update("version", 2).Error)
+
+	_, err := ExecutePurchaseOrderReceiptConfirmation(ExecutePurchaseOrderReceiptConfirmationCommand{
+		OrderID:         "po-1",
+		ActorID:         "user-1",
+		Operator:        "tester",
+		ExpectedVersion: 3,
+		Payload: PurchaseOrderReceiptConfirmPayload{
+			Operator:    "tester",
+			Remarks:     "stale line version",
+			ReceiptDate: "2026-04-12T00:00:00Z",
+			Lines: []PurchaseOrderReceiptConfirmLinePayload{
+				{
+					PurchaseOrderLineID: 1,
+					OrderLineVersion:    1,
+					MaterialID:          "mat-1",
+					Quantity:            1,
+					PurchasePrice:       10,
+					BatchNo:             "B-STALE-001",
+					TargetCategory:      "MATERIAL",
+				},
+			},
+		},
+	})
+	require.ErrorIs(t, err, ErrPurchaseTransactionVersionConflict)
 }

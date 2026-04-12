@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Box, Building2, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -41,19 +41,24 @@ export function SupplierActionDialog({
   const { data: formData, tracker } = useDeltaTracker(initialFormData as Supplier, open)
   const [productInput, setProductInput] = useState('')
 
-  useEffect(() => {
-    if (!open) {
-        setProductInput('')
+  const updateField = <K extends keyof Supplier>(key: K, value: Supplier[K]) => {
+    Reflect.set(formData as unknown as Partial<Record<keyof Supplier, Supplier[keyof Supplier]>>, key, value)
+  }
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setProductInput('')
     }
-  }, [open])
+    onOpenChange(nextOpen)
+  }
 
   const handleSave = () => {
     const isPatch = !!supplier
     const delta = tracker.commit()
     
     if (isPatch && Object.keys(delta).length === 0) {
-        onOpenChange(false)
-        return
+      handleDialogOpenChange(false)
+      return
     }
 
     onSave({ 
@@ -62,23 +67,23 @@ export function SupplierActionDialog({
         delta: isPatch ? delta : undefined 
     })
     setProductInput('')
-    onOpenChange(false)
+    handleDialogOpenChange(false)
   }
 
   const addProduct = () => {
     if (!productInput || formData.mainProducts?.includes(productInput)) return
-    formData.mainProducts = [...(formData.mainProducts || []), productInput]
+    updateField('mainProducts', [...(formData.mainProducts || []), productInput])
     setProductInput('')
   }
 
   const removeProduct = (product: string) => {
-    formData.mainProducts = formData.mainProducts?.filter((item) => item !== product)
+    updateField('mainProducts', formData.mainProducts?.filter((item) => item !== product) ?? [])
   }
 
   return (
     <ActionDialogShell
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleDialogOpenChange}
       title={supplier ? t('purchase.suppliers.dialogEditTitle') : t('purchase.suppliers.dialogCreateTitle')}
       description={t('purchase.suppliers.dialogDescription')}
       contentClassName={shellClasses.content}
@@ -91,7 +96,7 @@ export function SupplierActionDialog({
         <>
           <Button
             variant='ghost'
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleDialogOpenChange(false)}
             className='h-11 flex-1 rounded-full px-8 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-muted/30 sm:flex-none'
           >
             {t('purchase.suppliers.cancel')}
@@ -117,7 +122,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.namePlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all placeholder:text-muted-foreground/20 focus:ring-2 focus:ring-primary/20'
               value={formData.name}
-              onChange={(e) => { formData.name = e.target.value }}
+              onChange={(e) => updateField('name', e.target.value)}
             />
           </div>
         </div>
@@ -130,7 +135,7 @@ export function SupplierActionDialog({
             placeholder={t('purchase.suppliers.fields.codePlaceholder')}
             className='h-12 rounded-2xl border-none bg-muted/50 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.code}
-            onChange={(e) => { formData.code = e.target.value }}
+            onChange={(e) => updateField('code', e.target.value)}
           />
         </div>
       </div>
@@ -142,7 +147,7 @@ export function SupplierActionDialog({
           </Label>
           <Select
             value={formData.category}
-            onValueChange={(value) => { formData.category = value }}
+            onValueChange={(value) => updateField('category', value)}
           >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
               <SelectValue placeholder={t('purchase.suppliers.fields.categoryPlaceholder')} />
@@ -162,7 +167,7 @@ export function SupplierActionDialog({
           </Label>
           <Select
             value={formData.status}
-            onValueChange={(value) => { formData.status = value as SupplierStatus }}
+            onValueChange={(value) => updateField('status', value as SupplierStatus)}
           >
             <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black uppercase transition-all focus:ring-2 focus:ring-primary/20'>
               <SelectValue placeholder={t('purchase.suppliers.fields.statusPlaceholder')} />
@@ -239,7 +244,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.contactPersonPlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.contactPerson}
-              onChange={(e) => { formData.contactPerson = e.target.value }}
+              onChange={(e) => updateField('contactPerson', e.target.value)}
             />
           </div>
         </div>
@@ -254,7 +259,7 @@ export function SupplierActionDialog({
               placeholder={t('purchase.suppliers.fields.contactPhonePlaceholder')}
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.contactPhone}
-              onChange={(e) => { formData.contactPhone = e.target.value }}
+              onChange={(e) => updateField('contactPhone', e.target.value)}
             />
           </div>
         </div>
@@ -272,7 +277,7 @@ export function SupplierActionDialog({
             rows={2}
             className='resize-none rounded-2xl border-none bg-muted/50 py-4 pl-11 pr-4 text-sm font-bold leading-relaxed transition-all focus:ring-2 focus:ring-primary/20'
             value={formData.address}
-            onChange={(e) => { formData.address = e.target.value }}
+            onChange={(e) => updateField('address', e.target.value)}
           />
         </div>
       </div>

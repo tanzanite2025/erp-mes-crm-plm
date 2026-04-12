@@ -36,6 +36,7 @@ type PatchSupplierRequest struct {
 
 type PurchaseOrderLineRequest struct {
 	ID            uint    `json:"id"`
+	Version       int     `json:"version"`
 	LineNo        int     `json:"lineNo"`
 	MaterialID    string  `json:"materialId"`
 	MaterialCode  string  `json:"materialCode"`
@@ -100,6 +101,7 @@ type PatchPurchaseOrderRequest struct {
 
 type PurchaseOrderLineResponse struct {
 	ID            uint    `json:"id"`
+	Version       int     `json:"version"`
 	LineNo        int     `json:"lineNo"`
 	MaterialID    string  `json:"materialId"`
 	MaterialCode  string  `json:"materialCode"`

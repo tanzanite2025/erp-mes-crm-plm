@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,12 @@ import (
 type bulkUpdateEmployeeStatusRequest struct {
 	IDs    []string `json:"ids"`
 	Status string   `json:"status"`
+}
+
+type bulkUpdateEmployeeStatusResponse struct {
+	Status     string `json:"status"`
+	Updated    int64  `json:"updated"`
+	OperatedAt string `json:"operatedAt"`
 }
 
 type commitEmployeeImportRequest struct {
@@ -50,7 +57,7 @@ func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
 		return
 	}
 
-	updated, err := services.BulkUpdateEmployeeStatus(input.IDs, input.Status)
+	result, err := services.BulkUpdateEmployeeStatus(input.IDs, input.Status)
 	if err != nil {
 		if err == services.ErrInvalidEmployeeStatus || err == services.ErrEmptyEmployeeIDs {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -60,7 +67,11 @@ func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "updated": updated})
+	c.JSON(http.StatusOK, bulkUpdateEmployeeStatusResponse{
+		Status:     "success",
+		Updated:    result.Updated,
+		OperatedAt: result.OperatedAt.UTC().Format(time.RFC3339Nano),
+	})
 }
 
 func SaveEmployeeHandler(c *gin.Context) {
@@ -86,7 +97,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee patch payload: " + err.Error()})
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "idCard", "phone", "emergencyPhone", "address", "bankCard", "bankName", "education", "age", "status", "joinedDate", "deptId", "lineId", "processId"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "idCard", "phone", "emergencyPhone", "address", "bankCard", "bankName", "education", "age", "status", "joinedDate", "deptId", "positionId", "lineId", "processId"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee delta: " + err.Error()})
 		return
 	}
@@ -211,6 +222,18 @@ func PatchEmployeeHandler(c *gin.Context) {
 				return
 			}
 			patch.DeptID = &value
+		case "positionId":
+			var value *string
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				var fallback string
+				if err := json.Unmarshal(valueRaw, &fallback); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee positionId payload"})
+					return
+				}
+				value = &fallback
+			}
+			patch.PositionID = value
+			patch.PositionIDSet = true
 		case "lineId":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {

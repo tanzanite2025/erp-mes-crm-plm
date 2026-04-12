@@ -1,9 +1,11 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
 import { type Mold, type Furnace } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
 import { AssetService } from '../services/asset-service'
 import { MoldTransactionService } from '../services/mold-transaction-service'
 import { MoldMaintenanceService } from '../services/mold-maintenance-service'
@@ -41,6 +43,36 @@ export function useAssets() {
     queryKey: MOLD_LOANS_QUERY_KEY,
     queryFn: () => AssetService.getLoans(),
   })
+
+  const molds = useMemo(() => {
+    if (moldsQuery.isLoading) return []
+    if (!moldsQuery.data) {
+      const error = new Error('[CRITICAL] Molds data is missing after load')
+      failLoudly(error, 'useAssets.molds')
+      throw error
+    }
+    return moldsQuery.data
+  }, [moldsQuery.data, moldsQuery.isLoading])
+
+  const furnaces = useMemo(() => {
+    if (furnacesQuery.isLoading) return []
+    if (!furnacesQuery.data) {
+      const error = new Error('[CRITICAL] Furnaces data is missing after load')
+      failLoudly(error, 'useAssets.furnaces')
+      throw error
+    }
+    return furnacesQuery.data
+  }, [furnacesQuery.data, furnacesQuery.isLoading])
+
+  const loans = useMemo(() => {
+    if (loansQuery.isLoading) return []
+    if (!loansQuery.data) {
+      const error = new Error('[CRITICAL] Asset loans data is missing after load')
+      failLoudly(error, 'useAssets.loans')
+      throw error
+    }
+    return loansQuery.data
+  }, [loansQuery.data, loansQuery.isLoading])
 
   const moldMutation = useMutation({
     mutationFn: async ({
@@ -116,9 +148,9 @@ export function useAssets() {
   })
 
   return {
-    molds: moldsQuery.data || [],
-    furnaces: furnacesQuery.data || [],
-    loans: loansQuery.data || [],
+    molds,
+    furnaces,
+    loans,
     isLoading: moldsQuery.isLoading || furnacesQuery.isLoading || loansQuery.isLoading,
     updateMolds: (mold: Mold, isPatch?: boolean, delta?: DeltaSet) =>
       moldMutation.mutateAsync({ mold, isPatch, delta }),

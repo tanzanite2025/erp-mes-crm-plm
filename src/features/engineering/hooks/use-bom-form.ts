@@ -3,20 +3,17 @@ import { useFieldArray, useForm, useWatch, type Resolver } from 'react-hook-form
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { normalizeBomChangeType, normalizeBomEffectiveDate, normalizeBomNo, normalizeBomStatus, normalizeBomVersion, normalizeRevisionNo } from '@/lib/codecs/code-normalization'
+import { failLoudly } from '@/lib/safe-catch'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
 import { bomSchema, type BOM, type ChangeOrder, type Product } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
-import { CHANGE_ORDERS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
+import { CHANGE_ORDERS_QUERY_KEY, productOptionsQueryKey } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
 
 const logger = createLogger('useBOMForm')
-const EMPTY_PRODUCTS: ReturnType<typeof Array<Product>> = []
-const EMPTY_CHANGE_ORDERS: ChangeOrder[] = []
-const EMPTY_MATERIALS: ReturnType<typeof Array<BOMItemDraft>> = []
 
 interface UseBOMFormProps {
   currentRow?: BOM
@@ -30,17 +27,16 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
   const initialValues = useMemo<BOM>(
     () => ({
       id: '',
-      bomNo: normalizeBomNo(''),
+      bomNo: '',
       productId: '',
       changeOrderId: '',
-      bomVersion: normalizeBomVersion('V1.0'),
+      bomVersion: 'V1.0',
       revisionNo: 'R1',
-      changeType: normalizeBomChangeType('MANUAL'),
+      changeType: 'MANUAL',
       isDefaultSite: true,
-      status: normalizeBomStatus('active'),
+      status: 'active',
       items: [],
       description: '',
-      createdAt: new Date().toISOString(),
       version: 1,
     }),
     []
@@ -59,8 +55,8 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
   const selectedProductId = useWatch({ control: form.control, name: 'productId' })
 
   const productsQuery = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts(),
+    queryKey: productOptionsQueryKey(),
+    queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
     enabled: open,
   })
   const changeOrdersQuery = useQuery({
@@ -77,9 +73,35 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     queryFn: () => MaterialCoreService.getMaterialOptions(),
     enabled: open,
   })
-  const products = productsQuery.data ?? EMPTY_PRODUCTS
-  const changeOrders = (changeOrdersQuery.data ?? EMPTY_CHANGE_ORDERS) as ChangeOrder[]
-  const materials = materialsQuery.data ?? EMPTY_MATERIALS
+  const products = useMemo(() => {
+    if (productsQuery.data) return productsQuery.data
+    if (productsQuery.isPending) return [] as Product[]
+    const error = productsQuery.error instanceof Error
+      ? productsQuery.error
+      : new Error('[CRITICAL] Missing BOM form products query data')
+    failLoudly(error, 'useBOMForm.products')
+    return [] as Product[]
+  }, [productsQuery.data, productsQuery.error, productsQuery.isPending])
+
+  const changeOrders = useMemo(() => {
+    if (changeOrdersQuery.data) return changeOrdersQuery.data as ChangeOrder[]
+    if (changeOrdersQuery.isPending) return [] as ChangeOrder[]
+    const error = changeOrdersQuery.error instanceof Error
+      ? changeOrdersQuery.error
+      : new Error('[CRITICAL] Missing BOM form change orders query data')
+    failLoudly(error, 'useBOMForm.changeOrders')
+    return [] as ChangeOrder[]
+  }, [changeOrdersQuery.data, changeOrdersQuery.error, changeOrdersQuery.isPending])
+
+  const materials = useMemo(() => {
+    if (materialsQuery.data) return materialsQuery.data
+    if (materialsQuery.isPending) return [] as BOMItemDraft[]
+    const error = materialsQuery.error instanceof Error
+      ? materialsQuery.error
+      : new Error('[CRITICAL] Missing BOM form materials query data')
+    failLoudly(error, 'useBOMForm.materials')
+    return [] as BOMItemDraft[]
+  }, [materialsQuery.data, materialsQuery.error, materialsQuery.isPending])
 
   useEffect(() => {
     if (changeOrdersQuery.error) {
@@ -109,19 +131,11 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
         if (isEdit && currentRow) {
           const data = {
             ...currentRow,
-            bomNo: normalizeBomNo(currentRow.bomNo),
-            bomVersion: normalizeBomVersion(currentRow.bomVersion),
             changeOrderId: currentRow.changeOrderId || '',
-            revisionNo: normalizeRevisionNo(currentRow.revisionNo),
-            changeType: normalizeBomChangeType(currentRow.changeType),
-            status: normalizeBomStatus(currentRow.status),
             isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
-            effectiveFrom: normalizeBomEffectiveDate(currentRow.effectiveFrom),
-            effectiveTo: normalizeBomEffectiveDate(currentRow.effectiveTo),
             items: (currentRow.items || []).map((item) => ({
               ...item,
               substitutes: item.substitutes || [],
-              standardUsage: item.standardUsage || 0, // 浠呰鍙栧悗绔繑鍥炵殑鏉权閲?
             })),
           } as BOM
           form.reset(data)
@@ -129,26 +143,24 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           return
         }
 
-        // [REMOVED] 鍓嶇涓嶅啀棰勮绠楀垵濮嬬増鏈彿锛岀敱鍚庣鍦ㄥ垱寤鸿姹傛椂鍒嗛厤鍒濆鍊兼垨閫氳繃 DTO 杩斿洖
+        // [REMOVED] 前端不再预计算初始版本号；创建时的初始值应由后端保存链路分配或通过 DTO 返回。
         const initialVersion = currentRow?.bomVersion || 'V1.0'
 
         const data = {
           id: '',
-          bomNo: normalizeBomNo(''),
+          bomNo: '',
           productId: initialProductId || '',
           changeOrderId: '',
-          bomVersion: normalizeBomVersion(initialVersion),
-          revisionNo: normalizeRevisionNo('R1'),
-          changeType: normalizeBomChangeType('MANUAL'),
+          bomVersion: initialVersion,
+          revisionNo: 'R1',
+          changeType: 'MANUAL',
           isDefaultSite: true,
-          status: normalizeBomStatus('active'),
+          status: 'active',
           items: (initialItems || []).map((item) => ({
             ...item,
             substitutes: item.substitutes || [],
-            standardUsage: item.standardUsage || 0,
           })),
           description: '',
-          createdAt: new Date().toISOString(),
           version: 1,
         } as BOM
         form.reset(data)

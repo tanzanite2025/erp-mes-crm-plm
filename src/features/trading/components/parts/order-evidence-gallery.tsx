@@ -2,17 +2,16 @@ import { ImageIcon, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { type OrderEvidence } from '../../data/schema'
+import { type TranslationKey } from '@/locales'
 
 interface OrderEvidenceGalleryProps {
   evidences: OrderEvidence[]
-  titleKey?: string
-  fallbackTitle?: string
+  titleKey?: TranslationKey
 }
 
 export function OrderEvidenceGallery({
   evidences,
   titleKey = 'tradingSalesOrder.detail.evidenceTitle',
-  fallbackTitle = 'Order Evidence',
 }: OrderEvidenceGalleryProps) {
   const { t } = useLanguage()
 
@@ -25,7 +24,7 @@ export function OrderEvidenceGallery({
       <div className='mb-3 flex items-center gap-2'>
         <ImageIcon className='size-3.5 text-primary' />
         <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 italic'>
-          {t(titleKey as never) || fallbackTitle}
+          {t(titleKey)}
         </h4>
       </div>
       <div className='flex flex-wrap gap-4'>

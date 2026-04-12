@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, CheckCircle2, Database, History, Package, Plus, RefreshCw, Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -39,10 +39,9 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 import { isForbiddenError } from '@/lib/error-status'
 import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
-import { auditUtils } from '@/lib/audit-utils'
 import { Route } from '@/routes/_authenticated/warehouse/inbound'
 import { WarehouseCategoryCoreService, type WarehouseCategoryOption } from '../category'
-import { InventoryCoreService, InventoryTransactionService, type InboundRecord, type MasterDataSearchResult } from '../inventory'
+import { InventoryCoreService, InventoryTransactionService, type InboundTDO, type MasterDataSearchResult } from '../inventory'
 import { warehouseQueryKeys } from '../query-keys'
 import {
     filterWarehouseCategoriesByScene,
@@ -53,8 +52,40 @@ const DEFAULT_INBOUND_DATA = {
     quantity: 1,
     batchNo: '',
     targetCategory: '',
-    entryDate: new Date().toISOString().slice(0, 10),
+    entryDate: '',
     remarks: ''
+}
+
+function resolveInboundCategoryLookup(
+    warehouseCategories: WarehouseCategoryOption[],
+    scene: 'product-inbound' | 'material-inbound',
+    preferredCode?: string
+) {
+    const selectableCategories = filterWarehouseCategoriesByScene(warehouseCategories, scene)
+    if (selectableCategories.length === 0) {
+        throw new Error(`[CRITICAL] Missing warehouse categories for ${scene}`)
+    }
+
+    const defaultCategoryCode = getDefaultWarehouseCategoryCode(warehouseCategories, scene, preferredCode)
+    if (!defaultCategoryCode) {
+        throw new Error(`[CRITICAL] Missing default warehouse category for ${scene}`)
+    }
+
+    return {
+        selectableCategories,
+        defaultCategoryCode,
+    }
+}
+
+function buildInboundTDO(selectedItem: MasterDataSearchResult, formData: typeof DEFAULT_INBOUND_DATA): InboundTDO {
+    return {
+        materialId: selectedItem.id,
+        quantity: formData.quantity,
+        batchNo: formData.batchNo,
+        entryDate: formData.entryDate,
+        remarks: formData.remarks,
+        targetCategory: formData.targetCategory,
+    }
 }
 
 export default function ProductInbound() {
@@ -104,10 +135,10 @@ export default function ProductInbound() {
     }, [debouncedSearchQuery, searchQueryResult.data, searchQueryResult.isSuccess, t])
 
     const submitInboundMutation = useMutation({
-        mutationFn: async (payload: Omit<InboundRecord, 'id'>) => {
+        mutationFn: async (payload: InboundTDO) => {
             return InventoryTransactionService.recordInbound(payload)
         },
-        onSuccess: async (_, variables) => {
+        onSuccess: async (savedRecord) => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inboundHistory() }),
                 queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
@@ -115,7 +146,7 @@ export default function ProductInbound() {
                 queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
             ])
 
-            toast.success(t('warehouse.inbound.toast.success', { name: variables.materialName }))
+            toast.success(t('warehouse.inbound.toast.success', { name: savedRecord.materialName }))
             setIsInboundOpen(false)
             setSelectedItem(null)
             setSearchQuery('')
@@ -132,8 +163,29 @@ export default function ProductInbound() {
         return <ForbiddenState />
     }
 
-    const history = historyQuery.data ?? []
-    const warehouseCategories = categoriesQuery.data ?? ([] as WarehouseCategoryOption[])
+    const history = useMemo(() => {
+        if (historyQuery.isLoading) return []
+        if (!historyQuery.data) {
+            const lookupError = historyQuery.error instanceof Error
+                ? historyQuery.error
+                : new Error('[CRITICAL] Inbound history missing after load')
+            failLoudly(lookupError, 'ProductInbound.history')
+            throw lookupError
+        }
+        return historyQuery.data
+    }, [historyQuery.data, historyQuery.error, historyQuery.isLoading])
+
+    const warehouseCategories = useMemo(() => {
+        if (categoriesQuery.isLoading) return [] as WarehouseCategoryOption[]
+        if (!categoriesQuery.data) {
+            const lookupError = categoriesQuery.error instanceof Error
+                ? categoriesQuery.error
+                : new Error('[CRITICAL] Warehouse category options missing after load')
+            failLoudly(lookupError, 'ProductInbound.categories')
+            throw lookupError
+        }
+        return categoriesQuery.data
+    }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
     const searchResults = debouncedSearchQuery ? (searchQueryResult.data ?? []) : []
     const isSearching = searchQueryResult.isFetching
 
@@ -142,11 +194,12 @@ export default function ProductInbound() {
         setSelectedItem(item)
 
         const scene = item.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
+        const { defaultCategoryCode } = resolveInboundCategoryLookup(warehouseCategories, scene, item.category)
         setFormData({
-            targetCategory: getDefaultWarehouseCategoryCode(warehouseCategories, scene, item.category),
-            batchNo: `P${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`,
+            targetCategory: defaultCategoryCode,
+            batchNo: '',
             quantity: 1,
-            entryDate: new Date().toISOString().slice(0, 10),
+            entryDate: '',
             remarks: '',
         })
 
@@ -161,26 +214,15 @@ export default function ProductInbound() {
             return
         }
 
-        await submitInboundMutation.mutateAsync({
-            materialId: selectedItem.id,
-            materialName: selectedItem.name,
-            materialCode: selectedItem.code,
-            quantity: formData.quantity,
-            purchasePrice: 0,
-            batchNo: formData.batchNo,
-            entryDate: formData.entryDate,
-            operator: auditUtils.getOperatorInfo().label,
-            remarks: formData.remarks,
-            targetCategory: formData.targetCategory
-        })
+        await submitInboundMutation.mutateAsync(buildInboundTDO(selectedItem, formData))
     }
 
-    const selectableWarehouseCategories = selectedItem
-        ? filterWarehouseCategoriesByScene(
-            warehouseCategories,
-            selectedItem.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
-        )
-        : warehouseCategories
+    const selectableWarehouseCategories = useMemo(() => {
+        if (!selectedItem) return warehouseCategories
+
+        const scene = selectedItem.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
+        return resolveInboundCategoryLookup(warehouseCategories, scene, selectedItem.category).selectableCategories
+    }, [selectedItem, warehouseCategories])
 
     const hasSearched = searchQuery.trim().length > 0
 
@@ -348,7 +390,7 @@ export default function ProductInbound() {
 
                     <div className='relative p-5 md:p-8'>
                         <DialogHeader className='mb-6 md:mb-8 text-left'>
-                            <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase flex items-center gap-3 md:gap-4'>
+                            <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic flex items-center gap-3 md:gap-4'>
                                 <div className='size-9 md:size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
                                     <Package className='size-4 md:size-5 text-emerald-600' />
                                 </div>

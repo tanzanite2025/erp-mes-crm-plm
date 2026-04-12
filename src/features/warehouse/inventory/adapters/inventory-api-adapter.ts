@@ -1,4 +1,5 @@
 import {
+  type CreateInventoryInboundApiDTO,
   type InventoryAlertSummaryApiDTO,
   type InventoryInboundRecordApiDTO,
   type InventoryItemApiDTO,
@@ -6,6 +7,7 @@ import {
   type MasterDataSearchResultApiDTO,
 } from '../contracts/inventory-api-dto'
 import {
+  type InboundTDO,
   type InboundRecord,
   type InventoryAlertSummary,
   type InventoryRecord,
@@ -22,6 +24,9 @@ export function toInventoryRecordContract(dto: InventoryItemApiDTO): InventoryRe
   return {
     id: dto.id,
     materialId: dto.materialId,
+    onHand: dto.onHand,
+    reserved: dto.reserved,
+    availableQty: dto.availableQty,
     quantity: dto.quantity,
     totalValue: dto.totalValue,
     averageUnitCost: dto.averageUnitCost,
@@ -94,21 +99,13 @@ export function toInboundRecordContracts(dtos: InventoryInboundRecordApiDTO[]): 
   return dtos.map(toInboundRecordContract)
 }
 
-export function toInboundRecordApiDTO(
-  contract: Omit<InboundRecord, 'id' | 'createdAt' | 'updatedAt'>
-): Omit<InventoryInboundRecordApiDTO, 'id' | 'createdAt' | 'updatedAt'> {
+export function toInboundTDOApiDTO(contract: InboundTDO): CreateInventoryInboundApiDTO {
   return {
     materialId: contract.materialId,
-    materialName: contract.materialName,
-    materialCode: contract.materialCode,
-    purchaseOrderId: contract.purchaseOrderId,
-    purchaseOrderLineId: contract.purchaseOrderLineId,
     quantity: contract.quantity,
-    purchasePrice: contract.purchasePrice,
     targetCategory: contract.targetCategory,
     batchNo: contract.batchNo,
     inboundDate: contract.entryDate,
-    operator: contract.operator,
     remarks: contract.remarks,
   }
 }

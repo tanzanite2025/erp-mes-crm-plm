@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/logger'
 import { ProductCoreService } from '../services/product-core-service'
 import { ProductTypeService } from '../services/product-type-service'
 import { type Product } from '../data/schema'
+import { type ProductSubmitPayload } from './use-product-form'
 import { useProductWriteActions } from './use-product-write-actions'
 import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 
@@ -65,11 +66,13 @@ export function useProductMgmt() {
         })
     }, [activeSubTab, activeTab, data, productTypes])
 
-    const handleFormSubmit = async (formData: Product | Product[]) => {
-        if (Array.isArray(formData)) {
-            await syncProducts(formData)
+    const handleFormSubmit = async ({ products, currentRow }: ProductSubmitPayload) => {
+        if (products.length > 1) {
+            await syncProducts(products)
         } else {
-            await saveProducts([formData])
+            const [product] = products
+            if (!product) return
+            await saveProducts([{ data: product, currentRow }])
         }
     }
 

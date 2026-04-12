@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
 import {
   WarehouseCategoryCoreService,
   type WarehouseCategory,
@@ -46,8 +48,21 @@ export function useWarehouseCategory() {
     }
   })
 
+  const categories = useMemo(() => {
+    if (categoriesQuery.isLoading) return []
+    if (!categoriesQuery.data) {
+      const lookupError =
+        categoriesQuery.error instanceof Error
+          ? categoriesQuery.error
+          : new Error('[CRITICAL] Warehouse category list missing after load')
+      failLoudly(lookupError, 'useWarehouseCategory.categories')
+      throw lookupError
+    }
+    return categoriesQuery.data
+  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
+
   return {
-    categories: categoriesQuery.data || [],
+    categories,
     isLoading: categoriesQuery.isLoading,
     error: categoriesQuery.error,
     refetch: categoriesQuery.refetch,

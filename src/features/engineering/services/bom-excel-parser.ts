@@ -163,7 +163,6 @@ export const parseBOMExcel = async (file: File): Promise<ParsedBOMExcelResult> =
       unitPrice: isNaN(unitPrice) ? 0 : unitPrice,
       unitUsage,
       wastagePercent: isNaN(wastage) ? 0 : wastage,
-      standardUsage: Number((unitUsage * (1 + wastage / 100)).toFixed(6)),
     })
   })
 

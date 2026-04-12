@@ -89,6 +89,11 @@ export const materialArchive = {
     externalTag: '物流尺寸',
     unknownCategory: '未分类',
   },
+  mobile: {
+    loading: '姝ｅ湪鍚屾鐗╂枡妗ｆ...',
+    empty: '鏆傛棤鐗╂枡妗ｆ',
+    internalDimensions: '鍐呭昂瀵?: {{value}}',
+  },
   form: {
     categoryLabel: '01. 物料分类',
     categoryPlaceholder: '请选择分类',
@@ -146,6 +151,10 @@ export const materialArchive = {
     },
     parse: {
       sheetNotFound: '未在 Excel 中找到“{{sheetName}}”页，请确保使用系统导出的标准模板。',
+      configSheetNotFound: '未在 Excel 中找到系统配置页“{{sheetName}}”，请重新使用最新标准模板导出后再维护。',
+      invalidGlobalVersion: 'Excel 中缺少有效的全局物料版本指纹，请重新导出最新模板后再导入。',
+      invalidCompositeId: 'Excel 中存在无效的记录唯一键：{{value}}。请勿手动修改锁定列。',
+      categoryMappingMissing: 'Excel 中存在未识别的物料分类：{{value}}。请使用模板下拉选项选择分类。',
     },
   },
 }

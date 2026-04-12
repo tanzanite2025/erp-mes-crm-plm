@@ -78,6 +78,10 @@ export const productSchema = z.object({
 
 export type Product = z.infer<typeof productSchema>
 
+export const productDraftSchema = productSchema.extend({
+  sku: z.string().default(''),
+})
+
 export const productTemplateSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Template name is required'),
@@ -226,13 +230,21 @@ export const bomSchema = z.object({
   status: z.enum(['draft', 'active', 'archived']).default('draft'),
   items: z.array(bomItemSchema).default([]),
   description: z.string().optional(),
-  createdAt: z.string(),
+  createdAt: z.string().optional(),
   version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)
+
+export const bomListSchema = z.object({
+  items: z.array(bomSchema).default([]),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+})
 
 export type BOMSubstitute = z.infer<typeof bomSubstituteSchema>
 export type BOMItem = z.infer<typeof bomItemSchema>
 export type BOM = z.infer<typeof bomSchema>
+export type BOMList = z.infer<typeof bomListSchema>
 
 // --- 产品工艺路线 (Product Routing) 模型 ---
 export const productProcessRoutingNodeSchema = z.object({

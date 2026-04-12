@@ -62,9 +62,9 @@ export function createMoldSchema(t?: EquipmentToolingTranslate) {
         sn: z.string().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.molds.dialog.validation.snRequired', moldValidationFallbacks)),
         name: z.string().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.molds.dialog.validation.nameRequired', moldValidationFallbacks)),
         maxCycles: z.number().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.molds.dialog.validation.maxCyclesPositive', moldValidationFallbacks)),
-        currentCycles: z.number().default(0),
+        currentCycles: z.number().min(0, 'Current cycles must be greater than or equal to 0').default(0),
         maintenanceThreshold: z.number().min(1, getEquipmentToolingValidationMessage(t, 'equipmentTooling.molds.dialog.validation.maintenanceThresholdPositive', moldValidationFallbacks)),
-        totalLifeCycles: z.number().default(0),
+        totalLifeCycles: z.number().min(0, 'Total life cycles must be greater than or equal to 0').default(0),
         groupName: z.string().optional(),
         status: moldStatusSchema,
         location: z.string().optional(),
@@ -77,6 +77,30 @@ export function createMoldSchema(t?: EquipmentToolingTranslate) {
         createdBy: z.string().optional(),
         updatedBy: z.string().optional(),
         updatedAt: z.string().optional(),
+    }).superRefine((value, ctx) => {
+        if (value.maintenanceThreshold > value.maxCycles) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['maintenanceThreshold'],
+                message: 'Maintenance threshold must not exceed max cycles',
+            })
+        }
+
+        if (value.currentCycles > value.maxCycles) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['currentCycles'],
+                message: 'Current cycles must not exceed max cycles',
+            })
+        }
+
+        if (value.totalLifeCycles < value.currentCycles) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['totalLifeCycles'],
+                message: 'Total life cycles must not be less than current cycles',
+            })
+        }
     })
 }
 

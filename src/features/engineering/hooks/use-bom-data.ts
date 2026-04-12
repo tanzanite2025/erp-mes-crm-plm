@@ -191,7 +191,6 @@ export function useBOMData() {
           }
         )
         toast.error(t('engineering.bomArchive.toasts.parseFailed'), { id: loadingId })
-        toast.error('BOM 鐎电厧鍙嗗鏌ユ▎閺傤叏绱板Λ鈧ù瀣煂閻椻晜鏋℃稉缁樻殶閹诡喛顢戦敍宀冾嚞閸忓牆婀悧鈺傛灐濡楋絾顢嶆稉顓熸▔瀵繒娣幎銈囩箹娴滄稓澧块弬娆忔倵閸愬秴顕遍崗?BOM閵?')
         return null
       }
 
@@ -223,11 +222,6 @@ export function useBOMData() {
         }
         if (typeof item.wastagePercent !== 'number' || Number.isNaN(item.wastagePercent)) {
           const error = new Error('[CRITICAL] Missing or invalid BOM wastagePercent in imported row')
-          failLoudly(error, 'useBOMData.parseExcel')
-          throw error
-        }
-        if (typeof item.standardUsage !== 'number' || Number.isNaN(item.standardUsage)) {
-          const error = new Error('[CRITICAL] Missing or invalid BOM standardUsage in imported row')
           failLoudly(error, 'useBOMData.parseExcel')
           throw error
         }
@@ -270,7 +264,6 @@ export function useBOMData() {
           unit: item.unit,
           unitUsage: item.unitUsage,
           wastagePercent: item.wastagePercent,
-          standardUsage: item.standardUsage,
           materialType: materialTypeLabel,
           supplyChannel: item.supplyChannel,
         }

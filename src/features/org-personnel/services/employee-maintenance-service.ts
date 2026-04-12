@@ -14,6 +14,12 @@ type EmployeeStatus = Employee['status']
 type BulkUpdateEmployeesStatusResponse = {
     status: 'success'
     updated: number
+    operatedAt: string
+}
+
+type BulkUpdateEmployeesStatusResult = {
+    updated: number
+    operatedAt: string
 }
 
 /**
@@ -45,8 +51,9 @@ export const EmployeeMaintenanceService = {
   /**
    * 批量更新员工状态 (如 Active -> Resigned)
    */
-  updateEmployeesStatus: async (ids: string[], status: EmployeeStatus): Promise<number> => {
+  updateEmployeesStatus: async (ids: string[], status: EmployeeStatus): Promise<BulkUpdateEmployeesStatusResult> => {
     let updated = 0
+    let operatedAt = ''
 
     try {
       const data = await apiFetch<BulkUpdateEmployeesStatusResponse>('/employees/status', {
@@ -54,6 +61,7 @@ export const EmployeeMaintenanceService = {
         body: JSON.stringify({ ids, status }),
       })
       updated = data?.updated ?? 0
+      operatedAt = data?.operatedAt ?? ''
     } catch (error) {
       const isMissingBulkEndpoint =
         error instanceof Error &&
@@ -66,9 +74,10 @@ export const EmployeeMaintenanceService = {
 
       logger.warn('Bulk status endpoint unavailable, falling back to per-employee updates.')
       updated = await fallbackUpdateEmployeesStatus(ids, status)
+      operatedAt = ''
     }
 
-    return updated
+    return { updated, operatedAt }
   },
 
   /**

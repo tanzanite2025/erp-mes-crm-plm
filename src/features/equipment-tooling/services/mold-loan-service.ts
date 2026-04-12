@@ -10,6 +10,13 @@ type MoldBorrowRecordResponse = {
     mold: Mold
 }
 
+type BorrowMoldSeed = {
+    sn: string
+    name: string
+    maxCycles: number
+    currentCycles: number
+}
+
 /**
  * MoldLoanService - 专门负责模具跨厂流转/借用业务 (已同步至后端)
  */
@@ -19,19 +26,7 @@ export class MoldLoanService {
      */
     static async getLoans(): Promise<MoldLoan[]> {
         const res = await apiFetch<MoldLoan[]>('/mold-loans')
-        const stored = ensureArrayResponse<MoldLoan>(res, 'MoldLoanService.getLoans')
-        
-        // 【智能预警】动态判定逾期状态 (前端实时计算以保证 UI 即时性)
-        const now = new Date()
-        return stored.map(loan => {
-            if (loan.status === 'ACTIVE' && loan.expectedReturnDate) {
-                const expectedDate = new Date(loan.expectedReturnDate)
-                if (expectedDate < now) {
-                    return { ...loan, status: 'OVERDUE' }
-                }
-            }
-            return loan
-        })
+        return ensureArrayResponse<MoldLoan>(res, 'MoldLoanService.getLoans')
     }
 
     /**
@@ -59,7 +54,10 @@ export class MoldLoanService {
      * 发起借入记录 (外部模具入库)
      * 会在资产档案中创建一个临时模具记录
      */
-    static async createBorrowRecord(loan: Omit<MoldLoan, 'id' | 'createdAt'>, moldData: Omit<Mold, 'id' | 'createdAt' | 'status'>): Promise<MoldBorrowRecordResponse> {
+    static async createBorrowRecord(
+        loan: Omit<MoldLoan, 'id' | 'createdAt'>,
+        moldData: BorrowMoldSeed
+    ): Promise<MoldBorrowRecordResponse> {
         // 建议由后端聚合接口处理
         const res = await apiFetch<MoldBorrowRecordResponse>('/mold-loans/borrow', {
             method: 'POST',

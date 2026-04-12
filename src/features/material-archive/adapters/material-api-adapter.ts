@@ -6,7 +6,7 @@ import type {
   MaterialListPageApiDTO,
   MaterialOptionApiDTO,
   SaveMaterialApiDTO,
-} from '../contracts/material-api-dto'
+} from '../contracts/material-api-contract'
 
 export interface MaterialListPageContract {
   items: Material[]

@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"strings"
+	"time"
 	"xdfc-server/dependencies"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
@@ -72,7 +73,12 @@ func ListPositions() ([]PositionListItemResponse, error) {
 	return defaultOrganizationService.ListPositions()
 }
 
-func BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {
+type BulkUpdateEmployeeStatusResult struct {
+	Updated    int64
+	OperatedAt time.Time
+}
+
+func BulkUpdateEmployeeStatus(ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
 	return defaultOrganizationService.BulkUpdateEmployeeStatus(ids, status)
 }
 
@@ -247,30 +253,32 @@ func (s *OrganizationService) ListPositions() ([]PositionListItemResponse, error
 	return MapPositionsToListItemResponse(positions), nil
 }
 
-func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status string) (int64, error) {
+func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
-		return 0, ErrEmptyEmployeeIDs
+		return BulkUpdateEmployeeStatusResult{}, ErrEmptyEmployeeIDs
 	}
 
 	normalizedStatus := strings.TrimSpace(status)
 	switch normalizedStatus {
 	case "active", "resigned", "on-leave":
 	default:
-		return 0, ErrInvalidEmployeeStatus
+		return BulkUpdateEmployeeStatusResult{}, ErrInvalidEmployeeStatus
 	}
 
 	var updated int64
+	var operatedAt time.Time
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		var err error
 		updated, err = s.repository.BulkUpdateEmployeeStatus(tx, normalizedIDs, normalizedStatus)
+		operatedAt = time.Now().UTC()
 		return err
 	})
 	if err != nil {
-		return 0, err
+		return BulkUpdateEmployeeStatusResult{}, err
 	}
 
-	return updated, nil
+	return BulkUpdateEmployeeStatusResult{Updated: updated, OperatedAt: operatedAt}, nil
 }
 
 func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {

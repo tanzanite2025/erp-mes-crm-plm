@@ -5,6 +5,7 @@ import {
     type ProductRoutingDraftOverrides,
     type ProductTemplateDraftOverrides,
 } from '../mutation-types'
+import { normalizeChangeOrderNo, normalizeRevisionNo, normalizeSiteCode } from '@/lib/codecs/code-normalization'
 
 export function createProductDraft(overrides: ProductDraftOverrides = {}): Product {
     return {
@@ -58,7 +59,7 @@ export function createChangeOrderDraft(overrides: ChangeOrderDraftOverrides = {}
         productId: '',
         status: 'draft',
         description: '',
-        createdAt: new Date().toISOString(),
+        createdAt: '',
         version: 1,
         changeOrderNo: '',
         changeType: 'ECO',
@@ -69,6 +70,28 @@ export function createChangeOrderDraft(overrides: ChangeOrderDraftOverrides = {}
         effectiveTo: '',
         ...overrides,
     }
+}
+
+const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
+
+export function buildChangeOrderDraft(overrides?: ChangeOrderDraftOverrides | null): ChangeOrder {
+    const siteCode = normalizeSiteCode(overrides?.siteCode)
+
+    return createChangeOrderDraft({
+        ...overrides,
+        changeOrderNo: normalizeChangeOrderNo(overrides?.changeOrderNo),
+        title: overrides?.title || '',
+        productId: overrides?.productId || '',
+        status: overrides?.status || 'draft',
+        description: overrides?.description || '',
+        siteCode,
+        revisionNo: normalizeRevisionNo(overrides?.revisionNo),
+        isDefaultSite: overrides?.isDefaultSite ?? !siteCode,
+        effectiveFrom: formatDateInput(overrides?.effectiveFrom),
+        effectiveTo: formatDateInput(overrides?.effectiveTo),
+        createdAt: overrides?.createdAt || '',
+        version: overrides?.version ?? 1,
+    })
 }
 
 export function createProductRoutingDraft(overrides: ProductRoutingDraftOverrides = {}): ProductProcessRouting {

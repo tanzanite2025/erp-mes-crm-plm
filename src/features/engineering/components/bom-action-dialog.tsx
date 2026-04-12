@@ -20,7 +20,6 @@ import { Input } from '@/components/ui/input'
 import { BOMFormHeader } from './bom-editor/bom-form-header'
 import { BOMRecipeEditor } from './bom-editor/bom-recipe-editor'
 import { type DeltaSet } from '@/lib/delta/types'
-import { normalizeBomNo, normalizeBomVersion } from '@/lib/codecs/code-normalization'
 import { type BOM } from '../data/schema'
 import { useBOMForm } from '../hooks/use-bom-form'
 import { type BOMItemDraft } from '../mutation-types'
@@ -54,14 +53,9 @@ export function BOMActionDialog({
   const typedForm = form as UseFormReturn<BOM>
 
   const handleFormSubmit = async (data: BOM) => {
-    const normalizedData: BOM = {
-      ...data,
-      bomNo: normalizeBomNo(data.bomNo),
-      bomVersion: normalizeBomVersion(data.bomVersion),
-    }
     let delta: DeltaSet | undefined
     if (isEdit) {
-      Object.assign(deltaProxy, normalizedData)
+      Object.assign(deltaProxy, data)
       delta = commitDelta()
       if (!delta || Object.keys(delta).length === 0) {
         onOpenChange(false)
@@ -69,7 +63,7 @@ export function BOMActionDialog({
       }
     }
 
-    if (onSubmit) await onSubmit(normalizedData, delta)
+    if (onSubmit) await onSubmit(data, delta)
     onOpenChange(false)
   }
 

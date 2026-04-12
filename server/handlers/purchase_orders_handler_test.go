@@ -51,7 +51,8 @@ func TestGetPurchaseOrderHandlerReturnsNamedErrorResponseWhenMissing(t *testing.
 		price REAL,
 		amount REAL,
 		received_qty REAL,
-		status TEXT
+		status TEXT,
+		version INTEGER DEFAULT 1
 	)`).Error, t)
 
 	recorder := httptest.NewRecorder()

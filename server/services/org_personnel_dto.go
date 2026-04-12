@@ -2,6 +2,8 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 	"xdfc-server/models"
 )
@@ -57,6 +59,7 @@ type EmployeeSaveRequest struct {
 	DeptID         string     `json:"deptId"`
 	LineID         string     `json:"lineId"`
 	ProcessID      string     `json:"processId"`
+	PositionID     string     `json:"positionId"`
 }
 
 type OrganizationTreeNodeResponse struct {
@@ -80,15 +83,18 @@ type EmployeeListItemResponse struct {
 	Gender         string     `json:"gender"`
 	Birthday       *time.Time `json:"birthday"`
 	IDCard         string     `json:"idCard"`
+	MaskedIDCard   string     `json:"maskedIdCard"`
 	Phone          string     `json:"phone"`
 	EmergencyPhone string     `json:"emergencyPhone"`
 	Address        string     `json:"address"`
 	BankCard       string     `json:"bankCard"`
+	MaskedBankCard string     `json:"maskedBankCard"`
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
+	WorkYears      string     `json:"workYears"`
 	DeptID         string     `json:"deptId"`
 	LineID         string     `json:"lineId"`
 	ProcessID      string     `json:"processId"`
@@ -109,15 +115,18 @@ type EmployeeSaveResponse struct {
 	Gender         string     `json:"gender"`
 	Birthday       *time.Time `json:"birthday"`
 	IDCard         string     `json:"idCard"`
+	MaskedIDCard   string     `json:"maskedIdCard"`
 	Phone          string     `json:"phone"`
 	EmergencyPhone string     `json:"emergencyPhone"`
 	Address        string     `json:"address"`
 	BankCard       string     `json:"bankCard"`
+	MaskedBankCard string     `json:"maskedBankCard"`
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
 	Age            int        `json:"age"`
 	Status         string     `json:"status"`
 	JoinedDate     *time.Time `json:"joinedDate"`
+	WorkYears      string     `json:"workYears"`
 	DeptID         string     `json:"deptId"`
 	LineID         string     `json:"lineId"`
 	ProcessID      string     `json:"processId"`
@@ -176,6 +185,59 @@ func MapOrganizationSaveRequestToModel(input OrganizationSaveRequest) models.Org
 	}
 }
 
+func formatEmployeeWorkYears(joinedDate *time.Time) string {
+	if joinedDate == nil {
+		return ""
+	}
+
+	start := joinedDate.UTC()
+	now := time.Now().UTC()
+	if start.After(now) {
+		return ""
+	}
+
+	diffYears := now.Sub(start).Hours() / 24 / 365.25
+	if diffYears < 0 {
+		return ""
+	}
+
+	rounded := float64(int(diffYears*10+0.5)) / 10
+	if rounded == float64(int64(rounded)) {
+		return fmt.Sprintf("%.0f", rounded)
+	}
+	return fmt.Sprintf("%.1f", rounded)
+}
+
+func maskEmployeeIDCard(value string) string {
+	normalized := strings.TrimSpace(value)
+	if normalized == "" {
+		return ""
+	}
+	runes := []rune(normalized)
+	if len(runes) <= 8 {
+		if len(runes) <= 2 {
+			return normalized
+		}
+		return string(runes[:1]) + strings.Repeat("*", len(runes)-2) + string(runes[len(runes)-1:])
+	}
+	return string(runes[:4]) + strings.Repeat("*", len(runes)-8) + string(runes[len(runes)-4:])
+}
+
+func maskEmployeeBankCard(value string) string {
+	normalized := strings.TrimSpace(value)
+	if normalized == "" {
+		return ""
+	}
+	runes := []rune(normalized)
+	if len(runes) <= 8 {
+		if len(runes) <= 2 {
+			return normalized
+		}
+		return string(runes[:1]) + strings.Repeat("*", len(runes)-2) + string(runes[len(runes)-1:])
+	}
+	return string(runes[:4]) + strings.Repeat("*", len(runes)-8) + string(runes[len(runes)-4:])
+}
+
 func MapOrganizationToSaveResponse(model models.Organization) OrganizationSaveResponse {
 	return OrganizationSaveResponse{
 		ID:                 model.ID,
@@ -222,6 +284,7 @@ func MapEmployeeSaveRequestToModel(input EmployeeSaveRequest) models.Employee {
 		DeptID:         input.DeptID,
 		LineID:         input.LineID,
 		ProcessID:      input.ProcessID,
+		PositionID:     input.PositionID,
 	}
 }
 
@@ -262,6 +325,10 @@ func MapOrganizationNodeToResponse(node *models.Organization) OrganizationTreeNo
 }
 
 func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemResponse {
+	workYears := formatEmployeeWorkYears(model.JoinedDate)
+	maskedIDCard := maskEmployeeIDCard(model.IDCard)
+	maskedBankCard := maskEmployeeBankCard(model.BankCard)
+
 	return EmployeeListItemResponse{
 		ID:             model.ID,
 		StaffID:        model.StaffID,
@@ -269,15 +336,18 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		Gender:         model.Gender,
 		Birthday:       model.Birthday,
 		IDCard:         model.IDCard,
+		MaskedIDCard:   maskedIDCard,
 		Phone:          model.Phone,
 		EmergencyPhone: model.EmergencyPhone,
 		Address:        model.Address,
 		BankCard:       model.BankCard,
+		MaskedBankCard: maskedBankCard,
 		BankName:       model.BankName,
 		Education:      model.Education,
 		Age:            model.Age,
 		Status:         model.Status,
 		JoinedDate:     model.JoinedDate,
+		WorkYears:      workYears,
 		DeptID:         model.DeptID,
 		LineID:         model.LineID,
 		ProcessID:      model.ProcessID,
@@ -301,6 +371,10 @@ func MapEmployeesToListItemResponse(models []models.Employee) []EmployeeListItem
 }
 
 func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
+	workYears := formatEmployeeWorkYears(model.JoinedDate)
+	maskedIDCard := maskEmployeeIDCard(model.IDCard)
+	maskedBankCard := maskEmployeeBankCard(model.BankCard)
+
 	return EmployeeSaveResponse{
 		ID:             model.ID,
 		StaffID:        model.StaffID,
@@ -308,15 +382,18 @@ func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
 		Gender:         model.Gender,
 		Birthday:       model.Birthday,
 		IDCard:         model.IDCard,
+		MaskedIDCard:   maskedIDCard,
 		Phone:          model.Phone,
 		EmergencyPhone: model.EmergencyPhone,
 		Address:        model.Address,
 		BankCard:       model.BankCard,
+		MaskedBankCard: maskedBankCard,
 		BankName:       model.BankName,
 		Education:      model.Education,
 		Age:            model.Age,
 		Status:         model.Status,
 		JoinedDate:     model.JoinedDate,
+		WorkYears:      workYears,
 		DeptID:         model.DeptID,
 		LineID:         model.LineID,
 		ProcessID:      model.ProcessID,

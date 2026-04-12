@@ -119,6 +119,12 @@ export const orgPersonnel = {
     noIdFound: 'No updatable personnel ID found',
     filterStatus: 'Filter Status',
     filterFiltering: 'FILTERING',
+    filterPosition: 'Position Filter',
+    filterPositionCode: 'POSITION',
+    unassigned: 'Unassigned',
+    batchSync: 'Batch Sync',
+    batchSyncHint: 'Add / Update',
+    bulkActionInProgress: 'Bulk action in progress...',
     searchPlaceholder: 'Search name, ID, phone...',
     bulk: {
       entity: 'Staff',
