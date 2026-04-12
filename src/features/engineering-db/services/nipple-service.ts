@@ -1,5 +1,5 @@
 import { Nipple, nippleSchema } from '../data/nipple-schema'
-import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
+import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 
 export const nippleService = {
   getNipples: async (): Promise<Nipple[]> => {
@@ -18,7 +18,7 @@ export const nippleService = {
   },
 
   saveNipple: async (data: Nipple) => {
-    const spec: EngineeringSpec = {
+    const spec: EngineeringSpecInput = {
       id: data.id,
       name: data.name,
       code: data.id,

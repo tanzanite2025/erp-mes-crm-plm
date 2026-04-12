@@ -1,6 +1,36 @@
-import { type DrillingPlan, type DrillingPlanInput, type LabelingDraft, drillingPlanSchema, labelingDraftSchema } from '../data/schema'
-import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
+import {
+  type DrillingPlan,
+  type DrillingPlanInput,
+  type LabelingDraft,
+  type LabelingDraftInput,
+  drillingPlanSchema,
+  labelingDraftSchema,
+} from '../data/schema'
+import {
+  engineeringSpecService,
+  type EngineeringSpec,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
+
+function toDrillingPlan(spec: EngineeringSpec): DrillingPlan {
+  return drillingPlanSchema.parse({
+    ...(spec.drillingData ?? {}),
+    id: spec.id,
+    version: spec._v,
+    createdAt: spec.createdAt,
+  })
+}
+
+function toLabelingDraft(spec: EngineeringSpec): LabelingDraft {
+  return labelingDraftSchema.parse({
+    ...(spec.labelingData ?? {}),
+    id: spec.id,
+    version: spec._v,
+    createdAt: spec.createdAt,
+  })
+}
 
 /**
  * 生产数据库服务 (Production DB Service)
@@ -12,14 +42,9 @@ export const ProductionDBService = {
   getDrilling: async (): Promise<DrillingPlan[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('DRILLING_PLAN')
-      return raw.map(s => ({
-        ...s.drillingData,
-        id: s.id,
-        version: s._v,
-        createdAt: s.createdAt || new Date().toISOString()
-      })).filter(item => drillingPlanSchema.safeParse(item).success)
+      return raw.map(toDrillingPlan)
     } catch (e) {
-      console.error('Failed to get drilling stats from cloud', e)
+      failLoudly(e, 'ProductionDBService.getDrilling')
       return []
     }
   },
@@ -65,25 +90,18 @@ export const ProductionDBService = {
   getLabeling: async (): Promise<LabelingDraft[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('LABELING_DRAFT')
-      return raw.map(s => ({
-        ...s.labelingData,
-        id: s.id,
-        version: s._v,
-        createdAt: s.createdAt || new Date().toISOString()
-      })).filter(item => labelingDraftSchema.safeParse(item).success)
+      return raw.map(toLabelingDraft)
     } catch (e) {
-      console.error('Failed to get labeling stats from cloud', e)
+      failLoudly(e, 'ProductionDBService.getLabeling')
       return []
     }
   },
 
-  saveLabeling: async (data: LabelingDraft[]) => {
+  saveLabeling: async (data: LabelingDraftInput[]) => {
     if (data.length === 0) return;
     const item = data[0];
-    const spec: EngineeringSpec = {
-      id: item.id,
+    const spec: EngineeringSpecInput = {
       name: item.name,
-      code: item.id,
       type: 'LABELING_DRAFT',
       active: true,
       labelingData: item,
@@ -92,7 +110,7 @@ export const ProductionDBService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
-  saveLabelingItem: async (item: LabelingDraft) => {
+  saveLabelingItem: async (item: LabelingDraftInput) => {
     await ProductionDBService.saveLabeling([item])
   },
 

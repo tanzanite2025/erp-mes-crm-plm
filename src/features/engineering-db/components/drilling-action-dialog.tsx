@@ -28,7 +28,7 @@ interface DrillingActionDialogProps {
     isPatch: boolean; 
     delta?: DeltaSet; 
     version?: number 
-  }) => void
+  }) => Promise<void>
   isLoading?: boolean
 }
 
@@ -85,7 +85,7 @@ export function DrillingActionDialog({
     }))
   }, [setFormData])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const parsed = drillingPlanInputSchema.safeParse(formData)
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? '请填写钻孔方案必填项')
@@ -99,14 +99,14 @@ export function DrillingActionDialog({
         onOpenChange(false)
         return
       }
-      onSave({ 
+      await onSave({ 
         data: payload, 
         isPatch: true, 
         delta, 
         version: currentRow.version 
       })
     } else {
-      onSave({ data: payload, isPatch: false })
+      await onSave({ data: payload, isPatch: false })
     }
   }
 

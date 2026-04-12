@@ -268,7 +268,7 @@ export function DrillingTab() {
     })
 
     const handleSave = async (params: {
-        data: DrillingPlan
+        data: DrillingPlanInput
         isPatch: boolean
         delta?: any
         version?: number

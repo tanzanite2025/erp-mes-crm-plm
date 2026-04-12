@@ -1,5 +1,9 @@
 import { type TechnicalSpec, technicalSpecSchema } from '../data/schema'
-import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
+import {
+  engineeringSpecService,
+  type EngineeringSpec,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { failLoudly } from '@/lib/safe-catch'
 
@@ -45,7 +49,7 @@ export const SpecsService = {
     // 编码应当由后端发号器在事务执行时分配。
     const safeCode = (item.id || '').trim()
     
-    const spec: EngineeringSpec = {
+    const spec: EngineeringSpecInput = {
       id: item.id,
       name: item.name,
       code: safeCode,

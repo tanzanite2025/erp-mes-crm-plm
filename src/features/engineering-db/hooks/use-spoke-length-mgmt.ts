@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { type SpokeLength } from '../data/schema'
+import { type SpokeLength, type SpokeLengthInput } from '../data/schema'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
 import { SpokeService } from '../services/spoke-service'
@@ -47,7 +47,7 @@ export function useSpokeLengthMgmt() {
 
   const saveMutation = useMutation({
     mutationFn: async (params: {
-      data: SpokeLength
+      data: SpokeLengthInput
       isPatch: boolean
       delta?: any
       version?: number
@@ -125,7 +125,7 @@ export function useSpokeLengthMgmt() {
   }
 
   const handleSave = async (params: {
-    data: SpokeLength
+    data: SpokeLengthInput
     isPatch: boolean
     delta?: any
     version?: number

@@ -1,5 +1,5 @@
 import { Hub, hubSchema } from '../data/hub-schema'
-import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
+import { engineeringSpecService, type EngineeringSpecInput } from '@/features/engineering/services/engineering-spec-service'
 
 export const hubService = {
   getHubs: async (): Promise<Hub[]> => {
@@ -18,7 +18,7 @@ export const hubService = {
   },
 
   saveHub: async (data: Hub) => {
-    const spec: EngineeringSpec = {
+    const spec: EngineeringSpecInput = {
       id: data.id,
       name: data.name,
       code: data.id,

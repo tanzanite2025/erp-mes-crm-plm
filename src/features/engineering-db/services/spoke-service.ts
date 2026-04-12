@@ -1,6 +1,20 @@
-import { type SpokeLength, spokeLengthSchema } from '../data/schema'
-import { engineeringSpecService, type EngineeringSpec } from '@/features/engineering/services/engineering-spec-service'
+import { type SpokeLength, type SpokeLengthInput, spokeLengthSchema } from '../data/schema'
+import {
+  engineeringSpecService,
+  type EngineeringSpec,
+  type EngineeringSpecInput,
+} from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { failLoudly } from '@/lib/safe-catch'
+
+function toSpokeLength(spec: EngineeringSpec): SpokeLength {
+  return spokeLengthSchema.parse({
+    ...(spec.spokeLengthData ?? {}),
+    id: spec.id,
+    version: spec._v,
+    createdAt: spec.createdAt,
+  })
+}
 
 /**
  * 辐条工程服务 (Spoke Service)
@@ -13,14 +27,9 @@ export const SpokeService = {
   getSpokeLength: async (): Promise<SpokeLength[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('SPOKE_LENGTH')
-      return raw.map(s => ({
-        ...s.spokeLengthData,
-        id: s.id,
-        version: s._v,
-        createdAt: s.createdAt || new Date().toISOString()
-      })).filter(item => spokeLengthSchema.safeParse(item).success)
+      return raw.map(toSpokeLength)
     } catch (e) {
-      console.error('Failed to get spoke length from cloud', e)
+      failLoudly(e, 'SpokeService.getSpokeLength')
       return []
     }
   },
@@ -28,13 +37,11 @@ export const SpokeService = {
   /**
    * 保存辐条长度记录
    */
-  saveSpokeLength: async (data: SpokeLength[]) => {
+  saveSpokeLength: async (data: SpokeLengthInput[]) => {
     if (data.length === 0) return;
     const item = data[0];
-    const spec: EngineeringSpec = {
-      id: item.id,
+    const spec: EngineeringSpecInput = {
       name: item.name,
-      code: item.id,
       type: 'SPOKE_LENGTH',
       active: true,
       spokeLengthData: item,
@@ -43,7 +50,7 @@ export const SpokeService = {
     await engineeringSpecService.saveSpec(spec);
   },
 
-  saveSpokeLengthItem: async (item: SpokeLength) => {
+  saveSpokeLengthItem: async (item: SpokeLengthInput) => {
     await SpokeService.saveSpokeLength([item])
   },
 

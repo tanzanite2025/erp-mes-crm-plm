@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
-import { type LabelingDraft } from '../data/schema'
+import { type LabelingDraft, type LabelingDraftInput } from '../data/schema'
 import { ProductionDBService } from '../services/production-db-service'
 import { FileResolverService } from '../services/file-resolver-service'
 import { LabelingActionDialog } from '../components/labeling-action-dialog'
@@ -75,7 +75,7 @@ export function LabelingTab() {
 
     const saveMutation = useMutation({
         mutationFn: async (params: {
-            data: LabelingDraft
+            data: LabelingDraftInput
             isPatch: boolean
             delta?: any
             version?: number
@@ -262,7 +262,7 @@ export function LabelingTab() {
     })
 
     const handleSave = async (params: {
-        data: LabelingDraft
+        data: LabelingDraftInput
         isPatch: boolean
         delta?: any
         version?: number
