@@ -1,45 +1,20 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useSearch } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { CADViewerDialog } from '@/features/engineering-db/components/cad-viewer/cad-viewer-dialog'
 import { ExcelViewerDialog } from '@/features/engineering-db/components/excel-viewer/excel-viewer-dialog'
 import { PDFViewerDialog } from '@/features/engineering-db/components/pdf-viewer/pdf-viewer-dialog'
-import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
-import { FileResolverService } from '@/features/engineering-db/services/file-resolver-service'
-import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { useCommands } from '@/features/system-mgmt/workflow-core/hooks/use-commands'
 import { useAuthStore } from '@/stores/auth-store'
 import type { SalesOrder } from '../data/schema'
+import { useSalesOrderCommandState } from '../hooks/use-sales-order-command-state'
+import { useSalesOrderDetailActions } from '../hooks/use-sales-order-detail-actions'
+import { useSalesOrderPreview } from '../hooks/use-sales-order-preview'
 import { useGetSalesOrderDetail, useSalesOrderMutations } from '../sales'
 import { SalesOrderDetailActivity } from './parts/sales-order-detail-activity'
 import { SalesOrderDetailHeader } from './parts/sales-order-detail-header'
 import { SalesOrderDetailItemsCard } from './parts/sales-order-detail-items-card'
 import { SalesOrderDetailSummary } from './parts/sales-order-detail-summary'
-
-interface PreviewFile {
-  fileName: string
-  fileUrl: string
-}
-
-interface ProductPreviewRefs {
-  engineeringSpecId?: string
-  techSpecId?: string
-  drillingPlanId?: string
-}
-
-interface PreviewAsset {
-  id: string
-  fileUrl?: string
-  name?: string
-  fileExtension?: string
-}
-
-type DrawingType = 'spec' | 'drilling' | 'labeling'
 
 export function SalesOrderDetail({
   order: initialOrder,
@@ -56,141 +31,28 @@ export function SalesOrderDetail({
   const order = detailedOrder || initialOrder
   const { claimMutation, statusTransitionMutation, cancelMutation } = useSalesOrderMutations()
   const user = useAuthStore((state) => state.user)
-  const { commands } = useCommands()
   const canHardDelete = allowsAction('action_trading_sales_order_delete')
-  const search = useSearch({ from: '/_authenticated/trading/sales-orders' })
-  const activeCommand = useMemo(
-    () => commands.find((command) => command.id === search?.activeCommandId),
-    [commands, search?.activeCommandId]
-  )
-  const isClaimAction = Boolean(
-    activeCommand?.actionType === 'CLAIM' ||
-      activeCommand?.title?.toLowerCase().includes('claim') ||
-      activeCommand?.title?.includes('认领')
-  )
+  const { activeCommandTitle, activeCommandContent, isClaimAction } = useSalesOrderCommandState()
+  const {
+    handlePreview,
+    previewFile,
+    isCADOpen,
+    isExcelOpen,
+    isPDFOpen,
+    setIsCADOpen,
+    setIsExcelOpen,
+    setIsPDFOpen,
+  } = useSalesOrderPreview()
 
-  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null)
-  const [isCADOpen, setIsCADOpen] = useState(false)
-  const [isPDFOpen, setIsPDFOpen] = useState(false)
-  const [isExcelOpen, setIsExcelOpen] = useState(false)
-
-  useEffect(() => {
-    return () => {
-      if (previewFile?.fileUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(previewFile.fileUrl)
-      }
-    }
-  }, [previewFile?.fileUrl])
-
-  const handlePreview = async (
-    productId: string | undefined,
-    planId: string | undefined,
-    type: DrawingType
-  ) => {
-    try {
-      let targetId = planId
-      if (!targetId && productId) {
-        const product = await ProductCoreService.getProductById(productId) as ProductPreviewRefs | null
-        if (product) {
-          targetId =
-            type === 'spec'
-              ? product.engineeringSpecId || product.techSpecId
-              : product.drillingPlanId
-        }
-      }
-
-      if (!targetId) {
-        toast.error(t('tradingSalesOrder.preview.noTechFile'))
-        return
-      }
-
-      let files: PreviewAsset[] = []
-      if (type === 'spec') files = await SpecsService.getSpecs()
-      else if (type === 'drilling') files = await ProductionDBService.getDrilling()
-      else files = await ProductionDBService.getLabeling()
-
-      const file = files.find((item) => item.id === targetId)
-      if (!file || !file.fileUrl) {
-        toast.error(t('tradingSalesOrder.preview.fileMissing'))
-        return
-      }
-
-      const resolvedUrl = await FileResolverService.resolveFileUrl(file.fileUrl)
-      if (!resolvedUrl) {
-        toast.error(t('tradingSalesOrder.preview.resolveFailed'))
-        return
-      }
-
-      const fileName = file.name || t('tradingSalesOrder.preview.unknownFile')
-      setPreviewFile({ fileName, fileUrl: resolvedUrl })
-
-      const ext = file.fileExtension || fileName.split('.').pop()?.toLowerCase() || ''
-      if (['dwg', 'dxf', 'rvt'].includes(ext)) setIsCADOpen(true)
-      else if (['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) setIsPDFOpen(true)
-      else if (['xlsx', 'xls', 'csv'].includes(ext)) setIsExcelOpen(true)
-      else window.open(resolvedUrl, '_blank')
-    } catch (error) {
-      failLoudly(error, 'SalesOrderDetail.handlePreview')
-    }
-  }
-
-  const handleMutateStatus = (payload: Partial<SalesOrder>) => {
-    if (!order) return
-    if (!allowsAction('action_trading_sales_order_manage')) return
-
-    const nextStatus = payload.status
-    const nextStatusNote = payload.statusNote
-    if (!nextStatus) return
-    if (nextStatus === 'Canceled') {
-      cancelMutation.mutate({
-        orderId: order.id,
-        reason: nextStatusNote,
-        operator: user?.accountNo || 'Unknown',
-        actorId: user?.id,
-        expectedVersion: order.version,
-      })
-      return
-    }
-    if (nextStatus === order.status && (nextStatusNote ?? '') === (order.statusNote ?? '')) return
-
-    statusTransitionMutation.mutate({
-      orderId: order.id,
-      status: nextStatus,
-      statusNote: nextStatusNote,
-      operator: user?.accountNo || 'Unknown',
-      actorId: user?.id,
-      expectedVersion: order.version,
-    })
-  }
-
-  const handleClaimModel = (model: string) => {
-    if (!order) return
-    if (!allowsAction('action_trading_sales_order_manage')) return
-
-    const lineNos = order.lines
-      .filter((line) => line.productModel === model && !line.claimedBy)
-      .map((line) => line.lineNo)
-    claimMutation.mutate({
-      orderId: order.id,
-      lineNos,
-      operator: user?.accountNo || 'Unknown',
-      actorId: user?.id,
-      expectedVersion: order.version,
-    })
-  }
-
-  const handleClaimLine = (lineNo: number) => {
-    if (!order) return
-    if (!allowsAction('action_trading_sales_order_manage')) return
-
-    claimMutation.mutate({
-      orderId: order.id,
-      lineNos: [lineNo],
-      operator: user?.accountNo || 'Unknown',
-      actorId: user?.id,
-      expectedVersion: order.version,
-    })
-  }
+  const { handleClaimLine, handleClaimModel, handleMutateStatus } = useSalesOrderDetailActions({
+    order,
+    allowsAction,
+    claimMutation,
+    statusTransitionMutation,
+    cancelMutation,
+    operator: user?.accountNo || 'Unknown',
+    actorId: user?.id,
+  })
 
   if (isDetailLoading) {
     return (
@@ -221,8 +83,8 @@ export function SalesOrderDetail({
       <SalesOrderDetailHeader
         order={order}
         isClaimAction={isClaimAction}
-        activeCommandTitle={activeCommand?.title}
-        activeCommandContent={activeCommand?.content}
+        activeCommandTitle={activeCommandTitle}
+        activeCommandContent={activeCommandContent}
         onMutateStatus={handleMutateStatus}
       />
 
@@ -268,3 +130,4 @@ export function SalesOrderDetail({
     </div>
   )
 }
+

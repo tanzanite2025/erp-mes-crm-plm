@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   ExternalLink,
@@ -31,11 +32,13 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
+import { tradingQueryKeys } from '../query-keys'
 import { CustomerActionDialog } from './customer-action-dialog'
 import { useCustomerMutations, useGetCustomerList } from '../customer'
 
 export function CustomerList() {
   const { locale, t } = useLanguage()
+  const queryClient = useQueryClient()
   const { allowsAction } = useNonBlockingPermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
@@ -46,7 +49,6 @@ export function CustomerList() {
     isLoading,
     isError,
     error,
-    refetch,
   } = useGetCustomerList()
   const user = useAuthStore((state) => state.user)
   const { createMutation, saveMutation, deleteMutation } = useCustomerMutations()
@@ -185,7 +187,7 @@ export function CustomerList() {
         </p>
         <Button
           variant='outline'
-          onClick={() => void refetch()}
+          onClick={() => void queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })}
           className='h-12 rounded-full border-dashed border-2 font-black text-[10px] uppercase tracking-widest px-10'
         >
           {locale === 'zh-CN' ? '重试加载' : 'Retry'}

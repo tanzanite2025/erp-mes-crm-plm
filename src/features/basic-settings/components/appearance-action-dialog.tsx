@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Palette, RotateCcw, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
@@ -17,28 +18,17 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  APPEARANCE_MAPPING_KEY,
+  APPEARANCE_MAPPING_QUERY_KEY,
+  DEFAULT_APPEARANCE_MAPPING,
+  type AppearanceMapping,
+} from '../data/appearance-mapping'
+import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
 
-export interface AppearanceMapping {
-  [key: string]: {
-    label: string
-    desc: string
-  }
-}
+export type { AppearanceMapping } from '../data/appearance-mapping'
 
 const logger = createLogger('AppearanceActionDialog')
-const APPEARANCE_MAPPING_KEY = 'xdfc_appearance_mapping'
-
-const DEFAULT_MAPPING: AppearanceMapping = {
-  '1': { label: 'UD', desc: '无纹理碳纤原色' },
-  '2': { label: '3K', desc: '平纹编织(大方格)' },
-  '3': { label: '12K', desc: '平纹编织(粗线)' },
-  '4': { label: 'MARBLE', desc: '大理石纹/锻造纹' },
-  '5': { label: 'PAINT', desc: '色漆涂层' },
-  '6': { label: 'CUSTOM', desc: '特殊定制逻辑' },
-  '7': { label: '-', desc: '未定义' },
-  '8': { label: '-', desc: '未定义' },
-  '9': { label: '-', desc: '未定义' },
-}
 
 interface AppearanceActionDialogProps {
   open: boolean
@@ -47,31 +37,32 @@ interface AppearanceActionDialogProps {
 
 export function AppearanceActionDialog({ open, onOpenChange }: AppearanceActionDialogProps) {
   const { t } = useLanguage()
-  const [mapping, setMapping] = useState<AppearanceMapping>(DEFAULT_MAPPING)
+  const queryClient = useQueryClient()
+  const { data: savedMapping = DEFAULT_APPEARANCE_MAPPING } = useAppearanceMapping()
+  const [mapping, setMapping] = useState<AppearanceMapping>(DEFAULT_APPEARANCE_MAPPING)
 
   useEffect(() => {
-    const loadData = async () => {
-      if (open) {
-        try {
-          const stored = await StorageService.getItem<AppearanceMapping>(APPEARANCE_MAPPING_KEY)
-          setMapping(stored || DEFAULT_MAPPING)
-        } catch (error) {
-          logger.error('[FAIL_LOUDLY] AppearanceActionDialog.loadData', error)
-          setMapping(DEFAULT_MAPPING)
-        }
-      }
+    if (!open) {
+      return
     }
-    loadData()
-  }, [open])
+
+    try {
+      setMapping(savedMapping)
+    } catch (error) {
+      logger.error('[FAIL_LOUDLY] AppearanceActionDialog.syncDraft', error)
+      setMapping(DEFAULT_APPEARANCE_MAPPING)
+    }
+  }, [open, savedMapping])
 
   const handleSave = async () => {
     await StorageService.setItem(APPEARANCE_MAPPING_KEY, mapping)
+    queryClient.setQueryData(APPEARANCE_MAPPING_QUERY_KEY, mapping)
     toast.success(t('basicSettings.appearanceMapping.toasts.saved'))
     onOpenChange(false)
   }
 
   const handleReset = () => {
-    setMapping(DEFAULT_MAPPING)
+    setMapping(DEFAULT_APPEARANCE_MAPPING)
     toast.info(t('basicSettings.appearanceMapping.toasts.reset'))
   }
 
@@ -105,7 +96,7 @@ export function AppearanceActionDialog({ open, onOpenChange }: AppearanceActionD
         </DialogHeader>
 
         <div className='grid max-h-[50vh] grid-cols-1 gap-4 overflow-y-auto py-4 pr-2 md:grid-cols-2'>
-          {Object.keys(DEFAULT_MAPPING)
+          {Object.keys(DEFAULT_APPEARANCE_MAPPING)
             .sort()
             .map((key) => (
               <div

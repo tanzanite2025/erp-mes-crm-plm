@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
-import { Search, Plus, Edit, Trash2, Target, FileCode, FileText, Eye, Hash, Calendar, Layers } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Target, Eye, Hash, Calendar, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
@@ -34,26 +34,31 @@ import { DrillingActionDialog } from '../components/drilling-action-dialog'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { toast } from 'sonner'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { ENGINEERING_DB_DRILLING_QUERY_KEY } from '../query-keys'
+import { useEngineeringDbProductLookup } from '../hooks/use-engineering-db-product-lookup'
+import {
+    getEngineeringDbFileVisual,
+    getEngineeringDbPreviewKind,
+} from '../view-helpers'
+
+type DrillingRowViewModel = {
+    item: DrillingPlan
+    productSku: string | null
+    productName: string | null
+    searchText: string
+}
 
 export function DrillingTab() {
     const { t } = useLanguage()
     const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/drilling' })
-    const { data: products = [] } = useGetProducts()
+    const { productMap } = useEngineeringDbProductLookup()
     const [searchTerm, setSearchTerm] = useState('')
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<DrillingPlan | undefined>(undefined)
-
-    const productMap = useMemo(() => {
-        const map = new Map<string, (typeof products)[0]>()
-        products.forEach((product) => map.set(product.id, product))
-        return map
-    }, [products])
 
     const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
     const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
@@ -108,23 +113,29 @@ export function DrillingTab() {
     }, [previewFile?.url])
 
     const filteredData = useMemo(() => {
-        return data.filter((item) => {
+        const rows = data.map<DrillingRowViewModel>((item) => {
             const product = productMap.get(item.productId)
-            const searchStr = searchTerm.toLowerCase()
-            return item.name.toLowerCase().includes(searchStr) ||
-                   (product?.sku || '').toLowerCase().includes(searchStr) ||
-                   (item.lacingPattern || '').toLowerCase().includes(searchStr)
+            return {
+                item,
+                productSku: product?.sku || null,
+                productName: product?.name || null,
+                searchText: [
+                    item.name,
+                    product?.sku || '',
+                    product?.name || '',
+                    item.lacingPattern || '',
+                    item.standardHoles || '',
+                ].join(' ').toLowerCase(),
+            }
         })
-    }, [data, productMap, searchTerm])
 
-    const getIconInfo = (ext?: string) => {
-        const lowerExt = ext?.toLowerCase()
-        const isCAD = ['dwg', 'dxf', 'stp', 'step'].includes(lowerExt || '')
-        const Icon = isCAD ? FileCode : FileText
-        const colorClass = isCAD ? 'text-orange-500 bg-orange-500/10 border-orange-500/20' :
-                         'text-indigo-500 bg-indigo-500/10 border-indigo-500/20'
-        return { Icon, colorClass, isCAD }
-    }
+        const searchStr = searchTerm.trim().toLowerCase()
+        if (!searchStr) {
+            return rows
+        }
+
+        return rows.filter((row) => row.searchText.includes(searchStr))
+    }, [data, productMap, searchTerm])
 
     const handlePreview = async (item: DrillingPlan) => {
         if (!item.fileUrl) {
@@ -139,40 +150,39 @@ export function DrillingTab() {
         }
 
         const product = productMap.get(item.productId)
-        const ext = item.fileExtension?.toLowerCase()
-
         setPreviewFile({
             url: resolvedUrl,
             name: item.name,
             sku: product?.sku
         })
 
-        if (['dwg', 'dxf', 'stp', 'step'].includes(ext || '')) {
+        const previewKind = getEngineeringDbPreviewKind(item.fileExtension)
+        if (previewKind === 'cad') {
             setCadPreviewOpen(true)
-        } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+        } else if (previewKind === 'excel') {
             setExcelPreviewOpen(true)
         } else {
             setPdfPreviewOpen(true)
         }
     }
 
-    const columns: ColumnDef<DrillingPlan>[] = [
+    const columns: ColumnDef<DrillingRowViewModel>[] = [
         {
-            accessorKey: 'name',
+            accessorKey: 'item.name',
             header: t('engineering.drilling.table.name'),
             cell: ({ row }) => {
-                const info = getIconInfo(row.original.fileExtension)
-                const Icon = info.Icon
+                const fileVisual = getEngineeringDbFileVisual({ extension: row.original.item.fileExtension, category: 'DRILLING' })
+                const Icon = fileVisual.icon
                 return (
                     <div className='flex items-center gap-3'>
-                        <div className={`size-10 rounded-lg border ${info.colorClass} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-                            <Icon className='size-5' />
+                        <div className={`size-10 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
-                            <span className='font-bold text-sm text-foreground'>{row.original.name}</span>
+                            <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
                             <div className='flex items-center gap-2 mt-1'>
                                 <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
-                                    {row.original.fileExtension || 'PDF'}
+                                    {row.original.item.fileExtension || 'PDF'}
                                 </Badge>
                             </div>
                         </div>
@@ -183,43 +193,42 @@ export function DrillingTab() {
         {
             header: t('engineering.drilling.table.product'),
             cell: ({ row }) => {
-                const product = productMap.get(row.original.productId)
                 return (
                     <div className='flex flex-col'>
                         <span className='text-[12px] font-bold text-indigo-600 font-mono'>
-                            {product?.sku || 'UNKNOWN'}
+                            {row.original.productSku || 'UNKNOWN'}
                         </span>
                         <span className='text-[10px] text-muted-foreground mt-0.5 truncate max-w-[150px]'>
-                            {product?.name || t('engineering.drilling.table.unlinked')}
+                            {row.original.productName || t('engineering.drilling.table.unlinked')}
                         </span>
                     </div>
                 )
             }
         },
         {
-            accessorKey: 'lacingPattern',
+            accessorKey: 'item.lacingPattern',
             header: t('engineering.drilling.table.lacing'),
             cell: ({ row }) => (
                 <Badge variant='outline' className='bg-indigo-50 text-indigo-700 border-indigo-200 font-mono text-[10px] h-5'>
-                    {row.original.lacingPattern || '--'}
+                    {row.original.item.lacingPattern || '--'}
                 </Badge>
             )
         },
         {
-            accessorKey: 'standardHoles',
+            accessorKey: 'item.standardHoles',
             header: t('engineering.drilling.table.holes'),
             cell: ({ row }) => (
                 <span className='font-bold text-sm text-foreground italic'>
-                    {row.original.standardHoles ? `${row.original.standardHoles}H` : '--'}
+                    {row.original.item.standardHoles ? `${row.original.item.standardHoles}H` : '--'}
                 </span>
             )
         },
         {
-            accessorKey: 'createdAt',
+            accessorKey: 'item.createdAt',
             header: t('engineering.drilling.table.date'),
             cell: ({ row }) => (
                 <span className='font-mono text-[11px] text-muted-foreground font-medium'>
-                    {row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString() : 'N/A'}
+                    {row.original.item.createdAt ? new Date(row.original.item.createdAt).toLocaleDateString() : 'N/A'}
                 </span>
             )
         },
@@ -228,9 +237,9 @@ export function DrillingTab() {
             header: t('engineering.drilling.table.actions'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-1'>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                     <Button
                         variant='ghost'
                         size='icon'
@@ -238,7 +247,7 @@ export function DrillingTab() {
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.drilling.toasts.deleteConfirm',
                             onAction: async () => {
-                                await deleteMutation.mutateAsync(row.original.id)
+                                await deleteMutation.mutateAsync(row.original.item.id)
                             }
                         })}
                     >
@@ -324,10 +333,10 @@ export function DrillingTab() {
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
-                                        onClick={() => handlePreview(row.original)}
+                                        onClick={() => handlePreview(row.original.item)}
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
-                                            row.original.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
+                                            row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
                                         )}
                                     >
                                         {row.getVisibleCells().map((cell) => (
@@ -351,10 +360,10 @@ export function DrillingTab() {
                 ) : filteredData.length === 0 ? (
                     <div className='p-12 text-center bg-muted/5 rounded-[28px] border border-dashed border-muted-foreground/50 italic text-[10px] text-muted-foreground opacity-40 uppercase'>{t('engineering.drilling.placeholders.noData')}</div>
                 ) : (
-                    filteredData.map((item) => {
-                        const product = productMap.get(item.productId)
-                        const info = getIconInfo(item.fileExtension)
-                        const Icon = info.Icon
+                    filteredData.map((row) => {
+                        const item = row.item
+                        const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: 'DRILLING' })
+                        const Icon = fileVisual.icon
                         return (
                             <div
                                 key={item.id}
@@ -365,16 +374,16 @@ export function DrillingTab() {
                                 )}
                             >
                                 <div className='absolute top-0 right-0 p-4 opacity-10'>
-                                    <Icon className={cn('size-16', info.colorClass.split(' ')[0])} />
+                                    <Icon className={cn('size-16', fileVisual.iconClassName)} />
                                 </div>
 
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
-                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', info.colorClass)}>
-                                            <Icon className='size-5' />
+                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', fileVisual.containerClassName)}>
+                                            <Icon className={cn('size-5', fileVisual.iconClassName)} />
                                         </div>
                                         <Badge variant='outline' className='text-[10px] font-black italic font-mono bg-indigo-500/10 border-none text-indigo-600 px-3 rounded-full h-5 leading-none'>
-                                            {product?.sku || 'GENERIC'}
+                                            {row.productSku || 'GENERIC'}
                                         </Badge>
                                     </div>
 

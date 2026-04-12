@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { CreditCard, Info, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
@@ -12,13 +13,13 @@ import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { isConflictError } from '@/lib/handle-server-error'
 import { type PaymentTerm } from '../data/schema'
+import { financeQueryKeys } from '../query-keys'
 import { PaymentTermMaintenanceService } from '../services/payment-term-maintenance-service'
 
 interface PaymentTermActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editingTerm: PaymentTerm | null
-  onSuccess: () => void
 }
 
 const DEFAULT_TERM: Partial<PaymentTerm> = {
@@ -36,9 +37,9 @@ export function PaymentTermActionDialog({
   open,
   onOpenChange,
   editingTerm,
-  onSuccess,
 }: PaymentTermActionDialogProps) {
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const isEdit = !!editingTerm
 
   const shellClasses = buildActionDialogShellClasses({
@@ -85,8 +86,8 @@ export function PaymentTermActionDialog({
           ? t('finance.paymentTerms.toast.saveSuccessUpdated')
           : t('finance.paymentTerms.toast.saveSuccessCreated'),
       )
+      await queryClient.invalidateQueries({ queryKey: financeQueryKeys.paymentTerms() })
       onOpenChange(false)
-      onSuccess()
     } catch (error) {
       if (isConflictError(error)) {
         toast.error(t('finance.paymentTerms.toast.conflict'))

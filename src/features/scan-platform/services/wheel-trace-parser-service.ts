@@ -1,4 +1,5 @@
 import { parseLinearBarcodeCode } from '@/features/basic-settings/utils/linear-barcode-parser'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import type { ScanResolveInput } from '../core/types'
 import type {
   WheelBarcodeSnapshot,
@@ -11,10 +12,10 @@ export interface WheelTraceParserOptions {
   products?: Array<{ modelCode?: string; name?: string; id?: string; sku?: string }>
 }
 
-export interface WheelTraceParserContext extends WheelTraceParserOptions {}
+export type WheelTraceParserContext = WheelTraceParserOptions
 
 function toBarcodeSnapshot(rawCode: string): WheelBarcodeSnapshot {
-  const normalized = rawCode.trim().toUpperCase()
+  const normalized = normalizeMachineCode(rawCode)
 
   return {
     rawCode: normalized,

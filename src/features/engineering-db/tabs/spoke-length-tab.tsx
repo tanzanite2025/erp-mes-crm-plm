@@ -41,9 +41,6 @@ export function SpokeLengthTab() {
         isLoading,
         searchTerm,
         setSearchTerm,
-        productMap,
-        hubMap,
-        nippleMap,
         handleDelete,
         handleSave,
         refresh
@@ -70,9 +67,6 @@ export function SpokeLengthTab() {
 
     const columns = useSpokeLengthColumns({
         t: t as any,
-        productMap,
-        hubMap,
-        nippleMap,
         onPreview: handlePreview,
         onEdit: (item) => { 
             setCurrentRow(item)
@@ -146,7 +140,7 @@ export function SpokeLengthTab() {
                                         key={row.id} 
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-20',
-                                            row.original.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
+                                            row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
                                         )}
                                     >
                                         {row.getVisibleCells().map((cell) => (

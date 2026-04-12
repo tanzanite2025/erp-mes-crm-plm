@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
@@ -8,6 +9,7 @@ import { getSalesOrderById, useGetSalesOrders } from '@/features/trading/sales'
 import { auditUtils } from '@/lib/audit-utils'
 import { resolveInventoryErrorTip } from '../../constants/inventory-error-codes'
 import { type MasterDataSearchResult } from '../../inventory'
+import { warehouseQueryKeys } from '../../query-keys'
 import { InventoryMaintenanceService } from '../../services/inventory-maintenance-service'
 import {
   filterWarehouseCategoriesByScene,
@@ -21,6 +23,7 @@ import { useShipmentSearch } from './use-shipment-search'
 
 export function useShipment() {
   const { locale, t } = useLanguage()
+  const queryClient = useQueryClient()
   const { allowsAction } = useNonBlockingPermissionActions()
   const shipmentSearch = useShipmentSearch()
   const shipmentBootstrap = useShipmentBootstrap()
@@ -36,6 +39,30 @@ export function useShipment() {
     throw new Error('[CRITICAL] Sales orders data missing in UseShipment.salesOrders')
   }
   const salesOrders = useMemo(() => salesOrdersData ?? [], [salesOrdersData])
+
+  const invalidateWarehouseReads = useCallback(async (materialId?: string, sourceCategory?: string) => {
+    const invalidations = [
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryValuation() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() }),
+    ]
+
+    if (materialId) {
+      invalidations.push(
+        queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryBreakdown(materialId) }),
+      )
+    }
+
+    if (materialId && sourceCategory) {
+      invalidations.push(
+        queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryStock(materialId, sourceCategory) }),
+      )
+    }
+
+    await Promise.all(invalidations)
+  }, [queryClient])
 
   const openShipmentForm = useCallback((item: MasterDataSearchResult) => {
     if (!allowsAction('action_warehouse_shipment_record')) return
@@ -136,15 +163,15 @@ export function useShipment() {
           : t('warehouse.shipment.toast.commitSuccess'),
       )
       shipmentForm.closeShipmentForm()
-      await shipmentBootstrap.refreshData()
+      await invalidateWarehouseReads(selectedItem.id, formData.sourceCategory)
     } catch (error) {
       toast.error(resolveInventoryErrorTip(error, locale))
     }
   }, [
     allowsAction,
+    invalidateWarehouseReads,
     locale,
     resolveSalesOrderBinding,
-    shipmentBootstrap,
     shipmentForm,
     shipmentInventoryContext.categoryStock,
     t,
@@ -166,11 +193,11 @@ export function useShipment() {
     try {
       await ShipmentTransactionService.commitShipment(id)
       toast.success(t('warehouse.shipment.toast.commitRecorded'))
-      await shipmentBootstrap.refreshData()
+      await invalidateWarehouseReads(record.materialId, record.sourceCategory)
     } catch (error) {
       toast.error(resolveInventoryErrorTip(error, locale))
     }
-  }, [allowsAction, locale, shipmentBootstrap, t])
+  }, [allowsAction, invalidateWarehouseReads, locale, shipmentBootstrap.history, t])
 
   const removeRecord = useCallback(async (
     id: string,
@@ -197,11 +224,11 @@ export function useShipment() {
           ? t('warehouse.shipment.toast.voidSuccess')
           : t('warehouse.shipment.toast.actionSuccess'),
       )
-      await shipmentBootstrap.refreshData()
+      await invalidateWarehouseReads(record.materialId, record.sourceCategory)
     } catch (error) {
       toast.error(resolveInventoryErrorTip(error, locale))
     }
-  }, [allowsAction, locale, shipmentBootstrap, t])
+  }, [allowsAction, invalidateWarehouseReads, locale, shipmentBootstrap.history, t])
 
   return {
     searchQuery: shipmentSearch.searchQuery,

@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Edit2, Percent, Plus, ShieldAlert, RefreshCcw } from 'lucide-react'
@@ -8,32 +9,25 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { TaxActionDialog } from '../components/tax-action-dialog'
+import { financeQueryKeys } from '../query-keys'
 
 export function TaxationTab() {
   const { t } = useLanguage()
-  const [rates, setRates] = useState<TaxRate[]>([])
-  const [error, setError] = useState<unknown>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingRate, setEditingRate] = useState<TaxRate | null>(null)
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      setError(null)
-      const data = await taxService.getTaxRates()
-      setRates(data)
-    } catch (error) {
-      setError(error)
-      toast.error(t('finance.taxation.toast.loadFailed'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
+  const taxRatesQuery = useQuery({
+    queryKey: financeQueryKeys.taxRates(),
+    queryFn: () => taxService.getTaxRates(),
+  })
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    if (!taxRatesQuery.error) return
+    toast.error(t('finance.taxation.toast.loadFailed'))
+  }, [taxRatesQuery.error, t])
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: financeQueryKeys.taxRates() })
 
   const openEdit = (rate: TaxRate) => {
     setEditingRate(rate)
@@ -45,12 +39,14 @@ export function TaxationTab() {
     setIsDialogOpen(true)
   }
 
-  if (isForbiddenError(error)) {
+  if (isForbiddenError(taxRatesQuery.error)) {
     return <ForbiddenState />
   }
 
   const getCardNameKey = (code: string): Parameters<typeof t>[0] => `finance.taxation.card.names.${code}` as Parameters<typeof t>[0]
   const getCardDescriptionKey = (code: string): Parameters<typeof t>[0] => `finance.taxation.card.descriptions.${code}` as Parameters<typeof t>[0]
+  const rates = taxRatesQuery.data ?? []
+  const isLoading = taxRatesQuery.isLoading || taxRatesQuery.isFetching
 
   return (
     <div className='space-y-6 animate-in fade-in duration-700'>
@@ -63,7 +59,7 @@ export function TaxationTab() {
           <Button 
             variant='outline' 
             size='sm' 
-            onClick={loadData}
+            onClick={() => void refresh()}
             className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-emerald-500/5 hover:text-emerald-600 transition-all'
           >
             <RefreshCcw className={`size-3 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -149,7 +145,6 @@ export function TaxationTab() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         editingRate={editingRate}
-        onSuccess={loadData}
       />
     </div>
   )

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-
 import {
     InventoryCoreService,
     InventoryMaintenanceService,
@@ -11,52 +11,44 @@ import {
 } from '../inventory'
 import { ShipmentCoreService, type ShipmentRecord } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
+import { warehouseQueryKeys } from '../query-keys'
 
 const logger = createLogger('useWarehouseReport')
 
 export function useReport() {
     const { locale, t } = useLanguage()
+    const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState('inbound')
-    const [inboundData, setInboundData] = useState<InboundRecord[]>([])
-    const [shipmentData, setShipmentData] = useState<ShipmentRecord[]>([])
-    const [masterDataMap, setMasterDataMap] = useState<Record<string, MasterDataSearchResult>>({})
-    const [error, setError] = useState<unknown>(null)
     const [filters, setFilters] = useState({
         startDate: '',
         endDate: '',
         query: ''
     })
 
-    const loadData = useCallback(async () => {
-        try {
-            setError(null)
-            const [inbound, shipment, masterList] = await Promise.all([
-                InventoryCoreService.getInboundHistory(),
-                ShipmentCoreService.getShipmentHistory(),
-                InventoryCoreService.searchMasterData('')
-            ])
+    const inboundQuery = useQuery({
+        queryKey: warehouseQueryKeys.inboundHistory(),
+        queryFn: () => InventoryCoreService.getInboundHistory(),
+    })
 
-            const map: Record<string, MasterDataSearchResult> = {}
-            masterList.forEach((item: MasterDataSearchResult) => { map[item.id] = item })
+    const shipmentQuery = useQuery({
+        queryKey: warehouseQueryKeys.shipmentHistory(),
+        queryFn: () => ShipmentCoreService.getShipmentHistory(),
+    })
 
-            setInboundData(inbound)
-            setShipmentData(shipment)
-            setMasterDataMap(map)
-        } catch (loadError) {
-            setError(loadError)
-            logger.error('Failed to load report data', loadError)
-        }
-    }, [])
+    const masterDataQuery = useQuery({
+        queryKey: warehouseQueryKeys.masterDataAll(),
+        queryFn: () => InventoryCoreService.searchMasterData(''),
+    })
 
-    useEffect(() => {
-        const timer = globalThis.setTimeout(() => {
-            void loadData()
-        }, 0)
-
-        return () => {
-            globalThis.clearTimeout(timer)
-        }
-    }, [loadData])
+    const inboundData = useMemo(() => inboundQuery.data ?? [], [inboundQuery.data])
+    const shipmentData = useMemo(() => shipmentQuery.data ?? [], [shipmentQuery.data])
+    const masterDataMap = useMemo(() => {
+        const map: Record<string, MasterDataSearchResult> = {}
+        ;(masterDataQuery.data ?? []).forEach((item: MasterDataSearchResult) => {
+            map[item.id] = item
+        })
+        return map
+    }, [masterDataQuery.data])
 
     const filteredInbound = useMemo(() => {
         return inboundData.filter((item) => {
@@ -96,25 +88,42 @@ export function useReport() {
 
     const resetFilters = () => setFilters({ startDate: '', endDate: '', query: '' })
 
-    const handleReconcile = async () => {
-        if (!confirm(t('warehouse.reports.reconcileConfirm'))) return
-
-        try {
-            const result = await InventoryMaintenanceService.reconcileInventory()
-            await loadData()
+    const reconcileMutation = useMutation({
+        mutationFn: () => InventoryMaintenanceService.reconcileInventory(),
+        onSuccess: async (result) => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inboundHistory() }),
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.masterDataAll() }),
+            ])
             toast.success(t('warehouse.reports.reconcileSuccess', {
                 totalItems: result.totalItems,
                 fixedNegatives: result.fixedNegatives
             }))
-            return true
-        } catch (error) {
+        },
+        onError: (error) => {
             logger.error('Inventory reconciliation failed', error)
             toast.error(t('warehouse.reports.reconcileFailed'))
+        },
+    })
+
+    const handleReconcile = async () => {
+        if (!confirm(t('warehouse.reports.reconcileConfirm'))) return false
+
+        try {
+            await reconcileMutation.mutateAsync()
+            return true
+        } catch {
             return false
         }
     }
 
     const hasData = activeTab === 'inbound' ? filteredInbound.length > 0 : filteredShipment.length > 0
+    const error = inboundQuery.error ?? shipmentQuery.error ?? masterDataQuery.error
+
+    if (error) {
+        logger.error('Failed to load report data', error)
+    }
 
     return {
         activeTab,

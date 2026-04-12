@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -41,6 +41,13 @@ const leaveTypeOptions = [
   { value: 'other', label: '其他' },
 ] as const
 
+const DEFAULT_LEAVE_FORM_VALUES: LeaveCreateForm = {
+  leaveType: 'annual',
+  startTime: '',
+  endTime: '',
+  reason: '',
+}
+
 interface LeaveActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -61,13 +68,13 @@ function toIsoString(localValue: string): string {
 export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps) {
   const form = useForm<LeaveCreateForm>({
     resolver: zodResolver(leaveCreateFormSchema),
-    defaultValues: {
-      leaveType: 'annual',
-      startTime: '',
-      endTime: '',
-      reason: '',
-    },
+    defaultValues: DEFAULT_LEAVE_FORM_VALUES,
   })
+
+  const handleSubmitSuccess = useCallback(() => {
+    onOpenChange(false)
+    form.reset(DEFAULT_LEAVE_FORM_VALUES)
+  }, [form, onOpenChange])
 
   const {
     isEmployeeBound,
@@ -77,30 +84,19 @@ export function LeaveActionDialog({ open, onOpenChange }: LeaveActionDialogProps
     previewLeaveRequest,
     submitLeaveRequest,
     resetPreview,
-  } = useSubmitLeaveRequest(() => {
-    onOpenChange(false)
-    form.reset({
-      leaveType: 'annual',
-      startTime: '',
-      endTime: '',
-      reason: '',
-    })
-  })
+  } = useSubmitLeaveRequest(handleSubmitSuccess)
+
+  const { reset } = form
 
   const startTime = useWatch({ control: form.control, name: 'startTime' })
   const endTime = useWatch({ control: form.control, name: 'endTime' })
 
   useEffect(() => {
     if (!open) {
-      form.reset({
-        leaveType: 'annual',
-        startTime: '',
-        endTime: '',
-        reason: '',
-      })
+      reset(DEFAULT_LEAVE_FORM_VALUES)
       resetPreview()
     }
-  }, [form, open, resetPreview])
+  }, [open, reset, resetPreview])
 
   const handlePreview = async () => {
     const valid = await form.trigger(['leaveType', 'startTime', 'endTime'])

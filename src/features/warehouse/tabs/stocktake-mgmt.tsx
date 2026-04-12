@@ -22,6 +22,7 @@ import { auditUtils } from '@/lib/audit-utils'
 
 import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
 import { useWarehouseCategoryOptions } from '../hooks/use-warehouse-category'
+import { warehouseQueryKeys } from '../query-keys'
 import { StocktakeMaintenanceService, type StocktakeItem, type StocktakeTask } from '../stocktake'
 import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
 import { getStocktakeStatusMeta } from '../utils/warehouse-status-display'
@@ -35,7 +36,7 @@ export function StocktakeMgmt() {
         tasks, 
         isLoading, 
         isError: error,
-        refetch,
+        refreshData,
         createStocktake,
         isCreating 
     } = useStocktake()
@@ -68,8 +69,12 @@ export function StocktakeMgmt() {
 
     const postAdjustmentMutation = useMutation({
         mutationFn: (taskId: string) => StocktakeMaintenanceService.submitAdjustmentForApproval(taskId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })
+        onSuccess: async (_, taskId) => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() }),
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeItems(taskId) }),
+                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() }),
+            ])
             toast.success(t('warehouse.stocktake.toast.postSuccess'))
         },
         onError: (err: Error) => {
@@ -110,7 +115,7 @@ export function StocktakeMgmt() {
                     <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => refetch()}
+                        onClick={() => { void refreshData() }}
                         className='size-9 md:size-10 rounded-full hover:bg-muted shrink-0'
                     >
                         <RefreshCw className={cn('size-3.5 md:size-4 text-muted-foreground', isLoading && 'animate-spin')} />

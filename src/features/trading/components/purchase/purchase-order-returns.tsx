@@ -46,8 +46,14 @@ import { isForbiddenError } from '@/lib/error-status'
 import { auditUtils } from '@/lib/audit-utils'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
+import {
+  getPurchaseOrderPendingLines,
+  getPurchaseOrderRemainingQty,
+  usePurchaseReturnViewModel,
+} from '../../hooks/use-purchase-return-view-model'
+import { usePurchaseReturnActions } from '../../hooks/use-purchase-return-actions'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
-import type { OrderEvidence, PurchaseOrder } from '../../data/schema'
+import type { OrderEvidence } from '../../data/schema'
 import {
   type PurchaseReturnRecord,
   useGetPurchaseOrders,
@@ -78,17 +84,6 @@ function formatMetric(value: number) {
   return Number(value || 0).toLocaleString()
 }
 
-function getRemainingQty(order: PurchaseOrder, lineId?: number) {
-  const line = order.lines.find((item) => item.id === lineId)
-  if (!line) return 0
-  return Math.max((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0), 0)
-}
-
-function getPendingLines(order?: PurchaseOrder) {
-  if (!order) return []
-  return order.lines.filter((line) => line.id && getRemainingQty(order, line.id) > 0)
-}
-
 function createEmptyLineDraft(): ReturnLineDraft {
   return {
     quantity: 0,
@@ -111,7 +106,7 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
 
   if (normalized === 'DRAFT' || normalized === 'CREATED' || normalized === 'OPEN') {
     return {
-      label: locale === 'zh-CN' ? '已登记' : 'Created',
+      label: locale === 'zh-CN' ? '已登�? : 'Created',
       className: 'bg-amber-500/10 text-amber-600 border-amber-200',
       dotClassName: 'bg-amber-500',
     }
@@ -129,8 +124,8 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
       label:
         locale === 'zh-CN'
           ? normalized === 'SUBMITTED'
-            ? '已提交'
-            : '已完成'
+            ? '已提�?
+            : '已完�?
           : normalized === 'SUBMITTED'
             ? 'Submitted'
             : 'Completed',
@@ -141,7 +136,7 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
 
   if (normalized === 'CANCELED' || normalized === 'CANCELLED' || normalized === 'VOID' || normalized === 'REJECTED') {
     return {
-      label: locale === 'zh-CN' ? '已取消' : 'Canceled',
+      label: locale === 'zh-CN' ? '已取�? : 'Canceled',
       className: 'bg-rose-500/10 text-rose-600 border-rose-200',
       dotClassName: 'bg-rose-500',
     }
@@ -211,32 +206,27 @@ export function PurchaseOrderReturns() {
     [issueCategoryQuery.data]
   )
 
-  const eligibleOrders = useMemo(
-    () =>
-      orders.filter(
-        (order) =>
-          (order.status === 'Sent' || order.status === 'Awaiting') &&
-          order.lines.some((line) => getRemainingQty(order, line.id) > 0)
-      ),
-    [orders]
-  )
-
-  const normalizedSearch = searchValue.trim().toLowerCase()
-  const filteredEligibleOrders = useMemo(() => {
-    if (!normalizedSearch) return eligibleOrders
-    return eligibleOrders.filter((order) =>
-      [order.orderNo, order.supplierName, order.purchaser]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(normalizedSearch))
-    )
-  }, [eligibleOrders, normalizedSearch])
-
-  const selectedOrder = useMemo(() => {
-    const exactMatch =
-      filteredEligibleOrders.find((item) => item.id === selectedOrderId) ||
-      eligibleOrders.find((item) => item.id === selectedOrderId)
-    return exactMatch ?? filteredEligibleOrders[0] ?? eligibleOrders[0]
-  }, [eligibleOrders, filteredEligibleOrders, selectedOrderId])
+  const {
+    draftSummary,
+    eligibleOrders,
+    eligibleOrderStats,
+    filteredEligibleOrders,
+    groupedEligibleOrders,
+    selectedOrder,
+    selectedPendingLines,
+    selectedPendingQty,
+    totalPendingLineCount,
+    totalReturnedAmount,
+    totalReturnedQty,
+    visibleRecords,
+  } = usePurchaseReturnViewModel({
+    orders,
+    records,
+    searchValue,
+    historyOrderNo,
+    selectedOrderId,
+    lineDrafts,
+  })
 
   useEffect(() => {
     if (!selectedOrderId && selectedOrder) {
@@ -257,7 +247,7 @@ export function PurchaseOrderReturns() {
 
     setLineDrafts((prev) => {
       const nextDrafts: Record<number, ReturnLineDraft> = {}
-      getPendingLines(selectedOrder).forEach((line) => {
+      getPurchaseOrderPendingLines(selectedOrder).forEach((line) => {
         if (!line.id) return
         nextDrafts[line.id] = prev[line.id] ?? createEmptyLineDraft()
       })
@@ -279,84 +269,29 @@ export function PurchaseOrderReturns() {
     return () => window.clearTimeout(timer)
   }, [reactToPrint, recordToPrint])
 
-  const selectedPendingLines = useMemo(() => getPendingLines(selectedOrder), [selectedOrder])
 
-  const draftSummary = useMemo(() => {
-    if (!selectedOrder) {
-      return { selectedLines: 0, totalQty: 0, totalAmount: 0 }
-    }
+    const {
+    clearAllDrafts,
+    clearLineDraft,
+    fillAllRemaining,
+    fillLineRemaining,
+    handleSubmit,
+    updateLineDraft,
+  } = usePurchaseReturnActions({
+    selectedOrder,
+    selectedPendingLines,
+    lineDrafts,
+    setLineDrafts,
+    issueCategory,
+    reason,
+    remarks,
+    evidences,
+    returnDate,
+    createMutation,
+    onCloseDialog: () => handleOpenChange(false),
+  })
 
-    return selectedPendingLines.reduce(
-      (summary, line) => {
-        if (!line.id) return summary
-        const draftQty = Math.min(
-          Math.max(Number(lineDrafts[line.id]?.quantity || 0), 0),
-          getRemainingQty(selectedOrder, line.id)
-        )
-        if (draftQty <= 0) return summary
-
-        summary.selectedLines += 1
-        summary.totalQty += draftQty
-        summary.totalAmount += draftQty * (line.price || 0)
-        return summary
-      },
-      { selectedLines: 0, totalQty: 0, totalAmount: 0 }
-    )
-  }, [lineDrafts, selectedOrder, selectedPendingLines])
-
-  const groupedEligibleOrders = useMemo(() => {
-    const supplierMap = new Map<
-      string,
-      {
-        supplierName: string
-        groups: Array<{ status: string; orders: PurchaseOrder[] }>
-      }
-    >()
-
-    filteredEligibleOrders.forEach((order) => {
-      const supplierKey = order.supplierName || '未指定供应商'
-      const supplierEntry = supplierMap.get(supplierKey) ?? {
-        supplierName: supplierKey,
-        groups: [],
-      }
-      let statusGroup = supplierEntry.groups.find((item) => item.status === order.status)
-      if (!statusGroup) {
-        statusGroup = { status: order.status, orders: [] }
-        supplierEntry.groups.push(statusGroup)
-      }
-      statusGroup.orders.push(order)
-      supplierMap.set(supplierKey, supplierEntry)
-    })
-
-    return Array.from(supplierMap.values()).sort((a, b) => a.supplierName.localeCompare(b.supplierName))
-  }, [filteredEligibleOrders])
-
-  const visibleRecords = useMemo(() => {
-    const normalized = historyOrderNo.trim().toLowerCase()
-    if (normalized) {
-      return records.filter((record) => record.purchaseOrderNo.toLowerCase().includes(normalized))
-    }
-    if (!selectedOrder) return records
-    const matched = records.filter((record) => record.purchaseOrderId === selectedOrder.id)
-    return matched.length > 0 ? matched : records
-  }, [historyOrderNo, records, selectedOrder])
-
-  const totalReturnedAmount = useMemo(
-    () => records.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0),
-    [records]
-  )
-
-  const totalReturnedQty = useMemo(
-    () => records.reduce((sum, item) => sum + (Number(item.totalQuantity) || 0), 0),
-    [records]
-  )
-
-  const totalPendingLineCount = useMemo(
-    () => eligibleOrders.reduce((sum, order) => sum + getPendingLines(order).length, 0),
-    [eligibleOrders]
-  )
-
-  const resetDialog = () => {
+const resetDialog = () => {
     setReturnDate(todayValue())
     setIssueCategory('')
     setReason('')
@@ -372,90 +307,6 @@ export function PurchaseOrderReturns() {
     }
   }
 
-  const updateLineDraft = (lineId: number, patch: Partial<ReturnLineDraft>) => {
-    setLineDrafts((prev) => ({
-      ...prev,
-      [lineId]: {
-        ...createEmptyLineDraft(),
-        ...prev[lineId],
-        ...patch,
-      },
-    }))
-  }
-
-  const fillLineRemaining = (lineId: number) => {
-    if (!selectedOrder) return
-    updateLineDraft(lineId, { quantity: getRemainingQty(selectedOrder, lineId) })
-  }
-
-  const clearLineDraft = (lineId: number) => {
-    updateLineDraft(lineId, createEmptyLineDraft())
-  }
-
-  const fillAllRemaining = () => {
-    if (!selectedOrder) return
-    setLineDrafts((prev) => {
-      const next = { ...prev }
-      selectedPendingLines.forEach((line) => {
-        if (!line.id) return
-        next[line.id] = {
-          quantity: getRemainingQty(selectedOrder, line.id),
-          issueCategory: prev[line.id]?.issueCategory || '',
-          reason: prev[line.id]?.reason || '',
-          evidences: prev[line.id]?.evidences || [],
-        }
-      })
-      return next
-    })
-  }
-
-  const clearAllDrafts = () => {
-    setLineDrafts((prev) => {
-      const next = { ...prev }
-      selectedPendingLines.forEach((line) => {
-        if (!line.id) return
-        next[line.id] = {
-          ...createEmptyLineDraft(),
-        }
-      })
-      return next
-    })
-  }
-
-  const handleSubmit = () => {
-    if (!selectedOrder) return
-    const lines = Object.entries(lineDrafts)
-      .map(([key, value]) => ({
-        purchaseOrderLineId: Number(key),
-        quantity: Number(value.quantity || 0),
-        price: selectedOrder.lines.find((line) => line.id === Number(key))?.price || 0,
-        issueCategory: value.issueCategory.trim() || issueCategory || undefined,
-        reason: value.reason.trim() || undefined,
-        evidences: value.evidences,
-      }))
-      .filter((item) => item.quantity > 0)
-
-    if (lines.length === 0) return
-
-    createMutation.mutate(
-      {
-        purchaseOrderId: selectedOrder.id,
-        payload: {
-          issueCategory: issueCategory || undefined,
-          reason: reason.trim() || undefined,
-          remarks: remarks.trim() || undefined,
-          evidences,
-          returnDate: new Date(`${returnDate}T00:00:00`).toISOString(),
-          lines,
-        },
-      },
-      {
-        onSuccess: () => {
-          handleOpenChange(false)
-        },
-      }
-    )
-  }
 
   if (
     ordersQuery.isLoading ||
@@ -534,12 +385,7 @@ export function PurchaseOrderReturns() {
                       {t('purchase.orders.returns.pendingQty')}
                     </p>
                     <p className='mt-2 text-2xl font-black italic text-rose-600'>
-                      {formatMetric(
-                        selectedPendingLines.reduce(
-                          (sum, line) => sum + (line.id ? getRemainingQty(selectedOrder, line.id) : 0),
-                          0
-                        )
-                      )}
+                      {formatMetric(selectedPendingQty)}
                     </p>
                   </CardContent>
                 </Card>
@@ -672,7 +518,7 @@ export function PurchaseOrderReturns() {
             <ScrollArea className='mt-4 h-[360px] pr-4'>
               <div className='space-y-3'>
                 {selectedPendingLines.map((line) => {
-                  const remainingQty = getRemainingQty(selectedOrder!, line.id)
+                  const remainingQty = getPurchaseOrderRemainingQty(selectedOrder!, line.id)
                   const draft = lineDrafts[line.id!] ?? createEmptyLineDraft()
                   const amountPreview = Number(draft.quantity || 0) * Number(line.price || 0)
 
@@ -953,11 +799,9 @@ export function PurchaseOrderReturns() {
                               </span>
                             </div>
                             {statusGroup.orders.map((order) => {
-                              const pendingLines = getPendingLines(order)
-                              const pendingQty = pendingLines.reduce(
-                                (sum, line) => sum + (line.id ? getRemainingQty(order, line.id) : 0),
-                                0
-                              )
+                              const pendingStats = eligibleOrderStats.get(order.id)
+                              const pendingLinesCount = pendingStats?.pendingLinesCount ?? 0
+                              const pendingQty = pendingStats?.pendingQty ?? 0
 
                               return (
                                 <button
@@ -988,7 +832,7 @@ export function PurchaseOrderReturns() {
                                       <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
                                         {t('purchase.orders.returns.pendingLines')}
                                       </p>
-                                      <p className='mt-1 text-sm font-black text-amber-600'>{pendingLines.length}</p>
+                                      <p className='mt-1 text-sm font-black text-amber-600'>{pendingLinesCount}</p>
                                     </div>
                                     <div>
                                       <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
@@ -1081,12 +925,7 @@ export function PurchaseOrderReturns() {
                       {t('purchase.orders.returns.pendingQty')}
                     </p>
                     <p className='mt-2 text-2xl font-black italic text-rose-700'>
-                      {formatMetric(
-                        selectedPendingLines.reduce(
-                          (sum, line) => sum + (line.id ? getRemainingQty(selectedOrder, line.id) : 0),
-                          0
-                        )
-                      )}
+                      {formatMetric(selectedPendingQty)}
                     </p>
                   </div>
                 </div>
@@ -1121,7 +960,7 @@ export function PurchaseOrderReturns() {
                             {t('purchase.orders.returns.remainingQty')}
                           </p>
                           <p className='mt-1 text-sm font-black text-primary'>
-                            {formatMetric(line.id ? getRemainingQty(selectedOrder, line.id) : 0)}
+                            {formatMetric(line.id ? getPurchaseOrderRemainingQty(selectedOrder, line.id) : 0)}
                           </p>
                         </div>
                       </div>
@@ -1305,3 +1144,12 @@ export function PurchaseOrderReturns() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+

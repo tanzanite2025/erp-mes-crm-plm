@@ -1,5 +1,6 @@
 import type { ProductionLine, ProductionJobCategory, ProductionSegment } from '../data/production-line'
 import type { ProductionProcessStep } from '../data/production-process'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import type {
   ProductionJobCategoryApiDTO,
   ProductionLineApiDTO,
@@ -14,7 +15,7 @@ import type {
 function toLineProcessContract(dto: ProductionProcessStepApiDTO): ProductionProcessStep {
   return {
     id: dto.id,
-    code: dto.code || '',
+    code: normalizeMachineCode(dto.code),
     name: dto.name,
     description: dto.description || '',
     sortOrder: dto.sortOrder || 0,
@@ -57,7 +58,7 @@ function toSegmentContract(dto: ProductionLineSegmentApiDTO): ProductionSegment 
 export function toProductionLineContract(dto: ProductionLineApiDTO): ProductionLine {
   return {
     id: dto.id,
-    code: dto.code,
+    code: normalizeMachineCode(dto.code),
     name: dto.name,
     description: dto.description || '',
     version: Number(dto.version) || 1,
@@ -81,7 +82,7 @@ export function toProductionProcessContracts(
 function toProcessApiDTO(process: ProductionProcessStep): ProductionProcessStepApiDTO {
   return {
     id: process.id,
-    code: process.code || '',
+    code: normalizeMachineCode(process.code),
     name: process.name,
     description: process.description || '',
     sortOrder: process.sortOrder || 0,
@@ -123,7 +124,7 @@ export function toSaveProductionLineApiDTO(
 ): SaveProductionLineApiDTO {
   return {
     id: line.id,
-    code: line.code,
+    code: normalizeMachineCode(line.code),
     name: line.name,
     description: line.description || '',
     version: line.version || 1,
@@ -140,7 +141,7 @@ export function toSaveProductionProcessStepApiDTO(
 ): SaveProductionProcessStepApiDTO {
   return {
     id: step.id,
-    code: step.code || '',
+    code: normalizeMachineCode(step.code),
     name: step.name,
     description: step.description || '',
     sortOrder: step.sortOrder || 0,

@@ -3,6 +3,7 @@ import { AuditStamp } from '@/components/common/audit-stamp'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
+import { useSalesOrderDetailActivity } from '../../hooks/use-sales-order-detail-activity'
 import { type SalesOrder } from '../../data/schema'
 
 interface SalesOrderDetailActivityProps {
@@ -21,6 +22,12 @@ export function SalesOrderDetailActivity({
   onHardDelete,
 }: SalesOrderDetailActivityProps) {
   const { t } = useLanguage()
+  const { canDelete, handleHardDelete } = useSalesOrderDetailActivity({
+    order,
+    canHardDelete,
+    onHardDelete,
+    confirmText: t('common.actions.delete'),
+  })
 
   return (
     <div className='space-y-6 rounded-[32px] border-2 border-dashed border-muted/40 bg-muted/5 p-6 animate-in slide-in-from-bottom-2 duration-500'>
@@ -42,16 +49,13 @@ export function SalesOrderDetailActivity({
           className='border-primary/10'
         />
 
-        {order.status === 'Canceled' && canHardDelete && onHardDelete && (
+        {canDelete && (
           <div className='flex justify-end border-t border-dashed border-muted-foreground/10 pt-6'>
             <Button
               variant='ghost'
               size='sm'
               className='h-9 gap-2 rounded-full border border-destructive/10 px-6 text-[10px] font-black uppercase tracking-widest text-destructive transition-all hover:bg-destructive/10'
-              onClick={() => {
-                if (!confirm(t('common.actions.delete'))) return
-                onHardDelete(order.id)
-              }}
+              onClick={handleHardDelete}
             >
               <Trash2 className='size-3.5' />
               {t('common.actions.delete')}

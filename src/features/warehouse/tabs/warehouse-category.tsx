@@ -35,6 +35,7 @@ import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { failLoudly } from '@/lib/safe-catch'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 
 import { useWarehouseCategory, type WarehouseCategory as Category } from '../category'
 
@@ -169,7 +170,7 @@ export default function WarehouseCategory() {
                 Object.assign(draft, {
                     ...formData,
                     name: formData.name.trim(),
-                    code: formData.code.trim().toUpperCase(),
+                    code: normalizeMachineCode(formData.code),
                     description: (formData.description ?? '').trim(),
                 })
                 const delta = tracker.commit()
@@ -184,7 +185,7 @@ export default function WarehouseCategory() {
                 const newCategory: Omit<Category, 'id' | 'version'> = {
                     ...formData,
                     name: formData.name.trim(),
-                    code: formData.code.trim().toUpperCase(),
+                    code: normalizeMachineCode(formData.code),
                     description: (formData.description ?? '').trim(),
                     isSystem: false,
                 }
@@ -416,7 +417,7 @@ export default function WarehouseCategory() {
                                     <Input
                                         id='code'
                                         value={formData.code}
-                                        onChange={(e) => updateForm({ code: e.target.value.toUpperCase() })}
+                                        onChange={(e) => updateForm({ code: normalizeMachineCode(e.target.value) })}
                                         placeholder={t('warehouse.category.dialog.codePlaceholder')}
                                         className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-blue-600 shadow-inner'
                                     />

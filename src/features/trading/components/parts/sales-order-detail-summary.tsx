@@ -1,10 +1,6 @@
-import { auditUtils } from '@/lib/audit-utils'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
-import {
-  getSalesOrderClassificationLabel,
-  getSalesOrderTypeLabel,
-} from '../../data/sales-order-options'
+import { useSalesOrderDetailSummaryViewModel } from '../../hooks/use-sales-order-detail-summary-view-model'
 import { OrderEvidenceGallery } from './order-evidence-gallery'
 
 function InfoRow({
@@ -32,81 +28,29 @@ function InfoRow({
   )
 }
 
-function getCurrencyPrefix(currency?: string) {
-  switch ((currency || '').toUpperCase()) {
-    case 'USD':
-      return '$'
-    case 'EUR':
-      return 'EUR '
-    case 'GBP':
-      return 'GBP '
-    case 'JPY':
-      return 'JPY '
-    case 'CNY':
-      return 'CNY '
-    default:
-      return currency ? `${currency} ` : ''
-  }
-}
-
 export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
   const { t, locale } = useLanguage()
+  const {
+    infoRows,
+    requirementsText,
+    evidences,
+  } = useSalesOrderDetailSummaryViewModel({ order, locale, t })
 
   return (
     <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-6 py-5 shadow-inner'>
       <div className='grid grid-cols-2 gap-x-4 gap-y-2.5 md:grid-cols-4 lg:grid-cols-6'>
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.orderType')}
-          value={getSalesOrderTypeLabel(order.type, locale) || order.type}
-        />
-        <InfoRow label={t('tradingSalesOrder.detail.info.currency')} value={order.currency} />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.classification')}
-          value={getSalesOrderClassificationLabel(order.classification, locale) || order.classification}
-        />
-        <InfoRow label={t('tradingSalesOrder.detail.info.orderDate')} value={order.orderDate} />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.deliveryDate')}
-          value={order.deliveryDate}
-          highlight
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.paymentMethod')}
-          value={order.paymentMethodName || order.paymentMethod}
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.paymentTerm')}
-          value={order.paymentTermName || order.paymentTerm}
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.contractAmount')}
-          value={`${getCurrencyPrefix(order.currency)}${order.amount?.toLocaleString() || '0.00'}`}
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.totalQuantity')}
-          value={`${order.quantity?.toLocaleString() || 0} PCS`}
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.createdBy')}
-          value={
-            auditUtils.formatOperatorName(order.createdBy) ||
-            t('tradingSalesOrder.detail.info.systemImported')
-          }
-        />
-        <InfoRow
-          label={t('tradingSalesOrder.detail.info.updatedBy')}
-          value={
-            auditUtils.formatOperatorName(order.updatedBy) ||
-            t('tradingSalesOrder.detail.info.originalVersion')
-          }
-        />
-        <InfoRow label={t('tradingSalesOrder.detail.info.customerPo')} value={order.purchaseOrderNo} />
-        <InfoRow label={t('tradingSalesOrder.detail.info.barcode')} value={order.barcode} />
-        <InfoRow label={t('tradingSalesOrder.detail.info.orderId')} value={order.id} />
+        {infoRows.map((row) => (
+          <InfoRow
+            key={row.label}
+            label={row.label}
+            value={row.value}
+            highlight={row.highlight}
+          />
+        ))}
       </div>
 
       <OrderEvidenceGallery
-        evidences={order.evidences || []}
+        evidences={evidences}
         titleKey='tradingSalesOrder.detail.evidenceTitle'
         fallbackTitle='Order Evidence'
       />
@@ -119,7 +63,7 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
               {t('tradingSalesOrder.detail.requirementsTitle')}
             </p>
             <p className='text-[12px] font-medium leading-relaxed text-foreground/80'>
-              {order.requirements || t('tradingSalesOrder.detail.requirementsEmpty')}
+              {requirementsText}
             </p>
           </div>
         </div>

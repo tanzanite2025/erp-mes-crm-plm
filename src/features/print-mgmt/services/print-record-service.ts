@@ -31,8 +31,6 @@ interface PrintBatchApiDTO {
 import { ensureObjectResponse } from '@/lib/api-response'
 import { apiFetch } from '@/lib/api-client'
 
-const UPDATE_EVENT = 'xdfc_print_batches_updated'
-
 function toPrintBatchContract(dto: PrintBatchApiDTO): PrintBatch {
     return {
         id: dto.id,
@@ -104,7 +102,6 @@ export const PrintRecordService = {
             body: JSON.stringify(batch)
         })
 
-        window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
         return toPrintBatchContract(
             ensureObjectResponse<PrintBatchApiDTO & Record<string, unknown>>(
                 res,
@@ -128,7 +125,6 @@ export const PrintRecordService = {
             })
         })
 
-        window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
         return toPrintBatchContract(
             ensureObjectResponse<PrintBatchApiDTO & Record<string, unknown>>(
                 res,
@@ -144,7 +140,6 @@ export const PrintRecordService = {
         await apiFetch(`/print-batches/${id}/scrap`, {
             method: 'POST'
         })
-        window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
         return true
     },
 

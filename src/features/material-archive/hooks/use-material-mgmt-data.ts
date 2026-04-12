@@ -81,15 +81,6 @@ export function useMaterialMgmtData({ category }: UseMaterialMgmtDataParams) {
       toast.success('物料已删除')
     },
   })
-
-  useEffect(() => {
-    const handleRefresh = () => {
-      void queryClient.invalidateQueries({ queryKey: ['material-archive'] })
-    }
-    window.addEventListener('xdfc_storage_initialized', handleRefresh)
-    return () => window.removeEventListener('xdfc_storage_initialized', handleRefresh)
-  }, [queryClient])
-
   return {
     queryClient,
     searchTerm,

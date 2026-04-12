@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight } from 'lucide-react'
@@ -49,14 +49,23 @@ function withDynamicBadges(items: NavItem[], unreadApprovals: number, systemAler
   })
 }
 
+function groupHasActiveItem(pathname: string, items: NavItem[]) {
+  return items.some((item) => checkIsActive(pathname, item))
+}
+
+type SidebarSystemAlert = {
+  id?: string
+}
+
 export function NavGroup({ title, items }: NavGroupProps) {
   const { unreadApprovals } = useNotificationStore()
   const pathname = useLocation({ select: (location) => location.pathname })
+  const [userCollapsed, setUserCollapsed] = useState(false)
 
   const shouldWatchSystemAlerts = items.some((item) => isSystemManagementItem(item))
   const { data: systemActiveAlerts = [] } = useQuery({
     queryKey: ['sidebar-system-active-alerts'],
-    queryFn: () => apiFetch<any[]>('/system/status/alerts/active'),
+    queryFn: () => apiFetch<SidebarSystemAlert[]>('/system/status/alerts/active'),
     refetchInterval: (query) => {
       const error = query.state.error as { status?: number } | null
       return error?.status === 403 ? false : 10000
@@ -68,23 +77,45 @@ export function NavGroup({ title, items }: NavGroupProps) {
 
   const systemAlertCount = systemActiveAlerts.length
   const itemsWithBadges = withDynamicBadges(items, unreadApprovals, systemAlertCount)
+  const shouldExpandForPath = groupHasActiveItem(pathname, itemsWithBadges)
+  const isExpanded = shouldExpandForPath || !userCollapsed
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className='mb-1.5 h-auto min-h-5 py-0 leading-[1.2] whitespace-normal font-black italic'>
-        {title}
-      </SidebarGroupLabel>
-      <SidebarMenu className='gap-px'>
-        {itemsWithBadges.map((item) => {
-          const key = `${item.title}-${'url' in item ? item.url : item.title}`
-
-          if (!item.items) {
-            return <SidebarMenuLink key={key} item={item} pathname={pathname} />
+      <button
+        type='button'
+        className={cn(
+          'mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
+          'text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
+          isExpanded && 'bg-sidebar-accent/40 text-sidebar-accent-foreground'
+        )}
+        onClick={() => {
+          if (shouldExpandForPath) {
+            setUserCollapsed(true)
+            return
           }
 
-          return <SidebarMenuCollapsedDropdown key={key} item={item} pathname={pathname} />
-        })}
-      </SidebarMenu>
+          setUserCollapsed((current) => !current)
+        }}
+      >
+        <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-inherit'>
+          {title}
+        </SidebarGroupLabel>
+        <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />
+      </button>
+      {isExpanded ? (
+        <SidebarMenu className='gap-px'>
+          {itemsWithBadges.map((item) => {
+            const key = `${item.title}-${'url' in item ? item.url : item.title}`
+
+            if (!item.items) {
+              return <SidebarMenuLink key={key} item={item} pathname={pathname} />
+            }
+
+            return <SidebarMenuCollapsedDropdown key={key} item={item} pathname={pathname} />
+          })}
+        </SidebarMenu>
+      ) : null}
     </SidebarGroup>
   )
 }
@@ -189,15 +220,21 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
+function isNavLink(item: NavItem): item is NavLink {
+  return 'url' in item
+}
+
 function checkIsActive(pathname: string, item: NavItem, mainNav = false) {
-  if ((item as any).url === '/') {
+  if (isNavLink(item) && item.url === '/') {
     return pathname === '/'
   }
 
+  const itemUrl = isNavLink(item) ? item.url : undefined
+
   return (
-    pathname === (item as any).url ||
-    pathname.startsWith((item as any).url + '/') ||
+    (!!itemUrl && pathname === itemUrl) ||
+    (!!itemUrl && pathname.startsWith(itemUrl + '/')) ||
     !!item?.items?.some((subItem) => pathname === subItem.url || pathname.startsWith(subItem.url + '/')) ||
-    (mainNav && pathname.split('/')[1] === (item as any)?.url?.split('/')[1])
+    (!!itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
   )
 }

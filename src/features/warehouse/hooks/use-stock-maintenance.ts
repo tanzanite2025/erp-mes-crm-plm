@@ -1,65 +1,109 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { StocktakeCoreService, StocktakeMaintenanceService, type PDAScanPayload } from '../stocktake'
+import { warehouseQueryKeys } from '../query-keys'
+import { StocktakeCoreService, StocktakeMaintenanceService, StocktakeOfflineAdapter, type PDAScanPayload } from '../stocktake'
 
-/**
- * useStocktake - 封装盘点任务的管理与同步逻辑情况情况总量针对。
- */
 export function useStocktake() {
     const queryClient = useQueryClient()
 
-    // 盘点任务列表
     const tasksQuery = useQuery({
-        queryKey: ['stocktake_tasks'],
-        queryFn: () => StocktakeCoreService.getTasks()
+        queryKey: warehouseQueryKeys.stocktakeTasks(),
+        queryFn: () => StocktakeCoreService.getTasks(),
     })
 
-    // 发起新盘点
+    const pendingScansQuery = useQuery({
+        queryKey: ['stocktake_pending_scans'],
+        queryFn: async () => {
+            const pending = await StocktakeOfflineAdapter.listPendingScans()
+            return pending.filter((item) => item.state === 'queued' || item.state === 'syncing').length
+        },
+    })
+
+    const refreshPendingScans = useCallback(async () => {
+        await queryClient.invalidateQueries({ queryKey: ['stocktake_pending_scans'] })
+    }, [queryClient])
+
     const createMutation = useMutation({
         mutationFn: (data: { title: string, warehouseCategoryCode: string, remarks?: string }) =>
             StocktakeMaintenanceService.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['stocktake_tasks'] })
-            toast.success('盘点任务已发起情况情况总量针对。')
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
+            toast.success('盘点任务已创建')
         },
         onError: (error: unknown) => {
             const message = error instanceof Error ? error.message : 'unknown error'
-            toast.error('发起盘点失败: ' + message)
-        }
+            toast.error(`发起盘点失败: ${message}`)
+        },
     })
 
-    // PDA 扫描同步
     const pdaSyncMutation = useMutation({
-        mutationFn: (data: PDAScanPayload) => StocktakeMaintenanceService.pdaSubmitScan(data),
-        onSuccess: () => {
-            toast.success('扫描数据已同步情况情况总量针对。')
-        }
+        mutationFn: (data: PDAScanPayload) => StocktakeOfflineAdapter.submitScan(data),
+        onSuccess: async (result) => {
+            await refreshPendingScans()
+
+            if (result.status === 'queued') {
+                toast.success('扫描数据已保存为离线草稿，网络恢复后会自动补交。')
+                return
+            }
+
+            toast.success('扫描数据已同步。')
+            await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
+        },
     })
 
-    // [FAIL-LOUDLY]: 严禁使用 || [] 掩盖盘点任务数据的缺失。
+    const flushPendingMutation = useMutation({
+        mutationFn: () => StocktakeOfflineAdapter.flushQueuedScans(),
+        onSuccess: async (result) => {
+            await refreshPendingScans()
+            await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
+
+            if (result.syncedCount > 0) {
+                toast.success(`已同步 ${result.syncedCount} 条离线扫描记录。`)
+                return
+            }
+
+            if (result.remainingCount > 0) {
+                toast.success(`当前仍有 ${result.remainingCount} 条待同步扫描记录。`)
+            }
+        },
+    })
+
+    const refreshData = useCallback(async () => {
+        await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
+        await refreshPendingScans()
+    }, [queryClient, refreshPendingScans])
+
+    useEffect(() => {
+        return StocktakeOfflineAdapter.registerAutoFlush(() => {
+            void refreshPendingScans()
+            void queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
+        })
+    }, [queryClient, refreshPendingScans])
+
     const tasks = tasksQuery.data
     if (!tasksQuery.isLoading && tasksQuery.isSuccess && !tasks) {
         throw new Error('[CRITICAL] Stocktake Tasks missing in Hook: UseStocktake.tasks')
     }
 
     return {
-        tasks: tasks || [], // 此时经过校验，若到达此处且非 loading，tasks 已确定存在或为合法空值（由后端判定）
+        tasks: tasks ?? [],
         isLoading: tasksQuery.isLoading,
         isError: tasksQuery.isError,
-        refetch: tasksQuery.refetch,
+        refreshData,
         createStocktake: createMutation.mutateAsync,
         submitPdaScan: pdaSyncMutation.mutateAsync,
-        isCreating: createMutation.isPending
+        flushPendingScans: flushPendingMutation.mutateAsync,
+        pendingScanCount: pendingScansQuery.data ?? 0,
+        isCreating: createMutation.isPending,
+        isFlushingPendingScans: flushPendingMutation.isPending,
     }
 }
 
-/**
- * useStocktakeItems - 封装特定任务的行项目查询逻辑情况情况总量针对。
- */
 export function useStocktakeItems(taskId: string | null) {
     return useQuery({
-        queryKey: ['stocktake_items', taskId],
-        queryFn: () => taskId ? StocktakeCoreService.getItems(taskId) : Promise.resolve([]),
-        enabled: !!taskId
+        queryKey: warehouseQueryKeys.stocktakeItems(taskId ?? ''),
+        queryFn: () => (taskId ? StocktakeCoreService.getItems(taskId) : Promise.resolve([])),
+        enabled: Boolean(taskId),
     })
 }

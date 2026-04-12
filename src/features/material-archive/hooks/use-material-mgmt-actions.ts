@@ -2,6 +2,8 @@ import { useState, type ChangeEvent } from 'react'
 import { type QueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '@/features/basic-settings/query-keys'
+import { unitService } from '@/features/basic-settings/services/unit-service'
 import { createLogger } from '@/lib/logger'
 import { type Material } from '../data/schema'
 import { MaterialMaintenanceService } from '../services/material-maintenance-service'
@@ -49,7 +51,11 @@ export function useMaterialMgmtActions({
     )
 
     try {
-      await MaterialExcelService.exportMaterials(filteredMaterials, currentCategoryLabel, locale)
+      const units = await queryClient.fetchQuery({
+        queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY,
+        queryFn: () => unitService.getUnits(),
+      })
+      await MaterialExcelService.exportMaterials(filteredMaterials, currentCategoryLabel, locale, units)
       toast.success(t('materialArchive.actions.exportSuccess'), { id: loadingId })
     } catch (error) {
       logger.error('Export error', error)

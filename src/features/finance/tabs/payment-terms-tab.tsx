@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, RefreshCcw, CreditCard, Edit2 } from 'lucide-react'
@@ -10,35 +11,28 @@ import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { PaymentTermActionDialog } from '../components/payment-term-action-dialog'
+import { financeQueryKeys } from '../query-keys'
 
 const logger = createLogger('PaymentTermsTab')
 
 export function PaymentTermsTab() {
     const { t } = useLanguage()
-    const [terms, setTerms] = useState<PaymentTerm[]>([])
-    const [error, setError] = useState<unknown>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const queryClient = useQueryClient()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingTerm, setEditingTerm] = useState<PaymentTerm | null>(null)
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const data = await PaymentTermCoreService.getPaymentTerms()
-            setTerms(data)
-        } catch (error) {
-            setError(error)
-            logger.error('Failed to load payment terms in PaymentTermsTab', error)
-            toast.error(t('finance.paymentTerms.toast.loadFailed'))
-        } finally {
-            setIsLoading(false)
-        }
-    }, [t])
+    const termsQuery = useQuery({
+        queryKey: financeQueryKeys.paymentTerms(),
+        queryFn: () => PaymentTermCoreService.getPaymentTerms(),
+    })
 
     useEffect(() => {
-        void loadData()
-    }, [loadData])
+        if (!termsQuery.error) return
+        logger.error('Failed to load payment terms in PaymentTermsTab', termsQuery.error)
+        toast.error(t('finance.paymentTerms.toast.loadFailed'))
+    }, [termsQuery.error, t])
+
+    const refresh = () => queryClient.invalidateQueries({ queryKey: financeQueryKeys.paymentTerms() })
 
     const openEdit = (term: PaymentTerm) => {
         setEditingTerm(term)
@@ -50,12 +44,14 @@ export function PaymentTermsTab() {
         setIsDialogOpen(true)
     }
 
-    if (isForbiddenError(error)) {
+    if (isForbiddenError(termsQuery.error)) {
         return <ForbiddenState />
     }
 
     const getCardLabelKey = (code: string): Parameters<typeof t>[0] => `finance.paymentTerms.card.labels.${code}` as Parameters<typeof t>[0]
     const getCardDescriptionKey = (code: string): Parameters<typeof t>[0] => `finance.paymentTerms.card.descriptions.${code}` as Parameters<typeof t>[0]
+    const terms = termsQuery.data ?? []
+    const isLoading = termsQuery.isLoading || termsQuery.isFetching
 
     return (
         <div className='space-y-6 animate-in fade-in duration-700'>
@@ -68,7 +64,7 @@ export function PaymentTermsTab() {
                     <Button 
                         variant='outline' 
                         size='sm' 
-                        onClick={loadData}
+                        onClick={() => void refresh()}
                         className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
                     >
                         <RefreshCcw className={`size-3 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -169,7 +165,6 @@ export function PaymentTermsTab() {
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
                 editingTerm={editingTerm}
-                onSuccess={loadData}
             />
         </div>
     )

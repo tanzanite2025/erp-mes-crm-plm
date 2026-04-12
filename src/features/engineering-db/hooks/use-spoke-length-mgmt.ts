@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { type SpokeLength } from '../data/schema'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
@@ -14,11 +13,21 @@ import {
   ENGINEERING_DB_NIPPLES_QUERY_KEY,
   ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
 } from '../query-keys'
+import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
+
+export type SpokeLengthRowViewModel = {
+  item: SpokeLength
+  productSku: string | null
+  productName: string | null
+  hubName: string | null
+  nippleName: string | null
+  searchText: string
+}
 
 export function useSpokeLengthMgmt() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
-  const { data: products = [] } = useGetProducts()
+  const { productMap } = useEngineeringDbProductLookup()
   const [searchTerm, setSearchTerm] = useState('')
 
   const { data = [], isLoading: isSpokeLengthsLoading } = useQuery({
@@ -59,12 +68,6 @@ export function useSpokeLengthMgmt() {
 
   const isLoading = isSpokeLengthsLoading || isHubsLoading || isNipplesLoading
 
-  const productMap = useMemo(() => {
-    const map = new Map<string, any>()
-    products.forEach((product) => map.set(product.id, product))
-    return map
-  }, [products])
-
   const hubMap = useMemo(() => {
     const map = new Map<string, Hub>()
     hubs.forEach((hub) => map.set(hub.id, hub))
@@ -78,18 +81,35 @@ export function useSpokeLengthMgmt() {
   }, [nipples])
 
   const filteredData = useMemo(() => {
-    return data.filter((item) => {
+    const rows = data.map<SpokeLengthRowViewModel>((item) => {
       const product = productMap.get(item.productId)
       const hub = hubMap.get(item.hubId || '')
       const nipple = nippleMap.get(item.nippleId || '')
-      const searchStr = searchTerm.toLowerCase()
 
-      return item.name.toLowerCase().includes(searchStr) ||
-        (product?.sku || '').toLowerCase().includes(searchStr) ||
-        (hub?.name || '').toLowerCase().includes(searchStr) ||
-        (nipple?.name || '').toLowerCase().includes(searchStr) ||
-        (item.material || '').toLowerCase().includes(searchStr)
+      return {
+        item,
+        productSku: product?.sku || null,
+        productName: product?.name || null,
+        hubName: hub?.name || null,
+        nippleName: nipple?.name || null,
+        searchText: [
+          item.name,
+          product?.sku || '',
+          product?.name || '',
+          hub?.name || '',
+          nipple?.name || '',
+          item.material || '',
+          item.length || '',
+        ].join(' ').toLowerCase(),
+      }
     })
+
+    const normalizedSearch = searchTerm.trim().toLowerCase()
+    if (!normalizedSearch) {
+      return rows
+    }
+
+    return rows.filter((row) => row.searchText.includes(normalizedSearch))
   }, [data, productMap, hubMap, nippleMap, searchTerm])
 
   const handleDelete = async (item: SpokeLength) => {
@@ -120,9 +140,6 @@ export function useSpokeLengthMgmt() {
     isLoading,
     searchTerm,
     setSearchTerm,
-    productMap,
-    hubMap,
-    nippleMap,
     handleDelete,
     handleSave,
     refresh: () => queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY }),

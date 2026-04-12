@@ -1,22 +1,26 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     flexRender,
     getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    getFilteredRowModel,
     getFacetedRowModel,
     getFacetedUniqueValues,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
     type Row,
     useReactTable,
 } from '@tanstack/react-table'
-import { Download, FileSpreadsheet, Plus, Share, Pencil, UserCheck, UserMinus, Clock, Search, X } from 'lucide-react'
+import { Clock, Download, FileSpreadsheet, Pencil, Plus, Search, Share, UserCheck, UserMinus, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import { DataTableFacetedFilter, DataTablePagination } from '@/components/data-table'
+import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
     Table,
@@ -26,28 +30,21 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableFacetedFilter } from '@/components/data-table'
-import { DataTableViewOptions } from '@/components/data-table/view-options'
 import { useLanguage } from '@/context/language-provider'
-import { ConfirmDialog } from '@/components/confirm-dialog'
+import { type DeltaSet } from '@/lib/delta/types'
 import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
-
 import { EmployeeActionDialog } from '../components/employee-action-dialog'
-import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
 import { EmployeeBulkActions } from '../components/employee-bulk-actions'
 import { getEmployeeColumns, UNASSIGNED_POSITION_FILTER_VALUE } from '../components/employee-columns'
+import { ImportPersonnelDialog } from '../components/import-personnel-dialog'
 import { type Employee } from '../data/schema'
-import { employees as initialData } from '../data/employees'
-import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
+import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
+import { personnelQueryKeys } from '../query-keys'
 import { type EmployeeStatus } from '../services/employee-service'
 import { EmployeeCoreService } from '../services/employee-core-service'
 import { EmployeeMaintenanceService } from '../services/employee-maintenance-service'
-import { OrgService } from '../services/org-service'
-import { productionLinesService } from '@/features/production-shared/services/production-lines-service'
-import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
-import { type OrgNode } from '../data/org-schema'
-import { type DeltaSet } from '@/lib/delta/types'
+import { downloadPersonnelTemplate, exportPersonnelData } from '../utils/personnel-import-utils'
 
 const logger = createLogger('EmployeeManagementList')
 
@@ -62,7 +59,7 @@ type RecentResignSnapshot = {
 
 export function EmployeeManagementList() {
     const { locale, t } = useLanguage()
-    const [data, setData] = useState<Employee[]>(initialData)
+    const queryClient = useQueryClient()
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<Employee | undefined>(undefined)
     const [importOpen, setImportOpen] = useState(false)
@@ -71,16 +68,25 @@ export function EmployeeManagementList() {
         id: false,
         positionName: true,
     })
-    const [nameMap, setNameMap] = useState<Record<string, string>>({})
     const [recentResignSnapshot, setRecentResignSnapshot] = useState<RecentResignSnapshot | null>(null)
     const [isUndoingRecentResign, setIsUndoingRecentResign] = useState(false)
     const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
     const [itemsToDelete, setItemsToDelete] = useState<Employee[]>([])
-    const [error, setError] = useState<unknown>(null)
     const [globalFilter, setGlobalFilter] = useState('')
     const [searchValue, setSearchValue] = useState('')
 
-    // 防抖处理：避免频繁触发表格重绘导致的输入卡顿
+    const employeesQuery = useQuery({
+        queryKey: personnelQueryKeys.employees(),
+        queryFn: () => EmployeeCoreService.getEmployees(),
+    })
+    const { nameMap, error: lookupError, isLoading: isLookupsLoading } = useOrgPersonnelLookups({
+        includeProductionResources: true,
+    })
+
+    const data = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data])
+    const error = employeesQuery.error ?? lookupError
+    const isLoading = employeesQuery.isLoading || isLookupsLoading
+
     useEffect(() => {
         const handler = setTimeout(() => {
             setGlobalFilter(searchValue)
@@ -88,44 +94,9 @@ export function EmployeeManagementList() {
         return () => clearTimeout(handler)
     }, [searchValue])
 
-    const loadLookups = useCallback(async () => {
-        try {
-            const [orgData, lineData, prcData] = await Promise.all([
-                OrgService.getOrgTree(),
-                productionLinesService.getLines(),
-                productionProcessesService.getSteps(),
-            ])
-
-            const newMap: Record<string, string> = {}
-
-            const flattenOrg = (nodes: OrgNode[]) => {
-                nodes.forEach((node) => {
-                    newMap[node.id || ''] = node.name
-                    if (node.children) flattenOrg(node.children)
-                })
-            }
-            flattenOrg(orgData)
-
-            lineData.forEach((line) => {
-                newMap[line.id] = line.name
-                line.segments.forEach((seg) => {
-                    seg.jobCategories.forEach((category) => {
-                        category.processes.forEach((process) => {
-                            newMap[process.id] = process.name
-                        })
-                    })
-                })
-            })
-
-            prcData.forEach((process) => {
-                newMap[process.id] = process.name
-            })
-
-            setNameMap(newMap)
-        } catch (err) {
-            logger.error('Load lookups failed', err)
-        }
-    }, [])
+    const refreshEmployees = async () => {
+        await queryClient.invalidateQueries({ queryKey: personnelQueryKeys.employees() })
+    }
 
     const handleBulkStatusChange = async (
         items: Employee[],
@@ -159,7 +130,7 @@ export function EmployeeManagementList() {
             }
         }
 
-        await loadData()
+        await refreshEmployees()
         setRowSelection({})
         return updated
     }
@@ -178,7 +149,7 @@ export function EmployeeManagementList() {
         setIsUndoingRecentResign(true)
         try {
             const updated = await EmployeeMaintenanceService.updateEmployeesStatus(idsToRestore, 'active')
-            await loadData()
+            await refreshEmployees()
             setRowSelection({})
 
             if (updated === 0) {
@@ -201,30 +172,6 @@ export function EmployeeManagementList() {
         }
     }
 
-    const loadData = useCallback(async () => {
-        try {
-            setError(null)
-            await loadLookups()
-            const stored = await EmployeeCoreService.getEmployees()
-            if (stored) setData(stored)
-        } catch (err) {
-            setError(err)
-            logger.error('Load failed', err)
-        }
-    }, [loadLookups])
-
-    useEffect(() => {
-        const timer = globalThis.setTimeout(() => {
-            void loadData()
-        }, 0)
-
-        void loadData()
-
-        return () => {
-            globalThis.clearTimeout(timer)
-        }
-    }, [loadData])
-
     const handleBulkDelete = (items: Employee[]) => {
         setItemsToDelete(items)
         setBulkDeleteConfirmOpen(true)
@@ -232,10 +179,11 @@ export function EmployeeManagementList() {
 
     const onConfirmBulkDelete = async () => {
         if (itemsToDelete.length === 0) return
+
         try {
             const idsToDelete = itemsToDelete.map((item) => item.id)
             await EmployeeMaintenanceService.deleteEmployees(idsToDelete)
-            await loadData()
+            await refreshEmployees()
             setRowSelection({})
             setBulkDeleteConfirmOpen(false)
             setItemsToDelete([])
@@ -246,7 +194,6 @@ export function EmployeeManagementList() {
         }
     }
 
-    // SDRTS: 适配增量 Patch 提交
     const handleUpdateEmployee = async (finalEmp: Employee, isPatch?: boolean, delta?: DeltaSet) => {
         try {
             if (isPatch && delta && finalEmp.id) {
@@ -273,7 +220,6 @@ export function EmployeeManagementList() {
                 }
                 toast.success(t('orgPersonnel.list.saveUpdated'))
             } else {
-                // 执行全量保存 (创建新员工)
                 const createdEmployee = await EmployeeMaintenanceService.saveEmployee(finalEmp)
                 const nextPositionId = finalEmp.positionId?.trim() || ''
                 if (nextPositionId) {
@@ -281,12 +227,13 @@ export function EmployeeManagementList() {
                 }
                 toast.success(t('orgPersonnel.list.saveCreated'))
             }
-            await loadData()
+
+            await refreshEmployees()
             setCurrentRow(undefined)
         } catch (err) {
             logger.error('Update employee failed', err)
             toast.error(t('orgPersonnel.list.saveFailed', {
-                message: err instanceof Error ? err.message : 'Unknown error'
+                message: err instanceof Error ? err.message : 'Unknown error',
             }))
         }
     }
@@ -296,7 +243,6 @@ export function EmployeeManagementList() {
         setOpen(true)
     }
 
-    // 动态注入操作列，实现增量介入入口
     const columns = useMemo(() => {
         const baseColumns = getEmployeeColumns(t)
         const actionColumn = {
@@ -347,6 +293,7 @@ export function EmployeeManagementList() {
             columnVisibility,
             globalFilter,
         },
+        meta: { nameMap },
         onColumnVisibilityChange: setColumnVisibility,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
@@ -356,7 +303,6 @@ export function EmployeeManagementList() {
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
         onRowSelectionChange: setRowSelection,
-        // 性能关键优化：仅允许对“姓名”和“工号”进行全局搜索过滤
         getColumnCanGlobalFilter: (column) => {
             const id = column.id
             return id === 'name' || id === 'staffId'
@@ -367,7 +313,7 @@ export function EmployeeManagementList() {
         ? recentResignSnapshot.employees
             .slice(0, 6)
             .map((item) => item.name || item.staffId || item.id)
-            .join('、')
+            .join(' / ')
         : ''
     const recentResignExtraCount = recentResignSnapshot
         ? Math.max(recentResignSnapshot.employees.length - 6, 0)
@@ -466,11 +412,11 @@ export function EmployeeManagementList() {
                         <div className='flex items-center gap-1'>
                             <FileSpreadsheet className='size-3 text-blue-600' />
                             <span className='text-[10px] font-black tracking-tighter'>
-                                {locale === 'zh-CN' ? '批量同步' : 'Batch sync'}
+                                Batch sync
                             </span>
                         </div>
                         <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>
-                            {locale === 'zh-CN' ? '新增 / 更新' : 'add / update'}
+                            add / update
                         </span>
                     </Button>
                     <Button
@@ -528,7 +474,7 @@ export function EmployeeManagementList() {
                                         colSpan={table.getAllColumns().length}
                                         className='h-24 text-center text-[10px] font-black uppercase tracking-widest opacity-30 text-muted-foreground'
                                     >
-                                        {t('orgPersonnel.list.empty')}
+                                        {isLoading ? t('common.status.loading') : t('orgPersonnel.list.empty')}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -547,9 +493,9 @@ export function EmployeeManagementList() {
                                 {t('orgPersonnel.list.recentResignTitle')}
                             </p>
                             <p className='text-xs font-black italic text-slate-700'>
-                                {t('orgPersonnel.list.recentResignCount', { 
+                                {t('orgPersonnel.list.recentResignCount', {
                                     count: recentResignSnapshot.employees.length,
-                                    time: recentResignTimeLabel
+                                    time: recentResignTimeLabel,
                                 })}
                             </p>
                             <div className='flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/60 tracking-tight'>
@@ -585,7 +531,7 @@ export function EmployeeManagementList() {
                 onStatusChange={handleBulkStatusChange}
                 onEdit={(items) => {
                     if (items.length > 1) {
-                        toast.info(locale === 'zh-CN' ? '正在批量处理中...' : 'Bulk action in progress...')
+                        toast.info('Bulk action in progress...')
                     }
                     if (items.length > 0) {
                         handleEditRow(items[0])
@@ -606,7 +552,7 @@ export function EmployeeManagementList() {
             <ImportPersonnelDialog
                 open={importOpen}
                 onOpenChange={setImportOpen}
-                onSuccess={loadData}
+                onSuccess={refreshEmployees}
             />
 
             <ConfirmDialog

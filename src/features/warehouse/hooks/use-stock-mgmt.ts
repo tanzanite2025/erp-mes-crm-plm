@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
 import { WarehouseCategoryCoreService } from '../category'
 import { InventoryCoreService, InventoryMaintenanceService, type InventoryView } from '../inventory'
+import { warehouseQueryKeys } from '../query-keys'
 
 /**
  * useStockMgmt - 深度重构后的库存管理 Hook 情况情况总量针对。
@@ -18,27 +19,27 @@ export function useStockMgmt() {
     
     // 【归一化查询】：并行获取所有依赖数据情况情况总量针对。
     const inventoryQuery = useQuery({
-        queryKey: ['inventory_list'],
+        queryKey: warehouseQueryKeys.inventoryList(),
         queryFn: () => InventoryCoreService.getInventoryList()
     })
 
     const valuationQuery = useQuery({
-        queryKey: ['inventory_valuation'],
+        queryKey: warehouseQueryKeys.inventoryValuation(),
         queryFn: () => InventoryCoreService.getInventoryValuation()
     })
 
     const alertSummaryQuery = useQuery({
-        queryKey: ['inventory_alert_summary'],
+        queryKey: warehouseQueryKeys.inventoryAlertSummary(),
         queryFn: () => InventoryCoreService.getAlertSummary()
     })
 
     const thresholdsQuery = useQuery({
-        queryKey: ['inventory_thresholds'],
+        queryKey: warehouseQueryKeys.alertThresholds(),
         queryFn: () => InventoryMaintenanceService.getAlertThresholds()
     })
 
     const categoriesQuery = useQuery({
-        queryKey: ['warehouse_categories'],
+        queryKey: warehouseQueryKeys.categoryList(),
         queryFn: () => WarehouseCategoryCoreService.getCategoryList()
     })
 
@@ -56,7 +57,7 @@ export function useStockMgmt() {
     const reconcileMutation = useMutation({
         mutationFn: () => InventoryMaintenanceService.reconcileInventory(),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['inventory_list'] })
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() })
             toast.success(t('warehouse.stock.toast.reconcileSuccess'))
             setReconcileConfirmOpen(false)
         },
@@ -67,7 +68,7 @@ export function useStockMgmt() {
         mutationFn: (params: { id: string, value: number }) => 
             InventoryMaintenanceService.setAlertThreshold(params.id, params.value),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['inventory_thresholds'] })
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() })
             toast.success(t('warehouse.stock.toast.thresholdUpdated', { 
                 name: selectedMaterial?.name || 'Item', 
                 value: variables.value 
@@ -191,8 +192,8 @@ export function useStockMgmt() {
         onConfirmReconcile,
         handleSaveThreshold,
         refreshData: () => {
-            queryClient.invalidateQueries({ queryKey: ['inventory_list'] })
-            queryClient.invalidateQueries({ queryKey: ['inventory_thresholds'] })
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() })
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() })
         }
     }
 }

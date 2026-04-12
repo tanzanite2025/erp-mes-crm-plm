@@ -6,6 +6,7 @@ export const sidebar = {
   groups: {
     resourceManagement: 'Resource Management',
     engineeringManagement: 'Engineering Management',
+    warehouseManagement: 'Warehouse',
     experimentalCenter: 'Lab Center',
     productionCoordination: 'Production Collaboration',
     toolingManagement: 'Tooling Management',
@@ -14,6 +15,7 @@ export const sidebar = {
   items: {
     dashboard: 'Dashboard',
     warehouse: 'Warehouse',
+    warehouseOperations: 'Warehouse Operations',
     salesManagement: 'Sales Management',
     mrp: 'MRP',
     purchaseManagement: 'Purchase Management',

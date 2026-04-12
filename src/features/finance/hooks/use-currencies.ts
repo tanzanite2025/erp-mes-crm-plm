@@ -6,9 +6,10 @@ import { createLogger } from '@/lib/logger'
 import { CurrencyCoreService } from '../services/currency-core-service'
 import { CurrencyMaintenanceService } from '../services/currency-maintenance-service'
 import { type Currency } from '../data/schema'
+import { financeQueryKeys } from '../query-keys'
 
 const logger = createLogger('useCurrencies')
-export const CURRENCIES_QUERY_KEY = ['finance', 'currencies'] as const
+export const CURRENCIES_QUERY_KEY = financeQueryKeys.currencies()
 
 type SyncApiError = Error & {
     status?: number

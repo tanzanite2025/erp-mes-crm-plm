@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ClipboardList, Tag, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,11 +12,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { unitService, type Unit } from '@/features/basic-settings/services/unit-service'
+import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
+import {
+  ENGINEERING_DB_DRILLING_QUERY_KEY,
+  ENGINEERING_DB_LABELING_QUERY_KEY,
+} from '@/features/engineering-db/query-keys'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { type SalesOrder } from '../data/schema'
 import { useGetCustomers } from '../customer'
+import { useSalesOrderDrawingOptions } from '../hooks/use-sales-order-drawing-options'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
 import { useSalesOrderSave } from '../hooks/use-sales-order-save'
 import { OrderFooterStats } from './parts/order-footer-stats'
@@ -38,41 +43,20 @@ export function SalesOrderActionDialog({
   const { allowsAction } = useNonBlockingPermissionActions()
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
-  const [units, setUnits] = useState<Unit[]>([])
-  const [drillingOptions, setDrillingOptions] = useState<{ label: string; value: string }[]>([])
-  const [labelingOptions, setLabelingOptions] = useState<{ label: string; value: string }[]>([])
+  const { units = [] } = useUnitsQuery({ enabled: open })
+  const drillingQuery = useQuery({
+    queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
+    queryFn: () => ProductionDBService.getDrilling(),
+    enabled: open,
+  })
+  const labelingQuery = useQuery({
+    queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
+    queryFn: () => ProductionDBService.getLabeling(),
+    enabled: open,
+  })
 
-  useEffect(() => {
-    const loadMetadata = async () => {
-      const [unitList, drillingList, labelingList] = await Promise.all([
-        unitService.getUnits(),
-        ProductionDBService.getDrilling(),
-        ProductionDBService.getLabeling(),
-      ])
-
-      // Fail loudly if critical metadata is unavailable; the editor cannot recover safely.
-      if (!unitList) throw new Error('[CRITICAL] Metadata missing: Units')
-      if (!drillingList) throw new Error('[CRITICAL] Metadata missing: DrillingOptions')
-      if (!labelingList) throw new Error('[CRITICAL] Metadata missing: LabelingOptions')
-
-      setUnits(unitList)
-      setDrillingOptions(drillingList.map((item) => ({ label: item.name, value: item.id })))
-      setLabelingOptions(labelingList.map((item) => ({ label: item.name, value: item.id })))
-    }
-
-    loadMetadata()
-
-    const handleUnitsUpdate = async () => {
-      const unitList = await unitService.getUnits()
-      setUnits(unitList || [])
-    }
-
-    window.addEventListener('xdfc_units_updated', handleUnitsUpdate)
-
-    return () => {
-      window.removeEventListener('xdfc_units_updated', handleUnitsUpdate)
-    }
-  }, [])
+  const drillingOptions = useSalesOrderDrawingOptions(drillingQuery.data)
+  const labelingOptions = useSalesOrderDrawingOptions(labelingQuery.data)
 
   const {
     formData,

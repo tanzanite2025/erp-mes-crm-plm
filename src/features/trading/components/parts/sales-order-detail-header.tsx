@@ -1,8 +1,9 @@
 import { CheckCircle, FileCheck, Play, Printer, Settings2, XCircle } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
+import { useSalesOrderDetailHeaderActions } from '../../hooks/use-sales-order-detail-header-actions'
+import { useSalesOrderDetailHeaderViewModel } from '../../hooks/use-sales-order-detail-header-view-model'
 import { SalesOrderStatusBadge } from './sales-order-status-badge'
 
 interface SalesOrderDetailHeaderProps {
@@ -21,6 +22,28 @@ export function SalesOrderDetailHeader({
   onMutateStatus,
 }: SalesOrderDetailHeaderProps) {
   const { t } = useLanguage()
+  const { handlePrint, printLabel } = useSalesOrderDetailHeaderActions({
+    printLabel: t('tradingSalesOrder.print.printShipment'),
+    printPendingMessage: t('tradingSalesOrder.print.templatePending'),
+  })
+  const {
+    showClaimBanner,
+    commandTitle,
+    canSubmitPending,
+    canStartProduction,
+    canMarkDone,
+    canCancel,
+    submitPendingPayload,
+    startProductionPayload,
+    markDonePayload,
+    cancelPayload,
+    cancelConfirmText,
+  } = useSalesOrderDetailHeaderViewModel({
+    order,
+    isClaimAction,
+    activeCommandTitle,
+    t,
+  })
 
   return (
     <div className='relative overflow-hidden rounded-[32px] border border-dashed border-primary/20 bg-muted/5 px-6 py-4 shadow-inner backdrop-blur-md'>
@@ -47,13 +70,12 @@ export function SalesOrderDetailHeader({
         </div>
       </div>
 
-      {isClaimAction && order.status === 'Pending' && (
+      {showClaimBanner && (
         <div className='mt-3 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-2 animate-in slide-in-from-top-1'>
           <div className='flex items-center gap-2 px-1'>
             <Settings2 className='size-3 animate-spin-slow text-primary' />
             <span className='text-[10px] font-black uppercase tracking-wider text-primary'>
-              {t('tradingSalesOrder.detail.pendingInstruction')}:{' '}
-              {activeCommandTitle || t('tradingSalesOrder.detail.claimFallback')}
+              {t('tradingSalesOrder.detail.pendingInstruction')}: {commandTitle}
             </span>
           </div>
           <p className='text-[9px] font-bold italic text-muted-foreground'>{activeCommandContent}</p>
@@ -61,50 +83,44 @@ export function SalesOrderDetailHeader({
       )}
 
       <div className='mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-muted-foreground/10 pt-2'>
-        {order.status === 'Draft' && (
+        {canSubmitPending && (
           <Button
             size='sm'
             className='gap-1.5 rounded-xl bg-amber-500 text-[10px] font-black uppercase text-white hover:bg-amber-600'
-            onClick={() => onMutateStatus({ id: order.id, status: 'Pending' })}
+            onClick={() => onMutateStatus(submitPendingPayload)}
           >
             <FileCheck className='size-3.5' />
             {t('tradingSalesOrder.detail.submitPending')}
           </Button>
         )}
-        {order.status === 'Pending' && (
+        {canStartProduction && (
           <Button
             size='sm'
             className='gap-1.5 rounded-xl bg-primary text-[10px] font-black uppercase text-white shadow-lg shadow-primary/20 hover:bg-primary/90'
-            onClick={() =>
-              onMutateStatus({
-                id: order.id,
-                status: 'InProgress',
-                statusNote: t('tradingSalesOrder.detail.productionTriggered'),
-              })
-            }
+            onClick={() => onMutateStatus(startProductionPayload)}
           >
             <Play className='size-3.5' />
             {t('tradingSalesOrder.detail.startProduction')}
           </Button>
         )}
-        {order.status === 'InProgress' && (
+        {canMarkDone && (
           <Button
             size='sm'
             className='gap-1.5 rounded-xl bg-emerald-500 text-[10px] font-black uppercase text-white hover:bg-emerald-600'
-            onClick={() => onMutateStatus({ id: order.id, status: 'Done' })}
+            onClick={() => onMutateStatus(markDonePayload)}
           >
             <CheckCircle className='size-3.5' />
             {t('tradingSalesOrder.detail.markDone')}
           </Button>
         )}
-        {['Draft', 'Pending'].includes(order.status) && (
+        {canCancel && (
           <Button
             size='sm'
             variant='ghost'
             className='gap-1.5 rounded-xl text-[10px] font-black uppercase text-destructive hover:bg-destructive/10'
             onClick={() => {
-              if (!confirm(t('tradingSalesOrder.detail.cancelConfirm'))) return
-              onMutateStatus({ id: order.id, status: 'Canceled' })
+              if (!confirm(cancelConfirmText)) return
+              onMutateStatus(cancelPayload)
             }}
           >
             <XCircle className='size-3.5' />
@@ -116,10 +132,10 @@ export function SalesOrderDetailHeader({
           size='sm'
           variant='outline'
           className='gap-1.5 rounded-xl border-2 border-dashed text-[10px] font-black uppercase'
-          onClick={() => toast.info(t('tradingSalesOrder.print.templatePending'))}
+          onClick={handlePrint}
         >
           <Printer className='size-3.5' />
-          {t('tradingSalesOrder.print.printShipment')}
+          {printLabel}
         </Button>
       </div>
     </div>

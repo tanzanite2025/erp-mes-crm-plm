@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
-import { Search, Plus, Edit, Trash2, BookOpen, FileSpreadsheet, FileText, Download, Eye, Hash, Calendar } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, BookOpen, Download, Eye, Hash, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,6 +30,12 @@ import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '../query-keys'
+import { getEngineeringDbFileVisual, getEngineeringDbPreviewKind } from '../view-helpers'
+
+type SpecsRowViewModel = {
+    item: TechnicalSpec
+    searchText: string
+}
 
 export function SpecsTab() {
     const { t } = useLanguage()
@@ -95,23 +101,23 @@ export function SpecsTab() {
     })
 
     const filteredData = useMemo(() => {
-        return data.filter(item => 
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    }, [data, searchTerm])
+        const rows = data.map<SpecsRowViewModel>((item) => ({
+            item,
+            searchText: [
+                item.name,
+                item.category,
+                item.description || '',
+                item.fileExtension || '',
+            ].join(' ').toLowerCase(),
+        }))
 
-    const getFileInfo = (ext?: string) => {
-        const lowerExt = ext?.toLowerCase()
-        const isExcel = ['xlsx', 'xls', 'csv'].includes(lowerExt || '')
-        const isWord = ['docx', 'doc'].includes(lowerExt || '')
-        const Icon = isExcel ? FileSpreadsheet : isWord ? FileText : BookOpen
-        const colorClass = isExcel ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 
-                         isWord ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' : 
-                         'text-amber-500 bg-amber-500/10 border-amber-500/20'
-        return { Icon, colorClass }
-    }
+        const normalizedSearch = searchTerm.trim().toLowerCase()
+        if (!normalizedSearch) {
+            return rows
+        }
+
+        return rows.filter((row) => row.searchText.includes(normalizedSearch))
+    }, [data, searchTerm])
 
     const handleDownload = async (item: TechnicalSpec) => {
         if (item.fileUrl) {
@@ -129,9 +135,8 @@ export function SpecsTab() {
                 toast.error(t('engineering.specs.toasts.unResolved'))
                 return
             }
-            const ext = item.fileExtension?.toLowerCase()
             setPreviewFile({ url: resolvedUrl, name: item.name })
-            if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+            if (getEngineeringDbPreviewKind(item.fileExtension) === 'excel') {
                 setExcelPreviewOpen(true)
             } else {
                 setPdfPreviewOpen(true)
@@ -141,27 +146,27 @@ export function SpecsTab() {
         }
     }
 
-    const columns: ColumnDef<TechnicalSpec>[] = [
+    const columns: ColumnDef<SpecsRowViewModel>[] = [
         {
-            accessorKey: 'name',
+            accessorKey: 'item.name',
             header: t('engineering.specs.table.name'),
             cell: ({ row }) => {
-                const info = getFileInfo(row.original.fileExtension)
-                const Icon = info.Icon
+                const fileVisual = getEngineeringDbFileVisual({ extension: row.original.item.fileExtension, category: 'SPEC' })
+                const Icon = fileVisual.icon
                 return (
                     <div className='flex items-center gap-3'>
-                        <div className={`size-10 rounded-lg border ${info.colorClass} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-                            <Icon className='size-5' />
+                        <div className={`size-10 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
-                            <span className='font-bold text-sm text-foreground'>{row.original.name}</span>
+                            <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
                             <div className='flex items-center gap-2 mt-1'>
                                 <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
-                                    {row.original.fileExtension || 'PDF'}
+                                    {row.original.item.fileExtension || 'PDF'}
                                 </Badge>
                                 <span className='text-[10px] text-muted-foreground font-medium uppercase tracking-tight'>
-                                    {t('engineering.specs.table.version')}: {row.original.version} | 
-                                    {row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString() : 'N/A'}
+                                    {t('engineering.specs.table.version')}: {row.original.item.version} | 
+                                    {row.original.item.createdAt ? new Date(row.original.item.createdAt).toLocaleDateString() : 'N/A'}
                                 </span>
                             </div>
                         </div>
@@ -170,20 +175,20 @@ export function SpecsTab() {
             }
         },
         {
-            accessorKey: 'category',
+            accessorKey: 'item.category',
             header: t('engineering.specs.table.category'),
             cell: ({ row }) => (
                 <Badge variant='outline' className='w-fit h-5 text-[10px] px-2 rounded-full font-bold bg-amber-500/10 text-amber-500 border-amber-500/20 whitespace-nowrap'>
-                    {row.original.category}
+                    {row.original.item.category}
                 </Badge>
             )
         },
         {
-            accessorKey: 'description',
+            accessorKey: 'item.description',
             header: t('engineering.specs.table.description'),
             cell: ({ row }) => (
                 <p className='text-[12px] text-muted-foreground max-w-[200px] truncate italic font-medium'>
-                    {row.original.description || t('engineering.specs.table.noDesc')}
+                    {row.original.item.description || t('engineering.specs.table.noDesc')}
                 </p>
             )
         },
@@ -192,10 +197,10 @@ export function SpecsTab() {
             header: t('engineering.specs.table.actions'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-1'>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-emerald-500/10 hover:text-emerald-500' onClick={() => handleDownload(row.original)}><Download className='size-3.5' /></Button>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-blue-500/10 hover:text-blue-500' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-emerald-500/10 hover:text-emerald-500' onClick={() => handleDownload(row.original.item)}><Download className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-blue-500/10 hover:text-blue-500' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                     <Button 
                         variant='ghost' 
                         size='icon' 
@@ -203,12 +208,12 @@ export function SpecsTab() {
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.specs.toasts.deleteConfirm',
                             onAction: async () => {
-                                if (!row.original.id) {
+                                if (!row.original.item.id) {
                                     toast.error(t('engineering.specs.toasts.noId'))
                                     return
                                 }
                                 try {
-                                    await deleteMutation.mutateAsync(row.original.id)
+                                    await deleteMutation.mutateAsync(row.original.item.id)
                                 } catch (error) {
                                     const message = error instanceof Error ? error.message : t('engineering.specs.toasts.deleteFailed')
                                     toast.error(message)
@@ -309,9 +314,9 @@ export function SpecsTab() {
                                         key={row.id} 
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
-                                            row.original.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
+                                            row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
                                         )}
-                                        onClick={() => handlePreview(row.original)}
+                                        onClick={() => handlePreview(row.original.item)}
                                     >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell key={cell.id} className='px-6'>
@@ -339,9 +344,10 @@ export function SpecsTab() {
                 ) : filteredData.length === 0 ? (
                     <div className='p-12 text-center bg-muted/5 rounded-[28px] border border-dashed border-muted/50 italic text-[10px] text-muted-foreground opacity-40 uppercase'>{t('engineering.specs.table.empty')}</div>
                 ) : (
-                    filteredData.map((item) => {
-                        const info = getFileInfo(item.fileExtension)
-                        const Icon = info.Icon
+                    filteredData.map((row) => {
+                        const item = row.item
+                        const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: 'SPEC' })
+                        const Icon = fileVisual.icon
                         return (
                             <div 
                                 key={item.id}
@@ -352,13 +358,13 @@ export function SpecsTab() {
                                 )}
                             >
                                 <div className='absolute top-0 right-0 p-4 opacity-10'>
-                                    <Icon className={cn('size-16', info.colorClass.split(' ')[0])} />
+                                    <Icon className={cn('size-16', fileVisual.iconClassName)} />
                                 </div>
                                 
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
-                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', info.colorClass)}>
-                                            <Icon className='size-5' />
+                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', fileVisual.containerClassName)}>
+                                            <Icon className={cn('size-5', fileVisual.iconClassName)} />
                                         </div>
                                         <Badge variant='outline' className='text-[10px] font-black italic font-mono bg-muted/50 border-none text-muted-foreground px-3 rounded-full h-5'>
                                             {t('engineering.specs.table.rev')}: {item.version}

@@ -9,6 +9,7 @@ import type { MasterDataSearchResult } from '../../inventory'
 
 interface ShipmentSearchProps {
   searchQuery: string
+  autoFocus?: boolean
   setSearchQuery: (query: string) => void
   isSearching: boolean
   searchResults: MasterDataSearchResult[]
@@ -17,6 +18,7 @@ interface ShipmentSearchProps {
 
 export function ShipmentSearch({
   searchQuery,
+  autoFocus = false,
   setSearchQuery,
   isSearching,
   searchResults,
@@ -37,6 +39,7 @@ export function ShipmentSearch({
           <input
             placeholder={t('warehouse.shipment.search.placeholder')}
             className='w-full h-11 md:h-12 pl-10 pr-10 text-xs md:text-sm bg-muted/50 rounded-xl md:rounded-2xl border-none focus-visible:ring-1 focus-visible:ring-primary/20 font-medium placeholder:text-muted-foreground/30 transition-all outline-none'
+            autoFocus={autoFocus}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

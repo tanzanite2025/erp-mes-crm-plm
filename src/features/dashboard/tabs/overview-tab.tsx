@@ -16,9 +16,8 @@ import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type ProductionSegment as Segment } from '@/features/production-shared/data/production-line'
 import { useProductionLinesQuery } from '@/features/production-shared/hooks/use-production-resources'
-import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
+import { useVisibleDashboardSegments } from '@/features/dashboard/hooks/use-visible-dashboard-segments'
 
-const VISIBLE_SEGMENTS_KEY = 'xdfc_dashboard_visible_segments'
 const logger = createLogger('DashboardOverviewTab')
 
 function getErrorMessage(error: unknown): string {
@@ -31,7 +30,6 @@ function getErrorMessage(error: unknown): string {
 
 export function DashboardOverviewTab() {
   const { t } = useLanguage()
-  const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const { data: lines = [], isLoading: loading, error, refetch } = useProductionLinesQuery()
 
@@ -46,49 +44,21 @@ export function DashboardOverviewTab() {
     [lines],
   )
 
+  const { visibleSegmentIds: savedVisibleSegmentIds, saveVisibleSegmentIds } = useVisibleDashboardSegments(
+    segments.map((segment) => segment.id),
+  )
+  const [visibleSegmentIds, setVisibleSegmentIds] = useState<string[]>([])
+
   useEffect(() => {
-    let active = true
-
-    const syncVisibleSegments = async () => {
-      try {
-        const saved = await StorageService.getItem<string[]>(VISIBLE_SEGMENTS_KEY)
-        if (!active) return
-
-        if (saved) {
-          setVisibleSegmentIds(saved)
-          return
-        }
-
-        if (segments.length > 0) {
-          const defaults = segments.slice(0, 5).map((segment) => segment.id)
-          setVisibleSegmentIds(defaults)
-          await StorageService.setItem(VISIBLE_SEGMENTS_KEY, defaults)
-        }
-      } catch (storageError) {
-        logger.error('Failed to sync dashboard segments config', storageError)
-      }
+    try {
+      setVisibleSegmentIds(savedVisibleSegmentIds)
+    } catch (storageError) {
+      logger.error('Failed to sync dashboard segments config', storageError)
     }
-
-    void syncVisibleSegments()
-
-    const handleSync = (event?: Event) => {
-      const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
-      if (key && key !== VISIBLE_SEGMENTS_KEY) {
-        return
-      }
-      void syncVisibleSegments()
-    }
-
-    window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
-    return () => {
-      active = false
-      window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
-    }
-  }, [segments])
+  }, [savedVisibleSegmentIds])
 
   const handleSaveConfig = async (ids: string[]) => {
-    setVisibleSegmentIds(ids)
-    await StorageService.setItem(VISIBLE_SEGMENTS_KEY, ids)
+    await saveVisibleSegmentIds(ids)
     setIsConfigOpen(false)
   }
 
@@ -152,7 +122,10 @@ export function DashboardOverviewTab() {
                 variant='ghost'
                 size='icon'
                 className='size-9 rounded-xl text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 transition-all border border-transparent hover:border-blue-500/20'
-                onClick={() => setIsConfigOpen(true)}
+                onClick={() => {
+                  setVisibleSegmentIds(savedVisibleSegmentIds)
+                  setIsConfigOpen(true)
+                }}
               >
                 <Settings className='size-5' />
               </Button>

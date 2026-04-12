@@ -1,4 +1,5 @@
 export const PRODUCTS_QUERY_KEY = ['engineering', 'products'] as const
+export const productDetailQueryKey = (id: string) => ['engineering', 'products', id] as const
 export const PRODUCT_TYPES_QUERY_KEY = ['engineering', 'productTypes'] as const
 export const CHANGE_ORDERS_QUERY_KEY = ['engineering', 'changeOrders'] as const
 export const PRODUCT_TEMPLATES_QUERY_KEY = ['engineering', 'productTemplates'] as const

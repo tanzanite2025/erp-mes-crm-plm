@@ -214,6 +214,9 @@ export const warehouse = {
     material: '物料',
     select: '选择',
     idleTitle: '空闲状态',
+    startInbound: '登记入库',
+    emptyBeforeSearchGuide: '请先搜索产品或物料，匹配到结果后点击“登记入库”开始入库。',
+    emptyAfterSearchGuide: '当前没有匹配结果，请调整搜索关键词，匹配到结果后点击“登记入库”开始入库。',
     historyTitle: '历史流水',
     latestTransactions: '最新流水',
     columns: {

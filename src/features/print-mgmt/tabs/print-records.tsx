@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -19,31 +20,28 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
+import { PRINT_BATCHES_QUERY_KEY } from '../query-keys'
 
 export function PrintRecords() {
     const { t } = useLanguage()
-    const [batches, setBatches] = useState<PrintBatch[]>([])
+    const queryClient = useQueryClient()
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedBatch, setSelectedBatch] = useState<PrintBatch | null>(null)
     const [isVerifyOpen, setIsVerifyOpen] = useState(false)
     const [verifyCount, setVerifyCount] = useState<number>(0)
-
-    useEffect(() => {
-        const loadBatches = async () => {
-            const data = await PrintRecordService.getBatches()
-            setBatches(data)
-        }
-        loadBatches()
-        
-        const handleSync = () => loadBatches()
-        window.addEventListener('xdfc_print_batches_updated', handleSync)
-        window.addEventListener('xdfc_storage_initialized', handleSync)
-        
-        return () => {
-            window.removeEventListener('xdfc_print_batches_updated', handleSync)
-            window.removeEventListener('xdfc_storage_initialized', handleSync)
-        }
-    }, [])
+    const { data: batches = [] } = useQuery<PrintBatch[]>({
+        queryKey: PRINT_BATCHES_QUERY_KEY,
+        queryFn: () => PrintRecordService.getBatches(),
+    })
+    const activateMutation = useMutation({
+        mutationFn: ({ id, count, version }: { id: string; count: number; version: number }) =>
+            PrintRecordService.activate(id, count, version),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: PRINT_BATCHES_QUERY_KEY }),
+    })
+    const scrapMutation = useMutation({
+        mutationFn: (id: string) => PrintRecordService.scrap(id),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: PRINT_BATCHES_QUERY_KEY }),
+    })
 
     const handleOpenVerify = (batch: PrintBatch) => {
         setSelectedBatch(batch)
@@ -58,14 +56,18 @@ export function PrintRecords() {
             return
         }
 
-        await PrintRecordService.activate(selectedBatch.id, verifyCount, selectedBatch.version)
+        await activateMutation.mutateAsync({
+            id: selectedBatch.id,
+            count: verifyCount,
+            version: selectedBatch.version,
+        })
         toast.success(t('printMgmt.records.toasts.verifySuccess', { count: verifyCount }))
         setIsVerifyOpen(false)
     }
 
     const handleScrap = async (id: string) => {
         if (confirm(t('printMgmt.records.confirmScrap'))) {
-            await PrintRecordService.scrap(id)
+            await scrapMutation.mutateAsync(id)
             toast.info(t('printMgmt.records.toasts.scrapInfo'))
         }
     }

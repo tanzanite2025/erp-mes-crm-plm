@@ -43,6 +43,13 @@ import { getPdaCategories } from '../data'
 import { isForbiddenError } from '@/lib/error-status'
 import { useAuthStore } from '@/stores/auth-store'
 import { createLogger } from '@/lib/logger'
+import {
+  normalizeDeviceCode,
+  normalizeMachineCode,
+  normalizeMaterialCode,
+  normalizeSceneKey,
+  normalizeTaskKey,
+} from '@/lib/codecs/code-normalization'
 
 type PDAWorkbenchForm = {
   rawCode: string
@@ -144,20 +151,17 @@ export function PDATerminalTab() {
     }
   }, [])
 
-  const normalizedRawCode = useMemo(
-    () => form.rawCode.replace(/\s+/g, '').trim().toUpperCase(),
-    [form.rawCode]
-  )
+  const normalizedRawCode = useMemo(() => normalizeMachineCode(form.rawCode), [form.rawCode])
 
   const payloadPreview = useMemo<PDAIngestRequest>(() => {
     const parsedQty = Number(form.scannedQty)
     return {
       rawCode: normalizedRawCode,
       symbology: form.symbology,
-      scene: form.scene,
-      deviceId: form.deviceId.trim(),
-      taskId: form.taskId.trim() || undefined,
-      materialCode: form.materialCode.trim().toUpperCase() || undefined,
+      scene: normalizeSceneKey(form.scene),
+      deviceId: normalizeDeviceCode(form.deviceId),
+      taskId: normalizeTaskKey(form.taskId) || undefined,
+      materialCode: normalizeMaterialCode(form.materialCode) || undefined,
       batchNo: form.batchNo.trim() || undefined,
       scannedQty:
         Number.isFinite(parsedQty) && parsedQty > 0
@@ -170,7 +174,7 @@ export function PDATerminalTab() {
     async (overrideRawCode?: string) => {
       const payload: PDAIngestRequest = {
         ...payloadPreview,
-        rawCode: (overrideRawCode || payloadPreview.rawCode || '').toUpperCase(),
+        rawCode: normalizeMachineCode(overrideRawCode || payloadPreview.rawCode),
       }
 
       if (!payload.rawCode) {
@@ -224,8 +228,8 @@ export function PDATerminalTab() {
         ...protocolConfig,
         ingestDefaults: {
           symbology: form.symbology,
-          scene: form.scene,
-          deviceId: form.deviceId.trim() || protocolConfig.ingestDefaults.deviceId,
+          scene: normalizeSceneKey(form.scene),
+          deviceId: normalizeDeviceCode(form.deviceId) || protocolConfig.ingestDefaults.deviceId,
           scannedQty:
             Number.isFinite(parsedQty) && parsedQty > 0
               ? parsedQty
@@ -351,7 +355,7 @@ export function PDATerminalTab() {
                 value={form.rawCode}
                 onValueChange={(value) => {
                   lastAutoSubmittedRef.current = value === form.rawCode ? lastAutoSubmittedRef.current : ''
-                  setForm((current) => ({ ...current, rawCode: value.toUpperCase() }))
+                  setForm((current) => ({ ...current, rawCode: normalizeMachineCode(value) }))
                   setLastError(null)
                 }}
                 placeholder={t('terminalConfig.pda.workbench.inputPlaceholder')}
@@ -387,7 +391,7 @@ export function PDATerminalTab() {
                 </label>
                 <Select
                   value={form.scene}
-                  onValueChange={(value) => setForm((current) => ({ ...current, scene: value }))}
+                  onValueChange={(value) => setForm((current) => ({ ...current, scene: normalizeSceneKey(value) }))}
                 >
                   <SelectTrigger className='h-11 rounded-2xl'>
                     <SelectValue placeholder={t('terminalConfig.pda.fields.scenePlaceholder')} />
@@ -409,7 +413,7 @@ export function PDATerminalTab() {
                 <Input
                   value={form.deviceId}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, deviceId: event.target.value.toUpperCase() }))
+                    setForm((current) => ({ ...current, deviceId: normalizeDeviceCode(event.target.value) }))
                   }
                   placeholder='PDA-01'
                   className='h-11 rounded-2xl'
@@ -442,7 +446,7 @@ export function PDATerminalTab() {
                 <Input
                   value={form.taskId}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, taskId: event.target.value }))
+                    setForm((current) => ({ ...current, taskId: normalizeTaskKey(event.target.value) }))
                   }
                   placeholder={t('terminalConfig.pda.fields.taskIdPlaceholder')}
                   className='h-11 rounded-2xl'
@@ -458,7 +462,7 @@ export function PDATerminalTab() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      materialCode: event.target.value.toUpperCase(),
+                      materialCode: normalizeMaterialCode(event.target.value),
                     }))
                   }
                   placeholder='MAT-001'

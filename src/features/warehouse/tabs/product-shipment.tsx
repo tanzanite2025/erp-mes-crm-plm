@@ -36,7 +36,7 @@ export default function ProductShipment() {
         alertThresholds,
         salesOrders
     } = useShipment()
-    const { viewId } = Route.useSearch()
+    const { mode, viewId } = Route.useSearch()
 
     useEffect(() => {
         if (viewId) {
@@ -59,6 +59,7 @@ export default function ProductShipment() {
 
             <ShipmentSearch
                 searchQuery={searchQuery}
+                autoFocus={mode === 'scan'}
                 setSearchQuery={setSearchQuery}
                 isSearching={isSearching}
                 searchResults={searchResults}

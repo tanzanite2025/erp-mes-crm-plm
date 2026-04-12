@@ -4,10 +4,8 @@ import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type Product } from '@/features/engineering/data/schema'
-import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { type SalesOrderLine } from '../../data/schema'
-
-type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
+import { useSalesOrderLinesEditorViewModel } from '../../hooks/use-sales-order-lines-editor-view-model'
 
 interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
@@ -26,24 +24,6 @@ interface OrderLinesEditorProps {
   ) => void
 }
 
-function getCurrencySymbol(currency?: string) {
-  if (!currency) return 'CNY '
-  switch (currency.toUpperCase()) {
-    case 'CNY':
-      return 'CNY '
-    case 'USD':
-      return '$'
-    case 'EUR':
-      return 'EUR '
-    case 'GBP':
-      return 'GBP '
-    case 'JPY':
-      return 'JPY '
-    default:
-      return `${currency} `
-  }
-}
-
 export function OrderLinesEditor({
   lines,
   products,
@@ -56,22 +36,13 @@ export function OrderLinesEditor({
   onLineChange,
 }: OrderLinesEditorProps) {
   const { t } = useLanguage()
-  const symbol = getCurrencySymbol(currency)
-
-  const handleProductChange = (index: number, productId: string) => {
-    const product = products.find((item) => item.id === productId)
-    if (!product) {
-      onLineChange(index, 'productId', productId)
-      return
-    }
-
-    onLineChange(index, 'productId', productId, {
-      productModel: product.sku,
-      productCode: product.sku,
-      specification: formatProductDisplayName(product),
-      uom: 'PCS',
+  const { currencySymbol, productById, productOptions, activeUnitOptions, handleProductChange } =
+    useSalesOrderLinesEditorViewModel({
+      products,
+      units,
+      currency,
+      onLineChange,
     })
-  }
 
   return (
     <section className='space-y-3'>
@@ -116,14 +87,14 @@ export function OrderLinesEditor({
                 <td className='text-center font-mono text-[10px] text-muted-foreground/40'>{line.lineNo}</td>
                 <td className='py-2'>
                   <div className='mx-auto flex size-10 items-center justify-center overflow-hidden rounded-lg border bg-muted/20'>
-                    {(() => {
-                      const product = products.find((item) => item.id === line.productId)
-                      return product?.image ? (
-                        <img src={product.image} className='size-full object-cover' />
-                      ) : (
-                        <ImageIcon className='size-4 text-muted-foreground/10' />
-                      )
-                    })()}
+                    {productById.get(line.productId || '')?.image ? (
+                      <img
+                        src={productById.get(line.productId || '')?.image}
+                        className='size-full object-cover'
+                      />
+                    ) : (
+                      <ImageIcon className='size-4 text-muted-foreground/10' />
+                    )}
                   </div>
                 </td>
                 <td className='px-4'>
@@ -133,9 +104,9 @@ export function OrderLinesEditor({
                     onChange={(e) => handleProductChange(index, e.target.value)}
                   >
                     <option value=''>{t('tradingSalesOrder.linesEditor.selectDesktop')}</option>
-                    {products.map((product) => (
+                    {productOptions.map((product) => (
                       <option key={product.id} value={product.id}>
-                        {formatProductDisplayName(product)}
+                        {product.label}
                       </option>
                     ))}
                   </select>
@@ -193,7 +164,7 @@ export function OrderLinesEditor({
                   />
                 </td>
                 <td className='text-center text-xs font-black tabular-nums text-primary'>
-                  {symbol}
+                  {currencySymbol}
                   {Number(line.amount).toLocaleString()}
                 </td>
                 <td className='px-2'>
@@ -202,13 +173,11 @@ export function OrderLinesEditor({
                     value={line.uom}
                     onChange={(e) => onLineChange(index, 'uom', e.target.value)}
                   >
-                    {units
-                      .filter((unit) => unit.status === 'active')
-                      .map((unit) => (
-                        <option key={unit.id} value={unit.code}>
-                          {unit.code}
-                        </option>
-                      ))}
+                    {activeUnitOptions.map((unit) => (
+                      <option key={unit.id} value={unit.code}>
+                        {unit.code}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td className='text-center'>
@@ -232,14 +201,14 @@ export function OrderLinesEditor({
           <div key={index} className='relative rounded-[24px] border-2 border-dashed bg-muted/5 p-4 animate-in fade-in slide-in-from-bottom-2'>
             <div className='mb-4 flex items-start gap-4'>
               <div className='flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-background'>
-                {(() => {
-                  const product = products.find((item) => item.id === line.productId)
-                  return product?.image ? (
-                    <img src={product.image} className='size-full object-cover' />
-                  ) : (
-                    <ImageIcon className='size-6 text-muted-foreground/10' />
-                  )
-                })()}
+                {productById.get(line.productId || '')?.image ? (
+                  <img
+                    src={productById.get(line.productId || '')?.image}
+                    className='size-full object-cover'
+                  />
+                ) : (
+                  <ImageIcon className='size-6 text-muted-foreground/10' />
+                )}
               </div>
               <div className='min-w-0 flex-1 space-y-1.5'>
                 <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 italic leading-none'>
@@ -251,9 +220,9 @@ export function OrderLinesEditor({
                   onChange={(e) => handleProductChange(index, e.target.value)}
                 >
                   <option value=''>{t('tradingSalesOrder.linesEditor.selectProduct')}</option>
-                  {products.map((product) => (
+                  {productOptions.map((product) => (
                     <option key={product.id} value={product.id}>
-                      {formatProductDisplayName(product)}
+                      {product.label}
                     </option>
                   ))}
                 </select>
@@ -336,13 +305,11 @@ export function OrderLinesEditor({
                   value={line.uom}
                   onChange={(e) => onLineChange(index, 'uom', e.target.value)}
                 >
-                  {units
-                    .filter((unit) => unit.status === 'active')
-                    .map((unit) => (
-                      <option key={unit.id} value={unit.code}>
-                        {unit.code}
-                      </option>
-                    ))}
+                  {activeUnitOptions.map((unit) => (
+                    <option key={unit.id} value={unit.code}>
+                      {unit.code}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -377,7 +344,7 @@ export function OrderLinesEditor({
                   {t('tradingSalesOrder.linesEditor.rowTotal')}
                 </span>
                 <div className='text-lg font-black italic tracking-tighter text-primary'>
-                  <span className='mr-0.5 text-[10px]'>{symbol}</span>
+                  <span className='mr-0.5 text-[10px]'>{currencySymbol}</span>
                   {Number(line.amount).toLocaleString()}
                 </div>
               </div>

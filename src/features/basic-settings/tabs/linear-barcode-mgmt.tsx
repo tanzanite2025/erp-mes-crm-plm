@@ -17,11 +17,11 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
-import { StorageService, XDFC_STORAGE_EVENT } from '@/features/system-mgmt/services/storage-service'
 import { DMRuleConfigDialog } from '../components/dm-rule-config-dialog'
 import { AppearanceActionDialog, type AppearanceMapping } from '../components/appearance-action-dialog'
 import { DMRulesTable } from '../components/dm-rules-table'
 import { LinearBarcodeSimulationSection } from '../components/linear-barcode-simulation-section'
+import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
 import { parseLinearBarcodeCode } from '../utils/linear-barcode-parser'
 import { type DMRuleSegment } from '../data/linear-barcode-rules-config'
 import {
@@ -40,20 +40,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const APPEARANCE_MAPPING_KEY = 'xdfc_appearance_mapping'
 const logger = createLogger('LinearBarcodeMgmt')
-
-const DEFAULT_APPEARANCE_MAPPING: AppearanceMapping = {
-  '1': { label: 'UD', desc: 'Default appearance 1' },
-  '2': { label: '3K', desc: 'Default appearance 2' },
-  '3': { label: '12K', desc: 'Default appearance 3' },
-  '4': { label: 'MARBLE', desc: 'Default appearance 4' },
-  '5': { label: 'PAINT', desc: 'Default appearance 5' },
-  '6': { label: 'CUSTOM', desc: 'Default appearance 6' },
-  '7': { label: '-', desc: 'Reserved' },
-  '8': { label: '-', desc: 'Reserved' },
-  '9': { label: '-', desc: 'Reserved' },
-}
 
 export function LinearBarcodeMgmt() {
   const { t, locale } = useLanguage()
@@ -65,8 +52,8 @@ export function LinearBarcodeMgmt() {
   const [selectedSegment, setSelectedSegment] = useState<DMRuleSegment | null>(null)
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
-  const [appearanceMapping, setAppearanceMapping] = useState<AppearanceMapping | null>(null)
   const { data: products = [] } = useGetProducts()
+  const { data: appearanceMapping = null } = useAppearanceMapping()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [mockInputs, setMockInputs] = useState<LinearBarcodeMockInputs>(createDefaultLinearBarcodeMockInputs)
@@ -100,19 +87,6 @@ export function LinearBarcodeMgmt() {
       ? t('basicSettings.linearBarcode.page.badges.saving')
       : t('basicSettings.linearBarcode.page.badges.synced')
 
-  const loadAppearanceMapping = useCallback(async () => {
-    if (typeof window === 'undefined') return
-
-    try {
-      const savedAppearance = await StorageService.getItem<AppearanceMapping>(APPEARANCE_MAPPING_KEY)
-
-      setAppearanceMapping(savedAppearance || DEFAULT_APPEARANCE_MAPPING)
-    } catch (error) {
-      logger.error('Failed to load shared mappings', error)
-      setAppearanceMapping(DEFAULT_APPEARANCE_MAPPING)
-    }
-  }, [])
-
   const loadProtocolConfig = useCallback(async () => {
     setIsConfigLoading(true)
     try {
@@ -134,22 +108,8 @@ export function LinearBarcodeMgmt() {
   }, [])
 
   useEffect(() => {
-    void loadAppearanceMapping()
     void loadProtocolConfig()
-
-    const handleSync = (event?: Event) => {
-      const key = (event as CustomEvent<{ key?: string }> | undefined)?.detail?.key
-      if (key && key !== APPEARANCE_MAPPING_KEY) {
-        return
-      }
-      void loadAppearanceMapping()
-    }
-    window.addEventListener(XDFC_STORAGE_EVENT, handleSync)
-
-    return () => {
-      window.removeEventListener(XDFC_STORAGE_EVENT, handleSync)
-    }
-  }, [loadAppearanceMapping, loadProtocolConfig])
+  }, [loadProtocolConfig])
 
   useEffect(() => {
     if (!products.length) return

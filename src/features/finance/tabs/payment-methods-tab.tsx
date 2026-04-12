@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CreditCard, Edit2, Plus, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -6,39 +7,35 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
-import { type PaymentMethod } from '../data/schema'
 import { PaymentMethodActionDialog } from '../components/payment-method-action-dialog'
+import { type PaymentMethod } from '../data/schema'
+import { financeQueryKeys } from '../query-keys'
 import { PaymentMethodCoreService } from '../services/payment-method-core-service'
 
 export function PaymentMethodsTab() {
   const { t } = useLanguage()
-  const [methods, setMethods] = useState<PaymentMethod[]>([])
-  const [error, setError] = useState<unknown>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null)
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await PaymentMethodCoreService.getPaymentMethods()
-      setMethods(data)
-    } catch (loadError) {
-      setError(loadError)
-      toast.error(t('finance.paymentMethods.toast.loadFailed'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [t])
+  const methodsQuery = useQuery({
+    queryKey: financeQueryKeys.paymentMethods(),
+    queryFn: () => PaymentMethodCoreService.getPaymentMethods(),
+  })
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    if (!methodsQuery.error) return
+    toast.error(t('finance.paymentMethods.toast.loadFailed'))
+  }, [methodsQuery.error, t])
 
-  if (isForbiddenError(error)) {
+  const refresh = () => queryClient.invalidateQueries({ queryKey: financeQueryKeys.paymentMethods() })
+
+  if (isForbiddenError(methodsQuery.error)) {
     return <ForbiddenState />
   }
+
+  const methods = methodsQuery.data ?? []
+  const isLoading = methodsQuery.isLoading || methodsQuery.isFetching
 
   return (
     <div className='space-y-6 animate-in fade-in duration-700'>
@@ -53,7 +50,7 @@ export function PaymentMethodsTab() {
           <Button
             variant='outline'
             size='sm'
-            onClick={loadData}
+            onClick={() => void refresh()}
             className='rounded-full h-9 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-primary/5 hover:text-primary transition-all'
           >
             <RefreshCcw className={`size-3 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -149,7 +146,6 @@ export function PaymentMethodsTab() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         editingMethod={editingMethod}
-        onSuccess={loadData}
       />
     </div>
   )

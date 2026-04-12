@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import {
   createPurchaseReturn,
@@ -11,7 +12,7 @@ import {
 
 export function useGetPurchaseReturns(page = 1, pageSize = 50) {
   return useQuery<PaginatedPurchaseReturns, Error>({
-    queryKey: ['purchase-returns', page, pageSize],
+    queryKey: tradingQueryKeys.purchaseReturns(page, pageSize),
     queryFn: () => getPurchaseReturns(page, pageSize),
   })
 }
@@ -30,9 +31,9 @@ export function usePurchaseReturnMutations() {
     }) => createPurchaseReturn(purchaseOrderId, payload),
     onSuccess: (data) => {
       toast.success(t('purchase.orders.toasts.returnCreated'))
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders', data.purchaseOrder.id] })
-      queryClient.invalidateQueries({ queryKey: ['purchase-returns'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.purchaseOrdersRoot() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.purchaseOrderDetail(data.purchaseOrder.id) })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.purchaseReturnsRoot() })
     },
     onError: handleServerError,
   })

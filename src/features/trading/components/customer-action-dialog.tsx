@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { Building2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -12,24 +11,13 @@ import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useCustomerActionViewModel } from '../hooks/use-customer-action-view-model'
 
 interface CustomerActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
   onSave: (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => void
-}
-
-const defaultFormData: Partial<Customer> = {
-  name: '',
-  code: '',
-  contactPerson: '',
-  contactPhone: '',
-  email: '',
-  address: '',
-  status: 'Active',
-  creditLimit: 0,
-  balance: 0,
 }
 
 export function CustomerActionDialog({
@@ -47,8 +35,7 @@ export function CustomerActionDialog({
     body: 'contents',
     footer: 'flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
   })
-  const allowedEditStatuses = ['Active', 'Pending']
-  const initialFormData = useMemo(() => (customer ? customer : (defaultFormData as Customer)), [customer])
+  const { allowedEditStatuses, initialFormData, statusOptions } = useCustomerActionViewModel({ customer, t })
   const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -191,9 +178,11 @@ export function CustomerActionDialog({
                   <SelectValue placeholder='请选择状态' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='Active'>{t('trading.customerStatus.active')}</SelectItem>
-                  <SelectItem value='Pending'>{t('trading.customerStatus.pending')}</SelectItem>
-                  <SelectItem value='Inactive'>{t('trading.customerStatus.inactive')}</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

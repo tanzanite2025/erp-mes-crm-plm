@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Control, UseFormReturn } from 'react-hook-form'
 import { Box, Settings2, Sparkles } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
@@ -21,7 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { UnitActionDialog } from '../../basic-settings/components/unit-action-dialog'
-import { unitService, type Unit } from '../../basic-settings/services/unit-service'
+import { useUnitsQuery } from '../../basic-settings/hooks/use-units-query'
 import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { type Material } from '../data/schema'
 
@@ -33,28 +33,8 @@ interface MaterialFormProps {
 export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
   const { t, locale } = useLanguage()
   const [isUnitMgmtOpen, setIsUnitMgmtOpen] = useState(false)
-  const [units, setUnits] = useState<Unit[]>([])
+  const { units } = useUnitsQuery()
   const categoryOptions = useMemo(() => getMaterialCategoryOptions(locale), [locale])
-
-  useEffect(() => {
-    const loadUnits = async () => {
-      const data = await unitService.getUnits()
-      setUnits(data)
-    }
-
-    void loadUnits()
-  }, [])
-
-  useEffect(() => {
-    const handleUpdate = async () => {
-      const data = await unitService.getUnits()
-      setUnits(data)
-    }
-
-    window.addEventListener('xdfc_units_updated', handleUpdate)
-    return () => window.removeEventListener('xdfc_units_updated', handleUpdate)
-  }, [])
-
 
   const renderOptions = categoryOptions
 
@@ -250,10 +230,6 @@ export function MaterialForm({ form, selectedCategory }: MaterialFormProps) {
       <UnitActionDialog
         open={isUnitMgmtOpen}
         onOpenChange={setIsUnitMgmtOpen}
-        onSaveSuccess={async () => {
-          const data = await unitService.getUnits()
-          setUnits(data)
-        }}
       />
     </div>
   )

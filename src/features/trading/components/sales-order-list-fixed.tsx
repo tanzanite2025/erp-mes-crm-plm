@@ -15,21 +15,17 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
-import { type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
-import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
-import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
-import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
+import { useSalesOrderListViewModel } from '../hooks/use-sales-order-list-view-model'
+import { useTradingFinanceFilterOptions } from '../hooks/use-trading-finance-resources'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderDetail } from './sales-order-detail'
 import { SalesOrderMaster } from './sales-order-master'
-
-const logger = createLogger('SalesOrderList')
 
 const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
 	Draft: 'draft',
@@ -59,8 +55,6 @@ export function SalesOrderList() {
   const [selectedId, setSelectedId] = useState<string | null>(search.detailId || null)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null)
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([])
 
   // Data Fetching
   const { data, isLoading, isError, error } = useGetSalesOrders(page, pageSize)
@@ -68,91 +62,15 @@ export function SalesOrderList() {
 
   const orders = useMemo(() => data?.items ?? [], [data?.items])
   const total = data?.total || 0
-
-  useEffect(() => {
-    const loadFinanceFilters = async () => {
-      try {
-        const [paymentMethodData, paymentTermData] = await Promise.all([
-          PaymentMethodCoreService.getPaymentMethods(),
-          PaymentTermCoreService.getPaymentTerms(),
-        ])
-        setPaymentMethods(paymentMethodData)
-        setPaymentTerms(paymentTermData)
-      } catch (error) {
-        logger.error('Failed to load sales order filter options', error)
-      }
-    }
-
-    void loadFinanceFilters()
-  }, [])
-
-  const paymentMethodOptions = useMemo(() => {
-    const entries = new Map<string, string>()
-
-    paymentMethods.forEach((item) => {
-      if (item.code) entries.set(item.code, item.name || item.code)
-    })
-
-    orders.forEach((order) => {
-      if (order.paymentMethod) {
-        entries.set(
-          order.paymentMethod,
-          order.paymentMethodName || entries.get(order.paymentMethod) || order.paymentMethod
-        )
-      }
-    })
-
-    return Array.from(entries.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentMethods])
-
-  const paymentTermOptions = useMemo(() => {
-    const entries = new Map<string, string>()
-
-    paymentTerms.forEach((item) => {
-      if (item.code) entries.set(item.code, item.name || item.code)
-    })
-
-    orders.forEach((order) => {
-      if (order.paymentTerm) {
-        entries.set(
-          order.paymentTerm,
-          order.paymentTermName || entries.get(order.paymentTerm) || order.paymentTerm
-        )
-      }
-    })
-
-    return Array.from(entries.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentTerms])
-
-  // Filtering Logic
-  const filteredOrders = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase()
-
-    return orders.filter((order) => {
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        [
-          order.orderNo,
-          order.customerName,
-          order.purchaseOrderNo,
-          order.paymentMethod,
-          order.paymentMethodName,
-          order.paymentTerm,
-          order.paymentTermName,
-        ].some((value) => (value?.toLowerCase() ?? '').includes(normalizedSearch))
-      
-      const matchesStatus = statusFilter === 'all' || order.status.toLowerCase() === statusFilter.toLowerCase()
-      const matchesPaymentMethod =
-        paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
-      const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
-
-      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
-    })
-  }, [orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
+  const { paymentMethodOptions, paymentTermOptions } = useTradingFinanceFilterOptions(orders)
+  const { filteredOrders, selectedOrder } = useSalesOrderListViewModel({
+    orders,
+    searchTerm,
+    statusFilter,
+    paymentMethodFilter,
+    paymentTermFilter,
+    selectedId,
+  })
 
   const { runConfirmedAction } = useConfirmedActionFlow()
 
@@ -349,7 +267,7 @@ export function SalesOrderList() {
           <ScrollArea className='flex-1'>
             <div className='p-8'>
               <SalesOrderDetail
-                order={orders.find((o) => o.id === selectedId)}
+                order={selectedOrder}
                 onDelete={(id) => {
                   setSelectedId(null)
                   handleDeleteOrder(id)

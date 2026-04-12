@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import type { ProductionProcessStep as ProcessStep } from '../../../data/production-process'
 import { useProcessLibraryProcesses } from '../hooks/use-process-library-processes'
 
@@ -63,7 +64,7 @@ function toProcessFormState(process?: ProcessStep): ProcessFormState {
 
   return {
     id: process.id,
-    code: process.code || '',
+    code: normalizeMachineCode(process.code),
     name: process.name,
     description: process.description || '',
     sortOrder: process.sortOrder || 0,
@@ -114,7 +115,7 @@ export function ProcessLibraryPanel() {
   }
 
   const handleSave = async () => {
-    if (!formState.code.trim() || !formState.name.trim()) {
+    if (!normalizeMachineCode(formState.code) || !formState.name.trim()) {
       toast.error('Process code and name are required')
       return
     }
@@ -124,7 +125,7 @@ export function ProcessLibraryPanel() {
     try {
       await saveProcess({
         id: formState.id,
-        code: formState.code.trim(),
+        code: normalizeMachineCode(formState.code),
         name: formState.name.trim(),
         description: formState.description.trim(),
         sortOrder: Number.isFinite(formState.sortOrder) ? formState.sortOrder : 0,
@@ -292,7 +293,7 @@ export function ProcessLibraryPanel() {
                 <Input
                   value={formState.code}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, code: event.target.value.toUpperCase() }))
+                    setFormState((prev) => ({ ...prev, code: normalizeMachineCode(event.target.value) }))
                   }
                   placeholder='e.g. PROC-ANODIZE'
                   className='h-11 rounded-2xl'

@@ -3,12 +3,13 @@ import type {
   LogisticsInboundHostContext,
   LogisticsInboundScanPayload,
 } from '../models/logistics-inbound'
+import { normalizeTrackingCode } from '@/lib/codecs/code-normalization'
 
 export const logisticsInboundResolutionService = {
   async resolve(
     input: ScanResolveInput<LogisticsInboundHostContext>
   ): Promise<ScanResolvedContext<LogisticsInboundScanPayload>> {
-    const normalizedTrackingNo = input.rawCode.trim().toUpperCase()
+    const normalizedTrackingNo = normalizeTrackingCode(input.rawCode)
     const hostContext = input.context
     if (!hostContext) {
       // 物流进货解析必须具备宿主上下文（采购单信息等），否则将导致采集流程中断或数据孤立

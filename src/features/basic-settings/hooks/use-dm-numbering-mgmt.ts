@@ -13,6 +13,7 @@ import { type ProductType } from '@/features/engineering/data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { PRODUCT_TYPES_QUERY_KEY } from '@/features/engineering/query-keys'
 import type { TranslationKey } from '@/locales'
+import { useAppearanceMapping } from './use-appearance-mapping'
 
 export function useDMNumberingMgmt() {
     const { t } = useLanguage()
@@ -29,8 +30,8 @@ export function useDMNumberingMgmt() {
     const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
     const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
 
-    const [appearanceMapping] = useState<any>(null)
     const { data: products = [] } = useGetProducts()
+    const { data: appearanceMapping = null } = useAppearanceMapping()
     const { data: productTypes = [] } = useQuery<ProductType[]>({
         queryKey: PRODUCT_TYPES_QUERY_KEY,
         queryFn: () => ProductTypeService.getProductTypes(),

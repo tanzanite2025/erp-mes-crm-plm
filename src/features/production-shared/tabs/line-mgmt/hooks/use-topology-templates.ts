@@ -1,67 +1,65 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { TopologyTemplate } from '../types'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
+import { TopologyTemplate } from '../types'
 
 const TEMPLATE_STORAGE_KEY = 'xdfc_topology_templates_v1'
-const UPDATE_EVENT = 'xdfc_topology_templates_updated'
+const TOPOLOGY_TEMPLATES_QUERY_KEY = ['production-shared', 'topology-templates'] as const
 
 const logger = createLogger('useTopologyTemplates')
 
-export function useTopologyTemplates() {
-  const [templates, setTemplates] = useState<TopologyTemplate[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  const loadTemplates = useCallback(async () => {
-    if (typeof window === 'undefined') return
-    try {
-      const stored = await StorageService.getItem<TopologyTemplate[]>(TEMPLATE_STORAGE_KEY)
-      setTemplates(stored || [])
-    } catch (e) {
-      logger.error('Failed to load templates from storage', e)
-      setTemplates([])
-    } finally {
-      setIsLoaded(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadTemplates()
-
-    const handleSync = () => loadTemplates()
-    window.addEventListener(UPDATE_EVENT, handleSync)
-    window.addEventListener('xdfc_storage_initialized', handleSync)
-
-    return () => {
-      window.removeEventListener(UPDATE_EVENT, handleSync)
-      window.removeEventListener('xdfc_storage_initialized', handleSync)
-    }
-  }, [loadTemplates])
-
-  const saveTemplates = async (newTemplates: TopologyTemplate[]) => {
-    await StorageService.setItem(TEMPLATE_STORAGE_KEY, newTemplates)
-    setTemplates(newTemplates)
-    window.dispatchEvent(new CustomEvent(UPDATE_EVENT))
+async function loadTopologyTemplates() {
+  try {
+    const stored = await StorageService.getItem<TopologyTemplate[]>(TEMPLATE_STORAGE_KEY)
+    return stored || []
+  } catch (error) {
+    logger.error('Failed to load templates from storage', error)
+    return []
   }
+}
+
+export function useTopologyTemplates() {
+  const queryClient = useQueryClient()
+  const { data: templates = [], isLoading } = useQuery<TopologyTemplate[]>({
+    queryKey: TOPOLOGY_TEMPLATES_QUERY_KEY,
+    queryFn: loadTopologyTemplates,
+    initialData: [],
+  })
+
+  const saveTemplatesMutation = useMutation({
+    mutationFn: async (nextTemplates: TopologyTemplate[]) => {
+      await StorageService.setItem(TEMPLATE_STORAGE_KEY, nextTemplates)
+      return nextTemplates
+    },
+    onSuccess: (nextTemplates) => {
+      queryClient.setQueryData(TOPOLOGY_TEMPLATES_QUERY_KEY, nextTemplates)
+    },
+  })
 
   const addTemplate = async (template: TopologyTemplate) => {
-    await saveTemplates([template, ...templates])
+    await saveTemplatesMutation.mutateAsync([template, ...templates])
   }
 
   const removeTemplate = async (id: string) => {
-    await saveTemplates(templates.filter(t => t.id !== id))
+    await saveTemplatesMutation.mutateAsync(templates.filter((template) => template.id !== id))
   }
 
   const updateTemplate = async (template: TopologyTemplate) => {
-    await saveTemplates(templates.map(t => t.id === template.id ? template : t))
+    await saveTemplatesMutation.mutateAsync(
+      templates.map((item) => (item.id === template.id ? template : item)),
+    )
+  }
+
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: TOPOLOGY_TEMPLATES_QUERY_KEY })
   }
 
   return {
     templates,
-    isLoaded,
+    isLoaded: !isLoading,
     addTemplate,
     removeTemplate,
     updateTemplate,
-    refresh: loadTemplates
+    refresh,
   }
 }

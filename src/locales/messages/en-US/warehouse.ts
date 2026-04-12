@@ -204,6 +204,9 @@ export const warehouse = {
     material: 'Material',
     select: 'Select',
     idleTitle: 'Idle State',
+    startInbound: 'Record Inbound',
+    emptyBeforeSearchGuide: 'Search for a product or material first, then click "Record Inbound" on a matching result to start inbound.',
+    emptyAfterSearchGuide: 'No matching result was found. Refine your search, then click "Record Inbound" on a result to start inbound.',
     historyTitle: 'History',
     latestTransactions: 'Latest Transactions',
     columns: {

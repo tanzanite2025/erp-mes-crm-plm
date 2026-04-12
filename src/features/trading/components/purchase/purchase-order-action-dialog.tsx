@@ -7,6 +7,7 @@ import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purc
 import { useGetSuppliers } from '../../supplier'
 import { usePurchaseOrderForm } from '../../hooks/use-purchase-order-form'
 import { usePurchaseOrderDialogResources } from '../../hooks/use-purchase-order-dialog-resources'
+import { usePurchaseOrderSavePreparation } from '../../hooks/use-purchase-order-save-preparation'
 import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 import { PurchaseOrderActionDialogShell } from './purchase-order-action-dialog-shell'
@@ -33,8 +34,13 @@ export function PurchaseOrderActionDialog({
   const activeOrder = summaryOrder ? detailedOrder || summaryOrder : null
   const { units, materials, isMetaLoading } = usePurchaseOrderDialogResources(open)
 
-  const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, prepareSubmitData, commit } =
+  const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit, isFinanceLoading } =
     usePurchaseOrderForm(activeOrder, open)
+  const { prepareSaveExecution } = usePurchaseOrderSavePreparation({
+    initialOrder: activeOrder,
+    formData,
+    commit,
+  })
 
   const { createMutation, saveMutation } = usePurchaseOrderMutations()
 
@@ -43,31 +49,21 @@ export function PurchaseOrderActionDialog({
     if (!validate()) return
 
     try {
-      const preparedData = prepareSubmitData()
+      const saveExecution = prepareSaveExecution()
 
-      if (activeOrder && summaryOrder) {
-        // SDRTS: 提交增量
-        const delta = commit()
-        if (Object.keys(delta).length === 0) {
+      if (saveExecution.mode === 'noop') {
           onOpenChange(false)
-          return
-        }
-
-        if (activeOrder.version === undefined || activeOrder.version === null) {
-          throw new Error(`[CRITICAL] Missing version for SDRTS Patch on PurchaseOrder ${activeOrder.id}`)
-        }
-
+      } else if (saveExecution.mode === 'update') {
         await saveMutation.mutateAsync({
-          orderId: activeOrder.id,
-          delta,
-          finalData: preparedData,
+          orderId: saveExecution.orderId,
+          delta: saveExecution.delta,
+          finalData: saveExecution.finalData,
           operator: user?.accountNo || 'Unknown',
           actorId: user?.id,
-          expectedVersion: activeOrder.version,
+          expectedVersion: saveExecution.expectedVersion,
         })
       } else {
-        // 新建采购单
-        await createMutation.mutateAsync(preparedData)
+        await createMutation.mutateAsync(saveExecution.finalData)
       }
       onOpenChange(false)
     } catch (_error) {
@@ -75,7 +71,7 @@ export function PurchaseOrderActionDialog({
     }
   }
 
-  const isDataLoading = isMetaLoading || (!!summaryOrder && isDetailLoading)
+  const isDataLoading = isMetaLoading || isFinanceLoading || (!!summaryOrder && isDetailLoading)
   const dialogTitle = summaryOrder
     ? t('purchase.orders.dialogEditTitle')
     : t('purchase.orders.dialogCreateTitle')

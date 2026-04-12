@@ -21,6 +21,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { AdjustmentPrint } from '../components/adjustment-print'
 import { AdjustmentService, type InventoryAdjustment } from '../adjustment'
+import { warehouseQueryKeys } from '../query-keys'
 import { getAdjustmentStatusMeta } from '../utils/warehouse-status-display'
 
 export function AdjustmentHistory() {
@@ -31,8 +32,8 @@ export function AdjustmentHistory() {
     const [adjToExecute, setAdjToExecute] = useState<InventoryAdjustment | null>(null)
     const printRef = useRef<HTMLDivElement>(null)
 
-    const { data: adjustments, isLoading, error, refetch } = useQuery({
-        queryKey: ['inventory-adjustments'],
+    const { data: adjustments, isLoading, error } = useQuery({
+        queryKey: warehouseQueryKeys.inventoryAdjustments(),
         queryFn: () => AdjustmentService.getHistory()
     })
 
@@ -42,8 +43,8 @@ export function AdjustmentHistory() {
 
     const executeMutation = useMutation({
         mutationFn: (id: string) => AdjustmentService.execute(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] })
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() })
             toast.success(t('warehouse.adjustment.toast.executeSuccess'))
             setExecuteConfirmOpen(false)
             setAdjToExecute(null)
@@ -82,7 +83,7 @@ export function AdjustmentHistory() {
                     <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => refetch()}
+                        onClick={() => { void queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() }) }}
                         className='size-9 md:size-10 rounded-full hover:bg-muted shrink-0'
                     >
                         <RefreshCw className={cn('size-3.5 md:size-4 text-muted-foreground', isLoading && 'animate-spin')} />

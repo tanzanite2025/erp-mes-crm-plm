@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Settings2, XCircle } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
+import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '../query-keys'
 import { unitService, type Unit, type UnitCategory } from '../services/unit-service'
 
 interface UnitActionDialogProps {
@@ -52,6 +54,7 @@ export function UnitActionDialog({
   onSaveSuccess,
 }: UnitActionDialogProps) {
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-md rounded-[24px]',
     header: 'p-6 pb-0 border-none bg-transparent',
@@ -97,6 +100,7 @@ export function UnitActionDialog({
       await unitService.addUnit(formData)
     }
 
+    await queryClient.invalidateQueries({ queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY })
     onOpenChange(false)
     onSaveSuccess?.()
   }

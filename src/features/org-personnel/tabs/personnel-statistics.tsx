@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { PersonnelStatsService } from '../services/personnel-stats-service'
+import { personnelQueryKeys } from '../query-keys'
 import { Card } from '@/components/ui/card'
 import { useMemo } from 'react'
 import { Trophy, Users } from 'lucide-react'
@@ -7,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function PersonnelStatistics() {
   const { data: ranking, isLoading } = useQuery({
-    queryKey: ['personnel', 'stats', 'ranking'],
+    queryKey: personnelQueryKeys.stats.ranking(),
     queryFn: () => PersonnelStatsService.getExcellentEmployeeRanking()
   })
 

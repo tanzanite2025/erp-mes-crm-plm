@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
-import { getSalesOrders } from '@/features/trading/sales'
+import { useGetSalesOrders } from '@/features/trading/sales'
 import { type SalesOrder } from '@/features/trading/data/schema'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { type MaterialRequirement, type MrpStats } from '../data/requirement-schema'
+import { mrpQueryKeys } from '../query-keys'
 import { requirementService } from '../services/requirement-service'
 
 const logger = createLogger('useRequirements')
@@ -15,6 +18,13 @@ type RequirementsError = {
   message: string
 }
 
+const EMPTY_STATS: MrpStats = {
+  totalMaterials: 0,
+  missingBOMCount: 0,
+  activeOrderCount: 0,
+  analyzedModels: [],
+}
+
 const toRequirementsError = (error: unknown): RequirementsError => {
   if (error instanceof Error) {
     return { message: error.message }
@@ -23,92 +33,59 @@ const toRequirementsError = (error: unknown): RequirementsError => {
 }
 
 export function useRequirements() {
+  const queryClient = useQueryClient()
   const [requirements, setRequirements] = useState<MaterialRequirement[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<unknown>(null)
-  const [stats, setStats] = useState<MrpStats>({
-    totalMaterials: 0,
-    missingBOMCount: 0,
-    activeOrderCount: 0,
-    analyzedModels: [],
+  const [stats, setStats] = useState<MrpStats>(EMPTY_STATS)
+  const [calculateError, setCalculateError] = useState<RequirementsError | null>(null)
+
+  const ordersQuery = useGetSalesOrders(1, 200, {
+    withLines: true,
+    status: ['Pending', 'InProgress'],
   })
-  const [orders, setOrders] = useState<SalesOrder[]>([])
 
-  const fetchOrders = useCallback(async () => {
-    const data = await getSalesOrders({
-      withLines: true,
-      status: ['Pending', 'InProgress'],
-      pageSize: 200,
-    })
-    if (!data?.items) {
-      throw new Error('[CRITICAL] Base SalesOrders for MRP are missing from backend response')
-    }
-    setOrders(data.items)
-  }, [])
+  const calculateMutation = useMutation({
+    mutationKey: mrpQueryKeys.requirementsCalculation(),
+    mutationFn: async (selectedKeys?: string[]) => {
+      if (selectedKeys) {
+        logger.info(`Calculating requirements for ${selectedKeys.length} keys...`)
+      }
+      const result = await requirementService.getMrpRequirements(selectedKeys ?? [])
+      if (!result.requirements) {
+        throw new Error('[CRITICAL] MRP Calculation returned invalid null requirements')
+      }
+      return result
+    },
+    onSuccess: (result) => {
+      setRequirements(result.requirements)
+      setStats(result.stats)
+      setCalculateError(null)
+    },
+    onError: (error) => {
+      setRequirements([])
+      setStats(EMPTY_STATS)
+      setCalculateError(toRequirementsError(error))
+      logger.error('Failed to calculate requirements from backend', error)
+    },
+  })
 
-  const loadAllData = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      await fetchOrders()
-    } catch (loadError) {
-      setError(loadError)
-      logger.error('Failed to load requirement orders', loadError)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [fetchOrders])
+  const ordersError = useMemo(() => {
+    if (!ordersQuery.error) return null
+    return toRequirementsError(ordersQuery.error)
+  }, [ordersQuery.error])
 
-  useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      void loadAllData()
-    }, 0)
-
-    window.addEventListener('xdfc_trading_updated', fetchOrders)
-    window.addEventListener('xdfc_sales_orders_updated', fetchOrders)
-
-    return () => {
-      globalThis.clearTimeout(timer)
-      window.removeEventListener('xdfc_trading_updated', fetchOrders)
-      window.removeEventListener('xdfc_sales_orders_updated', fetchOrders)
-    }
-  }, [fetchOrders, loadAllData])
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrdersRoot() })
+  }
 
   return {
     requirements,
-    activeOrders: orders,
-    error,
-    isLoading,
+    activeOrders: ordersQuery.data?.items ?? ([] as SalesOrder[]),
+    error: calculateError ?? ordersError,
+    isLoading: ordersQuery.isLoading || ordersQuery.isFetching || calculateMutation.isPending,
     stats,
-    refresh: async () => {
-      await loadAllData()
-    },
+    refresh,
     calculate: async (selectedKeys?: string[]) => {
-      setIsLoading(true)
-      try {
-        if (selectedKeys) {
-          logger.info(`Calculating requirements for ${selectedKeys.length} keys...`)
-        }
-        const result = await requirementService.getMrpRequirements(selectedKeys || [])
-        if (!result.requirements) {
-          throw new Error('[CRITICAL] MRP Calculation returned invalid null requirements')
-        }
-        setRequirements(result.requirements)
-        setStats(result.stats)
-        setError(null)
-      } catch (calculateError) {
-        setRequirements([])
-        setStats({
-          totalMaterials: 0,
-          missingBOMCount: 0,
-          activeOrderCount: 0,
-          analyzedModels: [],
-        })
-        setError(toRequirementsError(calculateError))
-        logger.error('Failed to calculate requirements from backend', calculateError)
-      } finally {
-        setIsLoading(false)
-      }
+      await calculateMutation.mutateAsync(selectedKeys)
     },
   }
 }

@@ -1,6 +1,5 @@
 import { useMemo, useEffect, useCallback } from 'react'
 import { useLanguage } from '@/context/language-provider'
-import { CurrencyCoreService } from '@/features/finance/services/currency-core-service'
 import { createLogger } from '@/lib/logger'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
@@ -19,7 +18,7 @@ import {
   normalizePurchaseOrderCurrencyValue,
   resolvePurchaseOrderExchangeRate,
 } from './purchase-order-form-header-helpers'
-import { preparePurchaseOrderForSubmit } from './purchase-order-form-submit-helpers'
+import { useTradingFinanceResources } from './use-trading-finance-resources'
 
 const logger = createLogger('usePurchaseOrderForm')
 type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
@@ -30,6 +29,11 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
     const user = useAuthStore((state) => state.user)
     const { t } = useLanguage()
     const purchaserName = user?.username || user?.accountNo || ''
+    const { currencies, isLoading: isFinanceLoading } = useTradingFinanceResources({
+        includeCurrencies: open,
+        includePaymentMethods: false,
+        includePaymentTerms: false,
+    })
     
     const memoizedInitial = useMemo(() => initialOrder || (DEFAULT_PURCHASE_ORDER as PurchaseOrder), [initialOrder])
     const { data: formData, commit } = useDeltaTracker(memoizedInitial, open)
@@ -43,65 +47,43 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
         }
     }, [formData])
 
-    const handleHeaderChange = useCallback(async (field: keyof PurchaseOrder, value: PurchaseOrder[keyof PurchaseOrder]) => {
+    const handleHeaderChange = useCallback((field: keyof PurchaseOrder, value: PurchaseOrder[keyof PurchaseOrder]) => {
         if (field === 'currency') {
             const currencyValue = normalizePurchaseOrderCurrencyValue(value)
-            try {
-                const currencies = await CurrencyCoreService.getCurrencies()
-                setFormData((prev) => ({
-                    ...prev,
-                    ...buildPurchaseOrderCurrencyPatch(
-                        currencyValue,
-                        resolvePurchaseOrderExchangeRate(currencies, currencyValue, prev.exchangeRate)
-                    ),
-                }))
-            } catch (error) {
-                logger.error('Failed to fetch exchange rate', error)
-                setFormData((prev) => ({
-                    ...prev,
-                    ...buildPurchaseOrderCurrencyPatch(currencyValue),
-                }))
-            }
+            setFormData((prev) => ({
+                ...prev,
+                ...buildPurchaseOrderCurrencyPatch(
+                    currencyValue,
+                    resolvePurchaseOrderExchangeRate(currencies, currencyValue, prev.exchangeRate)
+                ),
+            }))
         } else {
             setFormData((prev) => ({
                 ...prev,
                 ...buildPurchaseOrderHeaderPatch(field, value),
             }))
         }
-    }, [setFormData])
+    }, [currencies, setFormData])
 
     useEffect(() => {
         if (!open || initialOrder) return
+        if (isFinanceLoading) return
 
-        let cancelled = false
+        const defaultCurrency = DEFAULT_PURCHASE_ORDER.currency || 'CNY'
+        const defaultExchangeRate =
+            resolvePurchaseOrderExchangeRate(
+                currencies,
+                defaultCurrency,
+                DEFAULT_PURCHASE_ORDER.exchangeRate ?? 1
+            ) ?? (DEFAULT_PURCHASE_ORDER.exchangeRate ?? 1)
 
-        const initializeNewOrder = async () => {
-            const defaultCurrency = DEFAULT_PURCHASE_ORDER.currency || 'CNY'
-            let defaultExchangeRate = DEFAULT_PURCHASE_ORDER.exchangeRate ?? 1
-
-            try {
-                const currencies = await CurrencyCoreService.getCurrencies()
-                defaultExchangeRate = resolvePurchaseOrderExchangeRate(currencies, defaultCurrency, defaultExchangeRate) ?? defaultExchangeRate
-            } catch (error) {
-                logger.error('Failed to hydrate default purchase exchange rate', error)
-            }
-
-            if (cancelled) return
-
-            const nextDraft = createNewPurchaseOrderDraft(purchaserName, defaultExchangeRate)
-            setFormData((prev) => ({
-                ...prev,
-                ...nextDraft,
-                currency: defaultCurrency,
-            }))
-        }
-
-        void initializeNewOrder()
-
-        return () => {
-            cancelled = true
-        }
-    }, [open, initialOrder, purchaserName, setFormData])
+        const nextDraft = createNewPurchaseOrderDraft(purchaserName, defaultExchangeRate)
+        setFormData((prev) => ({
+            ...prev,
+            ...nextDraft,
+            currency: defaultCurrency,
+        }))
+    }, [currencies, initialOrder, isFinanceLoading, open, purchaserName, setFormData])
 
     const handleAddLine = useCallback(() => {
         setFormData((prev) => {
@@ -148,10 +130,6 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
         })
     }
 
-    const prepareSubmitData = useCallback(() => {
-        return preparePurchaseOrderForSubmit(formData)
-    }, [formData])
-
     return {
         formData,
         handleHeaderChange,
@@ -159,7 +137,7 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
         handleRemoveLine,
         updateLine,
         validate,
-        prepareSubmitData,
         commit,
+        isFinanceLoading,
     }
 }

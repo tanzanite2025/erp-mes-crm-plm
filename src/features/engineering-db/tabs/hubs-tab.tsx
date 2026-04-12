@@ -28,6 +28,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { ENGINEERING_DB_HUBS_QUERY_KEY } from '../query-keys'
 
+type HubsRowViewModel = {
+    item: Hub
+    searchText: string
+}
+
 export function HubsTab() {
     const { t } = useLanguage()
     const queryClient = useQueryClient()
@@ -80,12 +85,26 @@ export function HubsTab() {
     })
 
     const filteredData = useMemo(() => {
-        return data.filter(item => {
-            const searchStr = searchTerm.toLowerCase()
-            return item.name.toLowerCase().includes(searchStr) ||
-                   (item.brand || '').toLowerCase().includes(searchStr) ||
-                   (item.model || '').toLowerCase().includes(searchStr)
-        })
+        const rows = data.map<HubsRowViewModel>((item) => ({
+            item,
+            searchText: [
+                item.name,
+                item.brand || '',
+                item.model || '',
+                item.holeCount || '',
+                item.pcdLeft || '',
+                item.pcdRight || '',
+                item.flangeLeft || '',
+                item.flangeRight || '',
+            ].join(' ').toLowerCase(),
+        }))
+
+        const normalizedSearch = searchTerm.trim().toLowerCase()
+        if (!normalizedSearch) {
+            return rows
+        }
+
+        return rows.filter((row) => row.searchText.includes(normalizedSearch))
     }, [data, searchTerm])
 
     const handlePreview = (item: Hub) => {
@@ -97,9 +116,9 @@ export function HubsTab() {
         }
     }
 
-    const columns: ColumnDef<Hub>[] = [
+    const columns: ColumnDef<HubsRowViewModel>[] = [
         {
-            accessorKey: 'name',
+            accessorKey: 'item.name',
             header: t('engineering.hubs.table.name'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-3'>
@@ -107,24 +126,24 @@ export function HubsTab() {
                         <Cpu className='size-5 text-indigo-600' />
                     </div>
                     <div className='flex flex-col'>
-                        <span className='font-bold text-sm text-foreground'>{row.original.name}</span>
-                        <span className='text-[10px] text-muted-foreground uppercase font-mono tracking-widest'>{row.original.brand || t('engineering.labeling.table.generic')}</span>
+                        <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
+                        <span className='text-[10px] text-muted-foreground uppercase font-mono tracking-widest'>{row.original.item.brand || t('engineering.labeling.table.generic')}</span>
                     </div>
                 </div>
             )
         },
         {
-            accessorKey: 'holeCount',
+            accessorKey: 'item.holeCount',
             header: t('engineering.hubs.table.holes'),
-            cell: ({ row }) => <Badge variant='outline' className='bg-muted/50 border-none font-mono'>{row.original.holeCount || '--'}H</Badge>
+            cell: ({ row }) => <Badge variant='outline' className='bg-muted/50 border-none font-mono'>{row.original.item.holeCount || '--'}H</Badge>
         },
         {
             header: t('engineering.hubs.table.geometry'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-2 font-mono text-[11px]'>
-                    <span className='text-muted-foreground'>{row.original.pcdLeft || '--'}</span>
+                    <span className='text-muted-foreground'>{row.original.item.pcdLeft || '--'}</span>
                     <span className='opacity-20'>/</span>
-                    <span className='text-muted-foreground'>{row.original.pcdRight || '--'}</span>
+                    <span className='text-muted-foreground'>{row.original.item.pcdRight || '--'}</span>
                 </div>
             )
         },
@@ -132,9 +151,9 @@ export function HubsTab() {
             header: t('engineering.hubs.table.flange'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-2 font-mono text-[11px]'>
-                    <span className='text-indigo-600 font-bold'>{row.original.flangeLeft || '--'}</span>
+                    <span className='text-indigo-600 font-bold'>{row.original.item.flangeLeft || '--'}</span>
                     <span className='opacity-20'>/</span>
-                    <span className='text-indigo-600 font-bold'>{row.original.flangeRight || '--'}</span>
+                    <span className='text-indigo-600 font-bold'>{row.original.item.flangeRight || '--'}</span>
                 </div>
             )
         },
@@ -143,8 +162,8 @@ export function HubsTab() {
             header: t('engineering.hubs.table.actions'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-1'>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                     <Button 
                         variant='ghost' 
                         size='icon' 
@@ -152,7 +171,7 @@ export function HubsTab() {
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.hubs.toasts.deleteConfirm',
                             onAction: async () => {
-                                await deleteMutation.mutateAsync(row.original.id)
+                                await deleteMutation.mutateAsync(row.original.item.id)
                             }
                         })}
                     >
@@ -204,7 +223,7 @@ export function HubsTab() {
                         <TableBody>
                             {isLoading ? <TableRow><TableCell colSpan={columns.length} className='h-64 text-center'>{t('common.status.syncing')}</TableCell></TableRow> : 
                              table.getRowModel().rows?.length ? table.getRowModel().rows.map(row => (
-                                <TableRow key={row.id} className={cn('hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16', row.original.id === highlightId && 'bg-primary/5')}>
+                                <TableRow key={row.id} className={cn('hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16', row.original.item.id === highlightId && 'bg-primary/5')}>
                                     {row.getVisibleCells().map(cell => <TableCell key={cell.id} className='px-6'>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
                                 </TableRow>
                              )) : <TableRow><TableCell colSpan={columns.length} className='h-64 text-center text-muted-foreground/30'>{t('engineering.hubs.table.empty')}</TableCell></TableRow>}

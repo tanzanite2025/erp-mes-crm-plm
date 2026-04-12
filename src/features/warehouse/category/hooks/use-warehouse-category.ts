@@ -7,12 +7,13 @@ import {
   type WarehouseCategoryOption,
 } from '../services/warehouse-category-core-service'
 import { WarehouseCategoryMaintenanceService } from '../services/warehouse-category-maintenance-service'
+import { warehouseQueryKeys } from '../../query-keys'
 
 export function useWarehouseCategory() {
   const queryClient = useQueryClient()
 
   const categoriesQuery = useQuery({
-    queryKey: ['warehouse_categories'],
+    queryKey: warehouseQueryKeys.categoryList(),
     queryFn: () => WarehouseCategoryCoreService.getCategoryList()
   })
 
@@ -20,8 +21,8 @@ export function useWarehouseCategory() {
     mutationFn: (data: Omit<WarehouseCategory, 'id' | 'version'>) =>
       WarehouseCategoryMaintenanceService.createCategory(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['warehouse_categories'] })
-      queryClient.invalidateQueries({ queryKey: ['warehouse_category_options'] })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
       toast.success('Warehouse category created')
     }
   })
@@ -30,8 +31,8 @@ export function useWarehouseCategory() {
     mutationFn: (params: { id: string, delta: DeltaSet, version: number }) =>
       WarehouseCategoryMaintenanceService.patchCategory(params.id, params.delta, params.version),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['warehouse_categories'] })
-      queryClient.invalidateQueries({ queryKey: ['warehouse_category_options'] })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
       toast.success('Warehouse category updated')
     }
   })
@@ -39,8 +40,8 @@ export function useWarehouseCategory() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => WarehouseCategoryMaintenanceService.deleteCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['warehouse_categories'] })
-      queryClient.invalidateQueries({ queryKey: ['warehouse_category_options'] })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
       toast.success('Warehouse category deleted')
     }
   })
@@ -59,7 +60,7 @@ export function useWarehouseCategory() {
 
 export function useWarehouseCategoryOptions() {
   return useQuery({
-    queryKey: ['warehouse_category_options'],
+    queryKey: warehouseQueryKeys.categoryOptions(),
     queryFn: (): Promise<WarehouseCategoryOption[]> => WarehouseCategoryCoreService.getCategoryOptions()
   })
 }

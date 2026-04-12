@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Box, Building2, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
@@ -12,26 +12,13 @@ import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useSupplierActionViewModel } from '../hooks/use-supplier-action-view-model'
 
 interface SupplierActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   supplier?: Supplier | null
   onSave: (payload: { data: Partial<Supplier>; isPatch: boolean; delta?: DeltaSet }) => void
-}
-
-const DEFAULT_CATEGORY = '原材料'
-const DEFAULT_FORM_DATA: Partial<Supplier> = {
-  name: '',
-  code: '',
-  category: DEFAULT_CATEGORY,
-  mainProducts: [],
-  contactPerson: '',
-  contactPhone: '',
-  email: '',
-  address: '',
-  status: 'Active',
-  rating: 5,
 }
 
 export function SupplierActionDialog({
@@ -50,7 +37,7 @@ export function SupplierActionDialog({
     footer: 'shrink-0 flex-row gap-3 border-t border-dashed border-muted-foreground/10 bg-muted/5 p-6 sm:justify-end sm:px-8',
   })
   
-  const initialFormData = useMemo(() => (supplier ? supplier : DEFAULT_FORM_DATA), [supplier])
+  const { initialFormData, categoryOptions, statusOptions } = useSupplierActionViewModel({ supplier, t })
   const { data: formData, tracker } = useDeltaTracker(initialFormData as Supplier, open)
   const [productInput, setProductInput] = useState('')
 
@@ -87,13 +74,6 @@ export function SupplierActionDialog({
   const removeProduct = (product: string) => {
     formData.mainProducts = formData.mainProducts?.filter((item) => item !== product)
   }
-
-  const categoryOptions = [
-    { value: '原材料', label: t('purchase.suppliers.categories.rawMaterial') },
-    { value: '标准件', label: t('purchase.suppliers.categories.standardPart') },
-    { value: '外协加工', label: t('purchase.suppliers.categories.outsourcing') },
-    { value: '设备工装', label: t('purchase.suppliers.categories.equipmentTooling') },
-  ]
 
   return (
     <ActionDialogShell
@@ -188,15 +168,11 @@ export function SupplierActionDialog({
               <SelectValue placeholder={t('purchase.suppliers.fields.statusPlaceholder')} />
             </SelectTrigger>
             <SelectContent className='rounded-2xl border-none shadow-2xl'>
-              <SelectItem value='Active' className='py-3 text-[11px] font-black uppercase'>
-                {t('purchase.suppliers.statusActive')}
-              </SelectItem>
-              <SelectItem value='OnReview' className='py-3 text-[11px] font-black uppercase'>
-                {t('purchase.suppliers.statusReview')}
-              </SelectItem>
-              <SelectItem value='Inactive' className='py-3 text-[11px] font-black uppercase'>
-                {t('purchase.suppliers.statusInactive')}
-              </SelectItem>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value} className='py-3 text-[11px] font-black uppercase'>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

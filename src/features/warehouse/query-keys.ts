@@ -1,0 +1,20 @@
+import type { QueryKey } from '@tanstack/react-query'
+
+export const warehouseQueryKeys = {
+  all: (): QueryKey => ['warehouse'],
+  inboundHistory: (): QueryKey => ['warehouse', 'inbound-history'],
+  shipmentHistory: (): QueryKey => ['warehouse', 'shipment-history'],
+  masterDataAll: (): QueryKey => ['warehouse', 'master-data', 'all'],
+  masterDataSearch: (query: string): QueryKey => ['warehouse', 'master-data', 'search', query],
+  inventoryBreakdown: (materialId: string): QueryKey => ['warehouse', 'inventory-breakdown', materialId],
+  categoryStock: (materialId: string, category: string): QueryKey => ['warehouse', 'category-stock', materialId, category],
+  stocktakeTasks: (): QueryKey => ['warehouse', 'stocktake-tasks'],
+  stocktakeItems: (taskId: string): QueryKey => ['warehouse', 'stocktake-items', taskId],
+  inventoryAdjustments: (): QueryKey => ['warehouse', 'inventory-adjustments'],
+  categoryList: (): QueryKey => ['warehouse_categories'],
+  categoryOptions: (): QueryKey => ['warehouse_category_options'],
+  alertThresholds: (): QueryKey => ['inventory_thresholds'],
+  inventoryList: (): QueryKey => ['inventory_list'],
+  inventoryValuation: (): QueryKey => ['inventory_valuation'],
+  inventoryAlertSummary: (): QueryKey => ['inventory_alert_summary'],
+} as const

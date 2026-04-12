@@ -1,5 +1,12 @@
 import type { PDAIngestRequest } from './pda-ingest-service'
 import { createLogger } from '@/lib/logger'
+import {
+  normalizeDeviceCode,
+  normalizeMachineCode,
+  normalizeMaterialCode,
+  normalizeSceneKey,
+  normalizeTaskKey,
+} from '@/lib/codecs/code-normalization'
 
 const PDA_SHELL_QUEUE_KEY = 'xdfc_pda_shell_retry_queue_v1'
 
@@ -29,24 +36,19 @@ function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
-function normalizeScene(scene?: string) {
-  const normalized = (scene || '').trim().toLowerCase()
-  return normalized || 'general'
-}
-
 function buildDedupeKey(payload: PDAIngestRequest) {
   return [
-    normalizeScene(payload.scene),
-    (payload.deviceId || '').trim().toUpperCase(),
-    (payload.rawCode || '').trim().toUpperCase(),
-    (payload.taskId || '').trim(),
-    (payload.materialCode || '').trim().toUpperCase(),
+    normalizeSceneKey(payload.scene),
+    normalizeDeviceCode(payload.deviceId),
+    normalizeMachineCode(payload.rawCode),
+    normalizeTaskKey(payload.taskId),
+    normalizeMaterialCode(payload.materialCode),
   ].join('|')
 }
 
 function normalizeRetryItem(item: Partial<PDAIngestRetryItem> & { payload?: PDAIngestRequest }) {
   const payload = item.payload || { rawCode: '' }
-  const scene = normalizeScene(item.scene || payload.scene)
+  const scene = normalizeSceneKey(item.scene || payload.scene)
   const dedupeKey = item.dedupeKey || buildDedupeKey(payload)
   const createdAt = item.createdAt || new Date().toISOString()
 
@@ -55,9 +57,9 @@ function normalizeRetryItem(item: Partial<PDAIngestRetryItem> & { payload?: PDAI
     payload: {
       ...payload,
       scene,
-      rawCode: (payload.rawCode || '').trim().toUpperCase(),
-      deviceId: (payload.deviceId || '').trim().toUpperCase(),
-      materialCode: (payload.materialCode || '').trim().toUpperCase(),
+      rawCode: normalizeMachineCode(payload.rawCode),
+      deviceId: normalizeDeviceCode(payload.deviceId),
+      materialCode: normalizeMaterialCode(payload.materialCode),
     },
     scene,
     dedupeKey,
@@ -101,7 +103,7 @@ function writeQueue(queue: PDAIngestRetryItem[]) {
 export function listPDAShellRetryQueue(scene?: string): PDAIngestRetryItem[] {
   const queue = readQueue()
   if (!scene) return queue
-  const normalizedScene = normalizeScene(scene)
+  const normalizedScene = normalizeSceneKey(scene)
   return queue.filter((item) => item.scene === normalizedScene)
 }
 

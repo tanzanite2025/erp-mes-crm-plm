@@ -4,7 +4,7 @@ import type { Cell, CellValue, Row, Workbook } from 'exceljs'
 import { type Material } from '../data/schema'
 import { getMaterialCategoryOptions } from '../data/material-category-options'
 import { packagingService } from './packaging-service'
-import { unitService } from '../../basic-settings/services/unit-service'
+import { type Unit } from '../../basic-settings/services/unit-service'
 import { MaterialCoreService } from './material-core-service'
 
 const DICT_SHEET_NAME = '__MATERIAL_DICTIONARY__'
@@ -64,7 +64,8 @@ export const MaterialExcelService = {
   async exportMaterials(
     materials: Material[],
     categoryLabel: string = translate('zh-CN', 'materialArchive.excel.allMaterials'),
-    locale: AppLocale = 'zh-CN'
+    locale: AppLocale = 'zh-CN',
+    units: Unit[] = []
   ) {
     const { default: ExcelJS } = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
@@ -75,7 +76,6 @@ export const MaterialExcelService = {
     const dictSheet = workbook.addWorksheet(DICT_SHEET_NAME, { state: 'veryHidden' })
     const configSheet = workbook.addWorksheet(CONFIG_SHEET_NAME, { state: 'veryHidden' })
 
-    const units = await unitService.getUnits()
     const categories = getMaterialCategoryOptions(locale)
 
     dictSheet.columns = [

@@ -1,15 +1,6 @@
-import { Outlet, createLazyFileRoute } from '@tanstack/react-router'
-import { StocktakeMgmt } from '@/features/warehouse/tabs/stocktake-mgmt'
+import { createLazyFileRoute } from '@tanstack/react-router'
+import { StocktakeRouteEntry } from '@/features/warehouse/stocktake/components/stocktake-route-entry'
 
 export const Route = createLazyFileRoute('/_authenticated/warehouse/stocktake')({
-  component: StocktakeRouteComponent,
+  component: StocktakeRouteEntry,
 })
-
-function StocktakeRouteComponent() {
-  return (
-    <>
-      <StocktakeMgmt />
-      <Outlet />
-    </>
-  )
-}

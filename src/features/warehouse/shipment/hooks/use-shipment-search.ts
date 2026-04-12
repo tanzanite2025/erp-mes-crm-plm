@@ -1,49 +1,41 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { InventoryCoreService, type MasterDataSearchResult } from '../../inventory'
+import { warehouseQueryKeys } from '../../query-keys'
 
 export function useShipmentSearch() {
   const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<MasterDataSearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return
-
-    setIsSearching(true)
-    try {
-      const results = await InventoryCoreService.searchMasterData(searchQuery)
-      setSearchResults(results)
-
-      if (results.length === 0) {
-        toast.error(t('warehouse.shipment.toast.notFound'))
-      }
-    } finally {
-      setIsSearching(false)
-    }
-  }, [searchQuery, t])
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([])
-      return
-    }
-
     const timer = setTimeout(() => {
-      void handleSearch()
+      setDebouncedSearchQuery(searchQuery.trim())
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [handleSearch, searchQuery])
+  }, [searchQuery])
+
+  const searchResultsQuery = useQuery({
+    queryKey: warehouseQueryKeys.masterDataSearch(debouncedSearchQuery),
+    queryFn: (): Promise<MasterDataSearchResult[]> => InventoryCoreService.searchMasterData(debouncedSearchQuery),
+    enabled: debouncedSearchQuery.length > 0,
+  })
+
+  useEffect(() => {
+    if (!debouncedSearchQuery || !searchResultsQuery.isSuccess) return
+    if ((searchResultsQuery.data ?? []).length > 0) return
+    toast.error(t('warehouse.shipment.toast.notFound'))
+  }, [debouncedSearchQuery, searchResultsQuery.data, searchResultsQuery.isSuccess, t])
 
   return {
     searchQuery,
     setSearchQuery,
-    searchResults,
-    isSearching,
+    searchResults: debouncedSearchQuery ? (searchResultsQuery.data ?? []) : [],
+    isSearching: searchResultsQuery.isFetching,
   }
 }

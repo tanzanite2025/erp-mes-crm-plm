@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Plus,
   Search,
@@ -34,6 +35,7 @@ import { isForbiddenError } from '@/lib/error-status'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Supplier, type SupplierStatus } from '../data/schema'
+import { tradingQueryKeys } from '../query-keys'
 import { SupplierActionDialog } from './supplier-action-dialog'
 import { useGetSupplierList, useSupplierMutations } from '../supplier'
 import { cn } from '@/lib/utils'
@@ -41,6 +43,7 @@ import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-perm
 
 export function SupplierList() {
   const { locale, t } = useLanguage()
+  const queryClient = useQueryClient()
   const { allowsAction } = useNonBlockingPermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<SupplierStatus | 'All'>('All')
@@ -49,7 +52,6 @@ export function SupplierList() {
     isLoading,
     isError,
     error,
-    refetch,
   } = useGetSupplierList()
   const user = useAuthStore((state) => state.user)
   const { createMutation, saveMutation, deleteMutation } = useSupplierMutations()
@@ -176,7 +178,7 @@ export function SupplierList() {
         </p>
         <Button
           variant='outline'
-          onClick={() => void refetch()}
+          onClick={() => void queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })}
           className='h-12 rounded-full border-dashed border-2 font-black text-[10px] uppercase tracking-widest px-10'
         >
           {t('common.actions.retry')}

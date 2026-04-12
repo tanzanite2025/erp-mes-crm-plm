@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-table'
 import { useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
-import { Search, Plus, Edit, Trash2, Sticker, FileCode, FileText, Eye, Hash, Calendar, Zap, Droplets, PenTool } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Sticker, Eye, Hash, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { Input } from '@/components/ui/input'
@@ -31,29 +31,37 @@ import { type LabelingDraft } from '../data/schema'
 import { ProductionDBService } from '../services/production-db-service'
 import { FileResolverService } from '../services/file-resolver-service'
 import { LabelingActionDialog } from '../components/labeling-action-dialog'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { toast } from 'sonner'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { ENGINEERING_DB_LABELING_QUERY_KEY } from '../query-keys'
+import { useEngineeringDbProductLookup } from '../hooks/use-engineering-db-product-lookup'
+import {
+    getEngineeringDbFileVisual,
+    getEngineeringDbLabelingTypeLabel,
+    getEngineeringDbLabelingTypeVisual,
+    getEngineeringDbPreviewKind,
+} from '../view-helpers'
+
+type LabelingRowViewModel = {
+    item: LabelingDraft
+    productSku: string | null
+    productName: string | null
+    typeLabel: string
+    searchText: string
+}
 
 export function LabelingTab() {
     const { t } = useLanguage()
     const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
     const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/labeling' })
-    const { data: products = [] } = useGetProducts()
+    const { productMap } = useEngineeringDbProductLookup()
     const [searchTerm, setSearchTerm] = useState('')
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<LabelingDraft | undefined>(undefined)
-
-    const productMap = useMemo(() => {
-        const map = new Map<string, (typeof products)[0]>()
-        products.forEach((product) => map.set(product.id, product))
-        return map
-    }, [products])
 
     const [previewFile, setPreviewFile] = useState<{ url: string; name: string; sku?: string } | null>(null)
     const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
@@ -108,36 +116,32 @@ export function LabelingTab() {
     }, [previewFile?.url])
 
     const filteredData = useMemo(() => {
-        return data.filter((item) => {
+        const rows = data.map<LabelingRowViewModel>((item) => {
             const product = productMap.get(item.productId || '')
-            const searchStr = searchTerm.toLowerCase()
-            return item.name.toLowerCase().includes(searchStr) ||
-                   (product?.sku || '').toLowerCase().includes(searchStr) ||
-                   item.type.toLowerCase().includes(searchStr)
+            const typeLabel = getEngineeringDbLabelingTypeLabel(t, item.type)
+
+            return {
+                item,
+                productSku: product?.sku || null,
+                productName: product?.name || null,
+                typeLabel,
+                searchText: [
+                    item.name,
+                    product?.sku || '',
+                    product?.name || '',
+                    item.type,
+                    typeLabel,
+                ].join(' ').toLowerCase(),
+            }
         })
-    }, [data, productMap, searchTerm])
 
-    const getIconInfo = (ext?: string, type?: string) => {
-        const lowerExt = ext?.toLowerCase()
-        const isCAD = ['dwg', 'dxf', 'stp', 'step'].includes(lowerExt || '')
-        const mainIcon = isCAD ? FileCode : FileText
-
-        let TypeIcon = PenTool
-        let typeColor = 'text-teal-500 bg-teal-500/10 border-teal-500/20'
-
-        if (type === 'Water') {
-            TypeIcon = Droplets
-            typeColor = 'text-blue-500 bg-blue-500/10 border-blue-500/20'
-        } else if (type === 'Laser') {
-            TypeIcon = Zap
-            typeColor = 'text-orange-500 bg-orange-500/10 border-orange-500/20'
-        } else if (type === 'Paint') {
-            TypeIcon = PenTool
-            typeColor = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+        const searchStr = searchTerm.trim().toLowerCase()
+        if (!searchStr) {
+            return rows
         }
 
-        return { mainIcon, TypeIcon, typeColor, isCAD }
-    }
+        return rows.filter((row) => row.searchText.includes(searchStr))
+    }, [data, productMap, searchTerm, t])
 
     const handlePreview = async (item: LabelingDraft) => {
         if (!item.fileUrl) {
@@ -152,45 +156,43 @@ export function LabelingTab() {
         }
 
         const product = productMap.get(item.productId || '')
-        const ext = item.fileExtension?.toLowerCase()
-
         setPreviewFile({
             url: resolvedUrl,
             name: item.name,
             sku: product?.sku,
         })
 
-        if (['dwg', 'dxf', 'stp', 'step', 'rvt'].includes(ext || '')) {
+        const previewKind = getEngineeringDbPreviewKind(item.fileExtension)
+        if (previewKind === 'cad') {
             setCadPreviewOpen(true)
-        } else if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+        } else if (previewKind === 'excel') {
             setExcelPreviewOpen(true)
         } else {
             setPdfPreviewOpen(true)
         }
     }
 
-    const columns: ColumnDef<LabelingDraft>[] = [
+    const columns: ColumnDef<LabelingRowViewModel>[] = [
         {
-            accessorKey: 'name',
+            accessorKey: 'item.name',
             header: t('engineering.labeling.table.name'),
             cell: ({ row }) => {
-                const info = getIconInfo(row.original.fileExtension, row.original.type)
-                const Icon = info.mainIcon
+                const fileVisual = getEngineeringDbFileVisual({ extension: row.original.item.fileExtension, category: 'LABELING' })
+                const typeVisual = getEngineeringDbLabelingTypeVisual(row.original.item.type)
+                const Icon = fileVisual.icon
                 return (
                     <div className='flex items-center gap-3'>
-                        <div className={`size-10 rounded-lg border ${info.typeColor} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-                            <Icon className='size-5' />
+                        <div className={`size-10 rounded-lg border ${typeVisual.className} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
-                            <span className='font-bold text-sm text-foreground'>{row.original.name}</span>
+                            <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
                             <div className='flex items-center gap-2 mt-1'>
                                 <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
-                                    {row.original.fileExtension || 'PDF'}
+                                    {row.original.item.fileExtension || 'PDF'}
                                 </Badge>
                                 <span className='text-[10px] text-muted-foreground/60 font-medium uppercase'>
-                                    {row.original.type === 'Water' ? t('engineering.labeling.types.water') :
-                                     row.original.type === 'Paint' ? t('engineering.labeling.types.paint') :
-                                     row.original.type === 'Laser' ? t('engineering.labeling.types.laser') : t('engineering.labeling.types.other')}
+                                    {row.original.typeLabel}
                                 </span>
                             </div>
                         </div>
@@ -201,28 +203,27 @@ export function LabelingTab() {
         {
             header: t('engineering.labeling.table.product'),
             cell: ({ row }) => {
-                if (!row.original.productId) {
+                if (!row.original.item.productId) {
                     return <span className='text-[10px] font-black uppercase text-muted-foreground/40 italic bg-muted/30 px-2 py-0.5 rounded-full'>{t('engineering.labeling.table.generic')}</span>
                 }
-                const product = productMap.get(row.original.productId || '')
                 return (
                     <div className='flex flex-col'>
                         <span className='text-[12px] font-bold text-teal-600 font-mono'>
-                            {product?.sku || 'UNKNOWN'}
+                            {row.original.productSku || 'UNKNOWN'}
                         </span>
                         <span className='text-[10px] text-muted-foreground mt-0.5 truncate max-w-[150px]'>
-                            {product?.name || t('engineering.labeling.table.unlinked')}
+                            {row.original.productName || t('engineering.labeling.table.unlinked')}
                         </span>
                     </div>
                 )
             }
         },
         {
-            accessorKey: 'createdAt',
+            accessorKey: 'item.createdAt',
             header: t('engineering.labeling.table.date'),
             cell: ({ row }) => (
                 <span className='font-mono text-[11px] text-muted-foreground font-medium'>
-                    {row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString() : 'N/A'}
+                    {row.original.item.createdAt ? new Date(row.original.item.createdAt).toLocaleDateString() : 'N/A'}
                 </span>
             )
         },
@@ -231,9 +232,9 @@ export function LabelingTab() {
             header: t('engineering.labeling.table.actions'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-1'>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-teal-500/10 hover:text-teal-500' onClick={() => handlePreview(row.original)}><Eye className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-teal-500/10 hover:text-teal-500' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
                     <div className='w-px h-4 bg-border mx-1' />
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original); setOpen(true); }}><Edit className='size-3.5' /></Button>
+                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
                     <Button
                         variant='ghost'
                         size='icon'
@@ -241,7 +242,7 @@ export function LabelingTab() {
                         onClick={() => runConfirmedAction({
                             confirmKey: 'engineering.labeling.toasts.deleteConfirm',
                             onAction: async () => {
-                                await deleteMutation.mutateAsync(row.original.id)
+                                await deleteMutation.mutateAsync(row.original.item.id)
                             }
                         })}
                     >
@@ -327,10 +328,10 @@ export function LabelingTab() {
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
-                                        onClick={() => handlePreview(row.original)}
+                                        onClick={() => handlePreview(row.original.item)}
                                         className={cn(
                                             'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
-                                            row.original.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
+                                            row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
                                         )}
                                     >
                                         {row.getVisibleCells().map((cell) => (
@@ -354,11 +355,12 @@ export function LabelingTab() {
                 ) : filteredData.length === 0 ? (
                     <div className='p-12 text-center bg-muted/5 rounded-[28px] border border-dashed border-muted-foreground/50 italic text-[10px] text-muted-foreground opacity-40 uppercase'>{t('engineering.labeling.placeholders.noData')}</div>
                 ) : (
-                    filteredData.map((item) => {
-                        const product = productMap.get(item.productId || '')
-                        const info = getIconInfo(item.fileExtension, item.type)
-                        const Icon = info.mainIcon
-                        const TypeIcon = info.TypeIcon
+                    filteredData.map((row) => {
+                        const item = row.item
+                        const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: 'LABELING' })
+                        const typeVisual = getEngineeringDbLabelingTypeVisual(item.type)
+                        const Icon = fileVisual.icon
+                        const TypeIcon = typeVisual.icon
                         return (
                             <div
                                 key={item.id}
@@ -369,30 +371,28 @@ export function LabelingTab() {
                                 )}
                             >
                                 <div className='absolute top-0 right-0 p-4 opacity-10'>
-                                    <Icon className={cn('size-16', info.typeColor.split(' ')[0])} />
+                                    <Icon className={cn('size-16', fileVisual.iconClassName)} />
                                 </div>
 
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
-                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', info.typeColor)}>
-                                            <Icon className='size-5' />
+                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', typeVisual.className)}>
+                                            <Icon className={cn('size-5', fileVisual.iconClassName)} />
                                         </div>
                                         <Badge variant='outline' className={cn(
                                             'text-[10px] font-black italic font-mono border-none px-3 rounded-full h-5 leading-none',
-                                            product ? 'bg-teal-500/10 text-teal-600' : 'bg-muted/50 text-muted-foreground/60'
+                                            row.productSku ? 'bg-teal-500/10 text-teal-600' : 'bg-muted/50 text-muted-foreground/60'
                                         )}>
-                                            {product?.sku || t('engineering.labeling.table.generic')}
+                                            {row.productSku || t('engineering.labeling.table.generic')}
                                         </Badge>
                                     </div>
 
                                     <div>
                                         <h4 className='text-sm font-black tracking-tight leading-tight group-active:text-teal-600 transition-colors line-clamp-2'>{item.name}</h4>
                                         <div className='flex flex-wrap items-center gap-2 mt-3 font-black uppercase tracking-widest'>
-                                            <div className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px]', info.typeColor)}>
+                                            <div className={cn('flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px]', typeVisual.className)}>
                                                 <TypeIcon className='size-3 opacity-40' />
-                                                {item.type === 'Water' ? t('engineering.labeling.types.water') :
-                                                 item.type === 'Paint' ? t('engineering.labeling.types.paint') :
-                                                 item.type === 'Laser' ? t('engineering.labeling.types.laser') : t('engineering.labeling.types.other')}
+                                                {row.typeLabel}
                                             </div>
                                             <div className='size-1 rounded-full bg-muted-foreground/20' />
                                             <div className='flex items-center gap-1 text-[9px] text-muted-foreground/60 italic font-mono'>

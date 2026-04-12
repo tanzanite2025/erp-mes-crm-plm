@@ -1,14 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { LeaveService, type LeaveRequestPreviewResult } from '../services/leave-service'
 import type { LeaveCreateForm } from '../data/leave-request-schema'
+import { personnelQueryKeys } from '../query-keys'
 import { useAuthStore } from '@/stores/auth-store'
 
 export function useSubmitLeaveRequest(onSuccess?: () => void) {
   const queryClient = useQueryClient()
   const employeeId = useAuthStore((state) => state.user?.employeeId)
   const [preview, setPreview] = useState<LeaveRequestPreviewResult | null>(null)
+  const resetPreview = useCallback(() => {
+    setPreview(null)
+  }, [])
 
   const isEmployeeBound = useMemo(() => Boolean(employeeId?.trim()), [employeeId])
 
@@ -47,8 +51,8 @@ export function useSubmitLeaveRequest(onSuccess?: () => void) {
     onSuccess: async () => {
       setPreview(null)
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['personnel', 'leaves', 'my'] }),
-        queryClient.invalidateQueries({ queryKey: ['personnel', 'leaves', 'stats', 'my'] }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.my() }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.statsMy() }),
       ])
       toast.success('请假申请已提交')
       onSuccess?.()
@@ -66,6 +70,6 @@ export function useSubmitLeaveRequest(onSuccess?: () => void) {
     isSubmitting: submitMutation.isPending,
     previewLeaveRequest: previewMutation.mutateAsync,
     submitLeaveRequest: submitMutation.mutateAsync,
-    resetPreview: () => setPreview(null),
+    resetPreview,
   }
 }

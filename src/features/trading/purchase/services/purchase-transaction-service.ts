@@ -190,3 +190,19 @@ export const changePurchaseOrderLineContent = async (
     },
   })
 }
+
+export const purchaseOrderTransactionCore = {
+  executePurchaseOrderTransaction,
+}
+
+export const purchaseOrderHeaderTransactions = {
+  savePurchaseOrder,
+  changePurchaseOrderExpectedDate,
+  changePurchaseOrderSupplier,
+}
+
+export const purchaseOrderLineTransactions = {
+  changePurchaseOrderLineAdd,
+  changePurchaseOrderLineRemove,
+  changePurchaseOrderLineContent,
+}

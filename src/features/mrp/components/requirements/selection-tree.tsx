@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, ClipboardList, ExternalLink, Layers, Package, ShoppingCart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -8,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
-import { type BOM } from '@/features/engineering/data/schema'
+import { BOMS_QUERY_KEY } from '@/features/engineering/query-keys'
 import { bomService } from '@/features/engineering/services/bom-service'
 import { type SalesOrder } from '@/features/trading/data/schema'
 import { RequirementStageAlert } from './requirement-stage-alert'
@@ -26,7 +27,12 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
   const { t } = useLanguage()
   const [expandedOrders, setExpandedOrders] = useState<string[]>([])
   const [expandedProducts, setExpandedProducts] = useState<string[]>([])
-  const [boms, setBoms] = useState<BOM[]>([])
+  const bomsQuery = useQuery({
+    queryKey: BOMS_QUERY_KEY,
+    queryFn: () => bomService.getBOMs(),
+    select: (data) => data.filter((bom) => bom.status === 'active'),
+  })
+  const boms = useMemo(() => bomsQuery.data ?? [], [bomsQuery.data])
 
   const selectedMissingBomCount = selectedKeys.reduce((count, key) => {
     const [orderNo, rawLineNo] = key.split('-')
@@ -39,17 +45,9 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
   }, 0)
 
   useEffect(() => {
-    const loadBOMs = async () => {
-      try {
-        const data = await bomService.getBOMs()
-        if (data) setBoms(data.filter((bom) => bom.status === 'active'))
-      } catch (error) {
-        logger.error('Failed to load BOMs from backend', error)
-      }
-    }
-
-    void loadBOMs()
-  }, [])
+    if (!bomsQuery.error) return
+    logger.error('Failed to load BOMs from backend', bomsQuery.error)
+  }, [bomsQuery.error])
 
   const toggleOrder = (id: string) => {
     setExpandedOrders((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))

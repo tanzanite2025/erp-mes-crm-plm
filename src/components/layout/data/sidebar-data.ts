@@ -58,12 +58,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/dashboard/overview'),
       },
       {
-        titleKey: 'sidebar.items.warehouse',
-        url: '/warehouse',
-        icon: Warehouse,
-        permissionId: permissionIdForPath('/warehouse'),
-      },
-      {
         titleKey: 'sidebar.items.salesManagement',
         url: '/trading',
         icon: ShoppingBag,
@@ -93,12 +87,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/engineering'),
       },
       {
-        titleKey: 'sidebar.items.materialArchive',
-        url: '/materials',
-        icon: Database,
-        permissionId: permissionIdForPath('/materials'),
-      },
-      {
         titleKey: 'sidebar.items.engineeringDatabase',
         url: '/engineering-db',
         icon: Database,
@@ -109,6 +97,23 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/quality',
         icon: Scale,
         permissionId: permissionIdForPath('/quality'),
+      },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.warehouseManagement',
+    items: [
+      {
+        titleKey: 'sidebar.items.warehouseOperations',
+        url: '/warehouse',
+        icon: Warehouse,
+        permissionId: permissionIdForPath('/warehouse'),
+      },
+      {
+        titleKey: 'sidebar.items.materialArchive',
+        url: '/materials',
+        icon: Database,
+        permissionId: permissionIdForPath('/materials'),
       },
     ],
   },
@@ -219,7 +224,6 @@ export const sidebarData: SidebarData = {
           icon: BarChart3,
           permissionId: permissionIdForPath('/dashboard/overview'),
         },
-        { title: '仓储', url: '/warehouse', icon: Warehouse, permissionId: permissionIdForPath('/warehouse') },
         {
           title: '销售管理',
           url: '/trading',
@@ -238,7 +242,6 @@ export const sidebarData: SidebarData = {
           icon: Box,
           permissionId: permissionIdForPath('/engineering'),
         },
-        { title: '物料档案', url: '/materials', icon: Database, permissionId: permissionIdForPath('/materials') },
         {
           title: '工程数据库',
           url: '/engineering-db',
@@ -246,6 +249,13 @@ export const sidebarData: SidebarData = {
           permissionId: permissionIdForPath('/engineering-db'),
         },
         { title: '品质审计', url: '/quality', icon: Scale, permissionId: permissionIdForPath('/quality') },
+      ],
+    },
+    {
+      title: '仓储',
+      items: [
+        { title: '仓储作业', url: '/warehouse', icon: Warehouse, permissionId: permissionIdForPath('/warehouse') },
+        { title: '物料档案', url: '/materials', icon: Database, permissionId: permissionIdForPath('/materials') },
       ],
     },
     {

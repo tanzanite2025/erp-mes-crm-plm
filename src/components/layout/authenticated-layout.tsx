@@ -10,6 +10,7 @@ import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
 import { useAuthStore } from '@/stores/auth-store'
 import { syncIdentitySnapshotFromProfile } from '@/features/authz/services/effective-permission-service'
+import { QuickActionsFloating } from '@/features/quick-actions'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthenticatedLayout')
@@ -123,7 +124,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         setIsSyncing(true)
         try {
           await syncIdentitySnapshotFromProfile()
-        } catch (error: any) {
+        } catch (error: unknown) {
           logger.error('[CRITICAL] Background identity sync failed. Redirecting to sign-in.', error)
           // 强制重置局部同步状态，并退回登录页，避免用户停留在加载死循环
           setIsSyncing(false)
@@ -180,6 +181,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         >
           {children ?? <Outlet />}
         </SidebarInset>
+        <QuickActionsFloating />
         {showDeferredWidgets && (
           <Suspense fallback={null}>
             <NotificationCenter />

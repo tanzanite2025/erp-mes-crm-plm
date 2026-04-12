@@ -4,11 +4,12 @@ import { useLanguage } from '@/context/language-provider'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Supplier } from '../../data/schema'
+import { tradingQueryKeys } from '../../query-keys'
 import { changeSupplierIdentity, changeSupplierStatus, createSupplier, deleteSupplier, getSupplierList, getSuppliers, patchSupplier, saveSupplier } from '../services/supplier-service'
 
 export const useGetSuppliers = (options = {}) => {
   return useQuery({
-    queryKey: ['suppliers'],
+    queryKey: tradingQueryKeys.suppliers(),
     queryFn: getSuppliers,
     ...options,
   })
@@ -16,7 +17,7 @@ export const useGetSuppliers = (options = {}) => {
 
 export const useGetSupplierList = (options = {}) => {
   return useQuery({
-    queryKey: ['suppliers', 'list'],
+    queryKey: tradingQueryKeys.supplierList(),
     queryFn: getSupplierList,
     ...options,
   })
@@ -32,8 +33,8 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })
@@ -44,8 +45,8 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })
@@ -68,8 +69,8 @@ export const useSupplierMutations = () => {
     }) => saveSupplier(id, { delta, finalData, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })
@@ -90,8 +91,8 @@ export const useSupplierMutations = () => {
     }) => changeSupplierStatus(id, { status, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })
@@ -114,8 +115,8 @@ export const useSupplierMutations = () => {
     }) => changeSupplierIdentity(id, { code, name, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })
@@ -124,8 +125,8 @@ export const useSupplierMutations = () => {
     mutationFn: deleteSupplier,
     onSuccess: () => {
       toast.success(t('purchase.suppliers.toasts.deleted'))
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.suppliers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.supplierList() })
     },
     onError: handleServerError,
   })

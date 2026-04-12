@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
 import {
   toProductionLineContract,
   toProductionLineContracts,
@@ -30,7 +31,11 @@ export const productionLinesService = {
   },
 
   saveLine: async (line: ProductionLine, authCode?: string): Promise<ProductionLine> => {
-    const payload: SaveLinePayload = authCode ? { ...line, authCode } : line
+    const normalizedLine: ProductionLine = {
+      ...line,
+      code: normalizeMachineCode(line.code),
+    }
+    const payload: SaveLinePayload = authCode ? { ...normalizedLine, authCode } : normalizedLine
     const res = await apiFetch<ProductionLineApiDTO>('/production/lines', {
       method: 'POST',
       body: JSON.stringify(toSaveProductionLineApiDTO(payload, authCode)),

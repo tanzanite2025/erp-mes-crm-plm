@@ -1,3 +1,1798 @@
+### 1. architecture：工程属性值模块接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 PDA / scan-platform / warehouse-category / production shared 等模块已经完成第一批与第二批收口后，下一批最适合推进的是工程属性值模块。
+
+但该模块与此前已经接入的 `normalizeMachineCode` 规则并不完全相同。
+
+工程属性中的机器值（如属性分类 key、属性选项 value）当前已有独立规则，目标更接近：
+
+1. 去首尾空白
+2. 将空格与下划线折叠为 `-`
+3. 移除非法字符
+4. 连字符压缩
+5. 最终转为小写
+
+因此，本轮不应把它粗暴并入“全大写机器码”规则，而应在全局规范化体系下，保留并继续强化其**独立机器值契约**。
+
+#### 1.2 当前现状判断
+
+当前已识别的关键文件包括：
+
+1. `src/features/engineering/utils/product-attribute-machine-value.ts`
+2. `src/features/engineering/components/product-attributes/product-attribute-category-dialog.tsx`
+3. `src/features/engineering/components/product-attributes/product-attribute-option-dialog.tsx`
+4. `src/features/engineering/services/product-attribute-category-service.ts`
+5. `src/features/engineering/services/product-attribute-option-service.ts`
+6. `src/features/engineering/hooks/use-product-attribute-write-actions.ts`
+
+当前最明确的机器值字段包括：
+
+1. `ProductAttributeCategory.key`
+2. `ProductAttributeOption.value`
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应将工程属性值模块定义为“**小写 slug 风格机器值规范**”模块，而不是“通用大写机器码模块”。
+
+也就是说：
+
+1. 该模块继续使用 `product-attribute-machine-value.ts` 的契约。
+2. 不直接替换为 `normalizeMachineCode`。
+3. 但其输入边界、保存边界、写入动作仍应按“统一规范层”的思想收口。
+
+#### 1.4 推荐结构分层
+
+##### A. 输入边界层
+
+优先位置：
+
+1. `product-attribute-category-dialog.tsx`
+2. `product-attribute-option-dialog.tsx`
+
+职责：
+
+1. 用户输入 `key / value` 时即时使用工程属性专用机器值规范函数。
+2. 减少大小写、空格、下划线等输入漂移。
+
+##### B. 服务保存边界层
+
+优先位置：
+
+1. `product-attribute-category-service.ts`
+2. `product-attribute-option-service.ts`
+
+职责：
+
+1. 在保存前对 `key / value` 执行最终规范化兜底。
+2. 保证即使未来换 UI 入口，也不会绕过规则。
+
+##### C. 写动作与适配层
+
+优先位置：
+
+1. `use-product-attribute-write-actions.ts`
+2. 若存在 adapter / DTO 映射层，则继续评估是否补最后一道兜底
+
+职责：
+
+1. 保证 optimistic update / save action 与 service 口径一致。
+2. 避免“UI 已规范、写动作未规范”的漂移。
+
+#### 1.5 规则差异说明
+
+此前已经收口的模块主要分两类：
+
+1. 大写机器码：如 PDA 原始码、物料码、设备码、仓库分类码、产线/工序 code
+2. 小写机器值：如工程属性 `key / value`
+
+因此，本轮必须显式保持这两类规则并存，而不是试图统一成单一大小写策略。
+
+#### 1.6 推荐实施范围
+
+第一批建议只收口：
+
+1. `ProductAttributeCategory.key`
+2. `ProductAttributeOption.value`
+
+原因：
+
+1. 语义最明确。
+2. 已有专用规范函数。
+3. 与显示字段、国际化标签字段边界清晰。
+
+#### 1.7 明确不动范围
+
+本轮不扩到：
+
+1. `labelZh`
+2. `labelEn`
+3. `nameZh`
+4. `nameEn`
+5. 其它展示描述字段
+
+原因：
+
+1. 它们是展示文案，不是机器值。
+2. 粗暴小写化或 slug 化会直接破坏业务语义。
+
+#### 1.8 风险与控制策略
+
+1. **误用大写机器码规则风险**
+   - 若把 `normalizeMachineCode` 直接套到属性 key/value，会破坏现有小写 slug 约定。
+   - 控制策略：继续使用 `product-attribute-machine-value.ts` 的专用规则。
+
+2. **只改 dialog 不改 service 风险**
+   - 若只在输入层处理，未来其它入口保存仍会漏。
+   - 控制策略：dialog 输入层和 service 保存边界都要收口。
+
+3. **写动作层漂移风险**
+   - 若 write actions / optimistic update 不对齐，会出现本地态与服务提交口径不一致。
+   - 控制策略：评估并补写动作层兜底。
+
+#### 1.9 推荐推进顺序
+
+建议后续若进入代码实施，按以下顺序推进：
+
+1. 先收口 `product-attribute-category-dialog.tsx` 与 `product-attribute-option-dialog.tsx` 的输入边界。
+2. 再收口 `product-attribute-category-service.ts` 与 `product-attribute-option-service.ts` 的保存边界。
+3. 再评估 `use-product-attribute-write-actions.ts` 是否增加统一机器值兜底。
+4. 最后执行定向验证并更新 `walkthrough.md`。
+
+#### 1.10 当前阶段结论
+
+工程属性值模块是“全局码规范化”中的下一类特例：它不属于大写机器码，而属于小写 slug 风格机器值。下一步最合理的方向不是强行复用 `normalizeMachineCode`，而是在全局规范化框架下，继续明确并收口 `ProductAttributeCategory.key / ProductAttributeOption.value` 的专用规范契约与输入/保存边界。
+
+### 1. architecture：生产共享资源模块接入全局码规范化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在公共 `code-normalization.ts` 已建立，并已先收口 PDA / scan-platform / queue / warehouse-category 之后，下一批最合适的模块是生产共享资源（production shared）。
+
+但经过排查，真正需要接入的重点并不是：
+
+1. `production-resource-service.ts`
+2. `production-resource-sync.ts`
+
+因为这两个文件主要承担：
+
+1. 服务聚合
+2. 事件分发
+3. 失效通知
+
+它们不是编码字段的真实输入或保存边界。
+
+#### 1.2 当前现状判断
+
+当前在生产共享资源链路中，最值得优先收口的机器值字段包括：
+
+1. `ProductionLine.code`
+2. `ProductionProcessStep.code`
+
+已识别的关键位置：
+
+1. `src/features/production-shared/services/production-lines-service.ts`
+2. `src/features/production-shared/services/production-processes-service.ts`
+3. `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+4. `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+
+当前特征是：
+
+1. `code` 字段已存在明确语义。
+2. 前端表单保存时仍有局部 `trim()` 逻辑。
+3. adapter DTO 出口当前直接透传 `line.code / step.code`。
+4. `sync` 文件本身没有码规范化需求。
+
+#### 1.3 本轮结论
+
+本轮若进入实施，应把生产共享资源模块理解为“明确的机器码保存边界模块”，而不是“事件同步模块”。
+
+也就是说，本轮应优先收口：
+
+1. 表单输入边界
+2. 保存边界
+3. DTO 出口兜底边界
+
+而不是去改动同步通知本身。
+
+#### 1.4 推荐结构分层
+
+##### A. 表单输入层
+
+优先位置：
+
+1. `process-library-panel.tsx`
+2. 其它工作架构或 production-shared 相关编辑表单
+
+职责：
+
+1. 用户输入 `code` 时即时走公共 normalization。
+2. 避免大小写漂移在 UI 层继续扩散。
+
+##### B. 服务保存边界层
+
+优先位置：
+
+1. `production-lines-service.ts`
+2. `production-processes-service.ts`
+
+职责：
+
+1. 在提交保存前对 `line.code / step.code` 做最终规范化。
+2. 保证即使未来换 UI 入口，也不会绕过规则。
+
+##### C. DTO 适配层
+
+优先位置：
+
+1. `production-resource-api-adapter.ts`
+
+职责：
+
+1. 评估是否需要在 API DTO 出口增加最后一道规范化兜底。
+2. 作为防腐层保证前端内部对象流转与后端协议输出的一致性。
+
+#### 1.5 推荐实施范围
+
+第一批建议先接入：
+
+1. `ProductionLine.code`
+2. `ProductionProcessStep.code`
+
+原因：
+
+1. 这两个字段语义最明确。
+2. 与此前已建立的 `normalizeMachineCode` 契约最匹配。
+3. 风险相对可控，不会误伤 `name / description / attributes` 等非机器码字段。
+
+#### 1.6 与 production-resource-sync 的边界
+
+当前明确不将以下内容纳入码规范化：
+
+1. `PRODUCTION_LINES_UPDATED_EVENT`
+2. `PRODUCTION_PROCESSES_UPDATED_EVENT`
+3. `kind: 'lines' | 'processes'`
+
+原因：
+
+1. 它们属于事件协议键。
+2. 当前已具有稳定语义。
+3. 并不属于“用户输入的机器码 / 人工输入码”问题域。
+
+#### 1.7 风险与控制策略
+
+1. **误伤非机器字段风险**
+   - 若把 `name / description / attributes` 也纳入统一大写，会直接破坏业务含义。
+   - 控制策略：本轮只动 `code` 字段。
+
+2. **只改表单不改保存边界风险**
+   - 若只在 `process-library-panel` 改，换入口仍可能漏。
+   - 控制策略：表单输入层和服务保存边界都要收口。
+
+3. **adapter 透传漂移风险**
+   - 若内部对象未规范，adapter 直接透传会把漂移继续送到后端。
+   - 控制策略：评估 adapter 层增加最终兜底规范化。
+
+#### 1.8 推荐推进顺序
+
+建议后续若进入代码实施，按以下顺序推进：
+
+1. 先为 `ProductionLine.code / ProductionProcessStep.code` 接入公共 normalization。
+2. 再收口 `process-library-panel` 等表单输入边界。
+3. 再评估 `production-resource-api-adapter.ts` 是否增加 DTO 出口兜底。
+4. 最后执行定向验证并更新 `walkthrough.md`。
+
+#### 1.9 当前阶段结论
+
+生产共享资源模块的下一步重点，不在 `production-resource-sync.ts` 这种事件分发层，而在 `line.code / step.code` 的真实输入与保存边界。最合理的实施方式是只针对明确的机器码字段接入公共 normalization，避免扩大到名称、描述、attributes 等非机器值字段。
+
+### 1. architecture：机器码 / 人工输入码全局规范化扩展方案
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前项目中已经存在“码规范化”动作，但主要分散在 PDA、扫码解析、队列 dedupe 和个别业务表单中，尚未形成全局统一能力。
+
+这意味着：
+
+1. 局部场景已经做过一定抽取。
+2. 但新增工业流程仍可能继续各自写 `trim().toUpperCase()`。
+3. 机器码与人工输入码缺少项目级统一入口，容易继续漂移。
+
+因此，本轮真正需要推进的不是“补一个组件”，而是把现有局部抽取升级为一个可复用、可扩展、按码类型分层的规范化能力。
+
+#### 1.2 当前现状判断
+
+当前已识别的落点包括：
+
+1. `src/features/terminal-config/tabs/pda-shell.tsx`
+2. `src/features/terminal-config/tabs/pda-terminal.tsx`
+3. `src/features/terminal-config/services/pda-shell-queue-service.ts`
+4. `src/features/scan-platform/services/logistics-inbound-resolution-service.ts`
+5. `src/features/scan-platform/services/wheel-trace-parser-service.ts`
+6. `src/features/warehouse/tabs/warehouse-category.tsx`
+
+这些位置已经说明“码规范化”并非完全缺失，但问题在于它们仍是：
+
+1. 局部函数
+2. 组件内规则
+3. 服务内局部规则
+4. 缺少统一契约与公共出口
+
+#### 1.3 本轮结论
+
+本轮的结论不是“从零开始设计规范化”，而是：
+
+1. 现有工作属于**局部抽取**。
+2. 目前缺少的是**全局统一规范层**。
+3. 当前问题更适合定义为“之前做过，但没做完 / 做漏了”。
+
+#### 1.4 推荐架构分层
+
+##### A. 公共规范函数层
+
+建议新增独立目录，例如：
+
+1. `src/lib/codecs/`
+2. 或 `src/lib/code-normalization/`
+
+职责：
+
+1. 承载所有码类型规范函数。
+2. 提供明确、可复用的 normalization contract。
+3. 避免组件和服务继续散落 `trim().toUpperCase()`。
+
+##### B. 扫码主链接入层
+
+优先接入：
+
+1. `pda-shell`
+2. `pda-terminal`
+3. `scan-platform`
+4. `pda-shell-queue-service`
+
+职责：
+
+1. 所有扫码输入统一走公共规范函数。
+2. 解析器与队列 dedupe 复用同一套规则。
+
+##### C. 业务保存边界层
+
+后续接入：
+
+1. `warehouse-category.code`
+2. `engineering` 相关机器值（如 `category.key / option.value`）
+3. 其它显式机器码字段
+
+职责：
+
+1. 输入层可做即时规范化体验。
+2. 保存层必须做最终规范化兜底。
+
+#### 1.5 规范函数拆分建议
+
+本轮不建议只提供一个万能 `normalizeCode(value)`。
+
+建议至少按语义拆出：
+
+1. `normalizeMachineCode(value)`
+2. `normalizeTrackingCode(value)`
+3. `normalizeMaterialCode(value)`
+4. `normalizeDeviceCode(value)`
+5. `normalizeSceneKey(value)`
+6. 如有需要，再补 `normalizeHumanEnteredCode(value)`
+
+原因：
+
+1. 不同字段的规范不完全相同。
+2. 有的要全大写。
+3. 有的只应 `trim`。
+4. 有的要保留特定符号。
+5. 有的更适合小写 key / slug 语义。
+
+#### 1.6 推荐第一批实施范围
+
+第一批建议先收口扫码主链：
+
+1. `src/features/terminal-config/tabs/pda-shell.tsx`
+2. `src/features/terminal-config/tabs/pda-terminal.tsx`
+3. `src/features/terminal-config/services/pda-shell-queue-service.ts`
+4. `src/features/scan-platform/services/logistics-inbound-resolution-service.ts`
+5. `src/features/scan-platform/services/wheel-trace-parser-service.ts`
+
+推荐原因：
+
+1. 这些入口最像工业流程的真实入口。
+2. 扫码场景最容易因为大小写与空白差异造成 dedupe、匹配或解析漂移。
+3. 先统一这条主链，可以最快看到“全局规范化”的真实收益。
+
+#### 1.7 第二批实施范围
+
+在扫码主链收口后，再进入业务保存边界：
+
+1. `src/features/warehouse/tabs/warehouse-category.tsx`
+2. 工程属性等显式机器值管理页面
+3. 其它保存边界中对 `code / key / value` 的机器字段处理
+
+#### 1.8 本轮边界控制
+
+本轮明确不做：
+
+1. 不对所有输入字段无差别强制转大写。
+2. 不在未区分字段语义前全局搜索替换 `trim().toUpperCase()`。
+3. 不跳过服务层与保存边界，单靠组件层修补。
+
+#### 1.9 风险与控制策略
+
+1. **过度统一风险**
+   - 若把所有码都压成同一规则，可能破坏 slug / key / scene 等字段语义。
+   - 控制策略：按码类型建立独立函数契约。
+
+2. **只改输入层不改保存层风险**
+   - 若只在组件里清洗，换入口后仍会漏。
+   - 控制策略：输入层做体验规范化，保存层做最终兜底规范化。
+
+3. **扫码链与队列 dedupe 口径不一致风险**
+   - 若解析前与队列 dedupe 使用不同规则，会继续出现同码不同键问题。
+   - 控制策略：让扫码主链与队列统一复用公共规范函数。
+
+#### 1.10 推荐推进顺序
+
+建议后续若进入代码实施，按以下顺序推进：
+
+1. 先建立公共 `code normalization` 目录与函数契约。
+2. 先收口 `pda-shell / pda-terminal / scan-platform / pda-shell-queue-service`。
+3. 再收口 `warehouse-category` 等业务机器码保存边界。
+4. 最后视情况继续扩大到更多工业流程输入点。
+
+#### 1.11 当前阶段结论
+
+当前问题不应再被理解为“只有一个组件在处理大小写”，而应理解为：此前已在 PDA / 扫码等局部场景做过规范化抽取，但尚未形成全局统一能力。下一步最合理的方向不是继续在单个组件里补 `toUpperCase()`，而是建立一个按码类型拆分的公共规范函数层，并优先收口工业流程的扫码主链。
+
+### 1. architecture：右侧悬浮小手柄快捷扫描入口方案
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前现场作业类页面已经逐步具备扫描、离线队列、冲突处理等能力，但入口仍偏模块化导航：用户需要先进入业务模块，再找到对应扫描页或扫描态入口。
+
+这对高频岗位（如库管、收货、出库、盘点现场）仍然偏慢，尤其在手机 / PDA 终端场景下，理想方式应更接近：
+
+1. 页面右侧有一个始终可达的小手柄。
+2. 点击后展开可用快捷扫描动作。
+3. 用户点击动作后直接进入对应扫描页。
+4. 页面默认进入扫描态。
+
+本轮目标不是做一个新的导航系统，而是在现有模块和离线架构之上增加一个面向现场作业的快捷入口层。
+
+#### 1.2 目标形态结论
+
+本轮明确采用：
+
+1. **右侧悬浮小手柄**
+2. **快捷动作抽屉 / 面板**
+3. **按权限过滤显示**
+4. **点击动作后直接跳转扫描态**
+
+本轮明确不采用：
+
+1. 不采用独立 Tab 管理页作为主入口形态。
+2. 不采用账号硬编码动作表。
+3. 不新建第二套路由协议或离线协议。
+
+#### 1.3 推荐结构分层
+
+##### A. 快捷入口层
+
+职责：
+
+1. 渲染右侧小手柄。
+2. 展开 / 收起快捷动作面板。
+3. 根据当前权限集过滤动作。
+4. 负责点击动作后跳转到目标扫描页。
+
+建议目录：
+
+1. `src/features/quick-actions/data/quick-action-registry.ts`
+2. `src/features/quick-actions/services/quick-action-access.ts`
+3. `src/features/quick-actions/components/quick-action-handle.tsx`
+4. `src/features/quick-actions/components/quick-action-drawer.tsx`
+
+##### B. 扫描页接入层
+
+职责：
+
+1. 接收 `mode=scan` 或等效参数。
+2. 页面进入后直接聚焦扫描输入。
+3. 若页面本身支持 PDA / 手机扫描，默认进入扫描工作流。
+
+##### C. 业务与离线层
+
+职责保持不变：
+
+1. 仍由原业务模块页面、Hook、adapter 承担。
+2. 仍由既有离线基础设施承接离线队列与冲突治理。
+
+#### 1.4 权限策略建议
+
+本轮建议采用：
+
+1. **快捷动作按权限过滤显示**。
+2. 不按账号单独硬编码动作白名单。
+3. 快捷动作与权限之间建立配置映射。
+
+推荐字段模型：
+
+1. `id`
+2. `title`
+3. `icon`
+4. `targetRoute`
+5. `scanMode`
+6. `requiredPermissions`
+7. `enabled`
+8. `sortOrder`
+
+这样可以保证：
+
+1. 库管账号只看到入库 / 出库 / 盘点等可用动作。
+2. 其它岗位只看到自己允许使用的扫描入口。
+3. 不破坏现有权限体系的单一事实来源。
+
+#### 1.5 与现有权限体验策略的边界
+
+当前推荐边界是：
+
+1. **主导航层**仍保持既有模块发现策略。
+2. **快捷动作层**可以按权限直接过滤显示。
+
+原因：
+
+1. 主导航是模块级入口，偏“发现”和“排障”。
+2. 快捷动作是岗位级作业入口，偏“高频执行”。
+
+这意味着“主菜单尽量可见”和“快捷动作只显示可用项”可以同时成立，不冲突。
+
+#### 1.6 与现有离线架构的兼容边界
+
+本轮必须明确保持以下硬约束：
+
+1. 手机扫码与 PDA 扫码**共用同一套离线体系**。
+2. 快捷入口层不能再造第二套离线协议。
+
+必须继续复用：
+
+1. `offline-sync`
+2. `stocktake-offline-adapter`
+3. `pending_log`
+4. `conflict_records`
+
+也就是说，右侧小手柄只是：
+
+1. 入口层
+2. 权限过滤层
+3. 扫描态跳转层
+
+它不负责重建业务同步语义。
+
+#### 1.7 首批快捷动作建议范围
+
+建议先从高频、已具备扫描基础的动作开始：
+
+1. `warehouse inbound`
+2. `warehouse outbound`
+3. `pda stocktake`
+
+理由：
+
+1. 现场价值高。
+2. 与“直接扫”交互最匹配。
+3. 能优先验证快捷入口层是否真正提升现场效率。
+
+#### 1.8 扫描态跳转建议
+
+建议每个快捷动作都指向既有业务页，并附带扫描态参数，例如：
+
+1. `/warehouse/inbound?mode=scan`
+2. `/warehouse/outbound?mode=scan`
+3. `/pda-stocktake?mode=scan`
+
+页面收到该参数后：
+
+1. 自动进入扫描工作流。
+2. 自动聚焦扫描输入。
+3. 优先呈现适合手机 / PDA 的交互。
+
+#### 1.9 预期修改范围
+
+本轮若进入执行，预期主要涉及：
+
+1. 新增 `quick-actions` 入口层目录与组件
+2. 侧边布局或全局壳层中挂载右侧小手柄
+3. 首批扫描页增加 `mode=scan` 进入能力
+4. 权限过滤逻辑接入既有权限服务
+
+#### 1.10 本轮边界控制
+
+本轮明确不做：
+
+1. 不新建第二套离线同步协议。
+2. 不把快捷入口做成新的完整导航系统。
+3. 不把动作与具体账号硬编码绑定。
+4. 不在本轮扩大为所有模块全部接入快捷扫描。
+
+#### 1.11 风险与控制策略
+
+1. **快捷入口与主导航语义冲突风险**
+   - 若快捷入口承担过多模块导航职责，会和主导航重复。
+   - 控制策略：快捷入口只承载高频现场动作，不承载完整模块发现。
+
+2. **权限过滤口径漂移风险**
+   - 若快捷动作自己维护一套权限判断，后续容易与主权限体系分叉。
+   - 控制策略：继续复用现有权限服务与权限契约。
+
+3. **扫描态路由碎片化风险**
+   - 若每个页面自己定义不同扫描参数，后续会越来越乱。
+   - 控制策略：统一采用明确的扫描态参数约定（如 `mode=scan`）。
+
+4. **手机扫码与 PDA 扫码分叉风险**
+   - 若快捷入口为手机再造一套离线流程，会直接破坏当前离线架构。
+   - 控制策略：手机 / PDA 只在 UI 与扫描能力接入上区分，离线层继续复用同一套体系。
+
+#### 1.12 推荐推进顺序
+
+建议后续若进入代码实施，按以下顺序推进：
+
+1. 先建立快捷动作注册表与权限过滤函数。
+2. 实现右侧小手柄与快捷抽屉 UI。
+3. 为首批扫描页补齐 `mode=scan` 直接进入能力。
+4. 定向验证移动端 / PDA 场景下的交互与权限表现。
+
+#### 1.13 当前阶段结论
+
+当前最适合的方案不是再建一个独立 Tab 管理页，而是在现有系统右侧增加一个面向现场作业的悬浮小手柄。它只负责“按权限展示快捷扫描动作，并一键进入扫描态页面”，同时继续复用既有 `offline-sync` 与模块 adapter，不再制造第二套手机扫码离线协议。
+
+### 1. architecture：PDA 盘点扫描链路离线 SDRTS 试点细化方案
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 试点目标
+
+本轮在“首批试点选择”为 PDA 盘点扫描链路之后，继续把该试点细化到可施工粒度。目标不是立刻铺开所有离线能力，而是先为 PDA 盘点扫描构建一个最小可闭环的离线 SDRTS 样板。
+
+该样板应至少验证：
+
+1. 本地 Delta / Intent 入队
+2. IndexedDB 持久化
+3. 页面刷新后可恢复
+4. 联网后 replay / flush
+5. 幂等重试
+6. 字段级冲突升级
+
+#### 1.2 试点范围分期
+
+##### Phase A：`pdaSubmitScan`
+
+目标：
+
+1. 以单条扫描写入验证最小入队 -> 恢复 -> 补交闭环。
+2. 优先打通离线基础设施层与一个简单 adapter。
+
+##### Phase B：`pdaBulkSync`
+
+目标：
+
+1. 验证批量日志与批次 replay。
+2. 验证失败拆分、批量 ack、批次幂等策略。
+
+##### Phase C：`pdaPatchItem`
+
+目标：
+
+1. 引入 `DeltaSet + version + intent` 场景。
+2. 验证版本优先、字段级冲突、人工升级边界。
+
+#### 1.3 推荐目录结构
+
+##### A. 公共基础设施层
+
+建议新建：
+
+1. `src/offline-sync/types/`
+2. `src/offline-sync/storage/`
+3. `src/offline-sync/queue/`
+4. `src/offline-sync/replay/`
+5. `src/offline-sync/conflict/`
+6. `src/offline-sync/core/`
+
+职责：
+
+1. Dexie / IndexedDB schema
+2. `snapshot / pending_log / sync_meta` 访问
+3. 队列状态迁移
+4. replay / flush 编排
+5. 冲突记录管理
+
+##### B. PDA 试点 adapter 层
+
+建议新建：
+
+1. `src/features/warehouse/stocktake/offline/stocktake-offline-adapter.ts`
+2. `src/features/warehouse/stocktake/offline/stocktake-offline-types.ts`
+3. 如有必要，再补：
+   - `stocktake-offline-conflict.ts`
+   - `stocktake-offline-replay.ts`
+
+职责：
+
+1. 定义 PDA 扫描实体与 path 规则
+2. 定义日志压缩规则
+3. 定义冲突判定与升级条件
+4. 定义如何调用既有 `StocktakeMaintenanceService` 完成正式提交
+
+##### C. 页面 / Hook 调用层
+
+PDA 页面、Hook 或 bridge 层只应调用：
+
+1. `enqueueScanIntent(...)`
+2. `flushPendingStocktake(...)`
+3. `resolveStocktakeConflict(...)`
+
+不得直接访问 Dexie / IndexedDB。
+
+#### 1.4 最小本地表结构建议
+
+##### A. `stocktake_snapshots`
+
+建议字段：
+
+1. `entityType`
+2. `entityId`
+3. `version`
+4. `data`
+5. `syncedAt`
+
+##### B. `pending_deltas`
+
+建议字段：
+
+1. `opId`
+2. `clientId`
+3. `entityType`
+4. `entityId`
+5. `path`
+6. `o`
+7. `n`
+8. `baseVersion`
+9. `intent`
+10. `createdAt`
+11. `state` (`queued / syncing / conflict / expired`)
+12. `batchId`（Phase B 起需要）
+
+##### C. `sync_meta`
+
+建议字段：
+
+1. `entityType`
+2. `entityId`
+3. `latestAckVersion`
+4. `lastSyncAt`
+5. `hasConflict`
+6. `queueState`
+
+##### D. `conflict_records`（可选）
+
+建议在进入 `pdaPatchItem` 阶段时引入，用于保存：
+
+1. `opId`
+2. `path`
+3. `serverValue`
+4. `localOldValue`
+5. `localNewValue`
+6. `resolutionState`
+
+#### 1.5 最小接口草案
+
+##### 公共层接口
+
+1. `enqueueDelta(delta)`
+2. `getPendingByEntity(entityType, entityId)`
+3. `saveSnapshot(snapshot)`
+4. `getSnapshot(entityType, entityId)`
+5. `flushEntity(entityType, entityId)`
+6. `markConflict(opId, detail)`
+
+##### PDA adapter 接口
+
+1. `enqueueScanIntent(payload)`
+2. `enqueueBulkScanIntents(payloads)`
+3. `enqueuePatchItemDelta(id, delta, version)`
+4. `compressPendingStocktakeLogs(logs)`
+5. `detectStocktakeConflict(serverSnapshot, log)`
+6. `buildStocktakeSubmission(logs)`
+
+#### 1.6 replay 规则建议
+
+##### Phase A
+
+1. 单条日志直接 replay。
+2. 失败则保留在 `queued`。
+3. 成功后写 ack、更新 `snapshot / sync_meta`。
+
+##### Phase B
+
+1. 批次日志优先按 `batchId` 聚合。
+2. 对同实体、同路径可做压缩。
+3. 批次失败时允许拆分重试。
+
+##### Phase C
+
+1. 先拉取服务端最新快照与版本。
+2. 以 `baseVersion` 优先判断。
+3. 同 path 冲突进入 `conflict_records`，并暂停自动重放。
+
+#### 1.7 冲突边界建议
+
+PDA 首批试点里建议区分两类：
+
+1. **可自动合并**
+   - 不同 path
+   - 服务端当前值仍等于本地 `o`
+
+2. **必须人工升级**
+   - 同 path 且 `serverCurrent != o`
+   - 高风险数量 / 状态字段冲突
+
+这样可以避免首批试点一上来就做过度复杂的自动语义合并。
+
+#### 1.8 与现有体系的兼容方式
+
+PDA 试点必须继续通过既有正式边界提交：
+
+1. `pdaSubmitScan` 最终仍走 `StocktakeMaintenanceService.pdaSubmitScan`
+2. `pdaBulkSync` 最终仍走 `StocktakeMaintenanceService.pdaBulkSync`
+3. `pdaPatchItem` 最终仍走 `StocktakeMaintenanceService.pdaPatchItem`
+
+离线层只负责：
+
+1. 延迟提交
+2. 本地日志化
+3. replay / flush
+4. 冲突升级
+
+不得替代既有 service / command 边界。
+
+#### 1.9 推荐推进顺序
+
+建议后续若进入代码实施，按以下顺序推进：
+
+1. 先建立 `offline-sync/types + storage` 最小骨架
+2. 再建立 `pending_log / sync_meta` 基础访问层
+3. 再接 `stocktake-offline-adapter` 的 `pdaSubmitScan`
+4. 打通单条 replay 后，再推进 `pdaBulkSync`
+5. 最后再进入 `pdaPatchItem` 的冲突链路
+
+#### 1.10 当前阶段结论
+
+PDA 盘点扫描链路已经可以被细化为一个明确可施工的试点：公共层先落最小 `snapshot / pending_log / sync_meta`，模块侧只给 `stocktake` 提供 adapter，提交仍走既有 `StocktakeMaintenanceService`。这样既能验证离线基础设施层的价值，又能把试点风险控制在一个高价值、高清晰度、低外溢的范围内。
+
+### 1. architecture：离线 SDRTS adapter 首批试点模块选择
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前目标
+
+在已经确定“公共离线基础设施层 + 模块 adapter”方向之后，需要选择一个最适合的首批试点模块，验证：
+
+1. 离线日志入队
+2. IndexedDB 持久化
+3. replay / flush
+4. 冲突判定
+5. 与既有 service / command 边界的兼容
+
+首批试点的选择必须兼顾工业现场价值与工程可控性，不能一开始就压到最复杂的事务链路上。
+
+#### 1.2 本轮候选模块评估
+
+##### A. 仓储产品入库 `product-inbound.tsx`
+
+优点：
+
+1. 业务价值明确。
+2. 已有清晰表单提交流程。
+
+不足：
+
+1. 更偏单次表单提交，不是最典型的高频断网写入链路。
+2. 冲突语义更靠近“重复入库 / 幂等提交”，不如扫描链路更适合先验证离线队列模型。
+
+##### B. 仓储 PDA / 盘点扫描链路
+
+相关接口：
+
+1. `StocktakeMaintenanceService.pdaSubmitScan`
+2. `StocktakeMaintenanceService.pdaBulkSync`
+3. `StocktakeMaintenanceService.pdaPatchItem`
+
+优点：
+
+1. 工业现场断网价值最高。
+2. 写入频率高，最能体现离线日志与恢复同步的真实价值。
+3. `pdaPatchItem` 已具备 `DeltaSet + version + intent` 结构，和 SDRTS 离线化方向天然贴合。
+4. PDA 场景天然适合“本地暂存 -> 联网后补交”的模型。
+
+不足：
+
+1. 扫描批量同步与单条 patch 需要分阶段收口，不宜一次全部铺开。
+
+##### C. 仓储调整执行 `AdjustmentService.execute`
+
+优点：
+
+1. 已具备命令型意图 `STOCK_ADJUSTMENT_EXECUTE`。
+
+不足：
+
+1. 更像高语义命令执行，不适合作为离线基础设施的第一批验证对象。
+2. 一旦离线重放失败，业务后果比 PDA 暂存更重。
+
+##### D. 计件维护 `PieceworkMaintenanceService`
+
+优点：
+
+1. 也有 patch/update 形态。
+
+不足：
+
+1. 当前实现仍存在 `Partial<T>` 与 `any` 倾向。
+2. 若拿它做首批试点，容易把“离线基础设施试点”与“旧协议整治”混在一起。
+
+#### 1.3 首批试点推荐结论
+
+首批最推荐的试点模块是：
+
+1. **仓储盘点 PDA 扫描链路**
+
+推荐理由：
+
+1. 工业现场价值最高。
+2. 高频写入，最能检验离线队列设计是否真的可用。
+3. 已有 `DeltaSet + version + intent` 基础，适合作为 SDRTS 离线 adapter 首样板。
+4. 既贴近现场，又没有一上来就进入最复杂的 Workflow 长事务核心。
+
+#### 1.4 推荐试点范围
+
+建议按三步推进，而不是一次全做：
+
+##### Phase A：`pdaSubmitScan`
+
+目标：
+
+1. 先验证单条扫描写入的离线入队与恢复补交。
+2. 先打通最小 `snapshot / pending_log / sync_meta`。
+
+##### Phase B：`pdaBulkSync`
+
+目标：
+
+1. 在单条链路稳定后，再验证批量同步与批次 replay。
+2. 验证压缩、批次 ack、失败拆分等策略。
+
+##### Phase C：`pdaPatchItem`
+
+目标：
+
+1. 引入真正的 `DeltaSet + version` patch 场景。
+2. 验证字段级冲突与版本优先合并策略。
+
+#### 1.5 为什么不建议一开始就选其它模块
+
+1. **不先选 `product-inbound`**
+   - 更适合作为第二批“表单式离线提交”试点，而不是第一批“高频现场写入”试点。
+
+2. **不先选 `AdjustmentService.execute`**
+   - 命令执行语义更重，首批试点失败成本更高。
+
+3. **不先选 `PieceworkMaintenanceService`**
+   - 该模块更像旧协议整治对象，容易把离线架构试点与协议清理混在一起。
+
+#### 1.6 试点成功标准
+
+若后续进入执行，首批试点至少应验证：
+
+1. 断网时扫描写入不丢失。
+2. 页面刷新后本地待同步日志仍可恢复。
+3. 联网后日志可自动 replay / flush。
+4. 幂等重试不会重复应用。
+5. 冲突可被识别与升级，而不是静默覆盖。
+
+#### 1.7 当前阶段结论
+
+如果要为离线 SDRTS adapter 选首批试点，最合适的不是“通用表单页”或“高语义命令执行”，而是**仓储盘点 PDA 扫描链路**。它既具备最强的工业现场价值，也具备较清晰的输入模型和较低的试点失控风险，适合作为离线基础设施层的第一批验证样板。
+
+### 1. architecture：离线 SDRTS 基础设施层（方向 A）项目级架构方案
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在工业现场断网属于常态的前提下，SDRTS 若要支持长周期离线与恢复同步，不能继续依赖内存态或让每个模块各自实现一套临时离线逻辑。
+
+当前已确认的原则包括：
+
+1. `o(old value)` 必须持久化，不能只放内存。
+2. IndexedDB 应作为浏览器端离线主存储。
+3. 不能把方案停留在“单一 pending queue”。
+4. 必须继续遵守：
+   - 后端权威
+   - `services/` 去副作用化
+   - `Workflow / DispatchService / StandardCommand` 边界
+
+因此，本轮更适合先输出一个项目级架构分层方案，而不是直接让单个模块先写一版“离线重试逻辑”。
+
+#### 1.2 架构结论
+
+本轮推荐采用：
+
+1. **公共离线基础设施层**
+2. **模块级领域 adapter 层**
+3. **页面 / hook 调用层**
+
+核心原则是：
+
+1. **离线能力平台化**
+2. **冲突语义领域化**
+
+也就是说：
+
+1. IndexedDB、队列、同步状态机、重放编排应由公共层统一提供。
+2. 不同模块的字段冲突、压缩规则、提交协议由各自 adapter 定义。
+
+#### 1.3 推荐目录结构
+
+建议在前端引入独立目录，例如：
+
+1. `src/offline-sync/core/`
+2. `src/offline-sync/storage/`
+3. `src/offline-sync/queue/`
+4. `src/offline-sync/replay/`
+5. `src/offline-sync/conflict/`
+6. `src/offline-sync/types/`
+
+如后续需要模块适配层，则按模块放置：
+
+1. `src/features/warehouse/offline/warehouse-sync-adapter.ts`
+2. `src/features/production/offline/production-sync-adapter.ts`
+3. `src/features/quality/offline/quality-sync-adapter.ts`
+
+这样可以满足“公共能力集中、领域规则分散”的结构目标。
+
+#### 1.4 三层数据模型建议
+
+##### A. `snapshot`
+
+职责：
+
+1. 保存最近一次与服务端确认对齐后的实体快照。
+2. 作为离线恢复时的本地基线。
+
+##### B. `pending_log`
+
+职责：
+
+1. 保存尚未完成同步确认的 delta / intent。
+2. 必须至少包含：
+   - `entityType`
+   - `entityId`
+   - `path`
+   - `o`
+   - `n`
+   - `baseVersion`
+   - `opId`
+   - `createdAt`
+   - `state`
+
+##### C. `sync_meta`
+
+职责：
+
+1. 保存实体同步状态元数据，例如：
+   - `latestAckVersion`
+   - `lastSyncAt`
+   - `hasConflict`
+   - `queueState`
+
+这意味着浏览器端不应只有一个 `pending_queue`，而应采用：
+
+1. `snapshot`
+2. `pending_log`
+3. `sync_meta`
+
+三层配合。
+
+#### 1.5 公共基础设施层职责
+
+公共层应负责：
+
+1. IndexedDB schema 与访问封装
+2. `pending_log` 的入队 / 出队 / 状态迁移
+3. `snapshot` 的读写与回填
+4. `sync_meta` 的维护
+5. 在线恢复后的 replay / flush 编排
+6. `opId` 幂等标识生成
+7. 通用冲突记录存储与状态管理
+
+这些能力不应由各个业务模块重复实现。
+
+#### 1.6 模块 adapter 层职责
+
+模块 adapter 应负责：
+
+1. 定义本模块哪些实体支持离线日志化
+2. 定义 path 粒度与稳定标识规则
+3. 定义日志压缩策略
+4. 定义冲突判定策略
+5. 定义自动合并 / 人工决策边界
+6. 定义如何把 delta / intent 转为该模块最终提交协议
+
+例如：
+
+1. 仓储模块更关注数量、批次、库位冲突
+2. 生产模块更关注工序状态、参数、报工冲突
+3. 审批类模块可能很多字段根本不允许自动合并
+
+因此冲突语义不能硬编码在公共层里。
+
+#### 1.7 与现有体系的兼容原则
+
+本轮必须明确保持以下兼容：
+
+##### A. 不绕开 DTO / adapter / service
+
+离线层最终不能直接跳过现有传输边界，而应通过模块 adapter 输出给既有 service / command 边界消费。
+
+##### B. 不绕开 Workflow / StandardCommand
+
+若某些业务当前必须通过事务命令、工作流或标准命令链路提交，则离线层只负责“延迟提交与重放”，不应自己成为新的业务写入口。
+
+##### C. 不削弱后端权威
+
+本地快照只是离线基线，不是新的最终权威读模型。
+
+#### 1.8 最小接口草案
+
+公共层可先定义以下级别的抽象接口：
+
+1. `enqueueDelta(delta)`
+2. `getEntitySnapshot(entityType, entityId)`
+3. `saveEntitySnapshot(snapshot)`
+4. `flushEntity(entityType, entityId)`
+5. `flushAllPending()`
+6. `markConflict(opId, detail)`
+7. `resolveConflict(opId, resolution)`
+
+模块 adapter 层可定义：
+
+1. `compressPendingDeltas(deltas)`
+2. `detectConflict(serverSnapshot, delta)`
+3. `buildSubmissionPayload(deltas, snapshot)`
+4. `applyServerAck(serverResponse)`
+
+#### 1.9 推荐实施顺序
+
+若后续进入执行，建议按以下顺序推进：
+
+1. 先建立 `offline-sync` 公共骨架与 types
+2. 先实现 `snapshot / pending_log / sync_meta` 的最小存储层
+3. 再实现最小 flush / replay 编排
+4. 再选择一个高价值模块做第一批 adapter 试点
+5. 最后再评估是否继续推广到其它模块
+
+#### 1.10 本轮边界控制
+
+本轮明确不做：
+
+1. 不直接写 IndexedDB 具体实现代码。
+2. 不直接改某个业务模块进入试点。
+3. 不将本轮扩大为全系统离线化施工。
+
+#### 1.11 风险与控制策略
+
+1. **公共层过度通用风险**
+   - 如果公共层试图理解所有业务冲突语义，会重新变成上帝模块。
+   - 控制策略：公共层只管“存储 / 编排 / 状态机”，冲突语义下放给 adapter。
+
+2. **模块各自实现导致漂移风险**
+   - 如果不抽公共层，各模块迟早各写一套 IndexedDB / 队列逻辑。
+   - 控制策略：先平台化基础能力，再模块化语义。
+
+3. **绕开既有写链风险**
+   - 若离线层直接变成新的写入口，会破坏现有 `service / workflow / command` 边界。
+   - 控制策略：离线层只负责“延迟、重放、冲突”，最终提交仍通过既有正式边界。
+
+#### 1.12 当前阶段结论
+
+当前最合理的方向不是“每个模块自己做离线”，也不是“做一个什么都懂的超级黑盒”，而是先建立一个独立的离线同步基础设施层，再让各模块通过自己的 adapter 挂接冲突语义与提交协议。这样既能复用底层能力，也不会破坏现有 DTO / service / workflow 的边界。
+
+### 1. layout：侧边栏分类标题字号与颜色层级优化
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+上一轮已完成侧边栏分类折叠能力，但当前分类标题的视觉层级仍偏弱：
+
+1. 标题字号比菜单项更小或接近偏小。
+2. 标题颜色对比度较弱。
+3. 折叠按钮本身存在，但分类标题没有形成足够明显的“分组标题”感。
+
+这会影响侧边栏分组折叠后的可扫描性。
+
+#### 1.2 当前问题判断
+
+##### A. 分类标题层级弱于菜单项
+
+当前用户感知是“菜单标题比分类标题还大”，这会让分组结构显得不清楚。
+
+##### B. 分类标题颜色样式不够突出
+
+如果分类标题只是浅色辅助文案，即使已经能折叠，用户也很难把它快速识别成真正的导航分组标题。
+
+#### 1.3 本轮目标
+
+本轮只处理视觉层级，不改变交互逻辑：
+
+1. 提高分类标题字号。
+2. 提高分类标题字重与颜色对比。
+3. 补足 hover / expanded 状态下的视觉反馈。
+4. 保持菜单项与分类标题之间更清晰的主次结构。
+
+#### 1.4 建议实施方案
+
+##### 第一步：提升标题字号与字重
+
+目标：
+
+1. 分类标题字号至少与菜单项接近，或略大于菜单项。
+2. 保持 italic / 工业风格，但避免因为过小而失去结构感。
+
+##### 第二步：增强颜色与状态样式
+
+目标：
+
+1. 默认态比当前更清晰。
+2. hover 态更容易感知可点击。
+3. 展开态与收起态在视觉上有明确区分。
+
+##### 第三步：保持逻辑不变
+
+目标：
+
+1. 不修改当前分类自动展开逻辑。
+2. 不修改菜单点击行为。
+3. 不联动改变 sidebar 其它组件结构。
+
+#### 1.5 预期修改范围
+
+本轮预期主要涉及：
+
+1. `src/components/layout/nav-group.tsx`
+
+#### 1.6 本轮边界控制
+
+本轮明确不做：
+
+1. 不再次调整侧边栏信息架构。
+2. 不重写折叠逻辑。
+3. 不扩大为整套导航主题重做。
+
+#### 1.7 风险与控制策略
+
+1. **标题过强导致菜单项层级失衡风险**
+   - 如果标题样式过重，可能压过具体菜单项。
+   - 控制策略：让标题达到“清晰分组”而不是“比菜单更像主操作”。
+
+2. **样式改动影响折叠态可读性风险**
+   - 若在折叠态下仍保留过强标题样式，可能与 icon 模式冲突。
+   - 控制策略：仅在展开侧边栏下强化标题层级。
+
+#### 1.8 验证建议
+
+若后续进入执行，建议至少验证：
+
+1. 分类标题字号与颜色明显强于当前实现。
+2. 菜单项与分类标题层级更清晰。
+3. 分类折叠逻辑不受影响。
+4. `pnpm exec eslint` 目标文件通过。
+5. `pnpm exec tsc --noEmit` 通过。
+
+#### 1.9 当前阶段结论
+
+本轮更适合做一次小而准的视觉层级修正：只提升侧边栏分类标题的字号、字重与颜色状态，让分组结构真正可见，而不是继续扩大为导航组件重做。
+
+### 1. layout：侧边栏分类支持折叠并默认展开当前分类
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前侧边栏在导航承载上已经出现新的体验问题：
+
+1. 分组数量与菜单项数量都在增长。
+2. 目前只有整栏折叠能力与内容区 `overflow-auto` 滚动兜底。
+3. 每个分类分组本身始终展开，导致单列信息密度持续升高。
+
+这意味着当前问题不只是“有没有滚动条”，而是“用户是否还能快速扫描并找到当前上下文入口”。
+
+#### 1.2 当前问题判断
+
+##### A. 当前没有分类级折叠能力
+
+`NavGroup` 目前直接渲染标题与完整菜单列表，没有自己的展开/收起状态。
+
+##### B. 单纯依赖滚动不能解决认知拥挤
+
+即使菜单技术上不会溢出视区，用户仍会遇到：
+
+1. 一屏可见内容过多
+2. 分类之间边界感下降
+3. 常用入口被挤到更深位置
+
+##### C. 最合适的平衡方式是“默认只展开当前分类”
+
+与其让所有分类始终展开，不如：
+
+1. 当前路由所在分类默认展开
+2. 其它分类默认收起
+3. 用户按需再展开其它分类
+
+#### 1.3 本轮目标
+
+本轮目标是给侧边栏增加更稳妥的动态平衡能力：
+
+1. 每个分类支持折叠/展开。
+2. 默认展开当前命中路由所属分类。
+3. 其它分类默认收起。
+4. 保留现有整栏折叠与滚动兜底能力。
+
+#### 1.4 建议实施方案
+
+##### 第一步：在 `NavGroup` 引入分类级折叠状态
+
+目标：
+
+1. 分类标题可点击。
+2. 标题右侧显示展开/收起指示。
+3. 分类内容区可按状态显示或隐藏。
+
+##### 第二步：自动展开当前分类
+
+目标：
+
+1. 根据当前 pathname 判断当前命中分类。
+2. 当前分类初始默认展开。
+3. 其它分类初始默认收起。
+
+##### 第三步：保持现有滚动与整栏折叠作为兜底
+
+目标：
+
+1. 不破坏现在的 sidebar 整体收起逻辑。
+2. 不移除 `SidebarContent` 的滚动能力。
+3. 分类折叠作为“第一层减压”，滚动作为“最后兜底”。
+
+#### 1.5 预期修改范围
+
+本轮预期主要涉及：
+
+1. `src/components/layout/nav-group.tsx`
+2. 如需要，少量联动 `src/components/ui/sidebar.tsx`
+3. 若有文案或交互细节需要，再少量联动对应 locale
+
+#### 1.6 本轮边界控制
+
+本轮明确不做：
+
+1. 不扩大为整套侧边栏 UI 重写。
+2. 不一次性引入复杂持久化状态。
+3. 不同时改造命令面板、权限菜单与顶部导航。
+
+#### 1.7 风险与控制策略
+
+1. **分类收起后可发现性风险**
+   - 若当前分类判断不准确，用户可能打开页面后看不到当前菜单组。
+   - 控制策略：默认以当前 pathname 命中的分类为展开优先级。
+
+2. **整栏折叠与分类折叠双层状态冲突风险**
+   - 若状态耦合处理不好，可能导致图标栏与分类展开逻辑互相干扰。
+   - 控制策略：分类折叠仅在 sidebar 展开态下发挥作用；整栏折叠保持现有逻辑。
+
+3. **交互过重风险**
+   - 若一次引入动画、持久化、自动平衡全套逻辑，改动面会扩大。
+   - 控制策略：本轮先做最小可用方案，优先解决“默认只展开当前分类”。
+
+#### 1.8 验证建议
+
+若后续进入执行，建议至少验证：
+
+1. 侧边栏每个分类可手动展开/收起。
+2. 当前路由所属分类默认展开。
+3. 其它分类默认收起。
+4. sidebar 整体折叠/展开仍正常。
+5. 内容区滚动兜底仍正常。
+6. `pnpm exec eslint` 目标文件通过。
+7. `pnpm exec tsc --noEmit` 通过。
+
+#### 1.9 当前阶段结论
+
+当前更稳妥的方案不是继续依赖单列滚动，而是在保留整栏折叠与滚动兜底的前提下，为每个分类增加折叠能力，并默认只展开当前分类。这能更好地平衡不断增长的菜单量与侧边栏可扫描性。
+
+### 1. warehouse：将仓储从资源管理子菜单提升为独立分类导航
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前仓储能力在导航上的承载方式已经开始失衡：
+
+1. “仓储”目前归于“资源管理”侧边栏菜单下。
+2. 仓储模块内部已经承载库存、入库、出库、盘点、调整等多类作业页。
+3. “物料档案”在业务归属上属于仓储主数据，但当前再继续塞入仓储 tabs 已不合适。
+
+这说明当前问题已经不是菜单文案优化，而是导航层级不再匹配实际业务边界。
+
+#### 1.2 当前问题判断
+
+##### A. 仓储已从“资源子页”演变为独立业务域
+
+从业务职责看，仓储已不只是资源管理中的一个小功能，而是包含：
+
+1. 仓储作业
+2. 仓储主数据
+3. 仓储执行记录/报表
+
+这种情况下，继续把它挂在“资源管理”下会削弱模块归属感，也让后续扩展更加别扭。
+
+##### B. tabs 不再适合作为持续扩张的主导航承载层
+
+tabs 更适合同模块内少量紧密相关的子视图，不适合不断吸纳新的独立业务入口。
+
+##### C. 菜单文案加括号只能算临时补丁
+
+例如“物料档案（仓储）”虽然能提示归属，但不能解决：
+
+1. 侧边栏结构不清晰
+2. 仓储域入口继续增长时的承载问题
+3. 后续更多仓储主数据页的扩展路径
+
+#### 1.3 本轮目标
+
+本轮目标不是只给某个菜单改名字，而是把仓储导航结构收口为更稳定的业务域表达：
+
+1. 将“仓储”提升为独立侧边栏分类/模块组。
+2. 在该分类下并列承载：
+   - 仓储作业
+   - 物料档案
+3. 保持现有页面路由与功能行为尽量不变。
+
+#### 1.4 建议实施方案
+
+##### 第一步：提升“仓储”为独立导航分类
+
+目标：
+
+1. 让仓储不再作为“资源管理”的一个普通子菜单。
+2. 在侧边栏结构上单独形成仓储分类/分组。
+
+##### 第二步：将“仓储作业”与“物料档案”作为并列入口
+
+目标：
+
+1. “仓储作业”不再代表整个仓储模块本身，而只是仓储分类下的一个页面。
+2. “物料档案”作为仓储主数据入口，与仓储作业并列，而不是被硬塞进 tabs。
+
+##### 第三步：页面内部继续表达业务归属
+
+即使导航上已独立分类，页面标题/副标题/面包屑仍可保持“仓储域”归属表达，避免用户迷失。
+
+#### 1.5 预期修改范围
+
+本轮预期主要涉及：
+
+1. 侧边栏导航配置文件
+2. warehouse 模块 tabs / 路由入口配置
+3. 物料档案页面在导航中的挂载位置
+4. 如有必要，联动页面标题/面包屑文案
+
+#### 1.6 本轮边界控制
+
+本轮明确不做：
+
+1. 不扩大为整套权限体系重构。
+2. 不一次性重写 warehouse 页面内部全部 tabs。
+3. 不顺手改造其它资源管理模块导航层级。
+4. 不把本轮退化为单纯文案加括号补丁。
+
+#### 1.7 风险与控制策略
+
+1. **导航迁移后可发现性回归风险**
+   - 用户原先从资源管理进入仓储，迁移后可能短期不适应。
+   - 控制策略：保持命名直观，必要时在页面内保留仓储归属提示。
+
+2. **权限挂载点联动风险**
+   - 侧边栏分类提升后，菜单权限与路由权限映射需检查是否仍一致。
+   - 控制策略：保持现有路由与 action 权限语义不变，优先做导航层收口，不扩大权限语义修改。
+
+3. **tabs 与侧边栏双重语义冲突风险**
+   - 若仓储分类已独立，但模块内部仍保持过多 tabs，可能形成二次拥挤。
+   - 控制策略：本轮先解决侧边栏层级，内部 tabs 仅做必要最小调整。
+
+#### 1.8 验证建议
+
+若后续进入执行，建议至少验证：
+
+1. 侧边栏中“仓储”已成为独立分类/分组。
+2. “仓储作业”与“物料档案”可作为并列入口访问。
+3. 原有仓储页面和物料档案页面路由访问正常。
+4. 权限门控未因导航迁移而失效。
+5. `pnpm exec eslint` 目标文件通过。
+6. `pnpm exec tsc --noEmit` 通过。
+
+#### 1.9 当前阶段结论
+
+从信息架构看，当前更合理的长期方案不是“物料档案（仓储）”这类菜单补丁，而是将仓储正式提升为独立分类，再把“仓储作业”与“物料档案”并列承载在该分类下。这更符合实际业务边界，也更适合后续继续扩展仓储域能力。
+
+### 1. org-personnel：新建请假申请崩溃（Maximum update depth exceeded）修复
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前 `LEAVE_MANAGEMENT` 模块在点击“新建请假申请”后会出现前端崩溃，控制台同时出现：
+
+1. `/leaves/stats` 请求失败
+2. `/leaves/my` 请求失败
+3. React `Maximum update depth exceeded`
+
+页面主链已排查到：
+
+1. `src/features/org-personnel/tabs/leave-management.tsx`
+2. `src/features/org-personnel/components/leave-action-dialog.tsx`
+3. `src/features/org-personnel/hooks/use-submit-leave-request.ts`
+4. `src/features/org-personnel/services/leave-service.ts`
+
+#### 1.2 当前问题判断
+
+##### A. 核心问题更像前端弹窗内部更新环
+
+从当前代码结构看，列表页本身只是：
+
+1. 查询 `/leaves/my`
+2. 查询 `/leaves/stats`
+3. 点击按钮打开 `LeaveActionDialog`
+
+真正更可疑的是 `LeaveActionDialog` 内部：
+
+1. `react-hook-form`
+2. `useWatch`
+3. `Dialog`
+4. `open / onOpenChange`
+5. `useEffect` 中的 reset 链路
+
+这类组合若某个依赖在每次 render 都变化，或某个 ref callback 反复触发状态更新，很容易导致最大更新深度报错。
+
+##### B. `/leaves/*` 请求失败可能是并发症状，不一定是根因
+
+当前两个 query 发生在页面挂载时，本身需要进一步判断：
+
+1. 是接口真的失败
+2. 还是组件崩溃过程中请求被中断 / 边界重建后重复打断
+
+因此本轮优先级应先放在“修复崩溃”，再决定是否要给 leaves 统计与列表查询补空态/错误态兜底。
+
+#### 1.3 本轮目标
+
+本轮目标分两层：
+
+1. **必做**：修复新建请假申请弹窗打开即崩溃的问题。
+2. **次做**：若 `/leaves/stats`、`/leaves/my` 请求失败在崩溃修复后仍存在，再补最小稳定性兜底。
+
+#### 1.4 建议实施顺序
+
+##### 第一步：收紧 `LeaveActionDialog` 的状态更新链路
+
+重点检查并修复：
+
+1. `useEffect(() => { if (!open) form.reset(...); resetPreview() }, [form, open, resetPreview])`
+2. `useWatch()` 与 Dialog 打开关闭时的字段联动
+3. 可能导致 `DialogContent` 或内部输入 ref 重复 setState 的写法
+
+目标是让弹窗在打开/关闭过程中不再触发无限更新。
+
+##### 第二步：确认 leaves 查询失败是否仍独立存在
+
+如果崩溃修复后 `/leaves/stats`、`/leaves/my` 仍报错，则追加最小治理：
+
+1. 明确错误来源
+2. 避免列表页因查询失败直接影响弹窗使用
+3. 视情况补错误提示或空态兜底
+
+#### 1.5 预期修改文件
+
+本轮预期主要涉及：
+
+1. `src/features/org-personnel/components/leave-action-dialog.tsx`
+2. `src/features/org-personnel/hooks/use-submit-leave-request.ts`
+3. 如确有必要，再联动：
+   - `src/features/org-personnel/tabs/leave-management.tsx`
+   - `src/features/org-personnel/services/leave-service.ts`
+
+#### 1.6 本轮边界控制
+
+本轮明确不做：
+
+1. 不修改后端 `/leaves` 接口语义。
+2. 不扩大为整个人事请假模块重构。
+3. 不顺手重写统计卡片或列表布局。
+
+#### 1.7 风险与控制策略
+
+1. **表单重置逻辑修复后行为漂移风险**
+   - 若直接移除 reset 逻辑，可能留下旧表单值。
+   - 控制策略：修复循环时仍保留“关闭后重置”语义。
+
+2. **请求失败与崩溃根因混淆风险**
+   - 若先处理请求失败而未解决更新环，页面仍会崩。
+   - 控制策略：先解决 `Maximum update depth exceeded`，再判断查询失败是否独立存在。
+
+3. **Dialog / form 组合回归风险**
+   - 弹窗打开、关闭、试算、提交四个动作都需要回归。
+   - 控制策略：修复后定向验证打开弹窗、试算、提交、关闭重开。
+
+#### 1.8 验证建议
+
+若后续进入执行，建议至少验证：
+
+1. 点击“新建请假申请”后页面不再崩溃。
+2. 弹窗可正常打开、关闭、重新打开。
+3. 试算请假时长可正常执行。
+4. 提交请假申请链路可正常执行。
+5. `pnpm exec eslint` 目标文件通过。
+6. `pnpm exec tsc --noEmit` 通过。
+
+#### 1.9 当前阶段结论
+
+当前请假申请问题应优先按“前端弹窗状态更新环”来处理，而不是先把 `/leaves/stats` 与 `/leaves/my` 当成唯一根因。最稳妥的修复顺序，是先让 `LeaveActionDialog` 恢复稳定打开与关闭，再判断列表查询失败是否还需要单独治理。
+
+### 1. warehouse：`/warehouse/inbound` 缺少明确入库按钮的业务修复
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前 `/warehouse/inbound` 页面已经具备入库业务能力，但入口表达不清晰。
+
+已排查到页面主文件：
+
+1. `src/routes/_authenticated/warehouse/inbound.lazy.tsx`
+2. `src/features/warehouse/tabs/product-inbound.tsx`
+
+当前页面的实际入库链路为：
+
+1. 用户搜索产品/物料
+2. 点击搜索结果卡片触发 `openInboundForm(item)`
+3. 弹出入库对话框
+4. 点击弹窗确认按钮触发 `submitInbound()`
+5. 调用 `InventoryTransactionService.recordInbound()` 提交入库
+
+也就是说，问题不在“系统没有入库能力”，而在“页面没有明确暴露可理解的入库按钮入口”。
+
+#### 1.2 当前问题判断
+
+##### A. 主操作入口过弱
+
+搜索结果卡片本身支持点击，但视觉上更像信息卡片，不像明确操作入口。
+
+##### B. 按钮仅在 hover 时强调
+
+当前卡片右侧按钮被包在 `NonBlockingPermissionBoundary` 中，且通过 `sm:opacity-0 group-hover:opacity-100` 做 hover 才显的强调效果。对于普通用户来说，会误判为“没有可以执行入库的按钮”。
+
+##### C. 按钮文案语义偏弱
+
+当前文案是 `warehouse.inbound.select`，更像“选择条目”，而不是“执行入库 / 登记入库”。
+
+#### 1.3 本轮目标
+
+本轮目标是在不改后端接口语义、不改提交流程的前提下，补齐一个**明确、常显、语义清楚**的入库入口。
+
+目标包括：
+
+1. 页面上能一眼看到可执行的入库按钮。
+2. 按钮语义明确指向“入库”而不是“选择”。
+3. 继续沿用现有 `openInboundForm()` 与 `submitInbound()` 流程。
+4. 继续沿用现有权限控制 `action_warehouse_inbound_record`。
+
+#### 1.4 建议实施方案
+
+建议优先采用**最小业务修复**：
+
+##### 第一步：补齐搜索结果卡片中的常显主按钮
+
+在 `src/features/warehouse/tabs/product-inbound.tsx` 的搜索结果项中：
+
+1. 保留卡片点击打开弹窗的现有行为，避免破坏已有快捷交互。
+2. 右侧按钮改为常显，至少在桌面态不再依赖 hover 才可见。
+3. 按钮文案改为“入库”或“登记入库”对应的 i18n 文案。
+
+##### 第二步：必要时补充空结果 / 首次进入时的操作引导
+
+若页面在无搜索结果时仍容易让用户误以为“没有入口”，可评估在结果区或搜索框附近补一条短提示，例如“搜索产品或物料后可执行入库”。
+
+本项属于可选项，优先级低于主按钮显式化。
+
+#### 1.5 预期修改文件
+
+本轮预期主要涉及：
+
+1. `src/features/warehouse/tabs/product-inbound.tsx`
+2. 如缺少更合适文案，可能联动对应 locale 文案文件
+
+#### 1.6 本轮边界控制
+
+本轮明确不做：
+
+1. 不修改 `/inventory/inbound` 后端接口语义。
+2. 不修改 `InventoryTransactionService.recordInbound()` 的请求结构。
+3. 不重构 `ProductInbound` 页面整体结构。
+4. 不联动改造其它仓储页面。
+
+#### 1.7 风险与控制策略
+
+1. **权限门控误伤风险**
+   - 如果按钮显式化但权限边界处理不当，可能导致无权限用户也看到可执行按钮。
+   - 控制策略：继续保留 `NonBlockingPermissionBoundary` 和 `allowsAction('action_warehouse_inbound_record')` 现有门控。
+
+2. **交互重复触发风险**
+   - 当前卡片点击与按钮点击都可能打开弹窗，若事件冒泡处理不当可能产生重复触发。
+   - 控制策略：若新增更明确按钮，需处理按钮点击与卡片点击的事件边界。
+
+3. **视觉改动扩大风险**
+   - 若顺手重做整页布局，会扩大业务修复范围。
+   - 控制策略：本轮只聚焦入库入口显式化，不扩大为整页视觉重构。
+
+#### 1.8 验证建议
+
+若后续进入执行，建议至少验证：
+
+1. `/warehouse/inbound` 页面中搜索结果项存在明确常显的“入库”操作入口。
+2. 有权限用户点击按钮可正常打开入库弹窗。
+3. 无权限场景仍遵守现有门控策略。
+4. 入库弹窗确认后仍能正常调用现有提交流程。
+5. `pnpm exec eslint` 目标文件通过。
+6. `pnpm exec tsc --noEmit` 通过。
+
+#### 1.9 当前阶段结论
+
+当前 `/warehouse/inbound` 的核心问题不是业务能力缺失，而是入口表达失败。最稳妥的修复方式不是重写流程，而是在现有提交流程不变的前提下，把“入库”按钮显式化、常显化、语义化。
+
 ### 1. purchase：第二阶段收口规划（`usePurchaseOrderForm` / 写操作边界）
 
 日期：2026-04-12  

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import {
   getSalesOrderById,
   getSalesOrders,
@@ -11,9 +12,11 @@ export const useGetSalesOrders = (
   options: Omit<GetSalesOrdersOptions, 'page' | 'pageSize'> & Record<string, unknown> = {}
 ) => {
   const { withLines, status, ...queryOptions } = options
+  const normalizedWithLines = withLines ?? false
+  const normalizedStatus = status ?? []
 
   return useQuery({
-    queryKey: ['sales-orders', page, pageSize, withLines ?? false, status ?? []],
+    queryKey: tradingQueryKeys.salesOrders(page, pageSize, normalizedWithLines, normalizedStatus),
     queryFn: () => getSalesOrders({ page, pageSize, withLines, status }),
     ...queryOptions,
   })
@@ -21,7 +24,7 @@ export const useGetSalesOrders = (
 
 export const useGetSalesOrderDetail = (id: string) => {
   return useQuery({
-    queryKey: ['sales-orders', id],
+    queryKey: tradingQueryKeys.salesOrderDetail(id),
     queryFn: () => getSalesOrderById(id),
     enabled: !!id,
   })

@@ -3,6 +3,7 @@ import {
   type SaveProductAttributeCategoryInput,
   type SaveProductAttributeOptionInput,
 } from '../mutation-types'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import {
   PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
   PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
@@ -15,7 +16,10 @@ export function useProductAttributeWriteActions() {
 
   const saveCategoryMutation = useMutation({
     mutationFn: (category: SaveProductAttributeCategoryInput) =>
-      ProductAttributeCategoryService.saveProductAttributeCategory(category),
+      ProductAttributeCategoryService.saveProductAttributeCategory({
+        ...category,
+        key: normalizeProductAttributeMachineValue(category.key),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY })
     },
@@ -33,7 +37,11 @@ export function useProductAttributeWriteActions() {
 
   const saveOptionMutation = useMutation({
     mutationFn: (option: SaveProductAttributeOptionInput) =>
-      ProductAttributeOptionService.saveProductAttributeOption(option),
+      ProductAttributeOptionService.saveProductAttributeOption({
+        ...option,
+        categoryKey: normalizeProductAttributeMachineValue(option.categoryKey),
+        value: normalizeProductAttributeMachineValue(option.value),
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY })
     },

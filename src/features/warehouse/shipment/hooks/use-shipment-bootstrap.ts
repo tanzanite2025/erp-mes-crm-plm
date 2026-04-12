@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { WarehouseCategoryCoreService } from '../../category'
@@ -10,51 +11,58 @@ import {
   type MasterDataSearchResult,
 } from '../../inventory'
 import { type WarehouseCategoryOption } from '../../category/data/schema'
+import { warehouseQueryKeys } from '../../query-keys'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
 import { type ShipmentRecord } from '../data/schema'
 import { ShipmentCoreService } from '../services/shipment-core-service'
 
 export function useShipmentBootstrap() {
   const { t } = useLanguage()
-  const [history, setHistory] = useState<ShipmentRecord[]>([])
-  const [warehouseCategories, setWarehouseCategories] = useState<WarehouseCategoryOption[]>([])
-  const [alertThresholds, setAlertThresholds] = useState<Record<string, number>>({})
-  const [masterDataMap, setMasterDataMap] = useState<Record<string, MasterDataSearchResult>>({})
-  const [error, setError] = useState<unknown>(null)
 
-  const refreshData = useCallback(async () => {
-    try {
-      setError(null)
+  const historyQuery = useQuery({
+    queryKey: warehouseQueryKeys.shipmentHistory(),
+    queryFn: () => ShipmentCoreService.getShipmentHistory(),
+  })
 
-      const [recentHistory, categories, allMasterData, thresholds] = await Promise.all([
-        ShipmentCoreService.getShipmentHistory(),
-        WarehouseCategoryCoreService.getCategoryOptions(),
-        InventoryCoreService.searchMasterData(''),
-        InventoryMaintenanceService.getAlertThresholds(),
-      ])
+  const categoriesQuery = useQuery({
+    queryKey: warehouseQueryKeys.categoryOptions(),
+    queryFn: () => WarehouseCategoryCoreService.getCategoryOptions(),
+  })
 
-      if (!recentHistory || !categories || !thresholds) {
-        throw new Error('[CRITICAL] Mandatory inventory master data missing during rehydration')
-      }
+  const masterDataQuery = useQuery({
+    queryKey: warehouseQueryKeys.masterDataAll(),
+    queryFn: () => InventoryCoreService.searchMasterData(''),
+  })
 
-      setHistory(recentHistory)
-      setWarehouseCategories(filterWarehouseCategoriesByScene(categories, 'shipment'))
-      setAlertThresholds(thresholds)
+  const thresholdsQuery = useQuery({
+    queryKey: warehouseQueryKeys.alertThresholds(),
+    queryFn: () => InventoryMaintenanceService.getAlertThresholds(),
+  })
 
-      const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}
-      allMasterData.forEach((item: MasterDataSearchResult) => {
-        nextMasterDataMap[item.id] = item
-      })
-      setMasterDataMap(nextMasterDataMap)
-    } catch (loadError) {
-      setError(loadError)
-      toast.error(t('warehouse.errors.queryFailed'))
-    }
-  }, [t])
+  const error =
+    historyQuery.error ??
+    categoriesQuery.error ??
+    masterDataQuery.error ??
+    thresholdsQuery.error
 
   useEffect(() => {
-    void refreshData()
-  }, [refreshData])
+    if (!error) return
+    toast.error(t('warehouse.errors.queryFailed'))
+  }, [error, t])
+
+  const history = useMemo(() => historyQuery.data ?? ([] as ShipmentRecord[]), [historyQuery.data])
+  const warehouseCategories = useMemo(
+    () => filterWarehouseCategoriesByScene(categoriesQuery.data ?? ([] as WarehouseCategoryOption[]), 'shipment'),
+    [categoriesQuery.data],
+  )
+  const alertThresholds = useMemo(() => thresholdsQuery.data ?? {}, [thresholdsQuery.data])
+  const masterDataMap = useMemo(() => {
+    const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}
+    ;(masterDataQuery.data ?? []).forEach((item: MasterDataSearchResult) => {
+      nextMasterDataMap[item.id] = item
+    })
+    return nextMasterDataMap
+  }, [masterDataQuery.data])
 
   return {
     history,
@@ -62,6 +70,5 @@ export function useShipmentBootstrap() {
     alertThresholds,
     masterDataMap,
     error,
-    refreshData,
   }
 }

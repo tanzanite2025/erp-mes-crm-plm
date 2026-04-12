@@ -8,8 +8,7 @@ import { useLanguage } from '@/context/language-provider'
 import { type MaterialOption } from '@/features/material-archive/data/schema'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrderLine } from '../../../data/schema'
-
-type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
+import { usePurchaseOrderLinesEditorViewModel } from '../../../hooks/use-purchase-order-lines-editor-view-model'
 
 interface PurchaseOrderLinesEditorProps {
   lines: PurchaseOrderLine[]
@@ -38,38 +37,12 @@ export function PurchaseOrderLinesEditor({
   onLineChange,
 }: PurchaseOrderLinesEditorProps) {
   const { t } = useLanguage()
-
-  const materialOptions = materials.map((material) => ({
-    label: material.name,
-    value: material.id,
-    secondaryLabel: material.spec,
-    tertiaryLabel: material.code,
-    keywords: `${material.name} ${material.code} ${material.spec}`,
-  }))
-
-  const unitOptions = units.map((unit) => ({
-    label: unit.name,
-    value: unit.name,
-    secondaryLabel: unit.category,
-    tertiaryLabel: unit.code,
-    keywords: `${unit.name} ${unit.code} ${unit.category}`,
-  }))
-
-  const handleMaterialSelect = (index: number, materialId: string) => {
-    const material = materials.find((item) => item.id === materialId)
-    if (!material) {
-      onLineChange(index, 'materialName', '')
-      return
-    }
-
-    onLineChange(index, 'materialName', material.name, {
-      materialId: material.id,
-      materialCode: material.code,
-      specification: material.spec || '',
-      uom: material.uom,
-      price: lines[index].price || material.costPrice || 0,
-    })
-  }
+  const { materialOptions, unitOptions, handleMaterialSelect } = usePurchaseOrderLinesEditorViewModel({
+    units,
+    materials,
+    lines,
+    onLineChange,
+  })
 
   return (
     <section className='space-y-4'>

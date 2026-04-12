@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
+import { normalizeMachineCode, normalizeSceneKey } from '@/lib/codecs/code-normalization'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
@@ -75,10 +76,6 @@ function vibrate(pattern: number | number[]) {
 function getOnlineState() {
   if (typeof navigator === 'undefined') return true
   return navigator.onLine
-}
-
-function normalizeRawCode(rawCode: string) {
-  return rawCode.replace(/\s+/g, '').trim().toUpperCase()
 }
 
 function createShellPayload(
@@ -266,7 +263,7 @@ export function PDAShellTab() {
       const queuedItems = listPDAShellRetryQueue()
       if (!queuedItems.length) return
 
-      const normalizedScene = (targetScene || '').trim().toLowerCase()
+      const normalizedScene = normalizeSceneKey(targetScene, '')
       const orderedItems = [...queuedItems].sort((a, b) => {
         if (!normalizedScene) return b.lastQueuedAt.localeCompare(a.lastQueuedAt)
         if (a.scene === normalizedScene && b.scene !== normalizedScene) return -1
@@ -358,7 +355,7 @@ export function PDAShellTab() {
 
   const submitRawCode = useCallback(
     async (value: string) => {
-      const normalized = normalizeRawCode(value)
+      const normalized = normalizeMachineCode(value)
       if (!normalized) return
 
       const payload = createShellPayload(normalized, protocolConfig)
@@ -402,7 +399,7 @@ export function PDAShellTab() {
     [getSceneLabel, isOnline, protocolConfig, refreshQueue, t]
   )
 
-  const normalizedRawCode = useMemo(() => normalizeRawCode(rawCode), [rawCode])
+  const normalizedRawCode = useMemo(() => normalizeMachineCode(rawCode), [rawCode])
   const currentSceneQueue = useMemo(
     () => queue.filter((item) => item.scene === currentScene),
     [currentScene, queue]
@@ -555,8 +552,8 @@ export function PDAShellTab() {
               <TrackingNumberInput
                 value={rawCode}
                 onValueChange={(value) => {
-                  const normalized = normalizeRawCode(value)
-                  if (normalized !== normalizeRawCode(rawCode)) {
+                  const normalized = normalizeMachineCode(value)
+                  if (normalized !== normalizeMachineCode(rawCode)) {
                     lastAutoSubmittedRef.current = ''
                   }
                   setRawCode(normalized)

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { LeaveService } from '../services/leave-service'
+import { personnelQueryKeys } from '../query-keys'
 import { Button } from '@/components/ui/button'
 import { Plus, Calendar, FileText, BadgeCheck, Clock, XCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -20,13 +21,13 @@ export default function LeaveManagement() {
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null)
   const { cancelLeaveRequest, isCanceling, cancelingLeaveId } = useCancelLeaveRequest()
   const { data: leaves, isLoading: isLeavesLoading } = useQuery({
-    queryKey: ['personnel', 'leaves', 'my'],
+    queryKey: personnelQueryKeys.leaves.my(),
     queryFn: () => LeaveService.getMyLeaveRequests()
   })
 
   // [BACKEND-AUTHORITY]: 获取由后端财务与人事服务精确计算的统计指标
   const { data: stats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['personnel', 'leaves', 'stats', 'my'],
+    queryKey: personnelQueryKeys.leaves.statsMy(),
     queryFn: () => LeaveService.getLeaveStats()
   })
 

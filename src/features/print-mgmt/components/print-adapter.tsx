@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Printer, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { createLogger } from '@/lib/logger'
 import { BarcodeService } from '../services/barcode-service'
 import { PrintRecordService } from '../services/print-record-service'
+import { PRINT_BATCHES_QUERY_KEY } from '../query-keys'
 import { type BarcodeConfig } from '../../engineering/data/schema'
 
 const logger = createLogger('PrintAdapter')
@@ -26,6 +28,7 @@ export function PrintAdapter({
   templateName,
 }: PrintAdapterProps) {
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const [isPrinting, setIsPrinting] = useState(false)
 
   const handleBatchPrint = async () => {
@@ -43,6 +46,7 @@ export function PrintAdapter({
         productId,
         quantity,
       })
+      await queryClient.invalidateQueries({ queryKey: PRINT_BATCHES_QUERY_KEY })
 
       toast.success(t('printMgmt.adapter.submitSuccess', { quantity }), {
         description: t('printMgmt.adapter.submitSuccessDescription', {

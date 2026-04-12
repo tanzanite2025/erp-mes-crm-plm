@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
-import { changePurchaseOrderExpectedDate, changePurchaseOrderLineAdd, changePurchaseOrderLineContent, changePurchaseOrderLineRemove, changePurchaseOrderSupplier, savePurchaseOrder } from '../services/purchase-transaction-service'
+import { purchaseOrderHeaderTransactions, purchaseOrderLineTransactions } from '../services/purchase-transaction-service'
 import {
   confirmPurchaseReceipt,
   createPurchaseOrder,
@@ -17,23 +18,23 @@ import {
 } from '../services/purchase-service'
 
 function invalidatePurchaseOrderQueries(queryClient: ReturnType<typeof useQueryClient>, orderId?: string) {
-  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+  queryClient.invalidateQueries({ queryKey: tradingQueryKeys.purchaseOrdersRoot() })
 
   if (orderId) {
-    queryClient.invalidateQueries({ queryKey: ['purchase-orders', orderId] })
+    queryClient.invalidateQueries({ queryKey: tradingQueryKeys.purchaseOrderDetail(orderId) })
   }
 }
 
 export const useGetPurchaseOrders = (page = 1, pageSize = 50) => {
   return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
-    queryKey: ['purchase-orders', page, pageSize],
+    queryKey: tradingQueryKeys.purchaseOrders(page, pageSize),
     queryFn: () => getPurchaseOrders(page, pageSize),
   })
 }
 
 export const useGetPurchaseOrderDetail = (id: string) => {
   return useQuery({
-    queryKey: ['purchase-orders', id],
+    queryKey: tradingQueryKeys.purchaseOrderDetail(id),
     queryFn: () => getPurchaseOrderById(id),
     enabled: !!id,
   })
@@ -80,7 +81,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => savePurchaseOrder(orderId, { delta, finalData, operator, expectedVersion, actorId }),
+    }) => purchaseOrderHeaderTransactions.savePurchaseOrder(orderId, { delta, finalData, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },
@@ -102,7 +103,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changePurchaseOrderSupplier(orderId, { supplierId, supplierName, operator, expectedVersion, actorId }),
+    }) => purchaseOrderHeaderTransactions.changePurchaseOrderSupplier(orderId, { supplierId, supplierName, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },
@@ -122,7 +123,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changePurchaseOrderLineRemove(orderId, { lines, operator, expectedVersion, actorId }),
+    }) => purchaseOrderLineTransactions.changePurchaseOrderLineRemove(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },
@@ -142,7 +143,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changePurchaseOrderLineAdd(orderId, { lines, operator, expectedVersion, actorId }),
+    }) => purchaseOrderLineTransactions.changePurchaseOrderLineAdd(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },
@@ -162,7 +163,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changePurchaseOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
+    }) => purchaseOrderLineTransactions.changePurchaseOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },
@@ -191,7 +192,7 @@ export const usePurchaseOrderMutations = () => {
       operator: string
       expectedVersion: number
       actorId?: string
-    }) => changePurchaseOrderExpectedDate(orderId, { expectedDate, operator, expectedVersion, actorId }),
+    }) => purchaseOrderHeaderTransactions.changePurchaseOrderExpectedDate(orderId, { expectedDate, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       handleSavedSuccess(data.id)
     },

@@ -12,6 +12,7 @@ import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
 import { type PurchaseOrder } from '../../data/schema'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { usePurchaseOrderListViewModel } from '../../hooks/use-purchase-order-list-view-model'
 import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
 
 export function PurchaseOrderList() {
@@ -58,37 +59,14 @@ export function PurchaseOrderList() {
   }, [search, detailId])
 
   const { paymentMethodOptions, paymentTermOptions } = usePurchaseOrderFilterOptions(orders)
-
-  const filteredOrders = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase()
-
-    return (orders || []).filter((order: PurchaseOrder) => {
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        [
-          order.orderNo,
-          order.supplierName,
-          order.paymentMethod,
-          order.paymentMethodName,
-          order.paymentTerm,
-          order.paymentTermName,
-        ].some((value) => (value?.toLowerCase() ?? '').includes(normalizedSearch))
-
-      const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter
-      const matchesPaymentMethod =
-        paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
-      const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
-
-      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
-    })
-  }, [orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
-
-  const selectedOrder = useMemo(
-    () =>
-      filteredOrders.find((order: PurchaseOrder) => order.id === (selectedId || filteredOrders[0]?.id)) ??
-      filteredOrders[0],
-    [filteredOrders, selectedId]
-  )
+  const { filteredOrders, selectedOrder } = usePurchaseOrderListViewModel({
+    orders,
+    searchTerm,
+    statusFilter,
+    paymentMethodFilter,
+    paymentTermFilter,
+    selectedId,
+  })
 
   const handleAddOrder = () => {
     if (!allowsAction('action_trading_purchase_order_manage')) return

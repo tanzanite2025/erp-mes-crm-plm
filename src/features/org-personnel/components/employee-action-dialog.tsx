@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -35,10 +35,8 @@ import {
     type PersonnelFormFieldKey,
     type PersonnelSelectOption,
 } from '../config/personnel-archive-columns'
-import { type OrgNode } from '../data/org-schema'
 import { type Employee } from '../data/schema'
-import { OrgService } from '../services/org-service'
-import { PositionService } from '../services/position-service'
+import { useOrgPersonnelLookups } from '../hooks/use-org-personnel-lookups'
 
 const UNASSIGNED_POSITION_VALUE = '__UNASSIGNED_POSITION__'
 
@@ -108,8 +106,6 @@ export function EmployeeActionDialog({
 }: EmployeeActionDialogProps) {
     const { locale, t } = useLanguage()
     const isEdit = !!currentRow
-    const [dynamicDepts, setDynamicDepts] = useState<PersonnelSelectOption[]>([])
-    const [positionOptions, setPositionOptions] = useState<PersonnelSelectOption[]>([])
     const getColumnLabel = (key: PersonnelFormFieldKey) => t(`orgPersonnel.excel.columns.${key}` as TranslationKey)
     const getOptionLabel = (label: string) => (label.includes('.') ? t(label as TranslationKey) : label)
     const deptFieldLabel = getColumnLabel('deptId')
@@ -123,6 +119,10 @@ export function EmployeeActionDialog({
     const noPositionLabel = locale === 'zh-CN' ? '无岗位' : 'No position'
     const initialFormValues = useMemo(() => buildFormValues(currentRow), [currentRow])
     const { data: deltaProxy, tracker } = useDeltaTracker(initialFormValues, open)
+    const { departmentOptions, positions } = useOrgPersonnelLookups({
+        enabled: open,
+        includePositions: true,
+    })
 
     const formSchema = z.object({
         id: z.string().optional(),
@@ -153,40 +153,16 @@ export function EmployeeActionDialog({
         defaultValues: initialFormValues,
     })
 
-    useEffect(() => {
-        if (!open) return
-
-        const loadDynamicData = async () => {
-            const [orgData, positions] = await Promise.all([
-                OrgService.getOrgTree(),
-                PositionService.getPositions(),
-            ])
-
-            const flattenDepts = (nodes: OrgNode[]): PersonnelSelectOption[] => {
-                let results: PersonnelSelectOption[] = []
-                nodes.forEach(node => {
-                    if (node.type === 'department') {
-                        results.push({ label: node.name, value: node.id })
-                    }
-                    if (node.children) {
-                        results = [...results, ...flattenDepts(node.children)]
-                    }
-                })
-                return results
-            }
-
-            setDynamicDepts(flattenDepts(orgData))
-            setPositionOptions([
-                { label: noPositionLabel, value: UNASSIGNED_POSITION_VALUE },
-                ...positions.map(position => ({
-                    label: position.orgUnitName ? `${position.name} / ${position.orgUnitName}` : position.name,
-                    value: position.id,
-                })),
-            ])
-        }
-
-        void loadDynamicData()
-    }, [noPositionLabel, open])
+    const positionOptions = useMemo(
+        () => [
+            { label: noPositionLabel, value: UNASSIGNED_POSITION_VALUE },
+            ...positions.map(position => ({
+                label: position.orgUnitName ? `${position.name} / ${position.orgUnitName}` : position.name,
+                value: position.id,
+            })),
+        ],
+        [noPositionLabel, positions]
+    )
 
     useEffect(() => {
         if (!open) return
@@ -284,7 +260,7 @@ export function EmployeeActionDialog({
                                                         value={field.value}
                                                         onValueChange={field.onChange}
                                                         placeholder={fieldConfig.key === 'deptId' ? deptFieldLabel : getColumnLabel(fieldConfig.key)}
-                                                        items={resolveFieldOptions(fieldConfig, dynamicDepts).map(opt => ({
+                                                        items={resolveFieldOptions(fieldConfig, departmentOptions).map(opt => ({
                                                             ...opt,
                                                             label: getOptionLabel(opt.label),
                                                         }))}

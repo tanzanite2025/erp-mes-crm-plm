@@ -3,6 +3,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
+import { useSalesOrderClaimButtonViewModel } from '../../hooks/use-sales-order-claim-button-view-model'
+import { getSalesOrderDrawingLabel } from '../../hooks/use-sales-order-drawing-labels'
+import { getSalesOrderDrawingTitle } from '../../hooks/use-sales-order-drawing-titles'
+import { useSalesOrderDrawingView } from '../../hooks/use-sales-order-drawing-view'
+import { useSalesOrderDetailLineRows } from '../../hooks/use-sales-order-detail-line-rows'
+import { useSalesOrderDetailTableColumns } from '../../hooks/use-sales-order-detail-table-columns'
+import { useSalesOrderDetailViewModel } from '../../hooks/use-sales-order-detail-view-model'
 import { SalesOrderStatusBadge } from './sales-order-status-badge'
 
 type DrawingType = 'spec' | 'drilling' | 'labeling'
@@ -11,38 +18,33 @@ function DrawingAction({
   productId,
   planId,
   type,
-  label,
   holeCount,
   onPreview,
 }: {
   productId?: string
   planId?: string
   type: DrawingType
-  label: string
   holeCount?: number
   onPreview: (productId: string | undefined, planId: string | undefined, type: DrawingType) => void
 }) {
   const { t } = useLanguage()
-  const colorClass =
-    type === 'spec'
-      ? 'border-blue-200/50 hover:bg-blue-500/10 hover:text-blue-600'
-      : type === 'drilling'
-        ? 'border-indigo-200/50 hover:bg-indigo-500/10 hover:text-indigo-600'
-        : 'border-teal-200/50 text-teal-600 hover:bg-teal-500/10 hover:text-teal-600'
+  const { className: colorClass } = useSalesOrderDrawingView(type)
+  const labelText = getSalesOrderDrawingLabel({ type, t })
+  const titleText = getSalesOrderDrawingTitle({ type, t })
 
   return (
     <Button
       variant='outline'
       size='sm'
       className={`h-7 gap-1.5 rounded-lg border px-2 text-[10px] font-black uppercase tracking-tighter transition-all disabled:opacity-30 ${colorClass}`}
-      onClick={(e) => {
-        e.stopPropagation()
+      onClick={(event) => {
+        event.stopPropagation()
         onPreview(productId, planId, type)
       }}
-      title={t('tradingSalesOrder.detail.drawing.previewTitle', { label })}
+      title={t('tradingSalesOrder.detail.drawing.previewTitle', { label: titleText })}
     >
       <Eye className='size-3' />
-      <span>{label}</span>
+      <span>{labelText}</span>
       {holeCount !== undefined && <span className='font-mono opacity-50'>[{holeCount}H]</span>}
     </Button>
   )
@@ -66,9 +68,10 @@ export function SalesOrderDetailItemsCard({
   onPreview,
 }: SalesOrderDetailItemsCardProps) {
   const { t } = useLanguage()
-  const uniqueClaimableModels = Array.from(
-    new Set(order.lines.filter((line) => !line.claimedBy).map((line) => line.productModel))
-  )
+  const { claimableModels } = useSalesOrderDetailViewModel(order)
+  const lineRows = useSalesOrderDetailLineRows(order)
+  const columns = useSalesOrderDetailTableColumns(t)
+  const { className: claimButtonClassName } = useSalesOrderClaimButtonViewModel(isClaimAction)
 
   return (
     <Card className='overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner backdrop-blur-sm'>
@@ -82,14 +85,12 @@ export function SalesOrderDetailItemsCard({
           </div>
           <div className='flex items-center gap-2'>
             {order.status === 'Pending' &&
-              uniqueClaimableModels.map((model) => (
+              claimableModels.map((model) => (
                 <Button
                   key={model}
                   variant='outline'
                   size='sm'
-                  className={`h-6 rounded-lg border-primary/30 px-2 text-[9px] font-black text-primary transition-all hover:bg-primary/5 ${
-                    isClaimAction ? 'animate-pulse bg-primary/10 shadow-lg ring-2 ring-primary ring-offset-1' : ''
-                  }`}
+                  className={claimButtonClassName}
                   onClick={() => onClaimModel(model)}
                 >
                   {t('tradingSalesOrder.detail.claimModel')}: {model}
@@ -102,147 +103,113 @@ export function SalesOrderDetailItemsCard({
           <table className='w-full border-collapse text-left'>
             <thead>
               <tr className='border-b bg-muted/5'>
-                <th className='w-[40px] px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.no')}
-                </th>
-                <th className='px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.product')}
-                </th>
-                <th className='px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.snapshot')}
-                </th>
-                <th className='px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.shipment')}
-                </th>
-                <th className='px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.productionRef')}
-                </th>
-                <th className='px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.drawing')}
-                </th>
-                <th className='px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.process')}
-                </th>
-                <th className='px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                  {t('tradingSalesOrder.detail.headers.state')}
-                </th>
+                {columns.map((column) => (
+                  <th key={column.key} className={column.className}>
+                    {column.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className='divide-y divide-muted-foreground/10'>
-              {order.lines.map((line) => (
-                <tr key={`${order.id}-${line.lineNo}`} className='group transition-all hover:bg-primary/5'>
+              {lineRows.map((row) => (
+                <tr key={row.key} className='group transition-all hover:bg-primary/5'>
                   <td className='px-3 py-2 text-center font-mono text-[10px] text-muted-foreground/30'>
-                    {line.lineNo}
+                    {row.line.lineNo}
                   </td>
                   <td className='px-3 py-2'>
                     <div className='flex flex-col'>
-                      <span className='text-[11px] font-black tracking-tighter'>{line.productModel}</span>
-                      <span className='text-[8px] font-mono text-muted-foreground/40'>ID: {line.productId || 'UN-REG'}</span>
+                      <span className='text-[11px] font-black tracking-tighter'>{row.line.productModel}</span>
+                      <span className='text-[8px] font-mono text-muted-foreground/40'>
+                        ID: {row.line.productId || 'UN-REG'}
+                      </span>
                     </div>
                   </td>
                   <td className='px-3 py-2'>
                     <div className='flex flex-col'>
                       <span
                         className='max-w-[120px] truncate text-[10px] font-bold leading-tight text-foreground/70'
-                        title={line.specification}
+                        title={row.specificationLabel}
                       >
-                        {line.specification}
+                        {row.specificationLabel}
                       </span>
                       <p
                         className='max-w-[150px] truncate text-[8px] leading-snug text-muted-foreground/40'
-                        title={line.description}
+                        title={row.descriptionLabel}
                       >
-                        {line.description}
+                        {row.descriptionLabel}
                       </p>
                     </div>
                   </td>
                   <td className='px-3 py-2 text-center'>
                     <div className='flex flex-col items-center gap-1 leading-none'>
                       <div className='flex items-baseline gap-0.5'>
-                        <span
-                          className={`text-[11px] font-black tabular-nums ${
-                            (line.deliveredQty || 0) > 0 ? 'text-primary' : 'text-foreground'
-                          }`}
-                        >
-                          {line.deliveredQty || 0}
+                        <span className={`text-[11px] font-black tabular-nums ${row.deliveredTextClass}`}>
+                          {row.deliveredQty}
                         </span>
                         <span className='text-[8px] font-bold italic text-muted-foreground/40'>
-                          / {line.qty.toLocaleString()}
+                          / {row.line.qty.toLocaleString()}
                         </span>
                       </div>
                       <div className='h-1 w-12 overflow-hidden rounded-full border border-muted/20 bg-muted/50'>
                         <div
-                          className={`h-full transition-all duration-1000 ${
-                            (line.deliveredQty || 0) >= line.qty ? 'bg-emerald-500' : 'bg-primary'
-                          }`}
-                          style={{ width: `${Math.min(100, ((line.deliveredQty || 0) / line.qty) * 100)}%` }}
+                          className={`h-full transition-all duration-1000 ${row.deliveredBarClass}`}
+                          style={{ width: `${row.deliveredPercent}%` }}
                         />
                       </div>
-                      <span className='text-[7px] font-black uppercase opacity-30'>{line.uom}</span>
+                      <span className='text-[7px] font-black uppercase opacity-30'>{row.line.uom}</span>
                     </div>
                   </td>
                   <td className='px-3 py-2'>
                     <div className='flex flex-col leading-tight'>
                       <div className='flex items-center gap-1'>
                         <span className='text-[7px] font-black opacity-20'>JOB:</span>
-                        <span className='text-[9px] font-mono font-bold'>{line.jobNo || '-'}</span>
+                        <span className='text-[9px] font-mono font-bold'>{row.jobNoLabel}</span>
                       </div>
                       <div className='flex items-center gap-1'>
                         <span className='text-[7px] font-black opacity-20'>REF:</span>
-                        <span className='text-[9px] font-mono font-bold'>{line.customerPartNo || '-'}</span>
+                        <span className='text-[9px] font-mono font-bold'>{row.customerPartNoLabel}</span>
                       </div>
                     </div>
                   </td>
                   <td className='px-3 py-2 text-center'>
                     <div className='flex flex-col items-center justify-center gap-1'>
+                      <DrawingAction productId={row.line.productId} type='spec' onPreview={onPreview} />
                       <DrawingAction
-                        productId={line.productId}
-                        type='spec'
-                        label={t('tradingSalesOrder.detail.drawing.spec')}
-                        onPreview={onPreview}
-                      />
-                      <DrawingAction
-                        planId={line.drillingPlanId}
-                        holeCount={line.holeCount}
+                        planId={row.line.drillingPlanId}
+                        holeCount={row.line.holeCount}
                         type='drilling'
-                        label={t('tradingSalesOrder.detail.drawing.drilling')}
                         onPreview={onPreview}
                       />
-                      <DrawingAction
-                        planId={line.labelingPlanId}
-                        type='labeling'
-                        label={t('tradingSalesOrder.detail.drawing.labeling')}
-                        onPreview={onPreview}
-                      />
+                      <DrawingAction planId={row.line.labelingPlanId} type='labeling' onPreview={onPreview} />
                     </div>
                   </td>
                   <td className='px-3 py-2'>
                     <div className='flex flex-col leading-tight'>
                       <span className='max-w-[60px] truncate text-[9px] font-medium text-foreground/50'>
-                        {line.route || t('tradingSalesOrder.detail.processDefault')}
+                        {row.routeLabel || t('tradingSalesOrder.detail.processDefault')}
                       </span>
                     </div>
                   </td>
                   <td className='px-3 py-2 text-center'>
                     <div className='flex flex-col items-center gap-1.5'>
-                      <SalesOrderStatusBadge status={line.status} />
-                      {order.status === 'Pending' && !line.claimedBy && (
+                      <SalesOrderStatusBadge status={row.line.status} />
+                      {order.status === 'Pending' && !row.line.claimedBy && (
                         <Button
                           size='sm'
                           variant='secondary'
                           className='h-6 rounded-lg bg-primary/10 px-2 text-[9px] font-black uppercase tracking-tighter text-primary transition-all hover:scale-105 hover:bg-primary hover:text-white active:scale-95'
-                          onClick={() => onClaimLine(line.lineNo)}
+                          onClick={() => onClaimLine(row.line.lineNo)}
                         >
                           {t('tradingSalesOrder.detail.claimItem')}
                         </Button>
                       )}
-                      {line.claimedBy && (
+                      {row.line.claimedBy && (
                         <div className='flex flex-col items-center opacity-70'>
                           <span className='text-[8px] font-black uppercase tracking-tighter text-emerald-600'>
                             {t('tradingSalesOrder.detail.claimed')}
                           </span>
                           <span className='max-w-[50px] truncate text-[8px] font-bold text-muted-foreground'>
-                            {line.claimedBy || claimOperator}
+                            {row.line.claimedBy || claimOperator}
                           </span>
                         </div>
                       )}

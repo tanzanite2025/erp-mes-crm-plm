@@ -1,3 +1,307 @@
+- [ ] 715. architecture：工程属性值模块接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮最明确的机器值字段包括：
+    - [x] `ProductAttributeCategory.key`
+    - [x] `ProductAttributeOption.value`
+  - [x] 已确认当前已有局部机器值规范工具：`src/features/engineering/utils/product-attribute-machine-value.ts`
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/engineering/components/product-attributes/product-attribute-category-dialog.tsx`
+    - [x] `src/features/engineering/components/product-attributes/product-attribute-option-dialog.tsx`
+    - [x] `src/features/engineering/services/product-attribute-category-service.ts`
+    - [x] `src/features/engineering/services/product-attribute-option-service.ts`
+    - [x] `src/features/engineering/hooks/use-product-attribute-write-actions.ts`
+  - [x] 已确认推荐方向不是直接改用 `normalizeMachineCode` 覆盖原规则，而是优先复用该模块现有的 `product-attribute-machine-value` 规则，并与全局 normalization 分层协同。
+  - [x] 已确认该模块机器值规则与此前大写码不同：
+    - [x] 允许小写字母、数字、连字符
+    - [x] 会把空格/下划线折叠为 `-`
+    - [x] 最终转为小写
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不把工程属性机器值粗暴切到 `normalizeMachineCode`
+    - [x] 不改 `labelZh / labelEn / name` 等展示字段
+    - [x] 不跳过规划直接批量替换 engineering 全模块
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 收口 category dialog / option dialog 的输入边界
+    - [ ] 收口 category / option service 的保存边界
+    - [ ] 评估 write actions / adapter 是否增加机器值兜底
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 714. architecture：生产共享资源模块接入全局码规范化（2026-04-12，待确认）
+  - [x] 已确认本轮目标模块不是 `production-resource-service / production-resource-sync` 本身，而是它们下游的真实保存边界与表单入口。
+  - [x] 已确认当前主要候选接入点包括：
+    - [x] `src/features/production-shared/services/production-lines-service.ts`
+    - [x] `src/features/production-shared/services/production-processes-service.ts`
+    - [x] `src/features/production-shared/adapters/production-resource-api-adapter.ts`
+    - [x] `src/features/production-shared/tabs/work-architecture/components/process-library-panel.tsx`
+  - [x] 已确认本轮最明确的机器值字段包括：
+    - [x] `ProductionLine.code`
+    - [x] `ProductionProcessStep.code`
+  - [x] 已确认 `production-resource-sync.ts` 当前主要负责事件与失效通知，不是码规范化的主要收口点。
+  - [x] 已确认推荐接入顺序为：
+    - [x] 先统一 `line.code / step.code` 的表单输入与保存边界
+    - [x] 再检查 adapter DTO 出口是否继续需要最终兜底规范化
+    - [x] 最后再评估是否扩展到更多 production shared 子结构
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不在未识别字段语义前对所有 `name / description / attributes` 做规范化
+    - [x] 不把 sync 事件名当成机器码字段处理
+    - [x] 不跳过规划直接批量替换 production-shared 全模块
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 为 `ProductionLine.code / ProductionProcessStep.code` 接入公共 normalization
+    - [ ] 收口 `process-library-panel` 等表单输入边界
+    - [ ] 评估 adapter 出口是否增加最终兜底规范化
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 713. architecture：机器码 / 人工输入码全局规范化扩展方案（2026-04-12，待确认）
+  - [x] 已确认当前问题不是“完全没做码规范化”，而是此前只在局部场景做过抽取，尚未形成全局统一规范层。
+  - [x] 已确认当前已存在的局部规范化落点主要包括：
+    - [x] `src/features/terminal-config/tabs/pda-shell.tsx`
+    - [x] `src/features/terminal-config/tabs/pda-terminal.tsx`
+    - [x] `src/features/terminal-config/services/pda-shell-queue-service.ts`
+    - [x] `src/features/scan-platform/services/*`
+    - [x] `src/features/warehouse/tabs/warehouse-category.tsx`
+  - [x] 已确认当前缺口本质为：
+    - [x] 扫码主链存在局部规范化
+    - [x] 业务表单存在零散规范化
+    - [x] 缺少项目级统一 `code normalization` 能力
+  - [x] 已确认本轮推荐方向不是继续在每个组件里追加 `trim().toUpperCase()`，而是建立公共规范函数层。
+  - [x] 已确认公共规范应按码类型拆分，而不是做一个万能粗暴函数：
+    - [x] 机器码
+    - [x] 追踪码
+    - [x] 物料码
+    - [x] 设备码
+    - [x] 场景 key / slug
+  - [x] 已确认推荐推进顺序：
+    - [x] 先统一扫码主链（PDA / scan-platform / queue）
+    - [x] 再统一业务保存边界
+    - [x] 最后再视情况扩展到更多工业流程入口
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不对所有字段一刀切强制 `toUpperCase`
+    - [x] 不在未区分字段语义前批量替换全仓代码
+    - [x] 不跳过规划直接大面积修改业务代码
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 建立公共 `code normalization` 目录与函数契约
+    - [ ] 先收口 `pda-shell / pda-terminal / scan-platform / pda-shell-queue-service`
+    - [ ] 再收口 `warehouse-category` 与其它机器码保存边界
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 712. architecture：右侧悬浮小手柄快捷扫描入口方案（2026-04-12，待确认）
+  - [x] 已确认目标形态不是独立 Tab，而是页面右侧的悬浮小手柄 / 快捷抽屉。
+  - [x] 已确认目标交互为：
+    - [x] 点击右侧小手柄展开快捷动作
+    - [x] 只显示当前账号有权限使用的快捷扫描动作
+    - [x] 点击动作后直接进入对应扫描页
+    - [x] 页面默认进入扫描态，而不是先进入普通浏览态再手动切换
+  - [x] 已确认本轮推荐首批快捷动作可从以下高频现场作业开始：
+    - [x] 入库扫描
+    - [x] 出库扫描
+    - [x] 盘点扫描
+  - [x] 已确认快捷动作显示应由权限驱动，而不是账号硬编码绑定。
+  - [x] 已确认本轮重要架构约束：
+    - [x] 手机扫码与 PDA 扫码不得拆成两套离线协议
+    - [x] 必须继续共用 `offline-sync`
+    - [x] 必须继续共用 `stocktake-offline-adapter`
+    - [x] 必须继续共用 `pending_log`
+    - [x] 必须继续共用 `conflict_records`
+  - [x] 已确认快捷手柄层只负责：
+    - [x] 动作发现
+    - [x] 权限过滤
+    - [x] 页面跳转与扫描态参数分发
+  - [x] 已确认快捷手柄层不负责：
+    - [x] 不重做业务 service
+    - [x] 不新建第二套离线同步协议
+    - [x] 不替代现有模块页面本身的业务处理逻辑
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 建立快捷动作注册表与权限过滤规则
+    - [ ] 实现右侧悬浮小手柄 / 快捷抽屉 UI
+    - [ ] 为首批扫描页补齐 `mode=scan` 直接进入扫描态能力
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 711. architecture：PDA 盘点扫描链路离线 SDRTS 试点细化方案（2026-04-12，待确认）
+  - [x] 已确认首批试点对象为 `warehouse stocktake PDA` 扫描链路。
+  - [x] 已确认本轮细化目标不是立即落代码，而是把试点压到“可施工”粒度。
+  - [x] 已确认试点分阶段范围：
+    - [x] Phase A：`StocktakeMaintenanceService.pdaSubmitScan`
+    - [x] Phase B：`StocktakeMaintenanceService.pdaBulkSync`
+    - [x] Phase C：`StocktakeMaintenanceService.pdaPatchItem`
+  - [x] 已确认建议目录与职责拆分方向：
+    - [x] `src/offline-sync/` 承载公共基础设施层
+    - [x] `src/features/warehouse/stocktake/offline/` 承载 PDA 试点 adapter
+    - [x] 页面与 Hook 只调用 adapter / facade，不直连 IndexedDB / Dexie
+  - [x] 已确认 PDA 试点最小本地表结构需覆盖：
+    - [x] `snapshot`
+    - [x] `pending_log`
+    - [x] `sync_meta`
+    - [x] 如发生冲突，可追加 `conflict_records`
+  - [x] 已确认 PDA 试点最小能力闭环包括：
+    - [x] 扫描入队
+    - [x] 本地持久化恢复
+    - [x] 联网后 replay / flush
+    - [x] 幂等重试
+    - [x] 冲突升级
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接落第二批模块
+    - [x] 不把试点扩大到全部 warehouse 写链
+    - [x] 不在试点阶段重写现有 Workflow / StandardCommand 体系
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 进入 PDA 试点代码实施规划或直接开始最小骨架代码
+    - [ ] 先落 `offline-sync/storage + queue + meta` 最小骨架
+    - [ ] 再接 `warehouse/stocktake/offline` adapter
+
+- [ ] 710. architecture：离线 SDRTS adapter 首批试点模块选择（2026-04-12，待确认）
+  - [x] 已完成首批候选模块评估，重点对比了：
+    - [x] 仓储产品入库 `product-inbound.tsx`
+    - [x] PDA / 盘点扫描链路 `StocktakeMaintenanceService.pdaSubmitScan / pdaBulkSync / pdaPatchItem`
+    - [x] 仓储调整执行 `AdjustmentService.execute`
+    - [x] 计件维护 `PieceworkMaintenanceService`
+  - [x] 已确认首批试点选择标准包括：
+    - [x] 工业现场断网价值高
+    - [x] 写入频率高
+    - [x] 写模型边界清晰
+    - [x] 冲突语义可控
+    - [x] 不一上来就压中最复杂的 Workflow / 长事务核心链路
+  - [x] 已确认当前最推荐的首批试点是：
+    - [x] `warehouse stocktake PDA` 扫描与盘点项 patch 链路
+  - [x] 已确认不推荐作为第一批试点的原因包括：
+    - [x] `product-inbound` 更偏表单式提交，离线价值有但不如 PDA 高频现场扫描强
+    - [x] `AdjustmentService.execute` 属于命令执行型动作，首批试点语义过重
+    - [x] `PieceworkMaintenanceService` 当前协议形态较粗，且存在 `any/Partial` 倾向，不适合作为离线架构首样板
+  - [x] 已确认首批试点建议范围：
+    - [x] 先覆盖 `pdaSubmitScan`
+    - [x] 再覆盖 `pdaBulkSync`
+    - [x] 最后视情况纳入 `pdaPatchItem`
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 按 PDA 盘点扫描链路细化试点范围、目录和接口
+    - [ ] 定义该试点的 adapter、存储表结构与 replay 规则
+    - [ ] 再决定是否进入代码试点实施
+
+- [ ] 709. architecture：离线 SDRTS 基础设施层（方向 A）项目级架构方案（2026-04-12，待确认）
+  - [x] 已确认当前目标不是让每个模块各自重做一套离线同步逻辑，而是规划一套可复用的离线基础设施层。
+  - [x] 已确认当前核心约束包括：
+    - [x] 不削弱“后端权威”
+    - [x] 不破坏 `services/` 去副作用化
+    - [x] 不绕开 `Workflow / DispatchService / StandardCommand`
+    - [x] 不回退到字符串散落的全局事件模式
+  - [x] 已确认当前推荐架构不是“单一 pending queue”，而是：
+    - [x] `snapshot + pending log + sync meta` 三层结构
+    - [x] 基础设施层平台化
+    - [x] 冲突语义领域化（模块 adapter）
+  - [x] 已确认本轮先输出项目级架构方案，不直接进入代码执行。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不直接改 IndexedDB 实现代码
+    - [x] 不直接落某个模块试点
+    - [x] 不把本轮扩大为全量离线化实施
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 明确离线基础设施层目录、文件职责与接口草案
+    - [ ] 明确模块 adapter 的边界、职责与接入方式
+    - [ ] 明确与 DTO / services / Workflow / StandardCommand 的兼容原则
+    - [ ] 后续再决定是否进入试点模块执行
+
+- [ ] 708. layout：侧边栏分类标题字号与颜色层级优化（2026-04-12，待确认）
+  - [x] 已确认上一轮已完成侧边栏分类折叠，但当前分类标题的视觉层级仍弱于菜单项。
+  - [x] 已确认当前问题包括：
+    - [x] 分类标题字号偏小
+    - [x] 分类标题颜色对比度偏弱
+    - [x] 分类标题与菜单项在层级上不够明显区分
+  - [x] 已确认本轮目标是仅做样式层级优化：
+    - [x] 将分类标题字号提升到接近菜单标题级别
+    - [x] 为分类标题增加更明确的颜色/状态样式
+    - [x] 保持现有折叠交互与路由逻辑不变
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不再次调整侧边栏信息架构
+    - [x] 不改分类折叠逻辑
+    - [x] 不扩大为整套导航主题重做
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 调整 `NavGroup` 分类标题字号、字重、颜色和 hover/active 态
+    - [ ] 保持菜单项与分类标题的视觉层级更清晰
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 707. layout：侧边栏分类支持折叠并默认展开当前分类（2026-04-12，待确认）
+  - [x] 已确认当前侧边栏只有整栏折叠与内容滚动兜底，不支持“分类级折叠”。
+  - [x] 已确认当前问题不是物理看不到菜单，而是分组越来越多后单列信息密度过高、滚动成本升高。
+  - [x] 已确认本轮推荐方向是：
+    - [x] 让每个侧边栏分类支持折叠/展开
+    - [x] 默认展开当前命中路由所属分类
+    - [x] 其它分类默认收起
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不把本轮扩大为整套侧边栏 UI 重写
+    - [x] 不同时引入过重的自适应布局逻辑
+    - [x] 不先做复杂持久化，优先解决当前溢出与扫描负担
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 为 `NavGroup` 增加分类折叠/展开能力
+    - [ ] 默认展开当前路由所属分类，其他分类默认收起
+    - [ ] 保留现有整栏折叠与滚动兜底能力
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 706. warehouse：将仓储从资源管理子菜单提升为独立分类导航（2026-04-12，待确认）
+  - [x] 已确认当前问题不只是“物料档案叫什么名字”，而是仓储导航承载层级已经不合适。
+  - [x] 已确认当前症状包括：
+    - [x] 仓储目前归于“资源管理”侧边栏菜单下
+    - [x] 仓储模块内部 tabs 已承载较多页面
+    - [x] 物料档案虽业务上属于仓储，但继续塞入当前 tabs 已不合理
+  - [x] 已确认本轮推荐方向是：
+    - [x] 将“仓储”从资源管理的子菜单提升为独立分类/模块组
+    - [x] 在该分类下并列放置“仓储作业”和“物料档案”
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不仅用菜单文案加括号（如“物料档案（仓储）”）作为长期方案
+    - [x] 不直接扩大为整个侧边栏权限体系重构
+    - [x] 不联动重写 warehouse 页面内部全部 tabs 结构
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 调整侧边栏/模块导航，使“仓储”成为独立分类
+    - [ ] 将“仓储作业”和“物料档案”作为该分类下并列入口
+    - [ ] 保持现有页面路由与权限门控尽量低破坏迁移
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 705. org-personnel：新建请假申请崩溃（Maximum update depth exceeded）修复（2026-04-12，待确认）
+  - [x] 已确认当前问题发生在 `LEAVE_MANAGEMENT` 模块点击“新建请假申请”后。
+  - [x] 已确认当前报错包含两类现象：
+    - [x] `/leaves/stats` 与 `/leaves/my` 请求失败
+    - [x] React `Maximum update depth exceeded`
+  - [x] 已确认页面主链涉及文件包括：
+    - [x] `src/features/org-personnel/tabs/leave-management.tsx`
+    - [x] `src/features/org-personnel/components/leave-action-dialog.tsx`
+    - [x] `src/features/org-personnel/hooks/use-submit-leave-request.ts`
+    - [x] `src/features/org-personnel/services/leave-service.ts`
+  - [x] 已确认当前高优先级怀疑点包括：
+    - [x] `leave-action-dialog.tsx` 中 Dialog + `react-hook-form` 组合的状态重置链路
+    - [x] 弹窗打开后某个受控字段或 ref 回调在重复触发更新
+    - [x] `/leaves/stats`、`/leaves/my` 请求失败可能是并发背景噪音，不一定是崩溃根因
+  - [x] 已确认本轮目标是先修复“新建请假申请直接崩溃”的根问题，再判断是否需要补强 leaves 请求失败的兜底表现。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不扩大为整个人事模块重构
+    - [x] 不直接改后端请假接口语义
+    - [x] 不顺手重写 leave 列表页的统计逻辑
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 修复 `LeaveActionDialog` 打开时的无限更新链路
+    - [ ] 视情况补强 `/leaves/stats` 与 `/leaves/my` 请求失败时的页面稳定性
+    - [ ] 执行定向验证并更新 `walkthrough.md`
+
+- [ ] 704. warehouse：`/warehouse/inbound` 缺少明确入库按钮的业务修复（2026-04-12，待确认）
+  - [x] 已确认当前问题不是后端无入库能力，而是前端页面把入库入口弱化成“搜索结果卡片点击 + hover 才显按钮”，导致页面上看起来没有明确可执行的入库操作。
+  - [x] 已确认页面入口位于：
+    - [x] `src/routes/_authenticated/warehouse/inbound.lazy.tsx`
+    - [x] `src/features/warehouse/tabs/product-inbound.tsx`
+  - [x] 已确认当前已有入库提交流程仍然存在：
+    - [x] 搜索结果点击 `openInboundForm(item)`
+    - [x] 弹窗中点击 `submitInbound()`
+    - [x] 最终调用 `InventoryTransactionService.recordInbound()`
+  - [x] 已确认当前“看起来没有按钮”的直接原因包括：
+    - [x] 搜索结果区没有稳定常显的主操作按钮
+    - [x] 结果卡片右侧按钮仅在 hover 态下明显显示，且文案是 `select`，语义偏弱
+    - [x] 当前交互更像“选中条目”，而不是“执行入库”
+  - [x] 已确认本轮目标是补齐**明确、可见、可理解**的入库入口，而不是重写整个入库流程。
+  - [x] 已确认本轮先做专项规划，不直接修改业务代码。
+  - [x] 已确认本轮不做以下事项：
+    - [x] 不改后端 `/inventory/inbound` 接口语义
+    - [x] 不改 `InventoryTransactionService.recordInbound()` 提交结构
+    - [x] 不扩大为仓储入库页面整体重做
+    - [x] 不联动改造 shipment / inventory / stocktake 其它页面
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 在 `product-inbound.tsx` 中补一个明确常显的“入库”主按钮入口
+    - [ ] 视情况将当前弱语义 `select` 文案调整为更直观的“入库 / 登记入库”语义
+    - [ ] 保持现有权限门控 `action_warehouse_inbound_record` 与现有弹窗提交流程不变
+    - [ ] 执行定向验证并更新 `walkthrough.md`
 
 - [ ] 703. purchase：第二阶段收口规划（`usePurchaseOrderForm` / 写操作边界）（2026-04-12，待确认）
   - [x] 已确认 `purchase` 方向 A 第一轮 UI 容器拆分已完成，并已通过 `eslint` / `tsc` 验证。

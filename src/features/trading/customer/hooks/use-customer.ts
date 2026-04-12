@@ -3,11 +3,12 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type Customer } from '../../data/schema'
+import { tradingQueryKeys } from '../../query-keys'
 import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
-    queryKey: ['customers'],
+    queryKey: tradingQueryKeys.customers(),
     queryFn: getCustomers,
     ...options,
   })
@@ -15,7 +16,7 @@ export const useGetCustomers = (options = {}) => {
 
 export const useGetCustomerList = (options = {}) => {
   return useQuery({
-    queryKey: ['customers', 'list'],
+    queryKey: tradingQueryKeys.customerList(),
     queryFn: getCustomerList,
     ...options,
   })
@@ -49,8 +50,8 @@ export const useCustomerMutations = () => {
     },
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.created'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -63,8 +64,8 @@ export const useCustomerMutations = () => {
     },
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -89,8 +90,8 @@ export const useCustomerMutations = () => {
     }) => saveCustomer(id, { delta, finalData, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -113,8 +114,8 @@ export const useCustomerMutations = () => {
     }) => changeCustomerStatus(id, { status, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -139,8 +140,8 @@ export const useCustomerMutations = () => {
     }) => changeCustomerIdentity(id, { code, name, operator, expectedVersion, actorId }),
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.updated'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.saveFailed'))
@@ -151,8 +152,8 @@ export const useCustomerMutations = () => {
     mutationFn: deleteCustomer,
     onSuccess: () => {
       toast.success(t('trading.customers.toasts.deleted'))
-      queryClient.invalidateQueries({ queryKey: ['customers'] })
-      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customers() })
+      queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })
     },
     onError: (error) => {
       toast.error(resolveCustomerErrorMessage(error, 'trading.customers.errors.deleteFailed'))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
     flexRender,
     getCoreRowModel,
@@ -8,7 +8,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table'
-import { Search, FileText, BookOpen, Target, Eye, FileSpreadsheet, FileCode, ArrowUpRight, Hash, Clock } from 'lucide-react'
+import { Search, FileText, Eye, ArrowUpRight, Hash, Clock } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -25,45 +25,31 @@ import {
 import { DataTablePagination } from '@/components/data-table'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
-import { SpecsService } from '../services/specs-service'
-import { ProductionDBService } from '../services/production-db-service'
 import { FileResolverService } from '../services/file-resolver-service'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
 import { useLanguage } from '@/context/language-provider'
-
-type UnifiedEntry = {
-    id: string
-    name: string
-    category: 'SPEC' | 'DRILLING' | 'LABELING'
-    subType: string
-    relationId?: string
-    fileExtension?: string
-    fileUrl?: string
-    createdAt: string
-}
+import { type UnifiedEntry, useEngineeringDbOverview } from '../hooks/use-engineering-db-overview'
+import {
+    getEngineeringDbCategoryBadgeClass,
+    getEngineeringDbCategoryLabel,
+    getEngineeringDbFileVisual,
+    getEngineeringDbPreviewKind,
+    getEngineeringDbSubtypeLabel,
+    normalizeEngineeringDbFileExtension,
+} from '../view-helpers'
 
 export function OverviewTab() {
     const { t } = useLanguage()
     const [searchTerm, setSearchTerm] = useState('')
-    const { data: products = [] } = useGetProducts()
     const navigate = useNavigate()
-    
-    const [data, setData] = useState<UnifiedEntry[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data, filteredData, productMap, stats, isLoading: loading } = useEngineeringDbOverview(searchTerm)
 
     const [previewFile, setPreviewFile] = useState<{ url: string; name: string; sku?: string } | null>(null)
     const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
     const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
     const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
-
-    const productMap = useMemo(() => {
-        const map = new Map<string, (typeof products)[0]>()
-        products.forEach(p => map.set(p.id, p))
-        return map
-    }, [products])
 
     useEffect(() => {
         return () => {
@@ -72,85 +58,13 @@ export function OverviewTab() {
             }
         }
     }, [previewFile?.url])
-
-    useEffect(() => {
-        const loadAllData = async () => {
-            setLoading(true)
-            try {
-                const [specsData, drillingData, labelingData] = await Promise.all([
-                    SpecsService.getSpecs(),
-                    ProductionDBService.getDrilling(),
-                    ProductionDBService.getLabeling()
-                ])
-
-                const specs = specsData.map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    category: 'SPEC' as const,
-                    subType: s.category || 'SOP',
-                    relationId: undefined,
-                    fileExtension: s.fileExtension,
-                    fileUrl: s.fileUrl,
-                    createdAt: s.createdAt
-                }))
-
-                const drilling = drillingData.map(dr => ({
-                    id: dr.id,
-                    name: dr.name,
-                    category: 'DRILLING' as const,
-                    subType: 'DRILLING_PLAN',
-                    relationId: dr.productId,
-                    fileExtension: dr.fileExtension,
-                    fileUrl: dr.fileUrl,
-                    createdAt: dr.createdAt
-                }))
-
-                const labeling = labelingData.map(lb => ({
-                    id: lb.id,
-                    name: lb.name,
-                    category: 'LABELING' as const,
-                    subType: 'LABELING_DRAFT',
-                    relationId: lb.productId || undefined,
-                    fileExtension: lb.fileExtension,
-                    fileUrl: lb.fileUrl,
-                    createdAt: lb.createdAt
-                }))
-
-                const combined = [...specs, ...drilling, ...labeling].sort((a, b) => 
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                )
-                setData(combined)
-            } finally {
-                setLoading(false)
-            }
-        }
-        loadAllData()
-    }, [])
-
-    const filteredData = useMemo(() => {
-        return data.filter(item => 
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.subType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    }, [data, searchTerm])
-
-    const stats = useMemo(() => [
-        { label: t('engineering.db.stats.technicalSpecs'), count: data.filter(d => d.category === 'SPEC').length, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-        { label: t('engineering.db.stats.drillingPlans'), count: data.filter(d => d.category === 'DRILLING').length, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-        { label: t('engineering.db.stats.labelingDrafts'), count: data.filter(d => d.category === 'LABELING').length, color: 'text-teal-500', bg: 'bg-teal-500/10' },
-        { label: t('engineering.db.stats.excelSheets'), count: data.filter(d => ['xlsx', 'xls', 'csv'].includes(d.fileExtension || '')).length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        { label: t('engineering.db.stats.cadDrawings'), count: data.filter(d => ['dwg', 'dxf', 'stp'].includes(d.fileExtension || '')).length, color: 'text-orange-500', bg: 'bg-orange-500/10' }
-    ], [data, t])
-
-    const getIconInfo = (ext?: string, category?: string) => {
-        const lowerExt = ext?.toLowerCase()
-        if (['xlsx', 'xls', 'csv'].includes(lowerExt || '')) return { icon: FileSpreadsheet, color: 'text-emerald-600', bg: 'bg-emerald-500/10' }
-        if (['dwg', 'dxf', 'stp', 'step'].includes(lowerExt || '')) return { icon: FileCode, color: 'text-orange-500', bg: 'bg-orange-500/10' }
-        if (category === 'SPEC') return { icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-500/10' }
-        if (category === 'LABELING') return { icon: FileText, color: 'text-teal-500', bg: 'bg-teal-500/10' }
-        return { icon: Target, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }
-    }
+    const statCards = useMemo(() => [
+        { label: t('engineering.db.stats.technicalSpecs'), count: stats.specCount, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        { label: t('engineering.db.stats.drillingPlans'), count: stats.drillingCount, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+        { label: t('engineering.db.stats.labelingDrafts'), count: stats.labelingCount, color: 'text-teal-500', bg: 'bg-teal-500/10' },
+        { label: t('engineering.db.stats.excelSheets'), count: stats.excelCount, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        { label: t('engineering.db.stats.cadDrawings'), count: stats.cadCount, color: 'text-orange-500', bg: 'bg-orange-500/10' }
+    ], [stats, t])
 
     const handlePreview = async (item: UnifiedEntry) => {
         if (item.fileUrl) {
@@ -160,17 +74,16 @@ export function OverviewTab() {
                 return
             }
             const product = productMap.get(item.relationId || '')
-            const ext = item.fileExtension?.toLowerCase()
-            
             setPreviewFile({
                 url: resolvedUrl,
                 name: item.name,
                 sku: product?.sku
             })
 
-            if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+            const previewKind = getEngineeringDbPreviewKind(item.fileExtension)
+            if (previewKind === 'excel') {
                 setExcelPreviewOpen(true)
-            } else if (['dwg', 'dxf', 'stp', 'step'].includes(ext || '')) {
+            } else if (previewKind === 'cad') {
                 setCadPreviewOpen(true)
             } else {
                 setPdfPreviewOpen(true)
@@ -186,14 +99,14 @@ export function OverviewTab() {
             header: t('engineering.db.table.topic'),
             cell: ({ row }) => {
                 const item = row.original
-                const ext = item.fileExtension?.toLowerCase()
-                const conf = getIconInfo(ext, item.category)
-                const Icon = conf.icon
+                const ext = normalizeEngineeringDbFileExtension(item.fileExtension)
+                const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: item.category })
+                const Icon = fileVisual.icon
 
                 return (
                     <div className='flex items-center gap-3'>
-                        <div className={`size-9 rounded-lg border ${conf.bg} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105`}>
-                            <Icon className={`size-5 ${conf.color}`} />
+                        <div className={`size-9 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105`}>
+                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
                         </div>
                         <div className='flex flex-col'>
                             <span className='font-bold text-sm text-foreground group-hover:text-primary transition-colors'>{item.name}</span>
@@ -212,15 +125,9 @@ export function OverviewTab() {
         {
             header: t('engineering.db.table.category'),
             cell: ({ row }) => {
-                const categoryLabel = row.original.category === 'SPEC' ? t('engineering.db.categories.spec') : 
-                                     row.original.category === 'DRILLING' ? t('engineering.db.categories.drilling') : t('engineering.db.categories.labeling')
-                const colorClass = row.original.category === 'SPEC' ? 'text-blue-500 bg-blue-500/10' : 
-                                   row.original.category === 'DRILLING' ? 'text-indigo-500 bg-indigo-500/10' :
-                                   'text-teal-500 bg-teal-500/10'
-                
-                const subTypeLabel = row.original.subType === 'DRILLING_PLAN' ? t('engineering.db.categories.drilling') :
-                                     row.original.subType === 'LABELING_DRAFT' ? t('engineering.db.categories.labeling') :
-                                     row.original.subType
+                const categoryLabel = getEngineeringDbCategoryLabel(t, row.original.category)
+                const colorClass = getEngineeringDbCategoryBadgeClass(row.original.category)
+                const subTypeLabel = getEngineeringDbSubtypeLabel(t, row.original.subType)
                 return (
                     <div className='flex flex-col gap-1'>
                         <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full w-fit uppercase tracking-tighter ${colorClass}`}>
@@ -338,7 +245,7 @@ export function OverviewTab() {
                 </div>
 
                 <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4'>
-                    {stats.map((stat, idx) => (
+                    {statCards.map((stat, idx) => (
                         <div key={idx} className={`flex flex-col gap-1 ${stat.bg} p-4 md:p-5 rounded-[20px] md:rounded-[24px] border border-white/5 shadow-sm hover:scale-[1.02] transition-all cursor-default`}>
                             <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-60 ${stat.color}`}>{stat.label}</span>
                             <div className='text-2xl md:text-3xl font-black italic tabular-nums tracking-tighter'>{stat.count}</div>
@@ -392,15 +299,10 @@ export function OverviewTab() {
                 ) : (
                     filteredData.map((item) => {
                         const product = productMap.get(item.relationId || '')
-                        const conf = getIconInfo(item.fileExtension, item.category)
-                        const Icon = conf.icon
-                        
-                        const mobileCategoryLabel = item.category === 'SPEC' ? t('engineering.db.categories.spec') : 
-                                                   item.category === 'DRILLING' ? t('engineering.db.categories.drilling') : t('engineering.db.categories.labeling')
-                        
-                        const mobileSubTypeLabel = item.subType === 'DRILLING_PLAN' ? t('engineering.db.categories.drilling') :
-                                                   item.subType === 'LABELING_DRAFT' ? t('engineering.db.categories.labeling') :
-                                                   item.subType
+                        const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: item.category })
+                        const Icon = fileVisual.icon
+                        const mobileCategoryLabel = getEngineeringDbCategoryLabel(t, item.category)
+                        const mobileSubTypeLabel = getEngineeringDbSubtypeLabel(t, item.subType)
 
                         return (
                             <div 
@@ -409,13 +311,13 @@ export function OverviewTab() {
                                 className='p-5 rounded-[28px] border border-dashed border-muted/50 bg-background/50 active:scale-[0.98] transition-all relative overflow-hidden group'
                             >
                                 <div className={`absolute top-0 right-0 p-4 opacity-20`}>
-                                    <Icon className={`size-12 ${conf.color}`} />
+                                    <Icon className={`size-12 ${fileVisual.iconClassName}`} />
                                 </div>
                                 
                                 <div className='flex flex-col gap-4'>
                                     <div className='flex items-center justify-between'>
-                                        <div className={`size-8 rounded-lg border ${conf.bg} flex items-center justify-center`}>
-                                            <Icon className={`size-4 ${conf.color}`} />
+                                        <div className={`size-8 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center`}>
+                                            <Icon className={`size-4 ${fileVisual.iconClassName}`} />
                                         </div>
                                         {product?.sku && (
                                             <Badge variant='outline' className='text-[10px] font-black italic font-mono bg-primary/5 border-none text-primary px-3 rounded-full h-5 leading-none'>

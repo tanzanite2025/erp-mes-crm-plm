@@ -1,22 +1,39 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { NotificationService } from '@/features/system-mgmt/notifications/notification-service'
+import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
 import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
 import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
 
+const invalidateSalesOrderReads = async (queryClient: QueryClient, orderId?: string) => {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrdersRoot() }),
+    ...(orderId
+      ? [queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderDetail(orderId) })]
+      : []),
+  ])
+}
+
 export const useSalesOrderMutations = () => {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
+  const invalidateSalesReads = (orderId?: string) => invalidateSalesOrderReads(queryClient, orderId)
+  const handleSavedSuccess = (orderId: string) => {
+    toast.success(t('tradingSalesOrder.toasts.saved'))
+    void invalidateSalesReads(orderId)
+  }
+  const handleVoidedSuccess = (orderId?: string) => {
+    toast.success(t('tradingSalesOrder.toasts.voided'))
+    void invalidateSalesReads(orderId)
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: Omit<SalesOrder, 'id' | 'version'>) => createSalesOrder(data),
     onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-
       if (data.status === 'Pending') {
         NotificationService.dispatch('ORDER_EVENT', {
           action: 'STATUS_CHANGED',
@@ -32,9 +49,7 @@ export const useSalesOrderMutations = () => {
         })
       }
 
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
+      handleSavedSuccess(data.id)
     },
     onError: handleServerError,
   })
@@ -60,12 +75,7 @@ export const useSalesOrderMutations = () => {
       void actorId
       return patchSalesOrder(orderId, delta, expectedVersion)
     },
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -83,15 +93,9 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderPurchaseOrderNo(orderId, { purchaseOrderNo, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
-
 
   const requirementsChangeMutation = useMutation({
     mutationFn: ({
@@ -107,12 +111,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderRequirements(orderId, { requirements, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -130,12 +129,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderDeliveryDate(orderId, { deliveryDate, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -157,12 +151,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderClassificationType(orderId, { classification, type, barcode, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -180,12 +169,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderLines(orderId, { lines, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -203,12 +187,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderLineContent(orderId, { lines, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -226,12 +205,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => addSalesOrderLine(orderId, { lines, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -249,12 +223,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => removeSalesOrderLine(orderId, { lines, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -274,12 +243,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => changeSalesOrderCustomer(orderId, { customerId, customerName, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -299,12 +263,7 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => transitionSalesOrderStatus(orderId, { status, statusNote, operator, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.saved'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleSavedSuccess(data.id),
     onError: handleServerError,
   })
 
@@ -322,21 +281,13 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => cancelSalesOrder(orderId, { operator, reason, expectedVersion, actorId }),
-    onSuccess: (data) => {
-      toast.success(t('tradingSalesOrder.toasts.voided'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
-      queryClient.invalidateQueries({ queryKey: ['requirements'] })
-    },
+    onSuccess: (data) => handleVoidedSuccess(data.id),
     onError: handleServerError,
   })
 
   const deleteMutation = useMutation({
     mutationFn: deleteSalesOrder,
-    onSuccess: () => {
-      toast.success(t('tradingSalesOrder.toasts.voided'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-    },
+    onSuccess: () => handleVoidedSuccess(),
     onError: handleServerError,
   })
 
@@ -356,8 +307,7 @@ export const useSalesOrderMutations = () => {
     }) => claimSalesOrderLines(orderId, { lineNos, operator, expectedVersion, actorId }),
     onSuccess: (data) => {
       toast.success(t('tradingSalesOrder.toasts.claimed'))
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] })
-      queryClient.invalidateQueries({ queryKey: ['sales-orders', data.id] })
+      void invalidateSalesReads(data.id)
     },
     onError: handleServerError,
   })

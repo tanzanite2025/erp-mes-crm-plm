@@ -1,18 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
-import { StocktakeCoreService, StocktakeMaintenanceService, type StocktakeItem } from '@/features/warehouse/stocktake'
-
-type ApiMutationError = Error & {
-  status?: number
-  isConflict?: boolean
-}
-
-function isVersionConflictError(error: unknown): error is ApiMutationError {
-  if (!error || typeof error !== 'object') return false
-  const candidate = error as ApiMutationError
-  return candidate.isConflict === true || candidate.status === 409
-}
+import { StocktakeCoreService, StocktakeOfflineAdapter, type StocktakeItem } from '@/features/warehouse/stocktake'
 
 export function useGetStocktakeTasks() {
   return useQuery({
@@ -32,9 +21,14 @@ export function useGetStocktakeItems(taskId: string) {
 export function useStocktakeMutations() {
   const queryClient = useQueryClient()
 
+  const refreshConflictQueries = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['pda_stocktake_conflicts'] })
+    await queryClient.invalidateQueries({ queryKey: ['pda_stocktake_resolved_conflicts'] })
+  }
+
   const patchItemMutation = useMutation({
-    mutationFn: ({ id, delta, version }: { id: string; delta: DeltaSet; version: number; taskId: string }) =>
-      StocktakeMaintenanceService.pdaPatchItem(id, delta, version),
+    mutationFn: ({ id, delta, version, taskId }: { id: string; delta: DeltaSet; version: number; taskId: string }) =>
+      StocktakeOfflineAdapter.submitPatchItem({ itemId: id, taskId, delta, version }),
     onMutate: async ({ id, delta, taskId }) => {
       await queryClient.cancelQueries({ queryKey: ['pda_stocktake_items', taskId] })
       const previousItems = queryClient.getQueryData<StocktakeItem[]>(['pda_stocktake_items', taskId])
@@ -69,27 +63,87 @@ export function useStocktakeMutations() {
         queryClient.setQueryData(['pda_stocktake_items', variables.taskId], context.previousItems)
       }
 
-      if (isVersionConflictError(err)) {
-        queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
-        toast.error('该盘点项已被其他人更新，请刷新后重试', {
-          description: '系统已开始重新拉取最新盘点明细。',
-          action: {
-            label: '立即刷新',
-            onClick: () => {
-              queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
-            },
-          },
-        })
+      toast.error('同步失败: ' + err.message)
+    },
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
+
+      if (result.status === 'queued') {
+        toast.success('盘点项变更已离线保存，网络恢复后会自动补交')
         return
       }
 
-      toast.error('同步失败: ' + err.message)
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', variables.taskId] })
+      if (result.status === 'conflict') {
+        toast.error('该盘点项存在版本冲突，请刷新后处理')
+        return
+      }
+
       toast.success('SDRTS 差量同步成功')
     },
   })
 
-  return { patchItemMutation }
+  const flushPatchMutation = useMutation({
+    mutationFn: () => StocktakeOfflineAdapter.flushQueuedPatches(),
+    onSuccess: async () => {
+      await refreshConflictQueries()
+    },
+  })
+
+  const resolveConflictMutation = useMutation({
+    mutationFn: (conflictId: string) => StocktakeOfflineAdapter.resolveConflict(conflictId),
+    onSuccess: async () => {
+      await refreshConflictQueries()
+    },
+  })
+
+  const retryConflictMutation = useMutation({
+    mutationFn: async ({ conflictId, taskId }: { conflictId: string; taskId: string }) => {
+      const result = await StocktakeOfflineAdapter.retryConflictAfterRefresh(conflictId)
+      await queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', taskId] })
+      await refreshConflictQueries()
+      return result
+    },
+  })
+
+  const batchResolveConflictMutation = useMutation({
+    mutationFn: async (conflictIds: string[]) => {
+      await Promise.all(conflictIds.map((conflictId) => StocktakeOfflineAdapter.resolveConflict(conflictId)))
+    },
+    onSuccess: async () => {
+      await refreshConflictQueries()
+    },
+  })
+
+  const batchRetryConflictMutation = useMutation({
+    mutationFn: async ({ conflictIds, taskId }: { conflictIds: string[]; taskId: string }) => {
+      await Promise.all(conflictIds.map((conflictId) => StocktakeOfflineAdapter.retryConflictAfterRefresh(conflictId)))
+      await queryClient.invalidateQueries({ queryKey: ['pda_stocktake_items', taskId] })
+    },
+    onSuccess: async () => {
+      await refreshConflictQueries()
+    },
+  })
+
+  const conflictsQuery = useQuery({
+    queryKey: ['pda_stocktake_conflicts'],
+    queryFn: () => StocktakeOfflineAdapter.listConflicts(),
+  })
+
+  const resolvedConflictsQuery = useQuery({
+    queryKey: ['pda_stocktake_resolved_conflicts'],
+    queryFn: () => StocktakeOfflineAdapter.listResolvedConflicts(),
+  })
+
+  return {
+    patchItemMutation,
+    flushPatchMutation,
+    resolveConflictMutation,
+    retryConflictMutation,
+    batchResolveConflictMutation,
+    batchRetryConflictMutation,
+    conflicts: conflictsQuery.data ?? [],
+    resolvedConflicts: resolvedConflictsQuery.data ?? [],
+    isLoadingConflicts: conflictsQuery.isLoading,
+    isLoadingResolvedConflicts: resolvedConflictsQuery.isLoading,
+  }
 }

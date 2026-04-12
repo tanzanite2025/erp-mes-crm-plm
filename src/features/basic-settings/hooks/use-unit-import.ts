@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { loadXLSX } from '@/lib/lazy-vendors'
 import { createLogger } from '@/lib/logger'
 import { translate, AppLocale } from '@/locales'
+import { BASIC_SETTINGS_UNITS_QUERY_KEY } from '../query-keys'
 import { unitService, Unit, UnitCategory } from '../services/unit-service'
 
 const logger = createLogger('useUnitImport')
@@ -66,6 +68,7 @@ function normalizeCategory(input: string): UnitCategory {
 
 export function useUnitImport(onSuccess: () => void) {
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const [isImporting, setIsImporting] = useState(false)
 
   const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +158,7 @@ export function useUnitImport(onSuccess: () => void) {
       })
 
       await unitService.sync(unitsToSync)
+      await queryClient.invalidateQueries({ queryKey: BASIC_SETTINGS_UNITS_QUERY_KEY })
       toast.success(t('basicSettings.units.import.success', { count: unitsToSync.length }), {
         id: toastId,
       })

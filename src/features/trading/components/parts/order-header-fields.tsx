@@ -1,24 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
 import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
 import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { type PaymentMethod, type PaymentTerm } from '@/features/finance/data/schema'
-import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
-import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
-import { createLogger } from '@/lib/logger'
 import { type Customer, type SalesOrder } from '../../data/schema'
-import {
-  getSalesOrderClassificationOptions,
-  getSalesOrderTypeOptions,
-} from '../../data/sales-order-options'
+import { useSalesOrderHeaderFieldsViewModel } from '../../hooks/use-sales-order-header-fields-view-model'
+import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 import { OrderEvidenceManager } from './order-evidence-manager'
 
 type SalesOrderFormState = Partial<SalesOrder>
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
-
-const logger = createLogger('OrderHeaderFields')
 
 interface OrderHeaderFieldsProps {
   formData: Partial<SalesOrder>
@@ -35,27 +26,23 @@ export function OrderHeaderFields({
 }: OrderHeaderFieldsProps) {
   const { t, locale } = useLanguage()
   const allowedEditStatuses = ['Draft', 'Pending']
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([])
-  const typeOptions = useMemo(() => getSalesOrderTypeOptions(locale), [locale])
-  const classificationOptions = useMemo(() => getSalesOrderClassificationOptions(locale), [locale])
-
-  useEffect(() => {
-    const loadFinanceData = async () => {
-      try {
-        const [paymentMethodData, paymentTermData] = await Promise.all([
-          PaymentMethodCoreService.getPaymentMethods(),
-          PaymentTermCoreService.getPaymentTerms(),
-        ])
-        setPaymentMethods(paymentMethodData.filter((item) => item.status === 'Active'))
-        setPaymentTerms(paymentTermData.filter((item) => item.status === 'Active'))
-      } catch (error) {
-        logger.error('Failed to load sales finance master data', error)
-      }
-    }
-
-    void loadFinanceData()
-  }, [])
+  const { paymentMethods, paymentTerms } = useTradingFinanceResources()
+  const {
+    typeOptions,
+    classificationOptions,
+    customerOptions,
+    paymentMethodOptions,
+    paymentTermOptions,
+    handleCustomerChange,
+    handlePaymentMethodChange,
+    handlePaymentTermChange,
+  } = useSalesOrderHeaderFieldsViewModel({
+    locale,
+    customers,
+    paymentMethods,
+    paymentTerms,
+    setFormData,
+  })
 
   return (
     <section className='space-y-3'>
@@ -111,19 +98,12 @@ export function OrderHeaderFields({
               <select
                 className='w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px] h-11'
                 value={formData.customerName}
-                onChange={(e) => {
-                  const customer = customers.find((item) => item.name === e.target.value)
-                  setFormData((prev) => ({
-                    ...prev,
-                    customerName: e.target.value,
-                    customerId: customer?.id,
-                  }))
-                }}
+                onChange={(e) => handleCustomerChange(e.target.value)}
               >
                 <option value=''>{t('tradingSalesOrder.headerFields.customerPlaceholder')}</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.name}>
-                    {customer.name}
+                {customerOptions.map((customer) => (
+                  <option key={customer.id} value={customer.value}>
+                    {customer.label}
                   </option>
                 ))}
               </select>
@@ -186,19 +166,12 @@ export function OrderHeaderFields({
             <select
               className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
               value={formData.paymentMethod || ''}
-              onChange={(e) => {
-                const selected = paymentMethods.find((item) => item.code === e.target.value)
-                setFormData((prev) => ({
-                  ...prev,
-                  paymentMethod: e.target.value,
-                  paymentMethodName: selected?.name || '',
-                }))
-              }}
+              onChange={(e) => handlePaymentMethodChange(e.target.value)}
             >
               <option value=''>{t('tradingSalesOrder.headerFields.paymentMethodPlaceholder')}</option>
-              {paymentMethods.map((method) => (
-                <option key={method.code} value={method.code}>
-                  {method.name}
+              {paymentMethodOptions.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
                 </option>
               ))}
             </select>
@@ -211,19 +184,12 @@ export function OrderHeaderFields({
             <select
               className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
               value={formData.paymentTerm || ''}
-              onChange={(e) => {
-                const selected = paymentTerms.find((item) => item.code === e.target.value)
-                setFormData((prev) => ({
-                  ...prev,
-                  paymentTerm: e.target.value,
-                  paymentTermName: selected?.name || '',
-                }))
-              }}
+              onChange={(e) => handlePaymentTermChange(e.target.value)}
             >
               <option value=''>{t('tradingSalesOrder.headerFields.paymentTermPlaceholder')}</option>
-              {paymentTerms.map((term) => (
-                <option key={term.code} value={term.code}>
-                  {term.name}
+              {paymentTermOptions.map((term) => (
+                <option key={term.value} value={term.value}>
+                  {term.label}
                 </option>
               ))}
             </select>

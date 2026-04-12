@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { CreditCard, Info, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
@@ -12,13 +13,13 @@ import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { isConflictError } from '@/lib/handle-server-error'
 import { type PaymentMethod } from '../data/schema'
+import { financeQueryKeys } from '../query-keys'
 import { PaymentMethodMaintenanceService } from '../services/payment-method-maintenance-service'
 
 interface PaymentMethodActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editingMethod: PaymentMethod | null
-  onSuccess: () => void
 }
 
 const DEFAULT_METHOD: Partial<PaymentMethod> = {
@@ -35,9 +36,9 @@ export function PaymentMethodActionDialog({
   open,
   onOpenChange,
   editingMethod,
-  onSuccess,
 }: PaymentMethodActionDialogProps) {
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const isEdit = !!editingMethod
   const shellClasses = buildActionDialogShellClasses({
     content: 'max-w-[95vw] sm:max-w-[520px] rounded-[32px]',
@@ -83,8 +84,8 @@ export function PaymentMethodActionDialog({
           ? t('finance.paymentMethods.toast.saveSuccessUpdated')
           : t('finance.paymentMethods.toast.saveSuccessCreated'),
       )
+      await queryClient.invalidateQueries({ queryKey: financeQueryKeys.paymentMethods() })
       onOpenChange(false)
-      onSuccess()
     } catch (error) {
       if (isConflictError(error)) {
         toast.error(t('finance.paymentMethods.toast.conflict'))
