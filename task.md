@@ -1,3 +1,17 @@
+- [ ] 772. plan：basic-settings 单点 TypeScript 编译阻塞修复（2026-04-12，待确认）
+  - [x] 已确认新增阻塞点不再是 `engineering-db` 主链路，而是 `basic-settings` 中的单点编译错误：
+    - [x] `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+  - [x] 已确认当前错误形态是未使用导入导致 `tsc` 失败：
+    - [x] `AppearanceMapping` 被导入但未使用
+  - [x] 已确认本轮最小修复边界：
+    - [x] 仅删除未使用的类型导入，不改业务逻辑
+    - [x] 修复后执行一次 `pnpm exec tsc --noEmit` 继续确认是否还有后续阻塞点
+    - [x] 不扩散到无关 warning 或样式清理
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 修改 `linear-barcode-mgmt.tsx` 的导入
+    - [ ] 执行 TypeScript 校验
+    - [ ] 更新 `walkthrough.md`
+
 - [ ] 771. plan：engineering-db TypeScript 类型报错修复（2026-04-12，待确认）
   - [x] 已确认当前报错集中在 `engineering-db` 模块的 schema / service / hook / tab 调用边界不一致：
     - [x] `src/features/engineering-db/hooks/use-spoke-length-mgmt.ts`

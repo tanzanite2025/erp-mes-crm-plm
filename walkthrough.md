@@ -1077,3 +1077,32 @@
 2. dialog 表单更新方式与仓内现有 `useDeltaTracker` 样板对齐
 
 这样既解决了截图中的 `id` / `name` 报错，也避免继续在 `engineering-db` 里保留“有的 dialog 直接改代理对象、有的 dialog 走 setFormData”的分裂写法。
+
+## 2026-04-12 - fix：basic-settings 单点 TypeScript 编译阻塞
+
+### 本轮目标
+
+修复 `basic-settings` 中在完整 TypeScript 编译时新暴露出的单点阻塞：
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+2. 未使用的 `AppearanceMapping` 类型导入
+
+### 本轮实现
+
+1. 删除 `linear-barcode-mgmt.tsx` 中未使用的 `AppearanceMapping` 类型导入
+2. 保留 `AppearanceActionDialog` 导入不变
+3. 不改动任何条码业务逻辑
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+这次 follow-up 属于典型的“修掉上一批错误后露出的下一个编译断点”。当前已经按最小边界清除 `linear-barcode-mgmt.tsx` 的未使用类型导入，并确认完整 TypeScript 编译重新通过。

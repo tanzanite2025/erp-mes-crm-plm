@@ -1,3 +1,59 @@
+### 1. plan：basic-settings 单点 TypeScript 编译阻塞修复
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+在上一轮 `engineering-db` 类型修复通过后，构建链继续暴露出一个新的单点 TypeScript 编译阻塞。当前截图显示问题位于：
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+
+#### 1.2 当前排查结论
+
+当前错误不是业务模型不一致，也不是 runtime schema 问题，而是一个更小的静态编译问题：
+
+1. `AppearanceActionDialog` 与 `AppearanceMapping` 同时被导入
+2. 当前文件只使用了 `AppearanceActionDialog`
+3. `AppearanceMapping` 未被消费
+4. `tsc` 因未使用声明而失败
+
+#### 1.3 推荐修复策略
+
+本轮建议做最小修复：
+
+1. 删除 `linear-barcode-mgmt.tsx` 中未使用的 `AppearanceMapping` 类型导入
+2. 不修改业务逻辑
+3. 修复后重新执行一次 `pnpm exec tsc --noEmit`
+
+#### 1.4 涉及文件
+
+预计仅涉及：
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+
+以及验证时更新：
+
+2. `walkthrough.md`
+
+#### 1.5 非目标边界
+
+本轮不做：
+
+1. 不顺带清理无关 lint / 样式 warning
+2. 不重构 `basic-settings` 条码配置逻辑
+3. 不扩大到其他未在当前构建日志中出现的文件
+
+#### 1.6 验证方式
+
+建议执行：
+
+1. `pnpm exec tsc --noEmit`
+
+#### 1.7 当前阶段结论
+
+这次新增阻塞点属于典型的“上一层错误修完后露出的下一个编译断点”，当前最合理的处理方式是做单点最小修复，并用一次完整 TypeScript 校验确认是否还有后续连锁问题。
+
 ### 1. plan：engineering-db TypeScript 类型报错修复
 
 日期：2026-04-12  
