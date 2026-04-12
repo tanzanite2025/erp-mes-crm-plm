@@ -9,7 +9,9 @@ import {
     normalizeChangeOrderEntity,
     normalizeEngineeringChangeOrderNo,
     normalizeEngineeringRevisionNo,
+    normalizeEngineeringRoutingVersionControlTag,
     normalizeEngineeringSiteCode,
+    normalizeProductRoutingEntity,
     normalizeProductTemplateEntity,
 } from './product-code-normalization'
 
@@ -101,12 +103,12 @@ export function buildChangeOrderDraft(overrides?: ChangeOrderDraftOverrides | nu
 }
 
 export function createProductRoutingDraft(overrides: ProductRoutingDraftOverrides = {}): ProductProcessRouting {
-    return {
+    return normalizeProductRoutingEntity({
         targetProductId: '',
-        versionControlTag: 'V1.0.0.Draft',
+        versionControlTag: normalizeEngineeringRoutingVersionControlTag('V1.0.0.Draft'),
         isCurrentlyActiveBlueprint: true,
         version: 1,
         routeNodes: [],
         ...overrides,
-    }
+    })
 }

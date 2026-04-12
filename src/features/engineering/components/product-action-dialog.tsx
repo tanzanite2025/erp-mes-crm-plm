@@ -23,6 +23,7 @@ import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
+import { getCreateProductTemplate } from '../utils/product-create-template-resolution'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 
 const logger = createLogger('ProductActionDialog')
@@ -108,7 +109,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     let cancelled = false
 
     const resolveBoundTemplate = async () => {
-      if (!watchedTypeId) {
+      if (!watchedTypeId && !currentRow?.templateKey) {
         if (!cancelled) {
           setBoundTemplate(null)
           setTemplateResolveError(null)
@@ -117,7 +118,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       }
 
       const selectedType = productTypes.find((type) => type.id === watchedTypeId)
-      if (!selectedType) {
+      if (!selectedType && !currentRow?.templateKey) {
         if (!cancelled) {
           setBoundTemplate(null)
           setTemplateResolveError(`Template binding resolution failed: product type ${watchedTypeId} was not found in the current dialog context.`)
@@ -128,31 +129,46 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
         return
       }
 
-      if (!selectedType.templateId) {
-        if (!cancelled) {
-          setBoundTemplate(null)
-          setTemplateResolveError(null)
-        }
-        return
-      }
-
       try {
-        const template = await getEffectiveTemplate(selectedType)
+        const result = isEdit
+          ? await getEffectiveTemplate({
+            productTypes,
+            typeId: watchedTypeId,
+            productTemplateKey: currentRow?.templateKey,
+          })
+          : await getCreateProductTemplate({
+            productTypes,
+            typeId: watchedTypeId,
+          })
         if (cancelled) return
 
+        const template = result.template
         if (!template) {
-          const message = `Template binding resolution failed: product type ${selectedType.name} (${selectedType.id}) references template ${selectedType.templateId}, but that template could not be resolved.`
+          const selectedTypeLabel = selectedType
+            ? `${selectedType.name} (${selectedType.id})`
+            : `unknown product type (${watchedTypeId || 'missing'})`
+          const message = isEdit && currentRow?.templateKey
+            ? `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding, and product templateKey ${currentRow.templateKey} could not be mapped to a concrete template.`
+            : `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding in its category chain.`
           setBoundTemplate(null)
           setTemplateResolveError(message)
-          logger.error('Template binding resolution failed: referenced template could not be resolved', {
-            productTypeId: selectedType.id,
-            templateId: selectedType.templateId,
+          logger.error('Template binding resolution failed: effective template could not be resolved', {
+            productTypeId: selectedType?.id,
+            templateId: selectedType?.templateId,
+            productTemplateKey: isEdit ? currentRow?.templateKey : undefined,
+            mode: isEdit ? 'edit' : 'create',
           })
           return
         }
 
         setBoundTemplate(template)
         setTemplateResolveError(null)
+        logger.info('Resolved effective template for product dialog', {
+          productTypeId: selectedType?.id,
+          templateId: template.id,
+          source: result.source,
+          mode: isEdit ? 'edit' : 'create',
+        })
       } catch (error) {
         if (cancelled) return
 
@@ -170,7 +186,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     return () => {
       cancelled = true
     }
-  }, [productTypes, watchedTypeId])
+  }, [currentRow?.templateKey, isEdit, productTypes, watchedTypeId])
 
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null

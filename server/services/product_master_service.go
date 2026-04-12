@@ -86,77 +86,7 @@ func replaceProductAttributeValues(tx *gorm.DB, productID string, items []models
 }
 
 func applyDerivedTemplateKeys(tx *gorm.DB, products []models.Product) error {
-	if len(products) == 0 {
-		return nil
-	}
-
-	typeIDs := make([]string, 0, len(products))
-	seenTypeIDs := make(map[string]struct{}, len(products))
-	for _, product := range products {
-		typeID := strings.TrimSpace(product.TypeID)
-		if typeID == "" {
-			continue
-		}
-		if _, exists := seenTypeIDs[typeID]; exists {
-			continue
-		}
-		seenTypeIDs[typeID] = struct{}{}
-		typeIDs = append(typeIDs, typeID)
-	}
-
-	if len(typeIDs) == 0 {
-		for idx := range products {
-			products[idx].TemplateKey = ""
-		}
-		return nil
-	}
-
-	var productTypes []models.ProductType
-	if err := tx.Select("id", "template_id").Where("id IN ?", typeIDs).Find(&productTypes).Error; err != nil {
-		return err
-	}
-
-	typeToTemplateID := make(map[string]string, len(productTypes))
-	templateIDs := make([]string, 0, len(productTypes))
-	seenTemplateIDs := make(map[string]struct{}, len(productTypes))
-	for _, productType := range productTypes {
-		if productType.TemplateID == nil {
-			continue
-		}
-		templateID := strings.TrimSpace(*productType.TemplateID)
-		if templateID == "" {
-			continue
-		}
-		typeToTemplateID[productType.ID] = templateID
-		if _, exists := seenTemplateIDs[templateID]; exists {
-			continue
-		}
-		seenTemplateIDs[templateID] = struct{}{}
-		templateIDs = append(templateIDs, templateID)
-	}
-
-	templateKeyByID := make(map[string]string, len(templateIDs))
-	if len(templateIDs) > 0 {
-		var templates []models.ProductTemplate
-		if err := tx.Select("id", "component_key").Where("id IN ?", templateIDs).Find(&templates).Error; err != nil {
-			return err
-		}
-		for _, template := range templates {
-			templateKeyByID[template.ID] = strings.TrimSpace(template.ComponentKey)
-		}
-	}
-
-	for idx := range products {
-		typeID := strings.TrimSpace(products[idx].TypeID)
-		templateID, ok := typeToTemplateID[typeID]
-		if !ok {
-			products[idx].TemplateKey = ""
-			continue
-		}
-		products[idx].TemplateKey = templateKeyByID[templateID]
-	}
-
-	return nil
+	return enrichProductsForEditRead(tx, products)
 }
 
 func ListProducts(query ProductListQuery) ([]models.Product, int64, error) {

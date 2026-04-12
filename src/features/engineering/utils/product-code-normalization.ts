@@ -2,6 +2,9 @@ import {
   normalizeComponentKey,
   normalizeChangeOrderNo,
   normalizeBomNo,
+  normalizeBomChangeType,
+  normalizeBomEffectiveDate,
+  normalizeBomStatus,
   normalizeBomVersion,
   normalizeMachineCode,
   normalizeModelCode,
@@ -10,7 +13,7 @@ import {
   normalizeSku,
   normalizeTemplateKey,
 } from '@/lib/codecs/code-normalization'
-import { type ChangeOrder, type ProductTemplate, type ProductType } from '../data/schema'
+import { type ChangeOrder, type ProductProcessRouting, type ProductTemplate, type ProductType } from '../data/schema'
 import {
   type SaveChangeOrderInput,
   type SaveProductInput,
@@ -137,11 +140,56 @@ export function normalizeEngineeringBomVersion(value?: string | null, fallback =
   return normalizeBomVersion(value, fallback)
 }
 
+export function normalizeEngineeringBomChangeType(
+  value?: string | null,
+  fallback: 'MANUAL' | 'ECO' | 'ECN' = 'MANUAL'
+): 'MANUAL' | 'ECO' | 'ECN' {
+  return normalizeBomChangeType(value, fallback)
+}
+
+export function normalizeEngineeringBomStatus(
+  value?: string | null,
+  fallback: 'draft' | 'active' | 'archived' = 'active'
+): 'draft' | 'active' | 'archived' {
+  return normalizeBomStatus(value, fallback)
+}
+
+export function normalizeEngineeringBomEffectiveDate(value?: string | null): string {
+  return normalizeBomEffectiveDate(value)
+}
+
+export function normalizeEngineeringRoutingVersionControlTag(
+  value?: string | null,
+  fallback = 'V1.0.0.Draft'
+): string {
+  return normalizeBomVersion(value, fallback)
+}
+
+export function normalizeProductRoutingEntity(
+  routing: ProductProcessRouting
+): ProductProcessRouting {
+  return {
+    ...routing,
+    versionControlTag: normalizeEngineeringRoutingVersionControlTag(routing.versionControlTag),
+    isCurrentlyActiveBlueprint: Boolean(routing.isCurrentlyActiveBlueprint),
+  }
+}
+
 export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
+  const normalizedSiteCode = normalizeEngineeringSiteCode(data.siteCode)
+
   return {
     ...data,
     bomNo: normalizeEngineeringBomNo(data.bomNo),
     bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
+    changeType: normalizeEngineeringBomChangeType(data.changeType),
+    status: normalizeEngineeringBomStatus(data.status),
+    changeOrderNo: normalizeEngineeringChangeOrderNo(data.changeOrderNo),
+    siteCode: normalizedSiteCode,
+    revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
+    effectiveFrom: normalizeEngineeringBomEffectiveDate(data.effectiveFrom) || undefined,
+    effectiveTo: normalizeEngineeringBomEffectiveDate(data.effectiveTo) || undefined,
+    isDefaultSite: normalizedSiteCode === '' || Boolean(data.isDefaultSite),
   }
 }
 

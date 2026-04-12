@@ -13,7 +13,12 @@ import { type BOMItemDraft } from '../mutation-types'
 import { CHANGE_ORDERS_QUERY_KEY, productOptionsQueryKey } from '../query-keys'
 import { changeOrderService } from '../services/change-order-service'
 import { ProductCoreService } from '../services/product-core-service'
-import { normalizeEngineeringBomVersion } from '../utils/product-code-normalization'
+import {
+  normalizeEngineeringBomChangeType,
+  normalizeEngineeringBomStatus,
+  normalizeEngineeringBomVersion,
+  normalizeEngineeringRevisionNo,
+} from '../utils/product-code-normalization'
 
 const logger = createLogger('useBOMForm')
 
@@ -33,10 +38,10 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
       productId: '',
       changeOrderId: '',
       bomVersion: normalizeEngineeringBomVersion('V1.0'),
-      revisionNo: 'R1',
-      changeType: 'MANUAL',
+      revisionNo: normalizeEngineeringRevisionNo('R1'),
+      changeType: normalizeEngineeringBomChangeType('MANUAL'),
       isDefaultSite: true,
-      status: 'active',
+      status: normalizeEngineeringBomStatus('active'),
       items: [],
       description: '',
       version: 1,
@@ -154,10 +159,10 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
           productId: initialProductId || '',
           changeOrderId: '',
           bomVersion: initialVersion,
-          revisionNo: 'R1',
-          changeType: 'MANUAL',
+          revisionNo: normalizeEngineeringRevisionNo('R1'),
+          changeType: normalizeEngineeringBomChangeType('MANUAL'),
           isDefaultSite: true,
-          status: 'active',
+          status: normalizeEngineeringBomStatus('active'),
           items: (initialItems || []).map((item) => ({
             ...item,
             substitutes: item.substitutes || [],

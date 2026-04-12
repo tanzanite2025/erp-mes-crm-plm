@@ -24,11 +24,11 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     return saveBOMSchema.parse({
         ...normalizedData,
         description: trimToUndefined(data.description),
-        revisionNo: trimToUndefined(data.revisionNo),
-        changeOrderNo: trimToUndefined(data.changeOrderNo),
-        siteCode: trimToUndefined(data.siteCode),
-        effectiveFrom: trimToNull(data.effectiveFrom),
-        effectiveTo: trimToNull(data.effectiveTo),
+        revisionNo: trimToUndefined(normalizedData.revisionNo),
+        changeOrderNo: trimToUndefined(normalizedData.changeOrderNo),
+        siteCode: trimToUndefined(normalizedData.siteCode),
+        effectiveFrom: trimToNull(normalizedData.effectiveFrom),
+        effectiveTo: trimToNull(normalizedData.effectiveTo),
         items: data.items.map((item) => ({
             ...item,
             section: item.section.trim(),

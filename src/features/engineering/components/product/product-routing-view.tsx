@@ -8,6 +8,7 @@ import { Plus, ArrowDown, Activity, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { type Product, type ProductProcessRouting, type ProductProcessRoutingNode } from '../../data/schema'
 import { createProductRoutingDraft } from '../../utils/default-builders'
+import { normalizeProductRoutingEntity } from '../../utils/product-code-normalization'
 import { useProductionProcessesQuery } from '@/features/production-shared/hooks/use-production-resources'
 
 interface ProductRoutingViewProps {
@@ -19,11 +20,15 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
     const [currentBlueprint, setCurrentBlueprint] = useState<ProductProcessRouting>(createProductRoutingDraft({
         targetProductId: product.id,
     }))
+    const normalizedCurrentBlueprint = useMemo(
+        () => normalizeProductRoutingEntity(currentBlueprint),
+        [currentBlueprint]
+    )
     const { data: globalProcessResourcePool } = useProductionProcessesQuery()
     const availableProcesses = useMemo(() => globalProcessResourcePool ?? [], [globalProcessResourcePool])
     const displayedRouteNodes = useMemo(() => {
-        if (currentBlueprint.routeNodes.length > 0 || availableProcesses.length < 2) {
-            return currentBlueprint.routeNodes
+        if (normalizedCurrentBlueprint.routeNodes.length > 0 || availableProcesses.length < 2) {
+            return normalizedCurrentBlueprint.routeNodes
         }
 
         return [
@@ -46,7 +51,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
                 qualityInspectionRequired: true,
             }
         ]
-    }, [availableProcesses, currentBlueprint.routeNodes])
+    }, [availableProcesses, normalizedCurrentBlueprint.routeNodes])
     const sortedDisplayedRouteNodes = useMemo(
         () => [...displayedRouteNodes].sort((a, b) => a.sequenceNumber - b.sequenceNumber),
         [displayedRouteNodes]
@@ -65,7 +70,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
             standardTimeValueInSeconds: 0,
             qualityInspectionRequired: false
         }
-        setCurrentBlueprint(prev => ({ ...prev, routeNodes: [...displayedRouteNodes, newNode] }))
+        setCurrentBlueprint(prev => normalizeProductRoutingEntity({ ...prev, routeNodes: [...displayedRouteNodes, newNode] }))
         toast.info('挂载了新的空白前置节点，请填写具体指引')
     }
 
@@ -87,7 +92,7 @@ export function ProductRoutingView({ product }: ProductRoutingViewProps) {
                 </div>
                 <div className='flex items-center gap-3'>
                     <Badge variant='outline' className='bg-purple-50 text-purple-700 border-purple-200 uppercase text-[10px] tracking-widest font-black py-1 px-4 rounded-full'>
-                        {currentBlueprint.versionControlTag}
+                        {normalizedCurrentBlueprint.versionControlTag}
                     </Badge>
                 </div>
             </div>

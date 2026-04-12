@@ -3,7 +3,7 @@
 import { RimSpecForm, RimSpecOverview } from './rim-spec'
 import { StemSpecForm, StemSpecOverview } from './stem-spec'
 import { ForkSpecForm, ForkSpecOverview } from './fork-spec'
-import { type ProductTemplate } from '../../data/schema'
+import { type ProductTemplate, type ProductType } from '../../data/schema'
 import { productTemplateService } from '../../services/product-template-service'
 
 type TranslationFn<T extends string = string> = (
@@ -12,7 +12,20 @@ type TranslationFn<T extends string = string> = (
 ) => string
 
 type TemplateBoundType = {
+  id?: string
+  parentId?: string | null
   templateId?: string | null
+}
+
+interface ProductEditTemplateParams {
+  productTypes: ProductType[]
+  typeId?: string | null
+  productTemplateKey?: string | null
+}
+
+export interface ProductEditTemplateResolution {
+  template: ProductTemplate | null
+  source: 'typeBinding' | 'productTemplateKey' | 'none'
 }
 
 export const SPEC_COMPONENTS = {
@@ -67,7 +80,78 @@ export function resolveTemplateFromType(
   return templates.find((template) => template.id === type.templateId) || null
 }
 
-export async function getEffectiveTemplate(type?: TemplateBoundType) {
+function resolveTemplateFromTypeChain(types: ProductType[], typeId?: string | null): TemplateBoundType | null {
+  const currentTypeId = typeId?.trim()
+  if (!currentTypeId) return null
+
+  const typeMap = new Map(types.map((type) => [type.id, type]))
+  const visited = new Set<string>()
+  let cursor: string | undefined = currentTypeId
+
+  while (cursor) {
+    if (visited.has(cursor)) return null
+    visited.add(cursor)
+
+    const currentType = typeMap.get(cursor)
+    if (!currentType) return null
+    if (currentType.templateId?.trim()) return currentType
+
+    cursor = currentType.parentId?.trim() || undefined
+  }
+
+  return typeMap.get(currentTypeId) || null
+}
+
+function resolveTemplateFromProductTemplateKey(
+  templates: ProductTemplate[],
+  productTemplateKey?: string | null
+): ProductTemplate | null {
+  const normalizedTemplateKey = productTemplateKey?.trim().toUpperCase()
+  if (!normalizedTemplateKey) return null
+
+  const matches = templates.filter(
+    (template) => template.componentKey.trim().toUpperCase() === normalizedTemplateKey
+  )
+
+  if (matches.length === 1) {
+    return matches[0]
+  }
+
+  const activeMatch = matches.find((template) => template.active)
+  return activeMatch || null
+}
+
+export function resolveEffectiveTemplate(
+  templates: ProductTemplate[],
+  params: ProductEditTemplateParams
+): ProductEditTemplateResolution {
+  const resolvedType = resolveTemplateFromTypeChain(params.productTypes, params.typeId)
+  const templateFromType = resolveTemplateFromType(templates, resolvedType ?? undefined)
+  if (templateFromType) {
+    return {
+      template: templateFromType,
+      source: 'typeBinding',
+    }
+  }
+
+  const templateFromProductTemplateKey = resolveTemplateFromProductTemplateKey(
+    templates,
+    params.productTemplateKey
+  )
+  if (templateFromProductTemplateKey) {
+    return {
+      template: templateFromProductTemplateKey,
+      source: 'productTemplateKey',
+    }
+  }
+
+  return {
+    template: null,
+    source: 'none',
+  }
+}
+
+export async function getEffectiveTemplate(params: ProductEditTemplateParams) {
   const templates = await productTemplateService.getTemplates()
-  return resolveTemplateFromType(templates, type)
+  return resolveEffectiveTemplate(templates, params)
 }

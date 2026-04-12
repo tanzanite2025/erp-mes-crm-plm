@@ -7,6 +7,14 @@ import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { type BOM, type ChangeOrder, type Product } from '../../data/schema'
+import {
+  normalizeEngineeringBomChangeType,
+  normalizeEngineeringBomEffectiveDate,
+  normalizeEngineeringBomStatus,
+  normalizeEngineeringChangeOrderNo,
+  normalizeEngineeringRevisionNo,
+  normalizeEngineeringSiteCode,
+} from '../../utils/product-code-normalization'
 import { getProductAttributes } from '../../utils/product-utils'
 
 type FormFieldName = keyof BOM | string
@@ -169,22 +177,23 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
       failLoudly(error, 'BOMFormHeader.changeOrderNo')
       throw error
     }
-    form.setValue('changeOrderNo', selected.changeOrderNo, { shouldDirty: true })
+    form.setValue('changeOrderNo', normalizeEngineeringChangeOrderNo(selected.changeOrderNo), { shouldDirty: true })
     if (selected.changeType) {
-      form.setValue('changeType', selected.changeType, { shouldDirty: true })
+      form.setValue('changeType', normalizeEngineeringBomChangeType(selected.changeType), { shouldDirty: true })
     }
     if (selected.siteCode !== undefined) {
-      form.setValue('siteCode', selected.siteCode, { shouldDirty: true })
-      form.setValue('isDefaultSite', selected.isDefaultSite ?? !selected.siteCode, { shouldDirty: true })
+      const normalizedSiteCode = normalizeEngineeringSiteCode(selected.siteCode)
+      form.setValue('siteCode', normalizedSiteCode, { shouldDirty: true })
+      form.setValue('isDefaultSite', selected.isDefaultSite ?? !normalizedSiteCode, { shouldDirty: true })
     }
     if (selected.revisionNo) {
-      form.setValue('revisionNo', selected.revisionNo, { shouldDirty: true })
+      form.setValue('revisionNo', normalizeEngineeringRevisionNo(selected.revisionNo), { shouldDirty: true })
     }
     if (selected.effectiveFrom) {
-      form.setValue('effectiveFrom', selected.effectiveFrom, { shouldDirty: true })
+      form.setValue('effectiveFrom', normalizeEngineeringBomEffectiveDate(selected.effectiveFrom), { shouldDirty: true })
     }
     if (selected.effectiveTo) {
-      form.setValue('effectiveTo', selected.effectiveTo, { shouldDirty: true })
+      form.setValue('effectiveTo', normalizeEngineeringBomEffectiveDate(selected.effectiveTo), { shouldDirty: true })
     }
   }
 
@@ -217,6 +226,14 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                           handleChangeOrderSelection(value, field.onChange)
                           return
                         }
+                        if (fieldConfig.name === 'changeType') {
+                          field.onChange(normalizeEngineeringBomChangeType(value))
+                          return
+                        }
+                        if (fieldConfig.name === 'status') {
+                          field.onChange(normalizeEngineeringBomStatus(value))
+                          return
+                        }
                         field.onChange(value)
                       }}
                       items={fieldConfig.items}
@@ -236,7 +253,33 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                         type={fieldConfig.inputType ?? 'text'}
                         readOnly={fieldConfig.readOnly}
                         placeholder={fieldConfig.placeholder}
-                        onChange={field.onChange}
+                        onChange={(event) => {
+                          const nextValue = event.target.value
+
+                          if (fieldConfig.name === 'changeOrderNo') {
+                            field.onChange(normalizeEngineeringChangeOrderNo(nextValue))
+                            return
+                          }
+
+                          if (fieldConfig.name === 'siteCode') {
+                            const normalizedSiteCode = normalizeEngineeringSiteCode(nextValue)
+                            field.onChange(normalizedSiteCode)
+                            form.setValue('isDefaultSite', normalizedSiteCode === '', { shouldDirty: true })
+                            return
+                          }
+
+                          if (fieldConfig.name === 'revisionNo') {
+                            field.onChange(normalizeEngineeringRevisionNo(nextValue))
+                            return
+                          }
+
+                          if (fieldConfig.name === 'effectiveFrom' || fieldConfig.name === 'effectiveTo') {
+                            field.onChange(normalizeEngineeringBomEffectiveDate(nextValue))
+                            return
+                          }
+
+                          field.onChange(event)
+                        }}
                         className={cn(
                           'h-11! rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner',
                           fieldConfig.className

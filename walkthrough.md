@@ -1,5 +1,189 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-13 - refactor：新增型号模板读取链单独抽离
+
+### 本轮目标
+
+将“新增型号创建态的模板读取链”从与编辑态共用的解析入口中单独抽离，明确创建态与编辑态是两种不同 authority，避免后续维护时误把两条路径混成一条。
+
+### 实现细节
+
+1. **新增创建态模板解析文件**
+   - 新增 `src/features/engineering/utils/product-create-template-resolution.ts`
+   - 单独承载新增型号模板读取链：
+     - `resolveCreateProductTemplate(...)`
+     - `getCreateProductTemplate(...)`
+   - 该链只负责：
+     - 按当前 `typeId` 解析模板
+     - 沿分类祖先链向上查找模板绑定
+   - 该链明确不承载历史产品 `templateKey` 兜底
+
+2. **创建态 / 编辑态调用点显式分流**
+   - 更新 `src/features/engineering/components/product-action-dialog.tsx`
+   - 当前行为：
+     - `isEdit === false` 时，创建态调用 `getCreateProductTemplate(...)`
+     - `isEdit === true` 时，编辑态继续调用 `getEffectiveTemplate(...)`
+   - 同时把日志中的 `mode` 明确为 `create / edit`，避免后续排查时混淆两条链路
+
+3. **编辑态解析文件语义收口**
+   - 更新 `src/features/engineering/components/specs/index.ts`
+   - 将编辑态模板解析参数/返回命名收口为更明确的编辑语义
+   - 继续保留编辑态的历史 `templateKey` 兜底能力，不让该逻辑反向污染新增态
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改产品模板管理 UI
+2. 未重构规格组件本身
+3. 未扩散到后端产品写入链路
+4. 当前只做创建态 / 编辑态模板读取分流，不继续扩散到其它产品表单语义
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把“新增型号模板读取链”从“编辑态有效模板解析链”中明确拆开：创建态现在只按当前表单选择与分类祖先链解析模板，编辑态则继续保留既有产品补全与历史 `templateKey` 兜底语义。这样后续即使继续调整其中一条链，也不容易再误伤另一条路径。
+
+## 2026-04-13 - refactor：已建产品编辑读取链从 product_master_service.go 单独抽离
+
+### 本轮目标
+
+将“已建产品点击编辑时的读取补全链”从 `server/services/product_master_service.go` 中单独抽离，避免高敏感编辑态读取逻辑继续埋在大文件里，同时保持现有对外接口与返回契约完全不变。
+
+### 实现细节
+
+1. **新增独立编辑读取 service 文件**
+   - 新增 `server/services/product_edit_read_service.go`
+   - 单独承载编辑态高风险读取补全逻辑：
+     - `productTypeTemplateBinding`
+     - `resolveTemplateIDFromProductTypeChain(...)`
+     - `loadProductTypeTemplateBindings(...)`
+     - `loadTemplateKeyByTemplateID(...)`
+     - `enrichProductsForEditRead(...)`
+
+2. **product_master_service.go 保留对外入口，内部改为委托**
+   - 更新 `server/services/product_master_service.go`
+   - `applyDerivedTemplateKeys(...)` 不再内联实现完整模板派生链
+   - 现在统一委托到 `enrichProductsForEditRead(...)`
+   - 这样 `GetProductByID(...)`、列表读取等外部调用点签名不变，但编辑态读取补全逻辑已经独立收口
+
+3. **补充抽离后的稳定性回归测试**
+   - 更新 `server/services/product_master_service_test.go`
+   - 当前已覆盖：
+     - 直接分类绑定模板
+     - 子分类继承父分类模板
+     - 无模板绑定时返回空 `templateKey`
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未全面拆分 `product_master_service.go` 的其它 CRUD 链路
+2. 未改变 `GetProductByID(...)` 等现有对外接口
+3. 未扩散到前端 UI 结构重构
+4. 未扩散到 BOM / Routing / 权限等无关模块
+
+### 验证结果
+
+已执行：
+
+1. `go test ./services -run "TemplateKeys|ProductTypeTemplate|NoBinding"`
+
+结果：
+
+1. 后端定向回归通过。
+
+### 当前阶段结论
+
+本轮已经把“已建产品编辑读取链”从超大文件中最小安全地单独抽离出来：高敏感模板派生与编辑态补全逻辑现在位于独立文件、独立职责入口中，而对外调用契约保持不变。这样后续如果继续审计或增强编辑态读取链，将不再需要在 `product_master_service.go` 大文件中冒险改动整段逻辑。
+
+## 2026-04-13 - fix：产品型号编辑弹窗规格模板不回显根因修复
+
+### 本轮目标
+
+修复“已建立的产品型号点击编辑后，规格模板不显示、模板表单不渲染”的问题，并确保修复落在模板绑定解析根因上，而不是仅在弹窗里做表面回显补丁。
+
+### 根因结论
+
+本轮确认真实问题不在模板页数据本身，而在“模板绑定解析语义”前后端同时存在偏差：
+
+1. **后端模板派生链路过窄**
+   - `server/services/product_master_service.go`
+   - 旧逻辑在派生产品 `templateKey` 时，只检查产品当前 `typeId` 对应分类自己的 `template_id`
+   - 如果模板绑定在父分类、产品挂在子分类，则产品返回给前端时 `templateKey` 会被派生成空
+
+2. **前端编辑弹窗解析链路过窄**
+   - `src/features/engineering/components/product-action-dialog.tsx`
+   - 旧逻辑只检查当前分类自身的 `templateId`
+   - 一旦当前分类未直接绑定模板，即使父分类已绑定、或产品历史上已有派生 `templateKey`，弹窗也会静默退化为“待选择规格模板”
+
+因此这是一个**模板绑定解析规则在前后端同时收窄**的问题，而不是单纯 UI 不回显。
+
+### 实现细节
+
+1. **后端：模板派生改为沿分类祖先链解析**
+   - 更新 `server/services/product_master_service.go`
+   - 新增祖先链模板解析 helper：
+     - `resolveTemplateIDFromProductTypeChain(...)`
+   - `applyDerivedTemplateKeys(...)` 不再只看当前分类自身 `template_id`
+   - 现在会沿 `parent_id -> parent_id ...` 向上查找第一个有效模板绑定
+
+2. **后端：补回归测试覆盖父分类模板继承场景**
+   - 更新 `server/services/product_master_service_test.go`
+   - 新增：
+     - `TestApplyDerivedTemplateKeysDerivesFromAncestorProductTypeTemplate`
+   - 断言：子分类自身未绑模板、父分类绑定模板时，产品仍能正确派生 `templateKey`
+
+3. **前端：规格模板解析收口为统一逻辑**
+   - 更新 `src/features/engineering/components/specs/index.ts`
+   - 新增：
+     - `resolveTemplateFromTypeChain(...)`
+     - `resolveTemplateFromProductTemplateKey(...)`
+     - `resolveEffectiveTemplate(...)`
+   - 新逻辑优先顺序：
+     - 先按分类祖先链解析 `templateId`
+     - 若仍无法解析，再按产品自身 `templateKey` 兜底映射模板
+
+4. **前端：编辑弹窗切换到统一有效模板解析**
+   - 更新 `src/features/engineering/components/product-action-dialog.tsx`
+   - 编辑态模板解析不再只依赖当前分类直接绑定
+   - 当分类未直接绑定模板但产品存在 `templateKey` 时，也能正确回显模板
+   - 同时补充了解析失败日志，避免再次静默退化
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改产品模板管理页 UI 或录入逻辑
+2. 未重做规格表单组件结构
+3. 未扩散到 BOM / Routing / 权限等无关模块
+4. 仍保持最终模板元数据以现有模板表为权威来源
+
+### 验证结果
+
+已执行：
+
+1. `go test ./services -run "TemplateKeys|ProductTypeTemplate"`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端模板派生定向回归通过
+2. 前端 TypeScript 编译校验通过
+
+### 当前阶段结论
+
+本轮已将“规格模板不回显”从表象修复提升为前后端一致的根因修复：后端产品 `templateKey` 派生与前端编辑弹窗模板解析都已改为支持分类祖先链模板绑定，并对历史产品保留 `templateKey` 兜底能力。这样既修复了当前编辑弹窗空白问题，也避免后续再因父子分类模板绑定语义不一致而重复出现同类故障。
+
 ## 2026-04-13 - fix：应收 / 应付页面样式纠偏与演示残留清理
 
 ### 本轮目标
@@ -1111,6 +1295,169 @@
 5. 未让前端按订单数据自行推导 authority，只是临时展示 mock 聚合结果
 
 ### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
+
+### 本轮目标
+
+将 `BOM` 中剩余仍未完整接回统一入口的枚举/日期控制字段收口到 engineering helper，重点覆盖：
+
+1. `changeType`
+2. `status`
+3. `effectiveFrom`
+4. `effectiveTo`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+4. `src/features/engineering/services/bom-service.ts`
+
+### 实现细节
+
+1. **扩展 BOM 统一 helper**
+   - 在 `product-code-normalization.ts` 中新增：
+     - `normalizeEngineeringBomChangeType(...)`
+     - `normalizeEngineeringBomStatus(...)`
+     - `normalizeEngineeringBomEffectiveDate(...)`
+   - 同时扩展 `normalizeBOMInput(...)`，统一纳入：
+     - `changeType`
+     - `status`
+     - `effectiveFrom`
+     - `effectiveTo`
+
+2. **收口 BOM 默认值边界**
+   - `use-bom-form.ts` 中：
+     - `changeType` 默认值改为统一复用 `normalizeEngineeringBomChangeType('MANUAL')`
+     - `status` 默认值改为统一复用 `normalizeEngineeringBomStatus('active')`
+     - 创建场景初始化值同步复用同一套 helper
+
+3. **收口 BOM 输入边界与 change order 回填边界**
+   - `bom-form-header.tsx` 中：
+     - `changeType` 选择改为统一通过 BOM helper 处理
+     - `status` 选择改为统一通过 BOM helper 处理
+     - `effectiveFrom / effectiveTo` 输入改为统一通过 BOM 日期 helper 处理
+     - 选择 change order 后回填 `changeType / effectiveFrom / effectiveTo` 时也统一通过 helper 收口
+
+4. **收口 BOM 保存边界**
+   - `bom-service.ts` 中：
+     - `effectiveFrom / effectiveTo` 保存边界改为复用 `normalizeBOMInput(...)` 结果
+     - 避免再直接基于原始输入做日期 trim 口径
+
+### 当前阶段结论
+
+这一步把 `BOM` 中的 `changeType / status / effectiveFrom / effectiveTo` 从“schema 与展示层已有规则，但表单默认值、输入边界、保存边界仍各自处理”的状态，正式接回 BOM 统一 helper。至此，BOM 这条控制字段规范化主线已经把核心控制字段、枚举字段和日期字段都收进统一入口。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-13 - impl：ProductProcessRouting 版本控制字段接入统一 helper
+
+### 本轮目标
+
+将 `ProductProcessRouting` 当前已存在但尚未形成统一入口的版本控制字段收口到 engineering helper，重点覆盖：
+
+1. `versionControlTag`
+2. `isCurrentlyActiveBlueprint`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/utils/default-builders.ts`
+3. `src/features/engineering/components/product/product-routing-view.tsx`
+
+### 实现细节
+
+1. **扩展 ProductProcessRouting 统一 helper**
+   - 在 `product-code-normalization.ts` 中新增：
+     - `normalizeEngineeringRoutingVersionControlTag(...)`
+     - `normalizeProductRoutingEntity(...)`
+   - 明确将 `versionControlTag / isCurrentlyActiveBlueprint` 作为版本控制字段统一治理
+
+2. **收口 routing draft 默认值边界**
+   - `default-builders.ts` 中：
+     - `createProductRoutingDraft(...)` 改为复用 `normalizeProductRoutingEntity(...)`
+     - `versionControlTag` 默认值通过 `normalizeEngineeringRoutingVersionControlTag('V1.0.0.Draft')` 收口
+
+3. **收口当前视图 state / 显示边界**
+   - `product-routing-view.tsx` 中：
+     - 当前蓝图 state 增加 `normalizedCurrentBlueprint`
+     - 显示的 `versionControlTag` 统一来自 helper 处理后的值
+     - 添加节点时也统一通过 `normalizeProductRoutingEntity(...)` 回写 state
+
+### 当前阶段结论
+
+这一步并没有假造 routing save service 或 adapter，而是只收口 `ProductProcessRouting` 当前真实存在的边界：draft 默认值、前端本地 state 与显示口径。现在 `versionControlTag / isCurrentlyActiveBlueprint` 已经具备 engineering 域内统一 helper，不再只散落在 schema 默认值和本地 mock state 中。
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. TypeScript 编译校验通过。
+
+## 2026-04-13 - impl：BOM 剩余控制字段接入统一 helper
+
+### 本轮目标
+
+将 `BOM` 中剩余仍未完整接回统一入口的控制字段收口到 engineering helper，重点覆盖：
+
+1. `revisionNo`
+2. `siteCode`
+3. `changeOrderNo`
+
+### 本轮修改文件
+
+1. `src/features/engineering/utils/product-code-normalization.ts`
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+
+### 实现细节
+
+1. **扩展 BOM 统一 helper**
+   - 在 `product-code-normalization.ts` 中扩展 `normalizeBOMInput(...)`
+   - 让其统一纳入：
+     - `changeOrderNo`
+     - `siteCode`
+     - `revisionNo`
+     - `isDefaultSite`
+   - 继续复用 `718` 已建立的 engineering 控制字段 helper，而不是新增 BOM 专属 codec
+
+2. **收口 BOM 默认值与初始化值**
+   - `use-bom-form.ts` 中：
+     - `revisionNo` 默认值改为统一复用 `normalizeEngineeringRevisionNo('R1')`
+     - 创建场景初始化值也统一复用该 helper
+
+3. **收口 BOM 输入边界与 change order 回填边界**
+   - `bom-form-header.tsx` 中：
+     - `changeOrderNo / siteCode / revisionNo` 输入改为统一复用 engineering 控制字段 helper
+     - change order 选中后的回填也改为统一通过 helper 收口
+     - `siteCode` 输入/回填时同步维护 `isDefaultSite`
+
+### 当前阶段结论
+
+这一步把 `BOM` 中的 `revisionNo / siteCode / changeOrderNo` 从“局部已有规则、但仍分散在 form header、默认值与保存边界”的状态，正式接回 `normalizeBOMInput(...)` 和 engineering 控制字段 helper。现在 BOM 的控制字段已经与前面 `718 / 719` 的收口方式对齐，默认值、输入、回填与保存边界共享同一套口径。
+
+### 测试与验证
 
 已执行：
 

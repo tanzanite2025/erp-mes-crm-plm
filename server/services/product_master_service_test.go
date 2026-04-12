@@ -174,3 +174,80 @@ func TestApplyDerivedTemplateKeysDerivesFromProductTypeTemplate(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "FORK", product.TemplateKey)
 }
+
+func TestApplyDerivedTemplateKeysDerivesFromAncestorProductTypeTemplate(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	templateID := "template-ancestor"
+	parentTypeID := "type-parent"
+	childTypeID := "type-child"
+	productID := "product-child"
+
+	require.NoError(t, testDB.Create(&models.ProductTemplate{
+		BaseModel:    models.BaseModel{ID: templateID},
+		Name:         "Rim Template",
+		Code:         "RIM_STD",
+		ComponentKey: "RIM",
+		Active:       true,
+		Version:      1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:         parentTypeID,
+		Name:       "Parent Type",
+		Code:       "PARENT",
+		TemplateID: &templateID,
+		Active:     true,
+		Version:    1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:       childTypeID,
+		ParentID: &parentTypeID,
+		Name:     "Child Type",
+		Code:     "CHILD",
+		Active:   true,
+		Version:  1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "PRD-CHILD-001",
+		Name:      "Child Product",
+		ModelCode: "01",
+		TypeID:    childTypeID,
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	product, err := GetProductByID(productID)
+	require.NoError(t, err)
+	require.Equal(t, "RIM", product.TemplateKey)
+}
+
+func TestApplyDerivedTemplateKeysReturnsEmptyTemplateKeyWhenNoBindingExists(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	typeID := "type-no-template"
+	productID := "product-no-template"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      typeID,
+		Name:    "No Template Type",
+		Code:    "NO_TEMPLATE",
+		Active:  true,
+		Version: 1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "PRD-NO-TPL-001",
+		Name:      "No Template Product",
+		ModelCode: "01",
+		TypeID:    typeID,
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	product, err := GetProductByID(productID)
+	require.NoError(t, err)
+	require.Equal(t, "", product.TemplateKey)
+}
