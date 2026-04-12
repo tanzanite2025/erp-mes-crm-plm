@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { type Customer } from '../data/schema'
+import type { TranslationKey } from '@/locales'
 
 interface CustomerActionViewModelOptions {
   customer?: Customer | null
-  t: (key: string) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
 }
 
 interface CustomerStatusOption {

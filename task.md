@@ -1,3 +1,36 @@
+- [ ] 733. architecture：ProductCommand 收口提交前组合（2026-04-12，待确认）
+  - [x] 已确认当前提交前组合职责仍然分散在：
+    - [x] `src/features/engineering/hooks/use-product-form-submit.ts`
+    - [x] `src/features/engineering/utils/product-form-utils.ts`
+    - [x] `src/features/engineering/commands/product-command.ts`
+  - [x] 已确认当前 hook 内仍承担的命令式组合职责包括：
+    - [x] 根据 `selectedVariants.length` 决定单品 / 单 variant / 批量 variant 三种提交形态
+    - [x] 调用 `buildBatchProducts / buildSingleVariantProduct` 生成最终提交 payload
+    - [x] 决定提交成功后的成功文案分支（create single / create variant / batch / edit）
+  - [x] 已确认当前 utils 内承担的派生职责包括：
+    - [x] `deriveSku`
+    - [x] `buildBatchProducts`
+    - [x] `buildSingleVariantProduct`
+  - [x] 已确认当前最适合继续收口到 `ProductCommand` 的，不是远程读取或 toast，而是**提交前 payload 组合命令**
+  - [x] 已确认推荐收口方向：
+    - [x] 在 `ProductCommand` 增加提交前组合入口
+    - [x] 将以下职责迁入命令层：
+      - [x] variant 数量判定后的 payload 组合
+      - [x] 单 variant / 批量 variant 的产品派生
+      - [x] 对应的提交模式标识（single / variant / batch / edit）
+  - [x] 已确认推荐第一轮实施边界：
+    - [x] 先收口 payload compose，不收口 `ProductCoreService.getProducts()`
+    - [x] 不把 `ensureSkuUnique` 与 toast 文案一起卷入命令层
+    - [x] 不改后端保存接口
+  - [x] 已确认推荐结果形态：
+    - [x] `ProductCommand.composeSubmitPayload()`（或同职责命名）返回：
+      - [x] `mode`
+      - [x] `productsToSave`
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 扩展 `ProductCommand`
+    - [ ] 改造 `use-product-form-submit` 只负责编排校验/调用/提示
+    - [ ] 执行定向 `eslint` / `tsc` 校验并更新 `walkthrough.md`
+
 - [ ] 732. architecture：selectedVariants 初始化规则收口（2026-04-12，待确认）
   - [x] 已确认问题入口位于：
     - [x] `src/features/engineering/hooks/use-product-form.ts`

@@ -15,6 +15,7 @@ export {
   createPurchaseReturn,
   getPurchaseReturns,
   type CreatePurchaseReturnPayload,
+  type CreatePurchaseReturnResponse,
   type PurchaseReturnRecord,
 } from './services/purchase-return-service'
 export {

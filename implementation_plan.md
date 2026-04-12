@@ -1,3 +1,139 @@
+### 1. architecture：ProductCommand 收口提交前组合
+
+日期：2026-04-12  
+状态：待批准
+
+#### 1.1 当前背景
+
+上一轮已经把 `selectedVariants` 的初始化规则收口到了 `ProductCommand.composeInitialState()`。但产品表单在**提交前组合**这一步，仍然存在命令职责分散：
+
+1. hook 决定提交模式
+2. utils 负责单 variant / 批量 variant 的产品派生
+3. hook 再继续负责提交成功分支文案判断
+
+这意味着初始化阶段已经有统一命令入口，但提交前组合阶段还没有单一来源。
+
+#### 1.2 当前排查结论
+
+当前已经确认：
+
+1. `use-product-form-submit.ts` 仍负责：
+   - 根据 `selectedVariants.length` 判定提交分支
+   - 调用 `buildBatchProducts / buildSingleVariantProduct`
+   - 决定成功 toast 分支
+
+2. `product-form-utils.ts` 仍负责：
+   - `deriveSku`
+   - `buildBatchProducts`
+   - `buildSingleVariantProduct`
+
+3. `ProductCommand` 当前只覆盖：
+   - `composeInitialState()`
+
+#### 1.3 问题本质
+
+当前问题不是函数放在哪里不好看，而是**产品表单的命令边界被切成了两段**：
+
+1. 初始化有命令层
+2. 提交前组合没有命令层
+
+这会导致：
+
+1. `selectedVariants` 的语义在 init 阶段和 submit 阶段分别由不同层解释
+2. variant 数量分支、SKU 派生、属性回写这些命令式组合规则仍散落在 hook + utils
+3. 后续若新增 variant 提交模式或修改派生策略，仍需跨多层同步改动
+
+#### 1.4 推荐方案
+
+建议在 `ProductCommand` 继续补一个提交前组合入口，例如：
+
+1. `ProductCommand.composeSubmitPayload()`
+
+推荐输入：
+
+1. `values`
+2. `selectedVariants`
+3. `typeCode`
+4. `isEdit`
+
+推荐输出：
+
+1. `mode`
+   - `single`
+   - `variant`
+   - `batch`
+   - `edit`
+2. `productsToSave`
+
+#### 1.5 建议迁入命令层的职责
+
+第一轮建议只迁入以下内容：
+
+1. 基于 `selectedVariants.length` 的提交模式判定
+2. 单 variant 的产品派生
+3. 批量 variant 的产品派生
+4. `mode` 与 `productsToSave` 的统一返回结构
+
+#### 1.6 第一轮明确不迁入的职责
+
+为了控制范围，本轮不建议把以下职责一起卷入 `ProductCommand`：
+
+1. `ProductCoreService.getProducts()`
+2. `ensureSkuUnique()`
+3. toast 文案选择与展示
+4. 真正的 `onSubmit` 调用
+
+原因是这些更偏向：
+
+1. 编排层
+2. 校验层
+3. 交互反馈层
+
+不宜和产品派生命令一次性揉在一起。
+
+#### 1.7 推荐落地方式
+
+建议：
+
+1. 保留 `deriveSku` 等纯派生函数作为底层工具
+2. 由 `ProductCommand.composeSubmitPayload()` 统一调用这些工具
+3. `use-product-form-submit.ts` 改为只负责：
+   - 获取远程产品列表
+   - 做 SKU 唯一性校验
+   - 调用 `onSubmit`
+   - 展示 toast
+
+换句话说，把 hook 从“命令 + 编排混合体”收敛成“编排器”。
+
+#### 1.8 风险与控制策略
+
+1. **一次性把校验和交互也卷入命令层的风险**
+   - 会把简单的 payload compose 变成大而杂的 submit framework。
+   - 控制策略：第一轮只收口 compose，不动校验/提示。
+
+2. **edit 场景语义混淆的风险**
+   - 若 edit 仍带单个 variant，`single` 与 `edit` 的文案/语义可能混淆。
+   - 控制策略：命令层返回显式 `mode`，由 hook 再映射文案。
+
+3. **工具函数职责重叠的风险**
+   - 如果只新增命令层但不调整原 utils 角色，可能出现双入口。
+   - 控制策略：第一轮让 utils 退回到底层纯派生，命令层负责面向表单业务的统一入口。
+
+#### 1.9 推荐推进顺序
+
+建议若进入实施，按以下顺序推进：
+
+1. 扩展 `ProductCommand`，新增 `composeSubmitPayload()`
+2. 让其统一返回 `mode + productsToSave`
+3. 改造 `use-product-form-submit.ts` 消费统一结果
+4. 保留 `ensureSkuUnique` 与 toast 在 hook 层
+5. 执行定向 `eslint` / `tsc`
+6. 更新 `walkthrough.md`
+
+#### 1.10 当前阶段结论
+
+既然初始化已经由 `ProductCommand.composeInitialState()` 统一，下一步最自然的演进就是把**提交前组合**也收口到同一个命令层。但为了避免范围失控，第一轮只应收口 `mode + productsToSave` 的生成，不要把远程读取、唯一性校验和交互提示一并卷进去。
+
 ### 1. architecture：selectedVariants 初始化规则收口
 
 日期：2026-04-12  

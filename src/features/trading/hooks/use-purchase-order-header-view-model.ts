@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { type OrderEvidence, type PurchaseOrder, type Supplier } from '../data/schema'
 import { getPurchaseStatusDisplayMeta } from '../data/purchase-status'
+import type { TranslationKey } from '@/locales'
 
 type PurchaseOrderFieldValue = PurchaseOrder[keyof PurchaseOrder]
 
@@ -22,7 +23,7 @@ interface PurchaseOrderHeaderViewModelOptions {
   currencies: CurrencyOption[]
   paymentMethods: PaymentOption[]
   paymentTerms: PaymentOption[]
-  t: (key: string, vars?: Record<string, string | number>) => string
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string
   handleHeaderChange: (field: keyof PurchaseOrder, value: PurchaseOrderFieldValue) => void
   onEvidencesChange: (evidences: OrderEvidence[]) => void
 }

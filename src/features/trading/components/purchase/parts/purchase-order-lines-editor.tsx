@@ -10,6 +10,8 @@ import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { type PurchaseOrderLine } from '../../../data/schema'
 import { usePurchaseOrderLinesEditorViewModel } from '../../../hooks/use-purchase-order-lines-editor-view-model'
 
+type PurchaseOrderLineFieldValue = PurchaseOrderLine[keyof PurchaseOrderLine]
+
 interface PurchaseOrderLinesEditorProps {
   lines: PurchaseOrderLine[]
   units: Unit[]
