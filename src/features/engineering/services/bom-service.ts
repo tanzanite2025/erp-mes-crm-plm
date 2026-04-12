@@ -49,6 +49,24 @@ function sanitizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     })
 }
 
+function normalizeBOMListResponse(response: unknown): BOMList {
+    const checked = ensureObjectResponse<Record<string, unknown>>(
+        response,
+        'BOMService.getBOMs'
+    )
+
+    if (Array.isArray(checked)) {
+        return bomListSchema.parse({
+            items: checked,
+            total: typeof checked.total === 'number' ? checked.total : checked.length,
+            page: typeof checked.page === 'number' ? checked.page : 1,
+            pageSize: typeof checked.pageSize === 'number' ? checked.pageSize : checked.length,
+        })
+    }
+
+    return bomListSchema.parse(checked)
+}
+
 /**
  * BOM 配方清单服务层
  */
@@ -60,11 +78,7 @@ export const bomService = {
     async getBOMs(productId?: string): Promise<BOM[]> {
         const url = productId ? `/engineering/bom?productId=${productId}` : '/engineering/bom'
         const response = await apiFetch<BOMList>(url)
-        const checked = ensureObjectResponse<Record<string, unknown>>(
-            response,
-            'BOMService.getBOMs'
-        )
-        return bomListSchema.parse(checked).items
+        return normalizeBOMListResponse(response).items
     },
 
     /**

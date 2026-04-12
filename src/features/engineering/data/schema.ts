@@ -184,7 +184,7 @@ export type ProductAttributeOption = z.infer<typeof productAttributeOptionSchema
 export const changeOrderSchema = z.object({
   id: z.string(),
   title: z.string().min(1, 'Change order title is required'),
-  productId: z.string().optional(),
+  productId: z.string().nullable().optional(),
   status: z.enum(['draft', 'released', 'obsolete']).default('draft'),
   description: z.string().optional(),
   createdAt: z.string(),
@@ -223,7 +223,7 @@ export const bomSchema = z.object({
   bomNo: z.string().trim().default(''),
   productId: z.string().min(1, 'Product is required'),
   product: productSchema.optional(),
-  changeOrderId: z.string().optional(),
+  changeOrderId: z.string().nullable().optional(),
   changeOrder: changeOrderSchema.optional(),
   bomVersion: z.string().trim().regex(/^V[0-9]+(\.[0-9]+)*$/, 'Version must follow V1.0 format').default('V1.0'),
   bomDisplayVersion: z.string().optional(),

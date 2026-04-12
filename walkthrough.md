@@ -1,5 +1,203 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-13 - refactor：`use-bom-data.ts` 最小职责拆分
+
+### 本轮目标
+
+在不改变 `/engineering/bom` 页面核心交互与已修好错误态逻辑的前提下，将 `use-bom-data.ts` 中混杂的读取链、导入导出链拆出，让该文件回归薄 orchestration hook。
+
+### 实现细节
+
+1. **抽离 BOM 读取层 hook**
+   - 新增 `src/features/engineering/hooks/use-bom-read-data.ts`
+   - 当前单独负责：
+     - BOM 列表 query
+     - 产品 query
+     - 物料 query
+     - `isLoading`
+     - `loadError`
+     - 读取结果分流
+     - 读取链日志与 toast
+
+2. **抽离 BOM 导入导出层 hook**
+   - 新增 `src/features/engineering/hooks/use-bom-import-export.ts`
+   - 当前单独负责：
+     - 模板下载
+     - Excel 解析
+     - 导入后二次加工
+     - 导入相关 fail loudly / logger / toast
+
+3. **收口 `use-bom-data.ts` 为薄 orchestration hook**
+   - 更新 `src/features/engineering/hooks/use-bom-data.ts`
+   - 当前行为：
+     - 组合 `useBOMReadData`
+     - 组合 `useBOMWriteActions`
+     - 组合 `useBOMImportExport`
+   - 对外继续向 `BOMMgmt` 暴露基本一致的接口，避免扩大页面调用改动面
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未抽后端 `engineering_master_service.go`
+2. 未重构 BOM UI 组件目录
+3. 未扩散到 `use-bom-form.ts`
+4. BOM 页面已有错误态逻辑保持不变
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经将 `use-bom-data.ts` 从“读取 + 写入 + 导入导出 + 错误策略”混杂状态收口为更清晰的组合层：BOM 读取链与导入导出链现在各自拥有独立 hook，后续修读链时不再容易误伤导入链，修导入链时也不必再在单个大 hook 中冒险改动其它职责。
+
+## 2026-04-13 - fix：`/engineering/bom` 页面 500 根因修复
+
+### 本轮目标
+
+修复 `/engineering/bom` 页面在 BOM 列表加载阶段直接 500 并触发整页崩溃的问题，确保 BOM 页面在接口失败或契约异常时具备明确错误呈现，而不是被 `failLoudly` 直接炸掉。
+
+### 根因结论
+
+本轮确认该问题由两层因素叠加导致：
+
+1. **前后端 BOM 契约存在 null 不一致**
+   - 后端 `models.BOM.ChangeOrderID` 为 `*string`
+   - 后端 `models.ChangeOrder.ProductID` 为 `*string`
+   - 前端 `bomSchema / changeOrderSchema` 原本仅接受 `string | undefined`
+   - 因此当后端返回 `null` 时，Zod parse 可能直接失败
+
+2. **BOM 列表服务与全局 API 混合数组分页响应不兼容**
+   - 全局 `apiFetch` 在分页场景下可能返回带有 `total/page/pageSize` 元数据的 Hybrid Array
+   - `bomService.getBOMs()` 一度仍按普通对象响应直接执行 `bomListSchema.parse(...)`
+   - 因此会出现：`Invalid input: expected object, received array`
+
+3. **BOM 页面读取链对失败分支过于激进**
+   - `useBOMData` 原逻辑在 query 加载结束且 `data` 为空时直接：
+     - `failLoudly(...)`
+     - `throw error`
+   - 这会把上游接口失败或契约失败放大成 React error boundary 接管的整页崩溃
+
+### 实现细节
+
+1. **修复 BOM / ChangeOrder 前端 schema 的 null 兼容**
+   - 更新 `src/features/engineering/data/schema.ts`
+   - 调整：
+     - `changeOrderSchema.productId`
+     - `bomSchema.changeOrderId`
+   - 现在接受后端指针字段可能返回的 `null`
+
+2. **修复 BOM 列表服务对 Hybrid Array 分页响应的适配**
+   - 更新 `src/features/engineering/services/bom-service.ts`
+   - 新增 `normalizeBOMListResponse(...)`
+   - 当前同时兼容：
+     - 标准分页对象 `{ items, total, page, pageSize }`
+     - `apiFetch` 返回的 Hybrid Array 分页结构
+
+3. **修复 `useBOMData` 的错误分支设计**
+   - 更新 `src/features/engineering/hooks/use-bom-data.ts`
+   - 当前改为：
+     - query loading 时返回空数组占位
+     - query error 时返回空数组占位
+     - 仅在“无错误、非加载、仍无数据”时才视为真正的 critical missing
+   - 同时暴露 `loadError` 给页面层处理
+
+4. **BOM 管理页补充页面内错误态**
+   - 更新 `src/features/engineering/tabs/bom-mgmt.tsx`
+   - 当 `loadError && !isLoading` 时，页面显示明确错误提示区块
+   - 避免继续由 error boundary 接管整页
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未重构 BOM 表格或编辑弹窗结构
+2. 未扩散到无关 engineering 模块
+3. 当前主要修复读取契约与错误分流，不扩成 BOM 全模块重构
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把 `/engineering/bom` 页面 500 的两个直接根因同时收住：一方面修正了 BOM 前后端契约中 `null` 字段不兼容的问题，另一方面把 `useBOMData` 从“接口失败即整页崩溃”的过激分支改为“页面内明确错误态”。这样即使上游接口后续再出现失败，BOM 页面也不会再直接被 React error boundary 炸成整页异常。
+
+## 2026-04-13 - fix：快捷扫描侧边栏 i18n 系统化收口
+
+### 本轮目标
+
+修复“快捷扫描”侧边栏出现中文壳层 + 英文卡片内容混搭的问题，并将 quick-actions 模块整体接入系统化中英文模式匹配，而不是只替换几句表面文案。
+
+### 实现细节
+
+1. **quick-actions registry 改为文案 key authority**
+   - 更新 `src/features/quick-actions/types.ts`
+   - 更新 `src/features/quick-actions/data/quick-action-registry.ts`
+   - `QuickActionDefinition` 不再持有最终 `title / description` 字符串
+   - 改为持有：
+     - `titleKey`
+     - `descriptionKey`
+
+2. **drawer / handle 接入统一语言系统**
+   - 更新 `src/features/quick-actions/components/quick-action-drawer.tsx`
+   - 更新 `src/features/quick-actions/components/quick-action-handle.tsx`
+   - 统一接入 `useLanguage()` 与 `t(...)`
+   - 当前已覆盖：
+     - 抽屉标题
+     - 抽屉描述
+     - 空态标题
+     - 空态说明
+     - 卡片标题
+     - 卡片描述
+     - 关闭按钮
+     - 入口按钮文字
+     - `aria-label`
+
+3. **补齐 quick-actions 中英文 locale**
+   - 新增 `src/locales/messages/zh-CN/quickActions.ts`
+   - 新增 `src/locales/messages/en-US/quickActions.ts`
+   - 更新：
+     - `src/locales/messages/zh-CN/index.ts`
+     - `src/locales/messages/en-US/index.ts`
+   - 让 quick-actions 模块正式进入统一 locale 聚合体系
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改 quick-actions 权限判定逻辑
+2. 未新增新的快捷动作入口
+3. 未改扫描页面业务逻辑
+4. 当前仅收口 quick-actions 模块自身的国际化链路
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把 quick-actions 模块从“中文硬编码 + 英文硬编码混搭”收口到统一的 `t(...) + locale keys` 体系中。现在快捷扫描侧边栏在中文与英文模式下都具备完整文案来源，后续新增快捷动作时也不需要再继续散落硬编码字符串。
+
 ## 2026-04-13 - refactor：新增型号模板读取链单独抽离
 
 ### 本轮目标

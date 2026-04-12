@@ -4,8 +4,8 @@ import type { QuickActionDefinition } from '../types'
 const quickActionRegistryEntries = [
   {
     id: 'warehouse_inbound_scan',
-    title: 'Inbound Scan',
-    description: 'Open warehouse inbound scanning mode directly for rapid receiving.',
+    titleKey: 'quickActions.actions.warehouseInboundScan.title',
+    descriptionKey: 'quickActions.actions.warehouseInboundScan.description',
     icon: PackagePlus,
     to: '/warehouse/inbound',
     search: { mode: 'scan' },
@@ -15,8 +15,8 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'warehouse_shipment_scan',
-    title: 'Shipment Scan',
-    description: 'Open warehouse shipment scanning mode directly for rapid outbound processing.',
+    titleKey: 'quickActions.actions.warehouseShipmentScan.title',
+    descriptionKey: 'quickActions.actions.warehouseShipmentScan.description',
     icon: ScanLine,
     to: '/warehouse/shipment',
     search: { mode: 'scan' },
@@ -26,8 +26,8 @@ const quickActionRegistryEntries = [
   },
   {
     id: 'warehouse_stocktake_scan',
-    title: 'Stocktake Scan',
-    description: 'Open PDA stocktake scanning mode directly.',
+    titleKey: 'quickActions.actions.warehouseStocktakeScan.title',
+    descriptionKey: 'quickActions.actions.warehouseStocktakeScan.description',
     icon: ClipboardCheck,
     to: '/warehouse/stocktake',
     search: { mode: 'scan' },

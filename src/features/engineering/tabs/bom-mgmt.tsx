@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Layers } from 'lucide-react'
+import { AlertTriangle, Layers } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
 import { BOMActionDialog } from '../components/bom-action-dialog'
@@ -20,6 +20,7 @@ export function BOMMgmt() {
     products,
     materials,
     isLoading,
+    loadError,
     saveBOM,
     deleteBOM,
     downloadTemplate,
@@ -66,6 +67,34 @@ export function BOMMgmt() {
         materials={materials}
         onBack={() => setPreviewBOM(null)}
       />
+    )
+  }
+
+  if (loadError && !isLoading) {
+    return (
+      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+        <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
+          <div className='flex items-center gap-2 text-primary'>
+            <Layers className='size-4 text-primary' />
+            <h3 className='text-lg font-black tracking-tighter italic uppercase'>
+              {t('engineering.bomArchive.header.title')}
+            </h3>
+          </div>
+          <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
+            {t('engineering.bomArchive.header.description')}
+          </p>
+        </div>
+
+        <div className='flex flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-12 text-center'>
+          <AlertTriangle className='mb-4 size-10 text-rose-500' />
+          <p className='text-sm font-black tracking-widest text-foreground'>
+            {t('engineering.bomArchive.toasts.loadFailed')}
+          </p>
+          <p className='mt-2 text-[11px] font-medium text-muted-foreground'>
+            {loadError instanceof Error ? loadError.message : t('engineering.bomArchive.toasts.loadFailed')}
+          </p>
+        </div>
+      </div>
     )
   }
 

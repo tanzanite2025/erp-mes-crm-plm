@@ -124,6 +124,124 @@
     - [x] 已抽离新增型号模板读取链到独立文件/入口
     - [x] 已调整创建态与编辑态调用点，明确两条路径不混用
     - [x] 已执行定向前端校验并更新 `walkthrough.md`
+
+- [ ] 727 快捷扫描侧边栏 i18n 系统化收口规划（中文），确保 quick-actions 模块不再出现中文壳层 + 英文卡片内容的混搭。
+  - [x] 已确认当前真实问题不是语言切换失效，而是 quick-actions 模块没有系统化接入 i18n
+  - [x] 已确认当前主要根因：
+    - [x] `src/features/quick-actions/data/quick-action-registry.ts` 直接硬编码英文 `title / description`
+    - [x] `src/features/quick-actions/components/quick-action-drawer.tsx` 直接硬编码中文标题、描述、空态、按钮文案
+    - [x] `src/features/quick-actions/components/quick-action-handle.tsx` 直接硬编码中文 `aria-label` 与按钮文字
+  - [x] 已确认当前风险点：
+    - [x] 若只把英文卡片改成中文，会继续留下英文模式不完整的问题
+    - [x] quick-actions 后续新增动作时，若不统一口径，极易继续出现中英硬编码混搭
+    - [x] 当前模块的数据层与展示层都未统一接入 `useLanguage / t(...)`
+  - [x] 已确认本轮建议实施边界：
+    - [x] quick-action registry 不再存最终展示文案，改存 i18n key
+    - [x] drawer / handle 接入 `useLanguage()` 与 `t(...)`
+    - [x] 补齐 `zh-CN / en-US` 对应 locale 文案
+    - [x] 保持权限筛选与动作路由逻辑不变，只修国际化文案链路
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/quick-actions/data/quick-action-registry.ts`
+    - [x] `src/features/quick-actions/components/quick-action-drawer.tsx`
+    - [x] `src/features/quick-actions/components/quick-action-handle.tsx`
+    - [x] `src/features/quick-actions/types.ts`
+    - [x] `src/locales/messages/zh-CN/*`
+    - [x] `src/locales/messages/en-US/*`
+  - [x] 已确认本轮非目标边界：
+    - [x] 不改 quick-actions 权限判定逻辑
+    - [x] 不顺手扩展新的快捷动作入口
+    - [x] 不改扫描页面业务逻辑
+  - [x] 已完成本轮执行：
+    - [x] 已重构 quick-actions registry 的文案承载方式
+    - [x] 已接入 `useLanguage / t(...)` 并补齐中英文 locale
+    - [x] 已执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 728 `/engineering/bom` 页面 500 根因排查与修复规划（中文），确保 BOM 页面读取链不再因为列表接口异常而被前端 fail loudly 放大成整页崩溃。
+  - [x] 已确认当前报错现象：
+    - [x] `/engineering/bom` 页面加载时出现 500
+    - [x] 前端控制台在 `useBOMData.boms` 抛出 `[CRITICAL] BOM data is missing after load`
+    - [x] `BOMMgmt` 被 React error boundary 接管并重建
+  - [x] 已确认当前真实故障链路：
+    - [x] `BOMMgmt` 调用 `useBOMData()`
+    - [x] `useBOMData` 通过 React Query 调用 `bomService.getBOMs()`
+    - [x] `bomService.getBOMs()` 请求 `/engineering/bom`
+    - [x] 当接口返回失败时，`bomsQuery.data` 在加载结束后仍为空
+    - [x] `useBOMData` 当前对“加载完成但无数据”直接 `failLoudly + throw`，因此把上游失败放大成页面级崩溃
+  - [x] 已确认当前高风险点：
+    - [x] 前端把“数据缺失”与“接口失败”混成一个 `[CRITICAL]` 分支，缺少清晰区分
+    - [x] `/engineering/bom` 列表接口一旦 500，当前页面不是显示错误态，而是直接崩
+    - [x] 后端 `ListBOMs` 预加载 `Product / ChangeOrder / Items / Substitutes / Material`，任何一层契约或查询异常都可能导致整个列表失败
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/engineering/hooks/use-bom-data.ts`
+    - [x] `src/features/engineering/services/bom-service.ts`
+    - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
+    - [x] `server/handlers/bom.go`
+    - [x] `server/services/engineering_master_service.go`
+  - [x] 已确认本轮建议实施边界：
+    - [x] 先修 BOM 列表接口或契约根因，不能只在前端吞掉错误
+    - [x] 前端需把“接口失败”和“空数据”区分开，避免继续用 `[CRITICAL]` 误伤页面
+    - [x] 保持 BOM 管理页核心交互不变，只修读取链与错误呈现
+  - [x] 已确认本轮非目标边界：
+    - [x] 不顺手重构 BOM 表格或编辑弹窗结构
+    - [x] 不扩散到无关 engineering 模块
+    - [x] 不处理与本次 500 无关的 warning
+  - [x] 已完成本轮执行：
+    - [x] 已修复 `/engineering/bom` 前后端契约根因中的 null 字段兼容问题
+    - [x] 已调整 BOM 页面读取链错误分支，避免整页崩溃
+    - [x] 已执行定向前端校验并更新 `walkthrough.md`
+
+- [ ] 729 `use-bom-data.ts` 最小职责拆分规划（中文），确保 BOM 读取、写入、导入导出不再继续堆叠在同一个 orchestration hook 中。
+  - [x] 已确认当前最需要拆分的文件是 `src/features/engineering/hooks/use-bom-data.ts`
+  - [x] 已确认当前职责混杂点：
+    - [x] BOM 列表 / 产品 / 物料读取 query
+    - [x] 读取错误分支与 toast / logger
+    - [x] save / delete 编排
+    - [x] Excel 导入导出
+    - [x] 导入后的 BOM item 二次加工与校验
+  - [x] 已确认本轮建议拆分边界：
+    - [x] 抽 `use-bom-read-data.ts`，只负责读取 query、isLoading、loadError 与数据分流
+    - [x] 抽 `use-bom-import-export.ts`，只负责 BOM 模板下载、Excel 导入解析与导入后加工
+    - [x] 保留 `use-bom-write-actions.ts` 继续负责 save / delete mutation
+    - [x] `use-bom-data.ts` 收口成薄 orchestration hook，对外返回接口尽量保持稳定
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/engineering/hooks/use-bom-data.ts`
+    - [x] `src/features/engineering/hooks/use-bom-write-actions.ts`
+    - [x] 必要时新增 `use-bom-read-data.ts`
+    - [x] 必要时新增 `use-bom-import-export.ts`
+  - [x] 已确认本轮风险控制要求：
+    - [x] 保持 `BOMMgmt` 调用接口尽量不变
+    - [x] 不改变 BOM 页面已修好的错误态逻辑
+    - [x] 不顺手改 BOM 表格、弹窗与后端服务
+  - [x] 已确认本轮非目标边界：
+    - [x] 不抽后端 `engineering_master_service.go`
+    - [x] 不重构 BOM UI 组件目录
+    - [x] 不扩散到 use-bom-form.ts
+  - [x] 已完成本轮执行：
+    - [x] 已拆出 `use-bom-read-data.ts`
+    - [x] 已拆出 `use-bom-import-export.ts`
+    - [x] 已收口 `use-bom-data.ts` 并执行定向前端校验
+
+- [ ] 730 BOM 新建弹窗“总成本显示为 楼0.00”修复规划（中文），确保 BOM 成本概览卡片与分段成本展示不再被错误硬编码前缀污染。
+  - [x] 已确认当前真实问题不是成本计算错误，而是展示字符串硬编码异常
+  - [x] 已确认当前根因位置：
+    - [x] `src/features/engineering/components/bom-editor/summary-panel.tsx`
+    - [x] 总成本当前直接渲染为 `楼{totalCost.toFixed(2)}`
+    - [x] 分段成本当前直接渲染为 `楼{sectionCost.toFixed(1)}`
+  - [x] 已确认当前影响范围：
+    - [x] 新建 BOM 弹窗中的总成本卡片
+    - [x] 工段分布概览中的分段成本显示
+    - [x] 当前未发现是 BOM 数值计算链问题
+  - [x] 已确认本轮建议实施边界：
+    - [x] 只修 `summary-panel.tsx` 的成本展示格式
+    - [x] 不改成本计算公式
+    - [x] 如有必要，仅补最小 i18n / 格式化收口，不扩散到其它 BOM 组件
+  - [x] 已确认本轮非目标边界：
+    - [x] 不改 BOM item 的价格或用量计算逻辑
+    - [x] 不改 BOM 表单结构
+    - [x] 不扩散到后端 BOM 读写链路
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 修复 BOM 总成本与分段成本的展示前缀
+    - [ ] 执行定向前端校验并更新 `walkthrough.md`
 - [ ] 722 BOM 剩余枚举/日期控制字段统一收口规划（中文），记录 changeType/status/effectiveFrom/effectiveTo 的排查结论、推荐实施范围与待确认执行项。
   - [x] 已确认本轮最明确的字段包括：
     - [x] `changeType`

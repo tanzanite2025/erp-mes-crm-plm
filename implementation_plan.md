@@ -1,5 +1,374 @@
 ### 1. plan：production-shared 机器码字段统一收口
 
+### 1. plan：BOM 总成本显示为 `楼0.00` 的展示异常修复
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前用户反馈新建 BOM 弹窗中“预估总成本”显示为 `楼0.00`，同时工段分布概览中的分段成本也出现相同前缀异常。这种现象非常不自然，且容易被误判为成本计算链或币种逻辑异常。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前真实问题不是计算链错误
+
+通过定位 BOM 新建弹窗的成本概览组件，已经确认当前问题不在数值计算，而在展示字符串硬编码：
+
+1. `SummaryPanel` 中总成本展示直接写为：`楼{totalCost.toFixed(2)}`
+2. 工段成本展示直接写为：`楼{sectionCost.toFixed(1)}`
+
+因此当前异常是**展示层污染**，不是 BOM 成本计算公式错误。
+
+##### 1.2.2 当前主要风险点
+
+当前风险主要是视觉误导与维护混淆：
+
+1. 用户会误以为成本单位、货币符号或后端金额字段出了问题
+2. 如果不先明确根因，后续维护者可能去错误地修改成本计算链
+3. 这类硬编码若继续存在，后续其它 BOM 展示位也可能被复制污染
+
+#### 1.3 推荐实施策略
+
+本轮建议采用最小修复策略：
+
+1. 仅修复 `summary-panel.tsx` 中成本展示前缀
+2. 保持总成本与分段成本计算公式不变
+3. 如有必要，仅做最小展示格式收口，不扩散到无关 BOM 组件
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/components/bom-editor/summary-panel.tsx`
+
+#### 1.5 风险与破坏性评估
+
+本轮风险很低，主要属于展示层最小修复：
+
+1. 若直接删除前缀字符即可恢复正常，则变更面极小
+2. 若继续沿错误方向调整成本计算链，会制造新的业务风险
+
+因此本轮必须坚持：
+
+1. 只修展示
+2. 不动计算链
+3. 不扩散
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. 新建 BOM 弹窗中的总成本显示恢复正常
+2. 工段分布概览中的分段成本显示恢复正常
+3. `pnpm exec tsc --noEmit` 通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不改 BOM item 的价格/用量计算逻辑
+2. 不改 BOM 表单结构
+3. 不扩散到后端 BOM 读写链路
+
+#### 1.8 当前阶段结论
+
+当前 `楼0.00` 问题已经明确属于 `summary-panel.tsx` 的展示硬编码异常，而不是 BOM 成本计算链错误。下一步应按最小修复原则直接清理错误前缀，并执行定向前端校验，避免继续让展示污染误导后续排查。
+
+### 1. plan：`use-bom-data.ts` 最小职责拆分
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 `/engineering/bom` 页面 500 根因修复完成后，当前 BOM 模块中最明显的职责堆叠点已经明确暴露在 `src/features/engineering/hooks/use-bom-data.ts`：该文件同时承担了读取、错误策略、写入编排、Excel 导入导出与导入后二次加工。
+
+这会带来两个持续风险：
+
+1. 任何读取链修复都可能误伤写入或导入逻辑
+2. 后续维护者很难快速判断某段改动属于“读链”、“写链”还是“导入链”
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前最值得拆分的不是整个 BOM 模块，而是 `use-bom-data.ts`
+
+当前 BOM 模块里：
+
+1. `bom-mgmt.tsx` 主要仍是页面编排层
+2. `use-bom-write-actions.ts` 职责相对清晰
+3. `bom-service.ts` 仍然基本是服务层职责
+
+真正多职责堆叠的是 `use-bom-data.ts`，因此本轮应优先做“最小职责拆分”，而不是整模块大重组。
+
+##### 1.2.2 当前建议拆分后的结构
+
+本轮建议拆成三层：
+
+1. **`use-bom-read-data.ts`**
+   - 负责 BOM / 产品 / 物料 query
+   - 负责 `isLoading / loadError`
+   - 负责读取结果分流
+
+2. **`use-bom-import-export.ts`**
+   - 负责模板下载
+   - 负责 Excel 导入解析
+   - 负责导入后二次加工与相关校验
+
+3. **`use-bom-data.ts`**
+   - 只负责 orchestration
+   - 组合 read / write / import-export 三层
+   - 对外返回接口尽量保持稳定，减少 `BOMMgmt` 变动
+
+#### 1.3 推荐实施策略
+
+本轮建议只做前端 hook 层的最小拆分：
+
+1. 新增 `use-bom-read-data.ts`
+2. 新增 `use-bom-import-export.ts`
+3. 保留 `use-bom-write-actions.ts` 不动或仅做最小配合
+4. 将 `use-bom-data.ts` 收口为薄组合层
+5. 不动后端 BOM 服务，不动 BOM 表格/弹窗结构
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/hooks/use-bom-data.ts`
+2. `src/features/engineering/hooks/use-bom-write-actions.ts`
+3. `src/features/engineering/hooks/use-bom-read-data.ts`（新增）
+4. `src/features/engineering/hooks/use-bom-import-export.ts`（新增）
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要在于拆分时是否会破坏 BOM 页现有稳定性：
+
+1. 若对外返回接口变化过大，会扩大 `BOMMgmt` 改动面
+2. 若把错误态逻辑拆散，可能把刚修好的 BOM 页面错误分支重新打乱
+3. 若顺手改 BOM 表格、弹窗或后端，会扩大任务范围
+
+因此本轮必须坚持：
+
+1. 对外接口尽量稳定
+2. 页面错误态逻辑保持不变
+3. 只拆 hook 层，不扩散到无关层
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. `/engineering/bom` 页面正常加载
+2. BOM 页面错误态仍可正常展示
+3. Excel 导入导出入口不受拆分影响
+4. `pnpm exec tsc --noEmit` 通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不抽后端 `engineering_master_service.go`
+2. 不重构 BOM UI 组件目录
+3. 不扩散到 `use-bom-form.ts`
+
+#### 1.8 当前阶段结论
+
+当前 BOM 模块并不需要马上做整体系大重构，但 `use-bom-data.ts` 已经明确是职责最不清晰、最值得优先拆分的点。下一步应以最小改动方式拆出读取层与导入导出层，让 `use-bom-data.ts` 回归薄 orchestration hook，从而降低后续 BOM 读链、写链、导入链互相误伤的风险。
+
+### 1. plan：`/engineering/bom` 页面 500 根因排查与修复
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前用户反馈 `/engineering/bom` 页面打开时直接 500，控制台出现：
+
+1. `useBOMData.boms Error: [CRITICAL] BOM data is missing after load`
+2. `BOMMgmt` 被 React error boundary 接管
+
+这说明问题已经不是普通“列表加载失败提示”，而是 BOM 页面读取链把上游异常放大成了整页崩溃。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前真实故障链路
+
+当前已确认读取链如下：
+
+1. `BOMMgmt` 调用 `useBOMData()`
+2. `useBOMData` 通过 React Query 调 `bomService.getBOMs()`
+3. `bomService.getBOMs()` 请求 `/engineering/bom`
+4. 若该接口失败，则 `bomsQuery.data` 在加载结束后仍为 `undefined`
+5. `useBOMData` 当前逻辑把“加载完成但没有 data”统一视为 `[CRITICAL] BOM data is missing after load`
+6. 随后执行 `failLoudly + throw`，导致页面级崩溃
+
+因此当前 500 的表象在前端，但上游根因更可能位于：
+
+1. 后端 `/engineering/bom` 列表接口本身异常
+2. 或前后端列表契约不一致导致 parse 失败
+
+##### 1.2.2 当前主要风险点
+
+当前高风险点有两个层面：
+
+1. **后端风险**
+   - `ListBOMs` 预加载了：
+     - `Product`
+     - `ChangeOrder`
+     - `Items`
+     - `Items.Substitutes`
+     - `Items.Substitutes.Material`
+   - 任一关联查询、字段契约、脏数据、迁移差异都可能导致整个列表失败
+
+2. **前端风险**
+   - `useBOMData` 没有把“接口失败”和“空数据”区分开
+   - 导致接口失败时，用户看到的是 `[CRITICAL] data missing`，而不是明确的错误态
+
+#### 1.3 推荐实施策略
+
+本轮建议按“先根因、后容错”处理：
+
+1. 先定位并修复 `/engineering/bom` 列表接口或前后端契约根因
+2. 再调整 `useBOMData`，把：
+   - 接口失败
+   - 空数据
+   - 非法响应
+   明确分流处理
+3. BOM 页面在接口失败时应显示错误态/提示，而不是直接崩溃
+4. 保持 BOM 管理页表格、弹窗、写入逻辑不变，只修读取链与错误呈现
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/hooks/use-bom-data.ts`
+2. `src/features/engineering/services/bom-service.ts`
+3. `src/features/engineering/tabs/bom-mgmt.tsx`
+4. `server/handlers/bom.go`
+5. `server/services/engineering_master_service.go`
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要在于 BOM 列表 authority 本身：
+
+1. 如果只在前端去掉 `throw`，会掩盖后端真实失败
+2. 如果只修后端不修前端错误分流，后续类似契约异常仍会再次把页面炸掉
+3. BOM 模块属于核心工程主数据，不能接受“失败时静默空表”这种伪正常状态
+
+因此本轮必须坚持：
+
+1. 根因修复优先
+2. 错误分流清晰
+3. 页面 fail loudly 但不整页崩溃
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. `/engineering/bom` 页面正常加载时 BOM 列表可显示
+2. BOM 接口失败时页面显示明确错误，而不是直接崩溃
+3. 定向前后端校验通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不顺手重构 BOM 表格或编辑弹窗结构
+2. 不扩散到无关 engineering 模块
+3. 不处理与本次 500 无关的 warning
+
+#### 1.8 当前阶段结论
+
+当前 `/engineering/bom` 的 500 不是单一前端报错，而是“上游 BOM 列表请求失败”与“前端错误分支设计过于激进”叠加造成的。下一步应优先修 BOM 列表接口或契约根因，并同步把 `useBOMData` 改成能区分接口失败与空数据的读取链，避免继续把 BOM 页面炸成整页错误。
+
+### 1. plan：快捷扫描侧边栏 i18n 系统化收口
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前“快捷扫描”侧边栏已经出现明显的中英文混搭：
+
+1. 面板标题、描述、空态、底部按钮为中文
+2. 快捷动作卡片标题与描述为英文
+
+这不是单纯的翻译遗漏，而是 `quick-actions` 模块从数据层到展示层都没有统一接入国际化体系。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前真实问题不是语言切换失效
+
+当前 `LanguageProvider` 与 `useLanguage().t(...)` 是存在且可用的，真正的问题在于 quick-actions 模块没有系统接入：
+
+1. `quick-action-registry.ts` 直接存储英文最终展示文案
+2. `quick-action-drawer.tsx` 直接硬编码中文壳层文案
+3. `quick-action-handle.tsx` 直接硬编码中文按钮与 `aria-label`
+
+因此这块不是“切换没生效”，而是“根本没有统一 i18n 模式”。
+
+##### 1.2.2 当前主要风险点
+
+如果只把当前三张卡片英文替换成中文，会留下更大的结构性问题：
+
+1. 英文模式仍不完整
+2. 后续新增快捷动作时仍会继续散落硬编码
+3. quick-actions 模块内部没有清晰的“文案 key authority”，长期维护风险高
+
+#### 1.3 推荐实施策略
+
+本轮建议按模块整体收口，而不是做局部替换：
+
+1. `quick-action-registry.ts` 不再保存最终 `title / description` 文案，改为保存 i18n key
+2. `quick-action-drawer.tsx` / `quick-action-handle.tsx` 统一接入 `useLanguage()` 与 `t(...)`
+3. 为 quick-actions 模块补齐 `zh-CN / en-US` locale 文案
+4. 保持权限判定、动作路由、排序逻辑不变，只调整文案 authority 与渲染方式
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/quick-actions/data/quick-action-registry.ts`
+2. `src/features/quick-actions/components/quick-action-drawer.tsx`
+3. `src/features/quick-actions/components/quick-action-handle.tsx`
+4. `src/features/quick-actions/types.ts`
+5. `src/locales/messages/zh-CN/*`
+6. `src/locales/messages/en-US/*`
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要在于文案 authority 迁移，而不是业务逻辑变更：
+
+1. 若 registry 与组件层同时改动但 key 设计不清晰，容易出现漏 key 或错 key
+2. 若 locale 补齐不完整，某些语言模式下会出现回退或空字符串
+3. 若顺手改权限或路由逻辑，会扩大影响面，不符合本轮目标
+
+因此本轮必须坚持：
+
+1. 文案 authority 单一化
+2. 业务逻辑不变
+3. 中英文两端都能完整渲染
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. 中文模式下：标题、描述、卡片、空态、按钮全部为中文
+2. 英文模式下：标题、描述、卡片、空态、按钮全部为英文
+3. `pnpm exec tsc --noEmit` 通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不改 quick-actions 权限判定逻辑
+2. 不新增新的快捷动作入口
+3. 不改扫描页面业务逻辑
+4. 不扩散到其它无关模块的国际化治理
+
+#### 1.8 当前阶段结论
+
+当前 quick-actions 模块的问题不是“有几句英文没翻译”，而是整个模块没有系统化中英文模式匹配。下一步应把 registry、组件、locale 三层统一收口到 `t(...) + locale keys` 体系中，让快捷扫描面板在中文与英文模式下都能完整一致地渲染，而不是继续维持中英硬编码混搭。
+
 ### 1. plan：新增型号模板读取链单独抽离
 
 日期：2026-04-13  
