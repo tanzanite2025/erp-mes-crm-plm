@@ -1,0 +1,39 @@
+{
+  "id": "/personal-workbench/capture?mode=video",
+  "name": "XDFC 个人录视频",
+  "short_name": "个人录视频",
+  "description": "XDFC 个人缓冲区快捷录视频入口，现场短视频可直接整理为个人记录。",
+  "start_url": "/personal-workbench/capture?mode=video",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icons/wheel-trace-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "个人拍照",
+      "short_name": "拍照",
+      "description": "直接进入个人拍照快捷采集入口",
+      "url": "/personal-workbench/capture?mode=photo"
+    },
+    {
+      "name": "个人录视频",
+      "short_name": "录视频",
+      "description": "直接进入个人录视频快捷采集入口",
+      "url": "/personal-workbench/capture?mode=video"
+    },
+    {
+      "name": "个人缓冲区",
+      "short_name": "缓冲区",
+      "description": "打开个人记录缓冲区",
+      "url": "/personal-workbench"
+    }
+  ]
+}

@@ -1,5 +1,23 @@
 import type { PersonalWorkbenchColumnKey } from './constants'
 
+export type PersonalLocalMediaDraftKind = 'image' | 'video'
+
+export type PersonalLocalMediaDraftStatus = 'local_draft' | 'uploading' | 'uploaded' | 'linked_to_record'
+
+export interface PersonalLocalMediaDraft {
+  id: string
+  kind: PersonalLocalMediaDraftKind
+  ownerAccountNo?: string
+  ownerUserId?: string
+  queuePriority?: number
+  status: PersonalLocalMediaDraftStatus
+  file: File
+  mimeType: string
+  createdAt: string
+  durationSeconds?: number
+  linkedRecordAt?: string
+}
+
 export interface PersonalRecordAsset {
   id: string
   recordId: string

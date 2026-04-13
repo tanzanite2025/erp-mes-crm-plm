@@ -2876,6 +2876,880 @@
 
 1. 个人记录完整页方案 B 结构改造后 TypeScript 编译通过
 
+## 2026-04-13 - feat：个人记录媒体面板 10 秒视频录制
+
+### 本轮目标
+
+在现有个人记录媒体面板中补齐短视频录制能力，并严格限制为单段、最长 10 秒：
+
+1. 页面内视频录制
+2. 录制中剩余秒数提示
+3. 10 秒自动停止
+4. 手动提前停止
+5. 录制完成后继续走现有上传链
+
+### 核心实现
+
+1. **按更干净拆法拆出录制 hook 与录制 UI 组件**
+   - 新增：`src/features/personal-workbench/hooks/use-media-recorder.ts`
+   - 新增：`src/features/personal-workbench/components/personal-workbench-video-recorder.tsx`
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+
+2. **录制状态机下沉到独立 hook**
+   - `use-media-recorder.ts` 负责：
+     - `MediaRecorder` 生命周期
+     - 10 秒倒计时
+     - 自动停止
+     - 手动停止
+     - 录制结果产出为 `File`
+
+3. **视频录制 UI 独立承接**
+   - `personal-workbench-video-recorder.tsx` 负责：
+     - 开始录制按钮
+     - 停止录制按钮
+     - 录制中倒计时展示
+     - 10 秒上限提示
+
+4. **媒体面板回归编排层**
+   - `personal-workbench-image-picker.tsx` 负责：
+     - 拍照 / 录视频模式切换
+     - 统一管理相机流
+     - 监听录制结果并走现有 `AssetService.uploadFile`
+     - 不支持 `MediaRecorder` 时继续降级到拍照/普通上传
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 单段视频录制
+2. 最长 10 秒
+3. 自动停止与手动停止
+4. 录制完成后上传
+5. 保持拍照与普通上传共存
+
+本轮明确未实现：
+
+1. 视频裁剪
+2. 封面编辑
+3. 多段拼接
+4. 长视频录制
+5. 视频库管理
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录媒体面板接入 10 秒视频录制后 TypeScript 编译通过
+
+## 2026-04-13 - feat：个人记录视频录制反馈强化（第一阶段）
+
+### 本轮目标
+
+在不修改视频录制链路的前提下，先补强录制中的视觉反馈：
+
+1. 红色高亮边缘
+2. 呼吸灯效果
+3. 更明确的录制中提示
+
+### 核心实现
+
+1. **录制 UI 强化**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-video-recorder.tsx`
+   - 录制中时：
+     - 切换到红色高亮边框
+     - 增加 `animate-pulse` 呼吸灯效果
+     - 增加“正在记录现场”提示文案
+
+2. **媒体面板外层同步高亮**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当 `isRecording=true` 时，相机面板外层同步切换到红色高亮态
+   - 保持录制中视觉反馈从局部控件扩展到整个采集面板
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 更强的录制中视觉确认
+2. 红色高亮边缘
+3. 呼吸灯效果
+4. 更明确的录制状态提示
+
+本轮明确未实现：
+
+1. 码率调整
+2. 分辨率调整
+3. IndexedDB 暂存
+4. `Video_Ref` 协议升级
+5. 视频增强或压缩
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录视频录制反馈强化后 TypeScript 编译通过
+
+## 2026-04-13 - feat：个人记录本地草稿模型与 IndexedDB 暂存基础层
+
+### 本轮目标
+
+为个人记录媒体能力补齐“本地优先”路线的第一层基础承载：
+
+1. 本地草稿媒体模型
+2. IndexedDB 本地持久化
+3. 页面刷新后可恢复草稿
+4. 为后续手动上传与本地丢弃预留状态层
+
+### 核心实现
+
+1. **本地草稿模型补充到 personal-workbench schema**
+   - 更新：`src/features/personal-workbench/data/schema.ts`
+   - 新增：
+     - `PersonalLocalMediaDraftKind`
+     - `PersonalLocalMediaDraftStatus`
+     - `PersonalLocalMediaDraft`
+
+2. **新增 IndexedDB 存储服务**
+   - 新增：`src/features/personal-workbench/services/local-media-draft-store.ts`
+   - 负责：
+     - 打开数据库
+     - 读取全部草稿
+     - 保存草稿
+     - 删除草稿
+
+3. **新增本地草稿 hook**
+   - 新增：`src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+   - 负责：
+     - 初始化读取本地草稿
+     - 暴露 `drafts`
+     - 暴露 `isReady`
+     - 暴露 `saveDraft`
+
+4. **媒体面板接入本地草稿基础层**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当前行为：
+     - 文件选择图片时先写本地草稿
+     - 页面内拍照时先写本地草稿
+     - 视频录制结束时先写本地草稿
+     - 面板顶部显示当前本地草稿数量
+
+5. **本轮过渡策略**
+   - 为避免打断当前已可用的记录链路，本轮暂时保留现有即时上传行为
+   - 也就是说：
+     - 采集结果会先写本地草稿
+     - 同时仍继续走当前上传链
+   - 下一步做“手动上传入口”时，再将默认即时上传切换掉
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 本地草稿模型
+2. IndexedDB 基础持久化
+3. 拍照/视频采集结果写入本地草稿
+4. 刷新后理论可恢复草稿
+
+本轮明确未实现：
+
+1. 手动上传按钮
+2. 本地草稿删除 UI
+3. 云端与本地草稿自动合并
+4. 多端同步
+5. 默认关闭即时上传
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录本地草稿模型与 IndexedDB 暂存基础层接入后 TypeScript 编译通过
+
+## 2026-04-13 - feat：个人记录媒体手动上传入口
+
+### 本轮目标
+
+将个人记录媒体流程从“采集后默认即时上传”切换为“本地保存后人工上传”：
+
+1. 停止默认即时上传
+2. 显示当前本地草稿
+3. 新增“上传到服务器”按钮
+4. 上传成功后再回写当前编辑表单
+
+### 核心实现
+
+1. **本地草稿 hook 能力补充**
+   - 更新：`src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+   - 新增：
+     - `updateDraft`
+     - `getDraftById`
+
+2. **媒体面板切换为手动上传工作流**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当前行为改为：
+     - 文件选择后仅保存本地草稿
+     - 页面内拍照后仅保存本地草稿
+     - 视频录制后仅保存本地草稿
+     - 不再默认即时上传
+
+3. **新增当前草稿可视区**
+   - 在媒体面板中显示当前活跃草稿
+   - 图片草稿显示图片预览
+   - 视频草稿显示可播放预览
+   - 显示 `未上传 / 已上传` 状态
+
+4. **显式“上传到服务器”按钮**
+   - 点击后才调用现有 `AssetService.uploadFile`
+   - 上传成功后：
+     - 将草稿状态更新为 `uploaded`
+     - 将云端 URL 回写到当前编辑表单
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 手动上传入口
+2. 默认即时上传关闭
+3. 本地草稿预览
+4. 上传成功后表单值回写
+
+本轮明确未实现：
+
+1. 本地草稿删除 UI
+2. 多端同步
+3. 协议升级
+4. 草稿批量管理
+5. 本地与云端自动合并
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录媒体手动上传入口接入后 TypeScript 编译通过
+
+## 2026-04-13 - feat：个人记录本地草稿删除/丢弃入口
+
+### 本轮目标
+
+为本地优先媒体链路补齐“当前草稿可丢弃”动作：
+
+1. 当前活跃草稿增加丢弃入口
+2. 丢弃后清理 IndexedDB 记录
+3. 同步清空当前草稿态与必要的表单媒体值
+
+### 核心实现
+
+1. **本地草稿 hook 增加删除能力**
+   - 更新：`src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+   - 新增：`removeDraft`
+   - 用于删除 IndexedDB 中的本地草稿，并同步更新内存态 `drafts`
+
+2. **当前活跃草稿增加“丢弃草稿”按钮**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 在当前草稿预览区增加 `丢弃草稿` 按钮
+
+3. **丢弃动作的状态同步**
+   - 删除本地草稿记录后：
+     - 清空 `activeDraftId`
+     - 移除当前草稿预览
+   - 若当前草稿状态已为 `uploaded` 且当前表单值仍有媒体引用，则同步执行 `onChange('')`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 当前活跃草稿删除/丢弃入口
+2. IndexedDB 草稿清理
+3. 当前草稿预览同步消失
+4. 已上传草稿丢弃时同步清空当前表单媒体值
+
+本轮明确未实现：
+
+1. 草稿列表中心
+2. 批量删除
+3. 云端资源删除
+4. 多端同步
+5. 协议升级
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录本地草稿删除/丢弃入口接入后 TypeScript 编译通过
+
+## 2026-04-13 - feat：快捷扫描右侧边栏接入个人缓冲区快捷媒体入口
+
+### 本轮目标
+
+让右侧“快捷扫描”边栏能够直接承接个人缓冲区的高频移动端入口：
+
+1. 个人拍照
+2. 个人录视频
+3. 个人缓冲区
+
+### 核心实现
+
+1. **扩展 quick actions 类型与注册表**
+   - 更新：
+     - `src/features/quick-actions/types.ts`
+     - `src/features/quick-actions/data/quick-action-registry.ts`
+   - 新增动作：
+     - `personal_workbench_photo`
+     - `personal_workbench_video`
+     - `personal_workbench_buffer`
+
+2. **补充快捷扫描中文文案**
+   - 更新：`src/locales/messages/zh-CN/quickActions.ts`
+   - 增加“个人拍照 / 个人录视频 / 个人缓冲区”标题与描述
+
+3. **新增 personal capture 页面与路由**
+   - 新增：
+     - `src/features/personal-workbench/capture/index.tsx`
+     - `src/routes/_authenticated/personal-workbench/capture.tsx`
+     - `src/routes/_authenticated/personal-workbench/capture.lazy.tsx`
+     - `src/routes/_authenticated/personal-workbench/capture-route-component.tsx`
+   - 通过 query 参数承接：
+     - `mode=photo`
+     - `mode=video`
+
+4. **媒体面板支持快捷采集页模式**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 新增：
+     - `initialCaptureMode`
+     - `autoStartCamera`
+   - 使快捷采集页进入后即可直达拍照或录视频模式，并自动打开相机
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 快捷扫描侧栏中的个人拍照入口
+2. 快捷扫描侧栏中的个人录视频入口
+3. 快捷扫描侧栏中的个人缓冲区入口
+4. 独立快捷采集页与模式直达
+
+本轮明确未实现：
+
+1. 添加到主屏幕交互提示
+2. 浏览器直接写手机桌面文件系统
+3. 草稿中心
+4. 多端同步
+5. 云端协议升级
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 快捷扫描右侧边栏接入个人缓冲区快捷媒体入口后 TypeScript 编译通过
+
+## 2026-04-13 - fix：快捷扫描个人拍照/录视频入口改为更接近直调体验
+
+### 本轮目标
+
+修正快捷扫描中“个人拍照 / 个人录视频”仍然过于像普通网页承接页的问题：
+
+1. 个人拍照更接近直接调起系统拍照入口
+2. 个人录视频更接近直入极简录制页
+
+### 核心实现
+
+1. **个人记录媒体面板增强快捷采集模式能力**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 新增能力：
+     - `autoTriggerPhotoPicker`
+     - `autoStartRecording`
+     - `compactMode`
+   - 具体行为：
+     - 拍照模式下进入页面后自动尝试触发系统拍照选择器
+     - 录视频模式下在相机就绪后自动开始录制
+     - 快捷采集页中隐藏部分普通编辑态 UI，收敛为更接近直入模式
+
+2. **快捷采集页调整为模式化直入说明与行为**
+   - 更新：`src/features/personal-workbench/capture/index.tsx`
+   - 当前行为：
+     - `mode=photo` 时，进入页后自动尝试拉起系统拍照入口
+     - `mode=video` 时，进入页后自动打开相机并自动开始录制
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 个人拍照更接近系统拍照入口
+2. 个人录视频更接近极简录制页直入模式
+
+本轮仍然未实现：
+
+1. 原生 App 级别的无页面系统录像接管
+2. 浏览器直接写手机桌面文件系统
+3. 主屏幕安装引导交互
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 快捷扫描个人拍照/录视频入口改为更接近直调体验后 TypeScript 编译通过
+
+## 2026-04-13 - feat：方案A - 快捷采集成功后自动打开新建个人记录弹窗
+
+### 本轮目标
+
+将快捷采集入口与“新建个人记录”弹窗打通，形成“采集现场媒体 -> 整理记录”的闭环：
+
+1. 快捷拍照成功后自动打开新建个人记录弹窗
+2. 快捷录视频成功后自动打开新建个人记录弹窗
+3. 弹窗自动回填刚采集的本地草稿媒体
+
+### 核心实现
+
+1. **个人记录媒体面板支持草稿桥接回填**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 新增能力：
+     - `initialDraftId`
+     - `onDraftCreated`
+   - 具体行为：
+     - 新建草稿成功时向外回调草稿 id
+     - 支持外部指定当前草稿 id 并在编辑弹窗中回填对应草稿预览
+     - 当草稿为视频且尚未上传时，允许在弹窗中直接预览本地视频草稿
+
+2. **个人记录弹窗支持“快捷采集回填模式”**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-card-editor.tsx`
+   - 具体行为：
+     - 接收 `initialDraftId`
+     - 当由快捷采集唤起时，顶部提示改为“已带入刚采集的现场媒体，请补充记录信息后保存”
+     - 媒体面板自动读取并展示对应草稿
+
+3. **快捷采集页在采集成功后自动唤起弹窗**
+   - 更新：`src/features/personal-workbench/capture/index.tsx`
+   - 具体行为：
+     - 快捷拍照/录视频生成草稿后，记录该草稿 id
+     - 自动打开 `PersonalWorkbenchCardEditor`
+     - 保存成功后继续复用现有个人记录创建 mutation
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 快捷采集成功后自动唤起新建个人记录弹窗
+2. 新建弹窗自动回填刚采集的媒体草稿
+3. 用户可在弹窗中继续补充标题、备注、分栏并保存
+
+本轮仍然未实现：
+
+1. 多条草稿切换器
+2. 草稿中心
+3. 多端同步
+4. 后端协议升级
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 方案A“快捷采集成功后自动打开新建个人记录弹窗并回填草稿媒体”实现后 TypeScript 编译通过
+
+## 2026-04-13 - feat：快捷扫描个人卡片增加“放到桌面”入口
+
+### 本轮目标
+
+为快捷扫描侧边栏中的个人卡片增加“放到桌面”次级操作，在不破坏主跳转行为的前提下，支持更直接的移动端高频入口：
+
+1. 个人拍照卡片支持放到桌面
+2. 个人录视频卡片支持放到桌面
+3. 个人缓冲区卡片支持放到桌面
+
+### 核心实现
+
+1. **快捷扫描卡片增加安装次级按钮**
+   - 更新：`src/features/quick-actions/components/quick-action-drawer.tsx`
+   - 具体行为：
+     - 保持卡片主点击继续走原有页面跳转
+     - 仅对 `personal_workbench_photo` / `personal_workbench_video` / `personal_workbench_buffer` 三类卡片增加“放到桌面”次级按钮
+     - 复用 `usePageInstall` 安装能力 hook
+     - 若浏览器支持安装提示，则触发安装引导
+     - 若浏览器不支持安装，则弹出“添加到主屏幕”说明
+
+2. **补充快捷扫描侧边栏安装文案**
+   - 更新：`src/locales/messages/zh-CN/quickActions.ts`
+   - 新增文案：
+     - 放到桌面
+     - 已在桌面
+     - 安装指引
+     - 安装提示成功反馈
+     - 手动添加到主屏幕标题
+
+3. **为三类个人入口新增独立 manifest**
+   - 新增：
+     - `public/manifests/personal-workbench-photo.webmanifest`
+     - `public/manifests/personal-workbench-video.webmanifest`
+     - `public/manifests/personal-workbench-buffer.webmanifest`
+   - 目标映射：
+     - 个人拍照 -> `/personal-workbench/capture?mode=photo`
+     - 个人录视频 -> `/personal-workbench/capture?mode=video`
+     - 个人缓冲区 -> `/personal-workbench`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 侧边栏个人卡片出现“放到桌面”按钮
+2. 支持安装时触发安装提示
+3. 不支持安装时展示手动添加到主屏幕引导
+
+本轮仍然未实现：
+
+1. 原生系统级快捷方式直写
+2. 浏览器外桌面文件写入
+3. 桌面端独立打包
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 快捷扫描个人卡片增加“放到桌面”入口后 TypeScript 编译通过
+
+## 2026-04-13 - fix：个人记录缓冲区 500 与 Dialog 可访问性问题止血修复
+
+### 本轮目标
+
+对 `t81` 做前端侧最小正确修复：
+
+1. 个人记录缓冲区完整页在接口异常时不再直接放大为 500
+2. 个人记录缓冲区弹窗在接口异常时有明确错误态兜底
+3. 缓解外层缓冲区 Dialog 与内层编辑 Dialog 同时打开导致的可访问性警告
+
+### 核心实现
+
+1. **完整页补 query 错误兜底**
+   - 更新：`src/features/personal-workbench/index.tsx`
+   - 具体行为：
+     - 使用 `isError / error / isPending / refetch`
+     - 接口异常时展示错误态和重试按钮
+     - 避免 query 异常直接放大成整页崩溃
+
+2. **缓冲区弹窗补 query 错误兜底**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-dialog.tsx`
+   - 具体行为：
+     - 为弹窗内部列表区补充 loading / error 态
+     - 接口异常时展示错误提示与重试按钮
+
+3. **缓解嵌套 Dialog 问题**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-dialog.tsx`
+   - 具体行为：
+     - 新建 / 编辑记录时先关闭外层 `PersonalWorkbenchDialog`
+     - 再打开 `PersonalWorkbenchCardEditor`
+     - 降低 `Dialog` 套 `Dialog` 导致的可访问性警告概率
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 接口异常时个人记录完整页不再直接落到 500
+2. 个人缓冲区弹窗在接口异常时可见错误态与重试入口
+3. 外层缓冲区弹窗与内层编辑弹窗不再维持同时打开状态
+
+本轮未直接修复：
+
+1. `404` 的真实环境根因（后端版本 / 代理 / 路由注册）
+2. 个人记录后端协议
+
+### 额外说明
+
+当前已确认个人记录前端 service 路径与后端路由定义是对齐的，因此 `404` 仍应视为环境同步核对项，而不是前端接口地址错误。
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录缓冲区 500 与 Dialog 止血修复后 TypeScript 编译通过
+
+## 2026-04-13 - fix：第一阶段必修 - 本地媒体草稿账号隔离
+
+### 本轮目标
+
+修复个人缓冲区快捷采集链路中的高优先级漏洞点：本地媒体草稿在同一浏览器多账号切换场景下可能串数据。目标是将本地草稿与当前登录账号绑定。
+
+### 核心实现
+
+1. **本地草稿 schema 增加账号归属字段**
+   - 更新：`src/features/personal-workbench/data/schema.ts`
+   - 新增字段：
+     - `ownerUserId`
+     - `ownerAccountNo`
+
+2. **本地草稿存储层支持按账号读取**
+   - 更新：`src/features/personal-workbench/services/local-media-draft-store.ts`
+   - 新增能力：
+     - `getAllByOwner(ownerUserId, ownerAccountNo)`
+   - 行为：
+     - 只返回归属于当前账号的本地草稿
+     - 草稿按 `createdAt` 倒序返回，降低不同浏览器实现差异带来的顺序不确定性
+
+3. **本地草稿 hook 接入当前登录账号**
+   - 更新：`src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+   - 行为：
+     - 读取当前 `AuthStore.user`
+     - 初始化时按当前账号过滤草稿
+     - 保存草稿时写入 `ownerUserId` 与 `ownerAccountNo`
+     - 更新旧草稿时若缺少归属字段，则以当前账号补齐最小兼容字段
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 同一浏览器中不同账号不会再直接共用同一批本地草稿
+2. 新生成草稿会携带明确账号归属
+3. 旧草稿在被当前账号更新时可补齐归属字段
+
+本轮仍未实现：
+
+1. 对无归属字段的历史旧草稿自动做离线迁移
+2. 第二阶段中的状态源收敛与保存后流转优化
+3. 第三阶段中的草稿队列、manifest shortcuts 与状态机增强
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 第一阶段“本地媒体草稿账号隔离”实现后 TypeScript 编译通过
+
+## 2026-04-13 - fix：第二阶段 - 状态源收敛、保存后去向与录视频准备态优化
+
+### 本轮目标
+
+在不推翻第一阶段账号隔离的前提下，对快捷采集链路做第二阶段收敛优化：
+
+1. 收敛媒体显示状态源
+2. 明确保存成功后的默认去向
+3. 将自动录视频从“自动开始录制”调整为更稳的录制准备态
+
+### 核心实现
+
+1. **媒体显示状态收敛**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当前调整：
+     - 保留本地草稿块作为主要本地媒体状态展示
+     - 已上传媒体预览仅在没有 `activeDraft` 时显示
+     - 降低 `value + activeDraft + previewUrl` 同时驱动同一预览区域的混杂程度
+
+2. **录视频进入方式调整为准备态**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当前调整：
+     - 新增 `autoPrepareRecording`
+     - 视频模式下自动打开相机并进入录制准备态
+     - 不再在相机 ready 后自动直接开始录制
+     - UI 增加“准备录制”提示 badge
+
+3. **保存成功后的默认去向明确**
+   - 更新：`src/features/personal-workbench/capture/index.tsx`
+   - 当前默认策略：
+     - 快捷采集完成并在弹窗中保存个人记录后
+     - 提示“个人记录已保存，正在返回个人缓冲区”
+     - 自动跳转回 `/personal-workbench`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 录视频不再进入页面后立即自动开始录制
+2. 快捷采集保存成功后存在明确默认流转
+3. 媒体显示判断链比上一版更收敛
+
+本轮仍未实现：
+
+1. 更彻底的单一真相来源重构
+2. 待整理草稿队列
+3. manifest shortcuts
+4. 本地草稿状态机增强
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 第二阶段优化后 TypeScript 编译通过
+
+## 2026-04-13 - feat：第三阶段增强 - 草稿队列、manifest shortcuts 与草稿状态机
+
+### 本轮目标
+
+在前两阶段稳定基础上，为个人缓冲区快捷采集链路补充第三阶段增强能力：
+
+1. 待整理草稿队列
+2. manifest shortcuts
+3. 更明确的本地草稿状态机
+
+### 核心实现
+
+1. **本地草稿状态机扩容**
+   - 更新：
+     - `src/features/personal-workbench/data/schema.ts`
+     - `src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+     - `src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 当前状态扩展为：
+     - `local_draft`
+     - `uploading`
+     - `uploaded`
+     - `linked_to_record`
+   - 行为：
+     - 新建草稿默认进入 `local_draft`
+     - 上传中进入 `uploading`
+     - 上传完成进入 `uploaded`
+     - 在快捷采集弹窗中保存记录后，当前草稿标记为 `linked_to_record`
+
+2. **快捷采集页支持待整理草稿队列**
+   - 更新：`src/features/personal-workbench/capture/index.tsx`
+   - 当前行为：
+     - 读取当前账号下仍待整理的草稿（`local_draft` / `uploaded`）
+     - 显示待整理草稿数量
+     - 当前记录保存完成后，若还有下一条草稿，则自动切换到下一条继续整理
+     - 所有待整理草稿处理完成后，再返回个人缓冲区
+
+3. **manifest shortcuts 增强**
+   - 更新：
+     - `public/manifests/personal-workbench-buffer.webmanifest`
+     - `public/manifests/personal-workbench-photo.webmanifest`
+     - `public/manifests/personal-workbench-video.webmanifest`
+   - 当前 shortcuts 提供：
+     - 个人拍照
+     - 个人录视频
+     - 个人缓冲区
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 多条草稿可顺序整理，而不再局限于一次处理一条
+2. 草稿生命周期比前两阶段更明确
+3. 现有放到桌面能力之外，manifest 中已有标准 shortcuts 补充
+
+本轮仍未实现：
+
+1. 对旧草稿状态做离线批量迁移
+2. 更复杂的队列优先级或批量操作
+3. 浏览器层面对 shortcuts 展示效果的完全一致性保证
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 第三阶段增强后 TypeScript 编译通过
+
+## 2026-04-13 - feat：更深层增强 - 历史迁移、队列批量能力与 shortcuts 兼容
+
+### 本轮目标
+
+在前三阶段基础上继续补强长期稳定性与产品化能力：
+
+1. 让历史旧草稿状态显式迁移到新状态机
+2. 给待整理草稿队列增加优先级与批量操作
+3. 为 shortcuts 增加跨浏览器兼容提示
+
+### 核心实现
+
+1. **历史旧草稿状态批量迁移**
+   - 更新：
+     - `src/features/personal-workbench/data/schema.ts`
+     - `src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+   - 当前行为：
+     - 读取当前账号草稿后，对历史旧状态做显式映射
+     - 旧 `draft` 迁移为 `local_draft`
+     - 补齐 `queuePriority`
+     - 迁移结果回写 IndexedDB，而不是仅依赖运行时容忍
+
+2. **队列优先级与批量操作**
+   - 更新：
+     - `src/features/personal-workbench/hooks/use-local-media-drafts.ts`
+     - `src/features/personal-workbench/capture/index.tsx`
+   - 新增能力：
+     - `reprioritizeDraft`
+     - `clearLinkedDrafts`
+   - 当前交互：
+     - 置顶当前
+     - 稍后处理
+     - 清理已整理
+   - 同时在草稿 schema 中补充：
+     - `queuePriority`
+     - `linkedRecordAt`
+
+3. **shortcuts 兼容增强**
+   - 更新：
+     - `src/locales/messages/zh-CN/quickActions.ts`
+     - `src/features/quick-actions/components/quick-action-drawer.tsx`
+   - 当前行为：
+     - 在安装降级提示中补充兼容性说明
+     - 明确告诉用户：不同浏览器可能展示为桌面图标、长按快捷入口或应用内快捷动作
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 历史旧草稿不再只依赖运行时兼容，而会显式迁移到新状态机
+2. 待整理草稿队列具备了最小可用的优先级与批量操作
+3. shortcuts 兼容提示更完整，降低了用户把浏览器差异误判为失败的概率
+
+本轮仍未实现：
+
+1. 更复杂的批量选择面板或多选任务管理 UI
+2. 浏览器层面对 shortcuts 呈现差异的完全统一控制
+3. 旧草稿迁移进度或迁移审计展示
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 更深层增强实现后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

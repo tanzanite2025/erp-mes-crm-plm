@@ -9,13 +9,14 @@ import type { PersonalRecord, PersonalRecordUpsertPayload } from '../data/schema
 import { PersonalWorkbenchImagePicker } from './personal-workbench-image-picker'
 
 interface PersonalWorkbenchCardEditorProps {
+  initialDraftId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   record?: PersonalRecord
   onSubmit: (payload: PersonalRecordUpsertPayload, recordId?: string) => Promise<void>
 }
 
-export function PersonalWorkbenchCardEditor({ open, onOpenChange, record, onSubmit }: PersonalWorkbenchCardEditorProps) {
+export function PersonalWorkbenchCardEditor({ initialDraftId = null, open, onOpenChange, record, onSubmit }: PersonalWorkbenchCardEditorProps) {
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [columnKey, setColumnKey] = useState<(typeof personalWorkbenchColumns)[number]['key']>('INBOX')
@@ -50,7 +51,7 @@ export function PersonalWorkbenchCardEditor({ open, onOpenChange, record, onSubm
               {record ? '编辑个人记录' : '新建个人记录'}
             </DialogTitle>
             <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60'>
-              仅保存在你自己的个人缓冲区中
+              {initialDraftId ? '已带入刚采集的现场媒体，请补充记录信息后保存' : '仅保存在你自己的个人缓冲区中'}
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 md:grid-cols-[1.2fr_0.8fr]'>
@@ -77,7 +78,7 @@ export function PersonalWorkbenchCardEditor({ open, onOpenChange, record, onSubm
                 </Select>
               </div>
             </div>
-            <PersonalWorkbenchImagePicker value={coverImageUrl} onChange={setCoverImageUrl} />
+            <PersonalWorkbenchImagePicker initialDraftId={initialDraftId} value={coverImageUrl} onChange={setCoverImageUrl} />
           </div>
           <DialogFooter>
             <Button type='button' variant='ghost' className='rounded-full' onClick={() => onOpenChange(false)}>取消</Button>

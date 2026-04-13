@@ -1,4 +1,4 @@
-import { ClipboardCheck, PackagePlus, ScanLine } from 'lucide-react'
+import { Camera, ClipboardCheck, NotebookPen, PackagePlus, ScanLine, Video } from 'lucide-react'
 import type { QuickActionDefinition } from '../types'
 
 const quickActionRegistryEntries = [
@@ -34,6 +34,39 @@ const quickActionRegistryEntries = [
     requiredPermissions: ['action_warehouse_stocktake_manage'],
     enabled: true,
     sortOrder: 30,
+  },
+  {
+    id: 'personal_workbench_photo',
+    titleKey: 'quickActions.actions.personalWorkbenchPhoto.title',
+    descriptionKey: 'quickActions.actions.personalWorkbenchPhoto.description',
+    icon: Camera,
+    to: '/personal-workbench/capture',
+    search: { mode: 'photo' },
+    requiredPermissions: [],
+    enabled: true,
+    sortOrder: 40,
+  },
+  {
+    id: 'personal_workbench_video',
+    titleKey: 'quickActions.actions.personalWorkbenchVideo.title',
+    descriptionKey: 'quickActions.actions.personalWorkbenchVideo.description',
+    icon: Video,
+    to: '/personal-workbench/capture',
+    search: { mode: 'video' },
+    requiredPermissions: [],
+    enabled: true,
+    sortOrder: 50,
+  },
+  {
+    id: 'personal_workbench_buffer',
+    titleKey: 'quickActions.actions.personalWorkbenchBuffer.title',
+    descriptionKey: 'quickActions.actions.personalWorkbenchBuffer.description',
+    icon: NotebookPen,
+    to: '/personal-workbench',
+    search: {},
+    requiredPermissions: [],
+    enabled: true,
+    sortOrder: 60,
   },
 ] satisfies QuickActionDefinition[]
 

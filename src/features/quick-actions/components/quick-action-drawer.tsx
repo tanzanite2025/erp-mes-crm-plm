@@ -2,10 +2,12 @@
 
 import { useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, ShieldAlert } from 'lucide-react'
+import { toast } from 'sonner'
+import { ArrowRight, Download, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLanguage } from '@/context/language-provider'
+import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
 import { useAuthStore } from '@/stores/auth-store'
 import { getAvailableQuickActions } from '../services/quick-action-access'
 
@@ -19,6 +21,25 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const actions = useMemo(() => getAvailableQuickActions(user), [user])
+  const photoInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-photo.webmanifest' })
+  const videoInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-video.webmanifest' })
+  const bufferInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-buffer.webmanifest' })
+
+  const installStateMap = useMemo(() => ({
+    personal_workbench_photo: photoInstall,
+    personal_workbench_video: videoInstall,
+    personal_workbench_buffer: bufferInstall,
+  }), [bufferInstall, photoInstall, videoInstall])
+
+  const resolveInstallLabel = (installLabel: string) => {
+    if (installLabel === 'ALREADY_INSTALLED') {
+      return t('quickActions.drawer.install.installed')
+    }
+    if (installLabel === 'ADD_TO_HOME_SCREEN') {
+      return t('quickActions.drawer.install.action')
+    }
+    return t('quickActions.drawer.install.guide')
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -38,27 +59,59 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
           ) : (
             actions.map((action) => {
               const Icon = action.icon
+              const installState = action.id in installStateMap ? installStateMap[action.id as keyof typeof installStateMap] : null
               return (
-                <button
+                <div
                   key={action.id}
-                  type='button'
                   className='group flex items-center justify-between rounded-3xl border border-border/70 bg-background px-4 py-4 text-left shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
-                  onClick={() => {
-                    onOpenChange(false)
-                    void navigate({ to: action.to, search: action.search })
-                  }}
                 >
-                  <div className='flex min-w-0 items-center gap-3'>
-                    <div className='flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
-                      <Icon className='size-5' />
+                  <button
+                    type='button'
+                    className='flex min-w-0 flex-1 items-center justify-between gap-3 text-left'
+                    onClick={() => {
+                      onOpenChange(false)
+                      void navigate({ to: action.to, search: action.search })
+                    }}
+                  >
+                    <div className='flex min-w-0 items-center gap-3'>
+                      <div className='flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
+                        <Icon className='size-5' />
+                      </div>
+                      <div className='min-w-0'>
+                        <p className='truncate text-[12px] font-black uppercase tracking-widest text-foreground'>{t(action.titleKey)}</p>
+                        <p className='mt-1 text-[11px] font-medium text-muted-foreground'>{t(action.descriptionKey)}</p>
+                      </div>
                     </div>
-                    <div className='min-w-0'>
-                      <p className='truncate text-[12px] font-black uppercase tracking-widest text-foreground'>{t(action.titleKey)}</p>
-                      <p className='mt-1 text-[11px] font-medium text-muted-foreground'>{t(action.descriptionKey)}</p>
+                    <ArrowRight className='size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary' />
+                  </button>
+                  {installState ? (
+                    <div className='ml-3 flex shrink-0 items-center'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='rounded-full px-3 text-[10px] font-black tracking-widest'
+                        onClick={async (event) => {
+                          event.stopPropagation()
+
+                          if (installState.isPromptAvailable) {
+                            await installState.promptInstall()
+                            toast.success(t('quickActions.drawer.install.success'))
+                            return
+                          }
+
+                          toast.message(t('quickActions.drawer.install.fallbackTitle'), {
+                            description: `${installState.fallbackHint} ${t('quickActions.drawer.install.compatibilityHint')}`,
+                          })
+                        }}
+                        disabled={!installState.canInstall}
+                      >
+                        <Download className='size-3.5' />
+                        {resolveInstallLabel(installState.installLabel)}
+                      </Button>
                     </div>
-                  </div>
-                  <ArrowRight className='size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary' />
-                </button>
+                  ) : null}
+                </div>
               )
             })
           )}
