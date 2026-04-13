@@ -269,3 +269,65 @@
     - [x] 不扩到 `items / substitutes`
     - [x] 不改 BOM 表格/预览的 UI 结构
     - [x] 不处理无关样式 warning
+
+- [ ] 735 应收应付记录级证据挂载规划（中文），让每一笔收款/付款记录都能独立挂载图片证据，并在详情中按记录联动展示。
+  - [x] 已确认本轮目标不是给台账或订单底部临时加附件区，而是为 `ReceiptRecord / PaymentRecord` 增加独立证据挂载能力
+  - [x] 已确认当前已有基础能力：
+    - [x] 应收/应付详情已具备 `receiptRecords / paymentRecords`
+    - [x] 当前系统已具备图片上传基础设施与订单级 evidence 组件
+    - [x] 当前系统已具备核销分摊能力，可表达部分收款/付款
+  - [x] 已确认当前核心缺口：
+    - [x] 收款记录与付款记录当前没有独立 evidence 绑定关系
+    - [x] 订单级 `evidences` 不能替代记录级财务证据
+    - [x] 详情页当前只能看记录和分摊，不能按记录联动展示截图
+  - [x] 已确认本轮最小实施范围：
+    - [x] 先支持收款记录级图片证据挂载
+    - [x] 先支持付款记录级图片证据挂载
+    - [x] 前端详情页支持“选中记录 -> 展示该记录证据”
+    - [x] 暂不扩到 PDF / Excel / OCR / 阶段款语义
+  - [x] 已确认本轮建议的解耦原则：
+    - [x] 资源上传层与业务挂载层分离
+    - [x] 不直接把 evidences JSON 塞进 `receipt_records / payment_records`
+    - [x] 不复用订单 evidence 语义承载财务记录证据
+    - [x] 详情页长组件优先拆出独立 evidence section，避免继续堆叠
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `server/models` 下新增 settlement evidence 模型文件
+    - [x] `server/services` 下新增 settlement evidence service / dto / mapper
+    - [x] `server/handlers` 下新增 settlement evidence handler
+    - [x] `server/routes` 下新增 settlement evidence route
+    - [x] `src/features/trading/settlement-evidences` 下新增 contracts / services / hooks / components
+    - [x] `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+    - [x] `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+  - [x] 已确认本轮主要风险点：
+    - [x] 若混用订单级 evidence 与记录级 evidence，会导致财务证据语义混乱
+    - [x] 若把上传、挂载、展示逻辑继续堆进现有 500+ 行 dialog，维护成本会继续恶化
+    - [x] 若一开始就扩到文档类附件与阶段款语义，任务范围会失控
+  - [ ] 待执行：
+    - [ ] 新增后端记录级 evidence 模型、服务、handler、route 骨架
+    - [ ] 新增前端 settlement evidence contract / service / hooks / components
+    - [ ] 改造应收详情，支持按收款记录查看与上传图片证据
+    - [ ] 改造应付详情，支持按付款记录查看与上传图片证据
+    - [ ] 执行定向 Go / TS 校验并更新 `walkthrough.md`
+  - [ ] 视觉收口新增目标（待确认后执行）：让记录级证据区与系统现有 trading 详情视觉语言完全对齐
+    - [x] 已确认这一步是新增范围，不再是上一轮 MVP 的默认延伸
+    - [x] 已确认本轮目标不是新增业务能力，而是只做视觉收口
+    - [x] 已确认本轮重点检查项：
+      - [x] 卡片标题字体 / 字号 / 字重 / 是否斜体
+      - [x] 空态容器与文案层级
+      - [x] badge 风格与颜色语义
+      - [x] 上传区与 gallery 卡片的边框、圆角、间距、按钮层级
+      - [x] 应收 / 应付详情中新增区块与既有区块的节奏一致性
+    - [x] 已确认本轮优先涉及文件：
+      - [x] `src/features/trading/settlement-evidences/components/settlement-record-evidence-panel.tsx`
+      - [x] `src/features/trading/settlement-evidences/components/settlement-evidence-upload.tsx`
+      - [x] `src/features/trading/settlement-evidences/components/settlement-evidence-gallery.tsx`
+      - [x] `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+      - [x] `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+    - [x] 已确认本轮非目标边界：
+      - [x] 不新增后端接口
+      - [x] 不改记录级 evidence 业务语义
+      - [x] 不顺手重构整个应收应付详情结构
+    - [ ] 待执行：
+      - [ ] 对齐标题、空态、badge、上传区与 gallery 的系统视觉风格
+      - [ ] 对齐新增筛选按钮与既有 dialog 控件层级
+      - [ ] 执行前端定向校验并更新 `walkthrough.md`

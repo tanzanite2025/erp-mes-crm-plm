@@ -119,7 +119,7 @@ func SearchReceivableLedgers(query LedgerSearchQuery) (LedgerSearchResponse, err
 
 func GetReceivableLedgerByID(id string) (ReceivableLedgerDetailResponse, error) {
 	var ledger models.ReceivableLedger
-	err := db.DB.Preload("ReceiptRecords").Preload("SettlementMappings").First(&ledger, "id = ?", strings.TrimSpace(id)).Error
+	err := db.DB.Preload("ReceiptRecords.Evidences.Asset").Preload("SettlementMappings").First(&ledger, "id = ?", strings.TrimSpace(id)).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ReceivableLedgerDetailResponse{}, ErrReceivableLedgerNotFound
 	}
@@ -131,7 +131,7 @@ func GetReceivableLedgerByID(id string) (ReceivableLedgerDetailResponse, error) 
 
 func GetPayableLedgerByID(id string) (PayableLedgerDetailResponse, error) {
 	var ledger models.PayableLedger
-	err := db.DB.Preload("PaymentRecords").Preload("SettlementMappings").First(&ledger, "id = ?", strings.TrimSpace(id)).Error
+	err := db.DB.Preload("PaymentRecords.Evidences.Asset").Preload("SettlementMappings").First(&ledger, "id = ?", strings.TrimSpace(id)).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return PayableLedgerDetailResponse{}, ErrPayableLedgerNotFound
 	}
@@ -553,6 +553,10 @@ func mapPayableLedgerDetail(item models.PayableLedger) PayableLedgerDetailRespon
 }
 
 func mapReceiptRecord(item models.ReceiptRecord) ReceiptRecordResponse {
+	evidences := make([]SettlementRecordEvidenceResponse, 0, len(item.Evidences))
+	for _, evidence := range item.Evidences {
+		evidences = append(evidences, mapSettlementRecordEvidence(evidence))
+	}
 	return ReceiptRecordResponse{
 		ID:            item.ID,
 		RecordNo:      item.RecordNo,
@@ -566,10 +570,15 @@ func mapReceiptRecord(item models.ReceiptRecord) ReceiptRecordResponse {
 		ReferenceNo:   item.ReferenceNo,
 		CreatedAt:     item.CreatedAt,
 		UpdatedAt:     item.UpdatedAt,
+		Evidences:     evidences,
 	}
 }
 
 func mapPaymentRecord(item models.PaymentRecord) PaymentRecordResponse {
+	evidences := make([]SettlementRecordEvidenceResponse, 0, len(item.Evidences))
+	for _, evidence := range item.Evidences {
+		evidences = append(evidences, mapSettlementRecordEvidence(evidence))
+	}
 	return PaymentRecordResponse{
 		ID:            item.ID,
 		RecordNo:      item.RecordNo,
@@ -583,6 +592,7 @@ func mapPaymentRecord(item models.PaymentRecord) PaymentRecordResponse {
 		ReferenceNo:   item.ReferenceNo,
 		CreatedAt:     item.CreatedAt,
 		UpdatedAt:     item.UpdatedAt,
+		Evidences:     evidences,
 	}
 }
 
@@ -758,7 +768,7 @@ func buildSettlementRecordNo(prefix string) string {
 
 func reloadReceivableLedgerDetailTx(tx *gorm.DB, id string) (ReceivableLedgerDetailResponse, error) {
 	var ledger models.ReceivableLedger
-	if err := tx.Preload("ReceiptRecords").Preload("SettlementMappings").First(&ledger, "id = ?", id).Error; err != nil {
+	if err := tx.Preload("ReceiptRecords.Evidences.Asset").Preload("SettlementMappings").First(&ledger, "id = ?", id).Error; err != nil {
 		return ReceivableLedgerDetailResponse{}, err
 	}
 	return mapReceivableLedgerDetail(ledger), nil
@@ -766,7 +776,7 @@ func reloadReceivableLedgerDetailTx(tx *gorm.DB, id string) (ReceivableLedgerDet
 
 func reloadPayableLedgerDetailTx(tx *gorm.DB, id string) (PayableLedgerDetailResponse, error) {
 	var ledger models.PayableLedger
-	if err := tx.Preload("PaymentRecords").Preload("SettlementMappings").First(&ledger, "id = ?", id).Error; err != nil {
+	if err := tx.Preload("PaymentRecords.Evidences.Asset").Preload("SettlementMappings").First(&ledger, "id = ?", id).Error; err != nil {
 		return PayableLedgerDetailResponse{}, err
 	}
 	return mapPayableLedgerDetail(ledger), nil

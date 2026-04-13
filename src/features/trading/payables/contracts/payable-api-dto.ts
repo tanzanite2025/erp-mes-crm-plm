@@ -1,3 +1,5 @@
+import type { SettlementRecordEvidenceApiDTO } from '../../settlement-evidences/contracts/settlement-evidence-api-dto'
+
 export interface PayableRecordApiDTO {
   id: string
   documentNo: string
@@ -54,6 +56,7 @@ export interface PaymentRecordApiDTO {
   referenceNo: string
   createdAt: string
   updatedAt: string
+  evidences: SettlementRecordEvidenceApiDTO[]
 }
 
 export interface SettlementAllocationApiDTO {

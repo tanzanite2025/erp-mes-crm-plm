@@ -101,18 +101,19 @@ type LedgerSearchResponse struct {
 }
 
 type ReceiptRecordResponse struct {
-	ID            string    `json:"id"`
-	RecordNo      string    `json:"recordNo"`
-	LedgerID      string    `json:"ledgerId"`
-	Amount        float64   `json:"amount"`
-	Currency      string    `json:"currency"`
-	PaymentMethod string    `json:"paymentMethod"`
-	PaymentTerm   string    `json:"paymentTerm"`
-	RecordDate    string    `json:"recordDate"`
-	Status        string    `json:"status"`
-	ReferenceNo   string    `json:"referenceNo"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID            string                             `json:"id"`
+	RecordNo      string                             `json:"recordNo"`
+	LedgerID      string                             `json:"ledgerId"`
+	Amount        float64                            `json:"amount"`
+	Currency      string                             `json:"currency"`
+	PaymentMethod string                             `json:"paymentMethod"`
+	PaymentTerm   string                             `json:"paymentTerm"`
+	RecordDate    string                             `json:"recordDate"`
+	Status        string                             `json:"status"`
+	ReferenceNo   string                             `json:"referenceNo"`
+	CreatedAt     time.Time                          `json:"createdAt"`
+	UpdatedAt     time.Time                          `json:"updatedAt"`
+	Evidences     []SettlementRecordEvidenceResponse `json:"evidences"`
 }
 
 type SettlementAllocationResponse struct {
@@ -129,18 +130,19 @@ type SettlementAllocationResponse struct {
 }
 
 type PaymentRecordResponse struct {
-	ID            string    `json:"id"`
-	RecordNo      string    `json:"recordNo"`
-	LedgerID      string    `json:"ledgerId"`
-	Amount        float64   `json:"amount"`
-	Currency      string    `json:"currency"`
-	PaymentMethod string    `json:"paymentMethod"`
-	PaymentTerm   string    `json:"paymentTerm"`
-	RecordDate    string    `json:"recordDate"`
-	Status        string    `json:"status"`
-	ReferenceNo   string    `json:"referenceNo"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID            string                             `json:"id"`
+	RecordNo      string                             `json:"recordNo"`
+	LedgerID      string                             `json:"ledgerId"`
+	Amount        float64                            `json:"amount"`
+	Currency      string                             `json:"currency"`
+	PaymentMethod string                             `json:"paymentMethod"`
+	PaymentTerm   string                             `json:"paymentTerm"`
+	RecordDate    string                             `json:"recordDate"`
+	Status        string                             `json:"status"`
+	ReferenceNo   string                             `json:"referenceNo"`
+	CreatedAt     time.Time                          `json:"createdAt"`
+	UpdatedAt     time.Time                          `json:"updatedAt"`
+	Evidences     []SettlementRecordEvidenceResponse `json:"evidences"`
 }
 
 type ReceivableLedgerDetailResponse struct {

@@ -1,5 +1,190 @@
 ### 1. plan：production-shared 机器码字段统一收口
 
+### 1. plan：应收应付记录级证据挂载
+
+日期：2026-04-13  
+状态：已批准，待执行
+
+#### 1.1 当前背景
+
+当前应收/应付详情已经具备台账详情、收付款记录与核销分摊能力，也已有图片上传基础设施和订单级 evidence 组件。但现状仍无法表达“这一次收了多少 / 付了多少，对应的是哪几张截图”，因此无法形成记录级审计证据链。
+
+#### 1.2 当前问题本质
+
+当前真正缺失的不是一个页面附件区，而是**记录级证据挂载语义**：
+
+1. `ReceiptRecord / PaymentRecord` 目前没有独立 evidence 绑定关系
+2. 订单级 `evidences` 只能表达订单背景凭据，不能替代财务记录证据
+3. 详情页当前只能看记录与核销，不能按记录联动展示截图
+4. 若把这项需求继续堆进现有 dialog 或直接塞进记录表 JSON，会导致上传、业务、展示三层继续耦合
+
+因此本轮目标不是“页面底部加附件”，而是**给收付款记录新增独立证据挂载能力，并在详情里按记录联动展示**。
+
+#### 1.3 本轮目标
+
+本轮按最小可运行范围实施：
+
+1. 支持收款记录级图片证据挂载
+2. 支持付款记录级图片证据挂载
+3. 应收/应付详情支持“选中记录 -> 展示该记录证据”
+4. 上传基础设施与业务挂载关系分离
+5. 不破坏现有台账、记录、核销主链
+
+#### 1.4 推荐实施策略
+
+##### 1.4.1 后端新增记录级 evidence 模型与挂载关系
+
+新增独立 settlement evidence 模型，而不是把 evidences JSON 直接塞进：
+
+1. `receipt_records`
+2. `payment_records`
+
+推荐拆成：
+
+1. evidence 资源对象（文件元数据）
+2. record evidence 挂载关系（记录与资源绑定）
+
+这样上传层与业务层可以保持解耦，后续扩到 PDF / Excel 也不会推倒重来。
+
+##### 1.4.2 后端新增记录证据增删查接口
+
+本轮优先新增：
+
+1. 收款记录 evidence 查询 / 创建 / 删除接口
+2. 付款记录 evidence 查询 / 创建 / 删除接口
+
+优先按 receipt / payment 分开路由，避免本轮继续扩大到 settlement record 抽象统一。
+
+##### 1.4.3 前端新增 settlement evidences 独立目录
+
+前端不把证据逻辑继续堆进现有 500+ 行详情 dialog，而是新增独立目录承载：
+
+1. contracts
+2. services
+3. hooks
+4. components
+
+详情页仅负责组合：
+
+1. 记录列表
+2. 当前选中记录
+3. 该记录证据展示与上传
+
+##### 1.4.4 订单 evidence 与记录 evidence 严格分层
+
+本轮明确不复用订单级 `evidences` 语义承载财务记录证据：
+
+1. 订单 evidence 继续表达订单背景凭据
+2. 记录 evidence 只表达某次收款 / 付款的直接证据
+
+#### 1.5 预计涉及文件
+
+##### 后端
+
+1. `server/models/settlement_evidence.go`
+2. `server/services/settlement_evidence_dto.go`
+3. `server/services/settlement_evidence_mapper.go`
+4. `server/services/settlement_evidence_service.go`
+5. `server/handlers/settlement_evidence_handler.go`
+6. `server/routes/routes_settlement_evidence.go`
+7. `server/routes/routes.go`
+8. 必要时联动 `server/services/ar_ap_dto.go` 与 AR/AP 查询链
+
+##### 前端
+
+1. `src/features/trading/settlement-evidences/contracts/settlement-evidence-api-dto.ts`
+2. `src/features/trading/settlement-evidences/services/settlement-evidence-service.ts`
+3. `src/features/trading/settlement-evidences/hooks/use-settlement-record-evidences.ts`
+4. `src/features/trading/settlement-evidences/components/settlement-record-evidence-panel.tsx`
+5. `src/features/trading/settlement-evidences/components/settlement-evidence-upload.tsx`
+6. `src/features/trading/settlement-evidences/components/settlement-evidence-gallery.tsx`
+7. `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+8. `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+9. 必要时拆出应收/应付的 records table / evidence section 子组件
+
+#### 1.6 风险与破坏性评估
+
+本轮主要风险点：
+
+1. 若混用订单级 evidence 与记录级 evidence，会导致财务证据语义混乱
+2. 若把上传、挂载、展示逻辑继续堆进现有 dialog，后续维护成本会继续恶化
+3. 若本轮直接扩到 PDF / Excel / OCR / 阶段款语义，任务范围会失控
+4. 若后端直接修改现有记录主表结构而不是新增挂载层，未来扩展会受限
+
+因此本轮必须坚持：
+
+1. 资源上传层与业务挂载层分离
+2. 先做图片证据 MVP
+3. 不破坏现有应收应付主链
+4. 优先通过独立文件目录解耦职责
+
+#### 1.7 验证策略
+
+本轮验证至少覆盖：
+
+1. 收款记录可上传并查询图片证据
+2. 付款记录可上传并查询图片证据
+3. 应收详情可按记录联动展示对应证据
+4. 应付详情可按记录联动展示对应证据
+5. 无证据记录可正常显示空态，不崩溃
+6. `pnpm exec tsc --noEmit` 通过
+7. 对应 Go 定向测试通过
+
+#### 1.8 非目标边界
+
+本轮不做：
+
+1. 不扩到 PDF / Excel / 表格类附件
+2. 不做 OCR 或金额识别
+3. 不引入阶段款 / 里程碑语义扩展
+4. 不重构现有订单 evidence 体系
+5. 不重写应收应付整体页面结构
+
+#### 1.9 当前阶段结论
+
+本轮最安全、最方便、最解耦的路线，是把“收付款记录证据挂载”独立成一层，而不是把附件语义继续塞进订单或详情页面局部状态中。这样既能尽快拿到“按记录挂截图”的最小能力，也能为后续扩展文档类附件和更完整的财务审计链保留清晰边界。
+
+#### 1.10 视觉收口补充（待确认）
+
+当前记录级 evidence 功能链已经跑通，但新增 UI 仍只能算“基本贴住当前详情页体系”，还不能称为与系统视觉**完全对齐**。因此需要单独追加一轮视觉收口，而不是继续把它归为功能实现的一部分。
+
+本轮补充仅做前端视觉收口，不扩业务能力：
+
+1. 对齐记录 evidence panel 的标题层级
+2. 对齐空态容器与文案层级
+3. 对齐 `已挂凭证 / 缺少凭证` badge 的系统语义表达
+4. 对齐 upload 区与 gallery 卡片的圆角、边框、留白、按钮层级
+5. 对齐应收 / 应付详情中新增区块与既有区块的节奏一致性
+
+##### 1.10.1 涉及文件
+
+1. `src/features/trading/settlement-evidences/components/settlement-record-evidence-panel.tsx`
+2. `src/features/trading/settlement-evidences/components/settlement-evidence-upload.tsx`
+3. `src/features/trading/settlement-evidences/components/settlement-evidence-gallery.tsx`
+4. `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+5. `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+
+##### 1.10.2 非目标边界
+
+本轮不做：
+
+1. 不新增后端接口
+2. 不改记录 evidence 业务语义
+3. 不顺手重构整个 AR/AP 详情结构
+4. 不扩展新的附件能力
+
+##### 1.10.3 验证策略
+
+本轮至少验证：
+
+1. 新增 evidence 区与现有详情弹窗字体层级一致
+2. 标题、空态、badge、上传区和 gallery 视觉语言一致
+3. `pnpm exec tsc --noEmit` 通过
+
+##### 1.10.4 当前判断
+
+只有在这一轮完成后，才能把“记录级证据区”的 UI 评价为与系统视觉完全对齐。当前状态更准确地说仍是“功能完成后的保守对齐”。
+
 ### 1. plan：新建型号模板链路加固
 
 日期：2026-04-13  

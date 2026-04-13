@@ -28,6 +28,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerLeaveRoutes(authorized)
 		registerFinanceRoutes(authorized)
 		registerArApRoutes(authorized)
+		registerSettlementEvidenceRoutes(authorized)
 		registerVoucherRoutes(authorized)
 		registerApprovalRoutes(authorized)
 		registerWorkflowRoutes(authorized)

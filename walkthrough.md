@@ -1,5 +1,260 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-13 - feat：735 应收应付记录级证据挂载 MVP
+
+### 本轮目标
+
+为应收/应付详情中的 `ReceiptRecord / PaymentRecord` 增加独立图片证据挂载能力，让页面支持“选中某条收款/付款记录 -> 查看并上传该记录对应截图”，而不是继续把财务证据混挂到订单级 evidence 中。
+
+### 根因结论
+
+本轮确认此前系统虽然已有：
+
+1. 应收/应付台账
+2. 收付款记录
+3. 核销分摊
+4. 图片上传基础设施
+
+但仍缺失最关键的一层：**记录级证据挂载关系**。
+
+这导致系统只能表达“收了多少钱 / 付了多少钱”，不能表达“这一次对应哪几张截图”。若继续把附件语义放在订单 evidence 或详情页局部状态里，上传、业务、展示三层会继续耦合。
+
+### 实现细节
+
+1. **新增后端记录级 evidence 模型**
+   - 新增 `server/models/settlement_evidence.go`
+   - 增加：
+     - `SettlementEvidenceAsset`
+     - `SettlementRecordEvidence`
+   - 资源元数据与记录挂载关系分离，避免直接把 evidences JSON 塞进 `receipt_records / payment_records`
+
+2. **新增后端 DTO / service / handler / route 骨架**
+   - 新增：
+     - `server/services/settlement_evidence_dto.go`
+     - `server/services/settlement_evidence_mapper.go`
+     - `server/services/settlement_evidence_service.go`
+     - `server/handlers/settlement_evidence_handler.go`
+     - `server/routes/routes_settlement_evidence.go`
+   - 提供：
+     - 收款记录 evidence 查询 / 创建 / 删除
+     - 付款记录 evidence 查询 / 创建 / 删除
+
+3. **注册迁移与主路由入口**
+   - 更新 `server/db/db.go`
+   - 更新 `server/routes/routes.go`
+   - 让 settlement evidence 模型进入 AutoMigrate，并在主路由中注册新接口
+
+4. **新增前端 settlement evidences 独立目录**
+   - 新增：
+     - `src/features/trading/settlement-evidences/contracts/settlement-evidence-api-dto.ts`
+     - `src/features/trading/settlement-evidences/services/settlement-evidence-service.ts`
+     - `src/features/trading/settlement-evidences/hooks/use-settlement-record-evidences.ts`
+     - `src/features/trading/settlement-evidences/components/settlement-record-evidence-panel.tsx`
+     - `src/features/trading/settlement-evidences/components/settlement-evidence-upload.tsx`
+     - `src/features/trading/settlement-evidences/components/settlement-evidence-gallery.tsx`
+   - 采用独立目录承载，符合“能解耦就拆文件”的约束
+
+5. **应收/应付详情接入记录证据区**
+   - 更新：
+     - `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+     - `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+     - `src/features/trading/query-keys.ts`
+   - 记录表现在支持选中某条记录
+   - 下方新增独立 evidence panel
+   - 当前采用懒加载记录证据方案，避免首轮就侵入现有 AR/AP 详情 DTO
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 仅支持**图片**记录证据挂载
+2. 未扩到 PDF / Excel / OCR
+3. 未引入阶段款 / 里程碑语义
+4. 未重构订单级 evidence 体系
+5. 未重写应收应付整体页面结构
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./routes ./services -run ^$`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+2. 后端 handlers / routes / services 编译型校验通过
+
+补充说明：
+
+1. 之前尝试的 `go test ./handlers ./routes ./services -run "ArAp|Settlement|Receipt|Payment"` 暴露的是仓库内既有无关测试夹具问题（如 `purchase_order_lines.returned_qty`、`payment_methods` 测试表缺失），未在本轮任务中扩散修复
+
+### 当前阶段结论
+
+本轮已经把“按收付款记录挂截图”的最小链路搭起来：后端具备记录级 evidence 增删查骨架，前端详情也已支持按记录查看和上传图片证据。这样财务证据开始从“订单附件语义”中解耦出来，为后续扩展文档类附件与更完整的审计链保留了清晰边界。
+
+### 增量更新：方向 1 - 记录表展示证据数与缺证据状态
+
+在 MVP 基础上，继续完成了记录表层的可视化补强：
+
+1. **后端详情接口直接返回记录 evidence 列表**
+   - 更新 `server/models/ar_ap_ledger.go`
+   - 更新 `server/services/ar_ap_dto.go`
+   - 更新 `server/services/ar_ap_query_service.go`
+   - 为 `ReceiptRecord / PaymentRecord` 增加 `Evidences` 关联
+   - `GetReceivableLedgerByID / GetPayableLedgerByID` 与事务内 reload 现在会直接 preload `Evidences.Asset`
+   - 这样详情记录表可直接使用后端 authoritative evidence 列表，不需要前端为每条记录额外发 N 次请求
+
+2. **前端记录 DTO 增加 evidences 字段**
+   - 更新：
+     - `src/features/trading/receivables/contracts/receivable-api-dto.ts`
+     - `src/features/trading/payables/contracts/payable-api-dto.ts`
+
+3. **应收/应付记录表增加两列**
+   - 更新：
+     - `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+     - `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 新增：
+     - `证据数`
+     - `凭证状态`
+   - 当前判定规则：
+     - `evidences.length > 0` -> `已挂凭证`
+     - `evidences.length === 0` -> `缺少凭证`
+
+4. **本轮收益**
+   - 财务人员在不点开证据区时，就能直接看到哪些记录缺凭证
+   - 避免详情页打开时按记录逐条查询 evidence 数量，减少前端局部补丁式请求风暴
+
+### 增量验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./routes ./services -run ^$`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+2. 后端 handlers / routes / services 编译型校验通过
+
+### 增量更新：方向 1 - 只看缺凭证记录筛选
+
+继续在记录表层补充缺凭证治理能力：
+
+1. **应收记录表增加本地筛选开关**
+   - 更新 `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+   - 新增 `showOnlyMissingEvidenceRecords`
+   - 基于 `record.evidences.length === 0` 做前端本地过滤
+   - 空态文案区分：
+     - `暂无收款记录`
+     - `当前没有缺凭证的收款记录`
+
+2. **应付记录表增加本地筛选开关**
+   - 更新 `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 新增 `showOnlyMissingEvidenceRecords`
+   - 基于 `record.evidences.length === 0` 做前端本地过滤
+   - 空态文案区分：
+     - `暂无付款记录`
+     - `当前没有缺凭证的付款记录`
+
+3. **当前实现策略**
+   - 未新增后端接口
+   - 直接复用后端已返回的 `evidences` 列表
+   - 避免再次引入逐条请求或筛选状态漂移
+
+### 本次筛选增强验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+
+### 增量更新：方向 1 - 缺凭证高亮样式
+
+继续增强缺凭证记录的可见性，但保持现有详情弹窗视觉体系不变：
+
+1. **缺凭证行增加轻量背景提醒**
+   - 更新：
+     - `src/features/trading/receivables/components/sales-receivable-detail-dialog.tsx`
+     - `src/features/trading/payables/components/purchase-payable-detail-dialog.tsx`
+   - 当 `record.evidences.length === 0` 时，记录行增加：
+     - `bg-destructive/5`
+     - `hover:bg-destructive/10`
+
+2. **缺凭证状态改为醒目 badge**
+   - `已挂凭证` 使用绿色轻量 badge
+   - `缺少凭证` 使用红色轻量 badge
+   - 仍然沿用当前系统按钮/表格/文本层级，不额外引入新字号或新斜体规则
+
+3. **样式一致性约束**
+   - 未调整新增卡片标题的 `text-sm font-medium` 口径
+   - 未调整筛选按钮的 `Button size='sm'` 体系
+   - 未新增额外斜体样式，避免与现有 dialog/table 风格漂移
+
+### 本次样式增强验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+
+### 增量更新：记录级证据区与系统视觉完全对齐
+
+在用户确认后，继续对记录级 evidence UI 做了一轮专门的视觉收口，目标不是新增功能，而是把新增区块与现有 trading 详情视觉语言完全拉齐。
+
+1. **以现有 order evidence 视觉语言为基准收口**
+   - 对齐基准：
+     - `src/features/trading/components/parts/order-evidence-manager.tsx`
+     - `src/features/trading/components/parts/order-evidence-gallery.tsx`
+   - 收口目标：
+     - 标题 icon + 小号大写斜体标题
+     - dashed 容器 / 空态占位语言
+     - gallery 卡片圆角、边框、阴影、按钮层级
+     - upload 区拖放风格视觉表达
+
+2. **记录 evidence panel 视觉收口**
+   - 更新 `src/features/trading/settlement-evidences/components/settlement-record-evidence-panel.tsx`
+   - 调整内容：
+     - 标题改为 `ImageIcon + text-[10px] font-black uppercase tracking-[0.2em] italic`
+     - 右上角增加与 evidence 数量一致的轻量计数
+     - “未选择记录 / 加载中 / 加载失败”全部改为统一的 rounded dashed 空态容器
+
+3. **上传区视觉收口**
+   - 更新 `src/features/trading/settlement-evidences/components/settlement-evidence-upload.tsx`
+   - 调整内容：
+     - 备注标签改为小号大写标签
+     - 备注输入改为与现有 evidence note 输入一致的 `rounded-xl + text-xs`
+     - 上传触发区改为大号 dashed dropzone，而不是普通 outline 按钮
+
+4. **gallery 卡片视觉收口**
+   - 更新 `src/features/trading/settlement-evidences/components/settlement-evidence-gallery.tsx`
+   - 调整内容：
+     - 空态改为 icon + italic placeholder
+     - 证据卡片改为 `rounded-2xl border bg-background p-3 shadow-sm`
+     - 图片 hover 改为 scale 过渡
+     - 删除按钮改为圆形 destructive icon 按钮，与现有 evidence 卡片口径一致
+
+5. **本轮视觉边界**
+   - 保持应收 / 应付详情原有区块标题层级不动，避免为了对齐 evidence 区反而破坏当前 dialog 内部既有节奏
+   - 不新增后端接口
+   - 不修改记录 evidence 业务语义
+
+### 本次视觉收口验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+
 ## 2026-04-13 - fix：734 新建型号模板链路加固
 
 ### 本轮目标

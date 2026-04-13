@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { LedgerSearchDialog } from '../../components/ledger-search-dialog'
 import { useGetReceivables, useSearchReceivableLedgers } from '../hooks/use-receivables'
 import { useCreateReceiptRecord, useReceivableLedgerDetail } from '../hooks/use-receivable-ledger-detail'
+import { SettlementRecordEvidencePanel } from '../../settlement-evidences/components/settlement-record-evidence-panel'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 
 interface AllocationDraft {
@@ -62,6 +63,8 @@ export function SalesReceivableDetailDialog({
   const [isLedgerSearchDialogOpen, setIsLedgerSearchDialogOpen] = useState(false)
   const [activeAllocationSequenceNo, setActiveAllocationSequenceNo] = useState<number | null>(null)
   const [historySearchTerm, setHistorySearchTerm] = useState('')
+  const [selectedReceiptRecordId, setSelectedReceiptRecordId] = useState<string | null>(null)
+  const [showOnlyMissingEvidenceRecords, setShowOnlyMissingEvidenceRecords] = useState(false)
 
   const detail = detailQuery.data
   const currencyOptions = useMemo(
@@ -107,6 +110,12 @@ export function SalesReceivableDetailDialog({
       allocations: allocationHistory.filter((allocation) => allocation.receiptRecordId === record.id),
     }))
   }, [allocationHistory, records])
+  const filteredRecords = useMemo(() => {
+    if (!showOnlyMissingEvidenceRecords) {
+      return records
+    }
+    return records.filter((record) => record.evidences.length === 0)
+  }, [records, showOnlyMissingEvidenceRecords])
   const fallbackFilteredLedgerOptions = useMemo(() => {
     const keyword = ledgerSearchTerm.trim().toLowerCase()
     if (!keyword) {
@@ -176,6 +185,8 @@ export function SalesReceivableDetailDialog({
     setIsLedgerSearchDialogOpen(false)
     setActiveAllocationSequenceNo(null)
     setHistorySearchTerm('')
+    setSelectedReceiptRecordId(null)
+    setShowOnlyMissingEvidenceRecords(false)
   }
 
   useEffect(() => {
@@ -437,29 +448,56 @@ export function SalesReceivableDetailDialog({
           </div>
 
           <div className='rounded-lg border p-4'>
-            <div className='mb-3 text-sm font-medium'>收款记录</div>
+            <div className='mb-3 flex items-center justify-between gap-4'>
+              <div className='text-sm font-medium'>收款记录</div>
+              <Button
+                type='button'
+                variant={showOnlyMissingEvidenceRecords ? 'default' : 'outline'}
+                size='sm'
+                onClick={() => setShowOnlyMissingEvidenceRecords((current) => !current)}
+              >
+                {showOnlyMissingEvidenceRecords ? '显示全部记录' : '只看缺凭证记录'}
+              </Button>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>记录号</TableHead>
                   <TableHead>金额</TableHead>
                   <TableHead>日期</TableHead>
+                  <TableHead>证据数</TableHead>
+                  <TableHead>凭证状态</TableHead>
                   <TableHead>状态</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records.length === 0 ? (
+                {filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className='text-center text-muted-foreground'>
-                      暂无收款记录
+                    <TableCell colSpan={6} className='text-center text-muted-foreground'>
+                      {showOnlyMissingEvidenceRecords ? '当前没有缺凭证的收款记录' : '暂无收款记录'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  records.map((record) => (
-                    <TableRow key={record.id}>
+                  filteredRecords.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={`cursor-pointer ${record.evidences.length === 0 ? 'bg-destructive/5 hover:bg-destructive/10' : ''}`}
+                      data-state={selectedReceiptRecordId === record.id ? 'selected' : undefined}
+                      onClick={() => setSelectedReceiptRecordId(record.id)}
+                    >
                       <TableCell>{record.recordNo}</TableCell>
                       <TableCell>{record.amount}</TableCell>
                       <TableCell>{record.recordDate}</TableCell>
+                      <TableCell>{record.evidences.length}</TableCell>
+                      <TableCell>
+                        <span
+                          className={record.evidences.length > 0
+                            ? 'inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700'
+                            : 'inline-flex rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive'}
+                        >
+                          {record.evidences.length > 0 ? '已挂凭证' : '缺少凭证'}
+                        </span>
+                      </TableCell>
                       <TableCell>{record.status}</TableCell>
                     </TableRow>
                   ))
@@ -467,6 +505,13 @@ export function SalesReceivableDetailDialog({
               </TableBody>
             </Table>
           </div>
+
+          <SettlementRecordEvidencePanel
+            recordId={selectedReceiptRecordId}
+            recordType='receipt'
+            uploadPath='/sales-orders/evidence/upload'
+            title='收款记录证据'
+          />
 
           <div className='rounded-lg border p-4'>
             <div className='mb-3 text-sm font-medium'>核销分摊明细</div>

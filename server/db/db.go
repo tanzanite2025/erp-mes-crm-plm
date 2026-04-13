@@ -433,6 +433,8 @@ func InitDB(dsn string) {
 		&models.ReceiptRecord{},
 		&models.PaymentRecord{},
 		&models.SettlementAllocation{},
+		&models.SettlementEvidenceAsset{},
+		&models.SettlementRecordEvidence{},
 		&models.InventoryAdjustment{},
 		&models.InventoryAdjustmentItem{},
 		&models.StocktakeTask{},
