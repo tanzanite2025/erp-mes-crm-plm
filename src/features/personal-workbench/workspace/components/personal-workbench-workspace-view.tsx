@@ -1,0 +1,126 @@
+import { useMemo, useState } from 'react'
+import { Link2, Plus, StickyNote } from 'lucide-react'
+import { toast } from 'sonner'
+import { PageHeader } from '@/components/layout/page-header'
+import { Button } from '@/components/ui/button'
+import type { PersonalWorkspaceItemDraft, PersonalWorkspaceItemType } from '../data/schema'
+import { WorkspaceBoard } from './workspace-board'
+import { WorkspaceItemEditor } from './workspace-item-editor'
+import { useWorkspaceItems } from '../hooks/use-workspace-items'
+
+export function PersonalWorkbenchWorkspaceView() {
+  const { createItem, isReady, items, removeItem, updateItem } = useWorkspaceItems()
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editorType, setEditorType] = useState<PersonalWorkspaceItemType>('note')
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+
+  const editingItem = useMemo(
+    () => items.find((item) => item.id === editingItemId) ?? undefined,
+    [editingItemId, items]
+  )
+
+  const handleEditorOpenChange = (open: boolean) => {
+    setIsEditorOpen(open)
+    if (!open) {
+      setEditingItemId(null)
+    }
+  }
+
+  return (
+    <div className='flex flex-col items-stretch gap-4'>
+      <div className='flex items-center justify-end gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          className='rounded-full'
+          onClick={() => {
+            setEditingItemId(null)
+            setEditorType('note')
+            setIsEditorOpen(true)
+          }}
+        >
+          <StickyNote className='size-4' />
+          新建便签
+        </Button>
+        <Button
+          type='button'
+          className='rounded-full'
+          onClick={() => {
+            setEditingItemId(null)
+            setEditorType('link')
+            setIsEditorOpen(true)
+          }}
+        >
+          <Plus className='size-4' />
+          新增链接
+        </Button>
+      </div>
+      <PageHeader
+        title='个人工作收纳箱'
+        description='先承接随手复制的文本和零散网址，把杂乱信息收回系统内。'
+        icon={Link2}
+      />
+      {!isReady ? (
+        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
+          正在加载个人工作收纳箱…
+        </div>
+      ) : (
+        <WorkspaceBoard
+          items={items}
+          onDelete={(id) => {
+            void (async () => {
+              try {
+                await removeItem(id)
+                toast.success('条目已删除')
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : '删除条目失败')
+              }
+            })()
+          }}
+          onEdit={(id) => {
+            const target = items.find((item) => item.id === id)
+            if (!target) {
+              return
+            }
+            setEditingItemId(id)
+            setEditorType(target.type)
+            setIsEditorOpen(true)
+          }}
+        />
+      )}
+      <WorkspaceItemEditor
+        item={editingItem}
+        open={isEditorOpen}
+        type={editorType}
+        onOpenChange={handleEditorOpenChange}
+        onSubmit={async (draft: PersonalWorkspaceItemDraft, itemId?: string) => {
+          if (itemId) {
+            const target = items.find((item) => item.id === itemId)
+            if (!target) {
+              throw new Error('当前条目不存在，无法更新')
+            }
+            if (target.type === 'note') {
+              const updatedItem = await updateItem({ ...target, content: draft.content ?? '', title: draft.title })
+              if (!updatedItem) {
+                throw new Error('便签更新失败')
+              }
+            } else {
+              const updatedItem = await updateItem({ ...target, remark: draft.remark ?? '', title: draft.title, url: draft.url ?? '' })
+              if (!updatedItem) {
+                throw new Error('链接更新失败')
+              }
+            }
+            toast.success('条目已更新')
+            return
+          }
+
+          const createdItem = await createItem(draft)
+          if (!createdItem) {
+            throw new Error(draft.type === 'note' ? '便签保存失败' : '链接保存失败')
+          }
+          toast.success(draft.type === 'note' ? '便签已保存' : '链接已保存')
+        }}
+      />
+    </div>
+  )
+}

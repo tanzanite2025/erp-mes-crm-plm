@@ -3750,6 +3750,182 @@
 
 1. 更深层增强实现后 TypeScript 编译通过
 
+## 2026-04-13 - feat：个人工作收纳箱第一批 MVP - 便签与链接
+
+### 本轮目标
+
+新增独立于个人媒体缓冲区的“个人工作收纳箱”第一批 MVP，仅承接两类高频边缘工作数据：
+
+1. 便签
+2. 链接
+
+并坚持：
+
+1. 与当前个人媒体缓冲区链路隔离
+2. 能拆就拆，尽量一个功能一个文件
+
+### 核心实现
+
+1. **独立的数据模型与本地存储**
+   - 新增：
+     - `src/features/personal-workbench/workspace/data/schema.ts`
+     - `src/features/personal-workbench/workspace/services/workspace-item-store.ts`
+     - `src/features/personal-workbench/workspace/hooks/use-workspace-items.ts`
+   - 当前行为：
+     - 便签与链接使用独立 IndexedDB 存储
+     - 继续沿用账号隔离思路，仅读取当前账号条目
+     - 与原个人媒体草稿存储彻底分开，避免互相影响
+
+2. **独立的工作收纳箱页面与组件**
+   - 新增：
+     - `src/features/personal-workbench/workspace/index.tsx`
+     - `src/features/personal-workbench/workspace/components/workspace-board.tsx`
+     - `src/features/personal-workbench/workspace/components/workspace-item-editor.tsx`
+     - `src/features/personal-workbench/workspace/components/workspace-note-card.tsx`
+     - `src/features/personal-workbench/workspace/components/workspace-link-card.tsx`
+   - 当前交互：
+     - 新建便签
+     - 新增链接
+     - 编辑条目
+     - 删除条目
+     - 便签以较大容器样式展示
+     - 链接显示 URL 与备注，并可直接新窗口打开
+
+3. **独立路由与最小入口挂接**
+   - 新增：
+     - `src/routes/_authenticated/personal-workbench/workspace.tsx`
+     - `src/routes/_authenticated/personal-workbench/workspace.lazy.tsx`
+   - 更新：`src/features/personal-workbench/index.tsx`
+   - 当前行为：
+     - 从个人工作台主页可进入“工作收纳箱”
+     - 仅做最小入口挂接，不改当前个人媒体缓冲区内部链路
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 便签与链接有独立的本地收纳能力
+2. 功能拆成数据 / 存储 / hook / 卡片 / 编辑器 / 页面 / 路由多个独立文件
+3. 现有个人媒体缓冲区仍保持独立，不与工作收纳箱逻辑混写
+
+本轮仍未实现：
+
+1. 联系人类型
+2. 提醒/待办类型
+3. 复杂标签与筛选系统
+4. 与订单/客户/设备等正式业务对象的关联
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人工作收纳箱第一批 MVP 实现后 TypeScript 编译通过
+
+## 2026-04-13 - fix：personal-workbench 权限映射与 service worker warning
+
+### 本轮目标
+
+仅修复本轮已确认的两项问题：
+
+1. `/personal-workbench` 未映射到 permission catalog
+2. `public/sw.js` 中 no-op fetch handler 浏览器 warning
+
+### 核心实现
+
+1. **补齐 personal-workbench 权限映射**
+   - 更新：`src/features/authz/data/permission-catalog.ts`
+   - 当前行为：
+     - 为 `/personal-workbench` 补充顶层路径映射
+     - 消除 `permission-catalog` 对 `/personal-workbench` 抛出的 `Unmapped top-level path` 错误
+
+2. **移除 service worker 空 fetch 监听器**
+   - 更新：`public/sw.js`
+   - 当前行为：
+     - 删除 no-op `fetch` handler
+     - 保留 install / activate 最小 installability 逻辑
+     - 不额外引入 runtime caching
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 个人工作台新路由不会再因 permission catalog 缺口导致权限生成报错
+2. service worker 不再包含空 fetch 监听器 warning 来源
+
+本轮未处理：
+
+1. `useNotifications` websocket 根因修复
+2. 任何额外的 service worker 缓存策略扩展
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 本轮两项修复后 TypeScript 编译通过
+
+## 2026-04-13 - feat：personal-workbench 顶部统一 Tab 结构
+
+### 本轮目标
+
+将 `/personal-workbench` 顶部统一为与系统整体风格一致的 Tab 结构，同时保持“个人记录缓冲区”和“工作收纳箱”的底层实现继续隔离。
+
+### 核心实现
+
+1. **抽出独立视图组件**
+   - 新增：
+     - `src/features/personal-workbench/components/personal-workbench-records-view.tsx`
+     - `src/features/personal-workbench/workspace/components/personal-workbench-workspace-view.tsx`
+   - 当前行为：
+     - 个人记录缓冲区页面编排抽成独立视图
+     - 工作收纳箱页面编排抽成独立视图
+     - 底层继续复用各自原有 hook / 存储 / 编辑器
+
+2. **主页面统一为 Tab 外壳**
+   - 更新：`src/features/personal-workbench/index.tsx`
+   - 当前行为：
+     - `/personal-workbench` 顶部提供两个 Tab：
+       - `个人记录缓冲区`
+       - `工作收纳箱`
+     - 两个视图在同一工作台内切换，入口体验与系统其他 Tab 风格统一
+
+3. **保留工作收纳箱独立直达页，但复用同一视图**
+   - 更新：`src/features/personal-workbench/workspace/index.tsx`
+   - 当前行为：
+     - 仍可通过独立工作收纳箱页面直达
+     - 页面内部不再重复维护一套独立编排逻辑，而是复用统一的工作收纳箱视图
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 个人工作台入口体验统一为 Tab
+2. 记录缓冲区与工作收纳箱都能在同一入口下直接切换
+3. 底层仍保持独立存储、独立 hook、独立编辑器，不重新混模
+
+本轮未做：
+
+1. 不新增新的工作收纳箱类型
+2. 不把便签/链接混进四栏记录看板的数据结构
+3. 不取消工作收纳箱独立直达页
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 统一 Tab 改造后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

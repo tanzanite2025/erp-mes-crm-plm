@@ -567,3 +567,27 @@
     - [ ] 为 shortcuts 增加跨浏览器兼容增强，避免仅依赖单一 manifest/安装路径
     - [ ] 不回退前三阶段已完成的账号隔离、录制准备态、队列整理与保存后流转
     - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 737-个人工作收纳箱第一批 MVP：便签与链接（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 新增“便签”类型，支持直接粘贴文本并以较大容器样式展示
+    - [ ] 新增“链接”类型，支持通过 `+` 号新增链接，并保存 URL 与备注
+    - [ ] 第一批目标是承接杂乱边缘信息，不强行挂入正式业务模块
+    - [ ] 第一批不做联系人、提醒、复杂标签系统与业务对象关联
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 738-问题修复：个人工作台权限映射、service worker warning 与 notifications websocket 排查（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 修复 `/personal-workbench` 顶层路径未映射到 permission catalog 导致的权限生成报错
+    - [ ] 清理 `public/sw.js` 中 no-op fetch handler，消除浏览器导航 warning
+    - [ ] 排查 `useNotifications` websocket error 是前端日志/重连策略问题，还是后端/代理不可用问题
+    - [ ] 若 websocket 根因在后端或部署层，本轮先补前端降噪与诊断，不臆造前端补丁
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 739-personal-workbench 顶部统一 Tab 结构（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 在 `/personal-workbench` 顶部引入统一 Tab，至少包含“个人记录缓冲区”和“工作收纳箱”
+    - [ ] 保持工作收纳箱与个人媒体缓冲区底层能力隔离，仅统一入口与切换体验
+    - [ ] 尽量复用现有 `tabs` 组件，不额外引入复杂导航结构
+    - [ ] 不回退当前已完成的工作收纳箱独立路由与本地存储隔离
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`

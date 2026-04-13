@@ -5,7 +5,3 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
-
-self.addEventListener('fetch', () => {
-  // Intentionally left minimal for installability. Runtime caching can be added later.
-})
