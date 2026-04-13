@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
-import { OrderEvidenceManager } from '@/features/trading/components/parts/order-evidence-manager'
+import { DocumentEvidenceManager } from '@/features/sales-document/components/document-evidence-manager'
 import { type OrderEvidence, type PurchaseOrder, type Supplier } from '../../../data/schema'
 import { usePurchaseOrderHeaderViewModel } from '../../../hooks/use-purchase-order-header-view-model'
 import { useTradingFinanceResources } from '../../../hooks/use-trading-finance-resources'
@@ -178,7 +178,7 @@ export function PurchaseOrderHeaderFields({
       </div>
 
       <div className='rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/5 p-5'>
-        <OrderEvidenceManager
+        <DocumentEvidenceManager
           evidences={formData.evidences || []}
           onChange={onEvidencesChange}
           disabled={false}

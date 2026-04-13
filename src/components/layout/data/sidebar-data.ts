@@ -5,6 +5,7 @@ import {
   CheckSquare,
   Cpu,
   Database,
+  FileText,
   Gauge,
   Printer,
   ScanLine,
@@ -60,12 +61,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/dashboard/overview'),
       },
       {
-        titleKey: 'sidebar.items.salesManagement',
-        url: '/trading',
-        icon: ShoppingBag,
-        permissionId: permissionIdForPath('/trading'),
-      },
-      {
         titleKey: 'sidebar.items.mrp',
         url: '/mrp',
         icon: Gauge,
@@ -76,6 +71,23 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/purchase',
         icon: Truck,
         permissionId: permissionIdForPath('/purchase'),
+      },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.salesManagement',
+    items: [
+      {
+        titleKey: 'sidebar.items.salesManagement',
+        url: '/trading',
+        icon: ShoppingBag,
+        permissionId: permissionIdForPath('/trading'),
+      },
+      {
+        titleKey: 'sidebar.items.quoteManagement',
+        url: '/quotes',
+        icon: FileText,
+        permissionId: permissionIdForPath('/quotes'),
       },
     ],
   },
@@ -248,13 +260,24 @@ export const sidebarData: SidebarData = {
           icon: BarChart3,
           permissionId: permissionIdForPath('/dashboard/overview'),
         },
+        { title: '采购管理', url: '/purchase', icon: Truck, permissionId: permissionIdForPath('/purchase') },
+      ],
+    },
+    {
+      title: '销售管理',
+      items: [
         {
           title: '销售管理',
           url: '/trading',
           icon: ShoppingBag,
           permissionId: permissionIdForPath('/trading'),
         },
-        { title: '采购管理', url: '/purchase', icon: Truck, permissionId: permissionIdForPath('/purchase') },
+        {
+          title: '报价管理',
+          url: '/quotes',
+          icon: FileText,
+          permissionId: permissionIdForPath('/quotes'),
+        },
       ],
     },
     {

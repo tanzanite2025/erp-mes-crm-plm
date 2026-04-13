@@ -2,10 +2,23 @@ export const trading = {
   tabs: {
     title: 'Trading Management',
     customers: 'Customers',
+    quotes: 'Quotes',
     salesOrders: 'Sales Orders',
-    receivables: 'Receivables',
     logistics: 'Logistics',
+    receivables: 'Receivables',
     ordersAnalysis: 'Orders Analysis',
+  },
+  quotes: {
+    title: 'Quote Management',
+    description: 'This phase reserves the sales flow position first, with quote lists, versioning, validity, and order conversion to be added progressively later.',
+    statusTitle: 'Quote Management Is Being Prepared',
+    statusDescription: 'The current release only provides the structural placeholder. Quote lists, details, version flow, and sales-order conversion will be added in later iterations.',
+    scopeTitle: 'Reserved in This Iteration',
+    scopes: {
+      tab: 'Independent tab entry inside Sales Management',
+      route: 'Dedicated route and page handoff location',
+      expansion: 'Ready for future real quote business capabilities',
+    },
   },
   analytics: {
     activeCustomers: 'Active Customers',

@@ -5,6 +5,7 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: 'Resource Management',
+    salesManagement: 'Sales Management',
     engineeringManagement: 'Engineering Management',
     warehouseManagement: 'Warehouse',
     experimentalCenter: 'Lab Center',
@@ -19,6 +20,7 @@ export const sidebar = {
     warehouse: 'Warehouse',
     warehouseOperations: 'Warehouse Operations',
     salesManagement: 'Sales Management',
+    quoteManagement: 'Quote Management',
     mrp: 'MRP',
     purchaseManagement: 'Purchase Management',
     productEngineering: 'Product Engineering',

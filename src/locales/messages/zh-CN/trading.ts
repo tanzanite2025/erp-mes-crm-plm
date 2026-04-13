@@ -2,10 +2,23 @@ export const trading = {
   tabs: {
     title: '交易管理',
     customers: '客户管理',
+    quotes: '报价管理',
     salesOrders: '销售订单',
-    receivables: '应收',
     logistics: '物流管理',
+    receivables: '应收',
     ordersAnalysis: '订单分析',
+  },
+  quotes: {
+    title: '报价管理',
+    description: '先完成销售主链路落位，后续逐步接入报价单、版本、有效期与转订单能力。',
+    statusTitle: '报价管理正在筹备接入',
+    statusDescription: '当前版本先提供结构占位，后续会逐步补齐报价单列表、明细、版本流转与转销售订单能力。',
+    scopeTitle: '本轮已预留的位置',
+    scopes: {
+      tab: '销售管理内独立 TAB 入口',
+      route: '独立路由与页面承接位置',
+      expansion: '后续可继续接入真实报价业务',
+    },
   },
   analytics: {
     activeCustomers: '活跃客户',

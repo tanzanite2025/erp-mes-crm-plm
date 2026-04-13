@@ -5,6 +5,7 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: '资源管理',
+    salesManagement: '销售管理',
     engineeringManagement: '工程管理',
     warehouseManagement: '仓储',
     experimentalCenter: '实验中心',
@@ -19,6 +20,7 @@ export const sidebar = {
     warehouse: '仓储',
     warehouseOperations: '仓储作业',
     salesManagement: '销售管理',
+    quoteManagement: '报价管理',
     mrp: 'MRP',
     purchaseManagement: '采购管理',
     productEngineering: '产品工程管理',

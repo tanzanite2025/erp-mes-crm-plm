@@ -124,6 +124,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/warehouse': 'warehouse',
   '/mrp': 'mrp',
   '/trading': 'trading',
+  '/quotes': 'trading',
   '/purchase': 'trading',
   '/engineering': 'engineering',
   '/materials': 'engineering',

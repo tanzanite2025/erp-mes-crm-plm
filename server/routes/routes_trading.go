@@ -46,6 +46,12 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	customerGroup.DELETE("/:id", customerDelete, handlers.DeleteCustomerHandler)
 	customerGroup.POST("/sync", customerSync, handlers.BulkSyncCustomersHandler)
 
+	quoteGroup := authorized.Group("/quotes")
+	quoteGroup.Use(tradingAccess)
+	quoteGroup.GET("", handlers.GetQuotesHandler)
+	quoteGroup.GET("/:id", handlers.GetQuoteDetailHandler)
+	quoteGroup.POST("/:id/convert", salesOrderManage, handlers.ConvertQuoteHandler)
+
 	supplierGroup := authorized.Group("/suppliers")
 	supplierGroup.Use(tradingAccess)
 	supplierGroup.GET("", handlers.GetSuppliersHandler)

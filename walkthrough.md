@@ -4303,6 +4303,1521 @@
 
 1. 个人工作台统一搜索实现后 TypeScript 编译通过
 
+## 2026-04-14 - feat：销售管理侧边栏一级分类收口
+
+### 本轮目标
+
+先建立侧边栏一级分类 `销售管理`，并将现有 `/trading` 销售入口整体迁入该分类；本轮不提前细拆 `客户管理 / 报价管理 / 销售订单` 等子模块，只做导航层级收口。
+
+### 核心实现
+
+1. **侧边栏新增独立销售管理分类**
+   - 更新：`src/components/layout/data/sidebar-data.ts`
+   - 当前行为：
+     - 将 `/trading` 从 `资源管理` 分组移出
+     - 新增独立一级分组 `销售管理`
+     - 现有销售入口继续以单入口形式挂在 `销售管理` 分组下
+     - 不改销售路由与页面逻辑，仅调整导航归属
+
+2. **中英文侧边栏文案补齐销售管理分组**
+   - 更新：
+     - `src/locales/messages/zh-CN/sidebar.ts`
+     - `src/locales/messages/en-US/sidebar.ts`
+   - 当前行为：
+     - 新增 `sidebar.groups.salesManagement`
+     - 保持现有 `sidebar.items.salesManagement` 条目文案继续承接 `/trading`
+
+3. **命令搜索归属与新导航结构对齐**
+   - 更新：
+     - `src/components/layout/data/search-data.ts`
+     - `src/locales/messages/zh-CN/commandMenu.ts`
+     - `src/locales/messages/en-US/commandMenu.ts`
+   - 当前行为：
+     - 新增命令搜索父级 `salesManagement`
+     - 将销售相关导航项归属切换到 `销售管理 / Sales Management`
+     - 将销售相关动作项（如新增客户、创建销售订单）同步切换到新父级
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 侧边栏出现独立一级分类 `销售管理`
+2. 当前销售主入口 `/trading` 已从原分组迁入新分类
+3. 命令搜索中的销售相关导航与动作入口已同步归属到新分类
+
+本轮未做：
+
+1. 不新增 `报价管理` 独立页面
+2. 不拆分 `客户管理 / 销售订单 / 物流` 为新的侧边栏子项
+3. 不改销售业务页面、表结构或接口
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 销售管理侧边栏一级分类收口后 TypeScript 编译通过
+
+## 2026-04-14 - feat：销售管理内部TAB重排与报价管理占位页
+
+### 本轮目标
+
+将 `trading` 内部 TAB 顺序调整为 `客户管理 / 报价管理 / 销售订单 / 物流管理 / 应收 / 订单分析`，并新增 `报价管理` 的独立路由与占位页；本轮只做结构落位，不接完整报价业务。
+
+### 核心实现
+
+1. **销售管理内部 TAB 顺序重排**
+   - 更新：`src/features/trading/tabs.ts`
+   - 当前行为：
+     - 在 `客户管理` 后插入 `报价管理`
+     - 将整体顺序调整为 `客户管理 / 报价管理 / 销售订单 / 物流管理 / 应收 / 订单分析`
+
+2. **新增报价管理占位页文案**
+   - 更新：
+     - `src/locales/messages/zh-CN/trading.ts`
+     - `src/locales/messages/en-US/trading.ts`
+   - 当前行为：
+     - 新增 `trading.tabs.quotes`
+     - 新增 `trading.quotes.*` 占位页说明文案
+
+3. **新增报价管理独立占位页与路由**
+   - 新增：
+     - `src/features/trading/quotes/tabs/sales-quotes-tab.tsx`
+     - `src/routes/_authenticated/trading/quotes.tsx`
+     - `src/routes/_authenticated/trading/quotes.lazy.tsx`
+   - 当前行为：
+     - 点击 `报价管理` TAB 后可进入独立占位页
+     - 占位页明确提示当前仅完成结构落位，后续再逐步接入真实报价能力
+
+4. **命令搜索补齐报价管理入口**
+   - 更新：`src/components/layout/data/search-data.ts`
+   - 当前行为：
+     - 新增 `/trading/quotes` 命令搜索入口
+     - 保持销售模块搜索顺序与新的 TAB 顺序一致
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 销售管理内部新增 `报价管理` TAB
+2. `报价管理` 已具备独立路由和占位页
+3. 现有 `客户 / 订单 / 物流 / 应收 / 分析` 入口保持不变
+
+本轮未做：
+
+1. 不接真实报价单列表与明细
+2. 不实现报价审批、版本、有效期、转订单
+3. 不重构现有客户、订单、物流、应收、分析业务实现
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 销售管理内部 TAB 重排与报价管理占位页实施后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价管理迁移为侧边栏独立同级菜单
+
+### 本轮目标
+
+将 `报价管理` 从 `trading` 内部 TAB 迁移为侧边栏中与 `销售管理` 同级的独立菜单项，并为新的 `报价管理` 模块预留自己的内部多 TAB 结构，以承接零售模板、批发模板等后续扩展。
+
+### 核心实现
+
+1. **侧边栏新增独立报价管理菜单项**
+   - 更新：`src/components/layout/data/sidebar-data.ts`
+   - 当前行为：
+     - 在 `销售管理` 分组中新增独立菜单项 `报价管理`
+     - 独立入口指向 `/quotes`
+     - 保持 `销售管理` 与 `报价管理` 为并列入口
+
+2. **trading 内部移除报价管理 TAB**
+   - 更新：`src/features/trading/tabs.ts`
+   - 当前行为：
+     - `trading` 内部恢复聚焦 `客户管理 / 销售订单 / 物流管理 / 应收 / 订单分析`
+     - 不再由 `trading` 承接 `报价管理` 子模块
+
+3. **独立 quotes 模块与内部多 TAB 壳子**
+   - 新增：
+     - `src/features/quotes/index.tsx`
+     - `src/features/quotes/tabs.ts`
+     - `src/features/quotes/tabs/index.tsx`
+     - `src/routes/_authenticated/quotes/route.tsx`
+     - `src/routes/_authenticated/quotes/route.lazy.tsx`
+     - `src/routes/_authenticated/quotes/index.tsx`
+     - `src/routes/_authenticated/quotes/retail.tsx`
+     - `src/routes/_authenticated/quotes/retail.lazy.tsx`
+     - `src/routes/_authenticated/quotes/wholesale.tsx`
+     - `src/routes/_authenticated/quotes/wholesale.lazy.tsx`
+   - 当前行为：
+     - 新建独立 `quotes` 模块
+     - 内部预留 `零售模板 / 批发模板` 两个 TAB
+     - `/quotes` 默认跳转到 `/quotes/retail`
+
+4. **旧 /trading/quotes 过渡入口改为跳转**
+   - 更新：`src/routes/_authenticated/trading/quotes.tsx`
+   - 当前行为：
+     - 旧入口不再作为最终挂载位置
+     - 访问旧路径时重定向到新的 `/quotes/retail`
+
+5. **命令搜索与中英文文案同步归属**
+   - 更新：
+     - `src/components/layout/data/search-data.ts`
+     - `src/locales/messages/zh-CN/sidebar.ts`
+     - `src/locales/messages/en-US/sidebar.ts`
+     - `src/locales/messages/zh-CN/commandMenu.ts`
+     - `src/locales/messages/en-US/commandMenu.ts`
+   - 当前行为：
+     - 为 `报价管理` 补齐独立导航与命令搜索文案
+     - 增加 `零售报价模板 / 批发报价模板` 搜索入口
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. `报价管理` 已从 `trading` 内部 TAB 独立出去
+2. 侧边栏出现独立的 `报价管理` 入口
+3. 新的 `quotes` 模块已具备自己的内部多 TAB 壳子
+
+本轮未做：
+
+1. 不接真实报价单列表、明细、版本、有效期
+2. 不实现零售/批发模板完整业务能力
+3. 不重构现有客户、订单、物流、应收、分析实现
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价管理迁移为侧边栏独立同级菜单后 TypeScript 编译通过
+
+## 2026-04-14 - refactor：销售单据共用模板层抽取（第一步）
+
+### 本轮目标
+
+先从正式销售订单中提炼可供 `销售订单 / 报价管理` 共同复用的单据模板层，优先抽取 `表头模板 / 明细编辑模板 / 底部统计模板`，不在本轮合并保存逻辑、状态流与 API。
+
+### 核心实现
+
+1. **新增独立销售单据模板层目录**
+   - 新增：`src/features/sales-document/components/`
+   - 当前行为：
+     - 将后续可供报价管理与销售订单共同复用的模板层放入独立目录
+     - 避免继续堆叠在 `trading` 专用目录中
+
+2. **抽取共用表头模板**
+   - 新增：`src/features/sales-document/components/document-header-fields.tsx`
+   - 当前行为：
+     - 提炼原销售订单表头区为 `DocumentHeaderFields`
+     - 先保持现有销售订单字段与交互不变
+     - 后续报价管理可直接复用该模板层
+
+3. **抽取共用明细编辑模板**
+   - 新增：`src/features/sales-document/components/document-lines-editor.tsx`
+   - 当前行为：
+     - 提炼原销售订单明细编辑区为 `DocumentLinesEditor`
+     - 保留动态产品、单位、钻孔/贴标等配置注入能力
+     - 保留桌面/移动双视图编辑结构
+
+4. **抽取共用底部统计模板**
+   - 新增：`src/features/sales-document/components/document-footer-stats.tsx`
+   - 当前行为：
+     - 提炼原销售订单底部统计区为 `DocumentFooterStats`
+     - 保留行数、数量、金额与保存/取消操作展示结构
+
+5. **销售订单回接新模板层**
+   - 更新：`src/features/trading/components/sales-order-action-dialog.tsx`
+   - 当前行为：
+     - `SalesOrderActionDialog` 已切换为使用新的 `DocumentHeaderFields / DocumentLinesEditor / DocumentFooterStats`
+     - 销售订单现有保存逻辑、状态流与 API 保持不变
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 共用销售单据模板层目录已建立
+2. 表头、明细、底部统计模板已抽出
+3. 正式销售订单已回接到新的模板层
+
+本轮未做：
+
+1. 未合并报价与销售订单的保存逻辑
+2. 未合并两者状态流与事务逻辑
+3. 暂未继续抽离 `OrderEvidenceManager`
+4. 暂未让报价管理真正接入该模板层
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 销售单据共用模板层抽取第一步完成后 TypeScript 编译通过
+
+## 2026-04-14 - refactor：销售单据共用模板层抽取（第二步）
+
+### 本轮目标
+
+继续完善 `Sales Document` 共用模板层，补齐 `附件/凭证管理` 与 `备注/需求输入区` 这两块仍残留在业务模块中的模板片段，并让销售订单与采购单尽量回接到新的共用层。
+
+### 核心实现
+
+1. **抽取共用附件/凭证管理模板**
+   - 新增：`src/features/sales-document/components/document-evidence-manager.tsx`
+   - 当前行为：
+     - 将原 `OrderEvidenceManager` 的附件/凭证上传、排序、备注能力提炼为 `DocumentEvidenceManager`
+     - 保留上传路径可配置能力，支持销售订单与采购单按各自上传地址复用
+
+2. **共用表头模板改用共用附件组件**
+   - 更新：`src/features/sales-document/components/document-header-fields.tsx`
+   - 当前行为：
+     - `DocumentHeaderFields` 已改为依赖 `DocumentEvidenceManager`
+     - 进一步减少对 `trading` 私有模板组件的依赖
+
+3. **抽取共用备注/需求片段**
+   - 新增：`src/features/sales-document/components/document-notes-section.tsx`
+   - 当前行为：
+     - 将原销售订单弹窗内联的备注输入区提炼为 `DocumentNotesSection`
+     - 便于报价管理后续复用同类文档备注区结构
+
+4. **销售订单回接共用备注组件**
+   - 更新：`src/features/trading/components/sales-order-action-dialog.tsx`
+   - 当前行为：
+     - 销售订单弹窗已切换为使用 `DocumentNotesSection`
+     - 并清理旧的内联备注区实现
+
+5. **采购单开始复用共用附件组件**
+   - 更新：`src/features/trading/components/purchase/parts/purchase-order-header-fields.tsx`
+   - 当前行为：
+     - 采购单头部字段组件已改为使用 `DocumentEvidenceManager`
+     - 证明该附件模板已具备跨单据复用价值
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 共用附件模板已抽出
+2. 共用备注模板已抽出
+3. 销售订单与采购单都开始回接到新的共用模板层
+
+本轮未做：
+
+1. 未删除旧 `OrderEvidenceManager` 文件，避免一次迁移范围过大
+2. 未让报价管理真正接入该模板层
+3. 未合并各业务模块的保存逻辑、状态流与 API
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 销售单据共用模板层抽取第二步完成后 TypeScript 编译通过
+
+## 2026-04-14 - refactor：报价管理单一主TAB方案落地
+
+### 本轮目标
+
+将 `报价管理` 从当前的 `零售 / 批发` 双主 TAB 结构收口为单一主工作区 `报价单`，其中客户改为筛选维度、类型改为字段/筛选项表达，并为未来的 `模板规则 / 加成计算 / 历史作废` 能力扩展预留空间。
+
+### 核心实现
+
+1. **报价管理内部导航收口为单一主 TAB**
+   - 更新：`src/features/quotes/tabs.ts`
+   - 当前行为：
+     - `quotes` 内部只保留一个主 TAB：`报价单`
+     - 主工作区路由改为 `/quotes/orders`
+
+2. **报价管理页面收口为单一“报价单”工作区**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 用 `QuoteOrdersTab` 替换原有 `RetailQuoteTemplatesTab / WholesaleQuoteTemplatesTab`
+     - 页面内预留：
+       - 客户筛选维度
+       - 状态/类型筛选区
+       - 历史版本与作废入口
+       - 一键转正式销售订单入口
+
+3. **新增单一主工作区路由**
+   - 新增：
+     - `src/routes/_authenticated/quotes/orders.tsx`
+     - `src/routes/_authenticated/quotes/orders.lazy.tsx`
+   - 当前行为：
+     - `/quotes/orders` 成为报价管理新的主内容挂载位置
+
+4. **旧入口改为兼容跳转**
+   - 更新：
+     - `src/routes/_authenticated/quotes/index.tsx`
+     - `src/routes/_authenticated/quotes/retail.tsx`
+     - `src/routes/_authenticated/quotes/wholesale.tsx`
+     - `src/routes/_authenticated/trading/quotes.tsx`
+   - 当前行为：
+     - `/quotes`
+     - `/quotes/retail`
+     - `/quotes/wholesale`
+     - `/trading/quotes`
+       均统一跳转到 `/quotes/orders`
+
+5. **命令搜索表达同步收口**
+   - 更新：`src/components/layout/data/search-data.ts`
+   - 当前行为：
+     - 报价管理命令搜索入口改为 `/quotes/orders`
+     - 移除 `零售报价模板 / 批发报价模板` 作为一级搜索入口的表达
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价管理内部已收口为单一主工作区 `报价单`
+2. 客户不再作为一级 TAB，而是保留为页面内筛选维度预留
+3. 零售/批发不再作为一级 TAB，而是回退为类型字段/筛选项方向
+
+本轮未做：
+
+1. 未实现完整报价单列表与真实筛选逻辑
+2. 未实现模板规则 / 加成计算 / 历史作废等后续能力页签
+3. 未接入真实报价单保存与转销售订单业务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价管理单一主TAB方案落地后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价单工作区真实骨架
+
+### 本轮目标
+
+在已完成“报价管理单一主 TAB 收口”的基础上，把 `报价单` 主工作区从说明型占位页面推进为可承载后续业务的真实骨架页面，优先落地：筛选区、列表区、空态与关键动作入口占位。
+
+### 核心实现
+
+1. **新增报价工作区筛选组件**
+   - 新增：`src/features/quotes/components/quote-workspace-filters.tsx`
+   - 当前行为：
+     - 提供 `客户 / 状态 / 类型 / 关键词` 四类筛选控件
+     - 提供 `新建报价` 主入口按钮
+     - 提供 `重置筛选` 操作
+
+2. **新增报价工作区列表骨架组件**
+   - 新增：`src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 提供 `报价编号 / 客户 / 类型 / 状态 / 最近更新时间 / 操作` 列头骨架
+     - 提供空态说明与后续动作入口
+     - 提供右侧 `动作预留区`，用于承接未来 `新建报价 / 历史 / 作废 / 转正式销售订单`
+
+3. **报价单主工作区改为真实页面编排层**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - `QuoteOrdersTab` 只负责页面编排与本地筛选状态维护
+     - 已接入新的筛选组件与列表骨架组件
+     - 已将客户、状态、类型的当前筛选值回显到列表摘要区
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. `报价单` 页面已具备真实筛选区
+2. `报价单` 页面已具备列表区结构与空态
+3. `新建报价 / 历史版本 / 作废记录 / 转正式销售订单` 已具备稳定入口占位
+4. 报价管理组件已按独立文件拆分，避免继续堆叠在单一页面文件中
+
+本轮未做：
+
+1. 未接入真实报价列表数据
+2. 未接入报价单 CRUD
+3. 未接入真实历史版本、作废记录与转正式销售订单流程
+4. 未接回真实报价录入/编辑表单
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价单工作区真实骨架实现后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价单列表假数据与服务层接口骨架
+
+### 本轮目标
+
+为 `报价单` 工作区补齐最小可运行的数据层，先使用本地 mock 数据与 service/hook 骨架，让现有 `客户 / 状态 / 类型 / 关键词` 筛选区真正驱动列表结果联动。
+
+### 核心实现
+
+1. **新增报价摘要数据模型**
+   - 新增：`src/features/quotes/data/quote-summary.ts`
+   - 当前行为：
+     - 定义 `QuoteSummary`
+     - 定义 `QuoteListFilters`
+     - 收口客户、状态、类型筛选值类型
+
+2. **新增本地 mock 报价数据**
+   - 新增：`src/features/quotes/data/quote-summary.mock.ts`
+   - 当前行为：
+     - 提供多组报价摘要样例
+     - 覆盖 `重点客户 / 长期客户 / 新客户`
+     - 覆盖 `零售 / 批发 / 打样`
+     - 覆盖 `草稿 / 待确认 / 已转正式单 / 已作废`
+
+3. **新增报价列表 service 与 hook 骨架**
+   - 新增：
+     - `src/features/quotes/services/quote-list-service.ts`
+     - `src/features/quotes/hooks/use-quote-list.ts`
+   - 当前行为：
+     - service 负责本地 mock 数据过滤
+     - hook 负责汇总筛选结果与结果摘要
+     - 为后续切换到真实 API 保留稳定替换边界
+
+4. **筛选区与列表结果联动**
+   - 更新：
+     - `src/features/quotes/tabs/index.tsx`
+     - `src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 切换 `客户 / 状态 / 类型 / 关键词` 时，列表结果会同步变化
+     - 列表支持展示真实 mock 报价摘要
+     - 无匹配结果时展示真实空态
+     - 列表头新增 `金额摘要` 表达
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. `报价单` 页面已具备最小数据感知能力
+2. 筛选区可驱动列表结果联动
+3. 页面层之外已具备独立的 `data / service / hook` 结构
+
+本轮未做：
+
+1. 未接入真实报价后端 API
+2. 未接入完整报价单 CRUD
+3. 未接入转正式销售订单真实事务
+4. 未接入审批流与持久化保存
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价单列表假数据与服务层接口骨架接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价列表真实接口适配层
+
+### 本轮目标
+
+在现有 `mock service` 骨架之上，为 `报价单` 工作区补齐“真实接口适配层”，优先尝试报价列表只读接口，同时保持页面层继续只消费 `hook / service`，并在接口未就绪时自动回退 mock 数据。
+
+### 核心实现
+
+1. **新增报价列表 DTO 与 mapper**
+   - 新增：
+     - `src/features/quotes/contracts/quote-api-dto.ts`
+     - `src/features/quotes/adapters/quote-api-adapter.ts`
+   - 当前行为：
+     - 定义报价列表候选返回字段 DTO
+     - 将真实接口返回统一映射到稳定的 `QuoteSummary`
+
+2. **新增报价查询 key**
+   - 新增：`src/features/quotes/query-keys.ts`
+   - 当前行为：
+     - 为报价列表读取链提供统一 query key
+
+3. **报价列表 service 升级为真实接口适配壳**
+   - 更新：`src/features/quotes/services/quote-list-service.ts`
+   - 当前行为：
+     - 优先尝试候选只读列表接口：`/quotes`、`/trading/quotes`、`/sales-quotes`
+     - 支持数组响应与对象分页响应的统一解包
+     - 真实接口成功时映射为 `QuoteSummary`
+     - 接口缺失或失败时自动回退到 mock 数据
+
+4. **读取 hook 改为 react-query 统一消费层**
+   - 更新：`src/features/quotes/hooks/use-quote-list.ts`
+   - 当前行为：
+     - 使用 `useQuery` 管理报价列表读取
+     - 对页面统一暴露 `rows / source / isLoading / summary`
+     - 增加稳定 memo，避免 hooks 依赖 warning
+
+5. **页面可感知当前数据源状态**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-list.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 页面可显示当前数据源是 `REAL API` 还是 `MOCK FALLBACK`
+     - 加入加载态说明：优先尝试真实接口，必要时回退 mock
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价列表读取链已具备真实接口适配壳
+2. 页面层仍然保持 `hook / service` 解耦消费
+3. 接口未就绪时页面仍可稳定回退 mock 数据
+
+本轮未做：
+
+1. 未确认并固定单一后端报价列表正式接口
+2. 未接入报价详情页
+3. 未接入完整报价单 CRUD
+4. 未接入审批流与转正式销售订单事务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价列表真实接口适配层接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：固定正式报价列表接口
+
+### 本轮目标
+
+将报价列表读取链从“候选 endpoint 试探”推进到“正式接口定版”：固定唯一后端报价列表只读接口、固定查询参数契约、固定响应结构，并同步收口前端 `quote-list-service` 到单一路径。
+
+### 核心实现
+
+1. **新增后端正式报价列表 DTO 与查询服务**
+   - 新增：
+     - `server/services/quote_query_dto.go`
+     - `server/services/quote_query_service.go`
+   - 当前行为：
+     - 固定报价列表查询参数：
+       - `customerSegment`
+       - `status`
+       - `type`
+       - `q`
+     - 固定返回结构：
+       - `items`
+       - `total`
+       - `page`
+       - `pageSize`
+     - 第一版正式报价摘要基于现有 `SalesOrder + Customer` 数据拼装
+
+2. **新增后端正式报价列表 handler**
+   - 新增：`server/handlers/quotes.go`
+   - 当前行为：
+     - 提供 `GetQuotesHandler`
+     - 按统一参数解析并调用 `services.ListQuotes`
+
+3. **将正式报价列表接口注册进 trading 路由域**
+   - 更新：`server/routes/routes_trading.go`
+   - 当前行为：
+     - 新增正式只读接口：`GET /api/v1/quotes`
+
+4. **前端读取链收口到单一路径**
+   - 更新：`src/features/quotes/services/quote-list-service.ts`
+   - 当前行为：
+     - 不再轮询多个候选 endpoint
+     - 只请求正式路径：`/quotes`
+     - 请求失败时仍保留受控 `mock fallback`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 后端正式报价列表接口已固定为单一路径
+2. 前端正式读取链已收口到单一路径
+3. 查询参数与返回结构已从试探态推进到定版态
+
+本轮未做：
+
+1. 未扩展报价详情页
+2. 未扩展完整报价单 CRUD
+3. 未扩展审批流
+4. 未扩展转正式销售订单事务
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./handlers ./routes ./services -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 后端正式报价列表接口新增后 handlers/routes/services 编译通过
+2. 前端正式报价列表读取链收口后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价详情只读接口
+
+### 本轮目标
+
+在正式报价列表接口固定之后，继续补齐单一正式 `报价详情只读接口`，并在前端新增详情读取链，形成 `列表 -> 详情` 的正式只读闭环。
+
+### 核心实现
+
+1. **新增后端报价详情 DTO 与详情查询实现**
+   - 新增/更新：
+     - `server/services/quote_detail_dto.go`
+     - `server/services/quote_query_service.go`
+   - 当前行为：
+     - 新增 `GetQuoteDetail(id)`
+     - 基于现有 `SalesOrder + Customer` 数据拼装正式详情响应
+     - 详情结构覆盖：头部字段、金额/数量汇总、需求说明、明细行
+
+2. **新增后端报价详情 handler 与正式路由**
+   - 更新：
+     - `server/handlers/quotes.go`
+     - `server/routes/routes_trading.go`
+   - 当前行为：
+     - 新增 `GetQuoteDetailHandler`
+     - 新增正式只读接口：`GET /api/v1/quotes/:id`
+
+3. **新增前端报价详情 contract / data / service / hook**
+   - 新增：
+     - `src/features/quotes/contracts/quote-detail-api-dto.ts`
+     - `src/features/quotes/data/quote-detail.ts`
+     - `src/features/quotes/services/quote-detail-service.ts`
+     - `src/features/quotes/hooks/use-quote-detail.ts`
+   - 更新：
+     - `src/features/quotes/adapters/quote-api-adapter.ts`
+   - 当前行为：
+     - 新增 `QuoteDetail` 前端合约
+     - 新增 DTO -> contract 详情映射
+     - 新增正式详情读取 service / hook
+
+4. **形成列表到详情的正式读取闭环**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-list.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 左侧列表增加 `详情` 入口
+     - 页面维护 `selectedQuoteId`
+     - 右侧区域从“动作预留区”升级为“详情挂点”
+     - 选择一条报价后可读取并展示正式详情只读数据
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价详情正式只读接口已固定
+2. 前端详情读取链已通过 `service / hook` 解耦接入
+3. 报价页已具备 `列表 -> 详情` 的正式只读闭环
+
+本轮未做：
+
+1. 未扩展报价编辑页
+2. 未扩展完整报价单 CRUD
+3. 未扩展审批流
+4. 未扩展转正式销售订单事务
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./handlers ./routes ./services -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价详情只读接口新增后 handlers/routes/services 编译通过
+2. 报价详情前端读取链接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价工作弹窗方案
+
+### 本轮目标
+
+将原先右侧狭窄的“详情挂点”交互形态切换为“点击报价打开工作弹窗”，使单条报价的查看、局部编辑、PDF、客户转发与转正式销售订单等动作能在一个更贴近现场的工作台中完成。
+
+### 核心实现
+
+1. **新增独立报价工作弹窗组件**
+   - 新增：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 使用通用 `Dialog` 组件承载单条报价工作台
+     - 在弹窗中展示：
+       - 头部基础信息
+       - 金额/数量汇总
+       - 需求说明
+       - 明细摘要
+     - 预留动作位：
+       - 保存
+       - 一键保存 PDF
+       - 客户微信转发
+       - 转正式销售订单
+
+2. **列表区从“右侧详情挂点”切换为“打开工作台”**
+   - 更新：`src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 移除右侧详情挂点区域
+     - 每条报价改为 `打开工作台`
+     - 列表区域回归为纯筛选结果主视图
+
+3. **页面层维护弹窗状态与最小局部编辑状态**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 新增 `isDialogOpen`
+     - 新增最小局部编辑状态：
+       - `editedAmountLabel`
+       - `editedRequirements`
+     - 仍沿用既有 `useQuoteDetail` 读取链，不新增第二套详情语义
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价详情展示已从右侧窄栏升级为工作弹窗
+2. 单条报价已具备更接近真实现场的集中式操作容器
+3. 详情读取链保持不变，仅升级交互与展示结构
+
+本轮未做：
+
+1. 未打通真实保存逻辑
+2. 未打通真实 PDF 导出流程
+3. 未打通真实客户微信转发
+4. 未打通转正式销售订单完整事务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价工作弹窗方案接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：客户联系方式驱动的转发动作
+
+### 本轮目标
+
+在报价工作弹窗中接入客户真实联系方式，让转发动作不再是静态按钮，而是根据 `wechat / whatsapp` 真实数据自适应切换文案；若客户未留联系方式，则保留按钮并在点击后明确提示缺失。
+
+### 核心实现
+
+1. **后端报价详情响应补齐客户联系方式字段**
+   - 更新：
+     - `server/services/quote_detail_dto.go`
+     - `server/services/quote_query_service.go`
+   - 当前行为：
+     - 报价详情响应新增：
+       - `wechat`
+       - `whatsapp`
+     - 后端详情映射阶段从真实 `Customer` 主数据中读取并返回联系方式
+
+2. **前端详情合约与 adapter 同步承接联系方式字段**
+   - 更新：
+     - `src/features/quotes/data/quote-detail.ts`
+     - `src/features/quotes/contracts/quote-detail-api-dto.ts`
+     - `src/features/quotes/adapters/quote-api-adapter.ts`
+   - 当前行为：
+     - `QuoteDetail` 前端合约已收口：
+       - `wechat`
+       - `whatsapp`
+     - 详情 adapter 已将后端联系方式字段映射到前端详情模型
+
+3. **报价工作弹窗按真实联系方式自适应显示转发动作**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 有 `wechat`：显示 `转发微信`
+     - 否则有 `whatsapp`：显示 `转发 WhatsApp`
+     - 两者都没有：
+       - 保留动作按钮
+       - helper 文案显示 `客户未留联系方式`
+       - 点击后弹出明确提示 `客户未留联系方式`
+     - 当前若存在真实联系方式但外部发送链路尚未接通，会提示“能力待接入，但已读取真实联系方式”
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 弹窗转发动作已读取客户真实联系方式
+2. 转发动作文案可按微信 / WhatsApp 自适应切换
+3. 无联系方式时动作位仍保留，并给出明确缺失提示
+
+本轮未做：
+
+1. 未接通微信外部发送集成
+2. 未接通 WhatsApp 外部发送集成
+3. 未扩展审批流
+4. 未扩展转正式销售订单完整事务
+5. 未扩展完整 PDF 流程
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./handlers ./routes ./services -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价详情联系方式字段接入后 handlers/routes/services 编译通过
+2. 弹窗真实转发动作接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价真实 PDF 导出
+
+### 本轮目标
+
+为报价工作弹窗中的 `一键保存 PDF` 接入真实导出链路，优先复用现有打印/预览思路，形成 `报价弹窗 -> 打印预览 -> 浏览器保存 PDF` 的现场闭环。
+
+### 核心实现
+
+1. **新增报价打印文档组件**
+   - 新增：`src/features/quotes/components/quote-print-document.tsx`
+   - 当前行为：
+     - 基于报价详情生成 A4 打印版式
+     - 覆盖：
+       - 报价头部信息
+       - 金额与需求说明
+       - 报价明细表格
+
+2. **新增报价打印预览弹窗**
+   - 新增：`src/features/quotes/components/quote-print-preview-dialog.tsx`
+   - 当前行为：
+     - 在弹窗中展示打印预览
+     - 点击 `打印 / 保存 PDF` 后调用浏览器打印面板
+     - 用户可直接选择“保存为 PDF”
+
+3. **将工作弹窗中的 PDF 动作接入真实导出路径**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-dialog.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - `一键保存 PDF` 不再是静态动作位
+     - 从报价工作弹窗直接打开报价打印预览弹窗
+     - 页面层新增 `isPrintPreviewOpen` 维护打印预览状态
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价工作弹窗已具备真实 PDF 导出入口
+2. 用户可通过浏览器打印面板稳定走“保存为 PDF”路径
+3. 导出链路已与现有打印文档思路保持一致，而非重新发明第二套机制
+
+本轮未做：
+
+1. 未接后端 PDF 二进制生成接口
+2. 未扩展完整编辑保存事务
+3. 未接通微信 / WhatsApp 外部发送集成
+4. 未扩展转正式销售订单完整事务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价真实 PDF 导出接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价 PDF 模板精修
+
+### 本轮目标
+
+在真实 PDF 导出链路已经接通之后，继续把报价打印模板从“可打印”提升到“更适合对客交付”的版式质量：优化品牌化头部、基础信息分组、金额说明层级，以及 A4 明细表格的阅读体验。
+
+### 核心实现
+
+1. **精修报价打印文档头部品牌区**
+   - 更新：`src/features/quotes/components/quote-print-document.tsx`
+   - 当前行为：
+     - 头部增加中英双语导出语义
+     - 强化 `QUOTATION` 标题与客户版副标题
+     - 补充“对客沟通 / 打印留档 / PDF 交付”用途说明
+
+2. **优化基础信息与金额说明区层级**
+   - 更新：`src/features/quotes/components/quote-print-document.tsx`
+   - 当前行为：
+     - 基础信息改为独立版块展示
+     - 金额与需求说明改为更清晰的双列分组
+     - 突出报价金额、数量汇总与负责人信息
+
+3. **优化 A4 明细表格与打印可读性**
+   - 更新：`src/features/quotes/components/quote-print-document.tsx`
+   - 当前行为：
+     - 增加 A4 打印样式类：
+       - `quote-print-sheet`
+       - `quote-print-avoid-break`
+     - 为明细表格补齐 `colgroup` 列宽控制
+     - 提升产品型号、产品编码、金额列的对客阅读清晰度
+     - 增加客户沟通信息与打印说明尾区
+
+4. **顺手修复模板中的 Tailwind 轻量 lint**
+   - 更新：`src/features/quotes/components/quote-print-document.tsx`
+   - 当前行为：
+     - 将 `bg-black/[0.03]` 收敛为 `bg-black/3`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价 PDF 已更接近正式对客版式
+2. 品牌头部、金额说明区与明细表格可读性明显提升
+3. 打印模板仍沿用既有导出链路，不新增第二套机制
+
+本轮未做：
+
+1. 未接后端 PDF 二进制生成接口
+2. 未扩展完整编辑保存事务
+3. 未接通微信 / WhatsApp 外部发送集成
+4. 未扩展转正式销售订单完整事务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价 PDF 模板精修后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价弹窗真实保存
+
+### 本轮目标
+
+将报价工作弹窗中现有的最小局部编辑区接入真实保存链路，不再停留在前端临时输入态；优先复用现有 `sales-orders/:id PATCH` 语义，只打通 `amount` 与 `requirements` 的最小保存闭环。
+
+### 核心实现
+
+1. **新增报价最小 PATCH service**
+   - 新增：`src/features/quotes/services/quote-maintenance-service.ts`
+   - 当前行为：
+     - 复用 `/sales-orders/:id` 的 `PATCH` 接口
+     - 使用 SDRTS 结构提交最小 delta：
+       - `amount`
+       - `requirements`
+
+2. **新增报价保存 hook**
+   - 新增：`src/features/quotes/hooks/use-save-quote.ts`
+   - 当前行为：
+     - 触发真实保存请求
+     - 保存成功后刷新：
+       - `quoteQueryKeys.all()`
+       - `quoteQueryKeys.detail(id)`
+     - 保存成功给出成功提示
+     - 保存失败给出明确错误提示
+
+3. **扩展报价 query keys，支持详情精确刷新**
+   - 更新：`src/features/quotes/query-keys.ts`
+   - 当前行为：
+     - 新增 `detail(id)` key
+
+4. **弹窗接入真实保存动作与错误反馈**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-dialog.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - `保存当前报价` 与 `保存并继续处理` 已接到真实保存动作
+     - 保存按钮具备 `isSaving` 状态
+     - 弹窗内可展示保存失败反馈
+     - 前端会将金额输入从展示文本收口为真实数值 `amount`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价工作弹窗已具备最小真实保存能力
+2. 可保存字段已收口为：
+   - `amount`
+   - `requirements`
+3. 保存成功后详情与列表会刷新，避免显示陈旧数据
+
+本轮未做：
+
+1. 未扩展完整报价编辑器
+2. 未扩展完整明细行编辑保存
+3. 未扩展审批流
+4. 未扩展转正式销售订单完整事务
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价弹窗真实保存接入后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价转正式销售订单
+
+### 本轮目标
+
+将报价工作弹窗中的 `转正式销售订单` 从静态动作位升级为真实业务动作，采用单一正式转单入口进行处理，不将转单混入普通 `PATCH` 保存语义。
+
+### 核心实现
+
+1. **新增后端显式转单 DTO 与服务逻辑**
+   - 更新：
+     - `server/services/quote_detail_dto.go`
+     - `server/services/quote_query_service.go`
+   - 当前行为：
+     - 新增 `QuoteConvertResponse`
+     - 新增 `ConvertQuoteToSalesOrder(id, operator)`
+     - 当前最小实现：
+       - 将底层报价单据状态切为 `converted`
+       - 返回：
+         - `quoteId`
+         - `targetSalesOrderId`
+         - `targetSalesOrderNo`
+         - `status`
+
+2. **新增后端显式转单 handler 与正式路由**
+   - 更新：
+     - `server/handlers/quotes.go`
+     - `server/routes/routes_trading.go`
+   - 当前行为：
+     - 新增 `ConvertQuoteHandler`
+     - 注册正式接口：`POST /api/v1/quotes/:id/convert`
+
+3. **新增前端专用转单 service / hook**
+   - 新增：
+     - `src/features/quotes/services/quote-convert-service.ts`
+     - `src/features/quotes/hooks/use-convert-quote.ts`
+   - 当前行为：
+     - 前端通过专用 service/hook 调用转单接口
+     - 转单成功后刷新：
+       - `quoteQueryKeys.all()`
+       - `quoteQueryKeys.detail(id)`
+     - 转单成功给出明确提示
+     - 转单失败给出明确错误提示
+
+4. **将报价工作弹窗的转单动作接入真实调用链**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-dialog.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - `转正式销售订单` 按钮已接入真实转单动作
+     - 按钮具备 `isConverting` 状态
+     - 弹窗可显示 `convertError` 失败反馈
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 报价工作弹窗可真实触发转正式销售订单动作
+2. 转单成功后报价列表与详情会刷新
+3. 转单动作已作为显式业务动作独立出来，没有混入普通 PATCH 保存
+
+本轮未做：
+
+1. 未复制生成第二张新的正式销售订单实体
+2. 未扩展完整审批流全链路
+3. 未扩展完整报价编辑器
+4. 未扩展完整明细行编辑保存
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./handlers ./routes ./services -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价转单后端接口接入后 handlers/routes/services 编译通过
+2. 报价转单前端调用链接入后 TypeScript 编译通过
+
+## 2026-04-14 - fix：报价工作弹窗详情空白
+
+### 问题现象
+
+打开报价工作弹窗后，只能看到弹窗框架与右侧动作区，左侧详情内容整块空白，用户无法看到报价基础信息、金额区与明细摘要。
+
+### 根因
+
+1. **后端报价详情路由写法异常**
+   - `server/routes/routes_trading.go` 中报价详情与转单路由缺少前导 `/`
+   - 导致 `/api/v1/quotes/:id` 与 `/api/v1/quotes/:id/convert` 命中异常，前端详情请求无法稳定读取到数据
+
+2. **前端弹窗缺少明确空态 / 错误态**
+   - 当 `detail` 拉取失败或为空时，弹窗左侧不会渲染任何替代内容
+   - 最终表现为“大片空白”而不是可理解的错误提示
+
+### 核心修复
+
+1. **修正报价详情与转单路由**
+   - 更新：`server/routes/routes_trading.go`
+   - 当前行为：
+     - `GET /quotes/:id`
+     - `POST /quotes/:id/convert`
+     均改为标准 Gin 路由写法
+
+2. **补充详情错误信息透传**
+   - 更新：`src/features/quotes/hooks/use-quote-detail.ts`
+   - 当前行为：
+     - hook 对外暴露 `errorMessage`
+
+3. **补充弹窗错误态与空态**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-dialog.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 详情请求失败时弹窗显示明确错误
+     - `detail` 为空时显示空态提示，不再整块空白
+
+4. **顺手修复报价页入口的类型约束问题**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-filters.tsx`
+     - `src/features/quotes/hooks/use-quote-list.ts`
+   - 当前行为：
+     - 过滤器回调类型与页面状态 setter 对齐
+     - 列表空数组默认值改为可变数组类型，避免 props 类型冲突
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./handlers ./routes ./services -run ^$`
+2. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价详情路由修复后 handlers/routes/services 编译通过
+2. 报价工作弹窗空白修复后 TypeScript 编译通过
+
+## 2026-04-14 - refactor：删除报价页说明文案并移除 MOCK 回退
+
+### 本轮目标
+
+删除报价工作弹窗右侧不再需要的说明文案，并彻底移除报价列表链路中的 mock fallback，让报价页只面向真实接口数据进行联调测试。
+
+### 核心实现
+
+1. **删除报价工作弹窗右侧说明文案**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 移除“现场高频动作”标题与说明段落
+     - 右侧仅保留真实动作按钮
+
+2. **移除报价列表 MOCK fallback**
+   - 更新：`src/features/quotes/services/quote-list-service.ts`
+   - 当前行为：
+     - 删除 `quoteSummaryMockData` 回退逻辑
+     - 删除 mock 数据导入
+     - 列表请求失败时不再兜底 mock
+     - 数据源类型固定为 `api`
+
+3. **补齐真实接口失败时的明确错误态**
+   - 更新：
+     - `src/features/quotes/hooks/use-quote-list.ts`
+     - `src/features/quotes/components/quote-workspace-list.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 列表 hook 暴露：
+       - `isError`
+       - `errorMessage`
+     - 列表组件在真实接口失败时显示明确错误提示
+     - 真实接口返回空数组时仍正常显示空态
+
+4. **顺手清理移除 mock 后的未用变量**
+   - 更新：
+     - `src/features/quotes/components/quote-workspace-list.tsx`
+     - `src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 移除不再需要的 `source` props 与相关未用变量
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 删除说明文案并移除报价列表 MOCK 回退后 TypeScript 编译通过
+
+## 2026-04-14 - refactor：报价管理页回归系统 1.0 视觉
+
+### 本轮目标
+
+将报价管理页从偏演示稿的视觉结构收口回系统 1.0 正式页面风格，重点统一页头节奏、筛选区密度、列表容器与表格内态表现。
+
+### 核心实现
+
+1. **重构报价筛选区为系统化过滤条**
+   - 更新：`src/features/quotes/components/quote-workspace-filters.tsx`
+   - 当前行为：
+     - 从展示型大卡片收口为更接近系统工具栏的过滤条结构
+     - 压缩说明性文本与留白
+     - 统一输入框、下拉框与按钮的高度、圆角和边框风格
+
+2. **重构报价列表区为系统标准表格容器**
+   - 更新：`src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 列表容器改为系统已有的 `rounded-[24px] + border-dashed + shadow-inner` 风格
+     - 压缩顶部标签噪音，只保留必要摘要信息
+     - 统一表头字重、行高、边框与 hover 风格
+
+3. **将空态与错误态回归表格内态**
+   - 更新：`src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 加载态、错误态、空态都以内嵌表格行方式呈现
+     - 不再使用居中海报式大块提示
+
+4. **收紧页面整体垂直节奏**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 页面主骨架从松散卡片堆叠改为更接近系统页面节奏的 `flex-1 + gap-4/6`
+     - 页头与内容区间距收紧
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价管理页视觉回归后 TypeScript 编译通过
+
+## 2026-04-14 - fix：新建报价按钮无响应
+
+### 本轮目标
+
+修复报价页中 `新建报价` 按钮点击无反应、无报错的问题，先消除静默失败，保证点击后有明确结果。
+
+### 核心实现
+
+1. **为筛选区新建报价按钮补充统一点击回调**
+   - 更新：`src/features/quotes/components/quote-workspace-filters.tsx`
+   - 当前行为：
+     - `新建报价` 按钮已接入 `onCreateQuote`
+
+2. **为列表空态中的新建报价按钮补充统一点击回调**
+   - 更新：`src/features/quotes/components/quote-workspace-list.tsx`
+   - 当前行为：
+     - 空态中的 `新建报价` 按钮已接入 `onCreateQuote`
+
+3. **在页面层统一处理新建报价行为**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 页面层新增 `handleCreateQuote`
+     - 当前在没有现成创建入口时，通过 toast 给出明确提示
+     - 消除“点击无反应且无报错”的静默失败
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 筛选区与空态区的 `新建报价` 按钮行为一致
+2. 点击后用户能得到明确反馈
+
+本轮未做：
+
+1. 未扩展完整报价创建弹窗
+2. 未扩展完整报价创建后端链路
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 新建报价按钮无响应修复后 TypeScript 编译通过
+
+## 2026-04-14 - feat：复用工作弹窗做新建报价
+
+### 本轮目标
+
+不新增第二个新建弹窗，直接复用现有 `quote-workspace-dialog`，扩展 create mode，并在创建成功后原地切换到 detail mode，继续在同一弹窗内执行后续动作。
+
+### 核心实现
+
+1. **新增报价创建 service / hook**
+   - 新增：
+     - `src/features/quotes/services/quote-create-service.ts`
+     - `src/features/quotes/hooks/use-create-quote.ts`
+   - 当前行为：
+     - 复用 `POST /sales-orders`
+     - 以最小 payload 创建报价对应单据
+     - 创建成功后刷新报价查询缓存
+
+2. **工作弹窗扩展为 create / detail 双模式**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 增加 `mode`
+     - create mode 下展示动态客户选择、金额、需求说明
+     - detail mode 保持现有详情工作台行为
+
+3. **接入动态客户列表**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 复用 `useGetCustomers`
+     - 新建报价时动态加载客户选项
+
+4. **创建成功后原地切 detail mode**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 点击 `新建报价` 打开现有工作弹窗 create mode
+     - 创建成功后将返回的 `id` 写入当前页面状态
+     - 弹窗不关闭，原地切换为 detail mode
+     - 继续解锁后续动作链
+
+5. **创建前后动作边界调整**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 创建前：PDF / 转发 / 转正式销售订单因无真实单据而不可执行
+     - 创建成功后：同一弹窗内自动进入 detail mode，可继续后续动作
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 复用工作弹窗做新建报价并原地切换 detail mode 后 TypeScript 编译通过
+
+## 2026-04-14 - fix：新建报价 create mode 布局压缩
+
+### 问题现象
+
+create mode 下沿用详情态双栏比例，导致左侧录入区宽度不足，客户区、状态区和创建说明被严重挤压，出现近似竖排显示，影响录入可读性。
+
+### 核心修复
+
+1. **调整 create mode 的左右栏比例**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - create mode 使用更宽的左侧录入区比例
+     - detail mode 保持原有比例
+
+2. **重排 create mode 头部表单块**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 客户选择区与状态说明区改为横向可读布局
+     - 状态说明区改为独立信息卡，不再被挤压成窄列
+
+3. **收口金额区网格布局**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - create mode 金额区改为更适合录入的 `2/3` 列自适应栅格
+     - 创建说明文本恢复正常横向阅读
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. create mode 弹窗布局压缩修复后 TypeScript 编译通过
+
+## 2026-04-14 - fix：报价工作弹窗总宽度被压缩
+
+### 问题现象
+
+报价工作弹窗在当前页面环境下整体可用宽度过窄，导致 create mode 中左侧录入区和右侧动作区同时被压缩；即使局部栅格调整后，表单区仍然像被限制在屏幕极小比例内，无法正常完成录入与操作。
+
+### 核心修复
+
+1. **放宽 DialogContent 最大宽度**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 弹窗宽度改为 `min(96vw, 1400px)`
+     - 避免整体容器被过窄的默认上限锁死
+
+2. **create mode 改为主内容优先布局**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - create mode 在常规视口下优先纵向展开主录入内容
+     - 到更宽视口时再恢复左右分栏
+
+3. **动作区边界随模式自适应**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - create mode 下动作区默认下置，避免继续挤压主录入区
+     - detail mode 保持原有右侧动作栏布局
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价工作弹窗总宽度压缩修复后 TypeScript 编译通过
+
+## 2026-04-14 - feat：报价新建接入完整明细编辑器
+
+### 本轮目标
+
+将报价新建从“仅客户/金额/需求说明”的低配表单升级为真实可用的报价录入入口，接入产品选择、明细表格、数量/单价/金额编辑，并继续保留创建成功后原地切详情态的工作流。
+
+### 核心实现
+
+1. **create mode 改为接收完整编辑器节点**
+   - 更新：`src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前行为：
+     - 不再在弹窗内部硬编码低配创建表单
+     - create mode 改为渲染外部传入的完整编辑器内容
+
+2. **页面层接入成熟单据编辑能力**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 复用 `useSalesOrderForm`
+     - 复用 `DocumentHeaderFields`
+     - 复用 `DocumentLinesEditor`
+     - 复用 `DocumentNotesSection`
+
+3. **接入真实产品/单位/工艺数据**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 产品来源：`useGetProducts`
+     - 单位来源：`useUnitsQuery`
+     - 打孔/贴标选项：`ProductionDBService.getDrilling` / `getLabeling`
+
+4. **create mode 具备真实报价明细能力**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - 可选择客户
+     - 可新增/删除明细行
+     - 可选择产品
+     - 可编辑数量、单价、单位、工艺相关字段
+     - 可实时预览金额汇总
+
+5. **创建后原地切入详情态保留**
+   - 更新：`src/features/quotes/tabs/index.tsx`
+   - 当前行为：
+     - create mode 保存时复用交易侧创建 mutation
+     - 创建成功后刷新报价查询缓存
+     - 原地切换到 detail mode，不返回列表重来
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 报价新建接入完整明细编辑器后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ClipboardList, Tag, X } from 'lucide-react'
+import { ClipboardList, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,11 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
+import { DocumentFooterStats } from '@/features/sales-document/components/document-footer-stats'
+import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
+import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
+import { DocumentNotesSection } from '@/features/sales-document/components/document-notes-section'
 import {
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
@@ -24,9 +26,6 @@ import { useGetCustomers } from '../customer'
 import { useSalesOrderDrawingOptions } from '../hooks/use-sales-order-drawing-options'
 import { useSalesOrderForm } from '../hooks/use-sales-order-form'
 import { useSalesOrderSave } from '../hooks/use-sales-order-save'
-import { OrderFooterStats } from './parts/order-footer-stats'
-import { OrderHeaderFields } from './parts/order-header-fields'
-import { OrderLinesEditor } from './parts/order-lines-editor'
 
 interface SalesOrderActionDialogProps {
   open: boolean
@@ -110,14 +109,14 @@ export function SalesOrderActionDialog({
         </div>
 
         <div className='space-y-4 px-6 pb-6 pt-1'>
-          <OrderHeaderFields
+          <DocumentHeaderFields
             formData={formData}
             setFormData={setFormData}
             customers={customers}
             onClassificationChange={handleClassificationChange}
           />
 
-          <OrderLinesEditor
+          <DocumentLinesEditor
             lines={formData.lines || []}
             products={products}
             units={units}
@@ -129,22 +128,13 @@ export function SalesOrderActionDialog({
             onLineChange={updateLine}
           />
 
-          <section className='grid gap-2'>
-            <Label className='flex items-center gap-2 pl-1 text-[10px] font-black uppercase text-secondary'>
-              <Tag className='size-3' />
-              {t('tradingSalesOrder.dialog.memoLabel')}
-            </Label>
-            <Textarea
-              placeholder={t('tradingSalesOrder.dialog.memoPlaceholder')}
-              rows={3}
-              className='resize-none rounded-[24px] border-muted/60 p-3 text-xs font-medium leading-relaxed transition-shadow focus:shadow-xl'
-              value={formData.requirements}
-              onChange={(e) => setFormData((prev: Partial<SalesOrder>) => ({ ...prev, requirements: e.target.value }))}
-            />
-          </section>
+          <DocumentNotesSection
+            value={formData.requirements || ''}
+            onChange={(value) => setFormData((prev: Partial<SalesOrder>) => ({ ...prev, requirements: value }))}
+          />
         </div>
 
-        <OrderFooterStats formData={formData} onCancel={() => onOpenChange(false)} onSave={handleActualSave} />
+        <DocumentFooterStats formData={formData} onCancel={() => onOpenChange(false)} onSave={handleActualSave} />
       </DialogContent>
     </Dialog>
   )
