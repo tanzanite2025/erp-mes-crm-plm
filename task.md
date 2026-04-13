@@ -331,3 +331,46 @@
       - [ ] 对齐标题、空态、badge、上传区与 gallery 的系统视觉风格
       - [ ] 对齐新增筛选按钮与既有 dialog 控件层级
       - [ ] 执行前端定向校验并更新 `walkthrough.md`
+
+- [ ] 736 客户卡片微信打开入口最小实现规划（中文），仅支持从客户卡片打开微信，不扩展审计、Webhook、时间轴或企微侧边栏集成。
+   - [x] 已确认本轮范围严格收敛为“打开微信”最小能力：
+    - [x] 本轮实际业务能力只落地微信入口
+    - [x] 但代码组织需按多渠道扩展预留独立目录/文件
+    - [x] 不做沟通审计
+    - [x] 不做消息回传
+    - [x] 不做企微侧边栏或会话存档
+  - [x] 已确认当前前置缺口：
+    - [x] `src/features/trading/data/schema.ts` 的 `Customer` 结构尚无微信字段
+    - [x] `src/features/trading/customer/contracts/customer-api-dto.ts` 尚无微信字段
+    - [x] `src/features/trading/components/customer-action-dialog.tsx` 尚无微信输入项
+    - [x] `src/features/trading/components/customer-list.tsx` 尚无微信打开按钮
+  - [x] 已确认本轮最小实施范围：
+    - [x] 新增独立 communications/contact-channels 目录承载渠道能力
+    - [x] 为客户资料补充渠道字段或最小微信字段支撑
+    - [x] 在客户编辑弹窗提供微信录入
+    - [x] 在客户卡片增加渠道入口按钮，但当前只启用微信
+    - [x] 将 deep link / scheme 拼装逻辑放入独立文件，避免散落在客户卡片组件
+  - [x] 已确认本轮非目标边界：
+    - [x] 不保证直接命中某个客户对话框
+    - [x] 首轮跳转能力仍只启用微信，其他渠道先只记录资料
+    - [x] 不处理个人微信与企业微信复杂兼容策略
+    - [x] 不新增后端沟通事件模型
+    - [x] 不改客户时间轴或订单拓扑
+    - [x] 不处理无关 CRM / trading 视觉重构
+  - [ ] 范围已变更，需重新确认“多渠道资料记录”方案：
+    - [ ] 在客户资料中统一补充渠道字段：`wechat / whatsapp / facebook / instagram / telegram`
+    - [ ] 客户编辑弹窗新增上述渠道输入项
+    - [ ] 当前仅 `wechat` 保留已实现的卡片打开入口
+    - [ ] `whatsapp / facebook / instagram / telegram` 本轮仅保存与展示，不做跳转按钮
+    - [ ] 前后端客户契约与持久化链路统一补齐新增字段
+    - [ ] 执行定向 TypeScript / Go 编译型校验并更新 `walkthrough.md`
+
+- [ ] 736-扩展：将客户沟通渠道/卡片交互方案复用到供应商（中文）
+  - [ ] 待确认本轮扩展范围：
+    - [ ] 为供应商资料补充与客户一致的沟通渠道字段：`wechat / whatsapp / facebook / instagram / telegram / email`
+    - [ ] 在供应商编辑弹窗中新增“沟通渠道”分组
+    - [ ] 供应商卡片不再支持点击卡片本体直接编辑，只保留菜单编辑入口
+    - [ ] 若供应商卡片已有微信入口，则保持仅微信可跳转；若尚无，则本轮可按客户同口径补最小微信入口
+    - [ ] 其余渠道本轮仅保存与展示，不做跳转按钮
+    - [ ] 前后端供应商契约、保存链路、历史数据兼容策略按客户同标准补齐
+    - [ ] 执行定向 TypeScript / Go 编译型校验并更新 `walkthrough.md`

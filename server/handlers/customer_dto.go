@@ -12,6 +12,11 @@ type CustomerRequest struct {
 	Code          string  `json:"code"`
 	ContactPerson string  `json:"contactPerson"`
 	ContactPhone  string  `json:"contactPhone"`
+	WeChat        string  `json:"wechat"`
+	WhatsApp      string  `json:"whatsapp"`
+	Facebook      string  `json:"facebook"`
+	Instagram     string  `json:"instagram"`
+	Telegram      string  `json:"telegram"`
 	Email         string  `json:"email"`
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
@@ -27,6 +32,11 @@ type CustomerResponse struct {
 	Code          string    `json:"code"`
 	ContactPerson string    `json:"contactPerson"`
 	ContactPhone  string    `json:"contactPhone"`
+	WeChat        string    `json:"wechat"`
+	WhatsApp      string    `json:"whatsapp"`
+	Facebook      string    `json:"facebook"`
+	Instagram     string    `json:"instagram"`
+	Telegram      string    `json:"telegram"`
 	Email         string    `json:"email"`
 	Address       string    `json:"address"`
 	Status        string    `json:"status"`
@@ -52,6 +62,11 @@ type BulkSyncCustomerRequest struct {
 	Code          string  `json:"code"`
 	ContactPerson string  `json:"contactPerson"`
 	ContactPhone  string  `json:"contactPhone"`
+	WeChat        string  `json:"wechat"`
+	WhatsApp      string  `json:"whatsapp"`
+	Facebook      string  `json:"facebook"`
+	Instagram     string  `json:"instagram"`
+	Telegram      string  `json:"telegram"`
 	Email         string  `json:"email"`
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
@@ -68,6 +83,11 @@ func mapCustomerRequestToModel(input CustomerRequest) models.Customer {
 		Code:          input.Code,
 		ContactPerson: input.ContactPerson,
 		ContactPhone:  input.ContactPhone,
+		WeChat:        input.WeChat,
+		WhatsApp:      input.WhatsApp,
+		Facebook:      input.Facebook,
+		Instagram:     input.Instagram,
+		Telegram:      input.Telegram,
 		Email:         input.Email,
 		Address:       input.Address,
 		Status:        input.Status,
@@ -85,6 +105,11 @@ func mapBulkSyncCustomerRequestToModel(input BulkSyncCustomerRequest) models.Cus
 		Code:          input.Code,
 		ContactPerson: input.ContactPerson,
 		ContactPhone:  input.ContactPhone,
+		WeChat:        input.WeChat,
+		WhatsApp:      input.WhatsApp,
+		Facebook:      input.Facebook,
+		Instagram:     input.Instagram,
+		Telegram:      input.Telegram,
 		Email:         input.Email,
 		Address:       input.Address,
 		Status:        input.Status,
@@ -102,6 +127,11 @@ func mapCustomerToResponse(model models.Customer) CustomerResponse {
 		Code:          model.Code,
 		ContactPerson: model.ContactPerson,
 		ContactPhone:  model.ContactPhone,
+		WeChat:        model.WeChat,
+		WhatsApp:      model.WhatsApp,
+		Facebook:      model.Facebook,
+		Instagram:     model.Instagram,
+		Telegram:      model.Telegram,
 		Email:         model.Email,
 		Address:       model.Address,
 		Status:        model.Status,

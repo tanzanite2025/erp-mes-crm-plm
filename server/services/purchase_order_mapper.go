@@ -11,6 +11,11 @@ func MapSaveSupplierRequestToModel(input SaveSupplierRequest) models.Supplier {
 		MainProducts:  input.MainProducts,
 		ContactPerson: input.ContactPerson,
 		ContactPhone:  input.ContactPhone,
+		WeChat:        input.WeChat,
+		WhatsApp:      input.WhatsApp,
+		Facebook:      input.Facebook,
+		Instagram:     input.Instagram,
+		Telegram:      input.Telegram,
 		Email:         input.Email,
 		Address:       input.Address,
 		Status:        input.Status,
@@ -37,6 +42,21 @@ func ApplyPatchSupplierRequestToModel(target *models.Supplier, patch PatchSuppli
 	}
 	if patch.ContactPhone != nil {
 		target.ContactPhone = *patch.ContactPhone
+	}
+	if patch.WeChat != nil {
+		target.WeChat = *patch.WeChat
+	}
+	if patch.WhatsApp != nil {
+		target.WhatsApp = *patch.WhatsApp
+	}
+	if patch.Facebook != nil {
+		target.Facebook = *patch.Facebook
+	}
+	if patch.Instagram != nil {
+		target.Instagram = *patch.Instagram
+	}
+	if patch.Telegram != nil {
+		target.Telegram = *patch.Telegram
 	}
 	if patch.Email != nil {
 		target.Email = *patch.Email

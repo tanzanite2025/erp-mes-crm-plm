@@ -52,6 +52,11 @@ type CustomerSaveSnapshot struct {
 	Code          string  `json:"code"`
 	ContactPerson string  `json:"contactPerson"`
 	ContactPhone  string  `json:"contactPhone"`
+	WeChat        string  `json:"wechat"`
+	WhatsApp      string  `json:"whatsapp"`
+	Facebook      string  `json:"facebook"`
+	Instagram     string  `json:"instagram"`
+	Telegram      string  `json:"telegram"`
 	Email         string  `json:"email"`
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
@@ -72,6 +77,11 @@ type SupplierSaveSnapshot struct {
 	MainProducts  []string `json:"mainProducts"`
 	ContactPerson string   `json:"contactPerson"`
 	ContactPhone  string   `json:"contactPhone"`
+	WeChat        string   `json:"wechat"`
+	WhatsApp      string   `json:"whatsapp"`
+	Facebook      string   `json:"facebook"`
+	Instagram     string   `json:"instagram"`
+	Telegram      string   `json:"telegram"`
 	Email         string   `json:"email"`
 	Address       string   `json:"address"`
 	Status        string   `json:"status"`
@@ -139,7 +149,7 @@ func parseCustomerSavePayload(payload json.RawMessage) (CustomerSavePayload, err
 	if len(input.Delta) == 0 {
 		return CustomerSavePayload{}, fmt.Errorf("%w: delta is required", ErrCustomerTransactionInvalidPayload)
 	}
-	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "contactPerson", "contactPhone", "email", "address", "status", "creditLimit", "balance"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status", "creditLimit", "balance"); err != nil {
 		return CustomerSavePayload{}, fmt.Errorf("%w: %v", ErrCustomerTransactionInvalidPayload, err)
 	}
 	input.Operator = strings.TrimSpace(input.Operator)
@@ -147,6 +157,11 @@ func parseCustomerSavePayload(payload json.RawMessage) (CustomerSavePayload, err
 	input.FinalData.Code = strings.TrimSpace(input.FinalData.Code)
 	input.FinalData.ContactPerson = strings.TrimSpace(input.FinalData.ContactPerson)
 	input.FinalData.ContactPhone = strings.TrimSpace(input.FinalData.ContactPhone)
+	input.FinalData.WeChat = strings.TrimSpace(input.FinalData.WeChat)
+	input.FinalData.WhatsApp = strings.TrimSpace(input.FinalData.WhatsApp)
+	input.FinalData.Facebook = strings.TrimSpace(input.FinalData.Facebook)
+	input.FinalData.Instagram = strings.TrimSpace(input.FinalData.Instagram)
+	input.FinalData.Telegram = strings.TrimSpace(input.FinalData.Telegram)
 	input.FinalData.Email = strings.TrimSpace(input.FinalData.Email)
 	input.FinalData.Address = strings.TrimSpace(input.FinalData.Address)
 	input.FinalData.Status = strings.TrimSpace(input.FinalData.Status)
@@ -161,7 +176,7 @@ func parseSupplierSavePayload(payload json.RawMessage) (SupplierSavePayload, err
 	if len(input.Delta) == 0 {
 		return SupplierSavePayload{}, fmt.Errorf("%w: delta is required", ErrSupplierTransactionInvalidPayload)
 	}
-	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "email", "address", "status", "rating"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(input.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status", "rating"); err != nil {
 		return SupplierSavePayload{}, fmt.Errorf("%w: %v", ErrSupplierTransactionInvalidPayload, err)
 	}
 	input.Operator = strings.TrimSpace(input.Operator)
@@ -170,6 +185,11 @@ func parseSupplierSavePayload(payload json.RawMessage) (SupplierSavePayload, err
 	input.FinalData.Category = strings.TrimSpace(input.FinalData.Category)
 	input.FinalData.ContactPerson = strings.TrimSpace(input.FinalData.ContactPerson)
 	input.FinalData.ContactPhone = strings.TrimSpace(input.FinalData.ContactPhone)
+	input.FinalData.WeChat = strings.TrimSpace(input.FinalData.WeChat)
+	input.FinalData.WhatsApp = strings.TrimSpace(input.FinalData.WhatsApp)
+	input.FinalData.Facebook = strings.TrimSpace(input.FinalData.Facebook)
+	input.FinalData.Instagram = strings.TrimSpace(input.FinalData.Instagram)
+	input.FinalData.Telegram = strings.TrimSpace(input.FinalData.Telegram)
 	input.FinalData.Email = strings.TrimSpace(input.FinalData.Email)
 	input.FinalData.Address = strings.TrimSpace(input.FinalData.Address)
 	input.FinalData.Status = strings.TrimSpace(input.FinalData.Status)
@@ -230,6 +250,82 @@ func customerIdentityOnlyDelta(deltaKeys []string) bool {
 	return true
 }
 
+func mergeCustomerSaveSnapshot(current models.Customer, incoming CustomerSaveSnapshot, deltaKeys []string) CustomerSaveSnapshot {
+	merged := MapCustomerToSaveSnapshot(current)
+	for _, key := range deltaKeys {
+		switch key {
+		case "name":
+			merged.Name = incoming.Name
+		case "code":
+			merged.Code = incoming.Code
+		case "contactPerson":
+			merged.ContactPerson = incoming.ContactPerson
+		case "contactPhone":
+			merged.ContactPhone = incoming.ContactPhone
+		case "wechat":
+			merged.WeChat = incoming.WeChat
+		case "whatsapp":
+			merged.WhatsApp = incoming.WhatsApp
+		case "facebook":
+			merged.Facebook = incoming.Facebook
+		case "instagram":
+			merged.Instagram = incoming.Instagram
+		case "telegram":
+			merged.Telegram = incoming.Telegram
+		case "email":
+			merged.Email = incoming.Email
+		case "address":
+			merged.Address = incoming.Address
+		case "status":
+			merged.Status = incoming.Status
+		case "creditLimit":
+			merged.CreditLimit = incoming.CreditLimit
+		case "balance":
+			merged.Balance = incoming.Balance
+		}
+	}
+	return merged
+}
+
+func mergeSupplierSaveSnapshot(current models.Supplier, incoming SupplierSaveSnapshot, deltaKeys []string) SupplierSaveSnapshot {
+	merged := MapSaveSupplierSnapshotFromModel(current)
+	for _, key := range deltaKeys {
+		switch key {
+		case "name":
+			merged.Name = incoming.Name
+		case "code":
+			merged.Code = incoming.Code
+		case "category":
+			merged.Category = incoming.Category
+		case "mainProducts":
+			merged.MainProducts = incoming.MainProducts
+		case "contactPerson":
+			merged.ContactPerson = incoming.ContactPerson
+		case "contactPhone":
+			merged.ContactPhone = incoming.ContactPhone
+		case "wechat":
+			merged.WeChat = incoming.WeChat
+		case "whatsapp":
+			merged.WhatsApp = incoming.WhatsApp
+		case "facebook":
+			merged.Facebook = incoming.Facebook
+		case "instagram":
+			merged.Instagram = incoming.Instagram
+		case "telegram":
+			merged.Telegram = incoming.Telegram
+		case "email":
+			merged.Email = incoming.Email
+		case "address":
+			merged.Address = incoming.Address
+		case "status":
+			merged.Status = incoming.Status
+		case "rating":
+			merged.Rating = incoming.Rating
+		}
+	}
+	return merged
+}
+
 func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input ExecuteCustomerTransactionInput) (*models.Customer, error) {
 	payload, err := parseCustomerSavePayload(input.Payload)
 	if err != nil {
@@ -238,10 +334,11 @@ func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input E
 
 	operator := resolvePartnerOperator(payload.Operator, input.Operator, input.ActorID)
 	deltaKeys := extractDeltaKeys(payload.Delta)
+	mergedFinalData := mergeCustomerSaveSnapshot(*current, payload.FinalData, deltaKeys)
 
 	if customerStatusOnlyDelta(deltaKeys) {
 		derivedPayload, _ := json.Marshal(StatusChangePayload{
-			Status:   payload.FinalData.Status,
+			Status:   mergedFinalData.Status,
 			Operator: operator,
 		})
 		return executeCustomerStatusChangeTx(tx, current, ExecuteCustomerTransactionInput{
@@ -257,8 +354,8 @@ func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input E
 
 	if customerIdentityOnlyDelta(deltaKeys) {
 		derivedPayload, _ := json.Marshal(IdentityChangePayload{
-			Code:     payload.FinalData.Code,
-			Name:     payload.FinalData.Name,
+			Code:     mergedFinalData.Code,
+			Name:     mergedFinalData.Name,
 			Operator: operator,
 		})
 		return executeCustomerIdentityChangeTx(tx, current, ExecuteCustomerTransactionInput{
@@ -272,17 +369,17 @@ func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input E
 		})
 	}
 
-	if payload.FinalData.Code == "" || payload.FinalData.Name == "" {
+	if mergedFinalData.Code == "" || mergedFinalData.Name == "" {
 		return nil, fmt.Errorf("%w: code and name must not be empty", ErrCustomerTransactionInvalidPayload)
 	}
-	if !customerStatusSupported(payload.FinalData.Status) {
+	if !customerStatusSupported(mergedFinalData.Status) {
 		return nil, fmt.Errorf("%w: unsupported customer status", ErrCustomerTransactionInvalidPayload)
 	}
 
-	if payload.FinalData.Code != strings.TrimSpace(current.Code) {
+	if mergedFinalData.Code != strings.TrimSpace(current.Code) {
 		var duplicateCount int64
 		if err := tx.Model(&models.Customer{}).
-			Where("code = ? AND id <> ? AND is_deleted = ?", payload.FinalData.Code, current.ID, false).
+			Where("code = ? AND id <> ? AND is_deleted = ?", mergedFinalData.Code, current.ID, false).
 			Count(&duplicateCount).Error; err != nil {
 			return nil, err
 		}
@@ -293,29 +390,39 @@ func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input E
 
 	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
-		"name":           payload.FinalData.Name,
-		"code":           payload.FinalData.Code,
-		"contact_person": payload.FinalData.ContactPerson,
-		"contact_phone":  payload.FinalData.ContactPhone,
-		"email":          payload.FinalData.Email,
-		"address":        payload.FinalData.Address,
-		"status":         payload.FinalData.Status,
-		"credit_limit":   payload.FinalData.CreditLimit,
-		"balance":        payload.FinalData.Balance,
+		"name":           mergedFinalData.Name,
+		"code":           mergedFinalData.Code,
+		"contact_person": mergedFinalData.ContactPerson,
+		"contact_phone":  mergedFinalData.ContactPhone,
+		"we_chat":        mergedFinalData.WeChat,
+		"whats_app":      mergedFinalData.WhatsApp,
+		"facebook":       mergedFinalData.Facebook,
+		"instagram":      mergedFinalData.Instagram,
+		"telegram":       mergedFinalData.Telegram,
+		"email":          mergedFinalData.Email,
+		"address":        mergedFinalData.Address,
+		"status":         mergedFinalData.Status,
+		"credit_limit":   mergedFinalData.CreditLimit,
+		"balance":        mergedFinalData.Balance,
 		"version":        nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
 
-	current.Name = payload.FinalData.Name
-	current.Code = payload.FinalData.Code
-	current.ContactPerson = payload.FinalData.ContactPerson
-	current.ContactPhone = payload.FinalData.ContactPhone
-	current.Email = payload.FinalData.Email
-	current.Address = payload.FinalData.Address
-	current.Status = payload.FinalData.Status
-	current.CreditLimit = payload.FinalData.CreditLimit
-	current.Balance = payload.FinalData.Balance
+	current.Name = mergedFinalData.Name
+	current.Code = mergedFinalData.Code
+	current.ContactPerson = mergedFinalData.ContactPerson
+	current.ContactPhone = mergedFinalData.ContactPhone
+	current.WeChat = mergedFinalData.WeChat
+	current.WhatsApp = mergedFinalData.WhatsApp
+	current.Facebook = mergedFinalData.Facebook
+	current.Instagram = mergedFinalData.Instagram
+	current.Telegram = mergedFinalData.Telegram
+	current.Email = mergedFinalData.Email
+	current.Address = mergedFinalData.Address
+	current.Status = mergedFinalData.Status
+	current.CreditLimit = mergedFinalData.CreditLimit
+	current.Balance = mergedFinalData.Balance
 	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{
@@ -352,10 +459,11 @@ func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input E
 
 	operator := resolvePartnerOperator(payload.Operator, input.Operator, input.ActorID)
 	deltaKeys := extractDeltaKeys(payload.Delta)
+	mergedFinalData := mergeSupplierSaveSnapshot(*current, payload.FinalData, deltaKeys)
 
 	if customerStatusOnlyDelta(deltaKeys) {
 		derivedPayload, _ := json.Marshal(StatusChangePayload{
-			Status:   payload.FinalData.Status,
+			Status:   mergedFinalData.Status,
 			Operator: operator,
 		})
 		return executeSupplierStatusChangeTx(tx, current, ExecuteSupplierTransactionInput{
@@ -371,8 +479,8 @@ func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input E
 
 	if customerIdentityOnlyDelta(deltaKeys) {
 		derivedPayload, _ := json.Marshal(IdentityChangePayload{
-			Code:     payload.FinalData.Code,
-			Name:     payload.FinalData.Name,
+			Code:     mergedFinalData.Code,
+			Name:     mergedFinalData.Name,
 			Operator: operator,
 		})
 		return executeSupplierIdentityChangeTx(tx, current, ExecuteSupplierTransactionInput{
@@ -386,17 +494,17 @@ func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input E
 		})
 	}
 
-	if payload.FinalData.Code == "" || payload.FinalData.Name == "" {
+	if mergedFinalData.Code == "" || mergedFinalData.Name == "" {
 		return nil, fmt.Errorf("%w: code and name must not be empty", ErrSupplierTransactionInvalidPayload)
 	}
-	if !supplierStatusSupported(payload.FinalData.Status) {
+	if !supplierStatusSupported(mergedFinalData.Status) {
 		return nil, fmt.Errorf("%w: unsupported supplier status", ErrSupplierTransactionInvalidPayload)
 	}
 
-	if payload.FinalData.Code != strings.TrimSpace(current.Code) {
+	if mergedFinalData.Code != strings.TrimSpace(current.Code) {
 		var duplicateCount int64
 		if err := tx.Model(&models.Supplier{}).
-			Where("code = ? AND id <> ? AND is_deleted = ?", payload.FinalData.Code, current.ID, false).
+			Where("code = ? AND id <> ? AND is_deleted = ?", mergedFinalData.Code, current.ID, false).
 			Count(&duplicateCount).Error; err != nil {
 			return nil, err
 		}
@@ -405,38 +513,48 @@ func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input E
 		}
 	}
 
-	mainProductsJSON, err := json.Marshal(payload.FinalData.MainProducts)
+	mainProductsJSON, err := json.Marshal(mergedFinalData.MainProducts)
 	if err != nil {
 		return nil, fmt.Errorf("%w: invalid mainProducts", ErrSupplierTransactionInvalidPayload)
 	}
 
 	nextVersion := current.Version + 1
 	if err := tx.Model(current).Updates(map[string]any{
-		"name":           payload.FinalData.Name,
-		"code":           payload.FinalData.Code,
-		"category":       payload.FinalData.Category,
+		"name":           mergedFinalData.Name,
+		"code":           mergedFinalData.Code,
+		"category":       mergedFinalData.Category,
 		"main_products":  string(mainProductsJSON),
-		"contact_person": payload.FinalData.ContactPerson,
-		"contact_phone":  payload.FinalData.ContactPhone,
-		"email":          payload.FinalData.Email,
-		"address":        payload.FinalData.Address,
-		"status":         payload.FinalData.Status,
-		"rating":         payload.FinalData.Rating,
+		"contact_person": mergedFinalData.ContactPerson,
+		"contact_phone":  mergedFinalData.ContactPhone,
+		"we_chat":        mergedFinalData.WeChat,
+		"whats_app":      mergedFinalData.WhatsApp,
+		"facebook":       mergedFinalData.Facebook,
+		"instagram":      mergedFinalData.Instagram,
+		"telegram":       mergedFinalData.Telegram,
+		"email":          mergedFinalData.Email,
+		"address":        mergedFinalData.Address,
+		"status":         mergedFinalData.Status,
+		"rating":         mergedFinalData.Rating,
 		"version":        nextVersion,
 	}).Error; err != nil {
 		return nil, err
 	}
 
-	current.Name = payload.FinalData.Name
-	current.Code = payload.FinalData.Code
-	current.Category = payload.FinalData.Category
+	current.Name = mergedFinalData.Name
+	current.Code = mergedFinalData.Code
+	current.Category = mergedFinalData.Category
 	current.MainProducts = string(mainProductsJSON)
-	current.ContactPerson = payload.FinalData.ContactPerson
-	current.ContactPhone = payload.FinalData.ContactPhone
-	current.Email = payload.FinalData.Email
-	current.Address = payload.FinalData.Address
-	current.Status = payload.FinalData.Status
-	current.Rating = payload.FinalData.Rating
+	current.ContactPerson = mergedFinalData.ContactPerson
+	current.ContactPhone = mergedFinalData.ContactPhone
+	current.WeChat = mergedFinalData.WeChat
+	current.WhatsApp = mergedFinalData.WhatsApp
+	current.Facebook = mergedFinalData.Facebook
+	current.Instagram = mergedFinalData.Instagram
+	current.Telegram = mergedFinalData.Telegram
+	current.Email = mergedFinalData.Email
+	current.Address = mergedFinalData.Address
+	current.Status = mergedFinalData.Status
+	current.Rating = mergedFinalData.Rating
 	current.Version = nextVersion
 
 	auditDiff, _ := json.Marshal(map[string]any{

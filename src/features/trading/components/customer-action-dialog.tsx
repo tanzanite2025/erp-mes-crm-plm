@@ -12,6 +12,7 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Customer } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useCustomerActionViewModel } from '../hooks/use-customer-action-view-model'
+import { buildCustomerSaveSnapshot } from '../customer/utils/customer-save-snapshot'
 
 interface CustomerActionDialogProps {
   open: boolean
@@ -49,6 +50,8 @@ export function CustomerActionDialog({
   const handleSave = () => {
     const isPatch = !!customer
     const delta = tracker.commit()
+    const snapshot = JSON.parse(JSON.stringify(formData)) as Partial<Customer>
+    const nextData = buildCustomerSaveSnapshot(customer, snapshot)
     
     if (isPatch && Object.keys(delta).length === 0) {
       onOpenChange(false)
@@ -56,7 +59,7 @@ export function CustomerActionDialog({
     }
 
     onSave({ 
-      data: formData as Partial<Customer>, 
+      data: nextData,
       isPatch, 
       delta: isPatch ? delta : undefined 
     })
@@ -207,23 +210,98 @@ export function CustomerActionDialog({
             </div>
           </div>
 
-          <div className='grid gap-2'>
-            <Label
-              htmlFor='email'
-              className='text-[11px] font-bold uppercase text-muted-foreground'
-            >
-              {t('trading.customers.dialog.fields.email')}
-            </Label>
-            <div className='relative'>
-              <Mail className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
-              <Input
-                id='email'
-                type='email'
-                placeholder={t('trading.customers.dialog.placeholders.email')}
-                className='pl-10 h-10 font-bold'
-                value={formData.email}
-                onChange={(event) => updateField('email', event.target.value)}
-              />
+          <div className='grid gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-4 sm:p-5'>
+            <div className='flex flex-col gap-1'>
+              <h3 className='text-[11px] font-black uppercase tracking-[0.2em] text-foreground/80'>
+                社媒 / 沟通渠道
+              </h3>
+              <p className='text-[10px] font-bold text-muted-foreground'>
+                当前先记录客户常用海外沟通方式，后续再逐步接入真实跳转能力。
+              </p>
+            </div>
+
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              <div className='grid gap-2'>
+                <Label htmlFor='email' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  邮箱
+                </Label>
+                <div className='relative'>
+                  <Mail className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
+                  <Input
+                    id='email'
+                    type='email'
+                    placeholder={t('trading.customers.dialog.placeholders.email')}
+                    className='pl-10 h-11 rounded-2xl border-none bg-background font-bold'
+                    value={formData.email}
+                    onChange={(event) => updateField('email', event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className='grid gap-2'>
+                <Label htmlFor='wechat' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  微信号
+                </Label>
+                <Input
+                  id='wechat'
+                  placeholder='请输入客户微信号'
+                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  value={formData.wechat}
+                  onChange={(event) => updateField('wechat', event.target.value)}
+                />
+              </div>
+
+              <div className='grid gap-2'>
+                <Label htmlFor='whatsapp' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  WhatsApp
+                </Label>
+                <Input
+                  id='whatsapp'
+                  placeholder='请输入 WhatsApp 号码或账号'
+                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  value={formData.whatsapp}
+                  onChange={(event) => updateField('whatsapp', event.target.value)}
+                />
+              </div>
+
+              <div className='grid gap-2'>
+                <Label htmlFor='facebook' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  Facebook
+                </Label>
+                <Input
+                  id='facebook'
+                  placeholder='请输入 Facebook 链接或账号名'
+                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  value={formData.facebook}
+                  onChange={(event) => updateField('facebook', event.target.value)}
+                />
+              </div>
+
+              <div className='grid gap-2'>
+                <Label htmlFor='instagram' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  Instagram
+                </Label>
+                <Input
+                  id='instagram'
+                  placeholder='请输入 Instagram 账号'
+                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  value={formData.instagram}
+                  onChange={(event) => updateField('instagram', event.target.value)}
+                />
+              </div>
+
+              <div className='grid gap-2 sm:col-span-2'>
+                <Label htmlFor='telegram' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
+                  Telegram
+                </Label>
+                <Input
+                  id='telegram'
+                  placeholder='请输入 Telegram 用户名或链接'
+                  className='h-11 rounded-2xl border-none bg-background font-bold'
+                  value={formData.telegram}
+                  onChange={(event) => updateField('telegram', event.target.value)}
+                />
+              </div>
             </div>
           </div>
 

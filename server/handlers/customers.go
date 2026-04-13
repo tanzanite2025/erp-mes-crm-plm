@@ -76,7 +76,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "contactPerson", "contactPhone", "email", "address", "status", "creditLimit", "balance"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status", "creditLimit", "balance"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "[VALIDATION] customer delta is invalid: " + err.Error(),
 			"code":  "CUSTOMER_PATCH_VALIDATION_FAILED",
@@ -96,7 +96,7 @@ func PatchCustomerHandler(c *gin.Context) {
 		}
 
 		switch key {
-		case "name", "code", "contactPerson", "contactPhone", "email", "address", "status":
+		case "name", "code", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{
@@ -114,6 +114,16 @@ func PatchCustomerHandler(c *gin.Context) {
 				patch.ContactPerson = &value
 			case "contactPhone":
 				patch.ContactPhone = &value
+			case "wechat":
+				patch.WeChat = &value
+			case "whatsapp":
+				patch.WhatsApp = &value
+			case "facebook":
+				patch.Facebook = &value
+			case "instagram":
+				patch.Instagram = &value
+			case "telegram":
+				patch.Telegram = &value
 			case "email":
 				patch.Email = &value
 			case "address":

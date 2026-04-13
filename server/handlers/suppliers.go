@@ -66,7 +66,7 @@ func PatchSupplierHandler(c *gin.Context) {
 		return
 	}
 
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "email", "address", "status", "rating"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "name", "code", "category", "mainProducts", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status", "rating"); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid supplier delta: " + err.Error()})
 		return
 	}
@@ -82,27 +82,40 @@ func PatchSupplierHandler(c *gin.Context) {
 			return
 		}
 		switch key {
-		case "name":
+		case "name", "code", "category", "contactPerson", "contactPhone", "wechat", "whatsapp", "facebook", "instagram", "telegram", "email", "address", "status":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] name 字段错误"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 字段错误: " + key})
 				return
 			}
-			patch.Name = &value
-		case "code":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] code 字段错误"})
-				return
+			switch key {
+			case "name":
+				patch.Name = &value
+			case "code":
+				patch.Code = &value
+			case "category":
+				patch.Category = &value
+			case "contactPerson":
+				patch.ContactPerson = &value
+			case "contactPhone":
+				patch.ContactPhone = &value
+			case "wechat":
+				patch.WeChat = &value
+			case "whatsapp":
+				patch.WhatsApp = &value
+			case "facebook":
+				patch.Facebook = &value
+			case "instagram":
+				patch.Instagram = &value
+			case "telegram":
+				patch.Telegram = &value
+			case "email":
+				patch.Email = &value
+			case "address":
+				patch.Address = &value
+			case "status":
+				patch.Status = &value
 			}
-			patch.Code = &value
-		case "category":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] category 字段错误"})
-				return
-			}
-			patch.Category = &value
 		case "mainProducts":
 			var values []string
 			if err := json.Unmarshal(valueRaw, &values); err != nil {
@@ -116,41 +129,6 @@ func PatchSupplierHandler(c *gin.Context) {
 			}
 			value := string(encoded)
 			patch.MainProducts = &value
-		case "contactPerson":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] contactPerson 字段错误"})
-				return
-			}
-			patch.ContactPerson = &value
-		case "contactPhone":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] contactPhone 字段错误"})
-				return
-			}
-			patch.ContactPhone = &value
-		case "email":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] email 字段错误"})
-				return
-			}
-			patch.Email = &value
-		case "address":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] address 字段错误"})
-				return
-			}
-			patch.Address = &value
-		case "status":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] status 字段错误"})
-				return
-			}
-			patch.Status = &value
 		case "rating":
 			var value float64
 			if err := json.Unmarshal(valueRaw, &value); err != nil {

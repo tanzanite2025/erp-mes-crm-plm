@@ -12,6 +12,11 @@ type SaveSupplierRequest struct {
 	MainProducts  string  `json:"mainProducts"`
 	ContactPerson string  `json:"contactPerson"`
 	ContactPhone  string  `json:"contactPhone"`
+	WeChat        string  `json:"wechat"`
+	WhatsApp      string  `json:"whatsapp"`
+	Facebook      string  `json:"facebook"`
+	Instagram     string  `json:"instagram"`
+	Telegram      string  `json:"telegram"`
 	Email         string  `json:"email"`
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
@@ -27,6 +32,11 @@ type PatchSupplierRequest struct {
 	MainProducts  *string
 	ContactPerson *string
 	ContactPhone  *string
+	WeChat        *string
+	WhatsApp      *string
+	Facebook      *string
+	Instagram     *string
+	Telegram      *string
 	Email         *string
 	Address       *string
 	Status        *string

@@ -14,7 +14,9 @@ import {
   Box,
   CheckCircle2,
   Loader2,
+  MessageCircle,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +39,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import { requireTradingCommandActor } from '../utils/command-actor'
+import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
+import { buildSupplierSaveSnapshot } from '../supplier/utils/supplier-save-snapshot'
 import { SupplierActionDialog } from './supplier-action-dialog'
 import { useGetSupplierList, useSupplierMutations } from '../supplier'
 import { cn } from '@/lib/utils'
@@ -96,6 +100,7 @@ export function SupplierList() {
     if (!allowsAction('action_trading_supplier_manage')) return
 
     if (payload.isPatch && payload.delta && selectedSupplier) {
+      const finalData = buildSupplierSaveSnapshot(selectedSupplier, payload.data)
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'SupplierList.handleSaveSupplier',
@@ -103,7 +108,7 @@ export function SupplierList() {
       saveMutation.mutate({
         id: selectedSupplier.id,
         delta: payload.delta,
-        finalData: payload.data as Supplier,
+        finalData,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: selectedSupplier.version,
@@ -125,6 +130,15 @@ export function SupplierList() {
     if (rating >= 70) return t('purchase.suppliers.ratings.preferred')
     if (rating >= 50) return t('purchase.suppliers.ratings.standard')
     return t('purchase.suppliers.ratings.probation')
+  }
+
+  const handleOpenWeChat = (supplier: Supplier) => {
+    if (!canOpenWeChat(supplier.wechat)) {
+      toast.error('未填写微信号')
+      return
+    }
+
+    openWeChat(supplier.wechat)
   }
 
   const getStatusBadge = (status: SupplierStatus) => {
@@ -332,7 +346,6 @@ export function SupplierList() {
             <Card
               key={supplier.id}
               className='group hover:bg-muted/30 transition-all border-dashed border-muted/50 bg-muted/5 rounded-[24px] overflow-hidden cursor-default relative'
-              onClick={() => handleEditClick(supplier)}
             >
               <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
               <CardHeader className='p-4 md:p-6 pb-4 border-b border-dashed border-muted/50 relative'>
@@ -427,6 +440,32 @@ export function SupplierList() {
                   <p className='text-[10px] md:text-[11px] font-bold text-muted-foreground truncate leading-relaxed'>
                     {supplier.address}
                   </p>
+                </div>
+
+                <div className='space-y-1.5 pt-4 border-t border-dashed border-muted/50'>
+                  <div className='flex items-center gap-2 text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+                    <MessageCircle className='size-3' />
+                    微信
+                  </div>
+                  <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <p className='text-[10px] md:text-[11px] font-bold text-muted-foreground break-all'>
+                      {supplier.wechat || '未填写'}
+                    </p>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      disabled={!canOpenWeChat(supplier.wechat)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleOpenWeChat(supplier)
+                      }}
+                      className='h-8 w-full sm:w-auto rounded-full text-[9px] font-black uppercase tracking-widest'
+                    >
+                      打开微信
+                      <ExternalLink className='ms-2 size-3' />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className='pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-dashed border-muted/50'>

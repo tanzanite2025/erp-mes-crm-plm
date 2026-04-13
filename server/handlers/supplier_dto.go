@@ -14,6 +14,11 @@ type SupplierResponse struct {
 	MainProducts  string    `json:"mainProducts"`
 	ContactPerson string    `json:"contactPerson"`
 	ContactPhone  string    `json:"contactPhone"`
+	WeChat        string    `json:"wechat"`
+	WhatsApp      string    `json:"whatsapp"`
+	Facebook      string    `json:"facebook"`
+	Instagram     string    `json:"instagram"`
+	Telegram      string    `json:"telegram"`
 	Email         string    `json:"email"`
 	Address       string    `json:"address"`
 	Status        string    `json:"status"`
@@ -40,6 +45,11 @@ type BulkSyncSupplierRequest struct {
 	MainProducts  string  `json:"mainProducts"`
 	ContactPerson string  `json:"contactPerson"`
 	ContactPhone  string  `json:"contactPhone"`
+	WeChat        string  `json:"wechat"`
+	WhatsApp      string  `json:"whatsapp"`
+	Facebook      string  `json:"facebook"`
+	Instagram     string  `json:"instagram"`
+	Telegram      string  `json:"telegram"`
 	Email         string  `json:"email"`
 	Address       string  `json:"address"`
 	Status        string  `json:"status"`
@@ -57,6 +67,11 @@ func mapBulkSyncSupplierRequestToModel(input BulkSyncSupplierRequest) models.Sup
 		MainProducts:  input.MainProducts,
 		ContactPerson: input.ContactPerson,
 		ContactPhone:  input.ContactPhone,
+		WeChat:        input.WeChat,
+		WhatsApp:      input.WhatsApp,
+		Facebook:      input.Facebook,
+		Instagram:     input.Instagram,
+		Telegram:      input.Telegram,
 		Email:         input.Email,
 		Address:       input.Address,
 		Status:        input.Status,
@@ -75,6 +90,11 @@ func mapSupplierToResponse(model models.Supplier) SupplierResponse {
 		MainProducts:  model.MainProducts,
 		ContactPerson: model.ContactPerson,
 		ContactPhone:  model.ContactPhone,
+		WeChat:        model.WeChat,
+		WhatsApp:      model.WhatsApp,
+		Facebook:      model.Facebook,
+		Instagram:     model.Instagram,
+		Telegram:      model.Telegram,
 		Email:         model.Email,
 		Address:       model.Address,
 		Status:        model.Status,

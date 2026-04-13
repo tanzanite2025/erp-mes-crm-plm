@@ -2157,6 +2157,173 @@
 
 1. TypeScript 编译校验通过。
 
+## 2026-04-13 - feat：736 客户卡片微信打开入口最小实现
+
+### 本轮目标
+
+在客户资料中补充 `wechat` 字段，并在客户卡片上提供“打开微信”最小入口；同时按后续多渠道扩展要求，将渠道能力放入独立 `contact-channels` 目录，避免直接堆叠到客户卡片组件内部。
+
+### 实现细节
+
+1. **新增独立 contact-channels 目录**
+   - 新增：
+     - `src/features/contact-channels/types.ts`
+     - `src/features/contact-channels/wechat.ts`
+     - `src/features/contact-channels/index.ts`
+   - 当前仅提供最小微信能力：
+     - `normalizeWeChatHandle(...)`
+     - `canOpenWeChat(...)`
+     - `openWeChat(...)`
+   - 本轮仅尝试通过 `weixin://` 拉起微信客户端，不承诺直达指定会话窗口
+
+2. **客户前后端字段链路补充 wechat**
+   - 更新后端：
+     - `server/models/trading.go`
+     - `server/handlers/customer_dto.go`
+     - `server/handlers/customers.go`
+     - `server/services/partner_list_dto.go`
+     - `server/services/partner_service.go`
+     - `server/services/partner_transaction_service.go`
+   - 更新前端：
+     - `src/features/trading/data/schema.ts`
+     - `src/features/trading/customer/contracts/customer-api-dto.ts`
+     - `src/features/trading/customer/adapters/customer-api-adapter.ts`
+     - `src/features/trading/hooks/use-customer-action-view-model.ts`
+   - 现在客户 `wechat` 字段已进入：模型、DTO、adapter、save snapshot、PATCH delta 白名单与差量生成链路
+
+3. **客户编辑弹窗接入微信输入**
+   - 更新 `src/features/trading/components/customer-action-dialog.tsx`
+   - 新增微信输入框，允许新建/编辑客户时录入微信号
+
+4. **客户卡片接入微信入口按钮**
+   - 更新 `src/features/trading/components/customer-list.tsx`
+   - 卡片增加微信展示区
+   - 当微信号为空时：按钮禁用，点击前会阻止错误跳转
+   - 当微信号存在时：调用独立 `contact-channels` 能力尝试拉起微信
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 不做企业微信侧边栏或会话归档
+2. 不做客户沟通审计 / 时间轴 / Webhook
+3. 不做 Telegram / Instagram / WhatsApp / Facebook 的实际接入
+4. 不承诺微信一定直达指定客户聊天窗口
+
+### 测试与验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./services -run ^$`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+2. 后端 handlers / services 编译型校验通过
+
+### 增量更新：客户资料扩展为多渠道记录
+
+在微信最小入口实现基础上，本轮继续按“先记录资料、后启用能力”的方式，把客户资料扩展为统一多渠道联系方式结构：
+
+1. **客户模型扩展为 5 个渠道字段**
+   - 新增/补齐：
+     - `wechat`
+     - `whatsapp`
+     - `facebook`
+     - `instagram`
+     - `telegram`
+   - 更新后端：
+     - `server/models/trading.go`
+     - `server/handlers/customer_dto.go`
+     - `server/handlers/customers.go`
+     - `server/services/partner_list_dto.go`
+     - `server/services/partner_service.go`
+     - `server/services/partner_transaction_service.go`
+   - 更新前端：
+     - `src/features/trading/data/schema.ts`
+     - `src/features/trading/customer/contracts/customer-api-dto.ts`
+     - `src/features/trading/customer/adapters/customer-api-adapter.ts`
+     - `src/features/trading/hooks/use-customer-action-view-model.ts`
+
+2. **客户编辑弹窗新增“社媒 / 沟通渠道”分组**
+   - 更新 `src/features/trading/components/customer-action-dialog.tsx`
+   - 将渠道字段集中到独立分组中录入：
+     - 微信号
+     - WhatsApp
+     - Facebook
+     - Instagram
+     - Telegram
+   - 当前该分组只承担资料录入和保存职责，不引入额外跳转状态
+
+3. **能力边界继续保持收敛**
+   - `wechat` 继续保留客户卡片上的最小打开入口
+   - `whatsapp / facebook / instagram / telegram` 本轮仅保存资料，不新增跳转按钮
+   - 这样客户资料结构已经为后续渠道扩展预留好稳定字段基础
+
+### 本轮追加验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./services -run ^$`
+
+结果：
+
+1. 多渠道字段接入后前端 TypeScript 编译通过
+2. 多渠道字段接入后后端 handlers / services 编译型校验通过
+
+### 增量更新：客户保存链根因级修复
+
+在客户渠道字段扩展完成后，编辑客户时通过事务保存 `/customers/:id/transactions` 出现 `code and name must not be empty`。本轮对该问题做了前后端双层根因加固，而不是继续停留在页面级补丁。
+
+1. **前端收口完整快照生成职责**
+   - 新增：
+     - `src/features/trading/customer/utils/customer-save-snapshot.ts`
+   - 提供 `buildCustomerSaveSnapshot(baseCustomer, draft)`，统一负责：
+     - 将表单草稿转为普通对象快照
+     - 在编辑态基于原客户对象生成完整 `finalData`
+   - 接入位置：
+     - `src/features/trading/components/customer-action-dialog.tsx`
+     - `src/features/trading/components/customer-list.tsx`
+   - 这样后续再新增渠道字段时，不需要每个页面自己记得写一套合并逻辑
+
+2. **后端统一保存事务增加 authoritative merge**
+   - 更新：
+     - `server/services/partner_transaction_service.go`
+   - 新增 `mergeCustomerSaveSnapshot(...)`
+   - 在 `executeCustomerUnifiedSaveTx(...)` 中改为：
+     - 先读取当前数据库客户 `current`
+     - 再按 `deltaKeys` 将请求中的 `finalData` 合并到当前快照上
+     - 最终使用合并后的 `mergedFinalData` 执行：
+       - `code / name` 校验
+       - 状态校验
+       - 重复编码校验
+       - 数据库更新
+   - 这样即使前端未来遗漏未修改字段，服务端也会以后端当前值兜底，不再因未改字段缺失而导致事务保存失败
+
+3. **本轮修复后的稳定性结论**
+   - 这次修复不再只针对 `wechat`
+   - 对当前客户所有字段，包括：
+     - `wechat`
+     - `whatsapp`
+     - `facebook`
+     - `instagram`
+     - `telegram`
+   - 以及后续新增的客户普通字段，都具备更稳定的事务保存边界
+
+### 本轮追加验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./services -run ^$`
+
+结果：
+
+1. 前端统一快照收口后 TypeScript 编译通过
+2. 后端 authoritative merge 接入后 handlers / services 编译型校验通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

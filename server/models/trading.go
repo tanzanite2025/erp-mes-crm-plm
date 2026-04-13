@@ -73,6 +73,11 @@ type Customer struct {
 	Code          string    `gorm:"size:100;uniqueIndex;not null" json:"code"`
 	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
 	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
+	WeChat        string    `gorm:"size:100" json:"wechat"`
+	WhatsApp      string    `gorm:"size:100" json:"whatsapp"`
+	Facebook      string    `gorm:"size:255" json:"facebook"`
+	Instagram     string    `gorm:"size:100" json:"instagram"`
+	Telegram      string    `gorm:"size:100" json:"telegram"`
 	Email         string    `gorm:"size:100" json:"email"`
 	Address       string    `gorm:"type:text" json:"address"`
 	Status        string    `gorm:"size:20;default:'Active'" json:"status"`
@@ -93,6 +98,11 @@ type Supplier struct {
 	MainProducts  string    `gorm:"type:jsonb" json:"mainProducts"` // 存储产品列表 JSON
 	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
 	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
+	WeChat        string    `gorm:"size:100" json:"wechat"`
+	WhatsApp      string    `gorm:"size:100" json:"whatsapp"`
+	Facebook      string    `gorm:"size:255" json:"facebook"`
+	Instagram     string    `gorm:"size:100" json:"instagram"`
+	Telegram      string    `gorm:"size:100" json:"telegram"`
 	Email         string    `gorm:"size:100" json:"email"`
 	Address       string    `gorm:"type:text" json:"address"`
 	Status        string    `gorm:"size:20;default:'Active'" json:"status"`

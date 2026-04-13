@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Building2, MapPin, Phone, User } from 'lucide-react'
+import { Box, Building2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useSupplierActionViewModel } from '../hooks/use-supplier-action-view-model'
+import { buildSupplierSaveSnapshot } from '../supplier/utils/supplier-save-snapshot'
 
 interface SupplierActionDialogProps {
   open: boolean
@@ -55,6 +56,8 @@ export function SupplierActionDialog({
   const handleSave = () => {
     const isPatch = !!supplier
     const delta = tracker.commit()
+    const snapshot = JSON.parse(JSON.stringify(formData)) as Partial<Supplier>
+    const nextData = buildSupplierSaveSnapshot(supplier, snapshot)
     
     if (isPatch && Object.keys(delta).length === 0) {
       handleDialogOpenChange(false)
@@ -62,7 +65,7 @@ export function SupplierActionDialog({
     }
 
     onSave({ 
-        data: formData as Partial<Supplier>, 
+        data: nextData, 
         isPatch, 
         delta: isPatch ? delta : undefined 
     })
@@ -260,6 +263,95 @@ export function SupplierActionDialog({
               className='h-12 rounded-2xl border-none bg-muted/50 pl-11 font-mono text-sm font-black tabular-nums transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.contactPhone}
               onChange={(e) => updateField('contactPhone', e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className='grid gap-4 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4'>
+        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+          沟通渠道
+        </Label>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <div className='grid gap-3'>
+            <Label htmlFor='email' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              Email
+            </Label>
+            <div className='group relative'>
+              <Mail className='absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
+              <Input
+                id='email'
+                placeholder='name@company.com'
+                className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+                value={formData.email}
+                onChange={(e) => updateField('email', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className='grid gap-3'>
+            <Label htmlFor='wechat' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              WeChat
+            </Label>
+            <Input
+              id='wechat'
+              placeholder='微信号'
+              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              value={formData.wechat}
+              onChange={(e) => updateField('wechat', e.target.value)}
+            />
+          </div>
+
+          <div className='grid gap-3'>
+            <Label htmlFor='whatsapp' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              WhatsApp
+            </Label>
+            <Input
+              id='whatsapp'
+              placeholder='WhatsApp'
+              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              value={formData.whatsapp}
+              onChange={(e) => updateField('whatsapp', e.target.value)}
+            />
+          </div>
+
+          <div className='grid gap-3'>
+            <Label htmlFor='facebook' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              Facebook
+            </Label>
+            <Input
+              id='facebook'
+              placeholder='Facebook'
+              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              value={formData.facebook}
+              onChange={(e) => updateField('facebook', e.target.value)}
+            />
+          </div>
+
+          <div className='grid gap-3'>
+            <Label htmlFor='instagram' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              Instagram
+            </Label>
+            <Input
+              id='instagram'
+              placeholder='Instagram'
+              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              value={formData.instagram}
+              onChange={(e) => updateField('instagram', e.target.value)}
+            />
+          </div>
+
+          <div className='grid gap-3'>
+            <Label htmlFor='telegram' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              Telegram
+            </Label>
+            <Input
+              id='telegram'
+              placeholder='Telegram'
+              className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
+              value={formData.telegram}
+              onChange={(e) => updateField('telegram', e.target.value)}
             />
           </div>
         </div>

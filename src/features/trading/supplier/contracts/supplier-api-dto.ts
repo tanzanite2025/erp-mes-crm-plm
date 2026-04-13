@@ -6,6 +6,11 @@ export interface SupplierApiDTO {
   mainProducts: string | string[]
   contactPerson: string
   contactPhone: string
+  wechat?: string
+  whatsapp?: string
+  facebook?: string
+  instagram?: string
+  telegram?: string
   email: string
   address: string
   status: 'Active' | 'Inactive' | 'OnReview'

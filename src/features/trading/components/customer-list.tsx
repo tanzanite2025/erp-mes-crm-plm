@@ -7,11 +7,13 @@ import {
   Loader2,
   MapPin,
   MoreHorizontal,
+  MessageCircle,
   Phone,
   Plus,
   Search,
   User,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +32,9 @@ import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
+import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
 import { type Customer } from '../data/schema'
+import { buildCustomerSaveSnapshot } from '../customer/utils/customer-save-snapshot'
 import { type DeltaSet } from '@/lib/delta/types'
 import { tradingQueryKeys } from '../query-keys'
 import { requireTradingCommandActor } from '../utils/command-actor'
@@ -93,6 +97,7 @@ export function CustomerList() {
     if (!allowsAction('action_trading_customer_manage')) return
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
+      const finalData = buildCustomerSaveSnapshot(selectedCustomer, payload.data)
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'CustomerList.handleSaveCustomer',
@@ -100,7 +105,7 @@ export function CustomerList() {
       saveMutation.mutate({
         id: selectedCustomer.id,
         delta: payload.delta,
-        finalData: payload.data as Customer,
+        finalData,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: selectedCustomer.version,
@@ -115,6 +120,15 @@ export function CustomerList() {
     if (confirm(t('trading.customers.deleteConfirm'))) {
       deleteMutation.mutate(id)
     }
+  }
+
+  const handleOpenWeChat = (customer: Customer) => {
+    if (!canOpenWeChat(customer.wechat)) {
+      toast.error('未填写微信号')
+      return
+    }
+
+    openWeChat(customer.wechat)
   }
 
   const getStatusBadge = (customer: Customer) => {
@@ -302,7 +316,6 @@ export function CustomerList() {
             <Card
               key={customer.id}
               className='group hover:bg-muted/30 transition-all border-dashed border-muted/50 bg-muted/5 rounded-[24px] overflow-hidden cursor-default relative'
-              onClick={() => handleEditClick(customer)}
             >
               <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
               <CardHeader className='pb-4 border-b border-dashed border-muted/50 relative'>
@@ -385,6 +398,32 @@ export function CustomerList() {
                   <p className='text-[11px] font-bold text-muted-foreground truncate leading-relaxed'>
                     {customer.address}
                   </p>
+                </div>
+
+                <div className='space-y-1.5 pt-4 border-t border-dashed border-muted/50'>
+                  <div className='flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+                    <MessageCircle className='size-3' />
+                    微信
+                  </div>
+                  <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <p className='text-[11px] font-bold text-muted-foreground break-all'>
+                      {customer.wechat || '未填写'}
+                    </p>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      disabled={!canOpenWeChat(customer.wechat)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleOpenWeChat(customer)
+                      }}
+                      className='h-8 w-full sm:w-auto rounded-full text-[9px] font-black uppercase tracking-widest'
+                    >
+                      打开微信
+                      <ExternalLink className='ms-2 size-3' />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className='pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-dashed border-muted/50'>
