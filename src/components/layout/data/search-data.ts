@@ -84,6 +84,22 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'tpmb',
   },
   {
+    id: 'tab-service-leave-management',
+    href: '/personnel/leave',
+    titleKey: 'commandMenu.items.leaveManagement',
+    parentKey: 'commandMenu.parents.serviceCenter',
+    keywords: ['leave', 'vacation', '请假'],
+    pinyin: 'qjgl',
+  },
+  {
+    id: 'tab-service-hall-of-fame',
+    href: '/personnel/stats',
+    titleKey: 'commandMenu.items.hallOfFame',
+    parentKey: 'commandMenu.parents.serviceCenter',
+    keywords: ['honor', 'ranking', '荣誉榜'],
+    pinyin: 'ryb',
+  },
+  {
     id: 'tab-warehouse-stock',
     href: '/warehouse',
     titleKey: 'commandMenu.items.stock',

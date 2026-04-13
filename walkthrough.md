@@ -3926,6 +3926,329 @@
 
 1. 统一 Tab 改造后 TypeScript 编译通过
 
+## 2026-04-13 - feat：组织人事最小分类调整
+
+### 本轮目标
+
+对当前“人事账号中心”先做最小导航升级：
+
+1. 命名升级为“组织人事”
+2. 第一轮整体承接现有内容
+3. 暂不细拆内部结构
+
+### 核心实现
+
+1. **侧边栏导航命名升级**
+   - 更新：
+     - `src/locales/messages/zh-CN/sidebar.ts`
+     - `src/locales/messages/en-US/sidebar.ts`
+   - 当前行为：
+     - 侧边栏入口从“人事账号中心 / Personnel & Accounts”统一升级为“组织人事 / Organization & Personnel`
+
+2. **命令搜索命名同步**
+   - 更新：
+     - `src/locales/messages/zh-CN/commandMenu.ts`
+     - `src/locales/messages/en-US/commandMenu.ts`
+   - 当前行为：
+     - 命令菜单中的父级与入口名称同步升级为“组织人事 / Organization & Personnel`
+
+3. **模块外层标题沿用统一命名**
+   - `src/routes/_authenticated/personnel/route.tsx` 已通过 `sidebar.items.personnelCenter` 取标题
+   - 因此在侧边栏文案升级后，模块外层标题会自动同步为“组织人事”
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 导航入口从“账号中心”语义升级为更中性的“组织人事”
+2. 当前原有人事相关内容继续整体承接，不强行细拆
+
+本轮未做：
+
+1. 不细拆为组织人员 / 账号权限等子分组
+2. 不接入 `KPI绩效`
+3. 不重写人事模块内部页面结构
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 组织人事最小分类调整后 TypeScript 编译通过
+
+## 2026-04-13 - feat：组织人事独立侧边栏分组
+
+### 本轮目标
+
+将“组织人事”从“系统配置”中独立出来，成为一个真正独立的侧边栏分组，并先整体挂载当前 `/personnel` 入口。
+
+### 核心实现
+
+1. **新增组织人事侧边栏分组文案**
+   - 更新：
+     - `src/locales/messages/zh-CN/sidebar.ts`
+     - `src/locales/messages/en-US/sidebar.ts`
+   - 当前行为：
+     - 侧边栏已有独立分组文案：`组织人事 / Organization & Personnel`
+
+2. **迁移 `/personnel` 入口归属**
+   - 更新：`src/components/layout/data/sidebar-data.ts`
+   - 当前行为：
+     - 新增独立分组 `sidebar.groups.orgPersonnel`
+     - 将 `/personnel` 从 `systemSettings` 分组中迁出
+     - 先整体挂入新的“组织人事”分组
+     - 其他系统配置项保持原位不动
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 组织人事不再作为系统配置的子项显示
+2. `/personnel` 已成为独立侧边栏分组下的唯一入口
+
+本轮未做：
+
+1. 不细拆为组织人员 / 账号权限等子分组
+2. 不接入 `KPI绩效`
+3. 不重写组织人事内部页面结构
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 组织人事独立侧边栏分组调整后 TypeScript 编译通过
+
+## 2026-04-13 - style：头像下拉菜单 1.0 视觉对齐
+
+### 本轮目标
+
+将点击头像后的下拉菜单视觉风格对齐到 1.0 标准，同时不改动任何菜单功能行为。
+
+### 核心实现
+
+1. **触发器样式升级**
+   - 更新：`src/components/profile-dropdown.tsx`
+   - 当前行为：
+     - 头像触发按钮改为更接近 1.0 的虚线边框、轻阴影和 hover 反馈
+     - 头像 fallback 字体与底色层级更明确
+
+2. **下拉菜单容器与头部样式升级**
+   - 更新：`src/components/profile-dropdown.tsx`
+   - 当前行为：
+     - 菜单容器使用更大的圆角、虚线边框、毛玻璃背景和更强层级阴影
+     - 用户信息头改为更清晰的头像 + 双层文字结构
+
+3. **菜单项与退出项样式升级**
+   - 更新：`src/components/profile-dropdown.tsx`
+   - 当前行为：
+     - 菜单项统一为更强字重、圆角块状点击区域
+     - 危险项保持 destructive 语义，但视觉上更贴近系统 1.0 风格
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 头像菜单视觉层级更接近系统 1.0 标准
+2. 不影响个人记录缓冲区入口、个人工作台入口和退出逻辑
+
+本轮未做：
+
+1. 不修改 dropdown-menu 通用基础组件
+2. 不改菜单项文案与跳转逻辑
+3. 不扩散到其他下拉菜单
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 头像下拉菜单 1.0 视觉对齐后 TypeScript 编译通过
+
+## 2026-04-13 - style：语言切换与主题切换菜单 1.0 视觉统一
+
+### 本轮目标
+
+将右上角语言切换与明暗模式切换的下拉菜单视觉风格统一到与头像菜单一致的 1.0 标准。
+
+### 核心实现
+
+1. **触发器样式统一**
+   - 更新：
+     - `src/components/language-switch.tsx`
+     - `src/components/theme-switch.tsx`
+   - 当前行为：
+     - 两个按钮均升级为与头像菜单一致的圆形触发器风格
+     - 使用虚线边框、轻阴影和统一 hover 反馈
+
+2. **下拉容器样式统一**
+   - 更新：
+     - `src/components/language-switch.tsx`
+     - `src/components/theme-switch.tsx`
+   - 当前行为：
+     - 菜单容器统一为更大圆角、虚线边框、毛玻璃背景和 1.0 阴影层级
+
+3. **菜单项样式统一**
+   - 更新：
+     - `src/components/language-switch.tsx`
+     - `src/components/theme-switch.tsx`
+   - 当前行为：
+     - 选项项统一使用更强字重、块状圆角点击区和一致的 focus 态
+     - 当前选中项的 `Check` 图标统一为主色表现
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 语言、主题、头像三套右上角菜单风格已明显趋于统一
+2. 功能行为与切换逻辑不受影响
+
+本轮未做：
+
+1. 不修改通用 dropdown-menu 基础组件
+2. 不扩散到其他模块下拉菜单
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 语言切换与主题切换菜单 1.0 视觉统一后 TypeScript 编译通过
+
+## 2026-04-13 - fix：/personnel/leave 与 /personnel/stats 本地化收口
+
+### 本轮目标
+
+修复 `/personnel/leave` 与 `/personnel/stats` 中残留的中英混排问题，统一接入系统现有语言模式。
+
+### 核心实现
+
+1. **补齐 leave / stats 语言包字段**
+   - 更新：
+     - `src/locales/messages/zh-CN/orgPersonnel.ts`
+     - `src/locales/messages/en-US/orgPersonnel.ts`
+   - 当前行为：
+     - 为 `leaveMgmt` 与 `statsPage` 补齐页眉、统计、表头、单位、详情和动作文案
+
+2. **将 leave-display 收口为语言感知 helper**
+   - 更新：`src/features/org-personnel/data/leave-display.ts`
+   - 当前行为：
+     - 请假状态标签支持 `zh-CN / en-US`
+     - 请假类型标签支持 `zh-CN / en-US`
+     - 时间格式按当前语言环境输出，而非固定 `zh-CN`
+
+3. **leave 页面与相关组件切换为统一本地化文案**
+   - 更新：
+     - `src/features/org-personnel/tabs/leave-management.tsx`
+     - `src/features/org-personnel/components/leave-list-toolbar.tsx`
+     - `src/features/org-personnel/components/leave-detail-dialog.tsx`
+     - `src/features/org-personnel/components/leave-action-dialog.tsx`
+   - 当前行为：
+     - 页眉、统计卡片、列表空态、按钮、详情弹窗、申请弹窗全部统一走 `t(...)`
+     - 状态、类型、时间、单位不再固定中文
+
+4. **stats 页面切换为统一本地化文案**
+   - 更新：`src/features/org-personnel/tabs/personnel-statistics.tsx`
+   - 当前行为：
+     - 荣誉榜标题、说明、指标名称、表头、请假天数、工龄单位全部统一走 `t(...)`
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. `leave` 与 `stats` 在 `zh-CN` / `en-US` 下不再保留明显中英混排
+2. 状态、类型、时间与单位已跟随当前语言模式切换
+
+本轮未做：
+
+1. 不重写 leave / stats 业务逻辑
+2. 不扩散到其他 personnel tab
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. leave / stats 本地化收口后 TypeScript 编译通过
+
+## 2026-04-13 - feat：服务中心方案A导航重构
+
+### 本轮目标
+
+新增与 `组织人事` 同级的 `服务中心` 侧边栏分组，并将 `请假管理` 与 `荣誉榜` 从 `组织人事` Tab 中完全迁出。
+
+### 核心实现
+
+1. **新增服务中心侧边栏分组与菜单文案**
+   - 更新：
+     - `src/locales/messages/zh-CN/sidebar.ts`
+     - `src/locales/messages/en-US/sidebar.ts`
+   - 当前行为：
+     - 侧边栏新增 `服务中心 / Service Center`
+     - 新增菜单项 `请假管理 / Leave Management`
+     - 新增菜单项 `荣誉榜 / Hall of Fame`
+
+2. **侧边栏结构迁移**
+   - 更新：`src/components/layout/data/sidebar-data.ts`
+   - 当前行为：
+     - 新增独立分组 `sidebar.groups.serviceCenter`
+     - 将 `/personnel/leave` 与 `/personnel/stats` 挂入该分组
+     - `组织人事` 分组继续只承接 `/personnel` 基础入口
+
+3. **组织人事 Tab 完全迁出这两个入口**
+   - 更新：`src/features/org-personnel/tabs.ts`
+   - 当前行为：
+     - `组织人事` Tab 中移除 `请假管理`
+     - `组织人事` Tab 中移除 `荣誉榜`
+     - 采用方案A，不保留重复导航入口
+
+4. **命令搜索同步归属调整**
+   - 更新：
+     - `src/locales/messages/zh-CN/commandMenu.ts`
+     - `src/locales/messages/en-US/commandMenu.ts`
+     - `src/components/layout/data/search-data.ts`
+   - 当前行为：
+     - 命令搜索中新增父级 `服务中心 / Service Center`
+     - `请假管理` 与 `荣誉榜` 搜索结果已归到该新父级下
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. `服务中心` 成为与 `组织人事` 同级的独立侧边栏分组
+2. `请假管理` 与 `荣誉榜` 已从 `组织人事` Tab 中完全迁出
+
+本轮未做：
+
+1. 不改 `请假管理` 与 `荣誉榜` 的业务逻辑
+2. 不继续增加其他服务中心页面
+3. 不重构整个人事模块路由体系
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 服务中心方案A导航重构后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

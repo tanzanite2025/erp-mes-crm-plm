@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_authenticated/personnel')({
 
     return (
       <ModuleTabbedLayout
-        title={t('orgPersonnel.org.personnelProfile.title')}
+        title={t('sidebar.items.personnelCenter')}
         tabs={getOrgPersonnelTabs(t)}
       >
         <Outlet />

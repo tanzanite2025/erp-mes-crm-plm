@@ -26,32 +26,40 @@ export function ThemeSwitch() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' size='icon' className='scale-95 rounded-full'>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='relative h-10 w-10 rounded-full border border-dashed border-border/70 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
+        >
           <Sun className='size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90' />
           <Moon className='absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0' />
           <span className='sr-only'>{t('common.theme.switcher')}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        <DropdownMenuItem onClick={() => setTheme('light')}>
+      <DropdownMenuContent
+        className='w-56 rounded-[28px] border border-dashed border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur-xl'
+        align='end'
+        sideOffset={10}
+      >
+        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('light')}>
           {t('common.theme.light')}{' '}
           <Check
             size={14}
-            className={cn('ms-auto', theme !== 'light' && 'hidden')}
+            className={cn('ms-auto text-primary', theme !== 'light' && 'hidden')}
           />
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
+        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('dark')}>
           {t('common.theme.dark')}
           <Check
             size={14}
-            className={cn('ms-auto', theme !== 'dark' && 'hidden')}
+            className={cn('ms-auto text-primary', theme !== 'dark' && 'hidden')}
           />
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
+        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setTheme('system')}>
           {t('common.theme.system')}
           <Check
             size={14}
-            className={cn('ms-auto', theme !== 'system' && 'hidden')}
+            className={cn('ms-auto text-primary', theme !== 'system' && 'hidden')}
           />
         </DropdownMenuItem>
       </DropdownMenuContent>

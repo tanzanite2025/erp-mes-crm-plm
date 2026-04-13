@@ -15,19 +15,27 @@ export function LanguageSwitch() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' size='icon' className='scale-95 rounded-full'>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='relative h-10 w-10 rounded-full border border-dashed border-border/70 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
+        >
           <Languages className='size-[1.2rem]' />
           <span className='sr-only'>{t('common.language.switcher')}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        <DropdownMenuItem onClick={() => setLocale('zh-CN')}>
+      <DropdownMenuContent
+        className='w-56 rounded-[28px] border border-dashed border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur-xl'
+        align='end'
+        sideOffset={10}
+      >
+        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setLocale('zh-CN')}>
           {t('common.language.zhCN')}
-          <Check size={14} className={cn('ms-auto', locale !== 'zh-CN' && 'hidden')} />
+          <Check size={14} className={cn('ms-auto text-primary', locale !== 'zh-CN' && 'hidden')} />
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLocale('en-US')}>
+        <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setLocale('en-US')}>
           {t('common.language.enUS')}
-          <Check size={14} className={cn('ms-auto', locale !== 'en-US' && 'hidden')} />
+          <Check size={14} className={cn('ms-auto text-primary', locale !== 'en-US' && 'hidden')} />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

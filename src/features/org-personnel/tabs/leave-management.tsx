@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useLanguage } from '@/context/language-provider'
 import { LeaveService } from '../services/leave-service'
 import { personnelQueryKeys } from '../query-keys'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ import { formatLeaveDateTime, getLeaveStatusBadgeClassName, getLeaveStatusLabel,
 import type { LeaveRequest } from '../data/leave-request-schema'
 
 export default function LeaveManagement() {
+  const { locale, t } = useLanguage()
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<LeaveStatusFilter>('ALL')
   const [typeFilter, setTypeFilter] = useState<LeaveTypeFilter>('ALL')
@@ -56,15 +58,15 @@ export default function LeaveManagement() {
         <div className="space-y-1">
           <h2 className="text-sm font-black italic tracking-tighter uppercase flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
-            Online Leave Requests
+            {t('orgPersonnel.leaveMgmt.headerTitle')}
           </h2>
           <p className="text-[9px] font-black uppercase tracking-widest opacity-60">
-            全数字化请假申请与审批追踪系统
+            {t('orgPersonnel.leaveMgmt.headerDescription')}
           </p>
         </div>
         <Button className="rounded-full px-6 h-11 font-black text-[10px] uppercase tracking-widest" onClick={() => setIsActionDialogOpen(true)}>
            <Plus className="w-3 h-3 mr-2" />
-           新建请假申请
+           {t('orgPersonnel.leaveMgmt.createRequest')}
         </Button>
       </header>
 
@@ -73,25 +75,25 @@ export default function LeaveManagement() {
         {[
           {
             icon: Clock,
-            label: '待审批',
+            label: t('orgPersonnel.leaveMgmt.summary.pending'),
             val: isStatsError ? '--' : stats?.pendingCount ?? 0,
             color: 'text-amber-500'
           },
           {
             icon: BadgeCheck,
-            label: '已通过',
+            label: t('orgPersonnel.leaveMgmt.summary.approved'),
             val: isStatsError ? '--' : stats?.approvedCount ?? 0,
             color: 'text-emerald-500'
           },
           {
             icon: XCircle,
-            label: '已拒绝',
+            label: t('orgPersonnel.leaveMgmt.summary.rejected'),
             val: isStatsError ? '--' : stats?.rejectedCount ?? 0,
             color: 'text-rose-500'
           },
           {
             icon: Calendar,
-            label: '累计工日',
+            label: t('orgPersonnel.leaveMgmt.summary.totalDays'),
             val: isStatsError ? '--' : (stats?.totalDays ?? 0).toFixed(1),
             color: 'text-primary'
           },
@@ -104,7 +106,7 @@ export default function LeaveManagement() {
                 <p className="text-[8px] font-black uppercase tracking-widest opacity-50">{stat.label}</p>
                 <p className="text-lg font-black italic tracking-tighter">{stat.val}</p>
                 {isStatsLoadingOnly ? (
-                  <p className="text-[8px] font-black uppercase tracking-widest opacity-40">同步中</p>
+                  <p className="text-[8px] font-black uppercase tracking-widest opacity-40">{t('orgPersonnel.leaveMgmt.summary.syncing')}</p>
                 ) : null}
              </div>
           </Card>
@@ -113,9 +115,9 @@ export default function LeaveManagement() {
 
       {isStatsError ? (
         <div className="rounded-[20px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
-          <div className="text-[10px] font-black uppercase tracking-widest">统计卡片已降级</div>
-          <p className="mt-1 text-[11px] font-bold leading-relaxed">{statsError instanceof Error ? statsError.message : '请假统计加载失败'}</p>
-          <p className="mt-1 text-[10px] font-medium opacity-80">请假记录列表仍可继续查看；当前仅统计聚合数据暂不可用。</p>
+          <div className="text-[10px] font-black uppercase tracking-widest">{t('orgPersonnel.leaveMgmt.statsError.title')}</div>
+          <p className="mt-1 text-[11px] font-bold leading-relaxed">{statsError instanceof Error ? statsError.message : t('orgPersonnel.leaveMgmt.statsError.fallback')}</p>
+          <p className="mt-1 text-[10px] font-medium opacity-80">{t('orgPersonnel.leaveMgmt.statsError.hint')}</p>
         </div>
       ) : null}
 
@@ -132,24 +134,24 @@ export default function LeaveManagement() {
           />
 
           {isListLoading ? (
-            <p className="text-[10px] uppercase font-black tracking-widest animate-pulse">正在同步云端记录...</p>
+            <p className="text-[10px] uppercase font-black tracking-widest animate-pulse">{t('orgPersonnel.leaveMgmt.list.loading')}</p>
           ) : isLeavesError ? (
             <div className="h-40 flex flex-col items-center justify-center text-rose-600 gap-2 text-center">
                <FileText className="w-8 h-8 opacity-40" />
-               <p className="text-[10px] font-black uppercase tracking-widest">请假记录暂不可用</p>
+               <p className="text-[10px] font-black uppercase tracking-widest">{t('orgPersonnel.leaveMgmt.list.unavailable')}</p>
                <p className="max-w-[360px] text-[10px] font-medium text-rose-700/80">
-                 {leavesError instanceof Error ? leavesError.message : '请假记录加载失败'}
+                 {leavesError instanceof Error ? leavesError.message : t('orgPersonnel.leaveMgmt.list.loadFailed')}
                </p>
             </div>
           ) : (leaves?.length || 0) === 0 ? (
             <div className="h-40 flex flex-col items-center justify-center text-muted-foreground gap-2">
                <FileText className="w-8 h-8 opacity-20" />
-               <p className="text-[10px] font-black uppercase tracking-widest">暂无请假历史记录</p>
+               <p className="text-[10px] font-black uppercase tracking-widest">{t('orgPersonnel.leaveMgmt.list.empty')}</p>
             </div>
           ) : visibleLeaves.length === 0 ? (
             <div className="h-40 flex flex-col items-center justify-center text-muted-foreground gap-2">
                <FileText className="w-8 h-8 opacity-20" />
-               <p className="text-[10px] font-black uppercase tracking-widest">当前筛选条件下暂无记录</p>
+               <p className="text-[10px] font-black uppercase tracking-widest">{t('orgPersonnel.leaveMgmt.list.filteredEmpty')}</p>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -157,22 +159,22 @@ export default function LeaveManagement() {
                 <div key={leave.id} className="group p-4 rounded-2xl border border-dashed border-primary/5 hover:border-primary/20 hover:bg-muted/5 transition-all flex items-center justify-between">
                    <div className="flex items-center gap-6">
                       <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-primary/5 min-w-[64px]">
-                         <span className="text-[10px] font-black italic text-primary">{getLeaveTypeLabel(leave.leaveType)}</span>
+                         <span className="text-[10px] font-black italic text-primary">{getLeaveTypeLabel(leave.leaveType, locale)}</span>
                       </div>
                       <div className="space-y-1">
                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black italic tracking-tighter uppercase">{leave.employeeName || '本人申请'}</h4>
+                            <h4 className="text-sm font-black italic tracking-tighter uppercase">{leave.employeeName || t('orgPersonnel.leaveMgmt.list.selfApplied')}</h4>
                             <Badge variant="outline" className={`h-4 text-[8px] rounded-full px-2 font-mono border-dashed ${getLeaveStatusBadgeClassName(leave.status)}`}>
-                               {getLeaveStatusLabel(leave.status)}
+                               {getLeaveStatusLabel(leave.status, locale)}
                             </Badge>
                          </div>
-                         <p className="text-[9px] font-mono text-muted-foreground">{formatLeaveDateTime(leave.startTime)} → {formatLeaveDateTime(leave.endTime)}</p>
+                         <p className="text-[9px] font-mono text-muted-foreground">{formatLeaveDateTime(leave.startTime, locale)} → {formatLeaveDateTime(leave.endTime, locale)}</p>
                          <p className="text-[10px] text-muted-foreground/80">{leave.reason}</p>
                       </div>
                    </div>
                    <div className="text-right flex flex-col items-end gap-2">
                       <p className="text-xl font-black italic tracking-tighter text-primary">{leave.durationDays}</p>
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-50">DAYS</p>
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-50">{t('orgPersonnel.leaveMgmt.list.daysLabel')}</p>
                       <Button
                         type="button"
                         variant="ghost"
@@ -180,7 +182,7 @@ export default function LeaveManagement() {
                         className="rounded-full text-[10px] font-black tracking-widest"
                         onClick={() => setSelectedLeave(leave)}
                       >
-                        查看详情
+                        {t('orgPersonnel.leaveMgmt.list.viewDetail')}
                       </Button>
                       {leave.status === 'PENDING' ? (
                         <Button
@@ -191,7 +193,7 @@ export default function LeaveManagement() {
                           disabled={isCanceling}
                           onClick={() => void handleCancelLeave(leave.id)}
                         >
-                          {cancelingLeaveId === leave.id ? '撤销中...' : '撤销申请'}
+                          {cancelingLeaveId === leave.id ? t('orgPersonnel.leaveMgmt.list.canceling') : t('orgPersonnel.leaveMgmt.list.cancelRequest')}
                         </Button>
                       ) : null}
                    </div>

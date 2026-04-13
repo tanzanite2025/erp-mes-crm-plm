@@ -8,11 +8,27 @@ import { WorkspaceBoard } from './workspace-board'
 import { WorkspaceItemEditor } from './workspace-item-editor'
 import { useWorkspaceItems } from '../hooks/use-workspace-items'
 
-export function PersonalWorkbenchWorkspaceView() {
+interface PersonalWorkbenchWorkspaceViewProps {
+  searchQuery: string
+}
+
+export function PersonalWorkbenchWorkspaceView({ searchQuery }: PersonalWorkbenchWorkspaceViewProps) {
   const { createItem, isReady, items, removeItem, updateItem } = useWorkspaceItems()
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editorType, setEditorType] = useState<PersonalWorkspaceItemType>('note')
   const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredItems = useMemo(() => {
+    if (!normalizedQuery) {
+      return items
+    }
+    return items.filter((item) => {
+      const haystack = item.type === 'note'
+        ? [item.title, item.content, item.type].join(' ')
+        : [item.title, item.url, item.remark, item.type].join(' ')
+      return haystack.toLowerCase().includes(normalizedQuery)
+    })
+  }, [items, normalizedQuery])
 
   const editingItem = useMemo(
     () => items.find((item) => item.id === editingItemId) ?? undefined,
@@ -32,7 +48,7 @@ export function PersonalWorkbenchWorkspaceView() {
         <Button
           type='button'
           variant='outline'
-          className='rounded-full'
+          className='rounded-full text-[11px] font-black tracking-widest'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('note')
@@ -44,7 +60,7 @@ export function PersonalWorkbenchWorkspaceView() {
         </Button>
         <Button
           type='button'
-          className='rounded-full'
+          className='rounded-full text-[11px] font-black tracking-widest'
           onClick={() => {
             setEditingItemId(null)
             setEditorType('link')
@@ -64,9 +80,16 @@ export function PersonalWorkbenchWorkspaceView() {
         <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-sm font-bold text-muted-foreground'>
           正在加载个人工作收纳箱…
         </div>
+      ) : filteredItems.length === 0 && items.length > 0 ? (
+        <div className='flex min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-border/70 bg-muted/10 p-6 text-center'>
+          <div className='max-w-md'>
+            <p className='text-base font-black tracking-tight text-foreground'>未找到匹配的便签或链接</p>
+            <p className='mt-2 text-sm text-muted-foreground'>当前搜索只会在你自己的工作收纳内容中查找标题、正文、备注和链接地址。</p>
+          </div>
+        </div>
       ) : (
         <WorkspaceBoard
-          items={items}
+          items={filteredItems}
           onDelete={(id) => {
             void (async () => {
               try {

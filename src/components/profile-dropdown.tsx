@@ -34,30 +34,36 @@ export function ProfileDropdown() {
           <Button
             variant='ghost'
             size='icon'
-            className='relative h-9 w-9 rounded-full border border-border/60 bg-background/80'
+            className='relative h-10 w-10 rounded-full border border-dashed border-border/70 bg-background/90 shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
           >
-            <Avatar className='h-8 w-8'>
+            <Avatar className='h-9 w-9'>
               <AvatarImage src='' alt={displayName} />
-              <AvatarFallback>{fallback}</AvatarFallback>
+              <AvatarFallback className='bg-muted/70 text-[12px] font-black text-foreground'>{fallback}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className='w-56' align='end' forceMount>
-          <DropdownMenuLabel className='font-normal'>
-            <div className='flex flex-col gap-1.5'>
-              <p className='text-sm leading-none font-medium'>{displayName}</p>
-              <p className='text-xs leading-none text-muted-foreground'>{email}</p>
+        <DropdownMenuContent className='w-72 rounded-[28px] border border-dashed border-border/70 bg-background/95 p-2 shadow-xl backdrop-blur-xl' align='end' forceMount sideOffset={10}>
+          <DropdownMenuLabel className='px-3 py-3 font-normal'>
+            <div className='flex items-center gap-3'>
+              <Avatar className='h-11 w-11 rounded-2xl'>
+                <AvatarImage src='' alt={displayName} />
+                <AvatarFallback className='rounded-2xl bg-primary/10 text-[13px] font-black text-primary'>{fallback}</AvatarFallback>
+              </Avatar>
+              <div className='flex min-w-0 flex-1 flex-col gap-1'>
+                <p className='truncate text-base leading-none font-black tracking-tight italic text-foreground'>{displayName}</p>
+                <p className='truncate text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{email}</p>
+              </div>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setPersonalWorkbenchOpen(true)}>
+          <DropdownMenuSeparator className='my-2 bg-border/70' />
+          <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => setPersonalWorkbenchOpen(true)}>
             个人记录缓冲区
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate({ to: '/personal-workbench' })}>
+          <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-foreground focus:bg-primary/5 focus:text-foreground' onClick={() => navigate({ to: '/personal-workbench' })}>
             打开个人记录页面
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
+          <DropdownMenuSeparator className='my-2 bg-border/70' />
+          <DropdownMenuItem className='rounded-2xl px-3 py-3 text-[12px] font-black tracking-tight text-destructive focus:bg-destructive/10 focus:text-destructive' variant='destructive' onClick={() => setOpen(true)}>
             {t('common.actions.signOut')}
           </DropdownMenuItem>
         </DropdownMenuContent>

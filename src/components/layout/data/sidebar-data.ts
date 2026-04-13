@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Box,
+  Calendar,
   CheckSquare,
   Cpu,
   Database,
@@ -11,6 +12,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sliders,
+  Trophy,
   Truck,
   Users,
   Warehouse,
@@ -157,6 +159,34 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    titleKey: 'sidebar.groups.orgPersonnel',
+    items: [
+      {
+        titleKey: 'sidebar.items.personnelCenter',
+        url: '/personnel',
+        icon: Users,
+        permissionId: permissionIdForPath('/personnel'),
+      },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.serviceCenter',
+    items: [
+      {
+        titleKey: 'sidebar.items.leaveManagement',
+        url: '/personnel/leave',
+        icon: Calendar,
+        permissionId: permissionIdForPath('/personnel/leave'),
+      },
+      {
+        titleKey: 'sidebar.items.hallOfFame',
+        url: '/personnel/stats',
+        icon: Trophy,
+        permissionId: permissionIdForPath('/personnel/stats'),
+      },
+    ],
+  },
+  {
     titleKey: 'sidebar.groups.systemSettings',
     items: [
       {
@@ -164,12 +194,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/pda-shell',
         icon: ScanLine,
         permissionId: permissionIdForPath('/pda-shell'),
-      },
-      {
-        titleKey: 'sidebar.items.personnelCenter',
-        url: '/personnel',
-        icon: Users,
-        permissionId: permissionIdForPath('/personnel'),
       },
       {
         titleKey: 'sidebar.items.printCenter',
