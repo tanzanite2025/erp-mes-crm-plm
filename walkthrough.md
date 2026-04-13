@@ -4249,6 +4249,60 @@
 
 1. 服务中心方案A导航重构后 TypeScript 编译通过
 
+## 2026-04-13 - feat：个人工作台统一搜索
+
+### 本轮目标
+
+在个人工作台内提供一个统一搜索入口，同时搜索 `个人记录缓冲区` 与 `工作收纳箱`，并继续通过 `records / workspace` Tab 查看结果；同时明确不接入全局搜索。
+
+### 核心实现
+
+1. **个人工作台顶部新增统一搜索框**
+   - 更新：`src/features/personal-workbench/index.tsx`
+   - 当前行为：
+     - 顶部新增统一搜索框
+     - 搜索提示明确为“统一搜索我的内容”
+     - 辅助说明明确“仅搜索你自己的个人记录、便签与链接”
+     - 搜索词统一下发到 `records` 与 `workspace` 两个 Tab
+
+2. **个人记录缓冲区接入统一搜索**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-records-view.tsx`
+   - 当前行为：
+     - 接收统一搜索词 `searchQuery`
+     - 在已加载的个人记录数据中按标题、内容、状态列进行前端过滤
+     - 当搜索无结果时展示“未找到匹配的个人记录”空态
+
+3. **工作收纳箱接入统一搜索**
+   - 更新：`src/features/personal-workbench/workspace/components/personal-workbench-workspace-view.tsx`
+   - 当前行为：
+     - 接收统一搜索词 `searchQuery`
+     - 在已加载的便签/链接数据中按标题、正文、备注、链接地址进行前端过滤
+     - 当搜索无结果时展示“未找到匹配的便签或链接”空态
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 个人工作台只保留一个统一搜索入口
+2. 搜索可同时覆盖个人记录与工作收纳内容
+3. 结果仍通过 `records / workspace` Tab 分开展示
+
+本轮未做：
+
+1. 不把个人内容接入 `Ctrl+K` 全局搜索
+2. 不新增服务端搜索接口
+3. 不新增跨用户搜索能力
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人工作台统一搜索实现后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标
