@@ -817,3 +817,30 @@
     - [ ] 新建成功后继续留在同一工作弹窗内，原地切入详情态并继续后续动作
     - [ ] 优先复用交易侧已有产品/客户/行编辑能力，避免另起一套报价专用低配编辑器
     - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 764-报价管理 TAB 职责拆分与稳定性优化（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 拆分 `src/features/quotes/tabs/index.tsx`，将页面编排、create mode 资源加载、创建保存流从单文件中抽离
+    - [ ] 为报价工作台新增 controller / adapter 层，隔离 quotes 域与 trading 销售订单编辑能力的直接耦合
+    - [ ] 收口 create/detail 两种模式的状态边界，降低弹窗状态污染风险
+    - [ ] 控制 `quote-workspace-dialog` 继续膨胀的趋势，优先向 shell + create/detail 内容拆分方向演进
+    - [ ] 保持现有可用能力不回退：完整明细编辑器、创建后原地切详情态、现有保存/转单/预览行为
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 765-报价域与 trading 域 adapter/façade 边界收口（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 为 quotes 域新增面向报价工作台的 adapter / façade，避免页面与工作台直接依赖 trading 域的表单与 mutation 语义
+    - [ ] 将报价新建所需的表单状态、资源装配、创建提交统一收口到 quotes 域接口中
+    - [ ] 降低 `useSalesOrderForm`、`useSalesOrderMutations`、销售单据组件对 quotes 页面的直接暴露程度
+    - [ ] 保持现有完整明细编辑能力、创建后原地切详情态、现有保存/转单/预览行为不回退
+    - [ ] 优先做轻量防腐层，不复制一套完整 trading 实现
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`
+
+- [ ] 766-createResources 并入 quotes create façade（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 将客户、产品、单位、打孔、贴标等 create mode 资源装配从 `use-quote-create-editor.ts` 继续下沉到 quotes façade / adapter
+    - [ ] 让 quotes create façade 同时承接：表单桥接、资源装配、创建提交
+    - [ ] 将 `use-quote-create-editor.ts` 继续收口为更薄的一层报价工作台接口
+    - [ ] 保持现有完整明细编辑器和创建后原地切 detail mode 行为不回退
+    - [ ] 不复制 trading / engineering / basic-settings 的底层查询实现，只做 quotes 域对外收口
+    - [ ] 执行定向 TypeScript 校验并补充 `walkthrough.md`

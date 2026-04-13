@@ -5837,6 +5837,322 @@
 
 对真实报价业务来说，**没有明细表格与产品选择，就不构成可用的新建报价能力**。因此下一步必须把 create mode 从“最小表单入口”升级为“完整报价录入入口”，优先复用现有成熟的单据编辑能力，让报价新建真正可录、可算、可继续流转。
 
+### 1. plan：报价管理 TAB 职责拆分与稳定性优化
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+在报价管理页连续补齐视觉回归、新建入口、create mode、完整明细编辑器之后，当前报价 TAB 已经达到“可用”状态，但也明显暴露出结构性问题：`src/features/quotes/tabs/index.tsx` 逐步承担了页面入口、create mode 资源装配、明细编辑器拼装、创建保存分流、详情态保存与转换、弹窗模式切换等多重职责，已经接近单文件业务控制器。
+
+如果继续在这个基础上叠加历史版本、作废记录、客户沟通链路或报价审批动作，当前结构会快速恶化，后续缺陷定位与改动成本都会显著上升。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 `quotes/tabs/index.tsx` 已经职责过载
+
+当前文件同时承担：
+
+1. 页面筛选状态
+2. 报价列表与详情查询
+3. create/detail 弹窗模式切换
+4. create mode 资源加载（客户、产品、单位、工艺）
+5. create mode 编辑器拼装
+6. 创建保存与创建后切详情态
+7. 详情态保存与转正式单
+
+这使其不再是简单页面组件，而是混合了 view/controller/composition 角色的集中编排文件。
+
+##### 1.2.2 报价域与 trading 域当前缺少防腐层
+
+当前报价新建直接复用 trading 侧的：
+
+1. `useSalesOrderForm`
+2. `DocumentHeaderFields`
+3. `DocumentLinesEditor`
+4. `useSalesOrderMutations`
+
+这条路径能快速复用成熟能力，但也意味着报价域目前直接暴露在销售订单域的字段、校验、mutation 语义之下。若未来报价与正式销售订单在字段/规则上产生分叉，当前实现会首先成为耦合断点。
+
+##### 1.2.3 `quote-workspace-dialog` 需要控制继续膨胀
+
+当前 `quote-workspace-dialog` 已承载：
+
+1. 工作台外壳
+2. create/detail 模式切换
+3. 详情展示与局部编辑
+4. 预览/转发/转单动作栏
+
+虽然 create 内容已通过插槽外提，但整体仍有继续长成巨石组件的风险。因此需要在本轮优化中为后续 `shell + create/detail content` 拆分留出结构位。
+
+#### 1.3 推荐实施策略
+
+本轮建议按最小风险方式实施：
+
+1. 从 `src/features/quotes/tabs/index.tsx` 中抽离报价工作台控制逻辑
+2. 新增报价工作台 controller hook，统一维护：
+   - dialog mode
+   - selected quote id
+   - 打印预览开关
+   - 创建后原地切 detail mode
+3. 新增 create editor 资源与保存编排 hook，统一维护：
+   - customers/products/units/drilling/labeling 资源加载
+   - create form 状态
+   - 创建提交
+4. 为报价域增加轻量 adapter / façade，减少对 trading mutation 细节的直接暴露
+5. 保持 `quote-workspace-dialog` 作为工作台外壳，但进一步弱化其业务拼装职责
+
+#### 1.4 预计涉及文件
+
+若后续进入实现，预计优先涉及：
+
+1. `src/features/quotes/tabs/index.tsx`
+2. `src/features/quotes/components/quote-workspace-dialog.tsx`
+3. 新增 `src/features/quotes/hooks/use-quote-workspace-controller.ts`
+4. 新增 `src/features/quotes/hooks/use-quote-create-editor.ts`
+5. 视情况新增 `src/features/quotes/services/quote-workspace-service.ts` 或 adapter 文件
+
+#### 1.5 风险与破坏性评估
+
+本轮主要风险：
+
+1. 若拆分时接口边界不清，可能引入状态回传混乱
+2. 若过度抽象，会让当前本已可用的工作流被无谓复杂化
+3. 若 controller / adapter 设计不当，会把交易域耦合从页面层平移到另一层，而非真正收口
+
+因此本轮必须坚持：
+
+1. 只拆高价值职责，不做过度框架化
+2. 优先解决状态边界和域耦合问题
+3. 不回退现有完整创建能力
+
+#### 1.6 验证策略
+
+本轮若进入实现，至少需要验证：
+
+1. `quotes/tabs/index.tsx` 职责明显收口
+2. create mode 完整明细编辑能力不回退
+3. 创建后原地切 detail mode 仍可用
+4. 详情保存、转正式单、打印预览行为不受影响
+5. TypeScript 编译通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不重做报价模块整体 UI
+2. 不回退已接入的完整明细编辑器
+3. 不扩展新的历史版本/作废记录/审批流功能
+4. 不把交易域编辑器完全复制出一套报价专用实现
+
+#### 1.8 结论
+
+报价管理 TAB 当前最需要的不是继续堆功能，而是**做一次有限度的职责拆分与稳定性治理**。优先拆解 `quotes/tabs/index.tsx`、新增报价工作台 controller / create-editor hook，并为 quotes 与 trading 的复用关系加一层更清晰的防腐结构，才能让后续迭代继续稳定推进。
+
+### 1. plan：报价域与 trading 域 adapter/façade 边界收口
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+经过前几轮拆分后，报价工作台的页面编排层、dialog 内容层和 shell 层已经明显收口，但 quotes 域在“新建报价”这条链路上，仍然直接暴露在 trading 域的核心语义之下：
+
+1. 表单状态来自 `useSalesOrderForm`
+2. 创建提交来自 `useSalesOrderMutations`
+3. 头部/明细/备注 UI 直接复用销售单据组件
+
+这种复用本身没有问题，但当前缺少 quotes 侧自己的 adapter / façade，导致报价页虽然已经在结构上拆散了文件，却还没有在**领域边界**上真正收口。
+
+#### 1.2 当前核心问题
+
+##### 1.2.1 quotes 页面对 trading 语义仍然暴露过深
+
+当前 quotes 页面层与 quotes hook 层，仍然知道并直接使用：
+
+1. `useSalesOrderForm`
+2. `useSalesOrderMutations`
+3. trading 侧的表单字段与行编辑语义
+
+这意味着只要 trading 域的字段规则、创建入参、校验逻辑稍有变化，quotes 域就会直接承压。
+
+##### 1.2.2 现有 create-editor hook 仍偏向“复用拼装器”，而非“报价域 façade”
+
+`use-quote-create-editor.ts` 当前已经把资源加载和创建保存从页面层抽走，但它仍直接公开 trading 风格的表单状态和行编辑操作。这是一个良好的过渡层，但还不是最终边界。
+
+##### 1.2.3 若未来报价与正式销售订单分叉，当前实现仍会首先成为耦合断点
+
+未来若出现：
+
+1. 报价允许字段 ≠ 正式销售订单允许字段
+2. 报价创建校验 ≠ 正式销售订单校验
+3. 报价创建 API ≠ 正式销售订单创建 API
+
+那么当前 quotes 直接暴露 trading 表单/mutation 的实现会最先失稳。
+
+#### 1.3 本轮推荐目标
+
+本轮不复制 trading 域，而是为 quotes 域增加轻量 adapter / façade，目标如下：
+
+1. 页面层和工作台层优先依赖 quotes 自己的 hook / service 接口
+2. trading 侧表单、mutation、资源装配细节尽量只停留在 quotes façade 内部
+3. 保持现有成熟单据编辑器复用能力，不做重复建设
+
+#### 1.4 推荐实施策略
+
+建议按最小风险方式推进：
+
+1. 新增 quotes 侧 façade / adapter 文件，例如：
+   - `src/features/quotes/adapters/quote-sales-order-adapter.ts`
+   - 或 `src/features/quotes/services/quote-create-facade.ts`
+2. 将以下语义统一封装到 quotes 域：
+   - create mode 初始表单
+   - create mode 资源装配
+   - create mode 创建提交
+   - 创建成功后的 quotes 查询刷新与 detail mode 切换所需结果
+3. `use-quote-create-editor.ts` 改为依赖 quotes façade，而不是直接依赖 trading mutation / trading 表单实现细节
+4. 页面层与 dialog 层继续只消费 quotes 域返回的稳定接口
+
+#### 1.5 预计涉及文件
+
+若后续进入实现，预计优先涉及：
+
+1. `src/features/quotes/hooks/use-quote-create-editor.ts`
+2. 新增 `src/features/quotes/adapters/quote-sales-order-adapter.ts` 或等价 façade 文件
+3. 视实现方式，可能新增 quotes 域类型文件用于描述 create editor 对外返回结构
+4. `src/features/quotes/tabs/index.tsx`（只做接线级调整）
+
+#### 1.6 风险与边界
+
+主要风险：
+
+1. 若 façade 抽象过厚，可能引入不必要的间接层
+2. 若 façade 设计过薄，则只是把 trading 直接调用搬家，无法真正起到防腐作用
+
+因此本轮必须坚持：
+
+1. façade 只封装 quotes 真正在意的稳定语义
+2. 不复制 trading 现有编辑器实现
+3. 不回退已完成的完整报价创建能力
+
+#### 1.7 验证策略
+
+本轮若进入实现，至少验证：
+
+1. 页面层不再直接依赖 trading mutation 语义
+2. quotes create editor 对外接口更接近 quotes 语言，而非 sales order 语言
+3. 创建报价、创建后切 detail mode、保存/转单/预览均不回退
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+前几轮拆分解决的是“文件职责过载”问题；这一轮要解决的是“领域边界暴露过深”问题。下一步应为 quotes 域加一层轻量 adapter / façade，让报价工作台依赖 quotes 自己的稳定接口，而不是继续把 trading 域的表单与 mutation 语义直接扩散到页面与工作台层。
+
+### 1. plan：createResources 并入 quotes create façade
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+上一轮已经完成 quotes 与 trading 的第一层 adapter/façade 收口：`use-quote-create-editor.ts` 不再直接处理 trading 创建 mutation、审计戳与查询刷新，而是转而依赖 `useQuoteSalesOrderAdapter(...)`。
+
+但当前 create mode 资源装配仍然留在 `use-quote-create-editor.ts`：
+
+1. 客户查询
+2. 产品查询
+3. 单位查询
+4. 打孔查询
+5. 贴标查询
+6. drawing options 转换
+
+这意味着 `use-quote-create-editor.ts` 仍然同时承担“报价工作台接口层”和“create mode 资源编排层”两种职责。
+
+#### 1.2 当前问题
+
+##### 1.2.1 façade 只收口了创建提交，没有收口资源装配
+
+目前 quotes façade 已封装：
+
+1. trading 表单桥接
+2. trading 创建提交
+3. 审计戳
+4. 列表缓存刷新
+
+但 create mode 资源仍在 façade 外部装配，导致 quotes create editor 仍然知道多个跨域查询细节。
+
+##### 1.2.2 `use-quote-create-editor.ts` 仍偏重
+
+它当前同时维护：
+
+1. quotes façade 的桥接结果
+2. customers/products/units/drilling/labeling 查询
+3. drawing option 转换
+4. createResources 聚合
+
+这仍然不是一个足够薄的工作台接口层。
+
+#### 1.3 本轮推荐目标
+
+本轮建议进一步将 create mode 资源装配也下沉到 quotes create façade，使 quotes 域对外统一提供：
+
+1. 报价草稿状态
+2. 报价草稿编辑方法
+3. createResources
+4. 创建提交与创建状态
+
+这样 `use-quote-create-editor.ts` 可以继续收口，甚至后续视情况退化为简单转发层。
+
+#### 1.4 推荐实施策略
+
+建议按最小风险方式推进：
+
+1. 扩展 `src/features/quotes/adapters/quote-sales-order-adapter.ts`
+   - 在 adapter 内整合：
+     - `useGetCustomers`
+     - `useGetProducts`
+     - `useUnitsQuery`
+     - drilling / labeling 查询
+     - drawing option 转换
+2. 在 adapter 对外暴露统一的 `createResources`
+3. 简化 `use-quote-create-editor.ts`，只消费 quotes façade 并直接转发报价工作台所需接口
+4. 保持 `tabs/index.tsx` 无需感知资源来源变化
+
+#### 1.5 预计涉及文件
+
+若后续进入实现，预计优先涉及：
+
+1. `src/features/quotes/adapters/quote-sales-order-adapter.ts`
+2. `src/features/quotes/hooks/use-quote-create-editor.ts`
+3. 视情况可能补充 quotes 侧资源类型定义
+
+#### 1.6 风险与边界
+
+主要风险：
+
+1. 若 adapter 收口过多，会演变成新的重文件
+2. 若资源装配与表单桥接没有清晰分段，后续维护会重新堆叠
+
+因此本轮必须坚持：
+
+1. 继续做轻量 façade，而不是把所有 quotes 创建逻辑塞进一个巨型文件
+2. 只收口 create mode 真正稳定且对页面不该暴露的资源装配细节
+3. 不回退已完成的创建能力与 dialog 工作流
+
+#### 1.7 验证策略
+
+本轮若进入实现，至少验证：
+
+1. `use-quote-create-editor.ts` 不再直接依赖客户/产品/单位/工艺查询细节
+2. quotes façade 对外同时提供草稿编辑能力与 `createResources`
+3. 页面层与工作台层行为不回退
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+前一轮 adapter/façade 收口解决了“创建提交语义”外露的问题；这一轮要解决的是“资源装配细节”仍外露的问题。下一步应将 `createResources` 继续并入 quotes create façade，使报价工作台真正通过 quotes 域的单一稳定接口获取创建态所需能力。
+
 ### 1. plan：`use-bom-data.ts` 最小职责拆分
 
 日期：2026-04-13  

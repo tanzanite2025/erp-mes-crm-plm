@@ -5818,6 +5818,252 @@ create mode 下沿用详情态双栏比例，导致左侧录入区宽度不足�
 
 1. 报价新建接入完整明细编辑器后 TypeScript 编译通过
 
+## 2026-04-14 报价管理 TAB 职责拆分与稳定性优化
+
+### 本轮完成内容
+
+1. 在 `src/features/quotes/hooks/use-quote-workspace-controller.ts` 中抽离报价工作台状态控制，统一收口：
+   - `dialogMode`
+   - `selectedQuoteId`
+   - `isDialogOpen`
+   - `isPrintPreviewOpen`
+   - `editedAmountLabel`
+   - `editedRequirements`
+   - 创建态切详情态的状态切换
+2. 在 `src/features/quotes/hooks/use-quote-create-editor.ts` 中抽离 create mode 的资源加载与创建保存编排，统一管理：
+   - 客户、产品、单位、打孔、贴标资源加载
+   - 复用 `useSalesOrderForm` 的表单状态与明细行操作
+   - 创建提交、审计戳、报价列表失效刷新、创建后回切 detail mode
+3. 收口 `src/features/quotes/tabs/index.tsx`，让页面层主要保留：
+   - 筛选状态
+   - 列表与详情查询
+   - create editor JSX 组装
+   - 工作台与打印预览挂载
+
+### 结构收益
+
+1. 页面入口文件不再直接承担 create mode 资源装配和创建 mutation 细节
+2. create/detail 双模式的状态边界更清晰，后续继续拆 `dialog shell/content` 时阻力更小
+3. quotes 页面对 trading 侧创建能力的复用关系被收口到更明确的 hook 边界中，后续接 adapter / façade 更容易
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-workspace-dialog` 仍然是工作台外壳 + detail 行为混合体，本轮仅先控制页面层职责，不继续做第二轮大拆
+2. `quote-print-document.tsx` 仍存在既有 Tailwind lint 提示：`bg-black/[0.03]` 可写为 `bg-black/3`；该项与本轮重构无直接关系，未在本轮顺带修改
+
+## 2026-04-14 报价工作台对话框内容层拆分
+
+### 本轮完成内容
+
+1. 新增 `src/features/quotes/components/quote-workspace-detail-content.tsx`
+   - 将详情态原先内联在 `quote-workspace-dialog.tsx` 中的内容区抽离出去
+   - 统一承接详情加载、错误展示、金额编辑、需求说明编辑、明细摘要展示
+2. 新增 `src/features/quotes/components/quote-workspace-action-panel.tsx`
+   - 将右侧动作区抽离出去
+   - 统一承接保存、导出 PDF、客户转发、转正式销售订单按钮及其禁用态逻辑
+3. 收口 `src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 主文件当前主要保留：
+     - dialog 外壳
+     - header
+     - create/detail 模式分流
+     - footer
+
+### 结构收益
+
+1. `quote-workspace-dialog.tsx` 不再内联大段详情展示结构，后续扩展 create/detail 视图时更容易定位修改点
+2. 右侧动作区从主对话框中抽离后，后续若增加审批、历史版本、作废记录等动作，风险更集中在 action panel
+3. 第二轮拆分完成后，报价工作台已经从“单页集中编排 + 巨石弹窗”向“页面编排 + 内容组件分层”演进
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-workspace-dialog.tsx` 仍保留 header/footer 与 transfer action 的局部编排逻辑，若后续继续治理，可继续拆出更明确的 shell 层
+2. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理，该项与本轮 dialog 内容层拆分无直接关系
+
+## 2026-04-14 报价工作台 dialog shell 化收口
+
+### 本轮完成内容
+
+1. 新增 `src/features/quotes/hooks/use-quote-transfer-action.ts`
+   - 将客户转发渠道判断逻辑从 `quote-workspace-dialog.tsx` 中抽离
+   - 统一返回 `label / helper / missing` 结构，供 action panel 复用
+2. 新增 `src/features/quotes/components/quote-workspace-header.tsx`
+   - 将工作台 header、模式描述、状态 badge 与“详情未加载”提示从主 dialog 中抽离
+3. 新增 `src/features/quotes/components/quote-workspace-footer.tsx`
+   - 将底部关闭/保存行为区从主 dialog 中抽离
+4. 收口 `src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 当前主要负责：
+     - Dialog 容器
+     - create/detail 内容分流
+     - action panel 挂载
+     - transfer click 行为拼装
+
+### 结构收益
+
+1. `quote-workspace-dialog.tsx` 已进一步接近 shell 容器，后续修改 header/footer/transfer 逻辑时不再需要反复进入主文件
+2. quotes 工作台结构已形成更清晰的分层：
+   - 页面编排层
+   - workspace controller / create editor hook
+   - dialog shell
+   - detail content / action panel / header / footer
+3. 后续若要继续推进，可在不动现有业务能力的前提下进一步把 transfer click 行为从 dialog 中移到独立 action hook
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-workspace-dialog.tsx` 中的 `handleTransferClick` 仍保留在主文件，属于最后一小段行为编排逻辑
+2. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理，该项与本轮 shell 化收口无直接关系
+
+## 2026-04-14 报价工作台 transfer handler 最后一段收口
+
+### 本轮完成内容
+
+1. 新增 `src/features/quotes/hooks/use-quote-transfer-handler.ts`
+   - 将 `quote-workspace-dialog.tsx` 中最后保留的 transfer click 行为抽离为独立 hook
+   - 统一处理：
+     - 无联系方式时提示
+     - 已识别联系方式但转发能力待接入时的提示
+2. 更新 `src/features/quotes/components/quote-workspace-dialog.tsx`
+   - 主文件不再内联 transfer click 处理逻辑
+   - 仅消费：
+     - `useQuoteTransferAction`
+     - `useQuoteTransferHandler`
+
+### 结构收益
+
+1. `quote-workspace-dialog.tsx` 已基本完成 shell 化，主文件仅保留容器编排与 hook 拼装
+2. quotes 工作台当前已经形成较清晰的职责边界，后续继续调整某一层时不需要再回到单个巨石文件中修改
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+2. 当前报价工作台的主要剩余优化方向已不再是 shell 化，而是是否需要继续对 quotes/trading 域边界做更强的 adapter 收口
+
+## 2026-04-14 报价域与 trading 域 adapter/façade 边界收口
+
+### 本轮完成内容
+
+1. 新增 `src/features/quotes/adapters/quote-sales-order-adapter.ts`
+   - 在 quotes 域内部封装对 trading 创建链路的复用
+   - 将以下原先直接暴露在 quotes hook 中的逻辑收口到 adapter 内：
+     - `useSalesOrderForm`
+     - `useSalesOrderMutations`
+     - 审计戳处理
+     - 报价查询失效刷新
+     - 创建成功后的 `onCreated` 回调
+2. 改造 `src/features/quotes/hooks/use-quote-create-editor.ts`
+   - 不再直接依赖 trading 表单与 mutation
+   - 改为依赖 quotes 侧 `useQuoteSalesOrderAdapter(...)`
+   - 对外继续暴露报价工作台所需的稳定接口：
+     - `formData`
+     - `setFormData`
+     - `handleClassificationChange`
+     - `handleAddLine`
+     - `handleRemoveLine`
+     - `updateLine`
+     - `handleCreate`
+     - `isCreating`
+     - `createError`
+
+### 结构收益
+
+1. quotes 工作台不再直接面对 `useSalesOrderMutations` 与 `auditUtils.stamp` 这类 trading/基础设施细节
+2. trading 表单与创建链路的细节被收口到 quotes adapter 内部，后续若 trading 创建实现调整，受影响面更集中
+3. 页面层和工作台层现在更明确地依赖 quotes 自己的 create editor 接口，而不是直接扩散 trading 语义
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. 当前 `createResources` 资源装配仍在 `use-quote-create-editor.ts` 中，后续若继续强化 façade，可进一步收口到 quotes create façade 中
+2. `DocumentHeaderFields` / `DocumentLinesEditor` / `DocumentNotesSection` 仍直接复用销售单据组件；当前属于 UI 复用，不是本轮优先解除的领域边界
+3. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+
+## 2026-04-14 createResources 并入 quotes create façade
+
+### 本轮完成内容
+
+1. 扩展 `src/features/quotes/adapters/quote-sales-order-adapter.ts`
+   - 将 create mode 资源装配继续下沉到 quotes façade 内部
+   - adapter 内部现已统一承接：
+     - `useGetCustomers`
+     - `useGetProducts`
+     - `useUnitsQuery`
+     - drilling / labeling 查询
+     - drawing options 转换
+     - trading 表单桥接
+     - trading 创建提交
+2. 简化 `src/features/quotes/hooks/use-quote-create-editor.ts`
+   - 不再直接依赖客户/产品/单位/工艺查询细节
+   - 改为只消费 quotes adapter 返回的：
+     - 报价草稿状态
+     - 报价草稿编辑方法
+     - `createResources`
+     - 创建提交与创建状态
+
+### 结构收益
+
+1. `use-quote-create-editor.ts` 已进一步收薄，基本成为报价工作台对 quotes façade 的转发层
+2. quotes create façade 现在同时收口了“创建提交语义”与“资源装配细节”
+3. 页面层和工作台层已无需感知 create mode 资源来自哪些跨域查询
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-sales-order-adapter.ts` 已成为 quotes create façade 的核心入口，后续若继续增强，需要警惕其重新膨胀为新的重文件
+2. `DocumentHeaderFields` / `DocumentLinesEditor` / `DocumentNotesSection` 仍直接复用销售单据组件；当前属于 UI 复用，不是本轮优先解除的领域边界
+3. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+
+## 2026-04-14 修复 quotes 路由仍引用旧 tab 导出导致的构建失败
+
+### 本轮完成内容
+
+1. 更新 `src/routes/_authenticated/quotes/retail.lazy.tsx`
+   - 将已不存在的 `RetailQuoteTemplatesTab` 引用改为当前真实存在的 `QuoteOrdersTab`
+2. 更新 `src/routes/_authenticated/quotes/wholesale.lazy.tsx`
+   - 将已不存在的 `WholesaleQuoteTemplatesTab` 引用改为当前真实存在的 `QuoteOrdersTab`
+
+### 根因结论
+
+1. quotes 模块已经重构为以 `QuoteOrdersTab` 为主的单工作台入口
+2. 但旧的 retail / wholesale 路由文件仍在引用历史导出名
+3. 这会导致构建阶段出现 `TS2305`，并在实际部署/启动时表现为前端路由加载失败
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前未处理项
+
+1. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+2. 若后续确认 retail / wholesale 路由已经完全失去独立语义，可以进一步考虑是否需要保留这两个别名路由
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标
