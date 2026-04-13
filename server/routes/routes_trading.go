@@ -39,6 +39,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	customerGroup := authorized.Group("/customers")
 	customerGroup.Use(tradingAccess)
 	customerGroup.GET("", handlers.GetCustomersHandler)
+	customerGroup.GET("/sales-closure-summary", handlers.GetCustomerSalesClosureSummaryHandler)
 	customerGroup.POST("", customerManage, handlers.SaveCustomerHandler)
 	customerGroup.POST("/:id/transactions", customerManage, handlers.ExecuteCustomerTransactionHandler)
 	customerGroup.PATCH("/:id", customerManage, handlers.PatchCustomerHandler)

@@ -45,11 +45,13 @@ export function SalesOrderList() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/_authenticated/trading/sales-orders' })
   const user = useAuthStore((state) => state.user)
+  const routeCustomerId = search.customerId || undefined
+  const routeCustomerName = search.customerName || undefined
   
   // UI States
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(search.search || '')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
@@ -70,6 +72,8 @@ export function SalesOrderList() {
     statusFilter,
     paymentMethodFilter,
     paymentTermFilter,
+    customerId: routeCustomerId,
+    customerName: routeCustomerName,
     selectedId,
   })
 
@@ -125,7 +129,12 @@ export function SalesOrderList() {
     setSelectedId(id)
     navigate({
       to: '/trading/sales-orders',
-      search: (prev) => ({ ...prev, detailId: id }),
+      search: (prev) => ({
+        ...prev,
+        detailId: id,
+        customerId: routeCustomerId,
+        customerName: routeCustomerName,
+      }),
     })
   }
 
@@ -289,7 +298,12 @@ export function SalesOrderList() {
               setSelectedId(null)
               navigate({
                 to: '/trading/sales-orders',
-                search: (prev) => ({ ...prev, detailId: undefined }),
+                search: (prev) => ({
+                  ...prev,
+                  detailId: undefined,
+                  customerId: routeCustomerId,
+                  customerName: routeCustomerName,
+                }),
               })
             }}
           >

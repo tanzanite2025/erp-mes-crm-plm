@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
@@ -38,16 +39,21 @@ import { buildCustomerSaveSnapshot } from '../customer/utils/customer-save-snaps
 import { type DeltaSet } from '@/lib/delta/types'
 import { tradingQueryKeys } from '../query-keys'
 import { requireTradingCommandActor } from '../utils/command-actor'
+import { CustomerAuditTimelineSheet } from '../customer/components/customer-audit-timeline-sheet'
+import { CustomerSalesClosureSummaryBlock } from '../customer/components/customer-sales-closure-summary'
 import { CustomerActionDialog } from './customer-action-dialog'
 import { useCustomerMutations, useGetCustomerList } from '../customer'
+import { useGetCustomerSalesClosureSummary } from '../customer/hooks/use-customer-sales-closure-summary'
 
 export function CustomerList() {
   const { locale, t } = useLanguage()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { allowsAction } = useNonBlockingPermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [auditCustomer, setAuditCustomer] = useState<Customer | null>(null)
   const [showDeleted, setShowDeleted] = useState(false)
   const {
     data: customerList,
@@ -55,6 +61,7 @@ export function CustomerList() {
     isError,
     error,
   } = useGetCustomerList()
+  const { data: salesClosureSummaryList } = useGetCustomerSalesClosureSummary()
   const user = useAuthStore((state) => state.user)
   const { createMutation, saveMutation, deleteMutation } = useCustomerMutations()
   const loadFailedLabel =
@@ -69,6 +76,7 @@ export function CustomerList() {
     locale === 'zh-CN'
       ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
       : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
+  const salesClosureSummaryMap = new Map((salesClosureSummaryList?.items ?? []).map((item) => [item.customerId, item]))
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
@@ -129,6 +137,18 @@ export function CustomerList() {
     }
 
     openWeChat(customer.wechat)
+  }
+
+  const handleOpenCustomerOrders = (customer: Customer) => {
+    navigate({
+      to: '/trading/sales-orders',
+      search: (prev) => ({
+        ...prev,
+        customerId: customer.id,
+        customerName: customer.name,
+        detailId: undefined,
+      }),
+    })
   }
 
   const getStatusBadge = (customer: Customer) => {
@@ -311,27 +331,27 @@ export function CustomerList() {
       </div>
 
       {filteredCustomers.length > 0 ? (
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        <div className='grid grid-cols-1 gap-4'>
           {filteredCustomers.map((customer) => (
             <Card
               key={customer.id}
-              className='group hover:bg-muted/30 transition-all border-dashed border-muted/50 bg-muted/5 rounded-[24px] overflow-hidden cursor-default relative'
+              className='group gap-0 py-0 hover:bg-muted/30 transition-all border-dashed border-muted/50 bg-muted/5 rounded-[24px] overflow-hidden cursor-default relative'
             >
               <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-              <CardHeader className='pb-4 border-b border-dashed border-muted/50 relative'>
+              <CardHeader className='[.border-b]:pb-3 px-4 py-4 pb-3 sm:px-5 sm:py-5 sm:pb-3 border-b border-dashed border-muted/50 relative'>
                 <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-4'>
-                    <div className='size-12 rounded-2xl bg-primary/10 flex items-center justify-center font-black text-primary text-lg shadow-inner'>
+                  <div className='flex items-center gap-3'>
+                    <div className='size-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary text-base shadow-inner'>
                       {customer.name?.substring(0, 1) || '?'}
                     </div>
                     <div>
-                      <div className='flex items-center gap-3'>
-                        <h4 className='text-base font-black tracking-tight italic text-foreground'>
+                      <div className='flex items-center gap-2.5'>
+                        <h4 className='text-sm sm:text-[15px] font-black tracking-tight italic text-foreground'>
                           {customer.name}
                         </h4>
                         {getStatusBadge(customer)}
                       </div>
-                      <p className='text-[10px] font-black text-muted-foreground uppercase mt-1 tracking-widest opacity-50'>
+                      <p className='text-[9px] font-black text-muted-foreground uppercase mt-0.5 tracking-widest opacity-50'>
                         ID: {customer.code}
                       </p>
                     </div>
@@ -339,7 +359,7 @@ export function CustomerList() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
-                      <Button variant='ghost' size='icon' className='h-9 w-9 rounded-xl hover:bg-muted/50'>
+                      <Button variant='ghost' size='icon' className='h-8 w-8 rounded-xl hover:bg-muted/50'>
                         <MoreHorizontal className='size-4 text-muted-foreground' />
                       </Button>
                     </DropdownMenuTrigger>
@@ -350,8 +370,17 @@ export function CustomerList() {
                       >
                         {t('trading.customers.editCustomer')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1'>
-                        {t('trading.customers.viewTransactions')}
+                      <DropdownMenuItem
+                        onClick={() => handleOpenCustomerOrders(customer)}
+                        className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1'
+                      >
+                        查看完整订单
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setAuditCustomer(customer)}
+                        className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1'
+                      >
+                        查看审计记录
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={(event) => {
@@ -367,46 +396,48 @@ export function CustomerList() {
                 </div>
               </CardHeader>
 
-              <CardContent className='pt-5 sm:pt-6 space-y-4 sm:space-y-5 relative'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
-                  <div className='space-y-1.5'>
+              <CardContent className='px-4 pb-3 pt-2.5 space-y-2.5 sm:px-5 sm:pb-4 sm:pt-3 sm:space-y-3 relative'>
+                <CustomerSalesClosureSummaryBlock summary={salesClosureSummaryMap.get(customer.id)} />
+
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                  <div className='space-y-1'>
                     <div className='flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
                       <User className='size-3' />
                       {t('trading.customers.contactPerson')}
                     </div>
-                    <p className='text-[12px] sm:text-[13px] font-black text-foreground'>
+                    <p className='text-[11px] sm:text-[12px] font-black text-foreground'>
                       {customer.contactPerson}
                     </p>
                   </div>
 
-                  <div className='space-y-1.5 sm:text-right'>
+                  <div className='space-y-1 sm:text-right'>
                     <div className='flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 sm:justify-end italic'>
                       <Phone className='size-3' />
                       {t('trading.customers.contactPhone')}
                     </div>
-                    <p className='text-[12px] sm:text-[13px] font-black text-foreground'>
+                    <p className='text-[11px] sm:text-[12px] font-black text-foreground'>
                       {customer.contactPhone}
                     </p>
                   </div>
                 </div>
 
-                <div className='space-y-1.5 pt-4 border-t border-dashed border-muted/50'>
-                  <div className='flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+                <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
+                  <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
                     <MapPin className='size-3' />
                     {t('trading.customers.address')}
                   </div>
-                  <p className='text-[11px] font-bold text-muted-foreground truncate leading-relaxed'>
+                  <p className='text-[10px] font-bold text-muted-foreground truncate leading-relaxed'>
                     {customer.address}
                   </p>
                 </div>
 
-                <div className='space-y-1.5 pt-4 border-t border-dashed border-muted/50'>
-                  <div className='flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+                <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
+                  <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
                     <MessageCircle className='size-3' />
                     微信
                   </div>
-                  <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                    <p className='text-[11px] font-bold text-muted-foreground break-all'>
+                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                    <p className='text-[10px] font-bold text-muted-foreground break-all'>
                       {customer.wechat || '未填写'}
                     </p>
                     <Button
@@ -418,7 +449,7 @@ export function CustomerList() {
                         event.stopPropagation()
                         handleOpenWeChat(customer)
                       }}
-                      className='h-8 w-full sm:w-auto rounded-full text-[9px] font-black uppercase tracking-widest'
+                      className='h-7 w-full sm:w-auto rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
                     >
                       打开微信
                       <ExternalLink className='ms-2 size-3' />
@@ -426,21 +457,22 @@ export function CustomerList() {
                   </div>
                 </div>
 
-                <div className='pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-dashed border-muted/50'>
+                <div className='pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-dashed border-muted/50'>
                   <div className='flex flex-col gap-0.5'>
                     <span className='text-[8px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] italic'>
                       {t('trading.customers.creditBalance')}
                     </span>
-                    <div className='text-base sm:text-lg font-black italic tracking-tighter tabular-nums'>
+                    <div className='text-sm sm:text-base font-black italic tracking-tighter tabular-nums'>
                       {customer.balance.toLocaleString(locale)}
                     </div>
                   </div>
                   <Button
                     variant='secondary'
                     size='sm'
-                    className='h-9 w-full sm:w-auto px-5 rounded-full font-black text-[9px] uppercase tracking-widest bg-emerald-500/5 text-emerald-500 border border-emerald-500/10 hover:bg-emerald-500/10 transition-colors'
+                    onClick={() => handleOpenCustomerOrders(customer)}
+                    className='h-8 w-full sm:w-auto px-4 rounded-full font-black text-[8px] uppercase tracking-widest bg-emerald-500/5 text-emerald-500 border border-emerald-500/10 hover:bg-emerald-500/10 transition-colors'
                   >
-                    {t('trading.customers.ledger')}
+                    查看完整订单
                     <ExternalLink className='ms-2 size-3 animate-pulse' />
                   </Button>
                 </div>
@@ -450,7 +482,8 @@ export function CustomerList() {
                 targetId={customer.id}
                 createdAt={customer.createdAt}
                 updatedAt={customer.updatedAt}
-                className='border-primary/10 pt-2'
+                showTimelineButton={false}
+                className='border-primary/10 pt-1'
               />
             </Card>
           ))}
@@ -476,6 +509,16 @@ export function CustomerList() {
         onOpenChange={setIsActionDialogOpen}
         customer={selectedCustomer}
         onSave={handleSaveCustomer}
+      />
+      <CustomerAuditTimelineSheet
+        customerId={auditCustomer?.id}
+        customerName={auditCustomer?.name}
+        open={!!auditCustomer}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAuditCustomer(null)
+          }
+        }}
       />
     </div>
   )

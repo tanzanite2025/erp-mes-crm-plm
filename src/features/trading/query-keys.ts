@@ -1,6 +1,7 @@
 export const tradingQueryKeys = {
   customers: (): readonly ['customers'] => ['customers'],
   customerList: (): readonly ['customers', 'list'] => ['customers', 'list'],
+  customerSalesClosureSummary: (): readonly ['customers', 'sales-closure-summary'] => ['customers', 'sales-closure-summary'],
   payableDetail: (id: string): readonly ['payables', string] => ['payables', id],
   settlementRecordEvidences: (
     type: 'receipt' | 'payment',

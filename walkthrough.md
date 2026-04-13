@@ -2324,6 +2324,273 @@
 1. 前端统一快照收口后 TypeScript 编译通过
 2. 后端 authoritative merge 接入后 handlers / services 编译型校验通过
 
+### 增量更新：供应商复用客户沟通渠道与卡片交互方案
+
+本轮将客户侧已经稳定下来的“沟通渠道资料结构 + 卡片交互规则 + 保存链路防腐”按同口径复用到供应商，避免客户/供应商继续分叉。
+
+1. **供应商资料补齐沟通渠道字段**
+   - 前端补齐：
+     - `src/features/trading/data/schema.ts`
+     - `src/features/trading/supplier/contracts/supplier-api-dto.ts`
+     - `src/features/trading/supplier/adapters/supplier-api-adapter.ts`
+     - `src/features/trading/hooks/use-supplier-action-view-model.ts`
+   - 后端补齐：
+     - `server/models/trading.go`
+     - `server/handlers/supplier_dto.go`
+     - `server/handlers/suppliers.go`
+     - `server/services/purchase_order_dto.go`
+     - `server/services/purchase_order_mapper.go`
+     - `server/services/partner_list_dto.go`
+     - `server/services/partner_service.go`
+     - `server/services/partner_transaction_service.go`
+   - 新增字段：
+     - `wechat`
+     - `whatsapp`
+     - `facebook`
+     - `instagram`
+     - `telegram`
+     - `email`
+
+2. **供应商保存链按客户同口径加固**
+   - 新增：
+     - `src/features/trading/supplier/utils/supplier-save-snapshot.ts`
+   - 前端在以下位置统一生成完整保存快照：
+     - `src/features/trading/components/supplier-action-dialog.tsx`
+     - `src/features/trading/components/supplier-list.tsx`
+   - 后端在 `server/services/partner_transaction_service.go` 中新增：
+     - `mergeSupplierSaveSnapshot(...)`
+   - 统一保存事务 `executeSupplierUnifiedSaveTx(...)` 改为：
+     - 先读取当前数据库供应商
+     - 再按 `deltaKeys` 与请求 `finalData` 做 authoritative merge
+     - 用合并后的 `mergedFinalData` 执行校验与落库
+   - 这样后续供应商再新增普通字段时，也不会因未改字段缺失而导致保存事务失败
+
+3. **供应商编辑弹窗对齐客户信息架构**
+   - 更新：
+     - `src/features/trading/components/supplier-action-dialog.tsx`
+   - 新增“沟通渠道”分组，统一承载：
+     - `email`
+     - `wechat`
+     - `whatsapp`
+     - `facebook`
+     - `instagram`
+     - `telegram`
+   - 保持联系人信息、产品范围、地址分区不混杂
+
+4. **供应商卡片交互对齐客户规则**
+   - 更新：
+     - `src/features/trading/components/supplier-list.tsx`
+   - 调整结果：
+     - 供应商卡片本体不再点击即编辑
+     - 编辑入口只保留菜单中的编辑动作
+     - 供应商卡片新增最小微信入口
+     - 其余渠道本轮仍只保存与展示，不做跳转按钮
+
+### 本轮追加验证（供应商）
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./services -run ^$`
+
+结果：
+
+1. 供应商沟通渠道字段、弹窗与卡片交互接入后前端 TypeScript 编译通过
+2. 供应商 authoritative merge 与多渠道字段后端接入后 handlers / services 编译型校验通过
+
+## 2026-04-13 - feat：客户卡片接入真实销售闭环摘要并改为单列占满
+
+### 本轮目标
+
+在不动现有粗粒度 analytics 聚合口径的前提下，让客户卡片直接展示来自真实销售订单链的闭环摘要，并将客户卡片从双列半宽改为单列占满，承载更完整的业务状态信息。
+
+### 核心实现
+
+1. **新增独立后端客户销售闭环摘要读链**
+   - 新增：`server/handlers/customer_sales_closure_summary.go`
+   - 路由接线：`server/routes/routes_trading.go`
+   - 新增接口：`GET /customers/sales-closure-summary`
+   - 数据来源直接基于 `sales_orders` 主单聚合，不复用现有 analytics 粗聚合接口
+   - 输出字段：
+     - `customerId`
+     - `hasOpenOrders`
+     - `openOrderCount`
+     - `lastOrderDate`
+     - `daysSinceLastOrder`
+     - `totalOrders`
+
+2. **未完成订单口径与最后下单时间均走真实订单链**
+   - 未完成订单判定：
+     - `Draft`
+     - `Pending`
+     - `InProgress`
+   - 已闭环判定：
+     - `Done`
+     - `Canceled`
+   - `lastOrderDate` 直接取客户维度销售订单最新 `order_date`
+   - `daysSinceLastOrder` 在后端统一计算，避免前端重复处理日期差与时区问题
+
+3. **新增独立前端读链与独立展示组件**
+   - 新增 service：
+     - `src/features/trading/customer/services/customer-sales-closure-summary-service.ts`
+   - 新增 hook：
+     - `src/features/trading/customer/hooks/use-customer-sales-closure-summary.ts`
+   - 新增展示组件：
+     - `src/features/trading/customer/components/customer-sales-closure-summary.tsx`
+   - 新增 query key：
+     - `src/features/trading/query-keys.ts`
+       - `customerSalesClosureSummary()`
+
+4. **客户卡片改为单列占满并接入闭环摘要**
+   - 更新：`src/features/trading/components/customer-list.tsx`
+   - 调整内容：
+     - 客户卡片容器从 `grid-cols-1 lg:grid-cols-2` 改为 `grid-cols-1`
+     - 在客户卡片顶部信息区新增独立闭环摘要块
+     - 当前摘要优先展示：
+       - 是否存在未完成订单
+       - 未完成订单数
+       - 最后下单时间
+       - 沉默时长（距上次下单天数）
+
+### 设计取舍
+
+1. 本轮**明确不动**现有 `/sales-orders/analytics/*` 粗聚合分析接口口径
+2. 客户卡片不直接消费 analytics 分析结果，避免“分析值”和“当前业务事实”混用
+3. 本轮通过新增独立后端 handler、独立前端 service/hook/组件来承载能力，尽量减少把逻辑补丁式塞回旧文件
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./services -run ^$`
+
+结果：
+
+1. 前端客户卡片单列布局与闭环摘要接线后 TypeScript 编译通过
+2. 后端独立客户销售闭环摘要 handler 接入后 handlers / services 编译型校验通过
+
+## 2026-04-13 - feat：客户卡片主闭环入口改造
+
+### 本轮目标
+
+在客户卡片上明确区分“记录入口”和“主闭环入口”两类职责：
+
+1. 时间线只负责记录
+2. 主闭环入口直接跳转到现有销售订单管理页
+3. 订单管理页承接结构化 `customerId` 上下文，而不是只依赖模糊搜索
+
+### 核心实现
+
+1. **销售订单路由 search 契约独立化并扩展客户上下文承接**
+   - 新增：`src/features/trading/sales/utils/sales-order-route-search.ts`
+   - 更新：`src/routes/_authenticated/trading/sales-orders.tsx`
+   - 扩展字段：
+     - `customerId`
+     - `customerName`
+   - 目的：让客户卡片可以稳定把用户带到现有订单管理页的目标客户上下文，而不是只依赖 `search` 字段做模糊命中
+
+2. **销售订单列表按结构化客户上下文过滤**
+   - 更新：`src/features/trading/hooks/use-sales-order-list-view-model.ts`
+   - 更新：`src/features/trading/components/sales-order-list-fixed.tsx`
+   - 调整点：
+     - 销售订单页从路由 search 读取 `customerId/customerName`
+     - 订单列表过滤优先使用 `customerId`，`customerName` 仅作兜底
+     - 详情打开/关闭时保留客户上下文，避免闭环链路中断
+
+3. **客户卡片新增主按钮“查看完整订单”**
+   - 更新：`src/features/trading/components/customer-list.tsx`
+   - 在客户卡片主操作区新增 `查看完整订单` 按钮
+   - 点击后直接导航到：
+     - `/_authenticated/trading/sales-orders`
+     - 同时带上 `customerId/customerName`
+   - 这样用户可以从客户卡片直接进入完整订单处理上下文，形成真正闭环
+
+4. **审计入口降级为次级入口**
+   - 更新：`src/components/common/audit-stamp.tsx`
+   - 新增：`src/features/trading/customer/components/customer-audit-timeline-sheet.tsx`
+   - 更新：`src/features/trading/components/customer-list.tsx`
+   - 调整结果：
+     - 底部 `AuditStamp` 默认不再显示时间线按钮
+     - 审计记录改为客户卡片菜单中的次级入口：`查看审计记录`
+     - 保留审计能力，但不再与主闭环入口混淆
+
+### 设计取舍
+
+1. 本轮**不新造客户业务中心页**
+2. 本轮**不复制一套订单列表面板到客户模块**
+3. 直接复用现有销售订单管理页作为真正闭环承接页
+4. 使用 `customerId` 作为稳定主键，避免客户改名后链接失效
+5. 客户卡片只负责展示摘要与发起导航，不承担订单页过滤规则实现
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 销售订单页 `customerId/customerName` 路由承接与客户卡片主闭环按钮接线后 TypeScript 编译通过
+2. 审计入口降级为次级入口后未引入新的前端类型问题
+
+## 2026-04-13 - feat：客户卡片订单闭环显示口径调整
+
+### 本轮目标
+
+将客户卡片“订单闭环”主值从“有未完成订单 / 当前已闭环”改为更直观的“已完成数 / 总订单数”表达，例如：
+
+1. `0/0`
+2. `0/1`
+3. `1/1`
+4. `2/5`
+
+同时保持：
+
+1. 无订单客户明确表达为 `0/0` + `暂无订单`
+2. 最后下单时间与沉默时长继续保留为辅信息
+3. 不新增后端接口，直接复用现有 `openOrderCount / totalOrders`
+
+### 核心实现
+
+1. **新增独立闭环派生 util**
+   - 新增：`src/features/trading/customer/utils/customer-sales-closure-metrics.ts`
+   - 统一负责：
+     - `closedOrderCount`
+     - `closureRatioLabel`
+     - `closureStatusLabel`
+   - 派生规则：
+     - `closedOrderCount = Math.max(0, totalOrders - openOrderCount)`
+   - 这样避免把展示计算继续堆进卡片组件
+
+2. **客户卡片闭环主值改为 `closed/total`**
+   - 更新：`src/features/trading/customer/components/customer-sales-closure-summary.tsx`
+   - 调整后：
+     - 主值显示 `closed/total`
+     - 状态 badge 显示：
+       - `暂无订单`
+       - `未闭环 X 单`
+       - `全部闭环`
+   - 最后下单时间与沉默时长保留为次级信息
+
+### 设计取舍
+
+1. 本轮**不改后端契约**
+2. 本轮**不新增 `closedOrderCount` 后端字段**
+3. 仅在前端做稳定派生，缩小变更面
+4. 通过独立 util 保持展示逻辑集中，便于后续再调口径
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 客户卡片订单闭环主值切换为 `已完成数 / 总订单数` 后 TypeScript 编译通过
+2. 无订单场景可稳定显示 `0/0`，且展示逻辑已集中到独立 util
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

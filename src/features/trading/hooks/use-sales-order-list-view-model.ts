@@ -7,6 +7,8 @@ interface UseSalesOrderListViewModelParams {
   statusFilter: string
   paymentMethodFilter: string
   paymentTermFilter: string
+  customerId?: string
+  customerName?: string
   selectedId: string | null
 }
 
@@ -16,12 +18,21 @@ export function useSalesOrderListViewModel({
   statusFilter,
   paymentMethodFilter,
   paymentTermFilter,
+  customerId,
+  customerName,
   selectedId,
 }: UseSalesOrderListViewModelParams) {
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
+    const normalizedCustomerId = customerId?.trim() ?? ''
+    const normalizedCustomerName = customerName?.trim().toLowerCase() ?? ''
 
     return orders.filter((order) => {
+      const matchesCustomerContext =
+        normalizedCustomerId.length === 0
+          ? normalizedCustomerName.length === 0 || (order.customerName?.toLowerCase() ?? '') === normalizedCustomerName
+          : (order.customerId ?? '') === normalizedCustomerId
+
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -40,9 +51,9 @@ export function useSalesOrderListViewModel({
         paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter
       const matchesPaymentTerm = paymentTermFilter === 'ALL' || order.paymentTerm === paymentTermFilter
 
-      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
+      return matchesCustomerContext && matchesSearch && matchesStatus && matchesPaymentMethod && matchesPaymentTerm
     })
-  }, [orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
+  }, [customerId, customerName, orders, paymentMethodFilter, paymentTermFilter, searchTerm, statusFilter])
 
   const selectedOrder = useMemo(
     () => filteredOrders.find((order) => order.id === selectedId) ?? orders.find((order) => order.id === selectedId),

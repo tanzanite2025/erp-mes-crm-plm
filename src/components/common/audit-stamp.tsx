@@ -13,6 +13,7 @@ interface AuditStampProps {
   className?: string
   module?: AuditModuleValue
   targetId?: string
+  showTimelineButton?: boolean
 }
 
 /**
@@ -28,6 +29,7 @@ export function AuditStamp({
   className,
   module,
   targetId,
+  showTimelineButton = true,
 }: AuditStampProps) {
   const [isTimelineOpen, setIsTimelineOpen] = useState(false)
   // 仅当传入了 module 和 targetId 时才启用可交互模式
@@ -38,23 +40,13 @@ export function AuditStamp({
 
   return (
     <div
-      onClick={() => isInteractive && setIsTimelineOpen(true)}
       className={cn(
         'flex flex-col gap-1.5 border-l border-dashed border-muted-foreground/20 pl-4 transition-all duration-300',
         'group/audit font-mono text-[9px] uppercase tracking-tighter opacity-50 hover:opacity-100',
-        isInteractive && 'cursor-pointer hover:border-primary/50 active:scale-[0.98]',
+        isInteractive && 'hover:border-primary/50',
         className
       )}
     >
-      {/* Interaction Hint - Only visible on hover in interactive mode */}
-      {isInteractive && (
-        <div className='absolute -left-1.5 top-0 flex h-full items-center opacity-0 transition-opacity group-hover/audit:opacity-100'>
-          <div className='flex size-3 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground shadow-lg'>
-             <History className='size-2' />
-          </div>
-        </div>
-      )}
-
       {/* Created Trace */}
       <div className='flex items-center gap-2'>
         <span className='font-black text-primary/60'>CREATED:</span>
@@ -63,6 +55,19 @@ export function AuditStamp({
         <span className='font-black italic text-slate-500'>
           @{auditUtils.formatOperatorName(createdBy)}
         </span>
+        {isInteractive && showTimelineButton && (
+          <button
+            type='button'
+            onClick={(event) => {
+              event.stopPropagation()
+              setIsTimelineOpen(true)
+            }}
+            className='ms-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/20 bg-primary/8 text-primary transition-colors hover:bg-primary/15'
+            aria-label='Open data timeline'
+          >
+            <History className='size-3' />
+          </button>
+        )}
       </div>
 
       {/* Updated Trace (Only if exists and different from creation) */}
