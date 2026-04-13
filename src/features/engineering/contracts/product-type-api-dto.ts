@@ -22,4 +22,11 @@ export interface ProductTypeListPageApiDTO {
   pageSize: number
 }
 
+export interface ProductTypeTemplateResolutionApiDTO {
+  resolvedTemplateId?: string
+  resolvedTemplateKey?: string
+  templateResolutionSource?: string
+  templateResolutionError?: string
+}
+
 export type PatchProductTypeApiDTO = DeltaPayload

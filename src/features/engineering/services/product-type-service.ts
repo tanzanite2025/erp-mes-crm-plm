@@ -4,12 +4,19 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { buildProductTypeDelta, toProductTypeApiDTO, toProductTypeArrayContract, toProductTypeContract, toProductTypeListContract } from '../adapters/product-type-api-adapter'
-import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO } from '../contracts/product-type-api-dto'
+import { type ProductTypeApiDTO, type ProductTypeListPageApiDTO, type ProductTypeTemplateResolutionApiDTO } from '../contracts/product-type-api-dto'
 import { type ProductType } from '../data/schema'
 import { type SaveProductTypeInput } from '../mutation-types'
 import { normalizeProductTypeInput as normalizeEngineeringProductTypeInput } from '../utils/product-code-normalization'
 
 export type { SaveProductTypeInput } from '../mutation-types'
+
+export interface ProductTypeTemplateResolution {
+  resolvedTemplateId?: string
+  resolvedTemplateKey?: string
+  templateResolutionSource?: string
+  templateResolutionError?: string
+}
 
 /**
  * ProductTypeService - unified full-save service for product types.
@@ -91,5 +98,20 @@ export const ProductTypeService = {
     return apiFetch(`/engineering/product-types/${id}`, {
       method: 'DELETE',
     })
+  },
+
+  async getTemplateResolution(typeId: string): Promise<ProductTypeTemplateResolution> {
+    const res = await apiFetch<ProductTypeTemplateResolutionApiDTO>(`/engineering/product-types/template-resolution?typeId=${encodeURIComponent(typeId)}`)
+    const data = ensureObjectResponse<ProductTypeTemplateResolutionApiDTO & Record<string, unknown>>(
+      res,
+      'ProductTypeService.getTemplateResolution'
+    ) as ProductTypeTemplateResolutionApiDTO
+
+    return {
+      resolvedTemplateId: data.resolvedTemplateId?.trim() || undefined,
+      resolvedTemplateKey: data.resolvedTemplateKey?.trim() || undefined,
+      templateResolutionSource: data.templateResolutionSource?.trim() || undefined,
+      templateResolutionError: data.templateResolutionError?.trim() || undefined,
+    }
   },
 }

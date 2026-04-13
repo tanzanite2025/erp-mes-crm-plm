@@ -40,6 +40,10 @@ export interface ProductApiDTO {
   attachments?: unknown
   status?: 'Active' | 'Draft' | 'Archived'
   templateKey?: string
+  resolvedTemplateId?: string
+  resolvedTemplateKey?: string
+  templateResolutionSource?: string
+  templateResolutionError?: string
   revisionNo?: string
   effectiveFrom?: string | null
   effectiveTo?: string | null

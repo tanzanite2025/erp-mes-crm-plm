@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -41,6 +42,27 @@ func GetProductTypesHandler(c *gin.Context) {
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
+	})
+}
+
+func GetProductTypeTemplateResolutionHandler(c *gin.Context) {
+	typeID := strings.TrimSpace(c.Query("typeId"))
+	if typeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] typeId is required"})
+		return
+	}
+
+	result, err := services.ResolveProductTypeTemplate(typeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to resolve product type template: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"resolvedTemplateId":       result.TemplateID,
+		"resolvedTemplateKey":      result.TemplateKey,
+		"templateResolutionSource": result.Source,
+		"templateResolutionError":  result.Error,
 	})
 }
 

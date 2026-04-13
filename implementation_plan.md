@@ -1,5 +1,522 @@
 ### 1. plan：production-shared 机器码字段统一收口
 
+### 1. plan：新建型号模板链路加固
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+上一轮已经把“编辑产品规格”场景的模板绑定 authority 收口到了后端读取链，前端编辑弹窗现在优先消费后端返回的 resolved template 结果。但“新建型号”场景当前仍主要依赖前端根据 `typeId -> parent chain -> template` 做本地解析，因此创建态与编辑态仍不是同一套 authority。
+
+#### 1.2 当前问题本质
+
+如果创建态继续保留前端局部模板解析 authority，会持续存在以下风险：
+
+1. 前端 options 中的分类父链不完整时，创建态会误判无模板
+2. `templateId` 指向失效模板时，创建态只能在前端局部兜底
+3. 创建态与编辑态可能对同一分类得出不同模板结果
+4. 即便编辑态已经稳住，创建态仍可能再次出现同类 `Template Binding Broken`
+
+因此当前真正要解决的不是“再给创建态加一个重试”，而是**让创建态也消费后端 authoritative template resolution**。
+
+#### 1.3 本轮目标
+
+本轮目标是让创建态与编辑态收敛到同一模板 authority：
+
+1. 创建态选择分类时可拿到后端 resolved template 结果
+2. 创建态与编辑态对同一分类得到一致模板结论
+3. 当前端本地上下文陈旧时，也不会因为局部父链推断再次误判
+4. 模板真实缺失时仍能明确展示错误
+
+#### 1.4 推荐实施策略
+
+##### 1.4.1 为创建态提供后端模板解析入口
+
+优先推荐两种实现路径中的一种：
+
+1. 新增按 `typeId` 解析模板的后端 endpoint
+2. 或扩展现有产品类型 options 响应，直接附带每个分类可解析到的 resolved template 结果
+
+返回结果建议与编辑态保持一致，包括：
+
+1. `resolvedTemplateId`
+2. `resolvedTemplateKey`
+3. `templateResolutionSource`
+4. `templateResolutionError`
+
+##### 1.4.2 创建态前端改为优先消费后端 authority
+
+创建态在用户选择分类后，应优先消费后端返回的 resolved template 结果，而不是立即使用本地 `productTypes` 递归父链推断。
+
+本地推断仅保留为最小兜底，避免成为主 authority。
+
+##### 1.4.3 创建态 / 编辑态对齐同一解析语义
+
+无论是读取已有产品还是新建产品选择分类，都应尽量使用同一套：
+
+1. 模板存在性判断
+2. 模板有效性判断
+3. 失败原因枚举
+4. 前端错误态展示逻辑
+
+#### 1.5 预计涉及文件
+
+预计优先涉及：
+
+1. 产品类型 / 模板相关后端 service、handler、route、DTO
+2. `src/features/engineering/components/product-action-dialog.tsx`
+3. `src/features/engineering/utils/product-create-template-resolution.ts`
+4. `src/features/engineering/services/product-type-service.ts`
+5. 必要时联动前端 contract / adapter
+
+#### 1.6 风险与破坏性评估
+
+本轮风险主要在于创建态请求节奏与接口契约：
+
+1. 若创建态每次选分类都即时请求后端，需控制请求频率与错误态表现
+2. 若扩展产品类型 options 响应，需要同步前端 adapter，避免类型漂移
+3. 若创建态与编辑态使用的失败原因语义仍不统一，前端展示会再次分叉
+
+因此本轮必须坚持：
+
+1. 创建态优先消费后端 authority
+2. 保持失败原因 machine-readable
+3. 不顺手重构整个模板系统
+
+#### 1.7 验证策略
+
+本轮验证至少覆盖：
+
+1. 新建型号时选择分类可稳定解析模板
+2. 同一分类在创建态 / 编辑态得到一致模板结果
+3. 无效模板绑定时，创建态给出明确错误原因
+4. `pnpm exec tsc --noEmit` 通过
+5. 若涉及后端新增解析入口，则执行对应 Go 定向测试
+
+#### 1.8 非目标边界
+
+本轮不做：
+
+1. 不重构整个产品模板系统
+2. 不改产品规格 UI 结构
+3. 不扩到 BOM 模块
+4. 不处理无关样式问题
+
+#### 1.9 当前阶段结论
+
+如果要避免“模板绑定问题只是从编辑态转移到创建态”，那么新建型号链路也必须跟进 authority 收口。最稳的做法是为创建态提供后端 authoritative template resolution，并让创建态与编辑态消费同一套 resolved template 语义。
+
+### 1. plan：产品模板绑定根因级稳住
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+上一轮已经为“编辑产品规格”的 `Template Binding Broken` 增加了前端 fresh metadata fallback，可以降低由于旧分类树或旧模板缓存导致的误判。但当前目标已经升级为“从根因稳住”，这意味着不能继续依赖前端局部重试作为主要保障。
+
+#### 1.2 当前问题本质
+
+当前模板绑定 authority 仍然分散：
+
+1. 后端在产品读取链中会按产品分类父链派生 `TemplateKey`
+2. 前端在产品编辑弹窗中仍会再次根据 `typeId / parentId / templateId / templateKey` 本地推断具体模板
+3. 当两边使用的上下文、缓存或数据时点不一致时，就可能出现前端误判或后端派生缺失
+
+因此当前真正的问题不是“提示文案不好”，而是**同一模板绑定语义被前后端重复推断，authority 不集中**。
+
+#### 1.3 本轮目标
+
+本轮目标是把模板绑定 authority 尽量收回后端，并在进入前端前就得到明确结果：
+
+1. 后端对产品分类父链模板绑定做一致性校验
+2. 后端在产品读取链返回显式 resolved template 信息
+3. 前端优先消费后端给出的解析结果，而不是自己再次做完整判定
+4. 保留前端错误态展示，但错误来源应尽量来自后端 authoritative result
+
+#### 1.4 推荐实施策略
+
+##### 1.4.1 后端统一模板解析 authority
+
+优先把以下语义收口到后端：
+
+1. 产品分类父链是否能解析到有效模板
+2. 解析到的模板是否真实存在
+3. 该模板对应的 `componentKey / templateKey / templateId` 是什么
+4. 若解析失败，失败原因属于：
+   - 分类链缺失
+   - 父链循环
+   - 模板不存在
+   - 模板不可用
+
+##### 1.4.2 后端返回显式 resolved template 字段
+
+建议在产品读取 DTO 中增加显式字段，例如：
+
+1. `resolvedTemplateId`
+2. `resolvedTemplateKey`
+3. `templateResolutionSource`
+4. `templateResolutionError`
+
+这样前端在编辑态可优先直接消费后端 authority，而不是再次完整重建解析过程。
+
+##### 1.4.3 前端降级为展示与兜底
+
+前端仍可保留最小 fallback，但角色应调整为：
+
+1. 优先使用后端 resolved template 结果
+2. 当后端明确返回错误时，展示明确错误态
+3. 仅在必要时执行最小本地兜底，不再承担主 authority
+
+#### 1.5 预计涉及文件
+
+预计优先涉及：
+
+1. `server/services/product_edit_read_service.go`
+2. `server/services/product_master_service.go`
+3. `server/handlers/product_api_dto.go`
+4. `server/handlers/product_mapper.go`
+5. 产品类型 / 产品模板相关 service、handler、DTO
+6. `src/features/engineering/contracts/product-api-dto.ts`
+7. `src/features/engineering/adapters/product-api-adapter.ts`
+8. `src/features/engineering/components/product-action-dialog.tsx`
+
+#### 1.6 风险与破坏性评估
+
+本轮风险主要在于模板读取 contract 变化：
+
+1. 若后端新增字段但前端未同步 adapter，容易出现类型漂移
+2. 若后端把旧的 `templateKey` 语义直接替换掉，可能影响现有调用点
+3. 若没有明确区分“解析失败”和“暂时无模板”，前端仍可能误处理
+
+因此本轮必须坚持：
+
+1. 新增显式 resolved 字段优先，避免直接破坏旧字段兼容
+2. 通过最小范围改动收口 authority，不顺手重构整套模板系统
+3. 为失败原因提供可区分的 machine-readable 信息
+
+#### 1.7 验证策略
+
+本轮验证至少覆盖：
+
+1. 编辑态产品返回的 resolved template 结果与后端分类链一致
+2. 创建态与编辑态对同一分类解析结果一致
+3. 无效分类模板绑定时，后端返回明确错误或明确失败原因
+4. 前端在后端已给出 resolved template 时，不再因本地旧上下文误判
+5. `pnpm exec tsc --noEmit` 通过
+6. 对应 Go 定向测试 / 读取链校验通过
+
+#### 1.8 非目标边界
+
+本轮不做：
+
+1. 不重构整个产品模板系统
+2. 不改产品规格 UI 结构
+3. 不扩到 BOM 模块
+4. 不处理无关样式问题
+
+#### 1.9 当前阶段结论
+
+如果要真正从根因稳住模板绑定问题，关键不是继续堆前端 fallback，而是把模板解析 authority 收口到后端，并把显式 resolved result 提供给前端消费。只有这样，才能系统性降低前后端重复推断、缓存不一致和数据漂移带来的误判风险。
+
+### 1. plan：编辑产品规格时 `Template Binding Broken`
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前用户在“编辑产品规格”弹窗中选择产品分类 `山地车圈` 后，页面底部出现 `Template Binding Broken` 错误，提示当前产品分类在其 category chain 中没有可解析模板绑定，导致规格模板区域无法正常解析，进一步阻断保存。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前前端报错来源明确
+
+当前报错来自：
+
+1. `src/features/engineering/components/product-action-dialog.tsx`
+
+该弹窗在编辑态会执行：
+
+1. `getEffectiveTemplate(...)`
+2. 优先根据 `typeId -> parent chain -> templateId` 解析模板
+3. 若类型链没有解析到模板，再尝试 `productTemplateKey -> concrete template`
+4. 若两条链都失败，则设置 `templateResolveError` 并显示 `Template Binding Broken`
+
+##### 1.2.2 当前可疑断点
+
+当前高概率问题集中在以下三类之一：
+
+1. `山地车圈` 所在产品分类链没有可用 `templateId`
+2. 分类链虽然解析出了 `templateId`，但模板列表里没有对应模板
+3. 编辑态 `currentRow.templateKey` 无法映射到具体模板，导致 fallback 失效
+
+##### 1.2.3 当前前后端存在一条共同的分类父链解析逻辑
+
+当前后端在：
+
+1. `server/services/product_edit_read_service.go`
+
+中通过 `resolveTemplateIDFromProductTypeChain(...)` 沿产品分类父链寻找 `template_id`，再将其映射为 `TemplateKey` 返回给编辑态读取链。
+
+这说明当前问题并不只是一个单纯的前端展示异常，而很可能涉及：
+
+1. 分类树绑定缺失
+2. 编辑态回读 `TemplateKey` 为空
+3. 前后端模板解析链路存在不一致
+
+#### 1.3 推荐实施策略
+
+本轮建议只做“模板绑定解析链路修复”，不扩展为模板系统重构：
+
+1. 优先比对前端 `resolveTemplateFromTypeChain(...)` 与后端 `resolveTemplateIDFromProductTypeChain(...)` 的行为是否一致
+2. 确认 `山地车圈` 当前分类节点及其父链上是否真实存在 `templateId`
+3. 若编辑态 `TemplateKey` 回读为空或无法映射，应修复 fallback 逻辑或回读链路
+4. 保持弹窗在模板缺失时继续给出明确错误态，而不是静默失败
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/components/product-action-dialog.tsx`
+2. `src/features/engineering/components/specs/index.ts`
+3. `src/features/engineering/utils/product-create-template-resolution.ts`
+4. `server/services/product_edit_read_service.go`
+5. 必要时联动模板相关 service / handler / route
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要在于模板解析 authority 不能被误改：
+
+1. 若只修前端提示，不修根因，保存前仍会被阻断
+2. 若只改 fallback，不核对分类链绑定，可能掩盖后端回读缺失
+3. 若顺手改整个模板系统，会扩大任务范围与回归风险
+
+因此本轮必须坚持：
+
+1. 优先修绑定链路根因
+2. 保持现有错误态可见
+3. 不做产品模板系统大改
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. 编辑 `山地车圈` 产品规格时可正确解析模板
+2. 创建/编辑产品规格的模板切换不回退
+3. 如模板真实缺失，错误态仍然明确可见
+4. `pnpm exec tsc --noEmit` 通过
+5. 若涉及后端修复，则执行对应 Go 定向测试或最小验证命令
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不改 BOM 模块
+2. 不改产品规格 UI 结构
+3. 不处理无关样式问题
+
+#### 1.8 当前阶段结论
+
+当前“编辑产品规格”中的 `Template Binding Broken` 更像是产品分类模板绑定链路断裂，而不是单纯的前端显示问题。下一步应优先确认 `山地车圈` 分类链、模板列表与编辑态 `TemplateKey` 回读之间的实际不一致点，再用最小改动修正模板解析根因。
+
+### 1. plan：722 BOM 枚举/日期控制字段统一收口
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前 BOM 相关的 `changeType / status / effectiveFrom / effectiveTo` 已经不是“完全无规则”状态：底层 codec、保存前净化、展示层 normalize 都已经存在。但用户要求的是“统一收口”，而不是长期维持多层分散兜底。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前真实问题不是缺少 normalize，而是 authority 分散
+
+当前已确认这组字段的规则分布在多层：
+
+1. **底层 codec**
+   - `src/lib/codecs/code-normalization.ts`
+   - 已提供 `normalizeBomChangeType / normalizeBomStatus / normalizeBomEffectiveDate`
+
+2. **工程层净化 helper**
+   - `src/features/engineering/utils/product-code-normalization.ts`
+   - 已提供 `normalizeEngineeringBomChangeType / normalizeEngineeringBomStatus / normalizeEngineeringBomEffectiveDate / normalizeBOMInput`
+
+3. **保存层**
+   - `src/features/engineering/services/bom-service.ts`
+   - 保存前 `sanitizeBOMInput(...)` 会走 `normalizeBOMInput(...)`
+
+4. **展示层**
+   - `src/features/engineering/components/bom-mgmt/bom-table.tsx`
+   - `src/features/engineering/components/bom-mgmt/bom-preview.tsx`
+   - 已对 changeType/status/effectiveFrom 做展示 normalize
+
+5. **表单输入层**
+   - `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+   - 仍在组件内部通过多个 if/else 分散处理这组字段
+
+因此当前问题不在“有没有规则”，而在“规则 authority 没有收成单一入口”。
+
+##### 1.2.2 当前主要风险点
+
+如果继续维持这种结构，会有三个风险：
+
+1. 初始化值、输入时状态、保存前净化后的状态不一定长期一致
+2. 组件层局部补丁越多，越难判断哪一层才是 authority
+3. 后续如果扩 BOM 表单字段，会继续复制这种分散收口模式
+
+#### 1.3 推荐实施策略
+
+本轮建议只做“表单 authority 收口”，而不是重写整条 BOM 链：
+
+1. 优先收口 BOM 表单初始化 / 输入链
+2. 让 `changeType / status / effectiveFrom / effectiveTo` 在表单进入可编辑态时就尽量成为规范值
+3. 保留 `normalizeBOMInput(...)` 作为保存前最终防线
+4. 保留 table / preview 展示层 normalize 作为展示兜底
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+2. `src/features/engineering/hooks/use-bom-form.ts`
+3. `src/features/engineering/hooks/use-bom-form-initialization.ts`
+4. `src/features/engineering/utils/product-code-normalization.ts`
+5. `src/features/engineering/services/bom-service.ts`
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要不是业务规则变化，而是 authority 调整：
+
+1. 若把组件层收口改得过猛，可能影响 BOM 表单当前交互
+2. 若误删保存层 normalize，会削弱最终防线
+3. 若顺手改展示层或后端模型，会扩大任务范围
+
+因此本轮必须坚持：
+
+1. 优先收口表单 authority
+2. 保存层 normalize 保留
+3. 展示层 normalize 保留
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. 新建 BOM 弹窗中四个字段输入/切换后保持规范值
+2. 编辑 BOM 弹窗回填后四个字段保持规范值
+3. 保存 BOM 时 payload 仍经过统一净化
+4. table / preview 展示不回退
+5. `pnpm exec tsc --noEmit` 通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不改后端 BOM 模型
+2. 不扩散到无关 engineering 模块
+3. 不顺手重构 BOM UI 结构
+
+#### 1.8 当前阶段结论
+
+722 当前的核心问题不是规则缺失，而是 `changeType / status / effectiveFrom / effectiveTo` 的 authority 仍然分散在初始化、输入、保存、展示四层。下一步最合理的实施方式，是优先把 BOM 表单初始化/输入链收口为更清晰的 authority，再保留保存层与展示层作为稳定兜底。
+
+### 1. plan：`use-bom-form.ts` 最小职责拆分
+
+日期：2026-04-13  
+状态：待批准
+
+#### 1.1 当前背景
+
+在 `use-bom-data.ts` 已完成最小职责拆分后，BOM 模块中第二个职责堆叠明显的点已经转移到 `src/features/engineering/hooks/use-bom-form.ts`：该文件同时承担表单初始化、选项读取、缺失分支处理、编辑态/创建态 reset 映射、change order 合法性清洗与 delta 跟踪。
+
+这意味着当前 BOM 表单 hook 既是“表单状态容器”，又是“options 读取器”，还是“初始化映射器”，继续堆叠下去会提高后续误改风险。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 当前最合理的下一阶段拆分点就是 `use-bom-form.ts`
+
+当前 BOM 前端链路中：
+
+1. `use-bom-data.ts` 已经被收口为薄 orchestration hook
+2. `use-bom-write-actions.ts` 职责清晰
+3. `use-bom-read-data.ts` / `use-bom-import-export.ts` 已独立
+
+因此下一阶段若继续做最小拆分，最值得处理的就是 `use-bom-form.ts`。
+
+##### 1.2.2 当前建议拆分后的结构
+
+本轮建议拆成三层：
+
+1. **`use-bom-form-options.ts`**
+   - 负责 products / materials / changeOrders 读取
+   - 负责缺失分支处理与相关日志
+
+2. **`use-bom-form-initialization.ts`**
+   - 负责创建态 / 编辑态初始值
+   - 负责表单 reset 映射
+   - 负责 `changeOrderId` 合法性清洗
+
+3. **`use-bom-form.ts`**
+   - 保留 `useForm`
+   - 保留 `useFieldArray`
+   - 保留 `useDeltaTracker`
+   - 组合 options 与 initialization 两层
+
+#### 1.3 推荐实施策略
+
+本轮建议只做前端 BOM form hook 层的最小拆分：
+
+1. 新增 `use-bom-form-options.ts`
+2. 新增 `use-bom-form-initialization.ts`
+3. 将 `use-bom-form.ts` 收口成表单 orchestration hook
+4. 保持 `BOMActionDialog` 调用接口尽量稳定
+
+#### 1.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/engineering/hooks/use-bom-form.ts`
+2. `src/features/engineering/hooks/use-bom-form-options.ts`（新增）
+3. `src/features/engineering/hooks/use-bom-form-initialization.ts`（新增）
+4. `src/features/engineering/components/bom-action-dialog.tsx`（仅必要时最小跟随）
+
+#### 1.5 风险与破坏性评估
+
+本轮风险主要在于拆分时不能破坏 BOM 表单行为：
+
+1. 若创建态与编辑态 reset 映射被拆乱，可能直接影响新建/编辑弹窗稳定性
+2. 若 delta tracker 组合关系变化过大，可能影响编辑保存语义
+3. 若 options 读取与清洗分支拆散后接口变化过多，会扩大 `BOMActionDialog` 改动面
+
+因此本轮必须坚持：
+
+1. 对外接口尽量稳定
+2. 初始化行为不变
+3. delta 语义不变
+
+#### 1.6 验证策略
+
+本轮验证至少覆盖：
+
+1. 新建 BOM 弹窗正常初始化
+2. 编辑 BOM 弹窗正常回填
+3. change order 联动清洗逻辑不回退
+4. `pnpm exec tsc --noEmit` 通过
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不改 BOM 表单 UI 结构
+2. 不扩散到 `use-bom-data.ts`
+3. 不抽后端 BOM 服务
+
+#### 1.8 当前阶段结论
+
+当前 BOM 模块继续做最小拆分的最合理路径，就是把 `use-bom-form.ts` 从“表单状态 + 选项读取 + 初始化映射 + 清洗 + delta 跟踪”的混杂状态收口为更清晰的 orchestration hook。下一步应只在 form hook 层拆出 options 与 initialization 两层，降低后续维护时对 BOM 弹窗行为误伤的风险。
+
 ### 1. plan：BOM 总成本显示为 `楼0.00` 的展示异常修复
 
 日期：2026-04-13  

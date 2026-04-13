@@ -1,5 +1,405 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-13 - fix：734 新建型号模板链路加固
+
+### 本轮目标
+
+让“新建型号”场景的模板解析 authority 与编辑态保持一致，避免创建态继续只依赖前端 `typeId -> parent chain -> template` 本地推断而再次出现模板误判。
+
+### 根因结论
+
+本轮确认上一轮虽然已经稳住了编辑态，但创建态仍保留另一套前端局部解析 authority：
+
+1. 用户选择分类后，前端会按当前 `productTypes` 递归父链解析模板
+2. 若当前 options 上下文不完整、模板缓存陈旧或模板绑定真实失效，创建态仍可能再次出现与编辑态相同的模板断裂问题
+3. 这样会导致创建态 / 编辑态对同一分类无法保证得到一致模板结果
+
+因此本轮关键不是继续给创建态叠加重试，而是**让创建态也优先消费后端 authoritative template resolution**。
+
+### 实现细节
+
+1. **新增创建态后端模板解析入口**
+   - 更新 `server/services/product_edit_read_service.go`
+   - 导出 `ProductTemplateResolutionResult`
+   - 新增 `ResolveProductTypeTemplate(typeID string)`
+   - 复用后端已有模板解析 authority，按 `typeId` 返回：
+     - `resolvedTemplateId`
+     - `resolvedTemplateKey`
+     - `templateResolutionSource`
+     - `templateResolutionError`
+
+2. **新增创建态模板解析 handler / route**
+   - 更新 `server/handlers/product_type.go`
+   - 新增 `GetProductTypeTemplateResolutionHandler`
+   - 更新 `server/routes/routes.go`
+   - 注册：
+     - `GET /api/v1/engineering/product-types/template-resolution?typeId=...`
+
+3. **前端新增创建态模板解析 service**
+   - 更新 `src/features/engineering/contracts/product-type-api-dto.ts`
+   - 更新 `src/features/engineering/services/product-type-service.ts`
+   - 新增 `getTemplateResolution(typeId)`
+
+4. **创建态改为优先消费后端 authority**
+   - 更新 `src/features/engineering/components/product-action-dialog.tsx`
+   - 创建态现在会先调用后端 `getTemplateResolution(typeId)`
+   - 若后端已解析出有效模板，则优先使用后端结果
+   - 仅在后端 authority 仍无法映射具体模板时，才退回本地 `getCreateProductTemplate(...)` 最小兜底
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未重构整个产品模板系统
+2. 未改产品规格 UI 结构
+3. 未改 BOM 模块
+4. 未处理无关样式 warning
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./services ./handlers ./routes -run "ProductType|Product|Template"`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+2. 后端产品类型 / 产品 / 模板相关定向测试通过
+
+### 当前阶段结论
+
+本轮已经把“新建型号”链路也接入后端模板解析 authority：创建态现在会优先使用后端按 `typeId` 返回的 resolved template 结果，而不是继续只靠前端本地父链推断。这样创建态与编辑态现在更接近同一套模板裁决语义，可显著降低同类模板断裂问题从编辑态转移到创建态的风险。
+
+## 2026-04-13 - fix：733 产品模板绑定根因级稳住
+
+### 本轮目标
+
+将产品模板绑定的 authority 从前端局部推断收口到后端读取链，避免编辑态与创建态因前后端重复解析、缓存漂移或父链不一致而再次出现 `Template Binding Broken` 误判。
+
+### 根因结论
+
+本轮确认真正的问题不是“前端没有重试”，而是**模板解析 authority 分散**：
+
+1. 后端此前只派生 `templateKey`
+2. 前端编辑弹窗又再次根据 `typeId / parentId / templateId / templateKey` 本地猜测具体模板
+3. 同一模板绑定语义被前后端重复推断，导致：
+   - 缓存时点不同会漂移
+   - 父链缺失与模板缺失原因无法 machine-readable 暴露
+   - 前端只能根据局部上下文做二次猜测
+
+因此本轮核心不是继续堆前端 fallback，而是**把 resolved template authority 收回后端**。
+
+### 实现细节
+
+1. **后端产品模型增加显式模板解析结果字段**
+   - 更新 `server/models/product.go`
+   - 新增非持久化字段：
+     - `ResolvedTemplateID`
+     - `ResolvedTemplateKey`
+     - `TemplateResolutionSource`
+     - `TemplateResolutionError`
+
+2. **后端产品 API DTO 暴露 resolved template authority**
+   - 更新 `server/handlers/product_api_dto.go`
+   - 更新 `server/handlers/product_mapper.go`
+   - 将后端解析结果显式传递到前端 contract
+
+3. **后端统一模板解析 authority**
+   - 更新 `server/services/product_edit_read_service.go`
+   - 将原本“只返回 `templateKey`”升级为完整解析结果：
+     - `resolvedTemplateId`
+     - `resolvedTemplateKey`
+     - `templateResolutionSource`
+     - `templateResolutionError`
+   - 失败原因现在可区分：
+     - `missingTypeId`
+     - `missingTypeBinding`
+     - `missingTemplateBinding`
+     - `cyclicTypeChain`
+     - `templateNotFound`
+     - `templateInactive`
+     - `templateKeyMissing`
+   - 同时继续保留 `templateKey` 兼容现有调用点
+
+4. **前端 Product contract 接入后端 resolved 字段**
+   - 更新 `src/features/engineering/data/schema.ts`
+   - 更新 `src/features/engineering/contracts/product-api-dto.ts`
+   - 更新 `src/features/engineering/adapters/product-api-adapter.ts`
+
+5. **产品编辑弹窗改为优先消费后端 authority**
+   - 更新 `src/features/engineering/components/product-action-dialog.tsx`
+   - 编辑态优先使用：
+     - `resolvedTemplateId`
+     - `resolvedTemplateKey`
+     - `templateResolutionSource`
+     - `templateResolutionError`
+   - 仅在后端 authority 仍无法映射具体模板时，才继续执行本地最小 fallback
+   - 保留现有红色错误态，但错误文案现在可带出后端解析结果
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未重构整个产品模板系统
+2. 未改产品规格 UI 结构
+3. 未改 BOM 模块
+4. 未处理无关样式 warning
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./services ./handlers -run "Product|Template"`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过
+2. 后端产品 / 模板相关定向测试通过
+
+### 当前阶段结论
+
+本轮已经把产品模板绑定的主 authority 从“前端 + 后端各自推断”收口到后端读取链：后端现在会返回显式 resolved template 结果与失败原因，前端则优先消费后端 authority，并只保留最小本地兜底。这样可以系统性降低模板绑定因缓存漂移、父链不一致或解析语义分散而再次出现误判的风险。
+
+## 2026-04-13 - fix：编辑产品规格 `Template Binding Broken`
+
+### 本轮目标
+
+修复“编辑产品规格”弹窗中由于模板绑定解析失败而出现 `Template Binding Broken` 的问题，避免后端模板绑定已更新但前端仍使用旧上下文元数据时误判为模板链断裂。
+
+### 根因结论
+
+本轮确认该问题并不只是一个单纯的前端提示问题，而是模板解析强依赖两类上下文：
+
+1. 当前弹窗传入的 `productTypes`
+2. 当前会话中的 `product templates` 列表缓存
+
+编辑态模板解析链路会先尝试：
+
+1. `typeId -> parent chain -> templateId -> template`
+2. 若失败，再尝试 `productTemplateKey -> concrete template`
+
+当当前弹窗上下文仍是旧分类树或旧模板缓存时，即使后台绑定已修正，前端仍可能把该产品类型误判为“无可解析模板绑定”，从而显示 `Template Binding Broken`。
+
+### 实现细节
+
+1. **增强产品编辑弹窗的模板解析 fallback**
+   - 更新 `src/features/engineering/components/product-action-dialog.tsx`
+   - 保留当前上下文解析优先级不变：
+     - 编辑态：先按 `type chain` / `productTemplateKey` 解析
+     - 创建态：先按 `type chain` 解析
+
+2. **当前上下文解析失败时，主动刷新元数据后重试**
+   - 新增 fresh fallback：
+     - `ProductTypeService.getProductTypes({ isOptions: true })`
+     - `productTemplateService.getTemplates({ fresh: true })`
+   - 若第一次解析失败，则使用最新 product types 与 templates 再解析一次
+   - 这样可以覆盖“后台已更新模板绑定，但前端仍停留在旧会话元数据”的场景
+
+3. **保留真实缺绑定时的错误态可见性**
+   - 若 fresh metadata 解析后仍然没有模板，则继续显示原有 `Template Binding Broken`
+   - 本轮没有把错误态静默吞掉，也没有把问题伪装成成功
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改产品规格 UI 结构
+2. 未重构整个产品模板系统
+3. 未改 BOM 模块
+4. 未处理无关样式 warning
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮通过在产品编辑弹窗中增加 fresh metadata fallback，修复了“模板绑定已经存在但当前前端上下文仍判定失败”的高概率问题，同时保留了真实缺模板绑定时的明确错误提示。这样可以优先修正你当前遇到的“还是模板”问题，但不会掩盖真正缺失的分类模板绑定。
+
+## 2026-04-13 - refactor：722 BOM 枚举/日期控制字段统一收口
+
+### 本轮目标
+
+收口 BOM 中 `changeType / status / effectiveFrom / effectiveTo` 的 authority，避免这组字段继续分散在初始化、输入、保存、展示四层各自局部修补。
+
+### 根因结论
+
+本轮确认 722 的真实问题不是“缺少规则”，而是“规则分散”：
+
+1. 底层 codec 已有 normalize
+2. 保存前 `normalizeBOMInput(...)` 已存在
+3. table / preview 展示层已有兜底 normalize
+4. 但 BOM 表单初始化与输入层此前仍在多个位置分散处理这组字段
+
+因此当前真正要修的不是新增另一套规则，而是**收口 BOM 表单 authority**。
+
+### 实现细节
+
+1. **新增 BOM control 字段统一 helper**
+   - 更新 `src/features/engineering/utils/product-code-normalization.ts`
+   - 新增 `normalizeBOMControlFieldPatch(...)`
+   - 统一收口：
+     - `changeType`
+     - `status`
+     - `changeOrderNo`
+     - `revisionNo`
+     - `siteCode`
+     - `effectiveFrom`
+     - `effectiveTo`
+     - `isDefaultSite`
+
+2. **收口 BOM 表单初始化层 authority**
+   - 更新 `src/features/engineering/hooks/use-bom-form-initialization.ts`
+   - 创建态 / 编辑态 reset 前统一走 `normalizeBOMControlFieldPatch(...)`
+   - 让表单进入可编辑态时，这组 control 字段就尽量已经是规范值
+
+3. **收口 BOM 表单输入层 authority**
+   - 更新 `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+   - `changeOrderId` 联动回填、select 输入、date 输入、siteCode 输入，统一改走 `normalizeBOMControlFieldPatch(...)`
+   - 减少组件内部对这组字段的分散 normalize 分支
+
+4. **保留保存层与展示层兜底不变**
+   - `src/features/engineering/services/bom-service.ts` 继续保留 `normalizeBOMInput(...)`
+   - `bom-table.tsx / bom-preview.tsx` 继续保留展示层 normalize
+   - 本轮不削弱原有最终防线
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未扩到 `items / substitutes`
+2. 未改 BOM 表格/预览的 UI 结构
+3. 未处理无关样式 warning
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把 BOM 中 `changeType / status / effectiveFrom / effectiveTo` 的 authority 从“初始化层 + 输入层分散处理”收口到更清晰的表单 control helper 上，同时保留保存层和展示层兜底。这意味着后续如果继续维护 BOM 表单，不需要再分别在多个组件分支中手动补 normalize，风险明显更低。
+
+## 2026-04-13 - refactor：`use-bom-form.ts` 最小职责拆分
+
+### 本轮目标
+
+在不改变 BOM 弹窗初始化行为、编辑态回填语义与 delta 跟踪语义的前提下，将 `use-bom-form.ts` 中混杂的选项读取与初始化映射拆出，让该文件回归表单 orchestration hook。
+
+### 实现细节
+
+1. **抽离 BOM 表单 options 层 hook**
+   - 新增 `src/features/engineering/hooks/use-bom-form-options.ts`
+   - 当前单独负责：
+     - products 选项读取
+     - materials 选项读取
+     - changeOrders 选项读取
+     - 相关缺失分支处理
+     - 相关日志上报
+
+2. **抽离 BOM 表单 initialization 层 hook**
+   - 新增 `src/features/engineering/hooks/use-bom-form-initialization.ts`
+   - 当前单独负责：
+     - 创建态初始值映射
+     - 编辑态回填/reset
+     - `changeOrderId` 合法性清洗
+     - reset 后 tracker 同步
+
+3. **收口 `use-bom-form.ts` 为薄 orchestration hook**
+   - 更新 `src/features/engineering/hooks/use-bom-form.ts`
+   - 当前保留：
+     - `useForm`
+     - `useFieldArray`
+     - `useDeltaTracker`
+   - 当前组合：
+     - `useBOMFormOptions`
+     - `useBOMFormInitialization`
+   - 对外继续向 `BOMActionDialog` 暴露稳定接口，避免扩大调用点改动面
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改 BOM 表单 UI 结构
+2. 未扩散到 `use-bom-data.ts`
+3. 未抽后端 BOM 服务
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把 `use-bom-form.ts` 从“表单状态 + 选项读取 + 初始化映射 + 清洗 + delta 跟踪”混杂状态收口为更清晰的 orchestration hook。现在 BOM 弹窗的 options 读取与 initialization 逻辑都拥有独立 hook，后续调整其中一层时，不再需要在单个大 form hook 中冒险混改其它职责。
+
+## 2026-04-13 - fix：BOM 新建弹窗总成本显示为 `楼0.00`
+
+### 本轮目标
+
+修复 BOM 新建弹窗中“预估总成本”与工段分布概览成本显示为 `楼0.00` 的异常，确保 BOM 成本概览展示不再被错误硬编码前缀污染。
+
+### 根因结论
+
+本轮已确认该问题不是 BOM 成本计算链错误，而是 `summary-panel.tsx` 的展示层硬编码异常：
+
+1. 总成本显示被写成了 `楼{totalCost.toFixed(2)}`
+2. 分段成本显示被写成了 `楼{sectionCost.toFixed(1)}`
+
+因此本次异常属于展示层污染，不涉及成本公式本身。
+
+### 实现细节
+
+1. **修复成本展示前缀**
+   - 更新 `src/features/engineering/components/bom-editor/summary-panel.tsx`
+   - 移除总成本与分段成本前面的错误硬编码字符 `楼`
+   - 保持 `totalCost` 与 `sectionCost` 的计算逻辑完全不变
+
+2. **顺手修复同文件的真实依赖错误**
+   - 将 `resolveItemValue` 包装为 `useCallback`
+   - 补齐 `totalCost` 的 `useMemo` 依赖
+   - 避免继续留下 React Compiler / hooks 依赖不一致问题
+
+### 当前实现边界
+
+本轮明确保持：
+
+1. 未改 BOM item 的价格或用量计算逻辑
+2. 未改 BOM 表单结构
+3. 未扩散到后端 BOM 读写链路
+
+### 验证结果
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 前端 TypeScript 编译校验通过。
+
+### 当前阶段结论
+
+本轮已经把 BOM 新建弹窗中的 `楼0.00` 展示异常收口为一次明确的最小修复：问题根因在展示层硬编码，而不是成本计算链。现在总成本与分段成本的显示已经恢复正常，同时同文件的真实依赖错误也一并收掉，避免后续继续产生无关噪音。
+
 ## 2026-04-13 - refactor：`use-bom-data.ts` 最小职责拆分
 
 ### 本轮目标

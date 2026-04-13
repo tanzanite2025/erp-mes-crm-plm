@@ -158,6 +158,45 @@ export function normalizeEngineeringBomEffectiveDate(value?: string | null): str
   return normalizeBomEffectiveDate(value)
 }
 
+export function normalizeBOMControlFieldPatch<T extends {
+  changeType?: string | null
+  status?: string | null
+  changeOrderNo?: string | null
+  revisionNo?: string | null
+  siteCode?: string | null
+  effectiveFrom?: string | null
+  effectiveTo?: string | null
+  isDefaultSite?: boolean | null
+}>(data: T): T {
+  const normalized = { ...data } as T
+
+  if ('changeType' in data) {
+    normalized.changeType = normalizeEngineeringBomChangeType(data.changeType) as T['changeType']
+  }
+  if ('status' in data) {
+    normalized.status = normalizeEngineeringBomStatus(data.status) as T['status']
+  }
+  if ('changeOrderNo' in data) {
+    normalized.changeOrderNo = normalizeEngineeringChangeOrderNo(data.changeOrderNo) as T['changeOrderNo']
+  }
+  if ('revisionNo' in data) {
+    normalized.revisionNo = normalizeEngineeringRevisionNo(data.revisionNo) as T['revisionNo']
+  }
+  if ('effectiveFrom' in data) {
+    normalized.effectiveFrom = (normalizeEngineeringBomEffectiveDate(data.effectiveFrom) || '') as T['effectiveFrom']
+  }
+  if ('effectiveTo' in data) {
+    normalized.effectiveTo = (normalizeEngineeringBomEffectiveDate(data.effectiveTo) || '') as T['effectiveTo']
+  }
+  if ('siteCode' in data) {
+    const normalizedSiteCode = normalizeEngineeringSiteCode(data.siteCode)
+    normalized.siteCode = normalizedSiteCode as T['siteCode']
+    normalized.isDefaultSite = (data.isDefaultSite ?? !normalizedSiteCode) as T['isDefaultSite']
+  }
+
+  return normalized
+}
+
 export function normalizeEngineeringRoutingVersionControlTag(
   value?: string | null,
   fallback = 'V1.0.0.Draft'

@@ -17,7 +17,7 @@ import {
 import { Form } from '@/components/ui/form'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { getEffectiveTemplate, getLocalizedSpecComponents } from './specs'
+import { type ProductEditTemplateResolution, getLocalizedSpecComponents, resolveEffectiveTemplate } from './specs'
 import { ProductBasicInfo } from './product/product-basic-info'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
@@ -25,6 +25,8 @@ import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
 import { getCreateProductTemplate } from '../utils/product-create-template-resolution'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { ProductTypeService } from '../services/product-type-service'
+import { productTemplateService } from '../services/product-template-service'
 
 const logger = createLogger('ProductActionDialog')
 
@@ -88,6 +90,10 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
   const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)
   const [templateResolveError, setTemplateResolveError] = useState<string | null>(null)
+  const resolvedTemplateKey = currentRow?.resolvedTemplateKey?.trim() || currentRow?.templateKey?.trim() || ''
+  const resolvedTemplateId = currentRow?.resolvedTemplateId?.trim() || ''
+  const templateResolutionError = currentRow?.templateResolutionError?.trim() || ''
+  const templateResolutionSource = currentRow?.templateResolutionSource?.trim() || ''
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -109,7 +115,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     let cancelled = false
 
     const resolveBoundTemplate = async () => {
-      if (!watchedTypeId && !currentRow?.templateKey) {
+      if (!watchedTypeId && !resolvedTemplateKey && !resolvedTemplateId) {
         if (!cancelled) {
           setBoundTemplate(null)
           setTemplateResolveError(null)
@@ -118,7 +124,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       }
 
       const selectedType = productTypes.find((type) => type.id === watchedTypeId)
-      if (!selectedType && !currentRow?.templateKey) {
+      if (!selectedType && !resolvedTemplateKey && !resolvedTemplateId) {
         if (!cancelled) {
           setBoundTemplate(null)
           setTemplateResolveError(`Template binding resolution failed: product type ${watchedTypeId} was not found in the current dialog context.`)
@@ -130,32 +136,118 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
       }
 
       try {
-        const result = isEdit
-          ? await getEffectiveTemplate({
+        type ResolvedTemplateResult = ProductEditTemplateResolution | {
+          template: ProductTemplate | null
+          source: string
+        }
+
+        const resolveFromBackendAuthority = async () => {
+          if (!isEdit) return null
+
+          const templates = await productTemplateService.getTemplates()
+          const template = templates.find((item) => item.id === resolvedTemplateId)
+            || templates.find((item) => item.componentKey.trim().toUpperCase() === resolvedTemplateKey.toUpperCase())
+            || null
+
+          if (template) {
+            return {
+              template,
+              source: templateResolutionSource || 'backendResolvedTemplate',
+            }
+          }
+
+          return null
+        }
+
+        const resolveFromCurrentContext = async () => {
+          if (isEdit) {
+            const templates = await productTemplateService.getTemplates()
+            return resolveEffectiveTemplate(templates, {
+              productTypes,
+              typeId: watchedTypeId,
+              productTemplateKey: resolvedTemplateKey,
+            })
+          }
+
+          const backendResolution = await ProductTypeService.getTemplateResolution(watchedTypeId || '')
+          const templates = await productTemplateService.getTemplates()
+          const backendTemplate = templates.find((item) => item.id === backendResolution.resolvedTemplateId)
+            || templates.find((item) => item.componentKey.trim().toUpperCase() === (backendResolution.resolvedTemplateKey || '').toUpperCase())
+            || null
+
+          if (backendTemplate) {
+            return {
+              template: backendTemplate,
+              source: backendResolution.templateResolutionSource || 'backendCreateTypeResolution',
+            }
+          }
+
+          return getCreateProductTemplate({
             productTypes,
             typeId: watchedTypeId,
-            productTemplateKey: currentRow?.templateKey,
           })
-          : await getCreateProductTemplate({
-            productTypes,
+        }
+
+        const resolveFromFreshContext = async () => {
+          const [freshProductTypes, freshTemplates] = await Promise.all([
+            ProductTypeService.getProductTypes({ isOptions: true }),
+            productTemplateService.getTemplates({ fresh: true }),
+          ])
+
+          if (isEdit) {
+            return resolveEffectiveTemplate(freshTemplates, {
+              productTypes: freshProductTypes,
+              typeId: watchedTypeId,
+              productTemplateKey: resolvedTemplateKey,
+            })
+          }
+
+          return getCreateProductTemplate({
+            productTypes: freshProductTypes,
             typeId: watchedTypeId,
           })
+        }
+
+        let result: ResolvedTemplateResult | null = await resolveFromBackendAuthority()
+        if (!result) {
+          result = await resolveFromCurrentContext()
+        }
+
+        if (!result?.template) {
+          logger.warn('Template binding unresolved in current dialog context, retrying with fresh metadata', {
+            productTypeId: selectedType?.id,
+            productTemplateKey: resolvedTemplateKey,
+            resolvedTemplateId,
+            templateResolutionError,
+            mode: isEdit ? 'edit' : 'create',
+          })
+          result = await resolveFromFreshContext()
+        }
+
         if (cancelled) return
+
+        if (!result) {
+          setBoundTemplate(null)
+          setTemplateResolveError('Template binding resolution failed: unknown resolution state.')
+          return
+        }
 
         const template = result.template
         if (!template) {
           const selectedTypeLabel = selectedType
             ? `${selectedType.name} (${selectedType.id})`
             : `unknown product type (${watchedTypeId || 'missing'})`
-          const message = isEdit && currentRow?.templateKey
-            ? `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding, and product templateKey ${currentRow.templateKey} could not be mapped to a concrete template.`
+          const message = isEdit && (resolvedTemplateKey || templateResolutionError)
+            ? `Template binding resolution failed: product type ${selectedTypeLabel} could not resolve an effective template. backendResolution=${templateResolutionError || 'unknown'} templateKey=${resolvedTemplateKey || 'missing'}.`
             : `Template binding resolution failed: product type ${selectedTypeLabel} has no resolvable template binding in its category chain.`
           setBoundTemplate(null)
           setTemplateResolveError(message)
           logger.error('Template binding resolution failed: effective template could not be resolved', {
             productTypeId: selectedType?.id,
             templateId: selectedType?.templateId,
-            productTemplateKey: isEdit ? currentRow?.templateKey : undefined,
+            productTemplateKey: isEdit ? resolvedTemplateKey : undefined,
+            resolvedTemplateId: isEdit ? resolvedTemplateId : undefined,
+            templateResolutionError: isEdit ? templateResolutionError : undefined,
             mode: isEdit ? 'edit' : 'create',
           })
           return
@@ -186,7 +278,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     return () => {
       cancelled = true
     }
-  }, [currentRow?.templateKey, isEdit, productTypes, watchedTypeId])
+  }, [currentRow?.resolvedTemplateId, currentRow?.resolvedTemplateKey, currentRow?.templateKey, currentRow?.templateResolutionError, currentRow?.templateResolutionSource, isEdit, productTypes, watchedTypeId, resolvedTemplateId, resolvedTemplateKey, templateResolutionError, templateResolutionSource])
 
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null

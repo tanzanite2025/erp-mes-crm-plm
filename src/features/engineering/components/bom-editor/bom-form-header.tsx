@@ -8,12 +8,7 @@ import { cn } from '@/lib/utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { type BOM, type ChangeOrder, type Product } from '../../data/schema'
 import {
-  normalizeEngineeringBomChangeType,
-  normalizeEngineeringBomEffectiveDate,
-  normalizeEngineeringBomStatus,
-  normalizeEngineeringChangeOrderNo,
-  normalizeEngineeringRevisionNo,
-  normalizeEngineeringSiteCode,
+  normalizeBOMControlFieldPatch,
 } from '../../utils/product-code-normalization'
 import { getProductAttributes } from '../../utils/product-utils'
 
@@ -177,23 +172,32 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
       failLoudly(error, 'BOMFormHeader.changeOrderNo')
       throw error
     }
-    form.setValue('changeOrderNo', normalizeEngineeringChangeOrderNo(selected.changeOrderNo), { shouldDirty: true })
+    const normalizedPatch = normalizeBOMControlFieldPatch({
+      changeOrderNo: selected.changeOrderNo,
+      changeType: selected.changeType,
+      siteCode: selected.siteCode,
+      isDefaultSite: selected.isDefaultSite,
+      revisionNo: selected.revisionNo,
+      effectiveFrom: selected.effectiveFrom,
+      effectiveTo: selected.effectiveTo,
+    })
+
+    form.setValue('changeOrderNo', normalizedPatch.changeOrderNo || '', { shouldDirty: true })
     if (selected.changeType) {
-      form.setValue('changeType', normalizeEngineeringBomChangeType(selected.changeType), { shouldDirty: true })
+      form.setValue('changeType', normalizedPatch.changeType || 'MANUAL', { shouldDirty: true })
     }
     if (selected.siteCode !== undefined) {
-      const normalizedSiteCode = normalizeEngineeringSiteCode(selected.siteCode)
-      form.setValue('siteCode', normalizedSiteCode, { shouldDirty: true })
-      form.setValue('isDefaultSite', selected.isDefaultSite ?? !normalizedSiteCode, { shouldDirty: true })
+      form.setValue('siteCode', normalizedPatch.siteCode || '', { shouldDirty: true })
+      form.setValue('isDefaultSite', Boolean(normalizedPatch.isDefaultSite), { shouldDirty: true })
     }
     if (selected.revisionNo) {
-      form.setValue('revisionNo', normalizeEngineeringRevisionNo(selected.revisionNo), { shouldDirty: true })
+      form.setValue('revisionNo', normalizedPatch.revisionNo || '', { shouldDirty: true })
     }
     if (selected.effectiveFrom) {
-      form.setValue('effectiveFrom', normalizeEngineeringBomEffectiveDate(selected.effectiveFrom), { shouldDirty: true })
+      form.setValue('effectiveFrom', normalizedPatch.effectiveFrom || '', { shouldDirty: true })
     }
     if (selected.effectiveTo) {
-      form.setValue('effectiveTo', normalizeEngineeringBomEffectiveDate(selected.effectiveTo), { shouldDirty: true })
+      form.setValue('effectiveTo', normalizedPatch.effectiveTo || '', { shouldDirty: true })
     }
   }
 
@@ -227,11 +231,11 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                           return
                         }
                         if (fieldConfig.name === 'changeType') {
-                          field.onChange(normalizeEngineeringBomChangeType(value))
+                          field.onChange(normalizeBOMControlFieldPatch({ changeType: value }).changeType)
                           return
                         }
                         if (fieldConfig.name === 'status') {
-                          field.onChange(normalizeEngineeringBomStatus(value))
+                          field.onChange(normalizeBOMControlFieldPatch({ status: value }).status)
                           return
                         }
                         field.onChange(value)
@@ -257,24 +261,31 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                           const nextValue = event.target.value
 
                           if (fieldConfig.name === 'changeOrderNo') {
-                            field.onChange(normalizeEngineeringChangeOrderNo(nextValue))
+                            field.onChange(normalizeBOMControlFieldPatch({ changeOrderNo: nextValue }).changeOrderNo)
                             return
                           }
 
                           if (fieldConfig.name === 'siteCode') {
-                            const normalizedSiteCode = normalizeEngineeringSiteCode(nextValue)
-                            field.onChange(normalizedSiteCode)
-                            form.setValue('isDefaultSite', normalizedSiteCode === '', { shouldDirty: true })
+                            const normalizedPatch = normalizeBOMControlFieldPatch({
+                              siteCode: nextValue,
+                              isDefaultSite: nextValue.trim() === '',
+                            })
+                            field.onChange(normalizedPatch.siteCode)
+                            form.setValue('isDefaultSite', Boolean(normalizedPatch.isDefaultSite), { shouldDirty: true })
                             return
                           }
 
                           if (fieldConfig.name === 'revisionNo') {
-                            field.onChange(normalizeEngineeringRevisionNo(nextValue))
+                            field.onChange(normalizeBOMControlFieldPatch({ revisionNo: nextValue }).revisionNo)
                             return
                           }
 
                           if (fieldConfig.name === 'effectiveFrom' || fieldConfig.name === 'effectiveTo') {
-                            field.onChange(normalizeEngineeringBomEffectiveDate(nextValue))
+                            field.onChange(
+                              fieldConfig.name === 'effectiveFrom'
+                                ? normalizeBOMControlFieldPatch({ effectiveFrom: nextValue }).effectiveFrom
+                                : normalizeBOMControlFieldPatch({ effectiveTo: nextValue }).effectiveTo
+                            )
                             return
                           }
 

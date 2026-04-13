@@ -72,6 +72,10 @@ export const productSchema = z.object({
   })).default([]),
   status: z.enum(['Active', 'Draft', 'Archived']).default('Active'),
   templateKey: z.string().optional(),
+  resolvedTemplateId: z.string().optional(),
+  resolvedTemplateKey: z.string().optional(),
+  templateResolutionSource: z.string().optional(),
+  templateResolutionError: z.string().optional(),
   createdAt: z.string(),
   version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)

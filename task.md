@@ -110,30 +110,89 @@
     - [x] 与已建产品编辑读取链保持明确命名区分，禁止混用
   - [x] 已确认本轮优先涉及文件：
     - [x] `src/features/engineering/components/specs/index.ts`
-    - [x] `src/features/engineering/components/product-action-dialog.tsx`
     - [x] 必要时新增 `src/features/engineering` 下专门承载新增型号模板读取链的文件
   - [x] 已确认本轮风险控制要求：
     - [x] 新增态不得依赖编辑态的历史产品补全语义
     - [x] 编辑态不得回退为仅按当前表单分类实时解析
     - [x] 必须让两条路径在命名、调用点、测试上都能明显区分
-  - [x] 已确认本轮非目标边界：
-    - [x] 不改产品模板管理 UI
-    - [x] 不顺手重构规格组件本身
-    - [x] 不扩散到后端产品写入链路
-  - [x] 已完成本轮执行：
-    - [x] 已抽离新增型号模板读取链到独立文件/入口
-    - [x] 已调整创建态与编辑态调用点，明确两条路径不混用
-    - [x] 已执行定向前端校验并更新 `walkthrough.md`
+  - [x] 已确认本轮建议实施范围：
+    - [x] 先修正前端/后端模板绑定解析不一致或缺失的根因
+    - [x] 保持产品规格编辑弹窗在模板缺失时给出明确错误态
+    - [x] 不顺手重构整个产品模板系统
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 修复模板绑定解析链路或 fallback 逻辑
+    - [ ] 验证 `山地车圈` 编辑弹窗可正确解析规格模板
+    - [ ] 更新 `walkthrough.md` 并记录验证结果
 
-- [ ] 727 快捷扫描侧边栏 i18n 系统化收口规划（中文），确保 quick-actions 模块不再出现中文壳层 + 英文卡片内容的混搭。
-  - [x] 已确认当前真实问题不是语言切换失效，而是 quick-actions 模块没有系统化接入 i18n
-  - [x] 已确认当前主要根因：
-    - [x] `src/features/quick-actions/data/quick-action-registry.ts` 直接硬编码英文 `title / description`
-    - [x] `src/features/quick-actions/components/quick-action-drawer.tsx` 直接硬编码中文标题、描述、空态、按钮文案
-    - [x] `src/features/quick-actions/components/quick-action-handle.tsx` 直接硬编码中文 `aria-label` 与按钮文字
+- [ ] 733 产品模板绑定根因级稳住规划（中文），将模板解析 authority 从前端局部推断收口到后端一致性校验与显式解析结果。
+  - [x] 已确认当前仅靠前端 fresh metadata fallback 还不够做到“任何情况都不再出问题”
+  - [x] 已确认当前剩余风险点：
+    - [x] 产品分类链真实缺失 `templateId`
+    - [x] `templateId` 指向不存在或不可用模板
+    - [x] 编辑态 `templateKey` 派生与模板真实数据不一致
+    - [x] 前后端重复解析同一模板绑定语义，存在 authority 分散
+  - [x] 已确认本轮根因级目标：
+    - [x] 在后端增加模板绑定一致性校验
+    - [x] 在产品读取链返回显式 resolved template 信息
+    - [x] 前端优先消费后端 authority，减少本地重复猜测
+  - [x] 已确认建议实施边界：
+    - [x] 优先加固产品类型父链模板解析与产品编辑读取链
+    - [x] 保留前端错误态展示，但不再让前端成为模板绑定 authority
+    - [x] 不扩成整套模板系统重构
+  - [x] 已确认优先涉及文件：
+    - [x] `server/services/product_edit_read_service.go`
+    - [x] `server/services/product_master_service.go`
+    - [x] 产品类型 / 产品模板相关 handler、service、DTO、mapper
+    - [x] `src/features/engineering/components/product-action-dialog.tsx`
+    - [x] 必要时联动前端 product contract / adapter
+  - [x] 已确认验证目标：
+    - [x] 编辑态与创建态的模板解析结果一致
+    - [x] 后端对无效分类模板绑定给出明确错误
+    - [x] 前端不再因为本地旧上下文与后端 authority 漂移而误判
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 实施后端模板绑定一致性校验
+    - [ ] 实施产品读取链 resolved template authority 收口
+    - [ ] 前端切换为优先消费后端解析结果
+    - [ ] 执行定向 TS / Go 校验并更新 `walkthrough.md`
+
+- [ ] 734 新建型号模板链路加固规划（中文），让创建态模板解析 authority 与编辑态保持一致，避免创建态继续只靠前端父链推断。
+  - [x] 已确认当前编辑态 authority 已收口到后端读取链，但创建态仍主要依赖前端按 `typeId -> parent chain -> template` 推断
+  - [x] 已确认当前创建态仍存在的风险点：
+    - [x] 产品分类父链在前端 options 上下文中不完整
+    - [x] `templateId` 指向不存在或不可用模板
+    - [x] 创建态与编辑态对同一分类给出不同模板结果
+    - [x] 前端缓存 / 上下文漂移再次导致模板误判
+  - [x] 已确认本轮根因级目标：
+    - [x] 为创建态提供后端 authoritative template resolution
+    - [x] 让创建态与编辑态消费同一套模板裁决语义
+    - [x] 保留前端错误态展示，但不再让创建态承担主 authority
+  - [x] 已确认建议实施方向：
+    - [x] 优先新增或扩展后端创建态模板解析入口（按 `typeId` 返回 resolved template result）
+    - [x] 或在产品类型 options 返回中直接附带该分类的有效模板解析结果
+    - [x] 前端创建态优先消费后端解析结果，仅保留最小本地兜底
+  - [x] 已确认优先涉及文件：
+    - [x] 产品类型 / 模板相关后端 service、handler、route、DTO
+    - [x] `src/features/engineering/components/product-action-dialog.tsx`
+    - [x] `src/features/engineering/utils/product-create-template-resolution.ts`
+    - [x] 必要时联动 `ProductTypeService` / 前端 contract / adapter
+  - [x] 已确认验证目标：
+    - [x] 创建态选择分类时能稳定解析模板
+    - [x] 创建态与编辑态对同一分类返回一致模板结果
+    - [x] 模板真实缺失时可给出明确错误而非误判
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 实施创建态后端模板解析 authority
+    - [ ] 前端创建态切换为优先消费后端结果
+    - [ ] 执行定向 TS / Go 校验并更新 `walkthrough.md`
+- [ ] 731 `use-bom-form.ts` 最小职责拆分规划（中文），确保 BOM 表单初始化、选项读取、状态修正与 delta 跟踪不再继续堆叠在同一个 form hook 中。
+  - [x] 已确认当前最值得作为下一阶段拆分点的是 `src/features/engineering/hooks/use-bom-form.ts`
+  - [x] 已确认当前职责混杂点：
+    - [x] 表单初始化与选项读取混杂在 `useBOMForm` 中
+    - [x] 表单状态修正与 delta 跟踪混杂在 `useBOMForm` 中
+    - [x] `useBOMForm` 内部存在多个不相关的副作用
   - [x] 已确认当前风险点：
-    - [x] 若只把英文卡片改成中文，会继续留下英文模式不完整的问题
-    - [x] quick-actions 后续新增动作时，若不统一口径，极易继续出现中英硬编码混搭
+    - [x] 若继续堆叠职责，后续维护将变得困难
+    - [x] 若不及时拆分职责，将导致 BOM 表单逻辑变得难以理解
+    - [x] 若不及时拆分职责，将导致 BOM 表单 bug 难以定位
     - [x] 当前模块的数据层与展示层都未统一接入 `useLanguage / t(...)`
   - [x] 已确认本轮建议实施边界：
     - [x] quick-action registry 不再存最终展示文案，改存 i18n key
@@ -176,105 +235,37 @@
     - [x] `src/features/engineering/services/bom-service.ts`
     - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
     - [x] `server/handlers/bom.go`
-    - [x] `server/services/engineering_master_service.go`
-  - [x] 已确认本轮建议实施边界：
-    - [x] 先修 BOM 列表接口或契约根因，不能只在前端吞掉错误
-    - [x] 前端需把“接口失败”和“空数据”区分开，避免继续用 `[CRITICAL]` 误伤页面
-    - [x] 保持 BOM 管理页核心交互不变，只修读取链与错误呈现
-  - [x] 已确认本轮非目标边界：
-    - [x] 不顺手重构 BOM 表格或编辑弹窗结构
-    - [x] 不扩散到无关 engineering 模块
-    - [x] 不处理与本次 500 无关的 warning
-  - [x] 已完成本轮执行：
-    - [x] 已修复 `/engineering/bom` 前后端契约根因中的 null 字段兼容问题
-    - [x] 已调整 BOM 页面读取链错误分支，避免整页崩溃
-    - [x] 已执行定向前端校验并更新 `walkthrough.md`
-
-- [ ] 729 `use-bom-data.ts` 最小职责拆分规划（中文），确保 BOM 读取、写入、导入导出不再继续堆叠在同一个 orchestration hook 中。
-  - [x] 已确认当前最需要拆分的文件是 `src/features/engineering/hooks/use-bom-data.ts`
-  - [x] 已确认当前职责混杂点：
-    - [x] BOM 列表 / 产品 / 物料读取 query
-    - [x] 读取错误分支与 toast / logger
-    - [x] save / delete 编排
-    - [x] Excel 导入导出
-    - [x] 导入后的 BOM item 二次加工与校验
-  - [x] 已确认本轮建议拆分边界：
-    - [x] 抽 `use-bom-read-data.ts`，只负责读取 query、isLoading、loadError 与数据分流
-    - [x] 抽 `use-bom-import-export.ts`，只负责 BOM 模板下载、Excel 导入解析与导入后加工
-    - [x] 保留 `use-bom-write-actions.ts` 继续负责 save / delete mutation
-    - [x] `use-bom-data.ts` 收口成薄 orchestration hook，对外返回接口尽量保持稳定
-  - [x] 已确认本轮优先涉及文件：
-    - [x] `src/features/engineering/hooks/use-bom-data.ts`
-    - [x] `src/features/engineering/hooks/use-bom-write-actions.ts`
-    - [x] 必要时新增 `use-bom-read-data.ts`
-    - [x] 必要时新增 `use-bom-import-export.ts`
-  - [x] 已确认本轮风险控制要求：
-    - [x] 保持 `BOMMgmt` 调用接口尽量不变
-    - [x] 不改变 BOM 页面已修好的错误态逻辑
-    - [x] 不顺手改 BOM 表格、弹窗与后端服务
-  - [x] 已确认本轮非目标边界：
-    - [x] 不抽后端 `engineering_master_service.go`
-    - [x] 不重构 BOM UI 组件目录
-    - [x] 不扩散到 use-bom-form.ts
-  - [x] 已完成本轮执行：
-    - [x] 已拆出 `use-bom-read-data.ts`
-    - [x] 已拆出 `use-bom-import-export.ts`
-    - [x] 已收口 `use-bom-data.ts` 并执行定向前端校验
-
-- [ ] 730 BOM 新建弹窗“总成本显示为 楼0.00”修复规划（中文），确保 BOM 成本概览卡片与分段成本展示不再被错误硬编码前缀污染。
-  - [x] 已确认当前真实问题不是成本计算错误，而是展示字符串硬编码异常
-  - [x] 已确认当前根因位置：
-    - [x] `src/features/engineering/components/bom-editor/summary-panel.tsx`
-    - [x] 总成本当前直接渲染为 `楼{totalCost.toFixed(2)}`
-    - [x] 分段成本当前直接渲染为 `楼{sectionCost.toFixed(1)}`
-  - [x] 已确认当前影响范围：
-    - [x] 新建 BOM 弹窗中的总成本卡片
-    - [x] 工段分布概览中的分段成本显示
-    - [x] 当前未发现是 BOM 数值计算链问题
-  - [x] 已确认本轮建议实施边界：
-    - [x] 只修 `summary-panel.tsx` 的成本展示格式
-    - [x] 不改成本计算公式
-    - [x] 如有必要，仅补最小 i18n / 格式化收口，不扩散到其它 BOM 组件
-  - [x] 已确认本轮非目标边界：
-    - [x] 不改 BOM item 的价格或用量计算逻辑
-    - [x] 不改 BOM 表单结构
-    - [x] 不扩散到后端 BOM 读写链路
-  - [ ] 待你确认后执行下一阶段：
-    - [ ] 修复 BOM 总成本与分段成本的展示前缀
-    - [ ] 执行定向前端校验并更新 `walkthrough.md`
 - [ ] 722 BOM 剩余枚举/日期控制字段统一收口规划（中文），记录 changeType/status/effectiveFrom/effectiveTo 的排查结论、推荐实施范围与待确认执行项。
   - [x] 已确认本轮最明确的字段包括：
     - [x] `changeType`
     - [x] `status`
     - [x] `effectiveFrom`
     - [x] `effectiveTo`
-  - [x] 已确认当前并非完全无规则，而是规则主要停留在底层 codec 与展示侧：
+  - [x] 已确认当前并非完全无规则，而是 authority 分散：
     - [x] `src/lib/codecs/code-normalization.ts` 已提供 `normalizeBomChangeType / normalizeBomStatus / normalizeBomEffectiveDate`
     - [x] `src/features/engineering/components/bom-mgmt/bom-table.tsx` 已在展示侧使用上述 helper
     - [x] `src/features/engineering/components/bom-mgmt/bom-preview.tsx` 已在展示侧使用上述 helper
     - [x] `src/features/engineering/data/schema.ts` 已对 `changeType / status / effectiveFrom / effectiveTo` 定义约束或默认值
-  - [x] 已确认当前真实问题不是“字段缺少规则”，而是“BOM 侧仍未把这组字段接回统一输入/保存入口”：
-    - [x] `use-bom-form.ts` 默认值仍直接写死 `changeType: 'MANUAL' / status: 'active'`
-    - [x] `bom-form-header.tsx` 的 `changeType` 与日期输入目前未统一走 BOM helper
-    - [x] `bom-mgmt.tsx` 提交前只统一了 `normalizeBOMInput(...)`，但该 helper 尚未纳入这组字段
-    - [x] `bom-service.ts` 保存边界当前仍以 `trimToNull` 为主，未明确复用 BOM 枚举/日期 helper
-  - [x] 已确认本轮推荐方向：
-    - [x] 为 BOM 剩余枚举/日期控制字段补统一 helper 入口
-    - [x] 收口默认值、输入边界、提交前 payload、service 保存边界
-    - [x] 继续沿用前面 `719 / 720` 的 BOM helper 收口方式，而不是把规则继续散在表格/预览/表单中
+  - [x] 已确认当前真实问题不是“字段缺少规则”，而是“BOM 侧仍未把这组字段收口到单一 authority”：
+    - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx` 仍在组件内分散处理 `changeType / status / effectiveFrom / effectiveTo`
+    - [x] `src/features/engineering/utils/product-code-normalization.ts` 虽然提供了 `normalizeBOMInput(...)`，但主要发生在保存前
+    - [x] 创建态默认值、编辑态回填、输入时 normalize、保存前 sanitize、展示层 normalize 目前仍分散在多个层级
+  - [x] 已确认当前主要风险点：
+    - [x] 若继续在 `bom-form-header.tsx` 内局部补丁，后续很难保证初始化/输入/保存三层语义一致
+    - [x] 若只依赖保存前 `normalizeBOMInput(...)`，UI 层仍可能长期保留不规范中间态
+    - [x] 若未来继续扩充 BOM 表单字段，分散 authority 会继续放大维护成本
+  - [x] 已确认本轮建议实施范围：
+    - [x] 优先收口 BOM 表单输入链
+    - [x] 保留保存前 `normalizeBOMInput(...)` 作为最终防线
+    - [x] 保留 table / preview 展示层 normalize 作为展示兜底
+    - [x] 尽量把组件层分散字段处理下沉到更稳定的表单 authority
   - [x] 已确认本轮优先涉及文件：
-    - [x] `src/features/engineering/utils/product-code-normalization.ts`
-    - [x] `src/features/engineering/hooks/use-bom-form.ts`
     - [x] `src/features/engineering/components/bom-editor/bom-form-header.tsx`
+    - [x] `src/features/engineering/hooks/use-bom-form.ts`
+    - [x] `src/features/engineering/hooks/use-bom-form-initialization.ts`
     - [x] `src/features/engineering/tabs/bom-mgmt.tsx`
     - [x] `src/features/engineering/services/bom-service.ts`
   - [x] 已确认本轮非目标边界：
     - [x] 不扩到 `items / substitutes`
     - [x] 不改 BOM 表格/预览的 UI 结构
-    - [x] 不顺手扩成 routing 或 Product 主线调整
     - [x] 不处理无关样式 warning
-  - [ ] 待你确认后执行下一阶段：
-    - [ ] 为 `changeType / status / effectiveFrom / effectiveTo` 增加 BOM 统一 helper
-    - [ ] 收口 BOM 默认值、输入边界、提交前 payload、service 保存边界
-    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
-

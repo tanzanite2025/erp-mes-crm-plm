@@ -90,6 +90,7 @@ func SetupRoutes(r *gin.Engine) {
 			}
 
 			engineeringGroup.GET("/product-types", handlers.GetProductTypesHandler)
+			engineeringGroup.GET("/product-types/template-resolution", handlers.GetProductTypeTemplateResolutionHandler)
 			engineeringGroup.POST("/product-types", adminOnly, handlers.SaveProductTypeHandler)
 			engineeringGroup.PATCH("/product-types/:id", adminOnly, handlers.PatchProductTypeHandler)
 			engineeringGroup.DELETE("/product-types/:id", adminOnly, handlers.DeleteProductTypeHandler)
