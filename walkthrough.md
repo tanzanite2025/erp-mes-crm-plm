@@ -2591,6 +2591,291 @@
 1. 客户卡片订单闭环主值切换为 `已完成数 / 总订单数` 后 TypeScript 编译通过
 2. 无订单场景可稳定显示 `0/0`，且展示逻辑已集中到独立 util
 
+## 2026-04-13 - feat：个人记录缓冲区模块骨架
+
+### 本轮目标
+
+新增一个独立的“个人记录缓冲区”模块，满足以下边界：
+
+1. 账户私有，仅本人可见
+2. 管理员无审计权
+3. 当前只做个人记录 / 整理 / 归档
+4. 复用现有图片上传链
+5. 预留未来从个人记录发起业务调用的 action 扩展位，但本轮不实现
+
+### 核心实现
+
+1. **后端独立模型与最小读写链**
+   - 新增：`server/models/personal_workbench.go`
+   - 新增：`server/services/personal_workbench_service.go`
+   - 新增：`server/handlers/personal_workbench_handlers.go`
+   - 新增：`server/routes/routes_personal_workbench.go`
+   - 更新：`server/routes/routes.go`
+   - 更新：`server/db/db.go`
+   - 当前后端已实现：
+     - 仅按当前 `userId` 读取自己的记录
+     - 创建个人记录
+     - PATCH 更新个人记录
+     - `AutoMigrate` 接入：
+       - `PersonalRecord`
+       - `PersonalRecordAsset`
+       - `PersonalRecordActionLog`
+
+2. **前端独立模块目录**
+   - 新增目录：`src/features/personal-workbench/`
+   - 当前已新增：
+     - `data/constants.ts`
+     - `data/schema.ts`
+     - `services/personal-workbench-service.ts`
+     - `hooks/use-personal-workbench.ts`
+     - `hooks/use-personal-workbench-dialog-store.ts`
+     - `components/personal-workbench-image-picker.tsx`
+     - `components/personal-workbench-card-editor.tsx`
+     - `components/personal-workbench-card.tsx`
+     - `components/personal-workbench-column.tsx`
+     - `components/personal-workbench-board.tsx`
+     - `components/personal-workbench-dialog.tsx`
+     - `index.tsx`
+
+3. **双入口接入：弹窗 + 独立页面**
+   - 新增路由：
+     - `src/routes/_authenticated/personal-workbench.tsx`
+     - `src/routes/_authenticated/personal-workbench.lazy.tsx`
+   - 更新：`src/components/profile-dropdown.tsx`
+   - 当前可从头像下拉菜单进入：
+     - `个人记录缓冲区`（弹窗）
+     - `打开个人记录页面`（独立页面）
+
+4. **图片能力复用现有上传链**
+   - 个人记录图片上传复用：`AssetService.uploadFile`
+   - 未新增第二套图片压缩 / 上传逻辑
+   - 前端仅消费已有上传结果 URL，保持模块边界清晰
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 独立模块目录与最小读写链
+2. Trello 式四列轻量展示：
+   - `INBOX`
+   - `ORGANIZING`
+   - `PARKED`
+   - `ARCHIVED`
+3. 图片、标题、备注、分栏编辑
+4. 弹窗与独立页面共用同一套看板组件
+
+本轮明确未实现：
+
+1. 正式业务对象流转
+2. 团队协作
+3. 管理员查看 / 恢复 / 导出
+4. 未来 action 调用 UI
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./routes ./services -run ^$`
+
+结果：
+
+1. 前端 `personal-workbench` 独立模块、路由与弹窗接线后 TypeScript 编译通过
+2. 后端个人记录缓冲区最小读写链编译型校验通过
+
+## 2026-04-13 - feat：个人记录缓冲区拖拽排序
+
+### 本轮目标
+
+在个人记录缓冲区现有四列看板基础上，补齐最小可用的拖拽整理闭环：
+
+1. 支持列内排序
+2. 支持跨列拖拽
+3. 拖拽后同步持久化 `columnKey` 与 `sortOrder`
+4. 保持弹窗与独立页面共用同一套看板逻辑
+
+### 核心实现
+
+1. **后端新增批量排序接口**
+   - 更新：`server/services/personal_workbench_service.go`
+   - 更新：`server/handlers/personal_workbench_handlers.go`
+   - 更新：`server/routes/routes_personal_workbench.go`
+   - 新增接口：`POST /personal-workbench/records/reorder`
+   - 请求体只接收最小排序信息：
+     - `id`
+     - `columnKey`
+     - `sortOrder`
+   - 服务层使用事务逐条更新，并强制限定在当前 `ownerUserId` 范围内执行
+
+2. **前端新增排序 helper 与批量排序 mutation**
+   - 新增：`src/features/personal-workbench/utils/record-reorder.ts`
+   - 更新：`src/features/personal-workbench/data/schema.ts`
+   - 更新：`src/features/personal-workbench/services/personal-workbench-service.ts`
+   - 更新：`src/features/personal-workbench/hooks/use-personal-workbench.ts`
+   - 前端统一通过 helper 计算新的列内顺序与受影响记录集合，避免排序规则散落在组件中
+
+3. **看板接入原生 HTML5 拖拽**
+   - 更新：
+     - `src/features/personal-workbench/components/personal-workbench-board.tsx`
+     - `src/features/personal-workbench/components/personal-workbench-column.tsx`
+     - `src/features/personal-workbench/components/personal-workbench-card.tsx`
+   - 当前已实现：
+     - 卡片可拖拽
+     - 列内落点排序
+     - 跨列拖入目标列
+     - optimistic UI 更新
+     - 落库失败时回滚本地顺序并弹错误提示
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 最小拖拽排序闭环
+2. 批量排序落库
+3. 刷新后顺序稳定
+4. 弹窗与独立页面共用同一套排序逻辑
+
+本轮明确未实现：
+
+1. 移动端复杂拖拽手势优化
+2. 多图能力增强
+3. 业务 action 调用 UI
+4. 批量归档 / 批量恢复
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+2. `go test ./handlers ./routes ./services -run ^$`
+
+结果：
+
+1. 前端拖拽排序、批量排序 mutation 与原有编辑链共存后 TypeScript 编译通过
+2. 后端批量排序接口与个人记录服务编译型校验通过
+
+## 2026-04-13 - feat：个人记录弹窗完整相机面板
+
+### 本轮目标
+
+在个人记录新建/编辑弹窗中补齐页面内完整相机面板，满足以下能力：
+
+1. 页面内相机预览
+2. 前后摄像头切换
+3. 拍照按钮
+4. 拍照后继续走现有上传链
+5. 不支持环境自动降级到原文件上传方案
+
+### 核心实现
+
+1. **相机面板挂载到现有图片选择器**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+   - 未新增第二套上传协议或后端接口
+   - 继续复用：`AssetService.uploadFile`
+
+2. **页面内相机预览与拍照链**
+   - 使用 `navigator.mediaDevices.getUserMedia` 获取视频流
+   - 使用 `<video>` 展示实时预览
+   - 使用隐藏 `canvas` 对当前画面截帧
+   - 将截帧结果转换为 `File` 后继续走既有上传流程
+
+3. **摄像头切换与资源释放**
+   - 使用 `facingMode` 在 `environment` / `user` 间切换
+   - 关闭相机、切换镜头、组件卸载时统一释放媒体流
+   - 避免摄像头持续占用
+
+4. **兼容性降级**
+   - 当环境不支持 `getUserMedia`、不处于安全上下文、或权限被拒绝时：
+     - 保留原文件上传入口
+     - 提示用户当前已回退为普通上传
+   - 不把相机不可用视为阻塞性错误
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 页面内相机预览
+2. 拍照上传
+3. 前后摄像头切换
+4. 自动降级
+5. 继续复用现有单图上传链
+
+本轮明确未实现：
+
+1. 录像
+2. 连续拍摄
+3. 多图编辑
+4. 图片裁剪 / 滤镜 / 标注
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录图片选择器接入完整相机面板后 TypeScript 编译通过
+
+## 2026-04-13 - feat：个人记录完整页模块壳布局（方案 B）
+
+### 本轮目标
+
+将个人记录完整页从当前“`PageHeader + 看板直出`”的轻量独页结构，调整为更接近系统内正式模块页的页面骨架：
+
+1. 顶部模块承载层
+2. 页面级主操作按钮
+3. 正文前置页头卡片
+4. 看板退回正文层，不再重复承担页面标题职责
+
+### 核心实现
+
+1. **完整页增加模块级顶部承载层**
+   - 更新：`src/features/personal-workbench/index.tsx`
+   - 完整页顶部新增模块承载条：
+     - 模块名标识
+     - 当前页面标题
+     - 主操作按钮 `新建记录`
+
+2. **正文层统一为 PageHeader + Board**
+   - 保留 `PageHeader` 作为正文前置页头卡片
+   - 将 `PersonalWorkbenchBoard` 退回正文内容区
+   - 完整页中不再让 Board 重复渲染自己的标题与新建按钮
+
+3. **Board 组件补充页面壳适配参数**
+   - 更新：`src/features/personal-workbench/components/personal-workbench-board.tsx`
+   - 新增可选参数：
+     - `hideHeading`
+     - `hideCreateAction`
+   - 使 Board 可以在：
+     - 弹窗场景保持轻量头部
+     - 完整页场景退回正文层
+
+### 当前实现边界
+
+本轮已经实现：
+
+1. 更接近正式模块页的顶部骨架
+2. 页面标题与主操作按钮上收至模块承载层
+3. 完整页不再出现 Board 内部重复头部
+
+本轮明确未实现：
+
+1. 多业务 tab 体系
+2. 共享/协作副页
+3. 筛选器中心
+4. 弹窗与完整页完全同构
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. 个人记录完整页方案 B 结构改造后 TypeScript 编译通过
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

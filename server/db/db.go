@@ -384,6 +384,9 @@ func InitDB(dsn string) {
 
 	err = DB.AutoMigrate(
 		&models.User{},
+		&models.PersonalRecord{},
+		&models.PersonalRecordAsset{},
+		&models.PersonalRecordActionLog{},
 		&models.SalesOrder{},
 		&models.SalesOrderLine{},
 		&models.Customer{},

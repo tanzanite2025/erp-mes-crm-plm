@@ -1,4 +1,5 @@
 import useDialogState from '@/hooks/use-dialog-state'
+import { useNavigate } from '@tanstack/react-router'
 import { useLanguage } from '@/context/language-provider'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -12,11 +13,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
+import { PersonalWorkbenchDialog } from '@/features/personal-workbench/components/personal-workbench-dialog'
+import { usePersonalWorkbenchDialogStore } from '@/features/personal-workbench/hooks/use-personal-workbench-dialog-store'
 
 export function ProfileDropdown() {
+  const navigate = useNavigate()
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
   const [open, setOpen] = useDialogState()
+  const setPersonalWorkbenchOpen = usePersonalWorkbenchDialogStore((state) => state.setOpen)
 
   const displayName = user?.username || user?.accountNo || 'User'
   const email = user?.email || 'No email'
@@ -45,6 +50,13 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setPersonalWorkbenchOpen(true)}>
+            个人记录缓冲区
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate({ to: '/personal-workbench' })}>
+            打开个人记录页面
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
             {t('common.actions.signOut')}
           </DropdownMenuItem>
@@ -52,6 +64,7 @@ export function ProfileDropdown() {
       </DropdownMenu>
 
       <SignOutDialog open={!!open} onOpenChange={setOpen} />
+      <PersonalWorkbenchDialog />
     </>
   )
 }

@@ -32,6 +32,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerVoucherRoutes(authorized)
 		registerApprovalRoutes(authorized)
 		registerWorkflowRoutes(authorized)
+		registerPersonalWorkbenchRoutes(authorized)
 
 		adminOnly := middleware.RequirePermissions(authz.PermissionManage)
 		engineeringAccess := middleware.RequirePermissions(authz.MenuEngineering)
