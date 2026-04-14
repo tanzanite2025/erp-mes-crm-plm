@@ -8,6 +8,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/finance-management/currency-rates",
   "/finance-management/payment-terms",
   "/logistics-config/packaging-rules",
+  "/logistics-config/vehicle-loading",
   "/system-management/ai-capability",
   "/engineering/product-attributes",
   "/system-management/audit-engine",

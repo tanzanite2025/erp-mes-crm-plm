@@ -18,6 +18,22 @@
 - **验证结果**
   - `pnpm exec tsc --noEmit`：通过。
 
+## 2026-04-15 装载示意图被截断修复
+
+- **问题现象**
+  - 弹窗内装载示意图在行数/层数较多时出现内容被裁切（底部箱体/信息被截断）。
+
+- **原因定位**
+  - `VehicleLoadingDiagram` 内部存在多处 `overflow-hidden` 与固定高度容器，导致内容超出时直接被裁剪且无法滚动查看。
+
+- **修复方式**
+  - 在 `src/features/logistics-config/vehicle-loading/components/vehicle-loading-diagram.tsx` 中：
+    - 将示意图主容器与层容器从 `overflow-hidden` 调整为 `overflow-auto`，允许内容超出时在示意图区域内滚动。
+    - 桌面端高度由 `h-[22rem]` 提升为 `sm:h-[26rem]`，减少在常见分辨率下的裁切概率。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
 ## 2026-04-14 产品属性历史重复机器值治理（P2）
 
 - **变更概述**
@@ -135,6 +151,61 @@
   - 在 `src/features/engineering/components/template-mgmt/template-editor-dialog-layout.tsx` 中调整主体滚动策略：
     - 移动端：主体容器保留 `overflow-y-auto`，避免内容被截断。
     - 桌面端（lg+）：主体容器改为 `overflow-hidden`，三列区域 `h-full` 占满中间固定高度，仅各列容器 `overflow-y-auto` 独立滚动。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-15 物流模块新增“装载/配车”TAB（MOCK）
+
+- **变更概述**
+  - 在物流配置模块新增与“物流供应商”同级的 TAB：`/logistics-config/vehicle-loading`。
+  - 新增 TAB 页面 `LogisticsVehicleLoadingTab`：
+    - 出货汇总（箱数/体积/重量）先以可编辑示例数据占位。
+    - 车型规格库先以前端常量 `MOCK_VEHICLE_SPECS` 提供，支持简单筛选。
+    - 推荐结果先以 `mockRecommendVehicles()` 输出占位（按体积/重量估算需要车辆数，并输出 mock reason）。
+  - 补齐中英文 i18n 文案：新增 `logisticsConfig.tabs.vehicleLoading` 与 `logisticsConfig.vehicleLoading.*`。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-15 物流装载示意弹窗按钮无响应修复
+
+- **问题现象**
+  - 在 `/logistics-config/vehicle-loading` 页面点击“查看装载示意”按钮无反应。
+
+- **原因定位**
+  - 页面组件未挂载 `VehicleLoadingPlanDialog`，且未将 `onViewDiagram` 回调传递给 `VehicleLoadingHeader` / `VehicleRecommendationPanel`，导致点击后没有任何可打开的弹窗实例。
+
+- **修复方式**
+  - 在 `src/features/logistics-config/vehicle-loading/vehicle-loading-tab.tsx` 中补齐弹窗 `open` 状态与 `VehicleLoadingPlanDialog` 渲染。
+  - 将 `onViewDiagram` 回调传给 `VehicleLoadingHeader` 与 `VehicleRecommendationPanel`，确保点击可打开弹窗。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-15 装载示意弹窗可读性修复（限制高度 + 内容滚动）
+
+- **问题现象**
+  - 装载示意弹窗在部分屏幕尺寸下上下溢出视口，导致内容不可读。
+
+- **修复方式**
+  - 在 `src/features/logistics-config/vehicle-loading/components/vehicle-loading-plan-dialog.tsx` 中重构弹窗容器布局：
+    - `DialogContent` 增加 `max-h-[calc(100vh-2rem)]`，保证弹窗不超过视口。
+    - 头部与底部改为 `shrink-0` 固定区。
+    - 中间主体改为 `flex-1 min-h-0 overflow-y-auto`，确保内容过长时在弹窗内部滚动。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-15 装载示意弹窗桌面端加宽（提升示意图可读性）
+
+- **问题现象**
+  - 桌面端弹窗宽度偏窄，示意图区域压缩，导致信息密度过高、难以阅读。
+
+- **修复方式**
+  - 在 `src/features/logistics-config/vehicle-loading/components/vehicle-loading-plan-dialog.tsx` 中调整弹窗宽度与两列比例：
+    - `DialogContent` 改为 `w-[calc(100vw-2rem)] max-w-[1200px]`，在不超出视口的前提下尽可能加宽。
+    - 两列比例从 `lg:grid-cols-[1.4fr_1fr]` 调整为 `lg:grid-cols-[1.85fr_1fr]`，优先保证左侧示意图区域宽度。
 
 - **验证结果**
   - `pnpm exec tsc --noEmit`：通过。

@@ -31,12 +31,12 @@ export function QualityStandardsHeader({
                 <div className="flex flex-col sm:flex-row sm:items-center gap-6">
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest leading-none mb-1">
+                            <span className="text-[10px] font-semibold text-muted-foreground/60 leading-none mb-1">
                                 {t('quality.standards.page.activeProtocols')}
                             </span>
                             <div className='flex items-baseline gap-1'>
-                                <span className="text-2xl font-black text-primary tracking-tighter italic tabular-nums">{total}</span>
-                                <span className='text-[10px] font-black opacity-20'>{t('quality.standards.page.files')}</span>
+                                <span className="text-2xl font-black text-primary tabular-nums">{total}</span>
+                                <span className='text-[10px] font-semibold text-muted-foreground/50'>{t('quality.standards.page.files')}</span>
                             </div>
                         </div>
                         <div className="w-px h-8 bg-muted-foreground/10 border-l border-dashed" />
@@ -46,7 +46,7 @@ export function QualityStandardsHeader({
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
                         <Input
                             placeholder={t('quality.standards.page.searchPlaceholder')}
-                            className="h-12 w-full sm:w-[320px] lg:w-[380px] pl-11 rounded-2xl bg-muted/50 border-none shadow-inner text-[11px] font-bold uppercase tracking-tight focus:bg-background transition-all"
+                            className="h-12 w-full sm:w-[320px] lg:w-[380px] pl-11 rounded-2xl bg-muted/50 border-none shadow-inner text-sm font-medium tracking-normal focus:bg-background transition-all"
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
                         />
@@ -57,7 +57,7 @@ export function QualityStandardsHeader({
                     <Button
                         size='sm'
                         onClick={onAdd}
-                        className="h-11 flex-1 sm:flex-initial px-6 rounded-full bg-primary font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all gap-2"
+                        className="h-11 flex-1 sm:flex-initial px-6 rounded-full bg-primary font-semibold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all gap-2"
                     >
                         <Plus className="size-4" />
                         {t('quality.standards.page.add')}

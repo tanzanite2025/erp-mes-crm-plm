@@ -1,9 +1,82 @@
 export const logisticsConfig = {
   tabs: {
     suppliers: 'Suppliers',
+    vehicleLoading: 'Vehicle Loading',
     packagingRules: 'Packaging Rules',
     scanning: 'Scanning',
     platforms: 'Platforms',
+  },
+  vehicleLoading: {
+    title: 'Vehicle Loading & Recommendation',
+    description:
+      'Shows shipment summary (boxes/volume/weight) and recommends vehicles based on a vehicle spec library.',
+    mockBadge: 'Rules Trial',
+    source: {
+      title: 'Input Source',
+      description: 'Choose the source used for the current loading trial',
+      manual: 'Manual Trial',
+      packingRule: 'Packaging Rule Result',
+      api: 'API Result',
+    },
+    summary: {
+      title: 'Shipment Summary',
+      note: 'You can adjust the sample numbers. Later this will connect to real boxing summary results.',
+      boxes: 'Boxes',
+      volume: 'Total Volume (m³)',
+      weight: 'Total Gross Weight (kg)',
+      disclaimer:
+        'Used to validate the page structure and interactions. Real vehicle specs and loading constraints will be added later.',
+    },
+    filters: {
+      category: 'Category',
+      categoryPlaceholder: 'Select category',
+      all: 'All',
+      van: 'Van',
+      boxTruck: 'Box Truck',
+      lightTruck: 'Light Truck',
+      mediumTruck: 'Medium Truck',
+      minVolume: 'Min Volume (m³)',
+      minPayload: 'Min Payload (kg)',
+    },
+    vehicleSpecs: {
+      title: 'Vehicle Specs',
+      note: 'This shows common vehicle specs and will later be replaced by a maintainable vehicle dictionary.',
+      table: {
+        name: 'Vehicle',
+        category: 'Category',
+        volume: 'Volume',
+        payload: 'Payload',
+        innerSize: 'Inner Size',
+      },
+      emptyState: {
+        title: 'No available vehicles',
+        description: 'No vehicle matches the current filters. Please relax minimum volume, payload, or category.',
+      },
+    },
+    recommendation: {
+      title: 'Recommendations',
+      vehiclesNeeded: 'Vehicles needed: {{count}}',
+      emptyStateTitle: 'No recommendation results',
+      emptyStateDescription: 'No vehicle can be recommended under the current conditions. Try adjusting the shipment volume or filters.',
+      volumeUtilization: 'Volume utilization',
+      weightUtilization: 'Weight utilization',
+    },
+    errors: {
+      specsLoadFailed: 'Vehicle loading failed',
+      specsRetry: 'Reload vehicles',
+      recommendationsLoadFailed: 'Recommendation calculation failed',
+      recommendationsRetry: 'Recalculate recommendations',
+    },
+    status: {
+      specsLoading: 'Loading vehicles',
+      specsLoaded: 'Vehicles loaded',
+      recommendationsLoading: 'Calculating recommendations',
+      recommendationsLoaded: 'Recommendations ready',
+    },
+    badges: {
+      source: 'Source',
+      rules: 'Rules',
+    },
   },
   suppliers: {
     title: 'Logistics Suppliers Directory',

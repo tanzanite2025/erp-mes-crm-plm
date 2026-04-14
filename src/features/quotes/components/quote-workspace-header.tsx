@@ -20,10 +20,10 @@ export function QuoteWorkspaceHeader({
   detailError,
 }: QuoteWorkspaceHeaderProps) {
   return (
-    <DialogHeader className='border-b border-dashed border-border/60 px-6 py-5'>
+    <DialogHeader className='border-b border-dashed border-border/60 px-4 py-4'>
       <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
-        <div className='space-y-2'>
-          <DialogTitle className='text-xl font-black italic tracking-tight'>报价工作台</DialogTitle>
+        <div className='space-y-1'>
+          <DialogTitle className='text-lg font-black tracking-tight'>报价工作台</DialogTitle>
           <DialogDescription>
             {isCreateMode
               ? '在同一个工作台中完成报价新建，并在创建成功后继续转发、导出与转单。'
@@ -39,7 +39,7 @@ export function QuoteWorkspaceHeader({
         ) : null}
 
         {!isLoading && !detail && !detailError && !isCreateMode ? (
-          <div className='rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground'>
+          <div className='rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground'>
             未加载到报价详情，请返回列表后重新打开该报价。
           </div>
         ) : null}
