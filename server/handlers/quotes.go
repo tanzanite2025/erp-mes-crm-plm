@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
 
@@ -27,6 +28,28 @@ func GetQuotesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[SERVER] failed to list quotes: " + err.Error(),
 			"code":  "QUOTE_LIST_FETCH_FAILED",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func GetCustomerQuoteSummaryHandler(c *gin.Context) {
+	customerID := strings.TrimSpace(c.Query("customerId"))
+	if customerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "[CLIENT] customerId is required",
+			"code":  "QUOTE_CUSTOMER_SUMMARY_CUSTOMER_ID_REQUIRED",
+		})
+		return
+	}
+
+	response, err := services.ListCustomerQuoteSummary(services.CustomerQuoteSummaryQuery{CustomerID: customerID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "[SERVER] failed to load customer quote summary: " + err.Error(),
+			"code":  "QUOTE_CUSTOMER_SUMMARY_FETCH_FAILED",
 		})
 		return
 	}

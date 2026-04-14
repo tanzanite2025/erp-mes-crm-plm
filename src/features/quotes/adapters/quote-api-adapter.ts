@@ -33,8 +33,11 @@ function formatAmountLabel(value: number | string | undefined, amountLabel?: str
 }
 
 export function toQuoteSummaryContract(dto: QuoteListItemApiDTO, index: number): QuoteSummary {
+  const quoteNo = dto.quoteNo?.trim() || dto.code?.trim() || `QUOTE-${index + 1}`
+
   return {
-    id: dto.id?.trim() || dto.quoteNo?.trim() || dto.code?.trim() || `QUOTE-${index + 1}`,
+    id: dto.id?.trim() || quoteNo,
+    quoteNo,
     customerName: dto.customerName?.trim() || dto.customer?.trim() || '未命名客户',
     customerSegment: normalizeCustomerSegment(dto.customerSegment || dto.segment),
     quoteType: normalizeQuoteType(dto.quoteType || dto.type),

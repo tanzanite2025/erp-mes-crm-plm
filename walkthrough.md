@@ -6064,6 +6064,108 @@ create mode 下沿用详情态双栏比例，导致左侧录入区宽度不足�
 1. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
 2. 若后续确认 retail / wholesale 路由已经完全失去独立语义，可以进一步考虑是否需要保留这两个别名路由
 
+## 2026-04-14 客户卡片补报价闭环联动
+
+### 本轮完成内容
+
+1. 新增 `src/features/quotes/components/quote-workspace-host.tsx`
+   - 抽出可复用的报价工作台宿主
+   - 统一承载 detail / create 两种模式下的报价弹窗、打印预览、保存与转单能力
+   - 支持通过外部请求直接打开现有报价弹窗，而不复制第二套实现
+2. 新增 `src/features/quotes/hooks/use-customer-quote-summary.ts`
+   - 基于 quotes 列表能力，为客户卡片提供轻量报价摘要
+   - 输出报价 `id / quoteNo / status / updatedAt`
+3. 新增 `src/features/trading/customer/components/customer-quote-entry-block.tsx`
+   - 作为客户卡片中的报价入口块
+   - 有报价时显示单号入口；多报价时支持选择；无报价时给出提醒并可直接新建报价
+4. 新增 `src/features/trading/components/customer-list-item.tsx`
+   - 将单个客户卡片抽成独立组件
+   - 在组件内部安全使用 `useCustomerQuoteSummary`，避免违反 React Hooks 规则
+5. 更新 `src/features/trading/components/customer-list.tsx`
+   - 接入新的客户卡片项组件
+   - 接入 `QuoteWorkspaceHost`
+   - 通过本地请求状态桥接“打开指定报价详情 / 打开新建报价”两条路径
+6. 更新 quotes 摘要模型
+   - `src/features/quotes/data/quote-summary.ts` 新增 `quoteNo`
+   - `src/features/quotes/adapters/quote-api-adapter.ts` 保留真实报价单号，避免客户卡片将 `id` 误展示成单据号
+
+### 闭环结果
+
+1. 客户卡片存在报价时
+   - 可看到报价单号入口
+   - 多张报价时可选择具体单号
+   - 选中后直接拉起现有报价工作弹窗 `detail mode`
+2. 客户卡片不存在报价时
+   - 会显示“暂无报价，建议立即报价”类提醒
+   - 点击后直接拉起现有报价工作弹窗 `create mode`
+
+### 实现边界
+
+1. 未新增第二套报价详情弹窗
+2. 未新增第二套新建报价弹窗
+3. 客户卡片仅负责入口与触发，不接管报价工作台内部状态
+4. 仍复用现有 quotes 工作台的详情、创建、保存、转单与打印预览能力
+
+### 验证结果
+
+1. 已执行 `pnpm exec tsc --noEmit`
+2. 结果：通过
+
+### 当前已知事项
+
+1. 客户卡片报价摘要当前通过 quotes 列表能力做轻量聚合，后续若需要更高精度或更高性能，可再考虑补独立的按客户摘要接口
+2. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+
+## 2026-04-14 客户报价摘要升级为后端独立接口
+
+### 本轮完成内容
+
+1. 后端新增 quotes 客户摘要独立能力
+   - `server/services/quote_query_dto.go`
+     - 新增 `CustomerQuoteSummaryQuery`
+     - 新增 `CustomerQuoteSummaryItemResponse`
+     - 新增 `CustomerQuoteSummaryResponse`
+   - `server/services/quote_query_service.go`
+     - 新增 `ListCustomerQuoteSummary`
+     - 直接按 `customer_id` 查询报价主表
+     - 仅选择 `id / customer_id / order_no / barcode / status / updated_at`
+     - 不再 preload 明细行
+   - `server/handlers/quotes.go`
+     - 新增 `GetCustomerQuoteSummaryHandler`
+     - 对缺失 `customerId` 返回 400
+   - `server/routes/routes_trading.go`
+     - 新增 `GET /quotes/customer-summary`
+2. 后端收口 quoteNo 推导逻辑
+   - 在 `quote_query_service.go` 中抽出 `deriveQuoteNo`
+   - 让列表、详情、客户摘要三处共用同一套单号回退规则
+3. 前端新增独立客户摘要消费链路
+   - 新增 `src/features/quotes/contracts/customer-quote-summary-api-dto.ts`
+   - 新增 `src/features/quotes/services/customer-quote-summary-service.ts`
+   - `src/features/quotes/query-keys.ts` 新增 `customerSummary`
+   - `src/features/quotes/hooks/use-customer-quote-summary.ts` 改为直接调用独立摘要接口
+4. 客户卡片切到 `customerId` 维度
+   - `src/features/trading/components/customer-list-item.tsx`
+   - 不再按 `customerName` 复用列表搜索语义
+
+### 本轮收益
+
+1. 客户卡片摘要不再依赖 `/quotes` 列表接口的关键词搜索/分页语义
+2. 摘要查询主键从 `customerName` 升级为 `customerId`
+3. 避免同名客户、改名、前后空格差异导致的串单或漏单
+4. 客户卡片只拿轻量字段，减少不必要数据搬运
+
+### 验证结果
+
+1. 已执行 `go test ./handlers ./routes ./services -run ^$`
+2. 结果：通过
+3. 已执行 `pnpm exec tsc --noEmit`
+4. 结果：通过
+
+### 当前已知事项
+
+1. 本轮为定向编译/静态校验通过，尚未补专门的 quotes customer summary 后端单测；若后续需要提高回归信心，可再补 handler/service 测试
+2. `quote-print-document.tsx` 的既有 Tailwind lint 仍未处理：`bg-black/[0.03]` 可改为 `bg-black/3`
+
 ## 2026-04-13 - impl：BOM 剩余枚举/日期控制字段接入统一 helper
 
 ### 本轮目标

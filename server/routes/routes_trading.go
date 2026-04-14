@@ -49,6 +49,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	quoteGroup := authorized.Group("/quotes")
 	quoteGroup.Use(tradingAccess)
 	quoteGroup.GET("", handlers.GetQuotesHandler)
+	quoteGroup.GET("/customer-summary", handlers.GetCustomerQuoteSummaryHandler)
 	quoteGroup.GET("/:id", handlers.GetQuoteDetailHandler)
 	quoteGroup.POST("/:id/convert", salesOrderManage, handlers.ConvertQuoteHandler)
 

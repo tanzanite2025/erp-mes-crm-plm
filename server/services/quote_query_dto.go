@@ -9,6 +9,10 @@ type QuoteListQuery struct {
 	Keyword            string
 }
 
+type CustomerQuoteSummaryQuery struct {
+	CustomerID string
+}
+
 type QuoteSummaryResponse struct {
 	ID              string `json:"id"`
 	QuoteNo         string `json:"quoteNo"`
@@ -28,4 +32,17 @@ type QuoteListResponse struct {
 	Total    int64                  `json:"total"`
 	Page     int                    `json:"page"`
 	PageSize int                    `json:"pageSize"`
+}
+
+type CustomerQuoteSummaryItemResponse struct {
+	QuoteID    string `json:"quoteId"`
+	QuoteNo    string `json:"quoteNo"`
+	Status     string `json:"status"`
+	UpdatedAt  string `json:"updatedAt"`
+	CustomerID string `json:"customerId"`
+}
+
+type CustomerQuoteSummaryResponse struct {
+	Items []CustomerQuoteSummaryItemResponse `json:"items"`
+	Total int64                              `json:"total"`
 }

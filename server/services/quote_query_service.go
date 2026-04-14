@@ -10,6 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type customerQuoteSummaryProjection struct {
+	ID         string
+	CustomerID string
+	OrderNo    string
+	Barcode    string
+	Status     string
+	UpdatedAt  time.Time
+}
+
 func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse, error) {
 	orderID := strings.TrimSpace(id)
 	if orderID == "" {
@@ -135,6 +144,38 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	}, nil
 }
 
+func ListCustomerQuoteSummary(query CustomerQuoteSummaryQuery) (CustomerQuoteSummaryResponse, error) {
+	customerID := strings.TrimSpace(query.CustomerID)
+	if customerID == "" {
+		return CustomerQuoteSummaryResponse{}, fmt.Errorf("customer id is required")
+	}
+
+	var rows []customerQuoteSummaryProjection
+	if err := db.DB.Model(&models.SalesOrder{}).
+		Select("id, customer_id, order_no, barcode, status, updated_at").
+		Where("is_deleted = ? AND customer_id = ?", false, customerID).
+		Order("updated_at desc").
+		Find(&rows).Error; err != nil {
+		return CustomerQuoteSummaryResponse{}, err
+	}
+
+	items := make([]CustomerQuoteSummaryItemResponse, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, CustomerQuoteSummaryItemResponse{
+			QuoteID:    row.ID,
+			QuoteNo:    deriveQuoteNo(row.OrderNo, row.Barcode, row.ID),
+			Status:     strings.TrimSpace(row.Status),
+			UpdatedAt:  row.UpdatedAt.Format("2006-01-02 15:04"),
+			CustomerID: strings.TrimSpace(row.CustomerID),
+		})
+	}
+
+	return CustomerQuoteSummaryResponse{
+		Items: items,
+		Total: int64(len(items)),
+	}, nil
+}
+
 func deriveQuoteCustomerSegment(customer models.Customer) string {
 	if customer.ID == "" {
 		return "new"
@@ -154,20 +195,14 @@ func deriveQuoteCustomerSegment(customer models.Customer) string {
 }
 
 func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string) QuoteSummaryResponse {
+	quoteNo := deriveQuoteNo(order.OrderNo, order.Barcode, order.ID)
+
 	productSummary := strings.TrimSpace(order.Requirements)
 	if productSummary == "" && len(order.Lines) > 0 {
 		productSummary = strings.TrimSpace(order.Lines[0].ProductModel)
 	}
 	if productSummary == "" {
 		productSummary = "待补充产品摘要"
-	}
-
-	quoteNo := strings.TrimSpace(order.OrderNo)
-	if quoteNo == "" {
-		quoteNo = strings.TrimSpace(order.Barcode)
-	}
-	if quoteNo == "" {
-		quoteNo = order.ID
 	}
 
 	return QuoteSummaryResponse{
@@ -204,13 +239,7 @@ func GetQuoteDetail(id string) (QuoteDetailResponse, error) {
 }
 
 func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Customer, customerSegment string) QuoteDetailResponse {
-	quoteNo := strings.TrimSpace(order.OrderNo)
-	if quoteNo == "" {
-		quoteNo = strings.TrimSpace(order.Barcode)
-	}
-	if quoteNo == "" {
-		quoteNo = order.ID
-	}
+	quoteNo := deriveQuoteNo(order.OrderNo, order.Barcode, order.ID)
 
 	lines := make([]QuoteDetailLineResponse, 0, len(order.Lines))
 	for _, line := range order.Lines {
@@ -255,4 +284,15 @@ func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Custome
 
 func errorsIsRecordNotFound(err error) bool {
 	return err == gorm.ErrRecordNotFound || strings.Contains(strings.ToLower(err.Error()), "record not found")
+}
+
+func deriveQuoteNo(orderNo string, barcode string, fallbackID string) string {
+	quoteNo := strings.TrimSpace(orderNo)
+	if quoteNo == "" {
+		quoteNo = strings.TrimSpace(barcode)
+	}
+	if quoteNo == "" {
+		quoteNo = strings.TrimSpace(fallbackID)
+	}
+	return quoteNo
 }

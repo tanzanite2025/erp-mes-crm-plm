@@ -8,6 +8,7 @@ export type QuoteSummaryCustomerSegment = Exclude<QuoteCustomerFilter, 'all'>
 
 export type QuoteSummary = {
   id: string
+  quoteNo: string
   customerName: string
   customerSegment: QuoteSummaryCustomerSegment
   quoteType: QuoteSummaryType
