@@ -38,6 +38,24 @@
     - [ ] 为 `车型匹配` / `联系人` / `发货记录` 三个子页补齐 `PageHeader`
     - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
 
+- [ ] 747 联系人卡片绑定车型规格库规划（中文）：评估 `/logistics-config/vehicle-loading` 的车型规格库能否作为共享 authority，供 `发货管理 -> 联系人` 页面建立“联系人卡片绑定车型”能力。
+  - [x] 已确认当前车型规格库 authority：
+    - [x] 数据模型在 `src/features/logistics-config/vehicle-loading/data/vehicle-loading.types.ts`，核心类型是 `VehicleSpec`
+    - [x] 读取服务在 `src/features/logistics-config/vehicle-loading/services/vehicle-loading-service.ts`，当前 `getVehicleSpecs()` 走 mock / API 双态
+    - [x] 页面侧当前通过 `useVehicleLoadingSpecs()` / `useVehicleLoadingData()` / `useVehicleLoadingPage()` 组合使用
+  - [x] 已确认当前发货管理联系人页现状：
+    - [x] `src/features/trading/shipping-management/contacts-page.tsx` 目前仍是占位卡片
+    - [x] 当前没有“车型 -> 联系人”绑定 authority，也没有联系人卡片真实数据层
+  - [x] 已确认当前架构缺口：
+    - [x] 车型规格库现在仍主要挂在 `logistics-config/vehicle-loading` 页面上下文里，未抽成 trading / shipping-management 可直接复用的共享 hook
+    - [x] `useVehicleLoadingSpecs()` 仍是 `useEffect + useState` 手动拉数，尚未成为稳定的共享 query authority
+    - [x] “联系人绑定车型”不是车型库本身的属性，应该是独立的绑定关系层，而不是往 `VehicleSpec` 里硬塞联系人字段
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 先抽共享车型规格库读取层（建议独立 hook / service adapter，避免 shipping-management 直接依赖 vehicle-loading 页面 hook）
+    - [ ] 再设计“车型 -> 联系人卡片”的绑定关系结构（前端先占位或 mock，后续可落后端 authority）
+    - [ ] 在 `发货管理 -> 联系人` 页面消费共享车型规格库并展示绑定关系
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
 - [ ] 744 修复侧边栏权限清单映射缺失导致的页面崩溃（中文）：`/shipping-management` 未映射到 menu permission，触发 `[permission-catalog] Unmapped top-level path` 并由 ErrorBoundary 重建。
   - [x] 已确认根因链路：
     - [x] `src/components/layout/data/sidebar-data.ts` 新增菜单项 `url: '/shipping-management'`

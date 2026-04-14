@@ -69,6 +69,22 @@
 - **验证结果**
   - `pnpm exec tsc --noEmit`：待执行。
 
+## 2026-04-15 联系人卡片绑定车型规格库（第一步前端共享抽象）
+
+- **变更概述**
+  - 新增 `src/features/logistics-config/vehicle-loading/query-keys.ts`，为车型规格库建立共享 query key。
+  - 新增 `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query.ts`，通过 React Query 提供共享车型规格库读取层。
+  - `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-specs.ts` 已改为复用共享 query 层，不再直接使用 `useEffect + useState` 手动拉车型规格库。
+  - 新增 `src/features/trading/shipping-management/contact-bindings.mock.ts`，定义“车型 -> 联系人卡片”前端绑定关系 mock 视图模型。
+  - 改造 `src/features/trading/shipping-management/contacts-page.tsx`，让联系人页消费共享车型规格库，并以车型卡片 + 联系人卡片形式展示绑定关系，同时具备 loading / error / empty 三态。
+
+- **架构收口结果**
+  - 车型规格库 authority 不再挂死在 `vehicle-loading` 页面 hook 中，而是提升为可被多个页面复用的共享读取层。
+  - “联系人绑定车型”仍保持为独立的绑定关系层，没有污染 `VehicleSpec` 主模型语义。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：待执行。
+
 ## 2026-04-15 装载示意图被截断修复
 
 - **问题现象**
