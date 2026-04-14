@@ -18,7 +18,6 @@ import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type Customer } from '../data/schema'
-import { buildCustomerSaveSnapshot } from '../customer/utils/customer-save-snapshot'
 import { type DeltaSet } from '@/lib/delta/types'
 import { tradingQueryKeys } from '../query-keys'
 import { requireTradingCommandActor } from '../utils/command-actor'
@@ -89,11 +88,10 @@ export function CustomerList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveCustomer = (payload: { data: Partial<Customer>; isPatch: boolean; delta?: DeltaSet }) => {
+  const handleSaveCustomer = (payload: { data: Customer; isPatch: boolean; delta?: DeltaSet }) => {
     if (!allowsAction('action_trading_customer_manage')) return
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
-      const finalData = buildCustomerSaveSnapshot(selectedCustomer, payload.data)
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'CustomerList.handleSaveCustomer',
@@ -101,7 +99,7 @@ export function CustomerList() {
       saveMutation.mutate({
         id: selectedCustomer.id,
         delta: payload.delta,
-        finalData,
+        finalData: payload.data,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: selectedCustomer.version,

@@ -6464,6 +6464,144 @@
 
 这轮问题的关键不是“认证失败后如何前端兜底”，而是认证公共后端链路已经失稳。因为 `/auth/login` 与 `/auth/snapshot` 同时 502，所以必须优先从服务端认证/权限快照公共依赖入手，先恢复后端稳定性，再决定前端是否需要最小配套调整。
 
+### 1. plan：客户管理报价记录区“新建报价”按钮引导增强
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前客户管理卡片在“暂无报价”场景下已经提供了“新建报价”入口，但按钮仍使用较弱的次级 outline 风格，与周围文字相比不够突出，难以承担“引导用户立即建立报价”的动作角色。
+
+#### 1.2 本轮目标
+
+本轮目标非常聚焦：
+
+1. 提高“新建报价”按钮的视觉优先级
+2. 让按钮更像主行动按钮，而不是次级附属操作
+3. 增强“暂无报价 -> 立即建立报价”的引导感
+4. 不改变现有联动逻辑与打开行为
+
+#### 1.3 推荐实施方式
+
+建议仅在 `src/features/trading/customer/components/customer-quote-entry-block.tsx` 中做最小 UI 调整：
+
+1. 将“暂无报价”场景下的按钮从弱 outline 提升为更明显的主按钮或高对比强调样式
+2. 结合更清晰的按钮文案，例如保留“新建报价”但增强颜色、阴影、hover 与尺寸感
+3. 如有需要，可在按钮旁增加轻量提示标签，但不新增说明块级复杂结构
+
+#### 1.4 关键边界
+
+本轮必须坚持：
+
+1. 不修改 `onCreateQuote` 行为
+2. 不新增第二套报价创建入口
+3. 不改已有报价时的打开/选择交互
+4. 不把客户卡片做成独立报价页
+
+#### 1.5 预计涉及文件
+
+1. `src/features/trading/customer/components/customer-quote-entry-block.tsx`
+
+#### 1.6 风险与注意点
+
+1. 若视觉强调过重，可能压过整张客户卡片的其他操作
+2. 若按钮样式与系统主按钮风格完全脱节，会破坏一致性
+3. 因此建议做“明显但仍在系统设计语言内”的强化，而不是做广告式夸张样式
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. “暂无报价”场景下按钮显著更易发现
+2. 点击仍正常打开现有报价工作台 `create mode`
+3. TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮不是功能新增，而是入口引导优化。目标是让“新建报价”在客户上下文中更像一个清晰、可感知、可立即采取的主行动入口，从而提高建立报价的引导效果。
+
+### 1. plan：客户资料编辑保存失败（联系电话修改触发 `code/name` 为空）
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前客户资料编辑中，仅修改联系电话后保存，会触发：
+
+1. `POST /customers/:id/transactions`
+2. 后端返回 `400`
+3. 错误信息为：`invalid customer transaction payload: code and name must not be empty`
+
+这说明问题不是联系电话字段本身非法，而是前端在提交统一保存事务时，没有把后端要求的最小主数据字段完整带回。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. `CustomerList.handleSaveCustomer(...)`
+   - 在 patch 场景下，会调用 `buildCustomerSaveSnapshot(selectedCustomer, payload.data)` 生成 `finalData`
+2. `customer-action-dialog.tsx`
+   - 也会先用 `buildCustomerSaveSnapshot(customer, snapshot)` 生成一次 `nextData`
+3. 后端 `partner_transaction_service.go`
+   - 在统一保存事务里明确要求 `mergedFinalData.Code` 与 `mergedFinalData.Name` 不为空
+
+因此本轮高概率根因在前端：
+
+1. 局部编辑数据进入保存链时，`payload.data` / `snapshot` 中缺少 `code`、`name`
+2. 某一层合并顺序或对话框返回数据不完整，导致最终提交给事务接口的 `finalData` 被裁空
+
+#### 1.3 本轮目标
+
+本轮目标是修复客户编辑保存链，使“只改联系电话”这类局部更新也能稳定提交：
+
+1. 保证事务保存时 `finalData` 始终包含完整 `code` / `name`
+2. 保证局部字段修改不会把其他必填主数据裁掉
+3. 不回退现有事务保存架构
+4. 不改后端统一保存语义，只修正前端 payload 组装缺口
+
+#### 1.4 推荐实施方向
+
+建议优先检查并修正以下点：
+
+1. `src/features/trading/components/customer-action-dialog.tsx`
+   - 确认提交给 `onSave` 的 `data` 是否已经是完整快照，还是仅局部变更
+2. `src/features/trading/customer/utils/customer-save-snapshot.ts`
+   - 确认合并逻辑是否会被空字符串、`undefined`、序列化裁剪等情况误伤
+3. `src/features/trading/components/customer-list.tsx`
+   - 确认 `handleSaveCustomer` 是否重复用不完整 `payload.data` 再次覆盖完整快照
+
+优先怀疑点是：
+
+1. 对话框层已经生成了较完整快照，但列表层又用较瘦的 `payload.data` 重新生成一次 `finalData`
+2. 或对话框提交的 `data` 本身不是完整对象，只是局部 delta
+
+#### 1.5 预计涉及文件
+
+1. `src/features/trading/components/customer-action-dialog.tsx`
+2. `src/features/trading/components/customer-list.tsx`
+3. `src/features/trading/customer/utils/customer-save-snapshot.ts`
+
+#### 1.6 风险与注意点
+
+1. 若错误地把所有空字符串都回退成旧值，可能掩盖用户主动清空字段的意图
+2. 若在两层都做快照合并，容易再次造成重复覆盖
+3. 因此应优先明确“哪一层负责生成最终快照”，避免双重组装
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. 仅修改联系电话后可正常保存
+2. 仅修改联系人、微信、地址等字段后也可正常保存
+3. `code` / `name` 不会在 patch 保存时丢失
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮问题本质上不是后端校验过严，而是前端事务保存链没有稳定提交完整主数据快照。正确修复方式应是明确并收口客户编辑保存的最终快照装配责任，让局部编辑也能满足统一事务保存的最小数据要求。
+
 ### 1. plan：`use-bom-data.ts` 最小职责拆分
 
 日期：2026-04-13  

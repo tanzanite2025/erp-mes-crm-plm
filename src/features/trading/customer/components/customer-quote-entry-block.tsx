@@ -58,14 +58,18 @@ export function CustomerQuoteEntryBlock({
           报价记录
         </div>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-          <p className='text-[10px] font-bold text-amber-600'>{customerName} 暂无报价，建议立即报价</p>
+          <div className='space-y-1'>
+            <p className='text-[10px] font-black text-amber-700'>{customerName} 暂无报价，建议立即建立报价</p>
+            <p className='text-[9px] font-bold text-amber-600/80'>点击右侧按钮，直接进入报价工作台新建模式</p>
+          </div>
           <Button
             type='button'
-            variant='outline'
+            variant='default'
             size='sm'
             onClick={onCreateQuote}
-            className='h-7 w-full sm:w-auto rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-9 w-full sm:w-auto rounded-full px-4 text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/25 bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 animate-in fade-in duration-300'
           >
+            立即
             新建报价
           </Button>
         </div>
