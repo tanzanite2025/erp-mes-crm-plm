@@ -1,17 +1,17 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ConfigErrorPanel } from './components/config-error-panel'
-import { VehicleFilterPanel } from './components/vehicle-filter-panel'
-import { VehicleLoadingHeader } from './components/vehicle-loading-header'
-import { VehicleLoadingPlanDialog } from './components/vehicle-loading-plan-dialog'
-import { VehicleLoadingPlanOverview } from './components/vehicle-loading-plan-overview'
-import { VehicleLoadingSourceSwitch } from './components/vehicle-loading-source-switch'
-import { VehicleLoadingSummaryPanel } from './components/vehicle-loading-summary-panel'
-import { VehicleRecommendationPanel } from './components/vehicle-recommendation-panel'
-import { VehicleSpecsTable } from './components/vehicle-specs-table'
-import type { VehicleRecommendation } from './data/vehicle-loading.types'
-import { useVehicleLoadingPage } from './hooks/use-vehicle-loading-page'
+import { ConfigErrorPanel } from './vehicle-loading/components/config-error-panel'
+import { VehicleFilterPanel } from './vehicle-loading/components/vehicle-filter-panel'
+import { VehicleLoadingHeader } from './vehicle-loading/components/vehicle-loading-header'
+import { VehicleLoadingPlanDialog } from './vehicle-loading/components/vehicle-loading-plan-dialog'
+import { VehicleLoadingPlanOverview } from './vehicle-loading/components/vehicle-loading-plan-overview'
+import { VehicleLoadingSourceSwitch } from './vehicle-loading/components/vehicle-loading-source-switch'
+import { VehicleLoadingSummaryPanel } from './vehicle-loading/components/vehicle-loading-summary-panel'
+import { VehicleRecommendationPanel } from './vehicle-loading/components/vehicle-recommendation-panel'
+import { VehicleSpecsTable } from './vehicle-loading/components/vehicle-specs-table'
+import type { VehicleRecommendation } from './vehicle-loading/data/vehicle-loading.types'
+import { useVehicleLoadingPage } from './vehicle-loading/hooks/use-vehicle-loading-page'
 
 export function LogisticsVehicleLoadingTab() {
   const {
@@ -70,7 +70,7 @@ export function LogisticsVehicleLoadingTab() {
         summary={summary}
         vehicleSpecsCount={filteredSpecs.length}
         recommendations={recommendations}
-        categoryLabelText={categoryOptions.find((item) => item.value === category)?.label ?? '全部'}
+        categoryLabelText={categoryOptions.find((item: { value: string; label: string }) => item.value === category)?.label ?? '全部'}
         sourceLabel={sourceLabel}
         activeFilters={activeFilters}
         isLoadingSpecs={isLoadingSpecs}

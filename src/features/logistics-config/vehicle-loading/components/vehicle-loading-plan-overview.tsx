@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ShipmentSummary, VehicleRecommendation } from '../../data/vehicle-loading.types'
+import type { ShipmentSummary, VehicleRecommendation } from '../data/vehicle-loading.types'
 import { PlanOverviewFilterTags } from './plan-overview-filter-tags'
 import { PlanOverviewInputSourceCard } from './plan-overview-input-source-card'
 import { PlanOverviewMetricCard } from './plan-overview-metric-card'

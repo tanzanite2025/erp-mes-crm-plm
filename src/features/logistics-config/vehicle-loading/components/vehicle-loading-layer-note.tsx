@@ -1,4 +1,4 @@
-export function VehicleLoadingLayerNote({ layerCount, maxBoxes }: { layerCount: number; maxBoxes: number }) {
+export function VehicleLoadingLayerNote({ layerCount }: { layerCount: number }) {
   if (layerCount <= 1) return null
 
   return (

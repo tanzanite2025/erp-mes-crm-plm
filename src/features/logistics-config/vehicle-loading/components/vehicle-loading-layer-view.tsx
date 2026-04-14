@@ -18,7 +18,7 @@ export function VehicleLoadingLayerView({
         orientationAxis={orientationAxis}
         layerCount={layerCount}
       />
-      <VehicleLoadingLayerNote layerCount={layerCount} maxBoxes={maxBoxes} />
+      <VehicleLoadingLayerNote layerCount={layerCount} />
       <VehicleLoadingSummaryStrip boxesPerLayer={boxesPerLayer} layerCount={layerCount} maxBoxes={maxBoxes} />
     </div>
   )

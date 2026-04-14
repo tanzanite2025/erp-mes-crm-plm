@@ -1,4 +1,4 @@
-import type { VehicleSpec } from '../data/mock-vehicle-specs'
+import type { VehicleSpec } from '../vehicle-loading/data/vehicle-loading.types'
 
 export type ShipmentSummary = {
   boxes: number

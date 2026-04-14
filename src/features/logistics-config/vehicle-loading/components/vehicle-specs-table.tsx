@@ -13,7 +13,7 @@ export function VehicleSpecsTable({ specs }: Props) {
   const { t } = useLanguage()
 
   return (
-    <FieldCard title={t('logisticsConfig.vehicleLoading.vehicleSpecs.title')} description={t('logisticsConfig.vehicleLoading.vehicleSpecs.description')}>
+    <FieldCard title={t('logisticsConfig.vehicleLoading.vehicleSpecs.title')} description='车型清单与规格数据'>
       {specs.length === 0 ? (
         <VehicleEmptyState
           title='暂无可用车型'
