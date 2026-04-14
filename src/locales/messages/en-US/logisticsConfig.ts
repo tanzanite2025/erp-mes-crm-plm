@@ -1,4 +1,5 @@
 export const logisticsConfig = {
+  moduleDescription: 'A central configuration hub for logistics suppliers, packaging rules, scanning setup, and platform integrations.',
   tabs: {
     suppliers: 'Suppliers',
     vehicleLoading: 'Vehicle Loading',

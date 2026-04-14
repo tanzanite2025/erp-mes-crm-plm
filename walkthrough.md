@@ -18,6 +18,57 @@
 - **验证结果**
   - `pnpm exec tsc --noEmit`：通过。
 
+## 2026-04-15 修复侧边栏 /shipping-management 权限映射缺失导致的崩溃
+
+- **问题现象**
+  - 进入已登录页面时，侧边栏构建阶段抛错：`[permission-catalog] Unmapped top-level path: /shipping-management`，并触发 ErrorBoundary 重建。
+
+- **原因定位**
+  - `src/components/layout/data/sidebar-data.ts` 存在菜单项 `url: '/shipping-management'`，其 `permissionId` 通过 `getMenuPermissionForPath()` 计算。
+  - `src/features/authz/data/permission-catalog.ts` 的 `ROUTE_TO_MENU_MAPPING` 缺少 `'/shipping-management'`，导致 `getMenuPermissionForPath()` 直接 `throw`。
+
+- **修复方式**
+  - 在 `src/features/authz/data/permission-catalog.ts` 为 `'/shipping-management'` 补齐映射，并按“销售管理（与报价同级）”归属到 `menu_trading`。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：待执行。
+
+## 2026-04-15 通用搜索顶栏 + 一致 TAB 栏第一批样板（logistics-config）
+
+- **变更概述**
+  - 新增 `src/components/layout/module-header-summary.tsx`，用于在统一 `Header` 左侧展示模块级标题与说明。
+  - 改造 `src/components/layout/module-tabbed-layout.tsx`，新增可选 `headerTitle / headerDescription`，保持现有 `title` 行为向后兼容。
+  - 改造 `src/features/logistics-config/index.tsx`，让 `logistics-config` 模块通过 `ModuleTabbedLayout` 在统一顶栏中显示模块识别信息，同时保留全局 `Search` 入口。
+  - 在 `src/locales/messages/zh-CN/logisticsConfig.ts` 与 `src/locales/messages/en-US/logisticsConfig.ts` 中补充 `moduleDescription` 文案。
+
+- **架构收口结果**
+  - 本轮没有新造第二套搜索入口，而是明确复用既有 `Header + Search` 作为通用搜索顶栏能力。
+  - `logistics-config` 作为第一批模块样板，已具备“统一 Header + 模块级 TabBar + 模块内容区摘要”的完整结构。
+  - 这一步只收口模块级路由 TAB；页面内局部 TAB 的统一 variant 仍留待下一阶段推进。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：待执行。
+
+## 2026-04-15 发货管理接入统一搜索顶栏与模块级多 TAB 结构
+
+- **变更概述**
+  - 新增 `src/features/trading/shipping-management/` 目录，按模块化方式拆分 `发货管理` 入口与子页内容。
+  - 新增 `src/features/trading/shipping-management/index.tsx`，通过 `ModuleTabbedLayout` 接入统一 `Header + Search + ModuleTabs`。
+  - 新增模块级 TAB 定义：`车型匹配` / `联系人` / `发货记录`。
+  - `车型匹配` / `联系人` / `发货记录` 三个子页已对齐现有 `PageHeader` 模式，不再使用临时卡片充当页眉。
+  - 新增 `src/routes/_authenticated/shipping-management/` 子路由目录，并将 `/shipping-management` 默认重定向到 `/shipping-management/vehicle-match`。
+  - `src/routes/_authenticated/shipping-management.lazy.tsx` 已切换为加载新的模块入口，不再继续渲染旧的页内 Tabs 版本。
+  - 在 `src/locales/messages/zh-CN/trading.ts` 与 `src/locales/messages/en-US/trading.ts` 中补齐 `trading.shippingManagement.*` 文案。
+
+- **架构收口结果**
+  - `发货管理` 已从“单页内局部 Tabs”提升为“模块级路由 Tabs”。
+  - 页面顶部现在会走统一 `Header`，因此可见全局 `Search` 入口；模块识别摘要改为放在模块内容区顶部，而不是插入通用顶栏。
+  - 旧页面内 Tabs 不再作为主导航结构，避免与模块级 Tabs 叠加冲突。
+  - 由于三个子页已各自拥有 `PageHeader`，发货管理模块内容区顶部的重复模块摘要已移除，避免标题与说明重复出现。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：待执行。
+
 ## 2026-04-15 装载示意图被截断修复
 
 - **问题现象**

@@ -21,6 +21,7 @@ export const sidebar = {
     warehouseOperations: '仓储作业',
     salesManagement: '销售管理',
     quoteManagement: '报价管理',
+    shippingManagement: '发货管理',
     mrp: 'MRP',
     purchaseManagement: '采购管理',
     productEngineering: '产品工程管理',

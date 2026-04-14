@@ -1,4 +1,5 @@
 export const logisticsConfig = {
+  moduleDescription: '统一承载物流供应商、包装规则、扫描配置与接口平台的配置中心。',
   tabs: {
     suppliers: '物流供应商',
     vehicleLoading: '装载/配车',

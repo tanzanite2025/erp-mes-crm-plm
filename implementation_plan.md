@@ -1,9 +1,200 @@
-### 1. plan：物流模块新增“装载/配车计算”TAB（与物流供应商同级，先MOCK）
+### 1. plan：修复侧边栏权限清单映射缺失导致的页面崩溃（/shipping-management）
+ 
+ 日期：2026-04-15  
+ 状态：待批准
+ 
+ #### 1.1 背景与目标
+ 
+ 当前侧边栏在渲染过程中会基于菜单项的 `url` 计算其所属的 `menu_*` 权限 ID。由于 `/shipping-management` 顶层 path 未被纳入 `permission-catalog` 的映射表，导致 `getMenuPermissionForPath()` 直接抛错：
+ 
+ - `[permission-catalog] Unmapped top-level path: /shipping-management`
+ 
+ 该异常发生在侧边栏数据构建阶段，最终由 React ErrorBoundary 重建 `<Lazy>` 组件树，表现为页面崩溃/白屏。
+ 
+ 本轮目标：
+ 
+ 1. 补齐 `/shipping-management` 的菜单权限映射，使侧边栏不再因为缺失映射而崩溃
+ 2. 保持权限裁决仍以服务端为准，不引入新的前端路由硬拦截逻辑
+ 3. 修复应为“根因级”：让新增顶层模块不会再因为漏配映射造成运行时崩溃
+ 
+ #### 1.2 已确认根因链路
+ 
+ 1. `src/components/layout/data/sidebar-data.ts` 新增菜单项 `url: '/shipping-management'`
+ 2. `permissionIdForPath('/shipping-management')` 调用 `getMenuPermissionForPath(path)`
+ 3. `src/features/authz/data/permission-catalog.ts` 的 `ROUTE_TO_MENU_MAPPING` 缺少 `'/shipping-management'`
+ 4. `getMenuPermissionForPath()` 因缺少映射直接 `throw`
+ 
+ 同时已确认路由文件存在：`src/routes/_authenticated/shipping-management.tsx`
+ 
+ #### 1.3 修复策略
+ 
+ 1. 为 `ROUTE_TO_MENU_MAPPING` 增加：
+    - `'/shipping-management': <某个 menu key>`
+ 2. 决策点：`/shipping-management` 应归属哪个顶层菜单权限（`MENU_PERMISSIONS`）
+    - 若该模块语义仍属于“购销/销售”域，则可映射到 `menu_trading`
+    - 若后续会独立为“出货管理”顶层模块，则需要新增一个新的 `MENU_PERMISSIONS.shipping`（对应新的 `menu_shipping`）并同步后端权限契约（本轮倾向先走最小修复，避免引入新菜单权限再联动一整条迁移）
+ 3. 保持 `authenticated-route-catalog.ts` 仅作为“路由收录清单”，不在本轮增加前端守卫逻辑
+ 
+ #### 1.4 预计涉及文件
+ 
+ 1. `src/features/authz/data/permission-catalog.ts`（新增 `/shipping-management` 映射）
+ 2. （仅核对，无需改动时不动）`src/components/layout/data/sidebar-data.ts`
+ 3. （仅核对）`src/routes/_authenticated/shipping-management.tsx`
+ 4. （仅核对）`src/features/authz/data/authenticated-route-catalog.ts`
+ 
+ #### 1.5 风险与注意事项
+ 1. 若映射到错误的 `menu_*`，可能导致“菜单权限语义漂移”（例如出货管理被错误归到 settings 或 pda）
+ 2. 若后续决定新增 `menu_shipping`，则必须与后端 permission contract 同步，避免再次漂移
+
+ #### 1.6 验证策略
+
+ 1. 进入任意已登录页面，侧边栏可正常渲染，不再抛出 unmapped 错误
+ 2. 执行 `pnpm exec tsc --noEmit`（或最小定向 TS 校验）通过
+ 3. 在 `walkthrough.md` 记录：根因、修复点、验证结果
+
+### 2. plan：发货管理页面接入统一搜索顶栏与模块级多 TAB 结构
 
 日期：2026-04-15  
 状态：待批准
 
-#### 1.1 背景与目标
+#### 2.1 背景与问题
+
+虽然我们已经在 `logistics-config` 完成了“统一 Header + 全局 Search + ModuleTabs”的第一批样板，但 `发货管理` 页面并没有接入这套结构，因此你看到它仍然没有搜索顶栏，也没有一致的模块级多 TAB 栏。
+
+实查当前链路：
+
+1. `src/routes/_authenticated/shipping-management.lazy.tsx` 直接渲染 `ShippingManagement`
+2. `src/features/trading/tabs/index.tsx` 中的 `ShippingManagement` 仅渲染 `ShippingManagementTab`
+3. `src/features/trading/tabs/shipping-management.tsx` 当前是单页直出，内部使用 `PageHeader + 本地 Tabs`
+
+因此它仍是“页面内局部组织”，而不是“模块级布局”。
+
+#### 2.2 本轮目标
+
+1. 让 `/shipping-management` 接入统一 `Header + Search + ModuleTabs` 结构
+2. 让“发货管理”从单页直出提升为模块级布局
+3. 避免出现“模块级 Tabs + 页面内 Tabs”双层重复导航
+
+#### 2.3 关键设计点
+
+本轮需要先明确：`发货管理` 的多 TAB 到底承载什么。
+
+推荐的第一批策略是：
+
+1. 先把当前页面中的局部 Tabs 上升为模块级 Tabs
+2. 将当前单页里的主要分区按信息架构拆成 2-3 个模块级子页（示例：待发货 / 发货记录 / 配车与确认）
+3. 或者如果当前业务尚不足以支撑拆页，则先只接入统一 Header，并暂缓真正的多路由 TAB 拆分
+4. 子页页眉不自造新样式，直接复用现有 `src/components/layout/page-header.tsx`，与项目中其它页面保持一致
+
+#### 2.4 预计涉及文件
+
+1. `src/routes/_authenticated/shipping-management.tsx`
+2. `src/routes/_authenticated/shipping-management.lazy.tsx`
+3. `src/features/trading/tabs/index.tsx`
+4. `src/features/trading/tabs/shipping-management.tsx`
+5. 视设计结果，可能新增 `src/routes/_authenticated/shipping-management/*` 子路由文件
+6. 视设计结果，可能新增 `src/features/shipping-management` 或 `src/features/trading/shipping-management/*` 目录承载拆分后的模块内容
+
+#### 2.5 风险与注意事项
+
+1. 若不先确认 TAB 划分，直接硬套模块级多 TAB，容易造出“为了有 Tabs 而有 Tabs”的空结构。
+2. 若保留现有页面内 Tabs 又新增模块级 Tabs，会出现双层导航冲突。
+3. 需要控制第一批范围，避免把发货管理顺手扩成整个 trading 域重构。
+
+#### 2.6 需要你确认的决策点
+
+1. 已确认：采用方案 B，本轮直接拆成模块级多 TAB
+
+2. 已确认第一批 TAB 划分：
+   - `车型匹配`
+   - `联系人`
+   - `发货记录`
+
+#### 2.7 验证策略
+
+1. `/shipping-management` 页面具备统一 Header 与 Search 入口
+2. 若接入模块级 Tabs，导航结构不重复、不冲突
+3. `车型匹配` / `联系人` / `发货记录` 三个子页均使用 `PageHeader`，标题/描述与项目现有页眉风格一致
+4. `pnpm exec tsc --noEmit` 通过
+5. `walkthrough.md` 记录：结构调整、TAB 划分、验证结果
+
+### 3. plan：通用搜索顶栏 + 一致 TAB 栏（渐进式收口）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 2.1 背景与问题
+
+你反馈“页面目前还没有通用搜索顶栏，也没有一致的 TAB 栏”。实查当前代码：
+
+1. **通用顶栏/搜索入口并非不存在**：全局 `Header`（`src/components/layout/header.tsx`）已内置 `Search`（`src/components/search.tsx`，通过 `useSearch()` 打开搜索弹层）。
+2. **TAB 体系存在分裂**：
+   - 模块级（路由级）多 TAB：已存在 `ModuleTabbedLayout + ModuleTabs`（固定二级 TabBar，支持横向滚动、actions slot）。
+   - 页面内（组件级）TAB：大量页面直接用 `TabsList/TabsTrigger` 并手写 class，导致视觉与交互不一致。
+
+因此问题更准确是：
+
+- 顶栏与搜索入口的“统一使用口径”未形成（哪些模块一定要展示、是否需要 page title slot 等）。
+- TAB 栏样式与行为没有形成“单一事实源”，而是散落在各业务页面。
+
+#### 2.2 本轮目标
+
+1. **形成统一规范**：明确通用 Header 的使用策略 + TAB 的分类与统一承载方式。
+2. **渐进式落地**：先选定 1-2 个模块完成收口，验证可行后再扩。
+3. **避免破坏性改动**：不全站一次性替换；不引入新的前端硬拦截权限守卫语义。
+
+#### 2.3 统一对象拆分（关键）
+
+本轮把 TAB 明确拆为两类，避免“同一个组件想同时满足两类需求”导致再次混乱：
+
+1. **模块级路由 TAB（Module Tabs）**
+   - 定义：与路由绑定、切换即 `navigate`，通常位于 Header 下方固定位置。
+   - 统一目标：收口到 `src/components/layout/module-tabbed-layout.tsx` 与 `src/components/module-tabs.tsx`。
+
+2. **页面内局部 TAB（Page Tabs）**
+   - 定义：同一路由内切换视图（例如报表分类切换），不必固定在顶部。
+   - 统一目标：提供统一的样式 variant（尺寸/圆角/字重/滚动/active 色），减少各页面自由手写 class。
+
+#### 2.4 技术策略（建议）
+
+1. **通用搜索顶栏**
+   - 复用既有 `Header` + `Search`（不要新造第二套搜索入口）。
+   - 明确 Header 的可配置项：`showGlobalSearch`、`children` slot（用于 page title / breadcrumb），并制定“默认开启”的模块列表。
+
+2. **一致 TAB 栏**
+   - 模块级：对已有多 TAB 模块优先迁移到 `ModuleTabbedLayout`（避免出现多套 fixed tabbar）。
+   - 页面内：抽一个 `TabsList/TabsTrigger` 的样式收口点（例如在 `ui/tabs.tsx` 增加可复用 variant，或新增 `components/page-tabs.tsx` 作为薄封装）。
+
+#### 2.5 需要你确认的决策点
+
+1. “通用搜索”语义确认：
+   - 是否仅作为“全局命令面板/页面跳转搜索”入口（当前实现倾向）
+   - 还是要在顶栏直接提供“全局关键字搜索业务数据”（单据/主数据）的第一阶段能力
+
+2. 第一批落地范围（建议只选 1-2 个）：
+   - 候选 A：`warehouse`（页面内 TAB 较多，适合作为 Page Tabs 统一样式样板）
+   - 候选 B：`logistics-config`（模块级多 TAB，适合作为 Module Tabs 收口样板）
+   - 候选 C：你指定的最常用/最刺眼的模块
+
+#### 2.6 风险与注意事项
+
+1. 全站统一容易引发大量 UI 细节回归，本轮必须控制范围。
+2. Module Tabs 固定定位与 Header fixed 的叠层/z-index 需要小心，避免出现遮挡与滚动穿透问题。
+
+#### 2.7 验证策略
+
+1. 选定模块在桌面/移动端均可正常展示 Header + Search 入口，交互不被遮挡。
+2. 选定模块 TAB 样式一致，且切换不影响路由/状态。
+3. `pnpm exec tsc --noEmit` 通过。
+4. `walkthrough.md` 记录：统一策略、落地范围、验证结果。
+
+### 3. plan：物流模块新增“装载/配车计算”TAB（与物流供应商同级，先MOCK）
+
+日期：2026-04-15  
+状态：待批准
+ 
+
+#### 3.1 背景与目标
 
 在“物流”模块内新增一个与“物流供应商”同级的 TAB，用于展示“本批出货”的装箱汇总（箱数/体积/可选毛重），并基于车型规格库给出配车推荐。
 

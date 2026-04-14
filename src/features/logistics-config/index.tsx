@@ -7,7 +7,11 @@ export function LogisticsConfigModule() {
   const { t } = useLanguage()
 
   return (
-    <ModuleTabbedLayout title={t('sidebar.items.logisticsConfig')} tabs={getLogisticsConfigTabs(t)}>
+    <ModuleTabbedLayout
+      headerTitle={t('sidebar.items.logisticsConfig')}
+      headerDescription={t('logisticsConfig.moduleDescription')}
+      tabs={getLogisticsConfigTabs(t)}
+    >
       <Outlet />
     </ModuleTabbedLayout>
   )

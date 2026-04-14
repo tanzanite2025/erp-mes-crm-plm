@@ -1,3 +1,55 @@
+- [ ] 745 通用搜索顶栏 + 一致 TAB 栏规划（中文）：当前已存在全局 Header 与 Search 入口、以及模块级 `ModuleTabbedLayout/ModuleTabs`，但各业务页面仍散落使用不同 Tabs 样式与布局策略，导致“没有统一顶栏/搜索入口认知 + TAB 视觉与交互不一致”。
+  - [x] 已确认现状：
+    - [x] 全局 Header：`src/components/layout/header.tsx` 已内置 `Search`（`src/components/search.tsx`）入口与 TopNav/SidebarTrigger 等。
+    - [x] 模块级路由 TAB：`src/components/layout/module-tabbed-layout.tsx` + `src/components/module-tabs.tsx` 已实现固定二级 TabBar（支持横向滚动与 actions slot）。
+    - [x] 页面内局部 TAB：多处页面直接使用 `src/components/ui/tabs.tsx` 并各自写 `TabsList/TabsTrigger` class，样式分裂且难以统一。
+  - [x] 已确认本轮核心目标：
+    - [x] 统一“通用搜索顶栏”的使用口径（哪些页面必须展示、哪些场景可隐藏/替换 title slot）。
+    - [x] 统一 TAB 体系的视觉与交互（至少把“模块级路由 TAB”与“页面内 TAB”两类分别规范化）。
+    - [x] 采用渐进式落地：先选 1-2 个代表模块收口，避免全站一次性改动。
+  - [ ] 待你确认后执行下一阶段：
+    - [x] 已确认“通用搜索”语义：本轮采用 A1，保持为全局命令面板 / 页面跳转搜索入口，不扩展到业务数据全局搜索。
+    - [x] 已确认 TAB 统一对象：
+      - [x] 模块级路由 TAB：继续统一收口到 `ModuleTabbedLayout/ModuleTabs`。
+      - [ ] 页面内 TAB：下一阶段提供统一 variant（样式 token/尺寸/圆角/滚动）并逐步替换散落 class。
+    - [x] 已确认第一批落地模块/页面：采用 B1，先在 `logistics-config` 作为模块级顶栏 + TAB 样板落地。
+    - [x] 已完成第一批样板落地：
+      - [x] 新增 `src/components/layout/module-header-summary.tsx`，作为模块级顶栏摘要组件。
+      - [x] `ModuleTabbedLayout` 已支持 `headerTitle / headerDescription`，可在统一 Header 左侧显示模块识别信息。
+      - [x] `src/features/logistics-config/index.tsx` 已接入统一模块级顶栏摘要，同时保留全局 `Search`。
+      - [x] 已补齐 `logisticsConfig.moduleDescription` 中英文文案。
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`。
+
+- [ ] 746 发货管理页面接入统一搜索顶栏与模块级多 TAB 结构规划（中文）：当前 `/shipping-management` 仍是旧式单页直出，未接入 `ModuleTabbedLayout + Header + Search + ModuleTabs`，因此看起来仍然没有统一搜索顶栏，也没有一致的模块级多 TAB 结构。
+  - [x] 已确认根因：
+    - [x] `src/routes/_authenticated/shipping-management.lazy.tsx` 直接渲染 `ShippingManagement`
+    - [x] `src/features/trading/tabs/index.tsx` 中的 `ShippingManagement` 仅包裹 `ShippingManagementTab`
+    - [x] `src/features/trading/tabs/shipping-management.tsx` 当前使用页面内 `PageHeader + 本地 Tabs`，未接入 `ModuleTabbedLayout`
+  - [x] 已确认当前表现后果：
+    - [x] 没有统一 Header 中的模块识别摘要与全局搜索顶栏感知
+    - [x] 没有统一的模块级固定多 TAB 栏
+    - [x] 仍停留在单页面内局部 Tabs 的旧结构
+  - [ ] 待你确认后执行下一阶段：
+    - [x] 已确认执行范围：采用方案 B，直接拆成模块级多 TAB
+    - [x] 已确认第一批 TAB 划分：`车型匹配` / `联系人` / `发货记录`
+    - [x] 已将该路由接入统一 `ModuleTabbedLayout + Header + Search + ModuleTabs`
+    - [x] 已拆分旧 `shipping-management.tsx` 中的局部 Tabs 主导航，避免“模块级 Tabs + 页面内 Tabs”重复叠加
+    - [x] 已确认页眉对齐口径：复用现有 `src/components/layout/page-header.tsx`，不自造新的子页页眉样式
+    - [ ] 为 `车型匹配` / `联系人` / `发货记录` 三个子页补齐 `PageHeader`
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
+- [ ] 744 修复侧边栏权限清单映射缺失导致的页面崩溃（中文）：`/shipping-management` 未映射到 menu permission，触发 `[permission-catalog] Unmapped top-level path` 并由 ErrorBoundary 重建。
+  - [x] 已确认根因链路：
+    - [x] `src/components/layout/data/sidebar-data.ts` 新增菜单项 `url: '/shipping-management'`
+    - [x] `permissionIdForPath('/shipping-management')` 调用 `getMenuPermissionForPath()`
+    - [x] `src/features/authz/data/permission-catalog.ts` 的 `ROUTE_TO_MENU_MAPPING` 缺少 `'/shipping-management'`
+    - [x] `getMenuPermissionForPath()` 因缺少映射直接 `throw`，导致 `<Lazy>` 组件树崩溃
+  - [x] 已确认关联路由存在：`src/routes/_authenticated/shipping-management.tsx`
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 在 `permission-catalog.ts` 为 `'/shipping-management'` 补齐 `ROUTE_TO_MENU_MAPPING` 映射（并确认应归属到哪个 `MENU_PERMISSIONS`）
+    - [ ] 视需要补齐 route catalog / permission contract 的一致性校验点（不引入前端硬拦截）
+    - [ ] 执行定向 TypeScript 校验并更新 `walkthrough.md`
+
 - [ ] 737 物流模块新增“包装规则”TAB 规划（中文），先建立包装规则主数据中心，统一承载包装尺寸、重量、容量与适用物料配置，供后续链路调用。
   
 - [ ] 743 物流模块新增“装载/配车计算”TAB 规划（中文），与“物流供应商”同级，用于展示本批出货箱数/体积汇总，并基于车型规格给出配车推荐（当前先用 MOCK 数据与 MOCK 约束结果跑通交互）。

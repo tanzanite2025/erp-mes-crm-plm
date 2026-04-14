@@ -39,9 +39,10 @@ export function Header({
   const { pathname } = useLocation()
 
   useEffect(() => {
-    const onScroll = (e: any) => {
-      const target = e.target === document ? (document.documentElement || document.body) : e.target
-      if (target && typeof target.scrollTop === 'number') {
+    const onScroll = (e: Event) => {
+      const eventTarget = e.target
+      const target = eventTarget === document ? (document.documentElement || document.body) : eventTarget
+      if (target instanceof Element && typeof target.scrollTop === 'number') {
         setOffset(target.scrollTop)
       }
     }
@@ -80,7 +81,7 @@ export function Header({
             }))} />
           )}
 
-          <div className='flex-1 truncate'>
+          <div className='flex h-full min-w-0 flex-1 items-center overflow-hidden'>
             {children}
           </div>
         </div>

@@ -125,6 +125,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/mrp': 'mrp',
   '/trading': 'trading',
   '/quotes': 'trading',
+  '/shipping-management': 'trading',
   '/purchase': 'trading',
   '/engineering': 'engineering',
   '/materials': 'engineering',

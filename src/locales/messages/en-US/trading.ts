@@ -202,4 +202,24 @@ export const trading = {
       deleteFailed: 'Failed to remove record: {{message}}',
     },
   },
+  shippingManagement: {
+    moduleDescription: 'A unified entry for shipment vehicle matching, contact outreach, and shipment history tracking.',
+    tabs: {
+      vehicleMatch: 'Vehicle Match',
+      contacts: 'Contacts',
+      history: 'Shipment History',
+    },
+    vehicleMatch: {
+      title: 'Vehicle Match',
+      description: 'Enter vehicle matching from the pending shipment list and later review recommended vehicles, load rate, and pre-shipment confirmation details here.',
+    },
+    contacts: {
+      title: 'Contacts',
+      description: 'Review shipment-related contacts, outreach methods, and carrier-side coordination details in one place for future call, message, and copy actions.',
+    },
+    history: {
+      title: 'Shipment History',
+      description: 'Track shipment confirmation, vehicle matching, contact outreach, and status transitions in a single shipment lifecycle view.',
+    },
+  },
 }

@@ -199,4 +199,24 @@ export const trading = {
       deleteFailed: '记录移除失败：{{message}}',
     },
   },
+  shippingManagement: {
+    moduleDescription: '统一承载发货车型匹配、联系人触达与发货记录追踪的模块入口。',
+    tabs: {
+      vehicleMatch: '车型匹配',
+      contacts: '联系人',
+      history: '发货记录',
+    },
+    vehicleMatch: {
+      title: '车型匹配',
+      description: '从待发货货物列表进入车型匹配，后续在这里查看推荐车型、装载率与发货前确认信息。',
+    },
+    contacts: {
+      title: '联系人',
+      description: '集中查看发货相关联系人、触达方式与承运侧对接信息，承接后续电话、微信和复制联系能力。',
+    },
+    history: {
+      title: '发货记录',
+      description: '查看发货确认、车型匹配、联系人触达与状态流转记录，形成发货闭环追踪视图。',
+    },
+  },
 }

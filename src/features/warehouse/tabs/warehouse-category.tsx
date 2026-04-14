@@ -352,6 +352,12 @@ export default function WarehouseCategory() {
                                         </div>
                                     </div>
 
+                                    {cat.isSystem ? (
+                                        <div className='mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700'>
+                                            系统保护发货占用仓，真实占库存，不允许删除。
+                                        </div>
+                                    ) : null}
+
                                     <div className='mt-6 pt-5 border-t border-dashed border-muted/80 flex items-center justify-between'>
                                         <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/30'>
                                             {t('warehouse.category.permissionLevel')}

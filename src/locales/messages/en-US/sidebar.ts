@@ -21,6 +21,7 @@ export const sidebar = {
     warehouseOperations: 'Warehouse Operations',
     salesManagement: 'Sales Management',
     quoteManagement: 'Quote Management',
+    shippingManagement: 'Shipping Management',
     mrp: 'MRP',
     purchaseManagement: 'Purchase Management',
     productEngineering: 'Product Engineering',

@@ -64,4 +64,14 @@ var DefaultWarehouseCategories = []WarehouseCategory{
 		AllowShipment:  true,
 		AllowStocktake: true,
 	},
+	{
+		Name:           "虚拟发货仓",
+		Code:           "SHIPPING_VIRTUAL",
+		Description:    "系统内置发货占用仓，用于承接已确认待发货货物并真实占用库存",
+		IsSystem:       true,
+		SortOrder:      90,
+		AllowInbound:   true,
+		AllowShipment:  true,
+		AllowStocktake: true,
+	},
 }

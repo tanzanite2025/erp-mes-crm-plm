@@ -98,6 +98,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/quotes/orders",
   "/quotes/retail",
   "/materials/:category",
+  "/shipping-management",
   "/finance-management",
   "/personal-workbench",
   "/equipment-tooling",
