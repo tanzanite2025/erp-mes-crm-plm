@@ -6363,6 +6363,107 @@
 
 这轮升级的本质不是“再做一个查询接口”，而是把客户卡片报价摘要从“列表页副产物”升级成 quotes 域正式能力。只有这样，客户卡片上的报价入口才能在数据精度、接口边界和后续可维护性上真正稳定下来。
 
+### 1. plan：`/auth/snapshot` 与登录 502 根因排查与修复
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前前端日志显示两条认证关键链路同时失败：
+
+1. `GET /auth/snapshot` 返回 `502 Bad Gateway`
+2. 登录页发起的 `POST /auth/login` 也返回 `502 Bad Gateway`
+
+前端现象上表现为：
+
+1. `AuthenticatedLayout` 在后台身份同步阶段调用 `/auth/snapshot`
+2. 一旦失败，直接记录 `[CRITICAL] Background identity sync failed` 并跳回登录页
+3. 登录页重新尝试 `/auth/login`，仍返回 502
+
+这说明问题不是“某个页面单点请求失败”，而是认证公共链路整体异常。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. `POST /auth/login`
+   - 由 `server/handlers/auth.go` 中 `LoginHandler` 处理
+   - 登录成功前会调用 `dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotForUser(user)`
+   - 因此登录并不只是验密码，还依赖“身份权限快照解析”公共能力
+2. `GET /auth/snapshot`
+   - 由 `server/routes/routes.go` 挂在受保护路由上
+   - `GetAuthSnapshotHandler` 自身较轻，但依赖 `AuthMiddleware` 预先完成 token 解析与 access snapshot 上下文装配
+3. 两条链都共享“认证/权限快照”这条公共后端依赖
+
+因此当前最优先怀疑点不是前端，而是：
+
+1. 认证中间件链
+2. `IdentityAccessService` / access snapshot 解析链
+3. 其依赖的数据库、角色/权限数据或后端异常处理
+
+#### 1.3 本轮目标
+
+本轮目标是明确并修复导致 `/auth/login` 与 `/auth/snapshot` 同时 502 的根因：
+
+1. 明确 502 来源于后端 panic、上游代理、还是公共依赖失败
+2. 若是后端身份权限快照链路异常，修复其根因
+3. 保持登录成功后仍返回稳定 token / user payload
+4. 保持 `/auth/snapshot` 仍能返回前端所需身份与权限信息
+5. 不用前端降级补丁去掩盖后端认证故障
+
+#### 1.4 推荐实施顺序
+
+建议按以下顺序推进：
+
+1. 先复查 `server/middleware/auth.go`
+   - 确认 token 解析、用户加载、access snapshot 注入过程是否可能 panic 或返回未兜底错误
+2. 复查 `dependencies.NewIdentityAccessServiceWithDB(... )`
+   - 确认 `ResolveSnapshotForUser(...)` / 相关解析逻辑对脏数据、缺失角色、空权限、DB 异常是否有稳定处理
+3. 必要时做最小复现实验
+   - 直接对 `/auth/login`、`/auth/snapshot` 做定向请求或后端测试
+4. 只有在后端根因明确后，才考虑是否需要微调前端错误文案或跳转策略
+
+#### 1.5 预计涉及文件
+
+预计优先涉及：
+
+1. `server/handlers/auth.go`
+2. `server/middleware/auth.go`
+3. `server/dependencies/*identity*` / `effective_access*` 相关文件（待进一步定位）
+4. 如有必要，才涉及：
+   - `src/components/layout/authenticated-layout.tsx`
+   - `src/features/authz/services/effective-permission-service.ts`
+
+#### 1.6 风险与注意点
+
+主要风险：
+
+1. 若只在前端把 502 改成“静默失败”，会让认证根因继续隐藏
+2. 若登录链依赖 access snapshot，而 snapshot 解析对脏角色数据不容错，会导致整条认证链被拖垮
+3. 若 `/auth/snapshot` 与 `/auth/login` 共用的公共依赖没有分层错误码，前端只能看到统一 502，难以定位
+
+因此本轮必须坚持：
+
+1. 优先修后端根因
+2. 避免用前端重试/降级掩盖问题
+3. 若发现后端错误边界不清晰，应补充更明确的服务端日志或错误响应
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. `POST /auth/login` 不再返回 502
+2. `GET /auth/snapshot` 不再返回 502
+3. 登录后 `AuthenticatedLayout` 不再陷入“同步失败 -> 重定向登录”循环
+4. 前端登录与后台身份同步链路恢复正常
+5. 定向后端测试或编译校验通过
+6. `pnpm exec tsc --noEmit` 通过
+
+#### 1.8 结论
+
+这轮问题的关键不是“认证失败后如何前端兜底”，而是认证公共后端链路已经失稳。因为 `/auth/login` 与 `/auth/snapshot` 同时 502，所以必须优先从服务端认证/权限快照公共依赖入手，先恢复后端稳定性，再决定前端是否需要最小配套调整。
+
 ### 1. plan：`use-bom-data.ts` 最小职责拆分
 
 日期：2026-04-13  

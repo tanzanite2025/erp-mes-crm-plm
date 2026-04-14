@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type CustomerQuoteSummaryItem } from '@/features/quotes/hooks/use-customer-quote-summary'
+import { type CustomerQuoteSummaryItem } from '@/features/quotes/services/customer-quote-summary-service'
 
 type CustomerQuoteEntryBlockProps = {
   customerName: string

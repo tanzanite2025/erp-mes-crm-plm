@@ -3,6 +3,7 @@ import type { QuoteSummary } from './quote-summary'
 export const quoteSummaryMockData: QuoteSummary[] = [
   {
     id: 'Q-2026-0012',
+    quoteNo: 'Q-2026-0012',
     customerName: '华东样品客户组',
     customerSegment: 'vip',
     quoteType: 'sample',
@@ -15,6 +16,7 @@ export const quoteSummaryMockData: QuoteSummary[] = [
   },
   {
     id: 'Q-2026-0011',
+    quoteNo: 'Q-2026-0011',
     customerName: '宁波长期贸易客户',
     customerSegment: 'long-term',
     quoteType: 'wholesale',
@@ -27,6 +29,7 @@ export const quoteSummaryMockData: QuoteSummary[] = [
   },
   {
     id: 'Q-2026-0010',
+    quoteNo: 'Q-2026-0010',
     customerName: '深圳零售客户',
     customerSegment: 'new',
     quoteType: 'retail',
@@ -39,6 +42,7 @@ export const quoteSummaryMockData: QuoteSummary[] = [
   },
   {
     id: 'Q-2026-0009',
+    quoteNo: 'Q-2026-0009',
     customerName: '北方代理客户',
     customerSegment: 'vip',
     quoteType: 'wholesale',
@@ -51,6 +55,7 @@ export const quoteSummaryMockData: QuoteSummary[] = [
   },
   {
     id: 'Q-2026-0008',
+    quoteNo: 'Q-2026-0008',
     customerName: '华南老客户',
     customerSegment: 'long-term',
     quoteType: 'retail',
