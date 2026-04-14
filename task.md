@@ -953,6 +953,38 @@
     - [x] 已保留用户编辑态与保存链，但不再让 `createDefault...` 充当远端读取 fallback
     - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
 
+- [ ] 783-构建失败修复：linear-barcode 类型收口与 terminal-resource 引用漂移修正（中文）
+  - [x] 已确认当前构建失败至少包含 4 个信号：
+    - [x] `linear-barcode-mgmt.tsx` 存在未使用导入 `cn`
+    - [x] `linear-barcode-mgmt.tsx` 存在未使用变量 `refetchProtocolConfig`
+    - [x] `linear-barcode-mgmt.tsx` 中 `protocolConfig` 的可空类型尚未完全收口
+    - [x] `terminal-resource-service.ts` 引用了不存在的 `@/lib/api-fetch`
+  - [x] 已确认当前真实根因可分为两类：
+    - [x] `linear-barcode-mgmt.tsx` 属于上一轮 query authority 整改后的残留 TypeScript 收口问题，而不是新的业务需求
+    - [x] `terminal-resource-service.ts` 属于模块引用漂移：仓库内不存在 `src/lib/api-fetch`，实际 `apiFetch` 导出位于 `src/lib/api-client.ts`
+  - [x] 已确认本轮最小实施范围：
+    - [x] 收紧 `linear-barcode-mgmt.tsx` 的未使用符号与可空类型口径
+    - [x] 修正 `terminal-resource-service.ts` 的 `apiFetch` 导入路径
+    - [x] 复核 route tree 生成阶段的提示是否只是告警，不在本轮顺手扩改路由结构
+  - [x] 已确认本轮优先涉及文件：
+    - [x] `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+    - [x] `src/features/terminal-config/services/terminal-resource-service.ts`
+    - [x] 必要时复核 `src/lib/api-client.ts`
+    - [x] 必要时复核相关 route 生成产物与文件命名，但仅限确认是否阻断构建
+  - [x] 已确认本轮风险控制要求：
+    - [x] 不回退 `linear-barcode-mgmt.tsx` 已完成的 React Query authority 方向
+    - [x] 不为消除 TS 报错而重新引入默认配置 masking
+    - [x] 不为了兼容旧引用而额外新建 `api-fetch` 别名文件掩盖真实漂移
+  - [x] 已确认本轮非目标边界：
+    - [x] 不重构线性条码模块整体结构
+    - [x] 不顺手改 numbering / appearance / product 查询链
+    - [x] 不扩散到 terminal-config 其它服务层重写
+    - [x] 不处理与当前构建失败无关的样式或历史 warning
+  - [ ] 待你确认后执行下一阶段：
+    - [ ] 实施 `linear-barcode-mgmt.tsx` 的 TS 收口修复
+    - [ ] 实施 `terminal-resource-service.ts` 的 `apiFetch` 导入修复
+    - [ ] 执行定向 TypeScript / 构建校验，并更新 `walkthrough.md`
+
 - [x] 782-useSalesOrderInit 水合链迁移到 query/defaultValues（中文）
   - [x] 已完成本轮执行：
     - [x] 已实查 `src/features/trading/hooks/use-sales-order-init.ts` 当前通过 `useEffect` 执行异步初始化：编辑态直接 `setFormData(initialOrder)`，新建态先请求 `numberingService.previewContractBarcode(...)` 再批量 `setFormData(...)`

@@ -567,6 +567,102 @@
 
 这项问题的根因不在于“有没有 error 分支”，而在于加载阶段仍然让本地默认配置充当了远端 authority。下一步应把线性条码配置的 ready 条件严格绑定到 query 状态，由 UI 层显式展示 loading / error，而不是继续用默认配置做 masking。
 
+### 1. plan：构建失败修复（`linear-barcode-mgmt.tsx` TS 收口 + `terminal-resource-service.ts` 引用漂移）
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+当前部署截图显示前端构建被 TypeScript 直接阻断，至少涉及两组明确问题：
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+   - 存在未使用导入 `cn`
+   - 存在未使用变量 `refetchProtocolConfig`
+   - 渲染处 `protocolConfig.sequenceRuleKey` 的可空类型尚未完全收口
+2. `src/features/terminal-config/services/terminal-resource-service.ts`
+   - 当前引用 `@/lib/api-fetch`
+   - 但仓库内不存在 `src/lib/api-fetch`
+   - 实际 `apiFetch` 导出位于 `src/lib/api-client.ts`
+
+这说明当前问题不是部署环境偶发，而是仓库内已经存在可稳定复现的编译级断点。
+
+#### 1.2 当前排查结论
+
+##### 1.2.1 `linear-barcode-mgmt.tsx` 的问题性质
+
+当前 `linear-barcode-mgmt.tsx` 已处于“React Query 承担远端 authority，本地 state 承担编辑草稿”的方向上；本次报错更像是上一轮整改后的残留 TS 收口问题，而不是新的业务逻辑错误：
+
+1. 未使用符号应直接移除，不能为了消警再伪造调用
+2. `protocolConfig` 的 ready 语义虽已在 loading 分支中体现，但渲染点上的类型仍未完全让 TS 信服
+3. 本轮修复必须保持“query 真相归属”方向不回退
+
+##### 1.2.2 `terminal-resource-service.ts` 的问题性质
+
+当前 `terminal-resource-service.ts` 的模块解析失败不是类型推断问题，而是明确的导入路径漂移：
+
+1. 仓库内无 `src/lib/api-fetch`
+2. 全局搜索可见 `apiFetch` 的真实导出位于 `src/lib/api-client.ts`
+3. 因此正确方向应是修正引用口径，而不是额外补一个 `api-fetch` 别名文件遮盖漂移
+
+##### 1.2.3 route tree 提示的处理口径
+
+截图中还出现 route tree 生成提示：
+
+1. `capture-route-component.tsx` “does not contain any route piece”
+2. 当前截图里真正导致退出码为 2 的仍是后续 TypeScript error 汇总
+3. 因此本轮先将其视为需复核的旁路告警，不在未证实阻断性的前提下顺手改路由结构
+
+#### 1.3 本轮目标
+
+1. 消除当前截图中的确定性 TypeScript 构建阻断项
+2. 保持 `linear-barcode-mgmt.tsx` 已建立的 React Query authority 方向不回退
+3. 修正 `terminal-resource-service.ts` 的模块引用漂移，而不是增加兼容层掩盖根因
+
+#### 1.4 推荐实施方向
+
+1. 在 `linear-barcode-mgmt.tsx` 中移除未使用符号
+2. 在不改变现有 ready / loading / reset 语义的前提下，显式收紧 `protocolConfig` 的可空类型边界
+3. 将 `terminal-resource-service.ts` 的 `apiFetch` 导入修正为真实导出位置
+4. 实施后执行定向 `tsc` 或等价构建校验，确认截图中的 4 个编译错误全部消失
+
+#### 1.5 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+2. `src/features/terminal-config/services/terminal-resource-service.ts`
+3. 必要时复核 `src/lib/api-client.ts`
+4. 必要时复核 route 生成提示对应文件，但仅限确认是否仍阻断构建
+
+#### 1.6 风险与注意点
+
+1. 不能为绕过 TS 报错而把 `linear-barcode-mgmt.tsx` 再改回默认配置 hydration 或 masking 结构
+2. 不能通过新增 `src/lib/api-fetch` 转发文件来掩盖真实漂移，否则会继续扩散错误引用口径
+3. 若 route tree 提示在修复 TS 后仍阻断构建，需要重新回到规划阶段补充影响范围
+
+#### 1.7 非目标边界
+
+本轮不做：
+
+1. 不重构线性条码模块整体交互
+2. 不顺手改 numbering / appearance / product 查询链
+3. 不扩散到 terminal-config 其它 service 重写
+4. 不处理与当前构建失败无关的历史 warning
+
+#### 1.8 验证策略
+
+若进入实现，至少验证：
+
+1. `linear-barcode-mgmt.tsx` 不再出现未使用符号与可空类型报错
+2. `terminal-resource-service.ts` 不再出现 `@/lib/api-fetch` 模块解析失败
+3. `pnpm exec tsc --noEmit` 或等价前端构建校验通过
+4. 如 route tree 提示仍存在，确认其是否仅为告警并在 `walkthrough.md` 记录
+
+#### 1.9 结论
+
+这次部署失败的根因不是“服务器构建机偶发异常”，而是仓库内已经存在稳定的编译断点：一部分来自 `linear-barcode-mgmt.tsx` 的整改后 TS 收口未完成，另一部分来自 `terminal-resource-service.ts` 的导入路径漂移。下一步应先完成这两处根因修复，再复核 route tree 提示是否仍需单独处理。
+
 ### 1. plan：`useSalesOrderInit` 水合迁移到 query + 稳定 defaultValues 边界
 
 日期：2026-04-14  

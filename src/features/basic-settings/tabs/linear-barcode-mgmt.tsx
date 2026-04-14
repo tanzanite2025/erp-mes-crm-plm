@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { linearBarcodeProtocolService } from '@/features/basic-settings/services/linear-barcode-protocol-service'
@@ -66,7 +65,6 @@ export function LinearBarcodeMgmt() {
   const {
     data: protocolConfig,
     isLoading: isConfigLoading,
-    refetch: refetchProtocolConfig,
   } = useQuery({
     queryKey: BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY,
     queryFn: () => linearBarcodeProtocolService.getConfig(),
@@ -206,7 +204,7 @@ export function LinearBarcodeMgmt() {
   }
 
   // --- 渲染逻辑 (严格 Loading 分支) ---
-  if (isConfigLoading || !rules || !mockInputs) {
+  if (isConfigLoading || !protocolConfig || !rules || !mockInputs) {
     return (
       <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
         <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>

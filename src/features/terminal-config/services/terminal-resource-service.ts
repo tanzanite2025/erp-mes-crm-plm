@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api-fetch'
+import { apiFetch } from '@/lib/api-client'
 import { z } from 'zod'
 
 // 终端资源状态定义
