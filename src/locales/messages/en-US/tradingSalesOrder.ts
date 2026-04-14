@@ -21,6 +21,9 @@ export const tradingSalesOrder = {
     claimed: 'Order lines claimed successfully',
     saveFailed: 'Failed to save sales order',
   },
+  errors: {
+    missingActor: 'Missing valid trading command actor',
+  },
   detail: {
     loading: 'Loading order details...',
     empty: 'No order selected or order not found',

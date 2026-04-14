@@ -23,6 +23,9 @@ export const tradingSalesOrder = {
     claimed: '订单明细行认领成功',
     saveFailed: '保存销售订单失败',
   },
+  errors: {
+    missingActor: '缺少有效的交易操作者',
+  },
   detail: {
     loading: '正在拉取订单详情...',
     empty: '未选择订单或订单不存在',

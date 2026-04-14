@@ -2157,6 +2157,111 @@
 
 1. TypeScript 编译校验通过。
 
+## 2026-04-14 - fix：审计 diff 后端契约统一与客户保存入口防腐
+
+### 本轮目标
+
+1. 从根源修复审计时间线 `diff?.map is not a function`
+2. 不让前端长期承担审计 `diff` 兼容计算责任
+3. 修复客户/供应商保存入口允许空 `code/name` 进入新建分支的后端防腐缺口
+
+### 核心实现
+
+1. **后端统一审计 `diff` 输出契约为数组**
+   - 更新：`server/services/audit_service.go`
+   - 在 `defaultAuditLogger.Write(...)` 内新增标准化逻辑：
+     - 空值 / `null` / `{}` 统一输出为 `[]`
+     - 对象型 `diff` 统一转换为 `audit.DiffItem[]`
+     - `payload.deltaKeys` 在写入前按字典序稳定化，避免输出顺序漂移
+   - 结果：后端写入审计日志时不再把对象型 `diff` 原样落库
+
+2. **审计时间线接口对历史日志做后端标准化**
+   - 更新：`server/handlers/audit_handlers.go`
+   - `/audit/timeline` 返回前统一调用 `services.NormalizeAuditLogs(...)`
+   - 结果：即使库内存在历史对象型 `diff`，接口也会返回标准数组契约
+
+3. **补齐客户/供应商保存入口的 `code/name` 非空防腐**
+   - 更新：`server/services/partner_service.go`
+   - `SaveCustomer(...)` / `SaveSupplier(...)` 在新建分支直接 `Create` 前先校验：
+     - `name` 非空
+     - `code` 非空
+   - 同时统一返回带明确信息的错误：
+     - `code and name must not be empty`
+   - 结果：不再允许通过新建入口把空主身份字段写入系统
+
+4. **补齐与修正后端测试**
+   - 更新：`server/services/audit_service_test.go`
+   - 更新：`server/handlers/audit_handlers_test.go`
+   - 更新：`server/services/partner_transaction_service_test.go`
+   - 新增：`server/services/partner_service_test.go`
+   - 同时补齐 partner transaction sqlite 测试表结构中的社交字段列，使测试库与当前模型一致
+
+### 设计取舍
+
+1. 本轮**不把审计契约修复责任下放到前端**
+2. 前端类型 `diff: DiffItem[]` 保持不变，后端负责保证真实输出与契约一致
+3. 对历史对象型审计日志，选择在后端读取层统一修复，而不是要求前端猜测性转换
+4. 客户保存问题优先在后端入口加防腐，避免继续把脏数据问题推回前端
+
+### 本轮验证
+
+已执行：
+
+1. `go test ./services ./handlers -run "Test(DefaultAuditLoggerWrite|GetDataTimelineHandler|SaveCustomerRejectsEmptyIdentityOnCreate|SaveSupplierRejectsEmptyIdentityOnCreate|ExecuteCustomerTransactionSave|ExecuteSupplierTransactionSave)"`
+
+结果：
+
+1. 审计对象型 `diff` 写入后会被标准化为 `DiffItem[]`
+2. `/audit/timeline` 对历史对象型 `diff` 也会返回标准数组
+3. 客户/供应商新建入口已拒绝空 `code/name`
+4. 相关服务与 handler 定向测试通过
+
+## 2026-04-14 - fix：sales order 明细乱码 toast 修复与模具领借 Command 收口
+
+### 本轮目标
+
+1. 修复 sales order 详情动作中缺少操作者时的乱码 toast
+2. 将模具领借 (`LEND`) 的命令 metadata 编排从 Hook 收口到 `AssetService.lendMold(...)`
+
+### 核心实现
+
+1. **sales order detail action 接回 i18n 消息链**
+   - 更新：`src/features/trading/hooks/use-sales-order-detail-actions.ts`
+   - 更新：`src/features/trading/components/sales-order-detail.tsx`
+   - 更新：`src/locales/messages/zh-CN/tradingSalesOrder.ts`
+   - 更新：`src/locales/messages/en-US/tradingSalesOrder.ts`
+   - 调整内容：
+     - `SalesOrderDetail` 将 `t` 注入 `useSalesOrderDetailActions(...)`
+     - `ensureCommandActor(...)` 捕获缺少 actor 时，改为：
+       - `toast.error(t('tradingSalesOrder.errors.missingActor'))`
+     - 新增中英文 `missingActor` 词条
+
+2. **模具领借命令收口到 AssetService facade**
+   - 更新：`src/features/equipment-tooling/data/schema.ts`
+   - 更新：`src/features/equipment-tooling/services/asset-service.ts`
+   - 调整内容：
+     - 为 `MoldLoan` 增加可选 `metadata` 结构
+     - 将 `AssetService.lendMold` 从简单 bind 改为显式方法
+     - 在保持原有 metadata 的前提下，注入：
+       - `intent: 'PHYSICAL_LOAN_TRANSITION'`
+
+### 设计取舍
+
+1. 本轮**不改动 actor 校验规则本身**，只修复展示文案来源
+2. 本轮**不顺手重构 borrow/return 流程**，只收口 `LEND` 命令边界
+3. metadata 注入采用 merge，而非覆盖，避免误伤后续扩展字段
+
+### 本轮验证
+
+已执行：
+
+1. `pnpm exec tsc --noEmit`
+
+结果：
+
+1. sales order detail i18n 注入后 TypeScript 编译通过
+2. 模具领借 `AssetService.lendMold(...)` 收口后 TypeScript 编译通过
+
 ## 2026-04-13 - feat：736 客户卡片微信打开入口最小实现
 
 ### 本轮目标

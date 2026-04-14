@@ -38,7 +38,7 @@ func GetDataTimelineHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, logs)
+	c.JSON(http.StatusOK, services.NormalizeAuditLogs(logs))
 }
 
 func GetAuditEngineStatsHandler(c *gin.Context) {

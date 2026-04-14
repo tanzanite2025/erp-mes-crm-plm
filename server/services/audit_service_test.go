@@ -1,8 +1,10 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
@@ -35,4 +37,27 @@ func TestDefaultAuditLoggerWriteNormalizesTradingModuleAlias(t *testing.T) {
 	require.Equal(t, AuditModuleSalesOrder, log.Module)
 	require.Equal(t, "so-1", log.TargetID)
 	require.Equal(t, "Create", log.Action)
+}
+
+func TestDefaultAuditLoggerWriteNormalizesObjectDiffToArray(t *testing.T) {
+	testDB := setupAuditServiceSQLiteDB(t)
+
+	err := defaultAuditLogger{}.Write(testDB, AuditEntry{
+		Module:   "Customer",
+		TargetID: "cust-1",
+		Action:   "CUSTOMER_SAVE",
+		Diff:     json.RawMessage(`{"intent":"CUSTOMER_SAVE","payload":{"status":"Inactive","code":"CUST-001"}}`),
+	})
+	require.NoError(t, err)
+
+	var log models.AuditLog
+	require.NoError(t, testDB.First(&log).Error)
+
+	var diff []audit.DiffItem
+	require.NoError(t, json.Unmarshal(log.Diff, &diff))
+	require.Len(t, diff, 2)
+	require.Equal(t, "code", diff[0].Field)
+	require.Equal(t, "CUST-001", diff[0].New)
+	require.Equal(t, "status", diff[1].Field)
+	require.Equal(t, "Inactive", diff[1].New)
 }

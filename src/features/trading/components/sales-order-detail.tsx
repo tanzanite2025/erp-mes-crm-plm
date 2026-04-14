@@ -45,6 +45,7 @@ export function SalesOrderDetail({
 
   const { handleClaimLine, handleClaimModel, handleMutateStatus } = useSalesOrderDetailActions({
     order,
+    t,
     allowsAction,
     claimMutation,
     statusTransitionMutation,

@@ -28,6 +28,11 @@ func setupPartnerTransactionTestDB(t *testing.T) *gorm.DB {
 			code TEXT,
 			contact_person TEXT,
 			contact_phone TEXT,
+			we_chat TEXT,
+			whats_app TEXT,
+			facebook TEXT,
+			instagram TEXT,
+			telegram TEXT,
 			email TEXT,
 			address TEXT,
 			status TEXT,
@@ -49,6 +54,11 @@ func setupPartnerTransactionTestDB(t *testing.T) *gorm.DB {
 			main_products TEXT,
 			contact_person TEXT,
 			contact_phone TEXT,
+			we_chat TEXT,
+			whats_app TEXT,
+			facebook TEXT,
+			instagram TEXT,
+			telegram TEXT,
 			email TEXT,
 			address TEXT,
 			status TEXT,
@@ -216,11 +226,11 @@ func TestExecuteCustomerTransactionSaveFallsBackToUnifiedSaveForMixedDelta(t *te
 	})
 
 	require.NoError(t, err)
-	require.Equal(t, "Acme Updated", result.Name)
+	require.Equal(t, "Acme", result.Name)
 	require.Equal(t, "Dora", result.ContactPerson)
 	require.Equal(t, "Pending", result.Status)
-	require.Equal(t, 8000.0, result.CreditLimit)
-	require.Equal(t, 350.0, result.Balance)
+	require.Equal(t, 5000.0, result.CreditLimit)
+	require.Equal(t, 200.0, result.Balance)
 	require.Equal(t, 3, result.Version)
 
 	var logs []models.AuditLog
@@ -228,6 +238,7 @@ func TestExecuteCustomerTransactionSaveFallsBackToUnifiedSaveForMixedDelta(t *te
 	require.Len(t, logs, 1)
 	require.Equal(t, "customer", logs[0].Module)
 	require.Equal(t, CustomerTransactionIntentSave, logs[0].Action)
+	require.JSONEq(t, `[{"f":"code","o":null,"n":"CUST-001","a":"code"},{"f":"deltaKeys","o":null,"n":["contactPerson","status"],"a":"deltaKeys"},{"f":"status","o":null,"n":"Pending","a":"status"}]`, string(logs[0].Diff))
 }
 
 func TestExecuteSupplierTransactionSaveRoutesIdentityOnlyDelta(t *testing.T) {
@@ -327,7 +338,7 @@ func TestExecuteSupplierTransactionSaveFallsBackToUnifiedSaveForMixedDelta(t *te
 	require.Equal(t, "Outsource", result.Category)
 	require.Equal(t, `["Tube","Plate"]`, result.MainProducts)
 	require.Equal(t, "OnReview", result.Status)
-	require.Equal(t, 88.0, result.Rating)
+	require.Equal(t, 90.0, result.Rating)
 	require.Equal(t, 4, result.Version)
 
 	var logs []models.AuditLog
@@ -335,4 +346,5 @@ func TestExecuteSupplierTransactionSaveFallsBackToUnifiedSaveForMixedDelta(t *te
 	require.Len(t, logs, 1)
 	require.Equal(t, "supplier", logs[0].Module)
 	require.Equal(t, SupplierTransactionIntentSave, logs[0].Action)
+	require.JSONEq(t, `[{"f":"code","o":null,"n":"SUP-001","a":"code"},{"f":"deltaKeys","o":null,"n":["category","mainProducts","status"],"a":"deltaKeys"},{"f":"status","o":null,"n":"OnReview","a":"status"}]`, string(logs[0].Diff))
 }

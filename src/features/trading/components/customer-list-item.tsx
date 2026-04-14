@@ -21,14 +21,21 @@ import {
 import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
-import { useCustomerQuoteSummary } from '@/features/quotes/hooks/use-customer-quote-summary'
+import { type CustomerQuoteSummaryItem } from '@/features/quotes/services/customer-quote-summary-service'
 import type { Customer } from '../data/schema'
 import { CustomerQuoteEntryBlock } from '../customer/components/customer-quote-entry-block'
 import { CustomerSalesClosureSummaryBlock } from '../customer/components/customer-sales-closure-summary'
 import type { CustomerSalesClosureSummary } from '../customer/services/customer-sales-closure-summary-service'
 
+type CustomerQuoteSummaryState = {
+  items: CustomerQuoteSummaryItem[]
+  isLoading: boolean
+  isError: boolean
+}
+
 type CustomerListItemProps = {
   customer: Customer
+  quoteSummary?: CustomerQuoteSummaryState
   locale: string
   onEdit: (customer: Customer) => void
   onDelete: (id: string) => void
@@ -40,6 +47,7 @@ type CustomerListItemProps = {
 
 export function CustomerListItem({
   customer,
+  quoteSummary,
   locale,
   onEdit,
   onDelete,
@@ -50,7 +58,7 @@ export function CustomerListItem({
 }: CustomerListItemProps) {
   const { t } = useLanguage()
   const navigate = useNavigate()
-  const quoteSummary = useCustomerQuoteSummary(customer.id)
+  const resolvedQuoteSummary = quoteSummary ?? { items: [], isLoading: false, isError: false }
 
   const handleOpenCustomerOrders = () => {
     navigate({
@@ -180,9 +188,9 @@ export function CustomerListItem({
         <CustomerSalesClosureSummaryBlock summary={salesClosureSummary} />
         <CustomerQuoteEntryBlock
           customerName={customer.name}
-          quotes={quoteSummary.items}
-          isLoading={quoteSummary.isLoading}
-          isError={quoteSummary.isError}
+          quotes={resolvedQuoteSummary.items}
+          isLoading={resolvedQuoteSummary.isLoading}
+          isError={resolvedQuoteSummary.isError}
           onOpenQuote={onOpenQuote}
           onCreateQuote={onCreateQuote}
         />

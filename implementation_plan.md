@@ -6681,6 +6681,408 @@
 
 这轮整改的核心不是“把 effect 改成另一种写法”，而是恢复远端真相的正确归属：服务端数据交给 React Query，hook 只负责消费、派生与初始化。这样才能保证缓存失效、后台变更与 UI 展示保持一致。
 
+### 1. plan：客户管理增加“无报价客户”筛选
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+客户管理卡片中虽然已经展示了每个客户的报价记录摘要，但当前列表级筛选只有：
+
+1. 搜索关键词
+2. 显示已删除
+
+这会导致用户想快速找到“还没有建立报价的客户”时，只能逐卡查看并人工判断，效率较低。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. `customer-list.tsx` 当前负责客户列表的搜索与删除态筛选
+2. `customer-list-item.tsx` 中每张客户卡片会通过 `useCustomerQuoteSummary(customer.id)` 获取该客户报价摘要
+3. 因此前端实际上已经能知道“某客户当前是否存在报价”，只是还没有把它提升为列表级筛选条件
+
+#### 1.3 本轮目标
+
+本轮目标是补齐客户管理中的报价状态筛选能力：
+
+1. 支持快速筛出“无报价客户”
+2. 让已有报价 / 未报价客户不再依赖人工逐个判断
+3. 保持与现有搜索、已删除筛选兼容
+4. 不新增新的报价业务流程，只增强发现与筛选效率
+
+#### 1.4 推荐实施方向
+
+建议优先采用可扩展的三态筛选，而不是只做一个布尔开关：
+
+1. `全部客户`
+2. `仅看有报价`
+3. `仅看无报价`
+
+原因：
+
+1. 你的当前诉求是“筛无报价客户”
+2. 但一旦有了报价维度，用户通常也会需要反向查看“已有报价客户”
+3. 三态设计比后续再叠第二个 checkbox 更稳定，也更不容易让筛选条件冲突
+
+#### 1.5 实施边界
+
+本轮应坚持：
+
+1. 不改客户卡片中的报价展示逻辑
+2. 不改“新建报价 / 打开报价”交互
+3. 不把筛选逻辑下沉到每张卡片内部各自处理
+4. 优先在客户列表层统一管理筛选状态
+
+#### 1.6 预计涉及文件
+
+1. `src/features/trading/components/customer-list.tsx`
+2. 如有必要，抽出轻量筛选常量或类型定义
+
+#### 1.7 风险与注意点
+
+1. 当前每张卡片是独立调用 `useCustomerQuoteSummary(customer.id)`，若列表层也要基于报价状态筛选，需要注意数据可用性与加载态表现
+2. 若直接依赖卡片内部 hook 结果，列表层拿不到统一筛选依据，可能需要把报价摘要查询前移到列表层或增加统一聚合态
+3. 因此实现时应避免“卡片知道、列表不知道”的状态割裂
+
+#### 1.8 验证策略
+
+若进入实现，至少验证：
+
+1. `仅看无报价客户` 能正确筛出暂无报价的客户
+2. 搜索关键词与报价筛选能叠加生效
+3. “显示已删除”与报价筛选能共存
+4. TypeScript 编译通过
+
+#### 1.9 结论
+
+这轮需求本质上是客户列表的“报价状态可观测性增强”。目标不是新增业务，而是让用户能够在列表层直接区分“已有报价”和“未报价”，从而更精准地推进报价建立工作。
+
+### 1. plan：客户保存失败二次深排（定位历史脏数据 / 后端防腐缺口）
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+在前一轮已收口前端 `finalData` 组装责任后，用户实测编辑客户资料时仍然返回：
+
+`invalid customer transaction payload: code and name must not be empty`
+
+这说明问题并没有完全落在前端 payload 组装层，而是很可能已经进入了历史数据或后端防腐层面。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. 前端编辑态初始值来源 `useCustomerActionViewModel` 看起来会带入完整 customer
+2. `customer-action-dialog.tsx` 提交前会基于编辑态对象生成 `nextData`
+3. 后端统一保存事务 `executeCustomerUnifiedSaveTx(...)` 会先取数据库当前记录 `current`，再按 `deltaKeys` 合并 `payload.FinalData`
+4. 如果本次仅改 `contactPhone`，按理论 `code/name` 应从 `current` 继承保留
+
+因此当前高概率根因是：
+
+1. 目标客户记录在数据库中本来就缺失 `code` 或 `name`
+2. 或历史创建/更新链曾允许空主数据落库
+3. 当前统一保存事务只是把这个旧问题显式暴露了出来
+
+#### 1.3 本轮目标
+
+本轮目标是把客户保存失败问题从“前端现象”推进到“数据面与后端约束”层面解决：
+
+1. 证实目标记录当前是否已是脏数据
+2. 找出客户创建/更新链路中允许空 `code/name` 进入系统的缺口
+3. 为保存链补充最小防腐与必要自愈
+4. 避免未来再次出现“编辑任意字段时才暴露历史脏数据”的情况
+
+#### 1.4 推荐实施方向
+
+建议分三层处理：
+
+1. 数据核查
+   - 检查目标 customer 当前库内 `name` / `code`
+2. 后端防腐
+   - 在创建与更新入口补足 `name` / `code` 非空校验
+3. 脏数据处置
+   - 若发现历史空值记录，增加最小自愈或显式阻断与错误提示，而不是继续让统一事务在深层报错
+
+#### 1.5 风险与注意点
+
+1. 若只在前端补值，会掩盖数据库已经存在的脏数据问题
+2. 若只在后端加严格校验，不处理历史记录，用户仍会在编辑时持续被阻塞
+3. 因此必须同时兼顾“防新增脏数据”和“处理已有脏数据”
+
+#### 1.6 预计涉及文件
+
+1. `server/services/partner_service.go`
+2. `server/services/partner_transaction_service.go`
+3. 必要时补充 customer handler / service 测试
+4. 视情况补充前端错误提示文案，但不以前端补丁掩盖后端问题
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. 目标客户仅修改联系电话时可正确保存，或得到明确的脏数据提示
+2. 新增/更新客户时 `name` 与 `code` 不再允许空值进入系统
+3. 不再出现深层 `code and name must not be empty` 才被动暴露的问题
+
+#### 1.8 结论
+
+这轮客户保存失败问题已经超出“前端 payload 是否完整”的范围。更真实的方向是：系统内可能已有历史客户脏数据，而后端缺少足够靠前的防腐与自愈机制。修复应当直达数据约束与交易入口，而不是继续在前端兜圈子。
+
+### 1. plan：审计时间线 diff 契约漂移修复
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+客户管理页还出现了前端运行时错误：
+
+`TypeError: a.diff?.map is not a function`
+
+错误位置落在 `audit-stamp -> data-timeline`。这说明审计时间线组件假设 `diff` 一定是数组，但实际返回值并不总是该形态。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. 前端 `DataTimeline` 直接执行 `log.diff?.map(...)`
+2. 前端类型 `AuditLog.diff` 被定义为 `DiffItem[]`
+3. 后端 `audit_logs.diff` 实际是 `json.RawMessage / jsonb`
+4. 多个交易服务写审计时并未统一采用数组 diff
+   - 有的写标准 delta 数组
+   - 有的直接写 `json.Marshal(map[string]any{...})`
+
+因此根因是典型的契约漂移：
+
+1. 后端 `diff` 结构多形态
+2. 前端却把它强行视为单一 `DiffItem[]`
+3. 最终在运行时触发 `.map is not a function`
+
+#### 1.3 本轮目标
+
+本轮目标是先恢复审计时间线的稳定性，再考虑长期统一契约：
+
+1. 前端对 `diff` 做兼容解析，避免页面崩溃
+2. 明确区分数组 diff 与对象 diff 的展示路径
+3. 若必要，后端逐步统一审计 diff 输出结构
+
+#### 1.4 推荐实施方向
+
+建议按“前端先稳住，后端再收敛”的顺序处理：
+
+1. 前端 `useAuditTimeline` 或 adapter 层
+   - 将 `diff` 规范化为可渲染结构
+2. 前端 `DataTimeline`
+   - 不再直接对未知形态 `diff` 调用 `.map`
+   - 为对象 / 空值 / 非法 JSON 提供降级展示
+3. 后端审计写入链
+   - 识别当前哪些模块写的是对象型 diff
+   - 评估后续统一为数组型 diff 的成本与风险
+
+#### 1.5 风险与注意点
+
+1. 若只改组件不改 adapter，其他审计消费方后续仍可能重复踩坑
+2. 若立即强推后端全量统一 diff 契约，改动面较大，风险高
+3. 因此优先策略应是“前端兼容解析 + 后端渐进收敛”
+
+#### 1.6 预计涉及文件
+
+1. `src/features/audit-timeline/hooks/use-audit-timeline.ts`
+2. `src/features/audit-timeline/components/data-timeline.tsx`
+3. `src/features/audit-timeline/types.ts`
+4. 如需长期收敛，再扩展到后端审计写入服务
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. 打开客户/订单等审计时间线时不再因 `diff` 非数组而崩溃
+2. 数组型 diff 仍能正常显示 before/after
+3. 对象型 diff 至少能安全降级显示，不影响页面可用性
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮问题不是简单的组件空指针，而是前后端审计 diff 契约已经漂移。正确做法应先在前端建立兼容解析层，恢复页面稳定，再逐步把后端写入格式收敛到统一模型。
+
+### 1. plan：sales order 明细动作乱码 toast 修复
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+`src/features/trading/hooks/use-sales-order-detail-actions.ts` 中，交易操作者缺失时仍在使用一条乱码提示：
+
+`toast.error('缂哄皯鏈夋晥鐨勪氦鏄撴搷浣滀汉')`
+
+这会直接影响用户可读性，也绕开了当前项目的国际化消息体系。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. `SalesOrderDetail` 组件已通过 `useLanguage()` 拿到 `t`
+2. `useSalesOrderDetailActions(...)` 当前未接收 `t`
+3. hook 内 `ensureCommandActor(...)` 捕获 `requireTradingCommandActor(...)` 抛错后直接显示乱码 toast
+
+因此本轮不需要改 actor 校验规则本身，只需要把错误提示收口回 i18n。
+
+#### 1.3 本轮目标
+
+1. 移除乱码 toast
+2. 将缺少操作者提示改为 `t('tradingSalesOrder.errors.missingActor')`
+3. 保持现有权限守卫、actor 校验与 mutation 行为不变
+
+#### 1.4 推荐实施方向
+
+1. 在 `SalesOrderDetail` 中把 `t` 传入 `useSalesOrderDetailActions(...)`
+2. 在 `useSalesOrderDetailActions.ts` 的参数类型中补充 `t`
+3. 仅替换错误提示来源，不改动 `requireTradingCommandActor(...)` 的失败判定
+
+#### 1.5 风险与注意点
+
+1. 不应把 `useLanguage()` 直接塞进业务 hook 内，避免 hook 职责继续膨胀
+2. 不应顺手修改 claim/status/cancel 提交链，避免扩大变更面
+
+#### 1.6 预计涉及文件
+
+1. `src/features/trading/components/sales-order-detail.tsx`
+2. `src/features/trading/hooks/use-sales-order-detail-actions.ts`
+3. 如缺少对应词条，再补 locale 文案
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. actor 缺失时显示 i18n 文案，不再出现乱码
+2. sales order 详情页 TypeScript 编译通过
+3. 现有状态变更 / 认领 mutation 调用参数不被误伤
+
+#### 1.8 结论
+
+这轮属于明显的展示边界回归，修复重点应是“恢复国际化消息链路”，而不是重写 actor 校验逻辑。
+
+### 1. plan：模具领借 Command 抽离至 AssetService.lendMold
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+`use-mold-loan-mgmt.ts` 当前在 mutation 内部直接按 `mode` 分支处理不同提交流程，其中 `LEND` 分支直接调用 `AssetService.lendMold(data)`，但 `AssetService.lendMold` 目前只是对 `MoldLoanService.createLoan` 的简单绑定，尚未承载“领借命令”的显式语义与 metadata 注入。
+
+#### 1.2 当前排查结论
+
+已确认：
+
+1. 领借入口位于 `use-mold-loan-mgmt.ts` 的 `mutationFn`
+2. `AssetService.lendMold` 当前仅是 `MoldLoanService.createLoan.bind(MoldLoanService)`
+3. 用户要求在命令 metadata 中注入：
+   - `intent: 'PHYSICAL_LOAN_TRANSITION'`
+
+因此本轮核心不是新增 API，而是把“领借命令编排责任”从 Hook 收口到 `AssetService` facade。
+
+#### 1.3 本轮目标
+
+1. 将模具领借的命令语义集中到 `AssetService.lendMold(...)`
+2. 在该命令中注入 `metadata.intent = 'PHYSICAL_LOAN_TRANSITION'`
+3. 保持 `BORROW` / `RETURN` 现有流程不变
+
+#### 1.4 推荐实施方向
+
+1. 将 `AssetService.lendMold` 从简单 bind 改为显式方法
+2. 在方法内部对提交 payload 做最小包装，补入 `metadata.intent`
+3. `use-mold-loan-mgmt.ts` 继续只负责模式分派，不再承担领借 metadata 编排
+
+#### 1.5 风险与注意点
+
+1. 不应顺手重构 `borrowMold` / `returnMold`，避免扩大变更面
+2. 若 `MoldLoan` 当前类型中 metadata 是可选字段，需要谨慎保持向后兼容
+3. 若后端已依赖原 metadata 结构，新增 intent 时应采用 merge 而非覆盖
+
+#### 1.6 预计涉及文件
+
+1. `src/features/equipment-tooling/services/asset-service.ts`
+2. `src/features/equipment-tooling/hooks/use-mold-loan-mgmt.ts`
+3. 必要时查看 `mold-loan-service.ts` / schema 类型定义，确保 metadata 结构兼容
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. `LEND` 分支会通过 `AssetService.lendMold(...)` 注入 `PHYSICAL_LOAN_TRANSITION`
+2. `BORROW` 分支行为不变
+3. equipment-tooling 相关 TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮属于“命令语义上移到 facade 层”的最小职责收口。重点不是重构整个模具借还模块，而是把 `LEND` 的 metadata 编排从 Hook 抽离出去，形成更清晰的 Command 边界。
+
+### 1. plan：linear-barcode React Query 真相归属与错误处理整改
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+`src/features/basic-settings/tabs/linear-barcode-mgmt.tsx` 当前仍使用 `useEffect + useState` 手动拉取远端配置，并在加载失败时回退到 `createDefault...` 生成的本地默认配置。这同时违反了两条约束：
+
+1. 服务端真相必须归属于 React Query
+2. 错误处理不得通过默认空值/伪配置进行静默掩盖
+
+#### 1.2 当前排查结论
+
+当前风险点包括：
+
+1. 远端配置读取状态散落在组件本地状态里，绕开了 React Query 的缓存、重试与失效策略
+2. 当 API 加载失败时，页面仍会得到一份“看似正常”的默认配置，导致真实错误被吞掉
+3. 后续用户可能在错误前提下继续编辑并提交，进一步放大数据面问题
+
+#### 1.3 本轮目标
+
+1. 将线性条码配置读取迁移到 React Query
+2. 移除 `createDefault...` 式失败兜底
+3. 让远端错误显式暴露，而不是伪造配置继续渲染
+
+#### 1.4 推荐实施方向
+
+1. 为 linear-barcode 配置提取专用 query hook 或直接改用 `useQuery`
+2. 组件仅消费 query 的 `data / isLoading / error`
+3. 若读取失败：
+   - 显式展示错误态，或
+   - 走 fail-loudly / 错误提示链路
+4. 不再在读取失败时构造默认远端配置对象
+
+#### 1.5 风险与注意点
+
+1. 不能把“无配置”和“接口失败”混为一谈
+2. 若后端允许首次空配置，需要单独明确“空配置”的合法表现形式，而不是复用异常兜底
+3. 迁移时应检查保存链是否依赖本地默认配置副作用
+
+#### 1.6 预计涉及文件
+
+1. `src/features/basic-settings/tabs/linear-barcode-mgmt.tsx`
+2. linear-barcode 相关 service / contract / hook 文件（如已存在）
+3. 必要时补充错误态展示组件或 query 封装
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. 远端配置通过 React Query 加载
+2. 接口失败时不再回退 `createDefault...` 掩盖错误
+3. 页面会显式呈现失败状态或中止使用错误配置
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮整改不是简单的“把 `useEffect` 改成 `useQuery`”，而是要把 linear-barcode 的远端真相归属与错误边界一并纠正。根治点是：**服务端配置属于远端状态，失败时必须显性暴露，而不是用默认值伪装成成功。**
+
 ### 1. plan：`use-bom-data.ts` 最小职责拆分
 
 日期：2026-04-13  

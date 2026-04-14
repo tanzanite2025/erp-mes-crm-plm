@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 	"xdfc-server/db"
@@ -149,6 +150,11 @@ func ListSuppliers(query SupplierListQuery) (SupplierListResponse, error) {
 
 func SaveCustomer(input SaveCustomerRequest, actorID string, operator string, ip string) (CustomerResponse, error) {
 	model := MapSaveCustomerRequestToModel(input)
+	model.Name = strings.TrimSpace(model.Name)
+	model.Code = strings.TrimSpace(model.Code)
+	if model.Name == "" || model.Code == "" {
+		return CustomerResponse{}, wrapPartnerIdentityRequiredError(ErrCustomerTransactionInvalidPayload)
+	}
 	if strings.TrimSpace(model.ID) == "" {
 		model.Version = 1
 		if err := db.DB.Create(&model).Error; err != nil {
@@ -246,6 +252,11 @@ func PatchCustomer(input PatchCustomerRequest, actorID string, operator string, 
 
 func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip string) (SupplierResponse, error) {
 	model := MapSaveSupplierRequestToModel(input)
+	model.Name = strings.TrimSpace(model.Name)
+	model.Code = strings.TrimSpace(model.Code)
+	if model.Name == "" || model.Code == "" {
+		return SupplierResponse{}, wrapPartnerIdentityRequiredError(ErrSupplierTransactionInvalidPayload)
+	}
 	if strings.TrimSpace(model.ID) == "" {
 		model.Version = 1
 		if err := db.DB.Create(&model).Error; err != nil {
@@ -345,6 +356,10 @@ func PatchSupplier(input PatchSupplierRequest, actorID string, operator string, 
 func marshalJSONString(value string) string {
 	encoded, _ := json.Marshal(value)
 	return string(encoded)
+}
+
+func wrapPartnerIdentityRequiredError(base error) error {
+	return fmt.Errorf("%w: code and name must not be empty", base)
 }
 
 func marshalFloatDelta(oldValue float64, newValue float64) string {

@@ -221,6 +221,9 @@ export const moldLoanSchema = z.object({
     maxCycles: z.number().optional(),
     currentCycles: z.number().optional(),
     maintenanceThreshold: z.number().optional(),
+    metadata: z.object({
+        intent: z.string().optional(),
+    }).passthrough().optional(),
     version: z.number().default(1),
     createdAt: z.string(),
 })

@@ -1,9 +1,11 @@
 import { toast } from 'sonner'
+import type { TranslationKey } from '@/locales'
 import type { SalesOrder } from '../data/schema'
 import { requireTradingCommandActor } from '../utils/command-actor'
 
 interface UseSalesOrderDetailActionsParams {
   order?: SalesOrder
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
   allowsAction: (permission: string) => boolean
   claimMutation: {
     mutate: (payload: {
@@ -39,6 +41,7 @@ interface UseSalesOrderDetailActionsParams {
 
 export function useSalesOrderDetailActions({
   order,
+  t,
   allowsAction,
   claimMutation,
   statusTransitionMutation,
@@ -50,7 +53,7 @@ export function useSalesOrderDetailActions({
     try {
       return requireTradingCommandActor({ operator, actorId }, scope)
     } catch {
-      toast.error('缂哄皯鏈夋晥鐨勪氦鏄撴搷浣滀汉')
+      toast.error(t('tradingSalesOrder.errors.missingActor'))
       return null
     }
   }

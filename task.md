@@ -901,3 +901,52 @@
     - [ ] 确保 query 失效或后台数据刷新后，产品表单元数据能响应式更新
     - [ ] 评估并补齐所需 query key / hook 封装，避免在 hook 内直接堆叠请求编排
     - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 773-客户管理增加“无报价客户”筛选（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 在客户管理现有筛选区增加“仅看无报价客户”能力
+    - [ ] 让用户可直接区分已有报价客户与未报价客户，减少逐卡判断
+    - [ ] 复用现有客户报价摘要数据，不额外引入新的业务流程
+    - [ ] 保持搜索词与“显示已删除”筛选可叠加使用
+    - [ ] 若需要，支持未来扩展为“全部 / 有报价 / 无报价”三态筛选
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 774-客户保存失败二次深排：定位历史脏数据 / 后端防腐缺口（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 核查目标客户记录在数据库当前值中是否已缺失 `code` / `name`
+    - [ ] 确认本次 400 是否由历史脏数据触发，而非仅由前端 payload 丢字段触发
+    - [ ] 检查客户创建/更新链是否缺少 `code` / `name` 非空防腐校验
+    - [ ] 如确认存在脏数据，补充保存链防腐与最小自愈策略
+    - [ ] 执行定向验证，并补充 `walkthrough.md`
+
+- [ ] 775-审计时间线 diff 契约漂移修复（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 定位 `audit-stamp` / `data-timeline` 中 `diff` 被错误假设为数组的根因
+    - [ ] 核查后端 audit log 中 `diff` 实际存在数组 / 对象 / JSON 字符串等多形态问题
+    - [ ] 为前端时间线增加兼容解析，避免 `diff?.map is not a function` 运行时崩溃
+    - [ ] 评估后端是否需要统一审计 `diff` 输出契约，减少后续漂移
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 776-sales order 明细动作乱码 toast 修复（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 定位 `use-sales-order-detail-actions.ts` 中缺少交易操作者时的乱码 toast
+    - [ ] 将错误提示切换为 `t('tradingSalesOrder.errors.missingActor')`
+    - [ ] 在 `SalesOrderDetail` -> `useSalesOrderDetailActions` 链路中补充 `t` 注入
+    - [ ] 保持现有 actor 校验逻辑与权限判断不变
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 777-模具领借 Command 抽离至 AssetService.lendMold（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 定位 `use-mold-loan-mgmt.ts` 中 `mode === 'LEND'` 的领借提交链路
+    - [ ] 将领借编排责任从 Hook 收口到 `AssetService.lendMold(...)`
+    - [ ] 为领借命令 metadata 注入 `intent: 'PHYSICAL_LOAN_TRANSITION'`
+    - [ ] 保持借入 (`BORROW`) 与归还 (`RETURN`) 现有行为不变
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 778-linear-barcode 真相归属与错误处理整改（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 定位 `linear-barcode-mgmt.tsx` 中使用 `useEffect + useState` 手动加载远端配置的链路
+    - [ ] 将线性条码配置读取迁移到 React Query，恢复服务端真相归属
+    - [ ] 移除 API 失败时 `createDefault...` 默认配置兜底，禁止静默掩盖错误
+    - [ ] 为加载失败场景提供显式错误展示或 fail-loudly 路径，而不是伪造可用配置
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`

@@ -50,3 +50,31 @@ func TestGetDataTimelineHandlerReturnsCanonicalAndAliasLogsForCanonicalQuery(t *
 	require.Equal(t, "log-1", response[1].ID)
 	require.Equal(t, "sales-order", response[1].Module)
 }
+
+func TestGetDataTimelineHandlerNormalizesLegacyObjectDiff(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-legacy",
+		Module:    "customer",
+		TargetID:  "cust-1",
+		Action:    "CUSTOMER_SAVE",
+		Diff:      json.RawMessage(`{"intent":"CUSTOMER_SAVE","payload":{"status":"Inactive","code":"CUST-001"}}`),
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 4, 9, 12, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=customer&target_id=cust-1", nil)
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 1)
+	require.JSONEq(t, `[{"f":"code","o":null,"n":"CUST-001","a":"code"},{"f":"status","o":null,"n":"Inactive","a":"status"}]`, string(response[0].Diff))
+}

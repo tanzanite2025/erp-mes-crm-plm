@@ -2,6 +2,7 @@ import { MoldCoreService } from './mold-core-service'
 import { MoldTransactionService } from './mold-transaction-service'
 import { FurnaceService } from './furnace-service'
 import { MoldLoanService } from './mold-loan-service'
+import { type MoldLoan } from '../data/schema'
 
 /**
  * AssetService - 资产管理服务 (Facade 模式 - 已适配后端与性能优化)
@@ -27,7 +28,15 @@ export class AssetService {
     static getFurnaces = FurnaceService.getFurnaces.bind(FurnaceService)
 
     static getLoans = MoldLoanService.getLoans.bind(MoldLoanService)
-    static lendMold = MoldLoanService.createLoan.bind(MoldLoanService)
+    static async lendMold(loan: Omit<MoldLoan, 'id' | 'createdAt'>) {
+        return MoldLoanService.createLoan({
+            ...loan,
+            metadata: {
+                ...loan.metadata,
+                intent: 'PHYSICAL_LOAN_TRANSITION',
+            },
+        })
+    }
     static borrowMold = MoldLoanService.createBorrowRecord.bind(MoldLoanService)
     static returnMold = MoldLoanService.returnMold.bind(MoldLoanService)
 

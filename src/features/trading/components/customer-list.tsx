@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   ExternalLink,
@@ -24,9 +24,13 @@ import { requireTradingCommandActor } from '../utils/command-actor'
 import { CustomerAuditTimelineSheet } from '../customer/components/customer-audit-timeline-sheet'
 import { CustomerListItem } from './customer-list-item'
 import { CustomerActionDialog } from './customer-action-dialog'
+import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { QuoteWorkspaceHost } from '@/features/quotes/components/quote-workspace-host'
+import { listCustomerQuoteSummary } from '@/features/quotes/services/customer-quote-summary-service'
 import { useCustomerMutations, useGetCustomerList } from '../customer'
 import { useGetCustomerSalesClosureSummary } from '../customer/hooks/use-customer-sales-closure-summary'
+
+type QuoteStatusFilter = 'all' | 'withQuote' | 'withoutQuote'
 
 export function CustomerList() {
   const { locale, t } = useLanguage()
@@ -37,6 +41,7 @@ export function CustomerList() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [auditCustomer, setAuditCustomer] = useState<Customer | null>(null)
   const [showDeleted, setShowDeleted] = useState(false)
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState<QuoteStatusFilter>('all')
   const [quoteWorkspaceRequest, setQuoteWorkspaceRequest] = useState<{
     open: boolean
     mode: 'create' | 'detail' | null
@@ -64,14 +69,42 @@ export function CustomerList() {
       ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
       : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
   const salesClosureSummaryMap = new Map((salesClosureSummaryList?.items ?? []).map((item) => [item.customerId, item]))
+  const customerQuoteSummaryQueries = useQueries({
+    queries: customers.map((customer) => ({
+      queryKey: quoteQueryKeys.customerSummary(customer.id),
+      queryFn: () => listCustomerQuoteSummary(customer.id),
+      enabled: customer.id.trim().length > 0,
+    })),
+  })
+  const customerQuoteSummaryMap = useMemo(() => {
+    return new Map(
+      customers.map((customer, index) => [
+        customer.id,
+        {
+          items: customerQuoteSummaryQueries[index]?.data ?? [],
+          isLoading: customerQuoteSummaryQueries[index]?.isLoading ?? false,
+          isError: customerQuoteSummaryQueries[index]?.isError ?? false,
+        },
+      ])
+    )
+  }, [customerQuoteSummaryQueries, customers])
+  const quoteFilterLabels = {
+    all: locale === 'zh-CN' ? '全部客户' : 'All Customers',
+    withQuote: locale === 'zh-CN' ? '仅看有报价' : 'With Quotes',
+    withoutQuote: locale === 'zh-CN' ? '仅看无报价' : 'Without Quotes',
+  } as const
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
       (customer.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (customer.code?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (customer.contactPerson?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+    const quoteSummary = customerQuoteSummaryMap.get(customer.id)
+    const hasQuotes = (quoteSummary?.items.length ?? 0) > 0
 
     if (!showDeleted && customer.isDeleted) return false
+    if (quoteStatusFilter === 'withQuote' && !hasQuotes) return false
+    if (quoteStatusFilter === 'withoutQuote' && hasQuotes) return false
 
     return matchesSearch
   })
@@ -236,6 +269,25 @@ export function CustomerList() {
         </div>
 
         <div className='flex items-center gap-2 sm:gap-3 w-full sm:w-auto'>
+          <div className='flex items-center gap-1 rounded-full bg-muted/40 p-1'>
+            {(['all', 'withQuote', 'withoutQuote'] as const).map((option) => (
+              <Button
+                key={option}
+                type='button'
+                variant='ghost'
+                onClick={() => setQuoteStatusFilter(option)}
+                className={cn(
+                  'h-9 rounded-full px-3 text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all',
+                  quoteStatusFilter === option
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {quoteFilterLabels[option]}
+              </Button>
+            ))}
+          </div>
+
           <Button
             variant='ghost'
             onClick={() => setShowDeleted((value) => !value)}
@@ -264,6 +316,7 @@ export function CustomerList() {
             <CustomerListItem
               key={customer.id}
               customer={customer}
+              quoteSummary={customerQuoteSummaryMap.get(customer.id)}
               locale={locale}
               onEdit={handleEditClick}
               onDelete={handleDeleteCustomer}
