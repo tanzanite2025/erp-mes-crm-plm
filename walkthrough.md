@@ -128,6 +128,17 @@
 - **验证结果**
   - `pnpm exec tsc --noEmit`：通过。
 
+## 2026-04-15 模板弹窗滚动策略收口（桌面端仅列内滚动）
+
+- **变更概述**
+  - 目标：不改变弹窗总高度的前提下，避免轻内容场景出现无意义的整体垂直滚动条。
+  - 在 `src/features/engineering/components/template-mgmt/template-editor-dialog-layout.tsx` 中调整主体滚动策略：
+    - 移动端：主体容器保留 `overflow-y-auto`，避免内容被截断。
+    - 桌面端（lg+）：主体容器改为 `overflow-hidden`，三列区域 `h-full` 占满中间固定高度，仅各列容器 `overflow-y-auto` 独立滚动。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
 ## 2026-04-14 订单列表卡片挂载独立包装预览摘要
 
 - **变更概述**

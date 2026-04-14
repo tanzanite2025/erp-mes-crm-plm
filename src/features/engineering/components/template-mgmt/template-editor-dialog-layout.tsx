@@ -56,8 +56,8 @@ export function TemplateEditorDialogLayout({
           </div>
         </DialogHeader>
 
-        <div className='min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 xl:px-7'>
-          <div className='grid gap-4 lg:h-[72vh] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:overflow-hidden xl:px-7'>
+          <div className='grid gap-4 lg:h-full lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch'>
             <div className='min-w-0 rounded-[28px] border border-dashed border-muted/40 bg-muted/5 p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto'>
               {leftColumn}
             </div>

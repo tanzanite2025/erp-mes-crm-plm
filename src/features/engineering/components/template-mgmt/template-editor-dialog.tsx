@@ -1,6 +1,7 @@
 'use client'
 
 import { Eye } from 'lucide-react'
+import { type TranslationKey } from '@/locales'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -40,7 +41,7 @@ interface TemplateEditorDialogProps {
   onToggleRequired: (categoryKey: string, checked: boolean) => void
   onSubmit: () => void
   locale: string
-  t: (key: string | unknown, params?: Record<string, unknown>) => string
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string
   componentLabels: Record<string, string>
   assembledCategories: AssembledCategoryItem[]
   availableCategories: AvailableCategoryItem[]

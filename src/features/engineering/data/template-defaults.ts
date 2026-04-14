@@ -14,6 +14,7 @@ export const DEFAULT_PRODUCT_TEMPLATES: ReadonlyArray<ProductTemplate> = [
     description: 'Standard geometry template for rim products.',
     active: true,
     createdAt: new Date(0).toISOString(),
+    attributeBindings: [],
     version: 1,
   },
   {
@@ -24,6 +25,7 @@ export const DEFAULT_PRODUCT_TEMPLATES: ReadonlyArray<ProductTemplate> = [
     description: 'Physical spec template for stems and related components.',
     active: true,
     createdAt: new Date(0).toISOString(),
+    attributeBindings: [],
     version: 1,
   },
   {
@@ -34,6 +36,7 @@ export const DEFAULT_PRODUCT_TEMPLATES: ReadonlyArray<ProductTemplate> = [
     description: 'Parameter definition template for composite forks.',
     active: true,
     createdAt: new Date(0).toISOString(),
+    attributeBindings: [],
     version: 1,
   },
 ]

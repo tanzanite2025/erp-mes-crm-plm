@@ -3,7 +3,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
-  toProductArrayContract,
   toProductContract,
   toProductListContract,
   toProductOptionsArrayContract,
