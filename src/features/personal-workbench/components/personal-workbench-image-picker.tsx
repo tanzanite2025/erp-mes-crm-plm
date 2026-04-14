@@ -312,15 +312,15 @@ export function PersonalWorkbenchImagePicker({
   }
 
   useEffect(() => {
-    if (!autoStartCamera || cameraMode || isStartingCamera || !supportsCamera) {
+    if (!autoStartCamera || cameraMode || isStartingCamera || initialDraftId || !supportsCamera) {
       return
     }
 
     void startCamera(initialCaptureMode === 'video' ? 'environment' : facingMode)
-  }, [autoStartCamera, cameraMode, facingMode, initialCaptureMode, isStartingCamera, startCamera, supportsCamera])
+  }, [autoStartCamera, cameraMode, facingMode, initialCaptureMode, initialDraftId, isStartingCamera, startCamera, supportsCamera])
 
   useEffect(() => {
-    if (!autoTriggerPhotoPicker || initialCaptureMode !== 'photo' || value || activeDraft || cameraMode) {
+    if (!autoTriggerPhotoPicker || initialCaptureMode !== 'photo' || initialDraftId || value || activeDraft || cameraMode) {
       return
     }
 
@@ -331,15 +331,15 @@ export function PersonalWorkbenchImagePicker({
     return () => {
       window.clearTimeout(timer)
     }
-  }, [activeDraft, autoTriggerPhotoPicker, cameraMode, initialCaptureMode, value])
+  }, [activeDraft, autoTriggerPhotoPicker, cameraMode, initialCaptureMode, initialDraftId, value])
 
   useEffect(() => {
-    if (!autoPrepareRecording || captureMode !== 'video' || cameraMode || isStartingCamera || !supportsCamera) {
+    if (!autoPrepareRecording || captureMode !== 'video' || initialDraftId || cameraMode || isStartingCamera || !supportsCamera) {
       return
     }
 
     void startCamera('environment')
-  }, [autoPrepareRecording, cameraMode, captureMode, isStartingCamera, startCamera, supportsCamera])
+  }, [autoPrepareRecording, cameraMode, captureMode, initialDraftId, isStartingCamera, startCamera, supportsCamera])
 
   return (
     <div className='space-y-2'>

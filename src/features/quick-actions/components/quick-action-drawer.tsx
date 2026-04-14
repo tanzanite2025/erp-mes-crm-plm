@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { ArrowRight, Download, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLanguage } from '@/context/language-provider'
+import { useLocalMediaDrafts } from '@/features/personal-workbench/hooks/use-local-media-drafts'
 import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
 import { useAuthStore } from '@/stores/auth-store'
 import { getAvailableQuickActions } from '../services/quick-action-access'
@@ -20,7 +21,11 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
   const navigate = useNavigate()
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [isCapturing, setIsCapturing] = useState(false)
   const actions = useMemo(() => getAvailableQuickActions(user), [user])
+  const { saveDraft } = useLocalMediaDrafts()
   const photoInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-photo.webmanifest' })
   const videoInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-video.webmanifest' })
   const bufferInstall = usePageInstall({ manifestHref: '/manifests/personal-workbench-buffer.webmanifest' })
@@ -40,6 +45,60 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
     }
     return t('quickActions.drawer.install.guide')
   }
+
+  const openDirectCapture = useCallback((mode: 'photo' | 'video') => {
+    if (isCapturing) {
+      return
+    }
+
+    if (mode === 'photo') {
+      photoInputRef.current?.click()
+      return
+    }
+
+    videoInputRef.current?.click()
+  }, [isCapturing])
+
+  const handleDirectCapture = useCallback(async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    mode: 'photo' | 'video',
+  ) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    setIsCapturing(true)
+    try {
+      const draft = await saveDraft({
+        durationSeconds: mode === 'video' ? 10 : undefined,
+        file,
+        kind: mode === 'video' ? 'video' : 'image',
+      })
+
+      if (!draft) {
+        toast.error(mode === 'video' ? '当前环境无法保存本地视频草稿' : '当前环境无法保存本地图片草稿')
+        return
+      }
+
+      onOpenChange(false)
+      void navigate({
+        to: '/personal-workbench/capture',
+        search: {
+          autoEdit: true,
+          draftId: draft.id,
+          mode,
+        },
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : mode === 'video' ? '拉起录视频失败' : '拉起拍照失败'
+      toast.error(message)
+    } finally {
+      setIsCapturing(false)
+    }
+  }, [navigate, onOpenChange, saveDraft])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -69,6 +128,16 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
                     type='button'
                     className='flex min-w-0 flex-1 items-center justify-between gap-3 text-left'
                     onClick={() => {
+                      if (action.id === 'personal_workbench_photo') {
+                        openDirectCapture('photo')
+                        return
+                      }
+
+                      if (action.id === 'personal_workbench_video') {
+                        openDirectCapture('video')
+                        return
+                      }
+
                       onOpenChange(false)
                       void navigate({ to: action.to, search: action.search })
                     }}
@@ -122,6 +191,22 @@ export function QuickActionDrawer({ open, onOpenChange }: QuickActionDrawerProps
             {t('quickActions.drawer.close')}
           </Button>
         </div>
+        <input
+          ref={photoInputRef}
+          type='file'
+          accept='image/*'
+          capture='environment'
+          className='hidden'
+          onChange={(event) => void handleDirectCapture(event, 'photo')}
+        />
+        <input
+          ref={videoInputRef}
+          type='file'
+          accept='video/*'
+          capture='environment'
+          className='hidden'
+          onChange={(event) => void handleDirectCapture(event, 'video')}
+        />
       </SheetContent>
     </Sheet>
   )

@@ -40,13 +40,14 @@ import { createMoldDraft, createMoldSchema, type Mold, type MoldDrawing, type Mo
 import { ImageUpload } from './image-upload'
 import { AssetService } from '../services/asset-service'
 import { MoldCoreService } from '../services/mold-core-service'
-import { DrawingService } from '../services/drawing-service'
 import { Plus, RotateCcw, Save, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
+import { useMoldGroupsQuery } from '../hooks/use-mold-groups-query'
+import { useMoldDrawingsQuery } from '../hooks/use-mold-drawings-query'
 
 interface MoldActionDialogProps {
     open: boolean
@@ -65,9 +66,7 @@ export function MoldActionDialog({
     const { allowsAction } = useNonBlockingPermissionActions()
     const user = useAuthStore((state) => state.user)
     const canOpenDrawings = canOpenRouteEntryNonBlocking(user, '/equipment-tooling/drawings')
-    const [groupNames, setGroupNames] = useState<string[]>([])
     const [isAddingNewGroup, setIsAddingNewGroup] = useState(false)
-    const [linkedDrawings, setLinkedDrawings] = useState<MoldDrawing[]>([])
     const moldFormSchema = useMemo(() => createMoldSchema(t), [t])
     const defaultDraft = useMemo(() => createMoldDraft(editData ?? {}), [editData])
 
@@ -79,36 +78,34 @@ export function MoldActionDialog({
         resolver: zodResolver(moldFormSchema),
         defaultValues: defaultDraft,
     })
+    const moldGroupsQuery = useMoldGroupsQuery(open)
+    const moldDrawingsQuery = useMoldDrawingsQuery(open, editData?.sn)
+    const groupNames = moldGroupsQuery.data ?? []
+    const linkedDrawings: MoldDrawing[] = moldDrawingsQuery.data ?? []
 
     const watchedMax = useWatch({ control: form.control, name: 'maxCycles' }) ?? 0
     const watchedCurrent = useWatch({ control: form.control, name: 'currentCycles' }) ?? 0
     const healthPercent = AssetService.previewHealthScore(watchedCurrent, watchedMax)
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            if (!open) return
-
-            const [groups, drawings] = await Promise.all([
-                AssetService.getGroupNames(),
-                editData?.sn ? DrawingService.getDrawingsByMold(editData.sn) : Promise.resolve([]),
-            ])
-
-            setGroupNames(groups)
-            setLinkedDrawings(drawings)
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
             setIsAddingNewGroup(false)
+        }
+        onOpenChange(nextOpen)
+    }
 
-            if (editData) {
-                form.reset(editData)
-                tracker.reset(editData)
-                return
-            }
+    useEffect(() => {
+        if (!open) return
 
-            const draft = createMoldDraft()
-            form.reset(draft)
-            tracker.reset(draft)
+        if (editData) {
+            form.reset(editData)
+            tracker.reset(editData)
+            return
         }
 
-        loadInitialData()
+        const draft = createMoldDraft()
+        form.reset(draft)
+        tracker.reset(draft)
     }, [editData, form, open, tracker])
 
     const onSubmit = async (data: MoldFormOutput) => {
@@ -126,7 +123,7 @@ export function MoldActionDialog({
         const isDirty = Object.keys(delta).length > 0
 
         if (isEdit && !isDirty) {
-            onOpenChange(false)
+            handleOpenChange(false)
             return
         }
 
@@ -138,11 +135,11 @@ export function MoldActionDialog({
         
         // SDRTS: 发送 Patch 意图或全量数据
         onConfirm(stampedData, isEdit, isEdit ? delta : undefined)
-        onOpenChange(false)
+        handleOpenChange(false)
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className='w-[95vw] sm:max-w-[550px] max-h-[92vh] flex flex-col p-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
                 <DialogHeader className='pb-4 pt-6 px-6 sm:px-8 relative z-10 shrink-0'>
                     <DialogTitle className='text-lg sm:text-xl font-black tracking-tight uppercase italic'>
@@ -376,7 +373,7 @@ export function MoldActionDialog({
                 </div>
 
                 <DialogFooter className='p-6 sm:px-8 bg-muted/5 border-t border-dashed border-muted-foreground/10 flex flex-row sm:justify-end gap-3 shrink-0'>
-                    <Button type='button' variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest' onClick={() => onOpenChange(false)}>
+                    <Button type='button' variant='ghost' className='flex-1 sm:flex-none rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest' onClick={() => handleOpenChange(false)}>
                         {t('equipmentTooling.molds.dialog.actions.cancel')}
                     </Button>
                     <Button onClick={form.handleSubmit(onSubmit)} className='flex-1 sm:flex-none rounded-full h-11 px-10 bg-primary hover:bg-primary/90 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-2'>

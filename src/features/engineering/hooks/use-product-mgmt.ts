@@ -1,19 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
+import { type TranslationKey } from '@/locales'
+import { toast } from 'sonner'
 import { ProductCoreService } from '../services/product-core-service'
 import { ProductTypeService } from '../services/product-type-service'
+import { type Product } from '../data/schema'
 import { type ProductSubmitPayload } from './use-product-form'
 import { useProductWriteActions } from './use-product-write-actions'
 import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from '../query-keys'
 
 const logger = createLogger('useProductMgmt')
 
-export function useProductMgmt() {
+type TranslateProductArchive = (key: TranslationKey, params?: Record<string, string | number>) => string
+
+export function useProductMgmt(t: TranslateProductArchive) {
     const [activeTab, setActiveTab] = useState<string>('all')
     const [activeSubTab, setActiveSubTab] = useState<string>('all')
     const queryClient = useQueryClient()
-    const { saveProducts, syncProducts } = useProductWriteActions()
+    const { saveProducts, syncProducts, deleteProduct } = useProductWriteActions()
     const productsQuery = useQuery({
         queryKey: PRODUCTS_QUERY_KEY,
         queryFn: () => ProductCoreService.getProducts(),
@@ -22,8 +27,8 @@ export function useProductMgmt() {
         queryKey: PRODUCT_TYPES_QUERY_KEY,
         queryFn: () => ProductTypeService.getProductTypes(),
     })
-    const data = productsQuery.data ?? []
-    const productTypes = productTypesQuery.data ?? []
+    const data = useMemo(() => productsQuery.data ?? [], [productsQuery.data])
+    const productTypes = useMemo(() => productTypesQuery.data ?? [], [productTypesQuery.data])
     const isLoading = productsQuery.isLoading || productsQuery.isFetching || productTypesQuery.isLoading || productTypesQuery.isFetching
 
     useEffect(() => {
@@ -32,9 +37,10 @@ export function useProductMgmt() {
         }
     }, [productTypesQuery.error, productsQuery.error])
 
-    useEffect(() => {
+    const handleActiveTabChange = (nextTab: string) => {
+        setActiveTab(nextTab)
         setActiveSubTab('all')
-    }, [activeTab])
+    }
 
     const topLevelTypes = useMemo(
         () => productTypes.filter((type) => type && !type.parentId),
@@ -75,6 +81,24 @@ export function useProductMgmt() {
         }
     }
 
+    const handleDeleteProduct = async (product: Product) => {
+        const confirmed = window.confirm(t('engineering.productArchive.toasts.deleteConfirm'))
+        if (!confirmed) return
+
+        try {
+            await deleteProduct(product.id)
+            toast.success(t('engineering.productArchive.toasts.deleteSuccess'))
+        } catch (error) {
+            const message = error instanceof Error ? error.message : ''
+            toast.error(
+                t('engineering.productArchive.toasts.deleteFailed', {
+                    message,
+                })
+            )
+            logger.error('Failed to delete product archive item', error)
+        }
+    }
+
     const refresh = async () => {
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY }),
@@ -87,13 +111,14 @@ export function useProductMgmt() {
         productTypes,
         isLoading,
         activeTab,
-        setActiveTab,
+        setActiveTab: handleActiveTabChange,
         activeSubTab,
         setActiveSubTab,
         topLevelTypes,
         subLevelTypes,
         filteredProducts,
         handleFormSubmit,
+        handleDeleteProduct,
         refresh,
     }
 }

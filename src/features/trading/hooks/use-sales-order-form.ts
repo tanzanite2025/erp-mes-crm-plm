@@ -12,42 +12,13 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 type SalesOrderFormState = Partial<SalesOrder>
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
 
-const DEFAULT_ORDER: Partial<SalesOrder> = {
-  orderNo: '',
-  customerName: '',
-  customerId: '',
-  type: '',
-  currency: 'CNY',
-  paymentMethod: '',
-  paymentMethodName: '',
-  paymentTerm: '',
-  paymentTermName: '',
-  classification: 'GENERAL',
-  orderDate: '',
-  deliveryDate: '',
-  status: 'Pending',
-  purchaseOrderNo: '',
-  barcode: '',
-  statusNote: '',
-  lines: [],
-  evidences: [],
-  quantity: 0,
-  amount: 0,
-  requirements: '',
-  version: 1,
-}
-
 export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, open: boolean) {
   const { t } = useLanguage()
+  const { initialFormData, isInitializing, initError, retryInit } = useSalesOrderInit(initialOrder, open)
 
-  // 使用 SDRTS DeltaTracker 进行状态追踪
-  const memoizedInitial = useMemo(() => initialOrder || (DEFAULT_ORDER as SalesOrder), [initialOrder])
+  const memoizedInitial = useMemo(() => initialFormData as SalesOrder, [initialFormData])
   const { data: formData, commit, isDirty } = useDeltaTracker(memoizedInitial, open)
 
-  /**
-   * 兼容性 Shim: 模拟 useState 的 setFormData
-   * 实际上操作的是 ProxyTracker 的 Proxy 对象
-   */
   const setFormData = useCallback((updater: SalesOrderFormUpdater) => {
     if (typeof updater === 'function') {
       const next = updater(formData)
@@ -57,13 +28,8 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     }
   }, [formData])
 
-  // 1. 初始化逻辑 (已抽离) - 这里的 setFormData 会操作 proxy
-  useSalesOrderInit(initialOrder, open, setFormData)
-
-  // 2. 行操作逻辑 (已抽离)
   const { handleAddLine, handleRemoveLine, updateLine } = useSalesOrderOps(setFormData)
 
-  // 3. 状态切换：分类变更
   const handleClassificationChange = useCallback(async (value: string) => {
     const newBarcode = await numberingService.previewContractBarcode(
       getSalesOrderClassificationExt(value)
@@ -76,7 +42,6 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     }))
   }, [setFormData])
 
-  // 4. 校验逻辑集成
   const validate = (): boolean => {
     const { isValid, errorKey } = validateSalesOrder(formData, initialOrder)
     if (!isValid && errorKey) {
@@ -86,7 +51,6 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     return true
   }
 
-  // 5. 保存前置准备
   const prepareToSave = async () => {
     if (!initialOrder) {
       const barcode = await numberingService.generateContractBarcode(
@@ -116,5 +80,8 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     prepareToSave,
     commit,
     isDirty,
+    isInitializing,
+    initError,
+    retryInit,
   }
 }

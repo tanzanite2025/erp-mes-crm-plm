@@ -15,6 +15,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type moldGroupNameRow struct {
+	GroupName string `gorm:"column:group_name"`
+}
+
 // GetMoldsHandler 获取所有模具 (支持分页)
 func GetMoldsHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -62,6 +66,27 @@ func GetMoldsHandler(c *gin.Context) {
 		"pageSize": pageSize,
 		"version":  moldListVersion(items),
 	})
+}
+
+func GetMoldGroupNamesHandler(c *gin.Context) {
+	var rows []moldGroupNameRow
+	err := db.DB.Model(&models.Mold{}).
+		Select("DISTINCT TRIM(group_name) AS group_name").
+		Where("group_name IS NOT NULL").
+		Where("TRIM(group_name) <> ''").
+		Order("TRIM(group_name) ASC").
+		Scan(&rows).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取模具组名失败: " + err.Error()})
+		return
+	}
+
+	groupNames := make([]string, 0, len(rows))
+	for _, row := range rows {
+		groupNames = append(groupNames, row.GroupName)
+	}
+
+	c.JSON(http.StatusOK, groupNames)
 }
 
 // GetMoldHandler 获取单个模具

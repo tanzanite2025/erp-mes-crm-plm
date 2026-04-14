@@ -77,6 +77,9 @@ export const tradingQueryKeys = {
     status,
   ],
   salesOrderDetail: (id: string): readonly ['sales-orders', string] => ['sales-orders', id],
+  salesOrderPreviewBarcode: (
+    classificationAlias: string
+  ): readonly ['sales-orders', 'preview-barcode', string] => ['sales-orders', 'preview-barcode', classificationAlias],
   suppliers: (): readonly ['suppliers'] => ['suppliers'],
   supplierList: (): readonly ['suppliers', 'list'] => ['suppliers', 'list'],
 } as const

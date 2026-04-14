@@ -943,10 +943,81 @@
     - [ ] 保持借入 (`BORROW`) 与归还 (`RETURN`) 现有行为不变
     - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
 
-- [ ] 778-linear-barcode 真相归属与错误处理整改（中文）
+- [x] 778-linear-barcode 真相归属与错误处理整改（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `linear-barcode-mgmt.tsx` 当前虽已使用 `useQuery` 获取 `protocolConfig`，但仍通过本地 `useState` 预置 `rules=[]` 与 `mockInputs=createDefaultLinearBarcodeMockInputs()`，再用 `useEffect` 从远端配置回填
+    - [x] 已实查当前真实 masking 风险不只在“请求失败兜底”，还在于 query 未就绪时 UI 会先消费默认 `mockInputs / rules`，呈现一套伪装成可用配置的本地默认态
+    - [x] 已实查当前文件已存在 `error` 分支，但主体渲染仍在加载阶段依赖本地默认 state，而不是由 UI 层基于 query 状态明确裁决 loading / error / ready
+    - [x] 已移除 `rules / mockInputs` 的默认配置型 hydration 逻辑，让线性条码配置真相直接归属 React Query ready 态
+    - [x] 已由 UI 层显式显示 loading / error 状态，不再以本地默认配置掩盖未加载或失败状态
+    - [x] 已保留用户编辑态与保存链，但不再让 `createDefault...` 充当远端读取 fallback
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [x] 782-useSalesOrderInit 水合链迁移到 query/defaultValues（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/features/trading/hooks/use-sales-order-init.ts` 当前通过 `useEffect` 执行异步初始化：编辑态直接 `setFormData(initialOrder)`，新建态先请求 `numberingService.previewContractBarcode(...)` 再批量 `setFormData(...)`
+    - [x] 已实查 `useSalesOrderForm` 当前通过 `useDeltaTracker` 持有 `formData`，再用 `setFormData` shim 在 effect 中回填，初始化真相与表单默认值边界混在一起
+    - [x] 已确认当前真实问题不是“能不能工作”，而是“初始化读取与表单默认值水合边界不稳定，容易引入 hydration / reset 风险”
+    - [x] 已将新建态默认条码预览迁移到 `useQuery` authority
+    - [x] 已将表单初始化收口到更稳定的派生初始值边界，移除 `useSalesOrderInit` 中的 effect 水合
+    - [x] 已保持现有销售订单校验、行编辑与保存链语义不变
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [x] 779-产品档案列定义纯化：删除动作上浮至管理 Hook/Dispatcher（中文）
+  - [x] 已完成本轮执行：
+    - [x] 定位 `use-product-columns.tsx` 中操作列内嵌的删除编排（Confirm + Async Mutation + Toast）
+    - [x] 将删除动作编排上浮到 `use-product-mgmt.ts`（或等价 dispatcher），列定义仅保留事件转发
+    - [x] `use-product-columns` 改为依赖注入 `onDelete` 回调，不再直接依赖写入 Hook 与 toast
+    - [x] 在管理 Hook 统一承接删除确认、调用 mutation、提示成功/失败
+    - [x] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+    - [x] 已实查 `use-product-columns.tsx` 的 `actions` 列当前直接内嵌删除编排：`window.confirm(...) -> await deleteProduct(...) -> toast.success / toast.error`
+    - [x] 已实查 `use-product-columns.tsx` 当前直接依赖 `useProductWriteActions` 与 `sonner/toast`，渲染列定义存在副作用耦合
+    - [x] 已实查 `ProductPartsMgmt` 当前仅向 `useProductColumns(...)` 注入 `onEdit`，尚未注入删除事件 handler
+    - [x] 已实查 `use-product-mgmt.ts` 当前仅承接产品列表读取、筛选、提交与刷新，尚无统一删除编排入口
+    - [x] 已将删除动作编排上浮到 `use-product-mgmt.ts`，列定义仅保留事件转发
+    - [x] 已将 `use-product-columns` 改为依赖注入 `onDelete` 回调，不再直接依赖写入 Hook 与 toast
+    - [x] 已在管理 Hook 统一承接删除确认、调用 mutation、提示成功/失败
+    - [x] 已执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [x] 780-模具组名聚合下沉到后端接口（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/features/equipment-tooling/services/mold-core-service.ts` 的 `getGroupNames()` 当前通过 `getMolds()` 全量拉取模具后，在前端执行 `map(groupName) + filter(Boolean) + Set 去重`
+    - [x] 已实查当前后端 `GET /molds` 仅提供模具列表接口，尚无专门的“组名聚合查询”接口
+    - [x] 已实查当前 `GET /molds?options=true` 仍返回全量模具记录，不适合作为大数据量场景下的组名来源
+    - [x] 已确认当前真实问题不是“缺少去重”，而是“组名聚合计算重心错误地放在前端全量拉取之后”
+    - [x] 已在后端新增模具组名聚合只读接口，直接返回去重后的组名列表
+    - [x] 已将前端 `getGroupNames()` 切换为调用后端聚合接口，不再依赖全量 `getMolds()`
+    - [x] 已同步检查 `AssetService.getGroupNames()`、模具弹窗、产品表单等调用点，保持消费契约不变
+    - [x] 已执行定向 Go / TypeScript 校验，并补充 `walkthrough.md`
+
+- [x] 781-模具弹窗读取链切换到 React Query（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/features/equipment-tooling/components/mold-action-dialog.tsx` 当前在 `useEffect` 中手动执行 `Promise.all([AssetService.getGroupNames(), DrawingService.getDrawingsByMold(...)])`
+    - [x] 已实查当前弹窗将服务端数据落到本地 state：`groupNames`、`linkedDrawings`
+    - [x] 已实查该 `useEffect` 同时还承担表单 reset / tracker reset，本地表单初始化逻辑与远端读链混在一起
+    - [x] 已确认当前真实问题不是“缺少缓存”，而是“服务端真相读取未归属到 React Query”
+    - [x] 已封装 `useMoldGroupsQuery`，承接组名读取
+    - [x] 已封装 `useMoldDrawingsQuery`，承接按模具 SN 读取图纸列表
+    - [x] 已让 `mold-action-dialog.tsx` 去掉手动 fetch state，仅保留表单 reset / tracker reset 的本地副作用
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [x] 783-快捷扫描个人拍照/录视频入口直开摄像头整改（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/features/quick-actions/data/quick-action-registry.ts` 中“个人拍照 / 个人录视频”入口当前跳转到 `/personal-workbench/capture?mode=photo|video`，并非直接跳到 `/personal-workbench`
+    - [x] 已实查 `src/features/quick-actions/components/quick-action-drawer.tsx` 点击动作当前只是 `navigate({ to: action.to, search: action.search })`，未在点击时直接桥接摄像头能力
+    - [x] 已实查 `src/features/personal-workbench/capture/index.tsx` 当前是“个人缓冲区快捷采集页”，包含草稿队列、整理动作与缓冲区文案，不是纯直拍壳层
+    - [x] 已实查 `PersonalWorkbenchImagePicker` 当前拍照通过 `useEffect + setTimeout + input.click()` 触发文件选择，录视频则进入录制准备态；两者都发生在路由跳转之后，移动端用户手势已丢失
+    - [x] 已确认当前真实问题不是“路由参数 mode 未生效”，而是“快捷入口没有把直接采集动作绑定在同一次用户手势里，capture 页又承担了缓冲区中间页职责”
+    - [x] 已将“个人拍照 / 个人录视频”入口改为更接近直开摄像头的链路，避免先落到缓冲区感知页面
+    - [x] 已按你最新确认收口：`个人拍照 / 个人录视频` 只作为独立新建入口，不读取历史草稿队列
+    - [x] 已让 `capture` 页去掉草稿队列 / 清理 / 稍后处理等缓冲区工作台逻辑，仅承接本次新建采集与编辑
+    - [x] 已保留技术层临时草稿桥接，但不把“个人缓冲区”产品心智混入新建入口
+    - [x] 已继续执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [ ] 784-capture 页面标题/描述收口为新建拍照/录像页（中文）
   - [ ] 待确认本轮规划范围：
-    - [ ] 定位 `linear-barcode-mgmt.tsx` 中使用 `useEffect + useState` 手动加载远端配置的链路
-    - [ ] 将线性条码配置读取迁移到 React Query，恢复服务端真相归属
-    - [ ] 移除 API 失败时 `createDefault...` 默认配置兜底，禁止静默掩盖错误
-    - [ ] 为加载失败场景提供显式错误展示或 fail-loudly 路径，而不是伪造可用配置
-    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+    - [x] 已实查 `src/features/personal-workbench/capture/index.tsx` 顶部标题仍使用“个人快捷采集 / 一键拍照 / 一键录视频 / 独立新建采集入口”等混合表述
+    - [x] 已确认当前页面职责已经收口为“独立新建采集页”，因此标题/描述也应同步改成“新建拍照 / 新建录像”心智
+    - [ ] 待你确认后执行：仅调整 `/personal-workbench/capture` 页的标题与描述文案，使其更像“新建拍照页 / 新建录像页”
+    - [ ] 待你确认后执行：不扩散修改快捷抽屉、个人缓冲区页或底层采集逻辑
+    - [ ] 待你确认后执行：执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`

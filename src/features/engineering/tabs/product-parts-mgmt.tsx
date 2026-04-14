@@ -44,20 +44,22 @@ export function ProductPartsMgmt() {
     subLevelTypes,
     filteredProducts,
     handleFormSubmit,
+    handleDeleteProduct,
     refresh
-  } = useProductMgmt()
+  } = useProductMgmt(t)
 
   const [open, setOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<Product | undefined>(undefined)
   const [typeDialogOpen, setTypeDialogOpen] = useState(false)
 
   const columns = useProductColumns(
-    t as any,
+    t,
     productTypes,
     (product) => {
       setCurrentRow(product)
       setOpen(true)
-    }
+    },
+    handleDeleteProduct
   )
 
   const table = useReactTable({

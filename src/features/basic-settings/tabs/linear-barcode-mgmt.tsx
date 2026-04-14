@@ -1,16 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Barcode, RotateCcw, Save, Settings2 } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Barcode, Loader2, RotateCcw, Save, Settings2 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
-import { ForbiddenState } from '@/components/forbidden-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
-import { isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
@@ -24,12 +23,12 @@ import { LinearBarcodeSimulationSection } from '../components/linear-barcode-sim
 import { useAppearanceMapping } from '../hooks/use-appearance-mapping'
 import { parseLinearBarcodeCode } from '../utils/linear-barcode-parser'
 import { type DMRuleSegment } from '../data/linear-barcode-rules-config'
+import { BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY } from '../query-keys'
 import {
-  createDefaultLinearBarcodeMockInputs,
   createDefaultLinearBarcodeProtocolConfig,
   DAY_OPTIONS,
-  type LinearBarcodeMockInputs,
   type LinearBarcodeProtocolConfig,
+  type LinearBarcodeMockInputs,
 } from '../data/linear-barcode-protocol'
 import {
   Dialog,
@@ -45,22 +44,43 @@ const logger = createLogger('LinearBarcodeMgmt')
 export function LinearBarcodeMgmt() {
   const { t, locale } = useLanguage()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
   const canOpenSequences = canOpenRouteEntryNonBlocking(user, '/basic-settings/sequences')
-  const [protocolConfig, setProtocolConfig] = useState<LinearBarcodeProtocolConfig>(createDefaultLinearBarcodeProtocolConfig)
-  const [rules, setRules] = useState<DMRuleSegment[]>(createDefaultLinearBarcodeProtocolConfig().rules)
+
+  // --- 本地逻辑状态 (编辑态) ---
+  const [rules, setRules] = useState<DMRuleSegment[] | null>(null)
+  const [mockInputs, setMockInputs] = useState<LinearBarcodeMockInputs | null>(null)
+  
+  // --- UI 状态 ---
   const [selectedSegment, setSelectedSegment] = useState<DMRuleSegment | null>(null)
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
   const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
-  const { data: products = [] } = useGetProducts()
-  const { data: appearanceMapping = null } = useAppearanceMapping()
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
-  const [mockInputs, setMockInputs] = useState<LinearBarcodeMockInputs>(createDefaultLinearBarcodeMockInputs)
-  const [isConfigLoading, setIsConfigLoading] = useState(false)
   const [isConfigSaving, setIsConfigSaving] = useState(false)
-  const [error, setError] = useState<unknown>(null)
 
+  // --- 数据拉取 (服务端真相) ---
+  const { data: products = [] } = useGetProducts()
+  const { data: appearanceMapping = null } = useAppearanceMapping()
+  const {
+    data: protocolConfig,
+    isLoading: isConfigLoading,
+    refetch: refetchProtocolConfig,
+  } = useQuery({
+    queryKey: BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY,
+    queryFn: () => linearBarcodeProtocolService.getConfig(),
+  })
+
+  // --- 水合逻辑：仅在 protocolConfig 加载完成后初始化本地状态一次 ---
+  useEffect(() => {
+    if (protocolConfig && !rules && !mockInputs) {
+      setRules(protocolConfig.rules)
+      setMockInputs(protocolConfig.mockInput)
+    }
+  }, [protocolConfig, rules, mockInputs])
+
+  // --- 衍生状态 ---
   const monthOptions = useMemo(() => {
     const monthUnit = t('common.units.month')
     return [
@@ -79,47 +99,8 @@ export function LinearBarcodeMgmt() {
     ]
   }, [t])
 
-  const resetConfirmationText = t('basicSettings.linearBarcode.resetDialog.verifyTarget')
-
-  const statusBadgeLabel = isConfigLoading
-    ? t('basicSettings.linearBarcode.page.badges.loading')
-    : isConfigSaving
-      ? t('basicSettings.linearBarcode.page.badges.saving')
-      : t('basicSettings.linearBarcode.page.badges.synced')
-
-  const loadProtocolConfig = useCallback(async () => {
-    setIsConfigLoading(true)
-    try {
-      setError(null)
-      const config = await linearBarcodeProtocolService.getConfig()
-      setProtocolConfig(config)
-      setRules(config.rules)
-      setMockInputs(config.mockInput)
-    } catch (loadError) {
-      setError(loadError)
-      logger.error('Failed to load protocol config', loadError)
-      const fallback = createDefaultLinearBarcodeProtocolConfig()
-      setProtocolConfig(fallback)
-      setRules(fallback.rules)
-      setMockInputs(fallback.mockInput)
-    } finally {
-      setIsConfigLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadProtocolConfig()
-  }, [loadProtocolConfig])
-
-  useEffect(() => {
-    if (!products.length) return
-    const matched = products.some((product) => product.modelCode === mockInputs.model)
-    if (!matched) {
-      setMockInputs((prev) => ({ ...prev, model: products[0]?.modelCode || '01' }))
-    }
-  }, [mockInputs.model, products])
-
   const assembledCode = useMemo(() => {
+    if (!mockInputs) return ''
     const { year, month, day, model, appearance, holePrefix, holes, serial } = mockInputs
     return `${year}${month}${day}${model}${appearance}${holePrefix}${holes}${serial}`.toUpperCase()
   }, [mockInputs])
@@ -133,123 +114,125 @@ export function LinearBarcodeMgmt() {
     [appearanceMapping, assembledCode, products],
   )
 
+  const statusBadgeLabel = isConfigLoading
+    ? t('basicSettings.linearBarcode.page.badges.loading')
+    : isConfigSaving
+      ? t('basicSettings.linearBarcode.page.badges.saving')
+      : t('basicSettings.linearBarcode.page.badges.synced')
+
+  const resetConfirmationText = t('basicSettings.linearBarcode.resetDialog.verifyTarget')
+
+  // --- 交互 Handler ---
   const handleEditLogic = (segment: DMRuleSegment) => {
     if (segment.id === 'appearance') {
       setIsAppearanceDialogOpen(true)
       return
     }
-
     setSelectedSegment(segment)
     setIsConfigDialogOpen(true)
   }
 
   const handleSaveRule = (segmentId: string, newData: unknown) => {
-    setRules((prev) =>
-      prev.map((segment) => {
-        if (segment.id !== segmentId) return segment
-        if (Array.isArray(newData)) {
-          return {
-            ...segment,
-            examples: newData.map((item: { key: string; value: string }) => `${item.key}=${item.value}`),
-          }
+    if (!rules) return
+    const nextRules = rules.map((segment) => {
+      if (segment.id !== segmentId) return segment
+      if (Array.isArray(newData)) {
+        return {
+          ...segment,
+          examples: newData.map((item: { key: string; value: string }) => `${item.key}=${item.value}`),
         }
-        return { ...segment, description: String(newData) }
-      }),
-    )
+      }
+      return { ...segment, description: String(newData) }
+    })
+    setRules(nextRules)
   }
 
   const requestNextSerial = useCallback(async () => {
-    try {
-      const nextSerial = await numberingService.generateNumber(protocolConfig.sequenceRuleKey)
+    const sequenceRuleKey = protocolConfig?.sequenceRuleKey
+    if (!sequenceRuleKey) {
+      toast.error(t('basicSettings.linearBarcode.toasts.requestSerialFailed'))
+      return
+    }
 
+    try {
+      const nextSerial = await numberingService.generateNumber(sequenceRuleKey)
       if (!/^\d{4}$/.test(nextSerial)) {
-        throw new Error(
-          t('basicSettings.linearBarcode.toasts.invalidSerialFormat', {
-            key: protocolConfig.sequenceRuleKey,
-          }),
-        )
+        throw new Error(t('basicSettings.linearBarcode.toasts.invalidSerialFormat', { key: sequenceRuleKey }))
       }
 
-      setMockInputs((prev) => ({ ...prev, serial: nextSerial }))
+      setMockInputs((prev) => (prev ? { ...prev, serial: nextSerial } : null))
       toast.success(t('basicSettings.linearBarcode.toasts.requestSerialSuccess', { serial: nextSerial }))
     } catch (error) {
       const message = error instanceof Error ? error.message : t('basicSettings.linearBarcode.toasts.requestSerialFailed')
-
-      if (message.includes('RuleKey') || message.includes('规则定义')) {
-        toast.error(
-          t('basicSettings.linearBarcode.toasts.sequenceRuleMissing', {
-            key: protocolConfig.sequenceRuleKey,
-          }),
-        )
-        return
-      }
-
       toast.error(message)
     }
-  }, [protocolConfig.sequenceRuleKey, t])
+  }, [protocolConfig?.sequenceRuleKey, t])
 
-  const handleSaveProtocol = useCallback(
-    async (nextRules: DMRuleSegment[] = rules, nextMockInputs: LinearBarcodeMockInputs = mockInputs) => {
-      setIsConfigSaving(true)
-      try {
-        const nextConfig: LinearBarcodeProtocolConfig = {
-          ...protocolConfig,
-          rules: nextRules,
-          mockInput: nextMockInputs,
-        }
-        const saved = await linearBarcodeProtocolService.updateConfig(nextConfig)
-        setProtocolConfig(saved)
-        setRules(saved.rules)
-        setMockInputs(saved.mockInput)
-        toast.success(t('basicSettings.linearBarcode.toasts.saveSuccess'))
-        return saved
-      } catch (error) {
-        logger.error('Failed to save protocol config', error)
-        toast.error(t('basicSettings.linearBarcode.toasts.saveFailed'))
-        throw error
-      } finally {
-        setIsConfigSaving(false)
-      }
-    },
-    [mockInputs, protocolConfig, rules, t],
-  )
-
-  const handleResetRules = async () => {
-    if (confirmText !== resetConfirmationText) return
-
-    const defaults = createDefaultLinearBarcodeProtocolConfig()
-
-    try {
-      await handleSaveProtocol(defaults.rules, defaults.mockInput)
-      setConfirmText('')
-      setIsResetDialogOpen(false)
-      toast.success(t('basicSettings.linearBarcode.toasts.resetSuccess'))
-    } catch {
-      // Keep current edits when backend persistence fails.
+  const handleSaveProtocol = useCallback(async (
+    targetRules: DMRuleSegment[] | null = rules, 
+    targetMockInputs: LinearBarcodeMockInputs | null = mockInputs
+  ) => {
+    if (!protocolConfig || !targetRules || !targetMockInputs) {
+      toast.error(t('basicSettings.linearBarcode.toasts.saveFailed'))
+      return
     }
+
+    setIsConfigSaving(true)
+    try {
+      const payload: LinearBarcodeProtocolConfig = {
+        ...protocolConfig,
+        rules: targetRules,
+        mockInput: targetMockInputs,
+      }
+      const saved = await linearBarcodeProtocolService.updateConfig(payload)
+      queryClient.setQueryData(BASIC_SETTINGS_LINEAR_BARCODE_QUERY_KEY, saved)
+      setRules(saved.rules)
+      setMockInputs(saved.mockInput)
+      toast.success(t('basicSettings.linearBarcode.toasts.saveSuccess'))
+    } catch (error) {
+      logger.error('Failed to save protocol config', error)
+      toast.error(t('basicSettings.linearBarcode.toasts.saveFailed'))
+    } finally {
+      setIsConfigSaving(false)
+    }
+  }, [protocolConfig, rules, mockInputs, queryClient, t])
+
+  const handleResetToDefaults = async () => {
+    if (confirmText !== resetConfirmationText) return
+    const defaults = createDefaultLinearBarcodeProtocolConfig()
+    await handleSaveProtocol(defaults.rules, defaults.mockInput)
+    setConfirmText('')
+    setIsResetDialogOpen(false)
   }
 
-  if (isForbiddenError(error)) {
-    return <ForbiddenState />
+  // --- 渲染逻辑 (严格 Loading 分支) ---
+  if (isConfigLoading || !rules || !mockInputs) {
+    return (
+      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+        <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>
+          <div className='flex items-center gap-2 text-primary'>
+            <div className='size-5 bg-primary/20 rounded-lg animate-pulse' />
+            <div className='h-8 w-48 bg-muted rounded-lg animate-pulse' />
+          </div>
+          <div className='h-3 w-32 bg-muted/40 rounded mt-1 animate-pulse' />
+        </div>
+        <div className='h-[400px] w-full bg-muted/10 rounded-[24px] border border-dashed border-muted/30 flex items-center justify-center'>
+          <div className='flex flex-col items-center gap-3'>
+            <Loader2 className='size-10 text-primary animate-spin' />
+            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
+              {t('basicSettings.linearBarcode.page.badges.loading')}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-                @keyframes scanMove {
-                    0%, 100% { top: 0%; opacity: 0; }
-                    20%, 80% { opacity: 1; }
-                    50% { top: 100%; }
-                }
-            `,
-        }}
-      />
-
       <div className='flex flex-col gap-1 bg-muted/5 p-4 md:p-6 rounded-[32px] border border-dashed border-muted/50'>
         <div className='flex items-center gap-2 text-primary'>
-          <Barcode className='size-4 text-primary' />
+          <Barcode className='size-4' />
           <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('basicSettings.linearBarcode.page.title')}</h3>
         </div>
         <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
@@ -265,37 +248,34 @@ export function LinearBarcodeMgmt() {
           <Badge className='bg-slate-500/10 text-slate-600 border-none font-black text-[9px] px-4 h-6 tracking-widest uppercase rounded-full italic'>
             {statusBadgeLabel}
           </Badge>
-          <div className='w-px h-3 bg-muted-foreground/20 mx-2' />
-          <span className='text-[10px] font-black text-muted-foreground/40 uppercase tracking-tight italic'>
-            {t('basicSettings.linearBarcode.page.badges.payload')}
-          </span>
         </div>
 
-        <div className='flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0'>
+        <div className='flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto'>
           <Button
             className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest'
             onClick={() => void handleSaveProtocol()}
-            disabled={isConfigLoading || isConfigSaving}
+            disabled={isConfigSaving}
           >
             <Save className='size-4 mr-2' />
             {isConfigSaving ? t('basicSettings.linearBarcode.page.actions.saving') : t('basicSettings.linearBarcode.page.actions.save')}
           </Button>
-          {canOpenSequences ? (
+          {canOpenSequences && (
             <Button
               variant='ghost'
-              className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest hover:bg-blue-500/5 hover:text-blue-600 transition-all'
+              className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest'
               onClick={() => navigate({ to: '/basic-settings/sequences' })}
             >
-              <Settings2 className='size-4 mr-2' /> {t('basicSettings.linearBarcode.page.actions.numberingRule')}
+              <Settings2 className='size-4 mr-2' />
+              {t('basicSettings.linearBarcode.page.actions.numberingRule')}
             </Button>
-          ) : null}
+          )}
           <Button
             variant='ghost'
-            className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest hover:bg-rose-500/5 hover:text-rose-600 transition-all'
+            className='w-full sm:w-auto rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest hover:text-rose-600'
             onClick={() => setIsResetDialogOpen(true)}
-            disabled={isConfigSaving}
           >
-            <RotateCcw className='size-4 mr-2' /> {t('basicSettings.linearBarcode.page.actions.reset')}
+            <RotateCcw className='size-4 mr-2' />
+            {t('basicSettings.linearBarcode.page.actions.reset')}
           </Button>
         </div>
       </div>
@@ -310,7 +290,9 @@ export function LinearBarcodeMgmt() {
 
       <LinearBarcodeSimulationSection
         mockInputs={mockInputs}
-        setMockInputs={setMockInputs}
+        setMockInputs={(updater) => {
+          setMockInputs((prev) => (typeof updater === 'function' ? updater(prev!) : updater))
+        }}
         assembledCode={assembledCode}
         parsedResult={parsedResult}
         products={products}
@@ -320,18 +302,6 @@ export function LinearBarcodeMgmt() {
         onRequestNextSerial={requestNextSerial}
         sequenceRuleKey={protocolConfig.sequenceRuleKey}
       />
-
-      <div className='bg-background/40 p-6 lg:p-8 rounded-[32px] border border-white/5 flex items-start gap-6'>
-        <div className='p-4 bg-primary/10 rounded-2xl'>
-          <Barcode className='size-6 text-primary' />
-        </div>
-        <div className='space-y-2'>
-          <h4 className='text-sm font-black uppercase tracking-tight'>{t('basicSettings.linearBarcode.footer.title')}</h4>
-          <p className='text-xs leading-relaxed text-muted-foreground/60 font-medium max-w-[820px]'>
-            {t('basicSettings.linearBarcode.footer.description', { key: protocolConfig.sequenceRuleKey })}
-          </p>
-        </div>
-      </div>
 
       <DMRuleConfigDialog
         open={isConfigDialogOpen}
@@ -345,55 +315,37 @@ export function LinearBarcodeMgmt() {
       <AppearanceActionDialog open={isAppearanceDialogOpen} onOpenChange={setIsAppearanceDialogOpen} />
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-      <DialogContent className='max-w-2xl bg-background border-border p-0 rounded-[32px] overflow-hidden shadow-2xl'>
-          <div className='absolute inset-0 bg-linear-to-b from-rose-500/5 via-transparent to-transparent pointer-events-none' />
-          <div className='relative p-8'>
-            <DialogHeader className='mb-6'>
-              <div className='size-14 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4 border border-rose-500/20 shadow-inner'>
-                <RotateCcw className='size-7 animate-spin-reverse opacity-80' />
-              </div>
-              <DialogTitle className='text-xl font-black tracking-tighter uppercase italic'>{t('basicSettings.linearBarcode.resetDialog.title')}</DialogTitle>
-              <DialogDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1 leading-relaxed'>
-                {t('basicSettings.linearBarcode.resetDialog.description')}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className='space-y-4'>
-              <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 italic pl-1'>
-                {t('basicSettings.linearBarcode.resetDialog.verifyPrompt')}
-              </p>
-              <div className='p-6 bg-muted/50 rounded-2xl border border-dashed border-muted/50 text-center select-none shadow-inner'>
-                <span className='text-[11px] font-black tracking-[0.4em] text-slate-400'>{resetConfirmationText}</span>
-              </div>
-              <Input
-                value={confirmText}
-                onChange={(event) => setConfirmText(event.target.value)}
-                placeholder={t('basicSettings.linearBarcode.resetDialog.placeholder')}
-                className='h-12 rounded-2xl bg-muted/50 border-none font-black text-center text-sm focus:ring-1 focus:ring-rose-500/20 transition-all flex items-center px-4'
-              />
+        <DialogContent className='max-w-2xl rounded-[32px] overflow-hidden'>
+          <DialogHeader className='p-8'>
+            <div className='size-14 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4 border border-rose-500/20'>
+              <RotateCcw className='size-7' />
             </div>
+            <DialogTitle className='text-xl font-black italic uppercase'>{t('basicSettings.linearBarcode.resetDialog.title')}</DialogTitle>
+            <DialogDescription className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              {t('basicSettings.linearBarcode.resetDialog.description')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className='p-8 space-y-4'>
+            <div className='p-6 bg-muted/50 rounded-2xl border border-dashed border-muted/50 text-center select-none'>
+              <span className='text-[11px] font-black tracking-[0.4em] text-slate-400'>{resetConfirmationText}</span>
+            </div>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={t('basicSettings.linearBarcode.resetDialog.placeholder')}
+              className='h-12 rounded-2xl text-center font-black'
+            />
           </div>
 
-          <DialogFooter className='p-8 pt-0 bg-transparent flex items-center justify-between gap-4'>
-            <Button
-              variant='ghost'
-              className='flex-1 rounded-full h-11 font-black text-[10px] uppercase tracking-widest transition-colors hover:bg-muted'
-              onClick={() => {
-                setIsResetDialogOpen(false)
-                setConfirmText('')
-              }}
-            >
-              {t('basicSettings.linearBarcode.resetDialog.discard')}
+          <DialogFooter className='p-8 flex gap-4'>
+            <Button variant='ghost' className='flex-1 rounded-full' onClick={() => setIsResetDialogOpen(false)}>
+              {t('common.actions.cancel')}
             </Button>
             <Button
-              className={cn(
-                'flex-1 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 gap-2',
-                confirmText === resetConfirmationText
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xl shadow-rose-500/20'
-                  : 'bg-muted text-muted-foreground/20 cursor-not-allowed grayscale',
-              )}
-              onClick={handleResetRules}
+              className='flex-1 rounded-full bg-rose-600 hover:bg-rose-700'
               disabled={confirmText !== resetConfirmationText || isConfigSaving}
+              onClick={handleResetToDefaults}
             >
               {t('basicSettings.linearBarcode.resetDialog.commit')}
             </Button>
@@ -403,4 +355,3 @@ export function LinearBarcodeMgmt() {
     </div>
   )
 }
-

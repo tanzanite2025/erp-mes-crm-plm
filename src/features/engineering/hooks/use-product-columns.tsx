@@ -3,18 +3,18 @@ import { Box, Edit, Trash2 } from 'lucide-react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { type TranslationKey } from '@/locales'
 import { type Product, type ProductType } from '../data/schema'
-import { useProductWriteActions } from './use-product-write-actions'
 import { getProductAttributes } from '../utils/product-utils'
-import { toast } from 'sonner'
+
+type TranslateProductArchive = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 export function useProductColumns(
-    t: (key: string, options?: any) => string,
+    t: TranslateProductArchive,
     productTypes: ProductType[],
-    onEdit: (product: Product) => void
+    onEdit: (product: Product) => void,
+    onDelete: (product: Product) => void | Promise<void>
 ): ColumnDef<Product>[] {
-    const { deleteProduct } = useProductWriteActions()
-    const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : '')
     const typeNameMap = useMemo(
         () =>
             new Map(
@@ -109,26 +109,12 @@ export function useProductColumns(
                         variant='ghost'
                         size='icon'
                         className='text-destructive'
-                        onClick={async () => {
-                            const confirmed = window.confirm(t('engineering.productArchive.toasts.deleteConfirm'))
-                            if (!confirmed) return
-
-                            try {
-                                await deleteProduct(row.original.id)
-                                toast.success(t('engineering.productArchive.toasts.deleteSuccess'))
-                            } catch (error) {
-                                toast.error(
-                                    t('engineering.productArchive.toasts.deleteFailed', {
-                                        message: getErrorMessage(error),
-                                    })
-                                )
-                            }
-                        }}
+                        onClick={() => void onDelete(row.original)}
                     >
                         <Trash2 className='size-4' />
                     </Button>
                 </div>
             ),
         },
-    ], [deleteProduct, onEdit, t, typeNameMap])
+    ], [onDelete, onEdit, t, typeNameMap])
 }

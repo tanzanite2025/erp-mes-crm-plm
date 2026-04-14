@@ -107,3 +107,29 @@ func TestCheckMoldCapacityAlertsHandlerReturnsOnlyAlertingModels(t *testing.T) {
 	require.Len(t, response[0].CriticalMolds, 1)
 	require.Equal(t, "M-002", response[0].CriticalMolds[0].SN)
 }
+
+func TestGetMoldGroupNamesHandlerReturnsDistinctTrimmedSortedGroupNames(t *testing.T) {
+	setupMoldCapacityHandlerTestDB(t)
+	now := time.Now()
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO molds (id, sn, name, group_name, status, created_at, updated_at)
+		VALUES
+			('mold-1', 'M-001', 'Mold 1', ' MODEL-B ', 'IDLE', ?, ?),
+			('mold-2', 'M-002', 'Mold 2', 'MODEL-A', 'IDLE', ?, ?),
+			('mold-3', 'M-003', 'Mold 3', 'MODEL-B', 'IDLE', ?, ?),
+			('mold-4', 'M-004', 'Mold 4', '', 'IDLE', ?, ?),
+			('mold-5', 'M-005', 'Mold 5', '   ', 'IDLE', ?, ?)
+	`, now, now, now, now, now, now, now, now, now, now).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/molds/group-names", nil)
+
+	GetMoldGroupNamesHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []string
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, []string{"MODEL-A", "MODEL-B"}, response)
+}

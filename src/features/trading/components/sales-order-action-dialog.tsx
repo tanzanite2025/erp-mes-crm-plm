@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ClipboardList, X } from 'lucide-react'
+import { ClipboardList, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -67,6 +67,9 @@ export function SalesOrderActionDialog({
     validate,
     prepareToSave,
     commit,
+    isInitializing,
+    initError,
+    retryInit,
   } = useSalesOrderForm(order, open)
 
   const { handleSave } = useSalesOrderSave({
@@ -108,33 +111,62 @@ export function SalesOrderActionDialog({
           </Button>
         </div>
 
-        <div className='space-y-4 px-6 pb-6 pt-1'>
-          <DocumentHeaderFields
-            formData={formData}
-            setFormData={setFormData}
-            customers={customers}
-            onClassificationChange={handleClassificationChange}
-          />
+        {isInitializing ? (
+          <div className='flex min-h-[420px] flex-col items-center justify-center gap-3 px-6 py-12 opacity-60'>
+            <Loader2 className='size-8 animate-spin text-primary' />
+            <p className='text-[10px] font-black uppercase tracking-widest'>
+              {t('tradingSalesOrder.detail.loading')}
+            </p>
+          </div>
+        ) : initError ? (
+          <div className='px-6 py-6'>
+            <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-rose-300/50 bg-rose-50/40 px-6 text-center'>
+              <p className='text-[10px] font-black uppercase tracking-[0.3em] text-rose-600'>
+                {t('tradingSalesOrder.toasts.saveFailed')}
+              </p>
+              <p className='mt-3 max-w-xl text-xs font-bold text-rose-700/80'>
+                {initError instanceof Error ? initError.message : t('tradingSalesOrder.toasts.saveFailed')}
+              </p>
+              <Button
+                variant='outline'
+                className='mt-5 rounded-full border-dashed px-8 text-[10px] font-black uppercase tracking-widest'
+                onClick={() => void retryInit()}
+              >
+                {t('common.actions.retry')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className='space-y-4 px-6 pb-6 pt-1'>
+              <DocumentHeaderFields
+                formData={formData}
+                setFormData={setFormData}
+                customers={customers}
+                onClassificationChange={handleClassificationChange}
+              />
 
-          <DocumentLinesEditor
-            lines={formData.lines || []}
-            products={products}
-            units={units}
-            drillingOptions={drillingOptions}
-            labelingOptions={labelingOptions}
-            currency={formData.currency}
-            onAddLine={handleAddLine}
-            onRemoveLine={handleRemoveLine}
-            onLineChange={updateLine}
-          />
+              <DocumentLinesEditor
+                lines={formData.lines || []}
+                products={products}
+                units={units}
+                drillingOptions={drillingOptions}
+                labelingOptions={labelingOptions}
+                currency={formData.currency}
+                onAddLine={handleAddLine}
+                onRemoveLine={handleRemoveLine}
+                onLineChange={updateLine}
+              />
 
-          <DocumentNotesSection
-            value={formData.requirements || ''}
-            onChange={(value) => setFormData((prev: Partial<SalesOrder>) => ({ ...prev, requirements: value }))}
-          />
-        </div>
+              <DocumentNotesSection
+                value={formData.requirements || ''}
+                onChange={(value) => setFormData((prev: Partial<SalesOrder>) => ({ ...prev, requirements: value }))}
+              />
+            </div>
 
-        <DocumentFooterStats formData={formData} onCancel={() => onOpenChange(false)} onSave={handleActualSave} />
+            <DocumentFooterStats formData={formData} onCancel={() => onOpenChange(false)} onSave={handleActualSave} />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )

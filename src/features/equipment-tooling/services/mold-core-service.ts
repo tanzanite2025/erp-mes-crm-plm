@@ -1,7 +1,7 @@
 'use client'
 
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import { toMoldContract, toMoldDuplicateCheckContract, toMoldListPageContract } from '../adapters/equipment-mold-api-adapter'
 import {
   type MoldApiDTO,
@@ -38,9 +38,8 @@ export const MoldCoreService = {
   },
 
   async getGroupNames(): Promise<string[]> {
-    const molds = await this.getMolds()
-    const groups = molds.map((m) => m.groupName).filter(Boolean) as string[]
-    return Array.from(new Set(groups))
+    const res = await apiFetch<string[]>('/molds/group-names')
+    return ensureArrayResponse<string>(res, 'MoldCoreService.getGroupNames')
   },
 
   async isSnDuplicate(sn: string, excludeId?: string): Promise<boolean> {
