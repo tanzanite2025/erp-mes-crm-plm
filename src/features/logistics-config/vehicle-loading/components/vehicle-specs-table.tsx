@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
-import type { VehicleSpec } from '../../data/vehicle-loading.types'
+import type { VehicleSpec } from '../data/vehicle-loading.types'
 import { categoryLabel } from '../data/vehicle-loading.utils'
 import { FieldCard } from './field-card'
 import { VehicleEmptyState } from './vehicle-empty-state'

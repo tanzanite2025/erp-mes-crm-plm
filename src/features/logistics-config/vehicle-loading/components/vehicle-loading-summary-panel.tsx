@@ -1,7 +1,8 @@
+import type { Dispatch, SetStateAction } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import type { ShipmentSummary } from '../../data/vehicle-loading.types'
+import type { ShipmentSummary } from '../data/vehicle-loading.types'
 import { FieldCard } from './field-card'
 
 const fieldClass =
@@ -10,7 +11,7 @@ const labelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-m
 
 type Props = {
   summary: ShipmentSummary
-  onSummaryChange: React.Dispatch<React.SetStateAction<ShipmentSummary>>
+  onSummaryChange: Dispatch<SetStateAction<ShipmentSummary>>
 }
 
 export function VehicleLoadingSummaryPanel({ summary, onSummaryChange }: Props) {
