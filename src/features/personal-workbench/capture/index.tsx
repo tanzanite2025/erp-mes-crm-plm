@@ -50,8 +50,8 @@ export default function PersonalWorkbenchCapturePage({
           <div className='flex items-center gap-2 min-w-0'>
             {isVideoMode ? <Video className='size-4 text-primary shrink-0' /> : <Camera className='size-4 text-primary shrink-0' />}
             <div className='min-w-0'>
-              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>个人快捷采集</p>
-              <p className='text-sm font-black tracking-tight italic truncate'>{isVideoMode ? '一键录视频' : '一键拍照'}</p>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>独立新建入口</p>
+              <p className='text-sm font-black tracking-tight italic truncate'>{isVideoMode ? '新建录像记录' : '新建拍照记录'}</p>
             </div>
           </div>
           <Badge variant='outline'>当前账号隔离</Badge>
@@ -62,12 +62,12 @@ export default function PersonalWorkbenchCapturePage({
           <div className='rounded-[32px] border border-dashed border-primary/20 bg-background/80 p-5 shadow-sm'>
             <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
               {isVideoMode ? <Video className='size-4' /> : <Camera className='size-4' />}
-              独立新建采集入口
+              {isVideoMode ? '新建录像页' : '新建拍照页'}
             </div>
             <p className='mt-3 text-sm font-bold text-foreground'>
               {isVideoMode
-                ? '当前入口仅用于新建一条个人录像记录。完成录制后，会直接打开本次新建的编辑器。'
-                : '当前入口仅用于新建一条个人拍照记录。完成拍摄后，会直接打开本次新建的编辑器。'}
+                ? '当前页面仅用于新建一条个人录像记录。完成录制后，会直接打开本次新建记录的编辑器。'
+                : '当前页面仅用于新建一条个人拍照记录。完成拍摄后，会直接打开本次新建记录的编辑器。'}
             </p>
             <div className='mt-4'>
               <PersonalWorkbenchImagePicker

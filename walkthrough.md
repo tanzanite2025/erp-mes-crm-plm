@@ -107,3 +107,51 @@
 - **验证结果**
   - `pnpm exec tsc --noEmit`：通过。
   - `pnpm exec eslint src/features/quick-actions/components/quick-action-drawer.tsx src/features/personal-workbench/capture/index.tsx src/features/personal-workbench/components/personal-workbench-image-picker.tsx src/routes/_authenticated/personal-workbench/capture.tsx src/routes/_authenticated/personal-workbench/capture-route-component.tsx`：通过。
+
+## 2026-04-14 capture 页面标题/描述收口为新建拍照/录像页
+
+- **变更概述**
+  - 调整 `src/features/personal-workbench/capture/index.tsx` 顶部标题与说明文案。
+  - 将页面顶部表述从“个人快捷采集 / 一键拍照 / 一键录视频 / 独立新建采集入口”收口为更明确的“独立新建入口 / 新建拍照记录 / 新建录像记录 / 新建拍照页 / 新建录像页”。
+
+- **架构收口结果**
+  - `/personal-workbench/capture` 的页面文案已与当前职责边界一致，明确表达其是独立新建采集页。
+  - 页面文案不再残留缓冲区或混合采集心智。
+  - 本轮仅做标题/描述收口，未改动快捷入口、个人缓冲区页或底层采集逻辑。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+  - `pnpm exec eslint src/features/personal-workbench/capture/index.tsx`：通过。
+
+## 2026-04-14 侧边栏方案A：请假管理 / 荣誉榜并回组织人事分组
+
+- **变更概述**
+  - 调整 `src/components/layout/data/sidebar-data.ts`。
+  - 将 `请假管理`（`/personnel/leave`）与 `荣誉榜`（`/personnel/stats`）从“服务中心”分组并回“组织人事”分组。
+  - 同时移除已变空的“服务中心”分组配置。
+
+- **架构收口结果**
+  - 侧边栏分组与 `/personnel*` 路由归属重新一致。
+  - `组织人事 / 请假管理 / 荣誉榜` 现在同属组织人事域分组，减少了“人事域页面却由服务中心承载”的违和感。
+  - 本轮未改动路由结构，也未修改 `checkIsActive(...)` 的底层匹配算法。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+  - `pnpm exec eslint src/components/layout/data/sidebar-data.ts src/components/layout/app-sidebar.tsx src/components/layout/nav-group.tsx`：通过。
+
+## 2026-04-14 侧边栏分类卡片 / 文字层级色收口
+
+- **变更概述**
+  - 调整 `src/components/layout/nav-group.tsx` 中分类容器按钮与分类标题的样式。
+  - 为分类容器补充基于 `sidebar-*` token 的独立层级底色、边框和文字层级色。
+  - 去掉分类标题对外层按钮文字色的 `text-inherit` 继承，改为使用 `text-sidebar-foreground/78`，让分类层与菜单项层一眼可分。
+
+- **架构收口结果**
+  - 分类卡片与具体菜单项的层级已被明确区分。
+  - 亮色 / 暗色模式继续通过 sidebar 主题变量体系自动对齐，没有引入脱离主题系统的硬编码颜色。
+  - 本轮未改动路由、active 算法、菜单数据结构或整体 sidebar 架构。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+  - `pnpm exec eslint src/components/layout/nav-group.tsx src/components/layout/app-sidebar.tsx`：通过。
+  - `src/components/ui/sidebar.tsx` 在 eslint 中被 ignore，未产生阻塞错误。

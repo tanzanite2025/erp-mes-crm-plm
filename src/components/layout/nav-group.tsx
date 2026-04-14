@@ -85,9 +85,9 @@ export function NavGroup({ title, items }: NavGroupProps) {
       <button
         type='button'
         className={cn(
-          'mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
-          'text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
-          isExpanded && 'bg-sidebar-accent/40 text-sidebar-accent-foreground'
+          'mb-1.5 flex w-full items-center justify-between rounded-lg border border-sidebar-border/35 bg-sidebar-accent/18 px-2.5 py-1.5 text-left transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
+          'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
+          isExpanded && 'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
         )}
         onClick={() => {
           setManualExpanded((current) => {
@@ -99,7 +99,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
           })
         }}
       >
-        <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-inherit'>
+        <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
           {title}
         </SidebarGroupLabel>
         <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />

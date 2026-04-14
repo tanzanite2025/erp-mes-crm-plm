@@ -179,11 +179,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Users,
         permissionId: permissionIdForPath('/personnel'),
       },
-    ],
-  },
-  {
-    titleKey: 'sidebar.groups.serviceCenter',
-    items: [
       {
         titleKey: 'sidebar.items.leaveManagement',
         url: '/personnel/leave',

@@ -1014,10 +1014,30 @@
     - [x] 已保留技术层临时草稿桥接，但不把“个人缓冲区”产品心智混入新建入口
     - [x] 已继续执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
 
-- [ ] 784-capture 页面标题/描述收口为新建拍照/录像页（中文）
-  - [ ] 待确认本轮规划范围：
+- [x] 784-capture 页面标题/描述收口为新建拍照/录像页（中文）
+  - [x] 已完成本轮执行：
     - [x] 已实查 `src/features/personal-workbench/capture/index.tsx` 顶部标题仍使用“个人快捷采集 / 一键拍照 / 一键录视频 / 独立新建采集入口”等混合表述
     - [x] 已确认当前页面职责已经收口为“独立新建采集页”，因此标题/描述也应同步改成“新建拍照 / 新建录像”心智
-    - [ ] 待你确认后执行：仅调整 `/personal-workbench/capture` 页的标题与描述文案，使其更像“新建拍照页 / 新建录像页”
-    - [ ] 待你确认后执行：不扩散修改快捷抽屉、个人缓冲区页或底层采集逻辑
-    - [ ] 待你确认后执行：执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+    - [x] 已仅调整 `/personal-workbench/capture` 页的标题与描述文案，使其更像“新建拍照页 / 新建录像页”
+    - [x] 未扩散修改快捷抽屉、个人缓冲区页或底层采集逻辑
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [x] 785-侧边栏方案A：请假管理/荣誉榜并回组织人事分组（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/components/layout/data/sidebar-data.ts` 当前将 `/personnel` 放在“组织人事”组下，却将 `/personnel/leave` 与 `/personnel/stats` 放在“服务中心”组下
+    - [x] 已实查 `请假管理` 与 `荣誉榜` 的路由仍归属于 `/personnel/*`，与“组织人事”属于同一人事域路径树
+    - [x] 已实查 `src/components/layout/nav-group.tsx` 的 active 判定采用父路径前缀命中，因此 `/personnel/stats` 会同时命中 `/personnel` 与 `/personnel/stats`
+    - [x] 已确认方案A方向：不重做路由，只把 `请假管理 / 荣誉榜` 从“服务中心”并回“组织人事”分组，收口信息架构
+    - [x] 已调整侧边栏分组配置，让 `请假管理 / 荣誉榜` 与 `组织人事` 同组展示
+    - [x] 未扩散为整套路由迁移或服务中心模块重构
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
+
+- [x] 786-侧边栏分类卡片/文字层级色收口（中文）
+  - [x] 已完成本轮执行：
+    - [x] 已实查 `src/components/layout/nav-group.tsx` 当前分类标题 `SidebarGroupLabel` 使用 `text-inherit`，继承了外层按钮文字色，导致分类名与具体菜单项层级接近
+    - [x] 已实查 `src/components/ui/sidebar.tsx` 的 `SidebarGroupLabel` 默认走 `text-sidebar-foreground/50`，说明当前系统本身支持基于 sidebar 主题变量做层级色
+    - [x] 已确认你的要求不是单纯调浅文字，而是让“分类卡片”本身有独立层级色，同时保持明暗模式与 sidebar 主题变量系统一致
+    - [x] 已调整侧边栏分类容器与标题文字的样式，使分类层与菜单层一眼可分
+    - [x] 已继续使用 `sidebar-*` 主题变量，不硬编码破坏亮暗模式
+    - [x] 未扩散修改菜单项 active 色、路由逻辑或整体 sidebar 结构
+    - [x] 已执行定向 TypeScript / eslint 校验，并补充 `walkthrough.md`
