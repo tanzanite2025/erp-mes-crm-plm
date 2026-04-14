@@ -892,3 +892,12 @@
     - [ ] 保证仅修改联系电话等局部字段时，事务保存仍能携带完整必需主数据
     - [ ] 不回退当前客户事务保存链路，只修补 payload 组装缺口
     - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`
+
+- [ ] 772-Engineering：`use-product-form-init.ts` 远端真相归属整改（中文）
+  - [ ] 待确认本轮规划范围：
+    - [ ] 识别 `use-product-form-init.ts` 中被 `useState + useEffect` 手动托管的远端数据
+    - [ ] 将 `attributeCategories`、`attributeOptions`、`attributeBindings` 等服务端真相迁回 React Query
+    - [ ] 保留仅属于 UI 的派生选项与表单初始化状态，不把远端缓存再次复制到本地 state
+    - [ ] 确保 query 失效或后台数据刷新后，产品表单元数据能响应式更新
+    - [ ] 评估并补齐所需 query key / hook 封装，避免在 hook 内直接堆叠请求编排
+    - [ ] 执行定向 TypeScript 校验，并补充 `walkthrough.md`

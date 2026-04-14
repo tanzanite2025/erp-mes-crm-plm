@@ -6602,6 +6602,85 @@
 
 这轮问题本质上不是后端校验过严，而是前端事务保存链没有稳定提交完整主数据快照。正确修复方式应是明确并收口客户编辑保存的最终快照装配责任，让局部编辑也能满足统一事务保存的最小数据要求。
 
+### 1. plan：Engineering `use-product-form-init.ts` 远端真相归属整改
+
+日期：2026-04-14  
+状态：待批准
+
+#### 1.1 当前背景
+
+`src/features/engineering/hooks/use-product-form-init.ts` 当前同时承担了：
+
+1. 远端元数据拉取
+2. 远端数据缓存落地到本地 `useState`
+3. 基于远端数据的 UI 派生选项计算
+4. 表单初始化与重置
+
+其中 `attributeCategories`、`attributeOptions`、`attributeBindings` 明显属于服务端真相，但现在通过 `useEffect + useState` 手动维护。这会绕开 React Query 的缓存、失效与响应式更新机制，导致后台数据变化后 UI 可能仍持有陈旧快照。
+
+#### 1.2 当前排查结论
+
+已确认 `use-product-form-init.ts` 中存在以下架构偏离：
+
+1. `ProductAttributeCategoryService.getProductAttributeCategories(...)`
+2. `ProductAttributeOptionService.getProductAttributeOptions(...)`
+3. `ProductTypeAttributeBindingService.getProductTypeAttributeBindings(...)`
+
+这些远端请求都在 `useEffect` 中手动发起，并将响应写入本地 `useState`：
+
+1. `attributeCategories`
+2. `attributeOptions`
+3. `attributeBindings`
+
+这类状态应由 React Query 托管，而不是由 hook 自己复制一份“私有缓存”。
+
+#### 1.3 本轮目标
+
+本轮目标是把产品表单初始化 hook 中的远端真相归位：
+
+1. 将服务端数据迁回 React Query
+2. 让 hook 只消费 query 结果与派生值，而不手动缓存远端数据
+3. 保留仅属于表单/UI 的本地状态与初始化逻辑
+4. 确保后台字典、绑定关系更新后，产品表单能随 query 刷新而响应式更新
+
+#### 1.4 推荐实施方向
+
+建议按职责拆分：
+
+1. 为产品属性分类、属性选项、类型绑定补齐或复用独立 query key / query hook
+2. 在 `use-product-form-init.ts` 中直接消费 query 的 `data / error / isLoading`
+3. 将 `versionLevelOptions`、`moldOptions`、`specOptions` 改为基于 query 数据的 `useMemo` 派生值，而不是再次 `setState`
+4. 将真正需要副作用的部分限制在：
+   - 表单打开时初始化
+   - 基于已解析元数据进行 `form.reset(...)`
+   - 关闭时清理 `selectedVariants`
+
+#### 1.5 高风险点
+
+1. `attributeBindings` 与 `watchedTypeId` 强相关，query 的 `enabled`、`queryKey` 必须正确区分不同产品类型
+2. `AssetService.getGroupNames()` 与 `SpecsService.getSpecs()` 目前也在同一 effect 中拉取，需要判断是否同样属于远端真相并一起迁移
+3. 表单初始化依赖 `versionLevelOptions`，需要避免 query 未返回时重复 reset 或错误覆盖编辑态数据
+
+#### 1.6 预计涉及文件
+
+1. `src/features/engineering/hooks/use-product-form-init.ts`
+2. `src/features/engineering/query-keys.ts`
+3. 可能新增或调整 engineering 下的 query hooks 文件
+4. 如有必要，补充 asset/spec 相关 query 封装
+
+#### 1.7 验证策略
+
+若进入实现，至少验证：
+
+1. 产品新建/编辑弹窗仍能正确初始化
+2. 切换 `typeId` 后属性绑定能正确更新
+3. 分类/选项/绑定数据不再由本地 `useState` 手动缓存
+4. TypeScript 编译通过
+
+#### 1.8 结论
+
+这轮整改的核心不是“把 effect 改成另一种写法”，而是恢复远端真相的正确归属：服务端数据交给 React Query，hook 只负责消费、派生与初始化。这样才能保证缓存失效、后台变更与 UI 展示保持一致。
+
 ### 1. plan：`use-bom-data.ts` 最小职责拆分
 
 日期：2026-04-13  

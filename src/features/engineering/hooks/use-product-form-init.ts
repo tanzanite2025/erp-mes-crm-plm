@@ -1,16 +1,23 @@
-import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
+import { type Dispatch, type SetStateAction, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { type UseFormReturn } from 'react-hook-form'
-import { type Product, type ProductAttributeCategory, type ProductAttributeOption, type ProductType, type ProductTypeAttributeBinding } from '../data/schema'
+import { type Product, type ProductAttributeOption, type ProductType } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
+import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
 import { type ProductVariantSelection } from '../utils/product-form-utils'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import { ProductTypeAttributeBindingService } from '../services/product-type-attribute-binding-service'
+import {
+    ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY,
+    PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+    PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+    productTypeAttributeBindingsQueryKey,
+} from '../query-keys'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
 import { useLanguage } from '@/context/language-provider'
 import { isNotFoundError } from '@/lib/error-status'
-import { failLoudly } from '@/lib/safe-catch'
 import { ProductCommand } from '../commands/product-command'
 
 type OptionItem = { label: string; value: string }
@@ -56,93 +63,96 @@ export function useProductFormInit({
 }: UseProductFormInitParams) {
     const { locale, t } = useLanguage()
     const watchedTypeId = form.watch('typeId')
-    const [attributeCategories, setAttributeCategories] = useState<ProductAttributeCategory[]>([])
-    const [attributeOptions, setAttributeOptions] = useState<ProductAttributeOption[]>([])
-    const [attributeBindings, setAttributeBindings] = useState<ProductTypeAttributeBinding[]>([])
-    const [versionLevelOptions, setVersionLevelOptions] = useState<OptionItem[]>([])
-    const [moldOptions, setMoldOptions] = useState<OptionItem[]>([])
-    const [specOptions, setSpecOptions] = useState<OptionItem[]>([])
-    const [metadataInitError, setMetadataInitError] = useState<string | null>(null)
+    const categoriesQuery = useQuery({
+        queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
+        queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+        enabled: open,
+    })
+
+    const optionsQuery = useQuery({
+        queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
+        queryFn: () => ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
+        enabled: open,
+    })
+
+    const bindingsQuery = useQuery({
+        queryKey: productTypeAttributeBindingsQueryKey(watchedTypeId || ''),
+        queryFn: () => ProductTypeAttributeBindingService.getProductTypeAttributeBindings({ productTypeId: watchedTypeId || '', activeOnly: true }),
+        enabled: open && !!watchedTypeId,
+    })
+
+    const moldGroupsQuery = useQuery({
+        queryKey: ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY,
+        queryFn: () => AssetService.getGroupNames(),
+        enabled: open,
+    })
+
+    const specsQuery = useQuery({
+        queryKey: ENGINEERING_DB_SPECS_QUERY_KEY,
+        queryFn: () => SpecsService.getSpecs(),
+        enabled: open,
+    })
+
+    const attributeCategories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
+    const attributeOptions = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data])
+    const attributeBindings = useMemo(
+        () => (watchedTypeId ? bindingsQuery.data ?? [] : []),
+        [bindingsQuery.data, watchedTypeId]
+    )
+    const versionLevelOptions = useMemo(
+        () => toOptionItems(locale, attributeOptions, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version),
+        [attributeOptions, locale]
+    )
+    const moldOptions = useMemo(
+        () => (moldGroupsQuery.data ?? []).map(group => ({ label: group, value: group })),
+        [moldGroupsQuery.data]
+    )
+    const specOptions = useMemo(
+        () => (specsQuery.data ?? []).map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id })),
+        [specsQuery.data]
+    )
+    const metadataInitError = useMemo(() => {
+        const error = categoriesQuery.error ?? optionsQuery.error ?? bindingsQuery.error ?? moldGroupsQuery.error ?? specsQuery.error
+        if (!error) {
+            return null
+        }
+
+        return isNotFoundError(error)
+            ? t('engineering.productMgmt.metadata.unavailable')
+            : error instanceof Error
+                ? error.message
+                : t('engineering.productMgmt.metadata.initFailed')
+    }, [bindingsQuery.error, categoriesQuery.error, moldGroupsQuery.error, optionsQuery.error, specsQuery.error, t])
+
+    const metadataReady = open && !metadataInitError && categoriesQuery.isSuccess && optionsQuery.isSuccess && moldGroupsQuery.isSuccess && specsQuery.isSuccess && (!watchedTypeId || bindingsQuery.isSuccess)
 
     useEffect(() => {
-        let cancelled = false
-
-        const loadDictData = async () => {
-            if (!open) return
-            setMetadataInitError(null)
-
-            try {
-                const [nextCategories, nextOptions, nextBindings] = await Promise.all([
-                    ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
-                    ProductAttributeOptionService.getProductAttributeOptions({ activeOnly: true }),
-                    watchedTypeId
-                        ? ProductTypeAttributeBindingService.getProductTypeAttributeBindings({ productTypeId: watchedTypeId, activeOnly: true })
-                        : Promise.resolve([]),
-                ])
-
-                if (cancelled) return
-
-                setAttributeCategories(nextCategories)
-                setAttributeOptions(nextOptions)
-                setAttributeBindings(nextBindings)
-
-                const resolvedVersionLevelOptions = toOptionItems(locale, nextOptions, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
-                setVersionLevelOptions(resolvedVersionLevelOptions)
-
-                const [groups, specs] = await Promise.all([
-                    AssetService.getGroupNames(),
-                    SpecsService.getSpecs(),
-                ])
-
-                if (cancelled) return
-
-                setMoldOptions(groups.map(group => ({ label: group, value: group })))
-                setSpecOptions(specs.map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id })))
-
-                if (!isEdit && selectedVariants.length === 0) {
-                    const initialState = ProductCommand.composeInitialState({
-                        isEdit,
-                        currentRow,
-                        versionLevelOptions: resolvedVersionLevelOptions,
-                        baseValues: form.getValues(),
-                    })
-                    setSelectedVariants(initialState.selectedVariants)
-                }
-            } catch (error) {
-                if (cancelled) return
-
-                failLoudly(error, 'useProductFormInit.loadDictData')
-                setMetadataInitError(
-                    isNotFoundError(error)
-                        ? t('engineering.productMgmt.metadata.unavailable')
-                        : error instanceof Error
-                            ? error.message
-                            : t('engineering.productMgmt.metadata.initFailed')
-                )
-            }
+        if (!metadataReady) {
+            return
         }
 
-        void loadDictData()
-
-        return () => {
-            cancelled = true
+        if (!isEdit && selectedVariants.length === 0) {
+            const initialState = ProductCommand.composeInitialState({
+                isEdit,
+                currentRow,
+                versionLevelOptions,
+                baseValues: form.getValues(),
+            })
+            setSelectedVariants(initialState.selectedVariants)
         }
-    }, [open, isEdit, currentRow, form, locale, selectedVariants.length, setSelectedVariants, t, watchedTypeId])
+    }, [currentRow, form, isEdit, metadataReady, selectedVariants.length, setSelectedVariants, versionLevelOptions])
 
     useEffect(() => {
-        const initForm = async () => {
-            if (open) {
-                const initialState = ProductCommand.composeInitialState({
-                    isEdit,
-                    currentRow,
-                    versionLevelOptions,
-                })
-                form.reset(initialState.formValues)
-                setSelectedVariants(initialState.selectedVariants)
-            }
+        if (open && metadataReady) {
+            const initialState = ProductCommand.composeInitialState({
+                isEdit,
+                currentRow,
+                versionLevelOptions,
+            })
+            form.reset(initialState.formValues)
+            setSelectedVariants(initialState.selectedVariants)
         }
-        initForm()
-    }, [open, isEdit, currentRow, productTypes, form, setSelectedVariants, versionLevelOptions])
+    }, [open, isEdit, currentRow, productTypes, form, setSelectedVariants, versionLevelOptions, metadataReady])
 
     useEffect(() => {
         if (!open) {
