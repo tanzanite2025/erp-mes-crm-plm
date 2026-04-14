@@ -11,6 +11,7 @@ const templates: ProductTemplate[] = [
     description: 'Standard geometry template for rim products.',
     active: true,
     createdAt: '2026-01-28T00:00:00.000Z',
+    attributeBindings: [],
     version: 1,
   },
   {
@@ -21,6 +22,7 @@ const templates: ProductTemplate[] = [
     description: 'Custom template stays untouched.',
     active: true,
     createdAt: '2026-01-28T00:00:00.000Z',
+    attributeBindings: [],
     version: 1,
   },
 ]
