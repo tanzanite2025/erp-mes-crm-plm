@@ -141,6 +141,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/basic-settings': 'settings',
   '/print-mgmt': 'settings',
   '/terminal-config': 'settings',
+  '/logistics-config': 'settings',
   '/finance-management': 'settings',
   '/personal-workbench': 'pda',
   '/pda-shell': 'pda',

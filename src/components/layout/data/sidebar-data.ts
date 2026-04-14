@@ -203,6 +203,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/pda-shell'),
       },
       {
+        titleKey: 'sidebar.items.logisticsConfig',
+        url: '/logistics-config',
+        icon: Truck,
+        permissionId: permissionIdForPath('/logistics-config'),
+      },
+      {
         titleKey: 'sidebar.items.printCenter',
         url: '/print-mgmt',
         icon: Printer,
@@ -342,6 +348,12 @@ export const sidebarData: SidebarData = {
           url: '/pda-shell',
           icon: ScanLine,
           permissionId: permissionIdForPath('/pda-shell'),
+        },
+        {
+          title: '物流',
+          url: '/logistics-config',
+          icon: Truck,
+          permissionId: permissionIdForPath('/logistics-config'),
         },
         { title: '人事账号中心', url: '/personnel', icon: Users, permissionId: permissionIdForPath('/personnel') },
         { title: '打印中心', url: '/print-mgmt', icon: Printer, permissionId: permissionIdForPath('/print-mgmt') },

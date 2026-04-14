@@ -72,6 +72,10 @@ func SaveProductHandler(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] product not found"})
 			return
 		}
+		if errors.Is(err, services.ErrProductValidation) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product payload: " + err.Error()})
+			return
+		}
 		if errors.Is(err, services.ErrProductVersionConflict) {
 			respondVersionConflict(c)
 			return
@@ -96,6 +100,8 @@ func PatchProductHandler(c *gin.Context) {
 		switch {
 		case errors.Is(err, services.ErrProductVersionConflict):
 			respondVersionConflict(c)
+		case errors.Is(err, services.ErrProductValidation):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product delta: " + err.Error()})
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product delta: " + err.Error()})
 		}
@@ -143,6 +149,10 @@ func BulkSyncProductsHandler(c *gin.Context) {
 	}
 
 	if err := services.BulkSyncProducts(input); err != nil {
+		if errors.Is(err, services.ErrProductValidation) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid bulk product payload: " + err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] bulk product sync failed: " + err.Error()})
 		return
 	}

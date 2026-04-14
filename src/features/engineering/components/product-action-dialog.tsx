@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { type FieldErrors, useWatch } from 'react-hook-form'
-import { Box } from 'lucide-react'
+import { Box, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +22,7 @@ import { ProductBasicInfo } from './product/product-basic-info'
 import { DynamicAttributeSection } from './product/dynamic-attribute-section'
 import { ProductionRestrictions } from './product/production-restrictions'
 import { useProductForm, type ProductSubmitPayload } from '../hooks/use-product-form'
+import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
 import { getCreateProductTemplate } from '../utils/product-create-template-resolution'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
@@ -87,6 +88,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     updateVariantWeight,
     handleFormSubmit,
   } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit })
+  const { deleteProduct, isDeletingProduct } = useProductWriteActions()
   const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
   const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)
   const [templateResolveError, setTemplateResolveError] = useState<string | null>(null)
@@ -283,6 +285,21 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null
   const SpecComponent = activeSpec?.form
+  const templateBindingStatus = React.useMemo(() => {
+    if (!boundTemplate) return 'none'
+    if (attributeBindings.length === 0) return 'missing'
+
+    const templateSignature = [...(boundTemplate.attributeBindings ?? [])]
+      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
+      .sort()
+      .join('|')
+    const typeSignature = [...attributeBindings]
+      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
+      .sort()
+      .join('|')
+
+    return templateSignature === typeSignature ? 'aligned' : 'drifted'
+  }, [attributeBindings, boundTemplate])
   const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
   const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
   const submissionBlocked = Boolean(metadataInitError || templateResolveError || issuanceBlocked)
@@ -299,6 +316,27 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     'barcodeConfig.holes': t('engineering.productMgmt.barcode.holesLabel'),
     'barcodeConfig.serialNumber': t('engineering.productMgmt.barcode.serialLabel'),
     attachments: t('engineering.productMgmt.attachments.uploadTitle'),
+  }
+
+  const handleDelete = async () => {
+    if (!currentRow) return
+
+    const confirmed = window.confirm(t('engineering.productArchive.toasts.deleteConfirm'))
+    if (!confirmed) return
+
+    try {
+      await deleteProduct(currentRow.id)
+      toast.success(t('engineering.productArchive.toasts.deleteSuccess'))
+      onOpenChange(false)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      toast.error(
+        t('engineering.productArchive.toasts.deleteFailed', {
+          message,
+        })
+      )
+      logger.error('Failed to delete product from action dialog', error)
+    }
   }
 
   return (
@@ -385,6 +423,28 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 </div>
               ) : null}
 
+              {boundTemplate ? (
+                <div className='rounded-[24px] border border-dashed border-blue-300 bg-blue-50 px-4 py-3 text-blue-900'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <div className='text-[10px] font-black uppercase tracking-widest'>
+                      {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
+                        name: boundTemplate.name,
+                      })}
+                    </div>
+                    <Badge variant='outline' className='border-blue-200 bg-white text-blue-700'>
+                      {activeSpec?.label || boundTemplate.componentKey}
+                    </Badge>
+                  </div>
+                  <p className='mt-2 text-[11px] font-bold leading-relaxed'>
+                    {templateBindingStatus === 'aligned'
+                      ? t('engineering.productMgmt.dialog.attributeBindingAligned')
+                      : templateBindingStatus === 'missing'
+                        ? t('engineering.productMgmt.dialog.attributeBindingMissing')
+                        : t('engineering.productMgmt.dialog.attributeBindingDrifted')}
+                  </p>
+                </div>
+              ) : null}
+
               <DynamicAttributeSection
                 form={form}
                 locale={locale}
@@ -454,10 +514,22 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
           </Form>
         </div>
         <DialogFooter className='shrink-0 px-4 sm:px-8 py-4 border-t border-dashed border-muted/50 bg-white flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3'>
+          {isEdit ? (
+            <Button
+              type='button'
+              variant='outline'
+              disabled={isDeletingProduct}
+              onClick={() => void handleDelete()}
+              className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl border-destructive/20 bg-white text-destructive hover:bg-destructive/5 hover:text-destructive shadow-destructive/10'
+            >
+              <Trash2 className='mr-2 size-4' />
+              {isDeletingProduct ? t('engineering.productMgmt.dialog.deleting') : t('engineering.productMgmt.dialog.delete')}
+            </Button>
+          ) : null}
           <Button
             type='submit'
             form='product-form'
-            disabled={submissionBlocked}
+            disabled={submissionBlocked || isDeletingProduct}
             className={`h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl ${
               selectedVariants.length > 1
                 ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30'

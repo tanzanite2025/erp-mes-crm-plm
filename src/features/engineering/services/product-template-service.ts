@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaPayload } from '@/lib/delta/types'
-import { buildProductTemplateDelta, toProductTemplateApiDTO, toProductTemplateContract } from '../adapters/product-template-api-adapter'
+import { toProductTemplateApiDTO, toProductTemplateContract } from '../adapters/product-template-api-adapter'
 import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
 import { normalizeProductTemplateInput } from '../utils/product-code-normalization'
 
@@ -58,19 +57,14 @@ export const productTemplateService = {
 
   patchTemplate: async (current: ProductTemplate, next: SaveProductTemplateInput): Promise<ProductTemplate> => {
     const normalizedNext = normalizeProductTemplateInput(next)
-    const delta = buildProductTemplateDelta(current, normalizedNext)
-    if (Object.keys(delta).length === 0) {
-      return { ...current, ...normalizedNext }
-    }
-
-    const payload: DeltaPayload = {
-      op: 'PATCH',
-      delta,
-      metadata: { id: current.id, version: current.version, intent: 'ENGINEERING_PRODUCT_TEMPLATE_UPDATE' },
-    }
-    const saved = await apiFetch<ProductTemplateApiDTO>(`/engineering/templates/${current.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
+    const saved = await apiFetch<ProductTemplateApiDTO>('/engineering/templates', {
+      method: 'POST',
+      body: JSON.stringify(toProductTemplateApiDTO({
+        ...current,
+        ...normalizedNext,
+        id: current.id,
+        version: current.version,
+      })),
     })
     invalidateTemplateCache()
     return toProductTemplateContract(

@@ -38,6 +38,7 @@ export const sidebar = {
     leaveManagement: 'Leave Management',
     hallOfFame: 'Hall of Fame',
     printCenter: 'Print Center',
+    logisticsConfig: 'Logistics',
     terminalConfig: 'Terminal Config',
     systemManagement: 'System Management',
     approvalCenter: 'Approval Center',

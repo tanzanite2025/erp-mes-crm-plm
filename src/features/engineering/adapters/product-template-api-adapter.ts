@@ -1,12 +1,40 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type ProductTemplate } from '../data/schema'
-import { type ProductTemplateApiDTO } from '../contracts/product-template-api-dto'
+import { type ProductTemplate, type ProductTemplateAttributeBinding } from '../data/schema'
+import { type ProductTemplateApiDTO, type ProductTemplateAttributeBindingApiDTO } from '../contracts/product-template-api-dto'
 import { type SaveProductTemplateInput } from '../mutation-types'
 import {
   normalizeEngineeringTemplateCode,
   normalizeEngineeringTemplateComponentKey,
 } from '../utils/product-code-normalization'
+
+function toProductTemplateAttributeBindingContract(
+  dto: ProductTemplateAttributeBindingApiDTO
+): ProductTemplateAttributeBinding {
+  return {
+    id: dto.id,
+    templateId: dto.templateId,
+    categoryKey: dto.categoryKey,
+    sortOrder: dto.sortOrder ?? 0,
+    required: dto.required ?? false,
+    active: dto.active ?? true,
+    version: dto.version ?? 1,
+  }
+}
+
+function toProductTemplateAttributeBindingApiDTO(
+  binding: ProductTemplateAttributeBinding
+): ProductTemplateAttributeBindingApiDTO {
+  return {
+    id: binding.id,
+    templateId: binding.templateId,
+    categoryKey: binding.categoryKey,
+    sortOrder: binding.sortOrder ?? 0,
+    required: binding.required ?? false,
+    active: binding.active ?? true,
+    version: binding.version ?? 1,
+  }
+}
 
 export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTemplate {
   return {
@@ -16,6 +44,7 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
     componentKey: normalizeEngineeringTemplateComponentKey(dto.componentKey),
     description: dto.description || '',
     active: dto.active,
+    attributeBindings: (dto.attributeBindings ?? []).map(toProductTemplateAttributeBindingContract),
     createdAt: dto.createdAt || new Date().toISOString(),
     version: dto._v ?? 1,
   }
@@ -29,6 +58,7 @@ export function toProductTemplateApiDTO(template: SaveProductTemplateInput): Pro
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
     description: template.description || '',
     active: template.active ?? true,
+    attributeBindings: (template.attributeBindings ?? []).map(toProductTemplateAttributeBindingApiDTO),
     createdAt: template.createdAt,
     _v: template.version ?? 1,
   }
@@ -40,6 +70,7 @@ const PRODUCT_TEMPLATE_PATCH_FIELDS: Array<keyof ProductTemplate> = [
   'componentKey',
   'description',
   'active',
+  'attributeBindings',
 ]
 
 export function buildProductTemplateDelta(current: ProductTemplate, next: SaveProductTemplateInput): DeltaSet {

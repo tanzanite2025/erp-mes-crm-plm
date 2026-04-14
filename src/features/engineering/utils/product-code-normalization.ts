@@ -21,6 +21,7 @@ import {
   type SaveProductTypeInput,
   type SaveBOMInput,
 } from '../mutation-types'
+import { normalizeProductAttributeMachineValue } from './product-attribute-machine-value'
 
 export function normalizeEngineeringTemplateCode(value?: string | null): string {
   return normalizeMachineCode(value)
@@ -39,6 +40,15 @@ export function normalizeProductTemplateInput(
     ...template,
     code: normalizeEngineeringTemplateCode(template.code),
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
+    attributeBindings: (template.attributeBindings ?? []).map((binding, index) => ({
+      ...binding,
+      templateId: binding.templateId?.trim() || template.id || undefined,
+      categoryKey: binding.categoryKey?.trim() || '',
+      sortOrder: binding.sortOrder ?? index + 1,
+      required: Boolean(binding.required),
+      active: binding.active ?? true,
+      version: binding.version ?? 1,
+    })),
   }
 }
 
@@ -47,6 +57,15 @@ export function normalizeProductTemplateEntity(template: ProductTemplate): Produ
     ...template,
     code: normalizeEngineeringTemplateCode(template.code),
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
+    attributeBindings: (template.attributeBindings ?? []).map((binding, index) => ({
+      ...binding,
+      templateId: binding.templateId?.trim() || template.id || undefined,
+      categoryKey: binding.categoryKey?.trim() || '',
+      sortOrder: binding.sortOrder ?? index + 1,
+      required: Boolean(binding.required),
+      active: binding.active ?? true,
+      version: binding.version ?? 1,
+    })),
   }
 }
 
@@ -102,6 +121,11 @@ export function normalizeSaveProductInput(product: SaveProductInput): SaveProduc
     sku: normalizeProductSkuValue(product.sku),
     modelCode: normalizeProductModelCodeValue(product.modelCode),
     templateKey: normalizeProductTemplateKeyValue(product.templateKey),
+    attributeValues: (product.attributeValues ?? []).map((item) => ({
+      ...item,
+      categoryKey: normalizeProductAttributeMachineValue(item.categoryKey),
+      optionValue: normalizeProductAttributeMachineValue(item.optionValue),
+    })),
     revisionNo: normalizeEngineeringRevisionNo(product.revisionNo),
     changeOrderNo: normalizeEngineeringChangeOrderNo(product.changeOrderNo),
     siteCode: normalizeEngineeringSiteCode(product.siteCode),

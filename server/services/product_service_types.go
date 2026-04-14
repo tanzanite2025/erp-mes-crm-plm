@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 	"xdfc-server/models"
 )
@@ -125,9 +126,9 @@ func toProductAttributeValueModels(items []ProductAttributeValueAPIRequest) []mo
 			BaseModel: models.BaseModel{
 				ID: item.ID,
 			},
-			ProductID:   item.ProductID,
-			CategoryKey: item.CategoryKey,
-			OptionValue: item.OptionValue,
+			ProductID:   strings.TrimSpace(item.ProductID),
+			CategoryKey: strings.TrimSpace(item.CategoryKey),
+			OptionValue: normalizeProductAttributeMachineValue(item.OptionValue),
 			SortOrder:   item.SortOrder,
 			Version:     item.Version,
 		})

@@ -2,14 +2,23 @@ package services
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
 )
+
+type productAttributeOptionDuplicateGroup struct {
+	CategoryKey     string
+	NormalizedValue string
+	CanonicalID     string
+	CanonicalValue  string
+	DuplicateIDs    []string
+	DuplicateValues []string
+}
 
 type ProductAttributeOptionListQuery struct {
 	CategoryKey string
@@ -78,6 +87,135 @@ func normalizeProductAttributeOption(input *models.ProductAttributeOption) {
 	input.LabelEn = strings.TrimSpace(input.LabelEn)
 	input.Description = strings.TrimSpace(input.Description)
 	input.MasterDataControl.Normalize("R1")
+}
+
+func chooseCanonicalProductAttributeOption(items []models.ProductAttributeOption, normalizedValue string) models.ProductAttributeOption {
+	ordered := append([]models.ProductAttributeOption(nil), items...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		leftMatches := ordered[i].Value == normalizedValue
+		rightMatches := ordered[j].Value == normalizedValue
+		if leftMatches != rightMatches {
+			return leftMatches
+		}
+		if ordered[i].SortOrder != ordered[j].SortOrder {
+			return ordered[i].SortOrder < ordered[j].SortOrder
+		}
+		return ordered[i].ID < ordered[j].ID
+	})
+	return ordered[0]
+}
+
+func cleanupDuplicateProductAttributeOptionsTx(tx *gorm.DB) ([]productAttributeOptionDuplicateGroup, error) {
+	var options []models.ProductAttributeOption
+	if err := tx.Order("category asc").Order("sort_order asc").Order("id asc").Find(&options).Error; err != nil {
+		return nil, err
+	}
+
+	grouped := make(map[string][]models.ProductAttributeOption)
+	for _, option := range options {
+		normalizedValue := normalizeProductAttributeMachineValue(option.Value)
+		if normalizedValue == "" {
+			continue
+		}
+		key := option.CategoryKey + "::" + normalizedValue
+		grouped[key] = append(grouped[key], option)
+	}
+
+	cleanups := make([]productAttributeOptionDuplicateGroup, 0)
+	for _, group := range grouped {
+		if len(group) == 0 {
+			continue
+		}
+		normalizedValue := normalizeProductAttributeMachineValue(group[0].Value)
+		canonical := chooseCanonicalProductAttributeOption(group, normalizedValue)
+		duplicateIDs := make([]string, 0)
+		duplicateValues := make([]string, 0)
+		for _, item := range group {
+			if item.ID == canonical.ID {
+				continue
+			}
+			duplicateIDs = append(duplicateIDs, item.ID)
+			duplicateValues = append(duplicateValues, item.Value)
+		}
+
+		needsCanonicalNormalize := canonical.Value != normalizedValue
+		if !needsCanonicalNormalize && len(duplicateIDs) == 0 {
+			continue
+		}
+
+		if needsCanonicalNormalize {
+			if err := tx.Model(&models.ProductAttributeOption{}).
+				Where("id = ?", canonical.ID).
+				Updates(map[string]interface{}{"value": normalizedValue}).Error; err != nil {
+				return nil, err
+			}
+		}
+
+		candidateValues := append([]string{canonical.Value, normalizedValue}, duplicateValues...)
+		uniqueValues := make([]string, 0, len(candidateValues))
+		seenValues := make(map[string]struct{}, len(candidateValues))
+		for _, value := range candidateValues {
+			trimmed := strings.TrimSpace(value)
+			if trimmed == "" {
+				continue
+			}
+			if _, exists := seenValues[trimmed]; exists {
+				continue
+			}
+			seenValues[trimmed] = struct{}{}
+			uniqueValues = append(uniqueValues, trimmed)
+		}
+
+		if len(uniqueValues) > 0 {
+			if err := tx.Model(&models.ProductAttributeValue{}).
+				Where("category_key = ? AND option_value IN ?", canonical.CategoryKey, uniqueValues).
+				Update("option_value", normalizedValue).Error; err != nil {
+				return nil, err
+			}
+		}
+
+		if len(duplicateIDs) > 0 {
+			if err := tx.Delete(&models.ProductAttributeOption{}, "id IN ?", duplicateIDs).Error; err != nil {
+				return nil, err
+			}
+		}
+
+		cleanups = append(cleanups, productAttributeOptionDuplicateGroup{
+			CategoryKey:     canonical.CategoryKey,
+			NormalizedValue: normalizedValue,
+			CanonicalID:     canonical.ID,
+			CanonicalValue:  normalizedValue,
+			DuplicateIDs:    duplicateIDs,
+			DuplicateValues: duplicateValues,
+		})
+	}
+
+	return cleanups, nil
+}
+
+func CleanupDuplicateProductAttributeOptions() ([]productAttributeOptionDuplicateGroup, error) {
+	if db.DB == nil {
+		return nil, nil
+	}
+
+	var cleanups []productAttributeOptionDuplicateGroup
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+		cleanups, err = cleanupDuplicateProductAttributeOptionsTx(tx)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cleanups, nil
+}
+
+func EnsureProductAttributeOptionValueUniqueIndex(tx *gorm.DB) error {
+	if tx == nil || !tx.Migrator().HasTable(&models.ProductAttributeOption{}) {
+		return nil
+	}
+	return tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value))").Error
 }
 
 func ensureProductAttributeOptionValueAvailable(tx *gorm.DB, categoryKey string, nextValue string, excludeID string) error {
@@ -223,20 +361,19 @@ func DeleteProductAttributeOption(id string) error {
 }
 
 func SeedDefaultProductAttributeOptions(tx *gorm.DB) error {
+	var existingCount int64
+	if err := tx.Unscoped().Model(&models.ProductAttributeOption{}).Count(&existingCount).Error; err != nil {
+		return err
+	}
+	if existingCount > 0 {
+		return nil
+	}
+
 	for _, option := range defaultProductAttributeOptions() {
 		item := option
 		normalizeProductAttributeOption(&item)
 		item.Version = 1
-
-		var existing models.ProductAttributeOption
-		err := tx.Where("category = ? AND value = ?", item.CategoryKey, item.Value).First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if err := tx.Create(&item).Error; err != nil {
-				return err
-			}
-			continue
-		}
-		if err != nil {
+		if err := tx.Create(&item).Error; err != nil {
 			return err
 		}
 	}

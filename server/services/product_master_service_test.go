@@ -251,3 +251,173 @@ func TestApplyDerivedTemplateKeysReturnsEmptyTemplateKeyWhenNoBindingExists(t *t
 	require.NoError(t, err)
 	require.Equal(t, "", product.TemplateKey)
 }
+
+func TestIssueProductIdentityIssuesSKUFromTypeAndModelCode(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+
+	issued, err := issueProductIdentity(testDB, normalizeProductWriteInput(ProductWriteInput{
+		ID:        "product-new",
+		SKU:       "   ",
+		Name:      "R50",
+		ModelCode: "01",
+		TypeID:    "type-1",
+		Status:    "Active",
+	}))
+
+	require.NoError(t, err)
+	require.Equal(t, "MTB-01", issued.SKU)
+	require.Equal(t, "01", issued.ModelCode)
+}
+
+func TestPatchProductReissuesSKUFromUpdatedTypeAndModelCode(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+	productID := "product-1"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-2",
+		Name:    "Road Fork",
+		Code:    "RD",
+		Active:  true,
+		Version: 1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.Product{
+		BaseModel: models.BaseModel{ID: productID},
+		SKU:       "R50-01",
+		Name:      "R50",
+		ModelCode: "01",
+		TypeID:    "type-1",
+		Status:    "Active",
+		Version:   1,
+	}).Error)
+
+	saved, err := PatchProduct(productID, 1, map[string]json.RawMessage{
+		"typeId":    json.RawMessage(`{"o":"type-1","n":"type-2"}`),
+		"modelCode": json.RawMessage(`{"o":"01","n":" 7 "}`),
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "RD-7", saved.SKU)
+	require.Equal(t, "7", saved.ModelCode)
+}
+
+func TestIssueProductIdentityIssuesVersionedSKUFromVariantAttribute(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:      "type-1",
+		Name:    "MTB Fork",
+		Code:    "MTB",
+		Active:  true,
+		Version: 1,
+	}).Error)
+
+	issued, err := issueProductIdentity(testDB, normalizeProductWriteInput(ProductWriteInput{
+		ID:        "product-variant",
+		SKU:       "",
+		Name:      "R50 Lightweight",
+		ModelCode: "09",
+		TypeID:    "type-1",
+		Status:    "Active",
+		AttributeValues: []ProductAttributeValueAPIRequest{
+			{
+				CategoryKey: "versionLevel",
+				OptionValue: "lightweight",
+				SortOrder:   1,
+				Version:     1,
+			},
+		},
+	}))
+
+	require.NoError(t, err)
+	require.Equal(t, "MTB-09-LIGHTWEIGHT", issued.SKU)
+	require.Equal(t, "LIGHTWEIGHT", issued.VersionLevel)
+}
+
+func TestCleanupDuplicateProductAttributeOptionsMigratesHistoricalProductAttributeValues(t *testing.T) {
+	testDB := setupProductMasterServiceTestDB(t)
+
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE product_attribute_options (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			revision_no TEXT,
+			effective_from DATETIME,
+			effective_to DATETIME,
+			change_type TEXT,
+			change_order_no TEXT,
+			site_code TEXT,
+			is_default_site NUMERIC,
+			category TEXT,
+			value TEXT,
+			label TEXT,
+			label_en TEXT,
+			description TEXT,
+			sort_order INTEGER,
+			active NUMERIC,
+			version INTEGER
+		)
+	`).Error)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-upper"},
+		CategoryKey: "tireType",
+		Value:       "Hooked",
+		LabelZh:     "有钩",
+		LabelEn:     "Hooked",
+		SortOrder:   20,
+		Active:      true,
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-lower"},
+		CategoryKey: "tireType",
+		Value:       "hooked",
+		LabelZh:     "有钩",
+		LabelEn:     "Hooked",
+		SortOrder:   10,
+		Active:      true,
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeValue{
+		BaseModel:   models.BaseModel{ID: "attr-1"},
+		ProductID:   "product-1",
+		CategoryKey: "tireType",
+		OptionValue: "Hooked",
+		SortOrder:   1,
+		Version:     1,
+	}).Error)
+
+	cleanups, err := CleanupDuplicateProductAttributeOptions()
+	require.NoError(t, err)
+	require.Len(t, cleanups, 1)
+	require.Equal(t, "tireType", cleanups[0].CategoryKey)
+	require.Equal(t, "hooked", cleanups[0].NormalizedValue)
+
+	var options []models.ProductAttributeOption
+	require.NoError(t, testDB.Order("id asc").Find(&options).Error)
+	require.Len(t, options, 1)
+	require.Equal(t, "opt-lower", options[0].ID)
+	require.Equal(t, "hooked", options[0].Value)
+
+	var attr models.ProductAttributeValue
+	require.NoError(t, testDB.First(&attr, "id = ?", "attr-1").Error)
+	require.Equal(t, "hooked", attr.OptionValue)
+}

@@ -86,6 +86,18 @@ export const productDraftSchema = productSchema.extend({
   sku: z.string().default(''),
 })
 
+export const productTemplateAttributeBindingSchema = z.object({
+  id: z.string().optional(),
+  templateId: z.string().optional(),
+  categoryKey: z.string().min(1, 'Category key is required'),
+  sortOrder: z.number().default(0),
+  required: z.boolean().default(false),
+  active: z.boolean().default(true),
+  version: z.number().default(1),
+})
+
+export type ProductTemplateAttributeBinding = z.infer<typeof productTemplateAttributeBindingSchema>
+
 export const productTemplateSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Template name is required'),
@@ -93,6 +105,7 @@ export const productTemplateSchema = z.object({
   componentKey: z.enum(['RIM', 'STEM', 'FORK', 'GENERAL']).default('GENERAL'),
   description: z.string().optional(),
   active: z.boolean().default(true),
+  attributeBindings: z.array(productTemplateAttributeBindingSchema).default([]),
   createdAt: z.string(),
   version: z.number().default(1),
 }).extend(masterDataControlSchema.shape)

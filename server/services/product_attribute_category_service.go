@@ -2,7 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"xdfc-server/db"
@@ -198,20 +197,19 @@ func DeleteProductAttributeCategory(id string) error {
 }
 
 func SeedDefaultProductAttributeCategories(tx *gorm.DB) error {
+	var existingCount int64
+	if err := tx.Unscoped().Model(&models.ProductAttributeCategory{}).Count(&existingCount).Error; err != nil {
+		return err
+	}
+	if existingCount > 0 {
+		return nil
+	}
+
 	for _, category := range defaultProductAttributeCategories() {
 		item := category
 		normalizeProductAttributeCategory(&item)
 		item.Version = 1
-
-		var existing models.ProductAttributeCategory
-		err := tx.Where("key = ?", item.Key).First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if err := tx.Create(&item).Error; err != nil {
-				return err
-			}
-			continue
-		}
-		if err != nil {
+		if err := tx.Create(&item).Error; err != nil {
 			return err
 		}
 	}

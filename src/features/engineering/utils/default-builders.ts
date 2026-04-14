@@ -54,6 +54,7 @@ export function createProductTemplateDraft(overrides: ProductTemplateDraftOverri
         componentKey: 'GENERAL',
         description: '',
         active: true,
+        attributeBindings: [],
         createdAt: new Date().toISOString(),
         version: 1,
         ...overrides,

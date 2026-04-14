@@ -1,5 +1,6 @@
 import { buildFlattenDelta } from '@/lib/delta/flatten-delta'
 import { type DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
 import { barcodeConfigSchema, productSchema, type Product, type ProductAttributeValue } from '../data/schema'
 import {
   type BulkSyncProductsApiDTO,
@@ -17,13 +18,16 @@ import {
   normalizeProductTemplateKeyValue,
   normalizeSaveProductInput,
 } from '../utils/product-code-normalization'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
+
+const logger = createLogger('ProductApiAdapter')
 
 function toProductAttributeValueContract(dto: ProductAttributeValueApiDTO): ProductAttributeValue {
   return {
     id: dto.id,
     productId: dto.productId,
     categoryKey: dto.categoryKey,
-    optionValue: dto.optionValue,
+    optionValue: normalizeProductAttributeMachineValue(dto.optionValue),
     sortOrder: dto.sortOrder ?? 0,
     version: dto.version ?? 1,
   }
@@ -34,7 +38,7 @@ function toProductAttributeValueApiDTO(item: ProductAttributeValue): ProductAttr
     id: item.id,
     productId: item.productId,
     categoryKey: item.categoryKey,
-    optionValue: item.optionValue,
+    optionValue: normalizeProductAttributeMachineValue(item.optionValue),
     sortOrder: item.sortOrder ?? 0,
     version: item.version ?? 1,
   }
@@ -49,8 +53,8 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
   return parsed.success ? parsed.data : undefined
 }
 
-export function toProductContract(dto: ProductApiDTO): Product {
-  return productSchema.parse({
+function buildProductCandidate(dto: ProductApiDTO) {
+  return {
     id: dto.id,
     sku: normalizeProductSkuValue(dto.sku),
     name: dto.name,
@@ -90,11 +94,53 @@ export function toProductContract(dto: ProductApiDTO): Product {
     changeOrderNo: normalizeEngineeringChangeOrderNo(dto.changeOrderNo),
     siteCode: normalizeEngineeringSiteCode(dto.siteCode),
     isDefaultSite: dto.isDefaultSite,
-  })
+  }
+}
+
+export function toProductContract(dto: ProductApiDTO): Product {
+  return productSchema.parse(buildProductCandidate(dto))
 }
 
 export function toProductArrayContract(items: ProductApiDTO[]): Product[] {
   return items.map(toProductContract)
+}
+
+export function toProductOptionsArrayContract(items: ProductApiDTO[]): Product[] {
+  const validProducts: Product[] = []
+  let skipped = 0
+
+  items.forEach((item, index) => {
+    const candidate = buildProductCandidate(item)
+    const parsed = productSchema.safeParse(candidate)
+    if (parsed.success) {
+      validProducts.push(parsed.data)
+      return
+    }
+
+    skipped += 1
+    logger.warn('Skipped invalid product option during contract mapping', {
+      index,
+      id: item.id,
+      name: item.name,
+      rawSku: item.sku,
+      normalizedSku: candidate.sku,
+      issues: parsed.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        code: issue.code,
+        message: issue.message,
+      })),
+    })
+  })
+
+  if (skipped > 0) {
+    logger.warn('Product options contract mapping completed with skipped entries', {
+      received: items.length,
+      returned: validProducts.length,
+      skipped,
+    })
+  }
+
+  return validProducts
 }
 
 export function toProductListContract(dto: ProductListPageApiDTO): Product[] {

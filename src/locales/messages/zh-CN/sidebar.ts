@@ -38,6 +38,7 @@ export const sidebar = {
     leaveManagement: '请假管理',
     hallOfFame: '荣誉榜',
     printCenter: '打印中心',
+    logisticsConfig: '物流',
     terminalConfig: '终端配置',
     systemManagement: '系统管理',
     approvalCenter: '审批中心',

@@ -10,6 +10,7 @@ import (
 	"xdfc-server/audit"
 	"xdfc-server/authz"
 	"xdfc-server/models"
+	"xdfc-server/productidentity"
 
 	"time"
 
@@ -23,6 +24,153 @@ var DB *gorm.DB
 type duplicatePackagingRuleRow struct {
 	MaterialID string
 	Count      int64
+}
+
+type duplicateProductAttributeOptionRow struct {
+	ID          string
+	CategoryKey string
+	Value       string
+	SortOrder   int
+}
+
+func normalizeProductAttributeMachineValueForDB(value string) string {
+	result := make([]rune, 0, len(value))
+	lastWasSeparator := false
+	for _, r := range value {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			result = append(result, r+('a'-'A'))
+			lastWasSeparator = false
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
+			result = append(result, r)
+			lastWasSeparator = false
+		case r == '-' || r == '_' || r == ' ' || r == '\t' || r == '\n' || r == '\r':
+			if len(result) == 0 || lastWasSeparator {
+				continue
+			}
+			result = append(result, '-')
+			lastWasSeparator = true
+		default:
+			if len(result) == 0 || lastWasSeparator {
+				continue
+			}
+			result = append(result, '-')
+			lastWasSeparator = true
+		}
+	}
+	for len(result) > 0 && result[len(result)-1] == '-' {
+		result = result[:len(result)-1]
+	}
+	return string(result)
+}
+
+func cleanupDuplicateProductAttributeOptions() {
+	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeOption{}) || !DB.Migrator().HasTable(&models.ProductAttributeValue{}) {
+		return
+	}
+
+	var options []duplicateProductAttributeOptionRow
+	if err := DB.Table("product_attribute_options").
+		Select("id", "category AS category_key", "value", "sort_order").
+		Order("category asc").
+		Order("sort_order asc").
+		Order("id asc").
+		Scan(&options).Error; err != nil {
+		log.Fatal("Failed to scan product_attribute_options for cleanup:", err)
+	}
+
+	type groupedOptions struct {
+		categoryKey string
+		normalized  string
+		items       []duplicateProductAttributeOptionRow
+	}
+
+	groups := make(map[string]*groupedOptions)
+	for _, option := range options {
+		normalized := normalizeProductAttributeMachineValueForDB(option.Value)
+		if normalized == "" {
+			continue
+		}
+		key := option.CategoryKey + "::" + normalized
+		if groups[key] == nil {
+			groups[key] = &groupedOptions{categoryKey: option.CategoryKey, normalized: normalized}
+		}
+		groups[key].items = append(groups[key].items, option)
+	}
+
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		for _, group := range groups {
+			if len(group.items) == 0 {
+				continue
+			}
+
+			canonical := group.items[0]
+			for _, item := range group.items[1:] {
+				if canonical.Value != group.normalized && item.Value == group.normalized {
+					canonical = item
+					continue
+				}
+				if item.SortOrder < canonical.SortOrder || (item.SortOrder == canonical.SortOrder && item.ID < canonical.ID) {
+					canonical = item
+				}
+			}
+
+			candidateValues := []string{canonical.Value, group.normalized}
+			duplicateIDs := make([]string, 0)
+			for _, item := range group.items {
+				if item.ID == canonical.ID {
+					continue
+				}
+				duplicateIDs = append(duplicateIDs, item.ID)
+				candidateValues = append(candidateValues, item.Value)
+			}
+
+			if canonical.Value != group.normalized {
+				if err := tx.Exec("UPDATE product_attribute_options SET value = ? WHERE id = ?", group.normalized, canonical.ID).Error; err != nil {
+					return err
+				}
+			}
+
+			seen := make(map[string]struct{}, len(candidateValues))
+			uniqueValues := make([]string, 0, len(candidateValues))
+			for _, value := range candidateValues {
+				trimmed := strings.TrimSpace(value)
+				if trimmed == "" {
+					continue
+				}
+				if _, exists := seen[trimmed]; exists {
+					continue
+				}
+				seen[trimmed] = struct{}{}
+				uniqueValues = append(uniqueValues, trimmed)
+			}
+
+			if len(uniqueValues) > 0 {
+				if err := tx.Exec("UPDATE product_attribute_values SET option_value = ? WHERE category_key = ? AND option_value IN ?", group.normalized, group.categoryKey, uniqueValues).Error; err != nil {
+					return err
+				}
+			}
+
+			if len(duplicateIDs) > 0 {
+				if err := tx.Exec("DELETE FROM product_attribute_options WHERE id IN ?", duplicateIDs).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal("Failed to cleanup duplicate product attribute options:", err)
+	}
+}
+
+func ensureProductAttributeOptionValueUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.ProductAttributeOption{}) {
+		return
+	}
+	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_attribute_options_category_value_ci ON product_attribute_options (category, LOWER(value))").Error; err != nil {
+		log.Fatal("Failed to enforce product attribute option value uniqueness:", err)
+	}
 }
 
 func failOnDuplicatePackagingRules() {
@@ -93,21 +241,20 @@ func ensureDefaultProductAttributeCategories() {
 		return
 	}
 
-	for _, category := range defaultProductAttributeCategories() {
-		var existing models.ProductAttributeCategory
-		err := DB.Where("key = ?", category.Key).First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			item := category
-			item.MasterDataControl.Normalize("R1")
-			item.Version = 1
-			if err := DB.Create(&item).Error; err != nil {
-				log.Fatal("[CRITICAL] Failed to seed default product attribute category: ", err)
-			}
-			continue
-		}
+	var existingCount int64
+	if err := DB.Unscoped().Model(&models.ProductAttributeCategory{}).Count(&existingCount).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to count product attribute categories before seeding: ", err)
+	}
+	if existingCount > 0 {
+		return
+	}
 
-		if err != nil {
-			log.Fatal("[CRITICAL] Failed to query default product attribute category: ", err)
+	for _, category := range defaultProductAttributeCategories() {
+		item := category
+		item.MasterDataControl.Normalize("R1")
+		item.Version = 1
+		if err := DB.Create(&item).Error; err != nil {
+			log.Fatal("[CRITICAL] Failed to seed default product attribute category: ", err)
 		}
 	}
 }
@@ -117,21 +264,20 @@ func ensureDefaultProductAttributeOptions() {
 		return
 	}
 
-	for _, option := range defaultProductAttributeOptions() {
-		var existing models.ProductAttributeOption
-		err := DB.Where("category = ? AND value = ?", option.CategoryKey, option.Value).First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			item := option
-			item.MasterDataControl.Normalize("R1")
-			item.Version = 1
-			if err := DB.Create(&item).Error; err != nil {
-				log.Fatal("[CRITICAL] Failed to seed default product attribute option: ", err)
-			}
-			continue
-		}
+	var existingCount int64
+	if err := DB.Unscoped().Model(&models.ProductAttributeOption{}).Count(&existingCount).Error; err != nil {
+		log.Fatal("[CRITICAL] Failed to count product attribute options before seeding: ", err)
+	}
+	if existingCount > 0 {
+		return
+	}
 
-		if err != nil {
-			log.Fatal("[CRITICAL] Failed to query default product attribute option: ", err)
+	for _, option := range defaultProductAttributeOptions() {
+		item := option
+		item.MasterDataControl.Normalize("R1")
+		item.Version = 1
+		if err := DB.Create(&item).Error; err != nil {
+			log.Fatal("[CRITICAL] Failed to seed default product attribute option: ", err)
 		}
 	}
 }
@@ -325,6 +471,55 @@ func ensureUserIntegrityConstraints() {
 	}
 }
 
+func ensureProductIntegrityConstraints() {
+	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_products_sku_not_blank'
+			) THEN
+				ALTER TABLE products
+				ADD CONSTRAINT chk_products_sku_not_blank
+				CHECK (sku IS NOT NULL AND length(btrim(sku)) > 0) NOT VALID;
+			END IF;
+		END
+		$$;
+	`).Error; err != nil {
+		log.Fatal("Failed to add products sku integrity constraint:", err)
+	}
+}
+
+func backfillBlankProductSKUs() {
+	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
+		return
+	}
+
+	plans, err := productidentity.ApplyBlankProductSKUBackfill(DB)
+	if err != nil {
+		log.Fatal("Failed to backfill blank product skus:", err)
+	}
+	if len(plans) == 0 {
+		return
+	}
+
+	log.Printf("[DATA_FIX] Backfilled %d product row(s) with derived SKUs.", len(plans))
+	for _, plan := range plans {
+		log.Printf(
+			"[DATA_FIX] product=%s name=%s derived_sku=%s type=%s model=%s version=%s",
+			plan.ID,
+			plan.Name,
+			plan.DerivedSKU,
+			plan.TypeCode,
+			plan.ModelCode,
+			plan.VersionLevel,
+		)
+	}
+}
+
 func ensureUserRolePrimaryUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.UserRole{}) {
 		return
@@ -411,6 +606,7 @@ func InitDB(dsn string) {
 		&models.EngineeringSpec{},
 		&models.ProductAttributeCategory{},
 		&models.ProductAttributeOption{},
+		&models.ProductTemplateAttributeBinding{},
 		&models.ProductTypeAttributeBinding{},
 		&models.ProductAttributeValue{},
 		&models.Unit{},
@@ -420,6 +616,8 @@ func InitDB(dsn string) {
 		&models.MoldLoan{},
 		&models.Material{},
 		&models.PackagingRule{},
+		&models.PackagingProfile{},
+		&models.PackagingProfileTarget{},
 		&models.Organization{},
 		&models.Employee{},
 		&models.WarehouseCategory{},
@@ -507,9 +705,13 @@ func InitDB(dsn string) {
 	DB.Exec("UPDATE roles SET role_id = 'admin' WHERE role_id = 'superadmin'")
 	hardenSeedAdminRole()
 	ensureUserIntegrityConstraints()
+	backfillBlankProductSKUs()
+	ensureProductIntegrityConstraints()
 	ensureUserRolePrimaryUniqueIndex()
 
 	ensurePackagingRuleMaterialUniqueIndex()
+	cleanupDuplicateProductAttributeOptions()
+	ensureProductAttributeOptionValueUniqueIndex()
 	fmt.Println("Database migration completed.")
 	sqlDB, err := DB.DB()
 	if err == nil {

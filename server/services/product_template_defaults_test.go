@@ -37,6 +37,20 @@ func setupProductTemplateServiceTestDB(t *testing.T) *gorm.DB {
 			version INTEGER DEFAULT 1
 		)
 	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE product_template_attribute_bindings (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			template_id TEXT NOT NULL,
+			category_key TEXT NOT NULL,
+			sort_order INTEGER DEFAULT 0,
+			required NUMERIC DEFAULT 0,
+			active NUMERIC DEFAULT 1,
+			version INTEGER DEFAULT 1
+		)
+	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_templates_deleted_at ON product_templates(deleted_at)`).Error)
 
 	previousDB := db.DB
@@ -86,4 +100,39 @@ func TestListProductTemplatesSeedsDefaultsWhenTableIsEmpty(t *testing.T) {
 
 	require.NoError(t, testDB.Model(&models.ProductTemplate{}).Count(&afterCount).Error)
 	require.EqualValues(t, 3, afterCount)
+}
+
+func TestSaveProductTemplatePersistsAttributeBindings(t *testing.T) {
+	setupProductTemplateServiceTestDB(t)
+
+	saved, err := SaveProductTemplate(SaveProductTemplateInput{
+		Name:         "Template With Attributes",
+		Code:         "GENERAL_STD",
+		ComponentKey: "GENERAL",
+		Description:  "Template with assembled attribute bindings",
+		Active:       true,
+		AttributeBindings: []models.ProductTemplateAttributeBinding{
+			{CategoryKey: "tireType", Required: true, Active: true},
+			{CategoryKey: "versionLevel", Required: false, Active: true},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, saved.AttributeBindings, 2)
+	require.Equal(t, "tireType", saved.AttributeBindings[0].CategoryKey)
+	require.Equal(t, saved.ID, saved.AttributeBindings[0].TemplateID)
+	require.Equal(t, 1, saved.AttributeBindings[0].SortOrder)
+
+	items, total, err := ListProductTemplates(ProductTemplateListQuery{Page: 1, PageSize: 50, Options: true})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, total, int64(1))
+	matched := false
+	for _, item := range items {
+		if item.ID != saved.ID {
+			continue
+		}
+		matched = true
+		require.Len(t, item.AttributeBindings, 2)
+		require.Equal(t, "versionLevel", item.AttributeBindings[1].CategoryKey)
+	}
+	require.True(t, matched)
 }

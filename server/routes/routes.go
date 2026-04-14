@@ -142,6 +142,9 @@ func SetupRoutes(r *gin.Engine) {
 			packagingGroup.GET("", handlers.GetPackagingRulesHandler)
 			packagingGroup.POST("", adminOnly, handlers.SavePackagingRuleHandler)
 			packagingGroup.DELETE("/:id", adminOnly, handlers.DeletePackagingRuleHandler)
+			packagingGroup.GET("/profiles", handlers.GetPackagingProfilesHandler)
+			packagingGroup.POST("/profiles", adminOnly, handlers.SavePackagingProfileHandler)
+			packagingGroup.DELETE("/profiles/:id", adminOnly, handlers.DeletePackagingProfileHandler)
 		}
 
 		pdaGroup := authorized.Group("/pda")

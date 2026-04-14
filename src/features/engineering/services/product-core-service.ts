@@ -2,7 +2,12 @@
 
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
-import { toProductArrayContract, toProductContract, toProductListContract } from '../adapters/product-api-adapter'
+import {
+  toProductArrayContract,
+  toProductContract,
+  toProductListContract,
+  toProductOptionsArrayContract,
+} from '../adapters/product-api-adapter'
 import {
   type ProductApiDTO,
   type ProductListPageApiDTO,
@@ -24,7 +29,7 @@ export const ProductCoreService = {
 
     if (useOptions) {
       const res = await apiFetch<ProductApiDTO[]>(`/engineering/products${qs}`)
-      return toProductArrayContract(
+      return toProductOptionsArrayContract(
         ensureArrayResponse<ProductApiDTO>(res, 'ProductCoreService.getProducts.options')
       )
     }

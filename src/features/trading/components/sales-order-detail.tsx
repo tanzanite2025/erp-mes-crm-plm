@@ -13,6 +13,7 @@ import { useGetSalesOrderDetail, useSalesOrderMutations } from '../sales'
 import { SalesOrderDetailActivity } from './parts/sales-order-detail-activity'
 import { SalesOrderDetailHeader } from './parts/sales-order-detail-header'
 import { SalesOrderDetailItemsCard } from './parts/sales-order-detail-items-card'
+import { SalesOrderPackagingPreviewCard } from './parts/sales-order-packaging-preview-card'
 import { SalesOrderDetailSummary } from './parts/sales-order-detail-summary'
 
 export function SalesOrderDetail({
@@ -89,6 +90,8 @@ export function SalesOrderDetail({
       />
 
       <SalesOrderDetailSummary order={order} />
+
+      <SalesOrderPackagingPreviewCard order={order} />
 
       <SalesOrderDetailItemsCard
         order={order}

@@ -7,35 +7,18 @@ import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { isConflictError } from '@/lib/handle-server-error'
-import { SPEC_COMPONENTS } from '../components/specs'
-import { localizeTemplateDefinitions } from '../data/template-defaults'
+import { TemplateEditorDialog } from '../components/template-mgmt/template-editor-dialog'
+import { DEFAULT_PRODUCT_TEMPLATES, localizeTemplateDefinitions } from '../data/template-defaults'
 import { type ProductTemplate } from '../data/schema'
 import { useProductTemplateWriteActions } from '../hooks/use-product-template-write-actions'
 import { PRODUCT_TEMPLATES_QUERY_KEY } from '../query-keys'
+import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { productTemplateService } from '../services/product-template-service'
 import {
   normalizeEngineeringTemplateCode,
-  normalizeEngineeringTemplateComponentKey,
   normalizeProductTemplateEntity,
 } from '../utils/product-code-normalization'
 import { createProductTemplateDraft } from '../utils/default-builders'
@@ -46,15 +29,21 @@ function getErrorMessage(error: unknown) {
 }
 
 export function TemplateMgmt() {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ProductTemplate | null>(null)
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState('')
   const { saveTemplate, deleteTemplate } = useProductTemplateWriteActions()
   const templatesQuery = useQuery({
     queryKey: PRODUCT_TEMPLATES_QUERY_KEY,
     queryFn: () => productTemplateService.getTemplates(),
   })
+  const categoriesQuery = useQuery({
+    queryKey: ['engineering', 'product-attribute-categories', 'active-options'],
+    queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
+  })
   const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data])
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
   const error = templatesQuery.error
 
   const componentLabels = useMemo(
@@ -71,6 +60,25 @@ export function TemplateMgmt() {
     () => localizeTemplateDefinitions(templates, t),
     [t, templates]
   )
+  const presetTemplateCodes = useMemo(
+    () => new Set(DEFAULT_PRODUCT_TEMPLATES.map((template) => template.code)),
+    []
+  )
+
+  const assembledCategories = useMemo(() => {
+    if (!editingTemplate) return []
+    return (editingTemplate.attributeBindings ?? [])
+      .map((binding) => ({
+        binding,
+        category: categories.find((item) => item.key === binding.categoryKey),
+      }))
+      .sort((a, b) => (a.binding.sortOrder ?? 0) - (b.binding.sortOrder ?? 0))
+  }, [categories, editingTemplate])
+
+  const availableCategories = useMemo(() => {
+    const used = new Set((editingTemplate?.attributeBindings ?? []).map((item) => item.categoryKey))
+    return categories.filter((item) => item.active && !used.has(item.key))
+  }, [categories, editingTemplate])
 
   useEffect(() => {
     if (!error) return
@@ -87,12 +95,57 @@ export function TemplateMgmt() {
 
   const handleAdd = () => {
     setEditingTemplate(createProductTemplateDraft())
+    setSelectedCategoryKey('')
     setIsDialogOpen(true)
   }
 
   const handleEdit = (template: ProductTemplate) => {
     setEditingTemplate(normalizeProductTemplateEntity(template))
+    setSelectedCategoryKey('')
     setIsDialogOpen(true)
+  }
+
+  const handleAddAttributeBinding = () => {
+    if (!selectedCategoryKey) return
+    setEditingTemplate((prev) => {
+      if (!prev) return prev
+      const nextBindings = [...(prev.attributeBindings ?? [])]
+      if (nextBindings.some((item) => item.categoryKey === selectedCategoryKey)) {
+        return prev
+      }
+      nextBindings.push({
+        templateId: prev.id || undefined,
+        categoryKey: selectedCategoryKey,
+        sortOrder: nextBindings.length + 1,
+        required: false,
+        active: true,
+        version: 1,
+      })
+      return { ...prev, attributeBindings: nextBindings }
+    })
+    setSelectedCategoryKey('')
+  }
+
+  const handleRemoveAttributeBinding = (categoryKey: string) => {
+    setEditingTemplate((prev) => {
+      if (!prev) return prev
+      const nextBindings = (prev.attributeBindings ?? [])
+        .filter((item) => item.categoryKey !== categoryKey)
+        .map((item, index) => ({ ...item, sortOrder: index + 1 }))
+      return { ...prev, attributeBindings: nextBindings }
+    })
+  }
+
+  const handleToggleRequired = (categoryKey: string, checked: boolean) => {
+    setEditingTemplate((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        attributeBindings: (prev.attributeBindings ?? []).map((item) =>
+          item.categoryKey === categoryKey ? { ...item, required: checked } : item
+        ),
+      }
+    })
   }
 
   const handleDelete = async (id: string) => {
@@ -189,7 +242,10 @@ export function TemplateMgmt() {
         </div>
       ) : (
         <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
-          {displayTemplates.map((template) => (
+          {displayTemplates.map((template) => {
+            const isPresetTemplate = presetTemplateCodes.has(template.code)
+
+            return (
             <Card
               key={template.id}
               className='group relative overflow-hidden rounded-[32px] border-dashed bg-muted/5 transition-all hover:border-blue-400/50 hover:bg-white hover:shadow-2xl'
@@ -212,8 +268,18 @@ export function TemplateMgmt() {
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='size-8 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500'
-                      onClick={() => handleDelete(template.id)}
+                      className={`size-8 rounded-full ${
+                        isPresetTemplate
+                          ? 'cursor-not-allowed text-slate-300 opacity-60 hover:bg-transparent hover:text-slate-300'
+                          : 'text-slate-400 hover:bg-red-50 hover:text-red-500'
+                      }`}
+                      onClick={() => {
+                        if (isPresetTemplate) return
+                        void handleDelete(template.id)
+                      }}
+                      disabled={isPresetTemplate}
+                      title={isPresetTemplate ? '系统预置模板不可删除' : undefined}
+                      aria-label={isPresetTemplate ? '系统预置模板不可删除' : undefined}
                     >
                       <Trash2 className='size-4' />
                     </Button>
@@ -256,120 +322,27 @@ export function TemplateMgmt() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className='overflow-hidden rounded-[32px] border-none p-0 shadow-2xl'>
-          <DialogHeader className='border-b border-dashed border-muted/50 bg-muted/5 px-8 py-4 text-start'>
-            <DialogTitle className='flex items-center gap-3 text-lg font-black tracking-tighter italic text-slate-800'>
-              <div className='size-2 animate-pulse rounded-full bg-blue-600' />
-              {editingTemplate?.id
-                ? t('engineering.templateMgmt.dialog.editTitle')
-                : t('engineering.templateMgmt.dialog.createTitle')}
-            </DialogTitle>
-            <DialogDescription className='mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
-              {t('engineering.templateMgmt.dialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className='space-y-4 px-8 py-6'>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                {t('engineering.templateMgmt.fields.name')}
-              </Label>
-              <Input
-                placeholder={t('engineering.templateMgmt.placeholders.name')}
-                className='h-12 rounded-2xl border-none bg-muted/50 font-black italic'
-                value={editingTemplate?.name || ''}
-                onChange={(event) =>
-                  setEditingTemplate((prev) =>
-                    prev ? { ...prev, name: event.target.value } : null
-                  )
-                }
-              />
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                {t('engineering.templateMgmt.fields.code')}
-              </Label>
-              <Input
-                placeholder={t('engineering.templateMgmt.placeholders.code')}
-                className='h-12 rounded-2xl border-none bg-muted/50 font-mono font-black italic'
-                value={editingTemplate?.code || ''}
-                onChange={(event) =>
-                  setEditingTemplate((prev) =>
-                    prev ? { ...prev, code: normalizeEngineeringTemplateCode(event.target.value) } : null
-                  )
-                }
-              />
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                {t('engineering.templateMgmt.fields.component')}
-              </Label>
-              <Select
-                value={editingTemplate?.componentKey || 'GENERAL'}
-                onValueChange={(value) =>
-                  setEditingTemplate((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          componentKey: normalizeEngineeringTemplateComponentKey(value),
-                        }
-                      : null
-                  )
-                }
-              >
-                <SelectTrigger className='h-12 rounded-2xl border-none bg-muted/50 font-black italic'>
-                  <SelectValue placeholder={t('engineering.templateMgmt.placeholders.component')} />
-                </SelectTrigger>
-                <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                  {Object.keys(SPEC_COMPONENTS).map((key) => (
-                    <SelectItem key={key} value={key} className='text-xs font-black italic'>
-                      {componentLabels[key as keyof typeof componentLabels] ||
-                        t('engineering.templateMgmt.components.GENERAL')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className='text-[9px] font-bold italic text-blue-600/40'>
-                {t('engineering.templateMgmt.hints.component')}
-              </p>
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                {t('engineering.templateMgmt.fields.description')}
-              </Label>
-              <Input
-                placeholder={t('engineering.templateMgmt.placeholders.description')}
-                className='h-12 rounded-2xl border-none bg-muted/50 font-black italic'
-                value={editingTemplate?.description || ''}
-                onChange={(event) =>
-                  setEditingTemplate((prev) =>
-                    prev ? { ...prev, description: event.target.value } : null
-                  )
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter className='flex items-center justify-end gap-3 border-t border-dashed border-muted/50 bg-muted/5 px-8 py-4'>
-            <Button
-              variant='ghost'
-              onClick={() => setIsDialogOpen(false)}
-              className='h-10 rounded-full text-[10px] font-black uppercase'
-            >
-              {t('engineering.templateMgmt.buttons.cancel')}
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              className='h-10 rounded-full bg-blue-600 px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700'
-            >
-              {t('engineering.templateMgmt.buttons.save')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TemplateEditorDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        editingTemplate={editingTemplate}
+        selectedCategoryKey={selectedCategoryKey}
+        onSelectedCategoryKeyChange={setSelectedCategoryKey}
+        onTemplateChange={setEditingTemplate}
+        onAddAttributeBinding={handleAddAttributeBinding}
+        onRemoveAttributeBinding={handleRemoveAttributeBinding}
+        onToggleRequired={handleToggleRequired}
+        onSubmit={handleSubmit}
+        locale={locale}
+        t={t}
+        componentLabels={componentLabels}
+        assembledCategories={assembledCategories}
+        availableCategories={availableCategories}
+      />
     </div>
   )
 }

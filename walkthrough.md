@@ -1,5 +1,150 @@
 # 变更记录与验证（walkthrough.md）
 
+## 2026-04-14 侧边栏独立“物流”分类与物流配置中心多 TAB
+
+- **变更概述**
+  - 新增独立模块 `src/features/logistics-config`，以多 TAB 形式承载“物流供应商 / 扫描配置 / 接口平台”。
+  - 新增 `src/routes/_authenticated/logistics-config/*` 路由骨架，并将默认入口重定向到 `/logistics-config/suppliers`。
+  - 在 `src/components/layout/data/sidebar-data.ts` 的“系统配置”组中新增独立“物流”入口，路径为 `/logistics-config`。
+  - 在 `src/features/authz/data/permission-catalog.ts` 中将 `/logistics-config` 归入现有 `settings` 菜单权限口径，避免未映射顶级路径报错。
+  - 新增 `zh-CN / en-US` 的 `logisticsConfig` locale，并补齐侧边栏“物流”文案。
+
+- **架构收口结果**
+  - 物流配置型信息从原先散落于 `terminal-config/scanners`、`scan-platform`、`sandbox/logistics-api` 的状态，收口到独立“物流”模块入口。
+  - 新模块明确定位为“集合信息与扫描配置中心”，未改动现有 `/purchase/logistics` 与 `/trading/logistics` 业务流。
+  - `扫描配置` TAB 直接复用 `ScanPlatformModulePanel`，避免再造第二套扫码模组展示。
+  - `接口/平台` TAB 复用现有 logistics provider 后端服务能力，避免配置语义再次分叉。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 产品属性历史重复机器值治理（P2）
+
+- **变更概述**
+  - 在 `server/db/db.go` 增加启动期产品属性历史脏数据自愈：扫描 `product_attribute_options` 中同一分类下归一后等价的重复机器值，保留 canonical 记录、删除重复记录，并同步迁移 `product_attribute_values.option_value` 的历史引用。
+  - 在 `server/db/db.go` 增加 `product_attribute_options(category, LOWER(value))` 唯一索引，补数据库级防复发约束。
+  - 在 `server/services/product_service_types.go` 收口产品保存链，对 `attributeValues.categoryKey / optionValue` 做归一化，阻断新脏值写入。
+  - 在 `src/features/engineering/adapters/product-api-adapter.ts` 与 `src/features/engineering/utils/product-code-normalization.ts` 收口前端读取/提交链，对产品属性值统一使用机器值归一化口径。
+  - 在 `server/services/product_master_service_test.go` 新增定向测试，验证重复 option 清理会同步迁移历史产品属性引用。
+
+- **架构收口结果**
+  - 产品属性配置页仍然是全局属性字典页，未引入模板绑定语义漂移。
+  - 历史重复项治理不再只停留在展示层去重，而是回到数据库与保存链统一收口。
+  - 产品属性值与属性选项机器值口径已统一，避免旧大小写值继续在前后端之间回流。
+  - 这一轮只完成 P2 数据治理与防复发，模板与产品属性接线方案仍保留为下一阶段独立工作。
+
+- **验证结果**
+  - `go test ./services -run "Product|Attribute"`：通过。
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 模板可预览装配器与“模板 -> 产品类型 -> 属性绑定”接线落地
+
+- **变更概述**
+  - 新增后端模型 `server/models/product_template_attribute_binding.go`，并在 `server/models/product_template.go` 中为 `ProductTemplate` 增加 `attributeBindings` 关联，支持模板保存“装配了哪些全局属性分类”。
+  - 在 `server/services/product_master_service.go` 中为模板查询增加 `AttributeBindings` 预加载，并在模板保存时同步持久化模板属性装配结构；在 `server/db/db.go` 中补 `AutoMigrate`。
+  - 在 `server/services/product_template_defaults_test.go` 新增定向测试，验证模板保存会携带并读回属性装配结构。
+  - 在前端 `src/features/engineering/data/schema.ts`、`contracts/product-template-api-dto.ts`、`adapters/product-template-api-adapter.ts`、`utils/product-code-normalization.ts`、`utils/default-builders.ts` 中补齐模板属性装配结构的契约、归一化与默认值。
+  - 在 `src/features/engineering/services/product-template-service.ts` 将模板编辑态保存收口为整棵模板对象全量保存，以便稳定承载 `attributeBindings`。
+  - 在 `src/features/engineering/tabs/template-mgmt.tsx` 中把模板弹窗升级为“左侧配置 + 右侧预览”形态：
+    - 可从全局产品属性分类中选择接入模板
+    - 可移除装配项
+    - 可切换 `required`
+    - 可实时查看模板规格组件与已装配属性分类预览
+  - 在 `src/features/engineering/components/product-type-action-dialog.tsx` 与 `tabs/product-types-mgmt.tsx` 中加入模板装配摘要、类型绑定偏离提示，以及“保存后按模板同步属性绑定”的显式开关。
+  - 在 `src/features/engineering/components/product-action-dialog.tsx` 中补充产品编辑弹窗只读提示，显式说明当前动态属性区对应模板来源，以及类型绑定是否未同步模板装配或已偏离模板定义。
+
+- **架构收口结果**
+  - 产品属性配置页继续是全局属性素材库，只维护标准分类与选项。
+  - 模板页不再是黑盒记录，而是“模板结构编辑器 + 属性装配器 + 基础预览器”。
+  - 产品类型页继续作为运行时最终生效层，模板装配不会静默覆盖类型绑定，必须通过显式同步动作落地。
+  - 产品编辑页继续只消费产品类型最终绑定；模板只作为来源说明与一致性提示，不直接改写产品保存链。
+
+- **验证结果**
+  - `go test ./services -run "Template"`：通过。
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 模板编辑弹窗桌面端宽度与布局修正
+
+- **变更概述**
+  - 在 `src/features/engineering/tabs/template-mgmt.tsx` 中放大模板编辑弹窗桌面端容器宽度，改为 `max-w-[1500px]`，避免大屏下仍呈现窄竖条弹层。
+  - 将弹窗主体重排为更明确的横向编辑器布局：左侧保留模板基础信息，右侧承载属性装配区与模板预览区。
+  - 将属性装配区卡片改为更适合桌面端的双列展示，减轻长列表纵向堆叠造成的拥挤感。
+  - 优化 footer 在小屏与桌面端的按钮排列，保持移动端兜底不被破坏。
+
+- **架构收口结果**
+  - 本轮仅调整模板编辑弹窗布局与尺寸，不改模板装配、保存、删除等业务语义。
+  - 桌面端模板弹窗从“窄列长条”调整为“横向编辑器”，基础信息、属性装配与预览区可同时获得可读空间。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 模板弹窗布局/内容解耦与固定三列重构
+
+- **变更概述**
+  - 新增 `src/features/engineering/components/template-mgmt/template-editor-dialog-layout.tsx`，专门负责模板编辑弹窗的 `DialogContent` 容器、固定三列比例与各列滚动布局。
+  - 新增 `src/features/engineering/components/template-mgmt/template-editor-dialog.tsx`，承载模板编辑弹窗的基础信息列、属性装配列、预览列与底部操作区内容。
+  - 在 `src/features/engineering/tabs/template-mgmt.tsx` 中移除大段弹窗 DOM，仅保留数据查询、状态、保存和事件编排，并改为挂载 `TemplateEditorDialog`。
+  - 桌面端模板弹窗固定为 `80vw` 宽度，三列固定为 `26% / 44% / 30%`，各列独立滚动，避免属性增加时整体布局抖动。
+  - 预览列中容易被裁切的文案改为可换行展示，减少右侧内容显示不完整的问题。
+
+- **架构收口结果**
+  - 模板弹窗的“布局/样式”与“内容/交互”已完成职责拆分，后续再调尺寸、滚动或列比例时无需继续在 `template-mgmt.tsx` 上反复打补丁。
+  - `template-mgmt.tsx` 恢复为页面编排层，模板弹窗内部结构成为可独立维护的组件边界。
+  - 本轮未修改模板装配的数据模型与保存语义，仅对前端结构与展示稳定性做了收口。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 模板弹窗内部信息架构与三列内容重排
+
+- **变更概述**
+  - 在 `src/features/engineering/components/template-mgmt/template-editor-dialog.tsx` 中重排三列内部内容结构，不再只是把原有表单和预览块横向摆开。
+  - 左列新增模板身份摘要区，将模板名称、编码、物理组件、描述做成更清晰的“模板是什么”信息卡，再将可编辑基础字段集中收口到下方基础信息编辑区。
+  - 中列拆分为“装配操作区”和“已装配列表区”，将选择属性分类与新增操作从结果列表中分离出来，降低信息混杂感。
+  - 右列拆分为“模板预览摘要”和“已装配属性预览”，让用户能更直观看到模板组件、描述与装配结果的最终呈现。
+  - 各区块统一了标题层级、摘要标签、分隔边界与间距结构，提升模板弹窗作为编辑器的整体可读性。
+
+- **架构收口结果**
+  - 模板弹窗当前不仅完成了布局/内容拆分，也完成了三列内部信息架构收口。
+  - 左列负责模板身份与基础信息编辑，中列负责装配动作与装配结果，右列负责最终预览，职责边界更稳定。
+  - 本轮仍未改动模板数据模型与保存语义，只对前端呈现结构进行重排与优化。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 模板主页预置模板禁止删除
+
+- **变更概述**
+  - 在 `src/features/engineering/tabs/template-mgmt.tsx` 中引入 `DEFAULT_PRODUCT_TEMPLATES`，以预置模板 `code` 集合作为系统模板识别依据。
+  - 模板主页卡片遍历时对预置模板进行识别，并将其删除按钮改为禁用态，不再允许直接触发删除。
+  - 普通自定义模板保持原有删除逻辑不变，仍可走既有确认与删除流程。
+  - 为预置模板删除按钮补充不可删提示文案，降低误操作预期。
+
+- **架构收口结果**
+  - 模板主页已经在页面层明确区分“系统预置模板”和“普通模板”的删除能力。
+  - 三个系统预置模板不再暴露可执行的删除入口，避免用户误以为系统模板可被随意移除。
+  - 本轮未改动模板保存、编辑与创建语义，仅在主页卡片层增加删除保护。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+
+## 2026-04-14 订单列表卡片挂载独立包装预览摘要
+
+- **变更概述**
+  - 新增 `src/features/trading/components/parts/sales-order-packaging-summary-inline.tsx`，作为订单列表场景使用的轻量包装摘要组件。
+  - 在 `src/features/trading/components/sales-order-master.tsx` 的数量区块下方挂载 `SalesOrderPackagingSummaryInline`。
+  - 继续复用既有 `use-sales-order-packaging-preview.ts`，未新增第二套包装计算或聚合逻辑。
+  - 在 `src/locales/messages/zh-CN/tradingSalesOrder.ts` 与 `src/locales/messages/en-US/tradingSalesOrder.ts` 中补充列表摘要 loading / error 文案。
+
+- **架构收口结果**
+  - 订单列表卡片当前只展示包装轻量摘要，包括总箱数、总体积、总毛重与告警数。
+  - 列表页不复刻详情页完整展开内容，详细箱规组合与逐行拆分仍由详情页独立卡片承载。
+  - 订单列表与订单详情继续共用同一包装消费层，避免后续出现双轨逻辑漂移。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+  - `pnpm exec eslint src/features/logistics-config src/routes/_authenticated/logistics-config src/components/layout/data/sidebar-data.ts src/features/authz/data/permission-catalog.ts src/locales/messages/zh-CN/logisticsConfig.ts src/locales/messages/en-US/logisticsConfig.ts src/locales/messages/zh-CN/sidebar.ts src/locales/messages/en-US/sidebar.ts src/locales/messages/zh-CN/index.ts src/locales/messages/en-US/index.ts`：通过。
+
 ## 2026-04-14 产品档案列定义纯化：删除动作上浮至管理 Hook
 
 - **变更概述**
@@ -155,3 +300,46 @@
   - `pnpm exec tsc --noEmit`：通过。
   - `pnpm exec eslint src/components/layout/nav-group.tsx src/components/layout/app-sidebar.tsx`：通过。
   - `src/components/ui/sidebar.tsx` 在 eslint 中被 ignore，未产生阻塞错误。
+
+## 2026-04-14 物流模块新增包装规则主数据 TAB
+
+- **变更概述**
+  - 在 `server/models/packaging_profile.go` 新增 `PackagingProfile / PackagingProfileTarget`，用于承载包装主数据与适用对象范围。
+  - 在 `server/handlers/packaging_profiles.go` 与 `server/handlers/packaging_profiles_response_helpers.go` 新增包装主数据读写接口与响应映射。
+  - 在 `server/routes/routes.go` 的既有 `/packaging` 分组下新增：
+    - `GET /packaging/profiles`
+    - `POST /packaging/profiles`
+    - `DELETE /packaging/profiles/:id`
+  - 在 `server/db/db.go` 中将 `PackagingProfile / PackagingProfileTarget` 纳入 AutoMigrate。
+  - 在前端 `src/features/logistics-config` 新增 `packaging-rules-service.ts` 与 `packaging-rules-tab.tsx`。
+  - 在 `src/routes/_authenticated/logistics-config` 新增 `packaging-rules.tsx / packaging-rules.lazy.tsx` 路由文件。
+  - 在 `src/features/logistics-config/tabs.ts` 中新增 `包装规则` TAB，并在 `zh-CN / en-US` 的 `logisticsConfig.ts` 中补齐文案。
+
+- **架构收口结果**
+  - 本轮没有直接复用旧 `packaging_rules` 的“物料包装换算”语义去硬承载新需求，而是新增了面向物流主数据的包装规则模型，避免误伤现有 MRP/换算链路。
+  - 物流模块下已形成独立的“包装规则”TAB，作为后续包装预算、出货与物流链路的主数据入口。
+  - 单位选择已直接复用系统现有单位引擎（`useUnitsQuery / unitService`）。
+  - 适用对象支持动态选择 `产品 / 物料`，前端分别复用 `ProductCoreService.getProducts({ isOptions: true })` 与 `MaterialCoreService.getMaterialOptions()`。
+  - 本轮已为后续拼装接入预留 `assemblySource` 字段，但没有凭空新增第二套拼装/BOM 引擎接口。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。
+  - `go test ./handlers ./routes -run ^$`：通过。
+
+## 2026-04-14 订单侧独立包装预览卡片（详情页首挂载）
+
+- **变更概述**
+  - 新增 `src/features/trading/hooks/use-sales-order-packaging-preview.ts`，以 React Query 聚合包装规则与产品基础数据，并复用 `src/features/logistics-config/packaging-calculator.ts` 输出订单侧包装预览视图模型。
+  - 新增 `src/features/trading/components/parts/sales-order-packaging-preview-card.tsx`，将包装预览实现为独立卡片，而非塞入销售订单明细表格内部。
+  - 在 `src/features/trading/components/sales-order-detail.tsx` 中挂载 `SalesOrderPackagingPreviewCard`，当前先接入订单详情页。
+  - 在 `src/locales/messages/zh-CN/tradingSalesOrder.ts` 与 `src/locales/messages/en-US/tradingSalesOrder.ts` 中补充 `packagingPreview` 文案与告警键。
+  - 为 `src/locales/messages/en-US/tradingSalesOrder.ts` 补充 `as const`，确保新增翻译键进入严格联合类型。
+
+- **架构收口结果**
+  - 包装计算真相继续留在物流域纯函数模块中，订单侧只新增消费层 `hook` 与独立展示卡片。
+  - 销售订单详情页当前仅作为挂载方，不拥有包装过滤、箱规拆分或重量体积计算逻辑。
+  - 新卡片底部已预留动作扩展位，可供后续接入“缺料提醒 / 指定账号通知 / 微信触达”等并列订单协同动作。
+  - 用户面告警已在卡片层做本地化映射，避免直接向界面暴露英文内部 warning 文本；日志侧英文根因仍保留在底层模块。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit`：通过。

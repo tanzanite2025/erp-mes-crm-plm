@@ -9,11 +9,14 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/productidentity"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 var (
+	ErrProductValidation              = errors.New("product validation failed")
 	ErrProductVersionConflict         = errors.New("product version conflict")
 	ErrProductInUse                   = errors.New("product still referenced by downstream records")
 	ErrProductTemplateVersionConflict = errors.New("product template version conflict")
@@ -45,6 +48,83 @@ type SyncProductTypeInput models.ProductType
 
 func normalizeEngineeringSpecID(raw string) string {
 	return strings.TrimSpace(raw)
+}
+
+func normalizeProductWriteInput(input ProductWriteInput) ProductWriteInput {
+	input.SKU = strings.ToUpper(strings.TrimSpace(input.SKU))
+	input.Name = strings.TrimSpace(input.Name)
+	input.TypeID = strings.TrimSpace(input.TypeID)
+	input.ModelCode = strings.TrimSpace(input.ModelCode)
+	input.VersionLevel = strings.ToUpper(strings.TrimSpace(input.VersionLevel))
+	input.Status = strings.TrimSpace(input.Status)
+	return input
+}
+
+func normalizeProductTypeCode(raw string) string {
+	return productidentity.NormalizeTypeCode(raw)
+}
+
+func normalizeProductModelCode(raw string) string {
+	return productidentity.NormalizeModelCode(raw)
+}
+
+func normalizeProductVersionLevel(raw string) string {
+	return productidentity.NormalizeVersionLevel(raw)
+}
+
+func deriveVersionLevelFromAttributes(items []ProductAttributeValueAPIRequest) string {
+	for _, item := range items {
+		if strings.TrimSpace(item.CategoryKey) != "versionLevel" {
+			continue
+		}
+		return normalizeProductVersionLevel(item.OptionValue)
+	}
+	return ""
+}
+
+func deriveIssuedProductSKU(typeCode string, modelCode string, versionLevel string) string {
+	return productidentity.DeriveSKU(typeCode, modelCode, versionLevel)
+}
+
+func issueProductIdentity(tx *gorm.DB, input ProductWriteInput) (ProductWriteInput, error) {
+	if input.TypeID == "" {
+		return input, fmt.Errorf("%w: type id is required to issue sku", ErrProductValidation)
+	}
+
+	var productType models.ProductType
+	if err := tx.Select("id", "code").Where("id = ?", input.TypeID).First(&productType).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return input, fmt.Errorf("%w: product type %s was not found for sku issuance", ErrProductValidation, input.TypeID)
+		}
+		return input, err
+	}
+
+	typeCode := normalizeProductTypeCode(productType.Code)
+	if typeCode == "" {
+		return input, fmt.Errorf("%w: product type %s has no code for sku issuance", ErrProductValidation, productType.ID)
+	}
+
+	input.ModelCode = normalizeProductModelCode(input.ModelCode)
+	if versionLevel := deriveVersionLevelFromAttributes(input.AttributeValues); versionLevel != "" {
+		input.VersionLevel = versionLevel
+	}
+	input.VersionLevel = normalizeProductVersionLevel(input.VersionLevel)
+	input.SKU = deriveIssuedProductSKU(typeCode, input.ModelCode, input.VersionLevel)
+
+	return input, nil
+}
+
+func validateProductWriteInput(input ProductWriteInput) error {
+	if input.SKU == "" {
+		return fmt.Errorf("%w: sku issuance produced an empty sku", ErrProductValidation)
+	}
+	if input.Name == "" {
+		return fmt.Errorf("%w: name is required", ErrProductValidation)
+	}
+	if input.TypeID == "" {
+		return fmt.Errorf("%w: type id is required", ErrProductValidation)
+	}
+	return nil
 }
 
 func normalizeProductAttributeValues(items []models.ProductAttributeValue) []models.ProductAttributeValue {
@@ -144,10 +224,19 @@ func GetProductByID(id string) (models.Product, error) {
 }
 
 func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) {
-	modelInput := toProductModel(input)
+	input = normalizeProductWriteInput(input)
 	var saved models.Product
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		issuedInput, err := issueProductIdentity(tx, input)
+		if err != nil {
+			return err
+		}
+		if err := validateProductWriteInput(issuedInput); err != nil {
+			return err
+		}
+
+		modelInput := toProductModel(issuedInput)
 		modelInput.EngineeringSpecID = normalizeEngineeringSpecID(modelInput.EngineeringSpecID)
 		modelInput.AttributeValues = normalizeProductAttributeValues(modelInput.AttributeValues)
 		if modelInput.EngineeringSpecID != "" {
@@ -425,8 +514,17 @@ func PatchProduct(id string, version int, payload map[string]json.RawMessage) (m
 
 func BulkSyncProducts(input BulkSyncProductsAPIPayload) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
-		for _, in := range input.Products {
-			product := toProductModel(toProductWriteInput(in))
+		for idx, in := range input.Products {
+			writeInput := normalizeProductWriteInput(toProductWriteInput(in))
+			writeInput, err := issueProductIdentity(tx, writeInput)
+			if err != nil {
+				return fmt.Errorf("bulk product sync item %d (id=%s, name=%s): %w", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err)
+			}
+			if err := validateProductWriteInput(writeInput); err != nil {
+				return fmt.Errorf("bulk product sync item %d (id=%s, name=%s): %w", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err)
+			}
+
+			product := toProductModel(writeInput)
 			product.EngineeringSpecID = normalizeEngineeringSpecID(product.EngineeringSpecID)
 			product.AttributeValues = normalizeProductAttributeValues(product.AttributeValues)
 			if product.EngineeringSpecID != "" {
@@ -533,7 +631,9 @@ func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTempl
 		pageSize = 50
 	}
 
-	tx := db.DB.Model(&models.ProductTemplate{})
+	tx := db.DB.Model(&models.ProductTemplate{}).Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
+		return database.Order("sort_order asc").Order("category_key asc")
+	})
 	if err := ensureDefaultProductTemplates(db.DB); err != nil {
 		return nil, 0, err
 	}
@@ -557,14 +657,46 @@ func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTempl
 	return items, total, nil
 }
 
+func normalizeProductTemplateAttributeBinding(input *models.ProductTemplateAttributeBinding) {
+	input.TemplateID = strings.TrimSpace(input.TemplateID)
+	input.CategoryKey = strings.TrimSpace(input.CategoryKey)
+	if input.SortOrder < 0 {
+		input.SortOrder = 0
+	}
+	if input.Version == 0 {
+		input.Version = 1
+	}
+}
+
+func syncProductTemplateAttributeBindingsTx(tx *gorm.DB, templateID string, bindings []models.ProductTemplateAttributeBinding) error {
+	if err := tx.Where("template_id = ?", templateID).Delete(&models.ProductTemplateAttributeBinding{}).Error; err != nil {
+		return err
+	}
+	if len(bindings) == 0 {
+		return nil
+	}
+	items := make([]models.ProductTemplateAttributeBinding, 0, len(bindings))
+	for idx, binding := range bindings {
+		item := binding
+		item.ID = ""
+		item.TemplateID = templateID
+		item.SortOrder = idx + 1
+		normalizeProductTemplateAttributeBinding(&item)
+		items = append(items, item)
+	}
+	return tx.Create(&items).Error
+}
+
 func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate, error) {
 	modelInput := models.ProductTemplate(input)
+	bindings := append([]models.ProductTemplateAttributeBinding(nil), modelInput.AttributeBindings...)
+	modelInput.AttributeBindings = nil
 	var saved models.ProductTemplate
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if modelInput.ID != "" {
 			var existing models.ProductTemplate
-			if err := tx.Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
+			if err := tx.Preload("AttributeBindings").Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
 				return err
 			}
 			if modelInput.Version != existing.Version {
@@ -576,16 +708,28 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 			if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
 				return err
 			}
-			return tx.First(&saved, "id = ?", existing.ID).Error
+			if err := syncProductTemplateAttributeBindingsTx(tx, existing.ID, bindings); err != nil {
+				return err
+			}
+			return tx.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
+				return database.Order("sort_order asc").Order("category_key asc")
+			}).First(&saved, "id = ?", existing.ID).Error
 		}
 
 		modelInput.MasterDataControl.Normalize("R1")
 		modelInput.Version = 1
+		if strings.TrimSpace(modelInput.ID) == "" {
+			modelInput.ID = uuid.NewString()
+		}
 		if err := tx.Create(&modelInput).Error; err != nil {
 			return err
 		}
-		saved = modelInput
-		return nil
+		if err := syncProductTemplateAttributeBindingsTx(tx, modelInput.ID, bindings); err != nil {
+			return err
+		}
+		return tx.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
+			return database.Order("sort_order asc").Order("category_key asc")
+		}).First(&saved, "id = ?", modelInput.ID).Error
 	})
 	if err != nil {
 		return models.ProductTemplate{}, err

@@ -26,6 +26,7 @@ import { dashboard } from './dashboard'
 import { productionShared } from './productionShared'
 import { scanPlatform } from './scanPlatform'
 import { quickActions } from './quickActions'
+import { logisticsConfig } from './logisticsConfig'
 import { terminalConfig } from './terminalConfig'
 import { users } from './users'
 import { piecework } from './piecework'
@@ -60,6 +61,7 @@ export const enUSMessages = {
   productionShared,
   scanPlatform,
   quickActions,
+  logisticsConfig,
   terminalConfig,
   users,
   piecework,

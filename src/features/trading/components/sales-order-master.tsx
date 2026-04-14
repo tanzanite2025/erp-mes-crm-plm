@@ -13,6 +13,7 @@ import { failLoudly } from '@/lib/safe-catch'
 import type { SalesOrder } from '../data/schema'
 import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
+import { SalesOrderPackagingSummaryInline } from './parts/sales-order-packaging-summary-inline'
 
 interface SalesOrderMasterProps {
   orders: SalesOrder[]
@@ -135,6 +136,7 @@ export function SalesOrderMaster({
                         <span className='text-[12px] font-black tabular-nums'>
                           {order.quantity?.toLocaleString() || 0} PCS
                         </span>
+                        <SalesOrderPackagingSummaryInline order={order} />
                         {order.status !== 'Draft' && (
                           <div className='flex flex-col gap-1'>
                             {typeof order.fulfillmentRate === 'number' ? (
