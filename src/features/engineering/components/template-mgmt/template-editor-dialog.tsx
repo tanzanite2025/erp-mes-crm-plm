@@ -40,7 +40,7 @@ interface TemplateEditorDialogProps {
   onToggleRequired: (categoryKey: string, checked: boolean) => void
   onSubmit: () => void
   locale: string
-  t: (key: any, params?: Record<string, unknown>) => string
+  t: (key: string | unknown, params?: Record<string, unknown>) => string
   componentLabels: Record<string, string>
   assembledCategories: AssembledCategoryItem[]
   availableCategories: AvailableCategoryItem[]
