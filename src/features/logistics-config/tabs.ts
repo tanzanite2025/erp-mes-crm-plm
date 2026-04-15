@@ -7,8 +7,7 @@ export function getLogisticsConfigTabs(t: TranslateFn): TabItem[] {
   return [
     { key: 'suppliers', label: t('logisticsConfig.tabs.suppliers'), href: '/logistics-config/suppliers' },
     { key: 'vehicle-loading', label: t('logisticsConfig.tabs.vehicleLoading'), href: '/logistics-config/vehicle-loading' },
+    { key: 'vehicle-specs-library', label: t('logisticsConfig.tabs.vehicleSpecsLibrary'), href: '/logistics-config/vehicle-specs-library' },
     { key: 'packaging-rules', label: t('logisticsConfig.tabs.packagingRules'), href: '/logistics-config/packaging-rules' },
-    { key: 'scanning', label: t('logisticsConfig.tabs.scanning'), href: '/logistics-config/scanning' },
-    { key: 'platforms', label: t('logisticsConfig.tabs.platforms'), href: '/logistics-config/platforms' },
   ]
 }

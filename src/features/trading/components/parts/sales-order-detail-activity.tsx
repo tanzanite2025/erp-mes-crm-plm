@@ -9,7 +9,7 @@ import { type SalesOrder } from '../../data/schema'
 interface SalesOrderDetailActivityProps {
   order: SalesOrder
   canHardDelete?: boolean
-  onHardDelete?: (id: string) => void
+  onHardDelete?: (order: SalesOrder) => void
 }
 
 /**

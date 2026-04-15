@@ -30,8 +30,12 @@ func TestGetPurchaseOrderHandlerReturnsNamedErrorResponseWhenMissing(t *testing.
 		amount REAL,
 		exchange_rate REAL,
 		purchaser TEXT,
+		payment_method TEXT,
+		payment_method_name TEXT,
 		payment_term TEXT,
+		payment_term_name TEXT,
 		note TEXT,
+		evidences BLOB DEFAULT X'5B5D',
 		workflow_instance_id TEXT,
 		created_at DATETIME,
 		updated_at DATETIME,
@@ -51,6 +55,7 @@ func TestGetPurchaseOrderHandlerReturnsNamedErrorResponseWhenMissing(t *testing.
 		price REAL,
 		amount REAL,
 		received_qty REAL,
+		returned_qty REAL DEFAULT 0,
 		status TEXT,
 		version INTEGER DEFAULT 1
 	)`).Error, t)

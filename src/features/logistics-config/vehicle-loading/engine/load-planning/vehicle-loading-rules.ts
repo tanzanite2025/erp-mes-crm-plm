@@ -12,8 +12,8 @@ export function checkVehicleConstraints(
     return results
   }
 
-  if (vehicle.innerLengthMm <= 0 || vehicle.innerWidthMm <= 0 || vehicle.innerHeightMm <= 0) {
-    results.push({ passed: false, code: 'invalid_vehicle_space', message: '车辆车厢尺寸非法' })
+  if (vehicle.usableInnerSize.lengthMm <= 0 || vehicle.usableInnerSize.widthMm <= 0 || vehicle.usableInnerSize.heightMm <= 0) {
+    results.push({ passed: false, code: 'invalid_vehicle_space', message: '车辆可用空间非法' })
   }
 
   if (vehicle.payloadKg <= 0) {
@@ -24,16 +24,16 @@ export function checkVehicleConstraints(
     results.push({ passed: false, code: 'invalid_package_weight', message: '单箱重量非法' })
   }
 
-  if (orientation.lengthMm > vehicle.innerLengthMm) {
-    results.push({ passed: false, code: 'length_exceeded', message: '箱长超过车厢长度' })
+  if (orientation.lengthMm > vehicle.usableInnerSize.lengthMm) {
+    results.push({ passed: false, code: 'length_exceeded', message: '箱长超过车厢可用长度' })
   }
 
-  if (orientation.widthMm > vehicle.innerWidthMm) {
-    results.push({ passed: false, code: 'width_exceeded', message: '箱宽超过车厢宽度' })
+  if (orientation.widthMm > vehicle.usableInnerSize.widthMm) {
+    results.push({ passed: false, code: 'width_exceeded', message: '箱宽超过车厢可用宽度' })
   }
 
-  if (orientation.heightMm > vehicle.innerHeightMm) {
-    results.push({ passed: false, code: 'height_exceeded', message: '箱高超过车厢高度' })
+  if (orientation.heightMm > vehicle.usableInnerSize.heightMm) {
+    results.push({ passed: false, code: 'height_exceeded', message: '箱高超过车厢可用高度' })
   }
 
   if (unitWeightKg > vehicle.payloadKg) {

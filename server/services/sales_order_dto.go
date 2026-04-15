@@ -143,6 +143,7 @@ type SalesOrderResponse struct {
 	UpdatedBy          string                   `json:"updatedBy"`
 	IsDeleted          bool                     `json:"isDeleted"`
 	Version            int                      `json:"version"`
+	FulfillmentRate    float64                  `json:"fulfillmentRate"`
 	Lines              []SalesOrderLineResponse `json:"lines"`
 }
 
@@ -175,6 +176,7 @@ type SalesOrderListItemResponse struct {
 	UpdatedBy          string                   `json:"updatedBy"`
 	IsDeleted          bool                     `json:"isDeleted"`
 	Version            int                      `json:"version"`
+	FulfillmentRate    float64                  `json:"fulfillmentRate"`
 	Lines              []SalesOrderLineResponse `json:"lines,omitempty"`
 }
 

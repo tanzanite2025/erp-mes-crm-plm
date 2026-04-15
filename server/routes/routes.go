@@ -125,6 +125,28 @@ func SetupRoutes(r *gin.Engine) {
 			logisticsGroup.DELETE("/:id", tradingLogisticsDelete, handlers.DeleteLogisticsRecordHandler)
 		}
 
+		logisticsConfigGroup := authorized.Group("/logistics-config")
+		logisticsConfigGroup.Use(middleware.RequirePermissions(authz.MenuSettings, authz.MenuTrading))
+		{
+			logisticsConfigGroup.GET("/vehicle-specs", handlers.GetVehicleSpecsCatalogHandler)
+			logisticsConfigGroup.POST("/vehicle-specs/:id/photos", handlers.SaveVehicleSpecPhotoHandler)
+		}
+
+		vehicleLoadingGroup := authorized.Group("/logistics/vehicle-loading")
+		vehicleLoadingGroup.Use(middleware.RequirePermissions(authz.MenuSettings, authz.MenuTrading))
+		{
+			vehicleLoadingGroup.POST("/recommendations", handlers.GetVehicleLoadingRecommendationsHandler)
+		}
+
+		shippingManagementGroup := authorized.Group("/shipping-management")
+		shippingManagementGroup.Use(middleware.RequirePermissions(authz.MenuTrading, authz.MenuSettings))
+		{
+			shippingManagementGroup.GET("/vehicle-contacts", handlers.GetVehicleContactBindingsHandler)
+			shippingManagementGroup.GET("/vehicle-contacts/:id", handlers.GetVehicleContactBindingHandler)
+			shippingManagementGroup.POST("/vehicle-contacts/:id", handlers.SaveVehicleContactBindingHandler)
+			shippingManagementGroup.DELETE("/vehicle-contacts/:id", handlers.DeleteVehicleContactBindingHandler)
+		}
+
 		logisticsPush := authorized.Group("/logistics-push")
 		logisticsPush.Use(tradingAccess)
 		{

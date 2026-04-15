@@ -1,25 +1,35 @@
 import { useMemo } from 'react'
-import { categoryLabel } from '../data/vehicle-loading.utils'
+import { useLanguage } from '@/context/language-provider'
+import { categoryLabelKey } from '../data/vehicle-loading.utils'
 import { getVehicleLoadingSourceConfig, type VehicleLoadingSourceType } from '../data/vehicle-loading-sources'
 import { useVehicleLoadingData } from './use-vehicle-loading-data'
+import { useVehicleLoadingSourcePackageInput } from './use-vehicle-loading-source-package-input'
 import { useVehicleLoadingState } from './use-vehicle-loading-state'
 
 export type VehicleLoadingSource = VehicleLoadingSourceType
 
 export function useVehicleLoadingPage() {
+  const { t } = useLanguage()
   const state = useVehicleLoadingState()
-  const data = useVehicleLoadingData(state.summary, state.source)
   const sourceConfig = useMemo(() => getVehicleLoadingSourceConfig(state.source), [state.source])
+  const packageInputState = useVehicleLoadingSourcePackageInput({
+    source: state.source,
+    summary: state.summary,
+    selectedPackagingProfileId: state.selectedPackagingProfileId,
+    apiPackageDraft: state.apiPackageDraft,
+    sourceLabel: sourceConfig.label,
+  })
+  const data = useVehicleLoadingData(state.summary, state.source, packageInputState.packageInput, packageInputState.isPackageInputReady)
 
   const categoryOptions = useMemo(
     () => [
       { value: 'all' as const, label: '全部' },
-      { value: 'van' as const, label: categoryLabel('van') },
-      { value: 'boxTruck' as const, label: categoryLabel('boxTruck') },
-      { value: 'lightTruck' as const, label: categoryLabel('lightTruck') },
-      { value: 'mediumTruck' as const, label: categoryLabel('mediumTruck') },
+      { value: 'van' as const, label: t(categoryLabelKey('van')) },
+      { value: 'boxTruck' as const, label: t(categoryLabelKey('boxTruck')) },
+      { value: 'lightTruck' as const, label: t(categoryLabelKey('lightTruck')) },
+      { value: 'mediumTruck' as const, label: t(categoryLabelKey('mediumTruck')) },
     ],
-    []
+    [t]
   )
 
   const filteredSpecs = useMemo(() => {
@@ -47,6 +57,14 @@ export function useVehicleLoadingPage() {
     setSummary: state.setSummary,
     source: state.source,
     setSource: state.setSource,
+    packageInput: packageInputState.packageInput,
+    packageInputError: packageInputState.packageInputError,
+    isLoadingPackageInput: packageInputState.isLoadingPackageInput,
+    packagingProfiles: packageInputState.packagingProfiles,
+    selectedPackagingProfileId: packageInputState.resolvedPackagingProfileId,
+    setSelectedPackagingProfileId: state.setSelectedPackagingProfileId,
+    apiPackageDraft: state.apiPackageDraft,
+    setApiPackageDraft: state.setApiPackageDraft,
     category: state.category,
     setCategory: state.setCategory,
     minVolumeM3: state.minVolumeM3,

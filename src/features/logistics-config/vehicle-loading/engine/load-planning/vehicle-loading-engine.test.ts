@@ -22,9 +22,11 @@ const packageProfile: PackageLoadProfile = {
 const vehicle: VehicleLoadSpace = {
   id: 'van-large',
   name: '面包车（加长）',
-  innerLengthMm: 3000,
-  innerWidthMm: 1500,
-  innerHeightMm: 1300,
+  usableInnerSize: {
+    lengthMm: 3000,
+    widthMm: 1500,
+    heightMm: 1300,
+  },
   payloadKg: 900,
   volumeM3: 5,
   isBoxBody: false,
@@ -35,6 +37,35 @@ describe('load-planning engine', () => {
     const orientations = getPackageOrientations(packageProfile.dimension)
     expect(orientations.length).toBeGreaterThan(0)
     expect(new Set(orientations.map((item) => item.label)).size).toBe(orientations.length)
+  })
+
+  it('keeps height fixed when canRotate is true but canInvert is false', () => {
+    const orientations = getPackageOrientations({
+      ...packageProfile.dimension,
+      lengthMm: 700,
+      widthMm: 500,
+      heightMm: 600,
+      canRotate: true,
+      canInvert: false,
+    })
+
+    expect(orientations).toHaveLength(2)
+    expect(orientations.map((item) => item.label)).toEqual(['L-W-H', 'W-L-H'])
+    expect(orientations.every((item) => item.heightMm === 600)).toBe(true)
+  })
+
+  it('allows changing vertical direction only when canInvert is true', () => {
+    const orientations = getPackageOrientations({
+      ...packageProfile.dimension,
+      lengthMm: 700,
+      widthMm: 500,
+      heightMm: 600,
+      canRotate: true,
+      canInvert: true,
+    })
+
+    expect(orientations).toHaveLength(6)
+    expect(orientations.some((item) => item.heightMm !== 600)).toBe(true)
   })
 
   it('passes vehicle constraints for a fitting orientation', () => {

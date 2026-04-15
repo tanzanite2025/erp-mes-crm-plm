@@ -22,30 +22,72 @@ func setupBackfillTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, testDB.Exec(`
 		CREATE TABLE product_types (
 			id TEXT PRIMARY KEY,
+			parent_id TEXT,
+			template_id TEXT,
+			name TEXT,
 			code TEXT,
-			name TEXT
+			description TEXT,
+			active BOOLEAN DEFAULT TRUE,
+			sort_order INTEGER DEFAULT 0,
+			created_at DATETIME,
+			updated_at DATETIME,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
 		CREATE TABLE products (
 			id TEXT PRIMARY KEY,
-			sku TEXT,
-			name TEXT,
-			type_id TEXT,
-			model_code TEXT,
-			version_level TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
-			deleted_at DATETIME
+			deleted_at DATETIME,
+			revision_no TEXT,
+			effective_from DATETIME,
+			effective_to DATETIME,
+			change_type TEXT,
+			change_order_no TEXT,
+			site_code TEXT,
+			is_default_site BOOLEAN DEFAULT TRUE,
+			sku TEXT,
+			name TEXT,
+			model_code TEXT,
+			type_id TEXT,
+			depth REAL,
+			width_internal REAL,
+			width_external REAL,
+			tire_type TEXT,
+			brake_type TEXT,
+			tech_series TEXT,
+			version_level TEXT,
+			weight REAL,
+			length REAL,
+			angle REAL,
+			clamp TEXT,
+			offset REAL,
+			axle_crown REAL,
+			steerer TEXT,
+			image TEXT,
+			restrictions BLOB,
+			mold_group TEXT,
+			description TEXT,
+			engineering_spec_id TEXT,
+			technical_specs BLOB,
+			barcode_config BLOB,
+			attachments BLOB,
+			status TEXT,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
 		CREATE TABLE product_attribute_values (
 			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
 			product_id TEXT,
 			category_key TEXT,
 			option_value TEXT,
-			sort_order INTEGER
+			sort_order INTEGER,
+			version INTEGER DEFAULT 1
 		)
 	`).Error)
 	return testDB

@@ -1,16 +1,22 @@
 import type { VehicleCategory } from './vehicle-loading.types'
 
-export function categoryLabel(category: VehicleCategory): string {
+export type VehicleCategoryLabelKey =
+  | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.van'
+  | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.boxTruck'
+  | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.lightTruck'
+  | 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.mediumTruck'
+
+export function categoryLabelKey(category: VehicleCategory): VehicleCategoryLabelKey {
   switch (category) {
     case 'van':
-      return '面包车'
+      return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.van'
     case 'boxTruck':
-      return '厢式货车'
+      return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.boxTruck'
     case 'lightTruck':
-      return '轻卡'
+      return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.lightTruck'
     case 'mediumTruck':
-      return '中卡'
+      return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.mediumTruck'
     default:
-      return category
+      return 'logisticsConfig.vehicleSpecsLibrary.vehicleCategories.van'
   }
 }

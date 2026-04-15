@@ -1,19 +1,21 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
-import type { VehicleRecommendation } from '../data/vehicle-loading.types'
+import type { VehicleRecommendation, VehicleSpec } from '../data/vehicle-loading.types'
 import { VehicleEmptyState } from './vehicle-empty-state'
+import { VehiclePhotoTriggerButton } from './vehicle-photo-trigger-button'
 
 type Props = {
   recommendations: VehicleRecommendation[]
   onViewDiagram?: (recommendation: VehicleRecommendation) => void
+  onViewPhoto?: (vehicle: VehicleSpec) => void
 }
 
 function percentText(value: number): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
-export function VehicleRecommendationPanel({ recommendations, onViewDiagram }: Props) {
+export function VehicleRecommendationPanel({ recommendations, onViewDiagram, onViewPhoto }: Props) {
   const { t } = useLanguage()
 
   return (
@@ -47,12 +49,15 @@ export function VehicleRecommendationPanel({ recommendations, onViewDiagram }: P
                 <div>{t('logisticsConfig.vehicleLoading.recommendation.weightUtilization')} {percentText(rec.loadRateWeight)}</div>
               </div>
               {rec.warning ? <div className='mt-2 text-[10px] font-medium text-amber-600'>{rec.warning}</div> : null}
-              <div className='mt-2 break-words font-mono text-[10px] leading-relaxed text-primary/70'>{rec.reason}</div>
-              {onViewDiagram ? (
-                <div className='mt-3 flex justify-end'>
-                  <Button type='button' variant='outline' size='sm' onClick={() => onViewDiagram(rec)}>
-                    查看示意图
-                  </Button>
+              <div className='mt-2 wrap-break-word font-mono text-[10px] leading-relaxed text-primary/70'>{rec.reason}</div>
+              {onViewDiagram || onViewPhoto ? (
+                <div className='mt-3 flex flex-wrap justify-end gap-2'>
+                  {onViewPhoto ? <VehiclePhotoTriggerButton onClick={() => onViewPhoto(rec.vehicle)} /> : null}
+                  {onViewDiagram ? (
+                    <Button type='button' variant='outline' size='sm' onClick={() => onViewDiagram(rec)}>
+                      查看示意图
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

@@ -22,6 +22,7 @@ func setupFinanceMasterServiceTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, err)
 	require.NoError(t, testDB.AutoMigrate(&models.Currency{}))
 	require.NoError(t, testDB.AutoMigrate(&models.PaymentTerm{}))
+	require.NoError(t, testDB.AutoMigrate(&models.PaymentMethod{}))
 	return testDB
 }
 

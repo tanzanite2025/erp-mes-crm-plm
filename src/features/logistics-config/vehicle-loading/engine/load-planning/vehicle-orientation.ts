@@ -11,18 +11,25 @@ function dedupeOrientations(orientations: Orientation[]): Orientation[] {
 }
 
 export function getPackageOrientations(dimension: PackageDimension): Orientation[] {
-  const { lengthMm, widthMm, heightMm, canRotate } = dimension
+  const { lengthMm, widthMm, heightMm, canRotate, canInvert } = dimension
 
   if (!canRotate) {
     return [{ lengthMm, widthMm, heightMm, label: '标准朝向' }]
   }
 
+  if (!canInvert) {
+    return dedupeOrientations([
+      { lengthMm, widthMm, heightMm, label: 'L-W-H' },
+      { lengthMm: widthMm, widthMm: lengthMm, heightMm, label: 'W-L-H' },
+    ])
+  }
+
   return dedupeOrientations([
     { lengthMm, widthMm, heightMm, label: 'L-W-H' },
-    { lengthMm, heightMm, widthMm, label: 'L-H-W' },
-    { widthMm, lengthMm, heightMm, label: 'W-L-H' },
-    { widthMm, heightMm, lengthMm, label: 'W-H-L' },
-    { heightMm, lengthMm, widthMm, label: 'H-L-W' },
-    { heightMm, widthMm, lengthMm, label: 'H-W-L' },
+    { lengthMm, widthMm: heightMm, heightMm: widthMm, label: 'L-H-W' },
+    { lengthMm: widthMm, widthMm: lengthMm, heightMm, label: 'W-L-H' },
+    { lengthMm: widthMm, widthMm: heightMm, heightMm: lengthMm, label: 'W-H-L' },
+    { lengthMm: heightMm, widthMm: lengthMm, heightMm: widthMm, label: 'H-L-W' },
+    { lengthMm: heightMm, widthMm, heightMm: lengthMm, label: 'H-W-L' },
   ])
 }

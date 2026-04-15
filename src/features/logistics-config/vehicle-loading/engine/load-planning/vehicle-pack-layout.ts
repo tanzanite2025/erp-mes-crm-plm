@@ -7,15 +7,15 @@ export function calculateLoadPlanForOrientation(
   unitWeightKg: number
 ): VehicleLoadPlan | null {
   const fits =
-    orientation.lengthMm <= vehicle.innerLengthMm &&
-    orientation.widthMm <= vehicle.innerWidthMm &&
-    orientation.heightMm <= vehicle.innerHeightMm
+    orientation.lengthMm <= vehicle.usableInnerSize.lengthMm &&
+    orientation.widthMm <= vehicle.usableInnerSize.widthMm &&
+    orientation.heightMm <= vehicle.usableInnerSize.heightMm
 
   if (!fits) return null
 
-  const boxesAlongLength = Math.floor(vehicle.innerLengthMm / orientation.lengthMm)
-  const boxesAlongWidth = Math.floor(vehicle.innerWidthMm / orientation.widthMm)
-  const layers = Math.floor(vehicle.innerHeightMm / orientation.heightMm)
+  const boxesAlongLength = Math.floor(vehicle.usableInnerSize.lengthMm / orientation.lengthMm)
+  const boxesAlongWidth = Math.floor(vehicle.usableInnerSize.widthMm / orientation.widthMm)
+  const layers = Math.floor(vehicle.usableInnerSize.heightMm / orientation.heightMm)
 
   const boxesPerLayer = boxesAlongLength * boxesAlongWidth
   const maxBoxesByGeometry = boxesPerLayer * layers

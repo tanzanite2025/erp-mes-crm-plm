@@ -188,7 +188,548 @@
 3. `pnpm exec tsc --noEmit` 通过。
 4. `walkthrough.md` 记录：统一策略、落地范围、验证结果。
 
-### 3. plan：物流模块新增“装载/配车计算”TAB（与物流供应商同级，先MOCK）
+### 5. plan：车型规格库独立 TAB + 后端 authority 化
+
+日期：2026-04-15  
+状态：待批准
+
+#### 5.1 背景与问题
+
+当前 `/logistics-config/vehicle-loading` 页面同时承担了两类职责：
+
+1. 装载/配车计算
+2. 车型规格库展示
+
+这在早期用 mock 打通交互是合理的，但如果后续要支持：
+
+- 自定义车型
+- 自定义内部空间
+- 联系人绑定车型
+- 多页面复用车型库
+
+那么车型库就不应继续作为“装载计算页里的附属列表”，而应提升为独立主数据中心。
+
+同时，当前 `VehicleSpec` 模型仍是理想化模型：
+
+1. 只有名义内尺寸与体积
+2. 默认内部空间可满铺
+3. 没有表达安全间隙、操作余量、门洞约束、轮包/立柱侵占等真实装载限制
+
+因此如果直接基于当前模型做后续绑定与推荐，得到的结果会偏离真实业务。
+
+#### 5.2 推荐目标
+
+1. 在 `logistics-config` 下新增独立 `车型规格库` TAB
+2. 将车型库从前端 mock / 页面附属数据提升为后端 authoritative 主数据
+3. 让 `装载/配车计算` 页面只负责计算与展示，不再承担车型主数据维护职责
+4. 将当前 `VehicleSpec` 升级为更贴近实际装载约束的数据模型
+
+#### 5.3 推荐的数据模型升级方向
+
+建议至少拆分以下几类字段：
+
+1. **物理尺寸字段**
+   - 真实内长 / 内宽 / 内高
+   - 名义载重
+   - 名义载方
+
+2. **可用装载空间字段**
+   - 可用装载长 / 宽 / 高
+   - 可用装载体积
+
+3. **装载约束字段**
+   - 安全间隙 / 顶部预留 / 侧边预留
+   - 门洞尺寸
+   - 轮包侵占
+   - 立柱/异形空间干涉
+
+4. **业务附加字段**
+   - 启用状态
+   - 备注
+   - 适用场景/区域（如有）
+
+#### 5.4 为什么建议独立 TAB
+
+1. 车型库是可维护主数据，不是临时计算输入
+2. 后续会被：
+   - 装载/配车计算
+   - 发货管理联系人绑定
+   - 调车/承运商选择
+   - 可能的物流成本估算
+   共用
+3. 若继续挂在 `vehicle-loading` 页面内部，后续维护入口、权限语义与复用边界都会混乱
+
+#### 5.5 为什么建议转后端 authority
+
+1. 主数据需要可维护、可校验、可审计
+2. 多页面共享时，前端 mock / 常量无法长期成立
+3. 自定义车型、空间参数与装载约束显然属于应持久化的数据，而非前端局部状态
+
+#### 5.6 预计涉及文件/层
+
+前端预计涉及：
+
+1. `src/features/logistics-config/*`
+2. `src/routes/_authenticated/logistics-config/*`
+3. `src/features/logistics-config/vehicle-loading/data/vehicle-loading.types.ts`
+4. 共享车型库 query / service / adapter 层
+5. 依赖车型库的消费页（如 `shipping-management/contacts`）
+
+后端预计涉及：
+
+1. 车型库主数据模型
+2. 车型库 CRUD / list 接口
+3. 与前端 contract 对齐的 DTO / validation
+
+#### 5.7 风险与注意事项
+
+1. 若继续沿用当前理想化体积模型，后续推荐结果会持续偏乐观
+2. 若把“可用空间”与“物理空间”混成一套字段，后续维护会失真
+3. 若车型库不独立，发货管理、装载计算与主数据维护职责会继续缠在一起
+
+#### 5.8 需要你确认的决策点
+
+1. 是否确认在 `logistics-config` 下新增独立 `车型规格库` TAB
+2. 是否确认车型库进入后端 authority 化阶段
+3. 是否确认后续推荐计算优先基于“可用装载空间”而不是单纯名义体积
+
+#### 5.9 验证策略
+
+1. 前端存在独立 `车型规格库` 入口
+2. 车型库主数据可被 `vehicle-loading` / `shipping-management` 复用
+3. 数据模型能表达可用装载空间与装载约束
+4. `pnpm exec tsc --noEmit` 通过，若涉及后端则补对应后端校验
+5. `walkthrough.md` 记录：架构调整、模型升级、验证结果
+
+### 6. plan：物流侧边栏独立一级分类
+
+日期：2026-04-15  
+状态：待批准
+
+#### 6.1 背景与问题
+
+当前侧边栏中的物流相关能力仍主要挂在 `logistics-config` 语义下，这在早期可以理解为“物流配置中心”，但随着能力增长，这个定位已经开始失真。
+
+当前模块下已经包含：
+
+1. 物流供应商
+2. 装载/配车
+3. 车型规格库
+4. 包装规则
+5. 扫描配置
+6. 接口平台
+
+其中相当一部分已不再只是“系统参数配置”，而是：
+
+- 主数据中心
+- 业务支撑中心
+- 物流域能力入口
+
+继续挂在“系统配置/基础配置”语义下面，会让侧边栏的信息架构越来越不符合真实业务边界。
+
+#### 6.2 推荐目标
+
+1. 在侧边栏中新增一级分类：`物流`
+2. 让当前 `logistics-config` 演进为物流域下的模块入口，而不是继续作为 settings 语义下的子项
+3. 为后续物流扩展能力预留稳定导航位置
+
+#### 6.3 为什么建议独立一级分类
+
+1. 物流能力已经开始形成独立业务域，而不是零散配置项
+2. 后续极可能继续增加：
+   - 路线/区域
+   - 承运商联系人体系
+   - 配送/发货策略
+   - 物流报价/费用规则
+   - 平台对接能力
+3. 若继续放在“系统配置”语义下，后续每新增一个物流能力，都会继续污染导航边界
+
+#### 6.4 规划中的关键决策点
+
+1. **侧边栏信息架构**
+   - 是将 `物流` 做成一级菜单直达模块主页
+   - 还是做成一级菜单 + 二级子入口集合
+
+2. **路由策略**
+   - 方案 A：保留现有 `/logistics-config/*` 路径，仅调整侧边栏语义
+   - 方案 B：逐步演进到 `/logistics/*`，并保留旧路径重定向/兼容
+
+3. **权限策略**
+   - 方案 A：短期内继续复用现有 `settings/trading` 相关权限，先完成导航语义纠偏
+   - 方案 B：新增独立 `menu_logistics`，让物流域成为权限契约中的一等模块
+
+#### 6.5 推荐实施顺序
+
+建议分两步，而不是一次性硬切：
+
+1. **第一步：导航语义纠偏**
+   - 先把侧边栏中的 `物流` 独立出来
+   - 保持主要路由兼容，降低迁移风险
+
+2. **第二步：域边界收口**
+   - 视后续物流能力增长，再决定是否升级为独立路由前缀与独立权限菜单
+
+#### 6.6 预计涉及文件/层
+
+前端预计涉及：
+
+1. `src/components/layout/data/sidebar-data.ts`
+2. `src/features/authz/data/permission-catalog.ts`
+3. `src/features/authz/data/authenticated-route-catalog.ts`
+4. `src/features/logistics-config/*` 与可能新增的 `src/features/logistics/*`
+5. 相关路由文件与模块入口
+
+后端/权限预计涉及：
+
+1. `server/authz/permissions.go`（若决定新增独立物流菜单权限）
+2. 对应前端 permission contract 生成链
+
+#### 6.7 风险与注意事项
+
+1. 若直接改成独立一级分类但不考虑旧路径兼容，可能影响既有书签与入口跳转
+2. 若导航语义先拆、权限语义不拆，需要明确这是过渡态，避免长期漂移
+3. 若立即新增独立 `menu_logistics`，会牵动权限契约与角色矩阵，需要控制范围
+
+#### 6.8 需要你确认的决策点
+
+1. 是否确认将侧边栏中的物流独立为一级分类 `物流`
+2. 是否优先采用“先调整导航语义，暂不立即重做全部路由”的渐进策略
+3. 是否本轮只做导航结构规划，权限语义独立留待下一阶段确认
+
+#### 6.9 验证策略
+
+1. 侧边栏中存在清晰独立的 `物流` 一级分类
+2. 物流相关能力入口不再继续压在系统配置语义下
+3. 旧入口在过渡期仍可兼容访问（若采用兼容策略）
+4. `pnpm exec tsc --noEmit` 通过
+5. `walkthrough.md` 记录：导航调整、路由/权限决策、验证结果
+
+### 7. plan：物流 TAB 拆分为多个侧边菜单（第一阶段：新增“物流配置”）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 7.1 背景与问题
+
+当前 `物流` 侧边栏下仍主要只有一个总入口：`logistics-config`。
+
+而该入口内部已经集中承载了多组不同性质的 TAB：
+
+1. 物流供应商
+2. 装载/配车
+3. 车型规格库
+4. 包装规则
+5. 扫描配置
+6. 接口平台
+
+虽然这些 TAB 当前已经是“独立文件承接”，但导航层级上仍然过于集中：
+
+- 入口过重
+- 模块边界不清晰
+- 随着物流域持续扩展，会越来越难在侧边栏上表达不同能力簇
+
+因此下一步问题不再是“TAB 是否独立文件”，而是“哪些 TAB 应继续留在同一模块，哪些应上升为并列侧边菜单”。
+
+#### 7.2 第一阶段推荐目标
+
+先做最小可控拆分，而不是一次性把物流域全部打散：
+
+1. 在 `物流` 一级分类下新增一个并列侧边菜单：`物流配置`
+2. 将当前 `扫描配置`、`接口平台` 两个 TAB 收入 `物流配置`
+3. 当前 `物流供应商`、`装载/配车`、`车型规格库`、`包装规则` 暂保留在现有物流入口中
+
+#### 7.3 为什么先拆“物流配置”
+
+`扫描配置` 与 `接口平台` 两个 TAB 的共同点非常明确：
+
+1. 都更偏向“配置与集成能力”
+2. 都不像 `物流供应商 / 车型规格库 / 包装规则` 这类主数据中心
+3. 都适合作为单独的“物流配置”子模块集合
+
+因此先把这两个 TAB 收口到 `物流配置`，是最低风险、也最符合语义的一步。
+
+#### 7.4 第一阶段后的推荐信息架构
+
+建议先调整为：
+
+1. **物流**
+   - 物流供应商
+   - 装载/配车
+   - 车型规格库
+   - 包装规则
+
+2. **物流配置**
+   - 扫描配置
+   - 接口平台
+
+后续若物流域继续变大，再考虑把主数据中心进一步拆散成更多并列侧边菜单。
+
+#### 7.5 路由策略建议
+
+建议仍采用渐进迁移，而不是一次性硬切：
+
+1. **方案 A（推荐）**
+   - 新增 `物流配置` 入口与模块壳
+   - 为 `扫描配置`、`接口平台` 提供新路由入口
+   - 旧的 `/logistics-config/scanning`、`/logistics-config/platforms` 保留兼容跳转或过渡入口
+
+2. **方案 B（不推荐当前直接做）**
+   - 立即重构全部物流子路由归属
+   - 风险更高，影响更大
+
+#### 7.6 预计涉及文件/层
+
+前端预计涉及：
+
+1. `src/components/layout/data/sidebar-data.ts`
+2. `src/features/logistics-config/tabs.ts`
+3. 新增 `src/features/logistics-settings/*` 或同等独立模块目录
+4. 新增对应路由文件（如 `src/routes/_authenticated/logistics-settings/*`）
+5. 旧 `scanning/platforms` TAB 的迁移与兼容入口
+
+权限/映射预计涉及：
+
+1. `src/features/authz/data/permission-catalog.ts`
+2. `src/features/authz/data/authenticated-route-catalog.ts`
+
+#### 7.7 风险与注意事项
+
+1. 若直接迁移 `scanning/platforms` 而不做旧路由兼容，会影响现有书签与内部跳转
+2. 若“物流”与“物流配置”边界不清晰，后续仍会继续膨胀成新的大杂烩
+3. 本轮不建议同步做独立 `menu_logistics_settings` 等新权限菜单，避免扩大范围
+
+#### 7.8 需要你确认的决策点
+
+1. 是否确认第一阶段先只拆出 `物流配置`
+2. 是否确认 `扫描配置`、`接口平台` 先移入 `物流配置`
+3. 是否确认其余四个 TAB 暂保留在现有物流入口中，后续再评估继续拆分
+
+#### 7.9 验证策略
+
+1. 侧边栏中存在并列入口：`物流` 与 `物流配置`
+2. `扫描配置`、`接口平台` 可从 `物流配置` 访问
+3. 旧入口在过渡期仍兼容可访问（若采用兼容策略）
+4. `pnpm exec tsc --noEmit` 通过
+5. `walkthrough.md` 记录：导航拆分、兼容策略、验证结果
+
+### 8. plan：销售订单 fulfillmentRate 缺失修复 + 详情抽屉化承接
+
+日期：2026-04-15  
+状态：待批准
+
+#### 8.1 背景与问题
+
+当前销售订单页面存在两类问题叠加：
+
+1. 点击销售单后，`SalesOrderMaster` 持续抛出：`[CRITICAL] Missing fulfillmentRate from sales order DTO`
+2. 详情展示采用“列表左侧 + 详情右侧内嵌面板”方式，导致主列表被明显压缩，影响正常预览
+
+从当前前端代码看：
+
+- `src/features/trading/sales/contracts/sales-order-api-dto.ts` 已声明 `fulfillmentRate?: number`
+- `src/features/trading/sales/adapters/sales-order-api-adapter.ts` 已将 `dto.fulfillmentRate` 透传到前端领域模型
+- `src/features/trading/components/sales-order-master.tsx` 在订单非 `Draft` 时将 `fulfillmentRate` 视为关键字段，并在缺失时 fail loudly
+
+因此当前更像是**后端实际返回漏了 `fulfillmentRate`**，而不是前端漏映射。
+
+同时，`src/features/trading/components/sales-order-list-fixed.tsx` 当前在存在 `selectedId` 时，会把列表缩到 `w-1/3`，剩余区域渲染内嵌 `SalesOrderDetail`。这种布局在高频点选详情场景下会直接破坏主列表可读性。
+
+#### 8.2 推荐目标
+
+1. 从根因修复销售单 DTO 中缺失 `fulfillmentRate` 的问题
+2. 将销售单详情从“右侧内嵌挤压”改为独立抽屉式承接
+3. 保持现有 `SalesOrderDetail` 业务内容组件可复用，避免把展示容器和业务逻辑继续耦合
+
+#### 8.3 为什么不能只做前端兜底
+
+不建议简单把 `fulfillmentRate` 缺失时渲染成 `--` 就结束：
+
+1. 当前页面已经把该字段视为关键业务指标
+2. fail loudly 暴露的是 DTO 契约漂移，不是单纯 UI 容错问题
+3. 若前端静默兜底，会掩盖后端返回不完整数据的真实问题
+
+因此应优先保证：**后端 authoritative DTO 与前端契约一致**。
+
+#### 8.4 为什么建议改为抽屉承接
+
+当前详情不是弹窗，也不是覆盖层，而是直接把主列表挤成 `1/3` 宽度。这会带来：
+
+1. 列表列宽被压缩，主信息不可读
+2. 用户在查看详情时失去对列表上下文的稳定浏览能力
+3. 详情内容越来越复杂时，右侧内嵌面板会继续膨胀
+
+因此更适合改成：
+
+1. 独立 `SalesOrderDetailDrawer`（或同等命名）容器组件
+2. 采用底部滑出式 / Drawer 样式承接详情
+3. 复用现有 `SalesOrderDetail` 作为抽屉内部内容
+
+#### 8.5 推荐实施方式
+
+1. **Phase A：修 DTO 根因**
+   - 排查销售单列表与详情后端返回
+   - 补齐 `fulfillmentRate`
+   - 确保前端列表与详情读取一致
+
+2. **Phase B：抽屉化承接**
+   - 新增独立抽屉容器组件
+   - 让 `SalesOrderList` 保持主列表宽度，不再因选中详情而缩成 `w-1/3`
+   - 抽屉打开状态仍沿用当前 `detailId` 路由搜索参数
+
+#### 8.6 预计涉及文件/层
+
+前端预计涉及：
+
+1. `src/features/trading/components/sales-order-list-fixed.tsx`
+2. `src/features/trading/components/sales-order-detail.tsx`
+3. 新增详情抽屉容器组件（如 `sales-order-detail-drawer.tsx`）
+4. 相关详情子组件与样式容器
+
+后端预计涉及：
+
+1. 销售订单列表/详情 handler
+2. 销售订单 DTO / service / repository 映射链中 `fulfillmentRate` 的生成与返回
+
+#### 8.7 风险与注意事项
+
+1. 若只改前端详情容器而不修 DTO，日志风暴与指标缺失仍会持续
+2. 抽屉改造需要保证编辑/删除/文件预览等动作仍正常工作
+3. 若使用底部抽屉，需要关注桌面端高度、滚动容器与嵌套预览弹窗之间的交互
+
+#### 8.8 需要你确认的决策点
+
+1. 是否确认先从后端根因修复 `fulfillmentRate` 缺失
+2. 是否确认把销售单详情改为独立抽屉组件承接
+3. 是否确认优先采用“底部滑出式”而不是继续右侧内嵌面板
+
+#### 8.9 验证策略
+
+1. 销售订单页不再出现 `Missing fulfillmentRate from sales order DTO`
+2. 点击销售单后主列表不再被压缩到难以预览
+3. 抽屉中的详情、删除、预览、状态动作均可正常使用
+4. `pnpm exec tsc --noEmit` 通过；若涉及后端则补对应 Go 校验
+5. `walkthrough.md` 记录：根因、交互调整、验证结果
+
+#### 8.10 第二轮收口建议（当前待批准）
+
+在第一轮修复完成后，当前结构已经比原来清晰很多，但还有两个收口点值得继续做：
+
+1. **详情删除 / 作废回流链仍不够稳**
+   - 当前 `SalesOrderList` 中的删除动作仍依赖列表页 `orders.find()` 来找回 `status/version`
+   - 若详情是通过 URL 直达、当前分页不含该订单、或筛选条件已将其排除，则可能出现详情中点击删除/作废但无法闭环执行的风险
+   - 推荐改为：详情侧直接使用 authoritative `order` 数据完成删除/作废命令参数组装，不再依赖列表快照
+
+2. **`sales-order-detail.tsx` 仍略偏厚**
+   - 当前文件同时负责：详情查询、权限获取、mutation 组装、预览状态、内容编排
+   - 这使它更像 detail orchestrator，而不是纯内容组件
+   - 推荐进一步拆为：
+     - `sales-order-detail.tsx`（或 `sales-order-detail-container.tsx`）：保留容器 / orchestration
+     - `sales-order-detail-content.tsx`：保留纯内容编排与展示
+
+#### 8.11 第二轮推荐目标
+
+1. 让详情删除 / 作废链在详情上下文内闭环，不依赖外层列表快照
+2. 继续强化“抽屉容器 / 详情容器 / 详情内容”三层职责分离
+3. 保持现有抽屉交互与详情业务内容不变，只做结构收口，不再扩大到额外 UI 重做
+
+#### 8.12 第二轮预计涉及文件
+
+前端预计涉及：
+
+1. `src/features/trading/components/sales-order-list-fixed.tsx`
+2. `src/features/trading/components/sales-order-detail-sheet.tsx`
+3. `src/features/trading/components/sales-order-detail.tsx`
+4. 新增 `src/features/trading/components/sales-order-detail-content.tsx`
+5. 视情况新增 `use-sales-order-detail-view-model.ts`（仅当容器仍显著偏厚时）
+
+#### 8.13 第二轮风险与注意事项
+
+1. 删除/作废链改到详情 authoritative 数据闭环时，要确保 `version` 使用的是详情最新值，避免乐观锁误用旧列表快照
+2. 拆分 `sales-order-detail.tsx` 时要保证预览弹窗、权限动作、状态迁移与硬删除入口不退化
+3. 本轮建议只做结构收口，不再继续叠加新的 UI 形态变化
+
+#### 8.14 第二轮需要你确认的决策点
+
+1. 是否确认继续修复详情删除/作废回流链，不再依赖列表页 `orders.find()`
+2. 是否确认继续将 `sales-order-detail.tsx` 拆为容器层与内容层文件
+3. 是否确认本轮只做结构收口，不再扩大到更多 UI 改造
+
+### 9. plan：前端临时切到本地 Go 开发服务
+
+日期：2026-04-15  
+状态：待批准
+
+#### 9.1 背景与目标
+
+当前前端开发环境运行于 `127.0.0.1:5173`。根据现有配置，`/api` 请求默认经由 Vite 代理转发到 `localhost:8080`。已确认当前 `8080` 端口并非你刚修改源码后重新启动的本地 Go 开发服务，而是 Docker / nginx 承接的旧链路，因此销售订单页面仍拿到旧版 DTO，继续触发 `Missing fulfillmentRate from sales order DTO`。
+
+本轮目标不是继续修改销售订单业务代码，而是将前端开发环境的 API 请求**临时切换到你本地真正的 Go 开发服务端口**，以便联调最新后端源码，并保留清晰的回退方式。
+
+#### 9.2 关键约束（已确认）
+
+1. 优先做“临时联调切换”，不破坏现有 Docker / nginx 的 `8080` 服务链路
+2. 优先采用环境变量或开发代理配置实现，不在业务组件中硬编码 API 地址
+3. 切换后必须可快速回退，避免影响你继续使用原容器链路
+
+#### 9.3 推荐实施策略
+
+1. 先识别你本地 Go 开发服务的实际监听端口
+   - 若本地 Go 服务准备监听 `8081` / `18080` 等非 `8080` 端口，则前端开发代理应显式指向该端口
+   - 若你计划停掉 Docker 占用并让 Go 服务接管 `8080`，则只需验证端口归属切换成功，无需改前端配置
+
+2. 以前端开发配置为单一切换点
+   - 优先检查并使用 `VITE_PROXY_TARGET`
+   - 仅在确有需要时才使用 `VITE_API_BASE_URL`
+   - 原则：本地开发模式下尽量保留 `/api` 相对路径，通过代理切换目标，避免引入跨域与环境分裂
+
+3. 保持回退路径显式可见
+   - 若新增/修改本地环境变量文件，应注明默认值与回退值
+   - 若修改 `vite.config.ts`，必须保证不影响未设置环境变量时的默认链路
+
+#### 9.4 预计涉及文件
+
+1. `vite.config.ts`
+2. 视现有环境文件情况，可能涉及：`.env.local`、`.env.development.local` 或其他本地开发环境变量文件
+3. `walkthrough.md`
+
+#### 9.5 风险与注意事项
+
+1. 若直接改成绝对地址 `VITE_API_BASE_URL`，可能绕开现有代理语义并引入额外跨域差异，因此不作为首选
+2. 若误改默认代理目标，可能影响你继续使用 Docker 链路进行其他功能联调
+3. 若本地 Go 服务未实际启动或端口判断错误，前端切换后会从“旧数据错误”变成“连接失败”，因此必须先确认真实监听端口
+
+#### 9.5.1 执行中发现的新增阻塞
+
+1. 项目实际上已经提供了 Host Go 热调模式：
+   - `pnpm run dev:server:debug`：将 Go 服务运行在 `18080`
+   - `pnpm run dev:frontend:debug`：将前端代理指向 `http://localhost:18080`
+2. 当前并不需要先修改前端配置文件，理论上可以直接利用上述脚本完成临时切换
+3. 但执行 `pnpm run dev:server:debug` 时，Go 编译失败：
+   - 文件：`server/services/logistics_vehicle_specs_service.go`
+   - 问题：`VehicleSpecResponse` 已移除 `InnerLengthMm` / `InnerWidthMm` / `InnerHeightMm`，但 `buildVehicleSpecResponse()` 仍在 struct literal 中写入这 3 个旧字段
+4. 该问题会直接阻断 Host Go 热调服务启动，因此必须先修复，才能继续本计划
+
+#### 9.5.2 新增阻塞的处理策略
+
+1. 本轮仅做最小兼容性修复：移除 `logistics_vehicle_specs_service.go` 中对已删除 `inner*` 字段的旧引用
+2. 不在本轮扩大到物流车型前后端结构重构；仅恢复当前类型契约一致性与 Go 启动能力
+3. 修复后重新执行 `pnpm run dev:server:debug`，确认 `18080` 成功监听，再继续前端切换验证
+
+#### 9.6 验证方案
+
+1. 启动前端后确认开发请求已命中目标本地 Go 服务端口
+2. 打开销售订单列表，确认接口返回的 DTO 中存在 `fulfillmentRate`
+3. 确认 `SalesOrderMaster` 不再触发 `Missing fulfillmentRate from sales order DTO`
+4. 如需回退，恢复环境变量或代理目标后重新启动前端并验证旧链路恢复
+
+#### 9.7 需要你确认的决策点
+
+1. 是否确认本轮只做“前端 API 指向切换”，不继续修改销售订单业务代码
+2. 是否确认优先采用 `VITE_PROXY_TARGET` 作为临时切换入口，而不是在业务代码里硬编码地址
+3. 是否确认实施后会把具体回退方式同步记录到 `walkthrough.md`
+4. 是否确认先插入一个最小后端兼容性修复，解除 `dev:server:debug` 的 Go 编译阻塞，再继续本轮前端联调切换
+
+### 9. plan：物流模块新增“装载/配车计算”TAB（与物流供应商同级，先MOCK）
 
 日期：2026-04-15  
 状态：待批准
@@ -253,6 +794,477 @@
 1. 不做后端数据表/接口
 2. 不做真实 3D 装载算法
 3. 不做承运商报价/下单联动
+
+### 10. plan：车型实拍图旁路弹窗（统一复用）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 10.1 背景与目标
+
+当前物流侧已存在多个“展示车型”的位置，但都以文字规格为主：
+
+1. `vehicle-specs-library-tab.tsx`：车型规格卡片
+2. `vehicle-specs-table.tsx`：装载/配车页车型表格
+3. `vehicle-recommendation-panel.tsx`：推荐车型结果卡片
+
+你希望增加一个“旁路”的真实车型图片查看能力：不改主业务流程，不把图片塞进每个列表主体，而是通过一个统一按钮打开独立弹窗，查看某个车型对应的真实图片。
+
+本轮目标是：建立一个**按 `vehicle.id` 绑定的可复用图片弹窗能力**，让所有展示车型的页面都能以统一入口打开“真实车型图片查看”。
+
+#### 10.2 设计结论
+
+1. 采用独立业务弹窗组件
+   - 不复用现有“装载示意图弹窗”等业务弹窗实现
+   - 可以继续使用底层 `Dialog` 基础设施，但业务层组件、布局和状态应独立维护
+   - 原因：真实车型图片查看属于旁路媒体浏览，不应与装载示意逻辑耦合
+
+2. 采用“图片清单 + 弹窗组件 + 触发入口”三层结构
+   - 图片清单：按 `vehicle.id` 维护真实图片元数据
+   - 弹窗组件：只负责展示标题、说明、图片列表/大图
+   - 触发入口：在车型卡片、表格、推荐卡中复用统一按钮
+
+3. 不把“真实图片”塞进车型主数据接口
+   - 当前车型规格主数据负责尺寸/载方/约束等结构化字段
+   - 图片属于富媒体展示层，先在前端做旁路映射，避免把本轮扩大成主数据接口重构
+
+#### 10.3 推荐信息架构
+
+建议为每个车型维护如下前端展示元数据：
+
+1. `vehicleId`
+2. `displayTitle`
+3. `coverImageUrl`
+4. `images[]`
+   - `url`
+   - `alt`
+   - `viewType`（例如 `exterior` / `sideDoorOpen` / `rearDoorInterior`）
+   - `caption`（可选）
+   - `annotations[]`（可选）
+     - `id`
+     - `xPercent`
+     - `yPercent`
+     - `title`
+     - `description`
+     - `tag`（可选，例如“轮包”“尾门”“侧门”）
+5. `description`（可选）
+6. `tags`（可选，如“面包车/厢货/高栏/尾板”等）
+
+这层数据建议与车型规格接口返回值保持松耦合，仅通过 `vehicle.id` 做关联。
+
+同时建议每个车型至少准备 3 类图片：
+
+1. 外观图
+2. 侧门开启状态图
+3. 尾门 / 内部空间图
+
+#### 10.4 推荐实施策略
+
+1. 新增图片清单文件
+   - 例如：`src/features/logistics-config/vehicle-loading/data/vehicle-photo-manifest.ts`
+   - 只导出按 `vehicle.id` 检索的图片与标注元数据，不承载 UI 状态
+
+2. 新增独立弹窗组件
+   - 例如：`src/features/logistics-config/vehicle-loading/components/vehicle-photo-dialog.tsx`
+   - Props 建议：`open`、`onOpenChange`、`vehicle`、`photoEntry`
+   - 支持：标题、说明、主图、缩略图/图片列表、当前图片标注层、空态提示
+
+3. 新增统一触发按钮组件（可选但推荐）
+   - 例如：`vehicle-photo-trigger-button.tsx`
+   - 统一文案、图标和空图禁用/提示逻辑
+
+4. 在以下入口接线
+   - `vehicle-specs-library-tab.tsx`：每张车型卡增加“查看实车图”按钮
+   - `vehicle-specs-table.tsx`：每行增加操作列或名称旁按钮
+   - `vehicle-recommendation-panel.tsx`：与“查看示意图”并列增加“查看实车图”按钮
+
+5. 状态收口建议
+   - 在各自页面容器层维护 `selectedVehicle` 与 `photoDialogOpen`
+   - 尽量避免在每个列表项内部各自维护一套弹窗状态
+
+#### 10.5 预计涉及文件
+
+1. `src/features/logistics-config/vehicle-specs-library-tab.tsx`
+2. `src/features/logistics-config/vehicle-loading/components/vehicle-specs-table.tsx`
+3. `src/features/logistics-config/vehicle-loading/components/vehicle-recommendation-panel.tsx`
+4. 新增 `src/features/logistics-config/vehicle-loading/components/vehicle-photo-dialog.tsx`
+5. （推荐新增）`src/features/logistics-config/vehicle-loading/components/vehicle-photo-trigger-button.tsx`
+6. 新增 `src/features/logistics-config/vehicle-loading/data/vehicle-photo-manifest.ts`
+7. 视需要补充 `locales/messages/zh-CN/logisticsConfig.ts` 与 `en-US/logisticsConfig.ts`
+
+#### 10.6 资源组织建议
+
+真实图片建议统一放在 `public/images/logistics/vehicles/` 下，再由前端图片清单显式引用：
+
+1. 路径集中，便于后续替换/补图
+2. 不与业务源码混放
+3. 后续若切到后端可维护图片源，也能保留当前清单层作为适配器
+4. 建议以 `vehicle.id/view-type-index` 形式做命名，便于同一车型维护多张视角图
+
+#### 10.7 风险与注意事项
+
+1. 若某车型暂时没有图片，弹窗应展示明确空态，而不是直接报错或隐藏车型
+2. 当前 `vehicle-loading-tab.tsx` 与 `vehicle-specs.mock.ts` 仍存在旧 `inner*` 字段收口问题，本轮实施应尽量聚焦图片弹窗，不把多个结构修补混成大改
+3. 表格列数增加后要注意移动端/窄屏表现，必要时优先采用“名称旁按钮”而不是新增独立宽操作列
+4. 标注层坐标建议采用相对百分比而不是固定像素，避免图片在弹窗缩放时标注错位
+
+#### 10.8 非目标边界
+
+1. 不做车型图片上传后台
+2. 不做后端图片管理接口
+3. 不把图片字段写入当前车辆规格主数据 API
+4. 不替代现有“查看示意图”弹窗
+5. 不在本轮实现复杂图片标注编辑器；仅先支持静态 Metadata 标注展示
+
+#### 10.9 需要你确认的决策点
+
+1. 是否确认本轮先采用“前端静态图片清单 + `vehicle.id` 绑定”的旁路方案
+2. 是否确认弹窗必须是独立业务弹窗，不复用现有“装载示意图弹窗”的业务实现
+3. 是否确认优先接入 3 个入口：车型规格库卡片、车型规格表格、推荐结果卡片
+4. 是否确认每个车型优先按“外观 / 侧门开启 / 尾门或内部空间”至少 3 类图片组织
+5. 是否确认本轮先展示静态 Metadata 标注，不实现后台上传与在线编辑标注
+
+#### 10.10 新增需求修订：车型规格库卡片内上传入口
+
+在当前“只读查看 + 静态清单”方案基础上，你进一步明确：车型图片不应仅依赖手工修改清单文件来决定放在哪里，而应在**车型规格库页面的每个车型卡片内提供明确上传入口**。
+
+你指定的交互约束为：
+
+1. 上传入口放在每个车型卡片左侧
+2. 用户在车型卡片上下文里直接上传，避免脱离车型语境再去选择归属位置
+3. 上传结果仍然归属当前 `vehicle.id`，继续复用现有的“查看实车图”独立弹窗能力
+
+#### 10.11 修订后的推荐实施策略
+
+1. 在 `vehicle-specs-library-tab.tsx` 的车型卡片布局中预留左侧媒体操作区
+   - 左侧：上传按钮 / 当前封面缩略图 / 图片数量摘要（如有）
+   - 右侧：保留现有规格文字区与“查看实车图”按钮
+
+2. 上传入口与查看弹窗分离
+   - 上传入口负责“把图片挂到当前车型名下”
+   - 查看弹窗继续负责“浏览多张图片与标注信息”
+   - 两者共享同一 `vehicle.id` 归属模型，但不混成一个组件
+
+3. 上传后的图片组织仍保持多视角模型
+   - 外观图
+   - 侧门开启图
+   - 尾门 / 内部空间图
+   - 必要时可在上传时要求选择 `viewType`，避免图片归类混乱
+
+4. 存储与数据链需要进一步确认
+   - 若仅做前端临时选择，本地刷新后会丢失，不满足“以后不用再想放哪里”的目标
+   - 因此更合理的方向是：上传动作至少要落到可持久化的图片存储与映射层
+   - 这意味着本轮很可能不再只是纯前端旁路，而需要补后端图片归属/保存链设计
+
+#### 10.11.1 现有上传基础设施调研结论
+
+1. 前端已存在通用资产上传服务：`src/services/asset-service.ts`
+   - 调用：`POST /api/v1/assets/upload`
+   - 返回：`url`、`fileName`、`size`
+
+2. 后端已存在通用上传处理：`server/handlers/assets_upload.go`
+   - 白名单允许图片后缀（jpg / jpeg / png / gif）
+   - 文件落到服务器磁盘 `uploads/`
+   - 返回 `/uploads/<uuid>.<ext>` 形式的访问 URL
+
+3. 因此，本轮不需要重复发明“文件二进制上传”链路；更合理的是：
+   - 继续复用通用资产上传完成物理文件保存
+   - 新增“车型图片业务映射层”负责把 URL 绑定到具体 `vehicle.id`
+   - 同时保存 `viewType`、排序、标题、标注元数据等业务字段
+
+#### 10.11.2 修订后的推荐实施策略（更可落地）
+
+1. 前端交互层
+   - 在 `vehicle-specs-library-tab.tsx` 的每个车型卡片左侧新增媒体操作区
+   - 左侧区至少包含：上传按钮、当前封面/占位缩略图、已挂图片数
+   - 上传时要求选择或确定 `viewType`（外观 / 侧门开启 / 尾门或内部空间）
+
+2. 文件上传层
+   - 前端复用 `AssetService.uploadFile(file)` 完成真实图片上传
+   - 不重复造第二套图片上传 transport
+
+3. 业务归属层
+   - 需要新增“车型图片记录”持久化结构，至少包含：
+     - `vehicle_id`
+     - `url`
+     - `view_type`
+     - `sort_order`
+     - `title` / `caption`（可选）
+     - `annotations_json`（静态标注数组）
+   - 读取时返回给前端，继续喂给现有独立 `vehicle-photo-dialog.tsx`
+
+4. 查看联动层
+   - 上传成功后，当前车型卡片应能立即刷新图片状态
+   - “查看实车图”弹窗应直接读取最新持久化结果，而不是继续只依赖本地静态清单
+
+#### 10.11.3 推荐涉及文件（修订后）
+
+除现有前端图片弹窗文件外，预计还会新增/修改：
+
+1. 前端：
+   - `src/features/logistics-config/vehicle-specs-library-tab.tsx`
+   - `src/services/asset-service.ts`（大概率复用，无需大改）
+   - 新增车型图片业务 service / query / mutation 文件（建议拆分独立文件）
+
+2. 后端：
+   - 新增车型图片模型 / DTO / handler / service / route
+   - 读取与保存 `vehicle.id -> 图片集合` 的业务归属记录
+
+3. 文档：
+   - `task.md`
+   - `walkthrough.md`
+
+#### 10.12 由新增需求带来的风险与边界变化
+
+1. 需求已从“只读图片查看”升级为“图片上传 + 归属绑定”，复杂度明显提升
+2. 若没有后端持久化，仅在前端挂上传按钮会造成伪能力，不能满足长期使用目标
+3. 若引入上传，需要明确：
+   - 图片存储位置
+   - `vehicle.id -> 图片集合` 的持久化结构
+   - 上传后如何在查看弹窗中即时可见
+
+#### 10.13 修订后的待确认决策点
+
+1. 是否确认上传入口必须优先落在 `vehicle-specs-library-tab.tsx` 的每个车型卡片左侧
+2. 是否确认本轮目标已从“只读旁路查看”扩大为“上传 + 归属绑定 + 查看联动”
+3. 是否确认文件二进制上传复用现有 `AssetService` + `/assets/upload`，而不是另造一套上传 transport
+4. 是否确认要补一层车型图片业务持久化结构，用于保存 `vehicle.id`、`viewType`、排序与 `annotations`
+5. 是否确认本轮优先把上传入口放在车型规格库卡片左侧，其他页面先消费结果、不重复提供上传入口
+
+### 12. plan：车型图片链路按 `GEMINI.md` 规范收口
+
+日期：2026-04-15  
+状态：待批准
+
+#### 12.1 当前背景
+
+车型图片上传/查看主链已经打通：
+
+1. 后端已持久化 `LogisticsVehiclePhoto`
+2. `GET /api/v1/logistics-config/vehicle-specs` 已返回 `photoEntry`
+3. 前端已经通过 React Query 读取车型规格并在上传后失效刷新
+
+但按 `GEMINI.md` 重新审视后，这条链路仍有几处规范偏差，主要集中在“后端权威”与 “Fail Loudly” 两个维度。
+
+#### 12.2 当前问题归纳
+
+##### 12.2.1 第二真相源仍然存在
+
+当前 `use-vehicle-photo-dialog-state.ts` 仍有如下行为：
+
+1. 优先读取 `selectedVehicle.photoEntry`
+2. 若缺失，再回退到 `vehicle-photo-manifest.ts`
+
+这会导致：
+
+1. 前端保留第二套车型图片业务数据源
+2. 当后端缺字段或漏返回时，UI 不会直接暴露契约问题，而会被本地 manifest 遮盖
+
+这不符合 `GEMINI.md` 中“后端权威”与“禁止用空对象/空数组掩盖错误”的要求。
+
+##### 12.2.2 响应 DTO 仍在静默补缺
+
+当前 `vehicle-loading.schema.ts` 中：
+
+1. `annotations` 使用 `.default([])`
+2. `tags` 使用 `.default([])`
+3. `images` 使用 `.default([])`
+
+这意味着后端如果漏发这些字段，前端不会将其视为 contract drift，而会自动补成空数组。该行为与 `Fail Loudly` 直接冲突。
+
+##### 12.2.3 `photoEntry` 契约仍偏宽松
+
+当前前端把 `vehicleSpec.photoEntry` 定义为可选字段，但后端 `GetVehicleSpecsCatalog()` 实际上已经对每个车型都返回 `photoEntry`。这种“后端必返、前端可选”的不对齐会继续放大 fallback 逻辑的存在空间。
+
+##### 12.2.4 图片实体缺少版本语义
+
+当前 `LogisticsVehiclePhoto` 使用 `BaseModel`，但没有独立 `version` 字段。若后续扩展到：
+
+1. 删除图片
+2. 编辑 caption
+3. 调整 sortOrder
+4. 标注编辑
+
+则会进入真正的可变主实体场景，与 `GEMINI.md` 中对主实体版本控制的约束不完全一致。
+
+#### 12.3 推荐实施策略
+
+本轮建议按 4 个修正规范点收口：
+
+1. **移除车型图片业务数据 fallback**
+   - 保留 `vehicle-photo-manifest.ts` 中共享类型与视角常量
+   - 取消其作为图片业务数据提供者的职责
+   - `use-vehicle-photo-dialog-state.ts` 只消费后端返回的 `photoEntry`
+
+2. **移除响应 DTO 上的默认空数组兜底**
+   - 将 `vehiclePhotoImageSchema` / `vehiclePhotoEntrySchema` 中的 `.default([])` 去掉
+   - 让后端漏字段直接在 Zod parse 时暴露错误
+
+3. **将 `photoEntry` 收紧为必返字段**
+   - 后端继续保证每个车型返回完整 `photoEntry`
+   - 前端 `vehicleSpecSchema`、`VehicleSpec` 类型改为 required
+   - UI 对“有 `photoEntry` 但 `images` 为空”展示显式空态，而不是通过缺字段区分
+
+4. **为车型图片实体补 `version`**
+   - 在 `server/models/logistics_vehicle_photo.go` 增加 `Version int`
+   - 在保存/映射响应时带出 `version`
+   - 同步更新前端 `vehiclePhotoImageSchema` / DTO / type
+   - 为后续排序、编辑、删除的并发控制预留契约基础
+
+#### 12.4 预计涉及文件
+
+预计优先涉及：
+
+1. 后端：
+   - `server/models/logistics_vehicle_photo.go`
+   - `server/services/logistics_vehicle_photo_service.go`
+   - `server/services/logistics_vehicle_specs_service.go`
+   - `server/db/db.go`
+
+2. 前端：
+   - `src/features/logistics-config/vehicle-loading/data/vehicle-photo-manifest.ts`
+   - `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-photo-dialog-state.ts`
+   - `src/features/logistics-config/vehicle-loading/services/vehicle-loading.schema.ts`
+   - `src/features/logistics-config/vehicle-loading/data/vehicle-loading.types.ts`
+   - `src/features/logistics-config/vehicle-loading/services/vehicle-photo-service.ts`
+   - `src/features/logistics-config/vehicle-loading/services/vehicle-loading-service.ts`
+   - 必要时：`src/features/logistics-config/vehicle-loading/components/vehicle-photo-dialog.tsx`
+   - 必要时：`src/features/logistics-config/vehicle-loading/components/vehicle-photo-upload-panel.tsx`
+
+3. 文档：
+   - `task.md`
+   - `walkthrough.md`
+
+#### 12.5 风险与破坏性评估
+
+本轮风险中等，主要在于：
+
+1. 去掉 fallback 后，若后端响应不完整，前端会更早暴露错误；这是符合规范的有意收紧，但需要接受页面在契约漂移时 fail loudly
+2. 为图片实体补 `version` 需要同步改模型、响应 DTO、前端 schema 与数据库迁移，不能只改其中一层
+3. 若同时调整 `vehicle-loading-service.ts` 的 DTO 解析行为，需要确保不误伤车型推荐其它已有 mock/engine 逻辑
+
+#### 12.6 非目标边界
+
+本轮不做：
+
+1. 不新增图片删除接口
+2. 不新增图片排序或标注编辑 UI
+3. 不重构车型规格主数据来源
+4. 不将车型图片链路改造成 SDRTS / 离线写模型
+
+#### 12.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint` 针对车型图片相关前端文件
+2. `pnpm exec tsc --noEmit`
+3. `go test ./db ./handlers ./models ./routes ./services -run ^$`
+4. 必要时补跑与车型规格/图片链路直接相关的后端定向测试
+
+#### 12.8 当前阶段结论
+
+车型图片主链已经具备持久化与 React Query 刷新能力，但还没有完全达到 `GEMINI.md` 对“后端权威”和“Fail Loudly”的要求。下一步应优先移除 manifest 数据兜底、收紧 DTO/schema 契约，并为图片实体补 `version`，把整条链路从“能用”收口到“契约严格一致”。
+
+### 11. plan：清理 `server/scripts` 多 `main` 冲突与既有 Go 测试基座漂移
+
+日期：2026-04-15  
+状态：待批准
+
+#### 11.1 当前背景
+
+在车型图片接入完成后，定向编译已通过，但仓库级 `go test ./...` 仍暴露出两类既有问题：
+
+1. `server/scripts` 目录下集中放置多个独立可执行脚本，每个文件都定义了 `main()`，导致 Go 在按包编译 `server/scripts` 时直接报重复入口。
+2. 若干服务测试仍依赖手写 SQLite 表结构或公共 test schema helper，这些测试表定义没有完全跟上当前模型字段与 JSON 列约定，导致测试数据写入或扫描失败。
+
+#### 11.2 当前问题归纳
+
+##### 11.2.1 `server/scripts` 包冲突
+
+当前目录中至少包含以下独立脚本：
+
+1. `backfill_blank_product_skus.go`
+2. `cleanup_cashier.go`
+3. `cleanup_packaging_rules.go`
+4. `diag_500.go`
+5. `gen_db_pass.go`
+6. `migrate_finance_dictionaries.go`
+7. `purge_all.go`
+8. `route_snapshot.go`
+
+这些文件全部位于 `server/scripts` 同一包目录且都定义 `func main()`，因此：
+
+1. 平时单文件运行也许可行
+2. 但一旦执行 `go test ./...` 或包级编译，Go 会把它们视为同一个 package，直接触发 `main redeclared in this block`
+
+##### 11.2.2 测试 schema / 字段漂移
+
+目前已明确暴露的漂移点包括：
+
+1. `server/services/purchase_transaction_service_test.go`
+   - 该测试手写的 `suppliers` 表缺少 `we_chat / whats_app / facebook / instagram / telegram` 等列
+   - 但 `models.Supplier` 与 `partner_transaction_service.go` 的保存逻辑已经会更新这些列
+   - 结果是测试在 `Create(&models.Supplier{})` 或事务更新时直接报 `table suppliers has no column named we_chat`
+
+2. `server/services/trading_test_schema_helper_test.go`
+   - 其中 `sales_orders.evidences`、`purchase_orders.evidences` 目前使用的是历史兼容写法
+   - `sales_order_flow_test.go` 在读取 `models.SalesOrder` 时触发 `unsupported Scan, storing driver.Value type string into type *json.RawMessage`
+   - 说明 SQLite 测试列类型/默认值/扫描结果与当前模型 `json.RawMessage` 的读取预期并未完全对齐
+
+#### 11.3 推荐实施策略
+
+本轮建议分两条线清理，但保持“小步收口、优先修公共基座”：
+
+1. **脚本目录线**
+   - 将 `server/scripts` 下的各个独立脚本拆分到各自子目录，例如 `server/scripts/<script-name>/main.go`
+   - 保持脚本内容与执行语义不变，仅解决包级编译冲突
+   - 避免继续通过 build tags 或忽略测试来掩盖结构问题，优先让目录天然符合 Go 多二进制项目组织方式
+
+2. **测试基座线**
+   - 优先修 `purchase_transaction_service_test.go` 中手写 `suppliers` 表定义，使其与 `models.Supplier` 当前字段保持一致
+   - 优先修 `trading_test_schema_helper_test.go` 中 `sales_orders` / `purchase_orders` 的 `evidences` 列定义与默认值
+   - 若发现同类 helper 还存在 `json.RawMessage` / 新增字段漂移，按“测试表结构向真实模型契约看齐”的原则一并补齐
+   - 尽量优先改公共 helper，而不是在单个测试里做更多局部例外
+
+#### 11.4 预计涉及文件
+
+预计优先涉及：
+
+1. `server/scripts/*`
+2. `server/services/purchase_transaction_service_test.go`
+3. `server/services/trading_test_schema_helper_test.go`
+4. 必要时：`server/services/sales_order_flow_test.go`
+5. 必要时：其它直接手写 `CREATE TABLE suppliers` / `CREATE TABLE sales_orders` 的测试文件
+
+#### 11.5 风险与破坏性评估
+
+本轮属于仓库基座清理，风险中等，主要在于：
+
+1. `server/scripts` 调整目录后，已有人工执行方式可能需要同步改成新的文件路径
+2. 若只修一处测试但不收口公共 helper，仓库里仍可能留有同类隐患
+3. 若测试依赖历史 SQLite 行为，简单改列类型后可能暴露更多隐藏的扫描/默认值问题
+
+#### 11.6 非目标边界
+
+本轮不做：
+
+1. 不重写这些脚本的业务逻辑
+2. 不顺手清理与本次失败无关的全部历史测试问题
+3. 不把现有测试体系整体替换成另一套迁移/fixture 框架
+
+#### 11.7 验证策略
+
+建议按以下顺序验证：
+
+1. `go test ./db ./handlers ./models ./routes ./services -run ^$`
+2. `go test ./services -run 'Purchase|SalesOrder|Partner|Trading'`
+3. `go test ./...`
+
+若第 3 步仍有失败，需要在结果中明确区分：
+
+1. 已被本轮修复的问题
+2. 本轮清理后新增暴露但尚未纳入范围的问题
+3. 与本轮目标无关的独立历史失败
 
 ### 1. plan：模板弹窗自适应高度与滚动策略优化
 
@@ -2230,3 +3242,1451 @@
 ### 6.7 结论
 
 当前更合适的处理顺序不是立刻把模板和属性强行接起来，而是先消除属性字典中的历史重复值，让产品属性候选项恢复单一真相来源；随后再基于干净数据设计模板与产品属性的关系，优先通过“模板 -> 产品类型 -> 属性绑定”链路收口，而不是把模板页、属性页和类型绑定页揉成一个新的混合真相来源。
+
+## 13. plan：`/shipping-management/contacts` 切到真实后端联系人页，并收紧车型规格加载状态判定
+
+日期：2026-04-15  
+状态：待批准
+
+#### 13.1 当前背景
+
+围绕“删除 `/shipping-management/contacts` 中的演示联系人数据”继续追查后，当前已确认：
+
+1. 生产路由 `src/routes/_authenticated/shipping-management/contacts.lazy.tsx` 仍然导入 `src/features/trading/shipping-management/contacts-page.tsx`
+2. 该页面直接消费 `src/features/trading/shipping-management/contact-bindings.mock.ts`，并未接入后端联系人 CRUD 页面
+3. 用户已将 `contact-bindings.mock.ts` 清空，这可以让演示联系人立即消失，但页面本质仍是 mock 链路，只是从“有演示数据”变成了“空 mock 数据”
+4. 仓库中已存在更符合生产目标的真实页面 `src/features/shipping-management/contacts-page.tsx`，其联系人列表、新增、启停、删除均走后端接口
+
+#### 13.2 当前问题归纳
+
+##### 13.2.1 生产路由仍挂在 mock 页面
+
+当前 `contacts.lazy.tsx`：
+
+1. 指向 `@/features/trading/shipping-management/contacts-page`
+2. 该页面只把车型规格作为辅助数据来源
+3. 联系人本体仍来自前端静态数组 `SHIPPING_VEHICLE_CONTACT_BINDINGS`
+
+这导致：
+
+1. 页面展示结果与数据库无关
+2. 删除或修改后端联系人记录不会反映到当前生产路由
+3. 即使 mock 清空，仍不能说明页面已经满足“后端权威”
+
+##### 13.2.2 `specsStatus` 目前依赖错误文案猜测权限态
+
+`src/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query.ts` 已新增 `specsStatus`，方向正确，但当前实现仍通过错误 message 是否包含 `403` / `forbidden` 来判定权限不足。
+
+这存在以下问题：
+
+1. 过度依赖错误文案格式，后续错误包装一变就可能失效
+2. 状态判定不是结构化的 HTTP status 判断，不利于在更多页面复用
+3. 仓库已有 `src/lib/error-status.ts` 中的 `getErrorStatus()` / `isForbiddenError()`，继续使用字符串匹配会形成重复且脆弱的约定
+
+#### 13.3 推荐实施策略
+
+本轮建议只做两项收口，保持范围清晰：
+
+1. **路由切换到真实联系人页**
+   - 将 `src/routes/_authenticated/shipping-management/contacts.lazy.tsx` 的页面导入改为 `@/features/shipping-management/contacts-page`
+   - 使 `/shipping-management/contacts` 直接落到真实的联系人管理页
+   - 保持真实页继续通过 `useVehicleContactBindings()` / `useVehicleContactActions()` 调用后端接口，不再消费前端联系人 mock
+
+2. **将车型规格加载状态改为结构化判断**
+   - 在 `use-vehicle-specs-query.ts` 中复用 `src/lib/error-status.ts`
+   - 使用 `isForbiddenError(query.error)` 或 `getErrorStatus(query.error) === 403` 识别权限不足
+   - 其它异常统一归类为 `failed`
+   - 当接口成功但返回 0 条数据时归类为 `empty`
+   - 保持 `vehicleSpecs` 仍由 React Query 管理，不引入本地 fallback
+
+3. **复核真实页的空态与禁用态语义**
+   - 确保 `ContactsListPanel` 在 `forbidden / failed / empty / ok` 下展示的标题、说明与按钮禁用逻辑一致
+   - 若仅需微调文案或条件判断，作为同一轮收口一并处理
+
+#### 13.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/routes/_authenticated/shipping-management/contacts.lazy.tsx`
+2. `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query.ts`
+3. `src/lib/error-status.ts`（大概率只读复用；如确有缺口再评估是否补充）
+4. `src/features/shipping-management/contacts-page.tsx`
+5. `src/features/shipping-management/contacts-list-panel.tsx`
+6. 文档：`task.md`、`walkthrough.md`
+
+#### 13.5 风险与破坏性评估
+
+本轮风险中等，主要在于：
+
+1. 路由切换后，用户进入 `/shipping-management/contacts` 看到的将不再是旧的静态联系人卡片，而是完整的后端联系人管理页；这是有意的生产化切换
+2. 若当前账号没有车型规格读取权限，真实页会显式显示权限不足或无法创建绑定，这会暴露原本被 mock 掩盖的问题，但符合 `GEMINI.md` 的 fail loudly 思路
+3. 若 `useVehicleSpecsQuery()` 的状态语义被其它页面间接消费，需要确认新增的结构化判断不会误伤现有使用场景；从当前调用点看风险可控
+
+#### 13.6 非目标边界
+
+本轮不做：
+
+1. 不重构联系人后端接口
+2. 不把联系人查询进一步改造成新的 React Query hook 体系
+3. 不顺手删除 `src/features/trading/shipping-management/contact-bindings.mock.ts` 文件本身，除非验证后确认已完全无用且需单独清理
+4. 不修改车型规格接口返回契约本身，只收紧前端的状态识别方式
+
+#### 13.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint` 针对 `contacts.lazy.tsx`、`use-vehicle-specs-query.ts`、`contacts-page.tsx`、`contacts-list-panel.tsx`
+2. `pnpm exec tsc --noEmit`
+3. 手动验证 `/shipping-management/contacts`：
+   - 能看到真实后端联系人列表或真实空态
+   - 删除前端 mock 不再影响页面结果
+   - 车型权限不足 / 接口失败 / 空目录时空态文案和按钮禁用符合预期
+
+#### 13.8 当前阶段结论
+
+当前最小且正确的生产化收口方式，不是继续维护一个“已清空 demo 数据的 mock 页面”，而是把生产路由直接切到真实后端联系人管理页，并将 `specsStatus` 从字符串猜测改为结构化状态判断。这样既能移除演示数据残留，也能让联系人页真正回到“后端权威 + 显式失败”的规范轨道。
+
+### 14. plan：修复 `/shipping-management/contacts` 真实列表返回 `null` 导致的过滤崩溃
+
+日期：2026-04-15  
+状态：待批准
+
+#### 14.1 当前背景
+
+在将 `/shipping-management/contacts` 切到真实后端联系人页后，页面进入即出现：
+
+1. `TypeError: Cannot read properties of null (reading 'filter')`
+2. 堆栈落在 `src/features/shipping-management/hooks/use-vehicle-contact-filters.ts`
+3. 由于错误发生在组件渲染期，React ErrorBoundary 会反复接管并重建页面，表现为明显抖动
+
+同时控制台还存在：
+
+1. `/system/status/alerts/active` 的 `502 Bad Gateway`
+2. 通知 WebSocket `1006`
+
+但从当前堆栈和数据链看，这两项并不是联系人页 `bindings.filter(...)` 崩溃的直接根因。
+
+#### 14.2 当前问题归纳
+
+##### 14.2.1 前端联系人列表链缺少数组契约校验
+
+当前 `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`：
+
+1. 使用 `src/lib/api.ts` 请求 `/shipping-management/vehicle-contacts`
+2. 直接把返回值赋给 `bindings`
+3. 没有验证响应是否真的是数组
+
+随后 `useVehicleContactFilters(bindings)` 会直接调用：
+
+1. `bindings.filter(...)`
+
+因此只要接口成功返回 `null`，页面就会在渲染期直接崩掉。
+
+##### 14.2.2 后端成功响应与失败响应没有清晰区分“空数组”与“异常”
+
+当前 `server/services/vehicle_contact_binding_service.go` 中：
+
+1. `ListVehicleContactBindings()` 在 `db.DB == nil` 时返回 `nil`
+2. 查询 `Find(&items)` 失败时同样返回 `nil`
+3. handler 再把这个 `nil` 直接 `c.JSON(http.StatusOK, items)` 返回给前端
+
+这会导致：
+
+1. 成功但空列表 与 内部失败 都可能表现成 JSON `null`
+2. 前端无法区分“没有联系人”还是“后端未初始化/查询失败”
+3. 真实页会把后端契约漂移直接放大成渲染期崩溃
+
+#### 14.3 推荐实施策略
+
+本轮建议沿“后端先收紧契约，前端再显式校验”的顺序修复：
+
+1. **后端列表服务改为显式错误返回**
+   - 将 `ListVehicleContactBindings()` 签名改为返回 `([]models.VehicleContactBinding, error)`
+   - `db.DB == nil` 时返回明确错误，而不是 `nil`
+   - 查询失败时把 GORM error 向上返回
+   - 查询成功但无数据时返回非 `nil` 空切片 `[]`
+
+2. **handler 区分成功空列表与内部错误**
+   - `GetVehicleContactBindingsHandler` 调用新签名
+   - 若 service 返回 error，则 `500` + 错误消息
+   - 若成功，则始终返回数组 JSON
+
+3. **前端联系人列表 hook 做 fail loudly 校验**
+   - 在 `useVehicleContactBindings()` 中校验接口返回是否为数组
+   - 如果不是数组，抛出明确 contract error 并走现有 `error + toast` 流程
+   - 请求失败时维持 `bindings` 为安全空数组，避免渲染期再次崩溃
+   - 不在 `useVehicleContactFilters()` 中简单做 `bindings ?? []` 静默兜底，以免掩盖契约问题
+
+#### 14.4 预计涉及文件
+
+预计优先涉及：
+
+1. `server/services/vehicle_contact_binding_service.go`
+2. `server/handlers/vehicle_contact_binding_handler.go`
+3. `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`
+4. 必要时：`src/features/shipping-management/hooks/use-vehicle-contact-filters.ts`（仅在需要补开发期断言或类型收紧时评估）
+5. 文档：`task.md`、`walkthrough.md`
+
+#### 14.5 风险与破坏性评估
+
+本轮风险较低到中等，主要在于：
+
+1. 若后端当前确实经常落到 `db.DB == nil`，修复后前端会稳定显示 500 错误态，而不是继续“看似有数据但偶发崩溃”
+2. 若其它调用方也依赖 `ListVehicleContactBindings()` 的旧签名，需要同步修正编译错误，但当前已知主要入口仅为该 handler
+3. 前端数组校验会让返回形状错误更早暴露，这是有意的 fail loudly 收紧，不应再降级为隐式空态
+
+#### 14.6 非目标边界
+
+本轮不做：
+
+1. 不处理 `/system/status/alerts/active` 的 502
+2. 不处理通知 WebSocket 1006
+3. 不将联系人列表链整体重构成新的 React Query query 层
+4. 不改变联系人编辑、新增、删除的现有接口语义
+
+#### 14.7 验证策略
+
+建议按以下顺序验证：
+
+1. 前端定向校验：
+   - `pnpm exec eslint src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts src/features/shipping-management/hooks/use-vehicle-contact-filters.ts src/features/shipping-management/contacts-page.tsx`
+   - `pnpm exec tsc --noEmit`
+2. 后端定向编译校验：
+   - `go test ./handlers ./services -run ^$`
+3. 页面验证：
+   - `/shipping-management/contacts` 不再出现 `bindings.filter` 崩溃
+   - 接口返回空列表时显示真实空态
+   - 接口内部失败时显示错误态，不再抖动
+
+#### 14.8 当前阶段结论
+
+这次问题的根因不是“真实页本身不能用”，而是联系人列表链当前没有把“空数组”和“内部失败”分开表达，导致后端 `nil -> JSON null` 直接污染前端状态。最小正确修复应该是：后端成功时固定返回数组、失败时显式报错，前端再对数组契约做 fail loudly 校验，从根上阻断 `null` 进入过滤链。
+
+### 15. plan：修复 `/shipping-management/contacts` 默认 filters 对象 identity 导致的 effect 死循环，并补后续重构预案
+
+日期：2026-04-15  
+状态：待批准
+
+#### 15.1 当前背景
+
+在修复联系人列表 `null -> filter` 崩溃后，页面不再跳到 500，但仍然持续抖动，并报：
+
+1. `Maximum update depth exceeded`
+2. 堆栈落在 `use-vehicle-contact-bindings.ts` 中 `setState` 与 `useEffect(() => void reload(), [reload])`
+
+复查当前调用链后，已确认问题不在后端响应形状，而在前端 render 期构造默认 filters 对象的方式。
+
+#### 15.2 当前问题归纳
+
+##### 15.2.1 render 中临时创建默认 filters 导致依赖持续变化
+
+当前 `src/features/shipping-management/contacts-page.tsx`：
+
+1. 在组件 render 中直接调用 `useVehicleContactBindings(createDefaultContactFilters())`
+2. `createDefaultContactFilters()` 每次执行都会返回一个新对象引用
+
+而 `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`：
+
+1. `reload` 通过 `useCallback(..., [filters, showToast])` 依赖 `filters`
+2. `useEffect(() => void reload(), [reload])` 依赖 `reload`
+
+因此每次 render 都会出现：
+
+1. 新的 `filters`
+2. 新的 `reload`
+3. effect 再次执行
+4. `setState`
+5. 再次 render
+
+最终形成无限重渲染闭环。
+
+#### 15.3 推荐实施策略
+
+本轮建议拆成“两层方案”，避免把止血修复和架构重构混在一次提交里：
+
+1. **第一阶段：最小止血修复**
+   - 在 `ContactsPage` 中通过 `useMemo` 或等价稳定初始化方式持有默认 filters
+   - 仅将稳定引用传给 `useVehicleContactBindings()`
+   - 保证当前页面立刻停止 `Maximum update depth exceeded` 循环
+
+2. **第一阶段：保留真实依赖关系**
+   - 继续保留 `reload` 对 `filters` 的依赖
+   - 继续保留 `useEffect` 对 `reload` 的依赖
+   - 这样当远端筛选参数未来真的变化时，仍能正确重拉
+
+3. **第二阶段预案：拆清远端 filters 与本地 UI filters**
+   - 当前联系人页同时存在“远端请求默认 filters”和“本地界面筛选 filters”两层概念
+   - 后续建议把这两层状态来源彻底拆开，避免再次通过 render 期临时对象拼装数据流
+   - 若后续联系人列表继续演进，可评估迁到 React Query 读取层，使远端数据与本地筛选职责边界更清楚
+
+4. **避免错误修法**
+   - 不删 `useEffect` 依赖数组
+   - 不把 `reload` 改成无依赖闭包
+   - 不通过禁用 lint 规则或强行忽略依赖来“止血”
+
+#### 15.4 预计涉及文件
+
+预计优先涉及：
+
+1. 第一阶段优先：`src/features/shipping-management/contacts-page.tsx`
+2. 第一阶段必要时：`src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`
+3. 第二阶段预案参考：`src/features/shipping-management/hooks/use-vehicle-contact-filters.ts`
+4. 文档：`task.md`、`walkthrough.md`
+
+#### 15.5 风险与破坏性评估
+
+本轮执行阶段风险较低，预案层风险中等，主要在于：
+
+1. 若后续联系人列表真正需要跟随远端 filters 变化自动重拉，必须保证稳定的是“默认对象 identity”，而不是误删真正依赖
+2. 当前联系人页同时存在“远端请求默认 filters”和“本地 UI filters”两层概念，本轮执行只做最小止血，不进一步重构这两层边界
+3. 若未来推进 React Query 迁移，需要重新梳理联系人编辑/删除后的刷新与失效策略；这不应混入当前止血修复
+
+#### 15.6 非目标边界
+
+本轮不做：
+
+1. 本轮执行不重构联系人列表筛选架构
+2. 本轮执行不将联系人列表链整体迁移到 React Query（仅作为后续预案记录）
+3. 不处理 `/system/status/alerts/active` 的 502 与通知 WebSocket 1006
+
+#### 15.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint src/features/shipping-management/contacts-page.tsx src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`
+2. `pnpm exec tsc --noEmit`
+3. 手动验证 `/shipping-management/contacts`：
+   - 不再出现 `Maximum update depth exceeded`
+   - 页面不再持续抖动
+   - 联系人列表与错误态保持原有行为
+
+#### 15.8 当前阶段结论
+
+这次剩余问题不是接口形状错误，而是默认 filters 在 render 期反复创建，导致 hook 依赖链持续变化。当前阶段应先稳定默认 filters 的对象引用，并保留 `reload` / `useEffect` 的真实依赖关系；更进一步的“远端 filters / 本地 UI filters”边界收口与 React Query 迁移，作为后续预案单独推进，而不与本轮止血修复混做。
+
+### 16. plan：联系人页第二阶段 2B —— 读取层迁到 React Query，并收口 invalidateQueries 刷新链
+
+日期：2026-04-15  
+状态：待批准
+
+#### 16.1 当前背景
+
+联系人页第二阶段 2A 已完成：
+
+1. `VehicleContactRemoteFilters` 与 `VehicleContactUiFilters` 已拆分
+2. `ContactsPage` 已显式区分 `defaultRemoteFilters` 与 `uiFilters`
+3. 当前剩余的“服务端状态读取”仍在 `useVehicleContactBindings()` 中通过 `useEffect + useState + reload` 手工管理
+
+结合当前仓库既有方向与约束，下一步应把联系人列表读取层正式迁到 React Query，让服务端真相、缓存和失效刷新统一归属到 query 层，而不是继续由页面手工拉取和手工 `reload()` 协调。
+
+#### 16.2 当前问题归纳
+
+##### 16.2.1 联系人列表读取层仍然是手工状态管理
+
+当前 `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`：
+
+1. 使用 `useState` 管理 `bindings / loading / error`
+2. 使用 `useEffect` 触发初次读取
+3. 暴露 `reload()` 给页面与动作链手工调用
+
+这带来的问题是：
+
+1. 服务端状态缓存和失效策略散落在自定义 hook 内部
+2. 保存 / 删除后必须显式传递 `reload`，动作链和读取链耦合较重
+3. 后续如果远端 filters 变化，需要持续手工维护依赖与刷新行为
+
+##### 16.2.2 保存 / 删除后的刷新链仍是命令式 reload
+
+当前 `src/features/shipping-management/hooks/use-vehicle-contact-actions.ts`：
+
+1. 保存成功后 `await reload()`
+2. 删除成功后 `await reload()`
+
+这会导致：
+
+1. 动作 hook 必须知道读取 hook 的刷新实现细节
+2. 难以与后续缓存层、分页层或更多 query key 规则协同
+3. 无法自然复用 React Query 的失效 / refetch 机制
+
+#### 16.3 推荐实施策略
+
+本轮 2B 建议聚焦“读取层迁移 + 动作失效收口”，不一次性扩成完整 mutation 体系重构：
+
+1. **建立联系人列表 query keys**
+   - 新增 `src/features/shipping-management/query-keys.ts`
+   - 设计 `vehicleContactQueryKeys`，至少包含：
+     - `all()` -> `['vehicle-contact-bindings']`
+     - `lists()` -> `['vehicle-contact-bindings', 'list']`
+     - `list(filters)` -> `['vehicle-contact-bindings', 'list', filters]`
+   - 确保只使用稳定、可序列化的 `VehicleContactRemoteFilters`
+
+2. **将 `useVehicleContactBindings()` 改造成 React Query 读取 hook**
+   - 使用 `useQuery()` 承担联系人列表读取
+   - `queryFn` 中继续通过 `apiFetch` + `ensureArrayResponse()` 做 fail loudly 校验
+   - 对外暴露的数据形态保持尽量平滑，例如：
+     - `bindings`
+     - `loading`
+     - `error`
+     - `reload`（内部改为 `query.refetch()` 包装）
+   - 移除读取层内部的手工 `useEffect` 和列表状态 `useState`
+
+3. **将动作链从 `reload()` 收口为 `invalidateQueries()`**
+   - 在 `useVehicleContactActions()` 中引入 `useQueryClient()`
+   - 保存 / 删除成功后调用：
+     - `queryClient.invalidateQueries({ queryKey: vehicleContactQueryKeys.all() })`
+   - 让动作链不再依赖外部传入的 `reload`
+   - 继续保留成功 / 失败 toast 语义
+
+4. **保持 2A 的边界成果，不回退混用**
+   - 本地 `uiFilters` 继续只负责前端显示过滤
+   - `ContactsPage` 仍只把 `defaultRemoteFilters` 传给列表读取层
+   - 本轮不把本地筛选重新回并到远端请求参数
+
+#### 16.4 预计涉及文件
+
+预计优先涉及：
+
+1. `src/features/shipping-management/query-keys.ts`（新增）
+2. `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`
+3. `src/features/shipping-management/hooks/use-vehicle-contact-actions.ts`
+4. `src/features/shipping-management/contacts-page.tsx`
+5. 必要时：`src/features/shipping-management/contact-filters.shared.ts`
+6. 文档：`task.md`、`walkthrough.md`
+
+#### 16.5 风险与破坏性评估
+
+本轮风险中等，主要在于：
+
+1. 若 query key 设计不稳定，仍可能造成重复请求或缓存命中异常
+2. 若 invalidate 范围过宽，可能产生不必要的列表重拉；若范围过窄，则保存 / 删除后列表不同步
+3. 若读取 hook 的对外接口变化过大，页面与动作链会同时受影响，因此本轮应尽量保持返回 shape 平滑演进
+4. React Query 迁移后，错误与加载态的节奏会更接近 query 生命周期，需要确认当前页面空态 / 错误态不会因此误闪
+
+#### 16.6 非目标边界
+
+本轮不做：
+
+1. 不把保存 / 删除整体迁到 `useMutation`
+2. 不引入分页、无限滚动或服务端搜索的新交互语义
+3. 不把本地 `uiFilters` 全量同步到后端请求层
+4. 不处理 `/system/status/alerts/active` 的 502 与通知 WebSocket 1006
+
+#### 16.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint src/features/shipping-management/query-keys.ts src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts src/features/shipping-management/hooks/use-vehicle-contact-actions.ts src/features/shipping-management/contacts-page.tsx`
+2. `pnpm exec tsc --noEmit`
+3. 手动验证 `/shipping-management/contacts`：
+   - 页面正常加载联系人列表
+   - 保存联系人后列表自动刷新
+   - 删除联系人后列表自动刷新
+   - 接口失败时仍进入显式错误态
+   - 本地 `uiFilters` 仍只影响前端显示，不破坏列表读取链
+
+#### 16.8 当前阶段结论
+
+联系人页第二阶段 2B 的正确方向，不是继续扩写手工 `reload()`，而是把联系人列表读取层正式迁到 React Query，并让保存 / 删除动作通过 `invalidateQueries()` 与 query key 体系协同。这样可以把服务端真相、缓存和刷新策略统一收口到 query 层，同时保留当前 2A 已拆清的“远端请求 filters / 本地 UI filters”边界。
+
+### 17. 联系人页自动化测试补齐规划（待批准）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 17.1 背景与问题
+
+联系人页刚完成第二阶段 2B：
+
+1. 列表读取层已迁到 React Query
+2. 保存 / 删除成功后已改为依赖 `invalidateQueries()` 刷新列表
+3. 本地 `uiFilters` 与远端请求 filters 的边界已拆清
+
+当前虽然已经通过定向 `eslint` 与 `tsc`，但还缺一条能覆盖“页面交互 + 接口 mock + React Query 刷新链”的自动化回归测试。仅靠静态校验无法确保以下关键行为长期稳定：
+
+1. 页面首屏能否正确加载联系人列表
+2. 保存 / 启停后列表是否真的因 query invalidation 而重拉
+3. 删除后列表是否依据最新服务端状态刷新
+
+#### 17.2 推荐测试层级
+
+建议本轮优先补 **Playwright e2e**，而不是先补 hook / 组件单测。
+
+原因：
+
+1. 当前仓库 `e2e/dictionary-save-no-rollback.spec.ts` 已提供成熟样板：登录、统一拦截 `/api/v1/**`、在前端真实路由下断言界面结果
+2. 联系人页的核心价值不只是某个纯函数，而是“接口返回 -> React Query 缓存 -> 页面刷新 -> 列表展示”的联动链路
+3. 若先做 hook 单测，需要额外搭建 `QueryClientProvider`、组件桩、弹窗交互桩与 fetch mock，投入更大但对当前风险点命中反而不如 e2e 直接
+
+#### 17.3 建议覆盖范围
+
+建议新增：
+
+1. `e2e/shipping-management-contacts.spec.ts`
+
+首条用例建议覆盖以下主路径：
+
+1. 模拟登录并进入 `/shipping-management/contacts`
+2. mock 车型库接口，返回可绑定车型列表
+3. mock 联系人列表 GET，返回 1-2 条联系人数据
+4. 断言联系人姓名 / 车型 / 状态在页面可见，确认首屏加载成功
+5. 点击现有列表项的“启用 / 停用”按钮，mock POST 后更新内存数据
+6. 让后续 GET 返回变更后的启停状态，断言界面从“启用”切到“停用”或反之
+7. 点击“删除”，在确认弹窗执行删除，mock DELETE 后移除内存数据
+8. 让后续 GET 返回删除后的列表，断言对应联系人从界面消失
+
+这样可以在一条测试里同时覆盖：
+
+1. 首屏读取
+2. 保存后刷新
+3. 删除后刷新
+4. React Query invalidation 驱动的列表重拉
+
+#### 17.4 涉及文件
+
+预计涉及：
+
+1. 新增 `e2e/shipping-management-contacts.spec.ts`
+2. 更新 `task.md`
+3. 更新 `walkthrough.md`
+
+本轮原则上 **不修改业务代码**。只有在测试无法稳定定位交互元素、且确有必要时，才回退提出“为关键按钮补最小可测性标识”的二次规划，而不是直接扩改页面。
+
+#### 17.5 Mock 策略
+
+建议沿用现有 Playwright 方式，在 `page.route('**/api/v1/**')` 内维护内存态：
+
+1. `POST /api/v1/auth/login`：返回登录成功信息
+2. `GET /api/v1/auth/snapshot`：返回具备访问联系人页所需权限的用户快照
+3. `GET /api/v1/logistics/vehicle-specs` 或实际车型接口：返回至少 1 条可绑定车型
+4. `GET /api/v1/shipping-management/vehicle-contacts`：返回内存中的联系人列表
+5. `POST /api/v1/shipping-management/vehicle-contacts/:id`：更新内存中对应联系人的 `enabled` 等字段
+6. `DELETE /api/v1/shipping-management/vehicle-contacts/:id`：从内存列表移除对应记录
+
+关键点：
+
+1. GET 返回必须读取同一份可变内存数据，确保保存 / 删除后的下一次重拉拿到最新结果
+2. 不能只断言 toast 成功文案，必须断言列表状态真的变化
+
+#### 17.6 风险与注意事项
+
+1. 联系人页当前缺少稳定 `data-testid`，测试选择器应优先使用按钮文字、对话框 role、联系人姓名等稳定语义点
+2. 若测试直接走“新增联系人完整表单”路径，字段较多且与车型库下拉强耦合，首条测试容易过重；建议先聚焦现有列表项的启停与删除
+3. 若路由进入联系人页需要额外权限 catalog / auth snapshot 字段，mock 用户对象必须一次补齐，避免把权限问题误判成页面刷新失败
+4. 若车型接口实际路径与预期不一致，需要先以现有服务实现为准补 mock，避免出现 contacts 已成功但车型库空态遮挡列表
+
+#### 17.7 非目标边界
+
+本轮不做：
+
+1. 不把联系人页整体拆成更多组件只为测试服务
+2. 不引入新的测试库或 fetch mock 框架
+3. 不把保存 / 删除改造成 `useMutation`
+4. 不覆盖所有筛选组合与编辑弹窗字段校验
+
+#### 17.8 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint e2e/shipping-management-contacts.spec.ts`
+2. `pnpm exec playwright test e2e/shipping-management-contacts.spec.ts`
+3. 观察测试产物，确认以下断言成立：
+   - 联系人页首屏能显示 mock 列表
+   - 点击启用 / 停用后，列表状态发生变化
+   - 删除后，对应联系人从界面消失
+
+#### 17.9 当前阶段结论
+
+联系人页下一步最值得补上的，不是继续扩大业务重构，而是一条能锁定“React Query 读取 + invalidation 刷新链”行为的 Playwright 回归测试。这样后续无论继续演进 `useMutation`，还是补更多联系人交互，都有一条可执行的页面级防回归基线。
+
+### 18. 最近修改生产文件的冗余清理与修复规划（待批准）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 18.1 背景与问题
+
+基于对最近修改生产文件的回溯，当前存在三类需要清理的问题：
+
+1. `src/features/trading/shipping-management/contacts-page.tsx` 及其 `contact-bindings.mock.ts` 仍保留旧联系人页实现，但真实路由入口已经切到 `src/features/shipping-management/contacts-page.tsx`
+2. 新联系人读取链已完成 React Query 迁移，但仍残留少量“平滑迁移期”的轻冗余返回值与 query key 预留项
+3. `vehicle-photo-*` 组件拆分本身没有问题，但图片视角标签解析逻辑在多个文件中重复出现，存在进一步收口空间
+
+本轮目标不是做新功能，而是把最近这一轮重构后留下的冗余出口和并行残留清掉，避免后续继续在旧链路上误维护。
+
+#### 18.2 核心目标
+
+1. 移除旧联系人页并行实现，确保生产代码中只保留一套联系人页主链
+2. 精简新联系人读取层中当前无人消费或语义重复的接口
+3. 收口图片视角标签的重复逻辑，同时保留已拆好的组件结构
+
+#### 18.3 建议处理范围
+
+建议本轮处理：
+
+1. `src/features/trading/shipping-management/contacts-page.tsx`
+2. `src/features/trading/shipping-management/contact-bindings.mock.ts`
+3. 视引用情况，可能连带处理旧联系人页仅使用的边界组件
+4. `src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts`
+5. `src/features/shipping-management/query-keys.ts`
+6. `src/features/logistics-config/vehicle-loading/components/vehicle-photo-dialog.tsx`
+7. `src/features/logistics-config/vehicle-loading/components/vehicle-photo-upload-panel.tsx`
+8. 如有需要，新增一个轻量共享 util / 常量文件用于承载 `VehiclePhotoViewType` 标签解析
+
+#### 18.4 建议实施顺序
+
+1. **先清理旧联系人页残留**
+   - 先确认旧 `trading/shipping-management` 联系人页确无生产入口引用
+   - 删除旧联系人页文件，以及仅供其使用的 mock / boundary 残留
+
+2. **再精简新联系人读取层轻冗余**
+   - 删除 `useVehicleContactBindings()` 中当前无消费价值的 `filteredBindings`
+   - 评估并删除 `vehicleContactQueryKeys.lists()` 这类当前未使用的预留项
+   - 保留 `reload`，因为页面显式错误态仍通过它执行手工重试
+
+3. **最后收口图片视角标签重复逻辑**
+   - 将 `vehicle-photo-dialog.tsx` 与 `vehicle-photo-upload-panel.tsx` 中重复的 `viewType -> label` 解析逻辑抽到共享出口
+   - 保持 `vehicle-photo-dialog-header/preview/sidebar/footer` 这类拆分文件不回并
+
+#### 18.5 风险与注意事项
+
+1. 旧联系人页文件删除前，必须确认没有隐藏入口、路由 fallback 或模块 tabs 仍间接依赖它
+2. 若旧联系人页相关的 `contacts-boundary` 被其他页共用，则只能删旧页专属部分，不能整组粗删
+3. `useVehicleContactBindings()` 返回 shape 发生变化时，要同步确认唯一消费方 `ContactsPage` 不受影响
+4. 图片视角标签收口应仅做逻辑去重，不改动既有国际化 key 和展示文案，避免引入 UI 回归
+
+#### 18.6 非目标边界
+
+本轮不做：
+
+1. 不继续推进联系人页新的交互重构
+2. 不把 `vehicle-photo-*` 重新合并回单文件
+3. 不顺手重构 `api-client` / `api` 体系
+4. 不扩大到 docs / locale 文案润色之外的无关模块清理
+
+#### 18.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts src/features/shipping-management/query-keys.ts src/features/logistics-config/vehicle-loading/components/vehicle-photo-dialog.tsx src/features/logistics-config/vehicle-loading/components/vehicle-photo-upload-panel.tsx`
+2. 若删除旧联系人页残留，则补充对相应删除/改动文件的定向 `eslint`
+3. `pnpm exec tsc --noEmit`
+4. 如联系人页链路受影响，补跑 `pnpm exec playwright test e2e/shipping-management-contacts.spec.ts`
+
+#### 18.8 当前阶段结论
+
+最近这一轮真正需要清理的，不是 `vehicle-photo-*` 这种已被多入口消费的有效拆分，而是旧联系人页并行残留，以及新联系人读取层里迁移后留下的少量轻冗余。优先把这些点清掉，可以减少后续维护歧义，同时保持当前重构成果不被回退。
+
+### 19. packaging-rules 页面车型规格卡片国际化崩溃修复规划（待批准）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 19.1 背景与问题
+
+在 `/logistics-config/packaging-rules` 页面打开过程中，控制台出现：
+
+1. `TypeError: Cannot read properties of undefined (reading 'split')`
+2. 调用栈定位到 `translate()` -> `VehicleSpecCardHeader`
+
+进一步核对后可确认：
+
+1. `VehicleSpecCardHeader` 正在调用 `t(spec.nameKey)`
+2. `VehicleSpecCardNotes` 正在调用 `t(spec.notesKey)`
+3. 但车辆规格接口 schema 当前定义的是 `name` 与 `notes` 字段，而不是 `nameKey` 与 `notesKey`
+
+因此这不是单纯的文案缺失，而是**前端 `VehicleSpec` 类型约定与真实接口 DTO 结构漂移**。页面一旦消费接口返回的 DTO，`nameKey / notesKey` 就是 `undefined`，最终把 `undefined` 传入 `translate()`，在 `key.split('.')` 处崩溃。
+
+#### 19.2 核心目标
+
+1. 对齐 `VehicleSpec` 前端类型与接口 DTO 的真实结构
+2. 修复车型规格卡片头部与备注区对旧字段的错误读取
+3. 确保 packaging-rules / vehicle-specs-library / 其他复用车型规格数据的页面不再因 i18n key 漂移崩溃
+
+#### 19.3 建议处理范围
+
+建议本轮处理：
+
+1. `src/features/logistics-config/vehicle-loading/data/vehicle-loading.types.ts`
+2. `src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts`
+3. `src/features/logistics-config/vehicle-specs-library/components/vehicle-spec-card-header.tsx`
+4. `src/features/logistics-config/vehicle-specs-library/components/vehicle-spec-card-notes.tsx`
+5. 视引用情况，复核其它使用 `VehicleSpec` 的组件是否仍读取 `nameKey / notesKey`
+
+#### 19.4 建议实施方式
+
+1. **先统一数据契约**
+   - 以当前接口 DTO 为准，把 `VehicleSpec` 类型从 `nameKey / notesKey` 收口到 `name / notes`
+   - 保证 mock 数据与运行时接口返回结构一致，不再并存两套字段定义
+
+2. **再修正消费组件**
+   - `VehicleSpecCardHeader` 直接展示 `spec.name`
+   - `VehicleSpecCardNotes` 直接展示 `spec.notes`
+   - 仅保留类别等真正仍由 i18n key 驱动的字段翻译
+
+3. **最后补最小防御校验**
+   - 若还有翻译 key 来源不稳定的调用点，再视情况增加显式 guard
+   - 但本轮优先通过统一契约解决根因，而不是到处加 `?? ''` 掩盖错误
+
+#### 19.5 风险与注意事项
+
+1. 若 `VehicleSpec` 类型变更后，仍有其它组件读取 `nameKey / notesKey`，会产生连锁类型错误；这正是本轮需要主动暴露并一并修正的点
+2. mock 数据不能继续保留旧字段，否则会形成“mock 可用、接口崩溃”的双轨语义
+3. 本轮不处理浏览器扩展导致的 `runtime.lastError`，也不处理通知 WebSocket 1006，避免将无关噪音与当前根因混在一起
+
+#### 19.6 非目标边界
+
+本轮不做：
+
+1. 不处理 `useNotifications` 的 WebSocket 重连策略
+2. 不处理浏览器扩展消息通道报错
+3. 不改 packaging-rules 页面无关的视觉样式或布局
+
+#### 19.7 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint src/features/logistics-config/vehicle-loading/data/vehicle-loading.types.ts src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts src/features/logistics-config/vehicle-specs-library/components/vehicle-spec-card-header.tsx src/features/logistics-config/vehicle-specs-library/components/vehicle-spec-card-notes.tsx`
+2. `pnpm exec tsc --noEmit`
+3. 手动验证 `/logistics-config/packaging-rules` 与 `/logistics-config/vehicle-specs-library`：
+   - 页面不再因 `t(undefined)` 崩溃
+   - 车型名称与备注能正常显示
+   - 其它车型规格展示区域不受影响
+
+#### 19.8 当前阶段结论
+
+这次崩溃的正确修复方式，不是给 `translate()` 临时兜空，而是收口 `VehicleSpec` 的前端数据契约，停止让页面组件把后端 DTO 当成 i18n key 容器来读取。只有把 `name / notes` 与 `nameKey / notesKey` 的漂移彻底消掉，才能避免同类问题在其它车型规格页面再次出现。
+
+### 20. logistics-config 剩余 mock 链路清单与推荐真接口收口规划（待批准）
+
+日期：2026-04-15  
+状态：待批准
+
+#### 20.1 当前 mock 链路清单
+
+基于本轮梳理，`logistics-config` 当前并不是“全链路都已对齐真数据”，而是存在以下分层状态：
+
+1. **已对齐真数据**
+   - `useVehicleSpecsQuery()` -> `getVehicleSpecs()` -> `/api/v1/logistics-config/vehicle-specs`
+   - `packagingRulesService.getProfiles()` -> `/packaging/profiles`
+
+2. **仍在生产逻辑中生效的 mock / 本地引擎分支**
+   - `src/features/logistics-config/vehicle-loading/services/vehicle-loading-service.ts`
+   - 其中 `USE_MOCK_RECOMMENDATIONS = true` 使 `getVehicleRecommendations()` 继续走本地 `buildRecommendationFromEngine()`，而不是后端 `/api/v1/logistics/vehicle-loading/recommendations`
+   - `src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts` 仍会作为推荐请求构造时的本地兜底输入参与运行路径
+
+3. **当前未见生产主链消费的 mock 残留**
+   - `src/features/logistics-config/utils/vehicle-recommendation-mock.ts`
+
+4. **仍是占位语义、未真正形成数据链的来源切换**
+   - `vehicle-loading-tab.tsx` 中 `source === 'packing-rule'` 与 `source === 'api'` 当前主要展示提示文案，尚未形成真实差异化数据源
+
+#### 20.2 背景与问题
+
+当前风险不在于“仓库里还留有某个 mock 文件”，而在于：
+
+1. 推荐结果主链仍由本地引擎驱动，用户界面却已经暴露 `manual / packing-rule / api` 多来源语义
+2. 车型规格列表已是真数据，但推荐结果不是真后端结果，形成“半真半 mock”状态
+3. 如果只看列表页，很容易误以为 `logistics-config` 已全部 authority 化；实际上推荐链尚未收口
+
+#### 20.3 下一轮核心目标
+
+1. 将 `USE_MOCK_RECOMMENDATIONS` 收口到真接口
+2. 移除推荐运行链中仍参与逻辑决策的本地 mock 兜底
+3. 明确 `manual / packing-rule / api` 三种来源在推荐请求上的真实语义边界
+
+#### 20.4 建议处理范围
+
+建议下一轮重点处理：
+
+1. `src/features/logistics-config/vehicle-loading/services/vehicle-loading-service.ts`
+2. `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-recommendations.ts`
+3. `src/features/logistics-config/vehicle-loading/vehicle-loading-tab.tsx`
+4. `src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts`
+5. `src/features/logistics-config/utils/vehicle-recommendation-mock.ts`
+6. 如有需要，联动后端推荐接口 contract 对齐文件
+
+#### 20.5 建议实施方式
+
+1. **先核对推荐接口契约**
+   - 确认后端 `/api/v1/logistics/vehicle-loading/recommendations` 是否已稳定提供当前前端 `vehicleRecommendationRequestSchema` / `vehicleRecommendationResponseSchema` 所要求的字段
+   - 若 contract 存在漂移，先对齐 schema，再切运行链
+
+2. **再收口运行链**
+   - 移除 `USE_MOCK_RECOMMENDATIONS` 分支
+   - 让 `getVehicleRecommendations()` 始终走真实接口
+   - 移除 `MOCK_VEHICLE_SPECS` 在推荐主链中的运行时兜底角色，避免接口失败时继续本地静默代算
+
+3. **最后清理残留与来源语义**
+   - 评估 `vehicle-recommendation-mock.ts` 是否还能转为测试专用，否则删除
+   - 重新审视 `manual / packing-rule / api`：
+     - 若暂时都走同一推荐接口，应在 UI/文案上明确说明
+     - 若 `packing-rule` / `api` 已有不同输入来源，就同步接入真实数据链，不再停留在占位提示
+
+#### 20.6 风险与注意事项
+
+1. 不能只把开关改成 `false` 就视为完成；若后端 contract 尚未稳定，页面会直接暴露真实错误，这虽然符合 fail loudly，但需要提前评估影响面
+2. 若 `packing-rule` / `api` 仍无真实差异化来源，而 UI 继续强调“不同来源”，会造成语义误导
+3. 若移除 `MOCK_VEHICLE_SPECS` 后仍有任何推荐链路在 `vehicleSpecs` 为空时运行，需要明确进入显式错误或空态，而不是再引入新的静默兜底
+4. 最新核对 `server/routes/routes.go` 后，尚未发现 `/api/v1/logistics/vehicle-loading/recommendations` 的后端路由注册；这意味着本轮已从“前端切真接口”升级为“前后端联动补齐接口 + 前端收口”
+
+#### 20.7 非目标边界
+
+本轮不做：
+
+1. 不处理通知 WebSocket 1006
+2. 不处理浏览器扩展 `runtime.lastError`
+3. 不扩大到 `logistics-config` 其它无关模块重构
+
+#### 20.8 验证策略
+
+建议按以下顺序验证：
+
+1. `pnpm exec eslint` 针对 vehicle-loading recommendation 相关文件
+2. `pnpm exec tsc --noEmit`
+3. 手动验证 `/logistics-config/vehicle-loading`：
+   - 推荐结果通过真实接口返回
+   - 接口失败时进入显式错误态
+   - 不再因为本地 mock 分支而掩盖真实问题
+
+#### 20.9 当前阶段结论
+
+`logistics-config` 当前已经完成“车型规格主数据列表 -> 真接口”的收口，但“推荐计算链 -> 真接口”还没有完成。下一轮正确方向，不是继续保留 `USE_MOCK_RECOMMENDATIONS` 当作安全垫，而是先核对后端推荐接口契约，再把推荐主链真正切到真实接口，并将剩余 mock 明确降级为测试/样板用途或直接清理。
+
+#### 20.10 新发现的执行阻塞点
+
+继续核对后发现，前端虽然已经定义了 `VEHICLE_RECOMMENDATIONS_ENDPOINT = '/api/v1/logistics/vehicle-loading/recommendations'`，但后端当前并未在 `server/routes/routes.go` 中注册对应 recommendations 路由。已确认的相关事实如下：
+
+1. 后端已注册 `/api/v1/logistics-config/vehicle-specs`
+2. 后端已注册 `/api/v1/packaging/profiles`
+3. 后端尚未发现 `/api/v1/logistics/vehicle-loading/recommendations` 对应注册项、handler 或 service 入口
+
+因此原计划需要升级为：
+
+1. **先落地后端 recommendations 接口**
+   - 注册路由
+   - 增加 handler
+   - 视情况复用现有车型规格数据与装载推荐引擎，输出与前端 `vehicleRecommendationResponseSchema` 对齐的响应
+
+2. **再切前端到真接口**
+   - 移除 `USE_MOCK_RECOMMENDATIONS`
+   - 移除推荐主链的运行时 mock 兜底
+   - 保持失败显式暴露，不再本地静默代算
+
+3. **最后做前后端联动验证**
+   - Go 路由/handler 定向测试（如适用）
+   - 前端 `eslint` / `tsc`
+   - 手动验证 `/logistics-config/vehicle-loading` 推荐结果链
+
+在用户重新确认该扩大范围前，不应继续进入业务代码修改阶段。
+
+#### 20.11 下一轮目标：清理脱链 mock/helper + 推进三来源差异化真实输入
+
+上一轮完成 recommendations 真接口收口后，仓库里仍残留几类“已经不在生产运行链中，但会继续误导后续维护”的前端文件；同时 `manual / packing-rule / api` 三种来源虽然已经出现在 UI 与 request contract 中，但实际输入仍未真正分化。因此下一轮建议拆为两条并行目标：
+
+1. **清理脱链 mock/helper 文件**
+2. **把三种来源从“标签差异”推进到“输入差异”**
+
+#### 20.12 已确认的脱链文件边界
+
+通过引用核对，目前可纳入清理范围的文件如下：
+
+1. `src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts`
+2. `src/features/logistics-config/utils/vehicle-recommendation-mock.ts`
+3. `src/features/logistics-config/vehicle-loading/services/vehicle-loading-package-adapters.ts`
+4. `src/features/logistics-config/vehicle-loading/services/vehicle-loading-result-mapper.ts`
+
+这些文件当前已无生产消费点；继续保留只会让人误判 recommendations 仍依赖前端本地代算或 mock 兜底。
+
+另有一组文件需要谨慎处理：
+
+1. `src/features/logistics-config/vehicle-loading/engine/load-planning/*`
+2. `src/features/logistics-config/vehicle-loading/engine/load-planning/vehicle-loading-engine.test.ts`
+
+这组前端装载引擎实现目前主要被测试引用。虽然生产链已切到后端，但它仍可暂时作为后端 recommendations 算法的对照/spec。建议本轮**先不直接删除**，待确认是否要把测试一并迁移到后端或保留为前端算法回归样本后再处理。
+
+#### 20.13 三来源当前真实缺口
+
+##### 20.13.1 manual
+
+`manual` 当前仍只依赖页面内 `boxes / totalVolumeM3 / totalWeightKg` 三个 summary 字段。这条链是现有唯一真正可用的用户输入来源。
+
+##### 20.13.2 packing-rule
+
+仓库内已经存在可复用能力：
+
+1. `packagingRulesService.getProfiles()` 可读取 `/packaging/profiles`
+2. `calculatePackagingPlan()` 可基于包装定义推导装箱结果
+
+这意味着 `packing-rule` 并不需要继续占位；可以在 `vehicle-loading` 页面引入包装定义选择/推导逻辑，并把真实箱规结果映射为 recommendations 所需的 package input。
+
+##### 20.13.3 api
+
+当前仓库里**没有发现独立 authoritative 的 API 结果源**。现状是：
+
+1. 前端把 `source='api'` 传给 `/api/v1/logistics/vehicle-loading/recommendations`
+2. 后端 `BuildVehicleLoadingRecommendations()` 会识别 `source` 标签
+3. 但后端仍统一使用固定默认箱型 `660x660x800`
+
+也就是说，`api` 现在还不是“真实 API 结果来源”，只是“同一算法下的另一个标签”。
+
+因此若要在本轮继续推进 `api` 差异化输入，最稳妥的方式是：
+
+1. **扩展当前 recommendations request contract**，允许前端显式传入 package input（例如 `packageDimension`、`unitWeightKg`、`profileRef`、`canRotate`、`canInvert` 等）
+2. 在 `source='api'` 时由页面展示独立输入位，显式驱动后端推荐
+3. 不再让后端在 `api` 来源下回落到默认箱型冒充“真实来源”
+
+若用户坚持 `api` 必须代表“另一个后端系统/上游系统已经算好的 authoritative 结果”，则范围需进一步扩大为新增 upstream endpoint 或新增适配层；这不属于当前仓库内已存在能力的直接复用。
+
+#### 20.14 建议执行顺序
+
+1. **先做仓库清理**
+   - 删除已脱链 mock/helper 文件
+   - 跑 `eslint` / `tsc` 确保无残余引用
+
+2. **再做 contract 扩展**
+   - 前端 schema 与 types 增加 source-specific package input
+   - 后端 request payload 与推荐 service 对应支持显式 package input
+
+3. **接入 packing-rule 真实输入**
+   - 页面新增包装定义选择或映射层
+   - 从 `/packaging/profiles` 读取真实定义
+   - 将包装定义映射为 recommendations 计算输入
+
+4. **接入 api 显式输入**
+   - 页面为 `api` 来源提供独立输入位
+   - 不再依赖默认箱型
+
+5. **最后做联动验证**
+   - 前端 `eslint` / `tsc`
+   - 后端 recommendations 定向测试
+   - 手动验证三种来源的推荐结果确实随输入来源变化
+
+#### 20.15 风险与边界
+
+1. 当前 `vehicle-loading` 页面 state 只有 summary 与筛选条件；要支持真正不同的来源输入，必须新增 source-specific state 与 UI 区块
+2. `packing-rule` 若直接复用包装定义，需要明确“箱数/重量/体积”由谁提供，避免同一来源里又混入 manual 语义
+3. `api` 在没有上游 authoritative 结果源的前提下，只能先收口为“显式 API contract 输入”，不能对用户宣称已经接上另一套真实系统
+4. 本轮仍不扩大到无关的 logistics-config 重构
+
+在用户确认这份新规划前，不应开始删除文件或修改业务代码。
+
+#### 20.16 本轮执行结果（2026-04-15）
+
+本轮已在用户批准后完成执行，实际落地结果如下：
+
+1. **清理脱链 mock/helper 文件**
+   - 已删除：
+     - `src/features/logistics-config/vehicle-loading/data/vehicle-specs.mock.ts`
+     - `src/features/logistics-config/utils/vehicle-recommendation-mock.ts`
+     - `src/features/logistics-config/vehicle-loading/services/vehicle-loading-package-adapters.ts`
+     - `src/features/logistics-config/vehicle-loading/services/vehicle-loading-result-mapper.ts`
+   - 删除前已先核对无生产引用，删除后再次确认文件不存在。
+
+2. **扩展 recommendations contract**
+   - 前端 `vehicle-loading.types.ts`、`vehicle-loading.schema.ts`、`vehicle-loading-service.ts` 已新增显式 `packageInput` 契约。
+   - 后端 `VehicleLoadingRecommendationsRequest` 已新增 `packageInput` payload；当存在显式输入时，推荐服务优先采用该输入而不是默认箱型。
+
+3. **落地三来源真实输入差异**
+   - `manual`：继续由 summary 驱动，并显式构造默认手动 package input。
+   - `packing-rule`：新增独立 hook 读取 `/packaging/profiles`，从活动包装定义生成 recommendations 所需箱型输入。
+   - `api`：页面新增独立输入面板，显式维护箱型名称、单箱重量、长宽高、`canRotate`、`canInvert`。
+
+4. **单位与失败策略**
+   - `packing-rule` 当前支持 `mm / cm / m` 长度单位与 `kg / g` 重量单位映射。
+   - 遇到未知单位或非正数输入时直接显式报错，保持 fail loudly，不做静默兜底。
+
+5. **验证结果**
+   - `pnpm exec tsc --noEmit`：通过。
+   - `pnpm exec eslint`（定向针对本轮变更文件）：通过。
+   - `go test ./handlers -run TestGetVehicleLoadingRecommendationsHandlerReturnsRecommendations -count=1`：通过。
+
+#### 20.17 回溯审查后的风险排序修正方案（2026-04-15）
+
+在完成三来源输入接入后，对实现做了一轮回溯审查。结论不是“需要回滚”，而是“需要围绕语义一致性再做一轮收口”。按风险排序如下：
+
+1. **P1：`canInvert` 语义漏洞**
+   - 当前 `canInvert` 已存在于前端 state、前端 request contract 与后端 payload 中。
+   - 但现有前后端朝向生成逻辑只看 `canRotate`，没有真正消费 `canInvert`。
+   - 这会导致 UI 暴露了一个看似生效、实际不参与算法的控制项，属于 contract/行为不一致。
+   - 修正方向：
+     - 先明确 `canRotate=false / canInvert=true`、`canRotate=true / canInvert=false` 等组合语义。
+     - 再同步修改前后端 orientation 生成逻辑，避免再次漂移。
+
+2. **P1：`packing-rule` authority 仍未完全收口**
+   - 当前 `packing-rule` 已接入 `/packaging/profiles`，但尚未真正接入 `calculatePackagingPlan()`。
+   - 目前它更接近“包装定义驱动试算”，而不是“真实装箱结果驱动试算”。
+   - 同时箱数仍来自 `summary.boxes`，存在“箱型来自箱规、箱数来自手输”的混合语义。
+   - 修正方向：
+     - 若本轮只做最小收口，应在 UI 文案中明确当前 authority 边界，避免误导。
+     - 若本轮继续扩大，则需引入足够的业务输入上下文，真正调用 `calculatePackagingPlan()` 并决定箱数 authority。
+
+3. **P2：提示文案滞后**
+   - `vehicle-loading-tab.tsx` 中关于 `packing-rule / api` “后续再接入”的提示，已落后于当前实现。
+   - 修正方向：更新提示文案，只描述当前真实状态，不提前宣称尚未实现的差异。
+
+4. **P2：默认箱型常量重复定义**
+   - 前端 `DEFAULT_PACKAGE_DIMENSION` 与后端 `defaultVehiclePackageDimension` 当前是重复常量。
+   - 修正方向：本轮至少在计划内明确为“共享默认语义”，若改动成本可控则进一步合并或加一致性测试。
+
+5. **P3：单位映射 authority 化**
+   - 当前 `mm / cm / m` 与 `kg / g` 的换算逻辑是硬编码白名单，fail loudly 策略是正确的。
+   - 但长期看仍可能与单位主数据漂移。
+   - 修正方向：后续再评估是否升级为基于单位主数据或后端 authority 的换算层；本轮不建议无边界扩大。
+
+#### 20.18 建议执行顺序（待确认）
+
+1. 先修 **P1**：`canInvert` 语义一致性
+2. 再修 **P1/P2 边界项**：明确 `packing-rule` 当前 authority，并决定本轮是否只收口文案，还是继续扩大到真实装箱结果
+3. 最后修 **P2**：页面提示文案与默认常量漂移
+4. **P3** 单位 authority 化默认暂缓，除非本轮执行中发现真实阻塞
+
+#### 20.19 本轮边界（待确认）
+
+1. 若选择最小修正，本轮应聚焦：
+   - `canInvert` 真正参与算法
+   - `packing-rule` 文案与 authority 边界说清楚
+   - 文案与默认常量收口
+2. 若选择扩大修正，本轮将继续引入 `calculatePackagingPlan()`，这意味着：
+   - 需要补齐业务输入上下文
+   - 需要重新定义箱数 authority
+   - 复杂度与验证范围都会明显上升
+
+在你确认本轮修正边界前，不应继续进入业务代码修改阶段。
+
+#### 20.20 中等收口执行结果（2026-04-15）
+
+用户已确认按“中等收口”执行，本轮实际完成如下：
+
+1. **修正 `canRotate / canInvert` 组合语义**
+   - 明确收口为：
+     - `canRotate`：只允许底面旋转，长宽可互换，保持高度方向不变
+     - `canInvert`：允许改变竖直方向，将箱体侧放或翻面参与计算
+   - 前端 `vehicle-orientation.ts` 与后端 `getVehiclePackageOrientations()` 已同步对齐该语义。
+   - 同时暴露并修复了前端旧朝向枚举中的对象简写错误，避免“看似 6 个朝向、实际只返回 1 个”的历史 bug 继续潜伏。
+
+2. **收口 `packing-rule` authority 边界**
+   - 本轮刻意不扩大到 `calculatePackagingPlan()`。
+   - 页面已明确说明当前 `packing-rule` 是“包装定义驱动试算”：
+     - 包装定义提供尺寸与单箱重量
+     - 箱数仍由本页 `summary.boxes` 提供
+
+3. **收口 UI 文案与交互**
+   - `vehicle-loading-tab.tsx` 已移除“待后续接入”的滞后文案，改为描述当前真实状态。
+   - `vehicle-loading-source-input-panel.tsx` 已将 `canRotate / canInvert` 的提示与算法一致。
+   - 当 `canRotate=false` 时，`canInvert` 会自动复位为 `false` 并在 UI 上禁用，避免暴露无效组合。
+
+4. **降低默认箱型漂移风险**
+   - 前端默认箱型已收口到 `DEFAULT_VEHICLE_LOADING_PACKAGE_DIMENSION` 单点常量。
+   - 本轮不继续扩大到跨前后端共享常量，但至少消除了前端内部重复定义的漂移风险。
+
+5. **验证结果**
+   - `pnpm exec vitest run src/features/logistics-config/vehicle-loading/engine/load-planning/vehicle-loading-engine.test.ts`：通过。
+   - `go test ./handlers -run "TestGetVehicleLoadingRecommendationsHandler(ReturnsRecommendations|ConsumesCanInvert)" -count=1`：通过。
+   - `pnpm exec eslint src/features/logistics-config/vehicle-loading/engine/load-planning/vehicle-orientation.ts src/features/logistics-config/vehicle-loading/engine/load-planning/vehicle-loading-engine.test.ts src/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input.ts src/features/logistics-config/vehicle-loading/components/vehicle-loading-source-input-panel.tsx src/features/logistics-config/vehicle-loading/vehicle-loading-tab.tsx`：通过。
+   - `pnpm exec tsc --noEmit`：通过。
+
+#### 20.21 P3 阶段：单位映射 Authority 化改造 (2026-04-16)
+
+**背景与目标**
+在 `vehicle-loading` 模块中，从 `packing-rule` 提取长宽高与重量时，当前直接通过硬编码的 `toMillimeters` 和 `toKilograms` 匹配单位字符串（如 'mm', 'cm', 'kg'）。这种模式与系统的单位主数据（Unit Authority）脱节。
+经过调研，现有 `Unit` 模型包含 `code, name, category` 等属性，但不自带换算系数。因此本轮的改造目标不是“动态支持任意自动换算”，而是**通过单位主数据做严谨校验**，提升容错性。
+
+**执行方案**
+
+1. **上游挂载**：
+   - 在前端 hook (`use-vehicle-loading-source-package-input.ts` 或相关容器) 中接入 `useUnitsQuery` 获取活跃单位表 `units`。
+2. **逻辑升级**：
+   - 修改 `vehicle-loading-package-input.ts`：
+     - `buildVehicleLoadingPackageInputFromProfile` 需要增加 `units: Unit[]` 参数。
+     - 在转换前，必须在 `units` 中通过 `profile.dimensionUnitCode` 和 `profile.weightUnitCode` 查找到对应的合法单位实体。
+     - 校验找出的单位 `category` 必须分别是 `LENGTH` 和 `WEIGHT`，否则显式报错（fail loudly）。
+     - 继续沿用原有的基准单位换算率，但依托于权威的 `unit.code` 进行。
+3. **向后兼容**：
+   - 若遇到未注册或停用单位，明确抛出包含 `unitCode` 的异常，拦截错误试算。
+   
+**风险与验证**
+- **风险**：需要确保 React 渲染树中调用的 hook 不会引发过度渲染，且正确处理加载态 `isLoading`。
+- **验证**：静态编译 `pnpm exec tsc --noEmit` 检查接口变更；Eslint 检查规范；在 UI 测试或观察是否正常渲染 `packing-rule` 模式。
+
+#### 20.22 P4 阶段：重构车型联系人数据链路 (2026-04-16)
+
+**背景与目标**
+在 `/shipping-management/contacts` 新增联系人时出现隐蔽的 `400 Bad Request` 报错。经排查发现，问题根源在于前后端对 `channels`（联系方式）的处理逻辑存在严重的“双向复杂化”：前端为了拆分 UI 视图将数据打散再重组，后端为了“容错”又做了极深的归一化（Normalization）和自动补齐。两套复杂的黑盒逻辑导致契约漂移和难以排查的边界报错。
+重构目标：**化繁为简，所见即所得**。
+
+**执行方案**
+
+1. **后端验证降级**：
+   - 彻底删除 `normalizeVehicleContactChannels` 的“自作主张补主电话”和数组重排序逻辑。
+   - `validateVehicleContactBindingUpsert` 仅作最基础的非空判断（必含 `vehicleId`、`contactName`，且传入的 `channels` 中必须仅有一个 `type="phone"` 且 `primary=true` 的项）。如果错误则返回清晰直白的校验信息。
+2. **前端 Payload 直传**：
+   - 废弃 `use-vehicle-contact-actions.ts` 里的 `buildContactPayload`。
+   - 前端向后端的 `POST` payload 结构必须直接映射 `VehicleContactBindingUpsert`。
+3. **Editor Dialog 状态精简**：
+   - 移除 `phoneChannels` 与 `nonPhoneChannels` 的分离状态。
+   - 移除保存时复杂的 `.filter().map()` 重组行为。
+   - UI 维护唯一的一份 `channels: ContactChannel[]`，主电话的值直接在保存前通过 `.find(c => c.primary && c.type === 'phone')?.value` 提取赋给 `primaryPhone` 并一并发送。
+
+**验证策略**
+直接在 UI 新增联系人并测试联调，确认能够顺畅落库并不再出现因格式不对称导致的 `400`。
+
+#### 20.23 P5 阶段：车型联系人编辑弹窗 UDS 1.0 样式对齐 (Task 759)
+
+**背景与目标**
+当前 `VehicleContactEditorDialog` 仍使用旧版的自定义 fixed Modal 背景和普通 Card 组合，未对齐项目中最新的 UDS 1.0 `ActionDialogShell` 规范。这导致该弹窗在视觉层级、关闭交互、头部标题样式和底部按钮区布局上与项目中其他标准弹窗（如基础设置模块的弹窗）不一致。
+
+本轮目标：
+1. 将 `VehicleContactEditorDialog` 重构为使用标准的 `ActionDialogShell` 组件
+2. 使用 `buildActionDialogShellClasses` 统一弹窗各区域的样式类
+3. 对齐内部表单控件的 UDS 1.0 样式（如 Label 的 `text-[10px] font-black uppercase`，Input/Select 的 `h-10 rounded-xl` 等）
+4. 优化“联系方式”列表及对应行的视觉层级与操作按钮样式，保持整体一致性
+
+**执行方案**
+
+1. **替换弹窗容器**
+   - 移除外层的 `fixed inset-0` div 和内层 `Card`
+   - 引入 `ActionDialogShell` 和 `buildActionDialogShellClasses`
+   - 提取底部按钮区为 `footer` prop
+   - 标题区域加入 `Users` 图标并统一 class
+
+2. **表单控件样式对齐**
+   - 所有的 `<label>` 内部文本使用 `<Label className='text-[10px] font-black uppercase ml-1'>`
+   - `<Input>`、`<select>` 和模拟的 div 输入框统一加上 `h-10 rounded-xl`
+   - 所有的 `<textarea>` 加上 `rounded-xl`
+
+3. **联系方式列表样式对齐**
+   - 调整“添加联系方式”按钮和每一行的删除、类型切换等操作的样式
+   - `VehicleContactChannelRow` 内部控件同样对齐 `h-10 rounded-xl`
+
+**验证策略**
+1. 打开“新增联系人”或“编辑”弹窗，确认整体显示为标准 UDS 1.0 圆角弹窗
+2. 标题区带有图标、全大写加粗等样式，底部按钮区固定且样式正确
+3. 内部表单项间距、字体大小和边框样式与其他基础设置弹窗保持一致
+4. 联系方式动态增删行功能正常，样式无破损
+5. `pnpm exec tsc --noEmit` 通过，更新 `walkthrough.md`
+
+**第二轮补充范围（待你确认后执行）**
+1. 将 `VehicleContactEditorDialog` 中仍保留的原生 `<select>`（车型、启用状态）替换为项目现有 `Select / SelectTrigger / SelectContent / SelectItem` 体系。
+2. 将 `vehicle-contact-channel-row.tsx` 中联系方式类型选择从原生 `<select>` 替换为同一套 UDS 下拉组件。
+3. 统一下拉触发器的圆角、边框、字体、占位样式，以及弹层的圆角、阴影、hover/selected 态，消除浏览器原生下拉菜单观感。
+4. 保持现有字段值、保存 payload 和 `channels` 状态结构不变，本轮只调整交互承接与视觉实现。
+
+**第二轮执行结果（2026-04-16）**
+1. `VehicleContactEditorDialog` 中的车型、启用状态已切到项目统一 `Select` 体系。
+2. `vehicle-contact-channel-row.tsx` 中的联系方式类型选择与只读电话类型展示已同步切到同一套 `Select` 体系。
+3. 下拉触发器与弹层已统一为圆角、阴影、hover/selected 态一致的 UDS 浮层菜单，不再使用浏览器原生下拉。
+4. 本轮未改动字段值、保存 payload 或 `channels` 状态结构，仅收口交互承接与视觉实现。
+
+#### 20.24 P6 阶段：修复 `/logistics-config/vehicle-loading` 页面 `categoryLabel` 导入漂移导致的模块加载 500
+
+**背景与目标**
+当前 `/logistics-config/vehicle-loading` 页面在前端模块加载阶段直接失败，浏览器报错：
+`The requested module '.../vehicle-loading.utils.ts' does not provide an export named 'categoryLabel'`。
+
+经核对，当前问题不是接口数据异常，也不是页面运行时状态错误，而是一个明确的 ESM 命名导出漂移：
+1. `src/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-page.ts` 仍导入 `categoryLabel`
+2. `src/features/logistics-config/vehicle-loading/data/vehicle-loading.utils.ts` 当前只导出 `categoryLabelKey`
+
+这会导致页面在模块解析阶段就报错，React 尚未进入正常渲染链，因此表现为页面直接 500 / ErrorBoundary 重建。
+
+**执行方案**
+1. 先对齐 `use-vehicle-loading-page.ts` 与 `vehicle-loading.utils.ts` 的导出契约，优先采用最小修复，避免把本轮扩大成整条 vehicle-loading 文案/工具层重构。
+2. 复核 `vehicle-loading` 域内是否还有其它调用点仍沿用旧的 `categoryLabel` 命名，避免修一处后仍残留同类模块导入错误。
+3. 保持当前 `vehicle-loading.utils.ts` 中分类 label key 的 authority 边界清晰；若页面侧需要 label 文本，应明确通过现有 key 映射链消费，而不是再制造新的命名漂移。
+
+**验证策略**
+1. `/logistics-config/vehicle-loading` 页面可恢复正常进入，不再在浏览器控制台出现 `does not provide an export named 'categoryLabel'`。
+2. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+3. 更新 `walkthrough.md` 记录根因、修复点与验证结果。
+
+#### 20.25 P6 阶段：简化 `/logistics-config/packaging-rules` 弹窗“包装名称”为物料库搜索选择
+
+**背景与目标**
+当前 `src/features/logistics-config/packaging-rules-tab.tsx` 中，“包装名称”字段仍是自由输入的 `Input`，这会导致包装定义的名称来源脱离物料档案。你已经明确要求本轮不要引入“包装无物料”等额外复杂机制，而是直接读取物料库即可。
+
+结合现有代码，当前可以复用的最小实现条件已经具备：
+1. 物料档案存在 `MaterialCoreService.getMaterialOptions()`
+2. 物料分类中已存在 `PACKAGING`
+3. 项目内已有可复用的搜索型选择组件 `src/components/ui/combobox.tsx`
+
+**最小实施方案**
+1. 在 `packaging-rules-tab.tsx` 中新增包装物料 options 查询，直接复用 `MaterialCoreService.getMaterialOptions()`。
+2. 在前端将 options 过滤为 `category === 'PACKAGING'`，只向“包装名称”字段暴露包装类物料。
+3. 将当前“包装名称”输入框替换为可搜索选择组件；选中后将物料名称回填到 `draft.name`。
+4. 保持当前“产品”字段继续代表适用产品，不与包装物料选择混用。
+5. 保持当前 `packagingRulesService.saveProfile()` 与后端 `PackagingProfile` 保存契约不扩展，本轮只调整名称来源，不增加新的后端字段。
+
+**风险与边界**
+1. 该最小方案可以把包装名称的录入入口收口到物料档案，但当前后端结构仍只保存 `name`，不会额外持久化包装物料 ID。
+2. 因此它是“前端来源闭环”而不是“后端强关系闭环”；如果未来需要真正按包装物料反查包装定义，需要再补 `packagingMaterialId` 级别的数据模型扩展。
+3. 本轮按你的要求不做该扩展，以保持实现简单、改动面小。
+
+**验证策略**
+1. 弹窗中“包装名称”不再是自由输入，而是只读于物料库 `PACKAGING` 类选项的可搜索选择。
+2. 选中包装物料后，保存链仍可正常提交，列表展示的 `profile.name` 与所选包装物料名称一致。
+3. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+4. 更新 `walkthrough.md` 记录本轮简化方案与验证结果。
+
+**执行结果（2026-04-16）**
+1. `src/features/logistics-config/packaging-rules-tab.tsx` 已接入 `MaterialCoreService.getMaterialOptions()`，并复用 `MATERIAL_OPTIONS_QUERY_KEY` 读取物料库 options。
+2. 弹窗“包装名称”已从自由输入切换为项目现有 `Combobox` 搜索选择，只暴露 `category === 'PACKAGING'` 的物料选项。
+3. 选中包装物料后，当前草稿通过物料名称回填 `draft.name`，保存时继续沿用现有 `PackagingProfile` payload，没有扩展后端字段。
+4. 同步补上包装物料查询的 fail loudly 校验，避免物料 options 缺失时静默退化为不可追踪状态。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.26 P6 阶段：调整 `/logistics-config/packaging-rules` 编辑弹窗宽度与响应式布局，减少无意义滚动
+
+**背景与目标**
+当前 `src/features/logistics-config/packaging-rules-tab.tsx` 的编辑弹窗虽然字段数量并不算多，但在常见桌面尺寸下已经需要纵向滚动才能看到完整内容。根因主要有三点：
+1. 外层宽度当前只有 `w-[min(1120px,calc(100vw-2rem))]`
+2. 基础信息区最多仅展开到 `2xl:4` 列
+3. 尺寸与装箱区要到 `xl` 才进入 4 列，再叠加汇总卡片与备注区，垂直空间被过早拉长
+
+你的目标很明确：增加整个弹窗宽度，并优化内部响应式布局，让这类中等复杂度表单在桌面端尽量首屏可见，不要“内容不多却还得滚动下拉才能看完”。
+
+**最小实施方案**
+1. 增加 `DialogContent` 的外层宽度上限，优先通过宽度和大屏内边距释放横向空间，而不是继续依赖纵向滚动承接。
+2. 调整“基础信息”区的响应式栅格，让包装名称、产品、状态、单位类字段在 `xl` / `2xl` 尺寸下能够容纳更多列。
+3. 调整“尺寸与装箱”区的响应式列数，使长度、宽度、高度、单箱装数尽早横向并排，而不是在中屏下过度换行。
+4. 保持汇总卡片与备注区的现有语义不变，只优化其在中大屏幕下与上方表单的空间关系。
+5. 不改任何字段含义、交互契约、保存链或后端数据结构。
+
+**验证策略**
+1. 在常见桌面窗口宽度下，弹窗主体内容应明显减少无意义纵向滚动。
+2. 移动端与窄屏下布局仍需自然回落，不出现横向溢出或遮挡。
+3. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+4. 更新 `walkthrough.md` 记录本轮布局收口内容与验证结果。
+
+**执行结果（2026-04-16）**
+1. `DialogContent` 外层宽度已从 `w-[min(1120px,calc(100vw-2rem))]` 提升为 `w-[min(1360px,calc(100vw-1.5rem))]`，优先释放桌面端横向空间。
+2. “基础信息”区栅格已调整为 `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`，让包装名称、产品、状态、单位类字段更早横向展开。
+3. “尺寸与装箱”区栅格已调整为 `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`，长度、宽度、高度、单箱装数在中大屏幕下更早并排显示。
+4. 本轮未调整字段语义、保存链、汇总逻辑或后端契约，仅通过容器宽度与栅格密度减少无意义纵向滚动。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.27 P6 阶段：继续压缩 `/logistics-config/packaging-rules` 编辑弹窗内部垂直高度
+
+**背景与目标**
+虽然上一轮已经增宽弹窗并提高了栅格密度，但当前编辑弹窗内部仍存在较明显的纵向留白，导致整体高度还是偏大。主要落点包括：
+1. 外层可滚动内容容器当前为 `space-y-7`
+2. 区块容器当前为 `space-y-5`
+3. section 标题区当前为 `mb-5`
+4. 汇总卡片当前为 `gap-4 p-6`
+5. 备注输入框当前为 `min-h-[132px]` 且 `rows={4}`
+
+你的要求很明确：继续压缩内部内容之间的高度，并把备注输入框高度砍掉一半左右，让弹窗在桌面端尽量把主要字段完整露出来。
+
+**最小实施方案**
+1. 收口外层滚动容器与主体区块的纵向 `space-y`，减少 section 之间的空白。
+2. 收口两个 section 标题区的底部 margin 与汇总卡片的 padding / gap，降低非输入内容对垂直空间的占用。
+3. 将备注输入框从当前约 `132px` 高度压缩到接近一半的可用高度，并同步下调 `rows`。
+4. 保持表单可读性、点击热区和视觉层级，不把压缩做成拥挤堆叠。
+5. 不改任何字段语义、交互契约、保存链或后端数据结构。
+
+**验证策略**
+1. 桌面端弹窗整体纵向高度继续下降，主要字段区域尽量减少滚动。
+2. 备注区仍保留基本录入能力，不因压缩导致输入体验明显退化。
+3. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+4. 更新 `walkthrough.md` 记录本轮内部间距收口内容与验证结果。
+
+**执行结果（2026-04-16）**
+1. 外层滚动容器已从 `space-y-7` 收口为 `space-y-5`，并将 `py-7/lg:py-8` 收口为 `py-6/lg:py-6`，降低整体纵向留白。
+2. 主体区块容器已从 `space-y-5` 收口为 `space-y-4`，两个 section 标题区已从 `mb-5` 收口为 `mb-4`。
+3. section 容器 padding 已从 `p-5 md:p-6` 收口为 `p-4 md:p-5`；汇总卡片也从 `gap-4 p-6` 收口为 `gap-3 p-4`。
+4. 备注输入框已从 `min-h-[132px] rows={4}` 压缩为 `min-h-[72px] rows={2}`，并同步下调内边距。
+5. Footer 顶部留白已从 `pt-4` 收口为 `pt-2`，进一步减少无意义垂直占高。
+6. 本轮未改动字段语义、保存链或后端契约；已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.28 P6 阶段：收口 `shipping-management` 车型联系人写入链的分层越界
+
+**背景与目标**
+当前 `src/features/shipping-management/hooks/use-vehicle-contact-actions.ts` 在一个 Hook 内同时承担了三类职责：
+1. 直接调用 `apiFetch(...)` 发起保存 / 删除请求
+2. 调用 `queryClient.invalidateQueries(...)` 承接 Query 失效
+3. 调用 `showToast(...)` 承接 UI 提示
+
+这与 `GEMINI.md` 中 `5.2 服务层的去副作用化` 与 `5.5 前端状态治理边界` 的要求不一致：
+- `services/` 应只负责请求与 DTO 适配
+- Hook 层负责 `invalidateQueries`、toast 等副作用编排
+
+此外，当前 `shipping-management` 域并没有对应的 `services/` 目录承接车型联系人请求；读取链 `use-vehicle-contact-bindings.ts` 也仍在 Hook 内直接 `apiFetch(...)`，并通过 `normalizeVehicleContactBindingsResponse()` 将异常响应静默兜底成空数组，这与当前项目更偏向的 fail loudly 方向也存在漂移。
+
+**最小实施方案**
+1. 新增 `src/features/shipping-management/services/vehicle-contact-service.ts`，承接车型联系人的保存 / 删除请求，并补齐基础 DTO / 响应契约处理。
+2. 让 `use-vehicle-contact-actions.ts` 只负责调用 service、执行 `invalidateQueries`，以及通过 `showToast` 收口成功 / 失败提示。
+3. 评估是否同步把 `use-vehicle-contact-bindings.ts` 的读取链迁移到 service：
+   - 若本轮一并处理，则去掉静默 `[]` 兜底，改为更明确的契约校验 / fail loudly
+   - 若本轮不处理，则至少在规划与文档中显式记录该遗留风险
+4. 不改变现有联系人保存 payload 语义，不扩大到联系人表单结构重构。
+
+**风险与边界**
+1. 该问题不只是“把 `apiFetch` 移文件”这么简单；如果引入 service，就要明确 DTO 契约和响应校验边界，避免只是做物理搬运。
+2. 读取链 `use-vehicle-contact-bindings.ts` 也有相似越层问题，但本轮主修复应优先聚焦写链；是否联动读取链，需根据改动面控制做最小判断。
+3. 本轮不触碰联系人表单 payload 语义，只处理分层边界与请求承接位置。
+
+**验证策略**
+1. `use-vehicle-contact-actions.ts` 不再直接持有 `apiFetch(...)` 请求细节。
+2. 车型联系人保存 / 删除流程仍可正常触发刷新与 Toast。
+3. 若联动读取链，则确认不再静默把异常响应吞成 `[]`。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮分层收口与验证结果。
+
+**执行结果（2026-04-16）**
+1. 已新增 `src/features/shipping-management/services/vehicle-contact-service.ts`，统一承接车型联系人的 `list / save / delete` 请求。
+2. service 内已显式对后端返回做契约校验：
+   - 列表接口按数组响应校验
+   - 保存接口按对象响应校验
+   - `channelsJson` 已统一适配为前端消费所需的 `channels`
+3. `use-vehicle-contact-actions.ts` 已移除直接 `apiFetch(...)`，当前只保留 service 调用、`invalidateQueries` 与 `showToast` 编排。
+4. `use-vehicle-contact-bindings.ts` 已移除 Hook 内直接请求和静默 `[]` 兜底，读取链统一改走 `vehicleContactService.listBindings()`。
+5. 本轮按你选择的“写读一起收口”范围执行，但仍未扩大到联系人表单 payload 语义重构，仅处理请求承接层和 DTO 边界。
+6. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.29 P6 阶段：收口 `vehicle-contact-editor-dialog.tsx` 中基于 `Partial<T>` 的本地补丁更新表达
+
+**背景与目标**
+当前 `src/features/shipping-management/vehicle-contact-editor-dialog.tsx` 仍存在两处以 `Partial<T>` 表达本地更新的写法：
+1. `updateForm(patch: Partial<VehicleContactBindingForm>)`
+2. `updateChannel(index, patch: Partial<ContactChannel>)`
+
+这些 `Partial` 目前主要用于本地表单状态更新，而不是直接作为后端 PATCH / SDRTS 载荷提交；但 `GEMINI.md` `2.2 SDRTS 差量更新协议` 已明确要求“禁止手动构造 `Partial<T>`”，因此这类业务层局部补丁写法仍然需要收口。
+
+同时，这个场景也有明确边界：你此前已经强调过 `vehicle-contacts` 的 `channels` 处理不要再被过度复杂化。因此本轮目标不是把本地表单编辑器重构成重型 SDRTS 提交器，而是把当前 `Partial<...>` 改成更明确、结构化、可读的本地更新语义。
+
+**最小实施方案**
+1. 将 `updateForm` 替换为更明确的字段级更新入口，例如按字段名 / 值更新，或拆成小型结构化 helper，避免继续使用 `Partial<VehicleContactBindingForm>`。
+2. 将 `updateChannel` 替换为更明确的 channel 更新语义，避免以 `Partial<ContactChannel>` 合并方式表达本地修改。
+3. 保持 `setPrimaryChannel`、`addChannel`、`removeChannel`、表单校验和最终保存 payload 语义不变，不扩大到联系人 payload 结构重构。
+4. 若需要引入本地增量结构，应保持轻量，仅服务于本地表单状态表达，不把它误升级为完整的远端 SDRTS 提交协议。
+
+**风险与边界**
+1. 不能为了满足“去 `Partial`”而把本地 UI 更新语义做得比当前更难维护。
+2. 需要继续维持 `channels` 与 `primaryPhone` 的联动关系，避免在重写局部更新函数时引入主电话同步回归。
+3. 本轮只处理本地状态更新表达，不改后端接口，不改当前保存 payload 语义。
+
+**验证策略**
+1. `vehicle-contact-editor-dialog.tsx` 不再出现 `Partial<VehicleContactBindingForm>` 与 `Partial<ContactChannel>`。
+2. 表单字段编辑、联系方式类型切换、主电话联动、删除 / 新增渠道逻辑保持正常。
+3. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+4. 更新 `walkthrough.md` 记录本轮本地增量表达收口与验证结果。
+
+**执行结果（2026-04-16）**
+1. `vehicle-contact-editor-dialog.tsx` 已移除 `updateForm(patch: Partial<VehicleContactBindingForm>)`，改为更明确的 `updateFormField(field, value)` 字段级更新入口。
+2. 已移除 `updateChannel(index, patch: Partial<ContactChannel>)`，改为 `updateChannels(...)` + `setChannelType(...)` + `setChannelValue(...)` 等结构化本地更新语义。
+3. `setPrimaryChannel`、`addChannel`、`removeChannel` 继续复用统一的 channel 更新承接，并保持 `primaryPhone` 自动联动逻辑不变。
+4. 本轮没有把本地编辑器硬升级成重型 SDRTS 提交器，只收口了业务层 `Partial<T>` 表达方式，同时保留当前交互和最终保存 payload 语义。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.30 P6 阶段：收口 `vehicle-contact-service.ts` 中未使用 Zod Schema 的 DTO 解析
+
+**背景与目标**
+当前 `src/features/shipping-management/services/vehicle-contact-service.ts` 虽然已经把请求职责从 Hook 中抽离出来，但 DTO 层仍然没有对齐 `GEMINI.md` 的要求。现状包括：
+1. service 内手写了 `VehicleContactBindingApiDTO`
+2. 通过 `ensureObjectResponse()` / `ensureArrayResponse()` 自行做运行时校验
+3. 直接在 service 内对后端 `channelsJson` 做 `JSON.parse(...)` 再映射为前端 `channels`
+
+这与 `GEMINI.md` `2.1 全量 DTO 模型` 的要求不一致：`services` 返回值必须基于 Zod Schema 定义的 DTO 模型，不能继续依赖散落的手写运行时解析逻辑。
+
+**当前项目可复用模式**
+1. `src/features/logistics-config/vehicle-loading/services/vehicle-loading.schema.ts` 已采用 feature 内 schema 文件承接 DTO。
+2. `src/features/material-archive/contracts/material-api-contract.ts` 已采用 `*ApiDTOSchema` + `z.infer` 组织 API 契约。
+3. 因此本轮应优先复用现有 Zod DTO 组织方式，而不是继续在 service 内散落手写 JSON 适配与校验逻辑。
+
+**最小实施方案**
+1. 为 `shipping-management / vehicle-contact` 新增对应的 Zod schema 文件，承接联系人列表项、联系人渠道、以及列表 / 单项响应 DTO 契约。
+2. 将 `channelsJson` 的解析与转换收口到 schema / adapter 边界：
+   - schema 负责定义原始 API DTO 形态
+   - adapter 或 transform 负责将 `channelsJson` 转成前端消费所需的 `channels`
+3. 将 `vehicle-contact-service.ts` 中手写 `VehicleContactBindingApiDTO`、`ensure*Response()` 调用与散落的 JSON 解析逻辑替换为基于 Zod schema 的解析流程。
+4. 保持当前 hook / service 分层不回退，不改联系人业务交互、不改保存语义。
+
+**风险与边界**
+1. 本轮目标是 DTO 契约与解析方式对齐，不扩大到联系人业务流程改造。
+2. `channelsJson` 是后端当前真实返回字段，因此前端仍需要适配，但适配点应收口在 schema / adapter，而不是继续散落在 service 主逻辑里。
+3. 需要避免为了“上 Zod”而把当前简单 DTO 链路拆得过碎；在满足 schema 约束的前提下仍保持可维护性。
+
+**验证策略**
+1. `vehicle-contact-service.ts` 不再手写 `VehicleContactBindingApiDTO` 与散落的运行时解析逻辑。
+2. 联系人列表读取、保存返回与 `channelsJson -> channels` 适配仍保持正确。
+3. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+4. 更新 `walkthrough.md` 记录本轮 DTO schema 收口与验证结果。
+
+**执行结果（2026-04-16）**
+1. 已新增 `src/features/shipping-management/services/vehicle-contact.schema.ts`，用 Zod schema 承接车型联系人的渠道 DTO、原始联系人 DTO 与转换后联系人 DTO。
+2. `channelsJson` 的解析已收口到 schema transform 边界，不再由 service 主逻辑手写 `JSON.parse(...)` 和逐字段运行时校验。
+3. `vehicle-contact-service.ts` 已移除手写 `VehicleContactBindingApiDTO`、`ensureObjectResponse()` / `ensureArrayResponse()` 解析流程，改为统一基于 schema `safeParse()` 验证列表与单项返回。
+4. 当前 hook / service 分层没有回退，联系人读取 / 保存返回语义保持不变。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.31 P6 阶段：收口 `use-vehicle-contact-actions.ts` 的副作用编排职责
+
+**背景与目标**
+当前 `src/features/shipping-management/hooks/use-vehicle-contact-actions.ts` 虽然已经不再直接持有请求细节，但职责仍然偏宽：
+1. 通过 `vehicleContactService` 发起写入动作
+2. 统一执行 `queryClient.invalidateQueries(...)`
+3. 直接调用 `showToast(...)`
+4. 同时负责成功 / 失败文案与错误转译
+
+相比项目内其它写动作 hook（如 `useProductWriteActions()`、`useProductAttributeWriteActions()`），它已经更接近一个通用动作编排层。`GEMINI.md` 虽然允许副作用位于 Hook / `onSuccess` 层，但从职责分离上看，更稳妥的边界通常是：
+- `service` 只管请求与 DTO
+- 写动作 hook 主要承接 mutation 与 query invalidation
+- UI 层或更具体的页面交互层决定 toast 展示与提示文案
+
+**最小实施方案**
+1. 收口 `use-vehicle-contact-actions.ts`，移除对 `showToast` 的直接依赖和内置文案转译逻辑。
+2. 保留写动作调用与 `invalidateQueries`，让 hook 返回更纯粹的结果或抛错行为。
+3. 将成功 / 失败 toast 的展示上浮到 `contacts-page.tsx` 或更具体的 UI 调用点（如删除确认、编辑保存回调）。
+4. 不改当前联系人写入 service，不改联系人业务语义与 DTO 层。
+
+**风险与边界**
+1. 本轮目标是缩窄 Hook 责任，不是把 query invalidation 也全部推回 UI；否则页面层容易重新堆叠重复刷新逻辑。
+2. toast 展示上浮后，需要避免在多个 UI 调用点复制粘贴完全相同的错误处理样板。
+3. 本轮不扩大到新的 dispatcher / workflow 抽象，仅做最小边界收口。
+
+**验证策略**
+1. `use-vehicle-contact-actions.ts` 不再直接接收 `showToast` 或负责提示文案转译。
+2. 保存 / 删除后仍可正常触发列表刷新。
+3. UI 层仍能展示成功 / 失败提示，且用户可见行为不回退。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮副作用边界收口与验证结果。
+
+**执行结果（2026-04-16）**
+1. `use-vehicle-contact-actions.ts` 已移除对 `showToast` 的依赖和内置成功 / 失败文案处理，当前仅保留 `vehicleContactService` 调用与 `invalidateQueries`。
+2. `contacts-page.tsx` 已承接保存、删除和启停切换场景的成功 / 失败提示展示，并在失败时保留错误上抛或用户可见反馈。
+3. 当前 query invalidation 没有散回 UI 层，Hook 仍保持写动作与刷新编排职责，避免页面层重复堆叠刷新逻辑。
+4. 当前 service / hook 分层没有回退，联系人业务语义保持不变。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.32 P6 阶段：继续收口 `use-vehicle-contact-actions.ts` 中领域操作与缓存失效策略的绑定
+
+**背景与目标**
+上一轮已经把 toast 展示从 `use-vehicle-contact-actions.ts` 上浮到页面层，但当前该 hook 仍然把“领域写操作”与“缓存失效策略”绑定在一起：
+1. 通过 `vehicleContactService` 执行保存 / 删除
+2. 在同一个通用动作 hook 内固定执行 `queryClient.invalidateQueries({ queryKey: vehicleContactQueryKeys.all() })`
+
+这种写法短期可用，但从边界上看仍然偏强：如果后续联系人写动作被不同页面、不同查询真相源或不同刷新策略复用，这个 hook 会继续承担越来越多“面向当前页面缓存结构”的知识，逐步演变成业务中枢。
+
+**最小实施方案**
+1. 收口 `use-vehicle-contact-actions.ts`，移除其内部固定的 `invalidateQueries(...)` 策略绑定，让它只负责调用写入 service 并返回结果 / 抛错。
+2. 将缓存失效策略上浮到 `contacts-page.tsx` 或更具体的页面管理层，由页面根据当前消费的 query key 明确决定刷新策略。
+3. 若页面层出现重复的失效策略样板，再评估是否需要新增更具体的管理 hook（例如 `useVehicleContactPageActions`），而不是继续把策略塞回通用动作 hook。
+4. 不改 `vehicleContactService`，不改联系人业务语义与当前交互。
+
+**风险与边界**
+1. 本轮目标是让通用动作层不再绑定当前缓存结构，不是否定 React Query invalidation 本身。
+2. 页面层上浮后要注意避免把刷新逻辑复制到过多调用点；若样板过多，应继续上浮到“页面级管理 hook”，而不是回退到通用动作 hook。
+3. 本轮不扩大到 dispatcher / workflow 抽象，只做最小边界收口。
+
+**验证策略**
+1. `use-vehicle-contact-actions.ts` 不再固定持有 `queryClient.invalidateQueries(...)` 策略。
+2. `contacts-page.tsx` 仍能在保存 / 删除 / 启停后正确刷新联系人列表。
+3. 用户侧可见行为不回退，错误与成功提示继续正常展示。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮缓存策略解耦与验证结果。
+
+**执行结果（2026-04-16）**
+1. `use-vehicle-contact-actions.ts` 已移除固定的 `queryClient.invalidateQueries(...)` 绑定，当前仅保留保存 / 删除请求动作。
+2. `contacts-page.tsx` 已新增页面级 `refreshVehicleContacts()`，由当前页面决定保存、删除、启停切换后的刷新时机与目标 query key。
+3. 当前联系人列表刷新、成功 / 失败提示与用户可见行为均保持不变。
+4. `vehicleContactService` 的纯请求边界没有回退，联系人业务语义与交互保持不变。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ConfigErrorPanel } from './vehicle-loading/components/config-error-panel'
+import { VehiclePhotoDialog } from './vehicle-loading/components/vehicle-photo-dialog'
 import { VehicleFilterPanel } from './vehicle-loading/components/vehicle-filter-panel'
 import { VehicleLoadingHeader } from './vehicle-loading/components/vehicle-loading-header'
 import { VehicleLoadingPlanDialog } from './vehicle-loading/components/vehicle-loading-plan-dialog'
@@ -11,6 +12,7 @@ import { VehicleLoadingSummaryPanel } from './vehicle-loading/components/vehicle
 import { VehicleRecommendationPanel } from './vehicle-loading/components/vehicle-recommendation-panel'
 import { VehicleSpecsTable } from './vehicle-loading/components/vehicle-specs-table'
 import type { VehicleRecommendation } from './vehicle-loading/data/vehicle-loading.types'
+import { useVehiclePhotoDialogState } from './vehicle-loading/hooks/use-vehicle-photo-dialog-state'
 import { useVehicleLoadingPage } from './vehicle-loading/hooks/use-vehicle-loading-page'
 
 export function LogisticsVehicleLoadingTab() {
@@ -39,6 +41,13 @@ export function LogisticsVehicleLoadingTab() {
 
   const [diagramOpen, setDiagramOpen] = useState(false)
   const [selectedRecommendation, setSelectedRecommendation] = useState<VehicleRecommendation | null>(null)
+  const {
+    photoDialogOpen,
+    setPhotoDialogOpen,
+    selectedVehicle,
+    selectedPhotoEntry,
+    openVehiclePhotos,
+  } = useVehiclePhotoDialogState()
 
   const selectedSpec = useMemo(() => filteredSpecs[0] ?? null, [filteredSpecs])
 
@@ -98,7 +107,7 @@ export function LogisticsVehicleLoadingTab() {
               车型加载中...
             </div>
           ) : null}
-          {!specsError && !isLoadingSpecs ? <VehicleSpecsTable specs={filteredSpecs} /> : null}
+          {!specsError && !isLoadingSpecs ? <VehicleSpecsTable specs={filteredSpecs} onViewPhoto={openVehiclePhotos} /> : null}
 
           {recommendationsError ? (
             <ConfigErrorPanel
@@ -115,7 +124,7 @@ export function LogisticsVehicleLoadingTab() {
             </div>
           ) : null}
           {!recommendationsError && !isLoadingRecommendations ? (
-            <VehicleRecommendationPanel recommendations={recommendations} onViewDiagram={handleViewDiagram} />
+            <VehicleRecommendationPanel recommendations={recommendations} onViewDiagram={handleViewDiagram} onViewPhoto={openVehiclePhotos} />
           ) : null}
         </div>
       </div>
@@ -125,14 +134,14 @@ export function LogisticsVehicleLoadingTab() {
         onOpenChange={setDiagramOpen}
         vehicleName={selectedRecommendation?.vehicle.name ?? '装载示意'}
         vehicleSize={{
-          lengthMm: selectedRecommendation?.vehicle.innerLengthMm ?? 0,
-          widthMm: selectedRecommendation?.vehicle.innerWidthMm ?? 0,
-          heightMm: selectedRecommendation?.vehicle.innerHeightMm ?? 0,
+          lengthMm: selectedRecommendation?.vehicle.usableInnerSize.lengthMm ?? 0,
+          widthMm: selectedRecommendation?.vehicle.usableInnerSize.widthMm ?? 0,
+          heightMm: selectedRecommendation?.vehicle.usableInnerSize.heightMm ?? 0,
         }}
         packageSize={{
-          lengthMm: selectedSpec?.innerLengthMm ?? 0,
-          widthMm: selectedSpec?.innerWidthMm ?? 0,
-          heightMm: selectedSpec?.innerHeightMm ?? 0,
+          lengthMm: selectedSpec?.usableInnerSize.lengthMm ?? 0,
+          widthMm: selectedSpec?.usableInnerSize.widthMm ?? 0,
+          heightMm: selectedSpec?.usableInnerSize.heightMm ?? 0,
         }}
         orientationLabel={selectedRecommendation?.selectedOrientationLabel ?? '当前推荐方案'}
         orientationAxis={selectedRecommendation?.selectedOrientationAxis}
@@ -148,6 +157,13 @@ export function LogisticsVehicleLoadingTab() {
               ]
             : ['请选择一个推荐方案查看装载示意。']
         }
+      />
+
+      <VehiclePhotoDialog
+        open={photoDialogOpen}
+        onOpenChange={setPhotoDialogOpen}
+        vehicle={selectedVehicle}
+        photoEntry={selectedPhotoEntry}
       />
     </div>
   )

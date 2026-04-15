@@ -201,6 +201,23 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    titleKey: 'sidebar.groups.logistics',
+    items: [
+      {
+        titleKey: 'sidebar.items.logisticsConfig',
+        url: '/logistics-config',
+        icon: Truck,
+        permissionId: permissionIdForPath('/logistics-config'),
+      },
+      {
+        titleKey: 'sidebar.items.logisticsSettings',
+        url: '/logistics-settings',
+        icon: Sliders,
+        permissionId: permissionIdForPath('/logistics-settings'),
+      },
+    ],
+  },
+  {
     titleKey: 'sidebar.groups.systemSettings',
     items: [
       {
@@ -208,12 +225,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/pda-shell',
         icon: ScanLine,
         permissionId: permissionIdForPath('/pda-shell'),
-      },
-      {
-        titleKey: 'sidebar.items.logisticsConfig',
-        url: '/logistics-config',
-        icon: Truck,
-        permissionId: permissionIdForPath('/logistics-config'),
       },
       {
         titleKey: 'sidebar.items.printCenter',
@@ -348,6 +359,23 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
+      title: '物流',
+      items: [
+        {
+          title: '物流',
+          url: '/logistics-config',
+          icon: Truck,
+          permissionId: permissionIdForPath('/logistics-config'),
+        },
+        {
+          title: '物流配置',
+          url: '/logistics-settings',
+          icon: Sliders,
+          permissionId: permissionIdForPath('/logistics-settings'),
+        },
+      ],
+    },
+    {
       title: '系统配置',
       items: [
         {
@@ -355,12 +383,6 @@ export const sidebarData: SidebarData = {
           url: '/pda-shell',
           icon: ScanLine,
           permissionId: permissionIdForPath('/pda-shell'),
-        },
-        {
-          title: '物流',
-          url: '/logistics-config',
-          icon: Truck,
-          permissionId: permissionIdForPath('/logistics-config'),
         },
         { title: '人事账号中心', url: '/personnel', icon: Users, permissionId: permissionIdForPath('/personnel') },
         { title: '打印中心', url: '/print-mgmt', icon: Printer, permissionId: permissionIdForPath('/print-mgmt') },

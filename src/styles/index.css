@@ -54,6 +54,34 @@
   @apply after:pointer-events-none after:absolute after:start-0 after:bottom-0 after:hidden after:h-32 after:w-full after:rounded-b-2xl after:bg-[linear-gradient(180deg,transparent_10%,var(--background)_70%)] md:after:block;
 }
 
+@utility uds-surface {
+  @apply rounded-2xl border border-border/60 bg-card shadow-none;
+}
+
+@utility uds-surface-muted {
+  @apply rounded-2xl border border-border/55 bg-muted/5 shadow-none;
+}
+
+@utility uds-surface-subtle {
+  @apply rounded-[20px] border border-border/50 bg-background/80 shadow-none;
+}
+
+@utility uds-label {
+  @apply text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60;
+}
+
+@utility uds-value {
+  @apply text-sm font-semibold text-foreground;
+}
+
+@utility uds-chip {
+  @apply rounded-full border border-border/60 bg-background px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70;
+}
+
+@utility uds-chip-primary {
+  @apply rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary;
+}
+
 /* styles.css */
 .CollapsibleContent {
   overflow: hidden;

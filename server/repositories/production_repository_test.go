@@ -119,7 +119,6 @@ func TestGormProductionRepositoryAppendProcessToJobCategoryLoadsProcesses(t *tes
 		},
 	}
 	require.NoError(t, testDB.Create(&line).Error)
-	require.NoError(t, testDB.Create(&line.Segments[0]).Error)
 
 	lines, err := repo.ListProductionLines(testDB)
 	require.NoError(t, err)

@@ -38,6 +38,8 @@ export const common = {
     export: 'Export',
     commit: 'Commit',
     preview: 'Preview',
+    refresh: 'Refresh',
+    search: 'Search',
     signOut: 'Sign Out',
   },
   labels: {

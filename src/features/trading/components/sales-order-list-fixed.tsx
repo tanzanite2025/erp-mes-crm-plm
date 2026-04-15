@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/context/language-provider'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
-import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
 import { useSalesOrderListViewModel } from '../hooks/use-sales-order-list-view-model'
@@ -25,7 +24,7 @@ import { useTradingFinanceFilterOptions } from '../hooks/use-trading-finance-res
 import { requireTradingCommandActor } from '../utils/command-actor'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
-import { SalesOrderDetail } from './sales-order-detail'
+import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderMaster } from './sales-order-master'
 
 const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
@@ -55,9 +54,9 @@ export function SalesOrderList() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
-  const [selectedId, setSelectedId] = useState<string | null>(search.detailId || null)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null)
+  const selectedId = search.detailId || undefined
 
   // Data Fetching
   const { data, isLoading, isError, error } = useGetSalesOrders(page, pageSize)
@@ -74,7 +73,7 @@ export function SalesOrderList() {
     paymentTermFilter,
     customerId: routeCustomerId,
     customerName: routeCustomerName,
-    selectedId,
+    selectedId: selectedId ?? null,
   })
 
   const { runConfirmedAction } = useConfirmedActionFlow()
@@ -125,13 +124,49 @@ export function SalesOrderList() {
     })
   }
 
+  const handleDeleteOrderFromDetail = (order: SalesOrder) => {
+    runConfirmedAction({
+      permission: 'action_trading_sales_order_delete',
+      confirmKey: 'common.actions.delete',
+      onAction: () => {
+        if (order.status === 'Canceled') {
+          deleteMutation.mutate(order.id)
+          return
+        }
+
+        const actor = requireTradingCommandActor(
+          { operator: user?.accountNo, actorId: user?.id },
+          'SalesOrderList.handleDeleteOrderFromDetail',
+        )
+
+        cancelMutation.mutate({
+          orderId: order.id,
+          operator: actor.operator,
+          actorId: actor.actorId,
+          expectedVersion: order.version,
+        })
+      },
+    })
+  }
+
   const handleOpenDetail = (id: string) => {
-    setSelectedId(id)
     navigate({
       to: '/trading/sales-orders',
       search: (prev) => ({
         ...prev,
         detailId: id,
+        customerId: routeCustomerId,
+        customerName: routeCustomerName,
+      }),
+    })
+  }
+
+  const handleCloseDetail = () => {
+    navigate({
+      to: '/trading/sales-orders',
+      search: (prev) => ({
+        ...prev,
+        detailId: undefined,
         customerId: routeCustomerId,
         customerName: routeCustomerName,
       }),
@@ -166,11 +201,7 @@ export function SalesOrderList() {
 
   return (
     <div className='flex min-h-0 flex-1 gap-6 overflow-hidden animate-in fade-in duration-700'>
-      {/* Master View (List) */}
-      <div className={cn(
-        'flex flex-col gap-6 transition-all duration-500',
-        selectedId ? 'w-1/3' : 'w-full'
-      )}>
+      <div className='flex w-full flex-col gap-6 transition-all duration-500'>
         {/* Tools */}
         <div className='flex flex-col gap-4 sm:flex-row sm:items-center justify-between px-1'>
           <div className='relative flex-1 max-w-md'>
@@ -247,7 +278,6 @@ export function SalesOrderList() {
           </div>
         </ScrollArea>
 
-        {/* Pagination Panel */}
         {total > pageSize && (
           <div className='mt-2 flex items-center justify-center gap-4'>
             <Button
@@ -275,42 +305,20 @@ export function SalesOrderList() {
         )}
       </div>
 
-      {/* Detail View (Right Panel) */}
-      {selectedId && (
-        <div className='relative flex flex-1 flex-col rounded-[40px] border-2 border-dashed border-primary/20 bg-primary/2 shadow-2xl animate-in slide-in-from-right-8 duration-500'>
-          <ScrollArea className='flex-1'>
-            <div className='p-8'>
-              <SalesOrderDetail
-                order={selectedOrder}
-                onDelete={(id) => {
-                  setSelectedId(null)
-                  handleDeleteOrder(id)
-                }}
-              />
-            </div>
-          </ScrollArea>
-          
-          <Button
-            variant='ghost'
-            size='icon'
-            className='absolute top-6 right-6 rounded-full hover:bg-primary/10'
-            onClick={() => {
-              setSelectedId(null)
-              navigate({
-                to: '/trading/sales-orders',
-                search: (prev) => ({
-                  ...prev,
-                  detailId: undefined,
-                  customerId: routeCustomerId,
-                  customerName: routeCustomerName,
-                }),
-              })
-            }}
-          >
-            <AlertCircle className='size-5 rotate-45 opacity-40' />
-          </Button>
-        </div>
-      )}
+      <SalesOrderDetailSheet
+        open={!!selectedId}
+        orderId={selectedId}
+        order={selectedOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetail()
+          }
+        }}
+        onDelete={(order) => {
+          handleCloseDetail()
+          handleDeleteOrderFromDetail(order)
+        }}
+      />
 
       <SalesOrderActionDialog
         open={isActionDialogOpen}

@@ -4,7 +4,7 @@ import type { SalesOrder } from '../data/schema'
 interface UseSalesOrderDetailActivityParams {
   order: SalesOrder
   canHardDelete?: boolean
-  onHardDelete?: (id: string) => void
+  onHardDelete?: (order: SalesOrder) => void
   confirmText: string
 }
 
@@ -19,8 +19,8 @@ export function useSalesOrderDetailActivity({
   const handleHardDelete = useCallback(() => {
     if (!onHardDelete) return
     if (!confirm(confirmText)) return
-    onHardDelete(order.id)
-  }, [confirmText, onHardDelete, order.id])
+    onHardDelete(order)
+  }, [confirmText, onHardDelete, order])
 
   return {
     canDelete,

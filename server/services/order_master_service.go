@@ -59,13 +59,17 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 	listTx := tx.Order("order_date desc").Limit(pageSize).Offset((page - 1) * pageSize)
 	if query.WithLines {
 		listTx = listTx.Preload("Lines")
+	} else {
+		listTx = listTx.Preload("Lines", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("id", "sales_order_id", "qty", "delivered_qty")
+		})
 	}
 	if err := listTx.Find(&orders).Error; err != nil {
 		return SalesOrderListResponse{}, err
 	}
 
 	return SalesOrderListResponse{
-		Items:    MapSalesOrdersToListItems(orders),
+		Items:    MapSalesOrdersToListItems(orders, query.WithLines),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

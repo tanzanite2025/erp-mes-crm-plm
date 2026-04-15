@@ -1,15 +1,17 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
 import type { VehicleSpec } from '../data/vehicle-loading.types'
-import { categoryLabel } from '../data/vehicle-loading.utils'
+import { categoryLabelKey } from '../data/vehicle-loading.utils'
 import { FieldCard } from './field-card'
+import { VehiclePhotoTriggerButton } from './vehicle-photo-trigger-button'
 import { VehicleEmptyState } from './vehicle-empty-state'
 
 type Props = {
   specs: VehicleSpec[]
+  onViewPhoto?: (vehicle: VehicleSpec) => void
 }
 
-export function VehicleSpecsTable({ specs }: Props) {
+export function VehicleSpecsTable({ specs, onViewPhoto }: Props) {
   const { t } = useLanguage()
 
   return (
@@ -28,17 +30,28 @@ export function VehicleSpecsTable({ specs }: Props) {
                 <TableHead className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleLoading.vehicleSpecs.table.category')}</TableHead>
                 <TableHead className='text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleLoading.vehicleSpecs.table.volume')}</TableHead>
                 <TableHead className='text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleLoading.vehicleSpecs.table.payload')}</TableHead>
-                <TableHead className='text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleLoading.vehicleSpecs.table.innerSize')}</TableHead>
+                <TableHead className='text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleSpecsLibrary.usableSize')}</TableHead>
+                <TableHead className='text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/55'>{t('logisticsConfig.vehicleSpecsLibrary.physicalSize')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {specs.map((spec) => (
                 <TableRow key={spec.id} className='border-border/35 hover:bg-primary/5'>
-                  <TableCell className='text-sm font-semibold text-foreground'>{spec.name}</TableCell>
-                  <TableCell className='text-sm font-normal text-muted-foreground'>{categoryLabel(spec.category)}</TableCell>
+                  <TableCell className='text-sm text-foreground'>
+                    <div className='flex flex-col gap-2'>
+                      <div className='font-semibold'>{spec.name}</div>
+                      {onViewPhoto ? (
+                        <div>
+                          <VehiclePhotoTriggerButton onClick={() => onViewPhoto(spec)} className='h-8 px-3 text-[10px] font-black uppercase tracking-widest' />
+                        </div>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell className='text-sm font-normal text-muted-foreground'>{t(categoryLabelKey(spec.category))}</TableCell>
                   <TableCell className='text-right text-sm font-medium tabular-nums text-foreground/90'>{spec.volumeM3.toFixed(1)} m³</TableCell>
                   <TableCell className='text-right text-sm font-medium tabular-nums text-foreground/90'>{spec.payloadKg.toFixed(0)} kg</TableCell>
-                  <TableCell className='text-right text-sm font-medium tabular-nums text-foreground/90'>{`${spec.innerLengthMm}×${spec.innerWidthMm}×${spec.innerHeightMm} mm`}</TableCell>
+                  <TableCell className='text-right text-sm font-medium tabular-nums text-foreground/90'>{`${spec.usableInnerSize.lengthMm}×${spec.usableInnerSize.widthMm}×${spec.usableInnerSize.heightMm} mm`}</TableCell>
+                  <TableCell className='text-right text-sm font-medium tabular-nums text-foreground/90'>{`${spec.physicalInnerSize.lengthMm}×${spec.physicalInnerSize.widthMm}×${spec.physicalInnerSize.heightMm} mm`}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

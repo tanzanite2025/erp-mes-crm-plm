@@ -192,6 +192,7 @@ func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
 		UpdatedBy:          order.UpdatedBy,
 		IsDeleted:          order.IsDeleted,
 		Version:            order.Version,
+		FulfillmentRate:    calculateSalesOrderFulfillmentRate(order),
 		Lines:              lines,
 	}
 }
@@ -232,12 +233,15 @@ func MapSalesOrderResponseToSnapshot(order SalesOrderResponse) SalesOrderSnapsho
 	}
 }
 
-func MapSalesOrdersToListItems(orders []models.SalesOrder) []SalesOrderListItemResponse {
+func MapSalesOrdersToListItems(orders []models.SalesOrder, includeLines bool) []SalesOrderListItemResponse {
 	items := make([]SalesOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
-		lines := make([]SalesOrderLineResponse, 0, len(order.Lines))
-		for _, line := range order.Lines {
-			lines = append(lines, mapSalesOrderLineToResponse(line))
+		lines := make([]SalesOrderLineResponse, 0)
+		if includeLines {
+			lines = make([]SalesOrderLineResponse, 0, len(order.Lines))
+			for _, line := range order.Lines {
+				lines = append(lines, mapSalesOrderLineToResponse(line))
+			}
 		}
 		items = append(items, SalesOrderListItemResponse{
 			ID:                 order.ID,
@@ -268,6 +272,7 @@ func MapSalesOrdersToListItems(orders []models.SalesOrder) []SalesOrderListItemR
 			UpdatedBy:          order.UpdatedBy,
 			IsDeleted:          order.IsDeleted,
 			Version:            order.Version,
+			FulfillmentRate:    calculateSalesOrderFulfillmentRate(order),
 			Lines:              lines,
 		})
 	}

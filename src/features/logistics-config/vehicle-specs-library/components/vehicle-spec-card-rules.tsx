@@ -1,0 +1,36 @@
+import { useLanguage } from '@/context/language-provider'
+import type { VehicleSpec } from '../../vehicle-loading/data/vehicle-loading.types'
+
+type Props = {
+  spec: VehicleSpec
+}
+
+export function VehicleSpecCardRules({ spec }: Props) {
+  const { t } = useLanguage()
+
+  return (
+    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
+      <div className='rounded-[22px] border border-dashed border-border/60 bg-background/70 px-4 py-3'>
+        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+          {t('logisticsConfig.vehicleSpecsLibrary.allowances')}
+        </div>
+        <div className='mt-1.5 space-y-1.5 text-[13px] leading-5 text-muted-foreground'>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.topClearance')}: ${spec.safetyAllowance.topClearanceMm} mm`}</div>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.sideClearance')}: ${spec.safetyAllowance.sideClearanceMm} mm`}</div>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.rearClearance')}: ${spec.safetyAllowance.rearClearanceMm} mm`}</div>
+        </div>
+      </div>
+
+      <div className='rounded-[22px] border border-dashed border-border/60 bg-background/70 px-4 py-3'>
+        <div className='text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+          {t('logisticsConfig.vehicleSpecsLibrary.constraints')}
+        </div>
+        <div className='mt-1.5 space-y-1.5 text-[13px] leading-5 text-muted-foreground'>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.door')}: ${spec.loadingConstraint.doorWidthMm} × ${spec.loadingConstraint.doorHeightMm} mm`}</div>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.wheelArch')}: ${spec.loadingConstraint.wheelArchWidthMm} × ${spec.loadingConstraint.wheelArchHeightMm} mm`}</div>
+          <div>{`${t('logisticsConfig.vehicleSpecsLibrary.centerPillar')}: ${spec.loadingConstraint.hasCenterPillar ? t('logisticsConfig.vehicleSpecsLibrary.yes') : t('logisticsConfig.vehicleSpecsLibrary.no')}`}</div>
+        </div>
+      </div>
+    </div>
+  )
+}

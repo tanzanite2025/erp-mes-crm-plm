@@ -38,6 +38,7 @@ export function buildVehicleLoadingPlan(input: VehicleLoadPlanningInput): Vehicl
     return {
       plans: [],
       bestPlan: undefined,
+      packageProfile,
       engineVersion: ENGINE_VERSION,
       generatedAt: new Date().toISOString(),
       warnings,
@@ -85,6 +86,7 @@ export function buildVehicleLoadingPlan(input: VehicleLoadPlanningInput): Vehicl
   return {
     plans,
     bestPlan: plans[0],
+    packageProfile,
     engineVersion: ENGINE_VERSION,
     generatedAt: new Date().toISOString(),
     warnings,

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/layout/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Combobox } from '@/components/ui/combobox'
 import {
   Dialog,
   DialogContent,
@@ -23,8 +24,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
-import { failLoudly } from '@/lib/safe-catch'
 import { type Product } from '@/features/engineering/data/schema'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
+import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
+import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import {
   packagingRulesService,
@@ -36,10 +40,11 @@ import {
 type PackagingProfileDraft = SavePackagingProfileInput
 
 const PACKAGING_PROFILE_QUERY_KEY = ['logistics-config', 'packaging-profiles'] as const
+const EMPTY_PACKAGING_MATERIAL_OPTIONS: MaterialOption[] = []
 const packagingFieldClass = 'w-full h-11 min-h-11 rounded-2xl border border-border/50 bg-muted/40 px-4 py-0 text-sm font-medium leading-none shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 disabled:opacity-100 disabled:bg-muted/20 disabled:text-foreground/70'
 const packagingSelectClass = `${packagingFieldClass} justify-between data-[size=default]:h-11`
 const packagingLabelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
-const packagingSectionClass = 'rounded-[28px] border border-dashed border-border/60 bg-muted/[0.035] p-5 md:p-6'
+const packagingSectionClass = 'rounded-[28px] border border-dashed border-border/60 bg-muted/[0.035] p-4 md:p-5'
 
 function createPackagingProfileCode(name: string): string {
   const normalized = name
@@ -98,6 +103,10 @@ export function LogisticsPackagingRulesTab() {
     queryKey: ['engineering', 'products', 'options'],
     queryFn: () => ProductCoreService.getProducts({ isOptions: true }) as Promise<Product[]>,
   })
+  const packagingMaterialsQuery = useQuery({
+    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+    queryFn: () => MaterialCoreService.getMaterialOptions() as Promise<MaterialOption[]>,
+  })
   const { units, isLoading: isUnitsLoading, error: unitsError } = useUnitsQuery()
 
   const saveMutation = useMutation({
@@ -131,6 +140,10 @@ export function LogisticsPackagingRulesTab() {
     failLoudly(productsQuery.error, 'LogisticsPackagingRulesTab.products')
     throw productsQuery.error
   }
+  if (packagingMaterialsQuery.isError) {
+    failLoudly(packagingMaterialsQuery.error, 'LogisticsPackagingRulesTab.packagingMaterials')
+    throw packagingMaterialsQuery.error
+  }
   if (unitsError) {
     failLoudly(unitsError, 'LogisticsPackagingRulesTab.units')
     throw unitsError
@@ -140,16 +153,39 @@ export function LogisticsPackagingRulesTab() {
     failLoudly(error, 'LogisticsPackagingRulesTab.profiles')
     throw error
   }
+  if (!packagingMaterialsQuery.isLoading && !packagingMaterialsQuery.data) {
+    const error = new Error('[CRITICAL] Missing packaging material options payload')
+    failLoudly(error, 'LogisticsPackagingRulesTab.packagingMaterials')
+    throw error
+  }
 
   const profiles = profilesQuery.data ?? []
   const products = productsQuery.data ?? []
+  const packagingMaterials = packagingMaterialsQuery.data ?? EMPTY_PACKAGING_MATERIAL_OPTIONS
 
   const dimensionUnits = useMemo(() => units.filter((unit) => unit.category === 'LENGTH'), [units])
   const weightUnits = useMemo(() => units.filter((unit) => unit.category === 'WEIGHT'), [units])
   const quantityUnits = useMemo(() => units.filter((unit) => unit.category === 'QUANTITY' || unit.code === 'pcs'), [units])
+  const packagingMaterialOptions = useMemo(
+    () =>
+      packagingMaterials
+        .filter((material) => material.category === 'PACKAGING')
+        .map((material) => ({
+          value: material.id,
+          label: material.name,
+          keywords: `${material.code} ${material.spec ?? ''}`,
+          secondaryLabel: material.spec ?? '',
+          tertiaryLabel: material.code,
+        })),
+    [packagingMaterials]
+  )
 
   const selectedTarget = draft.targets[0] ?? createDefaultTarget()
   const selectedProduct = products.find((item) => item.id === selectedTarget.entityId) ?? null
+  const selectedPackagingMaterialId = useMemo(
+    () => packagingMaterials.find((material) => material.category === 'PACKAGING' && material.name === draft.name)?.id ?? '',
+    [draft.name, packagingMaterials]
+  )
   const computedVolume = draft.length * draft.width * draft.height
   const computedGrossWeight = draft.netWeight + (selectedProduct?.weight ?? 0) * draft.capacity
 
@@ -210,6 +246,14 @@ export function LogisticsPackagingRulesTab() {
         },
       ],
       grossWeight: current.netWeight + (product?.weight ?? 0) * current.capacity,
+    }))
+  }
+
+  const updateSelectedPackagingMaterial = (materialId: string) => {
+    const material = packagingMaterials.find((item) => item.id === materialId && item.category === 'PACKAGING')
+    setDraft((current) => ({
+      ...current,
+      name: material?.name ?? '',
     }))
   }
 
@@ -355,10 +399,10 @@ export function LogisticsPackagingRulesTab() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className='flex max-h-[92vh] w-[min(1120px,calc(100vw-2rem))] max-w-none flex-col overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl'>
-          <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none' />
+        <DialogContent className='flex max-h-[92vh] w-[min(1360px,calc(100vw-1.5rem))] max-w-none flex-col overflow-hidden rounded-[32px] border-none bg-background p-0 shadow-2xl'>
+          <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent pointer-events-none' />
           
-          <div className='relative flex-1 overflow-y-auto px-6 py-7 lg:px-8 lg:py-8 space-y-7'>
+          <div className='relative flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-6 space-y-5'>
             <DialogHeader className='space-y-1 mt-2'>
               <DialogTitle className='text-xl font-black italic uppercase tracking-tighter text-primary'>
                 {t('logisticsConfig.packagingRules.dialog.title')}
@@ -368,9 +412,9 @@ export function LogisticsPackagingRulesTab() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className='space-y-5'>
+            <div className='space-y-4'>
               <section className={packagingSectionClass}>
-                <div className='mb-5 flex items-center justify-between gap-3'>
+                <div className='mb-4 flex items-center justify-between gap-3'>
                   <div>
                     <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
                       Packaging Identity
@@ -384,13 +428,19 @@ export function LogisticsPackagingRulesTab() {
                   </Badge>
                 </div>
 
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
                   <div className='space-y-2'>
                     <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.packagingName')}</Label>
-                    <Input
-                      className={packagingFieldClass}
-                      value={draft.name}
-                      onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                    <Combobox
+                      options={packagingMaterialOptions}
+                      value={selectedPackagingMaterialId}
+                      onValueChange={updateSelectedPackagingMaterial}
+                      placeholder={draft.name || '请选择包装物料'}
+                      searchPlaceholder='搜索包装物料名称、规格或编码...'
+                      emptyText='未找到包装物料'
+                      isLoading={packagingMaterialsQuery.isLoading}
+                      variant='industrial'
+                      className='h-11! rounded-2xl! border! border-border/50! bg-muted/40! px-4! text-sm! font-medium! shadow-sm! shadow-black/5!'
                     />
                   </div>
                   <div className='space-y-2'>
@@ -474,7 +524,7 @@ export function LogisticsPackagingRulesTab() {
               </section>
 
               <section className={packagingSectionClass}>
-                <div className='mb-5 flex items-center justify-between gap-3'>
+                <div className='mb-4 flex items-center justify-between gap-3'>
                   <div>
                     <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
                       Packaging Metrics
@@ -488,7 +538,7 @@ export function LogisticsPackagingRulesTab() {
                   </Badge>
                 </div>
 
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
                   <div className='space-y-2'>
                     <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.length')}</Label>
                     <Input
@@ -529,7 +579,7 @@ export function LogisticsPackagingRulesTab() {
               </section>
             </div>
 
-            <div className='grid grid-cols-1 gap-4 rounded-[24px] border border-dashed bg-primary/5 p-6 md:grid-cols-3'>
+            <div className='grid grid-cols-1 gap-3 rounded-[24px] border border-dashed bg-primary/5 p-4 md:grid-cols-3'>
               <div>
                 <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('logisticsConfig.packagingRules.summary.volume')}</div>
                 <div className='mt-1 text-xl font-black italic tracking-tighter text-primary'>{computedVolume} <span className='text-[10px] not-italic opacity-50'>{draft.dimensionUnitCode || '-'}³</span></div>
@@ -547,14 +597,14 @@ export function LogisticsPackagingRulesTab() {
             <div className='space-y-2'>
               <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.notes')}</Label>
               <Textarea 
-                className='min-h-[132px] rounded-2xl border border-border/50 bg-muted/40 px-4 py-3 text-sm shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 resize-none'
+                className='min-h-[72px] rounded-2xl border border-border/50 bg-muted/40 px-4 py-2.5 text-sm shadow-sm shadow-black/5 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/15 focus-visible:border-primary/30 resize-none'
                 value={draft.notes ?? ''} 
                 onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} 
-                rows={4} 
+                rows={2} 
               />
             </div>
 
-            <DialogFooter className='pt-4'>
+            <DialogFooter className='pt-2'>
               <Button 
                 variant='ghost' 
                 className='h-11 px-8 text-[10px] font-black uppercase tracking-widest'

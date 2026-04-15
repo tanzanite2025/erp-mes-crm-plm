@@ -40,6 +40,8 @@ export const common = {
     export: '导出',
     commit: '提交',
     preview: '预览',
+    refresh: '刷新',
+    search: '搜索',
   },
   labels: {
     nodes: '记录数',
