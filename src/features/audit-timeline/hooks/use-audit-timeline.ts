@@ -1,15 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api-client';
-import type { AuditLog } from '../types';
 import type { AuditModuleValue } from '../data/audit-modules';
+import { auditTimelineQueryKeys } from '../query-keys';
+import { fetchAuditTimeline } from '../services/audit-timeline-service';
 
 export const useAuditTimeline = (module: AuditModuleValue, targetId: string) => {
-  return useQuery<AuditLog[]>({
-    queryKey: ['audit-timeline', module, targetId],
-    queryFn: async () => {
-      const response = await apiFetch<AuditLog[]>(`/audit/timeline?module=${module}&target_id=${targetId}`);
-      return response;
-    },
+  return useQuery({
+    queryKey: auditTimelineQueryKeys.detail(module, targetId),
+    queryFn: () => fetchAuditTimeline(module, targetId),
     enabled: !!module && !!targetId,
   });
 };

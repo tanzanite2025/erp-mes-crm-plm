@@ -111,15 +111,8 @@ func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) 
 		if err := s.repository.SaveOrganization(tx, &current); err != nil {
 			return err
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "Organization",
-				TargetID: current.ID,
-				Action:   "PATCH",
-				Diff:     auditDeltaKeys(input.DeltaKeys),
-			}); err != nil {
-				return err
-			}
+		if err := recordLegacyAuditEntryTx(tx, "Organization", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys), "", "", ""); err != nil {
+			return err
 		}
 
 		updated = current
@@ -224,15 +217,8 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 				return err
 			}
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "Employee",
-				TargetID: current.ID,
-				Action:   "PATCH",
-				Diff:     auditDeltaKeys(input.DeltaKeys),
-			}); err != nil {
-				return err
-			}
+		if err := recordLegacyAuditEntryTx(tx, "Employee", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys), "", "", ""); err != nil {
+			return err
 		}
 
 		var err error

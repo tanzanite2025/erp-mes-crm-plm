@@ -11,7 +11,6 @@ import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.
 import {
   type ContactChannel,
   type ContactChannelType,
-  type VehicleCategory,
   type VehicleContactBinding,
   type VehicleContactBindingForm,
 } from './contacts-page.types'
@@ -35,12 +34,15 @@ function toForm(binding?: VehicleContactBinding | null): VehicleContactBindingFo
   }
 }
 
+const PHONE_CHANNEL_TYPE_OPTIONS: ContactChannelType[] = ['phone']
+const CHANNEL_TYPE_OPTIONS: ContactChannelType[] = ['phone', 'wechat', 'email', 'whatsapp', 'other']
+
 type Props = {
   open: boolean
   binding?: VehicleContactBinding | null
   vehicleOptions: Array<{ value: string; label: string; category?: string }>
   onOpenChange: (open: boolean) => void
-  onSaved: (binding: VehicleContactBinding) => Promise<void> | void
+  onSaved: (form: VehicleContactBindingForm) => Promise<void> | void
 }
 
 export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOpenChange, onSaved }: Props) {
@@ -76,6 +78,20 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
       next[field] = value
       return next
     })
+  }
+
+  const getChannelRowUiState = (channel: ContactChannel) => {
+    const isPhoneChannel = channel.type === 'phone'
+
+    return {
+      typeOptions: isPhoneChannel ? PHONE_CHANNEL_TYPE_OPTIONS : CHANNEL_TYPE_OPTIONS,
+      isTypeLocked: isPhoneChannel,
+      primaryControlMode: isPhoneChannel ? 'radio' : 'checkbox',
+      isPrimarySelected: Boolean(channel.primary),
+      primaryLabel: isPhoneChannel ? '主项' : '主联系方式',
+      valuePlaceholder: isPhoneChannel ? '主电话' : '联系方式',
+      showRemoveAction: !isPhoneChannel,
+    } as const
   }
 
   const updateChannels = (
@@ -135,24 +151,7 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
     if (!form.vehicleId || !form.contactName.trim() || !selectedVehicle || validationError) return
     setSaving(true)
     try {
-      const payload: VehicleContactBinding = {
-        id: binding?.id ?? `contact-${Date.now()}`,
-        vehicleId: form.vehicleId,
-        vehicleName: selectedVehicle.label,
-        category: (selectedVehicle.category ?? '') as VehicleCategory,
-        supplierName: form.supplierName.trim(),
-        contactName: form.contactName.trim(),
-        channels: form.channels
-          .map((channel) => ({ ...channel, value: channel.value.trim() }))
-          .filter((channel) => channel.value.length > 0),
-        region: form.region.trim(),
-        dispatchAdvice: form.dispatchAdvice.trim(),
-        note: form.note.trim(),
-        enabled: form.enabled,
-        createdAt: binding?.createdAt ?? new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      await onSaved(payload)
+      await onSaved(form)
       onOpenChange(false)
     } finally {
       setSaving(false)
@@ -247,16 +246,28 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
         {validationError ? <div className='mt-3 rounded-xl border border-dashed border-destructive/40 bg-destructive/5 px-3 py-2 text-[11px] font-bold text-destructive'>{validationError}</div> : null}
         <div className='mt-4 space-y-3'>
           {form.channels.map((channel, index) => (
-            <VehicleContactChannelRow
-              key={`channel-${index}`}
-              channel={channel}
-              index={index}
-              isPrimaryPhone={channel.type === 'phone' && channel.primary}
-              onTypeChange={setChannelType}
-              onValueChange={setChannelValue}
-              onPrimaryChange={setPrimaryChannel}
-              onRemove={removeChannel}
-            />
+            (() => {
+              const rowUiState = getChannelRowUiState(channel)
+
+              return (
+                <VehicleContactChannelRow
+                  key={`channel-${index}`}
+                  channel={channel}
+                  index={index}
+                  typeOptions={rowUiState.typeOptions}
+                  isTypeLocked={rowUiState.isTypeLocked}
+                  primaryControlMode={rowUiState.primaryControlMode}
+                  isPrimarySelected={rowUiState.isPrimarySelected}
+                  primaryLabel={rowUiState.primaryLabel}
+                  valuePlaceholder={rowUiState.valuePlaceholder}
+                  showRemoveAction={rowUiState.showRemoveAction}
+                  onTypeChange={setChannelType}
+                  onValueChange={setChannelValue}
+                  onPrimaryChange={setPrimaryChannel}
+                  onRemove={removeChannel}
+                />
+              )
+            })()
           ))}
         </div>
       </div>
@@ -274,4 +285,3 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
     </ActionDialogShell>
   )
 }
-

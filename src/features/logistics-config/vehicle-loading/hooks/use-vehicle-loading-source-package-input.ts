@@ -25,7 +25,7 @@ export function useVehicleLoadingSourcePackageInput(args: {
 }) {
   const { source, summary, selectedPackagingProfileId, apiPackageDraft, sourceLabel } = args
 
-  const { units, isLoading: isLoadingUnits, error: unitsError } = useUnitsQuery({
+  const { isLoading: isLoadingUnits, error: unitsError } = useUnitsQuery({
     enabled: source === 'packing-rule',
   })
 
@@ -68,7 +68,7 @@ export function useVehicleLoadingSourcePackageInput(args: {
           return { packageInput: null, error: new Error('No active packaging profiles available for packing-rule source'), enabled: false }
         }
         return {
-          packageInput: buildVehicleLoadingPackageInputFromProfile(selectedProfile, units, sourceLabel),
+          packageInput: buildVehicleLoadingPackageInputFromProfile(selectedProfile, sourceLabel),
           error: null,
           enabled: true,
         }
@@ -94,7 +94,7 @@ export function useVehicleLoadingSourcePackageInput(args: {
         enabled: false,
       }
     }
-  }, [apiPackageDraft, unitsError, profilesQuery.error, profilesQuery.isLoading, isLoadingUnits, selectedProfile, source, sourceLabel, summary, units])
+  }, [apiPackageDraft, unitsError, profilesQuery.error, profilesQuery.isLoading, isLoadingUnits, selectedProfile, source, sourceLabel, summary])
 
   return {
     packageInput: packageInputState.packageInput,

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 
 	"github.com/google/uuid"
@@ -120,14 +121,13 @@ func (s *OrganizationService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitR
 				return err
 			}
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "Employee",
-				TargetID: current.ID,
-				Action:   "CHANGE_ORG_UNIT",
-			}); err != nil {
-				return err
-			}
+		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
+			audit.AuditEntityEmployee,
+			current.ID,
+			audit.AuditAction("CHANGE_ORG_UNIT"),
+			audit.AuditActor{},
+		).Normalize()); err != nil {
+			return err
 		}
 
 		refreshed, err = loadEmployeeAggregate(tx, current.ID)
@@ -186,14 +186,13 @@ func (s *OrganizationService) ChangeEmployeePosition(input ChangeEmployeePositio
 				return err
 			}
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "Employee",
-				TargetID: current.ID,
-				Action:   "CHANGE_POSITION",
-			}); err != nil {
-				return err
-			}
+		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
+			audit.AuditEntityEmployee,
+			current.ID,
+			audit.AuditAction("CHANGE_POSITION"),
+			audit.AuditActor{},
+		).Normalize()); err != nil {
+			return err
 		}
 
 		refreshed, err = loadEmployeeAggregate(tx, current.ID)
@@ -248,14 +247,13 @@ func (s *OrganizationService) ClearEmployeePosition(input ClearEmployeePositionR
 				return err
 			}
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "Employee",
-				TargetID: current.ID,
-				Action:   "CLEAR_POSITION",
-			}); err != nil {
-				return err
-			}
+		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
+			audit.AuditEntityEmployee,
+			current.ID,
+			audit.AuditAction("CLEAR_POSITION"),
+			audit.AuditActor{},
+		).Normalize()); err != nil {
+			return err
 		}
 
 		refreshed, err = loadEmployeeAggregate(tx, current.ID)

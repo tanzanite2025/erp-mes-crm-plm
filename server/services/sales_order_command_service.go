@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services/trading_audit"
 
 	"gorm.io/gorm"
 )
@@ -42,7 +44,7 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 	}
 
 	if isNew {
-		created, err := createSalesOrderTx(input, originalID, strings.TrimSpace(command.ActorID))
+		created, err := createSalesOrderTx(input, originalID, strings.TrimSpace(command.ActorID), strings.TrimSpace(command.Operator), strings.TrimSpace(command.IP))
 		if err != nil {
 			return SalesOrderResponse{}, err
 		}
@@ -54,7 +56,7 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 		return SalesOrderResponse{}, err
 	}
 
-	return ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
+	result, err := ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
 		OrderID:         input.ID,
 		Intent:          SalesTransactionIntentOrderSave,
 		ActorID:         strings.TrimSpace(command.ActorID),
@@ -63,6 +65,13 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 		Payload:         payload,
 		IP:              strings.TrimSpace(command.IP),
 	})
+	if err != nil {
+		return SalesOrderResponse{}, err
+	}
+	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, "", result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: operator, IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
+		return SalesOrderResponse{}, err
+	}
+	return result, nil
 }
 
 func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error) {
@@ -92,7 +101,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 		return SalesOrderResponse{}, err
 	}
 
-	return ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
+	result, err := ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
 		OrderID:         orderID,
 		Intent:          SalesTransactionIntentOrderSave,
 		ActorID:         strings.TrimSpace(command.ActorID),
@@ -101,6 +110,13 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 		Payload:         payload,
 		IP:              strings.TrimSpace(command.IP),
 	})
+	if err != nil {
+		return SalesOrderResponse{}, err
+	}
+	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, snapshot.Status, result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: strings.TrimSpace(command.Operator), IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
+		return SalesOrderResponse{}, err
+	}
+	return result, nil
 }
 
 func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
@@ -228,7 +244,7 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 	}, nil
 }
 
-func createSalesOrderTx(input models.SalesOrder, originalID, requesterID string) (*models.SalesOrder, error) {
+func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operator, ip string) (*models.SalesOrder, error) {
 	var created models.SalesOrder
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, line := range input.Lines {
@@ -246,6 +262,9 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID string)
 			input.OrderNo = originalID
 		}
 		if err := tx.Create(&input).Error; err != nil {
+			return err
+		}
+		if err := recordAuditEventTx(tx, trading_audit.BuildSalesOrderCreateEvent(input, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "http"})); err != nil {
 			return err
 		}
 		if _, err := RecalculateSalesOrderStatusTx(tx, input.ID); err != nil {
@@ -269,6 +288,9 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID string)
 
 		input.WorkflowInstanceID = workflowInstance.ID
 		if err := tx.Model(&input).Update("workflow_instance_id", workflowInstance.ID).Error; err != nil {
+			return err
+		}
+		if err := recordAuditEventTx(tx, trading_audit.BuildSalesOrderWorkflowEvent(input.ID, workflowInstance.ID, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "workflow"})); err != nil {
 			return err
 		}
 		created = input

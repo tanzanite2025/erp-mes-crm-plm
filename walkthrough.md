@@ -1092,6 +1092,115 @@
   - `pnpm exec eslint src/features/shipping-management/services/vehicle-contact.schema.ts src/features/shipping-management/services/vehicle-contact-service.ts`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
+## 2026-04-16 收口 `vehicle-contact-editor-dialog.tsx` 中实体装配与持久化载荷拼装职责（770）
+
+- **变更概述**
+  - 调整 `src/features/shipping-management/vehicle-contact-editor-dialog.tsx`，将 `onSaved` 契约从完整持久化实体改为提交 `VehicleContactBindingForm`，dialog 本身不再构造 `VehicleContactBinding`。
+  - 调整 `src/features/shipping-management/contacts-page.tsx`，新增页面级 `toVehicleContactSaveInput(...)` 与 `toVehicleContactToggleInput(...)`，承接当前页面上下文的保存输入装配。
+  - 调整 `src/features/shipping-management/services/vehicle-contact-service.ts`，让 service 接收 `VehicleContactBindingSaveInput`，并在更低层承接 `id` 生成与持久化请求载荷整形。
+
+- **收口结果**
+  - dialog 组件回到“收集表单输入并提交”的 UI 边界，不再自行决定实体身份与持久化字段。
+  - 实体装配与持久化意图已下沉到页面管理层 / 写入层，`service` 纯请求边界仍保持不变。
+  - 当前表单交互、校验与联系人保存语义保持不变。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/shipping-management/vehicle-contact-editor-dialog.tsx src/features/shipping-management/contacts-page.tsx src/features/shipping-management/hooks/use-vehicle-contact-actions.ts src/features/shipping-management/services/vehicle-contact-service.ts src/features/shipping-management/contacts-page.types.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 收口 `vehicle-contact-channel-row.tsx` 中领域交互规则与视图组件的耦合（771）
+
+- **变更概述**
+  - 调整 `src/features/shipping-management/vehicle-contact-channel-row.tsx`，让 row 组件改为接收上层显式传入的派生 UI 状态，如 `typeOptions`、`isTypeLocked`、`primaryControlMode`、`showRemoveAction`、`valuePlaceholder` 等。
+  - 调整 `src/features/shipping-management/vehicle-contact-editor-dialog.tsx`，新增 `getChannelRowUiState(...)`，在表单层统一决定电话行锁定、主项展示模式、删除可用性与展示文案。
+
+- **收口结果**
+  - row 组件更接近纯展示 / 事件转发组件，不再直接裁决主要的领域交互规则。
+  - `phone` 通道锁定、primary 展示模式与删除可用性等规则已更明确地回到表单层裁决。
+  - 当前渠道编辑交互、primary 规则与 `phone` 通道约束语义保持不变。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/shipping-management/vehicle-contact-channel-row.tsx src/features/shipping-management/vehicle-contact-editor-dialog.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 修复 `contacts-list-panel.tsx` 中空状态依赖 props 契约遗漏（772）
+
+- **变更概述**
+  - 调整 `src/features/shipping-management/contacts-list-panel.tsx`，补齐 `vehicleSpecsLoading`、`vehicleSpecsError`、`vehicleSpecsStatus`、`vehicleOptionsCount` 四个缺失 props。
+  - 新增 `VehicleSpecsLoadState` 类型导入，并将 `vehicleSpecsStatus` 直接对齐到 `useVehicleSpecsQuery()` 已导出的状态类型。
+
+- **修复结果**
+  - `contacts-list-panel.tsx` 中空状态区域不再引用未声明变量。
+  - `ContactsPage` 现有传参已与子组件契约重新对齐，无需额外调整调用逻辑。
+  - 当前空状态提示、按钮禁用与状态展示行为保持不变。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/shipping-management/contacts-list-panel.tsx src/features/shipping-management/contacts-page.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 审计域清理阶段 A1：将完整交易/仓储旧写入底层切到新事件链（773-A1）
+
+- **变更概述**
+  - 新增 `server/services/audit_legacy_bridge.go`，把旧 `Diff` JSON / `deltaKeys` 风格统一桥接为新 `AuditEvent.ChangeSet`。
+  - 新增 `server/services/audit_legacy_adapter.go`，让现有 `AuditEntry` / `auditLogger` / `defaultAuditLogger` 直接转发到新 `server/audit/*` 写入链。
+  - 调整 `server/audit/writer.go`，让新事件链落库时继续编码为当前时间线可读的 `DiffItem[]` JSON 结构，避免阶段 A1 立即打断读侧。
+
+- **收口结果**
+  - 交易 / 仓储域现有旧写入调用在不大面积改动业务文件的前提下，底层已统一转发到新事件写入链。
+  - 旧 `AuditEntry/defaultAuditLogger` 仍暂存为兼容适配接口，但其底层已不再直接承担独立写入实现。
+  - 阶段 B 之前，读侧仍可继续消费当前 `DiffItem[]` 结构；后续再移除 `audit_service.go` 的旧读取兼容层。
+
+- **验证结果**
+  - `go test ./services ./audit`：通过。
+
+## 2026-04-16 审计域清理阶段 B：删除旧读侧兼容层并让时间线接口直接返回真实落库结构（773-B）
+
+- **变更概述**
+  - 调整 `server/handlers/audit_handlers.go`，移除对 `services.NormalizeAuditLogs(...)` 的调用。
+  - 清理 `server/services/audit_service.go` 中仅用于旧审计 payload 兼容的读侧标准化逻辑。
+  - 调整 `server/handlers/audit_handlers_test.go`，改为验证时间线接口返回真实存储的 `Diff` 结构。
+  - 补齐 `server/handlers/suppliers.go` 中现有缺失的 `audit` / `trading_audit` 导入，以完成 handler 包测试验证。
+
+- **收口结果**
+  - 时间线读取接口不再承担旧 object-diff 到 `DiffItem[]` 的兼容转换职责。
+  - 当前审计域后端已不再保留读侧兼容标准化层，读写两端进一步向新统一事件链收口。
+
+- **验证结果**
+  - `go test ./handlers -run DataTimeline`：通过。
+  - `go test ./services ./audit`：通过。
+  - `go test ./handlers ./audit ./services`：`handlers/suppliers.go` 因现有缺失导入问题失败，判定与本轮 A1 改造无关。
+
+## 2026-04-16 审计域清理阶段 C / D：拆分 audit-engine 前端边界并收口混装类型/常量（773-C/D）
+
+- **变更概述**
+  - 新增 `src/features/audit-engine/` 目录，将 `audit-engine` 页面组件、stats hook、types、module 常量拆成独立 feature。
+  - 调整 `/system-management/audit-engine` 路由，改为直接引用新 `audit-engine` feature。
+  - 调整 `src/features/audit-timeline/types.ts` 与 `data/audit-modules.ts`，仅保留通用时间线概念。
+  - 将原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 收口为兼容转发层，避免潜在引用断裂。
+
+- **收口结果**
+  - `audit-engine` 页面不再和 `audit-timeline` 通用时间线能力混放在同一 feature 目录中。
+  - 前端引擎总览与时间线详情的类型/常量边界已拆开，目录职责更清晰。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/audit-engine/components/audit-engine-tab.tsx src/features/audit-engine/hooks/use-audit-engine-stats.ts src/features/audit-engine/types.ts src/features/audit-engine/data/audit-engine-modules.ts src/features/audit-timeline/components/audit-engine-tab.tsx src/features/audit-timeline/hooks/use-audit-engine-stats.ts src/features/audit-timeline/types.ts src/features/audit-timeline/data/audit-modules.ts src/routes/_authenticated/system-management/audit-engine.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 审计域清理阶段 A2：将组织域整组旧写入链与产线写入链切到新事件链（773-A2）
+
+- **变更概述**
+  - 调整 `server/services/organization_service.go`、`server/services/production_service.go`，移除对 `auditLogger` 的直接构造依赖。
+  - 调整 `server/services/employee_assignment_commands.go`、`server/services/employee_import_service.go`、`server/services/org_personnel_patch_service.go`，把组织域残留旧写入链统一切到新事件写入链。
+  - 调整 `server/services/organization_service_test.go`、`server/services/production_service_test.go`，使测试对齐新构造签名，并在需要处直接验证 `audit_logs` 落库结果。
+
+- **收口结果**
+  - `OrganizationService` 不再作为旧 `auditLogger` 依赖的中心节点向外扩散。
+  - 组织域整组旧写入链与产线删除写入链已统一并入新审计事件链。
+  - 当前后端残留的旧写入接口已进一步收缩，后续可继续推进阶段 B 的读侧兼容层删除。
+
+- **验证结果**
+  - `go test ./services ./audit`：通过。
+
 ## 2026-04-16 继续收口 `use-vehicle-contact-actions.ts` 中领域写操作与缓存失效策略的绑定（768）
 
 - **变更概述**

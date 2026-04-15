@@ -51,7 +51,7 @@ func TestGetDataTimelineHandlerReturnsCanonicalAndAliasLogsForCanonicalQuery(t *
 	require.Equal(t, "sales-order", response[1].Module)
 }
 
-func TestGetDataTimelineHandlerNormalizesLegacyObjectDiff(t *testing.T) {
+func TestGetDataTimelineHandlerReturnsStoredLegacyObjectDiffAsIs(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
 
@@ -76,5 +76,5 @@ func TestGetDataTimelineHandlerNormalizesLegacyObjectDiff(t *testing.T) {
 	var response []models.AuditLog
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.Len(t, response, 1)
-	require.JSONEq(t, `[{"f":"code","o":null,"n":"CUST-001","a":"code"},{"f":"status","o":null,"n":"Inactive","a":"status"}]`, string(response[0].Diff))
+	require.JSONEq(t, `{"intent":"CUSTOMER_SAVE","payload":{"status":"Inactive","code":"CUST-001"}}`, string(response[0].Diff))
 }

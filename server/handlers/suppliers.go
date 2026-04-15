@@ -5,10 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
+	"xdfc-server/services/trading_audit"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -154,7 +156,7 @@ func PatchSupplierHandler(c *gin.Context) {
 // DeleteSupplierHandler 逻辑删除供应商
 func DeleteSupplierHandler(c *gin.Context) {
 	id := c.Param("id")
-	if err := db.DB.Model(&models.Supplier{}).Where("id = ?", id).Update("is_deleted", true).Error; err != nil {
+	if err := services.DeleteSupplier(id, middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除供应商失败: " + err.Error()})
 		return
 	}
@@ -184,6 +186,9 @@ func BulkSyncSuppliersHandler(c *gin.Context) {
 				Columns:   []clause.Column{{Name: "code"}},
 				UpdateAll: true,
 			}).Create(&s).Error; err != nil {
+				return err
+			}
+			if err := services.RecordAuditEventTx(tx, trading_audit.BuildSupplierCreateEvent(s, audit.AuditActor{UserID: middleware.GetSafeUserID(c), Username: middleware.GetSafeUsername(c), IP: c.ClientIP(), Source: "bulk-sync"})); err != nil {
 				return err
 			}
 		}

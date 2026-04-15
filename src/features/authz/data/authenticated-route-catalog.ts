@@ -2,7 +2,6 @@
 // Do not edit manually.
 
 export const AUTHENTICATED_ROUTE_PATHS = [
-  "/personal-workbench/capture-route-component",
   "/logistics-config/vehicle-specs-library",
   "/system-management/workflow-definition",
   "/finance-management/payment-methods",

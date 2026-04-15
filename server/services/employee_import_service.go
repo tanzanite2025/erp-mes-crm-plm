@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 
 	"github.com/google/uuid"
@@ -306,14 +307,13 @@ func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportReq
 					return err
 				}
 			}
-			if s.auditLogger != nil {
-				if err := s.auditLogger.Write(tx, AuditEntry{
-					Module:   "Employee",
-					TargetID: employeeToSave.ID,
-					Action:   action,
-				}); err != nil {
-					return err
-				}
+			if err := recordAuditEventTx(tx, audit.NewAuditEvent(
+				audit.AuditEntityEmployee,
+				employeeToSave.ID,
+				audit.AuditAction(action),
+				audit.AuditActor{},
+			).Normalize()); err != nil {
+				return err
 			}
 		}
 		return nil

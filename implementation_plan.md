@@ -4726,3 +4726,209 @@
 3. 当前 schema 已改为：`raw schema -> 扩展后的 parsed schema -> final DTO schema` 的单一路径组合，service 继续只消费统一 DTO schema。
 4. 联系人 DTO 语义与 `channelsJson -> channels` 适配结果保持不变。
 5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.34 P6 阶段：收口 `vehicle-contact-editor-dialog.tsx` 中实体装配与持久化载荷拼装职责
+
+**背景与目标**
+当前 `src/features/shipping-management/vehicle-contact-editor-dialog.tsx` 不只是收集表单输入，它还在 `save()` 中直接构造完整的 `VehicleContactBinding` 持久化实体，并自行决定：
+1. 新建场景的 `id`（通过 `Date.now()` 生成）
+2. `createdAt`
+3. `updatedAt`
+4. 最终写入载荷的完整字段形态
+
+这意味着 UI 组件已经越过了“纯输入收集 / 校验”的角色，开始承担实体装配、身份分配与持久化意图表达。这类职责更适合下沉到页面级写入编排层、service 层或明确的 mutation / workflow 边界。
+
+**最小实施方案**
+1. 调整 `VehicleContactEditorDialog` 的 `onSaved` 契约，使其提交 UI 输入模型（例如当前 `VehicleContactBindingForm` 或等价表单 DTO），而不是完整 `VehicleContactBinding`。
+2. 将 `VehicleContactBinding` 的实体拼装责任下沉到更低层：
+   - 由页面管理层结合 `editingBinding` / `selectedVehicle` / 当前时间等上下文完成实体装配
+   - 或进一步由写入层 / service 输入契约承接
+3. 将 `id` 生成与 `createdAt` / `updatedAt` 补齐从 dialog 组件移出。
+4. 保持现有表单交互、校验逻辑和最终保存业务语义不变。
+
+**风险与边界**
+1. 本轮目标是收口 UI 越层职责，不扩大到联系人业务流程重构。
+2. 下沉实体拼装后，要避免把同样的装配逻辑散落到多个页面调用点；若样板明显增多，应再评估是否上浮成页面级管理 hook。
+3. 需要继续保持“主电话从渠道中自动提取”的现有语义，不因职责搬移引入 payload 回归。
+
+**验证策略**
+1. `vehicle-contact-editor-dialog.tsx` 不再直接构造完整 `VehicleContactBinding`。
+2. dialog 组件不再自行生成 `id`、`createdAt`、`updatedAt`。
+3. 保存链路仍可正常完成，且联系人保存语义不回退。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮实体装配职责下沉与验证结果。
+
+**执行结果（2026-04-16）**
+1. `VehicleContactEditorDialog` 的 `onSaved` 契约已从提交完整 `VehicleContactBinding` 调整为提交 `VehicleContactBindingForm`。
+2. dialog 组件中的完整实体装配已移除，不再自行生成 `id`、`createdAt`、`updatedAt`。
+3. `contacts-page.tsx` 已新增页面侧的 `toVehicleContactSaveInput(...)` / `toVehicleContactToggleInput(...)`，承接当前页面上下文下的保存输入装配。
+4. `vehicle-contact-service.ts` 已改为接收 `VehicleContactBindingSaveInput`，并在更低层承接 `id` 生成与持久化请求载荷整形。
+5. 当前表单交互、校验逻辑与联系人保存语义保持不变；已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.35 P6 阶段：收口 `vehicle-contact-channel-row.tsx` 中领域交互规则与视图组件的耦合
+
+**背景与目标**
+当前 `src/features/shipping-management/vehicle-contact-channel-row.tsx` 不只是一个单纯的行级展示组件，它内部直接承载了多条领域交互规则：
+1. `phone` 通道或 `lockedPhone` 场景下直接分叉为另一套 UI
+2. `phone` 行固定禁用类型切换
+3. `primary` 交互在电话行使用 `RadioGroup`，在普通行使用 `Checkbox`
+4. 删除按钮是否显示也由 row 组件内部裁决
+
+同时，上层 `vehicle-contact-editor-dialog.tsx` 也保留了 `setPrimaryChannel`、`removeChannel`、`setChannelType` 等规则处理逻辑，说明当前“领域规则 + UI 分支”已经分散在 row 与表单层之间，边界不够清晰。
+
+**最小实施方案**
+1. 保留 row 组件的展示职责，但将更强的规则判断上移到 editor dialog 或更明确的表单 helper。
+2. 调整 `VehicleContactChannelRow` 的 props，让上层显式传入派生后的 UI 状态，例如：
+   - 是否锁定类型
+   - 是否允许删除
+   - 当前主项展示模式
+   - 当前使用单选还是勾选展示
+3. row 组件内部尽量只根据传入状态渲染和转发事件，不继续自行推导越来越多的领域约束。
+4. 保持现有 `phone` 通道约束、primary 规则与交互体验不变。
+
+**风险与边界**
+1. 本轮目标是收口规则裁决位置，不是重写渠道编辑交互。
+2. 需要避免把 row 组件完全参数化到难以维护；上移规则时仍要保持 props 语义清晰。
+3. 不能破坏当前“至少一个电话渠道 / 主电话自动提取 / 电话项主项唯一”的现有语义。
+
+**验证策略**
+1. `vehicle-contact-channel-row.tsx` 不再直接内嵌主要的领域规则判断分叉。
+2. `vehicle-contact-editor-dialog.tsx` 或其 helper 层更明确地承担渠道规则裁决。
+3. 现有渠道编辑、primary 选择、删除与类型切换交互不回退。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮规则上移与验证结果。
+
+**执行结果（2026-04-16）**
+1. `vehicle-contact-channel-row.tsx` 已调整为更偏展示组件的形态，改为接收 `typeOptions`、`isTypeLocked`、`primaryControlMode`、`showRemoveAction` 等派生 UI 状态。
+2. row 组件内部已移除基于 `channel.type === 'phone'` 的主要分叉裁决，改为按上层显式传入的 UI 状态渲染。
+3. `vehicle-contact-editor-dialog.tsx` 已新增 `getChannelRowUiState(...)`，在表单层统一决定电话行锁定、主项展示模式、删除可用性与占位文案等规则。
+4. 当前 `phone` 通道约束、primary 规则与渠道编辑交互保持不变。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.36 P6 阶段：修复 `contacts-list-panel.tsx` 中空状态依赖 props 契约遗漏
+
+**背景与目标**
+当前 `src/features/shipping-management/contacts-list-panel.tsx` 的空状态区已经使用 `vehicleSpecsLoading`、`vehicleSpecsError`、`vehicleSpecsStatus`、`vehicleOptionsCount` 四个值控制错误提示、按钮禁用与状态摘要；但该组件的 `Props` 与函数参数解构没有同步补齐，导致文件内出现一组 `ts(2304)` 未定义变量错误。
+
+父组件 `src/features/shipping-management/contacts-page.tsx` 已经明确传入上述四个 props，因此本次问题不是调用侧漏传，而是子组件接口定义遗漏。
+
+**最小实施方案**
+1. 仅修改 `contacts-list-panel.tsx`，补齐四个缺失 props 的类型声明与参数解构。
+2. 直接复用 `useVehicleSpecsQuery.ts` 中导出的 `VehicleSpecsLoadState` 作为 `vehicleSpecsStatus` 类型来源，避免重复书写联合字面量类型。
+3. 保持当前空状态 UI、按钮禁用条件、状态文案与列表展示逻辑不变。
+
+**风险与边界**
+1. 本轮不调整 `ContactsListPanel` 的职责拆分，只修复接口遗漏导致的编译错误。
+2. 需要避免引入循环依赖，因此类型来源应优先从 `use-vehicle-specs-query.ts` 单向导入。
+3. 若后续继续觉得列表组件 props 过宽，可另开任务拆出空状态子组件；不在本轮范围内。
+
+**验证策略**
+1. `contacts-list-panel.tsx` 不再出现 `vehicleSpecsStatus` 等未定义变量错误。
+2. `ContactsPage` 现有传参无需改动即可与子组件契约对齐。
+3. 执行定向 `eslint src/features/shipping-management/contacts-list-panel.tsx src/features/shipping-management/contacts-page.tsx`。
+4. 执行 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录修复内容与验证结果。
+
+**执行结果（2026-04-16）**
+1. `contacts-list-panel.tsx` 已补齐 `vehicleSpecsLoading`、`vehicleSpecsError`、`vehicleSpecsStatus`、`vehicleOptionsCount` 四个 props 契约。
+2. `vehicleSpecsStatus` 已复用 `use-vehicle-specs-query.ts` 导出的 `VehicleSpecsLoadState` 类型，避免重复定义状态联合类型。
+3. 组件函数签名已同步解构上述字段，空状态区的错误提示、按钮禁用与状态摘要逻辑保持不变。
+4. 已完成定向 `eslint src/features/shipping-management/contacts-list-panel.tsx src/features/shipping-management/contacts-page.tsx` 校验。
+5. 已完成 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.37 P6 阶段：清理审计域中的旧兼容层，并收口前端 `audit-engine` / `audit-timeline` 边界
+
+**背景与目标**
+当前审计域已出现明显的阶段性错位：
+1. 后端 `server/audit/events.go`、`bridge.go`、`writer.go` 已形成新的统一审计事件链。
+2. `server/services/trading_audit/*` 与 `audit_event_recorder.go` 已围绕新事件链工作，承担业务域 adapter 与事务内写入入口职责。
+3. 但 `server/services/audit_service.go` 仍保留旧 `diff` 载荷兼容读取逻辑，前端目录也仍围绕 `audit-timeline` 混放系统管理页专属的 `audit-engine` 页面实现。
+
+结合当前项目阶段，用户已明确：软件仍在开发中，旧审计无保留价值。因此本轮不再采用“新旧并存”的过渡策略，而是直接以“去旧留新”为目标清理审计域。
+
+**目标结构**
+1. 后端只保留新统一审计事件链：
+   - `server/audit/*` 作为核心模型、bridge 与 writer
+   - `server/services/*_audit` 作为业务域 adapter
+   - 删除旧审计兼容读取层与不再需要的历史包袱
+2. 前端按能力拆分：
+   - `audit-engine`：系统管理页专属总览能力
+   - `audit-timeline`：跨业务复用的审计时间线能力
+3. 类型、常量、hook、service、schema 与 query key 按能力边界拆开，避免引擎总览与时间线详情继续混装。
+
+**最小实施方案**
+1. 后端梳理 `server/services/audit_service.go` 的调用链，删除仅服务于旧 payload 兼容的标准化逻辑，并让读取接口直接对齐新统一审计输出。
+2. 保留并明确 `server/audit/*` 与 `server/services/trading_audit/*` 的职责，不将其误判为旧代码。
+3. 前端将 `/system-management/audit-engine` 页面实现从 `src/features/audit-timeline/` 中拆出到单独的 `audit-engine` 边界。
+4. 保留 `DataTimeline` / `useAuditTimeline` 为通用审计时间线能力，并拆分其与页面专属能力共享但语义不同的类型和常量。
+5. 为审计读取与引擎统计补齐更清晰的 `service` / `schema` / `query key` 分层，减少 hook 直接发请求与承担兼容职责的情况。
+
+**风险与边界**
+1. 本轮会涉及前后端联动，需谨慎确认读取 API 当前真实返回格式，避免误删后导致时间线展示断裂。
+2. 删除旧兼容层前，应先确认不存在仍依赖旧 `diff` 结构的接口与调用方。
+3. 目录迁移可能引起 import path 变更，需要控制在单次可验证范围内，避免大面积并发重命名。
+4. 若后端读取接口目前仍直接返回旧结构，则需要先做服务端读取面改造，再同步前端消费层。
+
+**新增发现（2026-04-16 执行前复核）**
+1. 旧审计并不只存在于 `server/services/audit_service.go` 的读取兼容层。
+2. 代码库中仍存在一条旧写入链：`defaultServiceRuntime().auditLogger.Write(...)` + `AuditEntry` + `defaultAuditLogger`。
+3. 这条旧写入链目前仍被 `sales_transaction_service.go`、`purchase_transaction_service.go`、`warehouse_master_service.go`、`purchase_return_service.go`、`purchase_receipt_confirm_service.go`、`organization_service.go`、`production_service.go` 等使用，并且相关测试也围绕该接口编写。
+4. 在 A1 执行前继续复核时，又确认 `partner_transaction_service.go` 与 `inventory_command_service.go` 也仍在使用同一套旧写入链，说明“交易 / 仓储”边界比最初估计更大。
+5. 因此，如果仅删除读取兼容层，而不迁移旧写入链，则“去旧留新”目标并未真正完成。
+
+**修订后的实施顺序**
+1. 阶段 A1：先迁移交易/仓储相关旧写入链；执行前需在“窄范围 5 文件”与“完整交易/仓储范围（追加 `partner_transaction_service.go`、`inventory_command_service.go`）”之间重新确认边界，然后再将对应文件中的 `AuditEntry/defaultAuditLogger` 调用改为 `server/audit/*` + `RecordAuditEventTx(...)` 新事件写入链。
+2. 阶段 A2：再迁移组织/产线相关旧写入链，将 `organization_service.go`、`production_service.go` 及相关测试/构造器依赖改为新事件写入链。
+3. 阶段 B：删除 `server/services/audit_service.go` 中旧 `diff` payload 兼容读取逻辑，并让时间线读取接口直接对齐新 DTO。
+4. 阶段 C：执行前端目录收口，把 `audit-engine` 页面实现从 `audit-timeline` 中拆出，同时保留 `DataTimeline` 作为通用能力。
+5. 阶段 D：最后拆分前端类型/常量与 `service` / `schema` / `query key` 边界。
+
+**执行策略调整**
+1. 由于旧写入链的影响面显著大于最初评估，本轮在未重新获得用户确认前不直接进入代码修改。
+2. 重新确认后，应优先拆分成可验证的小阶段；先做 A1，再做 A2，避免在交易、仓储、组织、产线服务与前端同时大面积改动导致回归面失控。
+
+**验证策略**
+1. 后端不存在仅为旧审计 payload 兼容而保留的读取标准化逻辑。
+2. 新统一审计写入链与业务域 adapter 仍可正常工作。
+3. 前端 `audit-engine` 页面与通用 `audit-timeline` 能力目录边界清晰，导入关系更直观。
+4. 审计引擎页面、时间线抽屉与相关调用点在 `eslint` / `tsc` / 后端测试下通过。
+5. 更新 `walkthrough.md` 记录本轮审计域清理的改造步骤与验证结果。
+
+**执行结果（2026-04-16，阶段 A1）**
+1. 已按“完整交易/仓储范围”确认并执行 A1，范围覆盖原定 5 个文件，并纳入执行前复核新增发现的 `partner_transaction_service.go` 与 `inventory_command_service.go` 所属旧写入路径。
+2. 本轮未直接逐文件重写所有调用点，而是新增 `server/services/audit_legacy_bridge.go` 与 `server/services/audit_legacy_adapter.go`，将现有 `AuditEntry / auditLogger / defaultAuditLogger` 底层统一桥接到 `server/audit/*` + `recordAuditEventTx(...)` 新事件写入链。
+3. `server/audit/writer.go` 已调整为在新事件链落库时继续编码为当前时间线可读的 `DiffItem[]` JSON 结构，从而保证读侧和既有测试在阶段 A1 内不被立即打断。
+4. 已完成 `go test ./services ./audit` 验证。
+5. 额外执行 `go test ./handlers ./audit ./services` 时发现 `handlers/suppliers.go` 缺失 `trading_audit` / `audit` 导入导致 `handlers` 构建失败；该问题与本轮 A1 改造无关，因此 A1 验证以 `services` / `audit` 定向通过为准。
+
+**新增发现（2026-04-16，阶段 A2 执行中）**
+1. 当前 A2 并不能仅按 `organization_service.go` + `production_service.go` 两个文件推进。
+2. 在移除 `OrganizationService.auditLogger` 字段并执行 `go test ./services ./audit` 后，发现 `employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go` 也仍直接依赖该字段。
+3. 这说明组织域的旧写入链是以 `OrganizationService` 为中心向外扩散的，真实 A2 范围应定义为“组织域整组旧写入链迁移 + 产线迁移”，而不是原先估计的两个服务文件。
+4. 因为影响面已超出原计划，本轮需先更新方案并重新获得确认，再继续代码修改。
+
+**修订后的 A2 边界**
+1. 组织域：`organization_service.go`、`employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go` 及其相关测试/构造器依赖。
+2. 产线域：`production_service.go` 及其相关测试/构造器依赖。
+3. 验证目标：在上述范围全部收口前，`go test ./services ./audit` 不能视为 A2 完成。
+
+**执行结果（2026-04-16，阶段 A2）**
+1. 已按扩大后的 A2 边界完成组织域整组旧写入链 + 产线迁移。
+2. `organization_service.go`、`production_service.go` 已移除对 `auditLogger` 的直接依赖。
+3. `employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go` 中残留的组织域旧写入链也已改为直接走 `server/audit/*` + `recordAuditEventTx(...)` / `recordLegacyAuditEntryTx(...)`。
+4. `organization_service_test.go`、`production_service_test.go` 已调整为对齐新构造签名，并在需要处直接验证 `audit_logs` 落库结果。
+5. 已再次执行 `go test ./services ./audit` 并通过，说明扩大后的 A2 范围已经编译闭环。
+
+**执行结果（2026-04-16，阶段 B）**
+1. `handlers/audit_handlers.go` 已移除对 `services.NormalizeAuditLogs(...)` 的调用，时间线读取接口现在直接返回当前真实落库结构。
+2. `server/services/audit_service.go` 中仅为旧审计 payload 保留的读侧标准化逻辑已移除。
+3. `handlers/audit_handlers_test.go` 已同步调整为验证“按真实存储 diff 返回”，不再要求旧 object payload 在读取时被标准化为 `DiffItem[]`。
+4. 为完成 handler 验证，额外补齐了 `handlers/suppliers.go` 中现有缺失的 `audit` / `trading_audit` 导入。
+5. 已完成 `go test ./handlers -run DataTimeline` 与 `go test ./services ./audit`，说明阶段 B 已闭环。
+
+**执行结果（2026-04-16，阶段 C / D）**
+1. 已新增独立 `src/features/audit-engine/` 目录，承接 `audit-engine` 页面组件、stats hook、engine types、module IDs 等专属内容。
+2. `/system-management/audit-engine` 路由已切换到新 `audit-engine` feature，不再直接依赖 `src/features/audit-timeline/` 下的实现。
+3. `src/features/audit-timeline/types.ts` 与 `src/features/audit-timeline/data/audit-modules.ts` 已剔除引擎专属概念，只保留通用时间线类型与模块常量。
+4. 为避免潜在隐藏引用断裂，原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 已收口为轻量转发层。
+5. 已完成相关前端验证：目标文件 `eslint` 通过，`pnpm exec tsc --noEmit --pretty false` 通过，说明前端边界拆分已闭环。

@@ -28,7 +28,7 @@ export function useVehiclePhotoUpload() {
       await queryClient.invalidateQueries({ queryKey: vehicleLoadingQueryKeys.specs() })
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : t('errors.unknown')
+      const message = error instanceof Error ? error.message : 'Unknown error'
       toast.error(t('logisticsConfig.vehiclePhotos.toasts.uploadFailed', { message }))
     },
   })

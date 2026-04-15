@@ -2,6 +2,7 @@ import { Plus, MapPinned } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { type VehicleSpecsLoadState } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
 import { type VehicleCategory, type VehicleContactBinding } from './contacts-page.types'
 
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
@@ -20,32 +21,27 @@ type Props = {
   onGoToVehicleCatalog: () => void
   vehicleSpecsLoading: boolean
   vehicleSpecsError: Error | null
-  vehicleSpecsStatus: 'loading' | 'ok' | 'forbidden' | 'failed' | 'empty'
+  vehicleSpecsStatus: VehicleSpecsLoadState
   vehicleOptionsCount: number
+  emptyStateTitle: string
+  emptyStateDescription: string
 }
 
-export function ContactsListPanel({ bindings, onEdit, onToggleEnabled, onRequestDelete, onCreate, onGoToVehicleCatalog, vehicleSpecsLoading, vehicleSpecsError, vehicleSpecsStatus, vehicleOptionsCount }: Props) {
+export function ContactsListPanel({
+  bindings,
+  onEdit,
+  onToggleEnabled,
+  onRequestDelete,
+  onCreate,
+  onGoToVehicleCatalog,
+  vehicleSpecsLoading,
+  vehicleSpecsError,
+  vehicleSpecsStatus,
+  vehicleOptionsCount,
+  emptyStateTitle,
+  emptyStateDescription,
+}: Props) {
   if (bindings.length === 0) {
-    const emptyStateTitle = vehicleSpecsStatus === 'loading'
-      ? '正在加载车型库'
-      : vehicleSpecsStatus === 'forbidden'
-        ? '权限不足，无法读取车型库'
-        : vehicleSpecsStatus === 'failed'
-          ? '车型接口加载失败'
-          : vehicleOptionsCount === 0
-            ? '车型库暂无可绑定车型'
-            : '还没有联系人绑定'
-
-    const emptyStateDescription = vehicleSpecsStatus === 'loading'
-      ? '正在从车型库接口获取可绑定车型，请稍候。'
-      : vehicleSpecsStatus === 'forbidden'
-        ? '当前账号没有读取车型库的权限，因此联系人页无法拿到可绑定车型。请联系管理员开放车型库查看权限。'
-        : vehicleSpecsStatus === 'failed'
-          ? `车型库接口异常，无法生成绑定下拉选项：${vehicleSpecsError?.message ?? '未知错误'}`
-          : vehicleOptionsCount === 0
-            ? '车型接口已返回，但当前没有可用于联系人绑定的车型。请先到车型库确认是否启用并可见。'
-            : '联系人绑定依附于车型库主数据，负责补充联系人、电话、渠道和调度备注。'
-
     return (
       <Card className='rounded-2xl border border-dashed border-border/60 bg-background/90 p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]'>
         {vehicleSpecsStatus === 'failed' && vehicleSpecsError ? (

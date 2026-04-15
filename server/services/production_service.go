@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
 
@@ -47,20 +48,17 @@ type JobCategoryProcessMappingRequest struct {
 
 type ProductionService struct {
 	txManager        transactionManager
-	auditLogger      auditLogger
 	repository       repositories.ProductionRepository
 	systemConfigRepo repositories.SystemConfigRepository
 }
 
 func NewProductionService(
 	txManager transactionManager,
-	auditLogger auditLogger,
 	repository repositories.ProductionRepository,
 	systemConfigRepo repositories.SystemConfigRepository,
 ) *ProductionService {
 	return &ProductionService{
 		txManager:        txManager,
-		auditLogger:      auditLogger,
 		repository:       repository,
 		systemConfigRepo: systemConfigRepo,
 	}
@@ -70,7 +68,6 @@ var defaultProductionRuntime = defaultServiceRuntime()
 
 var defaultProductionService = NewProductionService(
 	defaultProductionRuntime.txManager,
-	defaultProductionRuntime.auditLogger,
 	repositories.NewProductionRepository(),
 	repositories.NewSystemConfigRepository(),
 )
@@ -235,16 +232,12 @@ func (s *ProductionService) DeleteProductionLine(id string, operator string, ip 
 		if err := s.repository.DeleteProductionLine(tx, id); err != nil {
 			return err
 		}
-		if s.auditLogger != nil {
-			if err := s.auditLogger.Write(tx, AuditEntry{
-				Module:   "ProductionLine",
-				TargetID: id,
-				Action:   "Delete",
-				Operator: operator,
-				IP:       ip,
-			}); err != nil {
-				return err
-			}
+		if err := recordAuditEventTx(tx, audit.NewAuditEvent(audit.AuditEntityProductionLine, id, audit.AuditActionDelete, audit.AuditActor{
+			Username: strings.TrimSpace(operator),
+			IP:       strings.TrimSpace(ip),
+			Source:   "http",
+		}).Normalize()); err != nil {
+			return err
 		}
 		return nil
 	})

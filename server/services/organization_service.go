@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/dependencies"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
@@ -25,20 +26,17 @@ var (
 
 type OrganizationService struct {
 	txManager                transactionManager
-	auditLogger              auditLogger
 	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer
 	repository               repositories.OrganizationRepository
 }
 
 func NewOrganizationService(
 	txManager transactionManager,
-	auditLogger auditLogger,
 	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer,
 	repository repositories.OrganizationRepository,
 ) *OrganizationService {
 	return &OrganizationService{
 		txManager:                txManager,
-		auditLogger:              auditLogger,
 		roleSnapshotSynchronizer: roleSnapshotSynchronizer,
 		repository:               repository,
 	}
@@ -48,7 +46,6 @@ var defaultOrganizationRuntime = defaultServiceRuntime()
 
 var defaultOrganizationService = NewOrganizationService(
 	defaultOrganizationRuntime.txManager,
-	defaultOrganizationRuntime.auditLogger,
 	dependencies.NewRoleSnapshotSynchronizer(),
 	repositories.NewOrganizationRepository(),
 )
@@ -319,15 +316,9 @@ func (s *OrganizationService) DeleteEmployees(ids []string) error {
 		if err := s.repository.DisableUsersByEmployeeIDs(tx, normalizedIDs); err != nil {
 			return err
 		}
-		if s.auditLogger != nil {
-			for _, employeeID := range normalizedIDs {
-				if err := s.auditLogger.Write(tx, AuditEntry{
-					Module:   "Employee",
-					TargetID: employeeID,
-					Action:   "Delete",
-				}); err != nil {
-					return err
-				}
+		for _, employeeID := range normalizedIDs {
+			if err := recordAuditEventTx(tx, audit.NewAuditEvent(audit.AuditEntityEmployee, employeeID, audit.AuditActionDelete, audit.AuditActor{}).Normalize()); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -378,18 +369,12 @@ func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest)
 					return err
 				}
 			}
-			if s.auditLogger != nil {
-				action := "Create"
-				if found {
-					action = "Update"
-				}
-				if err := s.auditLogger.Write(tx, AuditEntry{
-					Module:   "Employee",
-					TargetID: employee.ID,
-					Action:   action,
-				}); err != nil {
-					return err
-				}
+			action := audit.AuditActionCreate
+			if found {
+				action = audit.AuditActionUpdate
+			}
+			if err := recordAuditEventTx(tx, audit.NewAuditEvent(audit.AuditEntityEmployee, employee.ID, action, audit.AuditActor{}).Normalize()); err != nil {
+				return err
 			}
 		}
 		return nil

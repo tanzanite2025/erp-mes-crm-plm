@@ -111,19 +111,6 @@ func (r fakeSystemConfigRepository) GetSystemConfigValue(database *gorm.DB, key 
 	return r.value, nil
 }
 
-type fakeAuditLogger struct {
-	entries []AuditEntry
-}
-
-func (l *fakeAuditLogger) Write(tx *gorm.DB, entry AuditEntry) error {
-	cloned := entry
-	if len(entry.Diff) > 0 {
-		cloned.Diff = append(json.RawMessage(nil), entry.Diff...)
-	}
-	l.entries = append(l.entries, cloned)
-	return nil
-}
-
 func TestProductionServiceSaveProductionLineRejectsUnauthorizedAuthCode(t *testing.T) {
 	repo := &fakeProductionRepository{
 		existingLine:      models.ProductionLine{BaseModel: models.BaseModel{ID: "line-1"}, Version: 3},
@@ -131,7 +118,6 @@ func TestProductionServiceSaveProductionLineRejectsUnauthorizedAuthCode(t *testi
 	}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{value: "expected"},
 	)
@@ -156,7 +142,6 @@ func TestProductionServiceSaveProductionLineRejectsVersionConflict(t *testing.T)
 	}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{value: "expected"},
 	)
@@ -178,7 +163,6 @@ func TestProductionServiceSaveProductionLineSetsInitialVersionForNewLine(t *test
 	repo := &fakeProductionRepository{}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{},
 	)
@@ -218,7 +202,6 @@ func TestProductionServicePatchProductionLineAppliesSegmentsDeltaAndReusesSaveCh
 	}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{value: "expected"},
 	)
@@ -256,7 +239,6 @@ func TestProductionServiceSaveProcessStepPersistsProcess(t *testing.T) {
 	repo := &fakeProductionRepository{}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{},
 	)
@@ -279,7 +261,6 @@ func TestProductionServiceAssignProcessToJobCategory(t *testing.T) {
 	repo := &fakeProductionRepository{}
 	service := NewProductionService(
 		fakeTransactionManager{},
-		&fakeAuditLogger{},
 		repo,
 		fakeSystemConfigRepository{},
 	)
@@ -297,11 +278,10 @@ func TestProductionServiceAssignProcessToJobCategory(t *testing.T) {
 }
 
 func TestProductionServiceDeleteProductionLineWritesAudit(t *testing.T) {
+	testDB := setupAuditServiceSQLiteDB(t)
 	repo := &fakeProductionRepository{}
-	auditLogger := &fakeAuditLogger{}
 	service := NewProductionService(
-		fakeTransactionManager{},
-		auditLogger,
+		fakeTransactionManager{db: testDB},
 		repo,
 		fakeSystemConfigRepository{},
 	)
@@ -310,12 +290,12 @@ func TestProductionServiceDeleteProductionLineWritesAudit(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, "line-9", repo.deletedLineID)
-	require.Len(t, auditLogger.entries, 1)
-	require.Equal(t, AuditEntry{
-		Module:   "ProductionLine",
-		TargetID: "line-9",
-		Action:   "Delete",
-		Operator: "tester",
-		IP:       "127.0.0.1",
-	}, auditLogger.entries[0])
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, "production-line", logs[0].Module)
+	require.Equal(t, "line-9", logs[0].TargetID)
+	require.Equal(t, "Delete", logs[0].Action)
+	require.Equal(t, "tester", logs[0].Operator)
+	require.Equal(t, "127.0.0.1", logs[0].IP)
 }

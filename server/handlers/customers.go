@@ -9,6 +9,8 @@ import (
 	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
+	"xdfc-server/services/trading_audit"
+	"xdfc-server/audit"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -180,14 +182,13 @@ func DeleteCustomerHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Model(&models.Customer{}).Where("id = ?", id).Update("is_deleted", true).Error; err != nil {
+	if err := services.DeleteCustomer(id, middleware.GetSafeUserID(c), middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "[SERVER] 删除客户失败: " + err.Error(),
 			"code":  "CUSTOMER_DELETE_FAILED",
 		})
 		return
 	}
-
 	c.Status(http.StatusNoContent)
 }
 
@@ -216,6 +217,9 @@ func BulkSyncCustomersHandler(c *gin.Context) {
 				Columns:   []clause.Column{{Name: "code"}},
 				UpdateAll: true,
 			}).Create(&cust).Error; err != nil {
+				return err
+			}
+			if err := services.RecordAuditEventTx(tx, trading_audit.BuildCustomerCreateEvent(cust, audit.AuditActor{UserID: middleware.GetSafeUserID(c), Username: middleware.GetSafeUsername(c), IP: c.ClientIP(), Source: "bulk-sync"})); err != nil {
 				return err
 			}
 		}

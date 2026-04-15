@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services/trading_audit"
 
 	"gorm.io/gorm"
 )
@@ -36,7 +38,7 @@ func SavePurchaseOrder(command SavePurchaseOrderCommand) (PurchaseOrderResponse,
 	}
 
 	if isNew {
-		created, err := createPurchaseOrderTx(order, originalID, strings.TrimSpace(command.ActorID))
+		created, err := createPurchaseOrderTx(order, originalID, strings.TrimSpace(command.ActorID), strings.TrimSpace(command.Operator), strings.TrimSpace(command.IP))
 		if err != nil {
 			return PurchaseOrderResponse{}, err
 		}
@@ -52,7 +54,7 @@ func SavePurchaseOrder(command SavePurchaseOrderCommand) (PurchaseOrderResponse,
 		return PurchaseOrderResponse{}, err
 	}
 
-	return ExecutePurchaseOrderTransaction(ExecutePurchaseOrderTransactionInput{
+	result, err := ExecutePurchaseOrderTransaction(ExecutePurchaseOrderTransactionInput{
 		OrderID:         order.ID,
 		Intent:          PurchaseTransactionIntentOrderSave,
 		ActorID:         strings.TrimSpace(command.ActorID),
@@ -61,6 +63,13 @@ func SavePurchaseOrder(command SavePurchaseOrderCommand) (PurchaseOrderResponse,
 		Payload:         payload,
 		IP:              strings.TrimSpace(command.IP),
 	})
+	if err != nil {
+		return PurchaseOrderResponse{}, err
+	}
+	if err := recordAuditEventTx(db.DB, trading_audit.BuildPurchaseOrderStatusChangeEvent(result.ID, "", result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: strings.TrimSpace(command.Operator), IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
+		return PurchaseOrderResponse{}, err
+	}
+	return result, nil
 }
 
 func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderResponse, error) {
@@ -82,7 +91,7 @@ func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderRespons
 		return PurchaseOrderResponse{}, err
 	}
 
-	return ExecutePurchaseOrderTransaction(ExecutePurchaseOrderTransactionInput{
+	result, err := ExecutePurchaseOrderTransaction(ExecutePurchaseOrderTransactionInput{
 		OrderID:         strings.TrimSpace(command.OrderID),
 		Intent:          PurchaseTransactionIntentOrderSave,
 		ActorID:         strings.TrimSpace(command.ActorID),
@@ -91,6 +100,13 @@ func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderRespons
 		Payload:         payload,
 		IP:              strings.TrimSpace(command.IP),
 	})
+	if err != nil {
+		return PurchaseOrderResponse{}, err
+	}
+	if err := recordAuditEventTx(db.DB, trading_audit.BuildPurchaseOrderStatusChangeEvent(result.ID, patch.Status, result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: strings.TrimSpace(command.Operator), IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
+		return PurchaseOrderResponse{}, err
+	}
+	return result, nil
 }
 
 func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchPurchaseOrderRequest, error) {
@@ -234,7 +250,7 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 	return patchReq, nil
 }
 
-func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID string) (*models.PurchaseOrder, error) {
+func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, operator, ip string) (*models.PurchaseOrder, error) {
 	var created models.PurchaseOrder
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, line := range order.Lines {
@@ -251,6 +267,9 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID s
 		if err := tx.Create(&order).Error; err != nil {
 			return err
 		}
+		if err := recordAuditEventTx(tx, trading_audit.BuildPurchaseOrderCreateEvent(order, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "http"})); err != nil {
+			return err
+		}
 
 		workflowInstance, err := CreateWorkflowInstanceForDocumentTx(
 			tx,
@@ -265,6 +284,9 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID s
 
 		order.WorkflowInstanceID = workflowInstance.ID
 		if err := tx.Model(&order).Update("workflow_instance_id", workflowInstance.ID).Error; err != nil {
+			return err
+		}
+		if err := recordAuditEventTx(tx, trading_audit.BuildPurchaseOrderWorkflowEvent(order.ID, workflowInstance.ID, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "workflow"})); err != nil {
 			return err
 		}
 		created = order

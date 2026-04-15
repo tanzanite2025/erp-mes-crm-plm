@@ -35,3 +35,15 @@ export type VehicleContactBindingForm = {
   note: string
   enabled: boolean
 }
+
+export type VehicleContactBindingSaveInput = {
+  id?: string
+  vehicleId: string
+  supplierName: string
+  contactName: string
+  channels: ContactChannel[]
+  region: string
+  dispatchAdvice: string
+  note: string
+  enabled: boolean
+}

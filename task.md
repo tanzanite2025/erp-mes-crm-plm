@@ -505,6 +505,101 @@
       - [x] 已保持 `vehicle-contact-service.ts` 继续只调用统一 DTO schema，没有引回手写解析
       - [x] 已保持现有联系人 DTO 语义与 `channelsJson -> channels` 适配结果不变
       - [x] 已执行定向 `eslint` / `tsc --noEmit` 并更新 `walkthrough.md`
+  - [x] 770 收口 `src/features/shipping-management/vehicle-contact-editor-dialog.tsx` 中实体装配与持久化载荷拼装职责（中文）：当前 dialog 组件在本地表单校验完成后，直接构造完整 `VehicleContactBinding` 持久化载荷，并自行决定 `id`、`createdAt`、`updatedAt` 等实体身份与持久化字段。这已经越过了纯 UI 组件的职责边界，更接近 service / mutation / workflow 层应承接的“实体拼装 + 持久化意图”。
+    - [x] 已确认当前现状：
+      - [x] `vehicle-contact-editor-dialog.tsx` 当前 `onSaved` 契约是 `(binding: VehicleContactBinding) => Promise<void> | void`
+      - [x] dialog 内部 `save()` 直接构造完整 `VehicleContactBinding`
+      - [x] 组件内自行用 `Date.now()` 生成新建场景的临时 `id`
+      - [x] 组件内自行填充 `createdAt` / `updatedAt`
+      - [x] 这意味着 UI 层正在决定实体身份和持久化载荷形态，而不只是收集表单输入
+    - [x] 已识别更稳妥的边界：
+      - [x] dialog 组件应更接近“收集表单输入并提交结构化表单数据”
+      - [x] 实体拼装、身份分配与持久化字段补齐更适合下沉到 service / 写入 hook / 页面级 mutation 编排层
+      - [x] 当前 `VehicleContactBindingForm` 已经是较自然的 UI 输入模型，可作为下沉边界的基础
+    - [x] 已完成最小改造：
+      - [x] 已调整 `VehicleContactEditorDialog` 的 `onSaved` 契约，改为提交表单输入模型而非完整持久化实体
+      - [x] 已将 `VehicleContactBinding` 的实体拼装、`id` 生成与时间字段补齐下沉到更低层（页面管理层与写入层）
+      - [x] 已保持现有表单交互、校验与最终保存语义不变
+      - [x] 已执行定向 `eslint` / `tsc --noEmit` 并更新 `walkthrough.md`
+  - [x] 771 收口 `src/features/shipping-management/vehicle-contact-channel-row.tsx` 中领域交互规则与视图组件的耦合（中文）：当前 row 组件不只是展示单行渠道输入，还直接承载了 `phone` 通道锁定、`primary` 展示分支、删除入口可见性、类型切换形态等较强的领域交互规则，容易让展示组件演变成半个业务组件。
+    - [x] 已确认当前现状：
+      - [x] `vehicle-contact-channel-row.tsx` 当前通过 `if (channel.type === 'phone' || lockedPhone)` 分叉渲染“锁定电话行”和“普通行”两套 UI
+      - [x] row 组件内部直接决定 `phone` 类型下拉不可切换、主项控件采用 `RadioGroup` 而非普通勾选
+      - [x] 删除按钮展示、类型切换能力、主项交互形态都由 row 组件内部直接决定
+      - [x] 同时 `vehicle-contact-editor-dialog.tsx` 也保留了 `setPrimaryChannel` / `removeChannel` / `setChannelType` 等规则处理，说明当前规则分散在 row 与表单层之间
+    - [x] 已识别更稳妥的边界：
+      - [x] row 组件应更接近“按外部传入状态渲染对应 UI 并抛出事件”
+      - [x] `phone` 锁定、primary 规则、删除可用性等更适合上移到 editor dialog 或更明确的表单规则层统一裁决
+      - [x] UI 组件保留必要的展示分支可以接受，但不应继续内嵌越来越多领域规则判断
+    - [x] 已完成最小改造：
+      - [x] 已调整 `VehicleContactChannelRow` 输入 props，让上层显式传入“是否锁定类型 / 是否允许删除 / primary 展示模式”等派生 UI 状态
+      - [x] 已将当前 row 内部的领域规则判断上移到 `vehicle-contact-editor-dialog.tsx` 表单层
+      - [x] 已保持现有交互体验、primary 规则与 `phone` 通道约束语义不变
+      - [x] 已执行定向 `eslint` / `tsc --noEmit` 并更新 `walkthrough.md`
+  - [x] 772 修复 `src/features/shipping-management/contacts-list-panel.tsx` 中空状态依赖 props 契约遗漏（中文）：当前 `ContactsPage` 已向 `ContactsListPanel` 传入 `vehicleSpecsLoading`、`vehicleSpecsError`、`vehicleSpecsStatus`、`vehicleOptionsCount`，但子组件 `Props` 与参数解构未同步更新，导致 `ts(2304)` 未定义变量错误。
+    - [x] 已确认当前现状：
+      - [x] `contacts-list-panel.tsx` 在空状态区域直接使用 `vehicleSpecsStatus`、`vehicleSpecsError`、`vehicleSpecsLoading`、`vehicleOptionsCount`
+      - [x] 当前 `Props` 中尚未声明上述字段，组件函数签名也未解构这些参数
+      - [x] `contacts-page.tsx` 调用点已传入这四个 props，说明问题属于组件接口同步遗漏
+      - [x] `useVehicleSpecsQuery.ts` 已给出这些值的稳定来源与类型，其中 `specsStatus` 对应 `VehicleSpecsLoadState`
+    - [x] 已识别最小修复边界：
+      - [x] 仅补齐 `ContactsListPanel` 的 props 契约与参数解构，不重写列表 UI
+      - [x] 复用 `useVehicleSpecsQuery.ts` 已存在的 `VehicleSpecsLoadState` 类型，避免手写重复联合类型
+      - [x] 保持当前空状态引导、按钮禁用与状态文案逻辑不变
+    - [x] 已完成最小改造：
+      - [x] 已为 `contacts-list-panel.tsx` 增加缺失的四个 props 类型声明与参数解构
+      - [x] 已处理必要的类型导入，消除当前 `ts(2304)` 错误
+      - [x] 已执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`
+      - [x] 已更新 `walkthrough.md` 记录本轮修复与验证结果
+  - [ ] 773 清理审计域中的旧兼容层，并收口前端 `audit-engine` / `audit-timeline` 边界（中文）：当前审计能力仍存在“新统一事件链已建立，但前后端目录和读取层仍残留旧兼容语义”的问题。既然软件仍在开发，旧审计没有保留价值，本轮应以“去旧留新”为原则，删除旧兼容层并重建更清晰的审计域边界。
+    - [x] 已确认当前现状：
+      - [x] 后端 `server/audit/events.go`、`server/audit/bridge.go`、`server/audit/writer.go` 已形成新统一审计事件链
+      - [x] `server/services/audit_event_recorder.go` 与 `server/services/trading_audit/*` 已作为新链路的服务入口与业务域 adapter 使用
+      - [x] `server/services/audit_service.go` 仍保留旧读取兼容逻辑，用于把历史 `diff` 载荷揉成前端可消费结构
+      - [x] 进一步确认到旧写入链并未完全退场：`defaultServiceRuntime().auditLogger.Write(...)`、`AuditEntry`、`defaultAuditLogger` 仍被 `sales_transaction_service.go`、`purchase_transaction_service.go`、`warehouse_master_service.go`、`purchase_return_service.go`、`purchase_receipt_confirm_service.go`、`organization_service.go`、`production_service.go` 等调用
+      - [x] 执行 A1 前进一步确认：`partner_transaction_service.go`、`inventory_command_service.go` 也仍在使用同一套旧写入链，说明“交易 / 仓储”真实影响面大于最初估计的 5 个文件
+      - [x] 执行 A2 前进一步确认：组织域并不只包含 `organization_service.go`，`employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go` 也仍直接依赖 `OrganizationService.auditLogger`，说明 A2 真实边界已扩展为“组织域整组旧写入链 + 产线迁移”
+      - [x] 前端 `/system-management/audit-engine` 页面实现当前仍挂在 `src/features/audit-timeline/` 下，且同目录混放了通用 `DataTimeline` 能力
+      - [x] `src/features/audit-timeline/data/audit-modules.ts` 与 `types.ts` 同时承载了引擎总览与时间线详情两套概念，边界不清
+    - [x] 已确认本轮目标边界：
+      - [x] 不保留旧审计兼容层，不按新旧并存方案继续演进
+      - [x] 后端以新统一审计事件链为唯一保留结构
+      - [x] 前端将 `audit-engine` 页面专属能力与 `audit-timeline` 通用能力拆开归属
+      - [x] hook / service / types / 常量按能力边界拆分，避免继续混装
+    - [x] 已发现执行复杂度超出首轮计划：
+      - [x] 若仅删除 `audit_service.go` 的读取兼容，而不同时迁移 `AuditEntry/defaultAuditLogger` 旧写入链，则“去旧留新”目标并未真正完成
+      - [x] 旧写入链横跨交易、仓储、组织、产线等多个服务与测试，属于更大范围的后端改造，不宜在未更新方案的情况下直接落代码
+    - [ ] 待后续继续执行的阶段性改造：
+      - [x] 阶段 A1：先迁移交易/仓储相关旧写入链；已确认并按“完整交易/仓储范围”执行，包含 `sales_transaction_service.go`、`purchase_transaction_service.go`、`warehouse_master_service.go`、`purchase_return_service.go`、`purchase_receipt_confirm_service.go`，并补充纳入 `partner_transaction_service.go`、`inventory_command_service.go`
+      - [x] 阶段 A2：迁移“组织域整组旧写入链 + 产线相关旧写入链”，已覆盖 `organization_service.go`、`employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go`、`production_service.go` 及其相关测试/构造器依赖
+      - [x] 阶段 B：已删除 `server/services/audit_service.go` 中仅用于旧审计 payload 兼容的读取逻辑，并让时间线读取接口直接返回当前真实落库结构
+      - [x] 阶段 C：前端已将 `/system-management/audit-engine` 页面能力从 `src/features/audit-timeline/` 中拆出到独立 `src/features/audit-engine/` 边界
+      - [x] 阶段 D：`DataTimeline` / `useAuditTimeline` 保留为通用审计时间线能力，`audit-modules.ts` / `types.ts` 中混装的引擎与时间线概念已拆分
+      - [ ] 阶段 E：补齐必要的 service / schema / query key 边界，避免 hook 直接承担请求与兼容职责
+      - [x] 已执行当前定向验证：`go test ./services ./audit`、`go test ./handlers -run DataTimeline`、`pnpm exec eslint ...audit-engine...`、`pnpm exec tsc --noEmit --pretty false`
+    - [x] 阶段 A1 已完成的实际改造：
+      - [x] 新增 `server/services/audit_legacy_bridge.go`，把旧 `Diff` JSON / `deltaKeys` 风格统一桥接为新 `AuditEvent.ChangeSet`
+      - [x] 新增 `server/services/audit_legacy_adapter.go`，让现有 `AuditEntry` / `auditLogger` / `defaultAuditLogger` 直接转发到新事件写入链
+      - [x] 调整 `server/audit/writer.go`，使新事件链落库时继续编码为当前时间线可读的 `DiffItem[]` 结构，避免读侧立即断裂
+      - [x] 已通过 `go test ./services ./audit`
+      - [x] 已确认 `go test ./handlers` 失败来自现有 `handlers/suppliers.go` 缺失导入问题，与本轮 A1 改造无关
+    - [x] 阶段 A2 已完成的实际改造：
+      - [x] 已移除 `organization_service.go`、`production_service.go` 对 `auditLogger` 的直接依赖
+      - [x] 已同步收口 `employee_assignment_commands.go`、`employee_import_service.go`、`org_personnel_patch_service.go` 中残留的组织域旧写入链
+      - [x] 已将组织/产线相关测试改为对齐新构造签名与真实 `audit_logs` 落库验证
+      - [x] 已再次通过 `go test ./services ./audit`
+    - [x] 阶段 B 已完成的实际改造：
+      - [x] `handlers/audit_handlers.go` 不再调用 `NormalizeAuditLogs(...)`，时间线接口直接返回当前真实落库结构
+      - [x] `server/services/audit_service.go` 中旧读侧兼容逻辑已移除
+      - [x] `handlers/audit_handlers_test.go` 已改为验证“按真实存储 diff 返回”，不再要求旧 object payload 被读时标准化
+      - [x] 为完成 handler 验证，已补齐 `handlers/suppliers.go` 缺失的 `audit` / `trading_audit` 导入
+      - [x] 已通过 `go test ./handlers -run DataTimeline` 与 `go test ./services ./audit`
+    - [x] 阶段 C / D 已完成的实际改造：
+      - [x] 已新增独立 `src/features/audit-engine/` 目录，承接 `audit-engine` 页面组件、hook、types、module 常量
+      - [x] `/system-management/audit-engine` 路由已切换到新 `audit-engine` feature 边界
+      - [x] `src/features/audit-timeline/types.ts` 与 `data/audit-modules.ts` 已只保留通用时间线概念
+      - [x] 原 `src/features/audit-timeline/components/audit-engine-tab.tsx`、`hooks/use-audit-engine-stats.ts` 已收口为兼容转发层
+      - [x] 已通过相关前端 `eslint` 与 `tsc --noEmit`
   - [ ] 第二阶段 2B 仍保留为后续预案：
     - [x] 已确认 2B 核心目标：
       - [x] 将联系人列表读取层从 `useEffect + useState + reload` 迁移到 React Query

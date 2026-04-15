@@ -1,5 +1,4 @@
 import type { PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
-import type { Unit } from '@/features/basic-settings/services/unit-service'
 import type {
   PackageDimension,
   ShipmentSummary,
