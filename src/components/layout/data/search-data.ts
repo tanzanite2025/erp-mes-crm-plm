@@ -85,7 +85,7 @@ const moduleGroups: CommandItemConfig[] = [
   },
   {
     id: 'tab-service-leave-management',
-    href: '/personnel/leave',
+    href: '/leave-management',
     titleKey: 'commandMenu.items.leaveManagement',
     parentKey: 'commandMenu.parents.serviceCenter',
     keywords: ['leave', 'vacation', '请假'],
@@ -93,7 +93,7 @@ const moduleGroups: CommandItemConfig[] = [
   },
   {
     id: 'tab-service-hall-of-fame',
-    href: '/personnel/stats',
+    href: '/hall-of-fame',
     titleKey: 'commandMenu.items.hallOfFame',
     parentKey: 'commandMenu.parents.serviceCenter',
     keywords: ['honor', 'ranking', '荣誉榜'],

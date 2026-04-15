@@ -575,8 +575,8 @@
       - [x] 阶段 B：已删除 `server/services/audit_service.go` 中仅用于旧审计 payload 兼容的读取逻辑，并让时间线读取接口直接返回当前真实落库结构
       - [x] 阶段 C：前端已将 `/system-management/audit-engine` 页面能力从 `src/features/audit-timeline/` 中拆出到独立 `src/features/audit-engine/` 边界
       - [x] 阶段 D：`DataTimeline` / `useAuditTimeline` 保留为通用审计时间线能力，`audit-modules.ts` / `types.ts` 中混装的引擎与时间线概念已拆分
-      - [ ] 阶段 E：补齐必要的 service / schema / query key 边界，避免 hook 直接承担请求与兼容职责
-      - [x] 已执行当前定向验证：`go test ./services ./audit`、`go test ./handlers -run DataTimeline`、`pnpm exec eslint ...audit-engine...`、`pnpm exec tsc --noEmit --pretty false`
+      - [x] 阶段 E：已补齐必要的 service / schema / query key 边界，避免 hook 直接承担请求与兼容职责
+      - [x] 已执行当前定向验证：`go test ./services ./audit`、`go test ./handlers -run DataTimeline`、目标文件 `pnpm exec eslint`、`pnpm exec tsc --noEmit --pretty false`
     - [x] 阶段 A1 已完成的实际改造：
       - [x] 新增 `server/services/audit_legacy_bridge.go`，把旧 `Diff` JSON / `deltaKeys` 风格统一桥接为新 `AuditEvent.ChangeSet`
       - [x] 新增 `server/services/audit_legacy_adapter.go`，让现有 `AuditEntry` / `auditLogger` / `defaultAuditLogger` 直接转发到新事件写入链
@@ -598,8 +598,13 @@
       - [x] 已新增独立 `src/features/audit-engine/` 目录，承接 `audit-engine` 页面组件、hook、types、module 常量
       - [x] `/system-management/audit-engine` 路由已切换到新 `audit-engine` feature 边界
       - [x] `src/features/audit-timeline/types.ts` 与 `data/audit-modules.ts` 已只保留通用时间线概念
-      - [x] 原 `src/features/audit-timeline/components/audit-engine-tab.tsx`、`hooks/use-audit-engine-stats.ts` 已收口为兼容转发层
+      - [x] 原 `src/features/audit-timeline/components/audit-engine-tab.tsx`、`hooks/use-audit-engine-stats.ts` 兼容转发壳已在确认无引用后删除
       - [x] 已通过相关前端 `eslint` 与 `tsc --noEmit`
+    - [x] 阶段 E 已完成的实际改造：
+      - [x] 已新增 `src/features/audit-engine/query-keys.ts`、`schema.ts`、`services/audit-engine-service.ts`
+      - [x] 已新增 `src/features/audit-timeline/query-keys.ts`、`schema.ts`、`services/audit-timeline-service.ts`
+      - [x] `useAuditEngineStats` 与 `useAuditTimeline` 已收口为仅负责 React Query 编排，不再内联请求与响应解析
+      - [x] 已再次通过目标文件 `eslint` 与 `tsc --noEmit`
   - [ ] 第二阶段 2B 仍保留为后续预案：
     - [x] 已确认 2B 核心目标：
       - [x] 将联系人列表读取层从 `useEffect + useState + reload` 迁移到 React Query
@@ -2180,3 +2185,27 @@
       - [ ] 在产品编辑弹窗补充模板来源与类型覆写状态的只读提示
       - [ ] 模板接线实现后执行定向 TypeScript 校验，并再次更新 `walkthrough.md`
 
+- [x] 793-组织人事侧边栏双高亮修复规划（中文）
+  - [x] 已确认当前问题现象：
+    - [x] 在“组织人事”分组下进入“请假管理”或“荣誉榜”时，侧边栏会同时高亮“组织人事”和当前子页面项
+    - [x] 该现象属于同组菜单 active 判定重叠，而不是点击状态残留或样式类串扰
+  - [x] 已确认当前根因：
+    - [x] 侧边栏数据将三项分别配置为 `/personnel`、`/personnel/leave`、`/personnel/stats`
+    - [x] `src/components/layout/nav-group.tsx` 中 `checkIsActive()` 对普通导航项使用 `pathname.startsWith(itemUrl + '/')` 前缀匹配
+    - [x] 因此当路径为 `/personnel/leave` 或 `/personnel/stats` 时，父级 `/personnel` 也会被同时判定为 active
+    - [x] `请假管理` 与 `荣誉榜` 的真实路由目前仍定义在 `src/routes/_authenticated/personnel/leave.tsx` 与 `stats.tsx`，尚未从 `/personnel/*` 路径空间中脱离
+  - [x] 已确认建议修复方向：
+    - [x] 优先修复侧边栏 active 判定边界，避免同组中“父级概览项”因前缀命中而与拆出的独立页面同时高亮
+    - [x] 修复应尽量局部、可解释，避免误伤其他依赖前缀匹配的模块菜单
+    - [x] 若需要为“组织人事”这类概览项增加精确匹配语义，应通过显式配置或受控规则实现，而不是写死一次性特判散落在组件里
+  - [x] 已确认风险与注意事项：
+    - [x] 不能直接粗暴移除所有 `startsWith()` 逻辑，否则可能破坏其他存在真实子路由层级的菜单高亮行为
+    - [x] 需核对 `/personnel` 首页与其 tabs 子路由（如 `/personnel/org`、`/personnel/employees`）仍应保持“组织人事”高亮
+    - [x] 本轮先修正视觉多选与 active 归属，不顺带扩展到权限、侧边栏分组重构或整套路由迁移
+  - [x] 已按“优先改路由”完成执行：
+    - [x] 已新增顶级路由 `/leave-management` 与 `/hall-of-fame`
+    - [x] 原 `/personnel/leave` 与 `/personnel/stats` 已收口为兼容跳转到新路由
+    - [x] 已同步更新侧边栏与命令面板入口到新路径
+    - [x] 已为新顶级路径补齐菜单权限映射，继续归属 `org` 菜单权限
+    - [x] 已刷新 `routeTree` 与认证路由目录生成产物
+    - [x] 已通过目标文件 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`

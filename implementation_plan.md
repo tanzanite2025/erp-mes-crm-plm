@@ -4930,5 +4930,76 @@
 1. 已新增独立 `src/features/audit-engine/` 目录，承接 `audit-engine` 页面组件、stats hook、engine types、module IDs 等专属内容。
 2. `/system-management/audit-engine` 路由已切换到新 `audit-engine` feature，不再直接依赖 `src/features/audit-timeline/` 下的实现。
 3. `src/features/audit-timeline/types.ts` 与 `src/features/audit-timeline/data/audit-modules.ts` 已剔除引擎专属概念，只保留通用时间线类型与模块常量。
-4. 为避免潜在隐藏引用断裂，原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 已收口为轻量转发层。
+4. 在确认已无外部引用后，原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 两个兼容转发壳文件已删除。
 5. 已完成相关前端验证：目标文件 `eslint` 通过，`pnpm exec tsc --noEmit --pretty false` 通过，说明前端边界拆分已闭环。
+
+**执行结果（2026-04-16，阶段 E）**
+1. `src/features/audit-engine/` 已补齐 `query-keys.ts`、`schema.ts`、`services/audit-engine-service.ts`，使引擎 hook 不再直接承担请求与响应解析。
+2. `src/features/audit-timeline/` 已补齐 `query-keys.ts`、`schema.ts`、`services/audit-timeline-service.ts`，使时间线 hook 同样只负责 React Query 编排。
+3. `useAuditEngineStats` 与 `useAuditTimeline` 已分别切换到新的 query key 与 service 层。
+4. schema 层已承担前端对审计引擎 stats 与时间线数据的基础结构收口，避免 hook 继续混入兼容解析职责。
+5. 已再次完成目标文件 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`，说明阶段 E 已闭环。
+
+---
+
+## 793-组织人事侧边栏双高亮修复规划
+
+### 1. 问题现象
+
+- 在“组织人事”分组中访问“请假管理”或“荣誉榜”时，侧边栏会同时高亮：
+  - `组织人事`（`/personnel`）
+  - 当前实际访问项（`/personnel/leave` 或 `/personnel/stats`）
+
+### 2. 已确认根因
+
+- 侧边栏配置位于 `src/components/layout/data/sidebar-data.ts`：
+  - `组织人事` -> `/personnel`
+  - `请假管理` -> `/personnel/leave`
+  - `荣誉榜` -> `/personnel/stats`
+- active 判定位于 `src/components/layout/nav-group.tsx` 的 `checkIsActive()`：
+  - 普通导航项当前采用 `pathname === itemUrl || pathname.startsWith(itemUrl + '/')`
+- 因此：
+  - 当路径为 `/personnel/leave` 时，`/personnel` 与 `/personnel/leave` 同时命中
+  - 当路径为 `/personnel/stats` 时，`/personnel` 与 `/personnel/stats` 同时命中
+- 同时已确认“请假管理”“荣誉榜”的真实路由仍位于：
+  - `src/routes/_authenticated/personnel/leave.tsx`
+  - `src/routes/_authenticated/personnel/stats.tsx`
+
+### 3. 修复目标
+
+1. 保证 `/personnel/leave` 与 `/personnel/stats` 不再让 `/personnel` 同时高亮。
+2. 保证 `/personnel` 首页以及组织人事内部 tabs 路径（如 `/personnel/org`、`/personnel/employees` 等）仍然正确高亮“组织人事”。
+3. 修复范围控制在侧边栏 active 归属，不扩大到权限系统、菜单结构重构或整套路由迁移。
+
+### 4. 建议实施方式
+
+1. 优先在侧边栏 active 规则层引入“精确匹配 / 受控子路由匹配”能力，而不是继续依赖无差别前缀命中。
+2. 对“组织人事”这类概览项，只允许命中其真实归属页与内部 tabs，不把已拆出的独立页面 `/personnel/leave`、`/personnel/stats` 继续视为其子路由。
+3. 若实现上需要新增菜单配置字段，应保持字段语义清晰，避免写成仅服务本页的一次性硬编码。
+
+### 5. 风险与注意事项
+
+- 不能直接删除全局 `startsWith()` 行为，否则可能影响其他模块菜单对子路由的正常高亮。
+- 需要确保 `ModuleTabbedLayout` 下的组织人事 tabs 仍保持现有行为，不因 active 收口导致 `/personnel/org` 等页面失去父级高亮。
+- 本轮不处理“请假管理”“荣誉榜”是否应彻底迁出 `/personnel/*` URL 空间的更大路由治理，只先修正当前视觉多选问题。
+
+### 6. 暂停点
+
+- 当前仅完成排查与方案整理。
+- **等待你确认后**，再进入代码修复、前端定向校验与 `walkthrough.md` 回写。
+
+### 7. 执行结果（2026-04-16）
+
+1. 按已确认方向，优先采用“迁出路由归属”而非先修改通用 active 规则。
+2. 已新增顶级路由：
+   - `/leave-management`
+   - `/hall-of-fame`
+3. 原 `src/routes/_authenticated/personnel/leave.tsx` 与 `stats.tsx` 已改为兼容重定向，分别跳转到新顶级路径，避免旧链接直接失效。
+4. 已同步更新以下入口到新路径：
+   - `src/components/layout/data/sidebar-data.ts`
+   - `src/components/layout/data/search-data.ts`
+5. 已在 `src/features/authz/data/permission-catalog.ts` 中将 `/leave-management` 与 `/hall-of-fame` 继续映射到 `org` 菜单权限，避免迁路由后菜单授权漂移。
+6. 已刷新自动生成产物：
+   - `src/routeTree.gen.ts`
+   - `src/features/authz/data/authenticated-route-catalog.ts`
+7. 已完成定向验证：目标文件 `eslint` 通过，`pnpm exec tsc --noEmit --pretty false` 通过。

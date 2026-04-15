@@ -136,6 +136,8 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/equipment-tooling': 'equipment',
   '/furnaces': 'equipment',
   '/personnel': 'org',
+  '/leave-management': 'org',
+  '/hall-of-fame': 'org',
   '/piecework': 'piecework',
   '/system-management': 'system',
   '/approval': 'approval',

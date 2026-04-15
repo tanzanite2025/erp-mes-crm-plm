@@ -1176,14 +1176,49 @@
   - 新增 `src/features/audit-engine/` 目录，将 `audit-engine` 页面组件、stats hook、types、module 常量拆成独立 feature。
   - 调整 `/system-management/audit-engine` 路由，改为直接引用新 `audit-engine` feature。
   - 调整 `src/features/audit-timeline/types.ts` 与 `data/audit-modules.ts`，仅保留通用时间线概念。
-  - 将原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 收口为兼容转发层，避免潜在引用断裂。
+  - 在确认无剩余引用后，删除原 `src/features/audit-timeline/components/audit-engine-tab.tsx` 与 `hooks/use-audit-engine-stats.ts` 两个兼容转发壳文件。
 
 - **收口结果**
   - `audit-engine` 页面不再和 `audit-timeline` 通用时间线能力混放在同一 feature 目录中。
   - 前端引擎总览与时间线详情的类型/常量边界已拆开，目录职责更清晰。
 
 - **验证结果**
-  - `pnpm exec eslint src/features/audit-engine/components/audit-engine-tab.tsx src/features/audit-engine/hooks/use-audit-engine-stats.ts src/features/audit-engine/types.ts src/features/audit-engine/data/audit-engine-modules.ts src/features/audit-timeline/components/audit-engine-tab.tsx src/features/audit-timeline/hooks/use-audit-engine-stats.ts src/features/audit-timeline/types.ts src/features/audit-timeline/data/audit-modules.ts src/routes/_authenticated/system-management/audit-engine.tsx`：通过。
+  - `pnpm exec eslint src/features/audit-engine/components/audit-engine-tab.tsx src/features/audit-engine/hooks/use-audit-engine-stats.ts src/features/audit-engine/types.ts src/features/audit-engine/data/audit-engine-modules.ts src/features/audit-timeline/types.ts src/features/audit-timeline/data/audit-modules.ts src/routes/_authenticated/system-management/audit-engine.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 审计域清理阶段 E：补齐前端 query key / service / schema 边界（773-E）
+
+- **变更概述**
+  - 新增 `src/features/audit-engine/query-keys.ts`、`schema.ts`、`services/audit-engine-service.ts`。
+  - 新增 `src/features/audit-timeline/query-keys.ts`、`schema.ts`、`services/audit-timeline-service.ts`。
+  - 调整 `useAuditEngineStats` 与 `useAuditTimeline`，让 hook 只保留 React Query 编排职责。
+
+- **收口结果**
+  - 审计引擎和时间线前端都具备了更清晰的 `query key -> service -> schema -> hook` 分层。
+  - hook 不再直接承担 API 请求与响应结构收口职责，后续继续演进时边界更稳定。
+
+- **验证结果**
+  - 目标文件 `pnpm exec eslint`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 组织人事侧边栏双高亮修复：优先迁出请假管理与荣誉榜路由（793）
+
+- **变更概述**
+  - 新增 `src/routes/_authenticated/leave-management.tsx` 与 `src/routes/_authenticated/hall-of-fame.tsx`，将“请假管理”“荣誉榜”迁出 `/personnel/*` 路径空间。
+  - 将原 `src/routes/_authenticated/personnel/leave.tsx` 与 `stats.tsx` 改为兼容跳转，分别重定向到 `/leave-management` 与 `/hall-of-fame`。
+  - 同步调整 `src/components/layout/data/sidebar-data.ts` 与 `src/components/layout/data/search-data.ts` 的入口路径。
+  - 在 `src/features/authz/data/permission-catalog.ts` 中补充新顶级路径到 `org` 菜单权限的映射。
+  - 刷新 `src/routeTree.gen.ts` 与 `src/features/authz/data/authenticated-route-catalog.ts` 生成产物。
+
+- **收口结果**
+  - “请假管理”“荣誉榜”不再继续占用 `/personnel/*` 的路由归属，避免与“组织人事”父级菜单发生前缀重叠高亮。
+  - `/personnel/leave` 与 `/personnel/stats` 旧地址仍可通过兼容跳转进入新页面，不会立即形成死链。
+  - 菜单权限仍统一归属组织人事分组，没有因路径迁出而漂移到其他菜单桶。
+
+- **验证结果**
+  - `pnpm run gen:route-tree`：通过。
+  - `pnpm run gen:auth-routes`：通过。
+  - `pnpm exec eslint src/routes/_authenticated/leave-management.tsx src/routes/_authenticated/hall-of-fame.tsx src/routes/_authenticated/personnel/leave.tsx src/routes/_authenticated/personnel/stats.tsx src/components/layout/data/sidebar-data.ts src/components/layout/data/search-data.ts src/features/authz/data/permission-catalog.ts`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
 ## 2026-04-16 审计域清理阶段 A2：将组织域整组旧写入链与产线写入链切到新事件链（773-A2）
