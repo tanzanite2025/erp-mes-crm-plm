@@ -9,6 +9,13 @@ export const vehicleContactChannelApiDTOSchema = z.object({
   primary: z.boolean().optional(),
 })
 
+const vehicleContactChannelDTOArraySchema = z.array(vehicleContactChannelApiDTOSchema).transform((channels) =>
+  channels.map((channel) => ({
+    ...channel,
+    primary: channel.primary === true,
+  }))
+)
+
 const vehicleContactChannelsFromJsonSchema = z.string().optional().transform((value, ctx) => {
   const rawValue = value ?? '[]'
 
@@ -23,7 +30,7 @@ const vehicleContactChannelsFromJsonSchema = z.string().optional().transform((va
     return z.NEVER
   }
 
-  const result = z.array(vehicleContactChannelApiDTOSchema).safeParse(parsed)
+  const result = vehicleContactChannelDTOArraySchema.safeParse(parsed)
   if (!result.success) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -32,10 +39,7 @@ const vehicleContactChannelsFromJsonSchema = z.string().optional().transform((va
     return z.NEVER
   }
 
-  return result.data.map((channel) => ({
-    ...channel,
-    primary: channel.primary === true,
-  }))
+  return result.data
 })
 
 export const vehicleContactBindingRawApiDTOSchema = z.object({
@@ -55,34 +59,25 @@ export const vehicleContactBindingRawApiDTOSchema = z.object({
   updatedAt: z.string().min(1),
 })
 
-export const vehicleContactBindingDTOSchema = vehicleContactBindingRawApiDTOSchema.transform((dto, ctx) => {
-  const channelsResult = vehicleContactChannelsFromJsonSchema.safeParse(dto.channelsJson)
-
-  if (!channelsResult.success) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'channelsJson must be a valid contact channel array',
-      path: ['channelsJson'],
-    })
-    return z.NEVER
-  }
-
-  return {
-    id: dto.id,
-    vehicleId: dto.vehicleId,
-    vehicleName: dto.vehicleName,
-    category: dto.category,
-    supplierName: dto.supplierName ?? '',
-    contactName: dto.contactName,
-    channels: channelsResult.data,
-    region: dto.region ?? '',
-    dispatchAdvice: dto.dispatchAdvice ?? '',
-    note: dto.note ?? '',
-    enabled: dto.enabled,
-    createdAt: dto.createdAt,
-    updatedAt: dto.updatedAt,
-  }
+const vehicleContactBindingParsedApiDTOSchema = vehicleContactBindingRawApiDTOSchema.extend({
+  channelsJson: vehicleContactChannelsFromJsonSchema,
 })
+
+export const vehicleContactBindingDTOSchema = vehicleContactBindingParsedApiDTOSchema.transform(({ channelsJson, ...dto }) => ({
+  id: dto.id,
+  vehicleId: dto.vehicleId,
+  vehicleName: dto.vehicleName,
+  category: dto.category,
+  supplierName: dto.supplierName ?? '',
+  contactName: dto.contactName,
+  channels: channelsJson,
+  region: dto.region ?? '',
+  dispatchAdvice: dto.dispatchAdvice ?? '',
+  note: dto.note ?? '',
+  enabled: dto.enabled,
+  createdAt: dto.createdAt,
+  updatedAt: dto.updatedAt,
+}))
 
 export const vehicleContactBindingDTOArraySchema = z.array(vehicleContactBindingDTOSchema)
 

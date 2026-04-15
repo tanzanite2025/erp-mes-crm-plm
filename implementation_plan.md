@@ -4690,3 +4690,39 @@
 3. 当前联系人列表刷新、成功 / 失败提示与用户可见行为均保持不变。
 4. `vehicleContactService` 的纯请求边界没有回退，联系人业务语义与交互保持不变。
 5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。
+
+#### 20.33 P6 阶段：收口 `vehicle-contact.schema.ts` 中 `channelsJson` 的重复解析路径
+
+**背景与目标**
+当前 `src/features/shipping-management/services/vehicle-contact.schema.ts` 已经进入 Zod DTO 体系，但 schema 内部的解析边界仍不够单一：
+1. 存在 `vehicleContactChannelsFromJsonSchema`
+2. `vehicleContactBindingDTOSchema.transform(...)` 内又显式调用 `vehicleContactChannelsFromJsonSchema.safeParse(dto.channelsJson)`
+
+因此当前不是 service/schema 双轨，而是 schema 内部仍有“helper schema + transform 内再次 parse”的重叠解析路径。这种实现短期可工作，但会让 DTO 解析边界不够统一，后续容易继续长成多层 parse / transform 链。
+
+**最小实施方案**
+1. 保留 raw DTO schema 与最终 DTO schema 的分层。
+2. 将 `channelsJson` 的解析收口为单一 schema 组合路径，例如：
+   - 让字段级 schema 直接产出已转换的 channels
+   - 或让 object-level transform 直接复用 transform 后字段，而不是再显式 `safeParse(...)`
+3. 保持 `vehicle-contact-service.ts` 继续只调用统一 DTO schema，不引回手写 DTO 解析。
+4. 不改变当前联系人 DTO 语义与 `channelsJson -> channels` 的适配结果。
+
+**风险与边界**
+1. 本轮目标是统一 schema 内部解析入口，不扩大到联系人业务流程改造。
+2. 重构后仍需保持错误信息足够明确，避免因为去掉显式 `safeParse(...)` 而失去必要的契约报错上下文。
+3. 需要避免为了“绝对纯”而把 schema 切得过碎，仍以可维护性为先。
+
+**验证策略**
+1. `vehicle-contact.schema.ts` 中 `channelsJson` 的解析不再通过 transform 内再次手动 `safeParse(...)` 形成重复路径。
+2. `vehicle-contact-service.ts` 继续只调用统一 DTO schema。
+3. 联系人列表 / 保存返回的 DTO 解析结果保持不变。
+4. 执行定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false`。
+5. 更新 `walkthrough.md` 记录本轮 schema 解析边界收口与验证结果。
+
+**执行结果（2026-04-16）**
+1. `vehicle-contact.schema.ts` 已新增 `vehicleContactChannelDTOArraySchema`，统一承接渠道数组的 DTO 校验与 `primary` 规范化。
+2. `channelsJson` 解析仍保留在字段级 schema，但 `vehicleContactBindingDTOSchema` 已不再在 `transform(...)` 内再次显式 `safeParse(...)`。
+3. 当前 schema 已改为：`raw schema -> 扩展后的 parsed schema -> final DTO schema` 的单一路径组合，service 继续只消费统一 DTO schema。
+4. 联系人 DTO 语义与 `channelsJson -> channels` 适配结果保持不变。
+5. 已完成定向 `eslint` 与 `pnpm exec tsc --noEmit --pretty false` 校验。

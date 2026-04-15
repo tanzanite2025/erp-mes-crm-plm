@@ -77,25 +77,25 @@ export function SalesOrderDetail({
 
   return (
     <SalesOrderDetailContent
-        order={order}
-        isClaimAction={isClaimAction}
-        activeCommandTitle={activeCommandTitle}
-        activeCommandContent={activeCommandContent}
-        claimOperator={user?.accountNo ?? ''}
-        canHardDelete={canHardDelete}
-        onMutateStatus={handleMutateStatus}
-        onClaimModel={handleClaimModel}
-        onClaimLine={handleClaimLine}
-        onPreview={handlePreview}
-        onHardDelete={onDelete}
-        previewFile={previewFile ?? undefined}
-        isCADOpen={isCADOpen}
-        isExcelOpen={isExcelOpen}
-        isPDFOpen={isPDFOpen}
-        setIsCADOpen={setIsCADOpen}
-        setIsExcelOpen={setIsExcelOpen}
-        setIsPDFOpen={setIsPDFOpen}
-      />
+      order={order}
+      isClaimAction={isClaimAction}
+      activeCommandTitle={activeCommandTitle}
+      activeCommandContent={activeCommandContent}
+      claimOperator={user?.accountNo ?? ''}
+      canHardDelete={canHardDelete}
+      onMutateStatus={handleMutateStatus}
+      onClaimModel={handleClaimModel}
+      onClaimLine={handleClaimLine}
+      onPreview={handlePreview}
+      onHardDelete={onDelete}
+      previewFile={previewFile ?? undefined}
+      isCADOpen={isCADOpen}
+      isExcelOpen={isExcelOpen}
+      isPDFOpen={isPDFOpen}
+      setIsCADOpen={setIsCADOpen}
+      setIsExcelOpen={setIsExcelOpen}
+      setIsPDFOpen={setIsPDFOpen}
+    />
   )
 }
 

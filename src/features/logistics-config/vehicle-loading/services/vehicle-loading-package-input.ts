@@ -19,15 +19,8 @@ function normalizeUnitCode(code: string): string {
   return code.trim().toLowerCase()
 }
 
-function toMillimeters(value: number, unitCode: string, units: Unit[]): number {
+function toMillimeters(value: number, unitCode: string): number {
   const normalized = normalizeUnitCode(unitCode)
-  const unitInfo = units.find((u) => normalizeUnitCode(u.code) === normalized)
-  if (!unitInfo) {
-    throw new Error(`Dimension unit '${unitCode}' not found in active units authority`)
-  }
-  if (unitInfo.category !== 'LENGTH') {
-    throw new Error(`Dimension unit '${unitCode}' must be of category LENGTH, got ${unitInfo.category}`)
-  }
   switch (normalized) {
     case 'mm':
     case '毫米':

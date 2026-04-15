@@ -490,6 +490,21 @@
       - [x] 已让 `contacts-page.tsx` 决定何时以及对哪些 query key 执行失效刷新
       - [x] 已保持 `vehicleContactService` 纯请求边界不回退，没有改联系人业务语义与交互
       - [x] 已执行定向 `eslint` / `tsc --noEmit` 并更新 `walkthrough.md`
+  - [x] 769 收口 `src/features/shipping-management/services/vehicle-contact.schema.ts` 中 `channelsJson` 的重复解析路径（中文）：当前 `vehicleContactBindingDTOSchema` 虽然已经基于 Zod schema 定义 DTO，但它在 `transform(...)` 内再次调用 `vehicleContactChannelsFromJsonSchema.safeParse(dto.channelsJson)`，形成了“helper schema + transform 内再次 parse”的重叠解析路径。这个实现还不至于坏掉，但 DTO 边界不够单一，后续容易继续长成多层解析链。
+    - [x] 已确认当前现状：
+      - [x] `vehicle-contact-service.ts` 当前只调用 `vehicleContactBindingDTOSchema` / `vehicleContactBindingDTOArraySchema`，没有再保留第二套手写 DTO 解析
+      - [x] 但 `vehicle-contact.schema.ts` 内部存在 `vehicleContactChannelsFromJsonSchema`
+      - [x] 同时 `vehicleContactBindingDTOSchema.transform(...)` 又对 `dto.channelsJson` 再做一次 `safeParse(...)`
+      - [x] 因此当前问题更准确地说是 schema 内部解析路径重叠，而不是 service/schema 双轨并存
+    - [x] 已识别更稳妥的方向：
+      - [x] 保留 raw DTO schema 与最终 DTO schema 的分层
+      - [x] 但让 `channelsJson` 的解析只通过单一入口完成，避免 transform 内再次手工 `safeParse(...)`
+      - [x] 若需要 helper，应让 helper 作为被复用的 schema / transform 组成部分，而不是在 transform 内再开启一轮显式 parse 流程
+    - [x] 已完成最小改造：
+      - [x] 已重构 `vehicle-contact.schema.ts`，让 `channelsJson` 解析收口为单一 schema 组合路径
+      - [x] 已保持 `vehicle-contact-service.ts` 继续只调用统一 DTO schema，没有引回手写解析
+      - [x] 已保持现有联系人 DTO 语义与 `channelsJson -> channels` 适配结果不变
+      - [x] 已执行定向 `eslint` / `tsc --noEmit` 并更新 `walkthrough.md`
   - [ ] 第二阶段 2B 仍保留为后续预案：
     - [x] 已确认 2B 核心目标：
       - [x] 将联系人列表读取层从 `useEffect + useState + reload` 迁移到 React Query

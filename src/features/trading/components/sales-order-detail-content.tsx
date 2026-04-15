@@ -18,7 +18,7 @@ interface SalesOrderDetailContentProps {
   onMutateStatus: (payload: Partial<SalesOrder>) => void
   onClaimModel: (model: string) => void
   onClaimLine: (lineNo: number) => void
-  onPreview: (file: { fileName: string; fileUrl: string }) => void
+  onPreview: (productId: string | undefined, planId: string | undefined, type: 'spec' | 'drilling' | 'labeling') => void
   onHardDelete?: (order: SalesOrder) => void
   previewFile?: { fileName: string; fileUrl: string }
   isCADOpen: boolean

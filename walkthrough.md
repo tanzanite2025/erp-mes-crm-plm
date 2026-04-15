@@ -1076,6 +1076,22 @@
   - `pnpm exec eslint src/features/shipping-management/hooks/use-vehicle-contact-actions.ts src/features/shipping-management/contacts-page.tsx`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
+## 2026-04-16 收口 `vehicle-contact.schema.ts` 中 `channelsJson` 的重复解析路径（769）
+
+- **变更概述**
+  - 调整 `src/features/shipping-management/services/vehicle-contact.schema.ts`，新增 `vehicleContactChannelDTOArraySchema`，统一承接联系人渠道数组的 DTO 校验与 `primary` 规范化。
+  - 保留 `channelsJson` 的字段级 JSON 解析，但移除 `vehicleContactBindingDTOSchema.transform(...)` 内再次显式 `safeParse(...)` 的重复路径。
+  - 当前 schema 组织改为：`raw schema -> parsed schema -> final DTO schema` 的单一路径组合，`vehicle-contact-service.ts` 继续只调用统一 DTO schema。
+
+- **收口结果**
+  - `vehicle-contact.schema.ts` 不再出现 transform 内再次 parse 同一字段的重叠解析路径。
+  - DTO 解析入口更单一，schema / service 边界更统一。
+  - 当前联系人 DTO 语义与 `channelsJson -> channels` 适配结果保持不变。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/shipping-management/services/vehicle-contact.schema.ts src/features/shipping-management/services/vehicle-contact-service.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
 ## 2026-04-16 继续收口 `use-vehicle-contact-actions.ts` 中领域写操作与缓存失效策略的绑定（768）
 
 - **变更概述**
