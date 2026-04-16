@@ -1,4 +1,5 @@
 import { type Product, type ProductAttributeCategory, type ProductAttributeOption } from '../data/schema'
+import { areSameProductAttributeCategoryKey } from './product-attribute-machine-value'
 
 export const PRODUCT_ATTRIBUTE_CATEGORY_KEYS = {
   series: 'techSeries',
@@ -9,12 +10,12 @@ export const PRODUCT_ATTRIBUTE_CATEGORY_KEYS = {
 
 export function getAttributeValue(product: Pick<Product, 'attributeValues'> | undefined, categoryKey: string): string {
   if (!product?.attributeValues?.length) return ''
-  return product.attributeValues.find((item) => item.categoryKey === categoryKey)?.optionValue || ''
+  return product.attributeValues.find((item) => areSameProductAttributeCategoryKey(item.categoryKey, categoryKey))?.optionValue || ''
 }
 
 export function upsertAttributeValue(product: Product, categoryKey: string, optionValue: string): Product {
   const nextValues = [...(product.attributeValues || [])]
-  const index = nextValues.findIndex((item) => item.categoryKey === categoryKey)
+  const index = nextValues.findIndex((item) => areSameProductAttributeCategoryKey(item.categoryKey, categoryKey))
 
   if (!optionValue) {
     if (index >= 0) nextValues.splice(index, 1)

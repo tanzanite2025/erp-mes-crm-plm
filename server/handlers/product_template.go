@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"xdfc-server/services"
@@ -53,11 +52,7 @@ func SaveProductTemplateHandler(c *gin.Context) {
 	saved, err := services.SaveProductTemplate(input)
 
 	if err != nil {
-		if errors.Is(err, services.ErrProductTemplateVersionConflict) {
-			respondVersionConflict(c)
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save product template: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to save product template: ")
 		return
 	}
 
@@ -80,11 +75,7 @@ func PatchProductTemplateHandler(c *gin.Context) {
 
 	saved, err := services.PatchProductTemplate(id, int(req.Metadata.Version), updates)
 	if err != nil {
-		if errors.Is(err, services.ErrProductTemplateVersionConflict) {
-			respondVersionConflict(c)
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to patch product template: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to patch product template: ")
 		return
 	}
 

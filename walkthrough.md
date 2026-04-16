@@ -337,6 +337,43 @@
   - `pnpm exec eslint src/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-source-package-input.ts src/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input.ts`：通过。
   - `pnpm exec tsc --noEmit`：通过。
 
+## 2026-04-16 修复 `/engineering/product-attributes` 新增分类项保存后 UI 不显示但再次新增提示重复（802）
+
+- **变更概述**
+  - 在 `src/features/engineering/utils/product-attribute-machine-value.ts` 拆分“分类键兼容比较”和“分类项值机器值规范化”职责，新增 `areSameProductAttributeCategoryKey` 与 `resolveProductAttributeCategoryKey`，并让 `normalizeProductAttributeOptionInputValue()` 不再改写 `categoryKey`。
+  - 在 `src/features/engineering/tabs/product-attributes-mgmt.tsx` 修正当前页的分类解析、分类项过滤、计数统计、编辑回填与保存前冲突检测逻辑，兼容历史 `versionLevel / brakeType / techSeries` 这类 camelCase 分类键与历史 lower 风格错键。
+  - 在 `src/features/engineering/utils/product-attribute-utils.ts`、`src/features/engineering/hooks/use-product-form-init.ts`、`src/features/engineering/components/product/dynamic-attribute-section.tsx`、`src/features/engineering/utils/product-code-normalization.ts` 收口产品表单链路，避免继续把属性 `categoryKey` 改写成另一套格式，并让属性值读取/筛选按兼容分类键工作。
+  - 在 `server/services/product_attribute_option_service.go` 建立分类项 `categoryKey` 的后端 canonical key 收口：创建前对齐现有分类、读取时映射历史错键、重复校验按兼容分类键判重。
+  - 在 `server/services/product_master_service.go` 修正 `deriveVersionLevelFromAttributes()`，确保历史 lower/camel 风格分类键都能参与版本等级派生。
+  - 在 `server/services/product_attribute_seed_test.go` 补充两条回归测试，覆盖“创建时 canonical key 对齐”和“读取时历史错键映射”。
+
+- **根因收口结果**
+  - 本次问题的根因不是 React Query 没刷新，而是新增分类项时把 `categoryKey` 误当成分类项机器值一并标准化，导致 `versionLevel` 被写成 `versionlevel`。
+  - 现在前端不会再把当前选中分类写进另一套命名空间；后端也会把传入错键映射回现有分类的真实 key。
+  - 已经历史落库成 lower 风格的分类项，当前读取时也会重新归并到正确分类下显示，不需要你手动重新录入。
+
+- **验证结果**
+  - `go test ./services -run "Test(CreateProductAttributeOptionCanonicalizesHistoricalCategoryKey|ListProductAttributeOptionsReturnsCanonicalCategoryKeyForHistoricalRows|IssueProductIdentityIssuesVersionedSKUFromVariantAttribute)$"`：通过。
+  - `go test ./... -run ^$`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/features/engineering/utils/product-attribute-machine-value.ts src/features/engineering/tabs/product-attributes-mgmt.tsx src/features/engineering/utils/product-attribute-utils.ts src/features/engineering/hooks/use-product-form-init.ts src/features/engineering/components/product/dynamic-attribute-section.tsx src/features/engineering/utils/product-code-normalization.ts`：通过。
+
+## 2026-04-16 修复 `/trading/logistics` “绑定订单”弹窗空 `SelectItem.value` 崩溃（803）
+
+- **变更概述**
+  - 在 `src/features/logistics/components/logistics-action-dialog.tsx` 对默认订单号做 `trim()`，并将订单下拉项改为使用 `order.orderNo.trim()` 作为 value。
+  - 在同一弹窗中显式过滤空 `orderNo` 的销售订单项，避免脏数据直接渲染进订单选择器。
+  - 在 `src/components/select-dropdown.tsx` 增加共享保护逻辑：渲染 `SelectItem` 前统一过滤 `value === ''` 的下拉项，阻断未来其它业务把空字符串值直接喂给 Radix `Select`。
+
+- **根因收口结果**
+  - 本次问题的根因不是后端 500，而是订单下拉里混入了 `orderNo === ''` 的销售订单记录。
+  - 旧实现会把这条脏数据直接渲染为 `SelectItem value=''`，而 Radix Select 明确禁止空字符串 item value，因此弹窗在渲染阶段直接崩溃。
+  - 现在业务层会先过滤空订单号，共享下拉层也补上了兜底保护，因此 `/trading/logistics` 的“绑定订单”弹窗可以在存在脏数据时继续正常打开。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/components/select-dropdown.tsx src/features/logistics/components/logistics-action-dialog.tsx`：通过。
+
 ## 2026-04-16 shipping-management/contacts 车型联系人前后端数据流重构与 400 修复 (P4)
 
 - **问题现象**
@@ -1011,6 +1048,267 @@
   - `pnpm exec eslint src/features/logistics-config/packaging-rules-tab.tsx`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
+
+## 2026-04-17 权限方案A第二轮：继续去角色兼容化，收口到用户显式权限单链路
+
+- **变更概述**
+  - 调整 `server/handlers/users.go`，将用户创建、编辑、替换、绑定员工、解绑员工、bulk sync 的活跃写路径从 legacy `role` / `user_roles` / `employee_roles` 同步链中断开，不再因为用户资料修改继续写回旧角色绑定。
+  - 调整 `src/features/trading/components/purchase/*print*.tsx`、`src/features/system-mgmt/tabs/perm-stats-tab.tsx`、`src/features/system-mgmt/tabs/index.tsx`、`src/stores/auth-store.ts`，去掉运行时对 `user.role`、`resolvedRole`、`roleInfo` 等旧角色兼容字段的依赖。
+  - 调整 `src/features/users/contracts/user-api-dto.ts`、`src/features/users/data/schema.ts`、`src/features/users/adapters/user-api-adapter.ts`、`src/features/users/test-factories.ts`，删除已无运行时消费者的 `resolvedRole / roleInfo` 兼容字段映射。
+  - 调整 `src/features/users/components/users-role-bindings-dialog.tsx`，将旧角色绑定弹窗退化为 `UsersPermissionsDialog` 代理壳，避免前端误接回旧角色接口。
+  - 调整 `server/handlers/users_create_role_validation_test.go` 与 `server/handlers/users_contract_regression_test.go`，把创建用户、绑定员工、解绑员工、`/auth/snapshot`、`GET /users/:id/access` 的回归测试收口到权限单链路口径，并补齐 `user_permissions` 测试表字段。
+  - 调整 `server/dependencies/effective_access.go`、`server/dependencies/effective_access_test.go`、`server/dependencies/effective_access_org_role_family_test.go`，将运行时 effective access 收口为只读取 `user_permissions` 的显式权限快照，移除 `PrimaryRoleID / EffectiveRoles` 的运行时语义与 legacy profile 迁移分支。
+  - 调整 `server/services/user_permission_service.go` 与 `server/handlers/user_permissions.go`，移除已脱离路由主链的 `migrate-effective` 迁移接口实现，避免继续保留“从旧角色快照回填权限”的隐性入口。
+  - 调整 `server/services/user_query_dto.go`、`server/services/user_query_service.go`、`server/handlers/users.go` 以及 `src/features/users/services/user-api.ts`、`src/routes/_authenticated/*/accounts.tsx`，移除用户列表 / options 查询中的 `role` 筛选，并停止在前后端活跃契约中继续透传 `role`。
+
+- **收口结果**
+  - 活跃用户写路径已不再把 legacy role 当作权限生效前提，也不再持续刷新旧 role binding 表。
+  - 前端运行时展示与状态同步链已基本从“角色摘要”切到“权限摘要”，避免继续给用户暴露“看起来仍有主角色/生效角色”的伪语义。
+  - 回归测试已开始以 `user_permissions` 为权威来源验证用户访问快照，而不是继续把 `primaryRoleId / effectiveRoles / roleBindings` 当成标准响应。
+  - 用户列表、options、用户创建/替换请求链已不再把 `role` 当成活跃过滤条件或写入字段，用户域主链进一步收口到“用户资料 + 显式权限”模型。
+  - `effective_access` 运行时实现与测试已不再混入角色绑定/部门角色推导，仅保留仍有用途的角色模板权限解析辅助能力。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `go test ./handlers -run "CreateUserHandler|BindUserEmployeeHandler|UnbindUserEmployeeHandler"`：通过。
+  - `go test ./handlers -run "ReplaceUserHandler|GetProfileReturnsExpectedUserMetadata|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler"`：通过。
+  - `pnpm exec vitest run src/features/users/services/user-api.test.ts`：通过。
+  - `go test ./dependencies -run "EffectiveAccess|ResolvePermissionsForRole"`：通过。
+  - `go test ./handlers -run "GetUsersHandler|GetProfileReturnsExpectedUserMetadata|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler" -count=1`：通过。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（用户域测试 / helper / locale）
+
+- **变更概述**
+  - 调整 `src/features/users/hooks/use-users-action-dialog-sync.test.ts`，移除对员工同步自动回填 `role` 的过期断言，改为验证姓名、手机号、用户名自动填充与编辑态不自动覆盖。
+  - 调整 `src/features/users/hooks/use-users.test.ts`，移除 `useUserOptionsQuery` 对旧 `role` 查询参数的测试假设，保持用户 options 查询只按当前活跃过滤契约断言。
+  - 调整 `server/handlers/users_create_role_validation_test.go` 与 `server/handlers/users_contract_regression_test.go`，移除 `currentRole` / `ctx.Set("role")` 等旧测试壳层，保持用户 handler 回归测试仅按当前权限单链路行为断言。
+  - 调整 `server/handlers/users.go`，将仅用于员工绑定校验的 helper 更名为 `resolveEmployeeRecordIDForBinding(...)`，避免继续沿用 role-binding 历史命名。
+  - 调整 `server/handlers/bulk_sync_audit.go` 及各 bulk sync handler 调用点，将 `enforceBulkSyncRole(...)` 更名为 `enforceBulkSyncPermissions(...)`，与当前显式权限裁决实现保持一致。
+  - 调整 `src/locales/messages/zh-CN/users.ts` 与 `src/locales/messages/en-US/users.ts`，继续把用户域列表列名、删除确认、校验提示与历史兼容说明刷新为“显式权限”语义。
+
+- **收口结果**
+  - 用户域活跃测试链已不再暗示“role 仍能决定用户写入、绑定或快照行为”，避免测试继续把历史语义带回主链。
+  - bulk sync 与员工绑定运行时 helper 的命名已与当前 permissions 实现对齐，减少后续维护时把 helper 名称误读为“仍依赖角色”的风险。
+  - 用户管理界面的中英文文案已进一步脱离“角色裁决 / 部门角色映射”表述，改为明确提示后端按显式权限裁决。
+  - 复扫确认：`users-role-bindings-dialog.tsx`、`use-role-display.ts`、`role-display.ts`、`role-resolver.ts` 当前已无运行时消费者，仅剩自引用或测试引用，后续可作为物理删除候选继续处理。
+
+- **验证结果**
+  - `pnpm exec vitest run src/features/users/hooks/use-users.test.ts src/features/users/hooks/use-users-action-dialog-sync.test.ts`：通过。
+  - `go test ./handlers -run "CreateUserHandler|BindUserEmployeeHandler|UnbindUserEmployeeHandler|ReplaceUserHandler|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler" -count=1`：通过。
+  - `go test ./handlers -run ^$ -count=1`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（用户域旧角色死代码物理下线）
+
+- **变更概述**
+  - 物理删除 `src/features/users/components/users-role-bindings-dialog.tsx`、`src/features/users/hooks/use-role-display.ts`、`src/features/users/utils/role-display.ts`、`src/features/users/utils/role-resolver.ts`、`src/features/users/utils/department-role.ts` 以及 `role-display.test.ts`、`role-resolver.test.ts`。
+  - 本轮删除目标均已在前序复扫中确认无运行时消费者，仅剩旧测试引用、自引用或代理壳层，不再承担任何用户权限主链职责。
+
+- **收口结果**
+  - 用户域前端已不再保留“角色展示解析 / 部门角色推导 / 角色绑定代理弹窗”这一组历史死代码，避免后续维护中再次把它们误接回主链。
+  - `src/features/users` 范围内对 `users-role-bindings-dialog / use-role-display / role-display / role-resolver / department-role` 的 import 与调用链已清空。
+  - 用户权限模型在前端用户域的主链语义进一步收口为“用户资料 + 显式权限分配 + 权限摘要展示”，不再保留旧角色工具壳层。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - 全仓复扫 `users-role-bindings-dialog / use-role-display / role-display / role-resolver / department-role`：无残留引用。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（移除 `user.Role` 运行时壳层与测试 schema 残留）
+
+- **变更概述**
+  - 调整 `server/models/user.go`，移除用户模型上的 legacy `Role` 字段，令用户运行时主链只保留 `username / status / employeeId` 等用户资料字段与显式权限快照入口。
+  - 调整 `server/middleware/auth.go`，认证链读取用户时不再 `SELECT role`；访问快照解析只基于用户基础资料与 `user_permissions`。
+  - 调整 `server/repositories/organization_repository.go` 与 `server/db/db.go`，去掉 `LOWER(role) <> 'admin'`、`LOWER(role) = 'admin'` 这类旧用户角色依赖，统一改为仅按受控用户名 `admin` 做兼容保护/seed。
+  - 调整 `server/handlers/users_create_role_validation_test.go`、`server/handlers/users_contract_regression_test.go`、`server/services/leave_service_test.go`、`server/handlers/leave_handlers_test.go`、`server/repositories/organization_repository_test.go`、`server/services/organization_service_test.go`、`server/dependencies/effective_access_test.go`，移除可安全删除的 `"role"` 请求 payload、`models.User{ Role: ... }` seed，以及随 `user.Role` 消失而不再需要的 `role TEXT` 用户表测试列。
+
+- **收口结果**
+  - 用户实体本身已不再携带 `role` 字段，后端用户主链从模型层开始进一步收口到“用户资料 + 显式权限 + 权限快照”。
+  - 用户 handler、认证链、组织域仓库和 admin 权限 seed 已不再依赖 `user.Role`；此前阻碍测试 schema 收口的运行时用户字段壳层已被移除。
+  - 全仓针对用户字段维度的 `role TEXT`、`"role":`、`models.User{ Role: ... }`、`json:"role"`、`SELECT role`、`LOWER(role)` 残留已清零；当前保留的仅是角色模板实体 `models.Role` 及其模板权限相关逻辑。
+
+- **验证结果**
+  - `go test ./handlers ./services ./repositories ./middleware ./dependencies ./db -run ^$ -count=1`：通过。
+  - `go test ./handlers -run "CreateUserHandler|BindUserEmployeeHandler|UnbindUserEmployeeHandler|ReplaceUserHandler|GetUsersHandler|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler|PreviewMyLeaveRequestHandler|CreateMyLeaveRequestHandler" -count=1`：通过。
+  - `go test ./services -run "PreviewMyLeaveRequest|CreateMyLeaveRequest|CancelMyLeaveRequest|GetMyLeaveStats" -count=1`：通过。
+  - 全仓复扫 `role TEXT / \"role\": / models.User{ Role: ... } / json:"role" / SELECT role / LOWER(role)`：`user.Role` 残留已清零。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（清理脚本与边缘工具中的 `admin/role` 历史语义）
+
+- **变更概述**
+  - 调整 `server/cmd/cleanup/main.go` 与 `server/scripts/cleanup_cashier.go`，不再按 `users.role='cashier'` 做精准删除，统一改为按受控用户名 `CLEANUP_USERNAME`（默认 `cashier`）执行清理。
+  - 调整 `server/handlers/ws.go`，WebSocket 握手时通过 `IdentityAccessService` 解析用户显式权限快照，不再从 JWT claims 读取 `role`，也不再保留 `client.Role` / `isAdminRole(...)` 这一组历史判定。
+  - 调整 `server/handlers/alerts.go`，系统告警通知从历史 `targetUser="admin"` 改为 `permission:perm_manage` 显式权限目标，由 WebSocket 通知链按权限投递给具备 `perm_manage` 的在线用户。
+  - 调整 `server/dependencies/effective_access.go`，移除 `fallbackPermissionsForRole(admin|superadmin)` 历史兜底，保留角色模板实体 `models.Role` 驱动的模板权限解析能力。
+  - 调整 `server/db/db.go`，删除 `hardenSeedAdminRole()`、`UPDATE users SET role = 'admin' ...` 与 `users.role` 约束清理，仅保留角色模板实体 `models.Role` 的模板种子、模板迁移与 admin 显式权限 seed。
+
+- **收口结果**
+  - `cleanup_*` 一类工具已不再依赖 `users.role` 历史字段，避免后续运维脚本继续误写“按角色删用户”的旧口径。
+  - 系统告警的 WebSocket 投递已从“admin 角色字符串”切换为“显式权限目标”，与当前权限单链路保持一致。
+  - `db.go` 中仅服务于用户 `role` 字段兼容的补丁逻辑已移除；当前保留的 `roles` 表与 `models.Role` 仅承担角色模板目录域职责，不再与用户运行时字段混用。
+
+- **验证结果**
+  - `go test ./handlers ./dependencies ./db ./cmd/cleanup -run ^$ -count=1`：通过。
+  - `go test ./handlers -run "GetActiveAlertsHandler|WSHandler|CreateUserHandler|ReplaceUserHandler|GetAuthSnapshotHandler" -count=1`：通过。
+  - `go test ./dependencies -run "EffectiveAccess|ResolvePermissionsForRole" -count=1`：通过。
+  - `go test -tags tools cleanup_cashier.go -run ^$ -count=1`（在 `server/scripts` 目录下单文件校验）：通过。
+  - 全仓复扫 `role ILIKE / client.Role / isAdminRole / ClaimString(claims, "role") / UPDATE users SET role = 'admin' / hardenSeedAdminRole / fallbackPermissionsForRole / System ALERT -> "admin"`：脚本与边缘工具残留已清零。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（清理前端与文案中的 `superadmin/admin role` 历史措辞）
+
+- **变更概述**
+  - 调整 `src/features/users/utils/user-utils.ts`，将用户侧保护 helper 从 `isSuperAdmin(...)` 收口为 `isProtectedSystemAccount(...)`，前端仅按受控用户名识别系统保护账户，不再保留旧角色判断措辞。
+  - 调整 `src/features/users/hooks/use-users.ts`、`data-table-row-actions.tsx`、`data-table-bulk-actions.tsx`、`users-columns.tsx`、`users-multi-delete-dialog.tsx`，将 `protected superadmin account`、`switchAdminFailed` 等旧错误口径与 helper 命名统一刷新为“受系统保护账户 / protected account”语义。
+  - 调整 `src/features/users/components/users-add-admin-dialog.tsx`，将验证/开通阶段的文案 key 从 `adminVerify* / adminCreate*` 刷新为 `accessVerify* / protectedAccountCreate*`，避免继续将高权限账户开通表述为历史 admin role 切换。
+  - 调整 `src/locales/messages/zh-CN/users.ts` 与 `src/locales/messages/en-US/users.ts`，将 `superadmin / ROOT 账户 / switch admin / Create Admin` 等用户侧历史措辞统一刷新为“高权限账户 / 受保护账户 / 全系统管理权限”。
+
+- **收口结果**
+  - 用户管理前端已不再使用 `isSuperAdmin`、`protected superadmin account`、`ROOT 账户` 这组历史用户角色措辞，前端保护逻辑与提示语均已切到“受系统保护账户 / 全系统管理权限”语义。
+  - `users` 中英文 locale 的用户可见文案和内部 key 已与当前权限单链路保持一致，不再暗示前端仍存在 admin role / superadmin role 切换链路。
+  - 本轮未改动 `src/features/system-mgmt/*` 中属于角色模板目录域的角色矩阵保护逻辑，避免误把角色模板语义当成用户字段兼容层一起删除。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - 全仓复扫 `isSuperAdmin / protected superadmin / Superadmins / ROOT-level / ROOT 账户 / users.dialogs.admin* / users.toast.switchAdmin* / users.actions.addAdmin`（限定 `src/features/users` 与 `users` locale）：残留已清零。
+
+## 2026-04-17 权限方案A第二轮去兼容化补充收口（清理 `system-mgmt` 角色模板域中过时说明文案）
+
+- **变更概述**
+  - 调整 `src/locales/overrides/system-management.zh-CN.ts`，将角色矩阵页安全提示从 `ROOT（superadmin）角色保持锁定` 刷新为“系统保留的全局模板角色保持锁定”。
+  - 调整 `src/locales/overrides/system-management.en-US.ts`，将对应提示从 `The ROOT role stays locked` 刷新为 `The built-in global template role stays locked`。
+  - 本轮仅刷新角色模板域中的用户可见说明文字，不调整 `src/features/system-mgmt/*` 中用于保护模板角色的内部 `admin/superadmin` 判断逻辑。
+
+- **收口结果**
+  - `system-mgmt` 角色矩阵页不再向用户暴露 `ROOT / superadmin` 这组过时说明文案，而是统一表述为“系统保留的全局模板角色”。
+  - 角色模板域的真实业务语义仍被保留：模板角色锁定、组织角色导入、矩阵权限编辑能力均未被误改。
+  - 当前 `system-mgmt` 范围中剩余的 `admin/superadmin` 命中主要属于内部变量名和模板保护逻辑，不属于需要继续删除的用户可见旧文案。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - 全仓复扫 `ROOT / superadmin`（限定 `system-mgmt` locale override / message 与 `src/features/system-mgmt` 展示文案范围）：剩余命中仅为内部变量名与模板保护逻辑，不再是用户可见过时说明文字。
+
+## 2026-04-17 本地登录 `502` 根因修复（Docker 本地上游不可用）
+
+- **问题现象**
+  - 浏览器登录页打印 `[UserAuthForm] [AUTH_DIAG] LOGIN_RESPONSE_FAILED`，账号 `admin` 在 `http://127.0.0.1:5173` 下登录时收到 `502`。
+  - 进一步排查发现 `fetch('/api/v1/auth/login')` 在开发环境下经 Vite 代理转发到 `http://localhost:8080`，而 `http://127.0.0.1:8080/api/v1/health` 直接返回 `nginx/1.29.7 502 Bad Gateway`。
+
+- **根因定位**
+  - `127.0.0.1:8080` 对应的是 Docker 的 `xdfc-nginx-lb`，并非 Go 进程本体；`502` 来自 nginx 上游 `server-app-*` 不可用。
+  - `server-app-1` / `server-app-2` 容器日志显示两个关键启动崩溃点：
+    - `user_permissions.granted_by` 列为可空 UUID，但模型使用 `string`，导致 seed admin explicit permissions 时写入空字符串 `''`，触发 PostgreSQL `invalid input syntax for type uuid: ""`；
+    - `ensurePackagingRuleMaterialUniqueIndex()` 在双副本启动时存在建索引竞态，可能触发 `pg_class_relname_nsp_index` 冲突并直接打崩容器。
+  - 此外，手工 `docker compose up` 若未显式走 `.env.dev`，还会让 app 读取 `server/.env` 中的数据库密码，触发本地 Postgres 认证失败；仓库内 `server/dev-up.ps1` 已内置这层防护。
+
+- **实施修复**
+  - 调整 `server/models/user_permission.go`，将 `GrantedBy` 从 `string` 改为 `*string`，让可空 UUID 真正落库为 `NULL`。
+  - 调整 `server/services/user_permission_service.go`，新增 `normalizeNullableUUIDString(...)`，把写入路径的空 `GrantedBy` 转成 `nil`，读取路径则对 `nil` 做安全展开。
+  - 调整 `server/db/db.go`，给 `ensurePackagingRuleMaterialUniqueIndex()` 增加事务级 `pg_advisory_xact_lock(2026041701)`，把双副本建索引流程串行化。
+  - 按仓库约定执行 `powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -FullStack`，确保 Docker 本地全栈使用 `.env.dev` 启动。
+
+- **验证结果**
+  - `go test ./services ./db ./handlers ./models -run ^$ -count=1`：通过。
+  - `powershell -ExecutionPolicy Bypass -File .\server\dev-up.ps1 -FullStack`：完成，本地全栈重新拉起。
+  - `docker ps`：`server-app-1` / `server-app-2` 均为 `healthy`。
+  - `curl http://127.0.0.1:8080/api/v1/health`：`200`。
+  - `curl http://127.0.0.1:5173/api/v1/health`：`200`。
+  - 登录链路已从 `502` 恢复为后端可正常响应状态；浏览器侧只需再实际重试一次真实账号登录即可确认终态。
+
+## 2026-04-17 `/aps-scheduling` 顶层路径权限映射修复
+
+- **问题现象**
+  - 前端渲染 `__root.tsx` 时，`permission-catalog` 抛出 `[permission-catalog] Unmapped top-level path: /aps-scheduling`。
+  - 侧边栏 `src/components/layout/data/sidebar-data.ts` 已为 `/aps-scheduling` 生成菜单项并调用 `permissionIdForPath('/aps-scheduling')`，因此一旦 `permission-catalog` 缺少顶层映射，整个根路由会在布局渲染阶段直接崩溃。
+
+- **根因定位**
+  - 路由 `src/routes/_authenticated/aps-scheduling/route.tsx` 已存在，`/aps-scheduling/process`、`/aps-scheduling/board` 等子路径也已纳入 route tree。
+  - `src/features/authz/data/permission-catalog.ts` 的 `ROUTE_TO_MENU_MAPPING` 漏掉了 `/aps-scheduling`，导致 `getMenuPermissionForPath('/aps-scheduling')` 无法解析 menu 权限。
+  - 该问题属于 permission catalog 单源缺口，而非运行时权限裁决异常。
+
+- **实施修复**
+  - 在 `src/features/authz/data/permission-catalog.ts` 中补齐 `/aps-scheduling -> piecework` 映射。
+  - 选择归入现有 `piecework` 菜单权限域，而不是新增一个新的 menu 权限，原因是：
+    - 当前侧边栏将 `APS排产` 与 `计件管理` 放在同一“生产协同”分组；
+    - 新增 `menu_aps_scheduling` 会引入新的前后端权限契约项，而本轮只需修复目录单源缺口。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `permission-catalog.ts` 中 `/aps-scheduling` 已可正常解析到现有 menu 权限域，不再触发 `Unmapped top-level path`。
+
+## 2026-04-17 权限树“页面更新后节点不自动更新”长远根因修复
+
+- **问题现象**
+  - 账号权限弹窗与系统管理权限树在页面/路由更新后，新增节点不会自动出现，表现为“路由已经加了，但权限树还是旧的”。
+
+- **根因定位**
+  - 前端权限树上游依赖 `authenticated-route-catalog.ts` 这份由脚本生成的静态目录，而 `dev` 只在启动 `vite` 前生成一次。
+  - 同时 `route-permission-registry.ts`、`default-permissions-registry.ts`、`default-permission-queries.ts`、`use-roles.ts`、`users-permissions-dialog.tsx` 等链路又在 import 时或生命周期初始阶段固化了一份权限快照。
+  - 结果是：即便新增了 `src/routes/_authenticated/**` 页面，权限树也可能继续读取旧目录、旧映射、旧父子关系。
+
+- **实施修复**
+  - 新增 `src/features/authz/data/authenticated-route-paths.ts`，前端运行时通过 `import.meta.glob('/src/routes/_authenticated/**/*.tsx')` 直接收集 authenticated route 路径。
+  - 新增 `scripts/authenticated-route-path-utils.mjs`，让脚本侧也能直接扫描 `src/routes/_authenticated`，不再依赖前端运行时 registry。
+  - 调整 `src/features/authz/data/route-permission-registry.ts` 为 getter 模式：按需从当前 route paths 生成 route-derived permissions / entries / map。
+  - 调整 `src/features/authz/data/default-permission-queries.ts`、`src/features/system-mgmt/utils/role-permission-tree.ts`、`src/features/system-mgmt/hooks/use-roles.ts`、`src/features/users/components/users-permissions-dialog.tsx`，去除 import-time 或生命周期初始阶段的权限快照读取。
+  - 调整 `package.json`，让 `dev` / `dev:frontend:debug` / `build` 不再依赖 `generate-authenticated-route-catalog.mjs` 作为权限树上游输入。
+  - 调整 `scripts/verify-permissions.mjs`，改为直接使用脚本侧 authenticated route collector 生成 route permission entries。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `node scripts/verify-permissions.mjs`：通过。
+  - 权限树上游已从“第二份静态 generated catalog”收口到“当前 authenticated routes + 按需权限派生”链路；后续新增 authenticated route 时，不需要再额外同步一份前端静态路由目录。
+
+## 2026-04-17 权限体系切到“纯用户直赋权”主链（方案A实施）
+
+- **变更概述**
+  - 后端新增 `server/models/user_permission.go` 与 `server/services/user_permission_service.go`，落地 `user_permissions` 显式授权主表、用户权限读取 / 替换 / 旧 effective permissions 迁移能力。
+  - 后端新增 `server/handlers/user_permissions.go`，并在 `server/routes/routes.go` 注册：
+    - `GET /api/v1/users/:id/permissions`
+    - `PUT /api/v1/users/:id/permissions`
+    - `POST /api/v1/users/permissions/migrate-effective`
+  - 调整 `server/dependencies/effective_access.go`、`server/dependencies/identity_access.go`、`server/middleware/authorization.go`，将权限判定主链切到 `user_permissions`，移除 admin 角色对 `RequirePermissions(...)` 的自动绕过。
+  - 调整 `server/db/db.go`，注册 `UserPermission` 自动迁移、唯一活动索引，移除 `users.role` 非空约束，并为 admin 账号补齐显式权限 seed。
+  - 调整 `server/handlers/users.go` 中 admin 敏感操作判断，改为按显式权限 `perm_manage` 判定，而不是依赖旧 `role=admin` 上下文。
+  - 前端新增 `src/features/users/components/users-permissions-dialog.tsx`，在用户列表行级操作中将“管理角色”替换为“管理权限”，通过权限树直接编辑用户显式权限。
+  - 前端补齐 `src/features/users/contracts/user-api-dto.ts`、`src/features/users/data/schema.ts`、`src/features/users/adapters/user-api-adapter.ts`、`src/features/users/services/user-api.ts`、`src/features/users/hooks/use-users.ts` 的用户权限 DTO / schema / adapter / API / hooks 主链。
+
+- **收口结果**
+  - 当前请求鉴权与 access snapshot 已收口为“只读用户显式权限”，不再依赖角色链做运行时权限放行。
+  - 用户列表现在已经具备单用户显式权限编辑入口，用户权限变更可直接落库到 `user_permissions`。
+  - `GET /users/:id/access` 仍保留兼容路径，但其角色相关字段已退为空，诊断信息明确标识 `user_permissions_authoritative` 与 `role_chain_disabled`。
+  - 旧角色绑定接口暂未物理删除，但已降级为兼容历史数据入口，不再影响真实鉴权主链。
+
+- **验证结果**
+  - `go test ./handlers ./middleware ./dependencies ./services ./routes -run ^$`：通过。
+  - `pnpm exec tsc --noEmit`：通过。
+  - `pnpm exec eslint src/features/users/components/users-permissions-dialog.tsx src/features/users/components/users-dialogs.tsx src/features/users/components/data-table-row-actions.tsx src/features/users/hooks/use-users.ts src/features/users/services/user-api.ts src/features/users/adapters/user-api-adapter.ts src/features/users/data/schema.ts src/features/users/contracts/user-api-dto.ts`：通过。
+  - 本轮未附加截图 / 录屏；当前记录以代码变更与命令验证结果为准。
+
+## 2026-04-16 修复销售订单主链空 `orderNo` 根因，并为历史脏数据补回填（804）
+
+- **变更概述**
+  - 新增 `server/numbering/generator.go`，将 `/numbering/generate` 的核心发号逻辑抽为共享 helper，供 handler 与业务服务复用。
+  - 新增 `server/salesorderidentity/identity.go`，统一销售订单分类别名到合同条码 ruleKey 的映射，以及 `orderNo / barcode` 的 identity 解析规则。
+  - 新增 `server/salesorderidentity/backfill.go` 与 `server/salesorderidentity/backfill_test.go`，为历史空 `orderNo` 记录提供受控回填能力。
+  - 调整 `server/handlers/numbering.go`，改为调用共享 `numbering.GenerateNextNumberTx(...)`，避免继续在 handler 内重复维护发号逻辑。
+  - 调整 `server/services/sales_order_command_service.go`，让新建销售订单在 `orderNo / barcode` 缺失时，由后端按分类生成合同条码，并强制令 `orderNo` 跟随 `barcode`。
+  - 调整 `server/services/order_master_service.go`，收口 `BulkSyncSalesOrders()`，避免通过同步入口继续写入空 `orderNo`。
+  - 调整 `server/services/sales_transaction_service.go`，阻断统一保存链把既有 `orderNo` 再写成空字符串。
+  - 调整 `server/db/db.go`，新增 `sales_orders.order_no` 的启动回填与非空约束初始化。
+  - 调整 `src/features/trading/hooks/use-sales-order-init.ts` 与 `src/features/trading/hooks/use-sales-order-form.ts`，让新建订单的只读 `orderNo` 预览与 `barcode` 保持一致。
+
+- **收口结果**
+  - 销售订单主链不再依赖前端“碰巧传了非空 `orderNo`”才能正常落库。
+  - 当前系统里真正已有权威发号能力的是合同条码规则，因此本轮将 `orderNo` 收口为跟随 `barcode` 的业务 identity，而不是再临时发明第二套不兼容编号体系。
+  - 历史脏数据不再只靠物流弹窗消费侧过滤；数据库启动时会优先把 `order_no=''` 且 `barcode` 非空的记录回填为同值 identity。
+  - 新增数据库层约束后，未来空 `orderNo` 将不能再被静默写入。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/features/trading/hooks/use-sales-order-init.ts src/features/trading/hooks/use-sales-order-form.ts`：通过。
+  - `go test .\salesorderidentity -run BlankSalesOrderNo`：通过。
+  - `go test .\numbering -run ^$`：通过。
+  - `go test .\services -run TestSaveSalesOrderGeneratesOrderNoFromBarcodeWhenBlank`：**未完成**；当前被仓库内并行存在的产品属性服务编译错误阻塞，阻塞文件为 `server/services/product_attribute_category_service.go` 与 `server/services/product_attribute_option_service.go`，与本轮销售订单修复无直接逻辑关系。
+
 ## 2026-04-16 收口 `shipping-management` 车型联系人读写链的 Hook / Service 分层边界（764）
 
 - **变更概述**
@@ -1027,6 +1325,27 @@
 - **验证结果**
   - `pnpm exec eslint src/features/shipping-management/hooks/use-vehicle-contact-actions.ts src/features/shipping-management/hooks/use-vehicle-contact-bindings.ts src/features/shipping-management/services/vehicle-contact-service.ts`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 修复 `product-attribute-machine-value.ts` 导出漂移导致的报价/销售路由级 500（805）
+
+- **变更概述**
+  - 调整 `src/features/engineering/utils/product-attribute-machine-value.ts`，恢复当前工程属性调用链仍在依赖的兼容导出：
+    - `areSameProductAttributeCategoryKey`
+    - `normalizeProductAttributeCategoryInputKey`
+    - `normalizeProductAttributeOptionInputValue`
+    - `buildProductAttributeCategorySaveInput`
+    - `buildProductAttributeOptionSaveInput`
+  - 保留现有 `normalizeProductAttributeMachineValue` 与 `resolveProductAttributeCategoryKey` 实现，仅修复工具文件导出集合与调用方契约的漂移。
+  - 复核受影响 import 站点，包括 `product-attribute-utils.ts`、`dynamic-attribute-section.tsx`、属性分类/分类项弹窗与属性服务层。
+
+- **收口结果**
+  - 这次页面 500 的根因被确认在共享 engineering utility 的 ESM 导出缺失，而不是报价管理 / 销售管理自身业务代码。
+  - 导出恢复后，依赖该工具链的模块可重新完成 import 装载，不再在路由首屏阶段直接抛 `SyntaxError`。
+  - WebSocket 1005 / 1006、PWA banner 等日志与本次页面崩溃无直接因果关系。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/features/engineering/utils/product-attribute-machine-value.ts src/features/engineering/utils/product-attribute-utils.ts src/features/engineering/components/product/dynamic-attribute-section.tsx src/features/engineering/components/product-attributes/product-attribute-option-dialog.tsx src/features/engineering/components/product-attributes/product-attribute-category-dialog.tsx src/features/engineering/services/product-attribute-category-service.ts src/features/engineering/services/product-attribute-option-service.ts`：通过。
 
 ## 2026-04-16 收口 `vehicle-contact-editor-dialog.tsx` 中基于 `Partial<T>` 的本地补丁更新表达（765）
 
@@ -1092,6 +1411,25 @@
   - `pnpm exec eslint src/features/shipping-management/services/vehicle-contact.schema.ts src/features/shipping-management/services/vehicle-contact-service.ts`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
+## 2026-04-16 修复 `server` Docker 构建阶段 `go build` 失败，并恢复 compose 构建链（806）
+
+- **变更概述**
+  - 调整 `server/services/product_attribute_category_service.go`，删除未使用的 `fmt` 导入，并收口残留的 `classifyProductAttributeCategoryCreateError / classifyProductAttributeCategoryPatchError` 调用。
+  - 调整 `server/services/product_attribute_option_service.go`，删除未使用的 `fmt` 导入，并收口残留的 `classifyProductAttributeOptionCreateError` 调用。
+  - 调整 `server/handlers/products.go`，移除对已不存在的 `services.ErrProductValidation / ErrProductVersionConflict / ErrProductInUse` 的依赖，改为与当前服务层一致地走 `respondDomainError(...)` 统一 domain error 响应路径，同时保留 `gorm.ErrRecordNotFound` 的显式 404 分支。
+
+- **收口结果**
+  - 本轮 Docker 构建失败最终确认不是 `Dockerfile` 问题，而是服务端源码存在两层历史编译漂移：
+    - 第一层是产品属性服务残留旧错误 helper
+    - 第二层是 `products` handler 残留旧 `ErrProduct*` 契约
+  - 这两层阻塞都收口后，`server` 主程序已重新可编译，Docker 镜像构建链也恢复正常。
+  - 本轮没有把旧错误常量补回服务层，而是统一收口到仓库现有的 domain error 响应方案，避免继续保留双轨错误契约。
+
+- **验证结果**
+  - `go build -ldflags="-s -w" -o xdfc-server .`：通过。
+  - `docker compose up -d --build search-engine app nginx_lb watchdog`：通过。
+  - Docker 输出确认 `server-app`、`server-search-engine`、`server-watchdog` 镜像重新构建成功，相关容器已成功启动。
+
 ## 2026-04-16 收口 `vehicle-contact-editor-dialog.tsx` 中实体装配与持久化载荷拼装职责（770）
 
 - **变更概述**
@@ -1121,6 +1459,24 @@
 
 - **验证结果**
   - `pnpm exec eslint src/features/shipping-management/vehicle-contact-channel-row.tsx src/features/shipping-management/vehicle-contact-editor-dialog.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 修复包装规则编辑弹窗中的单位下拉为空（807）
+
+- **变更概述**
+  - 调整 `src/features/logistics-config/packaging-rules-tab.tsx`，将尺寸单位、重量单位、数量单位的候选生成统一收口到包装场景专用 helper。
+  - 候选数据继续只来自 `useUnitsQuery()` / 单位管理接口，不新增第二套单位来源。
+  - 候选识别从仅依赖固定 `category` 过滤，升级为“优先按分类识别，未命中时按常见包装单位编码回退识别”。
+  - 为 `dimensionUnitCode / weightUnitCode / capacityUnitCode` 增加大小写无关解析，兼容历史 `pcs / PCS` 之类旧值回显。
+  - 为三个下拉补充显式中文空态提示，避免候选为空时静默空白。
+
+- **收口结果**
+  - 包装规格编辑弹窗中的尺寸单位、重量单位、数量单位已稳定复用单位管理数据。
+  - 当前问题确认是包装页本地候选构造过于刚性，不是“单位管理接口没有接入”。
+  - 即使当前环境中的单位分类或编码存在一定历史差异，弹窗也不再直接出现无提示空白。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/logistics-config/packaging-rules-tab.tsx`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
 ## 2026-04-16 修复 `contacts-list-panel.tsx` 中空状态依赖 props 契约遗漏（772）
@@ -1318,6 +1674,25 @@
   - `pnpm run gen:auth-routes`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
   - 目标文件 `eslint`：通过。
+
+## 2026-04-16 修复 `/basic-settings/units` 保存 404 与单位分类错乱（801）
+
+- **变更概述**
+  - 在 `server/routes/routes.go` 为 `/basic/units/:id` 补充 `PATCH` 路由，修复编辑保存直接 404。
+  - 在 `server/handlers/common.go` 新增 `PatchUnitHandler`，按标准 `SDRTSDeltaHandlerRequest` 解析前端 delta payload。
+  - 在后端统一加入单位分类归一化逻辑，兼容历史小写英文值与中文分类值，并收敛到标准枚举：`QUANTITY / WEIGHT / LENGTH / AREA / VOLUME / TIME / OTHER`。
+  - 归一化覆盖读取与写入两侧：创建、稀疏更新、PATCH、批量同步、缓存命中返回、数据库读取返回。
+  - 在 `server/handlers/save_patch_semantics_test.go` 补充单位 PATCH 与分类归一化回归测试。
+
+- **收口结果**
+  - `/basic-settings/units` 编辑弹窗点击“确认保存配置”不再因缺少后端 PATCH 路由而报 404。
+  - 历史单位若分类值为 `weight`、`面积` 等旧值，也会在 API 输出时归一化成标准枚举。
+  - 单位管理页的各分类 TAB 恢复正常过滤，不再只有“全部”页可见。
+
+- **验证结果**
+  - `go test ./handlers -run "Test(SaveUnitHandlerPreservesDescriptionAndSystemFlagOnSparseUpdate|PatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory|GetUnitsHandlerNormalizesHistoricalCategories)$"`：通过。
+  - `go test ./... -run ^$`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
 
 ## 2026-04-16 组织人事侧边栏双高亮修复：优先迁出请假管理与荣誉榜路由（793）
 

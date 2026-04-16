@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,32 +27,40 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
     const [showLeftArrow, setShowLeftArrow] = useState(false)
     const [showRightArrow, setShowRightArrow] = useState(false)
 
-    // 检测滚动状态
-    const checkScroll = () => {
-        const container = scrollContainerRef.current
-        if (container) {
-            const { scrollLeft, scrollWidth, clientWidth } = container
-            setShowLeftArrow(scrollLeft > 5)
-            setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 5)
-        }
-    }
+    const tabsSignature = useMemo(
+        () => tabs.map((tab) => `${tab.key}|${tab.href}`).join('||'),
+        [tabs],
+    )
 
-    useEffect(() => {
+    const checkScroll = useCallback(() => {
         const container = scrollContainerRef.current
-        if (container) {
-            checkScroll()
-            container.addEventListener('scroll', checkScroll)
-            window.addEventListener('resize', checkScroll)
-            
-            // 初始检测可能需要一点延迟待 DOM 渲染完成
-            const timer = setTimeout(checkScroll, 100)
-            return () => {
-                container.removeEventListener('scroll', checkScroll)
-                window.removeEventListener('resize', checkScroll)
-                clearTimeout(timer)
-            }
+        if (!container) {
+            setShowLeftArrow(false)
+            setShowRightArrow(false)
+            return
         }
-    }, [tabs])
+
+        const { scrollLeft, scrollWidth, clientWidth } = container
+        const nextShowLeft = scrollLeft > 5
+        const nextShowRight = scrollLeft + clientWidth < scrollWidth - 5
+
+        setShowLeftArrow((current) => (current === nextShowLeft ? current : nextShowLeft))
+        setShowRightArrow((current) => (current === nextShowRight ? current : nextShowRight))
+    }, [])
+
+    useLayoutEffect(() => {
+        const container = scrollContainerRef.current
+        if (!container) return
+
+        checkScroll()
+        container.addEventListener('scroll', checkScroll)
+        window.addEventListener('resize', checkScroll)
+
+        return () => {
+            container.removeEventListener('scroll', checkScroll)
+            window.removeEventListener('resize', checkScroll)
+        }
+    }, [checkScroll, tabsSignature, activeKey])
 
     const scroll = (direction: 'left' | 'right') => {
         const container = scrollContainerRef.current
@@ -71,7 +79,6 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
         )}>
             <div className='flex items-center justify-between gap-4 min-w-0 w-full overflow-hidden'>
                 <div className="relative flex-1 min-w-0 group">
-                    {/* 左侧遮罩与箭头 */}
                     {showLeftArrow && (
                         <>
                             <div className="absolute left-0 top-0 bottom-0 w-12 bg-linear-to-r from-background to-transparent z-10 pointer-events-none" />
@@ -113,7 +120,6 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
                         </TabsList>
                     </Tabs>
 
-                    {/* 右侧遮罩与箭头 */}
                     {showRightArrow && (
                         <>
                             <div className="absolute right-0 top-0 bottom-0 w-12 bg-linear-to-l from-background to-transparent z-10 pointer-events-none" />

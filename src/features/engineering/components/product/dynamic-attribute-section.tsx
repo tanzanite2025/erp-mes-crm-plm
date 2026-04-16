@@ -5,6 +5,7 @@ import { FormItem, FormLabel } from '@/components/ui/form'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { type Product, type ProductAttributeCategory, type ProductAttributeOption, type ProductTypeAttributeBinding } from '../../data/schema'
 import { getAttributeValue, getCategoryName, upsertAttributeValue, getOptionLabel } from '../../utils/product-attribute-utils'
+import { areSameProductAttributeCategoryKey } from '../../utils/product-attribute-machine-value'
 
 interface DynamicAttributeSectionProps {
   form: UseFormReturn<Product>
@@ -25,7 +26,7 @@ export function DynamicAttributeSection({
 }: DynamicAttributeSectionProps) {
   const values = form.watch()
   const visibleBindings = bindings.filter(
-    (binding) => binding.active && !excludeCategoryKeys.includes(binding.categoryKey)
+    (binding) => binding.active && !excludeCategoryKeys.some((item) => areSameProductAttributeCategoryKey(item, binding.categoryKey))
   )
 
   if (visibleBindings.length === 0) {
@@ -40,10 +41,10 @@ export function DynamicAttributeSection({
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
         {visibleBindings.map((binding) => {
-          const category = categories.find((item) => item.key === binding.categoryKey)
+          const category = categories.find((item) => areSameProductAttributeCategoryKey(item.key, binding.categoryKey))
           const currentValue = getAttributeValue(values, binding.categoryKey)
           const categoryOptions = options
-            .filter((item) => item.categoryKey === binding.categoryKey && item.active)
+            .filter((item) => areSameProductAttributeCategoryKey(item.categoryKey, binding.categoryKey) && item.active)
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((item) => ({
               value: item.value,

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"xdfc-server/authz"
 
 	"github.com/gin-gonic/gin"
 )
@@ -111,7 +112,7 @@ func AlertWebhookHandler(c *gin.Context) {
 			)
 			alertHistory = append(alertHistory, entry)
 
-			NotifyTrigger("System", "ALERT_RESOLVED", "系统自诊断已恢复: "+translatedDesc, "admin", map[string]interface{}{
+			NotifyTrigger("System", "ALERT_RESOLVED", "系统自诊断已恢复: "+translatedDesc, notificationTargetPermission(authz.PermissionManage), map[string]interface{}{
 				"fingerprint":     fingerprint,
 				"status":          "resolved",
 				"severity":        severity,
@@ -153,7 +154,7 @@ func AlertWebhookHandler(c *gin.Context) {
 			previous.Severity != alert.Severity ||
 			previous.Description != alert.Description
 		if shouldBroadcast {
-			NotifyTrigger("System", "ALERT", "系统自诊断异常: "+translatedDesc, "admin", alert)
+			NotifyTrigger("System", "ALERT", "系统自诊断异常: "+translatedDesc, notificationTargetPermission(authz.PermissionManage), alert)
 		}
 	}
 

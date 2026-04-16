@@ -17,7 +17,6 @@ export const getFormSchema = (t: TranslateFn) => z
     username: z.string().min(1, t('users.validation.usernameRequired')),
     phoneNumber: z.string().optional().or(z.literal('')),
     password: z.string().transform((pwd) => pwd.trim()),
-    role: z.string().min(1, t('users.validation.roleRequired')),
     confirmPassword: z.string().transform((pwd) => pwd.trim()),
     isEdit: z.boolean(),
     employeeId: z.string().optional(),

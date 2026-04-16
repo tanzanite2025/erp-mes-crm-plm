@@ -1,6 +1,5 @@
 import z from 'zod'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { roles } from '@/features/users/data/data'
 
 const usersSearchSchema = z.object({
   page: z.number().optional().catch(1),
@@ -14,10 +13,6 @@ const usersSearchSchema = z.object({
         z.literal('suspended'),
       ])
     )
-    .optional()
-    .catch([]),
-  role: z
-    .array(z.enum(roles.map((r) => r.value as (typeof roles)[number]['value'])))
     .optional()
     .catch([]),
   username: z.string().optional().catch(''),

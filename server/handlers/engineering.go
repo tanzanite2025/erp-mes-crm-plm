@@ -85,7 +85,7 @@ func SaveEngineeringSpecHandler(c *gin.Context) {
 }
 
 func BulkSyncEngineeringSpecsHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

@@ -30,12 +30,11 @@ export const InventoryMaintenanceService = {
         metadata: { intent: 'SHIPMENT_VOID' },
       }),
     })
-    const record = toShipmentRecordContract(
-      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryMaintenanceService.deleteShipmentRecord'
-      ) as InventoryShipmentRecordApiDTO
+    const response = ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+      res,
+      'InventoryMaintenanceService.deleteShipmentRecord'
     )
+    const record = toShipmentRecordContract(response)
     return record
   },
 

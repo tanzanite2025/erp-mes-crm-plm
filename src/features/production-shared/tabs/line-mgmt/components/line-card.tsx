@@ -114,58 +114,60 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
 
   return (
     <Card
-      className={`group/card transition-all hover:shadow-md rounded-[24px] border-dashed bg-muted/5 border-muted/50 h-fit min-h-0 w-full ${!line.isActive ? 'opacity-50 grayscale' : 'border-l-4 border-l-primary shadow-sm'
-        }`}
+      className={`group/card overflow-hidden rounded-[28px] border border-dashed bg-background/90 shadow-none backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_50px_-28px_rgba(6,182,212,0.55)] ${!line.isActive ? 'opacity-70 grayscale' : 'border-cyan-500/20'}`}
     >
-      <CardContent className='p-2.5 space-y-2 h-fit min-h-0'>
-        <div className='flex items-start justify-between'>
-          <div className='flex items-start gap-1 sm:gap-3 flex-1 min-w-0'>
+      <CardContent className='p-5 space-y-4'>
+        <div className='flex items-start justify-between gap-4'>
+          <div className='flex items-start gap-3 flex-1 min-w-0'>
             <Button
               variant='ghost'
               size='icon'
-              className='size-7 sm:size-8 mt-1 text-muted-foreground shrink-0'
+              className='size-9 shrink-0 rounded-full border border-dashed border-muted/30 bg-muted/5 text-muted-foreground transition-all hover:border-cyan-500/20 hover:bg-cyan-500/5 hover:text-cyan-700'
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              {isExpanded ? <ChevronDown className='size-4 sm:size-5' /> : <ChevronRight className='size-4 sm:size-5' />}
+              {isExpanded ? <ChevronDown className='size-4' /> : <ChevronRight className='size-4' />}
             </Button>
-            <div className='space-y-1 min-w-0 flex-1'>
+            <div className='min-w-0 flex-1 space-y-2'>
               <div className='flex flex-wrap items-center gap-2'>
-                <h4 className='truncate text-sm font-black italic uppercase tracking-tighter text-slate-800 dark:text-slate-100 sm:text-base'>{line.name}</h4>
-                <Badge variant='outline' className='text-[7px] sm:text-[8px] font-mono rounded-full border-muted/50 bg-background/50'>
+                <h4 className='truncate text-[15px] font-black tracking-tight text-foreground'>{line.name}</h4>
+                <Badge variant='outline' className='rounded-full border-cyan-500/15 bg-cyan-500/5 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.24em] text-cyan-700/70'>
                   {line.code}
                 </Badge>
+                <Badge variant='outline' className={`rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.24em] ${line.isActive ? 'border-emerald-500/15 bg-emerald-500/5 text-emerald-700' : 'border-slate-500/15 bg-slate-500/5 text-slate-600'}`}>
+                  {line.isActive ? t('orgPersonnel.lineMgmt.card.running') : t('orgPersonnel.lineMgmt.card.offline')}
+                </Badge>
               </div>
-              <div className='flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest italic'>
-                <Settings2 className='size-3 shrink-0' />
+              <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/55'>
+                <Settings2 className='size-3.5 shrink-0 text-cyan-600/60' />
                 <span className='truncate'>{t('orgPersonnel.lineMgmt.card.topologyMgmt')}</span>
               </div>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='size-8 shrink-0'>
+              <Button variant='ghost' size='icon' className='size-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted/40 hover:text-foreground'>
                 <MoreVertical className='size-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='rounded-[24px] border border-border/50 bg-background/95 p-1 shadow-2xl backdrop-blur-md dark:bg-popover/95'>
+            <DropdownMenuContent align='end' className='rounded-[22px] border border-dashed border-muted/40 bg-background/95 p-1 shadow-2xl backdrop-blur-md'>
               <DropdownMenuItem 
                 onClick={() => { setPendingAction('edit'); setIsAuthOpen(true); }} 
-                className='gap-2 text-[11px] font-bold uppercase tracking-widest rounded-xl px-4 py-3 cursor-pointer'
+                className='gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-[0.2em] cursor-pointer'
               >
-                <Edit2 className='size-3.5 text-blue-500' /> {t('orgPersonnel.lineMgmt.card.editInfo')}
+                <Edit2 className='size-3.5 text-cyan-600' /> {t('orgPersonnel.lineMgmt.card.editInfo')}
               </DropdownMenuItem>
               {line.segments?.length > 0 && (
-                <DropdownMenuItem onClick={handleSaveAsTemplate} className='gap-2 text-orange-600 focus:text-orange-600 text-[11px] font-bold uppercase tracking-widest rounded-xl px-4 py-3 cursor-pointer'>
+                <DropdownMenuItem onClick={handleSaveAsTemplate} className='gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-600 focus:text-amber-600 cursor-pointer'>
                   <FileCode className='size-3.5' /> {t('orgPersonnel.lineMgmt.card.saveTemplate')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => onToggleActive(line.id)} className='gap-2 text-[11px] font-bold uppercase tracking-widest rounded-xl px-4 py-3 cursor-pointer'>
-                <div className={`size-2 rounded-full ${line.isActive ? 'bg-slate-400' : 'bg-green-500'}`} />
+              <DropdownMenuItem onClick={() => onToggleActive(line.id)} className='gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-[0.2em] cursor-pointer'>
+                <div className={`size-2 rounded-full ${line.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                 {line.isActive ? t('orgPersonnel.lineMgmt.card.stop') : t('orgPersonnel.lineMgmt.card.enable')}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => { setPendingAction('delete'); setIsAuthOpen(true); }} 
-                className='gap-2 text-rose-500 focus:text-rose-500 text-[11px] font-bold uppercase tracking-widest rounded-xl px-4 py-3 cursor-pointer'
+                className='gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-rose-500 focus:text-rose-500 cursor-pointer'
               >
                 <Trash2 className='size-3.5' /> {t('orgPersonnel.lineMgmt.card.delete')}
               </DropdownMenuItem>
@@ -181,31 +183,26 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
             description={authDialogDescription}
         />
 
-        <div className='grid grid-cols-2 gap-4 py-3 border-y border-dashed border-muted/50'>
-          <div className='space-y-1'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
+        <div className='grid gap-4 rounded-[24px] border border-dashed border-muted/40 bg-muted/20 p-4 md:grid-cols-2'>
+          <div className='space-y-1.5'>
+            <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
               {t('orgPersonnel.lineMgmt.card.hierarchy')}
             </p>
-            <div className='flex items-center gap-1.5'>
-                <span className='text-[11px] font-black font-mono text-slate-600 dark:text-slate-300'>
-                {t('orgPersonnel.lineMgmt.card.hierarchyStats', { 
-                  segments: segmentCount,
-                  jobs: jobCategoryCount,
-                  processes: processCount,
-                })}
-              </span>
-            </div>
+            <p className='text-[12px] font-black tracking-tight text-foreground'>
+              {t('orgPersonnel.lineMgmt.card.hierarchyStats', { 
+                segments: segmentCount,
+                jobs: jobCategoryCount,
+                processes: processCount,
+              })}
+            </p>
           </div>
-          <div className='space-y-1'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
+          <div className='space-y-1.5'>
+            <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/45'>
               {t('orgPersonnel.lineMgmt.card.status')}
             </p>
-            <div className='flex items-center gap-1.5'>
-              <div
-                className={`size-2 rounded-full ${line.isActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'
-                  }`}
-              />
-              <span className='text-[11px] font-black uppercase tracking-tighter text-slate-600 dark:text-slate-300'>
+            <div className='flex items-center gap-2'>
+              <div className={`size-2.5 rounded-full ${line.isActive ? 'bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]' : 'bg-slate-400'}`} />
+              <span className='text-[12px] font-black uppercase tracking-[0.18em] text-foreground/80'>
                 {line.isActive ? t('orgPersonnel.lineMgmt.card.running') : t('orgPersonnel.lineMgmt.card.offline')}
               </span>
             </div>
@@ -213,9 +210,9 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
         </div>
 
         {isExpanded && (
-          <div className='pt-1 pb-1 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col items-start w-full h-auto min-h-0'>
+          <div className='space-y-3 animate-in fade-in slide-in-from-top-2 duration-300'>
             {line.segments?.length > 0 ? (
-              <div className='space-y-1 w-full flex flex-col items-start h-auto min-h-0'>
+              <div className='space-y-3'>
                 {(line.segments || []).map((segment) => (
                     <SegmentNode
                       key={segment.id}
@@ -231,32 +228,32 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                 <Button
                   variant='outline'
                   size='sm'
-                  className='h-10 w-full rounded-[20px] border-dashed border-slate-300 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 transition-all hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-600 active:scale-95 dark:border-white/10 dark:hover:bg-blue-500/10'
+                  className='h-11 w-full rounded-[20px] border-dashed border-cyan-500/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-800'
                   onClick={() => handleAddSegment()}
                 >
-                  <Plus className='size-4 mr-2' /> {t('orgPersonnel.lineMgmt.card.defineSegment')}
+                  <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.card.defineSegment')}
                 </Button>
               </div>
             ) : (
-              <div className='flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-slate-50/50 p-8 text-center dark:border-white/10 dark:bg-white/[0.03]'>
-                <div className='rounded-full border border-slate-100 bg-background p-3 shadow-sm dark:border-white/10 dark:bg-white/[0.05]'>
-                  <FileCode className='size-6 text-orange-500' />
+              <div className='flex flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-cyan-500/15 bg-cyan-500/5 p-8 text-center'>
+                <div className='rounded-full border border-cyan-500/15 bg-background p-3 shadow-sm'>
+                  <FileCode className='size-6 text-cyan-600' />
                 </div>
                 <div className='space-y-1'>
-                  <p className='text-sm font-bold'>{t('orgPersonnel.lineMgmt.card.initTopology')}</p>
+                  <p className='text-sm font-black tracking-tight'>{t('orgPersonnel.lineMgmt.card.initTopology')}</p>
                   <p className='text-xs text-muted-foreground'>{t('orgPersonnel.lineMgmt.card.emptyTopologyDesc')}</p>
                 </div>
                 {templates.length > 0 ? (
-                  <div className='flex flex-wrap gap-2 justify-center max-w-sm'>
+                  <div className='flex flex-wrap justify-center gap-2'>
                     {templates.map(t => (
                       <Button
                         key={t.id}
                         variant='outline'
                         size='sm'
-                        className='h-7 text-[10px] gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors'
+                        className='h-8 rounded-full border-cyan-500/15 bg-background/70 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700 hover:bg-cyan-500/5'
                         onClick={() => handleApplyTemplate(t)}
                       >
-                        <Check className='size-3' /> {t.name}
+                        <Check className='mr-1.5 size-3.5' /> {t.name}
                       </Button>
                     ))}
                   </div>
@@ -264,10 +261,10 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='h-8 text-xs gap-1.5'
+                    className='h-8 rounded-full text-xs font-black uppercase tracking-[0.2em] text-cyan-700 hover:bg-cyan-500/5'
                     onClick={() => handleAddSegment()}
                   >
-                    <Plus className='size-3.5' /> {t('orgPersonnel.lineMgmt.card.manualBuild')}
+                    <Plus className='mr-1.5 size-3.5' /> {t('orgPersonnel.lineMgmt.card.manualBuild')}
                   </Button>
                 )}
               </div>
@@ -275,11 +272,9 @@ export function LineCard({ line, onEdit, onDelete, onToggleActive, onUpdate }: L
           </div>
         )}
 
-
-
         {line.description && (
-          <p className='text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest italic line-clamp-2 mt-2'>
-            "{line.description}"
+          <p className='line-clamp-2 text-[10px] font-medium leading-relaxed text-muted-foreground/60'>
+            {line.description}
           </p>
         )}
       </CardContent>

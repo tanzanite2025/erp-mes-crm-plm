@@ -14,7 +14,7 @@ import { useSalesOrderForm } from '@/features/trading/hooks/use-sales-order-form
 import { useSalesOrderMutations } from '@/features/trading/sales'
 import { auditUtils } from '@/lib/audit-utils'
 
-export function useQuoteSalesOrderAdapter(open: boolean, onCreated: (quoteId: string) => void) {
+export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (quoteId: string) => void) {
   const queryClient = useQueryClient()
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })

@@ -4,19 +4,17 @@ import {
   getDefaultPermissionParentMap,
 } from '@/features/authz/data/default-permission-queries'
 
-const PERMISSION_ORDER_BY_ID = getDefaultPermissionOrderMap()
-const PERMISSION_PARENT_BY_ID = getDefaultPermissionParentMap()
-const CHILD_PERMISSION_IDS_BY_PARENT = getDefaultPermissionChildrenMap()
-
 function toUniquePermissionIds(permissionIds: string[]): string[] {
   const cleaned = permissionIds.map((id) => id.trim()).filter(Boolean)
   return Array.from(new Set(cleaned))
 }
 
 export function sortPermissionIds(permissionIds: string[]): string[] {
+  const permissionOrderById = getDefaultPermissionOrderMap()
+
   return [...permissionIds].sort((a, b) => {
-    const orderA = PERMISSION_ORDER_BY_ID.get(a)
-    const orderB = PERMISSION_ORDER_BY_ID.get(b)
+    const orderA = permissionOrderById.get(a)
+    const orderB = permissionOrderById.get(b)
 
     if (orderA !== undefined && orderB !== undefined) return orderA - orderB
     if (orderA !== undefined) return -1
@@ -27,12 +25,13 @@ export function sortPermissionIds(permissionIds: string[]): string[] {
 }
 
 export function collectAncestorPermissionIds(permissionId: string): string[] {
+  const permissionParentById = getDefaultPermissionParentMap()
   const ancestors: string[] = []
   let current = permissionId
   const visited = new Set<string>([permissionId])
 
   while (true) {
-    const parentId = PERMISSION_PARENT_BY_ID.get(current)
+    const parentId = permissionParentById.get(current)
     if (!parentId || visited.has(parentId)) break
 
     ancestors.push(parentId)
@@ -44,8 +43,9 @@ export function collectAncestorPermissionIds(permissionId: string): string[] {
 }
 
 export function collectDescendantPermissionIds(permissionId: string): string[] {
+  const childPermissionIdsByParent = getDefaultPermissionChildrenMap()
   const descendants: string[] = []
-  const queue = [...(CHILD_PERMISSION_IDS_BY_PARENT.get(permissionId) || [])]
+  const queue = [...(childPermissionIdsByParent.get(permissionId) || [])]
   const visited = new Set<string>()
 
   while (queue.length > 0) {
@@ -54,7 +54,7 @@ export function collectDescendantPermissionIds(permissionId: string): string[] {
     visited.add(nextId)
     descendants.push(nextId)
 
-    const nextChildren = CHILD_PERMISSION_IDS_BY_PARENT.get(nextId) || []
+    const nextChildren = childPermissionIdsByParent.get(nextId) || []
     nextChildren.forEach((childId) => queue.push(childId))
   }
 

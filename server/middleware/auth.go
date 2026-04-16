@@ -99,7 +99,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if err := db.DB.Select("id", "username", "role", "status", "employee_id").Where("id = ?", userID).First(&user).Error; err != nil {
+		if err := db.DB.Select("id", "username", "status", "employee_id").Where("id = ?", userID).First(&user).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Account not found or inactive"})
 			c.Abort()
 			return
@@ -117,16 +117,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		contextRoleID := strings.TrimSpace(accessSnapshot.PrimaryRoleID)
-
-		effectiveRoles := accessSnapshot.EffectiveRoles
-
 		resolvedPermissions := accessSnapshot.Permissions
 
 		c.Set("userId", user.ID)
 		c.Set("username", user.Username)
-		c.Set("role", contextRoleID)
-		c.Set("effectiveRoles", effectiveRoles)
 		c.Set("permissions", resolvedPermissions)
 		c.Set("status", user.Status)
 		c.Set("accessSnapshot", accessSnapshot)

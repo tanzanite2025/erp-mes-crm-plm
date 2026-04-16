@@ -1,4 +1,4 @@
-import { useQuoteSalesOrderAdapter } from '@/features/quotes/adapters/quote-sales-order-adapter'
+import { useQuoteWorkspaceSalesOrderAdapter } from '@/features/quotes/adapters/quote-sales-order-adapter'
 
 export function useQuoteCreateEditor(open: boolean, onCreated: (quoteId: string) => void) {
   const {
@@ -12,7 +12,7 @@ export function useQuoteCreateEditor(open: boolean, onCreated: (quoteId: string)
     createQuote,
     isCreatingQuote,
     createQuoteError,
-  } = useQuoteSalesOrderAdapter(open, onCreated)
+  } = useQuoteWorkspaceSalesOrderAdapter(open, onCreated)
 
   return {
     formData: quoteDraft,

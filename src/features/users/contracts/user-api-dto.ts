@@ -5,16 +5,10 @@ export interface UserApiDTO {
   phoneNumber?: string
   firstName?: string
   lastName?: string
-  role: string
+  role?: string
   status: 'active' | 'inactive' | 'suspended'
   employeeId?: string
   password?: string
-  resolvedRole?: string
-  roleInfo?: {
-    isStale?: boolean
-    isInvalid?: boolean
-    [key: string]: unknown
-  }
   createdAt?: string
   updatedAt?: string
   version?: number
@@ -37,33 +31,37 @@ export interface UserListPageApiDTO {
   pageSize: number
 }
 
-export interface UserRoleBindingApiDTO {
-  bindingId?: string
-  roleId: string
-  roleLabel?: string
-  roleColor?: string
-  isPrimary: boolean
-  status: string
+export interface UserPermissionItemApiDTO {
+  permissionId: string
   source?: string
-  startDate?: string
-  endDate?: string
+  grantedBy?: string
+  updatedAt?: string
 }
 
-export interface UserRoleBindingsApiDTO {
+export interface UserPermissionsApiDTO {
   userId: string
   username: string
-  primaryRoleId: string
-  effectiveRoles: string[]
-  roleBindings: UserRoleBindingApiDTO[]
+  status: 'active' | 'inactive' | 'suspended'
+  employeeId?: string
+  permissions: UserPermissionItemApiDTO[]
+  total: number
+}
+
+export interface UserPermissionsReplaceResultApiDTO {
+  userId: string
+  permissions: string[]
+  changeSummary?: {
+    added?: number
+    removed?: number
+    unchanged?: number
+  }
 }
 
 export interface UserAccessSnapshotApiDTO {
   userId: string
   username: string
   employeeId?: string
-  primaryRoleId: string
-  effectiveRoles: string[]
+  status?: 'active' | 'inactive' | 'suspended'
   permissions: string[]
   diagnostics?: string[]
-  roleBindings: UserRoleBindingApiDTO[]
 }

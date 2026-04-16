@@ -4,6 +4,7 @@ import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import ts from 'typescript'
+import { collectAuthenticatedRoutePaths } from './authenticated-route-path-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -91,26 +92,24 @@ const routePermissionsGeneratorModulePath = path.resolve(
   projectRoot,
   'src/features/authz/data/route-permissions-generator.ts',
 )
-const routePermissionRegistryModulePath = path.resolve(
-  projectRoot,
-  'src/features/authz/data/route-permission-registry.ts',
-)
+const authenticatedRoutesDir = path.resolve(projectRoot, 'src/routes/_authenticated')
 
 const { PERMISSION_VERSION, exportPermissionCatalog, migratePermissions } = loadTsModule(
   permissionCatalogModulePath,
 )
-const { ROUTE_PERMISSION_ENTRIES } = loadTsModule(routePermissionRegistryModulePath)
 const {
   clearRoutePermissionsCache,
   getPermissionsWithCache,
 } = loadTsModule(routePermissionsGeneratorModulePath)
 
 const catalog = exportPermissionCatalog()
-const entries = ROUTE_PERMISSION_ENTRIES
+const routePaths = collectAuthenticatedRoutePaths(authenticatedRoutesDir)
+const generatedRoutePermissions = getPermissionsWithCache(PERMISSION_VERSION, routePaths)
+const entries = generatedRoutePermissions.routePermissionEntries
 
 if (!Array.isArray(entries)) {
   throw new Error(
-    '[verify-permissions] ROUTE_PERMISSION_ENTRIES is unavailable or malformed. Check route-permission-registry exports.',
+    '[verify-permissions] routePermissionEntries is unavailable or malformed. Check route-permissions generation.',
   )
 }
 

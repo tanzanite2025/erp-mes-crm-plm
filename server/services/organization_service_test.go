@@ -146,7 +146,6 @@ func setupOrganizationServiceSQLiteDB(t *testing.T) *gorm.DB {
 			phone_number TEXT,
 			first_name TEXT,
 			last_name TEXT,
-			role TEXT,
 			status TEXT,
 			employee_id TEXT,
 			created_at DATETIME,

@@ -17,10 +17,12 @@ export function LineMgmt() {
   }
 
   return (
-    <LineList
-      lines={lines}
-      onUpdate={updateLine}
-      onDelete={deleteLine}
-    />
+    <div className='flex flex-col gap-8'>
+      <LineList
+        lines={lines}
+        onUpdate={updateLine}
+        onDelete={deleteLine}
+      />
+    </div>
   )
 }

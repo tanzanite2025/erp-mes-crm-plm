@@ -379,7 +379,7 @@ func UpdateTelemetryHandler(c *gin.Context) {
 
 // BulkSyncMoldsHandler 批量同步模具 (数据抢救)
 func BulkSyncMoldsHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

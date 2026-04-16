@@ -13,6 +13,12 @@ export interface ConfirmPurchaseReceiptContract {
   createdInboundRecords: Array<{ id: string }>
 }
 
+function normalizePurchaseOrderLineStatus(status: PurchaseOrderLineApiDTO['status']): PurchaseOrderLine['status'] {
+  return status === 'Draft' || status === 'Pending' || status === 'Received' || status === 'Rejected' || status === 'Cancelled' || status === 'Completed'
+    ? status
+    : 'Draft'
+}
+
 function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrderLine {
   return {
     id: dto.id,
@@ -29,7 +35,7 @@ function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrde
     expectedDate: dto.expectedDate,
     receivedQty: dto.receivedQty,
     returnedQty: dto.returnedQty ?? 0,
-    status: dto.status as PurchaseOrderLine['status'],
+    status: normalizePurchaseOrderLineStatus(dto.status),
     note: dto.note,
   }
 }
@@ -55,13 +61,19 @@ function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineAp
   }
 }
 
+function normalizePurchaseOrderStatus(status: PurchaseOrderApiDTO['status']): PurchaseOrder['status'] {
+  return status === 'Draft' || status === 'Pending' || status === 'Received' || status === 'Cancelled' || status === 'Completed'
+    ? status
+    : 'Draft'
+}
+
 export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder {
   return {
     id: dto.id,
     orderNo: dto.orderNo,
     supplierName: dto.supplierName,
     supplierId: dto.supplierId,
-    status: dto.status as PurchaseOrder['status'],
+    status: normalizePurchaseOrderStatus(dto.status),
     amount: dto.amount,
     orderDate: dto.orderDate,
     expectedDate: dto.expectedDate,
@@ -74,12 +86,12 @@ export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder
     paymentTermName: dto.paymentTermName,
     note: dto.note,
     workflowInstanceId: dto.workflowInstanceId,
-    isDeleted: dto.isDeleted ?? false,
+    isDeleted: dto.isDeleted,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
-    version: dto.version ?? 1,
-    evidences: dto.evidences ?? [],
-    lines: (dto.lines ?? []).map(toPurchaseOrderLineContract),
+    version: dto.version,
+    evidences: dto.evidences,
+    lines: dto.lines.map(toPurchaseOrderLineContract),
   }
 }
 
@@ -106,8 +118,8 @@ export function toPurchaseOrderApiDTO(order: PurchaseOrder): PurchaseOrderApiDTO
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     version: order.version,
-    evidences: order.evidences ?? [],
-    lines: (order.lines ?? []).map(toPurchaseOrderLineApiDTO),
+    evidences: order.evidences,
+    lines: order.lines.map(toPurchaseOrderLineApiDTO),
   }
 }
 

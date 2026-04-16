@@ -2,18 +2,23 @@ import { NotificationGateway } from '@/features/system-mgmt/notifications/notifi
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { type SalesOrder } from '../../data/schema'
+import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
 import { toSalesOrderApiDTO, toSalesOrderContract } from '../adapters/sales-order-api-adapter'
 import { type SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
 
-export const createSalesOrder = async (order: Omit<SalesOrder, 'id' | 'version'>): Promise<SalesOrder> => {
+export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
+  const createdOrder: SalesOrder = {
+    ...order,
+    id: '',
+    version: 1,
+  }
+
   const res = await apiFetch<SalesOrderApiDTO>('/sales-orders', {
     method: 'POST',
-    body: JSON.stringify(toSalesOrderApiDTO({ ...order, id: '', version: 1 } as SalesOrder)),
+    body: JSON.stringify(toSalesOrderApiDTO(createdOrder)),
   })
-  return toSalesOrderContract(
-    ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.createSalesOrder') as SalesOrderApiDTO
-  )
+  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.createSalesOrder')
+  return toSalesOrderContract(response)
 }
 
 export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {
@@ -27,9 +32,8 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return toSalesOrderContract(
-    ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.patchSalesOrder') as SalesOrderApiDTO
-  )
+  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.patchSalesOrder')
+  return toSalesOrderContract(response)
 }
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {

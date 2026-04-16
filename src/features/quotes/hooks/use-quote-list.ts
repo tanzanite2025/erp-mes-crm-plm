@@ -4,15 +4,13 @@ import type { QuoteListFilters, QuoteSummary } from '@/features/quotes/data/quot
 import { listQuoteSummaries } from '@/features/quotes/services/quote-list-service'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 
-const emptyRows: QuoteSummary[] = []
-
 export function useQuoteList(filters: QuoteListFilters) {
   const query = useQuery({
     queryKey: quoteQueryKeys.list(filters),
     queryFn: () => listQuoteSummaries(filters),
   })
 
-  const rows = useMemo(() => query.data?.rows ?? emptyRows, [query.data?.rows])
+  const rows = useMemo(() => query.data?.rows ?? [], [query.data?.rows])
   const source = query.data?.source ?? 'api'
 
   const summary = useMemo(

@@ -3,50 +3,77 @@ import type { QuoteDetail } from '@/features/quotes/data/quote-detail'
 import type { QuoteDetailApiDTO } from '@/features/quotes/contracts/quote-detail-api-dto'
 import type { QuoteListItemApiDTO } from '@/features/quotes/contracts/quote-api-dto'
 
-function normalizeCustomerSegment(value: string | undefined): QuoteSummaryCustomerSegment {
-  const normalized = value?.trim().toLowerCase()
+function requireNonEmptyString(value: unknown, context: string, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected ${field} to be a non-empty string.`)
+  }
+  return value.trim()
+}
+
+function requireNumber(value: unknown, context: string, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected ${field} to be a finite number.`)
+  }
+  return value
+}
+
+function normalizeCustomerSegment(value: unknown, context: string): QuoteSummaryCustomerSegment {
+  if (typeof value !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected customerSegment to be a string.`)
+  }
+  const normalized = value.trim().toLowerCase()
   if (normalized === 'vip') return 'vip'
   if (normalized === 'long-term' || normalized === 'long_term' || normalized === 'longterm') return 'long-term'
-  return 'new'
+  if (normalized === 'new') return 'new'
+  throw new Error(`[INVALID_RESPONSE] ${context} expected customerSegment to be one of vip | long-term | new.`)
 }
 
-function normalizeQuoteType(value: string | undefined): QuoteSummaryType {
-  const normalized = value?.trim().toLowerCase()
+function normalizeQuoteType(value: unknown, context: string): QuoteSummaryType {
+  if (typeof value !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected quoteType to be a string.`)
+  }
+  const normalized = value.trim().toLowerCase()
   if (normalized === 'wholesale') return 'wholesale'
   if (normalized === 'sample') return 'sample'
-  return 'retail'
+  if (normalized === 'retail') return 'retail'
+  throw new Error(`[INVALID_RESPONSE] ${context} expected quoteType to be one of retail | wholesale | sample.`)
 }
 
-function normalizeStatus(value: string | undefined): QuoteSummaryStatus {
-  const normalized = value?.trim().toLowerCase()
+function normalizeStatus(value: unknown, context: string): QuoteSummaryStatus {
+  if (typeof value !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected status to be a string.`)
+  }
+  const normalized = value.trim().toLowerCase()
   if (normalized === 'pending') return 'pending'
   if (normalized === 'converted') return 'converted'
   if (normalized === 'voided' || normalized === 'cancelled' || normalized === 'canceled') return 'voided'
-  return 'draft'
+  if (normalized === 'draft') return 'draft'
+  throw new Error(`[INVALID_RESPONSE] ${context} expected status to be one of draft | pending | converted | voided.`)
 }
 
-function formatAmountLabel(value: number | string | undefined, amountLabel?: string): string {
-  if (typeof amountLabel === 'string' && amountLabel.trim()) return amountLabel
+function formatAmountLabel(value: unknown, amountLabel: unknown, context: string): string {
+  if (typeof amountLabel === 'string' && amountLabel.trim()) return amountLabel.trim()
   if (typeof value === 'number' && Number.isFinite(value)) return `¥ ${value.toFixed(2)}`
-  if (typeof value === 'string' && value.trim()) return value
-  return '¥ 0.00'
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  throw new Error(`[INVALID_RESPONSE] ${context} expected amount or amountLabel to be present.`)
 }
 
 export function toQuoteSummaryContract(dto: QuoteListItemApiDTO, index: number): QuoteSummary {
-  const quoteNo = dto.quoteNo?.trim() || dto.code?.trim() || `QUOTE-${index + 1}`
+  const context = `QuoteApiAdapter.toQuoteSummaryContract[${index}]`
+  const quoteNo = requireNonEmptyString(dto.quoteNo ?? dto.code, context, 'quoteNo')
 
   return {
-    id: dto.id?.trim() || quoteNo,
+    id: requireNonEmptyString(dto.id ?? quoteNo, context, 'id'),
     quoteNo,
-    customerName: dto.customerName?.trim() || dto.customer?.trim() || '未命名客户',
-    customerSegment: normalizeCustomerSegment(dto.customerSegment || dto.segment),
-    quoteType: normalizeQuoteType(dto.quoteType || dto.type),
-    status: normalizeStatus(dto.status),
-    updatedAt: dto.updatedAt?.trim() || dto.updated_at?.trim() || '未知时间',
-    amountLabel: formatAmountLabel(dto.amount ?? dto.totalAmount, dto.amountLabel),
-    itemCount: dto.itemCount ?? dto.lineCount ?? 0,
-    ownerName: dto.ownerName?.trim() || dto.owner?.trim() || '未分配',
-    productSummary: dto.productSummary?.trim() || dto.summary?.trim() || '待补充产品摘要',
+    customerName: requireNonEmptyString(dto.customerName ?? dto.customer, context, 'customerName'),
+    customerSegment: normalizeCustomerSegment(dto.customerSegment ?? dto.segment, context),
+    quoteType: normalizeQuoteType(dto.quoteType ?? dto.type, context),
+    status: normalizeStatus(dto.status, context),
+    updatedAt: requireNonEmptyString(dto.updatedAt ?? dto.updated_at, context, 'updatedAt'),
+    amountLabel: formatAmountLabel(dto.amount ?? dto.totalAmount, dto.amountLabel, context),
+    itemCount: dto.itemCount ?? dto.lineCount ?? (() => { throw new Error(`[INVALID_RESPONSE] ${context} expected itemCount or lineCount to be present.`) })(),
+    ownerName: requireNonEmptyString(dto.ownerName ?? dto.owner, context, 'ownerName'),
+    productSummary: requireNonEmptyString(dto.productSummary ?? dto.summary, context, 'productSummary'),
   }
 }
 
@@ -55,38 +82,47 @@ export function toQuoteSummaryContracts(items: QuoteListItemApiDTO[]): QuoteSumm
 }
 
 export function toQuoteDetailContract(dto: QuoteDetailApiDTO): QuoteDetail {
+  const context = 'QuoteApiAdapter.toQuoteDetailContract'
+  const lines = dto.lines
+  if (!Array.isArray(lines)) {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected lines to be an array.`)
+  }
+
   return {
-    id: dto.id?.trim() || '',
-    quoteNo: dto.quoteNo?.trim() || '',
-    orderName: dto.orderName?.trim() || '',
-    customerName: dto.customerName?.trim() || '',
-    customerId: dto.customerId?.trim() || '',
-    wechat: dto.wechat?.trim() || '',
-    whatsapp: dto.whatsapp?.trim() || '',
-    customerSegment: dto.customerSegment?.trim() || 'new',
-    type: dto.type?.trim() || 'retail',
-    status: dto.status?.trim() || 'draft',
-    currency: dto.currency?.trim() || 'CNY',
-    amountLabel: dto.amountLabel?.trim() || '¥ 0.00',
-    quantityLabel: dto.quantityLabel?.trim() || '0.00',
-    orderDate: dto.orderDate?.trim() || '',
-    deliveryDate: dto.deliveryDate?.trim() || '',
-    paymentMethodName: dto.paymentMethodName?.trim() || '',
-    paymentTermName: dto.paymentTermName?.trim() || '',
-    requirements: dto.requirements?.trim() || '',
-    ownerName: dto.ownerName?.trim() || '',
-    updatedAt: dto.updatedAt?.trim() || '',
-    lines: (dto.lines ?? []).map((line, index) => ({
-      id: String(line.id ?? `line-${index + 1}`),
-      lineNo: line.lineNo ?? index + 1,
-      productModel: line.productModel?.trim() || '',
-      productCode: line.productCode?.trim() || '',
-      specification: line.specification?.trim() || '',
-      qty: line.qty ?? 0,
-      price: line.price ?? 0,
-      amount: line.amount ?? 0,
-      uom: line.uom?.trim() || '',
-      note: line.note?.trim() || '',
-    })),
+    id: requireNonEmptyString(dto.id, context, 'id'),
+    quoteNo: requireNonEmptyString(dto.quoteNo, context, 'quoteNo'),
+    orderName: requireNonEmptyString(dto.orderName, context, 'orderName'),
+    customerName: requireNonEmptyString(dto.customerName, context, 'customerName'),
+    customerId: requireNonEmptyString(dto.customerId, context, 'customerId'),
+    wechat: requireNonEmptyString(dto.wechat, context, 'wechat'),
+    whatsapp: requireNonEmptyString(dto.whatsapp, context, 'whatsapp'),
+    customerSegment: normalizeCustomerSegment(dto.customerSegment, context),
+    type: normalizeQuoteType(dto.type, context),
+    status: normalizeStatus(dto.status, context),
+    currency: requireNonEmptyString(dto.currency, context, 'currency'),
+    amountLabel: requireNonEmptyString(dto.amountLabel, context, 'amountLabel'),
+    quantityLabel: requireNonEmptyString(dto.quantityLabel, context, 'quantityLabel'),
+    orderDate: requireNonEmptyString(dto.orderDate, context, 'orderDate'),
+    deliveryDate: requireNonEmptyString(dto.deliveryDate, context, 'deliveryDate'),
+    paymentMethodName: requireNonEmptyString(dto.paymentMethodName, context, 'paymentMethodName'),
+    paymentTermName: requireNonEmptyString(dto.paymentTermName, context, 'paymentTermName'),
+    requirements: requireNonEmptyString(dto.requirements, context, 'requirements'),
+    ownerName: requireNonEmptyString(dto.ownerName, context, 'ownerName'),
+    updatedAt: requireNonEmptyString(dto.updatedAt, context, 'updatedAt'),
+    lines: lines.map((line, index) => {
+      const lineContext = `${context}.lines[${index}]`
+      return {
+        id: requireNonEmptyString(String(line.id ?? ''), lineContext, 'id'),
+        lineNo: requireNumber(line.lineNo, lineContext, 'lineNo'),
+        productModel: requireNonEmptyString(line.productModel, lineContext, 'productModel'),
+        productCode: requireNonEmptyString(line.productCode, lineContext, 'productCode'),
+        specification: requireNonEmptyString(line.specification, lineContext, 'specification'),
+        qty: requireNumber(line.qty, lineContext, 'qty'),
+        price: requireNumber(line.price, lineContext, 'price'),
+        amount: requireNumber(line.amount, lineContext, 'amount'),
+        uom: requireNonEmptyString(line.uom, lineContext, 'uom'),
+        note: requireNonEmptyString(line.note, lineContext, 'note'),
+      }
+    }),
   }
 }

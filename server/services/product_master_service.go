@@ -15,14 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	ErrProductValidation              = errors.New("product validation failed")
-	ErrProductVersionConflict         = errors.New("product version conflict")
-	ErrProductInUse                   = errors.New("product still referenced by downstream records")
-	ErrProductTemplateVersionConflict = errors.New("product template version conflict")
-	ErrProductTypeVersionConflict     = errors.New("product type version conflict")
-	ErrProductTypeNotEmpty            = errors.New("product type is not empty")
-)
+var ()
 
 type ProductListQuery struct {
 	Page     int
@@ -74,7 +67,7 @@ func normalizeProductVersionLevel(raw string) string {
 
 func deriveVersionLevelFromAttributes(items []ProductAttributeValueAPIRequest) string {
 	for _, item := range items {
-		if strings.TrimSpace(item.CategoryKey) != "versionLevel" {
+		if !sameProductAttributeCategoryKey(strings.TrimSpace(item.CategoryKey), "versionLevel") {
 			continue
 		}
 		return normalizeProductVersionLevel(item.OptionValue)
@@ -88,20 +81,20 @@ func deriveIssuedProductSKU(typeCode string, modelCode string, versionLevel stri
 
 func issueProductIdentity(tx *gorm.DB, input ProductWriteInput) (ProductWriteInput, error) {
 	if input.TypeID == "" {
-		return input, fmt.Errorf("%w: type id is required to issue sku", ErrProductValidation)
+		return input, domainValidationError("type id is required to issue sku")
 	}
 
 	var productType models.ProductType
 	if err := tx.Select("id", "code").Where("id = ?", input.TypeID).First(&productType).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return input, fmt.Errorf("%w: product type %s was not found for sku issuance", ErrProductValidation, input.TypeID)
+			return input, domainNotFoundError(fmt.Sprintf("product type %s was not found for sku issuance", input.TypeID))
 		}
 		return input, err
 	}
 
 	typeCode := normalizeProductTypeCode(productType.Code)
 	if typeCode == "" {
-		return input, fmt.Errorf("%w: product type %s has no code for sku issuance", ErrProductValidation, productType.ID)
+		return input, domainValidationError(fmt.Sprintf("product type %s has no code for sku issuance", productType.ID))
 	}
 
 	input.ModelCode = normalizeProductModelCode(input.ModelCode)
@@ -116,13 +109,13 @@ func issueProductIdentity(tx *gorm.DB, input ProductWriteInput) (ProductWriteInp
 
 func validateProductWriteInput(input ProductWriteInput) error {
 	if input.SKU == "" {
-		return fmt.Errorf("%w: sku issuance produced an empty sku", ErrProductValidation)
+		return domainValidationError("sku issuance produced an empty sku")
 	}
 	if input.Name == "" {
-		return fmt.Errorf("%w: name is required", ErrProductValidation)
+		return domainValidationError("name is required")
 	}
 	if input.TypeID == "" {
-		return fmt.Errorf("%w: type id is required", ErrProductValidation)
+		return domainValidationError("type id is required")
 	}
 	return nil
 }
@@ -252,7 +245,7 @@ func saveProductFromWriteInput(input ProductWriteInput) (models.Product, error) 
 				return err
 			}
 			if modelInput.Version != existing.Version {
-				return ErrProductVersionConflict
+				return domainConflictError("product version conflict")
 			}
 
 			modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
@@ -518,10 +511,10 @@ func BulkSyncProducts(input BulkSyncProductsAPIPayload) error {
 			writeInput := normalizeProductWriteInput(toProductWriteInput(in))
 			writeInput, err := issueProductIdentity(tx, writeInput)
 			if err != nil {
-				return fmt.Errorf("bulk product sync item %d (id=%s, name=%s): %w", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err)
+				return domainValidationError(fmt.Sprintf("bulk product sync item %d (id=%s, name=%s): %v", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err))
 			}
 			if err := validateProductWriteInput(writeInput); err != nil {
-				return fmt.Errorf("bulk product sync item %d (id=%s, name=%s): %w", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err)
+				return domainValidationError(fmt.Sprintf("bulk product sync item %d (id=%s, name=%s): %v", idx, strings.TrimSpace(in.ID), strings.TrimSpace(in.Name), err))
 			}
 
 			product := toProductModel(writeInput)
@@ -568,7 +561,7 @@ func BulkSyncProducts(input BulkSyncProductsAPIPayload) error {
 func GetNextProductModelCode(typeID string) (string, error) {
 	normalizedTypeID := strings.TrimSpace(typeID)
 	if normalizedTypeID == "" {
-		return "", errors.New("type id is required")
+		return "", domainValidationError("type id is required")
 	}
 
 	var codes []string
@@ -592,7 +585,7 @@ func GetNextProductModelCode(typeID string) (string, error) {
 		nextCode = 1
 	}
 	if nextCode > 99 {
-		return "", fmt.Errorf("product model code exhausted for type %s", normalizedTypeID)
+		return "", domainConflictError(fmt.Sprintf("product model code exhausted for type %s", normalizedTypeID))
 	}
 	return fmt.Sprintf("%02d", nextCode), nil
 }
@@ -614,7 +607,7 @@ func DeleteProduct(id string) error {
 			return err
 		}
 		if count > 0 {
-			return ErrProductInUse
+			return domainConflictError("product still referenced by downstream records")
 		}
 	}
 
@@ -700,7 +693,7 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 				return err
 			}
 			if modelInput.Version != existing.Version {
-				return ErrProductTemplateVersionConflict
+				return domainConflictError("product template version conflict")
 			}
 
 			modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
@@ -776,7 +769,7 @@ func PatchProductTemplate(id string, version int, updates map[string]interface{}
 		return models.ProductTemplate{}, err
 	}
 	if version > 0 && existing.Version != version {
-		return models.ProductTemplate{}, ErrProductTemplateVersionConflict
+		return models.ProductTemplate{}, domainConflictError("product template version conflict")
 	}
 
 	updates["version"] = existing.Version + 1
@@ -899,7 +892,7 @@ func PatchProductType(id string, version int, updates map[string]interface{}) (m
 		return models.ProductType{}, err
 	}
 	if version > 0 && existing.Version != version {
-		return models.ProductType{}, ErrProductTypeVersionConflict
+		return models.ProductType{}, domainConflictError("product type version conflict")
 	}
 	updates["version"] = existing.Version + 1
 	if err := db.DB.Model(&existing).Updates(updates).Error; err != nil {
@@ -928,7 +921,7 @@ func DeleteProductType(id string) error {
 			return err
 		}
 		if relatedProductCount > 0 {
-			return fmt.Errorf("%w: category is not empty because it still has %d related products", ErrProductTypeNotEmpty, relatedProductCount)
+			return domainConflictError(fmt.Sprintf("product type is not empty: still has %d related products", relatedProductCount))
 		}
 
 		var childCategoryCount int64
@@ -936,7 +929,7 @@ func DeleteProductType(id string) error {
 			return err
 		}
 		if childCategoryCount > 0 {
-			return fmt.Errorf("%w: category is not empty because it still has %d child categories", ErrProductTypeNotEmpty, childCategoryCount)
+			return domainConflictError(fmt.Sprintf("product type is not empty: still has %d child categories", childCategoryCount))
 		}
 
 		return tx.Delete(&models.ProductType{}, "id = ?", id).Error

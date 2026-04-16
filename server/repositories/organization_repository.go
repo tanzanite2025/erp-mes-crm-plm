@@ -145,7 +145,6 @@ func (GormOrganizationRepository) DisableUsersByEmployeeIDs(database *gorm.DB, i
 	return database.Model(&models.User{}).
 		Where("employee_id IN ?", ids).
 		Where("LOWER(username) <> ?", "admin").
-		Where("LOWER(role) <> ?", "admin").
 		Update("status", "disabled").Error
 }
 

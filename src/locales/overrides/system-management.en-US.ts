@@ -95,7 +95,7 @@ export const systemManagementEnUSOverrides = {
         collapsedShort: 'Collapsed {{count}} child nodes',
       },
       securityInfo:
-        'The permission matrix follows least privilege. The ROOT role stays locked to prevent accidental global authorization drift.',
+        'The permission matrix follows least privilege. The built-in global template role stays locked to prevent accidental global authorization drift.',
     },
   },
 } as const

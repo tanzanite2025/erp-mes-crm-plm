@@ -1,4 +1,4 @@
-import { type SalesOrder } from '../data/schema'
+import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 
 export type SalesOrderValidationErrorKey =
   | 'tradingSalesOrder.headerFields.lockedMessage'
@@ -18,7 +18,7 @@ export interface SalesOrderValidationResult {
  * 不包含 toast 触发，仅返回 isValid 状态与对应的多语言 Key。
  */
 export const validateSalesOrder = (
-  formData: Partial<SalesOrder>,
+  formData: SalesOrderFormValues,
   initialOrder: SalesOrder | null | undefined
 ): SalesOrderValidationResult => {
   const allowedEditStatuses = ['Draft', 'Pending']

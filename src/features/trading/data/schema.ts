@@ -30,6 +30,8 @@ export const customerSchema = baseEntitySchema.extend({
 })
 
 export type Customer = z.infer<typeof customerSchema>
+export type CustomerDraft = Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>
+export type CustomerFormValues = CustomerDraft
 
 export const customerArraySchema = z.array(customerSchema)
 
@@ -140,6 +142,55 @@ export interface SalesOrder extends BaseEntity {
     workflowInstanceId?: string // 统一工作流引擎桥接关键链
     version: number // SDRTS 乐观锁
 }
+
+export type SalesOrderDraft = Omit<SalesOrder, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>
+export type SalesOrderFormValues = SalesOrderDraft
+
+export const createEmptySalesOrderLine = (): SalesOrderLine => ({
+    lineNo: 1,
+    productModel: '',
+    productCode: '',
+    specification: '',
+    description: '',
+    qty: 0,
+    uom: 'PCS',
+    price: 0,
+    amount: 0,
+    deliveredQty: 0,
+    customerPartNo: '',
+    jobNo: '',
+    route: '',
+    orderDate: '',
+    status: 'Pending',
+})
+
+export const createEmptySalesOrderDraft = (orderNo = ''): SalesOrderFormValues => ({
+    orderNo,
+    orderName: '',
+    customerName: '',
+    customerId: '',
+    type: '',
+    currency: 'CNY',
+    paymentMethod: '',
+    paymentMethodName: '',
+    paymentTerm: '',
+    paymentTermName: '',
+    classification: '',
+    status: 'Pending',
+    statusNote: '',
+    evidences: [],
+    amount: 0,
+    quantity: 0,
+    orderDate: '',
+    deliveryDate: '',
+    purchaseOrderNo: '',
+    barcode: orderNo,
+    requirements: '',
+    lines: [createEmptySalesOrderLine()],
+    fulfillmentRate: 0,
+    workflowInstanceId: '',
+    version: 1,
+})
 
 export const salesOrderStatuses: { value: SalesOrderStatus; label: string; color: string }[] = [
     { value: 'Draft', label: '草稿', color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },

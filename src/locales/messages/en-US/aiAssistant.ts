@@ -12,8 +12,8 @@ export const aiAssistant = {
       enable: 'Enable Now',
     },
     roles: {
-      title: 'Role Access Distribution',
-      description: 'Only authorized roles can access AI insights',
+      title: 'Permission Access Distribution',
+      description: 'Only users with explicitly granted permissions can access AI insights',
     },
     api: {
       title: 'Engine Gateway Settings',
@@ -39,7 +39,7 @@ export const aiAssistant = {
     },
     governance: {
       title: 'Governance Note',
-      body: 'We recommend enabling AI access only for high-frequency decision-making roles. The switch here has higher priority than page-level permissions, and API keys are stored only in the current browser cache.',
+      body: 'We recommend enabling AI access only for accounts with explicitly granted business permissions. The switch here has higher priority than page-level permissions, and API keys are stored only in the current browser cache.',
     },
   },
 } as const

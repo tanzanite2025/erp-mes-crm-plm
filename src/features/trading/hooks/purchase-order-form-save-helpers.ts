@@ -4,36 +4,36 @@ import { type PurchaseOrder } from '../data/schema'
 export type PurchaseOrderSaveExecution =
   | {
       mode: 'create'
-      finalData: PurchaseOrder
+      submitValues: PurchaseOrder
     }
   | {
       mode: 'update'
       orderId: string
       expectedVersion: number
       delta: DeltaSet
-      finalData: PurchaseOrder
+      submitValues: PurchaseOrder
     }
   | {
       mode: 'noop'
-      finalData: PurchaseOrder
+      submitValues: PurchaseOrder
     }
 
 export function buildPurchaseOrderSaveExecution(
   initialOrder: PurchaseOrder | null | undefined,
-  finalData: PurchaseOrder,
+  submitValues: PurchaseOrder,
   delta: DeltaSet
 ): PurchaseOrderSaveExecution {
   if (!initialOrder) {
     return {
       mode: 'create',
-      finalData,
+      submitValues,
     }
   }
 
   if (Object.keys(delta).length === 0) {
     return {
       mode: 'noop',
-      finalData,
+      submitValues,
     }
   }
 
@@ -46,6 +46,6 @@ export function buildPurchaseOrderSaveExecution(
     orderId: initialOrder.id,
     expectedVersion: initialOrder.version,
     delta,
-    finalData,
+    submitValues,
   }
 }

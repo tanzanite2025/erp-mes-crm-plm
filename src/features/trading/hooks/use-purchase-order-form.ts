@@ -35,7 +35,7 @@ export function usePurchaseOrderForm(initialOrder: PurchaseOrder | null | undefi
         includePaymentTerms: false,
     })
     
-    const memoizedInitial = useMemo(() => initialOrder || (DEFAULT_PURCHASE_ORDER as PurchaseOrder), [initialOrder])
+    const memoizedInitial = useMemo(() => initialOrder ?? DEFAULT_PURCHASE_ORDER, [initialOrder])
     const { data: formData, commit } = useDeltaTracker(memoizedInitial, open)
 
     const setFormData = useCallback((updater: PurchaseOrderFormUpdater) => {

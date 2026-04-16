@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -54,7 +53,7 @@ func GetProductTypeTemplateResolutionHandler(c *gin.Context) {
 
 	result, err := services.ResolveProductTypeTemplate(typeID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to resolve product type template: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to resolve product type template: ")
 		return
 	}
 
@@ -99,12 +98,7 @@ func PatchProductTypeHandler(c *gin.Context) {
 
 	saved, err := services.PatchProductType(id, int(req.Metadata.Version), updates)
 	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrProductTypeVersionConflict):
-			c.JSON(http.StatusConflict, gin.H{"error": "version conflict", "code": "VERSION_CONFLICT"})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to patch product type: " + err.Error()})
-		}
+		respondDomainError(c, err, "[SERVER] failed to patch product type: ")
 		return
 	}
 
@@ -114,13 +108,7 @@ func PatchProductTypeHandler(c *gin.Context) {
 func DeleteProductTypeHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProductType(id); err != nil {
-		switch {
-		case errors.Is(err, services.ErrProductTypeNotEmpty):
-			c.JSON(http.StatusForbidden, gin.H{"error": "[CRITICAL] BUSINESS_CONSTRAINT_VIOLATION: Category is not empty"})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product type: " + err.Error()})
-			return
-		}
+		respondDomainError(c, err, "[SERVER] failed to delete product type: ")
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -134,7 +122,7 @@ func SyncProductTypesHandler(c *gin.Context) {
 	}
 
 	if err := services.SyncProductTypes(types); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to sync product types: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to sync product types: ")
 		return
 	}
 

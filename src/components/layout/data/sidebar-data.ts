@@ -158,6 +158,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: CheckSquare,
         permissionId: permissionIdForPath('/piecework'),
       },
+      {
+        titleKey: 'sidebar.items.apsScheduling',
+        url: '/aps-scheduling',
+        icon: Calendar,
+        permissionId: permissionIdForPath('/aps-scheduling'),
+      },
     ],
   },
   {

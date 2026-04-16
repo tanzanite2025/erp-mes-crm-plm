@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -14,7 +15,6 @@ type User struct {
 	PhoneNumber string         `gorm:"size:20" json:"phoneNumber"`
 	FirstName   string         `gorm:"size:50" json:"firstName"`
 	LastName    string         `gorm:"size:50" json:"lastName"`
-	Role        string         `gorm:"size:50;default:'user'" json:"role"`
 	Status      string         `gorm:"size:20;default:'active'" json:"status"`
 	EmployeeID  string         `gorm:"size:100" json:"employeeId"`
 	CreatedAt   time.Time      `json:"createdAt"`

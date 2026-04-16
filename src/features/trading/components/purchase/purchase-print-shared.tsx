@@ -66,16 +66,14 @@ export function formatPurchasePrintNumber(value?: number) {
 export function buildCurrentUserIdentityText(user?: {
   username?: string
   accountNo?: string
-  role?: string[]
-}, roleText?: string) {
+}, identitySuffix?: string) {
   if (!user) return undefined
 
-  const normalizedRoleText =
-    roleText || (Array.isArray(user.role) ? user.role.filter(Boolean).join(' / ') : '')
+  const normalizedIdentitySuffix = identitySuffix?.trim() || ''
   const primaryIdentity = [user.username, user.accountNo].filter(Boolean).join(' / ')
 
-  if (primaryIdentity && normalizedRoleText) return `${primaryIdentity} (${normalizedRoleText})`
-  return primaryIdentity || normalizedRoleText || undefined
+  if (primaryIdentity && normalizedIdentitySuffix) return `${primaryIdentity} (${normalizedIdentitySuffix})`
+  return primaryIdentity || normalizedIdentitySuffix || undefined
 }
 
 export function PurchasePrintDocument({

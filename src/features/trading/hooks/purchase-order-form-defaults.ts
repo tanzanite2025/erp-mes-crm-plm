@@ -1,6 +1,6 @@
 import { type PurchaseOrder, type PurchaseOrderLine } from '../data/schema'
 
-export const EMPTY_PURCHASE_ORDER_LINE: Partial<PurchaseOrderLine> = {
+export const EMPTY_PURCHASE_ORDER_LINE: PurchaseOrderLine = {
   lineNo: 1,
   materialName: '',
   materialCode: '',
@@ -13,9 +13,18 @@ export const EMPTY_PURCHASE_ORDER_LINE: Partial<PurchaseOrderLine> = {
   returnedQty: 0,
   status: 'Draft',
   expectedDate: new Date().toISOString().split('T')[0],
+  materialId: '',
+  expectedQty: 0,
+  receivedDate: '',
+  note: '',
+  version: 1,
 }
 
-export const DEFAULT_PURCHASE_ORDER: Partial<PurchaseOrder> = {
+export const DEFAULT_PURCHASE_ORDER: PurchaseOrder = {
+  id: '',
+  createdAt: '',
+  updatedAt: '',
+  isDeleted: false,
   orderNo: '',
   supplierName: '',
   supplierId: '',

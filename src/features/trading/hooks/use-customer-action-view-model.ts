@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { type Customer } from '../data/schema'
+import { type Customer, type CustomerFormValues } from '../data/schema'
 import type { TranslationKey } from '@/locales'
 
 interface CustomerActionViewModelOptions {
@@ -12,7 +12,7 @@ interface CustomerStatusOption {
   label: string
 }
 
-const DEFAULT_FORM_DATA: Partial<Customer> = {
+const DEFAULT_FORM_DATA: CustomerFormValues = {
   name: '',
   code: '',
   contactPerson: '',
@@ -31,7 +31,26 @@ const DEFAULT_FORM_DATA: Partial<Customer> = {
 
 export function useCustomerActionViewModel({ customer, t }: CustomerActionViewModelOptions) {
   const allowedEditStatuses = ['Active', 'Pending']
-  const initialFormData = useMemo(() => (customer ? customer : (DEFAULT_FORM_DATA as Customer)), [customer])
+  const initialFormData = useMemo<CustomerFormValues>(() => (
+    customer
+      ? {
+          name: customer.name,
+          code: customer.code,
+          contactPerson: customer.contactPerson,
+          contactPhone: customer.contactPhone,
+          wechat: customer.wechat,
+          whatsapp: customer.whatsapp,
+          facebook: customer.facebook,
+          instagram: customer.instagram,
+          telegram: customer.telegram,
+          email: customer.email,
+          address: customer.address,
+          status: customer.status,
+          creditLimit: customer.creditLimit,
+          balance: customer.balance,
+        }
+      : DEFAULT_FORM_DATA
+  ), [customer])
   const statusOptions = useMemo<CustomerStatusOption[]>(
     () => [
       { value: 'Active', label: t('trading.customerStatus.active') },

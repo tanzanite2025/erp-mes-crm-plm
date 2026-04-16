@@ -50,10 +50,10 @@ type UsersAddAdminDialogProps = {
 }
 
 /**
- * 管理员特权创建对话框 [安全加固版]
+ * 高权限账户创建对话框 [安全加固版]
  * 已对齐“后端裁决”原则：
  * 1. 移除硬编码万能通告码 '88888888'。
- * 2. 移除前端手动向 API 注入 'superadmin' 角色。
+ * 2. 移除前端手动向 API 注入历史角色标识。
  * 3. 身份挑战 (Passcode) 必须通过后端 verifyAdminChallenge 接口实时验证。
  */
 export function UsersAddAdminDialog({
@@ -80,7 +80,7 @@ export function UsersAddAdminDialog({
   // --- 核心变更：移除本地硬编码校验，执行后端身份挑战 ---
   const handleVerify = async () => {
     if (!verifyPass) {
-      setVerifyError(t('users.dialogs.adminVerifyPlaceholder'))
+      setVerifyError(t('users.dialogs.accessVerifyPlaceholder'))
       return
     }
 
@@ -101,14 +101,13 @@ export function UsersAddAdminDialog({
   const onSubmit = (values: UserForm) => {
     const { confirmPassword, ...data } = values
     
-    // --- 核心变更：不再由前端决定角色 ---
-    // 逻辑：向专用的 /admin 接口发送，或由后端根据调用链自动裁决为 superadmin。
-    // 这里前端仅发送基础信息，禁止手动注入 role: 'superadmin'。
+    // --- 核心变更：不再由前端决定权限身份 ---
+    // 逻辑：向专用的 /admin 接口发送，或由后端根据调用链自动裁决为受保护高权限账户。
+    // 这里前端仅发送基础信息，禁止手动注入任何历史 role 标识。
     const adminRequestPayload: CreateUserPayload = {
       ...data,
       firstName: 'System',
       lastName: 'Admin',
-      role: 'superadmin',
       phoneNumber: '',
     }
 
@@ -118,7 +117,7 @@ export function UsersAddAdminDialog({
         toast.success(t('users.toast.saveSuccessCreated'))
       },
       onError: () => {
-        toast.error(t('users.toast.switchAdminFailed'))
+        toast.error(t('users.toast.protectedAccountActionFailed'))
       }
     })
   }
@@ -144,12 +143,12 @@ export function UsersAddAdminDialog({
         <DialogHeader className='text-start bg-muted/5 p-8 border-b border-dashed border-muted/50'>
           <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex items-center gap-2'>
             <ShieldCheck className='h-5 w-5 text-primary' /> 
-            {step === 'verify' ? t('users.dialogs.adminVerifyTitle') : t('users.dialogs.adminCreateTitle')}
+            {step === 'verify' ? t('users.dialogs.accessVerifyTitle') : t('users.dialogs.protectedAccountCreateTitle')}
           </DialogTitle>
           <DialogDescription className='text-[9px] font-black uppercase tracking-widest opacity-60'>
             {step === 'verify' 
-              ? t('users.dialogs.adminVerifySubtitle')
-              : t('users.dialogs.adminCreateSubtitle')}
+              ? t('users.dialogs.accessVerifySubtitle')
+              : t('users.dialogs.protectedAccountCreateSubtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,13 +158,13 @@ export function UsersAddAdminDialog({
               <div className='p-4 bg-primary/10 rounded-full shadow-[0_0_25px_rgba(var(--primary),0.15)]'>
                 <KeyRound className={cn('h-10 w-10 text-primary', isVerifying && 'animate-spin')} />
               </div>
-              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>{t('users.dialogs.adminVerifyHint')}</p>
+              <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60'>{t('users.dialogs.accessVerifyHint')}</p>
             </div>
             <div className='space-y-2'>
               <PasswordInput 
                 value={verifyPass}
                 onChange={(e) => setVerifyPass(e.target.value)}
-                placeholder={t('users.dialogs.adminVerifyPlaceholder')}
+                placeholder={t('users.dialogs.accessVerifyPlaceholder')}
                 autoFocus
                 disabled={isVerifying}
                 onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
@@ -178,7 +177,7 @@ export function UsersAddAdminDialog({
               disabled={isVerifying}
               className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2'
             >
-              {isVerifying ? <Loader2 className="animate-spin h-4 w-4" /> : <>{t('users.dialogs.adminVerifyButton')} <ArrowRight className='h-4 w-4' /></>}
+              {isVerifying ? <Loader2 className="animate-spin h-4 w-4" /> : <>{t('users.dialogs.accessVerifyButton')} <ArrowRight className='h-4 w-4' /></>}
             </Button>
           </div>
         ) : (
@@ -233,7 +232,7 @@ export function UsersAddAdminDialog({
                   form='add-admin-form' 
                   className='w-full rounded-full h-11 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all'
                 >
-                  {t('users.dialogs.adminCreateButton')}
+                  {t('users.dialogs.protectedAccountCreateButton')}
                 </Button>
               </DialogFooter>
             </form>

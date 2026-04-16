@@ -5,12 +5,37 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
+
+func normalizePermissionContext(value any) []string {
+	switch v := value.(type) {
+	case []string:
+		return authz.DeduplicatePermissionIDs(v)
+	case string:
+		return authz.ParsePermissionIDs(v)
+	case []any:
+		permissions := make([]string, 0, len(v))
+		for _, item := range v {
+			if permission, ok := item.(string); ok {
+				permissions = append(permissions, permission)
+			}
+		}
+		return authz.DeduplicatePermissionIDs(permissions)
+	default:
+		stringValue := strings.TrimSpace(fmt.Sprint(v))
+		if stringValue == "" || stringValue == "<nil>" {
+			return nil
+		}
+		return authz.ParsePermissionIDs(stringValue)
+	}
+}
 
 // GetApprovalConfigsHandler returns all approval configs.
 func GetApprovalConfigsHandler(c *gin.Context) {
@@ -140,8 +165,8 @@ func ApproveRequestHandler(c *gin.Context) {
 
 // GetMyApprovalsHandler returns approvals relevant to current user.
 func GetMyApprovalsHandler(c *gin.Context) {
-	role, _ := c.Get("role")
-	requests, err := services.ListMyApprovals(middleware.GetSafeUserID(c), fmt.Sprint(role))
+	rawPermissions, _ := c.Get("permissions")
+	requests, err := services.ListMyApprovals(middleware.GetSafeUserID(c), normalizePermissionContext(rawPermissions))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取审批列表失败"})
 		return

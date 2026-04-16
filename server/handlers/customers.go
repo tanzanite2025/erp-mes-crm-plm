@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 	"xdfc-server/services/trading_audit"
-	"xdfc-server/audit"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -193,7 +193,7 @@ func DeleteCustomerHandler(c *gin.Context) {
 }
 
 func BulkSyncCustomersHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

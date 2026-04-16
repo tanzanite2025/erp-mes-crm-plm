@@ -26,7 +26,7 @@ export function useShipmentInventoryContext({
   })
 
   return {
-    categoryStock: selectedItem && sourceCategory ? (categoryStockQuery.data ?? 0) : 0,
-    inventoryBreakdown: selectedItem ? (inventoryBreakdownQuery.data ?? {}) : {},
+    categoryStock: selectedItem && sourceCategory ? categoryStockQuery.data : undefined,
+    inventoryBreakdown: selectedItem ? inventoryBreakdownQuery.data : undefined,
   }
 }

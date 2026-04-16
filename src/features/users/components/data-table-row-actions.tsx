@@ -13,7 +13,7 @@ import { type User } from '../data/schema'
 import { useUsers } from './users-provider'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
-import { isSuperAdmin } from '../utils/user-utils'
+import { isProtectedSystemAccount } from '../utils/user-utils'
 
 type DataTableRowActionsProps = {
   row: Row<User>
@@ -22,7 +22,7 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useLanguage()
   const { setOpen, setCurrentRow } = useUsers()
-  const isProtected = isSuperAdmin(row.original)
+  const isProtected = isProtectedSystemAccount(row.original)
 
   return (
     <>
@@ -45,11 +45,11 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
               onClick={() => {
                 if (isProtected) return
                 setCurrentRow(row.original)
-                setOpen('roles')
+                setOpen('permissions')
               }}
               title={isProtected ? t('users.table.protectedTooltip') : undefined}
             >
-              {t('users.actions.manageRoles')}
+              管理权限
               <DropdownMenuShortcut>
                 {isProtected ? <Lock size={14} className='text-amber-500' /> : <ShieldPlus size={16} />}
               </DropdownMenuShortcut>

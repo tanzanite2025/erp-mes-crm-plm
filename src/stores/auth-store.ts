@@ -20,7 +20,6 @@ export interface AuthUser {
   employeeId?: string
   email: string
   username: string
-  role: string[]
   permissions?: string[]
   exp: number
 }
@@ -43,7 +42,6 @@ type AuthUserSnapshot = {
   username: string
   accountNo: string
   email: string
-  role: string[]
   permissionCount: number
 }
 
@@ -62,7 +60,6 @@ function toAuthUserSnapshot(user: AuthUser | null): AuthUserSnapshot | null {
     username: user.username,
     accountNo: user.accountNo,
     email: user.email,
-    role: [...user.role],
     permissionCount: Array.isArray(user.permissions) ? user.permissions.length : 0,
   }
 }
@@ -166,7 +163,6 @@ function sanitizePersistedAuthState(persistedState: unknown): Partial<AuthState>
   // 严禁使用 persistedState ?? {} 掩盖加载失败或状态损坏。
   if (persistedState !== null && persistedState !== undefined && typeof persistedState !== 'object') {
     const errorMsg = `[CRITICAL] Auth Storage Corruption: Persisted state is not an object (type: ${typeof persistedState})`
-    console.error(errorMsg)
     throw new Error(errorMsg)
   }
 

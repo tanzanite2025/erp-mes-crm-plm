@@ -8,6 +8,7 @@ import (
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,6 +19,34 @@ import (
 var ErrVersionConflict = errors.New("version conflict")
 
 const versionConflictMessage = "数据已被更新，请刷新后重试"
+
+func mapDomainErrorToHTTPStatus(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+	switch {
+	case strings.HasPrefix(err.Error(), "[NOT_FOUND]"):
+		return http.StatusNotFound
+	case strings.HasPrefix(err.Error(), "[CONFLICT]"):
+		return http.StatusConflict
+	case strings.HasPrefix(err.Error(), "[VALIDATION]"):
+		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+func respondDomainError(c *gin.Context, err error, fallbackMessage string) {
+	if err == nil {
+		return
+	}
+	status := mapDomainErrorToHTTPStatus(err)
+	if status == http.StatusInternalServerError {
+		c.JSON(status, gin.H{"error": fallbackMessage + err.Error()})
+		return
+	}
+	c.JSON(status, gin.H{"error": err.Error()})
+}
 
 // respondVersionConflict 统一返回乐观锁冲突响应（不改变业务逻辑，仅标准化返回）
 func respondVersionConflict(c *gin.Context) {
@@ -41,7 +70,52 @@ func normalizeOptionalUUIDString(value string) (string, error) {
 	return parsed.String(), nil
 }
 
+func normalizeUnitCategoryValue(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "OTHER"
+	}
+
+	upper := strings.ToUpper(trimmed)
+	switch upper {
+	case "QUANTITY", "WEIGHT", "LENGTH", "AREA", "VOLUME", "TIME", "OTHER":
+		return upper
+	}
+
+	switch strings.ToLower(trimmed) {
+	case "quantity", "数量":
+		return "QUANTITY"
+	case "weight", "重量":
+		return "WEIGHT"
+	case "length", "长度":
+		return "LENGTH"
+	case "area", "面积":
+		return "AREA"
+	case "volume", "体积":
+		return "VOLUME"
+	case "time", "时间":
+		return "TIME"
+	default:
+		return "OTHER"
+	}
+}
+
+func normalizeUnitModel(unit *models.Unit) {
+	if unit == nil {
+		return
+	}
+	unit.Category = normalizeUnitCategoryValue(unit.Category)
+}
+
+func normalizeUnitModels(units []models.Unit) {
+	for index := range units {
+		normalizeUnitModel(&units[index])
+	}
+}
+
 func saveUnitRecord(unit *models.Unit) error {
+	normalizeUnitModel(unit)
+
 	if strings.TrimSpace(unit.ID) == "" {
 		return db.DB.Create(unit).Error
 	}
@@ -71,6 +145,10 @@ func buildUnitUpdates(payload map[string]json.RawMessage) (map[string]interface{
 			var value string
 			if err := json.Unmarshal(raw, &value); err != nil {
 				return nil, err
+			}
+			if key == "category" {
+				updates[key] = normalizeUnitCategoryValue(value)
+				continue
 			}
 			updates[key] = value
 		case "precision":
@@ -107,9 +185,21 @@ func GetUnitsHandler(c *gin.Context) {
 	cacheKey := "global:cache:units"
 
 	// 1. 内存常驻直出 (Bypass GORM)
-	if cachedData, err := db.RDB.Get(ctx, cacheKey).Result(); err == nil && cachedData != "" {
-		c.Data(http.StatusOK, "application/json", []byte(cachedData))
-		return
+	if db.RDB != nil {
+		if cachedData, err := db.RDB.Get(ctx, cacheKey).Result(); err == nil && cachedData != "" {
+			var units []models.Unit
+			if err := json.Unmarshal([]byte(cachedData), &units); err == nil {
+				normalizeUnitModels(units)
+				if jsonBytes, err := json.Marshal(units); err == nil {
+					db.RDB.Set(ctx, cacheKey, string(jsonBytes), 0)
+					c.Data(http.StatusOK, "application/json", jsonBytes)
+					return
+				}
+			}
+
+			c.Data(http.StatusOK, "application/json", []byte(cachedData))
+			return
+		}
 	}
 
 	// 2. 缓存未击中，常规拉取
@@ -118,9 +208,10 @@ func GetUnitsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	normalizeUnitModels(units)
 
 	// 3. 构建新的内存常驻序列
-	if jsonBytes, err := json.Marshal(units); err == nil {
+	if jsonBytes, err := json.Marshal(units); err == nil && db.RDB != nil {
 		db.RDB.Set(ctx, cacheKey, string(jsonBytes), 0) // 永不过期，靠写入操作硬驱逐
 	}
 
@@ -181,9 +272,67 @@ func SaveUnitHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, unit)
 }
 
+func PatchUnitHandler(c *gin.Context) {
+	id := c.Param("id")
+	var req services.SDRTSDeltaHandlerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid unit patch payload: " + err.Error()})
+		return
+	}
+	if strings.TrimSpace(req.Metadata.ID) != "" && strings.TrimSpace(req.Metadata.ID) != id {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] unit patch id mismatch"})
+		return
+	}
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "code", "name", "category", "precision", "status", "isSystem", "description"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid unit delta: " + err.Error()})
+		return
+	}
+
+	payload := make(map[string]json.RawMessage, len(req.Delta))
+	for key, raw := range req.Delta {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid unit delta payload: " + err.Error()})
+			return
+		}
+		payload[key] = valueRaw
+	}
+
+	updates, err := buildUnitUpdates(payload)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid unit delta: " + err.Error()})
+		return
+	}
+	if err := patchUnitRecord(id, updates); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "unit not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var unit models.Unit
+	if err := db.DB.First(&unit, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "unit not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	normalizeUnitModel(&unit)
+
+	if db.RDB != nil {
+		db.RDB.Del(context.Background(), "global:cache:units")
+	}
+
+	c.JSON(http.StatusOK, unit)
+}
+
 // BulkSyncUnitsHandler 批量同步计量单位 (用于数据抢救)
 func BulkSyncUnitsHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 
@@ -192,6 +341,7 @@ func BulkSyncUnitsHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	normalizeUnitModels(units)
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, u := range units {
@@ -212,7 +362,9 @@ func BulkSyncUnitsHandler(c *gin.Context) {
 	}
 
 	// 清洗常驻内存
-	db.RDB.Del(context.Background(), "global:cache:units")
+	if db.RDB != nil {
+		db.RDB.Del(context.Background(), "global:cache:units")
+	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(units)})
 }

@@ -4,22 +4,14 @@ import { type UserForm } from './users-action-dialog.shared'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
 
-export function resolveSubmitRole(params: {
-  roleFromForm: string
-}) {
-  const { roleFromForm } = params
-  return roleFromForm.trim()
-}
-
 /**
  * 使用 ProxyTracker 构建局部更新的 Delta 载荷
  */
 export function buildUserDelta(params: {
   currentRow: User
-  resolvedRole: string
   values: UserForm
 }): DeltaSet {
-  const { currentRow, resolvedRole, values } = params
+  const { currentRow, values } = params
   
   const tracker = trackDelta(currentRow)
   const draft = tracker.data as User
@@ -28,7 +20,6 @@ export function buildUserDelta(params: {
   draft.phoneNumber = values.phoneNumber?.trim() || ''
   draft.firstName = values.firstName.trim()
   draft.lastName = values.lastName.trim()
-  draft.role = resolvedRole
   
   if (values.password && values.password.trim()) {
     draft.password = values.password.trim()
@@ -38,10 +29,9 @@ export function buildUserDelta(params: {
 }
 
 export function buildUserCreatePayload(params: {
-  resolvedRole: string
   values: UserForm
 }): CreateUserPayload {
-  const { resolvedRole, values } = params
+  const { values } = params
 
   return {
     username: values.username.trim(),
@@ -49,7 +39,6 @@ export function buildUserCreatePayload(params: {
     phoneNumber: values.phoneNumber?.trim() || '',
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
-    role: resolvedRole,
     employeeId: values.employeeId?.trim() || undefined,
   }
 }

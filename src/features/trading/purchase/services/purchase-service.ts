@@ -22,33 +22,35 @@ export interface PaginatedResponse<T> {
 
 export const getPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrders> => {
   const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/orders?page=${page}&pageSize=${pageSize}`)
-  return toPurchaseOrderListPageContract(
-    ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(res, 'PurchaseService.getPurchaseOrders') as PurchaseOrderListPageApiDTO
-  )
+  const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(res, 'PurchaseService.getPurchaseOrders')
+  return toPurchaseOrderListPageContract(response)
 }
 
 export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrders> => {
   const res = await apiFetch<PurchaseOrderListPageApiDTO>(`/purchase/deleted-orders?page=${page}&pageSize=${pageSize}`)
-  return toPurchaseOrderListPageContract(
-    ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(res, 'PurchaseService.getDeletedPurchaseOrders') as PurchaseOrderListPageApiDTO
-  )
+  const response = ensureObjectResponse<PurchaseOrderListPageApiDTO & Record<string, unknown>>(res, 'PurchaseService.getDeletedPurchaseOrders')
+  return toPurchaseOrderListPageContract(response)
 }
 
 export const getPurchaseOrderById = async (id: string): Promise<PurchaseOrder> => {
   const res = await apiFetch<PurchaseOrderApiDTO>(`/purchase/orders/${id}`)
-  return toPurchaseOrderContract(
-    ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.getPurchaseOrderById') as PurchaseOrderApiDTO
-  )
+  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.getPurchaseOrderById')
+  return toPurchaseOrderContract(response)
 }
 
 export const createPurchaseOrder = async (order: Omit<PurchaseOrder, 'id' | 'version'>): Promise<PurchaseOrder> => {
+  const createdOrder: PurchaseOrder = {
+    ...order,
+    id: '',
+    version: 1,
+  }
+
   const res = await apiFetch<PurchaseOrderApiDTO>('/purchase/orders', {
     method: 'POST',
-    body: JSON.stringify(toPurchaseOrderApiDTO({ ...order, id: '', version: 1 } as PurchaseOrder)),
+    body: JSON.stringify(toPurchaseOrderApiDTO(createdOrder)),
   })
-  return toPurchaseOrderContract(
-    ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.createPurchaseOrder') as PurchaseOrderApiDTO
-  )
+  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.createPurchaseOrder')
+  return toPurchaseOrderContract(response)
 }
 
 export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: number): Promise<PurchaseOrder> => {
@@ -62,9 +64,8 @@ export const patchPurchaseOrder = async (id: string, delta: DeltaSet, version: n
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return toPurchaseOrderContract(
-    ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.patchPurchaseOrder') as PurchaseOrderApiDTO
-  )
+  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(res, 'PurchaseService.patchPurchaseOrder')
+  return toPurchaseOrderContract(response)
 }
 
 export const deletePurchaseOrder = async (id: string): Promise<void> => {

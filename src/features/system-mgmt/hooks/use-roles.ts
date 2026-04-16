@@ -8,8 +8,6 @@ import { buildTreeAssistedPermissionIds } from '../utils/role-permission-tree'
 import { toast } from 'sonner'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 
-const DEFAULT_PERMISSIONS = getDefaultPermissions()
-
 function isSuperAdminRoleId(roleId: string): boolean {
   const normalized = roleId.trim().toLowerCase()
   return normalized === 'superadmin' || normalized === 'admin'
@@ -44,8 +42,8 @@ function buildUserFacingErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function useRoles(enabled = true) {
+  const permissions: Permission[] = getDefaultPermissions()
   const [roles, setRoles] = useState<Role[]>([])
-  const [permissions] = useState<Permission[]>(DEFAULT_PERMISSIONS)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 

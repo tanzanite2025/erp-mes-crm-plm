@@ -3,16 +3,18 @@ import type {
   UserAccessSnapshot,
   UserListPage,
   UserOption,
-  UserRoleBinding,
-  UserRoleBindingsResponse,
+  UserPermissionItem,
+  UserPermissionsReplaceResult,
+  UserPermissionsResponse,
 } from '../data/schema'
 import type {
   UserAccessSnapshotApiDTO,
   UserApiDTO,
   UserListPageApiDTO,
   UserOptionApiDTO,
-  UserRoleBindingApiDTO,
-  UserRoleBindingsApiDTO,
+  UserPermissionItemApiDTO,
+  UserPermissionsApiDTO,
+  UserPermissionsReplaceResultApiDTO,
 } from '../contracts/user-api-dto'
 
 export function toUserContract(dto: UserApiDTO): User {
@@ -24,11 +26,8 @@ export function toUserContract(dto: UserApiDTO): User {
     username: dto.username,
     phoneNumber: dto.phoneNumber ?? '',
     status: dto.status,
-    role: dto.role,
     version: dto.version ?? 1,
     password: dto.password,
-    resolvedRole: dto.resolvedRole,
-    roleInfo: dto.roleInfo,
     createdAt: dto.createdAt ? new Date(dto.createdAt) : new Date(0),
     updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : new Date(0),
   }
@@ -45,7 +44,6 @@ export function toUserOptionContract(dto: UserOptionApiDTO): UserOption {
     employeeId: dto.employeeId,
     firstName: dto.firstName,
     lastName: dto.lastName,
-    role: dto.role,
     status: dto.status,
   }
 }
@@ -71,39 +69,46 @@ export function toUserApiDTO(contract: User): UserApiDTO {
     phoneNumber: contract.phoneNumber,
     firstName: contract.firstName,
     lastName: contract.lastName,
-    role: contract.role,
     status: contract.status,
     employeeId: contract.employeeId,
     password: contract.password,
-    resolvedRole: contract.resolvedRole,
-    roleInfo: contract.roleInfo,
     createdAt: contract.createdAt?.toISOString(),
     updatedAt: contract.updatedAt?.toISOString(),
     version: contract.version,
   }
 }
 
-export function toUserRoleBindingContract(dto: UserRoleBindingApiDTO): UserRoleBinding {
+export function toUserPermissionItemContract(dto: UserPermissionItemApiDTO): UserPermissionItem {
   return {
-    bindingId: dto.bindingId,
-    roleId: dto.roleId,
-    roleLabel: dto.roleLabel,
-    roleColor: dto.roleColor,
-    isPrimary: dto.isPrimary,
-    status: dto.status,
+    permissionId: dto.permissionId,
     source: dto.source,
-    startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-    endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+    grantedBy: dto.grantedBy,
+    updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : undefined,
   }
 }
 
-export function toUserRoleBindingsResponseContract(dto: UserRoleBindingsApiDTO): UserRoleBindingsResponse {
+export function toUserPermissionsResponseContract(dto: UserPermissionsApiDTO): UserPermissionsResponse {
   return {
     userId: dto.userId,
     username: dto.username,
-    primaryRoleId: dto.primaryRoleId,
-    effectiveRoles: Array.isArray(dto.effectiveRoles) ? dto.effectiveRoles : [],
-    roleBindings: (dto.roleBindings || []).map(toUserRoleBindingContract),
+    status: dto.status,
+    employeeId: dto.employeeId,
+    permissions: (dto.permissions || []).map(toUserPermissionItemContract),
+    total: dto.total,
+  }
+}
+
+export function toUserPermissionsReplaceResultContract(
+  dto: UserPermissionsReplaceResultApiDTO,
+): UserPermissionsReplaceResult {
+  return {
+    userId: dto.userId,
+    permissions: Array.isArray(dto.permissions) ? dto.permissions : [],
+    changeSummary: {
+      added: dto.changeSummary?.added ?? 0,
+      removed: dto.changeSummary?.removed ?? 0,
+      unchanged: dto.changeSummary?.unchanged ?? 0,
+    },
   }
 }
 
@@ -112,10 +117,8 @@ export function toUserAccessSnapshotContract(dto: UserAccessSnapshotApiDTO): Use
     userId: dto.userId,
     username: dto.username,
     employeeId: dto.employeeId,
-    primaryRoleId: dto.primaryRoleId,
-    effectiveRoles: Array.isArray(dto.effectiveRoles) ? dto.effectiveRoles : [],
+    status: dto.status,
     permissions: Array.isArray(dto.permissions) ? dto.permissions : [],
     diagnostics: Array.isArray(dto.diagnostics) ? dto.diagnostics : [],
-    roleBindings: (dto.roleBindings || []).map(toUserRoleBindingContract),
   }
 }

@@ -39,7 +39,7 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 		}
 		saved, err := services.PatchProductAttributeCategory(id, updates)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存产品属性分类失败: " + err.Error()})
+			respondDomainError(c, err, "[SERVER] 差分保存产品属性分类失败: ")
 			return
 		}
 		c.JSON(http.StatusOK, saved)
@@ -54,7 +54,7 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 
 	saved, err := services.CreateProductAttributeCategory(input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建产品属性分类失败: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, saved)
@@ -67,7 +67,7 @@ func DeleteProductAttributeCategoryHandler(c *gin.Context) {
 		return
 	}
 	if err := services.DeleteProductAttributeCategory(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除产品属性分类失败: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] 删除产品属性分类失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})

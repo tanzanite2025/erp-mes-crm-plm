@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -109,6 +110,82 @@ func TestSaveUnitHandlerPreservesDescriptionAndSystemFlagOnSparseUpdate(t *testi
 	require.Equal(t, 3, persisted.Precision)
 	require.Equal(t, "system unit", persisted.Description)
 	require.True(t, persisted.IsSystem)
+}
+
+func TestPatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory(t *testing.T) {
+	setupSavePatchSemanticsTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	unitID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, unitID, now, now, "CBM", "Cubic Meter", "weight", 3, "active", false, "volume unit").Error)
+
+	payload := services.SDRTSDeltaHandlerRequest{
+		Op: "PATCH",
+		Delta: map[string]json.RawMessage{
+			"category": json.RawMessage(`{"o":"weight","n":"面积"}`),
+			"name":     json.RawMessage(`{"o":"Cubic Meter","n":"Square Meter"}`),
+		},
+		Metadata: services.SDRTSDeltaMetadata{ID: unitID, Version: 1},
+	}
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/basic/units/"+unitID, strings.NewReader(string(body)))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: unitID}}
+
+	PatchUnitHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var persisted models.Unit
+	require.NoError(t, db.DB.Where("id = ?", unitID).First(&persisted).Error)
+	require.Equal(t, "Square Meter", persisted.Name)
+	require.Equal(t, "AREA", persisted.Category)
+	require.Equal(t, "volume unit", persisted.Description)
+}
+
+func TestGetUnitsHandlerNormalizesHistoricalCategories(t *testing.T) {
+	setupSavePatchSemanticsTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, "KG", "Kilogram", "weight", 3, "active", true, "weight unit").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, "M2", "Square Meter", "面积", 2, "active", false, "area unit").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/basic/units", nil)
+	ctx.Request = request
+
+	GetUnitsHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.Unit
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+
+	categoryByCode := make(map[string]string, len(response))
+	for _, unit := range response {
+		categoryByCode[unit.Code] = unit.Category
+	}
+
+	require.Equal(t, "WEIGHT", categoryByCode["KG"])
+	require.Equal(t, "AREA", categoryByCode["M2"])
 }
 
 func TestSaveTaxRateHandlerPreservesDescriptionOnSparseUpdate(t *testing.T) {

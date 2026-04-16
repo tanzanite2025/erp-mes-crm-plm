@@ -211,7 +211,7 @@ func UpdateFurnaceTelemetryHandler(c *gin.Context) {
 
 // BulkSyncFurnacesHandler 批量同步炉台 (数据抢救)
 func BulkSyncFurnacesHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

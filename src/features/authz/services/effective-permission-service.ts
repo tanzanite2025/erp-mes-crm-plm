@@ -9,8 +9,6 @@ type ProfilePayload = {
   username?: string
   email?: string
   employeeId?: string
-  effectiveRoles?: string[]
-  role?: string[]
   permissions?: string[]
 }
 
@@ -20,10 +18,6 @@ function normalizePermissionId(value: string): string {
 
 function toUniquePermissionIds(permissionIds: string[]): string[] {
   return Array.from(new Set(permissionIds.map((id) => normalizePermissionId(id)).filter(Boolean)))
-}
-
-function toUniqueRoleIds(roleIds: string[]): string[] {
-  return Array.from(new Set(roleIds.map((id) => id.trim()).filter(Boolean)))
 }
 
 function areStringArraysEqualAsSet(left: string[], right: string[]): boolean {
@@ -54,23 +48,19 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
   inFlightProfileSync = (async () => {
     const profile = await apiFetch<ProfilePayload>('/auth/snapshot', { ignoreBreaker: true })
     const normalizedPermissions = await processAndNotifyPermissions(profile.permissions || [])
-    const effectiveRoles = toUniqueRoleIds((profile.effectiveRoles || []).map((roleId) => roleId.toLowerCase()))
-    const nextRoleIds = effectiveRoles
 
     const state = useAuthStore.getState()
     const currentUser = state.user
     if (currentUser) {
-      const sameRoles = areStringArraysEqualAsSet(nextRoleIds, currentUser.role)
       const currentPermissions = toUniquePermissionIds(currentUser.permissions || [])
       const samePermissions = areStringArraysEqualAsSet(currentPermissions, normalizedPermissions)
       const nextEmployeeId = profile.employeeId?.trim() || undefined
       const sameEmployeeId = (currentUser.employeeId || '').trim() === (nextEmployeeId || '')
 
-      if (!sameRoles || !samePermissions || !sameEmployeeId) {
+      if (!samePermissions || !sameEmployeeId) {
         state.setUser({
           ...currentUser,
           employeeId: nextEmployeeId,
-          role: nextRoleIds,
           permissions: normalizedPermissions,
         }, 'profile_sync')
       }
@@ -81,7 +71,6 @@ export async function syncIdentitySnapshotFromProfile(): Promise<string[]> {
         employeeId: profile.employeeId?.trim() || undefined,
         email: profile.email || '',
         username: profile.username,
-        role: nextRoleIds,
         permissions: normalizedPermissions,
         exp: Date.now() + 24 * 60 * 60 * 1000,
       }, 'profile_rehydrate')

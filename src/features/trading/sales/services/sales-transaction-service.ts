@@ -102,12 +102,11 @@ export const executeSalesOrderTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return toSalesOrderContract(
-    ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
-      res,
-      'SalesTransactionService.executeSalesOrderTransaction'
-    ) as SalesOrderApiDTO
+  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
+    res,
+    'SalesTransactionService.executeSalesOrderTransaction'
   )
+  return toSalesOrderContract(response)
 }
 
 export const claimSalesOrderLines = async (

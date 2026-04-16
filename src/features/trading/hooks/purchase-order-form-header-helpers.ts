@@ -18,15 +18,16 @@ export function buildPurchaseOrderHeaderPatch(
 ): Partial<PurchaseOrder> {
   return {
     [field]: value,
-  } as Partial<PurchaseOrder>
+  }
 }
 
 export function buildPurchaseOrderCurrencyPatch(
   currencyCode: string,
   exchangeRate?: number
 ): Partial<PurchaseOrder> {
-  return {
-    currency: currencyCode,
-    ...(exchangeRate === undefined ? {} : { exchangeRate }),
+  const patch: Partial<PurchaseOrder> = { currency: currencyCode }
+  if (exchangeRate !== undefined) {
+    patch.exchangeRate = exchangeRate
   }
+  return patch
 }

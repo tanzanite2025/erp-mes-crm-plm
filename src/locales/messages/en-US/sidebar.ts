@@ -33,6 +33,7 @@ export const sidebar = {
     experimentalTests: 'Lab Tests',
     experimentalReports: 'Lab Reports',
     piecework: 'Piecework Management',
+    apsScheduling: 'APS Scheduling',
     toolingAssets: 'Tooling Asset Management',
     furnaceAssets: 'Furnace Asset Archive',
     pdaShell: 'PDA Shell',

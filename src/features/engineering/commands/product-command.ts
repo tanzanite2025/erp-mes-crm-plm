@@ -38,16 +38,17 @@ interface ProductSubmitPayload {
   productsToSave: Product[]
 }
 
-interface ToggleVariantSelectionParams {
+interface VariantSelectionParams {
   selectedVariants: ProductVariantSelection[]
   level: string
+}
+
+interface ToggleVariantSelectionParams extends VariantSelectionParams {
   checked: boolean
   defaultWeight: number | undefined
 }
 
-interface UpdateVariantSelectionWeightParams {
-  selectedVariants: ProductVariantSelection[]
-  level: string
+interface UpdateVariantSelectionWeightParams extends VariantSelectionParams {
   weight: number | undefined
 }
 
@@ -59,10 +60,18 @@ function toEditFormValues(currentRow: Product): Product {
   return draftRow
 }
 
+function getVersionLevelFromProduct(product: Product): string {
+  return getAttributeValue(product, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
+}
+
+function createSelectedVariant(level: string, weight: number | undefined): ProductVariantSelection {
+  return { level, weight }
+}
+
 function toEditSelectedVariants(formValues: Product): ProductVariantSelection[] {
-  const versionLevel = getAttributeValue(formValues, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
+  const versionLevel = getVersionLevelFromProduct(formValues)
   if (!versionLevel) return []
-  return [{ level: versionLevel, weight: formValues.weight || 0 }]
+  return [createSelectedVariant(versionLevel, formValues.weight || 0)]
 }
 
 function toCreateSelectedVariants(
@@ -70,7 +79,26 @@ function toCreateSelectedVariants(
   versionLevelOptions: OptionItem[]
 ): ProductVariantSelection[] {
   if (versionLevelOptions.length === 0) return []
-  return [{ level: versionLevelOptions[0].value, weight: formValues.weight }]
+  return [createSelectedVariant(versionLevelOptions[0].value, formValues.weight)]
+}
+
+function ensureVariantSelection(selectedVariants: ProductVariantSelection[], level: string, weight: number | undefined): ProductVariantSelection[] {
+  const existing = selectedVariants.find((variant) => variant.level === level)
+  if (existing) {
+    return selectedVariants
+  }
+
+  return [...selectedVariants, createSelectedVariant(level, weight)]
+}
+
+function removeVariantSelection(selectedVariants: ProductVariantSelection[], level: string): ProductVariantSelection[] {
+  return selectedVariants.filter((variant) => variant.level !== level)
+}
+
+function updateVariantWeight(selectedVariants: ProductVariantSelection[], level: string, weight: number | undefined): ProductVariantSelection[] {
+  return selectedVariants.map((variant) =>
+    variant.level === level ? createSelectedVariant(level, weight) : variant
+  )
 }
 
 function toggleVariantSelection({
@@ -79,15 +107,9 @@ function toggleVariantSelection({
   checked,
   defaultWeight,
 }: ToggleVariantSelectionParams): ProductVariantSelection[] {
-  if (checked) {
-    if (selectedVariants.some((variant) => variant.level === level)) {
-      return selectedVariants
-    }
-
-    return [...selectedVariants, { level, weight: defaultWeight }]
-  }
-
-  return selectedVariants.filter((variant) => variant.level !== level)
+  return checked
+    ? ensureVariantSelection(selectedVariants, level, defaultWeight)
+    : removeVariantSelection(selectedVariants, level)
 }
 
 function updateVariantSelectionWeight({
@@ -95,9 +117,37 @@ function updateVariantSelectionWeight({
   level,
   weight,
 }: UpdateVariantSelectionWeightParams): ProductVariantSelection[] {
-  return selectedVariants.map((variant) =>
-    variant.level === level ? { ...variant, weight } : variant
-  )
+  return updateVariantWeight(selectedVariants, level, weight)
+}
+
+function composeBatchSubmitPayload(
+  values: Product,
+  selectedVariants: ProductVariantSelection[],
+  typeCode: string
+): ProductSubmitPayload {
+  return {
+    mode: 'batch',
+    productsToSave: buildBatchProducts(values, selectedVariants, typeCode),
+  }
+}
+
+function composeSingleVariantSubmitPayload(
+  values: Product,
+  selectedVariant: ProductVariantSelection,
+  typeCode: string,
+  isEdit: boolean
+): ProductSubmitPayload {
+  return {
+    mode: isEdit ? 'edit' : 'variant',
+    productsToSave: [buildSingleVariantProduct(values, selectedVariant, typeCode)],
+  }
+}
+
+function composeDefaultSubmitPayload(values: Product, isEdit: boolean): ProductSubmitPayload {
+  return {
+    mode: isEdit ? 'edit' : 'single',
+    productsToSave: [values],
+  }
 }
 
 export const ProductCommand = {
@@ -129,30 +179,25 @@ export const ProductCommand = {
     isEdit,
   }: ComposeSubmitPayloadParams): ProductSubmitPayload {
     if (selectedVariants.length > 1) {
-      return {
-        mode: 'batch',
-        productsToSave: buildBatchProducts(values, selectedVariants, typeCode),
-      }
+      return composeBatchSubmitPayload(values, selectedVariants, typeCode)
     }
 
     if (selectedVariants.length === 1) {
-      return {
-        mode: isEdit ? 'edit' : 'variant',
-        productsToSave: [buildSingleVariantProduct(values, selectedVariants[0], typeCode)],
-      }
+      return composeSingleVariantSubmitPayload(values, selectedVariants[0], typeCode, isEdit)
     }
 
-    return {
-      mode: isEdit ? 'edit' : 'single',
-      productsToSave: [values],
-    }
+    return composeDefaultSubmitPayload(values, isEdit)
   },
 
-  toggleVariantSelection(params: ToggleVariantSelectionParams): ProductVariantSelection[] {
+  selectVariant(params: ToggleVariantSelectionParams): ProductVariantSelection[] {
     return toggleVariantSelection(params)
   },
 
-  updateVariantSelectionWeight(params: UpdateVariantSelectionWeightParams): ProductVariantSelection[] {
+  deselectVariant(params: VariantSelectionParams): ProductVariantSelection[] {
+    return removeVariantSelection(params.selectedVariants, params.level)
+  },
+
+  setVariantWeight(params: UpdateVariantSelectionWeightParams): ProductVariantSelection[] {
     return updateVariantSelectionWeight(params)
   },
 }

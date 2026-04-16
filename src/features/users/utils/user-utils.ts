@@ -1,13 +1,12 @@
 import { type User } from '../data/schema'
 
 /**
- * 判断用户是否为超级管理员 (Super Admin)
+ * 判断用户是否为受系统保护的账户
  * 
- * 符合以下任一条件即判定为受系统保护的账户：
- * 1. 角色标识 (role) 为 'superadmin'
- * 2. 账号名 (username) 为 'admin' (后备安全检查)
+ * 当前前端仅按受控用户名识别系统保护账户，
+ * 以避免继续保留历史角色口径。
  */
-export function isSuperAdmin(user: User): boolean {
+export function isProtectedSystemAccount(user: User): boolean {
   if (!user) return false
-  return user.role === 'superadmin' || user.username === 'admin'
+  return user.username === 'admin'
 }

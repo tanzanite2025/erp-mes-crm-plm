@@ -8,6 +8,12 @@ export interface PaginatedSalesOrders {
   pageSize: number
 }
 
+function normalizeSalesOrderLineStatus(status: SalesOrderLineApiDTO['status']): SalesOrderLine['status'] {
+  return status === 'Created' || status === 'InProgress' || status === 'Completed' || status === 'Cancelled'
+    ? status
+    : 'Pending'
+}
+
 function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
   return {
     id: dto.id,
@@ -30,7 +36,7 @@ function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
     holeCount: dto.holeCount,
     route: dto.route,
     orderDate: dto.orderDate,
-    status: dto.status as SalesOrderLine['status'],
+    status: normalizeSalesOrderLineStatus(dto.status),
     claimedBy: dto.claimedBy,
     claimedAt: dto.claimedAt,
   }
@@ -64,6 +70,12 @@ function toSalesOrderLineApiDTO(line: SalesOrderLine): SalesOrderLineApiDTO {
   }
 }
 
+function normalizeSalesOrderStatus(status: SalesOrderApiDTO['status']): SalesOrder['status'] {
+  return status === 'Pending' || status === 'Confirmed' || status === 'Cancelled' || status === 'Shipped' || status === 'Completed'
+    ? status
+    : 'Pending'
+}
+
 export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
   return {
     id: dto.id,
@@ -74,7 +86,7 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     type: dto.type,
     currency: dto.currency,
     classification: dto.classification,
-    status: dto.status as SalesOrder['status'],
+    status: normalizeSalesOrderStatus(dto.status),
     statusNote: dto.statusNote,
     amount: dto.amount,
     quantity: dto.quantity,
@@ -92,10 +104,10 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     updatedAt: dto.updatedAt,
     updatedBy: dto.updatedBy,
     isDeleted: dto.isDeleted,
-    version: dto.version ?? 1,
-    evidences: dto.evidences ?? [],
+    version: dto.version,
+    evidences: dto.evidences,
     fulfillmentRate: dto.fulfillmentRate,
-    lines: (dto.lines ?? []).map(toSalesOrderLineContract),
+    lines: dto.lines.map(toSalesOrderLineContract),
   }
 }
 
@@ -128,8 +140,8 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     updatedBy: order.updatedBy,
     isDeleted: order.isDeleted,
     version: order.version,
-    evidences: order.evidences ?? [],
-    lines: (order.lines ?? []).map(toSalesOrderLineApiDTO),
+    evidences: order.evidences,
+    lines: order.lines.map(toSalesOrderLineApiDTO),
   }
 }
 

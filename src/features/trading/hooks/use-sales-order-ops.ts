@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
+import { type SalesOrderFormValues, type SalesOrderLine, createEmptySalesOrderLine } from '../data/schema'
 import { previewLineAmount, previewOrderTotals } from '../utils/sales-order-calc'
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
@@ -12,7 +12,7 @@ type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
  * 系统的最终权威数据由 Go 后端计算引擎在提交时重算生成。
  */
 export function useSalesOrderOps(
-  setFormData: React.Dispatch<React.SetStateAction<Partial<SalesOrder>>>
+  setFormData: React.Dispatch<React.SetStateAction<SalesOrderFormValues>>
 ) {
   /**
    * 添加新行
@@ -20,7 +20,7 @@ export function useSalesOrderOps(
   const handleAddLine = useCallback(() => {
     setFormData((prev) => {
       const lines = prev.lines || []
-      const nextRawLines = [...lines, { ...EMPTY_SALES_ORDER_LINE } as SalesOrderLine]
+      const nextRawLines = [...lines, createEmptySalesOrderLine()]
       
       // [PREVIEW-ONLY] 重新计算预览统计
       const { lines: reindexedLines, quantity, amount } = previewOrderTotals(nextRawLines)
@@ -40,7 +40,7 @@ export function useSalesOrderOps(
   const handleRemoveLine = useCallback((index: number) => {
     setFormData((prev) => {
       if (!prev.lines || index < 0 || index >= prev.lines.length) {
-        throw new Error(`[CRITICAL] Cannot remove line at index ${index}: Lines array missing or index out of bounds`);
+        return prev;
       }
 
       const nextRawLines = prev.lines.filter((_, lineIndex) => lineIndex !== index)
@@ -67,7 +67,7 @@ export function useSalesOrderOps(
         const targetLine = nextLines[index]
         
         if (!targetLine) {
-          throw new Error(`[CRITICAL] Update failed: Line at index ${index} not found in state`);
+          return prev;
         }
         
         // 1. 基本字段更新

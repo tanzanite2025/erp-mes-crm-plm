@@ -6,7 +6,7 @@ import { DEFAULT_PURCHASE_ORDER, EMPTY_PURCHASE_ORDER_LINE } from './purchase-or
 
 type PurchaseOrderTranslate = (key: TranslationKey, params?: Record<string, string | number>) => string
 
-export function createNewPurchaseOrderDraft(purchaserName: string, exchangeRate: number): Partial<PurchaseOrder> {
+export function createNewPurchaseOrderDraft(purchaserName: string, exchangeRate: number): PurchaseOrder {
   const now = new Date()
   const date = now.toISOString().split('T')[0]
   const newId = `PO${now.toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)}`
@@ -19,7 +19,7 @@ export function createNewPurchaseOrderDraft(purchaserName: string, exchangeRate:
     purchaser: purchaserName,
     currency: DEFAULT_PURCHASE_ORDER.currency || 'CNY',
     exchangeRate,
-    lines: [{ ...EMPTY_PURCHASE_ORDER_LINE, lineNo: 1 } as PurchaseOrderLine],
+    lines: [EMPTY_PURCHASE_ORDER_LINE],
   }
 }
 
@@ -29,7 +29,7 @@ export function appendPurchaseOrderLine(lines: PurchaseOrderLine[]): {
 } {
   const nextLines = [
     ...lines,
-    { ...EMPTY_PURCHASE_ORDER_LINE, lineNo: lines.length + 1 } as PurchaseOrderLine,
+    EMPTY_PURCHASE_ORDER_LINE,
   ]
   const { lines: reindexedLines, amount } = previewOrderTotals(nextLines)
 

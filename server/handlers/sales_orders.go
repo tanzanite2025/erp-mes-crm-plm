@@ -141,7 +141,7 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 }
 
 func BulkSyncSalesOrdersHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

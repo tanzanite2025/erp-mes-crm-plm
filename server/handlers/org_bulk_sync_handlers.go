@@ -8,7 +8,7 @@ import (
 )
 
 func BulkSyncOrgHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 
@@ -28,7 +28,7 @@ func BulkSyncOrgHandler(c *gin.Context) {
 }
 
 func BulkSyncEmployeesHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

@@ -7,8 +7,6 @@ const userStatusSchema = z.union([
 ])
 export type UserStatus = z.infer<typeof userStatusSchema>
 
-const userRoleSchema = z.string()
-
 const userSchema = z.object({
   id: z.string(),
   employeeId: z.string().optional(),
@@ -17,14 +15,9 @@ const userSchema = z.object({
   username: z.string(),
   phoneNumber: z.string(),
   status: userStatusSchema,
-  role: userRoleSchema,
+  role: z.string().optional(),
   version: z.number().default(1), // 为 SDRTS 增加版本号支持
   password: z.string().optional(), // 移除硬编码默认值
-  resolvedRole: z.string().optional(),
-  roleInfo: z.object({
-    isStale: z.boolean().optional(),
-    isInvalid: z.boolean().optional()
-  }).passthrough().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -61,36 +54,45 @@ const nullableDateSchema = z.preprocess((value) => {
   return value
 }, z.coerce.date().optional())
 
-const userRoleBindingSchema = z.object({
-  bindingId: z.string().optional(),
-  roleId: z.string(),
-  roleLabel: z.string().optional(),
-  roleColor: z.string().optional(),
-  isPrimary: z.boolean(),
-  status: z.string(),
+const userPermissionItemSchema = z.object({
+  permissionId: z.string(),
   source: z.string().optional(),
-  startDate: nullableDateSchema,
-  endDate: nullableDateSchema,
+  grantedBy: z.string().optional(),
+  updatedAt: nullableDateSchema,
 })
-export type UserRoleBinding = z.infer<typeof userRoleBindingSchema>
+export type UserPermissionItem = z.infer<typeof userPermissionItemSchema>
 
-export const userRoleBindingsResponseSchema = z.object({
+export const userPermissionsResponseSchema = z.object({
   userId: z.string(),
   username: z.string(),
-  primaryRoleId: z.string(),
-  effectiveRoles: z.array(z.string()),
-  roleBindings: z.array(userRoleBindingSchema),
+  status: userStatusSchema,
+  employeeId: z.string().optional(),
+  permissions: z.array(userPermissionItemSchema),
+  total: z.number(),
 })
-export type UserRoleBindingsResponse = z.infer<typeof userRoleBindingsResponseSchema>
+export type UserPermissionsResponse = z.infer<typeof userPermissionsResponseSchema>
+
+export const userPermissionsReplaceResultSchema = z.object({
+  userId: z.string(),
+  permissions: z.array(z.string()),
+  changeSummary: z.object({
+    added: z.number().default(0),
+    removed: z.number().default(0),
+    unchanged: z.number().default(0),
+  }).default({
+    added: 0,
+    removed: 0,
+    unchanged: 0,
+  }),
+})
+export type UserPermissionsReplaceResult = z.infer<typeof userPermissionsReplaceResultSchema>
 
 export const userAccessSnapshotSchema = z.object({
   userId: z.string(),
   username: z.string(),
   employeeId: z.string().optional(),
-  primaryRoleId: z.string(),
-  effectiveRoles: z.array(z.string()),
+  status: userStatusSchema.optional(),
   permissions: z.array(z.string()),
   diagnostics: z.array(z.string()).optional(),
-  roleBindings: z.array(userRoleBindingSchema),
 })
 export type UserAccessSnapshot = z.infer<typeof userAccessSnapshotSchema>

@@ -20,10 +20,10 @@ export function usePurchaseOrderSavePreparation({
   }, [formData])
 
   const prepareSaveExecution = useCallback(() => {
-    const finalData = preparePurchaseOrderForSubmit(formData)
+    const submitValues = preparePurchaseOrderForSubmit(formData)
     const delta = commit()
 
-    return buildPurchaseOrderSaveExecution(initialOrder, finalData, delta)
+    return buildPurchaseOrderSaveExecution(initialOrder, submitValues, delta)
   }, [commit, formData, initialOrder])
 
   return {

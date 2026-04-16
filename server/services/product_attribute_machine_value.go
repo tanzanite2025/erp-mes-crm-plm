@@ -46,3 +46,11 @@ func isValidProductAttributeMachineValue(value string) bool {
 func sameProductAttributeMachineValue(a string, b string) bool {
 	return normalizeProductAttributeMachineValue(a) == normalizeProductAttributeMachineValue(b)
 }
+
+func normalizeProductAttributeCategoryKeyForCompare(value string) string {
+	return normalizeProductAttributeMachineValue(value)
+}
+
+func sameProductAttributeCategoryKey(a string, b string) bool {
+	return normalizeProductAttributeCategoryKeyForCompare(a) == normalizeProductAttributeCategoryKeyForCompare(b)
+}

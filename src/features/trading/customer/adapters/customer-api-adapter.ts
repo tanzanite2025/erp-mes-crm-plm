@@ -1,6 +1,12 @@
 import type { Customer } from '../../data/schema'
 import type { CustomerApiDTO } from '../contracts/customer-api-dto'
 
+function normalizeCustomerStatus(status: CustomerApiDTO['status']): Customer['status'] {
+  return status === 'Active' || status === 'Inactive' || status === 'Pending'
+    ? status
+    : 'Pending'
+}
+
 export function toCustomerContract(dto: CustomerApiDTO): Customer {
   return {
     id: dto.id,
@@ -15,7 +21,7 @@ export function toCustomerContract(dto: CustomerApiDTO): Customer {
     telegram: dto.telegram ?? '',
     email: dto.email,
     address: dto.address,
-    status: dto.status,
+    status: normalizeCustomerStatus(dto.status),
     creditLimit: dto.creditLimit,
     balance: dto.balance,
     createdAt: dto.createdAt ?? '',

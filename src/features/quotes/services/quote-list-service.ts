@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import { toQuoteSummaryContracts } from '@/features/quotes/adapters/quote-api-adapter'
-import type { QuoteListItemApiDTO, QuoteListPageApiDTO } from '@/features/quotes/contracts/quote-api-dto'
+import type { QuoteListPageApiDTO } from '@/features/quotes/contracts/quote-api-dto'
 import type { QuoteListFilters, QuoteSummary } from '@/features/quotes/data/quote-summary'
 
 export type QuoteListSource = 'api'
@@ -57,27 +57,16 @@ function buildQuoteListQuery(filters: QuoteListFilters): string {
   return queryString ? `?${queryString}` : ''
 }
 
-function toQuoteSummaryArrayFromUnknown(value: unknown, context: string): QuoteSummary[] {
-  if (Array.isArray(value)) {
-    return toQuoteSummaryContracts(ensureArrayResponse<QuoteListItemApiDTO>(value, context))
-  }
-
+function toQuoteSummaryArrayFromResponse(value: unknown, context: string): QuoteSummary[] {
   const response = ensureObjectResponse<QuoteListPageApiDTO & Record<string, unknown>>(value, context)
-  const items = Array.isArray(response.items)
-    ? response.items
-    : ensureArrayField<QuoteListItemApiDTO>(response, 'data', context)
-
+  const items = ensureArrayField(response, 'items', context)
   return toQuoteSummaryContracts(items)
 }
 
 async function fetchQuoteSummariesFromApi(filters: QuoteListFilters): Promise<QuoteSummary[]> {
   const suffix = buildQuoteListQuery(filters)
-
-  const response = await apiFetch<unknown>(`/quotes${suffix}`, {
-    suppressErrorStatuses: [404],
-  })
-
-  return toQuoteSummaryArrayFromUnknown(response, 'QuoteListService./quotes')
+  const response = await apiFetch<unknown>(`/quotes${suffix}`)
+  return toQuoteSummaryArrayFromResponse(response, 'QuoteListService./quotes')
 }
 
 export async function listQuoteSummaries(filters: QuoteListFilters): Promise<QuoteListResult> {

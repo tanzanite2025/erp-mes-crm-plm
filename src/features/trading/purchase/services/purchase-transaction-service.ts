@@ -84,12 +84,11 @@ export const executePurchaseOrderTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return toPurchaseOrderContract(
-    ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<PurchaseOrderApiDTO & Record<string, unknown>>(
       res,
       'PurchaseTransactionService.executePurchaseOrderTransaction'
-    ) as PurchaseOrderApiDTO
-  )
+    )
+  return toPurchaseOrderContract(response)
 }
 
 export const executePurchaseOrderReceiptConfirmation = async (
@@ -118,12 +117,11 @@ export const executePurchaseOrderReceiptConfirmation = async (
     }),
   })
 
-  return toConfirmPurchaseReceiptContract(
-    ensureObjectResponse<ConfirmPurchaseReceiptResponseApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<ConfirmPurchaseReceiptResponseApiDTO & Record<string, unknown>>(
       res,
       'PurchaseTransactionService.executePurchaseOrderReceiptConfirmation'
-    ) as ConfirmPurchaseReceiptResponseApiDTO
-  )
+    )
+  return toConfirmPurchaseReceiptContract(response)
 }
 
 export const changePurchaseOrderExpectedDate = async (

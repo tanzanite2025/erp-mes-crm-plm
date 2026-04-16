@@ -6,14 +6,16 @@ import {
   toUserAccessSnapshotContract,
   toUserListPageContract,
   toUserOptionContracts,
-  toUserRoleBindingsResponseContract,
+  toUserPermissionsReplaceResultContract,
+  toUserPermissionsResponseContract,
 } from '../adapters/user-api-adapter'
 import {
   type UserAccessSnapshotApiDTO,
   type UserApiDTO,
   type UserListPageApiDTO,
   type UserOptionApiDTO,
-  type UserRoleBindingsApiDTO,
+  type UserPermissionsApiDTO,
+  type UserPermissionsReplaceResultApiDTO,
 } from '../contracts/user-api-dto'
 
 export interface CreateUserPayload {
@@ -23,7 +25,6 @@ export interface CreateUserPayload {
   phoneNumber?: string
   firstName?: string
   lastName?: string
-  role: string
   status?: string
   employeeId?: string
 }
@@ -36,7 +37,6 @@ export interface UserUpdatePayload {
   firstName?: string
   lastName?: string
   status?: string
-  role?: string
   employeeId?: string
 }
 
@@ -47,22 +47,18 @@ export interface UserReplacePayload {
   firstName: string
   lastName: string
   status: string
-  role: string
   employeeId?: string
 }
 
-export interface UserRoleBindingUpsertPayload {
-  role: string
+export interface ReplaceUserPermissionsPayload {
+  permissions: string[]
   source?: string
+  reason?: string
 }
 
 type UsersQueryValue = string | number | boolean | null | undefined | string[]
 type UsersQueryParams = Record<string, UsersQueryValue>
 
-/**
- * 获取用户列表
- * 遵循“后端权威”原则：角色信息 (resolvedRole/roleInfo) 由 API 直接提供，前端不再进行自判定。
- */
 export const fetchUsers = async (params: UsersQueryParams = {}) => {
   const query = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -181,16 +177,6 @@ export const verifyAdminChallenge = async (passcode: string) => {
   })
 }
 
-export const fetchUserRoleBindings = async (id: string) => {
-  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles`)
-  return toUserRoleBindingsResponseContract(
-    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.fetchUserRoleBindings',
-    ) as UserRoleBindingsApiDTO,
-  )
-}
-
 export const fetchUserAccessSnapshot = async (id: string) => {
   const res = await apiFetch<UserAccessSnapshotApiDTO>(`/users/${id}/access`)
   return toUserAccessSnapshotContract(
@@ -198,6 +184,29 @@ export const fetchUserAccessSnapshot = async (id: string) => {
       res,
       'UserApi.fetchUserAccessSnapshot',
     ) as UserAccessSnapshotApiDTO,
+  )
+}
+
+export const fetchUserPermissions = async (id: string) => {
+  const res = await apiFetch<UserPermissionsApiDTO>(`/users/${id}/permissions`)
+  return toUserPermissionsResponseContract(
+    ensureObjectResponse<UserPermissionsApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.fetchUserPermissions',
+    ) as UserPermissionsApiDTO,
+  )
+}
+
+export const replaceUserPermissions = async (id: string, payload: ReplaceUserPermissionsPayload) => {
+  const res = await apiFetch<UserPermissionsReplaceResultApiDTO>(`/users/${id}/permissions`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+  return toUserPermissionsReplaceResultContract(
+    ensureObjectResponse<UserPermissionsReplaceResultApiDTO & Record<string, unknown>>(
+      res,
+      'UserApi.replaceUserPermissions',
+    ) as UserPermissionsReplaceResultApiDTO,
   )
 }
 
@@ -217,40 +226,5 @@ export const unbindUserEmployee = async (id: string) => {
   })
   return toUserContract(
     ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.unbindUserEmployee') as UserApiDTO,
-  )
-}
-
-export const setUserPrimaryRole = async (id: string, role: string) => {
-  const res = await apiFetch<UserApiDTO>(`/users/${id}/primary-role`, {
-    method: 'PATCH',
-    body: JSON.stringify({ role }),
-  })
-  return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.setUserPrimaryRole') as UserApiDTO,
-  )
-}
-
-export const addUserRoleBinding = async (id: string, payload: UserRoleBindingUpsertPayload) => {
-  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-  return toUserRoleBindingsResponseContract(
-    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.addUserRoleBinding',
-    ) as UserRoleBindingsApiDTO,
-  )
-}
-
-export const removeUserRoleBinding = async (id: string, roleId: string) => {
-  const res = await apiFetch<UserRoleBindingsApiDTO>(`/users/${id}/roles/${encodeURIComponent(roleId)}`, {
-    method: 'DELETE',
-  })
-  return toUserRoleBindingsResponseContract(
-    ensureObjectResponse<UserRoleBindingsApiDTO & Record<string, unknown>>(
-      res,
-      'UserApi.removeUserRoleBinding',
-    ) as UserRoleBindingsApiDTO,
   )
 }

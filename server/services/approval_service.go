@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -116,14 +117,14 @@ func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error)
 	}
 
 	request := models.ApprovalRequest{
-		ConfigID:      config.ID,
-		RequesterID:   input.RequesterID,
-		TargetID:      input.TargetID,
-		Reason:        input.Reason,
-		Module:        input.Module,
-		Action:        input.Action,
-		Status:        "PENDING",
-		CurrentLevel:  1,
+		ConfigID:     config.ID,
+		RequesterID:  input.RequesterID,
+		TargetID:     input.TargetID,
+		Reason:       input.Reason,
+		Module:       input.Module,
+		Action:       input.Action,
+		Status:       "PENDING",
+		CurrentLevel: 1,
 	}
 
 	if err := db.DB.Create(&request).Error; err != nil {
@@ -241,11 +242,11 @@ func ApproveRequest(input ApproveRequestInput, now time.Time, generateCode func(
 	return result, nil
 }
 
-func ListMyApprovals(userID string, role string) ([]models.ApprovalRequest, error) {
+func ListMyApprovals(userID string, permissionIDs []string) ([]models.ApprovalRequest, error) {
 	var requests []models.ApprovalRequest
 	query := db.DB.Preload("Config").Preload("Requester")
 
-	if role == "admin" {
+	if hasApprovalFullAccess(permissionIDs) {
 		if err := query.Find(&requests).Error; err != nil {
 			return nil, err
 		}
@@ -259,6 +260,16 @@ func ListMyApprovals(userID string, role string) ([]models.ApprovalRequest, erro
 		return nil, err
 	}
 	return requests, nil
+}
+
+func hasApprovalFullAccess(permissionIDs []string) bool {
+	normalized := authz.DeduplicatePermissionIDs(permissionIDs)
+	for _, permissionID := range normalized {
+		if permissionID == authz.PermissionManage || permissionID == authz.ActionApprovalConfigManage || permissionID == authz.ActionSystemWorkflowManage {
+			return true
+		}
+	}
+	return false
 }
 
 func VerifyAuthCode(input VerifyAuthCodeInput, now time.Time) (models.ApprovalRequest, error) {

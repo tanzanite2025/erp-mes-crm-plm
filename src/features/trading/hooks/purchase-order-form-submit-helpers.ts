@@ -19,7 +19,7 @@ function normalizePurchaseOrderLineForSubmit(line: PurchaseOrderLine, index: num
 }
 
 export function preparePurchaseOrderForSubmit(formData: PurchaseOrder): PurchaseOrder {
-  const normalizedLines = (formData.lines || []).map(normalizePurchaseOrderLineForSubmit)
+  const normalizedLines = formData.lines.map(normalizePurchaseOrderLineForSubmit)
 
   return {
     ...formData,

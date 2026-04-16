@@ -16,6 +16,7 @@ import {
     productTypeAttributeBindingsQueryKey,
 } from '../query-keys'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import { useLanguage } from '@/context/language-provider'
 import { isNotFoundError } from '@/lib/error-status'
 import { ProductCommand } from '../commands/product-command'
@@ -34,8 +35,11 @@ function toLocalizedOptionLabel(
 }
 
 function toOptionItems(locale: string, items: ProductAttributeOption[], categoryKey: string): OptionItem[] {
+    const normalizedCategoryKey = normalizeProductAttributeMachineValue(categoryKey)
+    if (!normalizedCategoryKey) return []
+
     return items
-        .filter((item) => item.categoryKey === categoryKey && item.active)
+        .filter((item) => normalizeProductAttributeMachineValue(item.categoryKey) === normalizedCategoryKey && item.active)
         .map((item) => ({
             value: item.value,
             label: toLocalizedOptionLabel(locale, item),
@@ -127,32 +131,32 @@ export function useProductFormInit({
     const metadataReady = open && !metadataInitError && categoriesQuery.isSuccess && optionsQuery.isSuccess && moldGroupsQuery.isSuccess && specsQuery.isSuccess && (!watchedTypeId || bindingsQuery.isSuccess)
 
     useEffect(() => {
-        if (!metadataReady) {
+        if (!metadataReady || isEdit || selectedVariants.length !== 0) {
             return
         }
 
-        if (!isEdit && selectedVariants.length === 0) {
-            const initialState = ProductCommand.composeInitialState({
-                isEdit,
-                currentRow,
-                versionLevelOptions,
-                baseValues: form.getValues(),
-            })
-            setSelectedVariants(initialState.selectedVariants)
-        }
+        const initialState = ProductCommand.composeInitialState({
+            isEdit,
+            currentRow,
+            versionLevelOptions,
+            baseValues: form.getValues(),
+        })
+        setSelectedVariants(initialState.selectedVariants)
     }, [currentRow, form, isEdit, metadataReady, selectedVariants.length, setSelectedVariants, versionLevelOptions])
 
     useEffect(() => {
-        if (open && metadataReady) {
-            const initialState = ProductCommand.composeInitialState({
-                isEdit,
-                currentRow,
-                versionLevelOptions,
-            })
-            form.reset(initialState.formValues)
-            setSelectedVariants(initialState.selectedVariants)
+        if (!open || !metadataReady) {
+            return
         }
-    }, [open, isEdit, currentRow, productTypes, form, setSelectedVariants, versionLevelOptions, metadataReady])
+
+        const initialState = ProductCommand.composeInitialState({
+            isEdit,
+            currentRow,
+            versionLevelOptions,
+        })
+        form.reset(initialState.formValues)
+        setSelectedVariants(initialState.selectedVariants)
+    }, [open, isEdit, currentRow, form, setSelectedVariants, versionLevelOptions, metadataReady])
 
     useEffect(() => {
         if (!open) {

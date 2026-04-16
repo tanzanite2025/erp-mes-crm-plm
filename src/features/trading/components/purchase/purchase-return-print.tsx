@@ -1,5 +1,4 @@
 import React from 'react'
-import { useRoleDisplay } from '@/features/users/hooks/use-role-display'
 import { useAuthStore } from '@/stores/auth-store'
 import type { PurchaseReturnRecord } from '../../purchase'
 import {
@@ -20,10 +19,9 @@ interface PurchaseReturnPrintProps {
 export const PurchaseReturnPrint = React.forwardRef<HTMLDivElement, PurchaseReturnPrintProps>(
   ({ record }, ref) => {
     const user = useAuthStore((state) => state.user)
-    const { text: currentRoleText } = useRoleDisplay(user?.role)
     const hasMainEvidences = (record.evidences?.length || 0) > 0
     const lineEvidenceLines = record.lines.filter((line) => (line.evidences?.length || 0) > 0)
-    const currentIdentity = buildCurrentUserIdentityText(user || undefined, currentRoleText)
+    const currentIdentity = buildCurrentUserIdentityText(user || undefined)
 
     return (
       <div ref={ref}>
@@ -170,7 +168,6 @@ export const PurchaseReturnPrint = React.forwardRef<HTMLDivElement, PurchaseRetu
           <PurchasePrintSignatureGrid
             entries={[
               { label: '当前账号', value: currentIdentity },
-              { label: '当前角色', value: currentRoleText },
               { label: '来料品检' },
               { label: '供应商代表' },
             ]}

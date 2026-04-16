@@ -11,6 +11,7 @@ import (
 	"xdfc-server/authz"
 	"xdfc-server/models"
 	"xdfc-server/productidentity"
+	"xdfc-server/salesorderidentity"
 
 	"time"
 
@@ -204,10 +205,18 @@ func ensurePackagingRuleMaterialUniqueIndex() {
 		return
 	}
 
-	if err := DB.Exec("DROP INDEX IF EXISTS idx_packaging_rules_material_id").Error; err != nil {
-		log.Fatal("Failed to drop stale packaging_rules material_id index:", err)
-	}
-	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_packaging_rules_material_id ON packaging_rules (material_id)").Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("SELECT pg_advisory_xact_lock(2026041701)").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("DROP INDEX IF EXISTS idx_packaging_rules_material_id").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_packaging_rules_material_id ON packaging_rules (material_id)").Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
 		log.Fatal("Failed to enforce packaging_rules material_id uniqueness:", err)
 	}
 }
@@ -353,21 +362,6 @@ func ensureWarehouseCategoryDefaultFlag(column string, code string) {
 	}
 }
 
-func hardenSeedAdminRole() {
-	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
-		return
-	}
-
-	if err := DB.Exec(`
-		UPDATE users
-		SET role = 'admin'
-		WHERE LOWER(username) = 'admin'
-		  AND (role IS NULL OR length(btrim(role)) = 0)
-	`).Error; err != nil {
-		log.Fatal("Failed to harden seed admin role:", err)
-	}
-}
-
 func ensureDefaultAdminRoleTemplate() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
 		return
@@ -439,22 +433,6 @@ func ensureUserIntegrityConstraints() {
 		DO $$
 		BEGIN
 			IF NOT EXISTS (
-				SELECT 1 FROM pg_constraint WHERE conname = 'chk_users_role_not_blank'
-			) THEN
-				ALTER TABLE users
-				ADD CONSTRAINT chk_users_role_not_blank
-				CHECK (role IS NOT NULL AND length(btrim(role)) > 0) NOT VALID;
-			END IF;
-		END
-		$$;
-	`).Error; err != nil {
-		log.Fatal("Failed to add users role integrity constraint:", err)
-	}
-
-	if err := DB.Exec(`
-		DO $$
-		BEGIN
-			IF NOT EXISTS (
 				SELECT 1 FROM pg_constraint WHERE conname = 'chk_users_status_allowed'
 			) THEN
 				ALTER TABLE users
@@ -493,6 +471,28 @@ func ensureProductIntegrityConstraints() {
 	}
 }
 
+func ensureSalesOrderIntegrityConstraints() {
+	if DB == nil || !DB.Migrator().HasTable(&models.SalesOrder{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 FROM pg_constraint WHERE conname = 'chk_sales_orders_order_no_not_blank'
+			) THEN
+				ALTER TABLE sales_orders
+				ADD CONSTRAINT chk_sales_orders_order_no_not_blank
+				CHECK (order_no IS NOT NULL AND length(btrim(order_no)) > 0) NOT VALID;
+			END IF;
+		END
+		$$;
+	`).Error; err != nil {
+		log.Fatal("Failed to add sales_orders order_no integrity constraint:", err)
+	}
+}
+
 func backfillBlankProductSKUs() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -520,6 +520,31 @@ func backfillBlankProductSKUs() {
 	}
 }
 
+func backfillBlankSalesOrderNos() {
+	if DB == nil || !DB.Migrator().HasTable(&models.SalesOrder{}) {
+		return
+	}
+
+	plans, err := salesorderidentity.ApplyBlankSalesOrderNoBackfill(DB)
+	if err != nil {
+		log.Fatal("Failed to backfill blank sales order orderNos:", err)
+	}
+	if len(plans) == 0 {
+		return
+	}
+
+	log.Printf("[DATA_FIX] Backfilled %d sales order row(s) with derived orderNo values.", len(plans))
+	for _, plan := range plans {
+		log.Printf(
+			"[DATA_FIX] sales_order=%s customer=%s derived_order_no=%s barcode=%s",
+			plan.ID,
+			plan.CustomerName,
+			plan.DerivedOrderNo,
+			plan.Barcode,
+		)
+	}
+}
+
 func ensureUserRolePrimaryUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.UserRole{}) {
 		return
@@ -531,6 +556,67 @@ func ensureUserRolePrimaryUniqueIndex() {
 		WHERE deleted_at IS NULL AND is_primary = true;
 	`).Error; err != nil {
 		log.Fatal("Failed to enforce unique primary role per user:", err)
+	}
+}
+
+func ensureUserPermissionUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.UserPermission{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_permissions_user_permission_active_unique
+		ON user_permissions (user_id, permission_id)
+		WHERE deleted_at IS NULL;
+	`).Error; err != nil {
+		log.Fatal("Failed to enforce unique active permission per user:", err)
+	}
+}
+
+func ensureSeedAdminUserPermissions() {
+	if DB == nil || !DB.Migrator().HasTable(&models.User{}) || !DB.Migrator().HasTable(&models.UserPermission{}) {
+		return
+	}
+
+	var users []models.User
+	if err := DB.Select("id", "username").
+		Where("LOWER(username) = ?", "admin").
+		Find(&users).Error; err != nil {
+		log.Fatal("Failed to query admin accounts for explicit permission seed:", err)
+	}
+
+	for _, user := range users {
+		var rows []models.UserPermission
+		if err := DB.Select("permission_id").
+			Where("user_id = ?", user.ID).
+			Where("deleted_at IS NULL").
+			Find(&rows).Error; err != nil {
+			log.Fatal("Failed to query existing admin explicit permissions:", err)
+		}
+
+		existing := make(map[string]struct{}, len(rows))
+		for _, row := range rows {
+			existing[strings.ToLower(strings.TrimSpace(row.PermissionID))] = struct{}{}
+		}
+
+		for _, permissionID := range authz.AdminFallbackPermissions {
+			normalizedPermissionID := strings.ToLower(strings.TrimSpace(permissionID))
+			if normalizedPermissionID == "" {
+				continue
+			}
+			if _, exists := existing[normalizedPermissionID]; exists {
+				continue
+			}
+
+			row := models.UserPermission{
+				UserID:       user.ID,
+				PermissionID: normalizedPermissionID,
+				Source:       "seed_admin",
+			}
+			if err := DB.Create(&row).Error; err != nil {
+				log.Fatal("Failed to seed admin explicit permissions:", err)
+			}
+		}
 	}
 }
 
@@ -579,6 +665,7 @@ func InitDB(dsn string) {
 
 	err = DB.AutoMigrate(
 		&models.User{},
+		&models.UserPermission{},
 		&models.PersonalRecord{},
 		&models.PersonalRecordAsset{},
 		&models.PersonalRecordActionLog{},
@@ -703,13 +790,14 @@ func InitDB(dsn string) {
 		log.Fatal("Failed to migrate database:", err)
 	}
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
-	DB.Exec("UPDATE users SET role = 'admin' WHERE role = 'superadmin'")
 	DB.Exec("UPDATE roles SET role_id = 'admin' WHERE role_id = 'superadmin'")
-	hardenSeedAdminRole()
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()
+	backfillBlankSalesOrderNos()
 	ensureProductIntegrityConstraints()
+	ensureSalesOrderIntegrityConstraints()
 	ensureUserRolePrimaryUniqueIndex()
+	ensureUserPermissionUniqueIndex()
 
 	ensurePackagingRuleMaterialUniqueIndex()
 	cleanupDuplicateProductAttributeOptions()
@@ -748,7 +836,6 @@ func InitDB(dsn string) {
 		admin := models.User{
 			Username: "admin",
 			Password: string(hashedPassword),
-			Role:     "admin",
 			Status:   "active",
 		}
 		DB.Create(&admin)
@@ -776,6 +863,7 @@ func InitDB(dsn string) {
 		fmt.Println("Initial role 'admin' created with full permissions.")
 	}
 	ensureDefaultAdminRoleTemplate()
+	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()
 	ensureDefaultWarehouseCategories()

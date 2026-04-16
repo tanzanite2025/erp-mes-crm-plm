@@ -40,11 +40,12 @@ export function LogisticsActionDialog({
   const { saveMutation } = useLogisticsMutations()
   const { data } = useGetSalesOrders(1, 1000, { enabled: open })
   const salesOrders = useMemo(() => data?.items ?? [], [data?.items])
+  const sanitizedDefaultOrderNo = defaultOrderNo.trim()
   
   const initialValues = useMemo<SaveLogisticsRecordInput>(() => {
     if (record) return record
     return {
-        orderNo: defaultOrderNo,
+        orderNo: sanitizedDefaultOrderNo,
         carrier: '',
         trackingNo: '',
         status: 'Pending' as const,
@@ -57,7 +58,7 @@ export function LogisticsActionDialog({
         version: 1,
         isDeleted: false,
     }
-  }, [record, defaultOrderNo, defaultShipmentId])
+  }, [record, sanitizedDefaultOrderNo, defaultShipmentId])
 
   const { data: formData, tracker } = useDeltaTracker(initialValues, open)
 
@@ -69,10 +70,12 @@ export function LogisticsActionDialog({
 
   const orderOptions = useMemo(
     () =>
-      salesOrders.map((order) => ({
-        label: `${order.orderNo} (${order.customerName})`,
-        value: order.orderNo,
-      })),
+      salesOrders
+        .map((order) => ({
+          label: `${order.orderNo} (${order.customerName})`,
+          value: order.orderNo.trim(),
+        }))
+        .filter((order) => order.value !== ''),
     [salesOrders]
   )
 

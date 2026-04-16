@@ -12,8 +12,8 @@ export const aiAssistant = {
       enable: '立即激活',
     },
     roles: {
-      title: '授权角色下发',
-      description: '仅授权角色可以访问 AI 分析能力',
+      title: '授权权限下发',
+      description: '仅显式授予对应权限的用户可以访问 AI 分析能力',
     },
     api: {
       title: '引擎网关配置',
@@ -39,7 +39,7 @@ export const aiAssistant = {
     },
     governance: {
       title: '治理说明',
-      body: '建议仅为高频决策角色开放 AI 分析权限。此处开关优先级高于页面级资源权限，API 密钥仅存储在当前浏览器本地缓存中。',
+      body: '建议仅为具备明确业务权限的账号开放 AI 分析能力。此处开关优先级高于页面级资源权限，API 密钥仅存储在当前浏览器本地缓存中。',
     },
   },
 } as const

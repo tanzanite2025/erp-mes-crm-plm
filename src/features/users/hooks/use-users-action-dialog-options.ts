@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 import { type Employee } from '@/features/org-personnel/data/schema'
 import { OrgService } from '@/features/org-personnel/services/org-service'
@@ -6,7 +6,6 @@ import { productionLinesService } from '@/features/production-shared/services/pr
 import { productionProcessesService } from '@/features/production-shared/services/production-processes-service'
 import type { ProductionLine } from '@/features/production-shared/data/production-line'
 import type { ProductionProcessStep } from '@/features/production-shared/data/production-process'
-import { type Role } from '@/features/system-mgmt/data/role-schema'
 import { type UserOption } from '../data/schema'
 import { type EmployeeOption, type TranslateFn } from '../components/users-action-dialog.shared'
 import { EmployeeCoreService } from '@/features/org-personnel/services/employee-core-service'
@@ -15,7 +14,6 @@ type UseUsersActionDialogOptionsParams = {
   open: boolean
   currentRow?: UserOption
   usersData?: UserOption[]
-  dynamicRoles: Role[]
   t: TranslateFn
 }
 
@@ -23,7 +21,6 @@ export function useUsersActionDialogOptions({
   open,
   currentRow,
   usersData,
-  dynamicRoles,
   t,
 }: UseUsersActionDialogOptionsParams) {
   const [employees, setEmployees] = useState<EmployeeOption[]>([])
@@ -110,35 +107,9 @@ export function useUsersActionDialogOptions({
     }
   }, [open, currentRow?.employeeId, usersData, t])
 
-  const combinedRoleOptions = useMemo(() => {
-    const options = dynamicRoles.map(({ label, id }) => ({
-      label,
-      value: id,
-    }))
-
-    const allOrgNodes: { label: string; value: string }[] = []
-    const collectNodes = (nodes: OrgNode[]) => {
-      nodes.forEach((node) => {
-        const orgId = `org_${node.id}`.toLowerCase()
-        if (!options.some((opt) => opt.value.toLowerCase() === orgId)) {
-          allOrgNodes.push({
-            label: node.name,
-            value: orgId,
-          })
-        }
-        if (node.children) collectNodes(node.children)
-      })
-    }
-
-    collectNodes(rawOrgNodes)
-
-    return [...options, ...allOrgNodes]
-  }, [dynamicRoles, rawOrgNodes])
-
   return {
     employees,
     rawOrgNodes,
-    combinedRoleOptions,
   }
 }
 

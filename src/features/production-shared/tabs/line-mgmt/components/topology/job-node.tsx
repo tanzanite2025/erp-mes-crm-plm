@@ -60,11 +60,13 @@ export const JobNode = memo(({
   const processes = jobCategory.processes || []
 
   return (
-    <div className='group/job-category relative flex h-auto min-h-0 w-full flex-col items-start rounded-[24px] border border-muted/30 bg-background/80 shadow-sm backdrop-blur-sm transition-all hover:border-blue-400/20 hover:shadow-md dark:bg-white/4'>
-      <div className='flex w-full flex-col justify-start p-3'>
-        <div className='mb-1 flex w-full items-center gap-2 text-sm font-black uppercase tracking-tighter text-slate-800 dark:text-slate-100'>
-          <BriefcaseBusiness className='size-4 shrink-0 text-blue-500' />
-          <span className='shrink-0 pl-1 text-[9px] font-bold tracking-widest text-blue-600/40'>[{t('orgPersonnel.lineMgmt.topology.jobCategory')}]</span>
+    <div className='group/job-category relative flex h-auto min-h-0 w-full flex-col items-start rounded-[24px] border border-dashed border-muted/30 bg-background/85 shadow-none transition-all hover:border-cyan-500/20 hover:bg-cyan-500/5'>
+      <div className='flex w-full flex-col justify-start p-4'>
+        <div className='mb-2 flex w-full items-center gap-2 text-sm font-black uppercase tracking-tighter text-foreground'>
+          <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-cyan-500/15 bg-cyan-500/5'>
+            <BriefcaseBusiness className='size-4 text-cyan-600' />
+          </div>
+          <span className='shrink-0 pl-1 text-[9px] font-black tracking-[0.24em] text-cyan-700/40'>[{t('orgPersonnel.lineMgmt.topology.jobCategory')}]</span>
 
           {isEditing ? (
             <div className='animate-in fade-in zoom-in-95 flex flex-1 items-center gap-1 duration-200'>
@@ -78,7 +80,7 @@ export const JobNode = memo(({
                     setIsEditing(false)
                   }
                 }}
-                className='h-7 min-w-0 flex-1 border-none bg-blue-50/50 px-1.5 text-xs font-black tracking-tight focus:ring-1 focus:ring-blue-200 dark:bg-blue-500/10 dark:text-slate-100'
+                className='h-8 min-w-0 flex-1 border border-cyan-500/15 bg-cyan-500/5 px-2 text-xs font-black tracking-tight focus:ring-1 focus:ring-cyan-200'
                 autoFocus
               />
               <button onClick={handleSave} className='pr-1 text-emerald-500'>
@@ -86,7 +88,7 @@ export const JobNode = memo(({
               </button>
             </div>
           ) : (
-            <span className='flex-1 truncate px-1.5 text-xs font-black tracking-tight text-slate-700 dark:text-slate-200'>
+            <span className='flex-1 truncate px-1.5 text-xs font-black tracking-tight text-foreground/85'>
               {jobCategory.name}
             </span>
           )}
@@ -95,20 +97,20 @@ export const JobNode = memo(({
             <DropdownMenuTrigger asChild>
               <button
                 type='button'
-                className='flex size-7 shrink-0 items-center justify-center text-slate-300 opacity-0 transition-opacity hover:text-slate-600 group-hover/job-category:opacity-100 dark:text-slate-500 dark:hover:text-slate-300'
+                className='flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-muted/40 hover:text-foreground group-hover/job-category:opacity-100'
               >
                 <MoreVertical className='size-4' />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='rounded-2xl border border-border/50 bg-background/95 p-1 shadow-xl backdrop-blur-md dark:bg-popover/95'>
+            <DropdownMenuContent align='end' className='rounded-2xl border border-dashed border-muted/40 bg-background/95 p-1 shadow-xl backdrop-blur-md'>
               <DropdownMenuItem
                 onClick={() => {
                   setPendingAction('rename')
                   setIsAuthOpen(true)
                 }}
-                className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest'
+                className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em]'
               >
-                <ShieldCheck className='size-3.5 text-blue-500' />
+                <ShieldCheck className='size-3.5 text-cyan-600' />
                 {t('orgPersonnel.lineMgmt.topology.renameJobCategory')}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -116,7 +118,7 @@ export const JobNode = memo(({
                   setPendingAction('remove')
                   setIsAuthOpen(true)
                 }}
-                className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-rose-500 focus:text-rose-600'
+                className='cursor-pointer gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-rose-500 focus:text-rose-600'
               >
                 <X className='size-3.5' />
                 {t('orgPersonnel.lineMgmt.topology.removeJobCategory')}
@@ -125,9 +127,9 @@ export const JobNode = memo(({
           </DropdownMenu>
         </div>
 
-        <div className='mt-2 flex w-full flex-col gap-3 pl-2'>
+        <div className='mt-2 flex w-full flex-col gap-3 pl-1'>
           {processes.length === 0 ? (
-            <p className='text-[10px] italic text-muted-foreground/45'>
+            <p className='text-[10px] text-muted-foreground/45'>
               {t('orgPersonnel.lineMgmt.editor.noProcesses')}
             </p>
           ) : (
@@ -135,7 +137,7 @@ export const JobNode = memo(({
               {processes.map((process) => (
                 <span
                   key={process.id}
-                  className='rounded-full border border-blue-100 bg-blue-50/70 px-2.5 py-1 text-[10px] font-mono tracking-wider text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200'
+                  className='rounded-full border border-cyan-500/15 bg-cyan-500/5 px-2.5 py-1 text-[10px] font-black tracking-[0.18em] text-cyan-700'
                 >
                   {process.name}
                 </span>

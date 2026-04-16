@@ -1,7 +1,7 @@
 import type { Permission } from '@/features/system-mgmt/data/role-schema'
 import { ACTION_PERMISSIONS } from './action-permission-catalog'
 import { assertBackendPermissionContract } from './permission-contract.gen'
-import { ROUTE_DERIVED_PERMISSIONS } from './route-permission-registry'
+import { getRouteDerivedPermissions } from './route-permission-registry'
 
 const permissionCategoryWeight: Record<Permission['category'], number> = {
   menu: 0,
@@ -12,7 +12,7 @@ const permissionCategoryWeight: Record<Permission['category'], number> = {
 
 export function collectDefaultPermissions(): Permission[] {
   const byId = new Map<string, Permission>()
-  ;[...ROUTE_DERIVED_PERMISSIONS, ...ACTION_PERMISSIONS].forEach((permission) => {
+  ;[...getRouteDerivedPermissions(), ...ACTION_PERMISSIONS].forEach((permission) => {
     byId.set(permission.id, permission)
   })
 
@@ -26,8 +26,3 @@ export function collectDefaultPermissions(): Permission[] {
 export function validateDefaultPermissionsContract(permissions: Permission[]): void {
   assertBackendPermissionContract(permissions.map((permission) => permission.id))
 }
-
-const defaultPermissions = collectDefaultPermissions()
-validateDefaultPermissionsContract(defaultPermissions)
-
-export const DEFAULT_PERMISSIONS = defaultPermissions

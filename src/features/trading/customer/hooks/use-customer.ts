@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type Customer } from '../../data/schema'
+import { type Customer, type CustomerFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
 import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
 
@@ -45,7 +45,7 @@ export const useCustomerMutations = () => {
   }
 
   const createMutation = useMutation({
-    mutationFn: (data: Omit<Customer, 'id' | 'version'>) => {
+    mutationFn: (data: CustomerFormValues) => {
       return createCustomer(data)
     },
     onSuccess: () => {

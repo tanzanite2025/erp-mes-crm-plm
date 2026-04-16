@@ -73,59 +73,64 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
   )
 
   return (
-    <div className='flex flex-col items-start gap-8 h-fit min-h-0 pb-10 w-full'>
-      {/* 顶部 UDS 风格页眉 */}
-      <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[24px] sm:rounded-[32px] border border-dashed border-muted/50 w-full'>
-          <div className='flex items-center gap-2 text-primary'>
-              <Factory className='size-4' />
-              <h3 className='text-base sm:text-lg font-black tracking-tighter italic uppercase'>{t('orgPersonnel.lineMgmt.header.title')}</h3>
+    <div className='flex h-fit min-h-0 w-full flex-col gap-6 pb-10'>
+      <div className='flex flex-col gap-2 rounded-[28px] border border-dashed border-cyan-500/15 bg-background/90 p-5 shadow-none sm:p-6'>
+        <div className='flex items-center gap-2 text-foreground'>
+          <div className='flex size-8 items-center justify-center rounded-full border border-cyan-500/15 bg-cyan-500/5'>
+            <Factory className='size-4 text-cyan-600' />
           </div>
-          <p className='text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-              {t('orgPersonnel.lineMgmt.header.subtitle')}
-          </p>
+          <h3 className='text-base font-black uppercase tracking-[0.24em] text-foreground sm:text-lg'>
+            {t('orgPersonnel.lineMgmt.header.title')}
+          </h3>
+        </div>
+        <p className='text-[9px] font-black uppercase tracking-[0.26em] text-muted-foreground/45'>
+          {t('orgPersonnel.lineMgmt.header.subtitle')}
+        </p>
       </div>
 
-      <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 px-1 w-full'>
+      <div className='flex flex-col gap-4 rounded-[28px] border border-dashed border-muted/35 bg-muted/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5'>
         <div className='relative w-full sm:max-w-sm'>
-          <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
+          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('orgPersonnel.lineMgmt.list.searchPlaceholder')}
-            className='pl-10 h-12 rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/20 text-sm font-medium transition-all'
+            className='h-12 rounded-full border border-cyan-500/10 bg-background/80 pl-10 text-sm font-medium shadow-none focus-visible:ring-2 focus-visible:ring-cyan-200'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button 
+        <Button
           onClick={handleAdd}
-          className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all w-full sm:w-auto'
+          className='h-11 w-full rounded-full px-6 text-[10px] font-black uppercase tracking-[0.24em] shadow-none transition-all active:scale-95 sm:w-auto'
         >
-          <Plus className='size-4 mr-2' /> {t('orgPersonnel.lineMgmt.list.addButton')}
+          <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.list.addButton')}
         </Button>
       </div>
 
       {filteredLines.length === 0 ? (
-        <Card className='rounded-[24px] border-dashed bg-muted/5 border-muted/50'>
-          <CardContent className='flex flex-col items-center justify-center py-24 space-y-4 text-center'>
-            <Factory className='size-12 text-muted-foreground/20' />
+        <Card className='rounded-[28px] border border-dashed border-cyan-500/15 bg-background/90 shadow-none'>
+          <CardContent className='flex flex-col items-center justify-center space-y-4 py-24 text-center'>
+            <div className='flex size-14 items-center justify-center rounded-full border border-cyan-500/15 bg-cyan-500/5'>
+              <Factory className='size-7 text-cyan-600/35' />
+            </div>
             <div className='space-y-2'>
-              <p className='text-base font-black italic uppercase tracking-tighter text-muted-foreground/60'>
+              <p className='text-base font-black uppercase tracking-[0.22em] text-foreground/80'>
                 {t('orgPersonnel.lineMgmt.list.emptyTitle')}
               </p>
-              <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 max-w-[300px]'>
+              <p className='max-w-[320px] text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/45'>
                 {t('orgPersonnel.lineMgmt.list.emptyDesc')}
               </p>
             </div>
-            <Button 
-              variant='outline' 
+            <Button
+              variant='outline'
               onClick={handleAdd}
-              className='rounded-full h-11 px-6 font-black text-[10px] uppercase tracking-widest border-dashed hover:bg-muted/5'
+              className='h-11 rounded-full border-dashed border-cyan-500/15 bg-cyan-500/5 px-6 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700 hover:bg-cyan-500/10 hover:text-cyan-800'
             >
-              <Plus className='size-4 mr-2' /> {t('orgPersonnel.lineMgmt.list.initButton')}
+              <Plus className='mr-2 size-4' /> {t('orgPersonnel.lineMgmt.list.initButton')}
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className='flex flex-col gap-4 w-full'>
+        <div className='flex w-full flex-col gap-4'>
           {filteredLines.map((line) => (
             <LineCard
               key={line.id}
@@ -143,7 +148,7 @@ export function LineList({ lines, onUpdate, onDelete }: LineListProps) {
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         editingLine={editingLine}
-        lines={lines} // 传入现有列表以计算流水号
+        lines={lines}
         onConfirm={handleDialogConfirm}
       />
     </div>

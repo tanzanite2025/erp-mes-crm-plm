@@ -112,26 +112,26 @@ export const executeCustomerTransaction = async <TPayload>(
     method: 'POST',
     body: JSON.stringify(request),
   })
-  return customerSchema.parse(
-    toCustomerContract(
-      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
-        res,
-        'CustomerService.executeCustomerTransaction'
-      ) as CustomerApiDTO
-    )
+  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(
+    res,
+    'CustomerService.executeCustomerTransaction'
   )
+  return customerSchema.parse(toCustomerContract(response))
 }
 
 export const createCustomer = async (customer: Omit<Customer, 'id' | 'version'>): Promise<Customer> => {
+  const createdCustomer: Customer = {
+    ...customer,
+    id: '',
+    version: 1,
+  }
+
   const res = await apiFetch<CustomerApiDTO>('/customers', {
     method: 'POST',
-    body: JSON.stringify(toCustomerApiDTO({ ...customer, id: '', version: 1 } as Customer)),
+    body: JSON.stringify(toCustomerApiDTO(createdCustomer)),
   })
-  return customerSchema.parse(
-    toCustomerContract(
-      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer') as CustomerApiDTO
-    )
-  )
+  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.createCustomer')
+  return customerSchema.parse(toCustomerContract(response))
 }
 
 export const deleteCustomer = async (id: string): Promise<void> => {
@@ -213,9 +213,6 @@ export const patchCustomer = async (id: string, delta: DeltaSet, version: number
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
-  return customerSchema.parse(
-    toCustomerContract(
-      ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer') as CustomerApiDTO
-    )
-  )
+  const response = ensureObjectResponse<CustomerApiDTO & Record<string, unknown>>(res, 'CustomerService.patchCustomer')
+  return customerSchema.parse(toCustomerContract(response))
 }

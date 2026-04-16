@@ -34,7 +34,7 @@ import { createLogger } from '@/lib/logger'
 
 interface AiConfig {
   enabled: boolean
-  allowedRoles: string[]
+  allowedPermissions: string[]
   api: {
     provider: 'gemini' | 'openai' | 'custom'
     apiKey: string
@@ -46,7 +46,7 @@ interface AiConfig {
 
 const DEFAULT_CONFIG: AiConfig = {
   enabled: true,
-  allowedRoles: [],
+  allowedPermissions: [],
   api: {
     provider: 'gemini',
     apiKey: '',
@@ -60,7 +60,7 @@ const logger = createLogger('AiAccessControl')
 
 export function AiAccessControl() {
   const { t } = useLanguage()
-  const { roles, isInitialLoading } = useRoles()
+  const { permissions, isInitialLoading } = useRoles()
   const [config, setConfig] = useState<AiConfig>(DEFAULT_CONFIG)
   const [pendingApi, setPendingApi] = useState<AiConfig['api']>(DEFAULT_CONFIG.api)
   const [isSaving, setIsSaving] = useState(false)
@@ -154,7 +154,7 @@ export function AiAccessControl() {
             {t('aiAssistant.accessControl.subtitle')}
           </p>
         </div>
-        <div className='p-2 md:p-3 rounded-xl md:rounded-2xl bg-indigo-50 border border-indigo-100 flex-shrink-0'>
+        <div className='p-2 md:p-3 rounded-xl md:rounded-2xl bg-indigo-50 border border-indigo-100 shrink-0'>
           <Cpu className='size-4 md:size-5 text-indigo-600' />
         </div>
       </div>
@@ -224,11 +224,11 @@ export function AiAccessControl() {
               </div>
             ) : (
               <div className='grid grid-cols-2 gap-3'>
-                {roles.map((role) => {
-                  const selected = config.allowedRoles.includes(String(role.id))
+                {permissions.map((permission) => {
+                  const selected = config.allowedPermissions.includes(String(permission.id))
                   return (
                     <div
-                      key={role.id}
+                      key={permission.id}
                       className={cn(
                         'flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer',
                         selected
@@ -236,19 +236,19 @@ export function AiAccessControl() {
                           : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
                       )}
                       onClick={() => {
-                        const newRoles = selected
-                          ? config.allowedRoles.filter((id) => id !== String(role.id))
-                          : [...config.allowedRoles, String(role.id)]
-                        handleSave({ ...config, allowedRoles: newRoles })
+                        const nextPermissions = selected
+                          ? config.allowedPermissions.filter((id) => id !== String(permission.id))
+                          : [...config.allowedPermissions, String(permission.id)]
+                        handleSave({ ...config, allowedPermissions: nextPermissions })
                       }}
                     >
                       <div className='flex items-center gap-2 overflow-hidden'>
                         {selected ? (
-                          <ShieldCheck className='size-3 flex-shrink-0' />
+                          <ShieldCheck className='size-3 shrink-0' />
                         ) : (
-                          <UserCheck className='size-3 flex-shrink-0 opacity-40' />
+                          <UserCheck className='size-3 shrink-0 opacity-40' />
                         )}
-                        <span className='text-[11px] font-bold truncate'>{role.label}</span>
+                        <span className='text-[11px] font-bold truncate'>{permission.label}</span>
                       </div>
                       <div
                         className={cn(

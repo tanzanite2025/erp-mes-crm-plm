@@ -9,7 +9,9 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/dependencies"
 	"xdfc-server/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +25,11 @@ var upgrader = websocket.Upgrader{
 
 // Client wraps one websocket client session.
 type Client struct {
-	Conn   *websocket.Conn
-	Send   chan []byte
-	UserID string
-	Role   string
+	Conn        *websocket.Conn
+	Send        chan []byte
+	UserID      string
+	Username    string
+	Permissions map[string]struct{}
 }
 
 // Hub manages active websocket clients.
@@ -143,11 +146,21 @@ func WSHandler(c *gin.Context) {
 		return
 	}
 
-	userID, role := extractWSIdentity(claims)
+	userID, username := extractWSIdentity(claims)
 	if userID == "" {
-		log.Printf("[WS_AUTH_FAIL] Invalid websocket claims (missing sub), userId=%s role=%s", userID, role)
+		log.Printf("[WS_AUTH_FAIL] Invalid websocket claims (missing sub), userId=%s username=%s", userID, username)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid websocket claims"})
 		return
+	}
+
+	accessSnapshot, err := dependencies.NewIdentityAccessServiceWithDB(db.DB).ResolveSnapshotByUserID(userID)
+	if err != nil {
+		log.Printf("[WS_AUTH_FAIL] Failed to resolve websocket access, userId=%s err=%v", userID, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to resolve account access"})
+		return
+	}
+	if username == "" {
+		username = accessSnapshot.Username
 	}
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -156,7 +169,7 @@ func WSHandler(c *gin.Context) {
 		return
 	}
 
-	client := &Client{Conn: conn, Send: make(chan []byte, 256), UserID: userID, Role: role}
+	client := &Client{Conn: conn, Send: make(chan []byte, 256), UserID: userID, Username: username, Permissions: buildPermissionSet(accessSnapshot.Permissions)}
 	GlobalHub.Register <- client
 
 	go client.WritePump()
@@ -200,31 +213,43 @@ func shouldDeliverNotification(client *Client, targetUser string) bool {
 	if targetUser == "" {
 		return true
 	}
-	if strings.EqualFold(targetUser, "admin") {
-		return isAdminRole(client.Role)
+	if permissionID, ok := parseNotificationPermissionTarget(targetUser); ok {
+		return clientHasPermission(client, permissionID)
 	}
 	return targetUser == client.UserID
 }
 
-func isAdminRole(role string) bool {
-	normalized := strings.ToLower(strings.TrimSpace(role))
-	if normalized == "" {
+func notificationTargetPermission(permissionID string) string {
+	return "permission:" + authz.NormalizePermissionID(permissionID)
+}
+
+func parseNotificationPermissionTarget(target string) (string, bool) {
+	normalized := strings.TrimSpace(target)
+	if !strings.HasPrefix(strings.ToLower(normalized), "permission:") {
+		return "", false
+	}
+	permissionID := authz.NormalizePermissionID(strings.TrimSpace(normalized[len("permission:"):]))
+	return permissionID, permissionID != ""
+}
+
+func buildPermissionSet(permissionIDs []string) map[string]struct{} {
+	result := make(map[string]struct{}, len(permissionIDs))
+	for _, permissionID := range permissionIDs {
+		normalized := authz.NormalizePermissionID(permissionID)
+		if normalized == "" {
+			continue
+		}
+		result[normalized] = struct{}{}
+	}
+	return result
+}
+
+func clientHasPermission(client *Client, permissionID string) bool {
+	if client == nil {
 		return false
 	}
-	parts := strings.FieldsFunc(normalized, func(r rune) bool {
-		switch r {
-		case ',', ';', ' ', '[', ']', '\'', '"':
-			return true
-		default:
-			return false
-		}
-	})
-	for _, part := range parts {
-		if part == "admin" {
-			return true
-		}
-	}
-	return false
+	_, ok := client.Permissions[authz.NormalizePermissionID(permissionID)]
+	return ok
 }
 
 func extractWSToken(c *gin.Context) string {
@@ -242,10 +267,10 @@ func extractWSToken(c *gin.Context) string {
 	return ""
 }
 
-func extractWSIdentity(claims jwt.MapClaims) (userID string, role string) {
+func extractWSIdentity(claims jwt.MapClaims) (userID string, username string) {
 	userID = middleware.ClaimString(claims, "sub")
-	role = middleware.ClaimString(claims, "role")
-	return userID, role
+	username = middleware.ClaimString(claims, "username")
+	return userID, username
 }
 
 func isWebSocketOriginAllowed(r *http.Request) bool {
@@ -269,7 +294,7 @@ func isWebSocketOriginAllowed(r *http.Request) bool {
 		}
 	}
 
-	// [PRODUCTION_CONNECTIVITY] 
+	// [PRODUCTION_CONNECTIVITY]
 	// If ALLOWED_ORIGIN is not set or doesn't match above, we still allow
 	// same-site connections where the request host matches the origin host.
 	// We no longer strictly compare ports if behind a proxy that might change them.
@@ -277,7 +302,7 @@ func isWebSocketOriginAllowed(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	return strings.EqualFold(originURL.Hostname(), r.Host) || strings.EqualFold(originURL.Host, r.Host)
 }
 

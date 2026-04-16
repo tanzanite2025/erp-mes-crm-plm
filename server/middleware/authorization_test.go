@@ -8,56 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestHasAnyRoleMatchesNormalizedRole(t *testing.T) {
-	t.Parallel()
-
-	gin.SetMode(gin.TestMode)
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set("role", " SuperAdmin ")
-
-	if !HasAnyRole(ctx, "admin", "superadmin") {
-		t.Fatalf("expected normalized role match")
-	}
-}
-
-func TestHasAnyRoleMatchesEffectiveRolesFromContext(t *testing.T) {
-	t.Parallel()
-
-	gin.SetMode(gin.TestMode)
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set("role", "finance_manager")
-	ctx.Set("effectiveRoles", []string{"finance_manager", "org_dept-1|研发部"})
-
-	if !HasAnyRole(ctx, "org_dept-1|研发部") {
-		t.Fatalf("expected effectiveRoles match")
-	}
-}
-
-func TestRequireRolesRejectsUnauthorizedRole(t *testing.T) {
-	t.Parallel()
-
-	gin.SetMode(gin.TestMode)
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(http.MethodGet, "/protected", nil)
-	ctx.Set("role", "user")
-
-	called := false
-	handler := RequireRoles("admin", "superadmin")
-	handler(ctx)
-	if !ctx.IsAborted() {
-		called = true
-	}
-
-	if called {
-		t.Fatalf("expected middleware to abort request")
-	}
-
-	if recorder.Code != http.StatusForbidden {
-		t.Fatalf("expected status %d, got %d", http.StatusForbidden, recorder.Code)
-	}
-}
-
 func TestParsePermissionIDsNormalizesAndDeduplicates(t *testing.T) {
 	t.Parallel()
 
@@ -84,28 +34,27 @@ func TestHasAnyPermissionMatchesNormalizedPermission(t *testing.T) {
 	}
 }
 
-func TestHasAnyPermissionAllowsSuperadminBypass(t *testing.T) {
+func TestHasAnyPermissionMatchesPermissionFromJSONStringContext(t *testing.T) {
 	t.Parallel()
 
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set("role", "superadmin")
+	ctx.Set("permissions", `["ACTION_TRADING_SALES_ORDER_MANAGE","menu_trading"]`)
 
-	if !HasAnyPermission(ctx, "menu_trading") {
-		t.Fatalf("expected superadmin bypass")
+	if !HasAnyPermission(ctx, "action_trading_sales_order_manage") {
+		t.Fatalf("expected JSON-string permission context match")
 	}
 }
 
-func TestHasAnyPermissionAllowsEffectiveSuperadminBypass(t *testing.T) {
+func TestHasAnyPermissionMatchesPermissionFromAnySliceContext(t *testing.T) {
 	t.Parallel()
 
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set("role", "finance_manager")
-	ctx.Set("effectiveRoles", []string{"superadmin"})
+	ctx.Set("permissions", []any{"menu_quality", "menu_trading"})
 
 	if !HasAnyPermission(ctx, "menu_trading") {
-		t.Fatalf("expected effective superadmin bypass")
+		t.Fatalf("expected any-slice permission context match")
 	}
 }
 
@@ -114,8 +63,6 @@ func TestHasAnyPermissionReturnsFalseWhenPermissionsContextMissing(t *testing.T)
 
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set("role", "finance_manager")
-	ctx.Set("effectiveRoles", []string{"finance_manager", "org_dept-sales"})
 
 	if HasAnyPermission(ctx, "menu_trading") {
 		t.Fatalf("expected missing permissions context to fail instead of lazy fallback")

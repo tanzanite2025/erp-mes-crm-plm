@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
 import { aiPolicyService, type AiPolicyConfig } from '../services/ai-policy-service'
 import { createLogger } from '@/lib/logger'
-import { getAuthSessionEffectiveRoleIds } from '@/features/authz/utils/auth-session'
+import { getAuthSessionPermissionIds } from '@/features/authz/utils/auth-session'
 
 const AI_CONFIG_KEY = 'xdfc_ai_capability_config'
 const logger = createLogger('useAiPermissions')
@@ -36,15 +36,15 @@ export function useAiPermissions() {
       const local = await StorageService.getItem<AiPolicyConfig>(AI_CONFIG_KEY).catch(() => null)
 
       const config = remote || local
-      const roleIds = normalizeIdList(getAuthSessionEffectiveRoleIds(user))
-      const allowedRoles = normalizeIdList(config?.allowedRoles)
+      const permissionIds = normalizeIdList(getAuthSessionPermissionIds(user))
+      const allowedPermissions = normalizeIdList(config?.allowedPermissions)
       const allowedUsers = normalizeIdList(config?.allowedUsers)
       const username = normalizeUsername(user?.username)
 
-      const matchedByRole = roleIds.some((roleId) => allowedRoles.includes(roleId))
+      const matchedByPermission = permissionIds.some((permissionId) => allowedPermissions.includes(permissionId))
       const matchedByUser = !!username && allowedUsers.includes(username)
 
-      setIsVisible(!!config?.enabled && !!user && (matchedByRole || matchedByUser))
+      setIsVisible(!!config?.enabled && !!user && (matchedByPermission || matchedByUser))
     } catch (e) {
       logger.error('Permission check failed', e)
       setIsVisible(false)

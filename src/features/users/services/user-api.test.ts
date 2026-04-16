@@ -10,16 +10,12 @@ vi.mock('@/lib/api-client', () => ({
 }))
 
 import {
-  addUserRoleBinding,
   bindUserEmployee,
   createUser,
   fetchUserOptions,
-  fetchUserRoleBindings,
   fetchUsers,
   patchUser,
-  removeUserRoleBinding,
   replaceUser,
-  setUserPrimaryRole,
   unbindUserEmployee,
 } from './user-api'
 
@@ -38,7 +34,6 @@ describe('user-api contract regression', () => {
           lastName: 'Fin',
           username: 'alice',
           phoneNumber: '123',
-          role: 'finance_manager',
         }),
       ],
       total: 1,
@@ -52,10 +47,9 @@ describe('user-api contract regression', () => {
       pageSize: 20,
       username: 'alice',
       status: ['active'],
-      role: ['finance_manager'],
     })
 
-    expect(apiFetchMock).toHaveBeenCalledWith('/users?page=2&pageSize=20&username=alice&status=active&role=finance_manager')
+    expect(apiFetchMock).toHaveBeenCalledWith('/users?page=2&pageSize=20&username=alice&status=active')
     expect(result).toEqual(expected)
     expect(Array.isArray(result)).toBe(false)
     expect(result.items).toHaveLength(1)
@@ -68,14 +62,13 @@ describe('user-api contract regression', () => {
         employeeId: 'EMP-2',
         username: 'bob',
         status: 'active',
-        role: 'ops_manager',
       },
     ]
     apiFetchMock.mockResolvedValue(expected)
 
-    const result = await fetchUserOptions({ role: ['ops_manager'], status: ['active'] })
+    const result = await fetchUserOptions({ status: ['active'] })
 
-    expect(apiFetchMock).toHaveBeenCalledWith('/users?options=true&role=ops_manager&status=active')
+    expect(apiFetchMock).toHaveBeenCalledWith('/users?options=true&status=active')
     expect(result).toEqual(expected)
     expect(Array.isArray(result)).toBe(true)
   })
@@ -87,7 +80,6 @@ describe('user-api contract regression', () => {
       username: 'new-user',
       password: 'plain-pass',
       email: 'new@example.com',
-      role: 'finance_manager',
       status: 'active',
       employeeId: 'EMP-3',
     })
@@ -98,7 +90,6 @@ describe('user-api contract regression', () => {
         username: 'new-user',
         password: 'plain-pass',
         email: 'new@example.com',
-        role: 'finance_manager',
         status: 'active',
         employeeId: 'EMP-3',
       }),
@@ -138,7 +129,6 @@ describe('user-api contract regression', () => {
       firstName: 'Replace',
       lastName: 'User',
       status: 'active',
-      role: 'ops_manager',
       employeeId: 'EMP-5',
     })
 
@@ -150,40 +140,8 @@ describe('user-api contract regression', () => {
         firstName: 'Replace',
         lastName: 'User',
         status: 'active',
-        role: 'ops_manager',
         employeeId: 'EMP-5',
       }),
-    })
-  })
-
-  it('fetchUserRoleBindings requests user role binding matrix', async () => {
-    apiFetchMock.mockResolvedValue({
-      userId: 'u-6',
-      username: 'alice',
-      primaryRoleId: 'ops_manager',
-      effectiveRoles: ['ops_manager', 'finance_manager'],
-      roleBindings: [
-        { roleId: 'ops_manager', isPrimary: true, status: 'active' },
-        { roleId: 'finance_manager', isPrimary: false, status: 'inactive' },
-      ],
-    })
-
-    const result = await fetchUserRoleBindings('u-6')
-
-    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-6/roles')
-    expect(result.userId).toBe('u-6')
-    expect(result.primaryRoleId).toBe('ops_manager')
-    expect(result.roleBindings).toHaveLength(2)
-  })
-
-  it('setUserPrimaryRole sends PATCH contract', async () => {
-    apiFetchMock.mockResolvedValue({ id: 'u-7', role: 'finance_manager', status: 'active', username: 'bob' })
-
-    await setUserPrimaryRole('u-7', 'finance_manager')
-
-    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/primary-role', {
-      method: 'PATCH',
-      body: JSON.stringify({ role: 'finance_manager' }),
     })
   })
 
@@ -205,39 +163,6 @@ describe('user-api contract regression', () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/unbind-employee', {
       method: 'POST',
-    })
-  })
-
-  it('addUserRoleBinding sends POST contract', async () => {
-    apiFetchMock.mockResolvedValue({
-      userId: 'u-8',
-      username: 'carol',
-      primaryRoleId: 'ops_manager',
-      effectiveRoles: ['ops_manager', 'finance_manager'],
-      roleBindings: [],
-    })
-
-    await addUserRoleBinding('u-8', { role: 'finance_manager', source: 'manual' })
-
-    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-8/roles', {
-      method: 'POST',
-      body: JSON.stringify({ role: 'finance_manager', source: 'manual' }),
-    })
-  })
-
-  it('removeUserRoleBinding sends DELETE contract', async () => {
-    apiFetchMock.mockResolvedValue({
-      userId: 'u-9',
-      username: 'dylan',
-      primaryRoleId: 'ops_manager',
-      effectiveRoles: ['ops_manager'],
-      roleBindings: [],
-    })
-
-    await removeUserRoleBinding('u-9', 'finance_manager')
-
-    expect(apiFetchMock).toHaveBeenCalledWith('/users/u-9/roles/finance_manager', {
-      method: 'DELETE',
     })
   })
 })

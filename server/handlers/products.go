@@ -72,15 +72,7 @@ func SaveProductHandler(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] product not found"})
 			return
 		}
-		if errors.Is(err, services.ErrProductValidation) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product payload: " + err.Error()})
-			return
-		}
-		if errors.Is(err, services.ErrProductVersionConflict) {
-			respondVersionConflict(c)
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to save product: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] failed to save product: ")
 		return
 	}
 
@@ -98,12 +90,10 @@ func PatchProductHandler(c *gin.Context) {
 	saved, err := services.PatchProduct(id, int(req.Metadata.Version), req.Delta)
 	if err != nil {
 		switch {
-		case errors.Is(err, services.ErrProductVersionConflict):
-			respondVersionConflict(c)
-		case errors.Is(err, services.ErrProductValidation):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product delta: " + err.Error()})
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] product not found"})
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid product delta: " + err.Error()})
+			respondDomainError(c, err, "[SERVER] failed to patch product: ")
 		}
 		return
 	}
@@ -114,12 +104,7 @@ func PatchProductHandler(c *gin.Context) {
 func DeleteProductHandler(c *gin.Context) {
 	id := c.Param("id")
 	if err := services.DeleteProduct(id); err != nil {
-		switch {
-		case errors.Is(err, services.ErrProductInUse):
-			c.JSON(http.StatusForbidden, gin.H{"error": "[BUSINESS_RULE_VIOLATION] product is still referenced by downstream records"})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete product: " + err.Error()})
-		}
+		respondDomainError(c, err, "[SERVER] failed to delete product: ")
 		return
 	}
 
@@ -138,7 +123,7 @@ func GetNextProductCodeHandler(c *gin.Context) {
 }
 
 func BulkSyncProductsHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 
@@ -149,11 +134,7 @@ func BulkSyncProductsHandler(c *gin.Context) {
 	}
 
 	if err := services.BulkSyncProducts(input); err != nil {
-		if errors.Is(err, services.ErrProductValidation) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] invalid bulk product payload: " + err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] bulk product sync failed: " + err.Error()})
+		respondDomainError(c, err, "[SERVER] bulk product sync failed: ")
 		return
 	}
 

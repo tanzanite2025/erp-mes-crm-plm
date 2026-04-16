@@ -38,8 +38,6 @@ type LoginSuccessPayload = {
     employeeId?: string
     email?: string
     username: string
-    role: string[]
-    effectiveRoles?: string[]
     permissions?: string[]
   }
 }
@@ -178,15 +176,12 @@ export function UserAuthForm({
           const result = parsedBody as LoginSuccessPayload
           const { setUser, setAccessToken, setIsIdentitySynced } = useAuthStore.getState()
 
-          const effectiveRoleIds = normalizeRoleIds(result.user.effectiveRoles)
-
           setUser({
             id: result.user.id,
             accountNo: result.user.employeeId || result.user.id,
             employeeId: result.user.employeeId?.trim() || undefined,
             email: result.user.email || data.email,
             username: result.user.username,
-            role: effectiveRoleIds,
             permissions: result.user.permissions || [],
             exp: Date.now() + 24 * 60 * 60 * 1000,
           }, 'login_success')
@@ -390,11 +385,6 @@ export function UserAuthForm({
       </form>
     </Form>
   )
-}
-
-function normalizeRoleIds(roleIds?: string[]): string[] {
-  if (!Array.isArray(roleIds)) return []
-  return roleIds.map((roleId) => roleId.trim()).filter(Boolean)
 }
 
 function sanitizeRedirectTarget(redirectTo?: string): string {

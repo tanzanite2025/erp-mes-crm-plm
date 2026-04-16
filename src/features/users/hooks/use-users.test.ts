@@ -6,10 +6,9 @@ const { useQueryMock, useMutationMock, useQueryClientMock } = vi.hoisted(() => (
   useQueryClientMock: vi.fn(),
 }))
 
-const { fetchUsersMock, fetchUserOptionsMock, fetchUserRoleBindingsMock, fetchUserAccessSnapshotMock } = vi.hoisted(() => ({
+const { fetchUsersMock, fetchUserOptionsMock, fetchUserAccessSnapshotMock } = vi.hoisted(() => ({
   fetchUsersMock: vi.fn(),
   fetchUserOptionsMock: vi.fn(),
-  fetchUserRoleBindingsMock: vi.fn(),
   fetchUserAccessSnapshotMock: vi.fn(),
 }))
 
@@ -22,7 +21,6 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('../services/user-api', () => ({
   fetchUsers: fetchUsersMock,
   fetchUserOptions: fetchUserOptionsMock,
-  fetchUserRoleBindings: fetchUserRoleBindingsMock,
   fetchUserAccessSnapshot: fetchUserAccessSnapshotMock,
   createUser: vi.fn(),
   patchUser: vi.fn(),
@@ -30,9 +28,6 @@ vi.mock('../services/user-api', () => ({
   deleteUser: vi.fn(),
   bindUserEmployee: vi.fn(),
   unbindUserEmployee: vi.fn(),
-  setUserPrimaryRole: vi.fn(),
-  addUserRoleBinding: vi.fn(),
-  removeUserRoleBinding: vi.fn(),
 }))
 
 vi.mock('@/lib/handle-server-error', () => ({
@@ -43,7 +38,7 @@ vi.mock('@/lib/react-query-mutation', () => ({
   buildMutationOptions: vi.fn(() => ({})),
 }))
 
-import { useUserOptionsQuery, useUserRoleBindingsQuery, useUsersQuery } from './use-users'
+import { useUserAccessSnapshotQuery, useUserOptionsQuery, useUsersQuery } from './use-users'
 
 describe('use-users hooks regression', () => {
   beforeEach(() => {
@@ -52,7 +47,6 @@ describe('use-users hooks regression', () => {
     useQueryClientMock.mockReset()
     fetchUsersMock.mockReset()
     fetchUserOptionsMock.mockReset()
-    fetchUserRoleBindingsMock.mockReset()
     fetchUserAccessSnapshotMock.mockReset()
     useQueryMock.mockImplementation((options: unknown) => options)
   })
@@ -74,7 +68,7 @@ describe('use-users hooks regression', () => {
   })
 
   it('useUserOptionsQuery wires isolated query key and fetchUserOptions queryFn', async () => {
-    const params = { role: ['ops_manager'], status: ['active'] }
+    const params = { status: ['active'] }
 
     useUserOptionsQuery(params)
 
@@ -89,24 +83,23 @@ describe('use-users hooks regression', () => {
     expect(result).toEqual([{ id: 'u-1', username: 'ops-user' }])
   })
 
-  it('useUserRoleBindingsQuery wires per-user query key and fetchUserRoleBindings queryFn', async () => {
-    useUserRoleBindingsQuery('u-9', true)
+  it('useUserAccessSnapshotQuery wires per-user query key and fetchUserAccessSnapshot queryFn', async () => {
+    useUserAccessSnapshotQuery('u-9', true)
 
     expect(useQueryMock).toHaveBeenCalledTimes(1)
     const queryOptions = useQueryMock.mock.calls[0]?.[0]
-    expect(queryOptions?.queryKey).toEqual(['users', 'role-bindings', 'u-9'])
+    expect(queryOptions?.queryKey).toEqual(['users', 'access-snapshot', 'u-9'])
     expect(queryOptions?.enabled).toBe(true)
 
-    fetchUserRoleBindingsMock.mockResolvedValue({
+    fetchUserAccessSnapshotMock.mockResolvedValue({
       userId: 'u-9',
       username: 'dylan',
-      primaryRoleId: 'ops_manager',
-      effectiveRoles: ['ops_manager'],
-      roleBindings: [],
+      permissions: ['menu_org'],
+      diagnostics: ['user_permissions_authoritative'],
     })
     const result = await queryOptions?.queryFn()
 
-    expect(fetchUserRoleBindingsMock).toHaveBeenCalledWith('u-9')
-    expect(result.primaryRoleId).toBe('ops_manager')
+    expect(fetchUserAccessSnapshotMock).toHaveBeenCalledWith('u-9')
+    expect(result.permissions).toEqual(['menu_org'])
   })
 })

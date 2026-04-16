@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 	"xdfc-server/db"
@@ -66,13 +65,12 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 		`
 		CREATE TABLE users (
 			id TEXT PRIMARY KEY,
-			username TEXT NOT NULL,
+			username TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
 			email TEXT,
 			phone_number TEXT,
 			first_name TEXT,
 			last_name TEXT,
-			role TEXT,
 			status TEXT,
 			employee_id TEXT,
 			created_at DATETIME,
@@ -81,15 +79,14 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 		);
 		`,
 		`
-		CREATE TABLE user_roles (
+		CREATE TABLE user_permissions (
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
-			role_id TEXT NOT NULL,
-			is_primary BOOLEAN,
-			start_date DATE,
-			end_date DATE,
-			status TEXT,
 			source TEXT,
+			permission_id TEXT NOT NULL,
+			granted_by TEXT,
+			reason TEXT,
+			batch_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME
@@ -146,35 +143,21 @@ func seedEmployee(t *testing.T, testDB *gorm.DB, employeeID string, deptID strin
 	}
 }
 
-func seedUser(t *testing.T, testDB *gorm.DB, user models.User) {
+func seedUserPermission(t *testing.T, testDB *gorm.DB, userID string, permissionID string, updatedAt time.Time) {
 	t.Helper()
 
-	if err := testDB.Create(&user).Error; err != nil {
-		t.Fatalf("seed user %s failed: %v", user.ID, err)
-	}
-}
-
-func seedUserRole(t *testing.T, testDB *gorm.DB, userID string, roleID string, isPrimary bool, status string, updatedAt time.Time) {
-	t.Helper()
-
-	if strings.TrimSpace(status) == "" {
-		status = "active"
-	}
-	userRole := models.UserRole{
+	permission := models.UserPermission{
 		BaseModel: models.BaseModel{
-			ID:        userID + "-" + roleID + "-binding",
+			ID:        userID + "-" + permissionID + "-permission",
 			CreatedAt: updatedAt.Add(-time.Minute),
 			UpdatedAt: updatedAt,
 		},
-		UserID:    userID,
-		RoleID:    roleID,
-		IsPrimary: isPrimary,
-		StartDate: updatedAt,
-		Status:    status,
-		Source:    "test",
+		UserID:       userID,
+		PermissionID: permissionID,
+		Source:       "test",
 	}
-	if err := testDB.Create(&userRole).Error; err != nil {
-		t.Fatalf("seed user role %s for %s failed: %v", roleID, userID, err)
+	if err := testDB.Create(&permission).Error; err != nil {
+		t.Fatalf("seed user permission %s for %s failed: %v", permissionID, userID, err)
 	}
 }
 
@@ -191,111 +174,45 @@ func containsAll(values []string, expected ...string) bool {
 	return true
 }
 
-func TestResolveEffectiveAccessProfileForUserExplicit(t *testing.T) {
+func TestResolveEffectiveAccessProfileForUserReadsExplicitUserPermissions(t *testing.T) {
 	testDB := setupEffectiveAccessTestDB(t)
-	seedRole(t, testDB, "finance_manager", `["menu_settings"]`, time.Unix(100, 0))
+	seedUserPermission(t, testDB, "user-1", "MENU_SETTINGS", time.Unix(100, 0))
+	seedUserPermission(t, testDB, "user-1", "user_view", time.Unix(101, 0))
 
-	profile := ResolveEffectiveAccessProfileForUser(models.User{
-		ID:   "user-1",
-		Role: "finance_manager",
-	})
+	profile := ResolveEffectiveAccessProfileForUser(models.User{ID: "user-1"})
 
-	if profile.PrimaryRoleID != "finance_manager" {
-		t.Errorf("expected primary role finance_manager, got %s", profile.PrimaryRoleID)
-	}
-	if !containsAll(profile.Permissions, "menu_settings") {
-		t.Errorf("expected explicit permissions, got %#v", profile.Permissions)
+	if !containsAll(profile.Permissions, "menu_settings", "user_view") {
+		t.Fatalf("expected explicit user permissions, got %#v", profile.Permissions)
 	}
 }
 
-func TestResolveEffectiveAccessProfileForUserResolvesDeptRoleFamilyByStaffID(t *testing.T) {
+func TestResolveEffectiveAccessProfileForUserKeepsEmployeeIDButDoesNotResolveLegacyRoles(t *testing.T) {
 	testDB := setupEffectiveAccessTestDB(t)
-
-	staffEmployee := models.Employee{
-		BaseModel: models.BaseModel{ID: "emp-staff-1"},
-		StaffID:   "STAFF-001",
-		Name:      "Staff User",
-		DeptID:    "dept-sales",
-	}
-	if err := testDB.Create(&staffEmployee).Error; err != nil {
-		t.Fatalf("seed employee by staff_id failed: %v", err)
-	}
-
-	seedRole(t, testDB, "org_dept-sales", `["page_trading_sales_orders"]`, time.Unix(100, 0))
-	seedRole(t, testDB, "org_dept-sales|Oversea", `["action_trading_customer_manage"]`, time.Unix(200, 0))
+	seedEmployee(t, testDB, "emp-1", "dept-sales")
+	seedUserPermission(t, testDB, "user-employee", "menu_org", time.Unix(100, 0))
 
 	profile := ResolveEffectiveAccessProfileForUser(models.User{
-		ID:         "user-staff-1",
-		EmployeeID: "staff-001",
+		ID:         "user-employee",
+		EmployeeID: "emp-1",
 	})
 
-	if !containsAll(profile.EffectiveRoles, "org_dept-sales", "org_dept-sales|Oversea") {
-		t.Fatalf("expected organization role family in effective roles, got %#v", profile.EffectiveRoles)
+	if profile.EmployeeID != "emp-1" {
+		t.Fatalf("expected employee id passthrough, got %s", profile.EmployeeID)
 	}
-
-	if !containsAll(profile.Permissions, "page_trading_sales_orders", "action_trading_customer_manage", "menu_trading") {
-		t.Fatalf("expected expanded trading permissions, got %#v", profile.Permissions)
+	if !containsAll(profile.Permissions, "menu_org") {
+		t.Fatalf("expected explicit permissions only, got %#v", profile.Permissions)
 	}
 }
 
-func TestResolveEffectiveAccessProfileForUserReflectsUpdatedDepartmentRolePermissions(t *testing.T) {
-	testDB := setupEffectiveAccessTestDB(t)
-	seedEmployee(t, testDB, "emp-role-update", "dept-role-update")
-	seedRole(t, testDB, "org_dept-role-update", `["page_trading_sales_orders"]`, time.Unix(100, 0))
+func TestResolveEffectiveAccessProfileForUserReturnsEmptyWhenNoExplicitPermissions(t *testing.T) {
+	setupEffectiveAccessTestDB(t)
 
-	initialProfile := ResolveEffectiveAccessProfileForUser(models.User{
-		ID:         "user-role-update",
-		EmployeeID: "emp-role-update",
-	})
-	if !containsAll(initialProfile.Permissions, "page_trading_sales_orders", "menu_trading") {
-		t.Fatalf("expected initial department role permissions, got %#v", initialProfile.Permissions)
+	profile := ResolveEffectiveAccessProfileForUser(models.User{ID: "user-empty", EmployeeID: "emp-empty"})
+
+	if len(profile.Permissions) != 0 {
+		t.Fatalf("expected no explicit permissions, got %#v", profile.Permissions)
 	}
-
-	requireErr := testDB.Model(&models.Role{}).
-		Where("role_id = ?", "org_dept-role-update").
-		Updates(map[string]any{"permissions": `["menu_system"]`}).Error
-	if requireErr != nil {
-		t.Fatalf("update role permissions failed: %v", requireErr)
-	}
-
-	updatedProfile := ResolveEffectiveAccessProfileForUser(models.User{
-		ID:         "user-role-update",
-		EmployeeID: "emp-role-update",
-	})
-	if containsAll(updatedProfile.Permissions, "page_trading_sales_orders") {
-		t.Fatalf("expected stale trading permission removed after update, got %#v", updatedProfile.Permissions)
-	}
-	if !containsAll(updatedProfile.Permissions, "menu_system") {
-		t.Fatalf("expected updated department role permissions, got %#v", updatedProfile.Permissions)
-	}
-}
-
-func TestResolveEffectiveAccessProfileForUserPrimaryRoleComesFromUserRoleBinding(t *testing.T) {
-	testDB := setupEffectiveAccessTestDB(t)
-	seedRole(t, testDB, "legacy_role", `["menu_org"]`, time.Unix(100, 0))
-	seedRole(t, testDB, "ops_manager", `["menu_system"]`, time.Unix(200, 0))
-
-	seedUser(t, testDB, models.User{
-		ID:       "user-primary-role",
-		Username: "primary-role-user",
-		Password: "hashed",
-		Role:     "legacy_role",
-		Status:   "active",
-	})
-	seedUserRole(t, testDB, "user-primary-role", "ops_manager", true, "active", time.Unix(300, 0))
-
-	profile := ResolveEffectiveAccessProfileForUser(models.User{
-		ID:   "user-primary-role",
-		Role: "legacy_role",
-	})
-
-	if profile.PrimaryRoleID != "ops_manager" {
-		t.Fatalf("expected primary role from user_roles binding, got %s", profile.PrimaryRoleID)
-	}
-	if len(profile.EffectiveRoles) == 0 || profile.EffectiveRoles[0] != "ops_manager" {
-		t.Fatalf("expected effective roles to start with binding primary role, got %#v", profile.EffectiveRoles)
-	}
-	if !containsAll(profile.EffectiveRoles, "ops_manager", "legacy_role") {
-		t.Fatalf("expected both binding and legacy roles in effective roles, got %#v", profile.EffectiveRoles)
+	if profile.EmployeeID != "emp-empty" {
+		t.Fatalf("expected employee id passthrough, got %s", profile.EmployeeID)
 	}
 }

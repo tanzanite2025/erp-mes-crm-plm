@@ -95,7 +95,7 @@ export const systemManagementZhCNOverrides = {
         collapsedShort: '已收起 {{count}} 个子节点',
       },
       securityInfo:
-        '权限矩阵遵循最小授权原则。ROOT（superadmin）角色保持锁定，避免误触发全局授权漂移。',
+        '权限矩阵遵循最小授权原则。系统保留的全局模板角色保持锁定，避免误触发全局授权漂移。',
     },
   },
 } as const

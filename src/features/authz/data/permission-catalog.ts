@@ -139,6 +139,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/leave-management': 'org',
   '/hall-of-fame': 'org',
   '/piecework': 'piecework',
+  '/aps-scheduling': 'piecework',
   '/system-management': 'system',
   '/approval': 'approval',
   '/basic-settings': 'settings',

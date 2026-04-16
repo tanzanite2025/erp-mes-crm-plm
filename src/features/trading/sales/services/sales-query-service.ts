@@ -35,37 +35,38 @@ export const getSalesOrders = async (
   }
 
   const res = await apiFetch<SalesOrderListPageApiDTO>(`/sales-orders?${params.toString()}`)
-  return toSalesOrderListPageContract(
-    ensureObjectResponse<SalesOrderListPageApiDTO & Record<string, unknown>>(
-      res,
-      'SalesQueryService.getSalesOrders'
-    ) as SalesOrderListPageApiDTO
+  const response = ensureObjectResponse<SalesOrderListPageApiDTO & Record<string, unknown>>(
+    res,
+    'SalesQueryService.getSalesOrders'
   )
+  return toSalesOrderListPageContract(response)
 }
 
 export const getSalesOrderById = async (id: string) => {
   const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${id}`)
-  return toSalesOrderContract(ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
     res,
     'SalesQueryService.getSalesOrderById'
-  ) as SalesOrderApiDTO)
+  )
+  return toSalesOrderContract(response)
 }
 
 export const getSalesOrderByNo = async (orderNo: string) => {
   const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/by-no/${orderNo}`)
-  return toSalesOrderContract(ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
+  const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(
     res,
     'SalesQueryService.getSalesOrderByNo'
-  ) as SalesOrderApiDTO)
+  )
+  return toSalesOrderContract(response)
 }
 
 export const getCustomerProductStats = async (params: { customerId?: string } = {}): Promise<Record<string, unknown>> => {
   const query = params.customerId ? `?customerId=${params.customerId}` : ''
   const res = await apiFetch<Record<string, unknown>>(`/sales-orders/analytics/customer-product-stats${query}`)
-  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getCustomerProductStats') as Record<string, unknown>
+  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getCustomerProductStats')
 }
 
 export const getGlobalProductRanking = async (limit: number = 10): Promise<Record<string, unknown>> => {
   const res = await apiFetch<Record<string, unknown>>(`/sales-orders/analytics/global-product-ranking?limit=${limit}`)
-  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getGlobalProductRanking') as Record<string, unknown>
+  return ensureObjectResponse<Record<string, unknown> & Record<string, unknown>>(res, 'SalesQueryService.getGlobalProductRanking')
 }

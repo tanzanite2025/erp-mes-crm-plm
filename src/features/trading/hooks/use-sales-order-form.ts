@@ -2,21 +2,21 @@ import { useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
-import { type SalesOrder } from '../data/schema'
+import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { getSalesOrderClassificationExt } from '../data/sales-order-options'
 import { validateSalesOrder } from '../utils/sales-order-validator'
 import { useSalesOrderInit } from './use-sales-order-init'
 import { useSalesOrderOps } from './use-sales-order-ops'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 
-type SalesOrderFormState = Partial<SalesOrder>
+type SalesOrderFormState = SalesOrderFormValues
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
 
 export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, open: boolean) {
   const { t } = useLanguage()
   const { initialFormData, isInitializing, initError, retryInit } = useSalesOrderInit(initialOrder, open)
 
-  const memoizedInitial = useMemo(() => initialFormData as SalesOrder, [initialFormData])
+  const memoizedInitial = useMemo<SalesOrderFormValues>(() => initialFormData, [initialFormData])
   const { data: formData, commit, isDirty } = useDeltaTracker(memoizedInitial, open)
 
   const setFormData = useCallback((updater: SalesOrderFormUpdater) => {
@@ -38,6 +38,7 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
     setFormData((prev) => ({
       ...prev,
       classification: value,
+      orderNo: newBarcode,
       barcode: newBarcode,
     }))
   }, [setFormData])
@@ -58,15 +59,17 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
       )
       setFormData((prev) => ({
         ...prev,
+        orderNo: barcode,
         barcode,
       }))
       return {
         ...formData,
+        orderNo: barcode,
         barcode,
-      } as SalesOrder
+      }
     }
 
-    return formData as SalesOrder
+    return formData
   }
 
   return {

@@ -2,7 +2,7 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -70,10 +70,29 @@ func ensureProductAttributeCategoryKeyAvailable(tx *gorm.DB, nextKey string, exc
 			continue
 		}
 		if sameProductAttributeMachineValue(item.Key, nextKey) {
-			return fmt.Errorf("[VALIDATION] 产品属性分类编码重复")
+			return domainConflictError("产品属性分类编码重复")
 		}
 	}
 	return nil
+}
+
+func isProductAttributeCategoryImmutableField(field string) bool {
+	switch field {
+	case "key":
+		return true
+	default:
+		return false
+	}
+}
+
+func classifyProductAttributeCategoryError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return domainNotFoundError("产品属性分类不存在")
+	}
+	return err
 }
 
 func defaultProductAttributeCategories() []models.ProductAttributeCategory {
@@ -102,7 +121,7 @@ func CreateProductAttributeCategory(input SaveProductAttributeCategoryInput) (mo
 	modelInput := toProductAttributeCategoryModel(input)
 	normalizeProductAttributeCategory(&modelInput)
 	if modelInput.Key == "" || !isValidProductAttributeMachineValue(modelInput.Key) {
-		return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 产品属性分类编码格式无效")
+		return models.ProductAttributeCategory{}, domainError(DomainErrorValidation, "产品属性分类编码格式无效")
 	}
 	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, modelInput.Key, ""); err != nil {
 		return models.ProductAttributeCategory{}, err
@@ -115,12 +134,20 @@ func CreateProductAttributeCategory(input SaveProductAttributeCategoryInput) (mo
 }
 
 func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
+	if err := validateSupportedTopLevelDeltaKeys(payload, "key", "nameZh", "nameEn", "description", "sortOrder", "active", "revisionNo", "changeType", "changeOrderNo", "siteCode", "isDefaultSite", "version"); err != nil {
+		return nil, err
+	}
+
 	updates := make(map[string]interface{})
 	for key, raw := range payload {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
 		switch key {
 		case "key", "nameZh", "nameEn", "description", "revisionNo", "changeType", "changeOrderNo", "siteCode":
 			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			switch key {
@@ -135,7 +162,7 @@ func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (m
 			}
 		case "sortOrder", "version":
 			var value int
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			if key == "sortOrder" {
@@ -145,12 +172,10 @@ func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (m
 			}
 		case "active", "isDefaultSite":
 			var value bool
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			updates[key] = value
-		case "id", "createdAt", "updatedAt", "metadata":
-		default:
 		}
 	}
 	return updates, nil
@@ -159,18 +184,24 @@ func BuildProductAttributeCategoryUpdates(payload map[string]json.RawMessage) (m
 func PatchProductAttributeCategory(id string, updates map[string]interface{}) (models.ProductAttributeCategory, error) {
 	var existing models.ProductAttributeCategory
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return models.ProductAttributeCategory{}, err
+		return models.ProductAttributeCategory{}, classifyProductAttributeCategoryError(err)
 	}
 	if nextKey, ok := updates["key"].(string); ok {
 		if nextKey == "" || !isValidProductAttributeMachineValue(nextKey) {
-			return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 产品属性分类编码格式无效")
+			return models.ProductAttributeCategory{}, domainValidationError("产品属性分类编码格式无效")
 		}
-		if nextKey != existing.Key {
-			return models.ProductAttributeCategory{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类编码不允许修改")
+		if isProductAttributeCategoryImmutableField("key") && nextKey != existing.Key {
+			return models.ProductAttributeCategory{}, domainConflictError("已有关联数据的分类编码不允许修改")
 		}
 	}
-	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, existing.Key, id); err != nil {
-		return models.ProductAttributeCategory{}, err
+	if nextKey, ok := updates["key"].(string); ok {
+		if err := ensureProductAttributeCategoryKeyAvailable(db.DB, nextKey, id); err != nil {
+			return models.ProductAttributeCategory{}, err
+		}
+	} else {
+		if err := ensureProductAttributeCategoryKeyAvailable(db.DB, existing.Key, id); err != nil {
+			return models.ProductAttributeCategory{}, err
+		}
 	}
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&existing).Updates(updates).Error; err != nil {

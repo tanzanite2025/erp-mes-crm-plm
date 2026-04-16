@@ -56,7 +56,6 @@ func setupOrganizationRepositoryTestDB(t *testing.T) *gorm.DB {
 			phone_number TEXT,
 			first_name TEXT,
 			last_name TEXT,
-			role TEXT,
 			status TEXT,
 			employee_id TEXT,
 			created_at DATETIME,
@@ -124,8 +123,8 @@ func TestGormOrganizationRepositoryDisableUsersByEmployeeIDsKeepsAdminAccountsAc
 	testDB := setupOrganizationRepositoryTestDB(t)
 
 	users := []models.User{
-		{ID: "user-10", Username: "ops-admin", Password: "x", Role: "admin", EmployeeID: "emp-admin", Status: "active"},
-		{ID: "user-11", Username: "operator", Password: "x", Role: "user", EmployeeID: "emp-operator", Status: "active"},
+		{ID: "user-10", Username: "admin", Password: "x", EmployeeID: "emp-admin", Status: "active"},
+		{ID: "user-11", Username: "operator", Password: "x", EmployeeID: "emp-operator", Status: "active"},
 	}
 	require.NoError(t, testDB.Create(&users).Error)
 

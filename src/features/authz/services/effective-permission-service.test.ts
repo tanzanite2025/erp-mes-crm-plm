@@ -36,7 +36,6 @@ describe('effective-permission-service regression', () => {
         accountNo: 'EMP-OLD',
         email: 'legacy@example.com',
         username: 'legacy',
-        role: ['legacy_role'],
         permissions: ['legacy_permission'],
         exp: Date.now() + 1000,
       },
@@ -51,8 +50,6 @@ describe('effective-permission-service regression', () => {
       username: 'legacy',
       employeeId: 'EMP-NEW',
       email: 'new@example.com',
-      role: ['finance_manager'],
-      effectiveRoles: ['finance_manager'],
       permissions: ['MENU_ORG', 'permission_user_view', 'permission_user_view'],
     })
 
@@ -63,7 +60,6 @@ describe('effective-permission-service regression', () => {
     expect(setUser).toHaveBeenCalledTimes(1)
     expect(setUser).toHaveBeenCalledWith(
       expect.objectContaining({
-        role: ['finance_manager'],
         permissions: ['menu_org', 'permission_user_view'],
       }),
       'profile_sync',
@@ -71,7 +67,7 @@ describe('effective-permission-service regression', () => {
     expect(setIsIdentitySynced).toHaveBeenCalledWith(true)
   })
 
-  it('ignores legacy role fallback when effectiveRoles is missing from snapshot payload', async () => {
+  it('rehydrates from permission-only snapshot payloads', async () => {
     const setUser = vi.fn()
     const setIsIdentitySynced = vi.fn()
 
@@ -81,7 +77,6 @@ describe('effective-permission-service regression', () => {
         accountNo: 'EMP-OLD-2',
         email: 'legacy2@example.com',
         username: 'legacy2',
-        role: ['legacy_role'],
         permissions: ['legacy_permission'],
         exp: Date.now() + 1000,
       },
@@ -96,7 +91,6 @@ describe('effective-permission-service regression', () => {
       username: 'legacy2',
       employeeId: 'EMP-NEW-2',
       email: 'new2@example.com',
-      role: ['finance_manager'],
       permissions: ['MENU_ORG'],
     })
 
@@ -104,7 +98,6 @@ describe('effective-permission-service regression', () => {
 
     expect(setUser).toHaveBeenCalledWith(
       expect.objectContaining({
-        role: [],
         permissions: ['menu_org'],
       }),
       'profile_sync',

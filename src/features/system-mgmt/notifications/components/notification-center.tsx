@@ -17,11 +17,7 @@ import { type StandardCommand } from '@/features/system-mgmt/workflow-core/data/
 import { type NotificationRule } from '@/features/system-mgmt/workflow-core/data/notification-rule-schema'
 import { resolveTemplate } from '../notification-service'
 import { useNavigate } from '@tanstack/react-router'
-import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
 import { getSalesOrders } from '@/features/trading/sales'
-import {
-  getAuthSessionCompatibleRoleIds,
-} from '@/features/authz/utils/auth-session'
 import { createLogger } from '@/lib/logger'
 import { RoutingService } from '@/features/system-mgmt/workflow-core/services/routing-service'
 
@@ -45,7 +41,6 @@ type NotificationVisualConfig = {
 export function NotificationCenter() {
   const user = useAuthStore((state) => state.user)
   const hasUser = !!user
-  const { roles } = useRoles(hasUser)
   const navigate = useNavigate()
   const [isExpanded, setIsExpanded] = useState(false)
   const { messages, markAsRead, dismissMessage, removeMessage, clearAll } = useNotificationStore()
@@ -114,22 +109,12 @@ export function NotificationCenter() {
     lastMessagesLength.current = messages.length
   }, [messages.length])
 
-  // 处理角色过滤逻辑
-  const userRoles = getAuthSessionCompatibleRoleIds(user)
-  const userRoleLabels = roles
-    .filter((role) => userRoles.includes(String(role.id)))
-    .map((role) => String(role.label))
-
   const visibleMessages = messages.filter(msg => {
     if (msg.isArchived) return false
     if (!msg.targetRoles?.length && !msg.targetUsers?.length) return true
-    
-    const hasRole = (msg.targetRoles || []).some((role: string) =>
-      userRoles.includes(role) || 
-      userRoleLabels.includes(role)
-    )
+
     const isTargetUser = (msg.targetUsers || []).includes(user?.username || '')
-    return hasRole || isTargetUser
+    return isTargetUser
   })
 
   const visibleUnreadCount = visibleMessages.filter(m => !m.isRead).length

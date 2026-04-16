@@ -10,7 +10,7 @@ func NormalizePermissionID(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
 }
 
-// ParsePermissionIDs parses a raw permission string (JSON array or comma-separated) 
+// ParsePermissionIDs parses a raw permission string (JSON array or comma-separated)
 // and returns a deduplicated list of normalized IDs.
 func ParsePermissionIDs(raw string) []string {
 	raw = strings.TrimSpace(raw)
@@ -56,4 +56,23 @@ func DeduplicatePermissionIDs(permissionIDs []string) []string {
 	}
 
 	return ids
+}
+
+func IsSupportedPermissionID(value string) bool {
+	normalized := NormalizePermissionID(value)
+	if normalized == "" {
+		return false
+	}
+
+	if strings.HasPrefix(normalized, "page_") || strings.HasPrefix(normalized, "tab_") {
+		return true
+	}
+
+	for _, permissionID := range ManagedPermissionIDs {
+		if permissionID == normalized {
+			return true
+		}
+	}
+
+	return false
 }

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { StatusGuard } from '@/components/status-guard'
 import { useLanguage } from '@/context/language-provider'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { type Customer } from '../data/schema'
+import { type Customer, type CustomerFormValues } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useCustomerActionViewModel } from '../hooks/use-customer-action-view-model'
 import { buildCustomerSaveSnapshot } from '../customer/utils/customer-save-snapshot'
@@ -43,15 +43,14 @@ export function CustomerActionDialog({
     onOpenChange(nextOpen)
   }
 
-  const updateField = <K extends keyof Customer>(key: K, value: Customer[K]) => {
-    Reflect.set(formData as unknown as Partial<Record<keyof Customer, Customer[keyof Customer]>>, key, value)
+  const updateField = <K extends keyof CustomerFormValues>(key: K, value: CustomerFormValues[K]) => {
+    formData[key] = value
   }
 
   const handleSave = () => {
     const isPatch = !!customer
     const delta = tracker.commit()
-    const snapshot = JSON.parse(JSON.stringify(formData)) as Partial<Customer>
-    const nextData = buildCustomerSaveSnapshot(customer, snapshot)
+    const nextData = buildCustomerSaveSnapshot(customer, formData)
     
     if (isPatch && Object.keys(delta).length === 0) {
       onOpenChange(false)

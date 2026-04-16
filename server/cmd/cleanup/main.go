@@ -25,10 +25,15 @@ func main() {
 	// 2. 初始化核心链路
 	db.InitDB(dsn)
 
-	// 3. 执行物理删除 (针对 CASHIER/cashier 精准爆破)
-	fmt.Println("[CRITICAL] Starting target data purging: [role ~* cashier]...")
+	cleanupUsername := strings.TrimSpace(os.Getenv("CLEANUP_USERNAME"))
+	if cleanupUsername == "" {
+		cleanupUsername = "cashier"
+	}
 
-	result := db.DB.Unscoped().Where("role ILIKE ?", "cashier").Delete(&models.User{})
+	// 3. 执行物理删除 (针对指定用户名精准爆破)
+	fmt.Printf("[CRITICAL] Starting target data purging: [username=%q]...\n", cleanupUsername)
+
+	result := db.DB.Unscoped().Where("LOWER(username) = ?", strings.ToLower(cleanupUsername)).Delete(&models.User{})
 	if result.Error != nil {
 		log.Fatalf("[ERROR] Failed to purge dirty data: %v", result.Error)
 	}

@@ -8,6 +8,7 @@ import (
 	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/salesorderidentity"
 	"xdfc-server/services/trading_audit"
 
 	"gorm.io/gorm"
@@ -258,8 +259,26 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		}
 
 		input.Version = 1
+		input.OrderNo = strings.TrimSpace(input.OrderNo)
+		input.Barcode = strings.TrimSpace(input.Barcode)
+		if input.Barcode == "" && input.OrderNo != "" {
+			input.Barcode = input.OrderNo
+		}
+		if input.Barcode == "" {
+			generatedBarcode, err := salesorderidentity.GenerateSalesOrderBarcodeTx(tx, input.Classification)
+			if err != nil {
+				return err
+			}
+			input.Barcode = generatedBarcode
+		}
+		if input.OrderNo == "" {
+			input.OrderNo = input.Barcode
+		}
 		if input.OrderNo == "" && originalID != "" {
-			input.OrderNo = originalID
+			input.OrderNo = strings.TrimSpace(originalID)
+		}
+		if input.OrderNo == "" {
+			return fmt.Errorf("[VALIDATION] sales order orderNo is required")
 		}
 		if err := tx.Create(&input).Error; err != nil {
 			return err

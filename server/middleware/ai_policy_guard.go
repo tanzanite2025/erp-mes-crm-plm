@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -13,19 +14,18 @@ import (
 const aiPolicyConfigKey = "ai_capability_policy"
 
 type AIPolicy struct {
-	Enabled      bool     `json:"enabled"`
-	AllowedRoles []string `json:"allowedRoles"`
-	AllowedUsers []string `json:"allowedUsers"`
+	Enabled            bool     `json:"enabled"`
+	AllowedPermissions []string `json:"allowedPermissions"`
+	AllowedUsers       []string `json:"allowedUsers"`
 }
 
 // AIPolicyGuard enforces AI governance policy on backend.
 func AIPolicyGuard() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		roleIDs := collectContextRoleIDs(c)
+		permissionIDs := normalizePermissionsFromContext(mustGetContext(c, "permissions"))
 		username := strings.TrimSpace(getStringContext(c, "username"))
 
-		// --- [CRITICAL_BYPASS] 上帝视角物理绕过 AI 政策 ---
-		if hasBypassRole(roleIDs) {
+		if hasManagePermission(permissionIDs) {
 			c.Next()
 			return
 		}
@@ -41,7 +41,7 @@ func AIPolicyGuard() gin.HandlerFunc {
 			return
 		}
 
-		if contains(policy.AllowedUsers, username) || containsAny(policy.AllowedRoles, roleIDs) {
+		if contains(policy.AllowedUsers, username) || containsAny(policy.AllowedPermissions, permissionIDs) {
 			c.Next()
 			return
 		}
@@ -55,11 +55,10 @@ func AIPolicyGuard() gin.HandlerFunc {
 }
 
 func loadAIPolicy() (AIPolicy, error) {
-	// Backward-compatible default: enabled and admin bypass only when policy missing.
 	policy := AIPolicy{
-		Enabled:      true,
-		AllowedRoles: []string{"admin", "superadmin"},
-		AllowedUsers: []string{},
+		Enabled:            true,
+		AllowedPermissions: []string{authz.PermissionManage},
+		AllowedUsers:       []string{},
 	}
 
 	var cfg models.SystemConfig
@@ -76,7 +75,7 @@ func loadAIPolicy() (AIPolicy, error) {
 	}
 
 	// Normalize.
-	policy.AllowedRoles = normalize(policy.AllowedRoles)
+	policy.AllowedPermissions = normalize(policy.AllowedPermissions)
 	policy.AllowedUsers = normalize(policy.AllowedUsers)
 	return policy, nil
 }
@@ -110,13 +109,18 @@ func containsAny(list []string, targets []string) bool {
 	return false
 }
 
-func hasBypassRole(roleIDs []string) bool {
-	for _, roleID := range roleIDs {
-		if strings.EqualFold(strings.TrimSpace(roleID), "admin") || strings.EqualFold(strings.TrimSpace(roleID), "superadmin") {
+func hasManagePermission(permissionIDs []string) bool {
+	for _, permissionID := range permissionIDs {
+		if authz.NormalizePermissionID(permissionID) == authz.PermissionManage {
 			return true
 		}
 	}
 	return false
+}
+
+func mustGetContext(c *gin.Context, key string) any {
+	v, _ := c.Get(key)
+	return v
 }
 
 func getStringContext(c *gin.Context, key string) string {

@@ -123,7 +123,7 @@ export function normalizeSaveProductInput(product: SaveProductInput): SaveProduc
     templateKey: normalizeProductTemplateKeyValue(product.templateKey),
     attributeValues: (product.attributeValues ?? []).map((item) => ({
       ...item,
-      categoryKey: normalizeProductAttributeMachineValue(item.categoryKey),
+      categoryKey: item.categoryKey?.trim() || '',
       optionValue: normalizeProductAttributeMachineValue(item.optionValue),
     })),
     revisionNo: normalizeEngineeringRevisionNo(product.revisionNo),

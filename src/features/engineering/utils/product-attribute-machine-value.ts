@@ -1,4 +1,7 @@
-import { type SaveProductAttributeCategoryInput, type SaveProductAttributeOptionInput } from '../mutation-types'
+import {
+  type SaveProductAttributeCategoryInput,
+  type SaveProductAttributeOptionInput,
+} from '../mutation-types'
 
 export function normalizeProductAttributeMachineValue(value: string): string {
   return value
@@ -14,8 +17,90 @@ export function isValidProductAttributeMachineValue(value: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
 }
 
-export function areSameProductAttributeMachineValue(a: string, b: string): boolean {
-  return normalizeProductAttributeMachineValue(a) === normalizeProductAttributeMachineValue(b)
+export function areSameProductAttributeCategoryKey(left: string, right: string): boolean {
+  const normalizedLeft = normalizeProductAttributeMachineValue(left)
+  const normalizedRight = normalizeProductAttributeMachineValue(right)
+  if (!normalizedLeft || !normalizedRight) {
+    return false
+  }
+  return normalizedLeft === normalizedRight
+}
+
+function trimOptionalString(value: string | undefined): string | undefined {
+  const trimmedValue = value?.trim()
+  return trimmedValue ? trimmedValue : undefined
+}
+
+export function normalizeProductAttributeCategoryInputKey(
+  input: SaveProductAttributeCategoryInput
+): SaveProductAttributeCategoryInput {
+  return {
+    ...input,
+    key: normalizeProductAttributeMachineValue(input.key || ''),
+  }
+}
+
+export function normalizeProductAttributeOptionInputValue(
+  input: SaveProductAttributeOptionInput
+): SaveProductAttributeOptionInput {
+  return {
+    ...input,
+    value: normalizeProductAttributeMachineValue(input.value || ''),
+  }
+}
+
+export function buildProductAttributeCategorySaveInput(
+  input: SaveProductAttributeCategoryInput
+): SaveProductAttributeCategoryInput {
+  return {
+    ...normalizeProductAttributeCategoryInputKey(input),
+    nameZh: input.nameZh?.trim() || '',
+    nameEn: trimOptionalString(input.nameEn),
+    description: trimOptionalString(input.description),
+    revisionNo: trimOptionalString(input.revisionNo),
+    effectiveFrom: input.effectiveFrom ?? undefined,
+    effectiveTo: input.effectiveTo ?? undefined,
+    changeOrderNo: trimOptionalString(input.changeOrderNo),
+    siteCode: trimOptionalString(input.siteCode),
+    sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
+    active: input.active ?? true,
+  }
+}
+
+export function buildProductAttributeOptionSaveInput(
+  input: SaveProductAttributeOptionInput
+): SaveProductAttributeOptionInput {
+  return {
+    ...normalizeProductAttributeOptionInputValue(input),
+    categoryKey: input.categoryKey?.trim() || '',
+    labelZh: input.labelZh?.trim() || '',
+    labelEn: trimOptionalString(input.labelEn),
+    description: trimOptionalString(input.description),
+    revisionNo: trimOptionalString(input.revisionNo),
+    effectiveFrom: input.effectiveFrom ?? undefined,
+    effectiveTo: input.effectiveTo ?? undefined,
+    changeOrderNo: trimOptionalString(input.changeOrderNo),
+    siteCode: trimOptionalString(input.siteCode),
+    sortOrder: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
+    active: input.active ?? true,
+  }
+}
+
+export function resolveProductAttributeCategoryKey<T extends { key: string }>(
+  categories: T[],
+  nextKey: string
+): string {
+  const trimmedKey = nextKey.trim()
+  if (!trimmedKey) return ''
+
+  const exactMatch = categories.find((item) => item.key === trimmedKey)
+  if (exactMatch) {
+    return exactMatch.key
+  }
+
+  const normalizedKey = normalizeProductAttributeMachineValue(trimmedKey)
+  const compatibleMatch = categories.find((item) => normalizeProductAttributeMachineValue(item.key) === normalizedKey)
+  return compatibleMatch?.key ?? trimmedKey
 }
 
 export function getProductAttributeMachineValueFormatHint(locale: string): string {
@@ -24,81 +109,3 @@ export function getProductAttributeMachineValueFormatHint(locale: string): strin
     : 'Machine values only allow lowercase letters, numbers, and hyphens, e.g. matte-black'
 }
 
-export function findProductAttributeMachineValueConflict<T extends { id?: string }>(
-  items: T[],
-  nextValue: string,
-  getValue: (item: T) => string,
-  currentId?: string
-): T | undefined {
-  const normalizedNext = normalizeProductAttributeMachineValue(nextValue)
-  if (!normalizedNext) return undefined
-
-  return items.find((item) => {
-    if (currentId && item.id === currentId) {
-      return false
-    }
-    return areSameProductAttributeMachineValue(getValue(item), normalizedNext)
-  })
-}
-
-export function normalizeProductAttributeCategoryInputKey(
-  category: SaveProductAttributeCategoryInput
-): SaveProductAttributeCategoryInput {
-  return {
-    ...category,
-    key: normalizeProductAttributeMachineValue(category.key || ''),
-  }
-}
-
-export function normalizeProductAttributeOptionInputValue(
-  option: SaveProductAttributeOptionInput
-): SaveProductAttributeOptionInput {
-  return {
-    ...option,
-    categoryKey: normalizeProductAttributeMachineValue(option.categoryKey || ''),
-    value: normalizeProductAttributeMachineValue(option.value || ''),
-  }
-}
-
-export function buildProductAttributeCategorySaveInput(
-  category: SaveProductAttributeCategoryInput
-): SaveProductAttributeCategoryInput {
-  const normalized = normalizeProductAttributeCategoryInputKey(category)
-  return {
-    ...normalized,
-    nameZh: normalized.nameZh?.trim(),
-    nameEn: normalized.nameEn?.trim(),
-    description: normalized.description?.trim(),
-  }
-}
-
-export function buildProductAttributeOptionSaveInput(
-  option: SaveProductAttributeOptionInput
-): SaveProductAttributeOptionInput {
-  const normalized = normalizeProductAttributeOptionInputValue(option)
-  return {
-    ...normalized,
-    labelZh: normalized.labelZh?.trim(),
-    labelEn: normalized.labelEn?.trim(),
-    description: normalized.description?.trim(),
-  }
-}
-
-export function findProductAttributeOptionConflictInCategory<T extends { id?: string; categoryKey: string; value: string }>(
-  items: T[],
-  categoryKey: string,
-  nextValue: string,
-  currentId?: string
-): T | undefined {
-  const normalizedCategoryKey = normalizeProductAttributeMachineValue(categoryKey)
-  return items.find((item) => {
-    if (currentId && item.id === currentId) {
-      return false
-    }
-
-    return (
-      normalizeProductAttributeMachineValue(item.categoryKey) === normalizedCategoryKey &&
-      areSameProductAttributeMachineValue(item.value, nextValue)
-    )
-  })
-}

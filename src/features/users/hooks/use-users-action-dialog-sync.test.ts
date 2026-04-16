@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestEmployee } from '@/features/org-personnel/test-factories'
-import { createTestRole } from '@/features/system-mgmt/test-factories'
 
 const { useCallbackMock, useEffectMock, useMemoMock } = vi.hoisted(() => ({
   useCallbackMock: vi.fn(),
@@ -37,134 +36,100 @@ describe('use-users-action-dialog-sync regression', () => {
     })
   })
 
-  it('auto-fills role from department default when role is empty', () => {
+  it('auto-fills employee profile fields on create sync', () => {
     const setValue = vi.fn()
-    const clearErrors = vi.fn()
-    const setError = vi.fn()
-    const getValues = vi.fn().mockReturnValue('')
 
     const form = {
       watch: vi.fn().mockReturnValue('emp-1'),
-      getValues,
       setValue,
-      clearErrors,
-      setError,
     }
 
     const employees = [
-      createEmployeeOption({ id: 'emp-1', name: 'Alice', deptId: 'dept-1' }),
-    ]
-
-    const dynamicRoles = [
-      createTestRole({ id: 'org_dept-1', label: 'Dept 1', color: '', permissions: ['menu_org'] }),
+      createEmployeeOption({ id: 'emp-1', name: '张三', phone: '13800000000', deptId: 'dept-1' }),
     ]
 
     const result = useUsersActionDialogSync({
       employees,
-      dynamicRoles,
       form: form as never,
       isEdit: false,
     })
 
-    expect(result.selectedEmployeeDeptRoleId).toBe('org_dept-1')
+    expect(result.selectedEmployee?.id).toBe('emp-1')
     result.handleEmployeeSync('emp-1')
-    expect(setValue).toHaveBeenCalledWith('role', 'org_dept-1')
-    expect(clearErrors).toHaveBeenCalledWith('role')
-    expect(setError).not.toHaveBeenCalled()
+
+    expect(setValue).toHaveBeenCalledWith('lastName', '张')
+    expect(setValue).toHaveBeenCalledWith('firstName', '三')
+    expect(setValue).toHaveBeenCalledWith('phoneNumber', '13800000000')
+    expect(setValue).toHaveBeenCalledWith('username', '13800000000')
   })
 
-  it('matches department role helper with normalized role ids', () => {
+  it('falls back to employee id prefix when employee phone is empty', () => {
     const setValue = vi.fn()
-    const clearErrors = vi.fn()
-    const setError = vi.fn()
-    const getValues = vi.fn().mockReturnValue('')
 
     const form = {
-      watch: vi.fn().mockReturnValue('emp-3'),
-      getValues,
+      watch: vi.fn().mockReturnValue('employee-xyz-123'),
       setValue,
-      clearErrors,
-      setError,
     }
 
     const employees = [
-      createEmployeeOption({ id: 'emp-3', name: 'Bob', phone: '13700000000', deptId: 'Dept-3' }),
+      createEmployeeOption({ id: 'employee-xyz-123', name: '李四', phone: '', deptId: 'Dept-3' }),
     ]
 
     const result = useUsersActionDialogSync({
       employees,
-      dynamicRoles: [createTestRole({ id: 'ORG_DEPT-3', label: 'QA', color: '', permissions: [] })],
       form: form as never,
       isEdit: false,
     })
 
-    expect(result.selectedEmployeeDeptRoleId).toBe('ORG_DEPT-3')
-    result.handleEmployeeSync('emp-3')
-    expect(setValue).toHaveBeenCalledWith('role', 'ORG_DEPT-3')
-    expect(clearErrors).toHaveBeenCalledWith('role')
-    expect(setError).not.toHaveBeenCalled()
+    expect(result.selectedEmployee?.id).toBe('employee-xyz-123')
+    result.handleEmployeeSync('employee-xyz-123')
+
+    expect(setValue).toHaveBeenCalledWith('lastName', '李')
+    expect(setValue).toHaveBeenCalledWith('firstName', '四')
+    expect(setValue).toHaveBeenCalledWith('phoneNumber', '')
+    expect(setValue).toHaveBeenCalledWith('username', 'employee')
   })
 
-  it('does not raise validation error when no department default role exists', () => {
+  it('does nothing when employee is missing', () => {
     const setValue = vi.fn()
-    const clearErrors = vi.fn()
-    const setError = vi.fn()
-    const getValues = vi.fn().mockReturnValue('')
 
     const form = {
-      watch: vi.fn().mockReturnValue('emp-2'),
-      getValues,
+      watch: vi.fn().mockReturnValue('emp-missing'),
       setValue,
-      clearErrors,
-      setError,
     }
 
-    const employees = [
-      createEmployeeOption({ id: 'emp-2', name: 'Chris', phone: '13900000000', deptId: 'dept-missing' }),
-    ]
+    const employees = [createEmployeeOption({ id: 'emp-2', name: 'Chris', phone: '13900000000' })]
 
     const result = useUsersActionDialogSync({
       employees,
-      dynamicRoles: [],
       form: form as never,
       isEdit: false,
     })
 
-    expect(result.selectedEmployeeDeptRoleId).toBe('')
-    result.handleEmployeeSync('emp-2')
-    expect(setValue).not.toHaveBeenCalledWith('role', '')
-    expect(setError).not.toHaveBeenCalled()
+    expect(result.selectedEmployee).toBeUndefined()
+    result.handleEmployeeSync('emp-missing')
+    expect(setValue).not.toHaveBeenCalled()
   })
 
-  it('does not override manually selected role during employee sync', () => {
+  it('does not sync employee profile fields during edit mode', () => {
     const setValue = vi.fn()
-    const clearErrors = vi.fn()
-    const setError = vi.fn()
-    const getValues = vi.fn().mockImplementation((key: string) => (key === 'role' ? 'ops_manager' : ''))
 
     const form = {
       watch: vi.fn().mockReturnValue('emp-4'),
-      getValues,
       setValue,
-      clearErrors,
-      setError,
     }
 
     const employees = [
-      createEmployeeOption({ id: 'emp-4', name: 'Doris', phone: '13600000000', deptId: 'dept-4' }),
+      createEmployeeOption({ id: 'emp-4', name: '王五', phone: '13600000000', deptId: 'dept-4' }),
     ]
 
     const result = useUsersActionDialogSync({
       employees,
-      dynamicRoles: [createTestRole({ id: 'org_dept-4', label: 'Purchase', color: '', permissions: [] })],
       form: form as never,
-      isEdit: false,
+      isEdit: true,
     })
 
     result.handleEmployeeSync('emp-4')
-    expect(setValue).not.toHaveBeenCalledWith('role', 'org_dept-4')
-    expect(clearErrors).not.toHaveBeenCalledWith('role')
-    expect(setError).not.toHaveBeenCalled()
+    expect(setValue).not.toHaveBeenCalled()
   })
 })
-

@@ -60,7 +60,7 @@ export function UsersMultiDeleteDialog<TData>({
       },
       error: (err) => {
         logger.error('Bulk delete failed', err)
-        return t('users.toast.switchAdminFailed')
+        return t('users.toast.protectedAccountActionFailed')
       },
     })
   }

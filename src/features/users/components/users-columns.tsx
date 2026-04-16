@@ -3,15 +3,12 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type Role } from '@/features/system-mgmt/data/role-schema'
 import { cn } from '@/lib/utils'
 import { ShieldAlert } from 'lucide-react'
 import { DataTableRowActions } from './data-table-row-actions'
-import { callTypes, roles } from '../data/data'
+import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
-import { type OrgNode } from '@/features/org-personnel/data/org-schema'
-import { buildRoleDisplayText } from '../utils/role-display'
-import { isSuperAdmin } from '../utils/user-utils'
+import { isProtectedSystemAccount } from '../utils/user-utils'
 
 const userStatusTranslationKeys: Record<
   UserStatus,
@@ -35,17 +32,8 @@ type TranslateFn = (
   params?: Record<string, string | number>
 ) => string
 
-type RoleColumnLabels = {
-  title: string
-  driftTooltip: string
-  invalid: string
-}
-
 export function getUsersColumns(
   t: TranslateFn,
-  dynamicRoles: Role[],
-  roleColumnLabels: RoleColumnLabels,
-  orgNodes: OrgNode[] = [],
 ): ColumnDef<User>[] {
   return [
     {
@@ -81,7 +69,7 @@ export function getUsersColumns(
         <DataTableColumnHeader column={column} title={t('users.columns.username')} />
       ),
       cell: ({ row }) => {
-        const protected_ = isSuperAdmin(row.original)
+        const protected_ = isProtectedSystemAccount(row.original)
         return (
           <div className='flex items-center gap-2 ps-3'>
             <LongText className={cn('max-w-36', protected_ && 'font-black text-amber-600 italic')}>
@@ -144,57 +132,6 @@ export function getUsersColumns(
       },
       enableHiding: false,
       enableSorting: false,
-    },
-    {
-      accessorKey: 'role',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={roleColumnLabels.title} />
-      ),
-      cell: ({ row }) => {
-        const { role, resolvedRole, roleInfo } = row.original
-        const displayRoleId = resolvedRole || role
-        const label =
-          buildRoleDisplayText([displayRoleId], dynamicRoles, { orgNodes, dedupe: false }) ||
-          displayRoleId
-        const userType = roles.find(({ value }) => value === displayRoleId)
-
-        return (
-          <div
-            className='flex items-center gap-x-2'
-            title={
-              roleInfo?.isStale
-                ? roleColumnLabels.driftTooltip
-                    .replace('{{original}}', role)
-                    .replace('{{resolved}}', resolvedRole ?? '')
-                : ''
-            }
-          >
-            {userType?.icon && <userType.icon size={16} className='text-muted-foreground' />}
-            <span
-              className={cn(
-                'text-sm capitalize',
-                roleInfo?.isInvalid
-                  ? 'text-destructive font-bold'
-                  : roleInfo?.isStale
-                    ? 'text-amber-600'
-                    : '',
-              )}
-            >
-              {label}
-            </span>
-            {roleInfo?.isInvalid && (
-              <div className='flex items-center gap-1 rounded border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive animate-pulse'>
-                <span className='font-bold underline'>{roleColumnLabels.invalid}</span>
-              </div>
-            )}
-          </div>
-        )
-      },
-      filterFn: (row, id, value) => {
-        return value.includes(row.getValue(id))
-      },
-      enableSorting: false,
-      enableHiding: false,
     },
     {
       id: 'actions',

@@ -1,5 +1,4 @@
 import React from 'react'
-import { useRoleDisplay } from '@/features/users/hooks/use-role-display'
 import { useAuthStore } from '@/stores/auth-store'
 import type { PurchaseOrder } from '../../data/schema'
 import {
@@ -21,9 +20,8 @@ export const PurchaseOrderEvidencePrint = React.forwardRef<
   PurchaseOrderEvidencePrintProps
 >(({ order }, ref) => {
   const user = useAuthStore((state) => state.user)
-  const { text: currentRoleText } = useRoleDisplay(user?.role)
   const evidences = order.evidences || []
-  const currentIdentity = buildCurrentUserIdentityText(user || undefined, currentRoleText)
+  const currentIdentity = buildCurrentUserIdentityText(user || undefined)
 
   return (
     <div ref={ref}>
@@ -73,7 +71,6 @@ export const PurchaseOrderEvidencePrint = React.forwardRef<
         <PurchasePrintSignatureGrid
           entries={[
             { label: '当前账号', value: currentIdentity },
-            { label: '当前角色', value: currentRoleText },
             { label: '来料品检' },
             { label: '供应商代表' },
           ]}

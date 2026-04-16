@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/models"
+	"xdfc-server/salesorderidentity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -149,6 +150,16 @@ func executeOrderUnifiedSaveTx(tx *gorm.DB, current *models.SalesOrder, input Ex
 	nextLines := nextOrder.Lines
 	if nextLines == nil {
 		nextLines = []models.SalesOrderLine{}
+	}
+	nextOrder.OrderNo, nextOrder.Barcode = salesorderidentity.ResolveSalesOrderIdentity(nextOrder.OrderNo, nextOrder.Barcode, current.OrderNo)
+	if nextOrder.OrderNo == "" {
+		nextOrder.OrderNo = strings.TrimSpace(current.Barcode)
+	}
+	if nextOrder.Barcode == "" {
+		nextOrder.Barcode = strings.TrimSpace(current.Barcode)
+	}
+	if nextOrder.OrderNo == "" {
+		return nil, fmt.Errorf("%w: orderNo is required", ErrSalesTransactionInvalidPayload)
 	}
 
 	isCustomerOnlyChange := true

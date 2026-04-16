@@ -1,7 +1,6 @@
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
-import { UsersAddAdminDialog } from '@/features/users/components/users-add-admin-dialog'
-import { UsersRoleBindingsDialog } from './users-role-bindings-dialog'
+import { UsersPermissionsDialog } from './users-permissions-dialog'
 import { useUsers } from './users-provider'
 
 export function UsersDialogs() {
@@ -12,12 +11,6 @@ export function UsersDialogs() {
         key='user-add'
         open={open === 'add'}
         onOpenChange={() => setOpen('add')}
-      />
-
-      <UsersAddAdminDialog
-        key='user-add-admin'
-        open={open === 'addAdmin'}
-        onOpenChange={() => setOpen('addAdmin')}
       />
 
       {currentRow && (
@@ -34,11 +27,11 @@ export function UsersDialogs() {
             currentRow={currentRow}
           />
 
-          <UsersRoleBindingsDialog
+          <UsersPermissionsDialog
             key={`user-roles-${currentRow.id}`}
-            open={open === 'roles'}
+            open={open === 'permissions'}
             onOpenChange={() => {
-              setOpen('roles')
+              setOpen('permissions')
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)

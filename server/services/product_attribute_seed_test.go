@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"testing"
+	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
@@ -65,10 +66,13 @@ func setupProductAttributeSeedTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_attribute_options_deleted_at ON product_attribute_options(deleted_at)`).Error)
+	prevDB := db.DB
+	db.DB = testDB
 
 	sqlDB, err := testDB.DB()
 	require.NoError(t, err)
 	t.Cleanup(func() {
+		db.DB = prevDB
 		_ = sqlDB.Close()
 	})
 
@@ -148,4 +152,63 @@ func TestSeedDefaultProductAttributeOptionsSkipsWhenSoftDeletedHistoryExists(t *
 	var allCount int64
 	require.NoError(t, testDB.Unscoped().Model(&models.ProductAttributeOption{}).Count(&allCount).Error)
 	require.EqualValues(t, 1, allCount)
+}
+
+func TestCreateProductAttributeOptionCanonicalizesHistoricalCategoryKey(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-version"},
+		Key:       "versionLevel",
+		NameZh:    "版本等级",
+		NameEn:    "Version Level",
+		SortOrder: 40,
+		Active:    true,
+		Version:   1,
+	}).Error)
+
+	saved, err := CreateProductAttributeOption(SaveProductAttributeOptionInput{
+		CategoryKey: "versionlevel",
+		Value:       "matte-black",
+		LabelZh:     "哑黑",
+		LabelEn:     "Matte Black",
+		SortOrder:   10,
+		Active:      true,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "versionLevel", saved.CategoryKey)
+
+	var persisted models.ProductAttributeOption
+	require.NoError(t, testDB.First(&persisted, "category = ? AND value = ?", "versionLevel", "matte-black").Error)
+	require.Equal(t, "versionLevel", persisted.CategoryKey)
+}
+
+func TestListProductAttributeOptionsReturnsCanonicalCategoryKeyForHistoricalRows(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-version"},
+		Key:       "versionLevel",
+		NameZh:    "版本等级",
+		NameEn:    "Version Level",
+		SortOrder: 40,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-version"},
+		CategoryKey: "versionlevel",
+		Value:       "matte-black",
+		LabelZh:     "哑黑",
+		LabelEn:     "Matte Black",
+		SortOrder:   10,
+		Active:      true,
+		Version:     1,
+	}).Error)
+
+	items, err := ListProductAttributeOptions(ProductAttributeOptionListQuery{CategoryKey: "versionLevel"})
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+	require.Equal(t, "versionLevel", items[0].CategoryKey)
+	require.Equal(t, "matte-black", items[0].Value)
 }

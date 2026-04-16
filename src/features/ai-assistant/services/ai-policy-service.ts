@@ -4,7 +4,7 @@ export const AI_POLICY_CONFIG_KEY = 'ai_capability_policy'
 
 export interface AiPolicyConfig {
   enabled: boolean
-  allowedRoles: string[]
+  allowedPermissions: string[]
   allowedUsers?: string[]
   api?: {
     provider: 'gemini' | 'openai' | 'custom'

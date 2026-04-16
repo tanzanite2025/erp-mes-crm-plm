@@ -30,6 +30,7 @@ import { logisticsConfig } from './logisticsConfig'
 import { terminalConfig } from './terminalConfig'
 import { users } from './users'
 import { piecework } from './piecework'
+import { apsScheduling } from './apsScheduling'
 import { errors } from './errors'
 
 export const zhCNMessages = {
@@ -65,5 +66,6 @@ export const zhCNMessages = {
   terminalConfig,
   users,
   piecework,
+  apsScheduling,
   errors,
 } as const

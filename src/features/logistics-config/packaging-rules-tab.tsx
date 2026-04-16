@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
+import { type Unit } from '@/features/basic-settings/services/unit-service'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import { type Product } from '@/features/engineering/data/schema'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
@@ -45,6 +46,64 @@ const packagingFieldClass = 'w-full h-11 min-h-11 rounded-2xl border border-bord
 const packagingSelectClass = `${packagingFieldClass} justify-between data-[size=default]:h-11`
 const packagingLabelClass = 'ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'
 const packagingSectionClass = 'rounded-[28px] border border-dashed border-border/60 bg-muted/[0.035] p-4 md:p-5'
+const PACKAGING_UNIT_CODE_FALLBACKS = {
+  LENGTH: ['mm', 'cm', 'm', 'meter', 'metre', 'km', 'in', 'inch', 'ft', 'foot'],
+  WEIGHT: ['mg', 'g', 'gram', 'kg', 'kilogram', 't', 'ton', 'lb', 'lbs', 'oz'],
+  QUANTITY: ['pcs', 'pc', 'piece', 'pieces', 'ea', 'unit', 'units', 'set', 'sets', 'box', 'boxes', 'ctn', 'carton', 'cartons', 'pack', 'pkg'],
+} as const
+
+type PackagingUnitKind = keyof typeof PACKAGING_UNIT_CODE_FALLBACKS
+
+function normalizePackagingUnitCode(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function matchesPackagingUnitKind(unit: Unit, kind: PackagingUnitKind): boolean {
+  if (unit.category === kind) {
+    return true
+  }
+
+  return PACKAGING_UNIT_CODE_FALLBACKS[kind].includes(normalizePackagingUnitCode(unit.code))
+}
+
+function dedupePackagingUnits(units: Unit[]): Unit[] {
+  const seen = new Set<string>()
+  const result: Unit[] = []
+
+  for (const unit of units) {
+    const normalizedCode = normalizePackagingUnitCode(unit.code)
+    if (normalizedCode === '' || seen.has(normalizedCode)) {
+      continue
+    }
+    seen.add(normalizedCode)
+    result.push(unit)
+  }
+
+  return result
+}
+
+function resolvePackagingUnitCode(units: Unit[], unitCode: string): string {
+  const normalizedCode = normalizePackagingUnitCode(unitCode)
+  if (normalizedCode === '') {
+    return ''
+  }
+
+  return units.find((unit) => normalizePackagingUnitCode(unit.code) === normalizedCode)?.code ?? unitCode.trim()
+}
+
+function buildPackagingUnitCandidates(units: Unit[], kind: PackagingUnitKind, selectedCode: string): Unit[] {
+  const matchedUnits = units.filter((unit) => unit.status === 'active' && matchesPackagingUnitKind(unit, kind))
+  const selectedUnit = units.find((unit) => normalizePackagingUnitCode(unit.code) === normalizePackagingUnitCode(selectedCode))
+
+  if (!selectedUnit) {
+    return dedupePackagingUnits(matchedUnits)
+  }
+
+  return dedupePackagingUnits([
+    selectedUnit,
+    ...matchedUnits,
+  ])
+}
 
 function createPackagingProfileCode(name: string): string {
   const normalized = name
@@ -163,9 +222,30 @@ export function LogisticsPackagingRulesTab() {
   const products = productsQuery.data ?? []
   const packagingMaterials = packagingMaterialsQuery.data ?? EMPTY_PACKAGING_MATERIAL_OPTIONS
 
-  const dimensionUnits = useMemo(() => units.filter((unit) => unit.category === 'LENGTH'), [units])
-  const weightUnits = useMemo(() => units.filter((unit) => unit.category === 'WEIGHT'), [units])
-  const quantityUnits = useMemo(() => units.filter((unit) => unit.category === 'QUANTITY' || unit.code === 'pcs'), [units])
+  const resolvedDimensionUnitCode = useMemo(
+    () => resolvePackagingUnitCode(units, draft.dimensionUnitCode),
+    [units, draft.dimensionUnitCode]
+  )
+  const resolvedWeightUnitCode = useMemo(
+    () => resolvePackagingUnitCode(units, draft.weightUnitCode),
+    [units, draft.weightUnitCode]
+  )
+  const resolvedCapacityUnitCode = useMemo(
+    () => resolvePackagingUnitCode(units, draft.capacityUnitCode),
+    [units, draft.capacityUnitCode]
+  )
+  const dimensionUnits = useMemo(
+    () => buildPackagingUnitCandidates(units, 'LENGTH', draft.dimensionUnitCode),
+    [units, draft.dimensionUnitCode]
+  )
+  const weightUnits = useMemo(
+    () => buildPackagingUnitCandidates(units, 'WEIGHT', draft.weightUnitCode),
+    [units, draft.weightUnitCode]
+  )
+  const quantityUnits = useMemo(
+    () => buildPackagingUnitCandidates(units, 'QUANTITY', draft.capacityUnitCode),
+    [units, draft.capacityUnitCode]
+  )
   const packagingMaterialOptions = useMemo(
     () =>
       packagingMaterials
@@ -268,7 +348,9 @@ export function LogisticsPackagingRulesTab() {
         code: draft.id ? draft.code : createPackagingProfileCode(draft.name),
         packagingType: 'carton',
         assemblySource: '',
-        capacityUnitCode: draft.capacityUnitCode || quantityUnits[0]?.code || 'pcs',
+        dimensionUnitCode: resolvedDimensionUnitCode,
+        weightUnitCode: resolvedWeightUnitCode,
+        capacityUnitCode: resolvedCapacityUnitCode || quantityUnits[0]?.code || draft.capacityUnitCode,
         grossWeight: computedGrossWeight,
         targets: [
           {
@@ -473,46 +555,58 @@ export function LogisticsPackagingRulesTab() {
 
                   <div className='space-y-2'>
                     <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.dimensionUnit')}</Label>
-                    <Select value={draft.dimensionUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, dimensionUnitCode: value }))}>
+                    <Select value={resolvedDimensionUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, dimensionUnitCode: value }))}>
                       <SelectTrigger className={packagingSelectClass}>
                         <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.dimensionUnit')} />
                       </SelectTrigger>
                       <SelectContent className='rounded-2xl border-none shadow-xl'>
-                        {dimensionUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
-                            {unit.name} ({unit.code})
-                          </SelectItem>
-                        ))}
+                        {dimensionUnits.length === 0 ? (
+                          <div className='px-3 py-2 text-sm text-muted-foreground'>未找到长度单位，请先到单位管理维护长度单位</div>
+                        ) : (
+                          dimensionUnits.map((unit) => (
+                            <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                              {unit.name} ({unit.code})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className='space-y-2'>
                     <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.weightUnit')}</Label>
-                    <Select value={draft.weightUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, weightUnitCode: value }))}>
+                    <Select value={resolvedWeightUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, weightUnitCode: value }))}>
                       <SelectTrigger className={packagingSelectClass}>
                         <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.weightUnit')} />
                       </SelectTrigger>
                       <SelectContent className='rounded-2xl border-none shadow-xl'>
-                        {weightUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
-                            {unit.name} ({unit.code})
-                          </SelectItem>
-                        ))}
+                        {weightUnits.length === 0 ? (
+                          <div className='px-3 py-2 text-sm text-muted-foreground'>未找到重量单位，请先到单位管理维护重量单位</div>
+                        ) : (
+                          weightUnits.map((unit) => (
+                            <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                              {unit.name} ({unit.code})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className='space-y-2'>
                     <Label className={packagingLabelClass}>{t('logisticsConfig.packagingRules.fields.quantityUnit')}</Label>
-                    <Select value={draft.capacityUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, capacityUnitCode: value }))}>
+                    <Select value={resolvedCapacityUnitCode} onValueChange={(value) => setDraft((current) => ({ ...current, capacityUnitCode: value }))}>
                       <SelectTrigger className={packagingSelectClass}>
                         <SelectValue placeholder={t('logisticsConfig.packagingRules.placeholders.capacityUnit')} />
                       </SelectTrigger>
                       <SelectContent className='rounded-2xl border-none shadow-xl'>
-                        {quantityUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
-                            {unit.name} ({unit.code})
-                          </SelectItem>
-                        ))}
+                        {quantityUnits.length === 0 ? (
+                          <div className='px-3 py-2 text-sm text-muted-foreground'>未找到数量单位，请先到单位管理维护数量单位</div>
+                        ) : (
+                          quantityUnits.map((unit) => (
+                            <SelectItem key={unit.code} value={unit.code} className='m-1 rounded-lg'>
+                              {unit.name} ({unit.code})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

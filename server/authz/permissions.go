@@ -175,3 +175,7 @@ var AdminFallbackPermissions = []string{
 	ActionSystemWorkflowReview,
 	MenuPDA,
 }
+
+var ManagedPermissionIDs = DeduplicatePermissionIDs(append([]string{
+	PermissionUserInvite,
+}, AdminFallbackPermissions...))

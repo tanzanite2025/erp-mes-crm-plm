@@ -2,7 +2,7 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"sort"
 	"strings"
 	"xdfc-server/db"
@@ -87,6 +87,62 @@ func normalizeProductAttributeOption(input *models.ProductAttributeOption) {
 	input.LabelEn = strings.TrimSpace(input.LabelEn)
 	input.Description = strings.TrimSpace(input.Description)
 	input.MasterDataControl.Normalize("R1")
+}
+
+func listProductAttributeCategoriesTx(tx *gorm.DB) ([]models.ProductAttributeCategory, error) {
+	var categories []models.ProductAttributeCategory
+	if err := tx.Select("key").Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return categories, nil
+}
+
+func resolveCanonicalProductAttributeCategoryKeyFromList(categories []models.ProductAttributeCategory, rawKey string) (string, bool) {
+	trimmed := strings.TrimSpace(rawKey)
+	if trimmed == "" {
+		return "", false
+	}
+
+	for _, category := range categories {
+		if strings.TrimSpace(category.Key) == trimmed {
+			return category.Key, true
+		}
+	}
+
+	for _, category := range categories {
+		if sameProductAttributeCategoryKey(category.Key, trimmed) {
+			return category.Key, true
+		}
+	}
+
+	return trimmed, false
+}
+
+func resolveCanonicalProductAttributeCategoryKeyTx(tx *gorm.DB, rawKey string) (string, error) {
+	categories, err := listProductAttributeCategoriesTx(tx)
+	if err != nil {
+		return "", err
+	}
+
+	if canonicalKey, ok := resolveCanonicalProductAttributeCategoryKeyFromList(categories, rawKey); ok {
+		return canonicalKey, nil
+	}
+
+	if strings.TrimSpace(rawKey) == "" {
+		return "", domainValidationError("产品属性归属分类不能为空")
+	}
+
+	return "", domainValidationError("产品属性归属分类不存在")
+}
+
+func canonicalizeProductAttributeOptionCategoryKeys(categories []models.ProductAttributeCategory, items []models.ProductAttributeOption) {
+	for index := range items {
+		if canonicalKey, ok := resolveCanonicalProductAttributeCategoryKeyFromList(categories, items[index].CategoryKey); ok {
+			items[index].CategoryKey = canonicalKey
+			continue
+		}
+		items[index].CategoryKey = strings.TrimSpace(items[index].CategoryKey)
+	}
 }
 
 func chooseCanonicalProductAttributeOption(items []models.ProductAttributeOption, normalizedValue string) models.ProductAttributeOption {
@@ -220,25 +276,45 @@ func EnsureProductAttributeOptionValueUniqueIndex(tx *gorm.DB) error {
 
 func ensureProductAttributeOptionValueAvailable(tx *gorm.DB, categoryKey string, nextValue string, excludeID string) error {
 	var items []models.ProductAttributeOption
-	if err := tx.Select("id", "category", "value").Where("category = ?", categoryKey).Find(&items).Error; err != nil {
+	canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(tx, categoryKey)
+	if err != nil {
+		return err
+	}
+	if err := tx.Select("id", "category", "value").Find(&items).Error; err != nil {
 		return err
 	}
 	for _, item := range items {
 		if excludeID != "" && item.ID == excludeID {
 			continue
 		}
-		if sameProductAttributeMachineValue(item.Value, nextValue) {
-			return fmt.Errorf("[VALIDATION] 产品属性分类项值重复")
+		if sameProductAttributeCategoryKey(item.CategoryKey, canonicalCategoryKey) && sameProductAttributeMachineValue(item.Value, nextValue) {
+			return domainConflictError("产品属性分类项值重复")
 		}
 	}
 	return nil
 }
 
+func isProductAttributeOptionImmutableField(field string) bool {
+	switch field {
+	case "category", "value":
+		return true
+	default:
+		return false
+	}
+}
+
+func classifyProductAttributeOptionError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return domainNotFoundError("产品属性分类项不存在")
+	}
+	return err
+}
+
 func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]models.ProductAttributeOption, error) {
 	tx := db.DB.Model(&models.ProductAttributeOption{})
-	if query.CategoryKey != "" {
-		tx = tx.Where("category = ?", query.CategoryKey)
-	}
 	if query.ActiveOnly {
 		tx = tx.Where("active = ?", true)
 	}
@@ -247,14 +323,34 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 	if err := tx.Order("category asc").Order("sort_order asc").Order("label asc").Find(&items).Error; err != nil {
 		return nil, err
 	}
-	return items, nil
+	categories, err := listProductAttributeCategoriesTx(db.DB)
+	if err != nil {
+		return nil, err
+	}
+	canonicalizeProductAttributeOptionCategoryKeys(categories, items)
+	if strings.TrimSpace(query.CategoryKey) == "" {
+		return items, nil
+	}
+
+	filtered := make([]models.ProductAttributeOption, 0, len(items))
+	for _, item := range items {
+		if sameProductAttributeCategoryKey(item.CategoryKey, query.CategoryKey) {
+			filtered = append(filtered, item)
+		}
+	}
+	return filtered, nil
 }
 
 func CreateProductAttributeOption(input SaveProductAttributeOptionInput) (models.ProductAttributeOption, error) {
 	modelInput := toProductAttributeOptionModel(input)
 	normalizeProductAttributeOption(&modelInput)
+	canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(db.DB, modelInput.CategoryKey)
+	if err != nil {
+		return models.ProductAttributeOption{}, err
+	}
+	modelInput.CategoryKey = canonicalCategoryKey
 	if modelInput.Value == "" || !isValidProductAttributeMachineValue(modelInput.Value) {
-		return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 产品属性分类项机器值格式无效")
+		return models.ProductAttributeOption{}, domainValidationError("产品属性分类项机器值格式无效")
 	}
 	if err := ensureProductAttributeOptionValueAvailable(db.DB, modelInput.CategoryKey, modelInput.Value, ""); err != nil {
 		return models.ProductAttributeOption{}, err
@@ -267,12 +363,20 @@ func CreateProductAttributeOption(input SaveProductAttributeOptionInput) (models
 }
 
 func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
+	if err := validateSupportedTopLevelDeltaKeys(payload, "categoryKey", "value", "labelZh", "labelEn", "description", "sortOrder", "active", "revisionNo", "changeType", "changeOrderNo", "siteCode", "isDefaultSite", "version", "effectiveFrom", "effectiveTo"); err != nil {
+		return nil, err
+	}
+
 	updates := make(map[string]interface{})
 	for key, raw := range payload {
+		valueRaw, err := extractDeltaNewValue(raw)
+		if err != nil {
+			return nil, err
+		}
 		switch key {
 		case "categoryKey", "value", "labelZh", "labelEn", "description", "revisionNo", "changeType", "changeOrderNo", "siteCode":
 			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			switch key {
@@ -287,7 +391,7 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 			}
 		case "sortOrder", "version":
 			var value int
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			if key == "sortOrder" {
@@ -297,12 +401,12 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 			}
 		case "active", "isDefaultSite":
 			var value bool
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			updates[key] = value
 		case "effectiveFrom", "effectiveTo":
-			if string(raw) == "null" {
+			if string(valueRaw) == "null" {
 				if key == "effectiveFrom" {
 					updates["effective_from"] = nil
 				} else {
@@ -311,7 +415,7 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 				continue
 			}
 			var value string
-			if err := json.Unmarshal(raw, &value); err != nil {
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
 				return nil, err
 			}
 			if key == "effectiveFrom" {
@@ -319,8 +423,6 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 			} else {
 				updates["effective_to"] = value
 			}
-		case "id", "createdAt", "updatedAt", "metadata":
-		default:
 		}
 	}
 	return updates, nil
@@ -329,20 +431,31 @@ func BuildProductAttributeOptionUpdates(payload map[string]json.RawMessage) (map
 func PatchProductAttributeOption(id string, updates map[string]interface{}) (models.ProductAttributeOption, error) {
 	var existing models.ProductAttributeOption
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
-		return models.ProductAttributeOption{}, err
+		return models.ProductAttributeOption{}, classifyProductAttributeOptionError(err)
 	}
-	if nextCategory, ok := updates["category"].(string); ok && nextCategory != existing.CategoryKey {
-		return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类项归属分类不允许修改")
+	if nextCategory, ok := updates["category"].(string); ok {
+		canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(db.DB, nextCategory)
+		if err != nil {
+			return models.ProductAttributeOption{}, err
+		}
+		updates["category"] = canonicalCategoryKey
+		if isProductAttributeOptionImmutableField("category") && !sameProductAttributeCategoryKey(canonicalCategoryKey, existing.CategoryKey) {
+			return models.ProductAttributeOption{}, domainError(DomainErrorConflict, "已有关联数据的分类项归属分类不允许修改")
+		}
 	}
 	if nextValue, ok := updates["value"].(string); ok {
 		if nextValue == "" || !isValidProductAttributeMachineValue(nextValue) {
-			return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 产品属性分类项机器值格式无效")
+			return models.ProductAttributeOption{}, domainError(DomainErrorValidation, "产品属性分类项机器值格式无效")
 		}
-		if nextValue != existing.Value {
-			return models.ProductAttributeOption{}, fmt.Errorf("[VALIDATION] 已有关联数据的分类项机器值不允许修改")
+		if isProductAttributeOptionImmutableField("value") && nextValue != existing.Value {
+			return models.ProductAttributeOption{}, domainConflictError("已有关联数据的分类项机器值不允许修改")
 		}
 	}
-	if err := ensureProductAttributeOptionValueAvailable(db.DB, existing.CategoryKey, existing.Value, id); err != nil {
+	categoryKeyForValidation := existing.CategoryKey
+	if nextCategory, ok := updates["category"].(string); ok {
+		categoryKeyForValidation = nextCategory
+	}
+	if err := ensureProductAttributeOptionValueAvailable(db.DB, categoryKeyForValidation, existing.Value, id); err != nil {
 		return models.ProductAttributeOption{}, err
 	}
 	if err := db.DB.Transaction(func(tx *gorm.DB) error {
@@ -352,6 +465,9 @@ func PatchProductAttributeOption(id string, updates map[string]interface{}) (mod
 		return tx.First(&existing, "id = ?", id).Error
 	}); err != nil {
 		return models.ProductAttributeOption{}, err
+	}
+	if canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(db.DB, existing.CategoryKey); err == nil {
+		existing.CategoryKey = canonicalCategoryKey
 	}
 	return existing, nil
 }

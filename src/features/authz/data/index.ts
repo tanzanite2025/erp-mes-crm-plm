@@ -20,7 +20,6 @@ export {
 
 export {
   collectDefaultPermissions,
-  DEFAULT_PERMISSIONS,
   validateDefaultPermissionsContract,
 } from './default-permissions'
 
@@ -33,10 +32,10 @@ export {
 } from './default-permission-queries'
 
 export {
-  ROUTE_DERIVED_MENU_PERMISSIONS,
-  ROUTE_DERIVED_PERMISSIONS,
-  ROUTE_PERMISSION_ENTRIES,
-  ROUTE_PERMISSION_MAP,
+  getRouteDerivedMenuPermissions,
+  getRouteDerivedPermissions,
+  getRoutePermissionEntries,
+  getRoutePermissionMap,
 } from './route-permission-registry'
 
 export {

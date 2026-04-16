@@ -165,7 +165,7 @@ func DeleteSupplierHandler(c *gin.Context) {
 
 // BulkSyncSuppliersHandler 批量同步供应商 (数据抢救)
 func BulkSyncSuppliersHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

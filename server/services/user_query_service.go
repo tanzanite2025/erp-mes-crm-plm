@@ -23,9 +23,6 @@ func ListUsers(queryInput UserQuery) (UserListResponse, error) {
 	if len(queryInput.Statuses) > 0 {
 		query = query.Where("status IN ?", queryInput.Statuses)
 	}
-	if len(queryInput.Roles) > 0 {
-		query = query.Where("role IN ?", queryInput.Roles)
-	}
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -52,9 +49,6 @@ func ListUserOptions(queryInput UserQuery) ([]UserOptionResponse, error) {
 	}
 	if len(queryInput.Statuses) > 0 {
 		query = query.Where("status IN ?", queryInput.Statuses)
-	}
-	if len(queryInput.Roles) > 0 {
-		query = query.Where("role IN ?", queryInput.Roles)
 	}
 
 	var items []models.User

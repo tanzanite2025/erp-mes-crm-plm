@@ -13,7 +13,7 @@ import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-ta
 import { type User } from '../data/schema'
 import { UsersMultiDeleteDialog } from './users-multi-delete-dialog'
 import { useLanguage } from '@/context/language-provider'
-import { isSuperAdmin } from '../utils/user-utils'
+import { isProtectedSystemAccount } from '../utils/user-utils'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -28,7 +28,7 @@ export function DataTableBulkActions<TData>({
   
   const handleBulkStatusChange = (status: 'active' | 'inactive') => {
     const allSelected = selectedRows.map((row) => row.original as User)
-    const actionableUsers = allSelected.filter(user => !isSuperAdmin(user))
+    const actionableUsers = allSelected.filter(user => !isProtectedSystemAccount(user))
     const skippedCount = allSelected.length - actionableUsers.length
 
     if (actionableUsers.length === 0) {
@@ -47,14 +47,14 @@ export function DataTableBulkActions<TData>({
         table.resetRowSelection()
         return status === 'active' ? t('users.toast.activateSuccess', { count: actionableUsers.length }) : t('users.toast.deactivateSuccess', { count: actionableUsers.length })
       },
-      error: t('users.toast.switchAdminFailed'),
+      error: t('users.toast.protectedAccountActionFailed'),
     })
     table.resetRowSelection()
   }
 
   const handleBulkInvite = () => {
     const allSelected = selectedRows.map((row) => row.original as User)
-    const actionableUsers = allSelected.filter(user => !isSuperAdmin(user))
+    const actionableUsers = allSelected.filter(user => !isProtectedSystemAccount(user))
     const skippedCount = allSelected.length - actionableUsers.length
 
     if (actionableUsers.length === 0) {
@@ -73,7 +73,7 @@ export function DataTableBulkActions<TData>({
         table.resetRowSelection()
         return t('users.toast.inviteSuccess', { count: actionableUsers.length })
       },
-      error: t('users.toast.switchAdminFailed'),
+      error: t('users.toast.protectedAccountActionFailed'),
     })
     table.resetRowSelection()
   }

@@ -24,9 +24,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { Combobox } from '@/components/ui/combobox'
 import { useLanguage } from '@/context/language-provider'
-import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
 import { useUsersActionDialogOptions } from '../hooks/use-users-action-dialog-options'
@@ -37,7 +35,6 @@ import {
   buildSubmitSuccessHandler,
   buildUserCreatePayload,
   buildUserDelta,
-  resolveSubmitRole,
 } from './users-action-dialog.submit'
 
 type UserActionDialogProps = {
@@ -51,14 +48,9 @@ export function UsersActionDialog({
   open,
   onOpenChange,
 }: UserActionDialogProps) {
-  const { t, locale } = useLanguage()
-  const { roles: dynamicRoles } = useRoles()
+  const { t } = useLanguage()
   const { data: userOptions } = useUserOptionsQuery({})
   const isEdit = !!currentRow
-  const roleFieldLabel =
-    locale === 'zh-CN' ? '所属角色 / 系统管理员' : 'Assigned Role / System Admin'
-  const roleFieldPlaceholder =
-    locale === 'zh-CN' ? '请选择所属角色或系统管理员' : 'Select assigned role or system admin'
 
   const form = useForm<UserForm>({
     resolver: zodResolver(getFormSchema(t)),
@@ -73,7 +65,6 @@ export function UsersActionDialog({
           firstName: '',
           lastName: '',
           username: '',
-          role: '',
           phoneNumber: '',
           password: '',
           confirmPassword: '',
@@ -82,16 +73,14 @@ export function UsersActionDialog({
         },
   })
 
-  const { employees, combinedRoleOptions } = useUsersActionDialogOptions({
+  const { employees } = useUsersActionDialogOptions({
     open,
     currentRow,
     usersData: userOptions,
-    dynamicRoles,
     t,
   })
   const { handleEmployeeSync } = useUsersActionDialogSync({
     employees,
-    dynamicRoles,
     form,
     isEdit,
   })
@@ -113,7 +102,6 @@ export function UsersActionDialog({
       firstName: '',
       lastName: '',
       username: '',
-      role: '',
       phoneNumber: '',
       password: '',
       confirmPassword: '',
@@ -144,24 +132,10 @@ export function UsersActionDialog({
   })
 
   const onSubmit = async (values: UserForm) => {
-    const resolvedRole = resolveSubmitRole({
-      roleFromForm: values.role,
-    })
-
-    if (!resolvedRole) {
-      form.setError('role', {
-        type: 'manual',
-        message: t('users.validation.roleRequired'),
-      })
-      toast.error(t('users.validation.roleRequired'))
-      return
-    }
-
     try {
       if (isEdit && currentRow) {
         const delta = buildUserDelta({
           currentRow,
-          resolvedRole,
           values,
         })
         const nextEmployeeID = values.employeeId?.trim() || ''
@@ -194,7 +168,6 @@ export function UsersActionDialog({
       }
 
       const payload = buildUserCreatePayload({
-        resolvedRole,
         values,
       })
 
@@ -375,33 +348,6 @@ export function UsersActionDialog({
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='role'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
-                        {roleFieldLabel}
-                      </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
-                        ACCESS_ROLE_MAP
-                      </span>
-                    </div>
-                    <div className='col-span-4'>
-                      <Combobox
-                        variant='industrial'
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder={roleFieldPlaceholder}
-                        options={combinedRoleOptions}
-                      />
-                    </div>
                     <FormMessage className='col-span-4 col-start-3' />
                   </FormItem>
                 )}

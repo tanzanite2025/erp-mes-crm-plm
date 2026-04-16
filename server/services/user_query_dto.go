@@ -11,7 +11,6 @@ type UserQuery struct {
 	Options  bool
 	Username string
 	Statuses []string
-	Roles    []string
 }
 
 type UserResponse struct {
@@ -21,7 +20,6 @@ type UserResponse struct {
 	PhoneNumber string    `json:"phoneNumber"`
 	FirstName   string    `json:"firstName"`
 	LastName    string    `json:"lastName"`
-	Role        string    `json:"role"`
 	Status      string    `json:"status"`
 	EmployeeID  string    `json:"employeeId"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -34,7 +32,6 @@ type UserOptionResponse struct {
 	EmployeeID string `json:"employeeId,omitempty"`
 	FirstName  string `json:"firstName,omitempty"`
 	LastName   string `json:"lastName,omitempty"`
-	Role       string `json:"role,omitempty"`
 	Status     string `json:"status,omitempty"`
 }
 
@@ -53,7 +50,6 @@ func MapUserToResponse(user models.User) UserResponse {
 		PhoneNumber: user.PhoneNumber,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
-		Role:        user.Role,
 		Status:      user.Status,
 		EmployeeID:  user.EmployeeID,
 		CreatedAt:   user.CreatedAt,
@@ -76,7 +72,6 @@ func MapUserToOptionResponse(user models.User) UserOptionResponse {
 		EmployeeID: user.EmployeeID,
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
-		Role:       user.Role,
 		Status:     user.Status,
 	}
 }

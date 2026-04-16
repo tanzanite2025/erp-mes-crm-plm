@@ -1,40 +1,15 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
-import { type SalesOrder, type SalesOrderLine, EMPTY_SALES_ORDER_LINE } from '../data/schema'
+import { type SalesOrder, createEmptySalesOrderDraft } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import {
   DEFAULT_SALES_ORDER_CLASSIFICATION,
-  DEFAULT_SALES_ORDER_TYPE,
   getSalesOrderClassificationExt,
 } from '../data/sales-order-options'
 
-export function buildNewSalesOrderInitialValues(initialBarcode: string): Partial<SalesOrder> {
-  return {
-    orderNo: '',
-    orderName: '',
-    customerName: '',
-    customerId: '',
-    type: DEFAULT_SALES_ORDER_TYPE,
-    currency: 'CNY',
-    paymentMethod: '',
-    paymentMethodName: '',
-    paymentTerm: '',
-    paymentTermName: '',
-    classification: DEFAULT_SALES_ORDER_CLASSIFICATION,
-    orderDate: '',
-    deliveryDate: '',
-    status: 'Pending',
-    purchaseOrderNo: '',
-    barcode: initialBarcode,
-    statusNote: '',
-    lines: [{ ...EMPTY_SALES_ORDER_LINE, lineNo: 1 } as SalesOrderLine],
-    evidences: [],
-    quantity: 0,
-    amount: 0,
-    requirements: '',
-    version: 1,
-  }
+export function buildNewSalesOrderInitialValues(initialBarcode: string) {
+  return createEmptySalesOrderDraft(initialBarcode)
 }
 
 export function useSalesOrderInit(

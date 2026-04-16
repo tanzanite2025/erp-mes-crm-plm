@@ -1,5 +1,5 @@
 import { createSalesOrder } from '@/features/trading/sales/services/sales-service'
-import type { SalesOrder } from '@/features/trading/data/schema'
+import type { SalesOrderFormValues } from '@/features/trading/data/schema'
 
 export type CreateQuotePayload = {
   customerId: string
@@ -8,30 +8,39 @@ export type CreateQuotePayload = {
   requirements: string
 }
 
-export async function createQuote(payload: CreateQuotePayload) {
+export async function createQuoteAsSalesOrderDraft(payload: CreateQuotePayload) {
   const orderDate = new Date().toISOString().slice(0, 10)
-  const quote = await createSalesOrder({
-    createdAt: '',
-    updatedAt: '',
-    isDeleted: false,
+  const quote: SalesOrderFormValues = {
     orderNo: '',
     orderName: `报价-${payload.customerName}`,
     customerName: payload.customerName,
     customerId: payload.customerId,
     type: 'retail',
     currency: 'CNY',
+    paymentMethod: '',
+    paymentMethodName: '',
+    paymentTerm: '',
+    paymentTermName: '',
     classification: 'quote',
     status: 'Draft',
+    statusNote: '',
+    evidences: [],
     amount: payload.amount,
     quantity: 0,
     orderDate,
     deliveryDate: '',
+    purchaseOrderNo: '',
+    barcode: '',
     requirements: payload.requirements,
     lines: [],
-    evidences: [],
-  } as Omit<SalesOrder, 'id' | 'version'>)
+    fulfillmentRate: 0,
+    workflowInstanceId: '',
+    version: 1,
+  }
+
+  const created = await createSalesOrder(quote)
 
   return {
-    id: quote.id,
+    id: created.id,
   }
 }

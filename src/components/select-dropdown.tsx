@@ -35,6 +35,7 @@ export function SelectDropdown({
   isControlled = false,
 }: SelectDropdownProps) {
   const form = useFormContext()
+  const normalizedItems = items?.filter(({ value }) => value.trim() !== '')
   const selectProps = isControlled
     ? { value: value ?? '', onValueChange }
     : { defaultValue, onValueChange }
@@ -58,7 +59,7 @@ export function SelectDropdown({
             </div>
           </SelectItem>
         ) : (
-          items?.map(({ label, value, disabled: itemDisabled }) => (
+          normalizedItems?.map(({ label, value, disabled: itemDisabled }) => (
             <SelectItem key={value} value={value} disabled={itemDisabled}>
               {label}
             </SelectItem>

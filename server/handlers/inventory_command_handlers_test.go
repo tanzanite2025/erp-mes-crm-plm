@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/services"
 
@@ -409,7 +410,7 @@ func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 	ctx.Set("username", "admin")
-	ctx.Set("role", "admin")
+	ctx.Set("permissions", []string{authz.ActionWarehouseSync})
 
 	BulkSyncInventoryHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -480,11 +481,11 @@ func TestBulkSyncInventoryHandlerReturnsForbiddenForNonAdmin(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(`[]`))
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
-	ctx.Set("role", "user")
+	ctx.Set("permissions", []string{"menu_inventory_readonly"})
 
 	BulkSyncInventoryHandler(ctx)
 	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
-	require.Contains(t, recorder.Body.String(), "Bulk sync requires admin role")
+	require.Contains(t, recorder.Body.String(), "Bulk sync requires explicit sync permissions")
 }
 
 func TestBulkSyncInventoryHandlerReturnsBadRequestForInvalidPayload(t *testing.T) {
@@ -495,7 +496,7 @@ func TestBulkSyncInventoryHandlerReturnsBadRequestForInvalidPayload(t *testing.T
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(`{"invalid":true}`))
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
-	ctx.Set("role", "admin")
+	ctx.Set("permissions", []string{authz.ActionWarehouseSync})
 
 	BulkSyncInventoryHandler(ctx)
 	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())

@@ -22,14 +22,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles as staticRoles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { getUsersColumns } from './users-columns'
-import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
 import { useLanguage } from '@/context/language-provider'
-import { OrgService } from '@/features/org-personnel/services/org-service'
-import { type OrgNode } from '@/features/org-personnel/data/org-schema'
 
 type DataTableProps = {
   data: User[]
@@ -40,43 +36,16 @@ type DataTableProps = {
 }
 
 export function UsersTable({ data, total, search, navigate, isLoading }: DataTableProps) {
-  const { t, locale } = useLanguage()
-  const { roles: dynamicRoles } = useRoles()
-  const [orgNodes, setOrgNodes] = useState<OrgNode[]>([])
-
-  // 加载组织架构树以支持部门名解析
-  useEffect(() => {
-    OrgService.getOrgTree().then((data) => {
-      if (data) setOrgNodes(data)
-    })
-  }, [])
+  const { t } = useLanguage()
 
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const roleColumnLabels = useMemo(
-    () =>
-      locale === 'zh-CN'
-        ? {
-            title: '所属角色',
-            driftTooltip:
-              '注意：账号访问范围由后端按角色与部门关系裁决。当前存储角色标识为 {{original}}，部门解析角色为 {{resolved}}',
-            invalid: '部门角色未匹配',
-          }
-        : {
-            title: 'Assigned Role',
-            driftTooltip:
-              'Note: Access is enforced by the backend from role and department mapping. Stored role marker: {{original}}, resolved department role: {{resolved}}',
-            invalid: 'Department Role Missing',
-          },
-    [locale],
-  )
-
   const columns = useMemo(
-    () => getUsersColumns(t, dynamicRoles, roleColumnLabels, orgNodes),
-    [dynamicRoles, roleColumnLabels, t, orgNodes],
+    () => getUsersColumns(t),
+    [t],
   )
 
   // Synced with URL states (keys/defaults mirror users route search schema)
@@ -94,7 +63,6 @@ export function UsersTable({ data, total, search, navigate, isLoading }: DataTab
     columnFilters: [
       { columnId: 'username', searchKey: 'username', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
   })
 
@@ -142,15 +110,6 @@ export function UsersTable({ data, total, search, navigate, isLoading }: DataTab
               { label: t('users.status.inactive'), value: 'inactive' },
               { label: t('users.status.suspended'), value: 'suspended' },
             ],
-          },
-          {
-            columnId: 'role',
-            title: t('users.table.filters.role'),
-            options: dynamicRoles.map((role) => ({
-              label: role.label,
-              value: role.id,
-              icon: staticRoles.find(r => r.value === role.id)?.icon
-            })),
           },
         ]}
       />

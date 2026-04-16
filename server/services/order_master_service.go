@@ -2,9 +2,11 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/salesorderidentity"
 
 	"gorm.io/gorm"
 )
@@ -111,20 +113,38 @@ func DeleteSalesOrder(id string) error {
 }
 
 func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
+	order.OrderNo = strings.TrimSpace(order.OrderNo)
+	order.Barcode = strings.TrimSpace(order.Barcode)
+	if order.OrderNo == "" {
+		order.OrderNo = order.Barcode
+	}
 	if order.ID == "" {
+		if order.OrderNo == "" {
+			return fmt.Errorf("sales order orderNo is required")
+		}
 		return tx.Create(order).Error
 	}
 
 	var existing models.SalesOrder
 	if err := tx.Where("id = ?", order.ID).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if order.OrderNo == "" {
+				return fmt.Errorf("sales order orderNo is required")
+			}
 			return tx.Create(order).Error
 		}
 		return err
 	}
 
+	order.OrderNo, order.Barcode = salesorderidentity.ResolveSalesOrderIdentity(order.OrderNo, order.Barcode, existing.OrderNo)
 	if order.OrderNo == "" {
-		order.OrderNo = existing.OrderNo
+		order.OrderNo = strings.TrimSpace(existing.Barcode)
+	}
+	if order.Barcode == "" {
+		order.Barcode = strings.TrimSpace(existing.Barcode)
+	}
+	if order.OrderNo == "" {
+		return fmt.Errorf("sales order orderNo is required")
 	}
 	if order.OrderName == "" {
 		order.OrderName = existing.OrderName
@@ -170,9 +190,6 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	}
 	if order.PurchaseOrderNo == "" {
 		order.PurchaseOrderNo = existing.PurchaseOrderNo
-	}
-	if order.Barcode == "" {
-		order.Barcode = existing.Barcode
 	}
 	if order.Requirements == "" {
 		order.Requirements = existing.Requirements

@@ -1,18 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { type User, type UserAccessSnapshot, type UserListPage, type UserOption, type UserRoleBindingsResponse } from '../data/schema'
+import {
+  type User,
+  type UserAccessSnapshot,
+  type UserListPage,
+  type UserOption,
+  type UserPermissionsReplaceResult,
+  type UserPermissionsResponse,
+} from '../data/schema'
 import * as userApi from '../services/user-api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type CreateUserPayload, type UserReplacePayload, type UserRoleBindingUpsertPayload } from '../services/user-api'
-import { isSuperAdmin } from '../utils/user-utils'
+import {
+  type CreateUserPayload,
+  type ReplaceUserPermissionsPayload,
+  type UserReplacePayload,
+} from '../services/user-api'
+import { isProtectedSystemAccount } from '../utils/user-utils'
 
 type UsersQueryValue = string | number | boolean | null | undefined | string[]
 type UsersQueryParams = Record<string, UsersQueryValue>
 
 export const USERS_QUERY_KEY = ['users'] as const
-export const USER_ROLE_BINDINGS_QUERY_KEY = ['users', 'role-bindings'] as const
 export const USER_ACCESS_SNAPSHOT_QUERY_KEY = ['users', 'access-snapshot'] as const
+export const USER_PERMISSIONS_QUERY_KEY = ['users', 'permissions'] as const
 
 export const useUsersQuery = (params: UsersQueryParams = {}) => {
   return useQuery<UserListPage>({
@@ -28,11 +39,11 @@ export const useUserOptionsQuery = (params: UsersQueryParams = {}) => {
   })
 }
 
-export const useUserRoleBindingsQuery = (userId: string | undefined, enabled = true) => {
+export const useUserPermissionsQuery = (userId: string | undefined, enabled = true) => {
   const normalizedUserID = (userId || '').trim()
-  return useQuery<UserRoleBindingsResponse>({
-    queryKey: [...USER_ROLE_BINDINGS_QUERY_KEY, normalizedUserID],
-    queryFn: () => userApi.fetchUserRoleBindings(normalizedUserID),
+  return useQuery<UserPermissionsResponse>({
+    queryKey: [...USER_PERMISSIONS_QUERY_KEY, normalizedUserID],
+    queryFn: () => userApi.fetchUserPermissions(normalizedUserID),
     enabled: enabled && normalizedUserID.length > 0,
   })
 }
@@ -60,8 +71,8 @@ export const useUserMutations = () => {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, delta, version, user }: { id: string; delta: DeltaSet; version: number; user?: User }) => {
-      if (user && isSuperAdmin(user)) {
-        throw new Error('[CRITICAL] Cannot modify protected superadmin account')
+      if (user && isProtectedSystemAccount(user)) {
+        throw new Error('[CRITICAL] Cannot modify protected system account')
       }
       return userApi.patchUser(id, delta, version)
     },
@@ -74,8 +85,8 @@ export const useUserMutations = () => {
 
   const replaceMutation = useMutation({
     mutationFn: ({ id, data, user }: { id: string; data: UserReplacePayload; user?: User }) => {
-      if (user && isSuperAdmin(user)) {
-        throw new Error('[CRITICAL] Cannot replace protected superadmin account')
+      if (user && isProtectedSystemAccount(user)) {
+        throw new Error('[CRITICAL] Cannot replace protected system account')
       }
       return userApi.replaceUser(id, data)
     },
@@ -88,8 +99,8 @@ export const useUserMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: ({ id, user }: { id: string; user: User }) => {
-      if (isSuperAdmin(user)) {
-        throw new Error('[CRITICAL] Cannot delete protected superadmin account')
+      if (isProtectedSystemAccount(user)) {
+        throw new Error('[CRITICAL] Cannot delete protected system account')
       }
       return userApi.deleteUser(id)
     },
@@ -100,20 +111,11 @@ export const useUserMutations = () => {
     }),
   })
 
-  const setPrimaryRoleMutation = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: string }) => userApi.setUserPrimaryRole(id, role),
-    ...buildMutationOptions<User, unknown, { id: string; role: string }>({
-      queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
-      onError: handleServerError,
-    }),
-  })
-
   const bindEmployeeMutation = useMutation({
     mutationFn: ({ id, employeeId }: { id: string; employeeId: string }) => userApi.bindUserEmployee(id, employeeId),
     ...buildMutationOptions<User, unknown, { id: string; employeeId: string }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
@@ -122,26 +124,17 @@ export const useUserMutations = () => {
     mutationFn: ({ id }: { id: string }) => userApi.unbindUserEmployee(id),
     ...buildMutationOptions<User, unknown, { id: string }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
 
-  const addRoleBindingMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UserRoleBindingUpsertPayload }) =>
-      userApi.addUserRoleBinding(id, payload),
-    ...buildMutationOptions<UserRoleBindingsResponse, unknown, { id: string; payload: UserRoleBindingUpsertPayload }>({
+  const replaceUserPermissionsMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: ReplaceUserPermissionsPayload }) =>
+      userApi.replaceUserPermissions(id, payload),
+    ...buildMutationOptions<UserPermissionsReplaceResult, unknown, { id: string; payload: ReplaceUserPermissionsPayload }>({
       queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
-      onError: handleServerError,
-    }),
-  })
-
-  const removeRoleBindingMutation = useMutation({
-    mutationFn: ({ id, roleId }: { id: string; roleId: string }) => userApi.removeUserRoleBinding(id, roleId),
-    ...buildMutationOptions<UserRoleBindingsResponse, unknown, { id: string; roleId: string }>({
-      queryClient,
-      invalidateQueryKeys: [USERS_QUERY_KEY, USER_ROLE_BINDINGS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
+      invalidateQueryKeys: [USERS_QUERY_KEY, USER_PERMISSIONS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
       onError: handleServerError,
     }),
   })
@@ -151,10 +144,8 @@ export const useUserMutations = () => {
     updateMutation,
     replaceMutation,
     deleteMutation,
-    setPrimaryRoleMutation,
     bindEmployeeMutation,
     unbindEmployeeMutation,
-    addRoleBindingMutation,
-    removeRoleBindingMutation,
+    replaceUserPermissionsMutation,
   }
 }

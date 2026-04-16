@@ -179,7 +179,7 @@ func SaveMaterialHandler(c *gin.Context) {
 
 // BulkSyncMaterialsHandler 批量同步物料 (数据抢救)
 func BulkSyncMaterialsHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 

@@ -108,26 +108,9 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	primaryRoleID := strings.TrimSpace(accessSnapshot.PrimaryRoleID)
-	effectiveRolePayload := make([]string, 0, len(accessSnapshot.EffectiveRoles))
-	for _, roleID := range accessSnapshot.EffectiveRoles {
-		normalizedRoleID := strings.TrimSpace(roleID)
-		if normalizedRoleID != "" {
-			effectiveRolePayload = append(effectiveRolePayload, normalizedRoleID)
-		}
-	}
-	if primaryRoleID == "" && len(effectiveRolePayload) > 0 {
-		primaryRoleID = effectiveRolePayload[0]
-	}
-	rolePayload := []string{}
-	if primaryRoleID != "" {
-		rolePayload = []string{primaryRoleID}
-	}
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":      user.ID,
 		"username": user.Username,
-		"role":     primaryRoleID,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
@@ -150,20 +133,17 @@ func LoginHandler(c *gin.Context) {
 	loginLogEvent(c).
 		Str("login_account", maskLoginIdentity(req.Username)).
 		Str("user_id", user.ID).
-		Str("role", primaryRoleID).
+		Int("permission_count", len(accessSnapshot.Permissions)).
 		Msg("AUTH_LOGIN_SUCCESS")
 
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken": tokenString,
 		"user": gin.H{
-			"id":             user.ID,
-			"username":       user.Username,
-			"email":          user.Email,
-			"employeeId":     user.EmployeeID,
-			"primaryRoleId":  primaryRoleID,
-			"role":           rolePayload,
-			"effectiveRoles": effectiveRolePayload,
-			"permissions":    []string{}, // 登录时不预载业务权限，由前端背景同步完成
+			"id":          user.ID,
+			"username":    user.Username,
+			"email":       user.Email,
+			"employeeId":  user.EmployeeID,
+			"permissions": []string{},
 		},
 	})
 }
@@ -171,8 +151,6 @@ func LoginHandler(c *gin.Context) {
 func GetAuthSnapshotHandler(c *gin.Context) {
 	userID, _ := c.Get("userId")
 	username, _ := c.Get("username")
-	role, _ := c.Get("role")
-	effectiveRoles, _ := c.Get("effectiveRoles")
 	status, _ := c.Get("status")
 	permissions, _ := c.Get("permissions")
 	accessSnapshotRaw, hasAccessSnapshot := c.Get("accessSnapshot")
@@ -194,54 +172,28 @@ func GetAuthSnapshotHandler(c *gin.Context) {
 		}
 	}
 
-	roleID, _ := role.(string)
-	roleID = strings.TrimSpace(roleID)
-	roleList := make([]string, 0, 1)
-	if roleID != "" {
-		roleList = append(roleList, roleID)
-	}
-
-	effectiveRoleList, ok := effectiveRoles.([]string)
-	if !ok {
-		effectiveRoleList = nil
-	}
-
 	permissionList, ok := permissions.([]string)
 	if !ok {
 		permissionList = []string{}
 	}
 
-	primaryRoleID := roleID
-	roleBindings := []dependencies.IdentityAccessRoleBinding{}
 	diagnostics := []string{}
 	if hasAccessSnapshot {
 		if snapshot, ok := accessSnapshotRaw.(dependencies.IdentityAccessSnapshot); ok {
-			if normalizedPrimary := strings.TrimSpace(snapshot.PrimaryRoleID); normalizedPrimary != "" {
-				primaryRoleID = normalizedPrimary
-				roleList = []string{normalizedPrimary}
-			}
-			if len(snapshot.EffectiveRoles) > 0 {
-				effectiveRoleList = append([]string(nil), snapshot.EffectiveRoles...)
-			}
 			if len(snapshot.Permissions) > 0 {
 				permissionList = append([]string(nil), snapshot.Permissions...)
 			}
-			roleBindings = append(roleBindings, snapshot.RoleBindings...)
 			diagnostics = append(diagnostics, snapshot.Diagnostics...)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":             userID,
-		"username":       username,
-		"email":          strings.TrimSpace(profileUser.Email),
-		"employeeId":     strings.TrimSpace(profileUser.EmployeeID),
-		"primaryRoleId":  primaryRoleID,
-		"role":           roleList,
-		"status":         status,
-		"effectiveRoles": effectiveRoleList,
-		"permissions":    permissionList,
-		"roleBindings":   roleBindings,
-		"diagnostics":    diagnostics,
+		"id":          userID,
+		"username":    username,
+		"email":       strings.TrimSpace(profileUser.Email),
+		"employeeId":  strings.TrimSpace(profileUser.EmployeeID),
+		"status":      status,
+		"permissions": permissionList,
+		"diagnostics": diagnostics,
 	})
 }

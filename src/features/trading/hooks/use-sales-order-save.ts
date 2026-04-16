@@ -2,14 +2,14 @@ import { useCallback } from 'react'
 import { auditUtils } from '@/lib/audit-utils'
 import { type DeltaSet } from '@/lib/delta/types'
 import { useAuthStore } from '@/stores/auth-store'
-import { type SalesOrder } from '../data/schema'
+import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { requireTradingCommandActor } from '../utils/command-actor'
 import { useSalesOrderMutations } from '../sales'
 
 interface UseSalesOrderSaveOptions {
   order?: SalesOrder | null
   validate: () => boolean
-  prepareToSave: () => Promise<SalesOrder | undefined>
+  prepareToSave: () => Promise<SalesOrderFormValues | undefined>
   commit: () => DeltaSet
   onSaved: () => void
 }
@@ -33,14 +33,14 @@ export function useSalesOrderSave({
       return
     }
 
-    const finalData = await prepareToSave()
-    if (!finalData) {
+    const submitValues = await prepareToSave()
+    if (!submitValues) {
       return
     }
 
     try {
       if (!order) {
-        const stampedData = auditUtils.stamp(finalData, 'create')
+        const stampedData = auditUtils.stamp(submitValues, 'create')
         await createMutation.mutateAsync(stampedData)
         onSaved()
         return
@@ -59,7 +59,7 @@ export function useSalesOrderSave({
       await saveMutation.mutateAsync({
         orderId: order.id,
         delta,
-        finalData,
+        finalData: submitValues,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: order.version,

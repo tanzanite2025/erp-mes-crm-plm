@@ -96,21 +96,19 @@ export const InventoryCoreService = {
 
   getInventoryValuation: async (): Promise<number> => {
     const res = await apiFetch<InventoryValuationApiDTO>('/inventory/valuation')
-    return toInventoryValuationContract(
-      ensureObjectResponse<InventoryValuationApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryCoreService.getInventoryValuation'
-      ) as InventoryValuationApiDTO
+    const response = ensureObjectResponse<InventoryValuationApiDTO & Record<string, unknown>>(
+      res,
+      'InventoryCoreService.getInventoryValuation'
     )
+    return toInventoryValuationContract(response)
   },
 
   getAlertSummary: async (): Promise<InventoryAlertSummary> => {
     const res = await apiFetch<InventoryAlertSummaryApiDTO>('/inventory/alerts/summary')
-    return toInventoryAlertSummaryContract(
-      ensureObjectResponse<InventoryAlertSummaryApiDTO & Record<string, unknown>>(
-        res,
-        'InventoryCoreService.getAlertSummary'
-      ) as InventoryAlertSummaryApiDTO
+    const response = ensureObjectResponse<InventoryAlertSummaryApiDTO & Record<string, unknown>>(
+      res,
+      'InventoryCoreService.getAlertSummary'
     )
+    return toInventoryAlertSummaryContract(response)
   },
 }

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { OrgService } from '@/features/org-personnel/services/org-service'
-import * as userApi from '@/features/users/services/user-api'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
@@ -14,11 +13,6 @@ import { UserRightsRoleSelector } from './components/user-rights-role-selector'
 import { flattenOrgRoleOptions, formatPermissionLabel, buildPermissionTree } from './components/user-rights-utils'
 import type { OrgRoleOption } from './components/user-rights-types'
 import { useRoles } from '../hooks/use-roles'
-
-type UserRoleCarrier = {
-  resolvedRole?: string
-  role?: string
-}
 
 export function UserRights() {
   const { t, locale } = useLanguage()
@@ -56,29 +50,12 @@ export function UserRights() {
 
   useEffect(() => {
     const loadOrgData = async () => {
-      // 并行获取全量账户列表与组织树，实现“账户驱动”的权限导入
-      const [usersResponse, nodes] = await Promise.all([
-        userApi.fetchUsers({ pageSize: 1000 }),
-        OrgService.getOrgTree(),
-      ])
+      const nodes = await OrgService.getOrgTree()
 
-      const userList: UserRoleCarrier[] = usersResponse.items ?? []
-
-      // 提取账户中实际使用的角色 ID (增强兼容性)
-      const usedRoleIdsFromAccounts = new Set<string>()
-      userList.forEach((u) => {
-        const rawRole = (u.resolvedRole || u.role || '').trim()
-        if (rawRole) {
-          usedRoleIdsFromAccounts.add(rawRole.toLowerCase())
-        }
-      })
-
-      // 找出当前系统中已有的角色 ID
       const existingRoleIds = new Set(roles.map((r) => r.id.trim().toLowerCase()))
 
-      // 生成全量组织选项，并传入活跃账号引用信息以供视觉提示
       const allOptions = nodes?.length
-        ? flattenOrgRoleOptions(nodes, Array.from(existingRoleIds), usedRoleIdsFromAccounts)
+        ? flattenOrgRoleOptions(nodes, Array.from(existingRoleIds), new Set<string>())
         : []
 
       setOrgNodes(allOptions)

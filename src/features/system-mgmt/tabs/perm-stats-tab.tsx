@@ -41,7 +41,7 @@ export function PermStatsTab() {
 
     const userDist = roles.map((role) => ({
       name: role.label,
-      value: allUsers.filter((user) => user.role.includes(role.id)).length,
+      value: 0,
     }))
 
     const permLoad = roles.map((role) => ({

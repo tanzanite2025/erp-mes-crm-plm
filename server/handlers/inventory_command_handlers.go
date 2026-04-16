@@ -381,7 +381,7 @@ func VoidShipmentHandler(c *gin.Context) {
 
 // BulkSyncInventoryHandler bulk upserts inventory records.
 func BulkSyncInventoryHandler(c *gin.Context) {
-	if !enforceBulkSyncRole(c) {
+	if !enforceBulkSyncPermissions(c) {
 		return
 	}
 
