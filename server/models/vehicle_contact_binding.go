@@ -18,7 +18,7 @@ type VehicleContactBinding struct {
 	SupplierName   string `json:"supplierName,omitempty" gorm:"column:supplier_name;default:''"`
 	ContactName    string `json:"contactName" gorm:"column:contact_name;not null"`
 	PrimaryPhone   string `json:"primaryPhone" gorm:"column:primary_phone;not null"`
-	ChannelsJSON   string `json:"channelsJson" gorm:"column:channels_json;type:jsonb;default:'[]'::jsonb"`
+	ChannelsJSON   string `json:"channelsJson" gorm:"column:channels_json;type:jsonb;not null;default:'[]'"`
 	Region         string `json:"region,omitempty" gorm:"column:region;default:''"`
 	DispatchAdvice string `json:"dispatchAdvice,omitempty" gorm:"column:dispatch_advice;default:''"`
 	Note           string `json:"note,omitempty" gorm:"column:note;default:''"`

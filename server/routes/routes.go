@@ -141,6 +141,7 @@ func SetupRoutes(r *gin.Engine) {
 		shippingManagementGroup := authorized.Group("/shipping-management")
 		shippingManagementGroup.Use(middleware.RequirePermissions(authz.MenuTrading, authz.MenuSettings))
 		{
+			shippingManagementGroup.GET("/vehicle-match-items", handlers.GetShippingVehicleMatchItemsHandler)
 			shippingManagementGroup.GET("/vehicle-contacts", handlers.GetVehicleContactBindingsHandler)
 			shippingManagementGroup.GET("/vehicle-contacts/:id", handlers.GetVehicleContactBindingHandler)
 			shippingManagementGroup.POST("/vehicle-contacts/:id", handlers.SaveVehicleContactBindingHandler)

@@ -5003,3 +5003,403 @@
    - `src/routeTree.gen.ts`
    - `src/features/authz/data/authenticated-route-catalog.ts`
 7. 已完成定向验证：目标文件 `eslint` 通过，`pnpm exec tsc --noEmit --pretty false` 通过。
+
+---
+
+## 794-`/shipping-management/vehicle-match` 对齐真实数据与删除 MOCK 规划
+
+### 1. 当前实现现状
+
+- 路由入口：`src/routes/_authenticated/shipping-management/vehicle-match.lazy.tsx`
+- 页面实现：`src/features/trading/shipping-management/vehicle-match-page.tsx`
+- 当前页面直接渲染 `src/features/trading/shipping-management/shipping-data.ts` 中的 `virtualWarehouseShipments`
+- 当前 feature 下尚未建立该页自己的 `query-keys / service / schema / hook`，属于典型的静态占位页
+
+### 2. 已确认的真实链路
+
+- 已存在真实出库记录读取链：
+  - 前端：`src/features/warehouse/shipment/services/shipment-core-service.ts`
+  - 接口：`GET /inventory/shipment`
+- 已存在车型推荐计算链：
+  - 接口：`POST /api/v1/logistics/vehicle-loading/recommendations`
+  - 前端参考实现：`src/features/logistics-config/vehicle-loading/services/vehicle-loading-service.ts` 及相关 hooks
+
+### 3. 当前缺口
+
+- `GET /inventory/shipment` 返回的真实字段主要是：
+  - `materialName / materialCode / quantity / orderNo / status / shipmentDate / operator / remarks`
+- 当前页面 mock 依赖的字段则是：
+  - `customerName / warehouseName / boxCount / volumeM3 / weightKg`
+- 结论：
+  - 现有真实接口不足以无损复刻当前页面卡片
+  - 仅删除 `shipping-data.ts` 并直接改成 `fetch('/inventory/shipment')` 会造成 UI 字段失真或继续前端拼假数据
+
+### 4. 候选实施方案
+
+#### 方案 A：前端最小收口
+
+1. 直接复用 `GET /inventory/shipment`。
+2. 为 `shipping-management` 建立本页自己的 `query-keys / service / schema / hook`，但底层读取仍复用出库记录接口。
+3. 页面卡片字段改为只展示真实已有字段，例如：
+   - 客户维度改为 `orderNo`
+   - 货物维度改为 `materialName / materialCode`
+   - 数量维度改为 `quantity`
+   - 状态维度改为真实 `status`
+4. 删除 `shipping-data.ts` 中本页使用的 mock 数据源。
+
+- 优点：改动小，能快速去掉当前 mock。
+- 风险：页面语义会从“虚拟发货仓待匹配货物”退化为“出库记录列表”，与现有文案、卡片字段和后续车型匹配入口并不完全一致。
+
+#### 方案 B：按页面语义正确对齐（推荐）
+
+1. 后端新增面向车辆匹配页的查询接口，建议挂在：
+   - `/shipping-management/vehicle-match-items`
+   - 或 `/inventory/shipment/vehicle-match-items`
+2. 后端返回专用 DTO，至少覆盖：
+   - `id`
+   - `orderNo`
+   - `customerName`
+   - `warehouseName`
+   - `boxCount`
+   - `volumeM3`
+   - `weightKg`
+   - `status`
+   - 如后续需要，还可补 `materialName / packageProfile / sourceCategory / shipmentId`
+3. 前端在 `src/features/trading/shipping-management` 下补齐：
+   - `query-keys.ts`
+   - `schema.ts`
+   - `services/shipping-vehicle-match-service.ts`
+   - `hooks/use-shipping-vehicle-match.ts`
+4. 页面改为消费真实 query 数据，删除 `shipping-data.ts` 的 mock 依赖。
+5. 后续若要打通“车型匹配”按钮，再基于行数据拼接推荐请求，去调用已有 `vehicle-loading/recommendations`。
+
+- 优点：页面语义、字段、后续扩展方向都更一致。
+- 风险：需要补后端查询能力，改动范围大于方案 A。
+
+### 5. 建议
+
+- **推荐方案 B。**
+- 原因：用户要求是“对齐真实数据，删除 MOCK 数据”，而不是仅把页面临时换成另一份字段不匹配的真实列表。
+- 如果你现在更希望快速收口当前占位页，也可以先走方案 A，后续再单独补方案 B。
+
+### 6. 暂停点
+
+- 当前已完成排查、真实链路识别与方案拆分。
+- **等待你确认采用方案 A 还是方案 B**，我再开始修改业务代码。
+
+### 7. 执行结果（2026-04-16）
+
+1. 你已确认采用方案 B，按页面语义补齐真实查询接口，而不是将页面降级为普通出库列表。
+2. 后端新增真实查询链：
+   - 新增 `server/services/shipping_vehicle_match_dto.go`
+   - 新增 `server/services/shipping_vehicle_match_service.go`
+   - 新增 `server/handlers/shipping_vehicle_match_handler.go`
+   - 在 `server/routes/routes.go` 中注册 `GET /api/v1/shipping-management/vehicle-match-items`
+3. 新接口当前以 `shipment_records` 为主表，并收口到 `source_category = SHIPPING_VIRTUAL` 的真实待匹配范围。
+4. 查询过程中已补齐以下真实关联：
+   - `sales_orders`：提供 `customerName`
+   - `warehouse_categories`：提供 `warehouseName`
+   - `packaging_profiles + packaging_profile_targets`：推导 `boxCount / volumeM3 / weightKg`
+   - `logistics_records`：提供物流状态并辅助推导页面状态
+5. 前端新增并接入该页专用边界文件：
+   - `src/features/trading/shipping-management/types.ts`
+   - `schema.ts`
+   - `query-keys.ts`
+   - `services/shipping-vehicle-match-service.ts`
+   - `hooks/use-shipping-vehicle-match.ts`
+6. `vehicle-match-page.tsx` 已切换为真实 query，并补充加载态、错误态、空态；`shared.tsx` 已改为兼容真实字段缺省值。
+7. `shipping-data.ts` 已删除本页实际使用的 mock 数组，不再作为 `/shipping-management/vehicle-match` 的页面数据来源。
+8. 已补充后端回归测试：
+   - `server/handlers/shipping_vehicle_match_handler_test.go`
+   - `server/routes/routes_shipping_management_test.go`
+9. 已完成验证：
+   - `go test ./handlers ./routes -run "ShippingVehicleMatch|ShippingVehicleMatchItems"`：通过
+   - 目标文件 `pnpm exec eslint ...`：通过
+   - `pnpm exec tsc --noEmit --pretty false`：通过
+
+---
+
+## 795-清理 shipping-management 历史演示页残余 mock 规划
+
+### 1. 当前确认结果
+
+- 残余目标文件已定位为：`src/features/trading/tabs/shipping-management.tsx`
+- 该文件不是当前 `shipping-management` 路由链的一部分，而是旧的整页演示实现。
+- 文件内部仍保留：
+  - `virtualWarehouseShipments` mock 常量
+  - 局部 `VirtualShipmentRow`
+  - 一整套演示 tabs UI
+
+### 2. 当前真实链路
+
+- 当前真实模块入口：`src/features/trading/shipping-management/index.tsx`
+- 当前真实 tabs 定义：`src/features/trading/shipping-management/tabs.ts`
+- 当前 `/shipping-management/vehicle-match` 已切到真实 query 链，不再依赖旧 demo 文件
+
+### 3. 已确认引用情况
+
+- 检索未发现任何文件导入 `ShippingManagementTab`
+- 当前 `src/features/trading/tabs/shipping-management.tsx` 处于“仓内残留、未接当前路径”的状态
+
+### 4. 建议实施方式
+
+1. 直接删除 `src/features/trading/tabs/shipping-management.tsx`
+2. 不联动改动当前 `src/features/trading/shipping-management/*` 真实页面链
+3. 删除后执行定向校验：
+   - 目标文件 `eslint`
+   - `pnpm exec tsc --noEmit --pretty false`
+
+### 5. 风险与注意事项
+
+- 若存在检索未覆盖到的隐式引用，删除后会在 TypeScript 校验阶段暴露
+- 本轮只清理这一份历史 demo 壳文件，不扩大到 `trading/tabs` 目录下其他旧实现
+
+### 6. 暂停点
+
+- 当前仅完成排查与方案整理。
+- **等待你确认后**，再执行文件删除、校验与 `walkthrough.md` 回写。
+
+### 7. 执行结果（2026-04-16）
+
+1. 已按确认范围删除未被当前路由使用的历史 demo 文件：`src/features/trading/tabs/shipping-management.tsx`。
+2. 删除后已再次确认：
+   - 仓内不再存在 `virtualWarehouseShipments` 残余引用
+   - `ShippingManagementTab` 不再作为残余导出符号存在
+3. 当前 `src/features/trading/shipping-management/*` 的真实页面链未做额外改动，范围保持在历史 demo 清理。
+4. 已完成验证：
+   - `pnpm exec eslint src/features/trading/shipping-management/vehicle-match-page.tsx src/features/trading/shipping-management/shared.tsx src/features/trading/shipping-management/types.ts src/features/trading/shipping-management/schema.ts src/features/trading/shipping-management/query-keys.ts src/features/trading/shipping-management/services/shipping-vehicle-match-service.ts src/features/trading/shipping-management/hooks/use-shipping-vehicle-match.ts`：通过
+   - `pnpm exec tsc --noEmit --pretty false`：通过
+
+---
+
+## 796-打通 vehicle-match 行按钮到现有 vehicle-loading/recommendations 规划
+
+### 1. 当前确认结果
+
+- 行级“车型匹配”按钮位于 `src/features/trading/shipping-management/shared.tsx`。
+- 当前行数据模型 `ShippingVehicleMatchItem` 已具备用于试算的基础字段：
+  - `boxCount`
+  - `volumeM3`
+  - `weightKg`
+  - `packageProfileId`
+  - `packageProfileName`
+- 当前页面数据来源已是真实接口 `/shipping-management/vehicle-match-items`，不再受 mock 约束。
+
+### 2. 现有可复用链路
+
+- 推荐查询：`useVehicleLoadingRecommendations(...)`
+- 请求服务：`getVehicleRecommendations(...)`
+- 车型清单：`useVehicleSpecsQuery()` / `useVehicleLoadingSpecs()`
+- 包装输入构造：
+  - `buildVehicleLoadingPackageInputFromProfile(...)`
+  - `buildManualVehicleLoadingPackageInput(...)`
+- 推荐结果展示组件：`VehicleRecommendationPanel`
+
+### 3. 建议实施方式
+
+- 采用**当前页内承接**，不把用户硬跳转到 `logistics-config` 的车型配置页。
+- 在 `vehicle-match` 页面增加一层推荐承接 Dialog：
+  1. 点击某一行的“车型匹配”按钮
+  2. 将该行数据映射为 `ShipmentSummary`
+  3. 优先基于 `packageProfileId` 解析包装资料并构造 `packageInput`
+  4. 若包装资料不可用但已有 `boxCount / weightKg / volumeM3` 的必要信息，则走手动试算输入
+  5. 复用现有车型清单与推荐查询，直接在弹层中展示推荐结果
+
+### 4. 代码边界建议
+
+- 页面级：
+  - `vehicle-match-page.tsx` 负责 orchestration
+- 新增边界文件（建议）：
+  - `hooks/use-shipping-vehicle-match-recommendation.ts`
+  - `components/shipping-vehicle-match-recommendation-dialog.tsx`
+  - 如需要，可新增 `adapters`/`mappers` 文件负责把行数据映射到 `ShipmentSummary` 与 `packageInput`
+- `shared.tsx` 中的 `VirtualShipmentRow` 仅保留按钮事件透传，不承载推荐业务编排
+
+### 5. 风险与注意事项
+
+- 若当前行缺失可计算推荐所必需的数据，必须明确展示“不可计算原因”，不能静默回退为假参数。
+- 若包装资料单位不合法，要保持现有 `vehicle-loading-package-input` 的 fail loudly 行为。
+- 本轮只打通“车型匹配”按钮，不顺带扩展“查看详情 / 联系人 / 示意图”链路。
+
+### 6. 验证方式
+
+- 目标文件 `pnpm exec eslint ...`
+- `pnpm exec tsc --noEmit --pretty false`
+- 必要时补充对映射函数的单点测试或最小组件回归
+
+### 7. 暂停点
+
+- 当前仅完成排查与方案整理。
+- **等待你确认后**，再执行代码实现、验证与 `walkthrough.md` 回写。
+
+### 8. 执行结果（2026-04-16）
+
+1. 已按确认范围在 `vehicle-match` 当前页内接入推荐承接链，而不是跳转到 `logistics-config` 主页面。
+2. 新增边界文件：
+   - `src/features/trading/shipping-management/adapters/shipping-vehicle-match-recommendation.ts`
+   - `src/features/trading/shipping-management/hooks/use-shipping-vehicle-match-recommendation.ts`
+   - `src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`
+3. 页面级编排调整：
+   - `vehicle-match-page.tsx` 负责保存当前选中行与 dialog 开关
+   - `shared.tsx` 中的 `VirtualShipmentRow` 仅保留按钮事件透传
+4. 推荐输入构造策略已按规划落地：
+   - 先把行数据映射为 `ShipmentSummary`
+   - 若存在 `packageProfileId`，优先读取包装资料并构造 `packageInput`
+   - 若包装资料不可用但行数据本身具备足够摘要信息，则回退到手动试算输入
+5. 推荐结果展示已直接复用现有能力：
+   - 车型清单继续复用现有车型查询链
+   - 推荐请求继续复用 `vehicle-loading/recommendations`
+   - 推荐列表继续复用 `VehicleRecommendationPanel`
+6. 错误与空态收口：
+   - 缺箱数 / 体积 / 重量时，明确提示“无法计算车型推荐”
+   - 包装输入构造失败、车型加载失败、推荐计算失败都已透出到页内 dialog
+   - 包装资料不存在但可退回手动试算时，会给出明确提示，而不是静默伪造来源
+7. 已完成验证：
+   - `pnpm exec eslint src/features/trading/shipping-management/vehicle-match-page.tsx src/features/trading/shipping-management/shared.tsx src/features/trading/shipping-management/adapters/shipping-vehicle-match-recommendation.ts src/features/trading/shipping-management/hooks/use-shipping-vehicle-match-recommendation.ts src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`：通过
+   - `pnpm exec tsc --noEmit --pretty false`：通过
+
+---
+
+## 797-排查并修复 shipping-management 联系人页表不存在报错 规划
+
+### 1. 当前确认结果
+
+- 报错页面：`/shipping-management/contacts`
+- 前端错误表现：联系人加载失败
+- 后端底层错误：`failed to list vehicle contact bindings: ERROR: relation "vehicle_contact_bindings" does not exist (SQLSTATE 42P01)`
+
+### 2. 已定位的调用链
+
+- 前端：`ContactsPage` -> `useVehicleContactBindings` -> `vehicleContactService.listBindings()`
+- 接口：`GET /api/v1/shipping-management/vehicle-contacts`
+- 后端：`GetVehicleContactBindingsHandler` -> `ListVehicleContactBindings()`
+- 查询表：`vehicle_contact_bindings`
+
+### 3. 根因判断
+
+- `server/models/vehicle_contact_binding.go` 已存在 `VehicleContactBinding` 模型。
+- 仓内也已有独立迁移脚本：`server/migrations/20260415_create_vehicle_contact_bindings.sql`。
+- 但当前主启动链 `server/db/db.go` 的 `DB.AutoMigrate(...)` 中未包含 `&models.VehicleContactBinding{}`。
+- 因此在常规后端启动流程里，这张表不会自动创建，导致联系人页首次查询就落到不存在的表。
+
+### 4. 建议实施方式
+
+1. 在 `server/db/db.go` 的 `DB.AutoMigrate(...)` 列表中补入 `&models.VehicleContactBinding{}`。
+2. 重新启动后端，让启动迁移链实际建表。
+3. 验证联系人页接口至少能返回 `[]` 或真实数据，而不是 500。
+
+### 5. 风险与注意事项
+
+- 如果只改源码不重启后端，当前运行实例仍不会自动拥有该表。
+- 若线上/本地数据库已经存在同名表但字段结构与模型不一致，还需进一步检查迁移结果。
+- 本轮优先修正建表链，不扩展联系人页功能和前端结构。
+
+### 6. 验证方式
+
+- 定向后端校验：确认启动后表存在
+- 如可行，补充最小回归测试或定向 handler/routes 测试
+- 前端页面复测 `/shipping-management/contacts`
+
+### 7. 暂停点
+
+- 当前仅完成排查与方案整理。
+- **等待你确认后**，再执行代码修复、验证与 `walkthrough.md` 回写。
+
+### 8. 执行结果（2026-04-16）
+
+1. 已在 `server/db/db.go` 的主启动迁移链 `DB.AutoMigrate(...)` 中补入 `&models.VehicleContactBinding{}`。
+2. 修复后，常规后端启动流程将会自动创建 `vehicle_contact_bindings` 表，不再依赖单独手工跑车型联系人迁移脚本。
+3. 已完成后端编译级校验：
+   - `go test ./... -run ^$`：通过
+4. 运行态注意事项：
+   - 当前修复要真正生效，必须重启后端进程，让 `AutoMigrate(...)` 实际执行建表。
+   - 重启后应复测 `/shipping-management/contacts` 列表加载与新增联系人保存两条链路。
+
+---
+
+## 798-修复 dev:stack:full 下后端容器重启导致的全局 502 规划
+
+### 1. 当前确认结果
+
+- 当前启动方式：`pnpm run dev:stack:full`
+- 前端表现：`/health`、`/auth/snapshot`、`/auth/login` 统一返回 502
+- 容器状态：`server-app-1/2` 持续 `Restarting`
+- 代理表现：`nginx_lb` 日志出现 `no live upstreams` 与 `connect() failed (111: Connection refused)`
+
+### 2. 根因判断
+
+- 这不是登录接口自身的业务错误，而是后端 app 容器根本没有成功启动。
+- 后端在 `DB.AutoMigrate(...)` 阶段创建 `vehicle_contact_bindings` 表失败：
+  - Postgres：`invalid input syntax for type json (SQLSTATE 22P02)`
+  - 失败 SQL 片段：`"channels_json" jsonb DEFAULT '[]''::jsonb'`
+- 问题根因是 `server/models/vehicle_contact_binding.go` 中 `channels_json` 的 GORM 默认值 tag 与 Postgres `jsonb` 默认表达式组合后，被 GORM 生成成了非法 SQL。
+- 因为 app 容器启动即崩，LB 在 8080 上没有存活 upstream，前端统一表现为 502。
+
+### 3. 建议实施方式
+
+1. 修正 `VehicleContactBinding` 模型里 `channels_json` 的默认值定义，避免 GORM 生成非法 `jsonb` 默认值 SQL。
+2. 保持 `db.go` 中新增的 `&models.VehicleContactBinding{}` 迁移入口不变。
+3. 重新拉起 `dev:stack:full`，确认 app 容器恢复健康。
+4. 回归验证：
+   - `/api/v1/health`
+   - 登录
+   - `/shipping-management/contacts` 列表与新增保存
+
+### 4. 风险与注意事项
+
+- 若只重启容器但不修模型 tag，app 仍会继续在迁移阶段崩溃。
+- 若数据库里已存在该表，仍需确认修复后的模型定义不会引入字段默认值漂移。
+- 本轮不修改登录逻辑、健康检查逻辑、nginx 配置，只修启动失败的根因。
+
+### 5. 验证方式
+
+- `go test ./... -run ^$`
+- 重新启动本地 stack 后检查 `docker compose ps`
+- 复测健康检查、登录、车型联系人页
+
+### 6. 暂停点
+
+- 当前仅完成排查与方案整理。
+- **等待你确认后**，再执行代码修复、验证与 `walkthrough.md` 回写。
+
+---
+
+## 799-重置本地 Postgres 数据卷以修复 dev:stack:full 凭据漂移 规划
+
+### 1. 当前确认结果
+
+- 798 的代码修复已经落地：`VehicleContactBinding` 的 `jsonb` 默认值 tag 已调整，后端编译级校验通过。
+- 重建 app 容器后，新的阻塞点不再是迁移 SQL，而是数据库认证失败：
+  - `password authentication failed for user "xdfc_admin" (SQLSTATE 28P01)`
+- 这会导致 `server-app-1/2` 持续重启，继而使 `/health`、`/auth/snapshot`、`/auth/login` 统一变为 502。
+
+### 2. 根因判断
+
+- 当前本地 Postgres 数据卷保留了历史初始化凭据。
+- 但 `dev:stack:full` 当前使用的本地开发约定凭据与之不一致。
+- 后端日志已明确提示当前本地开发约定密码为 `xdfc_local_dev_password`。
+
+### 3. 用户选择的处理路径
+
+- 你已明确选择“重置本地数据库”。
+- 因此本轮不继续保守排查旧数据卷来源，而是直接通过重置本地 Postgres 数据卷来恢复环境一致性。
+
+### 4. 风险与注意事项
+
+- 这是**本地破坏性操作**，会清空当前本地数据库数据。
+- 若本地仍有需要保留的数据，应在执行前先做备份或 Checkpoint。
+- 重置完成后，需要重新拉起 stack 并做运行态回归。
+
+### 5. 执行方式
+
+1. 执行本地数据库重置命令。
+2. 重新启动 `dev:stack:full`。
+3. 验证：
+   - `/api/v1/health`
+   - 登录
+   - `/shipping-management/contacts`
+
+### 6. 暂停点
+
+- 当前仅完成方案整理。
+- **等待你对本地破坏性操作做最终确认后**，再执行数据库重置与运行态复测。

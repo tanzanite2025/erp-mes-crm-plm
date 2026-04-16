@@ -20,7 +20,3 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_contact_bindings_vehicle_id ON vehicle_co
 CREATE INDEX IF NOT EXISTS idx_vehicle_contact_bindings_category ON vehicle_contact_bindings (category);
 CREATE INDEX IF NOT EXISTS idx_vehicle_contact_bindings_enabled ON vehicle_contact_bindings (enabled);
 CREATE INDEX IF NOT EXISTS idx_vehicle_contact_bindings_deleted_at ON vehicle_contact_bindings (deleted_at);
-
-DELETE FROM vehicle_contact_bindings
-WHERE contact_name IN ('陈经理', '王师傅', '周调度')
-   OR supplier_name IN ('达运物流', '演示供应商', 'Demo Logistics');

@@ -627,6 +627,7 @@ func InitDB(dsn string) {
 		&models.WorkflowInstance{},
 		&models.WorkflowTask{},
 		&models.LeaveRequest{},
+		&models.VehicleContactBinding{},
 		&models.FinancialVoucher{},
 		&models.ClearingEntry{},
 		&models.ReceivableLedger{},

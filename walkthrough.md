@@ -1201,6 +1201,75 @@
   - 目标文件 `pnpm exec eslint`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
 
+## 2026-04-16 `/shipping-management/vehicle-match` 对齐真实数据并移除页面 MOCK（794）
+
+- **变更概述**
+  - 新增后端真实查询链：`server/services/shipping_vehicle_match_dto.go`、`server/services/shipping_vehicle_match_service.go`、`server/handlers/shipping_vehicle_match_handler.go`。
+  - 在 `server/routes/routes.go` 中新增 `GET /api/v1/shipping-management/vehicle-match-items`。
+  - 新增前端边界文件：`src/features/trading/shipping-management/types.ts`、`schema.ts`、`query-keys.ts`、`services/shipping-vehicle-match-service.ts`、`hooks/use-shipping-vehicle-match.ts`。
+  - 调整 `src/features/trading/shipping-management/vehicle-match-page.tsx` 与 `shared.tsx`，改为消费真实 query 数据并补充加载态 / 错误态 / 空态。
+  - 调整 `src/features/trading/shipping-management/shipping-data.ts`，移除本页原先直接渲染使用的 mock 常量。
+
+- **收口结果**
+  - `/shipping-management/vehicle-match` 不再直接依赖前端硬编码的 `virtualWarehouseShipments` mock 数据。
+  - 页面真实数据已由后端接口统一返回，并通过销售单、仓位、包装资料、物流记录进行真实字段拼装。
+  - 当前列表已经可以真实展示客户、虚拟发货仓名称、货物、数量，以及在可解析包装资料时推导出的箱数 / 体积 / 重量。
+  - 当包装资料或物流资料不完整时，页面会以缺省展示收口，而不是继续回退到整页 mock。
+
+- **验证结果**
+  - `go test ./handlers ./routes -run "ShippingVehicleMatch|ShippingVehicleMatchItems"`：通过。
+  - `pnpm exec eslint src/features/trading/shipping-management/vehicle-match-page.tsx src/features/trading/shipping-management/shared.tsx src/features/trading/shipping-management/types.ts src/features/trading/shipping-management/schema.ts src/features/trading/shipping-management/query-keys.ts src/features/trading/shipping-management/services/shipping-vehicle-match-service.ts src/features/trading/shipping-management/hooks/use-shipping-vehicle-match.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 清理 shipping-management 历史演示页残余 mock（795）
+
+- **变更概述**
+  - 删除未被当前路由链使用的历史 demo 文件：`src/features/trading/tabs/shipping-management.tsx`。
+  - 一并清除该文件内部遗留的 `virtualWarehouseShipments` mock、局部 `VirtualShipmentRow` 与整套旧 tabs 演示 UI。
+
+- **收口结果**
+  - trading 旧 tabs 目录下不再残留这份 shipping-management 历史演示壳。
+  - 当前 `/shipping-management/*` 真实页面链继续保持在 `src/features/trading/shipping-management/*` 目录下，不受本轮清理影响。
+  - 仓内已经不存在该批旧 mock 数据的残余引用。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/trading/shipping-management/vehicle-match-page.tsx src/features/trading/shipping-management/shared.tsx src/features/trading/shipping-management/types.ts src/features/trading/shipping-management/schema.ts src/features/trading/shipping-management/query-keys.ts src/features/trading/shipping-management/services/shipping-vehicle-match-service.ts src/features/trading/shipping-management/hooks/use-shipping-vehicle-match.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 打通 vehicle-match 的“车型匹配”按钮到现有推荐链（796）
+
+- **变更概述**
+  - 新增 `src/features/trading/shipping-management/adapters/shipping-vehicle-match-recommendation.ts`，负责把行数据映射为推荐所需的 `ShipmentSummary`。
+  - 新增 `src/features/trading/shipping-management/hooks/use-shipping-vehicle-match-recommendation.ts`，负责包装输入解析、车型清单加载与推荐查询编排。
+  - 新增 `src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`，作为当前页内的推荐承接 dialog。
+  - 调整 `src/features/trading/shipping-management/vehicle-match-page.tsx`，由页面级状态承接当前选中行和 dialog 开关。
+  - 调整 `src/features/trading/shipping-management/shared.tsx`，让 `VirtualShipmentRow` 仅透传“车型匹配”点击事件，不内嵌推荐业务编排。
+
+- **收口结果**
+  - `/shipping-management/vehicle-match` 的“车型匹配”按钮已经可以直接触发现有 `vehicle-loading/recommendations` 推荐能力。
+  - 推荐结果在当前页内 dialog 展示，不需要用户跳转到 `logistics-config` 主页面。
+  - 若当前行具备关联包装资料，则优先按包装规则来源构造推荐输入；若包装资料缺失但摘要足够，则回退到手动试算来源。
+  - 当箱数 / 体积 / 重量缺失，或包装资料单位非法、推荐接口失败时，UI 会明确展示原因，不会静默伪造输入参数。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/trading/shipping-management/vehicle-match-page.tsx src/features/trading/shipping-management/shared.tsx src/features/trading/shipping-management/adapters/shipping-vehicle-match-recommendation.ts src/features/trading/shipping-management/hooks/use-shipping-vehicle-match-recommendation.ts src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-16 修复 `/shipping-management/contacts` 车型联系人页的缺表报错（797）
+
+- **变更概述**
+  - 调整 `server/db/db.go`，在主启动迁移链 `DB.AutoMigrate(...)` 中补入 `&models.VehicleContactBinding{}`。
+
+- **收口结果**
+  - 后端常规启动流程现在会自动创建 `vehicle_contact_bindings` 表。
+  - 这会同时覆盖两条失败链路：
+    - 联系人列表加载时的 `failed to list vehicle contact bindings`
+    - 新增/保存联系人时的 `failed to query vehicle contact binding`
+  - 当前修复要在运行态生效，仍需重启后端进程，让启动迁移实际执行。
+
+- **验证结果**
+  - `go test ./... -run ^$`：通过。
+
 ## 2026-04-16 组织人事侧边栏双高亮修复：优先迁出请假管理与荣誉榜路由（793）
 
 - **变更概述**
