@@ -5403,3 +5403,130 @@
 
 - 当前仅完成方案整理。
 - **等待你对本地破坏性操作做最终确认后**，再执行数据库重置与运行态复测。
+
+### 7. 执行结果（2026-04-16）
+
+1. 已修正 `server/models/vehicle_contact_binding.go` 中 `channels_json` 的 GORM 默认值定义：
+   - 从会生成非法 SQL 的 `default:'[]'::jsonb`
+   - 调整为与仓内其他 `jsonb` 字段一致的安全写法 `type:jsonb;not null;default:'[]'`
+2. 已完成后端编译级校验：
+   - `go test ./... -run ^$`：通过
+3. 已重建本地 full stack，确认 `server-app-1/2` 恢复健康，`/api/v1/health` 返回 200。
+4. 运行态又暴露出新的独立阻塞：本地 Postgres 数据卷凭据与当前开发约定不一致，app 容器报 `password authentication failed for user "xdfc_admin" (SQLSTATE 28P01)`。
+5. 在你确认后，已执行本地破坏性恢复：
+   - `pnpm run dev:stack:full:reset-db`
+6. 重置后运行态验证结果：
+   - `docker compose -f server/docker-compose.yml ps`：`server-app-1/2` healthy，`xdfc-postgres` healthy，`xdfc-nginx-lb` running
+   - `/api/v1/health`：200
+   - 登录接口：200
+   - `/api/v1/shipping-management/vehicle-contacts`：200，返回 `[]`
+7. 结论：
+   - 798 的代码根因与 799 的本地环境漂移都已收口
+   - `dev:stack:full` 当前已恢复可用，车型联系人页依赖的后端接口也已恢复正常
+
+---
+
+## 800-梳理“快捷扫描 -> 个人拍照/个人录视频 -> 新建个人记录 -> 个人缓冲区”链路 规划
+
+### 1. 当前确认结果
+
+- 用户期望链路：
+  1. 侧边栏快捷扫描点击“个人拍照/个人录视频”
+  2. 正常调用手机摄像头 / 录视频
+  3. 拍照或录制确认后，直接弹出“新建个人记录”面板
+  4. 用户补标题、备注等信息后保存
+  5. 回到个人缓冲区并看到刚创建的记录
+
+- 当前观察到的异常现象：
+  - 拍照确认后停在个人缓冲区页面
+  - 未出现用户期望的“新建个人记录”承接面板
+  - 页面没有进一步明显反馈
+
+### 2. 已定位的调用链
+
+- 快捷入口：`src/features/quick-actions/components/quick-action-drawer.tsx`
+- 数据来源：`src/features/quick-actions/data/quick-action-registry.ts`
+- 直接采集动作：
+  - 通过隐藏的 `input[type=file][capture=environment]` 拉系统相机/录像
+  - 采集后先用 `useLocalMediaDrafts().saveDraft()` 保存本地草稿
+- 跳转承接：
+  - `navigate('/personal-workbench/capture', { search: { autoEdit: true, draftId, mode } })`
+- capture 路由：
+  - `src/routes/_authenticated/personal-workbench/capture.tsx`
+  - `src/routes/_authenticated/personal-workbench/capture.lazy.tsx`
+- capture 页面：`src/features/personal-workbench/capture/index.tsx`
+- 编辑面板：`src/features/personal-workbench/components/personal-workbench-card-editor.tsx`
+- 媒体承接组件：`src/features/personal-workbench/components/personal-workbench-image-picker.tsx`
+
+### 3. 根因判断
+
+- 从代码定义看，拍照/录像确认后**理论上并不是直接去普通缓冲区页**，而是应进入 `/personal-workbench/capture` 并自动打开编辑器。
+- `PersonalWorkbenchCapturePage` 已明确实现了：
+  - `autoOpenEditor && initialDraftId` 时自动 `setIsEditorOpen(true)`
+  - 保存成功后才 `navigate('/personal-workbench')`
+- 因此当前现象更像是：
+  - `/personal-workbench/capture` 虽然被导航命中
+  - 但父级 `personal-workbench` 页面只渲染了 `PersonalWorkbenchPage`
+  - 未见承接子路由的 `Outlet`
+  - 导致实际界面仍停留在“个人缓冲区”父页，而 capture 子页没有正确可视化
+
+### 4. 次级交互问题
+
+- `PersonalWorkbenchCapturePage` 同时给 `PersonalWorkbenchImagePicker` 传入：
+  - `autoStartCamera`
+  - `autoTriggerPhotoPicker`
+- 这意味着进入 capture 页后，可能同时存在：
+  - 页面内相机面板自动拉起
+  - 系统文件/拍照 picker 自动点击
+- 即便不是本次主因，这种双入口竞争也会让移动端体验不稳定。
+
+### 5. 推荐交互方案
+
+- 推荐保持你描述的主流程：
+  1. 侧边栏快捷动作触发系统拍照/录视频
+  2. 确认后落一本地草稿
+  3. **直接打开“新建个人记录”面板**
+  4. 自动带入刚采集的媒体预览
+  5. 填标题、备注、分栏后保存
+  6. 保存成功再返回个人缓冲区
+
+- 不推荐的现状：
+  - 先回到普通缓冲区列表，再让用户自己猜下一步要干什么
+
+### 6. 建议实施方式
+
+1. 优先修正 `personal-workbench` 路由承接方式，确保 `/personal-workbench/capture` 真正渲染 capture 页面。
+2. 如需要，再收敛 `PersonalWorkbenchCapturePage` 与 `PersonalWorkbenchImagePicker` 的自动拉起策略，只保留一个清晰入口。
+3. 回归验证移动端拍照、录像、保存、返回缓冲区整条链路。
+
+### 7. 风险与注意事项
+
+- 如果 capture 子路由依赖父页面 layout，需要避免修复时误伤 `personal-workbench/workspace` 等兄弟子路由。
+- 若保留页面内相机和系统相机双入口，后续仍可能出现移动端体验不一致。
+- 本轮优先修正“承接不可见”问题，不扩展新的个人工作台业务字段。
+
+### 8. 暂停点
+
+- 当前仅完成链路排查与方案整理。
+- **等待你确认后**，再执行前端代码修复、验证与 `walkthrough.md` 回写。
+
+### 9. 执行结果（2026-04-16）
+
+1. 已按仓内标准路由模型重构 `personal-workbench`：
+   - 父级 `src/routes/_authenticated/personal-workbench.lazy.tsx` 现在仅作为 `Outlet` layout
+   - 新增 `src/routes/_authenticated/personal-workbench/index.tsx`
+   - 新增 `src/routes/_authenticated/personal-workbench/index.lazy.tsx`
+   - 默认个人工作台页正式下沉为 `index` 子路由，而不是继续占用父级路由本体
+2. 这样 `/personal-workbench/capture` 与 `/personal-workbench/workspace` 现在都是与默认页并列的真实子路由，不会再被父级“个人缓冲区”页面覆盖显示。
+3. 已收敛 capture 页自动入口策略：
+   - 在 `src/features/personal-workbench/capture/index.tsx` 中移除 `autoTriggerPhotoPicker`
+   - 保留 `autoStartCamera` / `autoPrepareRecording` 这条更可控的页面内承接链，避免与系统 picker 自动点击竞争
+4. 已把 capture 路由 search 参数映射抽到 `src/features/personal-workbench/capture-route-component.tsx`，避免在路由目录中混入非 route piece 文件，保持生成器稳定。
+5. 已完成生成与校验：
+   - `pnpm run gen:route-tree`：通过
+   - `pnpm run gen:auth-routes`：通过
+   - `pnpm exec tsc --noEmit --pretty false`：通过
+   - 目标文件 `eslint`：通过
+6. 结论：
+   - 这次修复不是在快捷扫描按钮上打补丁，而是把 personal-workbench 的父子路由承接模型整体修正为仓内统一模式
+   - “快捷扫描 -> 个人拍照/个人录视频 -> capture 承接页 -> 新建个人记录面板 -> 保存后返回缓冲区”这条链路现在在结构上已经对齐目标行为

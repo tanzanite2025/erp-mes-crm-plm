@@ -1,6 +1,5 @@
-import { createLazyFileRoute } from '@tanstack/react-router'
-import PersonalWorkbenchPage from '@/features/personal-workbench'
+import { Outlet, createLazyFileRoute } from '@tanstack/react-router'
 
 export const Route = createLazyFileRoute('/_authenticated/personal-workbench')({
-  component: PersonalWorkbenchPage,
+  component: () => <Outlet />,
 })

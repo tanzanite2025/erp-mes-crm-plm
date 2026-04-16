@@ -73,7 +73,6 @@ export default function PersonalWorkbenchCapturePage({
               <PersonalWorkbenchImagePicker
                 autoStartCamera
                 autoPrepareRecording={isVideoMode}
-                autoTriggerPhotoPicker={!isVideoMode}
                 compactMode
                 initialCaptureMode={mode}
                 initialDraftId={activeDraftId}

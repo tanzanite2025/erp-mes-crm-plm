@@ -2319,7 +2319,7 @@
     - [x] 已确认本次修复需要重启后端，才能让运行态实际建表
     - [x] 已更新 `walkthrough.md`
 
-- [ ] 798-修复 `pnpm run dev:stack:full` 下后端容器重启导致的全局 502（中文）
+- [x] 798-修复 `pnpm run dev:stack:full` 下后端容器重启导致的全局 502（中文）
   - [x] 已完成现状排查：
     - [x] `/health`、`/auth/snapshot`、`/auth/login` 都出现 502
     - [x] `docker compose ps` 显示 `server-app-1/2` 持续 `Restarting (1)`
@@ -2337,12 +2337,14 @@
     - [x] 若只重启容器不修模型 tag，容器仍会继续重启
     - [x] 修复后需要再次重启 `dev:stack:full` 或重新拉起 app 容器，让迁移重新执行
     - [x] 修复后要同时回归 `/health`、登录和 `/shipping-management/contacts`
-  - [ ] 待你确认后执行：
-    - [ ] 修正 `server/models/vehicle_contact_binding.go` 中 `channels_json` 的 GORM 默认值定义，使 Postgres AutoMigrate 可正常建表
-    - [ ] 执行后端定向编译/测试校验
-    - [ ] 回写 `walkthrough.md`
+  - [x] 已按确认范围完成执行：
+    - [x] 已修正 `server/models/vehicle_contact_binding.go` 中 `channels_json` 的 GORM 默认值定义
+    - [x] 已通过后端编译级定向校验：`go test ./... -run ^$`
+    - [x] 已重建本地 full stack 并确认 app 容器恢复健康
+    - [x] 已验证 `/api/v1/health` 返回 200
+    - [x] 已更新 `walkthrough.md`
 
-- [ ] 799-重置本地 Postgres 数据卷以修复 `dev:stack:full` 凭据漂移（中文）
+- [x] 799-重置本地 Postgres 数据卷以修复 `dev:stack:full` 凭据漂移（中文）
   - [x] 已完成现状排查：
     - [x] 代码侧 `VehicleContactBinding` 的 `jsonb` 默认值问题已修复并通过后端编译校验
     - [x] 重建 app 容器后，新的运行态阻塞变为 `password authentication failed for user "xdfc_admin" (SQLSTATE 28P01)`
@@ -2357,8 +2359,45 @@
     - [x] 这是本地破坏性操作，会清空当前本地数据库数据
     - [x] 若你本地仍有需要保留的数据，应先做备份或 Checkpoint
     - [x] 重置后需要复测 `/health`、登录、`/shipping-management/contacts`
-  - [ ] 待你最终确认后执行：
-    - [ ] 执行本地数据库重置命令
-    - [ ] 重新拉起本地 stack
-    - [ ] 复测健康检查、登录和车型联系人页
-    - [ ] 更新 `walkthrough.md`
+  - [x] 已按确认范围完成执行：
+    - [x] 已执行 `pnpm run dev:stack:full:reset-db`
+    - [x] 已确认 `server-app-1/2`、`xdfc-postgres`、`xdfc-nginx-lb` 恢复健康/可用
+    - [x] 已验证登录接口返回 200
+    - [x] 已验证 `/shipping-management/vehicle-contacts` 返回 200，当前为空数组 `[]`
+    - [x] 已更新 `walkthrough.md`
+
+- [x] 800-梳理并修复“快捷扫描 -> 个人拍照/个人录视频 -> 新建个人记录 -> 个人缓冲区”的承接链（中文）
+  - [x] 已完成现状排查：
+    - [x] 侧边栏“快捷扫描”来自 `src/features/quick-actions/components/quick-action-drawer.tsx`
+    - [x] “个人拍照/个人录视频”不是直接跳缓冲区，而是先通过隐藏 `input[type=file][capture=environment]` 拉系统相机/录像
+    - [x] 拍照/录视频确认后，会先保存本地草稿，再 `navigate('/personal-workbench/capture', { search: { autoEdit: true, draftId, mode } })`
+    - [x] `capture` 子路由会把 `autoEdit/draftId/mode` 透传给 `PersonalWorkbenchCapturePage`
+    - [x] `PersonalWorkbenchCapturePage` 在收到 `autoOpenEditor + initialDraftId` 时，理论上会直接打开 `PersonalWorkbenchCardEditor`
+  - [x] 已确认链路关键点：
+    - [x] 若 `capture` 页面成功渲染，拍照/录视频完成后应直接进入“新建个人记录”面板，而不是只停留在普通缓冲区列表
+    - [x] `PersonalWorkbenchCardEditor` 保存后才会 `navigate('/personal-workbench')`
+    - [x] 因此“拍照确认后直接停在个人缓冲区页且无面板”并不符合当前目标链路
+  - [x] 已识别最可疑断点：
+    - [x] `quick-action-drawer` 确实导航到了 `/personal-workbench/capture`
+    - [x] 但 `personal-workbench` 当前父路由页面本身只渲染 `PersonalWorkbenchPage`，未见承接子路由的 `Outlet`
+    - [x] 这会导致子路由命中后，界面仍可能只显示父级“个人缓冲区”页面，从而表现为“拍完照确定后停在缓冲区页、其他反应都没有”
+    - [x] 另一个次级问题是 `PersonalWorkbenchCapturePage` 同时传入了 `autoStartCamera` 与 `autoTriggerPhotoPicker`，交互存在双入口竞争，体验不够稳定
+  - [x] 已确认更合理的目标交互：
+    - [x] 从快捷扫描进入“个人拍照/个人录视频”后，完成系统拍照或录像确认，应直接打开“新建个人记录”面板
+    - [x] 面板中自动带入刚采集的本地草稿预览
+    - [x] 用户补标题、备注、分栏后保存，再回到个人缓冲区
+    - [x] 不应在拍照确认后先落回普通缓冲区列表而没有任何承接提示
+  - [x] 已确认本轮边界：
+    - [x] 优先修复路由/页面承接，让 capture 子路由与编辑器链路真正可见
+    - [x] 再视情况收敛相机页里的双入口（页面内相机 vs 系统相机 input）竞争问题
+    - [x] 不在本轮扩展新的个人记录字段或缓冲区业务能力
+  - [x] 已按确认范围完成执行：
+    - [x] 已将 `personal-workbench` 改为父级 `Outlet` layout，并新增 `index` 子路由承接默认个人工作台页
+    - [x] 已确保 `/personal-workbench/capture` 与 `/personal-workbench/workspace` 作为真正子路由稳定渲染，不再被父级缓冲区页吞掉
+    - [x] 已移除 capture 页里的 `autoTriggerPhotoPicker`，避免与 `autoStartCamera` 形成双入口竞争
+    - [x] 已新增独立的 `capture-route-component` 承接 search 参数映射，避免路由文件结构失衡
+    - [x] 已完成 `pnpm run gen:route-tree`
+    - [x] 已完成 `pnpm run gen:auth-routes`
+    - [x] 已通过 `pnpm exec tsc --noEmit --pretty false`
+    - [x] 已通过目标文件 `eslint`
+    - [x] 已更新 `walkthrough.md`

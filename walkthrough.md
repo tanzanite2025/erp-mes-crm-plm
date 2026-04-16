@@ -1270,6 +1270,55 @@
 - **验证结果**
   - `go test ./... -run ^$`：通过。
 
+## 2026-04-16 修复 `dev:stack:full` 下 `vehicle_contact_bindings` 迁移导致的全局 502（798）
+
+- **变更概述**
+  - 调整 `server/models/vehicle_contact_binding.go`，将 `channels_json` 的 GORM 默认值定义改为与仓内其他 `jsonb` 字段一致的安全写法。
+
+- **收口结果**
+  - 后端 `AutoMigrate(...)` 不再为 `vehicle_contact_bindings` 生成非法的 `DEFAULT '[]''::jsonb'` SQL。
+  - `pnpm run dev:stack:full` 下 app 容器不再因这张表的迁移 SQL 直接崩溃。
+
+- **验证结果**
+  - `go test ./... -run ^$`：通过。
+
+## 2026-04-16 重置本地 Postgres 数据卷并恢复 `dev:stack:full` 运行态（799）
+
+- **变更概述**
+  - 在确认本地数据库凭据漂移后，按确认范围执行 `pnpm run dev:stack:full:reset-db`，清空本地 Postgres 数据卷并重新初始化 full stack。
+
+- **收口结果**
+  - `server-app-1/2`、`xdfc-postgres`、`xdfc-nginx-lb` 已恢复健康/可用。
+  - `/api/v1/health` 恢复为 200。
+  - 登录接口恢复为 200。
+  - `/api/v1/shipping-management/vehicle-contacts` 恢复为 200，当前返回空数组 `[]`。
+
+- **验证结果**
+  - `docker compose -f server/docker-compose.yml ps`：通过。
+  - `/api/v1/health`：200。
+  - 登录接口：200。
+  - `/api/v1/shipping-management/vehicle-contacts`：200，返回 `[]`。
+
+## 2026-04-16 系统性修复“快捷扫描 -> 个人拍照/录视频 -> 新建个人记录 -> 个人缓冲区”承接链（800）
+
+- **变更概述**
+  - 将 `src/routes/_authenticated/personal-workbench.lazy.tsx` 改为纯 `Outlet` 父级 layout。
+  - 新增 `src/routes/_authenticated/personal-workbench/index.tsx` 与 `index.lazy.tsx`，把默认个人工作台页下沉到 `index` 子路由。
+  - 新增 `src/features/personal-workbench/capture-route-component.tsx`，专职承接 `/personal-workbench/capture` 的 search 参数并渲染 capture 页面。
+  - 调整 `src/routes/_authenticated/personal-workbench/capture.lazy.tsx`，改为引用上述独立承接组件。
+  - 调整 `src/features/personal-workbench/capture/index.tsx`，移除 `autoTriggerPhotoPicker`，避免与页面内相机自动拉起形成双入口竞争。
+
+- **收口结果**
+  - `/personal-workbench/capture` 与 `/personal-workbench/workspace` 不再被父级“个人工作台/个人缓冲区”页面吞掉显示。
+  - 快捷扫描中的“个人拍照/个人录视频”在完成系统拍照/录像确认后，结构上会进入真正的 capture 承接页，并由该页打开“新建个人记录”面板。
+  - 保存个人记录后仍按既有设计返回 `/personal-workbench`，与用户期望链路一致。
+
+- **验证结果**
+  - `pnpm run gen:route-tree`：通过。
+  - `pnpm run gen:auth-routes`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - 目标文件 `eslint`：通过。
+
 ## 2026-04-16 组织人事侧边栏双高亮修复：优先迁出请假管理与荣誉榜路由（793）
 
 - **变更概述**
