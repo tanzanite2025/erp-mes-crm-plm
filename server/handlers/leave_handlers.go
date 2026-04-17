@@ -11,16 +11,18 @@ import (
 )
 
 type leavePreviewRequest struct {
-	LeaveType string `json:"leaveType"`
-	StartTime string `json:"startTime"`
-	EndTime   string `json:"endTime"`
+	EmployeeID string `json:"employeeId"`
+	LeaveType  string `json:"leaveType"`
+	StartTime  string `json:"startTime"`
+	EndTime    string `json:"endTime"`
 }
 
 type createLeaveRequest struct {
-	LeaveType string `json:"leaveType"`
-	StartTime string `json:"startTime"`
-	EndTime   string `json:"endTime"`
-	Reason    string `json:"reason"`
+	EmployeeID string `json:"employeeId"`
+	LeaveType  string `json:"leaveType"`
+	StartTime  string `json:"startTime"`
+	EndTime    string `json:"endTime"`
+	Reason     string `json:"reason"`
 }
 
 func parseLeaveTimeRange(startRaw, endRaw string) (time.Time, time.Time, error) {
@@ -47,7 +49,7 @@ func writeLeaveServiceError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrLeaveUnauthorized):
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-	case errors.Is(err, services.ErrLeaveEmployeeUnbound),
+	case errors.Is(err, services.ErrLeaveEmployeeRequired),
 		errors.Is(err, services.ErrLeaveEmployeeNotFound),
 		errors.Is(err, services.ErrLeaveInvalidTimeRange),
 		errors.Is(err, services.ErrLeaveInvalidLeaveType),
@@ -63,8 +65,8 @@ func writeLeaveServiceError(c *gin.Context, err error) {
 	}
 }
 
-func GetMyLeaveRequestsHandler(c *gin.Context) {
-	leaves, err := services.ListMyLeaveRequests(currentUserIDFromContext(c))
+func GetLeaveRequestsHandler(c *gin.Context) {
+	leaves, err := services.ListLeaveRequests(currentUserIDFromContext(c))
 	if err != nil {
 		writeLeaveServiceError(c, err)
 		return
@@ -72,8 +74,8 @@ func GetMyLeaveRequestsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, leaves)
 }
 
-func GetMyLeaveStatsHandler(c *gin.Context) {
-	stats, err := services.GetMyLeaveStats(currentUserIDFromContext(c))
+func GetLeaveStatsHandler(c *gin.Context) {
+	stats, err := services.GetLeaveStats(currentUserIDFromContext(c))
 	if err != nil {
 		writeLeaveServiceError(c, err)
 		return
@@ -81,7 +83,7 @@ func GetMyLeaveStatsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-func PreviewMyLeaveRequestHandler(c *gin.Context) {
+func PreviewLeaveRequestHandler(c *gin.Context) {
 	var input leavePreviewRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid leave preview payload: " + err.Error()})
@@ -94,10 +96,11 @@ func PreviewMyLeaveRequestHandler(c *gin.Context) {
 		return
 	}
 
-	preview, err := services.PreviewMyLeaveRequest(currentUserIDFromContext(c), services.LeavePreviewInput{
-		LeaveType: input.LeaveType,
-		StartTime: startTime,
-		EndTime:   endTime,
+	preview, err := services.PreviewLeaveRequest(currentUserIDFromContext(c), services.LeavePreviewInput{
+		EmployeeID: input.EmployeeID,
+		LeaveType:  input.LeaveType,
+		StartTime:  startTime,
+		EndTime:    endTime,
 	})
 	if err != nil {
 		writeLeaveServiceError(c, err)
@@ -107,7 +110,7 @@ func PreviewMyLeaveRequestHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, preview)
 }
 
-func CreateMyLeaveRequestHandler(c *gin.Context) {
+func CreateLeaveRequestHandler(c *gin.Context) {
 	var input createLeaveRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid leave create payload: " + err.Error()})
@@ -120,11 +123,12 @@ func CreateMyLeaveRequestHandler(c *gin.Context) {
 		return
 	}
 
-	leave, err := services.CreateMyLeaveRequest(currentUserIDFromContext(c), services.CreateLeaveInput{
-		LeaveType: input.LeaveType,
-		StartTime: startTime,
-		EndTime:   endTime,
-		Reason:    input.Reason,
+	leave, err := services.CreateLeaveRequest(currentUserIDFromContext(c), services.CreateLeaveInput{
+		EmployeeID: input.EmployeeID,
+		LeaveType:  input.LeaveType,
+		StartTime:  startTime,
+		EndTime:    endTime,
+		Reason:     input.Reason,
 	})
 	if err != nil {
 		writeLeaveServiceError(c, err)
@@ -134,8 +138,8 @@ func CreateMyLeaveRequestHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, leave)
 }
 
-func CancelMyLeaveRequestHandler(c *gin.Context) {
-	if err := services.CancelMyLeaveRequest(currentUserIDFromContext(c), c.Param("id")); err != nil {
+func CancelLeaveRequestHandler(c *gin.Context) {
+	if err := services.CancelLeaveRequest(currentUserIDFromContext(c), c.Param("id")); err != nil {
 		writeLeaveServiceError(c, err)
 		return
 	}

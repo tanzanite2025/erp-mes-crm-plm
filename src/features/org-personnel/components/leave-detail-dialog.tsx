@@ -30,7 +30,7 @@ export function LeaveDetailDialog({ leave, open, onOpenChange }: LeaveDetailDial
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-50">{t('orgPersonnel.leaveMgmt.detail.applicant')}</p>
-                <p className="text-lg font-black italic tracking-tighter">{leave.employeeName || t('orgPersonnel.leaveMgmt.list.selfApplied')}</p>
+                <p className="text-lg font-black italic tracking-tighter">{leave.employeeName || t('orgPersonnel.leaveMgmt.list.unknownApplicant')}</p>
                 <p className="text-[11px] font-mono text-muted-foreground">{t('orgPersonnel.leaveMgmt.detail.employeeId', { id: leave.employeeId })}</p>
               </div>
               <Badge variant="outline" className={`h-6 rounded-full px-3 text-[10px] font-black border-dashed ${getLeaveStatusBadgeClassName(leave.status)}`}>

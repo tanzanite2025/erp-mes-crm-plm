@@ -250,7 +250,7 @@ export function TemplateMgmt() {
               key={template.id}
               className='group relative overflow-hidden rounded-[32px] border-dashed bg-muted/5 transition-all hover:border-blue-400/50 hover:bg-white hover:shadow-2xl'
             >
-              <div className='absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-blue-600/30 via-transparent to-transparent' />
+              <div className='absolute left-0 top-0 h-1 w-full bg-linear-to-r from-blue-600/30 via-transparent to-transparent' />
               <CardHeader className='pb-3'>
                 <div className='flex items-start justify-between'>
                   <div className='flex size-10 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 shadow-inner'>
@@ -294,7 +294,7 @@ export function TemplateMgmt() {
               </CardHeader>
               <CardContent className='pt-2'>
                 <div className='space-y-6'>
-                  <p className='min-h-[3rem] text-[11px] font-black italic leading-relaxed text-slate-500'>
+                  <p className='min-h-12 text-[11px] font-black italic leading-relaxed text-slate-500'>
                     {template.description || t('engineering.templateMgmt.card.descriptionFallback')}
                   </p>
                   <div className='flex items-end justify-between border-t border-dashed border-muted/50 pt-6'>

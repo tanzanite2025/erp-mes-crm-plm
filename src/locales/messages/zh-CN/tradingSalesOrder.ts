@@ -197,6 +197,17 @@ export const tradingSalesOrder = {
       allPaymentMethods: '全部支付方式',
       allPaymentTerms: '全部结算方式',
     },
+    errors: {
+      loadFailed: '销售订单数据加载失败',
+      retry: '重试加载',
+      authRequired: '当前会话无有效认证，请重新登录后再试。',
+      circuitBreaker: '请求已被短路保护拦截，请稍后再试。',
+      timeout: '请求超时，请检查当前网络链路。',
+      network: '网络请求失败，请确认前后端链路是否可达。',
+      invalidResponse: '后端返回的数据格式不符合预期。',
+      unknown: '请求失败，请查看下方真实错误信息。',
+      reasonPrefix: '原因：',
+    },
     columns: {
       orderStatus: '订单编号 / 状态',
       customer: '客户',

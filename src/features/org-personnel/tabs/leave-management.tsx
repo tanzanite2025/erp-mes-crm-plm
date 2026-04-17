@@ -28,8 +28,8 @@ export default function LeaveManagement() {
     isError: isLeavesError,
     error: leavesError,
   } = useQuery({
-    queryKey: personnelQueryKeys.leaves.my(),
-    queryFn: () => LeaveService.getMyLeaveRequests()
+    queryKey: personnelQueryKeys.leaves.list(),
+    queryFn: () => LeaveService.getLeaveRequests()
   })
 
   // [BACKEND-AUTHORITY]: 获取由后端财务与人事服务精确计算的统计指标
@@ -39,7 +39,7 @@ export default function LeaveManagement() {
     isError: isStatsError,
     error: statsError,
   } = useQuery({
-    queryKey: personnelQueryKeys.leaves.statsMy(),
+    queryKey: personnelQueryKeys.leaves.stats(),
     queryFn: () => LeaveService.getLeaveStats()
   })
 
@@ -163,7 +163,7 @@ export default function LeaveManagement() {
                       </div>
                       <div className="space-y-1">
                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black italic tracking-tighter uppercase">{leave.employeeName || t('orgPersonnel.leaveMgmt.list.selfApplied')}</h4>
+                            <h4 className="text-sm font-black italic tracking-tighter uppercase">{leave.employeeName || t('orgPersonnel.leaveMgmt.list.unknownApplicant')}</h4>
                             <Badge variant="outline" className={`h-4 text-[8px] rounded-full px-2 font-mono border-dashed ${getLeaveStatusBadgeClassName(leave.status)}`}>
                                {getLeaveStatusLabel(leave.status, locale)}
                             </Badge>

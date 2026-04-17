@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { getErrorStatus, isForbiddenError } from '@/lib/error-status'
+import { getErrorKind, getErrorStatus, isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
 import { router } from '@/lib/router'
@@ -74,6 +74,7 @@ export function isConflictError(error: unknown) {
 
 export function getServerErrorPresentation(error: unknown): ServerErrorPresentation {
   const status = getErrorStatus(error)
+  const kind = getErrorKind(error)
   const errorMessage = extractErrorMessage(error)
 
   const locale = (getCookie(LANGUAGE_COOKIE_NAME) as AppLocale) || DEFAULT_LOCALE
@@ -121,12 +122,16 @@ export function getServerErrorPresentation(error: unknown): ServerErrorPresentat
   }
 
   // 熔断器 / 超时 / 异常状态
-  if (errorMessage.includes('[CIRCUIT_BREAKER]')) {
+  if (kind === 'circuit_breaker') {
     return { message: translate(locale, API_NOT_READY_KEY), status }
   }
 
-  if (errorMessage.includes('[TIMEOUT]')) {
+  if (kind === 'timeout') {
     return { message: translate(locale, TIMEOUT_KEY), status }
+  }
+
+  if (kind === 'network' || kind === 'invalid_response' || kind === 'auth_required') {
+    return { message: errorMessage, status }
   }
 
   if (status === 204) {

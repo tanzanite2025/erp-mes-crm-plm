@@ -153,6 +153,7 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			logisticsPush.GET("/providers", handlers.GetLogisticsProvidersHandler)
 			logisticsPush.POST("/providers", tradingProviderManage, handlers.SaveLogisticsProviderHandler)
+			logisticsPush.POST("/providers/:id/verify", tradingProviderManage, handlers.VerifyLogisticsProviderHandler)
 			logisticsPush.DELETE("/providers/:id", tradingProviderManage, handlers.DeleteLogisticsProviderHandler)
 			logisticsPush.GET("/orders", handlers.GetDeliveryOrdersHandler)
 			logisticsPush.GET("/tracking/:trackingNo", handlers.GetDeliveryTrackingHandler)

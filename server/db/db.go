@@ -520,6 +520,25 @@ func backfillBlankProductSKUs() {
 	}
 }
 
+func backfillLeaveRequestSubmittedByUsers() {
+	if DB == nil || !DB.Migrator().HasTable(&models.LeaveRequest{}) || !DB.Migrator().HasTable("users") {
+		return
+	}
+	if !DB.Migrator().HasColumn(&models.LeaveRequest{}, "submitted_by_user_id") {
+		return
+	}
+
+	if err := DB.Exec(`
+		UPDATE leave_requests lr
+		SET submitted_by_user_id = u.id
+		FROM users u
+		WHERE lr.submitted_by_user_id IS NULL
+		  AND NULLIF(BTRIM(u.employee_id), '') = CAST(lr.employee_id AS text)
+	`).Error; err != nil {
+		log.Fatal("Failed to backfill leave request submitted_by_user_id:", err)
+	}
+}
+
 func backfillBlankSalesOrderNos() {
 	if DB == nil || !DB.Migrator().HasTable(&models.SalesOrder{}) {
 		return
@@ -794,6 +813,7 @@ func InitDB(dsn string) {
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()
 	backfillBlankSalesOrderNos()
+	backfillLeaveRequestSubmittedByUsers()
 	ensureProductIntegrityConstraints()
 	ensureSalesOrderIntegrityConstraints()
 	ensureUserRolePrimaryUniqueIndex()

@@ -20,4 +20,10 @@ export const logisticsProviderService = {
       method: 'DELETE',
     })
   },
+
+  verifyProvider(id: number) {
+    return apiFetch<LogisticsProvider>(`${PROVIDERS_ENDPOINT}/${id}/verify`, {
+      method: 'POST',
+    })
+  },
 }

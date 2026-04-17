@@ -54,7 +54,7 @@ export function Header({
     <header
       className={cn(
         'z-50 h-14 md:h-16 flex-none transition-[background-color,border-color,shadow,backdrop-filter] duration-300',
-        fixed && 'header-fixed fixed top-0 right-0 left-0 md:left-[var(--header-fixed-left,var(--sidebar-width))] bg-background/60 backdrop-blur-xl border-b border-dashed border-muted-foreground/20',
+        fixed && 'header-fixed fixed top-0 right-0 left-0 md:left-(--header-fixed-left,var(--sidebar-width)) bg-background/60 backdrop-blur-xl border-b border-dashed border-muted-foreground/20',
         offset > 5 && !fixed && 'shadow-sm bg-background/80 backdrop-blur-md',
         className
       )}
@@ -89,8 +89,8 @@ export function Header({
         {/* === 中心 (Center) === */}
         <div className='flex justify-center items-center px-4 h-full min-w-0'>
             {showGlobalSearch && (
-            <div className='hidden md:block w-full max-w-[28rem]'>
-                <Search className='sm:w-full lg:w-full xl:w-full max-w-[28rem]' />
+            <div className='hidden md:block w-full max-w-md'>
+                <Search className='sm:w-full lg:w-full xl:w-full max-w-md' />
             </div>
             )}
         </div>

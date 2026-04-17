@@ -1044,9 +1044,112 @@
   - “产品”字段仍然只表示适用产品，没有与包装物料选择混用。
   - 本轮按最小方案执行，只完成前端来源闭环；后端仍仅保存 `name`，未新增 `packagingMaterialId` 强关系字段。
 
-- **验证结果**
+ - **验证结果**
   - `pnpm exec eslint src/features/logistics-config/packaging-rules-tab.tsx`：通过。
   - `pnpm exec tsc --noEmit --pretty false`：通过。
+
+## 2026-04-17 新增 `/basic-settings/permission-tree-smoke` 验证权限树自动同步链
+
+- **变更概述**
+  - 新增 `src/routes/_authenticated/basic-settings/permission-tree-smoke.tsx`，提供一个仅承载最小中文占位内容的 authenticated 测试子路由，对外路径为 `/basic-settings/permission-tree-smoke`。
+  - 重新执行 `node scripts/generate-route-tree.mjs`，使 `src/routeTree.gen.ts` 纳入该新路径。
+  - 复用既有“运行时 route collector + getter 式 default permissions”主链，验证新增 route 后无需再维护第二份静态 authenticated route catalog。
+
+- **收口结果**
+  - `src/routeTree.gen.ts` 已出现 `/basic-settings/permission-tree-smoke` 与对应 `_authenticated` 路径条目，说明 TanStack Router 侧已接纳新路由。
+  - `node scripts/verify-permissions.mjs` 通过，且 `Route permission entries` 增至 `134`，说明权限派生链已纳入该新增 route。
+  - 本地 `http://127.0.0.1:5173/basic-settings/permission-tree-smoke` 返回 `200`，说明前端开发态已能直接访问该验证页。
+  - 当前会话已提供本地浏览器预览入口；账号权限弹窗与系统管理权限树中的最终目视节点确认，仍以你本地打开预览后的人工观察为准。
+
+- **验证结果**
+  - `node scripts/generate-route-tree.mjs`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `node scripts/verify-permissions.mjs`：通过。
+  - `curl.exe -I --max-time 10 http://127.0.0.1:5173/basic-settings/permission-tree-smoke`：返回 `HTTP/1.1 200 OK`。
+  - 本轮未附加截图 / 录屏；UI 节点显示情况以本地浏览器目视确认结果为准。
+
+## 2026-04-17 清理 `current_problems` 中 9 条 Tailwind 等价类名告警
+
+- **变更概述**
+  - 调整 `src/components/layout/header.tsx`，将 `md:left-[var(--header-fixed-left,var(--sidebar-width))]` 收敛为 `md:left-(--header-fixed-left,var(--sidebar-width))`，并将两个 `max-w-[28rem]` 替换为 `max-w-md`。
+  - 调整 `src/components/ui/dialog.tsx`，将两个 `z-[101]` 替换为 `z-101`。
+  - 调整 `src/features/engineering/tabs/template-mgmt.tsx`，将 `bg-gradient-to-r` 替换为 `bg-linear-to-r`，并将 `min-h-[3rem]` 替换为 `min-h-12`。
+  - 调整 `src/features/logistics-config/vehicle-loading/components/vehicle-loading-plan-dialog.tsx` 与 `src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`，将 `bg-muted/[0.03]` 替换为 `bg-muted/3`。
+
+- **收口结果**
+  - 本轮仅做 Tailwind 推荐写法收敛，没有改动任何 DOM 结构、交互逻辑、数据流或样式 token。
+  - 目标文件中旧告警类名已检索不到，说明当前这批 IDE 样式 warning 已完成源头清理。
+  - 类型检查通过，未引入新的 TypeScript 问题。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - 目标文件全文检索旧告警类名：无结果。
+  - 本轮未附加截图 / 录屏；如需进一步确认视觉一致性，可在本地刷新相关页面做快速目视回归。
+
+## 2026-04-17 `/leave-management` 改为“仅代员工申请”，支持无账号员工档案发起请假
+
+- **变更概述**
+  - 调整 `server/models/leave.go`，为 `LeaveRequest` 新增 `submitted_by_user_id`，用于记录当前代提账号。
+  - 调整 `server/services/leave_service.go` 与 `server/handlers/leave_handlers.go`，将请假试算/创建主链从“当前账号绑定 employeeId”改为“显式传入 `employeeId` + 当前登录用户作为代提操作者”。
+  - 调整 `server/db/db.go`，在启动迁移后补 `leave_requests.submitted_by_user_id` 的历史回填，避免旧请假单因新筛选口径丢失。
+  - 调整 `src/features/org-personnel/components/leave-action-dialog.tsx`，接入 `/employees` 员工档案查询与 `Combobox` 选择，不再弹出“当前账号未绑定员工档案”的阻塞提示。
+  - 调整 `src/features/org-personnel/data/leave-request-schema.ts`、`src/features/org-personnel/services/leave-service.ts`、`src/features/org-personnel/hooks/use-submit-leave-request.ts`、`src/features/org-personnel/hooks/use-cancel-leave-request.ts`、`src/features/org-personnel/query-keys.ts`、`src/features/org-personnel/tabs/leave-management.tsx`、`src/features/org-personnel/components/leave-detail-dialog.tsx`，统一收口到“代员工申请”语义。
+  - 调整 `src/locales/messages/zh-CN/orgPersonnel.ts` 与 `src/locales/messages/en-US/orgPersonnel.ts`，新增员工选择相关文案，并移除“仅支持本人申请 / 本人申请 / 未绑定员工档案”旧口径。
+
+- **收口结果**
+  - `/leave-management` 现在允许直接从组织人事员工档案中选择请假对象，因此没有系统账号的员工也可以由主管/管理员代提请假。
+  - 后端已不再要求“当前登录账号必须绑定 employee 档案”才能发起请假；申请对象改由请求体中的 `employeeId` 显式指定。
+  - 请假单已记录 `submitted_by_user_id`，后续可以继续基于此扩展审批、审计与责任追踪。
+  - 前端查询与列表展示已切到“当前操作者代提交的请假单”视角；目前保留 `/leaves/my` 兼容路径，但其内部语义已不再是“本人请假”。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `go test ./services ./handlers -run Leave`：通过。
+  - 本轮未附加截图 / 录屏；如需最终确认，可在本地打开 `/leave-management`，检查新建弹窗是否已可选择员工档案并成功试算/提交。
+
+## 2026-04-17 `/trading/sales-orders` 首屏“只显示重试且无后端请求”结构性收口
+
+- **变更概述**
+  - 新增 `src/lib/api-error.ts`，为前端请求层引入结构化错误类型，统一描述 `auth_required / circuit_breaker / timeout / network / http / invalid_response / unknown` 等失败来源。
+  - 调整 `src/lib/api-client.ts`，让 `apiFetch` 在请求前短路、HTTP 非 2xx、超时、网络失败时都抛出统一结构化错误，而不是散落的裸 `Error`。
+  - 调整 `src/lib/api-response.ts`，让响应契约校验失败也归入 `invalid_response` 结构化错误，避免数据契约问题继续伪装成普通字符串异常。
+  - 调整 `src/lib/error-status.ts` 与 `src/lib/handle-server-error.ts`，让全局错误判断与 toast 展示优先消费结构化 `kind`，不再主要依赖字符串前缀猜测。
+  - 新增 `src/features/trading/components/trading-query-error-state.tsx`，作为 Trading 域共享 query error 组件，对 auth、circuit breaker、timeout、network、invalid response 提供不同摘要与真实错误明细。
+  - 调整 `src/features/trading/components/sales-order-list-fixed.tsx`，把销售订单列表的 `isError` 分支从单一“重试”块改为共享结构化错误态。
+  - 调整 `src/main.tsx`，让 React Query 对 `auth_required / circuit_breaker / invalid_response` 这类前置短路或契约错误默认不再重试，避免无效 retry 掩盖真实问题。
+  - 调整 `src/locales/messages/zh-CN/tradingSalesOrder.ts` 与 `src/locales/messages/en-US/tradingSalesOrder.ts`，补充销售订单列表错误态的结构化文案。
+
+- **收口结果**
+  - `/trading/sales-orders` 不再把所有错误压成没有上下文的“重试”空态；若请求前被短路或请求失败，页面现在会显示明确错误类别与真实错误信息。
+  - 请求层与页面层的错误语义已开始对齐：前端现在可以区分“没发出请求就被拦截”与“请求已发出但失败”这两类问题。
+  - 本轮保持了向后兼容：原有依赖 `status` / `isConflict` 的逻辑仍可继续工作，没有强行改写成另一套完全不兼容的错误模型。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/lib/api-client.ts src/lib/api-error.ts src/lib/api-response.ts src/lib/error-status.ts src/lib/handle-server-error.ts src/features/trading/components/sales-order-list-fixed.tsx src/features/trading/components/trading-query-error-state.tsx src/main.tsx`：通过。
+  - 本轮未附加截图 / 录屏；如需最终确认，可在本地刷新 `/trading/sales-orders`，观察是否已能看到真实错误原因或真实网络请求，而不是只有“重试”。
+
+## 2026-04-17 登录 `502 Bad Gateway`：Docker app 启动回填类型兼容修复
+
+- **变更概述**
+  - 排查确认登录页 `UserAuthForm` 已真实发出 `/api/v1/auth/login` 请求，前端不是“没发请求”，而是通过同源 `/api` 被 Vite 代理到了 `http://localhost:8080`。
+  - 进一步确认 `localhost:8080` 是项目 Docker full stack 的 `xdfc-nginx-lb`；`502` 的直接原因不是前端，也不是代理路径错误，而是后端 `server-app-1` / `server-app-2` 持续重启。
+  - 读取容器日志后确认根因位于 `server/db/db.go`：`backfillLeaveRequestSubmittedByUsers()` 启动回填使用 `u.employee_id = lr.employee_id` 比较，触发 PostgreSQL `operator does not exist: character varying = uuid (SQLSTATE 42883)`，应用在迁移阶段 `log.Fatal` 退出。
+  - 已将回填条件收口为 `NULLIF(BTRIM(u.employee_id), '') = CAST(lr.employee_id AS text)`，将 `users.employee_id` 文本字段与 `leave_requests.employee_id` UUID 字段显式转换到可兼容比较的统一文本类型。
+
+- **收口结果**
+  - 后端 app 容器不再因请假历史回填的类型不匹配而启动失败。
+  - 登录链路的 `502` 根因已经解除：nginx 现在可以连通健康的 app 上游，而不是继续对外暴露 `Bad Gateway`。
+  - 本轮保持最小改动，只修复启动阻塞 SQL，没有顺手改登录前端、代理配置或请假业务接口。
+
+- **验证结果**
+  - `go test ./db -run ^$`：通过。
+  - `go test ./models -run ^$`：通过。
+  - 数据库只读验证确认真实字段类型为：`leave_requests.employee_id = uuid`、`users.employee_id = varchar`；新比较表达式可正常执行，不再报 `42883`。
+  - `docker compose --env-file .env.dev -f docker-compose.yml up -d --build app nginx_lb`：成功完成。
+  - `server-app-1` / `server-app-2`：已恢复 `healthy`。
+  - `http://localhost:8080/api/v1/health`：返回 `200 OK`。
+  - 为避免额外消耗登录限流窗口，本轮未再次主动发送登录 POST；但造成登录 `502` 的后端启动阻塞已确认解除。
 
 
 ## 2026-04-17 权限方案A第二轮：继续去角色兼容化，收口到用户显式权限单链路
@@ -1072,9 +1175,68 @@
   - `pnpm exec tsc --noEmit --pretty false`：通过。
   - `go test ./handlers -run "CreateUserHandler|BindUserEmployeeHandler|UnbindUserEmployeeHandler"`：通过。
   - `go test ./handlers -run "ReplaceUserHandler|GetProfileReturnsExpectedUserMetadata|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler"`：通过。
-  - `pnpm exec vitest run src/features/users/services/user-api.test.ts`：通过。
-  - `go test ./dependencies -run "EffectiveAccess|ResolvePermissionsForRole"`：通过。
-  - `go test ./handlers -run "GetUsersHandler|GetProfileReturnsExpectedUserMetadata|GetAuthSnapshotHandler|GetUserAccessSnapshotHandler" -count=1`：通过。
+
+## 2026-04-17 `/leave-management` 与 `/hall-of-fame` 布局修复
+
+- **变更概述**
+  - 调整 `src/features/org-personnel/tabs.ts`，为人员中心模块补齐 `leave` 与 `stats` 两个 TAB，分别指向现有顶级路径 `/leave-management` 与 `/hall-of-fame`。
+  - 新增 `src/features/org-personnel/components/leave-management-route-page.tsx` 与 `src/features/org-personnel/components/hall-of-fame-route-page.tsx`，将两个页面的实际渲染收口到独立组件，并在组件内复用 `ModuleTabbedLayout`。
+  - 调整 `src/routes/_authenticated/leave-management.tsx` 与 `src/routes/_authenticated/hall-of-fame.tsx`，让顶级路由文件只负责导出 `Route` 并引用新的页面组件，避免在路由文件内直接声明组件带来的 Hook 规则与 Fast Refresh 警告。
+
+- **收口结果**
+  - `/leave-management` 与 `/hall-of-fame` 虽然仍保持原有顶级 URL，但已经复用了人员中心相同的模块布局，因此可恢复通用 `Header` 与 `ModuleTabs`。
+  - 人员中心顶部 TAB 现在已包含“请假管理 / 荣誉榜”两个入口，并且激活态会根据当前 URL `/leave-management`、`/hall-of-fame` 正确匹配。
+  - 本轮没有改动 `src/routes/_authenticated/personnel/route.tsx`、`ModuleTabbedLayout`、侧边栏路径、搜索入口或权限路径映射，影响范围收敛在两个目标页面和人员中心 TAB 配置。
+
+- **验证结果**
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `pnpm exec eslint src/routes/_authenticated/leave-management.tsx src/routes/_authenticated/hall-of-fame.tsx src/features/org-personnel/components/leave-management-route-page.tsx src/features/org-personnel/components/hall-of-fame-route-page.tsx src/features/org-personnel/tabs.ts`：通过。
+  - 本轮未启动浏览器预览；建议你本地打开 `/leave-management` 与 `/hall-of-fame`，目视确认通用顶栏、TAB 栏与激活态均已恢复。
+
+## 2026-04-17 物流目录与平台配置单一数据源收口
+
+- **变更概述**
+  - 调整 `server/models/logistics_push.go`，将 `LogisticsAPIProvider` 扩展为同时承载目录页需要的 `category / website / contact / phone / note` 字段。
+  - 调整 `server/handlers/logistics_push.go`，在保存 Provider 时增加输入归一化和按 `code / name` 的重复校验，减少目录卡片与平台配置重复建档。
+  - 调整 `src/features/sandbox/logistics-api/types.ts`，补齐目录分类与模板默认信息；新增 `src/features/logistics-config/provider-directory.ts` 作为共享辅助层，集中承载空对象、模板应用、API 状态判断与前端重复项识别。
+  - 调整 `src/features/logistics-config/supplier-directory-tab.tsx`，将目录页从静态 `ENTRIES` 卡片切换为 React Query 读取 `/logistics-push/providers`，支持新增/编辑目录卡片、模板直选同步、API 状态标识以及跳转到平台配置页。
+  - 调整 `src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`，补齐已有 Provider 的编辑能力，并允许在平台页维护目录分类、网站、联系人、电话和备注等共享字段。
+  - 调整 `src/locales/messages/zh-CN/logisticsConfig.ts` 与 `src/locales/messages/en-US/logisticsConfig.ts`，补齐目录页新增交互所需文案。
+
+- **收口结果**
+  - `/logistics-config/suppliers` 不再显示与真实数据脱节的前端静态卡片，而是与 `/logistics-settings/platforms` 共用同一条后端 Provider 数据源。
+  - 目录页现在既保留了“联系方式 / 电话 / 网站 / 备注”的人工记录能力，又会明确显示“已接 API / 未对接 API”，并提供跳转到平台配置页的入口。
+  - 顺丰、京东、17TRACK 等模板型平台在新增目录卡片时可直接带出基础信息，减少人工重复录入；同时 code/name 双重去重约束降低了重复建档概率。
+  - 平台页不再只能新增 / 删除，已经具备编辑已有 Provider 的闭环，避免目录页跳过去后无法继续维护真实接口配置。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/logistics-config/supplier-directory-tab.tsx src/features/logistics-config/provider-directory.ts src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx src/features/sandbox/logistics-api/types.ts src/locales/messages/zh-CN/logisticsConfig.ts src/locales/messages/en-US/logisticsConfig.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false`：通过。
+  - `go test ./handlers -run TestNonExistent -count=1`：通过（用于 handlers 定向编译校验）。
+  - 本轮未启动浏览器预览；建议你本地目视确认 `/logistics-config/suppliers` 与 `/logistics-settings/platforms` 的新增/编辑、状态标识与跳转链路。
+
+## 2026-04-18 物流平台强化（接入健康度 / 验证闭环 / 引用保护 / 能力标签 / 信息分区）
+
+- **变更概述**
+  - 调整 `server/models/logistics_push.go`，为 `LogisticsAPIProvider` 增加 `Capabilities`、`VerificationStatus`、`LastVerifiedAt`、`LastVerificationMessage` 字段，并新增 `StringList` 以持久化能力标签数组。
+  - 新增 `server/services/logistics_provider_validation_service.go`，将物流 Provider 的验证逻辑拆到独立服务，避免继续堆叠在 handler 中；当前验证会校验基础配置完整性、URL 合法性，并做一次带超时控制的 endpoint 可达性请求。
+  - 调整 `server/handlers/logistics_push.go` 与 `server/routes/routes.go`，新增 `/logistics-push/providers/:id/verify` 手动验证接口，并在保存/删除时加入引用保护与关键编码保护；配置变更后会把验证状态重置为待验证。
+  - 调整 `src/features/sandbox/logistics-api/types.ts`、`src/features/logistics-config/provider-directory.ts`、`src/features/sandbox/logistics-api/services/logistics-provider-service.ts`，补齐前端能力标签、验证状态、最近验证结果与验证接口调用的类型和共享辅助层。
+  - 调整 `src/features/logistics-config/supplier-directory-tab.tsx` 与 `src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`，将目录页和平台页统一升级为“目录信息 / 接口信息”分区展示，并显示健康状态、最近验证信息和能力标签；平台页新增“测试连接”按钮。
+
+- **收口结果**
+  - 平台页不再只是“保存配置”，而是具备了“保存 -> 待验证 -> 手动测试 -> 落库验证结果”的最小验证闭环。
+  - 目录页和平台页都能清楚展示：当前平台只是建档、已验证可用、配置不完整、最近异常还是已停用，降低“已接 API 但不可用”的误判风险。
+  - 已被物流订单引用的 Provider 不能再被直接删除，也不能任意修改关键编码，避免历史单据和轨迹链路断裂。
+  - 模板和 Provider 已具备统一的能力标签语义，后续继续接更多物流平台时，不必再假设所有平台都支持同一套能力。
+  - 页面已明确拆分“目录信息”和“接口信息”，降低业务人员与技术人员对同一张卡片的认知混淆。
+
+- **验证结果**
+  - `pnpm exec eslint src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx src/features/logistics-config/supplier-directory-tab.tsx src/features/logistics-config/provider-directory.ts src/features/sandbox/logistics-api/services/logistics-provider-service.ts src/features/sandbox/logistics-api/types.ts`：通过。
+  - `pnpm exec tsc --noEmit --pretty false --incremental false`：通过。
+  - `go test ./handlers -run TestNonExistent -count=1`：通过。
+  - `go test ./services -run TestNonExistent -count=1`：通过。
+  - IDE 中仍存在 `aps-scheduling-engine` 目录下的大量编译错误，但与本轮物流改动无直接关系；本轮仅对物流相关目标文件做了定向通过校验。
 
 ## 2026-04-17 权限方案A第二轮去兼容化补充收口（用户域测试 / helper / locale）
 

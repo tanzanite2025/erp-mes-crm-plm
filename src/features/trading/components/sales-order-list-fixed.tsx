@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import {
-  AlertCircle,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -26,6 +25,7 @@ import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderMaster } from './sales-order-master'
+import { TradingQueryErrorState } from './trading-query-error-state'
 
 const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
 	Draft: 'draft',
@@ -59,7 +59,7 @@ export function SalesOrderList() {
   const selectedId = search.detailId || undefined
 
   // Data Fetching
-  const { data, isLoading, isError, error } = useGetSalesOrders(page, pageSize)
+  const { data, isLoading, isError, error, refetch } = useGetSalesOrders(page, pageSize)
   const { deleteMutation, cancelMutation } = useSalesOrderMutations()
 
   const orders = useMemo(() => data?.items ?? [], [data?.items])
@@ -189,14 +189,7 @@ export function SalesOrderList() {
 
   if (isError) {
     if (isForbiddenError(error)) return <ForbiddenState />
-    return (
-      <div className='flex h-72 flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-rose-300/50 bg-rose-50/40 px-6 text-center'>
-        <AlertCircle className='mb-4 size-12 text-rose-400/40' />
-        <p className='text-[10px] font-black uppercase tracking-[0.3em] text-rose-600'>
-          {t('common.actions.retry')}
-        </p>
-      </div>
-    )
+    return <TradingQueryErrorState title={t('tradingSalesOrder.master.errors.loadFailed')} error={error} onRetry={() => void refetch()} />
   }
 
   return (

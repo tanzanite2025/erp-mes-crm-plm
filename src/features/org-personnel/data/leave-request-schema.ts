@@ -25,6 +25,7 @@ export const leaveRequestSchema = z.object({
   id: z.string(),
   employeeId: z.string(),
   employeeName: z.string().optional(),
+  submittedByUserId: z.string().optional(),
   leaveType: leaveTypeSchema,
   startTime: z.string(), // ISO String
   endTime: z.string(),   // ISO String
@@ -50,6 +51,7 @@ export const leavePreviewSchema = z.object({
 export type LeavePreview = z.infer<typeof leavePreviewSchema>
 
 export const leaveCreateFormSchema = z.object({
+  employeeId: z.string().min(1, 'orgPersonnel.validation.leaveEmployeeRequired'),
   leaveType: leaveTypeSchema,
   startTime: z.string().min(1),
   endTime: z.string().min(1),

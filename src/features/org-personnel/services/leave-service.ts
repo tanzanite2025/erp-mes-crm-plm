@@ -2,6 +2,7 @@ import { apiFetch } from '@/lib/api-client'
 import type { LeaveRequest, LeaveType } from '../data/leave-request-schema'
 
 export interface LeaveRequestPreviewPayload {
+  employeeId: string
   leaveType: LeaveType
   startTime: string
   endTime: string
@@ -26,18 +27,18 @@ export interface LeaveRequestPreviewResult {
  */
 export const LeaveService = {
   /**
-   * 获取当前用户的请假记录
+   * 获取当前操作者代提交的请假记录
    */
-  getMyLeaveRequests: async (): Promise<LeaveRequest[]> => {
+  getLeaveRequests: async (): Promise<LeaveRequest[]> => {
     const data = await apiFetch<LeaveRequest[]>('/leaves/my')
     if (!data) {
-      throw new Error('[CRITICAL_DATA_PATH] Failed to fetch personal leave records')
+      throw new Error('[CRITICAL_DATA_PATH] Failed to fetch leave records')
     }
     return data
   },
 
   /**
-   * 提交请假申请，并自动发起审批流
+   * 提交代员工请假申请，并自动发起审批流
    * @param request 请假申请数据 (不含 ID 和状态)
    */
   previewLeaveRequest: async (request: LeaveRequestPreviewPayload): Promise<LeaveRequestPreviewResult> => {
@@ -75,7 +76,7 @@ export const LeaveService = {
     })
   },
   /**
-   * 获取当前用户的请假统计指标
+   * 获取当前操作者代提交的请假统计指标
    * [BACKEND-AUTHORITY]: 累计工日由后端根据排班与节假日逻辑精确计算。
    */
   getLeaveStats: async (): Promise<{ totalDays: number, pendingCount: number, approvedCount: number, rejectedCount: number }> => {

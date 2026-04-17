@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Camera, Loader2, RefreshCw, ScanLine, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -41,6 +41,7 @@ type WindowWithBarcodeDetector = Window & {
 interface TrackingNumberInputProps {
   value: string
   onValueChange: (value: string) => void
+  onScanComplete?: (value: string) => void
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -146,6 +147,7 @@ async function createDetector() {
 export function TrackingNumberInput({
   value,
   onValueChange,
+  onScanComplete,
   placeholder,
   disabled,
   className,
@@ -164,75 +166,95 @@ export function TrackingNumberInput({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const onValueChangeRef = useRef(onValueChange)
+  const onScanCompleteRef = useRef(onScanComplete)
   const detectorRef = useRef<BarcodeDetectorLike | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const frameRef = useRef<number | null>(null)
   const decodeInFlightRef = useRef(false)
-  const copy: ScannerCopy =
-    locale === 'zh-CN'
-      ? {
-          cameraScan: '摄像头扫码',
-          photoRecognize: '拍照识别',
-          panelTitle: '摄像头扫码',
-          panelHint: '对准条码后会自动回填识别结果。',
-          startingCamera: '正在启动摄像头',
-          unsupportedTitle: '当前浏览器暂不支持原生扫码',
-          unsupportedDescription: '建议用手机 Chrome、Edge 或新版 Safari 打开当前页面。',
-          mobileHint: '手机端请允许使用后置摄像头；若现场网络不是 HTTPS，可改用“拍照识别”。',
-          supportedFormats: '支持条形码、二维码、Data Matrix 等常见码制。',
-          permissionDenied: '未获得摄像头权限，请先允许浏览器访问摄像头后再试。',
-          cameraNotFound: '未检测到可用摄像头，请切换到带摄像头的设备后重试。',
-          cameraBusy: '摄像头正在被其他应用占用，请关闭后再试。',
-          rearCameraUnavailable: '当前设备无法启用后置摄像头，可以改用拍照识别。',
-          initFailed: '扫码初始化失败，请稍后重试。',
-          scanCollected: '已识别条码',
-          nativeScanUnsupported: '当前浏览器不支持原生扫码识别，请改用 Chrome、Edge 或新版 Safari。',
-          secureContextRequired: '摄像头扫码需要在 HTTPS 或 localhost 环境下使用。',
-          cameraApiUnsupported: '当前浏览器不支持摄像头调用，请改用拍照识别或手动输入。',
-          detectorUnavailable: '当前环境无法初始化扫码能力，请手动输入条码。',
-          previewNotReady: '扫码预览尚未准备完成，请重试。',
-          photoUnsupported: '当前浏览器不支持拍照识别，请直接手动输入。',
-          imageDetectorUnavailable: '无法初始化图片识别能力。',
-          barcodeNotFoundInImage: '未从图片中识别到条码，请换一张更清晰的照片。',
-          imageRecognized: '已从照片识别条码',
-        }
-      : {
-          cameraScan: 'Camera Scan',
-          photoRecognize: 'Photo Recognize',
-          panelTitle: 'Camera Scanner',
-          panelHint: 'Once the barcode is aligned, the result will fill in automatically.',
-          startingCamera: 'Starting camera',
-          unsupportedTitle: 'Native scanning is not available in this browser',
-          unsupportedDescription:
-            'Use Chrome, Edge, or a recent Safari version on a mobile device to open this page.',
-          mobileHint:
-            'Allow the rear camera on mobile. If the site is not running on HTTPS, switch to photo recognition instead.',
-          supportedFormats:
-            'Supports common formats such as linear barcodes, QR codes, and Data Matrix.',
-          permissionDenied:
-            'Camera permission is blocked. Allow browser access to the camera and try again.',
-          cameraNotFound:
-            'No available camera was detected. Switch to a device with a camera and try again.',
-          cameraBusy: 'The camera is in use by another app. Close it and try again.',
-          rearCameraUnavailable:
-            'The rear camera is not available on this device. Switch to photo recognition instead.',
-          initFailed: 'Scanner initialization failed. Please try again shortly.',
-          scanCollected: 'Barcode captured',
-          nativeScanUnsupported:
-            'Native camera scanning is not available in this browser. Use Chrome, Edge, or a recent Safari version instead.',
-          secureContextRequired: 'Camera scanning requires HTTPS or localhost.',
-          cameraApiUnsupported:
-            'This browser cannot access the camera. Use photo recognition or enter the code manually.',
-          detectorUnavailable:
-            'This environment cannot initialize barcode detection. Enter the code manually instead.',
-          previewNotReady: 'The scanner preview is not ready yet. Please try again.',
-          photoUnsupported:
-            'Photo recognition is not available in this browser. Enter the code manually instead.',
-          imageDetectorUnavailable: 'Image barcode detection could not be initialized.',
-          barcodeNotFoundInImage:
-            'No barcode was detected in this image. Try a clearer photo.',
-          imageRecognized: 'Barcode recognized from photo',
-        }
+  const copy: ScannerCopy = useMemo(
+    () =>
+      locale === 'zh-CN'
+        ? {
+            cameraScan: '摄像头扫码',
+            photoRecognize: '拍照识别',
+            panelTitle: '摄像头扫码',
+            panelHint: '对准条码后会自动回填识别结果。',
+            startingCamera: '正在启动摄像头',
+            unsupportedTitle: '当前浏览器暂不支持原生扫码',
+            unsupportedDescription:
+              '建议用手机 Chrome、Edge 或新版 Safari 打开当前页面。',
+            mobileHint:
+              '手机端请允许使用后置摄像头；若现场网络不是 HTTPS，可改用“拍照识别”。',
+            supportedFormats: '支持条形码、二维码、Data Matrix 等常见码制。',
+            permissionDenied:
+              '未获得摄像头权限，请先允许浏览器访问摄像头后再试。',
+            cameraNotFound:
+              '未检测到可用摄像头，请切换到带摄像头的设备后重试。',
+            cameraBusy: '摄像头正在被其他应用占用，请关闭后再试。',
+            rearCameraUnavailable:
+              '当前设备无法启用后置摄像头，可以改用拍照识别。',
+            initFailed: '扫码初始化失败，请稍后重试。',
+            scanCollected: '已识别条码',
+            nativeScanUnsupported:
+              '当前浏览器不支持原生扫码识别，请改用 Chrome、Edge 或新版 Safari。',
+            secureContextRequired:
+              '摄像头扫码需要在 HTTPS 或 localhost 环境下使用。',
+            cameraApiUnsupported:
+              '当前浏览器不支持摄像头调用，请改用拍照识别或手动输入。',
+            detectorUnavailable: '当前环境无法初始化扫码能力，请手动输入条码。',
+            previewNotReady: '扫码预览尚未准备完成，请重试。',
+            photoUnsupported: '当前浏览器不支持拍照识别，请直接手动输入。',
+            imageDetectorUnavailable: '无法初始化图片识别能力。',
+            barcodeNotFoundInImage:
+              '未从图片中识别到条码，请换一张更清晰的照片。',
+            imageRecognized: '已从照片识别条码',
+          }
+        : {
+            cameraScan: 'Camera Scan',
+            photoRecognize: 'Photo Recognize',
+            panelTitle: 'Camera Scanner',
+            panelHint:
+              'Once the barcode is aligned, the result will fill in automatically.',
+            startingCamera: 'Starting camera',
+            unsupportedTitle:
+              'Native scanning is not available in this browser',
+            unsupportedDescription:
+              'Use Chrome, Edge, or a recent Safari version on a mobile device to open this page.',
+            mobileHint:
+              'Allow the rear camera on mobile. If the site is not running on HTTPS, switch to photo recognition instead.',
+            supportedFormats:
+              'Supports common formats such as linear barcodes, QR codes, and Data Matrix.',
+            permissionDenied:
+              'Camera permission is blocked. Allow browser access to the camera and try again.',
+            cameraNotFound:
+              'No available camera was detected. Switch to a device with a camera and try again.',
+            cameraBusy:
+              'The camera is in use by another app. Close it and try again.',
+            rearCameraUnavailable:
+              'The rear camera is not available on this device. Switch to photo recognition instead.',
+            initFailed:
+              'Scanner initialization failed. Please try again shortly.',
+            scanCollected: 'Barcode captured',
+            nativeScanUnsupported:
+              'Native camera scanning is not available in this browser. Use Chrome, Edge, or a recent Safari version instead.',
+            secureContextRequired:
+              'Camera scanning requires HTTPS or localhost.',
+            cameraApiUnsupported:
+              'This browser cannot access the camera. Use photo recognition or enter the code manually.',
+            detectorUnavailable:
+              'This environment cannot initialize barcode detection. Enter the code manually instead.',
+            previewNotReady:
+              'The scanner preview is not ready yet. Please try again.',
+            photoUnsupported:
+              'Photo recognition is not available in this browser. Enter the code manually instead.',
+            imageDetectorUnavailable:
+              'Image barcode detection could not be initialized.',
+            barcodeNotFoundInImage:
+              'No barcode was detected in this image. Try a clearer photo.',
+            imageRecognized: 'Barcode recognized from photo',
+          },
+    [locale]
+  )
 
   useEffect(() => {
     setSupportsNativeScanner(Boolean(getBarcodeDetectorConstructor()))
@@ -241,6 +263,10 @@ export function TrackingNumberInput({
   useEffect(() => {
     onValueChangeRef.current = onValueChange
   }, [onValueChange])
+
+  useEffect(() => {
+    onScanCompleteRef.current = onScanComplete
+  }, [onScanComplete])
 
   useEffect(() => {
     if (autoOpenScanner) {
@@ -289,6 +315,7 @@ export function TrackingNumberInput({
         description: normalized,
       })
       onValueChangeRef.current(normalized)
+      onScanCompleteRef.current?.(normalized)
       setScannerOpen(false)
       stopSession()
       return true
@@ -396,7 +423,7 @@ export function TrackingNumberInput({
       cancelled = true
       stopSession()
     }
-  }, [locale, scannerOpen, restartKey])
+  }, [copy, scannerOpen, restartKey])
 
   const closeScanner = () => {
     if (frameRef.current !== null) {
@@ -451,6 +478,7 @@ export function TrackingNumberInput({
         }
 
         onValueChangeRef.current(normalized)
+        onScanCompleteRef.current?.(normalized)
         toast.success(copy.imageRecognized, {
           description: normalized,
         })
@@ -484,7 +512,7 @@ export function TrackingNumberInput({
               setScannerError(null)
               setScannerOpen((current) => !current)
             }}
-            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
           >
             <ScanLine className='mr-2 size-3.5' />
             {copy.cameraScan}
@@ -494,7 +522,7 @@ export function TrackingNumberInput({
             variant='outline'
             disabled={disabled || isDecodingImage}
             onClick={() => fileInputRef.current?.click()}
-            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest uppercase'
           >
             {isDecodingImage ? (
               <Loader2 className='mr-2 size-3.5 animate-spin' />
@@ -519,7 +547,7 @@ export function TrackingNumberInput({
         <div className='rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-3'>
           <div className='mb-3 flex items-center justify-between gap-3'>
             <div className='space-y-1'>
-              <p className='text-[10px] font-black uppercase tracking-widest text-primary/80'>
+              <p className='text-[10px] font-black tracking-widest text-primary/80 uppercase'>
                 {copy.panelTitle}
               </p>
               <p className='text-[10px] font-bold text-muted-foreground'>
@@ -562,12 +590,12 @@ export function TrackingNumberInput({
 
             <div className='pointer-events-none absolute inset-0 border border-white/15' />
             <div className='pointer-events-none absolute inset-x-[18%] top-[22%] bottom-[22%] rounded-[24px] border-2 border-emerald-400/80 shadow-[0_0_0_999px_rgba(15,23,42,0.28)]' />
-            <div className='pointer-events-none absolute left-[18%] right-[18%] top-1/2 h-0.5 -translate-y-1/2 bg-emerald-300/80 shadow-[0_0_16px_rgba(52,211,153,0.85)]' />
+            <div className='pointer-events-none absolute top-1/2 right-[18%] left-[18%] h-0.5 -translate-y-1/2 bg-emerald-300/80 shadow-[0_0_16px_rgba(52,211,153,0.85)]' />
 
             {isStartingScanner && (
               <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/70 text-white'>
                 <Loader2 className='size-6 animate-spin' />
-                <p className='text-[10px] font-black uppercase tracking-widest'>
+                <p className='text-[10px] font-black tracking-widest uppercase'>
                   {copy.startingCamera}
                 </p>
               </div>
@@ -577,7 +605,7 @@ export function TrackingNumberInput({
               <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 px-6 text-center text-white'>
                 <Camera className='size-8 text-emerald-300' />
                 <p className='text-sm font-black'>{copy.unsupportedTitle}</p>
-                <p className='text-[10px] font-bold leading-relaxed text-slate-200'>
+                <p className='text-[10px] leading-relaxed font-bold text-slate-200'>
                   {copy.unsupportedDescription}
                 </p>
               </div>
@@ -589,7 +617,9 @@ export function TrackingNumberInput({
               {copy.mobileHint}
             </p>
             {scannerError ? (
-              <p className='text-[10px] font-bold text-rose-600'>{scannerError}</p>
+              <p className='text-[10px] font-bold text-rose-600'>
+                {scannerError}
+              </p>
             ) : (
               <p className='text-[10px] font-bold text-emerald-700'>
                 {copy.supportedFormats}

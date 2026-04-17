@@ -13,13 +13,13 @@ export function useCancelLeaveRequest() {
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.my() }),
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.statsMy() }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.list() }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.stats() }),
       ])
-      toast.success('璇峰亣鐢宠宸叉挙閿€')
+      toast.success('请假申请已撤销')
     },
     onError: (error: Error) => {
-      toast.error(error.message || '鎾ら攢璇峰亣鐢宠澶辫触')
+      toast.error(error.message || '撤销请假申请失败')
     },
   })
 

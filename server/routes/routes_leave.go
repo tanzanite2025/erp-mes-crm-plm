@@ -12,10 +12,10 @@ func registerLeaveRoutes(authorized *gin.RouterGroup) {
 	leaveGroup := authorized.Group("/leaves")
 	leaveGroup.Use(middleware.RequirePermissions(authz.MenuOrg))
 	{
-		leaveGroup.GET("/my", handlers.GetMyLeaveRequestsHandler)
-		leaveGroup.GET("/stats", handlers.GetMyLeaveStatsHandler)
-		leaveGroup.POST("/preview", handlers.PreviewMyLeaveRequestHandler)
-		leaveGroup.POST("", handlers.CreateMyLeaveRequestHandler)
-		leaveGroup.POST("/:id/cancel", handlers.CancelMyLeaveRequestHandler)
+		leaveGroup.GET("/my", handlers.GetLeaveRequestsHandler)
+		leaveGroup.GET("/stats", handlers.GetLeaveStatsHandler)
+		leaveGroup.POST("/preview", handlers.PreviewLeaveRequestHandler)
+		leaveGroup.POST("", handlers.CreateLeaveRequestHandler)
+		leaveGroup.POST("/:id/cancel", handlers.CancelLeaveRequestHandler)
 	}
 }

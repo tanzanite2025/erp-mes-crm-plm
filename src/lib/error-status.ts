@@ -1,3 +1,5 @@
+import { getApiErrorKind, type ApiErrorKind } from '@/lib/api-error'
+
 export function getErrorStatus(error: unknown): number | undefined {
   if (error && typeof error === 'object' && 'status' in error) {
     const status = Number(error.status)
@@ -13,6 +15,10 @@ export function getErrorStatus(error: unknown): number | undefined {
   return undefined
 }
 
+export function getErrorKind(error: unknown): ApiErrorKind | undefined {
+  return getApiErrorKind(error)
+}
+
 export function isUnauthorizedError(error: unknown): boolean {
   return getErrorStatus(error) === 401
 }
@@ -23,4 +29,24 @@ export function isForbiddenError(error: unknown): boolean {
 
 export function isNotFoundError(error: unknown): boolean {
   return getErrorStatus(error) === 404
+}
+
+export function isAuthRequiredError(error: unknown): boolean {
+  return getErrorKind(error) === 'auth_required'
+}
+
+export function isCircuitBreakerError(error: unknown): boolean {
+  return getErrorKind(error) === 'circuit_breaker'
+}
+
+export function isTimeoutError(error: unknown): boolean {
+  return getErrorKind(error) === 'timeout'
+}
+
+export function isNetworkError(error: unknown): boolean {
+  return getErrorKind(error) === 'network'
+}
+
+export function isInvalidResponseError(error: unknown): boolean {
+  return getErrorKind(error) === 'invalid_response'
 }

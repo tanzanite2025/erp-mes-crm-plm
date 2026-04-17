@@ -11,7 +11,8 @@ export const quickActions = {
       guide: '安装指引',
       success: '已触发安装提示，请按浏览器提示完成添加。',
       fallbackTitle: '请手动添加到主屏幕',
-      compatibilityHint: '不同浏览器可能展示为桌面图标、长按快捷入口或应用内快捷动作，请以浏览器实际支持为准。',
+      compatibilityHint:
+        '不同浏览器可能展示为桌面图标、长按快捷入口或应用内快捷动作，请以浏览器实际支持为准。',
     },
   },
   handle: {
@@ -19,6 +20,11 @@ export const quickActions = {
     ariaLabel: '打开快捷扫描入口',
   },
   actions: {
+    wheelTraceScan: {
+      title: '车圈追溯',
+      description:
+        '直接打开摄像头扫描车圈一维码，识别后立即查询当前工段和轨迹。',
+    },
     warehouseInboundScan: {
       title: '入库扫描',
       description: '直接进入仓库入库扫描模式，快速完成收货登记。',

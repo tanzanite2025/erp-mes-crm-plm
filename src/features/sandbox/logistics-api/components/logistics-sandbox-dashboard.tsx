@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   AlertTriangle,
   Check,
@@ -28,6 +30,8 @@ import {
   Globe,
   Info,
   Loader2,
+  MoveUpRight,
+  PencilLine,
   Plus,
   RefreshCw,
   Settings2,
@@ -35,22 +39,24 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  applyLogisticsTemplate,
+  emptyLogisticsProvider,
+  formatProviderVerifiedAt,
+  findDuplicateProvider,
+  getLogisticsCapabilityLabel,
+  getProviderCategory,
+  getProviderCapabilities,
+  getProviderVerificationBadgeClass,
+  getProviderVerificationLabel,
+  getProviderVerificationStatus,
+  isProviderApiConnected,
+  LOGISTICS_CAPABILITY_OPTIONS,
+  logisticsProviderQueryKey,
+  toggleProviderCapability,
+} from '@/features/logistics-config/provider-directory'
 import { logisticsProviderService } from '../services/logistics-provider-service'
 import { LOGISTICS_TEMPLATES, type LogisticsProvider } from '../types'
-
-const emptyFormData: LogisticsProvider = {
-  name: '',
-  code: '',
-  endpoint: '',
-  status: 'Enabled',
-  appKey: '',
-  appSecret: '',
-  customerId: '',
-  checkWord: '',
-  quotaTotal: 0,
-  quotaUsed: 0,
-  quotaAlertAt: 100,
-}
 
 function getProviderSecretKey(provider: LogisticsProvider) {
   return String(provider.id ?? provider.code)
@@ -60,7 +66,7 @@ export function LogisticsSandboxDashboard() {
   const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
-  const [formData, setFormData] = useState<LogisticsProvider>(emptyFormData)
+  const [formData, setFormData] = useState<LogisticsProvider>(emptyLogisticsProvider)
   const [selectedNote, setSelectedNote] = useState('')
 
   const {
@@ -71,7 +77,7 @@ export function LogisticsSandboxDashboard() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['logistics-push-providers'],
+    queryKey: logisticsProviderQueryKey,
     queryFn: () => logisticsProviderService.getProviders(),
   })
 
@@ -79,10 +85,10 @@ export function LogisticsSandboxDashboard() {
     mutationFn: (provider: LogisticsProvider) =>
       logisticsProviderService.saveProvider(provider),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['logistics-push-providers'] })
+      queryClient.invalidateQueries({ queryKey: logisticsProviderQueryKey })
       toast.success('物流接口配置已保存到后端')
       setIsDialogOpen(false)
-      setFormData(emptyFormData)
+      setFormData(emptyLogisticsProvider)
       setSelectedNote('')
     },
     onError: (mutationError: unknown) => {
@@ -95,13 +101,25 @@ export function LogisticsSandboxDashboard() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => logisticsProviderService.deleteProvider(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['logistics-push-providers'] })
+      queryClient.invalidateQueries({ queryKey: logisticsProviderQueryKey })
       toast.success('物流接口配置已删除')
     },
     onError: (mutationError: unknown) => {
       const message =
         mutationError instanceof Error ? mutationError.message : '未知错误'
       toast.error(`删除失败: ${message}`)
+    },
+  })
+
+  const verifyMutation = useMutation({
+    mutationFn: (id: number) => logisticsProviderService.verifyProvider(id),
+    onSuccess: (provider) => {
+      queryClient.invalidateQueries({ queryKey: logisticsProviderQueryKey })
+      toast.success(`验证完成：${provider.lastVerificationMessage || getProviderVerificationLabel(getProviderVerificationStatus(provider))}`)
+    },
+    onError: (mutationError: unknown) => {
+      const message = mutationError instanceof Error ? mutationError.message : '未知错误'
+      toast.error(`验证失败: ${message}`)
     },
   })
 
@@ -113,25 +131,39 @@ export function LogisticsSandboxDashboard() {
     const template = LOGISTICS_TEMPLATES.find((item) => item.code === code)
     if (!template) return
 
-    setFormData((prev) => ({
-      ...prev,
-      name: template.name,
-      code: template.code,
-      endpoint: template.endpoint,
-    }))
+    setFormData((prev) => applyLogisticsTemplate(prev, code))
     setSelectedNote(template.note)
   }
 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open)
     if (!open) {
-      setFormData(emptyFormData)
+      setFormData(emptyLogisticsProvider)
       setSelectedNote('')
     }
   }
 
+  const handleEdit = (provider: LogisticsProvider) => {
+    setFormData({
+      ...emptyLogisticsProvider,
+      ...provider,
+      category: getProviderCategory(provider),
+    })
+    setSelectedNote(provider.note || '')
+    setIsDialogOpen(true)
+  }
+
   const handleSave = () => {
-    saveMutation.mutate(formData)
+    const duplicate = findDuplicateProvider(providers, formData)
+    if (duplicate) {
+      toast.error(`已存在重复物流服务商：${duplicate.name}`)
+      return
+    }
+
+    saveMutation.mutate({
+      ...formData,
+      category: getProviderCategory(formData),
+    })
   }
 
   const handleDelete = (id?: number) => {
@@ -139,14 +171,21 @@ export function LogisticsSandboxDashboard() {
     deleteMutation.mutate(id)
   }
 
+  const handleVerify = (id?: number) => {
+    if (!id) return
+    verifyMutation.mutate(id)
+  }
+
   const isFormValid =
     formData.name.trim() !== '' &&
-    formData.code.trim() !== '' &&
-    formData.endpoint.trim() !== ''
+    formData.code.trim() !== ''
 
   const isCredentialsComplete =
     (formData.appKey || '').trim() !== '' &&
     (formData.appSecret || '').trim() !== ''
+
+  const previewConnected = isProviderApiConnected(formData)
+  const previewVerificationStatus = getProviderVerificationStatus(formData)
 
   const pageError =
     error instanceof Error ? error.message : '无法加载后端物流接口配置'
@@ -265,21 +304,164 @@ export function LogisticsSandboxDashboard() {
                     </div>
                   </div>
 
-                  <div className='space-y-2'>
-                    <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
-                      API 生产地址 (Endpoint)
-                    </Label>
-                    <Input
-                      value={formData.endpoint}
-                      onChange={(event) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          endpoint: event.target.value,
-                        }))
-                      }
-                      className='h-12 rounded-2xl border-slate-200 font-mono text-[11px]'
-                      placeholder='https://...'
-                    />
+                  <div className='space-y-4 rounded-3xl border border-dashed border-slate-200 p-5'>
+                    <div className='space-y-1'>
+                      <h4 className='text-[10px] font-black uppercase tracking-widest text-slate-500'>目录信息</h4>
+                      <p className='text-xs text-muted-foreground'>维护业务协同、目录检索和交接说明。</p>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          目录分类
+                        </Label>
+                        <Select
+                          value={getProviderCategory(formData)}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              category: value as LogisticsProvider['category'],
+                            }))
+                          }
+                        >
+                          <SelectTrigger className='h-12 rounded-2xl border-slate-200'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='domestic'>国内物流</SelectItem>
+                            <SelectItem value='international'>国际物流</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          网站 / 平台入口
+                        </Label>
+                        <Input
+                          value={formData.website || ''}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              website: event.target.value,
+                            }))
+                          }
+                          className='h-12 rounded-2xl border-slate-200'
+                          placeholder='https://...'
+                        />
+                      </div>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          联系人
+                        </Label>
+                        <Input
+                          value={formData.contact || ''}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              contact: event.target.value,
+                            }))
+                          }
+                          className='h-12 rounded-2xl border-slate-200'
+                        />
+                      </div>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          联系电话
+                        </Label>
+                        <Input
+                          value={formData.phone || ''}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              phone: event.target.value,
+                            }))
+                          }
+                          className='h-12 rounded-2xl border-slate-200'
+                        />
+                      </div>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                        目录备注
+                      </Label>
+                      <Textarea
+                        value={formData.note || ''}
+                        onChange={(event) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            note: event.target.value,
+                          }))
+                        }
+                        className='min-h-24 rounded-2xl border-slate-200'
+                        placeholder='补充联系人职责、适用场景、交接说明等'
+                      />
+                    </div>
+                  </div>
+
+                  <div className='space-y-4 rounded-3xl border border-dashed border-primary/20 bg-primary/5 p-5'>
+                    <div className='space-y-1'>
+                      <h4 className='text-[10px] font-black uppercase tracking-widest text-primary/70'>接口信息</h4>
+                      <p className='text-xs text-primary/70'>维护技术配置、验证健康度和能力边界。</p>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          API 生产地址 (Endpoint)
+                        </Label>
+                        <Input
+                          value={formData.endpoint}
+                          onChange={(event) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              endpoint: event.target.value,
+                            }))
+                          }
+                          className='h-12 rounded-2xl border-slate-200 font-mono text-[11px]'
+                          placeholder='https://...'
+                        />
+                      </div>
+                      <div className='space-y-2'>
+                        <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                          验证状态
+                        </Label>
+                        <div className='flex h-12 items-center rounded-2xl border border-dashed bg-white/70 px-3 text-[11px] font-bold text-slate-600'>
+                          {getProviderVerificationLabel(previewVerificationStatus)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label className='pl-1 text-[10px] font-black uppercase tracking-widest opacity-50'>
+                        能力标签
+                      </Label>
+                      <div className='flex flex-wrap gap-2'>
+                        {LOGISTICS_CAPABILITY_OPTIONS.map((capability) => {
+                          const selected = getProviderCapabilities(formData).includes(capability.value)
+                          return (
+                            <Button
+                              key={capability.value}
+                              type='button'
+                              variant={selected ? 'default' : 'outline'}
+                              className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                              onClick={() => setFormData((prev) => toggleProviderCapability(prev, capability.value))}
+                            >
+                              {capability.label}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className='rounded-2xl border border-dashed border-slate-200 bg-white/80 px-4 py-3 text-[10px] font-bold text-slate-500'>
+                      {previewConnected
+                        ? `当前记录已具备 API 对接基础条件；健康度状态为「${getProviderVerificationLabel(previewVerificationStatus)}」。`
+                        : `当前记录会在目录页显示为“未接 API”；健康度状态为「${getProviderVerificationLabel(previewVerificationStatus)}」。`}
+                    </div>
                   </div>
 
                   <div className='space-y-3 border-t border-dashed border-slate-200 pt-4'>
@@ -436,6 +618,9 @@ export function LogisticsSandboxDashboard() {
                                 Disabled
                               </span>
                             )}
+                            <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${getProviderVerificationBadgeClass(getProviderVerificationStatus(provider))}`}>
+                              {getProviderVerificationLabel(getProviderVerificationStatus(provider))}
+                            </span>
                             {!hasCredentials ? (
                               <span className='rounded-full bg-amber-100/50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-600'>
                                 凭证缺失
@@ -445,56 +630,103 @@ export function LogisticsSandboxDashboard() {
                         </div>
                       </div>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        disabled={deleteMutation.isPending}
-                        className='rounded-full text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500'
-                        onClick={() => handleDelete(provider.id)}
+                        variant='outline'
+                        size='sm'
+                        className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                        onClick={() => handleEdit(provider)}
                       >
-                        <X className='size-4' />
+                        <PencilLine className='size-3.5' />
+                        编辑
                       </Button>
                     </div>
                   </CardHeader>
 
                   <CardContent className='space-y-4 pt-2'>
-                    <div className='grid grid-cols-2 gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4'>
-                      <div className='space-y-1'>
-                        <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>
-                          App Key
-                        </span>
-                        {provider.appKey?.trim() ? (
-                          <div className='flex items-center gap-2'>
-                            <span className='max-w-[150px] truncate text-[10px] font-mono font-bold text-slate-600'>
-                              {showSecrets[secretKey]
-                                ? provider.appKey
-                                : '****************'}
-                            </span>
-                            <button
-                              type='button'
-                              onClick={() => toggleSecret(secretKey)}
-                              className='text-slate-300 transition-colors hover:text-blue-600'
-                            >
-                              {showSecrets[secretKey] ? (
-                                <EyeOff className='size-3' />
-                              ) : (
-                                <Eye className='size-3' />
-                              )}
-                            </button>
-                          </div>
-                        ) : (
-                          <span className='text-[10px] font-bold text-rose-500'>
-                            未配置，请补充凭证
+                    <div className='space-y-3 rounded-3xl border border-dashed border-slate-200 p-4'>
+                      <div className='text-[10px] font-black uppercase tracking-widest text-slate-500'>目录信息</div>
+                      <div className='grid grid-cols-2 gap-3 text-[11px] text-slate-600'>
+                        <div>
+                          <span className='font-black text-slate-500'>网站：</span>
+                          <span>{provider.website?.trim() || '未填写'}</span>
+                        </div>
+                        <div>
+                          <span className='font-black text-slate-500'>分类：</span>
+                          <span>{getProviderCategory(provider) === 'domestic' ? '国内物流' : '国际物流'}</span>
+                        </div>
+                        <div>
+                          <span className='font-black text-slate-500'>联系人：</span>
+                          <span>{provider.contact?.trim() || '未填写'}</span>
+                        </div>
+                        <div>
+                          <span className='font-black text-slate-500'>联系电话：</span>
+                          <span>{provider.phone?.trim() || '未填写'}</span>
+                        </div>
+                      </div>
+                      <div className='rounded-2xl border border-dashed border-slate-100 bg-slate-50/60 p-4 text-[10px] leading-relaxed text-slate-500'>
+                        {provider.note?.trim() || '当前未填写目录备注，可在编辑弹窗中补充联系人职责、适用场景和交接说明。'}
+                      </div>
+                    </div>
+
+                    <div className='space-y-3 rounded-3xl border border-dashed border-primary/20 bg-primary/5 p-4'>
+                      <div className='text-[10px] font-black uppercase tracking-widest text-primary/70'>接口信息</div>
+                      <div className='grid grid-cols-2 gap-4 rounded-2xl border border-slate-100 bg-white/80 p-4'>
+                        <div className='space-y-1'>
+                          <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>
+                            App Key
                           </span>
-                        )}
+                          {provider.appKey?.trim() ? (
+                            <div className='flex items-center gap-2'>
+                              <span className='max-w-[150px] truncate text-[10px] font-mono font-bold text-slate-600'>
+                                {showSecrets[secretKey] ? provider.appKey : '****************'}
+                              </span>
+                              <button
+                                type='button'
+                                onClick={() => toggleSecret(secretKey)}
+                                className='text-slate-300 transition-colors hover:text-blue-600'
+                              >
+                                {showSecrets[secretKey] ? <EyeOff className='size-3' /> : <Eye className='size-3' />}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className='text-[10px] font-bold text-rose-500'>未配置，请补充凭证</span>
+                          )}
+                        </div>
+
+                        <div className='space-y-1'>
+                          <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>
+                            Endpoint
+                          </span>
+                          <span className='block truncate text-[9px] font-mono font-bold text-slate-500'>
+                            {provider.endpoint || '未配置'}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className='space-y-1'>
-                        <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>
-                          Endpoint
-                        </span>
-                        <span className='block truncate text-[9px] font-mono font-bold text-slate-500'>
-                          {provider.endpoint || '未配置'}
-                        </span>
+                      <div className='grid grid-cols-3 gap-3 rounded-2xl border border-dashed border-slate-100 bg-white p-4'>
+                        <div className='space-y-1'>
+                          <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>最近验证</span>
+                          <p className='text-[10px] font-bold text-slate-700'>{formatProviderVerifiedAt(provider.lastVerifiedAt)}</p>
+                        </div>
+                        <div className='space-y-1'>
+                          <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>验证摘要</span>
+                          <p className='text-[10px] font-bold text-slate-700'>
+                            {provider.lastVerificationMessage || getProviderVerificationLabel(getProviderVerificationStatus(provider))}
+                          </p>
+                        </div>
+                        <div className='space-y-1'>
+                          <span className='text-[8px] font-black uppercase tracking-widest text-slate-400'>能力标签</span>
+                          <div className='flex flex-wrap gap-1'>
+                            {getProviderCapabilities(provider).length > 0 ? (
+                              getProviderCapabilities(provider).map((capability) => (
+                                <Badge key={capability} variant='outline' className='px-1.5 py-0 text-[8px]'>
+                                  {getLogisticsCapabilityLabel(capability)}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className='text-[10px] font-bold text-slate-400'>未配置</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -523,6 +755,33 @@ export function LogisticsSandboxDashboard() {
                           {quotaRemaining ?? '-'}
                         </p>
                       </div>
+                    </div>
+
+                    <div className='flex flex-wrap gap-2'>
+                      <Button
+                        variant='outline'
+                        className='rounded-full text-[10px] font-black uppercase tracking-widest'
+                        onClick={() => handleVerify(provider.id)}
+                        disabled={!provider.id || verifyMutation.isPending}
+                      >
+                        {verifyMutation.isPending ? <Loader2 className='size-3.5 animate-spin' /> : <RefreshCw className='size-3.5' />}
+                        测试连接
+                      </Button>
+                      <Button asChild variant='outline' className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+                        <Link to='/logistics-config/suppliers'>
+                          <MoveUpRight className='size-3.5' />
+                          查看目录卡片
+                        </Link>
+                      </Button>
+                      <Button
+                        variant='ghost'
+                        disabled={deleteMutation.isPending}
+                        className='rounded-full text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:text-rose-600'
+                        onClick={() => handleDelete(provider.id)}
+                      >
+                        <X className='size-3.5' />
+                        删除
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

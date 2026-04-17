@@ -1,7 +1,27 @@
-import { Camera, ClipboardCheck, NotebookPen, PackagePlus, ScanLine, Video } from 'lucide-react'
+import {
+  Camera,
+  ClipboardCheck,
+  NotebookPen,
+  PackagePlus,
+  ScanLine,
+  SearchCheck,
+  Video,
+} from 'lucide-react'
 import type { QuickActionDefinition } from '../types'
 
 const quickActionRegistryEntries = [
+  {
+    id: 'wheel_trace_scan',
+    titleKey: 'quickActions.actions.wheelTraceScan.title',
+    descriptionKey: 'quickActions.actions.wheelTraceScan.description',
+    icon: SearchCheck,
+    to: '/wheel-trace',
+    search: { scan: '1' },
+    permissionPath: '/wheel-trace',
+    requiredPermissions: [],
+    enabled: true,
+    sortOrder: 5,
+  },
   {
     id: 'warehouse_inbound_scan',
     titleKey: 'quickActions.actions.warehouseInboundScan.title',
@@ -70,6 +90,6 @@ const quickActionRegistryEntries = [
   },
 ] satisfies QuickActionDefinition[]
 
-export const quickActionRegistry: QuickActionDefinition[] = [...quickActionRegistryEntries].sort(
-  (left, right) => left.sortOrder - right.sortOrder
-)
+export const quickActionRegistry: QuickActionDefinition[] = [
+  ...quickActionRegistryEntries,
+].sort((left, right) => left.sortOrder - right.sortOrder)

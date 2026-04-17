@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { createLogger } from '@/lib/logger';
+import { createApiClientError, isApiClientError } from '@/lib/api-error';
 
 /**
  * 全局统一 API 客户端
@@ -67,7 +68,18 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
             // 冷却期结束，进入半开状态，允许尝试
             circuitBreaker.tripped = false;
         } else {
-            throw new Error(`[CIRCUIT_BREAKER] 持续网络超时，已触发短路保护。拦截请求: ${endpoint}`);
+            logger.error('Blocked request before fetch because circuit breaker is open', {
+                endpoint,
+                baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+            });
+            throw createApiClientError({
+                kind: 'circuit_breaker',
+                message: `[CIRCUIT_BREAKER] 持续网络超时，已触发短路保护。拦截请求: ${endpoint}`,
+                endpoint,
+                details: {
+                    baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+                },
+            });
         }
     }
 
@@ -79,7 +91,20 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
     // 这能有效防止登录页背景请求堆积导致真实的登录请求超时 (Connection Pool Starvation)
     const publicEndpoint = isPublicEndpoint(endpoint);
     if (!token && !publicEndpoint && !options.ignoreBreaker) {
-        throw new Error(`[AUTH_REQUIRED] 未认证的 API 请求被拦截: ${endpoint}`);
+        logger.error('Blocked request before fetch because auth token is missing', {
+            endpoint,
+            baseUrl,
+            publicEndpoint,
+        });
+        throw createApiClientError({
+            kind: 'auth_required',
+            message: `[AUTH_REQUIRED] 未认证的 API 请求被拦截: ${endpoint}`,
+            endpoint,
+            details: {
+                baseUrl,
+                publicEndpoint,
+            },
+        });
     }
     
     const controller = new AbortController();
@@ -162,10 +187,17 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
             
             // 工业级修复：抛出的 Error 对象必须携带 status 以供 UI 层进行状态分支处理 (如 409/403)
             const errorMessage = errorData.error || errorData.message || `[API_ERROR] ${response.status} ${response.statusText}`;
-            const error = new Error(errorMessage) as ApiFetchError;
-            error.status = response.status;
-            error.code = errorData.code;
-            error.isConflict = response.status === 409;
+            const error = createApiClientError({
+                kind: 'http',
+                message: errorMessage,
+                endpoint,
+                status: response.status,
+                code: errorData.code,
+                isConflict: response.status === 409,
+                details: {
+                    statusText: response.statusText,
+                },
+            }) as ApiFetchError;
             if (response.status === 401) {
                 handleUnauthorizedSession(endpoint);
             }
@@ -182,16 +214,18 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
         // 【根治方案：全局 API 响应解包与混合对象防御】
         // 条件：判定 data 是一个简单的 Data/Pagination 包装器对象。
         if (data && typeof data === 'object' && !Array.isArray(data)) {
+            const dataRecord = data as Record<string, unknown>;
             // 候选包装路径：items (标准分页) 或 data (标准响应包装)
-            const wrapperKey = ('items' in data) ? 'items' : (('data' in data) ? 'data' : null);
+            const wrapperKey = ('items' in dataRecord) ? 'items' : (('data' in dataRecord) ? 'data' : null);
+            const wrappedPrimaryValue = wrapperKey ? dataRecord[wrapperKey] : undefined;
             
             const shouldCreateHybridArray =
                 wrapperKey === 'items' &&
-                Array.isArray((data as any)[wrapperKey]) &&
-                typeof (data as Record<string, unknown>).total === 'number';
+                Array.isArray(wrappedPrimaryValue) &&
+                typeof dataRecord.total === 'number';
 
             if (shouldCreateHybridArray) {
-                const wrappedData = data as Record<string, unknown>;
+                const wrappedData = dataRecord;
                 const primaryArray = Array.isArray(wrappedData[wrapperKey]) ? wrappedData[wrapperKey] as unknown[] : [];
                 
                 // 混合数组逻辑：将数组实例包装为带有原始对象元数据的 Proxy。
@@ -229,12 +263,22 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
             }
             
             const seconds = parseFloat((dynamicTimeout / 1000).toFixed(1));
-            const error = new Error(`[TIMEOUT] 请求 ${endpoint} 超过 ${seconds} 秒，网络可能不稳定`);
+            const error = createApiClientError({
+                kind: 'timeout',
+                message: `[TIMEOUT] 请求 ${endpoint} 超过 ${seconds} 秒，网络可能不稳定`,
+                endpoint,
+                details: {
+                    timeoutSeconds: seconds,
+                },
+                cause: err,
+            });
             throw error;
         }
+
+        let normalizedError: unknown = err;
         
         // 对于其他的网络异常 (Fetch Failed 等)
-        if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        if (normalizedError instanceof TypeError && normalizedError.message === 'Failed to fetch') {
             // 【生产环境诊断】检查 BaseURL 是否与当前访问域名错位
             const currentHost = window.location.hostname;
             let apiHost = 'unknown';
@@ -265,27 +309,50 @@ export async function apiFetch<T>(endpoint: string, options: ExtendedRequestInit
                     });
                 }
             }
+
+            const networkError = createApiClientError({
+                kind: 'network',
+                message: `[NETWORK_ERROR] 请求 ${endpoint} 失败，网络链路不可用`,
+                endpoint,
+                details: {
+                    currentHost,
+                    apiHost,
+                    origin: window.location.origin,
+                },
+                cause: normalizedError,
+            });
+            normalizedError = networkError;
         }
+
+        if (!isApiClientError(normalizedError) && normalizedError instanceof Error) {
+            normalizedError = createApiClientError({
+                kind: 'unknown',
+                message: normalizedError.message,
+                endpoint,
+                cause: normalizedError,
+            });
+        }
+
         const errorEnd = performance.now();
-        const status = err && typeof err === 'object' && 'status' in err
-            ? Number((err as { status?: unknown }).status)
+        const status = normalizedError && typeof normalizedError === 'object' && 'status' in normalizedError
+            ? Number((normalizedError as { status?: unknown }).status)
             : undefined;
         if (!shouldSuppressErrorLog(status, options)) {
             logger.error(`Request failed for ${endpoint}`, {
                 durationMs: Number((errorEnd - start).toFixed(2)),
-                error: err,
+                error: normalizedError,
                 status,
             });
         }
 
         if (
-            err instanceof Error &&
-            ((err as ApiFetchError).status === 401 || /invalid or expired token/i.test(err.message))
+            normalizedError instanceof Error &&
+            ((normalizedError as ApiFetchError).status === 401 || /invalid or expired token/i.test(normalizedError.message))
         ) {
             handleUnauthorizedSession(endpoint);
         }
 
         
-        throw err;
+        throw normalizedError;
     }
 }

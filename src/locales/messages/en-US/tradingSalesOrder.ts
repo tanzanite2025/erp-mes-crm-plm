@@ -184,6 +184,17 @@ export const tradingSalesOrder = {
       allPaymentMethods: 'All Payment Methods',
       allPaymentTerms: 'All Payment Terms',
     },
+    errors: {
+      loadFailed: 'Failed to load sales orders',
+      retry: 'Retry Load',
+      authRequired: 'The current session is not authenticated. Please sign in again.',
+      circuitBreaker: 'The request was blocked by circuit-breaker protection. Please retry later.',
+      timeout: 'The request timed out. Please check the current network path.',
+      network: 'The network request failed. Verify frontend/backend connectivity.',
+      invalidResponse: 'The backend returned a response format that does not match the contract.',
+      unknown: 'The request failed. Review the detailed error below.',
+      reasonPrefix: 'Reason:',
+    },
     columns: {
       orderStatus: 'Order No. / Status',
       customer: 'Customer',

@@ -1,24 +1,23 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { LeaveService, type LeaveRequestPreviewResult } from '../services/leave-service'
 import type { LeaveCreateForm } from '../data/leave-request-schema'
 import { personnelQueryKeys } from '../query-keys'
-import { useAuthStore } from '@/stores/auth-store'
 
 export function useSubmitLeaveRequest(onSuccess?: () => void) {
   const queryClient = useQueryClient()
-  const employeeId = useAuthStore((state) => state.user?.employeeId)
   const [preview, setPreview] = useState<LeaveRequestPreviewResult | null>(null)
   const resetPreview = useCallback(() => {
     setPreview(null)
   }, [])
 
-  const isEmployeeBound = useMemo(() => Boolean(employeeId?.trim()), [employeeId])
+  const hasSelectedEmployee = useCallback((employeeId?: string) => Boolean(employeeId?.trim()), [])
 
   const previewMutation = useMutation({
     mutationFn: async (values: LeaveCreateForm) => {
       return LeaveService.previewLeaveRequest({
+        employeeId: values.employeeId,
         leaveType: values.leaveType,
         startTime: values.startTime,
         endTime: values.endTime,
@@ -36,12 +35,14 @@ export function useSubmitLeaveRequest(onSuccess?: () => void) {
   const submitMutation = useMutation({
     mutationFn: async (values: LeaveCreateForm) => {
       const nextPreview = await LeaveService.previewLeaveRequest({
+        employeeId: values.employeeId,
         leaveType: values.leaveType,
         startTime: values.startTime,
         endTime: values.endTime,
       })
       setPreview(nextPreview)
       return LeaveService.submitLeaveRequest({
+        employeeId: values.employeeId,
         leaveType: values.leaveType,
         startTime: values.startTime,
         endTime: values.endTime,
@@ -51,8 +52,8 @@ export function useSubmitLeaveRequest(onSuccess?: () => void) {
     onSuccess: async () => {
       setPreview(null)
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.my() }),
-        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.statsMy() }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.list() }),
+        queryClient.invalidateQueries({ queryKey: personnelQueryKeys.leaves.stats() }),
       ])
       toast.success('请假申请已提交')
       onSuccess?.()
@@ -63,8 +64,7 @@ export function useSubmitLeaveRequest(onSuccess?: () => void) {
   })
 
   return {
-    employeeId,
-    isEmployeeBound,
+    hasSelectedEmployee,
     preview,
     isPreviewing: previewMutation.isPending,
     isSubmitting: submitMutation.isPending,

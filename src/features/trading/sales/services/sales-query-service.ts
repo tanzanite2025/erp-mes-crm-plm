@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { createLogger } from '@/lib/logger'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { toSalesOrderContract, toSalesOrderListPageContract, type PaginatedSalesOrders } from '../adapters/sales-order-api-adapter'
 import { type SalesOrderApiDTO, type SalesOrderListPageApiDTO } from '../contracts/sales-order-api-dto'
@@ -8,6 +9,25 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   pageSize: number
+}
+
+const logger = createLogger('SalesQueryService')
+
+function logSalesOrdersPayload(payload: unknown, context: string) {
+  if (!payload || typeof payload !== 'object') {
+    logger.error(`${context} returned a non-object payload`, { payloadType: typeof payload, payload })
+    return
+  }
+
+  const record = payload as Record<string, unknown>
+  logger.debug(`${context} payload received`, {
+    keys: Object.keys(record),
+    isArray: Array.isArray(payload),
+    total: record.total,
+    page: record.page,
+    pageSize: record.pageSize,
+    itemsType: Array.isArray(record.items) ? 'array' : typeof record.items,
+  })
 }
 
 export type GetSalesOrdersOptions = {
@@ -27,6 +47,14 @@ export const getSalesOrders = async (
     pageSize: String(pageSize),
   })
 
+  logger.debug('SalesQueryService.getSalesOrders request prepared', {
+    endpoint: `/sales-orders?${params.toString()}`,
+    page,
+    pageSize,
+    withLines,
+    status,
+  })
+
   if (withLines) {
     params.set('withLines', 'true')
   }
@@ -35,10 +63,25 @@ export const getSalesOrders = async (
   }
 
   const res = await apiFetch<SalesOrderListPageApiDTO>(`/sales-orders?${params.toString()}`)
+  logger.debug('SalesQueryService.getSalesOrders apiFetch resolved', {
+    endpoint: `/sales-orders?${params.toString()}`,
+  })
+  logSalesOrdersPayload(res, 'SalesQueryService.getSalesOrders raw response')
+
   const response = ensureObjectResponse<SalesOrderListPageApiDTO & Record<string, unknown>>(
     res,
     'SalesQueryService.getSalesOrders'
   )
+
+  logger.debug('SalesQueryService.getSalesOrders contract fields', {
+    hasItems: Array.isArray(response.items),
+    totalType: typeof response.total,
+    pageType: typeof response.page,
+    pageSizeType: typeof response.pageSize,
+    itemsLength: Array.isArray(response.items) ? response.items.length : null,
+    firstItemKeys: Array.isArray(response.items) && response.items.length > 0 ? Object.keys(response.items[0] as Record<string, unknown>) : [],
+  })
+
   return toSalesOrderListPageContract(response)
 }
 
@@ -48,6 +91,11 @@ export const getSalesOrderById = async (id: string) => {
     res,
     'SalesQueryService.getSalesOrderById'
   )
+  logger.debug('SalesQueryService.getSalesOrderById contract fields', {
+    hasLines: Array.isArray(response.lines),
+    statusType: typeof response.status,
+    versionType: typeof response.version,
+  })
   return toSalesOrderContract(response)
 }
 

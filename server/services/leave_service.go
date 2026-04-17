@@ -14,27 +14,29 @@ import (
 
 var (
 	ErrLeaveUnauthorized       = errors.New("未找到当前登录用户")
-	ErrLeaveEmployeeUnbound    = errors.New("当前账号未绑定员工档案，无法发起请假申请")
-	ErrLeaveEmployeeNotFound   = errors.New("当前账号绑定的员工档案不存在")
+	ErrLeaveEmployeeRequired   = errors.New("请选择请假员工")
+	ErrLeaveEmployeeNotFound   = errors.New("所选员工档案不存在")
 	ErrLeaveInvalidTimeRange   = errors.New("请假时间范围无效")
 	ErrLeaveInvalidLeaveType   = errors.New("请假类型不能为空")
 	ErrLeaveReasonRequired     = errors.New("请假事由不能为空")
 	ErrLeaveRequestNotFound    = errors.New("请假申请不存在")
-	ErrLeaveCancelForbidden    = errors.New("只能撤销本人的请假申请")
+	ErrLeaveCancelForbidden    = errors.New("只能撤销当前账号代提交的请假申请")
 	ErrLeaveCancelInvalidState = errors.New("当前请假申请状态不允许撤销")
 )
 
 type LeavePreviewInput struct {
-	LeaveType string    `json:"leaveType"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
+	EmployeeID string    `json:"employeeId"`
+	LeaveType  string    `json:"leaveType"`
+	StartTime  time.Time `json:"startTime"`
+	EndTime    time.Time `json:"endTime"`
 }
 
 type CreateLeaveInput struct {
-	LeaveType string    `json:"leaveType"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
-	Reason    string    `json:"reason"`
+	EmployeeID string    `json:"employeeId"`
+	LeaveType  string    `json:"leaveType"`
+	StartTime  time.Time `json:"startTime"`
+	EndTime    time.Time `json:"endTime"`
+	Reason     string    `json:"reason"`
 }
 
 type LeavePreviewResult struct {
@@ -58,51 +60,73 @@ type LeaveRequestView struct {
 	EmployeeName string `json:"employeeName,omitempty"`
 }
 
-type currentEmployeeContext struct {
-	UserID       string
+type leaveEmployeeContext struct {
 	EmployeeID   string
 	EmployeeName string
 }
 
-func resolveCurrentEmployeeContext(userID string) (*currentEmployeeContext, error) {
+func resolveCurrentUserID(userID string) (string, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
-		return nil, ErrLeaveUnauthorized
+		return "", ErrLeaveUnauthorized
 	}
 	if db.DB == nil {
-		return nil, gorm.ErrInvalidDB
+		return "", gorm.ErrInvalidDB
 	}
 
-	type userRow struct {
-		EmployeeID string
-	}
-
-	var user userRow
-	if err := db.DB.Table("users").Select("employee_id").Where("id = ?", normalizedUserID).Take(&user).Error; err != nil {
+	if err := db.DB.Table("users").Select("id").Where("id = ?", normalizedUserID).Take(&struct{ ID string }{}).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrLeaveUnauthorized
+			return "", ErrLeaveUnauthorized
 		}
-		return nil, err
+		return "", err
 	}
 
-	employeeID := strings.TrimSpace(user.EmployeeID)
-	if employeeID == "" {
-		return nil, ErrLeaveEmployeeUnbound
+	return normalizedUserID, nil
+}
+
+func resolveLeaveEmployeeContext(employeeID string) (*leaveEmployeeContext, error) {
+	normalizedEmployeeID := strings.TrimSpace(employeeID)
+	if normalizedEmployeeID == "" {
+		return nil, ErrLeaveEmployeeRequired
 	}
 
 	var employee models.Employee
-	if err := db.DB.Select("id", "name").Where("id = ?", employeeID).Take(&employee).Error; err != nil {
+	if err := db.DB.Select("id", "name").Where("id = ?", normalizedEmployeeID).Take(&employee).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrLeaveEmployeeNotFound
 		}
 		return nil, err
 	}
 
-	return &currentEmployeeContext{
-		UserID:       normalizedUserID,
+	return &leaveEmployeeContext{
 		EmployeeID:   employee.ID,
 		EmployeeName: strings.TrimSpace(employee.Name),
 	}, nil
+}
+
+func loadEmployeeNamesByIDs(employeeIDs []string) (map[string]string, error) {
+	if len(employeeIDs) == 0 {
+		return map[string]string{}, nil
+	}
+
+	type employeeRow struct {
+		ID   string
+		Name string
+	}
+
+	rows := make([]employeeRow, 0, len(employeeIDs))
+	if err := db.DB.Table("employees").
+		Select("id", "name").
+		Where("id IN ?", employeeIDs).
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]string, len(rows))
+	for _, row := range rows {
+		result[strings.TrimSpace(row.ID)] = strings.TrimSpace(row.Name)
+	}
+	return result, nil
 }
 
 func normalizeLeaveType(value string) string {
@@ -125,8 +149,12 @@ func calculateLeaveDurationDays(startTime, endTime time.Time) (float64, error) {
 	return days, nil
 }
 
-func PreviewMyLeaveRequest(userID string, input LeavePreviewInput) (*LeavePreviewResult, error) {
-	context, err := resolveCurrentEmployeeContext(userID)
+func PreviewLeaveRequest(userID string, input LeavePreviewInput) (*LeavePreviewResult, error) {
+	if _, err := resolveCurrentUserID(userID); err != nil {
+		return nil, err
+	}
+
+	context, err := resolveLeaveEmployeeContext(input.EmployeeID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,11 +179,17 @@ func PreviewMyLeaveRequest(userID string, input LeavePreviewInput) (*LeavePrevie
 	}, nil
 }
 
-func CreateMyLeaveRequest(userID string, input CreateLeaveInput) (*LeaveRequestView, error) {
-	preview, err := PreviewMyLeaveRequest(userID, LeavePreviewInput{
-		LeaveType: input.LeaveType,
-		StartTime: input.StartTime,
-		EndTime:   input.EndTime,
+func CreateLeaveRequest(userID string, input CreateLeaveInput) (*LeaveRequestView, error) {
+	normalizedUserID, err := resolveCurrentUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	preview, err := PreviewLeaveRequest(normalizedUserID, LeavePreviewInput{
+		EmployeeID: input.EmployeeID,
+		LeaveType:  input.LeaveType,
+		StartTime:  input.StartTime,
+		EndTime:    input.EndTime,
 	})
 	if err != nil {
 		return nil, err
@@ -167,15 +201,16 @@ func CreateMyLeaveRequest(userID string, input CreateLeaveInput) (*LeaveRequestV
 	}
 
 	leave := models.LeaveRequest{
-		BaseModel:    models.BaseModel{ID: uuid.NewString()},
-		EmployeeID:   preview.EmployeeID,
-		LeaveType:    preview.LeaveType,
-		StartTime:    preview.StartTime,
-		EndTime:      preview.EndTime,
-		DurationDays: preview.DurationDays,
-		Reason:       reason,
-		Status:       "PENDING",
-		Version:      1,
+		BaseModel:         models.BaseModel{ID: uuid.NewString()},
+		EmployeeID:        preview.EmployeeID,
+		SubmittedByUserID: &normalizedUserID,
+		LeaveType:         preview.LeaveType,
+		StartTime:         preview.StartTime,
+		EndTime:           preview.EndTime,
+		DurationDays:      preview.DurationDays,
+		Reason:            reason,
+		Status:            "PENDING",
+		Version:           1,
 	}
 
 	if err := db.DB.Create(&leave).Error; err != nil {
@@ -188,14 +223,33 @@ func CreateMyLeaveRequest(userID string, input CreateLeaveInput) (*LeaveRequestV
 	}, nil
 }
 
-func ListMyLeaveRequests(userID string) ([]LeaveRequestView, error) {
-	context, err := resolveCurrentEmployeeContext(userID)
+func ListLeaveRequests(userID string) ([]LeaveRequestView, error) {
+	normalizedUserID, err := resolveCurrentUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	var leaves []models.LeaveRequest
-	if err := db.DB.Where("employee_id = ?", context.EmployeeID).Order("created_at desc").Find(&leaves).Error; err != nil {
+	if err := db.DB.Where("submitted_by_user_id = ?", normalizedUserID).Order("created_at desc").Find(&leaves).Error; err != nil {
+		return nil, err
+	}
+
+	employeeIDs := make([]string, 0, len(leaves))
+	seen := make(map[string]struct{}, len(leaves))
+	for _, leave := range leaves {
+		normalizedEmployeeID := strings.TrimSpace(leave.EmployeeID)
+		if normalizedEmployeeID == "" {
+			continue
+		}
+		if _, exists := seen[normalizedEmployeeID]; exists {
+			continue
+		}
+		seen[normalizedEmployeeID] = struct{}{}
+		employeeIDs = append(employeeIDs, normalizedEmployeeID)
+	}
+
+	employeeNames, err := loadEmployeeNamesByIDs(employeeIDs)
+	if err != nil {
 		return nil, err
 	}
 
@@ -203,39 +257,39 @@ func ListMyLeaveRequests(userID string) ([]LeaveRequestView, error) {
 	for _, leave := range leaves {
 		result = append(result, LeaveRequestView{
 			LeaveRequest: leave,
-			EmployeeName: context.EmployeeName,
+			EmployeeName: employeeNames[strings.TrimSpace(leave.EmployeeID)],
 		})
 	}
 	return result, nil
 }
 
-func GetMyLeaveStats(userID string) (*LeaveStatsResult, error) {
-	context, err := resolveCurrentEmployeeContext(userID)
+func GetLeaveStats(userID string) (*LeaveStatsResult, error) {
+	normalizedUserID, err := resolveCurrentUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	stats := &LeaveStatsResult{}
 	if err := db.DB.Model(&models.LeaveRequest{}).
-		Where("employee_id = ? AND status = ?", context.EmployeeID, "APPROVED").
+		Where("submitted_by_user_id = ? AND status = ?", normalizedUserID, "APPROVED").
 		Count(&stats.ApprovedCount).Error; err != nil {
 		return nil, err
 	}
 	if err := db.DB.Model(&models.LeaveRequest{}).
-		Where("employee_id = ? AND status = ?", context.EmployeeID, "REJECTED").
+		Where("submitted_by_user_id = ? AND status = ?", normalizedUserID, "REJECTED").
 		Count(&stats.RejectedCount).Error; err != nil {
 		return nil, err
 	}
 
 	stats.PendingCount = 0
 	if err := db.DB.Model(&models.LeaveRequest{}).
-		Where("employee_id = ? AND status = ?", context.EmployeeID, "PENDING").
+		Where("submitted_by_user_id = ? AND status = ?", normalizedUserID, "PENDING").
 		Count(&stats.PendingCount).Error; err != nil {
 		return nil, err
 	}
 
 	if err := db.DB.Model(&models.LeaveRequest{}).
-		Where("employee_id = ? AND status = ?", context.EmployeeID, "APPROVED").
+		Where("submitted_by_user_id = ? AND status = ?", normalizedUserID, "APPROVED").
 		Select("COALESCE(SUM(duration_days), 0)").
 		Scan(&stats.TotalDays).Error; err != nil {
 		return nil, err
@@ -244,8 +298,8 @@ func GetMyLeaveStats(userID string) (*LeaveStatsResult, error) {
 	return stats, nil
 }
 
-func CancelMyLeaveRequest(userID, leaveID string) error {
-	context, err := resolveCurrentEmployeeContext(userID)
+func CancelLeaveRequest(userID, leaveID string) error {
+	normalizedUserID, err := resolveCurrentUserID(userID)
 	if err != nil {
 		return err
 	}
@@ -263,7 +317,7 @@ func CancelMyLeaveRequest(userID, leaveID string) error {
 		return err
 	}
 
-	if leave.EmployeeID != context.EmployeeID {
+	if leave.SubmittedByUserID == nil || strings.TrimSpace(*leave.SubmittedByUserID) != normalizedUserID {
 		return ErrLeaveCancelForbidden
 	}
 	if strings.TrimSpace(leave.Status) != "PENDING" {

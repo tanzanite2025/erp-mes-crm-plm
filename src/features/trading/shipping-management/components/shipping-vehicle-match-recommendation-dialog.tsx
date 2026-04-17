@@ -24,7 +24,7 @@ type Props = {
 
 function SummaryMetricCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className='rounded-2xl border border-dashed border-border/60 bg-muted/[0.03] px-4 py-3'>
+    <div className='rounded-2xl border border-dashed border-border/60 bg-muted/3 px-4 py-3'>
       <div className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>{title}</div>
       <div className='mt-1 text-sm font-black'>{value}</div>
     </div>

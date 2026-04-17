@@ -7,8 +7,8 @@ export const personnelQueryKeys = {
   positions: (): QueryKey => ['personnel', 'positions'],
   leaves: {
     all: (): QueryKey => ['personnel', 'leaves'],
-    my: (): QueryKey => ['personnel', 'leaves', 'my'],
-    statsMy: (): QueryKey => ['personnel', 'leaves', 'stats', 'my'],
+    list: (): QueryKey => ['personnel', 'leaves', 'list'],
+    stats: (): QueryKey => ['personnel', 'leaves', 'stats'],
   },
   stats: {
     all: (): QueryKey => ['personnel', 'stats'],

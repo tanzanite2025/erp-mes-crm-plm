@@ -69,6 +69,7 @@ func setupLeaveServiceTestDB(t *testing.T) *gorm.DB {
 			updated_at DATETIME,
 			deleted_at DATETIME,
 			employee_id TEXT NOT NULL,
+			submitted_by_user_id TEXT,
 			leave_type TEXT NOT NULL,
 			start_time DATETIME NOT NULL,
 			end_time DATETIME NOT NULL,
@@ -111,17 +112,18 @@ func seedLeaveUserAndEmployee(t *testing.T, userID, employeeID, employeeName str
 	}).Error)
 }
 
-func TestPreviewMyLeaveRequestUsesCurrentBoundEmployee(t *testing.T) {
+func TestPreviewLeaveRequestUsesExplicitEmployee(t *testing.T) {
 	setupLeaveServiceTestDB(t)
 	seedLeaveUserAndEmployee(t, "u-1", "emp-1", "张三")
 
 	startTime := time.Date(2026, 4, 9, 8, 0, 0, 0, time.UTC)
 	endTime := startTime.Add(30 * time.Hour)
 
-	preview, err := PreviewMyLeaveRequest("u-1", LeavePreviewInput{
-		LeaveType: "annual",
-		StartTime: startTime,
-		EndTime:   endTime,
+	preview, err := PreviewLeaveRequest("u-1", LeavePreviewInput{
+		EmployeeID: "emp-1",
+		LeaveType:  "annual",
+		StartTime:  startTime,
+		EndTime:    endTime,
 	})
 
 	require.NoError(t, err)
@@ -130,18 +132,19 @@ func TestPreviewMyLeaveRequestUsesCurrentBoundEmployee(t *testing.T) {
 	require.Equal(t, 1.5, preview.DurationDays)
 }
 
-func TestCreateMyLeaveRequestPersistsPendingLeaveForCurrentEmployee(t *testing.T) {
+func TestCreateLeaveRequestPersistsPendingLeaveForSelectedEmployeeAndSubmittingUser(t *testing.T) {
 	setupLeaveServiceTestDB(t)
 	seedLeaveUserAndEmployee(t, "u-2", "emp-2", "李四")
 
 	startTime := time.Date(2026, 4, 10, 8, 0, 0, 0, time.UTC)
 	endTime := startTime.Add(8 * time.Hour)
 
-	created, err := CreateMyLeaveRequest("u-2", CreateLeaveInput{
-		LeaveType: "sick",
-		StartTime: startTime,
-		EndTime:   endTime,
-		Reason:    "发烧就医",
+	created, err := CreateLeaveRequest("u-2", CreateLeaveInput{
+		EmployeeID: "emp-2",
+		LeaveType:  "sick",
+		StartTime:  startTime,
+		EndTime:    endTime,
+		Reason:     "发烧就医",
 	})
 
 	require.NoError(t, err)
@@ -152,46 +155,52 @@ func TestCreateMyLeaveRequestPersistsPendingLeaveForCurrentEmployee(t *testing.T
 	var persisted models.LeaveRequest
 	require.NoError(t, db.DB.Where("id = ?", created.ID).Take(&persisted).Error)
 	require.Equal(t, "emp-2", persisted.EmployeeID)
+	require.NotNil(t, persisted.SubmittedByUserID)
+	require.Equal(t, "u-2", *persisted.SubmittedByUserID)
 	require.Equal(t, "发烧就医", persisted.Reason)
 }
 
-func TestCancelMyLeaveRequestRejectsOtherEmployeesLeave(t *testing.T) {
+func TestCancelLeaveRequestRejectsOtherSubmittersLeave(t *testing.T) {
 	setupLeaveServiceTestDB(t)
 	seedLeaveUserAndEmployee(t, "u-owner", "emp-owner", "王五")
 	seedLeaveUserAndEmployee(t, "u-other", "emp-other", "赵六")
 
 	now := time.Now().UTC()
+	submittedByOwner := "u-owner"
 	leave := models.LeaveRequest{
-		BaseModel:    models.BaseModel{ID: "leave-1", CreatedAt: now, UpdatedAt: now},
-		EmployeeID:   "emp-owner",
-		LeaveType:    "annual",
-		StartTime:    now,
-		EndTime:      now.Add(24 * time.Hour),
-		DurationDays: 1,
-		Reason:       "休假",
-		Status:       "PENDING",
-		Version:      1,
+		BaseModel:         models.BaseModel{ID: "leave-1", CreatedAt: now, UpdatedAt: now},
+		EmployeeID:        "emp-owner",
+		SubmittedByUserID: &submittedByOwner,
+		LeaveType:         "annual",
+		StartTime:         now,
+		EndTime:           now.Add(24 * time.Hour),
+		DurationDays:      1,
+		Reason:            "休假",
+		Status:            "PENDING",
+		Version:           1,
 	}
 	require.NoError(t, db.DB.Create(&leave).Error)
 
-	err := CancelMyLeaveRequest("u-other", "leave-1")
+	err := CancelLeaveRequest("u-other", "leave-1")
 	require.ErrorIs(t, err, ErrLeaveCancelForbidden)
 }
 
-func TestGetMyLeaveStatsAggregatesPendingApprovedRejectedAndApprovedDays(t *testing.T) {
+func TestGetLeaveStatsAggregatesCurrentSubmitterPendingApprovedRejectedAndApprovedDays(t *testing.T) {
 	setupLeaveServiceTestDB(t)
 	seedLeaveUserAndEmployee(t, "u-3", "emp-3", "钱七")
 
 	now := time.Now().UTC()
+	submittedByCurrent := "u-3"
+	submittedByOther := "u-other"
 	leaves := []models.LeaveRequest{
-		{BaseModel: models.BaseModel{ID: "l1", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 1, Reason: "A", Status: "PENDING", Version: 1},
-		{BaseModel: models.BaseModel{ID: "l2", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 2, Reason: "B", Status: "APPROVED", Version: 1},
-		{BaseModel: models.BaseModel{ID: "l3", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 0.5, Reason: "C", Status: "REJECTED", Version: 1},
-		{BaseModel: models.BaseModel{ID: "l4", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-other", LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 9, Reason: "D", Status: "APPROVED", Version: 1},
+		{BaseModel: models.BaseModel{ID: "l1", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", SubmittedByUserID: &submittedByCurrent, LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 1, Reason: "A", Status: "PENDING", Version: 1},
+		{BaseModel: models.BaseModel{ID: "l2", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", SubmittedByUserID: &submittedByCurrent, LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 2, Reason: "B", Status: "APPROVED", Version: 1},
+		{BaseModel: models.BaseModel{ID: "l3", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-3", SubmittedByUserID: &submittedByCurrent, LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 0.5, Reason: "C", Status: "REJECTED", Version: 1},
+		{BaseModel: models.BaseModel{ID: "l4", CreatedAt: now, UpdatedAt: now}, EmployeeID: "emp-other", SubmittedByUserID: &submittedByOther, LeaveType: "annual", StartTime: now, EndTime: now.Add(24 * time.Hour), DurationDays: 9, Reason: "D", Status: "APPROVED", Version: 1},
 	}
 	require.NoError(t, db.DB.Create(&leaves).Error)
 
-	stats, err := GetMyLeaveStats("u-3")
+	stats, err := GetLeaveStats("u-3")
 	require.NoError(t, err)
 	require.Equal(t, int64(1), stats.PendingCount)
 	require.Equal(t, int64(1), stats.ApprovedCount)

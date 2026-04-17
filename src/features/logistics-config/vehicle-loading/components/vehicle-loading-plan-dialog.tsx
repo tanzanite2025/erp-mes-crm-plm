@@ -60,7 +60,7 @@ export function VehicleLoadingPlanDialog({
               />
             </div>
 
-            <div className='space-y-3 rounded-[22px] border border-dashed border-border/60 bg-muted/[0.03] p-3 sm:p-4'>
+            <div className='space-y-3 rounded-[22px] border border-dashed border-border/60 bg-muted/3 p-3 sm:p-4'>
               <div>
                 <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>说明</div>
                 <div className='mt-2 text-sm font-black'>{vehicleName}</div>

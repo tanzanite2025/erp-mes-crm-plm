@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -52,6 +54,89 @@ func GetLogisticsProvidersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, providers)
 }
 
+func normalizeLogisticsProviderInput(input *models.LogisticsAPIProvider) {
+	input.Name = strings.TrimSpace(input.Name)
+	input.Code = strings.ToUpper(strings.TrimSpace(input.Code))
+	input.Category = strings.TrimSpace(input.Category)
+	input.Website = strings.TrimSpace(input.Website)
+	input.Contact = strings.TrimSpace(input.Contact)
+	input.Phone = strings.TrimSpace(input.Phone)
+	input.Note = strings.TrimSpace(input.Note)
+	input.AppKey = strings.TrimSpace(input.AppKey)
+	input.AppSecret = strings.TrimSpace(input.AppSecret)
+	input.CustomerID = strings.TrimSpace(input.CustomerID)
+	input.CheckWord = strings.TrimSpace(input.CheckWord)
+	input.Endpoint = strings.TrimSpace(input.Endpoint)
+	input.Status = strings.TrimSpace(input.Status)
+	normalizedCapabilities := make(models.StringList, 0, len(input.Capabilities))
+	seenCapabilities := make(map[string]struct{}, len(input.Capabilities))
+	for _, capability := range input.Capabilities {
+		normalizedCapability := strings.TrimSpace(strings.ToLower(capability))
+		if normalizedCapability == "" {
+			continue
+		}
+		if _, exists := seenCapabilities[normalizedCapability]; exists {
+			continue
+		}
+		seenCapabilities[normalizedCapability] = struct{}{}
+		normalizedCapabilities = append(normalizedCapabilities, normalizedCapability)
+	}
+	input.Capabilities = normalizedCapabilities
+
+	if input.Category == "" {
+		input.Category = "domestic"
+	}
+	if input.Status == "" {
+		input.Status = "Enabled"
+	}
+}
+
+func countProviderReferencesByCode(code string) (int64, error) {
+	if strings.TrimSpace(code) == "" {
+		return 0, nil
+	}
+
+	var count int64
+	err := db.DB.Model(&models.DeliveryOrder{}).Where("carrier_code = ?", strings.TrimSpace(code)).Count(&count).Error
+	return count, err
+}
+
+func applyVerificationReset(existing *models.LogisticsAPIProvider, input *models.LogisticsAPIProvider) {
+	if strings.TrimSpace(input.Status) == "Disabled" {
+		now := time.Now()
+		input.VerificationStatus = "disabled"
+		input.LastVerifiedAt = &now
+		input.LastVerificationMessage = "provider is disabled"
+		return
+	}
+
+	if existing == nil {
+		input.VerificationStatus = "unverified"
+		input.LastVerifiedAt = nil
+		input.LastVerificationMessage = "awaiting first verification"
+		return
+	}
+
+	configChanged := existing.Endpoint != input.Endpoint ||
+		existing.AppKey != input.AppKey ||
+		existing.AppSecret != input.AppSecret ||
+		existing.CustomerID != input.CustomerID ||
+		existing.CheckWord != input.CheckWord ||
+		existing.Status != input.Status ||
+		existing.Code != input.Code
+
+	if configChanged {
+		input.VerificationStatus = "unverified"
+		input.LastVerifiedAt = nil
+		input.LastVerificationMessage = "configuration updated, verification required"
+		return
+	}
+
+	input.VerificationStatus = existing.VerificationStatus
+	input.LastVerifiedAt = existing.LastVerifiedAt
+	input.LastVerificationMessage = existing.LastVerificationMessage
+}
+
 // SaveLogisticsProviderHandler 保存/更新物流服务商
 func SaveLogisticsProviderHandler(c *gin.Context) {
 	var input models.LogisticsAPIProvider
@@ -60,12 +145,57 @@ func SaveLogisticsProviderHandler(c *gin.Context) {
 		return
 	}
 
+	normalizeLogisticsProviderInput(&input)
+	if input.Name == "" || input.Code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 厂商名称和编码不能为空"})
+		return
+	}
+
+	duplicateQuery := db.DB.Model(&models.LogisticsAPIProvider{}).
+		Where("code = ? OR LOWER(name) = LOWER(?)", input.Code, input.Name)
 	if input.ID != 0 {
-		if err := db.DB.Model(&input).Updates(input).Error; err != nil {
+		duplicateQuery = duplicateQuery.Where("id <> ?", input.ID)
+	}
+
+	var duplicate models.LogisticsAPIProvider
+	if err := duplicateQuery.First(&duplicate).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 已存在相同编码或名称的物流服务商"})
+		return
+	} else if err != nil && err != gorm.ErrRecordNotFound {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 重复性校验失败: " + err.Error()})
+		return
+	}
+
+	if input.ID != 0 {
+		var existing models.LogisticsAPIProvider
+		if err := db.DB.First(&existing, input.ID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 物流服务商不存在"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取现有服务商失败: " + err.Error()})
+			return
+		}
+
+		if existing.Code != input.Code {
+			referenceCount, refErr := countProviderReferencesByCode(existing.Code)
+			if refErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 引用校验失败: " + refErr.Error()})
+				return
+			}
+			if referenceCount > 0 {
+				c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 当前服务商已被物流订单引用，禁止修改关键编码，请改为停用/归档"})
+				return
+			}
+		}
+
+		applyVerificationReset(&existing, &input)
+		if err := db.DB.Save(&input).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
 			return
 		}
 	} else {
+		applyVerificationReset(nil, &input)
 		if err := db.DB.Create(&input).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建失败"})
 			return
@@ -74,9 +204,59 @@ func SaveLogisticsProviderHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, input)
 }
 
+// VerifyLogisticsProviderHandler 手动验证物流服务商配置
+func VerifyLogisticsProviderHandler(c *gin.Context) {
+	id := c.Param("id")
+	var provider models.LogisticsAPIProvider
+	if err := db.DB.First(&provider, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 物流服务商不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取服务商失败: " + err.Error()})
+		return
+	}
+
+	result := services.VerifyLogisticsProvider(provider)
+	provider.VerificationStatus = result.Status
+	provider.LastVerifiedAt = &result.CheckedAt
+	provider.LastVerificationMessage = result.Message
+
+	if err := db.DB.Model(&provider).Updates(map[string]interface{}{
+		"verification_status":       provider.VerificationStatus,
+		"last_verified_at":          provider.LastVerifiedAt,
+		"last_verification_message": provider.LastVerificationMessage,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 写入验证结果失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, provider)
+}
+
 // DeleteLogisticsProviderHandler 删除服务商
 func DeleteLogisticsProviderHandler(c *gin.Context) {
 	id := c.Param("id")
+	var provider models.LogisticsAPIProvider
+	if err := db.DB.First(&provider, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 物流服务商不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取服务商失败: " + err.Error()})
+		return
+	}
+
+	referenceCount, refErr := countProviderReferencesByCode(provider.Code)
+	if refErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 引用校验失败: " + refErr.Error()})
+		return
+	}
+	if referenceCount > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 当前服务商已被物流订单引用，禁止直接删除，请改为停用/归档"})
+		return
+	}
+
 	if err := db.DB.Delete(&models.LogisticsAPIProvider{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
 		return
@@ -121,8 +301,8 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 	db.DB.Where("delivery_order_id = ?", order.ID).Order("time desc").Find(&details)
 
 	c.JSON(http.StatusOK, gin.H{
-		"order":   order,
-		"traces":  details,
+		"order":  order,
+		"traces": details,
 	})
 }
 
@@ -131,10 +311,10 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 // =========================================================================
 
 type webhookPayload struct {
-	TrackingNo  string       `json:"trackingNo"`
-	CarrierCode string       `json:"carrierCode"`
-	Status      string       `json:"status"`
-	Traces      []traceItem  `json:"traces"`
+	TrackingNo  string      `json:"trackingNo"`
+	CarrierCode string      `json:"carrierCode"`
+	Status      string      `json:"status"`
+	Traces      []traceItem `json:"traces"`
 }
 
 type traceItem struct {

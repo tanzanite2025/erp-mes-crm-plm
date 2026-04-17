@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-qu
 import { RouterProvider } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
-import { getErrorStatus } from '@/lib/error-status'
+import { getErrorKind, getErrorStatus } from '@/lib/error-status'
 import { handleServerError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
 import { registerProductionResourceQueryClient } from '@/features/production-shared/services/production-resource-invalidation'
@@ -26,9 +26,11 @@ const queryClient = new QueryClient({
         }
 
         const status = getErrorStatus(error)
+        const kind = getErrorKind(error)
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
         if (failureCount > 3 && import.meta.env.PROD) return false
+        if (kind === 'auth_required' || kind === 'circuit_breaker' || kind === 'invalid_response') return false
 
         return ![401, 403].includes(status ?? 0)
       },

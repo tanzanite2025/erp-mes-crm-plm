@@ -54,11 +54,282 @@
    - 页面内容保持最小，只用于验证 route file 被新增后，前端运行时 route collector 是否能立即把它纳入 route-derived permissions；
    - 验证观察点至少包含三处：`node scripts/verify-permissions.mjs` 的 route entries 数量变化、账号权限弹窗中是否出现新节点、系统管理权限树中是否出现新节点；
    - 本轮不把该测试路由包装成真实业务功能，也不顺手扩展 tab config / menu 文案；如需长期保留，后续再明确命名与归属。
+   - 已执行结果：新增 `src/routes/_authenticated/basic-settings/permission-tree-smoke.tsx` 后，`node scripts/generate-route-tree.mjs` 已将 `/basic-settings/permission-tree-smoke` 写入 `src/routeTree.gen.ts`，`node scripts/verify-permissions.mjs` 通过且 `Route permission entries` 增至 `134`，同时本地 `http://127.0.0.1:5173/basic-settings/permission-tree-smoke` 返回 `200`；代码链路已跑通。
+   - 由于当前会话未直接采集 UI 截图，账号权限弹窗 / 系统管理权限树节点是否已目视出现，仍以已提供的本地浏览器预览入口做最后人工确认。
+25. 本轮 `current_problems` 为样式层静态告警清理，范围已收敛到 5 个文件、9 处类名：
+   - `src/components/layout/header.tsx`：`md:left-[var(--header-fixed-left,var(--sidebar-width))]` 与两个 `max-w-[28rem]`；
+   - `src/components/ui/dialog.tsx`：两个 `z-[101]`；
+   - `src/features/engineering/tabs/template-mgmt.tsx`：`bg-gradient-to-r`、`min-h-[3rem]`；
+   - `src/features/logistics-config/vehicle-loading/components/vehicle-loading-plan-dialog.tsx`：`bg-muted/[0.03]`；
+   - `src/features/trading/shipping-management/components/shipping-vehicle-match-recommendation-dialog.tsx`：`bg-muted/[0.03]`。
+26. 这些替换均属于 Tailwind 等价值收敛，不应改变 UI 语义：
+   - `max-w-md` 等价 `28rem`，`min-h-12` 等价 `3rem`，`z-101` 与 `z-[101]` 语义一致；
+   - `bg-linear-to-r` 与 `bg-gradient-to-r`、`bg-muted/3` 与 `bg-muted/[0.03]` 属于框架推荐的新写法；
+   - `md:left-(--header-fixed-left,var(--sidebar-width))` 属于 CSS 变量 inset 简写，需要特别回归 fixed header 在桌面态的左偏移是否保持一致。
+27. 因此本轮执行边界仅为“类名替换 + 定向回归”，不改 DOM 结构、不调样式 token、不顺手做视觉重构；验证以 IDE 告警消失和相关组件关键布局未回归为准。
+   - 已执行结果：5 个文件中的 9 条 warning 已按计划替换；`pnpm exec tsc --noEmit --pretty false` 通过，且目标文件中旧告警类名（`max-w-[28rem]`、`z-[101]`、`bg-gradient-to-r`、`min-h-[3rem]`、`bg-muted/[0.03]` 等）已检索不到。
+28. `/leave-management` 当前“新建请假申请”能力的真实口径已经确认是“本人自助申请”，不是“管理员为任意人员建单”：
+   - 前端文案已直接写明 `仅支持本人申请，请假时长以后端权威试算结果为准`；
+   - `src/features/org-personnel/hooks/use-submit-leave-request.ts` 只从 `useAuthStore().user?.employeeId` 判断是否允许提交；
+   - `src/features/org-personnel/services/leave-service.ts` 的接口全部是 `/leaves/my`、`/leaves/preview`、`/leaves`、`/leaves/stats`，没有传入目标 `employeeId`；
+   - `server/handlers/leave_handlers.go` 与 `server/services/leave_service.go` 也只接受当前登录用户上下文，不接受管理员显式指定申请人。
+29. 真正的阻塞点在后端主链而非前端表现层：
+   - `resolveCurrentEmployeeContext(userID)` 先去 `users` 表读取 `employee_id`；
+   - 若账号未绑定员工档案，则直接返回 `ErrLeaveEmployeeUnbound`；
+   - 后续试算、创建、列表、统计、撤销全部基于该 `context.EmployeeID` 操作 `leave_requests.employee_id`，因此当前弹窗报错是整个领域模型的一致体现，不是前端误判。
+30. “人员管理”数据源与账号体系已确认是两层模型：
+   - 组织人事前端通过 `/employees` 直接读取员工档案，说明员工名册本身可以独立存在；
+   - 后端组织仓储存在 `DisableUsersByEmployeeIDs(...)` 之类逻辑，反向证明 `employee` 是主档，`user` 是可选绑定账号层，而不是一一强制存在。
+31. 因此如果业务目标改为“某些部门只有管理账号，但仍要替无账号员工提交请假”，建议不要打补丁式放松前端校验，而应先确认产品口径并重建申请主体：
+   - 方案A：把当前入口定义为“管理员代员工申请”，新增员工档案选择器，接口显式传 `employeeId`，后端按 `employeeId` 建单并记录 `created_by_user_id` / `submitted_by_user_id`；
+   - 方案B：保留“本人申请”入口，再额外新增“代员工申请”入口，避免本人视角列表、统计、撤销语义被管理员场景污染；
+   - 无论选 A 还是 B，都不建议继续把“当前登录账号绑定 employeeId”当作唯一申请主体，因为这与你描述的组织现实不一致。
+32. 风险与改造影响面：
+   - 接口层：`preview/create/list/stats/cancel` 都要重新定义哪些是“我的”、哪些是“按员工/按发起人/按审批视角”；
+   - 数据层：可能需要在 `leave_requests` 增加 `submitted_by_user_id`、`created_by_user_id` 或 `proxy_submit` 标记，否则无法区分“本人申请”与“代申请”；
+   - 前端层：弹窗需从只读当前人改为 employee picker，列表筛选与详情文案也要区分申请对象和操作人；
+   - 权限层：谁能替他人发起请假，需要单独的业务权限或组织职责边界，不能默认所有登录人都能代提。
+33. 用户已确认选择方案A，因此本轮实施计划以“仅代员工申请”单链路为准，不保留当前“本人申请”语义，避免两套申请主体并存继续打架：
+   - 前端 `LeaveActionDialog` 不再基于 `isEmployeeBound` 禁用，而是新增员工档案查询/选择；候选源直接复用 `/employees`，仅按员工档案状态做必要过滤；
+   - `use-submit-leave-request.ts` 不再从 `auth-store.user.employeeId` 决定可提交性，而改为基于表单选择的 `employeeId`；
+   - `src/features/org-personnel/services/leave-service.ts` 的 preview/create 请求体改为显式携带 `employeeId`；
+   - `server/handlers/leave_handlers.go` 与 `server/services/leave_service.go` 去掉 `My` 语义输入假设，改为验证目标 `employeeId` 是否存在，并以当前登录用户作为提交操作者而非申请对象本身。
+   - 已执行结果：前端弹窗已接入员工档案 `Combobox`，并去除了“当前账号必须绑定员工档案”的阻塞逻辑；提交前试算与正式创建都改为显式传递 `employeeId`。
+34. 推荐的数据层收口方式：
+   - 保留 `leave_requests.employee_id` 作为申请对象员工主键；
+   - 新增 `submitted_by_user_id`（或 `created_by_user_id`）记录当前操作账号，确保后续审批、审计、责任追溯有据可查；
+   - 现阶段不建议再要求目标员工必须存在 user 账号，这与“无账号动态人员也可申请”的目标相冲突。
+   - 已执行结果：`server/models/leave.go` 已新增 `submitted_by_user_id`；`db/db.go` 已增加历史回填逻辑，用 `users.employee_id -> leave_requests.employee_id` 反查补齐旧单据的提交人。
+35. 推荐的接口与查询语义重命名：
+   - 前端 query key 从 `leaves.my()` / `leaves.statsMy()` 调整为更中性的 `leaves.list()` / `leaves.stats()` 或等价命名；
+   - 后端路由可继续沿用 `/leaves` 前缀，但应去掉 `/my` 这种本人语义，避免后续误导；
+   - 若本轮范围受控，也可以先保留旧 URL 但内部语义改为“当前操作者可见的请假单列表”，同时在代码和文档中去掉 `My` 命名，后续再清理接口路径。
+   - 已执行结果：前端 query key 已切到 `leaves.list()` / `leaves.stats()`；前端服务名、页面查询名、详情/列表 fallback 文案已去本人语义；后端当前保留 `/leaves/my` URL 仅作兼容路径，但内部逻辑已切为“当前操作者代提交的请假单”。
+36. 本轮建议的最小可行落地顺序：
+   - 第一步：后端模型与 handler/service 输入改造，打通 `employeeId + submitted_by_user_id` 建单链；
+   - 第二步：前端弹窗接入员工档案选择器，移除“当前账号必须绑定员工”的阻塞提示；
+   - 第三步：列表、详情、统计与 query key 去本人语义化，至少保证 UI 不再继续显示“仅支持本人申请”的错误文案；
+   - 第四步：补回归测试，覆盖“无账号员工可被代提请假”的核心场景。
+   - 已执行结果：上述四步均已完成；当前已通过 `pnpm exec tsc --noEmit --pretty false` 以及 `go test ./services ./handlers -run Leave` 定向验证。
+37. `/trading/sales-orders` 当前异常现象是：页面打开后立即显示“重试”，且用户观察到没有任何后端请求动作与服务端错误日志。结合现有代码，错误态来自 `src/features/trading/components/sales-order-list-fixed.tsx` 中的 `if (isError)` 分支，而不是路由级 fallback。
+38. 已确认该页主数据链为：
+   - `SalesOrderList` 调用 `useGetSalesOrders(page, pageSize)`；
+   - `useGetSalesOrders` 通过 React Query 执行 `getSalesOrders(...)`；
+   - `getSalesOrders` 最终调用 `apiFetch('/sales-orders?...')`；
+   - 因此若页面“零请求直失败”，高概率断点在真正 `fetch(...)` 之前，例如 `apiFetch` 的前置认证拦截、query 初始化阶段异常，或请求函数参数构造阶段抛错。
+39. 进一步校验后，简单的 “auth hydration 竞态” 不是最强根因：
+   - `src/routes/_authenticated/trading/route.tsx` 已在 `beforeLoad` 中执行 `ensureAuthenticatedRouteSession(location.pathname)`；
+   - `ensureAuthenticatedRouteSession()` 内部明确 `await waitForAuthHydration()`，随后才检查 `accessToken`；
+   - 因此按当前路由设计，交易模块子页理论上不应在 auth persist 尚未 hydration 完成时就直接进入页面并发起列表查询。
+40. 当前更接近根源的判断是“请求架构 + 错误呈现架构”双重问题，而不是 sales-orders 业务模型本身：
+   - `src/lib/api-client.ts` 把 auth gate、circuit breaker 等失败都设计成可在真正 `fetch` 之前直接 `throw`；
+   - `src/features/trading/components/sales-order-list-fixed.tsx` 又把所有 query error 压缩成一个无上下文的“重试”空态，既不展示 `error.message`，也不提供分类反馈；
+   - 于是只要出现任何前置短路（auth gate、breaker、客户端契约异常等），用户侧看到的就都会是“页面直接重试、没有网络请求、服务端没有日志”。
+41. 因而该问题更适合归类为架构问题，具体是：
+   - **请求层职责过重**：`apiFetch` 同时承担 transport、auth gate、breaker、错误格式化；
+   - **页面层错误语义过弱**：列表页没有把 query error 细分为未认证、短路保护、网络超时、后端 4xx/5xx、响应契约异常；
+   - **可观测性断层**：真正的错误只在前端 logger 内部，页面与用户面完全看不到，导致排查时误判成“后端没动作”。
+42. 如果后续进入修复，正确方向不应是单点补丁，而应做结构性收口：
+   - 明确哪些错误允许在 `fetch` 前短路，以及这些错误如何统一向页面暴露；
+   - 页面至少需要显示或上报真实错误类别，不能继续把所有 query error 一律压成“重试”；
+   - 再根据实际短路类型（auth / breaker / contract）决定是否需要对子页 query 增加更明确的 ready 条件或错误边界。
+43. 本轮建议的结构性修复方案：
+   - **请求层收口**：改造 `src/lib/api-client.ts`，把当前混杂的裸 `Error` 抛出改为带结构化字段的统一错误对象/类型守卫，至少携带 `kind` / `status` / `code` / `message` / `endpoint` 等最小信息；
+   - **错误解析层收口**：新增或复用前端错误解析工具，把 `apiFetch` 产生的 auth / breaker / timeout / network / http / contract 错误映射为页面可消费的稳定语义；
+   - **页面层收口**：`src/features/trading/components/sales-order-list-fixed.tsx` 不再直接用一个“重试”块兜所有错误，而是消费统一错误语义，至少展示真实错误消息，并对未认证/短路保护/网络失败分别给出不同反馈；
+   - **同构场景复核**：检查 Trading 其他列表页是否采用同样的 `isError -> retry` 空态，如果是，则优先抽一个 Trading 共享错误态或共享错误解析器，避免修一处漏多处。
+   - 已执行结果：`src/lib/api-error.ts` 已落地，`apiFetch` 与 `api-response` 已改为抛结构化错误；`sales-order-list-fixed.tsx` 已切到共享 `TradingQueryErrorState`，能够显示具体错误原因而不是只有“重试”。
+44. 预期修改文件（初步）：
+   - `src/lib/api-client.ts`
+   - `src/lib/error-status.ts` 或新增错误解析工具文件
+   - `src/features/trading/components/sales-order-list-fixed.tsx`
+   - 视复用情况，可能新增一个 Trading 共享 query error 组件/工具文件
+   - 已执行结果：实际新增/修改文件为 `src/lib/api-error.ts`、`src/lib/api-client.ts`、`src/lib/api-response.ts`、`src/lib/error-status.ts`、`src/lib/handle-server-error.ts`、`src/features/trading/components/trading-query-error-state.tsx`、`src/features/trading/components/sales-order-list-fixed.tsx`、`src/main.tsx` 及 sales-order 本地化文案文件。
+45. 风险与边界：
+   - 这是请求层公共能力改造，影响面不止 sales-orders，因此必须尽量保持向后兼容，避免误伤其它已依赖 `status` / `isConflict` 的页面；
+   - 本轮目标是“让错误真实可见且语义可判定”，不是顺手重写整个请求层；
+   - 若发现 Trading 之外也大面积复用相同反模式，本轮仍先以 sales-orders + 最小共享抽象收口，不在一次任务里全仓重构。
+   - 已执行结果：当前改造保留了原有 `status` / `isConflict` 字段，`main.tsx` 的 React Query retry 仅额外对 `auth_required / circuit_breaker / invalid_response` 关闭重试，保持现有 401/403/409 分支兼容。
+46. 验证标准：
+   - 正常登录态下，`/trading/sales-orders` 首屏能真实发起 `/sales-orders` 请求；
+   - 若请求前被短路，前端 UI/控制台能看到明确错误原因，不再只显示“重试”；
+   - `pnpm exec tsc --noEmit --pretty false` 通过；
+   - 定向页面或相关测试验证通过，且不引入现有 409/403 等状态处理回归。
+   - 已执行结果：`pnpm exec tsc --noEmit --pretty false` 与目标文件 eslint 已通过；页面层已具备对短路/网络/契约错误的结构化暴露能力。由于当前未自动化浏览器点击验证，本地最终视觉确认仍建议在 `/trading/sales-orders` 页面手动刷新一次检查。
+
+47. 当前新增阻塞：登录 `502 Bad Gateway`
+   - 现象：登录页 `UserAuthForm` 已输出 `[AUTH_DIAG] LOGIN_ATTEMPT` 与 `[AUTH_DIAG] LOGIN_RESPONSE_FAILED`，说明前端请求已经发出，不是此前 sales-orders 那类“请求前短路”；浏览器侧拿到的是 `502`，且无后端 `requestId`。
+   - 已确认链路：当前前端同源 `/api` 会被 Vite 代理到 `http://localhost:8080`；该地址并非缺失服务，而是项目 Docker full stack 的 `xdfc-nginx-lb`。
+   - 已确认上游状态：`docker ps` 显示 `server-app-1` / `server-app-2` 持续 `Restarting`，因此 nginx 返回 `502` 的本质是后端 app 上游不可用。
+   - 已确认启动失败根因：`server/db/db.go` 的 `backfillLeaveRequestSubmittedByUsers()` 在启动迁移阶段执行历史回填时，使用 `u.employee_id = lr.employee_id` 比较，触发 PostgreSQL `character varying = uuid` 类型不匹配，应用直接 `log.Fatal` 退出。
+48. 本轮建议的最小修复方案（待审批后执行）：
+   - **只修启动阻塞点，不扩写业务语义**：收口 `server/db/db.go` 中请假单 `submitted_by_user_id` 的历史回填 SQL，使其在旧库 `employee_id` 字段类型不一致时仍能安全执行；
+   - **保持迁移幂等**：只在 `submitted_by_user_id IS NULL` 的历史数据上补齐，不扩大更新范围；
+   - **优先显式同型比较**：将 `users.employee_id` 与 `leave_requests.employee_id` 转为兼容可比较的统一类型，再进行匹配，避免 PostgreSQL 在启动期直接抛 `42883`；
+   - **不顺手改登录前端**：本轮不改 `UserAuthForm`、不改 Vite 代理口径，因为前端链路已证明只是被动暴露后端 `502`。
+   - 已执行结果：`server/db/db.go` 已将历史回填条件调整为 `NULLIF(BTRIM(u.employee_id), '') = CAST(lr.employee_id AS text)`，把 `varchar` 与 `uuid` 的直接比较收口为文本同型比较。
+49. 预期修改文件（本轮）：
+   - `server/db/db.go`
+   - 若验证过程需要，可能补充 `task.md` / `walkthrough.md` 记录本次修复结果，但不额外扩散到其它业务文件。
+50. 风险与边界：
+   - 该修复位于后端启动迁移阶段，任何 SQL 误改都会影响整个 app 容器启动，因此必须保持最小改动；
+   - 当前已知历史库存在字段类型不一致现象，本轮目标是让回填逻辑兼容这种现实数据形态，而不是在一次任务里重构整套请假表结构；
+   - 若修复后仍有其它启动失败项，再按“逐个解阻塞”的方式继续，不把本轮范围扩大成 full stack 总体重构。
+   - 已执行结果：本轮仅修改 `server/db/db.go` 一处启动回填 SQL，没有扩散到登录前端、路由代理或请假业务处理链。
+51. 验证标准（本轮）：
+   - `server-app-1` / `server-app-2` 不再持续重启；
+   - `http://localhost:8080/api/v1/health` 返回 200，而非 nginx `502`；
+   - 登录接口 `POST /api/v1/auth/login` 不再返回 `502`；
+   - 如可行，补一次后端定向编译或启动验证，确保本次修复没有引入新的语法/编译问题。
+   - 已执行结果：`go test ./db -run ^$` 与 `go test ./models -run ^$` 通过；`docker compose --env-file .env.dev -f docker-compose.yml up -d --build app nginx_lb` 已成功完成，当前 `server-app-1` / `server-app-2` 均为 `healthy`，`http://localhost:8080/api/v1/health` 已返回 200。为避免额外消耗登录限流窗口，本轮未主动再打一次登录 POST，但造成 `502` 的后端启动阻塞已被解除。
+
+52. 当前新增问题：`/leave-management` 与 `/hall-of-fame` 缺失通用顶栏和通用 TAB 栏
+   - 现象：两个页面能进入业务内容，但没有人员中心模块的通用 `Header` 与 `ModuleTabs`，视觉上像“脱离模块布局的孤页”。
+   - 已确认根因：当前 `src/routes/_authenticated/leave-management.tsx` 与 `src/routes/_authenticated/hall-of-fame.tsx` 直接挂在 `/_authenticated` 下；其父级仅有 `AuthenticatedLayout`，不会经过 `src/routes/_authenticated/personnel/route.tsx` 中的 `ModuleTabbedLayout`。
+   - 已确认布局提供点：通用顶栏与通用 TAB 栏由 `src/components/layout/module-tabbed-layout.tsx` 统一渲染；该布局内部固定输出 `Header` 与 `ModuleTabs`，因此问题不在页面内容组件本身，而在路由挂载层级。
+   - 已确认配套缺口：`src/features/org-personnel/tabs.ts` 当前未包含 `/leave-management` 与 `/hall-of-fame` 的 TAB 定义；若仅调整路由层级而不补齐 tabs，激活态与模块导航仍会缺失。
+53. 本轮建议的最小修复方案（待审批后执行）：
+   - **收口到人员中心模块布局**：让 `/leave-management` 与 `/hall-of-fame` 复用 `/personnel` 模块的 `ModuleTabbedLayout`，而不是继续作为顶级 `_authenticated` 子路由裸渲染；
+   - **保持既有对外 URL 不变**：优先在路由层做布局归并或布局包裹，尽量不改变用户当前访问地址，避免影响侧边栏、搜索和权限映射；
+   - **同步补齐人员中心 tabs**：在 `src/features/org-personnel/tabs.ts` 中加入这两个页面的入口，确保顶部 TAB 可见且激活态按当前 URL 正确匹配；
+   - **避免重复 Header**：若最终采用页面级包裹而非路由迁移，必须确保不会与 `AuthenticatedLayout` 或子布局叠出双 Header。
+   - 已执行结果：本轮采用“页面级布局包裹 + 路由文件瘦身”方案，新建 `src/features/org-personnel/components/leave-management-route-page.tsx` 与 `src/features/org-personnel/components/hall-of-fame-route-page.tsx` 作为独立页面组件承载 `ModuleTabbedLayout`；原顶级路由文件仅负责引用对应页面组件，因此既保留了 `/leave-management` 与 `/hall-of-fame` 的既有 URL，也避免了路由文件内直接声明组件触发 Hook / Fast Refresh 规则冲突。
+54. 预期修改文件（本轮）：
+   - `src/routes/_authenticated/leave-management.tsx`
+   - `src/routes/_authenticated/hall-of-fame.tsx`
+   - `src/features/org-personnel/tabs.ts`
+   - 如需更稳妥地复用布局，可能涉及 `src/components/layout/module-tabbed-layout.tsx` 或 `src/routes/_authenticated/personnel/route.tsx`，但目标是最小修改。
+   - 已执行结果：实际修改为 `src/routes/_authenticated/leave-management.tsx`、`src/routes/_authenticated/hall-of-fame.tsx`、`src/features/org-personnel/tabs.ts`，并新增 `src/features/org-personnel/components/leave-management-route-page.tsx`、`src/features/org-personnel/components/hall-of-fame-route-page.tsx` 两个页面组件文件；未改动 `ModuleTabbedLayout` 和人员中心父路由本身。
+55. 风险与边界：
+   - 这两个页面当前是顶级可访问 URL，修复时不能顺手改掉现有侧边栏、搜索索引、权限路径 `/leave-management` 与 `/hall-of-fame`；
+   - 如果直接改路由父子关系，需要留意 TanStack Router 生成树、重定向别名 `/personnel/leave` 与 `/personnel/stats` 的兼容性；
+   - 本轮只解决“缺失通用顶栏和通用 TAB 栏”的布局挂载问题，不扩大为整个人员中心路由体系重构。
+56. 验证标准（本轮）：
+   - `/leave-management` 与 `/hall-of-fame` 页面恢复通用 `Header`；
+   - 顶部出现人员中心统一 `ModuleTabs`，并且当前页签激活态正确；
+   - 不出现双 Header、双 Tabs 或布局间距异常；
+   - 原有 URL、侧边栏入口、搜索入口仍可正常进入页面。
+   - 已执行结果：`pnpm exec tsc --noEmit --pretty false` 通过；`pnpm exec eslint src/routes/_authenticated/leave-management.tsx src/routes/_authenticated/hall-of-fame.tsx src/features/org-personnel/components/leave-management-route-page.tsx src/features/org-personnel/components/hall-of-fame-route-page.tsx src/features/org-personnel/tabs.ts` 通过。由于本轮未启动浏览器预览，UI 最终呈现仍建议你本地打开 `/leave-management` 与 `/hall-of-fame` 目视确认顶栏、TAB 与激活态。
+
+57. 当前新增问题：物流接口平台页与物流供应商目录页数据源分叉
+   - 现象：`/logistics-settings/platforms` 页面当前为空时，会显示“暂无物流接口配置”；但 `/logistics-config/suppliers` 仍固定显示顺丰速运、京东物流、17TRACK 等卡片，给人一种“系统里已经配置了这些物流平台”的错觉。
+   - 已确认路由关系：`/logistics-settings/platforms` 与 `/logistics-config/platforms` 当前实际都复用 `src/features/logistics-config/platforms-tab.tsx`，属于同一个“物流接口平台配置页”。
+   - 已确认真实数据源：平台配置页内部的 `LogisticsSandboxDashboard` 通过 React Query 调用 `/logistics-push/providers`，后端落到 `server/handlers/logistics_push.go` 和 `server/models/logistics_push.go` 的 `LogisticsAPIProvider` 表，属于真实可持久化的 API 平台配置。
+   - 已确认静态目录来源：`/logistics-config/suppliers` 的 `src/features/logistics-config/supplier-directory-tab.tsx` 直接渲染前端常量 `ENTRIES`，其中顺丰、京东、17TRACK 的名称、网址、联系人、电话、备注均写死在前端文件内，不来自任何后端接口。
+58. 已确认问题根因
+   - **数据源分叉**：平台页使用真实后端表 `LogisticsAPIProvider`；供应商目录页使用前端硬编码常量 `ENTRIES`；两页没有共享单一事实来源。
+   - **模板与目录分裂**：平台页新增弹窗使用另一套前端模板常量 `LOGISTICS_TEMPLATES` 预填名称、编码、endpoint；该模板集与供应商目录页 `ENTRIES` 也不是同一个结构，因此同一承运商信息会在两个文件里各自维护。
+   - **编辑链不完整**：后端 `SaveLogisticsProviderHandler` 实际支持按 `id` 更新已有 `LogisticsAPIProvider`，但前端平台页没有“编辑已有 provider”入口，只提供新增 / 删除；供应商目录页更是完全没有任何 mutation。
+   - **后续不会自动同步**：如果后面真实接入顺丰、京东、17TRACK API，只会反映到 `/logistics-push/providers` 这条平台配置链，`/logistics-config/suppliers` 仍会继续显示旧静态卡片，除非手动再改前端常量。
+59. 影响范围
+   - 用户会误以为 `/logistics-config/suppliers` 中出现的卡片代表“系统已建档、可编辑、可对接”的真实平台；
+   - 运营同事无法从该页判断哪些平台只是目录占位、哪些平台已真正完成 API 接入；
+   - 后续若多次接入/修改实际 API 凭证、endpoint、联系人等信息，前端两处静态模板和真实表容易长期漂移，形成维护成本和错误认知。
+60. 建议的收口方案（待审批后执行）
+   - **页面职责调整为“目录 + 记录”**：`/logistics-config/suppliers` 保留卡片化目录页，但不再伪装成真实 API 配置页；它应承载“联系人、电话、网站、备注、人工记录”等业务记录能力。
+   - **显式展示 API 接入状态**：每张卡片必须明确标出“已接 API / 未接 API”，并在未接入时展示提示文案，避免用户把目录卡片误认为已完成真实平台对接。
+   - **提供跳转入口**：对于已存在或可建立平台配置的承运商卡片，需要提供直达 `/logistics-settings/platforms` 或对应平台配置弹窗/页面的入口，帮助用户从目录页跳转到真实配置页。
+   - **模板直选同步**：对于顺丰、京东、17TRACK 等已经在 `LOGISTICS_TEMPLATES` 中定义的平台，目录卡片创建时应优先从模板或真实 `LogisticsAPIProvider` 同步基础信息（名称、编码、默认 endpoint / 接入状态），而不是重复纯手工录入。
+   - **允许手工补充但不允许无约束重复**：对“尚未接 API”的物流方允许人工创建目录卡片，但必须设置去重约束（至少基于 code / name 归一匹配），防止同一承运商被多次手工录入。
+   - **补齐平台编辑闭环**：真实平台配置链仍需补齐“编辑已有 Provider”能力，让目录页跳转过去后可以继续维护 endpoint、凭证、状态等字段。
+   - 已执行结果：本轮已将 `/logistics-config/suppliers` 改为直接读取 `/logistics-push/providers` 的真实数据源，不再使用前端静态 `ENTRIES`；目录页现在支持模板直选同步、自定义联系人/电话/网站/备注维护、API 状态提示与跳转到平台配置页。
+61. 预期修改文件（待审批后执行）
+   - `src/features/logistics-config/supplier-directory-tab.tsx`
+   - `src/features/logistics-config/platforms-tab.tsx`
+   - `src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`
+   - 可能新增/调整 `src/features/logistics-config` 下的 service / hook / adapter 文件，用于把页面从静态常量迁到真实数据源
+   - 如需后端补字段或单独拆“物流供应商目录”模型，可能涉及 `server/handlers/logistics_push.go`、`server/models/logistics_push.go` 或新增专门 handler / model，但应以最小必要改动为目标
+   - 倾向新增独立的“目录卡片数据层”文件，而不是把模板、状态映射、去重逻辑继续堆在单个页面组件里。
+   - 已执行结果：实际修改为 `src/features/logistics-config/supplier-directory-tab.tsx`、`src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`、`src/features/sandbox/logistics-api/types.ts`、`server/models/logistics_push.go`、`server/handlers/logistics_push.go`，并新增 `src/features/logistics-config/provider-directory.ts`；平台容器 `platforms-tab.tsx` 本身无需调整。
+62. 验证标准（本轮待实施）
+   - 用户能在 `/logistics-config/suppliers` 上清楚区分“目录记录信息”和“真实 API 对接状态”；
+   - 顺丰 / 京东 / 17TRACK 等模板型承运商创建目录卡片时，能直接带出基础信息，减少重复录入；
+   - 未接 API 的卡片会明确显示“未对接 API”，并提供去平台配置页的引导；
+   - 已接 API 的卡片能跳转到真实平台配置，且目录页不会出现同一承运商的重复建档；
+   - 平台页已有 Provider 支持编辑，避免只能新增/删除导致后续维护断链。
+   - 已执行结果：`pnpm exec eslint src/features/logistics-config/supplier-directory-tab.tsx src/features/logistics-config/provider-directory.ts src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx src/features/sandbox/logistics-api/types.ts src/locales/messages/zh-CN/logisticsConfig.ts src/locales/messages/en-US/logisticsConfig.ts` 通过；`pnpm exec tsc --noEmit --pretty false` 通过；`go test ./handlers -run TestNonExistent -count=1` 已通过 handlers 定向编译校验。仍建议你在浏览器中目视确认目录卡片新增/编辑、API 状态标记和页面跳转体验。
+
+63. 下一阶段物流强化重点（已由你确认优先级）
+   - **接入健康度**：当前页面只有“已接 API / 未对接 API”的粗粒度状态，还缺少“最近验证成功 / 已建档未验证 / 最近异常 / 已停用”这类能支撑运维判断的健康度信息。
+   - **验证闭环**：当前可以保存 endpoint 和凭证，但缺少手动测试连接、签名校验、认证校验以及最近测试结果回写能力，导致“保存成功 ≠ 平台可用”。
+   - **引用保护**：当前 Provider 已能被真实业务链消费，但还没有明确的删除保护 / 改码保护；后续若被订单、轨迹或补偿任务引用，再误删或改 code 会直接破坏历史链路。
+   - **能力标签**：当前系统默认所有物流平台是同质的，但成熟 ERP 会区分平台是否支持 `tracking / callback / label / order_create` 等能力；这有助于后续业务调用与页面提示不再误判。
+   - **目录/接口信息分区**：虽然当前已经统一到单一数据源，但页面上仍需进一步把“联系人、电话、网站、备注”与“endpoint、凭证、验证结果、技术状态”做清晰分区，降低业务和运维的认知混淆。
+64. 设计目标（下一阶段）
+   - **让状态可运维**：用户不止知道“有没有建卡”，还要能一眼看出“这个平台现在能不能正常调用”；
+   - **让错误可恢复**：当认证失败、endpoint 不通、额度不足、签名异常时，系统能给出可操作的恢复路径，而不是统一报“接口失败”；
+   - **让历史不断链**：平台一旦被业务引用，关键标识和删除动作就要受到保护；
+   - **让新增平台成本可控**：后续再增加一个物流平台时，尽量通过模板注册 + 能力标签 + 统一状态模型接入，而不是散点改很多文件；
+   - **让页面职责更清晰**：目录页强调业务记录与协同，平台页强调接口配置与可用性验证，两者共享同一数据源但展示侧重点不同。
+65. 建议实施顺序（下一阶段）
+   - **P0-1 接入健康度模型**：在 `LogisticsAPIProvider` 中增加最近验证状态、最近验证时间、最近错误摘要等字段，并在页面上可视化展示；
+   - **P0-2 测试连接 / 验证闭环**：提供手动测试入口，校验 endpoint 连通性、认证/签名有效性和响应结构，并把结果持久化；
+   - **P0-3 引用保护**：为删除、停用、改码增加业务引用校验，优先从“硬删除”收口为“停用/归档”；
+   - **P1-1 能力标签**：为模板和 Provider 增加能力清单，支持页面显示与后续业务调用分流；
+   - **P1-2 信息分区**：重构目录页与平台页的展示布局，把目录信息和接口信息显式拆区呈现。
+66. 预期修改范围（下一阶段待审批后执行）
+   - `server/models/logistics_push.go`
+   - `server/handlers/logistics_push.go`
+   - 如需真实验证逻辑，可能新增 `server/services` 或 `server/sandbox/logistics` 下的 provider validation/service 文件
+   - `src/features/logistics-config/provider-directory.ts`
+   - `src/features/logistics-config/supplier-directory-tab.tsx`
+   - `src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`
+   - `src/features/sandbox/logistics-api/types.ts`
+   - 可能补充相应的 locale 文案与定向测试/编译校验
+67. 范围边界（下一阶段）
+   - **本轮不做** 审批流、智能路由引擎、复杂 BI 看板、多平台自动择优派单；
+   - **本轮聚焦** 平台可用性、维护闭环、数据保护与展示清晰度；
+   - 若真实第三方 API 需要外部密钥或网络环境，本轮优先先打通框架和状态机，不强行接入所有外部平台。
+68. 第二轮细化目标（待审批后执行）
+   - **让状态判定更准**：不是简单继续增加字段，而是把验证状态与平台模板、能力标签、停用状态、必填字段绑定，减少“状态看起来健康，但其实只是命中了宽松条件”的误判。
+   - **让测试连接更像 ERP 运维工具**：当前验证链已经具备最小闭环，但结果仍偏通用；第二轮要把“失败原因 + 下一步动作”做得更可执行，帮助用户快速修复配置。
+   - **让保护提示更前置**：当前引用保护主要由后端兜底；第二轮要把“为什么不能删 / 不能改”前移到前端交互层，降低误操作成本。
+   - **让能力标签更可感知**：能力标签现在已经有了数据结构和基础 UI，但还需要更直接地作用到列表卡片、状态提示和使用认知上。
+   - **让信息分区更稳定易读**：目录信息与接口信息虽然已拆开，但文案仍可进一步压缩为更适合 ERP 日常维护的表达方式。
+69. 第二轮细化范围（待审批后执行）
+   - **验证状态机收紧**：
+     - 按模板/平台能力定义更严格的必填项校验；
+     - 明确区分“endpoint 可达”与“配置完整、可继续联调”的语义；
+     - 对 Disabled Provider 的展示和测试行为做更一致的处理。
+   - **测试连接结果细化**：
+     - 统一错误分类（配置错误 / 网络错误 / 平台异常 / 认证待补 / 停用）；
+     - 对常见模板平台输出更明确的修复提示；
+     - 如无法真正认证，则至少给出“当前只是网络探测，不代表平台业务认证已通过”的清晰提示。
+   - **引用保护交互细化**：
+     - 删除按钮前增加风险提示；
+     - 若关键编码变更存在历史引用风险，编辑态就提前提示；
+     - 对“建议停用/归档”的用户动作给出更明确引导。
+   - **能力标签联动细化**：
+     - 目录卡片上直观展示核心能力组合；
+     - 平台页在编辑时让能力标签与模板默认值关系更清楚；
+     - 为后续业务按能力选平台保留稳定契约。
+   - **信息分区与文案细化**：
+     - 收口“未配置 / 未验证 / 已停用 / 最近异常 / 配置不完整”的中文文案；
+     - 减少重复提示，避免页面同时出现多个相近状态描述造成噪音；
+     - 对目录页与平台页分别保留最需要的提示，不做机械复制。
+70. 建议实施顺序（第二轮，待审批后执行）
+   - **P0-1** 收紧验证状态机与结果分类；
+   - **P0-2** 细化测试连接结果摘要与下一步动作提示；
+   - **P1-1** 前移删除/改码风险提示；
+   - **P1-2** 加强能力标签的列表化展示与模板联动；
+   - **P1-3** 清理目录页 / 平台页重复和冗余文案。
+71. 预期修改范围（第二轮待审批后执行）
+   - `server/services/logistics_provider_validation_service.go`
+   - `server/handlers/logistics_push.go`
+   - `server/models/logistics_push.go`（如需补充状态字段枚举或统计字段）
+   - `src/features/logistics-config/provider-directory.ts`
+   - `src/features/logistics-config/supplier-directory-tab.tsx`
+   - `src/features/sandbox/logistics-api/components/logistics-sandbox-dashboard.tsx`
+   - 可能补充 `src/locales/messages/zh-CN/logisticsConfig.ts` 与 `en-US/logisticsConfig.ts`
+72. 第二轮边界（待审批后执行）
+   - **仍不做** 审批流、自动择优平台、复杂成本策略、BI 看板；
+   - **仍坚持** React Query 作为前端服务端真相入口，不回退到局部 `useEffect + useState` 拉数；
+   - **仍坚持** 以后端状态为准，前端只做前置提示和展示增强，不自建另一套判定真相。
 
 #### 当前仍待收尾
 
-1. 本轮长远根因修复已完成；当前进入真实路由新增验证阶段，待用户确认后补一个最小 authenticated 子路由，验证权限树自动同步链在真路由新增场景下可闭环。
-2. 已完成基础定向验证：`pnpm exec tsc --noEmit --pretty false` 通过；`node scripts/verify-permissions.mjs` 通过，且其 route 输入已不再依赖旧的 `authenticated-route-catalog.ts` 快照链。
+1. 权限树自动同步的真实新增路由代码链路已验证闭环；如需最终 UI 结论，仅剩在本地浏览器中目视确认账号权限弹窗 / 系统管理权限树是否已出现 `/basic-settings/permission-tree-smoke` 对应节点。
+2. 当前这批 `current_problems` 样式告警已完成等价替换与定向回归；若 IDE 刷新后仍有残留，需要再基于最新告警列表做增量清理。
 3. 中文实施文档已补充本轮结果，但最终收尾前仍需再统一复核一次所有 `roleBindings / effectiveRoles / primaryRoleId` 历史术语是否只剩兼容说明，不再形成错误引导。
 
 ### 17.1 目标
