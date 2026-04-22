@@ -10,11 +10,6 @@ export function getLinearBarcodeTabs(t: TranslateFn): TabItem[] {
       label: t('codeCenter.linearBarcode.tabs.protocol'),
       href: '/code-center/linear-barcode/protocol',
     },
-    {
-      key: 'numbering',
-      label: t('codeCenter.linearBarcode.tabs.numbering'),
-      href: '/code-center/linear-barcode/numbering',
-    },
   ]
 }
 
@@ -34,6 +29,11 @@ export function getSharedCodeSourceTabs(t: TranslateFn): TabItem[] {
       key: 'holeCodes',
       label: t('codeCenter.sharedCodeSource.tabs.holeCodes'),
       href: '/code-center/shared-code-source/hole-codes',
+    },
+    {
+      key: 'numberingEngine',
+      label: t('codeCenter.sharedCodeSource.tabs.numberingEngine'),
+      href: '/code-center/shared-code-source/numbering-engine',
     },
   ]
 }

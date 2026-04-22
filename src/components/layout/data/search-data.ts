@@ -1,6 +1,6 @@
-import { Layout, PlusCircle } from 'lucide-react'
 import type { ElementType } from 'react'
 import { type TranslationKey } from '@/locales'
+import { Layout, PlusCircle } from 'lucide-react'
 
 export type SearchCategory = 'navigation' | 'modules' | 'actions' | 'data'
 
@@ -15,7 +15,10 @@ export interface SearchItem {
   pinyin?: string
 }
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 type CommandItemConfig = {
   id: string
@@ -228,6 +231,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'smsb',
   },
   {
+    id: 'tab-terminal-mobile-capture',
+    href: '/terminal-config/mobile-capture',
+    titleKey: 'commandMenu.items.terminalMobileCapture',
+    parentKey: 'commandMenu.parents.terminalConfig',
+    keywords: ['mobile', 'camera', 'capture', 'phone', '移动采集', '手机扫码'],
+    pinyin: 'ydcj',
+  },
+  {
     id: 'tab-terminal-downloads',
     href: '/terminal-config/downloads',
     titleKey: 'commandMenu.items.terminalDownloads',
@@ -244,12 +255,12 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'azsm',
   },
   {
-    id: 'tab-basic-dm-numbering',
-    href: '/basic-settings/dm-numbering',
-    titleKey: 'commandMenu.items.dmNumbering',
-    parentKey: 'commandMenu.parents.basicSettings',
-    keywords: ['dm', 'numbering', '编码'],
-    pinyin: 'dmhm',
+    id: 'tab-code-center-shared-numbering-engine',
+    href: '/code-center/shared-code-source/numbering-engine',
+    titleKey: 'commandMenu.items.sharedNumberingEngine',
+    parentKey: 'commandMenu.parents.codeCenter',
+    keywords: ['shared', 'numbering', 'engine', 'barcode', 'dm', 'dm码', 'dm号码', '发号', '编号', '业务编号', '规则'],
+    pinyin: 'gxfhqy',
   },
   {
     id: 'tab-basic-units',
@@ -336,7 +347,13 @@ const moduleGroups: CommandItemConfig[] = [
     href: '/raw-materials',
     titleKey: 'commandMenu.items.rawMaterialsManagement',
     parentKey: 'commandMenu.parents.resourceManagement',
-    keywords: ['raw material', 'procurement', 'catalog', '原材料', '原材料管理'],
+    keywords: [
+      'raw material',
+      'procurement',
+      'catalog',
+      '原材料',
+      '原材料管理',
+    ],
     pinyin: 'yclgl',
   },
   {
@@ -466,7 +483,15 @@ const actionConfigs: CommandItemConfig[] = [
     href: '/approval/routing',
     titleKey: 'commandMenu.items.approvalCenter',
     parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['approval', 'workflow', 'center', 'message', 'routing', '消息中心', '审批中心'],
+    keywords: [
+      'approval',
+      'workflow',
+      'center',
+      'message',
+      'routing',
+      '消息中心',
+      '审批中心',
+    ],
     pinyin: 'spzx',
   },
 ]
@@ -475,7 +500,7 @@ function buildKeywords(
   t: TranslateFn,
   titleKey: TranslationKey,
   parentKey: TranslationKey,
-  extraKeywords: string[] = [],
+  extraKeywords: string[] = []
 ) {
   return [t(titleKey), t(parentKey), ...extraKeywords]
 }
@@ -484,7 +509,7 @@ function toSearchItem(
   t: TranslateFn,
   config: CommandItemConfig,
   category: SearchCategory,
-  icon: ElementType,
+  icon: ElementType
 ): SearchItem {
   return {
     id: config.id,
@@ -493,17 +518,26 @@ function toSearchItem(
     category,
     icon,
     parentTitle: t(config.parentKey),
-    keywords: buildKeywords(t, config.titleKey, config.parentKey, config.keywords),
+    keywords: buildKeywords(
+      t,
+      config.titleKey,
+      config.parentKey,
+      config.keywords
+    ),
     pinyin: config.pinyin || '',
   }
 }
 
 function getTabItems(t: TranslateFn): SearchItem[] {
-  return moduleGroups.map((config) => toSearchItem(t, config, 'modules', Layout))
+  return moduleGroups.map((config) =>
+    toSearchItem(t, config, 'modules', Layout)
+  )
 }
 
 function getActionItems(t: TranslateFn): SearchItem[] {
-  return actionConfigs.map((config) => toSearchItem(t, config, 'actions', PlusCircle))
+  return actionConfigs.map((config) =>
+    toSearchItem(t, config, 'actions', PlusCircle)
+  )
 }
 
 export function getSearchItems(t: TranslateFn): SearchItem[] {

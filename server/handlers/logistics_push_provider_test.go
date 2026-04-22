@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,31 +20,61 @@ func setupLogisticsProviderHandlerTestDB(t *testing.T) {
 	setupHandlerSQLiteTestDB(t, &models.LogisticsAPIProvider{}, &models.DeliveryOrder{})
 }
 
+func setupLogisticsProviderOnlyHandlerTestDB(t *testing.T) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.LogisticsAPIProvider{})
+}
+
+func TestGetLogisticsProvidersHandlerDoesNotRequireDeliveryOrdersTable(t *testing.T) {
+	setupLogisticsProviderOnlyHandlerTestDB(t)
+
+	provider := models.LogisticsAPIProvider{
+		Name:   "顺丰速运",
+		Code:   "SF",
+		Status: "Enabled",
+	}
+	require.NoError(t, db.DB.Create(&provider).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/logistics-push/providers", nil)
+
+	GetLogisticsProvidersHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var providers []models.LogisticsAPIProvider
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &providers))
+	require.Len(t, providers, 1)
+	require.Equal(t, "SF", providers[0].Code)
+	require.Equal(t, int64(0), providers[0].ReferenceCount)
+}
+
 func TestSaveLogisticsProviderHandlerPreservesOmittedFieldsOnUpdate(t *testing.T) {
 	setupLogisticsProviderHandlerTestDB(t)
 
 	now := time.Now().UTC()
 	existing := models.LogisticsAPIProvider{
-		ID:             1,
-		CreatedAt:      now,
-		UpdatedAt:      now,
-		Name:           "顺丰速运",
-		Code:           "SF",
-		Category:       "domestic",
-		Website:        "https://sf.example.com",
-		Contact:        "旧联系人",
-		Phone:          "95338",
-		Note:           "旧备注",
-		AppKey:         "key-1",
-		AppSecret:      "secret-1",
-		CustomerID:     "customer-1",
-		CheckWord:      "check-1",
-		Endpoint:       "https://old.example.com",
-		Status:         "Enabled",
-		Capabilities:   models.StringList{"tracking", "callback"},
-		QuotaTotal:     1000,
-		QuotaUsed:      120,
-		QuotaAlertAt:   80,
+		ID:           1,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		Name:         "顺丰速运",
+		Code:         "SF",
+		Category:     "domestic",
+		Website:      "https://sf.example.com",
+		Contact:      "旧联系人",
+		Phone:        "95338",
+		Note:         "旧备注",
+		AppKey:       "key-1",
+		AppSecret:    "secret-1",
+		CustomerID:   "customer-1",
+		CheckWord:    "check-1",
+		Endpoint:     "https://old.example.com",
+		Status:       "Enabled",
+		Capabilities: models.StringList{"tracking", "callback"},
+		QuotaTotal:   1000,
+		QuotaUsed:    120,
+		QuotaAlertAt: 80,
 	}
 	require.NoError(t, db.DB.Create(&existing).Error)
 

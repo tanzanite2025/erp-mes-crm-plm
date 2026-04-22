@@ -14,6 +14,7 @@ export const codeCenter = {
   sharedCodeSource: {
     tabs: {
       holeCodes: 'Hole Codes',
+      numberingEngine: 'Shared Numbering Engine',
     },
     holeCodes: {
       page: {
@@ -90,6 +91,25 @@ export const codeCenter = {
         countDeleteFailed: 'Failed to delete hole count',
         duplicatePrefixError: 'This hole prefix already exists',
         duplicateCountError: 'This hole count already exists',
+      },
+    },
+    numberingEngine: {
+      page: {
+        title: 'Shared Numbering Engine',
+        description: 'Centralized entry for the current shared numbering configuration and linear-barcode numbering rules',
+        notice:
+          'This shared page now only keeps the linear-barcode shared numbering configuration. Maintain DM code numbering rules in the standalone DM Code module.',
+        badges: {
+          linearBarcode: 'Linear Barcode',
+          dmCode: 'DM Code',
+        },
+      },
+      sections: {
+        linearBarcode: {
+          title: 'Linear Barcode Numbering Rules',
+          description: 'Reuses the current linear-barcode numbering rules and persisted /numbering/rules backend capability.',
+          status: 'Backend numbering connected',
+        },
       },
     },
   },

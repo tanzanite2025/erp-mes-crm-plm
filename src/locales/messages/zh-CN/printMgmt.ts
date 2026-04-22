@@ -83,8 +83,8 @@ export const printMgmt = {
       edit: '编辑模板',
       duplicate: '生成复本',
       delete: '删除模板',
-      numberRuleConfig: '号码规则配置',
-      ruleManagement: '规则管理',
+      numberRuleConfig: '打开共享发号引擎',
+      ruleManagement: '共享发号引擎',
     },
     templates: {
       productDm: {

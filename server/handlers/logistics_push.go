@@ -207,6 +207,9 @@ func countProviderReferencesByCode(code string) (int64, error) {
 	if strings.TrimSpace(code) == "" {
 		return 0, nil
 	}
+	if !db.DB.Migrator().HasTable(&models.DeliveryOrder{}) {
+		return 0, nil
+	}
 
 	var count int64
 	err := db.DB.Model(&models.DeliveryOrder{}).Where("carrier_code = ?", strings.TrimSpace(code)).Count(&count).Error

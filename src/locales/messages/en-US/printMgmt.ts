@@ -86,8 +86,8 @@ export const printMgmt = {
       edit: 'Edit Template',
       duplicate: 'Duplicate',
       delete: 'Delete Template',
-      numberRuleConfig: 'Numbering Rule Config',
-      ruleManagement: 'Rule Management',
+      numberRuleConfig: 'Open Shared Numbering Engine',
+      ruleManagement: 'Shared Numbering Engine',
     },
     templates: {
       productDm: {

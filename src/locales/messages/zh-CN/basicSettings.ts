@@ -1,8 +1,8 @@
 export const basicSettings = {
   tabs: {
-    dmNumbering: "DM号码",
+    dmNumbering: "DM码发号规则",
     units: "单位管理",
-    sequences: "业务编号",
+    sequences: "一维码发号规则",
     enterprise: "企业信息",
     security: "安全设置"
   },
@@ -26,8 +26,8 @@ export const basicSettings = {
   },
   sequences: {
     page: {
-      title: "业务编号规则原子中心",
-      subtitle: "定义系统内各类业务单据的前缀、周期与数字化发号原子逻辑"
+      title: "一维码发号规则配置中心",
+      subtitle: "维护一维码共享发号所需的规则键、周期策略与数字化发号逻辑"
     },
     syncGuard: {
       title: "原子性同步保障",
@@ -292,6 +292,10 @@ export const basicSettings = {
     }
   },
   dmNumbering: {
+    page: {
+      title: "DM码发号规则中心",
+      subtitle: "维护 DM 码共享发号页中的段位规则、仿真配置与当前本地发号逻辑"
+    },
     table: {
       headers: {
         segment: "分段",

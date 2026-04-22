@@ -4,6 +4,7 @@ export const terminalConfig = {
     printers: '打印机驱动',
     pda: 'PDA 终端',
     scanners: '扫码设备',
+    mobileCapture: '移动采集',
     downloads: '驱动下载',
     guides: '安装说明',
   },
@@ -19,21 +20,25 @@ export const terminalConfig = {
     printers: {
       title: '打印机驱动',
       description: '集中维护标签打印、联调工具与打印设备驱动包的发布入口。',
-      summary: '这里和打印中心分工不同：打印中心负责模板与记录，这里负责终端、驱动与接入包。正式驱动上传后，只需要替换静态清单里的下载链接即可。',
+      summary:
+        '这里和打印中心分工不同：打印中心负责模板与记录，这里负责终端、驱动与接入包。正式驱动上传后，只需要替换静态清单里的下载链接即可。',
     },
     scanners: {
       title: '扫码设备',
       description: '覆盖扫码枪、固定扫描头和扫描模块的接入说明与参数模板。',
-      summary: '扫码设备接入建议统一规范成 HID 回车模式或明确的串口协议模板，这样页面表单、产线过站和 PDA 扫码可以共用同一套约定。',
+      summary:
+        '扫码设备接入建议统一规范成 HID 回车模式或明确的串口协议模板，这样页面表单、产线过站和 PDA 扫码可以共用同一套约定。',
     },
     downloads: {
       title: '驱动下载',
       description: '统一汇总打印机、PDA 与扫码设备的下载位，便于现场快速分发。',
-      summary: '第一版已经预留了统一下载位和分类卡片。后续如果你们把驱动包放进企业网盘、OSS 或内网文件服务器，只需要把清单里的下载地址补上即可。',
+      summary:
+        '第一版已经预留了统一下载位和分类卡片。后续如果你们把驱动包放进企业网盘、OSS 或内网文件服务器，只需要把清单里的下载地址补上即可。',
     },
     guides: {
       title: '安装说明',
-      description: '整理打印机、PDA 与扫码设备部署前后的安装顺序、验收项和注意事项。',
+      description:
+        '整理打印机、PDA 与扫码设备部署前后的安装顺序、验收项和注意事项。',
     },
   },
   resources: {
@@ -143,7 +148,8 @@ export const terminalConfig = {
   pda: {
     page: {
       title: 'PDA 终端',
-      description: 'PDA 扫码工作台，直接调用 /pda/ingest，并复用后端持久化的一维码协议默认值。',
+      description:
+        'PDA 扫码工作台，直接调用 /pda/ingest，并复用后端持久化的一维码协议默认值。',
       openShell: '打开扫码终端',
       configLoading: '配置加载中',
       configReady: '配置已就绪',
@@ -152,9 +158,11 @@ export const terminalConfig = {
     },
     workbench: {
       title: '扫码采集工作台',
-      description: '手机摄像头、PDA 扫描头或扫码枪采到的原始码值，都会从这里进入统一采集链路。',
+      description:
+        '手机摄像头、PDA 扫描头或扫码枪采到的原始码值，都会从这里进入统一采集链路。',
       inputTitle: '摄像头 / 扫码输入',
-      inputDescription: '扫描到的码值会先保留原始值，再由后端解析协议、路由业务场景，并广播到 PC 端。',
+      inputDescription:
+        '扫描到的码值会先保留原始值，再由后端解析协议、路由业务场景，并广播到 PC 端。',
       autoSubmit: '自动提交',
       saveDefaults: '保存默认值',
       inputPlaceholder: '扫描或输入原始条码，例如 25010101R140001',
@@ -188,7 +196,8 @@ export const terminalConfig = {
       title: '协议默认值',
       description: '默认值来自后端持久化配置，不再只存在于前端页面里。',
       sequenceRule: '流水规则',
-      sequenceRuleHint: 'PDA 页面会直接读取这套协议中的 ingestDefaults，并可写回新的设备默认值。',
+      sequenceRuleHint:
+        'PDA 页面会直接读取这套协议中的 ingestDefaults，并可写回新的设备默认值。',
       payloadPreview: '载荷预览',
     },
     payload: {
@@ -203,7 +212,8 @@ export const terminalConfig = {
     },
     response: {
       title: '采集响应',
-      description: '后端返回解析结果、命中的产品或物料，以及是否桥接到了盘点提交流程。',
+      description:
+        '后端返回解析结果、命中的产品或物料，以及是否桥接到了盘点提交流程。',
       bridged: '已桥接',
       ingestOnly: '仅采集',
       productionDate: '生产日期',
@@ -218,7 +228,8 @@ export const terminalConfig = {
       serial: '流水号',
       product: '产品',
       material: '物料',
-      empty: '还没有提交采集请求。扫码后这里会显示协议解析、产品命中和桥接结果。',
+      empty:
+        '还没有提交采集请求。扫码后这里会显示协议解析、产品命中和桥接结果。',
     },
     toast: {
       rawCodeRequired: '请先采集或输入条码内容。',
@@ -232,7 +243,8 @@ export const terminalConfig = {
     page: {
       badge: 'PDA 扫码壳',
       title: '极简常驻扫码壳',
-      description: '默认自动提交 /pda/ingest。失败按场景入队，重复码自动合并，联网后自动重试。',
+      description:
+        '默认自动提交 /pda/ingest。失败按场景入队，重复码自动合并，联网后自动重试。',
       online: '在线',
       offline: '离线',
       configLoading: '配置加载中',
@@ -290,7 +302,8 @@ export const terminalConfig = {
       waitingRetry: '等待重试',
     },
     hints: {
-      lockMode: '音量键唤起能力取决于设备浏览器是否分发按键事件。Web 页面无法在真正息屏状态下从系统层唤醒应用；当前实现是“前台锁定模式 + 保持常亮 + 热键尽力拦截”。',
+      lockMode:
+        '音量键唤起能力取决于设备浏览器是否分发按键事件。Web 页面无法在真正息屏状态下从系统层唤醒应用；当前实现是“前台锁定模式 + 保持常亮 + 热键尽力拦截”。',
     },
     toast: {
       scanCollected: '扫码已采集',

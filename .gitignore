@@ -109,3 +109,22 @@ server/route_snapshot*.txt
 # Coverage artifacts
 coverage.out
 *.coverprofile
+
+# Local test/output artifacts
+output/
+playwright-report/
+test-results/
+blob-report/
+
+# One-off local debug scripts
+_tmp*
+tmp_*
+server/_tmp*
+server/tmp_*
+server/debug_*.go
+
+# Local planning / generated reports
+task.md
+implementation_plan.md
+walkthrough.md
+action-closure-report.json

@@ -47,9 +47,9 @@ export function LinearBarcodeMgmt() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
-  const canOpenSequences = canOpenRouteEntryNonBlocking(
+  const canOpenSharedNumberingEngine = canOpenRouteEntryNonBlocking(
     user,
-    '/code-center/linear-barcode/numbering'
+    '/code-center/shared-code-source/numbering-engine'
   )
 
   // --- 本地逻辑状态 (编辑态) ---
@@ -299,16 +299,16 @@ export function LinearBarcodeMgmt() {
               ? t('basicSettings.linearBarcode.page.actions.saving')
               : t('basicSettings.linearBarcode.page.actions.save')}
           </Button>
-          {canOpenSequences && (
+          {canOpenSharedNumberingEngine && (
             <Button
               variant='ghost'
               className='h-11 w-full rounded-full px-8 text-[10px] font-black tracking-widest uppercase sm:w-auto'
               onClick={() =>
-                navigate({ to: '/code-center/linear-barcode/numbering' })
+                navigate({ to: '/code-center/shared-code-source/numbering-engine' })
               }
             >
               <Settings2 className='mr-2 size-4' />
-              {t('basicSettings.linearBarcode.page.actions.numberingRule')}
+              {t('codeCenter.sharedCodeSource.tabs.numberingEngine')}
             </Button>
           )}
           <Button

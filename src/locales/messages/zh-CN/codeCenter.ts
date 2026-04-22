@@ -14,6 +14,7 @@ export const codeCenter = {
   sharedCodeSource: {
     tabs: {
       holeCodes: '孔型孔数',
+      numberingEngine: '共享发号引擎',
     },
     holeCodes: {
       page: {
@@ -84,6 +85,24 @@ export const codeCenter = {
         countDeleteFailed: '孔数删除失败',
         duplicatePrefixError: '该孔型前缀已存在',
         duplicateCountError: '该孔数已存在',
+      },
+    },
+    numberingEngine: {
+      page: {
+        title: '共享发号引擎',
+        description: '集中承载当前共享发号配置与一维码发号规则入口',
+        notice: '当前共享页仅保留一维码共享发号规则配置。DM 码发号规则请在独立的 DM 码模块中维护。',
+        badges: {
+          linearBarcode: '一维码',
+          dmCode: 'DM码',
+        },
+      },
+      sections: {
+        linearBarcode: {
+          title: '一维码发号规则',
+          description: '复用当前一维码发号规则与后端 /numbering/rules 配置能力。',
+          status: '后端发号已接入',
+        },
       },
     },
   },

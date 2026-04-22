@@ -19,7 +19,7 @@ import { useAuthStore } from '@/stores/auth-store'
 export function BarcodeTemplateManager() {
     const { t } = useLanguage()
     const user = useAuthStore((state) => state.user)
-    const canOpenDmNumbering = canOpenRouteEntryNonBlocking(user, '/basic-settings/dm-numbering')
+    const canOpenSharedNumberingEngine = canOpenRouteEntryNonBlocking(user, '/code-center/shared-code-source/numbering-engine')
 
     // 模拟数据
     const templates = [
@@ -82,10 +82,10 @@ export function BarcodeTemplateManager() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end' className='w-48 rounded-xl border-dashed'>
-                                        {template.hasNumberingRule && canOpenDmNumbering && (
+                                        {template.hasNumberingRule && canOpenSharedNumberingEngine && (
                                             <>
                                                 <DropdownMenuItem asChild className='text-xs font-bold'>
-                                                    <Link to='/basic-settings/dm-numbering' className='flex w-full items-center cursor-pointer'>
+                                                    <Link to='/code-center/shared-code-source/numbering-engine' className='flex w-full items-center cursor-pointer'>
                                                         <Hash className='mr-2 h-3.5 w-3.5 text-blue-500' />
                                                         {t('printMgmt.barcodeManager.actions.numberRuleConfig')}
                                                     </Link>
@@ -125,7 +125,7 @@ export function BarcodeTemplateManager() {
                                     </span>
                                     <span className='text-[10px] font-mono font-bold'>{template.lastModified}</span>
                                 </div>
-                                {template.hasNumberingRule && canOpenDmNumbering ? (
+                                {template.hasNumberingRule && canOpenSharedNumberingEngine ? (
                                     <Button 
                                         variant='ghost' 
                                         size='sm' 
@@ -133,7 +133,7 @@ export function BarcodeTemplateManager() {
                                         asChild
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        <Link to='/basic-settings/dm-numbering'>
+                                        <Link to='/code-center/shared-code-source/numbering-engine'>
                                             {t('printMgmt.barcodeManager.actions.ruleManagement')}
                                         </Link>
                                     </Button>

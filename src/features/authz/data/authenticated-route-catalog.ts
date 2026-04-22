@@ -4,9 +4,9 @@
 export const AUTHENTICATED_ROUTE_PATHS = [
   "/quality/standards/:standardid/preview",
   "/quality/standards/:standardid/edit",
+  "/code-center/shared-code-source/numbering-engine",
   "/engineering-db/engineering-master/weaving-mode",
   "/code-center/shared-code-source/hole-codes",
-  "/code-center/linear-barcode/numbering",
   "/code-center/linear-barcode/protocol",
   "/quality/standards/new",
   "/logistics-config/vehicle-specs-library",
@@ -25,6 +25,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/engineering/product-attributes",
   "/sales-analysis/orders-analysis",
   "/system-management/audit-engine",
+  "/terminal-config/mobile-capture",
   "/logistics-settings/platforms",
   "/personal-workbench/workspace",
   "/shipping-management/contacts",

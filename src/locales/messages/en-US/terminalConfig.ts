@@ -4,6 +4,7 @@ export const terminalConfig = {
     printers: 'Printer Drivers',
     pda: 'PDA Terminal',
     scanners: 'Scanner Devices',
+    mobileCapture: 'Mobile Capture',
     downloads: 'Driver Downloads',
     guides: 'Install Guides',
   },
@@ -18,7 +19,8 @@ export const terminalConfig = {
   pages: {
     printers: {
       title: 'Printer Drivers',
-      description: 'Central hub for printer drivers, setup tools, and release packages.',
+      description:
+        'Central hub for printer drivers, setup tools, and release packages.',
       summary:
         'This page is separate from the print center: the print center manages templates and records, while this area manages terminal-side drivers and access packages. Once the official drivers are uploaded, you only need to replace the download links in the static list.',
     },
@@ -62,8 +64,7 @@ export const terminalConfig = {
           tsc: {
             title: 'TSC Label Printer Universal Driver',
             target: 'TSC / TTP / TDP Series',
-            note:
-              'Recommended to be released together with the print-center template package. After upload, the download link can be replaced directly.',
+            note: 'Recommended to be released together with the print-center template package. After upload, the download link can be replaced directly.',
           },
           zebra: {
             title: 'Zebra Industrial Printer Driver',
@@ -74,13 +75,13 @@ export const terminalConfig = {
       },
       debugTools: {
         title: 'Printer Debug Tools',
-        description: 'Used for port inspection, paper calibration, and print self-checks.',
+        description:
+          'Used for port inspection, paper calibration, and print self-checks.',
         items: {
           portTool: {
             title: 'Printer Port Debug Utility',
             target: 'USB / Network Printers',
-            note:
-              'Recommended to ship together with print-center setup, reducing cases where templates are correct but the driver path is not connected.',
+            note: 'Recommended to ship together with print-center setup, reducing cases where templates are correct but the driver path is not connected.',
           },
         },
       },
@@ -88,17 +89,16 @@ export const terminalConfig = {
     pda: {
       workTerminals: {
         title: 'PDA Work Terminals',
-        description: 'Suitable for inbound, outbound, stocktake, and on-site scanning operations.',
+        description:
+          'Suitable for inbound, outbound, stocktake, and on-site scanning operations.',
         items: {
           browserShell: {
             title: 'PDA Browser Shell Package',
-            note:
-              'Used to configure fullscreen mode, fixed homepage behavior, and automatic scanner-key wakeup.',
+            note: 'Used to configure fullscreen mode, fixed homepage behavior, and automatic scanner-key wakeup.',
           },
           offlineGuide: {
             title: 'PDA Offline Cache Guide',
-            note:
-              'Describes offline caching, reconnect synchronization, and exception retry behavior.',
+            note: 'Describes offline caching, reconnect synchronization, and exception retry behavior.',
           },
         },
       },
@@ -106,13 +106,13 @@ export const terminalConfig = {
     scanners: {
       deviceModules: {
         title: 'Scanners and Scan Modules',
-        description: 'Covers HID keyboard mode, serial mode, and fixed scan-head debugging.',
+        description:
+          'Covers HID keyboard mode, serial mode, and fixed scan-head debugging.',
         items: {
           scannerGuide: {
             title: 'Scanner Configuration Manual',
             target: 'USB HID Scanner',
-            note:
-              'It is recommended to default to enter-suffix mode so ERP forms can receive scans directly.',
+            note: 'It is recommended to default to enter-suffix mode so ERP forms can receive scans directly.',
           },
           fixedHeadTemplate: {
             title: 'Fixed Scan Head Serial Template',
@@ -126,7 +126,8 @@ export const terminalConfig = {
   guides: {
     printerFlow: {
       title: 'Printer Setup Flow',
-      description: 'Install the driver first, then complete template alignment.',
+      description:
+        'Install the driver first, then complete template alignment.',
       points: [
         'Confirm whether the printer uses USB or network access before selecting the matching driver package.',
         'After the driver is installed, validate templates, paper size, and print direction in the print center.',
@@ -174,7 +175,8 @@ export const terminalConfig = {
         'Scanned values keep their raw input first, then the backend parses the protocol, routes the business scene, and broadcasts to the PC side.',
       autoSubmit: 'Auto Submit',
       saveDefaults: 'Save Defaults',
-      inputPlaceholder: 'Scan or enter a raw barcode, for example 25010101R140001',
+      inputPlaceholder:
+        'Scan or enter a raw barcode, for example 25010101R140001',
     },
     fields: {
       symbology: 'Symbology',
@@ -198,13 +200,13 @@ export const terminalConfig = {
     routing: {
       title: 'Routing Readiness',
       ready: 'The current payload is ready for stocktake bridging.',
-      idle:
-        'The current payload will only go through ingest parsing and broadcasting, without submitting stocktake results.',
+      idle: 'The current payload will only go through ingest parsing and broadcasting, without submitting stocktake results.',
       submit: 'Submit Ingest',
     },
     defaults: {
       title: 'Protocol Defaults',
-      description: 'Defaults come from backend persisted config instead of living only in the page.',
+      description:
+        'Defaults come from backend persisted config instead of living only in the page.',
       sequenceRule: 'Sequence Rule',
       sequenceRuleHint:
         'The PDA page reads ingestDefaults directly from this protocol set and can write updated device defaults back.',
@@ -245,7 +247,8 @@ export const terminalConfig = {
       rawCodeRequired: 'Please collect or enter a barcode first.',
       submitSuccess: 'Scan data has entered the ingest pipeline',
       submitFailed: 'Failed to submit ingest',
-      saveDefaultsSuccess: 'PDA default ingest settings were written back to the protocol config',
+      saveDefaultsSuccess:
+        'PDA default ingest settings were written back to the protocol config',
       saveDefaultsFailed: 'Failed to save PDA default settings',
     },
   },
@@ -288,7 +291,8 @@ export const terminalConfig = {
       manualWake: 'Scanner window was opened manually',
       retrySuccess: 'Retry succeeded: {{code}}',
       duplicateQueued: 'Duplicate failures merged: {{code}} x{{count}}',
-      queuedByScene: 'Submission failed and was added to the {{scene}} retry queue',
+      queuedByScene:
+        'Submission failed and was added to the {{scene}} retry queue',
     },
     stats: {
       autoSubmitTitle: 'Auto Submit',
@@ -308,7 +312,8 @@ export const terminalConfig = {
       sceneBucketsTitle: 'Scene Buckets',
       sceneDuplicateSummary: 'Merged duplicates: {{count}}',
       pendingTitle: 'Pending Retries',
-      pendingLine: 'Attempts {{attempts}} / duplicates {{duplicates}} / {{error}}',
+      pendingLine:
+        'Attempts {{attempts}} / duplicates {{duplicates}} / {{error}}',
       waitingRetry: 'waiting retry',
     },
     hints: {

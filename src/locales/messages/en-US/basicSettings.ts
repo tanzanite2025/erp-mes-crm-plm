@@ -1,9 +1,9 @@
 export const basicSettings = {
   tabs: {
-    dmNumbering: "DM Numbering",
+    dmNumbering: "DM Code Numbering Rules",
     linearBarcode: "Linear Barcode",
     units: "Unit Management",
-    sequences: "Business Sequences",
+    sequences: "Linear Barcode Numbering Rules",
     enterprise: "Enterprise Info",
     security: "Security Settings"
   },
@@ -27,8 +27,8 @@ export const basicSettings = {
   },
   sequences: {
     page: {
-      title: "Business Sequence Rule Center",
-      subtitle: "Define prefix, cycle, and digital issuance logic for all business document numbers."
+      title: "Linear Barcode Numbering Rule Center",
+      subtitle: "Maintain the rule keys, reset strategy, and persisted issuance logic used by shared linear-barcode numbering."
     },
     syncGuard: {
       title: "Atomic Sync Protocol",
@@ -443,6 +443,10 @@ export const basicSettings = {
     }
   },
   dmNumbering: {
+    page: {
+      title: "DM Code Numbering Rule Center",
+      subtitle: "Maintain the segment rules, simulation settings, and current local numbering logic used by the shared DM numbering experience."
+    },
     table: {
       headers: {
         segment: "SEGMENT",
