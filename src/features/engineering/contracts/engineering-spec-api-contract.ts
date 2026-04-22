@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { technicalSpecSchema } from '@/features/engineering-db/data/schema'
 
 const optionalControlDateSchema = z.string().trim().nullable().optional()
+const nullableOptionalBucketSchema = z.record(z.string(), z.unknown()).nullable().optional()
 
 export const engineeringSpecApiDTOSchema = z.object({
   id: z.string(),
@@ -17,18 +18,25 @@ export const engineeringSpecApiDTOSchema = z.object({
   changeOrderNo: z.string().optional(),
   siteCode: z.string().optional(),
   isDefaultSite: z.boolean().optional(),
-  specData: z.record(z.string(), z.unknown()).optional(),
-  drillingData: z.record(z.string(), z.unknown()).optional(),
-  labelingData: z.record(z.string(), z.unknown()).optional(),
-  spokeLengthData: z.record(z.string(), z.unknown()).optional(),
-  hubData: z.record(z.string(), z.unknown()).optional(),
-  nippleData: z.record(z.string(), z.unknown()).optional(),
+  specData: nullableOptionalBucketSchema,
+  drillingData: nullableOptionalBucketSchema,
+  labelingData: nullableOptionalBucketSchema,
+  spokeLengthData: nullableOptionalBucketSchema,
+  hubData: nullableOptionalBucketSchema,
+  nippleData: nullableOptionalBucketSchema,
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   _v: z.number(),
 })
 
 export const engineeringSpecApiDTOArraySchema = z.array(engineeringSpecApiDTOSchema)
+
+export const engineeringSpecListPageApiDTOSchema = z.object({
+  items: engineeringSpecApiDTOArraySchema,
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+})
 
 export const engineeringSpecPatchRequestSchema = z.object({
   delta: z.record(z.string(), z.unknown()),
@@ -61,4 +69,5 @@ export const engineeringSpecInputSchema = z.object({
 })
 
 export type EngineeringSpecApiDTO = z.infer<typeof engineeringSpecApiDTOSchema>
+export type EngineeringSpecListPageApiDTO = z.infer<typeof engineeringSpecListPageApiDTOSchema>
 export type EngineeringSpecInputDTO = z.infer<typeof engineeringSpecInputSchema>

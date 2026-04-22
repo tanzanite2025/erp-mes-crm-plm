@@ -1,33 +1,89 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import { ensureObjectResponse } from '@/lib/api-response'
 import {
   engineeringSpecApiDTOArraySchema,
   engineeringSpecApiDTOSchema,
   engineeringSpecInputSchema,
+  engineeringSpecListPageApiDTOSchema,
   engineeringSpecPatchRequestSchema,
   type EngineeringSpecApiDTO,
   type EngineeringSpecInputDTO,
+  type EngineeringSpecListPageApiDTO,
 } from '../contracts/engineering-spec-api-contract'
 
 export type EngineeringSpec = EngineeringSpecApiDTO
 
 export type EngineeringSpecInput = EngineeringSpecInputDTO
 
+const ENGINEERING_SPEC_BUCKET_KEYS = [
+  'specData',
+  'drillingData',
+  'labelingData',
+  'spokeLengthData',
+  'hubData',
+  'nippleData',
+] as const
+
+function normalizeEngineeringSpecBuckets<T extends Record<string, unknown>>(item: T): T {
+  const normalized = { ...item }
+
+  ENGINEERING_SPEC_BUCKET_KEYS.forEach((key) => {
+    if (normalized[key] == null) {
+      delete normalized[key]
+    }
+  })
+
+  return normalized as T
+}
+
 function parseEngineeringSpec(item: unknown, scope: string): EngineeringSpec {
   return engineeringSpecApiDTOSchema.parse(
-    ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+    normalizeEngineeringSpecBuckets(
+      ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, scope)
+    )
   )
 }
 
-function parseEngineeringSpecArray(items: unknown, scope: string): EngineeringSpec[] {
-  return engineeringSpecApiDTOArraySchema.parse(ensureArrayResponse(items, scope))
+function parseEngineeringSpecList(response: unknown, scope: string): EngineeringSpec[] {
+  if (Array.isArray(response)) {
+    return engineeringSpecApiDTOArraySchema.parse(
+      response.map((item, index) =>
+        normalizeEngineeringSpecBuckets(
+          ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, `${scope}[${index}]`)
+        )
+      )
+    )
+  }
+
+  const rawPage = ensureObjectResponse<Record<string, unknown>>(response, scope)
+
+  return engineeringSpecListPageApiDTOSchema.parse({
+    ...rawPage,
+    items: Array.isArray(rawPage.items)
+      ? rawPage.items.map((item, index) =>
+          normalizeEngineeringSpecBuckets(
+            ensureObjectResponse<Record<string, unknown>>(item as Record<string, unknown>, `${scope}.items[${index}]`)
+          )
+        )
+      : rawPage.items,
+  }).items
+}
+
+function buildEngineeringSpecsUrl(type?: string): string {
+  const query = new URLSearchParams({ options: 'true' })
+  if (type) {
+    query.set('type', type)
+  }
+
+  return `/engineering/specs?${query.toString()}`
 }
 
 export const engineeringSpecService = {
   getSpecs: async (type?: string): Promise<EngineeringSpec[]> => {
-    const url = type ? `/engineering/specs?type=${type}` : '/engineering/specs'
-    const res = await apiFetch<EngineeringSpecApiDTO[]>(url)
-    return parseEngineeringSpecArray(res, 'engineeringSpecService.getSpecs')
+    const res = await apiFetch<EngineeringSpecApiDTO[] | EngineeringSpecListPageApiDTO>(
+      buildEngineeringSpecsUrl(type),
+    )
+    return parseEngineeringSpecList(res, 'engineeringSpecService.getSpecs')
   },
 
   getSpec: async (id: string): Promise<EngineeringSpec> => {
