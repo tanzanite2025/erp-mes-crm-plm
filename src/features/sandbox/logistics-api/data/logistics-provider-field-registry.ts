@@ -63,7 +63,7 @@ export const LOGISTICS_PROVIDER_PERSISTED_FIELD_KEYS = Object.values(logisticsPr
 
 export function createEmptyLogisticsProviderDraft(): LogisticsProviderDraft {
   return Object.values(logisticsProviderFieldRegistry).reduce<LogisticsProviderDraft>((draft, field) => {
-    draft[field.key] = cloneLogisticsProviderFieldDefaultValue(field.defaultValue) as LogisticsProviderDraft[typeof field.key]
+    ;(draft as unknown as Record<string, unknown>)[field.key] = cloneLogisticsProviderFieldDefaultValue(field.defaultValue)
     return draft
   }, {} as LogisticsProviderDraft)
 }

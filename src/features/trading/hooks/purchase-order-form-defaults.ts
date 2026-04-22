@@ -14,8 +14,6 @@ export const EMPTY_PURCHASE_ORDER_LINE: PurchaseOrderLine = {
   status: 'Draft',
   expectedDate: new Date().toISOString().split('T')[0],
   materialId: '',
-  expectedQty: 0,
-  receivedDate: '',
   note: '',
   version: 1,
 }

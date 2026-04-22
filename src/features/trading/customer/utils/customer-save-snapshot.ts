@@ -1,6 +1,9 @@
-import type { Customer } from '../../data/schema'
+import type { Customer, CustomerFormValues } from '../../data/schema'
 
-export function buildCustomerSaveSnapshot(baseCustomer: Customer | null | undefined, draft: Customer): Customer {
+export function buildCustomerSaveSnapshot(
+  baseCustomer: Customer | null | undefined,
+  draft: CustomerFormValues
+): Customer | CustomerFormValues {
   if (!baseCustomer) {
     return draft
   }

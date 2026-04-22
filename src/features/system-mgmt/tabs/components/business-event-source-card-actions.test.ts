@@ -6,6 +6,7 @@ import {
   extractBusinessEventSourceSectionPatch,
 } from './business-event-source-card-diff'
 import {
+  type UndoPatchState,
   restoreRemovedBusinessEventSourceItem,
   saveAllBusinessEventSource,
   saveBusinessEventSourceSection,
@@ -100,7 +101,7 @@ describe('business-event-source-card-actions', () => {
     const draft = createSource()
     const savingAllState = createState(false)
     const draftState = createState(draft)
-    const undoState = createState({
+    const undoState = createState<UndoPatchState>({
       general: null,
       actions: null,
       statuses: null,
@@ -141,7 +142,7 @@ describe('business-event-source-card-actions', () => {
       fields: false,
       dynamicResolvers: false,
     })
-    const undoState = createState({
+    const undoState = createState<UndoPatchState>({
       general: null,
       actions: null,
       statuses: null,
@@ -211,7 +212,7 @@ describe('business-event-source-card-actions', () => {
       dynamicResolvers: false,
     })
     const draftState = createState(saved)
-    const undoState = createState({
+    const undoState = createState<UndoPatchState>({
       general: buildBusinessEventSourceSectionPatch(original, original, 'general'),
       actions: null,
       statuses: null,

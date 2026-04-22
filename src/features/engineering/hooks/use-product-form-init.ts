@@ -60,7 +60,7 @@ export function useProductFormInit({
     open,
     isEdit,
     currentRow,
-    productTypes,
+    productTypes: _productTypes,
     form,
     selectedVariants,
     setSelectedVariants

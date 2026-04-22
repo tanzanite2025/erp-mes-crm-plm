@@ -21,6 +21,7 @@ import type {
 import { SettlementLedgerDetailDialogBody } from './settlement-ledger-detail-dialog-body'
 import { SettlementLedgerDetailDialogFooter } from './settlement-ledger-detail-dialog-footer'
 import { SettlementLedgerSearchDialogContainer } from './settlement-ledger-search-dialog-container'
+import type { CreateSettlementRecordApiDTO } from '../../contracts/settlement-record-api-dto'
 
 interface SettlementLedgerDetailDialogProps<
   TDetail extends SettlementDetailLike,
@@ -41,20 +42,7 @@ interface SettlementLedgerDetailDialogProps<
   isCurrencyLoading: boolean
   isDetailLoading: boolean
   isSubmitPending: boolean
-  onSubmit: (payload: {
-    amount: number
-    paymentMethod?: string
-    recordDate?: string
-    receivedAt?: string
-    receiptAccount?: string
-    referenceNo?: string
-    allocations: Array<{
-      ledgerId: string
-      allocatedAmount: number
-      remark?: string
-      sequenceNo: number
-    }>
-  }) => Promise<void>
+  onSubmit: (payload: CreateSettlementRecordApiDTO) => Promise<void>
   useSearchLedgers: (
     params: SettlementLedgerSearchHookParams
   ) => SettlementLedgerSearchHookResult<TRemoteLedger>

@@ -5,7 +5,7 @@ import { NotificationService } from '@/features/system-mgmt/notifications/notifi
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type SalesOrder, type SalesOrderFormValues, type SalesOrderLine } from '../../data/schema'
+import { type SalesOrderFormValues, type SalesOrderLine } from '../../data/schema'
 import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
 import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
 

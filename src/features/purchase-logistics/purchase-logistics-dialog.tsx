@@ -15,7 +15,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
-import { type PurchaseOrder } from '@/features/trading/data/schema'
 import { getPurchaseOrders } from '@/features/trading/purchase'
 import { getPreferredCarriers } from '@/features/logistics/utils/carriers'
 import { inferCarrierFromTrackingNo } from '@/features/logistics/utils/tracking-no'
@@ -25,7 +24,6 @@ import {
 } from './services/purchase-logistics-offline-draft-service'
 import { PurchaseLogisticsService } from './services/purchase-logistics-service'
 
-type PurchaseOrderOption = Pick<PurchaseOrder, 'id' | 'orderNo' | 'supplierName'>
 type PurchaseLogisticsForm = {
   purchaseOrderId: string
   orderNo: string

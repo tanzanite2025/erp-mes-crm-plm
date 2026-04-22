@@ -212,7 +212,7 @@ export function QuickActionDrawer({
                           action.id === 'wheel_trace_scan'
                             ? { ...action.search, scan: String(Date.now()) }
                             : (action.search as never),
-                      })
+                      } as never)
                     }}
                   >
                     <div className='flex min-w-0 items-center gap-2.5'>

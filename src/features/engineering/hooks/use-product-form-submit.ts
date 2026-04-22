@@ -34,7 +34,7 @@ export function useProductFormSubmit({
   const handleVariantToggle = (level: string, checked: boolean) => {
     const currentWeight = form.getValues('weight')
     setSelectedVariants((prev) =>
-      ProductCommand.toggleVariantSelection({
+      ProductCommand.selectVariant({
         selectedVariants: prev,
         level,
         checked,
@@ -45,7 +45,7 @@ export function useProductFormSubmit({
 
   const updateVariantWeight = (level: string, weight: number | undefined) => {
     setSelectedVariants((prev) =>
-      ProductCommand.updateVariantSelectionWeight({
+      ProductCommand.setVariantWeight({
         selectedVariants: prev,
         level,
         weight,

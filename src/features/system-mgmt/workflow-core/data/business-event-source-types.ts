@@ -59,6 +59,13 @@ export const businessEventSourceConfigSchema = z.object({
   defaultActionUrlTemplate: z.string().optional(),
 })
 
+const emptyBusinessEventSourceConfig = {
+  actions: [],
+  statuses: [],
+  fields: [],
+  dynamicResolvers: [],
+}
+
 export const businessEventSourceSchema = z.object({
   id: z.string(),
   code: z.string().min(1),
@@ -69,7 +76,7 @@ export const businessEventSourceSchema = z.object({
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),
-  config: businessEventSourceConfigSchema.default({}),
+  config: businessEventSourceConfigSchema.default(emptyBusinessEventSourceConfig),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 })
@@ -83,7 +90,7 @@ export const businessEventSourceTemplateSchema = z.object({
     .default('SYSTEM'),
   enabled: z.boolean().default(true),
   description: z.string().optional(),
-  config: businessEventSourceConfigSchema.default({}),
+  config: businessEventSourceConfigSchema.default(emptyBusinessEventSourceConfig),
 })
 
 export type BusinessEventAction = z.infer<typeof businessEventActionSchema>

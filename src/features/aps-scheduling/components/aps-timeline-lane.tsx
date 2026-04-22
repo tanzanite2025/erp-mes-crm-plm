@@ -1,4 +1,5 @@
-import { ArrowRight, AlertTriangle, Badge, CircleAlert, Gauge, TriangleAlert, Workflow } from 'lucide-react'
+import { ArrowRight, AlertTriangle, CircleAlert, Gauge, TriangleAlert, Workflow } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { ApsJob } from '../types'
 

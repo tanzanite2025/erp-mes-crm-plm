@@ -315,7 +315,7 @@ describe('useDrillingPageState', () => {
     })
 
     const patchDelta: DeltaSet = {
-      standardHoles: '28',
+      standardHoles: { o: '24', n: '28' },
     }
 
     await act(async () => {

@@ -27,7 +27,6 @@ import { BusinessEventSourceFieldSection } from './business-event-source-field-s
 import {
   applyBusinessEventSourceSectionPatch,
   buildBusinessEventSourceSectionPatch,
-  extractBusinessEventSourceSectionPatch,
   getBusinessEventSourceDiff,
   getBusinessEventSourceGeneralDiffSummary,
   getBusinessEventSourceItemChangeKind,

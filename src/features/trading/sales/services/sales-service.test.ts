@@ -113,7 +113,6 @@ describe('sales-service', () => {
         fulfillmentRate: 0,
         workflowInstanceId: '',
         version: 1,
-        isDeleted: false,
       })
     ).rejects.toThrow()
   })
@@ -123,7 +122,7 @@ describe('sales-service', () => {
     apiFetchMock.mockResolvedValue(invalidDetail)
 
     await expect(
-      patchSalesOrder('order-1', { set: {} }, 1)
+      patchSalesOrder('order-1', { status: { o: 'Draft', n: 'Pending' } }, 1)
     ).rejects.toThrow()
   })
 })

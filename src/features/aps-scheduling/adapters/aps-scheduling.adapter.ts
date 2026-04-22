@@ -1,5 +1,6 @@
 import type { ProductionJobCategory, ProductionLine, ProductionProcessStep, ProductionSegment } from '@/features/production-shared/data/production-line'
 import type { ApsJob, ApsStageCard, ApsTimelineLaneDefinition } from '../types'
+export type { ApsJob } from '../types'
 
 export type ApsProcessTreeProcess = {
   id: string
@@ -31,6 +32,7 @@ export type ApsProcessTreeLine = {
 
 export type ApsSchedulingSource = {
   jobs: ApsJob[]
+  total: number
   timelineSlots: string[]
   lanes: ApsTimelineLaneDefinition[]
   stageCards: ApsStageCard[]
@@ -89,6 +91,7 @@ export function buildApsSchedulingSource(source: { lines?: ProductionLine[]; job
 
   return {
     jobs,
+    total: jobs.length,
     timelineSlots: source.timelineSlots ?? ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
     lanes,
     stageCards:

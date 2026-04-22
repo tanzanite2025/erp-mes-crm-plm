@@ -208,6 +208,6 @@ describe('purchase-service', () => {
     const { lines: _lines, ...invalidDetail } = detailOrderResponse
     apiFetchMock.mockResolvedValue(invalidDetail)
 
-    await expect(patchPurchaseOrder('po-1', { set: {} }, 1)).rejects.toThrow()
+    await expect(patchPurchaseOrder('po-1', { status: { o: 'Draft', n: 'Pending' } }, 1)).rejects.toThrow()
   })
 })

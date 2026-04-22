@@ -5,6 +5,7 @@ import {
   buildStatusPreview,
   getSegmentCompleteness,
   joinBusinessList,
+  type ResolverOption,
 } from './rule-card-model'
 
 const command: StandardCommand = {
@@ -18,11 +19,10 @@ const command: StandardCommand = {
   createdAt: '2026-04-20T00:00:00.000Z',
 }
 
-const resolverOptions = [
+const resolverOptions: ResolverOption[] = [
   {
     id: 'resolver-created-by',
     code: 'createdBy',
-    key: 'createdBy',
     label: '创建人',
     path: 'createdBy',
     type: 'user',

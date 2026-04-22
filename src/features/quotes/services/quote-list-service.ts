@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import { toQuoteSummaryContracts } from '@/features/quotes/adapters/quote-api-adapter'
-import type { QuoteListPageApiDTO } from '@/features/quotes/contracts/quote-api-dto'
+import type { QuoteListItemApiDTO, QuoteListPageApiDTO } from '@/features/quotes/contracts/quote-api-dto'
 import type { QuoteListFilters, QuoteSummary } from '@/features/quotes/data/quote-summary'
 
 export type QuoteListSource = 'api'
@@ -59,7 +59,7 @@ function buildQuoteListQuery(filters: QuoteListFilters): string {
 
 function toQuoteSummaryArrayFromResponse(value: unknown, context: string): QuoteSummary[] {
   const response = ensureObjectResponse<QuoteListPageApiDTO & Record<string, unknown>>(value, context)
-  const items = ensureArrayField(response, 'items', context)
+  const items = ensureArrayField<QuoteListItemApiDTO>(response, 'items', context)
   return toQuoteSummaryContracts(items)
 }
 

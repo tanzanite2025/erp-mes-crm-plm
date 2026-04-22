@@ -27,6 +27,7 @@ const DEFAULT_FORM_DATA: CustomerFormValues = {
   status: 'Active',
   creditLimit: 0,
   balance: 0,
+  version: 1,
 }
 
 export function useCustomerActionViewModel({ customer, t }: CustomerActionViewModelOptions) {
@@ -48,6 +49,7 @@ export function useCustomerActionViewModel({ customer, t }: CustomerActionViewMo
           status: customer.status,
           creditLimit: customer.creditLimit,
           balance: customer.balance,
+          version: customer.version,
         }
       : DEFAULT_FORM_DATA
   ), [customer])

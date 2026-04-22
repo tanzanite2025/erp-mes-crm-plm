@@ -18,7 +18,7 @@ interface CustomerActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
-  onSave: (payload: { data: Customer; isPatch: boolean; delta?: DeltaSet }) => void
+  onSave: (payload: { data: Customer | CustomerFormValues; isPatch: boolean; delta?: DeltaSet }) => void
 }
 
 export function CustomerActionDialog({

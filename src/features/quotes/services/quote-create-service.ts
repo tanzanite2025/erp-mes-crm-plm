@@ -44,3 +44,5 @@ export async function createQuoteAsSalesOrderDraft(payload: CreateQuotePayload) 
     id: created.id,
   }
 }
+
+export const createQuote = createQuoteAsSalesOrderDraft

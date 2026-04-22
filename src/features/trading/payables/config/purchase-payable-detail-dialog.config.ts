@@ -1,7 +1,8 @@
 import type { SettlementLedgerDetailDialogConfig } from '../../settlement-ledger-detail-dialog'
-import type { PayableDetailApiDTO, PayableRecordApiDTO } from '../contracts/payable-api-dto'
+import type { PayableRecord } from '../adapters/payable-api-adapter'
+import type { PayableDetailApiDTO } from '../contracts/payable-api-dto'
 
-export const purchasePayableDetailDialogConfig: SettlementLedgerDetailDialogConfig<PayableDetailApiDTO, PayableRecordApiDTO> = {
+export const purchasePayableDetailDialogConfig: SettlementLedgerDetailDialogConfig<PayableDetailApiDTO, PayableRecord> = {
   dialogTitle: '应付详情',
   ledgerKindLabel: '应付',
   actionLabel: '付款',
@@ -13,5 +14,5 @@ export const purchasePayableDetailDialogConfig: SettlementLedgerDetailDialogConf
   allocationMode: 'single-ledger',
   uploadPath: '/purchase/evidence/upload',
   getDetailPartnerName: (item: PayableDetailApiDTO) => item.supplierName,
-  getLocalLedgerPartnerName: (item: PayableRecordApiDTO) => item.supplierName,
-} satisfies SettlementLedgerDetailDialogConfig<PayableDetailApiDTO, PayableRecordApiDTO>
+  getLocalLedgerPartnerName: (item: PayableRecord) => item.supplierName,
+} satisfies SettlementLedgerDetailDialogConfig<PayableDetailApiDTO, PayableRecord>

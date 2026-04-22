@@ -62,13 +62,13 @@ export function PurchaseOrderActionDialog({
         await saveMutation.mutateAsync({
           orderId: saveExecution.orderId,
           delta: saveExecution.delta,
-          finalData: saveExecution.finalData,
+          finalData: saveExecution.submitValues,
           operator: actor.operator,
           actorId: actor.actorId,
           expectedVersion: saveExecution.expectedVersion,
         })
       } else {
-        await createMutation.mutateAsync(saveExecution.finalData)
+        await createMutation.mutateAsync(saveExecution.submitValues)
       }
       onOpenChange(false)
     } catch (_error) {

@@ -38,7 +38,7 @@ function toCreateInput(
 }
 
 function stripPersistenceFields(
-  source: BusinessEventSource
+  source: BusinessEventSourceTemplate
 ): EventSourceCreateInput {
   return toCreateInput(source)
 }

@@ -1,4 +1,5 @@
 import type { ProductionProcessStep } from './production-process'
+export type { ProductionProcessStep } from './production-process'
 
 export interface ProductionJobCategory {
   id: string

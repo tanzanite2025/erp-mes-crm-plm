@@ -10,9 +10,13 @@ import {
 } from '../contracts/sales-order-api-dto'
 
 export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
+  const now = new Date().toISOString()
   const createdOrder: SalesOrder = {
     ...order,
     id: '',
+    createdAt: now,
+    updatedAt: now,
+    isDeleted: false,
     version: 1,
   }
 

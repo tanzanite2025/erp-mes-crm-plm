@@ -3,16 +3,16 @@ import { StatusGuard } from '@/components/status-guard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
-import { type Customer, type SalesOrder } from '../../data/schema'
+import { type Customer, type SalesOrderFormValues } from '../../data/schema'
 import { useSalesOrderHeaderFieldsViewModel } from '../../hooks/use-sales-order-header-fields-view-model'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 import { OrderEvidenceManager } from './order-evidence-manager'
 
-type SalesOrderFormState = Partial<SalesOrder>
+type SalesOrderFormState = SalesOrderFormValues
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
 
 interface OrderHeaderFieldsProps {
-  formData: Partial<SalesOrder>
+  formData: SalesOrderFormValues
   setFormData: (value: SalesOrderFormUpdater) => void
   customers: Customer[]
   onClassificationChange: (value: string) => void

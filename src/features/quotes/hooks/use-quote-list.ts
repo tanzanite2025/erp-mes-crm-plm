@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { QuoteListFilters, QuoteSummary } from '@/features/quotes/data/quote-summary'
+import type { QuoteListFilters } from '@/features/quotes/data/quote-summary'
 import { listQuoteSummaries } from '@/features/quotes/services/quote-list-service'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 

@@ -42,13 +42,15 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ code: 'CREATED', name: '新建', kind: 'created' as const }],
-        statuses: [{ code: 'Draft', label: '草稿', phase: 'draft' as const }],
+        statuses: [{ code: 'Draft', label: '草稿', phase: 'draft' as const, isTerminal: false, defaultResolve: false }],
         fields: [
           {
             key: 'orderId',
             label: '订单ID',
             path: 'orderId',
             type: 'string' as const,
+            templateEnabled: false,
+            dynamicResolver: false,
           },
         ],
         dynamicResolvers: [],
@@ -142,7 +144,7 @@ describe('RoutingService event source contracts', () => {
       description: '销售订单事件源',
       config: {
         actions: [{ id: 'action-1', order: 0, code: 'CREATED', name: '新建', kind: 'created' as const }],
-        statuses: [{ id: 'status-1', order: 0, code: 'Draft', label: '草稿', phase: 'draft' as const }],
+        statuses: [{ id: 'status-1', order: 0, code: 'Draft', label: '草稿', phase: 'draft' as const, isTerminal: false, defaultResolve: false }],
         fields: [
           {
             id: 'field-1',
@@ -151,6 +153,8 @@ describe('RoutingService event source contracts', () => {
             label: '订单ID',
             path: 'orderId',
             type: 'string' as const,
+            templateEnabled: false,
+            dynamicResolver: false,
           },
         ],
         dynamicResolvers: [],
@@ -375,7 +379,7 @@ describe('RoutingService.getExecutionLogs', () => {
   })
 
   it('rejects paginated hybrid arrays so execution logs stay locked to object protocol', async () => {
-    const hybrid = [] as unknown[] & Record<string, unknown>
+    const hybrid = [] as unknown as unknown[] & Record<string, unknown>
     hybrid.items = hybrid
     hybrid.total = 0
     hybrid.page = 1

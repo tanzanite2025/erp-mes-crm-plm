@@ -141,6 +141,7 @@ export function QuoteOrdersTab() {
         onClassificationChange={handleCreateClassificationChange}
       />
       <DocumentLinesEditor
+        appearances={createResources.appearances}
         lines={createFormData.lines || []}
         products={createResources.products}
         units={createResources.units}

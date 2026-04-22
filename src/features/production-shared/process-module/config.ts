@@ -1,7 +1,8 @@
 import { AlertTriangle, Clock3, ShieldCheck } from 'lucide-react'
-import type { ProcessModuleContext } from './adapter'
 import type { ProcessModuleStatus } from './types'
 import { sharedProcessNodeStatusMap } from './status-mapping'
+
+export type { ProcessModuleStatus } from './types'
 
 export type ProcessFieldTone = 'muted' | 'accent' | 'danger'
 export type ProcessFieldWidth = 'sm' | 'md' | 'lg'

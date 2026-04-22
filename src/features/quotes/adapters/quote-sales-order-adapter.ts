@@ -7,6 +7,8 @@ import {
 } from '@/features/engineering-db/query-keys'
 import { ProductionDBService } from '@/features/engineering-db/services/production-db-service'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { PRODUCT_APPEARANCES_QUERY_KEY } from '@/features/engineering/query-keys'
+import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
 import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { useGetCustomers } from '@/features/trading/customer'
 import { useSalesOrderDrawingOptions } from '@/features/trading/hooks/use-sales-order-drawing-options'
@@ -19,6 +21,11 @@ export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (qu
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
   const { units = [] } = useUnitsQuery({ enabled: open })
+  const appearancesQuery = useQuery({
+    queryKey: PRODUCT_APPEARANCES_QUERY_KEY,
+    queryFn: () => productAppearanceService.getProductAppearances(),
+    enabled: open,
+  })
   const drillingQuery = useQuery({
     queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
     queryFn: () => ProductionDBService.getDrilling(),
@@ -63,11 +70,12 @@ export function useQuoteWorkspaceSalesOrderAdapter(open: boolean, onCreated: (qu
     () => ({
       customers,
       products,
+      appearances: appearancesQuery.data ?? [],
       units,
       drillingOptions,
       labelingOptions,
     }),
-    [customers, drillingOptions, labelingOptions, products, units]
+    [appearancesQuery.data, customers, drillingOptions, labelingOptions, products, units]
   )
 
   return {

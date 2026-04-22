@@ -9,7 +9,7 @@ import {
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { toCustomerApiDTO, toCustomerContract, toCustomerContracts } from '../adapters/customer-api-adapter'
 import { type CustomerApiDTO, type CustomerListApiResponseDTO } from '../contracts/customer-api-dto'
-import { customerArraySchema, customerSchema, type Customer } from '../../data/schema'
+import { customerArraySchema, customerSchema, type Customer, type CustomerFormValues } from '../../data/schema'
 
 export const CUSTOMER_TRANSACTION_INTENT_STATUS_CHANGE = 'CUSTOMER_STATUS_CHANGE'
 export const CUSTOMER_TRANSACTION_INTENT_IDENTITY_CHANGE = 'CUSTOMER_IDENTITY_CHANGE'
@@ -119,10 +119,14 @@ export const executeCustomerTransaction = async <TPayload>(
   return customerSchema.parse(toCustomerContract(response))
 }
 
-export const createCustomer = async (customer: Omit<Customer, 'id' | 'version'>): Promise<Customer> => {
+export const createCustomer = async (customer: CustomerFormValues): Promise<Customer> => {
+  const now = new Date().toISOString()
   const createdCustomer: Customer = {
     ...customer,
     id: '',
+    createdAt: now,
+    updatedAt: now,
+    isDeleted: false,
     version: 1,
   }
 

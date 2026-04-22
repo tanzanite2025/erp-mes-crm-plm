@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '../../data/schema'
 import { useSalesOrderLinesEditorViewModel } from '../../hooks/use-sales-order-lines-editor-view-model'
@@ -11,6 +12,7 @@ type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
 interface OrderLinesEditorProps {
   lines: SalesOrderLine[]
+  appearances?: ProductAppearance[]
   products: Product[]
   units: Unit[]
   drillingOptions: { label: string; value: string }[]
@@ -28,6 +30,7 @@ interface OrderLinesEditorProps {
 
 export function OrderLinesEditor({
   lines,
+  appearances = [],
   products,
   units,
   drillingOptions,
@@ -40,6 +43,7 @@ export function OrderLinesEditor({
   const { t } = useLanguage()
   const { currencySymbol, productById, productOptions, activeUnitOptions, handleProductChange } =
     useSalesOrderLinesEditorViewModel({
+      appearances,
       products,
       units,
       currency,

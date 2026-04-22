@@ -63,7 +63,7 @@ function matchesPackagingUnitKind(unit: Unit, kind: PackagingUnitKind): boolean 
     return true
   }
 
-  return PACKAGING_UNIT_CODE_FALLBACKS[kind].includes(normalizePackagingUnitCode(unit.code))
+  return (PACKAGING_UNIT_CODE_FALLBACKS[kind] as readonly string[]).includes(normalizePackagingUnitCode(unit.code))
 }
 
 function dedupePackagingUnits(units: Unit[]): Unit[] {

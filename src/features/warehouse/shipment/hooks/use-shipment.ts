@@ -167,10 +167,12 @@ export function useShipment() {
       return
     }
 
-    if (status === 'COMMITTED' && formData.quantity > shipmentInventoryContext.categoryStock) {
+    const categoryStock = shipmentInventoryContext.categoryStock ?? 0
+
+    if (status === 'COMMITTED' && formData.quantity > categoryStock) {
       toast.warning(
         t('warehouse.shipment.toast.insufficientStock', {
-          count: shipmentInventoryContext.categoryStock,
+          count: categoryStock,
           uom: selectedItem.uom,
         }),
       )

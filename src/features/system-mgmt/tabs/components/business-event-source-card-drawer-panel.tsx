@@ -39,7 +39,7 @@ interface BusinessEventSourceCardDrawerPanelProps {
   onOpenChange: (open: boolean) => void
   onAddStatus: () => void
   onUpdateStatus: (index: number, updates: Partial<BusinessEventSource['config']['statuses'][number]>) => void
-  onMoveStatus: (index: number, direction: 'up' | 'down') => void
+  onMoveStatus: (index: number, direction: -1 | 1) => void
   onDeleteStatus: (index: number) => void
   onRestoreRemovedStatusItem: (id: string) => void
   onSaveStatuses: () => void

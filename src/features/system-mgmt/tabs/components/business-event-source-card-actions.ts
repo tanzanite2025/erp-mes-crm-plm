@@ -11,7 +11,7 @@ import {
 import { cloneBusinessEventSource } from './business-event-source-card-utils'
 
 type SavingState = Record<BusinessEventSourceSection, boolean>
-type UndoPatchState = Record<
+export type UndoPatchState = Record<
   BusinessEventSourceSection,
   BusinessEventSourceSectionPatch | null
 >

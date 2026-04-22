@@ -25,7 +25,7 @@ import { useCustomerMutations, useGetCustomerList } from '../customer'
 import { CustomerAuditTimelineSheet } from '../customer/components/customer-audit-timeline-sheet'
 import { useGetCustomerSalesClosureSummary } from '../customer/hooks/use-customer-sales-closure-summary'
 import { useGetCustomerSalesReturnSummary } from '../customer/hooks/use-customer-sales-return-summary'
-import { type Customer } from '../data/schema'
+import { type Customer, type CustomerFormValues } from '../data/schema'
 import { tradingQueryKeys } from '../query-keys'
 import { requireTradingCommandActor } from '../utils/command-actor'
 import { CustomerActionDialog } from './customer-action-dialog'
@@ -136,7 +136,7 @@ export function CustomerList() {
   }
 
   const handleSaveCustomer = (payload: {
-    data: Customer
+    data: Customer | CustomerFormValues
     isPatch: boolean
     delta?: DeltaSet
   }) => {
@@ -150,13 +150,13 @@ export function CustomerList() {
       saveMutation.mutate({
         id: selectedCustomer.id,
         delta: payload.delta,
-        finalData: payload.data,
+        finalData: payload.data as Customer,
         operator: actor.operator,
         actorId: actor.actorId,
         expectedVersion: selectedCustomer.version,
       })
     } else {
-      createMutation.mutate(payload.data as Omit<Customer, 'id' | 'version'>)
+      createMutation.mutate(payload.data as CustomerFormValues)
     }
   }
 

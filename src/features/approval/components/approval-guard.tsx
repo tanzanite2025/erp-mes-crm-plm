@@ -19,7 +19,7 @@ interface ApprovalGuardProps {
   action: string
   targetId: string
   onApproved: (token?: string) => void
-  children: React.ReactElement
+  children: React.ReactElement<{ disabled?: boolean; onClick?: React.MouseEventHandler }>
 }
 
 export function ApprovalGuard({
@@ -57,7 +57,7 @@ export function ApprovalGuard({
   return (
     <>
       {React.cloneElement(children, {
-        onClick: (event: React.MouseEvent) => handleTrigger(event),
+        onClick: handleTrigger,
         disabled: children.props.disabled,
       })}
 
