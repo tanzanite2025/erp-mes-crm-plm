@@ -1,5 +1,8 @@
-import type { InventoryShipmentRecordApiDTO } from '../contracts/shipment-api-dto'
-import type { ShipmentRecord } from '../data/schema'
+import type {
+  InventoryShipmentRecordApiDTO,
+  ShipmentDemandApiDTO,
+} from '../contracts/shipment-api-dto'
+import type { ShipmentDemand, ShipmentRecord } from '../data/schema'
 
 export type ShipmentRecordCreateInput = Omit<
   ShipmentRecord,
@@ -36,6 +39,31 @@ export function toShipmentRecordContract(dto: InventoryShipmentRecordApiDTO): Sh
 
 export function toShipmentRecordContracts(dtos: InventoryShipmentRecordApiDTO[]): ShipmentRecord[] {
   return dtos.map(toShipmentRecordContract)
+}
+
+export function toShipmentDemandContract(dto: ShipmentDemandApiDTO): ShipmentDemand {
+  return {
+    salesOrderId: dto.salesOrderId,
+    salesOrderLineId: dto.salesOrderLineId,
+    orderNo: dto.orderNo,
+    customerName: dto.customerName,
+    deliveryDate: dto.deliveryDate,
+    materialId: dto.materialId,
+    materialName: dto.materialName,
+    materialCode: dto.materialCode,
+    materialSpec: dto.materialSpec,
+    uom: dto.uom,
+    orderedQty: dto.orderedQty,
+    deliveredQty: dto.deliveredQty,
+    virtualReadyQty: dto.virtualReadyQty,
+    remainingToPrepare: dto.remainingToPrepare,
+    availableQty: dto.availableQty,
+    stockBreakdown: dto.stockBreakdown ?? [],
+  }
+}
+
+export function toShipmentDemandContracts(dtos: ShipmentDemandApiDTO[]): ShipmentDemand[] {
+  return dtos.map(toShipmentDemandContract)
 }
 
 export function toShipmentRecordApiDTO(

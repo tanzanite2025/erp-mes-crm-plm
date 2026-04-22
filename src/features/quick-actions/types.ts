@@ -45,3 +45,15 @@ export interface QuickActionDefinition {
   enabled: boolean
   sortOrder: number
 }
+
+export interface SidebarQuickActionView {
+  id: string
+  title?: string
+  titleKey?: QuickActionTranslationKey
+  iconName: string
+  to: string
+  search: Record<string, string>
+  enabled: boolean
+  sortOrder: number
+  isPrivate: boolean
+}

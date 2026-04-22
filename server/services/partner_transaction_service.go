@@ -782,6 +782,9 @@ func ExecuteSupplierTransaction(input ExecuteSupplierTransactionInput) (*models.
 	if err != nil {
 		return nil, err
 	}
+	if response != nil {
+		syncSupplierToSearch(*response)
+	}
 	return response, nil
 }
 

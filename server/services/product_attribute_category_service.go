@@ -30,6 +30,22 @@ type SaveProductAttributeCategoryInput struct {
 	Version       int    `json:"version"`
 }
 
+type ProductAttributeReorderInput struct {
+	IDs []string `json:"ids"`
+}
+
+const productAttributeSortOrderStep = 10
+
+func nextProductAttributeCategorySortOrder(tx *gorm.DB) (int, error) {
+	var maxSortOrder int
+	if err := tx.Model(&models.ProductAttributeCategory{}).
+		Select("COALESCE(MAX(sort_order), 0)").
+		Scan(&maxSortOrder).Error; err != nil {
+		return 0, err
+	}
+	return maxSortOrder + productAttributeSortOrderStep, nil
+}
+
 func toProductAttributeCategoryModel(input SaveProductAttributeCategoryInput) models.ProductAttributeCategory {
 	return models.ProductAttributeCategory{
 		BaseModel: models.BaseModel{
@@ -123,11 +139,20 @@ func CreateProductAttributeCategory(input SaveProductAttributeCategoryInput) (mo
 	if modelInput.Key == "" || !isValidProductAttributeMachineValue(modelInput.Key) {
 		return models.ProductAttributeCategory{}, domainError(DomainErrorValidation, "产品属性分类编码格式无效")
 	}
-	if err := ensureProductAttributeCategoryKeyAvailable(db.DB, modelInput.Key, ""); err != nil {
-		return models.ProductAttributeCategory{}, err
-	}
 	modelInput.Version = 1
-	if err := db.DB.Create(&modelInput).Error; err != nil {
+	if err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := ensureProductAttributeCategoryKeyAvailable(tx, modelInput.Key, ""); err != nil {
+			return err
+		}
+		if modelInput.SortOrder <= 0 {
+			nextSortOrder, err := nextProductAttributeCategorySortOrder(tx)
+			if err != nil {
+				return err
+			}
+			modelInput.SortOrder = nextSortOrder
+		}
+		return tx.Create(&modelInput).Error
+	}); err != nil {
 		return models.ProductAttributeCategory{}, err
 	}
 	return modelInput, nil
@@ -212,6 +237,48 @@ func PatchProductAttributeCategory(id string, updates map[string]interface{}) (m
 		return models.ProductAttributeCategory{}, err
 	}
 	return existing, nil
+}
+
+func ReorderProductAttributeCategories(input ProductAttributeReorderInput) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var existingItems []models.ProductAttributeCategory
+		if err := tx.Select("id").Find(&existingItems).Error; err != nil {
+			return err
+		}
+		if len(input.IDs) != len(existingItems) {
+			return domainValidationError("产品属性分类排序列表必须包含全部分类")
+		}
+
+		existingIDs := make(map[string]struct{}, len(existingItems))
+		for _, item := range existingItems {
+			existingIDs[item.ID] = struct{}{}
+		}
+		seenIDs := make(map[string]struct{}, len(input.IDs))
+
+		for index, id := range input.IDs {
+			trimmedID := strings.TrimSpace(id)
+			if trimmedID == "" {
+				return domainValidationError("产品属性分类排序缺少 ID")
+			}
+			if _, exists := existingIDs[trimmedID]; !exists {
+				return domainNotFoundError("产品属性分类不存在")
+			}
+			if _, exists := seenIDs[trimmedID]; exists {
+				return domainValidationError("产品属性分类排序 ID 重复")
+			}
+			seenIDs[trimmedID] = struct{}{}
+			result := tx.Model(&models.ProductAttributeCategory{}).
+				Where("id = ?", trimmedID).
+				Update("sort_order", (index+1)*productAttributeSortOrderStep)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				return domainNotFoundError("产品属性分类不存在")
+			}
+		}
+		return nil
+	})
 }
 
 func DeleteProductAttributeCategory(id string) error {

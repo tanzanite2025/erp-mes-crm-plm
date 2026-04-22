@@ -154,6 +154,167 @@ func TestSeedDefaultProductAttributeOptionsSkipsWhenSoftDeletedHistoryExists(t *
 	require.EqualValues(t, 1, allCount)
 }
 
+func TestCreateProductAttributeCategoryAutoAssignsNextSortOrder(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-tech"},
+		Key:       "tech-series",
+		NameZh:    "Tech Series",
+		SortOrder: 10,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-version"},
+		Key:       "version-level",
+		NameZh:    "Version Level",
+		SortOrder: 20,
+		Active:    true,
+		Version:   1,
+	}).Error)
+
+	saved, err := CreateProductAttributeCategory(SaveProductAttributeCategoryInput{
+		Key:       "rim-profile",
+		NameZh:    "Rim Profile",
+		Active:    true,
+		SortOrder: 0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, 30, saved.SortOrder)
+}
+
+func TestCreateProductAttributeOptionAutoAssignsNextSortOrderWithinCategory(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-finish"},
+		Key:       "finishType",
+		NameZh:    "Finish Type",
+		SortOrder: 10,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-version"},
+		Key:       "versionLevel",
+		NameZh:    "Version Level",
+		SortOrder: 20,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-gloss"},
+		CategoryKey: "finishType",
+		Value:       "gloss",
+		LabelZh:     "Gloss",
+		SortOrder:   10,
+		Active:      true,
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-matte"},
+		CategoryKey: "finishType",
+		Value:       "matte",
+		LabelZh:     "Matte",
+		SortOrder:   20,
+		Active:      true,
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-version"},
+		CategoryKey: "versionLevel",
+		Value:       "std",
+		LabelZh:     "Standard",
+		SortOrder:   90,
+		Active:      true,
+		Version:     1,
+	}).Error)
+
+	saved, err := CreateProductAttributeOption(SaveProductAttributeOptionInput{
+		CategoryKey: "finishtype",
+		Value:       "satin",
+		LabelZh:     "Satin",
+		Active:      true,
+		SortOrder:   0,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "finishType", saved.CategoryKey)
+	require.Equal(t, 30, saved.SortOrder)
+}
+
+func TestReorderProductAttributeCategoriesUpdatesSortOrder(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-a"},
+		Key:       "category-a",
+		NameZh:    "Category A",
+		SortOrder: 10,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-b"},
+		Key:       "category-b",
+		NameZh:    "Category B",
+		SortOrder: 20,
+		Active:    true,
+		Version:   1,
+	}).Error)
+
+	require.NoError(t, ReorderProductAttributeCategories(ProductAttributeReorderInput{IDs: []string{"cat-b", "cat-a"}}))
+
+	items, err := ListProductAttributeCategories(ProductAttributeCategoryListQuery{})
+	require.NoError(t, err)
+	require.Len(t, items, 2)
+	require.Equal(t, "category-b", items[0].Key)
+	require.Equal(t, 10, items[0].SortOrder)
+	require.Equal(t, "category-a", items[1].Key)
+	require.Equal(t, 20, items[1].SortOrder)
+}
+
+func TestReorderProductAttributeOptionsUpdatesSortOrderWithinCategory(t *testing.T) {
+	testDB := setupProductAttributeSeedTestDB(t)
+
+	require.NoError(t, testDB.Create(&models.ProductAttributeCategory{
+		BaseModel: models.BaseModel{ID: "cat-finish"},
+		Key:       "finishType",
+		NameZh:    "Finish Type",
+		SortOrder: 10,
+		Active:    true,
+		Version:   1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-gloss"},
+		CategoryKey: "finishType",
+		Value:       "gloss",
+		LabelZh:     "Gloss",
+		SortOrder:   10,
+		Active:      true,
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductAttributeOption{
+		BaseModel:   models.BaseModel{ID: "opt-matte"},
+		CategoryKey: "finishType",
+		Value:       "matte",
+		LabelZh:     "Matte",
+		SortOrder:   20,
+		Active:      true,
+		Version:     1,
+	}).Error)
+
+	require.NoError(t, ReorderProductAttributeOptions("finishtype", ProductAttributeReorderInput{IDs: []string{"opt-matte", "opt-gloss"}}))
+
+	items, err := ListProductAttributeOptions(ProductAttributeOptionListQuery{CategoryKey: "finishType"})
+	require.NoError(t, err)
+	require.Len(t, items, 2)
+	require.Equal(t, "matte", items[0].Value)
+	require.Equal(t, 10, items[0].SortOrder)
+	require.Equal(t, "gloss", items[1].Value)
+	require.Equal(t, 20, items[1].SortOrder)
+}
+
 func TestCreateProductAttributeOptionCanonicalizesHistoricalCategoryKey(t *testing.T) {
 	testDB := setupProductAttributeSeedTestDB(t)
 

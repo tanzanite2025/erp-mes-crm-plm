@@ -4,15 +4,212 @@ export const trading = {
     customers: 'Customers',
     quotes: 'Quotes',
     salesOrders: 'Sales Orders',
+    salesReturns: 'Sales Returns',
+    salesExchanges: 'Sales Exchanges',
     logistics: 'Logistics',
     receivables: 'Receivables',
     ordersAnalysis: 'Orders Analysis',
   },
+  salesAnalysis: {
+    moduleTitle: 'Sales Analysis',
+    moduleDescription:
+      'A dedicated workspace for orders analysis and future customer, product, trend, and fulfillment analytics.',
+  },
+  salesReturns: {
+    title: 'Sales Returns',
+    description:
+      'Entry for the sales return domain, reserved for return registration, return-to-warehouse flow, write-offs, and customer after-sales tracking.',
+    statuses: {
+      Created: 'Created',
+      InTransit: 'In transit',
+      Received: 'Received',
+      Closed: 'Closed',
+      Canceled: 'Canceled',
+    },
+    transportModes: {
+      Courier: 'Courier',
+      Other: 'Other',
+    },
+    statusTitle: 'Sales Returns Page Reserved',
+    statusDescription:
+      'This release only mounts the tab and route skeleton. Real return documents, virtual return warehouse records, and order linkage will be added in later iterations.',
+    scopes: {
+      scope: 'Dedicated page location for post-order sales return workflows',
+      warehouse:
+        'Ready to connect virtual return warehouse receipts and inventory handoff records later',
+      future:
+        'Reserved for future return documents, reasons, approvals, and amount write-off flow',
+    },
+    context: {
+      fromCustomer: 'Initial context from customer card',
+      global: 'Global sales returns entry',
+      customerLabel: 'Current customer context',
+      allReturns: 'Currently viewing the full sales returns entry',
+      descriptionWithCustomer:
+        'This page was opened from a customer card. Future real sales-return queries will start from this customer scope first.',
+      descriptionWithoutCustomer:
+        'This page was opened directly from trading management. Future real sales-return queries will start from the global scope.',
+      clear: 'View all return orders',
+    },
+    shell: {
+      emptyTitle: 'Sales returns integration shell is ready',
+      emptyDescription:
+        'This release builds the page handoff layer for the sales return primary flow first: it can accept customer context, reserve the query shell, and hold future real return lists and detail expansion.',
+      filtersTitle: 'Filter handoff slot',
+      filtersDescription:
+        'Real sales-return filters such as customer, order, status, and date range will be connected here later.',
+      filtersDescriptionWithCustomer:
+        'Customer context is already attached: {{customerName}}. Future real filters will use this customer as the initial condition.',
+      listTitle: 'Return list handoff slot',
+      listDescription:
+        'Future real sales return orders, quantities, reasons, document states, and linked order information will be mounted here.',
+      queryTitle: 'Primary query shell',
+      queryDescription:
+        'The sales returns page will own the primary queries for orders, customers, quantities, and return orders. The customer card will only consume summarized results from this chain.',
+    },
+    queryShell: {
+      description:
+        'The current list shows real sales-return documents. The customer-card return summary is now aggregated from this primary chain instead of being assembled backward on the card.',
+      searchPlaceholder:
+        'Search return number, source order number, or customer...',
+      statusFilter: 'Filter return status',
+      allStatuses: 'All return statuses',
+      loadFailed: 'Failed to load sales returns',
+      createSuccess: 'Sales return created successfully',
+      logisticsUpdateSuccess: 'Sales return logistics updated successfully',
+      noSelectionTitle: 'No sales return selected yet',
+      noSelectionDescription:
+        'Select a real sales-return document from the list first. The key details will be shown on the right.',
+      selectionTitle: 'Current sales return',
+      clearSelection: 'Clear selected return',
+      customer: 'Customer',
+      quantity: 'Returned quantity',
+      orderDate: 'Source order date',
+      returnDate: 'Return date',
+      status: 'Return status',
+      reason: 'Return reason',
+      transportMode: 'Transport mode',
+      trackingNo: 'Tracking number',
+      carrier: 'Carrier',
+      shippedAt: 'Shipped at',
+      trackingFilledAt: 'Tracking filled at',
+      trackingFilledBy: 'Tracking filled by',
+      logisticsNote: 'Logistics note',
+      logisticsSectionTitle: 'Logistics update and lifecycle progress',
+      logisticsSectionDescription:
+        'After creation, you can fill tracking info, carrier, shipped time, and progress the return status here.',
+      pendingTrackingBadge: 'Tracking number pending',
+      updateLogistics: 'Save logistics',
+      emptyReason: 'No return reason provided',
+    },
+    entryShell: {
+      sourceSectionTitle: 'Search the sales order to return first',
+      sourceSectionDescription:
+        'The sales returns home now prioritizes the operational entry flow: find the source order first, then enter the return action from the result list.',
+      searchPlaceholder: 'Search customer, order number, or order name...',
+      statusFilter: 'Filter source order status',
+      allStatuses: 'All source order statuses',
+      sourceLoadFailed: 'Failed to load source sales orders',
+      sourceEmptyTitle: 'No matching sales orders found',
+      sourceEmptyDescription:
+        'Try a customer name, order number, or a different status filter to find the source order for the return.',
+      customer: 'Customer',
+      sourceQuantity: 'Ordered quantity',
+      sourceOrderDate: 'Order date',
+      sourceStatus: 'Order status',
+      sourceAction: 'Start return',
+      sourceActionPending: 'Return-entry slot reserved',
+      sourceActionPendingDetail:
+        'Order {{orderNo}} is selected. This iteration fixes the entry and search flow first; the minimal return form will be connected next.',
+      sourceSelectionTitle: 'Current source order',
+      sourceSelectionDescription:
+        'Select a sales order from the source result list first. The right side will show the return-entry handoff area for that order.',
+      returnsSectionTitle: 'Created real sales returns',
+      returnsSectionDescription:
+        'This result area still shows real persisted sales-return documents so you can inspect created returns and their details.',
+    },
+    createSheet: {
+      title: 'Create sales return',
+      description:
+        'Create a real sales return from order {{orderNo}} by first adding the products to return and then filling quantities.',
+      emptyLinesTitle: 'No return lines filled yet',
+      emptyLinesDescription:
+        'Add at least one product first and fill a return quantity greater than 0.',
+      summaryOrderNo: 'Source order number',
+      summaryCustomer: 'Customer',
+      summarySelectedLines: 'Added return products',
+      summaryQuantity: 'Total return quantity',
+      returnDate: 'Return date',
+      transportMode: 'Transport mode',
+      trackingNo: 'Tracking number',
+      trackingNoPlaceholder: 'Courier mode can be left empty and filled later',
+      carrier: 'Carrier',
+      carrierPlaceholder: 'e.g. SF Express, ZTO, DHL',
+      shippedAt: 'Shipped at',
+      logisticsNote: 'Logistics note',
+      logisticsNotePlaceholder:
+        'e.g. customer self-shipped, carton count, label notes',
+      issueCategory: 'Issue category',
+      issueCategoryPlaceholder: 'Select an issue category',
+      reason: 'Return reason',
+      reasonPlaceholder: 'Enter return reason...',
+      remarks: 'Remarks',
+      remarksPlaceholder: 'Enter additional notes...',
+      evidenceTitle: 'Return evidence images',
+      evidenceHint:
+        'Supports multiple screenshots or on-site photos, allows direct mobile camera capture, and keeps drag-to-reorder behavior.',
+      evidenceEmpty: 'No return evidence images yet',
+      evidenceUploadAction: 'Upload images',
+      evidenceCameraAction: 'Take photo',
+      evidenceNoteLabel: 'Image note',
+      evidenceNotePlaceholder:
+        'Example: damaged carton, signed receipt screenshot, batch label',
+      evidenceUploadSuccess: 'Return evidence images uploaded',
+      evidenceUploadFailed: 'Failed to upload return evidence images',
+      linesTitle: 'Return lines',
+      linesDescription:
+        'First choose the products to return from the order, then fill the return quantity in the selected list.',
+      availableLinesTitle: 'Available order items',
+      availableLinesDescription: 'Click + to add items to this return',
+      availableLinesEmpty: 'No more returnable items can be added from this order',
+      selectedLinesTitle: 'Selected return items',
+      selectedLinesDescription: 'Fill return quantities only in this list',
+      selectedLinesEmpty: 'Add the products you want to return from the available items list first',
+      addLine: 'Add',
+      removeLine: 'Remove',
+      itemInfo: 'Item info',
+      lineNo: 'Line no.',
+      orderQty: 'Ordered quantity',
+      returnedQty: 'Returned quantity',
+      remainingQty: 'Returnable quantity',
+      price: 'Unit price',
+      returnQty: 'Return quantity',
+      estimatedAmount: 'Estimated return amount',
+      submit: 'Create return',
+    },
+  },
+  salesExchanges: {
+    title: 'Sales Exchanges',
+    description:
+      'Entry for the sales exchange domain, reserved for returning old goods, shipping replacements, and customer exchange lifecycle tracking.',
+    statusTitle: 'Sales Exchanges Page Reserved',
+    statusDescription:
+      'This release only mounts the tab and route skeleton. Real exchange documents, replacement linkage, and after-sales fulfillment states will be added later.',
+    scopes: {
+      scope: 'Dedicated page location for post-order sales exchange workflows',
+      replacement:
+        'Ready to connect replacement materials, substitution relations, and fulfillment tracking later',
+      future:
+        'Reserved for future exchange documents, linked returns, and re-shipment workflow',
+    },
+  },
   quotes: {
     title: 'Quote Management',
-    description: 'This phase reserves the sales flow position first, with quote lists, versioning, validity, and order conversion to be added progressively later.',
+    description:
+      'This phase reserves the sales flow position first, with quote lists, versioning, validity, and order conversion to be added progressively later.',
     statusTitle: 'Quote Management Is Being Prepared',
-    statusDescription: 'The current release only provides the structural placeholder. Quote lists, details, version flow, and sales-order conversion will be added in later iterations.',
+    statusDescription:
+      'The current release only provides the structural placeholder. Quote lists, details, version flow, and sales-order conversion will be added in later iterations.',
     scopeTitle: 'Reserved in This Iteration',
     scopes: {
       tab: 'Independent tab entry inside Sales Management',
@@ -42,14 +239,14 @@ export const trading = {
     deleted: 'Deleted',
   },
   customers: {
-    pageTitle: 'Customer Relationship Ledger',
+    pageTitle: 'Customer Profiles',
     pageDescription:
-      'Strategic customer profiles, contact network, and credit exposure monitoring',
+      'Maintenance center for customer profiles, contacts, communication channels, and credit balance',
     loading: 'Loading customer archives...',
     searchPlaceholder: 'Search customer name, code, or contact...',
-    showDeleted: 'Show Deleted',
-    hideDeleted: 'Hide Deleted',
-    addCustomer: 'Register Customer',
+    showDeleted: 'Show Deleted Profiles',
+    hideDeleted: 'Hide Deleted Profiles',
+    addCustomer: 'New Customer Profile',
     editCustomer: 'Edit Profile',
     viewTransactions: 'Transaction Log',
     deleteCustomer: 'Delete Archive',
@@ -58,19 +255,56 @@ export const trading = {
     address: 'Business Address',
     creditBalance: 'Credit Balance',
     ledger: 'Ledger',
+    communication: 'Communication',
+    wechat: 'WeChat',
+    openWechat: 'Open WeChat',
+    unfilled: 'Not provided',
+    viewOrders: 'View Order Profile',
+    viewAudit: 'View Audit Log',
     empty: 'No customer archives',
-    firstCustomer: 'Register First Customer',
-    deleteConfirm: 'Delete this customer archive? This action cannot be undone.',
+    firstCustomer: 'Create First Customer Profile',
+    deleteConfirm:
+      'Delete this customer archive? This action cannot be undone.',
     stats: {
-      total: 'Total Customers',
-      active: 'Active Customers',
-      newThisMonth: 'New This Month',
-      newBadge: 'New',
+      total: 'Customer Profiles',
+      active: 'Active Profiles',
+      newThisMonth: 'New Profiles This Month',
+      newBadge: 'New Profile',
+    },
+    summary: {
+      orderStatusTitle: 'Order Status',
+      lastOrderDate: 'Latest Order',
+      idleDays: 'Days Since Last Order',
+      idleDaysValue: '{{count}} days',
+      noOrders: 'No orders yet',
+      quoteTitle: 'Quote Profiles',
+      quoteLoading: 'Loading quote profiles...',
+      quoteLoadFailed: 'Failed to load quote profiles',
+      quoteEmptyTitle: 'No quote profiles for {{customerName}} yet',
+      quoteEmptyDescription:
+        'Create a quote profile directly and continue with quote maintenance.',
+      quoteCreate: 'New Quote Profile',
+      quoteOpen: 'View Quote Profile',
+      quoteCount: '{{count}} quote profiles',
+      quoteSelectHint: 'Choose one to view the quote details',
+      quoteSelect: 'Choose Quote Profile',
+      returnTitle: 'Return Summary',
+      returnMetricTitle: 'Returned Units / Orders',
+      ready: 'Ready',
+      pending: 'Pending',
+      returnReadyDescription:
+        'Returned quantity totals {{returnedQuantity}} across {{totalOrders}} orders.',
+      returnPendingDescription:
+        'No return summary yet. You can enter the return profile from here.',
+      returnReadyBadge: 'Returns Ready',
+      returnPendingBadge: 'Returns Pending',
+      returnAction: 'View Return Profile',
     },
     dialog: {
-      createTitle: 'Register Customer',
+      createTitle: 'New Customer Profile',
       editTitle: 'Edit Customer Profile',
-      description: 'Complete the customer master profile and contact details',
+      description:
+        'Maintain customer basics, contacts, and preferred communication channels.',
       lockedMessage:
         'This customer is marked as inactive and its core archive is locked for editing.',
       fields: {
@@ -78,6 +312,7 @@ export const trading = {
         code: 'Customer Code',
         contactPerson: 'Contact Person',
         contactPhone: 'Contact Phone',
+        status: 'Customer Status',
         email: 'Email',
         address: 'Business Address',
       },
@@ -86,6 +321,7 @@ export const trading = {
         code: 'e.g. XD-C-2024-001',
         contactPerson: 'Enter contact person',
         contactPhone: 'Enter phone number',
+        status: 'Select customer status',
         email: 'example@xiandu.com',
         address: 'Enter office or shipping address...',
       },
@@ -99,19 +335,22 @@ export const trading = {
     },
     errors: {
       conflict: 'This customer was updated elsewhere. Refresh and try again.',
-      deleteBlocked: 'This customer still has unfinished sales orders and cannot be deleted.',
+      deleteBlocked:
+        'This customer still has unfinished sales orders and cannot be deleted.',
       saveFailed: 'Failed to save the customer.',
       deleteFailed: 'Failed to delete the customer.',
     },
   },
   receivables: {
     title: 'Sales Receivables',
-    description: 'Receivables entry point for the sales domain, reserved for balances, aging, and settlement views.',
+    description:
+      'Receivables entry point for the sales domain, reserved for balances, aging, and settlement views.',
     summaryTotal: 'Outstanding Receivables',
     summaryOverdue: 'Overdue Amount',
     summaryPending: 'Pending Receipts',
     tableTitle: 'Receivables List',
-    tableDescription: 'Review receivable ledgers, aging status, and open the detail dialog for receipt registration and allocation.',
+    tableDescription:
+      'Review receivable ledgers, aging status, and open the detail dialog for receipt registration and allocation.',
     columns: {
       documentNo: 'Document No.',
       customerName: 'Customer',
@@ -203,7 +442,8 @@ export const trading = {
     },
   },
   shippingManagement: {
-    moduleDescription: 'A unified entry for shipment vehicle matching, contact outreach, and shipment history tracking.',
+    moduleDescription:
+      'A unified entry for shipment vehicle matching, contact outreach, and shipment history tracking.',
     tabs: {
       vehicleMatch: 'Vehicle Match',
       contacts: 'Contacts',
@@ -211,15 +451,18 @@ export const trading = {
     },
     vehicleMatch: {
       title: 'Vehicle Match',
-      description: 'Enter vehicle matching from the pending shipment list and later review recommended vehicles, load rate, and pre-shipment confirmation details here.',
+      description:
+        'Enter vehicle matching from the pending shipment list and later review recommended vehicles, load rate, and pre-shipment confirmation details here.',
     },
     contacts: {
       title: 'Contacts',
-      description: 'Review shipment-related contacts, outreach methods, and carrier-side coordination details in one place for future call, message, and copy actions.',
+      description:
+        'Review shipment-related contacts, outreach methods, and carrier-side coordination details in one place for future call, message, and copy actions.',
     },
     history: {
       title: 'Shipment History',
-      description: 'Track shipment confirmation, vehicle matching, contact outreach, and status transitions in a single shipment lifecycle view.',
+      description:
+        'Track shipment confirmation, vehicle matching, contact outreach, and status transitions in a single shipment lifecycle view.',
     },
   },
 }

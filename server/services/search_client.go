@@ -74,8 +74,9 @@ func (s *SearchServiceClient) SyncIndex(doc SearchDocument) error {
 // SearchResponse 从引擎返回的搜索命中结果情况情况总量针对。
 type SearchResponse struct {
 	Items []struct {
-		ID    string  `json:"id"`
-		Score float32 `json:"score"`
+		ID       string  `json:"id"`
+		Category string  `json:"category"`
+		Score    float32 `json:"score"`
 	} `json:"items"`
 }
 

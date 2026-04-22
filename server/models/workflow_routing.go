@@ -27,10 +27,13 @@ func (StandardCommand) TableName() string {
  */
 type NotificationRule struct {
 	BaseModel
-	Name     string          `json:"name" gorm:"size:255"`
-	Enabled  bool            `json:"enabled" gorm:"default:true"`
-	Entity   string          `json:"entity" gorm:"size:50"`
-	Segments json.RawMessage `json:"segments" gorm:"type:jsonb"`
+	Name       string          `json:"name" gorm:"size:255"`
+	Enabled    bool            `json:"enabled" gorm:"default:true"`
+	Entity     string          `json:"entity" gorm:"size:50"`
+	SourceCode string          `json:"sourceCode" gorm:"size:80;index"`
+	ActionCode string          `json:"actionCode" gorm:"size:80;index"`
+	Segments   json.RawMessage `json:"segments" gorm:"type:jsonb"`
+	Version    int             `json:"version" gorm:"default:1"`
 }
 
 func (NotificationRule) TableName() string {

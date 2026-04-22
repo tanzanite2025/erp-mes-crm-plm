@@ -1,11 +1,71 @@
 export const engineering = {
   tabs: {
     products: '产品管理',
+    productAppearance: '产品外观',
     productAttributes: '产品属性配置',
     bom: 'BOM 配方',
     changes: 'ECO / ECN',
     templates: '产品模板',
     types: '产品分类',
+  },
+  productAppearance: {
+    title: '产品外观',
+    description: '维护客户订单所需的产品外观主数据，供后续销售选配与条码位值映射使用。',
+    metrics: {
+      total: '外观总数',
+      codes: '条码位值数',
+      active: '启用中',
+    },
+    fields: {
+      name: '外观名称',
+      barcodeCode: '条码位值',
+      description: '说明',
+      image: '外观图片',
+      active: '启用状态',
+      sortOrder: '排序',
+    },
+    placeholders: {
+      name: '例如：UD / 3K / 12K',
+      barcodeCode: '1-9',
+      description: '填写外观说明、客户识别口径或后续使用备注',
+    },
+    actions: {
+      add: '新增外观',
+      edit: '编辑',
+      delete: '删除',
+      uploadImage: '上传图片',
+      replaceImage: '更换图片',
+      removeImage: '移除图片',
+      save: '保存',
+      cancel: '取消',
+      deleteConfirm: '确认删除外观「{{name}}」吗？',
+    },
+    badges: {
+      active: '已启用',
+      inactive: '已停用',
+    },
+    empty: {
+      title: '暂无产品外观数据',
+      description: '先建立外观主数据，后续再接入销售订单和一维码。',
+      descriptionFallback: '暂无说明',
+    },
+    dialog: {
+      createTitle: '新增产品外观',
+      editTitle: '编辑产品外观',
+      description: '当前只建立外观主数据本体，不在本轮接入销售订单与一维码。',
+      imageHint: '当前阶段先使用本地原型图片，后续上线时再迁移到统一文件存储。',
+      imageEmpty: '尚未上传外观图片',
+    },
+    toasts: {
+      required: '外观名称和条码位值为必填项',
+      invalidBarcodeCode: '条码位值必须为 1-9 的单个数字',
+      duplicateBarcodeCode: '该条码位值已被其他外观占用',
+      imageReadFailed: '读取图片失败，请重新选择文件',
+      saveSuccess: '产品外观已保存',
+      saveFailed: '保存产品外观失败',
+      deleteSuccess: '产品外观已删除',
+      deleteFailed: '删除产品外观失败',
+    },
   },
   changeOrders: {
     title: 'ECO / ECN 变更单',
@@ -141,6 +201,82 @@ export const engineering = {
       noAttachment: '该档案暂无附件基础档',
     },
   },
+  masterData: {
+    page: {
+      title: '工程主数据中心',
+      description: '统一维护可复用、可约束、可被后续工程模块引用的全局工程字典',
+    },
+    tabs: {
+      weavingMode: '编织方式',
+    },
+    weavingMode: {
+      overview: {
+        title: '编织方式主数据',
+        description: '统一维护编织比例类工程主数据，约束唯一来源并支持系统预置与扩展新增',
+      },
+      metrics: {
+        total: '总数 {{count}}',
+        active: '启用 {{count}}',
+        presets: '预置 {{count}}',
+      },
+      placeholders: {
+        search: '搜索编织方式、比例或备注...',
+      },
+      table: {
+        mode: '编织方式',
+        ratio: '比例拆分',
+        source: '来源',
+        status: '状态',
+        actions: '操作',
+      },
+      fields: {
+        ratioNumerator: '分子',
+        ratioDenominator: '分母',
+        normalizedResult: '归一化结果',
+        description: '备注说明',
+        active: '启用状态',
+      },
+      badges: {
+        systemPreset: '系统预置',
+        custom: '自定义',
+        active: '启用',
+        inactive: '停用',
+      },
+      actions: {
+        create: '新增编织方式',
+        edit: '编辑',
+        delete: '删除',
+        save: '保存',
+        cancel: '取消',
+      },
+      dialog: {
+        createTitle: '新增编织方式',
+        editTitle: '编辑编织方式',
+        description: '仅维护主数据本体。系统自动归一化比例、生成编码并控制排序。',
+      },
+      hints: {
+        presetLockedTitle: '系统预置比例已锁定',
+        presetLockedDescription: '系统预置项不允许直接修改分子分母，如需新比例请新增独立记录。',
+      },
+      empty: {
+        title: '暂无匹配的编织方式',
+        description: '当前没有符合筛选条件的编织方式主数据，可直接新增新的比例规则。',
+        descriptionFallback: '暂无备注说明',
+      },
+      toasts: {
+        loadFailed: '加载编织方式失败',
+        saveSuccess: '编织方式已保存',
+        saveFailed: '编织方式保存失败',
+        initFailed: '系统预置编织方式初始化失败',
+        duplicate: '该编织比例已存在，系统已按归一化规则拦截重复值',
+        deleteSuccess: '编织方式已删除',
+        deleteFailed: '编织方式删除失败',
+        deleteConfirm: '确认删除编织方式 {{name}} 吗？',
+        presetDeleteBlocked: '系统预置编织方式不允许删除',
+        linkedDeleteBlocked: '该编织方式已被打孔方案引用，暂不允许删除',
+      },
+    },
+  },
   drilling: {
     overview: {
       title: '车圈打孔图纸原子中心',
@@ -149,7 +285,7 @@ export const engineering = {
     table: {
       name: '方案名称',
       product: '关联白坯型号',
-      lacing: '编织比例',
+      lacing: '编织方式',
       holes: '图示孔数',
       date: '存入日期',
       actions: '方案操作',
@@ -166,7 +302,7 @@ export const engineering = {
     form: {
       name: '打孔方案名称',
       product: '关联白坯产品',
-      lacing: '编织比例',
+      lacing: '编织方式',
       holes: '孔数规格',
       attachment: '图纸附件上传 (支持 DWG/PDF)',
       submit: '执行方案归档',
@@ -174,10 +310,10 @@ export const engineering = {
     placeholders: {
       name: '例如：700C-24H-标准打孔蓝图',
       product: '关联具体的物料型号...',
-      lacing: '选择编织比例',
+      lacing: '选择编织方式',
       holes: '选择孔数',
       attachment: '点击或拖拽方案图纸至此原子中心',
-      search: '搜索方案、SKU、比例...',
+      search: '搜索方案、SKU、编织方式...',
       mobileLoading: '正在解析蓝图库...',
       noData: '暂无打孔方案',
     },
@@ -188,6 +324,8 @@ export const engineering = {
       deleteSuccess: '方案已移除',
       noFile: '该打孔方案暂无图纸附件',
       unResolved: '无法解析图纸预览链接',
+      weavingModeLoadFailed: '编织方式主数据加载失败，请稍后重试',
+      weavingModeUnavailable: '当前没有可用的编织方式，请先到工程主数据中维护',
     },
   },
   hubs: {

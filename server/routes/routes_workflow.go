@@ -17,7 +17,6 @@ func registerWorkflowRoutes(authorized *gin.RouterGroup) {
 	)
 	workflowDefineManage := middleware.RequirePermissions(
 		authz.ActionSystemWorkflowManage,
-		authz.ActionApprovalConfigManage,
 	)
 	workflowTaskReview := middleware.RequirePermissions(
 		authz.ActionSystemWorkflowReview,

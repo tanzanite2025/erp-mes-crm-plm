@@ -31,6 +31,8 @@ func mapDomainErrorToHTTPStatus(err error) int {
 		return http.StatusConflict
 	case strings.HasPrefix(err.Error(), "[VALIDATION]"):
 		return http.StatusBadRequest
+	case strings.Contains(err.Error(), "nested delta path is not supported"):
+		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError
 	}

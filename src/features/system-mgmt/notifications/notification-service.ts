@@ -1,199 +1,263 @@
-import { NotificationGateway } from './notification-gateway'
 import { createLogger } from '@/lib/logger'
-import { type NotificationType, type NotificationPriority, type SystemMessage } from './types'
-import { type StandardCommand } from '../workflow-core/data/schema'
 import { type NotificationRule } from '../workflow-core/data/notification-rule-schema'
+import { type StandardCommand } from '../workflow-core/data/schema'
+import {
+  executeRoutingRules,
+  resolveTemplate,
+  type RuleExecutionMetadata,
+} from '../workflow-core/services/rule-execution-core'
+import { buildLiveRuleExecutionEvent } from '../workflow-core/services/rule-execution-event-builder'
 import { RoutingService } from '../workflow-core/services/routing-service'
+import {
+  type NotificationPriority,
+  type NotificationType,
+} from './types'
 
 const logger = createLogger('NotificationService')
 
-type NotificationMetadata = Record<string, unknown>
+export { resolveTemplate }
 
-function getMetadataRecord(metadata: SystemMessage['metadata'] | undefined): NotificationMetadata {
-  return metadata && typeof metadata === 'object' ? metadata : {}
+interface DispatchInput {
+  action?: string
+  targetStatus?: string
+  title?: string
+  content?: string
+  priority?: NotificationPriority
+  targetRoles?: string[]
+  targetUsers?: string[]
+  actionUrl?: string
+  sourceCode?: string
+  metadata?: RuleExecutionMetadata
 }
 
-function getMetadataString(metadata: NotificationMetadata, key: string): string | undefined {
-  const value = metadata[key]
-  return typeof value === 'string' ? value : undefined
+interface PurchaseOrderNotificationInput {
+  id: string
+  orderNo: string
+  status: string
+  supplierName?: string
+  purchaser?: string
+  materialName?: string
 }
 
-function getNestedManager(metadata: NotificationMetadata): string | undefined {
-  const approval = metadata.approval
-  if (!approval || typeof approval !== 'object') return undefined
-  const manager = (approval as Record<string, unknown>).manager
-  return typeof manager === 'string' ? manager : undefined
+interface ProductionTaskNotificationInput {
+  id: string
+  planId: string
+  status: string
+  batchNo?: string
+  processName?: string
+  operator?: string
+  orderNo?: string
+  productName?: string
+  targetQty?: number
+  actualQty?: number
 }
 
-/**
- * 助手方法：解析模板中的变量 [Key] -> value
- */
-export function resolveTemplate(template: string, metadata: Record<string, unknown> = {}) {
-  if (!template) return ''
-  return template.replace(/\[(\w+)\]/g, (match, key) => {
-    return metadata[key] !== undefined ? String(metadata[key]) : match
-  })
+interface ProductionPlanNotificationInput {
+  id: string
+  status: string
+  orderNo?: string
+  productName?: string
+  quantity?: number
+  startDate?: string | null
+  endDate?: string | null
 }
 
-/**
- * 全局消息中心逻辑服务 (后端裁决版)
- * 负责人接收外部事件并根据后端配置的“路由规则”决定消息分发逻辑。
- * 已对齐“后端裁决”原则：不再从本地读取规则与指令库，而是实时请求 RoutingService。
- */
+function buildPurchaseOrderNotificationMetadata(
+  order: PurchaseOrderNotificationInput
+): RuleExecutionMetadata {
+  return {
+    id: order.id,
+    purchaseOrderId: order.id,
+    PurchaseOrderId: order.id,
+    orderId: order.id,
+    OrderId: order.id,
+    purchaseOrderNo: order.orderNo,
+    PurchaseOrderNo: order.orderNo,
+    orderNo: order.orderNo,
+    OrderNo: order.orderNo,
+    status: order.status,
+    supplierName: order.supplierName,
+    SupplierName: order.supplierName,
+    purchaser: order.purchaser,
+    Purchaser: order.purchaser,
+    MaterialName: order.materialName,
+    sourceCode: 'PURCHASE_ORDER',
+  }
+}
+
+function buildProductionTaskNotificationMetadata(
+  task: ProductionTaskNotificationInput
+): RuleExecutionMetadata {
+  return {
+    id: task.id,
+    taskId: task.id,
+    TaskId: task.id,
+    planId: task.planId,
+    PlanId: task.planId,
+    status: task.status,
+    batchNo: task.batchNo,
+    BatchNo: task.batchNo,
+    processName: task.processName,
+    ProcessName: task.processName,
+    operator: task.operator,
+    Operator: task.operator,
+    orderNo: task.orderNo,
+    OrderNo: task.orderNo,
+    productName: task.productName,
+    ProductName: task.productName,
+    targetQty: task.targetQty,
+    TargetQty: task.targetQty,
+    actualQty: task.actualQty,
+    ActualQty: task.actualQty,
+    sourceCode: 'PRODUCTION_TASK',
+  }
+}
+
+function buildProductionPlanNotificationMetadata(
+  plan: ProductionPlanNotificationInput
+): RuleExecutionMetadata {
+  return {
+    id: plan.id,
+    planId: plan.id,
+    PlanId: plan.id,
+    status: plan.status,
+    orderNo: plan.orderNo,
+    OrderNo: plan.orderNo,
+    productName: plan.productName,
+    ProductName: plan.productName,
+    quantity: plan.quantity,
+    Quantity: plan.quantity,
+    startDate: plan.startDate,
+    StartDate: plan.startDate,
+    endDate: plan.endDate,
+    EndDate: plan.endDate,
+    sourceCode: 'PRODUCTION_PLAN',
+  }
+}
+
+function getProductionPlanStatusAction(status: string) {
+  if (status === 'CANCELED') return 'CANCELED'
+  if (status === 'COMPLETED') return 'COMPLETED'
+  return 'STATUS_CHANGED'
+}
+
 export const NotificationService = {
-  /**
-   * 分发系统消息 (核心入口)
-   */
-  dispatch: async (
-    type: NotificationType,
-    data: {
-      action?: string
-      targetStatus?: string
-      title?: string
-      content?: string
-      priority?: NotificationPriority
-      targetRoles?: string[]
-      actionUrl?: string
-      metadata?: NotificationMetadata
-    }
-  ) => {
-    // ─── 核心变更：对接后端事实源 ───
-    const [rules, stdCommands] = await Promise.all([
-        RoutingService.getRules().catch(() => [] as NotificationRule[]),
-        RoutingService.getCommands().catch(() => [] as StandardCommand[])
+  dispatch: async (type: NotificationType, data: DispatchInput) => {
+    const [rules, commands] = await Promise.all([
+      RoutingService.getRules().catch(() => [] as NotificationRule[]),
+      RoutingService.getCommands().catch(() => [] as StandardCommand[]),
     ])
 
-    if (!rules || rules.length === 0) {
-        logger.warn('No routing rules found on backend')
-        return
+    if (rules.length === 0) {
+      logger.warn('No routing rules found on backend')
+      return
     }
 
-    const entityTypeMap: Record<string, string> = {
-        'ORDER_EVENT': 'ORDER',
-        'QUALITY_ALERT': 'PRODUCT',
-        'EQUIPMENT_STATUS': 'MOLD',
-        'SYSTEM_NOTICE': 'SYSTEM'
-    }
-    const targetEntity = entityTypeMap[type] || 'ORDER'
-
-    const activeRules = rules.filter(r => r.enabled && r.entity === targetEntity)
-
-    for (const rule of activeRules) {
-        for (const segment of rule.segments) {
-            
-            const metadata: NotificationMetadata = {
-                ...data.metadata,
-                RuleId: rule.id,
-                SegmentId: segment.id,
-                SegmentTitle: segment.title
-            }
-
-            if (targetEntity === 'ORDER') {
-                const orderId = metadata.OrderId || metadata.orderId || metadata.id || data.metadata?.id
-                if (orderId) {
-                    metadata.OrderId = orderId 
-                    metadata.orderId = orderId
-                }
-            }
-
-            if (data.targetStatus && segment.resolveOnStatuses?.includes(data.targetStatus)) {
-                const orderId = getMetadataString(metadata, 'orderId') || getMetadataString(metadata, 'OrderId') || getMetadataString(metadata, 'id')
-                if (orderId) {
-                    NotificationGateway.archiveWhere((m) => {
-                        const messageMetadata = getMetadataRecord(m.metadata)
-                        return getMetadataString(messageMetadata, 'OrderId') === orderId && 
-                            getMetadataString(messageMetadata, 'SegmentId') === segment.id
-                    })
-                }
-            }
-
-            const isStatusMatch = segment.targetStatuses.length === 0 || 
-                                 (data.targetStatus && segment.targetStatuses.includes(data.targetStatus))
-
-            if (!isStatusMatch) continue
-
-            let dynamicRoles: string[] = []
-            if (segment.dynamicRoleField) {
-                const fieldMap: Record<string, () => string | undefined> = {
-                    'claimedBy': () => getMetadataString(data.metadata || {}, 'claimedBy'),
-                    'createdBy': () => getMetadataString(data.metadata || {}, 'createdBy'),
-                    'approval.manager': () => getNestedManager(data.metadata || {}),
-                }
-                const resolved = fieldMap[segment.dynamicRoleField]?.()
-                if (resolved) dynamicRoles = [resolved]
-            }
-            const finalRoles = data.targetRoles || [...new Set([...segment.assigneeRoles, ...dynamicRoles])]
-
-            if (segment.commandIds.length > 0) {
-                for (const cmdId of segment.commandIds) {
-                    const cmd = stdCommands?.find(c => c.id === cmdId)
-                    const uniqueKey = `${metadata.orderId || metadata.OrderId || metadata.id || 'sys'}_${segment.id}_${cmdId}`
-
-                    if (cmd) {
-                        NotificationGateway.addMessage({
-                            type,
-                            title: cmd.title,
-                            content: resolveTemplate(cmd.content, metadata),
-                            priority: data.priority || 'info', 
-                            targetRoles: finalRoles.length > 0 ? finalRoles : undefined,
-                            actionUrl: cmd.targetLink ? resolveTemplate(cmd.targetLink, metadata) : data.actionUrl,
-                            metadata: { ...metadata, uniqueKey, commandId: cmd.id },
-                            ruleId: rule.id,
-                            segmentId: segment.id,
-                            commandId: cmdId
-                        })
-                    }
-                }
-            } else if (data.content) {
-                const uniqueKey = `${metadata.orderId || metadata.OrderId || metadata.id || 'sys'}_${segment.id}_fallback`
-                NotificationGateway.addMessage({
-                    type,
-                    title: data.title || segment.title,
-                    content: data.content,
-                    priority: data.priority || 'info',
-                    targetRoles: finalRoles.length > 0 ? finalRoles : undefined,
-                    actionUrl: data.actionUrl,
-                    metadata: { ...metadata, uniqueKey },
-                    ruleId: rule.id,
-                    segmentId: segment.id,
-                })
-            }
-        }
-    }
+    const result = await executeRoutingRules({
+      rules,
+      commands,
+      event: buildLiveRuleExecutionEvent(type, data),
+      mode: 'live',
+    })
 
     if (data.priority === 'critical') {
-      logger.warn('Critical event dispatched', data)
+      logger.warn('Critical event dispatched', { data, result })
     }
+
+    return result
   },
 
   notifyOrderStatus: (orderId: string, orderNo: string, status: string) => {
-    NotificationService.dispatch('ORDER_EVENT', {
+    void NotificationService.dispatch('ORDER_EVENT', {
       action: 'STATUS_CHANGED',
+      sourceCode: 'SALES_ORDER',
       targetStatus: status,
-      metadata: { orderId, orderNo, status }
+      metadata: { orderId, orderNo, status, sourceCode: 'SALES_ORDER' },
     })
   },
 
   notifyOrderCreated: (orderNo: string, customer: string) => {
-    NotificationService.dispatch('ORDER_EVENT', {
+    void NotificationService.dispatch('ORDER_EVENT', {
       action: 'CREATED',
-      metadata: { orderNo, customer }
+      sourceCode: 'SALES_ORDER',
+      metadata: { orderNo, customer, sourceCode: 'SALES_ORDER' },
+    })
+  },
+
+  notifyPurchaseOrderCreated: (order: PurchaseOrderNotificationInput) => {
+    void NotificationService.dispatch('ORDER_EVENT', {
+      action: 'CREATED',
+      sourceCode: 'PURCHASE_ORDER',
+      targetStatus: order.status,
+      actionUrl: `/purchase/orders?search=${order.orderNo}&detailId=${order.id}`,
+      metadata: buildPurchaseOrderNotificationMetadata(order),
+    })
+  },
+
+  notifyPurchaseOrderStatus: (order: PurchaseOrderNotificationInput) => {
+    void NotificationService.dispatch('ORDER_EVENT', {
+      action: 'STATUS_CHANGED',
+      sourceCode: 'PURCHASE_ORDER',
+      targetStatus: order.status,
+      actionUrl: `/purchase/orders?search=${order.orderNo}&detailId=${order.id}`,
+      metadata: buildPurchaseOrderNotificationMetadata(order),
+    })
+  },
+
+  notifyProductionTaskCreated: (task: ProductionTaskNotificationInput) => {
+    void NotificationService.dispatch('TASK_ASSIGNED', {
+      action: 'CREATED',
+      sourceCode: 'PRODUCTION_TASK',
+      targetStatus: task.status,
+      actionUrl: `/dashboard/calendar?planId=${task.planId}`,
+      metadata: buildProductionTaskNotificationMetadata(task),
+    })
+  },
+
+  notifyProductionTaskStatus: (task: ProductionTaskNotificationInput) => {
+    const action = task.status === 'HOLD' ? 'QUALITY_HOLD' : 'STATUS_CHANGED'
+    void NotificationService.dispatch('TASK_ASSIGNED', {
+      action,
+      sourceCode: 'PRODUCTION_TASK',
+      targetStatus: task.status,
+      actionUrl: `/dashboard/calendar?planId=${task.planId}`,
+      metadata: buildProductionTaskNotificationMetadata(task),
+    })
+  },
+
+  notifyProductionPlanCreated: (plan: ProductionPlanNotificationInput) => {
+    void NotificationService.dispatch('SYSTEM_NOTICE', {
+      action: 'CREATED',
+      sourceCode: 'PRODUCTION_PLAN',
+      targetStatus: plan.status,
+      actionUrl: `/dashboard/calendar?planId=${plan.id}`,
+      metadata: buildProductionPlanNotificationMetadata(plan),
+    })
+  },
+
+  notifyProductionPlanStatus: (plan: ProductionPlanNotificationInput) => {
+    void NotificationService.dispatch('SYSTEM_NOTICE', {
+      action: getProductionPlanStatusAction(plan.status),
+      sourceCode: 'PRODUCTION_PLAN',
+      targetStatus: plan.status,
+      actionUrl: `/dashboard/calendar?planId=${plan.id}`,
+      metadata: buildProductionPlanNotificationMetadata(plan),
     })
   },
 
   notifyQualityIssue: (productCode: string, batchNo: string) => {
-    NotificationService.dispatch('QUALITY_ALERT', {
+    void NotificationService.dispatch('QUALITY_ALERT', {
       action: 'QUALITY_ISSUE',
-      metadata: { productCode, batchNo }
+      metadata: { productCode, batchNo },
     })
   },
 
   broadcast: (title: string, content: string) => {
-    NotificationService.dispatch('SYSTEM_NOTICE', {
+    void NotificationService.dispatch('SYSTEM_NOTICE', {
       action: 'CREATED',
       title,
       content,
-      priority: 'info'
+      priority: 'info',
     })
-  }
+  },
 }

@@ -10,6 +10,7 @@ import (
 	"xdfc-server/models"
 	"xdfc-server/services/trading_audit"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -42,7 +43,9 @@ func SavePurchaseOrder(command SavePurchaseOrderCommand) (PurchaseOrderResponse,
 		if err != nil {
 			return PurchaseOrderResponse{}, err
 		}
-		return MapPurchaseOrderToResponse(*created), nil
+		response := MapPurchaseOrderToResponse(*created)
+		syncPurchaseOrderToSearch(response)
+		return response, nil
 	}
 
 	payload, err := json.Marshal(PurchaseOrderSavePayload{
@@ -263,6 +266,9 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 		order.Version = 1
 		if order.OrderNo == "" && originalID != "" {
 			order.OrderNo = originalID
+		}
+		if strings.TrimSpace(order.ID) == "" {
+			order.ID = uuid.NewString()
 		}
 		if err := tx.Create(&order).Error; err != nil {
 			return err

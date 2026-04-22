@@ -2,7 +2,7 @@ export const approval = {
   centerTitle: '审批中心',
   tabs: {
     requests: '待办与申请',
-    configs: '职责配置',
+    routing: '消息中心',
     history: '审批历史',
   },
   modules: {
@@ -12,7 +12,7 @@ export const approval = {
     materials: '物料档案',
   },
   actions: {
-    void: '作废/冲销',
+    void: '作废 / 冲销',
     delete: '物理删除',
     price_override: '价格改写',
     scrap: '报废处理',
@@ -49,17 +49,20 @@ export const approval = {
   requests: {
     loading: '待办任务加载中...',
     heroTitle: '待办与申请中心',
-    heroSubtitle: '您有 {{count}} 条待授权请求，可在此完成敏感业务的二次授权核销。',
+    heroSubtitle:
+      '你有 {{count}} 条待授权请求，可在这里完成敏感业务的二次授权核销。',
     emptyPending: '当前暂无待处理任务',
     noReasonProvided: '未提供申请说明',
     reject: '拒绝',
     confirm: '口令核销',
     l1Pass: '一级通过',
     myLogsTitle: '个人申请审计轨迹',
-    myLogsSubtitle: '您发起的所有审批申请都会在这里实时追踪，支持全生命周期状态监控。',
+    myLogsSubtitle:
+      '你发起的所有审批申请都会在这里实时追踪，支持全生命周期状态监控。',
     emptyMine: '暂无本人发起的申请记录',
     pinDialogTitle: '设置 6 位授权码',
-    pinDialogDescription: '请输入 6 位数字口令。该口令将告知申请人，其输入后即可完成敏感操作。',
+    pinDialogDescription:
+      '请输入 6 位数字口令。该口令将告知申请人，其输入后即可完成敏感操作。',
     issuePin: '发放授权码',
     approvedToast: '已批准该申请',
     rejectedToast: '该申请已被拒绝',
@@ -68,35 +71,6 @@ export const approval = {
       status: '当前状态',
       pinCode: '授权口令',
       timestamp: '发起时间',
-    },
-  },
-  configs: {
-    loading: '正在加载审批配置...',
-    loadFailed: '无法加载审批相关数据',
-    approverRequired: '请至少指定一级审批人',
-    saveSuccess: '配置已保存',
-    heroTitle: '审批职责定义中心',
-    heroSubtitle: '在这里为敏感业务指定责任审批人，构建系统授权防线。',
-    addRule: '新增规则',
-    empty: '暂无审批规则，默认允许所有未受控操作。',
-    guidelinesTitle: '使用注意事项',
-    guidelines: {
-      separationTitle: '01. 职责分离',
-      separationBody: '末级审批人需通过口头或即时通讯方式，将 6 位授权码安全告知申请人。',
-      wildcardTitle: '02. 模糊匹配',
-      wildcardBody: '若未来支持更宽泛动作匹配，可优先复用模块级规则，减少重复配置。',
-      effectiveTitle: '03. 立即生效',
-      effectiveBody: '规则修改后立刻作用于新申请，已在流程中的审批不会被追溯影响。',
-    },
-    dialog: {
-      title: '定义审批职责规则',
-      targetModule: '目标模块',
-      sensitiveAction: '敏感动作',
-      l1Approver: '一级审批人',
-      l2Approver: '二级审批人',
-      unassigned: '未指定',
-      optionalBypass: '无（二审即跳过）',
-      submit: '提交规则配置',
     },
   },
   history: {
@@ -110,7 +84,8 @@ export const approval = {
     verifyDescription: '该操作受系统保护，请输入审批人发放的 6 位数字授权码。',
     verifyPlaceholder: '输入授权码',
     requestAnother: '丢失或未发起申请？重新申请',
-    requestDescription: '由于尚未配置审批流或申请已过期，请填写理由重新发起：',
+    requestDescription:
+      '由于尚未配置审批流或申请已过期，请填写理由重新发起：',
     requestPlaceholder: '申请理由（如：业务冲销、数据更正）',
     verifyAction: '验证并执行',
     submitRequest: '提交申请',

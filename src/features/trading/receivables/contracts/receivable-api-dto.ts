@@ -1,103 +1,83 @@
-import type { SettlementRecordEvidenceApiDTO } from '../../settlement-evidences/contracts/settlement-evidence-api-dto'
+import { z } from 'zod'
 
-export interface ReceivableRecordApiDTO {
-  id: string
-  documentNo: string
-  customerName: string
-  currency: string
-  invoiceAmount: number
-  receivedAmount: number
-  outstandingAmount: number
-  dueDate: string
-  agingBucket: string
-  status: string
+import type {
+  LedgerSearchCandidateApiDTO,
+  LedgerSearchResponseApiDTO,
+} from '../../contracts/ledger-search-api-dto'
+import {
+  createLedgerDetailApiDTOSchema,
+  createLedgerListPageApiDTOSchema,
+  createSettlementMutationResponseApiDTOSchema,
+  ledgerRecordBaseApiDTOShape,
+} from '../../contracts/shared/ledger-contract-schema'
+import {
+  createSettlementRecordApiDTOSchema,
+  settlementAllocationApiDTOSchema,
+  settlementRecordApiDTOSchema,
+  type CreateSettlementRecordApiDTO as TradingCreateSettlementRecordApiDTO,
+  type SettlementAllocationApiDTO as TradingSettlementAllocationApiDTO,
+  type SettlementRecordApiDTO as TradingSettlementRecordApiDTO,
+} from '../../contracts/settlement-record-api-dto'
+
+export const receivableRecordApiDTOSchema = z.object({
+  ...ledgerRecordBaseApiDTOShape,
+  customerName: z.string(),
+  invoiceAmount: z.number(),
+  receivedAmount: z.number(),
+}).strict()
+
+export const receivableSummaryApiDTOSchema = z.object({
+  totalReceivable: z.number(),
+  overdueReceivable: z.number(),
+  pendingReceiptCount: z.number(),
+}).strict()
+
+export const receivableListPageApiDTOSchema = createLedgerListPageApiDTOSchema(
+  receivableRecordApiDTOSchema,
+  receivableSummaryApiDTOSchema
+)
+
+export type ReceivableRecordApiDTO = z.infer<typeof receivableRecordApiDTOSchema>
+export type ReceivableSummaryApiDTO = z.infer<typeof receivableSummaryApiDTOSchema>
+export type ReceivableListPageApiDTO = z.infer<typeof receivableListPageApiDTOSchema>
+
+export function deserializeReceivableListPageApiDTO(input: unknown): ReceivableListPageApiDTO {
+  return receivableListPageApiDTOSchema.parse(input)
 }
 
-export interface ReceivableSummaryApiDTO {
-  totalReceivable: number
-  overdueReceivable: number
-  pendingReceiptCount: number
+export type ReceivableLedgerSearchCandidateApiDTO = LedgerSearchCandidateApiDTO
+export type ReceivableLedgerSearchResponseApiDTO = LedgerSearchResponseApiDTO
+
+export const receiptRecordApiDTOSchema = settlementRecordApiDTOSchema
+
+export const receivableDetailApiDTOSchema = createLedgerDetailApiDTOSchema(receivableRecordApiDTOSchema, {
+  sourceType: z.string(),
+  sourceRefId: z.string(),
+  customerId: z.string(),
+  version: z.number(),
+  receiptRecords: z.array(receiptRecordApiDTOSchema),
+  allocations: z.array(settlementAllocationApiDTOSchema),
+})
+
+export type ReceiptRecordApiDTO = TradingSettlementRecordApiDTO
+export type SettlementAllocationApiDTO = TradingSettlementAllocationApiDTO
+export type ReceivableDetailApiDTO = z.infer<typeof receivableDetailApiDTOSchema>
+
+export function deserializeReceivableDetailApiDTO(input: unknown): ReceivableDetailApiDTO {
+  return receivableDetailApiDTOSchema.parse(input)
 }
 
-export interface ReceivableListPageApiDTO {
-  items: ReceivableRecordApiDTO[]
-  total: number
-  page: number
-  pageSize: number
-  summary: ReceivableSummaryApiDTO
-}
+export const createReceiptRecordApiDTOSchema = createSettlementRecordApiDTOSchema
+export type CreateReceiptRecordApiDTO = TradingCreateSettlementRecordApiDTO
 
-export interface ReceivableLedgerSearchCandidateApiDTO {
-  id: string
-  documentNo: string
-  partnerName: string
-  outstandingAmount: number
-  status: string
-  currency: string
-}
+export const createReceiptRecordResponseApiDTOSchema = createSettlementMutationResponseApiDTOSchema(
+  receivableDetailApiDTOSchema,
+  receiptRecordApiDTOSchema,
+  settlementAllocationApiDTOSchema
+)
 
-export interface ReceivableLedgerSearchResponseApiDTO {
-  items: ReceivableLedgerSearchCandidateApiDTO[]
-  total: number
-  page: number
-  pageSize: number
-}
+export type CreateReceiptRecordResponseApiDTO = z.infer<typeof createReceiptRecordResponseApiDTOSchema>
 
-export interface ReceiptRecordApiDTO {
-  id: string
-  recordNo: string
-  ledgerId: string
-  amount: number
-  currency: string
-  paymentMethod: string
-  paymentTerm: string
-  recordDate: string
-  status: string
-  referenceNo: string
-  createdAt: string
-  updatedAt: string
-  evidences: SettlementRecordEvidenceApiDTO[]
-}
-
-export interface SettlementAllocationApiDTO {
-  id: string
-  ledgerId: string
-  receiptRecordId: string
-  paymentRecordId: string
-  allocatedAmount: number
-  sequenceNo: number
-  remark: string
-  operator: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface ReceivableDetailApiDTO extends ReceivableRecordApiDTO {
-  sourceType: string
-  sourceRefId: string
-  customerId: string
-  version: number
-  receiptRecords: ReceiptRecordApiDTO[]
-  allocations: SettlementAllocationApiDTO[]
-}
-
-export interface CreateReceiptRecordApiDTO {
-  amount: number
-  currency?: string
-  paymentMethod?: string
-  paymentTerm?: string
-  recordDate?: string
-  referenceNo?: string
-  allocations: Array<{
-    ledgerId: string
-    allocatedAmount: number
-    sequenceNo?: number
-    remark?: string
-  }>
-}
-
-export interface CreateReceiptRecordResponseApiDTO {
-  ledger: ReceivableDetailApiDTO
-  record: ReceiptRecordApiDTO
-  allocations: SettlementAllocationApiDTO[]
+export function deserializeCreateReceiptRecordResponseApiDTO(input: unknown): CreateReceiptRecordResponseApiDTO {
+  return createReceiptRecordResponseApiDTOSchema.parse(input)
 }

@@ -10,6 +10,13 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useCommandMenu')
 
+export function normalizeSearchHref(href: string) {
+  if (href === '/system-management/routing') {
+    return '/approval/routing'
+  }
+  return href
+}
+
 export function useCommandMenu() {
   const navigate = useNavigate()
   const { t } = useLanguage()
@@ -49,7 +56,7 @@ export function useCommandMenu() {
             results.push({
               id: `rust-search-${item.id}`,
               title: item.title,
-              href: item.href,
+              href: normalizeSearchHref(item.href),
               category: 'data',
               icon: Box,
               parentTitle: item.parentTitle + ` (${item.code})`,

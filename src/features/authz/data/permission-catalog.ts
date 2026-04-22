@@ -110,6 +110,13 @@ export const MENU_PERMISSIONS = {
     icon: 'Sliders',
     rootPath: '/basic-settings',
   },
+  codeCenter: {
+    id: 'menu_code_center',
+    label: '访问：编码中心',
+    desc: '允许进入编码规则、条码与发号相关页面',
+    icon: 'Barcode',
+    rootPath: '/code-center',
+  },
   pda: {
     id: 'menu_pda',
     label: '访问：PDA Shell',
@@ -119,11 +126,16 @@ export const MENU_PERMISSIONS = {
   },
 } as const satisfies Record<string, MenuPermissionDefinition>
 
-export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS> = {
+export const ROUTE_TO_MENU_MAPPING: Record<
+  string,
+  keyof typeof MENU_PERMISSIONS
+> = {
   '/dashboard': 'dashboard',
   '/warehouse': 'warehouse',
   '/mrp': 'mrp',
+  '/raw-materials': 'trading',
   '/trading': 'trading',
+  '/sales-analysis': 'trading',
   '/quotes': 'trading',
   '/shipping-management': 'trading',
   '/purchase': 'trading',
@@ -143,6 +155,9 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
   '/system-management': 'system',
   '/approval': 'approval',
   '/basic-settings': 'settings',
+  '/sidebar-command-assignment': 'settings',
+  '/sidebar-command-library': 'settings',
+  '/code-center': 'codeCenter',
   '/print-mgmt': 'settings',
   '/terminal-config': 'settings',
   '/logistics-config': 'settings',
@@ -156,7 +171,10 @@ export const ROUTE_TO_MENU_MAPPING: Record<string, keyof typeof MENU_PERMISSIONS
 /**
  * Generate a stable permission id from route path.
  */
-export function generatePermissionId(type: 'page' | 'tab', path: string): string {
+export function generatePermissionId(
+  type: 'page' | 'tab',
+  path: string
+): string {
   return buildPermissionId(type, path)
 }
 
@@ -179,7 +197,11 @@ export function getMenuPermissionForPath(path: string): string {
  *
  * Current behavior is non-destructive passthrough.
  */
-export function migratePermissions(from: string, to: string, permissionIds: string[]): string[] {
+export function migratePermissions(
+  from: string,
+  to: string,
+  permissionIds: string[]
+): string[] {
   if (!from || !to || from === to) {
     return [...permissionIds]
   }

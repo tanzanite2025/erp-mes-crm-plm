@@ -1,4 +1,9 @@
-import { LogisticsProvider } from '../types'
+import {
+  fromLogisticsProviderDtoArray,
+  toLogisticsProviderDraft,
+  toLogisticsProviderPayload,
+} from '@/features/sandbox/logistics-api/adapters/logistics-provider-adapter'
+import { type LogisticsProvider, type LogisticsProviderDraft, type LogisticsProviderDto } from '../types'
 
 const STORAGE_KEY = 'xdfc_logistics_sandbox_data'
 
@@ -10,18 +15,20 @@ const STORAGE_KEY = 'xdfc_logistics_sandbox_data'
 export const logisticsMockService = {
   getProviders: (): LogisticsProvider[] => {
     const data = localStorage.getItem(STORAGE_KEY)
-    return data ? JSON.parse(data) : []
+    return data ? fromLogisticsProviderDtoArray(JSON.parse(data) as LogisticsProviderDto[]) : []
   },
 
-  saveProvider: (provider: LogisticsProvider): LogisticsProvider => {
+  saveProvider: (provider: LogisticsProviderDraft): LogisticsProvider => {
     const providers = logisticsMockService.getProviders()
-    const newProvider = { 
-        ...provider, 
-        id: provider.id || Date.now(),
-        updatedAt: new Date().toISOString(),
-        createdAt: provider.createdAt || new Date().toISOString()
-    }
-    
+    const payload = toLogisticsProviderPayload(provider)
+    const now = new Date().toISOString()
+    const newProvider = toLogisticsProviderDraft({
+      ...payload,
+      id: provider.id || Date.now(),
+      updatedAt: now,
+      createdAt: provider.createdAt || now,
+    })
+
     const index = providers.findIndex(p => p.id === newProvider.id)
     if (index > -1) {
       providers[index] = newProvider

@@ -1,3 +1,4 @@
+use axum::body::Bytes;
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -12,7 +13,6 @@ use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::*;
 use tantivy::{doc, Index, IndexReader, IndexWriter, ReloadPolicy};
-use axum::body::Bytes;
 
 mod processor;
 
@@ -37,6 +37,7 @@ pub struct SearchParams {
 #[derive(Serialize)]
 pub struct SearchResult {
     pub id: String,
+    pub category: String,
     pub score: f32,
 }
 
@@ -118,18 +119,35 @@ async fn search(
     let name_field = schema.get_field("name").unwrap();
     let model_field = schema.get_field("model").unwrap();
 
-    let query_parser = QueryParser::for_index(&state.index, vec![code_field, name_field, model_field]);
+    let query_parser =
+        QueryParser::for_index(&state.index, vec![code_field, name_field, model_field]);
     let query = query_parser.parse_query(&params.q).unwrap();
 
     let limit = params.limit.unwrap_or(20);
-    let top_docs = searcher.search(&query, &TopDocs::with_limit(limit)).unwrap();
+    let top_docs = searcher
+        .search(&query, &TopDocs::with_limit(limit))
+        .unwrap();
 
     let id_field = schema.get_field("id").unwrap();
+    let category_field = schema.get_field("category").unwrap();
     let mut results = Vec::new();
     for (score, doc_address) in top_docs {
         let retrieved_doc = searcher.doc(doc_address).unwrap();
-        let id = retrieved_doc.get_first(id_field).and_then(|v| v.as_text()).unwrap().to_string();
-        results.push(SearchResult { id, score });
+        let id = retrieved_doc
+            .get_first(id_field)
+            .and_then(|v| v.as_text())
+            .unwrap()
+            .to_string();
+        let category = retrieved_doc
+            .get_first(category_field)
+            .and_then(|v| v.as_text())
+            .unwrap_or("")
+            .to_string();
+        results.push(SearchResult {
+            id,
+            category,
+            score,
+        });
     }
 
     let total = results.len();
@@ -158,19 +176,18 @@ async fn process_image_handler(
         "Received image processing request"
     );
 
-    let result = processor::process_image(&body)
-        .map_err(|e| {
-            let message = e.to_string();
-            tracing::error!(
-                error = %message,
-                body_len = body.len(),
-                body_prefix = %body_prefix_hex,
-                "Image processing failed"
-            );
-            (StatusCode::BAD_REQUEST, message)
-        })?;
-    
-    use base64::{Engine as _, engine::general_purpose};
+    let result = processor::process_image(&body).map_err(|e| {
+        let message = e.to_string();
+        tracing::error!(
+            error = %message,
+            body_len = body.len(),
+            body_prefix = %body_prefix_hex,
+            "Image processing failed"
+        );
+        (StatusCode::BAD_REQUEST, message)
+    })?;
+
+    use base64::{engine::general_purpose, Engine as _};
     let webp_base64 = general_purpose::STANDARD.encode(&result.webp_data);
 
     Ok(Json(ImageProcessResponse {
@@ -220,9 +237,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/v1/index", post(index_document))
         .route("/v1/search", get(search))
         .route(
-            "/v1/process-image", 
+            "/v1/process-image",
             post(process_image_handler)
-                .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
+                .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024)),
         )
         .with_state(state);
 

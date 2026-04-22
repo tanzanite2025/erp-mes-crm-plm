@@ -136,7 +136,7 @@ export function usePurchaseReturnViewModel({
     >()
 
     filteredEligibleOrders.forEach((order) => {
-      const supplierKey = order.supplierName || '鏈寚瀹氫緵搴斿晢'
+      const supplierKey = order.supplierName || '未指定供应商'
       const supplierEntry = supplierMap.get(supplierKey) ?? {
         supplierName: supplierKey,
         groups: [],

@@ -14,7 +14,7 @@ import {
 import { type WarehouseCategoryOption } from '../../category/data/schema'
 import { warehouseQueryKeys } from '../../query-keys'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
-import { type ShipmentRecord } from '../data/schema'
+import { type ShipmentDemand, type ShipmentRecord } from '../data/schema'
 import { ShipmentCoreService } from '../services/shipment-core-service'
 
 export function useShipmentBootstrap() {
@@ -23,6 +23,11 @@ export function useShipmentBootstrap() {
   const historyQuery = useQuery({
     queryKey: warehouseQueryKeys.shipmentHistory(),
     queryFn: () => ShipmentCoreService.getShipmentHistory(),
+  })
+
+  const demandsQuery = useQuery({
+    queryKey: warehouseQueryKeys.shipmentDemands(),
+    queryFn: () => ShipmentCoreService.getShipmentDemands(),
   })
 
   const categoriesQuery = useQuery({
@@ -42,6 +47,7 @@ export function useShipmentBootstrap() {
 
   const error =
     historyQuery.error ??
+    demandsQuery.error ??
     categoriesQuery.error ??
     masterDataQuery.error ??
     thresholdsQuery.error
@@ -85,6 +91,19 @@ export function useShipmentBootstrap() {
     return filteredCategories
   }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
 
+  const shipmentDemands = useMemo(() => {
+    if (demandsQuery.isLoading) return [] as ShipmentDemand[]
+    if (!demandsQuery.data) {
+      const lookupError =
+        demandsQuery.error instanceof Error
+          ? demandsQuery.error
+          : new Error('[CRITICAL] Shipment demands missing after load')
+      failLoudly(lookupError, 'useShipmentBootstrap.demands')
+      throw lookupError
+    }
+    return demandsQuery.data
+  }, [demandsQuery.data, demandsQuery.error, demandsQuery.isLoading])
+
   const alertThresholds = useMemo(() => {
     if (thresholdsQuery.isLoading) return {}
     if (!thresholdsQuery.data) {
@@ -117,6 +136,7 @@ export function useShipmentBootstrap() {
 
   return {
     history,
+    shipmentDemands,
     warehouseCategories,
     alertThresholds,
     masterDataMap,

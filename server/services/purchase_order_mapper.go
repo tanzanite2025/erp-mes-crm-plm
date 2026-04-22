@@ -154,7 +154,7 @@ func MapPatchPurchaseOrderRequestToModel(input PatchPurchaseOrderRequest) models
 	}
 }
 
-func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine) PurchaseOrderLineResponse {
+func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine, expectedDate string) PurchaseOrderLineResponse {
 	return PurchaseOrderLineResponse{
 		ID:            line.ID,
 		Version:       line.Version,
@@ -167,6 +167,7 @@ func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine) PurchaseOrder
 		UOM:           line.UOM,
 		Price:         line.Price,
 		Amount:        line.Amount,
+		ExpectedDate:  expectedDate,
 		ReceivedQty:   line.ReceivedQty,
 		ReturnedQty:   line.ReturnedQty,
 		Status:        line.Status,
@@ -176,7 +177,7 @@ func mapPurchaseOrderLineToResponse(line models.PurchaseOrderLine) PurchaseOrder
 func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderResponse {
 	lines := make([]PurchaseOrderLineResponse, 0, len(order.Lines))
 	for _, line := range order.Lines {
-		lines = append(lines, mapPurchaseOrderLineToResponse(line))
+		lines = append(lines, mapPurchaseOrderLineToResponse(line, order.ExpectedDate))
 	}
 	return PurchaseOrderResponse{
 		ID:                 order.ID,
@@ -205,9 +206,17 @@ func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderRespons
 	}
 }
 
-func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder) []PurchaseOrderListItemResponse {
+func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder, includeLines bool) []PurchaseOrderListItemResponse {
 	items := make([]PurchaseOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
+		var lines *[]PurchaseOrderLineResponse
+		if includeLines {
+			mappedLines := make([]PurchaseOrderLineResponse, 0, len(order.Lines))
+			for _, line := range order.Lines {
+				mappedLines = append(mappedLines, mapPurchaseOrderLineToResponse(line, order.ExpectedDate))
+			}
+			lines = &mappedLines
+		}
 		items = append(items, PurchaseOrderListItemResponse{
 			ID:                 order.ID,
 			OrderNo:            order.OrderNo,
@@ -231,6 +240,7 @@ func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder) []PurchaseOrder
 			UpdatedAt:          order.UpdatedAt,
 			IsDeleted:          order.IsDeleted,
 			Version:            order.Version,
+			Lines:              lines,
 		})
 	}
 	return items

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -51,6 +52,14 @@ func GetLogisticsProvidersHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 获取服务商列表失败: " + err.Error()})
 		return
 	}
+	for index := range providers {
+		referenceCount, refErr := countProviderReferencesByCode(providers[index].Code)
+		if refErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 引用统计失败: " + refErr.Error()})
+			return
+		}
+		providers[index].ReferenceCount = referenceCount
+	}
 	c.JSON(http.StatusOK, providers)
 }
 
@@ -89,6 +98,109 @@ func normalizeLogisticsProviderInput(input *models.LogisticsAPIProvider) {
 	if input.Status == "" {
 		input.Status = "Enabled"
 	}
+	if strings.TrimSpace(input.LastVerificationAction) != "" {
+		input.LastVerificationAction = strings.TrimSpace(input.LastVerificationAction)
+	}
+}
+
+func parseLogisticsProviderPayload(c *gin.Context) (models.LogisticsAPIProvider, map[string]json.RawMessage, error) {
+	var input models.LogisticsAPIProvider
+	providedFields := make(map[string]json.RawMessage)
+
+	rawBody, err := c.GetRawData()
+	if err != nil {
+		return input, nil, err
+	}
+
+	if err := json.Unmarshal(rawBody, &providedFields); err != nil {
+		return input, nil, err
+	}
+
+	if err := json.Unmarshal(rawBody, &input); err != nil {
+		return input, nil, err
+	}
+
+	return input, providedFields, nil
+}
+
+func mergeLogisticsProviderInput(target *models.LogisticsAPIProvider, input *models.LogisticsAPIProvider, providedFields map[string]json.RawMessage) {
+	if _, ok := providedFields["name"]; ok {
+		target.Name = input.Name
+	}
+	if _, ok := providedFields["code"]; ok {
+		target.Code = input.Code
+	}
+	if _, ok := providedFields["category"]; ok {
+		target.Category = input.Category
+	}
+	if _, ok := providedFields["website"]; ok {
+		target.Website = input.Website
+	}
+	if _, ok := providedFields["contact"]; ok {
+		target.Contact = input.Contact
+	}
+	if _, ok := providedFields["phone"]; ok {
+		target.Phone = input.Phone
+	}
+	if _, ok := providedFields["note"]; ok {
+		target.Note = input.Note
+	}
+	if _, ok := providedFields["appKey"]; ok {
+		target.AppKey = input.AppKey
+	}
+	if _, ok := providedFields["appSecret"]; ok {
+		target.AppSecret = input.AppSecret
+	}
+	if _, ok := providedFields["customerId"]; ok {
+		target.CustomerID = input.CustomerID
+	}
+	if _, ok := providedFields["checkWord"]; ok {
+		target.CheckWord = input.CheckWord
+	}
+	if _, ok := providedFields["endpoint"]; ok {
+		target.Endpoint = input.Endpoint
+	}
+	if _, ok := providedFields["status"]; ok {
+		target.Status = input.Status
+	}
+	if _, ok := providedFields["capabilities"]; ok {
+		target.Capabilities = input.Capabilities
+	}
+	if _, ok := providedFields["quotaTotal"]; ok {
+		target.QuotaTotal = input.QuotaTotal
+	}
+	if _, ok := providedFields["quotaUsed"]; ok {
+		target.QuotaUsed = input.QuotaUsed
+	}
+	if _, ok := providedFields["quotaAlertAt"]; ok {
+		target.QuotaAlertAt = input.QuotaAlertAt
+	}
+}
+
+func buildLogisticsProviderPersistenceUpdates(provider *models.LogisticsAPIProvider) map[string]interface{} {
+	return map[string]interface{}{
+		"name":                      provider.Name,
+		"code":                      provider.Code,
+		"category":                  provider.Category,
+		"website":                   provider.Website,
+		"contact":                   provider.Contact,
+		"phone":                     provider.Phone,
+		"note":                      provider.Note,
+		"app_key":                   provider.AppKey,
+		"app_secret":                provider.AppSecret,
+		"customer_id":               provider.CustomerID,
+		"check_word":                provider.CheckWord,
+		"endpoint":                  provider.Endpoint,
+		"status":                    provider.Status,
+		"capabilities":              provider.Capabilities,
+		"verification_status":       provider.VerificationStatus,
+		"last_verified_at":          provider.LastVerifiedAt,
+		"last_verification_message": provider.LastVerificationMessage,
+		"last_verification_action":  provider.LastVerificationAction,
+		"quota_total":               provider.QuotaTotal,
+		"quota_used":                provider.QuotaUsed,
+		"quota_alert_at":            provider.QuotaAlertAt,
+	}
 }
 
 func countProviderReferencesByCode(code string) (int64, error) {
@@ -107,6 +219,7 @@ func applyVerificationReset(existing *models.LogisticsAPIProvider, input *models
 		input.VerificationStatus = "disabled"
 		input.LastVerifiedAt = &now
 		input.LastVerificationMessage = "provider is disabled"
+		input.LastVerificationAction = "如需重新测试，请先启用该物流服务商。"
 		return
 	}
 
@@ -114,6 +227,7 @@ func applyVerificationReset(existing *models.LogisticsAPIProvider, input *models
 		input.VerificationStatus = "unverified"
 		input.LastVerifiedAt = nil
 		input.LastVerificationMessage = "awaiting first verification"
+		input.LastVerificationAction = "请先执行一次测试连接，再判断平台是否可用。"
 		return
 	}
 
@@ -129,40 +243,21 @@ func applyVerificationReset(existing *models.LogisticsAPIProvider, input *models
 		input.VerificationStatus = "unverified"
 		input.LastVerifiedAt = nil
 		input.LastVerificationMessage = "configuration updated, verification required"
+		input.LastVerificationAction = "配置已变更，请重新执行测试连接。"
 		return
 	}
 
 	input.VerificationStatus = existing.VerificationStatus
 	input.LastVerifiedAt = existing.LastVerifiedAt
 	input.LastVerificationMessage = existing.LastVerificationMessage
+	input.LastVerificationAction = existing.LastVerificationAction
 }
 
 // SaveLogisticsProviderHandler 保存/更新物流服务商
 func SaveLogisticsProviderHandler(c *gin.Context) {
-	var input models.LogisticsAPIProvider
-	if err := c.ShouldBindJSON(&input); err != nil {
+	input, providedFields, err := parseLogisticsProviderPayload(c)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 数据格式错误"})
-		return
-	}
-
-	normalizeLogisticsProviderInput(&input)
-	if input.Name == "" || input.Code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 厂商名称和编码不能为空"})
-		return
-	}
-
-	duplicateQuery := db.DB.Model(&models.LogisticsAPIProvider{}).
-		Where("code = ? OR LOWER(name) = LOWER(?)", input.Code, input.Name)
-	if input.ID != 0 {
-		duplicateQuery = duplicateQuery.Where("id <> ?", input.ID)
-	}
-
-	var duplicate models.LogisticsAPIProvider
-	if err := duplicateQuery.First(&duplicate).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 已存在相同编码或名称的物流服务商"})
-		return
-	} else if err != nil && err != gorm.ErrRecordNotFound {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 重复性校验失败: " + err.Error()})
 		return
 	}
 
@@ -177,7 +272,28 @@ func SaveLogisticsProviderHandler(c *gin.Context) {
 			return
 		}
 
-		if existing.Code != input.Code {
+		candidate := existing
+		mergeLogisticsProviderInput(&candidate, &input, providedFields)
+		normalizeLogisticsProviderInput(&candidate)
+		if candidate.Name == "" || candidate.Code == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 厂商名称和编码不能为空"})
+			return
+		}
+
+		duplicateQuery := db.DB.Model(&models.LogisticsAPIProvider{}).
+			Where("code = ? OR LOWER(name) = LOWER(?)", candidate.Code, candidate.Name).
+			Where("id <> ?", existing.ID)
+
+		var duplicate models.LogisticsAPIProvider
+		if err := duplicateQuery.First(&duplicate).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 已存在相同编码或名称的物流服务商"})
+			return
+		} else if err != gorm.ErrRecordNotFound {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 重复性校验失败: " + err.Error()})
+			return
+		}
+
+		if existing.Code != candidate.Code {
 			referenceCount, refErr := countProviderReferencesByCode(existing.Code)
 			if refErr != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 引用校验失败: " + refErr.Error()})
@@ -189,17 +305,46 @@ func SaveLogisticsProviderHandler(c *gin.Context) {
 			}
 		}
 
-		applyVerificationReset(&existing, &input)
-		if err := db.DB.Save(&input).Error; err != nil {
+		applyVerificationReset(&existing, &candidate)
+		if err := db.DB.Model(&models.LogisticsAPIProvider{}).Where("id = ?", existing.ID).Updates(buildLogisticsProviderPersistenceUpdates(&candidate)).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
 			return
 		}
+		if err := db.DB.First(&candidate, existing.ID).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 读取更新后的服务商失败: " + err.Error()})
+			return
+		}
+		referenceCount, refErr := countProviderReferencesByCode(candidate.Code)
+		if refErr == nil {
+			candidate.ReferenceCount = referenceCount
+		}
+		c.JSON(http.StatusOK, candidate)
+		return
 	} else {
+		normalizeLogisticsProviderInput(&input)
+		if input.Name == "" || input.Code == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 厂商名称和编码不能为空"})
+			return
+		}
+
+		duplicateQuery := db.DB.Model(&models.LogisticsAPIProvider{}).
+			Where("code = ? OR LOWER(name) = LOWER(?)", input.Code, input.Name)
+
+		var duplicate models.LogisticsAPIProvider
+		if err := duplicateQuery.First(&duplicate).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "[LOGISTICS-PUSH] 已存在相同编码或名称的物流服务商"})
+			return
+		} else if err != gorm.ErrRecordNotFound {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 重复性校验失败: " + err.Error()})
+			return
+		}
+
 		applyVerificationReset(nil, &input)
 		if err := db.DB.Create(&input).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建失败"})
 			return
 		}
+		input.ReferenceCount = 0
 	}
 	c.JSON(http.StatusOK, input)
 }
@@ -221,14 +366,20 @@ func VerifyLogisticsProviderHandler(c *gin.Context) {
 	provider.VerificationStatus = result.Status
 	provider.LastVerifiedAt = &result.CheckedAt
 	provider.LastVerificationMessage = result.Message
+	provider.LastVerificationAction = result.Action
 
 	if err := db.DB.Model(&provider).Updates(map[string]interface{}{
 		"verification_status":       provider.VerificationStatus,
 		"last_verified_at":          provider.LastVerifiedAt,
 		"last_verification_message": provider.LastVerificationMessage,
+		"last_verification_action":  provider.LastVerificationAction,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 写入验证结果失败: " + err.Error()})
 		return
+	}
+	referenceCount, refErr := countProviderReferencesByCode(provider.Code)
+	if refErr == nil {
+		provider.ReferenceCount = referenceCount
 	}
 
 	c.JSON(http.StatusOK, provider)

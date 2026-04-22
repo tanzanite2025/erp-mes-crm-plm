@@ -1,9 +1,20 @@
 #!/bin/sh
 set -e
 
-echo "[pre-commit] verify zh-CN locale encoding"
-if command -v pnpm >/dev/null 2>&1; then
-  pnpm run verify:zh-cn-encoding
-else
-  corepack pnpm run verify:zh-cn-encoding
-fi
+. "$(dirname "$0")/hook-helpers.sh"
+
+# i18n parity scans the merged locale graph, so we only run it when staged changes
+# actually touch locale dictionaries or the parity guard itself.
+run_pnpm_script_if_staged_matches \
+  "verify i18n parity" \
+  "verify:i18n" \
+  '^src/locales/|^scripts/verify-i18n-parity\.mjs$|^scripts/i18n-parity-baseline\.json$' \
+  "i18n parity (no staged locale changes)"
+
+# zh-CN encoding verification is narrower: only run it when staged changes may affect
+# zh-CN locale files or the encoding checker.
+run_pnpm_script_if_staged_matches \
+  "verify zh-CN locale encoding" \
+  "verify:zh-cn-encoding" \
+  '^src/locales/.*zh-CN|^scripts/verify-zh-cn-encoding\.mjs$' \
+  "zh-CN locale encoding (no staged zh-CN locale changes)"

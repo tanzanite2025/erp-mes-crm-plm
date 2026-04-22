@@ -15,6 +15,8 @@ import { DocumentFooterStats } from '@/features/sales-document/components/docume
 import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
 import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
 import { DocumentNotesSection } from '@/features/sales-document/components/document-notes-section'
+import { PRODUCT_APPEARANCES_QUERY_KEY } from '@/features/engineering/query-keys'
+import { productAppearanceService } from '@/features/engineering/services/product-appearance-service'
 import {
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
@@ -43,6 +45,11 @@ export function SalesOrderActionDialog({
   const { data: customers = [] } = useGetCustomers({ enabled: open })
   const { data: products = [] } = useGetProducts({ enabled: open })
   const { units = [] } = useUnitsQuery({ enabled: open })
+  const appearancesQuery = useQuery({
+    queryKey: PRODUCT_APPEARANCES_QUERY_KEY,
+    queryFn: () => productAppearanceService.getProductAppearances(),
+    enabled: open,
+  })
   const drillingQuery = useQuery({
     queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
     queryFn: () => ProductionDBService.getDrilling(),
@@ -88,8 +95,9 @@ export function SalesOrderActionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        size='full'
         showCloseButton={false}
-        className='max-h-[92vh] max-w-[calc(100%-1rem)] overflow-y-auto border-none p-0 shadow-2xl transition-all duration-300 sm:max-w-[95vw] lg:max-w-[1200px]'
+        className='max-h-[92vh] w-[95vw] max-w-[95vw] overflow-y-auto border-none p-0 shadow-2xl transition-all duration-300 sm:max-w-[95vw] md:max-w-[95vw] lg:max-w-[95vw] xl:max-w-[95vw]'
       >
         <div className='sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-2 backdrop-blur-sm sm:px-6 sm:py-2.5'>
           <DialogHeader>
@@ -147,6 +155,7 @@ export function SalesOrderActionDialog({
               />
 
               <DocumentLinesEditor
+                appearances={appearancesQuery.data ?? []}
                 lines={formData.lines || []}
                 products={products}
                 units={units}
@@ -160,7 +169,7 @@ export function SalesOrderActionDialog({
 
               <DocumentNotesSection
                 value={formData.requirements || ''}
-                onChange={(value) => setFormData((prev: Partial<SalesOrder>) => ({ ...prev, requirements: value }))}
+                onChange={(value) => setFormData((prev) => ({ ...prev, requirements: value }))}
               />
             </div>
 

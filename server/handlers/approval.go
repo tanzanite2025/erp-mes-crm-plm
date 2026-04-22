@@ -37,69 +37,28 @@ func normalizePermissionContext(value any) []string {
 	}
 }
 
-// GetApprovalConfigsHandler returns all approval configs.
-func GetApprovalConfigsHandler(c *gin.Context) {
-	configs, err := services.ListApprovalConfigs()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取审批配置失败"})
-		return
-	}
-	c.JSON(http.StatusOK, configs)
-}
-
-// SaveApprovalConfigHandler creates or updates approval config.
-func SaveApprovalConfigHandler(c *gin.Context) {
+func RequestApprovalHandler(c *gin.Context) {
 	var input struct {
 		Module      string `json:"module"`
 		Action      string `json:"action"`
+		TargetID    string `json:"targetId"`
+		Reason      string `json:"reason"`
 		Approver1ID string `json:"approver1Id"`
 		Approver2ID string `json:"approver2Id"`
-		IsActive    bool   `json:"isActive"`
-		Description string `json:"description"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的参数格式"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效参数"})
 		return
 	}
 
 	approver1ID, err := normalizeOptionalUUIDString(input.Approver1ID)
-	if err != nil || approver1ID == "" {
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "一级审批人 ID 格式无效"})
 		return
 	}
-
 	approver2ID, err := normalizeOptionalUUIDString(input.Approver2ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "二级审批人 ID 格式无效"})
-		return
-	}
-
-	err = services.SaveApprovalConfig(services.SaveApprovalConfigInput{
-		Module:      input.Module,
-		Action:      input.Action,
-		Approver1ID: approver1ID,
-		Approver2ID: approver2ID,
-		IsActive:    input.IsActive,
-		Description: input.Description,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存审批配置失败"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "保存成功"})
-}
-
-// RequestApprovalHandler creates an approval request.
-func RequestApprovalHandler(c *gin.Context) {
-	var input struct {
-		Module   string `json:"module"`
-		Action   string `json:"action"`
-		TargetID string `json:"targetId"`
-		Reason   string `json:"reason"`
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效参数"})
 		return
 	}
 
@@ -109,9 +68,11 @@ func RequestApprovalHandler(c *gin.Context) {
 		TargetID:    input.TargetID,
 		Reason:      input.Reason,
 		RequesterID: middleware.GetSafeUserID(c),
+		Approver1ID: approver1ID,
+		Approver2ID: approver2ID,
 	})
-	if errors.Is(err, services.ErrApprovalConfigNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "该操作未配置审批流，或默认允许执行"})
+	if errors.Is(err, services.ErrApprovalApproverMissing) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "未找到有效的审批链配置"})
 		return
 	}
 	if err != nil {
@@ -126,7 +87,6 @@ func RequestApprovalHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Request)
 }
 
-// ApproveRequestHandler performs L1/L2 approval.
 func ApproveRequestHandler(c *gin.Context) {
 	var input struct {
 		Status   string `json:"status"`
@@ -148,7 +108,7 @@ func ApproveRequestHandler(c *gin.Context) {
 		func() string { return fmt.Sprintf("%06d", rand.Intn(1000000)) },
 	)
 	if errors.Is(err, services.ErrApprovalRequestNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "申请不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "审批申请不存在"})
 		return
 	}
 	if err != nil {
@@ -163,7 +123,6 @@ func ApproveRequestHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "审批操作成功"})
 }
 
-// GetMyApprovalsHandler returns approvals relevant to current user.
 func GetMyApprovalsHandler(c *gin.Context) {
 	rawPermissions, _ := c.Get("permissions")
 	requests, err := services.ListMyApprovals(middleware.GetSafeUserID(c), normalizePermissionContext(rawPermissions))
@@ -174,7 +133,6 @@ func GetMyApprovalsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, requests)
 }
 
-// VerifyAuthCodeHandler verifies auth code and returns token.
 func VerifyAuthCodeHandler(c *gin.Context) {
 	var input struct {
 		Module   string `json:"module"`
@@ -210,18 +168,4 @@ func VerifyAuthCodeHandler(c *gin.Context) {
 		"message": "验证通过",
 		"token":   request.ID,
 	})
-}
-
-// DeleteApprovalConfigHandler deletes approval config.
-func DeleteApprovalConfigHandler(c *gin.Context) {
-	if err := services.DeleteApprovalConfig(c.Param("id")); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "已删除配置"})
-}
-
-// CheckAndConsumeApproval validates approval token and consumes it.
-func CheckAndConsumeApproval(module, action, targetID, approvalID string) error {
-	return services.CheckAndConsumeApproval(module, action, targetID, approvalID)
 }

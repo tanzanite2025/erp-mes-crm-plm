@@ -65,6 +65,17 @@ func toProductAttributeOptionModel(input SaveProductAttributeOptionInput) models
 	}
 }
 
+func nextProductAttributeOptionSortOrder(tx *gorm.DB, categoryKey string) (int, error) {
+	var maxSortOrder int
+	if err := tx.Model(&models.ProductAttributeOption{}).
+		Where("category = ?", categoryKey).
+		Select("COALESCE(MAX(sort_order), 0)").
+		Scan(&maxSortOrder).Error; err != nil {
+		return 0, err
+	}
+	return maxSortOrder + productAttributeSortOrderStep, nil
+}
+
 func defaultProductAttributeOptions() []models.ProductAttributeOption {
 	return []models.ProductAttributeOption{
 		{CategoryKey: "techSeries", Value: "normal", LabelZh: "常规系列", LabelEn: "Standard Series", Description: "常温常规工艺系列", SortOrder: 10, Active: true},
@@ -344,19 +355,28 @@ func ListProductAttributeOptions(query ProductAttributeOptionListQuery) ([]model
 func CreateProductAttributeOption(input SaveProductAttributeOptionInput) (models.ProductAttributeOption, error) {
 	modelInput := toProductAttributeOptionModel(input)
 	normalizeProductAttributeOption(&modelInput)
-	canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(db.DB, modelInput.CategoryKey)
-	if err != nil {
-		return models.ProductAttributeOption{}, err
-	}
-	modelInput.CategoryKey = canonicalCategoryKey
 	if modelInput.Value == "" || !isValidProductAttributeMachineValue(modelInput.Value) {
 		return models.ProductAttributeOption{}, domainValidationError("产品属性分类项机器值格式无效")
 	}
-	if err := ensureProductAttributeOptionValueAvailable(db.DB, modelInput.CategoryKey, modelInput.Value, ""); err != nil {
-		return models.ProductAttributeOption{}, err
-	}
 	modelInput.Version = 1
-	if err := db.DB.Create(&modelInput).Error; err != nil {
+	if err := db.DB.Transaction(func(tx *gorm.DB) error {
+		canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(tx, modelInput.CategoryKey)
+		if err != nil {
+			return err
+		}
+		modelInput.CategoryKey = canonicalCategoryKey
+		if err := ensureProductAttributeOptionValueAvailable(tx, modelInput.CategoryKey, modelInput.Value, ""); err != nil {
+			return err
+		}
+		if modelInput.SortOrder <= 0 {
+			nextSortOrder, err := nextProductAttributeOptionSortOrder(tx, modelInput.CategoryKey)
+			if err != nil {
+				return err
+			}
+			modelInput.SortOrder = nextSortOrder
+		}
+		return tx.Create(&modelInput).Error
+	}); err != nil {
 		return models.ProductAttributeOption{}, err
 	}
 	return modelInput, nil
@@ -470,6 +490,53 @@ func PatchProductAttributeOption(id string, updates map[string]interface{}) (mod
 		existing.CategoryKey = canonicalCategoryKey
 	}
 	return existing, nil
+}
+
+func ReorderProductAttributeOptions(categoryKey string, input ProductAttributeReorderInput) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		canonicalCategoryKey, err := resolveCanonicalProductAttributeCategoryKeyTx(tx, categoryKey)
+		if err != nil {
+			return err
+		}
+
+		var existingItems []models.ProductAttributeOption
+		if err := tx.Select("id").Where("category = ?", canonicalCategoryKey).Find(&existingItems).Error; err != nil {
+			return err
+		}
+		if len(input.IDs) != len(existingItems) {
+			return domainValidationError("产品属性分类项排序列表必须包含当前分类下全部分类项")
+		}
+
+		existingIDs := make(map[string]struct{}, len(existingItems))
+		for _, item := range existingItems {
+			existingIDs[item.ID] = struct{}{}
+		}
+		seenIDs := make(map[string]struct{}, len(input.IDs))
+
+		for index, id := range input.IDs {
+			trimmedID := strings.TrimSpace(id)
+			if trimmedID == "" {
+				return domainValidationError("产品属性分类项排序缺少 ID")
+			}
+			if _, exists := existingIDs[trimmedID]; !exists {
+				return domainNotFoundError("产品属性分类项不存在")
+			}
+			if _, exists := seenIDs[trimmedID]; exists {
+				return domainValidationError("产品属性分类项排序 ID 重复")
+			}
+			seenIDs[trimmedID] = struct{}{}
+			result := tx.Model(&models.ProductAttributeOption{}).
+				Where("id = ? AND category = ?", trimmedID, canonicalCategoryKey).
+				Update("sort_order", (index+1)*productAttributeSortOrderStep)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				return domainNotFoundError("产品属性分类项不存在")
+			}
+		}
+		return nil
+	})
 }
 
 func DeleteProductAttributeOption(id string) error {

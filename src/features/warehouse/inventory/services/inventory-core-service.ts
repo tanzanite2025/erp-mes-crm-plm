@@ -1,5 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  ensureArrayField,
+  ensureArrayResponse,
+  ensureObjectResponse,
+} from '@/lib/api-response'
 import {
   toInboundRecordContracts,
   toInventoryAlertSummaryContract,
@@ -11,6 +15,8 @@ import {
 import {
   type InventoryAlertSummaryApiDTO,
   type InventoryInboundHistoryApiDTO,
+  type InventoryInboundRecordApiDTO,
+  type InventoryItemApiDTO,
   type InventoryListPageApiDTO,
   type InventoryValuationApiDTO,
   type MasterDataSearchResultApiDTO,
@@ -38,7 +44,13 @@ export const InventoryCoreService = {
       res,
       'InventoryCoreService.getInventoryList'
     )
-    return toInventoryViewContracts(response.items ?? [])
+    return toInventoryViewContracts(
+      ensureArrayField<InventoryItemApiDTO>(
+        response,
+        'items',
+        'InventoryCoreService.getInventoryList'
+      )
+    )
   },
 
   getInventoryListRaw: async (): Promise<InventoryRecord[]> => {
@@ -47,7 +59,11 @@ export const InventoryCoreService = {
       res,
       'InventoryCoreService.getInventoryListRaw'
     )
-    return (response.items ?? []).map(toInventoryRecordContract)
+    return ensureArrayField<InventoryItemApiDTO>(
+      response,
+      'items',
+      'InventoryCoreService.getInventoryListRaw'
+    ).map(toInventoryRecordContract)
   },
 
   getInventoryBreakdown: async (materialId: string): Promise<Record<string, number>> => {
@@ -80,7 +96,13 @@ export const InventoryCoreService = {
       res,
       'InventoryCoreService.getInboundHistory'
     )
-    return toInboundRecordContracts(response.items ?? [])
+    return toInboundRecordContracts(
+      ensureArrayField<InventoryInboundRecordApiDTO>(
+        response,
+        'items',
+        'InventoryCoreService.getInboundHistory'
+      )
+    )
   },
 
   getCategoryStock: async (materialId: string, category: string): Promise<number> => {

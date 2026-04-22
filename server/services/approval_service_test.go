@@ -18,24 +18,13 @@ func setupApprovalServiceTestDB(t *testing.T) *gorm.DB {
 	testDB, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())), &gorm.Config{})
 	require.NoError(t, err)
 	ddl := []string{
-		`CREATE TABLE approval_configs (
-			id TEXT PRIMARY KEY,
-			module TEXT,
-			action TEXT,
-			approver1_id TEXT,
-			approver2_id TEXT,
-			is_active BOOLEAN,
-			description TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME
-		)`,
 		`CREATE TABLE approval_requests (
 			id TEXT PRIMARY KEY,
-			config_id TEXT,
 			requester_id TEXT,
 			target_id TEXT,
 			reason TEXT,
+			approver1_id TEXT,
+			approver2_id TEXT,
 			current_level INTEGER,
 			status TEXT,
 			auth_code TEXT,
@@ -60,60 +49,88 @@ func setupApprovalServiceTestDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
-func seedApprovalConfig(t *testing.T, testDB *gorm.DB, module string, action string) models.ApprovalConfig {
-	t.Helper()
-	config := models.ApprovalConfig{
-		BaseModel: models.BaseModel{ID: "cfg-1"},
-		Module:    module,
-		Action:    action,
-		IsActive:  true,
-		Approver1ID: "user-1",
-	}
-	require.NoError(t, testDB.Create(&config).Error)
-	return config
-}
-
-func TestCheckAndConsumeApproval_AllowsWhenNoConfig(t *testing.T) {
-	setupApprovalServiceTestDB(t)
-
-	err := CheckAndConsumeApproval("Inventory", "VOID", "shipment-1", "")
-	require.NoError(t, err)
-}
-
-func TestCheckAndConsumeApproval_RejectsMissingApprovalID(t *testing.T) {
+func TestRequestApproval_UsesRuleDrivenApprovers(t *testing.T) {
 	testDB := setupApprovalServiceTestDB(t)
-	seedApprovalConfig(t, testDB, "Inventory", "VOID")
 
-	err := CheckAndConsumeApproval("Inventory", "VOID", "shipment-1", "")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Missing Approval ID")
+	result, err := RequestApproval(RequestApprovalInput{
+		Module:      "Trading",
+		Action:      "ORDER_REVIEW",
+		TargetID:    "order-1",
+		Reason:      "rule matched",
+		RequesterID: "requester-1",
+		Approver1ID: "user-9",
+		Approver2ID: "user-10",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "user-9", result.NotifyTargetUser)
+	require.Equal(t, "user-9", result.Request.Approver1ID)
+	require.Equal(t, "user-10", result.Request.Approver2ID)
+
+	var stored models.ApprovalRequest
+	require.NoError(t, testDB.First(&stored, "id = ?", result.Request.ID).Error)
+	require.Equal(t, "user-9", stored.Approver1ID)
+	require.Equal(t, "user-10", stored.Approver2ID)
 }
 
-func TestCheckAndConsumeApproval_ConsumesVerifiedToken(t *testing.T) {
+func TestApproveRequest_UsesRuleDrivenApprovers(t *testing.T) {
 	testDB := setupApprovalServiceTestDB(t)
-	config := seedApprovalConfig(t, testDB, "Inventory", "VOID")
 
-	request := models.ApprovalRequest{
-		BaseModel:    models.BaseModel{ID: "req-1"},
-		ConfigID:     config.ID,
-		RequesterID:  "requester-1",
-		TargetID:     "shipment-1",
-		Module:       "Inventory",
-		Action:       "VOID",
-		Status:       "VERIFIED",
-		CurrentLevel: 1,
-		ExpiresAt:    ptrTime(time.Now().Add(10 * time.Minute)),
-	}
-	require.NoError(t, testDB.Create(&request).Error)
-
-	err := CheckAndConsumeApproval("Inventory", "VOID", "shipment-1", request.ID)
+	requestResult, err := RequestApproval(RequestApprovalInput{
+		Module:      "Trading",
+		Action:      "ORDER_REVIEW",
+		TargetID:    "order-2",
+		Reason:      "rule matched",
+		RequesterID: "requester-2",
+		Approver1ID: "user-9",
+		Approver2ID: "user-10",
+	})
 	require.NoError(t, err)
+
+	approveResult, err := ApproveRequest(ApproveRequestInput{
+		RequestID:      requestResult.Request.ID,
+		Status:         "APPROVED",
+		ApproverUserID: "user-9",
+	}, time.Now(), func() string { return "123456" })
+	require.NoError(t, err)
+	require.Equal(t, "L2_WAITING", approveResult.NotifyAction)
+	require.Equal(t, "user-10", approveResult.NotifyTargetUser)
 
 	var updated models.ApprovalRequest
-	require.NoError(t, testDB.First(&updated, "id = ?", request.ID).Error)
-	require.Equal(t, "CONSUMED", updated.Status)
+	require.NoError(t, testDB.First(&updated, "id = ?", requestResult.Request.ID).Error)
+	require.Equal(t, "APPROVED_L1", updated.Status)
+	require.Equal(t, 2, updated.CurrentLevel)
 }
 
-func ptrTime(v time.Time) *time.Time {
-	return &v
+func TestRequestApproval_AllowsRuleDrivenApproversWithoutLegacyConfig(t *testing.T) {
+	testDB := setupApprovalServiceTestDB(t)
+
+	result, err := RequestApproval(RequestApprovalInput{
+		Module:      "Trading",
+		Action:      "ORDER_REVIEW",
+		TargetID:    "order-3",
+		Reason:      "rule only",
+		RequesterID: "requester-3",
+		Approver1ID: "user-11",
+		Approver2ID: "user-12",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "user-11", result.NotifyTargetUser)
+
+	var stored models.ApprovalRequest
+	require.NoError(t, testDB.First(&stored, "id = ?", result.Request.ID).Error)
+	require.Equal(t, "user-11", stored.Approver1ID)
+	require.Equal(t, "user-12", stored.Approver2ID)
+}
+
+func TestRequestApproval_StillRequiresConfigWhenNoApproverChainProvided(t *testing.T) {
+	setupApprovalServiceTestDB(t)
+
+	_, err := RequestApproval(RequestApprovalInput{
+		Module:      "Trading",
+		Action:      "ORDER_REVIEW",
+		TargetID:    "order-4",
+		Reason:      "missing approver",
+		RequesterID: "requester-4",
+	})
+	require.ErrorIs(t, err, ErrApprovalApproverMissing)
 }

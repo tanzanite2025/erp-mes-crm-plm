@@ -1,4 +1,5 @@
 import { chmodSync, existsSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { resolve } from 'node:path'
 
@@ -16,9 +17,12 @@ try {
     stdio: 'ignore',
   })
   if (process.platform !== 'win32') {
-    const preCommitPath = resolve(projectRoot, '.githooks', 'pre-commit')
-    if (existsSync(preCommitPath)) {
-      chmodSync(preCommitPath, 0o755)
+    const hooksDir = resolve(projectRoot, '.githooks')
+    for (const entry of readdirSync(hooksDir)) {
+      const hookPath = resolve(hooksDir, entry)
+      if (existsSync(hookPath)) {
+        chmodSync(hookPath, 0o755)
+      }
     }
   }
   console.log('[setup-git-hooks] configured core.hooksPath=.githooks')

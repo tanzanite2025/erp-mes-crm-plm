@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
+import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
+import { trackDelta } from '@/lib/delta/proxy-tracker'
+import { toast } from 'sonner'
 import { type Permission, type Role } from '../data/role-schema'
 import { RoleService } from '../services/role-service'
-import {
-  getDefaultPermissions,
-} from '@/features/authz/data/default-permission-queries'
-import { buildTreeAssistedPermissionIds } from '../utils/role-permission-tree'
-import { toast } from 'sonner'
-import { trackDelta } from '@/lib/delta/proxy-tracker'
+import { buildTreeAssistedPermissionIds, sortPermissionIds } from '../utils/role-permission-tree'
 
 function isSuperAdminRoleId(roleId: string): boolean {
   const normalized = roleId.trim().toLowerCase()
@@ -15,22 +13,16 @@ function isSuperAdminRoleId(roleId: string): boolean {
 
 function isProtectedRoleId(roleId: string, currentUserRoles: string[] = []): boolean {
   const normalized = roleId.trim().toLowerCase()
-  const isSysAdmin = currentUserRoles.some((r) => r === 'admin' || r === 'superadmin')
+  const isSysAdmin = currentUserRoles.some((role) => role === 'admin' || role === 'superadmin')
 
-  // 系统核心角色 ID 始终保护
   if (normalized === 'admin' || normalized === 'superadmin') return true
-
-  // 部门角色如果不处于管理员模式，则保护。如果是管理员在进行操作，则允许增删。
-  if (normalized.startsWith('org_')) {
-    return !isSysAdmin
-  }
+  if (normalized.startsWith('org_')) return !isSysAdmin
 
   return false
 }
 
 function isRenamable(roleId: string): boolean {
   const normalized = roleId.trim().toLowerCase()
-  // 任何系统管理员角色及组织部相关角色均禁止通过前端 Matrix 直接改名
   return normalized !== 'admin' && normalized !== 'superadmin' && !normalized.startsWith('org_')
 }
 
@@ -82,14 +74,14 @@ export function useRoles(enabled = true) {
     const draft = tracker.data as Role
     draft.label = label
     const delta = tracker.commit()
-    
+
     if (Object.keys(delta).length === 0) return
 
     try {
       const result = await RoleService.patchRole(roleId, delta, role.version)
       setRoles((prev) => prev.map((item) => (item.id === roleId ? result : item)))
-    } catch (error) {
-      toast.error(buildUserFacingErrorMessage(error, '角色名称保存失败，请稍后重试'))
+    } catch (saveError) {
+      toast.error(buildUserFacingErrorMessage(saveError, '角色名称保存失败，请稍后重试'))
     }
   }
 
@@ -108,8 +100,28 @@ export function useRoles(enabled = true) {
     try {
       const result = await RoleService.patchRole(roleId, delta, role.version)
       setRoles((prev) => prev.map((item) => (item.id === roleId ? result : item)))
-    } catch (error) {
-      toast.error(buildUserFacingErrorMessage(error, '角色权限保存失败，已自动恢复至服务端状态'))
+    } catch (saveError) {
+      toast.error(buildUserFacingErrorMessage(saveError, '角色权限保存失败，已自动恢复至服务端状态'))
+    }
+  }
+
+  const updateRolePermissions = async (roleId: string, permissionIds: string[]) => {
+    const role = roles.find((item) => item.id === roleId)
+    if (!role) return
+    if (isSuperAdminRoleId(role.id)) return
+
+    const tracker = trackDelta(role)
+    const draft = tracker.data as Role
+    draft.permissions = sortPermissionIds(permissionIds)
+    const delta = tracker.commit()
+
+    if (Object.keys(delta).length === 0) return
+
+    try {
+      const result = await RoleService.patchRole(roleId, delta, role.version)
+      setRoles((prev) => prev.map((item) => (item.id === roleId ? result : item)))
+    } catch (saveError) {
+      toast.error(buildUserFacingErrorMessage(saveError, '角色权限保存失败，已自动恢复至服务端状态'))
     }
   }
 
@@ -127,8 +139,8 @@ export function useRoles(enabled = true) {
 
     try {
       await RoleService.upsertRole(newRole)
-    } catch (error) {
-      toast.error(buildUserFacingErrorMessage(error, '部门角色导入失败，请稍后重试'))
+    } catch (createError) {
+      toast.error(buildUserFacingErrorMessage(createError, '账号角色导入失败，请稍后重试'))
       setRoles((prev) => prev.filter((role) => role.id !== newRole.id))
     }
   }
@@ -138,8 +150,8 @@ export function useRoles(enabled = true) {
 
     try {
       await RoleService.deleteRole(roleId)
-    } catch (error) {
-      toast.error(buildUserFacingErrorMessage(error, '角色删除失败，请刷新后重试'))
+    } catch (deleteError) {
+      toast.error(buildUserFacingErrorMessage(deleteError, '角色删除失败，请刷新后重试'))
     }
   }
 
@@ -149,6 +161,7 @@ export function useRoles(enabled = true) {
     error,
     updateRoleLabel,
     applyPermissionTreeToggle,
+    updateRolePermissions,
     addRole,
     deleteRole,
     isInitialLoading,

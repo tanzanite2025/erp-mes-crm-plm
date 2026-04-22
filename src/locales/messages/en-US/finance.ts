@@ -171,12 +171,14 @@ export const finance = {
         PREPAY: 'Full Prepayment',
         INST_30_60_10: 'Installment Plan (30/60/10)',
         NET30: 'Net 30 Days',
+        NET60: 'Net 60 Days',
       },
       descriptions: {
         COD: 'Full payment mandatory within 3 business days of material receipt and validation.',
         PREPAY: 'Full payment required immediately upon order confirmation and commercial seal.',
         INST_30_60_10: '30% Prepayment / 60% Delivery Milestone / 10% Quality Retainage (365 days).',
         NET30: 'Full settlement required within 30 calendar days of statement verification and reconciliation.',
+        NET60: 'Full settlement required within 60 calendar days of statement verification and reconciliation.',
       },
     },
     status: {

@@ -104,8 +104,8 @@ export function resolveProductAttributeCategoryKey<T extends { key: string }>(
 }
 
 export function getProductAttributeMachineValueFormatHint(locale: string): string {
-  return locale === 'zh-CN'
-    ? '机器值仅允许小写字母、数字与连字符，例如 matte-black'
-    : 'Machine values only allow lowercase letters, numbers, and hyphens, e.g. matte-black'
+  if (locale === 'zh-CN') {
+    return '机器值仅允许小写字母、数字与连字符，例如 matte-black'
+  }
+  return 'Machine values only allow lowercase letters, numbers, and hyphens, e.g. matte-black'
 }
-

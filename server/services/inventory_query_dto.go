@@ -45,6 +45,36 @@ type InventoryShipmentHistoryResponse struct {
 	PageSize int                               `json:"pageSize"`
 }
 
+type ShipmentDemandStockBreakdownResponse struct {
+	CategoryCode string  `json:"categoryCode"`
+	BatchNo      string  `json:"batchNo"`
+	Quantity     float64 `json:"quantity"`
+}
+
+type ShipmentDemandResponse struct {
+	SalesOrderID       string                                 `json:"salesOrderId"`
+	SalesOrderLineID   uint                                   `json:"salesOrderLineId"`
+	OrderNo            string                                 `json:"orderNo"`
+	CustomerName       string                                 `json:"customerName"`
+	DeliveryDate       string                                 `json:"deliveryDate"`
+	MaterialID         string                                 `json:"materialId"`
+	MaterialName       string                                 `json:"materialName"`
+	MaterialCode       string                                 `json:"materialCode"`
+	MaterialSpec       string                                 `json:"materialSpec"`
+	UOM                string                                 `json:"uom"`
+	OrderedQty         float64                                `json:"orderedQty"`
+	DeliveredQty       float64                                `json:"deliveredQty"`
+	VirtualReadyQty    float64                                `json:"virtualReadyQty"`
+	RemainingToPrepare float64                                `json:"remainingToPrepare"`
+	AvailableQty       float64                                `json:"availableQty"`
+	StockBreakdown     []ShipmentDemandStockBreakdownResponse `json:"stockBreakdown"`
+}
+
+type ShipmentDemandListResponse struct {
+	Items []ShipmentDemandResponse `json:"items"`
+	Total int                      `json:"total"`
+}
+
 type InventoryValuationResponse struct {
 	TotalValue float64 `json:"totalValue"`
 }

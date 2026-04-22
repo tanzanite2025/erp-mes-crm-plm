@@ -7,11 +7,13 @@ import {
   DEFAULT_SHIPMENT_FORM_DATA,
   createShipmentFormDraft,
   type ShipmentFormData,
+  type ShipmentFormMode,
   type ShipmentFormUpdater,
 } from '../data/schema'
 
 export function useShipmentFormState() {
   const [selectedItem, setSelectedItem] = useState<MasterDataSearchResult | null>(null)
+  const [formMode, setFormMode] = useState<ShipmentFormMode>('dispatch')
   const [isShipmentOpen, setIsShipmentOpenState] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
 
@@ -32,11 +34,13 @@ export function useShipmentFormState() {
     setIsShipmentOpenState(open)
     if (!open) {
       setSelectedItem(null)
+      setFormMode('dispatch')
     }
   }, [])
 
-  const openShipmentForm = useCallback((item: MasterDataSearchResult) => {
+  const openShipmentForm = useCallback((item: MasterDataSearchResult, mode: ShipmentFormMode = 'dispatch') => {
     setSelectedItem(item)
+    setFormMode(mode)
     Object.assign(formData, createShipmentFormDraft(item))
     setIsShipmentOpenState(true)
   }, [formData])
@@ -52,6 +56,8 @@ export function useShipmentFormState() {
   return {
     selectedItem,
     setSelectedItem,
+    formMode,
+    setFormMode,
     isShipmentOpen,
     setIsShipmentOpen,
     activeTab,

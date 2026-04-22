@@ -43,4 +43,11 @@ export const ProductAttributeOptionService = {
       method: 'DELETE',
     })
   },
+
+  async reorderProductAttributeOptions(categoryKey: string, ids: string[]): Promise<void> {
+    await apiFetch('/engineering/product-attribute-options/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ categoryKey, ids }),
+    })
+  },
 }

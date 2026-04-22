@@ -104,6 +104,8 @@ type LogisticsAPIProvider struct {
 	VerificationStatus      string     `gorm:"size:30;default:'unverified'" json:"verificationStatus"`
 	LastVerifiedAt          *time.Time `json:"lastVerifiedAt,omitempty"`
 	LastVerificationMessage string     `gorm:"size:500" json:"lastVerificationMessage"`
+	LastVerificationAction  string     `gorm:"size:300" json:"lastVerificationAction"`
+	ReferenceCount          int64      `gorm:"-" json:"referenceCount"`
 	QuotaTotal              int        `gorm:"default:0" json:"quotaTotal"`
 	QuotaUsed               int        `gorm:"default:0" json:"quotaUsed"`
 	QuotaAlertAt            int        `gorm:"default:100" json:"quotaAlertAt"`

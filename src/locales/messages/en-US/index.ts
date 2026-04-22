@@ -26,12 +26,15 @@ import { dashboard } from './dashboard'
 import { productionShared } from './productionShared'
 import { scanPlatform } from './scanPlatform'
 import { quickActions } from './quickActions'
+import { sidebarCommandAssignment } from './sidebarCommandAssignment'
 import { logisticsConfig } from './logisticsConfig'
 import { terminalConfig } from './terminalConfig'
 import { users } from './users'
 import { piecework } from './piecework'
 import { apsScheduling } from './apsScheduling'
 import { errors } from './errors'
+import { rawMaterials } from './rawMaterials'
+import { codeCenter } from './codeCenter'
 
 export const enUSMessages = {
   common,
@@ -62,10 +65,13 @@ export const enUSMessages = {
   productionShared,
   scanPlatform,
   quickActions,
+  sidebarCommandAssignment,
   logisticsConfig,
   terminalConfig,
   users,
   piecework,
   apsScheduling,
   errors,
+  rawMaterials,
+  codeCenter,
 } as const

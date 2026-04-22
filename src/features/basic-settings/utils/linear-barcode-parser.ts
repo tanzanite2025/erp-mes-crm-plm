@@ -33,16 +33,12 @@ const MONTH_MAP: Record<string, string> = {
     D: '12月',
 }
 
-const HOLE_PREFIX_MAP: Record<string, string> = {
-    R: '公路车圈',
-    D: '山地车圈',
-}
-
 export function parseLinearBarcodeCode(
     code: string,
     options?: {
         appearanceMapping?: Record<string, { label?: string }>
         products?: Array<{ modelCode?: string; name?: string }>
+        holeCodeCombinationLabels?: Record<string, string>
     },
 ): ParsedLinearBarcodeResult {
     if (!code || code.length !== 15) {
@@ -66,12 +62,13 @@ export function parseLinearBarcodeCode(
     }
 
     const monthDisplay = MONTH_MAP[raw.month] || '未知月份'
-    const holeLabel = HOLE_PREFIX_MAP[raw.holePrefix] || '未定义孔型'
+    const holeCode = `${raw.holePrefix}${raw.holes}`
+    const holeLabel = options?.holeCodeCombinationLabels?.[holeCode] || holeCode
     const appearanceDisplay = options?.appearanceMapping?.[raw.appearance]?.label || `外观${raw.appearance}`
     const modelDisplay =
         options?.products?.find((product) => product.modelCode === raw.model)?.name || `型号${raw.model}`
 
-    const fullDescription = `20${raw.year}年${monthDisplay}${raw.day}日 · ${modelDisplay} · ${appearanceDisplay} · ${holeLabel}${raw.holes}孔 · 流水号:${raw.serial}`
+    const fullDescription = `20${raw.year}年${monthDisplay}${raw.day}日 · ${modelDisplay} · ${appearanceDisplay} · ${holeLabel} · 流水号:${raw.serial}`
     const shortTag = `${raw.holePrefix}${raw.holes}-${appearanceDisplay}`
 
     return {

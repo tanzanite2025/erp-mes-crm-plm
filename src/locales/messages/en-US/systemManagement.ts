@@ -1,211 +1,158 @@
 export const systemManagement = {
   layout: {
-    title: 'System Management',
     tabs: {
-      status: 'System Status',
-      routing: 'Message Routing',
-      workflowDefinition: 'Sales Workflow',
-      logisticsApi: 'Logistics API',
-      aiCapability: 'AI Capability Control',
-      accounts: 'User Accounts',
-      auditEngine: 'Audit Engine',
-    },
+      accounts: "User Accounts",
+      auditEngine: "Audit Engine"
+    }
   },
   statusPage: {
-    title: 'System Infrastructure Dashboard',
-    subtitle: 'Real-time server health and process integrity monitor',
-    forceRefresh: 'Force Refresh',
+    title: "System Infrastructure Dashboard",
+    subtitle: "Real-time server health and process integrity monitor",
+    forceRefresh: "Force Refresh",
     footer: {
-      nodeResponseTime: 'Node Response Time: {{time}}',
-      engineVersion: 'XDFC CORE ENGINE V2.6.4 (RELIANCE STABLE)',
-    },
+      nodeResponseTime: "Node Response Time: {{time}}",
+      engineVersion: "XDFC CORE ENGINE V2.6.4 (RELIANCE STABLE)"
+    }
   },
   serverIdentity: {
-    initializing: 'Initializing...',
-    runtimeLabel: 'Runtime: {{runtime}}',
-    systemUptime: 'System Uptime',
-    environment: 'Environment',
-    environmentValue: 'Production Cluster',
+    initializing: "Initializing...",
+    runtimeLabel: "Runtime: {{runtime}}",
+    systemUptime: "System Uptime",
+    environment: "Environment",
+    environmentValue: "Production Cluster"
   },
   infrastructure: {
-    runtimeMemory: 'Runtime Memory',
-    heapAllocation: 'Heap Allocation',
-    goroutines: 'Goroutines',
-    cpuCores: 'CPU Cores',
-    databasePool: 'Database Pool',
-    poolSaturation: 'Pool Saturation',
+    runtimeMemory: "Runtime Memory",
+    heapAllocation: "Heap Allocation",
+    goroutines: "Goroutines",
+    cpuCores: "CPU Cores",
+    databasePool: "Database Pool",
+    poolSaturation: "Pool Saturation",
     metrics: {
-      inUse: 'In Use',
-      idle: 'Idle',
-      wait: 'Wait',
-    },
+      inUse: "In Use",
+      idle: "Idle",
+      wait: "Wait"
+    }
   },
   componentStatus: {
-    title: 'Core Engine Connectivity',
-    online: 'Online',
-    terminated: 'Terminated',
+    title: "Core Engine Connectivity",
+    online: "Online",
+    terminated: "Terminated",
     labels: {
-      postgres: 'PostgreSQL DB',
-      redis: 'Redis Key-Value',
-      watchdog: 'Watchdog Engine',
-      loki: 'Loki Logger',
-    },
+      postgres: "PostgreSQL DB",
+      redis: "Redis Key-Value",
+      watchdog: "Watchdog Engine",
+      loki: "Loki Logger"
+    }
   },
   diagnostic: {
-    title: 'System Self-Diagnostic Alerts',
-    activeBadge: '{{count}} Active',
-    healthy: 'The system is healthy and no infrastructure anomaly is detected.',
-    activeAlerts: 'Active Alerts',
-    durationPrefix: 'Duration',
-    last24Hours: 'Diagnostic Logs in Last 24 Hours',
-    emptyLog: 'No abnormal fluctuation was recorded in the last 24 hours.',
-    statusDuration: 'Status: {{status}} | Duration: {{duration}}',
+    title: "System Self-Diagnostic Alerts",
+    activeBadge: "{{count}} Active",
+    healthy: "The system is healthy and no infrastructure anomaly is detected.",
+    activeAlerts: "Active Alerts",
+    durationPrefix: "Duration",
+    last24Hours: "Diagnostic Logs in Last 24 Hours",
+    emptyLog: "No abnormal fluctuation was recorded in the last 24 hours.",
+    statusDuration: "Status: {{status}} | Duration: {{duration}}"
   },
   routingTab: {
-    title: 'Notification Routing & Rules Center',
-    subtitle: 'Define independent notification listeners to dispatch business events in milliseconds.',
+    title: "Notification Routing & Rules Center",
+    subtitle: "Define independent notification listeners to dispatch business events in milliseconds.",
     tabs: {
-      rules: 'Notification Rules',
-      templates: 'Notification Templates',
+      rules: "Notification Rules",
+      sources: "Business Event Sources",
+      templates: "Notification Content Templates",
+      executions: "Execution Logs"
     },
-    rulesSectionTitle: 'Global Notification Rules',
+    rulesSectionTitle: "Global Notification Rules"
   },
   permissionAudit: {
-    loading: 'Loading permission audit data...',
+    loading: "Loading permission audit data...",
     header: {
-      title: 'Permission Audit Center',
-      subtitle: 'Permission audit / real-time role load, permission distribution, and core module coverage',
+      title: "Permission Audit Center",
+      subtitle: "Permission audit / real-time role load, permission distribution, and core module coverage"
     },
     cards: {
       totalUsers: {
-        title: 'Active Accounts',
-        caption: 'ACTIVE_ACCOUNTS',
+        title: "Active Accounts",
+        caption: "ACTIVE_ACCOUNTS"
       },
       totalRoles: {
-        title: 'Role Definitions',
-        caption: 'ROLE_DEFINITIONS',
+        title: "Role Definitions",
+        caption: "ROLE_DEFINITIONS"
       },
       totalPermissions: {
-        title: 'Permission Nodes',
-        caption: 'PERMISSION_NODES',
+        title: "Permission Nodes",
+        caption: "PERMISSION_NODES"
       },
       coreCoverage: {
-        title: 'Core Coverage',
-        caption: 'CORE_PENETRATION',
-      },
+        title: "Core Coverage",
+        caption: "CORE_PENETRATION"
+      }
     },
     charts: {
       userDistribution: {
-        title: 'Role User Distribution',
-        description: 'Distribution of user counts per role',
+        title: "Role User Distribution",
+        description: "Distribution of user counts per role"
       },
       permissionLoad: {
-        title: 'Permission Load Comparison',
-        description: 'Comparison of permission node load per role',
-        barLabel: 'Permission Node Count',
-      },
+        title: "Permission Load Comparison",
+        description: "Comparison of permission node load per role",
+        barLabel: "Permission Node Count"
+      }
     },
     matrix: {
-      title: 'Core Module Access Coverage Matrix',
-      description: 'Metrics of functional redundancy per core business module',
-      moduleSuffix: 'Module',
-      rolesAccess: 'ROLES_ACCESS',
+      title: "Core Module Access Coverage Matrix",
+      description: "Metrics of functional redundancy per core business module",
+      moduleSuffix: "Module",
+      rolesAccess: "ROLES_ACCESS"
     },
-    note:
-      '* Audit data refreshes in real time as roles and permissions change, keeping the permission view aligned with the effective grant state.',
+    note: "* Audit data refreshes in real time as roles and permissions change, keeping the permission view aligned with the effective grant state.",
     modules: {
-      warehouse: 'Warehouse',
-      trading: 'Trading',
-      mrp: 'MRP',
-      engineering: 'Engineering',
-      quality: 'Quality',
-      production: 'Production',
-      organization: 'Organization',
-    },
+      warehouse: "Warehouse",
+      trading: "Trading",
+      mrp: "MRP",
+      engineering: "Engineering",
+      quality: "Quality",
+      production: "Production",
+      organization: "Organization"
+    }
   },
   logisticsFallback: {
-    moduleUnavailable: 'Logistics API module is temporarily unavailable',
-    breakerTriggered: 'Circuit Breaker Triggered: {{message}}',
-    retry: 'Retry',
+    moduleUnavailable: "Logistics API module is temporarily unavailable",
+    breakerTriggered: "Circuit Breaker Triggered: {{message}}",
+    retry: "Retry"
   },
   auditEngine: {
-    title: 'Audit Engine Monitor',
-    subtitle: 'Real-time synchronization status & data timeline coverage',
-    systemStatus: 'System Status',
-    connected: 'Connected',
-    modulesCount: '{{connected}}/{{total}} Modules',
+    title: "Audit Engine Monitor",
+    subtitle: "Real-time synchronization status & data timeline coverage",
+    systemStatus: "System Status",
+    connected: "Connected",
+    modulesCount: "{{connected}}/{{total}} Modules",
     status: {
-      operational: 'OPERATIONAL',
-      partial: 'PARTIAL MIGRATION',
-      healthy: 'HEALTHY',
-      alert: 'ALERT',
-      critical: 'CRITICAL',
+      operational: "OPERATIONAL",
+      partial: "PARTIAL MIGRATION",
+      healthy: "HEALTHY",
+      alert: "ALERT",
+      critical: "CRITICAL"
     },
     metrics: {
-      coverage: 'Audit Coverage',
-      hotStorage: 'Hot Storage',
-      latency: 'Latency',
-      days: '30 Days',
-      neverSynced: 'NEVER SYNCED',
+      coverage: "Audit Coverage",
+      hotStorage: "Hot Storage",
+      latency: "Latency",
+      days: "30 Days",
+      neverSynced: "NEVER SYNCED"
     },
     footer: {
-      policyTitle: 'Engine Archival Policy',
-      policyDesc: 'The XDFC Audit Engine automatically archives hot data to cold JSON storage after 30 days. Field-level diffing is computed on the backend to ensure database leanness.',
+      policyTitle: "Engine Archival Policy",
+      policyDesc: "The XDFC Audit Engine automatically archives hot data to cold JSON storage after 30 days. Field-level diffing is computed on the backend to ensure database leanness."
     },
     modules: {
-      trading: 'Trading & Sales',
-      finance: 'Finance Management',
-      equipment: 'Equipment & Tooling',
-      engineering: 'Engineering DB',
-      warehouse: 'Warehouse & Inventory',
-    },
-  },
-  salesWorkflowDefinition: {
-    loading: 'Loading workflow definitions...',
-    title: 'Sales Order Workflow Definition',
-    subtitle: 'Manage SALES_ORDER workflow definitions. New sales orders bind to active definitions automatically.',
-    add: 'Add Definition',
-    empty: 'No sales workflow definitions found',
-    status: {
-      active: 'Active',
-      inactive: 'Inactive',
-    },
-    actions: {
-      enable: 'Enable',
-      disable: 'Disable',
-    },
-    table: {
-      code: 'Code',
-      name: 'Name',
-      version: 'Version',
-      status: 'Status',
-      updatedAt: 'Updated At',
-      actions: 'Actions',
-    },
-    dialog: {
-      createTitle: 'Create Workflow Definition',
-      editTitle: 'Edit Workflow Definition',
-      description: 'This definition is scoped to SALES_ORDER module.',
-    },
-    form: {
-      code: 'Code',
-      name: 'Name',
-      namePlaceholder: 'Sales Default Flow',
-      version: 'Version',
-      isActive: 'Active',
-      isActiveHint: 'When active, newly created sales orders can start workflow instances automatically.',
-      description: 'Description',
-      descriptionPlaceholder: 'Describe the business meaning of this definition',
-      definitionJson: 'Definition JSON',
-      useTemplate: 'Use Template',
-    },
-    toasts: {
-      loadFailed: 'Failed to load workflow definitions',
-      saveSuccess: 'Saved successfully',
-      saveFailed: 'Failed to save workflow definition',
-      required: 'Code and name are required',
-      invalidVersion: 'Version must be a positive integer',
-      invalidJson: 'Invalid workflow definition JSON',
-    },
-  },
+      trading: "Trading & Sales",
+      finance: "Finance Management",
+      equipment: "Equipment & Tooling",
+      engineering: "Engineering DB",
+      warehouse: "Warehouse & Inventory"
+    }
+  }
 } as const

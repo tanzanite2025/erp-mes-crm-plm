@@ -33,6 +33,30 @@ func TestRegisterInventoryRoutesRegistersSummaryEndpoints(t *testing.T) {
 	require.True(t, hasAlertSummary, "expected GET /api/v1/inventory/alerts/summary to be registered with GetInventoryAlertSummaryHandler")
 }
 
+func TestRegisterInventoryRoutesRegistersShipmentPreparationEndpoints(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	r := gin.New()
+	api := r.Group("/api/v1")
+	authorized := api.Group("")
+
+	registerInventoryRoutes(authorized)
+
+	var hasShipmentDemands bool
+	var hasVirtualLock bool
+	for _, route := range r.Routes() {
+		if route.Method == "GET" && route.Path == "/api/v1/inventory/shipment-demands" {
+			hasShipmentDemands = strings.Contains(route.Handler, "GetShipmentDemandsHandler")
+		}
+		if route.Method == "POST" && route.Path == "/api/v1/inventory/shipment/virtual-lock" {
+			hasVirtualLock = strings.Contains(route.Handler, "PrepareVirtualShipmentHandler")
+		}
+	}
+
+	require.True(t, hasShipmentDemands, "expected GET /api/v1/inventory/shipment-demands to be registered with GetShipmentDemandsHandler")
+	require.True(t, hasVirtualLock, "expected POST /api/v1/inventory/shipment/virtual-lock to be registered with PrepareVirtualShipmentHandler")
+}
+
 func TestRegisterInventoryRoutesRegistersStocktakePatchEndpoint(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

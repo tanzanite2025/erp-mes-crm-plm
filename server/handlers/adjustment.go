@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SubmitAdjustmentApprovalHandler 提交盘点调账审批
+// SubmitAdjustmentApprovalHandler creates an inventory adjustment from a stocktake task.
 func SubmitAdjustmentApprovalHandler(c *gin.Context) {
 	taskID := c.Param("taskId")
 	err := services.SubmitAdjustmentApproval(taskID, middleware.GetSafeUsername(c))
@@ -18,21 +18,19 @@ func SubmitAdjustmentApprovalHandler(c *gin.Context) {
 		case errors.Is(err, services.ErrStocktakeTaskNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "盘点任务不存在"})
 		case errors.Is(err, services.ErrAdjustmentTaskInvalidStatus):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "该盘点任务当前状态不支持调账提报"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该盘点任务当前状态不支持生成调账单"})
 		case errors.Is(err, services.ErrAdjustmentPendingExists):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "该任务已存在待处理的调账申请，请勿重复操作"})
-		case errors.Is(err, services.ErrAdjustmentApprovalConfigMiss):
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 提交审批失败: 系统未配置 [Warehouse:ADJUST] 审批职责"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该任务已存在待处理调账单，请勿重复操作"})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 提交审批失败: " + err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 生成调账单失败: " + err.Error()})
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "调账单已生成且审批已发起"})
+	c.JSON(http.StatusOK, gin.H{"message": "调账单已生成"})
 }
 
-// ExecuteAdjustmentHandler 执行调账
+// ExecuteAdjustmentHandler executes an inventory adjustment.
 func ExecuteAdjustmentHandler(c *gin.Context) {
 	id := c.Param("id")
 	err := services.ExecuteAdjustment(id, middleware.GetSafeUsername(c))
@@ -51,7 +49,7 @@ func ExecuteAdjustmentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "调账执行成功，库存已更新"})
 }
 
-// GetAdjustmentHistoryHandler 获取调账历史报表
+// GetAdjustmentHistoryHandler returns inventory adjustment history.
 func GetAdjustmentHistoryHandler(c *gin.Context) {
 	results, err := services.ListAdjustmentHistory()
 	if err != nil {

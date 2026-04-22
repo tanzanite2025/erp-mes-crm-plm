@@ -56,7 +56,7 @@ export function toPayableSummaryContract(dto: PayableSummaryApiDTO): PayableSumm
 
 export function toPayableListPageContract(dto: PayableListPageApiDTO): PaginatedPayables {
   return {
-    items: (dto.items ?? []).map(toPayableRecordContract),
+    items: dto.items.map(toPayableRecordContract),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

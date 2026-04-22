@@ -3,7 +3,7 @@ import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useLanguage } from '@/context/language-provider'
 import { FeatureSandbox } from '@/features/org-personnel/components/feature-sandbox'
-import { getOrgPersonnelTabs } from '@/features/org-personnel/tabs'
+import { getOrgPersonnelBranchTabs } from '@/features/org-personnel/tabs'
 
 const PersonnelStatistics = lazy(() => import('@/features/org-personnel/tabs/personnel-statistics'))
 
@@ -13,7 +13,7 @@ export function HallOfFameRoutePage() {
   return (
     <ModuleTabbedLayout
       title={t('sidebar.items.personnelCenter')}
-      tabs={getOrgPersonnelTabs(t)}
+      tabs={getOrgPersonnelBranchTabs(t)}
     >
       <FeatureSandbox fallbackName="PERSONNEL_STATISTICS">
         <Suspense fallback={<div className="p-8 space-y-8"><Skeleton className="h-40 w-full rounded-[32px]" /><Skeleton className="h-64 w-full" /></div>}>

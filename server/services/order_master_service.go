@@ -17,13 +17,17 @@ type SalesOrderListQuery struct {
 	Page            int
 	PageSize        int
 	WithLines       bool
+	CustomerID      string
+	Keyword         string
 	StatusFilterRaw string
 }
 
 type PurchaseOrderListQuery struct {
-	Page     int
-	PageSize int
-	Deleted  bool
+	Page            int
+	PageSize        int
+	Deleted         bool
+	WithLines       bool
+	StatusFilterRaw string
 }
 
 func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) {
@@ -40,6 +44,20 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 	var total int64
 
 	tx := db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false)
+	customerID := strings.TrimSpace(query.CustomerID)
+	if customerID != "" {
+		tx = tx.Where("customer_id = ?", customerID)
+	}
+	keyword := strings.TrimSpace(query.Keyword)
+	if keyword != "" {
+		likeKeyword := "%" + keyword + "%"
+		tx = tx.Where(
+			"LOWER(order_no) LIKE LOWER(?) OR LOWER(order_name) LIKE LOWER(?) OR LOWER(customer_name) LIKE LOWER(?)",
+			likeKeyword,
+			likeKeyword,
+			likeKeyword,
+		)
+	}
 	statusFilterRaw := strings.TrimSpace(query.StatusFilterRaw)
 	if statusFilterRaw != "" {
 		statuses := make([]string, 0)
@@ -70,8 +88,17 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 		return SalesOrderListResponse{}, err
 	}
 
+	returnedQuantityMap := make(map[uint]float64)
+	if query.WithLines {
+		metricsMap, metricsErr := loadSalesOrderReturnedQuantityMap(db.DB, orders)
+		if metricsErr != nil {
+			return SalesOrderListResponse{}, metricsErr
+		}
+		returnedQuantityMap = metricsMap
+	}
+
 	return SalesOrderListResponse{
-		Items:    MapSalesOrdersToListItems(orders, query.WithLines),
+		Items:    MapSalesOrdersToListItemsWithReturnMetrics(orders, query.WithLines, returnedQuantityMap),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
@@ -83,7 +110,11 @@ func GetSalesOrderByID(id string) (SalesOrderResponse, error) {
 	if err := db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
-	return MapSalesOrderToResponse(order), nil
+	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
+	if err != nil {
+		return SalesOrderResponse{}, err
+	}
+	return MapSalesOrderToResponseWithReturnMetrics(order, returnedQuantityMap), nil
 }
 
 func GetSalesOrderByNo(orderNo string) (SalesOrderResponse, error) {
@@ -91,7 +122,11 @@ func GetSalesOrderByNo(orderNo string) (SalesOrderResponse, error) {
 	if err := db.DB.Preload("Lines").Where("order_no = ? AND is_deleted = ?", orderNo, false).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
-	return MapSalesOrderToResponse(order), nil
+	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
+	if err != nil {
+		return SalesOrderResponse{}, err
+	}
+	return MapSalesOrderToResponseWithReturnMetrics(order, returnedQuantityMap), nil
 }
 
 func DeleteSalesOrder(id string) error {
@@ -262,12 +297,25 @@ func ListPurchaseOrders(query PurchaseOrderListQuery) (PurchaseOrderListResponse
 	var total int64
 
 	tx := db.DB.Model(&models.PurchaseOrder{}).Where("is_deleted = ?", query.Deleted)
+	statusFilterRaw := strings.TrimSpace(query.StatusFilterRaw)
+	if statusFilterRaw != "" {
+		statuses := make([]string, 0)
+		for _, item := range strings.Split(statusFilterRaw, ",") {
+			status := strings.TrimSpace(item)
+			if status != "" {
+				statuses = append(statuses, status)
+			}
+		}
+		if len(statuses) > 0 {
+			tx = tx.Where("status IN ?", statuses)
+		}
+	}
 	if err := tx.Count(&total).Error; err != nil {
 		return PurchaseOrderListResponse{}, err
 	}
 
 	listTx := tx.Order("updated_at desc").Limit(pageSize).Offset((page - 1) * pageSize)
-	if query.Deleted {
+	if query.WithLines {
 		listTx = listTx.Preload("Lines")
 	}
 	if err := listTx.Find(&orders).Error; err != nil {
@@ -275,7 +323,7 @@ func ListPurchaseOrders(query PurchaseOrderListQuery) (PurchaseOrderListResponse
 	}
 
 	return PurchaseOrderListResponse{
-		Items:    MapPurchaseOrdersToListItems(orders),
+		Items:    MapPurchaseOrdersToListItems(orders, query.WithLines),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

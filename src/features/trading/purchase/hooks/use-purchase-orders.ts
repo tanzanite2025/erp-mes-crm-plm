@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { NotificationService } from '@/features/system-mgmt/notifications/notification-service'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -23,10 +24,21 @@ function invalidatePurchaseOrderQueries(queryClient: ReturnType<typeof useQueryC
   }
 }
 
+function getPurchaseOrderNotificationPayload(order: PurchaseOrder) {
+  return {
+    id: order.id,
+    orderNo: order.orderNo,
+    status: order.status,
+    supplierName: order.supplierName,
+    purchaser: order.purchaser,
+    materialName: order.lines?.[0]?.materialName,
+  }
+}
+
 export const useGetPurchaseOrders = (page = 1, pageSize = 50) => {
   return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
     queryKey: tradingQueryKeys.purchaseOrders(page, pageSize),
-    queryFn: () => getPurchaseOrders(page, pageSize),
+    queryFn: () => getPurchaseOrders({ page, pageSize }),
   })
 }
 
@@ -59,6 +71,9 @@ export const usePurchaseOrderMutations = () => {
   const createMutation = useMutation({
     mutationFn: (data: Omit<PurchaseOrder, 'id' | 'version'>) => createPurchaseOrder(data),
     onSuccess: (data) => {
+      NotificationService.notifyPurchaseOrderCreated(
+        getPurchaseOrderNotificationPayload(data)
+      )
       handleSavedSuccess(data.id)
     },
     onError: handleServerError,
@@ -216,6 +231,9 @@ export const usePurchaseOrderMutations = () => {
         actorId,
       }),
     onSuccess: (data) => {
+      NotificationService.notifyPurchaseOrderStatus(
+        getPurchaseOrderNotificationPayload(data.purchaseOrder)
+      )
       handleConfirmReceiptSuccess(data.purchaseOrder.id)
     },
     onError: handleServerError,

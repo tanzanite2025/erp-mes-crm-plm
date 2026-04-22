@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Download, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,9 @@ import {
 } from '@/components/ui/sheet'
 import { useLocalMediaDrafts } from '@/features/personal-workbench/hooks/use-local-media-drafts'
 import { usePageInstall } from '@/features/scan-platform/hooks/use-page-install'
-import { getAvailableQuickActions } from '../services/quick-action-access'
+import { fetchMySidebarCommands } from '@/features/sidebar-command-assignment/services'
+import { QuickActionIcon } from './quick-action-icon'
+import { getSidebarQuickActions } from '../services/quick-action-access'
 
 interface QuickActionDrawerProps {
   open: boolean
@@ -29,11 +31,23 @@ export function QuickActionDrawer({
 }: QuickActionDrawerProps) {
   const navigate = useNavigate()
   const { t } = useLanguage()
-  const user = useAuthStore((state) => state.user)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
-  const actions = useMemo(() => getAvailableQuickActions(user), [user])
+  const sidebarCommandsQuery = useQuery({
+    queryKey: ['quick-actions', 'sidebar', 'me'],
+    queryFn: fetchMySidebarCommands,
+    enabled: open,
+    staleTime: 10000,
+  })
+  const actions = useMemo(
+    () =>
+      getSidebarQuickActions(
+        sidebarCommandsQuery.data?.businessCommands ?? [],
+        sidebarCommandsQuery.data?.privateCommandIds
+      ),
+    [sidebarCommandsQuery.data]
+  )
   const { saveDraft } = useLocalMediaDrafts()
   const photoInstall = usePageInstall({
     manifestHref: '/manifests/personal-workbench-photo.webmanifest',
@@ -165,19 +179,21 @@ export function QuickActionDrawer({
             </div>
           ) : (
             actions.map((action) => {
-              const Icon = action.icon
               const installState =
                 action.id in installStateMap
                   ? installStateMap[action.id as keyof typeof installStateMap]
                   : null
+              const title = action.titleKey
+                ? t(action.titleKey)
+                : (action.title ?? action.id)
               return (
                 <div
                   key={action.id}
-                  className='group flex items-center justify-between rounded-3xl border border-border/70 bg-background px-4 py-4 text-left shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
+                  className='group flex items-center justify-between rounded-3xl border border-border/70 bg-background px-4 py-3 text-left shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5'
                 >
                   <button
                     type='button'
-                    className='flex min-w-0 flex-1 items-center justify-between gap-3 text-left'
+                    className='flex min-w-0 flex-1 items-center justify-between gap-2.5 text-left'
                     onClick={() => {
                       if (action.id === 'personal_workbench_photo') {
                         openDirectCapture('photo')
@@ -191,24 +207,24 @@ export function QuickActionDrawer({
 
                       onOpenChange(false)
                       void navigate({
-                        to: action.to,
+                        to: action.to as never,
                         search:
                           action.id === 'wheel_trace_scan'
                             ? { ...action.search, scan: String(Date.now()) }
-                            : action.search,
+                            : (action.search as never),
                       })
                     }}
                   >
-                    <div className='flex min-w-0 items-center gap-3'>
-                      <div className='flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
-                        <Icon className='size-5' />
+                    <div className='flex min-w-0 items-center gap-2.5'>
+                      <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                        <QuickActionIcon
+                          iconName={action.iconName}
+                          className='size-5'
+                        />
                       </div>
                       <div className='min-w-0'>
                         <p className='truncate text-[12px] font-black tracking-widest text-foreground uppercase'>
-                          {t(action.titleKey)}
-                        </p>
-                        <p className='mt-1 text-[11px] font-medium text-muted-foreground'>
-                          {t(action.descriptionKey)}
+                          {title}
                         </p>
                       </div>
                     </div>

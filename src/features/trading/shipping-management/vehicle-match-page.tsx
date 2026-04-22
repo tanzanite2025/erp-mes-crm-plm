@@ -45,9 +45,6 @@ export function ShippingVehicleMatchPage() {
           </div>
           <Badge className='h-6 rounded-full border-none bg-white/70 px-3 text-[10px] font-black text-primary'>系统保护仓</Badge>
         </div>
-        <div className='mt-4 text-[11px] leading-relaxed text-primary/80'>
-          后续这里会直接拉取仓库侧的“虚拟发货仓”数据，用来承接待发货货物、真实占库存并进入车型计算流程。
-        </div>
       </Card>
 
       {isLoading ? (

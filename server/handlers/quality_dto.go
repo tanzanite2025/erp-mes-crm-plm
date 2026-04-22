@@ -16,6 +16,7 @@ type InspectionStandardRequest struct {
 	Items       json.RawMessage `json:"items"`
 	Auditor     string          `json:"auditor"`
 	AuditTime   *time.Time      `json:"auditTime"`
+	Remarks     string          `json:"remarks"`
 	Description string          `json:"description"`
 }
 
@@ -31,14 +32,45 @@ type InspectionStandardResponse struct {
 	Items       json.RawMessage `json:"items"`
 	Auditor     string          `json:"auditor"`
 	AuditTime   *time.Time      `json:"auditTime"`
+	Remarks     string          `json:"remarks"`
 	Description string          `json:"description"`
 }
 
+type InspectionStandardPatchMetadata struct {
+	ID      string  `json:"id"`
+	Version float64 `json:"version"`
+}
+
+type InspectionStandardPatchRequest struct {
+	Op       string                          `json:"op"`
+	Delta    map[string]json.RawMessage      `json:"delta"`
+	Metadata InspectionStandardPatchMetadata `json:"metadata"`
+}
+
+type InspectionStandardsListPaginationMetadata struct {
+	Total    int64 `json:"total"`
+	Page     int   `json:"page"`
+	PageSize int   `json:"pageSize"`
+}
+
+type InspectionStandardsListStatsMetadata struct {
+	Total     int64 `json:"total"`
+	Published int64 `json:"published"`
+	Draft     int64 `json:"draft"`
+	Archived  int64 `json:"archived"`
+}
+
+type InspectionStandardsListMetadata struct {
+	Pagination InspectionStandardsListPaginationMetadata `json:"pagination"`
+	Stats      InspectionStandardsListStatsMetadata      `json:"stats"`
+}
+
 type InspectionStandardsListResponse struct {
-	Items    []InspectionStandardResponse `json:"items"`
-	Total    int64                        `json:"total"`
-	Page     int                          `json:"page"`
-	PageSize int                          `json:"pageSize"`
+	Items    []InspectionStandardResponse    `json:"items"`
+	Total    int64                           `json:"total"`
+	Page     int                             `json:"page"`
+	PageSize int                             `json:"pageSize"`
+	Metadata InspectionStandardsListMetadata `json:"metadata"`
 }
 
 type InspectionTaskRequest struct {
@@ -56,20 +88,20 @@ type InspectionTaskRequest struct {
 }
 
 type InspectionTaskResponse struct {
-	ID          string                     `json:"id"`
-	CreatedAt   time.Time                  `json:"createdAt"`
-	UpdatedAt   time.Time                  `json:"updatedAt"`
-	StandardID  string                     `json:"standardId"`
+	ID          string                      `json:"id"`
+	CreatedAt   time.Time                   `json:"createdAt"`
+	UpdatedAt   time.Time                   `json:"updatedAt"`
+	StandardID  string                      `json:"standardId"`
 	Standard    *InspectionStandardResponse `json:"standard,omitempty"`
-	BatchNo     string                     `json:"batchNo"`
-	ProductID   string                     `json:"productId"`
-	ProductName string                     `json:"productName"`
-	SampleQty   float64                    `json:"sampleQty"`
-	Result      string                     `json:"result"`
-	Inspector   string                     `json:"inspector"`
-	InputData   json.RawMessage            `json:"inputData"`
-	Remarks     string                     `json:"remarks"`
-	CompletedAt *time.Time                 `json:"completedAt"`
+	BatchNo     string                      `json:"batchNo"`
+	ProductID   string                      `json:"productId"`
+	ProductName string                      `json:"productName"`
+	SampleQty   float64                     `json:"sampleQty"`
+	Result      string                      `json:"result"`
+	Inspector   string                      `json:"inspector"`
+	InputData   json.RawMessage             `json:"inputData"`
+	Remarks     string                      `json:"remarks"`
+	CompletedAt *time.Time                  `json:"completedAt"`
 }
 
 type InspectionTasksListResponse struct {
@@ -77,6 +109,12 @@ type InspectionTasksListResponse struct {
 	Total    int64                    `json:"total"`
 	Page     int                      `json:"page"`
 	PageSize int                      `json:"pageSize"`
+}
+
+type InspectionStatsResponse struct {
+	PendingCount int64 `json:"pendingCount"`
+	PassCount    int64 `json:"passCount"`
+	FailCount    int64 `json:"failCount"`
 }
 
 type QualityAbnormalityResponse struct {
@@ -95,6 +133,11 @@ type QualityAbnormalityResponse struct {
 }
 
 func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models.InspectionStandard {
+	remarks := input.Remarks
+	if remarks == "" {
+		remarks = input.Description
+	}
+
 	return models.InspectionStandard{
 		BaseModel:   models.BaseModel{ID: input.ID},
 		Code:        input.Code,
@@ -105,7 +148,7 @@ func mapInspectionStandardRequestToModel(input InspectionStandardRequest) models
 		Items:       input.Items,
 		Auditor:     input.Auditor,
 		AuditTime:   input.AuditTime,
-		Description: input.Description,
+		Description: remarks,
 	}
 }
 
@@ -122,6 +165,7 @@ func mapInspectionStandardToResponse(model models.InspectionStandard) Inspection
 		Items:       model.Items,
 		Auditor:     model.Auditor,
 		AuditTime:   model.AuditTime,
+		Remarks:     model.Description,
 		Description: model.Description,
 	}
 }

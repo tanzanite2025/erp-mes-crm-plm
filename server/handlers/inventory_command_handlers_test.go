@@ -224,15 +224,6 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			claimed_by TEXT,
 			claimed_at TEXT
 		)`,
-		`CREATE TABLE approval_configs (
-			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			module TEXT NOT NULL,
-			action TEXT NOT NULL,
-			is_active BOOLEAN DEFAULT FALSE
-		)`,
 		`CREATE TABLE approval_requests (
 			id TEXT PRIMARY KEY NOT NULL,
 			created_at DATETIME,
@@ -546,28 +537,4 @@ func TestVoidShipmentHandlerReturnsNamedStatusResponse(t *testing.T) {
 	var response services.InventoryCommandStatusResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.Equal(t, "success", response.Status)
-}
-
-func TestVoidShipmentHandlerReturnsForbiddenWhenApprovalIdMissingUnderActiveConfig(t *testing.T) {
-	setupInventoryCommandHandlerTestDB(t)
-
-	materialID := uuid.NewString()
-	now := time.Now()
-	require.NoError(t, db.DB.Exec(`INSERT INTO materials (id, created_at, updated_at) VALUES (?, ?, ?)`, materialID, now, now).Error)
-	require.NoError(t, db.DB.Exec(`INSERT INTO shipment_records (id, created_at, updated_at, material_id, quantity, source_category, batch_no, order_no, status, cogs, shipment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, "ship-void-handler-need-approval", now, now, materialID, 3.0, "WH_A", "B-001", "SO-VOID-002", "COMMITTED", 15.0, now).Error)
-	require.NoError(t, db.DB.Exec(`INSERT INTO approval_configs (id, created_at, updated_at, module, action, is_active) VALUES (?, ?, ?, ?, ?, ?)`, uuid.NewString(), now, now, "Inventory", "VOID", true).Error)
-
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Params = gin.Params{{Key: "id", Value: "ship-void-handler-need-approval"}}
-	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment/ship-void-handler-need-approval/void", strings.NewReader(`{"approvalId":""}`))
-	ctx.Request.Header.Set("Content-Type", "application/json")
-
-	VoidShipmentHandler(ctx)
-	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
-
-	var response inventoryErrorResponse
-	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Equal(t, "INVENTORY_VOID_FORBIDDEN", response.Code)
-	require.Contains(t, response.Error, "Missing Approval ID")
 }

@@ -5,7 +5,6 @@ type TranslateFn = (key: TranslationKey, params?: Record<string, string | number
 
 export function getPrintMgmtTabs(t: TranslateFn): TabItem[] {
   return [
-    { key: 'barcode', label: t('printMgmt.tabs.barcode'), href: '/print-mgmt/barcode' },
     { key: 'records', label: t('printMgmt.tabs.records'), href: '/print-mgmt/records' },
   ]
 }

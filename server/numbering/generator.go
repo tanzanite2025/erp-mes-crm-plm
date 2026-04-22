@@ -6,6 +6,7 @@ import (
 	"time"
 	"xdfc-server/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +30,7 @@ func GenerateNextNumberTx(tx *gorm.DB, ruleKey string) (string, error) {
 				}
 
 				rule = models.NumberingRule{
+					BaseModel:   models.BaseModel{ID: uuid.NewString()},
 					RuleKey:     normalizedRuleKey,
 					Prefix:      prefix,
 					Pattern:     "{PREFIX}{YYMM}{SEQ}",

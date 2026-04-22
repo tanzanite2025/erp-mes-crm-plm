@@ -1,51 +1,36 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { deserializeLedgerSearchResponseApiDTO } from '../../contracts/ledger-search-api-dto'
+import { buildLedgerSearchUrl, type LedgerSearchQueryParams } from '../../services/ledger-search-query'
 import {
   toPayableListPageContract,
   type PaginatedPayables,
 } from '../adapters/payable-api-adapter'
-import type {
-  PayableLedgerSearchCandidateApiDTO,
-  PayableLedgerSearchResponseApiDTO,
-  PayableListPageApiDTO,
+import {
+  deserializePayableListPageApiDTO,
+  type PayableLedgerSearchCandidateApiDTO,
+  type PayableLedgerSearchResponseApiDTO,
+  type PayableListPageApiDTO,
 } from '../contracts/payable-api-dto'
 
-export interface PayableLedgerSearchParams {
-  keyword: string
-  status: string
-  currency: string
-  outstandingMin: string
-  outstandingMax: string
-  sortBy: string
-  sortOrder: string
-}
+export type PayableLedgerSearchParams = LedgerSearchQueryParams
 
 export async function getPayables(): Promise<PaginatedPayables> {
   const res = await apiFetch<PayableListPageApiDTO>('/payables')
-  return toPayableListPageContract(
-    ensureObjectResponse<PayableListPageApiDTO & Record<string, unknown>>(
-      res,
-      'PayablesQueryService.getPayables'
-    ) as PayableListPageApiDTO
-  )
+  const payload = ensureObjectResponse<PayableListPageApiDTO & Record<string, unknown>>(
+    res,
+    'PayablesQueryService.getPayables'
+  ) as PayableListPageApiDTO
+  return toPayableListPageContract(deserializePayableListPageApiDTO(payload))
 }
 
 export async function searchPayableLedgers(params: PayableLedgerSearchParams): Promise<PayableLedgerSearchCandidateApiDTO[]> {
-  const query = new URLSearchParams({
-    keyword: params.keyword,
-    page: '1',
-    pageSize: '20',
-    status: params.status,
-    currency: params.currency,
-    outstandingMin: params.outstandingMin,
-    outstandingMax: params.outstandingMax,
-    sortBy: params.sortBy,
-    sortOrder: params.sortOrder,
-  })
-  const res = await apiFetch<PayableLedgerSearchResponseApiDTO>(`/payables/search?${query.toString()}`)
+  const res = await apiFetch<PayableLedgerSearchResponseApiDTO>(
+    buildLedgerSearchUrl('/payables/search', params)
+  )
   const payload = ensureObjectResponse<PayableLedgerSearchResponseApiDTO & Record<string, unknown>>(
     res,
     'PayablesQueryService.searchPayableLedgers'
   ) as PayableLedgerSearchResponseApiDTO
-  return payload.items ?? []
+  return deserializeLedgerSearchResponseApiDTO(payload).items
 }

@@ -289,7 +289,11 @@ export const equipmentTooling = {
       return: 'Confirm Return',
     },
     dialog: {
-      title: 'Mold Movement Registration',
+      title: {
+        edit: 'Edit Movement Record',
+        create: 'Register Movement Record',
+      },
+      description: 'Track physical location changes and status synchronization of molds between units.',
       modes: {
         lend: 'Lend Out',
         borrow: 'Borrow In',
@@ -319,6 +323,10 @@ export const equipmentTooling = {
         remarks: 'Add notes...',
       },
       actions: {
+        loading: 'Loading...',
+        close: 'Close',
+        save: 'Save',
+        create: 'Create Now',
         cancel: 'Cancel',
         submit: 'Submit {{mode}}',
       },
@@ -329,6 +337,8 @@ export const equipmentTooling = {
     },
     confirm: {
       return: 'Confirm this mold has been returned and checked in?',
+      createDescription:
+        'Registering this mold movement will also synchronize the linked mold inventory status and start movement-window tracking.',
     },
     toast: {
       createdLend: 'Lend-out record created',

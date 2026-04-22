@@ -8,7 +8,7 @@ export const orgPersonnel = {
     line: 'Production Lines',
     topology: 'Templates',
     leave: 'Leave Management',
-    stats: 'Hall of Fame',
+    stats: 'Top Employees',
   },
   leaveMgmt: {
     headerTitle: 'Online Leave Requests',
@@ -440,6 +440,8 @@ export const orgPersonnel = {
       loadFailed: 'Failed to load line data',
       saveConflict: 'Save failed: Line configuration has been updated by others, fetching latest version...',
       saveForbidden: 'Save failed: Backend command validation failed, please check authorization code',
+      saveForbiddenAuthCode: 'Save failed: The topology authorization code is invalid. Please verify it again.',
+      saveForbiddenPermission: 'Save failed: The current account does not have permission to maintain production line configuration.',
       saveError: 'Save failed, please check network or refresh and try again',
       deleteFailed: 'Deletion failed',
       loading: 'Loading line configurations from cloud...',

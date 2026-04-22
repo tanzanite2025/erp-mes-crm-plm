@@ -11,13 +11,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { type StandardCommand } from '../../data/schema'
 
 type CommandFormInput = Omit<StandardCommand, 'id' | 'createdAt'>
-type BindTypeValue = CommandFormInput['bindType']
-type NodeTypeValue = NonNullable<CommandFormInput['nodeType']>
 
 interface CommandFormProps {
   open: boolean
@@ -28,7 +25,7 @@ interface CommandFormProps {
 
 export function CommandForm({ open, onOpenChange, initialData, onSave }: CommandFormProps) {
   const { t } = useLanguage()
-  const { register, handleSubmit, setValue, reset, watch } = useForm<CommandFormInput>({
+  const { register, handleSubmit, reset } = useForm<CommandFormInput>({
     defaultValues: {
       actionType: 'NOTIFY',
       bindType: 'GLOBAL',
@@ -84,73 +81,38 @@ export function CommandForm({ open, onOpenChange, initialData, onSave }: Command
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 pt-4'>
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
-                {t('workflowCore.commands.form.fields.title')}
-              </Label>
-              <Input
-                placeholder={t('workflowCore.commands.form.placeholders.title')}
-                className='h-10 rounded-xl font-bold text-xs'
-                {...register('title', { required: true })}
-              />
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
-                {t('workflowCore.commands.form.fields.bindType')}
-              </Label>
-              <Select value={watch('bindType')} onValueChange={(value) => setValue('bindType', value as BindTypeValue)}>
-                <SelectTrigger className='h-10 rounded-xl font-bold text-xs'>
-                  <SelectValue placeholder={t('workflowCore.commands.form.placeholders.bindType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='SECTION'>{t('workflowCore.commands.bindTypes.section')}</SelectItem>
-                  <SelectItem value='ROLE'>{t('workflowCore.commands.bindTypes.role')}</SelectItem>
-                  <SelectItem value='GLOBAL'>{t('workflowCore.commands.bindTypes.global')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+              {t('workflowCore.commands.form.fields.title')}
+            </Label>
+            <Input
+              placeholder={t('workflowCore.commands.form.placeholders.title')}
+              className='h-10 rounded-xl font-bold text-xs'
+              {...register('title', { required: true })}
+            />
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
-                {t('workflowCore.commands.form.fields.nodeType')}
-              </Label>
-              <Select
-                value={watch('nodeType') || 'NONE'}
-                onValueChange={(value) => setValue('nodeType', value === 'NONE' ? undefined : (value as NodeTypeValue))}
-              >
-                <SelectTrigger className='h-10 rounded-xl border-primary/20 bg-primary/5 font-bold text-xs text-primary'>
-                  <SelectValue placeholder={t('workflowCore.commands.form.placeholders.nodeType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='NONE'>{t('workflowCore.commands.nodeTypes.none')}</SelectItem>
-                  <SelectItem value='START'>{t('workflowCore.commands.nodeTypes.start')}</SelectItem>
-                  <SelectItem value='APPROVAL'>{t('workflowCore.commands.nodeTypes.approval')}</SelectItem>
-                  <SelectItem value='CHECK'>{t('workflowCore.commands.nodeTypes.check')}</SelectItem>
-                  <SelectItem value='PRODUCTION'>{t('workflowCore.commands.nodeTypes.production')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase text-muted-foreground'>
-                {t('workflowCore.commands.form.fields.params')}
-              </Label>
-              <Input
-                placeholder={t('workflowCore.commands.form.placeholders.params')}
-                className='h-10 rounded-xl font-bold text-xs'
-                {...register('params', {
-                  setValueAs: (value) =>
-                    typeof value === 'string'
-                      ? value
-                          .split(',')
-                          .map((segment) => segment.trim())
-                          .filter(Boolean)
-                      : value,
-                })}
-              />
-            </div>
+          <div className='rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-[10px] font-medium text-muted-foreground'>
+            模板适用范围和关联环节已改由消息中心规则上下文决定，这里只维护通知内容本身。
+          </div>
+
+          <div className='space-y-2'>
+            <Label className='text-[10px] font-black uppercase text-muted-foreground'>
+              {t('workflowCore.commands.form.fields.params')}
+            </Label>
+            <Input
+              placeholder={t('workflowCore.commands.form.placeholders.params')}
+              className='h-10 rounded-xl font-bold text-xs'
+              {...register('params', {
+                setValueAs: (value) =>
+                  typeof value === 'string'
+                    ? value
+                        .split(',')
+                        .map((segment) => segment.trim())
+                        .filter(Boolean)
+                    : value,
+              })}
+            />
           </div>
 
           <div className='space-y-2'>

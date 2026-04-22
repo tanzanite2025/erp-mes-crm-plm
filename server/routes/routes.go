@@ -33,6 +33,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerApprovalRoutes(authorized)
 		registerWorkflowRoutes(authorized)
 		registerPersonalWorkbenchRoutes(authorized)
+		registerSidebarCommandRoutes(authorized)
 
 		adminOnly := middleware.RequirePermissions(authz.PermissionManage)
 		engineeringAccess := middleware.RequirePermissions(authz.MenuEngineering)
@@ -63,6 +64,15 @@ func SetupRoutes(r *gin.Engine) {
 			materialGroup.PATCH("/:id", materialUpdate, handlers.PatchMaterialHandler)
 			materialGroup.DELETE("/:id", adminOnly, handlers.DeleteMaterialHandler)
 			materialGroup.POST("/sync", adminOnly, handlers.BulkSyncMaterialsHandler)
+		}
+
+		appearanceGroup := authorized.Group("/engineering/product-appearances")
+		appearanceGroup.Use(middleware.RequirePermissions(authz.MenuEngineering, authz.MenuTrading))
+		{
+			appearanceGroup.GET("", handlers.GetProductAppearancesHandler)
+			appearanceGroup.POST("", adminOnly, handlers.SaveProductAppearanceHandler)
+			appearanceGroup.PATCH("/:id", adminOnly, handlers.PatchProductAppearanceHandler)
+			appearanceGroup.DELETE("/:id", adminOnly, handlers.DeleteProductAppearanceHandler)
 		}
 
 		engineeringGroup := authorized.Group("/engineering")
@@ -104,9 +114,11 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.DELETE("/product-type-attribute-bindings/:id", adminOnly, handlers.DeleteProductTypeAttributeBindingHandler)
 			engineeringGroup.GET("/product-attribute-categories", handlers.GetProductAttributeCategoriesHandler)
 			engineeringGroup.POST("/product-attribute-categories", adminOnly, handlers.SaveProductAttributeCategoryHandler)
+			engineeringGroup.POST("/product-attribute-categories/reorder", adminOnly, handlers.ReorderProductAttributeCategoriesHandler)
 			engineeringGroup.DELETE("/product-attribute-categories/:id", adminOnly, handlers.DeleteProductAttributeCategoryHandler)
 			engineeringGroup.GET("/product-attribute-options", handlers.GetProductAttributeOptionsHandler)
 			engineeringGroup.POST("/product-attribute-options", adminOnly, handlers.SaveProductAttributeOptionHandler)
+			engineeringGroup.POST("/product-attribute-options/reorder", adminOnly, handlers.ReorderProductAttributeOptionsHandler)
 			engineeringGroup.DELETE("/product-attribute-options/:id", adminOnly, handlers.DeleteProductAttributeOptionHandler)
 			engineeringGroup.GET("/specs", handlers.GetEngineeringSpecsHandler)
 			engineeringGroup.GET("/specs/:id", handlers.GetEngineeringSpecHandler)
@@ -199,6 +211,11 @@ func SetupRoutes(r *gin.Engine) {
 		// --- 工作流引擎路由 (Workflow Routing) ---
 		routingGroup := authorized.Group("/system/routing")
 		{
+			routingGroup.GET("/event-sources", middleware.RequirePermissions(authz.MenuSystem), handlers.GetBusinessEventSourcesHandler)
+			routingGroup.POST("/event-sources", adminOnly, handlers.SaveBusinessEventSourceHandler)
+			routingGroup.PUT("/event-sources/:id", adminOnly, handlers.UpdateBusinessEventSourceHandler)
+			routingGroup.DELETE("/event-sources/:id", adminOnly, handlers.DeleteBusinessEventSourceHandler)
+
 			routingGroup.GET("/commands", middleware.RequirePermissions(authz.MenuSystem), handlers.GetCommandsHandler)
 			routingGroup.POST("/commands", adminOnly, handlers.SaveCommandHandler)
 			routingGroup.PUT("/commands/:id", adminOnly, handlers.UpdateCommandHandler)
@@ -208,6 +225,9 @@ func SetupRoutes(r *gin.Engine) {
 			routingGroup.POST("/rules", adminOnly, handlers.SaveRuleHandler)
 			routingGroup.PUT("/rules/:id", adminOnly, handlers.UpdateRuleHandler)
 			routingGroup.DELETE("/rules/:id", adminOnly, handlers.DeleteRuleHandler)
+
+			routingGroup.GET("/execution-logs", middleware.RequirePermissions(authz.MenuSystem), handlers.GetRuleExecutionLogsHandler)
+			routingGroup.POST("/execution-logs", handlers.SaveRuleExecutionLogHandler)
 		}
 
 		printGroup := authorized.Group("/print-batches")
@@ -239,9 +259,12 @@ func SetupRoutes(r *gin.Engine) {
 		quality.Use(qualityAccess)
 		{
 			quality.GET("/standards", handlers.GetInspectionStandardsHandler)
+			quality.GET("/standards/:id", handlers.GetInspectionStandardByIDHandler)
+			quality.PATCH("/standards/:id", adminOnly, handlers.PatchInspectionStandardHandler)
 			quality.POST("/standards", adminOnly, handlers.SaveInspectionStandardHandler)
 			quality.GET("/tasks", handlers.GetInspectionTasksHandler)
 			quality.POST("/tasks", handlers.SaveInspectionTaskHandler)
+			quality.GET("/stats", handlers.GetInspectionStatsHandler)
 			quality.GET("/abnormalities", handlers.GetAbnormalitiesHandler)
 		}
 

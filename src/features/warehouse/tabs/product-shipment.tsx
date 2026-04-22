@@ -7,7 +7,7 @@ import { Route } from '@/routes/_authenticated/warehouse/shipment'
 import { useLanguage } from '@/context/language-provider'
 import { PageHeader } from '@/components/layout/page-header'
 import { isForbiddenError } from '@/lib/error-status'
-import { ShipmentDialog, ShipmentHistory, ShipmentSearch, useShipment } from '../shipment'
+import { ShipmentDemandBoard, ShipmentDialog, ShipmentHistory, ShipmentSearch, useShipment } from '../shipment'
 
 export default function ProductShipment() {
     const { t } = useLanguage()
@@ -16,9 +16,11 @@ export default function ProductShipment() {
         setSearchQuery,
         searchResults,
         history,
+        shipmentDemands,
         error,
         isSearching,
         selectedItem,
+        formMode,
         isShipmentOpen,
         setIsShipmentOpen,
         warehouseCategories,
@@ -28,6 +30,7 @@ export default function ProductShipment() {
         formData,
         setFormData,
         openShipmentForm,
+        openVirtualLockForm,
         submitShipment,
         commitDraft,
         removeRecord,
@@ -57,6 +60,12 @@ export default function ProductShipment() {
                 </div>
             </PageHeader>
 
+            <ShipmentDemandBoard
+                demands={shipmentDemands}
+                warehouseCategories={warehouseCategories}
+                onPrepare={openVirtualLockForm}
+            />
+
             <ShipmentSearch
                 searchQuery={searchQuery}
                 autoFocus={mode === 'scan'}
@@ -84,9 +93,10 @@ export default function ProductShipment() {
                 formData={formData}
                 setFormData={setFormData}
                 warehouseCategories={warehouseCategories}
+                formMode={formMode}
                 onSubmit={submitShipment}
-                categoryStock={categoryStock}
-                inventoryBreakdown={inventoryBreakdown}
+                categoryStock={categoryStock ?? 0}
+                inventoryBreakdown={inventoryBreakdown ?? {}}
                 alertThreshold={selectedItem ? alertThresholds[selectedItem.id] : 0}
                 salesOrders={salesOrders}
             />

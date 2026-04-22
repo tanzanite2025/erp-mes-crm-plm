@@ -1,19 +1,23 @@
 import { type WarehouseCategoryOption } from '../category/data/schema'
 
+export const SALES_RETURN_VIRTUAL_WAREHOUSE_CODE = 'SALES_RETURN_VIRTUAL'
+
 export type WarehouseCategoryScene =
   | 'product-inbound'
   | 'material-inbound'
+  | 'sales-return'
   | 'shipment'
   | 'stocktake'
   | 'purchase-receipt'
 
 export function isWarehouseCategoryAllowedForScene(
   category: WarehouseCategoryOption,
-  scene: WarehouseCategoryScene,
+  scene: WarehouseCategoryScene
 ) {
   switch (scene) {
     case 'product-inbound':
     case 'material-inbound':
+    case 'sales-return':
       return category.allowInbound
     case 'shipment':
       return category.allowShipment
@@ -28,21 +32,36 @@ export function isWarehouseCategoryAllowedForScene(
 
 export function filterWarehouseCategoriesByScene(
   categories: WarehouseCategoryOption[],
-  scene: WarehouseCategoryScene,
+  scene: WarehouseCategoryScene
 ) {
-  return categories.filter((category) => isWarehouseCategoryAllowedForScene(category, scene))
+  return categories.filter((category) =>
+    isWarehouseCategoryAllowedForScene(category, scene)
+  )
 }
 
 export function getDefaultWarehouseCategoryCode(
   categories: WarehouseCategoryOption[],
   scene: WarehouseCategoryScene,
-  preferredCode?: string,
+  preferredCode?: string
 ) {
   const allowed = filterWarehouseCategoriesByScene(categories, scene)
   if (allowed.length === 0) return ''
 
-  if (preferredCode && allowed.some((category) => category.code === preferredCode)) {
+  if (
+    preferredCode &&
+    allowed.some((category) => category.code === preferredCode)
+  ) {
     return preferredCode
+  }
+
+  if (scene === 'sales-return') {
+    return (
+      allowed.find(
+        (category) => category.code === SALES_RETURN_VIRTUAL_WAREHOUSE_CODE
+      )?.code ||
+      allowed[0]?.code ||
+      ''
+    )
   }
 
   const preferredDefault = allowed.find((category) => {

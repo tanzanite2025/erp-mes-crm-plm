@@ -1,8 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RoutingTab } from '@/features/system-mgmt/tabs/routing-tab'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute(
   '/_authenticated/system-management/routing'
 )({
-  component: () => <RoutingTab />,
+  beforeLoad: () => {
+    throw redirect({
+      to: '/approval/routing',
+      replace: true,
+    })
+  },
 })

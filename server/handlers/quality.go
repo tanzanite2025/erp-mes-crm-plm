@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
+	"errors"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
@@ -11,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // --- 质量标准库 (Inspection Standards) ---
@@ -19,21 +24,63 @@ import (
 func GetInspectionStandardsHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	typeFilter := c.Query("type")
+	typeFilter := strings.ToUpper(strings.TrimSpace(c.Query("type")))
+	statusFilter := strings.ToUpper(strings.TrimSpace(c.Query("status")))
+	keyword := strings.TrimSpace(c.Query("keyword"))
 
-	// 使用 Clone() 确保 Session 隔离，防止 Count 污染 Find
-	baseQuery := db.DB.Model(&models.InspectionStandard{})
-	if typeFilter != "" && typeFilter != "ALL" {
-		baseQuery = baseQuery.Where("type = ?", typeFilter)
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
 	}
 
+	scopedQuery := db.DB.Model(&models.InspectionStandard{})
+	if typeFilter != "" && typeFilter != "ALL" {
+		scopedQuery = scopedQuery.Where("type = ?", typeFilter)
+	}
+	if keyword != "" {
+		keywordLike := "%" + strings.ToLower(keyword) + "%"
+		scopedQuery = scopedQuery.Where(
+			"LOWER(code) LIKE ? OR LOWER(name) LIKE ?",
+			keywordLike,
+			keywordLike,
+		)
+	}
+
+	listQuery := scopedQuery.Session(&gorm.Session{})
+	if statusFilter != "" && statusFilter != "ALL" {
+		listQuery = listQuery.Where("status = ?", statusFilter)
+	}
+
+	var scopedTotal int64
+	if err := scopedQuery.Session(&gorm.Session{}).Count(&scopedTotal).Error; err != nil {
+		log.Printf("[ERROR] QualityStandards.StatsTotal Error: %v", err)
+	}
+
+	countByStatus := func(status string) int64 {
+		var count int64
+		if err := scopedQuery.Session(&gorm.Session{}).Where("status = ?", status).Count(&count).Error; err != nil {
+			log.Printf("[ERROR] QualityStandards.StatusCount(%s) Error: %v", status, err)
+			return 0
+		}
+		return count
+	}
+
+	publishedCount := countByStatus("PUBLISHED")
+	draftCount := countByStatus("DRAFT")
+	archivedCount := countByStatus("ARCHIVED")
+
 	var total int64
-	if err := baseQuery.Count(&total).Error; err != nil {
+	if err := listQuery.Count(&total).Error; err != nil {
 		log.Printf("[ERROR] QualityStandards.Count Error: %v", err)
 	}
 
 	var standards []models.InspectionStandard
-	if err := baseQuery.Order("code asc, version desc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&standards).Error; err != nil {
+	if err := listQuery.Order("code asc, version desc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&standards).Error; err != nil {
 		log.Printf("[ERROR] QualityStandards.Find Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准失败: " + err.Error()})
 		return
@@ -44,7 +91,166 @@ func GetInspectionStandardsHandler(c *gin.Context) {
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
+		Metadata: InspectionStandardsListMetadata{
+			Pagination: InspectionStandardsListPaginationMetadata{
+				Total:    total,
+				Page:     page,
+				PageSize: pageSize,
+			},
+			Stats: InspectionStandardsListStatsMetadata{
+				Total:     scopedTotal,
+				Published: publishedCount,
+				Draft:     draftCount,
+				Archived:  archivedCount,
+			},
+		},
 	})
+}
+
+// GetInspectionStandardByIDHandler 获取单条品质标准详情
+func GetInspectionStandardByIDHandler(c *gin.Context) {
+	standardID := c.Param("id")
+
+	var standard models.InspectionStandard
+	if err := db.DB.First(&standard, "id = ?", standardID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 品质标准不存在"})
+			return
+		}
+
+		log.Printf("[ERROR] QualityStandards.Detail Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取品质标准详情失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
+}
+
+func PatchInspectionStandardHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	var req InspectionStandardPatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的标准差量数据: " + err.Error()})
+		return
+	}
+
+	if op := strings.ToUpper(strings.TrimSpace(req.Op)); op != "" && op != "PATCH" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 不支持的标准更新操作"})
+		return
+	}
+
+	if strings.TrimSpace(req.Metadata.ID) != "" && strings.TrimSpace(req.Metadata.ID) != id {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 标准 ID 不匹配"})
+		return
+	}
+
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "code", "name", "type", "status", "items", "auditor", "auditTime", "remarks"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的标准差量字段: " + err.Error()})
+		return
+	}
+
+	var updated models.InspectionStandard
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var standard models.InspectionStandard
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&standard, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		if !qualityVersionMatches(standard.Version, req.Metadata.Version) {
+			return ErrVersionConflict
+		}
+
+		next := standard
+		for key, raw := range req.Delta {
+			valueRaw, err := extractDeltaNewValue(raw)
+			if err != nil {
+				return errors.New("invalid quality standard delta item")
+			}
+
+			switch key {
+			case "code":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard code payload")
+				}
+				next.Code = strings.TrimSpace(value)
+			case "name":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard name payload")
+				}
+				next.Name = strings.TrimSpace(value)
+			case "type":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard type payload")
+				}
+				next.Type = strings.TrimSpace(value)
+			case "status":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard status payload")
+				}
+				next.Status = strings.TrimSpace(value)
+			case "items":
+				next.Items = append(json.RawMessage(nil), valueRaw...)
+			case "auditor":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard auditor payload")
+				}
+				next.Auditor = strings.TrimSpace(value)
+			case "auditTime":
+				value, err := parseOptionalTimeValue(valueRaw)
+				if err != nil {
+					return errors.New("invalid quality standard auditTime payload")
+				}
+				next.AuditTime = value
+			case "remarks":
+				var value string
+				if err := json.Unmarshal(valueRaw, &value); err != nil {
+					return errors.New("invalid quality standard remarks payload")
+				}
+				next.Description = strings.TrimSpace(value)
+			}
+		}
+
+		next.Version = nextQualityStandardVersion(standard.Version)
+		updates := map[string]interface{}{
+			"code":        next.Code,
+			"name":        next.Name,
+			"type":        next.Type,
+			"version":     next.Version,
+			"status":      next.Status,
+			"items":       next.Items,
+			"auditor":     next.Auditor,
+			"audit_time":  next.AuditTime,
+			"description": next.Description,
+		}
+
+		if err := tx.Model(&standard).Updates(updates).Error; err != nil {
+			return err
+		}
+
+		return tx.First(&updated, "id = ?", id).Error
+	})
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[NOT_FOUND] 品质标准不存在"})
+			return
+		}
+		if err == ErrVersionConflict {
+			respondVersionConflict(c)
+			return
+		}
+
+		log.Printf("[ERROR] QualityStandards.Patch Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新品质标准失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapInspectionStandardToResponse(updated))
 }
 
 // SaveInspectionStandardHandler 保存/更新检验标准 (版本受控)
@@ -60,24 +266,20 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var existing models.InspectionStandard
 		if standard.ID != "" {
-			// 如果是编辑现有标准，自动递增版本号 (0.1)
 			if err := tx.First(&existing, "id = ?", standard.ID).Error; err == nil {
-				standard.Version = existing.Version + 0.1
+				standard.Version = nextQualityStandardVersion(existing.Version)
 				log.Printf("[INFO] Incrementing Standard %s Version to %.1f", standard.Code, standard.Version)
 			}
 		} else {
-			// 新增标准，默认 VER 1.0
 			standard.Version = 1.0
 		}
 
 		if standard.ID != "" {
-			// 编辑模式：使用 Updates 仅同步非零值，手动排除 CreatedAt 保护审计信息
 			if err := tx.Model(&existing).Omit("CreatedAt", "CreatedBy").Updates(standard).Error; err != nil {
 				return err
 			}
 			return tx.First(&standard, "id = ?", existing.ID).Error
 		} else {
-			// 新增模式：保持使用 Save/Create
 			if err := tx.Save(&standard).Error; err != nil {
 				return err
 			}
@@ -91,6 +293,14 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
+}
+
+func nextQualityStandardVersion(current float64) float64 {
+	return math.Round((current+0.1)*10) / 10
+}
+
+func qualityVersionMatches(current float64, expected float64) bool {
+	return math.Abs(current-expected) < 0.000001
 }
 
 // --- 检验执行流水 (Inspection Tasks) ---
@@ -123,7 +333,40 @@ func GetInspectionTasksHandler(c *gin.Context) {
 	})
 }
 
-// SaveInspectionTaskHandler 提交检验结果 (Triggering Abnormality if failed)
+// GetInspectionStatsHandler returns authoritative inspection task counts by result.
+func GetInspectionStatsHandler(c *gin.Context) {
+	countByResult := func(result string) (int64, error) {
+		var count int64
+		err := db.DB.Model(&models.InspectionTask{}).Where("result = ?", result).Count(&count).Error
+		return count, err
+	}
+
+	pendingCount, err := countByResult("PENDING")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to count pending inspection tasks: " + err.Error()})
+		return
+	}
+
+	passCount, err := countByResult("PASS")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to count passed inspection tasks: " + err.Error()})
+		return
+	}
+
+	failCount, err := countByResult("FAIL")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to count failed inspection tasks: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, InspectionStatsResponse{
+		PendingCount: pendingCount,
+		PassCount:    passCount,
+		FailCount:    failCount,
+	})
+}
+
+// SaveInspectionTaskHandler submits an inspection result and creates an abnormality when it fails.
 func SaveInspectionTaskHandler(c *gin.Context) {
 	var input InspectionTaskRequest
 	if err := c.ShouldBindJSON(&input); err != nil {

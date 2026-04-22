@@ -12,11 +12,3 @@ export const STANDARD_HOLE_COUNT_OPTIONS: DrillingSelectOption[] = [
   { label: '36H', value: '36' },
   { label: '40H', value: '40' },
 ]
-
-// Module-owned default options for lacing pattern.
-// Keep the canonical values stable to match persisted drilling plan records.
-export const LACING_PATTERN_OPTIONS: DrillingSelectOption[] = [
-  { label: '1:1 Standard', value: '1:1' },
-  { label: '2:1 Drive-Side', value: '2:1' },
-  { label: 'G3 System', value: 'G3' },
-]

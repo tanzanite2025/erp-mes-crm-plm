@@ -54,10 +54,23 @@ func SaveProductAttributeCategoryHandler(c *gin.Context) {
 
 	saved, err := services.CreateProductAttributeCategory(input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		respondDomainError(c, err, "[SERVER] 保存产品属性分类失败: ")
 		return
 	}
 	c.JSON(http.StatusOK, saved)
+}
+
+func ReorderProductAttributeCategoriesHandler(c *gin.Context) {
+	var input services.ProductAttributeReorderInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 产品属性分类排序参数格式错误"})
+		return
+	}
+	if err := services.ReorderProductAttributeCategories(input); err != nil {
+		respondDomainError(c, err, "[SERVER] 保存产品属性分类排序失败: ")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "排序已保存"})
 }
 
 func DeleteProductAttributeCategoryHandler(c *gin.Context) {

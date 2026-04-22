@@ -5,7 +5,7 @@ export const Route = createFileRoute(
 )({
   beforeLoad: () => {
     throw redirect({
-      to: '/system-management/routing',
+      to: '/approval/routing',
       replace: true,
     })
   },

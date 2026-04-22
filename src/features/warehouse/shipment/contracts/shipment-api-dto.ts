@@ -18,3 +18,33 @@ export interface InventoryShipmentRecordApiDTO {
   updatedAt?: string
   version: number
 }
+
+export interface ShipmentDemandStockBreakdownApiDTO {
+  categoryCode: string
+  batchNo: string
+  quantity: number
+}
+
+export interface ShipmentDemandApiDTO {
+  salesOrderId: string
+  salesOrderLineId: number
+  orderNo: string
+  customerName: string
+  deliveryDate: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  materialSpec: string
+  uom: string
+  orderedQty: number
+  deliveredQty: number
+  virtualReadyQty: number
+  remainingToPrepare: number
+  availableQty: number
+  stockBreakdown: ShipmentDemandStockBreakdownApiDTO[]
+}
+
+export interface ShipmentDemandListApiDTO {
+  items: ShipmentDemandApiDTO[]
+  total: number
+}

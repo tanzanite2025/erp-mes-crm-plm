@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
 use image::GenericImageView;
 use img_hash::image::{DynamicImage as HashDynamicImage, RgbaImage as HashRgbaImage};
-use img_hash::{HasherConfig, HashAlg};
+use img_hash::{HashAlg, HasherConfig};
 use webp::{Encoder, WebPMemory};
 
 /**
  * 图像处理核心模块 (Image Processor)
- * 职责: 
+ * 职责:
  *   1. 计算感知哈希 (pHash) 用于视觉查重
  *   2. 执行 WebP 工业级压缩
  */
@@ -19,9 +19,8 @@ pub struct ProcessedImage {
 
 pub fn process_image(raw_data: &[u8]) -> Result<ProcessedImage> {
     // 1. 解码图片
-    let img = image::load_from_memory(raw_data)
-        .context("Failed to decode image from memory")?;
-    
+    let img = image::load_from_memory(raw_data).context("Failed to decode image from memory")?;
+
     let (width, height) = img.dimensions();
 
     // 2. 计算感知哈希 (pHash)
@@ -41,12 +40,14 @@ pub fn process_image(raw_data: &[u8]) -> Result<ProcessedImage> {
     // 3. 执行 WebP 压缩
     // 设置质量为 75，这是工业凭据平衡清晰度与体积的黄金点
     let encoder = Encoder::from_rgba(rgba.as_raw(), width, height);
-    
+
     let webp_memory: WebPMemory = encoder.encode(75.0);
     let webp_data = webp_memory.to_vec();
 
     if webp_data.is_empty() {
-        return Err(anyhow::anyhow!("Failed to encode image to WebP: encoder returned empty payload"));
+        return Err(anyhow::anyhow!(
+            "Failed to encode image to WebP: encoder returned empty payload"
+        ));
     }
 
     Ok(ProcessedImage {
@@ -63,7 +64,7 @@ pub fn process_image(raw_data: &[u8]) -> Result<ProcessedImage> {
  */
 pub fn calculate_similarity(hash1: &str, hash2: &str) -> Result<u32> {
     // 这里仅作为逻辑参考，实际查重建议由 Go 或 Redis 的位运算完成以保障高并发
-    Ok(0) 
+    Ok(0)
 }
 
 #[cfg(test)]

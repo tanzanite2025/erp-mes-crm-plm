@@ -196,6 +196,14 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'wlgl',
   },
   {
+    id: 'tab-sales-analysis-orders-analysis',
+    href: '/sales-analysis/orders-analysis',
+    titleKey: 'commandMenu.items.salesAnalysis',
+    parentKey: 'commandMenu.parents.salesManagement',
+    keywords: ['analysis', 'sales analysis', 'orders', '订单分析', '销售分析'],
+    pinyin: 'xsfx',
+  },
+  {
     id: 'tab-terminal-printers',
     href: '/terminal-config/printers',
     titleKey: 'commandMenu.items.terminalPrinters',
@@ -250,14 +258,6 @@ const moduleGroups: CommandItemConfig[] = [
     parentKey: 'commandMenu.parents.basicSettings',
     keywords: ['unit', '单位'],
     pinyin: 'dwgl',
-  },
-  {
-    id: 'tab-basic-sequences',
-    href: '/basic-settings/sequences',
-    titleKey: 'commandMenu.items.sequences',
-    parentKey: 'commandMenu.parents.basicSettings',
-    keywords: ['sequence', 'number', '编号'],
-    pinyin: 'ywbh',
   },
   {
     id: 'tab-basic-enterprise',
@@ -330,6 +330,14 @@ const moduleGroups: CommandItemConfig[] = [
     parentKey: 'commandMenu.parents.materialArchive',
     keywords: ['material', 'master', 'archive', '物料主数据'],
     pinyin: 'wlzsj',
+  },
+  {
+    id: 'tab-raw-materials',
+    href: '/raw-materials',
+    titleKey: 'commandMenu.items.rawMaterialsManagement',
+    parentKey: 'commandMenu.parents.resourceManagement',
+    keywords: ['raw material', 'procurement', 'catalog', '原材料', '原材料管理'],
+    pinyin: 'yclgl',
   },
   {
     id: 'tab-experimental-equipment',
@@ -455,10 +463,10 @@ const actionConfigs: CommandItemConfig[] = [
   },
   {
     id: 'action-approval-center',
-    href: '/approval',
+    href: '/approval/routing',
     titleKey: 'commandMenu.items.approvalCenter',
     parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['approval', 'workflow', 'center', '审批中心'],
+    keywords: ['approval', 'workflow', 'center', 'message', 'routing', '消息中心', '审批中心'],
     pinyin: 'spzx',
   },
 ]

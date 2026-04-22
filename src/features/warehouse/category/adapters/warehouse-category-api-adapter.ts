@@ -74,5 +74,5 @@ export function toWarehouseCategoryOptionContracts(dtos: WarehouseCategoryOption
 }
 
 export function toWarehouseCategoryListPageContract(dto: WarehouseCategoryListPageApiDTO): WarehouseCategory[] {
-  return toWarehouseCategoryContracts(dto.items ?? [])
+  return toWarehouseCategoryContracts(dto.items)
 }

@@ -65,7 +65,7 @@ export function toLogisticsRecordContract(dto: LogisticsRecordApiDTO): Logistics
 
 export function toLogisticsListPageContract(dto: LogisticsListPageApiDTO): LogisticsListPage {
   return {
-    items: (dto.items ?? []).map(toLogisticsRecordContract),
+    items: dto.items.map(toLogisticsRecordContract),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

@@ -1,112 +1,83 @@
-import type { SettlementRecordEvidenceApiDTO } from '../../settlement-evidences/contracts/settlement-evidence-api-dto'
+import { z } from 'zod'
 
-export interface PayableRecordApiDTO {
-  id: string
-  documentNo: string
-  supplierName: string
-  currency: string
-  invoiceAmount: number
-  paidAmount: number
-  outstandingAmount: number
-  dueDate: string
-  agingBucket: string
-  status: string
+import type {
+  LedgerSearchCandidateApiDTO,
+  LedgerSearchResponseApiDTO,
+} from '../../contracts/ledger-search-api-dto'
+import {
+  createLedgerDetailApiDTOSchema,
+  createLedgerListPageApiDTOSchema,
+  createSettlementMutationResponseApiDTOSchema,
+  ledgerRecordBaseApiDTOShape,
+} from '../../contracts/shared/ledger-contract-schema'
+import {
+  createSettlementRecordApiDTOSchema,
+  settlementAllocationApiDTOSchema,
+  settlementRecordApiDTOSchema,
+  type CreateSettlementRecordApiDTO as TradingCreateSettlementRecordApiDTO,
+  type SettlementAllocationApiDTO as TradingSettlementAllocationApiDTO,
+  type SettlementRecordApiDTO as TradingSettlementRecordApiDTO,
+} from '../../contracts/settlement-record-api-dto'
+
+export const payableRecordApiDTOSchema = z.object({
+  ...ledgerRecordBaseApiDTOShape,
+  supplierName: z.string(),
+  invoiceAmount: z.number(),
+  paidAmount: z.number(),
+}).strict()
+
+export const payableSummaryApiDTOSchema = z.object({
+  totalPayable: z.number(),
+  overduePayable: z.number(),
+  pendingPaymentCount: z.number(),
+}).strict()
+
+export const payableListPageApiDTOSchema = createLedgerListPageApiDTOSchema(
+  payableRecordApiDTOSchema,
+  payableSummaryApiDTOSchema
+)
+
+export type PayableRecordApiDTO = z.infer<typeof payableRecordApiDTOSchema>
+export type PayableSummaryApiDTO = z.infer<typeof payableSummaryApiDTOSchema>
+export type PayableListPageApiDTO = z.infer<typeof payableListPageApiDTOSchema>
+
+export function deserializePayableListPageApiDTO(input: unknown): PayableListPageApiDTO {
+  return payableListPageApiDTOSchema.parse(input)
 }
 
-export interface PayableSummaryApiDTO {
-  totalPayable: number
-  overduePayable: number
-  pendingPaymentCount: number
+export type PayableLedgerSearchCandidateApiDTO = LedgerSearchCandidateApiDTO
+export type PayableLedgerSearchResponseApiDTO = LedgerSearchResponseApiDTO
+
+export const paymentRecordApiDTOSchema = settlementRecordApiDTOSchema
+
+export const payableDetailApiDTOSchema = createLedgerDetailApiDTOSchema(payableRecordApiDTOSchema, {
+  sourceType: z.string(),
+  sourceRefId: z.string(),
+  supplierId: z.string(),
+  version: z.number(),
+  paymentRecords: z.array(paymentRecordApiDTOSchema),
+  allocations: z.array(settlementAllocationApiDTOSchema),
+})
+
+export type PaymentRecordApiDTO = TradingSettlementRecordApiDTO
+export type SettlementAllocationApiDTO = TradingSettlementAllocationApiDTO
+export type PayableDetailApiDTO = z.infer<typeof payableDetailApiDTOSchema>
+
+export function deserializePayableDetailApiDTO(input: unknown): PayableDetailApiDTO {
+  return payableDetailApiDTOSchema.parse(input)
 }
 
-export interface PayableListPageApiDTO {
-  items: PayableRecordApiDTO[]
-  total: number
-  page: number
-  pageSize: number
-  summary: PayableSummaryApiDTO
-}
+export const createPaymentRecordApiDTOSchema = createSettlementRecordApiDTOSchema
+export type CreatePaymentRecordApiDTO = TradingCreateSettlementRecordApiDTO
 
-export interface PayableLedgerSearchCandidateApiDTO {
-  id: string
-  documentNo: string
-  partnerName: string
-  outstandingAmount: number
-  status: string
-  currency: string
-}
+export const createPaymentRecordResponseApiDTOSchema = createSettlementMutationResponseApiDTOSchema(
+  payableDetailApiDTOSchema,
+  paymentRecordApiDTOSchema,
+  settlementAllocationApiDTOSchema
+)
 
-export interface PayableLedgerSearchResponseApiDTO {
-  items: PayableLedgerSearchCandidateApiDTO[]
-  total: number
-  page: number
-  pageSize: number
-}
+export type CreatePaymentRecordResponseApiDTO = z.infer<typeof createPaymentRecordResponseApiDTOSchema>
 
-export interface PaymentRecordApiDTO {
-  id: string
-  recordNo: string
-  ledgerId: string
-  amount: number
-  currency: string
-  paymentMethod: string
-  paymentTerm: string
-  recordDate: string
-  status: string
-  referenceNo: string
-  createdAt: string
-  updatedAt: string
-  evidences: SettlementRecordEvidenceApiDTO[]
-}
-
-export interface SettlementAllocationApiDTO {
-  id: string
-  ledgerId: string
-  receiptRecordId: string
-  paymentRecordId: string
-  allocatedAmount: number
-  sequenceNo: number
-  remark: string
-  operator: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface PayableDetailApiDTO extends PayableRecordApiDTO {
-  sourceType: string
-  sourceRefId: string
-  supplierId: string
-  supplierName: string
-  invoiceAmount: number
-  paidAmount: number
-  outstandingAmount: number
-  dueDate: string
-  agingBucket: string
-  version: number
-  paymentRecords: PaymentRecordApiDTO[]
-  allocations: SettlementAllocationApiDTO[]
-  documentNo: string
-  status: string
-  currency: string
-}
-
-export interface CreatePaymentRecordApiDTO {
-  amount: number
-  currency?: string
-  paymentMethod?: string
-  paymentTerm?: string
-  recordDate?: string
-  referenceNo?: string
-  allocations: Array<{
-    ledgerId: string
-    allocatedAmount: number
-    sequenceNo?: number
-    remark?: string
-  }>
-}
-
-export interface CreatePaymentRecordResponseApiDTO {
-  ledger: PayableDetailApiDTO
-  record: PaymentRecordApiDTO
-  allocations: SettlementAllocationApiDTO[]
+export function deserializeCreatePaymentRecordResponseApiDTO(input: unknown): CreatePaymentRecordResponseApiDTO {
+  return createPaymentRecordResponseApiDTOSchema.parse(input)
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -13,6 +14,107 @@ var (
 	ErrStandardCommandNotFound  = errors.New("standard command not found")
 	ErrNotificationRuleNotFound = errors.New("notification rule not found")
 )
+
+func validateNotificationRuleReferences(rule models.NotificationRule) error {
+	sourceCode := strings.TrimSpace(rule.SourceCode)
+	entity := strings.TrimSpace(rule.Entity)
+	actionCode := strings.TrimSpace(rule.ActionCode)
+
+	var source models.BusinessEventSource
+	if err := db.DB.Where("code = ?", sourceCode).First(&source).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("business event source %q not found", sourceCode)
+		}
+		return err
+	}
+	if strings.TrimSpace(source.Entity) != entity {
+		return fmt.Errorf("business event source %q entity mismatch: %s", sourceCode, entity)
+	}
+
+	config, err := unmarshalBusinessEventSourceConfig(source.Config)
+	if err != nil {
+		return err
+	}
+
+	actionCodes := make(map[string]struct{}, len(config.Actions))
+	for _, action := range config.Actions {
+		actionCodes[action.Code] = struct{}{}
+	}
+	if _, ok := actionCodes[actionCode]; !ok {
+		return fmt.Errorf("actionCode %q is not configured on source %q", actionCode, sourceCode)
+	}
+
+	statusCodes := make(map[string]struct{}, len(config.Statuses))
+	for _, status := range config.Statuses {
+		statusCodes[status.Code] = struct{}{}
+	}
+	resolverCodes := make(map[string]struct{}, len(config.DynamicResolvers))
+	for _, resolver := range config.DynamicResolvers {
+		resolverCodes[resolver.Code] = struct{}{}
+	}
+
+	segments, err := unmarshalNotificationRuleSegments(rule.Segments)
+	if err != nil {
+		return err
+	}
+
+	commandIDs := make(map[string]struct{})
+	for segmentIndex, segment := range segments {
+		for _, statusCode := range segment.TargetStatuses {
+			if _, ok := statusCodes[statusCode]; !ok {
+				return fmt.Errorf(
+					"segments[%d].targetStatuses contains unknown status %q",
+					segmentIndex,
+					statusCode,
+				)
+			}
+		}
+		for _, statusCode := range segment.ResolveOnStatuses {
+			if _, ok := statusCodes[statusCode]; !ok {
+				return fmt.Errorf(
+					"segments[%d].resolveOnStatuses contains unknown status %q",
+					segmentIndex,
+					statusCode,
+				)
+			}
+		}
+		if segment.DynamicRoleField != nil {
+			if _, ok := resolverCodes[*segment.DynamicRoleField]; !ok {
+				return fmt.Errorf(
+					"segments[%d].dynamicRoleField contains unknown resolver %q",
+					segmentIndex,
+					*segment.DynamicRoleField,
+				)
+			}
+		}
+		if segment.Approval != nil && segment.Approval.DynamicApproverField != nil {
+			if _, ok := resolverCodes[*segment.Approval.DynamicApproverField]; !ok {
+				return fmt.Errorf(
+					"segments[%d].approval.dynamicApproverField contains unknown resolver %q",
+					segmentIndex,
+					*segment.Approval.DynamicApproverField,
+				)
+			}
+		}
+		for _, commandID := range segment.CommandIDs {
+			commandIDs[commandID] = struct{}{}
+		}
+	}
+
+	for commandID := range commandIDs {
+		var count int64
+		if err := db.DB.Model(&models.StandardCommand{}).
+			Where("id = ?", commandID).
+			Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return fmt.Errorf("command %q not found", commandID)
+		}
+	}
+
+	return nil
+}
 
 func ListStandardCommands() ([]models.StandardCommand, error) {
 	var commands []models.StandardCommand
@@ -62,6 +164,16 @@ func ListNotificationRules() ([]models.NotificationRule, error) {
 }
 
 func CreateNotificationRule(rule models.NotificationRule) (models.NotificationRule, error) {
+	rule.Name = strings.TrimSpace(rule.Name)
+	rule.Entity = strings.TrimSpace(rule.Entity)
+	rule.SourceCode = strings.TrimSpace(rule.SourceCode)
+	rule.ActionCode = strings.TrimSpace(rule.ActionCode)
+	if rule.Version == 0 {
+		rule.Version = 1
+	}
+	if err := validateNotificationRuleReferences(rule); err != nil {
+		return models.NotificationRule{}, err
+	}
 	if err := db.DB.Create(&rule).Error; err != nil {
 		return models.NotificationRule{}, err
 	}
@@ -78,7 +190,30 @@ func UpdateNotificationRule(id string, patch models.NotificationRule) (models.No
 		return models.NotificationRule{}, err
 	}
 
-	if err := db.DB.Model(&existing).Updates(patch).Error; err != nil {
+	nextVersion := existing.Version + 1
+	if patch.Version > existing.Version {
+		nextVersion = patch.Version
+	}
+	if err := validateNotificationRuleReferences(patch); err != nil {
+		return models.NotificationRule{}, err
+	}
+	updates := map[string]interface{}{
+		"name":        patch.Name,
+		"enabled":     patch.Enabled,
+		"entity":      patch.Entity,
+		"source_code": patch.SourceCode,
+		"action_code": patch.ActionCode,
+		"segments":    patch.Segments,
+		"version":     nextVersion,
+	}
+	if strings.TrimSpace(patch.Name) == "" {
+		updates["name"] = existing.Name
+	}
+	if strings.TrimSpace(patch.Entity) == "" {
+		updates["entity"] = existing.Entity
+	}
+
+	if err := db.DB.Model(&existing).Updates(updates).Error; err != nil {
 		return models.NotificationRule{}, err
 	}
 	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {

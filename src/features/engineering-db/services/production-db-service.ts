@@ -32,6 +32,17 @@ function toLabelingDraft(spec: EngineeringSpec): LabelingDraft {
   })
 }
 
+function parseManySafely<T>(items: EngineeringSpec[], parser: (spec: EngineeringSpec) => T, scope: string): T[] {
+  return items.reduce<T[]>((acc, item) => {
+    try {
+      acc.push(parser(item))
+    } catch (error) {
+      failLoudly(error, scope, { silentUI: true })
+    }
+    return acc
+  }, [])
+}
+
 /**
  * 生产数据库服务 (Production DB Service)
  * 职责: 管理钻孔 (Drilling) 与贴标 (Labeling) 等物理生产工艺参数。
@@ -42,7 +53,7 @@ export const ProductionDBService = {
   getDrilling: async (): Promise<DrillingPlan[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('DRILLING_PLAN')
-      return raw.map(toDrillingPlan)
+      return parseManySafely(raw, toDrillingPlan, 'ProductionDBService.getDrilling.parse')
     } catch (e) {
       failLoudly(e, 'ProductionDBService.getDrilling')
       return []
@@ -67,7 +78,7 @@ export const ProductionDBService = {
   },
 
   patchDrilling: async (id: string, delta: DeltaSet, version: number) => {
-    const mappedDelta: any = {}
+    const mappedDelta: DeltaSet = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`drillingData.${path}`] = value
     })
@@ -90,7 +101,7 @@ export const ProductionDBService = {
   getLabeling: async (): Promise<LabelingDraft[]> => {
     try {
       const raw = await engineeringSpecService.getSpecs('LABELING_DRAFT')
-      return raw.map(toLabelingDraft)
+      return parseManySafely(raw, toLabelingDraft, 'ProductionDBService.getLabeling.parse')
     } catch (e) {
       failLoudly(e, 'ProductionDBService.getLabeling')
       return []
@@ -115,7 +126,7 @@ export const ProductionDBService = {
   },
 
   patchLabeling: async (id: string, delta: DeltaSet, version: number) => {
-    const mappedDelta: any = {}
+    const mappedDelta: DeltaSet = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`labelingData.${path}`] = value
     })

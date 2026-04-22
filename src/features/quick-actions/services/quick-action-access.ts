@@ -1,32 +1,94 @@
-import type { AuthUser } from '@/stores/auth-store'
-import { matchesPathPermissionProjection } from '@/features/authz/guards/route-access'
 import { quickActionRegistry } from '../data/quick-action-registry'
-import type { QuickActionDefinition } from '../types'
+import type { SidebarCommandDefinitionDto } from '@/features/sidebar-command-assignment/services'
+import type { QuickActionDefinition, SidebarQuickActionView } from '../types'
 
-export function hasQuickActionPermission(
-  user: AuthUser | null,
-  requiredPermissions: string[]
-) {
-  if (requiredPermissions.length === 0) return true
-  const granted = new Set(user?.permissions ?? [])
-  return requiredPermissions.every((permission) => granted.has(permission))
+const privateQuickActionIds = [
+  'personal_workbench_photo',
+  'personal_workbench_video',
+  'personal_workbench_buffer',
+] satisfies QuickActionDefinition['id'][]
+
+// Only full backend command definitions are accepted for business shortcuts.
+// Do not add string-ID compatibility or static registry fallback for business
+// commands; new sidebar commands must come from /quick-actions/sidebar/me as
+// businessCommands.
+export function getSidebarQuickActions(
+  businessCommands: SidebarCommandDefinitionDto[],
+  privateCommandIds: string[] = privateQuickActionIds
+): SidebarQuickActionView[] {
+  const byId = new Map(quickActionRegistry.map((action) => [action.id, action]))
+  const result: SidebarQuickActionView[] = []
+
+  for (const command of businessCommands) {
+    if (command.enabled && command.status !== 'disabled') {
+      result.push({
+        id: command.commandId,
+        title: command.title,
+        iconName: command.icon,
+        to: command.route,
+        search: stringifySearchParams(command.searchParams),
+        enabled: command.enabled,
+        sortOrder: command.sortOrder,
+        isPrivate: false,
+      })
+    }
+  }
+
+  for (const commandId of privateCommandIds) {
+    const action = byId.get(commandId as QuickActionDefinition['id'])
+    if (action?.enabled) {
+      result.push(toSidebarQuickActionView(action, true))
+    }
+  }
+
+  return result
 }
 
-export function getAvailableQuickActions(
-  user: AuthUser | null
-): QuickActionDefinition[] {
-  return quickActionRegistry.filter((action) => {
-    if (
-      !action.enabled ||
-      !hasQuickActionPermission(user, action.requiredPermissions)
-    ) {
-      return false
-    }
+function toSidebarQuickActionView(
+  action: QuickActionDefinition,
+  isPrivate: boolean
+): SidebarQuickActionView {
+  return {
+    id: action.id,
+    titleKey: action.titleKey,
+    iconName: getRegistryActionIconName(action.id),
+    to: action.to,
+    search: stringifySearchParams(action.search),
+    enabled: action.enabled,
+    sortOrder: action.sortOrder,
+    isPrivate,
+  }
+}
 
-    if (!action.permissionPath) {
-      return true
-    }
+function getRegistryActionIconName(actionId: QuickActionDefinition['id']) {
+  switch (actionId) {
+    case 'wheel_trace_scan':
+      return 'SearchCheck'
+    case 'warehouse_inbound_scan':
+      return 'PackagePlus'
+    case 'warehouse_shipment_scan':
+      return 'ScanLine'
+    case 'warehouse_stocktake_scan':
+      return 'ClipboardCheck'
+    case 'personal_workbench_photo':
+      return 'Camera'
+    case 'personal_workbench_video':
+      return 'Video'
+    case 'personal_workbench_buffer':
+      return 'NotebookPen'
+  }
+}
 
-    return matchesPathPermissionProjection(user, action.permissionPath)
-  })
+function stringifySearchParams(
+  params: Record<string, unknown> | Record<string, string>
+) {
+  return Object.entries(params).reduce<Record<string, string>>(
+    (result, [key, value]) => {
+      if (value !== undefined && value !== null) {
+        result[key] = String(value)
+      }
+      return result
+    },
+    {}
+  )
 }

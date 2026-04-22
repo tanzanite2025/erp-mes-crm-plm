@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
@@ -14,19 +13,14 @@ import (
 
 // GetPurchaseOrdersHandler 获取所有采购订单 (分页优化)
 func GetPurchaseOrdersHandler(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
+	page, pageSize := parsePageQuery(c, 50)
 
 	response, err := services.ListPurchaseOrders(services.PurchaseOrderListQuery{
-		Page:     page,
-		PageSize: pageSize,
-		Deleted:  false,
+		Page:            page,
+		PageSize:        pageSize,
+		Deleted:         false,
+		WithLines:       queryIncludesLines(c),
+		StatusFilterRaw: queryStatusFilter(c),
 	})
 	if err != nil {
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
@@ -177,19 +171,14 @@ func DeletePurchaseOrderHandler(c *gin.Context) {
 
 // GetDeletedPurchaseOrdersHandler 获取已作废的采购订单 (审计日志)
 func GetDeletedPurchaseOrdersHandler(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
+	page, pageSize := parsePageQuery(c, 50)
 
 	response, err := services.ListPurchaseOrders(services.PurchaseOrderListQuery{
-		Page:     page,
-		PageSize: pageSize,
-		Deleted:  true,
+		Page:            page,
+		PageSize:        pageSize,
+		Deleted:         true,
+		WithLines:       queryIncludesLines(c),
+		StatusFilterRaw: queryStatusFilter(c),
 	})
 	if err != nil {
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())

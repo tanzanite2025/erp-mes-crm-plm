@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 import type { MasterDataSearchResult } from '../../inventory'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import { auditUtils } from '@/lib/audit-utils'
-import type { ShipmentFormData, ShipmentFormUpdater } from '../data/schema'
+import type { ShipmentFormData, ShipmentFormMode, ShipmentFormUpdater } from '../data/schema'
 import type { WarehouseCategoryOption } from '../../category/data/schema'
 
 interface ShipmentDialogProps {
@@ -31,6 +31,7 @@ interface ShipmentDialogProps {
   formData: ShipmentFormData
   setFormData: (data: ShipmentFormUpdater) => void
   warehouseCategories: WarehouseCategoryOption[]
+  formMode: ShipmentFormMode
   onSubmit: (status: 'DRAFT' | 'COMMITTED') => void
   categoryStock: number
   inventoryBreakdown: Record<string, number>
@@ -45,6 +46,7 @@ export function ShipmentDialog({
   formData,
   setFormData,
   warehouseCategories,
+  formMode,
   onSubmit,
   categoryStock,
   inventoryBreakdown,
@@ -55,6 +57,10 @@ export function ShipmentDialog({
 
   if (!selectedItem) return null
 
+  const isVirtualLock = formMode === 'virtualLock'
+  const selectableCategories = isVirtualLock
+    ? warehouseCategories.filter((category) => category.value !== 'SHIPPING_VIRTUAL')
+    : warehouseCategories
   const remainingStock = (selectedItem.stock || 0) - (formData.quantity || 0)
   const isBelowSafety = alertThreshold > 0 && remainingStock < alertThreshold
 
@@ -73,7 +79,9 @@ export function ShipmentDialog({
               <Truck className='size-5 md:size-6 text-white' />
             </div>
             <div className='space-y-0.5 overflow-hidden'>
-              <h3 className='text-base md:text-lg font-black text-white tracking-widest uppercase italic truncate'>{t('warehouse.shipment.dialog.title')}</h3>
+              <h3 className='text-base md:text-lg font-black text-white tracking-widest uppercase italic truncate'>
+                {isVirtualLock ? '转入虚拟发货仓' : t('warehouse.shipment.dialog.title')}
+              </h3>
               <div className='flex items-center gap-2 truncate'>
                 <Badge className='bg-white/20 text-white border-none text-[7px] md:text-[8px] font-black uppercase tracking-widest px-1.5 h-3.5 rounded-full leading-none shrink-0'>{t('warehouse.shipment.dialog.masterNode')}</Badge>
                 <span className='text-blue-100/60 font-mono text-[8px] md:text-[9px] font-black uppercase tracking-widest truncate'>{selectedItem.name} ({selectedItem.code})</span>
@@ -103,7 +111,7 @@ export function ShipmentDialog({
                       <SelectValue placeholder={t('warehouse.shipment.dialog.selectArea')} />
                     </SelectTrigger>
                     <SelectContent className='rounded-2xl border-none shadow-2xl'>
-                      {warehouseCategories.map(cat => (
+                      {selectableCategories.map(cat => (
                         <SelectItem key={cat.value} value={cat.value} className='rounded-xl my-1 mx-1 focus:bg-blue-500 focus:text-white transition-colors'>
                           <div className='flex justify-between items-center w-full gap-8 pr-2'>
                             <span className='font-black text-[11px] uppercase tracking-widest'>{cat.label}</span>
@@ -243,18 +251,20 @@ export function ShipmentDialog({
               <Button variant='ghost' className='rounded-full px-4 md:px-6 text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all' onClick={() => onOpenChange(false)}>
                 {t('warehouse.shipment.dialog.exit')}
               </Button>
-              <Button
-                variant='outline'
-                className='rounded-full px-6 text-[9px] font-black uppercase tracking-widest gap-2 bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20 transition-all'
-                onClick={() => onSubmit('DRAFT')}
-              >
-                <Save className='size-3' /> {t('warehouse.shipment.dialog.saveDraft')}
-              </Button>
+              {!isVirtualLock && (
+                <Button
+                  variant='outline'
+                  className='rounded-full px-6 text-[9px] font-black uppercase tracking-widest gap-2 bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20 transition-all'
+                  onClick={() => onSubmit('DRAFT')}
+                >
+                  <Save className='size-3' /> {t('warehouse.shipment.dialog.saveDraft')}
+                </Button>
+              )}
               <Button
                 className='rounded-full px-8 text-[9px] font-black uppercase tracking-widest gap-2 bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all transform active:scale-95 text-white'
                 onClick={() => onSubmit('COMMITTED')}
               >
-                <Send className='size-3' /> {t('warehouse.shipment.dialog.commit')}
+                <Send className='size-3' /> {isVirtualLock ? '转入虚拟发货仓' : t('warehouse.shipment.dialog.commit')}
               </Button>
             </div>
           </div>
@@ -271,7 +281,7 @@ export function ShipmentDialog({
             </div>
 
             <div className='space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar'>
-              {warehouseCategories.map((cat) => {
+              {selectableCategories.map((cat) => {
                 const stock = inventoryBreakdown[cat.value] || 0
                 const isSelected = formData.sourceCategory === cat.value
                 return (

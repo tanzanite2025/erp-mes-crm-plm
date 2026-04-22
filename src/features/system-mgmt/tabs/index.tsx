@@ -6,9 +6,8 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { toast } from 'sonner'
-import { UserRightsDesktopMatrix } from './components/user-rights-desktop-matrix'
 import { UserRightsHeader } from './components/user-rights-header'
-import { UserRightsMobileTree } from './components/user-rights-mobile-tree'
+import { UserRightsPermissionPanel } from './components/user-rights-permission-panel'
 import { UserRightsRoleSelector } from './components/user-rights-role-selector'
 import { flattenOrgRoleOptions, formatPermissionLabel, buildPermissionTree } from './components/user-rights-utils'
 import type { OrgRoleOption } from './components/user-rights-types'
@@ -20,15 +19,11 @@ export function UserRights() {
     roles,
     permissions,
     error,
-    updateRoleLabel,
-    applyPermissionTreeToggle,
+    updateRolePermissions,
     addRole,
     deleteRole,
-    isRenamable,
   } = useRoles()
-  const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
   const [selectedRoleId, setSelectedRoleId] = useState<string>('admin')
-  const [tempLabel, setTempLabel] = useState('')
   const [isAddingMode, setIsAddingMode] = useState(false)
   const [newRoleId, setNewRoleId] = useState('')
   const [orgNodes, setOrgNodes] = useState<OrgRoleOption[]>([])
@@ -89,15 +84,6 @@ export function UserRights() {
     }
   }, [permissionTree])
 
-  const saveLabel = (roleId: string) => {
-    if (!isRenamable(roleId)) {
-      setEditingRoleId(null)
-      return
-    }
-    if (tempLabel.trim()) updateRoleLabel(roleId, tempLabel.trim())
-    setEditingRoleId(null)
-  }
-
   const handleAddRole = () => {
     if (!newRoleId) return
     const [id, label] = newRoleId.split('|')
@@ -105,8 +91,8 @@ export function UserRights() {
     if (roles.some((role) => role.id.trim().toLowerCase() === id.trim().toLowerCase())) {
       toast.error(
         locale === 'zh-CN'
-          ? `部门角色“${label}”已导入，请直接修改现有角色矩阵。`
-          : `Department role "${label}" is already imported.`,
+          ? `账号角色“${label}”已导入，请直接修改现有角色权限。`
+          : `Account role "${label}" is already imported.`,
       )
       setIsAddingMode(false)
       setNewRoleId('')
@@ -133,8 +119,8 @@ export function UserRights() {
   const deleteRoleDialogDesc = pendingDeleteRole
     ? pendingDeleteRole.id.trim().toLowerCase().startsWith('org_')
       ? locale === 'zh-CN'
-        ? `即将删除部门角色“${pendingDeleteRole.label}”。删除后，该部门账号会失去对应访问范围，相关员工登录后可能无法进入原有页面。请先确认该部门已经切换到新的角色标识。`
-        : `You are deleting department role "${pendingDeleteRole.label}". After deletion, accounts in that department will lose the mapped access scope and may no longer access their current pages. Confirm the department has been reassigned first.`
+        ? `即将删除账号角色“${pendingDeleteRole.label}”。删除后，使用该角色的账号会失去对应访问范围，相关用户登录后可能无法进入原有页面。请先确认这些账号已经切换到新的角色标识。`
+        : `You are deleting account role "${pendingDeleteRole.label}". After deletion, accounts using this role will lose the mapped access scope and may no longer access their current pages. Confirm those accounts have been reassigned first.`
       : locale === 'zh-CN'
         ? `即将删除角色“${pendingDeleteRole.label}”。删除后，引用该角色的账号将失去对应权限。`
         : `You are deleting role "${pendingDeleteRole.label}". Accounts referencing this role will lose the mapped permissions.`
@@ -179,39 +165,15 @@ export function UserRights() {
         onSelectRole={setSelectedRoleId}
       />
 
-      <UserRightsDesktopMatrix
-        roles={roles}
-        permissionTree={permissionTree}
-        rootActionPermissions={rootActionPermissions}
-        editingRoleId={editingRoleId}
-        tempLabel={tempLabel}
-        expandedModuleIds={expandedModuleIds}
-        formatPermissionLabel={formatPermissionLabel}
-        isRenamable={isRenamable}
-        canDeleteRoles={canDeleteRoles}
-        onTempLabelChange={setTempLabel}
-        onStartEditing={(roleId, label) => {
-          if (!isRenamable(roleId)) return
-          setEditingRoleId(roleId)
-          setTempLabel(label)
-        }}
-        onSaveLabel={saveLabel}
-        onDeleteRole={setPendingDeleteRoleId}
-        onApplyPermissionTreeToggle={applyPermissionTreeToggle}
-        onToggleModuleExpanded={toggleModuleExpanded}
-        onExpandAll={() => setExpandedModuleIds(permissionTree.map(({ module }) => module.id))}
-        onCollapseAll={() => setExpandedModuleIds([])}
-      />
-
-      <UserRightsMobileTree
-        selectedRoleId={selectedRoleId}
+      <UserRightsPermissionPanel
         currentRole={currentRole}
-        isMobileSuperRole={canDeleteRoles}
         permissionTree={permissionTree}
         rootActionPermissions={rootActionPermissions}
         expandedModuleIds={expandedModuleIds}
         formatPermissionLabel={formatPermissionLabel}
-        onApplyPermissionTreeToggle={applyPermissionTreeToggle}
+        canDeleteRoles={canDeleteRoles}
+        onDeleteRole={setPendingDeleteRoleId}
+        onSavePermissions={updateRolePermissions}
         onToggleModuleExpanded={toggleModuleExpanded}
         onExpandAll={() => setExpandedModuleIds(permissionTree.map(({ module }) => module.id))}
         onCollapseAll={() => setExpandedModuleIds([])}

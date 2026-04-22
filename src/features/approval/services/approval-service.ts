@@ -10,58 +10,62 @@ export interface ApprovalUserOption {
   status?: string
 }
 
-export interface ApprovalConfig {
+export interface ApprovalUserRef {
   id: string
-  module: string
-  action: string
-  approver1Id: string
-  approver1?: any
-  approver2Id?: string
-  approver2?: any
-  isActive: boolean
-  description?: string
+  username?: string
+  firstName?: string
+  lastName?: string
 }
 
 export interface ApprovalRequest {
   id: string
-  configId: string
-  config?: ApprovalConfig
   requesterId: string
-  requester?: any
+  requester?: ApprovalUserRef
   targetId: string
   reason: string
+  approver1Id?: string
+  approver2Id?: string
   currentLevel: number
-  status: 'PENDING' | 'APPROVED_L1' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CONSUMED'
+  status:
+    | 'PENDING'
+    | 'APPROVED_L1'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'EXPIRED'
+    | 'CONSUMED'
   authCode?: string
   expiresAt?: string
   module: string
   action: string
   createdAt: string
-  delta?: any // SDRTS 格式的差量快照
-  targetVersion?: number // 被审批实体的目标版次
+  delta?: unknown
+  targetVersion?: number
 }
 
 export const ApprovalService = {
-  getConfigs: () => apiFetch<ApprovalConfig[]>('/approvals/configs'),
   fetchUserOptions: () => apiFetch<ApprovalUserOption[]>('/users?options=true'),
-  
-  saveConfig: (config: Partial<ApprovalConfig>) => 
-    apiFetch('/approvals/configs', {
-      method: 'POST',
-      body: JSON.stringify(config)
-    }),
 
-  requestApproval: (data: { module: string; action: string; targetId: string; reason: string }) =>
+  requestApproval: (data: {
+    module: string
+    action: string
+    targetId: string
+    reason: string
+    approver1Id?: string
+    approver2Id?: string
+  }) =>
     apiFetch<ApprovalRequest>('/approvals/request', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     }),
 
   getMyApprovals: () => apiFetch<ApprovalRequest[]>('/approvals/my'),
 
-  approveRequest: (id: string, data: { status: 'APPROVED' | 'REJECTED'; authCode?: string }) =>
+  approveRequest: (
+    id: string,
+    data: { status: 'APPROVED' | 'REJECTED'; authCode?: string }
+  ) =>
     apiFetch(`/approvals/${id}/approve`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
-    })
+      body: JSON.stringify(data),
+    }),
 }

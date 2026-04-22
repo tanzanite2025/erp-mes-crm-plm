@@ -16,8 +16,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DMPreview } from '../components/dm-preview'
+import { type AppearanceMapping } from '../data/appearance-mapping'
 import { type ProductType, type Product } from '@/features/engineering/data/schema'
-import { type AppearanceMapping } from './appearance-action-dialog'
 import { useLanguage } from '@/context/language-provider'
 
 interface DMSimulationSectionProps {
@@ -123,11 +123,11 @@ export function DMSimulationSection({
 
     return (
         <div className={cn(
-            'rounded-[2rem] border p-4 md:p-8 lg:p-10 shadow-2xl relative overflow-hidden group transition-all duration-500',
+            'rounded-4xl border p-4 md:p-8 lg:p-10 shadow-2xl relative overflow-hidden group transition-all duration-500',
             'bg-white border-slate-200 shadow-slate-200/50',
             'dark:bg-slate-950 dark:border-white/5 dark:shadow-none',
         )}>
-            <div className='absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_70%_30%,_var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent dark:opacity-20 opacity-10' />
+            <div className='absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_70%_30%,var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent dark:opacity-20' />
 
             <div className='relative z-10 space-y-10'>
                 <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6'>
@@ -135,7 +135,7 @@ export function DMSimulationSection({
                         <div className='text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-blue-600/60 dark:text-blue-400/60'>
                             <ShieldCheck className='size-3.5' /> {t('basicSettings.dmNumbering.simulation.title' as any)} <span>{previewOutputLabel}</span>
                         </div>
-                        <h3 className='text-lg lg:text-2xl font-black tracking-tight leading-tight whitespace-normal break-words text-slate-900 dark:text-white'>
+                        <h3 className='text-lg lg:text-2xl font-black tracking-tight leading-tight whitespace-normal wrap-break-word text-slate-900 dark:text-white'>
                             {parsedResult?.display?.fullDescription || t('basicSettings.dmNumbering.simulation.placeholder' as any)}
                         </h3>
                         <p className='text-[10px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] italic'>{t('basicSettings.dmNumbering.simulation.subtitle' as any)}</p>
@@ -162,12 +162,12 @@ export function DMSimulationSection({
                     <div className={cn(
                         'lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5 p-6 rounded-3xl transition-colors',
                         'bg-slate-50 border-slate-200',
-                        'dark:bg-white/[0.02] dark:border-white/5',
+                        'dark:bg-white/2 dark:border-white/5',
                     )}>
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.year' as any)}</label>
                             <Select value={mockInputs.year} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, year: value }))}>
-                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20'>
+                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20'>
                                     <SelectValue placeholder='YEAR_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -181,7 +181,7 @@ export function DMSimulationSection({
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.month' as any)}</label>
                             <Select value={mockInputs.month} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, month: value }))}>
-                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20'>
+                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20'>
                                     <SelectValue placeholder='MONTH_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -195,7 +195,7 @@ export function DMSimulationSection({
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.category' as any)}</label>
                             <Select value={mockInputs.category} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, category: value }))}>
-                                <SelectTrigger className='w-full bg-blue-500/5 border-blue-500/20 rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20 text-blue-600 dark:text-blue-400'>
+                                <SelectTrigger className='w-full bg-blue-500/5 border-blue-500/20 rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20 text-blue-600 dark:text-blue-400'>
                                     <SelectValue placeholder='CAT_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -212,7 +212,7 @@ export function DMSimulationSection({
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.model' as any)}</label>
                             <Select value={mockInputs.model} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, model: value }))}>
-                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20'>
+                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20'>
                                     <SelectValue placeholder='MODEL_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -229,7 +229,7 @@ export function DMSimulationSection({
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.appearance' as any)}</label>
                             <Select value={mockInputs.appearance} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, appearance: value }))}>
-                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20'>
+                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20'>
                                     <SelectValue placeholder='APP_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -245,7 +245,7 @@ export function DMSimulationSection({
                         <div className='space-y-2'>
                             <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>{t('basicSettings.dmNumbering.simulation.form.holes' as any)}</label>
                             <Select value={mockInputs.holes} onValueChange={(value) => setMockInputs((prev: any) => ({ ...prev, holes: value }))}>
-                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold focus:ring-blue-500/20'>
+                                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold focus:ring-blue-500/20'>
                                     <SelectValue placeholder='HOLE_SELECT' />
                                 </SelectTrigger>
                                 <SelectContent className='bg-popover border-input'>
@@ -265,7 +265,7 @@ export function DMSimulationSection({
                                 <div className={cn(
                                     'flex-1 border rounded-xl h-11 flex items-center px-4 font-mono font-black tracking-widest shadow-inner transition-colors',
                                     'bg-white border-slate-200 text-blue-600',
-                                    'dark:bg-white/[0.03] dark:border-white/10 dark:text-blue-400',
+                                    'dark:bg-white/3 dark:border-white/10 dark:text-blue-400',
                                 )}>
                                     {mockInputs.serial || t('basicSettings.dmNumbering.simulation.form.notIssued' as any)}
                                 </div>
@@ -286,9 +286,9 @@ export function DMSimulationSection({
                                     <ShieldCheck className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.dmNumbering.simulation.form.specialPrefix' as any)}
                                 </label>
                                 <div className={cn(
-                                    'flex items-center gap-3 p-2.5 rounded-xl border !h-11 transition-colors',
+                                    'flex items-center gap-3 p-2.5 rounded-xl border h-11! transition-colors',
                                     'bg-white border-slate-200',
-                                    'dark:bg-white/[0.02] dark:border-white/10',
+                                    'dark:bg-white/2 dark:border-white/10',
                                 )}>
                                     <span className='text-[10px] font-bold text-muted-foreground uppercase'>{t('basicSettings.dmNumbering.simulation.form.enableHPrefix' as any)}</span>
                                     <div
@@ -305,9 +305,9 @@ export function DMSimulationSection({
                                     <ChevronRight className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.dmNumbering.simulation.form.suffixWheel' as any)}
                                 </label>
                                 <div className={cn(
-                                    'flex p-1 border rounded-xl !h-11 items-center transition-colors',
+                                    'flex p-1 border rounded-xl h-11! items-center transition-colors',
                                     'bg-white border-slate-200',
-                                    'dark:bg-white/[0.02] dark:border-white/10',
+                                    'dark:bg-white/2 dark:border-white/10',
                                 )}>
                                     {[
                                         { label: t('basicSettings.dmNumbering.simulation.form.wheelOptions.F' as any), value: 'F' },
@@ -335,7 +335,7 @@ export function DMSimulationSection({
                                     <Database className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.dmNumbering.simulation.form.suffixScope' as any)}
                                 </label>
                                 <Input
-                                    className='!h-11 border-slate-200 dark:bg-white/[0.02] dark:border-white/10 rounded-xl font-black text-blue-600 dark:text-blue-400 placeholder:text-slate-300 dark:placeholder:text-slate-700 focus-visible:ring-blue-500/20'
+                                    className='h-11! border-slate-200 dark:bg-white/2 dark:border-white/10 rounded-xl font-black text-blue-600 dark:text-blue-400 placeholder:text-slate-300 dark:placeholder:text-slate-700 focus-visible:ring-blue-500/20'
                                     placeholder={t('basicSettings.dmNumbering.simulation.form.scopePlaceholder' as any)}
                                     value={mockInputs.scopeCode}
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -364,7 +364,7 @@ export function DMSimulationSection({
                             <div className={cn(
                                 'p-5 rounded-2xl border space-y-3 transition-colors',
                                 'bg-slate-50 border-slate-200',
-                                'dark:bg-white/[0.04] dark:border-white/10',
+                                'dark:bg-white/4 dark:border-white/10',
                             )}>
                                 <div className='flex items-center gap-2 mb-2'>
                                     <ShieldCheck className='size-3.5 text-blue-600 dark:text-blue-400' />

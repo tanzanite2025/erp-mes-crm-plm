@@ -10,6 +10,11 @@ import {
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 
+interface ReorderProductAttributeOptionsInput {
+  categoryKey: string
+  ids: string[]
+}
+
 export function useProductAttributeWriteActions() {
   const queryClient = useQueryClient()
 
@@ -31,6 +36,16 @@ export function useProductAttributeWriteActions() {
     },
   })
 
+  const reorderCategoriesMutation = useMutation({
+    mutationFn: ProductAttributeCategoryService.reorderProductAttributeCategories,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY })
+    },
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY })
+    },
+  })
+
   const saveOptionMutation = useMutation({
     mutationFn: (option: SaveProductAttributeOptionInput) =>
       ProductAttributeOptionService.saveProductAttributeOption(option),
@@ -46,14 +61,29 @@ export function useProductAttributeWriteActions() {
     },
   })
 
+  const reorderOptionsMutation = useMutation({
+    mutationFn: ({ categoryKey, ids }: ReorderProductAttributeOptionsInput) =>
+      ProductAttributeOptionService.reorderProductAttributeOptions(categoryKey, ids),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY })
+    },
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY })
+    },
+  })
+
   return {
     saveCategory: saveCategoryMutation.mutateAsync,
     deleteCategory: deleteCategoryMutation.mutateAsync,
+    reorderCategories: reorderCategoriesMutation.mutateAsync,
     saveOption: saveOptionMutation.mutateAsync,
     deleteOption: deleteOptionMutation.mutateAsync,
+    reorderOptions: reorderOptionsMutation.mutateAsync,
     isSavingCategory: saveCategoryMutation.isPending,
     isDeletingCategory: deleteCategoryMutation.isPending,
+    isReorderingCategories: reorderCategoriesMutation.isPending,
     isSavingOption: saveOptionMutation.isPending,
     isDeletingOption: deleteOptionMutation.isPending,
+    isReorderingOptions: reorderOptionsMutation.isPending,
   }
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { productionPlanStatuses } from './production-plan-status'
 
 export const workflowNodeStatusSchema = z.enum(['PENDING', 'ACTIVE', 'DONE', 'REJECTED'])
 export type WorkflowNodeStatus = z.infer<typeof workflowNodeStatusSchema>
@@ -61,7 +62,7 @@ export const productionPlanSchema = z.object({
     nodes: z.array(workflowNodeSchema),
     edges: z.array(workflowEdgeSchema).default([]), // 新增：流转连线
     currentStepIndex: z.number().default(0),
-    status: z.enum(['PLANNING', 'IN_PROGRESS', 'COMPLETED', 'CANCELED']).default('PLANNING'),
+    status: z.enum(productionPlanStatuses).default('SCHEDULED'),
     createdAt: z.string(),
     updatedAt: z.string(),
 })

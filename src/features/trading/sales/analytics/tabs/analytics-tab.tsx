@@ -8,16 +8,19 @@ import {
   Package, 
   ArrowUpRight
 } from 'lucide-react'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
+import { Route } from '@/routes/_authenticated/sales-analysis/orders-analysis'
 import { useSalesAnalytics, useGlobalProductRanking } from '../hooks/use-sales-analytics'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function OrdersAnalysisTab() {
   const { t, locale } = useLanguage()
+  const search = Route.useSearch()
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all')
   
   const { data: analytics, isLoading: isAnalyticsLoading } = useSalesAnalytics({
@@ -43,13 +46,33 @@ export function OrdersAnalysisTab() {
     () => analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0) || 0,
     [analytics]
   )
+  const timeRangeLabel = search.timeRange === 'last_30_days'
+    ? (locale === 'zh-CN' ? '最近 30 天' : 'Last 30 days')
+    : search.timeRange
 
   if (isAnalyticsLoading || isRankingLoading) {
     return <div className="p-8 space-y-4"><Skeleton className="h-48 w-full rounded-[32px]" /></div>
   }
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700 mt-4">
+    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+      <PageHeader
+        icon={BarChart3}
+        title={locale === 'zh-CN' ? '订单分析' : 'Orders Analysis'}
+        description={
+          locale === 'zh-CN'
+            ? '按客户、产品与订单行聚合销售表现，快速定位热销产品和客户结构。'
+            : 'Aggregate sales performance by customer, product, and order lines to identify hot products and customer mix.'
+        }
+      >
+        <div className='flex items-center gap-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-2 shadow-inner md:rounded-2xl md:px-5 md:py-2.5'>
+          <div className='size-1.5 rounded-full bg-primary' />
+          <span className='text-[9px] font-black uppercase tracking-widest text-primary md:text-[10px]'>
+            {timeRangeLabel}
+          </span>
+        </div>
+      </PageHeader>
+
       {/* Header KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-[32px] border-dashed bg-blue-500/5 p-6 border-blue-500/20 relative overflow-hidden group">

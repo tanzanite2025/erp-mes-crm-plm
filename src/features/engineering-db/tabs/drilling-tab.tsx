@@ -1,280 +1,41 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-    flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    type ColumnDef,
-    useReactTable,
-} from '@tanstack/react-table'
-import { useSearch } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
-import { Search, Plus, Edit, Trash2, Target, Eye, Hash, Calendar, Layers } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Target } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
-import { DataTablePagination } from '@/components/data-table'
-import { Badge } from '@/components/ui/badge'
-import { type DrillingPlan, type DrillingPlanInput } from '../data/schema'
-import { ProductionDBService } from '../services/production-db-service'
-import { FileResolverService } from '../services/file-resolver-service'
 import { DrillingActionDialog } from '../components/drilling-action-dialog'
 import { CADViewerDialog } from '../components/cad-viewer'
 import { PDFViewerDialog } from '../components/pdf-viewer'
 import { ExcelViewerDialog } from '../components/excel-viewer'
-import { toast } from 'sonner'
-import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
-import { ENGINEERING_DB_DRILLING_QUERY_KEY } from '../query-keys'
-import { useEngineeringDbProductLookup } from '../hooks/use-engineering-db-product-lookup'
-import {
-    getEngineeringDbFileVisual,
-    getEngineeringDbPreviewKind,
-} from '../view-helpers'
-
-type DrillingRowViewModel = {
-    item: DrillingPlan
-    productSku: string | null
-    productName: string | null
-    searchText: string
-}
+import { DrillingToolbar } from '../components/drilling-toolbar'
+import { DrillingTableCard } from '../components/drilling-table-card'
+import { DrillingMobileList } from '../components/drilling-mobile-list'
+import { useDrillingPageState } from '../hooks/use-drilling-page-state'
 
 export function DrillingTab() {
     const { t } = useLanguage()
-    const queryClient = useQueryClient()
-    const { runConfirmedAction } = useConfirmedActionFlow()
-    const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/drilling' })
-    const { productMap } = useEngineeringDbProductLookup()
-    const [searchTerm, setSearchTerm] = useState('')
-    const [open, setOpen] = useState(false)
-    const [currentRow, setCurrentRow] = useState<DrillingPlan | undefined>(undefined)
-
-    const [cadPreviewOpen, setCadPreviewOpen] = useState(false)
-    const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
-    const [excelPreviewOpen, setExcelPreviewOpen] = useState(false)
-    const [previewFile, setPreviewFile] = useState<{ url: string; name: string; sku?: string } | null>(null)
-
-    const { data = [], isLoading } = useQuery({
-        queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY,
-        queryFn: () => ProductionDBService.getDrilling(),
-    })
-
-    const saveMutation = useMutation({
-        mutationFn: async (params: {
-            data: DrillingPlanInput
-            isPatch: boolean
-            delta?: any
-            version?: number
-        }) => {
-            const { data: formData, isPatch, delta, version } = params
-            if (isPatch && delta) {
-                if (!currentRow?.id) return
-                await ProductionDBService.patchDrilling(currentRow.id, delta, version!)
-                return
-            }
-            await ProductionDBService.saveDrillingItem(formData)
-        },
-        onSuccess: async (_result, variables) => {
-            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
-            setOpen(false)
-            setCurrentRow(undefined)
-            toast.success(
-                variables.isPatch
-                    ? t('engineering.drilling.toasts.updateSuccess')
-                    : t('engineering.drilling.toasts.saveSuccess')
-            )
-        },
-    })
-
-    const deleteMutation = useMutation({
-        mutationFn: (id: string) => ProductionDBService.deleteDrilling(id),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_DRILLING_QUERY_KEY })
-            toast.success(t('engineering.drilling.toasts.deleteSuccess'))
-        },
-    })
-
-    useEffect(() => {
-        return () => {
-            if (previewFile?.url.startsWith('blob:')) {
-                URL.revokeObjectURL(previewFile.url)
-            }
-        }
-    }, [previewFile?.url])
-
-    const filteredData = useMemo(() => {
-        const rows = data.map<DrillingRowViewModel>((item) => {
-            const product = productMap.get(item.productId)
-            return {
-                item,
-                productSku: product?.sku || null,
-                productName: product?.name || null,
-                searchText: [
-                    item.name,
-                    product?.sku || '',
-                    product?.name || '',
-                    item.lacingPattern || '',
-                    item.standardHoles || '',
-                ].join(' ').toLowerCase(),
-            }
-        })
-
-        const searchStr = searchTerm.trim().toLowerCase()
-        if (!searchStr) {
-            return rows
-        }
-
-        return rows.filter((row) => row.searchText.includes(searchStr))
-    }, [data, productMap, searchTerm])
-
-    const handlePreview = async (item: DrillingPlan) => {
-        if (!item.fileUrl) {
-            toast.error(t('engineering.drilling.toasts.noFile'))
-            return
-        }
-
-        const resolvedUrl = await FileResolverService.resolveFileUrl(item.fileUrl)
-        if (!resolvedUrl) {
-            toast.error(t('engineering.drilling.toasts.unResolved'))
-            return
-        }
-
-        const product = productMap.get(item.productId)
-        setPreviewFile({
-            url: resolvedUrl,
-            name: item.name,
-            sku: product?.sku
-        })
-
-        const previewKind = getEngineeringDbPreviewKind(item.fileExtension)
-        if (previewKind === 'cad') {
-            setCadPreviewOpen(true)
-        } else if (previewKind === 'excel') {
-            setExcelPreviewOpen(true)
-        } else {
-            setPdfPreviewOpen(true)
-        }
-    }
-
-    const columns: ColumnDef<DrillingRowViewModel>[] = [
-        {
-            accessorKey: 'item.name',
-            header: t('engineering.drilling.table.name'),
-            cell: ({ row }) => {
-                const fileVisual = getEngineeringDbFileVisual({ extension: row.original.item.fileExtension, category: 'DRILLING' })
-                const Icon = fileVisual.icon
-                return (
-                    <div className='flex items-center gap-3'>
-                        <div className={`size-10 rounded-lg border ${fileVisual.containerClassName} flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
-                            <Icon className={`size-5 ${fileVisual.iconClassName}`} />
-                        </div>
-                        <div className='flex flex-col'>
-                            <span className='font-bold text-sm text-foreground'>{row.original.item.name}</span>
-                            <div className='flex items-center gap-2 mt-1'>
-                                <Badge variant='outline' className='text-[10px] h-4 px-1.5 py-0 bg-muted/50 text-muted-foreground uppercase font-mono font-bold border-none'>
-                                    {row.original.item.fileExtension || 'PDF'}
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-        },
-        {
-            header: t('engineering.drilling.table.product'),
-            cell: ({ row }) => {
-                return (
-                    <div className='flex flex-col'>
-                        <span className='text-[12px] font-bold text-indigo-600 font-mono'>
-                            {row.original.productSku || 'UNKNOWN'}
-                        </span>
-                        <span className='text-[10px] text-muted-foreground mt-0.5 truncate max-w-[150px]'>
-                            {row.original.productName || t('engineering.drilling.table.unlinked')}
-                        </span>
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: 'item.lacingPattern',
-            header: t('engineering.drilling.table.lacing'),
-            cell: ({ row }) => (
-                <Badge variant='outline' className='bg-indigo-50 text-indigo-700 border-indigo-200 font-mono text-[10px] h-5'>
-                    {row.original.item.lacingPattern || '--'}
-                </Badge>
-            )
-        },
-        {
-            accessorKey: 'item.standardHoles',
-            header: t('engineering.drilling.table.holes'),
-            cell: ({ row }) => (
-                <span className='font-bold text-sm text-foreground italic'>
-                    {row.original.item.standardHoles ? `${row.original.item.standardHoles}H` : '--'}
-                </span>
-            )
-        },
-        {
-            accessorKey: 'item.createdAt',
-            header: t('engineering.drilling.table.date'),
-            cell: ({ row }) => (
-                <span className='font-mono text-[11px] text-muted-foreground font-medium'>
-                    {row.original.item.createdAt ? new Date(row.original.item.createdAt).toLocaleDateString() : 'N/A'}
-                </span>
-            )
-        },
-        {
-            id: 'actions',
-            header: t('engineering.drilling.table.actions'),
-            cell: ({ row }) => (
-                <div className='flex items-center gap-1'>
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={() => handlePreview(row.original.item)}><Eye className='size-3.5' /></Button>
-                    <div className='w-px h-4 bg-border mx-1' />
-                    <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={() => { setCurrentRow(row.original.item); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                    <Button
-                        variant='ghost'
-                        size='icon'
-                        className='size-8 rounded-full text-destructive hover:bg-destructive/10'
-                        onClick={() => runConfirmedAction({
-                            confirmKey: 'engineering.drilling.toasts.deleteConfirm',
-                            onAction: async () => {
-                                await deleteMutation.mutateAsync(row.original.item.id)
-                            }
-                        })}
-                    >
-                        <Trash2 className='size-3.5' />
-                    </Button>
-                </div>
-            )
-        }
-    ]
-
-    const table = useReactTable({
-        data: filteredData,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-    })
-
-    const handleSave = async (params: {
-        data: DrillingPlanInput
-        isPatch: boolean
-        delta?: any
-        version?: number
-    }) => {
-        await saveMutation.mutateAsync(params)
-    }
+    const {
+        searchTerm,
+        setSearchTerm,
+        open,
+        setOpen,
+        currentRow,
+        filteredRows,
+        isLoading,
+        isSaving,
+        highlightId,
+        previewFile,
+        cadPreviewOpen,
+        setCadPreviewOpen,
+        pdfPreviewOpen,
+        setPdfPreviewOpen,
+        excelPreviewOpen,
+        setExcelPreviewOpen,
+        handleCreate,
+        handleEdit,
+        handleDelete,
+        handlePreview,
+        handleSave,
+    } = useDrillingPageState()
 
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
@@ -295,161 +56,18 @@ export function DrillingTab() {
                 </div>
             </div>
 
-            <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
-                <div className='relative w-full sm:w-96 group'>
-                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-indigo-600 transition-colors' />
-                    <Input
-                        placeholder={t('engineering.drilling.placeholders.search')}
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-indigo-600/20 w-full'
-                    />
-                </div>
-                <Button
-                    onClick={() => { setCurrentRow(undefined); setOpen(true); }}
-                    className='w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-white gap-2 transition-all active:scale-95'
-                >
-                    <Plus className='size-4' /> {t('engineering.drilling.table.upload')}
-                </Button>
-            </div>
+            <DrillingToolbar searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onCreate={handleCreate} />
 
-            <Card className='hidden md:block border border-dashed border-muted/50 shadow-none bg-background overflow-hidden rounded-[24px]'>
-                <CardContent className='p-0'>
-                    <Table>
-                        <TableHeader className='bg-muted/30 h-14'>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id} className='hover:bg-transparent border-b border-dashed border-muted/50'>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id} className='text-[10px] font-black uppercase tracking-widest px-6 text-muted-foreground/50'>
-                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                        </TableHead>
-                                    ))}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow><TableCell colSpan={columns.length} className='h-64 text-center'>{t('common.status.syncing')}</TableCell></TableRow>
-                            ) : table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        onClick={() => handlePreview(row.original.item)}
-                                        className={cn(
-                                            'group hover:bg-muted/5 transition-colors border-b border-dashed border-muted/50 last:border-0 h-16 cursor-pointer',
-                                            row.original.item.id === highlightId && 'bg-primary/5 animate-pulse border-2 border-primary/20 shadow-inner'
-                                        )}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className='px-6'>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow><TableCell colSpan={columns.length} className='h-64 text-center text-muted-foreground/30'>{t('engineering.drilling.table.empty')}</TableCell></TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <DrillingTableCard rows={filteredRows} isLoading={isLoading} highlightId={highlightId} onPreview={handlePreview} onEdit={handleEdit} onDelete={handleDelete} />
 
-            <div className='md:hidden flex flex-col gap-4'>
-                {isLoading ? (
-                    <div className='p-12 text-center text-[10px] font-black italic uppercase text-muted-foreground animate-pulse'>{t('engineering.drilling.placeholders.mobileLoading')}</div>
-                ) : filteredData.length === 0 ? (
-                    <div className='p-12 text-center bg-muted/5 rounded-[28px] border border-dashed border-muted-foreground/50 italic text-[10px] text-muted-foreground opacity-40 uppercase'>{t('engineering.drilling.placeholders.noData')}</div>
-                ) : (
-                    filteredData.map((row) => {
-                        const item = row.item
-                        const fileVisual = getEngineeringDbFileVisual({ extension: item.fileExtension, category: 'DRILLING' })
-                        const Icon = fileVisual.icon
-                        return (
-                            <div
-                                key={item.id}
-                                onClick={() => handlePreview(item)}
-                                className={cn(
-                                    'p-5 rounded-[28px] border border-dashed border-muted/50 bg-background/50 active:scale-[0.98] transition-all relative overflow-hidden group',
-                                    item.id === highlightId && 'bg-indigo-500/5 ring-2 ring-indigo-500/20 animate-pulse'
-                                )}
-                            >
-                                <div className='absolute top-0 right-0 p-4 opacity-10'>
-                                    <Icon className={cn('size-16', fileVisual.iconClassName)} />
-                                </div>
-
-                                <div className='flex flex-col gap-4'>
-                                    <div className='flex items-center justify-between'>
-                                        <div className={cn('size-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm', fileVisual.containerClassName)}>
-                                            <Icon className={cn('size-5', fileVisual.iconClassName)} />
-                                        </div>
-                                        <Badge variant='outline' className='text-[10px] font-black italic font-mono bg-indigo-500/10 border-none text-indigo-600 px-3 rounded-full h-5 leading-none'>
-                                            {row.productSku || 'GENERIC'}
-                                        </Badge>
-                                    </div>
-
-                                    <div>
-                                        <h4 className='text-sm font-black tracking-tight leading-tight group-active:text-indigo-600 transition-colors line-clamp-2'>{item.name}</h4>
-                                        <div className='flex flex-wrap items-center gap-2 mt-3 font-black uppercase tracking-widest'>
-                                            <div className='flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/50 text-[9px] text-muted-foreground'>
-                                                <Layers className='size-3 opacity-40' />
-                                                {item.lacingPattern || 'Std'}
-                                            </div>
-                                            <div className='flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/5 text-[9px] text-indigo-600'>
-                                                <Target className='size-3 opacity-40' />
-                                                {item.standardHoles || '??'}H
-                                            </div>
-                                            <div className='size-1 rounded-full bg-muted-foreground/20' />
-                                            <div className='flex items-center gap-1 text-[9px] text-muted-foreground/60 italic font-mono'>
-                                                <Hash className='size-2.5 opacity-30' />
-                                                {item.id.split('-').pop()}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className='flex items-center justify-between pt-3 border-t border-dashed border-muted-foreground/10'>
-                                        <div className='flex items-center gap-2 text-[9px] text-muted-foreground/40 font-medium italic'>
-                                            <Calendar className='size-3 opacity-30' />
-                                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}
-                                        </div>
-                                        <div className='flex items-center gap-1'>
-                                            <Button variant='ghost' size='icon' className='size-8 rounded-full hover:bg-orange-500/10 hover:text-orange-500' onClick={(e) => { e.stopPropagation(); handlePreview(item); }}><Eye className='size-4' /></Button>
-                                            <Button variant='ghost' size='icon' className='size-8 rounded-full' onClick={(e) => { e.stopPropagation(); setCurrentRow(item); setOpen(true); }}><Edit className='size-3.5' /></Button>
-                                            <Button
-                                                variant='ghost'
-                                                size='icon'
-                                                className='size-8 rounded-full text-destructive/40'
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    runConfirmedAction({
-                                                        confirmKey: 'engineering.drilling.toasts.deleteConfirm',
-                                                        onAction: async () => {
-                                                            await deleteMutation.mutateAsync(item.id)
-                                                        }
-                                                    })
-                                                }}
-                                            >
-                                                <Trash2 className='size-3.5' />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    })
-                )}
-            </div>
-
-            <div className='pt-2'>
-                <DataTablePagination table={table} />
-            </div>
+            <DrillingMobileList rows={filteredRows} isLoading={isLoading} highlightId={highlightId} onPreview={handlePreview} onEdit={handleEdit} onDelete={handleDelete} />
 
             <DrillingActionDialog
                 open={open}
                 onOpenChange={setOpen}
                 currentRow={currentRow}
                 onSave={handleSave}
-                isLoading={saveMutation.isPending}
+                isLoading={isSaving}
             />
             <CADViewerDialog open={cadPreviewOpen} onOpenChange={setCadPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />
             <PDFViewerDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen} fileUrl={previewFile?.url || ''} fileName={previewFile?.name || ''} sku={previewFile?.sku} />

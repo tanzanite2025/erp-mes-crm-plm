@@ -20,28 +20,6 @@ const (
 	SettlementRecordStatusVoided    = "VOIDED"
 )
 
-type ReceivableLedger struct {
-	BaseModel
-	LedgerNo           string                 `gorm:"size:60;uniqueIndex;not null" json:"ledgerNo"`
-	SourceType         string                 `gorm:"size:40;index;not null" json:"sourceType"`
-	SourceRefID        string                 `gorm:"size:100;index;not null" json:"sourceRefId"`
-	CustomerID         string                 `gorm:"size:100;index" json:"customerId"`
-	CustomerName       string                 `gorm:"size:255;index;not null" json:"customerName"`
-	Currency           string                 `gorm:"size:20;not null;default:'CNY'" json:"currency"`
-	OriginalAmount     float64                `gorm:"not null" json:"originalAmount"`
-	SettledAmount      float64                `gorm:"not null;default:0" json:"settledAmount"`
-	OutstandingAmount  float64                `gorm:"not null" json:"outstandingAmount"`
-	DueDate            string                 `gorm:"size:40;index" json:"dueDate"`
-	Status             string                 `gorm:"size:30;index;not null;default:'OPEN'" json:"status"`
-	Version            int                    `gorm:"not null;default:1" json:"version"`
-	ReceiptRecords     []ReceiptRecord        `gorm:"foreignKey:LedgerID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"receiptRecords,omitempty"`
-	SettlementMappings []SettlementAllocation `gorm:"foreignKey:LedgerID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"settlementMappings,omitempty"`
-}
-
-func (ReceivableLedger) TableName() string {
-	return "receivable_ledgers"
-}
-
 type PayableLedger struct {
 	BaseModel
 	LedgerNo           string                 `gorm:"size:60;uniqueIndex;not null" json:"ledgerNo"`
@@ -66,16 +44,19 @@ func (PayableLedger) TableName() string {
 
 type ReceiptRecord struct {
 	BaseModel
-	RecordNo      string                     `gorm:"size:60;uniqueIndex;not null" json:"recordNo"`
-	LedgerID      string                     `gorm:"type:uuid;index;not null" json:"ledgerId"`
-	Amount        float64                    `gorm:"not null" json:"amount"`
-	Currency      string                     `gorm:"size:20;not null;default:'CNY'" json:"currency"`
-	PaymentMethod string                     `gorm:"size:50" json:"paymentMethod"`
-	PaymentTerm   string                     `gorm:"size:50" json:"paymentTerm"`
-	RecordDate    string                     `gorm:"size:40;index" json:"recordDate"`
-	Status        string                     `gorm:"size:30;index;not null;default:'DRAFT'" json:"status"`
-	ReferenceNo   string                     `gorm:"size:100" json:"referenceNo"`
-	Evidences     []SettlementRecordEvidence `gorm:"foreignKey:RecordID;references:ID" json:"evidences,omitempty"`
+	RecordNo       string                     `gorm:"size:60;uniqueIndex;not null" json:"recordNo"`
+	LedgerID       string                     `gorm:"type:uuid;index;not null" json:"ledgerId"`
+	SalesOrderID   string                     `gorm:"size:100;index" json:"salesOrderId"`
+	Amount         float64                    `gorm:"not null" json:"amount"`
+	Currency       string                     `gorm:"size:20;not null;default:'CNY'" json:"currency"`
+	PaymentMethod  string                     `gorm:"size:50" json:"paymentMethod"`
+	PaymentTerm    string                     `gorm:"size:50" json:"paymentTerm"`
+	RecordDate     string                     `gorm:"size:40;index" json:"recordDate"`
+	ReceivedAt     string                     `gorm:"size:40;index" json:"receivedAt"`
+	ReceiptAccount string                     `gorm:"size:120" json:"receiptAccount"`
+	Status         string                     `gorm:"size:30;index;not null;default:'DRAFT'" json:"status"`
+	ReferenceNo    string                     `gorm:"size:100" json:"referenceNo"`
+	Evidences      []SettlementRecordEvidence `gorm:"foreignKey:RecordID;references:ID" json:"evidences,omitempty"`
 }
 
 func (ReceiptRecord) TableName() string {
@@ -103,6 +84,7 @@ func (PaymentRecord) TableName() string {
 type SettlementAllocation struct {
 	BaseModel
 	LedgerID        string  `gorm:"type:uuid;index;not null" json:"ledgerId"`
+	SalesOrderID    string  `gorm:"size:100;index" json:"salesOrderId"`
 	ReceiptRecordID string  `gorm:"type:uuid;index" json:"receiptRecordId"`
 	PaymentRecordID string  `gorm:"type:uuid;index" json:"paymentRecordId"`
 	AllocatedAmount float64 `gorm:"not null" json:"allocatedAmount"`

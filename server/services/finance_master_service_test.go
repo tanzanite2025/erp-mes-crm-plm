@@ -247,9 +247,55 @@ func TestListPaymentTermsSeedsDefaultsWithValidInstallmentJSON(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, terms)
 
+	codes := make([]string, 0, len(terms))
+	for _, item := range terms {
+		codes = append(codes, item.Code)
+	}
+	require.NotContains(t, codes, "PREPAY100")
+	require.NotContains(t, codes, "PREPAY30_BAL70")
+
 	var cod models.PaymentTerm
 	require.NoError(t, testDB.Where("code = ?", "COD").First(&cod).Error)
 	require.Equal(t, "[]", cod.Installment)
+}
+
+func TestListPaymentTermsRemovesDisallowedSystemDefaults(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupFinanceMasterServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	require.NoError(t, testDB.Create(&models.PaymentTerm{
+		Code:        "PREPAY100",
+		Name:        "预付 100%",
+		Description: "removed preset",
+		Installment: "[]",
+		IsSystem:    true,
+		Status:      "Active",
+		Version:     1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.PaymentTerm{
+		Code:        "PREPAY30_BAL70",
+		Name:        "预付 30% 尾款 70%",
+		Description: "removed preset",
+		Installment: "[]",
+		IsSystem:    true,
+		Status:      "Active",
+		Version:     1,
+	}).Error)
+
+	_, err := ListPaymentTerms()
+	require.NoError(t, err)
+
+	var count int64
+	require.NoError(t, testDB.Model(&models.PaymentTerm{}).Where("code IN ?", []string{"PREPAY100", "PREPAY30_BAL70"}).Count(&count).Error)
+	require.Zero(t, count)
 }
 
 func TestNormalizePaymentTermInstallmentDefaultsBlankAndPreservesJSON(t *testing.T) {

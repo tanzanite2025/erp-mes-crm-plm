@@ -104,31 +104,33 @@ function formatStatusText(status: string) {
 function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatusDisplayMeta {
   const normalized = status.trim().toUpperCase()
 
-  if (normalized === 'DRAFT' || normalized === 'CREATED' || normalized === 'OPEN') {
+  if (normalized === 'DRAFT') {
     return {
-      label: locale === 'zh-CN' ? '已创建' : 'Created',
+      label: locale === 'zh-CN' ? '待提交' : 'Draft',
       className: 'bg-amber-500/10 text-amber-600 border-amber-200',
       dotClassName: 'bg-amber-500',
     }
   }
 
-  if (
-    normalized === 'SUBMITTED' ||
-    normalized === 'CONFIRMED' ||
-    normalized === 'POSTED' ||
-    normalized === 'COMPLETED' ||
-    normalized === 'CLOSED' ||
-    normalized === 'RETURNED'
-  ) {
+  if (normalized === 'CREATED' || normalized === 'OPEN') {
     return {
-      label:
-        locale === 'zh-CN'
-          ? normalized === 'SUBMITTED'
-            ? '已提交'
-            : '已完成'
-          : normalized === 'SUBMITTED'
-            ? 'Submitted'
-            : 'Completed',
+      label: locale === 'zh-CN' ? '已登记' : 'Registered',
+      className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
+      dotClassName: 'bg-emerald-500',
+    }
+  }
+
+  if (normalized === 'SUBMITTED' || normalized === 'CONFIRMED' || normalized === 'POSTED') {
+    return {
+      label: locale === 'zh-CN' ? '处理中' : 'In Progress',
+      className: 'bg-blue-500/10 text-blue-600 border-blue-200',
+      dotClassName: 'bg-blue-500',
+    }
+  }
+
+  if (normalized === 'COMPLETED' || normalized === 'CLOSED' || normalized === 'RETURNED') {
+    return {
+      label: locale === 'zh-CN' ? '已完成' : 'Completed',
       className: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
       dotClassName: 'bg-emerald-500',
     }
@@ -136,7 +138,7 @@ function getPurchaseReturnStatusMeta(status: string, locale: string): AuditStatu
 
   if (normalized === 'CANCELED' || normalized === 'CANCELLED' || normalized === 'VOID' || normalized === 'REJECTED') {
     return {
-      label: locale === 'zh-CN' ? '已取消' : 'Canceled',
+      label: locale === 'zh-CN' ? '已作废' : 'Voided',
       className: 'bg-rose-500/10 text-rose-600 border-rose-200',
       dotClassName: 'bg-rose-500',
     }
@@ -500,8 +502,8 @@ export function PurchaseOrderReturns() {
                   {t('purchase.orders.returns.draftSummary')}
                 </p>
                 <p className='mt-1 text-[10px] font-bold text-muted-foreground'>
-                  {t('purchase.orders.returns.selectedLines')}: {draftSummary.selectedLines} 路{' '}
-                  {t('purchase.orders.returns.totalQty')}: {formatMetric(draftSummary.totalQty)} 路{' '}
+                  {t('purchase.orders.returns.selectedLines')}: {draftSummary.selectedLines} ·{' '}
+                  {t('purchase.orders.returns.totalQty')}: {formatMetric(draftSummary.totalQty)} ·{' '}
                   {t('purchase.orders.returns.estimatedAmount')}: {formatMetric(draftSummary.totalAmount)}
                 </p>
               </div>
@@ -867,7 +869,7 @@ export function PurchaseOrderReturns() {
                       {t('purchase.orders.returns.selectedOrder')}
                     </CardTitle>
                     <CardDescription className='mt-1 text-[11px] font-bold text-muted-foreground'>
-                      {selectedOrder.orderNo} 路 {selectedOrder.supplierName}
+                      {selectedOrder.orderNo} · {selectedOrder.supplierName}
                     </CardDescription>
                   </div>
                   <div className='flex items-center gap-3'>
@@ -1047,7 +1049,7 @@ export function PurchaseOrderReturns() {
                               ) : null}
                             </div>
                             <p className='mt-1 text-[11px] font-bold text-muted-foreground'>
-                              {record.purchaseOrderNo} 路 {record.supplierName}
+                              {record.purchaseOrderNo} · {record.supplierName}
                             </p>
                           </div>
                           <div className='text-right text-[11px] font-bold text-muted-foreground'>

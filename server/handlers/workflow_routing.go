@@ -75,7 +75,12 @@ func GetRulesHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 获取通知规则列表失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, services.MapNotificationRulesToResponse(rules))
+	response, err := services.MapNotificationRulesToResponse(rules)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 解析通知规则失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // SaveRuleHandler 保存(创建)通知规则
@@ -86,13 +91,22 @@ func SaveRuleHandler(c *gin.Context) {
 		return
 	}
 
-	rule := services.MapNotificationRuleRequestToModel(input)
+	rule, err := services.MapNotificationRuleRequestToModel(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 通知规则数据校验失败: " + err.Error()})
+		return
+	}
 	saved, err := services.CreateNotificationRule(rule)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存通知规则失败: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, services.MapNotificationRuleToResponse(saved))
+	response, err := services.MapNotificationRuleToResponse(saved)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 解析通知规则失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // UpdateRuleHandler 更新通知规则
@@ -104,7 +118,11 @@ func UpdateRuleHandler(c *gin.Context) {
 		return
 	}
 
-	rule := services.MapNotificationRuleRequestToModel(input)
+	rule, err := services.MapNotificationRuleRequestToModel(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 通知规则数据校验失败: " + err.Error()})
+		return
+	}
 	updated, err := services.UpdateNotificationRule(id, rule)
 	if err != nil {
 		if errors.Is(err, services.ErrNotificationRuleNotFound) {
@@ -115,7 +133,12 @@ func UpdateRuleHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, services.MapNotificationRuleToResponse(updated))
+	response, err := services.MapNotificationRuleToResponse(updated)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 解析通知规则失败: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteRuleHandler 删除通知规则

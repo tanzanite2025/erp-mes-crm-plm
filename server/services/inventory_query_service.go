@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -57,33 +56,6 @@ func loadReservationTotals(items []models.Inventory) (map[string]float64, error)
 	}
 
 	return reservedMap, nil
-}
-
-// RebuildSearchIndex 全量重构搜索引擎索引情况情况总量针对。
-func RebuildSearchIndex() (int, error) {
-	var items []models.Inventory
-	if err := db.DB.Find(&items).Error; err != nil {
-		return 0, err
-	}
-
-	total := 0
-	for _, item := range items {
-		// 异步推送到 Rust 搜索微服务情况情况总量针对。
-		doc := SearchDocument{
-			ID:       item.ID,
-			Code:     item.MaterialCode,
-			Name:     item.MaterialName,
-			Model:    item.MaterialSpec,
-			Category: item.CategoryCode,
-			Version:  uint64(item.UpdatedAt.UnixNano()),
-		}
-		if err := GlobalSearchClient.SyncIndex(doc); err == nil {
-			total++
-		}
-	}
-
-	log.Printf("[SEARCH_REBUILD] Completed re-indexing %d items", total)
-	return total, nil
 }
 
 func ListInventory(page, pageSize int) (InventoryListResponse, error) {

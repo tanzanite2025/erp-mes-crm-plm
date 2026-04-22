@@ -28,11 +28,10 @@ var (
 	ErrPDAScanTaskStatusConflict         = errors.New("stocktake task status conflict")
 	ErrPDAScanUnknownMaterial            = errors.New("unknown material code")
 
-	ErrAdjustmentPendingExists      = errors.New("pending adjustment already exists")
-	ErrAdjustmentApprovalConfigMiss = errors.New("approval config missing for adjustment")
-	ErrAdjustmentNotFound           = errors.New("inventory adjustment not found")
-	ErrAdjustmentAlreadyExecuted    = errors.New("inventory adjustment already executed")
-	ErrAdjustmentTaskInvalidStatus  = errors.New("adjustment task status is unsupported")
+	ErrAdjustmentPendingExists     = errors.New("pending adjustment already exists")
+	ErrAdjustmentNotFound          = errors.New("inventory adjustment not found")
+	ErrAdjustmentAlreadyExecuted   = errors.New("inventory adjustment already executed")
+	ErrAdjustmentTaskInvalidStatus = errors.New("adjustment task status is unsupported")
 )
 
 func toMaterialModel(input SaveMaterialAPIRequest) models.Material {
@@ -577,23 +576,7 @@ func SubmitAdjustmentApproval(taskID string, username string) error {
 			}
 		}
 
-		var config models.ApprovalConfig
-		if err := tx.Where("module = ? AND action = ?", "Warehouse", "ADJUST").First(&config).Error; err != nil {
-			return ErrAdjustmentApprovalConfigMiss
-		}
-
-		var user models.User
-		_ = tx.Where("username = ?", username).First(&user).Error
-		approval := models.ApprovalRequest{
-			ConfigID:    config.ID,
-			RequesterID: user.ID,
-			TargetID:    adjustment.ID,
-			Reason:      adjustment.Reason,
-			Module:      "Warehouse",
-			Action:      "ADJUST",
-			Status:      "PENDING",
-		}
-		return tx.Create(&approval).Error
+		return nil
 	})
 }
 

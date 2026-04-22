@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { getSalesOrderById, useGetSalesOrders } from '@/features/trading/sales'
+import { shippingManagementQueryKeys } from '@/features/trading/shipping-management/query-keys'
 import { auditUtils } from '@/lib/audit-utils'
 import { resolveInventoryErrorTip } from '../../constants/inventory-error-codes'
 import { type MasterDataSearchResult } from '../../inventory'
@@ -15,6 +16,7 @@ import {
   filterWarehouseCategoriesByScene,
   getDefaultWarehouseCategoryCode,
 } from '../../utils/warehouse-category-config'
+import { type ShipmentDemand } from '../data/schema'
 import { ShipmentTransactionService } from '../services/shipment-transaction-service'
 import { useShipmentBootstrap } from './use-shipment-bootstrap'
 import { useShipmentFormState } from './use-shipment-form-state'
@@ -43,10 +45,12 @@ export function useShipment() {
   const invalidateWarehouseReads = useCallback(async (materialId?: string, sourceCategory?: string) => {
     const invalidations = [
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
+      queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentDemands() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryValuation() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() }),
+      queryClient.invalidateQueries({ queryKey: shippingManagementQueryKeys.vehicleMatchItems() }),
     ]
 
     if (materialId) {
@@ -66,13 +70,53 @@ export function useShipment() {
 
   const openShipmentForm = useCallback((item: MasterDataSearchResult) => {
     if (!allowsAction('action_warehouse_shipment_record')) return
-    shipmentForm.openShipmentForm(item)
+    shipmentForm.openShipmentForm(item, 'dispatch')
     const allowedCategories = filterWarehouseCategoriesByScene(shipmentBootstrap.warehouseCategories, 'shipment')
     const defaultSourceCategory =
       getDefaultWarehouseCategoryCode(allowedCategories, 'shipment', item.category) ||
       allowedCategories[0]?.code ||
       ''
     shipmentForm.setFormData({ sourceCategory: defaultSourceCategory })
+  }, [allowsAction, shipmentBootstrap.warehouseCategories, shipmentForm])
+
+  const openVirtualLockForm = useCallback((demand: ShipmentDemand) => {
+    if (!allowsAction('action_warehouse_shipment_record')) return
+
+    const item: MasterDataSearchResult = {
+      id: demand.materialId,
+      name: demand.materialName || demand.materialCode,
+      code: demand.materialCode,
+      spec: demand.materialSpec,
+      uom: demand.uom,
+      category: 'FINISHED',
+      sourceModule: 'PRODUCT',
+      stock: demand.availableQty,
+    }
+
+    shipmentForm.openShipmentForm(item, 'virtualLock')
+
+    const allowedCategories = filterWarehouseCategoriesByScene(shipmentBootstrap.warehouseCategories, 'shipment')
+      .filter((category) => category.value !== 'SHIPPING_VIRTUAL')
+    const firstAvailableStock = demand.stockBreakdown.find((stock) => stock.quantity > 0)
+    const defaultSourceCategory =
+      firstAvailableStock?.categoryCode ||
+      getDefaultWarehouseCategoryCode(allowedCategories, 'shipment', item.category) ||
+      allowedCategories[0]?.code ||
+      ''
+    const defaultQuantity = Math.min(
+      demand.remainingToPrepare,
+      firstAvailableStock?.quantity ?? demand.remainingToPrepare
+    )
+
+    shipmentForm.setFormData({
+      sourceCategory: defaultSourceCategory,
+      batchNo: firstAvailableStock?.batchNo ?? '',
+      quantity: defaultQuantity,
+      orderNo: demand.orderNo,
+      salesOrderId: demand.salesOrderId,
+      salesOrderLineId: demand.salesOrderLineId,
+      remarks: '',
+    })
   }, [allowsAction, shipmentBootstrap.warehouseCategories, shipmentForm])
 
   const resolveSalesOrderBinding = useCallback(async (
@@ -133,6 +177,29 @@ export function useShipment() {
     }
 
     try {
+      if (shipmentForm.formMode === 'virtualLock') {
+        if (!formData.salesOrderId || !formData.salesOrderLineId) {
+          toast.error('订单行信息缺失，无法转入虚拟发货仓')
+          return
+        }
+
+        await ShipmentTransactionService.prepareVirtualShipment({
+          salesOrderId: formData.salesOrderId,
+          salesOrderLineId: formData.salesOrderLineId,
+          quantity: formData.quantity,
+          sourceCategory: formData.sourceCategory,
+          batchNo: formData.batchNo,
+          shipmentDate: formData.shipmentDate,
+          operator: auditUtils.getOperatorInfo().label,
+          remarks: formData.remarks,
+        })
+
+        toast.success('已转入虚拟发货仓，配车页面会同步读取')
+        shipmentForm.closeShipmentForm()
+        await invalidateWarehouseReads(selectedItem.id, formData.sourceCategory)
+        return
+      }
+
       const binding = await resolveSalesOrderBinding(
         selectedItem,
         formData.orderNo,
@@ -140,7 +207,7 @@ export function useShipment() {
         formData.salesOrderLineId,
       )
 
-      await ShipmentTransactionService.recordShipment({
+      const created = await ShipmentTransactionService.recordShipment({
         materialId: selectedItem.id,
         materialName: selectedItem.name,
         materialCode: selectedItem.code,
@@ -154,8 +221,12 @@ export function useShipment() {
         operator: auditUtils.getOperatorInfo().label,
         remarks: formData.remarks,
         sourceCategory: formData.sourceCategory,
-        status,
+        status: 'DRAFT',
       })
+
+      if (status === 'COMMITTED') {
+        await ShipmentTransactionService.commitShipment(created.id)
+      }
 
       toast.success(
         status === 'DRAFT'
@@ -235,9 +306,11 @@ export function useShipment() {
     setSearchQuery: shipmentSearch.setSearchQuery,
     searchResults: shipmentSearch.searchResults,
     history: shipmentBootstrap.history,
+    shipmentDemands: shipmentBootstrap.shipmentDemands,
     error: shipmentBootstrap.error,
     isSearching: shipmentSearch.isSearching,
     selectedItem: shipmentForm.selectedItem,
+    formMode: shipmentForm.formMode,
     isShipmentOpen: shipmentForm.isShipmentOpen,
     setIsShipmentOpen: shipmentForm.setIsShipmentOpen,
     warehouseCategories: shipmentBootstrap.warehouseCategories,
@@ -247,6 +320,7 @@ export function useShipment() {
     formData: shipmentForm.formData,
     setFormData: shipmentForm.setFormData,
     openShipmentForm,
+    openVirtualLockForm,
     submitShipment,
     commitDraft,
     removeRecord,

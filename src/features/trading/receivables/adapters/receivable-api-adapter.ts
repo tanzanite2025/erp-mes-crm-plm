@@ -56,7 +56,7 @@ export function toReceivableSummaryContract(dto: ReceivableSummaryApiDTO): Recei
 
 export function toReceivableListPageContract(dto: ReceivableListPageApiDTO): PaginatedReceivables {
   return {
-    items: (dto.items ?? []).map(toReceivableRecordContract),
+    items: dto.items.map(toReceivableRecordContract),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

@@ -30,7 +30,7 @@ import type {
 } from './types'
 
 function isSystemManagementItem(item: NavItem) {
-  return 'url' in item && item.url === '/system-management/routing'
+  return 'url' in item && item.url === '/system-management'
 }
 
 function isApprovalCenterItem(item: NavItem) {
@@ -145,7 +145,7 @@ function NavBadge({
 
 function SidebarMenuLink({ item, pathname }: { item: NavLink; pathname: string }) {
   const { setOpenMobile } = useSidebar()
-  const isSystemAlertBadge = item.url === '/system-management/routing' && item.badge === '●'
+  const isSystemAlertBadge = item.url === '/system-management' && item.badge === '●'
 
   return (
     <SidebarMenuItem>
@@ -171,7 +171,7 @@ function SidebarMenuCollapsedDropdown({
   item: NavCollapsible
   pathname: string
 }) {
-  const isSystemAlertBadge = item.url === '/system-management/routing' && item.badge === '●'
+  const isSystemAlertBadge = item.url === '/system-management' && item.badge === '●'
 
   return (
     <SidebarMenuItem>

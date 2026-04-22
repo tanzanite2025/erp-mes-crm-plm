@@ -70,8 +70,8 @@ export function SupplierList() {
     typeof supplierStats?.pendingReview === 'number'
   const supplierStatsMissingLabel =
     locale === 'zh-CN'
-      ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
-      : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
+      ? '统计暂不可用，请稍后刷新后重试。'
+      : 'Stats are temporarily unavailable. Please refresh and try again later.'
 
   const filteredSuppliers = (suppliers || []).filter((supplier) => {
     const matchesSearch =
@@ -134,7 +134,7 @@ export function SupplierList() {
 
   const handleOpenWeChat = (supplier: Supplier) => {
     if (!canOpenWeChat(supplier.wechat)) {
-      toast.error('未填写微信号')
+      toast.error('该供应商未填写微信号')
       return
     }
 
@@ -443,13 +443,13 @@ export function SupplierList() {
                 </div>
 
                 <div className='space-y-1.5 pt-4 border-t border-dashed border-muted/50'>
-                  <div className='flex items-center gap-2 text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
-                    <MessageCircle className='size-3' />
-                    微信
-                  </div>
+                    <div className='flex items-center gap-2 text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+                      <MessageCircle className='size-3' />
+                      {t('purchase.suppliers.communication')} / {t('purchase.suppliers.wechat')}
+                    </div>
                   <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                     <p className='text-[10px] md:text-[11px] font-bold text-muted-foreground break-all'>
-                      {supplier.wechat || '未填写'}
+                      {supplier.wechat || t('purchase.suppliers.unfilled')}
                     </p>
                     <Button
                       type='button'
@@ -462,7 +462,7 @@ export function SupplierList() {
                       }}
                       className='h-8 w-full sm:w-auto rounded-full text-[9px] font-black uppercase tracking-widest'
                     >
-                      打开微信
+                      {t('purchase.suppliers.openWechat')}
                       <ExternalLink className='ms-2 size-3' />
                     </Button>
                   </div>

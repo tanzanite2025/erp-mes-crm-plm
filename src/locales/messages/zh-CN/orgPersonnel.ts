@@ -8,7 +8,7 @@ export const orgPersonnel = {
     line: '产线管理',
     topology: '拓扑模板',
     leave: '请假管理',
-    stats: '荣誉榜',
+    stats: '优秀员工榜',
   },
   leaveMgmt: {
     headerTitle: '在线请假申请',
@@ -333,6 +333,7 @@ export const orgPersonnel = {
       editDesc: '在此更新人员核心档案数据。',
       createDesc: '在此录入新人员入职记录。数据字段已与人员档案模板和导出列保持一致。',
       submit: '保存提交',
+      noPosition: '未设置岗位',
       errors: {
         staffId: '请输入工号。',
         name: '请输入姓名。',
@@ -438,6 +439,7 @@ export const orgPersonnel = {
     toasts: {
       loadFailed: '产线数据加载失败',
       saveConflict: '保存失败：产线配置已被他人更新，正在拉取最新版本...',
+      saveForbidden: '保存失败：后端命令校验未通过，请检查当前授权状态',
       saveForbiddenAuthCode: '保存失败：拓扑授权码无效，请重新验证授权码',
       saveForbiddenPermission: '保存失败：当前账号缺少产线配置维护权限',
       saveError: '保存失败，请检查网络或刷新重试',

@@ -74,4 +74,14 @@ var DefaultWarehouseCategories = []WarehouseCategory{
 		AllowShipment:  true,
 		AllowStocktake: true,
 	},
+	{
+		Name:           "虚拟退货仓",
+		Code:           "SALES_RETURN_VIRTUAL",
+		Description:    "系统内置销售退货承接仓，用于暂存销售退货回仓货物并提供统一查看入口",
+		IsSystem:       true,
+		SortOrder:      91,
+		AllowInbound:   true,
+		AllowShipment:  false,
+		AllowStocktake: true,
+	},
 }

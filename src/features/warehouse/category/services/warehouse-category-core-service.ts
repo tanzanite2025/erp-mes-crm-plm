@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
 import {
-  toWarehouseCategoryContracts,
+  ensureArrayResponse,
+  ensureObjectResponse,
+} from '@/lib/api-response'
+import {
+  toWarehouseCategoryListPageContract,
   toWarehouseCategoryOptionContracts,
 } from '../adapters/warehouse-category-api-adapter'
 import {
@@ -22,7 +25,7 @@ export const WarehouseCategoryCoreService = {
       res,
       'WarehouseCategoryCoreService.getCategoryList'
     )
-    return toWarehouseCategoryContracts(response.items ?? [])
+    return toWarehouseCategoryListPageContract(response)
   },
 
   getCategoryOptions: async (): Promise<WarehouseCategoryOption[]> => {

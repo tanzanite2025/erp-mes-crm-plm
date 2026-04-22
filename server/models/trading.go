@@ -66,6 +66,57 @@ type SalesOrderLine struct {
 	ClaimedAt      string  `json:"claimedAt"`
 }
 
+// SalesReturn 销售退货单
+type SalesReturn struct {
+	BaseModel
+	ReturnNo         string            `gorm:"size:50;uniqueIndex;not null" json:"returnNo"`
+	SalesOrderID     string            `gorm:"type:uuid;index;not null" json:"salesOrderId"`
+	SalesOrderNo     string            `gorm:"size:50;index" json:"salesOrderNo"`
+	CustomerID       string            `gorm:"size:100;index" json:"customerId"`
+	CustomerName     string            `gorm:"size:255" json:"customerName"`
+	Status           string            `gorm:"size:50;default:'Created'" json:"status"`
+	TransportMode    string            `gorm:"size:30;not null;default:'Other'" json:"transportMode"`
+	TrackingNo       string            `gorm:"size:100;index" json:"trackingNo"`
+	Carrier          string            `gorm:"size:100" json:"carrier"`
+	ShippedAt        *time.Time        `json:"shippedAt"`
+	TrackingFilledAt *time.Time        `json:"trackingFilledAt"`
+	TrackingFilledBy string            `gorm:"size:100" json:"trackingFilledBy"`
+	LogisticsNote    string            `gorm:"type:text" json:"logisticsNote"`
+	ReturnDate       time.Time         `json:"returnDate"`
+	IssueCategory    string            `gorm:"size:100" json:"issueCategory"`
+	Reason           string            `gorm:"type:text" json:"reason"`
+	Remarks          string            `gorm:"type:text" json:"remarks"`
+	Evidences        json.RawMessage   `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	Operator         string            `gorm:"size:100" json:"operator"`
+	TotalQuantity    float64           `gorm:"default:0" json:"totalQuantity"`
+	TotalAmount      float64           `gorm:"default:0" json:"totalAmount"`
+	Lines            []SalesReturnLine `gorm:"foreignKey:SalesReturnID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+}
+
+func (SalesReturn) TableName() string {
+	return "sales_returns"
+}
+
+// SalesReturnLine 销售退货明细
+type SalesReturnLine struct {
+	ID               uint            `gorm:"primaryKey" json:"id"`
+	SalesReturnID    string          `gorm:"type:uuid;index" json:"-"`
+	SalesOrderLineID uint            `gorm:"index;not null" json:"salesOrderLineId"`
+	LineNo           int             `json:"lineNo"`
+	ProductID        string          `gorm:"type:uuid;index" json:"productId"`
+	ProductCode      string          `gorm:"size:100" json:"productCode"`
+	ProductModel     string          `gorm:"size:255" json:"productModel"`
+	Specification    string          `gorm:"type:text" json:"specification"`
+	Description      string          `gorm:"type:text" json:"description"`
+	UOM              string          `gorm:"size:20" json:"uom"`
+	Quantity         float64         `gorm:"default:0" json:"quantity"`
+	Price            float64         `gorm:"default:0" json:"price"`
+	Amount           float64         `gorm:"default:0" json:"amount"`
+	IssueCategory    string          `gorm:"size:100" json:"issueCategory"`
+	Reason           string          `gorm:"type:text" json:"reason"`
+	Evidences        json.RawMessage `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+}
+
 // Customer 客户模型
 type Customer struct {
 	ID            string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`

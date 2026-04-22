@@ -1,16 +1,26 @@
 export const tradingQueryKeys = {
   customers: (): readonly ['customers'] => ['customers'],
   customerList: (): readonly ['customers', 'list'] => ['customers', 'list'],
-  customerSalesClosureSummary: (): readonly ['customers', 'sales-closure-summary'] => ['customers', 'sales-closure-summary'],
-  payableDetail: (id: string): readonly ['payables', string] => ['payables', id],
+  customerSalesClosureSummary: (): readonly [
+    'customers',
+    'sales-closure-summary',
+  ] => ['customers', 'sales-closure-summary'],
+  customerSalesReturnSummary: (): readonly [
+    'customers',
+    'sales-return-summary',
+  ] => ['customers', 'sales-return-summary'],
+  payableDetail: (id: string): readonly ['payables', string] => [
+    'payables',
+    id,
+  ],
   settlementRecordEvidences: (
     type: 'receipt' | 'payment',
-    recordId: string,
-  ): readonly ['settlement-record-evidences', 'receipt' | 'payment', string] => [
+    recordId: string
+  ): readonly [
     'settlement-record-evidences',
-    type,
-    recordId,
-  ],
+    'receipt' | 'payment',
+    string,
+  ] => ['settlement-record-evidences', type, recordId],
   payableSearch: (
     keyword: string,
     status: string,
@@ -19,7 +29,17 @@ export const tradingQueryKeys = {
     outstandingMax: string,
     sortBy: string,
     sortOrder: string
-  ): readonly ['payables', 'search', string, string, string, string, string, string, string] => [
+  ): readonly [
+    'payables',
+    'search',
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ] => [
     'payables',
     'search',
     keyword,
@@ -31,38 +51,30 @@ export const tradingQueryKeys = {
     sortOrder,
   ],
   payables: (): readonly ['payables'] => ['payables'],
-  purchaseOrderDetail: (id: string): readonly ['purchase-orders', string] => ['purchase-orders', id],
+  purchaseOrderDetail: (id: string): readonly ['purchase-orders', string] => [
+    'purchase-orders',
+    id,
+  ],
   purchaseOrders: (
     page: number,
     pageSize: number
-  ): readonly ['purchase-orders', number, number] => ['purchase-orders', page, pageSize],
+  ): readonly ['purchase-orders', number, number] => [
+    'purchase-orders',
+    page,
+    pageSize,
+  ],
   purchaseOrdersRoot: (): readonly ['purchase-orders'] => ['purchase-orders'],
   purchaseReturns: (
     page: number,
     pageSize: number
-  ): readonly ['purchase-returns', number, number] => ['purchase-returns', page, pageSize],
-  purchaseReturnsRoot: (): readonly ['purchase-returns'] => ['purchase-returns'],
-  receivableDetail: (id: string): readonly ['receivables', string] => ['receivables', id],
-  receivableSearch: (
-    keyword: string,
-    status: string,
-    currency: string,
-    outstandingMin: string,
-    outstandingMax: string,
-    sortBy: string,
-    sortOrder: string
-  ): readonly ['receivables', 'search', string, string, string, string, string, string, string] => [
-    'receivables',
-    'search',
-    keyword,
-    status,
-    currency,
-    outstandingMin,
-    outstandingMax,
-    sortBy,
-    sortOrder,
+  ): readonly ['purchase-returns', number, number] => [
+    'purchase-returns',
+    page,
+    pageSize,
   ],
-  receivables: (): readonly ['receivables'] => ['receivables'],
+  purchaseReturnsRoot: (): readonly ['purchase-returns'] => [
+    'purchase-returns',
+  ],
   salesOrdersRoot: (): readonly ['sales-orders'] => ['sales-orders'],
   salesOrders: (
     page: number,
@@ -76,10 +88,66 @@ export const tradingQueryKeys = {
     withLines,
     status,
   ],
-  salesOrderDetail: (id: string): readonly ['sales-orders', string] => ['sales-orders', id],
+  salesReturnsSourceOrders: (
+    page: number,
+    pageSize: number,
+    status: string,
+    customerId: string,
+    keyword: string
+  ): readonly [
+    'sales-returns',
+    'source-orders',
+    number,
+    number,
+    string,
+    string,
+    string,
+  ] => [
+    'sales-returns',
+    'source-orders',
+    page,
+    pageSize,
+    status,
+    customerId,
+    keyword,
+  ],
+  salesReturnsSourceOrderDetail: (
+    id: string
+  ): readonly ['sales-returns', 'source-orders', string] => [
+    'sales-returns',
+    'source-orders',
+    id,
+  ],
+  salesReturnsRoot: (): readonly ['sales-returns'] => ['sales-returns'],
+  salesReturns: (
+    page: number,
+    pageSize: number,
+    customerId: string,
+    status: string,
+    keyword: string
+  ): readonly ['sales-returns', number, number, string, string, string] => [
+    'sales-returns',
+    page,
+    pageSize,
+    customerId,
+    status,
+    keyword,
+  ],
+  salesReturnDetail: (id: string): readonly ['sales-returns', string] => [
+    'sales-returns',
+    id,
+  ],
+  salesOrderDetail: (id: string): readonly ['sales-orders', string] => [
+    'sales-orders',
+    id,
+  ],
   salesOrderPreviewBarcode: (
     classificationAlias: string
-  ): readonly ['sales-orders', 'preview-barcode', string] => ['sales-orders', 'preview-barcode', classificationAlias],
+  ): readonly ['sales-orders', 'preview-barcode', string] => [
+    'sales-orders',
+    'preview-barcode',
+    classificationAlias,
+  ],
   suppliers: (): readonly ['suppliers'] => ['suppliers'],
   supplierList: (): readonly ['suppliers', 'list'] => ['suppliers', 'list'],
 } as const

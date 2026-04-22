@@ -24,6 +24,33 @@ export interface ShipmentRecord {
   updatedAt?: string
 }
 
+export interface ShipmentDemandStockBreakdown {
+  categoryCode: string
+  batchNo: string
+  quantity: number
+}
+
+export interface ShipmentDemand {
+  salesOrderId: string
+  salesOrderLineId: number
+  orderNo: string
+  customerName: string
+  deliveryDate: string
+  materialId: string
+  materialName: string
+  materialCode: string
+  materialSpec: string
+  uom: string
+  orderedQty: number
+  deliveredQty: number
+  virtualReadyQty: number
+  remainingToPrepare: number
+  availableQty: number
+  stockBreakdown: ShipmentDemandStockBreakdown[]
+}
+
+export type ShipmentFormMode = 'dispatch' | 'virtualLock'
+
 export const DEFAULT_SHIPMENT_FORM_DATA = {
   quantity: 1,
   batchNo: '',
@@ -42,6 +69,7 @@ export type ShipmentFormUpdater =
 
 export interface ShipmentBootstrapState {
   history: ShipmentRecord[]
+  shipmentDemands: ShipmentDemand[]
   warehouseCategories: WarehouseCategoryOption[]
   alertThresholds: Record<string, number>
   masterDataMap: Record<string, MasterDataSearchResult>

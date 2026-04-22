@@ -1,5 +1,9 @@
 import type { SalesOrder, SalesOrderLine } from '../../data/schema'
-import type { SalesOrderApiDTO, SalesOrderLineApiDTO, SalesOrderListPageApiDTO } from '../contracts/sales-order-api-dto'
+import type {
+  SalesOrderApiDTO,
+  SalesOrderLineApiDTO,
+  SalesOrderListPageApiDTO,
+} from '../contracts/sales-order-api-dto'
 
 export interface PaginatedSalesOrders {
   items: SalesOrder[]
@@ -8,10 +12,19 @@ export interface PaginatedSalesOrders {
   pageSize: number
 }
 
-function normalizeSalesOrderLineStatus(status: SalesOrderLineApiDTO['status']): SalesOrderLine['status'] {
-  return status === 'Created' || status === 'InProgress' || status === 'Completed' || status === 'Cancelled'
-    ? status
-    : 'Pending'
+function normalizeSalesOrderLineStatus(
+  status: SalesOrderLineApiDTO['status']
+): SalesOrderLine['status'] {
+  if (status === 'InProgress') {
+    return 'InProgress'
+  }
+  if (status === 'Completed') {
+    return 'Done'
+  }
+  if (status === 'Cancelled') {
+    return 'Canceled'
+  }
+  return 'Pending'
 }
 
 function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
@@ -39,6 +52,8 @@ function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
     status: normalizeSalesOrderLineStatus(dto.status),
     claimedBy: dto.claimedBy,
     claimedAt: dto.claimedAt,
+    returnedQuantity: dto.returnedQuantity,
+    remainingReturnableQuantity: dto.remainingReturnableQuantity,
   }
 }
 
@@ -67,13 +82,31 @@ function toSalesOrderLineApiDTO(line: SalesOrderLine): SalesOrderLineApiDTO {
     status: line.status,
     claimedBy: line.claimedBy,
     claimedAt: line.claimedAt,
+    returnedQuantity: line.returnedQuantity,
+    remainingReturnableQuantity: line.remainingReturnableQuantity,
   }
 }
 
-function normalizeSalesOrderStatus(status: SalesOrderApiDTO['status']): SalesOrder['status'] {
-  return status === 'Pending' || status === 'Confirmed' || status === 'Cancelled' || status === 'Shipped' || status === 'Completed'
-    ? status
-    : 'Pending'
+function normalizeSalesOrderStatus(
+  status: SalesOrderApiDTO['status']
+): SalesOrder['status'] {
+  if (status === 'Draft') {
+    return 'Draft'
+  }
+  if (status === 'Completed') {
+    return 'Done'
+  }
+  if (status === 'Cancelled') {
+    return 'Canceled'
+  }
+  if (
+    status === 'Confirmed' ||
+    status === 'Shipped' ||
+    status === 'InProgress'
+  ) {
+    return 'InProgress'
+  }
+  return 'Pending'
 }
 
 export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
@@ -103,11 +136,11 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     updatedBy: dto.updatedBy,
-    isDeleted: dto.isDeleted,
-    version: dto.version,
-    evidences: dto.evidences,
+    isDeleted: dto.isDeleted ?? false,
+    version: dto.version ?? 1,
+    evidences: dto.evidences ?? [],
     fulfillmentRate: dto.fulfillmentRate,
-    lines: dto.lines.map(toSalesOrderLineContract),
+    lines: (dto.lines ?? []).map(toSalesOrderLineContract),
   }
 }
 
@@ -141,7 +174,7 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     isDeleted: order.isDeleted,
     version: order.version,
     evidences: order.evidences,
-    lines: order.lines.map(toSalesOrderLineApiDTO),
+    lines: (order.lines ?? []).map(toSalesOrderLineApiDTO),
   }
 }
 
@@ -149,9 +182,11 @@ export function toSalesOrderContracts(items: SalesOrderApiDTO[]): SalesOrder[] {
   return items.map(toSalesOrderContract)
 }
 
-export function toSalesOrderListPageContract(dto: SalesOrderListPageApiDTO): PaginatedSalesOrders {
+export function toSalesOrderListPageContract(
+  dto: SalesOrderListPageApiDTO
+): PaginatedSalesOrders {
   return {
-    items: toSalesOrderContracts(dto.items ?? []),
+    items: toSalesOrderContracts(dto.items),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

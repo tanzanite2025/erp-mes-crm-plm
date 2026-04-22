@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrderLine } from '@/features/trading/data/schema'
 import { useSalesOrderLinesEditorViewModel } from '@/features/trading/hooks/use-sales-order-lines-editor-view-model'
@@ -10,6 +11,7 @@ import { useSalesOrderLinesEditorViewModel } from '@/features/trading/hooks/use-
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
 interface DocumentLinesEditorProps {
+  appearances: ProductAppearance[]
   lines: SalesOrderLine[]
   products: Product[]
   units: Unit[]
@@ -27,6 +29,7 @@ interface DocumentLinesEditorProps {
 }
 
 export function DocumentLinesEditor({
+  appearances,
   lines,
   products,
   units,
@@ -38,8 +41,17 @@ export function DocumentLinesEditor({
   onLineChange,
 }: DocumentLinesEditorProps) {
   const { t } = useLanguage()
-  const { currencySymbol, productById, productOptions, activeUnitOptions, handleProductChange } =
+  const {
+    appearanceOptions,
+    currencySymbol,
+    productById,
+    productOptions,
+    activeUnitOptions,
+    handleAppearanceChange,
+    handleProductChange,
+  } =
     useSalesOrderLinesEditorViewModel({
+      appearances,
       products,
       units,
       currency,
@@ -67,12 +79,13 @@ export function DocumentLinesEditor({
       </div>
 
       <div className='hidden overflow-x-auto rounded-[24px] border bg-background/50 shadow-sm md:block'>
-        <table className='min-w-[1000px] w-full border-collapse'>
+        <table className='min-w-[1200px] w-full border-collapse'>
           <thead className='border-b bg-muted/30'>
             <tr className='h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60'>
               <th className='w-[60px] text-center'>{t('tradingSalesOrder.linesEditor.headers.no')}</th>
               <th className='w-[60px] text-center'>{t('tradingSalesOrder.linesEditor.headers.thumb')}</th>
               <th className='px-4 text-left'>{t('tradingSalesOrder.linesEditor.headers.skuModel')}</th>
+              <th className='w-[220px] px-2 text-left'>{t('tradingSalesOrder.linesEditor.headers.appearance')}</th>
               <th className='w-[120px] text-center'>{t('tradingSalesOrder.linesEditor.headers.drilling')}</th>
               <th className='w-[120px] text-center'>{t('tradingSalesOrder.linesEditor.headers.labeling')}</th>
               <th className='w-[80px] text-center'>{t('tradingSalesOrder.linesEditor.headers.holes')}</th>
@@ -112,6 +125,41 @@ export function DocumentLinesEditor({
                       </option>
                     ))}
                   </select>
+                </td>
+                <td className='px-2'>
+                  <div className='space-y-2 py-2'>
+                    <select
+                      className='h-8 w-full appearance-none rounded-lg border bg-background px-2 text-[10px] font-bold outline-none focus:ring-1 focus:ring-primary'
+                      value={line.appearanceId || ''}
+                      onChange={(e) => handleAppearanceChange(index, e.target.value)}
+                    >
+                      <option value=''>{t('tradingSalesOrder.linesEditor.selectAppearanceDesktop')}</option>
+                      {appearanceOptions.map((appearance) => (
+                        <option key={appearance.id} value={appearance.id}>
+                          {appearance.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className='flex items-center gap-2 rounded-lg border border-dashed bg-muted/10 px-2 py-1.5'>
+                      <div className='flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-background'>
+                        {line.appearanceImageUrlSnapshot ? (
+                          <img src={line.appearanceImageUrlSnapshot} alt={line.appearanceNameSnapshot || 'appearance'} className='size-full object-cover' />
+                        ) : (
+                          <ImageIcon className='size-4 text-muted-foreground/20' />
+                        )}
+                      </div>
+                      <div className='min-w-0 flex-1'>
+                        <div className='truncate text-[10px] font-black'>
+                          {line.appearanceNameSnapshot || t('tradingSalesOrder.linesEditor.appearance')}
+                        </div>
+                        <div className='truncate text-[9px] text-muted-foreground'>
+                          {line.appearanceBarcodeCodeSnapshot
+                            ? `${t('tradingSalesOrder.linesEditor.appearanceCode')}: ${line.appearanceBarcodeCodeSnapshot}`
+                            : t('tradingSalesOrder.linesEditor.appearancePreviewEmpty')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </td>
                 <td className='px-2'>
                   <select
@@ -237,6 +285,46 @@ export function DocumentLinesEditor({
               >
                 <Trash2 className='size-4' />
               </Button>
+            </div>
+
+            <div className='mb-4 rounded-[20px] border border-dashed bg-background/70 p-3'>
+              <div className='mb-2 flex items-center justify-between gap-2'>
+                <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                  {t('tradingSalesOrder.linesEditor.appearance')}
+                </span>
+                <span className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/30'>
+                  {line.appearanceBarcodeCodeSnapshot || '--'}
+                </span>
+              </div>
+              <div className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_84px]'>
+                <select
+                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-[11px] font-bold'
+                  value={line.appearanceId || ''}
+                  onChange={(e) => handleAppearanceChange(index, e.target.value)}
+                >
+                  <option value=''>{t('tradingSalesOrder.linesEditor.selectAppearance')}</option>
+                  {appearanceOptions.map((appearance) => (
+                    <option key={appearance.id} value={appearance.id}>
+                      {appearance.label}
+                    </option>
+                  ))}
+                </select>
+                <div className='flex h-[84px] items-center justify-center overflow-hidden rounded-2xl border bg-muted/10'>
+                  {line.appearanceImageUrlSnapshot ? (
+                    <img src={line.appearanceImageUrlSnapshot} alt={line.appearanceNameSnapshot || 'appearance'} className='size-full object-cover' />
+                  ) : (
+                    <ImageIcon className='size-5 text-muted-foreground/20' />
+                  )}
+                </div>
+              </div>
+              <div className='mt-2 space-y-1'>
+                <div className='text-[11px] font-black'>
+                  {line.appearanceNameSnapshot || t('tradingSalesOrder.linesEditor.appearancePreviewEmpty')}
+                </div>
+                <div className='text-[10px] leading-4 text-muted-foreground'>
+                  {line.appearanceDescriptionSnapshot || t('tradingSalesOrder.linesEditor.appearanceDescriptionEmpty')}
+                </div>
+              </div>
             </div>
 
             <div className='mb-4 grid grid-cols-2 gap-3'>

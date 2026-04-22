@@ -1,6 +1,9 @@
 package services
 
-import "xdfc-server/models"
+import (
+	"math"
+	"xdfc-server/models"
+)
 
 func mapSalesOrderLineRequestToModel(line SalesOrderLineRequest) models.SalesOrderLine {
 	return models.SalesOrderLine{
@@ -66,6 +69,10 @@ func MapSaveSalesOrderRequestToModel(input SaveSalesOrderRequest) models.SalesOr
 	}
 }
 
+func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
+	return MapSalesOrderToResponseWithReturnMetrics(order, nil)
+}
+
 func MapSalesOrderSnapshotRequestToModel(input SalesOrderSnapshotRequest) models.SalesOrder {
 	lines := make([]models.SalesOrderLine, 0, len(input.Lines))
 	for _, line := range input.Lines {
@@ -102,32 +109,47 @@ func MapSalesOrderSnapshotRequestToModel(input SalesOrderSnapshotRequest) models
 	}
 }
 
-func mapSalesOrderLineToResponse(line models.SalesOrderLine) SalesOrderLineResponse {
-	return SalesOrderLineResponse{
-		ID:             line.ID,
-		LineNo:         line.LineNo,
-		ProductID:      line.ProductID,
-		ProductModel:   line.ProductModel,
-		ProductCode:    line.ProductCode,
-		Specification:  line.Specification,
-		Description:    line.Description,
-		Qty:            line.Qty,
-		UOM:            line.UOM,
-		Price:          line.Price,
-		Amount:         line.Amount,
-		DeliveredQty:   line.DeliveredQty,
-		CustomerPartNo: line.CustomerPartNo,
-		JobNo:          line.JobNo,
-		Note:           line.Note,
-		DrillingPlanID: line.DrillingPlanID,
-		LabelingPlanID: line.LabelingPlanID,
-		HoleCount:      line.HoleCount,
-		Route:          line.Route,
-		OrderDate:      line.OrderDate,
-		Status:         line.Status,
-		ClaimedBy:      line.ClaimedBy,
-		ClaimedAt:      line.ClaimedAt,
+func mapSalesOrderLineToResponseWithReturnMetrics(line models.SalesOrderLine, returnedQuantityMap map[uint]float64) SalesOrderLineResponse {
+	returnedQuantity := 0.0
+	if returnedQuantityMap != nil {
+		returnedQuantity = math.Round(returnedQuantityMap[line.ID]*100) / 100
 	}
+	remainingReturnableQuantity := math.Round((line.Qty-returnedQuantity)*100) / 100
+	if remainingReturnableQuantity < purchaseReceiptTolerance {
+		remainingReturnableQuantity = 0
+	}
+
+	return SalesOrderLineResponse{
+		ID:                          line.ID,
+		LineNo:                      line.LineNo,
+		ProductID:                   line.ProductID,
+		ProductModel:                line.ProductModel,
+		ProductCode:                 line.ProductCode,
+		Specification:               line.Specification,
+		Description:                 line.Description,
+		Qty:                         math.Round(line.Qty*100) / 100,
+		UOM:                         line.UOM,
+		Price:                       math.Round(line.Price*100) / 100,
+		Amount:                      math.Round(line.Amount*100) / 100,
+		DeliveredQty:                math.Round(line.DeliveredQty*100) / 100,
+		CustomerPartNo:              line.CustomerPartNo,
+		JobNo:                       line.JobNo,
+		Note:                        line.Note,
+		DrillingPlanID:              line.DrillingPlanID,
+		LabelingPlanID:              line.LabelingPlanID,
+		HoleCount:                   line.HoleCount,
+		Route:                       line.Route,
+		OrderDate:                   line.OrderDate,
+		Status:                      line.Status,
+		ClaimedBy:                   line.ClaimedBy,
+		ClaimedAt:                   line.ClaimedAt,
+		ReturnedQuantity:            returnedQuantity,
+		RemainingReturnableQuantity: remainingReturnableQuantity,
+	}
+}
+
+func mapSalesOrderLineToResponse(line models.SalesOrderLine) SalesOrderLineResponse {
+	return mapSalesOrderLineToResponseWithReturnMetrics(line, nil)
 }
 
 func mapSalesOrderLineResponseToRequest(line SalesOrderLineResponse) SalesOrderLineRequest {
@@ -158,10 +180,10 @@ func mapSalesOrderLineResponseToRequest(line SalesOrderLineResponse) SalesOrderL
 	}
 }
 
-func MapSalesOrderToResponse(order models.SalesOrder) SalesOrderResponse {
+func MapSalesOrderToResponseWithReturnMetrics(order models.SalesOrder, returnedQuantityMap map[uint]float64) SalesOrderResponse {
 	lines := make([]SalesOrderLineResponse, 0, len(order.Lines))
 	for _, line := range order.Lines {
-		lines = append(lines, mapSalesOrderLineToResponse(line))
+		lines = append(lines, mapSalesOrderLineToResponseWithReturnMetrics(line, returnedQuantityMap))
 	}
 	return SalesOrderResponse{
 		ID:                 order.ID,
@@ -233,15 +255,16 @@ func MapSalesOrderResponseToSnapshot(order SalesOrderResponse) SalesOrderSnapsho
 	}
 }
 
-func MapSalesOrdersToListItems(orders []models.SalesOrder, includeLines bool) []SalesOrderListItemResponse {
+func MapSalesOrdersToListItemsWithReturnMetrics(orders []models.SalesOrder, includeLines bool, returnedQuantityMap map[uint]float64) []SalesOrderListItemResponse {
 	items := make([]SalesOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
-		lines := make([]SalesOrderLineResponse, 0)
+		var lines *[]SalesOrderLineResponse
 		if includeLines {
-			lines = make([]SalesOrderLineResponse, 0, len(order.Lines))
+			mappedLines := make([]SalesOrderLineResponse, 0, len(order.Lines))
 			for _, line := range order.Lines {
-				lines = append(lines, mapSalesOrderLineToResponse(line))
+				mappedLines = append(mappedLines, mapSalesOrderLineToResponseWithReturnMetrics(line, returnedQuantityMap))
 			}
+			lines = &mappedLines
 		}
 		items = append(items, SalesOrderListItemResponse{
 			ID:                 order.ID,
@@ -277,4 +300,8 @@ func MapSalesOrdersToListItems(orders []models.SalesOrder, includeLines bool) []
 		})
 	}
 	return items
+}
+
+func MapSalesOrdersToListItems(orders []models.SalesOrder, includeLines bool) []SalesOrderListItemResponse {
+	return MapSalesOrdersToListItemsWithReturnMetrics(orders, includeLines, nil)
 }

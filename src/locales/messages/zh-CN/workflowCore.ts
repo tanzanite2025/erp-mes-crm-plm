@@ -1,25 +1,27 @@
 export const workflowCore = {
   commands: {
     page: {
-      title: '标准指令库',
-      description: '预设标准化指令模板，提升流程协同效率',
-      add: '新增标准指令',
-      searchPlaceholder: '搜索指令内容、分类或标签...',
+      title: '通知内容模板',
+      description:
+        '统一管理可复用的通知标题、正文和跳转链接，供消息中心规则绑定使用。',
+      add: '新增内容模板',
+      searchPlaceholder: '搜索模板名称、正文或跳转链接...',
       tabs: {
-        all: '全部指令',
+        all: '全部模板',
       },
     },
     list: {
-      empty: '暂无通知模板',
+      empty: '暂无通知内容模板',
       scope: '范围',
       nodeType: '环节',
     },
     form: {
-      editTitle: '编辑通知模板',
-      newTitle: '新增通知模板',
-      description: '配置通知正文及点击后的跳转路径，支持使用 [OrderNo]、[ProductName] 等变量。',
+      editTitle: '编辑通知内容模板',
+      newTitle: '新增通知内容模板',
+      description:
+        '配置通知正文及点击后的跳转路径，支持使用 [OrderNo]、[ProductName] 等变量。',
       fields: {
-        title: '通知模板名称',
+        title: '内容模板名称',
         bindType: '适用范围',
         nodeType: '关联环节',
         params: '动态参数（逗号分隔）',
@@ -51,16 +53,13 @@ export const workflowCore = {
     defaults: {
       pendingApproval: {
         title: '订单待审批通知',
-        content: '新订单 [OrderNo] ([ProductName]) 已提交，请点击处理按钮进行审核。',
+        content:
+          '新订单 [OrderNo] ([ProductName]) 已提交，请点击处理按钮进行审核。',
       },
       productionDone: {
         title: '生产任务完成',
         content: '订单 [OrderNo] 的生产任务已全部完成，请检查状态。',
       },
     },
-    toasts: {
-      added: '指令已添加到库中',
-      removed: '指令已从库中移除',
-    },
   },
-}
+} as const

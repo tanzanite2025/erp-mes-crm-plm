@@ -6,7 +6,7 @@ export const basicSettingsZhCNOverrides = {
     linearBarcode: {
       page: {
         title: '一维码规则中心',
-        subtitle: 'LINEAR_BARCODE_PROTOCOL / 维护年月日、型号、外观、孔型孔数与四位流水号的持久化 Code128 协议。',
+        subtitle: 'LINEAR_BARCODE_PROTOCOL / 维护年月日、型号、外观、孔型前缀、孔数与四位流水号的持久化 Code128 协议。',
         badges: {
           active: '协议已启用',
           loading: '配置加载中',
@@ -34,13 +34,14 @@ export const basicSettingsZhCNOverrides = {
           day: { name: '日期 (DD)', desc: '自然日编码，范围固定为 01-31。' },
           model: { name: '型号', desc: '与工程产品档案中的 2 位型号编码保持一致。' },
           appearance: { name: '外观', desc: '沿用共享外观字典的一位外观映射值。' },
-          holes: { name: '孔型孔数', desc: '使用 R/D + 两位孔数，例如 R14、D18。' },
+          holePrefix: { name: '孔型前缀', desc: '占 1 位，当前使用 R/D 等孔型分类标识。' },
+          holes: { name: '孔数', desc: '占 2 位，使用两位数字编码，例如 14、18、32。' },
           serial: { name: '流水号', desc: '通过共享业务编号规则发放的四位流水号。' },
         },
       },
       simulation: {
         title: '一维码动态仿真输出',
-        subtitle: '年份 + 月份 + 日期 + 型号 + 外观 + 孔型孔数 + 流水号',
+        subtitle: '年份 + 月份 + 日期 + 型号 + 外观 + 孔型前缀 + 孔数 + 流水号',
         codeLabel: '编码',
         form: {
           year: '年份 (YY)',
@@ -90,7 +91,7 @@ export const basicSettingsZhCNOverrides = {
       footer: {
         title: '一维码实施说明',
         description:
-          '当前页面定义了 15 位轮圈一维码结构：年份 + 月份 + 日期 + 型号 + 外观 + 孔型孔数 + 流水号。流水号复用业务编号规则 {{key}}，便于 PDA 与扫码入站端共享同一套后端默认值。',
+          '当前页面定义了 15 位轮圈一维码结构：年份 + 月份 + 日期 + 型号 + 外观 + 孔型前缀 + 孔数 + 流水号。其中孔型前缀占 1 位、孔数占 2 位；流水号复用业务编号规则 {{key}}，便于 PDA 与扫码入站端共享同一套后端默认值。',
       },
       resetDialog: {
         title: '重置一维码协议',

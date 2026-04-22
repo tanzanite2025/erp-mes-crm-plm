@@ -315,8 +315,8 @@ export function EmployeeManagementList() {
 
     return (
         <div className='flex flex-col gap-4'>
-            <div className='flex items-center justify-between px-1 gap-4 flex-wrap'>
-                <div className='flex items-center gap-3 overflow-hidden'>
+            <div className='relative z-10 flex items-center justify-between gap-4 px-1 flex-wrap'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2 overflow-visible'>
                     <div className='relative w-[240px] md:w-[280px] shrink-0'>
                         <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30' />
                         <Input

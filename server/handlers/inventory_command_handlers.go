@@ -345,6 +345,23 @@ func TransferInventoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.InventoryCommandStatusResponse{Status: "success"})
 }
 
+// PrepareVirtualShipmentHandler lets warehouse staff move real stock into the virtual shipping warehouse for vehicle matching.
+func PrepareVirtualShipmentHandler(c *gin.Context) {
+	var request services.PrepareVirtualShipmentRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_VIRTUAL_SHIPMENT_VALIDATION_FAILED", "[VALIDATION] invalid virtual shipment payload: "+err.Error())
+		return
+	}
+
+	shipment, err := services.PrepareVirtualShipment(request)
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_VIRTUAL_SHIPMENT_FAILED", "[SERVER] virtual shipment preparation failed: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, shipment)
+}
+
 // ReconcileInventoryHandler fixes negative quantity records to zero.
 func ReconcileInventoryHandler(c *gin.Context) {
 	if err := services.ReconcileNegativeInventory(); err != nil {
@@ -357,14 +374,6 @@ func ReconcileInventoryHandler(c *gin.Context) {
 // VoidShipmentHandler voids shipment and rolls back inventory for committed records.
 func VoidShipmentHandler(c *gin.Context) {
 	id := c.Param("id")
-
-	var input services.VoidShipmentRequest
-	c.ShouldBindJSON(&input)
-
-	if err := CheckAndConsumeApproval("Inventory", "VOID", id, input.ApprovalId); err != nil {
-		respondInventoryError(c, http.StatusForbidden, "INVENTORY_VOID_FORBIDDEN", "[SECURITY_LOCK] "+err.Error())
-		return
-	}
 
 	if err := services.VoidShipment(c.Request.Context(), id); err != nil {
 		log.Printf("[LOCK_INFO] operation conflict: %v", err)

@@ -1,3 +1,5 @@
+import { useNavigate } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
 import { useSalesOrderDetailSummaryViewModel } from '../../hooks/use-sales-order-detail-summary-view-model'
@@ -41,12 +43,24 @@ function InfoRow({
 }
 
 export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
+  const navigate = useNavigate()
   const { t, locale } = useLanguage()
   const {
     infoRows,
     requirementsText,
     evidences,
   } = useSalesOrderDetailSummaryViewModel({ order, locale, t })
+
+  const openReceivables = (autoOpen: boolean) => {
+    navigate({
+      to: '/trading/receivables',
+      search: {
+        sourceType: 'SALES_ORDER',
+        sourceRefId: order.id,
+        autoOpen: autoOpen || undefined,
+      },
+    })
+  }
 
   return (
     <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-6 py-5 shadow-inner'>
@@ -60,6 +74,15 @@ export function SalesOrderDetailSummary({ order }: { order: SalesOrder }) {
             variant={row.variant}
           />
         ))}
+      </div>
+
+      <div className='flex flex-wrap items-center gap-2 border-b border-muted-foreground/10 pb-4'>
+        <Button type='button' variant='outline' size='sm' onClick={() => openReceivables(false)}>
+          查看应收
+        </Button>
+        <Button type='button' size='sm' onClick={() => openReceivables(true)}>
+          登记收款
+        </Button>
       </div>
 
       <OrderEvidenceGallery

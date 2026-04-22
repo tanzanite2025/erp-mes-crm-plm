@@ -9,26 +9,27 @@ import {
   Search,
   User,
 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { type DeltaSet } from '@/lib/delta/types'
+import { isForbiddenError } from '@/lib/error-status'
+import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { isForbiddenError } from '@/lib/error-status'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { type Customer } from '../data/schema'
-import { type DeltaSet } from '@/lib/delta/types'
-import { tradingQueryKeys } from '../query-keys'
-import { requireTradingCommandActor } from '../utils/command-actor'
-import { CustomerAuditTimelineSheet } from '../customer/components/customer-audit-timeline-sheet'
-import { CustomerListItem } from './customer-list-item'
-import { CustomerActionDialog } from './customer-action-dialog'
-import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { QuoteWorkspaceHost } from '@/features/quotes/components/quote-workspace-host'
+import { quoteQueryKeys } from '@/features/quotes/query-keys'
 import { listCustomerQuoteSummary } from '@/features/quotes/services/customer-quote-summary-service'
 import { useCustomerMutations, useGetCustomerList } from '../customer'
+import { CustomerAuditTimelineSheet } from '../customer/components/customer-audit-timeline-sheet'
 import { useGetCustomerSalesClosureSummary } from '../customer/hooks/use-customer-sales-closure-summary'
+import { useGetCustomerSalesReturnSummary } from '../customer/hooks/use-customer-sales-return-summary'
+import { type Customer } from '../data/schema'
+import { tradingQueryKeys } from '../query-keys'
+import { requireTradingCommandActor } from '../utils/command-actor'
+import { CustomerActionDialog } from './customer-action-dialog'
+import { CustomerListItem } from './customer-list-item'
 
 type QuoteStatusFilter = 'all' | 'withQuote' | 'withoutQuote'
 
@@ -38,27 +39,32 @@ export function CustomerList() {
   const { allowsAction } = useNonBlockingPermissionActions()
   const [searchTerm, setSearchTerm] = useState('')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  )
   const [auditCustomer, setAuditCustomer] = useState<Customer | null>(null)
   const [showDeleted, setShowDeleted] = useState(false)
-  const [quoteStatusFilter, setQuoteStatusFilter] = useState<QuoteStatusFilter>('all')
+  const [quoteStatusFilter, setQuoteStatusFilter] =
+    useState<QuoteStatusFilter>('all')
   const [quoteWorkspaceRequest, setQuoteWorkspaceRequest] = useState<{
     open: boolean
     mode: 'create' | 'detail' | null
     quoteId: string | null
   }>({ open: false, mode: null, quoteId: null })
-  const {
-    data: customerList,
-    isLoading,
-    isError,
-    error,
-  } = useGetCustomerList()
+  const { data: customerList, isLoading, isError, error } = useGetCustomerList()
   const { data: salesClosureSummaryList } = useGetCustomerSalesClosureSummary()
+  const { data: salesReturnSummaryList } = useGetCustomerSalesReturnSummary()
   const user = useAuthStore((state) => state.user)
-  const { createMutation, saveMutation, deleteMutation } = useCustomerMutations()
+  const { createMutation, saveMutation, deleteMutation } =
+    useCustomerMutations()
   const loadFailedLabel =
-    locale === 'zh-CN' ? '客户数据加载失败，请稍后重试' : 'Failed to load customer data. Please try again.'
-  const customers = customerList?.items ?? []
+    locale === 'zh-CN'
+      ? '客户数据加载失败，请稍后重试'
+      : 'Failed to load customer data. Please try again.'
+  const customers = useMemo(
+    () => customerList?.items ?? [],
+    [customerList?.items]
+  )
   const customerStats = customerList?.metadata?.stats
   const customerStatsAvailable =
     typeof customerStats?.total === 'number' &&
@@ -66,9 +72,17 @@ export function CustomerList() {
     typeof customerStats?.newThisMonth === 'number'
   const customerStatsMissingLabel =
     locale === 'zh-CN'
-      ? '统计暂不可用：列表响应缺少 metadata.stats，当前不再回退前端本地重算。'
-      : 'Stats unavailable: list response is missing metadata.stats and no local fallback recalculation is used.'
-  const salesClosureSummaryMap = new Map((salesClosureSummaryList?.items ?? []).map((item) => [item.customerId, item]))
+      ? '统计暂不可用，请稍后刷新后重试。'
+      : 'Stats are temporarily unavailable. Please refresh and try again later.'
+  const salesClosureSummaryMap = new Map(
+    (salesClosureSummaryList?.items ?? []).map((item) => [
+      item.customerId,
+      item,
+    ])
+  )
+  const salesReturnSummaryMap = new Map(
+    (salesReturnSummaryList?.items ?? []).map((item) => [item.customerId, item])
+  )
   const customerQuoteSummaryQueries = useQueries({
     queries: customers.map((customer) => ({
       queryKey: quoteQueryKeys.customerSummary(customer.id),
@@ -76,18 +90,16 @@ export function CustomerList() {
       enabled: customer.id.trim().length > 0,
     })),
   })
-  const customerQuoteSummaryMap = useMemo(() => {
-    return new Map(
-      customers.map((customer, index) => [
-        customer.id,
-        {
-          items: customerQuoteSummaryQueries[index]?.data ?? [],
-          isLoading: customerQuoteSummaryQueries[index]?.isLoading ?? false,
-          isError: customerQuoteSummaryQueries[index]?.isError ?? false,
-        },
-      ])
-    )
-  }, [customerQuoteSummaryQueries, customers])
+  const customerQuoteSummaryMap = new Map(
+    customers.map((customer, index) => [
+      customer.id,
+      {
+        items: customerQuoteSummaryQueries[index]?.data ?? [],
+        isLoading: customerQuoteSummaryQueries[index]?.isLoading ?? false,
+        isError: customerQuoteSummaryQueries[index]?.isError ?? false,
+      },
+    ])
+  )
   const quoteFilterLabels = {
     all: locale === 'zh-CN' ? '全部客户' : 'All Customers',
     withQuote: locale === 'zh-CN' ? '仅看有报价' : 'With Quotes',
@@ -98,7 +110,9 @@ export function CustomerList() {
     const matchesSearch =
       (customer.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (customer.code?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-      (customer.contactPerson?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+      (customer.contactPerson?.toLowerCase() ?? '').includes(
+        searchTerm.toLowerCase()
+      )
     const quoteSummary = customerQuoteSummaryMap.get(customer.id)
     const hasQuotes = (quoteSummary?.items.length ?? 0) > 0
 
@@ -121,13 +135,17 @@ export function CustomerList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleSaveCustomer = (payload: { data: Customer; isPatch: boolean; delta?: DeltaSet }) => {
+  const handleSaveCustomer = (payload: {
+    data: Customer
+    isPatch: boolean
+    delta?: DeltaSet
+  }) => {
     if (!allowsAction('action_trading_customer_manage')) return
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
-        'CustomerList.handleSaveCustomer',
+        'CustomerList.handleSaveCustomer'
       )
       saveMutation.mutate({
         id: selectedCustomer.id,
@@ -159,12 +177,12 @@ export function CustomerList() {
 
   if (isLoading) {
     return (
-      <div className='h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
+      <div className='flex h-[60vh] animate-in flex-col items-center justify-center space-y-4 duration-500 fade-in'>
         <div className='relative'>
-          <Loader2 className='size-10 text-primary animate-spin opacity-20' />
-          <Building2 className='size-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' />
+          <Loader2 className='size-10 animate-spin text-primary opacity-20' />
+          <Building2 className='absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2 text-primary' />
         </div>
-        <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse'>
+        <p className='animate-pulse text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase'>
           {t('trading.customers.loading')}
         </p>
       </div>
@@ -177,9 +195,9 @@ export function CustomerList() {
     }
 
     return (
-      <div className='rounded-[40px] border-2 border-dashed border-rose-300/50 h-72 flex flex-col items-center justify-center text-center px-6 bg-rose-50/40'>
-        <Building2 className='size-16 mb-4 text-rose-400/40' />
-        <p className='text-[10px] font-black uppercase tracking-[0.3em] mb-3 text-rose-600'>
+      <div className='flex h-72 flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-rose-300/50 bg-rose-50/40 px-6 text-center'>
+        <Building2 className='mb-4 size-16 text-rose-400/40' />
+        <p className='mb-3 text-[10px] font-black tracking-[0.3em] text-rose-600 uppercase'>
           {loadFailedLabel}
         </p>
         <p className='mb-6 text-xs font-bold text-rose-700/70'>
@@ -187,8 +205,12 @@ export function CustomerList() {
         </p>
         <Button
           variant='outline'
-          onClick={() => void queryClient.invalidateQueries({ queryKey: tradingQueryKeys.customerList() })}
-          className='h-12 rounded-full border-dashed border-2 font-black text-[10px] uppercase tracking-widest px-10'
+          onClick={() =>
+            void queryClient.invalidateQueries({
+              queryKey: tradingQueryKeys.customerList(),
+            })
+          }
+          className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase'
         >
           {locale === 'zh-CN' ? '重试加载' : 'Retry'}
         </Button>
@@ -197,78 +219,78 @@ export function CustomerList() {
   }
 
   return (
-    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
       {!customerStatsAvailable && (
         <div className='rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-xs font-bold text-amber-800'>
           {customerStatsMissingLabel}
         </div>
       )}
 
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6'>
-        <div className='p-5 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted/50 flex flex-col justify-between h-32 sm:h-36 relative overflow-hidden group'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity'>
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6'>
+        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <Building2 className='size-12 sm:size-16' />
           </div>
-          <span className='text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 italic'>
+          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
             {t('trading.customers.stats.total')}
           </span>
-          <div className='flex items-end justify-between relative'>
-            <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums'>
+          <div className='relative flex items-end justify-between'>
+            <span className='text-3xl font-black tracking-tighter italic tabular-nums sm:text-4xl'>
               {customerStatsAvailable ? customerStats.total : '—'}
             </span>
-            <div className='p-2 bg-primary/10 rounded-xl'>
+            <div className='rounded-xl bg-primary/10 p-2'>
               <Building2 className='size-5 text-primary' />
             </div>
           </div>
         </div>
 
-        <div className='p-5 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted/50 flex flex-col justify-between h-32 sm:h-36 relative overflow-hidden group'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity'>
+        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <User className='size-12 sm:size-16' />
           </div>
-          <span className='text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 italic'>
+          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
             {t('trading.customers.stats.active')}
           </span>
-          <div className='flex items-end justify-between relative'>
-            <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums text-emerald-500'>
+          <div className='relative flex items-end justify-between'>
+            <span className='text-3xl font-black tracking-tighter text-emerald-500 italic tabular-nums sm:text-4xl'>
               {customerStatsAvailable ? customerStats.active : '—'}
             </span>
-            <div className='p-2 bg-emerald-500/10 rounded-xl'>
+            <div className='rounded-xl bg-emerald-500/10 p-2'>
               <User className='size-5 text-emerald-500' />
             </div>
           </div>
         </div>
 
-        <div className='p-5 sm:p-6 rounded-[24px] bg-muted/5 border-2 border-dashed border-muted/50 flex flex-col justify-between h-32 sm:h-36 relative overflow-hidden group'>
-          <div className='absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity'>
+        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+          <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <ExternalLink className='size-12 sm:size-16' />
           </div>
-          <span className='text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 italic'>
+          <span className='text-[9px] font-black tracking-[0.2em] text-muted-foreground/50 uppercase italic sm:text-[10px]'>
             {t('trading.customers.stats.newThisMonth')}
           </span>
-          <div className='flex items-end justify-between relative'>
-            <span className='text-3xl sm:text-4xl font-black italic tracking-tighter tabular-nums text-primary'>
+          <div className='relative flex items-end justify-between'>
+            <span className='text-3xl font-black tracking-tighter text-primary italic tabular-nums sm:text-4xl'>
               {customerStatsAvailable ? `+${customerStats.newThisMonth}` : '—'}
             </span>
-            <div className='px-3 py-1 bg-primary text-primary-foreground rounded-full text-[8px] font-black uppercase tracking-widest'>
+            <div className='rounded-full bg-primary px-3 py-1 text-[8px] font-black tracking-widest text-primary-foreground uppercase'>
               {t('trading.customers.stats.newBadge')}
             </div>
           </div>
         </div>
       </div>
 
-      <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-1'>
+      <div className='flex flex-col items-stretch justify-between gap-3 px-1 sm:flex-row sm:items-center sm:gap-4'>
         <div className='relative w-full sm:w-96'>
-          <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
+          <Search className='absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/40' />
           <Input
             placeholder={t('trading.customers.searchPlaceholder')}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className='pl-10 h-11 sm:h-12 rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/20 text-[13px] font-medium transition-all shadow-inner'
+            className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-[13px] font-medium shadow-inner transition-all focus-visible:ring-1 focus-visible:ring-primary/20 sm:h-12'
           />
         </div>
 
-        <div className='flex items-center gap-2 sm:gap-3 w-full sm:w-auto'>
+        <div className='flex w-full items-center gap-2 sm:w-auto sm:gap-3'>
           <div className='flex items-center gap-1 rounded-full bg-muted/40 p-1'>
             {(['all', 'withQuote', 'withoutQuote'] as const).map((option) => (
               <Button
@@ -277,7 +299,7 @@ export function CustomerList() {
                 variant='ghost'
                 onClick={() => setQuoteStatusFilter(option)}
                 className={cn(
-                  'h-9 rounded-full px-3 text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all',
+                  'h-9 rounded-full px-3 text-[9px] font-black tracking-widest uppercase transition-all sm:text-[10px]',
                   quoteStatusFilter === option
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -292,17 +314,19 @@ export function CustomerList() {
             variant='ghost'
             onClick={() => setShowDeleted((value) => !value)}
             className={cn(
-              'flex-1 sm:flex-none h-11 px-4 sm:px-6 rounded-full font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all',
+              'h-11 flex-1 rounded-full px-4 text-[9px] font-black tracking-widest uppercase transition-all sm:flex-none sm:px-6 sm:text-[10px]',
               showDeleted ? 'bg-primary/10 text-primary' : 'opacity-60'
             )}
           >
             <Filter className='mr-2 size-4' />
-            {showDeleted ? t('trading.customers.hideDeleted') : t('trading.customers.showDeleted')}
+            {showDeleted
+              ? t('trading.customers.hideDeleted')
+              : t('trading.customers.showDeleted')}
           </Button>
 
           <Button
             onClick={handleAddClick}
-            className='flex-1 sm:flex-none h-11 px-4 sm:px-8 rounded-full bg-primary text-primary-foreground font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95'
+            className='h-11 flex-1 rounded-full bg-primary px-4 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-xl shadow-primary/20 transition-all active:scale-95 sm:flex-none sm:px-8 sm:text-[10px]'
           >
             <Plus className='mr-2 size-4' />
             {t('trading.customers.addCustomer')}
@@ -324,19 +348,20 @@ export function CustomerList() {
               onCreateQuote={handleCreateCustomerQuote}
               onOpenAudit={setAuditCustomer}
               salesClosureSummary={salesClosureSummaryMap.get(customer.id)}
+              salesReturnSummary={salesReturnSummaryMap.get(customer.id)}
             />
           ))}
         </div>
       ) : (
-        <div className='rounded-[40px] border-2 border-dashed border-muted/50 h-72 flex flex-col items-center justify-center text-muted-foreground/20 bg-muted/5 group transition-all hover:bg-muted/10'>
-          <Building2 className='size-16 mb-4 opacity-10 group-hover:scale-110 group-hover:opacity-20 transition-all duration-700' />
-          <p className='text-[10px] font-black uppercase tracking-[0.3em] mb-6 animate-pulse'>
+        <div className='group flex h-72 flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-muted/50 bg-muted/5 text-muted-foreground/20 transition-all hover:bg-muted/10'>
+          <Building2 className='mb-4 size-16 opacity-10 transition-all duration-700 group-hover:scale-110 group-hover:opacity-20' />
+          <p className='mb-6 animate-pulse text-[10px] font-black tracking-[0.3em] uppercase'>
             {t('trading.customers.empty')}
           </p>
           <Button
             variant='outline'
             onClick={handleAddClick}
-            className='h-12 rounded-full border-dashed border-2 font-black text-[10px] uppercase tracking-widest px-10 hover:bg-primary hover:text-primary-foreground transition-all duration-500'
+            className='h-12 rounded-full border-2 border-dashed px-10 text-[10px] font-black tracking-widest uppercase transition-all duration-500 hover:bg-primary hover:text-primary-foreground'
           >
             {t('trading.customers.firstCustomer')}
           </Button>
@@ -363,7 +388,9 @@ export function CustomerList() {
         externalOpen={quoteWorkspaceRequest.open}
         externalMode={quoteWorkspaceRequest.mode}
         externalQuoteId={quoteWorkspaceRequest.quoteId}
-        onExternalHandled={() => setQuoteWorkspaceRequest({ open: false, mode: null, quoteId: null })}
+        onExternalHandled={() =>
+          setQuoteWorkspaceRequest({ open: false, mode: null, quoteId: null })
+        }
       />
     </div>
   )

@@ -208,6 +208,7 @@ func main() {
 
 	db.InitDB(dsn)
 	db.InitRedis()
+	services.StartInitialSearchRebuild()
 
 	go handlers.GlobalHub.Run()
 	go handlers.StartRedisSubscriber()

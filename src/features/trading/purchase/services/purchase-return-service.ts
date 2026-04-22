@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureObjectResponse } from '@/lib/api-response'
+import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
 import type { OrderEvidence, PurchaseOrder } from '../../data/schema'
 import { toPurchaseOrderContract } from '../adapters/purchase-order-api-adapter'
 import type {
@@ -128,7 +128,11 @@ export async function getPurchaseReturns(page = 1, pageSize = 50): Promise<Pagin
   ) as PurchaseReturnListPageApiDTO
 
   return {
-    items: (dto.items ?? []).map(toPurchaseReturnContract),
+    items: ensureArrayField<PurchaseReturnApiDTO>(
+      dto,
+      'items',
+      'PurchaseReturnService.getPurchaseReturns'
+    ).map(toPurchaseReturnContract),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

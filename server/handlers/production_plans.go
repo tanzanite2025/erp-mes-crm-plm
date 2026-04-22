@@ -20,6 +20,11 @@ func GetProductionPlansHandler(c *gin.Context) {
 	status := c.Query("status")
 	orderNo := c.Query("orderNo")
 
+	if status != "" && status != "ALL" && !services.IsProductionPlanStatus(status) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 非法生产计划状态: " + status})
+		return
+	}
+
 	query := db.DB.Model(&models.ProductionPlan{}).Preload("Tasks")
 
 	if status != "" && status != "ALL" {
@@ -57,6 +62,10 @@ func SaveProductionPlanHandler(c *gin.Context) {
 	var plan models.ProductionPlan
 	if err := c.ShouldBindJSON(&plan); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 生产计划格式错误: " + err.Error()})
+		return
+	}
+	if err := services.ValidateProductionPlanStatuses(plan); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		return
 	}
 

@@ -1,4 +1,5 @@
 export const common = {
+  all: 'All',
   language: {
     label: 'Language',
     switcher: 'Switch language',

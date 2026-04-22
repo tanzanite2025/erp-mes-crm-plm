@@ -1,72 +1,118 @@
-import { useState } from 'react'
-import { useGetQualityStandards, useQualityMutations } from './use-quality'
-import { type Standard } from '../data/schema'
-import { type DeltaSet } from '@/lib/delta/types'
+import type {
+  QualityStandardsListStats,
+  QualityStandardsListSearchState,
+  QualityStandardsStatusFilter,
+  QualityStandardsTypeFilter,
+} from '../types/quality-standards-list'
+import { useGetQualityStandards } from './use-quality'
 
-export function useQualityStandardsMgmt() {
-    const [page] = useState(1)
-    const [pageSize] = useState(20)
-    const [typeFilter] = useState('ALL')
-    const { data, error, isLoading } = useGetQualityStandards(page, pageSize, typeFilter)
-    const standards = data?.items || []
-    const total = data?.total || 0
-    const { saveStandardMutation } = useQualityMutations()
+const DEFAULT_STATUS_STATS: QualityStandardsListStats = {
+  total: 0,
+  published: 0,
+  draft: 0,
+  archived: 0,
+}
 
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedStandard, setSelectedStandard] = useState<Standard | null>(null)
-    const [isDetailOpen, setIsDetailOpen] = useState(false)
-    const [isActionOpen, setIsActionOpen] = useState(false)
-    const [actionStandard, setActionStandard] = useState<Standard | null>(null)
+type SearchStateUpdater = (
+  prev: QualityStandardsListSearchState
+) => Partial<QualityStandardsListSearchState>
 
-    const filteredStandards = standards.filter((standard: Standard) =>
-        (standard.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-        (standard.code?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-    )
+interface UseQualityStandardsMgmtParams {
+  search: QualityStandardsListSearchState
+  navigate: (options: { search: SearchStateUpdater; replace?: boolean }) => void
+}
 
-    const handleViewDetail = (standard: Standard) => {
-        setSelectedStandard(standard)
-        setIsDetailOpen(true)
-    }
+export function useQualityStandardsMgmt({
+  search,
+  navigate,
+}: UseQualityStandardsMgmtParams) {
+  const page = search.page
+  const pageSize = search.pageSize
+  const typeFilter = search.type
+  const statusFilter = search.status
 
-    const handleAdd = () => {
-        setActionStandard(null)
-        setIsActionOpen(true)
-    }
+  const { data, error, isLoading, isFetching } = useGetQualityStandards({
+    page,
+    pageSize,
+    type: typeFilter,
+    status: statusFilter,
+    keyword: search.keyword,
+  })
 
-    const handleEdit = (standard: Standard) => {
-        setActionStandard(standard)
-        setIsActionOpen(true)
-    }
+  const standards = data?.items || []
+  const total = data?.total || 0
+  const stats = data?.metadata?.stats ?? DEFAULT_STATUS_STATS
 
-    const handleSaveStandard = (payload: { data: Partial<Standard>; isPatch: boolean; delta?: DeltaSet }) => {
-        saveStandardMutation.mutate(payload)
-        setIsActionOpen(false)
-    }
+  const handleSearchChange = (value: string) => {
+    navigate({
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        keyword: value.trim(),
+        page: 1,
+      }),
+    })
+  }
 
-    return {
-        // Data states
-        standards: filteredStandards,
-        total,
-        isLoading,
-        error,
-        
-        // Search & Filter states
-        searchQuery,
-        setSearchQuery,
-        
-        // Dialog states
-        isDetailOpen,
-        setIsDetailOpen,
-        isActionOpen,
-        setIsActionOpen,
-        selectedStandard,
-        actionStandard,
-        
-        // Handlers
-        handleViewDetail,
-        handleAdd,
-        handleEdit,
-        handleSaveStandard,
-        isMutationPending: saveStandardMutation.isPending
-    }
+  const handleTypeFilterChange = (value: QualityStandardsTypeFilter) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        type: value,
+        page: 1,
+      }),
+    })
+  }
+
+  const handleStatusFilterChange = (value: QualityStandardsStatusFilter) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        status: value,
+        page: 1,
+      }),
+    })
+  }
+
+  const handlePageChange = (value: number) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        page: value,
+      }),
+    })
+  }
+
+  const handlePageSizeChange = (value: number) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        pageSize: value,
+        page: 1,
+      }),
+    })
+  }
+
+  const hasActiveFilters =
+    Boolean(search.keyword) || typeFilter !== 'ALL' || statusFilter !== 'ALL'
+
+  return {
+    standards,
+    total,
+    stats,
+    isLoading,
+    isFetching,
+    error,
+    page,
+    pageSize,
+    typeFilter,
+    statusFilter,
+    searchQuery: search.keyword,
+    hasActiveFilters,
+    setSearchQuery: handleSearchChange,
+    setTypeFilter: handleTypeFilterChange,
+    setStatusFilter: handleStatusFilterChange,
+    setPage: handlePageChange,
+    setPageSize: handlePageSizeChange,
+  }
 }

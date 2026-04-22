@@ -1,3 +1,5 @@
+import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
+
 export interface AppearanceMapping {
   [key: string]: {
     label: string
@@ -18,4 +20,22 @@ export const DEFAULT_APPEARANCE_MAPPING: AppearanceMapping = {
   '7': { label: '-', desc: 'Reserved' },
   '8': { label: '-', desc: 'Reserved' },
   '9': { label: '-', desc: 'Reserved' },
+}
+
+export function buildAppearanceMappingFromProductAppearances(items: ProductAppearance[]): AppearanceMapping {
+  const mapping: AppearanceMapping = {}
+
+  items.forEach((item) => {
+    const code = item.barcodeCode?.trim()
+    if (!code || !/^[1-9]$/.test(code)) {
+      return
+    }
+
+    mapping[code] = {
+      label: item.name?.trim() || `Appearance ${code}`,
+      desc: item.description?.trim() || '',
+    }
+  })
+
+  return mapping
 }

@@ -1,23 +1,16 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
-import { CircleDot, Tag, Info, Save, Grid3X3, FileType } from 'lucide-react'
+import { CircleDot, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { SelectDropdown } from '@/components/select-dropdown'
-import { FileUploader } from '@/components/file-uploader'
 import type { DeltaSet } from '@/lib/delta/types'
-import { drillingPlanInputSchema, type DrillingPlan, type DrillingPlanInput } from '../data/schema'
-import { LACING_PATTERN_OPTIONS, STANDARD_HOLE_COUNT_OPTIONS } from '../data/drilling-options'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import { type DrillingPlan, type DrillingPlanInput } from '../data/schema'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
-import { useDeltaTracker } from '@/hooks/use-delta-tracker'
-import { toast } from 'sonner'
-
-type DrillingFormState = DrillingPlanInput & { id?: string; createdAt?: string }
-type DrillingFormUpdater = DrillingFormState | ((prev: DrillingFormState) => DrillingFormState)
+import { useDrillingActionDialogState } from '../hooks/use-drilling-action-dialog-state'
+import { DrillingBasicInfoSection } from './drilling-basic-info-section'
+import { DrillingSpecSection } from './drilling-spec-section'
+import { DrillingAttachmentSection } from './drilling-attachment-section'
+import { DrillingMetaSection } from './drilling-meta-section'
 
 interface DrillingActionDialogProps {
   currentRow?: DrillingPlan | null
@@ -32,15 +25,6 @@ interface DrillingActionDialogProps {
   isLoading?: boolean
 }
 
-const DEFAULT_DRILLING: DrillingPlanInput = {
-  name: '',
-  productId: '',
-  lacingPattern: '',
-  standardHoles: '',
-  fileUrl: '',
-  fileExtension: 'pdf',
-}
-
 export function DrillingActionDialog({
   currentRow,
   open,
@@ -48,8 +32,6 @@ export function DrillingActionDialog({
   onSave,
   isLoading,
 }: DrillingActionDialogProps) {
-  const { data: products = [] } = useGetProducts({ mode: 'options' })
-  
   const shellClasses = buildActionDialogShellClasses({
     content: 'sm:max-w-[700px] rounded-[32px] overflow-hidden',
     header: 'p-8 pb-4 border-none bg-muted/5',
@@ -59,55 +41,32 @@ export function DrillingActionDialog({
     footer: 'p-8 pt-4 flex items-center justify-between w-full border-t border-dashed border-muted/20 bg-muted/5',
   })
 
-  const isEdit = !!currentRow
-  const initialFormData = useMemo<DrillingFormState>(() => {
-    if (currentRow) return currentRow
-    return { 
-      ...DEFAULT_DRILLING
-    }
-  }, [currentRow])
-
-  const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
-
-  const setFormData = useCallback((updater: DrillingFormUpdater) => {
-    if (typeof updater === 'function') {
-      const next = updater(formData)
-      Object.assign(formData, next)
-    } else {
-      Object.assign(formData, updater)
-    }
-  }, [formData])
-
-  const updateField = useCallback(<K extends keyof DrillingFormState>(field: K, value: DrillingFormState[K]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }, [setFormData])
+  const {
+    products,
+    formData,
+    isEdit,
+    isDirty,
+    updateField,
+    handleWeavingModeChange,
+    buildSaveParams,
+    weavingModeItems,
+    isWeavingModesLoading,
+    isWeavingModesError,
+    noWeavingModesAvailable,
+  } = useDrillingActionDialogState(currentRow, open)
 
   const handleSave = async () => {
-    const parsed = drillingPlanInputSchema.safeParse(formData)
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? '请填写钻孔方案必填项')
+    const params = await buildSaveParams()
+    if (!params) {
       return
     }
-    const payload = parsed.data
 
-    if (isEdit && currentRow) {
-      const delta = tracker.commit()
-      if (Object.keys(delta).length === 0) {
-        onOpenChange(false)
-        return
-      }
-      await onSave({ 
-        data: payload, 
-        isPatch: true, 
-        delta, 
-        version: currentRow.version 
-      })
-    } else {
-      await onSave({ data: payload, isPatch: false })
+    if (params.isPatch && params.delta && Object.keys(params.delta).length === 0) {
+      onOpenChange(false)
+      return
     }
+
+    await onSave(params)
   }
 
   return (
@@ -159,90 +118,31 @@ export function DrillingActionDialog({
 
       <div className='grid gap-8 relative'>
         {/* 核心标识组 */}
-        <div className='grid grid-cols-2 gap-6'>
-          <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <Tag className='size-3' /> 方案名称 / PLAN_NAME
-            </Label>
-            <Input
-              placeholder='例如: 2X-Cross-Standard-32H'
-              className='h-12 font-black text-sm bg-muted/40 border-none rounded-2xl focus-visible:ring-indigo-500/20 px-5 shadow-inner'
-              value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
-            />
-          </div>
-          <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2'>
-              <FileType className='size-3' /> 关联成品 SKU / PRODUCT_REF
-            </Label>
-            <SelectDropdown
-              defaultValue={formData.productId}
-              onValueChange={(val) => updateField('productId', val)}
-              items={products.map(p => ({ label: `${p.sku} | ${p.name}`, value: p.id }))}
-              placeholder='选择适配的产品 SKU'
-              className='h-12 rounded-2xl border-none bg-muted/40 px-5 font-bold text-sm shadow-inner italic'
-            />
-          </div>
-        </div>
+        <DrillingBasicInfoSection formData={formData} products={products} updateField={updateField} />
 
         {/* 技术规格组 */}
-        <div className='bg-muted/10 p-6 rounded-[32px] border border-dashed border-muted-foreground/10 space-y-6'>
-          <div className='flex items-center justify-between'>
-            <p className='text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600/70 flex items-center gap-2'>
-              <Grid3X3 className='size-3' /> 钻孔技术参数 / DRILLING_SPECS
-            </p>
-            <div className='h-px flex-1 mx-4 bg-muted-foreground/10' />
-          </div>
-
-          <div className='grid grid-cols-2 gap-6'>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>编织模式 / LACING_PATTERN</Label>
-              <SelectDropdown
-                defaultValue={formData.lacingPattern}
-                onValueChange={(val) => updateField('lacingPattern', val)}
-                items={LACING_PATTERN_OPTIONS}
-                placeholder='选择编织模式'
-                className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
-              />
-            </div>
-            <div className='space-y-2'>
-              <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>标准孔数 / HOLE_COUNT</Label>
-              <SelectDropdown
-                defaultValue={formData.standardHoles}
-                onValueChange={(val) => updateField('standardHoles', val)}
-                items={STANDARD_HOLE_COUNT_OPTIONS}
-                placeholder='选择孔数'
-                className='h-12 rounded-2xl border-none bg-background px-4 font-bold text-sm shadow-sm'
-              />
-            </div>
-          </div>
-        </div>
+        <DrillingSpecSection
+          formData={formData}
+          weavingModeItems={weavingModeItems}
+          isWeavingModesLoading={isWeavingModesLoading}
+          isWeavingModesError={isWeavingModesError}
+          noWeavingModesAvailable={noWeavingModesAvailable}
+          onWeavingModeChange={handleWeavingModeChange}
+          updateField={updateField}
+        />
 
         {/* 附件上传 */}
-        <div className='bg-indigo-500/5 p-6 rounded-[32px] border border-dashed border-indigo-500/20 space-y-3'>
-          <Label className='text-[10px] font-black uppercase tracking-widest text-indigo-600/60 flex items-center gap-2'>
-            <Info className='size-3' /> 钻孔工程图纸 / ENGINEERING_DWG
-          </Label>
-          <FileUploader 
-            value={formData.fileUrl} 
-            accept='.pdf,.dwg,.dxf,.stp,.step'
-            onChange={(url, ext) => {
-              updateField('fileUrl', url)
-              if (ext) updateField('fileExtension', ext)
-            }}
-          />
-        </div>
+        <DrillingAttachmentSection
+          fileUrl={formData.fileUrl ?? ''}
+          onChange={(url, ext) => {
+            updateField('fileUrl', url)
+            if (ext) {
+              updateField('fileExtension', ext)
+            }
+          }}
+        />
 
-        <div className='grid grid-cols-2 gap-6 opacity-40 grayscale pointer-events-none'>
-           <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>系统编码 / INTERNAL_ID</Label>
-            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.id ?? '--'} />
-          </div>
-          <div className='space-y-2'>
-            <Label className='text-[10px] font-black uppercase tracking-widest'>创建时间 / CREATED_AT</Label>
-            <Input readOnly className='h-10 font-mono text-xs bg-muted/20 border-none rounded-xl px-5' value={formData.createdAt ?? '--'} />
-          </div>
-        </div>
+        <DrillingMetaSection id={formData.id} createdAt={formData.createdAt} />
       </div>
     </ActionDialogShell>
   )

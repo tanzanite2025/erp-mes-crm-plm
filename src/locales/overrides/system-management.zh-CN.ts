@@ -1,5 +1,10 @@
 export const systemManagementZhCNOverrides = {
   systemManagement: {
+    routingTab: {
+      tabs: {
+        executions: '执行日志',
+      },
+    },
     layout: {
       title: '系统管理',
       tabs: {
@@ -65,8 +70,8 @@ export const systemManagementZhCNOverrides = {
         subtitle: '按角色统一管理模块、页面、标签页与操作权限。',
       },
       actions: {
-        importOrgRole: '导入部门角色',
-        selectOrgRole: '选择部门角色',
+        importOrgRole: '导入账号角色',
+        selectOrgRole: '选择账号角色',
         confirmImport: '确认导入',
         expand: '展开',
         collapse: '收起',

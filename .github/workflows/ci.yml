@@ -40,7 +40,7 @@ jobs:
         run: pnpm lint
 
       - name: Verify i18n parity
-        run: pnpm verify:i18n
+        run: pnpm run verify:i18n
 
       - name: Verify zh-CN encoding integrity
         run: pnpm run verify:zh-cn-encoding

@@ -1,4 +1,4 @@
-import type { Permission } from '@/features/system-mgmt/data/role-schema'
+﻿import type { Permission } from '@/features/system-mgmt/data/role-schema'
 
 export type ActionRouteBinding = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -159,8 +159,8 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_inventory_shipment_update',
-    label: 'Inventory: update shipment draft',
-    desc: 'Allow updating shipment draft records before commit/void.',
+    label: '仓储：更新出库草稿',
+    desc: '允许在提交或作废前更新出库草稿记录。',
     category: 'action',
     parentId: 'menu_warehouse',
     routeBindings: ['PATCH /inventory/shipment/:id'],
@@ -207,7 +207,7 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_warehouse_category_manage',
-    label: '仓储：管理库区分类',
+    label: '仓储：管理仓库分类',
     desc: '允许维护仓库分类主数据。',
     category: 'action',
     parentId: 'menu_warehouse',
@@ -231,8 +231,8 @@ const warehouseActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_inventory_adjustment_update',
-    label: 'Inventory: update inventory adjustment',
-    desc: 'Allow patching inventory records through SDRTS adjustment flow.',
+    label: '仓储：更新库存调账',
+    desc: '允许通过调账流程更新库存记录。',
     category: 'action',
     parentId: 'menu_warehouse',
     routeBindings: ['PATCH /inventory/:id'],
@@ -267,7 +267,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_trading_sales_order_sync',
     label: '贸销：同步销售订单',
-    desc: '允许批量同步销售订单。',
+    desc: '允许批量同步销售订单数据。',
     category: 'action',
     parentId: 'menu_trading',
     routeBindings: ['POST /sales-orders/sync'],
@@ -405,8 +405,8 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_equipment_drawing_update',
-    label: 'Equipment: update drawing',
-    desc: 'Allow patching mold drawing metadata and status.',
+    label: '设备工装：更新图纸',
+    desc: '允许更新模具图纸的基础信息和状态。',
     category: 'action',
     parentId: 'menu_equipment',
     routeBindings: ['PATCH /drawings/:id'],
@@ -445,8 +445,8 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_equipment_partner_update',
-    label: 'Equipment: update partner',
-    desc: 'Allow patching equipment partner master data.',
+    label: '设备工装：更新协作单位',
+    desc: '允许更新设备协作单位主数据。',
     category: 'action',
     parentId: 'menu_equipment',
     routeBindings: ['PATCH /equipment-partners/:id'],
@@ -461,7 +461,7 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
   },
   {
     id: 'action_equipment_telemetry_update',
-    label: '设备工装：更新遥测',
+    label: '设备工装：更新遥测数据',
     desc: '允许上报模具和炉台遥测数据。',
     category: 'action',
     parentId: 'menu_equipment',
@@ -470,18 +470,7 @@ const equipmentActions: LegacyActionPermissionEntry[] = [
 ]
 
 const approvalActions: LegacyActionPermissionEntry[] = [
-  {
-    id: 'action_approval_config_manage',
-    label: '审批：管理配置',
-    desc: '允许查看和维护审批配置。',
-    category: 'action',
-    parentId: 'menu_approval',
-    routeBindings: [
-      'GET /approvals/configs',
-      'POST /approvals/configs',
-      'DELETE /approvals/configs/:id',
-    ],
-  },
+
   {
     id: 'action_approval_review',
     label: '审批：审核申请',
@@ -498,8 +487,8 @@ const approvalActions: LegacyActionPermissionEntry[] = [
 const engineeringActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_material_update',
-    label: 'Engineering: update material',
-    desc: 'Allow patching material master records through SDRTS updates.',
+    label: '工程：更新物料',
+    desc: '允许更新物料主数据记录。',
     category: 'action',
     parentId: 'menu_engineering',
     routeBindings: ['PATCH /materials/:id'],
@@ -509,16 +498,16 @@ const engineeringActions: LegacyActionPermissionEntry[] = [
 const qualityActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_lab_experimental_category_create',
-    label: 'Quality: create experimental category',
-    desc: 'Allow creating laboratory experimental categories.',
+    label: '品质：创建实验分类',
+    desc: '允许创建实验室实验分类。',
     category: 'action',
     parentId: 'menu_quality',
     routeBindings: ['POST /labs/experimental/categories'],
   },
   {
     id: 'action_lab_experimental_category_delete',
-    label: 'Quality: delete experimental category',
-    desc: 'Allow deleting laboratory experimental categories.',
+    label: '品质：删除实验分类',
+    desc: '允许删除实验室实验分类。',
     category: 'action',
     parentId: 'menu_quality',
     routeBindings: ['DELETE /labs/experimental/categories/:id'],
@@ -528,32 +517,32 @@ const qualityActions: LegacyActionPermissionEntry[] = [
 const orgActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_org_profile_update',
-    label: 'Org: update organization profile',
-    desc: 'Allow patching organization profile metadata.',
+    label: '组织人事：更新组织资料',
+    desc: '允许更新组织机构资料。',
     category: 'action',
     parentId: 'menu_org',
     routeBindings: ['PATCH /org/:id'],
   },
   {
     id: 'action_employee_update',
-    label: 'Org: update employee profile',
-    desc: 'Allow patching employee profile metadata.',
+    label: '组织人事：更新员工资料',
+    desc: '允许更新员工档案资料。',
     category: 'action',
     parentId: 'menu_org',
     routeBindings: ['PATCH /employees/:id'],
   },
   {
     id: 'action_employee_import_preview',
-    label: 'Org: preview employee import',
-    desc: 'Allow running employee import preview.',
+    label: '组织人事：预览员工导入',
+    desc: '允许执行员工导入预览。',
     category: 'action',
     parentId: 'menu_org',
     routeBindings: ['POST /employees/import/preview'],
   },
   {
     id: 'action_employee_import_commit',
-    label: 'Org: commit employee import',
-    desc: 'Allow committing employee import batches.',
+    label: '组织人事：提交员工导入',
+    desc: '允许提交员工导入批次。',
     category: 'action',
     parentId: 'menu_org',
     routeBindings: ['POST /employees/import/commit'],
@@ -563,8 +552,8 @@ const orgActions: LegacyActionPermissionEntry[] = [
 const productionActions: LegacyActionPermissionEntry[] = [
   {
     id: 'action_production_line_update',
-    label: 'Production: update line topology',
-    desc: 'Allow patching production line topology snapshots.',
+    label: '生产：更新产线拓扑',
+    desc: '允许更新产线拓扑快照。',
     category: 'action',
     parentId: 'menu_prod_config',
     routeBindings: ['PATCH /production/lines/:id'],

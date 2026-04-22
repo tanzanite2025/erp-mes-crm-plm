@@ -34,13 +34,13 @@ export function DataTableViewOptions<TData>({
         {variant === 'industrial' ? (
           <Button
             variant='outline'
-            className='w-[105px] h-12 rounded-[18px] flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+            className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
           >
             <div className='flex items-center gap-1'>
               <MixerHorizontalIcon className='size-3 text-blue-600' />
-              <span className='text-[10px] font-black tracking-tighter'>{t('common.table.viewManagement' as any)}</span>
+              <span className='text-[10px] font-black tracking-tighter leading-none'>{t('common.table.viewManagement')}</span>
             </div>
-            <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{t('common.table.viewing' as any)}</span>
+            <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{t('common.table.viewing')}</span>
           </Button>
         ) : (
           <Button
@@ -49,14 +49,14 @@ export function DataTableViewOptions<TData>({
             className='ml-auto hidden h-8 lg:flex rounded-full px-4 text-[11px] font-black uppercase tracking-widest'
           >
             <MixerHorizontalIcon className='mr-2 h-4 w-4' />
-            {t('common.table.view' as any)}
+            {t('common.table.view')}
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[220px] rounded-[32px] border-dashed bg-background/95 backdrop-blur-md shadow-2xl p-2 border-muted/50'>
         <DropdownMenuLabel className='flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-40 px-4 pt-3 pb-1'>
           <MixerHorizontalIcon className='size-3' />
-          {t('common.table.selectColumns' as any)}
+          {t('common.table.selectColumns')}
         </DropdownMenuLabel>
         <DropdownMenuSeparator className='bg-muted/30 border-dashed mb-1' />
         {table

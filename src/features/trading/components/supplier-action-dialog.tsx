@@ -270,19 +270,22 @@ export function SupplierActionDialog({
 
       <div className='grid gap-4 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4'>
         <Label className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
-          沟通渠道
+          联系与沟通
         </Label>
+        <p className='pl-1 text-[10px] font-bold text-muted-foreground'>
+          补充常用联系方式，方便采购跟进、询价与异常沟通。
+        </p>
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
           <div className='grid gap-3'>
             <Label htmlFor='email' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
-              Email
+              邮箱
             </Label>
             <div className='group relative'>
               <Mail className='absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary' />
               <Input
                 id='email'
-                placeholder='name@company.com'
+                placeholder='请输入邮箱地址'
                 className='h-12 rounded-2xl border-none bg-muted/50 pl-11 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
                 value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
@@ -292,11 +295,11 @@ export function SupplierActionDialog({
 
           <div className='grid gap-3'>
             <Label htmlFor='wechat' className='pl-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
-              WeChat
+              微信
             </Label>
             <Input
               id='wechat'
-              placeholder='微信号'
+              placeholder='请输入微信号'
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.wechat}
               onChange={(e) => updateField('wechat', e.target.value)}
@@ -309,7 +312,7 @@ export function SupplierActionDialog({
             </Label>
             <Input
               id='whatsapp'
-              placeholder='WhatsApp'
+              placeholder='请输入 WhatsApp 号码或账号'
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.whatsapp}
               onChange={(e) => updateField('whatsapp', e.target.value)}
@@ -322,7 +325,7 @@ export function SupplierActionDialog({
             </Label>
             <Input
               id='facebook'
-              placeholder='Facebook'
+              placeholder='请输入 Facebook 链接或账号名'
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.facebook}
               onChange={(e) => updateField('facebook', e.target.value)}
@@ -335,7 +338,7 @@ export function SupplierActionDialog({
             </Label>
             <Input
               id='instagram'
-              placeholder='Instagram'
+              placeholder='请输入 Instagram 账号'
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.instagram}
               onChange={(e) => updateField('instagram', e.target.value)}
@@ -348,7 +351,7 @@ export function SupplierActionDialog({
             </Label>
             <Input
               id='telegram'
-              placeholder='Telegram'
+              placeholder='请输入 Telegram 用户名或链接'
               className='h-12 rounded-2xl border-none bg-muted/50 text-sm font-black transition-all focus:ring-2 focus:ring-primary/20'
               value={formData.telegram}
               onChange={(e) => updateField('telegram', e.target.value)}

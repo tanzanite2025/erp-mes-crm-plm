@@ -10,6 +10,20 @@ export interface PurchaseStatusMeta {
   description?: string
 }
 
+export function normalizePurchaseOrderStatus(status: string): PurchaseOrderStatus {
+  if (
+    status === 'Draft' ||
+    status === 'Sent' ||
+    status === 'Awaiting' ||
+    status === 'Received' ||
+    status === 'Canceled'
+  ) {
+    return status
+  }
+
+  throw new Error(`Invalid purchase order status: ${status}`)
+}
+
 const PURCHASE_STATUS_TRANSLATION_KEYS: Record<PurchaseOrderStatus, TranslationKey> = {
   Draft: 'purchase.orders.statusDraft',
   Sent: 'purchase.orders.statusSent',

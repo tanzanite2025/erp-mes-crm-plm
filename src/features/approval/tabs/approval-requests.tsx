@@ -75,8 +75,8 @@ export function ApprovalRequests() {
       requests
         .filter((r) => r.status === 'PENDING' || r.status === 'APPROVED_L1')
         .filter((r) => {
-          if (r.currentLevel === 1) return r.config?.approver1Id === currentUserId
-          if (r.currentLevel === 2) return r.config?.approver2Id === currentUserId
+          if (r.currentLevel === 1) return r.approver1Id === currentUserId
+          if (r.currentLevel === 2) return r.approver2Id === currentUserId
           return false
         }),
     [currentUserId, requests]
@@ -191,7 +191,7 @@ export function ApprovalRequests() {
                   size='sm'
                   className='h-10 flex-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20'
                   onClick={() => {
-                    const isFinal = req.currentLevel === 2 || !req.config?.approver2Id
+                    const isFinal = req.currentLevel === 2 || !req.approver2Id
                     if (isFinal) {
                       setPinModal({ id: req.id, open: true })
                     } else {
@@ -199,7 +199,7 @@ export function ApprovalRequests() {
                     }
                   }}
                 >
-                  {req.currentLevel === 2 || !req.config?.approver2Id
+                  {req.currentLevel === 2 || !req.approver2Id
                     ? t('approval.requests.confirm')
                     : t('approval.requests.l1Pass')}
                 </Button>

@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"xdfc-server/middleware"
 	"xdfc-server/services"
@@ -13,21 +12,15 @@ import (
 )
 
 func GetSalesOrdersHandler(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
-	withLines := strings.EqualFold(strings.TrimSpace(c.Query("withLines")), "true")
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 50
-	}
+	page, pageSize := parsePageQuery(c, 50)
 
 	response, err := services.ListSalesOrders(services.SalesOrderListQuery{
 		Page:            page,
 		PageSize:        pageSize,
-		WithLines:       withLines,
-		StatusFilterRaw: c.Query("status"),
+		WithLines:       queryIncludesLines(c),
+		CustomerID:      strings.TrimSpace(c.Query("customerId")),
+		Keyword:         strings.TrimSpace(c.Query("keyword")),
+		StatusFilterRaw: queryStatusFilter(c),
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to list sales orders: " + err.Error()})

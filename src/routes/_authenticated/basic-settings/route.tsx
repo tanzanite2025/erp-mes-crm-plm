@@ -6,7 +6,7 @@ export const Route = createFileRoute('/_authenticated/basic-settings')({
   beforeLoad: async ({ location }) => {
     await ensureAuthenticatedRouteSession(location.pathname)
     if (location.pathname === '/basic-settings') {
-      throw redirect({ to: '/basic-settings/dm-numbering' })
+      throw redirect({ to: '/basic-settings/units' })
     }
   },
   component: BasicSettings,

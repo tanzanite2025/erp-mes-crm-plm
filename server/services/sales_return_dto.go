@@ -1,0 +1,96 @@
+package services
+
+import "time"
+
+type CreateSalesReturnRequest struct {
+	Operator      string                         `json:"operator"`
+	TransportMode string                         `json:"transportMode"`
+	TrackingNo    string                         `json:"trackingNo"`
+	Carrier       string                         `json:"carrier"`
+	ShippedAt     string                         `json:"shippedAt"`
+	LogisticsNote string                         `json:"logisticsNote"`
+	IssueCategory string                         `json:"issueCategory"`
+	Reason        string                         `json:"reason"`
+	Remarks       string                         `json:"remarks"`
+	Evidences     []OrderEvidencePayload         `json:"evidences"`
+	ReturnDate    string                         `json:"returnDate"`
+	Lines         []CreateSalesReturnLineRequest `json:"lines"`
+}
+
+type PatchSalesReturnLogisticsRequest struct {
+	Operator      string `json:"operator"`
+	TransportMode string `json:"transportMode"`
+	TrackingNo    string `json:"trackingNo"`
+	Carrier       string `json:"carrier"`
+	ShippedAt     string `json:"shippedAt"`
+	LogisticsNote string `json:"logisticsNote"`
+	Status        string `json:"status"`
+}
+
+type CreateSalesReturnLineRequest struct {
+	SalesOrderLineID uint                   `json:"salesOrderLineId"`
+	Quantity         float64                `json:"quantity"`
+	Price            float64                `json:"price"`
+	IssueCategory    string                 `json:"issueCategory"`
+	Reason           string                 `json:"reason"`
+	Evidences        []OrderEvidencePayload `json:"evidences"`
+}
+
+type SalesReturnLineResponse struct {
+	ID               uint                   `json:"id"`
+	SalesOrderLineID uint                   `json:"salesOrderLineId"`
+	LineNo           int                    `json:"lineNo"`
+	ProductID        string                 `json:"productId"`
+	ProductCode      string                 `json:"productCode"`
+	ProductModel     string                 `json:"productModel"`
+	Specification    string                 `json:"specification"`
+	Description      string                 `json:"description"`
+	UOM              string                 `json:"uom"`
+	Quantity         float64                `json:"quantity"`
+	Price            float64                `json:"price"`
+	Amount           float64                `json:"amount"`
+	IssueCategory    string                 `json:"issueCategory"`
+	Reason           string                 `json:"reason"`
+	Evidences        []OrderEvidencePayload `json:"evidences"`
+}
+
+type SalesReturnResponse struct {
+	ID                  string                    `json:"id"`
+	ReturnNo            string                    `json:"returnNo"`
+	SalesOrderID        string                    `json:"salesOrderId"`
+	SalesOrderNo        string                    `json:"salesOrderNo"`
+	CustomerID          string                    `json:"customerId"`
+	CustomerName        string                    `json:"customerName"`
+	Status              string                    `json:"status"`
+	TransportMode       string                    `json:"transportMode"`
+	TrackingNo          string                    `json:"trackingNo"`
+	Carrier             string                    `json:"carrier"`
+	ShippedAt           *time.Time                `json:"shippedAt"`
+	TrackingFilledAt    *time.Time                `json:"trackingFilledAt"`
+	TrackingFilledBy    string                    `json:"trackingFilledBy"`
+	LogisticsNote       string                    `json:"logisticsNote"`
+	PendingTrackingFill bool                      `json:"pendingTrackingFill"`
+	ReturnDate          time.Time                 `json:"returnDate"`
+	IssueCategory       string                    `json:"issueCategory"`
+	Reason              string                    `json:"reason"`
+	Remarks             string                    `json:"remarks"`
+	Evidences           []OrderEvidencePayload    `json:"evidences"`
+	Operator            string                    `json:"operator"`
+	TotalQuantity       float64                   `json:"totalQuantity"`
+	TotalAmount         float64                   `json:"totalAmount"`
+	CreatedAt           time.Time                 `json:"createdAt"`
+	UpdatedAt           time.Time                 `json:"updatedAt"`
+	Lines               []SalesReturnLineResponse `json:"lines"`
+}
+
+type SalesReturnListResponse struct {
+	Items    []SalesReturnResponse `json:"items"`
+	Total    int64                 `json:"total"`
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"pageSize"`
+}
+
+type CreateSalesReturnResponse struct {
+	SalesReturn SalesReturnResponse `json:"salesReturn"`
+	SalesOrder  SalesOrderResponse  `json:"salesOrder"`
+}

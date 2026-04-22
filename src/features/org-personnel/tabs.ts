@@ -12,6 +12,11 @@ export function getOrgPersonnelTabs(t: TranslateFn): TabItem[] {
     { key: 'permissions', label: t('orgPersonnel.tabs.permissions'), href: '/personnel/permissions' },
     { key: 'line', label: t('orgPersonnel.tabs.line'), href: '/personnel/line' },
     { key: 'topology', label: t('orgPersonnel.tabs.topology'), href: '/personnel/topology' },
+  ]
+}
+
+export function getOrgPersonnelBranchTabs(t: TranslateFn): TabItem[] {
+  return [
     { key: 'leave', label: t('orgPersonnel.tabs.leave'), href: '/leave-management' },
     { key: 'stats', label: t('orgPersonnel.tabs.stats'), href: '/hall-of-fame' },
   ]

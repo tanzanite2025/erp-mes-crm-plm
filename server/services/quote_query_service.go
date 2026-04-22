@@ -75,12 +75,6 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	var orders []models.SalesOrder
 	baseQuery := db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false)
 
-	if status := strings.TrimSpace(query.StatusRaw); status != "" {
-		baseQuery = baseQuery.Where("status = ?", status)
-	}
-	if quoteType := strings.TrimSpace(query.TypeRaw); quoteType != "" {
-		baseQuery = baseQuery.Where("type = ?", quoteType)
-	}
 	if keyword := strings.TrimSpace(query.Keyword); keyword != "" {
 		likeKeyword := "%" + keyword + "%"
 		baseQuery = baseQuery.Where(
@@ -117,13 +111,22 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 
 	items := make([]QuoteSummaryResponse, 0, len(orders))
 	customerSegmentFilter := strings.TrimSpace(query.CustomerSegmentRaw)
+	statusFilter := normalizeQuoteStatusFilter(query.StatusRaw)
+	quoteTypeFilter := normalizeQuoteTypeFilter(query.TypeRaw)
 	for _, order := range orders {
 		customer := customerByID[order.CustomerID]
 		customerSegment := deriveQuoteCustomerSegment(customer)
 		if customerSegmentFilter != "" && !strings.EqualFold(customerSegmentFilter, customerSegment) {
 			continue
 		}
-		items = append(items, mapSalesOrderToQuoteSummary(order, customerSegment))
+		item := mapSalesOrderToQuoteSummary(order, customerSegment)
+		if statusFilter != "" && item.Status != statusFilter {
+			continue
+		}
+		if quoteTypeFilter != "" && item.Type != quoteTypeFilter {
+			continue
+		}
+		items = append(items, item)
 	}
 
 	total := int64(len(items))
@@ -194,6 +197,91 @@ func deriveQuoteCustomerSegment(customer models.Customer) string {
 	return "new"
 }
 
+func normalizeQuoteToken(value string) string {
+	return strings.NewReplacer("_", "", "-", "", " ", "").Replace(strings.ToLower(strings.TrimSpace(value)))
+}
+
+func isQuoteSampleAlias(value string) bool {
+	switch normalizeQuoteToken(value) {
+	case "sample", "sam", "smp", "rd", "rnd", "r&d", "trial":
+		return true
+	default:
+		return false
+	}
+}
+
+func isQuoteWholesaleAlias(value string) bool {
+	switch normalizeQuoteToken(value) {
+	case "wholesale", "bulk", "dealer", "outsource", "toll":
+		return true
+	default:
+		return false
+	}
+}
+
+func isQuoteRetailAlias(value string) bool {
+	switch normalizeQuoteToken(value) {
+	case "retail", "ret", "customer", "estimate", "general", "normal", "standard", "quote":
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizeQuoteSummaryType(rawType string, rawClassification string) string {
+	candidates := []string{rawType, rawClassification}
+	for _, candidate := range candidates {
+		if isQuoteSampleAlias(candidate) {
+			return "sample"
+		}
+	}
+	for _, candidate := range candidates {
+		if isQuoteWholesaleAlias(candidate) {
+			return "wholesale"
+		}
+	}
+	for _, candidate := range candidates {
+		if isQuoteRetailAlias(candidate) {
+			return "retail"
+		}
+	}
+	return "retail"
+}
+
+func normalizeQuoteTypeFilter(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || strings.EqualFold(trimmed, "all") {
+		return ""
+	}
+	return normalizeQuoteSummaryType(trimmed, "")
+}
+
+func normalizeQuoteStatus(raw string) string {
+	switch normalizeQuoteToken(raw) {
+	case "draft":
+		return "draft"
+	case "converted", "done", "completed", "complete", "closed":
+		return "converted"
+	case "voided", "canceled", "cancelled", "cancel":
+		return "voided"
+	case "pending", "inprogress", "processing", "submitted":
+		return "pending"
+	default:
+		if strings.TrimSpace(raw) == "" {
+			return "draft"
+		}
+		return "pending"
+	}
+}
+
+func normalizeQuoteStatusFilter(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || strings.EqualFold(trimmed, "all") {
+		return ""
+	}
+	return normalizeQuoteStatus(trimmed)
+}
+
 func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string) QuoteSummaryResponse {
 	quoteNo := deriveQuoteNo(order.OrderNo, order.Barcode, order.ID)
 
@@ -210,8 +298,8 @@ func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string
 		QuoteNo:         quoteNo,
 		CustomerName:    strings.TrimSpace(order.CustomerName),
 		CustomerSegment: customerSegment,
-		Type:            strings.TrimSpace(order.Type),
-		Status:          strings.TrimSpace(order.Status),
+		Type:            normalizeQuoteSummaryType(order.Type, order.Classification),
+		Status:          normalizeQuoteStatus(order.Status),
 		UpdatedAt:       order.UpdatedAt.Format("2006-01-02 15:04"),
 		AmountLabel:     fmt.Sprintf("¥ %.2f", order.Amount),
 		ItemCount:       len(order.Lines),
@@ -266,8 +354,8 @@ func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Custome
 		WeChat:            strings.TrimSpace(customer.WeChat),
 		WhatsApp:          strings.TrimSpace(customer.WhatsApp),
 		CustomerSegment:   customerSegment,
-		Type:              strings.TrimSpace(order.Type),
-		Status:            strings.TrimSpace(order.Status),
+		Type:              normalizeQuoteSummaryType(order.Type, order.Classification),
+		Status:            normalizeQuoteStatus(order.Status),
 		Currency:          strings.TrimSpace(order.Currency),
 		AmountLabel:       fmt.Sprintf("¥ %.2f", order.Amount),
 		QuantityLabel:     fmt.Sprintf("%.2f", order.Quantity),

@@ -4,6 +4,7 @@ export const warehouseQueryKeys = {
   all: (): QueryKey => ['warehouse'],
   inboundHistory: (): QueryKey => ['warehouse', 'inbound-history'],
   shipmentHistory: (): QueryKey => ['warehouse', 'shipment-history'],
+  shipmentDemands: (): QueryKey => ['warehouse', 'shipment-demands'],
   masterDataAll: (): QueryKey => ['warehouse', 'master-data', 'all'],
   masterDataSearch: (query: string): QueryKey => ['warehouse', 'master-data', 'search', query],
   inventoryBreakdown: (materialId: string): QueryKey => ['warehouse', 'inventory-breakdown', materialId],

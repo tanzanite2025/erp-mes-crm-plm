@@ -1,5 +1,7 @@
+import type { TranslationKey } from '@/locales'
 import {
   BarChart3,
+  Barcode,
   Box,
   Calendar,
   CheckSquare,
@@ -7,6 +9,7 @@ import {
   Database,
   FileText,
   Gauge,
+  ListChecks,
   Printer,
   ScanLine,
   Scale,
@@ -20,10 +23,12 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
-import type { TranslationKey } from '@/locales'
 import type { SidebarData } from '../types'
 
-type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>
+) => string
 
 type SidebarItemConfig = {
   titleKey: TranslationKey
@@ -49,7 +54,8 @@ const defaultTeam = {
   plan: 'Professional Edition',
 }
 
-const permissionIdForPath = (path: string): string => getMenuPermissionForPath(path)
+const permissionIdForPath = (path: string): string =>
+  getMenuPermissionForPath(path)
 
 const navGroupConfigs: SidebarGroupConfig[] = [
   {
@@ -73,6 +79,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Truck,
         permissionId: permissionIdForPath('/purchase'),
       },
+      {
+        titleKey: 'sidebar.items.rawMaterialsManagement',
+        url: '/raw-materials',
+        icon: Database,
+        permissionId: permissionIdForPath('/raw-materials'),
+      },
     ],
   },
   {
@@ -95,6 +107,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/shipping-management',
         icon: Package,
         permissionId: permissionIdForPath('/shipping-management'),
+      },
+      {
+        titleKey: 'sidebar.items.salesAnalysis',
+        url: '/sales-analysis',
+        icon: BarChart3,
+        permissionId: permissionIdForPath('/sales-analysis'),
       },
     ],
   },
@@ -193,12 +211,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/personnel'),
       },
       {
-        titleKey: 'sidebar.items.leaveManagement',
-        url: '/leave-management',
-        icon: Calendar,
-        permissionId: permissionIdForPath('/leave-management'),
-      },
-      {
         titleKey: 'sidebar.items.hallOfFame',
         url: '/hall-of-fame',
         icon: Trophy,
@@ -224,6 +236,40 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    titleKey: 'sidebar.groups.financeManagement',
+    items: [
+      {
+        titleKey: 'sidebar.items.financeCenter',
+        url: '/finance-management',
+        icon: Scale,
+        permissionId: permissionIdForPath('/finance-management'),
+      },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.codeCenter',
+    items: [
+      {
+        titleKey: 'sidebar.items.linearBarcode',
+        url: '/code-center/linear-barcode',
+        icon: Barcode,
+        permissionId: permissionIdForPath('/code-center/linear-barcode'),
+      },
+      {
+        titleKey: 'sidebar.items.dmCode',
+        url: '/code-center/dm-code',
+        icon: ScanLine,
+        permissionId: permissionIdForPath('/code-center/dm-code'),
+      },
+      {
+        titleKey: 'sidebar.items.sharedCodeSource',
+        url: '/code-center/shared-code-source',
+        icon: Database,
+        permissionId: permissionIdForPath('/code-center/shared-code-source'),
+      },
+    ],
+  },
+  {
     titleKey: 'sidebar.groups.systemSettings',
     items: [
       {
@@ -245,10 +291,16 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/terminal-config'),
       },
       {
+        titleKey: 'sidebar.items.sidebarCommandAssignment',
+        url: '/sidebar-command-library',
+        icon: ListChecks,
+        permissionId: permissionIdForPath('/sidebar-command-library'),
+      },
+      {
         titleKey: 'sidebar.items.systemManagement',
-        url: '/system-management/routing',
+        url: '/system-management',
         icon: ShieldCheck,
-        permissionId: permissionIdForPath('/system-management/routing'),
+        permissionId: permissionIdForPath('/system-management'),
       },
       {
         titleKey: 'sidebar.items.approvalCenter',
@@ -261,12 +313,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/basic-settings',
         icon: Sliders,
         permissionId: permissionIdForPath('/basic-settings'),
-      },
-      {
-        titleKey: 'sidebar.items.financeCenter',
-        url: '/finance-management',
-        icon: Scale,
-        permissionId: permissionIdForPath('/finance-management'),
       },
     ],
   },
@@ -285,7 +331,18 @@ export const sidebarData: SidebarData = {
           icon: BarChart3,
           permissionId: permissionIdForPath('/dashboard/overview'),
         },
-        { title: '采购管理', url: '/purchase', icon: Truck, permissionId: permissionIdForPath('/purchase') },
+        {
+          title: '采购管理',
+          url: '/purchase',
+          icon: Truck,
+          permissionId: permissionIdForPath('/purchase'),
+        },
+        {
+          title: '原材料管理',
+          url: '/raw-materials',
+          icon: Database,
+          permissionId: permissionIdForPath('/raw-materials'),
+        },
       ],
     },
     {
@@ -302,6 +359,18 @@ export const sidebarData: SidebarData = {
           url: '/quotes',
           icon: FileText,
           permissionId: permissionIdForPath('/quotes'),
+        },
+        {
+          title: '发货管理',
+          url: '/shipping-management',
+          icon: Package,
+          permissionId: permissionIdForPath('/shipping-management'),
+        },
+        {
+          title: '销售分析',
+          url: '/sales-analysis',
+          icon: BarChart3,
+          permissionId: permissionIdForPath('/sales-analysis'),
         },
       ],
     },
@@ -320,14 +389,29 @@ export const sidebarData: SidebarData = {
           icon: Database,
           permissionId: permissionIdForPath('/engineering-db'),
         },
-        { title: '品质审计', url: '/quality', icon: Scale, permissionId: permissionIdForPath('/quality') },
+        {
+          title: '品质审计',
+          url: '/quality',
+          icon: Scale,
+          permissionId: permissionIdForPath('/quality'),
+        },
       ],
     },
     {
       title: '仓储',
       items: [
-        { title: '仓储作业', url: '/warehouse', icon: Warehouse, permissionId: permissionIdForPath('/warehouse') },
-        { title: '物料档案', url: '/materials', icon: Database, permissionId: permissionIdForPath('/materials') },
+        {
+          title: '仓储作业',
+          url: '/warehouse',
+          icon: Warehouse,
+          permissionId: permissionIdForPath('/warehouse'),
+        },
+        {
+          title: '物料档案',
+          url: '/materials',
+          icon: Database,
+          permissionId: permissionIdForPath('/materials'),
+        },
       ],
     },
     {
@@ -361,7 +445,12 @@ export const sidebarData: SidebarData = {
           icon: Cpu,
           permissionId: permissionIdForPath('/equipment-tooling/overview'),
         },
-        { title: '炉台资产档案', url: '/furnaces', icon: Gauge, permissionId: permissionIdForPath('/furnaces') },
+        {
+          title: '炉台资产档案',
+          url: '/furnaces',
+          icon: Gauge,
+          permissionId: permissionIdForPath('/furnaces'),
+        },
       ],
     },
     {
@@ -382,6 +471,34 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
+      title: '财务管理',
+      items: [
+        {
+          title: '财务中心',
+          url: '/finance-management',
+          icon: Scale,
+          permissionId: permissionIdForPath('/finance-management'),
+        },
+      ],
+    },
+    {
+      title: '编码中心',
+      items: [
+        {
+          title: '一维码',
+          url: '/code-center/linear-barcode',
+          icon: Barcode,
+          permissionId: permissionIdForPath('/code-center/linear-barcode'),
+        },
+        {
+          title: 'DM码',
+          url: '/code-center/dm-code',
+          icon: ScanLine,
+          permissionId: permissionIdForPath('/code-center/dm-code'),
+        },
+      ],
+    },
+    {
       title: '系统配置',
       items: [
         {
@@ -390,8 +507,18 @@ export const sidebarData: SidebarData = {
           icon: ScanLine,
           permissionId: permissionIdForPath('/pda-shell'),
         },
-        { title: '人事账号中心', url: '/personnel', icon: Users, permissionId: permissionIdForPath('/personnel') },
-        { title: '打印中心', url: '/print-mgmt', icon: Printer, permissionId: permissionIdForPath('/print-mgmt') },
+        {
+          title: '人事账号中心',
+          url: '/personnel',
+          icon: Users,
+          permissionId: permissionIdForPath('/personnel'),
+        },
+        {
+          title: '打印中心',
+          url: '/print-mgmt',
+          icon: Printer,
+          permissionId: permissionIdForPath('/print-mgmt'),
+        },
         {
           title: '终端配置',
           url: '/terminal-config',
@@ -399,23 +526,28 @@ export const sidebarData: SidebarData = {
           permissionId: permissionIdForPath('/terminal-config'),
         },
         {
-          title: '系统管理',
-          url: '/system-management/routing',
-          icon: ShieldCheck,
-          permissionId: permissionIdForPath('/system-management/routing'),
+          title: '快捷操作配置',
+          url: '/sidebar-command-library',
+          icon: ListChecks,
+          permissionId: permissionIdForPath('/sidebar-command-library'),
         },
-        { title: '审批中心', url: '/approval', icon: ShieldCheck, permissionId: permissionIdForPath('/approval') },
+        {
+          title: '系统管理',
+          url: '/system-management',
+          icon: ShieldCheck,
+          permissionId: permissionIdForPath('/system-management'),
+        },
+        {
+          title: '审批中心',
+          url: '/approval',
+          icon: ShieldCheck,
+          permissionId: permissionIdForPath('/approval'),
+        },
         {
           title: '基础配置',
           url: '/basic-settings',
           icon: Sliders,
           permissionId: permissionIdForPath('/basic-settings'),
-        },
-        {
-          title: '财务中心',
-          url: '/finance-management',
-          icon: Scale,
-          permissionId: permissionIdForPath('/finance-management'),
         },
       ],
     },

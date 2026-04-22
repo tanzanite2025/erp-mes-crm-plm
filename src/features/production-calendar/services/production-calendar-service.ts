@@ -1,5 +1,9 @@
 import { apiFetch } from '@/lib/api-client'
-import { ensureArrayField, ensureArrayResponse, ensureObjectResponse } from '@/lib/api-response'
+import {
+  ensureArrayField,
+  ensureArrayResponse,
+  ensureObjectResponse,
+} from '@/lib/api-response'
 
 export interface DailyProductionRecord {
   date: Date
@@ -48,7 +52,7 @@ export const ProductionCalendarService = {
     const stats = await apiFetch<ProductionStatsResponse>('/production/stats')
     const normalizedStats = ensureObjectResponse<ProductionStatsResponse>(
       stats,
-      'Production monthly stats',
+      'Production monthly stats'
     )
 
     return {
@@ -58,8 +62,14 @@ export const ProductionCalendarService = {
   },
 
   async getAllRecords(): Promise<DailyProductionRecord[]> {
-    const response = await apiFetch<ProductionPlansResponse>('/production/plans?pageSize=1000')
-    const plans = ensureArrayField<ProductionPlanItem>(response, 'items', 'Production plans')
+    const response = await apiFetch<ProductionPlansResponse>(
+      '/production/plans?pageSize=1000'
+    )
+    const plans = ensureArrayField<ProductionPlanItem>(
+      response,
+      'items',
+      'Production plans'
+    )
     const recordsMap: Record<string, DailyProductionRecord> = {}
 
     plans.forEach((plan) => {
@@ -91,14 +101,17 @@ export const ProductionCalendarService = {
 
   async getOrderProgress(): Promise<OrderProgress[]> {
     const response = await apiFetch<unknown>('/production/order-progress')
-    return ensureArrayResponse<OrderProgress>(response, 'Production order progress')
+    return ensureArrayResponse<OrderProgress>(
+      response,
+      'Production order progress'
+    )
   },
 
   async getDayDetails(date: Date): Promise<DailyProductionRecord | null> {
     const records = await this.getAllRecords()
     const targetKey = date.toISOString().split('T')[0]
     const record = records.find(
-      (item) => new Date(item.date).toISOString().split('T')[0] === targetKey,
+      (item) => new Date(item.date).toISOString().split('T')[0] === targetKey
     )
 
     return record ?? null

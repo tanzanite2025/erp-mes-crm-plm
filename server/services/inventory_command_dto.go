@@ -95,6 +95,17 @@ type TransferInventoryRequest struct {
 	BatchNo      string  `json:"batchNo"`
 }
 
+type PrepareVirtualShipmentRequest struct {
+	SalesOrderID     string    `json:"salesOrderId"`
+	SalesOrderLineID uint      `json:"salesOrderLineId"`
+	Quantity         float64   `json:"quantity"`
+	SourceCategory   string    `json:"sourceCategory"`
+	BatchNo          string    `json:"batchNo"`
+	ShipmentDate     time.Time `json:"shipmentDate"`
+	Operator         string    `json:"operator"`
+	Remarks          string    `json:"remarks"`
+}
+
 type InventoryInboundRecordResponse struct {
 	ID                  string    `json:"id"`
 	MaterialID          string    `json:"materialId"`
@@ -132,10 +143,6 @@ type InventoryShipmentRecordResponse struct {
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 	Version          int       `json:"version"`
-}
-
-type VoidShipmentRequest struct {
-	ApprovalId string `json:"approvalId"`
 }
 
 type BulkSyncInventoryItemRequest struct {

@@ -1,4 +1,5 @@
 import type { PurchaseOrder, PurchaseOrderLine } from '../../data/schema'
+import { normalizePurchaseOrderStatus } from '../../data/purchase-status'
 import type { ConfirmPurchaseReceiptResponseApiDTO, PurchaseOrderApiDTO, PurchaseOrderLineApiDTO, PurchaseOrderListPageApiDTO } from '../contracts/purchase-order-api-dto'
 
 export interface PaginatedPurchaseOrders {
@@ -14,9 +15,7 @@ export interface ConfirmPurchaseReceiptContract {
 }
 
 function normalizePurchaseOrderLineStatus(status: PurchaseOrderLineApiDTO['status']): PurchaseOrderLine['status'] {
-  return status === 'Draft' || status === 'Pending' || status === 'Received' || status === 'Rejected' || status === 'Cancelled' || status === 'Completed'
-    ? status
-    : 'Draft'
+  return normalizePurchaseOrderStatus(status)
 }
 
 function toPurchaseOrderLineContract(dto: PurchaseOrderLineApiDTO): PurchaseOrderLine {
@@ -61,12 +60,6 @@ function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineAp
   }
 }
 
-function normalizePurchaseOrderStatus(status: PurchaseOrderApiDTO['status']): PurchaseOrder['status'] {
-  return status === 'Draft' || status === 'Pending' || status === 'Received' || status === 'Cancelled' || status === 'Completed'
-    ? status
-    : 'Draft'
-}
-
 export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder {
   return {
     id: dto.id,
@@ -91,7 +84,7 @@ export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder
     updatedAt: dto.updatedAt,
     version: dto.version,
     evidences: dto.evidences,
-    lines: dto.lines.map(toPurchaseOrderLineContract),
+    lines: (dto.lines ?? []).map(toPurchaseOrderLineContract),
   }
 }
 
@@ -129,7 +122,7 @@ export function toPurchaseOrderContracts(items: PurchaseOrderApiDTO[]): Purchase
 
 export function toPurchaseOrderListPageContract(dto: PurchaseOrderListPageApiDTO): PaginatedPurchaseOrders {
   return {
-    items: toPurchaseOrderContracts(dto.items ?? []),
+    items: toPurchaseOrderContracts(dto.items),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

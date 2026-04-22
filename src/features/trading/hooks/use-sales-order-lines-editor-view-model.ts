@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
 import { type SalesOrderLine } from '../data/schema'
@@ -7,6 +8,7 @@ import { type SalesOrderLine } from '../data/schema'
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
 interface LinesEditorViewModelOptions {
+  appearances: ProductAppearance[]
   products: Product[]
   units: Unit[]
   currency?: string
@@ -19,10 +21,13 @@ interface LinesEditorViewModelOptions {
 }
 
 interface LinesEditorViewModel {
+  appearanceById: Map<string, ProductAppearance>
+  appearanceOptions: { id: string; label: string }[]
   currencySymbol: string
   productById: Map<string, Product>
   productOptions: { id: string; label: string }[]
   activeUnitOptions: { id: string; code: string }[]
+  handleAppearanceChange: (index: number, appearanceId: string) => void
   handleProductChange: (index: number, productId: string) => void
 }
 
@@ -45,11 +50,26 @@ function getCurrencySymbol(currency?: string) {
 }
 
 export function useSalesOrderLinesEditorViewModel({
+  appearances,
   products,
   units,
   currency,
   onLineChange,
 }: LinesEditorViewModelOptions): LinesEditorViewModel {
+  const appearanceById = useMemo(
+    () => new Map(appearances.map((appearance) => [appearance.id, appearance])),
+    [appearances]
+  )
+  const appearanceOptions = useMemo(
+    () =>
+      appearances
+        .filter((appearance) => appearance.active)
+        .map((appearance) => ({
+          id: appearance.id,
+          label: `${appearance.name} · ${appearance.barcodeCode}`,
+        })),
+    [appearances]
+  )
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency])
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -92,11 +112,37 @@ export function useSalesOrderLinesEditorViewModel({
     [onLineChange, productById]
   )
 
+  const handleAppearanceChange = useCallback(
+    (index: number, appearanceId: string) => {
+      const appearance = appearanceById.get(appearanceId)
+      if (!appearance) {
+        onLineChange(index, 'appearanceId', appearanceId, {
+          appearanceNameSnapshot: '',
+          appearanceBarcodeCodeSnapshot: '',
+          appearanceDescriptionSnapshot: '',
+          appearanceImageUrlSnapshot: '',
+        })
+        return
+      }
+
+      onLineChange(index, 'appearanceId', appearanceId, {
+        appearanceNameSnapshot: appearance.name,
+        appearanceBarcodeCodeSnapshot: appearance.barcodeCode,
+        appearanceDescriptionSnapshot: appearance.description,
+        appearanceImageUrlSnapshot: appearance.imageThumbnailUrl || appearance.imageUrl || '',
+      })
+    },
+    [appearanceById, onLineChange]
+  )
+
   return {
+    appearanceById,
+    appearanceOptions,
     currencySymbol,
     productById,
     productOptions,
     activeUnitOptions,
+    handleAppearanceChange,
     handleProductChange,
   }
 }

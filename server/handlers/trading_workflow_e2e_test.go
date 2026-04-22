@@ -159,6 +159,16 @@ func setupTradingWorkflowHandlerTestDB(t *testing.T) *gorm.DB {
 			claimed_by TEXT,
 			claimed_at TEXT
 		)`,
+		`CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)`,
 	}
 
 	for _, stmt := range schemaStatements {

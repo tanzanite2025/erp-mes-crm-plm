@@ -1,20 +1,43 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+import {
+  AlertCircle,
+  Camera,
+  CloudUpload,
+  GripVertical,
+  ImageIcon,
+  Loader2,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { AlertCircle, CloudUpload, GripVertical, ImageIcon, Loader2, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useLanguage } from '@/context/language-provider'
-import { type OrderEvidence } from '@/features/trading/data/schema'
 import { apiFetch } from '@/lib/api-client'
 import { failLoudly } from '@/lib/safe-catch'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { type OrderEvidence } from '@/features/trading/data/schema'
 
 interface DocumentEvidenceManagerProps {
   evidences: OrderEvidence[]
   onChange: (evidences: OrderEvidence[]) => void
   disabled?: boolean
   uploadPath?: string
+  enableCameraCapture?: boolean
+  maxCount?: number
+  title?: string
+  hint?: string
+  emptyText?: string
+  uploadActionText?: string
+  cameraActionText?: string
+  noteLabel?: string
+  notePlaceholder?: string
+  uploadSuccessText?: string
+  uploadFailedText?: string
+  maxSizeExceededText?: string
+  duplicateTitle?: string
+  duplicateDescription?: string
+  compact?: boolean
 }
 
 export function DocumentEvidenceManager({
@@ -22,24 +45,80 @@ export function DocumentEvidenceManager({
   onChange,
   disabled = false,
   uploadPath = '/sales-orders/evidence/upload',
+  enableCameraCapture = false,
+  maxCount = 10,
+  title,
+  hint,
+  emptyText,
+  uploadActionText,
+  cameraActionText,
+  noteLabel,
+  notePlaceholder,
+  uploadSuccessText,
+  uploadFailedText,
+  maxSizeExceededText,
+  duplicateTitle,
+  duplicateDescription,
+  compact = false,
 }: DocumentEvidenceManagerProps) {
   const { t } = useLanguage()
   const [uploading, setUploading] = useState(false)
-  const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(null)
-  const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(null)
+  const [draggingEvidenceId, setDraggingEvidenceId] = useState<string | null>(
+    null
+  )
+  const [dragOverEvidenceId, setDragOverEvidenceId] = useState<string | null>(
+    null
+  )
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+
+  const resolvedTitle = title ?? t('tradingSalesOrder.detail.evidenceTitle')
+  const resolvedHint =
+    hint ??
+    `${t('tradingSalesOrder.detail.evidenceHint')} · ${t('tradingSalesOrder.detail.evidenceSortHint')}`
+  const resolvedEmptyText =
+    emptyText ?? t('tradingSalesOrder.detail.evidencePlaceholder')
+  const resolvedUploadActionText =
+    uploadActionText ?? t('tradingSalesOrder.fileUploader.upload')
+  const resolvedCameraActionText =
+    cameraActionText ?? t('tradingSalesOrder.fileUploader.upload')
+  const resolvedNoteLabel =
+    noteLabel ?? t('tradingSalesOrder.detail.evidenceNoteLabel')
+  const resolvedNotePlaceholder =
+    notePlaceholder ?? t('tradingSalesOrder.detail.evidenceNotePlaceholder')
+  const resolvedUploadSuccessText =
+    uploadSuccessText ?? t('tradingSalesOrder.toasts.saved')
+  const resolvedUploadFailedText =
+    uploadFailedText ?? t('tradingSalesOrder.fileUploader.toasts.saveFailed')
+  const resolvedMaxSizeExceededText =
+    maxSizeExceededText ??
+    t('tradingSalesOrder.fileUploader.toasts.maxSizeExceeded', { max: 10 })
+  const resolvedDuplicateTitle =
+    duplicateTitle ?? t('tradingSalesOrder.toasts.duplicateEvidence')
+  const resolvedDuplicateDescription =
+    duplicateDescription ??
+    t('tradingSalesOrder.toasts.duplicateEvidenceDetail')
+  const shouldShowHint = resolvedHint.trim().length > 0
 
   const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files
-      if (!files || files.length === 0) return
+    async (files: FileList | null, resetInput?: () => void) => {
+      if (!files || files.length === 0 || disabled) {
+        resetInput?.()
+        return
+      }
+
+      const remainingSlots = Math.max(maxCount - evidences.length, 0)
+      if (remainingSlots === 0) {
+        resetInput?.()
+        return
+      }
 
       setUploading(true)
       const newEvidences = [...evidences]
 
       try {
-        for (const file of Array.from(files)) {
+        for (const file of Array.from(files).slice(0, remainingSlots)) {
           if (file.size > 10 * 1024 * 1024) {
-            toast.error(t('tradingSalesOrder.fileUploader.toasts.maxSizeExceeded', { max: 10 }))
+            toast.error(resolvedMaxSizeExceededText)
             continue
           }
 
@@ -58,8 +137,8 @@ export function DocumentEvidenceManager({
           })
 
           if (response.isDuplicate) {
-            toast.warning(t('tradingSalesOrder.toasts.duplicateEvidence'), {
-              description: t('tradingSalesOrder.toasts.duplicateEvidenceDetail'),
+            toast.warning(resolvedDuplicateTitle, {
+              description: resolvedDuplicateDescription,
               icon: <AlertCircle className='size-4 text-amber-500' />,
             })
           }
@@ -72,16 +151,29 @@ export function DocumentEvidenceManager({
           })
         }
         onChange(newEvidences)
-        toast.success(t('tradingSalesOrder.toasts.saved'))
+        toast.success(resolvedUploadSuccessText)
       } catch (error) {
-        failLoudly(error, 'DocumentEvidenceManager.handleFileUpload', { silentUI: true })
-        toast.error(t('tradingSalesOrder.fileUploader.toasts.saveFailed'))
+        failLoudly(error, 'DocumentEvidenceManager.handleFileUpload', {
+          silentUI: true,
+        })
+        toast.error(resolvedUploadFailedText)
       } finally {
         setUploading(false)
-        if (e.target) e.target.value = ''
+        resetInput?.()
       }
     },
-    [evidences, onChange, t, uploadPath]
+    [
+      disabled,
+      evidences,
+      maxCount,
+      onChange,
+      resolvedDuplicateDescription,
+      resolvedDuplicateTitle,
+      resolvedMaxSizeExceededText,
+      resolvedUploadFailedText,
+      resolvedUploadSuccessText,
+      uploadPath,
+    ]
   )
 
   const removeEvidence = (id: string) => {
@@ -106,32 +198,80 @@ export function DocumentEvidenceManager({
   }
 
   return (
-    <div className='group space-y-4'>
-      <div className='flex items-center justify-between px-1'>
+    <div className={cn('group', compact ? 'space-y-2' : 'space-y-4')}>
+      <div className={cn('flex items-center justify-between', compact ? 'px-0.5' : 'px-1')}>
         <div className='flex items-center gap-2'>
           <ImageIcon className='size-3.5 text-primary' />
-          <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground italic'>
-            {t('tradingSalesOrder.detail.evidenceTitle')}
+          <h4
+            className={cn(
+              'font-black text-muted-foreground uppercase italic',
+              compact
+                ? 'text-[9px] tracking-[0.16em]'
+                : 'text-[10px] tracking-[0.2em]'
+            )}
+          >
+            {resolvedTitle}
           </h4>
         </div>
-        <span className='text-[8px] font-mono text-muted-foreground/40'>
-          {evidences.length} / 10
+        <span className='font-mono text-[8px] text-muted-foreground/40'>
+          {evidences.length} / {maxCount}
         </span>
       </div>
 
+      {enableCameraCapture ? (
+        <>
+          <input
+            ref={cameraInputRef}
+            type='file'
+            className='hidden'
+            accept='image/*'
+            capture='environment'
+            onChange={(event) =>
+              void handleFileUpload(event.target.files, () => {
+                event.target.value = ''
+              })
+            }
+            disabled={uploading || disabled || evidences.length >= maxCount}
+          />
+          <div className={cn('flex flex-wrap gap-2', compact ? 'px-0.5' : 'px-1')}>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='rounded-full'
+              disabled={uploading || disabled || evidences.length >= maxCount}
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              {uploading ? (
+                <Loader2 className='mr-2 size-3.5 animate-spin' />
+              ) : (
+                <Camera className='mr-2 size-3.5' />
+              )}
+              {resolvedCameraActionText}
+            </Button>
+          </div>
+        </>
+      ) : null}
+
       <div
         className={cn(
-          'relative min-h-[100px] rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-3 transition-all',
+          compact
+            ? 'relative min-h-[72px] rounded-[20px] border border-dashed border-muted-foreground/20 bg-muted/5 p-2.5 transition-all'
+            : 'relative min-h-[100px] rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-3 transition-all',
           'hover:border-primary/30 hover:bg-muted/10'
         )}
       >
-        <div className='grid gap-4 md:grid-cols-2'>
+        <div className={cn('grid md:grid-cols-2', compact ? 'gap-2.5' : 'gap-4')}>
           {evidences.map((ev) => (
             <div
               key={ev.id}
               className={cn(
-                'group/item rounded-2xl border bg-background p-3 shadow-sm transition-all hover:shadow-md',
-                dragOverEvidenceId === ev.id && draggingEvidenceId !== ev.id ? 'border-primary bg-primary/5' : 'border-border'
+                compact
+                  ? 'group/item rounded-[18px] border bg-background p-2.5 shadow-sm transition-all hover:shadow-md'
+                  : 'group/item rounded-2xl border bg-background p-3 shadow-sm transition-all hover:shadow-md',
+                dragOverEvidenceId === ev.id && draggingEvidenceId !== ev.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border'
               )}
               onDragOver={(e) => {
                 if (!draggingEvidenceId || disabled) return
@@ -153,10 +293,13 @@ export function DocumentEvidenceManager({
                   <img
                     src={getStaticEvidenceUrl(ev.url)}
                     alt={ev.name}
-                    className='h-40 w-full object-cover transition-transform duration-500 group-hover/item:scale-105'
+                    className={cn(
+                      'w-full object-cover transition-transform duration-500 group-hover/item:scale-105',
+                      compact ? 'h-28' : 'h-40'
+                    )}
                   />
                 ) : (
-                  <div className='flex h-40 items-center justify-center bg-muted/20'>
+                  <div className={cn('flex items-center justify-center bg-muted/20', compact ? 'h-28' : 'h-40')}>
                     <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
                   </div>
                 )}
@@ -173,7 +316,7 @@ export function DocumentEvidenceManager({
                       setDraggingEvidenceId(null)
                       setDragOverEvidenceId(null)
                     }}
-                    className='absolute left-2 top-2 flex size-8 cursor-move items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover/item:opacity-100'
+                    className='absolute top-2 left-2 flex size-8 cursor-move items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover/item:opacity-100'
                     aria-label='drag to reorder evidence'
                   >
                     <GripVertical className='size-4' />
@@ -184,7 +327,7 @@ export function DocumentEvidenceManager({
                   <Button
                     variant='destructive'
                     size='icon'
-                    className='absolute right-2 top-2 h-8 w-8 rounded-full shadow-lg opacity-0 transition-opacity group-hover/item:opacity-100'
+                    className='absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 shadow-lg transition-opacity group-hover/item:opacity-100'
                     onClick={(e) => {
                       e.stopPropagation()
                       removeEvidence(ev.id)
@@ -196,17 +339,24 @@ export function DocumentEvidenceManager({
                 ) : null}
               </div>
 
-              <div className='mt-3 space-y-2'>
-                <p className='truncate text-[10px] font-bold text-muted-foreground'>{ev.name}</p>
+              <div className={cn(compact ? 'mt-2 space-y-1.5' : 'mt-3 space-y-2')}>
+                <p className='truncate text-[10px] font-bold text-muted-foreground'>
+                  {ev.name}
+                </p>
                 <div className='space-y-1'>
-                  <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
-                    {t('tradingSalesOrder.detail.evidenceNoteLabel')}
+                  <p className='text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                    {resolvedNoteLabel}
                   </p>
                   <Input
                     value={ev.note || ''}
-                    onChange={(e) => updateEvidence(ev.id, { note: e.target.value })}
-                    placeholder={t('tradingSalesOrder.detail.evidenceNotePlaceholder')}
-                    className='h-9 rounded-xl bg-background text-xs shadow-none'
+                    onChange={(e) =>
+                      updateEvidence(ev.id, { note: e.target.value })
+                    }
+                    placeholder={resolvedNotePlaceholder}
+                    className={cn(
+                      'rounded-xl bg-background text-xs shadow-none',
+                      compact ? 'h-8' : 'h-9'
+                    )}
                     disabled={disabled}
                   />
                 </div>
@@ -214,50 +364,88 @@ export function DocumentEvidenceManager({
             </div>
           ))}
 
-          {!disabled && evidences.length < 10 && (
-            <div className='relative min-h-[240px]'>
+          {!disabled && evidences.length < maxCount ? (
+            <div className={cn('relative', compact ? 'min-h-[124px]' : 'min-h-[240px]')}>
               <input
                 type='file'
                 className='absolute inset-0 z-10 cursor-pointer opacity-0'
                 accept='image/*'
-                onChange={handleFileUpload}
+                onChange={(event) =>
+                  void handleFileUpload(event.target.files, () => {
+                    event.target.value = ''
+                  })
+                }
                 multiple
-                disabled={uploading}
+                disabled={uploading || evidences.length >= maxCount}
               />
-              <div className='flex h-full min-h-[240px] flex-col items-center justify-center space-y-2 rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5'>
+              <div
+                className={cn(
+                  'flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5',
+                  compact ? 'min-h-[124px] space-y-2' : 'min-h-[240px] space-y-2'
+                )}
+              >
                 {uploading ? (
-                  <Loader2 className='size-6 animate-spin text-primary' />
+                  <Loader2 className={cn('animate-spin text-primary', compact ? 'size-5' : 'size-6')} />
                 ) : (
                   <>
-                    <div className='flex size-10 items-center justify-center rounded-full bg-muted group-hover:bg-primary/20'>
-                      <CloudUpload className='size-5 text-muted-foreground group-hover:text-primary' />
+                    <div
+                      className={cn(
+                        'flex items-center justify-center rounded-full bg-muted group-hover:bg-primary/20',
+                        compact ? 'size-8' : 'size-10'
+                      )}
+                    >
+                      <CloudUpload
+                        className={cn(
+                          'text-muted-foreground group-hover:text-primary',
+                          compact ? 'size-4' : 'size-5'
+                        )}
+                      />
                     </div>
-                    <span className='px-1 text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground'>
-                      {t('tradingSalesOrder.fileUploader.upload')}
+                    <span
+                      className={cn(
+                        'px-1 text-center font-black text-muted-foreground uppercase',
+                        compact ? 'text-[8px] tracking-[0.12em]' : 'text-[9px] tracking-widest'
+                      )}
+                    >
+                      {resolvedUploadActionText}
                     </span>
                   </>
                 )}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {evidences.length === 0 && !uploading && (
-          <div className='absolute inset-0 flex flex-col items-center justify-center space-y-2 text-muted-foreground/30'>
-            <CloudUpload className='size-8' />
-            <p className='text-[10px] font-black uppercase tracking-[0.2em] italic'>
-              {t('tradingSalesOrder.detail.evidencePlaceholder')}
+          <div
+            className={cn(
+              'absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/30',
+              compact ? 'space-y-1.5' : 'space-y-2'
+            )}
+          >
+            <CloudUpload className={cn(compact ? 'size-6' : 'size-8')} />
+            <p
+              className={cn(
+                'font-black uppercase italic',
+                compact
+                  ? 'text-[9px] tracking-[0.14em]'
+                  : 'text-[10px] tracking-[0.2em]'
+              )}
+            >
+              {resolvedEmptyText}
             </p>
           </div>
         )}
       </div>
 
-      <div className='flex items-center gap-2 px-1'>
-        <div className='size-1 rounded-full bg-primary/40' />
-        <p className='text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60'>
-          {t('tradingSalesOrder.detail.evidenceHint')} · {t('tradingSalesOrder.detail.evidenceSortHint')}
-        </p>
-      </div>
+      {shouldShowHint ? (
+        <div className={cn('flex items-center gap-2', compact ? 'px-0.5' : 'px-1')}>
+          <div className='size-1 rounded-full bg-primary/40' />
+          <p className='text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
+            {resolvedHint}
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }

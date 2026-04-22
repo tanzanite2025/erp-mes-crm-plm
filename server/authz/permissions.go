@@ -13,6 +13,7 @@ const (
 	MenuEquipment   = "menu_equipment"
 	MenuSystem      = "menu_system"
 	MenuSettings    = "menu_settings"
+	MenuCodeCenter  = "menu_code_center"
 	MenuApproval    = "menu_approval"
 	MenuPDA         = "menu_pda"
 )
@@ -96,7 +97,6 @@ const (
 )
 
 const (
-	ActionApprovalConfigManage = "action_approval_config_manage"
 	ActionApprovalReview       = "action_approval_review"
 	ActionSystemWorkflowManage = "action_system_workflow_manage"
 	ActionSystemWorkflowReview = "action_system_workflow_review"
@@ -120,6 +120,7 @@ var AdminFallbackPermissions = []string{
 	MenuEquipment,
 	MenuSystem,
 	MenuSettings,
+	MenuCodeCenter,
 	MenuApproval,
 	ActionWarehouseInboundRecord,
 	ActionWarehouseShipmentRecord,
@@ -169,7 +170,6 @@ var AdminFallbackPermissions = []string{
 	ActionEmployeeImportPreview,
 	ActionEmployeeImportCommit,
 	ActionProductionLineUpdate,
-	ActionApprovalConfigManage,
 	ActionApprovalReview,
 	ActionSystemWorkflowManage,
 	ActionSystemWorkflowReview,

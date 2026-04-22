@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useLanguage } from '@/context/language-provider'
 import { type CustomerQuoteSummaryItem } from '@/features/quotes/services/customer-quote-summary-service'
 
 type CustomerQuoteEntryBlockProps = {
@@ -26,51 +27,58 @@ export function CustomerQuoteEntryBlock({
   onOpenQuote,
   onCreateQuote,
 }: CustomerQuoteEntryBlockProps) {
+  const { t } = useLanguage()
+
   if (isLoading) {
     return (
-      <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
-        <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+      <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
           <FileText className='size-3' />
-          报价记录
+          {t('trading.customers.summary.quoteTitle')}
         </div>
-        <p className='text-[10px] font-bold text-muted-foreground'>正在加载报价…</p>
+        <p className='text-[10px] font-bold text-muted-foreground'>
+          {t('trading.customers.summary.quoteLoading')}
+        </p>
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
-        <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+      <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
           <FileText className='size-3' />
-          报价记录
+          {t('trading.customers.summary.quoteTitle')}
         </div>
-        <p className='text-[10px] font-bold text-amber-600'>报价摘要加载失败</p>
+        <p className='text-[10px] font-bold text-amber-600'>{t('trading.customers.summary.quoteLoadFailed')}</p>
       </div>
     )
   }
 
   if (quotes.length === 0) {
     return (
-      <div className='space-y-2 pt-2 border-t border-dashed border-muted/50'>
-        <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+      <div className='space-y-2 border-t border-dashed border-muted/50 pt-2'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
           <AlertTriangle className='size-3' />
-          报价记录
+          {t('trading.customers.summary.quoteTitle')}
         </div>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <div className='space-y-1'>
-            <p className='text-[10px] font-black text-amber-700'>{customerName} 暂无报价，建议立即建立报价</p>
-            <p className='text-[9px] font-bold text-amber-600/80'>点击右侧按钮，直接进入报价工作台新建模式</p>
+            <p className='text-[10px] font-black text-amber-700'>
+              {t('trading.customers.summary.quoteEmptyTitle', { customerName })}
+            </p>
+            <p className='text-[9px] font-bold text-amber-600/80'>
+              {t('trading.customers.summary.quoteEmptyDescription')}
+            </p>
           </div>
           <Button
             type='button'
             variant='default'
             size='sm'
             onClick={onCreateQuote}
-            className='h-9 w-full sm:w-auto rounded-full px-4 text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/25 bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/30 animate-in fade-in duration-300'
+            className='h-9 w-full animate-in rounded-full border border-primary/30 bg-primary px-4 text-[9px] font-black tracking-widest text-primary-foreground uppercase shadow-lg shadow-primary/25 duration-300 fade-in hover:bg-primary/90 sm:w-auto'
           >
-            立即
-            新建报价
+            {t('trading.customers.summary.quoteCreate')}
           </Button>
         </div>
       </div>
@@ -80,26 +88,28 @@ export function CustomerQuoteEntryBlock({
   if (quotes.length === 1) {
     const quote = quotes[0]
     return (
-      <div className='space-y-2 pt-2 border-t border-dashed border-muted/50'>
-        <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+      <div className='space-y-2 border-t border-dashed border-muted/50 pt-2'>
+        <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
           <FileText className='size-3' />
-          报价记录
+          {t('trading.customers.summary.quoteTitle')}
         </div>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
             <Badge variant='outline' className='text-[10px] font-black'>
               {quote.quoteNo}
             </Badge>
-            <span className='text-[10px] font-bold text-muted-foreground'>{quote.status}</span>
+            <span className='text-[10px] font-bold text-muted-foreground'>
+              {quote.status}
+            </span>
           </div>
           <Button
             type='button'
             variant='outline'
             size='sm'
             onClick={() => onOpenQuote(quote.id)}
-            className='h-7 w-full sm:w-auto rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
+            className='h-7 w-full rounded-full px-3 text-[8px] font-black tracking-widest uppercase sm:w-auto'
           >
-            打开报价
+            {t('trading.customers.summary.quoteOpen')}
           </Button>
         </div>
       </div>
@@ -107,17 +117,19 @@ export function CustomerQuoteEntryBlock({
   }
 
   return (
-    <div className='space-y-2 pt-2 border-t border-dashed border-muted/50'>
-      <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+    <div className='space-y-2 border-t border-dashed border-muted/50 pt-2'>
+      <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
         <FileText className='size-3' />
-        报价记录
+        {t('trading.customers.summary.quoteTitle')}
       </div>
       <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
         <div className='flex flex-wrap items-center gap-2'>
           <Badge variant='outline' className='text-[10px] font-black'>
-            {quotes.length} 张报价
+            {t('trading.customers.summary.quoteCount', { count: quotes.length })}
           </Badge>
-          <span className='text-[10px] font-bold text-muted-foreground'>选择单号后直接打开</span>
+          <span className='text-[10px] font-bold text-muted-foreground'>
+            {t('trading.customers.summary.quoteSelectHint')}
+          </span>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -125,9 +137,9 @@ export function CustomerQuoteEntryBlock({
               type='button'
               variant='outline'
               size='sm'
-              className='h-7 w-full sm:w-auto rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
+              className='h-7 w-full rounded-full px-3 text-[8px] font-black tracking-widest uppercase sm:w-auto'
             >
-              选择报价
+              {t('trading.customers.summary.quoteSelect')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end' className='rounded-[16px] p-2'>

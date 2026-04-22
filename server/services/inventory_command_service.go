@@ -35,24 +35,6 @@ func updateInventoryRecord(tx *gorm.DB, inv *models.Inventory) error {
 	return tx.Model(inv).Updates(inventoryUpdateMap(*inv)).Error
 }
 
-// syncInventoryToSearch 将库存状态异步同步到 Rust 搜索引擎情况情况总量针对。
-func syncInventoryToSearch(inv models.Inventory) {
-	if GlobalSearchClient == nil {
-		return
-	}
-	go func() {
-		doc := SearchDocument{
-			ID:       inv.ID,
-			Code:     inv.MaterialCode,
-			Name:     inv.MaterialName,
-			Model:    inv.MaterialSpec,
-			Category: inv.CategoryCode,
-			Version:  uint64(inv.UpdatedAt.UnixNano()), // 使用纳秒时间戳作为基础版本号
-		}
-		_ = GlobalSearchClient.SyncIndex(doc)
-	}()
-}
-
 func mergeInventoryForSync(existing *models.Inventory, incoming models.Inventory) {
 	existing.MaterialID = incoming.MaterialID
 	if strings.TrimSpace(incoming.MaterialName) != "" {
@@ -320,7 +302,6 @@ func RecordInbound(inbound *models.InboundRecord) error {
 		return recordInboundTx(tx, inbound)
 	})
 	if err == nil {
-		// 事务成功后异步同步搜索引擎情况情况总量针对。
 		var latestInv models.Inventory
 		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", inbound.MaterialID, inbound.TargetCategory, inbound.BatchNo).First(&latestInv).Error == nil {
 			syncInventoryToSearch(latestInv)
@@ -468,7 +449,6 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		return err
 	})
 	if err == nil {
-		// 出库成功后同步搜索索引情况情况总量针对。
 		var latestInv models.Inventory
 		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).First(&latestInv).Error == nil {
 			syncInventoryToSearch(latestInv)
@@ -481,68 +461,82 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 	return InventoryShipmentRecordResponse{}, err
 }
 
+func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
+	var from models.Inventory
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).
+		First(&from).Error; err != nil {
+		return errors.New("source inventory record not found")
+	}
+	if input.Quantity <= 0 {
+		return errors.New("[CRITICAL_LOGIC_ERROR] transfer quantity must be greater than zero")
+	}
+	if from.Quantity < input.Quantity {
+		return errors.New("source inventory shortage")
+	}
+	transferValue := input.Quantity * from.AverageUnitCost
+	from.Quantity -= input.Quantity
+	from.TotalValue -= transferValue
+	if from.TotalValue < 0 && math.Abs(from.TotalValue) <= inventoryValueTolerance {
+		from.TotalValue = 0
+	}
+	if from.Quantity > 0 {
+		from.AverageUnitCost = from.TotalValue / from.Quantity
+	} else {
+		from.AverageUnitCost = 0
+	}
+	if err := updateInventoryRecord(tx, &from); err != nil {
+		return err
+	}
+
+	var to models.Inventory
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.ToCategory, input.BatchNo).
+		First(&to).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		toUnitCost := 0.0
+		if input.Quantity > 0 {
+			toUnitCost = transferValue / input.Quantity
+		}
+		to = models.Inventory{
+			MaterialID:      input.MaterialID,
+			MaterialName:    from.MaterialName,
+			MaterialCode:    from.MaterialCode,
+			MaterialSpec:    from.MaterialSpec,
+			Quantity:        input.Quantity,
+			TotalValue:      transferValue,
+			AverageUnitCost: toUnitCost,
+			CategoryCode:    input.ToCategory,
+			BatchNo:         input.BatchNo,
+			UOM:             from.UOM,
+		}
+		return tx.Create(&to).Error
+	}
+	if err != nil {
+		return err
+	}
+
+	previousToQuantity := to.Quantity
+	to.MaterialName = from.MaterialName
+	to.MaterialCode = from.MaterialCode
+	to.MaterialSpec = from.MaterialSpec
+	to.UOM = from.UOM
+	to.Quantity += input.Quantity
+	to.TotalValue += transferValue
+	if to.Quantity > 0 {
+		to.AverageUnitCost = to.TotalValue / to.Quantity
+	} else if previousToQuantity == 0 {
+		to.AverageUnitCost = 0
+	}
+	return updateInventoryRecord(tx, &to)
+}
+
 func TransferInventory(input TransferInventoryInput) error {
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var from models.Inventory
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).
-			First(&from).Error; err != nil {
-			return errors.New("source inventory record not found")
-		}
-		if from.Quantity < input.Quantity {
-			return errors.New("source inventory shortage")
-		}
-		transferValue := input.Quantity * from.AverageUnitCost
-		from.Quantity -= input.Quantity
-		from.TotalValue -= transferValue
-		if from.TotalValue < 0 && math.Abs(from.TotalValue) <= inventoryValueTolerance {
-			from.TotalValue = 0
-		}
-		if from.Quantity > 0 {
-			from.AverageUnitCost = from.TotalValue / from.Quantity
-		} else {
-			from.AverageUnitCost = 0
-		}
-		if err := updateInventoryRecord(tx, &from); err != nil {
-			return err
-		}
-
-		var to models.Inventory
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.ToCategory, input.BatchNo).
-			First(&to).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			toUnitCost := 0.0
-			if input.Quantity > 0 {
-				toUnitCost = transferValue / input.Quantity
-			}
-			to = models.Inventory{
-				MaterialID:      input.MaterialID,
-				Quantity:        input.Quantity,
-				TotalValue:      transferValue,
-				AverageUnitCost: toUnitCost,
-				CategoryCode:    input.ToCategory,
-				BatchNo:         input.BatchNo,
-			}
-			return tx.Create(&to).Error
-		}
-		if err != nil {
-			return err
-		}
-
-		previousToQuantity := to.Quantity
-		to.Quantity += input.Quantity
-		to.TotalValue += transferValue
-		if to.Quantity > 0 {
-			to.AverageUnitCost = to.TotalValue / to.Quantity
-		} else if previousToQuantity == 0 {
-			to.AverageUnitCost = 0
-		}
-		return updateInventoryRecord(tx, &to)
+		return transferInventoryTx(tx, input)
 	})
 
 	if err == nil {
-		// 调拨成功后同步双端搜索索引情况情况总量针对。
 		var fromInv, toInv models.Inventory
 		if db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).First(&fromInv).Error == nil {
 			syncInventoryToSearch(fromInv)

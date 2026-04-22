@@ -2,7 +2,10 @@ import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type SalesOrder, type SalesOrderLine } from '../../data/schema'
 import { toSalesOrderContract } from '../adapters/sales-order-api-adapter'
-import { type SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
+import {
+  deserializeSalesOrderApiDTO,
+  type SalesOrderApiDTO,
+} from '../contracts/sales-order-api-dto'
 
 export const SALES_TRANSACTION_INTENT_CLASSIFICATION_TYPE_CHANGE = 'ORDER_CLASSIFICATION_TYPE_CHANGE'
 export const SALES_TRANSACTION_INTENT_CUSTOMER_CHANGE = 'ORDER_CUSTOMER_CHANGE'
@@ -98,7 +101,7 @@ export const executeSalesOrderTransaction = async <TPayload>(
   orderId: string,
   request: SalesOrderTransactionRequest<TPayload>
 ): Promise<SalesOrder> => {
-  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${orderId}/transactions`, {
+  const res = await apiFetch<unknown>(`/sales-orders/${orderId}/transactions`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
@@ -106,7 +109,7 @@ export const executeSalesOrderTransaction = async <TPayload>(
     res,
     'SalesTransactionService.executeSalesOrderTransaction'
   )
-  return toSalesOrderContract(response)
+  return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 
 export const claimSalesOrderLines = async (

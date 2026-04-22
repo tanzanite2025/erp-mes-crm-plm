@@ -10,6 +10,17 @@ import { type ShipmentRecord } from '../data/schema'
 
 export type { ShipmentRecord, ShipmentStatus } from '../data/schema'
 
+export interface PrepareVirtualShipmentInput {
+  salesOrderId: string
+  salesOrderLineId: number
+  quantity: number
+  sourceCategory: string
+  batchNo: string
+  shipmentDate: string
+  operator: string
+  remarks: string
+}
+
 export const ShipmentTransactionService = {
   recordShipment: async (data: ShipmentRecordCreateInput): Promise<ShipmentRecord> => {
     const res = await apiFetch<InventoryShipmentRecordApiDTO>('/inventory/shipment', {
@@ -40,6 +51,23 @@ export const ShipmentTransactionService = {
       ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
         res,
         'ShipmentTransactionService.commitShipment'
+      ) as InventoryShipmentRecordApiDTO
+    )
+  },
+
+  prepareVirtualShipment: async (data: PrepareVirtualShipmentInput): Promise<ShipmentRecord> => {
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>('/inventory/shipment/virtual-lock', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        metadata: { intent: 'WAREHOUSE_VIRTUAL_SHIPMENT_LOCK' },
+      }),
+    })
+
+    return toShipmentRecordContract(
+      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+        res,
+        'ShipmentTransactionService.prepareVirtualShipment'
       ) as InventoryShipmentRecordApiDTO
     )
   },

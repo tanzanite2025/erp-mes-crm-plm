@@ -32,10 +32,10 @@ function normalizeQuoteType(value: unknown, context: string): QuoteSummaryType {
   if (typeof value !== 'string') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected quoteType to be a string.`)
   }
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'wholesale') return 'wholesale'
-  if (normalized === 'sample') return 'sample'
-  if (normalized === 'retail') return 'retail'
+  const normalized = value.trim().toLowerCase().replace(/[\s_-]/g, '')
+  if (['wholesale', 'bulk', 'dealer', 'outsource', 'toll'].includes(normalized)) return 'wholesale'
+  if (['sample', 'sam', 'smp', 'rd', 'rnd', 'r&d', 'trial'].includes(normalized)) return 'sample'
+  if (['retail', 'ret', 'customer', 'estimate', 'general', 'normal', 'standard', 'quote'].includes(normalized)) return 'retail'
   throw new Error(`[INVALID_RESPONSE] ${context} expected quoteType to be one of retail | wholesale | sample.`)
 }
 
@@ -45,7 +45,8 @@ function normalizeStatus(value: unknown, context: string): QuoteSummaryStatus {
   }
   const normalized = value.trim().toLowerCase()
   if (normalized === 'pending') return 'pending'
-  if (normalized === 'converted') return 'converted'
+  if (normalized === 'processing' || normalized === 'inprogress' || normalized === 'in_progress' || normalized === 'in-progress' || normalized === 'submitted') return 'pending'
+  if (normalized === 'converted' || normalized === 'done' || normalized === 'completed' || normalized === 'complete' || normalized === 'closed') return 'converted'
   if (normalized === 'voided' || normalized === 'cancelled' || normalized === 'canceled') return 'voided'
   if (normalized === 'draft') return 'draft'
   throw new Error(`[INVALID_RESPONSE] ${context} expected status to be one of draft | pending | converted | voided.`)

@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from 'react'
-import { type Customer, type SalesOrder } from '../data/schema'
+import { type Customer, type SalesOrderDraft } from '../data/schema'
 import type { AppLocale } from '@/locales'
 import {
   getSalesOrderClassificationOptions,
   getSalesOrderTypeOptions,
 } from '../data/sales-order-options'
 
-type SalesOrderFormState = Partial<SalesOrder>
+type SalesOrderFormState = SalesOrderDraft
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
 
 interface PaymentOption {

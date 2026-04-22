@@ -16,6 +16,7 @@ import (
 )
 
 var errWarehouseCategoryCodeExists = errors.New("warehouse category code already exists")
+var errWarehouseCategorySystemProtected = errors.New("warehouse category is system protected")
 
 // GetWarehouseCategoriesHandler returns the management list payload for warehouse categories.
 func GetWarehouseCategoriesHandler(c *gin.Context) {
@@ -143,6 +144,10 @@ func PatchWarehouseCategoryHandler(c *gin.Context) {
 			return err
 		}
 
+		if category.IsSystem {
+			return errWarehouseCategorySystemProtected
+		}
+
 		if int64(optimisticVersionForResponse(category.UpdatedAt, category.CreatedAt)) != req.Metadata.Version {
 			return ErrVersionConflict
 		}
@@ -268,6 +273,8 @@ func PatchWarehouseCategoryHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, mapWarehouseCategoryToResponse(updated))
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "warehouse category not found"})
+	case errors.Is(err, errWarehouseCategorySystemProtected):
+		c.JSON(http.StatusForbidden, gin.H{"error": "系统仓库分类不允许编辑"})
 	case errors.Is(err, ErrVersionConflict):
 		respondVersionConflict(c)
 	case errors.Is(err, errWarehouseCategoryCodeExists):

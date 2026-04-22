@@ -315,8 +315,14 @@ func ensureDefaultWarehouseCategories() {
 		if !existing.IsSystem {
 			updates["is_system"] = true
 		}
+		if !existing.Active {
+			updates["active"] = true
+		}
 		if existing.Name == "" {
 			updates["name"] = category.Name
+		}
+		if existing.Description == "" && category.Description != "" {
+			updates["description"] = category.Description
 		}
 		if existing.SortOrder == 0 {
 			updates["sort_order"] = category.SortOrder
@@ -592,6 +598,140 @@ func ensureUserPermissionUniqueIndex() {
 	}
 }
 
+func ensureSidebarCommandAssignmentUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.UserSidebarCommandAssignment{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_sidebar_commands_user_command_active_unique
+		ON user_sidebar_command_assignments (user_id, command_id)
+		WHERE deleted_at IS NULL;
+	`).Error; err != nil {
+		log.Fatal("Failed to enforce unique active sidebar command per user:", err)
+	}
+}
+
+func ensureSidebarCommandCategoryAssignmentUniqueIndex() {
+	if DB == nil || !DB.Migrator().HasTable(&models.UserSidebarCommandCategoryAssignment{}) {
+		return
+	}
+
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_sidebar_command_categories_user_category_active_unique
+		ON user_sidebar_command_category_assignments (user_id, category_id)
+		WHERE deleted_at IS NULL;
+	`).Error; err != nil {
+		log.Fatal("Failed to enforce unique active sidebar command category per user:", err)
+	}
+}
+
+func ensureDefaultSidebarCommandCategories() {
+	if DB == nil || !DB.Migrator().HasTable(&models.SidebarCommandCategory{}) {
+		return
+	}
+
+	defaultCategories := []models.SidebarCommandCategory{
+		{
+			CategoryID:  "business",
+			Name:        "业务指令",
+			Description: "系统内置业务指令默认分类，可按现场需要继续拆分。",
+			Enabled:     true,
+			Status:      "active",
+			SortOrder:   10,
+		},
+	}
+
+	for _, category := range defaultCategories {
+		var existing models.SidebarCommandCategory
+		err := DB.Where("category_id = ?", category.CategoryID).First(&existing).Error
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Fatal("Failed to inspect default sidebar command category:", err)
+		}
+		if err := DB.Create(&category).Error; err != nil {
+			log.Fatal("Failed to seed default sidebar command category:", err)
+		}
+	}
+}
+
+func ensureDefaultSidebarCommandDefinitions() {
+	if DB == nil || !DB.Migrator().HasTable(&models.SidebarCommandDefinition{}) {
+		return
+	}
+
+	defaultCommands := []models.SidebarCommandDefinition{
+		{
+			CommandID:    "wheel_trace_scan",
+			Title:        "车圈追溯",
+			Description:  "侧边栏直接进入车圈条码追溯，适合现场快速查找来源和流转记录。",
+			Route:        "/wheel-trace",
+			SearchParams: json.RawMessage(`{"scan":"1"}`),
+			Icon:         "SearchCheck",
+			Category:     "business",
+			Assignable:   true,
+			Enabled:      true,
+			Status:       "active",
+			SortOrder:    5,
+		},
+		{
+			CommandID:    "warehouse_inbound_scan",
+			Title:        "入库扫描",
+			Description:  "侧边栏直接进入仓库入库扫描，适合收货、上架等现场动作。",
+			Route:        "/warehouse/inbound",
+			SearchParams: json.RawMessage(`{"mode":"scan"}`),
+			Icon:         "PackagePlus",
+			Category:     "business",
+			Assignable:   true,
+			Enabled:      true,
+			Status:       "active",
+			SortOrder:    10,
+		},
+		{
+			CommandID:    "warehouse_shipment_scan",
+			Title:        "出货扫描",
+			Description:  "侧边栏直接进入仓库出货扫描，适合发货确认和扫码出库。",
+			Route:        "/warehouse/shipment",
+			SearchParams: json.RawMessage(`{"mode":"scan"}`),
+			Icon:         "ScanLine",
+			Category:     "business",
+			Assignable:   true,
+			Enabled:      true,
+			Status:       "active",
+			SortOrder:    20,
+		},
+		{
+			CommandID:    "warehouse_stocktake_scan",
+			Title:        "盘点扫描",
+			Description:  "侧边栏直接进入 PDA 盘点扫描，适合仓库现场盘点。",
+			Route:        "/warehouse/stocktake",
+			SearchParams: json.RawMessage(`{"mode":"scan"}`),
+			Icon:         "ClipboardCheck",
+			Category:     "business",
+			Assignable:   true,
+			Enabled:      true,
+			Status:       "active",
+			SortOrder:    30,
+		},
+	}
+
+	for _, command := range defaultCommands {
+		var existing models.SidebarCommandDefinition
+		err := DB.Where("command_id = ?", command.CommandID).First(&existing).Error
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Fatal("Failed to inspect default sidebar command definition:", err)
+		}
+		if err := DB.Create(&command).Error; err != nil {
+			log.Fatal("Failed to seed default sidebar command definition:", err)
+		}
+	}
+}
+
 func ensureSeedAdminUserPermissions() {
 	if DB == nil || !DB.Migrator().HasTable(&models.User{}) || !DB.Migrator().HasTable(&models.UserPermission{}) {
 		return
@@ -685,11 +825,17 @@ func InitDB(dsn string) {
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.UserPermission{},
+		&models.SidebarCommandCategory{},
+		&models.SidebarCommandDefinition{},
+		&models.UserSidebarCommandAssignment{},
+		&models.UserSidebarCommandCategoryAssignment{},
 		&models.PersonalRecord{},
 		&models.PersonalRecordAsset{},
 		&models.PersonalRecordActionLog{},
 		&models.SalesOrder{},
 		&models.SalesOrderLine{},
+		&models.SalesReturn{},
+		&models.SalesReturnLine{},
 		&models.Customer{},
 		&models.Supplier{},
 		&models.Inventory{},
@@ -700,6 +846,7 @@ func InitDB(dsn string) {
 		&models.ProductType{},
 		&models.LogisticsRecord{},
 		&models.Product{},
+		&models.ProductAppearance{},
 		&models.ChangeOrder{},
 		&models.BOM{},
 		&models.BOMItem{},
@@ -727,7 +874,6 @@ func InitDB(dsn string) {
 		&models.Organization{},
 		&models.Employee{},
 		&models.WarehouseCategory{},
-		&models.ApprovalConfig{},
 		&models.ApprovalRequest{},
 		&models.WorkflowDefinition{},
 		&models.WorkflowInstance{},
@@ -736,7 +882,6 @@ func InitDB(dsn string) {
 		&models.VehicleContactBinding{},
 		&models.FinancialVoucher{},
 		&models.ClearingEntry{},
-		&models.ReceivableLedger{},
 		&models.PayableLedger{},
 		&models.ReceiptRecord{},
 		&models.PaymentRecord{},
@@ -801,8 +946,10 @@ func InitDB(dsn string) {
 
 		// 缂備緡鍨靛畷鐢靛垝閻戞鈻旈幖绮光偓鑼煑婵炶揪绲剧划宥囩矈閿曞倹鐓€鐎广儱娲ㄩ弸?(System & Workflow)
 		&models.EnterpriseConfig{},
+		&models.BusinessEventSource{},
 		&models.StandardCommand{},
 		&models.NotificationRule{},
+		&models.RuleExecutionLog{},
 		&models.AuditLog{},
 	)
 	if err != nil {
@@ -818,6 +965,10 @@ func InitDB(dsn string) {
 	ensureSalesOrderIntegrityConstraints()
 	ensureUserRolePrimaryUniqueIndex()
 	ensureUserPermissionUniqueIndex()
+	ensureSidebarCommandAssignmentUniqueIndex()
+	ensureSidebarCommandCategoryAssignmentUniqueIndex()
+	ensureDefaultSidebarCommandCategories()
+	ensureDefaultSidebarCommandDefinitions()
 
 	ensurePackagingRuleMaterialUniqueIndex()
 	cleanupDuplicateProductAttributeOptions()

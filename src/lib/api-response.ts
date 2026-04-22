@@ -16,12 +16,7 @@ export function ensureObjectResponse<T extends Record<string, unknown>>(
   value: unknown,
   context: string,
 ): T {
-  // 分页加固：apiFetch 可能返回 'Hybrid Array' (即数组实例带分页元数据)
-  // 这种情况下 Array.isArray 为 true，但它仍然是符合 Record 要求的对象
-  const hybridCandidate = value as Record<string, unknown> | undefined
-  const isHybridArray = Array.isArray(value) && !!hybridCandidate && 'items' in hybridCandidate && 'total' in hybridCandidate
-
-  if (!value || typeof value !== 'object' || (Array.isArray(value) && !isHybridArray)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw createApiClientError({
       kind: 'invalid_response',
       message: `[INVALID_RESPONSE] ${context} expected an object response.`,

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { HoleCodeCountItem, HoleCodePrefixItem } from '@/features/code-center/data/hole-code-source'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/context/language-provider'
 import { DMPreview } from './dm-preview'
@@ -24,7 +25,7 @@ interface LinearBarcodeSimulationSectionProps {
     day: string
     model: string
     appearance: string
-    holePrefix: 'R' | 'D'
+    holePrefix: string
     holes: string
     serial: string
     isDrainHole: boolean
@@ -38,7 +39,7 @@ interface LinearBarcodeSimulationSectionProps {
       day: string
       model: string
       appearance: string
-      holePrefix: 'R' | 'D'
+      holePrefix: string
       holes: string
       serial: string
       isDrainHole: boolean
@@ -55,13 +56,14 @@ interface LinearBarcodeSimulationSectionProps {
   }
   products: Product[]
   appearanceMapping: AppearanceMapping | null
+  holePrefixSources: HoleCodePrefixItem[]
+  holeCountSources: HoleCodeCountItem[]
   monthOptions: Array<{ label: string; value: string }>
   dayOptions: Array<{ label: string; value: string }>
   onRequestNextSerial: () => Promise<void>
   sequenceRuleKey: string
 }
 
-const HOLE_OPTIONS = ['14', '16', '18', '20', '21', '24', '28', '32']
 const YEAR_OPTIONS = ['25', '26', '27']
 
 export function LinearBarcodeSimulationSection({
@@ -71,6 +73,8 @@ export function LinearBarcodeSimulationSection({
   parsedResult,
   products,
   appearanceMapping,
+  holePrefixSources,
+  holeCountSources,
   monthOptions,
   dayOptions,
   onRequestNextSerial,
@@ -85,12 +89,12 @@ export function LinearBarcodeSimulationSection({
   return (
     <div
       className={cn(
-        'rounded-[2rem] border p-4 md:p-8 lg:p-10 shadow-2xl relative overflow-hidden transition-all duration-500',
+        'rounded-4xl border p-4 md:p-8 lg:p-10 shadow-2xl relative overflow-hidden transition-all duration-500',
         'bg-white border-slate-200 shadow-slate-200/50',
         'dark:bg-slate-950 dark:border-white/5 dark:shadow-none',
       )}
     >
-      <div className='absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_70%_30%,_var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent' />
+      <div className='absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_70%_30%,var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent' />
 
       <div className='relative z-10 space-y-8'>
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6'>
@@ -98,7 +102,7 @@ export function LinearBarcodeSimulationSection({
             <div className='text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 text-blue-600/60 dark:text-blue-400/60'>
               <ShieldCheck className='size-3.5' /> {t('basicSettings.linearBarcode.simulation.title')} <span>(Code128)</span>
             </div>
-            <h3 className='text-lg lg:text-2xl font-black tracking-tight leading-tight whitespace-normal break-words text-slate-900 dark:text-white'>
+            <h3 className='text-lg lg:text-2xl font-black tracking-tight leading-tight whitespace-normal wrap-break-word text-slate-900 dark:text-white'>
               {parsedResult.display.fullDescription}
             </h3>
             <p className='text-[10px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] italic'>
@@ -125,7 +129,7 @@ export function LinearBarcodeSimulationSection({
             className={cn(
               'lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5 p-6 rounded-3xl transition-colors',
               'bg-slate-50 border-slate-200',
-              'dark:bg-white/[0.02] dark:border-white/5',
+              'dark:bg-white/2 dark:border-white/5',
             )}
           >
             <div className='space-y-2'>
@@ -133,7 +137,7 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.year')}
               </label>
               <Select value={mockInputs.year} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, year: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.year')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input'>
@@ -151,7 +155,7 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.month')}
               </label>
               <Select value={mockInputs.month} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, month: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.month')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input'>
@@ -169,7 +173,7 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.day')}
               </label>
               <Select value={mockInputs.day} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, day: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.day')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input max-h-72'>
@@ -187,7 +191,7 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.model')}
               </label>
               <Select value={mockInputs.model} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, model: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.model')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input'>
@@ -205,7 +209,7 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.appearance')}
               </label>
               <Select value={mockInputs.appearance} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, appearance: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.appearance')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input'>
@@ -223,23 +227,20 @@ export function LinearBarcodeSimulationSection({
               <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1'>
                 {t('basicSettings.linearBarcode.simulation.form.holePrefix')}
               </label>
-              <div className='flex p-1 border rounded-xl !h-11 items-center transition-colors bg-white border-slate-200 dark:bg-white/[0.02] dark:border-white/10'>
-                {[
-                  { label: t('basicSettings.linearBarcode.simulation.form.holePrefixOptions.R'), value: 'R' },
-                  { label: t('basicSettings.linearBarcode.simulation.form.holePrefixOptions.D'), value: 'D' },
-                ].map((option) => (
+              <div className='flex p-1 border rounded-xl h-11! items-center transition-colors bg-white border-slate-200 dark:bg-white/2 dark:border-white/10'>
+                {holePrefixSources.map((option) => (
                   <button
-                    key={option.value}
+                    key={option.id}
                     type='button'
-                    onClick={() => setMockInputs((prev) => ({ ...prev, holePrefix: option.value as 'R' | 'D' }))}
+                    onClick={() => setMockInputs((prev) => ({ ...prev, holePrefix: option.code }))}
                     className={cn(
                       'flex-1 h-full px-1 text-[9px] font-black rounded-lg transition-all',
-                      mockInputs.holePrefix === option.value
+                      mockInputs.holePrefix === option.code
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300',
                     )}
                   >
-                    {option.label}
+                    {option.label || option.code}
                   </button>
                 ))}
               </div>
@@ -250,14 +251,13 @@ export function LinearBarcodeSimulationSection({
                 {t('basicSettings.linearBarcode.simulation.form.holes')}
               </label>
               <Select value={mockInputs.holes} onValueChange={(value) => setMockInputs((prev) => ({ ...prev, holes: value }))}>
-                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl !h-11 !py-0 font-bold'>
+                <SelectTrigger className='w-full bg-background/50 border-input rounded-xl h-11! py-0! font-bold'>
                   <SelectValue placeholder={t('basicSettings.linearBarcode.simulation.form.placeholders.holes')} />
                 </SelectTrigger>
                 <SelectContent className='bg-popover border-input'>
-                  {HOLE_OPTIONS.map((holes) => (
-                    <SelectItem key={holes} value={holes}>
-                      {mockInputs.holePrefix}
-                      {holes}
+                  {holeCountSources.map((item) => (
+                    <SelectItem key={item.id} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -274,7 +274,7 @@ export function LinearBarcodeSimulationSection({
                   className={cn(
                     'flex-1 border rounded-xl h-11 flex items-center px-4 font-mono font-black tracking-widest shadow-inner transition-colors',
                     'bg-white border-slate-200 text-blue-600',
-                    'dark:bg-white/[0.03] dark:border-white/10 dark:text-blue-400',
+                    'dark:bg-white/3 dark:border-white/10 dark:text-blue-400',
                   )}
                 >
                   {mockInputs.serial || t('basicSettings.linearBarcode.simulation.form.notIssued')}
@@ -295,7 +295,7 @@ export function LinearBarcodeSimulationSection({
                 <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1 flex items-center gap-2'>
                   <ShieldCheck className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.linearBarcode.simulation.form.specialPrefix')}
                 </label>
-                <div className='flex items-center gap-3 p-2.5 rounded-xl border !h-11 transition-colors bg-white border-slate-200 dark:bg-white/[0.02] dark:border-white/10'>
+                <div className='flex items-center gap-3 p-2.5 rounded-xl border h-11! transition-colors bg-white border-slate-200 dark:bg-white/2 dark:border-white/10'>
                   <span className='text-[10px] font-bold text-muted-foreground uppercase'>{t('basicSettings.linearBarcode.simulation.form.enableHPrefix')}</span>
                   <div
                     onClick={() => setMockInputs((prev) => ({ ...prev, isDrainHole: !prev.isDrainHole }))}
@@ -310,7 +310,7 @@ export function LinearBarcodeSimulationSection({
                 <label className='text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest ml-1 flex items-center gap-2'>
                   <ChevronRight className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.linearBarcode.simulation.form.suffixWheel')}
                 </label>
-                <div className='flex p-1 border rounded-xl !h-11 items-center transition-colors bg-white border-slate-200 dark:bg-white/[0.02] dark:border-white/10'>
+                <div className='flex p-1 border rounded-xl h-11! items-center transition-colors bg-white border-slate-200 dark:bg-white/2 dark:border-white/10'>
                   {[
                     { label: t('basicSettings.linearBarcode.simulation.form.wheelOptions.F'), value: 'F' },
                     { label: t('basicSettings.linearBarcode.simulation.form.wheelOptions.R'), value: 'R' },
@@ -338,7 +338,7 @@ export function LinearBarcodeSimulationSection({
                   <Database className='size-3 text-blue-600 dark:text-blue-400' /> {t('basicSettings.linearBarcode.simulation.form.suffixScope')}
                 </label>
                 <Input
-                  className='!h-11 border-slate-200 dark:bg-white/[0.02] dark:border-white/10 rounded-xl font-black text-blue-600 dark:text-blue-400 placeholder:text-slate-300 dark:placeholder:text-slate-700'
+                  className='h-11! border-slate-200 dark:bg-white/2 dark:border-white/10 rounded-xl font-black text-blue-600 dark:text-blue-400 placeholder:text-slate-300 dark:placeholder:text-slate-700'
                   placeholder={t('basicSettings.linearBarcode.simulation.form.scopePlaceholder')}
                   value={mockInputs.scopeCode}
                   onChange={(event) =>
@@ -364,7 +364,7 @@ export function LinearBarcodeSimulationSection({
             </div>
 
             <div className='w-full space-y-4'>
-              <div className='p-5 rounded-2xl border space-y-3 transition-colors bg-slate-50 border-slate-200 dark:bg-white/[0.04] dark:border-white/10'>
+              <div className='p-5 rounded-2xl border space-y-3 transition-colors bg-slate-50 border-slate-200 dark:bg-white/4 dark:border-white/10'>
                 <div className='flex items-center gap-2 mb-2'>
                   <ShieldCheck className='size-3.5 text-blue-600 dark:text-blue-400' />
                   <span className='text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest'>

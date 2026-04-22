@@ -15,8 +15,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useLanguage } from '@/context/language-provider'
-import { apiFetch } from '@/lib/api-client'
 import { type PurchaseOrder } from '@/features/trading/data/schema'
+import { getPurchaseOrders } from '@/features/trading/purchase'
 import { getPreferredCarriers } from '@/features/logistics/utils/carriers'
 import { inferCarrierFromTrackingNo } from '@/features/logistics/utils/tracking-no'
 import {
@@ -52,11 +52,22 @@ export function PurchaseLogisticsDialog() {
   const [inferredCarrier, setInferredCarrier] = useState('')
   const preferredCarriers = getPreferredCarriers()
 
-  const { data: purchaseOrders } = useQuery<PurchaseOrderOption[] | { items?: PurchaseOrderOption[] }>({
+  const { data: purchaseOrders } = useQuery({
     queryKey: ['pending-purchase-orders'],
-    queryFn: () => apiFetch('/purchase/orders?status=Approved'),
+    queryFn: async () => {
+      const response = await getPurchaseOrders({
+        page: 1,
+        pageSize: 100,
+        status: ['Approved'],
+      })
+      return response.items.map((order) => ({
+        id: order.id,
+        orderNo: order.orderNo,
+        supplierName: order.supplierName,
+      }))
+    },
   })
-  const orders = Array.isArray(purchaseOrders) ? purchaseOrders : purchaseOrders?.items || []
+  const orders = purchaseOrders ?? []
 
   const mutation = useMutation({
     mutationFn: (data: PurchaseLogisticsForm) => PurchaseLogisticsService.saveRecord(data),

@@ -168,7 +168,7 @@ export function CustomerActionDialog({
                 htmlFor='status'
                 className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'
               >
-                状态
+                {t('trading.customers.dialog.fields.status')}
               </Label>
               <Select
                 value={formData.status || 'Active'}
@@ -177,7 +177,7 @@ export function CustomerActionDialog({
                 }}
               >
                 <SelectTrigger className='h-11 rounded-2xl border-none bg-muted/50 font-bold'>
-                  <SelectValue placeholder='请选择状态' />
+                  <SelectValue placeholder={t('trading.customers.dialog.placeholders.status')} />
                 </SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((option) => (
@@ -212,17 +212,17 @@ export function CustomerActionDialog({
           <div className='grid gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/10 p-4 sm:p-5'>
             <div className='flex flex-col gap-1'>
               <h3 className='text-[11px] font-black uppercase tracking-[0.2em] text-foreground/80'>
-                社媒 / 沟通渠道
+                联系与沟通
               </h3>
               <p className='text-[10px] font-bold text-muted-foreground'>
-                当前先记录客户常用海外沟通方式，后续再逐步接入真实跳转能力。
+                记录客户常用联系方式，方便跟进报价、订单与售后沟通。
               </p>
             </div>
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <div className='grid gap-2'>
                 <Label htmlFor='email' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
-                  邮箱
+                  {t('trading.customers.dialog.fields.email')}
                 </Label>
                 <div className='relative'>
                   <Mail className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40' />
@@ -239,11 +239,11 @@ export function CustomerActionDialog({
 
               <div className='grid gap-2'>
                 <Label htmlFor='wechat' className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'>
-                  微信号
+                  微信
                 </Label>
                 <Input
                   id='wechat'
-                  placeholder='请输入客户微信号'
+                  placeholder='请输入微信号'
                   className='h-11 rounded-2xl border-none bg-background font-bold'
                   value={formData.wechat}
                   onChange={(event) => updateField('wechat', event.target.value)}
@@ -307,7 +307,7 @@ export function CustomerActionDialog({
           <div className='grid gap-2'>
             <Label
               htmlFor='address'
-              className='text-[11px] font-bold uppercase text-muted-foreground'
+              className='text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest italic'
             >
               {t('trading.customers.dialog.fields.address')}
             </Label>
@@ -317,7 +317,7 @@ export function CustomerActionDialog({
                 id='address'
                 placeholder={t('trading.customers.dialog.placeholders.address')}
                 rows={3}
-                className='pl-10 resize-none font-medium text-xs leading-relaxed'
+                className='pl-10 resize-none rounded-2xl border-none bg-muted/50 font-medium text-xs leading-relaxed'
                 value={formData.address}
                 onChange={(event) => updateField('address', event.target.value)}
               />

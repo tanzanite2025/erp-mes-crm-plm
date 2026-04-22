@@ -12,7 +12,7 @@ interface SupplierOption {
   label: string
 }
 
-const DEFAULT_CATEGORY = '鍘熸潗鏂?'
+const DEFAULT_CATEGORY = '原材料'
 const DEFAULT_FORM_DATA: Partial<Supplier> = {
   name: '',
   code: '',
@@ -35,10 +35,10 @@ export function useSupplierActionViewModel({ supplier, t }: SupplierActionViewMo
   const initialFormData = useMemo(() => (supplier ? supplier : DEFAULT_FORM_DATA), [supplier])
   const categoryOptions = useMemo<SupplierOption[]>(
     () => [
-      { value: '鍘熸潗鏂?', label: t('purchase.suppliers.categories.rawMaterial') },
-      { value: '鏍囧噯浠?', label: t('purchase.suppliers.categories.standardPart') },
-      { value: '澶栧崗鍔犲伐', label: t('purchase.suppliers.categories.outsourcing') },
-      { value: '璁惧宸ヨ', label: t('purchase.suppliers.categories.equipmentTooling') },
+      { value: '原材料', label: t('purchase.suppliers.categories.rawMaterial') },
+      { value: '标准件', label: t('purchase.suppliers.categories.standardPart') },
+      { value: '外协加工', label: t('purchase.suppliers.categories.outsourcing') },
+      { value: '设备工装', label: t('purchase.suppliers.categories.equipmentTooling') },
     ],
     [t]
   )

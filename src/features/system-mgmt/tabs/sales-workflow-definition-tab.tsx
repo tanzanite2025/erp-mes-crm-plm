@@ -70,8 +70,7 @@ const defaultFormState: DefinitionFormState = {
 export function SalesWorkflowDefinitionTab() {
   const { t, locale } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
-  const canManage =
-    allowsAction('action_system_workflow_manage') || allowsAction('action_approval_config_manage')
+  const canManage = allowsAction('action_system_workflow_manage')
 
   const [items, setItems] = useState<WorkflowDefinitionRecord[]>([])
   const [loading, setLoading] = useState(true)

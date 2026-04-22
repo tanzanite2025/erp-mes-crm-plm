@@ -4,7 +4,10 @@ import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import { type SalesOrder, type SalesOrderFormValues } from '../../data/schema'
 import { toSalesOrderApiDTO, toSalesOrderContract } from '../adapters/sales-order-api-adapter'
-import { type SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
+import {
+  deserializeSalesOrderApiDTO,
+  type SalesOrderApiDTO,
+} from '../contracts/sales-order-api-dto'
 
 export const createSalesOrder = async (order: SalesOrderFormValues): Promise<SalesOrder> => {
   const createdOrder: SalesOrder = {
@@ -13,12 +16,12 @@ export const createSalesOrder = async (order: SalesOrderFormValues): Promise<Sal
     version: 1,
   }
 
-  const res = await apiFetch<SalesOrderApiDTO>('/sales-orders', {
+  const res = await apiFetch<unknown>('/sales-orders', {
     method: 'POST',
     body: JSON.stringify(toSalesOrderApiDTO(createdOrder)),
   })
   const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.createSalesOrder')
-  return toSalesOrderContract(response)
+  return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 
 export const patchSalesOrder = async (id: string, delta: DeltaSet, version: number): Promise<SalesOrder> => {
@@ -28,12 +31,12 @@ export const patchSalesOrder = async (id: string, delta: DeltaSet, version: numb
     metadata: { id, version },
   }
 
-  const res = await apiFetch<SalesOrderApiDTO>(`/sales-orders/${id}`, {
+  const res = await apiFetch<unknown>(`/sales-orders/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
   const response = ensureObjectResponse<SalesOrderApiDTO & Record<string, unknown>>(res, 'SalesService.patchSalesOrder')
-  return toSalesOrderContract(response)
+  return toSalesOrderContract(deserializeSalesOrderApiDTO(response))
 }
 
 export const deleteSalesOrder = async (id: string): Promise<void> => {

@@ -1,11 +1,71 @@
 export const engineering = {
   tabs: {
     products: 'Product Management',
+    productAppearance: 'Product Appearance',
     productAttributes: 'Product Attributes',
     bom: 'BOM Recipes',
     changes: 'ECO / ECN',
     templates: 'Product Templates',
     types: 'Product Categories',
+  },
+  productAppearance: {
+    title: 'Product Appearance',
+    description: 'Maintain appearance master data used later by sales demand selection and barcode appearance code mapping.',
+    metrics: {
+      total: 'Appearances',
+      codes: 'Barcode Codes',
+      active: 'Active',
+    },
+    fields: {
+      name: 'Appearance Name',
+      barcodeCode: 'Barcode Code',
+      description: 'Description',
+      image: 'Appearance Image',
+      active: 'Active Status',
+      sortOrder: 'Sort Order',
+    },
+    placeholders: {
+      name: 'e.g. UD / 3K / 12K',
+      barcodeCode: '1-9',
+      description: 'Describe the appearance or add downstream usage notes',
+    },
+    actions: {
+      add: 'Add Appearance',
+      edit: 'Edit',
+      delete: 'Delete',
+      uploadImage: 'Upload Image',
+      replaceImage: 'Replace Image',
+      removeImage: 'Remove Image',
+      save: 'Save',
+      cancel: 'Cancel',
+      deleteConfirm: 'Delete appearance "{{name}}"?',
+    },
+    badges: {
+      active: 'Active',
+      inactive: 'Inactive',
+    },
+    empty: {
+      title: 'No product appearances yet',
+      description: 'Build the appearance master first, then connect sales orders and barcode flows later.',
+      descriptionFallback: 'No description',
+    },
+    dialog: {
+      createTitle: 'Add Product Appearance',
+      editTitle: 'Edit Product Appearance',
+      description: 'This round only builds the appearance master itself and does not yet connect sales orders or barcode pages.',
+      imageHint: 'This phase uses local prototype images first and will migrate to unified file storage later.',
+      imageEmpty: 'No appearance image uploaded yet',
+    },
+    toasts: {
+      required: 'Appearance name and barcode code are required',
+      invalidBarcodeCode: 'Barcode code must be a single digit from 1 to 9',
+      duplicateBarcodeCode: 'This barcode code is already used by another appearance',
+      imageReadFailed: 'Failed to read the image file, please choose another one',
+      saveSuccess: 'Product appearance saved',
+      saveFailed: 'Failed to save product appearance',
+      deleteSuccess: 'Product appearance deleted',
+      deleteFailed: 'Failed to delete product appearance',
+    },
   },
   changeOrders: {
     title: 'ECO / ECN Change Orders',
@@ -141,6 +201,82 @@ export const engineering = {
       noAttachment: 'No physical file attached',
     },
   },
+  masterData: {
+    page: {
+      title: 'Engineering Master Data Center',
+      description: 'Maintain reusable and constrained engineering dictionaries that can be referenced by later engineering modules.',
+    },
+    tabs: {
+      weavingMode: 'Weaving Mode',
+    },
+    weavingMode: {
+      overview: {
+        title: 'Weaving Mode Master Data',
+        description: 'Maintain ratio-based weaving master data with a single authoritative source, presets, and extensible custom entries.',
+      },
+      metrics: {
+        total: 'Total {{count}}',
+        active: 'Active {{count}}',
+        presets: 'Presets {{count}}',
+      },
+      placeholders: {
+        search: 'Search weaving mode, ratio, or note...',
+      },
+      table: {
+        mode: 'Weaving Mode',
+        ratio: 'Ratio Split',
+        source: 'Source',
+        status: 'Status',
+        actions: 'Actions',
+      },
+      fields: {
+        ratioNumerator: 'Numerator',
+        ratioDenominator: 'Denominator',
+        normalizedResult: 'Normalized Result',
+        description: 'Description',
+        active: 'Active Status',
+      },
+      badges: {
+        systemPreset: 'System Preset',
+        custom: 'Custom',
+        active: 'Active',
+        inactive: 'Inactive',
+      },
+      actions: {
+        create: 'Create Weaving Mode',
+        edit: 'Edit',
+        delete: 'Delete',
+        save: 'Save',
+        cancel: 'Cancel',
+      },
+      dialog: {
+        createTitle: 'Create Weaving Mode',
+        editTitle: 'Edit Weaving Mode',
+        description: 'Maintain master data only. The system normalizes ratios, generates codes, and controls sorting automatically.',
+      },
+      hints: {
+        presetLockedTitle: 'Preset Ratio Locked',
+        presetLockedDescription: 'Preset entries cannot edit numerator or denominator directly. Create a new record for a new ratio.',
+      },
+      empty: {
+        title: 'No matching weaving modes',
+        description: 'No weaving mode master data matches the current filter. You can create a new ratio rule directly.',
+        descriptionFallback: 'No description provided',
+      },
+      toasts: {
+        loadFailed: 'Failed to load weaving modes',
+        saveSuccess: 'Weaving mode saved',
+        saveFailed: 'Failed to save weaving mode',
+        initFailed: 'Failed to initialize preset weaving modes',
+        duplicate: 'This weaving ratio already exists. Duplicate normalized values are blocked.',
+        deleteSuccess: 'Weaving mode deleted',
+        deleteFailed: 'Failed to delete weaving mode',
+        deleteConfirm: 'Delete weaving mode {{name}}?',
+        presetDeleteBlocked: 'System preset weaving modes cannot be deleted',
+        linkedDeleteBlocked: 'This weaving mode is still referenced by drilling plans and cannot be deleted',
+      },
+    },
+  },
   drilling: {
     overview: {
       title: 'Wheel Rim Drilling Center',
@@ -149,7 +285,7 @@ export const engineering = {
     table: {
       name: 'Plan Name',
       product: 'Linked Product (SKU)',
-      lacing: 'Lacing Pattern',
+      lacing: 'Weaving Mode',
       holes: 'Hole Count',
       date: 'Stored Date',
       actions: 'Actions',
@@ -166,7 +302,7 @@ export const engineering = {
     form: {
       name: 'Plan Name',
       product: 'Linked Product SKU',
-      lacing: 'Lacing Pattern',
+      lacing: 'Weaving Mode',
       holes: 'Hole count',
       attachment: 'Blueprint Upload (DWG/PDF)',
       submit: 'Archive Blueprint',
@@ -174,10 +310,10 @@ export const engineering = {
     placeholders: {
       name: 'e.g., 700C-24H-Standard Drilling Plan',
       product: 'Select a product SKU...',
-      lacing: 'Select lacing pattern',
+      lacing: 'Select weaving mode',
       holes: 'Select hole count',
       attachment: 'Click or drag drawing to this center',
-      search: 'Search plan, SKU, lacing...',
+      search: 'Search plan, SKU, weaving mode...',
       mobileLoading: 'Parsing blueprints...',
       noData: 'No drilling plans',
     },
@@ -188,6 +324,8 @@ export const engineering = {
       deleteSuccess: 'Plan removed',
       noFile: 'No blueprint attachment for this plan',
       unResolved: 'Unable to resolve drawing preview link',
+      weavingModeLoadFailed: 'Failed to load weaving mode master data. Please try again later.',
+      weavingModeUnavailable: 'No weaving modes are currently available. Please maintain them in Engineering Master Data first.',
     },
   },
   hubs: {

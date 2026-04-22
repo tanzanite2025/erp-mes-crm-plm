@@ -1,32 +1,85 @@
 export type LogisticsStatus = 'Enabled' | 'Disabled'
 export type LogisticsDirectoryCategory = 'domestic' | 'international'
 export type LogisticsCapability = 'tracking' | 'callback' | 'label' | 'order_create'
-export type LogisticsVerificationStatus = 'unverified' | 'healthy' | 'error' | 'invalid_config' | 'disabled'
+export type LogisticsVerificationStatus = 'unverified' | 'reachable' | 'healthy' | 'error' | 'invalid_config' | 'disabled'
 
-export interface LogisticsProvider {
+export interface LogisticsProviderCommonFields {
   id?: number
   createdAt?: string
   updatedAt?: string
   name: string
   code: string
+  category: LogisticsDirectoryCategory
+  website: string
+  contact: string
+  phone: string
+  note: string
+  appKey: string
+  appSecret: string
+  customerId: string
+  checkWord: string
+  endpoint: string
+  status: LogisticsStatus
+  capabilities: LogisticsCapability[]
+  verificationStatus: LogisticsVerificationStatus
+  lastVerifiedAt?: string
+  lastVerificationMessage: string
+  lastVerificationAction: string
+  referenceCount: number
+  quotaTotal: number
+  quotaUsed: number
+  quotaAlertAt: number
+}
+
+export type LogisticsProvider = LogisticsProviderCommonFields
+
+export type LogisticsProviderDraft = LogisticsProviderCommonFields
+
+export interface LogisticsProviderDto {
+  id?: number
+  createdAt?: string
+  updatedAt?: string
+  name?: string
+  code?: string
   category?: LogisticsDirectoryCategory
   website?: string
-  contact?: string
+  contact?: string | null
   phone?: string
   note?: string
   appKey?: string
   appSecret?: string
   customerId?: string
   checkWord?: string
-  endpoint: string
-  status: LogisticsStatus
-  capabilities?: LogisticsCapability[]
-  verificationStatus?: LogisticsVerificationStatus
+  endpoint?: string
+  status?: LogisticsStatus
+  capabilities?: string[]
+  verificationStatus?: LogisticsVerificationStatus | string
   lastVerifiedAt?: string
   lastVerificationMessage?: string
+  lastVerificationAction?: string
+  referenceCount?: number
   quotaTotal?: number
   quotaUsed?: number
   quotaAlertAt?: number
+}
+
+export interface LogisticsProviderPayload {
+  id?: number
+  name: string
+  code: string
+  category: LogisticsDirectoryCategory
+  website: string
+  contact: string
+  phone: string
+  note: string
+  appKey: string
+  appSecret: string
+  customerId: string
+  checkWord: string
+  endpoint: string
+  status: LogisticsStatus
+  capabilities: LogisticsCapability[]
+  quotaAlertAt: number
 }
 
 export interface LogisticsTemplate {

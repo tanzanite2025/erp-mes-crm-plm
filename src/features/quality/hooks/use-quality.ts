@@ -1,73 +1,108 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useLanguage } from '@/context/language-provider'
+import { type DeltaSet } from '@/lib/delta/types'
 import { handleServerError } from '@/lib/handle-server-error'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
+import { useLanguage } from '@/context/language-provider'
 import type { Standard } from '../data/schema'
-import { type DeltaSet } from '@/lib/delta/types'
-import { QualityCoreService, type QualityStandardsResponse, type QualityTasksResponse, type QualityAbnormality, type QualityTask } from '../services/quality-core-service'
-import { QualityMaintenanceService, type ExecuteInspectionPayload } from '../services/quality-maintenance-service'
+import {
+  QualityCoreService,
+  type QualityStandardsResponse,
+  type QualityTasksResponse,
+  type QualityAbnormality,
+  type QualityTask,
+} from '../services/quality-core-service'
+import {
+  QualityMaintenanceService,
+  type ExecuteInspectionPayload,
+} from '../services/quality-maintenance-service'
+import type { GetQualityStandardsParams } from '../types/quality-standards-list'
 
 // Re-export types for backward compatibility in components
-export type { QualityStandardsResponse, QualityTasksResponse, QualityAbnormality, ExecuteInspectionPayload, QualityTask }
-
-export function useGetQualityStandards(page: number, pageSize: number, type?: string) {
-    return useQuery({
-        queryKey: ['quality_standards', page, pageSize, type],
-        queryFn: () => QualityCoreService.getStandards(page, pageSize, type),
-    })
+export type {
+  QualityStandardsResponse,
+  QualityTasksResponse,
+  QualityAbnormality,
+  ExecuteInspectionPayload,
+  QualityTask,
 }
 
-export function useGetQualityTasks(page: number, pageSize: number, batchNo?: string) {
-    return useQuery({
-        queryKey: ['quality_tasks', page, pageSize, batchNo],
-        queryFn: () => QualityCoreService.getTasks(page, pageSize, batchNo),
-    })
+export function useGetQualityStandards(params: GetQualityStandardsParams) {
+  return useQuery({
+    queryKey: ['quality_standards', params],
+    queryFn: () => QualityCoreService.getStandards(params),
+  })
+}
+
+export function useGetQualityStandard(id: string) {
+  return useQuery({
+    queryKey: ['quality_standard', id],
+    queryFn: () => QualityCoreService.getStandardById(id),
+    enabled: !!id,
+  })
+}
+
+export function useGetQualityTasks(
+  page: number,
+  pageSize: number,
+  batchNo?: string
+) {
+  return useQuery({
+    queryKey: ['quality_tasks', page, pageSize, batchNo],
+    queryFn: () => QualityCoreService.getTasks(page, pageSize, batchNo),
+  })
 }
 
 export function useGetAbnormalities() {
-    return useQuery({
-        queryKey: ['quality_abnormalities'],
-        queryFn: () => QualityCoreService.getAbnormalities(),
-    })
+  return useQuery({
+    queryKey: ['quality_abnormalities'],
+    queryFn: () => QualityCoreService.getAbnormalities(),
+  })
 }
 
 export function useGetInspectionStats() {
-    return useQuery({
-        queryKey: ['quality_inspection_stats'],
-        queryFn: () => QualityCoreService.getInspectionStats(),
-    })
+  return useQuery({
+    queryKey: ['quality_inspection_stats'],
+    queryFn: () => QualityCoreService.getInspectionStats(),
+  })
 }
 
 export function useQualityMutations() {
-    const { t } = useLanguage()
-    const queryClient = useQueryClient()
+  const { t } = useLanguage()
+  const queryClient = useQueryClient()
 
-    const saveStandardMutation = useMutation({
-        mutationFn: (params: { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }) => 
-            QualityMaintenanceService.saveStandard(params),
-        ...buildMutationOptions<void, Error, { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }>({
-            queryClient,
-            invalidateQueryKeys: [['quality_standards']],
-            onError: handleServerError,
-            onSuccess: () => {
-                toast.success(t('quality.hooks.saveStandardSuccess'))
-            },
-        }),
-    })
+  const saveStandardMutation = useMutation({
+    mutationFn: (params: {
+      data: Partial<Standard>
+      isPatch?: boolean
+      delta?: DeltaSet
+    }) => QualityMaintenanceService.saveStandard(params),
+    ...buildMutationOptions<
+      Standard,
+      Error,
+      { data: Partial<Standard>; isPatch?: boolean; delta?: DeltaSet }
+    >({
+      queryClient,
+      invalidateQueryKeys: [['quality_standards'], ['quality_standard']],
+      onError: handleServerError,
+      onSuccess: () => {
+        toast.success(t('quality.hooks.saveStandardSuccess'))
+      },
+    }),
+  })
 
-    const executeInspectionMutation = useMutation({
-        mutationFn: (data: ExecuteInspectionPayload) => 
-            QualityMaintenanceService.executeInspection(data),
-        ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
-            queryClient,
-            invalidateQueryKeys: [['quality_tasks'], ['quality_abnormalities']],
-            onError: handleServerError,
-            onSuccess: () => {
-                toast.success(t('quality.inspection.toast.submitted'))
-            },
-        }),
-    })
+  const executeInspectionMutation = useMutation({
+    mutationFn: (data: ExecuteInspectionPayload) =>
+      QualityMaintenanceService.executeInspection(data),
+    ...buildMutationOptions<void, Error, ExecuteInspectionPayload>({
+      queryClient,
+      invalidateQueryKeys: [['quality_tasks'], ['quality_abnormalities'], ['quality_inspection_stats']],
+      onError: handleServerError,
+      onSuccess: () => {
+        toast.success(t('quality.inspection.toast.submitted'))
+      },
+    }),
+  })
 
-    return { saveStandardMutation, executeInspectionMutation }
+  return { saveStandardMutation, executeInspectionMutation }
 }

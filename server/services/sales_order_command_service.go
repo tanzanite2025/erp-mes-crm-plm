@@ -11,6 +11,7 @@ import (
 	"xdfc-server/salesorderidentity"
 	"xdfc-server/services/trading_audit"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -49,7 +50,9 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 		if err != nil {
 			return SalesOrderResponse{}, err
 		}
-		return MapSalesOrderToResponse(*created), nil
+		response := MapSalesOrderToResponse(*created)
+		syncSalesOrderToSearch(response)
+		return response, nil
 	}
 
 	payload, err := BuildSalesOrderSavePayload(MapSaveSalesOrderRequestToSnapshot(command.Request), buildSalesOrderSaveDelta(command.Request), operator)
@@ -72,6 +75,7 @@ func SaveSalesOrder(command SaveSalesOrderCommand) (SalesOrderResponse, error) {
 	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, "", result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: operator, IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
 		return SalesOrderResponse{}, err
 	}
+	syncSalesOrderToSearch(result)
 	return result, nil
 }
 
@@ -117,6 +121,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 	if err := recordAuditEventTx(db.DB, trading_audit.BuildSalesOrderStatusChangeEvent(result.ID, snapshot.Status, result.Status, audit.AuditActor{UserID: strings.TrimSpace(command.ActorID), Username: strings.TrimSpace(command.Operator), IP: strings.TrimSpace(command.IP), Source: "http"})); err != nil {
 		return SalesOrderResponse{}, err
 	}
+	syncSalesOrderToSearch(result)
 	return result, nil
 }
 
@@ -279,6 +284,9 @@ func createSalesOrderTx(input models.SalesOrder, originalID, requesterID, operat
 		}
 		if input.OrderNo == "" {
 			return fmt.Errorf("[VALIDATION] sales order orderNo is required")
+		}
+		if strings.TrimSpace(input.ID) == "" {
+			input.ID = uuid.NewString()
 		}
 		if err := tx.Create(&input).Error; err != nil {
 			return err

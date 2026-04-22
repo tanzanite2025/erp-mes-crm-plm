@@ -74,6 +74,15 @@ src/locales/messages/
 - 如果某个模块文件开始明显变大，可以继续按下一层业务域拆分，但要保持聚合入口清晰。
 - PowerShell 里看到中文乱码时，以 UTF-8 文件内容和 TypeScript 编译结果为准，不要因为终端显示异常就整文件重写。
 
+## 提交与校验
+
+- 本地 `pre-commit` 采用条件触发：
+- 只有 staged 文件命中 locale 词典或 i18n parity 校验脚本时，才运行 `verify:i18n`
+- 只有 staged 文件命中 `zh-CN` locale 文件或编码校验脚本时，才运行 `verify:zh-cn-encoding`
+- 条件触发逻辑通过 `.githooks/hook-helpers.sh` 复用，后续新增 staged-only 校验时优先走这层 helper
+- 这样可以避免普通业务改动被整仓 locale 扫描拖慢，同时仍保留提交前护栏
+- CI 端仍会跑完整的 `verify:i18n`，所以本地是轻量前置检查，远端是全量兜底
+
 ## 适合放在 messages 的例子
 
 - 全局按钮文案

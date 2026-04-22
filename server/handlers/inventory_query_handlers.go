@@ -35,6 +35,17 @@ func GetShipmentHistoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetShipmentDemandsHandler returns warehouse-owned order demand rows awaiting virtual shipment preparation.
+func GetShipmentDemandsHandler(c *gin.Context) {
+	response, err := services.ListShipmentDemands()
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_SHIPMENT_DEMAND_QUERY_FAILED", "[SERVER] failed to load shipment demands: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 // GetInventoryValuationHandler returns aggregated inventory valuation.
 func GetInventoryValuationHandler(c *gin.Context) {
 	response, err := services.GetInventoryValuation()

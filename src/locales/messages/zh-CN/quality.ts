@@ -22,8 +22,20 @@ export const quality = {
       searchPlaceholder: '检索标准...',
       add: '新增受控协议',
       filter: '筛选',
+      filterType: '筛选类型',
+      allTypes: '全部类型',
       empty: '暂无匹配协议',
       totalRecords: '总记录数',
+      statusViewTitle: '状态视图',
+      statusViewDescription: '按标准状态切换列表视图，统一走服务端查询语义。',
+      statusViewAll: '全部标准',
+      statusViewAllDescription: '查看当前条件下的全部品质标准。',
+      statusViewPublishedDescription: '仅查看已发布、可正式追溯的品质标准。',
+      statusViewDraftDescription: '仅查看待审核或仍处草稿阶段的品质标准。',
+      statusViewArchivedDescription: '仅查看已归档、不再继续编辑的历史标准。',
+      paginationSummary: '显示 {{start}}-{{end}} / 共 {{total}} 条',
+      pageSizeLabel: '每页',
+      pageIndicator: '第 {{page}} / {{totalPages}} 页',
     },
     table: {
       protocolId: '协议编号',
@@ -47,6 +59,43 @@ export const quality = {
       statusPublished: '已发布',
       statusPending: '待审核',
       statusArchived: '已归档',
+    },
+    workspace: {
+      backToList: '返回标准列表',
+      openPreview: '查看预览页',
+      openEditor: '进入编辑工作台',
+      phaseTag: '阶段 A 页面骨架',
+      currentStandardId: '当前标准 ID',
+      editorCreateTitle: '新建品质标准工作台',
+      editorEditTitle: '编辑品质标准工作台',
+      editorCreateDescription:
+        '在独立编辑页完成标准基础信息录入，保存后进入受控预览主链。',
+      editorEditDescription:
+        '在独立编辑页维护标准基础信息，保存后回到对应预览页继续确认。',
+      editorHint:
+        '编辑主链已迁入独立页面，旧弹窗仅保留兼容壳层，不再继续承载主编辑职责。',
+      editorFormTitle: '标准基础信息',
+      editorFormDescription:
+        '本阶段先迁入标准编码、名称、类型、状态与备注说明；检查项矩阵深度编辑将在后续阶段继续页面化。',
+      editorDirty: '存在未保存变更',
+      backToPreview: '返回预览页',
+      editorLoadFailedTitle: '品质标准编辑页加载失败',
+      editorLoadFailedDescription:
+        '无法根据当前标准 ID 加载编辑数据，请返回列表后重试。',
+      editorMissingTitle: '未找到可编辑的品质标准',
+      editorMissingDescription:
+        '当前标准可能已被删除，或你当前不可访问该标准。',
+      previewTitle: '品质标准预览页',
+      previewDescription:
+        '独立预览页骨架已建立，后续将在这里迁入标准摘要、矩阵预览、打印与发布前确认视图。',
+      previewHint:
+        '当前阶段未额外引入新的标准详情查询接口，因此此页先承接预览主链与页面骨架，下一阶段再迁入矩阵内容。',
+      previewLoadFailedTitle: '品质标准预览加载失败',
+      previewLoadFailedDescription:
+        '无法根据当前标准 ID 获取预览数据，请返回列表后重试。',
+      previewMissingTitle: '未找到品质标准',
+      previewMissingDescription:
+        '当前标准可能已被删除，或你当前不可访问该标准。',
     },
     dialog: {
       action: {
@@ -72,10 +121,11 @@ export const quality = {
         versionCurrent: '当前',
         versionInitial: '初始',
         validationRequired: '请填写完整必填项（编号与名称）',
-        toastUpdated: '品质标准更新请求已成功提交',
+        toastUpdated: '品质标准更新请求已成功提交，版本将升级为 {{version}}',
         toastCreated: '新增品质标准请求已成功提交',
         versionNoticeTitle: '后端版本管理系统已就绪',
-        versionNoticeEdit: '当前的变更将由后端审计引擎自动计算并生成新版本，请以保存后的实际数据为准。',
+        versionNoticeEdit:
+          '当前的变更将由后端审计引擎自动计算并生成新版本（预计版本 {{version}}），请以保存后的实际数据为准。',
         versionNoticeCreate: '新创建的标准将由系统分配初始控制版本。',
         cancel: '放弃',
         save: '确认保存变更',
@@ -83,10 +133,17 @@ export const quality = {
       detail: {
         title: '标准详情',
         subtitle: '品质标准详情',
+        auditTitle: '审计轨迹',
+        auditHint: '展示当前标准的责任人、最近更新时间与审核确认信息，便于品质追溯。',
+        auditPending: '待审核',
         fields: {
           code: '标准编码',
           name: '标准名称',
           type: '标准类型',
+          operator: '责任人',
+          operateTime: '更新时间',
+          auditor: '审核人',
+          auditTime: '审核时间',
         },
         table: {
           item: '检验项目',

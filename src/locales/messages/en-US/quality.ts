@@ -16,14 +16,32 @@ export const quality = {
   standards: {
     page: {
       title: 'Quality Standards System',
-      description: 'Centralized management of inspection standards, tolerance agreements, and controlled quality documents',
+      description:
+        'Centralized management of inspection standards, tolerance agreements, and controlled quality documents',
       activeProtocols: 'Active Protocols',
       files: 'files',
       searchPlaceholder: 'Search standards...',
       add: 'Add Controlled Protocol',
       filter: 'Filter',
+      filterType: 'Type Filter',
+      allTypes: 'All Types',
       empty: 'No matching protocols',
       totalRecords: 'Total Records',
+      statusViewTitle: 'Status Views',
+      statusViewDescription:
+        'Switch the list by standard status with the same server-side query semantics.',
+      statusViewAll: 'All Standards',
+      statusViewAllDescription:
+        'View all quality standards under the current query conditions.',
+      statusViewPublishedDescription:
+        'Only show published standards that are formally traceable.',
+      statusViewDraftDescription:
+        'Only show standards pending review or still in draft status.',
+      statusViewArchivedDescription:
+        'Only show archived standards that are no longer actively edited.',
+      paginationSummary: 'Showing {{start}}-{{end}} of {{total}}',
+      pageSizeLabel: 'Per Page',
+      pageIndicator: 'Page {{page}} / {{totalPages}}',
     },
     table: {
       protocolId: 'Protocol ID',
@@ -48,6 +66,43 @@ export const quality = {
       statusPending: 'Pending Review',
       statusArchived: 'Archived',
     },
+    workspace: {
+      backToList: 'Back to Standards',
+      openPreview: 'Open Preview',
+      openEditor: 'Open Editor Workspace',
+      phaseTag: 'Phase A Page Shell',
+      currentStandardId: 'Current Standard ID',
+      editorCreateTitle: 'Create Quality Standard Workspace',
+      editorEditTitle: 'Edit Quality Standard Workspace',
+      editorCreateDescription:
+        'Use the standalone editor page to create the standard basics, then continue through the controlled preview flow.',
+      editorEditDescription:
+        'Use the standalone editor page to maintain the standard basics, then return to the preview page for confirmation.',
+      editorHint:
+        'The editing flow now lives in the standalone page. The legacy dialog remains only as a compatibility shell.',
+      editorFormTitle: 'Standard Basics',
+      editorFormDescription:
+        'This phase migrates the standard code, name, type, status, and remarks into the standalone editor. Deep matrix editing will follow in later phases.',
+      editorDirty: 'Unsaved Changes',
+      backToPreview: 'Back to Preview',
+      editorLoadFailedTitle: 'Failed to Load Standard Editor',
+      editorLoadFailedDescription:
+        'Unable to load editing data for the current standard ID. Please return to the list and try again.',
+      editorMissingTitle: 'Editable Quality Standard Not Found',
+      editorMissingDescription:
+        'The standard may have been deleted, or it is not accessible in the current scope.',
+      previewTitle: 'Quality Standard Preview Page',
+      previewDescription:
+        'The standalone preview page shell is ready. The next phase will migrate the standard summary, matrix preview, printing, and pre-release confirmation here.',
+      previewHint:
+        'This phase does not introduce a new standard detail query yet, so the page currently focuses on the preview route shell and navigation chain before matrix content migration.',
+      previewLoadFailedTitle: 'Failed to Load Standard Preview',
+      previewLoadFailedDescription:
+        'Unable to load preview data for the current standard ID. Please return to the list and try again.',
+      previewMissingTitle: 'Quality Standard Not Found',
+      previewMissingDescription:
+        'The standard may have been deleted, or it is not accessible in the current scope.',
+    },
     dialog: {
       action: {
         titleEdit: 'Edit Core Standard',
@@ -71,12 +126,15 @@ export const quality = {
         },
         versionCurrent: 'Current',
         versionInitial: 'Initial',
-        validationRequired: 'Please complete the required fields (code and name).',
+        validationRequired:
+          'Please complete the required fields (code and name).',
         toastUpdated: 'Quality standard updated to VER {{version}}',
         toastCreated: 'Quality standard created successfully (VER 1.0)',
         versionNoticeTitle: 'Auto versioning is enabled',
-        versionNoticeEdit: 'A change was detected in the current standard. After saving, the version will advance to VER {{version}}.',
-        versionNoticeCreate: 'New quality standards start at VER 1.0 automatically.',
+        versionNoticeEdit:
+          'A change was detected in the current standard. After saving, the version will advance to VER {{version}}.',
+        versionNoticeCreate:
+          'New quality standards start at VER 1.0 automatically.',
         cancel: 'Discard',
         save: 'Save and Upgrade Version',
       },
@@ -84,7 +142,8 @@ export const quality = {
         title: 'Standard Details',
         subtitle: 'Quality Standard Details',
         auditTitle: 'Audit Trail',
-        auditHint: 'Shows the current standard owner, last update, and review confirmation for quality traceability.',
+        auditHint:
+          'Shows the current standard owner, last update, and review confirmation for quality traceability.',
         auditPending: 'Pending Review',
         fields: {
           code: 'Standard Code',
@@ -112,7 +171,8 @@ export const quality = {
         yes: 'Yes',
         no: 'No',
         emptyTitle: 'Standard Details Not Configured',
-        emptyDescription: 'Quality standard ({{code}}) has no inspection items configured yet.',
+        emptyDescription:
+          'Quality standard ({{code}}) has no inspection items configured yet.',
         startEditing: 'Start Editing',
         footerHint: 'Global Quality Standard Verification Node',
         close: 'Close Details',
@@ -124,7 +184,8 @@ export const quality = {
   abnormalities: {
     page: {
       title: 'Quality Abnormality Control',
-      description: 'Systematic governance and closed-loop traceability for production defects and non-conformances',
+      description:
+        'Systematic governance and closed-loop traceability for production defects and non-conformances',
       activeCriticals: 'Critical Issues',
       openReports: 'Open Reports',
       closedLooped: 'Closed Loop',
@@ -151,7 +212,8 @@ export const quality = {
   inspection: {
     page: {
       title: 'Inspection Terminal',
-      description: 'Digital execution workspace for incoming, in-process, and final inspections',
+      description:
+        'Digital execution workspace for incoming, in-process, and final inspections',
       searchPlaceholder: 'Search by batch number...',
       pendingLoad: 'Pending Tasks',
       empty: 'No active inspection tasks',
@@ -173,14 +235,16 @@ export const quality = {
   specialBuy: {
     page: {
       title: 'Special Acceptance Management',
-      description: 'Approval, tracking, and risk evaluation for minor non-conforming goods accepted by concession',
+      description:
+        'Approval, tracking, and risk evaluation for minor non-conforming goods accepted by concession',
       placeholder: 'Special acceptance workflow is under construction',
     },
   },
   formulas: {
     page: {
       title: 'Inspection Formula Engine',
-      description: 'Centralized management of mathematical models and logic used in inspection workflows',
+      description:
+        'Centralized management of mathematical models and logic used in inspection workflows',
       registered: 'Registered Formulas',
       algorithms: 'algorithms',
       searchPlaceholder: 'Search formulas or logic...',

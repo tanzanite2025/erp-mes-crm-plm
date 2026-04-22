@@ -1,5 +1,10 @@
 export const systemManagementEnUSOverrides = {
   systemManagement: {
+    routingTab: {
+      tabs: {
+        executions: 'Execution Logs',
+      },
+    },
     layout: {
       title: 'System Management',
       tabs: {
@@ -65,8 +70,8 @@ export const systemManagementEnUSOverrides = {
         subtitle: 'Manage module, page, tab, and action access by role.',
       },
       actions: {
-        importOrgRole: 'Import Organization Role',
-        selectOrgRole: 'Select Organization Role',
+        importOrgRole: 'Import Account Role',
+        selectOrgRole: 'Select Account Role',
         confirmImport: 'Confirm Import',
         expand: 'Expand',
         collapse: 'Collapse',

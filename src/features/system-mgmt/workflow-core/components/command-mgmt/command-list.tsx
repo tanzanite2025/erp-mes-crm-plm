@@ -1,6 +1,5 @@
 import { Bell, Edit3, Link as LinkIcon, Tag as TagIcon, Trash2 } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { type StandardCommand } from '../../data/schema'
@@ -25,13 +24,6 @@ export function CommandList({ commands, onEdit, onDelete }: CommandListProps) {
     )
   }
 
-  const getNodeTypeLabel = (nodeType: StandardCommand['nodeType']) => {
-    if (nodeType === 'START') return t('workflowCore.commands.nodeTypes.start')
-    if (nodeType === 'APPROVAL') return t('workflowCore.commands.nodeTypes.approval')
-    if (nodeType === 'CHECK') return t('workflowCore.commands.nodeTypes.check')
-    return t('workflowCore.commands.nodeTypes.production')
-  }
-
   return (
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
       {commands.map((cmd) => (
@@ -41,29 +33,7 @@ export function CommandList({ commands, onEdit, onDelete }: CommandListProps) {
         >
           <CardContent className='space-y-4 p-5'>
             <div className='flex items-start justify-between gap-4'>
-              <div className='flex gap-1.5'>
-                <Badge
-                  variant='outline'
-                  className='shrink-0 rounded-lg border-slate-200 text-[9px] font-black uppercase tracking-tighter text-slate-500'
-                >
-                  {t('workflowCore.commands.list.scope')}: {cmd.bindType}
-                </Badge>
-                {cmd.nodeType && (
-                  <Badge
-                    className={`shrink-0 rounded-lg border-none text-[9px] font-black uppercase tracking-tighter text-white ${
-                      cmd.nodeType === 'START'
-                        ? 'bg-purple-500'
-                        : cmd.nodeType === 'APPROVAL'
-                          ? 'bg-orange-500'
-                          : cmd.nodeType === 'CHECK'
-                            ? 'bg-blue-500'
-                            : 'bg-emerald-500'
-                    }`}
-                  >
-                    {t('workflowCore.commands.list.nodeType')}: {getNodeTypeLabel(cmd.nodeType)}
-                  </Badge>
-                )}
-              </div>
+              <div />
               <div className='flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
                 <Button variant='ghost' size='icon' className='size-7' onClick={() => onEdit(cmd)}>
                   <Edit3 className='size-3.5 text-blue-500' />

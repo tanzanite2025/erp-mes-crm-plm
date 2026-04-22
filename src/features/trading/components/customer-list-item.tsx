@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import {
   ExternalLink,
   MapPin,
@@ -6,32 +7,27 @@ import {
   Phone,
   User,
 } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { AuditStamp } from '@/components/common/audit-stamp'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/context/language-provider'
+import { AuditStamp } from '@/components/common/audit-stamp'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { canOpenWeChat, openWeChat } from '@/features/contact-channels'
-import { type CustomerQuoteSummaryItem } from '@/features/quotes/services/customer-quote-summary-service'
-import type { Customer } from '../data/schema'
-import { CustomerQuoteEntryBlock } from '../customer/components/customer-quote-entry-block'
-import { CustomerSalesClosureSummaryBlock } from '../customer/components/customer-sales-closure-summary'
+import {
+  CustomerDynamicSummaryLayer,
+  type CustomerQuoteSummaryState,
+} from '../customer/components/customer-dynamic-summary-layer'
 import type { CustomerSalesClosureSummary } from '../customer/services/customer-sales-closure-summary-service'
-
-type CustomerQuoteSummaryState = {
-  items: CustomerQuoteSummaryItem[]
-  isLoading: boolean
-  isError: boolean
-}
+import type { CustomerSalesReturnSummary } from '../customer/services/customer-sales-return-summary-service'
+import type { Customer } from '../data/schema'
 
 type CustomerListItemProps = {
   customer: Customer
@@ -43,6 +39,7 @@ type CustomerListItemProps = {
   onCreateQuote: () => void
   onOpenAudit: (customer: Customer) => void
   salesClosureSummary?: CustomerSalesClosureSummary
+  salesReturnSummary?: CustomerSalesReturnSummary
 }
 
 export function CustomerListItem({
@@ -55,10 +52,10 @@ export function CustomerListItem({
   onCreateQuote,
   onOpenAudit,
   salesClosureSummary,
+  salesReturnSummary,
 }: CustomerListItemProps) {
   const { t } = useLanguage()
   const navigate = useNavigate()
-  const resolvedQuoteSummary = quoteSummary ?? { items: [], isLoading: false, isError: false }
 
   const handleOpenCustomerOrders = () => {
     navigate({
@@ -72,9 +69,19 @@ export function CustomerListItem({
     })
   }
 
+  const handleOpenCustomerSalesReturns = () => {
+    navigate({
+      to: '/trading/sales-returns',
+      search: {
+        customerId: customer.id,
+        customerName: customer.name,
+      },
+    })
+  }
+
   const handleOpenWeChat = () => {
     if (!canOpenWeChat(customer.wechat)) {
-      toast.error('未填写微信号')
+      toast.error('该客户未填写微信号')
       return
     }
 
@@ -86,7 +93,7 @@ export function CustomerListItem({
       return (
         <Badge
           variant='outline'
-          className='bg-muted text-muted-foreground border-muted-foreground/20 text-[10px] font-black uppercase'
+          className='border-muted-foreground/20 bg-muted text-[10px] font-black text-muted-foreground uppercase'
         >
           {t('trading.customerStatus.deleted')}
         </Badge>
@@ -98,7 +105,7 @@ export function CustomerListItem({
         return (
           <Badge
             variant='outline'
-            className='bg-green-500/10 text-green-500 border-green-500/20 text-[8px] sm:text-[10px] font-black uppercase whitespace-nowrap'
+            className='border-green-500/20 bg-green-500/10 text-[8px] font-black whitespace-nowrap text-green-500 uppercase sm:text-[10px]'
           >
             {t('trading.customerStatus.active')}
           </Badge>
@@ -107,7 +114,7 @@ export function CustomerListItem({
         return (
           <Badge
             variant='outline'
-            className='bg-red-500/10 text-red-500 border-red-500/20 text-[8px] sm:text-[10px] font-black uppercase whitespace-nowrap'
+            className='border-red-500/20 bg-red-500/10 text-[8px] font-black whitespace-nowrap text-red-500 uppercase sm:text-[10px]'
           >
             {t('trading.customerStatus.inactive')}
           </Badge>
@@ -116,7 +123,7 @@ export function CustomerListItem({
         return (
           <Badge
             variant='outline'
-            className='bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-[8px] sm:text-[10px] font-black uppercase whitespace-nowrap'
+            className='border-yellow-500/20 bg-yellow-500/10 text-[8px] font-black whitespace-nowrap text-yellow-500 uppercase sm:text-[10px]'
           >
             {t('trading.customerStatus.pending')}
           </Badge>
@@ -127,22 +134,22 @@ export function CustomerListItem({
   }
 
   return (
-    <Card className='group gap-0 py-0 hover:bg-muted/30 transition-all border-dashed border-muted/50 bg-muted/5 rounded-[24px] overflow-hidden cursor-default relative'>
-      <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-      <CardHeader className='[.border-b]:pb-3 px-4 py-4 pb-3 sm:px-5 sm:py-5 sm:pb-3 border-b border-dashed border-muted/50 relative'>
+    <Card className='group relative cursor-default gap-0 overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 py-0 transition-all hover:bg-muted/30'>
+      <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
+      <CardHeader className='relative border-b border-dashed border-muted/50 px-4 py-4 pb-3 sm:px-5 sm:py-5 sm:pb-3 [.border-b]:pb-3'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <div className='size-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary text-base shadow-inner'>
+            <div className='flex size-10 items-center justify-center rounded-xl bg-primary/10 text-base font-black text-primary shadow-inner'>
               {customer.name?.substring(0, 1) || '?'}
             </div>
             <div>
               <div className='flex items-center gap-2.5'>
-                <h4 className='text-sm sm:text-[15px] font-black tracking-tight italic text-foreground'>
+                <h4 className='text-sm font-black tracking-tight text-foreground italic sm:text-[15px]'>
                   {customer.name}
                 </h4>
                 {getStatusBadge()}
               </div>
-              <p className='text-[9px] font-black text-muted-foreground uppercase mt-0.5 tracking-widest opacity-50'>
+              <p className='mt-0.5 text-[9px] font-black tracking-widest text-muted-foreground uppercase opacity-50'>
                 ID: {customer.code}
               </p>
             </div>
@@ -150,32 +157,39 @@ export function CustomerListItem({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='h-8 w-8 rounded-xl hover:bg-muted/50'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 rounded-xl hover:bg-muted/50'
+              >
                 <MoreHorizontal className='size-4 text-muted-foreground' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='rounded-[20px] border-2 shadow-xl p-2'>
+            <DropdownMenuContent
+              align='end'
+              className='rounded-[20px] border-2 p-2 shadow-xl'
+            >
               <DropdownMenuItem
                 onClick={() => onEdit(customer)}
-                className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2'
+                className='rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
               >
                 {t('trading.customers.editCustomer')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleOpenCustomerOrders}
-                className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1'
+                className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
               >
-                查看完整订单
+                {t('trading.customers.viewOrders')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onOpenAudit(customer)}
-                className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1'
+                className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase'
               >
-                查看审计记录
+                {t('trading.customers.viewAudit')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(customer.id)}
-                className='rounded-lg font-black text-[10px] uppercase tracking-widest px-4 py-2 mt-1 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10'
+                className='mt-1 rounded-lg px-4 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:bg-rose-500/10 focus:text-rose-500'
               >
                 {t('trading.customers.deleteCustomer')}
               </DropdownMenuItem>
@@ -184,57 +198,57 @@ export function CustomerListItem({
         </div>
       </CardHeader>
 
-      <CardContent className='px-4 pb-3 pt-2.5 space-y-2.5 sm:px-5 sm:pb-4 sm:pt-3 sm:space-y-3 relative'>
-        <CustomerSalesClosureSummaryBlock summary={salesClosureSummary} />
-        <CustomerQuoteEntryBlock
+      <CardContent className='relative space-y-2.5 px-4 pt-2.5 pb-3 sm:space-y-3 sm:px-5 sm:pt-3 sm:pb-4'>
+        <CustomerDynamicSummaryLayer
           customerName={customer.name}
-          quotes={resolvedQuoteSummary.items}
-          isLoading={resolvedQuoteSummary.isLoading}
-          isError={resolvedQuoteSummary.isError}
+          quoteSummary={quoteSummary}
+          salesClosureSummary={salesClosureSummary}
+          salesReturnSummary={salesReturnSummary}
+          onOpenSalesReturns={handleOpenCustomerSalesReturns}
           onOpenQuote={onOpenQuote}
           onCreateQuote={onCreateQuote}
         />
 
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'>
           <div className='space-y-1'>
-            <div className='flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
               <User className='size-3' />
               {t('trading.customers.contactPerson')}
             </div>
-            <p className='text-[11px] sm:text-[12px] font-black text-foreground'>
+            <p className='text-[11px] font-black text-foreground sm:text-[12px]'>
               {customer.contactPerson}
             </p>
           </div>
 
           <div className='space-y-1 sm:text-right'>
-            <div className='flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 sm:justify-end italic'>
+            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:justify-end sm:text-[9px]'>
               <Phone className='size-3' />
               {t('trading.customers.contactPhone')}
             </div>
-            <p className='text-[11px] sm:text-[12px] font-black text-foreground'>
+            <p className='text-[11px] font-black text-foreground sm:text-[12px]'>
               {customer.contactPhone}
             </p>
           </div>
         </div>
 
-        <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
-          <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+        <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
+          <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
             <MapPin className='size-3' />
             {t('trading.customers.address')}
           </div>
-          <p className='text-[10px] font-bold text-muted-foreground truncate leading-relaxed'>
+          <p className='truncate text-[10px] leading-relaxed font-bold text-muted-foreground'>
             {customer.address}
           </p>
         </div>
 
-        <div className='space-y-1 pt-2 border-t border-dashed border-muted/50'>
-          <div className='flex items-center gap-2 text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic'>
+        <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
+          <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
             <MessageCircle className='size-3' />
-            微信
+            {t('trading.customers.communication')} / {t('trading.customers.wechat')}
           </div>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <p className='text-[10px] font-bold text-muted-foreground break-all'>
-              {customer.wechat || '未填写'}
+            <p className='text-[10px] font-bold break-all text-muted-foreground'>
+              {customer.wechat || t('trading.customers.unfilled')}
             </p>
             <Button
               type='button'
@@ -242,20 +256,20 @@ export function CustomerListItem({
               size='sm'
               disabled={!canOpenWeChat(customer.wechat)}
               onClick={handleOpenWeChat}
-              className='h-7 w-full sm:w-auto rounded-full px-3 text-[8px] font-black uppercase tracking-widest'
+              className='h-7 w-full rounded-full px-3 text-[8px] font-black tracking-widest uppercase sm:w-auto'
             >
-              打开微信
+              {t('trading.customers.openWechat')}
               <ExternalLink className='ms-2 size-3' />
             </Button>
           </div>
         </div>
 
-        <div className='pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-dashed border-muted/50'>
+        <div className='flex flex-col items-start justify-between gap-2 border-t border-dashed border-muted/50 pt-2 sm:flex-row sm:items-center'>
           <div className='flex flex-col gap-0.5'>
-            <span className='text-[8px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] italic'>
+            <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
               {t('trading.customers.creditBalance')}
             </span>
-            <div className='text-sm sm:text-base font-black italic tracking-tighter tabular-nums'>
+            <div className='text-sm font-black tracking-tighter italic tabular-nums sm:text-base'>
               {customer.balance.toLocaleString(locale)}
             </div>
           </div>
@@ -263,9 +277,9 @@ export function CustomerListItem({
             variant='secondary'
             size='sm'
             onClick={handleOpenCustomerOrders}
-            className='h-8 w-full sm:w-auto px-4 rounded-full font-black text-[8px] uppercase tracking-widest bg-emerald-500/5 text-emerald-500 border border-emerald-500/10 hover:bg-emerald-500/10 transition-colors'
+            className='h-8 w-full rounded-full border border-emerald-500/10 bg-emerald-500/5 px-4 text-[8px] font-black tracking-widest text-emerald-500 uppercase transition-colors hover:bg-emerald-500/10 sm:w-auto'
           >
-            查看完整订单
+            {t('trading.customers.viewOrders')}
             <ExternalLink className='ms-2 size-3 animate-pulse' />
           </Button>
         </div>

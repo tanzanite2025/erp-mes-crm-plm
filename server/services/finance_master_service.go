@@ -690,8 +690,6 @@ func defaultFinanceTaxRates() []models.TaxRate {
 func defaultPaymentTerms() []models.PaymentTerm {
 	return []models.PaymentTerm{
 		{Code: "COD", Name: "货到付款", Description: "物资送达后支付全款", IsDefault: true, SortOrder: 10, IsSystem: true, Status: "Active", Version: 1},
-		{Code: "PREPAY100", Name: "预付 100%", Description: "订单确认后支付全款再排产或发货", SortOrder: 20, IsSystem: true, Status: "Active", Version: 1},
-		{Code: "PREPAY30_BAL70", Name: "预付 30% 尾款 70%", Description: "签约预付 30%，交付前或交付时支付尾款 70%", SortOrder: 30, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "NET30", Name: "月结 30 天", Description: "对账单确认后 30 天内支付", SortOrder: 40, IsSystem: true, Status: "Active", Version: 1},
 		{Code: "NET60", Name: "月结 60 天", Description: "对账单确认后 60 天内支付", SortOrder: 50, IsSystem: true, Status: "Active", Version: 1},
 	}
@@ -726,6 +724,10 @@ func ensureDefaultFinanceDictionariesTx(tx *gorm.DB) error {
 }
 
 func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
+	if err := removeDisallowedSystemPaymentTermsTx(tx); err != nil {
+		return err
+	}
+
 	for _, term := range defaultPaymentTerms() {
 		var existing models.PaymentTerm
 		err := tx.Where("code = ?", term.Code).First(&existing).Error
@@ -745,6 +747,11 @@ func ensureDefaultPaymentTermsTx(tx *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func removeDisallowedSystemPaymentTermsTx(tx *gorm.DB) error {
+	disallowedCodes := []string{"PREPAY100", "PREPAY30_BAL70"}
+	return tx.Where("is_system = ? AND code IN ?", true, disallowedCodes).Delete(&models.PaymentTerm{}).Error
 }
 
 func ensureDefaultPaymentMethodsTx(tx *gorm.DB) error {

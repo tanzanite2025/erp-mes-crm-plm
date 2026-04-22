@@ -48,11 +48,11 @@ export function DataTableFacetedFilter<TData, TValue>({
         {variant === 'industrial' ? (
           <Button
             variant='outline'
-            className='h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all px-4 min-w-[105px]'
+            className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
           >
             <div className='flex items-center gap-1.5'>
               <PlusCircledIcon className='size-3 text-blue-600' />
-              <span className='text-[10px] font-black tracking-tighter'>{title}</span>
+              <span className='text-[10px] font-black tracking-tighter leading-none'>{title}</span>
               {selectedValues?.size > 0 && (
                 <Badge
                   variant='secondary'
@@ -63,7 +63,7 @@ export function DataTableFacetedFilter<TData, TValue>({
               )}
             </div>
             {subtitle && (
-              <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest'>{subtitle}</span>
+              <span className='text-[7px] font-mono opacity-40 uppercase tracking-widest leading-none'>{subtitle}</span>
             )}
           </Button>
         ) : (

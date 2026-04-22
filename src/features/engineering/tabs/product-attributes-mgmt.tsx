@@ -25,6 +25,11 @@ import {
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import {
+  dropProductAttributeItemToTarget,
+  moveProductAttributeItem,
+  toProductAttributeOrderedIds,
+} from '../utils/product-attribute-ordering'
+import {
   getProductAttributeMachineValueFormatHint,
   isValidProductAttributeMachineValue,
   normalizeProductAttributeMachineValue,
@@ -71,7 +76,16 @@ export function ProductAttributesMgmt() {
   const [optionDialogOpen, setOptionDialogOpen] = useState(false)
   const [currentCategory, setCurrentCategory] = useState<SaveProductAttributeCategoryInput>(EMPTY_CATEGORY_FORM)
   const [currentOption, setCurrentOption] = useState<SaveProductAttributeOptionInput>(EMPTY_OPTION_FORM)
-  const { saveCategory, deleteCategory, saveOption, deleteOption } = useProductAttributeWriteActions()
+  const {
+    saveCategory,
+    deleteCategory,
+    reorderCategories,
+    saveOption,
+    deleteOption,
+    reorderOptions,
+    isReorderingCategories,
+    isReorderingOptions,
+  } = useProductAttributeWriteActions()
   const categoriesQuery = useQuery({
     queryKey: PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY,
     queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories(),
@@ -239,6 +253,29 @@ export function ProductAttributesMgmt() {
     }
   }
 
+  const saveCategoryOrder = async (nextCategories: ProductAttributeCategory[] | null) => {
+    if (!nextCategories) return
+    try {
+      await reorderCategories(toProductAttributeOrderedIds(nextCategories))
+      toast.success(locale === 'zh-CN' ? '分类显示顺序已保存' : 'Category order saved')
+    } catch (reorderError) {
+      toast.error(reorderError instanceof Error ? reorderError.message : locale === 'zh-CN' ? '排序保存失败' : 'Failed to save order')
+    }
+  }
+
+  const saveOptionOrder = async (nextOptions: ProductAttributeOption[] | null) => {
+    if (!nextOptions || !effectiveSelectedCategoryKey) return
+    try {
+      await reorderOptions({
+        categoryKey: effectiveSelectedCategoryKey,
+        ids: toProductAttributeOrderedIds(nextOptions),
+      })
+      toast.success(locale === 'zh-CN' ? '分类项显示顺序已保存' : 'Option order saved')
+    } catch (reorderError) {
+      toast.error(reorderError instanceof Error ? reorderError.message : locale === 'zh-CN' ? '排序保存失败' : 'Failed to save order')
+    }
+  }
+
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <ProductAttributesHeader locale={locale} />
@@ -255,10 +292,13 @@ export function ProductAttributesMgmt() {
         <ProductAttributeCategoryCard
           locale={locale}
           categories={categories}
+          isReordering={isReorderingCategories}
           getLocalizedCategoryName={getLocalizedCategoryName}
           onCreateCategory={openCreateCategory}
           onEditCategory={openEditCategory}
           onDeleteCategory={handleDeleteCategory}
+          onMoveCategory={(id, direction) => void saveCategoryOrder(moveProductAttributeItem(categories, id, direction))}
+          onDropCategory={(sourceId, targetId) => void saveCategoryOrder(dropProductAttributeItemToTarget(categories, sourceId, targetId))}
         />
 
         <ProductAttributeOptionCard
@@ -266,11 +306,14 @@ export function ProductAttributesMgmt() {
           selectedCategory={selectedCategory}
           selectedCategoryKey={effectiveSelectedCategoryKey}
           options={filteredOptions}
+          isReordering={isReorderingOptions}
           getLocalizedCategoryName={getLocalizedCategoryName}
           getLocalizedOptionLabel={getLocalizedOptionLabel}
           onCreateOption={openCreateOption}
           onEditOption={openEditOption}
           onDeleteOption={handleDeleteOption}
+          onMoveOption={(id, direction) => void saveOptionOrder(moveProductAttributeItem(filteredOptions, id, direction))}
+          onDropOption={(sourceId, targetId) => void saveOptionOrder(dropProductAttributeItemToTarget(filteredOptions, sourceId, targetId))}
         />
       </div>
 

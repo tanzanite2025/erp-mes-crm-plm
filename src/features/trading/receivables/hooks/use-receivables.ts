@@ -1,15 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
-import { tradingQueryKeys } from '@/features/trading/query-keys'
 import {
   getReceivables,
   searchReceivableLedgers,
+  type ReceivableListQueryParams,
   type ReceivableLedgerSearchParams,
 } from '../services/receivables-query-service'
+import { receivableQueryKeys } from '../query-keys'
 
-export function useGetReceivables() {
+export function useGetReceivables(params: ReceivableListQueryParams = {}) {
+  const sourceType = params.sourceType?.trim() ?? ''
+  const sourceRefId = params.sourceRefId?.trim() ?? ''
+
   return useQuery({
-    queryKey: tradingQueryKeys.receivables(),
-    queryFn: () => getReceivables(),
+    queryKey: receivableQueryKeys.receivableList(sourceType, sourceRefId),
+    queryFn: () => getReceivables({ sourceType, sourceRefId }),
   })
 }
 
@@ -17,7 +21,7 @@ export function useSearchReceivableLedgers(params: ReceivableLedgerSearchParams)
   const { keyword, status, currency, outstandingMin, outstandingMax, sortBy, sortOrder } = params
 
   return useQuery({
-    queryKey: tradingQueryKeys.receivableSearch(
+    queryKey: receivableQueryKeys.receivableSearch(
       keyword,
       status,
       currency,

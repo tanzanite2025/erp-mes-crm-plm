@@ -3,9 +3,11 @@ package services
 import "time"
 
 type ReceivableLedgerQuery struct {
-	Page     int
-	PageSize int
-	Status   string
+	Page        int
+	PageSize    int
+	Status      string
+	SourceType  string
+	SourceRefID string
 }
 
 type PayableLedgerQuery struct {
@@ -101,19 +103,21 @@ type LedgerSearchResponse struct {
 }
 
 type ReceiptRecordResponse struct {
-	ID            string                             `json:"id"`
-	RecordNo      string                             `json:"recordNo"`
-	LedgerID      string                             `json:"ledgerId"`
-	Amount        float64                            `json:"amount"`
-	Currency      string                             `json:"currency"`
-	PaymentMethod string                             `json:"paymentMethod"`
-	PaymentTerm   string                             `json:"paymentTerm"`
-	RecordDate    string                             `json:"recordDate"`
-	Status        string                             `json:"status"`
-	ReferenceNo   string                             `json:"referenceNo"`
-	CreatedAt     time.Time                          `json:"createdAt"`
-	UpdatedAt     time.Time                          `json:"updatedAt"`
-	Evidences     []SettlementRecordEvidenceResponse `json:"evidences"`
+	ID             string                             `json:"id"`
+	RecordNo       string                             `json:"recordNo"`
+	LedgerID       string                             `json:"ledgerId"`
+	Amount         float64                            `json:"amount"`
+	Currency       string                             `json:"currency"`
+	PaymentMethod  string                             `json:"paymentMethod"`
+	PaymentTerm    string                             `json:"paymentTerm"`
+	RecordDate     string                             `json:"recordDate"`
+	ReceivedAt     string                             `json:"receivedAt"`
+	ReceiptAccount string                             `json:"receiptAccount"`
+	Status         string                             `json:"status"`
+	ReferenceNo    string                             `json:"referenceNo"`
+	CreatedAt      time.Time                          `json:"createdAt"`
+	UpdatedAt      time.Time                          `json:"updatedAt"`
+	Evidences      []SettlementRecordEvidenceResponse `json:"evidences"`
 }
 
 type SettlementAllocationResponse struct {
@@ -188,13 +192,15 @@ type PayableLedgerDetailResponse struct {
 }
 
 type CreateReceiptRecordRequest struct {
-	Amount        float64                       `json:"amount" binding:"required"`
-	Currency      string                        `json:"currency"`
-	PaymentMethod string                        `json:"paymentMethod"`
-	PaymentTerm   string                        `json:"paymentTerm"`
-	RecordDate    string                        `json:"recordDate"`
-	ReferenceNo   string                        `json:"referenceNo"`
-	Allocations   []SettlementAllocationRequest `json:"allocations"`
+	Amount         float64                       `json:"amount" binding:"required"`
+	Currency       string                        `json:"currency"`
+	PaymentMethod  string                        `json:"paymentMethod"`
+	PaymentTerm    string                        `json:"paymentTerm"`
+	RecordDate     string                        `json:"recordDate"`
+	ReceivedAt     string                        `json:"receivedAt"`
+	ReceiptAccount string                        `json:"receiptAccount"`
+	ReferenceNo    string                        `json:"referenceNo"`
+	Allocations    []SettlementAllocationRequest `json:"allocations"`
 }
 
 type CreatePaymentRecordRequest struct {

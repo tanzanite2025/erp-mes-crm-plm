@@ -262,6 +262,7 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 		if err := db.DB.Create(&model).Error; err != nil {
 			return SupplierResponse{}, err
 		}
+		syncSupplierToSearch(model)
 		return MapSupplierToResponse(model), nil
 	}
 
