@@ -3,7 +3,40 @@ export const codeCenter = {
   linearBarcode: {
     tabs: {
       protocol: '协议规则',
+      print: '打印',
       numbering: '业务编号',
+    },
+    print: {
+      page: {
+        title: '一维码打印中心',
+        subtitle: 'LINEAR BARCODE PRINT / 协议联动、模板承载与打印任务骨架页',
+        notice: '当前页面先提供一维码打印能力的模块级承载骨架。后续将逐步接入模板管理、打印参数配置、预览与任务编排能力。',
+        badges: {
+          placeholder: '骨架占位',
+          protocolLinked: '协议已联动',
+        },
+      },
+      actions: {
+        gotoProtocol: '返回协议规则',
+        gotoNumberingEngine: '前往共享发号引擎',
+      },
+      sections: {
+        templates: {
+          title: '打印模板区',
+          description: '承载后续的一维码标签模板、样式版本与模板映射配置。',
+          placeholder: '模板管理能力将在后续阶段接入。当前先保留模块级入口与页面结构，用于承接标签模板列表、模板编辑器与版本切换。',
+        },
+        parameters: {
+          title: '打印参数区',
+          description: '承载纸张、方向、偏移、批次变量与条码协议联动参数。',
+          placeholder: '打印参数能力将在后续阶段接入。这里将用于承接标签尺寸、打印机参数、批量打印变量及协议字段映射。',
+        },
+        preview: {
+          title: '预览与任务区',
+          description: '承载标签预览、任务下发、打印日志与异常回执。',
+          placeholder: '打印预览与任务编排能力将在后续阶段接入。这里将用于承接标签渲染预览、任务队列、失败重试与打印回执。',
+        },
+      },
     },
   },
   dmCode: {

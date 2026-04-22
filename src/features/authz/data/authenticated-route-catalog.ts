@@ -8,6 +8,7 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/engineering-db/engineering-master/weaving-mode",
   "/code-center/shared-code-source/hole-codes",
   "/code-center/linear-barcode/protocol",
+  "/code-center/linear-barcode/print",
   "/quality/standards/new",
   "/logistics-config/vehicle-specs-library",
   "/system-management/workflow-definition",

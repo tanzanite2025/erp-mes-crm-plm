@@ -41,7 +41,7 @@ export function OrderLinesEditor({
   onLineChange,
 }: OrderLinesEditorProps) {
   const { t } = useLanguage()
-  const { currencySymbol, productById, productOptions, activeUnitOptions, handleProductChange } =
+  const { currencySymbol, productById, productOptions, activeUnitOptions, getHoleCountOptions, handleProductChange } =
     useSalesOrderLinesEditorViewModel({
       appearances,
       products,
@@ -146,12 +146,18 @@ export function OrderLinesEditor({
                   </select>
                 </td>
                 <td className='px-2'>
-                  <Input
-                    type='number'
-                    value={line.holeCount || ''}
-                    onChange={(e) => onLineChange(index, 'holeCount', Number(e.target.value))}
-                    className='h-8 text-center text-[11px] font-bold'
-                  />
+                  <select
+                    className='h-8 w-full appearance-none rounded-lg border bg-background px-2 text-center text-[11px] font-bold outline-none focus:ring-1 focus:ring-primary'
+                    value={line.holeCount?.toString() || ''}
+                    onChange={(e) => onLineChange(index, 'holeCount', e.target.value ? Number(e.target.value) : undefined)}
+                  >
+                    <option value=''>{t('tradingSalesOrder.linesEditor.holeCountDefault')}</option>
+                    {getHoleCountOptions(line.holeCount).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className='px-2'>
                   <Input
@@ -291,13 +297,18 @@ export function OrderLinesEditor({
                     {t('tradingSalesOrder.linesEditor.holeCount')}
                   </span>
                 </div>
-                <Input
-                  type='number'
-                  value={line.holeCount || ''}
-                  onChange={(e) => onLineChange(index, 'holeCount', Number(e.target.value))}
-                  className='h-10 rounded-xl text-center text-[12px] font-bold'
-                  placeholder={t('tradingSalesOrder.linesEditor.holeCount')}
-                />
+                <select
+                  className='h-10 w-full appearance-none rounded-xl border bg-background px-3 text-center text-[12px] font-bold'
+                  value={line.holeCount?.toString() || ''}
+                  onChange={(e) => onLineChange(index, 'holeCount', e.target.value ? Number(e.target.value) : undefined)}
+                >
+                  <option value=''>{t('tradingSalesOrder.linesEditor.holeCountDefault')}</option>
+                  {getHoleCountOptions(line.holeCount).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className='space-y-1'>
                 <div className='flex items-center gap-1.5 pl-1'>

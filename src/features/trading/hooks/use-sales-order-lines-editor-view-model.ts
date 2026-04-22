@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { type Unit } from '@/features/basic-settings/services/unit-service'
+import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
 import { type ProductAppearance } from '@/features/engineering/data/product-appearance'
 import { type Product } from '@/features/engineering/data/schema'
 import { formatProductDisplayName } from '@/features/engineering/utils/product-utils'
@@ -27,6 +28,7 @@ interface LinesEditorViewModel {
   productById: Map<string, Product>
   productOptions: { id: string; label: string }[]
   activeUnitOptions: { id: string; code: string }[]
+  getHoleCountOptions: (currentValue?: number) => { value: string; label: string }[]
   handleAppearanceChange: (index: number, appearanceId: string) => void
   handleProductChange: (index: number, productId: string) => void
 }
@@ -56,6 +58,7 @@ export function useSalesOrderLinesEditorViewModel({
   currency,
   onLineChange,
 }: LinesEditorViewModelOptions): LinesEditorViewModel {
+  const { activeCounts } = useActiveHoleCodeSource()
   const appearanceById = useMemo(
     () => new Map(appearances.map((appearance) => [appearance.id, appearance])),
     [appearances]
@@ -92,6 +95,19 @@ export function useSalesOrderLinesEditorViewModel({
           code: unit.code,
         })),
     [units]
+  )
+  const baseHoleCountOptions = useMemo(
+    () =>
+      activeCounts.map((item) => ({
+        value: item.value,
+        label: item.label || item.value,
+      })),
+    [activeCounts]
+  )
+
+  const getHoleCountOptions = useCallback(
+    (_currentValue?: number) => baseHoleCountOptions,
+    [baseHoleCountOptions]
   )
 
   const handleProductChange = useCallback(
@@ -142,6 +158,7 @@ export function useSalesOrderLinesEditorViewModel({
     productById,
     productOptions,
     activeUnitOptions,
+    getHoleCountOptions,
     handleAppearanceChange,
     handleProductChange,
   }

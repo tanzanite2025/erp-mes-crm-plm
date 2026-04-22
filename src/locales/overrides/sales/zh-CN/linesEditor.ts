@@ -28,6 +28,7 @@ export const linesEditor = {
       drillingPlan: '打孔方案',
       labelingPlan: '贴标方案',
       holeCount: '孔数',
+      holeCountDefault: '-- 孔数 --',
       unit: '单位',
       quantity: '数量',
       price: '单价',

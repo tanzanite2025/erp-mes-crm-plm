@@ -28,6 +28,7 @@ export const linesEditor = {
       drillingPlan: 'Drilling Plan',
       labelingPlan: 'Labeling Plan',
       holeCount: 'Hole Count',
+      holeCountDefault: '-- Hole Count --',
       unit: 'Unit',
       quantity: 'Quantity',
       price: 'Price',

@@ -3,7 +3,47 @@ export const codeCenter = {
   linearBarcode: {
     tabs: {
       protocol: 'Protocol Rules',
+      print: 'Print',
       numbering: 'Business Numbering',
+    },
+    print: {
+      page: {
+        title: 'Linear Barcode Print Center',
+        subtitle: 'LINEAR BARCODE PRINT / Skeleton page for protocol linkage, templates, and print tasks',
+        notice:
+          'This page currently provides the module-level shell for linear barcode printing. Template management, print parameter configuration, preview, and task orchestration will be connected in later phases.',
+        badges: {
+          placeholder: 'Skeleton Placeholder',
+          protocolLinked: 'Protocol Linked',
+        },
+      },
+      actions: {
+        gotoProtocol: 'Back To Protocol Rules',
+        gotoNumberingEngine: 'Open Shared Numbering Engine',
+      },
+      sections: {
+        templates: {
+          title: 'Template Area',
+          description:
+            'Will host future linear-barcode label templates, style revisions, and template mapping configuration.',
+          placeholder:
+            'Template management will be connected in a later phase. This area is reserved for the template list, editor, and version switching flow.',
+        },
+        parameters: {
+          title: 'Print Parameters',
+          description:
+            'Will host paper settings, orientation, offsets, batch variables, and protocol-linked print parameters.',
+          placeholder:
+            'Print parameter capability will be connected in a later phase. This area is reserved for label size, printer settings, batch variables, and protocol field mapping.',
+        },
+        preview: {
+          title: 'Preview & Tasks',
+          description:
+            'Will host label preview, task dispatching, print logs, and exception acknowledgements.',
+          placeholder:
+            'Preview and print-task orchestration will be connected in a later phase. This area is reserved for label rendering, task queues, retries, and print receipts.',
+        },
+      },
     },
   },
   dmCode: {

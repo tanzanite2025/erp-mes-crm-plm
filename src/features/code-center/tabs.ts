@@ -10,6 +10,11 @@ export function getLinearBarcodeTabs(t: TranslateFn): TabItem[] {
       label: t('codeCenter.linearBarcode.tabs.protocol'),
       href: '/code-center/linear-barcode/protocol',
     },
+    {
+      key: 'print',
+      label: t('codeCenter.linearBarcode.tabs.print'),
+      href: '/code-center/linear-barcode/print',
+    },
   ]
 }
 
