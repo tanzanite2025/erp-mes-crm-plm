@@ -1,6 +1,6 @@
 import { Info, Users } from 'lucide-react'
 import { EmployeeManagementList } from './employee-management-list'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 
 export function EmployeeMgmt() {
@@ -11,7 +11,7 @@ export function EmployeeMgmt() {
 
     return (
         <div className='flex flex-col gap-2 animate-in fade-in duration-700'>
-            <PageHeader 
+            <IndustrialHeader 
                 title={t('orgPersonnel.org.personnelProfile.title')}
                 description={t('orgPersonnel.org.personnelProfile.desc')}
                 icon={Users}

@@ -1,6 +1,6 @@
 import { AlertTriangle, Warehouse } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 
 interface StockMgmtHeaderProps {
@@ -12,11 +12,11 @@ export function StockMgmtHeader({ alertCount, totalAssets }: StockMgmtHeaderProp
     const { t } = useLanguage()
 
     return (
-        <PageHeader 
-            title={t('warehouse.stock.title')} 
-            description={t('warehouse.stock.subtitle')} 
+        <IndustrialHeader
+            title={t('warehouse.stock.title')}
+            description={t('warehouse.stock.subtitle')}
             icon={Warehouse}
-        >
+            statusBadge={
             <div className='flex items-center gap-2'>
                 <Badge variant="outline" className='bg-primary/5 text-primary border-dashed border-primary/20 text-[10px] h-5 px-2 rounded-full flex items-center gap-1.5 shrink-0'>
                     <span className='font-semibold text-muted-foreground/60'>ASSETS</span>
@@ -30,6 +30,7 @@ export function StockMgmtHeader({ alertCount, totalAssets }: StockMgmtHeaderProp
                     </Badge>
                 )}
             </div>
-        </PageHeader>
+            }
+        />
     )
 }

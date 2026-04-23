@@ -1,14 +1,14 @@
 import { ArrowLeftRight, PackagePlus, Route } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 export function SalesExchangesTab() {
   const { t } = useLanguage()
 
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-      <PageHeader
+      <IndustrialHeader
         icon={ArrowLeftRight}
         title={t('trading.salesExchanges.title')}
         description={t('trading.salesExchanges.description')}

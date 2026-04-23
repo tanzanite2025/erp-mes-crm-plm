@@ -5,7 +5,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { SegmentedTabs } from '@/components/segmented-tabs'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { KpiGrid } from './components/kpi-grid'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -104,7 +104,7 @@ export function Dashboard() {
 
       <Main className='p-4 md:p-8 animate-in fade-in duration-700 pt-14 md:pt-16'>
         <div className='flex flex-col gap-6 md:gap-8'>
-          <PageHeader
+          <IndustrialHeader
             title={t('dashboard.page.title')}
             description={t('dashboard.page.description')}
             icon={LayoutDashboard}

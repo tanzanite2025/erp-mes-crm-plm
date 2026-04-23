@@ -1,6 +1,6 @@
 import { RotateCcw } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { SalesReturnsEntryShell } from '@/features/trading/sales-returns/components/sales-returns-entry-shell'
 import { useSalesReturnQueryShell } from '@/features/trading/sales-returns/hooks/use-sales-return-query-shell'
 
@@ -10,7 +10,7 @@ export function SalesReturnsTab() {
 
   return (
     <div className='flex min-h-0 flex-1 animate-in flex-col gap-8 duration-700 fade-in'>
-      <PageHeader
+      <IndustrialHeader
         icon={RotateCcw}
         title={t('trading.salesReturns.title')}
         description={t('trading.salesReturns.description')}

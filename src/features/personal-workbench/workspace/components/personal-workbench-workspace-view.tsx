@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link2, Plus, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import type { PersonalWorkspaceItemDraft, PersonalWorkspaceItemType } from '../data/schema'
 import { WorkspaceBoard } from './workspace-board'
@@ -71,7 +71,7 @@ export function PersonalWorkbenchWorkspaceView({ searchQuery }: PersonalWorkbenc
           新增链接
         </Button>
       </div>
-      <PageHeader
+      <IndustrialHeader
         title='个人工作收纳箱'
         description='先承接随手复制的文本和零散网址，把杂乱信息收回系统内。'
         icon={Link2}

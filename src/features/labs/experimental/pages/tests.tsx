@@ -11,7 +11,7 @@ import {
   User,
 } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { SegmentedTabs } from '@/components/segmented-tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -65,7 +65,7 @@ export function LabTestsPage() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={FlaskConical}
         title={t('labExperimental.tests.title')}
         description={t('labExperimental.tests.description')}

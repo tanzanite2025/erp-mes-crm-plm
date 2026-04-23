@@ -22,7 +22,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { HIDScanInput, type HIDScanResult } from '@/components/hid-scan-input'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 
 type CheckTone = 'ok' | 'warn' | 'idle'
 
@@ -223,15 +223,14 @@ export function ScannerDevicesTab() {
 
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-      <PageHeader
+      <IndustrialHeader
         title='USB 扫码枪接入测试'
         description='适用于接 USB 后像键盘一样输入的一维码扫码枪。现场只需要让光标停在输入框内，扫码后由页面判断回车、前后缀和一维码协议。'
         icon={ScanLine}
-      >
-        <Badge className='rounded-full border-none bg-emerald-500/10 px-4 py-1.5 text-[10px] font-black text-emerald-700'>
+        statusBadge={<Badge className='rounded-full border-none bg-emerald-500/10 px-4 py-1.5 text-[10px] font-black text-emerald-700'>
           当前接入模式：USB HID 键盘模式
-        </Badge>
-      </PageHeader>
+        </Badge>}
+      />
 
       <section className='rounded-[28px] border border-dashed border-emerald-500/25 bg-emerald-500/5 p-5 md:p-6'>
         <div className='grid grid-cols-1 gap-4 md:grid-cols-4'>

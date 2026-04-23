@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
 import { useGetPieceworkRates, usePieceworkRateMutations } from '../hooks/use-piecework'
@@ -136,23 +137,20 @@ export function PieceworkRules() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            {/* 工业感页眉 */}
-            <div className='flex flex-col gap-2 bg-muted/5 p-8 rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-linear-to-br from-emerald-500/5 via-transparent pointer-events-none' />
-                <div className='flex items-center gap-2 text-emerald-600'>
-                    <Landmark className='size-5' />
-                    <h3 className='text-lg font-black tracking-tighter italic uppercase'>计件工价原子标准</h3>
-                </div>
-                <div className='flex items-center justify-between'>
-                    <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-                        PIECEWORK_RATE_HUB / 核心财务核算基准，所有规则变更均受 SDRTS 版本追踪与审计。
-                    </p>
-                    <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/10'>
+            <IndustrialHeader
+                icon={Landmark}
+                title='计件工价原子标准'
+                description='PIECEWORK_RATE_HUB / 核心财务核算基准，所有规则变更均受 SDRTS 版本追踪与审计。'
+                gradient
+                innerClassName='text-emerald-600'
+                className='border-muted-foreground/10'
+                statusBadge={
+                    <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/10 w-fit'>
                         <span className='text-[10px] font-black text-emerald-600/60 uppercase tracking-widest italic'>Audit_Active</span>
                         <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* 操作栏 */}
             <div className='flex items-center justify-between gap-4 bg-muted/5 p-8 rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
@@ -237,14 +235,12 @@ function Placeholder({ title }: { title: string }) {
     const { t } = useLanguage()
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <div className='flex flex-col gap-1 bg-muted/5 p-6 rounded-[32px] border border-dashed border-muted/50'>
-                <div className='flex items-center gap-2 text-primary'>
-                    <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('piecework.placeholders.moduleTitle', { title })}</h3>
-                </div>
-                <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-                    {t('piecework.placeholders.moduleSubtitle')}
-                </p>
-            </div>
+            <IndustrialHeader
+                icon={Landmark}
+                title={t('piecework.placeholders.moduleTitle', { title })}
+                description={t('piecework.placeholders.moduleSubtitle')}
+            />
+
 
             <div className='rounded-[24px] border border-dashed border-muted/50 h-96 flex flex-col items-center justify-center text-muted-foreground/30 bg-muted/5'>
                 <p className='text-xs font-black uppercase tracking-[0.3em] italic'>{t('piecework.placeholders.notAvailable', { title })}</p>

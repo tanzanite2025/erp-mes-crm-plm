@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Microscope, Settings2 } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { CategoryActionDialog } from '../components/category-action-dialog'
@@ -104,7 +104,7 @@ export function LabEquipmentPage() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         title={t('labExperimental.equipment.title')}
         description={t('labExperimental.equipment.description')}
         icon={Microscope}

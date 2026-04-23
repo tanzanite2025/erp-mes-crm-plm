@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { StandardPreviewContent } from '../components/standard-preview-content'
 import { useGetQualityStandard } from '../hooks/use-quality'
 
@@ -45,7 +45,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
   if (isLoading) {
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <PageHeader icon={Telescope} title={title} description={description} />
+        <IndustrialHeader icon={Telescope} title={title} description={description} />
         <div className='flex min-h-[60vh] items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5'>
           <div className='flex flex-col items-center gap-3 text-muted-foreground'>
             <Loader2 className='size-8 animate-spin text-primary' />
@@ -73,7 +73,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
           </Button>
         </div>
 
-        <PageHeader icon={Telescope} title={title} description={description} />
+        <IndustrialHeader icon={Telescope} title={title} description={description} />
 
         <Card className='rounded-[32px] border-dashed border-muted/50 bg-muted/5'>
           <CardHeader>
@@ -116,7 +116,7 @@ export function StandardPreviewPage({ standardId }: StandardPreviewPageProps) {
         </Button>
       </div>
 
-      <PageHeader icon={Telescope} title={title} description={description} />
+      <IndustrialHeader icon={Telescope} title={title} description={description} />
 
       <div className='group relative flex min-h-[70vh] flex-col overflow-hidden rounded-[32px] border border-dashed border-muted/50 bg-background shadow-sm'>
         <StandardPreviewContent

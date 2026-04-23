@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -211,7 +211,7 @@ export function ProductTypesMgmt() {
   if (productTypesQuery.isError) {
     return (
       <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-        <PageHeader
+        <IndustrialHeader
           icon={Tags}
           title={t('engineering.categoryArchive.header.title')}
           description={t('engineering.categoryArchive.header.description')}
@@ -269,7 +269,7 @@ export function ProductTypesMgmt() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Tags}
         title={t('engineering.categoryArchive.header.title')}
         description={t('engineering.categoryArchive.header.description')}

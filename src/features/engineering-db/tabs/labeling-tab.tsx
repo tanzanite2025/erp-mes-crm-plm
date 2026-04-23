@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type LabelingDraft, type LabelingDraftInput } from '../data/schema'
 import { ProductionDBService } from '../services/production-db-service'
 import { FileResolverService } from '../services/file-resolver-service'
@@ -275,22 +276,20 @@ export function LabelingTab() {
 
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-            <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent pointer-events-none' />
-                <div className='flex items-center gap-2 text-teal-600'>
-                    <Sticker className='size-4 md:size-5 text-teal-600' />
-                    <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase'>{t('engineering.labeling.overview.title')}</h3>
-                </div>
-                <div className='flex flex-col md:flex-row md:items-center justify-between gap-3'>
-                    <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
-                        {t('engineering.labeling.overview.description')}
-                    </p>
+            <IndustrialHeader
+                icon={Sticker}
+                title={t('engineering.labeling.overview.title')}
+                description={t('engineering.labeling.overview.description')}
+                gradient
+                innerClassName='text-teal-600'
+                statusBadge={
                     <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-teal-500/5 border border-teal-500/10 w-fit'>
                         <span className='text-[10px] font-black text-teal-600/60 uppercase tracking-widest'>{t('common.status.ready')}</span>
                         <div className='size-1.5 rounded-full bg-teal-600 animate-pulse' />
                     </div>
-                </div>
-            </div>
+                }
+                className='border-muted-foreground/10'
+            />
 
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>
                 <div className='relative w-full sm:w-96 group'>

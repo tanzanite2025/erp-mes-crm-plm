@@ -56,7 +56,7 @@ function buildRowsHtml(plan: CuttingPlanInput): string {
   return rows
     .map((item, index) => {
       if (item.type === 'separator') {
-        return `<tr class="group-break"><td colspan="8"></td></tr>`
+        return '<tr class="group-break"><td colspan="8"></td></tr>'
       }
       const line = item.line
       return `
@@ -211,4 +211,3 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
   printWindow.document.close()
   printWindow.focus()
 }
-

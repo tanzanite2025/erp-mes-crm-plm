@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Package2, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
@@ -373,7 +373,7 @@ export function LogisticsPackagingRulesTab() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Package2}
         title={t('logisticsConfig.packagingRules.title')}
         description={t('logisticsConfig.packagingRules.description')}

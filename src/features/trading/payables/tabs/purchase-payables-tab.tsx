@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BanknoteArrowUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useLanguage } from '@/context/language-provider'
 import { PurchasePayableDetailDialog } from '../components/purchase-payable-detail-dialog'
@@ -17,7 +17,7 @@ export function PurchasePayablesTab() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={BanknoteArrowUp}
         title={t('purchase.payables.title')}
         description={t('purchase.payables.description')}

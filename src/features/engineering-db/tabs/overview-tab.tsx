@@ -23,6 +23,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { FileResolverService } from '../services/file-resolver-service'
@@ -208,22 +209,18 @@ export function OverviewTab() {
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
             {/* 响应式工业页眉 */}
-            <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-6 rounded-[28px] md:rounded-[32px] border border-dashed border-muted/50 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent pointer-events-none' />
-                <div className='flex items-center gap-2 text-primary'>
-                    <FileText className='size-4 md:size-5 text-primary' />
-                    <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase'>{t('engineering.db.overview.title')}</h3>
-                </div>
-                <div className='flex flex-col md:flex-row md:items-center justify-between gap-2'>
-                    <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
-                        {t('engineering.db.overview.description')}
-                    </p>
+            <IndustrialHeader
+                icon={FileText}
+                title={t('engineering.db.overview.title')}
+                description={t('engineering.db.overview.description')}
+                gradient
+                statusBadge={
                     <div className='flex items-center gap-4 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 w-fit'>
                         <span className='text-[9px] font-black text-primary/60 uppercase tracking-widest'>{t('engineering.db.status.syncReady')}</span>
                         <div className='size-1.5 rounded-full bg-primary animate-pulse' />
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* 功能栏与统计 - 响应式栅格 */}
             <div className='flex flex-col gap-4 md:gap-6 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted/50 shadow-inner'>

@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { CuttingPlanEditor } from '../components/cutting-plan-editor'
 import {
   buildCuttingPlanInput,
@@ -57,7 +58,7 @@ export function CuttingPlanTab() {
         plan.documentNo,
         plan.carbonFiberModel,
         plan.resinModel,
-      ].some((value) => value?.toLowerCase().includes(keyword))
+      ].some((value) => value?.toLowerCase().includes(keyword)),
     )
   }, [plans, searchTerm])
 
@@ -101,7 +102,7 @@ export function CuttingPlanTab() {
 
   const handleSave = () => {
     if (!draft.productId) {
-      toast.error('请先选择产品型号')
+      toast.error('请先选择或匹配产品型号')
       return
     }
     if (!draft.holeCount) {
@@ -130,25 +131,21 @@ export function CuttingPlanTab() {
 
   return (
     <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
-      <section className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-        <div className='absolute inset-0 bg-linear-to-br from-rose-500/5 via-transparent pointer-events-none' />
-        <div className='flex flex-col md:flex-row md:items-center justify-between gap-3'>
-          <div className='space-y-2'>
-            <div className='flex items-center gap-2 text-rose-600'>
-              <Scissors className='size-4 md:size-5 text-rose-600' />
-              <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase'>裁纱方案</h3>
-            </div>
-            <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
-              导入模板按机器解析设计，只录入必要字段。打印导出会自动补齐完整表头和展示版式，便于现场流转与归档。
-            </p>
-          </div>
+      <IndustrialHeader
+        icon={Scissors}
+        title='裁纱方案'
+        description='导入模板按机器解析设计，只录入必要字段。打印导出会自动补齐完整表头和展示版式，便于现场流转与归档。'
+        gradient
+        innerClassName='text-rose-600'
+        className='border-muted-foreground/10'
+        statusBadge={
           <div className='grid grid-cols-3 gap-2 text-center md:min-w-[360px]'>
             <Metric label='方案数' value={plans.length} />
             <Metric label='启用' value={activeCount} />
             <Metric label='裁片行' value={lineCount} />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
         <div className='relative w-full md:max-w-md'>
@@ -352,4 +349,3 @@ function Info({
     </div>
   )
 }
-

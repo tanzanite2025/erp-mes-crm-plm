@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Box, Plus } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/context/language-provider'
@@ -88,7 +88,7 @@ export function Engineering() {
 
     return (
         <div className='flex flex-col gap-4 sm:gap-8 px-4 pb-6 pt-0 md:px-6 animate-in fade-in duration-700'>
-            <PageHeader
+            <IndustrialHeader
                 icon={Box}
                 title={t('engineering.productMgmt.pageTitle')}
                 description={t('engineering.productMgmt.pageDescription')}

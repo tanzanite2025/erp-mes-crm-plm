@@ -1,8 +1,8 @@
 import { TimerReset } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 import type { ApsJob, ApsSchedulingSource } from '../adapters/aps-scheduling.adapter'
-import { useLanguage } from '@/context/language-provider'
 
 type ApsKpiCardsProps = {
   source: ApsSchedulingSource
@@ -64,7 +64,13 @@ export function ApsKpiCards({ source }: ApsKpiCardsProps) {
   const linePressure = Math.min(1, occupiedHours / availableHours)
   const windowPressure = Math.min(1, occupiedHours / timeWindowHours)
   const stagePressure = totalJobs > 0 ? (runningJobs + riskJobs * 0.5) / totalJobs : 0
-  const capacityRate = totalJobs > 0 ? Math.min(95, Math.round((linePressure * 0.45 + windowPressure * 0.35 + stagePressure * 0.2) * 100)) : 0
+  const capacityRate =
+    totalJobs > 0
+      ? Math.min(
+          95,
+          Math.round((linePressure * 0.45 + windowPressure * 0.35 + stagePressure * 0.2) * 100),
+        )
+      : 0
 
   const kpis = [
     {
@@ -76,7 +82,11 @@ export function ApsKpiCards({ source }: ApsKpiCardsProps) {
     {
       label: t('apsScheduling.board.capacity'),
       value: `${capacityRate}%`,
-      note: `负载 ${formatHours(occupiedHours)} / 产能 ${formatHours(availableHours)} · 窗口 ${formatHours(timeWindowHours)}`,
+      note: t('apsScheduling.board.capacityNote', {
+        occupiedHours: formatHours(occupiedHours),
+        availableHours: formatHours(availableHours),
+        timeWindowHours: formatHours(timeWindowHours),
+      }),
       tone: 'text-amber-500',
     },
     {
@@ -90,14 +100,23 @@ export function ApsKpiCards({ source }: ApsKpiCardsProps) {
   return (
     <div className='grid gap-4 md:grid-cols-3'>
       {kpis.map((item) => (
-        <Card key={item.label} className='overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'>
+        <Card
+          key={item.label}
+          className='overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-none'
+        >
           <CardContent className='flex flex-col gap-3 p-6'>
-            <p className='text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground/50'>{item.label}</p>
+            <p className='text-[10px] font-black uppercase tracking-[0.28em] text-muted-foreground/50'>
+              {item.label}
+            </p>
             <div className='flex items-end justify-between'>
-              <span className={cn('text-3xl font-black italic tracking-tighter', item.tone)}>{item.value}</span>
+              <span className={cn('text-3xl font-black italic tracking-tighter', item.tone)}>
+                {item.value}
+              </span>
               <TimerReset className='size-5 text-muted-foreground/30' />
             </div>
-            <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>{item.note}</p>
+            <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+              {item.note}
+            </p>
           </CardContent>
         </Card>
       ))}

@@ -10,7 +10,7 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { isForbiddenError } from '@/lib/error-status'
@@ -72,7 +72,7 @@ export function AdjustmentHistory() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <PageHeader title={t('warehouse.adjustment.title')} description={t('warehouse.adjustment.subtitle')} icon={FileText} />
+            <IndustrialHeader title={t('warehouse.adjustment.title')} description={t('warehouse.adjustment.subtitle')} icon={FileText} />
 
             <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                 <div className='flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 bg-muted/10 px-3 md:px-4 py-2 rounded-full border border-dashed border-muted/50 w-full sm:w-auto overflow-hidden'>

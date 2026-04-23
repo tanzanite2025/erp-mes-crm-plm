@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { Package2 } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { getMaterialRouteTabs } from '@/features/material-archive/tab-config'
 import { getMaterialListQueryKey, MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
 import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
@@ -32,7 +32,7 @@ function MaterialsLayout() {
   return (
     <ModuleTabbedLayout tabs={tabs}>
         <div className='flex flex-col gap-8'>
-          <PageHeader
+          <IndustrialHeader
             icon={Package2}
             title={t('materialArchive.layout.title')}
             description={t('materialArchive.layout.description')}

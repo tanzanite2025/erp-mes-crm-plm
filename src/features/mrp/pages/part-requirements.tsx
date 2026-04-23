@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { SelectionTree } from '../components/requirements/selection-tree'
@@ -25,7 +25,7 @@ export function PartRequirements() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Search}
         title={t('mrp.requirements.pageTitle')}
         description={t('mrp.requirements.pageDescription')}

@@ -17,7 +17,7 @@ import {
   Clock,
   User,
 } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import type { InspectionFormula } from '../data/schema'
 import { formatQualityActorName } from '../utils/quality-utils'
@@ -48,7 +48,7 @@ export function QualityFormulas() {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <PageHeader
+      <IndustrialHeader
         icon={Calculator}
         title={t('quality.formulas.page.title')}
         description={t('quality.formulas.page.description')}

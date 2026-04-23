@@ -33,7 +33,7 @@ import {
     TableHeader,
     TableRow
 } from '@/components/ui/table'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { isForbiddenError } from '@/lib/error-status'
@@ -228,7 +228,7 @@ export default function ProductInbound() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <PageHeader title={t('warehouse.inbound.title')} description={t('warehouse.inbound.subtitle')} icon={Package} />
+            <IndustrialHeader title={t('warehouse.inbound.title')} description={t('warehouse.inbound.subtitle')} icon={Package} />
 
             <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                 <div className='relative max-w-sm flex-1'>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { toast } from 'sonner'
 import { FurnaceActionDialog } from '../components/furnace-action-dialog'
 import { useAssets } from '../hooks/use-assets'
@@ -92,7 +92,7 @@ export function FurnaceMgmt() {
 
   return (
     <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Thermometer}
         title={t('equipmentTooling.furnaces.page.title')}
         description={t('equipmentTooling.furnaces.page.description')}

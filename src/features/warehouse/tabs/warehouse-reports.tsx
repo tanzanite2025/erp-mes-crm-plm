@@ -16,7 +16,7 @@ import {
 import { InboundReportTable, ShipmentReportTable } from '../components/report-tables'
 import { useReport } from '../hooks/use-report'
 import { useLanguage } from '@/context/language-provider'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { isForbiddenError } from '@/lib/error-status'
 
 export function WarehouseReports() {
@@ -42,26 +42,7 @@ export function WarehouseReports() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <PageHeader title={t('warehouse.reports.title')} description={t('warehouse.reports.subtitle')} icon={Filter}>
-                <div className='flex flex-wrap items-center gap-2 md:gap-3 justify-end'>
-                        <Button
-                            variant='ghost'
-                            className='h-10 md:h-11 px-4 md:px-6 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-blue-500/5 text-blue-600 border border-blue-500/10 hover:bg-blue-500/10 transition-all gap-2 shrink-0'
-                            onClick={handleReconcile}
-                        >
-                            <ShieldCheck className='size-3.5' />
-                            <span className='hidden xs:inline'>{t('warehouse.reports.reconcile')}</span>
-                        </Button>
-                        <Button
-                            className='h-10 md:h-11 px-4 md:px-8 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-500/20 text-white disabled:bg-slate-300 transition-all gap-2 shrink-0'
-                            onClick={handleExport}
-                            disabled={!hasData}
-                        >
-                            <Download className='size-3.5' />
-                            <span className='truncate'>{hasData ? t('warehouse.reports.exportReport') : t('warehouse.reports.noData')}</span>
-                        </Button>
-                </div>
-            </PageHeader>
+            <IndustrialHeader title={t('warehouse.reports.title')} description={t('warehouse.reports.subtitle')} icon={Filter} statusBadge={} />
 
             <div className='relative rounded-2xl md:rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6 transition-all'>
                 <div className='absolute top-0 left-6 md:left-10 -translate-y-1/2 bg-background px-3 py-0.5 border border-dashed border-muted/50 rounded-full flex items-center gap-2'>

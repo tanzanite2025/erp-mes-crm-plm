@@ -1,5 +1,5 @@
 import { FileText, Layers3, Route } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 
@@ -8,7 +8,7 @@ export function SalesQuotesTab() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={FileText}
         title={t('trading.quotes.title')}
         description={t('trading.quotes.description')}

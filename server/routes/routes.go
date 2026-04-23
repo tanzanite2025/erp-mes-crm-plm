@@ -34,6 +34,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerWorkflowRoutes(authorized)
 		registerPersonalWorkbenchRoutes(authorized)
 		registerSidebarCommandRoutes(authorized)
+		registerApsSchedulingRoutes(authorized)
 
 		adminOnly := middleware.RequirePermissions(authz.PermissionManage)
 		engineeringAccess := middleware.RequirePermissions(authz.MenuEngineering)

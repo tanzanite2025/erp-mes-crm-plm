@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import {
   getPurchaseLogisticsOfflineDraftsSnapshot,
@@ -92,13 +92,12 @@ export function PurchaseLogisticsPage() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Truck}
         title={t('purchase.logistics.title')}
         description={t('purchase.logistics.description')}
-      >
-        <PurchaseLogisticsDialog />
-      </PageHeader>
+        statusBadge={}
+      />
 
       <div className='space-y-6'>
         {drafts.length > 0 ? (

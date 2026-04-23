@@ -1,6 +1,7 @@
 'use client'
 
 import { Target } from 'lucide-react'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { DrillingActionDialog } from '../components/drilling-action-dialog'
 import { CADViewerDialog } from '../components/cad-viewer'
@@ -39,22 +40,20 @@ export function DrillingTab() {
 
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
-            <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent pointer-events-none' />
-                <div className='flex items-center gap-2 text-indigo-600'>
-                    <Target className='size-4 md:size-5 text-indigo-600' />
-                    <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase'>{t('engineering.drilling.overview.title')}</h3>
-                </div>
-                <div className='flex flex-col md:flex-row md:items-center justify-between gap-3'>
-                    <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
-                        {t('engineering.drilling.overview.description')}
-                    </p>
+            <IndustrialHeader
+                icon={Target}
+                title={t('engineering.drilling.overview.title')}
+                description={t('engineering.drilling.overview.description')}
+                gradient
+                innerClassName='text-indigo-600'
+                statusBadge={
                     <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 w-fit'>
                         <span className='text-[10px] font-black text-indigo-600/60 uppercase tracking-widest'>{t('common.status.ready')}</span>
                         <div className='size-1.5 rounded-full bg-indigo-600 animate-pulse' />
                     </div>
-                </div>
-            </div>
+                }
+                className='border-muted-foreground/10'
+            />
 
             <DrillingToolbar searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onCreate={handleCreate} />
 

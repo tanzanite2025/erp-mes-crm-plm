@@ -67,11 +67,7 @@ function hasLineContent(lineFields: string[]): boolean {
   return lineFields.some((field) => normalizeCellText(field) !== '')
 }
 
-function requireHeaderValue(
-  value: string,
-  rowNumber: number,
-  fieldLabel: string,
-): string {
+function requireHeaderValue(value: string, rowNumber: number, fieldLabel: string): string {
   if (value) return value
   throw new Error(`第 ${rowNumber} 行缺少“${fieldLabel}”，无法导入。`)
 }
@@ -130,9 +126,9 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
       safelyGetCellValue(row.getCell(17)),
     ]
 
-    Object.entries(rowHeader).forEach(([key, value]) => {
-      if (value) {
-        header[key as keyof HeaderSnapshot] = value
+    Object.entries(rowHeader).forEach(([key, fieldValue]) => {
+      if (fieldValue) {
+        header[key as keyof HeaderSnapshot] = fieldValue
       }
     })
 
@@ -180,9 +176,7 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
   })
 
   if (rowLimitExceeded) {
-    throw new Error(
-      `导入行数超过 ${CUTTING_PLAN_EXCEL_LIMITS.maxRows} 行上限，请拆分后导入。`,
-    )
+    throw new Error(`导入行数超过 ${CUTTING_PLAN_EXCEL_LIMITS.maxRows} 行上限，请拆分后导入。`)
   }
 
   if (lines.length === 0) {

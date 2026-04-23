@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { Clock3, Download, ExternalLink, PackageCheck } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,7 +26,7 @@ export function TerminalConfigBoard({
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader title={title} description={description} icon={icon} />
+      <IndustrialHeader title={title} description={description} icon={icon} />
 
       <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
         {sections.map((section) => {
@@ -109,7 +109,7 @@ interface TerminalGuideBoardProps {
 export function TerminalGuideBoard({ title, description, icon, guides }: TerminalGuideBoardProps) {
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader title={title} description={description} icon={icon} />
+      <IndustrialHeader title={title} description={description} icon={icon} />
 
       <div className='grid grid-cols-1 xl:grid-cols-3 gap-6'>
         {guides.map((guide) => (

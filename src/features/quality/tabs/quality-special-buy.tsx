@@ -1,5 +1,5 @@
 import { Award } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 
 export function QualitySpecialBuy() {
@@ -7,7 +7,7 @@ export function QualitySpecialBuy() {
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-            <PageHeader
+            <IndustrialHeader
                 icon={Award}
                 title={t('quality.specialBuy.page.title')}
                 description={t('quality.specialBuy.page.description')}

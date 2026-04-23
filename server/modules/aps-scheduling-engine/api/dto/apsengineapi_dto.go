@@ -1,20 +1,26 @@
 package apsschedulingengine
 
 type CreatePlanRequest struct {
-	OrderIDs []string `json:"orderIds"`
-	Strategy string   `json:"strategy"`
-	Scope    string   `json:"scope"`
+	OrderIDs  []string `json:"orderIds"`
+	Strategy  string   `json:"strategy"`
+	Scope     string   `json:"scope"`
+	StartDate string   `json:"startDate"`
+	EndDate   string   `json:"endDate"`
 }
 
 type RecalculatePlanRequest struct {
-	Reason string `json:"reason"`
-	Scope  string `json:"scope"`
+	Reason    string `json:"reason"`
+	Scope     string `json:"scope"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
 }
 
 type IngestEventRequest struct {
-	Type    string         `json:"type"`
-	Source  string         `json:"source"`
-	Payload map[string]any `json:"payload"`
+	Type      string         `json:"type"`
+	Source    string         `json:"source"`
+	Payload   map[string]any `json:"payload"`
+	StartDate string         `json:"startDate"`
+	EndDate   string         `json:"endDate"`
 }
 
 type PlanResponse struct {

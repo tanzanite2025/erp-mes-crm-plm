@@ -6,7 +6,7 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -122,7 +122,7 @@ export function StocktakeMgmt() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <PageHeader title={t('warehouse.stocktake.title')} description={t('warehouse.stocktake.subtitle')} icon={PackageSearch} />
+            <IndustrialHeader title={t('warehouse.stocktake.title')} description={t('warehouse.stocktake.subtitle')} icon={PackageSearch} />
 
             <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                 <div className='flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 bg-muted/10 px-3 md:px-4 py-2 rounded-full border border-dashed border-muted/50 w-full sm:w-auto overflow-hidden'>

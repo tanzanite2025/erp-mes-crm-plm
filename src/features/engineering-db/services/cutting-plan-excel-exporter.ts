@@ -333,7 +333,7 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.mergeCells(`C${signValueRow}:D${signValueRow}`)
   sheet.mergeCells(`E${signValueRow}:F${signValueRow}`)
   sheet.mergeCells(`G${signValueRow}:H${signValueRow}`)
-  sheet.getCell(`A${signValueRow}`).value = '核准'
+  sheet.getCell(`A${signValueRow}`).value = '校准'
   sheet.getCell(`C${signValueRow}`).value = '审核'
   sheet.getCell(`E${signValueRow}`).value = '制表'
   sheet.getCell(`G${signValueRow}`).value = `制定日期 ${escapeFormula(plan.effectiveDate || '--')}`

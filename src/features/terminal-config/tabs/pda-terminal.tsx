@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -278,12 +278,11 @@ export function PDATerminalTab() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         title={t('terminalConfig.pda.page.title')}
         description={t('terminalConfig.pda.page.description')}
         icon={MonitorSmartphone}
-      >
-        <div className='flex flex-wrap items-center gap-2'>
+        statusBadge={<div className='flex flex-wrap items-center gap-2'>
           {canOpenShell ? (
             <Button asChild variant='outline' className='rounded-full text-[10px] font-black uppercase tracking-widest'>
               <Link to='/pda-shell'>
@@ -302,8 +301,8 @@ export function PDATerminalTab() {
               ? t('terminalConfig.pda.page.autoSubmitOn')
               : t('terminalConfig.pda.page.autoSubmitOff')}
           </Badge>
-        </div>
-      </PageHeader>
+        </div>}
+      />
 
       <div className='grid grid-cols-1 xl:grid-cols-12 gap-6'>
         <Card className='xl:col-span-8 rounded-[28px] border-dashed bg-muted/5 shadow-inner border-muted/50'>

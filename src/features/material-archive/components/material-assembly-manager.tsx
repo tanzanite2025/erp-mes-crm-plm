@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DataTablePagination } from '@/components/data-table/pagination'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -369,7 +369,7 @@ export function MaterialAssemblyManager() {
 
   return (
     <div className='flex flex-col gap-8 px-4 pb-6 pt-0 md:px-6 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={ArrowRightLeft}
         title={t('materialArchive.assemblyManager.title')}
         description={t('materialArchive.assemblyManager.description')}

@@ -1,5 +1,5 @@
 import { ShoppingCart, Users } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { LogisticsMgmt as LogisticsMgmtView } from '@/features/logistics/components/logistics-mgmt'
 import { CustomerList } from '../components/customer-list'
@@ -10,7 +10,7 @@ export function CustomerMgmt() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Users}
         title={t('trading.customers.pageTitle')}
         description={t('trading.customers.pageDescription')}
@@ -25,7 +25,7 @@ export function SalesOrders() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={ShoppingCart}
         title={t('tradingSalesOrder.tabs.title')}
         description={t('tradingSalesOrder.dialog.description')}

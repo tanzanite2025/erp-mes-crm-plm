@@ -8,7 +8,7 @@ import {
   Package, 
   ArrowUpRight
 } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SelectDropdown } from '@/components/select-dropdown'
@@ -56,7 +56,7 @@ export function OrdersAnalysisTab() {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-      <PageHeader
+      <IndustrialHeader
         icon={BarChart3}
         title={locale === 'zh-CN' ? '订单分析' : 'Orders Analysis'}
         description={
@@ -64,14 +64,8 @@ export function OrdersAnalysisTab() {
             ? '按客户、产品与订单行聚合销售表现，快速定位热销产品和客户结构。'
             : 'Aggregate sales performance by customer, product, and order lines to identify hot products and customer mix.'
         }
-      >
-        <div className='flex items-center gap-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-2 shadow-inner md:rounded-2xl md:px-5 md:py-2.5'>
-          <div className='size-1.5 rounded-full bg-primary' />
-          <span className='text-[9px] font-black uppercase tracking-widest text-primary md:text-[10px]'>
-            {timeRangeLabel}
-          </span>
-        </div>
-      </PageHeader>
+        statusBadge={}
+      />
 
       {/* Header KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

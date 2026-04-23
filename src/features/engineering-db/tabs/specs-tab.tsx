@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type TechnicalSpec } from '../data/schema'
 import { SpecsService } from '../services/specs-service'
 import { FileResolverService } from '../services/file-resolver-service'
@@ -250,22 +251,18 @@ export function SpecsTab() {
     return (
         <div className='flex flex-col gap-6 md:gap-8 animate-in fade-in duration-700'>
             {/* 响应式工业页眉 */}
-            <div className='flex flex-col gap-2 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-linear-to-br from-primary/5 via-transparent pointer-events-none' />
-                <div className='flex items-center gap-2 text-primary'>
-                    <BookOpen className='size-4 md:size-5 text-primary' />
-                    <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase'>{t('engineering.specs.overview.title')}</h3>
-                </div>
-                <div className='flex flex-col md:flex-row md:items-center justify-between gap-3'>
-                    <p className='text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60 max-w-2xl'>
-                        {t('engineering.specs.overview.description')}
-                    </p>
+            <IndustrialHeader
+                icon={BookOpen}
+                title={t('engineering.specs.overview.title')}
+                description={t('engineering.specs.overview.description')}
+                gradient
+                statusBadge={
                     <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-primary/5 border border-primary/10 w-fit'>
                         <span className='text-[10px] font-black text-primary/60 uppercase tracking-widest'>{t('common.status.ready')}</span>
                         <div className='size-1.5 rounded-full bg-primary animate-pulse' />
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* 功能操作行 - 响应式 */}
             <div className='flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/5 p-4 md:p-8 rounded-[28px] md:rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner overflow-hidden'>

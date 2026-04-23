@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Truck } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -31,7 +31,7 @@ export function ShippingVehicleMatchPage() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Truck}
         title={t('trading.shippingManagement.vehicleMatch.title')}
         description={t('trading.shippingManagement.vehicleMatch.description')}

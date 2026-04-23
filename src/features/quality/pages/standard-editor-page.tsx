@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { StandardEditorContent } from '../components/standard-editor-content'
 import {
   useGetQualityStandard,
@@ -93,7 +93,7 @@ export function StandardEditorPage({
   if (isEdit && isLoading) {
     return (
       <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-        <PageHeader icon={SquarePen} title={title} description={description} />
+        <IndustrialHeader icon={SquarePen} title={title} description={description} />
         <div className='flex min-h-[60vh] items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5'>
           <div className='flex flex-col items-center gap-3 text-muted-foreground'>
             <Loader2 className='size-8 animate-spin text-primary' />
@@ -122,7 +122,7 @@ export function StandardEditorPage({
           </Button>
         </div>
 
-        <PageHeader icon={SquarePen} title={title} description={description} />
+        <IndustrialHeader icon={SquarePen} title={title} description={description} />
 
         <Card className='rounded-[32px] border-dashed border-muted/50 bg-muted/5'>
           <CardHeader>
@@ -167,7 +167,7 @@ export function StandardEditorPage({
         ) : null}
       </div>
 
-      <PageHeader icon={SquarePen} title={title} description={description} />
+      <IndustrialHeader icon={SquarePen} title={title} description={description} />
 
       <div className='rounded-[32px] border border-dashed border-muted/50 bg-background p-6 shadow-sm lg:p-8'>
         <StandardEditorContent

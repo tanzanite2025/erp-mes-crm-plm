@@ -5,7 +5,7 @@ import { TrendingDown } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Route } from '@/routes/_authenticated/warehouse/shipment'
 import { useLanguage } from '@/context/language-provider'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { isForbiddenError } from '@/lib/error-status'
 import { ShipmentDemandBoard, ShipmentDialog, ShipmentHistory, ShipmentSearch, useShipment } from '../shipment'
 
@@ -53,12 +53,7 @@ export default function ProductShipment() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <PageHeader title={t('warehouse.shipment.title')} description={t('warehouse.shipment.subtitle')} icon={TrendingDown}>
-                <div className='flex items-center gap-2 md:gap-3 bg-blue-500/5 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border border-dashed border-blue-500/20 shadow-inner shrink-0 self-start sm:self-auto'>
-                        <div className='size-1.5 md:size-2 rounded-full bg-blue-500 animate-pulse' />
-                        <span className='text-[8px] md:text-[10px] font-black uppercase tracking-widest text-blue-600'>{t('warehouse.shipment.realtimeSync')}</span>
-                </div>
-            </PageHeader>
+            <IndustrialHeader title={t('warehouse.shipment.title')} description={t('warehouse.shipment.subtitle')} icon={TrendingDown} statusBadge={} />
 
             <ShipmentDemandBoard
                 demands={shipmentDemands}

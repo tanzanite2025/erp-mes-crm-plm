@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, NotebookPen, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type { PersonalRecord, PersonalRecordUpsertPayload } from '../data/schema'
 import { usePersonalWorkbenchMutations, usePersonalWorkbenchRecords } from '../hooks/use-personal-workbench'
 import { PersonalWorkbenchBoard } from './personal-workbench-board'
@@ -43,7 +43,7 @@ export function PersonalWorkbenchRecordsView({ searchQuery }: PersonalWorkbenchR
           新建记录
         </Button>
       </div>
-      <PageHeader
+      <IndustrialHeader
         title='个人记录缓冲区'
         description='只属于你自己的图片与碎片记录空间'
         icon={NotebookPen}

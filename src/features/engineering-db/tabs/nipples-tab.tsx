@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type Nipple } from '../data/nipple-schema'
 import { nippleService } from '../services/nipple-service'
 import { NippleActionDialog } from '../components/nipple-action-dialog'
@@ -176,35 +177,28 @@ export function NipplesTab() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            {/* Header Section */}
-            <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 bg-muted/5 p-8 rounded-[32px] md:rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='absolute inset-0 bg-linear-to-br from-orange-500/5 via-transparent pointer-events-none' />
-                <div className='space-y-1.5 relative'>
-                    <div className='flex items-center gap-3 mb-1'>
-                        <div className='h-8 w-8 rounded-2xl bg-orange-600 flex items-center justify-center shadow-lg shadow-orange-600/20'>
-                            <Layers className='h-4 w-4 text-white' />
+            <IndustrialHeader
+                icon={Layers}
+                title={`${t('engineering.nipples.overview.title')} / ${t('common.actions.preview')}`}
+                description={t('engineering.nipples.overview.description')}
+                gradient
+                innerClassName='text-orange-600'
+                statusBadge={
+                    <div className='flex items-center gap-4 relative'>
+                        <div className='hidden md:flex flex-col items-end mr-4'>
+                            <span className='text-[8px] font-mono opacity-40 uppercase tracking-tighter'>SYSTEM_VAULT_STATUS</span>
+                            <span className='text-[10px] font-black italic text-orange-600'>SYNCHRONIZED</span>
                         </div>
-                        <h1 className='text-lg font-black italic uppercase tracking-tighter'>
-                            {t('engineering.nipples.overview.title')} / {t('common.actions.preview')}
-                        </h1>
+                        <Button 
+                            onClick={() => { setCurrentRow(undefined); setOpen(true); }}
+                            className='rounded-full h-12 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-orange-600/20 bg-orange-600 hover:bg-orange-700 text-white'
+                        >
+                            <Plus className='mr-2 h-4 w-4' /> {t('engineering.nipples.table.upload')}
+                        </Button>
                     </div>
-                    <p className='text-[9px] font-black uppercase tracking-widest opacity-60 ml-11'>
-                        {t('engineering.nipples.overview.description')}
-                    </p>
-                </div>
-                <div className='flex items-center gap-4 relative'>
-                    <div className='hidden md:flex flex-col items-end mr-4'>
-                        <span className='text-[8px] font-mono opacity-40 uppercase tracking-tighter'>SYSTEM_VAULT_STATUS</span>
-                        <span className='text-[10px] font-black italic text-orange-600'>SYNCHRONIZED</span>
-                    </div>
-                    <Button 
-                        onClick={() => { setCurrentRow(undefined); setOpen(true); }}
-                        className='rounded-full h-12 px-8 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-orange-600/20 bg-orange-600 hover:bg-orange-700 text-white'
-                    >
-                        <Plus className='mr-2 h-4 w-4' /> {t('engineering.nipples.table.upload')}
-                    </Button>
-                </div>
-            </div>
+                }
+                className='border-muted-foreground/10'
+            />
 
             {/* Table Section */}
             <div className='bg-background/50 rounded-[24px] border border-dashed border-muted-foreground/10 overflow-hidden backdrop-blur-sm'>

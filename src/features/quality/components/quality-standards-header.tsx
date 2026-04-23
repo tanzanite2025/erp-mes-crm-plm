@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import type { QualityStandardsTypeFilter } from '../types/quality-standards-list'
 
 interface QualityStandardsHeaderProps {
@@ -41,7 +41,7 @@ export function QualityStandardsHeader({
 
   return (
     <div className='flex flex-col gap-8'>
-      <PageHeader
+      <IndustrialHeader
         icon={ShieldCheck}
         title={t('quality.standards.page.title')}
         description={t('quality.standards.page.description')}

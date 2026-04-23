@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { FileText } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { DocumentHeaderFields } from '@/features/sales-document/components/document-header-fields'
 import { DocumentLinesEditor } from '@/features/sales-document/components/document-lines-editor'
@@ -161,7 +161,7 @@ export function QuoteOrdersTab() {
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-6 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={FileText}
         title={t('commandMenu.items.quoteManagement')}
         description={t('trading.quotes.description')}

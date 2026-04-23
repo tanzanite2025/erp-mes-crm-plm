@@ -1,12 +1,12 @@
 import { Truck } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 
 export function VehicleSpecsLibraryHeader() {
   const { t } = useLanguage()
 
   return (
-    <PageHeader
+    <IndustrialHeader
       icon={Truck}
       title={t('logisticsConfig.vehicleSpecsLibrary.title')}
       description={t('logisticsConfig.vehicleSpecsLibrary.description')}

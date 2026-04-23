@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { type Hub } from '../data/hub-schema'
 import { hubService } from '../services/hub-service'
 import { HubActionDialog } from '../components/hub-action-dialog'
@@ -192,13 +193,13 @@ export function HubsTab() {
 
     return (
         <div className='flex flex-col gap-6 animate-in fade-in duration-700'>
-            <div className='flex flex-col gap-2 bg-muted/5 p-8 rounded-[32px] border border-dashed border-muted-foreground/10 relative overflow-hidden'>
-                <div className='flex items-center gap-2 text-indigo-600'>
-                    <Cpu className='size-5' />
-                    <h3 className='text-lg font-black tracking-tighter italic uppercase'>{t('engineering.hubs.overview.title')}</h3>
-                </div>
-                <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>{t('engineering.hubs.overview.description')}</p>
-            </div>
+            <IndustrialHeader
+                icon={Cpu}
+                title={t('engineering.hubs.overview.title')}
+                description={t('engineering.hubs.overview.description')}
+                innerClassName='text-indigo-600'
+                className='border-muted-foreground/10'
+            />
 
             <div className='flex items-center justify-between gap-4 bg-muted/5 p-8 rounded-[32px] border border-dashed border-muted-foreground/10 shadow-inner'>
                 <div className='relative w-96 group'>

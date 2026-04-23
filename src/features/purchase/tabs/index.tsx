@@ -1,6 +1,6 @@
 import { Factory, ShoppingCart } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { SupplierList } from '@/features/trading/components/supplier-list'
 import { PurchaseOrderList } from '@/features/trading/components/purchase/purchase-order-list'
@@ -12,7 +12,7 @@ export function SupplierMgmt() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={Factory}
         title={t('purchase.suppliers.title')}
         description={t('purchase.suppliers.description')}
@@ -27,7 +27,7 @@ export function PurchaseOrders() {
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-      <PageHeader
+      <IndustrialHeader
         icon={ShoppingCart}
         title={t('purchase.orders.title')}
         description={t('purchase.orders.description')}

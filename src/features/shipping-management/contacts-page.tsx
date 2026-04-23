@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
@@ -94,13 +94,12 @@ export function ContactsPage() {
 
   return (
     <div className='flex flex-col gap-3 animate-in fade-in duration-500'>
-      <PageHeader
+      <IndustrialHeader
         icon={Users}
         title='车型联系人'
         description='按车型维护联系人、电话、渠道与调度备注。'
-      >
-        <div className='uds-chip whitespace-nowrap px-2.5 py-1 text-[10px] leading-none'>{`绑定 ${filteredBindings.length}`}</div>
-      </PageHeader>
+        statusBadge={<div className='uds-chip whitespace-nowrap px-2.5 py-1 text-[10px] leading-none'>{`绑定 ${filteredBindings.length}`}</div>}
+      />
 
       <Card className='rounded-2xl border border-dashed border-border/60 bg-background/90 p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]'>
         <div className='flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between'>

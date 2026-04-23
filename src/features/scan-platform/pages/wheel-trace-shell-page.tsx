@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PageHeader } from '@/components/layout/page-header'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { createWheelTraceApiGateway } from '../adapters/wheel-trace/api-wheel-trace-gateway'
 import { usePageInstall } from '../hooks'
@@ -107,20 +107,19 @@ export function WheelTraceShellPage({
 
   return (
     <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
-      <PageHeader
+      <IndustrialHeader
         title='车圈追溯'
         description='独立追溯页已经切到真实查询接口，当前返回条码解析、产品匹配和生产拓扑锚点，后续可继续接入真实过站记录。'
         icon={SearchCheck}
-      >
-        <div className='flex flex-wrap gap-2'>
+        statusBadge={<div className='flex flex-wrap gap-2'>
           <Badge className='border-none bg-emerald-500/10 text-emerald-700'>
             SHELL_READY
           </Badge>
           <Badge className='border-none bg-blue-500/10 text-blue-700'>
             REAL_API
           </Badge>
-        </div>
-      </PageHeader>
+        </div>}
+      />
 
       <Card className='rounded-[28px] border-dashed border-muted/50 bg-muted/5 shadow-inner'>
         <CardHeader className='pb-4'>

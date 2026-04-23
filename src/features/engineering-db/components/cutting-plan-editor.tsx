@@ -19,10 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
-import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'
+import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import type { Product } from '@/features/engineering/data/schema'
 import type { PrepregMaterialSpec } from '@/features/raw-materials/data/prepreg-material-spec-schema'
+import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'
 import {
   buildCuttingPlanName,
   createEmptyCuttingPlanLine,
@@ -65,9 +66,34 @@ function tryExtractResinModel(spec: PrepregMaterialSpec): string {
 
 function getPrepregLabel(spec: PrepregMaterialSpec): string {
   const rc = formatPercent(spec.resinContentPercent)
-  const codePart = spec.code ? spec.code : spec.supplierProductCode || '--'
+  const codePart = spec.code || spec.supplierProductCode || '--'
   const namePart = spec.name || '--'
   return rc ? `${codePart} | ${namePart} | RC ${rc}` : `${codePart} | ${namePart}`
+}
+
+function normalizeMatchText(value?: string): string {
+  return value?.trim().toLowerCase() || ''
+}
+
+function findMatchedProduct(
+  products: Product[],
+  productCode?: string,
+  productName?: string,
+): Product | undefined {
+  const normalizedCode = normalizeMatchText(productCode)
+  const normalizedName = normalizeMatchText(productName)
+
+  if (!normalizedCode && !normalizedName) return undefined
+
+  return (
+    products.find((product) => {
+      const codeMatched = normalizedCode && normalizeMatchText(product.sku) === normalizedCode
+      const nameMatched = normalizedName && normalizeMatchText(product.name) === normalizedName
+      return Boolean(codeMatched && nameMatched)
+    }) ||
+    products.find((product) => normalizedCode && normalizeMatchText(product.sku) === normalizedCode) ||
+    products.find((product) => normalizedName && normalizeMatchText(product.name) === normalizedName)
+  )
 }
 
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
@@ -90,6 +116,11 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     [products],
   )
 
+  const matchedProduct = useMemo(
+    () => findMatchedProduct(activeProducts, value.productCode, value.productName),
+    [activeProducts, value.productCode, value.productName],
+  )
+
   const generatedName = useMemo(
     () =>
       buildCuttingPlanName({
@@ -100,10 +131,34 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     [value.productCode, value.productName, value.holeCount],
   )
 
+  const selectedPrepregSummary = useMemo(() => {
+    if (!value.prepregSpecId) return ''
+    const spec = prepregSpecs.find((item) => item.id === value.prepregSpecId)
+    if (!spec) return value.prepregSpecLabel || ''
+
+    const parts = [
+      spec.fiberModel?.trim(),
+      tryExtractResinModel(spec),
+      formatPercent(spec.resinContentPercent),
+    ].filter(Boolean)
+
+    return parts.length > 0 ? parts.join(' / ') : getPrepregLabel(spec)
+  }, [prepregSpecs, value.prepregSpecId, value.prepregSpecLabel])
+
   useEffect(() => {
     if (value.name === generatedName) return
     onChange({ ...value, name: generatedName })
   }, [generatedName, onChange, value])
+
+  useEffect(() => {
+    if (!matchedProduct || value.productId === matchedProduct.id) return
+    onChange({
+      ...value,
+      productId: matchedProduct.id,
+      productCode: matchedProduct.sku || '',
+      productName: matchedProduct.name || '',
+    })
+  }, [matchedProduct, onChange, value])
 
   const updateField = <K extends PlanField>(field: K, nextValue: CuttingPlanInput[K]) => {
     onChange({ ...value, [field]: nextValue })
@@ -168,13 +223,18 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
 
   return (
     <div className='space-y-4'>
-      <div className='grid gap-3 md:grid-cols-4 [&_input]:h-9 [&_input]:rounded-xl'>
+      <div className='grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-4 [&_input]:h-10 [&_input]:rounded-2xl'>
         <EditorField label='方案名称' required>
-          <Input value={value.name} readOnly placeholder='根据产品型号 + 孔数自动生成' />
+          <Input
+            value={value.name}
+            readOnly
+            placeholder='根据产品型号 + 孔数自动生成'
+            className='bg-muted/15'
+          />
         </EditorField>
         <EditorField label='产品型号' required>
           <Select value={value.productId || undefined} onValueChange={updateProduct}>
-            <SelectTrigger className='h-9 rounded-xl'>
+            <SelectTrigger className='h-10 w-full rounded-2xl'>
               <SelectValue placeholder='请选择产品工程型号' />
             </SelectTrigger>
             <SelectContent>
@@ -191,7 +251,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             value={value.holeCount || undefined}
             onValueChange={(nextValue) => updateField('holeCount', nextValue)}
           >
-            <SelectTrigger className='h-9 rounded-xl'>
+            <SelectTrigger className='h-10 w-full rounded-2xl'>
               <SelectValue placeholder='请选择共享编码源孔数' />
             </SelectTrigger>
             <SelectContent>
@@ -210,6 +270,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             placeholder='例如 XD2603028'
           />
         </EditorField>
+
         <EditorField label='版次'>
           <Input
             value={value.revisionNo}
@@ -222,7 +283,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             value={value.status}
             onValueChange={(nextValue) => updateField('status', nextValue as CuttingPlanStatus)}
           >
-            <SelectTrigger className='h-9 rounded-xl'>
+            <SelectTrigger className='h-10 w-full rounded-2xl'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -232,12 +293,6 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label='产品编码'>
-          <Input value={value.productCode} readOnly placeholder='选择产品后自动带出' />
-        </EditorField>
-        <EditorField label='产品名称' className='md:col-span-2'>
-          <Input value={value.productName} readOnly placeholder='选择产品后自动带出' />
-        </EditorField>
         <EditorField label='生效日期'>
           <Input
             value={value.effectiveDate}
@@ -245,30 +300,26 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             placeholder='2026-03-24'
           />
         </EditorField>
-        <EditorField label='RC含量'>
-          <Input value={value.resinContentPercent} readOnly placeholder='选择预浸料后自动带出' />
-        </EditorField>
-        <EditorField label='碳丝型号' className='md:col-span-2'>
-          <Input value={value.carbonFiberModel} readOnly placeholder='选择预浸料后自动带出' />
-        </EditorField>
-        <EditorField label='树脂型号'>
-          <Input value={value.resinModel} readOnly placeholder='选择预浸料后自动带出' />
-        </EditorField>
         <EditorField label='引用预浸料'>
-          <Select value={value.prepregSpecId || undefined} onValueChange={updatePrepreg}>
-            <SelectTrigger className='h-9 rounded-xl'>
-              <SelectValue
-                placeholder={prepregQuery.isLoading ? '正在加载预浸料...' : '请选择预浸料'}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {prepregSpecs.map((spec) => (
-                <SelectItem key={spec.id} value={spec.id}>
-                  {getPrepregLabel(spec)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='space-y-1.5'>
+            <Select value={value.prepregSpecId || undefined} onValueChange={updatePrepreg}>
+              <SelectTrigger className='h-10 w-full rounded-2xl'>
+                <SelectValue
+                  placeholder={prepregQuery.isLoading ? '正在加载预浸料...' : '请选择预浸料'}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {prepregSpecs.map((spec) => (
+                  <SelectItem key={spec.id} value={spec.id}>
+                    {getPrepregLabel(spec)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className='min-h-5 px-1 text-[11px] font-semibold leading-5 text-muted-foreground'>
+              {selectedPrepregSummary || '选择预浸料后自动带出碳丝、树脂和 RC 信息'}
+            </p>
+          </div>
         </EditorField>
       </div>
 
