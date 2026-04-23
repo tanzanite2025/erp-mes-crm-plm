@@ -17,7 +17,9 @@ export const tradingSalesOrder = {
     saveFailed: "Failed to save sales order"
   },
   errors: {
-    missingActor: "Missing valid trading command actor"
+    missingActor: "Missing valid trading command actor",
+    lineProductMissing: "Line {{lineNo}} is not bound to a product, so barcode snapshots cannot be persisted.",
+    lineBarcodeConfigMissing: "Line {{lineNo}} is missing product barcode configuration, so model code or hole prefix snapshots cannot be persisted."
   },
   detail: {
     backToList: "Back to Ledger",

@@ -25,6 +25,7 @@ export const linesEditor = {
       appearanceCode: '外观位值',
       appearancePreviewEmpty: '未选择外观图',
       appearanceDescriptionEmpty: '未填写外观说明',
+      detailPreview: '详情摘要',
       drillingPlan: '打孔方案',
       labelingPlan: '贴标方案',
       holeCount: '孔数',

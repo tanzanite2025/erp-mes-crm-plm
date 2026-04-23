@@ -13,45 +13,40 @@ export function useSalesOrderDetailTableColumns(
     {
       key: 'no',
       className:
-        'w-[40px] px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+        'w-[36px] px-2 py-1 text-center text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.no'),
     },
     {
       key: 'product',
-      className: 'px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.product'),
     },
     {
       key: 'snapshot',
-      className: 'px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.snapshot'),
     },
     {
       key: 'shipment',
       className:
-        'px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+        'px-2 py-1 text-center text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.shipment'),
-    },
-    {
-      key: 'productionRef',
-      className: 'px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
-      label: t('tradingSalesOrder.detail.headers.productionRef'),
     },
     {
       key: 'drawing',
       className:
-        'px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+        'px-2 py-1 text-center text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.drawing'),
     },
     {
       key: 'process',
-      className: 'px-3 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+      className: 'px-2 py-1 text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.process'),
     },
     {
       key: 'state',
       className:
-        'px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40',
+        'px-2 py-1 text-center text-[10px] font-black uppercase tracking-wide text-muted-foreground/50',
       label: t('tradingSalesOrder.detail.headers.state'),
     },
   ]

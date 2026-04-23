@@ -83,7 +83,11 @@ func effectiveApprover2(request models.ApprovalRequest) string {
 	return ""
 }
 
-func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	if tx == nil {
+		tx = db.DB
+	}
+
 	approver1ID, approver2ID := resolveRequestApprovers(input)
 	if approver1ID == "" {
 		return ApprovalWorkflowResult{}, ErrApprovalApproverMissing
@@ -102,7 +106,7 @@ func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error)
 		CurrentLevel: 1,
 	}
 
-	createTx := db.DB
+	createTx := tx
 	if approver2ID == "" {
 		createTx = createTx.Omit("Approver2ID")
 	}
@@ -110,14 +114,21 @@ func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error)
 		return ApprovalWorkflowResult{}, err
 	}
 
-	syncApprovalRequestToSearch(request)
-
 	return ApprovalWorkflowResult{
 		Request:          request,
 		NotifyAction:     "REQUEST",
 		NotifyTitle:      "您有一条新的待处理审批申请",
 		NotifyTargetUser: approver1ID,
 	}, nil
+}
+
+func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+	result, err := RequestApprovalTx(db.DB, input)
+	if err != nil {
+		return ApprovalWorkflowResult{}, err
+	}
+	syncApprovalRequestToSearch(result.Request)
+	return result, nil
 }
 
 func ApproveRequest(input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {

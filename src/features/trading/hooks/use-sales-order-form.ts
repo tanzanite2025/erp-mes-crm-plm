@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
+import { type Product } from '@/features/engineering/data/schema'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
 import { getSalesOrderClassificationExt } from '../data/sales-order-options'
 import { validateSalesOrder } from '../utils/sales-order-validator'
@@ -12,9 +13,17 @@ import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 type SalesOrderFormState = SalesOrderFormValues
 type SalesOrderFormUpdater = SalesOrderFormState | ((prev: SalesOrderFormState) => SalesOrderFormState)
 
-export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, open: boolean) {
+export function useSalesOrderForm(
+  initialOrder: SalesOrder | null | undefined,
+  open: boolean,
+  products: Product[]
+) {
   const { t } = useLanguage()
   const { initialFormData, isInitializing, initError, retryInit } = useSalesOrderInit(initialOrder, open)
+  const productById = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products]
+  )
 
   const memoizedInitial = useMemo<SalesOrderFormValues>(() => initialFormData, [initialFormData])
   const { data: formData, commit, isDirty } = useDeltaTracker(memoizedInitial, open)
@@ -53,6 +62,46 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
   }
 
   const prepareToSave = async () => {
+    let normalizedLines: typeof formData.lines
+
+    try {
+      normalizedLines = formData.lines.map((line) => {
+        if (!line.productId) {
+          throw new Error(
+            t('tradingSalesOrder.errors.lineProductMissing', {
+              lineNo: line.lineNo,
+            })
+          )
+        }
+
+        const product = productById.get(line.productId)
+        const modelCodeSnapshot = product?.barcodeConfig?.modelCode
+        const holePrefixSnapshot = product?.barcodeConfig?.category
+
+        if (!product || !modelCodeSnapshot || !holePrefixSnapshot) {
+          throw new Error(
+            t('tradingSalesOrder.errors.lineBarcodeConfigMissing', {
+              lineNo: line.lineNo,
+            })
+          )
+        }
+
+        return {
+          ...line,
+          modelCodeSnapshot,
+          holePrefixSnapshot,
+        }
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('tradingSalesOrder.toasts.saveFailed'))
+      return undefined
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      lines: normalizedLines,
+    }))
+
     if (!initialOrder) {
       const barcode = await numberingService.generateContractBarcode(
         getSalesOrderClassificationExt(formData.classification)
@@ -61,15 +110,20 @@ export function useSalesOrderForm(initialOrder: SalesOrder | null | undefined, o
         ...prev,
         orderNo: barcode,
         barcode,
+        lines: normalizedLines,
       }))
       return {
         ...formData,
         orderNo: barcode,
         barcode,
+        lines: normalizedLines,
       }
     }
 
-    return formData
+    return {
+      ...formData,
+      lines: normalizedLines,
+    }
   }
 
   return {

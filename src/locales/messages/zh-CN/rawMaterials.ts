@@ -1,7 +1,7 @@
 export const rawMaterials = {
   moduleTitle: '原材料管理',
-  moduleDescription: '独立承载原材料档案维护，并为后续供应协同与采购扩展预留结构。',
+  moduleDescription: '独立维护预浸料原材料定义，避免与物料档案中的原材料分类混用。',
   tabs: {
-    catalog: '原材料档案',
+    catalog: '预浸料',
   },
 } as const

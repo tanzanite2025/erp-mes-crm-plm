@@ -182,6 +182,12 @@ func TestSalesOrderServiceContractPatchIncludesLinesArray(t *testing.T) {
 func TestSalesOrderServiceContractTransactionIncludesLinesArray(t *testing.T) {
 	testDB := setupSalesOrderContractServiceTestDB(t)
 	order := seedSalesOrderContractFixture(t, testDB)
+	require.NoError(t, testDB.Model(&models.SalesOrder{}).Where("id = ?", order.ID).Update("status", "InProgress").Error)
+	require.NoError(t, testDB.Model(&models.SalesOrderLine{}).Where("sales_order_id = ?", order.ID).Updates(map[string]interface{}{
+		"status":        "InProgress",
+		"delivered_qty": 2,
+	}).Error)
+	order.Status = "InProgress"
 
 	result, err := ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
 		OrderID:         order.ID,

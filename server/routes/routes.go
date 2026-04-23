@@ -66,6 +66,16 @@ func SetupRoutes(r *gin.Engine) {
 			materialGroup.POST("/sync", adminOnly, handlers.BulkSyncMaterialsHandler)
 		}
 
+		rawMaterialGroup := authorized.Group("/raw-materials")
+		rawMaterialGroup.Use(middleware.RequirePermissions(authz.MenuTrading, authz.MenuWarehouse, authz.MenuEngineering))
+		{
+			rawMaterialGroup.POST("/prepreg-label-ocr-sessions", handlers.CreatePrepregLabelOcrSessionHandler)
+			rawMaterialGroup.GET("/prepreg-label-ocr-sessions/:sessionId", handlers.GetPrepregLabelOcrSessionHandler)
+			rawMaterialGroup.GET("/prepreg-specs", handlers.GetPrepregMaterialSpecsHandler)
+			rawMaterialGroup.POST("/prepreg-specs", adminOnly, handlers.SavePrepregMaterialSpecHandler)
+			rawMaterialGroup.DELETE("/prepreg-specs/:id", adminOnly, handlers.DeletePrepregMaterialSpecHandler)
+		}
+
 		appearanceGroup := authorized.Group("/engineering/product-appearances")
 		appearanceGroup.Use(middleware.RequirePermissions(authz.MenuEngineering, authz.MenuTrading))
 		{
@@ -297,6 +307,7 @@ func SetupRoutes(r *gin.Engine) {
 func registerPublicRoutes(api *gin.RouterGroup) {
 	api.GET("/health", handlers.HealthHandler)
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
+	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
 	api.GET("/ws", func(c *gin.Context) {
 		log.Printf("[WS_TRACE] Incoming request: Remote=%s, Host=%s, Upgrade=%s", c.Request.RemoteAddr, c.Request.Host, c.Request.Header.Get("Upgrade"))
 		handlers.WSHandler(c)

@@ -13,6 +13,21 @@ const orderEvidenceSchema = z
   })
   .strict()
 
+const salesOrderActionAvailabilitySchema = z
+  .object({
+    action: z.enum([
+      'submitPending',
+      'startProduction',
+      'markDone',
+      'cancel',
+      'createReturn',
+    ]),
+    allowed: z.boolean(),
+    reasonCode: z.string().optional(),
+    reason: z.string().optional(),
+  })
+  .strict()
+
 export const salesOrderLineApiDTOSchema = z
   .object({
     id: z.number().optional(),
@@ -21,6 +36,8 @@ export const salesOrderLineApiDTOSchema = z
     productModel: z.string(),
     productCode: z.string(),
     specification: z.string(),
+    modelCodeSnapshot: z.string().optional(),
+    holePrefixSnapshot: z.string().optional(),
     description: z.string(),
     qty: z.number(),
     uom: z.string(),
@@ -50,6 +67,8 @@ export interface SalesOrderLineApiDTO {
   productModel: string
   productCode: string
   specification: string
+  modelCodeSnapshot?: string
+  holePrefixSnapshot?: string
   description: string
   qty: number
   uom: string
@@ -102,6 +121,7 @@ const salesOrderListItemBaseSchema = z
     version: z.number().optional(),
     evidences: z.array(orderEvidenceSchema).optional(),
     fulfillmentRate: z.number().optional(),
+    availableActions: z.array(salesOrderActionAvailabilitySchema).optional(),
   })
   .strict()
 
@@ -155,6 +175,7 @@ export interface SalesOrderApiDTO {
   version?: number
   evidences?: OrderEvidence[]
   fulfillmentRate?: number
+  availableActions?: z.infer<typeof salesOrderActionAvailabilitySchema>[]
   lines?: SalesOrderLineApiDTO[]
 }
 

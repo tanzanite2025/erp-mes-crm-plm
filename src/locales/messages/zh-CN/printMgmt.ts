@@ -4,15 +4,6 @@ export const printMgmt = {
     barcode: '条码模板',
     records: '打印记录',
   },
-  adapter: {
-    defaultTemplateName: '默认产品标签',
-    preparing: '正在为打印机准备 {{quantity}} 枚标签...',
-    submitSuccess: '成功发送 {{quantity}} 枚标签至打印机队列',
-    submitSuccessDescription: '起始 SN: {{serialNumber}}',
-    submitFailed: '打印指令发送失败',
-    printing: '正在发送 ({{quantity}})...',
-    printNow: '立即打印 {{quantity}} 张',
-  },
   bomPreview: {
     unknownProduct: '未知产品',
     defaultSection: '默认',

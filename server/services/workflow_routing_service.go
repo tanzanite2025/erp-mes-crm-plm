@@ -15,7 +15,64 @@ var (
 	ErrNotificationRuleNotFound = errors.New("notification rule not found")
 )
 
+func normalizeNotificationRuleRouting(rule models.NotificationRule) models.NotificationRule {
+	entity := strings.TrimSpace(rule.Entity)
+	sourceCode := strings.TrimSpace(rule.SourceCode)
+	actionCode := strings.TrimSpace(rule.ActionCode)
+
+	if entity == "" {
+		entity = businessEventEntityOrder
+	}
+	if entity != businessEventEntityOrder {
+		if sourceCode == businessEventSourceProductionPlan || sourceCode == businessEventSourceProductionTask {
+			rule.Entity = entity
+			rule.SourceCode = sourceCode
+			rule.ActionCode = businessEventActionStatusChange
+			return rule
+		}
+		rule.Entity = entity
+		rule.SourceCode = sourceCode
+		rule.ActionCode = actionCode
+		return rule
+	}
+	if sourceCode == businessEventSourcePurchaseOrder {
+		rule.Entity = entity
+		rule.SourceCode = businessEventSourcePurchaseOrder
+		rule.ActionCode = businessEventActionStatusChange
+		return rule
+	}
+	if sourceCode != "" && sourceCode != businessEventEntityOrder && sourceCode != businessEventSourceSalesOrder {
+		rule.Entity = entity
+		rule.SourceCode = sourceCode
+		rule.ActionCode = actionCode
+		return rule
+	}
+
+	rule.Entity = businessEventEntityOrder
+	rule.SourceCode = businessEventSourceSalesOrder
+	if actionCode == "" || actionCode != businessEventActionStatusChange {
+		rule.ActionCode = businessEventActionStatusChange
+	} else {
+		rule.ActionCode = actionCode
+	}
+	return rule
+}
+
+func persistNormalizedNotificationRuleRouting(existing models.NotificationRule, normalized models.NotificationRule) error {
+	if existing.Entity == normalized.Entity &&
+		existing.SourceCode == normalized.SourceCode &&
+		existing.ActionCode == normalized.ActionCode {
+		return nil
+	}
+	return db.DB.Model(&existing).Updates(map[string]interface{}{
+		"entity":      normalized.Entity,
+		"source_code": normalized.SourceCode,
+		"action_code": normalized.ActionCode,
+	}).Error
+}
+
 func validateNotificationRuleReferences(rule models.NotificationRule) error {
+	rule = normalizeNotificationRuleRouting(rule)
 	sourceCode := strings.TrimSpace(rule.SourceCode)
 	entity := strings.TrimSpace(rule.Entity)
 	actionCode := strings.TrimSpace(rule.ActionCode)
@@ -160,10 +217,18 @@ func ListNotificationRules() ([]models.NotificationRule, error) {
 	if err := db.DB.Order("created_at desc").Find(&rules).Error; err != nil {
 		return nil, err
 	}
+	for index := range rules {
+		normalized := normalizeNotificationRuleRouting(rules[index])
+		if err := persistNormalizedNotificationRuleRouting(rules[index], normalized); err != nil {
+			return nil, err
+		}
+		rules[index] = normalized
+	}
 	return rules, nil
 }
 
 func CreateNotificationRule(rule models.NotificationRule) (models.NotificationRule, error) {
+	rule = normalizeNotificationRuleRouting(rule)
 	rule.Name = strings.TrimSpace(rule.Name)
 	rule.Entity = strings.TrimSpace(rule.Entity)
 	rule.SourceCode = strings.TrimSpace(rule.SourceCode)
@@ -194,6 +259,7 @@ func UpdateNotificationRule(id string, patch models.NotificationRule) (models.No
 	if patch.Version > existing.Version {
 		nextVersion = patch.Version
 	}
+	patch = normalizeNotificationRuleRouting(patch)
 	if err := validateNotificationRuleReferences(patch); err != nil {
 		return models.NotificationRule{}, err
 	}

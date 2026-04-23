@@ -3,7 +3,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
 import type { SalesOrder } from '../data/schema'
@@ -33,16 +32,12 @@ export function SalesOrderDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='bottom'
-        className='h-[88vh] rounded-t-[32px] border-t-2 border-dashed border-primary/20 bg-background px-0 pb-0 pt-0 shadow-2xl'
+        className='h-[78vh] gap-0 rounded-t-[20px] border-t border-dashed border-primary/20 bg-background px-0 pb-0 pt-0 shadow-2xl'
       >
-        <SheetHeader className='gap-2 border-b border-dashed border-muted/40 px-6 pb-4 pt-6 text-left'>
-          <SheetTitle className='pr-10 text-base font-black tracking-tight'>{title}</SheetTitle>
-          <SheetDescription className='text-xs font-medium text-muted-foreground'>
-            {description}
-          </SheetDescription>
-        </SheetHeader>
+        <SheetTitle className='sr-only'>{title}</SheetTitle>
+        <SheetDescription className='sr-only'>{description}</SheetDescription>
         <ScrollArea className='min-h-0 flex-1'>
-          <div className='px-6 py-5'>
+          <div className='px-4 pb-3 pt-10'>
             <SalesOrderDetail orderId={orderId} order={order} onDelete={onDelete} />
           </div>
         </ScrollArea>

@@ -1,6 +1,16 @@
 import type { SalesOrder } from '../data/schema'
 import type { TranslationKey } from '@/locales'
 
+function hasAvailableAction(order: SalesOrder, action: string) {
+  if (!order.availableActions || order.availableActions.length === 0) {
+    return false
+  }
+
+  return order.availableActions.some(
+    (item) => item.action === action && item.allowed
+  )
+}
+
 interface UseSalesOrderDetailHeaderViewModelParams {
   order: SalesOrder
   isClaimAction: boolean
@@ -20,10 +30,10 @@ export function useSalesOrderDetailHeaderViewModel({
   return {
     showClaimBanner,
     commandTitle,
-    canSubmitPending: order.status === 'Draft',
-    canStartProduction: order.status === 'Pending',
-    canMarkDone: order.status === 'InProgress',
-    canCancel: order.status === 'Draft' || order.status === 'Pending',
+    canSubmitPending: hasAvailableAction(order, 'submitPending'),
+    canStartProduction: hasAvailableAction(order, 'startProduction'),
+    canMarkDone: hasAvailableAction(order, 'markDone'),
+    canCancel: hasAvailableAction(order, 'cancel'),
     submitPendingPayload: { id: order.id, status: 'Pending' as const },
     startProductionPayload: {
       id: order.id,

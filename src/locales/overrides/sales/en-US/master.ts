@@ -11,6 +11,8 @@ export const master = {
       auditor: 'Auditor',
       system: 'System',
       overdue: 'Overdue',
+      viewReceivable: 'View Receivable',
+      registerReceipt: 'Register Receipt',
       editOrder: 'Edit Order',
       removePermanently: 'Remove Permanently',
       voidContract: 'Void Contract',

@@ -1,5 +1,6 @@
 import { isBefore, parseISO, startOfDay } from 'date-fns'
-import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { BanknoteArrowDown, Edit2, FileText, MoreHorizontal, Trash2 } from 'lucide-react'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
@@ -8,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
@@ -43,7 +45,19 @@ export function SalesOrderMaster({
   onDelete,
 }: SalesOrderMasterProps) {
   const { t, locale } = useLanguage()
-  const hasActions = Boolean(onEdit || onDelete)
+  const navigate = useNavigate()
+  const hasActions = true
+
+  const openReceivables = (order: SalesOrder, autoOpen: boolean) => {
+    navigate({
+      to: '/trading/receivables',
+      search: {
+        sourceType: 'SALES_ORDER',
+        sourceRefId: order.id,
+        autoOpen: autoOpen || undefined,
+      },
+    })
+  }
 
   return (
     <div className='w-full overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-muted/5 shadow-inner'>
@@ -235,8 +249,30 @@ export function SalesOrderMaster({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align='end'
-                            className='min-w-[120px] rounded-[20px] border-2 p-1.5 shadow-2xl'
+                            className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
                           >
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openReceivables(order, false)
+                              }}
+                              className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            >
+                              <FileText className='size-3 text-emerald-600' />
+                              {t('tradingSalesOrder.master.viewReceivable')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openReceivables(order, true)
+                              }}
+                              className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            >
+                              <BanknoteArrowDown className='size-3 text-emerald-600' />
+                              {t('tradingSalesOrder.master.registerReceipt')}
+                            </DropdownMenuItem>
+                            {(onEdit || onDelete) && <DropdownMenuSeparator className='my-1' />}
+                            {onEdit && (
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -247,6 +283,8 @@ export function SalesOrderMaster({
                               <Edit2 className='size-3 text-blue-500' />
                               {t('tradingSalesOrder.master.editOrder')}
                             </DropdownMenuItem>
+                            )}
+                            {onDelete && (
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -261,6 +299,7 @@ export function SalesOrderMaster({
                                   )
                                 : t('tradingSalesOrder.master.voidContract')}
                             </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

@@ -11,6 +11,8 @@ export const master = {
       auditor: '审计人',
       system: '系统',
       overdue: '超期',
+      viewReceivable: '查看应收',
+      registerReceipt: '登记收款',
       editOrder: '编辑单据',
       removePermanently: '物理移除',
       voidContract: '作废合同',

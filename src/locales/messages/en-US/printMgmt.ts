@@ -4,15 +4,6 @@ export const printMgmt = {
     barcode: 'Barcode Templates',
     records: 'Print Records',
   },
-  adapter: {
-    defaultTemplateName: 'Default Product Label',
-    preparing: 'Preparing {{quantity}} labels for the printer...',
-    submitSuccess: 'Sent {{quantity}} labels to the print queue',
-    submitSuccessDescription: 'Starting SN: {{serialNumber}}',
-    submitFailed: 'Failed to send the print command',
-    printing: 'Sending ({{quantity}})...',
-    printNow: 'Print {{quantity}} Now',
-  },
   bomPreview: {
     unknownProduct: 'Unknown Product',
     defaultSection: 'Default',

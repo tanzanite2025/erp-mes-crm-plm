@@ -71,6 +71,13 @@ func setupSalesReturnServiceTestDB(t *testing.T) *gorm.DB {
 			customer_id TEXT,
 			customer_name TEXT,
 			status TEXT,
+			transport_mode TEXT,
+			tracking_no TEXT,
+			carrier TEXT,
+			shipped_at DATETIME,
+			tracking_filled_at DATETIME,
+			tracking_filled_by TEXT,
+			logistics_note TEXT,
 			return_date DATETIME,
 			issue_category TEXT,
 			reason TEXT,
@@ -125,15 +132,16 @@ func TestCreateSalesReturnCreatesRealReturnRecord(t *testing.T) {
 	require.NoError(t, testDB.Exec(`
 		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, amount, quantity, order_date, delivery_date, evidences, created_at, updated_at, updated_by, is_deleted, version)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?, ?, ?)
-	`, "so-return-1", "SO-RETURN-001", "Returnable Order", "Customer A", "cust-1", "NORMAL", "CNY", "GENERAL", "Pending", 200.0, 10.0, "2026-04-18", "2026-04-20", now, now, "tester", false, 1).Error)
+	`, "so-return-1", "SO-RETURN-001", "Returnable Order", "Customer A", "cust-1", "NORMAL", "CNY", "GENERAL", "InProgress", 200.0, 10.0, "2026-04-18", "2026-04-20", now, now, "tester", false, 1).Error)
 	require.NoError(t, testDB.Exec(`
 		INSERT INTO sales_order_lines (sales_order_id, line_no, product_id, product_model, product_code, specification, description, qty, uom, price, amount, delivered_qty, customer_part_no, job_no, order_date, status)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, "so-return-1", 1, "prod-1", "PM-1", "PC-1", "Spec", "Desc", 10.0, "PCS", 12.5, 125.0, 0.0, "CP-1", "JOB-1", "2026-04-18", "Pending").Error)
+	`, "so-return-1", 1, "prod-1", "PM-1", "PC-1", "Spec", "Desc", 10.0, "PCS", 12.5, 125.0, 6.0, "CP-1", "JOB-1", "2026-04-18", "InProgress").Error)
 
 	response, err := CreateSalesReturn(CreateSalesReturnInput{
 		SalesOrderID:  "so-return-1",
 		Operator:      "tester",
+		TransportMode: SalesReturnTransportModeOther,
 		IssueCategory: "Damage",
 		Reason:        "surface issue",
 		Remarks:       "batch-a",
@@ -160,4 +168,90 @@ func TestCreateSalesReturnCreatesRealReturnRecord(t *testing.T) {
 	var returnCount int64
 	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_returns`).Scan(&returnCount).Error)
 	require.Equal(t, int64(1), returnCount)
+}
+
+func TestCreateSalesReturnRejectsPendingOrder(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesReturnServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now()
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, amount, quantity, order_date, delivery_date, evidences, created_at, updated_at, updated_by, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?, ?, ?)
+	`, "so-pending-return", "SO-PENDING-RETURN", "Pending Order", "Customer A", "cust-1", "NORMAL", "CNY", "GENERAL", "Pending", 200.0, 10.0, "2026-04-18", "2026-04-20", now, now, "tester", false, 1).Error)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_order_lines (sales_order_id, line_no, product_id, product_model, product_code, specification, description, qty, uom, price, amount, delivered_qty, customer_part_no, job_no, order_date, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "so-pending-return", 1, "prod-1", "PM-1", "PC-1", "Spec", "Desc", 10.0, "PCS", 12.5, 125.0, 0.0, "CP-1", "JOB-1", "2026-04-18", "Pending").Error)
+
+	_, err := CreateSalesReturn(CreateSalesReturnInput{
+		SalesOrderID:  "so-pending-return",
+		Operator:      "tester",
+		TransportMode: SalesReturnTransportModeOther,
+		ReturnDate:    time.Date(2026, 4, 19, 0, 0, 0, 0, time.UTC),
+		Lines: []CreateSalesReturnLineInput{
+			{
+				SalesOrderLineID: 1,
+				Quantity:         1,
+				Price:            12.5,
+			},
+		},
+	})
+
+	require.ErrorContains(t, err, "sales order status does not allow return")
+
+	var returnCount int64
+	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_returns`).Scan(&returnCount).Error)
+	require.Equal(t, int64(0), returnCount)
+}
+
+func TestCreateSalesReturnRejectsQuantityAboveDeliveredQuantity(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesReturnServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now()
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, amount, quantity, order_date, delivery_date, evidences, created_at, updated_at, updated_by, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?, ?, ?)
+	`, "so-delivered-cap", "SO-DELIVERED-CAP", "Partially Delivered Order", "Customer A", "cust-1", "NORMAL", "CNY", "GENERAL", "InProgress", 200.0, 10.0, "2026-04-18", "2026-04-20", now, now, "tester", false, 1).Error)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_order_lines (sales_order_id, line_no, product_id, product_model, product_code, specification, description, qty, uom, price, amount, delivered_qty, customer_part_no, job_no, order_date, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "so-delivered-cap", 1, "prod-1", "PM-1", "PC-1", "Spec", "Desc", 10.0, "PCS", 12.5, 125.0, 2.0, "CP-1", "JOB-1", "2026-04-18", "InProgress").Error)
+
+	_, err := CreateSalesReturn(CreateSalesReturnInput{
+		SalesOrderID:  "so-delivered-cap",
+		Operator:      "tester",
+		TransportMode: SalesReturnTransportModeOther,
+		ReturnDate:    time.Date(2026, 4, 19, 0, 0, 0, 0, time.UTC),
+		Lines: []CreateSalesReturnLineInput{
+			{
+				SalesOrderLineID: 1,
+				Quantity:         3,
+				Price:            12.5,
+			},
+		},
+	})
+
+	require.ErrorContains(t, err, "return quantity exceeds remaining returnable quantity")
+
+	var returnCount int64
+	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_returns`).Scan(&returnCount).Error)
+	require.Equal(t, int64(0), returnCount)
 }

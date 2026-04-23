@@ -10,6 +10,7 @@ import (
 	"time"
 	"xdfc-server/models"
 	"xdfc-server/salesorderidentity"
+	statemachine "xdfc-server/services/state_machine"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -1383,10 +1384,11 @@ func executeOrderCancelTx(tx *gorm.DB, current *models.SalesOrder, input Execute
 		operator = "unknown"
 	}
 
-	if current.Status == "Canceled" {
-		return nil, fmt.Errorf("%w: order already canceled", ErrSalesTransactionInvalidPayload)
+	if guard := statemachine.CanCancelSalesOrder(*current); !guard.Allowed {
+		return nil, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, guard.Err())
 	}
 
+	previousStatus := current.Status
 	if err := tx.Model(current).Updates(map[string]interface{}{
 		"status":      "Canceled",
 		"status_note": strings.TrimSpace(cancelPayload.Reason),
@@ -1399,6 +1401,9 @@ func executeOrderCancelTx(tx *gorm.DB, current *models.SalesOrder, input Execute
 	current.StatusNote = strings.TrimSpace(cancelPayload.Reason)
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
+	if err := DispatchSalesOrderStatusChangedTx(tx, *current, previousStatus, current.Status, strings.TrimSpace(input.ActorID), operator); err != nil {
+		return nil, err
+	}
 
 	if len(current.Lines) > 0 {
 		lineIDs := make([]uint, 0, len(current.Lines))
@@ -1463,6 +1468,16 @@ func executeOrderStatusTransitionTx(tx *gorm.DB, current *models.SalesOrder, inp
 	if status == current.Status && strings.TrimSpace(statusPayload.StatusNote) == strings.TrimSpace(current.StatusNote) {
 		return nil, fmt.Errorf("%w: status unchanged", ErrSalesTransactionInvalidPayload)
 	}
+	normalizedStatus := statemachine.NormalizeSalesOrderStatus(status)
+	if normalizedStatus == statemachine.SalesOrderStatusCanceled {
+		derivedPayload, _ := json.Marshal(SalesOrderCancelPayload{Operator: operator, Reason: statusPayload.StatusNote})
+		return executeOrderCancelTx(tx, current, ExecuteSalesOrderTransactionInput{OrderID: input.OrderID, Intent: SalesTransactionIntentOrderCancel, ActorID: input.ActorID, Operator: operator, ExpectedVersion: input.ExpectedVersion, Payload: derivedPayload, IP: input.IP})
+	}
+	if guard := statemachine.CanTransitionSalesOrderStatus(current.Status, status); !guard.Allowed {
+		return nil, fmt.Errorf("%w: %v", ErrSalesTransactionInvalidPayload, guard.Err())
+	}
+	status = string(normalizedStatus)
+	previousStatus := current.Status
 
 	if err := tx.Model(current).Updates(map[string]interface{}{
 		"status":      status,
@@ -1476,6 +1491,9 @@ func executeOrderStatusTransitionTx(tx *gorm.DB, current *models.SalesOrder, inp
 	current.StatusNote = strings.TrimSpace(statusPayload.StatusNote)
 	current.UpdatedBy = operator
 	current.Version = current.Version + 1
+	if err := DispatchSalesOrderStatusChangedTx(tx, *current, previousStatus, current.Status, strings.TrimSpace(input.ActorID), operator); err != nil {
+		return nil, err
+	}
 
 	if _, err := RecalculateSalesOrderStatusTx(tx, current.ID); err != nil {
 		return nil, err

@@ -186,6 +186,107 @@ func ensureBusinessEventSourceIdentityImmutable(
 	return nil
 }
 
+func mergeBusinessEventActionsByID(existing, defaults []BusinessEventActionDTO) []BusinessEventActionDTO {
+	seen := make(map[string]struct{}, len(existing))
+	result := append([]BusinessEventActionDTO{}, existing...)
+	for _, item := range existing {
+		seen[item.ID] = struct{}{}
+		seen["code:"+item.Code] = struct{}{}
+	}
+	for _, item := range defaults {
+		if _, ok := seen[item.ID]; ok {
+			continue
+		}
+		if _, ok := seen["code:"+item.Code]; !ok {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func mergeBusinessStatusesByID(existing, defaults []BusinessStatusDTO) []BusinessStatusDTO {
+	seen := make(map[string]struct{}, len(existing))
+	result := append([]BusinessStatusDTO{}, existing...)
+	for _, item := range existing {
+		seen[item.ID] = struct{}{}
+		seen["code:"+item.Code] = struct{}{}
+	}
+	for _, item := range defaults {
+		if _, ok := seen[item.ID]; ok {
+			continue
+		}
+		if _, ok := seen["code:"+item.Code]; !ok {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func mergeBusinessEventFieldsByID(existing, defaults []BusinessEventFieldDTO) []BusinessEventFieldDTO {
+	seen := make(map[string]struct{}, len(existing))
+	result := append([]BusinessEventFieldDTO{}, existing...)
+	for _, item := range existing {
+		seen[item.ID] = struct{}{}
+		seen["key:"+item.Key] = struct{}{}
+	}
+	for _, item := range defaults {
+		if _, ok := seen[item.ID]; ok {
+			continue
+		}
+		if _, ok := seen["key:"+item.Key]; !ok {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func mergeBusinessDynamicResolversByID(existing, defaults []BusinessDynamicResolverDTO) []BusinessDynamicResolverDTO {
+	seen := make(map[string]struct{}, len(existing))
+	result := append([]BusinessDynamicResolverDTO{}, existing...)
+	for _, item := range existing {
+		seen[item.ID] = struct{}{}
+		seen["code:"+item.Code] = struct{}{}
+	}
+	for _, item := range defaults {
+		if _, ok := seen[item.ID]; ok {
+			continue
+		}
+		if _, ok := seen["code:"+item.Code]; !ok {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func backfillDefaultBusinessEventSourceConfig(existing models.BusinessEventSource, seed defaultBusinessEventSourceSeed) error {
+	existingConfig, err := unmarshalBusinessEventSourceConfig(existing.Config)
+	if err != nil {
+		return err
+	}
+	defaultConfig, err := unmarshalBusinessEventSourceConfig(seed.Config)
+	if err != nil {
+		return err
+	}
+
+	merged := existingConfig
+	merged.Actions = mergeBusinessEventActionsByID(existingConfig.Actions, defaultConfig.Actions)
+	merged.Statuses = mergeBusinessStatusesByID(existingConfig.Statuses, defaultConfig.Statuses)
+	merged.Fields = mergeBusinessEventFieldsByID(existingConfig.Fields, defaultConfig.Fields)
+	merged.DynamicResolvers = mergeBusinessDynamicResolversByID(existingConfig.DynamicResolvers, defaultConfig.DynamicResolvers)
+	if strings.TrimSpace(merged.DefaultActionURLTemplate) == "" {
+		merged.DefaultActionURLTemplate = defaultConfig.DefaultActionURLTemplate
+	}
+
+	mergedRaw, err := marshalBusinessEventSourceConfig(merged)
+	if err != nil {
+		return err
+	}
+	if string(mergedRaw) == string(existing.Config) {
+		return nil
+	}
+	return db.DB.Model(&existing).Update("config", mergedRaw).Error
+}
+
 func EnsureDefaultBusinessEventSources() error {
 	if db.DB == nil || !db.DB.Migrator().HasTable(&models.BusinessEventSource{}) {
 		return nil
@@ -195,6 +296,9 @@ func EnsureDefaultBusinessEventSources() error {
 		var existing models.BusinessEventSource
 		err := db.DB.Where("code = ?", seed.Code).First(&existing).Error
 		if err == nil {
+			if err := backfillDefaultBusinessEventSourceConfig(existing, seed); err != nil {
+				return err
+			}
 			continue
 		}
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

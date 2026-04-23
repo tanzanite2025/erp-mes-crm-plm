@@ -5,6 +5,7 @@ import (
 	"testing"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/require"
@@ -256,4 +257,18 @@ func TestEnsureDefaultBusinessEventSources_BackfillsMissingDefaultSeeds(t *testi
 		config.Statuses[2].Code,
 		config.Statuses[3].Code,
 	})
+}
+
+func TestDefaultSalesOrderEventSourceUsesStateMachineStatuses(t *testing.T) {
+	config, err := unmarshalBusinessEventSourceConfig(defaultSalesOrderEventSourceConfig())
+	require.NoError(t, err)
+
+	catalog := statemachine.SalesOrderStatusCatalog()
+	require.Len(t, config.Statuses, len(catalog))
+	for index, item := range catalog {
+		require.Equal(t, string(item.Status), config.Statuses[index].Code)
+		require.Equal(t, item.Phase, config.Statuses[index].Phase)
+		require.Equal(t, item.IsTerminal, config.Statuses[index].IsTerminal)
+		require.Equal(t, item.DefaultResolve, config.Statuses[index].DefaultResolve)
+	}
 }

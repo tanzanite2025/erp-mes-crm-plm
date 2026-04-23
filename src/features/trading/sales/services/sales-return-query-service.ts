@@ -12,6 +12,19 @@ export type GetSalesReturnSourceOrdersOptions = {
   keyword?: string
 }
 
+const SALES_RETURN_SOURCE_ORDER_STATUSES = ['InProgress', 'Done'] as const
+const salesReturnSourceOrderStatusSet = new Set<string>(
+  SALES_RETURN_SOURCE_ORDER_STATUSES
+)
+
+function resolveSalesReturnSourceStatuses(status?: string): string[] {
+  if (status && status !== 'all' && salesReturnSourceOrderStatusSet.has(status)) {
+    return [status]
+  }
+
+  return [...SALES_RETURN_SOURCE_ORDER_STATUSES]
+}
+
 export async function getSalesReturnSourceOrders(
   options: GetSalesReturnSourceOrdersOptions = {}
 ) {
@@ -20,7 +33,7 @@ export async function getSalesReturnSourceOrders(
     page,
     pageSize,
     withLines: true,
-    status: status && status !== 'all' ? [status] : undefined,
+    status: resolveSalesReturnSourceStatuses(status),
     customerId,
     keyword,
   }

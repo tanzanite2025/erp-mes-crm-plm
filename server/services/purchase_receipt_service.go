@@ -30,9 +30,13 @@ func recalculatePurchaseOrderStatusTx(tx *gorm.DB, purchaseOrderID string) (mode
 		return order, nil
 	}
 
+	previousStatus := order.Status
 	if err := tx.Model(&order).Update("status", nextStatus).Error; err != nil {
 		return models.PurchaseOrder{}, err
 	}
 	order.Status = nextStatus
+	if err := DispatchPurchaseOrderStatusChangedTx(tx, order, previousStatus, nextStatus, "", ""); err != nil {
+		return models.PurchaseOrder{}, err
+	}
 	return order, nil
 }

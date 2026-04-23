@@ -1,5 +1,5 @@
-import { MaterialMgmt } from '@/features/material-archive/tabs/material-mgmt'
+import { PrepregCatalogPage } from './prepreg-catalog-page'
 
 export function RawMaterialsCatalogPage() {
-  return <MaterialMgmt category='RAW_MATERIAL' />
+  return <PrepregCatalogPage />
 }

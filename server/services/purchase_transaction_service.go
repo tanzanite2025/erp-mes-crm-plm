@@ -122,6 +122,7 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 	if err != nil {
 		return nil, err
 	}
+	previousStatus := current.Status
 
 	operator := strings.TrimSpace(payload.Operator)
 	if operator == "" {
@@ -318,6 +319,9 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 	}
 
 	if err := tx.Preload("Lines").First(current, "id = ?", current.ID).Error; err != nil {
+		return nil, err
+	}
+	if err := DispatchPurchaseOrderStatusChangedTx(tx, *current, previousStatus, current.Status, input.ActorID, operator); err != nil {
 		return nil, err
 	}
 

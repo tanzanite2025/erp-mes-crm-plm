@@ -1,10 +1,12 @@
 package services
 
 import (
+	"errors"
 	"strings"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func SyncLogisticsBusinessDocumentTx(tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
@@ -32,9 +34,24 @@ func syncPurchaseLogisticsStatusTx(tx *gorm.DB, record *models.LogisticsRecord, 
 
 	switch nextStatus {
 	case "InTransit", "Delivered":
-		return tx.Model(&models.PurchaseOrder{}).
-			Where("id = ? AND status = ?", purchaseOrderID, "Sent").
-			Update("status", "Awaiting").Error
+		var order models.PurchaseOrder
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", purchaseOrderID).
+			First(&order).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+		if order.Status != "Sent" {
+			return nil
+		}
+		previousStatus := order.Status
+		order.Status = "Awaiting"
+		if err := tx.Model(&order).Update("status", order.Status).Error; err != nil {
+			return err
+		}
+		return DispatchPurchaseOrderStatusChangedTx(tx, order, previousStatus, order.Status, "", "")
 	default:
 		return nil
 	}

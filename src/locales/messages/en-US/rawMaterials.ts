@@ -1,8 +1,8 @@
 export const rawMaterials = {
   moduleTitle: 'Raw Material Management',
   moduleDescription:
-    'A dedicated workspace for raw material records with room for future sourcing and procurement extensions.',
+    'A dedicated workspace for prepreg raw-material definitions, separate from material archive categories.',
   tabs: {
-    catalog: 'Raw Material Catalog',
+    catalog: 'Prepreg',
   },
 } as const

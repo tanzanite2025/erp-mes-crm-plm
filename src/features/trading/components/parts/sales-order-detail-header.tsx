@@ -46,47 +46,21 @@ export function SalesOrderDetailHeader({
   })
 
   return (
-    <div className='relative overflow-hidden rounded-[32px] border border-dashed border-primary/20 bg-muted/5 px-6 py-4 shadow-inner backdrop-blur-md'>
-      <div className='absolute left-0 top-0 h-full w-1.5 bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]' />
-      <div className='flex items-center justify-between'>
-        <div className='space-y-1'>
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 leading-none'>
-            {t('tradingSalesOrder.detail.businessOrderId')}
-          </p>
-          <div className='flex items-center gap-3'>
-            <h3 className='text-[22px] font-black uppercase tracking-tighter italic leading-none'>
-              {order.orderNo}
-            </h3>
-            <SalesOrderStatusBadge status={order.status} />
-          </div>
+    <div className='relative overflow-hidden rounded-xl border border-dashed border-primary/15 bg-muted/5 px-4 py-2 shadow-inner backdrop-blur-md'>
+      <div className='absolute left-0 top-0 h-full w-1 bg-primary/80' />
+      <div className='flex flex-wrap items-center gap-2 pl-2'>
+        <h3 className='text-[18px] font-black uppercase leading-none tracking-tight'>
+          {order.orderNo}
+        </h3>
+        <SalesOrderStatusBadge status={order.status} />
+        <div className='mx-1 h-4 border-l border-dashed border-muted-foreground/20' />
+        <div className='min-w-0 flex-1 truncate text-[13px] font-black tracking-tight text-foreground'>
+          {order.customerName}
         </div>
-        <div className='space-y-1 border-r-2 border-dashed border-primary/10 pr-6 text-right'>
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 leading-none'>
-            {t('tradingSalesOrder.detail.clientEntity')}
-          </p>
-          <p className='text-[14px] font-black tracking-tight text-foreground leading-none'>
-            {order.customerName}
-          </p>
-        </div>
-      </div>
-
-      {showClaimBanner && (
-        <div className='mt-3 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-2 animate-in slide-in-from-top-1'>
-          <div className='flex items-center gap-2 px-1'>
-            <Settings2 className='size-3 animate-spin-slow text-primary' />
-            <span className='text-[10px] font-black uppercase tracking-wider text-primary'>
-              {t('tradingSalesOrder.detail.pendingInstruction')}: {commandTitle}
-            </span>
-          </div>
-          <p className='text-[9px] font-bold italic text-muted-foreground'>{activeCommandContent}</p>
-        </div>
-      )}
-
-      <div className='mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-muted-foreground/10 pt-2'>
         {canSubmitPending && (
           <Button
             size='sm'
-            className='gap-1.5 rounded-xl bg-amber-500 text-[10px] font-black uppercase text-white hover:bg-amber-600'
+            className='h-7 gap-1.5 rounded-lg bg-amber-500 px-2 text-[10px] font-black uppercase text-white hover:bg-amber-600'
             onClick={() => onMutateStatus(submitPendingPayload)}
           >
             <FileCheck className='size-3.5' />
@@ -96,7 +70,7 @@ export function SalesOrderDetailHeader({
         {canStartProduction && (
           <Button
             size='sm'
-            className='gap-1.5 rounded-xl bg-primary text-[10px] font-black uppercase text-white shadow-lg shadow-primary/20 hover:bg-primary/90'
+            className='h-7 gap-1.5 rounded-lg bg-primary px-2 text-[10px] font-black uppercase text-white shadow-lg shadow-primary/20 hover:bg-primary/90'
             onClick={() => onMutateStatus(startProductionPayload)}
           >
             <Play className='size-3.5' />
@@ -106,7 +80,7 @@ export function SalesOrderDetailHeader({
         {canMarkDone && (
           <Button
             size='sm'
-            className='gap-1.5 rounded-xl bg-emerald-500 text-[10px] font-black uppercase text-white hover:bg-emerald-600'
+            className='h-7 gap-1.5 rounded-lg bg-emerald-500 px-2 text-[10px] font-black uppercase text-white hover:bg-emerald-600'
             onClick={() => onMutateStatus(markDonePayload)}
           >
             <CheckCircle className='size-3.5' />
@@ -117,7 +91,7 @@ export function SalesOrderDetailHeader({
           <Button
             size='sm'
             variant='ghost'
-            className='gap-1.5 rounded-xl text-[10px] font-black uppercase text-destructive hover:bg-destructive/10'
+            className='h-7 gap-1.5 rounded-lg px-2 text-[10px] font-black uppercase text-destructive hover:bg-destructive/10'
             onClick={() => {
               if (!confirm(cancelConfirmText)) return
               onMutateStatus(cancelPayload)
@@ -127,17 +101,28 @@ export function SalesOrderDetailHeader({
             {t('tradingSalesOrder.detail.cancelOrder')}
           </Button>
         )}
-        <div className='flex-1' />
         <Button
           size='sm'
           variant='outline'
-          className='gap-1.5 rounded-xl border-2 border-dashed text-[10px] font-black uppercase'
+          className='h-7 gap-1.5 rounded-lg border border-dashed px-2 text-[10px] font-black uppercase'
           onClick={handlePrint}
         >
           <Printer className='size-3.5' />
           {printLabel}
         </Button>
       </div>
+
+      {showClaimBanner && (
+        <div className='mt-1.5 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 animate-in slide-in-from-top-1'>
+          <div className='flex items-center gap-1.5'>
+            <Settings2 className='size-3 animate-spin-slow text-primary' />
+            <span className='text-[10px] font-black uppercase tracking-wide text-primary'>
+              {t('tradingSalesOrder.detail.pendingInstruction')}: {commandTitle}
+            </span>
+          </div>
+          <p className='text-[10px] font-bold text-muted-foreground'>{activeCommandContent}</p>
+        </div>
+      )}
     </div>
   )
 }

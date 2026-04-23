@@ -1,13 +1,90 @@
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
-import { NotificationService } from '@/features/system-mgmt/notifications/notification-service'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type SalesOrderFormValues, type SalesOrderLine } from '../../data/schema'
+import { type SalesOrder, type SalesOrderFormValues, type SalesOrderLine } from '../../data/schema'
 import { addSalesOrderLine, cancelSalesOrder, changeSalesOrderClassificationType, changeSalesOrderCustomer, changeSalesOrderDeliveryDate, changeSalesOrderLineContent, changeSalesOrderLines, changeSalesOrderPurchaseOrderNo, changeSalesOrderRequirements, claimSalesOrderLines, removeSalesOrderLine, transitionSalesOrderStatus } from '../services/sales-transaction-service'
 import { createSalesOrder, deleteSalesOrder, patchSalesOrder } from '../services/sales-service'
+
+interface SalesOrderListCache {
+  items: SalesOrder[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+function isSalesOrder(value: unknown): value is SalesOrder {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as Partial<SalesOrder>).id === 'string' &&
+    'status' in value
+  )
+}
+
+function isSalesOrderListCache(value: unknown): value is SalesOrderListCache {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    Array.isArray((value as Partial<SalesOrderListCache>).items)
+  )
+}
+
+const updateSalesOrderInCaches = (queryClient: QueryClient, order: SalesOrder) => {
+  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
+    if (isSalesOrderListCache(current)) {
+      return {
+        ...current,
+        items: current.items.map((item) => (item.id === order.id ? { ...item, ...order } : item)),
+      }
+    }
+    if (isSalesOrder(current) && current.id === order.id) {
+      return { ...current, ...order }
+    }
+    return current
+  })
+}
+
+const removeSalesOrderFromCaches = (queryClient: QueryClient, orderId: string) => {
+  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
+    if (isSalesOrderListCache(current)) {
+      const items = current.items.filter((item) => item.id !== orderId)
+      return {
+        ...current,
+        items,
+        total: Math.max(0, current.total - (items.length === current.items.length ? 0 : 1)),
+      }
+    }
+    if (isSalesOrder(current) && current.id === orderId) {
+      return undefined
+    }
+    return current
+  })
+}
+
+const markSalesOrderCanceledInCaches = (queryClient: QueryClient, orderId: string) => {
+  queryClient.setQueriesData({ queryKey: tradingQueryKeys.salesOrdersRoot() }, (current: unknown) => {
+    if (isSalesOrderListCache(current)) {
+      return {
+        ...current,
+        items: current.items.map((item) =>
+          item.id === orderId ? { ...item, status: 'Canceled' as const } : item
+        ),
+      }
+    }
+    if (isSalesOrder(current) && current.id === orderId) {
+      return { ...current, status: 'Canceled' as const }
+    }
+    return current
+  })
+}
+
+const isAlreadyCanceledError = (error: unknown) => {
+  if (!(error instanceof Error)) return false
+  return error.message.toLowerCase().includes('order already canceled')
+}
 
 const invalidateSalesOrderReads = async (queryClient: QueryClient, orderId?: string) => {
   await Promise.all([
@@ -34,21 +111,6 @@ export const useSalesOrderMutations = () => {
   const createMutation = useMutation({
     mutationFn: (data: SalesOrderFormValues) => createSalesOrder(data),
     onSuccess: (data) => {
-      if (data.status === 'Pending') {
-        NotificationService.dispatch('ORDER_EVENT', {
-          action: 'STATUS_CHANGED',
-          targetStatus: 'Pending',
-          title: t('tradingSalesOrder.notifications.pendingClaimTitle'),
-          content: t('tradingSalesOrder.notifications.pendingClaimContent', {
-            orderNo: data.orderNo,
-            customerName: data.customerName,
-          }),
-          priority: 'info',
-          actionUrl: `/trading/sales-orders?search=${data.orderNo}&detailId=${data.id}`,
-          metadata: { orderId: data.id, orderNo: data.orderNo, OrderNo: data.orderNo, OrderId: data.id },
-        })
-      }
-
       handleSavedSuccess(data.id)
     },
     onError: handleServerError,
@@ -281,13 +343,26 @@ export const useSalesOrderMutations = () => {
       expectedVersion: number
       actorId?: string
     }) => cancelSalesOrder(orderId, { operator, reason, expectedVersion, actorId }),
-    onSuccess: (data) => handleVoidedSuccess(data.id),
-    onError: handleServerError,
+    onSuccess: (data) => {
+      updateSalesOrderInCaches(queryClient, data)
+      handleVoidedSuccess(data.id)
+    },
+    onError: (error, variables) => {
+      if (isAlreadyCanceledError(error)) {
+        markSalesOrderCanceledInCaches(queryClient, variables.orderId)
+        handleVoidedSuccess(variables.orderId)
+        return
+      }
+      handleServerError(error)
+    },
   })
 
   const deleteMutation = useMutation({
     mutationFn: deleteSalesOrder,
-    onSuccess: () => handleVoidedSuccess(),
+    onSuccess: (_data, orderId) => {
+      removeSalesOrderFromCaches(queryClient, orderId)
+      handleVoidedSuccess()
+    },
     onError: handleServerError,
   })
 

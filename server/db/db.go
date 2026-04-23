@@ -867,6 +867,8 @@ func InitDB(dsn string) {
 		&models.Mold{},
 		&models.Furnace{},
 		&models.MoldLoan{},
+		&models.PrepregMaterialSpec{},
+		&models.PrepregLabelOcrSession{},
 		&models.Material{},
 		&models.PackagingRule{},
 		&models.PackagingProfile{},

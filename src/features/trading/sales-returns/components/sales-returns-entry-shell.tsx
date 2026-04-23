@@ -24,11 +24,19 @@ import { SalesReturnSourceOrderSpotlight } from './sales-return-source-order-spo
 
 const sourceOrderStatusOptions = [
   'all',
-  'Draft',
-  'Pending',
   'InProgress',
   'Done',
 ]
+
+function canCreateReturn(order: SalesOrder) {
+  if (!order.availableActions || order.availableActions.length === 0) {
+    return false
+  }
+
+  return order.availableActions.some(
+    (item) => item.action === 'createReturn' && item.allowed
+  )
+}
 
 type SalesReturnsEntryShellProps = {
   searchTerm: string
@@ -103,6 +111,9 @@ export function SalesReturnsEntryShell({
     isSourceDetailLoading || Boolean(selectedSourceOrder)
 
   const handleStartReturn = (order: SalesOrder) => {
+    if (!canCreateReturn(order)) {
+      return
+    }
     setCreateOrder(order)
   }
 

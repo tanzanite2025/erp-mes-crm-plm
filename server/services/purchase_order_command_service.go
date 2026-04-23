@@ -267,6 +267,9 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 		if order.OrderNo == "" && originalID != "" {
 			order.OrderNo = originalID
 		}
+		if strings.TrimSpace(order.Status) == "" {
+			order.Status = "Draft"
+		}
 		if strings.TrimSpace(order.ID) == "" {
 			order.ID = uuid.NewString()
 		}
@@ -293,6 +296,9 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 			return err
 		}
 		if err := recordAuditEventTx(tx, trading_audit.BuildPurchaseOrderWorkflowEvent(order.ID, workflowInstance.ID, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "workflow"})); err != nil {
+			return err
+		}
+		if err := DispatchPurchaseOrderStatusChangedTx(tx, order, "", order.Status, requesterID, operator); err != nil {
 			return err
 		}
 		created = order

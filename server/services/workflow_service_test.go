@@ -99,6 +99,19 @@ func setupWorkflowServiceTestDB(t *testing.T) *gorm.DB {
 		)
 	`).Error)
 
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE sales_orders (
+			id TEXT PRIMARY KEY NOT NULL,
+			order_no TEXT,
+			status TEXT,
+			workflow_instance_id TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			is_deleted BOOLEAN DEFAULT FALSE,
+			version INTEGER DEFAULT 1
+		)
+	`).Error)
+
 	return testDB
 }
 
@@ -235,6 +248,46 @@ func TestApproveWorkflowTaskFinalizedPurchaseOrderTransitionsToSent(t *testing.T
 	var purchaseOrder models.PurchaseOrder
 	require.NoError(t, testDB.Where("id = ?", "po-approved-1").First(&purchaseOrder).Error)
 	require.Equal(t, "Sent", purchaseOrder.Status)
+}
+
+func TestApproveWorkflowTaskFinalizedSalesOrderTransitionsThroughStateMachine(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupWorkflowServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	seedWorkflowDefinition(t, testDB, WorkflowModuleSalesOrder, `{"startNodeId":"n1","nodes":[{"nodeId":"n1","assigneeUserId":"u-approver"}]}`)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_orders (id, order_no, status, created_at, updated_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, "so-approved-1", "SO-APP-001", "Draft", time.Now(), time.Now(), false, 1).Error)
+
+	var instance *models.WorkflowInstance
+	require.NoError(t, testDB.Transaction(func(tx *gorm.DB) error {
+		created, err := CreateWorkflowInstanceForDocumentTx(tx, WorkflowModuleSalesOrder, "SALES_ORDER", "so-approved-1", "u-requester")
+		if err != nil {
+			return err
+		}
+		instance = created
+		return tx.Model(&models.SalesOrder{}).Where("id = ?", "so-approved-1").Update("workflow_instance_id", created.ID).Error
+	}))
+
+	var task models.WorkflowTask
+	require.NoError(t, testDB.Where("instance_id = ?", instance.ID).First(&task).Error)
+
+	approved, err := ApproveWorkflowTask(task.ID, "u-approver", "approved")
+	require.NoError(t, err)
+	require.Equal(t, models.WorkflowInstanceStatusApproved, approved.Status)
+
+	var salesOrder models.SalesOrder
+	require.NoError(t, testDB.Where("id = ?", "so-approved-1").First(&salesOrder).Error)
+	require.Equal(t, "Pending", salesOrder.Status)
 }
 
 func TestRejectWorkflowTask(t *testing.T) {

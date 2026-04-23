@@ -45,9 +45,31 @@ function normalizeNotificationRuleInput(input: unknown) {
     return input
   }
 
-  const rule = input as { segments?: unknown[] }
+  const rule = input as {
+    entity?: string
+    sourceCode?: string
+    actionCode?: string
+    segments?: unknown[]
+  }
+  const entity = (rule.entity ?? 'ORDER').trim()
+  const sourceCode = (rule.sourceCode ?? '').trim()
+  const normalizedSourceCode =
+    entity === 'ORDER' && (sourceCode === '' || sourceCode === 'ORDER')
+      ? 'SALES_ORDER'
+      : sourceCode
+  const forceStatusChanged =
+    (entity === 'ORDER' &&
+      ['SALES_ORDER', 'PURCHASE_ORDER'].includes(normalizedSourceCode)) ||
+    (entity === 'SYSTEM' &&
+      ['PRODUCTION_PLAN', 'PRODUCTION_TASK'].includes(normalizedSourceCode))
+
   return {
     ...rule,
+    entity,
+    sourceCode: normalizedSourceCode,
+    actionCode: forceStatusChanged
+      ? 'STATUS_CHANGED'
+      : rule.actionCode?.trim(),
     segments: Array.isArray(rule.segments)
       ? rule.segments.map((segment, index) =>
           normalizeRuleSegmentInput(segment, index)

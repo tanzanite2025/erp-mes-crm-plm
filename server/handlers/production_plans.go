@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -13,7 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetProductionPlansHandler 获取生产计划 (支持分页与看板聚合)
 func GetProductionPlansHandler(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
@@ -57,7 +57,6 @@ func GetProductionPlansHandler(c *gin.Context) {
 	})
 }
 
-// SaveProductionPlanHandler 保存生产计划 (原子事务)
 func SaveProductionPlanHandler(c *gin.Context) {
 	var plan models.ProductionPlan
 	if err := c.ShouldBindJSON(&plan); err != nil {
@@ -70,7 +69,16 @@ func SaveProductionPlanHandler(c *gin.Context) {
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. 如果有关联销售订单，验证其存在性
+		var previousPlan models.ProductionPlan
+		hasPreviousPlan := false
+		if strings.TrimSpace(plan.ID) != "" {
+			if err := tx.Preload("Tasks").Where("id = ?", strings.TrimSpace(plan.ID)).First(&previousPlan).Error; err == nil {
+				hasPreviousPlan = true
+			} else if err != nil && err != gorm.ErrRecordNotFound {
+				return err
+			}
+		}
+
 		if plan.OrderID != "" {
 			var order models.SalesOrder
 			if err := tx.First(&order, "id = ?", plan.OrderID).Error; err != nil {
@@ -78,22 +86,40 @@ func SaveProductionPlanHandler(c *gin.Context) {
 			}
 		}
 
-		// 2. 区分新增与更新，防止元数据全量擦除
 		if plan.ID != "" {
-			// 更新模式：局部更新主表字段，防止擦除 CreatedAt
 			if err := tx.Model(&plan).Omit("CreatedAt", "Tasks").Updates(&plan).Error; err != nil {
 				return err
 			}
-			// 同步生产任务关联 (GORM 会自动处理删除、更新、新增)
 			if err := tx.Model(&plan).Association("Tasks").Replace(plan.Tasks); err != nil {
 				return err
 			}
 		} else {
-			// 新增模式：直接 Save (会触发 Create)
 			if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&plan).Error; err != nil {
 				return err
 			}
 		}
+
+		var savedPlan models.ProductionPlan
+		if err := tx.Preload("Tasks").Where("id = ?", plan.ID).First(&savedPlan).Error; err != nil {
+			return err
+		}
+		previousPlanStatus := ""
+		previousTaskStatusByID := map[string]string{}
+		if hasPreviousPlan {
+			previousPlanStatus = previousPlan.Status
+			for _, task := range previousPlan.Tasks {
+				previousTaskStatusByID[task.ID] = task.Status
+			}
+		}
+		if err := services.DispatchProductionPlanStatusChangedTx(tx, savedPlan, previousPlanStatus, savedPlan.Status, "", ""); err != nil {
+			return err
+		}
+		for _, task := range savedPlan.Tasks {
+			if err := services.DispatchProductionTaskStatusChangedTx(tx, savedPlan, task, previousTaskStatusByID[task.ID], task.Status, "", task.Operator); err != nil {
+				return err
+			}
+		}
+		plan = savedPlan
 
 		return nil
 	})
@@ -103,29 +129,24 @@ func SaveProductionPlanHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, plan)
+	c.JSON(http.StatusOK, services.MapProductionPlansToResponse([]models.ProductionPlan{plan})[0])
 }
 
-// GetProductionStatsHandler 获取看板核心统计指标
 func GetProductionStatsHandler(c *gin.Context) {
 	var stats models.ProductionStats
 	today := time.Now().Truncate(24 * time.Hour)
 
-	// 1. 累计指标
 	db.DB.Model(&models.ProductionPlan{}).Count(&stats.TotalPlans)
 	db.DB.Model(&models.ProductionPlan{}).Select("SUM(quantity)").Scan(&stats.TotalQuantity)
 
-	// 2. 运行时指标 (WIP)
 	db.DB.Model(&models.ProductionPlan{}).
 		Where("status IN ?", []string{"IN_PROGRESS", "SCHEDULED"}).
 		Select("SUM(quantity)").Scan(&stats.ActiveWIP)
 
-	// 3. 今日完工
 	db.DB.Model(&models.ProductionTask{}).
 		Where("status = ? AND completed_at >= ?", "DONE", today).
 		Select("COUNT(*)").Scan(&stats.CompletedToday)
 
-	// 4. 逾期预警
 	db.DB.Model(&models.ProductionPlan{}).
 		Where("status != ? AND end_date < ?", "COMPLETED", time.Now()).
 		Count(&stats.DelayedCount)
@@ -133,10 +154,8 @@ func GetProductionStatsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.ProductionStatsEnvelopeResponse{Item: services.MapProductionStatsToResponse(stats)})
 }
 
-// GetOrderProgressHandler 聚合订单进度 (看板专用)
 func GetOrderProgressHandler(c *gin.Context) {
 	results := make([]services.OrderProgressItemResponse, 0)
-	// 联表查询：销售订单 + 生产计划汇总
 	query := `
 		SELECT 
 			so.id, 

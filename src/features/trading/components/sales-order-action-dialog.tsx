@@ -77,7 +77,7 @@ export function SalesOrderActionDialog({
     isInitializing,
     initError,
     retryInit,
-  } = useSalesOrderForm(order, open)
+  } = useSalesOrderForm(order, open, products)
 
   const { handleSave } = useSalesOrderSave({
     order,

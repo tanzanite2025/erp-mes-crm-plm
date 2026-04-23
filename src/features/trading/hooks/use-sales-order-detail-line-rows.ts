@@ -10,10 +10,16 @@ export interface SalesOrderLineRow {
   deliveredTextClass: string
   deliveredBarClass: string
   routeLabel: string
-  jobNoLabel: string
-  customerPartNoLabel: string
   specificationLabel: string
   descriptionLabel: string
+  appearanceNameLabel: string
+  appearanceCodeLabel: string
+  appearanceDescriptionLabel: string
+  appearanceImageUrl: string
+  holeCountLabel: string
+  quantityLabel: string
+  modelCodeSnapshotLabel: string
+  holePrefixSnapshotLabel: string
 }
 
 export function useSalesOrderDetailLineRows(order: SalesOrder) {
@@ -32,10 +38,16 @@ export function useSalesOrderDetailLineRows(order: SalesOrder) {
         deliveredTextClass: deliveredQty > 0 ? 'text-primary' : 'text-foreground',
         deliveredBarClass: deliveredQty >= line.qty ? 'bg-emerald-500' : 'bg-primary',
         routeLabel: line.route || '',
-        jobNoLabel: line.jobNo || '-',
-        customerPartNoLabel: line.customerPartNo || '-',
         specificationLabel: line.specification || '',
         descriptionLabel: line.description || '',
+        appearanceNameLabel: line.appearanceNameSnapshot || '',
+        appearanceCodeLabel: line.appearanceBarcodeCodeSnapshot || '',
+        appearanceDescriptionLabel: line.appearanceDescriptionSnapshot || '',
+        appearanceImageUrl: line.appearanceImageUrlSnapshot || '',
+        holeCountLabel: line.holeCount !== undefined ? String(line.holeCount) : '',
+        quantityLabel: line.qty.toLocaleString(),
+        modelCodeSnapshotLabel: line.modelCodeSnapshot || '',
+        holePrefixSnapshotLabel: line.holePrefixSnapshot || '',
       }
     })
   }, [order.id, order.lines])

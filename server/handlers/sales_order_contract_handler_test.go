@@ -392,6 +392,9 @@ func TestPatchSalesOrderHandlerContractIncludesLinesArray(t *testing.T) {
 func TestExecuteSalesOrderTransactionHandlerContractIncludesLinesArray(t *testing.T) {
 	testDB := setupSalesOrderContractHandlerDB(t)
 	order := seedSalesOrderContractHandlerFixture(t, testDB)
+	require.NoError(t, testDB.Model(&models.SalesOrder{}).
+		Where("id = ?", order.ID).
+		Update("status", "InProgress").Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)

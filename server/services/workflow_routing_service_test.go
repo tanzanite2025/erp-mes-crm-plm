@@ -95,6 +95,36 @@ func seedWorkflowRoutingEventSource(t *testing.T, testDB *gorm.DB) {
 			"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
 		}`),
 	}).Error)
+	require.NoError(t, testDB.Create(&models.BusinessEventSource{
+		BaseModel: models.BaseModel{ID: "source-2"},
+		Code:      "PURCHASE_ORDER",
+		Name:      "Purchase Order",
+		Module:    "Trading",
+		Entity:    "ORDER",
+		Enabled:   true,
+		Config: []byte(`{
+			"actions":[{"id":"action-1","order":0,"code":"STATUS_CHANGED","name":"Status Changed","kind":"status"}],
+			"statuses":[{"id":"status-1","order":0,"code":"Received","label":"Received","phase":"done","isTerminal":true,"defaultResolve":true}],
+			"fields":[],
+			"dynamicResolvers":[],
+			"defaultActionUrlTemplate":"/purchase/orders/[PurchaseOrderId]"
+		}`),
+	}).Error)
+	require.NoError(t, testDB.Create(&models.BusinessEventSource{
+		BaseModel: models.BaseModel{ID: "source-3"},
+		Code:      "PRODUCTION_PLAN",
+		Name:      "Production Plan",
+		Module:    "Production",
+		Entity:    "SYSTEM",
+		Enabled:   true,
+		Config: []byte(`{
+			"actions":[{"id":"action-1","order":0,"code":"STATUS_CHANGED","name":"Status Changed","kind":"status"}],
+			"statuses":[{"id":"status-1","order":0,"code":"COMPLETED","label":"Completed","phase":"done","isTerminal":true,"defaultResolve":true}],
+			"fields":[],
+			"dynamicResolvers":[],
+			"defaultActionUrlTemplate":"/dashboard/calendar?planId=[PlanId]"
+		}`),
+	}).Error)
 }
 
 func TestMapNotificationRuleRequestToModel_NormalizesMissingSegmentID(t *testing.T) {
@@ -145,6 +175,107 @@ func TestMapNotificationRuleToResponse_NormalizesLegacySegmentIDs(t *testing.T) 
 	require.NoError(t, err)
 	require.Len(t, response.Segments, 1)
 	require.Equal(t, "segment-pending-review-pending-1", response.Segments[0].ID)
+}
+
+func TestListNotificationRules_MigratesSalesOrderRulesToStatusChangedEvent(t *testing.T) {
+	testDB := setupWorkflowRoutingServiceTestDB(t)
+	seedWorkflowRoutingEventSource(t, testDB)
+
+	require.NoError(t, testDB.Create(&models.NotificationRule{
+		BaseModel:  models.BaseModel{ID: "rule-legacy-sales"},
+		Name:       "Legacy sales approval",
+		Enabled:    true,
+		Entity:     "ORDER",
+		SourceCode: "ORDER",
+		ActionCode: "ORDER_REVIEW",
+		Segments: []byte(`[{
+			"id":"segment-1",
+			"title":"Pending approval",
+			"targetStatuses":["Pending"],
+			"commandIds":[],
+			"assigneeRoles":[],
+			"assigneeUsernames":[],
+			"resolveOnStatuses":["Done"],
+			"dynamicRoleField":null
+		}]`),
+		Version: 1,
+	}).Error)
+
+	rules, err := ListNotificationRules()
+	require.NoError(t, err)
+	require.Len(t, rules, 1)
+	require.Equal(t, "ORDER", rules[0].Entity)
+	require.Equal(t, "SALES_ORDER", rules[0].SourceCode)
+	require.Equal(t, "STATUS_CHANGED", rules[0].ActionCode)
+
+	var stored models.NotificationRule
+	require.NoError(t, testDB.First(&stored, "id = ?", "rule-legacy-sales").Error)
+	require.Equal(t, "SALES_ORDER", stored.SourceCode)
+	require.Equal(t, "STATUS_CHANGED", stored.ActionCode)
+}
+
+func TestCreateNotificationRule_MigratesSalesOrderRulesBeforeValidation(t *testing.T) {
+	testDB := setupWorkflowRoutingServiceTestDB(t)
+	seedWorkflowRoutingEventSource(t, testDB)
+
+	rule, err := MapNotificationRuleRequestToModel(NotificationRuleRequest{
+		Name:       "Legacy sales action",
+		Enabled:    true,
+		Entity:     "ORDER",
+		SourceCode: "SALES_ORDER",
+		ActionCode: "SALES_ORDER_PENDING_APPROVAL",
+		Segments: []RuleSegmentDTO{
+			{
+				ID:             "segment-1",
+				Title:          "Pending",
+				TargetStatuses: []string{"Pending"},
+			},
+		},
+		Version: 1,
+	})
+	require.NoError(t, err)
+
+	created, err := CreateNotificationRule(rule)
+	require.NoError(t, err)
+	require.Equal(t, "SALES_ORDER", created.SourceCode)
+	require.Equal(t, "STATUS_CHANGED", created.ActionCode)
+}
+
+func TestCreateNotificationRule_MigratesPurchaseAndProductionRulesBeforeValidation(t *testing.T) {
+	testDB := setupWorkflowRoutingServiceTestDB(t)
+	seedWorkflowRoutingEventSource(t, testDB)
+
+	purchaseRule, err := MapNotificationRuleRequestToModel(NotificationRuleRequest{
+		Name:       "Purchase received",
+		Enabled:    true,
+		Entity:     "ORDER",
+		SourceCode: "PURCHASE_ORDER",
+		ActionCode: "RECEIVED",
+		Segments: []RuleSegmentDTO{
+			{ID: "segment-1", Title: "Received", TargetStatuses: []string{"Received"}},
+		},
+		Version: 1,
+	})
+	require.NoError(t, err)
+	createdPurchase, err := CreateNotificationRule(purchaseRule)
+	require.NoError(t, err)
+	require.Equal(t, "STATUS_CHANGED", createdPurchase.ActionCode)
+
+	productionRule, err := MapNotificationRuleRequestToModel(NotificationRuleRequest{
+		Name:       "Production completed",
+		Enabled:    true,
+		Entity:     "SYSTEM",
+		SourceCode: "PRODUCTION_PLAN",
+		ActionCode: "COMPLETED",
+		Segments: []RuleSegmentDTO{
+			{ID: "segment-1", Title: "Completed", TargetStatuses: []string{"COMPLETED"}},
+		},
+		Version: 1,
+	})
+	require.NoError(t, err)
+	createdProduction, err := CreateNotificationRule(productionRule)
+	require.NoError(t, err)
+	require.Equal(t, "STATUS_CHANGED", createdProduction.ActionCode)
 }
 
 func TestUpdateNotificationRule_AllowsEmptySegments(t *testing.T) {

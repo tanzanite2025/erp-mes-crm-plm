@@ -104,6 +104,8 @@ export function SalesOrderList() {
       permission: 'action_trading_sales_order_delete',
       confirmKey: 'common.actions.delete',
       onAction: () => {
+        if (cancelMutation.isPending || deleteMutation.isPending) return
+
         const order = orders.find((item) => item.id === id)
         if (!order) return
         if (order.status === 'Canceled') {
@@ -129,6 +131,8 @@ export function SalesOrderList() {
       permission: 'action_trading_sales_order_delete',
       confirmKey: 'common.actions.delete',
       onAction: () => {
+        if (cancelMutation.isPending || deleteMutation.isPending) return
+
         if (order.status === 'Canceled') {
           deleteMutation.mutate(order.id)
           return

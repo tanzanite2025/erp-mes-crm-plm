@@ -17,7 +17,9 @@ export const tradingSalesOrder = {
     saveFailed: "保存销售订单失败"
   },
   errors: {
-    missingActor: "缺少有效的交易操作者"
+    missingActor: "缺少有效的交易操作者",
+    lineProductMissing: "订单第 {{lineNo}} 行未绑定产品，无法固化条码快照。",
+    lineBarcodeConfigMissing: "订单第 {{lineNo}} 行缺少产品条码配置，无法固化型号编码或孔型前缀。"
   },
   detail: {
     backToList: "返回台账",

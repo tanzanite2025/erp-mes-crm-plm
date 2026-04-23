@@ -12,16 +12,22 @@ export interface PaginatedSalesOrders {
   pageSize: number
 }
 
+function normalizeApiStatus(status: string): string {
+  return status.trim().toLowerCase().replace(/[\s_-]/g, '')
+}
+
 function normalizeSalesOrderLineStatus(
   status: SalesOrderLineApiDTO['status']
 ): SalesOrderLine['status'] {
-  if (status === 'InProgress') {
+  const normalizedStatus = normalizeApiStatus(status)
+
+  if (normalizedStatus === 'inprogress') {
     return 'InProgress'
   }
-  if (status === 'Completed') {
+  if (normalizedStatus === 'completed' || normalizedStatus === 'done') {
     return 'Done'
   }
-  if (status === 'Cancelled') {
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') {
     return 'Canceled'
   }
   return 'Pending'
@@ -35,6 +41,8 @@ function toSalesOrderLineContract(dto: SalesOrderLineApiDTO): SalesOrderLine {
     productModel: dto.productModel,
     productCode: dto.productCode,
     specification: dto.specification,
+    modelCodeSnapshot: dto.modelCodeSnapshot,
+    holePrefixSnapshot: dto.holePrefixSnapshot,
     description: dto.description,
     qty: dto.qty,
     uom: dto.uom,
@@ -65,6 +73,8 @@ function toSalesOrderLineApiDTO(line: SalesOrderLine): SalesOrderLineApiDTO {
     productModel: line.productModel,
     productCode: line.productCode,
     specification: line.specification,
+    modelCodeSnapshot: line.modelCodeSnapshot,
+    holePrefixSnapshot: line.holePrefixSnapshot,
     description: line.description,
     qty: line.qty,
     uom: line.uom,
@@ -90,19 +100,21 @@ function toSalesOrderLineApiDTO(line: SalesOrderLine): SalesOrderLineApiDTO {
 function normalizeSalesOrderStatus(
   status: SalesOrderApiDTO['status']
 ): SalesOrder['status'] {
-  if (status === 'Draft') {
+  const normalizedStatus = normalizeApiStatus(status)
+
+  if (normalizedStatus === 'draft') {
     return 'Draft'
   }
-  if (status === 'Completed') {
+  if (normalizedStatus === 'completed' || normalizedStatus === 'done') {
     return 'Done'
   }
-  if (status === 'Cancelled') {
+  if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') {
     return 'Canceled'
   }
   if (
-    status === 'Confirmed' ||
-    status === 'Shipped' ||
-    status === 'InProgress'
+    normalizedStatus === 'confirmed' ||
+    normalizedStatus === 'shipped' ||
+    normalizedStatus === 'inprogress'
   ) {
     return 'InProgress'
   }
@@ -140,6 +152,7 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     version: dto.version ?? 1,
     evidences: dto.evidences ?? [],
     fulfillmentRate: dto.fulfillmentRate,
+    availableActions: dto.availableActions ?? [],
     lines: (dto.lines ?? []).map(toSalesOrderLineContract),
   }
 }
@@ -174,6 +187,7 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     isDeleted: order.isDeleted,
     version: order.version,
     evidences: order.evidences,
+    availableActions: order.availableActions,
     lines: (order.lines ?? []).map(toSalesOrderLineApiDTO),
   }
 }

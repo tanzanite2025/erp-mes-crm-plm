@@ -50,7 +50,7 @@ export function SalesOrderDetailContent({
   setIsPDFOpen,
 }: SalesOrderDetailContentProps) {
   return (
-    <div className='space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500'>
+    <div className='space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500'>
       <SalesOrderDetailHeader
         order={order}
         isClaimAction={isClaimAction}

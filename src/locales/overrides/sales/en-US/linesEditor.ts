@@ -25,6 +25,7 @@ export const linesEditor = {
       appearanceCode: 'Appearance Code',
       appearancePreviewEmpty: 'No appearance image selected',
       appearanceDescriptionEmpty: 'No appearance description',
+      detailPreview: 'Detail Preview',
       drillingPlan: 'Drilling Plan',
       labelingPlan: 'Labeling Plan',
       holeCount: 'Hole Count',

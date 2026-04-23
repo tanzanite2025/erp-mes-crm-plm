@@ -8,6 +8,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -161,10 +162,6 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 		return CreateSalesReturnResult{}, err
 	}
 
-	if order.Status == "Draft" || order.Status == "Canceled" {
-		return CreateSalesReturnResult{}, errors.New("sales order status does not allow return")
-	}
-
 	lineMap := make(map[uint]models.SalesOrderLine, len(order.Lines))
 	for _, line := range order.Lines {
 		lineMap[line.ID] = line
@@ -195,6 +192,9 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 		for _, row := range rows {
 			returnedQuantityMap[row.SalesOrderLineID] = row.ReturnedQuantity
 		}
+	}
+	if guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, nil); !guard.Allowed {
+		return CreateSalesReturnResult{}, guard.Err()
 	}
 
 	returnNo, err := generateSalesReturnNoTx(tx, input.ReturnDate)
@@ -245,9 +245,11 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 			return CreateSalesReturnResult{}, errors.New("sales order line not found")
 		}
 
-		remaining := orderLine.Qty - returnedQuantityMap[item.SalesOrderLineID]
-		if item.Quantity > remaining+purchaseReceiptTolerance {
-			return CreateSalesReturnResult{}, errors.New("return quantity exceeds remaining returnable quantity")
+		guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, map[uint]float64{
+			item.SalesOrderLineID: item.Quantity,
+		})
+		if !guard.Allowed {
+			return CreateSalesReturnResult{}, guard.Err()
 		}
 
 		price := item.Price

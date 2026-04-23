@@ -15,6 +15,16 @@ type SalesReturnSourceOrderSpotlightProps = {
   onStartReturn: (order: SalesOrder) => void
 }
 
+function canCreateReturn(order: SalesOrder) {
+  if (!order.availableActions || order.availableActions.length === 0) {
+    return false
+  }
+
+  return order.availableActions.some(
+    (item) => item.action === 'createReturn' && item.allowed
+  )
+}
+
 export function SalesReturnSourceOrderSpotlight({
   order,
   isLoading,
@@ -38,6 +48,7 @@ export function SalesReturnSourceOrderSpotlight({
   }
 
   const statusMeta = getSalesStatusMeta(order.status)
+  const isReturnAllowed = canCreateReturn(order)
 
   return (
     <Card className='rounded-2xl border border-dashed border-primary/20 bg-primary/5 shadow-none'>
@@ -54,7 +65,11 @@ export function SalesReturnSourceOrderSpotlight({
           <Button
             type='button'
             size='sm'
-            onClick={() => onStartReturn(order)}
+            disabled={!isReturnAllowed}
+            onClick={() => {
+              if (!isReturnAllowed) return
+              onStartReturn(order)
+            }}
             className='rounded-full text-[10px] font-black tracking-widest uppercase'
           >
             {t('trading.salesReturns.entryShell.sourceAction')}

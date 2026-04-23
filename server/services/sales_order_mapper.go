@@ -114,7 +114,7 @@ func mapSalesOrderLineToResponseWithReturnMetrics(line models.SalesOrderLine, re
 	if returnedQuantityMap != nil {
 		returnedQuantity = math.Round(returnedQuantityMap[line.ID]*100) / 100
 	}
-	remainingReturnableQuantity := math.Round((line.Qty-returnedQuantity)*100) / 100
+	remainingReturnableQuantity := math.Round((line.DeliveredQty-returnedQuantity)*100) / 100
 	if remainingReturnableQuantity < purchaseReceiptTolerance {
 		remainingReturnableQuantity = 0
 	}
@@ -215,6 +215,7 @@ func MapSalesOrderToResponseWithReturnMetrics(order models.SalesOrder, returnedQ
 		IsDeleted:          order.IsDeleted,
 		Version:            order.Version,
 		FulfillmentRate:    calculateSalesOrderFulfillmentRate(order),
+		AvailableActions:   buildSalesOrderAvailableActions(order, returnedQuantityMap),
 		Lines:              lines,
 	}
 }
@@ -296,6 +297,7 @@ func MapSalesOrdersToListItemsWithReturnMetrics(orders []models.SalesOrder, incl
 			IsDeleted:          order.IsDeleted,
 			Version:            order.Version,
 			FulfillmentRate:    calculateSalesOrderFulfillmentRate(order),
+			AvailableActions:   buildSalesOrderAvailableActions(order, returnedQuantityMap),
 			Lines:              lines,
 		})
 	}

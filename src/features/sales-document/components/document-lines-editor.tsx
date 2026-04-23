@@ -10,6 +10,60 @@ import { useSalesOrderLinesEditorViewModel } from '@/features/trading/hooks/use-
 
 type SalesOrderLineFieldValue = SalesOrderLine[keyof SalesOrderLine]
 
+interface LineDetailPreviewProps {
+  line: SalesOrderLine
+  title: string
+  appearanceLabel: string
+  appearanceCodeLabel: string
+  holeCountLabel: string
+  quantityLabel: string
+  appearanceEmptyLabel: string
+}
+
+function LineDetailPreview({
+  line,
+  title,
+  appearanceLabel,
+  appearanceCodeLabel,
+  holeCountLabel,
+  quantityLabel,
+  appearanceEmptyLabel,
+}: LineDetailPreviewProps) {
+  return (
+    <div className='rounded-xl border border-dashed bg-background/70 px-3 py-2'>
+      <div className='mb-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+        {title}
+      </div>
+      <div className='grid gap-1'>
+        <div className='flex items-center justify-between gap-3 text-[10px]'>
+          <span className='font-black text-muted-foreground/60'>{appearanceLabel}</span>
+          <span className='truncate text-right font-bold'>
+            {line.appearanceNameSnapshot || appearanceEmptyLabel}
+          </span>
+        </div>
+        <div className='flex items-center justify-between gap-3 text-[10px]'>
+          <span className='font-black text-muted-foreground/60'>{appearanceCodeLabel}</span>
+          <span className='font-mono font-bold'>
+            {line.appearanceBarcodeCodeSnapshot || '--'}
+          </span>
+        </div>
+        <div className='flex items-center justify-between gap-3 text-[10px]'>
+          <span className='font-black text-muted-foreground/60'>{holeCountLabel}</span>
+          <span className='font-mono font-bold'>
+            {line.holeCount?.toString() || '--'}
+          </span>
+        </div>
+        <div className='flex items-center justify-between gap-3 text-[10px]'>
+          <span className='font-black text-muted-foreground/60'>{quantityLabel}</span>
+          <span className='font-mono font-bold'>
+            {line.qty.toLocaleString()} {line.uom}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface DocumentLinesEditorProps {
   appearances: ProductAppearance[]
   lines: SalesOrderLine[]
@@ -41,6 +95,12 @@ export function DocumentLinesEditor({
   onLineChange,
 }: DocumentLinesEditorProps) {
   const { t } = useLanguage()
+  const detailPreviewLabel = t('tradingSalesOrder.linesEditor.detailPreview')
+  const appearanceLabel = t('tradingSalesOrder.linesEditor.appearance')
+  const appearanceCodeLabel = t('tradingSalesOrder.linesEditor.appearanceCode')
+  const holeCountLabel = t('tradingSalesOrder.linesEditor.holeCount')
+  const quantityLabel = t('tradingSalesOrder.linesEditor.quantity')
+  const appearanceEmptyLabel = t('tradingSalesOrder.linesEditor.appearancePreviewEmpty')
   const {
     appearanceOptions,
     currencySymbol,
@@ -160,6 +220,15 @@ export function DocumentLinesEditor({
                         </div>
                       </div>
                     </div>
+                    <LineDetailPreview
+                      line={line}
+                      title={detailPreviewLabel}
+                      appearanceLabel={appearanceLabel}
+                      appearanceCodeLabel={appearanceCodeLabel}
+                      holeCountLabel={holeCountLabel}
+                      quantityLabel={quantityLabel}
+                      appearanceEmptyLabel={appearanceEmptyLabel}
+                    />
                   </div>
                 </td>
                 <td className='px-2'>
@@ -331,6 +400,17 @@ export function DocumentLinesEditor({
                 <div className='text-[10px] leading-4 text-muted-foreground'>
                   {line.appearanceDescriptionSnapshot || t('tradingSalesOrder.linesEditor.appearanceDescriptionEmpty')}
                 </div>
+              </div>
+              <div className='mt-3'>
+                <LineDetailPreview
+                  line={line}
+                  title={detailPreviewLabel}
+                  appearanceLabel={appearanceLabel}
+                  appearanceCodeLabel={appearanceCodeLabel}
+                  holeCountLabel={holeCountLabel}
+                  quantityLabel={quantityLabel}
+                  appearanceEmptyLabel={appearanceEmptyLabel}
+                />
               </div>
             </div>
 

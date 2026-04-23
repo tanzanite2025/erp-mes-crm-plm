@@ -20,17 +20,17 @@ export function OrderEvidenceGallery({
   }
 
   return (
-    <div className='mt-6 border-t border-muted-foreground/10 pt-4'>
-      <div className='mb-3 flex items-center gap-2'>
+    <div className='mt-3 border-t border-muted-foreground/10 pt-3'>
+      <div className='mb-2 flex items-center gap-2'>
         <ImageIcon className='size-3.5 text-primary' />
-        <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 italic'>
+        <h4 className='text-[9px] font-black uppercase tracking-wide text-muted-foreground/60'>
           {t(titleKey)}
         </h4>
       </div>
-      <div className='flex flex-wrap gap-4'>
+      <div className='flex flex-wrap gap-3'>
         {evidences.map((ev) => (
-          <div key={ev.id} className='w-[112px] space-y-2'>
-            <div className='group relative size-20 overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:ring-2 hover:ring-primary/20'>
+          <div key={ev.id} className='w-[96px] space-y-1.5'>
+            <div className='group relative size-16 overflow-hidden rounded-xl border bg-background shadow-sm transition-all hover:ring-2 hover:ring-primary/20'>
               {ev.url ? (
                 <a href={getStaticEvidenceUrl(ev.url)} target='_blank' rel='noreferrer'>
                   <img

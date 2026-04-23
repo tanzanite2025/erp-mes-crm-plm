@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
-import { type PurchaseOrder, type SalesOrder } from '@/features/trading/data/schema'
+import { type PurchaseOrder } from '@/features/trading/data/schema'
 import { getPurchaseOrders } from '@/features/trading/purchase'
-import { getSalesOrders } from '@/features/trading/sales'
 import { type NotificationRule } from '../data/notification-rule-schema'
 import { DispatchService } from '../services/dispatch-service'
 import { getProductionRuleSnapshots } from '../services/production-task-query-service'
@@ -12,17 +11,6 @@ import { RoutingService } from '../services/routing-service'
 const logger = createLogger('NotificationRules')
 
 type NotificationRuleCreateInput = Omit<NotificationRule, 'id' | 'createdAt'>
-
-type DispatchOrderSnapshot = {
-  id: string
-  orderNo: string
-  status: string
-  createdBy?: string
-  lines?: Array<{
-    productModel?: string
-    claimedBy?: string
-  }>
-}
 
 type DispatchPurchaseOrderSnapshot = {
   id: string
@@ -59,24 +47,10 @@ export function useNotificationRules() {
 
   const triggerScan = useCallback(async (latestRules: NotificationRule[]) => {
     try {
-      const [salesOrders, purchaseOrders, production] = await Promise.all([
-        getSalesOrders({ withLines: true }),
+      const [purchaseOrders, production] = await Promise.all([
         getPurchaseOrders({ withLines: true }),
         getProductionRuleSnapshots(),
       ])
-
-      const salesOrderSnapshots: DispatchOrderSnapshot[] = salesOrders.items.map(
-        (order: SalesOrder) => ({
-          id: order.id,
-          orderNo: order.orderNo,
-          status: order.status,
-          createdBy: order.createdBy,
-          lines: order.lines?.map((line) => ({
-            productModel: line.productModel,
-            claimedBy: line.claimedBy,
-          })),
-        })
-      )
 
       const purchaseOrderSnapshots: DispatchPurchaseOrderSnapshot[] =
         purchaseOrders.items.map((order: PurchaseOrder) => ({
@@ -91,7 +65,6 @@ export function useNotificationRules() {
         }))
 
       const scannedCount = await DispatchService.scanByRules(latestRules, {
-        salesOrders: salesOrderSnapshots,
         purchaseOrders: purchaseOrderSnapshots,
         productionPlans: production.productionPlans,
         productionTasks: production.productionTasks,

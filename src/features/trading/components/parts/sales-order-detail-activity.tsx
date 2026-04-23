@@ -30,15 +30,8 @@ export function SalesOrderDetailActivity({
   })
 
   return (
-    <div className='space-y-6 rounded-[32px] border-2 border-dashed border-muted/40 bg-muted/5 p-6 animate-in slide-in-from-bottom-2 duration-500'>
-      <div className='flex items-center gap-2 px-1'>
-        <div className='size-1.5 w-4 rounded-full bg-primary/30' />
-        <h4 className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>
-          {t('tradingSalesOrder.detail.activities')}
-        </h4>
-      </div>
-
-      <div className='relative ml-1 space-y-8'>
+    <div className='space-y-3 rounded-xl border border-dashed border-muted/40 bg-muted/5 p-3 animate-in slide-in-from-bottom-2 duration-500'>
+      <div className='relative space-y-3'>
         <AuditStamp
           module={AUDIT_MODULES.salesOrder}
           targetId={order.id}
@@ -50,11 +43,11 @@ export function SalesOrderDetailActivity({
         />
 
         {canDelete && (
-          <div className='flex justify-end border-t border-dashed border-muted-foreground/10 pt-6'>
+          <div className='flex justify-end border-t border-dashed border-muted-foreground/10 pt-3'>
             <Button
               variant='ghost'
               size='sm'
-              className='h-9 gap-2 rounded-full border border-destructive/10 px-6 text-[10px] font-black uppercase tracking-widest text-destructive transition-all hover:bg-destructive/10'
+              className='h-8 gap-2 rounded-full border border-destructive/10 px-5 text-[10px] font-black uppercase tracking-wide text-destructive transition-all hover:bg-destructive/10'
               onClick={handleHardDelete}
             >
               <Trash2 className='size-3.5' />

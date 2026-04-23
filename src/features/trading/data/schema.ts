@@ -75,6 +75,20 @@ export type SalesOrderStatus =
 
 export type SalesOrderType = string // 交易模块订单模式枚举
 
+export type SalesOrderAvailableAction =
+  | 'submitPending'
+  | 'startProduction'
+  | 'markDone'
+  | 'cancel'
+  | 'createReturn'
+
+export interface SalesOrderActionAvailability {
+  action: SalesOrderAvailableAction
+  allowed: boolean
+  reasonCode?: string
+  reason?: string
+}
+
 export interface SalesOrderLine {
   id?: number
   lineNo: number
@@ -82,6 +96,8 @@ export interface SalesOrderLine {
   productModel: string
   productCode: string
   specification: string // 冗余存储下订单时的规格快照
+  modelCodeSnapshot?: string
+  holePrefixSnapshot?: string
   appearanceId?: string // 引用产品外观主数据 ID
   appearanceNameSnapshot?: string // 外观名称快照
   appearanceBarcodeCodeSnapshot?: string // 外观条码位值快照
@@ -113,6 +129,8 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   productModel: '',
   productCode: '',
   specification: '',
+  modelCodeSnapshot: '',
+  holePrefixSnapshot: '',
   appearanceId: '',
   appearanceNameSnapshot: '',
   appearanceBarcodeCodeSnapshot: '',
@@ -164,6 +182,7 @@ export interface SalesOrder extends BaseEntity {
   requirements?: string
   lines: SalesOrderLine[]
   fulfillmentRate?: number
+  availableActions?: SalesOrderActionAvailability[]
   workflowInstanceId?: string // 统一工作流引擎桥接关键链
   version: number // SDRTS 乐观锁
 }
@@ -179,6 +198,8 @@ export const createEmptySalesOrderLine = (): SalesOrderLine => ({
   productModel: '',
   productCode: '',
   specification: '',
+  modelCodeSnapshot: '',
+  holePrefixSnapshot: '',
   appearanceId: '',
   appearanceNameSnapshot: '',
   appearanceBarcodeCodeSnapshot: '',

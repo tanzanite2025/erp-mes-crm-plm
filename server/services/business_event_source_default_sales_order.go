@@ -1,6 +1,24 @@
 package services
 
-import "encoding/json"
+import (
+	"encoding/json"
+	statemachine "xdfc-server/services/state_machine"
+)
+
+func defaultSalesOrderBusinessStatuses() []BusinessStatusDTO {
+	catalog := statemachine.SalesOrderStatusCatalog()
+	statuses := make([]BusinessStatusDTO, 0, len(catalog))
+	for _, item := range catalog {
+		statuses = append(statuses, BusinessStatusDTO{
+			Code:           string(item.Status),
+			Label:          item.Label,
+			Phase:          item.Phase,
+			IsTerminal:     item.IsTerminal,
+			DefaultResolve: item.DefaultResolve,
+		})
+	}
+	return statuses
+}
 
 func defaultSalesOrderEventSourceConfig() json.RawMessage {
 	config := normalizeBusinessEventSourceConfigDTO(BusinessEventSourceConfigDTO{
@@ -9,13 +27,7 @@ func defaultSalesOrderEventSourceConfig() json.RawMessage {
 			{ID: "action-status-changed-2", Code: "STATUS_CHANGED", Name: "状态变更", Kind: "status"},
 			{ID: "action-updated-3", Code: "UPDATED", Name: "更新", Kind: "updated"},
 		},
-		Statuses: []BusinessStatusDTO{
-			{Code: "Draft", Label: "草稿", Phase: "draft", IsTerminal: false, DefaultResolve: false},
-			{Code: "Pending", Label: "待处理", Phase: "pending", IsTerminal: false, DefaultResolve: false},
-			{Code: "InProgress", Label: "正式下达", Phase: "active", IsTerminal: false, DefaultResolve: false},
-			{Code: "Done", Label: "已完成", Phase: "done", IsTerminal: true, DefaultResolve: true},
-			{Code: "Canceled", Label: "已作废", Phase: "cancelled", IsTerminal: true, DefaultResolve: true},
-		},
+		Statuses: defaultSalesOrderBusinessStatuses(),
 		Fields: []BusinessEventFieldDTO{
 			{Key: "orderId", Label: "订单ID", Path: "orderId", Type: "string", TemplateKey: "OrderId", TemplateEnabled: true, DynamicResolver: false},
 			{Key: "orderNo", Label: "订单号", Path: "orderNo", Type: "string", TemplateKey: "OrderNo", TemplateEnabled: true, DynamicResolver: false},

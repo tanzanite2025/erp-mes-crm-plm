@@ -13,6 +13,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/dependencies"
 	"xdfc-server/middleware"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -178,25 +179,12 @@ func WSHandler(c *gin.Context) {
 
 // NotifyTrigger publishes one business notification into Redis channel.
 func NotifyTrigger(module, action, title, targetUser string, data interface{}) {
-	msg := map[string]interface{}{
-		"module":     module,
-		"action":     action,
-		"title":      title,
-		"targetUser": targetUser,
-		"payload":    data,
-	}
-	jsonBytes, _ := json.Marshal(msg)
-	db.RDB.Publish(context.Background(), "xdfc_notifications", string(jsonBytes))
+	_ = services.PublishNotification(module, action, title, targetUser, data)
 }
 
 // NotifyCacheInvalidate publishes cache invalidation event for clients.
 func NotifyCacheInvalidate(module string) {
-	msg := map[string]interface{}{
-		"type":   "CACHE_INVALIDATE",
-		"module": module,
-	}
-	jsonBytes, _ := json.Marshal(msg)
-	db.RDB.Publish(context.Background(), "xdfc_notifications", string(jsonBytes))
+	_ = services.PublishCacheInvalidate(module)
 }
 
 func parseNotificationTargetUser(message []byte) (string, bool) {
