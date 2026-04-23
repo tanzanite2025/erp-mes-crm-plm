@@ -1,9 +1,5 @@
-import type {
-  OrgRoleOption,
-  PermissionTreeNode,
-  UserRightsOrgNode,
-  UserRightsPermission,
-} from './user-rights-types'
+import type { UserOption } from '@/features/users/data/schema'
+import type { PermissionTreeNode, UserRightsPermission, UserRoleOption } from './user-rights-types'
 import { buildPermissionTreeNodes } from './permission-tree-utils'
 
 export function buildPermissionTree(permissions: UserRightsPermission[]): PermissionTreeNode[] {
@@ -20,33 +16,27 @@ export function formatPermissionLabel(label: string) {
     .trim()
 }
 
-export function flattenOrgRoleOptions(
-  nodes: UserRightsOrgNode[],
+export function buildAccountRoleOptions(
+  users: UserOption[],
   importedRoleIds: string[] = [],
-  activeRoleIds?: Set<string>,
-): OrgRoleOption[] {
-  const items: OrgRoleOption[] = []
+): UserRoleOption[] {
   const importedSet = new Set(importedRoleIds.map((item) => item.trim().toLowerCase()))
+  const roleMap = new Map<string, string>()
 
-  const walk = (list: UserRightsOrgNode[], lineage: string[] = []) => {
-    list.forEach((node) => {
-      const nextLineage = [...lineage, node.name]
-      if (node.type === 'department') {
-        const roleId = `org_${node.id}`
-        const normalizedId = roleId.toLowerCase()
-        const isImported = importedSet.has(normalizedId)
-        const isActive = activeRoleIds?.has(normalizedId)
+  users.forEach((user) => {
+    const role = user.role?.trim()
+    if (!role) return
+    const normalizedRole = role.toLowerCase()
+    if (!roleMap.has(normalizedRole)) {
+      roleMap.set(normalizedRole, role)
+    }
+  })
 
-        items.push({
-          label: `${isActive ? '● ' : ''}${nextLineage.join(' / ')}${isImported ? ' (已存在)' : ''}`,
-          value: `${roleId}|${node.name}`,
-          disabled: isImported,
-        })
-      }
-      if (node.children) walk(node.children, nextLineage)
-    })
-  }
-
-  walk(nodes)
-  return items
+  return Array.from(roleMap.entries())
+    .sort((left, right) => left[1].localeCompare(right[1]))
+    .map(([normalizedRole, role]) => ({
+      label: role,
+      value: role,
+      disabled: importedSet.has(normalizedRole),
+    }))
 }

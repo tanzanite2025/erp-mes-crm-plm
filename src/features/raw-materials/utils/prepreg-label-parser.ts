@@ -56,6 +56,10 @@ export function parsePrepregLabelText(rawText: string): PrepregLabelParsedFields
     /(\d+(?:\.\d+)?)\s*%\s*[/／]\s*\d+/,
   ], text)
 
+  const resinModel = pick([
+    /(?:鏍戣剛鍨嬪彿|妯硅剛鍨嬪彿|树脂型号|Resin(?:\s*Model)?)[:\s]*([A-Za-z0-9][A-Za-z0-9_-]{1,})/i,
+  ], text)
+
   const widthMm = pick([
     /(?:幅宽|幅寬|宽度|寬度|门幅)[:\s]*(\d+(?:\.\d+)?)\s*(?:MM|mm|毫米)?/i,
     /\b(\d{3,5})\s*(?:MM|mm)\b/,
@@ -87,6 +91,7 @@ export function parsePrepregLabelText(rawText: string): PrepregLabelParsedFields
     code,
     name,
     supplierProductCode: code,
+    resinModel,
     resinContentPercent,
     widthMm,
     areaWeightGsm,

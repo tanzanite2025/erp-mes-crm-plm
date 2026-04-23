@@ -8,6 +8,7 @@ export function createTestUser(overrides: Partial<User> = {}): User {
     lastName: 'User',
     username: 'test-user',
     phoneNumber: '0000000000',
+    role: undefined,
     status: 'active',
     version: 1,
     password: undefined,

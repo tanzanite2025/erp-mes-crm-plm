@@ -6,6 +6,7 @@ export interface PrepregMaterialSpec {
   name: string
   supplierProductCode: string
   fiberModel: string
+  resinModel: string
   resinContentPercent: string
   widthMm: string
   areaWeightGsm: string
@@ -33,6 +34,7 @@ export type PrepregFormState = {
   name: string
   supplierProductCode: string
   fiberModel: string
+  resinModel: string
   resinContentPercent: string
   widthMm: string
   areaWeightGsm: string
@@ -50,6 +52,7 @@ export const EMPTY_PREPREG_FORM: PrepregFormState = {
   name: '',
   supplierProductCode: '',
   fiberModel: '',
+  resinModel: '',
   resinContentPercent: '',
   widthMm: '',
   areaWeightGsm: '',
@@ -69,6 +72,7 @@ export function normalizePrepregSpec(item: Partial<PrepregMaterialSpec>): Prepre
     name: item.name || '',
     supplierProductCode: item.supplierProductCode || '',
     fiberModel: item.fiberModel || '',
+    resinModel: item.resinModel || '',
     resinContentPercent: item.resinContentPercent || '',
     widthMm: item.widthMm || '',
     areaWeightGsm: item.areaWeightGsm || '',
@@ -92,6 +96,7 @@ export function formFromPrepregSpec(spec: PrepregMaterialSpec | null): PrepregFo
     name: spec.name || '',
     supplierProductCode: spec.supplierProductCode || '',
     fiberModel: spec.fiberModel || '',
+    resinModel: spec.resinModel || '',
     resinContentPercent: spec.resinContentPercent || '',
     widthMm: spec.widthMm || '',
     areaWeightGsm: spec.areaWeightGsm || '',
@@ -115,6 +120,7 @@ export function buildPrepregSpecPayload(
     name: form.name.trim(),
     supplierProductCode: form.supplierProductCode.trim(),
     fiberModel: form.fiberModel.trim(),
+    resinModel: form.resinModel.trim(),
     resinContentPercent: form.resinContentPercent.trim(),
     widthMm: form.widthMm.trim(),
     areaWeightGsm: form.areaWeightGsm.trim(),
@@ -132,6 +138,7 @@ export function buildPrepregSpecPayload(
 export function prepregSpecSummary(spec: PrepregMaterialSpec): string {
   return [
     spec.supplierProductCode,
+    spec.resinModel,
     spec.resinContentPercent ? `${spec.resinContentPercent}%` : '',
     spec.areaWeightGsm ? `${spec.areaWeightGsm}g/m2` : '',
     spec.widthMm ? `${spec.widthMm}mm` : '',

@@ -119,6 +119,7 @@ export function UsersPermissionsDialog({
   const [search, setSearch] = useState('')
   const [showSelectedOnly, setShowSelectedOnly] = useState(false)
   const [expandedModuleIDs, setExpandedModuleIDs] = useState<string[]>(() => permissionTree.map((node) => node.module.id))
+  const username = currentRow?.username || '-'
 
   const {
     data: permissionsData,
@@ -237,7 +238,7 @@ export function UsersPermissionsDialog({
         onSuccess: async () => {
           setLocalDraftPermissionIDs(null)
           await refetch()
-          toast.success('用户权限已更新')
+          toast.success(t('users.toast.permissionAssignmentsSaved'))
         },
       },
     )
@@ -266,9 +267,9 @@ export function UsersPermissionsDialog({
           <div className='absolute right-6 top-6 opacity-10 pointer-events-none'>
             <ShieldPlus className='size-10' />
           </div>
-          <DialogTitle className='text-lg font-black tracking-tight uppercase'>管理权限</DialogTitle>
+          <DialogTitle className='text-lg font-black tracking-tight uppercase'>{t('users.permissionAssignments.title')}</DialogTitle>
           <DialogDescription className='text-xs font-medium opacity-70'>
-            {currentRow?.username || '-'} 的显式权限配置
+            {t('users.permissionAssignments.subtitle', { username })}
           </DialogDescription>
         </DialogHeader>
 
@@ -280,26 +281,26 @@ export function UsersPermissionsDialog({
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder='搜索权限 ID、名称、描述或路径'
+                    placeholder={t('users.permissionAssignments.placeholders.search')}
                   />
                   <Button type='button' variant={showSelectedOnly ? 'default' : 'outline'} onClick={() => setShowSelectedOnly((value) => !value)}>
-                    仅看已选
+                    {t('users.permissionAssignments.actions.filterSelected')}
                   </Button>
                   <Button type='button' variant='outline' onClick={() => setExpandedModuleIDs(permissionTree.map((node) => node.module.id))}>
-                    全部展开
+                    {t('users.permissionAssignments.actions.expandAll')}
                   </Button>
                   <Button type='button' variant='outline' onClick={() => setExpandedModuleIDs([])}>
-                    全部收起
+                    {t('users.permissionAssignments.actions.collapseAll')}
                   </Button>
                 </div>
               </div>
 
               <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>权限树</div>
+                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.tree.title')}</div>
                 {isLoading ? (
-                  <div className='text-xs text-muted-foreground py-6 text-center'>加载用户权限中...</div>
+                  <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.loading')}</div>
                 ) : visibleTree.length === 0 ? (
-                  <div className='text-xs text-muted-foreground py-6 text-center'>没有匹配的权限项</div>
+                  <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.tree.empty')}</div>
                 ) : (
                   <div className='space-y-3'>
                     {visibleTree.map((node) => {
@@ -315,7 +316,7 @@ export function UsersPermissionsDialog({
                             </div>
                             <div className='flex items-center gap-3'>
                               <Button type='button' variant='ghost' size='sm' onClick={() => toggleModuleExpanded(node.module.id)}>
-                                {expanded ? '收起' : '展开'}
+                                {expanded ? t('users.permissionAssignments.actions.collapse') : t('users.permissionAssignments.actions.expand')}
                               </Button>
                               <Checkbox checked={moduleChecked} onCheckedChange={() => togglePermissionIDs(modulePermissionIDs)} />
                             </div>
@@ -330,7 +331,7 @@ export function UsersPermissionsDialog({
                                   <div key={pageNode.page.id} className='rounded-xl border border-dashed border-muted/30 p-3 space-y-2'>
                                     <div className='flex items-start justify-between gap-3'>
                                       <div>
-                                        <div className='text-sm font-semibold'>页面 / {formatPermissionLabel(pageNode.page.label)}</div>
+                                        <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.page')} / {formatPermissionLabel(pageNode.page.label)}</div>
                                         <div className='text-xs text-muted-foreground'>{pageNode.page.path || pageNode.page.desc}</div>
                                       </div>
                                       <Checkbox checked={pageChecked} onCheckedChange={() => togglePermissionIDs(pagePermissionIDs)} />
@@ -338,7 +339,7 @@ export function UsersPermissionsDialog({
                                     {pageNode.tabs.map((tab) => (
                                       <div key={tab.id} className='flex items-start justify-between gap-3 pl-4'>
                                         <div>
-                                          <div className='text-sm'>TAB / {formatPermissionLabel(tab.label)}</div>
+                                          <div className='text-sm'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
                                           <div className='text-xs text-muted-foreground'>{tab.path || tab.desc}</div>
                                         </div>
                                         <Checkbox
@@ -354,7 +355,7 @@ export function UsersPermissionsDialog({
                               {node.directTabs.map((tab) => (
                                 <div key={tab.id} className='flex items-start justify-between gap-3 rounded-xl border border-dashed border-muted/30 p-3'>
                                   <div>
-                                    <div className='text-sm font-semibold'>TAB / {formatPermissionLabel(tab.label)}</div>
+                                    <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
                                     <div className='text-xs text-muted-foreground'>{tab.path || tab.desc}</div>
                                   </div>
                                   <Checkbox
@@ -367,7 +368,7 @@ export function UsersPermissionsDialog({
                               {node.directActions.map((action) => (
                                 <div key={action.id} className='flex items-start justify-between gap-3 rounded-xl border border-dashed border-muted/30 p-3'>
                                   <div>
-                                    <div className='text-sm font-semibold'>动作 / {formatPermissionLabel(action.label)}</div>
+                                    <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.action')} / {formatPermissionLabel(action.label)}</div>
                                     <div className='text-xs text-muted-foreground'>{action.desc}</div>
                                   </div>
                                   <Checkbox
@@ -388,21 +389,21 @@ export function UsersPermissionsDialog({
 
             <div className='space-y-4'>
               <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>摘要</div>
+                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.summary.title')}</div>
                 {isAccessLoading ? (
-                  <div className='text-xs text-muted-foreground'>加载权限摘要中...</div>
+                  <div className='text-xs text-muted-foreground'>{t('users.permissionAssignments.accessLoading')}</div>
                 ) : (
                   <div className='grid grid-cols-1 gap-3 text-xs'>
                     <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>当前显式权限数</div>
+                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.explicitPermissionCount')}</div>
                       <div className='font-mono'>{String(draftPermissionIDs.length)}</div>
                     </div>
                     <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>状态</div>
+                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.status')}</div>
                       <div className='font-mono'>{permissionsData?.status || currentRow?.status || '-'}</div>
                     </div>
                     <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>诊断</div>
+                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.diagnostics')}</div>
                       <div className='flex flex-wrap gap-2'>
                         {(accessSnapshot?.diagnostics || []).length > 0 ? (
                           accessSnapshot?.diagnostics?.map((item) => (
@@ -411,13 +412,13 @@ export function UsersPermissionsDialog({
                             </Badge>
                           ))
                         ) : (
-                          <span className='font-mono'>无</span>
+                          <span className='font-mono'>{t('users.permissionAssignments.summary.none')}</span>
                         )}
                       </div>
                     </div>
                     <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>未保存变更</div>
-                      <div className='font-mono'>{hasUnsavedChanges ? '有' : '无'}</div>
+                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.unsavedChanges')}</div>
+                      <div className='font-mono'>{hasUnsavedChanges ? t('users.permissionAssignments.summary.changed') : t('users.permissionAssignments.summary.unchanged')}</div>
                     </div>
                   </div>
                 )}
@@ -425,14 +426,14 @@ export function UsersPermissionsDialog({
 
               <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
                 <div className='flex items-center justify-between gap-3'>
-                  <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>已选权限</div>
+                  <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.selected.title')}</div>
                   <Button type='button' variant='outline' size='sm' onClick={() => setLocalDraftPermissionIDs([])}>
-                    清空
+                    {t('users.permissionAssignments.actions.clear')}
                   </Button>
                 </div>
                 <div className='max-h-[420px] overflow-y-auto space-y-2'>
                   {selectedPermissions.length === 0 ? (
-                    <div className='text-xs text-muted-foreground py-6 text-center'>当前未分配显式权限</div>
+                    <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.selected.empty')}</div>
                   ) : (
                     selectedPermissions.map((permission) => (
                       <div key={permission.id} className='rounded-xl border border-dashed border-muted/30 bg-background p-3'>
@@ -449,10 +450,10 @@ export function UsersPermissionsDialog({
 
         <DialogFooter className='p-5 border-t border-dashed border-muted/40 bg-muted/5 gap-2'>
           <Button type='button' variant='outline' onClick={handleReset} disabled={anyMutationPending || !hasUnsavedChanges}>
-            重置未保存改动
+            {t('users.permissionAssignments.actions.reset')}
           </Button>
           <Button type='button' onClick={handleSave} disabled={anyMutationPending || !hasUnsavedChanges}>
-            保存权限
+            {t('users.permissionAssignments.actions.save')}
           </Button>
           <Button type='button' variant='outline' onClick={() => handleDialogOpenChange(false)}>
             {t('common.actions.close')}

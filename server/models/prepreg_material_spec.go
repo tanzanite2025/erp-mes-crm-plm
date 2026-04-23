@@ -8,6 +8,7 @@ type PrepregMaterialSpec struct {
 	Name                string `gorm:"size:255;not null" json:"name"`
 	SupplierProductCode string `gorm:"size:120;index" json:"supplierProductCode"`
 	FiberModel          string `gorm:"size:120;index" json:"fiberModel"`
+	ResinModel          string `gorm:"size:120;index" json:"resinModel"`
 	ResinContentPercent string `gorm:"size:40" json:"resinContentPercent"`
 	WidthMM             string `gorm:"size:40" json:"widthMm"`
 	AreaWeightGSM       string `gorm:"size:80" json:"areaWeightGsm"`

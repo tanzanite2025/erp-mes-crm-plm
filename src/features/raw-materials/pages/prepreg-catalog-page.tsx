@@ -183,7 +183,14 @@ export function PrepregCatalogPage() {
                 <div className='text-sm font-black tracking-tight'>{spec.name}</div>
                 <div className='text-xs font-semibold text-muted-foreground'>{prepregSpecSummary(spec) || '未填写规格摘要'}</div>
               </div>
-              <InfoCell icon={Waves} main={spec.fiberModel || '未填写纤维型号'} sub={spec.resinContentPercent ? `RC ${spec.resinContentPercent}%` : '未填写树脂含量'} />
+              <InfoCell
+                icon={Waves}
+                main={spec.fiberModel || '未填写纤维型号'}
+                sub={[
+                  spec.resinModel ? `树脂 ${spec.resinModel}` : '',
+                  spec.resinContentPercent ? `RC ${spec.resinContentPercent}%` : '',
+                ].filter(Boolean).join(' / ') || '未填写树脂型号与含量'}
+              />
               <InfoCell icon={Ruler} main={spec.widthMm ? `${spec.widthMm} mm` : '未填写宽幅'} sub={spec.areaWeightGsm ? `${spec.areaWeightGsm} g/m2` : '未填写克重'} />
               <InfoCell icon={Hash} main={spec.supplierBatchNo || '未填写批次样例'} sub={spec.rollNo ? `卷/箱 ${spec.rollNo}` : '未填写卷号样例'} />
               <div className='flex justify-end'>
@@ -219,6 +226,9 @@ export function PrepregCatalogPage() {
             </Field>
             <Field label='纤维型号'>
               <Input value={form.fiberModel} onChange={(event) => updateForm('fiberModel', event.target.value)} placeholder='例如 T700 / T800 / 40F' />
+            </Field>
+            <Field label='树脂型号'>
+              <Input value={form.resinModel} onChange={(event) => updateForm('resinModel', event.target.value)} placeholder='例如 慧柏5001' />
             </Field>
             <Field label='树脂含量 RC (%)'>
               <Input value={form.resinContentPercent} onChange={(event) => updateForm('resinContentPercent', event.target.value)} placeholder='例如 37' />

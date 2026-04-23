@@ -61,6 +61,7 @@ export function OverviewTab() {
     const statCards = useMemo(() => [
         { label: t('engineering.db.stats.technicalSpecs'), count: stats.specCount, color: 'text-blue-500', bg: 'bg-blue-500/10' },
         { label: t('engineering.db.stats.drillingPlans'), count: stats.drillingCount, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+        { label: '裁砂方案', count: stats.cuttingCount, color: 'text-rose-500', bg: 'bg-rose-500/10' },
         { label: t('engineering.db.stats.labelingDrafts'), count: stats.labelingCount, color: 'text-teal-500', bg: 'bg-teal-500/10' },
         { label: t('engineering.db.stats.excelSheets'), count: stats.excelCount, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         { label: t('engineering.db.stats.cadDrawings'), count: stats.cadCount, color: 'text-orange-500', bg: 'bg-orange-500/10' }
@@ -184,7 +185,7 @@ export function OverviewTab() {
                         size='icon' 
                         className='size-8 rounded-full hover:bg-violet-500/10 hover:text-violet-500' 
                         onClick={() => {
-                            const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', LABELING: '/engineering-db/labeling' }
+                            const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', CUTTING: '/engineering-db/cutting-plan', LABELING: '/engineering-db/labeling' }
                             const to = mapping[row.original.category]
                             navigate({ to, search: { highlightId: row.original.id } } as any)
                         }}
@@ -244,7 +245,7 @@ export function OverviewTab() {
                     </div>
                 </div>
 
-                <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4'>
+                <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4'>
                     {statCards.map((stat, idx) => (
                         <div key={idx} className={`flex flex-col gap-1 ${stat.bg} p-4 md:p-5 rounded-[20px] md:rounded-[24px] border border-white/5 shadow-sm hover:scale-[1.02] transition-all cursor-default`}>
                             <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-60 ${stat.color}`}>{stat.label}</span>
@@ -355,7 +356,7 @@ export function OverviewTab() {
                                                 className='size-8 rounded-full hover:bg-violet-500/10 hover:text-violet-500'
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', LABELING: '/engineering-db/labeling' }
+                                                    const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', CUTTING: '/engineering-db/cutting-plan', LABELING: '/engineering-db/labeling' }
                                                     const to = mapping[item.category]
                                                     navigate({ to, search: { highlightId: item.id } } as any)
                                                 }}

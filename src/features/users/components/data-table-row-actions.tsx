@@ -49,7 +49,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
               }}
               title={isProtected ? t('users.table.protectedTooltip') : undefined}
             >
-              管理权限
+              {t('users.actions.managePermissions')}
               <DropdownMenuShortcut>
                 {isProtected ? <Lock size={14} className='text-amber-500' /> : <ShieldPlus size={16} />}
               </DropdownMenuShortcut>

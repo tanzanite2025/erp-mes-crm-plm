@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { OrgService } from '@/features/org-personnel/services/org-service'
+import { useUserOptionsQuery } from '@/features/users/hooks/use-users'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
@@ -9,8 +9,7 @@ import { toast } from 'sonner'
 import { UserRightsHeader } from './components/user-rights-header'
 import { UserRightsPermissionPanel } from './components/user-rights-permission-panel'
 import { UserRightsRoleSelector } from './components/user-rights-role-selector'
-import { flattenOrgRoleOptions, formatPermissionLabel, buildPermissionTree } from './components/user-rights-utils'
-import type { OrgRoleOption } from './components/user-rights-types'
+import { buildAccountRoleOptions, formatPermissionLabel, buildPermissionTree } from './components/user-rights-utils'
 import { useRoles } from '../hooks/use-roles'
 
 export function UserRights() {
@@ -23,10 +22,10 @@ export function UserRights() {
     addRole,
     deleteRole,
   } = useRoles()
+  const userOptionsQuery = useUserOptionsQuery({ status: ['active'] })
   const [selectedRoleId, setSelectedRoleId] = useState<string>('admin')
   const [isAddingMode, setIsAddingMode] = useState(false)
   const [newRoleId, setNewRoleId] = useState('')
-  const [orgNodes, setOrgNodes] = useState<OrgRoleOption[]>([])
   const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([])
   const [pendingDeleteRoleId, setPendingDeleteRoleId] = useState<string | null>(null)
   const canDeleteRoles = true
@@ -43,25 +42,13 @@ export function UserRights() {
     }
   }, [roles, selectedRoleId])
 
-  useEffect(() => {
-    const loadOrgData = async () => {
-      const nodes = await OrgService.getOrgTree()
-
-      const existingRoleIds = new Set(roles.map((r) => r.id.trim().toLowerCase()))
-
-      const allOptions = nodes?.length
-        ? flattenOrgRoleOptions(nodes, Array.from(existingRoleIds), new Set<string>())
-        : []
-
-      setOrgNodes(allOptions)
-    }
-
-    if (isAddingMode) loadOrgData()
-  }, [isAddingMode, roles])
-
   const currentRole = roles.find((role) => role.id === selectedRoleId)
-  const selectedOrgRoleOption = orgNodes.find((option) => option.value === newRoleId)
   const pendingDeleteRole = roles.find((role) => role.id === pendingDeleteRoleId) || null
+  const roleOptions = useMemo(
+    () => buildAccountRoleOptions(userOptionsQuery.data ?? [], roles.map((role) => role.id)),
+    [roles, userOptionsQuery.data],
+  )
+  const selectedRoleOption = roleOptions.find((option) => option.value === newRoleId)
   const sortedPermissions = useMemo(
     () => [...permissions].sort((a, b) => (a.path || a.label).localeCompare(b.path || b.label)),
     [permissions],
@@ -85,20 +72,20 @@ export function UserRights() {
   }, [permissionTree])
 
   const handleAddRole = () => {
-    if (!newRoleId) return
-    const [id, label] = newRoleId.split('|')
-    if (!id || !label) return
-    if (roles.some((role) => role.id.trim().toLowerCase() === id.trim().toLowerCase())) {
+    const normalizedRoleId = newRoleId.trim()
+    if (!normalizedRoleId) return
+
+    if (roles.some((role) => role.id.trim().toLowerCase() === normalizedRoleId.toLowerCase())) {
       toast.error(
         locale === 'zh-CN'
-          ? `账号角色“${label}”已导入，请直接修改现有角色权限。`
-          : `Account role "${label}" is already imported.`,
+          ? `账号角色“${normalizedRoleId}”已导入，请直接修改现有角色权限。`
+          : `Account role "${normalizedRoleId}" is already imported.`,
       )
       setIsAddingMode(false)
       setNewRoleId('')
       return
     }
-    addRole(label, id)
+    addRole(normalizedRoleId, normalizedRoleId)
     setNewRoleId('')
     setIsAddingMode(false)
   }
@@ -117,13 +104,9 @@ export function UserRights() {
 
   const deleteRoleDialogTitle = locale === 'zh-CN' ? '删除角色确认' : 'Confirm Role Deletion'
   const deleteRoleDialogDesc = pendingDeleteRole
-    ? pendingDeleteRole.id.trim().toLowerCase().startsWith('org_')
-      ? locale === 'zh-CN'
-        ? `即将删除账号角色“${pendingDeleteRole.label}”。删除后，使用该角色的账号会失去对应访问范围，相关用户登录后可能无法进入原有页面。请先确认这些账号已经切换到新的角色标识。`
-        : `You are deleting account role "${pendingDeleteRole.label}". After deletion, accounts using this role will lose the mapped access scope and may no longer access their current pages. Confirm those accounts have been reassigned first.`
-      : locale === 'zh-CN'
-        ? `即将删除角色“${pendingDeleteRole.label}”。删除后，引用该角色的账号将失去对应权限。`
-        : `You are deleting role "${pendingDeleteRole.label}". Accounts referencing this role will lose the mapped permissions.`
+    ? locale === 'zh-CN'
+      ? `即将删除角色“${pendingDeleteRole.label}”。删除后，引用该角色的账号将失去对应权限。请先确认这些账号已经切换到新的角色标识。`
+      : `You are deleting role "${pendingDeleteRole.label}". Accounts referencing this role will lose the mapped permissions. Confirm those accounts have been reassigned first.`
     : ''
 
   if (isForbiddenError(error)) {
@@ -149,8 +132,8 @@ export function UserRights() {
           <UserRightsHeader
             isAddingMode={isAddingMode}
             newRoleId={newRoleId}
-            orgNodes={orgNodes}
-            isConfirmDisabled={!newRoleId || Boolean(selectedOrgRoleOption?.disabled)}
+            roleOptions={roleOptions}
+            isConfirmDisabled={!newRoleId || Boolean(selectedRoleOption?.disabled)}
             onNewRoleChange={setNewRoleId}
             onStartAdd={() => setIsAddingMode(true)}
             onConfirmAdd={handleAddRole}

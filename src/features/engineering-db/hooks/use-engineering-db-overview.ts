@@ -1,19 +1,22 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
+  ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
   ENGINEERING_DB_DRILLING_QUERY_KEY,
   ENGINEERING_DB_LABELING_QUERY_KEY,
   ENGINEERING_DB_SPECS_QUERY_KEY,
 } from '../query-keys'
 import { type DrillingPlan, type LabelingDraft, type TechnicalSpec } from '../data/schema'
+import { type CuttingPlan } from '../data/cutting-plan-schema'
 import { ProductionDBService } from '../services/production-db-service'
 import { SpecsService } from '../services/specs-service'
+import { CuttingPlanService } from '../services/cutting-plan-service'
 import { useEngineeringDbProductLookup } from './use-engineering-db-product-lookup'
 
 export type UnifiedEntry = {
   id: string
   name: string
-  category: 'SPEC' | 'DRILLING' | 'LABELING'
+  category: 'SPEC' | 'DRILLING' | 'CUTTING' | 'LABELING'
   subType: string
   relationId?: string
   fileExtension?: string
@@ -24,6 +27,7 @@ export type UnifiedEntry = {
 type OverviewStats = {
   specCount: number
   drillingCount: number
+  cuttingCount: number
   labelingCount: number
   excelCount: number
   cadCount: number
@@ -71,6 +75,19 @@ function toLabelingEntry(item: LabelingDraft): UnifiedEntry {
   }
 }
 
+function toCuttingEntry(item: CuttingPlan): UnifiedEntry {
+  return {
+    id: item.id,
+    name: item.name,
+    category: 'CUTTING',
+    subType: 'CUTTING_PLAN',
+    relationId: undefined,
+    fileExtension: 'xlsx',
+    fileUrl: undefined,
+    createdAt: item.createdAt || new Date().toISOString(),
+  }
+}
+
 export function useEngineeringDbOverview(searchTerm: string) {
   const { productMap } = useEngineeringDbProductLookup()
   const { data: specs = [], isLoading: isSpecsLoading } = useQuery<TechnicalSpec[]>({
@@ -85,12 +102,16 @@ export function useEngineeringDbOverview(searchTerm: string) {
     queryKey: ENGINEERING_DB_LABELING_QUERY_KEY,
     queryFn: () => ProductionDBService.getLabeling(),
   })
+  const { data: cuttingPlans = [], isLoading: isCuttingLoading } = useQuery<CuttingPlan[]>({
+    queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
+    queryFn: () => CuttingPlanService.list(),
+  })
 
   const data = useMemo(() => {
-    return [...specs.map(toSpecEntry), ...drilling.map(toDrillingEntry), ...labeling.map(toLabelingEntry)].sort(
+    return [...specs.map(toSpecEntry), ...drilling.map(toDrillingEntry), ...cuttingPlans.map(toCuttingEntry), ...labeling.map(toLabelingEntry)].sort(
       (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
     )
-  }, [drilling, labeling, specs])
+  }, [cuttingPlans, drilling, labeling, specs])
 
   const filteredData = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
@@ -114,6 +135,8 @@ export function useEngineeringDbOverview(searchTerm: string) {
           result.specCount += 1
         } else if (item.category === 'DRILLING') {
           result.drillingCount += 1
+        } else if (item.category === 'CUTTING') {
+          result.cuttingCount += 1
         } else if (item.category === 'LABELING') {
           result.labelingCount += 1
         }
@@ -131,6 +154,7 @@ export function useEngineeringDbOverview(searchTerm: string) {
       {
         specCount: 0,
         drillingCount: 0,
+        cuttingCount: 0,
         labelingCount: 0,
         excelCount: 0,
         cadCount: 0,
@@ -143,6 +167,6 @@ export function useEngineeringDbOverview(searchTerm: string) {
     filteredData,
     productMap,
     stats,
-    isLoading: isSpecsLoading || isDrillingLoading || isLabelingLoading,
+    isLoading: isSpecsLoading || isDrillingLoading || isCuttingLoading || isLabelingLoading,
   }
 }

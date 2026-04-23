@@ -3,6 +3,7 @@ export const apsScheduling = {
     title: 'APS排产',
     tabs: {
       board: 'APS看板',
+      engineConfig: '贪婪引擎配置',
       process: '工序总览',
     },
   },
@@ -25,6 +26,25 @@ export const apsScheduling = {
     loading: 'APS排产数据加载中...',
     refreshing: '正在刷新 APS 排产数据...',
     fallbackNotice: '若后端暂不可用，页面会回退到本地示例数据。',
+  },
+  engineConfig: {
+    title: '贪婪引擎配置',
+    subtitle: '先展示规则结构与因素卡片形态，后续再逐步接入真实排产计算。',
+    sections: {
+      factorDeckTitle: '因素卡片区',
+    },
+    dateCard: {
+      title: '日期 / 休息日 / 节假日',
+      description: '先把工作日、周末休息日与法定节假日这些日期因素抽成独立卡片，后续再决定如何参与真实排产。',
+      summary: {
+        defaultWorkdayLabel: '默认工作日',
+        defaultWorkdayValue: '工作日默认视为可排日期。',
+        weekendRestLabel: '周末处理',
+        weekendRestValue: '周末先按休息日展示，不接入真实停排逻辑。',
+        holidayStopLabel: '节假日处理',
+        holidayStopValue: '节假日先以停排占位展示，后续再接真实规则。',
+      },
+    },
   },
   process: {
     title: '工序总览',

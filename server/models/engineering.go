@@ -16,6 +16,7 @@ type EngineeringSpec struct {
 	Active       bool           `gorm:"default:true" json:"active"`
 	SpecData     datatypes.JSON `json:"specData"`
 	DrillingData datatypes.JSON `json:"drillingData"`
+	CuttingData  datatypes.JSON `json:"cuttingData"`
 	LabelingData datatypes.JSON `json:"labelingData"`
 	Version      int            `gorm:"default:1" json:"_v"`
 }

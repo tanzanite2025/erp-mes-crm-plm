@@ -3,5 +3,6 @@ export const ENGINEERING_DB_NIPPLES_QUERY_KEY = ['engineering-db', 'nipples'] as
 export const ENGINEERING_DB_HUBS_QUERY_KEY = ['engineering-db', 'hubs'] as const
 export const ENGINEERING_DB_LABELING_QUERY_KEY = ['engineering-db', 'labeling'] as const
 export const ENGINEERING_DB_DRILLING_QUERY_KEY = ['engineering-db', 'drilling'] as const
+export const ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY = ['engineering-db', 'cutting-plans'] as const
 export const ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY = ['engineering-db', 'spoke-lengths'] as const
 export const ENGINEERING_DB_WEAVING_MODES_QUERY_KEY = ['engineering-db', 'engineering-master', 'weaving-modes'] as const

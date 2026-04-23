@@ -70,8 +70,8 @@ export const systemManagementEnUSOverrides = {
         subtitle: 'Manage module, page, tab, and action access by role.',
       },
       actions: {
-        importOrgRole: 'Import Account Role',
-        selectOrgRole: 'Select Account Role',
+        importAccountRole: 'Import Account Role',
+        selectAccountRole: 'Select Account Role',
         confirmImport: 'Confirm Import',
         expand: 'Expand',
         collapse: 'Collapse',

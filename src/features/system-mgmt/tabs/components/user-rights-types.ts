@@ -1,7 +1,6 @@
-import type { OrgNode } from '@/features/org-personnel/data/org-schema'
 import type { Permission, Role } from '@/features/system-mgmt/data/role-schema'
 
-export type OrgRoleOption = {
+export type UserRoleOption = {
   label: string
   value: string
   disabled?: boolean
@@ -24,4 +23,3 @@ export type PermissionLabelFormatter = (label: string) => string
 
 export type UserRightsRole = Role
 export type UserRightsPermission = Permission
-export type UserRightsOrgNode = OrgNode

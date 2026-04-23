@@ -18,6 +18,7 @@ export type EngineeringSpecInput = EngineeringSpecInputDTO
 const ENGINEERING_SPEC_BUCKET_KEYS = [
   'specData',
   'drillingData',
+  'cuttingData',
   'labelingData',
   'spokeLengthData',
   'hubData',

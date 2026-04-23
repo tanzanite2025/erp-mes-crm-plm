@@ -70,8 +70,8 @@ export const systemManagementZhCNOverrides = {
         subtitle: '按角色统一管理模块、页面、标签页与操作权限。',
       },
       actions: {
-        importOrgRole: '导入账号角色',
-        selectOrgRole: '选择账号角色',
+        importAccountRole: '导入账号角色',
+        selectAccountRole: '选择账号角色',
         confirmImport: '确认导入',
         expand: '展开',
         collapse: '收起',

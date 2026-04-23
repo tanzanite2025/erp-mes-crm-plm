@@ -916,6 +916,8 @@ func InitDB(dsn string) {
 		&models.EmployeeRole{},
 		&models.ProductionPlan{},
 		&models.ProductionTask{},
+		&models.CuttingIssuanceExecution{},
+		&models.CuttingIssuanceBatch{},
 
 		// 婵犵妲呴崑鎾跺緤娴犲鑸?闂傚倷娴囬褎顨ョ粙鍖¤€块梺顒€绉寸壕濠氭煏閸繍妲归柛瀣戠换娑㈠幢濡搫顫庨梺宕囩帛濮婂綊濡甸崟顖氱閻犻缚妗ㄩ幋閿嬬節?(Experimental Center)
 		&models.ExpCategory{},

@@ -224,8 +224,8 @@ export function UsersActionDialog({
                             handleEmployeeSync(value)
                           }}
                           placeholder={t('users.dialogs.placeholders.sync')}
-                          searchPlaceholder='搜索姓名或部门名称...'
-                          emptyText='未找到对应员工记录'
+                          searchPlaceholder={t('users.dialogs.placeholders.syncSearch')}
+                          emptyText={t('users.dialogs.placeholders.syncEmpty')}
                           options={employees}
                         />
                       </div>

@@ -23,6 +23,7 @@ type SavePrepregMaterialSpecRequest struct {
 	Name                string `json:"name"`
 	SupplierProductCode string `json:"supplierProductCode"`
 	FiberModel          string `json:"fiberModel"`
+	ResinModel          string `json:"resinModel"`
 	ResinContentPercent string `json:"resinContentPercent"`
 	WidthMM             string `json:"widthMm"`
 	AreaWeightGSM       string `json:"areaWeightGsm"`
@@ -42,6 +43,7 @@ func trimPrepregMaterialSpecInput(input SavePrepregMaterialSpecRequest) SavePrep
 	input.Name = strings.TrimSpace(input.Name)
 	input.SupplierProductCode = strings.TrimSpace(input.SupplierProductCode)
 	input.FiberModel = strings.TrimSpace(input.FiberModel)
+	input.ResinModel = strings.TrimSpace(input.ResinModel)
 	input.ResinContentPercent = strings.TrimSpace(input.ResinContentPercent)
 	input.WidthMM = strings.TrimSpace(input.WidthMM)
 	input.AreaWeightGSM = strings.TrimSpace(input.AreaWeightGSM)
@@ -66,6 +68,7 @@ func toPrepregMaterialSpecModel(input SavePrepregMaterialSpecRequest) models.Pre
 		Name:                input.Name,
 		SupplierProductCode: input.SupplierProductCode,
 		FiberModel:          input.FiberModel,
+		ResinModel:          input.ResinModel,
 		ResinContentPercent: input.ResinContentPercent,
 		WidthMM:             input.WidthMM,
 		AreaWeightGSM:       input.AreaWeightGSM,
@@ -95,7 +98,8 @@ func ListPrepregMaterialSpecs(query PrepregMaterialSpecListQuery) ([]models.Prep
 	if search != "" {
 		pattern := "%" + search + "%"
 		tx = tx.Where(
-			"code ILIKE ? OR name ILIKE ? OR supplier_product_code ILIKE ? OR fiber_model ILIKE ? OR supplier_batch_no ILIKE ? OR roll_no ILIKE ?",
+			"code ILIKE ? OR name ILIKE ? OR supplier_product_code ILIKE ? OR fiber_model ILIKE ? OR resin_model ILIKE ? OR supplier_batch_no ILIKE ? OR roll_no ILIKE ?",
+			pattern,
 			pattern,
 			pattern,
 			pattern,

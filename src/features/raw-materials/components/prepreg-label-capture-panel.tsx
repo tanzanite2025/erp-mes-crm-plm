@@ -25,6 +25,7 @@ const FIELD_LABELS: Partial<Record<keyof PrepregFormState, string>> = {
   rollNo: '卷/箱号',
   productionDate: '生产日期',
 }
+FIELD_LABELS.resinModel = '树脂型号'
 
 interface PrepregLabelCapturePanelProps {
   onApply: (fields: Partial<PrepregFormState>) => void

@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { type Role } from '../data/role-schema'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 
 const logger = createLogger('RoleService')
 
@@ -57,38 +56,6 @@ export class RoleService {
       }
     } catch (error) {
       logger.error('Failed to upsert role', error)
-      throw error
-    }
-  }
-
-  /**
-   * 局部更新角色信息 (SDRTS 结构化差量更新)
-   */
-  static async patchRole(id: string, delta: DeltaSet, version: number): Promise<Role> {
-    try {
-      const payload: DeltaPayload = {
-        op: 'PATCH',
-        delta,
-        metadata: {
-          id,
-          version,
-        },
-      }
-
-      const data = await apiFetch<RoleApiRecord>(`${this.API_URL}/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      })
-
-      return {
-        id: data.id,
-        label: data.label,
-        color: data.color,
-        permissions: data.permissions,
-        version: data.version,
-      }
-    } catch (error) {
-      logger.error('Failed to patch role', error)
       throw error
     }
   }

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import type { TranslationKey } from '@/locales'
 
-type EngineeringDbCategory = 'SPEC' | 'DRILLING' | 'LABELING'
+type EngineeringDbCategory = 'SPEC' | 'DRILLING' | 'CUTTING' | 'LABELING'
 type LabelingType = 'Water' | 'Paint' | 'Laser' | 'Other'
 type TranslationFn = (key: TranslationKey, params?: Record<string, string | number>) => string
 
@@ -102,6 +102,14 @@ export function getEngineeringDbFileVisual(options: {
     }
   }
 
+  if (options.category === 'CUTTING') {
+    return {
+      icon: FileSpreadsheet,
+      iconClassName: 'text-rose-500',
+      containerClassName: 'bg-rose-500/10 border-rose-500/20',
+    }
+  }
+
   return {
     icon: BookOpen,
     iconClassName: 'text-amber-500',
@@ -116,6 +124,9 @@ export function getEngineeringDbCategoryLabel(t: TranslationFn, category: Engine
   if (category === 'DRILLING') {
     return t('engineering.db.categories.drilling')
   }
+  if (category === 'CUTTING') {
+    return '裁砂方案'
+  }
   return t('engineering.db.categories.labeling')
 }
 
@@ -126,12 +137,18 @@ export function getEngineeringDbCategoryBadgeClass(category: EngineeringDbCatego
   if (category === 'DRILLING') {
     return 'text-indigo-500 bg-indigo-500/10'
   }
+  if (category === 'CUTTING') {
+    return 'text-rose-500 bg-rose-500/10'
+  }
   return 'text-teal-500 bg-teal-500/10'
 }
 
 export function getEngineeringDbSubtypeLabel(t: TranslationFn, subType: string) {
   if (subType === 'DRILLING_PLAN') {
     return t('engineering.db.categories.drilling')
+  }
+  if (subType === 'CUTTING_PLAN') {
+    return '裁砂方案'
   }
   if (subType === 'LABELING_DRAFT') {
     return t('engineering.db.categories.labeling')

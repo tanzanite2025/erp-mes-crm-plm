@@ -28,7 +28,7 @@ export function UsersDialogs() {
           />
 
           <UsersPermissionsDialog
-            key={`user-roles-${currentRow.id}`}
+            key={`user-permissions-${currentRow.id}`}
             open={open === 'permissions'}
             onOpenChange={() => {
               setOpen('permissions')

@@ -58,7 +58,6 @@ describe('use-roles regression', () => {
 
     useStateMock
       .mockImplementationOnce(() => [[], setRoles])
-      .mockImplementationOnce(() => [[], vi.fn()])
       .mockImplementationOnce(() => [true, setIsInitialLoading])
       .mockImplementationOnce(() => [null, setError])
 
@@ -88,19 +87,18 @@ describe('use-roles regression', () => {
     expect(setIsInitialLoading).toHaveBeenLastCalledWith(false)
   })
 
-  it('adds new role with empty backend contract permissions instead of frontend defaults', async () => {
+  it('adds new account-linked role with empty backend contract permissions instead of frontend defaults', async () => {
     const setRoles = vi.fn()
 
     useStateMock
       .mockImplementationOnce(() => [[{ id: 'admin', label: 'Admin', color: '', permissions: ['menu_dashboard'] }], setRoles])
-      .mockImplementationOnce(() => [[], vi.fn()])
       .mockImplementationOnce(() => [false, vi.fn()])
       .mockImplementationOnce(() => [null, vi.fn()])
 
     upsertRoleMock.mockResolvedValue(undefined)
 
     const result = useRoles(false)
-    await result.addRole('Finance', 'org_finance')
+    await result.addRole('Warehouse', 'Warehouse')
 
     expect(setRoles).toHaveBeenCalledWith(expect.any(Function))
     const updaterCall = setRoles.mock.calls.find((call) => typeof call?.[0] === 'function')
@@ -110,17 +108,19 @@ describe('use-roles regression', () => {
     ).toEqual([
       { id: 'admin', label: 'Admin', color: '', permissions: ['menu_dashboard'] },
       {
-        id: 'org_finance',
-        label: 'Finance',
+        id: 'Warehouse',
+        label: 'Warehouse',
         color: 'bg-slate-500/10 text-slate-600 border-slate-200',
         permissions: [],
+        version: 1,
       },
     ])
     expect(upsertRoleMock).toHaveBeenCalledWith({
-      id: 'org_finance',
-      label: 'Finance',
+      id: 'Warehouse',
+      label: 'Warehouse',
       color: 'bg-slate-500/10 text-slate-600 border-slate-200',
       permissions: [],
+      version: 1,
     })
   })
 })

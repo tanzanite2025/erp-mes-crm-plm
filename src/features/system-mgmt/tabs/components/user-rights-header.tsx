@@ -2,12 +2,12 @@ import { Plus, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
-import type { OrgRoleOption } from './user-rights-types'
+import type { UserRoleOption } from './user-rights-types'
 
 type UserRightsHeaderProps = {
   isAddingMode: boolean
   newRoleId: string
-  orgNodes: OrgRoleOption[]
+  roleOptions: UserRoleOption[]
   isConfirmDisabled?: boolean
   onNewRoleChange: (value: string) => void
   onStartAdd: () => void
@@ -18,7 +18,7 @@ type UserRightsHeaderProps = {
 export function UserRightsHeader({
   isAddingMode,
   newRoleId,
-  orgNodes,
+  roleOptions,
   isConfirmDisabled,
   onNewRoleChange,
   onStartAdd,
@@ -45,19 +45,19 @@ export function UserRightsHeader({
         <Button
           size='sm'
           onClick={onStartAdd}
-          title={t('systemManagement.userRights.actions.importOrgRole')}
+          title={t('systemManagement.userRights.actions.importAccountRole')}
           className='rounded-full h-11 px-8 font-black text-[10px] tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all w-full sm:w-auto'
         >
           <Plus className='mr-2 size-3.5' />
-          {t('systemManagement.userRights.actions.importOrgRole')}
+          {t('systemManagement.userRights.actions.importAccountRole')}
         </Button>
       ) : (
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-background/50 p-3 sm:p-2 rounded-[20px] sm:rounded-full border border-dashed border-muted/50 shadow-inner w-full sm:w-auto'>
           <SelectDropdown
-            placeholder={t('systemManagement.userRights.actions.selectOrgRole')}
-            aria-label={t('systemManagement.userRights.actions.selectOrgRole')}
+            placeholder={t('systemManagement.userRights.actions.selectAccountRole')}
+            aria-label={t('systemManagement.userRights.actions.selectAccountRole')}
             className='h-10 sm:h-9 w-full sm:w-64 rounded-full border-none bg-muted/20 text-[10px] font-bold px-4'
-            items={orgNodes}
+            items={roleOptions}
             defaultValue={newRoleId}
             onValueChange={onNewRoleChange}
           />
