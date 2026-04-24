@@ -49,14 +49,14 @@ export function BOMRecipeEditor({ form, fields, materials, append, remove }: BOM
     })
 
   return (
-    <div className='space-y-3 p-1'>
-      <div className='mb-2 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-2'>
+    <div className='flex min-h-0 flex-1 flex-col space-y-2 p-0.5'>
+      <div className='mb-1.5 flex items-center justify-between border-b-2 border-dashed border-muted/50 pb-1.5'>
         <h4 className='text-[10px] font-black uppercase tracking-widest italic text-slate-900 sm:text-[12px]'>
           {t('engineering.bomArchive.recipe.title')}
         </h4>
       </div>
 
-      <div className='mb-2'>
+      <div className='mb-1.5'>
         <SegmentedTabs
           tabs={[
             { value: 'all', label: t('engineering.bomArchive.recipe.all') },
@@ -69,26 +69,26 @@ export function BOMRecipeEditor({ form, fields, materials, append, remove }: BOM
         />
       </div>
 
-      <Tabs value={activeTab} className='min-h-0 w-full flex-1'>
-        <div className='relative mt-2 flex h-[400px] flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-inner transition-all sm:h-[500px]'>
-          <div className='custom-scrollbar flex-1 overflow-y-auto p-0'>
-            {activeTab === 'all' ? (
+      <Tabs value={activeTab} className='flex min-h-0 w-full flex-1 flex-col'>
+        <div className='relative mt-1 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-dashed border-muted/50 bg-background shadow-inner'>
+          {activeTab === 'all' ? (
+            <div className='custom-scrollbar flex-1 overflow-y-auto p-0'>
               <SummaryPanel
                 fields={fields}
                 form={form}
                 sections={sections}
                 onSectionClick={(section) => setActiveTab(section)}
               />
-            ) : (
-              <ItemTable
-                form={form}
-                renderFields={renderFields}
-                materials={materials}
-                onRemove={(index) => remove(index)}
-                onAdd={() => handleAppend(activeTab)}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <ItemTable
+              form={form}
+              renderFields={renderFields}
+              materials={materials}
+              onRemove={(index) => remove(index)}
+              onAdd={() => handleAppend(activeTab)}
+            />
+          )}
         </div>
       </Tabs>
     </div>

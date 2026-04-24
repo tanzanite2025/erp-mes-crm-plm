@@ -1088,6 +1088,7 @@ export const engineering = {
     },
     form: {
       bomNo: 'BOM 编号',
+      bomNoAutoPlaceholder: '保存后自动生成',
       product: '产品',
       productPlaceholder: '请选择产品...',
       version: '系统版本',

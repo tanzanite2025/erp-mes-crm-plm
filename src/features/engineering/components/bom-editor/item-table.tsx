@@ -42,7 +42,7 @@ export function ItemTable({ form, renderFields, materials, onRemove, onAdd }: It
   return (
     <div
       ref={parentRef}
-      className='custom-scrollbar relative z-0 max-h-[500px] overflow-auto rounded-b-xl border-b border-muted bg-slate-50/50'
+      className='custom-scrollbar relative z-0 h-full min-h-0 flex-1 overflow-auto rounded-b-xl border-b border-muted bg-slate-50/50'
     >
       <Table>
         <TableHeader className='sticky top-0 z-20 bg-slate-900 shadow-md'>

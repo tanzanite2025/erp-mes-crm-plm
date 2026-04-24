@@ -5,8 +5,7 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Input } from '@/components/ui/input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { cn } from '@/lib/utils'
-import { failLoudly } from '@/lib/safe-catch'
-import { type BOM, type ChangeOrder, type Product } from '../../data/schema'
+import { type BOM, type Product } from '../../data/schema'
 import {
   normalizeBOMControlFieldPatch,
 } from '../../utils/product-code-normalization'
@@ -29,11 +28,10 @@ type FormFieldConfig = {
 interface BOMFormHeaderProps {
   form: UseFormReturn<BOM>
   products: Product[]
-  changeOrders: ChangeOrder[]
   isEdit: boolean
 }
 
-export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormHeaderProps) {
+export function BOMFormHeader({ form, products, isEdit }: BOMFormHeaderProps) {
   const { t } = useLanguage()
   const productItems = useMemo(
     () =>
@@ -44,11 +42,6 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
     [products]
   )
 
-  const changeOrderItems = changeOrders.map((changeOrder) => ({
-    label: `${changeOrder.changeOrderNo || ''} / ${changeOrder.title}`,
-    value: changeOrder.id,
-  }))
-
   const headerRows: FormFieldConfig[][] = [
     [
       {
@@ -56,7 +49,8 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
         label: t('engineering.bomArchive.form.bomNo'),
         colSpan: 'col-span-full sm:col-span-2',
         type: 'input',
-        readOnly: isEdit,
+        readOnly: true,
+        placeholder: isEdit ? undefined : t('engineering.bomArchive.form.bomNoAutoPlaceholder'),
         className: 'bg-muted/50',
       },
       {
@@ -89,42 +83,11 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
     ],
     [
       {
-        name: 'changeOrderId',
-        label: t('engineering.bomArchive.form.changeOrder'),
-        colSpan: 'col-span-full sm:col-span-4',
-        type: 'select',
-        placeholder:
-          changeOrderItems.length > 0
-            ? t('engineering.bomArchive.form.changeOrderPlaceholder')
-            : t('engineering.bomArchive.form.changeOrderEmpty'),
-        items: changeOrderItems,
-      },
-      {
-        name: 'changeOrderNo',
-        label: t('engineering.bomArchive.form.changeOrderNo'),
-        colSpan: 'col-span-full sm:col-span-2',
+        name: 'effectiveFrom',
+        label: t('engineering.bomArchive.form.effectiveFrom'),
+        colSpan: 'col-span-full sm:col-span-8',
         type: 'input',
-        placeholder: t('engineering.bomArchive.form.changeOrderNoPlaceholder'),
-        className: 'font-mono',
-      },
-      {
-        name: 'changeType',
-        label: t('engineering.bomArchive.form.changeType'),
-        colSpan: 'col-span-full sm:col-span-2',
-        type: 'select',
-        items: [
-          { label: t('engineering.bomArchive.form.manual'), value: 'MANUAL' },
-          { label: t('engineering.bomArchive.form.eco'), value: 'ECO' },
-          { label: t('engineering.bomArchive.form.ecn'), value: 'ECN' },
-        ],
-      },
-      {
-        name: 'siteCode',
-        label: t('engineering.bomArchive.form.siteCode'),
-        colSpan: 'col-span-full sm:col-span-2',
-        type: 'input',
-        placeholder: t('engineering.bomArchive.form.siteCodePlaceholder'),
-        className: 'font-mono uppercase',
+        inputType: 'date',
       },
       {
         name: 'revisionNo',
@@ -135,71 +98,7 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
         className: 'font-mono',
       },
     ],
-    [
-      {
-        name: 'effectiveFrom',
-        label: t('engineering.bomArchive.form.effectiveFrom'),
-        colSpan: 'col-span-full sm:col-span-6',
-        type: 'input',
-        inputType: 'date',
-      },
-      {
-        name: 'effectiveTo',
-        label: t('engineering.bomArchive.form.effectiveTo'),
-        colSpan: 'col-span-full sm:col-span-6',
-        type: 'input',
-        inputType: 'date',
-      },
-    ],
   ]
-
-  const handleChangeOrderSelection = (changeOrderId: string, onChange: (value: string) => void) => {
-    onChange(changeOrderId)
-
-    const selected = changeOrders.find((changeOrder) => changeOrder.id === changeOrderId)
-    if (!selected) {
-      const error = new Error(`[CRITICAL] Missing change order for id ${changeOrderId}`)
-      failLoudly(error, 'BOMFormHeader.changeOrderLookup')
-      throw error
-    }
-
-    if (!form.getValues('productId') && selected.productId) {
-      form.setValue('productId', selected.productId, { shouldDirty: true })
-    }
-
-    if (!selected.changeOrderNo) {
-      const error = new Error('[CRITICAL] Missing changeOrderNo for selected change order')
-      failLoudly(error, 'BOMFormHeader.changeOrderNo')
-      throw error
-    }
-    const normalizedPatch = normalizeBOMControlFieldPatch({
-      changeOrderNo: selected.changeOrderNo,
-      changeType: selected.changeType,
-      siteCode: selected.siteCode,
-      isDefaultSite: selected.isDefaultSite,
-      revisionNo: selected.revisionNo,
-      effectiveFrom: selected.effectiveFrom,
-      effectiveTo: selected.effectiveTo,
-    })
-
-    form.setValue('changeOrderNo', normalizedPatch.changeOrderNo || '', { shouldDirty: true })
-    if (selected.changeType) {
-      form.setValue('changeType', normalizedPatch.changeType || 'MANUAL', { shouldDirty: true })
-    }
-    if (selected.siteCode !== undefined) {
-      form.setValue('siteCode', normalizedPatch.siteCode || '', { shouldDirty: true })
-      form.setValue('isDefaultSite', Boolean(normalizedPatch.isDefaultSite), { shouldDirty: true })
-    }
-    if (selected.revisionNo) {
-      form.setValue('revisionNo', normalizedPatch.revisionNo || '', { shouldDirty: true })
-    }
-    if (selected.effectiveFrom) {
-      form.setValue('effectiveFrom', normalizedPatch.effectiveFrom || '', { shouldDirty: true })
-    }
-    if (selected.effectiveTo) {
-      form.setValue('effectiveTo', normalizedPatch.effectiveTo || '', { shouldDirty: true })
-    }
-  }
 
   return (
     <div className='space-y-4 rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-3 sm:p-4'>
@@ -226,14 +125,6 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                     <SelectDropdown
                       value={(field.value as string | undefined) ?? ''}
                       onValueChange={(value) => {
-                        if (fieldConfig.name === 'changeOrderId') {
-                          handleChangeOrderSelection(value, field.onChange)
-                          return
-                        }
-                        if (fieldConfig.name === 'changeType') {
-                          field.onChange(normalizeBOMControlFieldPatch({ changeType: value }).changeType)
-                          return
-                        }
                         if (fieldConfig.name === 'status') {
                           field.onChange(normalizeBOMControlFieldPatch({ status: value }).status)
                           return
@@ -243,10 +134,7 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                       items={fieldConfig.items}
                       placeholder={fieldConfig.placeholder}
                       className='h-11! w-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold shadow-inner'
-                      disabled={
-                        (isEdit && fieldConfig.name === 'productId') ||
-                        (fieldConfig.name === 'changeOrderId' && changeOrderItems.length === 0)
-                      }
+                      disabled={isEdit && fieldConfig.name === 'productId'}
                       isControlled
                     />
                   ) : (
@@ -260,32 +148,13 @@ export function BOMFormHeader({ form, products, changeOrders, isEdit }: BOMFormH
                         onChange={(event) => {
                           const nextValue = event.target.value
 
-                          if (fieldConfig.name === 'changeOrderNo') {
-                            field.onChange(normalizeBOMControlFieldPatch({ changeOrderNo: nextValue }).changeOrderNo)
-                            return
-                          }
-
-                          if (fieldConfig.name === 'siteCode') {
-                            const normalizedPatch = normalizeBOMControlFieldPatch({
-                              siteCode: nextValue,
-                              isDefaultSite: nextValue.trim() === '',
-                            })
-                            field.onChange(normalizedPatch.siteCode)
-                            form.setValue('isDefaultSite', Boolean(normalizedPatch.isDefaultSite), { shouldDirty: true })
-                            return
-                          }
-
                           if (fieldConfig.name === 'revisionNo') {
                             field.onChange(normalizeBOMControlFieldPatch({ revisionNo: nextValue }).revisionNo)
                             return
                           }
 
-                          if (fieldConfig.name === 'effectiveFrom' || fieldConfig.name === 'effectiveTo') {
-                            field.onChange(
-                              fieldConfig.name === 'effectiveFrom'
-                                ? normalizeBOMControlFieldPatch({ effectiveFrom: nextValue }).effectiveFrom
-                                : normalizeBOMControlFieldPatch({ effectiveTo: nextValue }).effectiveTo
-                            )
+                          if (fieldConfig.name === 'effectiveFrom') {
+                            field.onChange(normalizeBOMControlFieldPatch({ effectiveFrom: nextValue }).effectiveFrom)
                             return
                           }
 

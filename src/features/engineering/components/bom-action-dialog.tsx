@@ -43,7 +43,7 @@ export function BOMActionDialog({
 }: BOMActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, products, materials, changeOrders, deltaProxy, commitDelta } = useBOMForm({
+  const { form, fields, append, remove, products, materials, deltaProxy, commitDelta } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
@@ -69,8 +69,8 @@ export function BOMActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-[98vw] sm:max-w-[95vw] h-[98vh] max-h-[98vh] p-0 gap-0 rounded-[32px] border-none shadow-2xl overflow-hidden'>
-        <DialogHeader className='p-4 sm:p-6 pb-2 text-start flex-none relative'>
+      <DialogContent className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'>
+        <DialogHeader className='p-4 sm:p-5 pb-1.5 text-start flex-none relative'>
           <DialogTitle className='flex items-center gap-2 sm:gap-3 text-base sm:text-xl font-black tracking-tighter uppercase italic pr-8'>
             <Layers className='size-5 sm:size-6 text-blue-600 stroke-3 shrink-0' />
             <span className='truncate sm:whitespace-normal'>
@@ -84,12 +84,11 @@ export function BOMActionDialog({
           <form
             id='bom-form'
             onSubmit={typedForm.handleSubmit(handleFormSubmit)}
-            className='p-3 sm:p-4 pt-0 space-y-3 flex flex-col flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/10 scrollbar-track-transparent'
+            className='flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3 pt-0 sm:px-4 sm:pb-4 overflow-hidden'
           >
             <BOMFormHeader
               form={typedForm}
               products={products}
-              changeOrders={changeOrders}
               isEdit={isEdit}
             />
 
@@ -101,7 +100,7 @@ export function BOMActionDialog({
               remove={remove}
             />
 
-            <div className='flex flex-col sm:flex-row items-stretch gap-2 sm:gap-4 pt-2 border-t border-dashed border-muted/50 h-auto sm:h-12 mb-1 shrink-0'>
+            <div className='flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 pt-1.5 border-t border-dashed border-muted/50 h-auto sm:h-11 shrink-0'>
               <FormField
                 control={form.control}
                 name='description'

@@ -1088,6 +1088,7 @@ export const engineering = {
     },
     form: {
       bomNo: 'BOM Number',
+      bomNoAutoPlaceholder: 'Auto-generated after save',
       product: 'Product',
       productPlaceholder: 'Select a product...',
       version: 'System Version',
