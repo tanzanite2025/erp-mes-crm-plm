@@ -10,6 +10,7 @@ describe('sales-receivable-detail-dialog.config', () => {
       actionLabel: '收款',
       partnerLabel: '客户',
       amountLabel: '未收',
+      summaryAmountLabel: '订单金额',
       fieldPrefix: 'receivable',
       relationKey: 'receiptRecordId',
       recordType: 'receipt',
@@ -29,5 +30,11 @@ describe('sales-receivable-detail-dialog.config', () => {
         customerName: '北方客户',
       } as never)
     ).toBe('北方客户')
+
+    expect(
+      salesReceivableDetailDialogConfig.getDetailSummaryAmount?.({
+        orderAmount: 188,
+      } as never)
+    ).toBe(188)
   })
 })

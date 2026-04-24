@@ -51,7 +51,37 @@ func setupProductTemplateServiceTestDB(t *testing.T) *gorm.DB {
 			version INTEGER DEFAULT 1
 		)
 	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE product_types (
+			id TEXT PRIMARY KEY,
+			parent_id TEXT,
+			template_id TEXT,
+			name TEXT NOT NULL,
+			code TEXT,
+			description TEXT,
+			active NUMERIC DEFAULT 1,
+			sort_order INTEGER DEFAULT 0,
+			created_at DATETIME,
+			updated_at DATETIME,
+			version INTEGER DEFAULT 1
+		)
+	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE product_type_attribute_bindings (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			product_type_id TEXT NOT NULL,
+			category_key TEXT NOT NULL,
+			sort_order INTEGER DEFAULT 0,
+			required NUMERIC DEFAULT 0,
+			active NUMERIC DEFAULT 1,
+			version INTEGER DEFAULT 1
+		)
+	`).Error)
 	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_templates_deleted_at ON product_templates(deleted_at)`).Error)
+	require.NoError(t, testDB.Exec(`CREATE INDEX idx_product_type_attribute_bindings_deleted_at ON product_type_attribute_bindings(deleted_at)`).Error)
 
 	previousDB := db.DB
 	db.DB = testDB
@@ -135,4 +165,101 @@ func TestSaveProductTemplatePersistsAttributeBindings(t *testing.T) {
 		require.Equal(t, "versionLevel", item.AttributeBindings[1].CategoryKey)
 	}
 	require.True(t, matched)
+}
+
+func TestSaveProductTemplateSyncsResolvedTypeBindingsWithoutOverwritingDrift(t *testing.T) {
+	testDB := setupProductTemplateServiceTestDB(t)
+
+	saved, err := SaveProductTemplate(SaveProductTemplateInput{
+		Name:         "Template Rim",
+		Code:         "RIM_DYNAMIC",
+		ComponentKey: "RIM",
+		Active:       true,
+		AttributeBindings: []models.ProductTemplateAttributeBinding{
+			{CategoryKey: "techSeries", Required: false, Active: true},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, saved.Version)
+
+	parentTypeID := "type-parent"
+	childTypeID := "type-child"
+	driftTypeID := "type-drift"
+
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:         parentTypeID,
+		Name:       "Parent",
+		Code:       "PARENT",
+		TemplateID: &saved.ID,
+		Active:     true,
+		Version:    1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:       childTypeID,
+		Name:     "Child",
+		Code:     "CHILD",
+		ParentID: &parentTypeID,
+		Active:   true,
+		Version:  1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductType{
+		ID:         driftTypeID,
+		Name:       "Drift",
+		Code:       "DRIFT",
+		TemplateID: &saved.ID,
+		Active:     true,
+		Version:    1,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.ProductTypeAttributeBinding{
+		ProductTypeID: parentTypeID,
+		CategoryKey:   "techSeries",
+		SortOrder:     1,
+		Required:      false,
+		Active:        true,
+		Version:       1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.ProductTypeAttributeBinding{
+		ProductTypeID: driftTypeID,
+		CategoryKey:   "legacyOnly",
+		SortOrder:     1,
+		Required:      false,
+		Active:        true,
+		Version:       1,
+	}).Error)
+
+	updated, err := SaveProductTemplate(SaveProductTemplateInput{
+		BaseModel: models.BaseModel{
+			ID: saved.ID,
+		},
+		Name:         saved.Name,
+		Code:         saved.Code,
+		ComponentKey: saved.ComponentKey,
+		Active:       true,
+		Version:      saved.Version,
+		AttributeBindings: []models.ProductTemplateAttributeBinding{
+			{CategoryKey: "techSeries", Required: false, Active: true},
+			{CategoryKey: "brakeType", Required: false, Active: true},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, updated.Version)
+	require.Len(t, updated.AttributeBindings, 2)
+
+	var parentBindings []models.ProductTypeAttributeBinding
+	require.NoError(t, testDB.Where("product_type_id = ?", parentTypeID).Order("sort_order asc").Find(&parentBindings).Error)
+	require.Len(t, parentBindings, 2)
+	require.Equal(t, "techSeries", parentBindings[0].CategoryKey)
+	require.Equal(t, "brakeType", parentBindings[1].CategoryKey)
+
+	var childBindings []models.ProductTypeAttributeBinding
+	require.NoError(t, testDB.Where("product_type_id = ?", childTypeID).Order("sort_order asc").Find(&childBindings).Error)
+	require.Len(t, childBindings, 2)
+	require.Equal(t, "techSeries", childBindings[0].CategoryKey)
+	require.Equal(t, "brakeType", childBindings[1].CategoryKey)
+
+	var driftBindings []models.ProductTypeAttributeBinding
+	require.NoError(t, testDB.Where("product_type_id = ?", driftTypeID).Order("sort_order asc").Find(&driftBindings).Error)
+	require.Len(t, driftBindings, 1)
+	require.Equal(t, "legacyOnly", driftBindings[0].CategoryKey)
 }

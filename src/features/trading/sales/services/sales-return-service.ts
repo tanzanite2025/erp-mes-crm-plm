@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import {
+  ensureArrayResponse,
   ensureArrayField,
   ensureNumberField,
   ensureObjectResponse,
@@ -9,11 +10,13 @@ import { toSalesOrderContract } from '../adapters/sales-order-api-adapter'
 import {
   type CreateSalesReturnPayload,
   type CreateSalesReturnResponseApiDTO,
+  type PatchSalesReturnActualAmountEntryPayload,
+  type PatchSalesReturnPayload,
   type PatchSalesReturnLogisticsPayload,
+  type SalesReturnActualAmountRecordApiDTO,
   type SalesReturnApiDTO,
   type SalesReturnLineApiDTO,
   type SalesReturnListPageApiDTO,
-  type SalesReturnTransportMode,
 } from '../contracts/sales-return-api-dto'
 
 export interface SalesReturnLine {
@@ -42,7 +45,6 @@ export interface SalesReturnRecord {
   customerId: string
   customerName: string
   status: string
-  transportMode: SalesReturnTransportMode
   trackingNo?: string
   carrier?: string
   shippedAt?: string
@@ -54,6 +56,11 @@ export interface SalesReturnRecord {
   issueCategory?: string
   reason?: string
   remarks?: string
+  actualReturnAmount: number
+  actualReturnAmountNote?: string
+  actualReturnAmountEvidences?: OrderEvidence[]
+  actualReturnAmountRecordedAt?: string
+  actualReturnAmountRecordedBy?: string
   evidences?: OrderEvidence[]
   operator?: string
   totalQuantity: number
@@ -61,6 +68,24 @@ export interface SalesReturnRecord {
   createdAt: string
   updatedAt: string
   lines: SalesReturnLine[]
+}
+
+export interface SalesReturnActualAmountRecord {
+  id: string
+  salesReturnId: string
+  salesOrderId: string
+  salesOrderNo: string
+  returnNo: string
+  customerId: string
+  customerName: string
+  amount: number
+  note?: string
+  evidences?: OrderEvidence[]
+  estimatedReturnAmountSnapshot: number
+  recordedAt: string
+  recordedBy: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface PaginatedSalesReturns {
@@ -105,6 +130,28 @@ function toSalesReturnLineContract(
   }
 }
 
+function toSalesReturnActualAmountRecordContract(
+  dto: SalesReturnActualAmountRecordApiDTO
+): SalesReturnActualAmountRecord {
+  return {
+    id: dto.id,
+    salesReturnId: dto.salesReturnId,
+    salesOrderId: dto.salesOrderId,
+    salesOrderNo: dto.salesOrderNo,
+    returnNo: dto.returnNo,
+    customerId: dto.customerId,
+    customerName: dto.customerName,
+    amount: dto.amount,
+    note: dto.note,
+    evidences: dto.evidences ?? [],
+    estimatedReturnAmountSnapshot: dto.estimatedReturnAmountSnapshot,
+    recordedAt: dto.recordedAt,
+    recordedBy: dto.recordedBy,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+  }
+}
+
 function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
   return {
     id: dto.id,
@@ -114,7 +161,6 @@ function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
     customerId: dto.customerId,
     customerName: dto.customerName,
     status: dto.status,
-    transportMode: dto.transportMode,
     trackingNo: dto.trackingNo,
     carrier: dto.carrier,
     shippedAt: dto.shippedAt ?? undefined,
@@ -126,6 +172,11 @@ function toSalesReturnContract(dto: SalesReturnApiDTO): SalesReturnRecord {
     issueCategory: dto.issueCategory,
     reason: dto.reason,
     remarks: dto.remarks,
+    actualReturnAmount: dto.actualReturnAmount,
+    actualReturnAmountNote: dto.actualReturnAmountNote,
+    actualReturnAmountEvidences: dto.actualReturnAmountEvidences ?? [],
+    actualReturnAmountRecordedAt: dto.actualReturnAmountRecordedAt ?? undefined,
+    actualReturnAmountRecordedBy: dto.actualReturnAmountRecordedBy,
     evidences: dto.evidences ?? [],
     operator: dto.operator,
     totalQuantity: dto.totalQuantity,
@@ -193,6 +244,36 @@ export async function getSalesReturnById(
   return toSalesReturnContract(dto)
 }
 
+export async function getSalesReturnActualAmountRecords(
+  id: string
+): Promise<SalesReturnActualAmountRecord[]> {
+  const res = await apiFetch<Record<string, unknown>>(
+    `/sales-returns/${id}/actual-amount-records`
+  )
+  return ensureArrayResponse<SalesReturnActualAmountRecordApiDTO>(
+    res,
+    'SalesReturnService.getSalesReturnActualAmountRecords'
+  ).map(toSalesReturnActualAmountRecordContract)
+}
+
+export async function patchSalesReturnActualAmountEntry(
+  id: string,
+  payload: PatchSalesReturnActualAmountEntryPayload
+): Promise<SalesReturnRecord> {
+  const res = await apiFetch<Record<string, unknown>>(
+    `/sales-returns/${id}/actual-amount`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }
+  )
+  const dto = ensureObjectResponse<SalesReturnApiDTO & Record<string, unknown>>(
+    res,
+    'SalesReturnService.patchSalesReturnActualAmountEntry'
+  )
+  return toSalesReturnContract(dto)
+}
+
 export async function createSalesReturn(
   salesOrderId: string,
   payload: CreateSalesReturnPayload
@@ -212,6 +293,21 @@ export async function createSalesReturn(
     salesReturn: toSalesReturnContract(dto.salesReturn),
     salesOrder: toSalesOrderContract(dto.salesOrder),
   }
+}
+
+export async function patchSalesReturn(
+  id: string,
+  payload: PatchSalesReturnPayload
+): Promise<SalesReturnRecord> {
+  const res = await apiFetch<Record<string, unknown>>(`/sales-returns/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+  const dto = ensureObjectResponse<SalesReturnApiDTO & Record<string, unknown>>(
+    res,
+    'SalesReturnService.patchSalesReturn'
+  )
+  return toSalesReturnContract(dto)
 }
 
 export async function patchSalesReturnLogistics(

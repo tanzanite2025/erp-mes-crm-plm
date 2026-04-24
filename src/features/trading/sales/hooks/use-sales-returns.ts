@@ -3,17 +3,24 @@ import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
+import { receivableQueryKeys } from '@/features/trading/receivables/query-keys'
 import type {
   CreateSalesReturnPayload,
+  PatchSalesReturnActualAmountEntryPayload,
+  PatchSalesReturnPayload,
   PatchSalesReturnLogisticsPayload,
 } from '../contracts/sales-return-api-dto'
 import {
   createSalesReturn,
+  getSalesReturnActualAmountRecords,
   getSalesReturnById,
   getSalesReturns,
+  patchSalesReturnActualAmountEntry,
+  patchSalesReturn,
   patchSalesReturnLogistics,
   type GetSalesReturnsOptions,
   type PaginatedSalesReturns,
+  type SalesReturnActualAmountRecord,
   type SalesReturnRecord,
 } from '../services/sales-return-service'
 
@@ -53,6 +60,14 @@ export function useGetSalesReturnDetail(id: string) {
   })
 }
 
+export function useGetSalesReturnActualAmountRecords(id: string) {
+  return useQuery<SalesReturnActualAmountRecord[], Error>({
+    queryKey: tradingQueryKeys.salesReturnActualAmountRecords(id),
+    queryFn: () => getSalesReturnActualAmountRecords(id),
+    enabled: !!id,
+  })
+}
+
 export function useSalesReturnMutations() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
@@ -67,11 +82,17 @@ export function useSalesReturnMutations() {
     await queryClient.invalidateQueries({
       queryKey: tradingQueryKeys.salesReturnDetail(salesReturnId),
     })
+    await queryClient.invalidateQueries({
+      queryKey: tradingQueryKeys.salesReturnActualAmountRecords(salesReturnId),
+    })
     if (salesOrderId) {
       await queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesOrderDetail(salesOrderId),
       })
     }
+    await queryClient.invalidateQueries({
+      queryKey: receivableQueryKeys.receivables(),
+    })
     await queryClient.invalidateQueries({
       queryKey: tradingQueryKeys.customerSalesReturnSummary(),
     })
@@ -113,5 +134,49 @@ export function useSalesReturnMutations() {
     onError: handleServerError,
   })
 
-  return { createMutation, patchLogisticsMutation }
+  const patchBodyMutation = useMutation({
+    mutationFn: ({
+      salesReturnId,
+      payload,
+    }: {
+      salesReturnId: string
+      payload: PatchSalesReturnPayload
+    }) => patchSalesReturn(salesReturnId, payload),
+    onSuccess: async (data) => {
+      toast.success(t('trading.salesReturns.queryShell.editSuccess'))
+      await invalidateSalesReturnViews(data.id, data.salesOrderId)
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesReturnsSourceOrderDetail(data.salesOrderId),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['sales-returns', 'source-orders'],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesOrdersRoot(),
+      })
+    },
+    onError: handleServerError,
+  })
+
+  const patchActualAmountEntryMutation = useMutation({
+    mutationFn: ({
+      salesReturnId,
+      payload,
+    }: {
+      salesReturnId: string
+      payload: PatchSalesReturnActualAmountEntryPayload
+    }) => patchSalesReturnActualAmountEntry(salesReturnId, payload),
+    onSuccess: async (data) => {
+      toast.success(t('trading.salesReturns.queryShell.actualAmountEntrySuccess'))
+      await invalidateSalesReturnViews(data.id, data.salesOrderId)
+    },
+    onError: handleServerError,
+  })
+
+  return {
+    createMutation,
+    patchBodyMutation,
+    patchLogisticsMutation,
+    patchActualAmountEntryMutation,
+  }
 }

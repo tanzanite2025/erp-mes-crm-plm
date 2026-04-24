@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { CircuitBoard, FolderKanban, ScanSearch, SlidersHorizontal } from 'lucide-react'
+import { CircuitBoard, FolderKanban, Package2, ScanSearch, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
 import { formatCutSizeExpression } from '../../cut-size-library/data/cut-size-library-schema'
 import type { BatchEngineControls, BatchEngineMetric, BatchEngineRuleChip } from '../types'
@@ -18,6 +19,9 @@ type BatchEngineControlPanelProps = {
   ruleChips: BatchEngineRuleChip[]
   controls: BatchEngineControls
   updateControl: <K extends keyof BatchEngineControls>(key: K, value: BatchEngineControls[K]) => void
+  prepregSpecs: PrepregMaterialSpec[]
+  prepregLoading: boolean
+  selectedPrepregSpec?: PrepregMaterialSpec
   cutSizeUnits: CutSizeUnit[]
   cutSizeLoading: boolean
   selectedCutSize?: CutSizeUnit
@@ -38,9 +42,27 @@ function cutSizeOptionLabel(item: CutSizeUnit): string {
   return `${item.code} | ${item.name} | ${formatCutSizeExpression(item) || '--'}`
 }
 
+function prepregOptionLabel(item: PrepregMaterialSpec): string {
+  const width = item.widthMm?.trim() || '--'
+  const length = item.lengthM?.trim() || '--'
+  const display = item.displayAlias?.trim() || item.code
+  return `${display} | ${width}mm x ${length}m`
+}
+
 export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
   const { t } = useLanguage()
-  const { metrics, ruleChips, controls, updateControl, cutSizeUnits, cutSizeLoading, selectedCutSize } = props
+  const {
+    metrics,
+    ruleChips,
+    controls,
+    updateControl,
+    prepregSpecs,
+    prepregLoading,
+    selectedPrepregSpec,
+    cutSizeUnits,
+    cutSizeLoading,
+    selectedCutSize,
+  } = props
 
   return (
     <section className='rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.18)]'>
@@ -68,23 +90,67 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
             {t('rawMaterials.batchEngine.sections.control.blocks.roll.title')}
           </div>
           <div className='mt-3 grid gap-2'>
-            <ControlField label='卷材幅宽 (mm)'>
-              <Input
-                value={controls.rollWidthMm}
-                onChange={(event) => updateControl('rollWidthMm', event.target.value)}
-                className='h-8 rounded-lg bg-white text-xs font-semibold'
-                placeholder='1000'
-              />
+            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.prepregRef')}>
+              <Select
+                value={controls.selectedPrepregSpecId || '__none__'}
+                onValueChange={(value) =>
+                  updateControl('selectedPrepregSpecId', value === '__none__' ? '' : value)
+                }
+              >
+                <SelectTrigger className='h-9 rounded-lg bg-white text-xs font-semibold'>
+                  <SelectValue
+                    placeholder={
+                      prepregLoading
+                        ? t('rawMaterials.batchEngine.sections.control.placeholders.loading')
+                        : t('rawMaterials.batchEngine.sections.control.placeholders.selectPrepreg')
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='__none__'>
+                    {t('rawMaterials.batchEngine.sections.control.placeholders.none')}
+                  </SelectItem>
+                  {prepregSpecs.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {prepregOptionLabel(item)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </ControlField>
-            <ControlField label='卷材长度 (m)'>
-              <Input
-                value={controls.rollLengthM}
-                onChange={(event) => updateControl('rollLengthM', event.target.value)}
-                className='h-8 rounded-lg bg-white text-xs font-semibold'
-                placeholder='150'
-              />
-            </ControlField>
-            <ControlField label='刀缝 (mm)'>
+
+            <p className='min-h-5 text-xs font-semibold text-slate-600'>
+              {selectedPrepregSpec
+                ? `${t('rawMaterials.batchEngine.sections.control.prepregSummary.prefix')}: ${selectedPrepregSpec.widthMm || '--'}mm x ${selectedPrepregSpec.lengthM || '--'}m`
+                : t('rawMaterials.batchEngine.sections.control.prepregSummary.empty')}
+            </p>
+
+            <div className='rounded-[14px] border border-dashed border-cyan-300/70 bg-cyan-50/70 p-3'>
+              <div className='mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-800/80'>
+                <Package2 className='size-4' />
+                {t('rawMaterials.batchEngine.sections.control.blocks.rollSpec.title')}
+              </div>
+              <div className='grid gap-2'>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.rollWidth')}>
+                  <Input
+                    value={controls.rollWidthMm}
+                    readOnly
+                    className='h-8 rounded-lg bg-white text-xs font-semibold'
+                    placeholder='--'
+                  />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.rollLength')}>
+                  <Input
+                    value={controls.rollLengthM}
+                    readOnly
+                    className='h-8 rounded-lg bg-white text-xs font-semibold'
+                    placeholder='--'
+                  />
+                </ControlField>
+              </div>
+            </div>
+
+            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.knifeGap')}>
               <Input
                 value={controls.knifeGapMm}
                 onChange={(event) => updateControl('knifeGapMm', event.target.value)}
@@ -92,7 +158,7 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
                 placeholder='2'
               />
             </ControlField>
-            <ControlField label='修边 (mm)'>
+            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.edgeTrim')}>
               <Input
                 value={controls.edgeTrimMm}
                 onChange={(event) => updateControl('edgeTrimMm', event.target.value)}
@@ -109,13 +175,19 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
             {t('rawMaterials.batchEngine.sections.control.blocks.plan.title')}
           </div>
           <div className='mt-3'>
-            <ControlField label='引用裁切尺寸单元'>
+            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.cutSizeRef')}>
               <Select
                 value={controls.selectedCutSizeId || undefined}
                 onValueChange={(value) => updateControl('selectedCutSizeId', value)}
               >
                 <SelectTrigger className='h-9 rounded-lg bg-white text-xs font-semibold'>
-                  <SelectValue placeholder={cutSizeLoading ? '加载中...' : '请选择尺寸单元'} />
+                  <SelectValue
+                    placeholder={
+                      cutSizeLoading
+                        ? t('rawMaterials.batchEngine.sections.control.placeholders.loading')
+                        : t('rawMaterials.batchEngine.sections.control.placeholders.selectCutSize')
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {cutSizeUnits.map((item) => (
@@ -128,8 +200,8 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
             </ControlField>
             <p className='mt-2 min-h-5 text-xs font-semibold text-slate-600'>
               {selectedCutSize
-                ? `角度 ${selectedCutSize.cutAngle || 0} / 叠层 ${selectedCutSize.layupCount || 1} / 用途 ${selectedCutSize.usageType || '--'}`
-                : '选择尺寸单元后，模拟区将按长条优先规则实时计算'}
+                ? `${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.angle')} ${selectedCutSize.cutAngle || 0} / ${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.layup')} ${selectedCutSize.layupCount || 1} / ${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.usage')} ${selectedCutSize.usageType || '--'}`
+                : t('rawMaterials.batchEngine.sections.control.cutSizeSummary.empty')}
             </p>
           </div>
         </div>

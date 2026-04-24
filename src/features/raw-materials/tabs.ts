@@ -23,5 +23,10 @@ export function getRawMaterialsTabs(t: TranslateFn): TabItem[] {
       label: t('rawMaterials.tabs.cutSizeLibrary'),
       href: '/raw-materials/cut-size-library',
     },
+    {
+      key: 'cutting-plan',
+      label: t('rawMaterials.tabs.cuttingPlan'),
+      href: '/raw-materials/cutting-plan',
+    },
   ]
 }

@@ -19,7 +19,9 @@ func GetSalesOrdersHandler(c *gin.Context) {
 		PageSize:        pageSize,
 		WithLines:       queryIncludesLines(c),
 		CustomerID:      strings.TrimSpace(c.Query("customerId")),
-		Keyword:         strings.TrimSpace(c.Query("keyword")),
+		Keyword:         queryKeywordFilter(c),
+		PaymentMethod:   queryPaymentMethodFilter(c),
+		PaymentTerm:     queryPaymentTermFilter(c),
 		StatusFilterRaw: queryStatusFilter(c),
 	})
 	if err != nil {
@@ -124,6 +126,8 @@ func DeleteSalesOrderHandler(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] sales order not found: " + id})
 		case errors.Is(err, services.ErrSalesOrderDeleteRequiresCanceled):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "sales order must be canceled before delete"})
+		case errors.Is(err, services.ErrSalesOrderDeleteHasReturns):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "该销售订单已关联真实退货单，禁止删除"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to delete sales order: " + err.Error()})
 		}

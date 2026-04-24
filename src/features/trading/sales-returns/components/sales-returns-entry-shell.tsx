@@ -228,10 +228,10 @@ export function SalesReturnsEntryShell({
 
         <div className='rounded-[28px] border border-dashed border-muted/50 bg-muted/5 shadow-none'>
           <div className='px-5 pt-5 pb-2'>
-            <div className='text-base font-black'>
+            <div className='text-sm font-black tracking-tight text-foreground'>
               {t('trading.salesReturns.entryShell.returnsSectionTitle')}
             </div>
-            <p className='text-sm leading-6 font-bold text-muted-foreground'>
+            <p className='mt-1 text-xs leading-6 font-bold text-muted-foreground'>
               {t('trading.salesReturns.entryShell.returnsSectionDescription')}
             </p>
           </div>

@@ -13,11 +13,11 @@ func buildReceivableListItem(order models.SalesOrder, bundle receivableOrderSett
 		DocumentNo:        resolveReceivableDocumentNo(order),
 		CustomerName:      order.CustomerName,
 		Currency:          normalizeSettlementCurrency(order.Currency, "CNY"),
-		InvoiceAmount:     order.Amount,
+		OrderAmount:       order.Amount,
 		ReceivedAmount:    received,
 		OutstandingAmount: outstanding,
 		DueDate:           resolveReceivableDueDate(order),
-		AgingBucket:       deriveLedgerAgingBucket(status),
+		AgingBucket:       deriveReceivableAgingBucket(status),
 		Status:            status,
 		CreatedAt:         order.CreatedAt,
 		UpdatedAt:         order.UpdatedAt,
@@ -33,6 +33,7 @@ func buildReceivableDetail(order models.SalesOrder, bundle receivableOrderSettle
 	item := buildReceivableListItem(order, bundle)
 	records := bundle.recordsByOrderID[order.ID]
 	allocations := bundle.allocationsByOrderID[order.ID]
+	actualAmountRecords := bundle.actualAmountRecordsByOrderID[order.ID]
 	mappedRecords := make([]ReceiptRecordResponse, 0, len(records))
 	for _, record := range records {
 		record.LedgerID = order.ID
@@ -43,25 +44,31 @@ func buildReceivableDetail(order models.SalesOrder, bundle receivableOrderSettle
 		allocation.LedgerID = order.ID
 		mappedAllocations = append(mappedAllocations, mapSettlementAllocation(allocation))
 	}
+	mappedActualAmountRecords := make([]SalesReturnActualAmountRecordResponse, 0, len(actualAmountRecords))
+	for _, record := range actualAmountRecords {
+		mappedActualAmountRecords = append(mappedActualAmountRecords, mapSalesReturnActualAmountRecordToResponse(record))
+	}
 	return ReceivableLedgerDetailResponse{
-		ID:                order.ID,
-		DocumentNo:        item.DocumentNo,
-		SourceType:        "SALES_ORDER",
-		SourceRefID:       order.ID,
-		CustomerID:        order.CustomerID,
-		CustomerName:      order.CustomerName,
-		Currency:          item.Currency,
-		InvoiceAmount:     item.InvoiceAmount,
-		ReceivedAmount:    item.ReceivedAmount,
-		OutstandingAmount: item.OutstandingAmount,
-		DueDate:           item.DueDate,
-		AgingBucket:       item.AgingBucket,
-		Status:            item.Status,
-		Version:           order.Version,
-		CreatedAt:         order.CreatedAt,
-		UpdatedAt:         order.UpdatedAt,
-		ReceiptRecords:    mappedRecords,
-		Allocations:       mappedAllocations,
+		ID:                             order.ID,
+		DocumentNo:                     item.DocumentNo,
+		SourceType:                     "SALES_ORDER",
+		SourceRefID:                    order.ID,
+		CustomerID:                     order.CustomerID,
+		CustomerName:                   order.CustomerName,
+		Currency:                       item.Currency,
+		OrderAmount:                    item.OrderAmount,
+		ReceivedAmount:                 item.ReceivedAmount,
+		OutstandingAmount:              item.OutstandingAmount,
+		DueDate:                        item.DueDate,
+		AgingBucket:                    item.AgingBucket,
+		Status:                         item.Status,
+		Version:                        order.Version,
+		CreatedAt:                      order.CreatedAt,
+		UpdatedAt:                      order.UpdatedAt,
+		ReceiptRecords:                 mappedRecords,
+		Allocations:                    mappedAllocations,
+		ReturnAdjustmentAmount:         bundle.actualAmountAdjustmentByOrderID[order.ID],
+		SalesReturnActualAmountRecords: mappedActualAmountRecords,
 	}
 }
 

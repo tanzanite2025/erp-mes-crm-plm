@@ -50,7 +50,9 @@ export function ProductAppearanceMgmt() {
     queryFn: () => productAppearanceService.getProductAppearances(),
   })
 
-  const appearances = useMemo(() => appearancesQuery.data ?? [], [appearancesQuery.data])
+  if (appearancesQuery.isSuccess && !appearancesQuery.data) throw new Error('[CRITICAL] Appearances Data missing')
+
+  const appearances = appearancesQuery.data || []
   const activeCount = useMemo(() => appearances.filter((item) => item.active).length, [appearances])
   const usedCodes = useMemo(
     () => new Set(appearances.map((item) => item.barcodeCode).filter(Boolean)).size,

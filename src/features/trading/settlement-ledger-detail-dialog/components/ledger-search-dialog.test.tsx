@@ -10,6 +10,27 @@ const { useTradingFinanceResourcesMock } = vi.hoisted(() => ({
   useTradingFinanceResourcesMock: vi.fn(),
 }))
 
+vi.mock('@/context/language-provider', () => ({
+  useLanguage: () => ({
+    t: (key: string) => {
+      switch (key) {
+        case 'trading.ledger.statuses.OPEN':
+          return '待收'
+        case 'trading.ledger.statuses.PARTIAL':
+          return '部分收款'
+        case 'trading.ledger.statuses.OVERDUE':
+          return '已逾期'
+        case 'trading.ledger.statuses.SETTLED':
+          return '已结清'
+        case 'trading.ledger.statuses.CANCELLED':
+          return '已取消'
+        default:
+          return key
+      }
+    },
+  }),
+}))
+
 vi.mock('@/components/ui/dialog', () => ({
   Dialog: ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div data-testid='dialog-root'>{children}</div> : null,
@@ -121,6 +142,7 @@ describe('ledger-search-dialog', () => {
     expect(screen.getByRole('columnheader', { name: '供应商' })).toBeTruthy()
     expect(screen.getByText('PO-001')).toBeTruthy()
     expect(screen.getByText('示例供应商')).toBeTruthy()
+    expect(screen.getAllByText('待收').length).toBeGreaterThan(0)
 
     rerender(
       <LedgerSearchDialog

@@ -37,6 +37,8 @@ function toProductTemplateAttributeBindingApiDTO(
 }
 
 export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTemplate {
+  if (!dto.attributeBindings) throw new Error('[CRITICAL] Missing attributeBindings array in ProductTemplate DTO')
+
   return {
     id: dto.id,
     name: dto.name,
@@ -44,13 +46,15 @@ export function toProductTemplateContract(dto: ProductTemplateApiDTO): ProductTe
     componentKey: normalizeEngineeringTemplateComponentKey(dto.componentKey),
     description: dto.description || '',
     active: dto.active,
-    attributeBindings: (dto.attributeBindings ?? []).map(toProductTemplateAttributeBindingContract),
+    attributeBindings: dto.attributeBindings.map(toProductTemplateAttributeBindingContract),
     createdAt: dto.createdAt || new Date().toISOString(),
     version: dto._v ?? 1,
   }
 }
 
 export function toProductTemplateApiDTO(template: SaveProductTemplateInput): ProductTemplateApiDTO {
+  if (!template.attributeBindings) throw new Error('[CRITICAL] attributeBindings missing during save')
+
   return {
     id: template.id || '',
     name: template.name || '',
@@ -58,7 +62,7 @@ export function toProductTemplateApiDTO(template: SaveProductTemplateInput): Pro
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
     description: template.description || '',
     active: template.active ?? true,
-    attributeBindings: (template.attributeBindings ?? []).map(toProductTemplateAttributeBindingApiDTO),
+    attributeBindings: template.attributeBindings.map(toProductTemplateAttributeBindingApiDTO),
     createdAt: template.createdAt,
     _v: template.version ?? 1,
   }

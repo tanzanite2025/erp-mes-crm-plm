@@ -254,12 +254,12 @@ func mapPayableLedgerSearchItems(items []models.PayableLedger) []LedgerSearchCan
 
 func deriveLedgerAgingBucket(status string) string {
 	if strings.EqualFold(status, models.LedgerStatusSettled) {
-		return "SETTLED"
+		return models.LedgerAgingBucketSettled
 	}
 	if strings.EqualFold(status, models.LedgerStatusOverdue) {
-		return "OVERDUE"
+		return models.LedgerAgingBucketOverdue
 	}
-	return "OPEN"
+	return models.LedgerAgingBucketOpen
 }
 
 func mapSettlementAllocation(item models.SettlementAllocation) SettlementAllocationResponse {

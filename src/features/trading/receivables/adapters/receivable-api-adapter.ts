@@ -3,18 +3,19 @@ import type {
   ReceivableRecordApiDTO,
   ReceivableSummaryApiDTO,
 } from '../contracts/receivable-api-dto'
+import type { TradingLedgerAgingBucket, TradingLedgerStatus } from '../../utils/ledger-display'
 
 export interface ReceivableRecord {
   id: string
   documentNo: string
   customerName: string
   currency: string
-  invoiceAmount: number
+  orderAmount: number
   receivedAmount: number
   outstandingAmount: number
   dueDate: string
-  agingBucket: string
-  status: string
+  agingBucket: TradingLedgerAgingBucket
+  status: TradingLedgerStatus
 }
 
 export interface ReceivableSummary {
@@ -37,7 +38,7 @@ export function toReceivableRecordContract(dto: ReceivableRecordApiDTO): Receiva
     documentNo: dto.documentNo,
     customerName: dto.customerName,
     currency: dto.currency,
-    invoiceAmount: dto.invoiceAmount,
+    orderAmount: dto.orderAmount,
     receivedAmount: dto.receivedAmount,
     outstandingAmount: dto.outstandingAmount,
     dueDate: dto.dueDate,

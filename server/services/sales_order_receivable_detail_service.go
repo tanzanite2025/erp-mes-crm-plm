@@ -1,6 +1,7 @@
 package services
 
 import (
+	"math"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -29,9 +30,11 @@ func getReceivableOrderByIDTx(tx *gorm.DB, id string) (ReceivableLedgerDetailRes
 
 func loadReceivableSettlementBundle(tx *gorm.DB, orders []models.SalesOrder) (receivableOrderSettlementBundle, error) {
 	bundle := receivableOrderSettlementBundle{
-		recordsByOrderID:        make(map[string][]models.ReceiptRecord),
-		allocationsByOrderID:    make(map[string][]models.SettlementAllocation),
-		receivedAmountByOrderID: make(map[string]float64),
+		recordsByOrderID:                make(map[string][]models.ReceiptRecord),
+		allocationsByOrderID:            make(map[string][]models.SettlementAllocation),
+		receivedAmountByOrderID:         make(map[string]float64),
+		actualAmountRecordsByOrderID:    make(map[string][]models.SalesReturnActualAmountRecord),
+		actualAmountAdjustmentByOrderID: make(map[string]float64),
 	}
 	if len(orders) == 0 {
 		return bundle, nil
@@ -39,6 +42,19 @@ func loadReceivableSettlementBundle(tx *gorm.DB, orders []models.SalesOrder) (re
 	orderIDs := make([]string, 0, len(orders))
 	for _, order := range orders {
 		orderIDs = append(orderIDs, order.ID)
+	}
+
+	var actualAmountRecords []models.SalesReturnActualAmountRecord
+	if err := tx.Where("sales_order_id IN ?", orderIDs).Order("recorded_at desc, created_at desc").Find(&actualAmountRecords).Error; err != nil {
+		return bundle, err
+	}
+	for _, record := range actualAmountRecords {
+		orderID := strings.TrimSpace(record.SalesOrderID)
+		if orderID == "" {
+			continue
+		}
+		bundle.actualAmountRecordsByOrderID[orderID] = append(bundle.actualAmountRecordsByOrderID[orderID], record)
+		bundle.actualAmountAdjustmentByOrderID[orderID] = math.Round((bundle.actualAmountAdjustmentByOrderID[orderID]+record.Amount)*100) / 100
 	}
 
 	var allocations []models.SettlementAllocation
@@ -113,7 +129,7 @@ func loadReceivableSettlementBundle(tx *gorm.DB, orders []models.SalesOrder) (re
 func resolveReceivableSalesOrderTx(tx *gorm.DB, id string) (models.SalesOrder, error) {
 	id = strings.TrimSpace(id)
 	var order models.SalesOrder
-	if err := tx.Where("id = ? AND is_deleted = ?", id, false).First(&order).Error; err != nil {
+	if err := tx.Where("id = ? AND is_deleted = ? AND LOWER(COALESCE(status, '')) <> LOWER(?)", id, false, "Canceled").First(&order).Error; err != nil {
 		return models.SalesOrder{}, err
 	}
 	return order, nil

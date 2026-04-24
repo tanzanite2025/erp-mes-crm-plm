@@ -27,8 +27,16 @@ export function useProductMgmt(t: TranslateProductArchive) {
         queryKey: PRODUCT_TYPES_QUERY_KEY,
         queryFn: () => ProductTypeService.getProductTypes(),
     })
-    const data = useMemo(() => productsQuery.data ?? [], [productsQuery.data])
-    const productTypes = useMemo(() => productTypesQuery.data ?? [], [productTypesQuery.data])
+
+    if (productsQuery.isSuccess && !productsQuery.data) {
+        throw new Error('[CRITICAL] Products Data missing from query cache')
+    }
+    if (productTypesQuery.isSuccess && !productTypesQuery.data) {
+        throw new Error('[CRITICAL] Product Types Data missing from query cache')
+    }
+
+    const data = productsQuery.data
+    const productTypes = productTypesQuery.data
     const isLoading = productsQuery.isLoading || productsQuery.isFetching || productTypesQuery.isLoading || productTypesQuery.isFetching
 
     useEffect(() => {
@@ -43,16 +51,23 @@ export function useProductMgmt(t: TranslateProductArchive) {
     }
 
     const topLevelTypes = useMemo(
-        () => productTypes.filter((type) => type && !type.parentId),
+        () => {
+            if (!productTypes) return []
+            return productTypes.filter((type) => type && !type.parentId)
+        },
         [productTypes]
     )
 
     const subLevelTypes = useMemo(
-        () => productTypes.filter((type) => type && type.parentId === activeTab),
+        () => {
+            if (!productTypes) return []
+            return productTypes.filter((type) => type && type.parentId === activeTab)
+        },
         [activeTab, productTypes]
     )
 
     const filteredProducts = useMemo(() => {
+        if (!data || !productTypes) return []
         return data.filter((product) => {
             const type = productTypes.find((entry) => entry.id === product.typeId)
 

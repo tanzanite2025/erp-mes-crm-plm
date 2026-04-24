@@ -51,8 +51,8 @@ func setupCustomerSalesReturnSummaryHandlerDB(t *testing.T) {
 	require.NoError(t, testDB.Exec(`
 		INSERT INTO sales_returns (id, sales_order_id, customer_id, customer_name, status, return_date, deleted_at)
 		VALUES
-		('sr-1', 'so-1', 'cust-1', 'Customer A', 'Completed', '2026-04-19 00:00:00', NULL),
-		('sr-2', 'so-2', 'cust-1', 'Customer A', 'Completed', '2026-04-20 00:00:00', NULL)
+		('sr-1', 'so-1', 'cust-1', 'Customer A', 'Closed', '2026-04-19 00:00:00', NULL),
+		('sr-2', 'so-2', 'cust-1', 'Customer A', 'Closed', '2026-04-20 00:00:00', NULL)
 	`).Error)
 	require.NoError(t, testDB.Exec(`
 		INSERT INTO sales_return_lines (sales_return_id, sales_order_line_id, quantity)

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ interface SettlementLedgerDetailDialogProps<
   isDetailLoading: boolean
   isSubmitPending: boolean
   onSubmit: (payload: CreateSettlementRecordApiDTO) => Promise<void>
+  extraContent?: ReactNode
   useSearchLedgers: (
     params: SettlementLedgerSearchHookParams
   ) => SettlementLedgerSearchHookResult<TRemoteLedger>
@@ -69,6 +71,7 @@ export function SettlementLedgerDetailDialog<
   isDetailLoading,
   isSubmitPending,
   onSubmit,
+  extraContent,
   useSearchLedgers,
   config,
 }: SettlementLedgerDetailDialogProps<
@@ -117,6 +120,8 @@ export function SettlementLedgerDetailDialog<
               isCurrencyLoading={isCurrencyLoading}
               allocationHistoryCount={allocationHistory.length}
             />
+
+            {extraContent ? <div className='mt-3'>{extraContent}</div> : null}
           </div>
 
           <DialogFooter className='border-t border-dashed border-muted/60 bg-background px-5 py-3'>

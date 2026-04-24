@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
+import { getTradingLedgerStatusLabel, getTradingLedgerStatusOptions } from '@/features/trading/utils/ledger-display'
 
 export interface LedgerSearchCandidate {
   id: string
@@ -53,7 +55,6 @@ interface LedgerSearchDialogProps {
   onSortOrderChange: (value: string) => void
 }
 
-const LEDGER_STATUS_OPTIONS = ['OPEN', 'PARTIAL', 'OVERDUE', 'SETTLED'] as const
 const LEDGER_SORT_BY_OPTIONS = [
   { label: '最近更新', value: 'updated_at' },
   { label: '未结金额', value: 'outstanding_amount' },
@@ -98,6 +99,7 @@ export function LedgerSearchDialog({
   sortOrder,
   onSortOrderChange,
 }: LedgerSearchDialogProps) {
+  const { t } = useLanguage()
   const financeResources = useTradingFinanceResources({
     includeCurrencies: true,
     includePaymentMethods: false,
@@ -153,9 +155,9 @@ export function LedgerSearchDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='__all__'>全部状态</SelectItem>
-                  {LEDGER_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                  {getTradingLedgerStatusOptions(t).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -274,7 +276,7 @@ export function LedgerSearchDialog({
                         <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.partnerName}</TableCell>
                         <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>{item.currency}</TableCell>
                         <TableCell className='px-4 py-3 text-right text-xs font-black tabular-nums'>{amountFormatter.format(item.outstandingAmount)}</TableCell>
-                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>{item.status}</TableCell>
+                        <TableCell className='px-4 py-3 text-xs font-semibold text-muted-foreground'>{getTradingLedgerStatusLabel(item.status, t)}</TableCell>
                       </TableRow>
                     ))
                   ) : (

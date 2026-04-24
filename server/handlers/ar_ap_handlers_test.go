@@ -139,6 +139,24 @@ func setupArApHandlerTestDB(t *testing.T) {
 			note TEXT,
 			is_primary BOOLEAN NOT NULL
 		);
+		CREATE TABLE sales_return_actual_amount_records (
+			id TEXT PRIMARY KEY NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			sales_return_id TEXT,
+			sales_order_id TEXT,
+			sales_order_no TEXT,
+			return_no TEXT,
+			customer_id TEXT,
+			customer_name TEXT,
+			amount REAL,
+			note TEXT,
+			evidences BLOB DEFAULT X'5B5D',
+			estimated_return_amount_snapshot REAL,
+			recorded_at DATETIME,
+			recorded_by TEXT
+		);
 	`).Error)
 }
 
@@ -344,7 +362,7 @@ func requireReceivableListPageJSONContract(t *testing.T, recorder *httptest.Resp
 		"documentNo",
 		"customerName",
 		"currency",
-		"invoiceAmount",
+		"orderAmount",
 		"receivedAmount",
 		"outstandingAmount",
 		"dueDate",
@@ -390,7 +408,7 @@ func requireReceivableDetailJSONContract(t *testing.T, payload map[string]any) {
 		"documentNo",
 		"customerName",
 		"currency",
-		"invoiceAmount",
+		"orderAmount",
 		"receivedAmount",
 		"outstandingAmount",
 		"dueDate",
@@ -404,6 +422,8 @@ func requireReceivableDetailJSONContract(t *testing.T, payload map[string]any) {
 		"version",
 		"receiptRecords",
 		"allocations",
+		"returnAdjustmentAmount",
+		"salesReturnActualAmountRecords",
 	}, mapKeys(payload))
 	require.IsType(t, []any{}, payload["receiptRecords"])
 	require.IsType(t, []any{}, payload["allocations"])
@@ -531,6 +551,29 @@ func TestGetReceivableLedgersHandlerSupportsSourceFilters(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &payload))
 	require.Len(t, payload.Items, 1)
 	require.Equal(t, matched.ID, payload.Items[0].ID)
+}
+
+func TestGetReceivableLedgersHandlerExcludesCanceledOrders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupArApHandlerTestDB(t)
+	seedReceivableLedger(t, 80, models.LedgerStatusOpen)
+	seedReceivableLedger(t, 80, models.LedgerStatusCancelled)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/receivables?page=1&pageSize=10", nil)
+
+	GetReceivableLedgersHandler(c)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var payload services.ReceivableLedgerListResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &payload))
+	require.Len(t, payload.Items, 1)
+	require.Equal(t, models.LedgerStatusOpen, payload.Items[0].Status)
+	require.Equal(t, int64(1), payload.Total)
+	for _, item := range payload.Items {
+		require.NotEqual(t, models.LedgerStatusCancelled, item.Status)
+	}
 }
 
 func TestGetPayableLedgerHandlerReturnsLockedDetailContract(t *testing.T) {

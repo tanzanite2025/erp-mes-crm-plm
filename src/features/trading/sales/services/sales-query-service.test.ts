@@ -16,6 +16,8 @@ import {
 import {
   TRADING_QUERY_PARAM_PAGE,
   TRADING_QUERY_PARAM_PAGE_SIZE,
+  TRADING_QUERY_PARAM_PAYMENT_METHOD,
+  TRADING_QUERY_PARAM_PAYMENT_TERM,
   TRADING_QUERY_PARAM_STATUS,
   TRADING_QUERY_PARAM_WITH_LINES,
 } from '../../query-params'
@@ -178,6 +180,24 @@ describe('sales-query-service', () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       `/sales-orders?${TRADING_QUERY_PARAM_PAGE}=2&${TRADING_QUERY_PARAM_PAGE_SIZE}=25&${TRADING_QUERY_PARAM_WITH_LINES}=true&${TRADING_QUERY_PARAM_STATUS}=Pending%2CDone`
+    )
+  })
+
+  it('includes payment method and payment term query params when provided', async () => {
+    apiFetchMock.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 50,
+    })
+
+    await getSalesOrders({
+      paymentMethod: 'BANK_TRANSFER',
+      paymentTerm: 'MONTH_END',
+    })
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      `/sales-orders?${TRADING_QUERY_PARAM_PAGE}=1&${TRADING_QUERY_PARAM_PAGE_SIZE}=50&${TRADING_QUERY_PARAM_PAYMENT_METHOD}=BANK_TRANSFER&${TRADING_QUERY_PARAM_PAYMENT_TERM}=MONTH_END`
     )
   })
 

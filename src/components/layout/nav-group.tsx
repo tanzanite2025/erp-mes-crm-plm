@@ -85,7 +85,8 @@ export function NavGroup({ title, items }: NavGroupProps) {
       <button
         type='button'
         className={cn(
-          'mb-1.5 flex w-full items-center justify-between rounded-lg border border-sidebar-border/35 bg-sidebar-accent/18 px-2.5 py-1.5 text-left transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
+          'flex w-full items-center justify-between rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 px-2.5 py-1.5 text-left shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
+          isExpanded ? 'mb-1.5' : 'mb-1',
           'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
           isExpanded && 'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
         )}

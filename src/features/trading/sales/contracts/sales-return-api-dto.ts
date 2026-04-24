@@ -1,8 +1,6 @@
 import type { OrderEvidence } from '../../data/schema'
 import type { SalesOrderApiDTO } from './sales-order-api-dto'
 
-export type SalesReturnTransportMode = 'Courier' | 'Other'
-
 export interface SalesReturnLineApiDTO {
   id: number
   salesOrderLineId: number
@@ -29,7 +27,6 @@ export interface SalesReturnApiDTO {
   customerId: string
   customerName: string
   status: string
-  transportMode: SalesReturnTransportMode
   trackingNo?: string
   carrier?: string
   shippedAt?: string | null
@@ -41,6 +38,11 @@ export interface SalesReturnApiDTO {
   issueCategory?: string
   reason?: string
   remarks?: string
+  actualReturnAmount: number
+  actualReturnAmountNote?: string
+  actualReturnAmountEvidences?: OrderEvidence[]
+  actualReturnAmountRecordedAt?: string | null
+  actualReturnAmountRecordedBy?: string
   evidences?: OrderEvidence[]
   operator?: string
   totalQuantity: number
@@ -48,6 +50,24 @@ export interface SalesReturnApiDTO {
   createdAt: string
   updatedAt: string
   lines: SalesReturnLineApiDTO[]
+}
+
+export interface SalesReturnActualAmountRecordApiDTO {
+  id: string
+  salesReturnId: string
+  salesOrderId: string
+  salesOrderNo: string
+  returnNo: string
+  customerId: string
+  customerName: string
+  amount: number
+  note?: string
+  evidences?: OrderEvidence[]
+  estimatedReturnAmountSnapshot: number
+  recordedAt: string
+  recordedBy: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface SalesReturnListPageApiDTO {
@@ -68,7 +88,6 @@ export interface CreateSalesReturnLinePayload {
 
 export interface CreateSalesReturnPayload {
   operator?: string
-  transportMode?: SalesReturnTransportMode
   trackingNo?: string
   carrier?: string
   shippedAt?: string
@@ -81,14 +100,30 @@ export interface CreateSalesReturnPayload {
   lines: CreateSalesReturnLinePayload[]
 }
 
+export interface PatchSalesReturnPayload {
+  operator?: string
+  issueCategory?: string
+  reason?: string
+  remarks?: string
+  evidences?: OrderEvidence[]
+  returnDate?: string
+  lines: CreateSalesReturnLinePayload[]
+}
+
 export interface PatchSalesReturnLogisticsPayload {
   operator?: string
-  transportMode?: SalesReturnTransportMode
   trackingNo?: string
   carrier?: string
   shippedAt?: string
   logisticsNote?: string
   status?: string
+}
+
+export interface PatchSalesReturnActualAmountEntryPayload {
+  operator?: string
+  actualReturnAmount: number
+  actualReturnAmountNote?: string
+  actualReturnAmountEvidences?: OrderEvidence[]
 }
 
 export interface CreateSalesReturnResponseApiDTO {

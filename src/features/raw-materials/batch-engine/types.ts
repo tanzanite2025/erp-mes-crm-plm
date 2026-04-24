@@ -22,6 +22,7 @@ export type BatchEngineRuleChip = {
 }
 
 export type BatchEngineControls = {
+  selectedPrepregSpecId: string
   selectedCutSizeId: string
   rollWidthMm: string
   rollLengthM: string

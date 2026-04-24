@@ -6,24 +6,38 @@ import type { CustomerSalesReturnSummary } from '../services/customer-sales-retu
 type CustomerSalesReturnSummaryBlockProps = {
   summary?: CustomerSalesReturnSummary
   onOpenSalesReturns: () => void
+  compact?: boolean
 }
 
 export function CustomerSalesReturnSummaryBlock({
   summary,
   onOpenSalesReturns,
+  compact = false,
 }: CustomerSalesReturnSummaryBlockProps) {
   const { t } = useLanguage()
   const hasRealSummary = typeof summary?.totalOrders === 'number'
 
   return (
-    <div className='space-y-2 border-t border-dashed border-muted/50 pt-2'>
+    <div
+      className={
+        compact
+          ? 'space-y-2'
+          : 'space-y-2 border-t border-dashed border-muted/50 pt-2'
+      }
+    >
       <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
         <RotateCcw className='size-3' />
         {t('trading.customers.summary.returnTitle')}
       </div>
 
-      <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-3'>
-        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+      <div
+        className={
+          compact
+            ? 'rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2.5'
+            : 'rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-3'
+        }
+      >
+        <div className='grid gap-3 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
           <div className='space-y-1'>
             <div className='flex items-center gap-2 text-[10px] font-black text-foreground'>
               <ShieldAlert className='size-3.5 text-amber-600' />
@@ -49,7 +63,7 @@ export function CustomerSalesReturnSummaryBlock({
             </p>
           </div>
 
-          <div className='flex flex-col items-start gap-2 sm:items-end'>
+          <div className='flex flex-col items-start gap-2 sm:w-[136px] sm:justify-self-end sm:items-end'>
             <span className='inline-flex w-fit items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[8px] font-black tracking-widest text-amber-700 uppercase'>
               {hasRealSummary ? t('trading.customers.summary.returnReadyBadge') : t('trading.customers.summary.returnPendingBadge')}
             </span>
@@ -58,7 +72,7 @@ export function CustomerSalesReturnSummaryBlock({
               variant='outline'
               size='sm'
               onClick={onOpenSalesReturns}
-              className='h-8 w-full rounded-full px-4 text-[8px] font-black tracking-widest uppercase sm:w-auto'
+              className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase'
             >
               {t('trading.customers.summary.returnAction')}
             </Button>

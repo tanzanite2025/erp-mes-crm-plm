@@ -4,6 +4,7 @@ import {
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
 import {
+  buildCutSizeUnitPayload,
   normalizeCutSizeUnit,
   type CutSizeUnit,
   type CutSizeUnitFormState,
@@ -59,6 +60,9 @@ function includesKeyword(unit: CutSizeUnit, keyword: string): boolean {
     unit.layupMode,
     unit.widthMm,
     unit.lengthMm,
+    unit.areaM2,
+    unit.areaWeightGsm,
+    unit.weightG,
     unit.cutAngle,
   ]
     .join(' ')
@@ -89,7 +93,8 @@ export const CutSizeLibraryService = {
   },
 
   async save(form: CutSizeUnitFormState, editing?: CutSizeUnit | null): Promise<CutSizeUnit> {
-    const specInput = toEngineeringSpecInput(form, editing || undefined)
+    const payload = buildCutSizeUnitPayload(form, editing || null)
+    const specInput = toEngineeringSpecInput(payload, editing || undefined)
     const saved = await engineeringSpecService.saveSpec(specInput)
     return toCutSizeUnit(saved)
   },

@@ -21,26 +21,25 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DocumentEvidenceManager } from '@/features/sales-document/components/document-evidence-manager'
-import type { OrderEvidence, SalesOrder } from '@/features/trading/data/schema'
+import type { OrderEvidence, SalesOrder, SalesOrderLine } from '@/features/trading/data/schema'
 import { usePurchaseReturnDictionaryOptions } from '@/features/trading/purchase/hooks/use-purchase-return-dictionaries'
-import type { SalesReturnTransportMode } from '@/features/trading/sales/contracts/sales-return-api-dto'
+import { useGetSalesReturnSourceOrderDetail } from '@/features/trading/sales/hooks/use-sales-return-queries'
 import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
+import type { SalesReturnLine, SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 
 interface SalesReturnCreateSheetProps {
   order?: SalesOrder
+  record?: SalesReturnRecord
   open: boolean
   onOpenChange: (open: boolean) => void
+  mode?: 'create' | 'edit'
   onCreated?: (returnId: string) => void
+  onUpdated?: (returnId: string) => void
 }
 
 type LineDraft = {
   quantity: number
 }
-
-const salesReturnTransportModeOptions: SalesReturnTransportMode[] = [
-  'Courier',
-  'Other',
-]
 
 function todayValue() {
   return new Date().toISOString().slice(0, 10)
@@ -54,31 +53,113 @@ function toIsoDateTimeValue(value: string) {
   return new Date(trimmed).toISOString()
 }
 
-function getSalesReturnTransportModeLabel(
-  mode: SalesReturnTransportMode,
-  t: ReturnType<typeof useLanguage>['t']
-) {
-  switch (mode) {
-    case 'Courier':
-      return t('trading.salesReturns.transportModes.Courier')
-    case 'Other':
-      return t('trading.salesReturns.transportModes.Other')
-    default:
-      return mode
-  }
-}
-
 function createEmptyLineDraft(): LineDraft {
   return { quantity: 0 }
 }
 
+function createLineDraftMap(lines: SalesReturnLine[]): Record<number, LineDraft> {
+  return lines.reduce<Record<number, LineDraft>>((acc, line) => {
+    acc[line.salesOrderLineId] = {
+      quantity: line.quantity,
+    }
+    return acc
+  }, {})
+}
+
+function createAdjustedOrder(order: SalesOrder, record: SalesReturnRecord): SalesOrder {
+  const currentLineQtyMap = new Map<number, number>()
+  for (const line of record.lines) {
+    currentLineQtyMap.set(line.salesOrderLineId, line.quantity)
+  }
+
+  return {
+    ...order,
+    lines: order.lines.map((line) => {
+      const currentQty = currentLineQtyMap.get(Number(line.id)) ?? 0
+      return {
+        ...line,
+        returnedQuantity: Math.max(0, line.returnedQuantity - currentQty),
+        remainingReturnableQuantity: line.remainingReturnableQuantity + currentQty,
+      }
+    }),
+  }
+}
+
+function createFallbackOrderLine(
+  line: SalesReturnLine,
+  returnDate: string
+): SalesOrderLine {
+  return {
+    id: line.salesOrderLineId,
+    lineNo: line.lineNo,
+    productId: line.productId,
+    productModel: line.productModel,
+    productCode: line.productCode,
+    specification: line.specification,
+    description: line.description,
+    qty: line.quantity,
+    uom: line.uom,
+    price: line.price,
+    amount: line.amount,
+    deliveredQty: line.quantity,
+    customerPartNo: '',
+    jobNo: '',
+    orderDate: returnDate,
+    status: 'Done',
+    returnedQuantity: 0,
+    remainingReturnableQuantity: line.quantity,
+  }
+}
+
+function createFallbackOrder(record: SalesReturnRecord): SalesOrder {
+  const returnDate = record.returnDate.slice(0, 10)
+  return {
+    id: record.salesOrderId,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    isDeleted: false,
+    orderNo: record.salesOrderNo,
+    customerName: record.customerName,
+    customerId: record.customerId,
+    type: 'NORMAL',
+    currency: 'CNY',
+    classification: 'GENERAL',
+    status: 'Done',
+    amount: record.totalAmount,
+    quantity: record.totalQuantity,
+    orderDate: returnDate,
+    deliveryDate: returnDate,
+    lines: record.lines.map((line) => createFallbackOrderLine(line, returnDate)),
+    version: 0,
+  }
+}
+
 export function SalesReturnCreateSheet({
   order,
+  record,
   open,
   onOpenChange,
+  mode = 'create',
   onCreated,
+  onUpdated,
 }: SalesReturnCreateSheetProps) {
-  const formKey = `${order?.id || 'empty'}-${open ? 'open' : 'closed'}`
+  const { t } = useLanguage()
+  const sourceOrderQuery = useGetSalesReturnSourceOrderDetail(
+    mode === 'edit' ? (record?.salesOrderId ?? '') : ''
+  )
+  const resolvedOrder = useMemo(() => {
+    if (mode === 'edit') {
+      if (!record) {
+        return undefined
+      }
+      if (!sourceOrderQuery.data) {
+        return createFallbackOrder(record)
+      }
+      return createAdjustedOrder(sourceOrderQuery.data, record)
+    }
+    return order
+  }, [mode, order, record, sourceOrderQuery.data])
+  const formKey = `${mode}-${resolvedOrder?.id || 'empty'}-${record?.id || 'new'}-${open ? 'open' : 'closed'}`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,12 +168,30 @@ export function SalesReturnCreateSheet({
         showCloseButton
         className='flex h-[min(96vh,980px)] w-[calc(100vw-20px)] max-w-[1440px] flex-col gap-0 overflow-hidden rounded-2xl border-none bg-background p-0 shadow-2xl md:rounded-[28px]'
       >
-        {order ? (
+        {mode === 'edit' && sourceOrderQuery.isLoading ? (
+          <div className='flex flex-1 items-center justify-center px-6 py-10'>
+            <p className='text-sm font-black text-muted-foreground'>
+              {t('trading.salesReturns.editSheet.sourceLoading')}
+            </p>
+          </div>
+        ) : mode === 'edit' && (!resolvedOrder || !record) ? (
+          <div className='flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center'>
+            <p className='text-sm font-black text-foreground'>
+              {t('trading.salesReturns.editSheet.sourceLoadFailed')}
+            </p>
+            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
+              {t('common.actions.close')}
+            </Button>
+          </div>
+        ) : resolvedOrder ? (
           <SalesReturnCreateSheetBody
             key={formKey}
-            order={order}
+            mode={mode}
+            order={resolvedOrder}
+            record={record}
             onOpenChange={onOpenChange}
             onCreated={onCreated}
+            onUpdated={onUpdated}
           />
         ) : null}
       </DialogContent>
@@ -101,31 +200,45 @@ export function SalesReturnCreateSheet({
 }
 
 type SalesReturnCreateSheetBodyProps = {
+  mode: 'create' | 'edit'
   order: SalesOrder
+  record?: SalesReturnRecord
   onOpenChange: (open: boolean) => void
   onCreated?: (returnId: string) => void
+  onUpdated?: (returnId: string) => void
 }
 
 function SalesReturnCreateSheetBody({
+  mode,
   order,
+  record,
   onOpenChange,
   onCreated,
+  onUpdated,
 }: SalesReturnCreateSheetBodyProps) {
   const { t } = useLanguage()
-  const { createMutation } = useSalesReturnMutations()
+  const { createMutation, patchBodyMutation } = useSalesReturnMutations()
   const issueCategoryQuery = usePurchaseReturnDictionaryOptions('issue_category')
-  const [returnDate, setReturnDate] = useState(todayValue())
-  const [transportMode, setTransportMode] =
-    useState<SalesReturnTransportMode>('Courier')
-  const [trackingNo, setTrackingNo] = useState('')
-  const [carrier, setCarrier] = useState('')
-  const [shippedAt, setShippedAt] = useState('')
-  const [issueCategory, setIssueCategory] = useState('')
-  const [remarks, setRemarks] = useState('')
-  const [evidences, setEvidences] = useState<OrderEvidence[]>([])
-  const [selectedLineIds, setSelectedLineIds] = useState<number[]>([])
+  const isEditMode = mode === 'edit' && Boolean(record)
+  const [returnDate, setReturnDate] = useState(
+    isEditMode && record ? record.returnDate.slice(0, 10) : todayValue()
+  )
+  const [trackingNo, setTrackingNo] = useState(record?.trackingNo ?? '')
+  const [carrier, setCarrier] = useState(record?.carrier ?? '')
+  const [shippedAt, setShippedAt] = useState(
+    record?.shippedAt ? record.shippedAt.slice(0, 16) : ''
+  )
+  const [issueCategory, setIssueCategory] = useState(record?.issueCategory ?? '')
+  const [reason, setReason] = useState(record?.reason ?? '')
+  const [remarks, setRemarks] = useState(record?.remarks ?? '')
+  const [evidences, setEvidences] = useState<OrderEvidence[]>(record?.evidences ?? [])
+  const [selectedLineIds, setSelectedLineIds] = useState<number[]>(
+    record?.lines.map((line) => line.salesOrderLineId) ?? []
+  )
   const [activeLineId, setActiveLineId] = useState<number | null>(null)
-  const [lineDrafts, setLineDrafts] = useState<Record<number, LineDraft>>({})
+  const [lineDrafts, setLineDrafts] = useState<Record<number, LineDraft>>(
+    record ? createLineDraftMap(record.lines) : {}
+  )
 
   const lines = useMemo(
     () => (order.lines ?? []).filter((line) => typeof line.id === 'number'),
@@ -182,6 +295,9 @@ function SalesReturnCreateSheetBody({
       (issueCategoryQuery.data ?? []).filter((item) => item.status !== 'Inactive'),
     [issueCategoryQuery.data]
   )
+  const detailFieldsGridClassName = issueCategoryOptions.length > 0
+    ? 'grid gap-2 border-b border-dashed border-border/60 px-4 py-2 md:grid-cols-2 lg:grid-cols-[160px_180px_minmax(0,1fr)_minmax(0,1fr)]'
+    : 'grid gap-2 border-b border-dashed border-border/60 px-4 py-2 md:grid-cols-2 lg:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)]'
 
   const updateLineQuantity = (
     lineId: number,
@@ -244,16 +360,39 @@ function SalesReturnCreateSheetBody({
       return
     }
 
+    if (isEditMode && record) {
+      patchBodyMutation.mutate(
+        {
+          salesReturnId: record.id,
+          payload: {
+            issueCategory: issueCategory.trim() || undefined,
+            reason: reason.trim() || undefined,
+            remarks: remarks.trim() || undefined,
+            evidences: evidences.length > 0 ? evidences : undefined,
+            returnDate: new Date(`${returnDate}T00:00:00`).toISOString(),
+            lines: payloadLines,
+          },
+        },
+        {
+          onSuccess: (data) => {
+            onOpenChange(false)
+            onUpdated?.(data.id)
+          },
+        }
+      )
+      return
+    }
+
     createMutation.mutate(
       {
         salesOrderId: order.id,
         payload: {
           returnDate: new Date(`${returnDate}T00:00:00`).toISOString(),
-          transportMode,
           trackingNo: trackingNo.trim() || undefined,
           carrier: carrier.trim() || undefined,
           shippedAt: toIsoDateTimeValue(shippedAt),
           issueCategory: issueCategory.trim() || undefined,
+          reason: reason.trim() || undefined,
           remarks: remarks.trim() || undefined,
           evidences: evidences.length > 0 ? evidences : undefined,
           lines: payloadLines,
@@ -272,19 +411,36 @@ function SalesReturnCreateSheetBody({
     <>
       <DialogHeader className='border-b border-dashed border-border/70 px-4 py-4 text-left'>
         <DialogTitle className='text-base font-black tracking-tight'>
-          {t('trading.salesReturns.createSheet.title')}
+          {isEditMode
+            ? t('trading.salesReturns.editSheet.title')
+            : t('trading.salesReturns.createSheet.title')}
         </DialogTitle>
         <DialogDescription className='text-[11px] font-bold text-muted-foreground'>
-          {t('trading.salesReturns.createSheet.description', {
-            orderNo: order.orderNo,
-          })}
+          {isEditMode && record
+            ? t('trading.salesReturns.editSheet.description', {
+                orderNo: order.orderNo,
+              })
+            : t('trading.salesReturns.createSheet.description', {
+                orderNo: order.orderNo,
+              })}
         </DialogDescription>
       </DialogHeader>
 
       <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
         <div className='min-h-0 flex-1 overflow-y-auto'>
-        <div className='grid gap-2 border-b border-dashed border-border/60 px-4 py-2.5 md:grid-cols-4'>
-          <div className='rounded-2xl border border-dashed border-muted/50 bg-muted/10 px-3 py-2'>
+        <div className='overflow-x-auto border-b border-dashed border-border/60 px-4 py-2.5'>
+          <div className='flex min-w-[920px] items-stretch gap-2'>
+          {isEditMode && record ? (
+            <div className='min-w-0 flex-1 rounded-2xl border border-dashed border-muted/50 bg-muted/10 px-3 py-2'>
+              <div className='flex min-h-[44px] items-center justify-between gap-3'>
+                <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+                  {t('trading.salesReturns.editSheet.summaryReturnNo')}
+                </p>
+                <p className='truncate text-right text-sm font-black'>{record.returnNo}</p>
+              </div>
+            </div>
+          ) : null}
+          <div className='min-w-0 flex-1 rounded-2xl border border-dashed border-muted/50 bg-muted/10 px-3 py-2'>
             <div className='flex min-h-[44px] items-center justify-between gap-3'>
               <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('trading.salesReturns.createSheet.summaryOrderNo')}
@@ -292,7 +448,7 @@ function SalesReturnCreateSheetBody({
               <p className='truncate text-right text-sm font-black'>{order.orderNo}</p>
             </div>
           </div>
-          <div className='rounded-2xl border border-dashed border-muted/50 bg-muted/10 px-3 py-2'>
+          <div className='min-w-0 flex-1 rounded-2xl border border-dashed border-muted/50 bg-muted/10 px-3 py-2'>
             <div className='flex min-h-[44px] items-center justify-between gap-3'>
               <p className='text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                 {t('trading.salesReturns.createSheet.summaryCustomer')}
@@ -300,7 +456,7 @@ function SalesReturnCreateSheetBody({
               <p className='truncate text-right text-sm font-black'>{order.customerName}</p>
             </div>
           </div>
-          <div className='rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/5 px-3 py-2'>
+          <div className='min-w-[150px] rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/5 px-3 py-2'>
             <div className='flex min-h-[44px] items-center justify-between gap-3'>
               <p className='text-[10px] font-black tracking-widest text-amber-600/60 uppercase'>
                 {t('trading.salesReturns.createSheet.summarySelectedLines')}
@@ -310,7 +466,7 @@ function SalesReturnCreateSheetBody({
               </p>
             </div>
           </div>
-          <div className='rounded-2xl border border-dashed border-rose-500/20 bg-rose-500/5 px-3 py-2'>
+          <div className='min-w-[150px] rounded-2xl border border-dashed border-rose-500/20 bg-rose-500/5 px-3 py-2'>
             <div className='flex min-h-[44px] items-center justify-between gap-3'>
               <p className='text-[10px] font-black tracking-widest text-rose-600/60 uppercase'>
                 {t('trading.salesReturns.createSheet.summaryQuantity')}
@@ -319,6 +475,7 @@ function SalesReturnCreateSheetBody({
                 {totalQuantity.toLocaleString()}
               </p>
             </div>
+          </div>
           </div>
         </div>
 
@@ -511,7 +668,48 @@ function SalesReturnCreateSheetBody({
           </div>
         </div>
 
-        <div className='grid gap-2 border-b border-dashed border-border/60 px-4 py-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6'>
+        {!isEditMode ? (
+          <div className='grid gap-2 border-b border-dashed border-border/60 px-4 py-2 md:grid-cols-2 lg:grid-cols-3'>
+            <div className='space-y-1.5'>
+              <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                {t('trading.salesReturns.createSheet.trackingNo')}
+              </label>
+              <Input
+                value={trackingNo}
+                onChange={(event) => setTrackingNo(event.target.value)}
+                placeholder={t(
+                  'trading.salesReturns.createSheet.trackingNoPlaceholder'
+                )}
+                className='h-9 rounded-xl'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                {t('trading.salesReturns.createSheet.carrier')}
+              </label>
+              <Input
+                value={carrier}
+                onChange={(event) => setCarrier(event.target.value)}
+                placeholder={t(
+                  'trading.salesReturns.createSheet.carrierPlaceholder'
+                )}
+                className='h-9 rounded-xl'
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                {t('trading.salesReturns.createSheet.shippedAt')}
+              </label>
+              <Input
+                type='datetime-local'
+                value={shippedAt}
+                onChange={(event) => setShippedAt(event.target.value)}
+                className='h-9 rounded-xl'
+              />
+            </div>
+          </div>
+        ) : null}
+        <div className={detailFieldsGridClassName}>
           <div className='space-y-1.5'>
             <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('trading.salesReturns.createSheet.returnDate')}
@@ -520,65 +718,6 @@ function SalesReturnCreateSheetBody({
               type='date'
               value={returnDate}
               onChange={(event) => setReturnDate(event.target.value)}
-              className='h-9 rounded-xl'
-            />
-          </div>
-          <div className='space-y-1.5'>
-            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('trading.salesReturns.createSheet.transportMode')}
-            </label>
-            <Select
-              value={transportMode}
-              onValueChange={(value) =>
-                setTransportMode(value as SalesReturnTransportMode)
-              }
-            >
-              <SelectTrigger className='h-9 rounded-xl'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {salesReturnTransportModeOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {getSalesReturnTransportModeLabel(option, t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className='space-y-1.5'>
-            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('trading.salesReturns.createSheet.trackingNo')}
-            </label>
-            <Input
-              value={trackingNo}
-              onChange={(event) => setTrackingNo(event.target.value)}
-              placeholder={t(
-                'trading.salesReturns.createSheet.trackingNoPlaceholder'
-              )}
-              className='h-9 rounded-xl'
-            />
-          </div>
-          <div className='space-y-1.5'>
-            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('trading.salesReturns.createSheet.carrier')}
-            </label>
-            <Input
-              value={carrier}
-              onChange={(event) => setCarrier(event.target.value)}
-              placeholder={t(
-                'trading.salesReturns.createSheet.carrierPlaceholder'
-              )}
-              className='h-9 rounded-xl'
-            />
-          </div>
-          <div className='space-y-1.5'>
-            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-              {t('trading.salesReturns.createSheet.shippedAt')}
-            </label>
-            <Input
-              type='datetime-local'
-              value={shippedAt}
-              onChange={(event) => setShippedAt(event.target.value)}
               className='h-9 rounded-xl'
             />
           </div>
@@ -605,7 +744,21 @@ function SalesReturnCreateSheetBody({
               </Select>
             </div>
           ) : null}
-          <div className='space-y-1.5 md:col-span-2 lg:col-span-4 xl:col-span-6'>
+          <div className='space-y-1.5'>
+            <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+              {t('trading.salesReturns.createSheet.reason')}
+            </label>
+            <Textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={t(
+                'trading.salesReturns.createSheet.reasonPlaceholder'
+              )}
+              rows={1}
+              className='min-h-[36px] rounded-xl'
+            />
+          </div>
+          <div className='space-y-1.5'>
             <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
               {t('trading.salesReturns.createSheet.remarks')}
             </label>
@@ -675,11 +828,13 @@ function SalesReturnCreateSheetBody({
               <Button
                 type='button'
                 onClick={handleSubmit}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || patchBodyMutation.isPending}
               >
-                {createMutation.isPending
+                {createMutation.isPending || patchBodyMutation.isPending
                   ? t('common.actions.loading')
-                  : t('trading.salesReturns.createSheet.submit')}
+                  : isEditMode
+                    ? t('trading.salesReturns.editSheet.submit')
+                    : t('trading.salesReturns.createSheet.submit')}
               </Button>
             </div>
           </div>

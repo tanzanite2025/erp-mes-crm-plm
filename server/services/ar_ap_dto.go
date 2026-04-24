@@ -33,7 +33,7 @@ type ReceivableLedgerListItemResponse struct {
 	DocumentNo        string    `json:"documentNo"`
 	CustomerName      string    `json:"customerName"`
 	Currency          string    `json:"currency"`
-	InvoiceAmount     float64   `json:"invoiceAmount"`
+	OrderAmount       float64   `json:"orderAmount"`
 	ReceivedAmount    float64   `json:"receivedAmount"`
 	OutstandingAmount float64   `json:"outstandingAmount"`
 	DueDate           string    `json:"dueDate"`
@@ -150,24 +150,26 @@ type PaymentRecordResponse struct {
 }
 
 type ReceivableLedgerDetailResponse struct {
-	ID                string                         `json:"id"`
-	DocumentNo        string                         `json:"documentNo"`
-	SourceType        string                         `json:"sourceType"`
-	SourceRefID       string                         `json:"sourceRefId"`
-	CustomerID        string                         `json:"customerId"`
-	CustomerName      string                         `json:"customerName"`
-	Currency          string                         `json:"currency"`
-	InvoiceAmount     float64                        `json:"invoiceAmount"`
-	ReceivedAmount    float64                        `json:"receivedAmount"`
-	OutstandingAmount float64                        `json:"outstandingAmount"`
-	DueDate           string                         `json:"dueDate"`
-	AgingBucket       string                         `json:"agingBucket"`
-	Status            string                         `json:"status"`
-	Version           int                            `json:"version"`
-	CreatedAt         time.Time                      `json:"createdAt"`
-	UpdatedAt         time.Time                      `json:"updatedAt"`
-	ReceiptRecords    []ReceiptRecordResponse        `json:"receiptRecords"`
-	Allocations       []SettlementAllocationResponse `json:"allocations"`
+	ID                             string                                  `json:"id"`
+	DocumentNo                     string                                  `json:"documentNo"`
+	SourceType                     string                                  `json:"sourceType"`
+	SourceRefID                    string                                  `json:"sourceRefId"`
+	CustomerID                     string                                  `json:"customerId"`
+	CustomerName                   string                                  `json:"customerName"`
+	Currency                       string                                  `json:"currency"`
+	OrderAmount                    float64                                 `json:"orderAmount"`
+	ReceivedAmount                 float64                                 `json:"receivedAmount"`
+	OutstandingAmount              float64                                 `json:"outstandingAmount"`
+	DueDate                        string                                  `json:"dueDate"`
+	AgingBucket                    string                                  `json:"agingBucket"`
+	Status                         string                                  `json:"status"`
+	Version                        int                                     `json:"version"`
+	CreatedAt                      time.Time                               `json:"createdAt"`
+	UpdatedAt                      time.Time                               `json:"updatedAt"`
+	ReceiptRecords                 []ReceiptRecordResponse                 `json:"receiptRecords"`
+	Allocations                    []SettlementAllocationResponse          `json:"allocations"`
+	ReturnAdjustmentAmount         float64                                 `json:"returnAdjustmentAmount"`
+	SalesReturnActualAmountRecords []SalesReturnActualAmountRecordResponse `json:"salesReturnActualAmountRecords"`
 }
 
 type PayableLedgerDetailResponse struct {

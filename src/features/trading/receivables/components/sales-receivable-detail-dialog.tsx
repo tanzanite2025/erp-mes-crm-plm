@@ -1,6 +1,7 @@
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 import { salesReceivableDetailDialogConfig } from '../config/sales-receivable-detail-dialog.config'
+import { SalesReceivableSalesReturnAdjustmentSection } from './sales-receivable-sales-return-adjustment-section'
 import { useCreateReceiptRecord, useReceivableLedgerDetail } from '../hooks/use-receivable-ledger-detail'
 import { useGetReceivables, useSearchReceivableLedgers } from '../hooks/use-receivables'
 
@@ -46,6 +47,7 @@ export function SalesReceivableDetailDialog({
         }
         await createMutation.mutateAsync({ id: receivableId, payload })
       }}
+      extraContent={detail ? <SalesReceivableSalesReturnAdjustmentSection detail={detail} /> : null}
       useSearchLedgers={useSearchReceivableLedgers}
       config={salesReceivableDetailDialogConfig}
     />

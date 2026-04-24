@@ -15,6 +15,14 @@ const (
 )
 
 const (
+	LedgerAgingBucketOpen      = "OPEN"
+	LedgerAgingBucketCurrent   = "CURRENT"
+	LedgerAgingBucketOverdue   = "OVERDUE"
+	LedgerAgingBucketSettled   = "SETTLED"
+	LedgerAgingBucketCancelled = "CANCELLED"
+)
+
+const (
 	SettlementRecordStatusDraft     = "DRAFT"
 	SettlementRecordStatusConfirmed = "CONFIRMED"
 	SettlementRecordStatusVoided    = "VOIDED"

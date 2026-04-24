@@ -290,6 +290,110 @@ func TestGetSalesOrdersHandlerContractSupportsKeywordFilter(t *testing.T) {
 	require.Equal(t, "SO-FILTER-002", item["orderNo"])
 }
 
+func TestGetSalesOrdersHandlerContractSupportsKeywordFilterOnPaymentFields(t *testing.T) {
+	testDB := setupSalesOrderContractHandlerDB(t)
+	seedSalesOrderContractHandlerFixture(t, testDB)
+	require.NoError(t, testDB.Create(&models.SalesOrder{
+		ID:                "35555555-3333-4333-8333-333333333333",
+		OrderNo:           "SO-FILTER-004",
+		OrderName:         "Payment Term Filter",
+		CustomerName:      "Delta Manufacturing",
+		CustomerID:        "customer-4",
+		Type:              "NORMAL",
+		Currency:          "CNY",
+		PaymentMethod:     "BANK_TRANSFER",
+		PaymentMethodName: "Bank Transfer",
+		PaymentTerm:       "MONTH_END",
+		PaymentTermName:   "Month End",
+		Classification:    "GENERAL",
+		Status:            "Pending",
+		OrderDate:         "2026-04-19",
+		DeliveryDate:      "2026-04-22",
+		Barcode:           "SO-FILTER-004",
+		Evidences:         json.RawMessage(`[]`),
+		Version:           1,
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/sales-orders?page=1&pageSize=20&keyword=Month", nil)
+
+	GetSalesOrdersHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	payload := decodeJSONBody(t, recorder)
+	items, ok := payload["items"].([]any)
+	require.True(t, ok)
+	require.Len(t, items, 1)
+	item, ok := items[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "SO-FILTER-004", item["orderNo"])
+}
+
+func TestGetSalesOrdersHandlerContractSupportsPaymentMethodAndTermFilters(t *testing.T) {
+	testDB := setupSalesOrderContractHandlerDB(t)
+	seedSalesOrderContractHandlerFixture(t, testDB)
+	require.NoError(t, testDB.Create(&models.SalesOrder{
+		ID:                "36666666-3333-4333-8333-333333333333",
+		OrderNo:           "SO-FILTER-005",
+		OrderName:         "Payment Filter Order",
+		CustomerName:      "Echo Manufacturing",
+		CustomerID:        "customer-5",
+		Type:              "NORMAL",
+		Currency:          "CNY",
+		PaymentMethod:     "BANK_TRANSFER",
+		PaymentMethodName: "Bank Transfer",
+		PaymentTerm:       "MONTH_END",
+		PaymentTermName:   "Month End",
+		Classification:    "GENERAL",
+		Status:            "Pending",
+		OrderDate:         "2026-04-20",
+		DeliveryDate:      "2026-04-23",
+		Barcode:           "SO-FILTER-005",
+		Evidences:         json.RawMessage(`[]`),
+		Version:           1,
+	}).Error)
+	require.NoError(t, testDB.Create(&models.SalesOrder{
+		ID:                "37777777-3333-4333-8333-333333333333",
+		OrderNo:           "SO-FILTER-006",
+		OrderName:         "Non Match Payment Filter Order",
+		CustomerName:      "Foxtrot Manufacturing",
+		CustomerID:        "customer-6",
+		Type:              "NORMAL",
+		Currency:          "CNY",
+		PaymentMethod:     "CASH",
+		PaymentMethodName: "Cash",
+		PaymentTerm:       "IMMEDIATE",
+		PaymentTermName:   "Immediate",
+		Classification:    "GENERAL",
+		Status:            "Pending",
+		OrderDate:         "2026-04-20",
+		DeliveryDate:      "2026-04-23",
+		Barcode:           "SO-FILTER-006",
+		Evidences:         json.RawMessage(`[]`),
+		Version:           1,
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(
+		http.MethodGet,
+		"/api/v1/sales-orders?page=1&pageSize=20&paymentMethod=BANK_TRANSFER&paymentTerm=MONTH_END",
+		nil,
+	)
+
+	GetSalesOrdersHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	payload := decodeJSONBody(t, recorder)
+	items, ok := payload["items"].([]any)
+	require.True(t, ok)
+	require.Len(t, items, 1)
+	item, ok := items[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "SO-FILTER-005", item["orderNo"])
+}
+
 func TestGetSalesOrdersHandlerContractSupportsCustomerIDFilter(t *testing.T) {
 	testDB := setupSalesOrderContractHandlerDB(t)
 	seedSalesOrderContractHandlerFixture(t, testDB)

@@ -29,6 +29,61 @@ func GetSalesReturnsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func GetSalesReturnActualAmountRecordsHandler(c *gin.Context) {
+	salesReturnID := strings.TrimSpace(c.Param("id"))
+	if salesReturnID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	response, err := services.ListSalesReturnActualAmountRecords(salesReturnID)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func PatchSalesReturnHandler(c *gin.Context) {
+	salesReturnID := strings.TrimSpace(c.Param("id"))
+	if salesReturnID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	var req services.PatchSalesReturnRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.PatchSalesReturn(
+		services.MapPatchSalesReturnRequestToInput(req, salesReturnID, operator),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func PatchSalesReturnLogisticsHandler(c *gin.Context) {
 	salesReturnID := strings.TrimSpace(c.Param("id"))
 	if salesReturnID == "" {
@@ -49,6 +104,40 @@ func PatchSalesReturnLogisticsHandler(c *gin.Context) {
 
 	response, err := services.PatchSalesReturnLogistics(
 		services.MapPatchSalesReturnLogisticsRequestToInput(req, salesReturnID, operator),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func PatchSalesReturnActualAmountEntryHandler(c *gin.Context) {
+	salesReturnID := strings.TrimSpace(c.Param("id"))
+	if salesReturnID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	var req services.PatchSalesReturnActualAmountEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	operator := strings.TrimSpace(req.Operator)
+	if operator == "" {
+		operator = middleware.GetSafeUsername(c)
+	}
+
+	response, err := services.PatchSalesReturnActualAmountEntry(
+		services.MapPatchSalesReturnActualAmountEntryRequestToInput(req, salesReturnID, operator),
 	)
 	if err != nil {
 		switch {

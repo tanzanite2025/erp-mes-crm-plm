@@ -134,12 +134,12 @@ export function CustomerListItem({
   }
 
   return (
-    <Card className='group relative cursor-default gap-0 overflow-hidden rounded-[24px] border-dashed border-muted/50 bg-muted/5 py-0 transition-all hover:bg-muted/30'>
+    <Card className='group relative cursor-default gap-0 overflow-hidden rounded-[22px] border-dashed border-muted/50 bg-muted/5 py-0 transition-all hover:bg-muted/30'>
       <div className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent' />
-      <CardHeader className='relative border-b border-dashed border-muted/50 px-4 py-4 pb-3 sm:px-5 sm:py-5 sm:pb-3 [.border-b]:pb-3'>
+      <CardHeader className='relative border-b border-dashed border-muted/50 px-3.5 py-3 sm:px-4 sm:py-3.5 [.border-b]:pb-3'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <div className='flex size-10 items-center justify-center rounded-xl bg-primary/10 text-base font-black text-primary shadow-inner'>
+            <div className='flex size-9 items-center justify-center rounded-xl bg-primary/10 text-base font-black text-primary shadow-inner'>
               {customer.name?.substring(0, 1) || '?'}
             </div>
             <div>
@@ -198,90 +198,95 @@ export function CustomerListItem({
         </div>
       </CardHeader>
 
-      <CardContent className='relative space-y-2.5 px-4 pt-2.5 pb-3 sm:space-y-3 sm:px-5 sm:pt-3 sm:pb-4'>
-        <CustomerDynamicSummaryLayer
-          customerName={customer.name}
-          quoteSummary={quoteSummary}
-          salesClosureSummary={salesClosureSummary}
-          salesReturnSummary={salesReturnSummary}
-          onOpenSalesReturns={handleOpenCustomerSalesReturns}
-          onOpenQuote={onOpenQuote}
-          onCreateQuote={onCreateQuote}
-        />
+      <CardContent className='relative px-3.5 pt-2.5 pb-3 sm:px-4 sm:pt-2.5 sm:pb-3.5'>
+        <div className='space-y-3'>
+          <CustomerDynamicSummaryLayer
+            customerName={customer.name}
+            quoteSummary={quoteSummary}
+            salesClosureSummary={salesClosureSummary}
+            salesReturnSummary={salesReturnSummary}
+            onOpenSalesReturns={handleOpenCustomerSalesReturns}
+            onOpenQuote={onOpenQuote}
+            onCreateQuote={onCreateQuote}
+          />
 
-        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4'>
-          <div className='space-y-1'>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
-              <User className='size-3' />
-              {t('trading.customers.contactPerson')}
+          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+            <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 sm:py-2.5'>
+              <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
+                <User className='size-3' />
+                {t('trading.customers.contactPerson')}
+              </div>
+              <p className='mt-1 text-[11px] font-black text-foreground sm:text-[12px]'>
+                {customer.contactPerson || t('trading.customers.unfilled')}
+              </p>
             </div>
-            <p className='text-[11px] font-black text-foreground sm:text-[12px]'>
-              {customer.contactPerson}
-            </p>
-          </div>
 
-          <div className='space-y-1 sm:text-right'>
-            <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:justify-end sm:text-[9px]'>
-              <Phone className='size-3' />
-              {t('trading.customers.contactPhone')}
+            <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 sm:py-2.5'>
+              <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40 sm:text-[9px]'>
+                <Phone className='size-3' />
+                {t('trading.customers.contactPhone')}
+              </div>
+              <p className='mt-1 text-[11px] font-black text-foreground sm:text-[12px]'>
+                {customer.contactPhone || t('trading.customers.unfilled')}
+              </p>
             </div>
-            <p className='text-[11px] font-black text-foreground sm:text-[12px]'>
-              {customer.contactPhone}
-            </p>
-          </div>
-        </div>
 
-        <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
-          <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
-            <MapPin className='size-3' />
-            {t('trading.customers.address')}
-          </div>
-          <p className='truncate text-[10px] leading-relaxed font-bold text-muted-foreground'>
-            {customer.address}
-          </p>
-        </div>
+            <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 sm:col-span-2 sm:py-2.5'>
+              <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+                <MapPin className='size-3' />
+                {t('trading.customers.address')}
+              </div>
+              <p className='mt-1 truncate text-[10px] leading-relaxed font-bold text-muted-foreground'>
+                {customer.address || t('trading.customers.unfilled')}
+              </p>
+            </div>
 
-        <div className='space-y-1 border-t border-dashed border-muted/50 pt-2'>
-          <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
-            <MessageCircle className='size-3' />
-            {t('trading.customers.communication')} / {t('trading.customers.wechat')}
-          </div>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <p className='text-[10px] font-bold break-all text-muted-foreground'>
-              {customer.wechat || t('trading.customers.unfilled')}
-            </p>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              disabled={!canOpenWeChat(customer.wechat)}
-              onClick={handleOpenWeChat}
-              className='h-7 w-full rounded-full px-3 text-[8px] font-black tracking-widest uppercase sm:w-auto'
-            >
-              {t('trading.customers.openWechat')}
-              <ExternalLink className='ms-2 size-3' />
-            </Button>
-          </div>
-        </div>
+            <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 sm:col-span-2 sm:py-2.5'>
+              <div className='flex items-center gap-2 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
+                <MessageCircle className='size-3' />
+                {t('trading.customers.communication')} /{' '}
+                {t('trading.customers.wechat')}
+              </div>
+              <div className='mt-1 grid gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
+                <p className='text-[10px] font-bold break-all text-muted-foreground'>
+                  {customer.wechat || t('trading.customers.unfilled')}
+                </p>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  disabled={!canOpenWeChat(customer.wechat)}
+                  onClick={handleOpenWeChat}
+                  className='h-9 w-full rounded-full px-4 text-[9px] font-black tracking-widest uppercase sm:justify-self-end'
+                >
+                  {t('trading.customers.openWechat')}
+                  <ExternalLink className='ms-2 size-3' />
+                </Button>
+              </div>
+            </div>
 
-        <div className='flex flex-col items-start justify-between gap-2 border-t border-dashed border-muted/50 pt-2 sm:flex-row sm:items-center'>
-          <div className='flex flex-col gap-0.5'>
-            <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
-              {t('trading.customers.creditBalance')}
-            </span>
-            <div className='text-sm font-black tracking-tighter italic tabular-nums sm:text-base'>
-              {customer.balance.toLocaleString(locale)}
+            <div className='rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2 sm:col-span-2 sm:py-2.5'>
+              <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_136px] sm:items-center'>
+                <div className='flex flex-col gap-0.5'>
+                  <span className='text-[8px] font-black tracking-[0.2em] text-muted-foreground/40 uppercase italic'>
+                    {t('trading.customers.creditBalance')}
+                  </span>
+                  <div className='text-sm font-black tracking-tighter italic tabular-nums sm:text-base'>
+                    {customer.balance.toLocaleString(locale)}
+                  </div>
+                </div>
+                <Button
+                  variant='secondary'
+                  size='sm'
+                  onClick={handleOpenCustomerOrders}
+                  className='h-9 w-full rounded-full border border-emerald-500/10 bg-emerald-500/5 px-4 text-[9px] font-black tracking-widest text-emerald-500 uppercase transition-colors hover:bg-emerald-500/10 sm:justify-self-end'
+                >
+                  {t('trading.customers.viewOrders')}
+                  <ExternalLink className='ms-2 size-3 animate-pulse' />
+                </Button>
+              </div>
             </div>
           </div>
-          <Button
-            variant='secondary'
-            size='sm'
-            onClick={handleOpenCustomerOrders}
-            className='h-8 w-full rounded-full border border-emerald-500/10 bg-emerald-500/5 px-4 text-[8px] font-black tracking-widest text-emerald-500 uppercase transition-colors hover:bg-emerald-500/10 sm:w-auto'
-          >
-            {t('trading.customers.viewOrders')}
-            <ExternalLink className='ms-2 size-3 animate-pulse' />
-          </Button>
         </div>
       </CardContent>
       <AuditStamp

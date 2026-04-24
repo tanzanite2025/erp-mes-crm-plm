@@ -4,6 +4,240 @@ export const rawMaterials = {
     catalog: 'Prepreg',
     batchEngine: 'Batch Split Engine',
     cutSizeLibrary: 'Cut Size Library',
+    cuttingPlan: 'Cutting Plan',
+  },
+  catalog: {
+    hero: {
+      title: 'Prepreg Master Catalog',
+      description:
+        'Maintain prepreg material definitions only: product code, name, display alias, supplier mapping, resin content, width, and qualified area.',
+    },
+    metrics: {
+      total: 'Specs',
+      active: 'Active',
+      dimensionReady: 'Dimension Ready',
+    },
+    flow: {
+      definition: {
+        label: 'Definition',
+        value: 'Code / Name / Display Alias / Supplier',
+      },
+      dimension: {
+        label: 'Dimension',
+        value: 'Width / Qualified Area / Derived Roll Length',
+      },
+      recognition: {
+        label: 'Recognition Rule',
+        value: 'No conversion in OCR, clean before save',
+      },
+      scope: {
+        label: 'Current Scope',
+        value: 'Raw-material definition only',
+      },
+    },
+    searchPlaceholder:
+      'Search by product code, name, display alias, or supplier label',
+    loading: 'Loading prepreg specs...',
+    empty: {
+      title: 'No prepreg specs yet',
+      description:
+        'Start with product code, product name, width, and resin/batch fields from the supplier label.',
+    },
+    table: {
+      columns: {
+        product: 'Product & Alias',
+        material: 'Fiber / Resin',
+        dimension: 'Width / Qualified Area',
+        production: 'Production',
+        actions: 'Actions',
+      },
+      summaryEmpty: 'No summary',
+      length: 'Derived Length',
+      inspector: 'Inspector',
+      boxNo: 'Box',
+      fallback: {
+        fiberModel: 'Fiber model not filled',
+        resin: 'Resin info not filled',
+        width: 'Width not filled',
+        area: 'Qualified area not filled',
+        productionDate: 'Production date not filled',
+        inspection: 'Inspection info not filled',
+      },
+    },
+    dialog: {
+      titleCreate: 'New Prepreg Spec',
+      titleEdit: 'Edit Prepreg Spec',
+    },
+    form: {
+      code: {
+        label: 'Product Code',
+        placeholder: 'e.g. CFS-247-75',
+      },
+      name: {
+        label: 'Product Name',
+        placeholder: 'e.g. UD prepreg',
+      },
+      displayAlias: {
+        label: 'Display Alias (for issuance/print)',
+        placeholder: 'e.g. C24T-75 Main Ply',
+      },
+      supplier: {
+        label: 'Supplier (system reference)',
+        placeholder: 'Select supplier',
+        loading: 'Loading suppliers...',
+        empty: 'No selectable supplier',
+        legacyPrefix: 'Legacy',
+        legacyIdPrefix: 'Legacy supplier',
+      },
+      fiberModel: {
+        label: 'Fiber Model',
+        placeholder: 'e.g. T700 / T800 / 40F',
+      },
+      resinContentBatchRaw: {
+        label: 'Resin Content / Batch (label raw)',
+        placeholder: 'e.g. 37%/260204',
+      },
+      widthMm: {
+        label: 'Width',
+        placeholder: 'e.g. 1000',
+      },
+      nominalAreaM2: {
+        label: 'Qualified Area (m2)',
+        placeholder: 'e.g. 150',
+      },
+      inspector: {
+        label: 'Inspector',
+        placeholder: 'e.g. Z',
+      },
+      boxNo: {
+        label: 'Box No',
+        placeholder: 'e.g. 23',
+      },
+      productionDate: {
+        label: 'Production Date',
+        placeholder: 'e.g. 2026-03-06',
+      },
+      status: {
+        label: 'Status',
+      },
+      description: {
+        label: 'Remarks',
+        placeholder: 'Optional notes for supplier, quality, or usage constraints',
+      },
+    },
+    cleanedPreview: {
+      title: 'Normalized Data (saved as below)',
+      description:
+        'OCR keeps label values as-is. This section unifies units and derives dimensions for downstream use.',
+      resinContent: 'Normalized Resin Content',
+      supplierBatchNo: 'Normalized Batch No',
+      widthMm: 'Normalized Width',
+      lengthM: 'Normalized Roll Length',
+      nominalAreaM2: 'Normalized Qualified Area',
+      resinDerivation: 'Resin source: ',
+      resinDerivationManual: 'manual split fields',
+      resinDerivationFromRaw: 'split from raw "resin content/batch" text',
+      dimensionDerivationLabel: 'Dimension source: ',
+      dimensionDerivation: {
+        manual: 'manual / label direct input',
+        lengthFromArea: 'derive length from area + width',
+        areaFromLength: 'derive area from length + width',
+        widthFromAreaAndLength: 'derive width from area + length',
+      },
+      notes: {
+        resinContentMissing:
+          'Resin content could not be parsed from label text. Please verify manually.',
+        supplierBatchMissing:
+          'Batch number could not be parsed from label text. Please verify manually.',
+        areaMismatch:
+          'Area and width/length are inconsistent. Manual values were kept. Please verify label units.',
+      },
+    },
+    status: {
+      active: 'Active',
+      inactive: 'Inactive',
+      archived: 'Archived',
+    },
+    actions: {
+      create: 'Add Prepreg Spec',
+      save: 'Save Spec',
+      saving: 'Saving...',
+      cancel: 'Cancel',
+    },
+    toasts: {
+      created: 'Prepreg spec created',
+      updated: 'Prepreg spec updated',
+      recognizedApplied: 'Recognized fields applied. Please verify before saving.',
+      requiredCodeAndName: 'Please fill in product code and product name first.',
+    },
+    ocr: {
+      title: 'Label Photo Recognition',
+      description:
+        'Upload directly on desktop, or generate a mobile capture link and submit back to this dialog.',
+      waitingImage: 'Waiting for label image',
+      previewAlt: 'Prepreg label preview',
+      textPlaceholder:
+        'Paste OCR text, for example: Product code CFS-247-75, resin content/batch 37%/260204, width 1000MM, qualified area 150m2, inspector Z, box 23, production date 2026-03-06.',
+      emptyParsedFields: 'No parsed fields',
+      mobile: {
+        title: 'Scan by Mobile',
+        description:
+          'The link is valid for 30 minutes. This dialog will receive fields automatically after submit.',
+      },
+      message: {
+        idle:
+          'After upload, you can paste/correct OCR text, then apply fields into the form in one click.',
+        mobileSubmitted:
+          'Mobile result received. Please verify fields before saving.',
+        mobilePollingFailed:
+          'Polling mobile session failed. You can regenerate a new link.',
+        localUploaded:
+          'Label image loaded. Please verify OCR text and then apply.',
+        localUploadFailed:
+          'Failed to read label image. Please retry or fill manually.',
+        mobileSessionCreated:
+          'Mobile capture link generated. Scan and submit from your phone.',
+      },
+      actions: {
+        localUpload: 'Upload Local',
+        mobileCapture: 'Mobile Capture',
+        parseAndApply: 'Parse & Apply',
+        copyLink: 'Copy Link',
+        reading: 'Reading...',
+      },
+      toasts: {
+        noFields: 'No parsed fields yet. Please paste or edit OCR text first.',
+        mobileApplied: 'Mobile recognized fields have been applied.',
+        mobileSessionFailed: 'Failed to create mobile capture link.',
+        linkCopied: 'Capture link copied',
+        copyFailed: 'Copy failed. Please copy the link manually.',
+      },
+    },
+    mobileCapture: {
+      title: 'Prepreg Label Capture',
+      description:
+        'Take a photo for traceability, then paste or type label text. The system extracts fixed fields.',
+      previewAlt: 'Label photo preview',
+      imagePlaceholder: 'Take or upload label',
+      textTitle: 'Label Text',
+      textPlaceholder:
+        'Paste OCR text here or type manually: product code CFS-247-75, resin content/batch 37%/260204, width 1000MM, qualified area 150m2, inspector Z, box 23, production date 2026-03-06.',
+      actions: {
+        submit: 'Submit to Desktop',
+      },
+      submitted: {
+        title: 'Submitted',
+        description:
+          'The desktop prepreg dialog will receive the recognized fields automatically.',
+      },
+      errors: {
+        missingToken:
+          'Capture link is missing token. Please regenerate from desktop.',
+        emptyFields:
+          'No parsed fields yet. Please input or paste label text first.',
+        submitFailed: 'Submit failed. Please retry.',
+      },
+    },
   },
   batchEngine: {
     title: 'Batch Split Engine',
@@ -16,11 +250,38 @@ export const rawMaterials = {
         title: 'Roll and Rule Setup',
         description:
           'This side will later host roll selection, NFC binding, cutting-plan selection, and rule inputs.',
+        fields: {
+          prepregRef: 'Reference Prepreg Roll Spec',
+          rollWidth: 'Roll Width (mm)',
+          rollLength: 'Roll Length (m)',
+          knifeGap: 'Knife Gap (mm)',
+          edgeTrim: 'Edge Trim (mm)',
+          cutSizeRef: 'Reference Cut-Size Unit',
+        },
+        placeholders: {
+          loading: 'Loading...',
+          selectPrepreg: 'Select prepreg spec',
+          selectCutSize: 'Select size unit',
+          none: 'No reference (allow empty)',
+        },
+        prepregSummary: {
+          prefix: 'Referenced roll spec',
+          empty: 'Empty is allowed. Once selected, this page only reads roll width and roll length from prepreg master data.',
+        },
+        cutSizeSummary: {
+          angle: 'Angle',
+          layup: 'Layup',
+          usage: 'Usage',
+          empty: 'After selecting a size unit, the simulation updates in real time using strip-first rules.',
+        },
         blocks: {
           roll: {
             title: 'Active Roll',
             value: 'Select the specific prepreg roll before calculation',
             hint: 'Roll instance, NFC tag, remaining area/length, thaw window, and storage state will be surfaced here.',
+          },
+          rollSpec: {
+            title: 'Read-Only Roll Dimensions',
           },
           plan: {
             title: 'Cutting Sheet',

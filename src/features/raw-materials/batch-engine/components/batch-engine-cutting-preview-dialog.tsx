@@ -27,10 +27,11 @@ export function BatchEngineCuttingPreviewDialog(props: BatchEngineCuttingPreview
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        size='full'
         showCloseButton
-        className='w-[min(1500px,96vw)] max-w-[min(1500px,96vw)] overflow-hidden rounded-[24px] p-0'
+        className='flex min-h-0 max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[1500px] flex-col gap-0 overflow-hidden rounded-[24px] p-0 sm:w-[calc(100vw-2rem)] sm:max-w-[1500px]'
       >
-        <DialogHeader className='border-b border-dashed border-slate-200 bg-slate-50/80 px-5 py-4'>
+        <DialogHeader className='border-b border-dashed border-slate-200 bg-slate-50/80 px-4 py-3'>
           <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight text-slate-900'>
             <Maximize2 className='size-5 text-cyan-700' />
             {t('rawMaterials.batchEngine.canvasPreview.title')}
@@ -40,8 +41,8 @@ export function BatchEngineCuttingPreviewDialog(props: BatchEngineCuttingPreview
           </DialogDescription>
         </DialogHeader>
 
-        <div className='grid h-[82vh] min-h-[620px] grid-rows-[auto_minmax(0,1fr)]'>
-          <div className='flex flex-wrap items-center gap-2 border-b border-dashed border-slate-200 bg-white px-5 py-3'>
+        <div className='grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]'>
+          <div className='flex flex-wrap items-center gap-1.5 border-b border-dashed border-slate-200 bg-white px-4 py-2.5'>
             <SummaryPill
               label={t('rawMaterials.batchEngine.canvasPreview.summary.roll')}
               value={`${controls.rollLengthM || '--'}m x ${controls.rollWidthMm || '--'}mm`}
@@ -68,13 +69,13 @@ export function BatchEngineCuttingPreviewDialog(props: BatchEngineCuttingPreview
             />
           </div>
 
-          <div className='min-h-0 p-4'>
+          <div className='min-h-0 p-3'>
             <BatchEngineCuttingCanvas controls={controls} simulation={simulation} />
           </div>
         </div>
 
-        <DialogFooter className='border-t border-dashed border-slate-200 bg-slate-50/70 px-5 py-3 sm:justify-between'>
-          <div className='flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600'>
+        <DialogFooter className='border-t border-dashed border-slate-200 bg-slate-50/70 px-4 py-2.5 sm:items-center sm:justify-between'>
+          <div className='flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] font-semibold text-slate-600'>
             <LegendDot color='bg-slate-900' label={t('rawMaterials.batchEngine.canvasPreview.legend.roll')} />
             <LegendDot color='bg-cyan-500' label={t('rawMaterials.batchEngine.canvasPreview.legend.strip')} />
             <LegendDot color='bg-emerald-500' label={t('rawMaterials.batchEngine.canvasPreview.legend.piece')} />
@@ -84,7 +85,7 @@ export function BatchEngineCuttingPreviewDialog(props: BatchEngineCuttingPreview
               label={t('rawMaterials.batchEngine.canvasPreview.legend.aggregate')}
             />
           </div>
-          <Button variant='outline' onClick={() => onOpenChange(false)} className='rounded-full px-6 font-black'>
+          <Button variant='outline' onClick={() => onOpenChange(false)} className='shrink-0 rounded-full px-5 font-black'>
             <Scissors className='size-4' />
             {t('rawMaterials.batchEngine.canvasPreview.close')}
           </Button>
@@ -96,7 +97,7 @@ export function BatchEngineCuttingPreviewDialog(props: BatchEngineCuttingPreview
 
 function SummaryPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className='rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-700'>
+    <div className='rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-700'>
       <span className='font-black text-slate-500'>{label}: </span>
       {value}
     </div>

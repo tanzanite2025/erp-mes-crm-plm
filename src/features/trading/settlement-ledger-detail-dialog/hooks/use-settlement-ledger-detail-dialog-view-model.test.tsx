@@ -29,12 +29,14 @@ const payableConfig = {
   actionLabel: '付款',
   partnerLabel: '供应商',
   amountLabel: '未付',
+  summaryAmountLabel: '开票金额',
   fieldPrefix: 'payable',
   relationKey: 'paymentRecordId',
   recordType: 'payment',
   uploadPath: '/purchase/evidence/upload',
   getDetailPartnerName: (item: DetailStub) => item.supplierName,
   getLocalLedgerPartnerName: (item: LocalLedgerStub) => item.supplierName,
+  getDetailSummaryAmount: (item: DetailStub) => item.invoiceAmount,
 } satisfies SettlementLedgerDetailDialogConfig<DetailStub, LocalLedgerStub>
 
 function buildDetail(): DetailStub {
@@ -132,7 +134,7 @@ describe('use-settlement-ledger-detail-dialog-view-model', () => {
     expect(result.current.summaryItems).toEqual([
       { label: '单据编号', value: 'PO-001' },
       { label: '供应商', value: '示例供应商' },
-      { label: '开票金额', value: '待接入' },
+      { label: '开票金额', value: 'CNY 320.00' },
       { label: '未付金额', value: 'CNY 120.00' },
     ])
     expect(result.current.filteredRecords).toHaveLength(2)

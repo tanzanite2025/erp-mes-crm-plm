@@ -37,7 +37,7 @@ export function useSalesReturnQueryShell() {
   const routeCustomerId = search.customerId || undefined
   const routeCustomerName = search.customerName || undefined
   const selectedSourceOrderId = search.sourceOrderId || undefined
-  const selectedReturnId = search.returnId || search.detailId || undefined
+  const selectedReturnId = search.returnId || undefined
   const sourceSearchTerm = search.search || ''
   const sourceStatusFilter = search.status || SALES_RETURNS_ALL_STATUS
 

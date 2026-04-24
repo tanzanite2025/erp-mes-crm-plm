@@ -47,7 +47,7 @@ export function useSalesOrderListViewModel({
 
       const matchesStatus =
         statusFilter === 'all'
-          ? order.status !== 'Canceled'
+          ? true
           : order.status.toLowerCase() === statusFilter.toLowerCase()
       const matchesPaymentMethod =
         paymentMethodFilter === 'ALL' || order.paymentMethod === paymentMethodFilter

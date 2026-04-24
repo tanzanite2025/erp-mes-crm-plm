@@ -5,6 +5,7 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: 'Resource Management',
+    rawMaterialsManagement: 'Raw Material Management',
     salesManagement: 'Sales Management',
     engineeringManagement: 'Engineering Management',
     warehouseManagement: 'Warehouse',
@@ -29,6 +30,8 @@ export const sidebar = {
     mrp: 'MRP',
     purchaseManagement: 'Purchase Management',
     rawMaterialsManagement: 'Raw Material Management',
+    cuttingDatabase: 'Cutting Database',
+    cuttingOperations: 'Cutting Operations',
     productEngineering: 'Product Engineering',
     materialArchive: 'Material Archive',
     engineeringDatabase: 'Engineering Database',

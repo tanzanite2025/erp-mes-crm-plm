@@ -1,5 +1,3 @@
-import { useMemo, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, PackageSearch, RefreshCw, Send, AlertCircle, History, Database, Search } from 'lucide-react'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -10,111 +8,40 @@ import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { failLoudly } from '@/lib/safe-catch'
 import { auditUtils } from '@/lib/audit-utils'
 
-import { useStocktake, useStocktakeItems } from '../hooks/use-stock-maintenance'
-import { useWarehouseCategoryOptions } from '../hooks/use-warehouse-category'
-import { warehouseQueryKeys } from '../query-keys'
-import { StocktakeMaintenanceService, type StocktakeItem, type StocktakeTask } from '../stocktake'
-import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
+import { type StocktakeItem } from '../stocktake'
+import { useStocktakeMgmtViewModel } from '../hooks/use-stocktake-mgmt-view-model'
 import { getStocktakeStatusMeta } from '../utils/warehouse-status-display'
 
 export function StocktakeMgmt() {
-    const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
-    
-    const queryClient = useQueryClient()
-    const { 
-        tasks, 
-        isLoading, 
-        isError: error,
-        refreshData,
-        createStocktake,
-        isCreating 
-    } = useStocktake()
-
-    const categoriesQuery = useWarehouseCategoryOptions()
-    const stocktakeCategories = useMemo(() => {
-        if (categoriesQuery.isLoading) return []
-        if (!categoriesQuery.data) {
-            const lookupError = categoriesQuery.error instanceof Error
-                ? categoriesQuery.error
-                : new Error('[CRITICAL] Stocktake warehouse categories missing after load')
-            failLoudly(lookupError, 'StocktakeMgmt.categories')
-            throw lookupError
-        }
-
-        const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data, 'stocktake')
-        if (filteredCategories.length === 0) {
-            const lookupError = new Error('[CRITICAL] No warehouse categories allowed for stocktake scene')
-            failLoudly(lookupError, 'StocktakeMgmt.categories')
-            throw lookupError
-        }
-
-        return filteredCategories
-    }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
-
-    const [selectedTask, setSelectedTask] = useState<StocktakeTask | null>(null)
-    const [isCreateOpen, setIsCreateOpen] = useState(false)
-    const [adjustmentConfirmOpen, setAdjustmentConfirmOpen] = useState(false)
-    const selectedTaskId = selectedTask?.id
-
-    const { data: items, isLoading: itemsLoading } = useStocktakeItems(selectedTaskId || null)
-
-    const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        if (!allowsAction('action_warehouse_stocktake_manage')) return
-        const formData = new FormData(e.currentTarget)
-        try {
-            await createStocktake({
-                title: formData.get('title') as string,
-                warehouseCategoryCode: formData.get('category') as string,
-                remarks: formData.get('remarks') as string
-            })
-            setIsCreateOpen(false)
-        } catch (_error) {
-            // Already handled in hook toast
-        }
-    }
-
-    const postAdjustmentMutation = useMutation({
-        mutationFn: (taskId: string) => StocktakeMaintenanceService.submitAdjustmentForApproval(taskId),
-        onSuccess: async (_, taskId) => {
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() }),
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeItems(taskId) }),
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() }),
-            ])
-            toast.success(t('warehouse.stocktake.toast.postSuccess'))
-        },
-        onError: (err: Error) => {
-            toast.error(t('warehouse.stocktake.toast.postFailed', { message: err.message }))
-        }
-    })
-
-    const handlePostAdjustment = () => {
-        if (!selectedTask) return
-        if (!allowsAction('action_warehouse_adjustment_submit')) return
-        setAdjustmentConfirmOpen(true)
-    }
-
-    const onConfirmAdjustment = async () => {
-        if (!selectedTask) return
-        try {
-            await postAdjustmentMutation.mutateAsync(selectedTask.id)
-            setAdjustmentConfirmOpen(false)
-        } catch (error) {
-            failLoudly(error, 'StocktakeMgmt.onConfirmAdjustment', { silentUI: true })
-        }
-    }
+    const {
+        tasks,
+        isLoading,
+        error,
+        selectedTask,
+        items,
+        itemsLoading,
+        stocktakeCategories,
+        isCreateOpen,
+        adjustmentConfirmOpen,
+        isCreating,
+        isSubmittingAdjustment,
+        canSubmitAdjustment,
+        handleRefresh,
+        handleSelectTask,
+        handleCreateDialogOpenChange,
+        handleCreateTaskSubmit,
+        handleRequestAdjustmentSubmission,
+        handleAdjustmentConfirmOpenChange,
+        handleConfirmAdjustmentSubmission,
+    } = useStocktakeMgmtViewModel()
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -133,12 +60,12 @@ export function StocktakeMgmt() {
                     <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => { void refreshData() }}
+                        onClick={handleRefresh}
                         className='size-9 md:size-10 rounded-full hover:bg-muted shrink-0'
                     >
                         <RefreshCw className={cn('size-3.5 md:size-4 text-muted-foreground', isLoading && 'animate-spin')} />
                     </Button>
-                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                    <Dialog open={isCreateOpen} onOpenChange={handleCreateDialogOpenChange}>
                         <DialogTrigger asChild>
                             <Button className='h-10 md:h-11 px-4 md:px-6 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all gap-2 shrink-0'>
                                 <Plus className='size-3.5 md:size-4' />
@@ -147,7 +74,7 @@ export function StocktakeMgmt() {
                         </DialogTrigger>
                         <DialogContent className='w-[95vw] sm:max-w-[480px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
                             <div className='absolute inset-0 bg-linear-to-br from-blue-600/5 via-transparent pointer-events-none' />
-                            <form onSubmit={handleCreateTask} className='relative p-5 md:p-8'>
+                            <form onSubmit={handleCreateTaskSubmit} className='relative p-5 md:p-8'>
                                 <DialogHeader className='mb-6 md:mb-8 text-left'>
                                     <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase truncate'>
                                         {t('warehouse.stocktake.createDialog.title')}
@@ -244,7 +171,7 @@ export function StocktakeMgmt() {
                                     return (
                                     <div
                                         key={task.id}
-                                        onClick={() => setSelectedTask(task)}
+                                        onClick={() => handleSelectTask(task)}
                                         className={cn(
                                             'group relative p-5 rounded-[24px] border border-muted/60 transition-all cursor-pointer',
                                             selectedTask?.id === task.id
@@ -294,10 +221,10 @@ export function StocktakeMgmt() {
                                         {t('warehouse.stocktake.detailSubtitle', { count: items?.length || 0 })}
                                     </p>
                                 </div>
-                                {(selectedTask.status === 'IN_PROGRESS' || selectedTask.status === 'COMPLETED') && (
+                                {canSubmitAdjustment && (
                                     <Button
-                                        onClick={handlePostAdjustment}
-                                        disabled={postAdjustmentMutation.isPending}
+                                        onClick={handleRequestAdjustmentSubmission}
+                                        disabled={isSubmittingAdjustment}
                                         className='h-9 md:h-10 px-4 md:px-6 rounded-full shadow-lg shadow-amber-500/20 bg-amber-600 hover:bg-amber-700 font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all active:scale-95 gap-2 shrink-0 self-start sm:self-auto'
                                     >
                                         <Send className='size-3 md:size-3.5' /> {t('warehouse.stocktake.submitRecon')}
@@ -379,12 +306,12 @@ export function StocktakeMgmt() {
 
             <ConfirmDialog
                 open={adjustmentConfirmOpen}
-                onOpenChange={setAdjustmentConfirmOpen}
+                onOpenChange={handleAdjustmentConfirmOpenChange}
                 title={t('warehouse.adjustment.execute')}
                 desc={t('warehouse.stocktake.toast.posting')} // Reuse or specific desc if needed
                 confirmText={t('warehouse.stocktake.submitRecon')}
-                handleConfirm={onConfirmAdjustment}
-                isLoading={postAdjustmentMutation.isPending}
+                handleConfirm={handleConfirmAdjustmentSubmission}
+                isLoading={isSubmittingAdjustment}
             />
         </div>
     )

@@ -42,6 +42,7 @@ export function CustomerDynamicSummaryLayer({
       <CustomerSalesReturnSummaryBlock
         summary={salesReturnSummary}
         onOpenSalesReturns={onOpenSalesReturns}
+        compact
       />
       <CustomerQuoteEntryBlock
         customerName={customerName}
@@ -50,6 +51,7 @@ export function CustomerDynamicSummaryLayer({
         isError={resolvedQuoteSummary.isError}
         onOpenQuote={onOpenQuote}
         onCreateQuote={onCreateQuote}
+        compact
       />
     </div>
   )

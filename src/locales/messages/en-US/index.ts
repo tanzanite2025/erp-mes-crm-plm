@@ -37,6 +37,7 @@ import { rawMaterials } from './rawMaterials'
 import { codeCenter } from './codeCenter'
 import { productionQuality } from './productionQuality'
 import { productionArchitecture } from './productionArchitecture'
+import { cuttingOperations } from './cuttingOperations'
 
 export const enUSMessages = {
   common,
@@ -78,4 +79,5 @@ export const enUSMessages = {
   codeCenter,
   productionQuality,
   productionArchitecture,
+  cuttingOperations,
 } as const

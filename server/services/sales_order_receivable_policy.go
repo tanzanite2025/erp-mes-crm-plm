@@ -9,10 +9,11 @@ import (
 
 func calculateReceivableAmounts(order models.SalesOrder, bundle receivableOrderSettlementBundle) (float64, float64) {
 	received := math.Round(bundle.receivedAmountByOrderID[order.ID]*100) / 100
+	returnAdjustment := math.Round(bundle.actualAmountAdjustmentByOrderID[order.ID]*100) / 100
 	if strings.EqualFold(strings.TrimSpace(order.Status), "Canceled") {
 		return received, 0
 	}
-	outstanding := math.Round((order.Amount-received)*100) / 100
+	outstanding := math.Round((order.Amount-returnAdjustment-received)*100) / 100
 	if outstanding < 0 {
 		outstanding = 0
 	}
@@ -33,6 +34,19 @@ func deriveReceivableOrderStatus(order models.SalesOrder, outstanding float64, r
 		return models.LedgerStatusPartial
 	}
 	return models.LedgerStatusOpen
+}
+
+func deriveReceivableAgingBucket(status string) string {
+	if strings.EqualFold(strings.TrimSpace(status), models.LedgerStatusSettled) {
+		return models.LedgerAgingBucketSettled
+	}
+	if strings.EqualFold(strings.TrimSpace(status), models.LedgerStatusOverdue) {
+		return models.LedgerAgingBucketOverdue
+	}
+	if strings.EqualFold(strings.TrimSpace(status), models.LedgerStatusCancelled) {
+		return models.LedgerAgingBucketCancelled
+	}
+	return models.LedgerAgingBucketCurrent
 }
 
 func isReceivableOrderNotAllocatable(order models.SalesOrder, outstanding float64) bool {

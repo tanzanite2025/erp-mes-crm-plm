@@ -4,7 +4,7 @@ import { Scissors, TriangleAlert } from 'lucide-react'
 import { ModuleTabbedLayout } from '@/components/layout/module-tabbed-layout'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
-import { getApsSchedulingTabs } from '../../tab-config'
+import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
 import { ExecutionTableSection } from './components/execution-table-section'
 import { PlanningSelectionSection } from './components/planning-selection-section'
 import { TraceReportSection } from './components/trace-report-section'
@@ -36,7 +36,10 @@ export function ApsCuttingIssuanceTab() {
   } = useCuttingIssuancePageState()
 
   return (
-    <ModuleTabbedLayout title={t('apsScheduling.layout.title')} tabs={getApsSchedulingTabs(t as any)}>
+    <ModuleTabbedLayout
+      title={t('sidebar.items.cuttingOperations')}
+      tabs={getCuttingOperationTabs(t as any)}
+    >
       <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
         <IndustrialHeader
           icon={Scissors}

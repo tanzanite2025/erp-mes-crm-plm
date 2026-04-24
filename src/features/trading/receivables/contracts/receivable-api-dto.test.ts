@@ -13,11 +13,11 @@ const payload = {
       documentNo: 'AR-001',
       customerName: 'Acme Customer',
       currency: 'CNY',
-      invoiceAmount: 100,
+      orderAmount: 100,
       receivedAmount: 40,
       outstandingAmount: 60,
       dueDate: '2026-04-30',
-      agingBucket: 'OPEN',
+      agingBucket: 'CURRENT',
       status: 'OPEN',
       createdAt: '2026-04-19T00:00:00Z',
       updatedAt: '2026-04-19T00:00:00Z',
@@ -64,14 +64,35 @@ const receiptRecord = {
   evidences: [],
 }
 
+const salesReturnActualAmountRecord = {
+  id: 'return-adjustment-1',
+  salesReturnId: 'sales-return-1',
+  salesOrderId: 'receivable-1',
+  salesOrderNo: 'SO-001',
+  returnNo: 'SR-001',
+  customerId: 'CUST-001',
+  customerName: 'Acme Customer',
+  amount: 15,
+  note: 'customer confirmed return deduction',
+  evidences: [],
+  estimatedReturnAmountSnapshot: 20,
+  recordedAt: '2026-04-19T10:30:00Z',
+  recordedBy: 'finance-user',
+  createdAt: '2026-04-19T10:30:00Z',
+  updatedAt: '2026-04-19T10:30:00Z',
+}
+
 const detail = {
   ...payload.items[0],
+  outstandingAmount: 45,
   sourceType: 'SALES_ORDER',
-  sourceRefId: 'SO-001',
+  sourceRefId: 'receivable-1',
   customerId: 'CUST-001',
   version: 1,
   receiptRecords: [receiptRecord],
   allocations: [allocation],
+  returnAdjustmentAmount: 15,
+  salesReturnActualAmountRecords: [salesReturnActualAmountRecord],
 }
 
 describe('receivable api dto', () => {
@@ -110,6 +131,22 @@ describe('receivable api dto', () => {
       deserializeReceivableListPageApiDTO({
         ...payload,
         summary: { ...payload.summary, settledReceivable: 40 },
+      })
+    ).toThrow()
+  })
+
+  it('rejects unknown receivable ledger status and aging bucket values', () => {
+    expect(() =>
+      deserializeReceivableListPageApiDTO({
+        ...payload,
+        items: [{ ...payload.items[0], status: 'PROCESSING' }],
+      })
+    ).toThrow()
+
+    expect(() =>
+      deserializeReceivableListPageApiDTO({
+        ...payload,
+        items: [{ ...payload.items[0], agingBucket: 'LATE' }],
       })
     ).toThrow()
   })

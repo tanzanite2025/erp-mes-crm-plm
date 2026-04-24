@@ -36,11 +36,13 @@ export function normalizeEngineeringTemplateComponentKey(
 export function normalizeProductTemplateInput(
   template: SaveProductTemplateInput
 ): SaveProductTemplateInput {
+  if (!template.attributeBindings) throw new Error('[CRITICAL] attributeBindings missing in SaveProductTemplateInput')
+
   return {
     ...template,
     code: normalizeEngineeringTemplateCode(template.code),
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
-    attributeBindings: (template.attributeBindings ?? []).map((binding, index) => ({
+    attributeBindings: template.attributeBindings.map((binding, index) => ({
       ...binding,
       templateId: binding.templateId?.trim() || template.id || undefined,
       categoryKey: binding.categoryKey?.trim() || '',
@@ -53,11 +55,13 @@ export function normalizeProductTemplateInput(
 }
 
 export function normalizeProductTemplateEntity(template: ProductTemplate): ProductTemplate {
+  if (!template.attributeBindings) throw new Error('[CRITICAL] attributeBindings missing in ProductTemplate entity')
+
   return {
     ...template,
     code: normalizeEngineeringTemplateCode(template.code),
     componentKey: normalizeEngineeringTemplateComponentKey(template.componentKey),
-    attributeBindings: (template.attributeBindings ?? []).map((binding, index) => ({
+    attributeBindings: template.attributeBindings.map((binding, index) => ({
       ...binding,
       templateId: binding.templateId?.trim() || template.id || undefined,
       categoryKey: binding.categoryKey?.trim() || '',
@@ -116,12 +120,14 @@ export function deriveNormalizedProductSku(
 }
 
 export function normalizeSaveProductInput(product: SaveProductInput): SaveProductInput {
+  if (!product.attributeValues) throw new Error('[CRITICAL] attributeValues missing in SaveProductInput')
+
   return {
     ...product,
     sku: normalizeProductSkuValue(product.sku),
     modelCode: normalizeProductModelCodeValue(product.modelCode),
     templateKey: normalizeProductTemplateKeyValue(product.templateKey),
-    attributeValues: (product.attributeValues ?? []).map((item) => ({
+    attributeValues: product.attributeValues.map((item) => ({
       ...item,
       categoryKey: item.categoryKey?.trim() || '',
       optionValue: normalizeProductAttributeMachineValue(item.optionValue),

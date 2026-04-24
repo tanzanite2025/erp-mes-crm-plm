@@ -41,6 +41,9 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesReturnGroup.Use(tradingAccess)
 	salesReturnGroup.GET("", handlers.GetSalesReturnsHandler)
 	salesReturnGroup.GET("/:id", handlers.GetSalesReturnHandler)
+	salesReturnGroup.GET("/:id/actual-amount-records", handlers.GetSalesReturnActualAmountRecordsHandler)
+	salesReturnGroup.PATCH("/:id", salesOrderManage, handlers.PatchSalesReturnHandler)
+	salesReturnGroup.PATCH("/:id/actual-amount", salesOrderManage, handlers.PatchSalesReturnActualAmountEntryHandler)
 	salesReturnGroup.PATCH("/:id/logistics", salesOrderManage, handlers.PatchSalesReturnLogisticsHandler)
 
 	customerGroup := authorized.Group("/customers")

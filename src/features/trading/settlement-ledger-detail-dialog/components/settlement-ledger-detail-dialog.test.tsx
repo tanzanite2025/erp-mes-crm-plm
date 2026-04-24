@@ -89,12 +89,14 @@ const config = {
   actionLabel: '付款',
   partnerLabel: '供应商',
   amountLabel: '未付',
+  summaryAmountLabel: '开票金额',
   fieldPrefix: 'payable',
   relationKey: 'paymentRecordId',
   recordType: 'payment',
   uploadPath: '/purchase/evidence/upload',
   getDetailPartnerName: (detail: DetailStub) => detail.supplierName,
   getLocalLedgerPartnerName: (ledger: LocalLedgerStub) => ledger.supplierName,
+  getDetailSummaryAmount: (detail: DetailStub) => detail.invoiceAmount,
 } satisfies SettlementLedgerDetailDialogConfig<DetailStub, LocalLedgerStub>
 
 function createViewModel(): SettlementLedgerDetailDialogViewModel {
@@ -301,12 +303,14 @@ describe('settlement-ledger-detail-dialog', () => {
       actionLabel: '收款',
       partnerLabel: '客户',
       amountLabel: '未收',
+      summaryAmountLabel: '订单金额',
       fieldPrefix: 'receivable',
       relationKey: 'receiptRecordId' as const,
       recordType: 'receipt' as const,
       uploadPath: '/sales/evidence/upload',
       getDetailPartnerName: (detail: DetailStub) => detail.supplierName,
       getLocalLedgerPartnerName: (ledger: LocalLedgerStub) => ledger.supplierName,
+      getDetailSummaryAmount: (detail: DetailStub) => detail.invoiceAmount,
     }
 
     const vm = renderDialog(undefined, {

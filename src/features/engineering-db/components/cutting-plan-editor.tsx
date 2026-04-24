@@ -57,7 +57,6 @@ function formatPercent(value: string): string {
 }
 
 function tryExtractResinModel(spec: PrepregMaterialSpec): string {
-  if (spec.resinModel?.trim()) return spec.resinModel.trim()
   const source = `${spec.description || ''} ${spec.name || ''}`.trim()
   if (!source) return ''
   const matched = source.match(/(?:树脂型号|Resin(?:\s*Model)?)[:：\s]*([^\s,，;；]+)/i)
@@ -66,9 +65,11 @@ function tryExtractResinModel(spec: PrepregMaterialSpec): string {
 
 function getPrepregLabel(spec: PrepregMaterialSpec): string {
   const rc = formatPercent(spec.resinContentPercent)
-  const codePart = spec.code || spec.supplierProductCode || '--'
+  const displayPart = spec.displayAlias?.trim() || ''
   const namePart = spec.name || '--'
-  return rc ? `${codePart} | ${namePart} | RC ${rc}` : `${codePart} | ${namePart}`
+  const codePart = spec.code || spec.supplierProductCode || '--'
+  const base = displayPart || `${codePart} | ${namePart}`
+  return rc ? `${base} | RC ${rc}` : base
 }
 
 function normalizeMatchText(value?: string): string {

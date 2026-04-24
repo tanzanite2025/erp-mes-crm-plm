@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { OrderEvidence } from '../../data/schema'
 
-const orderEvidenceSchema = z
+export const orderEvidenceSchema = z
   .object({
     id: z.string(),
     url: z.string(),

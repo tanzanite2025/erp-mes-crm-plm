@@ -15,12 +15,6 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthenticatedLayout')
 
-const NotificationCenter = lazy(() =>
-  import('@/features/system-mgmt/notifications/components/notification-center').then((module) => ({
-    default: module.NotificationCenter,
-  }))
-)
-
 const SystemAnomalyBanner = lazy(() =>
   import('@/features/system-mgmt/monitor/components/system-anomaly-banner').then((module) => ({
     default: module.SystemAnomalyBanner,
@@ -114,7 +108,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   useSystemMonitor()
 
   const isPDAShellRoute = pathname === '/pda-shell'
-  const showDeferredWidgets = useDeferredActivation(!isPDAShellRoute, 250)
   const showAssistant = useDeferredActivation(!isPDAShellRoute, 1000)
 
   // --- 强一致性身份同步 ---
@@ -182,11 +175,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           {children ?? <Outlet />}
         </SidebarInset>
         <QuickActionsFloating />
-        {showDeferredWidgets && (
-          <Suspense fallback={null}>
-            <NotificationCenter />
-          </Suspense>
-        )}
         {showAssistant && (
           <Suspense fallback={null}>
             <AIAssistant />

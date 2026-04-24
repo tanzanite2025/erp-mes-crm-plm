@@ -80,13 +80,21 @@ export const tradingQueryKeys = {
     page: number,
     pageSize: number,
     withLines: boolean,
-    status: string[]
-  ): readonly ['sales-orders', number, number, boolean, string[]] => [
+    status: string[],
+    customerId: string,
+    keyword: string,
+    paymentMethod: string,
+    paymentTerm: string
+  ): readonly ['sales-orders', number, number, boolean, string[], string, string, string, string] => [
     'sales-orders',
     page,
     pageSize,
     withLines,
     status,
+    customerId,
+    keyword,
+    paymentMethod,
+    paymentTerm,
   ],
   salesReturnsSourceOrders: (
     page: number,
@@ -136,6 +144,13 @@ export const tradingQueryKeys = {
   salesReturnDetail: (id: string): readonly ['sales-returns', string] => [
     'sales-returns',
     id,
+  ],
+  salesReturnActualAmountRecords: (
+    id: string
+  ): readonly ['sales-returns', string, 'actual-amount-records'] => [
+    'sales-returns',
+    id,
+    'actual-amount-records',
   ],
   salesOrderDetail: (id: string): readonly ['sales-orders', string] => [
     'sales-orders',

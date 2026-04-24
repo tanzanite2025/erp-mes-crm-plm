@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+
 import { Settings2, ArrowUpDown, FileText, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -9,45 +9,25 @@ import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
 import { SPEC_COMPONENTS } from './specs'
-import { type Product } from '../data/schema'
-import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
-import { ProductTypeService } from '../services/product-type-service'
+import { type Product, type ProductType } from '../data/schema'
 import { getProductAttributes } from '../utils/product-utils'
 
 type ProductOverviewTabProps = {
     product: Product
+    productTypes: ProductType[]
     onEdit: (product: Product) => void
 }
 
-export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps) {
+export function ProductOverviewTab({ product, productTypes, onEdit }: ProductOverviewTabProps) {
     const { t } = useLanguage()
-    const productTypesQuery = useQuery({
-        queryKey: PRODUCT_TYPES_QUERY_KEY,
-        queryFn: () => ProductTypeService.getProductTypes(),
-    })
     const productView = useMemo(() => getProductAttributes(product), [product])
-    const isLoading = productTypesQuery.isLoading
-
-    if (productTypesQuery.isError) {
-        const error = productTypesQuery.error instanceof Error
-            ? productTypesQuery.error
-            : new Error('[CRITICAL] Product type lookup query failed in product overview')
-        failLoudly(error, 'ProductOverviewTab.productTypes')
-        throw error
-    }
-
-    if (!isLoading && !productTypesQuery.data) {
-        const error = new Error(`[CRITICAL] Missing product types lookup for product overview ${product.id}`)
-        failLoudly(error, 'ProductOverviewTab.productTypes')
-        throw error
-    }
 
     const categoryType = useMemo(
-        () => productTypesQuery.data?.find((entry) => entry.id === product.typeId) || null,
-        [product.typeId, productTypesQuery.data]
+        () => productTypes.find((entry) => entry.id === product.typeId) || null,
+        [product.typeId, productTypes]
     )
 
-    if (!isLoading && !categoryType) {
+    if (!categoryType) {
         const error = new Error(
             `[CRITICAL] Missing product type ${product.typeId} for product overview ${product.id}`
         )
@@ -56,20 +36,6 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
     }
 
     const renderTechnicalRibbon = () => {
-        if (isLoading) {
-            return (
-                <div className='flex items-center gap-4 p-4 rounded-2xl bg-muted/10 border border-dashed animate-pulse'>
-                   <div className='flex-1 flex items-center justify-around px-2'>
-                        <div className='h-8 w-24 bg-muted rounded' />
-                        <div className='w-px h-8 bg-muted' />
-                        <div className='h-8 w-24 bg-muted rounded' />
-                        <div className='w-px h-8 bg-muted' />
-                        <div className='h-8 w-32 bg-muted rounded' />
-                   </div>
-                </div>
-            )
-        }
-
         const componentKey = product.templateKey as keyof typeof SPEC_COMPONENTS | undefined
         if (!componentKey) {
             return (
@@ -143,7 +109,7 @@ export function ProductOverviewTab({ product, onEdit }: ProductOverviewTabProps)
                 </div>
                 <div className='flex flex-col items-start sm:items-end gap-2'>
                     <Badge variant='secondary' className='h-7 sm:h-8 px-4 sm:px-6 rounded-full text-[9px] sm:text-[10px] font-black bg-blue-600/5 border-none uppercase tracking-widest text-blue-600 italic shadow-inner'>
-                        {t('engineering.productMgmt.typeRefLabel')} / {isLoading ? '...' : categoryType!.code}
+                        {t('engineering.productMgmt.typeRefLabel')} / {categoryType!.code}
                     </Badge>
                 </div>
             </div>

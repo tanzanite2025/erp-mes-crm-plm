@@ -21,7 +21,9 @@ const salesReturnStatusOptions = [
   'Canceled',
 ] as const
 
-const salesReturnTransportModeOptions = ['Courier', 'Other'] as const
+function normalizeSalesReturnStatus(status: string) {
+  return status === 'Completed' ? 'Closed' : status
+}
 
 function toDateTimeLocalValue(value?: string) {
   if (!value) {
@@ -58,26 +60,13 @@ function getSalesReturnStatusLabel(
       return t('trading.salesReturns.statuses.InTransit')
     case 'Received':
       return t('trading.salesReturns.statuses.Received')
+    case 'Completed':
     case 'Closed':
       return t('trading.salesReturns.statuses.Closed')
     case 'Canceled':
       return t('trading.salesReturns.statuses.Canceled')
     default:
       return status
-  }
-}
-
-function getSalesReturnTransportModeLabel(
-  mode: string,
-  t: ReturnType<typeof useLanguage>['t']
-) {
-  switch (mode) {
-    case 'Courier':
-      return t('trading.salesReturns.transportModes.Courier')
-    case 'Other':
-      return t('trading.salesReturns.transportModes.Other')
-    default:
-      return mode
   }
 }
 
@@ -90,20 +79,18 @@ export function SalesReturnLogisticsPanel({
 }: SalesReturnLogisticsPanelProps) {
   const { t } = useLanguage()
   const { patchLogisticsMutation } = useSalesReturnMutations()
-  const [transportMode, setTransportMode] = useState(record.transportMode)
   const [trackingNo, setTrackingNo] = useState(record.trackingNo ?? '')
   const [carrier, setCarrier] = useState(record.carrier ?? '')
   const [shippedAt, setShippedAt] = useState(
     toDateTimeLocalValue(record.shippedAt)
   )
   const [logisticsNote, setLogisticsNote] = useState(record.logisticsNote ?? '')
-  const [status, setStatus] = useState(record.status)
+  const [status, setStatus] = useState(normalizeSalesReturnStatus(record.status))
 
   const handleSubmit = () => {
     patchLogisticsMutation.mutate({
       salesReturnId: record.id,
       payload: {
-        transportMode,
         trackingNo: trackingNo.trim() || undefined,
         carrier: carrier.trim() || undefined,
         shippedAt: toIsoDateTimeValue(shippedAt),
@@ -117,10 +104,10 @@ export function SalesReturnLogisticsPanel({
     <div className='rounded-[24px] border border-dashed border-border/70 bg-background/80 p-4 shadow-sm'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
         <div>
-          <p className='text-sm font-black text-foreground'>
+          <p className='text-xs font-black tracking-tight text-foreground'>
             {t('trading.salesReturns.queryShell.logisticsSectionTitle')}
           </p>
-          <p className='mt-1 text-xs leading-6 font-bold text-muted-foreground'>
+          <p className='mt-1 text-[11px] leading-5 font-bold text-muted-foreground'>
             {t('trading.salesReturns.queryShell.logisticsSectionDescription')}
           </p>
         </div>
@@ -132,27 +119,6 @@ export function SalesReturnLogisticsPanel({
       </div>
 
       <div className='mt-4 grid gap-4 md:grid-cols-2'>
-        <div className='space-y-2'>
-          <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
-            {t('trading.salesReturns.queryShell.transportMode')}
-          </label>
-          <Select
-            value={transportMode}
-            onValueChange={(value) => setTransportMode(value as typeof transportMode)}
-          >
-            <SelectTrigger className='h-11 rounded-2xl'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {salesReturnTransportModeOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {getSalesReturnTransportModeLabel(option, t)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className='space-y-2'>
           <label className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('trading.salesReturns.queryShell.status')}
@@ -206,7 +172,7 @@ export function SalesReturnLogisticsPanel({
         </div>
 
         <div className='space-y-2 rounded-2xl border border-dashed border-muted/50 bg-muted/10 p-4'>
-          <div className='grid gap-2 text-xs font-bold text-muted-foreground'>
+          <div className='grid gap-2 text-[11px] font-bold text-muted-foreground'>
             <div className='flex items-center justify-between gap-4'>
               <span>{t('trading.salesReturns.queryShell.trackingFilledAt')}</span>
               <span className='text-right text-foreground'>

@@ -5,6 +5,8 @@ import {
   TRADING_QUERY_PARAM_PAGE,
   TRADING_QUERY_PARAM_PAGE_SIZE,
   TRADING_QUERY_PARAM_KEYWORD,
+  TRADING_QUERY_PARAM_PAYMENT_METHOD,
+  TRADING_QUERY_PARAM_PAYMENT_TERM,
   TRADING_QUERY_PARAM_STATUS,
   TRADING_QUERY_PARAM_WITH_LINES,
 } from '../../query-params'
@@ -56,6 +58,8 @@ export type GetSalesOrdersOptions = {
   status?: string[]
   customerId?: string
   keyword?: string
+  paymentMethod?: string
+  paymentTerm?: string
 }
 
 export const getSalesOrders = async (
@@ -68,6 +72,8 @@ export const getSalesOrders = async (
     status,
     customerId,
     keyword,
+    paymentMethod,
+    paymentTerm,
   } = options
 
   const params = new URLSearchParams({
@@ -94,6 +100,12 @@ export const getSalesOrders = async (
   }
   if (keyword && keyword.trim().length > 0) {
     params.set(TRADING_QUERY_PARAM_KEYWORD, keyword.trim())
+  }
+  if (paymentMethod && paymentMethod.trim().length > 0) {
+    params.set(TRADING_QUERY_PARAM_PAYMENT_METHOD, paymentMethod.trim())
+  }
+  if (paymentTerm && paymentTerm.trim().length > 0) {
+    params.set(TRADING_QUERY_PARAM_PAYMENT_TERM, paymentTerm.trim())
   }
 
   const res = await apiFetch<unknown>(`/sales-orders?${params.toString()}`)

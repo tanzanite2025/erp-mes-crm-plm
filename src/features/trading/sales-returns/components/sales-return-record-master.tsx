@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { CalendarDays, FileStack, Package2, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
+import { SalesOrderSalesReturnActualAmountEntryDialog } from './sales-order-sales-return-actual-amount-entry-dialog/sales-order-sales-return-actual-amount-entry-dialog'
 
 function getSalesReturnStatusLabel(
   status: string,
@@ -14,6 +17,7 @@ function getSalesReturnStatusLabel(
       return t('trading.salesReturns.statuses.InTransit')
     case 'Received':
       return t('trading.salesReturns.statuses.Received')
+    case 'Completed':
     case 'Closed':
       return t('trading.salesReturns.statuses.Closed')
     case 'Canceled':
@@ -35,6 +39,7 @@ export function SalesReturnRecordMaster({
   onSelect,
 }: SalesReturnRecordMasterProps) {
   const { t } = useLanguage()
+  const [entryRecord, setEntryRecord] = useState<SalesReturnRecord | null>(null)
 
   if (records.length === 0) {
     return (
@@ -125,16 +130,44 @@ export function SalesReturnRecordMaster({
               <div className='space-y-1'>
                 <div className='flex items-center gap-2 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
                   <FileStack className='size-3.5' />
-                  退货金额
+                  {t('trading.salesReturns.createSheet.estimatedAmount')}
                 </div>
-                <p className='text-xs font-black text-foreground'>
-                  ¥ {record.totalAmount.toLocaleString()}
-                </p>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <p className='text-xs font-black text-foreground'>
+                    ¥ {record.totalAmount.toLocaleString()}
+                  </p>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setEntryRecord(record)
+                    }}
+                    onKeyDown={(event) => {
+                      event.stopPropagation()
+                    }}
+                    className='h-8 rounded-full px-3 text-[10px] font-black tracking-widest uppercase'
+                  >
+                    {t('trading.salesReturns.queryShell.actualAmountEntryAction')}
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
         )
       })}
+
+      <SalesOrderSalesReturnActualAmountEntryDialog
+        key={`${entryRecord?.id ?? 'sales-return-entry'}-${entryRecord?.updatedAt ?? 'closed'}`}
+        record={entryRecord ?? undefined}
+        open={Boolean(entryRecord)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEntryRecord(null)
+          }
+        }}
+      />
     </div>
   )
 }

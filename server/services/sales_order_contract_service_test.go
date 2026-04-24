@@ -110,6 +110,42 @@ func TestSalesOrderServiceContractListIncludesEmptyLinesArrayWhenRequested(t *te
 	require.Empty(t, *result.Items[0].Lines)
 }
 
+func TestSalesOrderServiceContractListSupportsPaymentMethodAndTermFilters(t *testing.T) {
+	testDB := setupSalesOrderContractServiceTestDB(t)
+	seedSalesOrderContractFixture(t, testDB)
+	require.NoError(t, testDB.Create(&models.SalesOrder{
+		ID:                "18888888-1111-4111-8111-111111111111",
+		OrderNo:           "SO-CONTRACT-002",
+		OrderName:         "Payment Filter Contract Order",
+		CustomerName:      "Delta",
+		CustomerID:        "customer-2",
+		Type:              "NORMAL",
+		Currency:          "CNY",
+		PaymentMethod:     "BANK_TRANSFER",
+		PaymentMethodName: "Bank Transfer",
+		PaymentTerm:       "MONTH_END",
+		PaymentTermName:   "Month End",
+		Classification:    "GENERAL",
+		Status:            "Pending",
+		OrderDate:         "2026-04-19",
+		DeliveryDate:      "2026-04-21",
+		Barcode:           "SO-CONTRACT-002",
+		Evidences:         json.RawMessage(`[]`),
+		Version:           1,
+	}).Error)
+
+	result, err := ListSalesOrders(SalesOrderListQuery{
+		Page:          1,
+		PageSize:      20,
+		WithLines:     false,
+		PaymentMethod: "BANK_TRANSFER",
+		PaymentTerm:   "MONTH_END",
+	})
+	require.NoError(t, err)
+	require.Len(t, result.Items, 1)
+	require.Equal(t, "SO-CONTRACT-002", result.Items[0].OrderNo)
+}
+
 func TestSalesOrderServiceContractGetByIDIncludesLines(t *testing.T) {
 	testDB := setupSalesOrderContractServiceTestDB(t)
 	order := seedSalesOrderContractFixture(t, testDB)

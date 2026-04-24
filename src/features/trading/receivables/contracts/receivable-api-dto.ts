@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import { orderEvidenceSchema } from '../../sales/contracts/sales-order-api-dto'
+import {
+  TRADING_LEDGER_AGING_BUCKET_OPTIONS,
+  TRADING_LEDGER_STATUS_LABEL_OPTIONS,
+} from '../../utils/ledger-display'
 
 import type {
   LedgerSearchCandidateApiDTO,
@@ -22,8 +27,10 @@ import {
 export const receivableRecordApiDTOSchema = z.object({
   ...ledgerRecordBaseApiDTOShape,
   customerName: z.string(),
-  invoiceAmount: z.number(),
+  orderAmount: z.number(),
   receivedAmount: z.number(),
+  agingBucket: z.enum(TRADING_LEDGER_AGING_BUCKET_OPTIONS),
+  status: z.enum(TRADING_LEDGER_STATUS_LABEL_OPTIONS),
 }).strict()
 
 export const receivableSummaryApiDTOSchema = z.object({
@@ -50,6 +57,24 @@ export type ReceivableLedgerSearchResponseApiDTO = LedgerSearchResponseApiDTO
 
 export const receiptRecordApiDTOSchema = settlementRecordApiDTOSchema
 
+export const salesReturnActualAmountRecordApiDTOSchema = z.object({
+  id: z.string(),
+  salesReturnId: z.string(),
+  salesOrderId: z.string(),
+  salesOrderNo: z.string(),
+  returnNo: z.string(),
+  customerId: z.string(),
+  customerName: z.string(),
+  amount: z.number(),
+  note: z.string().optional(),
+  evidences: z.array(orderEvidenceSchema).optional(),
+  estimatedReturnAmountSnapshot: z.number(),
+  recordedAt: z.string(),
+  recordedBy: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+}).strict()
+
 export const receivableDetailApiDTOSchema = createLedgerDetailApiDTOSchema(receivableRecordApiDTOSchema, {
   sourceType: z.string(),
   sourceRefId: z.string(),
@@ -57,10 +82,13 @@ export const receivableDetailApiDTOSchema = createLedgerDetailApiDTOSchema(recei
   version: z.number(),
   receiptRecords: z.array(receiptRecordApiDTOSchema),
   allocations: z.array(settlementAllocationApiDTOSchema),
+  returnAdjustmentAmount: z.number(),
+  salesReturnActualAmountRecords: z.array(salesReturnActualAmountRecordApiDTOSchema),
 })
 
 export type ReceiptRecordApiDTO = TradingSettlementRecordApiDTO
 export type SettlementAllocationApiDTO = TradingSettlementAllocationApiDTO
+export type SalesReturnActualAmountRecordApiDTO = z.infer<typeof salesReturnActualAmountRecordApiDTOSchema>
 export type ReceivableDetailApiDTO = z.infer<typeof receivableDetailApiDTOSchema>
 
 export function deserializeReceivableDetailApiDTO(input: unknown): ReceivableDetailApiDTO {

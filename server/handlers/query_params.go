@@ -10,6 +10,8 @@ import (
 const queryParamWithLines = "withLines"
 const queryParamStatus = "status"
 const queryParamKeyword = "keyword"
+const queryParamPaymentMethod = "paymentMethod"
+const queryParamPaymentTerm = "paymentTerm"
 const queryParamCurrency = "currency"
 const queryParamOutstandingMin = "outstandingMin"
 const queryParamOutstandingMax = "outstandingMax"
@@ -34,6 +36,14 @@ func queryStatusFilter(c *gin.Context) string {
 
 func queryKeywordFilter(c *gin.Context) string {
 	return queryStringParam(c, queryParamKeyword)
+}
+
+func queryPaymentMethodFilter(c *gin.Context) string {
+	return queryStringParam(c, queryParamPaymentMethod)
+}
+
+func queryPaymentTermFilter(c *gin.Context) string {
+	return queryStringParam(c, queryParamPaymentTerm)
 }
 
 func queryCurrencyFilter(c *gin.Context) string {

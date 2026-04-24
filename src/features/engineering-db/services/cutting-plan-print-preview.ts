@@ -85,6 +85,7 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
   const totalArea = plan.lines.reduce((sum, line) => sum + parseNumeric(line.areaM2), 0)
   const rowsHtml = buildRowsHtml(plan)
   const title = escapeHtml(plan.name || '裁纱单')
+  const prepregLabel = escapeHtml(plan.prepregSpecLabel || '--')
 
   const html = `
     <!doctype html>
@@ -147,7 +148,7 @@ export function openCuttingPlanPrintPreview(plan: CuttingPlanInput) {
           </tr>
         </table>
 
-        <div class="section-title">技术文件</div>
+        <div class="section-title">技术文件（预浸料：${prepregLabel}）</div>
         <table class="header-grid">
           <tr>
             <td style="width: 40%;">碳丝型号：${escapeHtml(plan.carbonFiberModel || '--')}</td>

@@ -25,6 +25,18 @@ var (
 	ErrPrepregLabelOcrSessionToken    = errors.New("invalid prepreg label ocr session token")
 )
 
+var allowedOcrFieldKeys = map[string]struct{}{
+	"code":                 {},
+	"name":                 {},
+	"supplierProductCode":  {},
+	"resinContentBatchRaw": {},
+	"widthMm":              {},
+	"nominalAreaM2":        {},
+	"inspector":            {},
+	"boxNo":                {},
+	"productionDate":       {},
+}
+
 type PrepregLabelOcrSessionResponse struct {
 	SessionID   string          `json:"sessionId"`
 	UploadToken string          `json:"uploadToken,omitempty"`
@@ -88,10 +100,14 @@ func SubmitPrepregLabelOcrSession(sessionID string, input SubmitPrepregLabelOcrS
 	now := time.Now()
 	fields := normalizeOcrFields(input.Fields)
 	session.Status = PrepregLabelOcrStatusSubmitted
-	session.RawText = strings.TrimSpace(input.RawText)
+	session.RawText = trimRunes(strings.TrimSpace(input.RawText), 8000)
 	session.Fields = fields
-	session.ImageName = strings.TrimSpace(input.ImageName)
-	session.ImageSize = input.ImageSize
+	session.ImageName = trimRunes(strings.TrimSpace(input.ImageName), 255)
+	if input.ImageSize < 0 {
+		session.ImageSize = 0
+	} else {
+		session.ImageSize = input.ImageSize
+	}
 	session.SubmittedAt = &now
 
 	if err := db.DB.Save(&session).Error; err != nil {
@@ -135,7 +151,44 @@ func normalizeOcrFields(raw json.RawMessage) json.RawMessage {
 	if trimmed == "" || !json.Valid([]byte(trimmed)) {
 		return json.RawMessage(`{}`)
 	}
-	return json.RawMessage(trimmed)
+
+	decoded := make(map[string]any)
+	if err := json.Unmarshal([]byte(trimmed), &decoded); err != nil {
+		return json.RawMessage(`{}`)
+	}
+
+	cleaned := make(map[string]string, len(decoded))
+	for key, value := range decoded {
+		if _, allowed := allowedOcrFieldKeys[key]; !allowed {
+			continue
+		}
+		text, ok := value.(string)
+		if !ok {
+			continue
+		}
+		nextValue := trimRunes(strings.TrimSpace(text), 200)
+		if nextValue == "" {
+			continue
+		}
+		cleaned[key] = nextValue
+	}
+
+	normalized, err := json.Marshal(cleaned)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return json.RawMessage(normalized)
+}
+
+func trimRunes(value string, max int) string {
+	if max <= 0 {
+		return ""
+	}
+	runes := []rune(value)
+	if len(runes) <= max {
+		return value
+	}
+	return string(runes[:max])
 }
 
 func randomToken(byteLen int) string {

@@ -38,8 +38,11 @@ export function Engineering() {
         queryFn: () => ProductTypeService.getProductTypes(),
     })
 
-    const products = productsQuery.data ?? []
-    const types = productTypesQuery.data ?? []
+    if (productsQuery.isSuccess && !productsQuery.data) throw new Error('[CRITICAL] Products Data missing')
+    if (productTypesQuery.isSuccess && !productTypesQuery.data) throw new Error('[CRITICAL] Product Types Data missing')
+
+    const products = productsQuery.data || []
+    const types = productTypesQuery.data || []
     const isLoading = productsQuery.isLoading || productTypesQuery.isLoading
     const error = productsQuery.error ?? productTypesQuery.error
     const productMap = useMemo(
@@ -130,7 +133,7 @@ export function Engineering() {
                                     </TabsList>
                                 </div>
                                 <TabsContent value='overview' className='mt-0'>
-                                    <ProductOverviewTab product={selectedProduct} onEdit={handleEditProduct} />
+                                    <ProductOverviewTab product={selectedProduct} productTypes={types} onEdit={handleEditProduct} />
                                 </TabsContent>
                                 <TabsContent value='routing' className='mt-0'>
                                     <ProductRoutingView product={selectedProduct} />
@@ -174,7 +177,7 @@ export function Engineering() {
                 productTypes={types}
             />
 
-            <CategoryManagerDialog open={isTypeDialogOpen} onOpenChange={setIsTypeDialogOpen} />
+            <CategoryManagerDialog open={isTypeDialogOpen} onOpenChange={setIsTypeDialogOpen} productTypes={types} />
         </div>
     )
 }

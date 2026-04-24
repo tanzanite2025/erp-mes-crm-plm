@@ -1,4 +1,6 @@
+import { useLanguage } from '@/context/language-provider'
 import { SettlementRecordEvidencePanel } from '../../settlement-evidences/components/settlement-record-evidence-panel'
+import { getTradingLedgerStatusOptions } from '@/features/trading/utils/ledger-display'
 import type { SettlementAllocationMode, SettlementLedgerDetailDialogViewModel } from '../types'
 import { SettlementAllocationHistorySection } from './settlement-allocation-history-section'
 import { SettlementLedgerSummarySection } from './settlement-ledger-summary-section'
@@ -29,6 +31,7 @@ export function SettlementLedgerDetailDialogBody({
   isCurrencyLoading,
   allocationHistoryCount,
 }: SettlementLedgerDetailDialogBodyProps) {
+  const { t } = useLanguage()
   const allocationMode = config.allocationMode ?? 'multi-ledger'
   const isSingleLedgerMode = allocationMode === 'single-ledger'
 
@@ -72,7 +75,7 @@ export function SettlementLedgerDetailDialogBody({
         statusLabel='状态'
         statusFilter={vm.ledgerStatusFilter}
         onStatusFilterChange={vm.setLedgerStatusFilter}
-        statusOptions={['OPEN', 'PARTIAL', 'OVERDUE', 'SETTLED']}
+        statusOptions={getTradingLedgerStatusOptions(t)}
         statusAllLabel='全部状态'
         statusPlaceholder='全部状态'
         currencyFieldId={`${vm.fieldPrefix}-ledger-currency-filter`}

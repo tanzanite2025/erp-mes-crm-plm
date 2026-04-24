@@ -54,31 +54,34 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
 }
 
 function buildProductCandidate(dto: ProductApiDTO) {
-  return {
-    id: dto.id,
-    sku: normalizeProductSkuValue(dto.sku),
-    name: dto.name,
-    modelCode: normalizeProductModelCodeValue(dto.modelCode),
-    typeId: dto.typeId,
-    depth: dto.depth,
-    widthInternal: dto.widthInternal,
-    widthExternal: dto.widthExternal,
-    weight: dto.weight,
-    length: dto.length,
-    angle: dto.angle,
-    clamp: dto.clamp,
-    offset: dto.offset,
-    axleCrown: dto.axleCrown,
-    steerer: dto.steerer,
-    image: dto.image,
-    restrictions: dto.restrictions ?? [],
-    moldGroup: dto.moldGroup,
-    description: dto.description,
-    engineeringSpecId: dto.engineeringSpecId,
-    attributeValues: (dto.attributeValues ?? []).map(toProductAttributeValueContract),
-    techSpecs: dto.techSpecs,
-    barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
-    attachments: toAttachmentArray(dto.attachments),
+    if (!dto.restrictions) throw new Error('[CRITICAL] Missing restrictions array in Product DTO')
+    if (!dto.attributeValues) throw new Error('[CRITICAL] Missing attributeValues array in Product DTO')
+
+    return {
+        id: dto.id,
+        sku: normalizeProductSkuValue(dto.sku),
+        name: dto.name,
+        modelCode: normalizeProductModelCodeValue(dto.modelCode),
+        typeId: dto.typeId,
+        depth: dto.depth,
+        widthInternal: dto.widthInternal,
+        widthExternal: dto.widthExternal,
+        weight: dto.weight,
+        length: dto.length,
+        angle: dto.angle,
+        clamp: dto.clamp,
+        offset: dto.offset,
+        axleCrown: dto.axleCrown,
+        steerer: dto.steerer,
+        image: dto.image,
+        restrictions: dto.restrictions,
+        moldGroup: dto.moldGroup,
+        description: dto.description,
+        engineeringSpecId: dto.engineeringSpecId,
+        attributeValues: dto.attributeValues.map(toProductAttributeValueContract),
+        techSpecs: dto.techSpecs,
+        barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
+        attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
     templateKey: normalizeProductTemplateKeyValue(dto.templateKey),
     resolvedTemplateId: dto.resolvedTemplateId?.trim() || undefined,
@@ -149,6 +152,10 @@ export function toProductListContract(dto: ProductListPageApiDTO): Product[] {
 
 export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
   const normalizedProduct = normalizeSaveProductInput(product)
+  if (!normalizedProduct.restrictions) throw new Error('[CRITICAL] restrictions missing during save')
+  if (!normalizedProduct.attributeValues) throw new Error('[CRITICAL] attributeValues missing during save')
+  if (!normalizedProduct.attachments) throw new Error('[CRITICAL] attachments missing during save')
+
   return {
     id: normalizedProduct.id || '',
     sku: normalizeProductSkuValue(normalizedProduct.sku),
@@ -166,14 +173,14 @@ export function toProductApiDTO(product: SaveProductInput): ProductApiDTO {
     axleCrown: normalizedProduct.axleCrown,
     steerer: normalizedProduct.steerer,
     image: normalizedProduct.image,
-    restrictions: normalizedProduct.restrictions ?? [],
+    restrictions: normalizedProduct.restrictions,
     moldGroup: normalizedProduct.moldGroup,
     description: normalizedProduct.description,
     engineeringSpecId: normalizedProduct.engineeringSpecId || '',
-    attributeValues: (normalizedProduct.attributeValues ?? []).map(toProductAttributeValueApiDTO),
+    attributeValues: normalizedProduct.attributeValues.map(toProductAttributeValueApiDTO),
     techSpecs: normalizedProduct.techSpecs,
     barcodeConfig: normalizedProduct.barcodeConfig,
-    attachments: normalizedProduct.attachments ?? [],
+    attachments: normalizedProduct.attachments,
     status: normalizedProduct.status ?? 'Active',
     templateKey: normalizeProductTemplateKeyValue(normalizedProduct.templateKey),
     revisionNo: normalizeEngineeringRevisionNo(normalizedProduct.revisionNo),

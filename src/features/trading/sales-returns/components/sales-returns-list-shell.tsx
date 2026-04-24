@@ -42,6 +42,7 @@ function getSalesReturnStatusLabel(
       return t('trading.salesReturns.statuses.InTransit')
     case 'Received':
       return t('trading.salesReturns.statuses.Received')
+    case 'Completed':
     case 'Closed':
       return t('trading.salesReturns.statuses.Closed')
     case 'Canceled':

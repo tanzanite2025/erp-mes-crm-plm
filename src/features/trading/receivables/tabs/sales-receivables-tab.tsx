@@ -52,7 +52,7 @@ export function SalesReceivablesTab() {
         columnLabels={{
           documentNo: t('trading.receivables.columns.documentNo'),
           customerName: t('trading.receivables.columns.customerName'),
-          invoiceAmount: t('trading.receivables.columns.invoiceAmount'),
+          orderAmount: t('trading.receivables.columns.orderAmount'),
           receivedAmount: t('trading.receivables.columns.receivedAmount'),
           outstandingAmount: t('trading.receivables.columns.outstandingAmount'),
           dueDate: t('trading.receivables.columns.dueDate'),

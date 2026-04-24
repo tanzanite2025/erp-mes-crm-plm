@@ -19,7 +19,7 @@ export const PrepregLabelOcrService = {
       rawText: '',
       fields: {},
       imagePreviewUrl,
-      message: '自动识别接口尚未接入；可先粘贴识别文本，再解析填入表单。',
+      message: '',
     }
   },
 }

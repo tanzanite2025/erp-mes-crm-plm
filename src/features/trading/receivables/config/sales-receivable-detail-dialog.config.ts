@@ -8,6 +8,7 @@ export const salesReceivableDetailDialogConfig: SettlementLedgerDetailDialogConf
   actionLabel: '收款',
   partnerLabel: '客户',
   amountLabel: '未收',
+  summaryAmountLabel: '订单金额',
   fieldPrefix: 'receivable',
   relationKey: 'receiptRecordId',
   recordType: 'receipt',
@@ -15,4 +16,5 @@ export const salesReceivableDetailDialogConfig: SettlementLedgerDetailDialogConf
   uploadPath: '/sales-orders/evidence/upload',
   getDetailPartnerName: (item: ReceivableDetailApiDTO) => item.customerName,
   getLocalLedgerPartnerName: (item: ReceivableRecord) => item.customerName,
+  getDetailSummaryAmount: (item: ReceivableDetailApiDTO) => item.orderAmount,
 } satisfies SettlementLedgerDetailDialogConfig<ReceivableDetailApiDTO, ReceivableRecord>

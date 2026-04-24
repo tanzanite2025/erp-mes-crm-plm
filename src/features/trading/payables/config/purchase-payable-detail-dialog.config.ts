@@ -8,6 +8,7 @@ export const purchasePayableDetailDialogConfig: SettlementLedgerDetailDialogConf
   actionLabel: '付款',
   partnerLabel: '供应商',
   amountLabel: '未付',
+  summaryAmountLabel: '开票金额',
   fieldPrefix: 'payable',
   relationKey: 'paymentRecordId',
   recordType: 'payment',
@@ -15,4 +16,5 @@ export const purchasePayableDetailDialogConfig: SettlementLedgerDetailDialogConf
   uploadPath: '/purchase/evidence/upload',
   getDetailPartnerName: (item: PayableDetailApiDTO) => item.supplierName,
   getLocalLedgerPartnerName: (item: PayableRecord) => item.supplierName,
+  getDetailSummaryAmount: (item: PayableDetailApiDTO) => item.invoiceAmount,
 } satisfies SettlementLedgerDetailDialogConfig<PayableDetailApiDTO, PayableRecord>

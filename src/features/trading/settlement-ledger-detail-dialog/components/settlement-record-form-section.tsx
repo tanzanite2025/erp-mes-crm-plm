@@ -43,7 +43,7 @@ interface SettlementRecordFormSectionProps {
   statusLabel: string
   statusFilter: string
   onStatusFilterChange: (value: string) => void
-  statusOptions: readonly string[]
+  statusOptions: ReadonlyArray<{ label: string; value: string }>
   currencyFieldId: string
   currencyLabel: string
   currencyFilter: string
@@ -277,8 +277,8 @@ export function SettlementRecordFormSection({
                   <SelectContent>
                     <SelectItem value='__all__'>{statusAllLabel}</SelectItem>
                     {statusOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

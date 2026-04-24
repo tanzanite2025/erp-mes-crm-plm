@@ -17,6 +17,9 @@ export function BatchEnginePage() {
     legend,
     controls,
     updateControl,
+    prepregSpecs,
+    prepregLoading,
+    selectedPrepregSpec,
     cutSizeUnits,
     cutSizeLoading,
     selectedCutSize,
@@ -43,6 +46,9 @@ export function BatchEnginePage() {
             ruleChips={ruleChips}
             controls={controls}
             updateControl={updateControl}
+            prepregSpecs={prepregSpecs}
+            prepregLoading={prepregLoading}
+            selectedPrepregSpec={selectedPrepregSpec}
             cutSizeUnits={cutSizeUnits}
             cutSizeLoading={cutSizeLoading}
             selectedCutSize={selectedCutSize}

@@ -12,6 +12,7 @@ import (
 )
 
 var ErrSalesOrderDeleteRequiresCanceled = errors.New("sales order must be canceled before delete")
+var ErrSalesOrderDeleteHasReturns = errors.New("sales order with sales returns cannot be deleted")
 
 type SalesOrderListQuery struct {
 	Page            int
@@ -19,6 +20,8 @@ type SalesOrderListQuery struct {
 	WithLines       bool
 	CustomerID      string
 	Keyword         string
+	PaymentMethod   string
+	PaymentTerm     string
 	StatusFilterRaw string
 }
 
@@ -52,11 +55,31 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 	if keyword != "" {
 		likeKeyword := "%" + keyword + "%"
 		tx = tx.Where(
-			"LOWER(order_no) LIKE LOWER(?) OR LOWER(order_name) LIKE LOWER(?) OR LOWER(customer_name) LIKE LOWER(?)",
+			`LOWER(order_no) LIKE LOWER(?)
+			 OR LOWER(order_name) LIKE LOWER(?)
+			 OR LOWER(customer_name) LIKE LOWER(?)
+			 OR LOWER(COALESCE(purchase_order_no, '')) LIKE LOWER(?)
+			 OR LOWER(COALESCE(payment_method, '')) LIKE LOWER(?)
+			 OR LOWER(COALESCE(payment_method_name, '')) LIKE LOWER(?)
+			 OR LOWER(COALESCE(payment_term, '')) LIKE LOWER(?)
+			 OR LOWER(COALESCE(payment_term_name, '')) LIKE LOWER(?)`,
+			likeKeyword,
+			likeKeyword,
+			likeKeyword,
+			likeKeyword,
+			likeKeyword,
 			likeKeyword,
 			likeKeyword,
 			likeKeyword,
 		)
+	}
+	paymentMethod := strings.TrimSpace(query.PaymentMethod)
+	if paymentMethod != "" {
+		tx = tx.Where("payment_method = ?", paymentMethod)
+	}
+	paymentTerm := strings.TrimSpace(query.PaymentTerm)
+	if paymentTerm != "" {
+		tx = tx.Where("payment_term = ?", paymentTerm)
 	}
 	statusFilterRaw := strings.TrimSpace(query.StatusFilterRaw)
 	if statusFilterRaw != "" {
@@ -137,6 +160,16 @@ func DeleteSalesOrder(id string) error {
 
 	if order.Status != "Canceled" {
 		return ErrSalesOrderDeleteRequiresCanceled
+	}
+
+	var relatedReturns int64
+	if err := db.DB.Model(&models.SalesReturn{}).
+		Where("sales_order_id = ? AND deleted_at IS NULL", order.ID).
+		Count(&relatedReturns).Error; err != nil {
+		return err
+	}
+	if relatedReturns > 0 {
+		return ErrSalesOrderDeleteHasReturns
 	}
 
 	return db.DB.Transaction(func(tx *gorm.DB) error {

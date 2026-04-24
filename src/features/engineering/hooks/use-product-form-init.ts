@@ -97,22 +97,35 @@ export function useProductFormInit({
         enabled: open,
     })
 
-    const attributeCategories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
-    const attributeOptions = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data])
-    const attributeBindings = useMemo(
-        () => (watchedTypeId ? bindingsQuery.data ?? [] : []),
-        [bindingsQuery.data, watchedTypeId]
-    )
+    if (categoriesQuery.isSuccess && !categoriesQuery.data) throw new Error('[CRITICAL] Categories Data missing')
+    if (optionsQuery.isSuccess && !optionsQuery.data) throw new Error('[CRITICAL] Options Data missing')
+    if (moldGroupsQuery.isSuccess && !moldGroupsQuery.data) throw new Error('[CRITICAL] Mold Groups Data missing')
+    if (specsQuery.isSuccess && !specsQuery.data) throw new Error('[CRITICAL] Specs Data missing')
+    if (watchedTypeId && bindingsQuery.isSuccess && !bindingsQuery.data) throw new Error('[CRITICAL] Bindings Data missing')
+
+    const attributeCategories = categoriesQuery.data
+    const attributeOptions = optionsQuery.data
+    const attributeBindings = watchedTypeId ? bindingsQuery.data : undefined
+
     const versionLevelOptions = useMemo(
-        () => toOptionItems(locale, attributeOptions, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version),
+        () => {
+            if (!attributeOptions) return []
+            return toOptionItems(locale, attributeOptions, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)
+        },
         [attributeOptions, locale]
     )
     const moldOptions = useMemo(
-        () => (moldGroupsQuery.data ?? []).map(group => ({ label: group, value: group })),
+        () => {
+            if (!moldGroupsQuery.data) return []
+            return moldGroupsQuery.data.map(group => ({ label: group, value: group }))
+        },
         [moldGroupsQuery.data]
     )
     const specOptions = useMemo(
-        () => (specsQuery.data ?? []).map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id })),
+        () => {
+            if (!specsQuery.data) return []
+            return specsQuery.data.map(spec => ({ label: `${spec.name} (${spec.version})`, value: spec.id }))
+        },
         [specsQuery.data]
     )
     const metadataInitError = useMemo(() => {

@@ -79,11 +79,22 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Truck,
         permissionId: permissionIdForPath('/purchase'),
       },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.rawMaterialsManagement',
+    items: [
       {
-        titleKey: 'sidebar.items.rawMaterialsManagement',
+        titleKey: 'sidebar.items.cuttingDatabase',
         url: '/raw-materials',
         icon: Database,
         permissionId: permissionIdForPath('/raw-materials'),
+      },
+      {
+        titleKey: 'sidebar.items.cuttingOperations',
+        url: '/cutting-operations',
+        icon: Calendar,
+        permissionId: permissionIdForPath('/cutting-operations'),
       },
     ],
   },

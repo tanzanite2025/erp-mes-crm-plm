@@ -1,9 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, CheckCircle2, Database, History, Package, Plus, RefreshCw, Search } from 'lucide-react'
-import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { Button } from '@/components/ui/button'
@@ -35,196 +32,42 @@ import {
 } from '@/components/ui/table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
-import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { isForbiddenError } from '@/lib/error-status'
-import { failLoudly } from '@/lib/safe-catch'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/warehouse/inbound'
-import { WarehouseCategoryCoreService, type WarehouseCategoryOption } from '../category'
-import { InventoryCoreService, InventoryTransactionService, type InboundTDO, type MasterDataSearchResult } from '../inventory'
-import { warehouseQueryKeys } from '../query-keys'
-import {
-    filterWarehouseCategoriesByScene,
-    getDefaultWarehouseCategoryCode,
-} from '../utils/warehouse-category-config'
-
-const DEFAULT_INBOUND_DATA = {
-    quantity: 1,
-    batchNo: '',
-    targetCategory: '',
-    entryDate: '',
-    remarks: ''
-}
-
-function resolveInboundCategoryLookup(
-    warehouseCategories: WarehouseCategoryOption[],
-    scene: 'product-inbound' | 'material-inbound',
-    preferredCode?: string
-) {
-    const selectableCategories = filterWarehouseCategoriesByScene(warehouseCategories, scene)
-    if (selectableCategories.length === 0) {
-        throw new Error(`[CRITICAL] Missing warehouse categories for ${scene}`)
-    }
-
-    const defaultCategoryCode = getDefaultWarehouseCategoryCode(warehouseCategories, scene, preferredCode)
-    if (!defaultCategoryCode) {
-        throw new Error(`[CRITICAL] Missing default warehouse category for ${scene}`)
-    }
-
-    return {
-        selectableCategories,
-        defaultCategoryCode,
-    }
-}
-
-function buildInboundTDO(selectedItem: MasterDataSearchResult, formData: typeof DEFAULT_INBOUND_DATA): InboundTDO {
-    return {
-        materialId: selectedItem.id,
-        quantity: formData.quantity,
-        batchNo: formData.batchNo,
-        entryDate: formData.entryDate,
-        remarks: formData.remarks,
-        targetCategory: formData.targetCategory,
-    }
-}
+import { useProductInboundViewModel } from '../hooks/use-product-inbound-view-model'
 
 export default function ProductInbound() {
     const { t } = useLanguage()
     const { mode } = Route.useSearch()
-    const queryClient = useQueryClient()
-    const { allowsAction } = useNonBlockingPermissionActions()
-    const [searchQuery, setSearchQuery] = useState('')
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-    const [selectedItem, setSelectedItem] = useState<MasterDataSearchResult | null>(null)
-    const [isInboundOpen, setIsInboundOpen] = useState(false)
-    const [formData, setFormData] = useState(DEFAULT_INBOUND_DATA)
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchQuery(searchQuery.trim())
-        }, 300)
-
-        return () => clearTimeout(timer)
-    }, [searchQuery])
-
-    const historyQuery = useQuery({
-        queryKey: warehouseQueryKeys.inboundHistory(),
-        queryFn: () => InventoryCoreService.getInboundHistory(),
-    })
-
-    const categoriesQuery = useQuery({
-        queryKey: warehouseQueryKeys.categoryOptions(),
-        queryFn: () => WarehouseCategoryCoreService.getCategoryOptions(),
-    })
-
-    const searchQueryResult = useQuery({
-        queryKey: warehouseQueryKeys.masterDataSearch(debouncedSearchQuery),
-        queryFn: () => InventoryCoreService.searchMasterData(debouncedSearchQuery),
-        enabled: debouncedSearchQuery.length > 0,
-    })
-
-    useEffect(() => {
-        if (!historyQuery.error && !categoriesQuery.error) return
-        toast.error(t('warehouse.inbound.toast.failed'))
-    }, [categoriesQuery.error, historyQuery.error, t])
-
-    useEffect(() => {
-        if (!debouncedSearchQuery || !searchQueryResult.isSuccess) return
-        if ((searchQueryResult.data ?? []).length > 0) return
-        toast.error(t('warehouse.inbound.toast.notFound'))
-    }, [debouncedSearchQuery, searchQueryResult.data, searchQueryResult.isSuccess, t])
-
-    const submitInboundMutation = useMutation({
-        mutationFn: async (payload: InboundTDO) => {
-            return InventoryTransactionService.recordInbound(payload)
-        },
-        onSuccess: async (savedRecord) => {
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inboundHistory() }),
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() }),
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryValuation() }),
-                queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAlertSummary() }),
-            ])
-
-            toast.success(t('warehouse.inbound.toast.success', { name: savedRecord.materialName }))
-            setIsInboundOpen(false)
-            setSelectedItem(null)
-            setSearchQuery('')
-            setDebouncedSearchQuery('')
-            setFormData(DEFAULT_INBOUND_DATA)
-        },
-        onError: (error) => {
-            failLoudly(error, 'ProductInbound.submitInbound')
-        },
-    })
-
-    const error = historyQuery.error ?? categoriesQuery.error
+    const {
+        error,
+        searchQuery,
+        searchResults,
+        isSearching,
+        hasSearched,
+        selectedItem,
+        targetNodeDescription,
+        isInboundOpen,
+        formData,
+        history,
+        warehouseCategories,
+        selectableWarehouseCategories,
+        isSubmittingInbound,
+        handleSearchQueryChange,
+        handleOpenInboundForm,
+        handleInboundDialogOpenChange,
+        handleTargetCategoryChange,
+        handleEntryDateChange,
+        handleQuantityChange,
+        handleBatchNoChange,
+        handleRemarksChange,
+        handleSubmitInbound,
+        handleCloseInboundDialog,
+    } = useProductInboundViewModel()
     if (isForbiddenError(error)) {
         return <ForbiddenState />
     }
-
-    const history = useMemo(() => {
-        if (historyQuery.isLoading) return []
-        if (!historyQuery.data) {
-            const lookupError = historyQuery.error instanceof Error
-                ? historyQuery.error
-                : new Error('[CRITICAL] Inbound history missing after load')
-            failLoudly(lookupError, 'ProductInbound.history')
-            throw lookupError
-        }
-        return historyQuery.data
-    }, [historyQuery.data, historyQuery.error, historyQuery.isLoading])
-
-    const warehouseCategories = useMemo(() => {
-        if (categoriesQuery.isLoading) return [] as WarehouseCategoryOption[]
-        if (!categoriesQuery.data) {
-            const lookupError = categoriesQuery.error instanceof Error
-                ? categoriesQuery.error
-                : new Error('[CRITICAL] Warehouse category options missing after load')
-            failLoudly(lookupError, 'ProductInbound.categories')
-            throw lookupError
-        }
-        return categoriesQuery.data
-    }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
-    const searchResults = debouncedSearchQuery ? (searchQueryResult.data ?? []) : []
-    const isSearching = searchQueryResult.isFetching
-
-    const openInboundForm = (item: MasterDataSearchResult) => {
-        if (!allowsAction('action_warehouse_inbound_record')) return
-        setSelectedItem(item)
-
-        const scene = item.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
-        const { defaultCategoryCode } = resolveInboundCategoryLookup(warehouseCategories, scene, item.category)
-        setFormData({
-            targetCategory: defaultCategoryCode,
-            batchNo: '',
-            quantity: 1,
-            entryDate: '',
-            remarks: '',
-        })
-
-        setIsInboundOpen(true)
-    }
-
-    const submitInbound = async () => {
-        if (!allowsAction('action_warehouse_inbound_record')) return
-        if (!selectedItem) return
-        if (formData.quantity <= 0) {
-            toast.error(t('warehouse.inbound.toast.quantityInvalid'))
-            return
-        }
-
-        await submitInboundMutation.mutateAsync(buildInboundTDO(selectedItem, formData))
-    }
-
-    const selectableWarehouseCategories = useMemo(() => {
-        if (!selectedItem) return warehouseCategories
-
-        const scene = selectedItem.sourceModule === 'PRODUCT' ? 'product-inbound' : 'material-inbound'
-        return resolveInboundCategoryLookup(warehouseCategories, scene, selectedItem.category).selectableCategories
-    }, [selectedItem, warehouseCategories])
-
-    const hasSearched = searchQuery.trim().length > 0
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
@@ -238,7 +81,7 @@ export default function ProductInbound() {
                         className='pl-10 h-11 md:h-12 rounded-xl md:rounded-2xl border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-emerald-500/20 text-xs md:text-sm font-medium transition-all'
                         autoFocus={mode === 'scan'}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => handleSearchQueryChange(e.target.value)}
                     />
                     {isSearching && (
                         <div className='absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none'>
@@ -268,7 +111,7 @@ export default function ProductInbound() {
                                     'flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-3 md:p-4 transition-all group rounded-xl md:rounded-[20px] my-1 gap-4',
                                     'hover:bg-emerald-500/5 cursor-pointer',
                                 )}
-                                onClick={() => openInboundForm(item)}
+                                onClick={() => handleOpenInboundForm(item)}
                             >
                                 <div className='flex items-center gap-3 md:gap-5 overflow-hidden'>
                                     <div className='size-10 md:size-12 rounded-xl md:rounded-2xl bg-background border border-muted/50 flex items-center justify-center shrink-0 shadow-sm group-hover:border-emerald-500/30 group-hover:scale-105 transition-all'>
@@ -297,7 +140,7 @@ export default function ProductInbound() {
                                         className='h-9 md:h-10 rounded-full px-4 md:px-5 text-[9px] md:text-[10px] font-black uppercase tracking-widest gap-2 bg-emerald-500/10 text-emerald-700 border border-emerald-500/30 transition-all shadow-lg shadow-emerald-500/10 shrink-0 hover:bg-emerald-500/15'
                                         onClick={(event) => {
                                             event.stopPropagation()
-                                            openInboundForm(item)
+                                            handleOpenInboundForm(item)
                                         }}
                                     >
                                         {t('warehouse.inbound.startInbound')} <Plus className='size-3' />
@@ -384,7 +227,10 @@ export default function ProductInbound() {
                 </div>
             </div>
 
-            <Dialog open={isInboundOpen} onOpenChange={setIsInboundOpen}>
+            <Dialog
+                open={isInboundOpen}
+                onOpenChange={handleInboundDialogOpenChange}
+            >
                 <DialogContent className='w-[95vw] sm:max-w-[560px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
                     <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
 
@@ -397,7 +243,9 @@ export default function ProductInbound() {
                                 <span className='truncate'>{t('warehouse.inbound.dialog.title')}</span>
                             </DialogTitle>
                             <DialogDescription className='text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mt-1 truncate block'>
-                                {selectedItem ? t('warehouse.inbound.dialog.targetNode', { name: selectedItem.name, code: selectedItem.code }) : ''}
+                                {targetNodeDescription
+                                    ? t('warehouse.inbound.dialog.targetNode', targetNodeDescription)
+                                    : ''}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -409,9 +257,7 @@ export default function ProductInbound() {
                                     </Label>
                                     <Select
                                         value={formData.targetCategory}
-                                        onValueChange={(val) => {
-                                            setFormData((current) => ({ ...current, targetCategory: val }))
-                                        }}
+                                        onValueChange={handleTargetCategoryChange}
                                     >
                                         <SelectTrigger className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-bold px-4 md:px-5 focus:ring-emerald-500 shadow-inner text-xs'>
                                             <SelectValue placeholder={t('warehouse.inbound.dialog.selectArea')} />
@@ -432,9 +278,7 @@ export default function ProductInbound() {
                                     <Input
                                         type='date'
                                         value={formData.entryDate}
-                                        onChange={(e) => {
-                                            setFormData((current) => ({ ...current, entryDate: e.target.value }))
-                                        }}
+                                        onChange={(e) => handleEntryDateChange(e.target.value)}
                                         className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-bold px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner text-xs'
                                     />
                                 </div>
@@ -450,9 +294,7 @@ export default function ProductInbound() {
                                             type='number'
                                             className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono text-lg md:text-xl font-black pl-4 md:pl-5 pr-10 md:pr-12 focus-visible:ring-emerald-500 shadow-inner group-hover:bg-muted/70 transition-all'
                                             value={formData.quantity}
-                                            onChange={(e) => {
-                                                setFormData((current) => ({ ...current, quantity: Number(e.target.value) }))
-                                            }}
+                                            onChange={(e) => handleQuantityChange(Number(e.target.value))}
                                         />
                                         <div className='absolute right-4 md:right-5 top-1/2 -translate-y-1/2 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/20 select-none group-focus-within:text-emerald-500 transition-colors'>
                                             {selectedItem?.uom || t('warehouse.inbound.dialog.units')}
@@ -466,9 +308,7 @@ export default function ProductInbound() {
                                     <Input
                                         placeholder={t('warehouse.inbound.dialog.batchPlaceholder')}
                                         value={formData.batchNo}
-                                        onChange={(e) => {
-                                            setFormData((current) => ({ ...current, batchNo: e.target.value }))
-                                        }}
+                                        onChange={(e) => handleBatchNoChange(e.target.value)}
                                         className='h-10 md:h-11 rounded-xl bg-muted/50 border-none font-mono font-black text-xs md:text-sm px-4 md:px-5 focus-visible:ring-emerald-500 shadow-inner'
                                     />
                                 </div>
@@ -481,9 +321,7 @@ export default function ProductInbound() {
                                 <Input
                                     placeholder={t('warehouse.inbound.dialog.remarksPlaceholder')}
                                     value={formData.remarks}
-                                    onChange={(e) => {
-                                        setFormData((current) => ({ ...current, remarks: e.target.value }))
-                                    }}
+                                    onChange={(e) => handleRemarksChange(e.target.value)}
                                     className='h-11 rounded-xl bg-muted/50 border-none font-bold px-5 focus-visible:ring-emerald-500 shadow-inner'
                                 />
                             </div>
@@ -494,18 +332,15 @@ export default function ProductInbound() {
                         <Button
                             variant='ghost'
                             className='flex-1 h-11 rounded-full hover:bg-muted font-black text-[10px] uppercase tracking-widest transition-colors'
-                            onClick={() => {
-                                setIsInboundOpen(false)
-                                setFormData(DEFAULT_INBOUND_DATA)
-                            }}
+                            onClick={handleCloseInboundDialog}
                         >
                             {t('warehouse.inbound.dialog.cancel')}
                         </Button>
                         <NonBlockingPermissionBoundary permission='action_warehouse_inbound_record'>
                             <Button
                                 className='flex-1 h-11 rounded-full shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 gap-2'
-                                onClick={() => { void submitInbound() }}
-                                disabled={submitInboundMutation.isPending}
+                                onClick={() => { void handleSubmitInbound() }}
+                                disabled={isSubmittingInbound}
                             >
                                 <CheckCircle2 className='size-4' /> {t('warehouse.inbound.dialog.commit')}
                             </Button>

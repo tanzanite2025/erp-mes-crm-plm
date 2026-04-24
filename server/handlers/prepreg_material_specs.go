@@ -55,6 +55,11 @@ func SavePrepregMaterialSpecHandler(c *gin.Context) {
 			respondVersionConflict(c)
 			return
 		}
+		var validationErr *services.PrepregMaterialSpecValidationError
+		if errors.As(err, &validationErr) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + validationErr.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[RAW_MATERIALS] 预浸料规格保存失败: " + err.Error()})
 		return
 	}

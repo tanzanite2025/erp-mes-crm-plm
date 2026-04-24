@@ -12,11 +12,7 @@ const (
 	SalesReturnStatusReceived  = "Received"
 	SalesReturnStatusClosed    = "Closed"
 	SalesReturnStatusCanceled  = "Canceled"
-)
-
-const (
-	SalesReturnTransportModeCourier = "Courier"
-	SalesReturnTransportModeOther   = "Other"
+	SalesReturnStatusCompleted = "Completed"
 )
 
 var salesReturnStatuses = []string{
@@ -27,24 +23,12 @@ var salesReturnStatuses = []string{
 	SalesReturnStatusCanceled,
 }
 
-var salesReturnTransportModes = []string{
-	SalesReturnTransportModeCourier,
-	SalesReturnTransportModeOther,
-}
-
 func normalizeSalesReturnStatus(raw string) string {
 	trimmed := strings.TrimSpace(raw)
-	for _, candidate := range salesReturnStatuses {
-		if strings.EqualFold(trimmed, candidate) {
-			return candidate
-		}
+	if strings.EqualFold(trimmed, SalesReturnStatusCompleted) {
+		return SalesReturnStatusClosed
 	}
-	return trimmed
-}
-
-func normalizeSalesReturnTransportMode(raw string) string {
-	trimmed := strings.TrimSpace(raw)
-	for _, candidate := range salesReturnTransportModes {
+	for _, candidate := range salesReturnStatuses {
 		if strings.EqualFold(trimmed, candidate) {
 			return candidate
 		}
@@ -62,29 +46,15 @@ func isSalesReturnStatusKnown(status string) bool {
 	return false
 }
 
-func isSalesReturnTransportModeKnown(mode string) bool {
-	normalized := normalizeSalesReturnTransportMode(mode)
-	for _, candidate := range salesReturnTransportModes {
-		if normalized == candidate {
-			return true
-		}
-	}
-	return false
-}
-
-func isSalesReturnTrackingRequired(mode string) bool {
-	return normalizeSalesReturnTransportMode(mode) == SalesReturnTransportModeCourier
-}
-
-func deriveSalesReturnPendingTracking(mode string, trackingNo string, status string) bool {
+func deriveSalesReturnPendingTracking(trackingNo string, status string) bool {
 	normalizedStatus := normalizeSalesReturnStatus(status)
 	if normalizedStatus == SalesReturnStatusClosed || normalizedStatus == SalesReturnStatusCanceled {
 		return false
 	}
-	return isSalesReturnTrackingRequired(mode) && strings.TrimSpace(trackingNo) == ""
+	return strings.TrimSpace(trackingNo) == ""
 }
 
-func resolveSalesReturnLifecycleStatus(currentStatus string, requestedStatus string, transportMode string, trackingNo string) (string, error) {
+func resolveSalesReturnLifecycleStatus(currentStatus string, requestedStatus string, trackingNo string) (string, error) {
 	normalizedCurrent := normalizeSalesReturnStatus(currentStatus)
 	if normalizedCurrent == "" {
 		normalizedCurrent = SalesReturnStatusCreated
@@ -92,24 +62,22 @@ func resolveSalesReturnLifecycleStatus(currentStatus string, requestedStatus str
 
 	normalizedRequested := normalizeSalesReturnStatus(requestedStatus)
 	if normalizedRequested == "" {
-		if isSalesReturnTrackingRequired(transportMode) {
-			if strings.TrimSpace(trackingNo) == "" {
-				if normalizedCurrent == SalesReturnStatusInTransit {
-					return SalesReturnStatusCreated, nil
-				}
-				return normalizedCurrent, nil
+		if strings.TrimSpace(trackingNo) == "" {
+			if normalizedCurrent == SalesReturnStatusInTransit {
+				return SalesReturnStatusCreated, nil
 			}
-			if normalizedCurrent == SalesReturnStatusCreated {
-				return SalesReturnStatusInTransit, nil
-			}
+			return normalizedCurrent, nil
+		}
+		if normalizedCurrent == SalesReturnStatusCreated {
+			return SalesReturnStatusInTransit, nil
 		}
 		return normalizedCurrent, nil
 	}
 
-	return validateSalesReturnStatusTransition(normalizedCurrent, normalizedRequested, transportMode, trackingNo)
+	return validateSalesReturnStatusTransition(normalizedCurrent, normalizedRequested, trackingNo)
 }
 
-func validateSalesReturnStatusTransition(currentStatus string, nextStatus string, transportMode string, trackingNo string) (string, error) {
+func validateSalesReturnStatusTransition(currentStatus string, nextStatus string, trackingNo string) (string, error) {
 	normalizedCurrent := normalizeSalesReturnStatus(currentStatus)
 	if normalizedCurrent == "" {
 		normalizedCurrent = SalesReturnStatusCreated
@@ -145,9 +113,6 @@ func validateSalesReturnStatusTransition(currentStatus string, nextStatus string
 	}
 	if normalizedNext == SalesReturnStatusInTransit && strings.TrimSpace(trackingNo) == "" {
 		return "", errors.New("tracking no is required before moving to InTransit")
-	}
-	if normalizedNext == SalesReturnStatusClosed && isSalesReturnTrackingRequired(transportMode) && strings.TrimSpace(trackingNo) == "" {
-		return "", errors.New("tracking no is required before closing courier return")
 	}
 	return normalizedNext, nil
 }

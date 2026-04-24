@@ -18,8 +18,12 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import {
+  deriveCutSizeAreaM2,
+  deriveCutSizeWeightG,
   formFromCutSizeUnit,
   formatCutSizeExpression,
+  resolveCutSizeAreaM2,
+  resolveCutSizeWeightG,
   EMPTY_CUT_SIZE_UNIT_FORM,
   type CutSizeUnit,
   type CutSizeUnitFormState,
@@ -51,6 +55,18 @@ function lossLabel(item: CutSizeUnit): string {
   const step = item.stepOffsetMm.trim()
   if (!trim && !step) return '--'
   return `修边 ${trim || 0} / 错位 ${step || 0}`
+}
+
+function areaLabel(item: Pick<CutSizeUnit, 'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'>): string {
+  const area = resolveCutSizeAreaM2(item)
+  return area ? `${area} m²` : '--'
+}
+
+function weightLabel(
+  item: Pick<CutSizeUnit, 'weightG' | 'areaM2' | 'areaWeightGsm' | 'widthMm' | 'lengthMm' | 'pieceCount'>
+): string {
+  const weight = resolveCutSizeWeightG(item)
+  return weight ? `${weight} g` : '--'
 }
 
 export function CutSizeLibraryPage() {
@@ -110,6 +126,29 @@ export function CutSizeLibraryPage() {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
+  const derivedAreaM2 = useMemo(
+    () =>
+      deriveCutSizeAreaM2({
+        widthMm: form.widthMm,
+        lengthMm: form.lengthMm,
+        pieceCount: form.pieceCount,
+      }),
+    [form.widthMm, form.lengthMm, form.pieceCount]
+  )
+  const resolvedFormAreaM2 = derivedAreaM2 || form.areaM2.trim()
+  const derivedWeightG = useMemo(
+    () =>
+      deriveCutSizeWeightG({
+        widthMm: form.widthMm,
+        lengthMm: form.lengthMm,
+        pieceCount: form.pieceCount,
+        areaM2: resolvedFormAreaM2,
+        areaWeightGsm: form.areaWeightGsm,
+      }),
+    [form.widthMm, form.lengthMm, form.pieceCount, resolvedFormAreaM2, form.areaWeightGsm]
+  )
+  const resolvedFormWeightG = derivedWeightG || form.weightG.trim()
+
   const handleSave = () => {
     if (!form.code.trim()) {
       toast.error('请填写尺寸编号')
@@ -121,6 +160,18 @@ export function CutSizeLibraryPage() {
     }
     if (!form.widthMm.trim() || !form.lengthMm.trim() || !form.pieceCount.trim()) {
       toast.error('请至少填写宽度、长度和张数')
+      return
+    }
+    if (!resolvedFormAreaM2) {
+      toast.error('请先补齐宽度、长度和张数以自动计算面积')
+      return
+    }
+    if (!form.areaWeightGsm.trim()) {
+      toast.error('请填写面密度')
+      return
+    }
+    if (!resolvedFormWeightG) {
+      toast.error('当前无法自动换算重量，请检查面积和面密度')
       return
     }
     saveMutation.mutate()
@@ -177,13 +228,14 @@ export function CutSizeLibraryPage() {
           </div>
 
           <div className='overflow-x-auto rounded-2xl border border-dashed border-slate-300/80 bg-white/80'>
-            <table className='w-full min-w-[1080px] text-sm'>
+            <table className='w-full min-w-[1180px] text-sm'>
               <thead className='bg-slate-100/80 text-left'>
                 <tr>
                   {[
                     t('rawMaterials.cutSizeLibrary.columns.code'),
                     t('rawMaterials.cutSizeLibrary.columns.name'),
                     t('rawMaterials.cutSizeLibrary.columns.size'),
+                    '面积 / 面密度 / 重量',
                     t('rawMaterials.cutSizeLibrary.columns.angle'),
                     t('rawMaterials.cutSizeLibrary.columns.layup'),
                     t('rawMaterials.cutSizeLibrary.columns.loss'),
@@ -203,13 +255,13 @@ export function CutSizeLibraryPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={9} className='px-4 py-8 text-center text-xs font-semibold text-muted-foreground'>
+                    <td colSpan={10} className='px-4 py-8 text-center text-xs font-semibold text-muted-foreground'>
                       正在加载裁切尺寸库...
                     </td>
                   </tr>
                 ) : units.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className='px-4 py-8 text-center'>
+                    <td colSpan={10} className='px-4 py-8 text-center'>
                       <p className='text-[11px] font-black uppercase tracking-[0.2em] text-slate-500'>
                         {t('rawMaterials.cutSizeLibrary.empty.title')}
                       </p>
@@ -229,6 +281,13 @@ export function CutSizeLibraryPage() {
                       </td>
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
                         {formatCutSizeExpression(item) || '--'}
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        <div>{areaLabel(item)}</div>
+                        <div className='mt-1 text-[11px] text-slate-500'>
+                          {item.areaWeightGsm.trim() ? `${item.areaWeightGsm.trim()} g/m²` : '未填写面密度'}
+                        </div>
+                        <div className='mt-1 text-[11px] text-slate-500'>{weightLabel(item)}</div>
                       </td>
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
                         {item.cutAngle || '--'}
@@ -343,6 +402,29 @@ export function CutSizeLibraryPage() {
                 placeholder='0 / 45 / custom'
               />
             </Field>
+            <Field label='面积 (m²)'>
+              <Input
+                value={resolvedFormAreaM2}
+                readOnly
+                disabled
+                placeholder='按宽度×长度×张数自动计算'
+              />
+            </Field>
+            <Field label='面密度 (g/m²)' required>
+              <Input
+                value={form.areaWeightGsm}
+                onChange={(event) => updateForm('areaWeightGsm', event.target.value)}
+                placeholder='例如 260'
+              />
+            </Field>
+            <Field label='重量 (g)'>
+              <Input
+                value={resolvedFormWeightG}
+                readOnly
+                disabled
+                placeholder='按面积×面密度自动换算'
+              />
+            </Field>
 
             <Field label='叠层数'>
               <Input
@@ -387,6 +469,26 @@ export function CutSizeLibraryPage() {
                 placeholder='例如 角度包络+修边'
               />
             </Field>
+            <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3 md:col-span-4'>
+              <div className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/80'>面积与重量口径</div>
+              <div className='mt-2 grid gap-2 md:grid-cols-3'>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                  几何推导面积：{derivedAreaM2 ? `${derivedAreaM2} m²` : '--'}
+                </div>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                  保存面积：{resolvedFormAreaM2 ? `${resolvedFormAreaM2} m²` : '--'}
+                </div>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                  当前面密度：{form.areaWeightGsm.trim() ? `${form.areaWeightGsm.trim()} g/m²` : '--'}
+                </div>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                  自动换算重量：{resolvedFormWeightG ? `${resolvedFormWeightG} g` : '--'}
+                </div>
+              </div>
+              <p className='mt-2 text-[10px] font-bold text-muted-foreground'>
+                面积始终按宽度 × 长度 × 张数自动派生；重量按面积 × 面密度自动换算。
+              </p>
+            </div>
             <Field label='说明' className='md:col-span-4'>
               <Textarea
                 value={form.notes}

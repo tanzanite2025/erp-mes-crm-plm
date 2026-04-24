@@ -5,6 +5,7 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: '资源管理',
+    rawMaterialsManagement: '原材料管理',
     salesManagement: '销售管理',
     engineeringManagement: '工程管理',
     warehouseManagement: '仓储',
@@ -29,6 +30,8 @@ export const sidebar = {
     mrp: 'MRP',
     purchaseManagement: '采购管理',
     rawMaterialsManagement: '原材料管理',
+    cuttingDatabase: '裁纱数据库',
+    cuttingOperations: '裁纱作业',
     productEngineering: '产品工程管理',
     materialArchive: '物料档案',
     engineeringDatabase: '工程数据库',

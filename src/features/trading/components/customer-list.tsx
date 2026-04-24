@@ -219,15 +219,15 @@ export function CustomerList() {
   }
 
   return (
-    <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+    <div className='flex animate-in flex-col gap-5 duration-700 fade-in sm:gap-6'>
       {!customerStatsAvailable && (
         <div className='rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-xs font-bold text-amber-800'>
           {customerStatsMissingLabel}
         </div>
       )}
 
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6'>
-        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+      <div className='grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'>
+        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
           <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <Building2 className='size-12 sm:size-16' />
           </div>
@@ -244,7 +244,7 @@ export function CustomerList() {
           </div>
         </div>
 
-        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
           <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <User className='size-12 sm:size-16' />
           </div>
@@ -261,7 +261,7 @@ export function CustomerList() {
           </div>
         </div>
 
-        <div className='group relative flex h-32 flex-col justify-between overflow-hidden rounded-[24px] border-2 border-dashed border-muted/50 bg-muted/5 p-5 sm:h-36 sm:p-6'>
+        <div className='group relative flex h-24 flex-col justify-between overflow-hidden rounded-[20px] border-2 border-dashed border-muted/50 bg-muted/5 p-4 sm:h-28 sm:p-[18px]'>
           <div className='absolute top-0 right-0 p-4 opacity-[0.03] transition-opacity group-hover:opacity-10'>
             <ExternalLink className='size-12 sm:size-16' />
           </div>
@@ -335,7 +335,7 @@ export function CustomerList() {
       </div>
 
       {filteredCustomers.length > 0 ? (
-        <div className='grid grid-cols-1 gap-4'>
+        <div className='grid grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-2'>
           {filteredCustomers.map((customer) => (
             <CustomerListItem
               key={customer.id}

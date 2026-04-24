@@ -836,6 +836,7 @@ func InitDB(dsn string) {
 		&models.SalesOrderLine{},
 		&models.SalesReturn{},
 		&models.SalesReturnLine{},
+		&models.SalesReturnActualAmountRecord{},
 		&models.Customer{},
 		&models.Supplier{},
 		&models.Inventory{},

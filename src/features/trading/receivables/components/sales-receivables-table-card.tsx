@@ -1,12 +1,14 @@
+import { useLanguage } from '@/context/language-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { getTradingLedgerAgingLabel, getTradingLedgerStatusLabel } from '@/features/trading/utils/ledger-display'
 import type { ReceivableRecord } from '../adapters/receivable-api-adapter'
 
 interface SalesReceivablesTableColumnLabels {
   documentNo: string
   customerName: string
-  invoiceAmount: string
+  orderAmount: string
   receivedAmount: string
   outstandingAmount: string
   dueDate: string
@@ -51,6 +53,8 @@ export function SalesReceivablesTableCard({
   columnLabels,
   onSelectReceivable,
 }: SalesReceivablesTableCardProps) {
+  const { t } = useLanguage()
+
   return (
     <Card className='overflow-hidden rounded-[24px] border border-dashed border-muted/60 bg-muted/5 shadow-inner'>
       <CardHeader className='gap-2 border-b border-dashed border-muted/50 bg-muted/20 px-5 py-4'>
@@ -70,7 +74,7 @@ export function SalesReceivablesTableCard({
                 {columnLabels.customerName}
               </TableHead>
               <TableHead className='h-11 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
-                {columnLabels.invoiceAmount}
+                {columnLabels.orderAmount}
               </TableHead>
               <TableHead className='h-11 px-4 text-right text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/55'>
                 {columnLabels.receivedAmount}
@@ -106,7 +110,7 @@ export function SalesReceivablesTableCard({
                   <TableCell className='px-4 py-3 text-xs font-black tracking-tight'>{item.documentNo}</TableCell>
                   <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.customerName}</TableCell>
                   <TableCell className='px-4 py-3 text-right text-xs font-semibold tabular-nums'>
-                    {formatAmount(item.invoiceAmount, item.currency)}
+                    {formatAmount(item.orderAmount, item.currency)}
                   </TableCell>
                   <TableCell className='px-4 py-3 text-right text-xs font-semibold tabular-nums'>
                     {formatAmount(item.receivedAmount, item.currency)}
@@ -115,7 +119,7 @@ export function SalesReceivablesTableCard({
                     {formatAmount(item.outstandingAmount, item.currency)}
                   </TableCell>
                   <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.dueDate}</TableCell>
-                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{item.agingBucket}</TableCell>
+                  <TableCell className='px-4 py-3 text-xs font-medium text-muted-foreground'>{getTradingLedgerAgingLabel(item.agingBucket, t)}</TableCell>
                   <TableCell className='px-4 py-3 text-xs'>
                     <span
                       className={cn(
@@ -123,7 +127,7 @@ export function SalesReceivablesTableCard({
                         getStatusClassName(item.status)
                       )}
                     >
-                      {item.status}
+                      {getTradingLedgerStatusLabel(item.status, t)}
                     </span>
                   </TableCell>
                 </TableRow>

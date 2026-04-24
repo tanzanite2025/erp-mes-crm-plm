@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+
 import {
   flexRender,
   getCoreRowModel,
@@ -42,23 +42,18 @@ import { buildOrderedProductTypes } from '../utils/product-type-tree'
 interface CategoryManagerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  productTypes: ProductType[]
 }
 
 const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : '')
 
-export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDialogProps) {
+export function CategoryManagerDialog({ open, onOpenChange, productTypes }: CategoryManagerDialogProps) {
   const { t } = useLanguage()
   const [actionOpen, setActionOpen] = useState(false)
   const [currentRow, setCurrentRow] = useState<ProductType | undefined>(undefined)
   const { saveProductType, deleteProductType } = useProductTypeWriteActions()
-  const productTypesQuery = useQuery({
-    queryKey: PRODUCT_TYPES_QUERY_KEY,
-    queryFn: () => ProductTypeService.getProductTypes(),
-    enabled: open,
-  })
-  const data = productTypesQuery.data
 
-  const displayData = useMemo(() => (data ? buildOrderedProductTypes(data, true) : []), [data])
+  const displayData = useMemo(() => (productTypes ? buildOrderedProductTypes(productTypes, true) : []), [productTypes])
 
   const columns: ColumnDef<ProductType>[] = [
     {
@@ -207,13 +202,13 @@ export function CategoryManagerDialog({ open, onOpenChange }: CategoryManagerDia
                 ))}
               </TableHeader>
               <TableBody>
-                {productTypesQuery.isPending ? (
+                {false ? (
                   <TableRow>
                     <TableCell colSpan={columns.length} className='h-32 text-center text-muted-foreground font-black uppercase tracking-widest text-[10px]'>
                       {t('engineering.categoryArchive.empty.loading')}
                     </TableCell>
                   </TableRow>
-                ) : productTypesQuery.isError ? (
+                ) : false ? (
                   <TableRow>
                     <TableCell colSpan={columns.length} className='h-32 text-center text-destructive font-black uppercase tracking-widest text-[10px]'>
                       {t('engineering.categoryArchive.toasts.loadFailed')}

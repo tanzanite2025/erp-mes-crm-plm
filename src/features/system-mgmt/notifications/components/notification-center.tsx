@@ -10,6 +10,13 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useNotificationStore } from '../notification-store'
 import { type NotificationPriority, type SystemMessage } from '../types'
 import { useAuthStore } from '@/stores/auth-store'
@@ -118,9 +125,6 @@ export function NotificationCenter() {
   })
 
   const visibleUnreadCount = visibleMessages.filter(m => !m.isRead).length
-  const displayMessages = isExpanded
-    ? visibleMessages
-    : visibleMessages.filter(m => !m.isRead && !m.isDismissed).slice(0, 3)
 
   const getDynamicContent = (msg: SystemMessage): NotificationDynamicContent => {
     if (!msg.commandId) return { title: msg.title, content: msg.content }
@@ -140,135 +144,195 @@ export function NotificationCenter() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-100 flex flex-col items-end gap-3 pointer-events-none">
-      <div className="flex flex-col-reverse gap-3 w-[340px] pointer-events-auto">
-        {displayMessages.length > 0 ? displayMessages.map((msg, idx) => {
-          const config = pConfig[msg.priority] || pConfig.info
-          const Icon = config.icon
-          const { title, content } = getDynamicContent(msg)
-
-          return (
-            <div
-              key={msg.id}
-              style={{ 
-                zIndex: displayMessages.length - idx,
-                transform: `scale(${1 - idx * 0.02}) translateX(${idx * 4}px)`,
-                opacity: 1 - idx * 0.1
-              }}
-              className={cn(
-                "relative group flex flex-col rounded-[24px] border border-white/40 bg-linear-to-br p-4 px-5 shadow-2xl backdrop-blur-2xl transition-all duration-500 hover:-translate-y-1 hover:scale-[1.02] animate-in slide-in-from-right-10 fade-in dark:border-white/10 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]",
-                config.gradient
-              )}
-            >
-              <div className={cn("absolute -inset-px rounded-[24px] opacity-10 blur-sm pointer-events-none bg-linear-to-r", config.gradient.split(' ')[0])} />
-
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className={cn("px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm", config.badge)}>
-                    {msg.type.replace('_', ' ')}
-                  </div>
-                  {!msg.isRead && <div className="size-1.5 rounded-full bg-primary animate-pulse" />}
-                </div>
-                
-                <button 
-                  onClick={() => isExpanded ? removeMessage(msg.id) : dismissMessage(msg.id)}
-                  className="flex size-5 items-center justify-center rounded-full text-slate-300 opacity-0 transition-all hover:bg-slate-100/50 hover:text-slate-600 group-hover:opacity-100 dark:text-slate-500 dark:hover:bg-white/6 dark:hover:text-slate-300"
-                  title={isExpanded ? "删除这条消息" : "暂时关闭"}
-                >
-                  <X className="size-3" />
-                </button>
-              </div>
-
-              <div className="space-y-1 relative">
-                <h4 className="flex items-center gap-2 text-[14px] font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">
-                  <Icon className={cn("size-3.5", config.color)} />
-                  {title}
-                </h4>
-                <p className="text-[11px] font-medium leading-relaxed text-slate-500 dark:text-slate-300">
-                  {content}
-                </p>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100/50 pt-3 dark:border-white/10">
-                <div className="flex items-center gap-2">
-                   <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-slate-100 dark:bg-white/8">
-                     <span className="text-[8px] font-bold capitalize text-slate-400 dark:text-slate-500">{msg.priority[0]}</span>
-                   </div>
-                   <span className="text-[9px] font-bold tracking-tighter text-slate-400 dark:text-slate-500">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-1.5">
-                  {msg.actionUrl ? (
-                    <Button 
-                      variant="ghost" 
-                      className="h-7 px-3 rounded-full text-[10px] font-black bg-primary text-white hover:bg-primary/90 hover:text-white shadow-lg shadow-primary/20 transition-all active:scale-95 group/btn gap-1"
-                      onClick={() => {
-                        markAsRead(msg.id)
-                        navigate({ to: msg.actionUrl as never })
-                      }}
-                    >
-                      立即处理 <ChevronRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="ghost" 
-                      className="h-7 rounded-full border border-slate-100 px-3 text-[10px] font-bold text-slate-400 transition-all hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/6 dark:text-slate-400"
-                      onClick={() => markAsRead(msg.id)}
-                      disabled={msg.isRead}
-                    >
-                      {msg.isRead ? '已阅' : '好的'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        }) : isExpanded && (
-          <div className="animate-in space-y-2 rounded-[32px] border border-slate-100 bg-background/90 p-8 text-center shadow-xl backdrop-blur-xl fade-in zoom-in duration-300 dark:border-white/10 dark:bg-popover/90">
-             <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-200 dark:bg-white/6 dark:text-slate-600">
-                <Bell className="size-6" />
-             </div>
-             <div>
-                <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">暂无待处理通知</p>
-                <p className="text-[10px] text-slate-400 font-medium tracking-tight">您的工作台目前非常整洁</p>
-             </div>
-          </div>
+    <>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={cn(
+          "relative h-10 w-10 rounded-full border border-dashed border-cyan-100/80 bg-cyan-500 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.28),0_14px_32px_-16px_rgba(6,182,212,0.95)] transition-all hover:border-white/90 hover:bg-cyan-400 hover:text-white hover:shadow-[0_0_0_1px_rgba(103,232,249,0.38),0_16px_34px_-16px_rgba(34,211,238,1)] dark:border-cyan-50/80 dark:bg-cyan-400 dark:text-slate-950 dark:shadow-[0_0_0_1px_rgba(165,243,252,0.3),0_16px_34px_-16px_rgba(34,211,238,0.88)] dark:hover:border-white dark:hover:bg-cyan-300 dark:hover:text-slate-950",
+          isExpanded && "border-white bg-cyan-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,243,252,0.45),0_18px_36px_-16px_rgba(34,211,238,1)] dark:border-white dark:bg-cyan-200 dark:text-slate-950",
+          visibleUnreadCount > 0 && !isExpanded && "ring-2 ring-cyan-300/35 ring-offset-2 ring-offset-background dark:ring-cyan-200/30"
         )}
-      </div>
+      >
+        {isExpanded ? (
+          <X className="size-[1.1rem] drop-shadow-[0_1px_4px_rgba(8,47,73,0.35)]" />
+        ) : (
+          <Bell className="size-[1.1rem] drop-shadow-[0_1px_4px_rgba(8,47,73,0.35)]" />
+        )}
+        {visibleUnreadCount > 0 && !isExpanded ? (
+          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-background/80 bg-red-500 px-1 text-[9px] font-black text-white shadow-lg dark:border-background/60">
+            {visibleUnreadCount > 99 ? '99+' : visibleUnreadCount}
+          </span>
+        ) : null}
+      </Button>
 
-      <div className="pointer-events-auto mt-2 scale-90 sm:scale-100">
-        <div className="flex flex-col items-end gap-2">
-            {isExpanded && visibleMessages.length > 3 && (
-              <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearAll}
-              className="rounded-full border border-slate-100 bg-background/90 px-4 text-[9px] font-black uppercase text-slate-400 shadow-sm backdrop-blur-md transition-all hover:text-destructive dark:border-white/10 dark:bg-popover/90 dark:text-slate-500"
-              >
-                清除全部通知
-              </Button>
-            )}
-            <Button
-              size="icon"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className={cn(
-                "size-14 rounded-full border-4 border-white/50 shadow-2xl ring-1 ring-black/5 transition-all duration-500 dark:border-white/10 dark:ring-white/10",
-                visibleUnreadCount > 0 ? "bg-primary hover:bg-primary/90" : "bg-slate-900 hover:bg-slate-800"
-              )}
-            >
-              <div className="relative">
-                {isExpanded ? <X className="size-6" /> : <Bell className="size-6" />}
-                {visibleUnreadCount > 0 && !isExpanded && (
-                  <span className="absolute -top-4 -right-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white border-2 border-white px-1 shadow-lg animate-bounce">
-                    {visibleUnreadCount > 99 ? '99+' : visibleUnreadCount}
-                  </span>
+      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
+        <DialogContent className="w-[95vw] max-w-[860px] rounded-[32px] border-none p-0 shadow-2xl">
+          <div className="relative overflow-hidden rounded-[32px] bg-background">
+            <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent" />
+            <div className="relative flex flex-col gap-0">
+              <DialogHeader className="border-b border-dashed border-border/60 px-6 py-5 text-left">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <DialogTitle className="text-lg font-black italic uppercase tracking-tighter">
+                      通知中心
+                    </DialogTitle>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+                      统一查看全部系统通知与待处理消息
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-dashed border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">
+                    未读 {visibleUnreadCount}
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="max-h-[65vh] overflow-y-auto px-6 py-5">
+                {visibleMessages.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {visibleMessages.map((msg) => {
+                      const config = pConfig[msg.priority] || pConfig.info
+                      const Icon = config.icon
+                      const { title, content } = getDynamicContent(msg)
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={cn(
+                            "relative rounded-[24px] border border-dashed p-4 shadow-sm transition-colors",
+                            msg.isRead
+                              ? "border-border/60 bg-background"
+                              : "border-primary/20 bg-primary/5",
+                            "bg-linear-to-br",
+                            config.gradient
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-3 min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className={cn("px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm", config.badge)}>
+                                  {msg.type.replace('_', ' ')}
+                                </div>
+                                {!msg.isRead ? (
+                                  <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                ) : null}
+                                <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60">
+                                  {new Date(msg.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+
+                              <div className="space-y-1">
+                                <h4 className="flex items-center gap-2 text-sm font-black tracking-tight text-foreground">
+                                  <Icon className={cn("size-4 shrink-0", config.color)} />
+                                  <span className="min-w-0 truncate">{title}</span>
+                                </h4>
+                                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                  {content}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => removeMessage(msg.id)}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                              title="删除这条消息"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border/50 pt-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-muted">
+                                <span className="text-[8px] font-bold capitalize text-muted-foreground">
+                                  {msg.priority[0]}
+                                </span>
+                              </div>
+                              <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60">
+                                {msg.priority}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              {msg.isDismissed ? null : (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 rounded-full border border-dashed border-border/60 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                                  onClick={() => dismissMessage(msg.id)}
+                                >
+                                  暂时关闭
+                                </Button>
+                              )}
+                              {msg.actionUrl ? (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 rounded-full bg-primary px-3 text-[10px] font-black uppercase tracking-widest text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                                  onClick={() => {
+                                    markAsRead(msg.id)
+                                    setIsExpanded(false)
+                                    navigate({ to: msg.actionUrl as never })
+                                  }}
+                                >
+                                  立即处理
+                                  <ChevronRight className="ml-1 size-3" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 rounded-full border border-dashed border-border/60 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                                  onClick={() => markAsRead(msg.id)}
+                                  disabled={msg.isRead}
+                                >
+                                  {msg.isRead ? '已阅' : '标记已阅'}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-border/60 bg-muted/10 px-6 py-14 text-center">
+                    <div className="flex size-14 items-center justify-center rounded-[20px] bg-muted text-muted-foreground/50">
+                      <Bell className="size-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-black italic uppercase tracking-tighter text-foreground">
+                        暂无待处理通知
+                      </p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                        您的工作台目前非常整洁
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
-            </Button>
-        </div>
-      </div>
-    </div>
+
+              <DialogFooter className="border-t border-dashed border-border/60 px-6 py-4">
+                <div className="flex w-full items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={clearAll}
+                    disabled={visibleMessages.length === 0}
+                    className="h-9 rounded-full border border-dashed border-border/60 px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive"
+                  >
+                    清除全部通知
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsExpanded(false)}
+                    className="h-9 rounded-full px-6 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    关闭
+                  </Button>
+                </div>
+              </DialogFooter>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

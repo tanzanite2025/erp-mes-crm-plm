@@ -42,8 +42,11 @@ export function TemplateMgmt() {
     queryKey: ['engineering', 'product-attribute-categories', 'active-options'],
     queryFn: () => ProductAttributeCategoryService.getProductAttributeCategories({ activeOnly: true }),
   })
-  const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data])
-  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
+  if (templatesQuery.isSuccess && !templatesQuery.data) throw new Error('[CRITICAL] Templates Data missing')
+  if (categoriesQuery.isSuccess && !categoriesQuery.data) throw new Error('[CRITICAL] Categories Data missing')
+
+  const templates = templatesQuery.data
+  const categories = categoriesQuery.data
   const error = templatesQuery.error
 
   const componentLabels = useMemo(
@@ -57,7 +60,10 @@ export function TemplateMgmt() {
   )
 
   const displayTemplates = useMemo(
-    () => localizeTemplateDefinitions(templates, t),
+    () => {
+      if (!templates) return []
+      return localizeTemplateDefinitions(templates, t)
+    },
     [t, templates]
   )
   const presetTemplateCodes = useMemo(
@@ -66,7 +72,7 @@ export function TemplateMgmt() {
   )
 
   const assembledCategories = useMemo(() => {
-    if (!editingTemplate) return []
+    if (!editingTemplate || !categories) return []
     return (editingTemplate.attributeBindings ?? [])
       .map((binding) => ({
         binding,
@@ -76,6 +82,7 @@ export function TemplateMgmt() {
   }, [categories, editingTemplate])
 
   const availableCategories = useMemo(() => {
+    if (!categories) return []
     const used = new Set((editingTemplate?.attributeBindings ?? []).map((item) => item.categoryKey))
     return categories.filter((item) => item.active && !used.has(item.key))
   }, [categories, editingTemplate])
@@ -173,7 +180,7 @@ export function TemplateMgmt() {
       const isEdit = Boolean(editingTemplate.id)
       await saveTemplate({
         formData: normalizeProductTemplateEntity(editingTemplate),
-        currentRow: templates.find((item) => item.id === editingTemplate.id),
+        currentRow: templates?.find((item) => item.id === editingTemplate.id),
       })
       toast.success(
         isEdit

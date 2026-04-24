@@ -4,7 +4,6 @@ import "time"
 
 type CreateSalesReturnRequest struct {
 	Operator      string                         `json:"operator"`
-	TransportMode string                         `json:"transportMode"`
 	TrackingNo    string                         `json:"trackingNo"`
 	Carrier       string                         `json:"carrier"`
 	ShippedAt     string                         `json:"shippedAt"`
@@ -17,14 +16,48 @@ type CreateSalesReturnRequest struct {
 	Lines         []CreateSalesReturnLineRequest `json:"lines"`
 }
 
+type PatchSalesReturnRequest struct {
+	Operator      string                         `json:"operator"`
+	IssueCategory string                         `json:"issueCategory"`
+	Reason        string                         `json:"reason"`
+	Remarks       string                         `json:"remarks"`
+	Evidences     []OrderEvidencePayload         `json:"evidences"`
+	ReturnDate    string                         `json:"returnDate"`
+	Lines         []CreateSalesReturnLineRequest `json:"lines"`
+}
+
 type PatchSalesReturnLogisticsRequest struct {
 	Operator      string `json:"operator"`
-	TransportMode string `json:"transportMode"`
 	TrackingNo    string `json:"trackingNo"`
 	Carrier       string `json:"carrier"`
 	ShippedAt     string `json:"shippedAt"`
 	LogisticsNote string `json:"logisticsNote"`
 	Status        string `json:"status"`
+}
+
+type PatchSalesReturnActualAmountEntryRequest struct {
+	Operator                    string                 `json:"operator"`
+	ActualReturnAmount          float64                `json:"actualReturnAmount"`
+	ActualReturnAmountNote      string                 `json:"actualReturnAmountNote"`
+	ActualReturnAmountEvidences []OrderEvidencePayload `json:"actualReturnAmountEvidences"`
+}
+
+type SalesReturnActualAmountRecordResponse struct {
+	ID                            string                 `json:"id"`
+	SalesReturnID                 string                 `json:"salesReturnId"`
+	SalesOrderID                  string                 `json:"salesOrderId"`
+	SalesOrderNo                  string                 `json:"salesOrderNo"`
+	ReturnNo                      string                 `json:"returnNo"`
+	CustomerID                    string                 `json:"customerId"`
+	CustomerName                  string                 `json:"customerName"`
+	Amount                        float64                `json:"amount"`
+	Note                          string                 `json:"note"`
+	Evidences                     []OrderEvidencePayload `json:"evidences"`
+	EstimatedReturnAmountSnapshot float64                `json:"estimatedReturnAmountSnapshot"`
+	RecordedAt                    time.Time              `json:"recordedAt"`
+	RecordedBy                    string                 `json:"recordedBy"`
+	CreatedAt                     time.Time              `json:"createdAt"`
+	UpdatedAt                     time.Time              `json:"updatedAt"`
 }
 
 type CreateSalesReturnLineRequest struct {
@@ -55,32 +88,36 @@ type SalesReturnLineResponse struct {
 }
 
 type SalesReturnResponse struct {
-	ID                  string                    `json:"id"`
-	ReturnNo            string                    `json:"returnNo"`
-	SalesOrderID        string                    `json:"salesOrderId"`
-	SalesOrderNo        string                    `json:"salesOrderNo"`
-	CustomerID          string                    `json:"customerId"`
-	CustomerName        string                    `json:"customerName"`
-	Status              string                    `json:"status"`
-	TransportMode       string                    `json:"transportMode"`
-	TrackingNo          string                    `json:"trackingNo"`
-	Carrier             string                    `json:"carrier"`
-	ShippedAt           *time.Time                `json:"shippedAt"`
-	TrackingFilledAt    *time.Time                `json:"trackingFilledAt"`
-	TrackingFilledBy    string                    `json:"trackingFilledBy"`
-	LogisticsNote       string                    `json:"logisticsNote"`
-	PendingTrackingFill bool                      `json:"pendingTrackingFill"`
-	ReturnDate          time.Time                 `json:"returnDate"`
-	IssueCategory       string                    `json:"issueCategory"`
-	Reason              string                    `json:"reason"`
-	Remarks             string                    `json:"remarks"`
-	Evidences           []OrderEvidencePayload    `json:"evidences"`
-	Operator            string                    `json:"operator"`
-	TotalQuantity       float64                   `json:"totalQuantity"`
-	TotalAmount         float64                   `json:"totalAmount"`
-	CreatedAt           time.Time                 `json:"createdAt"`
-	UpdatedAt           time.Time                 `json:"updatedAt"`
-	Lines               []SalesReturnLineResponse `json:"lines"`
+	ID                           string                    `json:"id"`
+	ReturnNo                     string                    `json:"returnNo"`
+	SalesOrderID                 string                    `json:"salesOrderId"`
+	SalesOrderNo                 string                    `json:"salesOrderNo"`
+	CustomerID                   string                    `json:"customerId"`
+	CustomerName                 string                    `json:"customerName"`
+	Status                       string                    `json:"status"`
+	TrackingNo                   string                    `json:"trackingNo"`
+	Carrier                      string                    `json:"carrier"`
+	ShippedAt                    *time.Time                `json:"shippedAt"`
+	TrackingFilledAt             *time.Time                `json:"trackingFilledAt"`
+	TrackingFilledBy             string                    `json:"trackingFilledBy"`
+	LogisticsNote                string                    `json:"logisticsNote"`
+	PendingTrackingFill          bool                      `json:"pendingTrackingFill"`
+	ReturnDate                   time.Time                 `json:"returnDate"`
+	IssueCategory                string                    `json:"issueCategory"`
+	Reason                       string                    `json:"reason"`
+	Remarks                      string                    `json:"remarks"`
+	ActualReturnAmount           float64                   `json:"actualReturnAmount"`
+	ActualReturnAmountNote       string                    `json:"actualReturnAmountNote"`
+	ActualReturnAmountEvidences  []OrderEvidencePayload    `json:"actualReturnAmountEvidences"`
+	ActualReturnAmountRecordedAt *time.Time                `json:"actualReturnAmountRecordedAt"`
+	ActualReturnAmountRecordedBy string                    `json:"actualReturnAmountRecordedBy"`
+	Evidences                    []OrderEvidencePayload    `json:"evidences"`
+	Operator                     string                    `json:"operator"`
+	TotalQuantity                float64                   `json:"totalQuantity"`
+	TotalAmount                  float64                   `json:"totalAmount"`
+	CreatedAt                    time.Time                 `json:"createdAt"`
+	UpdatedAt                    time.Time                 `json:"updatedAt"`
+	Lines                        []SalesReturnLineResponse `json:"lines"`
 }
 
 type SalesReturnListResponse struct {

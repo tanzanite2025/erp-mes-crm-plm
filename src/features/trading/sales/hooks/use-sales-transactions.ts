@@ -359,8 +359,17 @@ export const useSalesOrderMutations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteSalesOrder,
-    onSuccess: (_data, orderId) => {
+    onSuccess: async (_data, orderId) => {
       removeSalesOrderFromCaches(queryClient, orderId)
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesReturnsRoot(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['sales-returns', 'source-orders'],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerSalesReturnSummary(),
+      })
       handleVoidedSuccess()
     },
     onError: handleServerError,

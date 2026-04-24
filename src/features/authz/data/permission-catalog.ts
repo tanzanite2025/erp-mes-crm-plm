@@ -153,6 +153,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/leave-management': 'org',
   '/hall-of-fame': 'org',
   '/piecework': 'piecework',
+  '/cutting-operations': 'piecework',
   '/aps-scheduling': 'piecework',
   '/production-architecture': 'piecework',
   '/system-management': 'system',

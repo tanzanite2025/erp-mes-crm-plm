@@ -7,6 +7,7 @@ import {
   type CutSizeUnit,
 } from '../../cut-size-library/data/cut-size-library-schema'
 import { CutSizeLibraryService } from '../../cut-size-library/services/cut-size-library-service'
+import { PrepregMaterialSpecService } from '../../services/prepreg-material-spec-service'
 import type {
   BatchEngineControls,
   BatchEngineLegendItem,
@@ -16,11 +17,13 @@ import type {
 } from '../types'
 
 const CUT_SIZE_LIBRARY_OPTIONS_QUERY_KEY = ['raw-materials', 'cut-size-library', 'active-options'] as const
+const PREPREG_OPTIONS_QUERY_KEY = ['raw-materials', 'prepreg-specs', 'active-options'] as const
 
 const DEFAULT_CONTROLS: BatchEngineControls = {
+  selectedPrepregSpecId: '',
   selectedCutSizeId: '',
-  rollWidthMm: '1000',
-  rollLengthM: '150',
+  rollWidthMm: '',
+  rollLengthM: '',
   knifeGapMm: '2',
   edgeTrimMm: '0',
 }
@@ -153,6 +156,15 @@ export function useBatchEngineState() {
   const { t } = useLanguage()
   const [controls, setControls] = useState<BatchEngineControls>(DEFAULT_CONTROLS)
 
+  const { data: prepregSpecs = [], isLoading: prepregLoading } = useQuery({
+    queryKey: PREPREG_OPTIONS_QUERY_KEY,
+    queryFn: async () => {
+      const response = await PrepregMaterialSpecService.list('', 1, 200)
+      return response.items.filter((item) => item.status === 'Active')
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
   const { data: cutSizeUnits = [], isLoading: cutSizeLoading } = useQuery({
     queryKey: CUT_SIZE_LIBRARY_OPTIONS_QUERY_KEY,
     queryFn: () => CutSizeLibraryService.listActive(),
@@ -171,6 +183,25 @@ export function useBatchEngineState() {
     () => cutSizeUnits.find((item) => item.id === controls.selectedCutSizeId),
     [controls.selectedCutSizeId, cutSizeUnits]
   )
+  const selectedPrepregSpec = useMemo(
+    () => prepregSpecs.find((item) => item.id === controls.selectedPrepregSpecId),
+    [controls.selectedPrepregSpecId, prepregSpecs]
+  )
+
+  useEffect(() => {
+    const nextRollWidth = selectedPrepregSpec?.widthMm?.trim() || ''
+    const nextRollLength = selectedPrepregSpec?.lengthM?.trim() || ''
+    setControls((current) => {
+      if (current.rollWidthMm === nextRollWidth && current.rollLengthM === nextRollLength) {
+        return current
+      }
+      return {
+        ...current,
+        rollWidthMm: nextRollWidth,
+        rollLengthM: nextRollLength,
+      }
+    })
+  }, [selectedPrepregSpec?.id, selectedPrepregSpec?.lengthM, selectedPrepregSpec?.widthMm])
 
   const simulation = useMemo(
     () => buildSimulation(selectedCutSize, controls),
@@ -265,6 +296,9 @@ export function useBatchEngineState() {
     legend,
     controls,
     updateControl,
+    prepregSpecs,
+    prepregLoading,
+    selectedPrepregSpec,
     cutSizeUnits,
     cutSizeLoading,
     selectedCutSize,

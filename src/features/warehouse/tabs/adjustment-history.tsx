@@ -1,10 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRef } from 'react'
 import { format } from 'date-fns'
 import { RefreshCw, FileText, Printer, CheckCircle2, History, Search } from 'lucide-react'
-import { toast } from 'sonner'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Badge } from '@/components/ui/badge'
@@ -20,51 +18,34 @@ import { useLanguage } from '@/context/language-provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 import { AdjustmentPrint } from '../components/adjustment-print'
-import { AdjustmentService, type InventoryAdjustment } from '../adjustment'
-import { warehouseQueryKeys } from '../query-keys'
+import { type InventoryAdjustment } from '../adjustment'
+import { useAdjustmentHistoryViewModel } from '../hooks/use-adjustment-history-view-model'
 import { getAdjustmentStatusMeta } from '../utils/warehouse-status-display'
 
 export function AdjustmentHistory() {
-    const queryClient = useQueryClient()
     const { t } = useLanguage()
-    const [selectedAdj, setSelectedAdj] = useState<InventoryAdjustment | null>(null)
-    const [executeConfirmOpen, setExecuteConfirmOpen] = useState(false)
-    const [adjToExecute, setAdjToExecute] = useState<InventoryAdjustment | null>(null)
     const printRef = useRef<HTMLDivElement>(null)
-
-    const { data: adjustments, isLoading, error } = useQuery({
-        queryKey: warehouseQueryKeys.inventoryAdjustments(),
-        queryFn: () => AdjustmentService.getHistory()
-    })
+    const {
+        adjustments,
+        isLoading,
+        error,
+        selectedAdj,
+        previewOpen,
+        executeConfirmOpen,
+        executeConfirmDesc,
+        handleExecuteClick,
+        handleConfirmExecute,
+        handleExecuteConfirmOpenChange,
+        handleRefreshClick,
+        handleOpenPreview,
+        handleClosePreview,
+        handlePreviewOpenChange,
+        isExecuting,
+    } = useAdjustmentHistoryViewModel()
 
     const handlePrint = () => {
         window.print()
     }
-
-    const executeMutation = useMutation({
-        mutationFn: (id: string) => AdjustmentService.execute(id),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() })
-            toast.success(t('warehouse.adjustment.toast.executeSuccess'))
-            setExecuteConfirmOpen(false)
-            setAdjToExecute(null)
-        },
-        onError: (err: Error) => {
-            toast.error(t('warehouse.adjustment.toast.executeFailed', { message: err.message }))
-        }
-    })
-
-    const handleExecuteClick = (adj: InventoryAdjustment) => {
-        setAdjToExecute(adj)
-        setExecuteConfirmOpen(true)
-    }
-
-    const onConfirmExecute = async () => {
-        if (!adjToExecute) return
-        executeMutation.mutate(adjToExecute.id)
-    }
-
-    const executeConfirmDesc = `${adjToExecute?.adjustmentNo || ''} - ${t('warehouse.stock.toast.reconcileConfirm')}`
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -83,7 +64,7 @@ export function AdjustmentHistory() {
                     <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => { void queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryAdjustments() }) }}
+                        onClick={handleRefreshClick}
                         className='size-9 md:size-10 rounded-full hover:bg-muted shrink-0'
                     >
                         <RefreshCw className={cn('size-3.5 md:size-4 text-muted-foreground', isLoading && 'animate-spin')} />
@@ -177,7 +158,7 @@ export function AdjustmentHistory() {
                                                 variant='ghost'
                                                 size='sm'
                                                 className='h-8 md:h-9 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest gap-2 bg-muted/50 hover:bg-muted'
-                                                onClick={() => setSelectedAdj(adj)}
+                                                onClick={() => handleOpenPreview(adj)}
                                             >
                                                 <Printer className='size-3' /> {t('warehouse.adjustment.print')}
                                             </Button>
@@ -191,7 +172,7 @@ export function AdjustmentHistory() {
                 </div>
             </div>
 
-            <Dialog open={!!selectedAdj} onOpenChange={(open) => !open && setSelectedAdj(null)}>
+            <Dialog open={previewOpen} onOpenChange={handlePreviewOpenChange}>
                 <DialogContent className='w-[95vw] sm:max-w-[900px] p-0 overflow-hidden rounded-2xl md:rounded-[32px] border-none shadow-2xl'>
                     <div className='absolute inset-0 bg-linear-to-br from-amber-600/5 via-transparent pointer-events-none' />
 
@@ -220,7 +201,7 @@ export function AdjustmentHistory() {
                             <Button
                                 variant='ghost'
                                 className='flex-1 sm:flex-none h-10 md:h-12 rounded-full hover:bg-muted font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-colors px-4 md:px-8'
-                                onClick={() => setSelectedAdj(null)}
+                                onClick={handleClosePreview}
                             >
                                 {t('warehouse.adjustment.close')}
                             </Button>
@@ -237,11 +218,11 @@ export function AdjustmentHistory() {
 
             <ConfirmDialog
                 open={executeConfirmOpen}
-                onOpenChange={setExecuteConfirmOpen}
+                onOpenChange={handleExecuteConfirmOpenChange}
                 title={t('warehouse.adjustment.execute')}
                 desc={executeConfirmDesc}
-                handleConfirm={onConfirmExecute}
-                isLoading={executeMutation.isPending}
+                handleConfirm={handleConfirmExecute}
+                isLoading={isExecuting}
             />
         </div>
     )

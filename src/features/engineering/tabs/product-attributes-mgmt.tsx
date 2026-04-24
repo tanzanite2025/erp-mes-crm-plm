@@ -94,8 +94,11 @@ export function ProductAttributesMgmt() {
     queryKey: PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY,
     queryFn: () => ProductAttributeOptionService.getProductAttributeOptions(),
   })
-  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
-  const options = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data])
+  if (categoriesQuery.isSuccess && !categoriesQuery.data) throw new Error('[CRITICAL] Categories Data missing')
+  if (optionsQuery.isSuccess && !optionsQuery.data) throw new Error('[CRITICAL] Options Data missing')
+
+  const categories = categoriesQuery.data || []
+  const options = optionsQuery.data || []
   const error = categoriesQuery.error ?? optionsQuery.error
 
   const effectiveSelectedCategoryKey = useMemo(() => {

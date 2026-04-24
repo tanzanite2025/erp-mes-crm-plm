@@ -5,7 +5,7 @@ export type SettlementDetailLike = {
   id: string
   documentNo: string
   currency?: string
-  invoiceAmount: number
+  invoiceAmount?: number
   outstandingAmount: number
 }
 
@@ -80,6 +80,8 @@ export interface SettlementLedgerDetailDialogConfig<
   uploadPath: string
   getDetailPartnerName: (detail: TDetail) => string
   getLocalLedgerPartnerName: (ledger: TLocalLedger) => string
+  summaryAmountLabel?: string
+  getDetailSummaryAmount?: (detail: TDetail) => number
 }
 
 export interface SettlementLedgerDetailDialogViewModel {

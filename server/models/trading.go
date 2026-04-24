@@ -69,28 +69,32 @@ type SalesOrderLine struct {
 // SalesReturn 销售退货单
 type SalesReturn struct {
 	BaseModel
-	ReturnNo         string            `gorm:"size:50;uniqueIndex;not null" json:"returnNo"`
-	SalesOrderID     string            `gorm:"type:uuid;index;not null" json:"salesOrderId"`
-	SalesOrderNo     string            `gorm:"size:50;index" json:"salesOrderNo"`
-	CustomerID       string            `gorm:"size:100;index" json:"customerId"`
-	CustomerName     string            `gorm:"size:255" json:"customerName"`
-	Status           string            `gorm:"size:50;default:'Created'" json:"status"`
-	TransportMode    string            `gorm:"size:30;not null;default:'Other'" json:"transportMode"`
-	TrackingNo       string            `gorm:"size:100;index" json:"trackingNo"`
-	Carrier          string            `gorm:"size:100" json:"carrier"`
-	ShippedAt        *time.Time        `json:"shippedAt"`
-	TrackingFilledAt *time.Time        `json:"trackingFilledAt"`
-	TrackingFilledBy string            `gorm:"size:100" json:"trackingFilledBy"`
-	LogisticsNote    string            `gorm:"type:text" json:"logisticsNote"`
-	ReturnDate       time.Time         `json:"returnDate"`
-	IssueCategory    string            `gorm:"size:100" json:"issueCategory"`
-	Reason           string            `gorm:"type:text" json:"reason"`
-	Remarks          string            `gorm:"type:text" json:"remarks"`
-	Evidences        json.RawMessage   `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
-	Operator         string            `gorm:"size:100" json:"operator"`
-	TotalQuantity    float64           `gorm:"default:0" json:"totalQuantity"`
-	TotalAmount      float64           `gorm:"default:0" json:"totalAmount"`
-	Lines            []SalesReturnLine `gorm:"foreignKey:SalesReturnID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+	ReturnNo                     string            `gorm:"size:50;uniqueIndex;not null" json:"returnNo"`
+	SalesOrderID                 string            `gorm:"type:uuid;index;not null" json:"salesOrderId"`
+	SalesOrderNo                 string            `gorm:"size:50;index" json:"salesOrderNo"`
+	CustomerID                   string            `gorm:"size:100;index" json:"customerId"`
+	CustomerName                 string            `gorm:"size:255" json:"customerName"`
+	Status                       string            `gorm:"size:50;default:'Created'" json:"status"`
+	TrackingNo                   string            `gorm:"size:100;index" json:"trackingNo"`
+	Carrier                      string            `gorm:"size:100" json:"carrier"`
+	ShippedAt                    *time.Time        `json:"shippedAt"`
+	TrackingFilledAt             *time.Time        `json:"trackingFilledAt"`
+	TrackingFilledBy             string            `gorm:"size:100" json:"trackingFilledBy"`
+	LogisticsNote                string            `gorm:"type:text" json:"logisticsNote"`
+	ReturnDate                   time.Time         `json:"returnDate"`
+	IssueCategory                string            `gorm:"size:100" json:"issueCategory"`
+	Reason                       string            `gorm:"type:text" json:"reason"`
+	Remarks                      string            `gorm:"type:text" json:"remarks"`
+	ActualReturnAmount           float64           `gorm:"default:0" json:"actualReturnAmount"`
+	ActualReturnAmountNote       string            `gorm:"type:text" json:"actualReturnAmountNote"`
+	ActualReturnAmountEvidences  json.RawMessage   `gorm:"type:jsonb;not null;default:'[]'" json:"actualReturnAmountEvidences"`
+	ActualReturnAmountRecordedAt *time.Time        `json:"actualReturnAmountRecordedAt"`
+	ActualReturnAmountRecordedBy string            `gorm:"size:100" json:"actualReturnAmountRecordedBy"`
+	Evidences                    json.RawMessage   `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	Operator                     string            `gorm:"size:100" json:"operator"`
+	TotalQuantity                float64           `gorm:"default:0" json:"totalQuantity"`
+	TotalAmount                  float64           `gorm:"default:0" json:"totalAmount"`
+	Lines                        []SalesReturnLine `gorm:"foreignKey:SalesReturnID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
 }
 
 func (SalesReturn) TableName() string {

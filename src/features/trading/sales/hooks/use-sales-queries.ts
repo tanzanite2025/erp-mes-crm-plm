@@ -11,18 +11,35 @@ export const useGetSalesOrders = (
   pageSize = 50,
   options: Omit<GetSalesOrdersOptions, 'page' | 'pageSize'> & Record<string, unknown> = {}
 ) => {
-  const { withLines, status, ...queryOptions } = options
+  const { withLines, status, customerId, keyword, paymentMethod, paymentTerm, ...queryOptions } = options
   const normalizedWithLines = withLines ?? false
   const normalizedStatus = status ?? []
+  const normalizedCustomerID = typeof customerId === 'string' ? customerId.trim() : ''
+  const normalizedKeyword = typeof keyword === 'string' ? keyword.trim() : ''
+  const normalizedPaymentMethod = typeof paymentMethod === 'string' ? paymentMethod.trim() : ''
+  const normalizedPaymentTerm = typeof paymentTerm === 'string' ? paymentTerm.trim() : ''
 
   return useQuery({
-    queryKey: tradingQueryKeys.salesOrders(page, pageSize, normalizedWithLines, normalizedStatus),
+    queryKey: tradingQueryKeys.salesOrders(
+      page,
+      pageSize,
+      normalizedWithLines,
+      normalizedStatus,
+      normalizedCustomerID,
+      normalizedKeyword,
+      normalizedPaymentMethod,
+      normalizedPaymentTerm
+    ),
     queryFn: () =>
       getSalesOrders({
         page,
         pageSize,
         withLines: normalizedWithLines,
         status: normalizedStatus,
+        customerId: normalizedCustomerID || undefined,
+        keyword: normalizedKeyword || undefined,
+        paymentMethod: normalizedPaymentMethod || undefined,
+        paymentTerm: normalizedPaymentTerm || undefined,
       }),
     ...queryOptions,
   })

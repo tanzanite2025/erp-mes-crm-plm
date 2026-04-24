@@ -9,7 +9,6 @@ import (
 type CreateSalesReturnInput struct {
 	SalesOrderID  string
 	Operator      string
-	TransportMode string
 	TrackingNo    string
 	Carrier       string
 	ShippedAt     *time.Time
@@ -24,16 +23,35 @@ type CreateSalesReturnInput struct {
 	Lines         []CreateSalesReturnLineInput
 }
 
+type PatchSalesReturnInput struct {
+	SalesReturnID string
+	Operator      string
+	IssueCategory string
+	Reason        string
+	Remarks       string
+	Evidences     []OrderEvidencePayload
+	ReturnDate    time.Time
+	ReturnDateRaw string
+	Lines         []CreateSalesReturnLineInput
+}
+
 type PatchSalesReturnLogisticsInput struct {
 	SalesReturnID string
 	Operator      string
-	TransportMode string
 	TrackingNo    string
 	Carrier       string
 	ShippedAt     *time.Time
 	ShippedAtRaw  string
 	LogisticsNote string
 	Status        string
+}
+
+type PatchSalesReturnActualAmountEntryInput struct {
+	SalesReturnID               string
+	Operator                    string
+	ActualReturnAmount          float64
+	ActualReturnAmountNote      string
+	ActualReturnAmountEvidences []OrderEvidencePayload
 }
 
 type CreateSalesReturnLineInput struct {
@@ -66,7 +84,6 @@ func MapCreateSalesReturnRequestToInput(request CreateSalesReturnRequest, salesO
 	return CreateSalesReturnInput{
 		SalesOrderID:  salesOrderID,
 		Operator:      operator,
-		TransportMode: request.TransportMode,
 		TrackingNo:    request.TrackingNo,
 		Carrier:       request.Carrier,
 		ShippedAtRaw:  request.ShippedAt,
@@ -80,11 +97,45 @@ func MapCreateSalesReturnRequestToInput(request CreateSalesReturnRequest, salesO
 	}
 }
 
+func MapPatchSalesReturnActualAmountEntryRequestToInput(request PatchSalesReturnActualAmountEntryRequest, salesReturnID string, operator string) PatchSalesReturnActualAmountEntryInput {
+	return PatchSalesReturnActualAmountEntryInput{
+		SalesReturnID:               salesReturnID,
+		Operator:                    operator,
+		ActualReturnAmount:          request.ActualReturnAmount,
+		ActualReturnAmountNote:      request.ActualReturnAmountNote,
+		ActualReturnAmountEvidences: request.ActualReturnAmountEvidences,
+	}
+}
+
+func MapPatchSalesReturnRequestToInput(request PatchSalesReturnRequest, salesReturnID string, operator string) PatchSalesReturnInput {
+	lines := make([]CreateSalesReturnLineInput, 0, len(request.Lines))
+	for _, line := range request.Lines {
+		lines = append(lines, CreateSalesReturnLineInput{
+			SalesOrderLineID: line.SalesOrderLineID,
+			Quantity:         line.Quantity,
+			Price:            line.Price,
+			IssueCategory:    line.IssueCategory,
+			Reason:           line.Reason,
+			Evidences:        line.Evidences,
+		})
+	}
+
+	return PatchSalesReturnInput{
+		SalesReturnID: salesReturnID,
+		Operator:      operator,
+		IssueCategory: request.IssueCategory,
+		Reason:        request.Reason,
+		Remarks:       request.Remarks,
+		Evidences:     request.Evidences,
+		ReturnDateRaw: request.ReturnDate,
+		Lines:         lines,
+	}
+}
+
 func MapPatchSalesReturnLogisticsRequestToInput(request PatchSalesReturnLogisticsRequest, salesReturnID string, operator string) PatchSalesReturnLogisticsInput {
 	return PatchSalesReturnLogisticsInput{
 		SalesReturnID: salesReturnID,
 		Operator:      operator,
-		TransportMode: request.TransportMode,
 		TrackingNo:    request.TrackingNo,
 		Carrier:       request.Carrier,
 		ShippedAtRaw:  request.ShippedAt,
@@ -119,42 +170,42 @@ func MapSalesReturnToResponse(record models.SalesReturn) SalesReturnResponse {
 		lines = append(lines, mapSalesReturnLineToResponse(line))
 	}
 
-	transportMode := normalizeSalesReturnTransportMode(record.TransportMode)
-	if transportMode == "" {
-		transportMode = SalesReturnTransportModeOther
-	}
 	status := normalizeSalesReturnStatus(record.Status)
 	if status == "" {
 		status = SalesReturnStatusCreated
 	}
 
 	return SalesReturnResponse{
-		ID:                  record.ID,
-		ReturnNo:            record.ReturnNo,
-		SalesOrderID:        record.SalesOrderID,
-		SalesOrderNo:        record.SalesOrderNo,
-		CustomerID:          record.CustomerID,
-		CustomerName:        record.CustomerName,
-		Status:              status,
-		TransportMode:       transportMode,
-		TrackingNo:          record.TrackingNo,
-		Carrier:             record.Carrier,
-		ShippedAt:           record.ShippedAt,
-		TrackingFilledAt:    record.TrackingFilledAt,
-		TrackingFilledBy:    record.TrackingFilledBy,
-		LogisticsNote:       record.LogisticsNote,
-		PendingTrackingFill: deriveSalesReturnPendingTracking(transportMode, record.TrackingNo, status),
-		ReturnDate:          record.ReturnDate,
-		IssueCategory:       record.IssueCategory,
-		Reason:              record.Reason,
-		Remarks:             record.Remarks,
-		Evidences:           decodeOrderEvidences(record.Evidences),
-		Operator:            record.Operator,
-		TotalQuantity:       math.Round(record.TotalQuantity*100) / 100,
-		TotalAmount:         math.Round(record.TotalAmount*100) / 100,
-		CreatedAt:           record.CreatedAt,
-		UpdatedAt:           record.UpdatedAt,
-		Lines:               lines,
+		ID:                           record.ID,
+		ReturnNo:                     record.ReturnNo,
+		SalesOrderID:                 record.SalesOrderID,
+		SalesOrderNo:                 record.SalesOrderNo,
+		CustomerID:                   record.CustomerID,
+		CustomerName:                 record.CustomerName,
+		Status:                       status,
+		TrackingNo:                   record.TrackingNo,
+		Carrier:                      record.Carrier,
+		ShippedAt:                    record.ShippedAt,
+		TrackingFilledAt:             record.TrackingFilledAt,
+		TrackingFilledBy:             record.TrackingFilledBy,
+		LogisticsNote:                record.LogisticsNote,
+		PendingTrackingFill:          deriveSalesReturnPendingTracking(record.TrackingNo, status),
+		ReturnDate:                   record.ReturnDate,
+		IssueCategory:                record.IssueCategory,
+		Reason:                       record.Reason,
+		Remarks:                      record.Remarks,
+		ActualReturnAmount:           math.Round(record.ActualReturnAmount*100) / 100,
+		ActualReturnAmountNote:       record.ActualReturnAmountNote,
+		ActualReturnAmountEvidences:  decodeOrderEvidences(record.ActualReturnAmountEvidences),
+		ActualReturnAmountRecordedAt: record.ActualReturnAmountRecordedAt,
+		ActualReturnAmountRecordedBy: record.ActualReturnAmountRecordedBy,
+		Evidences:                    decodeOrderEvidences(record.Evidences),
+		Operator:                     record.Operator,
+		TotalQuantity:                math.Round(record.TotalQuantity*100) / 100,
+		TotalAmount:                  math.Round(record.TotalAmount*100) / 100,
+		CreatedAt:                    record.CreatedAt,
+		UpdatedAt:                    record.UpdatedAt,
+		Lines:                        lines,
 	}
 }
 

@@ -3,9 +3,11 @@ package services
 import "xdfc-server/models"
 
 type receivableOrderSettlementBundle struct {
-	recordsByOrderID        map[string][]models.ReceiptRecord
-	allocationsByOrderID    map[string][]models.SettlementAllocation
-	receivedAmountByOrderID map[string]float64
+	recordsByOrderID                map[string][]models.ReceiptRecord
+	allocationsByOrderID            map[string][]models.SettlementAllocation
+	receivedAmountByOrderID         map[string]float64
+	actualAmountRecordsByOrderID    map[string][]models.SalesReturnActualAmountRecord
+	actualAmountAdjustmentByOrderID map[string]float64
 }
 
 type receivableAllocationTarget struct {

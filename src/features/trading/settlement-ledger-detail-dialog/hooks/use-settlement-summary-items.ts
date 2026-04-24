@@ -16,7 +16,7 @@ interface UseSettlementSummaryItemsParams<
   isCurrencyLoading: boolean
   config: Pick<
     SettlementLedgerDetailDialogConfig<TDetail, TLocalLedger>,
-    'partnerLabel' | 'amountLabel' | 'getDetailPartnerName'
+    'partnerLabel' | 'amountLabel' | 'getDetailPartnerName' | 'summaryAmountLabel' | 'getDetailSummaryAmount'
   >
 }
 
@@ -32,7 +32,13 @@ export function useSettlementSummaryItems<
     () => [
       { label: '单据编号', value: detail?.documentNo ?? '-' },
       { label: config.partnerLabel, value: detail ? config.getDetailPartnerName(detail) : '-' },
-      { label: '开票金额', value: '待接入' },
+      {
+        label: config.summaryAmountLabel ?? '单据金额',
+        value:
+          detail && config.getDetailSummaryAmount
+            ? formatSettlementMoney(config.getDetailSummaryAmount(detail), detail.currency)
+            : '-',
+      },
       {
         label: `${config.amountLabel}金额`,
         value: detail ? formatSettlementMoney(detail.outstandingAmount, detail.currency) : '-',

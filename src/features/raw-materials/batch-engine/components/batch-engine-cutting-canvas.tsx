@@ -89,9 +89,15 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
 
   useEffect(() => {
     if (size.width <= 0 || size.height <= 0) return
-    setViewport(createFitViewport(layout, size.width, size.height))
-    setHoveredZoneId('')
-    setSelectedZoneId('')
+
+    const nextViewport = createFitViewport(layout, size.width, size.height)
+    const frame = window.requestAnimationFrame(() => {
+      setViewport(nextViewport)
+      setHoveredZoneId('')
+      setSelectedZoneId('')
+    })
+
+    return () => window.cancelAnimationFrame(frame)
   }, [layout, size.height, size.width])
 
   useEffect(() => {
@@ -137,15 +143,6 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
         offsetY: pointY - world.y * nextScale,
       }
     })
-  }
-
-  const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
-    event.preventDefault()
-    const rect = event.currentTarget.getBoundingClientRect()
-    const pointX = event.clientX - rect.left
-    const pointY = event.clientY - rect.top
-    const factor = event.deltaY < 0 ? 1.1 : 0.9
-    zoomAtPoint(pointX, pointY, factor)
   }
 
   const updateHoverZone = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -208,7 +205,7 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
   }
 
   return (
-    <div className='grid h-full min-h-0 gap-3'>
+    <div className='grid h-full min-h-0 gap-2'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600'>
           <span className='rounded-full border border-slate-300 bg-white px-3 py-1'>
@@ -249,15 +246,14 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
         </div>
       </div>
 
-      <div className='grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]'>
+      <div className='grid min-h-0 gap-2 xl:grid-cols-[minmax(0,1fr)_300px]'>
         <div
           ref={wrapperRef}
-          className='relative min-h-[380px] overflow-hidden rounded-[18px] border border-dashed border-slate-300/70 bg-slate-950/95'
+          className='relative min-h-[320px] overflow-hidden rounded-[18px] border border-dashed border-slate-300/70 bg-slate-950/95'
         >
           <canvas
             ref={canvasRef}
             className='block h-full w-full cursor-grab touch-none active:cursor-grabbing'
-            onWheel={handleWheel}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -277,11 +273,11 @@ function ZoneInspector({ zone }: { zone: StripLayoutZone | null }) {
 
   if (!zone) {
     return (
-      <aside className='rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-4'>
+      <aside className='rounded-[18px] border border-dashed border-slate-300 bg-slate-50/80 p-3'>
         <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
           {t('rawMaterials.batchEngine.canvas.selection')}
         </p>
-        <p className='mt-2 text-sm font-semibold text-slate-700'>
+        <p className='mt-1.5 text-sm font-semibold text-slate-700'>
           {t('rawMaterials.batchEngine.canvas.hoverHint')}
         </p>
       </aside>
@@ -289,14 +285,14 @@ function ZoneInspector({ zone }: { zone: StripLayoutZone | null }) {
   }
 
   return (
-    <aside className='rounded-[18px] border border-slate-200 bg-white p-4'>
+    <aside className='rounded-[18px] border border-slate-200 bg-white p-3'>
       <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
         {t('rawMaterials.batchEngine.canvas.selection')}
       </p>
-      <p className='mt-2 text-base font-black text-slate-900'>{zone.label}</p>
+      <p className='mt-1.5 text-base font-black text-slate-900'>{zone.label}</p>
       <p className='mt-1 text-xs font-semibold text-slate-600'>{zone.detail || '--'}</p>
 
-      <div className='mt-4 grid gap-2 text-xs font-semibold text-slate-700'>
+      <div className='mt-3 grid gap-1.5 text-xs font-semibold text-slate-700'>
         <InspectorRow label={t('rawMaterials.batchEngine.canvas.type')} value={zone.kind} />
         <InspectorRow
           label={t('rawMaterials.batchEngine.canvas.position')}
@@ -313,7 +309,7 @@ function ZoneInspector({ zone }: { zone: StripLayoutZone | null }) {
 
 function InspectorRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className='flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2'>
+    <div className='flex items-center justify-between rounded-xl bg-slate-50 px-2.5 py-1.5'>
       <span className='text-slate-500'>{label}</span>
       <span className='font-black text-slate-800'>{value}</span>
     </div>

@@ -43,7 +43,11 @@ func ListSalesReturns(query SalesReturnListQuery) (SalesReturnListResponse, erro
 	statusFilterRaw := strings.TrimSpace(query.StatusFilterRaw)
 	statusFilter := normalizeSalesReturnStatus(statusFilterRaw)
 	if statusFilterRaw != "" && !strings.EqualFold(statusFilterRaw, "all") && statusFilter != "" {
-		tx = tx.Where("status = ?", statusFilter)
+		if statusFilter == SalesReturnStatusClosed {
+			tx = tx.Where("status IN ?", []string{SalesReturnStatusClosed, SalesReturnStatusCompleted})
+		} else {
+			tx = tx.Where("status = ?", statusFilter)
+		}
 	}
 
 	keyword := strings.TrimSpace(query.Keyword)
@@ -108,22 +112,16 @@ func CreateSalesReturn(input CreateSalesReturnInput) (CreateSalesReturnResponse,
 	if input.ReturnDate.IsZero() {
 		input.ReturnDate = time.Now()
 	}
-	transportMode := normalizeSalesReturnTransportMode(input.TransportMode)
-	if !isSalesReturnTransportModeKnown(transportMode) {
-		return CreateSalesReturnResponse{}, errors.New("transportMode is invalid")
-	}
 	shippedAt, err := parseOptionalSalesReturnTime(input.ShippedAtRaw, "shippedAt")
 	if err != nil {
 		return CreateSalesReturnResponse{}, err
 	}
 
 	input.Operator = strings.TrimSpace(input.Operator)
-	input.TransportMode = transportMode
 	input.IssueCategory = strings.TrimSpace(input.IssueCategory)
 	input.Reason = strings.TrimSpace(input.Reason)
 	input.Remarks = strings.TrimSpace(input.Remarks)
 	input.TrackingNo, input.Carrier, input.ShippedAt, input.LogisticsNote = normalizeSalesReturnLogisticsPayload(
-		input.TransportMode,
 		input.TrackingNo,
 		input.Carrier,
 		shippedAt,
@@ -149,49 +147,118 @@ func CreateSalesReturn(input CreateSalesReturnInput) (CreateSalesReturnResponse,
 	return response, nil
 }
 
+func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) {
+	salesReturnID := strings.TrimSpace(input.SalesReturnID)
+	if salesReturnID == "" {
+		return SalesReturnResponse{}, errors.New("sales return id is required")
+	}
+	if len(input.Lines) == 0 {
+		return SalesReturnResponse{}, errors.New("sales return lines are required")
+	}
+	if strings.TrimSpace(input.ReturnDateRaw) != "" {
+		parsed, err := time.Parse(time.RFC3339, strings.TrimSpace(input.ReturnDateRaw))
+		if err != nil {
+			return SalesReturnResponse{}, errors.New("returnDate 格式错误，需为 RFC3339")
+		}
+		input.ReturnDate = parsed
+	}
+	input.Operator = strings.TrimSpace(input.Operator)
+	input.IssueCategory = strings.TrimSpace(input.IssueCategory)
+	input.Reason = strings.TrimSpace(input.Reason)
+	input.Remarks = strings.TrimSpace(input.Remarks)
+	if input.Operator == "" {
+		input.Operator = "unknown"
+	}
+
+	var response SalesReturnResponse
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		var record models.SalesReturn
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").First(&record, "id = ?", salesReturnID).Error; err != nil {
+			return err
+		}
+
+		status := normalizeSalesReturnStatus(record.Status)
+		if status != SalesReturnStatusCreated && status != SalesReturnStatusInTransit {
+			return errors.New("当前退货单状态不允许修改退货主体")
+		}
+
+		order, err := loadSalesReturnOrderForUpdate(tx, record.SalesOrderID)
+		if err != nil {
+			return err
+		}
+		if input.ReturnDate.IsZero() {
+			input.ReturnDate = record.ReturnDate
+		}
+
+		returnedQuantityMap, err := loadSalesReturnReturnedQuantityMap(tx, order.Lines, record.ID)
+		if err != nil {
+			return err
+		}
+		lines, totalQty, totalAmount, err := buildSalesReturnLines(order, returnedQuantityMap, input.Lines)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Exec("DELETE FROM sales_return_lines WHERE sales_return_id = ?", salesReturnID).Error; err != nil {
+			return err
+		}
+		for index := range lines {
+			lines[index].SalesReturnID = salesReturnID
+		}
+		if len(lines) > 0 {
+			if err := tx.Create(&lines).Error; err != nil {
+				return err
+			}
+		}
+
+		record.ReturnDate = input.ReturnDate
+		record.IssueCategory = input.IssueCategory
+		record.Reason = input.Reason
+		record.Remarks = input.Remarks
+		record.Evidences = encodeOrderEvidences(input.Evidences)
+		record.Operator = input.Operator
+		record.TotalQuantity = math.Round(totalQty*100) / 100
+		record.TotalAmount = math.Round(totalAmount*100) / 100
+		record.Lines = nil
+		if err := tx.Model(&models.SalesReturn{}).Where("id = ?", salesReturnID).Updates(map[string]any{
+			"return_date":    record.ReturnDate,
+			"issue_category": record.IssueCategory,
+			"reason":         record.Reason,
+			"remarks":        record.Remarks,
+			"evidences":      record.Evidences,
+			"operator":       record.Operator,
+			"total_quantity": record.TotalQuantity,
+			"total_amount":   record.TotalAmount,
+		}).Error; err != nil {
+			return err
+		}
+
+		var reloaded models.SalesReturn
+		if err := tx.Preload("Lines").First(&reloaded, "id = ?", record.ID).Error; err != nil {
+			return err
+		}
+		response = MapSalesReturnToResponse(reloaded)
+		return nil
+	})
+	if err != nil {
+		return SalesReturnResponse{}, err
+	}
+
+	return response, nil
+}
+
 func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSalesReturnResult, error) {
 	if tx == nil {
 		return CreateSalesReturnResult{}, errors.New("transaction is required")
 	}
 
-	var order models.SalesOrder
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-		Preload("Lines").
-		Where("id = ? AND is_deleted = ?", strings.TrimSpace(input.SalesOrderID), false).
-		First(&order).Error; err != nil {
+	order, err := loadSalesReturnOrderForUpdate(tx, input.SalesOrderID)
+	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-
-	lineMap := make(map[uint]models.SalesOrderLine, len(order.Lines))
-	for _, line := range order.Lines {
-		lineMap[line.ID] = line
-	}
-
-	returnedQuantityMap := make(map[uint]float64)
-	if len(order.Lines) > 0 {
-		lineIDs := make([]uint, 0, len(order.Lines))
-		for _, line := range order.Lines {
-			lineIDs = append(lineIDs, line.ID)
-		}
-
-		type aggregatedReturnedQuantityRow struct {
-			SalesOrderLineID uint    `gorm:"column:sales_order_line_id"`
-			ReturnedQuantity float64 `gorm:"column:returned_quantity"`
-		}
-
-		var rows []aggregatedReturnedQuantityRow
-		if err := tx.Table("sales_return_lines AS srl").
-			Select("srl.sales_order_line_id AS sales_order_line_id, COALESCE(SUM(srl.quantity), 0) AS returned_quantity").
-			Joins("JOIN sales_returns AS sr ON sr.id = srl.sales_return_id").
-			Where("srl.sales_order_line_id IN ? AND sr.deleted_at IS NULL", lineIDs).
-			Group("srl.sales_order_line_id").
-			Scan(&rows).Error; err != nil {
-			return CreateSalesReturnResult{}, err
-		}
-
-		for _, row := range rows {
-			returnedQuantityMap[row.SalesOrderLineID] = row.ReturnedQuantity
-		}
+	returnedQuantityMap, err := loadSalesReturnReturnedQuantityMap(tx, order.Lines, "")
+	if err != nil {
+		return CreateSalesReturnResult{}, err
 	}
 	if guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, nil); !guard.Allowed {
 		return CreateSalesReturnResult{}, guard.Err()
@@ -201,7 +268,11 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
-	resolvedStatus, err := resolveSalesReturnLifecycleStatus(SalesReturnStatusCreated, "", input.TransportMode, input.TrackingNo)
+	resolvedStatus, err := resolveSalesReturnLifecycleStatus(SalesReturnStatusCreated, "", input.TrackingNo)
+	if err != nil {
+		return CreateSalesReturnResult{}, err
+	}
+	lines, totalQty, totalAmount, err := buildSalesReturnLines(order, returnedQuantityMap, input.Lines)
 	if err != nil {
 		return CreateSalesReturnResult{}, err
 	}
@@ -214,7 +285,6 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 		CustomerID:    order.CustomerID,
 		CustomerName:  order.CustomerName,
 		Status:        resolvedStatus,
-		TransportMode: input.TransportMode,
 		ReturnDate:    input.ReturnDate,
 		IssueCategory: input.IssueCategory,
 		Reason:        input.Reason,
@@ -222,34 +292,106 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 		Evidences:     encodeOrderEvidences(input.Evidences),
 		Operator:      input.Operator,
 	}
+	applySalesReturnLogisticsFields(&record, input.TrackingNo, input.Carrier, input.ShippedAt, input.LogisticsNote, input.Operator, time.Now())
+	record.TotalQuantity = math.Round(totalQty*100) / 100
+	record.TotalAmount = math.Round(totalAmount*100) / 100
+	for index := range lines {
+		lines[index].SalesReturnID = record.ID
+	}
+	record.Lines = lines
 
-	usedLineIDs := make(map[uint]struct{}, len(input.Lines))
-	lines := make([]models.SalesReturnLine, 0, len(input.Lines))
+	if err := tx.Create(&record).Error; err != nil {
+		return CreateSalesReturnResult{}, err
+	}
+	if err := tx.Preload("Lines").First(&record, "id = ?", record.ID).Error; err != nil {
+		return CreateSalesReturnResult{}, err
+	}
+
+	return CreateSalesReturnResult{
+		SalesReturn: record,
+		SalesOrder:  order,
+	}, nil
+}
+
+func loadSalesReturnOrderForUpdate(tx *gorm.DB, salesOrderID string) (models.SalesOrder, error) {
+	var order models.SalesOrder
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("Lines").
+		Where("id = ? AND is_deleted = ?", strings.TrimSpace(salesOrderID), false).
+		First(&order).Error; err != nil {
+		return models.SalesOrder{}, err
+	}
+	return order, nil
+}
+
+func loadSalesReturnReturnedQuantityMap(tx *gorm.DB, orderLines []models.SalesOrderLine, excludedSalesReturnID string) (map[uint]float64, error) {
+	returnedQuantityMap := make(map[uint]float64)
+	if len(orderLines) == 0 {
+		return returnedQuantityMap, nil
+	}
+
+	lineIDs := make([]uint, 0, len(orderLines))
+	for _, line := range orderLines {
+		lineIDs = append(lineIDs, line.ID)
+	}
+
+	type aggregatedReturnedQuantityRow struct {
+		SalesOrderLineID uint    `gorm:"column:sales_order_line_id"`
+		ReturnedQuantity float64 `gorm:"column:returned_quantity"`
+	}
+
+	query := tx.Table("sales_return_lines AS srl").
+		Select("srl.sales_order_line_id AS sales_order_line_id, COALESCE(SUM(srl.quantity), 0) AS returned_quantity").
+		Joins("JOIN sales_returns AS sr ON sr.id = srl.sales_return_id").
+		Where("srl.sales_order_line_id IN ? AND sr.deleted_at IS NULL", lineIDs)
+	if strings.TrimSpace(excludedSalesReturnID) != "" {
+		query = query.Where("sr.id <> ?", strings.TrimSpace(excludedSalesReturnID))
+	}
+
+	var rows []aggregatedReturnedQuantityRow
+	if err := query.Group("srl.sales_order_line_id").Scan(&rows).Error; err != nil {
+		return returnedQuantityMap, err
+	}
+	for _, row := range rows {
+		returnedQuantityMap[row.SalesOrderLineID] = row.ReturnedQuantity
+	}
+
+	return returnedQuantityMap, nil
+}
+
+func buildSalesReturnLines(order models.SalesOrder, returnedQuantityMap map[uint]float64, inputLines []CreateSalesReturnLineInput) ([]models.SalesReturnLine, float64, float64, error) {
+	lineMap := make(map[uint]models.SalesOrderLine, len(order.Lines))
+	for _, line := range order.Lines {
+		lineMap[line.ID] = line
+	}
+
+	usedLineIDs := make(map[uint]struct{}, len(inputLines))
+	lines := make([]models.SalesReturnLine, 0, len(inputLines))
 	totalQty := 0.0
 	totalAmount := 0.0
 
-	for _, item := range input.Lines {
+	for _, item := range inputLines {
 		if item.SalesOrderLineID == 0 {
-			return CreateSalesReturnResult{}, errors.New("sales order line id is required")
+			return nil, 0, 0, errors.New("sales order line id is required")
 		}
 		if item.Quantity <= 0 {
-			return CreateSalesReturnResult{}, errors.New("return quantity must be greater than zero")
+			return nil, 0, 0, errors.New("return quantity must be greater than zero")
 		}
 		if _, exists := usedLineIDs[item.SalesOrderLineID]; exists {
-			return CreateSalesReturnResult{}, errors.New("duplicate sales order return line")
+			return nil, 0, 0, errors.New("duplicate sales order return line")
 		}
 		usedLineIDs[item.SalesOrderLineID] = struct{}{}
 
 		orderLine, ok := lineMap[item.SalesOrderLineID]
 		if !ok {
-			return CreateSalesReturnResult{}, errors.New("sales order line not found")
+			return nil, 0, 0, errors.New("sales order line not found")
 		}
 
 		guard := statemachine.CanCreateSalesReturn(order, returnedQuantityMap, map[uint]float64{
 			item.SalesOrderLineID: item.Quantity,
 		})
 		if !guard.Allowed {
-			return CreateSalesReturnResult{}, guard.Err()
+			return nil, 0, 0, guard.Err()
 		}
 
 		price := item.Price
@@ -257,7 +399,7 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 			price = orderLine.Price
 		}
 		if price < 0 {
-			return CreateSalesReturnResult{}, errors.New("return price must be greater than or equal to zero")
+			return nil, 0, 0, errors.New("return price must be greater than or equal to zero")
 		}
 
 		amount := math.Round(item.Quantity*price*100) / 100
@@ -282,27 +424,10 @@ func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSales
 	}
 
 	if len(lines) == 0 {
-		return CreateSalesReturnResult{}, errors.New("sales return lines are required")
+		return nil, 0, 0, errors.New("sales return lines are required")
 	}
 
-	applySalesReturnLogisticsFields(&record, input.TransportMode, input.TrackingNo, input.Carrier, input.ShippedAt, input.LogisticsNote, input.Operator, time.Now())
-
-	record.TotalQuantity = math.Round(totalQty*100) / 100
-	record.TotalAmount = math.Round(totalAmount*100) / 100
-	record.Lines = lines
-
-	if err := tx.Create(&record).Error; err != nil {
-		return CreateSalesReturnResult{}, err
-	}
-
-	if err := tx.Preload("Lines").First(&record, "id = ?", record.ID).Error; err != nil {
-		return CreateSalesReturnResult{}, err
-	}
-
-	return CreateSalesReturnResult{
-		SalesReturn: record,
-		SalesOrder:  order,
-	}, nil
+	return lines, totalQty, totalAmount, nil
 }
 
 func generateSalesReturnNoTx(tx *gorm.DB, now time.Time) (string, error) {

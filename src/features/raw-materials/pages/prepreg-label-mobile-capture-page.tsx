@@ -1,32 +1,30 @@
 import { useMemo, useRef, useState } from 'react'
-import { Camera, CheckCircle2, FileText, ImageIcon, Loader2, Wand2 } from 'lucide-react'
+import {
+  Camera,
+  CheckCircle2,
+  FileText,
+  ImageIcon,
+  Loader2,
+  Wand2,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { useLanguage } from '@/context/language-provider'
 import type { PrepregFormState } from '../data/prepreg-material-spec-schema'
 import { PrepregLabelCaptureSessionService } from '../services/prepreg-label-capture-session-service'
 import { parsePrepregLabelText } from '../utils/prepreg-label-parser'
-
-const FIELD_LABELS: Partial<Record<keyof PrepregFormState, string>> = {
-  code: '产品编号',
-  name: '产品名称',
-  supplierProductCode: '供应商型号',
-  resinContentPercent: '树脂含量',
-  widthMm: '幅宽',
-  areaWeightGsm: '克重',
-  nominalAreaM2: '面积',
-  supplierBatchNo: '批次',
-  rollNo: '卷/箱号',
-  productionDate: '生产日期',
-}
-FIELD_LABELS.resinModel = '树脂型号'
 
 interface PrepregLabelMobileCapturePageProps {
   sessionId: string
   token: string
 }
 
-export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabelMobileCapturePageProps) {
+export function PrepregLabelMobileCapturePage({
+  sessionId,
+  token,
+}: PrepregLabelMobileCapturePageProps) {
+  const { t } = useLanguage()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [rawText, setRawText] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
@@ -35,6 +33,21 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+
+  const fieldLabels = useMemo<Partial<Record<keyof PrepregFormState, string>>>(
+    () => ({
+      code: t('rawMaterials.catalog.form.code.label'),
+      name: t('rawMaterials.catalog.form.name.label'),
+      supplierProductCode: t('rawMaterials.catalog.form.supplier.label'),
+      resinContentBatchRaw: t('rawMaterials.catalog.form.resinContentBatchRaw.label'),
+      widthMm: t('rawMaterials.catalog.form.widthMm.label'),
+      nominalAreaM2: t('rawMaterials.catalog.form.nominalAreaM2.label'),
+      inspector: t('rawMaterials.catalog.form.inspector.label'),
+      boxNo: t('rawMaterials.catalog.form.boxNo.label'),
+      productionDate: t('rawMaterials.catalog.form.productionDate.label'),
+    }),
+    [t]
+  )
 
   const fields = useMemo(() => parsePrepregLabelText(rawText), [rawText])
   const entries = Object.entries(fields) as Array<[keyof PrepregFormState, string]>
@@ -55,11 +68,11 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
 
   const handleSubmit = async () => {
     if (!token) {
-      setError('采集链接缺少口令，请回到电脑端重新生成。')
+      setError(t('rawMaterials.catalog.mobileCapture.errors.missingToken'))
       return
     }
     if (entries.length === 0) {
-      setError('还没有解析到字段，请先输入或粘贴标签文字。')
+      setError(t('rawMaterials.catalog.mobileCapture.errors.emptyFields'))
       return
     }
     setSubmitting(true)
@@ -74,7 +87,11 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
       })
       setSubmitted(true)
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : '提交失败，请重试。')
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : t('rawMaterials.catalog.mobileCapture.errors.submitFailed')
+      )
     } finally {
       setSubmitting(false)
     }
@@ -87,9 +104,11 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
           <div className='flex size-20 items-center justify-center rounded-[28px] bg-emerald-500/10 text-emerald-600'>
             <CheckCircle2 className='size-10' />
           </div>
-          <h1 className='mt-6 text-3xl font-black italic tracking-tighter'>已提交</h1>
+          <h1 className='mt-6 text-3xl font-black italic tracking-tighter'>
+            {t('rawMaterials.catalog.mobileCapture.submitted.title')}
+          </h1>
           <p className='mt-3 text-sm font-semibold leading-6 text-muted-foreground'>
-            电脑端预浸料弹窗会自动接收识别结果，请回到电脑端核对后保存。
+            {t('rawMaterials.catalog.mobileCapture.submitted.description')}
           </p>
         </section>
       </main>
@@ -105,9 +124,11 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
               <Camera className='size-7' />
             </div>
             <div>
-              <h1 className='text-2xl font-black italic tracking-tighter'>预浸料标签采集</h1>
+              <h1 className='text-2xl font-black italic tracking-tighter'>
+                {t('rawMaterials.catalog.mobileCapture.title')}
+              </h1>
               <p className='mt-1 text-xs font-bold leading-5 text-muted-foreground'>
-                拍照留底，粘贴或输入标签文字，系统会提取固定字段。
+                {t('rawMaterials.catalog.mobileCapture.description')}
               </p>
             </div>
           </div>
@@ -128,11 +149,15 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
             className='flex min-h-[230px] w-full items-center justify-center overflow-hidden rounded-3xl border border-dashed border-muted-foreground/25 bg-muted/20'
           >
             {previewUrl ? (
-              <img src={previewUrl} alt='标签照片预览' className='max-h-[280px] w-full object-contain' />
+              <img
+                src={previewUrl}
+                alt={t('rawMaterials.catalog.mobileCapture.previewAlt')}
+                className='max-h-[280px] w-full object-contain'
+              />
             ) : (
               <div className='flex flex-col items-center gap-3 text-sm font-black text-muted-foreground'>
                 <ImageIcon className='size-10 opacity-60' />
-                拍照/上传标签
+                {t('rawMaterials.catalog.mobileCapture.imagePlaceholder')}
               </div>
             )}
           </button>
@@ -141,23 +166,30 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
         <div className='rounded-[28px] border border-dashed border-muted-foreground/20 bg-background p-4 shadow-sm'>
           <div className='mb-3 flex items-center gap-2 text-sm font-black'>
             <FileText className='size-4 text-primary' />
-            标签文字
+            {t('rawMaterials.catalog.mobileCapture.textTitle')}
           </div>
           <Textarea
             value={rawText}
             onChange={(event) => setRawText(event.target.value)}
-            placeholder='把手机 OCR / 相册识别出来的文字粘贴到这里，也可以手动输入：产品编号 CFS-247-75，37% / 260/204，1000MM，150㎡，20260306AM，箱号 23，2026年3月6日。'
+            placeholder={t('rawMaterials.catalog.mobileCapture.textPlaceholder')}
             className='min-h-[160px] rounded-2xl text-base font-semibold leading-7'
           />
           <div className='mt-3 flex flex-wrap gap-2'>
             {entries.length === 0 ? (
-              <Badge variant='outline' className='rounded-full border-dashed text-[10px] font-black text-muted-foreground'>
-                暂无可填字段
+              <Badge
+                variant='outline'
+                className='rounded-full border-dashed text-[10px] font-black text-muted-foreground'
+              >
+                {t('rawMaterials.catalog.ocr.emptyParsedFields')}
               </Badge>
             ) : (
               entries.map(([key, value]) => (
-                <Badge key={key} variant='outline' className='rounded-full text-[10px] font-black'>
-                  {FIELD_LABELS[key] || key}: {value}
+                <Badge
+                  key={key}
+                  variant='outline'
+                  className='rounded-full text-[10px] font-black'
+                >
+                  {fieldLabels[key] || key}: {value}
                 </Badge>
               ))
             )}
@@ -176,8 +208,12 @@ export function PrepregLabelMobileCapturePage({ sessionId, token }: PrepregLabel
           disabled={submitting}
           className='h-14 w-full rounded-full text-sm font-black tracking-widest'
         >
-          {submitting ? <Loader2 className='size-4 animate-spin' /> : <Wand2 className='size-4' />}
-          提交到电脑端
+          {submitting ? (
+            <Loader2 className='size-4 animate-spin' />
+          ) : (
+            <Wand2 className='size-4' />
+          )}
+          {t('rawMaterials.catalog.mobileCapture.actions.submit')}
         </Button>
       </section>
     </main>

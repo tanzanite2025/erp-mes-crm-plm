@@ -185,7 +185,7 @@ export async function exportCuttingPlanPrintWorkbook(plan: CuttingPlanInput) {
   sheet.getCell('H2').value = escapeFormula(plan.revisionNo || '--')
   sheet.getCell('G3').value = '生效日期'
   sheet.getCell('H3').value = escapeFormula(plan.effectiveDate || '--')
-  sheet.getCell('A4').value = '技术文件'
+  sheet.getCell('A4').value = `技术文件（预浸料：${escapeFormula(plan.prepregSpecLabel || '--')}）`
   sheet.getCell('A5').value = `碳丝型号：${escapeFormula(plan.carbonFiberModel || '--')}`
   sheet.getCell('D5').value = `树脂型号：${escapeFormula(plan.resinModel || '--')}`
   sheet.getCell('G5').value = `RC含量：${escapeFormula(plan.resinContentPercent || '--')}`
