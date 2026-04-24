@@ -37,7 +37,7 @@ export function NipplesTab() {
     const { t } = useLanguage()
     const queryClient = useQueryClient()
     const { runConfirmedAction } = useConfirmedActionFlow()
-    const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/nipples' })
+    const { highlightId } = useSearch({ from: '/_authenticated/engineering-reference/nipples' })
     const [searchTerm, setSearchTerm] = useState('')
     const [open, setOpen] = useState(false)
     const [currentRow, setCurrentRow] = useState<Nipple | undefined>(undefined)

@@ -1,4 +1,5 @@
-import { ChartColumnIncreasing, Scissors } from 'lucide-react'
+import { ChartColumnIncreasing, Maximize2, Scissors } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { formatCutSizeExpression } from '../../cut-size-library/data/cut-size-library-schema'
 import type { BatchEngineLegendItem, BatchEngineSimulation } from '../types'
@@ -6,6 +7,7 @@ import type { BatchEngineLegendItem, BatchEngineSimulation } from '../types'
 type BatchEngineSimulationStageProps = {
   legend: BatchEngineLegendItem[]
   simulation: BatchEngineSimulation
+  onOpenPreview: () => void
 }
 
 function getLegendToneClassName(tone: BatchEngineLegendItem['tone']) {
@@ -25,7 +27,7 @@ function getLegendToneClassName(tone: BatchEngineLegendItem['tone']) {
 
 export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProps) {
   const { t } = useLanguage()
-  const { legend, simulation } = props
+  const { legend, simulation, onOpenPreview } = props
 
   return (
     <section className='rounded-[28px] border border-cyan-300/55 bg-[linear-gradient(180deg,rgba(236,254,255,0.9),rgba(255,255,255,0.98))] p-4 shadow-[0_18px_50px_-34px_rgba(8,145,178,0.45)]'>
@@ -62,20 +64,34 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
         </div>
 
         <div className='rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-inner'>
-          <div className='flex items-center justify-between gap-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
             <div>
               <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
                 {t('rawMaterials.batchEngine.sections.stage.rollCanvasLabel')}
               </p>
               <p className='mt-1 text-sm font-semibold text-slate-800'>
                 {simulation.selectedUnit
-                  ? `尺寸单元: ${simulation.selectedUnit.code} / ${formatCutSizeExpression(simulation.selectedUnit) || '--'}`
+                  ? `${t('rawMaterials.batchEngine.sections.stage.unitPrefix')}: ${simulation.selectedUnit.code} / ${formatCutSizeExpression(simulation.selectedUnit) || '--'}`
                   : t('rawMaterials.batchEngine.sections.stage.rollCanvasHint')}
               </p>
             </div>
-            <div className='inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600'>
-              <ChartColumnIncreasing className='size-4 text-cyan-700' />
-              {simulation.ready ? '长条优先已计算' : t('rawMaterials.batchEngine.sections.stage.simulationStatus')}
+
+            <div className='flex items-center gap-2'>
+              <div className='inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600'>
+                <ChartColumnIncreasing className='size-4 text-cyan-700' />
+                {simulation.ready
+                  ? t('rawMaterials.batchEngine.sections.stage.computedStatus')
+                  : t('rawMaterials.batchEngine.sections.stage.simulationStatus')}
+              </div>
+              <Button
+                type='button'
+                variant='outline'
+                className='h-8 rounded-full px-3 text-xs font-black'
+                onClick={onOpenPreview}
+              >
+                <Maximize2 className='size-4' />
+                {t('rawMaterials.batchEngine.sections.stage.openCanvas')}
+              </Button>
             </div>
           </div>
 
@@ -83,14 +99,23 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             <div className='rounded-[18px] border border-cyan-400/30 bg-slate-950/70 p-4'>
               {!simulation.ready ? (
                 <div className='rounded-2xl border border-dashed border-cyan-500/40 bg-cyan-500/10 px-4 py-6 text-center text-sm font-semibold text-cyan-100/85'>
-                  {simulation.reason || '等待输入参数'}
+                  {simulation.reason || t('rawMaterials.batchEngine.sections.stage.pendingHint')}
                 </div>
               ) : (
                 <div className='space-y-4'>
                   <div className='grid gap-2 md:grid-cols-3'>
-                    <StatPill label='长条数量' value={`${simulation.stripsPerRoll}`} />
-                    <StatPill label='每条可切块' value={`${simulation.piecesPerStrip}`} />
-                    <StatPill label='可执行套数' value={`${simulation.executableSets}`} />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.stripCount')}
+                      value={`${simulation.stripsPerRoll}`}
+                    />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.piecesPerStrip')}
+                      value={`${simulation.piecesPerStrip}`}
+                    />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.executableSets')}
+                      value={`${simulation.executableSets}`}
+                    />
                   </div>
 
                   <div className='grid gap-3'>
@@ -101,7 +126,7 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
                             {strip.title}
                           </p>
                           <p className='text-[10px] font-black uppercase tracking-[0.16em] text-slate-200/90'>
-                            可切 {strip.pieceCount} 块
+                            {t('rawMaterials.batchEngine.sections.stage.pieceCountPrefix')} {strip.pieceCount}
                           </p>
                         </div>
                         <div className='mt-2 flex flex-wrap gap-2'>
@@ -124,8 +149,14 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
                   </div>
 
                   <div className='grid gap-2 md:grid-cols-2'>
-                    <StatPill label='余宽 (mm)' value={simulation.leftoverWidthMm.toFixed(1)} />
-                    <StatPill label='余长 (mm)' value={simulation.leftoverLengthMm.toFixed(1)} />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.leftoverWidth')}
+                      value={simulation.leftoverWidthMm.toFixed(1)}
+                    />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.leftoverLength')}
+                      value={simulation.leftoverLengthMm.toFixed(1)}
+                    />
                   </div>
                 </div>
               )}

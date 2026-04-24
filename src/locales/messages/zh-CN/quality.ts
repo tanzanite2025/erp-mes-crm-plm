@@ -1,11 +1,11 @@
 export const quality = {
   layout: {
-    title: '品质审计',
+    title: '品质基准',
     tabs: {
       standards: '品质标准',
-      abnormalities: '品质异常',
-      inspection: '产品检验',
-      specialBuy: '产品特采',
+      abnormalities: '异常处置',
+      inspection: '检验执行',
+      specialBuy: '特采放行',
       formulas: '检验公式',
     },
   },
@@ -173,8 +173,8 @@ export const quality = {
   },
   abnormalities: {
     page: {
-      title: '品质异常受控',
-      description: '生产缺陷与不合格项的系统化治理与全闭环追溯',
+      title: '异常处置',
+      description: '生产缺陷与不合格项的处置闭环、责任追踪与全程追溯',
       activeCriticals: '严重异常',
       openReports: '处理中',
       closedLooped: '已闭环',
@@ -200,7 +200,7 @@ export const quality = {
   },
   inspection: {
     page: {
-      title: '检验执行终端',
+      title: '检验执行',
       description: '进料、过程与成品检验的数字化执行工作空间',
       searchPlaceholder: '输入批号检索任务...',
       pendingLoad: '待处理任务',
@@ -222,8 +222,8 @@ export const quality = {
   },
   specialBuy: {
     page: {
-      title: '产品特采管理',
-      description: '针对轻微不合格但可让步接收的产品进行审批、追溯与风险评估',
+      title: '特采放行',
+      description: '针对可让步接收产品进行放行审批、追溯留档与风险评估',
       placeholder: '特采申请功能建设中',
     },
   },

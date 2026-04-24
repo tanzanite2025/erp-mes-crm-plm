@@ -35,6 +35,8 @@ import { apsScheduling } from './apsScheduling'
 import { errors } from './errors'
 import { rawMaterials } from './rawMaterials'
 import { codeCenter } from './codeCenter'
+import { productionQuality } from './productionQuality'
+import { productionArchitecture } from './productionArchitecture'
 
 export const enUSMessages = {
   common,
@@ -74,4 +76,6 @@ export const enUSMessages = {
   errors,
   rawMaterials,
   codeCenter,
+  productionQuality,
+  productionArchitecture,
 } as const

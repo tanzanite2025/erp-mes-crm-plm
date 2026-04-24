@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { Blocks } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
 import { BatchEngineControlPanel } from './components/batch-engine-control-panel'
+import { BatchEngineCuttingPreviewDialog } from './components/batch-engine-cutting-preview-dialog'
 import { BatchEngineSimulationStage } from './components/batch-engine-simulation-stage'
 import { BatchEngineSummaryPanel } from './components/batch-engine-summary-panel'
 import { useBatchEngineState } from './hooks/use-batch-engine-state'
 
 export function BatchEnginePage() {
   const { t } = useLanguage()
+  const [previewOpen, setPreviewOpen] = useState(false)
   const {
     metrics,
     ruleChips,
@@ -44,10 +47,21 @@ export function BatchEnginePage() {
             cutSizeLoading={cutSizeLoading}
             selectedCutSize={selectedCutSize}
           />
-          <BatchEngineSimulationStage legend={legend} simulation={simulation} />
+          <BatchEngineSimulationStage
+            legend={legend}
+            simulation={simulation}
+            onOpenPreview={() => setPreviewOpen(true)}
+          />
           <BatchEngineSummaryPanel simulation={simulation} />
         </div>
       </section>
+
+      <BatchEngineCuttingPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        controls={controls}
+        simulation={simulation}
+      />
     </div>
   )
 }

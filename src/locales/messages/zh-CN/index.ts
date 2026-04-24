@@ -35,6 +35,8 @@ import { apsScheduling } from './apsScheduling'
 import { errors } from './errors'
 import { rawMaterials } from './rawMaterials'
 import { codeCenter } from './codeCenter'
+import { productionQuality } from './productionQuality'
+import { productionArchitecture } from './productionArchitecture'
 
 export const zhCNMessages = {
   common,
@@ -74,4 +76,6 @@ export const zhCNMessages = {
   errors,
   rawMaterials,
   codeCenter,
+  productionQuality,
+  productionArchitecture,
 } as const

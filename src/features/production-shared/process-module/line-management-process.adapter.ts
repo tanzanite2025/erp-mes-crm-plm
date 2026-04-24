@@ -74,7 +74,7 @@ export function buildLineManagementProcessModuleConfig(lines: ProductionLine[]):
 
   return {
     title: '产线管理工序模块',
-    subtitle: 'SEGMENT / JOB CATEGORY / PROCESS FULL MAPPING FROM /personnel/line',
+    subtitle: 'SEGMENT / JOB CATEGORY / PROCESS FULL MAPPING FROM /production-architecture/line',
     cards,
   }
 }

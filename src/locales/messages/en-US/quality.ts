@@ -1,11 +1,11 @@
 export const quality = {
   layout: {
-    title: 'Quality Audit',
+    title: 'Quality Baseline',
     tabs: {
       standards: 'Quality Standards',
-      abnormalities: 'Quality Abnormalities',
-      inspection: 'Product Inspection',
-      specialBuy: 'Special Acceptance',
+      abnormalities: 'Abnormality Handling',
+      inspection: 'Inspection Execution',
+      specialBuy: 'Special Acceptance Release',
       formulas: 'Inspection Formulas',
     },
   },
@@ -183,9 +183,9 @@ export const quality = {
   },
   abnormalities: {
     page: {
-      title: 'Quality Abnormality Control',
+      title: 'Abnormality Handling',
       description:
-        'Systematic governance and closed-loop traceability for production defects and non-conformances',
+        'Closed-loop handling, accountability tracking, and traceability for production defects and non-conformances',
       activeCriticals: 'Critical Issues',
       openReports: 'Open Reports',
       closedLooped: 'Closed Loop',
@@ -211,7 +211,7 @@ export const quality = {
   },
   inspection: {
     page: {
-      title: 'Inspection Terminal',
+      title: 'Inspection Execution',
       description:
         'Digital execution workspace for incoming, in-process, and final inspections',
       searchPlaceholder: 'Search by batch number...',
@@ -234,9 +234,9 @@ export const quality = {
   },
   specialBuy: {
     page: {
-      title: 'Special Acceptance Management',
+      title: 'Special Acceptance Release',
       description:
-        'Approval, tracking, and risk evaluation for minor non-conforming goods accepted by concession',
+        'Release approval, traceability archival, and risk evaluation for concession-accepted products',
       placeholder: 'Special acceptance workflow is under construction',
     },
   },

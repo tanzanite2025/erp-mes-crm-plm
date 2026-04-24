@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { DeltaSet } from '@/lib/delta/types'
 import {
   Table,
   TableBody,
@@ -23,20 +24,18 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { TeamActionDialog } from './team-action-dialog'
-import { TeamModuleAdapter, TeamRecord, TeamType } from './types'
+import type { TeamModuleAdapter, TeamRecord, TeamType } from './types'
 
 type TeamManagementViewProps = {
   adapter: TeamModuleAdapter
 }
 
-const defaultDeleteConfirm = '确认删除该生产班组？此操作不可撤销。'
-
-function getTypeBadge(type: TeamType) {
+function getTypeBadge(type: TeamType, labels: TeamModuleAdapter['texts']['typeLabels']) {
   const configs: Record<TeamType, { label: string; color: string }> = {
-    dispatch: { label: '派工', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-    quality: { label: '品质', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-    transfer: { label: '移转', color: 'bg-orange-500/10 text-orange-500 border-orange-500/20' },
-    receive: { label: '接收', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+    dispatch: { label: labels.dispatch, color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+    quality: { label: labels.quality, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+    transfer: { label: labels.transfer, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20' },
+    receive: { label: labels.receive, color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
   }
   const config = configs[type] ?? configs.dispatch
 
@@ -48,6 +47,7 @@ function getTypeBadge(type: TeamType) {
 }
 
 export function TeamManagementView({ adapter }: TeamManagementViewProps) {
+  const { texts } = adapter
   const [searchQuery, setSearchQuery] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTeam, setEditingTeam] = useState<TeamRecord | null>(null)
@@ -60,13 +60,13 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
     return name.includes(keyword) || code.includes(keyword) || section.includes(keyword)
   })
 
-  const handleSaveTeam = (params: { data: TeamRecord; isPatch: boolean; delta?: any; version?: number }) => {
+  const handleSaveTeam = (params: { data: TeamRecord; isPatch: boolean; delta?: DeltaSet; version?: number }) => {
     void adapter.saveTeam(params)
     setIsDialogOpen(false)
   }
 
   const handleDeleteTeam = (id: string) => {
-    const confirmed = window.confirm(adapter.confirmDeleteMessage ?? defaultDeleteConfirm)
+    const confirmed = window.confirm(texts.confirmDeleteMessage)
     if (!confirmed) return
     void adapter.deleteTeam(id)
   }
@@ -86,12 +86,11 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         <div className='flex items-center gap-2 text-primary'>
           <Users className='size-4' />
           <h3 className='text-lg font-black tracking-tighter italic uppercase'>
-            {adapter.headerTitle ?? '班组群组原子中心'}
+            {texts.headerTitle}
           </h3>
         </div>
         <p className='text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60'>
-          {adapter.headerDescription ??
-            'PERSONNEL_TEAM_HUB / 生产动力核心：管理生产车间班组架构、逻辑分类及计件核算归属'}
+          {texts.headerDescription}
         </p>
       </div>
 
@@ -99,7 +98,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         <div className='relative w-96 group'>
           <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 transition-colors group-focus-within:text-primary pointer-events-none' />
           <Input
-            placeholder={adapter.searchPlaceholder ?? '搜索群组编码、名称、区段...'}
+            placeholder={texts.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className='pl-10 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-1 focus-visible:ring-primary/20 transition-all'
@@ -121,7 +120,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
             }}
             className='bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest text-primary-foreground gap-2 transition-all hover:scale-105 active:scale-95'
           >
-            <Plus className='size-4' /> {adapter.addButtonLabel ?? '新增班组'}
+            <Plus className='size-4' /> {texts.addButtonLabel}
           </Button>
         </div>
       </div>
@@ -130,15 +129,15 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         <Table>
           <TableHeader className='bg-muted/10 border-b border-dashed border-muted/50'>
             <TableRow className='border-white/5 hover:bg-transparent'>
-              <TableHead className='w-[120px] text-[10px] font-black uppercase tracking-widest py-6 italic'>群组编码 / CODE</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>群组名称 / NAME</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>显示序列 / STEP</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>归属区段 / SECTION</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>业务类型 / TYPE</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>特殊标识 / MAINT</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>运行状态 / STATUS</TableHead>
-              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>操作记录 / AUDIT</TableHead>
-              <TableHead className='text-right text-[10px] font-black uppercase tracking-widest pr-8 italic'>系统指令 / CMD</TableHead>
+              <TableHead className='w-[120px] text-[10px] font-black uppercase tracking-widest py-6 italic'>{texts.table.code}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>{texts.table.name}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>{texts.table.step}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>{texts.table.section}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>{texts.table.type}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>{texts.table.maintenance}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest text-center italic'>{texts.table.status}</TableHead>
+              <TableHead className='text-[10px] font-black uppercase tracking-widest italic'>{texts.table.audit}</TableHead>
+              <TableHead className='text-right text-[10px] font-black uppercase tracking-widest pr-8 italic'>{texts.table.commands}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -152,7 +151,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
                     {team.section}
                   </span>
                 </TableCell>
-                <TableCell className='text-center'>{getTypeBadge((team.type as TeamType) ?? 'dispatch')}</TableCell>
+                <TableCell className='text-center'>{getTypeBadge((team.type as TeamType) ?? 'dispatch', texts.typeLabels)}</TableCell>
                 <TableCell className='text-center'>
                   <Badge
                     variant='outline'
@@ -163,7 +162,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
                         : 'border-slate-500/20 text-slate-400'
                     )}
                   >
-                    {team.isMaintenance ? '维修组' : '常规组'}
+                    {team.isMaintenance ? texts.maintenanceLabels.true : texts.maintenanceLabels.false}
                   </Badge>
                 </TableCell>
                 <TableCell className='text-center'>
@@ -171,12 +170,12 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
                     {team.status === 'active' ? (
                       <>
                         <CheckCircle2 className='size-3 text-emerald-500' />
-                        <span className='text-emerald-500/80'>正常运行</span>
+                        <span className='text-emerald-500/80'>{texts.statusLabels.active}</span>
                       </>
                     ) : (
                       <>
                         <XCircle className='size-3 text-red-500' />
-                        <span className='text-red-500/80'>已停用</span>
+                        <span className='text-red-500/80'>{texts.statusLabels.inactive}</span>
                       </>
                     )}
                   </div>
@@ -221,8 +220,8 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         {filteredTeams.length === 0 && (
           <div className='py-24 flex flex-col items-center justify-center text-muted-foreground/30'>
             <Users className='size-16 mb-4 opacity-10 stroke-[1px]' />
-            <p className='text-sm font-black uppercase tracking-[0.3em]'>未匹配到任何工作团队</p>
-            <p className='text-[10px] uppercase tracking-widest mt-2'>请尝试调整搜索条件或创建新班组</p>
+            <p className='text-sm font-black uppercase tracking-[0.3em]'>{texts.empty.title}</p>
+            <p className='text-[10px] uppercase tracking-widest mt-2'>{texts.empty.description}</p>
           </div>
         )}
       </div>
@@ -232,6 +231,7 @@ export function TeamManagementView({ adapter }: TeamManagementViewProps) {
         onOpenChange={setIsDialogOpen}
         team={editingTeam}
         onSave={handleSaveTeam}
+        texts={texts.dialog}
         isLoading={adapter.isLoading}
       />
     </div>

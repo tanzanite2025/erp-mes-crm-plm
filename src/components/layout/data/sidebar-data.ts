@@ -132,6 +132,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/engineering-db'),
       },
       {
+        titleKey: 'sidebar.items.engineeringReference',
+        url: '/engineering-reference',
+        icon: FileText,
+        permissionId: permissionIdForPath('/engineering-reference'),
+      },
+      {
         titleKey: 'sidebar.items.qualityAudit',
         url: '/quality',
         icon: Scale,
@@ -181,6 +187,18 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/aps-scheduling',
         icon: Calendar,
         permissionId: permissionIdForPath('/aps-scheduling'),
+      },
+      {
+        titleKey: 'sidebar.items.productionArchitecture',
+        url: '/production-architecture',
+        icon: Box,
+        permissionId: permissionIdForPath('/production-architecture'),
+      },
+      {
+        titleKey: 'sidebar.items.qualityOperations',
+        url: '/production-quality',
+        icon: ListChecks,
+        permissionId: permissionIdForPath('/production-quality'),
       },
     ],
   },
@@ -390,7 +408,7 @@ export const sidebarData: SidebarData = {
           permissionId: permissionIdForPath('/engineering-db'),
         },
         {
-          title: '品质审计',
+          title: '品质基准',
           url: '/quality',
           icon: Scale,
           permissionId: permissionIdForPath('/quality'),
@@ -433,6 +451,12 @@ export const sidebarData: SidebarData = {
           url: '/piecework',
           icon: CheckSquare,
           permissionId: permissionIdForPath('/piecework'),
+        },
+        {
+          title: '品质作业',
+          url: '/production-quality',
+          icon: ListChecks,
+          permissionId: permissionIdForPath('/production-quality'),
         },
       ],
     },

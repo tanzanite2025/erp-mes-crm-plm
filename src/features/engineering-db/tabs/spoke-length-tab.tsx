@@ -35,7 +35,7 @@ import { toast } from 'sonner'
 
 export function SpokeLengthTab() {
     const { t } = useLanguage()
-    const { highlightId } = useSearch({ from: '/_authenticated/engineering-db/spoke-length' })
+    const { highlightId } = useSearch({ from: '/_authenticated/engineering-reference/spoke-length' })
     const {
         filteredData,
         isLoading,

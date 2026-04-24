@@ -22,6 +22,7 @@ export function PieceworkQuery() {
 }
 
 export function PieceworkRules() {
+    const { t } = useLanguage()
     const { data: rates = [], isLoading } = useGetPieceworkRates()
     const { saveRateMutation, patchRateMutation, deleteRateMutation } = usePieceworkRateMutations()
     
@@ -39,7 +40,7 @@ export function PieceworkRules() {
     const columns: ColumnDef<PieceworkRate>[] = [
         {
             accessorKey: 'processName',
-            header: '工序名称 / PROCESS',
+            header: t('piecework.rules.table.processName'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-3'>
                     <div className='p-2 bg-emerald-500/10 rounded-lg text-emerald-600'>
@@ -51,7 +52,7 @@ export function PieceworkRules() {
         },
         {
             accessorKey: 'productId',
-            header: '关联产品 SKU / PRODUCT',
+            header: t('piecework.rules.table.productSku'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-2'>
                     <Box className='size-3 text-muted-foreground' />
@@ -63,7 +64,7 @@ export function PieceworkRules() {
         },
         {
             accessorKey: 'piecePrice',
-            header: '计件单价 / PRICE',
+            header: t('piecework.rules.table.piecePrice'),
             cell: ({ row }) => (
                 <span className='font-mono font-black text-emerald-600 text-sm italic'>
                     ¥{row.original.piecePrice.toFixed(2)} / {row.original.unit}
@@ -72,7 +73,7 @@ export function PieceworkRules() {
         },
         {
             accessorKey: 'status',
-            header: '状态 / STATUS',
+            header: t('piecework.rules.table.status'),
             cell: ({ row }) => (
                 <Badge 
                     variant='outline' 
@@ -81,13 +82,15 @@ export function PieceworkRules() {
                         row.original.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-muted text-muted-foreground border-none'
                     )}
                 >
-                    {row.original.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
+                    {row.original.status === 'active'
+                        ? t('piecework.rules.status.active')
+                        : t('piecework.rules.status.inactive')}
                 </Badge>
             )
         },
         {
             id: 'actions',
-            header: '操作 / ACTIONS',
+            header: t('piecework.rules.table.actions'),
             cell: ({ row }) => (
                 <div className='flex items-center gap-1'>
                     <Button 
@@ -139,14 +142,16 @@ export function PieceworkRules() {
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
             <IndustrialHeader
                 icon={Landmark}
-                title='计件工价原子标准'
-                description='PIECEWORK_RATE_HUB / 核心财务核算基准，所有规则变更均受 SDRTS 版本追踪与审计。'
+                title={t('piecework.rules.page.headerTitle')}
+                description={t('piecework.rules.page.headerDescription')}
                 gradient
                 innerClassName='text-emerald-600'
                 className='border-muted-foreground/10'
                 statusBadge={
                     <div className='flex items-center gap-4 px-4 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/10 w-fit'>
-                        <span className='text-[10px] font-black text-emerald-600/60 uppercase tracking-widest italic'>Audit_Active</span>
+                        <span className='text-[10px] font-black text-emerald-600/60 uppercase tracking-widest italic'>
+                            {t('piecework.rules.page.statusBadge')}
+                        </span>
                         <div className='size-1.5 rounded-full bg-emerald-500 animate-pulse' />
                     </div>
                 }
@@ -157,7 +162,7 @@ export function PieceworkRules() {
                 <div className='relative w-96 group'>
                     <Search className='absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/30 group-focus-within:text-emerald-500 transition-colors' />
                     <Input 
-                        placeholder='搜索工序名、关联产品 SKU... RATIO_SCAN'
+                        placeholder={t('piecework.rules.page.searchPlaceholder')}
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className='pl-11 h-12 rounded-2xl border-none bg-background shadow-inner text-sm font-medium focus-visible:ring-emerald-500/20'
@@ -167,7 +172,7 @@ export function PieceworkRules() {
                     onClick={() => { setCurrentRow(null); setOpen(true); }} 
                     className='bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 rounded-full h-11 px-8 font-black text-[10px] uppercase tracking-widest gap-2 active:scale-95 transition-all'
                 >
-                    <Plus className='size-4' /> 新增工价标准
+                    <Plus className='size-4' /> {t('piecework.rules.page.add')}
                 </Button>
             </div>
 
@@ -190,7 +195,7 @@ export function PieceworkRules() {
                             {isLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={columns.length} className='h-64 text-center antialiased font-black tracking-widest opacity-20 uppercase text-[10px] italic'>
-                                        SDRTS_SYNCING...
+                                        {t('piecework.rules.page.loading')}
                                     </TableCell>
                                 </TableRow>
                             ) : table.getRowModel().rows?.length ? (
@@ -206,7 +211,7 @@ export function PieceworkRules() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={columns.length} className='h-64 text-center text-muted-foreground/30 antialiased font-black tracking-widest uppercase text-[10px] italic'>
-                                        NO_RATES_DEFINED
+                                        {t('piecework.rules.page.empty')}
                                     </TableCell>
                                 </TableRow>
                             )}

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { format, isValid, parseISO } from 'date-fns'
+import { Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -97,6 +100,12 @@ function getCutSizeOptionLabel(item: CutSizeUnit): string {
   return expression ? `${item.code} | ${item.name} | ${expression}` : `${item.code} | ${item.name}`
 }
 
+function parseDateInput(value?: string): Date | undefined {
+  if (!value?.trim()) return undefined
+  const parsed = parseISO(value)
+  return isValid(parsed) ? parsed : undefined
+}
+
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const lines = value.lines ?? []
   const { data: products = [] } = useGetProducts()
@@ -140,6 +149,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
       }),
     [value.productCode, value.productName, value.holeCount]
   )
+  const selectedEffectiveDate = useMemo(() => parseDateInput(value.effectiveDate), [value.effectiveDate])
 
   const selectedPrepregSummary = useMemo(() => {
     if (!value.prepregSpecId) return ''
@@ -337,11 +347,45 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
           </Select>
         </EditorField>
         <EditorField label='生效日期'>
-          <Input
-            value={value.effectiveDate}
-            onChange={(event) => updateField('effectiveDate', event.target.value)}
-            placeholder='2026-03-24'
-          />
+          <div className='flex items-center gap-1.5'>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='h-10 w-full justify-start rounded-2xl px-3 text-left text-sm font-semibold'
+                >
+                  {selectedEffectiveDate ? (
+                    format(selectedEffectiveDate, 'yyyy-MM-dd')
+                  ) : (
+                    <span className='text-muted-foreground'>请选择生效日期</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className='w-auto p-0' align='start'>
+                <Calendar
+                  mode='single'
+                  selected={selectedEffectiveDate}
+                  onSelect={(nextDate) =>
+                    updateField('effectiveDate', nextDate ? format(nextDate, 'yyyy-MM-dd') : '')
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {selectedEffectiveDate ? (
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='size-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground'
+                onClick={() => updateField('effectiveDate', '')}
+                aria-label='清空生效日期'
+              >
+                <X className='size-4' />
+              </Button>
+            ) : null}
+          </div>
         </EditorField>
         <EditorField label='引用预浸料'>
           <div className='space-y-1.5'>
