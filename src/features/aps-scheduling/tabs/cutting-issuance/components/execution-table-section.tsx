@@ -14,7 +14,6 @@ import { getProductionPlanStatusLabel, getProductionPlanStatusOptions } from '..
 import type { CuttingIssuanceExecutionRecord } from '../types'
 import {
   APS_INPUT_CLASS,
-  APS_KICKER_CLASS,
   APS_OUTLINE_BUTTON_CLASS,
   APS_SECONDARY_SECTION_CLASS,
   APS_SECONDARY_SECTION_HEADER_CLASS,

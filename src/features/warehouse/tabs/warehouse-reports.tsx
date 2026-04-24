@@ -6,12 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { ForbiddenState } from '@/components/forbidden-state'
 import {
     Search,
-    Download,
     Calendar as CalendarIcon,
     ArrowUpRight,
     ArrowDownLeft,
-    Filter,
-    ShieldCheck
+    Filter
 } from 'lucide-react'
 import { InboundReportTable, ShipmentReportTable } from '../components/report-tables'
 import { useReport } from '../hooks/use-report'
@@ -30,10 +28,7 @@ export function WarehouseReports() {
         filteredInbound,
         filteredShipment,
         masterDataMap,
-        handleExport,
-        handleReconcile,
         resetFilters,
-        hasData
     } = useReport()
 
     if (isForbiddenError(error)) {
@@ -42,7 +37,11 @@ export function WarehouseReports() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <IndustrialHeader title={t('warehouse.reports.title')} description={t('warehouse.reports.subtitle')} icon={Filter} statusBadge={} />
+            <IndustrialHeader
+                title={t('warehouse.reports.title')}
+                description={t('warehouse.reports.subtitle')}
+                icon={Filter}
+            />
 
             <div className='relative rounded-2xl md:rounded-[24px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6 transition-all'>
                 <div className='absolute top-0 left-6 md:left-10 -translate-y-1/2 bg-background px-3 py-0.5 border border-dashed border-muted/50 rounded-full flex items-center gap-2'>

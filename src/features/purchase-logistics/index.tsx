@@ -13,7 +13,6 @@ import {
   subscribePurchaseLogisticsOfflineDrafts,
   syncPurchaseLogisticsOfflineDrafts,
 } from './services/purchase-logistics-offline-draft-service'
-import { PurchaseLogisticsDialog } from './purchase-logistics-dialog'
 import { PurchaseLogisticsList } from './purchase-logistics-list'
 
 export function PurchaseLogisticsPage() {
@@ -96,7 +95,6 @@ export function PurchaseLogisticsPage() {
         icon={Truck}
         title={t('purchase.logistics.title')}
         description={t('purchase.logistics.description')}
-        statusBadge={}
       />
 
       <div className='space-y-6'>

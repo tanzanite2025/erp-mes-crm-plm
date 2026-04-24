@@ -13,5 +13,15 @@ export function getRawMaterialsTabs(t: TranslateFn): TabItem[] {
       label: t('rawMaterials.tabs.catalog'),
       href: '/raw-materials/catalog',
     },
+    {
+      key: 'batch-engine',
+      label: t('rawMaterials.tabs.batchEngine'),
+      href: '/raw-materials/batch-engine',
+    },
+    {
+      key: 'cut-size-library',
+      label: t('rawMaterials.tabs.cutSizeLibrary'),
+      href: '/raw-materials/cut-size-library',
+    },
   ]
 }

@@ -20,8 +20,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
-import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import type { Product } from '@/features/engineering/data/schema'
+import { useGetProducts } from '@/features/engineering/hooks/use-products'
+import {
+  formatCutSizeExpression,
+  type CutSizeUnit,
+} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
 import type { PrepregMaterialSpec } from '@/features/raw-materials/data/prepreg-material-spec-schema'
 import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'
 import {
@@ -37,16 +42,10 @@ interface CuttingPlanEditorProps {
 }
 
 type PlanField = Exclude<keyof CuttingPlanInput, 'lines'>
-type LineField =
-  | 'rollOrder'
-  | 'yarnDirection'
-  | 'sizeExpression'
-  | 'faw'
-  | 'weightG'
-  | 'areaM2'
-  | 'operationNote'
+type PlanLine = CuttingPlanInput['lines'][number]
 
 const PREPREG_SPECS_QUERY_KEY = ['raw-materials', 'prepreg-specs', 'active-options'] as const
+const CUT_SIZE_OPTIONS_QUERY_KEY = ['raw-materials', 'cut-size-library', 'active-options'] as const
 
 function formatPercent(value: string): string {
   const text = value.trim()
@@ -58,9 +57,7 @@ function tryExtractResinModel(spec: PrepregMaterialSpec): string {
   if (spec.resinModel?.trim()) return spec.resinModel.trim()
   const source = `${spec.description || ''} ${spec.name || ''}`.trim()
   if (!source) return ''
-  const matched = source.match(
-    /(?:树脂型号|樹脂型号|Resin(?:\s*Model)?)[:：]\s*([^\s,，;；/]+)/i,
-  )
+  const matched = source.match(/(?:树脂型号|Resin(?:\s*Model)?)[:：\s]*([^\s,，;；]+)/i)
   return matched?.[1]?.trim() || ''
 }
 
@@ -82,7 +79,6 @@ function findMatchedProduct(
 ): Product | undefined {
   const normalizedCode = normalizeMatchText(productCode)
   const normalizedName = normalizeMatchText(productName)
-
   if (!normalizedCode && !normalizedName) return undefined
 
   return (
@@ -96,29 +92,43 @@ function findMatchedProduct(
   )
 }
 
+function getCutSizeOptionLabel(item: CutSizeUnit): string {
+  const expression = formatCutSizeExpression(item)
+  return expression ? `${item.code} | ${item.name} | ${expression}` : `${item.code} | ${item.name}`
+}
+
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const lines = value.lines ?? []
   const { data: products = [] } = useGetProducts()
   const { countOptions } = useActiveHoleCodeSource()
+
   const prepregQuery = useQuery({
     queryKey: PREPREG_SPECS_QUERY_KEY,
     queryFn: () => PrepregMaterialSpecService.list('', 1, 200),
     staleTime: 5 * 60 * 1000,
   })
 
+  const cutSizeQuery = useQuery({
+    queryKey: CUT_SIZE_OPTIONS_QUERY_KEY,
+    queryFn: () => CutSizeLibraryService.listActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+
   const prepregSpecs = useMemo(
     () => (prepregQuery.data?.items ?? []).filter((item) => item.status === 'Active'),
-    [prepregQuery.data?.items],
+    [prepregQuery.data?.items]
   )
+
+  const cutSizeUnits = cutSizeQuery.data ?? []
 
   const activeProducts = useMemo(
     () => products.filter((product) => product.status !== 'Archived'),
-    [products],
+    [products]
   )
 
   const matchedProduct = useMemo(
     () => findMatchedProduct(activeProducts, value.productCode, value.productName),
-    [activeProducts, value.productCode, value.productName],
+    [activeProducts, value.productCode, value.productName]
   )
 
   const generatedName = useMemo(
@@ -128,7 +138,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
         productCode: value.productCode,
         holeCount: value.holeCount,
       }),
-    [value.productCode, value.productName, value.holeCount],
+    [value.productCode, value.productName, value.holeCount]
   )
 
   const selectedPrepregSummary = useMemo(() => {
@@ -198,11 +208,44 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     })
   }
 
-  const updateLine = (index: number, field: LineField, nextValue: string) => {
-    const nextLines = lines.map((line, lineIndex) =>
-      lineIndex === index ? { ...line, [field]: nextValue } : line,
-    )
+  const updateLine = (index: number, patch: Partial<PlanLine>) => {
+    const nextLines = lines.map((line, lineIndex) => (lineIndex === index ? { ...line, ...patch } : line))
     onChange({ ...value, lines: nextLines })
+  }
+
+  const updateLineField = (
+    index: number,
+    field: keyof PlanLine,
+    nextValue: string
+  ) => {
+    if (field === 'sizeExpression') {
+      updateLine(index, {
+        sizeExpression: nextValue,
+        cutSizeId: '',
+        cutSizeCode: '',
+        cutSizeName: '',
+      })
+      return
+    }
+    updateLine(index, { [field]: nextValue })
+  }
+
+  const updateLineCutSize = (index: number, cutSizeId: string) => {
+    const unit = cutSizeUnits.find((item) => item.id === cutSizeId)
+    if (!unit) {
+      updateLine(index, {
+        cutSizeId: '',
+        cutSizeCode: '',
+        cutSizeName: '',
+      })
+      return
+    }
+    updateLine(index, {
+      cutSizeId: unit.id,
+      cutSizeCode: unit.code,
+      cutSizeName: unit.name,
+      sizeExpression: formatCutSizeExpression(unit),
+    })
   }
 
   const addLine = () => {
@@ -328,7 +371,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
           <div>
             <div className='text-sm font-black'>裁片明细</div>
             <div className='text-[11px] font-semibold text-muted-foreground'>
-              记录纱别、尺寸、FAW、重量、面积和操作说明；后续执行单会引用这里的行。
+              行项支持引用裁切尺寸库；引用后自动回填宽×长×片，可继续编辑其余工艺字段。
             </div>
           </div>
           <Button
@@ -348,7 +391,8 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
               <TableHead className='w-12 text-center text-[10px] font-black'>序号</TableHead>
               <TableHead className='min-w-24 text-[10px] font-black'>卷制顺序</TableHead>
               <TableHead className='min-w-28 text-[10px] font-black'>纱别</TableHead>
-              <TableHead className='min-w-36 text-[10px] font-black'>宽*长*片</TableHead>
+              <TableHead className='min-w-56 text-[10px] font-black'>裁切尺寸库</TableHead>
+              <TableHead className='min-w-28 text-[10px] font-black'>宽×长×片</TableHead>
               <TableHead className='min-w-20 text-[10px] font-black'>FAW</TableHead>
               <TableHead className='min-w-20 text-[10px] font-black'>重量</TableHead>
               <TableHead className='min-w-20 text-[10px] font-black'>面积m2</TableHead>
@@ -360,10 +404,10 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             {lines.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className='h-24 text-center text-xs font-bold text-muted-foreground'
                 >
-                  还没有裁片行，先添加一行，把图里的 C0 / C20 / C45 等规则录进来。
+                  还没有裁片行，先添加一行并绑定尺寸库条目。
                 </TableCell>
               </TableRow>
             ) : (
@@ -373,45 +417,61 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                   <TableCell>
                     <LineInput
                       value={line.rollOrder}
-                      onChange={(nextValue) => updateLine(index, 'rollOrder', nextValue)}
+                      onChange={(nextValue) => updateLineField(index, 'rollOrder', nextValue)}
                     />
                   </TableCell>
                   <TableCell>
                     <LineInput
                       value={line.yarnDirection}
-                      onChange={(nextValue) => updateLine(index, 'yarnDirection', nextValue)}
+                      onChange={(nextValue) => updateLineField(index, 'yarnDirection', nextValue)}
                       placeholder='C0'
                     />
                   </TableCell>
                   <TableCell>
-                    <LineInput
-                      value={line.sizeExpression}
-                      onChange={(nextValue) => updateLine(index, 'sizeExpression', nextValue)}
-                      placeholder='980×34×4'
-                    />
+                    <Select
+                      value={line.cutSizeId || undefined}
+                      onValueChange={(nextValue) => updateLineCutSize(index, nextValue)}
+                    >
+                      <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'>
+                        <SelectValue
+                          placeholder={cutSizeQuery.isLoading ? '加载中...' : '选择尺寸库单元'}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cutSizeUnits.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {getCutSizeOptionLabel(item)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <LineInput
-                      value={line.faw}
-                      onChange={(nextValue) => updateLine(index, 'faw', nextValue)}
+                      value={line.sizeExpression}
+                      onChange={(nextValue) => updateLineField(index, 'sizeExpression', nextValue)}
+                      placeholder='980x34x4'
                     />
+                  </TableCell>
+                  <TableCell>
+                    <LineInput value={line.faw} onChange={(nextValue) => updateLineField(index, 'faw', nextValue)} />
                   </TableCell>
                   <TableCell>
                     <LineInput
                       value={line.weightG}
-                      onChange={(nextValue) => updateLine(index, 'weightG', nextValue)}
+                      onChange={(nextValue) => updateLineField(index, 'weightG', nextValue)}
                     />
                   </TableCell>
                   <TableCell>
                     <LineInput
                       value={line.areaM2}
-                      onChange={(nextValue) => updateLine(index, 'areaM2', nextValue)}
+                      onChange={(nextValue) => updateLineField(index, 'areaM2', nextValue)}
                     />
                   </TableCell>
                   <TableCell>
                     <LineInput
                       value={line.operationNote}
-                      onChange={(nextValue) => updateLine(index, 'operationNote', nextValue)}
+                      onChange={(nextValue) => updateLineField(index, 'operationNote', nextValue)}
                       placeholder='例如 第一层主纱'
                     />
                   </TableCell>
@@ -449,7 +509,7 @@ function EditorField({
 }) {
   return (
     <div className={className}>
-      <Label className='mb-1.5 text-[9px] font-black tracking-widest text-muted-foreground'>
+      <Label className='mb-1.5 text-[10px] font-black tracking-widest text-muted-foreground'>
         {label}
         {required ? <span className='ml-1 text-destructive'>*</span> : null}
       </Label>

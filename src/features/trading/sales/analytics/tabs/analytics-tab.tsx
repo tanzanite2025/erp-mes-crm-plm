@@ -13,14 +13,12 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useLanguage } from '@/context/language-provider'
-import { Route } from '@/routes/_authenticated/sales-analysis/orders-analysis'
 import { useSalesAnalytics, useGlobalProductRanking } from '../hooks/use-sales-analytics'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function OrdersAnalysisTab() {
   const { t, locale } = useLanguage()
-  const search = Route.useSearch()
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all')
   
   const { data: analytics, isLoading: isAnalyticsLoading } = useSalesAnalytics({
@@ -46,9 +44,6 @@ export function OrdersAnalysisTab() {
     () => analytics?.reduce((acc, curr) => acc + curr.totalOrders, 0) || 0,
     [analytics]
   )
-  const timeRangeLabel = search.timeRange === 'last_30_days'
-    ? (locale === 'zh-CN' ? '最近 30 天' : 'Last 30 days')
-    : search.timeRange
 
   if (isAnalyticsLoading || isRankingLoading) {
     return <div className="p-8 space-y-4"><Skeleton className="h-48 w-full rounded-[32px]" /></div>
@@ -64,7 +59,6 @@ export function OrdersAnalysisTab() {
             ? '按客户、产品与订单行聚合销售表现，快速定位热销产品和客户结构。'
             : 'Aggregate sales performance by customer, product, and order lines to identify hot products and customer mix.'
         }
-        statusBadge={}
       />
 
       {/* Header KPI cards */}

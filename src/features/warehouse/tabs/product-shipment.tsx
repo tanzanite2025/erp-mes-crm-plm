@@ -53,7 +53,11 @@ export default function ProductShipment() {
 
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
-            <IndustrialHeader title={t('warehouse.shipment.title')} description={t('warehouse.shipment.subtitle')} icon={TrendingDown} statusBadge={} />
+            <IndustrialHeader
+                title={t('warehouse.shipment.title')}
+                description={t('warehouse.shipment.subtitle')}
+                icon={TrendingDown}
+            />
 
             <ShipmentDemandBoard
                 demands={shipmentDemands}

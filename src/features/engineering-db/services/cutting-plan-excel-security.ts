@@ -1,8 +1,7 @@
 import type { Cell, Workbook } from 'exceljs'
 import { CUTTING_PLAN_EXCEL_LIMITS } from './cutting-plan-excel-contract'
 
-export const escapeFormula = (value: unknown): unknown => {
-  if (typeof value !== 'string') return value
+export const escapeFormula = (value: string): string => {
   if (value.length > 0 && ['=', '+', '-', '@'].includes(value[0])) {
     return `'${value}`
   }

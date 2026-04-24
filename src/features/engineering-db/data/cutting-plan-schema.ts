@@ -8,6 +8,9 @@ export const cuttingPlanLineSchema = z.object({
   sequenceNo: z.number(),
   rollOrder: z.string().optional(),
   yarnDirection: z.string().optional(),
+  cutSizeId: z.string().optional(),
+  cutSizeCode: z.string().optional(),
+  cutSizeName: z.string().optional(),
   sizeExpression: z.string().optional(),
   faw: z.string().optional(),
   weightG: z.string().optional(),
@@ -44,7 +47,7 @@ export const cuttingPlanSchema = z.object({
 export type CuttingPlan = z.infer<typeof cuttingPlanSchema>
 
 export const cuttingPlanInputSchema = cuttingPlanSchema.omit({ id: true, createdAt: true })
-export type CuttingPlanInput = z.input<typeof cuttingPlanInputSchema>
+export type CuttingPlanInput = z.infer<typeof cuttingPlanInputSchema>
 
 export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
   name: '',
@@ -73,6 +76,9 @@ export function createEmptyCuttingPlanLine(sequenceNo: number): CuttingPlanLine 
     sequenceNo,
     rollOrder: '',
     yarnDirection: '',
+    cutSizeId: '',
+    cutSizeCode: '',
+    cutSizeName: '',
     sizeExpression: '',
     faw: '',
     weightG: '',
@@ -90,6 +96,9 @@ export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingP
     sequenceNo: Number(raw.sequenceNo) || index + 1,
     rollOrder: raw.rollOrder || '',
     yarnDirection: raw.yarnDirection || '',
+    cutSizeId: raw.cutSizeId || '',
+    cutSizeCode: raw.cutSizeCode || '',
+    cutSizeName: raw.cutSizeName || '',
     sizeExpression: raw.sizeExpression || '',
     faw: raw.faw || '',
     weightG: raw.weightG || '',
@@ -118,7 +127,7 @@ export function buildCuttingPlanName(params: {
   const model = params.productName?.trim() || params.productCode?.trim() || ''
   const holeCount = params.holeCount?.trim() || ''
   if (!model || !holeCount) return ''
-  return `${model}-${holeCount}孔-裁纱单`
+  return `${model}-${holeCount}孔裁纱单`
 }
 
 export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan): CuttingPlanInput {
@@ -148,6 +157,9 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan): Cut
     lines: (plan.lines || []).map((line, index) => ({
       ...line,
       sequenceNo: index + 1,
+      cutSizeId: line.cutSizeId?.trim() || '',
+      cutSizeCode: line.cutSizeCode?.trim() || '',
+      cutSizeName: line.cutSizeName?.trim() || '',
     })),
   })
 }

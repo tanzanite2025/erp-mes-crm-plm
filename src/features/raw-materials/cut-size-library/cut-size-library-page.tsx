@@ -1,0 +1,443 @@
+import { type ReactNode, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Edit3, Plus, Ruler, Search, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { useLanguage } from '@/context/language-provider'
+import {
+  formFromCutSizeUnit,
+  formatCutSizeExpression,
+  EMPTY_CUT_SIZE_UNIT_FORM,
+  type CutSizeUnit,
+  type CutSizeUnitFormState,
+  type CutSizeUnitStatus,
+} from './data/cut-size-library-schema'
+import { CutSizeLibraryService } from './services/cut-size-library-service'
+
+const CUT_SIZE_LIBRARY_QUERY_KEY = ['raw-materials', 'cut-size-library'] as const
+
+function statusLabel(status: CutSizeUnitStatus): string {
+  if (status === 'Active') return '启用'
+  if (status === 'Inactive') return '停用'
+  return '归档'
+}
+
+function statusBadgeClass(status: CutSizeUnitStatus): string {
+  if (status === 'Active') {
+    return 'border-emerald-300/70 bg-emerald-50 text-emerald-700'
+  }
+  if (status === 'Inactive') {
+    return 'border-amber-300/70 bg-amber-50 text-amber-700'
+  }
+  return 'border-slate-300/70 bg-slate-100 text-slate-600'
+}
+
+function lossLabel(item: CutSizeUnit): string {
+  if (item.lossFactor.trim()) return item.lossFactor.trim()
+  const trim = item.edgeTrimMm.trim()
+  const step = item.stepOffsetMm.trim()
+  if (!trim && !step) return '--'
+  return `修边 ${trim || 0} / 错位 ${step || 0}`
+}
+
+export function CutSizeLibraryPage() {
+  const { t } = useLanguage()
+  const queryClient = useQueryClient()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingUnit, setEditingUnit] = useState<CutSizeUnit | null>(null)
+  const [form, setForm] = useState<CutSizeUnitFormState>(EMPTY_CUT_SIZE_UNIT_FORM)
+
+  const { data: units = [], isLoading } = useQuery({
+    queryKey: [...CUT_SIZE_LIBRARY_QUERY_KEY, searchTerm],
+    queryFn: () => CutSizeLibraryService.list(searchTerm),
+  })
+
+  const stats = useMemo(
+    () => ({
+      total: units.length,
+      active: units.filter((item) => item.status === 'Active').length,
+      archived: units.filter((item) => item.status === 'Archived').length,
+    }),
+    [units]
+  )
+
+  const saveMutation = useMutation({
+    mutationFn: () => CutSizeLibraryService.save(form, editingUnit),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: CUT_SIZE_LIBRARY_QUERY_KEY })
+      toast.success(editingUnit ? '裁切尺寸单元已更新' : '裁切尺寸单元已创建')
+      setDialogOpen(false)
+      setEditingUnit(null)
+      setForm(EMPTY_CUT_SIZE_UNIT_FORM)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => CutSizeLibraryService.remove(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: CUT_SIZE_LIBRARY_QUERY_KEY })
+      toast.success('裁切尺寸单元已删除')
+    },
+  })
+
+  const openCreate = () => {
+    setEditingUnit(null)
+    setForm(EMPTY_CUT_SIZE_UNIT_FORM)
+    setDialogOpen(true)
+  }
+
+  const openEdit = (item: CutSizeUnit) => {
+    setEditingUnit(item)
+    setForm(formFromCutSizeUnit(item))
+    setDialogOpen(true)
+  }
+
+  const updateForm = <K extends keyof CutSizeUnitFormState>(key: K, value: CutSizeUnitFormState[K]) => {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  const handleSave = () => {
+    if (!form.code.trim()) {
+      toast.error('请填写尺寸编号')
+      return
+    }
+    if (!form.name.trim()) {
+      toast.error('请填写尺寸名称')
+      return
+    }
+    if (!form.widthMm.trim() || !form.lengthMm.trim() || !form.pieceCount.trim()) {
+      toast.error('请至少填写宽度、长度和张数')
+      return
+    }
+    saveMutation.mutate()
+  }
+
+  return (
+    <div className='flex flex-col gap-5'>
+      <IndustrialHeader
+        icon={Ruler}
+        title={t('rawMaterials.cutSizeLibrary.title')}
+        description={t('rawMaterials.cutSizeLibrary.description')}
+        statusBadge={
+          <div className='rounded-full border border-cyan-500/20 bg-cyan-500/8 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700/85'>
+            {t('rawMaterials.cutSizeLibrary.status')}
+          </div>
+        }
+      />
+
+      <section className='rounded-[28px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] p-5 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.2)]'>
+        <div className='flex flex-col gap-4'>
+          <div className='flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between'>
+            <div className='space-y-2'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500/75'>
+                {t('rawMaterials.cutSizeLibrary.sections.dataset.kicker')}
+              </p>
+              <h2 className='text-base font-black tracking-tight text-slate-950'>
+                {t('rawMaterials.cutSizeLibrary.sections.dataset.title')}
+              </h2>
+              <p className='text-xs leading-5 text-slate-600/85'>
+                {t('rawMaterials.cutSizeLibrary.sections.dataset.description')}
+              </p>
+            </div>
+            <div className='grid grid-cols-3 gap-2 text-center lg:min-w-[340px]'>
+              <Metric label='尺寸总数' value={stats.total} />
+              <Metric label='启用' value={stats.active} />
+              <Metric label='归档' value={stats.archived} />
+            </div>
+          </div>
+
+          <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+            <div className='relative w-full md:max-w-md'>
+              <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40' />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder='搜索编号、名称、用途、角度'
+                className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-semibold shadow-inner'
+              />
+            </div>
+            <Button onClick={openCreate} className='h-11 rounded-full px-6 text-xs font-black'>
+              <Plus className='size-4' />
+              {t('rawMaterials.cutSizeLibrary.actions.add')}
+            </Button>
+          </div>
+
+          <div className='overflow-x-auto rounded-2xl border border-dashed border-slate-300/80 bg-white/80'>
+            <table className='w-full min-w-[1080px] text-sm'>
+              <thead className='bg-slate-100/80 text-left'>
+                <tr>
+                  {[
+                    t('rawMaterials.cutSizeLibrary.columns.code'),
+                    t('rawMaterials.cutSizeLibrary.columns.name'),
+                    t('rawMaterials.cutSizeLibrary.columns.size'),
+                    t('rawMaterials.cutSizeLibrary.columns.angle'),
+                    t('rawMaterials.cutSizeLibrary.columns.layup'),
+                    t('rawMaterials.cutSizeLibrary.columns.loss'),
+                    t('rawMaterials.cutSizeLibrary.columns.usage'),
+                    t('rawMaterials.cutSizeLibrary.columns.status'),
+                    '操作',
+                  ].map((label) => (
+                    <th
+                      key={label}
+                      className='px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500/80'
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={9} className='px-4 py-8 text-center text-xs font-semibold text-muted-foreground'>
+                      正在加载裁切尺寸库...
+                    </td>
+                  </tr>
+                ) : units.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className='px-4 py-8 text-center'>
+                      <p className='text-[11px] font-black uppercase tracking-[0.2em] text-slate-500'>
+                        {t('rawMaterials.cutSizeLibrary.empty.title')}
+                      </p>
+                      <p className='mt-1 text-xs leading-5 text-slate-600/85'>
+                        {t('rawMaterials.cutSizeLibrary.empty.description')}
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  units.map((item) => (
+                    <tr key={item.id} className='border-t border-dashed border-slate-200/80'>
+                      <td className='px-4 py-3 align-top'>
+                        <div className='font-mono text-xs font-black tracking-wider text-slate-900'>{item.code}</div>
+                      </td>
+                      <td className='px-4 py-3 align-top'>
+                        <div className='text-xs font-black text-slate-900'>{item.name}</div>
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        {formatCutSizeExpression(item) || '--'}
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        {item.cutAngle || '--'}
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        {item.layupCount ? `${item.layupCount} 层` : '--'}
+                        {item.layupMode ? ` / ${item.layupMode}` : ''}
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        {lossLabel(item)}
+                      </td>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                        {item.usageType || '--'}
+                      </td>
+                      <td className='px-4 py-3 align-top'>
+                        <Badge className={`rounded-full border text-[10px] font-black ${statusBadgeClass(item.status)}`}>
+                          {statusLabel(item.status)}
+                        </Badge>
+                      </td>
+                      <td className='px-4 py-3 align-top'>
+                        <div className='flex items-center gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => openEdit(item)}
+                            className='size-8 rounded-full text-slate-600'
+                          >
+                            <Edit3 className='size-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => deleteMutation.mutate(item.id)}
+                            disabled={deleteMutation.isPending}
+                            className='size-8 rounded-full text-muted-foreground hover:text-destructive'
+                          >
+                            <Trash2 className='size-4' />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className='max-h-[88vh] overflow-y-auto rounded-[24px] sm:max-w-[980px]'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2 text-lg font-black italic tracking-tight'>
+              <Ruler className='size-5 text-primary' />
+              {editingUnit ? '编辑裁切尺寸单元' : '新增裁切尺寸单元'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className='grid grid-cols-1 gap-3 md:grid-cols-4 [&_input]:h-10 [&_input]:rounded-xl'>
+            <Field label='尺寸编号' required>
+              <Input
+                value={form.code}
+                onChange={(event) => updateForm('code', event.target.value)}
+                placeholder='例如 CS-40-40-01'
+              />
+            </Field>
+            <Field label='尺寸名称' required className='md:col-span-2'>
+              <Input
+                value={form.name}
+                onChange={(event) => updateForm('name', event.target.value)}
+                placeholder='例如 C0 主纱 40x40'
+              />
+            </Field>
+            <Field label='状态'>
+              <Select value={form.status} onValueChange={(value) => updateForm('status', value as CutSizeUnitStatus)}>
+                <SelectTrigger className='h-10 rounded-xl'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='Active'>启用</SelectItem>
+                  <SelectItem value='Inactive'>停用</SelectItem>
+                  <SelectItem value='Archived'>归档</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label='宽度 (mm)' required>
+              <Input
+                value={form.widthMm}
+                onChange={(event) => updateForm('widthMm', event.target.value)}
+                placeholder='40'
+              />
+            </Field>
+            <Field label='长度 (mm)' required>
+              <Input
+                value={form.lengthMm}
+                onChange={(event) => updateForm('lengthMm', event.target.value)}
+                placeholder='40'
+              />
+            </Field>
+            <Field label='张数' required>
+              <Input
+                value={form.pieceCount}
+                onChange={(event) => updateForm('pieceCount', event.target.value)}
+                placeholder='1'
+              />
+            </Field>
+            <Field label='裁切角度'>
+              <Input
+                value={form.cutAngle}
+                onChange={(event) => updateForm('cutAngle', event.target.value)}
+                placeholder='0 / 45 / custom'
+              />
+            </Field>
+
+            <Field label='叠层数'>
+              <Input
+                value={form.layupCount}
+                onChange={(event) => updateForm('layupCount', event.target.value)}
+                placeholder='1'
+              />
+            </Field>
+            <Field label='叠层模式'>
+              <Input
+                value={form.layupMode}
+                onChange={(event) => updateForm('layupMode', event.target.value)}
+                placeholder='例如 双层叠'
+              />
+            </Field>
+            <Field label='用途类型'>
+              <Input
+                value={form.usageType}
+                onChange={(event) => updateForm('usageType', event.target.value)}
+                placeholder='例如 主纱 / 补强'
+              />
+            </Field>
+            <Field label='修边损耗 (mm)'>
+              <Input
+                value={form.edgeTrimMm}
+                onChange={(event) => updateForm('edgeTrimMm', event.target.value)}
+                placeholder='0'
+              />
+            </Field>
+
+            <Field label='渐短错位 (mm)'>
+              <Input
+                value={form.stepOffsetMm}
+                onChange={(event) => updateForm('stepOffsetMm', event.target.value)}
+                placeholder='0'
+              />
+            </Field>
+            <Field label='损耗模型' className='md:col-span-3'>
+              <Input
+                value={form.lossFactor}
+                onChange={(event) => updateForm('lossFactor', event.target.value)}
+                placeholder='例如 角度包络+修边'
+              />
+            </Field>
+            <Field label='说明' className='md:col-span-4'>
+              <Textarea
+                value={form.notes}
+                onChange={(event) => updateForm('notes', event.target.value)}
+                className='min-h-[74px] resize-none rounded-xl'
+                placeholder='补充工艺说明、适用范围、约束条件'
+              />
+            </Field>
+          </div>
+
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setDialogOpen(false)} className='rounded-full px-6 font-black'>
+              取消
+            </Button>
+            <Button onClick={handleSave} disabled={saveMutation.isPending} className='rounded-full px-8 font-black'>
+              {saveMutation.isPending ? '保存中...' : '保存尺寸单元'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function Field({
+  label,
+  required,
+  className,
+  children,
+}: {
+  label: string
+  required?: boolean
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className={className}>
+      <Label className='mb-1.5 text-[10px] font-black tracking-widest text-muted-foreground'>
+        {label}
+        {required ? <span className='ml-1 text-destructive'>*</span> : null}
+      </Label>
+      {children}
+    </div>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className='rounded-2xl border border-dashed border-muted/60 bg-background/70 p-3'>
+      <div className='text-2xl font-black tabular-nums'>{value}</div>
+      <div className='text-[10px] font-black tracking-widest text-muted-foreground'>{label}</div>
+    </div>
+  )
+}
