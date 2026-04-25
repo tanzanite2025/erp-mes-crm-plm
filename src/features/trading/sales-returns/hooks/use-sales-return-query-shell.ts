@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { isNotFoundError } from '@/lib/error-status'
 import {
   useGetSalesReturnSourceOrderDetail,
   useGetSalesReturnSourceOrders,
@@ -92,13 +93,56 @@ export function useSalesReturnQueryShell() {
     Math.ceil(returnTotal / SALES_RETURNS_PAGE_SIZE)
   )
 
+  const hasMissingSelectedReturn =
+    Boolean(selectedReturnId) && isNotFoundError(returnDetailQuery.error)
+
+  useEffect(() => {
+    if (!hasMissingSelectedReturn || !selectedReturnId) {
+      return
+    }
+
+    navigate({
+      to: '/trading/sales-returns',
+      replace: true,
+      search: buildSalesReturnsSearch({
+        customerId: routeCustomerId,
+        customerName: routeCustomerName,
+        search: sourceSearchTerm || undefined,
+        status:
+          sourceStatusFilter === SALES_RETURNS_ALL_STATUS
+            ? undefined
+            : sourceStatusFilter,
+        sourceOrderId: selectedSourceOrderId,
+        returnId: undefined,
+      }),
+    })
+  }, [
+    hasMissingSelectedReturn,
+    navigate,
+    routeCustomerId,
+    routeCustomerName,
+    selectedReturnId,
+    selectedSourceOrderId,
+    sourceSearchTerm,
+    sourceStatusFilter,
+  ])
+
   const selectedReturnRecord = useMemo(() => {
+    if (hasMissingSelectedReturn) {
+      return undefined
+    }
+
     if (returnDetailQuery.data) {
       return returnDetailQuery.data
     }
 
     return returnRecords.find((record) => record.id === selectedReturnId)
-  }, [returnDetailQuery.data, returnRecords, selectedReturnId])
+  }, [
+    hasMissingSelectedReturn,
+    returnDetailQuery.data,
+    returnRecords,
+    selectedReturnId,
+  ])
 
   const handleSourceSearchTermChange = (value: string) => {
     setSourcePage(1)

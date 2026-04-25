@@ -227,7 +227,11 @@ export function ProductPartsMgmt() {
         productTypes={productTypes}
       />
 
-      <CategoryManagerDialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen} />
+      <CategoryManagerDialog
+        open={typeDialogOpen}
+        onOpenChange={setTypeDialogOpen}
+        productTypes={productTypes}
+      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
+import { isNotFoundError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { receivableQueryKeys } from '@/features/trading/receivables/query-keys'
@@ -12,6 +13,7 @@ import type {
 } from '../contracts/sales-return-api-dto'
 import {
   createSalesReturn,
+  deleteSalesReturn,
   getSalesReturnActualAmountRecords,
   getSalesReturnById,
   getSalesReturns,
@@ -57,6 +59,7 @@ export function useGetSalesReturnDetail(id: string) {
     queryKey: tradingQueryKeys.salesReturnDetail(id),
     queryFn: () => getSalesReturnById(id),
     enabled: !!id,
+    retry: (_failureCount, error) => !isNotFoundError(error),
   })
 }
 
@@ -65,6 +68,7 @@ export function useGetSalesReturnActualAmountRecords(id: string) {
     queryKey: tradingQueryKeys.salesReturnActualAmountRecords(id),
     queryFn: () => getSalesReturnActualAmountRecords(id),
     enabled: !!id,
+    retry: (_failureCount, error) => !isNotFoundError(error),
   })
 }
 
@@ -115,6 +119,12 @@ export function useSalesReturnMutations() {
       await queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesOrdersRoot(),
       })
+      await queryClient.invalidateQueries({
+        queryKey: receivableQueryKeys.receivables(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerSalesReturnSummary(),
+      })
     },
     onError: handleServerError,
   })
@@ -154,6 +164,12 @@ export function useSalesReturnMutations() {
       await queryClient.invalidateQueries({
         queryKey: tradingQueryKeys.salesOrdersRoot(),
       })
+      await queryClient.invalidateQueries({
+        queryKey: receivableQueryKeys.receivables(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.customerSalesReturnSummary(),
+      })
     },
     onError: handleServerError,
   })
@@ -173,8 +189,44 @@ export function useSalesReturnMutations() {
     onError: handleServerError,
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: ({
+      salesReturnId,
+    }: {
+      salesReturnId: string
+      salesOrderId: string
+    }) => deleteSalesReturn(salesReturnId),
+    onSuccess: async (_data, variables) => {
+      toast.success(t('trading.salesReturns.queryShell.deleteSuccess'))
+      queryClient.removeQueries({
+        queryKey: tradingQueryKeys.salesReturnDetail(variables.salesReturnId),
+      })
+      queryClient.removeQueries({
+        queryKey: tradingQueryKeys.salesReturnActualAmountRecords(
+          variables.salesReturnId
+        ),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesReturnsRoot(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesReturnsSourceOrderDetail(
+          variables.salesOrderId
+        ),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['sales-returns', 'source-orders'],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: tradingQueryKeys.salesOrdersRoot(),
+      })
+    },
+    onError: handleServerError,
+  })
+
   return {
     createMutation,
+    deleteMutation,
     patchBodyMutation,
     patchLogisticsMutation,
     patchActualAmountEntryMutation,

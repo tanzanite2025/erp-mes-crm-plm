@@ -7,6 +7,7 @@ export type SettlementDetailLike = {
   currency?: string
   invoiceAmount?: number
   outstandingAmount: number
+  status?: string
 }
 
 export type SettlementRecordLike = {
@@ -59,7 +60,9 @@ export interface SettlementLedgerSearchHookParams {
   sortOrder: string
 }
 
-export interface SettlementLedgerSearchHookResult<TRemoteLedger extends SettlementRemoteLedgerLike> {
+export interface SettlementLedgerSearchHookResult<
+  TRemoteLedger extends SettlementRemoteLedgerLike,
+> {
   data: TRemoteLedger[] | undefined
   isFetching: boolean
 }
@@ -117,7 +120,9 @@ export interface SettlementLedgerDetailDialogViewModel {
   selectedRecordId: string | null
   setSelectedRecordId: (value: string | null) => void
   showOnlyMissingEvidenceRecords: boolean
-  setShowOnlyMissingEvidenceRecords: (value: boolean | ((current: boolean) => boolean)) => void
+  setShowOnlyMissingEvidenceRecords: (
+    value: boolean | ((current: boolean) => boolean)
+  ) => void
   totalAllocatedAmount: number
   canSubmit: boolean
   activeAllocationLedgerId: string
@@ -129,14 +134,21 @@ export interface SettlementLedgerDetailDialogViewModel {
   ledgerDisplayMap: Map<string, string>
   filteredRecords: SettlementRecordLike[]
   filteredHistoryGroups: SettlementAllocationHistoryGroup[]
-  displayLedgerOptions: Array<{ id: string; documentNo: string; displayName: string }>
+  displayLedgerOptions: Array<{
+    id: string
+    documentNo: string
+    displayName: string
+  }>
   remoteLedgerOptions: SettlementRemoteLedgerLike[]
   isSearchingLedgers: boolean
   handleOpenChange: (nextOpen: boolean) => void
   handleSubmit: () => Promise<void>
   addAllocationRow: () => void
   removeAllocationRow: (sequenceNo: number) => void
-  updateAllocationRow: (sequenceNo: number, patch: Partial<SettlementAllocationDraft>) => void
+  updateAllocationRow: (
+    sequenceNo: number,
+    patch: Partial<SettlementAllocationDraft>
+  ) => void
   openLedgerSearchDialog: (sequenceNo: number) => void
   handleLedgerSelected: (ledgerId: string) => void
   actionRecordLabel: string

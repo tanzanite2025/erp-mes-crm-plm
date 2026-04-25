@@ -262,7 +262,7 @@ const tradingActions: LegacyActionPermissionEntry[] = [
     desc: '允许删除销售订单。',
     category: 'action',
     parentId: 'menu_trading',
-    routeBindings: ['DELETE /sales-orders/:id'],
+    routeBindings: ['DELETE /sales-orders/:id', 'DELETE /sales-returns/:id'],
   },
   {
     id: 'action_trading_sales_order_sync',

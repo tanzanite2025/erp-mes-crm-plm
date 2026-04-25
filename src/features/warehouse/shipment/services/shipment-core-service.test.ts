@@ -43,7 +43,7 @@ describe('ShipmentCoreService', () => {
 
     const result = await ShipmentCoreService.getShipmentHistory()
 
-    expect(apiFetchMock).toHaveBeenCalledWith('/inventory/shipment')
+    expect(apiFetchMock).toHaveBeenCalledWith('/inventory/shipment?page=1&pageSize=50')
     expect(result).toHaveLength(1)
     expect(result[0]?.orderNo).toBe('SO-001')
   })

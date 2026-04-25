@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PRODUCTS_QUERY_KEY } from '@/features/engineering/query-keys'
-import { type Product } from '@/features/engineering/data/schema'
+import { productOptionsQueryKey } from '@/features/engineering/query-keys'
 import { ProductCoreService } from '@/features/engineering/services/product-core-service'
 import {
   calculatePackagingPlan,
@@ -59,8 +58,8 @@ export function useSalesOrderPackagingPreview(order: SalesOrder) {
   })
 
   const productsQuery = useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: () => ProductCoreService.getProducts({ isOptions: true }) as Promise<Product[]>,
+    queryKey: productOptionsQueryKey(),
+    queryFn: () => ProductCoreService.getProductPackagingOptions(),
   })
 
   const data = useMemo<SalesOrderPackagingPreviewData | null>(() => {

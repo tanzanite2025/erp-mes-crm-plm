@@ -34,8 +34,6 @@ import { cn } from '@/lib/utils'
 import { ProductTypeActionDialog } from './product-type-action-dialog'
 import { type ProductType } from '../data/schema'
 import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
-import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
-import { ProductTypeService } from '../services/product-type-service'
 import { type SaveProductTypeInput } from '../mutation-types'
 import { buildOrderedProductTypes } from '../utils/product-type-tree'
 

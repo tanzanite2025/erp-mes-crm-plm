@@ -36,6 +36,7 @@ import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/warehouse/inbound'
 import { useProductInboundViewModel } from '../hooks/use-product-inbound-view-model'
+import { SalesReturnReceivingQueueCard } from '../sales-return-receiving'
 
 export default function ProductInbound() {
     const { t } = useLanguage()
@@ -72,6 +73,8 @@ export default function ProductInbound() {
     return (
         <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
             <IndustrialHeader title={t('warehouse.inbound.title')} description={t('warehouse.inbound.subtitle')} icon={Package} />
+
+            <SalesReturnReceivingQueueCard />
 
             <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
                 <div className='relative max-w-sm flex-1'>

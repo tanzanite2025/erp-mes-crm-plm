@@ -15,6 +15,11 @@ import {
 import { type Product } from '../data/schema'
 import { getProductAttributeSummary } from '../utils/product-attribute-utils'
 
+export interface ProductPackagingOption {
+  id: string
+  weight?: number
+}
+
 export const ProductCoreService = {
   async getProducts(params?: { isOptions?: boolean; page?: number; pageSize?: number }): Promise<Product[]> {
     const useOptions = params?.isOptions ?? !params?.page
@@ -40,6 +45,17 @@ export const ProductCoreService = {
         'ProductCoreService.getProducts.page'
       ) as ProductListPageApiDTO
     )
+  },
+
+  async getProductPackagingOptions(): Promise<ProductPackagingOption[]> {
+    const res = await apiFetch<ProductApiDTO[]>('/engineering/products?options=true')
+    return ensureArrayResponse<ProductApiDTO>(
+      res,
+      'ProductCoreService.getProductPackagingOptions'
+    ).map((item) => ({
+      id: item.id,
+      weight: item.weight,
+    }))
   },
 
   async getProductById(id: string): Promise<Product> {

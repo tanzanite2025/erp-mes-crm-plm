@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { CalendarDays, FileStack, Package2, User } from 'lucide-react'
+import { CalendarDays, FileStack, Package2, Trash2, User } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
@@ -31,15 +41,34 @@ type SalesReturnRecordMasterProps = {
   records: SalesReturnRecord[]
   selectedId?: string
   onSelect: (id: string) => void
+  onDelete?: (record: SalesReturnRecord) => Promise<void> | void
+  deletingId?: string
 }
 
 export function SalesReturnRecordMaster({
   records,
   selectedId,
   onSelect,
+  onDelete,
+  deletingId,
 }: SalesReturnRecordMasterProps) {
   const { t } = useLanguage()
   const [entryRecord, setEntryRecord] = useState<SalesReturnRecord | null>(null)
+  const [pendingDeleteRecord, setPendingDeleteRecord] =
+    useState<SalesReturnRecord | null>(null)
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteRecord || !onDelete) {
+      return
+    }
+
+    try {
+      await onDelete(pendingDeleteRecord)
+      setPendingDeleteRecord(null)
+    } catch {
+      return
+    }
+  }
 
   if (records.length === 0) {
     return (
@@ -151,6 +180,27 @@ export function SalesReturnRecordMaster({
                   >
                     {t('trading.salesReturns.queryShell.actualAmountEntryAction')}
                   </Button>
+                  {onDelete ? (
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setPendingDeleteRecord(record)
+                      }}
+                      onKeyDown={(event) => {
+                        event.stopPropagation()
+                      }}
+                      disabled={deletingId === record.id}
+                      className='h-8 rounded-full border-rose-500/20 px-3 text-[10px] font-black tracking-widest text-rose-600 uppercase hover:text-rose-700'
+                    >
+                      <Trash2 className='mr-1 size-3.5' />
+                      {deletingId === record.id
+                        ? t('common.actions.loading')
+                        : t('trading.salesReturns.queryShell.deleteAction')}
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -168,6 +218,44 @@ export function SalesReturnRecordMaster({
           }
         }}
       />
+
+      {onDelete && pendingDeleteRecord ? (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingDeleteRecord(null)
+            }
+          }}
+        >
+          <AlertDialogContent className='rounded-[32px] border-none bg-background shadow-2xl'>
+            <AlertDialogHeader>
+              <AlertDialogTitle className='text-lg font-black tracking-tighter italic uppercase'>
+                {t('trading.salesReturns.queryShell.deleteConfirmTitle')}
+              </AlertDialogTitle>
+              <AlertDialogDescription className='text-[11px] font-bold leading-6 text-muted-foreground'>
+                {t('trading.salesReturns.queryShell.deleteConfirmDescription', {
+                  returnNo: pendingDeleteRecord.returnNo,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='gap-2'>
+              <AlertDialogCancel className='rounded-full text-[10px] font-black uppercase tracking-widest'>
+                {t('common.actions.cancel')}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => void handleConfirmDelete()}
+                disabled={deletingId === pendingDeleteRecord.id}
+                className='rounded-full bg-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-700'
+              >
+                {deletingId === pendingDeleteRecord.id
+                  ? t('common.actions.loading')
+                  : t('trading.salesReturns.queryShell.deleteConfirmAction')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </div>
   )
 }

@@ -16,6 +16,7 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { TradingQueryErrorState } from '@/features/trading/components/trading-query-error-state'
 import type { SalesOrder } from '@/features/trading/data/schema'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
+import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
 import { SalesReturnCreateSheet } from './sales-return-create-sheet'
 import { SalesReturnRecordMaster } from './sales-return-record-master'
 import { SalesReturnRecordSpotlight } from './sales-return-record-spotlight'
@@ -104,6 +105,7 @@ export function SalesReturnsEntryShell({
   onReturnPageChange,
 }: SalesReturnsEntryShellProps) {
   const { t } = useLanguage()
+  const { deleteMutation } = useSalesReturnMutations()
   const [createOrder, setCreateOrder] = useState<SalesOrder | undefined>(
     undefined
   )
@@ -115,6 +117,26 @@ export function SalesReturnsEntryShell({
       return
     }
     setCreateOrder(order)
+  }
+
+  const handleDeleteReturn = async (record: SalesReturnRecord) => {
+    const wasSelected = selectedReturnId === record.id
+
+    if (wasSelected) {
+      onClearSelectedReturn()
+    }
+
+    try {
+      await deleteMutation.mutateAsync({
+        salesReturnId: record.id,
+        salesOrderId: record.salesOrderId,
+      })
+    } catch (error) {
+      if (wasSelected) {
+        onSelectReturn(record.id)
+      }
+      throw error
+    }
   }
 
   return (
@@ -258,6 +280,12 @@ export function SalesReturnsEntryShell({
                       records={returnRecords}
                       selectedId={selectedReturnId}
                       onSelect={onSelectReturn}
+                      onDelete={handleDeleteReturn}
+                      deletingId={
+                        deleteMutation.isPending
+                          ? deleteMutation.variables?.salesReturnId
+                          : undefined
+                      }
                     />
                   </div>
                 </ScrollArea>

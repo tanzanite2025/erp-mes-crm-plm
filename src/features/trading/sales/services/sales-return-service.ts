@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api-client'
+import { isApiClientError } from '@/lib/api-error'
 import {
   ensureArrayResponse,
   ensureArrayField,
@@ -219,11 +220,7 @@ export async function getSalesReturns(
       'items',
       'SalesReturnService.getSalesReturns'
     ).map(toSalesReturnContract),
-    total: ensureNumberField(
-      dto,
-      'total',
-      'SalesReturnService.getSalesReturns'
-    ),
+    total: ensureNumberField(dto, 'total', 'SalesReturnService.getSalesReturns'),
     page: ensureNumberField(dto, 'page', 'SalesReturnService.getSalesReturns'),
     pageSize: ensureNumberField(
       dto,
@@ -236,7 +233,9 @@ export async function getSalesReturns(
 export async function getSalesReturnById(
   id: string
 ): Promise<SalesReturnRecord> {
-  const res = await apiFetch<Record<string, unknown>>(`/sales-returns/${id}`)
+  const res = await apiFetch<Record<string, unknown>>(`/sales-returns/${id}`, {
+    suppressErrorStatuses: [404],
+  })
   const dto = ensureObjectResponse<SalesReturnApiDTO & Record<string, unknown>>(
     res,
     'SalesReturnService.getSalesReturnById'
@@ -244,16 +243,32 @@ export async function getSalesReturnById(
   return toSalesReturnContract(dto)
 }
 
+export async function deleteSalesReturn(id: string): Promise<void> {
+  await apiFetch<void>(`/sales-returns/${id}`, {
+    method: 'DELETE',
+  })
+}
+
 export async function getSalesReturnActualAmountRecords(
   id: string
 ): Promise<SalesReturnActualAmountRecord[]> {
-  const res = await apiFetch<Record<string, unknown>>(
-    `/sales-returns/${id}/actual-amount-records`
-  )
-  return ensureArrayResponse<SalesReturnActualAmountRecordApiDTO>(
-    res,
-    'SalesReturnService.getSalesReturnActualAmountRecords'
-  ).map(toSalesReturnActualAmountRecordContract)
+  try {
+    const res = await apiFetch<Record<string, unknown>>(
+      `/sales-returns/${id}/actual-amount-records`,
+      {
+        suppressErrorStatuses: [404],
+      }
+    )
+    return ensureArrayResponse<SalesReturnActualAmountRecordApiDTO>(
+      res,
+      'SalesReturnService.getSalesReturnActualAmountRecords'
+    ).map(toSalesReturnActualAmountRecordContract)
+  } catch (error) {
+    if (isApiClientError(error) && error.status === 404) {
+      return []
+    }
+    throw error
+  }
 }
 
 export async function patchSalesReturnActualAmountEntry(

@@ -53,7 +53,7 @@ export function SalesReturnRecordSpotlight({
       <CardHeader className='flex flex-row items-start justify-between gap-4 px-5 py-4'>
         <div>
           <CardTitle className='text-sm font-black tracking-tight text-foreground'>
-            {t('trading.salesReturns.queryShell.selectionTitle')}
+            {t('trading.salesReturns.queryShell.editorPanelTitle')}
           </CardTitle>
           <p className='mt-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {record.returnNo}
@@ -77,7 +77,7 @@ export function SalesReturnRecordSpotlight({
             onClick={onClearSelection}
             className='rounded-full text-[10px] font-black tracking-widest uppercase'
           >
-            {t('trading.salesReturns.queryShell.clearSelection')}
+            {t('trading.salesReturns.queryShell.closePanel')}
           </Button>
         </div>
       </CardHeader>

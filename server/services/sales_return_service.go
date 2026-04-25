@@ -247,6 +247,30 @@ func PatchSalesReturn(input PatchSalesReturnInput) (SalesReturnResponse, error) 
 	return response, nil
 }
 
+func DeleteSalesReturn(id string) error {
+	salesReturnID := strings.TrimSpace(id)
+	if salesReturnID == "" {
+		return errors.New("sales return id is required")
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var record models.SalesReturn
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&record, "id = ?", salesReturnID).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("sales_return_id = ?", record.ID).Delete(&models.SalesReturnActualAmountRecord{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&models.SalesReturn{}, "id = ?", record.ID).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func createSalesReturnTx(tx *gorm.DB, input CreateSalesReturnInput) (CreateSalesReturnResult, error) {
 	if tx == nil {
 		return CreateSalesReturnResult{}, errors.New("transaction is required")

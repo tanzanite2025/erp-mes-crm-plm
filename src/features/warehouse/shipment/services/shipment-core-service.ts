@@ -18,13 +18,33 @@ interface ShipmentHistoryApiDTO {
   pageSize: number
 }
 
+interface ShipmentHistoryQueryOptions {
+  page?: number
+  pageSize?: number
+}
+
 export const ShipmentCoreService = {
-  getShipmentHistory: async (): Promise<ShipmentRecord[]> => {
-    const res = await apiFetch<ShipmentHistoryApiDTO>('/inventory/shipment')
-    const response = ensureObjectResponse<ShipmentHistoryApiDTO & Record<string, unknown>>(
+  getShipmentHistoryPage: async (
+    options: ShipmentHistoryQueryOptions = {}
+  ): Promise<ShipmentHistoryApiDTO> => {
+    const page = options.page ?? 1
+    const pageSize = options.pageSize ?? 50
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+    })
+
+    const res = await apiFetch<ShipmentHistoryApiDTO>(`/inventory/shipment?${params.toString()}`)
+    return ensureObjectResponse<ShipmentHistoryApiDTO & Record<string, unknown>>(
       res,
-      'ShipmentCoreService.getShipmentHistory'
-    )
+      'ShipmentCoreService.getShipmentHistoryPage'
+    ) as ShipmentHistoryApiDTO
+  },
+
+  getShipmentHistory: async (
+    options: ShipmentHistoryQueryOptions = {}
+  ): Promise<ShipmentRecord[]> => {
+    const response = await ShipmentCoreService.getShipmentHistoryPage(options)
     return toShipmentRecordContracts(
       ensureArrayField<InventoryShipmentRecordApiDTO>(
         response,

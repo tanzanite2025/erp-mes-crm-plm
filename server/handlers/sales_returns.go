@@ -152,6 +152,27 @@ func PatchSalesReturnActualAmountEntryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func DeleteSalesReturnHandler(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "销售退货ID不能为空"})
+		return
+	}
+
+	err := services.DeleteSalesReturn(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "销售退货单不存在"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除销售退货单失败: " + err.Error()})
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func GetSalesReturnHandler(c *gin.Context) {
 	id := strings.TrimSpace(c.Param("id"))
 	response, err := services.GetSalesReturnByID(id)

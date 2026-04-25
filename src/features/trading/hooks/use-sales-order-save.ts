@@ -1,16 +1,17 @@
 import { useCallback } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
 import { auditUtils } from '@/lib/audit-utils'
 import { type DeltaSet } from '@/lib/delta/types'
-import { useAuthStore } from '@/stores/auth-store'
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
-import { requireTradingCommandActor } from '../utils/command-actor'
 import { useSalesOrderMutations } from '../sales'
+import { requireTradingCommandActor } from '../utils/command-actor'
 
 interface UseSalesOrderSaveOptions {
   order?: SalesOrder | null
   validate: () => boolean
   prepareToSave: () => Promise<SalesOrderFormValues | undefined>
   commit: () => DeltaSet
+  canSave?: boolean
   onSaved: () => void
 }
 
@@ -19,16 +20,18 @@ export function useSalesOrderSave({
   validate,
   prepareToSave,
   commit,
+  canSave = true,
   onSaved,
 }: UseSalesOrderSaveOptions) {
   const user = useAuthStore((state) => state.user)
 
-  const {
-    createMutation,
-    saveMutation,
-  } = useSalesOrderMutations()
+  const { createMutation, saveMutation } = useSalesOrderMutations()
 
   const handleSave = useCallback(async () => {
+    if (!canSave) {
+      return
+    }
+
     if (!validate()) {
       return
     }
@@ -54,7 +57,7 @@ export function useSalesOrderSave({
 
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
-        'useSalesOrderSave.handleSave',
+        'useSalesOrderSave.handleSave'
       )
       await saveMutation.mutateAsync({
         orderId: order.id,
@@ -70,6 +73,7 @@ export function useSalesOrderSave({
       // Mutation onError handlers already surface the failure to the user.
     }
   }, [
+    canSave,
     commit,
     createMutation,
     onSaved,

@@ -45,6 +45,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	salesReturnGroup.PATCH("/:id", salesOrderManage, handlers.PatchSalesReturnHandler)
 	salesReturnGroup.PATCH("/:id/actual-amount", salesOrderManage, handlers.PatchSalesReturnActualAmountEntryHandler)
 	salesReturnGroup.PATCH("/:id/logistics", salesOrderManage, handlers.PatchSalesReturnLogisticsHandler)
+	salesReturnGroup.DELETE("/:id", salesOrderDelete, handlers.DeleteSalesReturnHandler)
 
 	customerGroup := authorized.Group("/customers")
 	customerGroup.Use(tradingAccess)

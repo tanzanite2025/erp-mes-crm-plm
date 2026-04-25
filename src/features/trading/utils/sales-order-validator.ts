@@ -1,4 +1,5 @@
 import { type SalesOrder, type SalesOrderFormValues } from '../data/schema'
+import { isSalesOrderEditable } from './sales-order-actions'
 
 export type SalesOrderValidationErrorKey =
   | 'tradingSalesOrder.headerFields.lockedMessage'
@@ -13,30 +14,32 @@ export interface SalesOrderValidationResult {
 }
 
 /**
- * 销售订单表单 UI 预检纯逻辑
- * 仅处理前端交互层的最小完整性校验，不承载必须由后端强制执行的业务裁决。
- * 不包含 toast 触发，仅返回 isValid 状态与对应的多语言 Key。
+ * UI-side validation only. Backend lifecycle guards remain authoritative.
  */
 export const validateSalesOrder = (
   formData: SalesOrderFormValues,
   initialOrder: SalesOrder | null | undefined
 ): SalesOrderValidationResult => {
-  const allowedEditStatuses = ['Draft', 'Pending']
-
-  // 1. 状态锁定检查
-  if (initialOrder && !allowedEditStatuses.includes(initialOrder.status)) {
-    return { isValid: false, errorKey: 'tradingSalesOrder.headerFields.lockedMessage' }
+  if (initialOrder && !isSalesOrderEditable(initialOrder)) {
+    return {
+      isValid: false,
+      errorKey: 'tradingSalesOrder.headerFields.lockedMessage',
+    }
   }
 
-  // 2. 核心字段空值检查
   if (!formData.customerName) {
-    return { isValid: false, errorKey: 'tradingSalesOrder.headerFields.customerPlaceholder' }
+    return {
+      isValid: false,
+      errorKey: 'tradingSalesOrder.headerFields.customerPlaceholder',
+    }
   }
   if (!formData.deliveryDate) {
-    return { isValid: false, errorKey: 'tradingSalesOrder.headerFields.deliveryDeadline' }
+    return {
+      isValid: false,
+      errorKey: 'tradingSalesOrder.headerFields.deliveryDeadline',
+    }
   }
 
-  // 3. 行项目完整性检查
   if (!formData.lines || formData.lines.length === 0) {
     return { isValid: false, errorKey: 'tradingSalesOrder.linesEditor.noLines' }
   }
@@ -45,7 +48,10 @@ export const validateSalesOrder = (
     (line) => !line.productModel || (Number(line.qty) || 0) <= 0
   )
   if (hasInvalidLine) {
-    return { isValid: false, errorKey: 'tradingSalesOrder.linesEditor.selectProduct' }
+    return {
+      isValid: false,
+      errorKey: 'tradingSalesOrder.linesEditor.selectProduct',
+    }
   }
 
   return { isValid: true }

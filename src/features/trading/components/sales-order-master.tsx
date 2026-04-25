@@ -1,6 +1,13 @@
 import { isBefore, parseISO, startOfDay } from 'date-fns'
 import { useNavigate } from '@tanstack/react-router'
-import { BanknoteArrowDown, Edit2, FileText, MoreHorizontal, Trash2 } from 'lucide-react'
+import {
+  BanknoteArrowDown,
+  Edit2,
+  FileText,
+  MoreHorizontal,
+  ScanLine,
+  Trash2,
+} from 'lucide-react'
 import { auditUtils } from '@/lib/audit-utils'
 import { failLoudly } from '@/lib/safe-catch'
 import { useLanguage } from '@/context/language-provider'
@@ -15,12 +22,15 @@ import {
 import { getSalesOrderClassificationLabel } from '../data/sales-order-options'
 import { getSalesStatusLabel, getSalesStatusMeta } from '../data/sales-status'
 import type { SalesOrder } from '../data/schema'
+import { canRegisterSalesOrderReceipt } from '../utils/sales-order-actions'
+import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
 import { SalesOrderPackagingSummaryInline } from './parts/sales-order-packaging-summary-inline'
 
 interface SalesOrderMasterProps {
   orders: SalesOrder[]
   selectedId?: string
   onSelect: (id: string) => void
+  onPreassembleScan?: (order: SalesOrder) => void
   onEdit?: (order: SalesOrder) => void
   onDelete?: (id: string) => void
 }
@@ -41,6 +51,7 @@ export function SalesOrderMaster({
   orders,
   selectedId,
   onSelect,
+  onPreassembleScan,
   onEdit,
   onDelete,
 }: SalesOrderMasterProps) {
@@ -57,6 +68,10 @@ export function SalesOrderMaster({
         autoOpen: autoOpen || undefined,
       },
     })
+  }
+
+  const openScanPreassemble = (order: SalesOrder) => {
+    onPreassembleScan?.(order)
   }
 
   return (
@@ -108,6 +123,9 @@ export function SalesOrderMaster({
             ) : (
               orders.map((order) => {
                 const active = order.id === selectedId
+                const canPreassembleScan =
+                  isSalesOrderPreassembleScanAllowed(order)
+                const canRegisterReceipt = canRegisterSalesOrderReceipt(order)
                 const classification =
                   getSalesOrderClassificationLabel(
                     order.classification,
@@ -119,7 +137,13 @@ export function SalesOrderMaster({
                 return (
                   <tr
                     key={order.id}
-                    onClick={() => onSelect(order.id)}
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement | null
+                      if (target?.closest('[data-order-row-action="true"]')) {
+                        return
+                      }
+                      onSelect(order.id)
+                    }}
                     className={`group animate-in cursor-pointer transition-all duration-200 fade-in slide-in-from-left-2 hover:bg-white hover:shadow-md ${
                       active
                         ? 'bg-white shadow-lg ring-1 ring-primary/30'
@@ -236,13 +260,18 @@ export function SalesOrderMaster({
                       </div>
                     </td>
                     {hasActions ? (
-                      <td className='rounded-r-2xl px-4 py-3 text-center'>
+                      <td
+                        data-order-row-action='true'
+                        className='rounded-r-2xl px-4 py-3 text-center'
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant='ghost'
                               size='icon'
                               className='h-8 w-8 rounded-full group-hover:bg-muted/50 hover:bg-muted'
+                              onClick={(event) => event.stopPropagation()}
                             >
                               <MoreHorizontal className='size-4' />
                             </Button>
@@ -252,7 +281,19 @@ export function SalesOrderMaster({
                             className='min-w-[144px] rounded-[20px] border-2 p-1.5 shadow-2xl'
                           >
                             <DropdownMenuItem
-                              onClick={(e) => {
+                              disabled={!canPreassembleScan}
+                              onSelect={(e) => {
+                                e.stopPropagation()
+                                if (!canPreassembleScan) return
+                                openScanPreassemble(order)
+                              }}
+                              className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                            >
+                              <ScanLine className='size-3 text-blue-600' />
+                              {t('tradingSalesOrder.master.shipByScan')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
                                 e.stopPropagation()
                                 openReceivables(order, false)
                               }}
@@ -262,8 +303,10 @@ export function SalesOrderMaster({
                               {t('tradingSalesOrder.master.viewReceivable')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={(e) => {
+                              disabled={!canRegisterReceipt}
+                              onSelect={(e) => {
                                 e.stopPropagation()
+                                if (!canRegisterReceipt) return
                                 openReceivables(order, true)
                               }}
                               className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
@@ -271,34 +314,36 @@ export function SalesOrderMaster({
                               <BanknoteArrowDown className='size-3 text-emerald-600' />
                               {t('tradingSalesOrder.master.registerReceipt')}
                             </DropdownMenuItem>
-                            {(onEdit || onDelete) && <DropdownMenuSeparator className='my-1' />}
+                            {(onEdit || onDelete) && (
+                              <DropdownMenuSeparator className='my-1' />
+                            )}
                             {onEdit && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onEdit?.(order)
-                              }}
-                              className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                            >
-                              <Edit2 className='size-3 text-blue-500' />
-                              {t('tradingSalesOrder.master.editOrder')}
-                            </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.stopPropagation()
+                                  onEdit?.(order)
+                                }}
+                                className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                              >
+                                <Edit2 className='size-3 text-blue-500' />
+                                {t('tradingSalesOrder.master.editOrder')}
+                              </DropdownMenuItem>
                             )}
                             {onDelete && (
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onDelete?.(order.id)
-                              }}
-                              className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
-                            >
-                              <Trash2 className='size-3' />
-                              {order.status === 'Canceled'
-                                ? t(
-                                    'tradingSalesOrder.master.removePermanently'
-                                  )
-                                : t('tradingSalesOrder.master.voidContract')}
-                            </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.stopPropagation()
+                                  onDelete?.(order.id)
+                                }}
+                                className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                              >
+                                <Trash2 className='size-3' />
+                                {order.status === 'Canceled'
+                                  ? t(
+                                      'tradingSalesOrder.master.removePermanently'
+                                    )
+                                  : t('tradingSalesOrder.master.voidContract')}
+                              </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>

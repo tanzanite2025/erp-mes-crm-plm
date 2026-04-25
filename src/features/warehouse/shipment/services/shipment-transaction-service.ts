@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
+import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
   type ShipmentRecordCreateInput,
   toShipmentRecordApiDTO,
@@ -68,6 +69,30 @@ export const ShipmentTransactionService = {
       ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
         res,
         'ShipmentTransactionService.prepareVirtualShipment'
+      ) as InventoryShipmentRecordApiDTO
+    )
+  },
+
+  patchShipmentDraft: async (id: string, delta: DeltaSet, version: number): Promise<ShipmentRecord> => {
+    const payload: DeltaPayload = {
+      op: 'PATCH',
+      delta,
+      metadata: {
+        id,
+        version,
+        intent: 'SALES_PREASSEMBLY_SCAN_CONFIRM',
+      },
+    }
+
+    const res = await apiFetch<InventoryShipmentRecordApiDTO>(`/inventory/shipment/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+
+    return toShipmentRecordContract(
+      ensureObjectResponse<InventoryShipmentRecordApiDTO & Record<string, unknown>>(
+        res,
+        'ShipmentTransactionService.patchShipmentDraft'
       ) as InventoryShipmentRecordApiDTO
     )
   },

@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/locales'
+
 export const TRADING_LEDGER_STATUS_OPTIONS = ['OPEN', 'PARTIAL', 'OVERDUE', 'SETTLED'] as const
 export const TRADING_LEDGER_STATUS_LABEL_OPTIONS = [...TRADING_LEDGER_STATUS_OPTIONS, 'CANCELLED'] as const
 export const TRADING_LEDGER_AGING_BUCKET_OPTIONS = ['OPEN', 'CURRENT', 'OVERDUE', 'SETTLED', 'CANCELLED'] as const
@@ -5,7 +7,7 @@ export const TRADING_LEDGER_AGING_BUCKET_OPTIONS = ['OPEN', 'CURRENT', 'OVERDUE'
 export type TradingLedgerStatus = (typeof TRADING_LEDGER_STATUS_LABEL_OPTIONS)[number]
 export type TradingLedgerAgingBucket = (typeof TRADING_LEDGER_AGING_BUCKET_OPTIONS)[number]
 
-type LedgerTranslator = (key: string) => string
+type LedgerTranslator = (key: TranslationKey) => string
 
 function normalizeLedgerValue(value: string) {
   return value.trim().toUpperCase()

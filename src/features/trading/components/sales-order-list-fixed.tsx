@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import {
   ChevronLeft,
@@ -8,22 +9,32 @@ import {
   Search,
   ShoppingCart,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import { type DeltaSet } from '@/lib/delta/types'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
+import { warehouseQueryKeys } from '@/features/warehouse/query-keys'
+import { ShipmentTransactionService } from '@/features/warehouse/shipment'
 import { useAuthStore } from '@/stores/auth-store'
+import { tradingQueryKeys } from '../query-keys'
 import { type SalesOrder, type SalesOrderStatus, salesOrderStatuses } from '../data/schema'
 import { useTradingFinanceResources } from '../hooks/use-trading-finance-resources'
 import { useGetSalesOrders, useSalesOrderMutations } from '../sales'
 import { requireTradingCommandActor } from '../utils/command-actor'
+import { isSalesOrderPreassembleScanAllowed } from '../utils/sales-order-preassemble'
 import { SalesOrderActionDialog } from './sales-order-action-dialog'
 import { SalesOrderDetailSheet } from './sales-order-detail-sheet'
 import { SalesOrderMaster } from './sales-order-master'
+import {
+  SalesOrderPreassembleScanDialog,
+  type SalesOrderPreassembleConfirmPayload,
+} from './sales-order-preassemble-scan-dialog'
 import { TradingQueryErrorState } from './trading-query-error-state'
 
 const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
@@ -41,6 +52,7 @@ function toSalesOrderStatusKey(status: SalesOrderStatus) {
 export function SalesOrderList() {
   const { t } = useLanguage()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const search = useSearch({ from: '/_authenticated/trading/sales-orders' })
   const user = useAuthStore((state) => state.user)
   const routeCustomerId = search.customerId || undefined
@@ -55,6 +67,8 @@ export function SalesOrderList() {
   const [paymentTermFilter, setPaymentTermFilter] = useState('ALL')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null)
+  const [preassembleScanOrder, setPreassembleScanOrder] = useState<SalesOrder | null>(null)
+  const [isSubmittingPreassemble, setIsSubmittingPreassemble] = useState(false)
   const [showCanceledSection, setShowCanceledSection] = useState(false)
 
   const selectedId = search.detailId || undefined
@@ -279,6 +293,84 @@ export function SalesOrderList() {
     }
   }
 
+  const handlePreassembleConfirm = (payload: SalesOrderPreassembleConfirmPayload) => {
+    runConfirmedAction({
+      permission: 'action_inventory_shipment_update',
+      onAction: async () => {
+        if (isSubmittingPreassemble) return
+        setIsSubmittingPreassemble(true)
+
+        try {
+          let patchedCount = 0
+          await Promise.all(
+            payload.entries.map(async (entry) => {
+              const delta: DeltaSet = {}
+
+              if (entry.currentSalesOrderId !== payload.orderId) {
+                delta.salesOrderId = {
+                  o: entry.currentSalesOrderId,
+                  n: payload.orderId,
+                }
+              }
+              if (entry.currentSalesOrderLineId !== entry.targetSalesOrderLineId) {
+                delta.salesOrderLineId = {
+                  o: entry.currentSalesOrderLineId,
+                  n: entry.targetSalesOrderLineId,
+                }
+              }
+              if (entry.currentOrderNo !== payload.orderNo) {
+                delta.orderNo = {
+                  o: entry.currentOrderNo,
+                  n: payload.orderNo,
+                }
+              }
+
+              if (Object.keys(delta).length === 0) {
+                return
+              }
+
+              await ShipmentTransactionService.patchShipmentDraft(
+                entry.shipmentId,
+                delta,
+                entry.version
+              )
+              patchedCount += 1
+            })
+          )
+
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrdersRoot() }),
+            queryClient.invalidateQueries({ queryKey: tradingQueryKeys.salesOrderDetail(payload.orderId) }),
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
+            queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentDemands() }),
+          ])
+
+          toast.success(
+            patchedCount > 0
+              ? `扫码预装已保存（${patchedCount} 条）`
+              : '扫码结果已确认（无绑定变更）'
+          )
+          setPreassembleScanOrder(null)
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : '扫码预装保存失败')
+        } finally {
+          setIsSubmittingPreassemble(false)
+        }
+      },
+    })
+  }
+
+  const handleOpenPreassembleScan = (order: SalesOrder) => {
+    if (!isSalesOrderPreassembleScanAllowed(order)) return
+
+    runConfirmedAction({
+      permission: 'action_inventory_shipment_update',
+      onAction: () => {
+        setPreassembleScanOrder(order)
+      },
+    })
+  }
+
   if (isLoading) {
     return (
       <div className='flex h-[60vh] flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
@@ -394,6 +486,7 @@ export function SalesOrderList() {
               orders={primaryOrders}
               selectedId={selectedId || undefined}
               onSelect={handleOpenDetail}
+              onPreassembleScan={handleOpenPreassembleScan}
               onEdit={handleEditOrder}
               onDelete={handleDeleteOrder}
             />
@@ -420,6 +513,7 @@ export function SalesOrderList() {
                     orders={canceledOrders}
                     selectedId={selectedId || undefined}
                     onSelect={handleOpenDetail}
+                    onPreassembleScan={handleOpenPreassembleScan}
                     onEdit={handleEditOrder}
                     onDelete={handleDeleteOrder}
                   />
@@ -501,6 +595,18 @@ export function SalesOrderList() {
         open={isActionDialogOpen}
         onOpenChange={setIsActionDialogOpen}
         order={editingOrder}
+      />
+
+      <SalesOrderPreassembleScanDialog
+        open={isSalesOrderPreassembleScanAllowed(preassembleScanOrder)}
+        onOpenChange={(open) => {
+          if (!open && !isSubmittingPreassemble) {
+            setPreassembleScanOrder(null)
+          }
+        }}
+        order={preassembleScanOrder}
+        isSubmitting={isSubmittingPreassemble}
+        onConfirm={handlePreassembleConfirm}
       />
     </div>
   )

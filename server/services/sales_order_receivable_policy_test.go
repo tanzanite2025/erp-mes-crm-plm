@@ -47,3 +47,22 @@ func TestDeriveReceivableAgingBucketUsesReceivableSpecificBuckets(t *testing.T) 
 	require.Equal(t, models.LedgerAgingBucketSettled, deriveReceivableAgingBucket(models.LedgerStatusSettled))
 	require.Equal(t, models.LedgerAgingBucketCancelled, deriveReceivableAgingBucket(models.LedgerStatusCancelled))
 }
+
+func TestCanceledSalesOrderReceivableIsNotAllocatable(t *testing.T) {
+	order := models.SalesOrder{
+		ID:     "sales-order-canceled",
+		Amount: 100,
+		Status: "Canceled",
+	}
+	bundle := receivableOrderSettlementBundle{
+		receivedAmountByOrderID:         map[string]float64{},
+		actualAmountAdjustmentByOrderID: map[string]float64{},
+	}
+
+	received, outstanding := calculateReceivableAmounts(order, bundle)
+
+	require.Equal(t, 0.0, received)
+	require.Equal(t, 0.0, outstanding)
+	require.True(t, isReceivableOrderNotAllocatable(order, outstanding))
+	require.Equal(t, models.LedgerStatusCancelled, deriveReceivableOrderStatus(order, outstanding, received))
+}

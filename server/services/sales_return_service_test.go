@@ -492,6 +492,42 @@ func TestListSalesReturnActualAmountRecordsRejectsMissingReturn(t *testing.T) {
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 }
 
+func TestDeleteSalesReturnSoftDeletesReturnAndActualAmountRecords(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupSalesReturnServiceTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now()
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_returns (id, created_at, updated_at, deleted_at, return_no, sales_order_id, sales_order_no, customer_id, customer_name, status, return_date, issue_category, reason, remarks, evidences, operator, total_quantity, total_amount)
+		VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?)
+	`, "sr-delete-target", now, now, "SR-DELETE-001", "so-delete-1", "SO-DELETE-001", "cust-1", "Customer A", "Created", now, "Damage", "initial", "batch-a", "tester", 2.0, 25.0).Error)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO sales_return_actual_amount_records (id, created_at, updated_at, deleted_at, sales_return_id, sales_order_id, sales_order_no, return_no, customer_id, customer_name, amount, note, evidences, estimated_return_amount_snapshot, recorded_at, recorded_by)
+		VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, X'5B5D', ?, ?, ?)
+	`, "sraar-delete-1", now, now, "sr-delete-target", "so-delete-1", "SO-DELETE-001", "SR-DELETE-001", "cust-1", "Customer A", 15.0, "confirmed", 25.0, now, "finance-user").Error)
+
+	require.NoError(t, DeleteSalesReturn("sr-delete-target"))
+
+	var activeReturnCount int64
+	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_returns WHERE id = ? AND deleted_at IS NULL`, "sr-delete-target").Scan(&activeReturnCount).Error)
+	require.Equal(t, int64(0), activeReturnCount)
+
+	var activeRecordCount int64
+	require.NoError(t, testDB.Raw(`SELECT COUNT(*) FROM sales_return_actual_amount_records WHERE sales_return_id = ? AND deleted_at IS NULL`, "sr-delete-target").Scan(&activeRecordCount).Error)
+	require.Equal(t, int64(0), activeRecordCount)
+
+	_, err := ListSalesReturnActualAmountRecords("sr-delete-target")
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+}
+
 func TestCreateSalesReturnRejectsQuantityAboveDeliveredQuantity(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupSalesReturnServiceTestDB(t)
