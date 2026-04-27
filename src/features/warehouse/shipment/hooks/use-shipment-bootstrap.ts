@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { WarehouseCategoryCoreService } from '../../category'
 import {
   InventoryCoreService,
@@ -16,6 +17,14 @@ import { warehouseQueryKeys } from '../../query-keys'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
 import { type ShipmentDemand, type ShipmentRecord } from '../data/schema'
 import { ShipmentCoreService } from '../services/shipment-core-service'
+
+export type ShipmentBootstrapResource = CompositeReadResource<{
+  history: ShipmentRecord[]
+  shipmentDemands: ShipmentDemand[]
+  warehouseCategories: WarehouseCategoryOption[]
+  alertThresholds: Record<string, number>
+  masterDataMap: Record<string, MasterDataSearchResult>
+}>
 
 export function useShipmentBootstrap() {
   const { t } = useLanguage()
@@ -45,101 +54,153 @@ export function useShipmentBootstrap() {
     queryFn: () => InventoryMaintenanceService.getAlertThresholds(),
   })
 
-  const error =
-    historyQuery.error ??
-    demandsQuery.error ??
-    categoriesQuery.error ??
-    masterDataQuery.error ??
-    thresholdsQuery.error
+  const readResource = useMemo<ShipmentBootstrapResource>(() => {
+    const historyFailure = resolveQueryFailure({
+      data: historyQuery.data,
+      error: historyQuery.error,
+      isPending: historyQuery.isPending,
+      scope: 'useShipmentBootstrap.history',
+      missingMessage: '[CRITICAL] Shipment history missing after load',
+      failureMessage: '[CRITICAL] Shipment history query failed',
+    })
+    if (historyFailure) {
+      return {
+        status: 'error',
+        error: historyFailure.error,
+        scope: historyFailure.scope,
+      }
+    }
+
+    const demandsFailure = resolveQueryFailure({
+      data: demandsQuery.data,
+      error: demandsQuery.error,
+      isPending: demandsQuery.isPending,
+      scope: 'useShipmentBootstrap.demands',
+      missingMessage: '[CRITICAL] Shipment demands missing after load',
+      failureMessage: '[CRITICAL] Shipment demands query failed',
+    })
+    if (demandsFailure) {
+      return {
+        status: 'error',
+        error: demandsFailure.error,
+        scope: demandsFailure.scope,
+      }
+    }
+
+    const categoriesFailure = resolveQueryFailure({
+      data: categoriesQuery.data,
+      error: categoriesQuery.error,
+      isPending: categoriesQuery.isPending,
+      scope: 'useShipmentBootstrap.categories',
+      missingMessage: '[CRITICAL] Shipment warehouse categories missing after load',
+      failureMessage: '[CRITICAL] Shipment warehouse categories query failed',
+    })
+    if (categoriesFailure) {
+      return {
+        status: 'error',
+        error: categoriesFailure.error,
+        scope: categoriesFailure.scope,
+      }
+    }
+
+    const masterDataFailure = resolveQueryFailure({
+      data: masterDataQuery.data,
+      error: masterDataQuery.error,
+      isPending: masterDataQuery.isPending,
+      scope: 'useShipmentBootstrap.masterData',
+      missingMessage: '[CRITICAL] Shipment master data missing after load',
+      failureMessage: '[CRITICAL] Shipment master data query failed',
+    })
+    if (masterDataFailure) {
+      return {
+        status: 'error',
+        error: masterDataFailure.error,
+        scope: masterDataFailure.scope,
+      }
+    }
+
+    const thresholdsFailure = resolveQueryFailure({
+      data: thresholdsQuery.data,
+      error: thresholdsQuery.error,
+      isPending: thresholdsQuery.isPending,
+      scope: 'useShipmentBootstrap.thresholds',
+      missingMessage: '[CRITICAL] Shipment alert thresholds missing after load',
+      failureMessage: '[CRITICAL] Shipment alert thresholds query failed',
+    })
+    if (thresholdsFailure) {
+      return {
+        status: 'error',
+        error: thresholdsFailure.error,
+        scope: thresholdsFailure.scope,
+      }
+    }
+
+    if (
+      historyQuery.isPending ||
+      demandsQuery.isPending ||
+      categoriesQuery.isPending ||
+      masterDataQuery.isPending ||
+      thresholdsQuery.isPending
+    ) {
+      return { status: 'loading' }
+    }
+
+    const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data as WarehouseCategoryOption[], 'shipment')
+    if (filteredCategories.length === 0) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] No warehouse categories allowed for shipment scene'),
+        scope: 'useShipmentBootstrap.categories',
+      }
+    }
+
+    const nextMasterDataMap = (masterDataQuery.data as MasterDataSearchResult[]).reduce<Record<string, MasterDataSearchResult>>((map, item) => {
+      map[item.id] = item
+      return map
+    }, {})
+
+    return {
+      status: 'ready',
+      history: historyQuery.data as ShipmentRecord[],
+      shipmentDemands: demandsQuery.data as ShipmentDemand[],
+      warehouseCategories: filteredCategories,
+      alertThresholds: thresholdsQuery.data as Record<string, number>,
+      masterDataMap: nextMasterDataMap,
+    }
+  }, [
+    categoriesQuery.data,
+    categoriesQuery.error,
+    categoriesQuery.isPending,
+    demandsQuery.data,
+    demandsQuery.error,
+    demandsQuery.isPending,
+    historyQuery.data,
+    historyQuery.error,
+    historyQuery.isPending,
+    masterDataQuery.data,
+    masterDataQuery.error,
+    masterDataQuery.isPending,
+    thresholdsQuery.data,
+    thresholdsQuery.error,
+    thresholdsQuery.isPending,
+  ])
 
   useEffect(() => {
-    if (!error) return
+    if (readResource.status !== 'error') return
     toast.error(t('warehouse.errors.queryFailed'))
-  }, [error, t])
-
-  const history = useMemo(() => {
-    if (historyQuery.isLoading) return [] as ShipmentRecord[]
-    if (!historyQuery.data) {
-      const lookupError =
-        historyQuery.error instanceof Error
-          ? historyQuery.error
-          : new Error('[CRITICAL] Shipment history missing after load')
-      failLoudly(lookupError, 'useShipmentBootstrap.history')
-      throw lookupError
-    }
-    return historyQuery.data
-  }, [historyQuery.data, historyQuery.error, historyQuery.isLoading])
-
-  const warehouseCategories = useMemo(() => {
-    if (categoriesQuery.isLoading) return [] as WarehouseCategoryOption[]
-    if (!categoriesQuery.data) {
-      const lookupError =
-        categoriesQuery.error instanceof Error
-          ? categoriesQuery.error
-          : new Error('[CRITICAL] Shipment warehouse categories missing after load')
-      failLoudly(lookupError, 'useShipmentBootstrap.categories')
-      throw lookupError
-    }
-
-    const filteredCategories = filterWarehouseCategoriesByScene(categoriesQuery.data, 'shipment')
-    if (filteredCategories.length === 0) {
-      const lookupError = new Error('[CRITICAL] No warehouse categories allowed for shipment scene')
-      failLoudly(lookupError, 'useShipmentBootstrap.categories')
-      throw lookupError
-    }
-
-    return filteredCategories
-  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
-
-  const shipmentDemands = useMemo(() => {
-    if (demandsQuery.isLoading) return [] as ShipmentDemand[]
-    if (!demandsQuery.data) {
-      const lookupError =
-        demandsQuery.error instanceof Error
-          ? demandsQuery.error
-          : new Error('[CRITICAL] Shipment demands missing after load')
-      failLoudly(lookupError, 'useShipmentBootstrap.demands')
-      throw lookupError
-    }
-    return demandsQuery.data
-  }, [demandsQuery.data, demandsQuery.error, demandsQuery.isLoading])
-
-  const alertThresholds = useMemo(() => {
-    if (thresholdsQuery.isLoading) return {}
-    if (!thresholdsQuery.data) {
-      const lookupError =
-        thresholdsQuery.error instanceof Error
-          ? thresholdsQuery.error
-          : new Error('[CRITICAL] Shipment alert thresholds missing after load')
-      failLoudly(lookupError, 'useShipmentBootstrap.thresholds')
-      throw lookupError
-    }
-    return thresholdsQuery.data
-  }, [thresholdsQuery.data, thresholdsQuery.error, thresholdsQuery.isLoading])
-  const masterDataMap = useMemo(() => {
-    if (masterDataQuery.isLoading) return {}
-    if (!masterDataQuery.data) {
-      const lookupError =
-        masterDataQuery.error instanceof Error
-          ? masterDataQuery.error
-          : new Error('[CRITICAL] Shipment master data missing after load')
-      failLoudly(lookupError, 'useShipmentBootstrap.masterData')
-      throw lookupError
-    }
-
-    const nextMasterDataMap: Record<string, MasterDataSearchResult> = {}
-    masterDataQuery.data.forEach((item: MasterDataSearchResult) => {
-      nextMasterDataMap[item.id] = item
-    })
-    return nextMasterDataMap
-  }, [masterDataQuery.data, masterDataQuery.error, masterDataQuery.isLoading])
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource, t])
 
   return {
-    history,
-    shipmentDemands,
-    warehouseCategories,
-    alertThresholds,
-    masterDataMap,
-    error,
+    readResource,
+    retryRead: async () => {
+      await Promise.all([
+        historyQuery.refetch(),
+        demandsQuery.refetch(),
+        categoriesQuery.refetch(),
+        masterDataQuery.refetch(),
+        thresholdsQuery.refetch(),
+      ])
+    },
   }
 }

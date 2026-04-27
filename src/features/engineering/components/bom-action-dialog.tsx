@@ -43,7 +43,7 @@ export function BOMActionDialog({
 }: BOMActionDialogProps) {
   const { t } = useLanguage()
   const isEdit = Boolean(currentRow)
-  const { form, fields, append, remove, products, materials, deltaProxy, commitDelta } = useBOMForm({
+  const { form, fields, append, remove, optionsResource, products, materials, deltaProxy, commitDelta } = useBOMForm({
     currentRow,
     initialItems,
     initialProductId,
@@ -86,44 +86,72 @@ export function BOMActionDialog({
             onSubmit={typedForm.handleSubmit(handleFormSubmit)}
             className='flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3 pt-0 sm:px-4 sm:pb-4 overflow-hidden'
           >
-            <BOMFormHeader
-              form={typedForm}
-              products={products}
-              isEdit={isEdit}
-            />
+            {optionsResource.status === 'error' ? (
+              <div className='flex min-h-0 flex-1 items-center justify-center rounded-[24px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-8 text-center'>
+                <div className='flex max-w-md flex-col items-center gap-2'>
+                  <Layers className='size-8 text-rose-500' />
+                  <div className='text-[10px] font-black uppercase tracking-widest text-rose-700'>
+                    {t('engineering.bomArchive.toasts.loadFailed')}
+                  </div>
+                  <p className='text-[11px] font-bold leading-relaxed text-foreground'>
+                    {optionsResource.error.message}
+                  </p>
+                </div>
+              </div>
+            ) : optionsResource.status === 'loading' ? (
+              <div className='flex min-h-0 flex-1 items-center justify-center rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-6 py-8 text-center'>
+                <div className='flex max-w-md flex-col items-center gap-2'>
+                  <Layers className='size-8 text-blue-400 animate-pulse' />
+                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+                    {t('engineering.bomArchive.header.title')}
+                  </div>
+                  <p className='text-[11px] font-bold leading-relaxed text-muted-foreground'>
+                    {t('engineering.bomArchive.toasts.loadFailed')}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <BOMFormHeader
+                  form={typedForm}
+                  products={products}
+                  isEdit={isEdit}
+                />
 
-            <BOMRecipeEditor
-              form={typedForm}
-              fields={fields}
-              materials={materials}
-              append={append}
-              remove={remove}
-            />
+                <BOMRecipeEditor
+                  form={typedForm}
+                  fields={fields}
+                  materials={materials}
+                  append={append}
+                  remove={remove}
+                />
 
-            <div className='flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 pt-1.5 border-t border-dashed border-muted/50 h-auto sm:h-11 shrink-0'>
-              <FormField
-                control={form.control}
-                name='description'
-                render={({ field }) => (
-                  <FormItem className='flex-1 space-y-0'>
-                    <FormControl>
-                      <Input
-                        placeholder={t('engineering.bomArchive.dialog.remarkPlaceholder')}
-                        {...field}
-                        className='h-11 sm:h-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold uppercase tracking-widest italic px-4 shadow-inner placeholder:text-[9px] placeholder:text-muted-foreground/40 placeholder:italic'
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <Button
-                type='submit'
-                form='bom-form'
-                className='h-12 sm:h-full w-full sm:w-64 rounded-xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest italic shadow-lg shadow-blue-600/10 shrink-0 hover:bg-blue-700 transition-all border border-white/20'
-              >
-                {t('engineering.bomArchive.dialog.save')}
-              </Button>
-            </div>
+                <div className='flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 pt-1.5 border-t border-dashed border-muted/50 h-auto sm:h-11 shrink-0'>
+                  <FormField
+                    control={form.control}
+                    name='description'
+                    render={({ field }) => (
+                      <FormItem className='flex-1 space-y-0'>
+                        <FormControl>
+                          <Input
+                            placeholder={t('engineering.bomArchive.dialog.remarkPlaceholder')}
+                            {...field}
+                            className='h-11 sm:h-full rounded-2xl border-none bg-muted/50 text-[11px] font-bold uppercase tracking-widest italic px-4 shadow-inner placeholder:text-[9px] placeholder:text-muted-foreground/40 placeholder:italic'
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type='submit'
+                    form='bom-form'
+                    className='h-12 sm:h-full w-full sm:w-64 rounded-xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest italic shadow-lg shadow-blue-600/10 shrink-0 hover:bg-blue-700 transition-all border border-white/20'
+                  >
+                    {t('engineering.bomArchive.dialog.save')}
+                  </Button>
+                </div>
+              </>
+            )}
           </form>
         </Form>
       </DialogContent>

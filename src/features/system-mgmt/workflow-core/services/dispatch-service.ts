@@ -96,7 +96,7 @@ export const DispatchService = {
           title: cmdTemplate.title,
           content: resolveTemplate(cmdTemplate.content, metadata),
           priority: 'info',
-          targetRoles: node.assigneeRoles,
+          targetGroups: node.assigneeGroups,
           actionUrl: cmdTemplate.targetLink
             ? resolveTemplate(cmdTemplate.targetLink, metadata)
             : `/trading/sales-orders?search=${context.orderNo}&detailId=${context.orderId}`,
@@ -109,7 +109,7 @@ export const DispatchService = {
         title: node.title,
         content: cmdRef,
         priority: 'info',
-        targetRoles: node.assigneeRoles,
+        targetGroups: node.assigneeGroups,
         actionUrl: `/trading/sales-orders?search=${context.orderNo}&detailId=${context.orderId}`,
       })
     }
@@ -177,7 +177,7 @@ export const DispatchService = {
               : `[追溯] ${cmdTemplate.title}`,
             content: resolveTemplate(cmdTemplate.content, metadata),
             priority: 'info',
-            targetRoles: node.assigneeRoles,
+            targetGroups: node.assigneeGroups,
             actionUrl: cmdTemplate.targetLink
               ? resolveTemplate(cmdTemplate.targetLink, metadata)
               : `/trading/sales-orders?search=${order.orderNo}&detailId=${order.id}`,
@@ -208,9 +208,9 @@ export const DispatchService = {
         addMessage({
           type: 'ORDER_EVENT',
           title: `[${node.title}] 待处理`,
-          content: `订单 ${order.orderNo} 的状态已变更为 ${order.status}，请相关负责人及时处理。`,
+          content: `订单 ${order.orderNo} 的状态已变更�?${order.status}，请相关负责人及时处理。`,
           priority: 'info',
-          targetRoles: node.assigneeRoles,
+          targetGroups: node.assigneeGroups,
           actionUrl: `/trading/sales-orders?search=${order.orderNo}&detailId=${order.id}`,
           metadata: {
             uniqueKey: fallbackKey,
@@ -232,7 +232,7 @@ export const DispatchService = {
   sendNotification: (
     title: string,
     content: string,
-    roles?: string[],
+    groups?: string[],
     actionUrl?: string
   ) => {
     NotificationGateway.addMessage({
@@ -240,7 +240,7 @@ export const DispatchService = {
       title,
       content,
       priority: 'info',
-      targetRoles: roles,
+      targetGroups: groups,
       actionUrl,
     })
   },
@@ -333,7 +333,7 @@ export const DispatchService = {
         processedApprovalKey,
         Array.from(processedApprovalIds)
       )
-      logger.info(`追溯扫描已创建 ${approvalCount} 条审批申请`)
+      logger.info(`追溯扫描已创�?${approvalCount} 条审批申请`)
     }
 
     return newCount

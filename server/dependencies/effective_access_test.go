@@ -26,18 +26,6 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 
 	schema := []string{
 		`
-		CREATE TABLE roles (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			role_id TEXT NOT NULL UNIQUE,
-			label TEXT,
-			color TEXT,
-			permissions TEXT
-		);
-		`,
-		`
 		CREATE TABLE employees (
 			id TEXT PRIMARY KEY,
 			created_at DATETIME,
@@ -112,24 +100,6 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
-func seedRole(t *testing.T, testDB *gorm.DB, roleID string, permissions string, updatedAt time.Time) {
-	t.Helper()
-
-	role := models.Role{
-		BaseModel: models.BaseModel{
-			ID:        roleID + "-pk",
-			CreatedAt: updatedAt.Add(-time.Minute),
-			UpdatedAt: updatedAt,
-		},
-		RoleID:      roleID,
-		Label:       roleID,
-		Permissions: permissions,
-	}
-	if err := testDB.Create(&role).Error; err != nil {
-		t.Fatalf("seed role %s failed: %v", roleID, err)
-	}
-}
-
 func seedEmployee(t *testing.T, testDB *gorm.DB, employeeID string, deptID string) {
 	t.Helper()
 
@@ -186,7 +156,7 @@ func TestResolveEffectiveAccessProfileForUserReadsExplicitUserPermissions(t *tes
 	}
 }
 
-func TestResolveEffectiveAccessProfileForUserKeepsEmployeeIDButDoesNotResolveLegacyRoles(t *testing.T) {
+func TestResolveEffectiveAccessProfileForUserKeepsEmployeeIDAndReadsOnlyUserPermissions(t *testing.T) {
 	testDB := setupEffectiveAccessTestDB(t)
 	seedEmployee(t, testDB, "emp-1", "dept-sales")
 	seedUserPermission(t, testDB, "user-employee", "menu_org", time.Unix(100, 0))

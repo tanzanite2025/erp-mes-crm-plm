@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { z } from 'zod'
@@ -50,11 +50,8 @@ type UsersAddAdminDialogProps = {
 }
 
 /**
- * 高权限账户创建对话框 [安全加固版]
- * 已对齐“后端裁决”原则：
- * 1. 移除硬编码万能通告码 '88888888'。
- * 2. 移除前端手动向 API 注入历史角色标识。
- * 3. 身份挑战 (Passcode) 必须通过后端 verifyAdminChallenge 接口实时验证。
+ * Protected account creation dialog.
+ * The frontend sends only account fields; backend challenge verification owns access decisions.
  */
 export function UsersAddAdminDialog({
   open,
@@ -77,7 +74,7 @@ export function UsersAddAdminDialog({
     },
   })
 
-  // --- 核心变更：移除本地硬编码校验，执行后端身份挑战 ---
+  // --- 鏍稿績鍙樻洿锛氱Щ闄ゆ湰鍦扮‖缂栫爜鏍￠獙锛屾墽琛屽悗绔韩浠芥寫鎴?---
   const handleVerify = async () => {
     if (!verifyPass) {
       setVerifyError(t('users.dialogs.accessVerifyPlaceholder'))
@@ -88,7 +85,7 @@ export function UsersAddAdminDialog({
     setVerifyError('')
 
     try {
-      // 向后端发起管理员访问挑战
+      // 鍚戝悗绔彂璧风鐞嗗憳璁块棶鎸戞垬
       await verifyAdminChallenge(verifyPass)
       setStep('create')
     } catch (_error) {
@@ -101,9 +98,7 @@ export function UsersAddAdminDialog({
   const onSubmit = (values: UserForm) => {
     const { confirmPassword, ...data } = values
     
-    // --- 核心变更：不再由前端决定权限身份 ---
-    // 逻辑：向专用的 /admin 接口发送，或由后端根据调用链自动裁决为受保护高权限账户。
-    // 这里前端仅发送基础信息，禁止手动注入任何历史 role 标识。
+    // The frontend does not inject any legacy identity marker into this request.
     const adminRequestPayload: CreateUserPayload = {
       ...data,
       firstName: 'System',

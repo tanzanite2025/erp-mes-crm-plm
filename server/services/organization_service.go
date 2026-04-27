@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/audit"
-	"xdfc-server/dependencies"
 	"xdfc-server/models"
 	"xdfc-server/repositories"
 
@@ -25,20 +24,17 @@ var (
 )
 
 type OrganizationService struct {
-	txManager                transactionManager
-	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer
-	repository               repositories.OrganizationRepository
+	txManager  transactionManager
+	repository repositories.OrganizationRepository
 }
 
 func NewOrganizationService(
 	txManager transactionManager,
-	roleSnapshotSynchronizer dependencies.RoleSnapshotSynchronizer,
 	repository repositories.OrganizationRepository,
 ) *OrganizationService {
 	return &OrganizationService{
-		txManager:                txManager,
-		roleSnapshotSynchronizer: roleSnapshotSynchronizer,
-		repository:               repository,
+		txManager:  txManager,
+		repository: repository,
 	}
 }
 
@@ -46,7 +42,6 @@ var defaultOrganizationRuntime = defaultServiceRuntime()
 
 var defaultOrganizationService = NewOrganizationService(
 	defaultOrganizationRuntime.txManager,
-	dependencies.NewRoleSnapshotSynchronizer(),
 	repositories.NewOrganizationRepository(),
 )
 
@@ -288,11 +283,6 @@ func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeS
 		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, model, "legacy_employee_save", ""); err != nil {
 			return err
 		}
-		if s.roleSnapshotSynchronizer != nil {
-			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, model); err != nil {
-				return err
-			}
-		}
 		var err error
 		refreshed, err = loadEmployeeAggregate(tx, model.ID)
 		return err
@@ -363,11 +353,6 @@ func (s *OrganizationService) BulkSyncEmployees(input []BulkSyncEmployeeRequest)
 			}
 			if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, employee, "legacy_employee_bulk_sync", ""); err != nil {
 				return err
-			}
-			if s.roleSnapshotSynchronizer != nil {
-				if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, employee); err != nil {
-					return err
-				}
 			}
 			action := audit.AuditActionCreate
 			if found {

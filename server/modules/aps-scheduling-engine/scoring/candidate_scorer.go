@@ -1,6 +1,12 @@
-package apsschedulingengine
+package scoring
 
-import "time"
+import (
+	"time"
+	apsorder "xdfc-server/modules/aps-scheduling-engine/models/order"
+	apsresource "xdfc-server/modules/aps-scheduling-engine/models/resource"
+	apsschedule "xdfc-server/modules/aps-scheduling-engine/models/schedule"
+	apsrules "xdfc-server/modules/aps-scheduling-engine/rules"
+)
 
 type CandidateScore struct {
 	TaskID      string
@@ -17,7 +23,11 @@ func NewCandidateScorer() *CandidateScorer {
 	return &CandidateScorer{}
 }
 
-func (s *CandidateScorer) Score(task Order, resource Resource, window TimeWindowCandidate, rules *RuleSet) CandidateScore {
+func (s *CandidateScorer) Score(task apsorder.Order, resource apsresource.Resource, window apsschedule.TimeWindowCandidate, rules *apsrules.RuleSet) CandidateScore {
+	if rules == nil {
+		rules = apsrules.DefaultRuleSet()
+	}
+
 	score := 0.0
 	reasons := make([]string, 0, 6)
 
@@ -29,20 +39,24 @@ func (s *CandidateScorer) Score(task Order, resource Resource, window TimeWindow
 		score += 20
 		reasons = append(reasons, "resource_available")
 	}
-	if window.WorkdayFlag {
-		score += 15
+	if rules.PreferWorkday && window.WorkdayFlag {
+		score += rules.WorkdayBonus
 		reasons = append(reasons, "workday")
 	}
 	if window.OvertimeFlag {
-		score += 5
+		score += rules.OvertimeBonus
 		reasons = append(reasons, "overtime")
 	}
 	if task.AllowSplit {
 		score += 2
 		reasons = append(reasons, "splittable")
 	}
+	if window.HolidayFlag {
+		score -= rules.HolidayPenalty
+		reasons = append(reasons, "holiday_penalty")
+	}
 	if window.Conflict {
-		score -= 100
+		score -= rules.ConflictPenalty
 		reasons = append(reasons, "conflict")
 	}
 

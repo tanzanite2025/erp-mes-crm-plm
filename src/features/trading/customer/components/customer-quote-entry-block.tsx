@@ -15,6 +15,8 @@ type CustomerQuoteEntryBlockProps = {
   quotes: CustomerQuoteSummaryItem[]
   isLoading: boolean
   isError: boolean
+  errorMessage?: string
+  onRetry?: () => void
   onOpenQuote: (quoteId: string) => void
   onCreateQuote: () => void
   compact?: boolean
@@ -25,6 +27,8 @@ export function CustomerQuoteEntryBlock({
   quotes,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
   onOpenQuote,
   onCreateQuote,
   compact = false,
@@ -68,8 +72,19 @@ export function CustomerQuoteEntryBlock({
           {t('trading.customers.summary.quoteTitle')}
         </div>
         <p className='text-[10px] font-bold text-amber-600'>
-          {t('trading.customers.summary.quoteLoadFailed')}
+          {errorMessage || t('trading.customers.summary.quoteLoadFailed')}
         </p>
+        {onRetry ? (
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={onRetry}
+            className='h-8 rounded-full px-4 text-[8px] font-black tracking-widest uppercase'
+          >
+            重试
+          </Button>
+        ) : null}
       </div>
     )
   }

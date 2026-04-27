@@ -23,6 +23,7 @@ import type { SalesOrder } from '@/features/trading/data/schema'
 import { auditUtils } from '@/lib/audit-utils'
 import type { ShipmentFormData, ShipmentFormMode, ShipmentFormUpdater } from '../data/schema'
 import type { WarehouseCategoryOption } from '../../category/data/schema'
+import type { ShipmentInventoryContextResource } from '../hooks/use-shipment-inventory-context'
 
 interface ShipmentDialogProps {
   open: boolean
@@ -33,8 +34,8 @@ interface ShipmentDialogProps {
   warehouseCategories: WarehouseCategoryOption[]
   formMode: ShipmentFormMode
   onSubmit: (status: 'DRAFT' | 'COMMITTED') => void
-  categoryStock: number
-  inventoryBreakdown: Record<string, number>
+  inventoryContextResource: ShipmentInventoryContextResource
+  onRetryInventoryContext: () => void
   alertThreshold?: number
   salesOrders?: SalesOrder[]
 }
@@ -48,8 +49,8 @@ export function ShipmentDialog({
   warehouseCategories,
   formMode,
   onSubmit,
-  categoryStock,
-  inventoryBreakdown,
+  inventoryContextResource,
+  onRetryInventoryContext,
   alertThreshold = 0,
   salesOrders = []
 }: ShipmentDialogProps) {
@@ -61,6 +62,7 @@ export function ShipmentDialog({
   const selectableCategories = isVirtualLock
     ? warehouseCategories.filter((category) => category.value !== 'SHIPPING_VIRTUAL')
     : warehouseCategories
+  const readyInventoryContext = inventoryContextResource.status === 'ready' ? inventoryContextResource : null
   const remainingStock = (selectedItem.stock || 0) - (formData.quantity || 0)
   const isBelowSafety = alertThreshold > 0 && remainingStock < alertThreshold
 
@@ -95,6 +97,39 @@ export function ShipmentDialog({
           </div>
         </div>
 
+        {inventoryContextResource.status === 'error' ? (
+          <div className='flex min-h-[420px] items-center justify-center bg-background px-6 py-10 text-center'>
+            <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-rose-200 bg-rose-50/60 px-6 py-8'>
+              <AlertTriangle className='size-8 text-rose-500' />
+              <div className='text-[10px] font-black uppercase tracking-widest text-rose-700'>
+                {t('warehouse.errors.queryFailed')}
+              </div>
+              <p className='text-[11px] font-bold leading-relaxed text-foreground'>
+                {inventoryContextResource.error.message}
+              </p>
+              <Button
+                type='button'
+                variant='outline'
+                className='h-9 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'
+                onClick={onRetryInventoryContext}
+              >
+                重试
+              </Button>
+            </div>
+          </div>
+        ) : inventoryContextResource.status === 'loading' ? (
+          <div className='flex min-h-[420px] items-center justify-center bg-background px-6 py-10 text-center'>
+            <div className='flex max-w-md flex-col items-center gap-3 rounded-[24px] border border-dashed border-muted/40 bg-muted/5 px-6 py-8'>
+              <Database className='size-8 animate-pulse text-blue-500/50' />
+              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+                {t('warehouse.shipment.dialog.realtimeIndex')}
+              </div>
+              <p className='text-[11px] font-bold leading-relaxed text-muted-foreground'>
+                正在加载库存上下文，请稍候。
+              </p>
+            </div>
+          </div>
+        ) : (
         <div className='flex flex-col lg:flex-row bg-background max-h-[80vh] overflow-y-auto lg:overflow-visible lg:h-[540px]'>
           <div className='flex-1 p-5 md:p-6 space-y-6 overflow-y-auto'>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8'>
@@ -115,7 +150,7 @@ export function ShipmentDialog({
                         <SelectItem key={cat.value} value={cat.value} className='rounded-xl my-1 mx-1 focus:bg-blue-500 focus:text-white transition-colors'>
                           <div className='flex justify-between items-center w-full gap-8 pr-2'>
                             <span className='font-black text-[11px] uppercase tracking-widest'>{cat.label}</span>
-                            <span className='text-[9px] font-mono opacity-40'>{t('warehouse.shipment.dialog.available', { count: inventoryBreakdown[cat.value] || 0 })}</span>
+                            <span className='text-[9px] font-mono opacity-40'>{t('warehouse.shipment.dialog.available', { count: readyInventoryContext?.inventoryBreakdown[cat.value] || 0 })}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -141,7 +176,7 @@ export function ShipmentDialog({
                         variant='ghost'
                         size='sm'
                         className='h-7 rounded-lg px-2 text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
-                        onClick={() => setFormData({ quantity: categoryStock })}
+                        onClick={() => setFormData({ quantity: readyInventoryContext?.categoryStock ?? 0 })}
                       >
                         {t('warehouse.shipment.dialog.max')}
                       </Button>
@@ -150,9 +185,9 @@ export function ShipmentDialog({
 
                   <div className='flex justify-between items-center px-1'>
                     <span className='text-[10px] font-black uppercase text-muted-foreground/30 tracking-widest'>
-                      {t('warehouse.shipment.dialog.areaAvailable', { count: categoryStock })}
+                      {t('warehouse.shipment.dialog.areaAvailable', { count: readyInventoryContext?.categoryStock ?? 0 })}
                     </span>
-                    {formData.quantity > categoryStock && (
+                    {formData.quantity > (readyInventoryContext?.categoryStock ?? 0) && (
                       <Badge className='bg-rose-500 text-white border-none text-[8px] font-black px-2 rounded-full animate-pulse tracking-widest uppercase'>{t('warehouse.shipment.dialog.insufficientStock')}</Badge>
                     )}
                   </div>
@@ -282,7 +317,7 @@ export function ShipmentDialog({
 
             <div className='space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar'>
               {selectableCategories.map((cat) => {
-                const stock = inventoryBreakdown[cat.value] || 0
+                const stock = readyInventoryContext?.inventoryBreakdown[cat.value] || 0
                 const isSelected = formData.sourceCategory === cat.value
                 return (
                   <div
@@ -336,6 +371,7 @@ export function ShipmentDialog({
             </div>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   )

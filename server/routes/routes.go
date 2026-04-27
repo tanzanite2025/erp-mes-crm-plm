@@ -19,7 +19,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		registerUserRoutes(authorized)
 		registerBasicUnitRoutes(authorized)
-		registerAuthzRoutes(authorized)
+		registerSystemConfigRoutes(authorized)
 		registerTradingRoutes(authorized)
 		registerInventoryRoutes(authorized)
 		registerEquipmentRoutes(authorized)

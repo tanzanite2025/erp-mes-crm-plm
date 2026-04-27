@@ -1,25 +1,30 @@
-package apsschedulingengine
+package core
 
-import "context"
+import (
+	"context"
+	apsengine "xdfc-server/modules/aps-scheduling-engine/engine"
+	apsschedule "xdfc-server/modules/aps-scheduling-engine/models/schedule"
+	apsrules "xdfc-server/modules/aps-scheduling-engine/rules"
+)
 
 type Engine struct {
-	Planner *Planner
-	Rules   *RuleSet
+	Planner *apsengine.Planner
+	Rules   *apsrules.RuleSet
 }
 
 func NewEngine() *Engine {
 	return &Engine{
-		Planner: NewPlanner(),
-		Rules:   DefaultRuleSet(),
+		Planner: apsengine.NewPlanner(),
+		Rules:   apsrules.DefaultRuleSet(),
 	}
 }
 
-func (e *Engine) BuildPlan(ctx context.Context, input BuildPlanInput) (*SchedulePlan, error) {
+func (e *Engine) BuildPlan(ctx context.Context, input apsschedule.BuildPlanInput) (*apsschedule.SchedulePlan, error) {
 	if e.Planner == nil {
-		e.Planner = NewPlanner()
+		e.Planner = apsengine.NewPlanner()
 	}
 	if e.Rules == nil {
-		e.Rules = DefaultRuleSet()
+		e.Rules = apsrules.DefaultRuleSet()
 	}
 	return e.Planner.Build(ctx, input, e.Rules)
 }

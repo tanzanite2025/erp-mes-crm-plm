@@ -118,7 +118,7 @@ export function NotificationCenter() {
 
   const visibleMessages = messages.filter(msg => {
     if (msg.isArchived) return false
-    if (!msg.targetRoles?.length && !msg.targetUsers?.length) return true
+    if (!msg.targetGroups?.length && !msg.targetUsers?.length) return true
 
     const isTargetUser = (msg.targetUsers || []).includes(user?.username || '')
     return isTargetUser

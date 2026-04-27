@@ -17,6 +17,10 @@ import { TradingQueryErrorState } from '@/features/trading/components/trading-qu
 import type { SalesOrder } from '@/features/trading/data/schema'
 import type { SalesReturnRecord } from '@/features/trading/sales/services/sales-return-service'
 import { useSalesReturnMutations } from '@/features/trading/sales/hooks/use-sales-returns'
+import type {
+  SalesReturnRecordsResource,
+  SalesReturnSourceOrdersResource,
+} from '../hooks/use-sales-return-query-shell'
 import { SalesReturnCreateSheet } from './sales-return-create-sheet'
 import { SalesReturnRecordMaster } from './sales-return-record-master'
 import { SalesReturnRecordSpotlight } from './sales-return-record-spotlight'
@@ -44,12 +48,9 @@ type SalesReturnsEntryShellProps = {
   statusFilter: string
   sourcePage: number
   sourceTotalPages: number
-  sourceOrders: SalesOrder[]
+  sourceOrdersResource: SalesReturnSourceOrdersResource
   selectedSourceOrderId?: string
   selectedSourceOrder?: SalesOrder
-  isSourceLoading: boolean
-  isSourceError: boolean
-  sourceError: unknown
   isSourceDetailLoading: boolean
   onRetrySourceOrders: () => void
   onSearchTermChange: (value: string) => void
@@ -59,12 +60,9 @@ type SalesReturnsEntryShellProps = {
   onSourcePageChange: (page: number) => void
   returnPage: number
   returnTotalPages: number
-  returnRecords: SalesReturnRecord[]
+  returnsResource: SalesReturnRecordsResource
   selectedReturnId?: string
   selectedReturnRecord?: SalesReturnRecord
-  isReturnsLoading: boolean
-  isReturnsError: boolean
-  returnsError: unknown
   isReturnDetailLoading: boolean
   onRetryReturns: () => void
   onSelectReturn: (id: string) => void
@@ -77,12 +75,9 @@ export function SalesReturnsEntryShell({
   statusFilter,
   sourcePage,
   sourceTotalPages,
-  sourceOrders,
+  sourceOrdersResource,
   selectedSourceOrderId,
   selectedSourceOrder,
-  isSourceLoading,
-  isSourceError,
-  sourceError,
   isSourceDetailLoading,
   onRetrySourceOrders,
   onSearchTermChange,
@@ -92,12 +87,9 @@ export function SalesReturnsEntryShell({
   onSourcePageChange,
   returnPage,
   returnTotalPages,
-  returnRecords,
+  returnsResource,
   selectedReturnId,
   selectedReturnRecord,
-  isReturnsLoading,
-  isReturnsError,
-  returnsError,
   isReturnDetailLoading,
   onRetryReturns,
   onSelectReturn,
@@ -178,20 +170,20 @@ export function SalesReturnsEntryShell({
             </div>
           </div>
 
-          {isSourceLoading ? (
-            <div className='flex h-40 items-center justify-center'>
-              <Loader2 className='size-8 animate-spin text-primary/40' />
-            </div>
-          ) : isSourceError ? (
-            isForbiddenError(sourceError) ? (
+          {sourceOrdersResource.status === 'error' ? (
+            isForbiddenError(sourceOrdersResource.error) ? (
               <ForbiddenState />
             ) : (
               <TradingQueryErrorState
                 title={t('trading.salesReturns.entryShell.sourceLoadFailed')}
-                error={sourceError}
+                error={sourceOrdersResource.error}
                 onRetry={onRetrySourceOrders}
               />
             )
+          ) : sourceOrdersResource.status === 'loading' ? (
+            <div className='flex h-40 items-center justify-center'>
+              <Loader2 className='size-8 animate-spin text-primary/40' />
+            </div>
           ) : (
             <div
               className={
@@ -203,7 +195,7 @@ export function SalesReturnsEntryShell({
               <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
                 <div className='space-y-4 p-4'>
                   <SalesReturnSourceOrderMaster
-                    orders={sourceOrders}
+                    orders={sourceOrdersResource.items}
                     selectedId={selectedSourceOrderId}
                     onSelect={onSelectSourceOrder}
                     onStartReturn={handleStartReturn}
@@ -258,26 +250,26 @@ export function SalesReturnsEntryShell({
             </p>
           </div>
           <div className='px-5 pb-5'>
-            {isReturnsLoading ? (
-              <div className='flex h-40 items-center justify-center'>
-                <Loader2 className='size-8 animate-spin text-primary/40' />
-              </div>
-            ) : isReturnsError ? (
-              isForbiddenError(returnsError) ? (
+            {returnsResource.status === 'error' ? (
+              isForbiddenError(returnsResource.error) ? (
                 <ForbiddenState />
               ) : (
                 <TradingQueryErrorState
                   title={t('trading.salesReturns.queryShell.loadFailed')}
-                  error={returnsError}
+                  error={returnsResource.error}
                   onRetry={onRetryReturns}
                 />
               )
+            ) : returnsResource.status === 'loading' ? (
+              <div className='flex h-40 items-center justify-center'>
+                <Loader2 className='size-8 animate-spin text-primary/40' />
+              </div>
             ) : (
               <div className='grid min-h-0 flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]'>
                 <ScrollArea className='min-h-0 rounded-[28px] border border-dashed border-muted/50 bg-background/40'>
                   <div className='space-y-4 p-4'>
                     <SalesReturnRecordMaster
-                      records={returnRecords}
+                      records={returnsResource.items}
                       selectedId={selectedReturnId}
                       onSelect={onSelectReturn}
                       onDelete={handleDeleteReturn}

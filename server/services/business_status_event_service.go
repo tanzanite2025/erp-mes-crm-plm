@@ -307,8 +307,8 @@ func businessStatusEventTargets(event BusinessStatusChangedEvent, segment RuleSe
 	for _, value := range segment.AssigneeUsernames {
 		add(value)
 	}
-	if segment.DynamicRoleField != nil {
-		add(resolveBusinessStatusEventField(event, *segment.DynamicRoleField))
+	if segment.DynamicTargetField != nil {
+		add(resolveBusinessStatusEventField(event, *segment.DynamicTargetField))
 	}
 	return targets
 }

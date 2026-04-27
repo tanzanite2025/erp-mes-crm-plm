@@ -1,4 +1,4 @@
-import type { Permission } from '@/features/system-mgmt/data/role-schema'
+import type { Permission } from '@/features/authz/data/permission-schema'
 import { ACTION_PERMISSIONS } from './action-permission-catalog'
 import { assertBackendPermissionContract } from './permission-contract.gen'
 import { getRouteDerivedPermissions } from './route-permission-registry'

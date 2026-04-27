@@ -46,7 +46,8 @@ export function useProductInboundViewModel() {
   }, [inbound.selectedItem])
 
   return {
-    error: inbound.error,
+    readResource: inbound.readResource,
+    searchResource: inbound.searchResource,
     searchQuery: inbound.searchQuery,
     searchResults: inbound.searchResults,
     isSearching: inbound.isSearching,
@@ -69,5 +70,7 @@ export function useProductInboundViewModel() {
     handleRemarksChange,
     handleSubmitInbound: inbound.submitInbound,
     handleCloseInboundDialog: inbound.closeInboundDialog,
+    retryRead: inbound.retryRead,
+    retrySearch: inbound.retrySearch,
   }
 }

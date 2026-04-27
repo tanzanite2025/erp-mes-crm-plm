@@ -1,11 +1,10 @@
-import { type Dispatch, type SetStateAction, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { type UseFormReturn } from 'react-hook-form'
-import { type Product, type ProductAttributeOption, type ProductType } from '../data/schema'
+import { type Product, type ProductAttributeOption } from '../data/schema'
 import { AssetService } from '@/features/equipment-tooling/services/asset-service'
 import { ENGINEERING_DB_SPECS_QUERY_KEY } from '@/features/engineering-db/query-keys'
 import { SpecsService } from '@/features/engineering-db/services/specs-service'
-import { type ProductVariantSelection } from '../utils/product-form-utils'
 import { ProductAttributeCategoryService } from '../services/product-attribute-category-service'
 import { ProductAttributeOptionService } from '../services/product-attribute-option-service'
 import { ProductTypeAttributeBindingService } from '../services/product-type-attribute-binding-service'
@@ -19,7 +18,6 @@ import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-util
 import { normalizeProductAttributeMachineValue } from '../utils/product-attribute-machine-value'
 import { useLanguage } from '@/context/language-provider'
 import { isNotFoundError } from '@/lib/error-status'
-import { ProductCommand } from '../commands/product-command'
 
 type OptionItem = { label: string; value: string }
 
@@ -48,22 +46,12 @@ function toOptionItems(locale: string, items: ProductAttributeOption[], category
 
 interface UseProductFormInitParams {
     open: boolean
-    isEdit: boolean
-    currentRow?: Product
-    productTypes: ProductType[]
     form: UseFormReturn<Product>
-    selectedVariants: ProductVariantSelection[]
-    setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
 }
 
 export function useProductFormInit({
     open,
-    isEdit,
-    currentRow,
-    productTypes: _productTypes,
     form,
-    selectedVariants,
-    setSelectedVariants
 }: UseProductFormInitParams) {
     const { locale, t } = useLanguage()
     const watchedTypeId = form.watch('typeId')
@@ -143,40 +131,6 @@ export function useProductFormInit({
 
     const metadataReady = open && !metadataInitError && categoriesQuery.isSuccess && optionsQuery.isSuccess && moldGroupsQuery.isSuccess && specsQuery.isSuccess && (!watchedTypeId || bindingsQuery.isSuccess)
 
-    useEffect(() => {
-        if (!metadataReady || isEdit || selectedVariants.length !== 0) {
-            return
-        }
-
-        const initialState = ProductCommand.composeInitialState({
-            isEdit,
-            currentRow,
-            versionLevelOptions,
-            baseValues: form.getValues(),
-        })
-        setSelectedVariants(initialState.selectedVariants)
-    }, [currentRow, form, isEdit, metadataReady, selectedVariants.length, setSelectedVariants, versionLevelOptions])
-
-    useEffect(() => {
-        if (!open || !metadataReady) {
-            return
-        }
-
-        const initialState = ProductCommand.composeInitialState({
-            isEdit,
-            currentRow,
-            versionLevelOptions,
-        })
-        form.reset(initialState.formValues)
-        setSelectedVariants(initialState.selectedVariants)
-    }, [open, isEdit, currentRow, form, setSelectedVariants, versionLevelOptions, metadataReady])
-
-    useEffect(() => {
-        if (!open) {
-            setSelectedVariants([])
-        }
-    }, [open, setSelectedVariants])
-
     return {
         attributeCategories,
         attributeOptions,
@@ -185,5 +139,6 @@ export function useProductFormInit({
         moldOptions,
         specOptions,
         metadataInitError,
+        metadataReady,
     }
 }

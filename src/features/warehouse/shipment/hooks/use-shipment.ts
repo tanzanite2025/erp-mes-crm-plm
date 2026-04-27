@@ -1,13 +1,16 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { type SalesOrder } from '@/features/trading/data/schema'
 import { getSalesOrderById, useGetSalesOrders } from '@/features/trading/sales'
 import { shippingManagementQueryKeys } from '@/features/trading/shipping-management/query-keys'
 import { auditUtils } from '@/lib/audit-utils'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { resolveInventoryErrorTip } from '../../constants/inventory-error-codes'
 import { type MasterDataSearchResult } from '../../inventory'
 import { warehouseQueryKeys } from '../../query-keys'
@@ -18,10 +21,21 @@ import {
 } from '../../utils/warehouse-category-config'
 import { type ShipmentDemand } from '../data/schema'
 import { ShipmentTransactionService } from '../services/shipment-transaction-service'
-import { useShipmentBootstrap } from './use-shipment-bootstrap'
+import { useShipmentBootstrap, type ShipmentBootstrapResource } from './use-shipment-bootstrap'
 import { useShipmentFormState } from './use-shipment-form-state'
 import { useShipmentInventoryContext } from './use-shipment-inventory-context'
 import { useShipmentSearch } from './use-shipment-search'
+
+type ShipmentBootstrapReady = Extract<ShipmentBootstrapResource, { status: 'ready' }>
+
+type ShipmentReadResource = CompositeReadResource<{
+  history: ShipmentBootstrapReady['history']
+  shipmentDemands: ShipmentBootstrapReady['shipmentDemands']
+  warehouseCategories: ShipmentBootstrapReady['warehouseCategories']
+  masterDataMap: ShipmentBootstrapReady['masterDataMap']
+  alertThresholds: ShipmentBootstrapReady['alertThresholds']
+  salesOrders: SalesOrder[]
+}>
 
 export function useShipment() {
   const { locale, t } = useLanguage()
@@ -37,10 +51,52 @@ export function useShipment() {
 
   const salesOrdersQuery = useGetSalesOrders()
   const salesOrdersData = salesOrdersQuery.data?.items
-  if (!salesOrdersData && !salesOrdersQuery.isLoading && salesOrdersQuery.isSuccess) {
-    throw new Error('[CRITICAL] Sales orders data missing in UseShipment.salesOrders')
-  }
-  const salesOrders = useMemo(() => salesOrdersData ?? [], [salesOrdersData])
+
+  const readResource = useMemo<ShipmentReadResource>(() => {
+    if (shipmentBootstrap.readResource.status !== 'ready') {
+      return shipmentBootstrap.readResource
+    }
+
+    const salesOrdersFailure = resolveQueryFailure({
+      data: salesOrdersData,
+      error: salesOrdersQuery.error,
+      isPending: salesOrdersQuery.isPending,
+      scope: 'useShipment.salesOrders',
+      missingMessage: '[CRITICAL] Sales orders data missing in useShipment.salesOrders',
+      failureMessage: '[CRITICAL] Sales orders query failed in useShipment.salesOrders',
+    })
+    if (salesOrdersFailure) {
+      return {
+        status: 'error',
+        error: salesOrdersFailure.error,
+        scope: salesOrdersFailure.scope,
+      }
+    }
+
+    if (salesOrdersQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      history: shipmentBootstrap.readResource.history,
+      shipmentDemands: shipmentBootstrap.readResource.shipmentDemands,
+      warehouseCategories: shipmentBootstrap.readResource.warehouseCategories,
+      masterDataMap: shipmentBootstrap.readResource.masterDataMap,
+      alertThresholds: shipmentBootstrap.readResource.alertThresholds,
+      salesOrders: salesOrdersData as SalesOrder[],
+    }
+  }, [salesOrdersData, salesOrdersQuery.error, salesOrdersQuery.isPending, shipmentBootstrap.readResource])
+
+  useEffect(() => {
+    if (readResource.status !== 'error' || readResource.scope !== 'useShipment.salesOrders') {
+      return
+    }
+
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const inventoryContextResource = shipmentInventoryContext.readResource
 
   const invalidateWarehouseReads = useCallback(async (materialId?: string, sourceCategory?: string) => {
     const invalidations = [
@@ -70,17 +126,19 @@ export function useShipment() {
 
   const openShipmentForm = useCallback((item: MasterDataSearchResult) => {
     if (!allowsAction('action_warehouse_shipment_record')) return
+    if (readResource.status !== 'ready') return
     shipmentForm.openShipmentForm(item, 'dispatch')
-    const allowedCategories = filterWarehouseCategoriesByScene(shipmentBootstrap.warehouseCategories, 'shipment')
+    const allowedCategories = filterWarehouseCategoriesByScene(readResource.warehouseCategories, 'shipment')
     const defaultSourceCategory =
       getDefaultWarehouseCategoryCode(allowedCategories, 'shipment', item.category) ||
       allowedCategories[0]?.code ||
       ''
     shipmentForm.setFormData({ sourceCategory: defaultSourceCategory })
-  }, [allowsAction, shipmentBootstrap.warehouseCategories, shipmentForm])
+  }, [allowsAction, readResource, shipmentForm])
 
   const openVirtualLockForm = useCallback((demand: ShipmentDemand) => {
     if (!allowsAction('action_warehouse_shipment_record')) return
+    if (readResource.status !== 'ready') return
 
     const item: MasterDataSearchResult = {
       id: demand.materialId,
@@ -95,7 +153,7 @@ export function useShipment() {
 
     shipmentForm.openShipmentForm(item, 'virtualLock')
 
-    const allowedCategories = filterWarehouseCategoriesByScene(shipmentBootstrap.warehouseCategories, 'shipment')
+    const allowedCategories = filterWarehouseCategoriesByScene(readResource.warehouseCategories, 'shipment')
       .filter((category) => category.value !== 'SHIPPING_VIRTUAL')
     const firstAvailableStock = demand.stockBreakdown.find((stock) => stock.quantity > 0)
     const defaultSourceCategory =
@@ -117,7 +175,7 @@ export function useShipment() {
       salesOrderLineId: demand.salesOrderLineId,
       remarks: '',
     })
-  }, [allowsAction, shipmentBootstrap.warehouseCategories, shipmentForm])
+  }, [allowsAction, readResource, shipmentForm])
 
   const resolveSalesOrderBinding = useCallback(async (
     selectedItem: MasterDataSearchResult,
@@ -132,6 +190,7 @@ export function useShipment() {
       }
     }
 
+    const salesOrders = readResource.status === 'ready' ? readResource.salesOrders : []
     const selectedOrder = salesOrders.find((order) => order.orderNo === orderNo)
     if (!selectedOrder?.id) {
       return {
@@ -153,7 +212,7 @@ export function useShipment() {
       salesOrderId: selectedOrder.id,
       salesOrderLineId: matchedLine?.id || 0,
     }
-  }, [salesOrders])
+  }, [readResource])
 
   const submitShipment = useCallback(async (status: 'DRAFT' | 'COMMITTED') => {
     if (!allowsAction('action_warehouse_shipment_record')) return
@@ -167,7 +226,12 @@ export function useShipment() {
       return
     }
 
-    const categoryStock = shipmentInventoryContext.categoryStock ?? 0
+    if (inventoryContextResource.status !== 'ready') {
+      toast.error(t('warehouse.errors.queryFailed'))
+      return
+    }
+
+    const categoryStock = inventoryContextResource.categoryStock
 
     if (status === 'COMMITTED' && formData.quantity > categoryStock) {
       toast.warning(
@@ -243,17 +307,18 @@ export function useShipment() {
   }, [
     allowsAction,
     invalidateWarehouseReads,
+    inventoryContextResource,
     locale,
     resolveSalesOrderBinding,
     shipmentForm,
-    shipmentInventoryContext.categoryStock,
     t,
   ])
 
   const commitDraft = useCallback(async (id: string, name: string) => {
     if (!allowsAction('action_warehouse_shipment_commit')) return
+    if (readResource.status !== 'ready') return
 
-    const record = shipmentBootstrap.history.find((entry) => entry.id === id)
+    const record = readResource.history.find((entry) => entry.id === id)
     if (!record) {
       toast.error(t('warehouse.shipment.toast.notFound'))
       return
@@ -270,7 +335,7 @@ export function useShipment() {
     } catch (error) {
       toast.error(resolveInventoryErrorTip(error, locale))
     }
-  }, [allowsAction, invalidateWarehouseReads, locale, shipmentBootstrap.history, t])
+  }, [allowsAction, invalidateWarehouseReads, locale, readResource, t])
 
   const removeRecord = useCallback(async (
     id: string,
@@ -280,8 +345,9 @@ export function useShipment() {
     approvalId?: string,
   ) => {
     if (!allowsAction('action_warehouse_shipment_void')) return
+    if (readResource.status !== 'ready') return
 
-    const record = shipmentBootstrap.history.find((entry) => entry.id === id)
+    const record = readResource.history.find((entry) => entry.id === id)
     if (!record) return
 
     const dialogMsg = status === 'COMMITTED'
@@ -301,22 +367,24 @@ export function useShipment() {
     } catch (error) {
       toast.error(resolveInventoryErrorTip(error, locale))
     }
-  }, [allowsAction, invalidateWarehouseReads, locale, shipmentBootstrap.history, t])
+  }, [allowsAction, invalidateWarehouseReads, locale, readResource, t])
 
   return {
+    readResource,
+    retryRead: async () => {
+      await Promise.all([
+        shipmentBootstrap.retryRead(),
+        salesOrdersQuery.refetch(),
+      ])
+    },
     searchQuery: shipmentSearch.searchQuery,
     setSearchQuery: shipmentSearch.setSearchQuery,
-    searchResults: shipmentSearch.searchResults,
-    history: shipmentBootstrap.history,
-    shipmentDemands: shipmentBootstrap.shipmentDemands,
-    error: shipmentBootstrap.error,
-    isSearching: shipmentSearch.isSearching,
+    searchResource: shipmentSearch.searchResource,
+    retrySearch: shipmentSearch.retrySearch,
     selectedItem: shipmentForm.selectedItem,
     formMode: shipmentForm.formMode,
     isShipmentOpen: shipmentForm.isShipmentOpen,
     setIsShipmentOpen: shipmentForm.setIsShipmentOpen,
-    warehouseCategories: shipmentBootstrap.warehouseCategories,
-    masterDataMap: shipmentBootstrap.masterDataMap,
     activeTab: shipmentForm.activeTab,
     setActiveTab: shipmentForm.setActiveTab,
     formData: shipmentForm.formData,
@@ -327,9 +395,7 @@ export function useShipment() {
     commitDraft,
     removeRecord,
     fillMaxQuantity: shipmentForm.fillMaxQuantity,
-    categoryStock: shipmentInventoryContext.categoryStock,
-    inventoryBreakdown: shipmentInventoryContext.inventoryBreakdown,
-    alertThresholds: shipmentBootstrap.alertThresholds,
-    salesOrders,
+    inventoryContextResource,
+    retryInventoryContext: shipmentInventoryContext.retryRead,
   }
 }

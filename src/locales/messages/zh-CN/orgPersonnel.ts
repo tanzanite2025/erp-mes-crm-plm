@@ -3,7 +3,7 @@ export const orgPersonnel = {
     org: '组织机构',
     employees: '人员管理',
     accounts: '账户列表',
-    rights: '角色权限',
+    rights: '用户权限',
     permissions: '权限审计',
     line: '产线管理',
     topology: '拓扑模板',

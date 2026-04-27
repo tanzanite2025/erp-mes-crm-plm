@@ -1,5 +1,6 @@
 import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { StatusGuard } from '@/components/status-guard'
@@ -38,7 +39,13 @@ export function DocumentHeaderFields({
   denseContractFields = false,
 }: DocumentHeaderFieldsProps) {
   const { t, locale } = useLanguage()
-  const { paymentMethods, paymentTerms } = useTradingFinanceResources()
+  const financeResources = useTradingFinanceResources()
+  const { paymentMethods, paymentTerms } = financeResources
+  const isFinanceLoading = financeResources.readResource.status === 'loading'
+  const isFinanceError = financeResources.readResource.status === 'error'
+  const financeErrorMessage = financeResources.readResource.status === 'error'
+    ? financeResources.readResource.error.message
+    : ''
   const {
     typeOptions,
     classificationOptions,
@@ -72,6 +79,30 @@ export function DocumentHeaderFields({
         allowedStatuses={[...SALES_ORDER_EDITABLE_STATUSES]}
         message={t('tradingSalesOrder.headerFields.lockedMessage')}
       >
+        {isFinanceLoading ? (
+          <div className='rounded-[20px] border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-amber-700'>财务字段加载中</p>
+            <p className='mt-1 text-[9px] font-bold text-amber-700/80'>付款方式与账期暂不可编辑。</p>
+          </div>
+        ) : null}
+        {isFinanceError ? (
+          <div className='flex items-center justify-between gap-3 rounded-[20px] border border-dashed border-rose-500/30 bg-rose-500/5 px-4 py-3'>
+            <div className='space-y-1'>
+              <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>财务字段加载失败</p>
+              <p className='text-[9px] font-bold text-rose-700/80'>{financeErrorMessage || '请重试后再编辑付款方式与账期。'}</p>
+            </div>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+              onClick={() => {
+                void financeResources.retry()
+              }}
+            >
+              重试
+            </Button>
+          </div>
+        ) : null}
         <div
           className={cn(
             'grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2',
@@ -203,7 +234,7 @@ export function DocumentHeaderFields({
             <select
               className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
               value={formData.paymentMethod || ''}
-              disabled={readOnly}
+              disabled={readOnly || isFinanceLoading || isFinanceError}
               onChange={(e) => handlePaymentMethodChange(e.target.value)}
             >
               <option value=''>
@@ -224,7 +255,7 @@ export function DocumentHeaderFields({
             <select
               className='h-11 w-full appearance-none rounded-xl border border-muted/30 bg-background px-4 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
               value={formData.paymentTerm || ''}
-              disabled={readOnly}
+              disabled={readOnly || isFinanceLoading || isFinanceError}
               onChange={(e) => handlePaymentTermChange(e.target.value)}
             >
               <option value=''>

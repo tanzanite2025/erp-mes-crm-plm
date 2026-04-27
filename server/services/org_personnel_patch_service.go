@@ -212,11 +212,6 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, current, "legacy_employee_patch", ""); err != nil {
 			return err
 		}
-		if s.roleSnapshotSynchronizer != nil {
-			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, current); err != nil {
-				return err
-			}
-		}
 		if err := recordLegacyAuditEntryTx(tx, "Employee", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys), "", "", ""); err != nil {
 			return err
 		}

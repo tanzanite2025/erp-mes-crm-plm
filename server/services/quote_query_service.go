@@ -317,7 +317,7 @@ func GetQuoteDetail(id string) (QuoteDetailResponse, error) {
 	var customer models.Customer
 	if strings.TrimSpace(order.CustomerID) != "" {
 		if err := db.DB.Where("id = ? AND is_deleted = ?", order.CustomerID, false).First(&customer).Error; err != nil {
-			if err != nil && !errorsIsRecordNotFound(err) {
+			if !errorsIsRecordNotFound(err) {
 				return QuoteDetailResponse{}, err
 			}
 		}

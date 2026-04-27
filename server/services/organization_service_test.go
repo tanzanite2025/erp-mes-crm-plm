@@ -21,21 +21,6 @@ func testOptimisticVersion(ts time.Time) int {
 	return int(version)
 }
 
-type fakeRoleSnapshotSynchronizer struct {
-	syncedEmployees   []string
-	syncedDepartments []string
-}
-
-func (s *fakeRoleSnapshotSynchronizer) SyncDepartment(tx *gorm.DB, deptID string) error {
-	s.syncedDepartments = append(s.syncedDepartments, strings.TrimSpace(deptID))
-	return nil
-}
-
-func (s *fakeRoleSnapshotSynchronizer) SyncEmployee(tx *gorm.DB, employee models.Employee) error {
-	s.syncedEmployees = append(s.syncedEmployees, strings.TrimSpace(employee.ID))
-	return nil
-}
-
 type fakeOrganizationRepository struct {
 	nameExists        bool
 	saveOrgHit        bool
@@ -268,7 +253,6 @@ func TestOrganizationServiceSaveOrganizationRejectsDuplicateName(t *testing.T) {
 	repo := &fakeOrganizationRepository{nameExists: true}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 
@@ -281,7 +265,6 @@ func TestOrganizationServiceSaveOrganizationRejectsDuplicateName(t *testing.T) {
 func TestOrganizationServiceDeleteOrganizationRejectsChildDepartments(t *testing.T) {
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		&fakeOrganizationRepository{childCount: 2},
 	)
 
@@ -293,7 +276,6 @@ func TestOrganizationServiceDeleteOrganizationRejectsChildDepartments(t *testing
 func TestOrganizationServiceDeleteOrganizationRejectsEmployees(t *testing.T) {
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		&fakeOrganizationRepository{employeeCount: 1},
 	)
 
@@ -305,7 +287,6 @@ func TestOrganizationServiceDeleteOrganizationRejectsEmployees(t *testing.T) {
 func TestOrganizationServiceSaveOrganizationRejectsInvalidRootType(t *testing.T) {
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		&fakeOrganizationRepository{},
 	)
 
@@ -321,7 +302,6 @@ func TestOrganizationServiceSaveOrganizationRejectsMissingParent(t *testing.T) {
 	parentID := "missing-parent"
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		&fakeOrganizationRepository{},
 	)
 
@@ -345,7 +325,6 @@ func TestOrganizationServiceSaveOrganizationRejectsInvalidChildType(t *testing.T
 	}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 
@@ -369,7 +348,6 @@ func TestOrganizationServiceSaveOrganizationRejectsFourthLevel(t *testing.T) {
 	}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 
@@ -393,7 +371,6 @@ func TestOrganizationServiceSaveOrganizationAcceptsDepartmentUnderCompany(t *tes
 	}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 
@@ -411,7 +388,6 @@ func TestOrganizationServiceBulkUpdateEmployeeStatusNormalizesIDs(t *testing.T) 
 	repo := &fakeOrganizationRepository{}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 
@@ -429,7 +405,6 @@ func TestOrganizationServiceDeleteEmployeesDisablesLinkedUsers(t *testing.T) {
 	repo := &fakeOrganizationRepository{}
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		nil,
 		repo,
 	)
 
@@ -459,7 +434,6 @@ func TestOrganizationServiceBulkSyncEmployeesWritesAudit(t *testing.T) {
 	testDB := setupOrganizationServiceSQLiteDB(t)
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		nil,
 		repo,
 	)
 
@@ -488,74 +462,6 @@ func TestOrganizationServiceBulkSyncEmployeesWritesAudit(t *testing.T) {
 	require.Equal(t, "Update", logs[0].Action)
 	require.Equal(t, "emp-2", logs[1].TargetID)
 	require.Equal(t, "Create", logs[1].Action)
-}
-
-func TestOrganizationServiceSaveEmployeeTriggersRoleSnapshotSync(t *testing.T) {
-	testDB := setupOrganizationServiceSQLiteDB(t)
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE employees (
-			id TEXT PRIMARY KEY,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			staff_id TEXT,
-			name TEXT NOT NULL,
-			gender TEXT,
-			birthday DATETIME,
-			id_card TEXT,
-			phone TEXT,
-			emergency_phone TEXT,
-			address TEXT,
-			bank_card TEXT,
-			bank_name TEXT,
-			education TEXT,
-			age INTEGER,
-			status TEXT,
-			joined_date DATETIME,
-			dept_id TEXT,
-			line_id TEXT,
-			process_id TEXT,
-			dept_name TEXT,
-			line_name TEXT,
-			process_name TEXT
-		);
-	`).Error)
-
-	repo := &fakeOrganizationRepository{}
-	snapshotSynchronizer := &fakeRoleSnapshotSynchronizer{}
-	service := NewOrganizationService(
-		fakeTransactionManager{db: testDB},
-		snapshotSynchronizer,
-		repo,
-	)
-
-	_, err := service.SaveEmployee(EmployeeSaveRequest{
-		ID:     "emp-sync-1",
-		Name:   "Alice",
-		Status: "active",
-		DeptID: "dept-1",
-	})
-
-	require.NoError(t, err)
-	require.Equal(t, []string{"emp-sync-1"}, snapshotSynchronizer.syncedEmployees)
-}
-
-func TestOrganizationServiceBulkSyncEmployeesTriggersRoleSnapshotSync(t *testing.T) {
-	repo := &fakeOrganizationRepository{}
-	snapshotSynchronizer := &fakeRoleSnapshotSynchronizer{}
-	service := NewOrganizationService(
-		fakeTransactionManager{},
-		snapshotSynchronizer,
-		repo,
-	)
-
-	_, err := service.BulkSyncEmployees([]BulkSyncEmployeeRequest{
-		{ID: "emp-sync-1", Name: "Alice", Status: "active", DeptID: "dept-a"},
-		{ID: "emp-sync-2", Name: "Bob", Status: "active", DeptID: "dept-b"},
-	})
-
-	require.NoError(t, err)
-	require.Equal(t, []string{"emp-sync-1", "emp-sync-2"}, snapshotSynchronizer.syncedEmployees)
 }
 
 func TestOrganizationServiceSaveEmployeeProjectsPrimaryAssignmentFromLegacyDept(t *testing.T) {
@@ -591,7 +497,6 @@ func TestOrganizationServiceSaveEmployeeProjectsPrimaryAssignmentFromLegacyDept(
 
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		nil,
 		&fakeOrganizationRepository{},
 	)
 
@@ -667,10 +572,8 @@ func TestOrganizationServiceChangeEmployeeOrgUnitUpdatesLegacyDeptAndAssignment(
 		UnitType:  "department",
 	}).Error)
 
-	snapshotSynchronizer := &fakeRoleSnapshotSynchronizer{}
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		snapshotSynchronizer,
 		&fakeOrganizationRepository{},
 	)
 
@@ -682,7 +585,6 @@ func TestOrganizationServiceChangeEmployeeOrgUnitUpdatesLegacyDeptAndAssignment(
 
 	require.NoError(t, err)
 	require.Equal(t, "org-unit-b", response.Employee.DeptID)
-	require.Equal(t, []string{"emp-change-org"}, snapshotSynchronizer.syncedEmployees)
 
 	var employee models.Employee
 	require.NoError(t, testDB.First(&employee, "id = ?", "emp-change-org").Error)
@@ -744,10 +646,8 @@ func TestOrganizationServiceChangeEmployeePositionCreatesPrimaryAssignment(t *te
 		Status:    "active",
 	}).Error)
 
-	snapshotSynchronizer := &fakeRoleSnapshotSynchronizer{}
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		snapshotSynchronizer,
 		&fakeOrganizationRepository{},
 	)
 
@@ -761,7 +661,6 @@ func TestOrganizationServiceChangeEmployeePositionCreatesPrimaryAssignment(t *te
 	require.Equal(t, "position-a", *response.Assignment.PositionID)
 	require.Equal(t, "position-a", response.Employee.PositionID)
 	require.Equal(t, "Supervisor", response.Employee.PositionName)
-	require.Equal(t, []string{"emp-change-position"}, snapshotSynchronizer.syncedEmployees)
 
 	var row struct {
 		OrgUnitID  string
@@ -832,10 +731,8 @@ func TestOrganizationServiceClearEmployeePositionClearsPrimaryAssignmentPosition
 		Status:    "active",
 	}).Error)
 
-	snapshotSynchronizer := &fakeRoleSnapshotSynchronizer{}
 	service := NewOrganizationService(
 		fakeTransactionManager{db: testDB},
-		snapshotSynchronizer,
 		&fakeOrganizationRepository{},
 	)
 
@@ -848,7 +745,6 @@ func TestOrganizationServiceClearEmployeePositionClearsPrimaryAssignmentPosition
 	require.Nil(t, response.Assignment.PositionID)
 	require.Equal(t, "", response.Employee.PositionID)
 	require.Equal(t, "", response.Employee.PositionName)
-	require.Equal(t, []string{"emp-clear-position"}, snapshotSynchronizer.syncedEmployees)
 
 	var row struct {
 		PositionID *string
@@ -877,7 +773,6 @@ func TestOrganizationServiceListPositionsReturnsLookupItems(t *testing.T) {
 	}
 	service := NewOrganizationService(
 		fakeTransactionManager{},
-		nil,
 		repo,
 	)
 

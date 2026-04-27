@@ -6,7 +6,6 @@ import {
   ApprovalService,
   type ApprovalUserOption,
 } from '@/features/approval/services/approval-service'
-import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
 import {
   type BusinessEventSource,
   getEventSourceStatusOptions,
@@ -40,7 +39,6 @@ export function SegmentForm({
   eventSource,
   onChange,
 }: SegmentFormProps) {
-  const { roles } = useRoles()
   const [users, setUsers] = useState<ApprovalUserOption[]>([])
   const approval = segment.approval ?? defaultApproval
   const statusOptions = getEventSourceStatusOptions(eventSource)
@@ -81,12 +79,12 @@ export function SegmentForm({
     })
   }
 
-  const toggleRole = (id: string) => {
-    const has = segment.assigneeRoles.includes(id)
+  const toggleUser = (username: string) => {
+    const has = segment.assigneeUsernames.includes(username)
     onChange({
-      assigneeRoles: has
-        ? segment.assigneeRoles.filter((roleId) => roleId !== id)
-        : [...segment.assigneeRoles, id],
+      assigneeUsernames: has
+        ? segment.assigneeUsernames.filter((item) => item !== username)
+        : [...segment.assigneeUsernames, username],
     })
   }
 
@@ -155,14 +153,17 @@ export function SegmentForm({
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
         <div className='flex flex-col gap-1.5'>
           <label className='text-[9px] font-black tracking-widest text-muted-foreground uppercase'>
-            接收角色（静态指定）
+            接收账号（静态指定）
           </label>
           <div className='flex min-h-[42px] flex-wrap gap-1.5 rounded-xl border border-muted/20 bg-muted/20 p-2'>
-            {roles.map((role) => {
-              const selected = segment.assigneeRoles.includes(role.id)
+            {users.map((user) => {
+              const selected = segment.assigneeUsernames.includes(user.username)
+              const displayName =
+                [user.firstName, user.lastName].filter(Boolean).join('') ||
+                user.username
               return (
                 <Badge
-                  key={role.id}
+                  key={user.id}
                   variant={selected ? 'default' : 'outline'}
                   className={cn(
                     'cursor-pointer px-2 py-0.5 text-[10px] transition-all',
@@ -170,9 +171,9 @@ export function SegmentForm({
                       ? 'border-blue-600 bg-blue-600'
                       : 'bg-transparent text-muted-foreground hover:bg-muted'
                   )}
-                  onClick={() => toggleRole(role.id)}
+                  onClick={() => toggleUser(user.username)}
                 >
-                  {role.label}
+                  {displayName}
                 </Badge>
               )
             })}
@@ -184,10 +185,10 @@ export function SegmentForm({
             动态接收人（来自业务字段）
           </label>
           <select
-            value={segment.dynamicRoleField ?? ''}
+            value={segment.dynamicTargetField ?? ''}
             onChange={(event) =>
               onChange({
-                dynamicRoleField: toNullableValue(event.target.value),
+                dynamicTargetField: toNullableValue(event.target.value),
               })
             }
             className='w-full appearance-none rounded-xl border border-muted/20 bg-muted/40 px-3 py-2 text-[11px] font-bold ring-primary outline-none focus:ring-1'

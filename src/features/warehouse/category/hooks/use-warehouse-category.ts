@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import {
   WarehouseCategoryCoreService,
@@ -10,6 +12,12 @@ import {
 } from '../services/warehouse-category-core-service'
 import { WarehouseCategoryMaintenanceService } from '../services/warehouse-category-maintenance-service'
 import { warehouseQueryKeys } from '../../query-keys'
+
+const logger = createLogger('useWarehouseCategory')
+
+export type WarehouseCategoryListResource = CompositeReadResource<{
+  categories: WarehouseCategory[]
+}>
 
 export function useWarehouseCategory() {
   const queryClient = useQueryClient()
@@ -48,23 +56,58 @@ export function useWarehouseCategory() {
     }
   })
 
-  const categories = useMemo(() => {
-    if (categoriesQuery.isLoading) return []
-    if (!categoriesQuery.data) {
-      const lookupError =
-        categoriesQuery.error instanceof Error
-          ? categoriesQuery.error
-          : new Error('[CRITICAL] Warehouse category list missing after load')
-      failLoudly(lookupError, 'useWarehouseCategory.categories')
-      throw lookupError
+  const readResource = useMemo<WarehouseCategoryListResource>(() => {
+    const failure = resolveQueryFailure({
+      data: categoriesQuery.data,
+      error: categoriesQuery.error,
+      isPending: categoriesQuery.isPending,
+      scope: 'useWarehouseCategory.categories',
+      missingMessage: '[CRITICAL] Warehouse category list missing after load',
+      failureMessage: '[CRITICAL] Warehouse category list query failed',
+    })
+    if (failure) {
+      return {
+        status: 'error',
+        error: failure.error,
+        scope: failure.scope,
+      }
     }
-    return categoriesQuery.data
-  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
+
+    if (categoriesQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    const categories = categoriesQuery.data
+    if (!categories) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Warehouse category list missing after load'),
+        scope: 'useWarehouseCategory.categories',
+      }
+    }
+
+    return {
+      status: 'ready',
+      categories,
+    }
+  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isPending])
+
+  useEffect(() => {
+    if (readResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to load warehouse category list: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const categories = readResource.status === 'ready' ? readResource.categories : []
 
   return {
+    readResource,
     categories,
-    isLoading: categoriesQuery.isLoading,
-    error: categoriesQuery.error,
+    isLoading: readResource.status === 'loading',
+    error: readResource.status === 'error' ? readResource.error : null,
     refetch: categoriesQuery.refetch,
     createCategory: createMutation.mutateAsync,
     patchCategory: patchMutation.mutateAsync,

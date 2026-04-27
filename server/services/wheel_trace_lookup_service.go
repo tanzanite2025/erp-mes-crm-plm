@@ -224,9 +224,7 @@ func resolveWheelTraceRouteAnchor() (*wheelTraceRouteAnchor, error) {
 					anchor.TeamName = team.Name
 					anchor.OperatorName = team.Operator
 				}
-				if anchor != nil {
-					break
-				}
+				break
 			}
 			if anchor != nil {
 				break

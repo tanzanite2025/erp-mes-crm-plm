@@ -95,7 +95,6 @@ type employeeImportResolvedRow struct {
 }
 
 type employeeImportDraftRow struct {
-	rowNumber         int
 	staffID           string
 	name              string
 	deptName          string
@@ -302,11 +301,6 @@ func (s *OrganizationService) CommitEmployeeImport(input CommitEmployeeImportReq
 					return err
 				}
 			}
-			if s.roleSnapshotSynchronizer != nil {
-				if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, employeeToSave); err != nil {
-					return err
-				}
-			}
 			if err := recordAuditEventTx(tx, audit.NewAuditEvent(
 				audit.AuditEntityEmployee,
 				employeeToSave.ID,
@@ -498,7 +492,6 @@ func parseEmployeeImportRows(
 		}
 
 		draft := employeeImportDraftRow{
-			rowNumber:      lineNumber,
 			staffID:        strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "staffId")),
 			name:           strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "name")),
 			deptName:       strings.TrimSpace(getEmployeeImportCell(row, headerIndex, "deptId")),

@@ -80,8 +80,8 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     moldOptions,
     specOptions,
     metadataInitError,
+    metadataReady,
     nextCodeDeriveError,
-    skuPreview,
     selectedVariants,
     specPreviewSummary,
     handleVariantToggle,
@@ -302,7 +302,20 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   }, [attributeBindings, boundTemplate])
   const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
   const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
-  const submissionBlocked = Boolean(metadataInitError || templateResolveError || issuanceBlocked)
+  const templateResolutionPending = Boolean(
+    open
+      && !templateResolveError
+      && !boundTemplate
+      && (watchedTypeId || resolvedTemplateKey || resolvedTemplateId)
+  )
+  const metadataPending = Boolean(open && !metadataInitError && !metadataReady)
+  const submissionBlocked = Boolean(
+    metadataInitError
+      || metadataPending
+      || templateResolveError
+      || templateResolutionPending
+      || issuanceBlocked
+  )
   const errorLabelMap: Record<string, string> = {
     typeId: t('engineering.productMgmt.form.category'),
     modelCode: t('engineering.productMgmt.form.modelCode'),
@@ -342,7 +355,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className='max-w-[95vw] sm:max-w-[800px] h-[95vh] sm:h-auto sm:max-h-[90vh] rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col'
+        className='max-w-[95vw] sm:max-w-[85vw] h-[95vh] sm:h-[90vh] sm:max-h-[90vh] rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col'
         aria-describedby={undefined}
       >
         <DialogHeader className='shrink-0 text-start px-8 py-4 bg-muted/5 border-b border-dashed border-muted/50'>
@@ -379,9 +392,51 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   specOptions={specOptions}
                   moldOptions={moldOptions}
                   isEdit={isEdit}
-                  skuPreview={skuPreview}
                   templateLabel={activeSpec?.label}
                 />
+
+              {templateResolveError ? (
+                <div className='rounded-2xl border border-dashed border-red-300 bg-red-50/90 px-4 py-2 text-red-900'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='min-w-0'>
+                      <div className='text-[9px] font-black uppercase tracking-widest text-red-700'>Template Binding Broken</div>
+                      <p className='text-[10px] font-black leading-tight'>
+                        {templateResolveError}
+                      </p>
+                    </div>
+                    <Badge variant='outline' className='h-5 w-fit border-red-200 bg-white text-red-700'>
+                      BLOCKED
+                    </Badge>
+                  </div>
+                </div>
+              ) : null}
+
+              {boundTemplate ? (
+                <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-4 py-2 text-blue-900'>
+                  <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='min-w-0'>
+                      <div className='text-[9px] font-black uppercase tracking-widest text-blue-700'>Template Status</div>
+                      <p className='text-[10px] font-black leading-tight'>
+                        {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
+                          name: boundTemplate.name,
+                        })}
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant='outline' className='h-5 border-blue-200 bg-white text-blue-700'>
+                        {activeSpec?.label || boundTemplate.componentKey}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className='mt-1 text-[9px] font-black uppercase tracking-widest opacity-75'>
+                    {templateBindingStatus === 'aligned'
+                      ? t('engineering.productMgmt.dialog.attributeBindingAligned')
+                      : templateBindingStatus === 'missing'
+                        ? t('engineering.productMgmt.dialog.attributeBindingMissing')
+                        : t('engineering.productMgmt.dialog.attributeBindingDrifted')}
+                  </p>
+                </div>
+              ) : null}
 
               {metadataInitError ? (
                 <div className='rounded-[24px] border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-amber-900'>
@@ -407,40 +462,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     {!isEdit && (!watchedModelCode || watchedModelCode === '01')
                       ? 'Authority code issuance is unavailable. Resolve the backend issuance error or fill a valid model code before saving.'
                       : 'Authority code issuance failed. Verify the backend issuer before continuing.'}
-                  </p>
-                </div>
-              ) : null}
-
-              {templateResolveError ? (
-                <div className='rounded-[24px] border border-dashed border-red-300 bg-red-50 px-4 py-3 text-red-900'>
-                  <div className='text-[10px] font-black uppercase tracking-widest'>Template Binding Broken</div>
-                  <p className='mt-1 text-[11px] font-bold leading-relaxed'>
-                    {templateResolveError}
-                  </p>
-                  <p className='mt-1 text-[10px] font-medium opacity-80'>
-                    Fix the selected product type template binding or restart the backend with the latest template endpoints before saving this product.
-                  </p>
-                </div>
-              ) : null}
-
-              {boundTemplate ? (
-                <div className='rounded-[24px] border border-dashed border-blue-300 bg-blue-50 px-4 py-3 text-blue-900'>
-                  <div className='flex items-center justify-between gap-3'>
-                    <div className='text-[10px] font-black uppercase tracking-widest'>
-                      {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
-                        name: boundTemplate.name,
-                      })}
-                    </div>
-                    <Badge variant='outline' className='border-blue-200 bg-white text-blue-700'>
-                      {activeSpec?.label || boundTemplate.componentKey}
-                    </Badge>
-                  </div>
-                  <p className='mt-2 text-[11px] font-bold leading-relaxed'>
-                    {templateBindingStatus === 'aligned'
-                      ? t('engineering.productMgmt.dialog.attributeBindingAligned')
-                      : templateBindingStatus === 'missing'
-                        ? t('engineering.productMgmt.dialog.attributeBindingMissing')
-                        : t('engineering.productMgmt.dialog.attributeBindingDrifted')}
                   </p>
                 </div>
               ) : null}
@@ -496,50 +517,51 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   form.setValue('restrictions', nextRestrictions, { shouldDirty: true })
                 }}
               />
-
-              <div className='p-3 bg-blue-600/5 border border-dashed border-blue-600/30 rounded-[24px] space-y-1 group transition-all hover:bg-blue-600/10'>
-                <div className='flex items-center justify-between border-b border-dashed border-blue-600/30 pb-1'>
-                  <span className='text-[10px] font-black text-blue-800 italic'>
-                    {t('engineering.productMgmt.dialog.previewTitle')}
-                  </span>
-                  <Badge variant='outline' className='h-3 text-[8px] font-black border-blue-300 text-blue-700 bg-white px-1'>
-                    {t('engineering.productArchive.states.live')}
-                  </Badge>
-                </div>
-                <p className='text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
-                  {specPreviewSummary || t('engineering.productArchive.states.unnamed')}
-                </p>
-              </div>
             </form>
           </Form>
         </div>
-        <DialogFooter className='shrink-0 px-4 sm:px-8 py-4 border-t border-dashed border-muted/50 bg-white flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3'>
-          {isEdit ? (
+        <DialogFooter className='shrink-0 px-4 sm:px-8 py-4 border-t border-dashed border-muted/50 bg-white flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='min-w-0 flex-1 rounded-[24px] border border-dashed border-blue-600/30 bg-blue-600/5 px-4 py-3'>
+            <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-600/30 pb-1'>
+              <span className='text-[10px] font-black text-blue-800 italic'>
+                {t('engineering.productMgmt.dialog.previewTitle')}
+              </span>
+              <Badge variant='outline' className='h-4 text-[8px] font-black border-blue-300 text-blue-700 bg-white px-1'>
+                {t('engineering.productArchive.states.live')}
+              </Badge>
+            </div>
+            <p className='mt-1 text-[11px] font-black text-blue-900 dark:text-blue-200 tracking-tighter italic break-all leading-tight'>
+              {specPreviewSummary || t('engineering.productArchive.states.unnamed')}
+            </p>
+          </div>
+          <div className='flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end'>
+            {isEdit ? (
+              <Button
+                type='button'
+                variant='outline'
+                disabled={isDeletingProduct}
+                onClick={() => void handleDelete()}
+                className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl border-destructive/20 bg-white text-destructive hover:bg-destructive/5 hover:text-destructive shadow-destructive/10'
+              >
+                <Trash2 className='mr-2 size-4' />
+                {isDeletingProduct ? t('engineering.productMgmt.dialog.deleting') : t('engineering.productMgmt.dialog.delete')}
+              </Button>
+            ) : null}
             <Button
-              type='button'
-              variant='outline'
-              disabled={isDeletingProduct}
-              onClick={() => void handleDelete()}
-              className='h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl border-destructive/20 bg-white text-destructive hover:bg-destructive/5 hover:text-destructive shadow-destructive/10'
+              type='submit'
+              form='product-form'
+              disabled={submissionBlocked || isDeletingProduct}
+              className={`h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl ${
+                selectedVariants.length > 1
+                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30'
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
+              }`}
             >
-              <Trash2 className='mr-2 size-4' />
-              {isDeletingProduct ? t('engineering.productMgmt.dialog.deleting') : t('engineering.productMgmt.dialog.delete')}
+              {selectedVariants.length > 1
+                ? t('engineering.productMgmt.dialog.saveBatch', { count: selectedVariants.length })
+                : t('engineering.productMgmt.dialog.saveStandard')}
             </Button>
-          ) : null}
-          <Button
-            type='submit'
-            form='product-form'
-            disabled={submissionBlocked || isDeletingProduct}
-            className={`h-11 sm:h-9 rounded-full px-10 text-[11px] font-black transition-all hover:scale-105 active:scale-95 shadow-xl ${
-              selectedVariants.length > 1
-                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30'
-                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30'
-            }`}
-          >
-            {selectedVariants.length > 1
-              ? t('engineering.productMgmt.dialog.saveBatch', { count: selectedVariants.length })
-              : t('engineering.productMgmt.dialog.saveStandard')}
-          </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

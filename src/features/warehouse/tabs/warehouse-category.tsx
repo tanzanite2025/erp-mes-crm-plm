@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Warehouse,
   Settings2,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { normalizeMachineCode } from '@/lib/codecs/code-normalization'
@@ -63,8 +64,10 @@ export default function WarehouseCategory() {
   const { allowsAction } = useNonBlockingPermissionActions()
   const { t } = useLanguage()
   const {
+    readResource,
     categories,
     error: loadError,
+    refetch,
     createCategory,
     patchCategory,
     deleteCategory,
@@ -234,6 +237,42 @@ export default function WarehouseCategory() {
 
   if (isForbiddenError(loadError)) {
     return <ForbiddenState />
+  }
+
+  if (readResource.status === 'error') {
+    return (
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+        <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/[0.03] px-6 text-center'>
+          <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>仓别列表加载失败</p>
+          <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+            {readResource.error.message || '请重试后再编辑仓别配置。'}
+          </p>
+          <Button
+            type='button'
+            variant='outline'
+            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black tracking-widest uppercase'
+            onClick={() => {
+              void refetch()
+            }}
+          >
+            重试
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (readResource.status === 'loading') {
+    return (
+      <div className='flex animate-in flex-col gap-8 duration-700 fade-in'>
+        <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
+          <Loader2 className='size-8 animate-spin text-primary/40' />
+          <p className='mt-4 text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase'>
+            仓别列表加载中
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

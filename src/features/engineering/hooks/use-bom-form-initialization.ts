@@ -17,6 +17,7 @@ interface UseBOMFormInitializationParams {
   form: UseFormReturn<BOM>
   tracker: { reset: (data: BOM) => void }
   changeOrders: ChangeOrder[]
+  optionsReady: boolean
   currentRow?: BOM
   initialItems?: BOMItemDraft[]
   initialProductId?: string
@@ -28,6 +29,7 @@ export function useBOMFormInitialization({
   form,
   tracker,
   changeOrders,
+  optionsReady,
   currentRow,
   initialItems,
   initialProductId,
@@ -53,12 +55,12 @@ export function useBOMFormInitialization({
   )
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !optionsReady) return
     const currentChangeOrderId = form.getValues('changeOrderId')
     if (currentChangeOrderId && !changeOrders.some((order) => order.id === currentChangeOrderId)) {
       form.setValue('changeOrderId', '', { shouldDirty: true })
     }
-  }, [changeOrders, form, open])
+  }, [changeOrders, form, open, optionsReady])
 
   useEffect(() => {
     const loadInitData = async () => {

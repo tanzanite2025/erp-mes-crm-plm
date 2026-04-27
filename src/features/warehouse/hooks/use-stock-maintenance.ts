@@ -1,8 +1,22 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { warehouseQueryKeys } from '../query-keys'
-import { StocktakeCoreService, StocktakeMaintenanceService, StocktakeOfflineAdapter, type PDAScanPayload } from '../stocktake'
+import { StocktakeCoreService, StocktakeMaintenanceService, StocktakeOfflineAdapter, type PDAScanPayload, type StocktakeItem, type StocktakeTask } from '../stocktake'
+
+const logger = createLogger('useStocktake')
+
+type StocktakeReadResource = CompositeReadResource<{
+    tasks: StocktakeTask[]
+    pendingScanCount: number
+}>
+
+type StocktakeItemsResource =
+    | { status: 'idle' }
+    | ReadResource<StocktakeItem[]>
 
 export function useStocktake() {
     const queryClient = useQueryClient()
@@ -81,29 +95,135 @@ export function useStocktake() {
         })
     }, [queryClient, refreshPendingScans])
 
-    const tasks = tasksQuery.data
-    if (!tasksQuery.isLoading && tasksQuery.isSuccess && !tasks) {
-        throw new Error('[CRITICAL] Stocktake Tasks missing in Hook: UseStocktake.tasks')
-    }
+    const readResource = useMemo<StocktakeReadResource>(() => {
+        const tasksFailure = resolveQueryFailure({
+            data: tasksQuery.data,
+            error: tasksQuery.error,
+            isPending: tasksQuery.isPending,
+            scope: 'useStocktake.tasks',
+            missingMessage: '[CRITICAL] Stocktake tasks missing after load',
+            failureMessage: '[CRITICAL] Stocktake tasks query failed',
+        })
+        if (tasksFailure) {
+            return {
+                status: 'error',
+                error: tasksFailure.error,
+                scope: tasksFailure.scope,
+            }
+        }
+
+        if (pendingScansQuery.error) {
+            return {
+                status: 'error',
+                error: pendingScansQuery.error instanceof Error ? pendingScansQuery.error : new Error('[CRITICAL] Stocktake pending scans query failed'),
+                scope: 'useStocktake.pendingScanCount',
+            }
+        }
+
+        if (tasksQuery.isPending || pendingScansQuery.isPending) {
+            return { status: 'loading' }
+        }
+
+        if (pendingScansQuery.data === undefined) {
+            return {
+                status: 'error',
+                error: new Error('[CRITICAL] Stocktake pending scan count missing after load'),
+                scope: 'useStocktake.pendingScanCount',
+            }
+        }
+
+        return {
+            status: 'ready',
+            tasks: tasksQuery.data as StocktakeTask[],
+            pendingScanCount: pendingScansQuery.data,
+        }
+    }, [pendingScansQuery.data, pendingScansQuery.error, pendingScansQuery.isPending, tasksQuery.data, tasksQuery.error, tasksQuery.isPending])
+
+    useEffect(() => {
+        if (readResource.status !== 'error') {
+            return
+        }
+
+        logger.error(`Failed to load stocktake resources: ${readResource.scope}`, readResource.error)
+        failLoudly(readResource.error, readResource.scope)
+    }, [readResource])
+
+    const tasks = useMemo(
+        () => (readResource.status === 'ready' ? readResource.tasks : []),
+        [readResource]
+    )
+    const pendingScanCount = readResource.status === 'ready' ? readResource.pendingScanCount : 0
 
     return {
+        readResource,
         tasks: tasks ?? [],
-        isLoading: tasksQuery.isLoading,
-        isError: tasksQuery.isError,
+        isLoading: readResource.status === 'loading',
+        isError: readResource.status === 'error',
         refreshData,
         createStocktake: createMutation.mutateAsync,
         submitPdaScan: pdaSyncMutation.mutateAsync,
         flushPendingScans: flushPendingMutation.mutateAsync,
-        pendingScanCount: pendingScansQuery.data ?? 0,
+        pendingScanCount,
         isCreating: createMutation.isPending,
         isFlushingPendingScans: flushPendingMutation.isPending,
+        retryRead: async () => {
+            await Promise.all([tasksQuery.refetch(), pendingScansQuery.refetch()])
+        },
     }
 }
 
 export function useStocktakeItems(taskId: string | null) {
-    return useQuery({
+    const itemsQuery = useQuery({
         queryKey: warehouseQueryKeys.stocktakeItems(taskId ?? ''),
         queryFn: () => (taskId ? StocktakeCoreService.getItems(taskId) : Promise.resolve([])),
         enabled: Boolean(taskId),
     })
+
+    const itemsResource = useMemo<StocktakeItemsResource>(() => {
+        if (!taskId) {
+            return { status: 'idle' }
+        }
+
+        const failure = resolveQueryFailure({
+            data: itemsQuery.data,
+            error: itemsQuery.error,
+            isPending: itemsQuery.isPending,
+            scope: 'useStocktakeItems.items',
+            missingMessage: '[CRITICAL] Stocktake items missing after load',
+            failureMessage: '[CRITICAL] Stocktake items query failed',
+        })
+        if (failure) {
+            return {
+                status: 'error',
+                error: failure.error,
+                scope: failure.scope,
+            }
+        }
+
+        if (itemsQuery.isPending) {
+            return { status: 'loading' }
+        }
+
+        return {
+            status: 'ready',
+            data: itemsQuery.data as StocktakeItem[],
+        }
+    }, [itemsQuery.data, itemsQuery.error, itemsQuery.isPending, taskId])
+
+    useEffect(() => {
+        if (itemsResource.status !== 'error') {
+            return
+        }
+
+        logger.error(`Failed to load stocktake items: ${itemsResource.scope}`, itemsResource.error)
+        failLoudly(itemsResource.error, itemsResource.scope)
+    }, [itemsResource])
+
+    return {
+        itemsResource,
+        data: itemsResource.status === 'ready' ? itemsResource.data : [],
+        isLoading: itemsResource.status === 'loading',
+        error: itemsResource.status === 'error' ? itemsResource.error : null,
+        refetch: itemsQuery.refetch,
+    }
 }

@@ -28,10 +28,10 @@ function createSegment(overrides: Partial<RuleSegment> = {}): RuleSegment {
     title: '待处理',
     targetStatuses: ['Pending'],
     commandIds: [],
-    assigneeRoles: [],
+    assigneeGroups: [],
     assigneeUsernames: [],
     resolveOnStatuses: ['Done'],
-    dynamicRoleField: null,
+    dynamicTargetField: null,
     approval: {
       enabled: false,
       module: 'Trading',

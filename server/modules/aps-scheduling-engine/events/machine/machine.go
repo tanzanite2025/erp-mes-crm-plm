@@ -1,6 +1,9 @@
-package apsschedulingengine
+package machine
 
-import "time"
+import (
+	"time"
+	apsevents "xdfc-server/modules/aps-scheduling-engine/events"
+)
 
 type MachineHook struct{}
 
@@ -8,8 +11,8 @@ func (h *MachineHook) Supports(targetType string) bool {
 	return targetType == "machine"
 }
 
-func (h *MachineHook) BuildEvent(target HookTarget, payload map[string]any) ScheduleEvent {
-	return ScheduleEvent{
+func (h *MachineHook) BuildEvent(target apsevents.HookTarget, payload map[string]any) apsevents.ScheduleEvent {
+	return apsevents.ScheduleEvent{
 		ID:         "evt-machine",
 		Type:       "machine",
 		Source:     target.Type,

@@ -31,7 +31,6 @@ const (
 type AuditActor struct {
 	UserID   string `json:"userId,omitempty"`
 	Username string `json:"username,omitempty"`
-	Role     string `json:"role,omitempty"`
 	IP       string `json:"ip,omitempty"`
 	Source   string `json:"source,omitempty"`
 }
@@ -46,11 +45,11 @@ func (a AuditActor) Normalize() AuditActor {
 
 // AuditChange describes a field-level mutation.
 type AuditChange struct {
-	Field    string `json:"field"`
-	OldValue any    `json:"oldValue,omitempty"`
-	NewValue any    `json:"newValue,omitempty"`
+	Field     string `json:"field"`
+	OldValue  any    `json:"oldValue,omitempty"`
+	NewValue  any    `json:"newValue,omitempty"`
 	ValueType string `json:"valueType,omitempty"`
-	Label    string `json:"label,omitempty"`
+	Label     string `json:"label,omitempty"`
 }
 
 // AuditChangeSet groups all field-level changes for one event.

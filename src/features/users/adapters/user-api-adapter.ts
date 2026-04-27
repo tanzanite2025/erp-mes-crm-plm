@@ -26,7 +26,6 @@ export function toUserContract(dto: UserApiDTO): User {
     username: dto.username,
     phoneNumber: dto.phoneNumber ?? '',
     status: dto.status,
-    role: dto.role,
     version: dto.version ?? 1,
     password: dto.password,
     createdAt: dto.createdAt ? new Date(dto.createdAt) : new Date(0),
@@ -45,7 +44,6 @@ export function toUserOptionContract(dto: UserOptionApiDTO): UserOption {
     employeeId: dto.employeeId,
     firstName: dto.firstName,
     lastName: dto.lastName,
-    role: dto.role,
     status: dto.status,
   }
 }
@@ -71,7 +69,6 @@ export function toUserApiDTO(contract: User): UserApiDTO {
     phoneNumber: contract.phoneNumber,
     firstName: contract.firstName,
     lastName: contract.lastName,
-    role: contract.role,
     status: contract.status,
     employeeId: contract.employeeId,
     password: contract.password,

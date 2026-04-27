@@ -3,10 +3,10 @@ import { Activity, Key, LayoutDashboard, ShieldCheck, Users } from 'lucide-react
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
+import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
 import { type User } from '@/features/users/data/schema'
-import { fetchUsers as fetchUsersApi } from '@/features/users/services/user-api'
+import { fetchUserPermissions, fetchUsers as fetchUsersApi } from '@/features/users/services/user-api'
 import { isForbiddenError } from '@/lib/error-status'
-import { useRoles } from '../hooks/use-roles'
 
 const PermStatsCharts = lazy(() =>
   import('./perm-stats-charts').then((module) => ({ default: module.PermStatsCharts })),
@@ -14,8 +14,9 @@ const PermStatsCharts = lazy(() =>
 
 export function PermStatsTab() {
   const { t } = useLanguage()
-  const { roles, permissions, error: rolesError } = useRoles()
+  const permissions = useMemo(() => getDefaultPermissions(), [])
   const [allUsers, setAllUsers] = useState<User[]>([])
+  const [userPermissions, setUserPermissions] = useState<Array<{ user: User; permissions: string[] }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 
@@ -25,9 +26,20 @@ export function PermStatsTab() {
         setError(null)
         const userPage = await fetchUsersApi({})
         setAllUsers(userPage.items)
+        const permissionEntries = await Promise.all(
+          userPage.items.map(async (user) => {
+            const permissionData = await fetchUserPermissions(user.id)
+            return {
+              user,
+              permissions: permissionData.permissions.map((item) => item.permissionId),
+            }
+          }),
+        )
+        setUserPermissions(permissionEntries)
       } catch (loadError) {
         setError(loadError)
         setAllUsers([])
+        setUserPermissions([])
       } finally {
         setLoading(false)
       }
@@ -37,16 +49,22 @@ export function PermStatsTab() {
   }, [])
 
   const stats = useMemo(() => {
-    if (!roles.length) return null
+    const grantedUsers = userPermissions.filter((entry) => entry.permissions.length > 0)
 
-    const userDist = roles.map((role) => ({
-      name: role.label,
-      value: 0,
-    }))
+    const userDist = [
+      {
+        name: 'Granted',
+        value: grantedUsers.length,
+      },
+      {
+        name: 'No Grants',
+        value: Math.max(allUsers.length - grantedUsers.length, 0),
+      },
+    ]
 
-    const permLoad = roles.map((role) => ({
-      name: role.label,
-      count: role.permissions.length,
+    const permLoad = grantedUsers.slice(0, 12).map((entry) => ({
+      name: entry.user.username,
+      count: entry.permissions.length,
       fullMark: permissions.length,
     }))
 
@@ -62,7 +80,7 @@ export function PermStatsTab() {
 
     const moduleCoverage = modules.map((moduleItem) => ({
       name: moduleItem.label,
-      roles: roles.filter((role) => role.permissions.includes(moduleItem.id)).length,
+      users: userPermissions.filter((entry) => entry.permissions.includes(moduleItem.id)).length,
     }))
 
     return {
@@ -70,19 +88,19 @@ export function PermStatsTab() {
       permLoad,
       moduleCoverage,
       totalUsers: allUsers.length,
-      totalRoles: roles.length,
+      totalGrantedUsers: grantedUsers.length,
       totalPerms: permissions.length,
     }
-  }, [roles, permissions, allUsers, t])
+  }, [allUsers, permissions, t, userPermissions])
 
   const coreCoverage = useMemo(() => {
-    if (!stats || stats.totalRoles === 0) return 0
-    const totalModuleRoles = stats.moduleCoverage.reduce((total, item) => total + item.roles, 0)
-    const baseCount = stats.totalRoles * stats.moduleCoverage.length
-    return Math.round((totalModuleRoles / baseCount) * 100)
+    if (!stats || stats.totalUsers === 0) return 0
+    const totalModuleUsers = stats.moduleCoverage.reduce((total, item) => total + item.users, 0)
+    const baseCount = stats.totalUsers * stats.moduleCoverage.length
+    return Math.round((totalModuleUsers / baseCount) * 100)
   }, [stats])
 
-  const pageError = error ?? rolesError
+  const pageError = error
 
   if (isForbiddenError(pageError)) {
     return <ForbiddenState />
@@ -129,14 +147,14 @@ export function PermStatsTab() {
         <Card className='rounded-[24px] border-dashed border-muted/50 bg-muted/5 transition-all hover:bg-muted/10'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-black uppercase italic tracking-tighter text-muted-foreground/60'>
-              {t('systemManagement.permissionAudit.cards.totalRoles.title')}
+              {t('systemManagement.permissionAudit.cards.totalGrantedUsers.title')}
             </CardTitle>
             <ShieldCheck className='h-4 w-4 text-blue-600/40' />
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-black font-mono tracking-tighter'>{stats.totalRoles}</div>
+            <div className='text-3xl font-black font-mono tracking-tighter'>{stats.totalGrantedUsers}</div>
             <p className='mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
-              {t('systemManagement.permissionAudit.cards.totalRoles.caption')}
+              {t('systemManagement.permissionAudit.cards.totalGrantedUsers.caption')}
             </p>
           </CardContent>
         </Card>
@@ -202,7 +220,7 @@ export function PermStatsTab() {
                 <span className='mb-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
                   {moduleItem.name} {t('systemManagement.permissionAudit.matrix.moduleSuffix')}
                 </span>
-                <div className='text-2xl font-black font-mono text-slate-800'>{moduleItem.roles}</div>
+                <div className='text-2xl font-black font-mono text-slate-800'>{moduleItem.users}</div>
                 <span className='mt-1 text-[8px] font-black uppercase tracking-widest text-slate-400 opacity-40'>
                   {t('systemManagement.permissionAudit.matrix.rolesAccess')}
                 </span>

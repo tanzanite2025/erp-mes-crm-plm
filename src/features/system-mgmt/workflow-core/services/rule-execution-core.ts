@@ -30,7 +30,7 @@ export interface RuleExecutionEvent {
   title?: string
   content?: string
   priority?: NotificationPriority
-  targetRoles?: string[]
+  targetGroups?: string[]
   targetUsers?: string[]
   actionUrl?: string
   sourceCode?: string
@@ -104,11 +104,11 @@ export async function executeRoutingRules({
 
       if (!isSegmentStatusMatch({ segment, event })) continue
 
-      const { dynamicTargets, finalRoles, finalUsers, finalTargets } =
+      const { dynamicTargets, finalGroups, finalUsers, finalTargets } =
         resolveSegmentTargets({
-          assigneeRoles: segment.assigneeRoles,
+          assigneeGroups: segment.assigneeGroups,
           assigneeUsernames: segment.assigneeUsernames,
-          dynamicRoleField: segment.dynamicRoleField,
+          dynamicTargetField: segment.dynamicTargetField,
           event,
         })
       const eventKey = buildExecutionEventKey(
@@ -168,7 +168,7 @@ export async function executeRoutingRules({
         targetEntity,
         targetSourceCode,
         metadata,
-        finalRoles,
+        finalGroups,
         finalUsers,
         finalTargets,
         commands,

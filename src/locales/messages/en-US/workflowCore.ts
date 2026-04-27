@@ -38,7 +38,7 @@ export const workflowCore = {
     },
     bindTypes: {
       section: "SECTION / Section Only",
-      role: "ROLE / Active Role Only",
+      group: "GROUP / Active Target Group",
       global: "GLOBAL / Available Everywhere"
     },
     nodeTypes: {

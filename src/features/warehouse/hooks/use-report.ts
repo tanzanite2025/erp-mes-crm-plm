@@ -1,18 +1,28 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import {
     InventoryCoreService,
     InventoryMaintenanceService,
+    type InboundRecord,
     type MasterDataSearchResult,
 } from '../inventory'
-import { ShipmentCoreService } from '../shipment'
+import { ShipmentCoreService, type ShipmentRecord } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
 import { warehouseQueryKeys } from '../query-keys'
 
 const logger = createLogger('useWarehouseReport')
+
+type ReportReadResource = CompositeReadResource<{
+    filteredInbound: InboundRecord[]
+    filteredShipment: ShipmentRecord[]
+    masterDataMap: Record<string, MasterDataSearchResult>
+    hasData: boolean
+}>
 
 export function useReport() {
     const { locale, t } = useLanguage()
@@ -28,29 +38,82 @@ export function useReport() {
         queryKey: warehouseQueryKeys.inboundHistory(),
         queryFn: () => InventoryCoreService.getInboundHistory(),
     })
+    const { refetch: refetchInbound } = inboundQuery
 
     const shipmentQuery = useQuery({
         queryKey: warehouseQueryKeys.shipmentHistory(),
         queryFn: () => ShipmentCoreService.getShipmentHistory(),
     })
+    const { refetch: refetchShipment } = shipmentQuery
 
     const masterDataQuery = useQuery({
         queryKey: warehouseQueryKeys.masterDataAll(),
         queryFn: () => InventoryCoreService.searchMasterData(''),
     })
+    const { refetch: refetchMasterData } = masterDataQuery
 
-    const inboundData = useMemo(() => inboundQuery.data ?? [], [inboundQuery.data])
-    const shipmentData = useMemo(() => shipmentQuery.data ?? [], [shipmentQuery.data])
-    const masterDataMap = useMemo(() => {
-        const map: Record<string, MasterDataSearchResult> = {}
-        ;(masterDataQuery.data ?? []).forEach((item: MasterDataSearchResult) => {
-            map[item.id] = item
+    const readResource = useMemo<ReportReadResource>(() => {
+        const inboundFailure = resolveQueryFailure({
+            data: inboundQuery.data,
+            error: inboundQuery.error,
+            isPending: inboundQuery.isPending,
+            scope: 'useReport.inboundHistory',
+            missingMessage: '[CRITICAL] Inbound report data is missing after load',
+            failureMessage: '[CRITICAL] Inbound report query failed',
         })
-        return map
-    }, [masterDataQuery.data])
+        if (inboundFailure) {
+            return {
+                status: 'error',
+                error: inboundFailure.error,
+                scope: inboundFailure.scope,
+            }
+        }
 
-    const filteredInbound = useMemo(() => {
-        return inboundData.filter((item) => {
+        const shipmentFailure = resolveQueryFailure({
+            data: shipmentQuery.data,
+            error: shipmentQuery.error,
+            isPending: shipmentQuery.isPending,
+            scope: 'useReport.shipmentHistory',
+            missingMessage: '[CRITICAL] Shipment report data is missing after load',
+            failureMessage: '[CRITICAL] Shipment report query failed',
+        })
+        if (shipmentFailure) {
+            return {
+                status: 'error',
+                error: shipmentFailure.error,
+                scope: shipmentFailure.scope,
+            }
+        }
+
+        const masterDataFailure = resolveQueryFailure({
+            data: masterDataQuery.data,
+            error: masterDataQuery.error,
+            isPending: masterDataQuery.isPending,
+            scope: 'useReport.masterDataAll',
+            missingMessage: '[CRITICAL] Report master data is missing after load',
+            failureMessage: '[CRITICAL] Report master data query failed',
+        })
+        if (masterDataFailure) {
+            return {
+                status: 'error',
+                error: masterDataFailure.error,
+                scope: masterDataFailure.scope,
+            }
+        }
+
+        if (inboundQuery.isPending || shipmentQuery.isPending || masterDataQuery.isPending) {
+            return { status: 'loading' }
+        }
+
+        const inboundData = inboundQuery.data as InboundRecord[]
+        const shipmentData = shipmentQuery.data as ShipmentRecord[]
+        const masterData = masterDataQuery.data as MasterDataSearchResult[]
+        const masterDataMap = masterData.reduce<Record<string, MasterDataSearchResult>>((map, item) => {
+            map[item.id] = item
+            return map
+        }, {})
+
+        const filteredInbound = inboundData.filter((item) => {
             const date = item.entryDate
             const master = masterDataMap[item.materialId]
             const matchDate = (!filters.startDate || date >= filters.startDate) &&
@@ -61,10 +124,8 @@ export function useReport() {
                 master?.code.toLowerCase().includes(query)
             return matchDate && matchQuery
         })
-    }, [inboundData, masterDataMap, filters])
 
-    const filteredShipment = useMemo(() => {
-        return shipmentData.filter((item) => {
+        const filteredShipment = shipmentData.filter((item) => {
             const date = item.shipmentDate
             const master = masterDataMap[item.materialId]
             const matchDate = (!filters.startDate || date >= filters.startDate) &&
@@ -75,13 +136,54 @@ export function useReport() {
                 master?.code.toLowerCase().includes(query)
             return matchDate && matchQuery
         })
-    }, [shipmentData, masterDataMap, filters])
+
+        return {
+            status: 'ready',
+            filteredInbound,
+            filteredShipment,
+            masterDataMap,
+            hasData: activeTab === 'inbound' ? filteredInbound.length > 0 : filteredShipment.length > 0,
+        }
+    }, [
+        activeTab,
+        filters,
+        inboundQuery.data,
+        inboundQuery.error,
+        inboundQuery.isPending,
+        masterDataQuery.data,
+        masterDataQuery.error,
+        masterDataQuery.isPending,
+        shipmentQuery.data,
+        shipmentQuery.error,
+        shipmentQuery.isPending,
+    ])
+
+    useEffect(() => {
+        if (readResource.status !== 'error') {
+            return
+        }
+
+        logger.error(`Failed to load warehouse report data: ${readResource.scope}`, readResource.error)
+        failLoudly(readResource.error, readResource.scope)
+    }, [readResource])
+
+    const retryRead = useCallback(async () => {
+        await Promise.all([
+            refetchInbound(),
+            refetchShipment(),
+            refetchMasterData(),
+        ])
+    }, [refetchInbound, refetchMasterData, refetchShipment])
 
     const handleExport = () => {
+        if (readResource.status !== 'ready') {
+            return
+        }
+
         if (activeTab === 'inbound') {
-            void WarehouseExportService.exportInbound(filteredInbound, masterDataMap, locale)
+            void WarehouseExportService.exportInbound(readResource.filteredInbound, readResource.masterDataMap, locale)
         } else {
-            void WarehouseExportService.exportShipment(filteredShipment, masterDataMap, locale)
+            void WarehouseExportService.exportShipment(readResource.filteredShipment, readResource.masterDataMap, locale)
         }
     }
 
@@ -117,25 +219,16 @@ export function useReport() {
         }
     }
 
-    const hasData = activeTab === 'inbound' ? filteredInbound.length > 0 : filteredShipment.length > 0
-    const error = inboundQuery.error ?? shipmentQuery.error ?? masterDataQuery.error
-
-    if (error) {
-        logger.error('Failed to load report data', error)
-    }
-
     return {
         activeTab,
         setActiveTab,
-        error,
+        readResource,
         filters,
         setFilters,
-        filteredInbound,
-        filteredShipment,
-        masterDataMap,
+        retryRead,
         handleExport,
         handleReconcile,
         resetFilters,
-        hasData
+        hasData: readResource.status === 'ready' ? readResource.hasData : false
     }
 }

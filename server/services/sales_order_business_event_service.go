@@ -291,8 +291,8 @@ func salesOrderEventTargets(event salesOrderStatusChangedEvent, segment RuleSegm
 	for _, value := range segment.AssigneeUsernames {
 		add(value)
 	}
-	if segment.DynamicRoleField != nil {
-		add(resolveSalesOrderEventField(event, *segment.DynamicRoleField))
+	if segment.DynamicTargetField != nil {
+		add(resolveSalesOrderEventField(event, *segment.DynamicTargetField))
 	}
 	return targets
 }

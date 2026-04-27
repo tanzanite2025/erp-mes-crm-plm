@@ -22,12 +22,9 @@ export function SalesReturnsTab() {
           statusFilter={queryShell.sourceStatusFilter}
           sourcePage={queryShell.sourcePage}
           sourceTotalPages={queryShell.sourceTotalPages}
-          sourceOrders={queryShell.sourceOrders}
+          sourceOrdersResource={queryShell.sourceOrdersResource}
           selectedSourceOrderId={queryShell.selectedSourceOrderId}
           selectedSourceOrder={queryShell.selectedSourceOrder}
-          isSourceLoading={queryShell.isSourceLoading}
-          isSourceError={queryShell.isSourceError}
-          sourceError={queryShell.sourceError}
           isSourceDetailLoading={queryShell.isSourceDetailLoading}
           onRetrySourceOrders={() => {
             void queryShell.refetchSourceOrders()
@@ -39,12 +36,9 @@ export function SalesReturnsTab() {
           onSourcePageChange={queryShell.handleSourcePageChange}
           returnPage={queryShell.returnPage}
           returnTotalPages={queryShell.returnTotalPages}
-          returnRecords={queryShell.returnRecords}
+          returnsResource={queryShell.returnsResource}
           selectedReturnId={queryShell.selectedReturnId}
           selectedReturnRecord={queryShell.selectedReturnRecord}
-          isReturnsLoading={queryShell.isReturnsLoading}
-          isReturnsError={queryShell.isReturnsError}
-          returnsError={queryShell.returnsError}
           isReturnDetailLoading={queryShell.isReturnDetailLoading}
           onRetryReturns={() => {
             void queryShell.refetchReturns()

@@ -249,7 +249,7 @@ export const useNotificationStore = create<NotificationState>()(
       rules: [],
       updateRule: () => {},
       initializeRules: () => {},
-      cleanupRoles: () => {},
+      cleanupGroups: () => {},
     }),
     {
       name: 'xdfc_notifications_v3', // 协议升级，重置存储

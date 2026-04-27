@@ -1,4 +1,4 @@
-﻿import type { Permission } from '@/features/system-mgmt/data/role-schema'
+﻿import type { Permission } from '@/features/authz/data/permission-schema'
 
 export type ActionRouteBinding = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -68,7 +68,7 @@ const systemActions: LegacyActionPermissionEntry[] = [
   {
     id: 'user_edit',
     label: '编辑用户',
-    desc: '允许更新用户资料和角色分配。',
+    desc: '允许更新用户资料和账号状态。',
     category: 'action',
     parentId: 'menu_system',
     routeBindings: ['PATCH /users/:id', 'PUT /users/:id', 'PATCH /employees/status'],
@@ -92,13 +92,11 @@ const systemActions: LegacyActionPermissionEntry[] = [
   {
     id: 'perm_manage',
     label: '管理权限配置',
-    desc: '允许管理角色、系统配置和基础权限。',
+    desc: '允许管理用户权限、系统配置和基础权限。',
     category: 'action',
     parentId: 'menu_system',
     routeBindings: [
       'POST /users/sync',
-      'POST /roles',
-      'DELETE /roles/:id',
       'POST /system/configs',
       'POST /org',
       'POST /org/sync',

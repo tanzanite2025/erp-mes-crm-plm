@@ -207,7 +207,7 @@ func hasContextPermission(c *gin.Context, required string) bool {
 	return false
 }
 
-// BindUserEmployeeHandler binds an account to an employee identity and synchronizes mirrored role bindings.
+// BindUserEmployeeHandler binds an account to an employee identity.
 func BindUserEmployeeHandler(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
 	if userID == "" {
@@ -442,7 +442,7 @@ func PatchUserHandler(c *gin.Context) {
 	}
 
 	if strings.EqualFold(strings.TrimSpace(user.Username), "admin") && !hasContextPermission(c, authz.PermissionManage) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage admin roles"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage the seed admin account"})
 		return
 	}
 
@@ -540,7 +540,7 @@ func ReplaceUserHandler(c *gin.Context) {
 	}
 
 	if strings.EqualFold(strings.TrimSpace(user.Username), "admin") && !hasContextPermission(c, authz.PermissionManage) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage admin roles"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage the seed admin account"})
 		return
 	}
 
@@ -550,7 +550,7 @@ func ReplaceUserHandler(c *gin.Context) {
 		return
 	}
 	if strings.EqualFold(user.Username, "admin") && !strings.EqualFold(normalizedUsername, "admin") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Seed admin role cannot be changed"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Seed admin account cannot be renamed"})
 		return
 	}
 

@@ -4,6 +4,7 @@ import type {
   SalesOrderLineApiDTO,
   SalesOrderListPageApiDTO,
 } from '../contracts/sales-order-api-dto'
+import { ensureArrayField } from '@/lib/api-response'
 
 export interface PaginatedSalesOrders {
   items: SalesOrder[]
@@ -121,6 +122,14 @@ function normalizeSalesOrderStatus(
   return 'Pending'
 }
 
+function requireSalesOrderArrayField<T>(
+  value: unknown,
+  fieldName: string,
+  context: string,
+): T[] {
+  return ensureArrayField<T>(value, fieldName, context)
+}
+
 export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
   return {
     id: dto.id,
@@ -150,10 +159,12 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     updatedBy: dto.updatedBy,
     isDeleted: dto.isDeleted ?? false,
     version: dto.version ?? 1,
-    evidences: dto.evidences ?? [],
+    evidences: requireSalesOrderArrayField(dto, 'evidences', 'SalesOrderApiAdapter.toSalesOrderContract'),
     fulfillmentRate: dto.fulfillmentRate,
-    availableActions: dto.availableActions ?? [],
-    lines: (dto.lines ?? []).map(toSalesOrderLineContract),
+    availableActions: requireSalesOrderArrayField(dto, 'availableActions', 'SalesOrderApiAdapter.toSalesOrderContract'),
+    lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', 'SalesOrderApiAdapter.toSalesOrderContract').map(
+      toSalesOrderLineContract
+    ),
   }
 }
 
@@ -188,7 +199,9 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
     version: order.version,
     evidences: order.evidences,
     availableActions: order.availableActions,
-    lines: (order.lines ?? []).map(toSalesOrderLineApiDTO),
+    lines: requireSalesOrderArrayField<SalesOrderLine>(order, 'lines', 'SalesOrderApiAdapter.toSalesOrderApiDTO').map(
+      toSalesOrderLineApiDTO
+    ),
   }
 }
 

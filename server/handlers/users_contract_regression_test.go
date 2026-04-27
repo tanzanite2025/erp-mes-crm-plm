@@ -34,16 +34,6 @@ func setupUsersContractRegressionTestDB(t *testing.T) {
 			updated_at DATETIME,
 			deleted_at DATETIME
 		)`,
-		`CREATE TABLE roles (
-			id TEXT PRIMARY KEY,
-			role_id TEXT NOT NULL UNIQUE,
-			label TEXT,
-			color TEXT,
-			permissions TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME
-		)`,
 		`CREATE TABLE user_permissions (
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
@@ -180,7 +170,7 @@ func TestReplaceUserHandlerRejectsAdminReplacementByNonAdmin(t *testing.T) {
 	}`)
 
 	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
-	require.Contains(t, recorder.Body.String(), "Only admin can manage admin roles")
+	require.Contains(t, recorder.Body.String(), "Only admin can manage the seed admin account")
 }
 
 func TestGetUsersHandlerReturnsPaginatedContractWithFilters(t *testing.T) {
@@ -327,7 +317,7 @@ func TestGetAuthSnapshotHandlerDoesNotRecomputePermissionsWhenContextPermissions
 	require.Equal(t, []any{}, payload["permissions"])
 }
 
-func TestGetAuthSnapshotHandlerDoesNotExposeLegacyRoleFields(t *testing.T) {
+func TestGetAuthSnapshotHandlerReturnsUserPermissionSnapshot(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	setupUsersContractRegressionTestDB(t)
 
@@ -357,8 +347,6 @@ func TestGetAuthSnapshotHandlerDoesNotExposeLegacyRoleFields(t *testing.T) {
 
 	var payload map[string]any
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &payload))
-	require.Nil(t, payload["role"])
-	require.Nil(t, payload["effectiveRoles"])
 }
 
 func TestGetUserAccessSnapshotHandlerReturnsPermissionOnlySnapshot(t *testing.T) {
@@ -398,8 +386,4 @@ func TestGetUserAccessSnapshotHandlerReturnsPermissionOnlySnapshot(t *testing.T)
 	require.Equal(t, "access-user", payload["username"])
 	require.Contains(t, payload["permissions"].([]any), "user_view")
 	require.Contains(t, payload["diagnostics"].([]any), "user_permissions_authoritative")
-	require.Contains(t, payload["diagnostics"].([]any), "role_chain_disabled")
-	require.Nil(t, payload["primaryRoleId"])
-	require.Nil(t, payload["effectiveRoles"])
-	require.Nil(t, payload["roleBindings"])
 }

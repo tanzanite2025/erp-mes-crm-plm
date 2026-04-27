@@ -1,31 +1,40 @@
-package apsschedulingengine
+package static
 
-import "context"
+import (
+	"context"
+	apsmatching "xdfc-server/modules/aps-scheduling-engine/matching"
+	apsschedule "xdfc-server/modules/aps-scheduling-engine/models/schedule"
+	apsorderplanner "xdfc-server/modules/aps-scheduling-engine/planner/static/order"
+	apsrules "xdfc-server/modules/aps-scheduling-engine/rules"
+	apsscoring "xdfc-server/modules/aps-scheduling-engine/scoring"
+	apsversioning "xdfc-server/modules/aps-scheduling-engine/versioning"
+	apswindowing "xdfc-server/modules/aps-scheduling-engine/windowing"
+)
 
 type StaticPlanner struct {
-	Scorer   *CandidateScorer
-	Matcher  *ResourceMatcher
-	Windower *TimeWindowFinder
-	Store    *VersionStore
+	Scorer   *apsscoring.CandidateScorer
+	Matcher  *apsmatching.ResourceMatcher
+	Windower *apswindowing.TimeWindowFinder
+	Store    *apsversioning.VersionStore
 }
 
-func NewStaticPlanner(scorer *CandidateScorer, matcher *ResourceMatcher, windower *TimeWindowFinder, store *VersionStore) *StaticPlanner {
+func NewStaticPlanner(scorer *apsscoring.CandidateScorer, matcher *apsmatching.ResourceMatcher, windower *apswindowing.TimeWindowFinder, store *apsversioning.VersionStore) *StaticPlanner {
 	return &StaticPlanner{Scorer: scorer, Matcher: matcher, Windower: windower, Store: store}
 }
 
-func (p *StaticPlanner) Build(ctx context.Context, input BuildPlanInput, rules *RuleSet) (*SchedulePlan, error) {
+func (p *StaticPlanner) Build(ctx context.Context, input apsschedule.BuildPlanInput, rules *apsrules.RuleSet) (*apsschedule.SchedulePlan, error) {
 	if p.Scorer == nil {
-		p.Scorer = NewCandidateScorer()
+		p.Scorer = apsscoring.NewCandidateScorer()
 	}
 	if p.Matcher == nil {
-		p.Matcher = NewResourceMatcher()
+		p.Matcher = apsmatching.NewResourceMatcher()
 	}
 	if p.Windower == nil {
-		p.Windower = NewTimeWindowFinder()
+		p.Windower = apswindowing.NewTimeWindowFinder()
 	}
 	if p.Store == nil {
-		p.Store = NewVersionStore()
+		p.Store = apsversioning.NewVersionStore()
 	}
 
-	return NewOrderPlanner(p.Scorer, p.Matcher, p.Windower, p.Store).Build(ctx, input, rules)
+	return apsorderplanner.NewOrderPlanner(p.Scorer, p.Matcher, p.Windower, p.Store).Build(ctx, input, rules)
 }

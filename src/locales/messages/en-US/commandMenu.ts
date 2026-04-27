@@ -82,7 +82,7 @@ export const commandMenu = {
     orgStructure: 'Organization',
     employees: 'Employees',
     accounts: 'Accounts',
-    rights: 'Role Rights',
+    rights: 'User Permissions',
     permissions: 'Permission Audit',
     productionLines: 'Production Lines',
     topology: 'Topology Templates',

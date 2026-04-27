@@ -136,7 +136,7 @@ func TestUpdateBusinessEventSource_RejectsNestedIdentityMutation(t *testing.T) {
 				"actions":[{"id":"action-1","order":0,"code":"CREATED","name":"Created","kind":"created"}],
 				"statuses":[{"id":"status-1","order":0,"code":"Pending","label":"Pending","phase":"pending","isTerminal":false,"defaultResolve":false}],
 				"fields":[{"id":"field-1","order":0,"key":"orderNo","label":"Order No","path":"orderNo","type":"string","templateKey":"OrderNo","templateEnabled":true,"dynamicResolver":false}],
-				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"role"}],
+				"dynamicResolvers":[{"id":"resolver-1","order":0,"code":"createdBy","label":"Created By","path":"createdBy","type":"group"}],
 				"defaultActionUrlTemplate":"/trading/orders/[OrderId]"
 			}`,
 		},

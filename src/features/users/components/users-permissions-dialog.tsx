@@ -17,9 +17,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
-import { buildPermissionTree, formatPermissionLabel } from '@/features/system-mgmt/tabs/components/user-rights-utils'
-import type { Permission } from '@/features/system-mgmt/data/role-schema'
-import type { PermissionPageNode, PermissionTreeNode } from '@/features/system-mgmt/tabs/components/user-rights-types'
+import { buildPermissionTree, formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
+import type { Permission } from '@/features/authz/data/permission-schema'
+import type { PermissionPageNode, PermissionTreeNode } from '@/features/authz/utils/permission-tree-types'
 import { type User } from '../data/schema'
 import { useUserAccessSnapshotQuery, useUserMutations, useUserPermissionsQuery } from '../hooks/use-users'
 

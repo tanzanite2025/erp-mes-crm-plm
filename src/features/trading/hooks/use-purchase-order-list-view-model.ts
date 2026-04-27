@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { type PurchaseOrder } from '../data/schema'
+import { type PurchaseOrderListItem } from '../data/schema'
 
 interface UsePurchaseOrderListViewModelParams {
-  orders: PurchaseOrder[]
+  orders: PurchaseOrderListItem[]
   searchTerm: string
   statusFilter: string
   paymentMethodFilter: string

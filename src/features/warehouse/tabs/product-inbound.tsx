@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertCircle, CheckCircle2, Database, History, Package, Plus, RefreshCw, Search } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Database, History, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,8 @@ export default function ProductInbound() {
     const { t } = useLanguage()
     const { mode } = Route.useSearch()
     const {
-        error,
+        readResource,
+        searchResource,
         searchQuery,
         searchResults,
         isSearching,
@@ -65,9 +66,50 @@ export default function ProductInbound() {
         handleRemarksChange,
         handleSubmitInbound,
         handleCloseInboundDialog,
+        retryRead,
+        retrySearch,
     } = useProductInboundViewModel()
-    if (isForbiddenError(error)) {
+
+    if (readResource.status === 'error' && isForbiddenError(readResource.error)) {
         return <ForbiddenState />
+    }
+
+    if (readResource.status === 'error') {
+        return (
+            <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+                <IndustrialHeader title={t('warehouse.inbound.title')} description={t('warehouse.inbound.subtitle')} icon={Package} />
+                <div className='flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>入库基础数据加载失败</p>
+                    <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+                        {readResource.error.message || '请重试后再进行产品入库。'}
+                    </p>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+                        onClick={() => {
+                            void retryRead()
+                        }}
+                    >
+                        重试
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
+    if (readResource.status === 'loading') {
+        return (
+            <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+                <IndustrialHeader title={t('warehouse.inbound.title')} description={t('warehouse.inbound.subtitle')} icon={Package} />
+                <div className='flex min-h-[360px] flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
+                    <Loader2 className='size-8 animate-spin text-primary/40' />
+                    <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+                        入库基础数据加载中
+                    </p>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -106,7 +148,30 @@ export default function ProductInbound() {
                     </span>
                 </div>
                 <div className='h-[320px] overflow-y-auto divide-y divide-dashed divide-muted px-2'>
-                    {searchResults.length > 0 ? (
+                    {searchResource.status === 'error' ? (
+                        <div className='flex h-full flex-col items-center justify-center px-6 text-center'>
+                            <AlertCircle className='size-8 text-rose-500' />
+                            <p className='mt-4 text-[10px] font-black uppercase tracking-widest text-rose-700'>搜索结果加载失败</p>
+                            <p className='mt-2 max-w-md text-[10px] font-bold leading-5 text-rose-700/80'>
+                                {searchResource.error.message || '请重试后再搜索主数据。'}
+                            </p>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                className='mt-5 h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                                onClick={() => {
+                                    void retrySearch()
+                                }}
+                            >
+                                重试
+                            </Button>
+                        </div>
+                    ) : searchResource.status === 'loading' ? (
+                        <div className='flex h-full flex-col items-center justify-center px-6 text-center text-muted-foreground/40'>
+                            <Loader2 className='size-6 animate-spin text-emerald-500/60' />
+                            <p className='mt-4 text-[10px] font-black uppercase tracking-widest'>搜索中</p>
+                        </div>
+                    ) : searchResource.status === 'ready' && searchResults.length > 0 ? (
                         searchResults.map((item) => (
                             <div
                                 key={item.id}

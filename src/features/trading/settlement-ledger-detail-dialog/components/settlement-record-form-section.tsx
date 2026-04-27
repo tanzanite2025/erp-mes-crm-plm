@@ -17,6 +17,10 @@ interface SettlementRecordFormSectionProps {
   onPaymentMethodChange: (value: string) => void
   paymentMethodOptions: Array<{ code: string; name: string }>
   paymentMethodPlaceholder: string
+  paymentMethodLoadingLabel: string
+  paymentMethodUnavailableLabel: string
+  isPaymentMethodLoading: boolean
+  isPaymentMethodOptionsUnavailable: boolean
   dateFieldId: string
   dateLabel: string
   recordDate: string
@@ -100,6 +104,10 @@ export function SettlementRecordFormSection({
   onPaymentMethodChange,
   paymentMethodOptions,
   paymentMethodPlaceholder,
+  paymentMethodLoadingLabel,
+  paymentMethodUnavailableLabel,
+  isPaymentMethodLoading,
+  isPaymentMethodOptionsUnavailable,
   dateFieldId,
   dateLabel,
   recordDate,
@@ -204,7 +212,11 @@ export function SettlementRecordFormSection({
         {showDetailedFields ? (
           <div className='grid gap-1.5'>
             <Label htmlFor={paymentMethodFieldId}>{paymentMethodLabel}</Label>
-            <Select value={paymentMethod || '__empty__'} onValueChange={(value) => onPaymentMethodChange(value === '__empty__' ? '' : value)}>
+            <Select
+              value={paymentMethod || '__empty__'}
+              onValueChange={(value) => onPaymentMethodChange(value === '__empty__' ? '' : value)}
+              disabled={isPaymentMethodLoading || isPaymentMethodOptionsUnavailable}
+            >
               <SelectTrigger id={paymentMethodFieldId}>
                 <SelectValue placeholder={paymentMethodPlaceholder} />
               </SelectTrigger>
@@ -217,6 +229,8 @@ export function SettlementRecordFormSection({
                 ))}
               </SelectContent>
             </Select>
+            {isPaymentMethodLoading ? <div className='text-[10px] font-bold text-muted-foreground/60'>{paymentMethodLoadingLabel}</div> : null}
+            {isPaymentMethodOptionsUnavailable ? <div className='text-[10px] font-bold text-destructive'>{paymentMethodUnavailableLabel}</div> : null}
           </div>
         ) : null}
         <div className='grid gap-1.5'>

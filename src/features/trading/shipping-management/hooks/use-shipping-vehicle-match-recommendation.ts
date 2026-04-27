@@ -1,17 +1,54 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useUnitsQuery } from '@/features/basic-settings/hooks/use-units-query'
 import { packagingRulesService, type PackagingProfile } from '@/features/logistics-config/packaging-rules-service'
-import type { ShipmentSummary } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading.types'
+import type { ShipmentSummary, VehicleLoadingPackageInput } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading.types'
 import { getVehicleLoadingSourceConfig, type VehicleLoadingSourceType } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading-sources'
 import { useVehicleLoadingData } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-loading-data'
 import {
   buildManualVehicleLoadingPackageInput,
   buildVehicleLoadingPackageInputFromProfile,
 } from '@/features/logistics-config/vehicle-loading/services/vehicle-loading-package-input'
+import { createLogger } from '@/lib/logger'
+import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import type { ShippingVehicleMatchItem } from '../types'
 
 const SHIPPING_MATCH_PACKAGING_PROFILE_QUERY_KEY = ['logistics-config', 'packaging-profiles'] as const
+const logger = createLogger('useShippingVehicleMatchRecommendation')
+
+type ShippingVehicleMatchPackageInputResource =
+  | {
+      status: 'loading'
+      source: VehicleLoadingSourceType
+      sourceLabel: string
+      packageInputNotice: string | null
+      selectedPackagingProfile: PackagingProfile | null
+    }
+  | {
+      status: 'error'
+      source: VehicleLoadingSourceType
+      sourceLabel: string
+      packageInputNotice: string | null
+      selectedPackagingProfile: PackagingProfile | null
+      error: Error
+      scope: string
+    }
+  | {
+      status: 'ready'
+      source: VehicleLoadingSourceType
+      sourceLabel: string
+      packageInputNotice: string | null
+      selectedPackagingProfile: PackagingProfile | null
+      packageInput: VehicleLoadingPackageInput
+    }
+
+export type ShippingVehicleMatchRecommendationReadResource = ReadResource<{
+  source: VehicleLoadingSourceType
+  sourceLabel: string
+  packageInputNotice: string | null
+  recommendations: ReturnType<typeof useVehicleLoadingData>['recommendations']
+}>
 
 function buildManualPackageInputState(summary: ShipmentSummary) {
   try {
@@ -55,7 +92,7 @@ function buildPackingRulePackageInputState(profile: PackagingProfile | null) {
 
 export function useShippingVehicleMatchRecommendation(item: ShippingVehicleMatchItem, summary: ShipmentSummary) {
   const hasPreferredPackagingProfile = item.packageProfileId.trim() !== ''
-  const { isLoading: isLoadingUnits, error: unitsError, refetch: refetchUnits } = useUnitsQuery({
+  const { readResource: unitsReadResource, refetch: refetchUnits } = useUnitsQuery({
     enabled: hasPreferredPackagingProfile,
   })
   const profilesQuery = useQuery({
@@ -64,14 +101,42 @@ export function useShippingVehicleMatchRecommendation(item: ShippingVehicleMatch
     enabled: hasPreferredPackagingProfile,
     retry: false,
   })
-  const {
-    data: profilesData,
-    error: profilesError,
-    isLoading: isLoadingProfiles,
-    refetch: refetchProfiles,
-  } = profilesQuery
+  const { refetch: refetchProfiles } = profilesQuery
+  const profilesReadResource = useMemo<ReadResource<PackagingProfile[]> | { status: 'idle' }>(() => {
+    if (!hasPreferredPackagingProfile) {
+      return { status: 'idle' }
+    }
 
-  const activeProfiles = useMemo(() => (profilesData ?? []).filter((profile) => profile.isActive), [profilesData])
+    const failure = resolveQueryFailure({
+      data: profilesQuery.data,
+      error: profilesQuery.error,
+      isPending: profilesQuery.isPending,
+      scope: 'useShippingVehicleMatchRecommendation.packagingProfiles',
+      missingMessage: '[CRITICAL] Shipping recommendation packaging profiles missing after load',
+      failureMessage: '[CRITICAL] Shipping recommendation packaging profiles query failed',
+    })
+    if (failure) {
+      return {
+        status: 'error',
+        error: failure.error,
+        scope: failure.scope,
+      }
+    }
+
+    if (profilesQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      data: profilesQuery.data as PackagingProfile[],
+    }
+  }, [hasPreferredPackagingProfile, profilesQuery.data, profilesQuery.error, profilesQuery.isPending])
+
+  const activeProfiles = useMemo(
+    () => (profilesReadResource.status === 'ready' ? profilesReadResource.data.filter((profile) => profile.isActive) : []),
+    [profilesReadResource]
+  )
   const selectedPackagingProfile = useMemo(
     () => activeProfiles.find((profile) => profile.id === item.packageProfileId) ?? null,
     [activeProfiles, item.packageProfileId]
@@ -80,119 +145,183 @@ export function useShippingVehicleMatchRecommendation(item: ShippingVehicleMatch
   const manualPackageState = useMemo(() => buildManualPackageInputState(summary), [summary])
   const packingRulePackageState = useMemo(() => buildPackingRulePackageInputState(selectedPackagingProfile), [selectedPackagingProfile])
 
-  const packageResolution = useMemo(() => {
+  const packageInputResource = useMemo<ShippingVehicleMatchPackageInputResource>(() => {
     if (!hasPreferredPackagingProfile) {
+      if (manualPackageState.ready && manualPackageState.packageInput) {
+        return {
+          status: 'ready',
+          source: 'manual',
+          sourceLabel: getVehicleLoadingSourceConfig('manual').label,
+          packageInput: manualPackageState.packageInput,
+          packageInputNotice: null,
+          selectedPackagingProfile: null,
+        }
+      }
+
       return {
-        source: 'manual' as VehicleLoadingSourceType,
+        status: 'error',
+        source: 'manual',
         sourceLabel: getVehicleLoadingSourceConfig('manual').label,
-        packageInput: manualPackageState.packageInput,
-        packageInputError: manualPackageState.error,
-        isReady: manualPackageState.ready,
-        isLoading: false,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile: null,
+        error: manualPackageState.error ?? new Error('无法构造手动试算包装输入'),
+        scope: 'useShippingVehicleMatchRecommendation.manualPackageInput',
       }
     }
 
-    if (unitsError instanceof Error) {
+    if (unitsReadResource.status === 'error') {
       return {
-        source: 'packing-rule' as VehicleLoadingSourceType,
+        status: 'error',
+        source: 'packing-rule',
         sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
-        packageInput: null,
-        packageInputError: unitsError,
-        isReady: false,
-        isLoading: false,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile: null,
+        error: unitsReadResource.error,
+        scope: unitsReadResource.scope,
       }
     }
 
-    if (profilesError instanceof Error) {
+    if (profilesReadResource.status === 'error') {
       return {
-        source: 'packing-rule' as VehicleLoadingSourceType,
+        status: 'error',
+        source: 'packing-rule',
         sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
-        packageInput: null,
-        packageInputError: profilesError,
-        isReady: false,
-        isLoading: false,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile: null,
+        error: profilesReadResource.error,
+        scope: profilesReadResource.scope,
       }
     }
 
-    if (isLoadingProfiles || isLoadingUnits) {
+    if (unitsReadResource.status === 'loading' || profilesReadResource.status === 'loading') {
       return {
-        source: 'packing-rule' as VehicleLoadingSourceType,
+        status: 'loading',
+        source: 'packing-rule',
         sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
-        packageInput: null,
-        packageInputError: null,
-        isReady: false,
-        isLoading: true,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile: null,
       }
     }
 
-    if (selectedPackagingProfile && packingRulePackageState.ready) {
+    if (!selectedPackagingProfile) {
       return {
-        source: 'packing-rule' as VehicleLoadingSourceType,
+        status: 'error',
+        source: 'packing-rule',
         sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
-        packageInput: packingRulePackageState.packageInput,
-        packageInputError: null,
-        isReady: true,
-        isLoading: false,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile: null,
+        error: new Error('未找到可用的关联包装资料，请检查包装规则配置。'),
+        scope: 'useShippingVehicleMatchRecommendation.selectedPackagingProfile',
       }
     }
 
     if (packingRulePackageState.error instanceof Error) {
       return {
-        source: 'packing-rule' as VehicleLoadingSourceType,
+        status: 'error',
+        source: 'packing-rule',
         sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
-        packageInput: null,
-        packageInputError: packingRulePackageState.error,
-        isReady: false,
-        isLoading: false,
-        notice: null as string | null,
+        packageInputNotice: null,
+        selectedPackagingProfile,
+        error: packingRulePackageState.error,
+        scope: 'useShippingVehicleMatchRecommendation.packingRulePackageInput',
       }
     }
 
-    if (manualPackageState.ready) {
+    if (packingRulePackageState.ready && packingRulePackageState.packageInput) {
       return {
-        source: 'manual' as VehicleLoadingSourceType,
-        sourceLabel: getVehicleLoadingSourceConfig('manual').label,
-        packageInput: manualPackageState.packageInput,
-        packageInputError: null,
-        isReady: true,
-        isLoading: false,
-        notice: '未找到可用的关联包装资料，已回退到手动试算来源。',
+        status: 'ready',
+        source: 'packing-rule',
+        sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
+        packageInput: packingRulePackageState.packageInput,
+        packageInputNotice: null,
+        selectedPackagingProfile,
       }
     }
 
     return {
-      source: 'manual' as VehicleLoadingSourceType,
-      sourceLabel: getVehicleLoadingSourceConfig('manual').label,
-      packageInput: null,
-      packageInputError: manualPackageState.error ?? new Error('无法构造车型推荐输入'),
-      isReady: false,
-      isLoading: false,
-      notice: null as string | null,
+      status: 'error',
+      source: 'packing-rule',
+      sourceLabel: getVehicleLoadingSourceConfig('packing-rule').label,
+      packageInputNotice: null,
+      selectedPackagingProfile,
+      error: new Error('无法构造包装规则输入'),
+      scope: 'useShippingVehicleMatchRecommendation.packingRulePackageInput',
     }
   }, [
     hasPreferredPackagingProfile,
-    isLoadingUnits,
     manualPackageState.error,
     manualPackageState.packageInput,
     manualPackageState.ready,
     packingRulePackageState.error,
     packingRulePackageState.packageInput,
     packingRulePackageState.ready,
-    profilesError,
-    isLoadingProfiles,
+    profilesReadResource,
     selectedPackagingProfile,
-    unitsError,
+    unitsReadResource,
   ])
 
-  const recommendationData = useVehicleLoadingData(summary, packageResolution.source, packageResolution.packageInput, packageResolution.isReady)
+  const recommendationData = useVehicleLoadingData(
+    summary,
+    packageInputResource.source,
+    packageInputResource.status === 'ready' ? packageInputResource.packageInput : null,
+    packageInputResource.status === 'ready'
+  )
   const { reload: reloadRecommendationData } = recommendationData
 
-  const reload = useCallback(async () => {
+  const readResource = useMemo<ShippingVehicleMatchRecommendationReadResource>(() => {
+    if (packageInputResource.status === 'error') {
+      return {
+        status: 'error',
+        error: packageInputResource.error,
+        scope: packageInputResource.scope,
+      }
+    }
+
+    if (packageInputResource.status === 'loading') {
+      return { status: 'loading' }
+    }
+
+    if (recommendationData.specsError instanceof Error) {
+      return {
+        status: 'error',
+        error: recommendationData.specsError,
+        scope: 'useShippingVehicleMatchRecommendation.vehicleSpecs',
+      }
+    }
+
+    if (recommendationData.recommendationsError instanceof Error) {
+      return {
+        status: 'error',
+        error: recommendationData.recommendationsError,
+        scope: 'useShippingVehicleMatchRecommendation.recommendations',
+      }
+    }
+
+    if (recommendationData.isLoadingSpecs || recommendationData.isLoadingRecommendations) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      data: {
+        source: packageInputResource.source,
+        sourceLabel: packageInputResource.sourceLabel,
+        packageInputNotice: packageInputResource.packageInputNotice,
+        recommendations: recommendationData.recommendations,
+      },
+    }
+  }, [packageInputResource, recommendationData.isLoadingRecommendations, recommendationData.isLoadingSpecs, recommendationData.recommendations, recommendationData.recommendationsError, recommendationData.specsError])
+
+  useEffect(() => {
+    if (readResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to resolve shipping vehicle recommendation: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const retryRead = useCallback(async () => {
     if (hasPreferredPackagingProfile) {
       await Promise.all([refetchProfiles(), refetchUnits()])
     }
@@ -200,19 +329,11 @@ export function useShippingVehicleMatchRecommendation(item: ShippingVehicleMatch
   }, [hasPreferredPackagingProfile, refetchProfiles, refetchUnits, reloadRecommendationData])
 
   return {
-    source: packageResolution.source,
-    sourceLabel: packageResolution.sourceLabel,
-    packageInput: packageResolution.packageInput,
-    packageInputError: packageResolution.packageInputError,
-    packageInputNotice: packageResolution.notice,
-    isLoadingPackageInput: packageResolution.isLoading,
-    isPackageInputReady: packageResolution.isReady,
-    selectedPackagingProfile,
-    recommendations: recommendationData.recommendations,
-    isLoadingSpecs: recommendationData.isLoadingSpecs,
-    isLoadingRecommendations: recommendationData.isLoadingRecommendations,
-    specsError: recommendationData.specsError,
-    recommendationsError: recommendationData.recommendationsError,
-    reload,
+    source: packageInputResource.source,
+    sourceLabel: packageInputResource.sourceLabel,
+    packageInputNotice: packageInputResource.packageInputNotice,
+    selectedPackagingProfile: packageInputResource.selectedPackagingProfile,
+    readResource,
+    retryRead,
   }
 }

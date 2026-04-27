@@ -57,11 +57,15 @@ export const tradingQueryKeys = {
   ],
   purchaseOrders: (
     page: number,
-    pageSize: number
-  ): readonly ['purchase-orders', number, number] => [
+    pageSize: number,
+    withLines: boolean,
+    status: string[]
+  ): readonly ['purchase-orders', number, number, boolean, string[]] => [
     'purchase-orders',
     page,
     pageSize,
+    withLines,
+    status,
   ],
   purchaseOrdersRoot: (): readonly ['purchase-orders'] => ['purchase-orders'],
   purchaseReturns: (

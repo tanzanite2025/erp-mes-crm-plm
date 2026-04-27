@@ -19,6 +19,10 @@ interface UseProductFormSubmitParams {
   onSubmit?: (payload: ProductSubmitPayload) => Promise<void> | void
 }
 
+function createEmptySubmitPayloadError(detail: string): Error {
+  return new Error(`[CRITICAL] useProductFormSubmit.handleFormSubmit ${detail}`)
+}
+
 export function useProductFormSubmit({
   currentRow,
   isEdit,
@@ -63,6 +67,12 @@ export function useProductFormSubmit({
       isEdit,
     })
 
+    if (submitPayload.productsToSave.length === 0) {
+      const error = createEmptySubmitPayloadError('received empty productsToSave payload')
+      failLoudly(error, 'ProductFormSubmit.handleFormSubmit')
+      throw error
+    }
+
     if (submitPayload.mode === 'batch') {
       toast.loading(
         t('engineering.productArchive.toasts.batchSaving', {
@@ -94,7 +104,11 @@ export function useProductFormSubmit({
     } else if (submitPayload.mode === 'variant' || submitPayload.mode === 'edit') {
       const [finalData] = submitPayload.productsToSave
 
-      if (!finalData) return
+      if (!finalData) {
+        const error = createEmptySubmitPayloadError('resolved variant/edit branch without a product item')
+        failLoudly(error, 'ProductFormSubmit.variantOrEditSubmit')
+        throw error
+      }
       if (onSubmit) {
         await onSubmit({
           products: [finalData],
@@ -110,7 +124,11 @@ export function useProductFormSubmit({
     } else {
       const [singleData] = submitPayload.productsToSave
 
-      if (!singleData) return
+      if (!singleData) {
+        const error = createEmptySubmitPayloadError('resolved single branch without a product item')
+        failLoudly(error, 'ProductFormSubmit.singleSubmit')
+        throw error
+      }
       if (onSubmit) {
         await onSubmit({
           products: [singleData],

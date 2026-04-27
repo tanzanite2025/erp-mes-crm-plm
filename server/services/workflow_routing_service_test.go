@@ -164,10 +164,10 @@ func TestMapNotificationRuleToResponse_NormalizesLegacySegmentIDs(t *testing.T) 
 				"title":"Pending Review",
 				"targetStatuses":["Pending"],
 				"commandIds":[],
-				"assigneeRoles":[],
+				"assigneeGroups":[],
 				"assigneeUsernames":[],
 				"resolveOnStatuses":["Done"],
-				"dynamicRoleField":null
+				"dynamicTargetField":null
 			}
 		]`),
 		Version: 3,
@@ -193,10 +193,10 @@ func TestListNotificationRules_MigratesSalesOrderRulesToStatusChangedEvent(t *te
 			"title":"Pending approval",
 			"targetStatuses":["Pending"],
 			"commandIds":[],
-			"assigneeRoles":[],
+			"assigneeGroups":[],
 			"assigneeUsernames":[],
 			"resolveOnStatuses":["Done"],
-			"dynamicRoleField":null
+			"dynamicTargetField":null
 		}]`),
 		Version: 1,
 	}).Error)
@@ -294,10 +294,10 @@ func TestUpdateNotificationRule_AllowsEmptySegments(t *testing.T) {
 				"title":"Pending",
 				"targetStatuses":["Pending"],
 				"commandIds":[],
-				"assigneeRoles":[],
+				"assigneeGroups":[],
 				"assigneeUsernames":[],
 				"resolveOnStatuses":[],
-				"dynamicRoleField":null
+				"dynamicTargetField":null
 			}
 		]`),
 		Version: 1,

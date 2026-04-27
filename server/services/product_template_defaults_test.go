@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"xdfc-server/db"
@@ -132,6 +133,24 @@ func TestListProductTemplatesSeedsDefaultsWhenTableIsEmpty(t *testing.T) {
 	require.EqualValues(t, 3, afterCount)
 }
 
+func TestListProductTemplatesOptionsSerializesEmptyAttributeBindingsArray(t *testing.T) {
+	setupProductTemplateServiceTestDB(t)
+
+	items, _, err := ListProductTemplates(ProductTemplateListQuery{
+		Page:     1,
+		PageSize: 50,
+		Options:  true,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, items)
+	require.NotNil(t, items[0].AttributeBindings)
+	require.Len(t, items[0].AttributeBindings, 0)
+
+	encoded, err := json.Marshal(items[0])
+	require.NoError(t, err)
+	require.Contains(t, string(encoded), `"attributeBindings":[]`)
+}
+
 func TestSaveProductTemplatePersistsAttributeBindings(t *testing.T) {
 	setupProductTemplateServiceTestDB(t)
 
@@ -165,6 +184,31 @@ func TestSaveProductTemplatePersistsAttributeBindings(t *testing.T) {
 		require.Equal(t, "versionLevel", item.AttributeBindings[1].CategoryKey)
 	}
 	require.True(t, matched)
+}
+
+func TestPatchProductTemplateReturnsNormalizedAttributeBindings(t *testing.T) {
+	setupProductTemplateServiceTestDB(t)
+
+	saved, err := SaveProductTemplate(SaveProductTemplateInput{
+		Name:         "Template Without Bindings",
+		Code:         "GENERAL_EMPTY",
+		ComponentKey: "GENERAL",
+		Description:  "empty bindings template",
+		Active:       true,
+	})
+	require.NoError(t, err)
+
+	updated, err := PatchProductTemplate(saved.ID, saved.Version, map[string]interface{}{
+		"description": "patched description",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, updated.AttributeBindings)
+	require.Len(t, updated.AttributeBindings, 0)
+	require.Equal(t, "patched description", updated.Description)
+
+	encoded, err := json.Marshal(updated)
+	require.NoError(t, err)
+	require.Contains(t, string(encoded), `"attributeBindings":[]`)
 }
 
 func TestSaveProductTemplateSyncsResolvedTypeBindingsWithoutOverwritingDrift(t *testing.T) {

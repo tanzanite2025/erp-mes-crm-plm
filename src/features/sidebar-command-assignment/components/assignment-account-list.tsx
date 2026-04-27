@@ -80,7 +80,7 @@ export function AssignmentAccountList({
                   {account.name}
                 </span>
                 <span className='mt-1 block truncate text-[10px] font-black tracking-widest text-muted-foreground/55 uppercase'>
-                  {account.username} / {account.role}
+                  {account.username} / {account.accountLabel}
                 </span>
               </button>
               {isActive ? <Badge className='shrink-0'>{assignedCount}</Badge> : null}

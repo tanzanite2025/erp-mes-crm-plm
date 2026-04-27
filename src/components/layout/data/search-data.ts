@@ -59,8 +59,8 @@ const moduleGroups: CommandItemConfig[] = [
     href: '/personnel/rights',
     titleKey: 'commandMenu.items.rights',
     parentKey: 'commandMenu.parents.orgPersonnelCenter',
-    keywords: ['role', 'rights', '角色'],
-    pinyin: 'jsqx',
+    keywords: ['user', 'permission', 'rights', '授权', '用户权限'],
+    pinyin: 'yhqx',
   },
   {
     id: 'tab-personnel-permissions',

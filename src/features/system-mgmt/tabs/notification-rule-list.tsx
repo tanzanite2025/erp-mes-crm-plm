@@ -111,10 +111,10 @@ export function NotificationRuleList() {
             ? [source.config.statuses[0].code]
             : [],
           commandIds: [],
-          assigneeRoles: [],
+          assigneeGroups: [],
           assigneeUsernames: [],
           resolveOnStatuses: defaultResolveStatuses,
-          dynamicRoleField: null,
+          dynamicTargetField: null,
           approval: {
             enabled: false,
             module: 'Trading',

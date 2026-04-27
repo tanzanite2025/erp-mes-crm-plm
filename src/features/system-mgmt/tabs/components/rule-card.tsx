@@ -114,7 +114,7 @@ export function RuleCard({
     return (
       segment.commandIds.length > 0 ||
       (segment.assigneeUsernames ?? []).length > 0 ||
-      Boolean(segment.dynamicRoleField)
+      Boolean(segment.dynamicTargetField)
     )
   }).length
 
@@ -476,7 +476,7 @@ export function RuleCard({
                 }
                 onDynamicNotifyChange={(resolverCode) =>
                   void patchStatusSegment(status, {
-                    dynamicRoleField: resolverCode || null,
+                    dynamicTargetField: resolverCode || null,
                   })
                 }
                 onApprovalUserChange={(approver1Id) =>

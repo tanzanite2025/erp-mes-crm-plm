@@ -1,4 +1,4 @@
-package apsschedulingengine
+package events
 
 type HookTarget struct {
 	Type string

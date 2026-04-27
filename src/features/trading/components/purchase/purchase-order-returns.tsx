@@ -42,8 +42,11 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { isForbiddenError } from '@/lib/error-status'
 import { auditUtils } from '@/lib/audit-utils'
+import { failLoudly } from '@/lib/safe-catch'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
 import { cn } from '@/lib/utils'
 import {
@@ -53,16 +56,26 @@ import {
 } from '../../hooks/use-purchase-return-view-model'
 import { usePurchaseReturnActions } from '../../hooks/use-purchase-return-actions'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
-import type { OrderEvidence } from '../../data/schema'
+import type { OrderEvidence, PurchaseOrder } from '../../data/schema'
 import {
   type PurchaseReturnRecord,
-  useGetPurchaseOrders,
+  type PurchaseReturnDictionaryItem,
+  useGetPurchaseOrdersWithLines,
   usePurchaseReturnDictionaryOptions,
   useGetPurchaseReturns,
   usePurchaseReturnMutations,
 } from '../../purchase'
 import { PurchaseReturnEvidenceManager } from './purchase-return-evidence-manager'
 import { PurchaseReturnPrint } from './purchase-return-print'
+
+const logger = createLogger('PurchaseOrderReturns')
+
+type PurchaseOrderReturnsResource = CompositeReadResource<{
+  orders: PurchaseOrder[]
+  records: PurchaseReturnRecord[]
+  returnReasonOptions: PurchaseReturnDictionaryItem[]
+  issueCategoryOptions: PurchaseReturnDictionaryItem[]
+}>
 
 interface ReturnLineDraft {
   quantity: number
@@ -178,7 +191,7 @@ function EvidencePreviewGrid({ evidences }: { evidences?: OrderEvidence[] }) {
 export function PurchaseOrderReturns() {
   const { t, locale } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
-  const ordersQuery = useGetPurchaseOrders(1, 100)
+  const ordersQuery = useGetPurchaseOrdersWithLines(1, 100)
   const returnsQuery = useGetPurchaseReturns(1, 100)
   const returnReasonQuery = usePurchaseReturnDictionaryOptions('return_reason')
   const issueCategoryQuery = usePurchaseReturnDictionaryOptions('issue_category')
@@ -197,16 +210,150 @@ export function PurchaseOrderReturns() {
   const [recordToPrint, setRecordToPrint] = useState<PurchaseReturnRecord | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
-  const orders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items])
-  const records = useMemo(() => returnsQuery.data?.items ?? [], [returnsQuery.data?.items])
-  const returnReasonOptions = useMemo(
-    () => (returnReasonQuery.data ?? []).filter((item) => item.status !== 'Inactive'),
-    [returnReasonQuery.data]
-  )
-  const issueCategoryOptions = useMemo(
-    () => (issueCategoryQuery.data ?? []).filter((item) => item.status !== 'Inactive'),
-    [issueCategoryQuery.data]
-  )
+  const readResource = useMemo<PurchaseOrderReturnsResource>(() => {
+    const ordersFailure = resolveQueryFailure({
+      data: ordersQuery.data,
+      error: ordersQuery.error,
+      isPending: ordersQuery.isPending,
+      scope: 'PurchaseOrderReturns.orders',
+      missingMessage: '[CRITICAL] Purchase return orders missing after load',
+      failureMessage: '[CRITICAL] Purchase return orders query failed',
+    })
+    if (ordersFailure) {
+      return {
+        status: 'error',
+        error: ordersFailure.error,
+        scope: ordersFailure.scope,
+      }
+    }
+
+    const returnsFailure = resolveQueryFailure({
+      data: returnsQuery.data,
+      error: returnsQuery.error,
+      isPending: returnsQuery.isPending,
+      scope: 'PurchaseOrderReturns.records',
+      missingMessage: '[CRITICAL] Purchase return records missing after load',
+      failureMessage: '[CRITICAL] Purchase return records query failed',
+    })
+    if (returnsFailure) {
+      return {
+        status: 'error',
+        error: returnsFailure.error,
+        scope: returnsFailure.scope,
+      }
+    }
+
+    const returnReasonFailure = resolveQueryFailure({
+      data: returnReasonQuery.data,
+      error: returnReasonQuery.error,
+      isPending: returnReasonQuery.isPending,
+      scope: 'PurchaseOrderReturns.returnReasons',
+      missingMessage: '[CRITICAL] Purchase return reason dictionary missing after load',
+      failureMessage: '[CRITICAL] Purchase return reason dictionary query failed',
+    })
+    if (returnReasonFailure) {
+      return {
+        status: 'error',
+        error: returnReasonFailure.error,
+        scope: returnReasonFailure.scope,
+      }
+    }
+
+    const issueCategoryFailure = resolveQueryFailure({
+      data: issueCategoryQuery.data,
+      error: issueCategoryQuery.error,
+      isPending: issueCategoryQuery.isPending,
+      scope: 'PurchaseOrderReturns.issueCategories',
+      missingMessage: '[CRITICAL] Purchase return issue category dictionary missing after load',
+      failureMessage: '[CRITICAL] Purchase return issue category dictionary query failed',
+    })
+    if (issueCategoryFailure) {
+      return {
+        status: 'error',
+        error: issueCategoryFailure.error,
+        scope: issueCategoryFailure.scope,
+      }
+    }
+
+    if (
+      ordersQuery.isPending ||
+      returnsQuery.isPending ||
+      returnReasonQuery.isPending ||
+      issueCategoryQuery.isPending
+    ) {
+      return { status: 'loading' }
+    }
+
+    const ordersData = ordersQuery.data
+    const returnsData = returnsQuery.data
+    const returnReasonData = returnReasonQuery.data
+    const issueCategoryData = issueCategoryQuery.data
+    if (!ordersData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Purchase return orders missing after load'),
+        scope: 'PurchaseOrderReturns.orders',
+      }
+    }
+    if (!returnsData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Purchase return records missing after load'),
+        scope: 'PurchaseOrderReturns.records',
+      }
+    }
+    if (!returnReasonData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Purchase return reason dictionary missing after load'),
+        scope: 'PurchaseOrderReturns.returnReasons',
+      }
+    }
+    if (!issueCategoryData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Purchase return issue category dictionary missing after load'),
+        scope: 'PurchaseOrderReturns.issueCategories',
+      }
+    }
+
+    return {
+      status: 'ready',
+      orders: ordersData.items,
+      records: returnsData.items,
+      returnReasonOptions: returnReasonData.filter((item) => item.status !== 'Inactive'),
+      issueCategoryOptions: issueCategoryData.filter((item) => item.status !== 'Inactive'),
+    }
+  }, [
+    issueCategoryQuery.data,
+    issueCategoryQuery.error,
+    issueCategoryQuery.isPending,
+    ordersQuery.data,
+    ordersQuery.error,
+    ordersQuery.isPending,
+    returnReasonQuery.data,
+    returnReasonQuery.error,
+    returnReasonQuery.isPending,
+    returnsQuery.data,
+    returnsQuery.error,
+    returnsQuery.isPending,
+  ])
+
+  useEffect(() => {
+    if (readResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to load purchase returns page resources: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const orders = readResource.status === 'ready' ? readResource.orders : []
+  const records = readResource.status === 'ready' ? readResource.records : []
+  const returnReasonOptions =
+    readResource.status === 'ready' ? readResource.returnReasonOptions : []
+  const issueCategoryOptions =
+    readResource.status === 'ready' ? readResource.issueCategoryOptions : []
 
   const {
     draftSummary,
@@ -310,14 +457,7 @@ export function PurchaseOrderReturns() {
 
     resetDialog()
   }
-
-
-  if (
-    ordersQuery.isLoading ||
-    returnsQuery.isLoading ||
-    returnReasonQuery.isLoading ||
-    issueCategoryQuery.isLoading
-  ) {
+  if (readResource.status === 'loading') {
     return (
       <div className='flex h-[55vh] flex-col items-center justify-center gap-3 opacity-70'>
         <Loader2 className='size-8 animate-spin text-primary' />
@@ -328,13 +468,39 @@ export function PurchaseOrderReturns() {
     )
   }
 
-  if (
-    isForbiddenError(ordersQuery.error) ||
-    isForbiddenError(returnsQuery.error) ||
-    isForbiddenError(returnReasonQuery.error) ||
-    isForbiddenError(issueCategoryQuery.error)
-  ) {
+  if (readResource.status === 'error' && isForbiddenError(readResource.error)) {
     return <ForbiddenState />
+  }
+
+  if (readResource.status === 'error') {
+    return (
+      <div className='flex h-[55vh] flex-col items-center justify-center gap-4 px-6 text-center'>
+        <AlertCircle className='size-8 text-rose-500' />
+        <div className='space-y-2'>
+          <p className='text-[10px] font-black uppercase tracking-[0.25em] text-rose-700'>
+            采购退货数据加载失败
+          </p>
+          <p className='max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+            {readResource.error.message || '请重试后再处理采购退货。'}
+          </p>
+        </div>
+        <Button
+          type='button'
+          variant='outline'
+          className='h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+          onClick={() => {
+            void Promise.all([
+              ordersQuery.refetch(),
+              returnsQuery.refetch(),
+              returnReasonQuery.refetch(),
+              issueCategoryQuery.refetch(),
+            ])
+          }}
+        >
+          重试
+        </Button>
+      </div>
+    )
   }
 
   const selectedStatusMeta = selectedOrder ? getPurchaseStatusDisplayMeta(selectedOrder.status, t) : null

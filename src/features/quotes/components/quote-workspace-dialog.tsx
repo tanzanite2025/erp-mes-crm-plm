@@ -25,6 +25,7 @@ type QuoteWorkspaceDialogProps = {
   onExportPdf: () => void
   onSave: () => void
   isSaving: boolean
+  saveDisabled?: boolean
   saveError: string | null
   onConvert: () => void
   isConverting: boolean
@@ -46,6 +47,7 @@ export function QuoteWorkspaceDialog({
   onExportPdf,
   onSave,
   isSaving,
+  saveDisabled = false,
   saveError,
   onConvert,
   isConverting,
@@ -90,6 +92,7 @@ export function QuoteWorkspaceDialog({
             isCreateMode={isCreateMode}
             hasDetail={Boolean(detail)}
             isSaving={isSaving}
+            saveDisabled={saveDisabled}
             isConverting={isConverting}
             transferLabel={transferAction.label}
             transferHelper={transferAction.helper}
@@ -104,6 +107,7 @@ export function QuoteWorkspaceDialog({
           detail={detail}
           isCreateMode={isCreateMode}
           isSaving={isSaving}
+          saveDisabled={saveDisabled}
           onOpenChange={onOpenChange}
           onSave={onSave}
         />

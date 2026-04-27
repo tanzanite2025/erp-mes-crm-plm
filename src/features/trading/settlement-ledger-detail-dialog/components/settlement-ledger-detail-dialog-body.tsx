@@ -1,4 +1,5 @@
 import { useLanguage } from '@/context/language-provider'
+import { Button } from '@/components/ui/button'
 import { SettlementRecordEvidencePanel } from '../../settlement-evidences/components/settlement-record-evidence-panel'
 import { getTradingLedgerStatusOptions } from '@/features/trading/utils/ledger-display'
 import type { SettlementAllocationMode, SettlementLedgerDetailDialogViewModel } from '../types'
@@ -21,6 +22,9 @@ interface SettlementLedgerDetailDialogBodyProps {
   config: SettlementLedgerDetailDialogBodyConfig
   showDetailedFields: boolean
   isCurrencyLoading: boolean
+  financeResourceStatus: 'loading' | 'error' | 'ready'
+  financeResourceErrorMessage?: string
+  onRetryFinanceResources?: () => void
   allocationHistoryCount: number
 }
 
@@ -29,6 +33,9 @@ export function SettlementLedgerDetailDialogBody({
   config,
   showDetailedFields,
   isCurrencyLoading,
+  financeResourceStatus,
+  financeResourceErrorMessage,
+  onRetryFinanceResources,
   allocationHistoryCount,
 }: SettlementLedgerDetailDialogBodyProps) {
   const { t } = useLanguage()
@@ -37,6 +44,30 @@ export function SettlementLedgerDetailDialogBody({
 
   return (
     <div className='grid gap-3'>
+      {financeResourceStatus !== 'ready' ? (
+        <div className={`flex items-center justify-between gap-3 rounded-[22px] border border-dashed px-4 py-3 ${financeResourceStatus === 'loading' ? 'border-amber-500/30 bg-amber-500/5' : 'border-rose-500/30 bg-rose-500/5'}`}>
+          <div className='space-y-1'>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${financeResourceStatus === 'loading' ? 'text-amber-700' : 'text-rose-700'}`}>
+              {financeResourceStatus === 'loading' ? '财务字典加载中' : '财务字典加载失败'}
+            </p>
+            <p className={`text-[9px] font-bold ${financeResourceStatus === 'loading' ? 'text-amber-700/80' : 'text-rose-700/80'}`}>
+              {financeResourceStatus === 'loading'
+                ? '币种与支付方式暂不可用。'
+                : financeResourceErrorMessage || '请重试后再登记结算记录。'}
+            </p>
+          </div>
+          {financeResourceStatus === 'error' && onRetryFinanceResources ? (
+            <Button
+              type='button'
+              variant='outline'
+              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+              onClick={onRetryFinanceResources}
+            >
+              重试
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       <SettlementLedgerSummarySection items={vm.summaryItems} />
 
       <SettlementRecordFormSection
@@ -49,6 +80,10 @@ export function SettlementLedgerDetailDialogBody({
         onPaymentMethodChange={vm.setPaymentMethod}
         paymentMethodOptions={vm.paymentMethodOptions}
         paymentMethodPlaceholder={`选择${config.actionLabel}方式`}
+        paymentMethodLoadingLabel='支付方式加载中...'
+        paymentMethodUnavailableLabel='支付方式加载失败，请稍后重试'
+        isPaymentMethodLoading={showDetailedFields && financeResourceStatus === 'loading'}
+        isPaymentMethodOptionsUnavailable={showDetailedFields && financeResourceStatus === 'error'}
         dateFieldId={`${vm.fieldPrefix}-date`}
         dateLabel={`${config.actionLabel}日期`}
         recordDate={vm.recordDate}

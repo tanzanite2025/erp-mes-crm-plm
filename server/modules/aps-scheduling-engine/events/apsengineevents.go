@@ -1,13 +1,13 @@
-package apsschedulingengine
+package events
 
-func (e ScheduleEvent) IsBarcodeEvent() bool {
+func IsBarcodeEvent(e ScheduleEvent) bool {
 	return e.Type == "barcode"
 }
 
-func (e ScheduleEvent) IsAttendanceEvent() bool {
+func IsAttendanceEvent(e ScheduleEvent) bool {
 	return e.Type == "attendance"
 }
 
-func (e ScheduleEvent) IsMachineEvent() bool {
+func IsMachineEvent(e ScheduleEvent) bool {
 	return e.Type == "machine"
 }

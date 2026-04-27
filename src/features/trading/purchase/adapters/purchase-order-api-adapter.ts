@@ -1,9 +1,23 @@
-import type { PurchaseOrder, PurchaseOrderLine } from '../../data/schema'
+import { ensureArrayField } from '@/lib/api-response'
+import type { PurchaseOrder, PurchaseOrderLine, PurchaseOrderListItem } from '../../data/schema'
 import { normalizePurchaseOrderStatus } from '../../data/purchase-status'
-import type { ConfirmPurchaseReceiptResponseApiDTO, PurchaseOrderApiDTO, PurchaseOrderLineApiDTO, PurchaseOrderListPageApiDTO } from '../contracts/purchase-order-api-dto'
+import type {
+  ConfirmPurchaseReceiptResponseApiDTO,
+  PurchaseOrderApiDTO,
+  PurchaseOrderLineApiDTO,
+  PurchaseOrderListItemWithLinesApiDTO,
+  PurchaseOrderListPageApiDTO,
+} from '../contracts/purchase-order-api-dto'
 
 export interface PaginatedPurchaseOrders {
   items: PurchaseOrder[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface PaginatedPurchaseOrderListItems {
+  items: PurchaseOrderListItem[]
   total: number
   page: number
   pageSize: number
@@ -60,7 +74,9 @@ function toPurchaseOrderLineApiDTO(line: PurchaseOrderLine): PurchaseOrderLineAp
   }
 }
 
-export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder {
+function toPurchaseOrderListItemContract(
+  dto: PurchaseOrderApiDTO | PurchaseOrderListPageApiDTO['items'][number]
+): PurchaseOrderListItem {
   return {
     id: dto.id,
     orderNo: dto.orderNo,
@@ -84,7 +100,17 @@ export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder
     updatedAt: dto.updatedAt,
     version: dto.version ?? 1,
     evidences: dto.evidences,
-    lines: (dto.lines ?? []).map(toPurchaseOrderLineContract),
+  }
+}
+
+export function toPurchaseOrderContract(dto: PurchaseOrderApiDTO): PurchaseOrder {
+  return {
+    ...toPurchaseOrderListItemContract(dto),
+    lines: ensureArrayField<PurchaseOrderLineApiDTO>(
+      dto,
+      'lines',
+      'PurchaseOrderApiAdapter.toPurchaseOrderContract'
+    ).map(toPurchaseOrderLineContract),
   }
 }
 
@@ -120,9 +146,26 @@ export function toPurchaseOrderContracts(items: PurchaseOrderApiDTO[]): Purchase
   return items.map(toPurchaseOrderContract)
 }
 
-export function toPurchaseOrderListPageContract(dto: PurchaseOrderListPageApiDTO): PaginatedPurchaseOrders {
+export function toPurchaseOrderListItems(
+  items: PurchaseOrderListPageApiDTO['items']
+): PurchaseOrderListItem[] {
+  return items.map(toPurchaseOrderListItemContract)
+}
+
+export function toPurchaseOrderListPageContract(dto: PurchaseOrderListPageApiDTO): PaginatedPurchaseOrderListItems {
   return {
-    items: toPurchaseOrderContracts(dto.items),
+    items: toPurchaseOrderListItems(dto.items),
+    total: dto.total,
+    page: dto.page,
+    pageSize: dto.pageSize,
+  }
+}
+
+export function toPurchaseOrderListPageWithLinesContract(
+  dto: { items: PurchaseOrderListItemWithLinesApiDTO[]; total: number; page: number; pageSize: number }
+): PaginatedPurchaseOrders {
+  return {
+    items: dto.items.map((item) => toPurchaseOrderContract(item)),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

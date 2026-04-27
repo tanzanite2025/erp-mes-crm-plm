@@ -1,10 +1,10 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
 import { PurchaseOrderDetail } from './purchase-order-detail'
 
 interface PurchaseOrderDetailSheetProps {
   open: boolean
-  order?: PurchaseOrder
+  order?: PurchaseOrder | PurchaseOrderListItem
   title: string
   onOpenChange: (open: boolean) => void
   onDelete: (id: string) => void

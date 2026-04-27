@@ -79,7 +79,7 @@ describe('purchase-service', () => {
     await expect(getPurchaseOrderById('po-1')).rejects.toThrow()
   })
 
-  it('accepts list payloads without lines when withLines is false', async () => {
+  it('maps withLines=false list payloads into lightweight contracts without lines', async () => {
     const { lines: _lines, ...listItem } = detailOrderResponse
     apiFetchMock.mockResolvedValue({
       items: [listItem],
@@ -94,7 +94,7 @@ describe('purchase-service', () => {
       `/purchase/orders?${TRADING_QUERY_PARAM_PAGE}=1&${TRADING_QUERY_PARAM_PAGE_SIZE}=50`
     )
     expect(result.items).toHaveLength(1)
-    expect(result.items[0]?.lines).toEqual([])
+    expect(result.items[0]).not.toHaveProperty('lines')
   })
 
   it('locks request URL contract when callers request purchase order lines', async () => {

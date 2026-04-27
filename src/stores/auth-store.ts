@@ -96,10 +96,8 @@ function logAuthUserMutation(prevUser: AuthUser | null, nextUser: AuthUser | nul
 }
 
 /**
- * AuthStore [安全加固版]
- * 核心变更：禁止持久化 AuthUser 对象。
- * 逻辑：登录状态仅依靠 accessToken 维持。刷新后，user 状态初始为 null，
- * 强制触发 AuthenticatedLayout 中的后端同步逻辑，确保角色与权限始终由后端裁决。
+ * AuthStore keeps only the token in persisted storage.
+ * User identity and permissions are always rehydrated from the backend snapshot.
  */
 export const useAuthStore = create<AuthState>()(
   persist(

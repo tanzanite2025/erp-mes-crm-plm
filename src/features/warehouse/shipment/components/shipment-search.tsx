@@ -1,18 +1,19 @@
 'use client'
 
-import { Search, Package, TrendingDown, Database, RefreshCw } from 'lucide-react'
+import { Search, Package, TrendingDown, Database, RefreshCw, AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 import type { MasterDataSearchResult } from '../../inventory'
+import type { ShipmentSearchResource } from '../hooks/use-shipment-search'
 
 interface ShipmentSearchProps {
   searchQuery: string
   autoFocus?: boolean
   setSearchQuery: (query: string) => void
-  isSearching: boolean
-  searchResults: MasterDataSearchResult[]
+  searchResource: ShipmentSearchResource
+  onRetry: () => void
   onSelect: (item: MasterDataSearchResult) => void
 }
 
@@ -20,11 +21,13 @@ export function ShipmentSearch({
   searchQuery,
   autoFocus = false,
   setSearchQuery,
-  isSearching,
-  searchResults,
+  searchResource,
+  onRetry,
   onSelect
 }: ShipmentSearchProps) {
   const { t } = useLanguage()
+  const searchResults = searchResource.status === 'ready' ? searchResource.data : []
+  const isSearching = searchResource.status === 'loading'
 
   return (
     <div className='relative rounded-2xl md:rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-4 md:p-6 transition-all hover:bg-muted/10 animate-in fade-in duration-500'>
@@ -58,7 +61,46 @@ export function ShipmentSearch({
             </span>
           </div>
           <div className='h-[300px] md:h-[360px] overflow-y-auto divide-y divide-dashed divide-muted px-2 md:px-4 py-1 md:py-2 scrollbar-hide'>
-            {searchResults.length > 0 ? (
+            {searchResource.status === 'error' ? (
+              <div className='h-full flex flex-col items-center justify-center text-center text-rose-500/80 gap-3 px-6'>
+                <AlertTriangle className='size-10' />
+                <p className='text-[10px] font-black uppercase tracking-widest'>{t('warehouse.errors.queryFailed')}</p>
+                <p className='text-[9px] text-muted-foreground'>{searchResource.error.message}</p>
+                <Button type='button' variant='outline' className='h-9 rounded-full px-4 text-[9px] font-black uppercase tracking-widest' onClick={onRetry}>
+                  {t('common.actions.retry')}
+                </Button>
+              </div>
+            ) : searchResource.status === 'idle' ? (
+              <div className='h-full flex flex-col items-center justify-center text-muted-foreground/30'>
+                <div className='relative mb-4'>
+                  <Search className='size-16 opacity-5' />
+                  <div className='absolute inset-0 flex items-center justify-center'>
+                    <Database className='size-8 opacity-10 animate-pulse' />
+                  </div>
+                </div>
+                <p className='text-[10px] font-black uppercase tracking-widest'>
+                  {t('warehouse.shipment.search.idleTitle')}
+                </p>
+                <p className='text-[9px] text-muted-foreground/40 mt-1'>
+                  {t('warehouse.shipment.search.idleHint')}
+                </p>
+              </div>
+            ) : searchResource.status === 'loading' ? (
+              <div className='h-full flex flex-col items-center justify-center text-muted-foreground/30'>
+                <div className='relative mb-4'>
+                  <Search className='size-16 opacity-5' />
+                  <div className='absolute inset-0 flex items-center justify-center'>
+                    <RefreshCw className='size-8 animate-spin' />
+                  </div>
+                </div>
+                <p className='text-[10px] font-black uppercase tracking-widest'>
+                  {t('warehouse.shipment.search.results')}
+                </p>
+                <p className='text-[9px] text-muted-foreground/40 mt-1'>
+                  {t('warehouse.shipment.search.placeholder')}
+                </p>
+              </div>
+            ) : searchResults.length > 0 ? (
               searchResults.map((item) => (
                 <div
                   key={item.id}
@@ -108,8 +150,12 @@ export function ShipmentSearch({
                     <Database className='size-8 opacity-10 animate-pulse' />
                   </div>
                 </div>
-                <p className='text-[10px] font-black uppercase tracking-widest'>{t('warehouse.shipment.search.idleTitle')}</p>
-                <p className='text-[9px] text-muted-foreground/40 mt-1'>{t('warehouse.shipment.search.idleHint')}</p>
+                <p className='text-[10px] font-black uppercase tracking-widest'>
+                  {t('warehouse.shipment.toast.notFound')}
+                </p>
+                <p className='text-[9px] text-muted-foreground/40 mt-1'>
+                  {t('warehouse.shipment.search.placeholder')}
+                </p>
               </div>
             )}
           </div>

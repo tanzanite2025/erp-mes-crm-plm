@@ -6,6 +6,8 @@ import { CurrencyCoreService } from '@/features/finance/services/currency-core-s
 import { PaymentMethodCoreService } from '@/features/finance/services/payment-method-core-service'
 import { PaymentTermCoreService } from '@/features/finance/services/payment-term-core-service'
 import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 
 const logger = createLogger('useTradingFinanceResources')
 
@@ -21,6 +23,22 @@ interface UseTradingFinanceResourcesOptions {
   includePaymentMethods?: boolean
   includePaymentTerms?: boolean
 }
+
+type FinanceOption = {
+  value: string
+  label: string
+}
+
+export type TradingFinanceResourcesReadResource = CompositeReadResource<{
+  currencies: Currency[]
+  paymentMethods: PaymentMethod[]
+  paymentTerms: PaymentTerm[]
+}>
+
+export type TradingFinanceFilterOptionsReadResource = CompositeReadResource<{
+  paymentMethodOptions: FinanceOption[]
+  paymentTermOptions: FinanceOption[]
+}>
 
 export function useTradingFinanceResources(options: UseTradingFinanceResourcesOptions = {}) {
   const {
@@ -47,39 +65,128 @@ export function useTradingFinanceResources(options: UseTradingFinanceResourcesOp
     enabled: includeCurrencies,
   })
 
-  useEffect(() => {
-    if (!paymentMethodsQuery.error && !paymentTermsQuery.error && !currenciesQuery.error) return
-    logger.error('Failed to load trading finance resources', {
-    paymentMethodsError: paymentMethodsQuery.error,
-    paymentTermsError: paymentTermsQuery.error,
-    currenciesError: currenciesQuery.error,
-    })
-  }, [currenciesQuery.error, paymentMethodsQuery.error, paymentTermsQuery.error])
+  const readResource = useMemo<TradingFinanceResourcesReadResource>(() => {
+    if (includePaymentMethods) {
+      const paymentMethodsFailure = resolveQueryFailure({
+        data: paymentMethodsQuery.data,
+        error: paymentMethodsQuery.error,
+        isPending: paymentMethodsQuery.isPending,
+        scope: 'useTradingFinanceResources.paymentMethods',
+        missingMessage: '[CRITICAL] Trading payment methods missing after load',
+        failureMessage: '[CRITICAL] Trading payment methods query failed',
+      })
+      if (paymentMethodsFailure) {
+        return {
+          status: 'error',
+          error: paymentMethodsFailure.error,
+          scope: paymentMethodsFailure.scope,
+        }
+      }
+    }
 
-  const paymentMethods = useMemo(
-    () => (paymentMethodsQuery.data ?? []).filter((item) => item.status === 'Active'),
-    [paymentMethodsQuery.data],
-  )
-  const paymentTerms = useMemo(
-    () => (paymentTermsQuery.data ?? []).filter((item) => item.status === 'Active'),
-    [paymentTermsQuery.data],
-  )
+    if (includePaymentTerms) {
+      const paymentTermsFailure = resolveQueryFailure({
+        data: paymentTermsQuery.data,
+        error: paymentTermsQuery.error,
+        isPending: paymentTermsQuery.isPending,
+        scope: 'useTradingFinanceResources.paymentTerms',
+        missingMessage: '[CRITICAL] Trading payment terms missing after load',
+        failureMessage: '[CRITICAL] Trading payment terms query failed',
+      })
+      if (paymentTermsFailure) {
+        return {
+          status: 'error',
+          error: paymentTermsFailure.error,
+          scope: paymentTermsFailure.scope,
+        }
+      }
+    }
+
+    if (includeCurrencies) {
+      const currenciesFailure = resolveQueryFailure({
+        data: currenciesQuery.data,
+        error: currenciesQuery.error,
+        isPending: currenciesQuery.isPending,
+        scope: 'useTradingFinanceResources.currencies',
+        missingMessage: '[CRITICAL] Trading currencies missing after load',
+        failureMessage: '[CRITICAL] Trading currencies query failed',
+      })
+      if (currenciesFailure) {
+        return {
+          status: 'error',
+          error: currenciesFailure.error,
+          scope: currenciesFailure.scope,
+        }
+      }
+    }
+
+    if (
+      (includePaymentMethods && paymentMethodsQuery.isPending) ||
+      (includePaymentTerms && paymentTermsQuery.isPending) ||
+      (includeCurrencies && currenciesQuery.isPending)
+    ) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      currencies: includeCurrencies ? (currenciesQuery.data as Currency[]) : [],
+      paymentMethods: includePaymentMethods
+        ? (paymentMethodsQuery.data as PaymentMethod[]).filter((item) => item.status === 'Active')
+        : [],
+      paymentTerms: includePaymentTerms
+        ? (paymentTermsQuery.data as PaymentTerm[]).filter((item) => item.status === 'Active')
+        : [],
+    }
+  }, [
+    currenciesQuery.data,
+    currenciesQuery.error,
+    currenciesQuery.isPending,
+    includeCurrencies,
+    includePaymentMethods,
+    includePaymentTerms,
+    paymentMethodsQuery.data,
+    paymentMethodsQuery.error,
+    paymentMethodsQuery.isPending,
+    paymentTermsQuery.data,
+    paymentTermsQuery.error,
+    paymentTermsQuery.isPending,
+  ])
+
+  useEffect(() => {
+    if (readResource.status !== 'error') return
+    logger.error(`Failed to load trading finance resources: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const currencies = readResource.status === 'ready' ? readResource.currencies : []
+  const paymentMethods = readResource.status === 'ready' ? readResource.paymentMethods : []
+  const paymentTerms = readResource.status === 'ready' ? readResource.paymentTerms : []
+  const retry = async () => {
+    await Promise.all([
+      includeCurrencies ? currenciesQuery.refetch() : Promise.resolve(),
+      includePaymentMethods ? paymentMethodsQuery.refetch() : Promise.resolve(),
+      includePaymentTerms ? paymentTermsQuery.refetch() : Promise.resolve(),
+    ])
+  }
 
   return {
-    currencies: (currenciesQuery.data ?? []) as Currency[],
-    paymentMethods: paymentMethods as PaymentMethod[],
-    paymentTerms: paymentTerms as PaymentTerm[],
-    isLoading:
-      (includePaymentMethods && paymentMethodsQuery.isLoading) ||
-      (includePaymentTerms && paymentTermsQuery.isLoading) ||
-      (includeCurrencies && currenciesQuery.isLoading),
+    readResource,
+    currencies,
+    paymentMethods,
+    paymentTerms,
+    isLoading: readResource.status === 'loading',
+    retry,
   }
 }
 
 export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(orders: TOrder[]) {
-  const { paymentMethods, paymentTerms } = useTradingFinanceResources()
+  const financeResources = useTradingFinanceResources()
 
   const paymentMethodOptions = useMemo(() => {
+    const paymentMethods = financeResources.readResource.status === 'ready'
+      ? financeResources.readResource.paymentMethods
+      : []
     const entries = new Map<string, string>()
 
     paymentMethods.forEach((item) => {
@@ -98,9 +205,12 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
     return Array.from(entries.entries())
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentMethods])
+  }, [financeResources.readResource, orders])
 
   const paymentTermOptions = useMemo(() => {
+    const paymentTerms = financeResources.readResource.status === 'ready'
+      ? financeResources.readResource.paymentTerms
+      : []
     const entries = new Map<string, string>()
 
     paymentTerms.forEach((item) => {
@@ -119,10 +229,18 @@ export function useTradingFinanceFilterOptions<TOrder extends PaymentLikeOrder>(
     return Array.from(entries.entries())
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([value, label]) => ({ value, label }))
-  }, [orders, paymentTerms])
+  }, [financeResources.readResource, orders])
 
   return {
+    readResource: financeResources.readResource.status === 'ready'
+      ? {
+          status: 'ready' as const,
+          paymentMethodOptions,
+          paymentTermOptions,
+        }
+      : financeResources.readResource,
     paymentMethodOptions,
     paymentTermOptions,
+    retry: financeResources.retry,
   }
 }

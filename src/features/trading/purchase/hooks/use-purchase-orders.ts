@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/language-provider'
 import { tradingQueryKeys } from '@/features/trading/query-keys'
 import { handleServerError } from '@/lib/handle-server-error'
 import { type DeltaSet } from '@/lib/delta/types'
-import { type PurchaseOrder, type PurchaseOrderLine } from '../../data/schema'
+import { type PurchaseOrder, type PurchaseOrderLine, type PurchaseOrderListItem } from '../../data/schema'
 import { executePurchaseOrderReceiptConfirmation, purchaseOrderHeaderTransactions, purchaseOrderLineTransactions, type ConfirmPurchaseReceiptPayload } from '../services/purchase-transaction-service'
 import {
   createPurchaseOrder,
@@ -24,9 +24,16 @@ function invalidatePurchaseOrderQueries(queryClient: ReturnType<typeof useQueryC
 }
 
 export const useGetPurchaseOrders = (page = 1, pageSize = 50) => {
-  return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
-    queryKey: tradingQueryKeys.purchaseOrders(page, pageSize),
+  return useQuery<PaginatedResponse<PurchaseOrderListItem>, Error>({
+    queryKey: tradingQueryKeys.purchaseOrders(page, pageSize, false, []),
     queryFn: () => getPurchaseOrders({ page, pageSize }),
+  })
+}
+
+export const useGetPurchaseOrdersWithLines = (page = 1, pageSize = 50, status?: string[]) => {
+  return useQuery<PaginatedResponse<PurchaseOrder>, Error>({
+    queryKey: tradingQueryKeys.purchaseOrders(page, pageSize, true, status ?? []),
+    queryFn: () => getPurchaseOrders({ page, pageSize, withLines: true, status }),
   })
 }
 

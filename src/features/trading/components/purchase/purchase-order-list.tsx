@@ -6,14 +6,24 @@ import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { PurchaseOrderDetailSheet } from './purchase-order-detail-sheet'
 import { useLanguage } from '@/context/language-provider'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { isForbiddenError } from '@/lib/error-status'
 import { PurchaseOrderMaster } from './purchase-order-master'
 import { PurchaseOrderActionDialog } from './purchase-order-action-dialog'
 import { useGetPurchaseOrders, usePurchaseOrderMutations } from '../../purchase'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrderListItem } from '../../data/schema'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { usePurchaseOrderListViewModel } from '../../hooks/use-purchase-order-list-view-model'
 import { usePurchaseOrderFilterOptions } from '../../hooks/use-purchase-order-filter-options'
+
+const logger = createLogger('PurchaseOrderList')
+
+type PurchaseOrderListResource = CompositeReadResource<{
+  orders: PurchaseOrderListItem[]
+  total: number
+}>
 
 export function PurchaseOrderList() {
   const { t } = useLanguage()
@@ -21,14 +31,12 @@ export function PurchaseOrderList() {
   const { search, detailId } = Route.useSearch()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)
-  const { data, isLoading, error } = useGetPurchaseOrders(page, pageSize)
-  const orders = useMemo(() => data?.items ?? [], [data?.items])
-  const total = data?.total || 0
+  const ordersQuery = useGetPurchaseOrders(page, pageSize)
   const { deleteMutation } = usePurchaseOrderMutations()
   const [selectedId, setSelectedId] = useState<string | undefined>(detailId || undefined)
   const [isDetailOpen, setIsDetailOpen] = useState<boolean>(!!detailId)
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
-  const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
+  const [editingOrder, setEditingOrder] = useState<PurchaseOrderListItem | null>(null)
   const [searchTerm, setSearchTerm] = useState(search || '')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
@@ -58,7 +66,61 @@ export function PurchaseOrderList() {
     }
   }, [search, detailId])
 
-  const { paymentMethodOptions, paymentTermOptions } = usePurchaseOrderFilterOptions(orders)
+  const listResource = useMemo<PurchaseOrderListResource>(() => {
+    const failure = resolveQueryFailure({
+      data: ordersQuery.data,
+      error: ordersQuery.error,
+      isPending: ordersQuery.isPending,
+      scope: 'PurchaseOrderList.orders',
+      missingMessage: '[CRITICAL] Purchase order list missing after load',
+      failureMessage: '[CRITICAL] Purchase order list query failed',
+    })
+    if (failure) {
+      return {
+        status: 'error',
+        error: failure.error,
+        scope: failure.scope,
+      }
+    }
+
+    if (ordersQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    const listData = ordersQuery.data
+    if (!listData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Purchase order list missing after load'),
+        scope: 'PurchaseOrderList.orders',
+      }
+    }
+
+    return {
+      status: 'ready',
+      orders: listData.items,
+      total: listData.total,
+    }
+  }, [ordersQuery.data, ordersQuery.error, ordersQuery.isPending])
+
+  useEffect(() => {
+    if (listResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to load purchase order list: ${listResource.scope}`, listResource.error)
+    failLoudly(listResource.error, listResource.scope)
+  }, [listResource])
+
+  const orders = useMemo(
+    () => (listResource.status === 'ready' ? listResource.orders : []),
+    [listResource]
+  )
+  const total = listResource.status === 'ready' ? listResource.total : 0
+
+  const financeFilterOptions = usePurchaseOrderFilterOptions(orders)
+  const paymentMethodOptions = financeFilterOptions.paymentMethodOptions
+  const paymentTermOptions = financeFilterOptions.paymentTermOptions
   const { filteredOrders, selectedOrder } = usePurchaseOrderListViewModel({
     orders,
     searchTerm,
@@ -74,7 +136,7 @@ export function PurchaseOrderList() {
     setIsActionDialogOpen(true)
   }
 
-  const handleEditOrder = (order: PurchaseOrder) => {
+  const handleEditOrder = (order: PurchaseOrderListItem) => {
     if (!allowsAction('action_trading_purchase_order_manage')) return
     setEditingOrder(order)
     setIsActionDialogOpen(true)
@@ -87,7 +149,7 @@ export function PurchaseOrderList() {
     deleteMutation.mutate(id)
   }
 
-  if (isLoading) {
+  if (listResource.status === 'loading') {
     return (
       <div className='h-[60vh] flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
         <Loader2 className='size-10 text-primary animate-spin opacity-20' />
@@ -98,8 +160,31 @@ export function PurchaseOrderList() {
     )
   }
 
-  if (isForbiddenError(error)) {
+  if (listResource.status === 'error' && isForbiddenError(listResource.error)) {
     return <ForbiddenState />
+  }
+
+  if (listResource.status === 'error') {
+    return (
+      <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+        <div className='flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
+          <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>采购订单列表加载失败</p>
+          <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+            {listResource.error.message || '请重试后再查看采购订单列表。'}
+          </p>
+          <Button
+            type='button'
+            variant='outline'
+            className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+            onClick={() => {
+              void ordersQuery.refetch()
+            }}
+          >
+            重试
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -123,6 +208,11 @@ export function PurchaseOrderList() {
         statusFilter={statusFilter}
         paymentMethodFilter={paymentMethodFilter}
         paymentTermFilter={paymentTermFilter}
+        financeFilterStatus={financeFilterOptions.readResource.status === 'error' ? 'error' : financeFilterOptions.readResource.status === 'loading' ? 'loading' : 'ready'}
+        financeFilterErrorMessage={financeFilterOptions.readResource.status === 'error' ? financeFilterOptions.readResource.error.message : undefined}
+        onRetryFinanceFilters={() => {
+          void financeFilterOptions.retry()
+        }}
         paymentMethodOptions={paymentMethodOptions}
         paymentTermOptions={paymentTermOptions}
         onSearchTermChange={setSearchTerm}

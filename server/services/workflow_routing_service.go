@@ -135,12 +135,12 @@ func validateNotificationRuleReferences(rule models.NotificationRule) error {
 				)
 			}
 		}
-		if segment.DynamicRoleField != nil {
-			if _, ok := resolverCodes[*segment.DynamicRoleField]; !ok {
+		if segment.DynamicTargetField != nil {
+			if _, ok := resolverCodes[*segment.DynamicTargetField]; !ok {
 				return fmt.Errorf(
-					"segments[%d].dynamicRoleField contains unknown resolver %q",
+					"segments[%d].dynamicTargetField contains unknown resolver %q",
 					segmentIndex,
-					*segment.DynamicRoleField,
+					*segment.DynamicTargetField,
 				)
 			}
 		}

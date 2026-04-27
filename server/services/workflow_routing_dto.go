@@ -43,15 +43,15 @@ type NotificationRuleApprovalDTO struct {
 }
 
 type RuleSegmentDTO struct {
-	ID                string                       `json:"id"`
-	Title             string                       `json:"title"`
-	TargetStatuses    []string                     `json:"targetStatuses"`
-	CommandIDs        []string                     `json:"commandIds"`
-	AssigneeRoles     []string                     `json:"assigneeRoles"`
-	AssigneeUsernames []string                     `json:"assigneeUsernames"`
-	ResolveOnStatuses []string                     `json:"resolveOnStatuses"`
-	DynamicRoleField  *string                      `json:"dynamicRoleField"`
-	Approval          *NotificationRuleApprovalDTO `json:"approval,omitempty"`
+	ID                 string                       `json:"id"`
+	Title              string                       `json:"title"`
+	TargetStatuses     []string                     `json:"targetStatuses"`
+	CommandIDs         []string                     `json:"commandIds"`
+	AssigneeGroups     []string                     `json:"assigneeGroups"`
+	AssigneeUsernames  []string                     `json:"assigneeUsernames"`
+	ResolveOnStatuses  []string                     `json:"resolveOnStatuses"`
+	DynamicTargetField *string                      `json:"dynamicTargetField"`
+	Approval           *NotificationRuleApprovalDTO `json:"approval,omitempty"`
 }
 
 type NotificationRuleRequest struct {
@@ -168,7 +168,7 @@ func normalizeNotificationRuleApprovalDTO(
 		normalized.Action = "ORDER_REVIEW"
 	}
 	if normalized.ReasonTemplate == "" {
-		normalized.ReasonTemplate = "业务规则「[RuleName] / [SegmentTitle]」已命中，请审批单据 [OrderNo]。"
+		normalized.ReasonTemplate = "Business rule [RuleName] / [SegmentTitle] matched. Please approve document [OrderNo]."
 	}
 	return &normalized
 }
@@ -214,10 +214,10 @@ func normalizeNotificationRuleSegments(
 		segment.Title = strings.TrimSpace(segment.Title)
 		segment.TargetStatuses = trimStringList(segment.TargetStatuses)
 		segment.CommandIDs = trimStringList(segment.CommandIDs)
-		segment.AssigneeRoles = trimStringList(segment.AssigneeRoles)
+		segment.AssigneeGroups = trimStringList(segment.AssigneeGroups)
 		segment.AssigneeUsernames = trimStringList(segment.AssigneeUsernames)
 		segment.ResolveOnStatuses = trimStringList(segment.ResolveOnStatuses)
-		segment.DynamicRoleField = normalizeOptionalStringPointer(segment.DynamicRoleField)
+		segment.DynamicTargetField = normalizeOptionalStringPointer(segment.DynamicTargetField)
 		segment.Approval = normalizeNotificationRuleApprovalDTO(segment.Approval)
 		if segment.ID == "" {
 			segment.ID = buildNotificationRuleSegmentID(index, segment)

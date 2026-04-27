@@ -38,10 +38,10 @@ function createSegment(
     title: '待处理',
     targetStatuses: ['Pending'],
     commandIds: [],
-    assigneeRoles: [],
+    assigneeGroups: [],
     assigneeUsernames: [],
     resolveOnStatuses: [],
-    dynamicRoleField: null,
+    dynamicTargetField: null,
     approval: {
       enabled: false,
       module: 'Trading',

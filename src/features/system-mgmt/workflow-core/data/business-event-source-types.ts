@@ -48,7 +48,7 @@ export const businessDynamicResolverSchema =
     code: z.string().min(1),
     label: z.string().min(1),
     path: z.string().min(1),
-    type: z.enum(['user', 'role', 'permission']).default('user'),
+    type: z.enum(['user', 'group', 'permission']).default('user'),
   })
 
 export const businessEventSourceConfigSchema = z.object({

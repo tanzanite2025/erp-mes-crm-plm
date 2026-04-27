@@ -1,4 +1,4 @@
-package apsschedulingengine
+package calendar
 
 import "time"
 

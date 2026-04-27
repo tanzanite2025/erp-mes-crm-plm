@@ -11,7 +11,7 @@ export const aiAssistant = {
       disable: 'Disable All',
       enable: 'Enable Now',
     },
-    roles: {
+    permissions: {
       title: 'Permission Access Distribution',
       description: 'Only users with explicitly granted permissions can access AI insights',
     },

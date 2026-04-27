@@ -12,6 +12,8 @@ export function useQuoteCreateEditor(open: boolean, onCreated: (quoteId: string)
     createQuote,
     isCreatingQuote,
     createQuoteError,
+    createResource,
+    retryCreateResources,
   } = useQuoteWorkspaceSalesOrderAdapter(open, onCreated)
 
   return {
@@ -22,8 +24,10 @@ export function useQuoteCreateEditor(open: boolean, onCreated: (quoteId: string)
     handleRemoveLine: removeQuoteLine,
     updateLine: updateQuoteLine,
     createResources,
+    createResource,
     handleCreate: createQuote,
     isCreating: isCreatingQuote,
     createError: createQuoteError,
+    retryCreateResources,
   }
 }

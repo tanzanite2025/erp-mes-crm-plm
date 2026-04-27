@@ -1,18 +1,22 @@
-package apsschedulingengine
+package local
 
-import "context"
+import (
+	"context"
+	apsschedule "xdfc-server/modules/aps-scheduling-engine/models/schedule"
+	apsstatic "xdfc-server/modules/aps-scheduling-engine/planner/static"
+)
 
 type LocalPlanner struct {
-	Static *StaticPlanner
+	Static *apsstatic.StaticPlanner
 }
 
-func NewLocalPlanner(static *StaticPlanner) *LocalPlanner {
+func NewLocalPlanner(static *apsstatic.StaticPlanner) *LocalPlanner {
 	return &LocalPlanner{Static: static}
 }
 
-func (p *LocalPlanner) Recalculate(ctx context.Context, input BuildPlanInput, current *SchedulePlan) (*SchedulePlan, error) {
+func (p *LocalPlanner) Recalculate(ctx context.Context, input apsschedule.BuildPlanInput, current *apsschedule.SchedulePlan) (*apsschedule.SchedulePlan, error) {
 	if p.Static == nil {
-		p.Static = NewStaticPlanner(nil, nil, nil, nil)
+		p.Static = apsstatic.NewStaticPlanner(nil, nil, nil, nil)
 	}
 	if current == nil {
 		return p.Static.Build(ctx, input, nil)

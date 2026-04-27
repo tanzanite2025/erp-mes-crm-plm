@@ -52,15 +52,19 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
 
   const selectedProductId = useWatch({ control: form.control, name: 'productId' })
 
-  const { products, materials, changeOrders } = useBOMFormOptions({
+  const optionsResource = useBOMFormOptions({
     open,
     selectedProductId,
   })
+  const products = optionsResource.status === 'ready' ? optionsResource.products : []
+  const materials = optionsResource.status === 'ready' ? optionsResource.materials : []
+  const changeOrders = optionsResource.status === 'ready' ? optionsResource.changeOrders : []
 
   useBOMFormInitialization({
     form,
     tracker,
     changeOrders,
+    optionsReady: optionsResource.status === 'ready',
     currentRow,
     initialItems,
     initialProductId,
@@ -76,6 +80,7 @@ export function useBOMForm({ currentRow, initialItems, initialProductId, open, i
     fields,
     append,
     remove,
+    optionsResource,
     products,
     materials,
     changeOrders,

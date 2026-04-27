@@ -16,11 +16,7 @@ import { normalizeBOMInput } from '../utils/product-code-normalization'
 export function BOMMgmt() {
   const { t } = useLanguage()
   const {
-    data,
-    products,
-    materials,
-    isLoading,
-    loadError,
+    readResource,
     saveBOM,
     deleteBOM,
     downloadTemplate,
@@ -59,18 +55,7 @@ export function BOMMgmt() {
     if (success) setOpen(false)
   }
 
-  if (previewBOM) {
-    return (
-      <BOMPreview
-        bom={previewBOM}
-        products={products}
-        materials={materials}
-        onBack={() => setPreviewBOM(null)}
-      />
-    )
-  }
-
-  if (loadError && !isLoading) {
+  if (readResource.status === 'error') {
     return (
       <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
         <div className='flex flex-col gap-1 bg-muted/5 p-4 sm:p-6 rounded-[32px] border border-dashed border-muted/50'>
@@ -91,12 +76,27 @@ export function BOMMgmt() {
             {t('engineering.bomArchive.toasts.loadFailed')}
           </p>
           <p className='mt-2 text-[11px] font-medium text-muted-foreground'>
-            {loadError instanceof Error ? loadError.message : t('engineering.bomArchive.toasts.loadFailed')}
+            {readResource.error.message || t('engineering.bomArchive.toasts.loadFailed')}
           </p>
         </div>
       </div>
     )
   }
+
+  if (previewBOM && readResource.status === 'ready') {
+    return (
+      <BOMPreview
+        bom={previewBOM}
+        products={readResource.products}
+        materials={readResource.materials}
+        onBack={() => setPreviewBOM(null)}
+      />
+    )
+  }
+
+  const bomTableData = readResource.status === 'ready' ? readResource.data : []
+  const bomProducts = readResource.status === 'ready' ? readResource.products : []
+  const isLoading = readResource.status === 'loading'
 
   return (
     <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
@@ -123,8 +123,8 @@ export function BOMMgmt() {
       />
 
       <BOMTable
-        data={data}
-        products={products}
+        data={bomTableData}
+        products={bomProducts}
         isLoading={isLoading}
         onPreview={setPreviewBOM}
         onEdit={(bom) => {

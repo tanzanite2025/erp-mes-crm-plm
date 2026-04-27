@@ -17,6 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { useConfirmedActionFlow } from '@/hooks/use-protected-action'
 import { isForbiddenError } from '@/lib/error-status'
 import { warehouseQueryKeys } from '@/features/warehouse/query-keys'
@@ -36,6 +39,15 @@ import {
   type SalesOrderPreassembleConfirmPayload,
 } from './sales-order-preassemble-scan-dialog'
 import { TradingQueryErrorState } from './trading-query-error-state'
+
+const logger = createLogger('SalesOrderList')
+
+type SalesOrderListResource = CompositeReadResource<{
+  primaryOrders: SalesOrder[]
+  canceledOrders: SalesOrder[]
+  total: number
+  canceledTotal: number
+}>
 
 const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
   Draft: 'draft',
@@ -106,23 +118,120 @@ export function SalesOrderList() {
 
   const { deleteMutation, cancelMutation } = useSalesOrderMutations()
 
+  const listResource = useMemo<SalesOrderListResource>(() => {
+    const primaryFailure = resolveQueryFailure({
+      data: primaryOrdersQuery.data,
+      error: primaryOrdersQuery.error,
+      isPending: primaryOrdersQuery.isPending,
+      scope: 'SalesOrderList.primaryOrders',
+      missingMessage: '[CRITICAL] Sales order list missing after load',
+      failureMessage: '[CRITICAL] Sales order list query failed',
+    })
+    if (primaryFailure) {
+      return {
+        status: 'error',
+        error: primaryFailure.error,
+        scope: primaryFailure.scope,
+      }
+    }
+
+    if (shouldLoadCanceledSection) {
+      const canceledFailure = resolveQueryFailure({
+        data: canceledOrdersQuery.data,
+        error: canceledOrdersQuery.error,
+        isPending: canceledOrdersQuery.isPending,
+        scope: 'SalesOrderList.canceledOrders',
+        missingMessage: '[CRITICAL] Canceled sales order list missing after load',
+        failureMessage: '[CRITICAL] Canceled sales order list query failed',
+      })
+      if (canceledFailure) {
+        return {
+          status: 'error',
+          error: canceledFailure.error,
+          scope: canceledFailure.scope,
+        }
+      }
+    }
+
+    if (
+      primaryOrdersQuery.isPending ||
+      (shouldLoadCanceledSection && canceledOrdersQuery.isPending)
+    ) {
+      return { status: 'loading' }
+    }
+
+    const primaryData = primaryOrdersQuery.data
+    if (!primaryData) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] Sales order list missing after load'),
+        scope: 'SalesOrderList.primaryOrders',
+      }
+    }
+
+    if (shouldLoadCanceledSection) {
+      const canceledData = canceledOrdersQuery.data
+      if (!canceledData) {
+        return {
+          status: 'error',
+          error: new Error('[CRITICAL] Canceled sales order list missing after load'),
+          scope: 'SalesOrderList.canceledOrders',
+        }
+      }
+
+      return {
+        status: 'ready',
+        primaryOrders: primaryData.items,
+        canceledOrders: canceledData.items,
+        total: primaryData.total,
+        canceledTotal: canceledData.total,
+      }
+    }
+
+    return {
+      status: 'ready',
+      primaryOrders: primaryData.items,
+      canceledOrders: [],
+      total: primaryData.total,
+      canceledTotal: 0,
+    }
+  }, [
+    canceledOrdersQuery.data,
+    canceledOrdersQuery.error,
+    canceledOrdersQuery.isPending,
+    primaryOrdersQuery.data,
+    primaryOrdersQuery.error,
+    primaryOrdersQuery.isPending,
+    shouldLoadCanceledSection,
+  ])
+
+  useEffect(() => {
+    if (listResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to load sales order list resources: ${listResource.scope}`, listResource.error)
+    failLoudly(listResource.error, listResource.scope)
+  }, [listResource])
+
   const primaryOrders = useMemo(
-    () => primaryOrdersQuery.data?.items ?? [],
-    [primaryOrdersQuery.data?.items]
+    () => (listResource.status === 'ready' ? listResource.primaryOrders : []),
+    [listResource]
   )
   const canceledOrders = useMemo(
-    () => (shouldLoadCanceledSection ? canceledOrdersQuery.data?.items ?? [] : []),
-    [canceledOrdersQuery.data?.items, shouldLoadCanceledSection]
+    () => (listResource.status === 'ready' ? listResource.canceledOrders : []),
+    [listResource]
   )
   const allLoadedOrders = useMemo(
     () => (shouldLoadCanceledSection ? [...primaryOrders, ...canceledOrders] : primaryOrders),
     [canceledOrders, primaryOrders, shouldLoadCanceledSection]
   )
 
-  const total = primaryOrdersQuery.data?.total || 0
-  const canceledTotal = shouldLoadCanceledSection ? canceledOrdersQuery.data?.total || 0 : 0
+  const total = listResource.status === 'ready' ? listResource.total : 0
+  const canceledTotal = listResource.status === 'ready' ? listResource.canceledTotal : 0
 
-  const { paymentMethods, paymentTerms } = useTradingFinanceResources()
+  const financeResources = useTradingFinanceResources()
+  const { paymentMethods, paymentTerms } = financeResources
   const paymentMethodOptions = useMemo(
     () =>
       paymentMethods
@@ -149,9 +258,16 @@ export function SalesOrderList() {
     () => allLoadedOrders.find((order) => order.id === selectedId),
     [allLoadedOrders, selectedId]
   )
-  const isLoading = primaryOrdersQuery.isLoading
-  const isError = primaryOrdersQuery.isError
-  const error = primaryOrdersQuery.error
+  const financeFilterStatus =
+    financeResources.readResource.status === 'error'
+      ? 'error'
+      : financeResources.readResource.status === 'loading'
+        ? 'loading'
+        : 'ready'
+  const financeFilterErrorMessage =
+    financeResources.readResource.status === 'error'
+      ? financeResources.readResource.error.message
+      : undefined
 
   const { runConfirmedAction } = useConfirmedActionFlow()
 
@@ -293,6 +409,10 @@ export function SalesOrderList() {
     }
   }
 
+  const handleRetryFinanceFilters = () => {
+    void financeResources.retry()
+  }
+
   const handlePreassembleConfirm = (payload: SalesOrderPreassembleConfirmPayload) => {
     runConfirmedAction({
       permission: 'action_inventory_shipment_update',
@@ -371,7 +491,7 @@ export function SalesOrderList() {
     })
   }
 
-  if (isLoading) {
+  if (listResource.status === 'loading') {
     return (
       <div className='flex h-[60vh] flex-col items-center justify-center space-y-4 animate-in fade-in duration-500'>
         <div className='relative'>
@@ -385,12 +505,12 @@ export function SalesOrderList() {
     )
   }
 
-  if (isError) {
-    if (isForbiddenError(error)) return <ForbiddenState />
+  if (listResource.status === 'error') {
+    if (isForbiddenError(listResource.error)) return <ForbiddenState />
     return (
       <TradingQueryErrorState
         title={t('tradingSalesOrder.master.errors.loadFailed')}
-        error={error}
+        error={listResource.error}
         onRetry={handleRetry}
       />
     )
@@ -426,7 +546,10 @@ export function SalesOrderList() {
             </Select>
 
             <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-              <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'>
+              <SelectTrigger
+                className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'
+                disabled={financeFilterStatus !== 'ready'}
+              >
                 <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentMethod')} />
               </SelectTrigger>
               <SelectContent className='rounded-2xl'>
@@ -440,7 +563,10 @@ export function SalesOrderList() {
             </Select>
 
             <Select value={paymentTermFilter} onValueChange={setPaymentTermFilter}>
-              <SelectTrigger className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'>
+              <SelectTrigger
+                className='h-11 w-full sm:w-[180px] rounded-full border-dashed bg-background/80 font-bold shadow-sm'
+                disabled={financeFilterStatus !== 'ready'}
+              >
                 <SelectValue placeholder={t('tradingSalesOrder.master.filters.paymentTerm')} />
               </SelectTrigger>
               <SelectContent className='rounded-2xl'>
@@ -462,6 +588,27 @@ export function SalesOrderList() {
             </Button>
           </div>
         </div>
+
+        {financeFilterStatus !== 'ready' ? (
+          <div className='flex items-center justify-end gap-3 px-1 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+            <span>
+              {financeFilterStatus === 'loading'
+                ? t('common.actions.loading')
+                : financeFilterErrorMessage || '财务筛选加载失败'}
+            </span>
+            {financeFilterStatus === 'error' ? (
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='h-8 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest'
+                onClick={handleRetryFinanceFilters}
+              >
+                重试
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         {hasCustomerContext && (
           <div className='flex items-center justify-between rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3'>

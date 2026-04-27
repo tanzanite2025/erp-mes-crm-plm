@@ -70,7 +70,7 @@ export function RuleStatusRow({
     (command) => command.id === selectedCommandId
   )
   const dynamicNotifyTarget = resolverOptions.find(
-    (resolver) => resolver.code === segment?.dynamicRoleField
+    (resolver) => resolver.code === segment?.dynamicTargetField
   )?.label
   const dynamicApprovalTarget = resolverOptions.find(
     (resolver) => resolver.code === approval.dynamicApproverField
@@ -244,7 +244,7 @@ export function RuleStatusRow({
           <label className='flex flex-col gap-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             动态通知对象
             <select
-              value={segment?.dynamicRoleField ?? ''}
+              value={segment?.dynamicTargetField ?? ''}
               onChange={(event) => onDynamicNotifyChange(event.target.value)}
               className='h-10 rounded-2xl border border-input bg-background px-3 text-xs font-bold normal-case tracking-normal text-foreground'
             >

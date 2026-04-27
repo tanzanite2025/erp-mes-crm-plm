@@ -223,7 +223,6 @@ func TestSalesOrderServiceContractTransactionIncludesLinesArray(t *testing.T) {
 		"status":        "InProgress",
 		"delivered_qty": 2,
 	}).Error)
-	order.Status = "InProgress"
 
 	result, err := ExecuteSalesOrderTransaction(ExecuteSalesOrderTransactionInput{
 		OrderID:         order.ID,

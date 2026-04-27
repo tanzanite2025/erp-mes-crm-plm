@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Box, Plus } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -14,12 +14,15 @@ import { EngineeringSidebar } from './components/engineering-sidebar'
 import { ProductActionDialog } from './components/product-action-dialog'
 import { ProductOverviewTab } from './components/product-overview-tab'
 import { ProductRoutingView } from './components/product/product-routing-view'
-import { type Product } from './data/schema'
+import { type Product, type ProductType } from './data/schema'
 import { useProductWriteActions } from './hooks/use-product-write-actions'
 import { type ProductSubmitPayload } from './hooks/use-product-form'
 import { PRODUCT_TYPES_QUERY_KEY, PRODUCTS_QUERY_KEY } from './query-keys'
 import { ProductCoreService } from './services/product-core-service'
 import { ProductTypeService } from './services/product-type-service'
+
+const EMPTY_PRODUCTS: Product[] = []
+const EMPTY_PRODUCT_TYPES: ProductType[] = []
 
 export function Engineering() {
     const { t } = useLanguage()
@@ -41,8 +44,8 @@ export function Engineering() {
     if (productsQuery.isSuccess && !productsQuery.data) throw new Error('[CRITICAL] Products Data missing')
     if (productTypesQuery.isSuccess && !productTypesQuery.data) throw new Error('[CRITICAL] Product Types Data missing')
 
-    const products = productsQuery.data || []
-    const types = productTypesQuery.data || []
+    const products = productsQuery.data ?? EMPTY_PRODUCTS
+    const types = productTypesQuery.data ?? EMPTY_PRODUCT_TYPES
     const isLoading = productsQuery.isLoading || productTypesQuery.isLoading
     const error = productsQuery.error ?? productTypesQuery.error
     const productMap = useMemo(
@@ -50,15 +53,21 @@ export function Engineering() {
         [products]
     )
 
-    useEffect(() => {
-        setSelectedProductId((prev) => {
-            if (products.length === 0) return null
-            if (prev && products.some((product) => product.id === prev)) return prev
-            return products[0].id
-        })
-    }, [products])
+    const effectiveSelectedProductId = useMemo(() => {
+        if (products.length === 0) {
+            return null
+        }
 
-    const selectedProduct = selectedProductId ? productMap.get(selectedProductId) : undefined
+        if (selectedProductId && productMap.has(selectedProductId)) {
+            return selectedProductId
+        }
+
+        return products[0].id
+    }, [productMap, products, selectedProductId])
+
+    const selectedProduct = effectiveSelectedProductId
+        ? productMap.get(effectiveSelectedProductId)
+        : undefined
 
     if (isForbiddenError(error)) {
         return <ForbiddenState />
@@ -75,6 +84,9 @@ export function Engineering() {
     }
 
     const handleProductSubmit = async ({ products: incoming, currentRow }: ProductSubmitPayload) => {
+        if (incoming.length === 0) {
+            throw new Error('[CRITICAL] Engineering.handleProductSubmit received empty products payload')
+        }
         const savedProducts = await saveProducts(
             incoming.map((product) => ({
                 data: product,
@@ -101,7 +113,7 @@ export function Engineering() {
                 <EngineeringSidebar
                     products={products}
                     types={types}
-                    selectedProductId={selectedProductId}
+                    selectedProductId={effectiveSelectedProductId}
                     onSelectProduct={setSelectedProductId}
                     onAddProduct={handleAddProduct}
                     onEditProduct={handleEditProduct}

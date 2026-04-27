@@ -67,7 +67,7 @@ export const systemManagementEnUSOverrides = {
     userRights: {
       header: {
         title: 'Role Permission Matrix',
-        subtitle: 'Manage module, page, tab, and action access by role.',
+        subtitle: 'Uniformly manage module, page, tab, and operation permissions by role.',
       },
       actions: {
         importAccountRole: 'Import Account Role',
@@ -79,8 +79,8 @@ export const systemManagementEnUSOverrides = {
         collapseAll: 'Collapse All',
       },
       sections: {
-        accessTree: 'Access Tree',
-        moduleActions: 'Module Actions',
+        accessTree: 'Permission Tree',
+        moduleActions: 'Module-level Operation Permissions',
       },
       table: {
         accessNodes: 'Permission Nodes',
@@ -96,11 +96,11 @@ export const systemManagementEnUSOverrides = {
       },
       status: {
         expanded: 'Expanded {{count}} child nodes',
-        collapsed: 'Collapsed {{count}} child nodes. Click left to expand.',
+        collapsed: 'Collapsed {{count}} child nodes, click left to expand.',
         collapsedShort: 'Collapsed {{count}} child nodes',
       },
       securityInfo:
-        'The permission matrix follows least privilege. The built-in global template role stays locked to prevent accidental global authorization drift.',
+        'The permission matrix follows the principle of least privilege. System-reserved global template roles remain locked to avoid accidental global authorization drift.',
     },
   },
 } as const

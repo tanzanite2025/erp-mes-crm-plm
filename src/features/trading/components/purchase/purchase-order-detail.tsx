@@ -10,15 +10,19 @@ import { useLanguage } from '@/context/language-provider'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useAuthStore } from '@/stores/auth-store'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
 import { canReceivePurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { OrderEvidenceGallery } from '../parts/order-evidence-gallery'
 import { PurchaseOrderEvidencePrint } from './purchase-order-evidence-print'
 import { PurchaseReceiptConfirmDialog } from './purchase-receipt-confirm-dialog'
 
+function isDetailedPurchaseOrder(order?: PurchaseOrder | PurchaseOrderListItem): order is PurchaseOrder {
+  return Boolean(order && 'lines' in order && Array.isArray(order.lines))
+}
+
 interface PurchaseOrderDetailProps {
-  order?: PurchaseOrder
+  order?: PurchaseOrder | PurchaseOrderListItem
   onDelete: (id: string) => void
 }
 
@@ -30,7 +34,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
   const { confirmReceiptMutation } = usePurchaseOrderMutations()
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
-  const order = detailedOrder || initialOrder
+  const order = detailedOrder || (isDetailedPurchaseOrder(initialOrder) ? initialOrder : undefined)
   const reactToPrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: order ? `${order.orderNo}_purchase_evidence` : 'purchase_evidence',

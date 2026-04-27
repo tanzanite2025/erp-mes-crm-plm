@@ -9,6 +9,8 @@ export type CustomerQuoteSummaryState = {
   items: CustomerQuoteSummaryItem[]
   isLoading: boolean
   isError: boolean
+  errorMessage?: string
+  onRetry?: () => void
 }
 
 type CustomerDynamicSummaryLayerProps = {
@@ -34,6 +36,8 @@ export function CustomerDynamicSummaryLayer({
     items: [],
     isLoading: false,
     isError: false,
+    errorMessage: undefined,
+    onRetry: undefined,
   }
 
   return (
@@ -49,6 +53,8 @@ export function CustomerDynamicSummaryLayer({
         quotes={resolvedQuoteSummary.items}
         isLoading={resolvedQuoteSummary.isLoading}
         isError={resolvedQuoteSummary.isError}
+        errorMessage={resolvedQuoteSummary.errorMessage}
+        onRetry={resolvedQuoteSummary.onRetry}
         onOpenQuote={onOpenQuote}
         onCreateQuote={onCreateQuote}
         compact

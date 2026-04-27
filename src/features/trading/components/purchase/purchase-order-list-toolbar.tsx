@@ -20,6 +20,9 @@ interface PurchaseOrderListToolbarProps {
   statusFilter: string
   paymentMethodFilter: string
   paymentTermFilter: string
+  financeFilterStatus: 'loading' | 'error' | 'ready'
+  financeFilterErrorMessage?: string
+  onRetryFinanceFilters?: () => void
   paymentMethodOptions: PaymentOption[]
   paymentTermOptions: PaymentOption[]
   onSearchTermChange: (value: string) => void
@@ -36,6 +39,9 @@ export function PurchaseOrderListToolbar({
   statusFilter,
   paymentMethodFilter,
   paymentTermFilter,
+  financeFilterStatus,
+  financeFilterErrorMessage,
+  onRetryFinanceFilters,
   paymentMethodOptions,
   paymentTermOptions,
   onSearchTermChange,
@@ -45,6 +51,7 @@ export function PurchaseOrderListToolbar({
   onAddOrder,
 }: PurchaseOrderListToolbarProps) {
   const { t } = useLanguage()
+  const isFinanceFilterReady = financeFilterStatus === 'ready'
   const allStatusMeta: AuditStatusDisplayMeta = {
     label: t('purchase.orders.all'),
     className: 'bg-muted/30 text-muted-foreground border-muted/20',
@@ -83,7 +90,7 @@ export function PurchaseOrderListToolbar({
             )
           })}
         </div>
-        <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange}>
+        <Select value={paymentMethodFilter} onValueChange={onPaymentMethodFilterChange} disabled={!isFinanceFilterReady}>
           <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm sm:w-[180px]'>
             <SelectValue placeholder={t('purchase.orders.filters.paymentMethod')} />
           </SelectTrigger>
@@ -96,7 +103,7 @@ export function PurchaseOrderListToolbar({
             ))}
           </SelectContent>
         </Select>
-        <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange}>
+        <Select value={paymentTermFilter} onValueChange={onPaymentTermFilterChange} disabled={!isFinanceFilterReady}>
           <SelectTrigger className='h-11 w-full rounded-2xl border-dashed bg-background/80 font-bold shadow-sm sm:w-[180px]'>
             <SelectValue placeholder={t('purchase.orders.filters.paymentTerm')} />
           </SelectTrigger>
@@ -118,6 +125,26 @@ export function PurchaseOrderListToolbar({
           {t('purchase.orders.addOrder')}
         </Button>
       </div>
+      {financeFilterStatus !== 'ready' ? (
+        <div className='flex w-full items-center justify-end gap-3 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>
+          <span>
+            {financeFilterStatus === 'loading'
+              ? t('purchase.orders.loading')
+              : financeFilterErrorMessage || '支付筛选加载失败'}
+          </span>
+          {financeFilterStatus === 'error' && onRetryFinanceFilters ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='h-8 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest'
+              onClick={onRetryFinanceFilters}
+            >
+              重试
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

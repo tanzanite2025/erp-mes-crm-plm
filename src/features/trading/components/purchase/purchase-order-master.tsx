@@ -17,14 +17,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useLanguage } from '@/context/language-provider'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrderListItem } from '../../data/schema'
 import { canEditPurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 
 interface PurchaseOrderMasterProps {
-  orders: PurchaseOrder[]
+  orders: PurchaseOrderListItem[]
   selectedId?: string
   onSelect: (id: string) => void
-  onEdit: (order: PurchaseOrder) => void
+  onEdit: (order: PurchaseOrderListItem) => void
   onDelete: (id: string) => void
 }
 

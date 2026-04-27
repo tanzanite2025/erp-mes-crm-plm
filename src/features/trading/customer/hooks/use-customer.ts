@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { type DeltaSet } from '@/lib/delta/types'
+import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { type Customer, type CustomerFormValues } from '../../data/schema'
 import { tradingQueryKeys } from '../../query-keys'
-import { changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
+import { type CustomerListResponse, changeCustomerIdentity, changeCustomerStatus, createCustomer, deleteCustomer, getCustomerList, getCustomers, patchCustomer, saveCustomer } from '../services/customer-service'
 
 export const useGetCustomers = (options = {}) => {
   return useQuery({
@@ -15,11 +17,48 @@ export const useGetCustomers = (options = {}) => {
 }
 
 export const useGetCustomerList = (options = {}) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: tradingQueryKeys.customerList(),
     queryFn: getCustomerList,
     ...options,
   })
+
+  const readResource = useMemo<ReadResource<CustomerListResponse>>(() => {
+    const failure = resolveQueryFailure({
+      data: query.data,
+      error: query.error,
+      isPending: query.isPending,
+      scope: 'useGetCustomerList.list',
+      missingMessage: '[CRITICAL] Customer list missing after load',
+      failureMessage: '[CRITICAL] Customer list query failed',
+    })
+    if (failure) {
+      return {
+        status: 'error',
+        error: failure.error,
+        scope: failure.scope,
+      }
+    }
+
+    if (query.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      data: query.data as CustomerListResponse,
+    }
+  }, [query.data, query.error, query.isPending])
+
+  return {
+    data: query.data,
+    error: query.error,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    isPending: query.isPending,
+    refetch: query.refetch,
+    readResource,
+  }
 }
 
 export const useCustomerMutations = () => {

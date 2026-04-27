@@ -18,15 +18,6 @@ export function hasAllIds(sourceIds: string[], requiredIds: string[]): boolean {
   return requiredIds.every((id) => sourceSet.has(normalizeForMatch(id)))
 }
 
-export function isSystemRole(roleId: string): boolean {
-  const normalized = normalizeForMatch(roleId)
-  return normalized === 'admin' || normalized === 'superadmin'
-}
-
-export function hasSystemRole(roleIds: string[]): boolean {
-  return roleIds.some((roleId) => isSystemRole(roleId))
-}
-
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value

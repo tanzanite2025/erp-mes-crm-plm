@@ -125,7 +125,7 @@ export function getSegmentCompleteness({
     enabled: true,
     hasNotifyTarget:
       (segment.assigneeUsernames ?? []).length > 0 ||
-      hasResolverTarget(resolverOptions, segment.dynamicRoleField),
+      hasResolverTarget(resolverOptions, segment.dynamicTargetField),
     approvalEnabled: Boolean(approval.enabled),
     hasApprovalTarget:
       Boolean(approval.approver1Id) ||
@@ -176,10 +176,10 @@ export function createStatusSegment(
     title: status.label,
     targetStatuses: [status.code],
     commandIds: [],
-    assigneeRoles: [],
+    assigneeGroups: [],
     assigneeUsernames: [],
     resolveOnStatuses: getDefaultResolveStatuses(source),
-    dynamicRoleField: null,
+    dynamicTargetField: null,
     approval: {
       ...defaultApproval,
       module: source.module,
@@ -191,11 +191,11 @@ export function createStatusSegment(
 export function normalizeSegment(segment: RuleSegment): RuleSegment {
   return {
     ...segment,
-    assigneeRoles: segment.assigneeRoles ?? [],
+    assigneeGroups: segment.assigneeGroups ?? [],
     assigneeUsernames: segment.assigneeUsernames ?? [],
     commandIds: segment.commandIds ?? [],
     resolveOnStatuses: segment.resolveOnStatuses ?? [],
-    dynamicRoleField: segment.dynamicRoleField ?? null,
+    dynamicTargetField: segment.dynamicTargetField ?? null,
     approval: segment.approval
       ? { ...defaultApproval, ...segment.approval }
       : defaultApproval,

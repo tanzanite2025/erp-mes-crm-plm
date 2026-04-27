@@ -48,7 +48,7 @@ var allowedBusinessFieldTypes = map[string]struct{}{
 
 var allowedBusinessResolverTypes = map[string]struct{}{
 	"user":       {},
-	"role":       {},
+	"group":      {},
 	"permission": {},
 }
 

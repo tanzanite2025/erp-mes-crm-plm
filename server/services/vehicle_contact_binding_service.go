@@ -63,9 +63,10 @@ func ListVehicleContactBindings(filter VehicleContactBindingFilter) ([]models.Ve
 	if filter.Category != "" && filter.Category != "all" {
 		query = query.Where("category = ?", filter.Category)
 	}
-	if filter.Enabled == "enabled" {
+	switch filter.Enabled {
+	case "enabled":
 		query = query.Where("enabled = ?", true)
-	} else if filter.Enabled == "disabled" {
+	case "disabled":
 		query = query.Where("enabled = ?", false)
 	}
 	if kw := strings.TrimSpace(filter.Keyword); kw != "" {

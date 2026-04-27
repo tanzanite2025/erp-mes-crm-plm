@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { productDraftSchema, type Product, type ProductType } from '../data/schema'
@@ -30,7 +30,9 @@ export function useProductForm({
 }: UseProductFormProps) {
   const isEdit = !!currentRow
   const [selectedVariants, setSelectedVariants] = useState<ProductVariantSelection[]>([])
+  const initializedSessionIdentityRef = useRef<string | null>(null)
   const initialState = ProductCommand.composeInitialState({ isEdit, currentRow })
+  const currentSessionIdentity = isEdit ? `edit:${currentRow?.id ?? ''}` : 'create'
 
   const form = useForm<Product>({
     resolver: zodResolver(productDraftSchema) as Resolver<Product>,
@@ -45,15 +47,40 @@ export function useProductForm({
     moldOptions,
     specOptions,
     metadataInitError,
+    metadataReady,
   } = useProductFormInit({
     open,
-    isEdit,
-    currentRow,
-    productTypes,
     form,
-    selectedVariants,
-    setSelectedVariants,
   })
+
+  useEffect(() => {
+    if (!open) {
+      initializedSessionIdentityRef.current = null
+      queueMicrotask(() => {
+        setSelectedVariants([])
+      })
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !metadataReady) {
+      return
+    }
+    if (initializedSessionIdentityRef.current === currentSessionIdentity) {
+      return
+    }
+
+    const nextInitialState = ProductCommand.composeInitialState({
+      isEdit,
+      currentRow,
+      versionLevelOptions,
+    })
+    form.reset(nextInitialState.formValues)
+    initializedSessionIdentityRef.current = currentSessionIdentity
+    queueMicrotask(() => {
+      setSelectedVariants(nextInitialState.selectedVariants)
+    })
+  }, [currentRow, currentSessionIdentity, form, isEdit, metadataReady, open, versionLevelOptions])
 
   const { dynamicTypes, specPreviewSummary, skuPreview, nextCodeDeriveError } = useProductFormDerive({
     isEdit,
@@ -84,6 +111,7 @@ export function useProductForm({
     moldOptions,
     specOptions,
     metadataInitError,
+    metadataReady,
     nextCodeDeriveError,
     skuPreview,
     selectedVariants,

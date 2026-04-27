@@ -1,6 +1,7 @@
-import { ImageIcon } from 'lucide-react'
+import { AlertCircle, ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { Button } from '@/components/ui/button'
 import { DocumentEvidenceManager } from '@/features/sales-document/components/document-evidence-manager'
 import type { OrderEvidence } from '@/features/trading/data/schema'
 import { failLoudly } from '@/lib/safe-catch'
@@ -49,7 +50,7 @@ export function SettlementRecordEvidencePanel({
   const createMutation = useCreateSettlementRecordEvidence(recordType)
   const deleteMutation = useDeleteSettlementRecordEvidence(recordType)
 
-  const evidences = evidencesQuery.data ?? []
+  const evidences = evidencesQuery.readResource.status === 'ready' ? evidencesQuery.readResource.data : []
   const documentEvidences = evidences.map(toDocumentEvidence)
   const isMutating = createMutation.isPending || deleteMutation.isPending
 
@@ -96,10 +97,36 @@ export function SettlementRecordEvidencePanel({
         </span>
       </div>
 
-      {!recordId ? (
+      {evidencesQuery.readResource.status === 'idle' ? (
         <EvidenceEmptyState text='先选择一条记录，再上传凭证' />
-      ) : evidencesQuery.isError ? (
-        <EvidenceEmptyState text='记录凭证加载失败' />
+      ) : evidencesQuery.readResource.status === 'loading' ? (
+        <div className='flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-muted/60 bg-background/60 p-3 text-center text-muted-foreground/60'>
+          <Loader2 className='size-6 animate-spin' />
+          <p className='text-[10px] font-black uppercase tracking-[0.14em]'>记录凭证加载中</p>
+        </div>
+      ) : evidencesQuery.readResource.status === 'error' ? (
+        <div className='flex min-h-[110px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-rose-300/60 bg-rose-50/60 p-4 text-center'>
+          <AlertCircle className='size-6 text-rose-500' />
+          <div className='space-y-1'>
+            <p className='text-[10px] font-black uppercase tracking-[0.14em] text-rose-700'>记录凭证加载失败</p>
+            <p className='text-[10px] font-bold leading-5 text-rose-700/80'>
+              {evidencesQuery.readResource.error.message || '请稍后重试。'}
+            </p>
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-8 rounded-full border-dashed px-4 text-[9px] font-black uppercase tracking-widest'
+            onClick={() => {
+              void evidencesQuery.retryRead()
+            }}
+          >
+            重试
+          </Button>
+        </div>
+      ) : evidences.length === 0 ? (
+        <EvidenceEmptyState text='当前记录暂无凭证' />
       ) : (
         <div className='max-h-[280px] overflow-auto pr-1'>
           <DocumentEvidenceManager
@@ -110,7 +137,7 @@ export function SettlementRecordEvidencePanel({
                 toast.error('凭证挂接失败，请稍后重试')
               })
             }}
-            disabled={isMutating || evidencesQuery.isLoading}
+            disabled={isMutating || evidencesQuery.readResource.status !== 'ready'}
             uploadPath={uploadPath}
             maxCount={20}
             compact

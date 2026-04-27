@@ -1,4 +1,5 @@
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,7 +25,14 @@ export function PurchaseOrderHeaderFields({
   onEvidencesChange,
 }: PurchaseOrderHeaderFieldsProps) {
   const { t } = useLanguage()
-  const { currencies, paymentMethods, paymentTerms } = useTradingFinanceResources({ includeCurrencies: true })
+  const financeResources = useTradingFinanceResources({ includeCurrencies: true })
+  const { currencies, paymentMethods, paymentTerms } = financeResources
+  const isFinanceLoading = financeResources.readResource.status === 'loading'
+  const isFinanceError = financeResources.readResource.status === 'error'
+  const isFinanceReady = financeResources.readResource.status === 'ready'
+  const financeErrorMessage = financeResources.readResource.status === 'error'
+    ? financeResources.readResource.error.message
+    : ''
   const {
     supplierOptions,
     currencyOptions,
@@ -50,6 +58,32 @@ export function PurchaseOrderHeaderFields({
 
   return (
     <section className='space-y-4'>
+      {isFinanceLoading ? (
+        <div className='flex items-center justify-between gap-3 rounded-[24px] border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3'>
+          <div className='space-y-1'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-amber-700'>财务基础数据加载中</p>
+            <p className='text-[9px] font-bold text-amber-700/80'>币种、付款方式与账期暂不可编辑。</p>
+          </div>
+        </div>
+      ) : null}
+      {isFinanceError ? (
+        <div className='flex items-center justify-between gap-3 rounded-[24px] border border-dashed border-rose-500/30 bg-rose-500/5 px-4 py-3'>
+          <div className='space-y-1'>
+            <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>财务基础数据加载失败</p>
+            <p className='text-[9px] font-bold text-rose-700/80'>{financeErrorMessage || '请重试后再编辑币种、付款方式与账期。'}</p>
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+            onClick={() => {
+              void financeResources.retry()
+            }}
+          >
+            重试
+          </Button>
+        </div>
+      ) : null}
       <div className='grid grid-cols-1 gap-4 rounded-[32px] border border-dashed border-muted-foreground/20 bg-muted/20 p-5 md:grid-cols-5'>
         <div className='space-y-1.5'>
           <Label className='pl-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50'>
@@ -80,6 +114,8 @@ export function PurchaseOrderHeaderFields({
             items={currencyOptions}
             defaultValue={formData.currency}
             onValueChange={(value) => handleHeaderChange('currency', value)}
+            isPending={isFinanceLoading}
+            disabled={!isFinanceReady}
             className='h-10 rounded-2xl bg-background font-bold'
           />
         </div>
@@ -140,6 +176,8 @@ export function PurchaseOrderHeaderFields({
             items={paymentMethodOptions}
             defaultValue={formData.paymentMethod}
             onValueChange={handlePaymentMethodChange}
+            isPending={isFinanceLoading}
+            disabled={!isFinanceReady}
             className='h-10 rounded-2xl bg-background font-bold'
           />
         </div>
@@ -153,6 +191,8 @@ export function PurchaseOrderHeaderFields({
             items={paymentTermOptions}
             defaultValue={formData.paymentTerm}
             onValueChange={handlePaymentTermChange}
+            isPending={isFinanceLoading}
+            disabled={!isFinanceReady}
             className='h-10 rounded-2xl bg-background font-bold'
           />
         </div>

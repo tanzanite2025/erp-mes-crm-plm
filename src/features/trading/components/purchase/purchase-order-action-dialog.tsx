@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useAuthStore } from '@/stores/auth-store'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
 import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
 import { useGetSuppliers } from '../../supplier'
 import { usePurchaseOrderForm } from '../../hooks/use-purchase-order-form'
@@ -13,10 +13,14 @@ import { PurchaseOrderHeaderFields } from './parts/purchase-order-header-fields'
 import { PurchaseOrderLinesEditor } from './parts/purchase-order-lines-editor'
 import { PurchaseOrderActionDialogShell } from './purchase-order-action-dialog-shell'
 
+function isDetailedPurchaseOrder(order?: PurchaseOrder | PurchaseOrderListItem | null): order is PurchaseOrder {
+  return Boolean(order && 'lines' in order && Array.isArray(order.lines))
+}
+
 interface PurchaseOrderActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  order?: PurchaseOrder | null
+  order?: PurchaseOrder | PurchaseOrderListItem | null
 }
 
 export function PurchaseOrderActionDialog({
@@ -28,11 +32,11 @@ export function PurchaseOrderActionDialog({
   const { allowsAction } = useNonBlockingPermissionActions()
   const user = useAuthStore((state) => state.user)
   const { data: suppliers = [] } = useGetSuppliers({ enabled: open })
-  const { data: detailedOrder, isLoading: isDetailLoading } = useGetPurchaseOrderDetail(
+  const { data: detailedOrder } = useGetPurchaseOrderDetail(
     summaryOrder?.id || ''
   )
 
-  const activeOrder = summaryOrder ? detailedOrder || summaryOrder : null
+  const activeOrder = detailedOrder || (isDetailedPurchaseOrder(summaryOrder) ? summaryOrder : null)
   const { units, materials, isMetaLoading } = usePurchaseOrderDialogResources(open)
 
   const { formData, handleHeaderChange, handleAddLine, handleRemoveLine, updateLine, validate, commit, isFinanceLoading } =
@@ -76,7 +80,7 @@ export function PurchaseOrderActionDialog({
     }
   }
 
-  const isDataLoading = isMetaLoading || isFinanceLoading || (!!summaryOrder && isDetailLoading)
+  const isDataLoading = isMetaLoading || isFinanceLoading || (!!summaryOrder && !activeOrder)
   const dialogTitle = summaryOrder
     ? t('purchase.orders.dialogEditTitle')
     : t('purchase.orders.dialogCreateTitle')

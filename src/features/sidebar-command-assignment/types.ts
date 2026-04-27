@@ -12,6 +12,6 @@ export type SidebarCommandAccount = {
   id: string
   username: string
   name: string
-  role: string
+  accountLabel: string
   status: string
 }

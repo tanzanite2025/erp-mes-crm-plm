@@ -1,6 +1,9 @@
-package apsschedulingengine
+package material
 
-import "time"
+import (
+	"time"
+	apsevents "xdfc-server/modules/aps-scheduling-engine/events"
+)
 
 type MaterialHook struct{}
 
@@ -8,8 +11,8 @@ func (h *MaterialHook) Supports(targetType string) bool {
 	return targetType == "material"
 }
 
-func (h *MaterialHook) BuildEvent(target HookTarget, payload map[string]any) ScheduleEvent {
-	return ScheduleEvent{
+func (h *MaterialHook) BuildEvent(target apsevents.HookTarget, payload map[string]any) apsevents.ScheduleEvent {
+	return apsevents.ScheduleEvent{
 		ID:         "evt-material",
 		Type:       "material",
 		Source:     target.Type,

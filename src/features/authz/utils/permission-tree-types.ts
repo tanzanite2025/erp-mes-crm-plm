@@ -1,10 +1,4 @@
-import type { Permission, Role } from '@/features/system-mgmt/data/role-schema'
-
-export type UserRoleOption = {
-  label: string
-  value: string
-  disabled?: boolean
-}
+import type { Permission } from '@/features/authz/data/permission-schema'
 
 export type PermissionPageNode = {
   page: Permission
@@ -20,6 +14,3 @@ export type PermissionTreeNode = {
 }
 
 export type PermissionLabelFormatter = (label: string) => string
-
-export type UserRightsRole = Role
-export type UserRightsPermission = Permission

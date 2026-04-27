@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +24,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
-import { useRoles } from '@/features/system-mgmt/hooks/use-roles'
+import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -60,7 +60,7 @@ const logger = createLogger('AiAccessControl')
 
 export function AiAccessControl() {
   const { t } = useLanguage()
-  const { permissions, isInitialLoading } = useRoles()
+  const permissions = useMemo(() => getDefaultPermissions(), [])
   const [config, setConfig] = useState<AiConfig>(DEFAULT_CONFIG)
   const [pendingApi, setPendingApi] = useState<AiConfig['api']>(DEFAULT_CONFIG.api)
   const [isSaving, setIsSaving] = useState(false)
@@ -210,59 +210,53 @@ export function AiAccessControl() {
           <CardHeader className='border-b border-dashed border-slate-100 p-4 md:p-6'>
             <div className='space-y-1'>
               <CardTitle className='text-[11px] md:text-sm font-black italic uppercase tracking-tight'>
-                {t('aiAssistant.accessControl.roles.title')}
+                {t('aiAssistant.accessControl.permissions.title')}
               </CardTitle>
               <CardDescription className='text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-slate-400'>
-                {t('aiAssistant.accessControl.roles.description')}
+                {t('aiAssistant.accessControl.permissions.description')}
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className='p-4 md:pt-6'>
-            {isInitialLoading ? (
-              <div className='flex items-center justify-center py-10'>
-                <Loader2 className='size-6 animate-spin text-slate-300' />
-              </div>
-            ) : (
-              <div className='grid grid-cols-2 gap-3'>
-                {permissions.map((permission) => {
-                  const selected = config.allowedPermissions.includes(String(permission.id))
-                  return (
-                    <div
-                      key={permission.id}
-                      className={cn(
-                        'flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer',
-                        selected
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
-                          : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
+            <div className='grid grid-cols-2 gap-3'>
+              {permissions.map((permission) => {
+                const selected = config.allowedPermissions.includes(String(permission.id))
+                return (
+                  <div
+                    key={permission.id}
+                    className={cn(
+                      'flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer',
+                      selected
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
+                        : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
+                    )}
+                    onClick={() => {
+                      const nextPermissions = selected
+                        ? config.allowedPermissions.filter((id) => id !== String(permission.id))
+                        : [...config.allowedPermissions, String(permission.id)]
+                      handleSave({ ...config, allowedPermissions: nextPermissions })
+                    }}
+                  >
+                    <div className='flex items-center gap-2 overflow-hidden'>
+                      {selected ? (
+                        <ShieldCheck className='size-3 shrink-0' />
+                      ) : (
+                        <UserCheck className='size-3 shrink-0 opacity-40' />
                       )}
-                      onClick={() => {
-                        const nextPermissions = selected
-                          ? config.allowedPermissions.filter((id) => id !== String(permission.id))
-                          : [...config.allowedPermissions, String(permission.id)]
-                        handleSave({ ...config, allowedPermissions: nextPermissions })
-                      }}
-                    >
-                      <div className='flex items-center gap-2 overflow-hidden'>
-                        {selected ? (
-                          <ShieldCheck className='size-3 shrink-0' />
-                        ) : (
-                          <UserCheck className='size-3 shrink-0 opacity-40' />
-                        )}
-                        <span className='text-[11px] font-bold truncate'>{permission.label}</span>
-                      </div>
-                      <div
-                        className={cn(
-                          'size-4 rounded-full border flex items-center justify-center',
-                          selected ? 'bg-white border-white' : 'border-slate-200'
-                        )}
-                      >
-                        {selected && <div className='size-1.5 rounded-full bg-indigo-600' />}
-                      </div>
+                      <span className='text-[11px] font-bold truncate'>{permission.label}</span>
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                    <div
+                      className={cn(
+                        'size-4 rounded-full border flex items-center justify-center',
+                        selected ? 'bg-white border-white' : 'border-slate-200'
+                      )}
+                    >
+                      {selected && <div className='size-1.5 rounded-full bg-indigo-600' />}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
 

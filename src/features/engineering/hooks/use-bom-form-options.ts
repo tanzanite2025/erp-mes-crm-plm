@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { type MaterialOption } from '../../material-archive/data/schema'
@@ -17,7 +18,13 @@ interface UseBOMFormOptionsParams {
   selectedProductId?: string
 }
 
-export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptionsParams) {
+export type BOMFormOptionsResource = CompositeReadResource<{
+  products: Product[]
+  materials: MaterialOption[]
+  changeOrders: ChangeOrder[]
+}>
+
+export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptionsParams): BOMFormOptionsResource {
   const productsQuery = useQuery({
     queryKey: productOptionsQueryKey(),
     queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
@@ -38,51 +45,85 @@ export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptions
     enabled: open,
   })
 
-  const products = useMemo(() => {
-    if (productsQuery.data) return productsQuery.data
-    if (productsQuery.isPending) return [] as Product[]
-    const error = productsQuery.error instanceof Error
-      ? productsQuery.error
-      : new Error('[CRITICAL] Missing BOM form products query data')
-    failLoudly(error, 'useBOMFormOptions.products')
-    return [] as Product[]
-  }, [productsQuery.data, productsQuery.error, productsQuery.isPending])
+  const resource = useMemo<BOMFormOptionsResource>(() => {
+    const productsFailure = resolveQueryFailure({
+      data: productsQuery.data,
+      error: productsQuery.error,
+      isPending: productsQuery.isPending,
+      scope: 'useBOMFormOptions.products',
+      missingMessage: '[CRITICAL] Missing BOM form products query data',
+      failureMessage: '[CRITICAL] BOM form products query failed',
+    })
+    if (productsFailure) {
+      return {
+        status: 'error',
+        error: productsFailure.error,
+        scope: productsFailure.scope,
+      }
+    }
 
-  const changeOrders = useMemo(() => {
-    if (changeOrdersQuery.data) return changeOrdersQuery.data as ChangeOrder[]
-    if (changeOrdersQuery.isPending) return [] as ChangeOrder[]
-    const error = changeOrdersQuery.error instanceof Error
-      ? changeOrdersQuery.error
-      : new Error('[CRITICAL] Missing BOM form change orders query data')
-    failLoudly(error, 'useBOMFormOptions.changeOrders')
-    return [] as ChangeOrder[]
-  }, [changeOrdersQuery.data, changeOrdersQuery.error, changeOrdersQuery.isPending])
+    const changeOrdersFailure = resolveQueryFailure({
+      data: changeOrdersQuery.data,
+      error: changeOrdersQuery.error,
+      isPending: changeOrdersQuery.isPending,
+      scope: 'useBOMFormOptions.changeOrders',
+      missingMessage: '[CRITICAL] Missing BOM form change orders query data',
+      failureMessage: '[CRITICAL] BOM form change orders query failed',
+    })
+    if (changeOrdersFailure) {
+      return {
+        status: 'error',
+        error: changeOrdersFailure.error,
+        scope: changeOrdersFailure.scope,
+      }
+    }
 
-  const materials = useMemo(() => {
-    if (materialsQuery.data) return materialsQuery.data as MaterialOption[]
-    if (materialsQuery.isPending) return [] as MaterialOption[]
-    const error = materialsQuery.error instanceof Error
-      ? materialsQuery.error
-      : new Error('[CRITICAL] Missing BOM form materials query data')
-    failLoudly(error, 'useBOMFormOptions.materials')
-    return [] as MaterialOption[]
-  }, [materialsQuery.data, materialsQuery.error, materialsQuery.isPending])
+    const materialsFailure = resolveQueryFailure({
+      data: materialsQuery.data,
+      error: materialsQuery.error,
+      isPending: materialsQuery.isPending,
+      scope: 'useBOMFormOptions.materials',
+      missingMessage: '[CRITICAL] Missing BOM form materials query data',
+      failureMessage: '[CRITICAL] BOM form materials query failed',
+    })
+    if (materialsFailure) {
+      return {
+        status: 'error',
+        error: materialsFailure.error,
+        scope: materialsFailure.scope,
+      }
+    }
+
+    if (productsQuery.isPending || changeOrdersQuery.isPending || materialsQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      products: productsQuery.data as Product[],
+      changeOrders: changeOrdersQuery.data as ChangeOrder[],
+      materials: materialsQuery.data as MaterialOption[],
+    }
+  }, [
+    changeOrdersQuery.data,
+    changeOrdersQuery.error,
+    changeOrdersQuery.isPending,
+    materialsQuery.data,
+    materialsQuery.error,
+    materialsQuery.isPending,
+    productsQuery.data,
+    productsQuery.error,
+    productsQuery.isPending,
+  ])
 
   useEffect(() => {
-    if (changeOrdersQuery.error) {
-      logger.error('BOM form load change orders failed', changeOrdersQuery.error)
+    if (resource.status !== 'error') {
+      return
     }
-  }, [changeOrdersQuery.error])
 
-  useEffect(() => {
-    if (materialsQuery.error) {
-      logger.error('BOM form load materials failed', materialsQuery.error)
-    }
-  }, [materialsQuery.error])
+    logger.error(`BOM form options resource failed: ${resource.scope}`, resource.error)
+    failLoudly(resource.error, resource.scope)
+  }, [resource])
 
-  return {
-    products,
-    materials,
-    changeOrders,
-  }
+  return resource
 }

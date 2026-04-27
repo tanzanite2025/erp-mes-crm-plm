@@ -1,4 +1,4 @@
-package apsschedulingengine
+package events
 
 type ReplanMode string
 

@@ -44,6 +44,7 @@ export const sidebarCommandAssignment = {
     loading: '正在加载真实账号...',
     empty: '没有可分配的真实账号',
     unsetRole: '未设置岗位',
+    unsetEmployeeId: '未设置工号',
   },
   summary: {
     currentAccount: '当前账号',

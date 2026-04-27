@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { getDeletedPurchaseOrders } from '../../purchase'
-import { type PurchaseOrder } from '../../data/schema'
+import { type PurchaseOrderListItem } from '../../data/schema'
 
 interface PurchaseLogTagMeta {
   label: string
@@ -66,7 +66,7 @@ function PurchaseLogTag({ meta }: { meta: PurchaseLogTagMeta }) {
 
 export function PurchaseOrderLogs() {
   const { t, locale } = useLanguage()
-  const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [orders, setOrders] = useState<PurchaseOrderListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
 

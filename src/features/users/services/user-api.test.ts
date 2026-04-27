@@ -61,7 +61,6 @@ describe('user-api contract regression', () => {
         id: 'u-2',
         employeeId: 'EMP-2',
         username: 'bob',
-        role: 'Warehouse',
         status: 'active',
       },
     ]

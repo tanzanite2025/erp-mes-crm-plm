@@ -368,68 +368,6 @@ func ensureWarehouseCategoryDefaultFlag(column string, code string) {
 	}
 }
 
-func ensureDefaultAdminRoleTemplate() {
-	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
-		return
-	}
-
-	fallbackPermissions := authz.DeduplicatePermissionIDs(authz.AdminFallbackPermissions)
-	serializedFallbackPermissions, err := json.Marshal(fallbackPermissions)
-	if err != nil {
-		log.Fatal("Failed to serialize admin fallback permissions:", err)
-	}
-
-	var adminRole models.Role
-	err = DB.Unscoped().Where("LOWER(role_id) = ?", "admin").First(&adminRole).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		created := models.Role{
-			RoleID:      "admin",
-			Label:       "Admin",
-			Color:       "bg-red-500/10 text-red-600 border-red-200",
-			Permissions: string(serializedFallbackPermissions),
-		}
-		if createErr := DB.Create(&created).Error; createErr != nil {
-			log.Fatal("Failed to create default admin role template:", createErr)
-		}
-		return
-	}
-	if err != nil {
-		log.Fatal("Failed to query admin role template:", err)
-	}
-
-	currentPermissions := authz.ParsePermissionIDs(adminRole.Permissions)
-	mergedPermissions := authz.DeduplicatePermissionIDs(append(currentPermissions, fallbackPermissions...))
-	serializedMergedPermissions, err := json.Marshal(mergedPermissions)
-	if err != nil {
-		log.Fatal("Failed to serialize merged admin permissions:", err)
-	}
-
-	needsUpdate := adminRole.Permissions != string(serializedMergedPermissions)
-	if strings.TrimSpace(adminRole.Label) == "" || strings.TrimSpace(adminRole.Color) == "" || adminRole.DeletedAt.Valid {
-		needsUpdate = true
-	}
-	if !needsUpdate {
-		return
-	}
-
-	updates := map[string]interface{}{
-		"permissions": string(serializedMergedPermissions),
-	}
-	if strings.TrimSpace(adminRole.Label) == "" {
-		updates["label"] = "Admin"
-	}
-	if strings.TrimSpace(adminRole.Color) == "" {
-		updates["color"] = "bg-red-500/10 text-red-600 border-red-200"
-	}
-	if adminRole.DeletedAt.Valid {
-		updates["deleted_at"] = nil
-	}
-
-	if updateErr := DB.Unscoped().Model(&adminRole).Updates(updates).Error; updateErr != nil {
-		log.Fatal("Failed to align default admin role template:", updateErr)
-	}
-}
-
 func ensureUserIntegrityConstraints() {
 	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
 		return
@@ -570,20 +508,6 @@ func backfillBlankSalesOrderNos() {
 	}
 }
 
-func ensureUserRolePrimaryUniqueIndex() {
-	if DB == nil || !DB.Migrator().HasTable(&models.UserRole{}) {
-		return
-	}
-
-	if err := DB.Exec(`
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_user_primary_unique
-		ON user_roles (user_id)
-		WHERE deleted_at IS NULL AND is_primary = true;
-	`).Error; err != nil {
-		log.Fatal("Failed to enforce unique primary role per user:", err)
-	}
-}
-
 func ensureUserPermissionUniqueIndex() {
 	if DB == nil || !DB.Migrator().HasTable(&models.UserPermission{}) {
 		return
@@ -595,6 +519,26 @@ func ensureUserPermissionUniqueIndex() {
 		WHERE deleted_at IS NULL;
 	`).Error; err != nil {
 		log.Fatal("Failed to enforce unique active permission per user:", err)
+	}
+}
+
+func dropLegacyRoleArtifacts() {
+	if DB == nil {
+		return
+	}
+
+	for _, tableName := range []string{
+		"employee_roles",
+		"user_roles",
+		"position_roles",
+		"org_default_roles",
+		"roles",
+	} {
+		if DB.Migrator().HasTable(tableName) {
+			if err := DB.Migrator().DropTable(tableName); err != nil {
+				log.Fatal("Failed to drop legacy role table ", tableName, ": ", err)
+			}
+		}
 	}
 }
 
@@ -905,16 +849,11 @@ func InitDB(dsn string) {
 		&models.PaymentMethod{},
 		&models.PaymentTerm{},
 		&models.TaxRate{},
-		&models.Role{},
 		&models.OrgUnit{},
 		&models.ProductionUnit{},
 		&models.OrgProductionMapping{},
 		&models.Position{},
 		&models.EmployeeAssignment{},
-		&models.OrgDefaultRole{},
-		&models.PositionRole{},
-		&models.UserRole{},
-		&models.EmployeeRole{},
 		&models.ProductionPlan{},
 		&models.ProductionTask{},
 		&models.CuttingIssuanceExecution{},
@@ -960,15 +899,14 @@ func InitDB(dsn string) {
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
+	dropLegacyRoleArtifacts()
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
-	DB.Exec("UPDATE roles SET role_id = 'admin' WHERE role_id = 'superadmin'")
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()
 	backfillBlankSalesOrderNos()
 	backfillLeaveRequestSubmittedByUsers()
 	ensureProductIntegrityConstraints()
 	ensureSalesOrderIntegrityConstraints()
-	ensureUserRolePrimaryUniqueIndex()
 	ensureUserPermissionUniqueIndex()
 	ensureSidebarCommandAssignmentUniqueIndex()
 	ensureSidebarCommandCategoryAssignmentUniqueIndex()
@@ -1018,27 +956,6 @@ func InitDB(dsn string) {
 		fmt.Println("Initial admin 'admin' created.")
 	}
 
-	// 5. Seed default role
-	var roleCount int64
-	DB.Model(&models.Role{}).Count(&roleCount)
-	if roleCount == 0 {
-		fmt.Println("No roles found. Seeding initial admin role...")
-
-		permissionJSON, err := json.Marshal(authz.AdminFallbackPermissions)
-		if err != nil {
-			log.Fatal("[CRITICAL_SECURITY] Failed to serialize initial role permissions: ", err)
-		}
-
-		superRole := models.Role{
-			RoleID:      "admin",
-			Label:       "Admin",
-			Color:       "bg-red-500/10 text-red-600 border-red-200",
-			Permissions: string(permissionJSON),
-		}
-		DB.Create(&superRole)
-		fmt.Println("Initial role 'admin' created with full permissions.")
-	}
-	ensureDefaultAdminRoleTemplate()
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()

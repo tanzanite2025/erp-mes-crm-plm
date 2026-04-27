@@ -23,7 +23,7 @@ interface DispatchInput {
   title?: string
   content?: string
   priority?: NotificationPriority
-  targetRoles?: string[]
+  targetGroups?: string[]
   targetUsers?: string[]
   actionUrl?: string
   sourceCode?: string

@@ -11,7 +11,7 @@ export const aiAssistant = {
       disable: '彻底禁用',
       enable: '立即激活',
     },
-    roles: {
+    permissions: {
       title: '授权权限下发',
       description: '仅显式授予对应权限的用户可以访问 AI 分析能力',
     },

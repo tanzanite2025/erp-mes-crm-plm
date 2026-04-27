@@ -70,16 +70,16 @@ export const systemManagement = {
     loading: "权限审计数据加载中...",
     header: {
       title: "权限审计中心",
-      subtitle: "权限审计 / 实时观察角色负载、权限分布与核心模块覆盖率"
+      subtitle: "权限审计 / 显式用户授权、权限分布与核心模块覆盖率"
     },
     cards: {
       totalUsers: {
         title: "当前用户总量",
         caption: "ACTIVE_ACCOUNTS"
       },
-      totalRoles: {
-        title: "角色定义数",
-        caption: "ROLE_DEFINITIONS"
+      totalGrantedUsers: {
+        title: "已授权用户数",
+        caption: "USER_PERMISSION_GRANTS"
       },
       totalPermissions: {
         title: "权限节点数",
@@ -92,12 +92,12 @@ export const systemManagement = {
     },
     charts: {
       userDistribution: {
-        title: "角色用户分布",
-        description: "按角色统计的用户数量分布"
+        title: "用户权限分布",
+        description: "按显式授权状态统计用户数量"
       },
       permissionLoad: {
         title: "权限负载对比",
-        description: "按角色对比权限节点负载情况",
+        description: "按用户对比显式权限节点负载",
         barLabel: "权限节点数量"
       }
     },
@@ -105,9 +105,9 @@ export const systemManagement = {
       title: "核心模块访问覆盖矩阵",
       description: "按核心业务模块衡量功能覆盖情况",
       moduleSuffix: "模块",
-      rolesAccess: "ROLES_ACCESS"
+      rolesAccess: "USERS_GRANTED"
     },
-    note: "* 审计数据会随着角色与权限变更实时刷新，确保权限视图与实际授权状态保持同步。",
+    note: "* 审计数据只读取用户显式授权，确保权限视图与运行时快照保持一致。",
     modules: {
       warehouse: "仓储",
       trading: "贸易",

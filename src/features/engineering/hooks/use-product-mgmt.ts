@@ -84,11 +84,13 @@ export function useProductMgmt(t: TranslateProductArchive) {
     }, [activeSubTab, activeTab, data, productTypes])
 
     const handleFormSubmit = async ({ products, currentRow }: ProductSubmitPayload) => {
+        if (products.length === 0) {
+            throw new Error('[CRITICAL] useProductMgmt.handleFormSubmit received empty products payload')
+        }
         if (products.length > 1) {
             await syncProducts(products)
         } else {
             const [product] = products
-            if (!product) return
             await saveProducts([{ data: product, currentRow }])
         }
     }

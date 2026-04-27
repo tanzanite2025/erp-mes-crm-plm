@@ -1,59 +1,101 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { useStocktake, useStocktakeItems } from './use-stock-maintenance'
 import { useStocktakeAdjustmentSubmission } from './use-stocktake-adjustment-submission'
 import { useWarehouseCategoryOptions } from './use-warehouse-category'
+import { type WarehouseCategoryOption } from '../category'
 import { type StocktakeTask } from '../stocktake'
 import { filterWarehouseCategoriesByScene } from '../utils/warehouse-category-config'
+
+const logger = createLogger('useStocktakeMgmtViewModel')
+
+type StocktakeMgmtShellResource = CompositeReadResource<{
+  tasks: StocktakeTask[]
+  stocktakeCategories: WarehouseCategoryOption[]
+}>
 
 export function useStocktakeMgmtViewModel() {
   const { allowsAction } = useNonBlockingPermissionActions()
 
   const {
+    readResource,
     tasks,
     isLoading,
-    isError,
     refreshData,
     createStocktake,
     isCreating,
+    retryRead: retryBaseRead,
   } = useStocktake()
   const { submitAdjustmentForApproval, isSubmittingAdjustment } =
     useStocktakeAdjustmentSubmission()
 
   const categoriesQuery = useWarehouseCategoryOptions()
-  const stocktakeCategories = useMemo(() => {
-    if (categoriesQuery.isLoading) return []
-    if (!categoriesQuery.data) {
-      const lookupError =
-        categoriesQuery.error instanceof Error
-          ? categoriesQuery.error
-          : new Error('[CRITICAL] Stocktake warehouse categories missing after load')
-      failLoudly(lookupError, 'useStocktakeMgmtViewModel.categories')
-      throw lookupError
-    }
-
-    const filteredCategories = filterWarehouseCategoriesByScene(
-      categoriesQuery.data,
-      'stocktake'
-    )
-    if (filteredCategories.length === 0) {
-      const lookupError = new Error(
-        '[CRITICAL] No warehouse categories allowed for stocktake scene'
-      )
-      failLoudly(lookupError, 'useStocktakeMgmtViewModel.categories')
-      throw lookupError
-    }
-
-    return filteredCategories
-  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
 
   const [selectedTask, setSelectedTask] = useState<StocktakeTask | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [adjustmentConfirmOpen, setAdjustmentConfirmOpen] = useState(false)
 
   const selectedTaskId = selectedTask?.id ?? null
-  const { data: items, isLoading: itemsLoading } = useStocktakeItems(selectedTaskId)
+  const { itemsResource, data: items, isLoading: itemsLoading, refetch: refetchItems } = useStocktakeItems(selectedTaskId)
+
+  const shellResource = useMemo<StocktakeMgmtShellResource>(() => {
+    if (readResource.status === 'error') {
+      return readResource
+    }
+
+    const categoriesFailure = resolveQueryFailure({
+      data: categoriesQuery.data,
+      error: categoriesQuery.error,
+      isPending: categoriesQuery.isPending,
+      scope: 'useStocktakeMgmtViewModel.categories',
+      missingMessage: '[CRITICAL] Stocktake warehouse categories missing after load',
+      failureMessage: '[CRITICAL] Stocktake warehouse categories query failed',
+    })
+    if (categoriesFailure) {
+      return {
+        status: 'error',
+        error: categoriesFailure.error,
+        scope: categoriesFailure.scope,
+      }
+    }
+
+    if (readResource.status === 'loading' || categoriesQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    const filteredCategories = filterWarehouseCategoriesByScene(
+      categoriesQuery.data as WarehouseCategoryOption[],
+      'stocktake'
+    )
+    if (filteredCategories.length === 0) {
+      return {
+        status: 'error',
+        error: new Error('[CRITICAL] No warehouse categories allowed for stocktake scene'),
+        scope: 'useStocktakeMgmtViewModel.categories',
+      }
+    }
+
+    return {
+      status: 'ready',
+      tasks,
+      stocktakeCategories: filteredCategories,
+    }
+  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isPending, readResource, tasks])
+
+  useEffect(() => {
+    if (shellResource.status !== 'error') {
+      return
+    }
+
+    logger.error(`Failed to load stocktake shell resources: ${shellResource.scope}`, shellResource.error)
+    failLoudly(shellResource.error, shellResource.scope)
+  }, [shellResource])
+
+  const stocktakeCategories =
+    shellResource.status === 'ready' ? shellResource.stocktakeCategories : []
 
   const canSubmitAdjustment =
     selectedTask?.status === 'IN_PROGRESS' || selectedTask?.status === 'COMPLETED'
@@ -110,9 +152,10 @@ export function useStocktakeMgmtViewModel() {
   }
 
   return {
+    readResource: shellResource,
+    itemsResource,
     tasks,
     isLoading,
-    error: isError,
     selectedTask,
     items,
     itemsLoading,
@@ -129,5 +172,9 @@ export function useStocktakeMgmtViewModel() {
     handleRequestAdjustmentSubmission,
     handleAdjustmentConfirmOpenChange,
     handleConfirmAdjustmentSubmission,
+    retryRead: async () => {
+      await Promise.all([retryBaseRead(), categoriesQuery.refetch()])
+    },
+    retryItems: refetchItems,
   }
 }

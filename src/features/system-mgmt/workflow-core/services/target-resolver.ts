@@ -181,25 +181,25 @@ export function getTargetSourceCode(event: RuleExecutionEvent) {
 }
 
 export function resolveSegmentTargets({
-  assigneeRoles,
+  assigneeGroups,
   assigneeUsernames,
-  dynamicRoleField,
+  dynamicTargetField,
   event,
 }: {
-  assigneeRoles: string[]
+  assigneeGroups: string[]
   assigneeUsernames: string[]
-  dynamicRoleField?: string | null
+  dynamicTargetField?: string | null
   event: RuleExecutionEvent
 }) {
   const dynamicTargets: string[] = []
   const resolved = resolveDynamicAssignee(
     event.metadata || {},
-    dynamicRoleField
+    dynamicTargetField
   )
   if (resolved) dynamicTargets.push(resolved)
 
-  const finalRoles = event.targetRoles || [
-    ...new Set([...assigneeRoles, ...dynamicTargets]),
+  const finalGroups = event.targetGroups || [
+    ...new Set([...assigneeGroups, ...dynamicTargets]),
   ]
   const finalUsers = [
     ...new Set([...(assigneeUsernames ?? []), ...dynamicTargets]),
@@ -207,8 +207,8 @@ export function resolveSegmentTargets({
 
   return {
     dynamicTargets,
-    finalRoles,
+    finalGroups,
     finalUsers,
-    finalTargets: [...finalRoles, ...finalUsers],
+    finalTargets: [...finalGroups, ...finalUsers],
   }
 }

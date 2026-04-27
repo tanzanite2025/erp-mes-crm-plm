@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { resolveQueryFailure } from '@/lib/read-resource'
 import { SettlementLedgerDetailDialog } from '../../settlement-ledger-detail-dialog'
 import { useTradingFinanceResources } from '../../hooks/use-trading-finance-resources'
 import { salesReceivableDetailDialogConfig } from '../config/sales-receivable-detail-dialog.config'
@@ -24,7 +26,55 @@ export function SalesReceivableDetailDialog({
     includePaymentMethods: true,
     includePaymentTerms: false,
   })
-  const detail = detailQuery.data
+  const financeResourceStatus = financeResources.readResource.status === 'error'
+    ? 'error'
+    : financeResources.readResource.status === 'loading'
+      ? 'loading'
+      : 'ready'
+  const financeResourceErrorMessage = financeResources.readResource.status === 'error'
+    ? financeResources.readResource.error.message
+    : undefined
+  const dialogResource = useMemo(() => {
+    if (!open || !receivableId) {
+      return { status: 'idle' as const }
+    }
+
+    if (detailQuery.readResource.status === 'error') {
+      return {
+        status: 'error' as const,
+        errorMessage: detailQuery.readResource.error.message,
+      }
+    }
+
+    const ledgerOptionsFailure = resolveQueryFailure({
+      data: receivablesQuery.data?.items,
+      error: receivablesQuery.error,
+      isPending: receivablesQuery.isPending,
+      scope: 'SalesReceivableDetailDialog.ledgerOptions',
+      missingMessage: '[CRITICAL] Receivable ledger options missing after load',
+      failureMessage: '[CRITICAL] Receivable ledger options query failed',
+    })
+    if (ledgerOptionsFailure) {
+      return {
+        status: 'error' as const,
+        errorMessage: ledgerOptionsFailure.error.message,
+      }
+    }
+
+    if (detailQuery.readResource.status === 'loading' || receivablesQuery.isPending) {
+      return { status: 'loading' as const }
+    }
+
+    if (detailQuery.readResource.status !== 'ready') {
+      return { status: 'idle' as const }
+    }
+
+    return {
+      status: 'ready' as const,
+      detail: detailQuery.readResource.data,
+      ledgerOptions: receivablesQuery.data?.items ?? [],
+    }
+  }, [detailQuery.readResource, open, receivableId, receivablesQuery.data?.items, receivablesQuery.error, receivablesQuery.isPending])
 
   return (
     <SettlementLedgerDetailDialog
@@ -32,14 +82,24 @@ export function SalesReceivableDetailDialog({
       open={open}
       ledgerId={receivableId}
       onOpenChange={onOpenChange}
-      detail={detail}
-      records={detail?.receiptRecords ?? []}
-      allocationHistory={detail?.allocations ?? []}
-      ledgerOptions={receivablesQuery.data?.items ?? []}
+      detail={dialogResource.status === 'ready' ? dialogResource.detail : undefined}
+      records={dialogResource.status === 'ready' ? dialogResource.detail.receiptRecords : []}
+      allocationHistory={dialogResource.status === 'ready' ? dialogResource.detail.allocations : []}
+      ledgerOptions={dialogResource.status === 'ready' ? dialogResource.ledgerOptions : []}
       currencies={financeResources.currencies}
       paymentMethods={financeResources.paymentMethods}
       isCurrencyLoading={financeResources.isLoading}
-      isDetailLoading={detailQuery.isLoading}
+      financeResourceStatus={financeResourceStatus}
+      financeResourceErrorMessage={financeResourceErrorMessage}
+      onRetryFinanceResources={() => {
+        void financeResources.retry()
+      }}
+      detailResourceStatus={dialogResource.status}
+      detailResourceErrorMessage={dialogResource.status === 'error' ? dialogResource.errorMessage : undefined}
+      onRetryDetailResource={() => {
+        void Promise.all([detailQuery.retryRead(), receivablesQuery.refetch()])
+      }}
+      isDetailLoading={dialogResource.status === 'loading'}
       isSubmitPending={createMutation.isPending}
       onSubmit={async (payload) => {
         if (!receivableId) {
@@ -47,7 +107,7 @@ export function SalesReceivableDetailDialog({
         }
         await createMutation.mutateAsync({ id: receivableId, payload })
       }}
-      extraContent={detail ? <SalesReceivableSalesReturnAdjustmentSection detail={detail} /> : null}
+      extraContent={dialogResource.status === 'ready' ? <SalesReceivableSalesReturnAdjustmentSection detail={dialogResource.detail} /> : null}
       useSearchLedgers={useSearchReceivableLedgers}
       config={salesReceivableDetailDialogConfig}
     />

@@ -63,7 +63,7 @@ func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (Identi
 		EmployeeID:  strings.TrimSpace(profile.EmployeeID),
 		Permissions: append([]string(nil), profile.Permissions...),
 	}
-	snapshot.Diagnostics = []string{"user_permissions_authoritative", "role_chain_disabled"}
+	snapshot.Diagnostics = []string{"user_permissions_authoritative"}
 	if len(snapshot.Permissions) == 0 {
 		snapshot.Diagnostics = append(snapshot.Diagnostics, "effective_permissions_empty")
 	}

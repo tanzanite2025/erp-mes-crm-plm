@@ -70,16 +70,16 @@ export const systemManagement = {
     loading: "Loading permission audit data...",
     header: {
       title: "Permission Audit Center",
-      subtitle: "Permission audit / real-time role load, permission distribution, and core module coverage"
+      subtitle: "Permission audit / explicit user grants, permission distribution, and core module coverage"
     },
     cards: {
       totalUsers: {
         title: "Active Accounts",
         caption: "ACTIVE_ACCOUNTS"
       },
-      totalRoles: {
-        title: "Role Definitions",
-        caption: "ROLE_DEFINITIONS"
+      totalGrantedUsers: {
+        title: "Granted Users",
+        caption: "USER_PERMISSION_GRANTS"
       },
       totalPermissions: {
         title: "Permission Nodes",
@@ -92,12 +92,12 @@ export const systemManagement = {
     },
     charts: {
       userDistribution: {
-        title: "Role User Distribution",
-        description: "Distribution of user counts per role"
+        title: "User Permission Distribution",
+        description: "Distribution of users with and without explicit grants"
       },
       permissionLoad: {
         title: "Permission Load Comparison",
-        description: "Comparison of permission node load per role",
+        description: "Comparison of explicit permission node load per user",
         barLabel: "Permission Node Count"
       }
     },
@@ -105,9 +105,9 @@ export const systemManagement = {
       title: "Core Module Access Coverage Matrix",
       description: "Metrics of functional redundancy per core business module",
       moduleSuffix: "Module",
-      rolesAccess: "ROLES_ACCESS"
+      rolesAccess: "USERS_GRANTED"
     },
-    note: "* Audit data refreshes in real time as roles and permissions change, keeping the permission view aligned with the effective grant state.",
+    note: "* Audit data reads explicit user grants only, keeping the view aligned with the effective runtime snapshot.",
     modules: {
       warehouse: "Warehouse",
       trading: "Trading",

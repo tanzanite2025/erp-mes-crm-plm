@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { failLoudly } from '@/lib/safe-catch'
 import {
@@ -9,6 +11,7 @@ import {
   type WarehouseCategoryOption,
 } from '../category'
 import {
+  type InboundRecord,
   InventoryCoreService,
   InventoryTransactionService,
   type InboundTDO,
@@ -19,6 +22,17 @@ import {
   filterWarehouseCategoriesByScene,
   getDefaultWarehouseCategoryCode,
 } from '../utils/warehouse-category-config'
+
+const logger = createLogger('useProductInbound')
+
+export type ProductInboundReadResource = CompositeReadResource<{
+  history: InboundRecord[]
+  warehouseCategories: WarehouseCategoryOption[]
+}>
+
+export type ProductInboundSearchResource =
+  | { status: 'idle' }
+  | ReadResource<MasterDataSearchResult[]>
 
 type InboundFormData = {
   quantity: number
@@ -115,16 +129,118 @@ export function useProductInbound() {
     enabled: debouncedSearchQuery.length > 0,
   })
 
-  useEffect(() => {
-    if (!historyQuery.error && !categoriesQuery.error) return
-    toast.error(t('warehouse.inbound.toast.failed'))
-  }, [categoriesQuery.error, historyQuery.error, t])
+  const readResource = useMemo<ProductInboundReadResource>(() => {
+    const historyFailure = resolveQueryFailure({
+      data: historyQuery.data,
+      error: historyQuery.error,
+      isPending: historyQuery.isPending,
+      scope: 'useProductInbound.history',
+      missingMessage: '[CRITICAL] Inbound history missing after load',
+      failureMessage: '[CRITICAL] Inbound history query failed',
+    })
+    if (historyFailure) {
+      return {
+        status: 'error',
+        error: historyFailure.error,
+        scope: historyFailure.scope,
+      }
+    }
+
+    const categoriesFailure = resolveQueryFailure({
+      data: categoriesQuery.data,
+      error: categoriesQuery.error,
+      isPending: categoriesQuery.isPending,
+      scope: 'useProductInbound.categories',
+      missingMessage: '[CRITICAL] Warehouse category options missing after load',
+      failureMessage: '[CRITICAL] Warehouse category options query failed',
+    })
+    if (categoriesFailure) {
+      return {
+        status: 'error',
+        error: categoriesFailure.error,
+        scope: categoriesFailure.scope,
+      }
+    }
+
+    if (historyQuery.isPending || categoriesQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      history: historyQuery.data as InboundRecord[],
+      warehouseCategories: categoriesQuery.data as WarehouseCategoryOption[],
+    }
+  }, [
+    categoriesQuery.data,
+    categoriesQuery.error,
+    categoriesQuery.isPending,
+    historyQuery.data,
+    historyQuery.error,
+    historyQuery.isPending,
+  ])
+
+  const searchResource = useMemo<ProductInboundSearchResource>(() => {
+    if (!debouncedSearchQuery) {
+      return { status: 'idle' }
+    }
+
+    const searchFailure = resolveQueryFailure({
+      data: searchQueryResult.data,
+      error: searchQueryResult.error,
+      isPending: searchQueryResult.isPending,
+      scope: 'useProductInbound.search',
+      missingMessage: '[CRITICAL] Product inbound search results missing after load',
+      failureMessage: '[CRITICAL] Product inbound search query failed',
+    })
+    if (searchFailure) {
+      return {
+        status: 'error',
+        error: searchFailure.error,
+        scope: searchFailure.scope,
+      }
+    }
+
+    if (searchQueryResult.isPending) {
+      return { status: 'loading' }
+    }
+
+    return {
+      status: 'ready',
+      data: searchQueryResult.data as MasterDataSearchResult[],
+    }
+  }, [
+    debouncedSearchQuery,
+    searchQueryResult.data,
+    searchQueryResult.error,
+    searchQueryResult.isPending,
+  ])
 
   useEffect(() => {
-    if (!debouncedSearchQuery || !searchQueryResult.isSuccess) return
-    if ((searchQueryResult.data ?? []).length > 0) return
+    if (readResource.status !== 'error') {
+      return
+    }
+
+    toast.error(t('warehouse.inbound.toast.failed'))
+    logger.error(`Failed to load product inbound resources: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource, t])
+
+  useEffect(() => {
+    if (searchResource.status !== 'error') {
+      return
+    }
+
+    toast.error(t('warehouse.inbound.toast.failed'))
+    logger.error(`Product inbound search failed: ${searchResource.scope}`, searchResource.error)
+    failLoudly(searchResource.error, searchResource.scope)
+  }, [searchResource, t])
+
+  useEffect(() => {
+    if (searchResource.status !== 'ready') return
+    if (searchResource.data.length > 0) return
     toast.error(t('warehouse.inbound.toast.notFound'))
-  }, [debouncedSearchQuery, searchQueryResult.data, searchQueryResult.isSuccess, t])
+  }, [searchResource, t])
 
   const submitInboundMutation = useMutation({
     mutationFn: async (payload: InboundTDO) => {
@@ -158,35 +274,19 @@ export function useProductInbound() {
     },
   })
 
-  const history = useMemo(() => {
-    if (historyQuery.isLoading) return []
-    if (!historyQuery.data) {
-      const lookupError =
-        historyQuery.error instanceof Error
-          ? historyQuery.error
-          : new Error('[CRITICAL] Inbound history missing after load')
-      failLoudly(lookupError, 'useProductInbound.history')
-      throw lookupError
-    }
-    return historyQuery.data
-  }, [historyQuery.data, historyQuery.error, historyQuery.isLoading])
+  const history = useMemo(
+    () => (readResource.status === 'ready' ? readResource.history : []),
+    [readResource]
+  )
+  const warehouseCategories = useMemo(
+    () => (readResource.status === 'ready' ? readResource.warehouseCategories : []),
+    [readResource]
+  )
 
-  const warehouseCategories = useMemo(() => {
-    if (categoriesQuery.isLoading) return [] as WarehouseCategoryOption[]
-    if (!categoriesQuery.data) {
-      const lookupError =
-        categoriesQuery.error instanceof Error
-          ? categoriesQuery.error
-          : new Error('[CRITICAL] Warehouse category options missing after load')
-      failLoudly(lookupError, 'useProductInbound.categories')
-      throw lookupError
-    }
-    return categoriesQuery.data
-  }, [categoriesQuery.data, categoriesQuery.error, categoriesQuery.isLoading])
-
-  const searchResults = debouncedSearchQuery
-    ? (searchQueryResult.data ?? [])
-    : []
+  const searchResults = useMemo(
+    () => (searchResource.status === 'ready' ? searchResource.data : []),
+    [searchResource]
+  )
   const isSearching = searchQueryResult.isFetching
   const hasSearched = searchQuery.trim().length > 0
 
@@ -206,6 +306,7 @@ export function useProductInbound() {
 
   const openInboundForm = (item: MasterDataSearchResult) => {
     if (!allowsAction('action_warehouse_inbound_record')) return
+    if (readResource.status !== 'ready') return
     setSelectedItem(item)
 
     const scene =
@@ -243,7 +344,8 @@ export function useProductInbound() {
   }
 
   return {
-    error: historyQuery.error ?? categoriesQuery.error,
+    readResource,
+    searchResource,
     searchQuery,
     setSearchQuery,
     searchResults,
@@ -260,5 +362,9 @@ export function useProductInbound() {
     submitInbound,
     closeInboundDialog,
     isSubmittingInbound: submitInboundMutation.isPending,
+    retryRead: async () => {
+      await Promise.all([historyQuery.refetch(), categoriesQuery.refetch()])
+    },
+    retrySearch: searchQueryResult.refetch,
   }
 }

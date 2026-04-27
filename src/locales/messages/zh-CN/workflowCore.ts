@@ -40,7 +40,7 @@ export const workflowCore = {
     },
     bindTypes: {
       section: 'SECTION / 仅工段',
-      role: 'ROLE / 仅角色激活',
+      group: 'GROUP / 仅目标组激活',
       global: 'GLOBAL / 全局通用',
     },
     nodeTypes: {

@@ -3,7 +3,7 @@ export const orgPersonnel = {
     org: 'Organization',
     employees: 'Employees',
     accounts: 'Accounts',
-    rights: 'Role Rights',
+    rights: 'User Permissions',
     permissions: 'Permission Audit',
     line: 'Production Lines',
     topology: 'Templates',

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import type { SalesOrder } from '../../data/schema'
+import type { SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
 import {
   toSalesOrderContract,
+  toSalesOrderApiDTO,
   toSalesOrderListPageContract,
 } from './sales-order-api-adapter'
 
 describe('sales-order-api-adapter', () => {
-  const baseOrder = {
+  const baseOrderDto: SalesOrderApiDTO = {
     id: 'order-1',
     orderNo: 'SO-001',
     orderName: 'Sales Order 001',
@@ -35,22 +38,87 @@ describe('sales-order-api-adapter', () => {
     version: 1,
     evidences: [],
     fulfillmentRate: 0,
+    availableActions: [],
+    lines: [],
   }
 
-  it('defaults missing lines to an empty array so list payloads cannot break the adapter', () => {
-    expect(
+  const baseOrderContract: SalesOrder = {
+    id: 'order-1',
+    orderNo: 'SO-001',
+    orderName: 'Sales Order 001',
+    customerName: 'Acme',
+    customerId: 'customer-1',
+    type: 'NORMAL',
+    currency: 'CNY',
+    classification: 'STANDARD',
+    status: 'Pending',
+    statusNote: '',
+    amount: 100,
+    quantity: 2,
+    orderDate: '2026-04-18',
+    deliveryDate: '2026-04-20',
+    paymentMethod: '',
+    paymentMethodName: '',
+    paymentTerm: '',
+    paymentTermName: '',
+    purchaseOrderNo: '',
+    barcode: 'SO-001',
+    requirements: '',
+    workflowInstanceId: '',
+    createdAt: '2026-04-18T00:00:00.000Z',
+    updatedAt: '2026-04-18T00:00:00.000Z',
+    updatedBy: 'tester',
+    isDeleted: false,
+    version: 1,
+    evidences: [],
+    fulfillmentRate: 0,
+    availableActions: [],
+    lines: [],
+  }
+
+  it('fails loudly when inbound lines are missing', () => {
+    expect(() =>
       toSalesOrderContract({
-        ...baseOrder,
+        ...baseOrderDto,
         lines: undefined as unknown as [],
-      }).lines
-    ).toEqual([])
+      })
+    ).toThrow()
+  })
+
+  it('fails loudly when inbound evidences are missing', () => {
+    expect(() =>
+      toSalesOrderContract({
+        ...baseOrderDto,
+        evidences: undefined,
+        lines: [],
+      })
+    ).toThrow()
+  })
+
+  it('fails loudly when inbound availableActions are missing', () => {
+    expect(() =>
+      toSalesOrderContract({
+        ...baseOrderDto,
+        availableActions: undefined,
+        lines: [],
+      })
+    ).toThrow()
+  })
+
+  it('fails loudly when outbound lines are missing', () => {
+    expect(() =>
+      toSalesOrderApiDTO({
+        ...baseOrderContract,
+        lines: undefined as unknown as [],
+      })
+    ).toThrow()
   })
 
   it.each(['Canceled', 'Cancelled', 'canceled', 'cancelled'])(
     'normalizes %s order and line statuses as Canceled',
     (status) => {
       const order = toSalesOrderContract({
-        ...baseOrder,
+        ...baseOrderDto,
         status,
         lines: [
           {

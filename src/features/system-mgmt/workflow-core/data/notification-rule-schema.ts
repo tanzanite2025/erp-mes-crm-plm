@@ -89,13 +89,13 @@ export const RuleSegmentSchema = z.object({
   targetStatuses: z.array(z.string()).default([]),
   /** 分支绑定的指令 ID */
   commandIds: z.array(z.string()).default([]),
-  /** 分支接收角色 */
-  assigneeRoles: z.array(z.string()).default([]),
+  /** 分支接收分组 */
+  assigneeGroups: z.array(z.string()).default([]),
   assigneeUsernames: z.array(z.string()).default([]),
   /** 自动归档触发状态 */
   resolveOnStatuses: z.array(z.string()).default(['Done', 'Canceled']),
-  /** 动态角色解析器 */
-  dynamicRoleField: z.string().nullable().default(null),
+  /** 动态目标解析器 */
+  dynamicTargetField: z.string().nullable().default(null),
   /** 审批动作配置：分支命中后，除通知外是否生成审批申请 */
   approval: z
     .object({

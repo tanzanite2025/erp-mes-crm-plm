@@ -12,7 +12,12 @@ export {
   PURCHASE_TRANSACTION_INTENT_RECEIPT_CONFIRM,
   type ConfirmPurchaseReceiptPayload,
 } from './services/purchase-transaction-service'
-export { useGetPurchaseOrderDetail, useGetPurchaseOrders, usePurchaseOrderMutations } from './hooks/use-purchase-orders'
+export {
+  useGetPurchaseOrderDetail,
+  useGetPurchaseOrders,
+  useGetPurchaseOrdersWithLines,
+  usePurchaseOrderMutations,
+} from './hooks/use-purchase-orders'
 export {
   createPurchaseReturn,
   getPurchaseReturns,

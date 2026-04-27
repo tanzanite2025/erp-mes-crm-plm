@@ -116,11 +116,6 @@ func (s *OrganizationService) ChangeEmployeeOrgUnit(input ChangeEmployeeOrgUnitR
 			return err
 		}
 
-		if s.roleSnapshotSynchronizer != nil {
-			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, current); err != nil {
-				return err
-			}
-		}
 		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
 			audit.AuditEntityEmployee,
 			current.ID,
@@ -181,11 +176,6 @@ func (s *OrganizationService) ChangeEmployeePosition(input ChangeEmployeePositio
 			return err
 		}
 
-		if s.roleSnapshotSynchronizer != nil {
-			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, current); err != nil {
-				return err
-			}
-		}
 		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
 			audit.AuditEntityEmployee,
 			current.ID,
@@ -242,11 +232,6 @@ func (s *OrganizationService) ClearEmployeePosition(input ClearEmployeePositionR
 			return err
 		}
 
-		if s.roleSnapshotSynchronizer != nil {
-			if err := s.roleSnapshotSynchronizer.SyncEmployee(tx, current); err != nil {
-				return err
-			}
-		}
 		if err := recordAuditEventTx(tx, audit.NewAuditEvent(
 			audit.AuditEntityEmployee,
 			current.ID,
@@ -405,7 +390,7 @@ func loadOrCreatePrimaryAssignment(tx *gorm.DB, employee models.Employee) (model
 		assignment.IsPrimary = true
 		return assignment, nil
 	}
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != gorm.ErrRecordNotFound {
 		return models.EmployeeAssignment{}, err
 	}
 

@@ -40,7 +40,7 @@ export const updateOrderDelivery = async (
 
   let changed = false
   // [UI-DERIVED-CALCULATION]: 这里的本地累加仅供 UI 即时反馈
-  order.lines = (order.lines || []).map((line) => {
+  order.lines = order.lines.map((line) => {
     if (line.productId === materialId || line.productCode === materialId) {
       const delivered = Math.max(0, Number(line.deliveredQty || 0) + quantity)
       changed = true

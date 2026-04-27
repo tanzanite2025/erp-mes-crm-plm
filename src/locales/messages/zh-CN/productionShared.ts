@@ -1,7 +1,7 @@
-export const productionShared = {
+﻿export const productionShared = {
   workArchitecture: {
     title: '全景架构中心',
-    description: '绑定工种角色与标准工序，构建工厂业务底座',
+    description: '绑定工种能力与标准工序，构建工厂业务底座',
     searchPlaceholder: '搜索产线编号或名称...',
     loadFailed: '产线数据加载失败，请检查网络连接。',
     emptyTitle: '未发现匹配的产线',

@@ -6,7 +6,6 @@ export interface ApprovalUserOption {
   employeeId?: string
   firstName?: string
   lastName?: string
-  role?: string
   status?: string
 }
 

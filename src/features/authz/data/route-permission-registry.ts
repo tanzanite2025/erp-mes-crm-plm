@@ -1,4 +1,4 @@
-import type { Permission } from '@/features/system-mgmt/data/role-schema'
+import type { Permission } from '@/features/authz/data/permission-schema'
 import { getAuthenticatedRoutePaths } from './authenticated-route-paths'
 import { PERMISSION_VERSION } from './permission-catalog'
 import {

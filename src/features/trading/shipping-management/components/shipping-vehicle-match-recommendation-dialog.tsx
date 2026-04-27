@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfigErrorPanel } from '@/features/logistics-config/vehicle-loading/components/config-error-panel'
+import { getVehicleLoadingSourceConfig } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading-sources'
 import { VehicleRecommendationPanel } from '@/features/logistics-config/vehicle-loading/components/vehicle-recommendation-panel'
 import type { ShipmentSummary } from '@/features/logistics-config/vehicle-loading/data/vehicle-loading.types'
 import { resolveShippingVehicleMatchRecommendationSummary } from '../adapters/shipping-vehicle-match-recommendation'
@@ -35,15 +36,30 @@ function ShippingVehicleMatchRecommendationResolvedContent({ item, summary }: { 
   const {
     sourceLabel,
     packageInputNotice,
-    packageInputError,
-    isLoadingPackageInput,
-    isLoadingSpecs,
-    isLoadingRecommendations,
-    specsError,
-    recommendationsError,
-    recommendations,
-    reload,
+    readResource,
+    retryRead,
   } = useShippingVehicleMatchRecommendation(item, summary)
+  const fallbackSourceLabel = item.packageProfileId.trim()
+    ? getVehicleLoadingSourceConfig('packing-rule').label
+    : getVehicleLoadingSourceConfig('manual').label
+  const metricSourceLabel = readResource.status === 'ready' ? readResource.data.sourceLabel : sourceLabel || fallbackSourceLabel
+
+  const errorTitle =
+    readResource.status === 'error'
+      ? readResource.scope.includes('vehicleSpecs')
+        ? '车型加载失败'
+        : readResource.scope.includes('recommendations')
+          ? '推荐计算失败'
+          : '推荐输入准备失败'
+      : null
+  const retryLabel =
+    readResource.status === 'error'
+      ? readResource.scope.includes('vehicleSpecs')
+        ? '重新加载车型'
+        : readResource.scope.includes('recommendations')
+          ? '重新计算推荐'
+          : '重新加载'
+      : '重新加载'
 
   return (
     <div className='space-y-5'>
@@ -51,7 +67,7 @@ function ShippingVehicleMatchRecommendationResolvedContent({ item, summary }: { 
         <SummaryMetricCard title='箱数' value={`${summary.boxes}`} />
         <SummaryMetricCard title='体积' value={`${summary.totalVolumeM3.toFixed(1)} m³`} />
         <SummaryMetricCard title='重量' value={`${summary.totalWeightKg.toFixed(0)} kg`} />
-        <SummaryMetricCard title='来源' value={sourceLabel} />
+        <SummaryMetricCard title='来源' value={metricSourceLabel} />
       </div>
 
       {packageInputNotice ? (
@@ -60,18 +76,18 @@ function ShippingVehicleMatchRecommendationResolvedContent({ item, summary }: { 
         </Card>
       ) : null}
 
-      {packageInputError ? <ConfigErrorPanel title='推荐输入构造失败' error={packageInputError} retryLabel='重新加载' onRetry={() => void reload()} /> : null}
-      {!packageInputError && specsError ? <ConfigErrorPanel title='车型加载失败' error={specsError} retryLabel='重新加载车型' onRetry={() => void reload()} /> : null}
-      {!packageInputError && !specsError && recommendationsError ? <ConfigErrorPanel title='推荐计算失败' error={recommendationsError} retryLabel='重新计算推荐' onRetry={() => void reload()} /> : null}
+      {readResource.status === 'error' ? (
+        <ConfigErrorPanel title={errorTitle || '车型推荐失败'} error={readResource.error} retryLabel={retryLabel} onRetry={() => void retryRead()} />
+      ) : null}
 
-      {!packageInputError && !specsError && !recommendationsError && (isLoadingPackageInput || isLoadingSpecs || isLoadingRecommendations) ? (
+      {readResource.status === 'loading' ? (
         <Card className='rounded-[22px] border-dashed border-primary/20 bg-primary/5 shadow-none'>
           <CardContent className='px-5 py-6 text-[10px] font-black uppercase tracking-widest text-primary/70'>车型推荐计算中...</CardContent>
         </Card>
       ) : null}
 
-      {!packageInputError && !specsError && !recommendationsError && !isLoadingPackageInput && !isLoadingSpecs && !isLoadingRecommendations ? (
-        <VehicleRecommendationPanel recommendations={recommendations} />
+      {readResource.status === 'ready' ? (
+        <VehicleRecommendationPanel recommendations={readResource.data.recommendations} />
       ) : null}
     </div>
   )

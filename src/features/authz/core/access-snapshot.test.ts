@@ -4,7 +4,7 @@ import {
 } from './access-snapshot'
 
 describe('access-snapshot permission reader', () => {
-  it('normalizes permission ids independently from role compatibility fields', () => {
+  it('normalizes permission ids from the user permission snapshot', () => {
     expect(getSnapshotPermissionIds({ permissions: ['MENU_ORG', 'permission_user_view'] })).toEqual([
       'MENU_ORG',
       'permission_user_view',

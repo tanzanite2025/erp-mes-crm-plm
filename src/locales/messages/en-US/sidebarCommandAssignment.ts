@@ -28,7 +28,7 @@ export const sidebarCommandAssignment = {
     title: 'Sidebar Command Assignment',
     description:
       'Configure quick scan entries for on-site accounts. Personal photo, video, and buffer stay as fixed private tools.',
-    searchPlaceholder: 'Search name, account, or role',
+    searchPlaceholder: 'Search name, account, or employee ID',
     syncingAccounts: 'Syncing accounts',
     accountCount: '{{count}} accounts',
     selectCurrentList: 'Select Current List',
@@ -43,7 +43,8 @@ export const sidebarCommandAssignment = {
     targetAria: 'Select {{name}} as batch target',
     loading: 'Loading real accounts...',
     empty: 'No real accounts available for assignment',
-    unsetRole: 'Unset Role',
+    unsetEmployeeId: 'No employee ID',
+    unsetRole: 'No role set',
   },
   summary: {
     currentAccount: 'Current Account',

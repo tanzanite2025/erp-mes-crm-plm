@@ -25,7 +25,7 @@ export interface NotificationExecutionInput {
   targetEntity: string
   targetSourceCode: string
   metadata: RuleExecutionMetadata
-  finalRoles: string[]
+  finalGroups: string[]
   finalUsers: string[]
   finalTargets: string[]
   commands: StandardCommand[]
@@ -83,7 +83,7 @@ export function executeNotificationAction({
   targetEntity,
   targetSourceCode,
   metadata,
-  finalRoles,
+  finalGroups,
   finalUsers,
   finalTargets,
   commands,
@@ -140,7 +140,7 @@ export function executeNotificationAction({
           title: command.title,
           content: resolvedContent,
           priority: event.priority || 'info',
-          targetRoles: finalRoles.length > 0 ? finalRoles : undefined,
+          targetGroups: finalGroups.length > 0 ? finalGroups : undefined,
           targetUsers: finalUsers.length > 0 ? finalUsers : event.targetUsers,
           actionUrl: resolvedActionUrl,
           metadata: { ...metadata, uniqueKey, commandId: command.id },
@@ -239,7 +239,7 @@ export function executeNotificationAction({
       title: event.title || segment.title,
       content: fallbackContent,
       priority: event.priority || 'info',
-      targetRoles: finalRoles.length > 0 ? finalRoles : undefined,
+      targetGroups: finalGroups.length > 0 ? finalGroups : undefined,
       targetUsers: finalUsers.length > 0 ? finalUsers : event.targetUsers,
       actionUrl: event.actionUrl,
       metadata: { ...metadata, uniqueKey },

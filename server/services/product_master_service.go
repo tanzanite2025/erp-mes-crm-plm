@@ -636,6 +636,7 @@ func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTempl
 		if err := tx.Order("created_at desc").Find(&templates).Error; err != nil {
 			return nil, 0, err
 		}
+		normalizeProductTemplateResponses(templates)
 		return templates, int64(len(templates)), nil
 	}
 
@@ -648,7 +649,23 @@ func ListProductTemplates(query ProductTemplateListQuery) ([]models.ProductTempl
 	if err := tx.Order("created_at desc").Limit(pageSize).Offset((page - 1) * pageSize).Find(&items).Error; err != nil {
 		return nil, 0, err
 	}
+	normalizeProductTemplateResponses(items)
 	return items, total, nil
+}
+
+func normalizeProductTemplateResponse(template *models.ProductTemplate) {
+	if template == nil {
+		return
+	}
+	if template.AttributeBindings == nil {
+		template.AttributeBindings = []models.ProductTemplateAttributeBinding{}
+	}
+}
+
+func normalizeProductTemplateResponses(templates []models.ProductTemplate) {
+	for idx := range templates {
+		normalizeProductTemplateResponse(&templates[idx])
+	}
 }
 
 func normalizeProductTemplateAttributeBinding(input *models.ProductTemplateAttributeBinding) {
@@ -881,6 +898,7 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 	if err != nil {
 		return models.ProductTemplate{}, err
 	}
+	normalizeProductTemplateResponse(&saved)
 	return saved, nil
 }
 
@@ -930,9 +948,12 @@ func PatchProductTemplate(id string, version int, updates map[string]interface{}
 	if err := db.DB.Model(&existing).Updates(updates).Error; err != nil {
 		return models.ProductTemplate{}, err
 	}
-	if err := db.DB.First(&existing, "id = ?", id).Error; err != nil {
+	if err := db.DB.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
+		return database.Order("sort_order asc").Order("category_key asc")
+	}).First(&existing, "id = ?", id).Error; err != nil {
 		return models.ProductTemplate{}, err
 	}
+	normalizeProductTemplateResponse(&existing)
 	return existing, nil
 }
 

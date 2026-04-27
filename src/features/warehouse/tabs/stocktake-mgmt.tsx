@@ -22,9 +22,10 @@ import { getStocktakeStatusMeta } from '../utils/warehouse-status-display'
 export function StocktakeMgmt() {
     const { t } = useLanguage()
     const {
+        readResource,
+        itemsResource,
         tasks,
         isLoading,
-        error,
         selectedTask,
         items,
         itemsLoading,
@@ -41,10 +42,48 @@ export function StocktakeMgmt() {
         handleRequestAdjustmentSubmission,
         handleAdjustmentConfirmOpenChange,
         handleConfirmAdjustmentSubmission,
+        retryRead,
+        retryItems,
     } = useStocktakeMgmtViewModel()
 
-    if (isForbiddenError(error)) {
+    if (readResource.status === 'error' && isForbiddenError(readResource.error)) {
         return <ForbiddenState />
+    }
+
+    if (readResource.status === 'error') {
+        return (
+            <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+                <IndustrialHeader title={t('warehouse.stocktake.title')} description={t('warehouse.stocktake.subtitle')} icon={PackageSearch} />
+                <div className='flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border border-dashed border-rose-500/25 bg-rose-500/3 px-6 text-center'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>盘点基础数据加载失败</p>
+                    <p className='mt-3 max-w-2xl text-[11px] font-bold leading-5 text-rose-700/80'>
+                        {readResource.error.message || '请重试后再查看盘点任务。'}
+                    </p>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+                        onClick={() => {
+                            void retryRead()
+                        }}
+                    >
+                        重试
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
+    if (readResource.status === 'loading') {
+        return (
+            <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
+                <IndustrialHeader title={t('warehouse.stocktake.title')} description={t('warehouse.stocktake.subtitle')} icon={PackageSearch} />
+                <div className='flex min-h-[360px] flex-col items-center justify-center gap-4 rounded-[32px] border border-dashed border-muted/50 bg-muted/5 px-6 text-center'>
+                    <RefreshCw className='size-8 animate-spin text-primary/40' />
+                    <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>盘点基础数据加载中</p>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -234,56 +273,76 @@ export function StocktakeMgmt() {
 
                             <div className='p-0 overflow-x-auto scrollbar-hide'>
                                 <ScrollArea className='h-auto max-h-[620px] lg:h-[620px]'>
-                                    <Table className='min-w-[700px] md:min-w-0'>
-                                        <TableHeader className='bg-muted/30 h-12 md:h-14'>
-                                            <TableRow className='hover:bg-transparent border-b border-dashed border-muted/50'>
-                                                <TableHead className='pl-5 md:pl-8 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.nodeContext')}</TableHead>
-                                                <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.batch')}</TableHead>
-                                                <TableHead className='text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.theory')}</TableHead>
-                                                <TableHead className='text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.actual')}</TableHead>
-                                                <TableHead className='pr-5 md:pr-8 text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.variance')}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {itemsLoading ? (
-                                                <TableRow>
-                                                    <TableCell colSpan={5} className='h-64 text-center'>
-                                                        <RefreshCw className='size-8 text-blue-600 animate-spin mx-auto opacity-20' />
-                                                    </TableCell>
+                                    {itemsResource.status === 'error' ? (
+                                        <div className='flex h-[420px] flex-col items-center justify-center px-6 text-center'>
+                                            <AlertCircle className='size-8 text-rose-500' />
+                                            <p className='mt-4 text-[10px] font-black uppercase tracking-widest text-rose-700'>盘点明细加载失败</p>
+                                            <p className='mt-3 max-w-lg text-[11px] font-bold leading-5 text-rose-700/80'>
+                                                {itemsResource.error.message || '请重试后再查看盘点明细。'}
+                                            </p>
+                                            <Button
+                                                type='button'
+                                                variant='outline'
+                                                className='mt-5 h-10 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+                                                onClick={() => {
+                                                    void retryItems()
+                                                }}
+                                            >
+                                                重试
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Table className='min-w-[700px] md:min-w-0'>
+                                            <TableHeader className='bg-muted/30 h-12 md:h-14'>
+                                                <TableRow className='hover:bg-transparent border-b border-dashed border-muted/50'>
+                                                    <TableHead className='pl-5 md:pl-8 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.nodeContext')}</TableHead>
+                                                    <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.batch')}</TableHead>
+                                                    <TableHead className='text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.theory')}</TableHead>
+                                                    <TableHead className='text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.actual')}</TableHead>
+                                                    <TableHead className='pr-5 md:pr-8 text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.stocktake.columns.variance')}</TableHead>
                                                 </TableRow>
-                                            ) : items?.map((item: StocktakeItem) => (
-                                                <TableRow key={item.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
-                                                    <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5'>
-                                                        <div className='flex flex-col overflow-hidden max-w-[150px] md:max-w-none'>
-                                                            <span className='font-bold text-[11px] md:text-[12px] text-slate-700 tracking-tight uppercase group-hover:text-blue-600 transition-colors truncate'>{item.materialName}</span>
-                                                            <span className='text-[7px] md:text-[8px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>{item.materialCode}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className='py-2 md:py-2.5'>
-                                                        <span className='inline-flex h-3.5 items-center rounded-full bg-white px-1.5 md:px-2 font-black text-[7px] md:text-[8px] uppercase tracking-widest shadow-sm whitespace-nowrap'>
-                                                            {item.batchNo || t('warehouse.stocktake.noBatch')}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className='text-right py-2 md:py-2.5 font-mono text-[10px] md:text-[11px] font-bold text-slate-400 whitespace-nowrap'>
-                                                        {item.theoryQty} <span className='text-[7px] uppercase tracking-tighter'>{item.uom}</span>
-                                                    </TableCell>
-                                                    <TableCell className='text-right py-2 md:py-2.5 font-mono text-xs md:text-sm font-black text-blue-600 whitespace-nowrap'>
-                                                        {item.actualQty} <span className='text-[7px] uppercase tracking-tighter text-blue-400'>{item.uom}</span>
-                                                    </TableCell>
-                                                    <TableCell className='pr-5 md:pr-8 py-2 md:py-2.5 text-right'>
-                                                        <div className={cn(
-                                                            'inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-md font-mono font-black text-[9px] md:text-[10px]',
-                                                            item.difference > 0 ? 'bg-emerald-500/10 text-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.1)]' :
-                                                                item.difference < 0 ? 'bg-rose-500/10 text-rose-600 shadow-[0_0_8px_rgba(244,63,94,0.1)]' :
-                                                                    'bg-muted text-muted-foreground/30'
-                                                        )}>
-                                                            {item.difference > 0 ? '+' : ''}{item.difference}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {itemsLoading ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={5} className='h-64 text-center'>
+                                                            <RefreshCw className='size-8 text-blue-600 animate-spin mx-auto opacity-20' />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : items.map((item: StocktakeItem) => (
+                                                    <TableRow key={item.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
+                                                        <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5'>
+                                                            <div className='flex flex-col overflow-hidden max-w-[150px] md:max-w-none'>
+                                                                <span className='font-bold text-[11px] md:text-[12px] text-slate-700 tracking-tight uppercase group-hover:text-blue-600 transition-colors truncate'>{item.materialName}</span>
+                                                                <span className='text-[7px] md:text-[8px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>{item.materialCode}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className='py-2 md:py-2.5'>
+                                                            <span className='inline-flex h-3.5 items-center rounded-full bg-white px-1.5 md:px-2 font-black text-[7px] md:text-[8px] uppercase tracking-widest shadow-sm whitespace-nowrap'>
+                                                                {item.batchNo || t('warehouse.stocktake.noBatch')}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className='text-right py-2 md:py-2.5 font-mono text-[10px] md:text-[11px] font-bold text-slate-400 whitespace-nowrap'>
+                                                            {item.theoryQty} <span className='text-[7px] uppercase tracking-tighter'>{item.uom}</span>
+                                                        </TableCell>
+                                                        <TableCell className='text-right py-2 md:py-2.5 font-mono text-xs md:text-sm font-black text-blue-600 whitespace-nowrap'>
+                                                            {item.actualQty} <span className='text-[7px] uppercase tracking-tighter text-blue-400'>{item.uom}</span>
+                                                        </TableCell>
+                                                        <TableCell className='pr-5 md:pr-8 py-2 md:py-2.5 text-right'>
+                                                            <div className={cn(
+                                                                'inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-md font-mono font-black text-[9px] md:text-[10px]',
+                                                                item.difference > 0 ? 'bg-emerald-500/10 text-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.1)]' :
+                                                                    item.difference < 0 ? 'bg-rose-500/10 text-rose-600 shadow-[0_0_8px_rgba(244,63,94,0.1)]' :
+                                                                        'bg-muted text-muted-foreground/30'
+                                                            )}>
+                                                                {item.difference > 0 ? '+' : ''}{item.difference}
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
                                 </ScrollArea>
                             </div>
                         </div>

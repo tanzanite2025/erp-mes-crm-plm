@@ -43,6 +43,6 @@ export const FIELD_TYPE_OPTIONS: BusinessEventField['type'][] = [
 
 export const RESOLVER_TYPE_OPTIONS: BusinessDynamicResolver['type'][] = [
   'user',
-  'role',
+  'group',
   'permission',
 ]

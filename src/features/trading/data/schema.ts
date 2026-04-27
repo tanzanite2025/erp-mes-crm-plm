@@ -305,7 +305,7 @@ export interface PurchaseOrderLine {
   note?: string
 }
 
-export interface PurchaseOrder extends BaseEntity {
+export interface PurchaseOrderListItem extends BaseEntity {
   orderNo: string
   supplierName: string
   supplierId: string // 引用供应商 ID
@@ -322,10 +322,13 @@ export interface PurchaseOrder extends BaseEntity {
   paymentTerm?: string
   paymentTermName?: string
   note?: string
-  lines: PurchaseOrderLine[]
   workflowInstanceId?: string // 统一工作流引擎桥接关键链
   isDeleted: boolean
   version: number // SDRTS 乐观锁
+}
+
+export interface PurchaseOrder extends PurchaseOrderListItem {
+  lines: PurchaseOrderLine[]
 }
 
 export { purchaseOrderStatuses }

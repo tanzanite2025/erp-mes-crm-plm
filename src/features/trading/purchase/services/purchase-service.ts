@@ -12,11 +12,14 @@ import {
   toPurchaseOrderApiDTO,
   toPurchaseOrderContract,
   toPurchaseOrderListPageContract,
+  toPurchaseOrderListPageWithLinesContract,
+  type PaginatedPurchaseOrderListItems,
   type PaginatedPurchaseOrders,
 } from '../adapters/purchase-order-api-adapter'
 import {
   deserializePurchaseOrderApiDTO,
   deserializePurchaseOrderListPageApiDTO,
+  type PurchaseOrderListItemWithLinesApiDTO,
   type PurchaseOrderApiDTO,
   type PurchaseOrderListPageApiDTO,
 } from '../contracts/purchase-order-api-dto'
@@ -35,9 +38,15 @@ export interface GetPurchaseOrdersOptions {
   status?: string[]
 }
 
-export const getPurchaseOrders = async (
+export function getPurchaseOrders(
+  options: GetPurchaseOrdersOptions & { withLines: true }
+): Promise<PaginatedPurchaseOrders>
+export function getPurchaseOrders(
+  options?: GetPurchaseOrdersOptions & { withLines?: false }
+): Promise<PaginatedPurchaseOrderListItems>
+export async function getPurchaseOrders(
   options: GetPurchaseOrdersOptions = {}
-): Promise<PaginatedPurchaseOrders> => {
+): Promise<PaginatedPurchaseOrders | PaginatedPurchaseOrderListItems> {
   const { page = 1, pageSize = 50, withLines = false, status } = options
   const params = new URLSearchParams({
     [TRADING_QUERY_PARAM_PAGE]: String(page),
@@ -55,12 +64,24 @@ export const getPurchaseOrders = async (
     res,
     'PurchaseService.getPurchaseOrders'
   )
+
+  if (withLines) {
+    return toPurchaseOrderListPageWithLinesContract(
+      deserializePurchaseOrderListPageApiDTO(response, { withLines: true }) as {
+        items: PurchaseOrderListItemWithLinesApiDTO[]
+        total: number
+        page: number
+        pageSize: number
+      }
+    )
+  }
+
   return toPurchaseOrderListPageContract(
-    deserializePurchaseOrderListPageApiDTO(response, { withLines })
+    deserializePurchaseOrderListPageApiDTO(response, { withLines: false })
   )
 }
 
-export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrders> => {
+export const getDeletedPurchaseOrders = async (page = 1, pageSize = 50): Promise<PaginatedPurchaseOrderListItems> => {
   const params = new URLSearchParams({
     [TRADING_QUERY_PARAM_PAGE]: String(page),
     [TRADING_QUERY_PARAM_PAGE_SIZE]: String(pageSize),

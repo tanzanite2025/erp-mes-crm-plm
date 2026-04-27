@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowRight,
@@ -16,11 +15,11 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useWarehouseCategoryOptions } from '@/features/warehouse/category'
 import type { OrderEvidence } from '@/features/trading/data/schema'
-import { SALES_RETURN_VIRTUAL_WAREHOUSE_CODE } from '@/features/warehouse/utils/warehouse-category-config'
-import { failLoudly } from '@/lib/safe-catch'
+import { ForbiddenState } from '@/components/forbidden-state'
+import { isForbiddenError } from '@/lib/error-status'
 import { getStaticEvidenceUrl } from '@/lib/url-utils'
+import { SALES_RETURN_VIRTUAL_WAREHOUSE_CODE } from '@/features/warehouse/utils/warehouse-category-config'
 import {
   type SalesReturnReceivingQueueItem,
   useSalesReturnReceivingQueue,
@@ -261,49 +260,14 @@ function QueueItemCard({ item }: { item: SalesReturnReceivingQueueItem }) {
 }
 
 export function SalesReturnReceivingQueueCard() {
-  const { items, totalPendingQuantity, isLoading, isFetching, error } =
-    useSalesReturnReceivingQueue()
-  const categoryOptionsQuery = useWarehouseCategoryOptions()
-  const salesReturnVirtualWarehouseName = useMemo(() => {
-    if (categoryOptionsQuery.isLoading) return null
-    if (categoryOptionsQuery.error) {
-      failLoudly(
-        categoryOptionsQuery.error,
-        'SalesReturnReceivingQueueCard.categoryOptions'
-      )
-      throw categoryOptionsQuery.error
-    }
-    if (!categoryOptionsQuery.data) {
-      const missingDataError = new Error(
-        '[CRITICAL] Warehouse category options missing after load'
-      )
-      failLoudly(
-        missingDataError,
-        'SalesReturnReceivingQueueCard.categoryOptions'
-      )
-      throw missingDataError
-    }
-
-    const salesReturnVirtualWarehouse = categoryOptionsQuery.data.find(
-      (category) => category.code === SALES_RETURN_VIRTUAL_WAREHOUSE_CODE
-    )
-    if (!salesReturnVirtualWarehouse) {
-      const missingCategoryError = new Error(
-        `[CRITICAL] Missing required warehouse category ${SALES_RETURN_VIRTUAL_WAREHOUSE_CODE}`
-      )
-      failLoudly(
-        missingCategoryError,
-        'SalesReturnReceivingQueueCard.salesReturnVirtualWarehouse'
-      )
-      throw missingCategoryError
-    }
-
-    return salesReturnVirtualWarehouse.label || salesReturnVirtualWarehouse.name
-  }, [
-    categoryOptionsQuery.data,
-    categoryOptionsQuery.error,
-    categoryOptionsQuery.isLoading,
-  ])
+  const { readResource, isRefreshing, retry } = useSalesReturnReceivingQueue()
+  const items = readResource.status === 'ready' ? readResource.items : []
+  const totalPendingQuantity =
+    readResource.status === 'ready' ? readResource.totalPendingQuantity : 0
+  const salesReturnVirtualWarehouseName =
+    readResource.status === 'ready'
+      ? readResource.salesReturnVirtualWarehouseName
+      : null
   const visibleItems = items.slice(0, MAX_VISIBLE_ITEMS)
   const hiddenItemCount = Math.max(items.length - visibleItems.length, 0)
 
@@ -319,7 +283,7 @@ export function SalesReturnReceivingQueueCard() {
               <h2 className='text-base font-black tracking-tighter text-slate-900 md:text-lg'>
                 销售退货待入库
               </h2>
-              {isFetching && !isLoading && (
+              {isRefreshing && readResource.status === 'ready' && (
                 <RefreshCw className='size-3.5 animate-spin text-emerald-600' />
               )}
             </div>
@@ -361,12 +325,26 @@ export function SalesReturnReceivingQueueCard() {
       </div>
 
       <div className='mt-4'>
-        {isLoading ? (
+        {readResource.status === 'error' ? (
+          isForbiddenError(readResource.error) ? (
+            <ForbiddenState />
+          ) : (
+            <div className='rounded-2xl border border-dashed border-red-500/20 bg-red-500/5 px-4 py-5 text-sm font-bold text-red-700'>
+              <div>销售退货待入库数据加载失败，请重试后再处理。</div>
+              <Button
+                type='button'
+                variant='outline'
+                className='mt-4 h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                onClick={() => {
+                  void retry()
+                }}
+              >
+                重试
+              </Button>
+            </div>
+          )
+        ) : readResource.status === 'loading' ? (
           <QueueSkeleton />
-        ) : error ? (
-          <div className='rounded-2xl border border-dashed border-red-500/20 bg-red-500/5 px-4 py-5 text-sm font-bold text-red-700'>
-            销售退货待入库数据加载失败，请刷新后重试。
-          </div>
         ) : visibleItems.length > 0 ? (
           <>
             <div className='grid gap-3 lg:grid-cols-3'>

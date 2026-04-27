@@ -1,4 +1,4 @@
-import type { Permission } from '@/features/system-mgmt/data/role-schema'
+import type { Permission } from '@/features/authz/data/permission-schema'
 import { collectDefaultPermissions, validateDefaultPermissionsContract } from './default-permissions'
 
 function getValidatedDefaultPermissions(): Permission[] {

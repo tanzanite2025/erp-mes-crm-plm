@@ -17,17 +17,14 @@ import {
 } from '../services'
 import type { PresentedSidebarCommand, SidebarCommandAccount } from '../types'
 
-function toSidebarCommandAccount(
-  user: UserOption,
-  fallbackRole: string
-): SidebarCommandAccount {
+function toSidebarCommandAccount(user: UserOption): SidebarCommandAccount {
   const displayName = `${user.lastName || ''}${user.firstName || ''}`.trim()
 
   return {
     id: user.id,
     username: user.username,
     name: displayName || user.username,
-    role: user.role || fallbackRole,
+    accountLabel: user.employeeId || user.username,
     status: user.status || 'active',
   }
 }
@@ -63,14 +60,9 @@ export function useSidebarCommandAssignmentViewModel() {
 
   const accounts = useMemo(() => {
     return (
-      usersQuery.data?.map((user) =>
-        toSidebarCommandAccount(
-          user,
-          t('sidebarCommandAssignment.accountList.unsetRole')
-        )
-      ) ?? []
+      usersQuery.data?.map((user) => toSidebarCommandAccount(user)) ?? []
     )
-  }, [t, usersQuery.data])
+  }, [usersQuery.data])
 
   const selectedAccountId = accounts.some(
     (account) => account.id === requestedAccountId
@@ -106,7 +98,7 @@ export function useSidebarCommandAssignmentViewModel() {
     if (!keyword) return accounts
 
     return accounts.filter((account) =>
-      [account.name, account.username, account.role]
+      [account.name, account.username, account.accountLabel]
         .join(' ')
         .toLowerCase()
         .includes(keyword)
