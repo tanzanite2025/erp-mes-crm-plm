@@ -38,6 +38,20 @@ func GetPrepregMaterialSpecsHandler(c *gin.Context) {
 	})
 }
 
+func GetPrepregMaterialSpecByIDHandler(c *gin.Context) {
+	spec, err := services.GetPrepregMaterialSpecByID(c.Param("id"))
+	if err != nil {
+		if errors.Is(err, services.ErrPrepregMaterialSpecNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[RAW_MATERIALS] 预浸料规格不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[RAW_MATERIALS] 预浸料规格详情读取失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, spec)
+}
+
 func SavePrepregMaterialSpecHandler(c *gin.Context) {
 	var input services.SavePrepregMaterialSpecRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -51,8 +65,20 @@ func SavePrepregMaterialSpecHandler(c *gin.Context) {
 
 	saved, err := services.SavePrepregMaterialSpec(input)
 	if err != nil {
+		if errors.Is(err, services.ErrPrepregMaterialSpecNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "[RAW_MATERIALS] 预浸料规格不存在"})
+			return
+		}
 		if errors.Is(err, services.ErrPrepregMaterialSpecVersionConflict) {
 			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, services.ErrPrepregBindingTokenExpired) {
+			c.JSON(http.StatusGone, gin.H{"error": "[VALIDATION] 绑定二维码已过期，请重新生成"})
+			return
+		}
+		if errors.Is(err, services.ErrPrepregBindingTokenConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "[VALIDATION] 该绑定二维码已绑定到其它预浸料规格"})
 			return
 		}
 		var validationErr *services.PrepregMaterialSpecValidationError

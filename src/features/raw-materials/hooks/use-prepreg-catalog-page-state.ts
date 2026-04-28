@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getRouteApi } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { getErrorStatus, isNotFoundError } from '@/lib/error-status'
 import { useGetSuppliers } from '@/features/trading/supplier'
 import type { PrepregSupplierOption } from '../components/prepreg-catalog-form'
 import {
@@ -17,6 +19,9 @@ import {
   type PrepregMaterialSpec,
 } from '../data/prepreg-material-spec-schema'
 import { PrepregMaterialSpecService } from '../services/prepreg-material-spec-service'
+import { extractPrepregBindingToken } from '../prepreg-binding-qr/services/prepreg-binding-token-service'
+
+const prepregCatalogRouteApi = getRouteApi('/_authenticated/raw-materials/catalog')
 
 interface SupplierLike {
   id: string
@@ -43,6 +48,10 @@ export interface UsePrepregCatalogPageStateResult {
   cleanedResinBatch: PrepregCleanedResinBatchFields
   openCreate: () => void
   openEdit: (spec: PrepregMaterialSpec) => void
+  bindingTokenDialogOpen: boolean
+  setBindingTokenDialogOpen: (open: boolean) => void
+  submitBindingTokenInput: (value: string) => void
+  activeBindingToken: string
   applyRecognizedFields: (fields: Partial<PrepregFormState>) => void
   handleSave: () => void
   isSaving: boolean
@@ -64,10 +73,14 @@ function supplierSnapshot(supplier: Pick<SupplierLike, 'code' | 'name'>): string
 export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
+  const search = prepregCatalogRouteApi.useSearch()
+  const navigate = prepregCatalogRouteApi.useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSpec, setEditingSpec] = useState<PrepregMaterialSpec | null>(null)
   const [form, setForm] = useState<PrepregFormState>(EMPTY_PREPREG_FORM)
+  const [bindingTokenDialogOpen, setBindingTokenDialogOpen] = useState(false)
+  const [activeBindingToken, setActiveBindingToken] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['raw-materials', 'prepreg-specs', searchTerm],
@@ -77,41 +90,87 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
     enabled: dialogOpen,
   })
 
-  const specs = data?.items ?? []
+  const specs = useMemo(() => data?.items ?? [], [data?.items])
   const activeSuppliers = useMemo(
     () => suppliers.filter((supplier) => supplier.status === 'Active'),
     [suppliers]
   )
 
+  const resetDialogState = useCallback(() => {
+    setDialogOpen(false)
+    setEditingSpec(null)
+    setForm(EMPTY_PREPREG_FORM)
+    setActiveBindingToken('')
+  }, [])
+
   const { mutate: savePrepregSpec, isPending: isSaving } = useMutation({
     mutationFn: (payload: Partial<PrepregMaterialSpec>) =>
-      PrepregMaterialSpecService.save(payload),
+      PrepregMaterialSpecService.save({
+        ...payload,
+        bindToken: activeBindingToken || undefined,
+      }),
     onSuccess: async () => {
+      const usedBindingToken = activeBindingToken
       await queryClient.invalidateQueries({
         queryKey: ['raw-materials', 'prepreg-specs'],
       })
-      toast.success(
-        editingSpec
-          ? t('rawMaterials.catalog.toasts.updated')
-          : t('rawMaterials.catalog.toasts.created')
+      if (usedBindingToken) {
+        toast.success(t('rawMaterials.catalog.toasts.bindingSaved'))
+      } else {
+        toast.success(
+          editingSpec
+            ? t('rawMaterials.catalog.toasts.updated')
+            : t('rawMaterials.catalog.toasts.created')
+        )
+      }
+      resetDialogState()
+    },
+    onError: (error) => {
+      const status = getErrorStatus(error)
+      if (status === 409 && activeBindingToken) {
+        toast.error(t('rawMaterials.catalog.toasts.bindingAlreadyBound'))
+        return
+      }
+      if (status === 410 && activeBindingToken) {
+        toast.error(t('rawMaterials.catalog.toasts.bindingExpired'))
+        return
+      }
+      if (status === 400 && activeBindingToken) {
+        toast.error(t('rawMaterials.catalog.toasts.bindingInvalid'))
+        return
+      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('rawMaterials.catalog.toasts.saveFailed')
       )
-      setDialogOpen(false)
-      setEditingSpec(null)
-      setForm(EMPTY_PREPREG_FORM)
     },
   })
 
   const openCreate = useCallback(() => {
     setEditingSpec(null)
     setForm(EMPTY_PREPREG_FORM)
+    setActiveBindingToken('')
     setDialogOpen(true)
   }, [])
 
   const openEdit = useCallback((spec: PrepregMaterialSpec) => {
     setEditingSpec(spec)
     setForm(formFromPrepregSpec(spec))
+    setActiveBindingToken('')
     setDialogOpen(true)
   }, [])
+
+  const setDialogOpenSafely = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setDialogOpen(true)
+        return
+      }
+      resetDialogState()
+    },
+    [resetDialogState]
+  )
 
   const updateForm = useCallback(
     <K extends keyof PrepregFormState>(key: K, value: PrepregFormState[K]) => {
@@ -214,6 +273,83 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
     [t]
   )
 
+  const consumeBindingToken = useCallback(
+    async (value: string) => {
+      const token = extractPrepregBindingToken(value)
+      if (!value.trim()) return
+
+      if (!token) {
+        toast.error(t('rawMaterials.catalog.toasts.bindingInvalid'))
+        return
+      }
+
+      try {
+        const resolved = await PrepregMaterialSpecService.getBindingToken(token)
+
+        if (resolved.status === 'BOUND' && resolved.specId) {
+          const existingSpec = specs.find((item) => item.id === resolved.specId)
+          toast.error(t('rawMaterials.catalog.toasts.bindingAlreadyBound'))
+          setBindingTokenDialogOpen(false)
+          if (existingSpec) {
+            openEdit(existingSpec)
+            return
+          }
+
+          const detailSpec = await PrepregMaterialSpecService.getById(resolved.specId)
+          openEdit(detailSpec)
+          return
+        }
+
+        setBindingTokenDialogOpen(false)
+        setEditingSpec(null)
+        setForm(EMPTY_PREPREG_FORM)
+        setActiveBindingToken(token)
+        setDialogOpen(true)
+        toast.success(t('rawMaterials.catalog.toasts.bindingActivated'))
+      } catch (error) {
+        const status = getErrorStatus(error)
+        if (status === 410) {
+          toast.error(t('rawMaterials.catalog.toasts.bindingExpired'))
+          return
+        }
+        if (status === 400 || isNotFoundError(error)) {
+          toast.error(t('rawMaterials.catalog.toasts.bindingInvalid'))
+          return
+        }
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t('rawMaterials.catalog.toasts.bindingLookupFailed')
+        )
+        return
+      }
+    },
+    [openEdit, specs, t]
+  )
+
+  const submitBindingTokenInput = useCallback(
+    (value: string) => {
+      void consumeBindingToken(value)
+    },
+    [consumeBindingToken]
+  )
+
+  useEffect(() => {
+    const bindToken = search.bindToken ?? ''
+    if (!bindToken) return
+    const timeoutId = window.setTimeout(() => {
+      void consumeBindingToken(bindToken)
+    }, 0)
+    void navigate({
+      to: '/raw-materials/catalog',
+      search: { bindToken: '' },
+      replace: true,
+    })
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [consumeBindingToken, navigate, search.bindToken])
+
   const handleSave = useCallback(() => {
     if (!form.code.trim() || !form.name.trim()) {
       toast.error(t('rawMaterials.catalog.toasts.requiredCodeAndName'))
@@ -228,7 +364,7 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
     specs,
     isLoading,
     dialogOpen,
-    setDialogOpen,
+    setDialogOpen: setDialogOpenSafely,
     editingSpec,
     form,
     updateForm,
@@ -240,6 +376,10 @@ export function usePrepregCatalogPageState(): UsePrepregCatalogPageStateResult {
     cleanedResinBatch,
     openCreate,
     openEdit,
+    bindingTokenDialogOpen,
+    setBindingTokenDialogOpen,
+    submitBindingTokenInput,
+    activeBindingToken,
     applyRecognizedFields,
     handleSave,
     isSaving,

@@ -74,8 +74,12 @@ func SetupRoutes(r *gin.Engine) {
 			rawMaterialGroup.POST("/prepreg-label-ocr-sessions", handlers.CreatePrepregLabelOcrSessionHandler)
 			rawMaterialGroup.GET("/prepreg-label-ocr-sessions/:sessionId", handlers.GetPrepregLabelOcrSessionHandler)
 			rawMaterialGroup.GET("/prepreg-specs", handlers.GetPrepregMaterialSpecsHandler)
+			rawMaterialGroup.GET("/prepreg-specs/:id", handlers.GetPrepregMaterialSpecByIDHandler)
 			rawMaterialGroup.POST("/prepreg-specs", adminOnly, handlers.SavePrepregMaterialSpecHandler)
 			rawMaterialGroup.DELETE("/prepreg-specs/:id", adminOnly, handlers.DeletePrepregMaterialSpecHandler)
+			rawMaterialGroup.POST("/prepreg-binding-tokens/batch", handlers.CreatePrepregBindingTokenBatchHandler)
+			rawMaterialGroup.GET("/prepreg-binding-tokens/:token", handlers.GetPrepregBindingTokenStateHandler)
+			rawMaterialGroup.POST("/prepreg-binding-tokens/:token/bind", adminOnly, handlers.BindPrepregBindingTokenToSpecHandler)
 			rawMaterialGroup.POST("/batch-optimizer/solve", handlers.SolveRawMaterialBatchOptimizerHandler)
 		}
 

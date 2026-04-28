@@ -14,6 +14,11 @@ export function getRawMaterialsTabs(t: TranslateFn): TabItem[] {
       href: '/raw-materials/catalog',
     },
     {
+      key: 'binding-qr',
+      label: t('rawMaterials.tabs.bindingQr'),
+      href: '/raw-materials/binding-qr',
+    },
+    {
       key: 'batch-engine',
       label: t('rawMaterials.tabs.batchEngine'),
       href: '/raw-materials/batch-engine',

@@ -21,6 +21,7 @@ interface PrepregCatalogDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editingSpec: PrepregMaterialSpec | null
+  activeBindingToken: string
   form: PrepregFormState
   updateForm: <K extends keyof PrepregFormState>(key: K, value: PrepregFormState[K]) => void
   supplierSelectValue?: string
@@ -38,6 +39,7 @@ export function PrepregCatalogDialog({
   open,
   onOpenChange,
   editingSpec,
+  activeBindingToken,
   form,
   updateForm,
   supplierSelectValue,
@@ -51,6 +53,7 @@ export function PrepregCatalogDialog({
   isSaving,
 }: PrepregCatalogDialogProps) {
   const { t } = useLanguage()
+  const isBindingMode = Boolean(activeBindingToken)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,6 +67,24 @@ export function PrepregCatalogDialog({
           </DialogTitle>
         </DialogHeader>
         <div className='min-h-0 flex-1 overflow-y-scroll pr-1'>
+          {isBindingMode ? (
+            <div className='mb-3 rounded-[24px] border border-dashed border-emerald-500/40 bg-emerald-500/5 p-4'>
+              <p className='text-sm font-black italic tracking-tighter text-emerald-700'>
+                {t('rawMaterials.catalog.binding.title')}
+              </p>
+              <p className='mt-2 text-[10px] font-black uppercase tracking-widest text-emerald-700/80'>
+                {t('rawMaterials.catalog.binding.description')}
+              </p>
+              <div className='mt-3 rounded-[18px] border border-dashed border-emerald-500/30 bg-background px-3 py-3'>
+                <p className='text-[8px] font-black uppercase tracking-[0.16em] text-muted-foreground/60'>
+                  {t('rawMaterials.catalog.binding.tokenLabel')}
+                </p>
+                <p className='mt-2 break-all text-[11px] font-mono leading-5 text-foreground'>
+                  {activeBindingToken}
+                </p>
+              </div>
+            </div>
+          ) : null}
           <PrepregLabelCapturePanel onApply={onApplyRecognizedFields} />
           <PrepregCatalogForm
             form={form}
@@ -91,8 +112,12 @@ export function PrepregCatalogDialog({
             className='h-9 rounded-full px-8 text-[10px] font-black uppercase tracking-widest'
           >
             {isSaving
-              ? t('rawMaterials.catalog.actions.saving')
-              : t('rawMaterials.catalog.actions.save')}
+              ? isBindingMode
+                ? t('rawMaterials.catalog.actions.binding')
+                : t('rawMaterials.catalog.actions.saving')
+              : isBindingMode
+                ? t('rawMaterials.catalog.actions.saveAndBind')
+                : t('rawMaterials.catalog.actions.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

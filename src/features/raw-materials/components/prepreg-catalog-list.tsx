@@ -1,4 +1,4 @@
-import { Calendar, Database, Pencil, Plus, Ruler, Search, Waves } from 'lucide-react'
+import { Calendar, Database, Pencil, Plus, Ruler, ScanLine, Search, Waves } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ interface PrepregCatalogListProps {
   searchTerm: string
   onSearchTermChange: (value: string) => void
   onCreate: () => void
+  onScanBind: () => void
   specs: PrepregMaterialSpec[]
   isLoading: boolean
   onEdit: (spec: PrepregMaterialSpec) => void
@@ -18,6 +19,7 @@ export function PrepregCatalogList({
   searchTerm,
   onSearchTermChange,
   onCreate,
+  onScanBind,
   specs,
   isLoading,
   onEdit,
@@ -95,13 +97,24 @@ export function PrepregCatalogList({
             className='h-12 rounded-2xl border-none bg-muted/50 pl-10 text-[10px] font-black tracking-[0.16em] shadow-inner placeholder:text-muted-foreground/45'
           />
         </div>
-        <Button
-          onClick={onCreate}
-          className='h-11 rounded-full px-7 text-[10px] font-black uppercase tracking-widest'
-        >
-          <Plus className='size-4' />
-          {t('rawMaterials.catalog.actions.create')}
-        </Button>
+        <div className='flex flex-wrap gap-3'>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={onScanBind}
+            className='h-11 rounded-full px-7 text-[10px] font-black uppercase tracking-widest'
+          >
+            <ScanLine className='size-4' />
+            {t('rawMaterials.catalog.actions.scanBind')}
+          </Button>
+          <Button
+            onClick={onCreate}
+            className='h-11 rounded-full px-7 text-[10px] font-black uppercase tracking-widest'
+          >
+            <Plus className='size-4' />
+            {t('rawMaterials.catalog.actions.create')}
+          </Button>
+        </div>
       </div>
 
       <div className='overflow-hidden rounded-[28px] border border-dashed border-muted/60 bg-background shadow-sm'>

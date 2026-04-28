@@ -1,3 +1,4 @@
+import { PrepregBindTokenEntryDialog } from '../components/prepreg-bind-token-entry-dialog'
 import { PrepregCatalogDialog } from '../components/prepreg-catalog-dialog'
 import { PrepregCatalogList } from '../components/prepreg-catalog-list'
 import { usePrepregCatalogPageState } from '../hooks/use-prepreg-catalog-page-state'
@@ -21,6 +22,10 @@ export function PrepregCatalogPage() {
     cleanedResinBatch,
     openCreate,
     openEdit,
+    bindingTokenDialogOpen,
+    setBindingTokenDialogOpen,
+    submitBindingTokenInput,
+    activeBindingToken,
     applyRecognizedFields,
     handleSave,
     isSaving,
@@ -32,15 +37,23 @@ export function PrepregCatalogPage() {
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         onCreate={openCreate}
+        onScanBind={() => setBindingTokenDialogOpen(true)}
         specs={specs}
         isLoading={isLoading}
         onEdit={openEdit}
+      />
+
+      <PrepregBindTokenEntryDialog
+        open={bindingTokenDialogOpen}
+        onOpenChange={setBindingTokenDialogOpen}
+        onSubmit={submitBindingTokenInput}
       />
 
       <PrepregCatalogDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editingSpec={editingSpec}
+        activeBindingToken={activeBindingToken}
         form={form}
         updateForm={updateForm}
         supplierSelectValue={supplierSelectValue}

@@ -13,6 +13,7 @@ import (
 )
 
 var ErrPrepregMaterialSpecVersionConflict = errors.New("prepreg material spec version conflict")
+var ErrPrepregMaterialSpecNotFound = errors.New("prepreg material spec not found")
 
 type PrepregMaterialSpecValidationError struct {
 	Message string
@@ -46,6 +47,7 @@ type SavePrepregMaterialSpecRequest struct {
 	ProductionDate      string `json:"productionDate"`
 	Description         string `json:"description"`
 	Status              string `json:"status"`
+	BindToken           string `json:"bindToken"`
 	Version             int    `json:"version"`
 }
 
@@ -67,6 +69,7 @@ func trimPrepregMaterialSpecInput(input SavePrepregMaterialSpecRequest) SavePrep
 	input.ProductionDate = strings.TrimSpace(input.ProductionDate)
 	input.Description = strings.TrimSpace(input.Description)
 	input.Status = strings.TrimSpace(input.Status)
+	input.BindToken = strings.TrimSpace(input.BindToken)
 	if input.Status == "" {
 		input.Status = "Active"
 	}
@@ -239,6 +242,18 @@ func ListPrepregMaterialSpecs(query PrepregMaterialSpecListQuery) ([]models.Prep
 	return specs, total, nil
 }
 
+func GetPrepregMaterialSpecByID(id string) (models.PrepregMaterialSpec, error) {
+	var spec models.PrepregMaterialSpec
+	err := db.DB.Where("id = ?", strings.TrimSpace(id)).First(&spec).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return models.PrepregMaterialSpec{}, ErrPrepregMaterialSpecNotFound
+	}
+	if err != nil {
+		return models.PrepregMaterialSpec{}, err
+	}
+	return spec, nil
+}
+
 func SavePrepregMaterialSpec(input SavePrepregMaterialSpecRequest) (models.PrepregMaterialSpec, error) {
 	modelInput := toPrepregMaterialSpecModel(input)
 	if err := normalizePrepregSupplierReference(&modelInput); err != nil {
@@ -261,9 +276,19 @@ func SavePrepregMaterialSpec(input SavePrepregMaterialSpecRequest) (models.Prepr
 				if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
 					return err
 				}
-				return tx.Where("id = ?", existing.ID).First(&saved).Error
+				if err := tx.Where("id = ?", existing.ID).First(&saved).Error; err != nil {
+					return err
+				}
+				if input.BindToken != "" {
+					if err := bindPrepregBindingTokenToSpecTx(tx, input.BindToken, saved); err != nil {
+						return err
+					}
+				}
+				return nil
 			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
+			} else {
+				return ErrPrepregMaterialSpecNotFound
 			}
 		}
 
@@ -272,6 +297,11 @@ func SavePrepregMaterialSpec(input SavePrepregMaterialSpecRequest) (models.Prepr
 			return err
 		}
 		saved = modelInput
+		if input.BindToken != "" {
+			if err := bindPrepregBindingTokenToSpecTx(tx, input.BindToken, saved); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	if err != nil {
@@ -281,5 +311,14 @@ func SavePrepregMaterialSpec(input SavePrepregMaterialSpecRequest) (models.Prepr
 }
 
 func DeletePrepregMaterialSpec(id string) error {
-	return db.DB.Delete(&models.PrepregMaterialSpec{}, "id = ?", strings.TrimSpace(id)).Error
+	normalizedID := strings.TrimSpace(id)
+	if normalizedID == "" {
+		return nil
+	}
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().Where("bound_spec_id = ?", normalizedID).Delete(&models.PrepregBindingToken{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&models.PrepregMaterialSpec{}, "id = ?", normalizedID).Error
+	})
 }

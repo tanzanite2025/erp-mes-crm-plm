@@ -2,11 +2,14 @@ import { ImageIcon, FileText, Cpu, Box, Eye, Edit, Trash2 } from 'lucide-react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import type { TranslationKey } from '@/locales'
 import { type SpokeLength } from '../data/schema'
 import { type SpokeLengthRowViewModel } from './use-spoke-length-mgmt'
 
+type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string
+
 interface SpokeLengthColumnProps {
-    t: (key: string) => string
+    t: TranslateFn
     onPreview: (item: SpokeLength) => void
     onEdit: (item: SpokeLength) => void
     onDelete: (item: SpokeLength) => void
