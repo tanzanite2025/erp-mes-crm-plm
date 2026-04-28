@@ -16,9 +16,6 @@ export interface CutSizeUnit {
   layupCount: string
   layupMode: string
   usageType: string
-  edgeTrimMm: string
-  stepOffsetMm: string
-  lossFactor: string
   notes: string
   status: CutSizeUnitStatus
   version: number
@@ -41,9 +38,6 @@ export const EMPTY_CUT_SIZE_UNIT_FORM: CutSizeUnitFormState = {
   layupCount: '1',
   layupMode: '',
   usageType: '',
-  edgeTrimMm: '',
-  stepOffsetMm: '',
-  lossFactor: '',
   notes: '',
   status: 'Active',
 }
@@ -69,9 +63,6 @@ export function normalizeCutSizeUnit(item: Partial<CutSizeUnit>): CutSizeUnit {
     layupCount: item.layupCount || '1',
     layupMode: item.layupMode || '',
     usageType: item.usageType || '',
-    edgeTrimMm: item.edgeTrimMm || '',
-    stepOffsetMm: item.stepOffsetMm || '',
-    lossFactor: item.lossFactor || '',
     notes: item.notes || '',
     status: normalizeStatus(item.status),
     version: Number(item.version || 1) || 1,
@@ -95,9 +86,6 @@ export function formFromCutSizeUnit(unit: CutSizeUnit | null): CutSizeUnitFormSt
     layupCount: unit.layupCount || '1',
     layupMode: unit.layupMode || '',
     usageType: unit.usageType || '',
-    edgeTrimMm: unit.edgeTrimMm || '',
-    stepOffsetMm: unit.stepOffsetMm || '',
-    lossFactor: unit.lossFactor || '',
     notes: unit.notes || '',
     status: unit.status,
   }
@@ -130,9 +118,6 @@ export function buildCutSizeUnitPayload(
     layupCount: form.layupCount.trim() || '1',
     layupMode: form.layupMode.trim(),
     usageType: form.usageType.trim(),
-    edgeTrimMm: form.edgeTrimMm.trim(),
-    stepOffsetMm: form.stepOffsetMm.trim(),
-    lossFactor: form.lossFactor.trim(),
     notes: form.notes.trim(),
     status: form.status,
     version: editing?.version || 1,

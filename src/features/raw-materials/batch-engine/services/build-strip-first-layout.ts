@@ -106,10 +106,7 @@ function computeGeometry(
   const rollWidthMm = Math.max(toPositiveNumber(controls.rollWidthMm), 1)
   const rollLengthMm = Math.max(toPositiveNumber(controls.rollLengthM) * 1000, 1)
   const knifeGapMm = Math.max(toPositiveNumber(controls.knifeGapMm), 0)
-  const edgeTrimMm = Math.max(
-    toPositiveNumber(controls.edgeTrimMm),
-    toPositiveNumber(selectedUnit.edgeTrimMm),
-  )
+  const edgeTrimMm = Math.max(toPositiveNumber(controls.edgeTrimMm), 0)
   const orientationGeometry = resolveCutOrientationGeometry({
     widthMm: toPositiveNumber(selectedUnit.widthMm),
     lengthMm: toPositiveNumber(selectedUnit.lengthMm),

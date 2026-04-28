@@ -337,17 +337,19 @@ export function CuttingPlanTab() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className='max-h-[88vh] overflow-y-auto rounded-[24px] sm:max-w-[1180px]'>
-          <DialogHeader>
+        <DialogContent className='flex h-[85vh] w-[min(96vw,1500px)] flex-col overflow-hidden rounded-[32px] p-0 sm:max-w-[1500px]'>
+          <DialogHeader className='border-b border-dashed border-muted-foreground/15 px-6 py-5'>
             <DialogTitle className='flex items-center gap-2 text-xl font-black italic tracking-tighter'>
               <Scissors className='size-5 text-primary' />
               {editingPlan ? t('engineering.cuttingPlan.dialog.editTitle') : t('engineering.cuttingPlan.dialog.createTitle')}
             </DialogTitle>
           </DialogHeader>
 
-          <CuttingPlanEditor value={draft} onChange={setDraft} />
+          <div className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-5'>
+            <CuttingPlanEditor value={draft} onChange={setDraft} />
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className='border-t border-dashed border-muted-foreground/15 px-6 py-4 sm:flex-row sm:flex-wrap sm:justify-end'>
             <Button
               variant='outline'
               onClick={() => void handlePreview(draft)}

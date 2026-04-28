@@ -74,10 +74,7 @@ export function buildBatchEnginePreview(
   const rollWidthMm = toPositiveNumber(controls.rollWidthMm)
   const rollLengthMm = toPositiveNumber(controls.rollLengthM) * 1000
   const knifeGapMm = toPositiveNumber(controls.knifeGapMm)
-  const edgeTrimMm = Math.max(
-    toPositiveNumber(controls.edgeTrimMm),
-    toPositiveNumber(selectedUnit.edgeTrimMm)
-  )
+  const edgeTrimMm = toPositiveNumber(controls.edgeTrimMm)
   const pieceWidthMm = validLines[0]?.occupiedWidthMm || toPositiveNumber(selectedUnit.widthMm)
   const pieceLengthMm = validLines[0]?.occupiedLengthMm || toPositiveNumber(selectedUnit.lengthMm)
   const pieceCountPerSet = validLines[0]?.pieceCountPerSet || Math.max(1, Math.floor(toPositiveNumber(selectedUnit.pieceCount) || 1))

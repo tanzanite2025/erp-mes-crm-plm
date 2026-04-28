@@ -53,14 +53,6 @@ function statusBadgeClass(status: CutSizeUnitStatus): string {
   return 'border-slate-300/70 bg-slate-100 text-slate-600'
 }
 
-function lossLabel(item: CutSizeUnit): string {
-  if (item.lossFactor.trim()) return item.lossFactor.trim()
-  const trim = item.edgeTrimMm.trim()
-  const step = item.stepOffsetMm.trim()
-  if (!trim && !step) return '--'
-  return `修边 ${trim || 0} / 错位 ${step || 0}`
-}
-
 function areaLabel(item: Pick<CutSizeUnit, 'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'>): string {
   const area = resolveCutSizeAreaM2(item)
   return area ? `${area} m²` : '--'
@@ -242,7 +234,6 @@ export function CutSizeLibraryPage() {
                     '面积 / 面密度 / 重量',
                     t('rawMaterials.cutSizeLibrary.columns.angle'),
                     t('rawMaterials.cutSizeLibrary.columns.layup'),
-                    t('rawMaterials.cutSizeLibrary.columns.loss'),
                     t('rawMaterials.cutSizeLibrary.columns.usage'),
                     t('rawMaterials.cutSizeLibrary.columns.status'),
                     '操作',
@@ -259,13 +250,13 @@ export function CutSizeLibraryPage() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className='px-4 py-8 text-center text-xs font-semibold text-muted-foreground'>
+                    <td colSpan={9} className='px-4 py-8 text-center text-xs font-semibold text-muted-foreground'>
                       正在加载裁切尺寸库...
                     </td>
                   </tr>
                 ) : units.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className='px-4 py-8 text-center'>
+                    <td colSpan={9} className='px-4 py-8 text-center'>
                       <p className='text-[11px] font-black uppercase tracking-[0.2em] text-slate-500'>
                         {t('rawMaterials.cutSizeLibrary.empty.title')}
                       </p>
@@ -299,9 +290,6 @@ export function CutSizeLibraryPage() {
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
                         {item.layupCount ? `${item.layupCount} 层` : '--'}
                         {item.layupMode ? ` / ${item.layupMode}` : ''}
-                      </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
-                        {lossLabel(item)}
                       </td>
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
                         {item.usageType || '--'}
@@ -456,28 +444,6 @@ export function CutSizeLibraryPage() {
                 value={form.usageType}
                 onChange={(event) => updateForm('usageType', event.target.value)}
                 placeholder='例如 主纱 / 补强'
-              />
-            </Field>
-            <Field label='修边损耗 (mm)'>
-              <Input
-                value={form.edgeTrimMm}
-                onChange={(event) => updateForm('edgeTrimMm', event.target.value)}
-                placeholder='0'
-              />
-            </Field>
-
-            <Field label='渐短错位 (mm)'>
-              <Input
-                value={form.stepOffsetMm}
-                onChange={(event) => updateForm('stepOffsetMm', event.target.value)}
-                placeholder='0'
-              />
-            </Field>
-            <Field label='损耗模型' className='md:col-span-3'>
-              <Input
-                value={form.lossFactor}
-                onChange={(event) => updateForm('lossFactor', event.target.value)}
-                placeholder='例如 角度包络+修边'
               />
             </Field>
             <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3 md:col-span-4'>

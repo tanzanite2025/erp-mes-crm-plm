@@ -324,8 +324,8 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
 
   return (
     <div className='space-y-4'>
-      <div className='grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-4 [&_input]:h-10 [&_input]:rounded-2xl'>
-        <EditorField label={t('engineering.cuttingPlan.fields.planName')} required>
+      <div className='grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-12 [&_input]:h-10 [&_input]:rounded-2xl'>
+        <EditorField label={t('engineering.cuttingPlan.fields.planName')} required className='xl:col-span-3'>
           <Input
             value={value.name}
             readOnly
@@ -333,7 +333,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             className='bg-muted/15'
           />
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.productModel')} required>
+        <EditorField label={t('engineering.cuttingPlan.fields.productModel')} required className='xl:col-span-3'>
           <Select value={value.productId || undefined} onValueChange={updateProduct}>
             <SelectTrigger className='h-10 w-full rounded-2xl'>
               <SelectValue placeholder={t('engineering.cuttingPlan.placeholders.selectProduct')} />
@@ -347,7 +347,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.holeCount')} required>
+        <EditorField label={t('engineering.cuttingPlan.fields.holeCount')} required className='xl:col-span-2'>
           <Select
             value={value.holeCount || undefined}
             onValueChange={(nextValue) => updateField('holeCount', nextValue)}
@@ -364,7 +364,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.documentNo')}>
+        <EditorField label={t('engineering.cuttingPlan.fields.documentNo')} className='xl:col-span-2'>
           <Input
             value={value.documentNo}
             onChange={(event) => updateField('documentNo', event.target.value)}
@@ -372,14 +372,14 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
           />
         </EditorField>
 
-        <EditorField label={t('engineering.cuttingPlan.fields.revisionNo')}>
+        <EditorField label={t('engineering.cuttingPlan.fields.revisionNo')} className='xl:col-span-2'>
           <Input
             value={value.revisionNo}
             onChange={(event) => updateField('revisionNo', event.target.value)}
             placeholder={t('engineering.cuttingPlan.placeholders.revisionNo')}
           />
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.status')}>
+        <EditorField label={t('engineering.cuttingPlan.fields.status')} className='xl:col-span-2'>
           <Select
             value={value.status}
             onValueChange={(nextValue) => updateField('status', nextValue as CuttingPlanStatus)}
@@ -394,7 +394,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.effectiveDate')}>
+        <EditorField label={t('engineering.cuttingPlan.fields.effectiveDate')} className='xl:col-span-3'>
           <div className='flex items-center gap-1.5'>
             <Popover>
               <PopoverTrigger asChild>
@@ -435,7 +435,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             ) : null}
           </div>
         </EditorField>
-        <EditorField label={t('engineering.cuttingPlan.fields.prepregRef')}>
+        <EditorField label={t('engineering.cuttingPlan.fields.prepregRef')} className='xl:col-span-5'>
           <div className='space-y-1.5'>
             <Select value={value.prepregSpecId || undefined} onValueChange={updatePrepreg}>
               <SelectTrigger className='h-10 w-full rounded-2xl'>
@@ -477,183 +477,185 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
           </Button>
         </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow className='bg-muted/30'>
-              <TableHead className='w-12 text-center text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sequenceNo')}</TableHead>
-              <TableHead className='min-w-40 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.rollOrder')}</TableHead>
-              <TableHead className='min-w-36 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.yarnDirection')}</TableHead>
-              <TableHead className='min-w-56 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.cutSizeLibrary')}</TableHead>
-              <TableHead className='min-w-28 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sizeExpression')}</TableHead>
-              <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.requiredSets')}</TableHead>
-              <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.priority')}</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.mustFulfill')}</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.allowMixedPlan')}</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.faw')}</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.weight')}</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.areaM2')}</TableHead>
-              <TableHead className='min-w-88 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.operationNote')}</TableHead>
-              <TableHead className='w-12 text-right' />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lines.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={14}
-                  className='h-24 text-center text-xs font-bold text-muted-foreground'
-                >
-                  {t('engineering.cuttingPlan.empty.noLines')}
-                </TableCell>
+        <div className='overflow-x-auto overscroll-x-contain rounded-b-2xl'>
+          <Table className='min-w-[1200px]'>
+            <TableHeader>
+              <TableRow className='bg-muted/30'>
+                <TableHead className='w-12 text-center text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sequenceNo')}</TableHead>
+                <TableHead className='min-w-28 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.rollOrder')}</TableHead>
+                <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.yarnDirection')}</TableHead>
+                <TableHead className='min-w-52 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.cutSizeLibrary')}</TableHead>
+                <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sizeExpression')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.requiredSets')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.priority')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.mustFulfill')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.allowMixedPlan')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.faw')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.weight')}</TableHead>
+                <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.areaM2')}</TableHead>
+                <TableHead className='min-w-72 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.operationNote')}</TableHead>
+                <TableHead className='w-12 text-right' />
               </TableRow>
-            ) : (
-              lines.map((line, index) => (
-                <TableRow key={line.id}>
-                  <TableCell className='text-center text-xs font-black'>{index + 1}</TableCell>
-                  <TableCell>
-                    <div className='grid gap-1.5'>
-                      <LineInput
-                        value={line.rollOrder}
-                        onChange={(nextValue) => updateLineTextField(index, 'rollOrder', nextValue)}
-                      />
-                      <LineInput
-                        value={line.constraintProfile?.rollGroupKey}
-                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'rollGroupKey', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.rollGroupKey')}
-                      />
-                      <LineInput
-                        value={line.constraintProfile?.orderSequence}
-                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'orderSequence', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.orderSequence')}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className='grid gap-1.5'>
-                      <LineInput
-                        value={line.yarnDirection}
-                        onChange={(nextValue) => updateLineTextField(index, 'yarnDirection', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.yarnDirection')}
-                      />
-                      <LineInput
-                        value={line.constraintProfile?.yarnDirectionMode}
-                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'yarnDirectionMode', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.yarnDirectionMode')}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={line.cutSizeId || undefined}
-                      onValueChange={(nextValue) => updateLineCutSize(index, nextValue)}
-                    >
-                      <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'>
-                        <SelectValue
-                          placeholder={cutSizeQuery.isLoading ? t('engineering.cuttingPlan.placeholders.cutSizeLoading') : t('engineering.cuttingPlan.placeholders.selectCutSize')}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cutSizeUnits.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {getCutSizeOptionLabel(item)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <ReadonlyLineValue
-                      value={line.sizeExpression}
-                      placeholder={t('engineering.cuttingPlan.placeholders.sizeExpression')}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <LineInput
-                      value={line.requiredSets}
-                      onChange={(nextValue) => updateLineTextField(index, 'requiredSets', nextValue)}
-                      placeholder={t('engineering.cuttingPlan.placeholders.requiredSets')}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <LineInput
-                      value={line.priority}
-                      onChange={(nextValue) => updateLineTextField(index, 'priority', nextValue)}
-                      placeholder={t('engineering.cuttingPlan.placeholders.priority')}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex h-8 items-center justify-center'>
-                      <Switch
-                        checked={line.mustFulfill ?? true}
-                        onCheckedChange={(checked) => updateLineBooleanField(index, 'mustFulfill', Boolean(checked))}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex h-8 items-center justify-center'>
-                      <Switch
-                        checked={line.allowMixedPlan ?? false}
-                        onCheckedChange={(checked) => updateLineBooleanField(index, 'allowMixedPlan', Boolean(checked))}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ReadonlyLineValue value={line.faw} />
-                  </TableCell>
-                  <TableCell>
-                    <ReadonlyLineValue
-                      value={line.weightG}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ReadonlyLineValue
-                      value={line.areaM2}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className='grid gap-1.5'>
-                      <LineInput
-                        value={line.operationNote}
-                        onChange={(nextValue) => updateLineTextField(index, 'operationNote', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.operationNote')}
-                      />
-                      <LineInput
-                        value={line.constraintProfile?.processTags?.join(', ')}
-                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'processTags', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.processTags')}
-                      />
-                      <LineInput
-                        value={line.constraintProfile?.noteKeywords?.join(', ')}
-                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'noteKeywords', nextValue)}
-                        placeholder={t('engineering.cuttingPlan.placeholders.noteKeywords')}
-                      />
-                      <div className='flex items-center justify-between rounded-lg border border-dashed border-muted/60 px-2 py-1.5'>
-                        <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-                          {t('engineering.cuttingPlan.fields.manualGroupBreakBefore')}
-                        </span>
-                        <Switch
-                          checked={line.manualGroupBreakBefore ?? false}
-                          onCheckedChange={(checked) => updateLineBooleanField(index, 'manualGroupBreakBefore', Boolean(checked))}
-                        />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className='text-right'>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      onClick={() => removeLine(index)}
-                      className='size-8 rounded-full text-muted-foreground hover:text-destructive'
-                    >
-                      <Trash2 className='size-4' />
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {lines.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={14}
+                    className='h-24 text-center text-xs font-bold text-muted-foreground'
+                  >
+                    {t('engineering.cuttingPlan.empty.noLines')}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                lines.map((line, index) => (
+                  <TableRow key={line.id}>
+                    <TableCell className='text-center text-xs font-black'>{index + 1}</TableCell>
+                    <TableCell>
+                      <div className='grid min-w-0 gap-1.5'>
+                        <LineInput
+                          value={line.rollOrder}
+                          onChange={(nextValue) => updateLineTextField(index, 'rollOrder', nextValue)}
+                        />
+                        <LineInput
+                          value={line.constraintProfile?.rollGroupKey}
+                          onChange={(nextValue) => updateLineConstraintProfileField(index, 'rollGroupKey', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.rollGroupKey')}
+                        />
+                        <LineInput
+                          value={line.constraintProfile?.orderSequence}
+                          onChange={(nextValue) => updateLineConstraintProfileField(index, 'orderSequence', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.orderSequence')}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='grid min-w-0 gap-1.5'>
+                        <LineInput
+                          value={line.yarnDirection}
+                          onChange={(nextValue) => updateLineTextField(index, 'yarnDirection', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.yarnDirection')}
+                        />
+                        <LineInput
+                          value={line.constraintProfile?.yarnDirectionMode}
+                          onChange={(nextValue) => updateLineConstraintProfileField(index, 'yarnDirectionMode', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.yarnDirectionMode')}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={line.cutSizeId || undefined}
+                        onValueChange={(nextValue) => updateLineCutSize(index, nextValue)}
+                      >
+                        <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'>
+                          <SelectValue
+                            placeholder={cutSizeQuery.isLoading ? t('engineering.cuttingPlan.placeholders.cutSizeLoading') : t('engineering.cuttingPlan.placeholders.selectCutSize')}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cutSizeUnits.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {getCutSizeOptionLabel(item)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <ReadonlyLineValue
+                        value={line.sizeExpression}
+                        placeholder={t('engineering.cuttingPlan.placeholders.sizeExpression')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <LineInput
+                        value={line.requiredSets}
+                        onChange={(nextValue) => updateLineTextField(index, 'requiredSets', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.requiredSets')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <LineInput
+                        value={line.priority}
+                        onChange={(nextValue) => updateLineTextField(index, 'priority', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.priority')}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex h-8 items-center justify-center'>
+                        <Switch
+                          checked={line.mustFulfill ?? true}
+                          onCheckedChange={(checked) => updateLineBooleanField(index, 'mustFulfill', Boolean(checked))}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex h-8 items-center justify-center'>
+                        <Switch
+                          checked={line.allowMixedPlan ?? false}
+                          onCheckedChange={(checked) => updateLineBooleanField(index, 'allowMixedPlan', Boolean(checked))}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <ReadonlyLineValue value={line.faw} />
+                    </TableCell>
+                    <TableCell>
+                      <ReadonlyLineValue
+                        value={line.weightG}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ReadonlyLineValue
+                        value={line.areaM2}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className='grid gap-1.5'>
+                        <LineInput
+                          value={line.operationNote}
+                          onChange={(nextValue) => updateLineTextField(index, 'operationNote', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.operationNote')}
+                        />
+                        <LineInput
+                          value={line.constraintProfile?.processTags?.join(', ')}
+                          onChange={(nextValue) => updateLineConstraintProfileField(index, 'processTags', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.processTags')}
+                        />
+                        <LineInput
+                          value={line.constraintProfile?.noteKeywords?.join(', ')}
+                          onChange={(nextValue) => updateLineConstraintProfileField(index, 'noteKeywords', nextValue)}
+                          placeholder={t('engineering.cuttingPlan.placeholders.noteKeywords')}
+                        />
+                        <div className='flex items-center justify-between rounded-lg border border-dashed border-muted/60 px-2 py-1.5'>
+                          <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+                            {t('engineering.cuttingPlan.fields.manualGroupBreakBefore')}
+                          </span>
+                          <Switch
+                            checked={line.manualGroupBreakBefore ?? false}
+                            onCheckedChange={(checked) => updateLineBooleanField(index, 'manualGroupBreakBefore', Boolean(checked))}
+                          />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        onClick={() => removeLine(index)}
+                        className='size-8 rounded-full text-muted-foreground hover:text-destructive'
+                      >
+                        <Trash2 className='size-4' />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )
