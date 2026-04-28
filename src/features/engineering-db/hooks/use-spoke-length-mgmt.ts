@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import type { DeltaSet } from '@/lib/delta/types'
+import { createLogger } from '@/lib/logger'
+import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
+import { failLoudly } from '@/lib/safe-catch'
 import { type SpokeLength, type SpokeLengthInput } from '../data/schema'
 import { type Hub } from '../data/hub-schema'
 import { type Nipple } from '../data/nipple-schema'
@@ -25,23 +28,30 @@ export type SpokeLengthRowViewModel = {
   searchText: string
 }
 
+type SpokeLengthReadResource = CompositeReadResource<{
+  data: SpokeLength[]
+  filteredData: SpokeLengthRowViewModel[]
+}>
+
+const logger = createLogger('useSpokeLengthMgmt')
+
 export function useSpokeLengthMgmt() {
   const { t } = useLanguage()
   const queryClient = useQueryClient()
   const { productMap } = useEngineeringDbProductLookup()
   const [searchTerm, setSearchTerm] = useState('')
 
-  const { data = [], isLoading: isSpokeLengthsLoading } = useQuery({
+  const spokeLengthsQuery = useQuery({
     queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY,
     queryFn: () => SpokeService.getSpokeLength(),
   })
 
-  const { data: hubs = [], isLoading: isHubsLoading } = useQuery({
+  const hubsQuery = useQuery({
     queryKey: ENGINEERING_DB_HUBS_QUERY_KEY,
     queryFn: () => hubService.getHubs(),
   })
 
-  const { data: nipples = [], isLoading: isNipplesLoading } = useQuery({
+  const nipplesQuery = useQuery({
     queryKey: ENGINEERING_DB_NIPPLES_QUERY_KEY,
     queryFn: () => nippleService.getNipples(),
   })
@@ -68,21 +78,69 @@ export function useSpokeLengthMgmt() {
     mutationFn: (id: string) => SpokeService.deleteSpokeLength(id),
   })
 
-  const isLoading = isSpokeLengthsLoading || isHubsLoading || isNipplesLoading
+  const readResource = useMemo<SpokeLengthReadResource>(() => {
+    const spokeFailure = resolveQueryFailure({
+      data: spokeLengthsQuery.data,
+      error: spokeLengthsQuery.error,
+      isPending: spokeLengthsQuery.isPending,
+      scope: 'useSpokeLengthMgmt.spokeLengths',
+      missingMessage: '[CRITICAL] Spoke length dataset missing after load',
+      failureMessage: '[CRITICAL] Spoke length query failed',
+    })
+    if (spokeFailure) {
+      return {
+        status: 'error',
+        error: spokeFailure.error,
+        scope: spokeFailure.scope,
+      }
+    }
 
-  const hubMap = useMemo(() => {
-    const map = new Map<string, Hub>()
-    hubs.forEach((hub) => map.set(hub.id, hub))
-    return map
-  }, [hubs])
+    const hubsFailure = resolveQueryFailure({
+      data: hubsQuery.data,
+      error: hubsQuery.error,
+      isPending: hubsQuery.isPending,
+      scope: 'useSpokeLengthMgmt.hubs',
+      missingMessage: '[CRITICAL] Hub master data missing after load',
+      failureMessage: '[CRITICAL] Hub master query failed',
+    })
+    if (hubsFailure) {
+      return {
+        status: 'error',
+        error: hubsFailure.error,
+        scope: hubsFailure.scope,
+      }
+    }
 
-  const nippleMap = useMemo(() => {
-    const map = new Map<string, Nipple>()
-    nipples.forEach((nipple) => map.set(nipple.id, nipple))
-    return map
-  }, [nipples])
+    const nipplesFailure = resolveQueryFailure({
+      data: nipplesQuery.data,
+      error: nipplesQuery.error,
+      isPending: nipplesQuery.isPending,
+      scope: 'useSpokeLengthMgmt.nipples',
+      missingMessage: '[CRITICAL] Nipple master data missing after load',
+      failureMessage: '[CRITICAL] Nipple master query failed',
+    })
+    if (nipplesFailure) {
+      return {
+        status: 'error',
+        error: nipplesFailure.error,
+        scope: nipplesFailure.scope,
+      }
+    }
 
-  const filteredData = useMemo(() => {
+    if (spokeLengthsQuery.isPending || hubsQuery.isPending || nipplesQuery.isPending) {
+      return { status: 'loading' }
+    }
+
+    const data = spokeLengthsQuery.data as SpokeLength[]
+    const hubs = hubsQuery.data as Hub[]
+    const nipples = nipplesQuery.data as Nipple[]
+
+    const hubMap = new Map<string, Hub>()
+    hubs.forEach((hub) => hubMap.set(hub.id, hub))
+
+    const nippleMap = new Map<string, Nipple>()
+    nipples.forEach((nipple) => nippleMap.set(nipple.id, nipple))
+
     const rows = data.map<SpokeLengthRowViewModel>((item) => {
       const product = productMap.get(item.productId)
       const hub = hubMap.get(item.hubId || '')
@@ -107,12 +165,42 @@ export function useSpokeLengthMgmt() {
     })
 
     const normalizedSearch = searchTerm.trim().toLowerCase()
-    if (!normalizedSearch) {
-      return rows
+    const filteredData = !normalizedSearch
+      ? rows
+      : rows.filter((row) => row.searchText.includes(normalizedSearch))
+
+    return {
+      status: 'ready',
+      data,
+      filteredData,
+    }
+  }, [
+    hubsQuery.data,
+    hubsQuery.error,
+    hubsQuery.isPending,
+    nipplesQuery.data,
+    nipplesQuery.error,
+    nipplesQuery.isPending,
+    productMap,
+    searchTerm,
+    spokeLengthsQuery.data,
+    spokeLengthsQuery.error,
+    spokeLengthsQuery.isPending,
+  ])
+
+  useEffect(() => {
+    if (readResource.status !== 'error') {
+      return
     }
 
-    return rows.filter((row) => row.searchText.includes(normalizedSearch))
-  }, [data, productMap, hubMap, nippleMap, searchTerm])
+    logger.error(`Failed to load spoke length resources: ${readResource.scope}`, readResource.error)
+    failLoudly(readResource.error, readResource.scope)
+  }, [readResource])
+
+  const data = readResource.status === 'ready' ? readResource.data : []
+  const filteredData = readResource.status === 'ready' ? readResource.filteredData : []
+  const isLoading = readResource.status === 'loading'
+  const isRefreshing = spokeLengthsQuery.isFetching || hubsQuery.isFetching || nipplesQuery.isFetching
 
   const handleDelete = async (item: SpokeLength) => {
     if (!window.confirm(t('engineering.spokeLength.toasts.deleteConfirm'))) return
@@ -137,14 +225,25 @@ export function useSpokeLengthMgmt() {
     await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY })
   }
 
+  const retryRead = async () => {
+    await Promise.all([
+      spokeLengthsQuery.refetch(),
+      hubsQuery.refetch(),
+      nipplesQuery.refetch(),
+    ])
+  }
+
   return {
+    readResource,
     data,
     filteredData,
     isLoading,
+    isRefreshing,
     searchTerm,
     setSearchTerm,
     handleDelete,
     handleSave,
-    refresh: () => queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_SPOKE_LENGTHS_QUERY_KEY }),
+    retryRead,
+    refresh: retryRead,
   }
 }

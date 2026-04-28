@@ -3,29 +3,25 @@ import { engineeringSpecService, type EngineeringSpecInput } from '@/features/en
 
 export const hubService = {
   getHubs: async (): Promise<Hub[]> => {
-    try {
-      const raw = await engineeringSpecService.getSpecs('HUB_DATA')
-	    return raw.flatMap((s) => {
-	      const parsed = hubSchema.safeParse({
-	        id: s.id,
-	        name: s.hubData?.name ?? s.name,
-	        brand: s.hubData?.brand,
-	        model: s.hubData?.model,
-	        holeCount: s.hubData?.holeCount,
-	        pcdLeft: s.hubData?.pcdLeft,
-	        pcdRight: s.hubData?.pcdRight,
-	        flangeLeft: s.hubData?.flangeLeft,
-	        flangeRight: s.hubData?.flangeRight,
-	        fileUrl: s.hubData?.fileUrl,
-	        fileExtension: s.hubData?.fileExtension,
-	        version: s._v ?? 1,
-	        createdAt: s.createdAt || new Date().toISOString(),
-	      })
-	      return parsed.success ? [parsed.data] : []
-	    })
-    } catch {
-      return []
-    }
+    const raw = await engineeringSpecService.getSpecs('HUB_DATA')
+    return raw.flatMap((s) => {
+      const parsed = hubSchema.safeParse({
+        id: s.id,
+        name: s.hubData?.name ?? s.name,
+        brand: s.hubData?.brand,
+        model: s.hubData?.model,
+        holeCount: s.hubData?.holeCount,
+        pcdLeft: s.hubData?.pcdLeft,
+        pcdRight: s.hubData?.pcdRight,
+        flangeLeft: s.hubData?.flangeLeft,
+        flangeRight: s.hubData?.flangeRight,
+        fileUrl: s.hubData?.fileUrl,
+        fileExtension: s.hubData?.fileExtension,
+        version: s._v ?? 1,
+        createdAt: s.createdAt || new Date().toISOString(),
+      })
+      return parsed.success ? [parsed.data] : []
+    })
   },
 
   saveHub: async (data: Hub) => {

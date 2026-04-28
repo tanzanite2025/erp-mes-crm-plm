@@ -5,7 +5,6 @@ import {
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
-import { failLoudly } from '@/lib/safe-catch'
 
 function toSpokeLength(spec: EngineeringSpec): SpokeLength {
   return spokeLengthSchema.parse({
@@ -25,13 +24,8 @@ export const SpokeService = {
    * 获取所有辐条长度记录
    */
   getSpokeLength: async (): Promise<SpokeLength[]> => {
-    try {
-      const raw = await engineeringSpecService.getSpecs('SPOKE_LENGTH')
-      return raw.map(toSpokeLength)
-    } catch (e) {
-      failLoudly(e, 'SpokeService.getSpokeLength')
-      return []
-    }
+    const raw = await engineeringSpecService.getSpecs('SPOKE_LENGTH')
+    return raw.map(toSpokeLength)
   },
 
   /**
@@ -59,7 +53,7 @@ export const SpokeService = {
    * 事务意图: SPOKE_SPEC_ADJUSTMENT
    */
   patchSpokeLength: async (id: string, delta: DeltaSet, version: number) => {
-    const mappedDelta: any = {}
+    const mappedDelta: DeltaSet = {}
     Object.entries(delta).forEach(([path, value]) => {
       mappedDelta[`spokeLengthData.${path}`] = value
     })

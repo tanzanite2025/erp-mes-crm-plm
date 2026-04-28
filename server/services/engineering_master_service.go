@@ -263,6 +263,12 @@ func SaveEngineeringSpec(input SaveEngineeringSpecInput) (models.EngineeringSpec
 			return err
 		}
 
+		if modelInput.Type == cuttingPlanSpecType {
+			if err := validateAndNormalizeCuttingPlanSpec(tx, &modelInput); err != nil {
+				return err
+			}
+		}
+
 		if modelInput.ID != "" {
 			var existing models.EngineeringSpec
 			if err := tx.Where("id = ?", modelInput.ID).First(&existing).Error; err != nil {
@@ -304,6 +310,11 @@ func BulkSyncEngineeringSpecs(inputs []BulkSyncEngineeringSpecInput) error {
 			spec.MasterDataControl.Normalize("R1")
 			if err := ensureWeavingModeNormalizedKeyUnique(tx, spec); err != nil {
 				return err
+			}
+			if spec.Type == cuttingPlanSpecType {
+				if err := validateAndNormalizeCuttingPlanSpec(tx, &spec); err != nil {
+					return err
+				}
 			}
 
 			if spec.ID != "" {

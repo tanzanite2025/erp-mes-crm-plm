@@ -71,6 +71,10 @@ func SaveEngineeringSpecHandler(c *gin.Context) {
 	saved, err := services.SaveEngineeringSpec(input)
 	if err != nil {
 		switch {
+		case errors.As(err, new(*services.CuttingPlanValidationError)):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
+		case errors.As(err, new(*services.PrepregMaterialSpecValidationError)):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] " + err.Error()})
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "[CRITICAL] engineering spec not found"})
 		case errors.Is(err, services.ErrEngineeringSpecVersionConflict):

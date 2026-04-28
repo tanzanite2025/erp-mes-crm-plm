@@ -68,4 +68,32 @@ describe('product-api-adapter', () => {
       })
     )
   })
+
+  it('normalizes missing option collection fields instead of throwing for product options conversion', () => {
+    const products = toProductOptionsArrayContract([
+      buildProductDto({
+        id: 'legacy-product',
+        name: 'Legacy Product',
+        sku: 'sku-legacy',
+        restrictions: undefined,
+        attributeValues: undefined,
+      }),
+    ])
+
+    expect(products).toHaveLength(1)
+    expect(products[0]).toMatchObject({
+      id: 'legacy-product',
+      sku: 'SKU-LEGACY',
+      restrictions: [],
+      attributeValues: [],
+    })
+    expect(warnMock).toHaveBeenCalledWith(
+      'Normalized missing product option collections during contract mapping',
+      expect.objectContaining({
+        id: 'legacy-product',
+        name: 'Legacy Product',
+        missingCollections: ['restrictions', 'attributeValues'],
+      })
+    )
+  })
 })

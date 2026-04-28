@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  AlertTriangle,
   CalendarDays,
   Download,
   FileSpreadsheet,
@@ -14,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { isApiClientError } from '@/lib/api-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -23,15 +25,19 @@ import { useLanguage } from '@/context/language-provider'
 import { CuttingPlanEditor } from '../components/cutting-plan-editor'
 import {
   buildCuttingPlanInput,
-  buildCuttingPlanName,
-  collectCuttingPlanLineAuthorityIssues,
+  CuttingPlanPreparationError,
   EMPTY_CUTTING_PLAN_INPUT,
+  prepareCuttingPlanForPersistence,
   type CuttingPlan,
   type CuttingPlanInput,
 } from '../data/cutting-plan-schema'
 import { useCuttingPlanImportExport } from '../hooks/use-cutting-plan-import-export'
 import { ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY } from '../query-keys'
-import { CuttingPlanService } from '../services/cutting-plan-service'
+import {
+  CuttingPlanService,
+  type InvalidCuttingPlanFailureType,
+  type InvalidCuttingPlanSummary,
+} from '../services/cutting-plan-service'
 import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
 
 const CUT_SIZE_OPTIONS_QUERY_KEY = ['raw-materials', 'cut-size-library', 'active-options'] as const
@@ -46,10 +52,12 @@ export function CuttingPlanTab() {
   const [draft, setDraft] = useState<CuttingPlanInput>(EMPTY_CUTTING_PLAN_INPUT)
   const { downloadTemplate, parseExcel, exportPrint, previewPrint } = useCuttingPlanImportExport()
 
-  const { data: plans = [], isLoading } = useQuery({
+  const { data: listReadModel, isLoading } = useQuery({
     queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
-    queryFn: CuttingPlanService.list,
+    queryFn: CuttingPlanService.listReadModel,
   })
+  const plans = useMemo(() => listReadModel?.items ?? [], [listReadModel?.items])
+  const invalidItems = useMemo(() => listReadModel?.invalidItems ?? [], [listReadModel?.invalidItems])
   const cutSizeQuery = useQuery({
     queryKey: CUT_SIZE_OPTIONS_QUERY_KEY,
     queryFn: () => CutSizeLibraryService.listActive(),
@@ -75,11 +83,26 @@ export function CuttingPlanTab() {
   }, [plans, searchTerm])
 
   const saveMutation = useMutation({
-    mutationFn: (payload: CuttingPlanInput) => CuttingPlanService.save(payload, editingPlan?.id),
+    mutationFn: (payload: CuttingPlanInput) =>
+      CuttingPlanService.save(payload, { id: editingPlan?.id, cutSizeUnits }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY })
       toast.success(editingPlan ? t('engineering.cuttingPlan.toasts.saveUpdated') : t('engineering.cuttingPlan.toasts.saveCreated'))
       closeDialog()
+    },
+    onError: (error) => {
+      if (error instanceof CuttingPlanPreparationError) {
+        handlePreparationIssues(error)
+        return
+      }
+
+      if (isApiClientError(error) && error.isConflict) {
+        toast.error(t('engineering.cuttingPlan.toasts.conflict'))
+        return
+      }
+
+      const message = error instanceof Error ? error.message : t('engineering.cuttingPlan.toasts.saveFailed')
+      toast.error(t('engineering.cuttingPlan.toasts.saveFailed', { message }))
     },
   })
 
@@ -117,59 +140,74 @@ export function CuttingPlanTab() {
     setDraft(EMPTY_CUTTING_PLAN_INPUT)
   }
 
-  const resolveAuthoritativePlan = (plan: CuttingPlanInput | CuttingPlan): CuttingPlanInput | null => {
+  const handlePreparationIssues = (error: CuttingPlanPreparationError) => {
+    const firstIssue = error.issues[0]
+    if (!firstIssue) {
+      toast.error(t('engineering.cuttingPlan.toasts.saveFailed', { message: 'Unknown preparation error' }))
+      return
+    }
+
+    switch (firstIssue.kind) {
+      case 'missing_product_binding':
+        toast.error(t('engineering.cuttingPlan.toasts.productRequired'))
+        return
+      case 'missing_hole_count':
+        toast.error(t('engineering.cuttingPlan.toasts.holeCountRequired'))
+        return
+      case 'name_generate_failed':
+        toast.error(t('engineering.cuttingPlan.toasts.nameGenerateFailed'))
+        return
+      case 'empty_lines':
+        toast.error(t('engineering.cuttingPlan.toasts.emptyLines'))
+        return
+      case 'missing_cut_size_binding':
+        toast.error(`第 ${firstIssue.sequenceNo} 行未绑定尺寸库条目，裁纱单所有行必须引用尺寸库。`)
+        return
+      case 'missing_cut_size_unit':
+        toast.error(`第 ${firstIssue.sequenceNo} 行引用的尺寸库条目不存在或未启用，请先修复尺寸库。`)
+        return
+    }
+  }
+
+  const preparePlanForOutput = (plan: CuttingPlanInput | CuttingPlan): CuttingPlanInput | null => {
     if (cutSizeQuery.isLoading) {
       toast.error('裁切尺寸库加载中，请稍后重试')
       return null
     }
 
-    const issues = collectCuttingPlanLineAuthorityIssues(plan.lines || [], cutSizeUnits)
-    if (issues.length > 0) {
-      const firstIssue = issues[0]
-      if (firstIssue.kind === 'missing_cut_size_binding') {
-        toast.error(`第 ${firstIssue.sequenceNo} 行未绑定尺寸库条目，裁纱单所有行必须引用尺寸库。`)
-      } else {
-        toast.error(`第 ${firstIssue.sequenceNo} 行引用的尺寸库条目不存在或未启用，请先修复尺寸库。`)
+    try {
+      return prepareCuttingPlanForPersistence(plan, cutSizeUnits)
+    } catch (error) {
+      if (error instanceof CuttingPlanPreparationError) {
+        handlePreparationIssues(error)
+        return null
       }
+
+      const message = error instanceof Error ? error.message : t('engineering.cuttingPlan.toasts.saveFailed')
+      toast.error(t('engineering.cuttingPlan.toasts.saveFailed', { message }))
       return null
     }
-
-    return buildCuttingPlanInput(plan, cutSizeUnits)
   }
 
   const handlePreview = async (plan: CuttingPlanInput | CuttingPlan) => {
-    const payload = resolveAuthoritativePlan(plan)
+    const payload = preparePlanForOutput(plan)
     if (!payload) return
     await previewPrint(payload)
   }
 
   const handleExport = async (plan: CuttingPlanInput | CuttingPlan) => {
-    const payload = resolveAuthoritativePlan(plan)
+    const payload = preparePlanForOutput(plan)
     if (!payload) return
     await exportPrint(payload)
   }
 
   const handleSave = () => {
-    if (!draft.productId) {
-      toast.error(t('engineering.cuttingPlan.toasts.productRequired'))
+    if (cutSizeQuery.isLoading) {
+      toast.error('裁切尺寸库加载中，请稍后重试')
       return
     }
-    if (!draft.holeCount) {
-      toast.error(t('engineering.cuttingPlan.toasts.holeCountRequired'))
-      return
-    }
-    const generatedName = buildCuttingPlanName({
-      productName: draft.productName,
-      productCode: draft.productCode,
-      holeCount: draft.holeCount,
-    })
-    if (!generatedName) {
-      toast.error(t('engineering.cuttingPlan.toasts.nameGenerateFailed'))
-      return
-    }
-    const payload = resolveAuthoritativePlan(draft)
-    if (!payload) return
-    saveMutation.mutate(payload)
+
+    saveMutation.mutate(draft)
   }
 
   const handleImportFile = async (file: File) => {
@@ -246,6 +284,8 @@ export function CuttingPlanTab() {
           </Button>
         </div>
       </div>
+
+      {invalidItems.length > 0 ? <InvalidCuttingPlanAlert invalidItems={invalidItems} t={t} /> : null}
 
       <div className='grid gap-3'>
         {isLoading ? (
@@ -379,6 +419,39 @@ export function CuttingPlanTab() {
   )
 }
 
+function getInvalidCuttingPlanFailureFilterLabel(
+  t: ReturnType<typeof useLanguage>['t'],
+  failureType: InvalidCuttingPlanFailureType,
+  count: number
+) {
+  switch (failureType) {
+    case 'missing_required_fields':
+      return t('engineering.cuttingPlan.alerts.failureTypes.missing_required_fields', { count })
+    case 'invalid_lines':
+      return t('engineering.cuttingPlan.alerts.failureTypes.invalid_lines', { count })
+    case 'schema_mismatch':
+      return t('engineering.cuttingPlan.alerts.failureTypes.schema_mismatch', { count })
+    case 'unknown_invalid_payload':
+      return t('engineering.cuttingPlan.alerts.failureTypes.unknown_invalid_payload', { count })
+  }
+}
+
+function getInvalidCuttingPlanFailureGroupLabel(
+  t: ReturnType<typeof useLanguage>['t'],
+  failureType: InvalidCuttingPlanFailureType,
+) {
+  switch (failureType) {
+    case 'missing_required_fields':
+      return t('engineering.cuttingPlan.alerts.failureGroups.missing_required_fields')
+    case 'invalid_lines':
+      return t('engineering.cuttingPlan.alerts.failureGroups.invalid_lines')
+    case 'schema_mismatch':
+      return t('engineering.cuttingPlan.alerts.failureGroups.schema_mismatch')
+    case 'unknown_invalid_payload':
+      return t('engineering.cuttingPlan.alerts.failureGroups.unknown_invalid_payload')
+  }
+}
+
 function getCuttingPlanStatusLabel(
   t: ReturnType<typeof useLanguage>['t'],
   status: CuttingPlan['status']
@@ -397,6 +470,163 @@ function Metric({ label, value }: { label: string; value: number }) {
     <div className='rounded-2xl border border-dashed border-muted/60 bg-background/70 p-3'>
       <div className='text-2xl font-black tabular-nums'>{value}</div>
       <div className='text-[10px] font-black tracking-widest text-muted-foreground'>{label}</div>
+    </div>
+  )
+}
+
+function InvalidCuttingPlanAlert({
+  invalidItems,
+  t,
+}: {
+  invalidItems: InvalidCuttingPlanSummary[]
+  t: ReturnType<typeof useLanguage>['t']
+}) {
+  const [selectedFailureType, setSelectedFailureType] = useState<'all' | InvalidCuttingPlanFailureType>('all')
+
+  const groupedInvalidItems = useMemo(() => {
+    const result = new Map<InvalidCuttingPlanFailureType, InvalidCuttingPlanSummary[]>()
+
+    invalidItems.forEach((item) => {
+      const bucket = result.get(item.failureType)
+      if (bucket) {
+        bucket.push(item)
+        return
+      }
+
+      result.set(item.failureType, [item])
+    })
+
+    return result
+  }, [invalidItems])
+
+  const availableFailureTypes = useMemo(
+    () => Array.from(groupedInvalidItems.keys()),
+    [groupedInvalidItems],
+  )
+
+  const effectiveFailureType =
+    selectedFailureType === 'all' || availableFailureTypes.includes(selectedFailureType)
+      ? selectedFailureType
+      : 'all'
+
+  const filteredInvalidItems = useMemo(() => {
+    if (effectiveFailureType === 'all') return invalidItems
+    return invalidItems.filter((item) => item.failureType === effectiveFailureType)
+  }, [effectiveFailureType, invalidItems])
+
+  const filteredGroupedEntries = useMemo(() => {
+    if (effectiveFailureType === 'all') {
+      return availableFailureTypes.map((failureType) => ({
+        failureType,
+        items: groupedInvalidItems.get(failureType) ?? [],
+      }))
+    }
+
+    return [
+      {
+        failureType: effectiveFailureType,
+        items: filteredInvalidItems,
+      },
+    ]
+  }, [availableFailureTypes, effectiveFailureType, filteredInvalidItems, groupedInvalidItems])
+
+  return (
+    <div className='relative overflow-hidden rounded-[24px] border border-dashed border-amber-500/40 bg-amber-500/5'>
+      <div className='absolute inset-0 bg-linear-to-br from-amber-500/10 via-transparent to-transparent' />
+      <div className='relative flex flex-col gap-4 p-5'>
+        <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
+          <div className='min-w-0'>
+            <div className='flex items-center gap-2'>
+              <AlertTriangle className='size-4 shrink-0 text-amber-600' />
+              <div className='text-sm font-black italic tracking-tighter text-amber-700'>
+                {t('engineering.cuttingPlan.alerts.invalidRecordsTitle', { count: invalidItems.length })}
+              </div>
+            </div>
+            <p className='mt-1 text-[9px] font-black uppercase tracking-widest text-amber-700/70'>
+              {t('engineering.cuttingPlan.alerts.invalidRecordsDescription')}
+            </p>
+          </div>
+          <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 text-[8px] font-mono text-amber-700'>
+            {t('engineering.cuttingPlan.alerts.invalidRecordsBadge', { count: invalidItems.length })}
+          </Badge>
+        </div>
+
+        <div className='flex flex-wrap gap-2'>
+          <Button
+            type='button'
+            variant={effectiveFailureType === 'all' ? 'default' : 'outline'}
+            size='sm'
+            onClick={() => setSelectedFailureType('all')}
+            className='h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-widest'
+          >
+            {t('engineering.cuttingPlan.alerts.filters.all', { count: invalidItems.length })}
+          </Button>
+          {availableFailureTypes.map((failureType) => {
+            const groupItems = groupedInvalidItems.get(failureType) ?? []
+            return (
+              <Button
+                key={failureType}
+                type='button'
+                variant={effectiveFailureType === failureType ? 'default' : 'outline'}
+                size='sm'
+                onClick={() => setSelectedFailureType(failureType)}
+                className='h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-widest'
+              >
+                {getInvalidCuttingPlanFailureFilterLabel(t, failureType, groupItems.length)}
+              </Button>
+            )
+          })}
+        </div>
+
+        {filteredInvalidItems.length === 0 ? (
+          <div className='rounded-[20px] border border-dashed border-amber-500/30 bg-background/70 p-6 text-center text-[10px] font-black uppercase tracking-widest text-amber-700'>
+            {t('engineering.cuttingPlan.alerts.emptyFilteredResults')}
+          </div>
+        ) : (
+          <div className='grid max-h-72 gap-4 overflow-y-auto pr-1'>
+            {filteredGroupedEntries.map(({ failureType, items }) => (
+              <div key={failureType} className='grid gap-3'>
+                <div className='flex items-center justify-between gap-3 rounded-[20px] border border-dashed border-amber-500/25 bg-background/60 px-4 py-3'>
+                  <div className='text-sm font-black italic tracking-tighter text-amber-700'>
+                    {getInvalidCuttingPlanFailureGroupLabel(t, failureType)}
+                  </div>
+                  <Badge className='h-5 rounded-full bg-amber-500/10 px-2.5 text-[8px] font-mono text-amber-700'>
+                    {t('engineering.cuttingPlan.alerts.failureGroupCount', { count: items.length })}
+                  </Badge>
+                </div>
+
+                {items.map((item) => (
+                  <div
+                    key={item.specId}
+                    className='rounded-[20px] border border-dashed border-amber-500/30 bg-background/80 p-4'
+                  >
+                    <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+                      <div className='min-w-0'>
+                        <div className='truncate text-sm font-black text-foreground'>{item.displayName}</div>
+                        <div className='mt-1 flex flex-wrap gap-2'>
+                          <Badge variant='outline' className='rounded-full border-dashed text-[8px] font-mono'>
+                            {t('engineering.cuttingPlan.alerts.invalidRecordCode', { code: item.specCode })}
+                          </Badge>
+                          <Badge variant='outline' className='rounded-full border-dashed text-[8px] font-mono'>
+                            {t('engineering.cuttingPlan.alerts.invalidRecordId', { id: item.specId })}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className='max-w-full rounded-2xl bg-amber-500/10 px-3 py-2 text-[10px] font-black tracking-wide text-amber-700 md:max-w-[50%]'>
+                        {item.reason}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className='text-[9px] font-black uppercase tracking-widest text-amber-700/70'>
+          {t('engineering.cuttingPlan.alerts.invalidRecordsHint')}
+        </div>
+      </div>
     </div>
   )
 }

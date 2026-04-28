@@ -83,6 +83,23 @@ export type CuttingPlanLineAuthorityIssue = {
   kind: 'missing_cut_size_binding' | 'missing_cut_size_unit'
 }
 
+export type CuttingPlanPreparationIssue =
+  | CuttingPlanLineAuthorityIssue
+  | { kind: 'missing_product_binding' }
+  | { kind: 'missing_hole_count' }
+  | { kind: 'empty_lines' }
+  | { kind: 'name_generate_failed' }
+
+export class CuttingPlanPreparationError extends Error {
+  readonly issues: CuttingPlanPreparationIssue[]
+
+  constructor(issues: CuttingPlanPreparationIssue[]) {
+    super('Cutting plan preparation failed')
+    this.name = 'CuttingPlanPreparationError'
+    this.issues = issues
+  }
+}
+
 export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
   name: '',
   productId: '',
@@ -219,6 +236,38 @@ export function collectCuttingPlanLineAuthorityIssues(
   return issues
 }
 
+export function collectCuttingPlanPreparationIssues(
+  plan: CuttingPlanInput | CuttingPlan,
+  cutSizeUnits: CutSizeUnit[],
+): CuttingPlanPreparationIssue[] {
+  const issues: CuttingPlanPreparationIssue[] = []
+
+  if (!plan.productId?.trim()) {
+    issues.push({ kind: 'missing_product_binding' })
+  }
+
+  if (!plan.holeCount?.trim()) {
+    issues.push({ kind: 'missing_hole_count' })
+  }
+
+  if ((plan.lines || []).length === 0) {
+    issues.push({ kind: 'empty_lines' })
+  }
+
+  const generatedName = buildCuttingPlanName({
+    productName: plan.productName,
+    productCode: plan.productCode,
+    holeCount: plan.holeCount,
+  })
+  if (!generatedName) {
+    issues.push({ kind: 'name_generate_failed' })
+  }
+
+  issues.push(...collectCuttingPlanLineAuthorityIssues(plan.lines || [], cutSizeUnits))
+
+  return issues
+}
+
 export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingPlanLine {
   const raw = (typeof line === 'object' && line ? line : {}) as Partial<CuttingPlanLine>
 
@@ -330,4 +379,16 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutS
       }
     }),
   })
+}
+
+export function prepareCuttingPlanForPersistence(
+  plan: CuttingPlanInput | CuttingPlan,
+  cutSizeUnits: CutSizeUnit[],
+): CuttingPlanInput {
+  const issues = collectCuttingPlanPreparationIssues(plan, cutSizeUnits)
+  if (issues.length > 0) {
+    throw new CuttingPlanPreparationError(issues)
+  }
+
+  return buildCuttingPlanInput(plan, cutSizeUnits)
 }

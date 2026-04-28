@@ -59,7 +59,7 @@ export function SpokeLengthActionDialog({
   onSave,
   isLoading,
 }: SpokeLengthActionDialogProps) {
-  const { data: products = [] } = useGetProducts()
+  const { data: products = [] } = useGetProducts({ enabled: open })
   const [hubs, setHubs] = useState<Hub[]>([])
   const [nipples, setNipples] = useState<Nipple[]>([])
 
@@ -76,12 +76,16 @@ export function SpokeLengthActionDialog({
     if (!open) return
 
     const loadMasterData = async () => {
-      const [hubData, nippleData] = await Promise.all([
-        hubService.getHubs(),
-        nippleService.getNipples(),
-      ])
-      setHubs(hubData)
-      setNipples(nippleData)
+      try {
+        const [hubData, nippleData] = await Promise.all([
+          hubService.getHubs(),
+          nippleService.getNipples(),
+        ])
+        setHubs(hubData)
+        setNipples(nippleData)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '结构关联件加载失败')
+      }
     }
 
     void loadMasterData()
@@ -92,6 +96,33 @@ export function SpokeLengthActionDialog({
     if (currentRow) return currentRow
     return { ...DEFAULT_SPOKE_LENGTH }
   }, [currentRow])
+
+  const productOptions = useMemo(
+    () =>
+      products.map((product) => ({
+        label: `${product.sku} | ${product.name}`,
+        value: product.id,
+      })),
+    [products],
+  )
+
+  const hubOptions = useMemo(
+    () =>
+      hubs.map((hub) => ({
+        label: `${hub.brand} ${hub.name}`,
+        value: hub.id,
+      })),
+    [hubs],
+  )
+
+  const nippleOptions = useMemo(
+    () =>
+      nipples.map((nipple) => ({
+        label: `${nipple.brand} ${nipple.name}`,
+        value: nipple.id,
+      })),
+    [nipples],
+  )
 
   const { data: formData, tracker, isDirty } = useDeltaTracker(initialFormData, open)
 
@@ -210,10 +241,7 @@ export function SpokeLengthActionDialog({
             <SelectDropdown
               defaultValue={formData.productId}
               onValueChange={(value) => updateField('productId', value)}
-              items={products.map((product) => ({
-                label: `${product.sku} | ${product.name}`,
-                value: product.id,
-              }))}
+              items={productOptions}
               placeholder='选择关联成品 SKU'
               className='h-12 rounded-2xl border-none bg-blue-500/5 px-4 text-sm font-bold italic shadow-inner'
             />
@@ -253,12 +281,9 @@ export function SpokeLengthActionDialog({
               <SelectDropdown
                 defaultValue={formData.hubId}
                 onValueChange={(value) => updateField('hubId', value)}
-                items={hubs.map((hub) => ({
-                  label: `${hub.brand} ${hub.name}`,
-                  value: hub.id,
-                }))}
+                items={hubOptions}
                 placeholder='选择关联花鼓'
-                className='h-11 rounded-2xl border-none bg-background px-4 text-xs font-bold shadow-inner'
+                className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-sm'
               />
             </div>
             <div className='space-y-2'>
@@ -268,12 +293,9 @@ export function SpokeLengthActionDialog({
               <SelectDropdown
                 defaultValue={formData.nippleId}
                 onValueChange={(value) => updateField('nippleId', value)}
-                items={nipples.map((nipple) => ({
-                  label: `${nipple.brand} ${nipple.name}`,
-                  value: nipple.id,
-                }))}
+                items={nippleOptions}
                 placeholder='选择关联条帽'
-                className='h-11 rounded-2xl border-none bg-background px-4 text-xs font-bold shadow-inner'
+                className='h-12 rounded-2xl border-none bg-background px-4 text-sm font-bold shadow-sm'
               />
             </div>
           </div>

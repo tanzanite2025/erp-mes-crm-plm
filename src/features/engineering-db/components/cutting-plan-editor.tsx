@@ -32,7 +32,7 @@ import {
   type CutSizeUnit,
 } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
-import type { PrepregMaterialSpec } from '@/features/raw-materials/data/prepreg-material-spec-schema'
+import type { PrepregMaterialSpec, PrepregMaterialSpecListResponse } from '@/features/raw-materials/data/prepreg-material-spec-schema'
 import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'
 import {
   buildCuttingPlanName,
@@ -124,9 +124,12 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   const { data: products = [] } = useGetProducts()
   const { countOptions } = useActiveHoleCodeSource()
 
-  const prepregQuery = useQuery({
+  const prepregQuery = useQuery<PrepregMaterialSpec[] | PrepregMaterialSpecListResponse>({
     queryKey: PREPREG_SPECS_QUERY_KEY,
-    queryFn: () => PrepregMaterialSpecService.list('', 1, 200),
+    queryFn: async () => {
+      const response = await PrepregMaterialSpecService.list('', 1, 200)
+      return response.items.filter((item) => item.status === 'Active')
+    },
     staleTime: 5 * 60 * 1000,
   })
 
@@ -136,10 +139,13 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     staleTime: 5 * 60 * 1000,
   })
 
-  const prepregSpecs = useMemo(
-    () => (prepregQuery.data?.items ?? []).filter((item) => item.status === 'Active'),
-    [prepregQuery.data?.items]
-  )
+  const prepregSpecs = useMemo(() => {
+    if (Array.isArray(prepregQuery.data)) return prepregQuery.data
+    if (Array.isArray(prepregQuery.data?.items)) {
+      return prepregQuery.data.items.filter((item) => item.status === 'Active')
+    }
+    return []
+  }, [prepregQuery.data])
 
   const cutSizeUnits = useMemo(() => cutSizeQuery.data ?? [], [cutSizeQuery.data])
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
+    type ColumnDef,
     flexRender,
     getCoreRowModel,
     getPaginationRowModel,
@@ -24,7 +25,6 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination } from '@/components/data-table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { FileResolverService } from '../services/file-resolver-service'
 import { CADViewerDialog } from '../components/cad-viewer'
@@ -67,6 +67,19 @@ export function OverviewTab() {
         { label: t('engineering.db.stats.excelSheets'), count: stats.excelCount, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         { label: t('engineering.db.stats.cadDrawings'), count: stats.cadCount, color: 'text-orange-500', bg: 'bg-orange-500/10' }
     ], [stats, t])
+
+    const resolveCategoryRoute = (category: UnifiedEntry['category']) => {
+        switch (category) {
+            case 'SPEC':
+                return '/engineering-db/specs'
+            case 'DRILLING':
+                return '/engineering-db/drilling'
+            case 'CUTTING':
+                return '/raw-materials/cutting-plan'
+            case 'LABELING':
+                return '/engineering-db/labeling'
+        }
+    }
 
     const handlePreview = async (item: UnifiedEntry) => {
         if (item.fileUrl) {
@@ -186,9 +199,7 @@ export function OverviewTab() {
                         size='icon' 
                         className='size-8 rounded-full hover:bg-violet-500/10 hover:text-violet-500' 
                         onClick={() => {
-                            const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', CUTTING: '/engineering-db/cutting-plan', LABELING: '/engineering-db/labeling' }
-                            const to = mapping[row.original.category]
-                            navigate({ to, search: { highlightId: row.original.id } } as any)
+                            navigate({ to: resolveCategoryRoute(row.original.category), search: { highlightId: row.original.id } })
                         }}
                     >
                         <ArrowUpRight className='size-3.5' />
@@ -353,9 +364,7 @@ export function OverviewTab() {
                                                 className='size-8 rounded-full hover:bg-violet-500/10 hover:text-violet-500'
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    const mapping = { SPEC: '/engineering-db/specs', DRILLING: '/engineering-db/drilling', CUTTING: '/engineering-db/cutting-plan', LABELING: '/engineering-db/labeling' }
-                                                    const to = mapping[item.category]
-                                                    navigate({ to, search: { highlightId: item.id } } as any)
+                                                    navigate({ to: resolveCategoryRoute(item.category), search: { highlightId: item.id } })
                                                 }}
                                             >
                                                 <ArrowUpRight className='size-3.5' />

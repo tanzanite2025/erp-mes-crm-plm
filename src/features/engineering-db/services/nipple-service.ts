@@ -3,26 +3,22 @@ import { engineeringSpecService, type EngineeringSpecInput } from '@/features/en
 
 export const nippleService = {
   getNipples: async (): Promise<Nipple[]> => {
-    try {
-      const raw = await engineeringSpecService.getSpecs('NIPPLE_DATA')
-	    return raw.flatMap((s) => {
-	      const parsed = nippleSchema.safeParse({
-	        id: s.id,
-	        name: s.nippleData?.name ?? s.name,
-	        brand: s.nippleData?.brand,
-	        material: s.nippleData?.material,
-	        length: s.nippleData?.length,
-	        color: s.nippleData?.color,
-	        fileUrl: s.nippleData?.fileUrl,
-	        fileExtension: s.nippleData?.fileExtension,
-	        version: s._v ?? 1,
-	        createdAt: s.createdAt || new Date().toISOString(),
-	      })
-	      return parsed.success ? [parsed.data] : []
-	    })
-    } catch {
-      return []
-    }
+    const raw = await engineeringSpecService.getSpecs('NIPPLE_DATA')
+    return raw.flatMap((s) => {
+      const parsed = nippleSchema.safeParse({
+        id: s.id,
+        name: s.nippleData?.name ?? s.name,
+        brand: s.nippleData?.brand,
+        material: s.nippleData?.material,
+        length: s.nippleData?.length,
+        color: s.nippleData?.color,
+        fileUrl: s.nippleData?.fileUrl,
+        fileExtension: s.nippleData?.fileExtension,
+        version: s._v ?? 1,
+        createdAt: s.createdAt || new Date().toISOString(),
+      })
+      return parsed.success ? [parsed.data] : []
+    })
   },
 
   saveNipple: async (data: Nipple) => {

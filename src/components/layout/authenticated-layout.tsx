@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useState, startTransition } from 'react'
+import { lazy, Suspense, useEffect, useState, startTransition, useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
@@ -91,6 +92,11 @@ type AuthenticatedLayoutProps = {
   children?: React.ReactNode
 }
 
+type IdentitySyncGateState =
+  | { status: 'idle' }
+  | { status: 'syncing' }
+  | { status: 'error'; error: Error }
+
 /**
  * 有效身份增强布局 (Security Sync Gate)
  * 职责：
@@ -103,39 +109,98 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const navigate = useNavigate()
   const { accessToken, isIdentitySynced, isSyncing, setIsSyncing } = useAuthStore()
   const shouldSyncIdentity = !!accessToken && !isIdentitySynced
-  
+  const [syncGateState, setSyncGateState] = useState<IdentitySyncGateState>(() =>
+    shouldSyncIdentity ? { status: 'syncing' } : { status: 'idle' }
+  )
+
   useNotifications()
   useSystemMonitor()
 
   const isPDAShellRoute = pathname === '/pda-shell'
   const showAssistant = useDeferredActivation(!isPDAShellRoute, 1000)
 
-  // --- 强一致性身份同步 ---
-  useEffect(() => {
-    const checkAndSync = async () => {
-      if (shouldSyncIdentity) {
-        setIsSyncing(true)
-        try {
-          await syncIdentitySnapshotFromProfile()
-        } catch (error: unknown) {
-          logger.error('[CRITICAL] Background identity sync failed. Redirecting to sign-in.', error)
-          // 强制重置局部同步状态，并退回登录页，避免用户停留在加载死循环
-          setIsSyncing(false)
-          navigate({ to: '/sign-in', replace: true })
-        } finally {
-          setIsSyncing(false)
-        }
-      } else if (!accessToken) {
-        navigate({ to: '/sign-in' })
-      }
+  const runIdentitySync = useCallback(async () => {
+    if (!shouldSyncIdentity) {
+      setSyncGateState({ status: 'idle' })
+      return
     }
 
-    void checkAndSync()
-  }, [accessToken, navigate, setIsSyncing, shouldSyncIdentity])
+    setSyncGateState({ status: 'syncing' })
+    setIsSyncing(true)
+    try {
+      await syncIdentitySnapshotFromProfile()
+      setSyncGateState({ status: 'idle' })
+    } catch (error: unknown) {
+      const normalizedError = error instanceof Error ? error : new Error('身份权限同步失败')
+      logger.error('[CRITICAL] Background identity sync failed. Showing retry gate.', normalizedError)
+      setSyncGateState({ status: 'error', error: normalizedError })
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [setIsSyncing, shouldSyncIdentity])
+
+  // --- 强一致性身份同步 ---
+  useEffect(() => {
+    if (!accessToken) {
+      setSyncGateState({ status: 'idle' })
+      navigate({ to: '/sign-in', replace: true })
+      return
+    }
+
+    if (!shouldSyncIdentity) {
+      setSyncGateState({ status: 'idle' })
+      return
+    }
+
+    if (syncGateState.status === 'error') {
+      return
+    }
+
+    void runIdentitySync()
+  }, [accessToken, navigate, runIdentitySync, shouldSyncIdentity, syncGateState.status])
 
   const defaultOpen = getCookie('sidebar_state') !== 'false'
 
-  if (shouldSyncIdentity || isSyncing) {
+  if (syncGateState.status === 'error') {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-background px-6'>
+        <div className='flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-dashed border-rose-500/25 bg-rose-500/5 px-8 py-10 text-center'>
+          <div className='size-12 rounded-full border-2 border-rose-500/20 border-t-rose-500' />
+          <div className='space-y-2'>
+            <p className='text-sm font-black uppercase tracking-widest text-rose-700'>
+              身份权限同步失败
+            </p>
+            <p className='text-xs font-bold text-rose-700/80'>
+              {syncGateState.error.message || '当前无法完成登录后身份快照同步，请重试或返回登录页。'}
+            </p>
+          </div>
+          <div className='flex flex-col gap-3 sm:flex-row'>
+            <Button
+              type='button'
+              className='h-11 rounded-full px-6 text-[10px] font-black uppercase tracking-widest'
+              onClick={() => {
+                void runIdentitySync()
+              }}
+            >
+              重试同步
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-11 rounded-full border-dashed px-6 text-[10px] font-black uppercase tracking-widest'
+              onClick={() => {
+                navigate({ to: '/sign-in', replace: true })
+              }}
+            >
+              返回登录
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (syncGateState.status === 'syncing' || shouldSyncIdentity || isSyncing) {
     return (
       <div className='flex min-h-screen items-center justify-center bg-background px-6'>
         <div className='flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-dashed border-muted/50 bg-muted/5 px-8 py-10 text-center'>

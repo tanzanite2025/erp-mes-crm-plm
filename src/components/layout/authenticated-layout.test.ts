@@ -4,6 +4,7 @@ const {
   lazyMock,
   suspenseMock,
   startTransitionMock,
+  useCallbackMock,
   useEffectMock,
   useStateMock,
   navigateMock,
@@ -17,6 +18,7 @@ const {
   }),
   suspenseMock: vi.fn(({ children }: { children: unknown }) => children),
   startTransitionMock: vi.fn((callback: () => void) => callback()),
+  useCallbackMock: vi.fn((callback: unknown) => callback),
   useEffectMock: vi.fn(),
   useStateMock: vi.fn(),
   navigateMock: vi.fn(),
@@ -32,6 +34,7 @@ vi.mock('react', async () => {
     lazy: lazyMock,
     Suspense: suspenseMock,
     startTransition: startTransitionMock,
+    useCallback: useCallbackMock,
     useEffect: useEffectMock,
     useState: useStateMock,
   }
@@ -97,6 +100,7 @@ describe('authenticated-layout regression', () => {
     lazyMock.mockClear()
     suspenseMock.mockClear()
     startTransitionMock.mockClear()
+    useCallbackMock.mockClear()
     navigateMock.mockReset()
     useLocationMock.mockReset()
     useAuthStoreMock.mockReset()
@@ -142,5 +146,24 @@ describe('authenticated-layout regression', () => {
     expect(syncIdentitySnapshotFromProfileMock).not.toHaveBeenCalled()
     expect(JSON.stringify(view)).toContain('protected-page')
     expect(JSON.stringify(view)).not.toContain('正在等待后端同步身份权限')
+  })
+
+  it('renders an explicit retry gate when identity sync is already in error state', () => {
+    useAuthStoreMock.mockReturnValue({
+      accessToken: 'token-1',
+      isIdentitySynced: false,
+      isSyncing: false,
+      setIsSyncing: vi.fn(),
+    })
+    useStateMock
+      .mockImplementationOnce(() => [{ status: 'error', error: new Error('snapshot failed') }, vi.fn()])
+      .mockImplementation((initialValue: unknown) => [initialValue, vi.fn()])
+
+    const view = AuthenticatedLayout({ children: 'protected-page' })
+
+    expect(syncIdentitySnapshotFromProfileMock).not.toHaveBeenCalled()
+    expect(JSON.stringify(view)).toContain('身份权限同步失败')
+    expect(JSON.stringify(view)).toContain('重试同步')
+    expect(JSON.stringify(view)).not.toContain('protected-page')
   })
 })

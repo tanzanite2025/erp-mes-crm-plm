@@ -53,35 +53,44 @@ function toBarcodeConfig(value: unknown): Product['barcodeConfig'] {
   return parsed.success ? parsed.data : undefined
 }
 
-function buildProductCandidate(dto: ProductApiDTO) {
-    if (!dto.restrictions) throw new Error('[CRITICAL] Missing restrictions array in Product DTO')
-    if (!dto.attributeValues) throw new Error('[CRITICAL] Missing attributeValues array in Product DTO')
+function buildProductCandidate(
+  dto: ProductApiDTO,
+  options?: {
+    allowMissingCollections?: boolean
+  }
+) {
+  const allowMissingCollections = options?.allowMissingCollections ?? false
+  const restrictions = dto.restrictions ?? (allowMissingCollections ? [] : undefined)
+  const attributeValues = dto.attributeValues ?? (allowMissingCollections ? [] : undefined)
 
-    return {
-        id: dto.id,
-        sku: normalizeProductSkuValue(dto.sku),
-        name: dto.name,
-        modelCode: normalizeProductModelCodeValue(dto.modelCode),
-        typeId: dto.typeId,
-        depth: dto.depth,
-        widthInternal: dto.widthInternal,
-        widthExternal: dto.widthExternal,
-        weight: dto.weight,
-        length: dto.length,
-        angle: dto.angle,
-        clamp: dto.clamp,
-        offset: dto.offset,
-        axleCrown: dto.axleCrown,
-        steerer: dto.steerer,
-        image: dto.image,
-        restrictions: dto.restrictions,
-        moldGroup: dto.moldGroup,
-        description: dto.description,
-        engineeringSpecId: dto.engineeringSpecId,
-        attributeValues: dto.attributeValues.map(toProductAttributeValueContract),
-        techSpecs: dto.techSpecs,
-        barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
-        attachments: toAttachmentArray(dto.attachments),
+  if (!restrictions) throw new Error('[CRITICAL] Missing restrictions array in Product DTO')
+  if (!attributeValues) throw new Error('[CRITICAL] Missing attributeValues array in Product DTO')
+
+  return {
+    id: dto.id,
+    sku: normalizeProductSkuValue(dto.sku),
+    name: dto.name,
+    modelCode: normalizeProductModelCodeValue(dto.modelCode),
+    typeId: dto.typeId,
+    depth: dto.depth,
+    widthInternal: dto.widthInternal,
+    widthExternal: dto.widthExternal,
+    weight: dto.weight,
+    length: dto.length,
+    angle: dto.angle,
+    clamp: dto.clamp,
+    offset: dto.offset,
+    axleCrown: dto.axleCrown,
+    steerer: dto.steerer,
+    image: dto.image,
+    restrictions,
+    moldGroup: dto.moldGroup,
+    description: dto.description,
+    engineeringSpecId: dto.engineeringSpecId,
+    attributeValues: attributeValues.map(toProductAttributeValueContract),
+    techSpecs: dto.techSpecs,
+    barcodeConfig: toBarcodeConfig(dto.barcodeConfig),
+    attachments: toAttachmentArray(dto.attachments),
     status: dto.status ?? 'Active',
     templateKey: normalizeProductTemplateKeyValue(dto.templateKey),
     resolvedTemplateId: dto.resolvedTemplateId?.trim() || undefined,
@@ -113,7 +122,21 @@ export function toProductOptionsArrayContract(items: ProductApiDTO[]): Product[]
   let skipped = 0
 
   items.forEach((item, index) => {
-    const candidate = buildProductCandidate(item)
+    const missingCollections = [
+      !item.restrictions ? 'restrictions' : null,
+      !item.attributeValues ? 'attributeValues' : null,
+    ].filter(Boolean)
+
+    if (missingCollections.length > 0) {
+      logger.warn('Normalized missing product option collections during contract mapping', {
+        index,
+        id: item.id,
+        name: item.name,
+        missingCollections,
+      })
+    }
+
+    const candidate = buildProductCandidate(item, { allowMissingCollections: true })
     const parsed = productSchema.safeParse(candidate)
     if (parsed.success) {
       validProducts.push(parsed.data)
