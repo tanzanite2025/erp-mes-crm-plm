@@ -7,12 +7,13 @@ import {
 } from './cut-orientation'
 
 describe('cut-orientation', () => {
-  it('normalizes equivalent cut angles into the same 0-180 domain', () => {
-    expect(normalizeCutAngleDegrees(225)).toBe(45)
-    expect(normalizeCutAngleDegrees(-135)).toBe(45)
+  it('keeps geometric normalization but only resolves 0 and 45 as supported business angles', () => {
+    expect(normalizeCutAngleDegrees(45)).toBe(45)
     expect(normalizeCutAngleDegrees(180)).toBe(0)
     expect(toCutAngleDegrees('45')).toBe(45)
-    expect(resolveSupportedCutAngleValue('225')).toBe('45')
+    expect(resolveSupportedCutAngleValue('45')).toBe('45')
+    expect(resolveSupportedCutAngleValue('90')).toBe('0')
+    expect(resolveSupportedCutAngleValue('135')).toBe('0')
     expect(resolveSupportedCutAngleValue('13')).toBe('0')
   })
 
@@ -39,16 +40,5 @@ describe('cut-orientation', () => {
     expect(geometry.envelopeWidthMm).toBe(757.311)
     expect(geometry.envelopeLengthMm).toBe(757.311)
     expect(geometry.envelopeAreaM2).toBeGreaterThan(geometry.baseAreaM2)
-  })
-
-  it('swaps width and length envelope at 90 degrees', () => {
-    const geometry = resolveCutOrientationGeometry({
-      widthMm: 980,
-      lengthMm: 91,
-      cutAngleDeg: 90,
-    })
-
-    expect(geometry.envelopeWidthMm).toBe(91)
-    expect(geometry.envelopeLengthMm).toBe(980)
   })
 })

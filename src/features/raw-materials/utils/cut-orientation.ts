@@ -9,7 +9,7 @@ export type CutOrientationGeometry = {
   envelopeAreaM2: number
 }
 
-export const SUPPORTED_CUT_ANGLE_VALUES = ['0', '45', '90', '135'] as const
+export const SUPPORTED_CUT_ANGLE_VALUES = ['0', '45'] as const
 
 export type SupportedCutAngleValue = (typeof SUPPORTED_CUT_ANGLE_VALUES)[number]
 
@@ -19,8 +19,6 @@ export const SUPPORTED_CUT_ANGLE_OPTIONS: ReadonlyArray<{
 }> = [
   { value: '0', label: '0°' },
   { value: '45', label: '45°' },
-  { value: '90', label: '90°' },
-  { value: '135', label: '135°' },
 ] as const
 
 function round(value: number, digits = 3): number {
@@ -54,10 +52,9 @@ export function normalizeCutAngleDegrees(value: number): number {
 export function resolveSupportedCutAngleValue(
   value: string | number | undefined
 ): SupportedCutAngleValue {
-  const normalized = normalizeCutAngleDegrees(toCutAngleDegrees(value))
-  const supported = String(normalized) as SupportedCutAngleValue
-  if (SUPPORTED_CUT_ANGLE_VALUES.includes(supported)) {
-    return supported
+  const parsed = toCutAngleDegrees(value)
+  if (parsed === 45) {
+    return '45'
   }
   return '0'
 }

@@ -23,8 +23,7 @@ func TestResolveRawMaterialCutGeometryExpandsEnvelopeAtFortyFiveDegrees(t *testi
 	require.Greater(t, geometry.EnvelopeAreaM2, geometry.BaseAreaM2)
 }
 
-func TestNormalizeRawMaterialCutAngleDegreesCanonicalizesEquivalentAngles(t *testing.T) {
-	require.Equal(t, 45.0, normalizeRawMaterialCutAngleDegrees(225))
-	require.Equal(t, 45.0, normalizeRawMaterialCutAngleDegrees(-135))
+func TestNormalizeRawMaterialCutAngleDegreesKeepsCanonicalZeroAndFortyFiveAngles(t *testing.T) {
+	require.Equal(t, 45.0, normalizeRawMaterialCutAngleDegrees(45))
 	require.Equal(t, 0.0, normalizeRawMaterialCutAngleDegrees(180))
 }

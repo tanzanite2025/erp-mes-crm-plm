@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"xdfc-server/models"
 )
@@ -128,10 +129,20 @@ func validateRawMaterialBatchOptimizerDemandLineInput(
 	if demandLine.LayupCount <= 0 {
 		return newRawMaterialBatchOptimizerValidationError("%s 叠层数必须大于 0", label)
 	}
+	if !isSupportedRawMaterialBatchOptimizerCutAngle(demandLine.CutAngle) {
+		return newRawMaterialBatchOptimizerValidationError("%s cutAngle 仅支持 0 或 45", label)
+	}
 	if demandLine.OrderSequence < 0 {
 		return newRawMaterialBatchOptimizerValidationError("%s orderSequence 不能为负数", label)
 	}
 	return nil
+}
+
+func isSupportedRawMaterialBatchOptimizerCutAngle(value float64) bool {
+	if math.IsNaN(value) || math.IsInf(value, 0) {
+		return false
+	}
+	return value == 0 || value == 45
 }
 
 func isSupportedRawMaterialBatchObjectivePreset(value string) bool {
