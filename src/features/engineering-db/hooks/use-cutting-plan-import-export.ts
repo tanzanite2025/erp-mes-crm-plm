@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
+import type { CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import { type CuttingPlanInput } from '../data/cutting-plan-schema'
 import { CuttingPlanExcelService } from '../services/cutting-plan-excel-service'
 import { openCuttingPlanPrintPreview } from '../services/cutting-plan-print-preview'
@@ -18,10 +19,10 @@ export function useCuttingPlanImportExport() {
     }
   }
 
-  const parseExcel = async (file: File): Promise<CuttingPlanInput | null> => {
+  const parseExcel = async (file: File, cutSizeUnits: CutSizeUnit[]): Promise<CuttingPlanInput | null> => {
     const loadingId = toast.loading('正在解析裁纱模板...')
     try {
-      const parsed = await CuttingPlanExcelService.parseImportFile(file)
+      const parsed = await CuttingPlanExcelService.parseImportFile(file, cutSizeUnits)
       toast.success(`导入成功，共 ${parsed.lines.length} 条裁片`, { id: loadingId })
       return parsed
     } catch (error) {

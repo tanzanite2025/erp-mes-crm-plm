@@ -2,6 +2,7 @@ import type { TabItem } from '@/components/module-tabs'
 
 export const systemManagementTabs: TabItem[] = [
   { key: 'status', label: 'System Status', href: '/system-management' },
+  { key: 'accounts', label: 'Role Matrix', href: '/system-management/accounts' },
   {
     key: 'workflow-definition',
     label: 'Sales Workflow',

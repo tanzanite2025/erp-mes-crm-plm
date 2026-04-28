@@ -1,7 +1,31 @@
 import { z } from 'zod'
+import {
+  deriveCutSizeAreaM2,
+  deriveCutSizeWeightG,
+  formatCutSizeExpression,
+  type CutSizeUnit,
+} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 
 export const cuttingPlanStatusSchema = z.enum(['Draft', 'Active', 'Archived'])
 export type CuttingPlanStatus = z.infer<typeof cuttingPlanStatusSchema>
+
+export const cuttingPlanLineConstraintProfileSchema = z.object({
+  rollGroupKey: z.string().optional(),
+  orderSequence: z.string().optional(),
+  yarnDirectionMode: z.string().optional(),
+  processTags: z.array(z.string()).default([]),
+  noteKeywords: z.array(z.string()).default([]),
+})
+
+export type CuttingPlanLineConstraintProfile = z.infer<typeof cuttingPlanLineConstraintProfileSchema>
+
+export const EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE: CuttingPlanLineConstraintProfile = {
+  rollGroupKey: '',
+  orderSequence: '',
+  yarnDirectionMode: '',
+  processTags: [],
+  noteKeywords: [],
+}
 
 export const cuttingPlanLineSchema = z.object({
   id: z.string(),
@@ -12,10 +36,15 @@ export const cuttingPlanLineSchema = z.object({
   cutSizeCode: z.string().optional(),
   cutSizeName: z.string().optional(),
   sizeExpression: z.string().optional(),
+  requiredSets: z.string().optional(),
+  priority: z.string().optional(),
+  mustFulfill: z.boolean().optional(),
+  allowMixedPlan: z.boolean().optional(),
   faw: z.string().optional(),
   weightG: z.string().optional(),
   areaM2: z.string().optional(),
   operationNote: z.string().optional(),
+  constraintProfile: cuttingPlanLineConstraintProfileSchema.optional(),
   manualGroupBreakBefore: z.boolean().optional(),
 })
 
@@ -49,6 +78,11 @@ export type CuttingPlan = z.infer<typeof cuttingPlanSchema>
 export const cuttingPlanInputSchema = cuttingPlanSchema.omit({ id: true, createdAt: true })
 export type CuttingPlanInput = z.infer<typeof cuttingPlanInputSchema>
 
+export type CuttingPlanLineAuthorityIssue = {
+  sequenceNo: number
+  kind: 'missing_cut_size_binding' | 'missing_cut_size_unit'
+}
+
 export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
   name: '',
   productId: '',
@@ -70,6 +104,21 @@ export const EMPTY_CUTTING_PLAN_INPUT: CuttingPlanInput = {
   version: 1,
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/[，,]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
 export function createEmptyCuttingPlanLine(sequenceNo: number): CuttingPlanLine {
   return {
     id: `cutting-line-${Date.now()}-${sequenceNo}`,
@@ -80,12 +129,94 @@ export function createEmptyCuttingPlanLine(sequenceNo: number): CuttingPlanLine 
     cutSizeCode: '',
     cutSizeName: '',
     sizeExpression: '',
+    requiredSets: '1',
+    priority: '',
+    mustFulfill: true,
+    allowMixedPlan: false,
     faw: '',
     weightG: '',
     areaM2: '',
     operationNote: '',
+    constraintProfile: { ...EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE },
     manualGroupBreakBefore: false,
   }
+}
+
+function trimLineValue(value?: string): string {
+  return value?.trim() || ''
+}
+
+function buildCuttingPlanLineSnapshotFromCutSizeUnit(unit: CutSizeUnit) {
+  const areaM2 = trimLineValue(unit.areaM2) || deriveCutSizeAreaM2(unit)
+  const weightG =
+    trimLineValue(unit.weightG) ||
+    deriveCutSizeWeightG({
+      widthMm: unit.widthMm,
+      lengthMm: unit.lengthMm,
+      pieceCount: unit.pieceCount,
+      areaM2,
+      areaWeightGsm: unit.areaWeightGsm,
+    })
+
+  return {
+    cutSizeId: unit.id,
+    cutSizeCode: trimLineValue(unit.code),
+    cutSizeName: trimLineValue(unit.name),
+    sizeExpression: formatCutSizeExpression(unit),
+    faw: trimLineValue(unit.areaWeightGsm),
+    weightG,
+    areaM2,
+  }
+}
+
+function clearCuttingPlanLineAuthoritySnapshot(line: CuttingPlanLine): CuttingPlanLine {
+  return {
+    ...line,
+    cutSizeId: trimLineValue(line.cutSizeId),
+    cutSizeCode: '',
+    cutSizeName: '',
+    sizeExpression: '',
+    faw: '',
+    weightG: '',
+    areaM2: '',
+  }
+}
+
+export function syncCuttingPlanLineWithCutSizeUnit(
+  line: CuttingPlanLine,
+  cutSizeUnit?: CutSizeUnit | null,
+): CuttingPlanLine {
+  if (!cutSizeUnit || !trimLineValue(line.cutSizeId)) {
+    return clearCuttingPlanLineAuthoritySnapshot(line)
+  }
+
+  return {
+    ...line,
+    ...buildCuttingPlanLineSnapshotFromCutSizeUnit(cutSizeUnit),
+  }
+}
+
+export function collectCuttingPlanLineAuthorityIssues(
+  lines: Array<CuttingPlanLine | CuttingPlanInput['lines'][number]>,
+  cutSizeUnits: CutSizeUnit[],
+): CuttingPlanLineAuthorityIssue[] {
+  const issues: CuttingPlanLineAuthorityIssue[] = []
+
+  lines.forEach((line, index) => {
+    const sequenceNo = Number(line.sequenceNo) || index + 1
+    const cutSizeId = trimLineValue(line.cutSizeId)
+    if (!cutSizeId) {
+      issues.push({ sequenceNo, kind: 'missing_cut_size_binding' })
+      return
+    }
+
+    const unit = cutSizeUnits.find((item) => item.id === cutSizeId)
+    if (!unit) {
+      issues.push({ sequenceNo, kind: 'missing_cut_size_unit' })
+    }
+  })
+
+  return issues
 }
 
 export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingPlanLine {
@@ -100,10 +231,21 @@ export function normalizeCuttingPlanLine(line: unknown, index: number): CuttingP
     cutSizeCode: raw.cutSizeCode || '',
     cutSizeName: raw.cutSizeName || '',
     sizeExpression: raw.sizeExpression || '',
+    requiredSets: raw.requiredSets || '1',
+    priority: raw.priority || '',
+    mustFulfill: raw.mustFulfill ?? true,
+    allowMixedPlan: raw.allowMixedPlan ?? false,
     faw: raw.faw || '',
     weightG: raw.weightG || '',
     areaM2: raw.areaM2 || '',
     operationNote: raw.operationNote || '',
+    constraintProfile: {
+      rollGroupKey: raw.constraintProfile?.rollGroupKey || '',
+      orderSequence: raw.constraintProfile?.orderSequence || '',
+      yarnDirectionMode: raw.constraintProfile?.yarnDirectionMode || '',
+      processTags: normalizeStringArray(raw.constraintProfile?.processTags),
+      noteKeywords: normalizeStringArray(raw.constraintProfile?.noteKeywords),
+    },
     manualGroupBreakBefore: Boolean(raw.manualGroupBreakBefore),
   })
 }
@@ -130,7 +272,7 @@ export function buildCuttingPlanName(params: {
   return `${model}-${holeCount}孔裁纱单`
 }
 
-export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan): CuttingPlanInput {
+export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan, cutSizeUnits: CutSizeUnit[]): CuttingPlanInput {
   const generatedName = buildCuttingPlanName({
     productName: plan.productName,
     productCode: plan.productCode,
@@ -154,12 +296,38 @@ export function buildCuttingPlanInput(plan: CuttingPlanInput | CuttingPlan): Cut
     prepregSpecLabel: plan.prepregSpecLabel?.trim() || '',
     totalInnerMaterialWeightG: plan.totalInnerMaterialWeightG?.trim() || '',
     totalMaterialWeightG: plan.totalMaterialWeightG?.trim() || '',
-    lines: (plan.lines || []).map((line, index) => ({
-      ...line,
-      sequenceNo: index + 1,
-      cutSizeId: line.cutSizeId?.trim() || '',
-      cutSizeCode: line.cutSizeCode?.trim() || '',
-      cutSizeName: line.cutSizeName?.trim() || '',
-    })),
+    lines: (plan.lines || []).map((line, index) => {
+      const syncedLine = syncCuttingPlanLineWithCutSizeUnit(
+        line,
+        cutSizeUnits.find((item) => item.id === trimLineValue(line.cutSizeId)),
+      )
+
+      return {
+        ...syncedLine,
+        sequenceNo: index + 1,
+        rollOrder: syncedLine.rollOrder?.trim() || '',
+        yarnDirection: syncedLine.yarnDirection?.trim() || '',
+        cutSizeId: syncedLine.cutSizeId?.trim() || '',
+        cutSizeCode: syncedLine.cutSizeCode?.trim() || '',
+        cutSizeName: syncedLine.cutSizeName?.trim() || '',
+        sizeExpression: syncedLine.sizeExpression?.trim() || '',
+        requiredSets: syncedLine.requiredSets?.trim() || '1',
+        priority: syncedLine.priority?.trim() || '',
+        mustFulfill: syncedLine.mustFulfill ?? true,
+        allowMixedPlan: syncedLine.allowMixedPlan ?? false,
+        faw: syncedLine.faw?.trim() || '',
+        weightG: syncedLine.weightG?.trim() || '',
+        areaM2: syncedLine.areaM2?.trim() || '',
+        operationNote: syncedLine.operationNote?.trim() || '',
+        constraintProfile: {
+          rollGroupKey: syncedLine.constraintProfile?.rollGroupKey?.trim() || '',
+          orderSequence: syncedLine.constraintProfile?.orderSequence?.trim() || '',
+          yarnDirectionMode: syncedLine.constraintProfile?.yarnDirectionMode?.trim() || '',
+          processTags: normalizeStringArray(syncedLine.constraintProfile?.processTags),
+          noteKeywords: normalizeStringArray(syncedLine.constraintProfile?.noteKeywords),
+        },
+        manualGroupBreakBefore: Boolean(syncedLine.manualGroupBreakBefore),
+      }
+    }),
   })
 }

@@ -25,7 +25,15 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import { useRolesQuery } from '@/features/system-mgmt/hooks/use-roles'
 import { type User } from '../data/schema'
 import { useUserMutations, useUserOptionsQuery } from '../hooks/use-users'
 import { useUsersActionDialogOptions } from '../hooks/use-users-action-dialog-options'
@@ -35,8 +43,10 @@ import {
   buildDialogCloseHandler,
   buildSubmitSuccessHandler,
   buildUserCreatePayload,
-  buildUserDelta,
+  buildUserReplacePayload,
 } from './users-action-dialog.submit'
+
+const UNASSIGNED_ROLE_VALUE = '__unassigned_role__'
 
 type UserActionDialogProps = {
   currentRow?: User
@@ -51,6 +61,7 @@ export function UsersActionDialog({
 }: UserActionDialogProps) {
   const { t } = useLanguage()
   const { data: userOptions } = useUserOptionsQuery({})
+  const { data: roles = [] } = useRolesQuery()
   const isEdit = !!currentRow
 
   const form = useForm<UserForm>({
@@ -71,6 +82,7 @@ export function UsersActionDialog({
           confirmPassword: '',
           isEdit,
           employeeId: '',
+          role: '',
         },
   })
 
@@ -95,6 +107,7 @@ export function UsersActionDialog({
         password: '',
         confirmPassword: '',
         isEdit: true,
+        role: currentRow.role || '',
       })
       return
     }
@@ -108,12 +121,13 @@ export function UsersActionDialog({
       confirmPassword: '',
       isEdit: false,
       employeeId: '',
+      role: '',
     })
   }, [open, isEdit, currentRow, form])
 
   const {
     createMutation,
-    updateMutation,
+    replaceMutation,
     bindEmployeeMutation,
     unbindEmployeeMutation,
   } = useUserMutations()
@@ -135,7 +149,7 @@ export function UsersActionDialog({
   const onSubmit = async (values: UserForm) => {
     try {
       if (isEdit && currentRow) {
-        const delta = buildUserDelta({
+        const payload = buildUserReplacePayload({
           currentRow,
           values,
         })
@@ -143,13 +157,11 @@ export function UsersActionDialog({
         const currentEmployeeID = currentRow.employeeId?.trim() || ''
         const employeeChanged = nextEmployeeID !== currentEmployeeID
 
-        if (Object.keys(delta).length > 0) {
-          await updateMutation.mutateAsync({
+        await replaceMutation.mutateAsync({
             id: currentRow.id,
-            delta,
-            version: currentRow.version || 1,
+            data: payload,
+            user: currentRow,
           })
-        }
 
         if (employeeChanged) {
           if (nextEmployeeID) {
@@ -322,6 +334,42 @@ export function UsersActionDialog({
                         className='col-span-4 h-11 rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner transition-all focus-visible:ring-primary/20'
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='role'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
+                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                        {t('users.dialogs.labels.role')}
+                      </FormLabel>
+                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                        ROLE_BINDING
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Select
+                        value={field.value || UNASSIGNED_ROLE_VALUE}
+                        onValueChange={(value) => field.onChange(value === UNASSIGNED_ROLE_VALUE ? '' : value)}
+                      >
+                        <SelectTrigger className='col-span-4 h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
+                          <SelectValue placeholder={t('users.dialogs.placeholders.role')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={UNASSIGNED_ROLE_VALUE}>{t('users.dialogs.placeholders.roleEmpty')}</SelectItem>
+                          {roles.map((role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              {role.label || role.id}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage className='col-span-4 col-start-3' />
                   </FormItem>

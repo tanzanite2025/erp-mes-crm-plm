@@ -99,7 +99,7 @@ describe('sales-query-service', () => {
     await expect(getSalesOrderByNo('SO-001')).rejects.toThrow()
   })
 
-  it('rejects list payloads that omit required arrays when withLines is false', async () => {
+  it('parses list payloads without lines when withLines is false', async () => {
     apiFetchMock.mockResolvedValue({
       items: [
         {
@@ -132,6 +132,7 @@ describe('sales-query-service', () => {
           version: 1,
           evidences: [],
           fulfillmentRate: 0,
+          availableActions: [],
         },
       ],
       total: 1,
@@ -139,7 +140,10 @@ describe('sales-query-service', () => {
       pageSize: 50,
     })
 
-    await expect(getSalesOrders()).rejects.toThrow()
+    const result = await getSalesOrders()
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]?.lines).toEqual([])
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       `/sales-orders?${TRADING_QUERY_PARAM_PAGE}=1&${TRADING_QUERY_PARAM_PAGE_SIZE}=50`
@@ -232,6 +236,7 @@ describe('sales-query-service', () => {
           version: 1,
           evidences: [],
           fulfillmentRate: 0,
+          availableActions: [],
         },
       ],
       total: 1,

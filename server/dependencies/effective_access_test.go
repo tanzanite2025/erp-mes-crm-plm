@@ -60,7 +60,20 @@ func setupEffectiveAccessTestDB(t *testing.T) *gorm.DB {
 			first_name TEXT,
 			last_name TEXT,
 			status TEXT,
+			role TEXT,
 			employee_id TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME
+		);
+		`,
+		`
+		CREATE TABLE roles (
+			id TEXT PRIMARY KEY,
+			role_id TEXT NOT NULL UNIQUE,
+			label TEXT,
+			color TEXT,
+			permissions TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME
@@ -131,6 +144,25 @@ func seedUserPermission(t *testing.T, testDB *gorm.DB, userID string, permission
 	}
 }
 
+func seedRole(t *testing.T, testDB *gorm.DB, roleID string, permissions string, updatedAt time.Time) {
+	t.Helper()
+
+	role := models.Role{
+		BaseModel: models.BaseModel{
+			ID:        roleID + "-row",
+			CreatedAt: updatedAt.Add(-time.Minute),
+			UpdatedAt: updatedAt,
+		},
+		RoleID:      roleID,
+		Label:       roleID,
+		Color:       "bg-slate-500/10 text-slate-600 border-slate-200",
+		Permissions: permissions,
+	}
+	if err := testDB.Create(&role).Error; err != nil {
+		t.Fatalf("seed role %s failed: %v", roleID, err)
+	}
+}
+
 func containsAll(values []string, expected ...string) bool {
 	set := make(map[string]struct{}, len(values))
 	for _, value := range values {
@@ -184,5 +216,24 @@ func TestResolveEffectiveAccessProfileForUserReturnsEmptyWhenNoExplicitPermissio
 	}
 	if profile.EmployeeID != "emp-empty" {
 		t.Fatalf("expected employee id passthrough, got %s", profile.EmployeeID)
+	}
+}
+
+func TestResolveEffectiveAccessProfileForUserMergesRoleAndExplicitPermissions(t *testing.T) {
+	testDB := setupEffectiveAccessTestDB(t)
+	seedRole(t, testDB, "finance-manager", `["menu_trading","action_trading_sales_order_manage"]`, time.Unix(99, 0))
+	seedUserPermission(t, testDB, "user-role-1", "user_view", time.Unix(101, 0))
+
+	profile := ResolveEffectiveAccessProfileForUser(models.User{
+		ID:         "user-role-1",
+		Role:       "finance-manager",
+		EmployeeID: "emp-role-1",
+	})
+
+	if profile.EmployeeID != "emp-role-1" {
+		t.Fatalf("expected employee id passthrough, got %s", profile.EmployeeID)
+	}
+	if !containsAll(profile.Permissions, "menu_trading", "action_trading_sales_order_manage", "user_view") {
+		t.Fatalf("expected merged role and explicit permissions, got %#v", profile.Permissions)
 	}
 }

@@ -130,7 +130,12 @@ function requireSalesOrderArrayField<T>(
   return ensureArrayField<T>(value, fieldName, context)
 }
 
-export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
+type SalesOrderBaseDTO = SalesOrderApiDTO | SalesOrderListPageApiDTO['items'][number]
+
+function toSalesOrderBaseContract(
+  dto: SalesOrderBaseDTO,
+  context: string,
+): Omit<SalesOrder, 'lines'> {
   return {
     id: dto.id,
     orderNo: dto.orderNo,
@@ -159,10 +164,39 @@ export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
     updatedBy: dto.updatedBy,
     isDeleted: dto.isDeleted ?? false,
     version: dto.version ?? 1,
-    evidences: requireSalesOrderArrayField(dto, 'evidences', 'SalesOrderApiAdapter.toSalesOrderContract'),
+    evidences: requireSalesOrderArrayField(dto, 'evidences', context),
     fulfillmentRate: dto.fulfillmentRate,
-    availableActions: requireSalesOrderArrayField(dto, 'availableActions', 'SalesOrderApiAdapter.toSalesOrderContract'),
-    lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', 'SalesOrderApiAdapter.toSalesOrderContract').map(
+    availableActions: requireSalesOrderArrayField(dto, 'availableActions', context),
+  }
+}
+
+function toSalesOrderListItemContract(
+  dto: SalesOrderListPageApiDTO['items'][number],
+  options: { withLines: boolean },
+): SalesOrder {
+  const context = 'SalesOrderApiAdapter.toSalesOrderListItemContract'
+  const base = toSalesOrderBaseContract(dto, context)
+
+  if (options.withLines) {
+    return {
+      ...base,
+      lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', context).map(
+        toSalesOrderLineContract,
+      ),
+    }
+  }
+
+  return {
+    ...base,
+    lines: Array.isArray(dto.lines) ? dto.lines.map(toSalesOrderLineContract) : [],
+  }
+}
+
+export function toSalesOrderContract(dto: SalesOrderApiDTO): SalesOrder {
+  const context = 'SalesOrderApiAdapter.toSalesOrderContract'
+  return {
+    ...toSalesOrderBaseContract(dto, context),
+    lines: requireSalesOrderArrayField<SalesOrderLineApiDTO>(dto, 'lines', context).map(
       toSalesOrderLineContract
     ),
   }
@@ -205,15 +239,12 @@ export function toSalesOrderApiDTO(order: SalesOrder): SalesOrderApiDTO {
   }
 }
 
-export function toSalesOrderContracts(items: SalesOrderApiDTO[]): SalesOrder[] {
-  return items.map(toSalesOrderContract)
-}
-
 export function toSalesOrderListPageContract(
-  dto: SalesOrderListPageApiDTO
+  dto: SalesOrderListPageApiDTO,
+  options: { withLines: boolean },
 ): PaginatedSalesOrders {
   return {
-    items: toSalesOrderContracts(dto.items),
+    items: dto.items.map((item) => toSalesOrderListItemContract(item, options)),
     total: dto.total,
     page: dto.page,
     pageSize: dto.pageSize,

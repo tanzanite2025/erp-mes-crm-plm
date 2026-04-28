@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useLanguage } from '@/context/language-provider'
 import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-code-source'
 import type { Product } from '@/features/engineering/data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
@@ -34,7 +36,9 @@ import type { PrepregMaterialSpec } from '@/features/raw-materials/data/prepreg-
 import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'
 import {
   buildCuttingPlanName,
+  syncCuttingPlanLineWithCutSizeUnit,
   createEmptyCuttingPlanLine,
+  EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE,
   type CuttingPlanInput,
   type CuttingPlanStatus,
 } from '../data/cutting-plan-schema'
@@ -107,8 +111,16 @@ function parseDateInput(value?: string): Date | undefined {
   return isValid(parsed) ? parsed : undefined
 }
 
+function parseCommaSeparatedList(value: string): string[] {
+  return value
+    .split(/[，,]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
-  const lines = value.lines ?? []
+  const { t } = useLanguage()
+  const lines = useMemo(() => value.lines ?? [], [value.lines])
   const { data: products = [] } = useGetProducts()
   const { countOptions } = useActiveHoleCodeSource()
 
@@ -129,7 +141,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     [prepregQuery.data?.items]
   )
 
-  const cutSizeUnits = cutSizeQuery.data ?? []
+  const cutSizeUnits = useMemo(() => cutSizeQuery.data ?? [], [cutSizeQuery.data])
 
   const activeProducts = useMemo(
     () => products.filter((product) => product.status !== 'Archived'),
@@ -181,6 +193,32 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     })
   }, [matchedProduct, onChange, value])
 
+  useEffect(() => {
+    if (lines.length === 0 || cutSizeUnits.length === 0) return
+
+    const nextLines = lines.map((line) =>
+      syncCuttingPlanLineWithCutSizeUnit(
+        line,
+        cutSizeUnits.find((item) => item.id === line.cutSizeId) || null,
+      )
+    )
+
+    const hasAuthorityDrift = nextLines.some((nextLine, index) => {
+      const currentLine = lines[index]
+      return (
+        nextLine.cutSizeCode !== currentLine.cutSizeCode ||
+        nextLine.cutSizeName !== currentLine.cutSizeName ||
+        nextLine.sizeExpression !== currentLine.sizeExpression ||
+        nextLine.faw !== currentLine.faw ||
+        nextLine.weightG !== currentLine.weightG ||
+        nextLine.areaM2 !== currentLine.areaM2
+      )
+    })
+
+    if (!hasAuthorityDrift) return
+    onChange({ ...value, lines: nextLines })
+  }, [cutSizeUnits, lines, onChange, value])
+
   const updateField = <K extends PlanField>(field: K, nextValue: CuttingPlanInput[K]) => {
     onChange({ ...value, [field]: nextValue })
   }
@@ -224,21 +262,35 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
     onChange({ ...value, lines: nextLines })
   }
 
-  const updateLineField = (
+  const updateLineTextField = (
     index: number,
     field: keyof PlanLine,
     nextValue: string
   ) => {
-    if (field === 'sizeExpression') {
-      updateLine(index, {
-        sizeExpression: nextValue,
-        cutSizeId: '',
-        cutSizeCode: '',
-        cutSizeName: '',
-      })
-      return
-    }
     updateLine(index, { [field]: nextValue })
+  }
+
+  const updateLineBooleanField = (
+    index: number,
+    field: 'mustFulfill' | 'allowMixedPlan' | 'manualGroupBreakBefore',
+    nextValue: boolean
+  ) => {
+    updateLine(index, { [field]: nextValue })
+  }
+
+  const updateLineConstraintProfileField = (
+    index: number,
+    field: 'rollGroupKey' | 'orderSequence' | 'yarnDirectionMode' | 'processTags' | 'noteKeywords',
+    nextValue: string
+  ) => {
+    const current = lines[index]?.constraintProfile || EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE
+    updateLine(index, {
+      constraintProfile: {
+        ...EMPTY_CUTTING_PLAN_LINE_CONSTRAINT_PROFILE,
+        ...current,
+        [field]: field === 'processTags' || field === 'noteKeywords' ? parseCommaSeparatedList(nextValue) : nextValue,
+      },
+    })
   }
 
   const updateLineCutSize = (index: number, cutSizeId: string) => {
@@ -251,12 +303,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
       })
       return
     }
-    updateLine(index, {
-      cutSizeId: unit.id,
-      cutSizeCode: unit.code,
-      cutSizeName: unit.name,
-      sizeExpression: formatCutSizeExpression(unit),
-    })
+    updateLine(index, syncCuttingPlanLineWithCutSizeUnit(lines[index], unit))
   }
 
   const addLine = () => {
@@ -278,18 +325,18 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
   return (
     <div className='space-y-4'>
       <div className='grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-4 [&_input]:h-10 [&_input]:rounded-2xl'>
-        <EditorField label='方案名称' required>
+        <EditorField label={t('engineering.cuttingPlan.fields.planName')} required>
           <Input
             value={value.name}
             readOnly
-            placeholder='根据产品型号 + 孔数自动生成'
+            placeholder={t('engineering.cuttingPlan.placeholders.generatedName')}
             className='bg-muted/15'
           />
         </EditorField>
-        <EditorField label='产品型号' required>
+        <EditorField label={t('engineering.cuttingPlan.fields.productModel')} required>
           <Select value={value.productId || undefined} onValueChange={updateProduct}>
             <SelectTrigger className='h-10 w-full rounded-2xl'>
-              <SelectValue placeholder='请选择产品工程型号' />
+              <SelectValue placeholder={t('engineering.cuttingPlan.placeholders.selectProduct')} />
             </SelectTrigger>
             <SelectContent>
               {activeProducts.map((product) => (
@@ -300,13 +347,13 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label='孔数' required>
+        <EditorField label={t('engineering.cuttingPlan.fields.holeCount')} required>
           <Select
             value={value.holeCount || undefined}
             onValueChange={(nextValue) => updateField('holeCount', nextValue)}
           >
             <SelectTrigger className='h-10 w-full rounded-2xl'>
-              <SelectValue placeholder='请选择共享编码源孔数' />
+              <SelectValue placeholder={t('engineering.cuttingPlan.placeholders.selectHoleCount')} />
             </SelectTrigger>
             <SelectContent>
               {countOptions.map((count) => (
@@ -317,22 +364,22 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label='文件编号'>
+        <EditorField label={t('engineering.cuttingPlan.fields.documentNo')}>
           <Input
             value={value.documentNo}
             onChange={(event) => updateField('documentNo', event.target.value)}
-            placeholder='例如 XD2603028'
+            placeholder={t('engineering.cuttingPlan.placeholders.documentNo')}
           />
         </EditorField>
 
-        <EditorField label='版次'>
+        <EditorField label={t('engineering.cuttingPlan.fields.revisionNo')}>
           <Input
             value={value.revisionNo}
             onChange={(event) => updateField('revisionNo', event.target.value)}
-            placeholder='A1'
+            placeholder={t('engineering.cuttingPlan.placeholders.revisionNo')}
           />
         </EditorField>
-        <EditorField label='状态'>
+        <EditorField label={t('engineering.cuttingPlan.fields.status')}>
           <Select
             value={value.status}
             onValueChange={(nextValue) => updateField('status', nextValue as CuttingPlanStatus)}
@@ -341,13 +388,13 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='Draft'>草稿</SelectItem>
-              <SelectItem value='Active'>启用</SelectItem>
-              <SelectItem value='Archived'>归档</SelectItem>
+              <SelectItem value='Draft'>{t('engineering.cuttingPlan.status.draft')}</SelectItem>
+              <SelectItem value='Active'>{t('engineering.cuttingPlan.status.active')}</SelectItem>
+              <SelectItem value='Archived'>{t('engineering.cuttingPlan.status.archived')}</SelectItem>
             </SelectContent>
           </Select>
         </EditorField>
-        <EditorField label='生效日期'>
+        <EditorField label={t('engineering.cuttingPlan.fields.effectiveDate')}>
           <div className='flex items-center gap-1.5'>
             <Popover>
               <PopoverTrigger asChild>
@@ -359,7 +406,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                   {selectedEffectiveDate ? (
                     format(selectedEffectiveDate, 'yyyy-MM-dd')
                   ) : (
-                    <span className='text-muted-foreground'>请选择生效日期</span>
+                    <span className='text-muted-foreground'>{t('engineering.cuttingPlan.placeholders.selectEffectiveDate')}</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -381,19 +428,19 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                 size='icon'
                 className='size-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground'
                 onClick={() => updateField('effectiveDate', '')}
-                aria-label='清空生效日期'
+                aria-label={t('engineering.cuttingPlan.accessibility.clearEffectiveDate')}
               >
                 <X className='size-4' />
               </Button>
             ) : null}
           </div>
         </EditorField>
-        <EditorField label='引用预浸料'>
+        <EditorField label={t('engineering.cuttingPlan.fields.prepregRef')}>
           <div className='space-y-1.5'>
             <Select value={value.prepregSpecId || undefined} onValueChange={updatePrepreg}>
               <SelectTrigger className='h-10 w-full rounded-2xl'>
                 <SelectValue
-                  placeholder={prepregQuery.isLoading ? '正在加载预浸料...' : '请选择预浸料'}
+                  placeholder={prepregQuery.isLoading ? t('engineering.cuttingPlan.placeholders.loadingPrepreg') : t('engineering.cuttingPlan.placeholders.selectPrepreg')}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -405,7 +452,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
               </SelectContent>
             </Select>
             <p className='min-h-5 px-1 text-[11px] font-semibold leading-5 text-muted-foreground'>
-              {selectedPrepregSummary || '选择预浸料后自动带出碳丝、树脂和 RC 信息'}
+              {selectedPrepregSummary || t('engineering.cuttingPlan.placeholders.prepregSummaryFallback')}
             </p>
           </div>
         </EditorField>
@@ -414,9 +461,9 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
       <div className='rounded-2xl border border-dashed border-muted-foreground/20 bg-background'>
         <div className='flex flex-col gap-2 border-b border-dashed border-muted-foreground/20 p-3 md:flex-row md:items-center md:justify-between'>
           <div>
-            <div className='text-sm font-black'>裁片明细</div>
+            <div className='text-sm font-black'>{t('engineering.cuttingPlan.fields.lineDetails')}</div>
             <div className='text-[11px] font-semibold text-muted-foreground'>
-              行项支持引用裁切尺寸库；引用后自动回填宽×长×片，可继续编辑其余工艺字段。
+              {t('engineering.cuttingPlan.fields.lineDetailsHint')}
             </div>
           </div>
           <Button
@@ -426,22 +473,26 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             className='h-8 rounded-full text-xs font-black'
           >
             <Plus className='size-3.5' />
-            添加裁片行
+            {t('engineering.cuttingPlan.actions.addLine')}
           </Button>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow className='bg-muted/30'>
-              <TableHead className='w-12 text-center text-[10px] font-black'>序号</TableHead>
-              <TableHead className='min-w-24 text-[10px] font-black'>卷制顺序</TableHead>
-              <TableHead className='min-w-28 text-[10px] font-black'>纱别</TableHead>
-              <TableHead className='min-w-56 text-[10px] font-black'>裁切尺寸库</TableHead>
-              <TableHead className='min-w-28 text-[10px] font-black'>宽×长×片</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>FAW</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>重量</TableHead>
-              <TableHead className='min-w-20 text-[10px] font-black'>面积m2</TableHead>
-              <TableHead className='min-w-72 text-[10px] font-black'>操作说明</TableHead>
+              <TableHead className='w-12 text-center text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sequenceNo')}</TableHead>
+              <TableHead className='min-w-40 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.rollOrder')}</TableHead>
+              <TableHead className='min-w-36 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.yarnDirection')}</TableHead>
+              <TableHead className='min-w-56 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.cutSizeLibrary')}</TableHead>
+              <TableHead className='min-w-28 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.sizeExpression')}</TableHead>
+              <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.requiredSets')}</TableHead>
+              <TableHead className='min-w-24 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.priority')}</TableHead>
+              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.mustFulfill')}</TableHead>
+              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.allowMixedPlan')}</TableHead>
+              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.faw')}</TableHead>
+              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.weight')}</TableHead>
+              <TableHead className='min-w-20 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.areaM2')}</TableHead>
+              <TableHead className='min-w-88 text-[10px] font-black'>{t('engineering.cuttingPlan.fields.operationNote')}</TableHead>
               <TableHead className='w-12 text-right' />
             </TableRow>
           </TableHeader>
@@ -449,10 +500,10 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
             {lines.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={10}
+                  colSpan={14}
                   className='h-24 text-center text-xs font-bold text-muted-foreground'
                 >
-                  还没有裁片行，先添加一行并绑定尺寸库条目。
+                  {t('engineering.cuttingPlan.empty.noLines')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -460,17 +511,36 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                 <TableRow key={line.id}>
                   <TableCell className='text-center text-xs font-black'>{index + 1}</TableCell>
                   <TableCell>
-                    <LineInput
-                      value={line.rollOrder}
-                      onChange={(nextValue) => updateLineField(index, 'rollOrder', nextValue)}
-                    />
+                    <div className='grid gap-1.5'>
+                      <LineInput
+                        value={line.rollOrder}
+                        onChange={(nextValue) => updateLineTextField(index, 'rollOrder', nextValue)}
+                      />
+                      <LineInput
+                        value={line.constraintProfile?.rollGroupKey}
+                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'rollGroupKey', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.rollGroupKey')}
+                      />
+                      <LineInput
+                        value={line.constraintProfile?.orderSequence}
+                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'orderSequence', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.orderSequence')}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <LineInput
-                      value={line.yarnDirection}
-                      onChange={(nextValue) => updateLineField(index, 'yarnDirection', nextValue)}
-                      placeholder='C0'
-                    />
+                    <div className='grid gap-1.5'>
+                      <LineInput
+                        value={line.yarnDirection}
+                        onChange={(nextValue) => updateLineTextField(index, 'yarnDirection', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.yarnDirection')}
+                      />
+                      <LineInput
+                        value={line.constraintProfile?.yarnDirectionMode}
+                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'yarnDirectionMode', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.yarnDirectionMode')}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Select
@@ -479,7 +549,7 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                     >
                       <SelectTrigger className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'>
                         <SelectValue
-                          placeholder={cutSizeQuery.isLoading ? '加载中...' : '选择尺寸库单元'}
+                          placeholder={cutSizeQuery.isLoading ? t('engineering.cuttingPlan.placeholders.cutSizeLoading') : t('engineering.cuttingPlan.placeholders.selectCutSize')}
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -492,33 +562,81 @@ export function CuttingPlanEditor({ value, onChange }: CuttingPlanEditorProps) {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <LineInput
+                    <ReadonlyLineValue
                       value={line.sizeExpression}
-                      onChange={(nextValue) => updateLineField(index, 'sizeExpression', nextValue)}
-                      placeholder='980x34x4'
+                      placeholder={t('engineering.cuttingPlan.placeholders.sizeExpression')}
                     />
                   </TableCell>
                   <TableCell>
-                    <LineInput value={line.faw} onChange={(nextValue) => updateLineField(index, 'faw', nextValue)} />
+                    <LineInput
+                      value={line.requiredSets}
+                      onChange={(nextValue) => updateLineTextField(index, 'requiredSets', nextValue)}
+                      placeholder={t('engineering.cuttingPlan.placeholders.requiredSets')}
+                    />
                   </TableCell>
                   <TableCell>
                     <LineInput
+                      value={line.priority}
+                      onChange={(nextValue) => updateLineTextField(index, 'priority', nextValue)}
+                      placeholder={t('engineering.cuttingPlan.placeholders.priority')}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex h-8 items-center justify-center'>
+                      <Switch
+                        checked={line.mustFulfill ?? true}
+                        onCheckedChange={(checked) => updateLineBooleanField(index, 'mustFulfill', Boolean(checked))}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex h-8 items-center justify-center'>
+                      <Switch
+                        checked={line.allowMixedPlan ?? false}
+                        onCheckedChange={(checked) => updateLineBooleanField(index, 'allowMixedPlan', Boolean(checked))}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <ReadonlyLineValue value={line.faw} />
+                  </TableCell>
+                  <TableCell>
+                    <ReadonlyLineValue
                       value={line.weightG}
-                      onChange={(nextValue) => updateLineField(index, 'weightG', nextValue)}
                     />
                   </TableCell>
                   <TableCell>
-                    <LineInput
+                    <ReadonlyLineValue
                       value={line.areaM2}
-                      onChange={(nextValue) => updateLineField(index, 'areaM2', nextValue)}
                     />
                   </TableCell>
                   <TableCell>
-                    <LineInput
-                      value={line.operationNote}
-                      onChange={(nextValue) => updateLineField(index, 'operationNote', nextValue)}
-                      placeholder='例如 第一层主纱'
-                    />
+                    <div className='grid gap-1.5'>
+                      <LineInput
+                        value={line.operationNote}
+                        onChange={(nextValue) => updateLineTextField(index, 'operationNote', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.operationNote')}
+                      />
+                      <LineInput
+                        value={line.constraintProfile?.processTags?.join(', ')}
+                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'processTags', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.processTags')}
+                      />
+                      <LineInput
+                        value={line.constraintProfile?.noteKeywords?.join(', ')}
+                        onChange={(nextValue) => updateLineConstraintProfileField(index, 'noteKeywords', nextValue)}
+                        placeholder={t('engineering.cuttingPlan.placeholders.noteKeywords')}
+                      />
+                      <div className='flex items-center justify-between rounded-lg border border-dashed border-muted/60 px-2 py-1.5'>
+                        <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+                          {t('engineering.cuttingPlan.fields.manualGroupBreakBefore')}
+                        </span>
+                        <Switch
+                          checked={line.manualGroupBreakBefore ?? false}
+                          onCheckedChange={(checked) => updateLineBooleanField(index, 'manualGroupBreakBefore', Boolean(checked))}
+                        />
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className='text-right'>
                     <Button
@@ -578,6 +696,23 @@ function LineInput({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className='h-8 rounded-lg border-muted/60 bg-background text-xs font-semibold'
+    />
+  )
+}
+
+function ReadonlyLineValue({
+  value,
+  placeholder,
+}: {
+  value?: string
+  placeholder?: string
+}) {
+  return (
+    <Input
+      value={value || ''}
+      readOnly
+      placeholder={placeholder}
+      className='h-8 rounded-lg border-muted/60 bg-muted/20 text-xs font-semibold text-foreground'
     />
   )
 }

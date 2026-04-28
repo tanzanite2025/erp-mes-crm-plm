@@ -26,6 +26,7 @@ export interface CreateUserPayload {
   firstName?: string
   lastName?: string
   status?: string
+  role?: string
   employeeId?: string
 }
 
@@ -37,6 +38,7 @@ export interface UserUpdatePayload {
   firstName?: string
   lastName?: string
   status?: string
+  role?: string
   employeeId?: string
 }
 
@@ -47,6 +49,7 @@ export interface UserReplacePayload {
   firstName: string
   lastName: string
   status: string
+  role?: string
   employeeId?: string
 }
 

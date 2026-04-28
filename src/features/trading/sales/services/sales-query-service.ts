@@ -131,7 +131,8 @@ export const getSalesOrders = async (
   })
 
   return toSalesOrderListPageContract(
-    deserializeSalesOrderListPageApiDTO(response, { withLines })
+    deserializeSalesOrderListPageApiDTO(response, { withLines }),
+    { withLines }
   )
 }
 

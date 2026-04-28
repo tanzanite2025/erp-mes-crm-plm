@@ -17,12 +17,33 @@ import { isProtectedSystemAccount } from '../utils/user-utils'
 
 type DataTableRowActionsProps = {
   row: Row<User>
+  mode?: 'management' | 'permissions'
 }
 
-export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+export function DataTableRowActions({ row, mode = 'management' }: DataTableRowActionsProps) {
   const { t } = useLanguage()
   const { setOpen, setCurrentRow } = useUsers()
   const isProtected = isProtectedSystemAccount(row.original)
+  const isPermissionsMode = mode === 'permissions'
+
+  if (isPermissionsMode) {
+    return (
+      <NonBlockingPermissionBoundary permission='user_edit'>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          onClick={() => {
+            setCurrentRow(row.original)
+            setOpen('permissions')
+          }}
+          className='h-9 rounded-full text-[10px] font-black uppercase tracking-widest'
+        >
+          {t('users.actions.managePermissions')}
+        </Button>
+      </NonBlockingPermissionBoundary>
+    )
+  }
 
   return (
     <>

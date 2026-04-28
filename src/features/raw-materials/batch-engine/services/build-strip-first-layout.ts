@@ -2,6 +2,10 @@ import {
   toPositiveNumber,
   type CutSizeUnit,
 } from '../../cut-size-library/data/cut-size-library-schema'
+import {
+  resolveCutOrientationGeometry,
+  toCutAngleDegrees,
+} from '../../utils/cut-orientation'
 import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 
 export type StripLayoutZoneKind = 'roll' | 'loss' | 'strip' | 'piece' | 'aggregate'
@@ -13,8 +17,17 @@ export type StripLayoutZone = {
   y: number
   width: number
   height: number
+  usageCategory?: string
   label: string
   detail?: string
+  rollId?: string
+  demandLineId?: string
+  areaM2?: number
+  allocatedSets?: number
+  allocatedPieces?: number
+  coverageSharePercent?: number
+  tooltipLines?: string[]
+  isDiffHighlighted?: boolean
   interactive?: boolean
 }
 
@@ -97,8 +110,13 @@ function computeGeometry(
     toPositiveNumber(controls.edgeTrimMm),
     toPositiveNumber(selectedUnit.edgeTrimMm),
   )
-  const pieceWidthMm = Math.max(toPositiveNumber(selectedUnit.widthMm), 0)
-  const pieceLengthMm = Math.max(toPositiveNumber(selectedUnit.lengthMm), 0)
+  const orientationGeometry = resolveCutOrientationGeometry({
+    widthMm: toPositiveNumber(selectedUnit.widthMm),
+    lengthMm: toPositiveNumber(selectedUnit.lengthMm),
+    cutAngleDeg: toCutAngleDegrees(selectedUnit.cutAngle),
+  })
+  const pieceWidthMm = Math.max(orientationGeometry.envelopeWidthMm, 0)
+  const pieceLengthMm = Math.max(orientationGeometry.envelopeLengthMm, 0)
 
   const usableX = edgeTrimMm
   const usableY = edgeTrimMm
@@ -112,6 +130,7 @@ function computeGeometry(
     edgeTrimMm,
     pieceWidthMm,
     pieceLengthMm,
+    orientationGeometry,
     usableX,
     usableY,
     usableWidthMm,
@@ -158,6 +177,7 @@ export function buildStripFirstLayout(
     edgeTrimMm,
     pieceWidthMm,
     pieceLengthMm,
+    orientationGeometry,
     usableX,
     usableY,
     usableWidthMm,
@@ -235,7 +255,7 @@ export function buildStripFirstLayout(
         width: stripWidth,
         height: pieceHeight,
         label: `P${pieceIndex + 1}`,
-        detail: `${pieceWidthMm.toFixed(1)}x${pieceLengthMm.toFixed(1)}mm`,
+        detail: `${orientationGeometry.baseWidthMm.toFixed(1)}x${orientationGeometry.baseLengthMm.toFixed(1)}mm @ ${orientationGeometry.angleDeg.toFixed(1)}°`,
         interactive: true,
       })
     }

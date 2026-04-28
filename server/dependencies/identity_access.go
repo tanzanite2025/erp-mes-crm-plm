@@ -46,7 +46,7 @@ func (s *IdentityAccessService) ResolveSnapshotByUserID(userID string) (Identity
 	}
 
 	var user models.User
-	if err := tx.Select("id", "username", "employee_id").
+	if err := tx.Select("id", "username", "employee_id", "role").
 		First(&user, "id = ?", strings.TrimSpace(userID)).Error; err != nil {
 		return IdentityAccessSnapshot{}, err
 	}
@@ -63,7 +63,10 @@ func (s *IdentityAccessService) ResolveSnapshotForUser(user models.User) (Identi
 		EmployeeID:  strings.TrimSpace(profile.EmployeeID),
 		Permissions: append([]string(nil), profile.Permissions...),
 	}
-	snapshot.Diagnostics = []string{"user_permissions_authoritative"}
+	snapshot.Diagnostics = []string{"role_plus_user_permissions_authoritative"}
+	if strings.TrimSpace(user.Role) == "" {
+		snapshot.Diagnostics = append(snapshot.Diagnostics, "role_unassigned")
+	}
 	if len(snapshot.Permissions) == 0 {
 		snapshot.Diagnostics = append(snapshot.Diagnostics, "effective_permissions_empty")
 	}

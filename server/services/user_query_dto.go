@@ -21,6 +21,7 @@ type UserResponse struct {
 	FirstName   string    `json:"firstName"`
 	LastName    string    `json:"lastName"`
 	Status      string    `json:"status"`
+	Role        string    `json:"role,omitempty"`
 	EmployeeID  string    `json:"employeeId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
@@ -32,6 +33,7 @@ type UserOptionResponse struct {
 	EmployeeID string `json:"employeeId,omitempty"`
 	FirstName  string `json:"firstName,omitempty"`
 	LastName   string `json:"lastName,omitempty"`
+	Role       string `json:"role,omitempty"`
 	Status     string `json:"status,omitempty"`
 }
 
@@ -51,6 +53,7 @@ func MapUserToResponse(user models.User) UserResponse {
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		Status:      user.Status,
+		Role:        user.Role,
 		EmployeeID:  user.EmployeeID,
 		CreatedAt:   user.CreatedAt,
 		UpdatedAt:   user.UpdatedAt,
@@ -72,6 +75,7 @@ func MapUserToOptionResponse(user models.User) UserOptionResponse {
 		EmployeeID: user.EmployeeID,
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
+		Role:       user.Role,
 		Status:     user.Status,
 	}
 }

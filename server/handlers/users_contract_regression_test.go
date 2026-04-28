@@ -29,6 +29,7 @@ func setupUsersContractRegressionTestDB(t *testing.T) {
 			first_name TEXT,
 			last_name TEXT,
 			status TEXT,
+			role TEXT,
 			employee_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -385,5 +386,6 @@ func TestGetUserAccessSnapshotHandlerReturnsPermissionOnlySnapshot(t *testing.T)
 	require.Equal(t, userID, payload["userId"])
 	require.Equal(t, "access-user", payload["username"])
 	require.Contains(t, payload["permissions"].([]any), "user_view")
-	require.Contains(t, payload["diagnostics"].([]any), "user_permissions_authoritative")
+	require.Contains(t, payload["diagnostics"].([]any), "role_plus_user_permissions_authoritative")
+	require.Contains(t, payload["diagnostics"].([]any), "role_unassigned")
 }

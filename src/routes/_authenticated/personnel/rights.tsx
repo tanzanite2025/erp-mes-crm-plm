@@ -1,6 +1,6 @@
 import z from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { Users } from '@/features/users'
+import { UsersPermissionsPage } from '@/features/users/permissions-page'
 
 const usersSearchSchema = z.object({
   page: z.number().optional().catch(1),
@@ -24,6 +24,6 @@ export const Route = createFileRoute('/_authenticated/personnel/rights')({
   component: () => {
     const search = Route.useSearch()
     const navigate = Route.useNavigate()
-    return <Users search={search} navigate={navigate} showLayout={false} />
+    return <UsersPermissionsPage search={search} navigate={navigate} />
   },
 })

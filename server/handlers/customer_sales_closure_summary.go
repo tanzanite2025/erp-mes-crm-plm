@@ -5,15 +5,16 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type customerSalesClosureSummaryRow struct {
-	CustomerID      string `gorm:"column:customer_id"`
-	LastOrderDate   string `gorm:"column:last_order_date"`
-	OpenOrderCount  int64  `gorm:"column:open_order_count"`
-	TotalOrders     int64  `gorm:"column:total_orders"`
+	CustomerID     string `gorm:"column:customer_id"`
+	LastOrderDate  string `gorm:"column:last_order_date"`
+	OpenOrderCount int64  `gorm:"column:open_order_count"`
+	TotalOrders    int64  `gorm:"column:total_orders"`
 }
 
 type CustomerSalesClosureSummaryResponse struct {
@@ -21,8 +22,19 @@ type CustomerSalesClosureSummaryResponse struct {
 	HasOpenOrders      bool   `json:"hasOpenOrders"`
 	OpenOrderCount     int64  `json:"openOrderCount"`
 	LastOrderDate      string `json:"lastOrderDate"`
-	DaysSinceLastOrder *int   `json:"daysSinceLastOrder"`
+	DaysSinceLastOrder *int   `json:"daysSinceLastOrder,omitempty"`
 	TotalOrders        int64  `json:"totalOrders"`
+}
+
+type CustomerSalesClosureSummaryMetadata struct {
+	Pagination services.PartnerListPaginationMeta `json:"pagination"`
+	Stats      services.CustomerListStats         `json:"stats"`
+}
+
+type CustomerSalesClosureSummaryListResponse struct {
+	Items    []CustomerSalesClosureSummaryResponse `json:"items"`
+	Total    int64                                 `json:"total"`
+	Metadata CustomerSalesClosureSummaryMetadata   `json:"metadata"`
 }
 
 func parseSummaryOrderDate(value string) (time.Time, bool) {
@@ -51,7 +63,7 @@ func GetCustomerSalesClosureSummaryHandler(c *gin.Context) {
 	if err := db.DB.Table("sales_orders AS so").
 		Select(`
 			so.customer_id AS customer_id,
-			MAX(so.order_date) AS last_order_date,
+			COALESCE(MAX(so.order_date), '') AS last_order_date,
 			COALESCE(SUM(CASE WHEN so.status IN ('Draft', 'Pending', 'InProgress') THEN 1 ELSE 0 END), 0) AS open_order_count,
 			COUNT(DISTINCT so.id) AS total_orders
 		`).
@@ -82,8 +94,20 @@ func GetCustomerSalesClosureSummaryHandler(c *gin.Context) {
 		items = append(items, item)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"items": items,
-		"total": len(items),
+	total := int64(len(items))
+	baseMetadata, err := services.BuildCustomerListMetadata(total, 1, len(items))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to aggregate customer sales closure metadata"})
+		return
+	}
+	metadata := CustomerSalesClosureSummaryMetadata{
+		Pagination: baseMetadata.Pagination,
+		Stats:      baseMetadata.Stats,
+	}
+
+	c.JSON(http.StatusOK, CustomerSalesClosureSummaryListResponse{
+		Items:    items,
+		Total:    total,
+		Metadata: metadata,
 	})
 }

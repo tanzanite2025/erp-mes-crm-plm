@@ -1,5 +1,6 @@
 import z from 'zod'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { RolePermissionMatrixTab } from '@/features/system-mgmt/tabs/role-permission-matrix-tab'
 
 const usersSearchSchema = z.object({
   page: z.number().optional().catch(1),
@@ -20,11 +21,5 @@ const usersSearchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/system-management/accounts')({
   validateSearch: usersSearchSchema,
-  beforeLoad: ({ search }) => {
-    throw redirect({
-      to: '/personnel/accounts',
-      search,
-      replace: true,
-    })
-  },
+  component: RolePermissionMatrixTab,
 })

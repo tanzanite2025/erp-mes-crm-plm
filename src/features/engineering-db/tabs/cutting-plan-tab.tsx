@@ -19,10 +19,12 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
+import { useLanguage } from '@/context/language-provider'
 import { CuttingPlanEditor } from '../components/cutting-plan-editor'
 import {
   buildCuttingPlanInput,
   buildCuttingPlanName,
+  collectCuttingPlanLineAuthorityIssues,
   EMPTY_CUTTING_PLAN_INPUT,
   type CuttingPlan,
   type CuttingPlanInput,
@@ -30,8 +32,12 @@ import {
 import { useCuttingPlanImportExport } from '../hooks/use-cutting-plan-import-export'
 import { ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY } from '../query-keys'
 import { CuttingPlanService } from '../services/cutting-plan-service'
+import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
+
+const CUT_SIZE_OPTIONS_QUERY_KEY = ['raw-materials', 'cut-size-library', 'active-options'] as const
 
 export function CuttingPlanTab() {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const importInputRef = useRef<HTMLInputElement>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -44,6 +50,12 @@ export function CuttingPlanTab() {
     queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY,
     queryFn: CuttingPlanService.list,
   })
+  const cutSizeQuery = useQuery({
+    queryKey: CUT_SIZE_OPTIONS_QUERY_KEY,
+    queryFn: () => CutSizeLibraryService.listActive(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const cutSizeUnits = cutSizeQuery.data ?? []
 
   const filteredPlans = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase()
@@ -63,10 +75,10 @@ export function CuttingPlanTab() {
   }, [plans, searchTerm])
 
   const saveMutation = useMutation({
-    mutationFn: () => CuttingPlanService.save(buildCuttingPlanInput(draft), editingPlan?.id),
+    mutationFn: (payload: CuttingPlanInput) => CuttingPlanService.save(payload, editingPlan?.id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY })
-      toast.success(editingPlan ? '裁纱方案已更新' : '裁纱方案已创建')
+      toast.success(editingPlan ? t('engineering.cuttingPlan.toasts.saveUpdated') : t('engineering.cuttingPlan.toasts.saveCreated'))
       closeDialog()
     },
   })
@@ -75,7 +87,7 @@ export function CuttingPlanTab() {
     mutationFn: (id: string) => CuttingPlanService.remove(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ENGINEERING_DB_CUTTING_PLANS_QUERY_KEY })
-      toast.success('裁纱方案已删除')
+      toast.success(t('engineering.cuttingPlan.toasts.deleteSuccess'))
     },
   })
 
@@ -89,8 +101,13 @@ export function CuttingPlanTab() {
   }
 
   const openEdit = (plan: CuttingPlan) => {
+    if (cutSizeQuery.isLoading) {
+      toast.error('裁切尺寸库加载中，请稍后再编辑')
+      return
+    }
+
     setEditingPlan(plan)
-    setDraft(buildCuttingPlanInput(plan))
+    setDraft(buildCuttingPlanInput(plan, cutSizeUnits))
     setDialogOpen(true)
   }
 
@@ -100,13 +117,45 @@ export function CuttingPlanTab() {
     setDraft(EMPTY_CUTTING_PLAN_INPUT)
   }
 
+  const resolveAuthoritativePlan = (plan: CuttingPlanInput | CuttingPlan): CuttingPlanInput | null => {
+    if (cutSizeQuery.isLoading) {
+      toast.error('裁切尺寸库加载中，请稍后重试')
+      return null
+    }
+
+    const issues = collectCuttingPlanLineAuthorityIssues(plan.lines || [], cutSizeUnits)
+    if (issues.length > 0) {
+      const firstIssue = issues[0]
+      if (firstIssue.kind === 'missing_cut_size_binding') {
+        toast.error(`第 ${firstIssue.sequenceNo} 行未绑定尺寸库条目，裁纱单所有行必须引用尺寸库。`)
+      } else {
+        toast.error(`第 ${firstIssue.sequenceNo} 行引用的尺寸库条目不存在或未启用，请先修复尺寸库。`)
+      }
+      return null
+    }
+
+    return buildCuttingPlanInput(plan, cutSizeUnits)
+  }
+
+  const handlePreview = async (plan: CuttingPlanInput | CuttingPlan) => {
+    const payload = resolveAuthoritativePlan(plan)
+    if (!payload) return
+    await previewPrint(payload)
+  }
+
+  const handleExport = async (plan: CuttingPlanInput | CuttingPlan) => {
+    const payload = resolveAuthoritativePlan(plan)
+    if (!payload) return
+    await exportPrint(payload)
+  }
+
   const handleSave = () => {
     if (!draft.productId) {
-      toast.error('请先选择或匹配产品型号')
+      toast.error(t('engineering.cuttingPlan.toasts.productRequired'))
       return
     }
     if (!draft.holeCount) {
-      toast.error('请先选择孔数')
+      toast.error(t('engineering.cuttingPlan.toasts.holeCountRequired'))
       return
     }
     const generatedName = buildCuttingPlanName({
@@ -115,14 +164,21 @@ export function CuttingPlanTab() {
       holeCount: draft.holeCount,
     })
     if (!generatedName) {
-      toast.error('方案名称生成失败，请检查产品型号和孔数')
+      toast.error(t('engineering.cuttingPlan.toasts.nameGenerateFailed'))
       return
     }
-    saveMutation.mutate()
+    const payload = resolveAuthoritativePlan(draft)
+    if (!payload) return
+    saveMutation.mutate(payload)
   }
 
   const handleImportFile = async (file: File) => {
-    const parsed = await parseExcel(file)
+    if (cutSizeQuery.isLoading) {
+      toast.error('裁切尺寸库加载中，请稍后再导入')
+      return
+    }
+
+    const parsed = await parseExcel(file, cutSizeUnits)
     if (!parsed) return
     setEditingPlan(null)
     setDraft(parsed)
@@ -133,16 +189,16 @@ export function CuttingPlanTab() {
     <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
       <IndustrialHeader
         icon={Scissors}
-        title='裁纱方案'
-        description='导入模板按机器解析设计，只录入必要字段。打印导出会自动补齐完整表头和展示版式，便于现场流转与归档。'
+        title={t('engineering.cuttingPlan.overview.title')}
+        description={t('engineering.cuttingPlan.overview.description')}
         gradient
         innerClassName='text-rose-600'
         className='border-muted-foreground/10'
         statusBadge={
           <div className='grid grid-cols-3 gap-2 text-center md:min-w-[360px]'>
-            <Metric label='方案数' value={plans.length} />
-            <Metric label='启用' value={activeCount} />
-            <Metric label='裁片行' value={lineCount} />
+            <Metric label={t('engineering.cuttingPlan.metrics.plans')} value={plans.length} />
+            <Metric label={t('engineering.cuttingPlan.metrics.active')} value={activeCount} />
+            <Metric label={t('engineering.cuttingPlan.metrics.lines')} value={lineCount} />
           </div>
         }
       />
@@ -153,7 +209,7 @@ export function CuttingPlanTab() {
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder='搜索方案、文件编号、产品、孔数、碳丝型号'
+            placeholder={t('engineering.cuttingPlan.placeholders.search')}
             className='h-11 rounded-2xl border-none bg-muted/50 pl-10 text-sm font-semibold shadow-inner'
           />
         </div>
@@ -174,7 +230,7 @@ export function CuttingPlanTab() {
           />
           <Button variant='outline' onClick={downloadTemplate} className='h-11 rounded-full px-5 text-xs font-black'>
             <Download className='size-4' />
-            下载模板
+            {t('engineering.cuttingPlan.actions.downloadTemplate')}
           </Button>
           <Button
             variant='outline'
@@ -182,11 +238,11 @@ export function CuttingPlanTab() {
             className='h-11 rounded-full px-5 text-xs font-black'
           >
             <Upload className='size-4' />
-            导入模板
+            {t('engineering.cuttingPlan.actions.importTemplate')}
           </Button>
           <Button onClick={openCreate} className='h-11 rounded-full px-6 text-xs font-black'>
             <Plus className='size-4' />
-            新增裁纱方案
+            {t('engineering.cuttingPlan.actions.create')}
           </Button>
         </div>
       </div>
@@ -194,13 +250,13 @@ export function CuttingPlanTab() {
       <div className='grid gap-3'>
         {isLoading ? (
           <div className='rounded-[24px] border border-dashed border-muted-foreground/15 p-10 text-center text-xs font-black tracking-widest text-muted-foreground'>
-            正在加载裁纱方案...
+            {t('engineering.cuttingPlan.empty.loading')}
           </div>
         ) : filteredPlans.length === 0 ? (
           <div className='rounded-[24px] border border-dashed border-muted-foreground/15 p-12 text-center'>
-            <p className='text-sm font-black'>还没有裁纱方案</p>
+            <p className='text-sm font-black'>{t('engineering.cuttingPlan.empty.title')}</p>
             <p className='mt-1 text-xs font-semibold text-muted-foreground'>
-              可以先下载模板批量导入，再在弹窗里核对后保存。
+              {t('engineering.cuttingPlan.empty.description')}
             </p>
           </div>
         ) : (
@@ -214,7 +270,7 @@ export function CuttingPlanTab() {
                   <div className='flex flex-wrap items-center gap-2'>
                     <span className='text-base font-black tracking-tight'>{plan.name}</span>
                     <Badge variant='outline' className='rounded-full border-dashed text-[10px] font-black'>
-                      {plan.status === 'Active' ? '启用' : plan.status === 'Archived' ? '归档' : '草稿'}
+                      {getCuttingPlanStatusLabel(t, plan.status)}
                     </Badge>
                     {plan.documentNo ? (
                       <Badge className='rounded-full bg-primary/10 text-[10px] font-black text-primary'>
@@ -225,20 +281,20 @@ export function CuttingPlanTab() {
                   <div className='mt-2 grid gap-2 text-xs font-semibold text-muted-foreground md:grid-cols-4'>
                     <Info
                       icon={FileSpreadsheet}
-                      label='产品'
+                      label={t('engineering.cuttingPlan.fields.product')}
                       value={
                         plan.holeCount
-                          ? `${plan.productName || plan.productCode || '--'} / ${plan.holeCount}孔`
+                          ? `${plan.productName || plan.productCode || '--'} / ${t('engineering.cuttingPlan.values.holeCount', { count: plan.holeCount })}`
                           : (plan.productName || plan.productCode || '--')
                       }
                     />
                     <Info
                       icon={CalendarDays}
-                      label='版次/生效'
+                      label={t('engineering.cuttingPlan.fields.revisionEffective')}
                       value={`${plan.revisionNo || '--'} / ${plan.effectiveDate || '--'}`}
                     />
-                    <Info icon={Layers3} label='材料' value={plan.carbonFiberModel || '--'} />
-                    <Info icon={Scissors} label='裁片行' value={`${plan.lines.length} 行`} />
+                    <Info icon={Layers3} label={t('engineering.cuttingPlan.fields.material')} value={plan.carbonFiberModel || '--'} />
+                    <Info icon={Scissors} label={t('engineering.cuttingPlan.fields.lineCount')} value={t('engineering.cuttingPlan.values.lineCount', { count: plan.lines.length })} />
                   </div>
                 </button>
 
@@ -247,21 +303,21 @@ export function CuttingPlanTab() {
                     type='button'
                     variant='outline'
                     size='sm'
-                    onClick={() => void previewPrint(buildCuttingPlanInput(plan))}
+                    onClick={() => void handlePreview(plan)}
                     className='h-8 rounded-full px-3 text-[11px] font-black'
                   >
                     <Printer className='size-3.5' />
-                    打印预览
+                    {t('engineering.cuttingPlan.actions.previewPrint')}
                   </Button>
                   <Button
                     type='button'
                     variant='outline'
                     size='sm'
-                    onClick={() => void exportPrint(buildCuttingPlanInput(plan))}
+                    onClick={() => void handleExport(plan)}
                     className='h-8 rounded-full px-3 text-[11px] font-black'
                   >
                     <Download className='size-3.5' />
-                    下载打印版
+                    {t('engineering.cuttingPlan.actions.downloadPrint')}
                   </Button>
                   <Button
                     type='button'
@@ -285,7 +341,7 @@ export function CuttingPlanTab() {
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2 text-xl font-black italic tracking-tighter'>
               <Scissors className='size-5 text-primary' />
-              {editingPlan ? '编辑裁纱方案' : '新增裁纱方案'}
+              {editingPlan ? t('engineering.cuttingPlan.dialog.editTitle') : t('engineering.cuttingPlan.dialog.createTitle')}
             </DialogTitle>
           </DialogHeader>
 
@@ -294,31 +350,44 @@ export function CuttingPlanTab() {
           <DialogFooter>
             <Button
               variant='outline'
-              onClick={() => void previewPrint(buildCuttingPlanInput(draft))}
+              onClick={() => void handlePreview(draft)}
               className='rounded-full px-5 font-black'
             >
               <Printer className='size-4' />
-              打印预览
+              {t('engineering.cuttingPlan.actions.previewPrint')}
             </Button>
             <Button
               variant='outline'
-              onClick={() => void exportPrint(buildCuttingPlanInput(draft))}
+              onClick={() => void handleExport(draft)}
               className='rounded-full px-5 font-black'
             >
               <Download className='size-4' />
-              下载打印版
+              {t('engineering.cuttingPlan.actions.downloadPrint')}
             </Button>
             <Button variant='outline' onClick={closeDialog} className='rounded-full px-6 font-black'>
-              取消
+              {t('engineering.cuttingPlan.actions.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saveMutation.isPending} className='rounded-full px-8 font-black'>
-              {saveMutation.isPending ? '保存中...' : '保存方案'}
+              {saveMutation.isPending ? `${t('engineering.cuttingPlan.actions.save')}...` : t('engineering.cuttingPlan.actions.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
+}
+
+function getCuttingPlanStatusLabel(
+  t: ReturnType<typeof useLanguage>['t'],
+  status: CuttingPlan['status']
+) {
+  if (status === 'Active') {
+    return t('engineering.cuttingPlan.status.active')
+  }
+  if (status === 'Archived') {
+    return t('engineering.cuttingPlan.status.archived')
+  }
+  return t('engineering.cuttingPlan.status.draft')
 }
 
 function Metric({ label, value }: { label: string; value: number }) {

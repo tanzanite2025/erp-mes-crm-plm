@@ -6,6 +6,7 @@ export interface UserApiDTO {
   firstName?: string
   lastName?: string
   status: 'active' | 'inactive' | 'suspended'
+  role?: string
   employeeId?: string
   password?: string
   createdAt?: string
@@ -19,6 +20,7 @@ export interface UserOptionApiDTO {
   employeeId?: string
   firstName?: string
   lastName?: string
+  role?: string
   status?: 'active' | 'inactive' | 'suspended'
 }
 

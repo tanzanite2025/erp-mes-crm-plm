@@ -4,7 +4,6 @@ import {
   type EngineeringSpecInput,
 } from '@/features/engineering/services/engineering-spec-service'
 import {
-  buildCuttingPlanInput,
   cuttingPlanSchema,
   type CuttingPlan,
   type CuttingPlanInput,
@@ -23,17 +22,16 @@ function toCuttingPlan(spec: EngineeringSpec): CuttingPlan {
 }
 
 function toEngineeringSpecInput(plan: CuttingPlanInput, id?: string): EngineeringSpecInput {
-  const payload = buildCuttingPlanInput(plan)
-  const code = payload.documentNo || payload.productCode || `CUTTING-${Date.now()}`
+  const code = plan.documentNo || plan.productCode || `CUTTING-${Date.now()}`
 
   return {
     id,
-    name: payload.name,
+    name: plan.name,
     code,
     type: CUTTING_PLAN_SPEC_TYPE,
-    active: payload.status !== 'Archived',
-    cuttingData: payload,
-    _v: payload.version || 1,
+    active: plan.status !== 'Archived',
+    cuttingData: plan,
+    _v: plan.version || 1,
   }
 }
 

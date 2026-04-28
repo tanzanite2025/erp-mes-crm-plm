@@ -18,6 +18,7 @@ func SetupRoutes(r *gin.Engine) {
 	authorized.Use(middleware.AuthMiddleware())
 	{
 		registerUserRoutes(authorized)
+		registerAuthzRoutes(authorized)
 		registerBasicUnitRoutes(authorized)
 		registerSystemConfigRoutes(authorized)
 		registerTradingRoutes(authorized)
@@ -75,6 +76,7 @@ func SetupRoutes(r *gin.Engine) {
 			rawMaterialGroup.GET("/prepreg-specs", handlers.GetPrepregMaterialSpecsHandler)
 			rawMaterialGroup.POST("/prepreg-specs", adminOnly, handlers.SavePrepregMaterialSpecHandler)
 			rawMaterialGroup.DELETE("/prepreg-specs/:id", adminOnly, handlers.DeletePrepregMaterialSpecHandler)
+			rawMaterialGroup.POST("/batch-optimizer/solve", handlers.SolveRawMaterialBatchOptimizerHandler)
 		}
 
 		appearanceGroup := authorized.Group("/engineering/product-appearances")

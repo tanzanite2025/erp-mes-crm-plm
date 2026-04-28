@@ -19,6 +19,8 @@ type DrawOptions = {
   viewport: BatchCanvasViewport
   hoveredZoneId?: string
   selectedZoneId?: string
+  highlightedDemandLineId?: string
+  filteredRollIds?: string[]
 }
 
 type ZoneStyle = {
@@ -111,16 +113,30 @@ function drawZoneLabel(
   style: ZoneStyle,
   viewport: BatchCanvasViewport
 ) {
-  const pxWidth = zone.width * viewport.scale
-  const pxHeight = zone.height * viewport.scale
-  if (pxWidth < 58 || pxHeight < 20) return
+  const scale = Math.max(viewport.scale, 0.001)
+  const pxWidth = zone.width * scale
+  const pxHeight = zone.height * scale
+  if (pxWidth < 58 || pxHeight < 20 || zone.id === 'roll-empty') return
+
+  const paddingXPx = Math.min(12, pxWidth * 0.12)
+  const paddingYPx = Math.min(8, pxHeight * 0.2)
+  const paddingX = paddingXPx / scale
+  const paddingY = paddingYPx / scale
+  const labelWidth = zone.width - paddingX * 2
+  const labelHeight = zone.height - paddingY * 2
+  if (labelWidth <= 0 || labelHeight <= 0) return
+
+  const fontSizePx = Math.max(9, Math.min(12, Math.min(pxHeight * 0.42, pxWidth * 0.16)))
 
   context.save()
+  context.beginPath()
+  context.rect(zone.x + paddingX, zone.y + paddingY, labelWidth, labelHeight)
+  context.clip()
   context.fillStyle = style.text
-  context.font = `${Math.max(10 / viewport.scale, 5)}px "Segoe UI", Arial, sans-serif`
+  context.font = `${fontSizePx / scale}px "Segoe UI", Arial, sans-serif`
   context.textAlign = 'center'
   context.textBaseline = 'middle'
-  context.fillText(zone.label, zone.x + zone.width / 2, zone.y + zone.height / 2)
+  context.fillText(zone.label, zone.x + zone.width / 2, zone.y + zone.height / 2, labelWidth)
   context.restore()
 }
 
@@ -129,14 +145,22 @@ function drawZone(
   zone: StripLayoutZone,
   viewport: BatchCanvasViewport,
   hoveredZoneId?: string,
-  selectedZoneId?: string
+  selectedZoneId?: string,
+  highlightedDemandLineId?: string,
+  filteredRollIds?: string[]
 ) {
   const style = getZoneStyle(zone.kind)
   const lineWidth = 1 / Math.max(viewport.scale, 0.001)
   const isHovered = hoveredZoneId === zone.id
   const isSelected = selectedZoneId === zone.id
+  const isHighlighted = Boolean(highlightedDemandLineId) && zone.demandLineId === highlightedDemandLineId
+  const isDiffHighlighted = Boolean(zone.isDiffHighlighted)
+  const isFilteredOut = Boolean(filteredRollIds?.length && zone.rollId && !filteredRollIds.includes(zone.rollId))
 
   context.save()
+  if (isFilteredOut) {
+    context.globalAlpha = 0.18
+  }
   context.fillStyle = style.fill
   context.strokeStyle = style.stroke
   context.lineWidth = lineWidth
@@ -146,6 +170,18 @@ function drawZone(
   if (isHovered || isSelected) {
     context.strokeStyle = isSelected ? 'rgba(244, 114, 182, 1)' : 'rgba(56, 189, 248, 1)'
     context.lineWidth = (isSelected ? 2.6 : 2) / Math.max(viewport.scale, 0.001)
+    context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+  }
+
+  if (isHighlighted && !isSelected) {
+    context.strokeStyle = 'rgba(251, 191, 36, 1)'
+    context.lineWidth = 2.2 / Math.max(viewport.scale, 0.001)
+    context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+  }
+
+  if (isDiffHighlighted && !isSelected) {
+    context.strokeStyle = 'rgba(244, 63, 94, 1)'
+    context.lineWidth = 2.4 / Math.max(viewport.scale, 0.001)
     context.strokeRect(zone.x, zone.y, zone.width, zone.height)
   }
 
@@ -163,6 +199,8 @@ export function drawStripFirstLayout(options: DrawOptions) {
     viewport,
     hoveredZoneId,
     selectedZoneId,
+    highlightedDemandLineId,
+    filteredRollIds,
   } = options
 
   context.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -174,7 +212,7 @@ export function drawStripFirstLayout(options: DrawOptions) {
   context.translate(viewport.offsetX, viewport.offsetY)
   context.scale(viewport.scale, viewport.scale)
   for (const zone of layout.zones) {
-    drawZone(context, zone, viewport, hoveredZoneId, selectedZoneId)
+    drawZone(context, zone, viewport, hoveredZoneId, selectedZoneId, highlightedDemandLineId, filteredRollIds)
   }
   context.restore()
 }

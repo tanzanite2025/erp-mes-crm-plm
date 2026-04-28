@@ -33,6 +33,7 @@ func setupCreateUserHandlerTestDB(t *testing.T) {
 			first_name TEXT,
 			last_name TEXT,
 			status TEXT,
+			role TEXT,
 			employee_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,

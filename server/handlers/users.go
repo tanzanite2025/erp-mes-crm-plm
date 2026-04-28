@@ -26,6 +26,7 @@ type CreateUserRequest struct {
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
 	Status      string `json:"status"`
+	Role        string `json:"role"`
 	EmployeeID  string `json:"employeeId"`
 }
 
@@ -73,6 +74,7 @@ type UpdateUserRequest struct {
 	FirstName   *string `json:"firstName"`
 	LastName    *string `json:"lastName"`
 	Status      *string `json:"status"`
+	Role        *string `json:"role"`
 	EmployeeID  *string `json:"employeeId"`
 }
 
@@ -83,6 +85,7 @@ type ReplaceUserRequest struct {
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
 	Status      string `json:"status" binding:"required"`
+	Role        string `json:"role"`
 	EmployeeID  string `json:"employeeId"`
 }
 
@@ -410,6 +413,7 @@ func CreateUserHandler(c *gin.Context) {
 		FirstName:   req.FirstName,
 		LastName:    req.LastName,
 		Status:      req.Status,
+		Role:        strings.ToLower(strings.TrimSpace(req.Role)),
 		EmployeeID:  req.EmployeeID,
 	}
 	if strings.TrimSpace(user.ID) == "" {
@@ -475,6 +479,14 @@ func PatchUserHandler(c *gin.Context) {
 
 	if input.EmployeeID != nil {
 		updates["employee_id"] = strings.TrimSpace(*input.EmployeeID)
+	}
+
+	if input.Role != nil {
+		if !hasContextPermission(c, authz.PermissionManage) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account roles"})
+			return
+		}
+		updates["role"] = strings.ToLower(strings.TrimSpace(*input.Role))
 	}
 
 	if input.Status != nil {
@@ -566,7 +578,13 @@ func ReplaceUserHandler(c *gin.Context) {
 		"first_name":   strings.TrimSpace(input.FirstName),
 		"last_name":    strings.TrimSpace(input.LastName),
 		"status":       normalizedStatus,
+		"role":         strings.ToLower(strings.TrimSpace(input.Role)),
 		"employee_id":  strings.TrimSpace(input.EmployeeID),
+	}
+
+	if strings.TrimSpace(input.Role) != strings.TrimSpace(user.Role) && !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage account roles"})
+		return
 	}
 
 	normalizedPassword := strings.TrimSpace(input.Password)

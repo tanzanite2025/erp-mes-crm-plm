@@ -10,6 +10,8 @@ import { callTypes } from '../data/data'
 import { type User, type UserStatus } from '../data/schema'
 import { isProtectedSystemAccount } from '../utils/user-utils'
 
+export type UsersTableMode = 'management' | 'permissions'
+
 const userStatusTranslationKeys: Record<
   UserStatus,
   'users.status.active' | 'users.status.inactive' | 'users.status.suspended'
@@ -24,6 +26,7 @@ type TranslateFn = (
     | 'users.dialogs.buttons.confirm'
     | 'users.columns.username'
     | 'users.columns.name'
+    | 'users.columns.role'
     | 'users.columns.phone'
     | 'users.columns.status'
     | 'users.status.active'
@@ -34,35 +37,41 @@ type TranslateFn = (
 
 export function getUsersColumns(
   t: TranslateFn,
+  mode: UsersTableMode = 'management',
+  showSelection = true,
 ): ColumnDef<User>[] {
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label={t('users.dialogs.buttons.confirm')}
-          className='translate-y-[2px]'
-        />
-      ),
-      meta: {
-        className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
-      },
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={t('users.dialogs.buttons.confirm')}
-          className='translate-y-[2px]'
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
+    ...(showSelection
+      ? [
+          {
+            id: 'select',
+            header: ({ table }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label={t('users.dialogs.buttons.confirm')}
+                className='translate-y-[2px]'
+              />
+            ),
+            meta: {
+              className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
+            },
+            cell: ({ row }) => (
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label={t('users.dialogs.buttons.confirm')}
+                className='translate-y-[2px]'
+              />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+          } satisfies ColumnDef<User>,
+        ]
+      : []),
     {
       accessorKey: 'username',
       header: ({ column }) => (
@@ -102,6 +111,21 @@ export function getUsersColumns(
       meta: { className: 'w-36' },
     },
     {
+      accessorKey: 'role',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t('users.columns.role')} />
+      ),
+      cell: ({ row }) => {
+        const role = String(row.getValue('role') || '').trim()
+        return (
+          <Badge variant='outline' className='rounded-full border-dashed text-[8px] font-mono uppercase'>
+            {role || 'UNASSIGNED'}
+          </Badge>
+        )
+      },
+      enableSorting: false,
+    },
+    {
       accessorKey: 'phoneNumber',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t('users.columns.phone')} />
@@ -135,7 +159,7 @@ export function getUsersColumns(
     },
     {
       id: 'actions',
-      cell: DataTableRowActions,
+      cell: ({ row }) => <DataTableRowActions row={row} mode={mode} />,
     },
   ]
 }

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { CircuitBoard, FolderKanban, Package2, ScanSearch, SlidersHorizontal } from 'lucide-react'
+import { FolderKanban, Package2, ScanSearch, SlidersHorizontal } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -9,37 +9,25 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
-import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
-import { formatCutSizeExpression } from '../../cut-size-library/data/cut-size-library-schema'
-import type { BatchEngineControls, BatchEngineMetric, BatchEngineRuleChip } from '../types'
+import type { BatchEngineControls, BatchEngineMetric, BatchEngineSimulation } from '../types'
 
 type BatchEngineControlPanelProps = {
   metrics: BatchEngineMetric[]
-  ruleChips: BatchEngineRuleChip[]
   controls: BatchEngineControls
   updateControl: <K extends keyof BatchEngineControls>(key: K, value: BatchEngineControls[K]) => void
   prepregSpecs: PrepregMaterialSpec[]
   prepregLoading: boolean
   selectedPrepregSpec?: PrepregMaterialSpec
-  cutSizeUnits: CutSizeUnit[]
-  cutSizeLoading: boolean
-  selectedCutSize?: CutSizeUnit
+  cuttingPlans: CuttingPlan[]
+  cuttingPlanLoading: boolean
+  selectedCuttingPlan?: CuttingPlan
+  simulation: BatchEngineSimulation
 }
 
-function getChipClassName(tone: BatchEngineRuleChip['tone']) {
-  switch (tone) {
-    case 'accent':
-      return 'border-cyan-300/70 bg-cyan-50 text-cyan-700'
-    case 'warn':
-      return 'border-amber-300/80 bg-amber-50 text-amber-700'
-    default:
-      return 'border-slate-200 bg-white text-slate-600'
-  }
-}
-
-function cutSizeOptionLabel(item: CutSizeUnit): string {
-  return `${item.code} | ${item.name} | ${formatCutSizeExpression(item) || '--'}`
+function cuttingPlanOptionLabel(item: CuttingPlan): string {
+  return `${item.productCode || '--'} | ${item.name} | ${item.documentNo || item.id}`
 }
 
 function prepregOptionLabel(item: PrepregMaterialSpec): string {
@@ -53,15 +41,15 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
   const { t } = useLanguage()
   const {
     metrics,
-    ruleChips,
     controls,
     updateControl,
     prepregSpecs,
     prepregLoading,
     selectedPrepregSpec,
-    cutSizeUnits,
-    cutSizeLoading,
-    selectedCutSize,
+    cuttingPlans,
+    cuttingPlanLoading,
+    selectedCuttingPlan,
+    simulation,
   } = props
 
   return (
@@ -175,56 +163,96 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
             {t('rawMaterials.batchEngine.sections.control.blocks.plan.title')}
           </div>
           <div className='mt-3'>
-            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.cutSizeRef')}>
+            <ControlField label={t('rawMaterials.batchEngine.sections.control.fields.cuttingPlanRef')}>
               <Select
-                value={controls.selectedCutSizeId || undefined}
-                onValueChange={(value) => updateControl('selectedCutSizeId', value)}
+                value={controls.selectedCuttingPlanId || undefined}
+                onValueChange={(value) => updateControl('selectedCuttingPlanId', value)}
               >
                 <SelectTrigger className='h-9 rounded-lg bg-white text-xs font-semibold'>
                   <SelectValue
                     placeholder={
-                      cutSizeLoading
+                      cuttingPlanLoading
                         ? t('rawMaterials.batchEngine.sections.control.placeholders.loading')
-                        : t('rawMaterials.batchEngine.sections.control.placeholders.selectCutSize')
+                        : t('rawMaterials.batchEngine.sections.control.placeholders.selectCuttingPlan')
                     }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {cutSizeUnits.map((item) => (
+                  {cuttingPlans.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      {cutSizeOptionLabel(item)}
+                      {cuttingPlanOptionLabel(item)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </ControlField>
             <p className='mt-2 min-h-5 text-xs font-semibold text-slate-600'>
-              {selectedCutSize
-                ? `${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.angle')} ${selectedCutSize.cutAngle || 0} / ${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.layup')} ${selectedCutSize.layupCount || 1} / ${t('rawMaterials.batchEngine.sections.control.cutSizeSummary.usage')} ${selectedCutSize.usageType || '--'}`
-                : t('rawMaterials.batchEngine.sections.control.cutSizeSummary.empty')}
+              {selectedCuttingPlan
+                ? `${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.document')} ${selectedCuttingPlan.documentNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.revision')} ${selectedCuttingPlan.revisionNo || '--'} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.lines')} ${selectedCuttingPlan.lines.length} / ${t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.invalidLines')} ${simulation.invalidDemandLineCount}`
+                : t('rawMaterials.batchEngine.sections.control.cuttingPlanSummary.empty')}
             </p>
-          </div>
-        </div>
 
-        <div className='rounded-[22px] border border-dashed border-slate-300/80 bg-slate-50/75 p-4'>
-          <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
-            <CircuitBoard className='size-4 text-cyan-700' />
-            {t('rawMaterials.batchEngine.sections.control.blocks.engine.title')}
-          </div>
-          <div className='mt-3 flex flex-wrap gap-2'>
-            {ruleChips.map((chip) => (
-              <span
-                key={chip.key}
-                className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getChipClassName(chip.tone)}`}
-              >
-                {chip.label}
-              </span>
-            ))}
+            <div className='mt-3 rounded-[14px] border border-dashed border-slate-300 bg-white/80 p-3'>
+              <div className='mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>
+                {t('rawMaterials.batchEngine.sections.control.objective.title')}
+              </div>
+              <p className='mb-2 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400/80'>
+                {t('rawMaterials.batchEngine.sections.control.objective.description')}
+              </p>
+              <Select value={controls.objectivePreset} onValueChange={(value) => updateControl('objectivePreset', value as BatchEngineControls['objectivePreset'])}>
+                <SelectTrigger className='h-9 rounded-lg bg-white text-xs font-semibold'>
+                  <SelectValue placeholder={t('rawMaterials.batchEngine.sections.control.objective.placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='yield-first'>
+                    {t('rawMaterials.batchEngine.sections.control.objective.options.yieldFirst')}
+                  </SelectItem>
+                  <SelectItem value='delivery-first'>
+                    {t('rawMaterials.batchEngine.sections.control.objective.options.deliveryFirst')}
+                  </SelectItem>
+                  <SelectItem value='stability-first'>
+                    {t('rawMaterials.batchEngine.sections.control.objective.options.stabilityFirst')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='mt-3 rounded-[14px] border border-dashed border-amber-300/70 bg-amber-50/70 p-3'>
+              <div className='mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-800/80'>
+                {t('rawMaterials.batchEngine.sections.control.scoreWeights.title')}
+              </div>
+              <p className='mb-2 text-[9px] font-black uppercase tracking-[0.16em] text-amber-700/70'>
+                {t('rawMaterials.batchEngine.sections.control.scoreWeights.description')}
+              </p>
+              <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.fulfilled')}>
+                  <Input value={controls.fulfilledWeight} onChange={(event) => updateControl('fulfilledWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='35' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.utilization')}>
+                  <Input value={controls.utilizationWeight} onChange={(event) => updateControl('utilizationWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='55' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.stability')}>
+                  <Input value={controls.stabilityWeight} onChange={(event) => updateControl('stabilityWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='10' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.assignmentPenalty')}>
+                  <Input value={controls.assignmentPenaltyWeight} onChange={(event) => updateControl('assignmentPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='4' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.unfulfilledPenalty')}>
+                  <Input value={controls.unfulfilledPenaltyWeight} onChange={(event) => updateControl('unfulfilledPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='12' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.splitPenalty')}>
+                  <Input value={controls.splitPenaltyWeight} onChange={(event) => updateControl('splitPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='6' />
+                </ControlField>
+                <ControlField label={t('rawMaterials.batchEngine.sections.control.scoreWeights.fields.mustPenalty')}>
+                  <Input value={controls.mustPenaltyWeight} onChange={(event) => updateControl('mustPenaltyWeight', event.target.value)} className='h-8 rounded-lg bg-white text-xs font-semibold' placeholder='45' />
+                </ControlField>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className='mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-1'>
+      <div className='mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
         {metrics.map((metric) => (
           <div key={metric.key} className='rounded-[20px] border border-slate-200 bg-white p-3'>
             <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/75'>

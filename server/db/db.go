@@ -532,7 +532,6 @@ func dropLegacyRoleArtifacts() {
 		"user_roles",
 		"position_roles",
 		"org_default_roles",
-		"roles",
 	} {
 		if DB.Migrator().HasTable(tableName) {
 			if err := DB.Migrator().DropTable(tableName); err != nil {
@@ -723,6 +722,66 @@ func ensureSeedAdminUserPermissions() {
 	}
 }
 
+func ensureDefaultAdminRole() {
+	if DB == nil || !DB.Migrator().HasTable(&models.Role{}) {
+		return
+	}
+
+	permissionJSON, err := json.Marshal(authz.AdminFallbackPermissions)
+	if err != nil {
+		log.Fatal("[CRITICAL_SECURITY] Failed to serialize default admin role permissions: ", err)
+	}
+
+	defaultRole := models.Role{
+		RoleID:      "admin",
+		Label:       "Admin",
+		Color:       "bg-red-500/10 text-red-600 border-red-200",
+		Permissions: string(permissionJSON),
+	}
+
+	var existing models.Role
+	err = DB.Where("LOWER(role_id) = ?", "admin").First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		if createErr := DB.Create(&defaultRole).Error; createErr != nil {
+			log.Fatal("Failed to create default admin role:", createErr)
+		}
+		return
+	}
+	if err != nil {
+		log.Fatal("Failed to query default admin role:", err)
+	}
+
+	updates := map[string]any{}
+	if existing.Label != defaultRole.Label {
+		updates["label"] = defaultRole.Label
+	}
+	if existing.Color != defaultRole.Color {
+		updates["color"] = defaultRole.Color
+	}
+	if strings.TrimSpace(existing.Permissions) != defaultRole.Permissions {
+		updates["permissions"] = defaultRole.Permissions
+	}
+	if len(updates) == 0 {
+		return
+	}
+	if updateErr := DB.Model(&existing).Updates(updates).Error; updateErr != nil {
+		log.Fatal("Failed to align default admin role:", updateErr)
+	}
+}
+
+func ensureSeedAdminUserRole() {
+	if DB == nil || !DB.Migrator().HasTable(&models.User{}) {
+		return
+	}
+
+	if err := DB.Model(&models.User{}).
+		Where("LOWER(username) = ?", "admin").
+		Where("COALESCE(role, '') = ''").
+		Update("role", "admin").Error; err != nil {
+		log.Fatal("Failed to seed admin user role:", err)
+	}
+}
+
 func logLocalDbAuthHint(dsn string, err error) {
 	if err == nil {
 		return
@@ -768,6 +827,7 @@ func InitDB(dsn string) {
 
 	err = DB.AutoMigrate(
 		&models.User{},
+		&models.Role{},
 		&models.UserPermission{},
 		&models.SidebarCommandCategory{},
 		&models.SidebarCommandDefinition{},
@@ -956,6 +1016,8 @@ func InitDB(dsn string) {
 		fmt.Println("Initial admin 'admin' created.")
 	}
 
+	ensureDefaultAdminRole()
+	ensureSeedAdminUserRole()
 	ensureSeedAdminUserPermissions()
 	ensureDefaultProductAttributeCategories()
 	ensureDefaultProductAttributeOptions()

@@ -1,0 +1,121 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+	"xdfc-server/db"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
+)
+
+type customerSalesClosureSummaryHandlerResponse struct {
+	Items    []map[string]any `json:"items"`
+	Total    int64            `json:"total"`
+	Metadata struct {
+		Pagination struct {
+			Total    int64 `json:"total"`
+			Page     int   `json:"page"`
+			PageSize int   `json:"pageSize"`
+		} `json:"pagination"`
+		Stats struct {
+			Total        int64 `json:"total"`
+			Active       int64 `json:"active"`
+			NewThisMonth int64 `json:"newThisMonth"`
+		} `json:"stats"`
+	} `json:"metadata"`
+}
+
+func setupCustomerSalesClosureSummaryHandlerDB(t *testing.T) {
+	t.Helper()
+
+	testDB := setupHandlerSQLiteTestDB(t)
+	for _, statement := range []string{
+		`CREATE TABLE customers (
+			id TEXT PRIMARY KEY,
+			name TEXT,
+			status TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			is_deleted BOOLEAN DEFAULT FALSE
+		)`,
+		`CREATE TABLE sales_orders (
+			id TEXT PRIMARY KEY NOT NULL,
+			customer_id TEXT,
+			customer_name TEXT,
+			status TEXT,
+			order_date TEXT,
+			is_deleted BOOLEAN DEFAULT FALSE
+		)`,
+	} {
+		require.NoError(t, testDB.Exec(statement).Error)
+	}
+}
+
+func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyLastOrderDate(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCustomerSalesClosureSummaryHandlerDB(t)
+
+	now := time.Now().UTC()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	lastMonth := startOfMonth.Add(-24 * time.Hour)
+	yesterday := now.Add(-24 * time.Hour).Format("2006-01-02")
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO customers (id, name, status, created_at, updated_at, is_deleted)
+		VALUES
+		('cust-1', 'Customer A', 'Active', ?, ?, FALSE),
+		('cust-2', 'Customer B', 'Inactive', ?, ?, FALSE),
+		('cust-3', 'Customer C', 'Active', ?, ?, TRUE)
+	`, now, now, lastMonth, lastMonth, now, now).Error)
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO sales_orders (id, customer_id, customer_name, status, order_date, is_deleted)
+		VALUES
+		('so-1', 'cust-1', 'Customer A', 'Draft', '', FALSE),
+		('so-2', 'cust-2', 'Customer B', 'Done', ?, FALSE),
+		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', TRUE)
+	`, yesterday).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/customers/sales-closure-summary", nil)
+
+	GetCustomerSalesClosureSummaryHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response customerSalesClosureSummaryHandlerResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, int64(2), response.Total)
+	require.Len(t, response.Items, 2)
+	require.Equal(t, int64(2), response.Metadata.Pagination.Total)
+	require.Equal(t, 1, response.Metadata.Pagination.Page)
+	require.Equal(t, 2, response.Metadata.Pagination.PageSize)
+	require.Equal(t, int64(2), response.Metadata.Stats.Total)
+	require.Equal(t, int64(1), response.Metadata.Stats.Active)
+	require.Equal(t, int64(1), response.Metadata.Stats.NewThisMonth)
+
+	itemsByCustomerID := make(map[string]map[string]any, len(response.Items))
+	for _, item := range response.Items {
+		customerID, ok := item["customerId"].(string)
+		require.True(t, ok)
+		itemsByCustomerID[customerID] = item
+	}
+
+	emptyDateItem := itemsByCustomerID["cust-1"]
+	require.Equal(t, "", emptyDateItem["lastOrderDate"])
+	require.Equal(t, true, emptyDateItem["hasOpenOrders"])
+	require.Equal(t, float64(1), emptyDateItem["openOrderCount"])
+	require.Equal(t, float64(1), emptyDateItem["totalOrders"])
+	_, hasDaysSinceLastOrder := emptyDateItem["daysSinceLastOrder"]
+	require.False(t, hasDaysSinceLastOrder)
+
+	validDateItem := itemsByCustomerID["cust-2"]
+	require.Equal(t, yesterday, validDateItem["lastOrderDate"])
+	_, hasValidDaysSinceLastOrder := validDateItem["daysSinceLastOrder"]
+	require.True(t, hasValidDaysSinceLastOrder)
+}

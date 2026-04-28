@@ -24,7 +24,7 @@ import {
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
-import { getUsersColumns } from './users-columns'
+import { getUsersColumns, type UsersTableMode } from './users-columns'
 import { useLanguage } from '@/context/language-provider'
 
 type DataTableProps = {
@@ -33,9 +33,21 @@ type DataTableProps = {
   search: Record<string, unknown>
   navigate: NavigateFn
   isLoading?: boolean
+  mode?: UsersTableMode
+  showBulkActions?: boolean
+  showSelection?: boolean
 }
 
-export function UsersTable({ data, total, search, navigate, isLoading }: DataTableProps) {
+export function UsersTable({
+  data,
+  total,
+  search,
+  navigate,
+  isLoading,
+  mode = 'management',
+  showBulkActions = true,
+  showSelection = true,
+}: DataTableProps) {
   const { t } = useLanguage()
 
   // Local UI-only states
@@ -44,8 +56,8 @@ export function UsersTable({ data, total, search, navigate, isLoading }: DataTab
   const [sorting, setSorting] = useState<SortingState>([])
 
   const columns = useMemo(
-    () => getUsersColumns(t),
-    [t],
+    () => getUsersColumns(t, mode, showSelection),
+    [mode, showSelection, t],
   )
 
   // Synced with URL states (keys/defaults mirror users route search schema)
@@ -78,7 +90,7 @@ export function UsersTable({ data, total, search, navigate, isLoading }: DataTab
       columnFilters,
       columnVisibility,
     },
-    enableRowSelection: true,
+    enableRowSelection: showSelection,
     onPaginationChange,
     onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
@@ -189,7 +201,7 @@ export function UsersTable({ data, total, search, navigate, isLoading }: DataTab
         </div>
       </Card>
       <DataTablePagination table={table} className='mt-auto' />
-      <DataTableBulkActions table={table} />
+      {showBulkActions ? <DataTableBulkActions table={table} /> : null}
     </div>
   )
 }

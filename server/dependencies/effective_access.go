@@ -51,7 +51,22 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 	}
 
 	userID := strings.TrimSpace(user.ID)
-	if tx == nil || userID == "" || !hasTable(tx, "user_permissions") {
+	if tx == nil || userID == "" {
+		return profile
+	}
+
+	permissionIDs := make([]string, 0, 32)
+
+	normalizedRoleID := strings.TrimSpace(user.Role)
+	if normalizedRoleID != "" && hasTable(tx, "roles") {
+		var role models.Role
+		if err := tx.Select("permissions").Where("LOWER(role_id) = ?", strings.ToLower(normalizedRoleID)).First(&role).Error; err == nil {
+			permissionIDs = append(permissionIDs, authz.ParsePermissionIDs(role.Permissions)...)
+		}
+	}
+
+	if !hasTable(tx, "user_permissions") {
+		profile.Permissions = authz.DeduplicatePermissionIDs(permissionIDs)
 		return profile
 	}
 
@@ -64,7 +79,6 @@ func (s *EffectiveAccessService) ResolveEffectiveAccessProfileForUser(user model
 		return profile
 	}
 
-	permissionIDs := make([]string, 0, len(rows))
 	for _, row := range rows {
 		permissionIDs = append(permissionIDs, row.PermissionID)
 	}

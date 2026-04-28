@@ -1,5 +1,5 @@
 import { type User } from '../data/schema'
-import { type CreateUserPayload } from '../services/user-api'
+import { type CreateUserPayload, type UserReplacePayload } from '../services/user-api'
 import { type UserForm } from './users-action-dialog.shared'
 import { trackDelta } from '@/lib/delta/proxy-tracker'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -20,6 +20,7 @@ export function buildUserDelta(params: {
   draft.phoneNumber = values.phoneNumber?.trim() || ''
   draft.firstName = values.firstName.trim()
   draft.lastName = values.lastName.trim()
+  draft.role = values.role?.trim() || ''
   
   if (values.password && values.password.trim()) {
     draft.password = values.password.trim()
@@ -40,6 +41,25 @@ export function buildUserCreatePayload(params: {
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
     employeeId: values.employeeId?.trim() || undefined,
+    role: values.role?.trim() || undefined,
+  }
+}
+
+export function buildUserReplacePayload(params: {
+  currentRow: User
+  values: UserForm
+}): UserReplacePayload {
+  const { currentRow, values } = params
+
+  return {
+    username: values.username.trim(),
+    password: values.password.trim() || undefined,
+    phoneNumber: values.phoneNumber?.trim() || '',
+    firstName: values.firstName.trim(),
+    lastName: values.lastName.trim(),
+    status: currentRow.status,
+    employeeId: values.employeeId?.trim() || undefined,
+    role: values.role?.trim() || undefined,
   }
 }
 

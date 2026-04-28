@@ -1,12 +1,15 @@
 import { ChartColumnIncreasing, Maximize2, Scissors } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
-import { formatCutSizeExpression } from '../../cut-size-library/data/cut-size-library-schema'
 import type { BatchEngineLegendItem, BatchEngineSimulation } from '../types'
 
 type BatchEngineSimulationStageProps = {
   legend: BatchEngineLegendItem[]
   simulation: BatchEngineSimulation
+  canSolve: boolean
+  solveDisabledReason: string
+  isSolving: boolean
+  onSolve: () => void
   onOpenPreview: () => void
 }
 
@@ -27,7 +30,7 @@ function getLegendToneClassName(tone: BatchEngineLegendItem['tone']) {
 
 export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProps) {
   const { t } = useLanguage()
-  const { legend, simulation, onOpenPreview } = props
+  const { legend, simulation, canSolve, solveDisabledReason, isSolving, onSolve, onOpenPreview } = props
 
   return (
     <section className='rounded-[28px] border border-cyan-300/55 bg-[linear-gradient(180deg,rgba(236,254,255,0.9),rgba(255,255,255,0.98))] p-4 shadow-[0_18px_50px_-34px_rgba(8,145,178,0.45)]'>
@@ -70,8 +73,8 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
                 {t('rawMaterials.batchEngine.sections.stage.rollCanvasLabel')}
               </p>
               <p className='mt-1 text-sm font-semibold text-slate-800'>
-                {simulation.selectedUnit
-                  ? `${t('rawMaterials.batchEngine.sections.stage.unitPrefix')}: ${simulation.selectedUnit.code} / ${formatCutSizeExpression(simulation.selectedUnit) || '--'}`
+                {simulation.selectedPlanName
+                  ? `${t('rawMaterials.batchEngine.sections.stage.planPrefix')}: ${simulation.selectedPlanName} / ${simulation.demandLineCount}`
                   : t('rawMaterials.batchEngine.sections.stage.rollCanvasHint')}
               </p>
             </div>
@@ -85,6 +88,14 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
               </div>
               <Button
                 type='button'
+                className='h-8 rounded-full px-3 text-xs font-black uppercase tracking-wider'
+                disabled={!canSolve || isSolving}
+                onClick={onSolve}
+              >
+                {isSolving ? '正式求解中' : '正式求解'}
+              </Button>
+              <Button
+                type='button'
                 variant='outline'
                 className='h-8 rounded-full px-3 text-xs font-black'
                 onClick={onOpenPreview}
@@ -95,6 +106,10 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             </div>
           </div>
 
+          {!canSolve && solveDisabledReason ? (
+            <p className='mt-3 text-xs font-semibold text-amber-700'>{solveDisabledReason}</p>
+          ) : null}
+
           <div className='mt-4 rounded-[22px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(30,41,59,0.96))] p-4'>
             <div className='rounded-[18px] border border-cyan-400/30 bg-slate-950/70 p-4'>
               {!simulation.ready ? (
@@ -103,49 +118,27 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
                 </div>
               ) : (
                 <div className='space-y-4'>
-                  <div className='grid gap-2 md:grid-cols-3'>
+                  <div className='grid gap-2 md:grid-cols-5'>
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.stripCount')}
-                      value={`${simulation.stripsPerRoll}`}
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.demandLines')}
+                      value={`${simulation.demandLineCount}`}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.piecesPerStrip')}
-                      value={`${simulation.piecesPerStrip}`}
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.validDemandLines')}
+                      value={`${simulation.validDemandLineCount}`}
                     />
                     <StatPill
-                      label={t('rawMaterials.batchEngine.sections.stage.stats.executableSets')}
-                      value={`${simulation.executableSets}`}
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalRequiredPieces')}
+                      value={`${simulation.totalRequiredPieces}`}
                     />
-                  </div>
-
-                  <div className='grid gap-3'>
-                    {simulation.stripVisuals.map((strip) => (
-                      <div key={strip.id} className='rounded-[16px] border border-cyan-500/20 bg-cyan-500/8 p-3'>
-                        <div className='flex items-center justify-between gap-3'>
-                          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100/75'>
-                            {strip.title}
-                          </p>
-                          <p className='text-[10px] font-black uppercase tracking-[0.16em] text-slate-200/90'>
-                            {t('rawMaterials.batchEngine.sections.stage.pieceCountPrefix')} {strip.pieceCount}
-                          </p>
-                        </div>
-                        <div className='mt-2 flex flex-wrap gap-2'>
-                          {Array.from({ length: strip.previewPieceCount }).map((_, index) => (
-                            <div
-                              key={`${strip.id}-piece-${index + 1}`}
-                              className='min-w-[74px] rounded-xl border border-emerald-400/25 bg-emerald-400/15 px-2 py-1 text-center text-[10px] font-black tracking-[0.14em] text-emerald-100'
-                            >
-                              P{index + 1}
-                            </div>
-                          ))}
-                          {strip.pieceCount > strip.previewPieceCount ? (
-                            <div className='min-w-[74px] rounded-xl border border-slate-400/30 bg-slate-400/15 px-2 py-1 text-center text-[10px] font-black tracking-[0.14em] text-slate-100'>
-                              +{strip.pieceCount - strip.previewPieceCount}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalDemandArea')}
+                      value={simulation.totalDemandAreaM2.toFixed(3)}
+                    />
+                    <StatPill
+                      label={t('rawMaterials.batchEngine.sections.stage.stats.totalOccupiedArea')}
+                      value={simulation.totalOccupiedAreaM2.toFixed(3)}
+                    />
                   </div>
 
                   <div className='grid gap-2 md:grid-cols-2'>

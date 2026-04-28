@@ -13,52 +13,100 @@ export function BatchEnginePage() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const {
     metrics,
-    ruleChips,
     legend,
     controls,
     updateControl,
     prepregSpecs,
     prepregLoading,
     selectedPrepregSpec,
-    cutSizeUnits,
-    cutSizeLoading,
-    selectedCutSize,
+    cuttingPlans,
+    cuttingPlanLoading,
+    selectedCuttingPlan,
     simulation,
+    canSolve,
+    solveDisabledReason,
+    solution,
+    isSolving,
+    solveError,
+    solve,
+    selectedPlanRank,
+    selectedPlan,
+    baselinePlanRank,
+    activeDiffSummary,
+    selectPlan,
+    selectBaselinePlan,
+    demandSearchQuery,
+    setDemandSearchQuery,
+    demandFilterMode,
+    setDemandFilterMode,
+    rollFilterMode,
+    setRollFilterMode,
+    demandGroupMode,
+    setDemandGroupMode,
+    filteredDemandLines,
+    groupedDemandLines,
+    selectedDemandLineId,
+    selectedDemand,
+    relatedRollIds,
+    filteredRollIds,
+    selectDemandLine,
   } = useBatchEngineState()
 
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-8 animate-in fade-in duration-700'>
       <IndustrialHeader
         icon={Blocks}
         title={t('rawMaterials.batchEngine.title')}
-        description={t('rawMaterials.batchEngine.description')}
-        statusBadge={
-          <div className='rounded-full border border-cyan-500/20 bg-cyan-500/8 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700/85'>
-            {t('rawMaterials.batchEngine.status')}
-          </div>
-        }
       />
 
-      <section className='rounded-[28px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] p-5 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.2)]'>
-        <div className='flex flex-col gap-4 xl:grid xl:grid-cols-[320px_minmax(0,1fr)_300px] xl:items-start'>
+      <section className='rounded-[32px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.2)] sm:p-5'>
+        <div className='flex flex-col gap-6'>
           <BatchEngineControlPanel
             metrics={metrics}
-            ruleChips={ruleChips}
             controls={controls}
             updateControl={updateControl}
             prepregSpecs={prepregSpecs}
             prepregLoading={prepregLoading}
             selectedPrepregSpec={selectedPrepregSpec}
-            cutSizeUnits={cutSizeUnits}
-            cutSizeLoading={cutSizeLoading}
-            selectedCutSize={selectedCutSize}
+            cuttingPlans={cuttingPlans}
+            cuttingPlanLoading={cuttingPlanLoading}
+            selectedCuttingPlan={selectedCuttingPlan}
+            simulation={simulation}
           />
           <BatchEngineSimulationStage
             legend={legend}
             simulation={simulation}
+            canSolve={canSolve}
+            solveDisabledReason={solveDisabledReason}
+            isSolving={isSolving}
+            onSolve={solve}
             onOpenPreview={() => setPreviewOpen(true)}
           />
-          <BatchEngineSummaryPanel simulation={simulation} />
+          <BatchEngineSummaryPanel
+            simulation={simulation}
+            solution={solution}
+            isSolving={isSolving}
+            solveError={solveError}
+            selectedPlanRank={selectedPlanRank}
+            selectedPlan={selectedPlan}
+            baselinePlanRank={baselinePlanRank}
+            activeDiffSummary={activeDiffSummary}
+            onSelectPlan={selectPlan}
+            onSelectBaselinePlan={selectBaselinePlan}
+            demandSearchQuery={demandSearchQuery}
+            onDemandSearchQueryChange={setDemandSearchQuery}
+            demandFilterMode={demandFilterMode}
+            onDemandFilterModeChange={setDemandFilterMode}
+            rollFilterMode={rollFilterMode}
+            onRollFilterModeChange={setRollFilterMode}
+            demandGroupMode={demandGroupMode}
+            onDemandGroupModeChange={setDemandGroupMode}
+            filteredDemandLines={filteredDemandLines}
+            groupedDemandLines={groupedDemandLines}
+            selectedDemandLineId={selectedDemandLineId}
+            selectedDemand={selectedDemand}
+            onSelectDemandLine={selectDemandLine}
+          />
         </div>
       </section>
 
@@ -67,6 +115,16 @@ export function BatchEnginePage() {
         onOpenChange={setPreviewOpen}
         controls={controls}
         simulation={simulation}
+        selectedPlan={selectedPlan}
+        baselinePlanRank={baselinePlanRank}
+        activeDiffSummary={activeDiffSummary}
+        plans={solution?.plans ?? []}
+        selectedDemand={selectedDemand}
+        selectedDemandLineId={selectedDemandLineId}
+        relatedRollIds={relatedRollIds}
+        filteredRollIds={filteredRollIds}
+        onSelectBaselinePlan={selectBaselinePlan}
+        onSelectDemandLine={selectDemandLine}
       />
     </div>
   )

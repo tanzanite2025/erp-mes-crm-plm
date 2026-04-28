@@ -57,6 +57,7 @@ func setupOrganizationRepositoryTestDB(t *testing.T) *gorm.DB {
 			first_name TEXT,
 			last_name TEXT,
 			status TEXT,
+			role TEXT,
 			employee_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
@@ -156,4 +157,87 @@ func TestGormOrganizationRepositoryFindEmployeeByIDOrStaffID(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok)
 	require.Equal(t, employee.ID, foundByStaffID.ID)
+}
+
+func TestGormOrganizationRepositoryListPositionsWithoutOrganizationsTable(t *testing.T) {
+	repo := NewOrganizationRepository()
+	testDB := setupRepositoryTestDB(t,
+		`CREATE TABLE positions (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT NOT NULL,
+			code TEXT,
+			org_unit_id TEXT,
+			production_unit_id TEXT,
+			category TEXT,
+			level INTEGER,
+			is_managerial BOOLEAN,
+			status TEXT,
+			sort_order INTEGER,
+			metadata TEXT
+		)`)
+
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO positions (id, name, code, org_unit_id, status, sort_order, metadata)
+		VALUES ('position-1', 'Supervisor', 'SUP', 'org-ghost', 'active', 1, '{}')
+	`).Error)
+
+	positions, err := repo.ListPositions(testDB)
+
+	require.NoError(t, err)
+	require.Len(t, positions, 1)
+	require.Equal(t, "position-1", positions[0].ID)
+	require.Equal(t, "Supervisor", positions[0].Name)
+	require.Equal(t, "", positions[0].OrgUnitName)
+}
+
+func TestGormOrganizationRepositoryListPositionsIncludesOrganizationNameWhenTableExists(t *testing.T) {
+	repo := NewOrganizationRepository()
+	testDB := setupRepositoryTestDB(t,
+		`CREATE TABLE organizations (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT NOT NULL,
+			parent_id TEXT,
+			manager TEXT,
+			description TEXT,
+			type TEXT,
+			linked_architecture BLOB
+		)`,
+		`CREATE TABLE positions (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT NOT NULL,
+			code TEXT,
+			org_unit_id TEXT,
+			production_unit_id TEXT,
+			category TEXT,
+			level INTEGER,
+			is_managerial BOOLEAN,
+			status TEXT,
+			sort_order INTEGER,
+			metadata TEXT
+		)`)
+
+	require.NoError(t, testDB.Create(&models.Organization{
+		BaseModel: models.BaseModel{ID: "org-1"},
+		Name:      "Manufacturing",
+	}).Error)
+	require.NoError(t, testDB.Exec(`
+		INSERT INTO positions (id, name, code, org_unit_id, status, sort_order, metadata)
+		VALUES ('position-2', 'Lead Operator', 'LOP', 'org-1', 'active', 2, '{}')
+	`).Error)
+
+	positions, err := repo.ListPositions(testDB)
+
+	require.NoError(t, err)
+	require.Len(t, positions, 1)
+	require.Equal(t, "Lead Operator", positions[0].Name)
+	require.Equal(t, "Manufacturing", positions[0].OrgUnitName)
 }

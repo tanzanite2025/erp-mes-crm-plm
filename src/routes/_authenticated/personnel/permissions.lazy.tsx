@@ -1,6 +1,10 @@
-import { createLazyFileRoute } from '@tanstack/react-router'
-import { PermStatsTab } from '@/features/system-mgmt/tabs/perm-stats-tab'
+import { createLazyFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createLazyFileRoute('/_authenticated/personnel/permissions')({
-  component: PermStatsTab,
+  component: () => {
+    throw redirect({
+      to: '/system-management/accounts',
+      replace: true,
+    })
+  },
 })

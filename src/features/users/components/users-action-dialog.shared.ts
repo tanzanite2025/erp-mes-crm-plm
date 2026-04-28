@@ -20,6 +20,7 @@ export const getFormSchema = (t: TranslateFn) => z
     confirmPassword: z.string().transform((pwd) => pwd.trim()),
     isEdit: z.boolean(),
     employeeId: z.string().optional(),
+    role: z.string().optional(),
   })
   .refine(
     (data) => {

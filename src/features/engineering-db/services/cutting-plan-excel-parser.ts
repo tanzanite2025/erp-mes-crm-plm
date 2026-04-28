@@ -2,9 +2,11 @@ import { loadExcelJS } from '@/lib/lazy-vendors'
 import {
   buildCuttingPlanInput,
   EMPTY_CUTTING_PLAN_INPUT,
+  syncCuttingPlanLineWithCutSizeUnit,
   type CuttingPlanInput,
   type CuttingPlanStatus,
 } from '../data/cutting-plan-schema'
+import { type CutSizeUnit } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
 import {
   CUTTING_PLAN_EXCEL_LIMITS,
   CUTTING_PLAN_EXCEL_SHEETS,
@@ -72,7 +74,39 @@ function requireHeaderValue(value: string, rowNumber: number, fieldLabel: string
   throw new Error(`第 ${rowNumber} 行缺少“${fieldLabel}”，无法导入。`)
 }
 
-export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPlanInput> {
+function normalizeCutSizeCodeKey(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function findMatchedCutSizeUnitByCode(
+  cutSizeCode: string,
+  cutSizeUnits: CutSizeUnit[],
+  rowNumber: number,
+): CutSizeUnit {
+  const normalizedCode = normalizeCutSizeCodeKey(cutSizeCode)
+  const matches = cutSizeUnits.filter(
+    (item) => normalizeCutSizeCodeKey(item.code) === normalizedCode,
+  )
+
+  if (matches.length === 1) {
+    return matches[0]
+  }
+
+  if (matches.length > 1) {
+    throw new Error(
+      `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”匹配到多个条目，请先清理尺寸库重复定义。`,
+    )
+  }
+
+  throw new Error(
+    `第 ${rowNumber} 行的尺寸库编码“${cutSizeCode}”未在尺寸库中启用，必须先在尺寸库建立并启用后才能导入裁纱单。`,
+  )
+}
+
+export async function parseCuttingPlanImportExcel(
+  file: File,
+  cutSizeUnits: CutSizeUnit[],
+): Promise<CuttingPlanInput> {
   validateCuttingPlanFileSize(file)
 
   const { default: ExcelJS } = await loadExcelJS()
@@ -113,7 +147,7 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
       carbonFiberModel: normalizeCellText(safelyGetCellValue(row.getCell(8))),
       resinModel: normalizeCellText(safelyGetCellValue(row.getCell(9))),
       resinContentPercent: normalizeCellText(safelyGetCellValue(row.getCell(10))),
-      status: normalizeCellText(safelyGetCellValue(row.getCell(19))),
+      status: normalizeCellText(safelyGetCellValue(row.getCell(16))),
     }
 
     const lineFields = [
@@ -121,9 +155,6 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
       safelyGetCellValue(row.getCell(12)),
       safelyGetCellValue(row.getCell(13)),
       safelyGetCellValue(row.getCell(14)),
-      safelyGetCellValue(row.getCell(15)),
-      safelyGetCellValue(row.getCell(16)),
-      safelyGetCellValue(row.getCell(17)),
     ]
 
     Object.entries(rowHeader).forEach(([key, fieldValue]) => {
@@ -155,24 +186,33 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
       sequenceNo: lines.length + 1,
       rollOrder: normalizeCellText(lineFields[0]),
       yarnDirection: normalizeCellText(lineFields[1]),
-      sizeExpression: normalizeCellText(lineFields[2]),
-      faw: normalizeCellText(lineFields[3]),
-      weightG: normalizeCellText(lineFields[4]),
-      areaM2: normalizeCellText(lineFields[5]),
-      operationNote: normalizeCellText(lineFields[6]),
+      cutSizeCode: normalizeCellText(lineFields[2]),
+      operationNote: normalizeCellText(lineFields[3]),
       manualGroupBreakBefore: resolveManualBreak(
-        normalizeCellText(safelyGetCellValue(row.getCell(18))),
+        normalizeCellText(safelyGetCellValue(row.getCell(15))),
       ),
     }
 
-    if (!line.sizeExpression) {
-      throw new Error(`第 ${rowNumber} 行缺少“宽*长*片”，无法导入。`)
+    if (!line.cutSizeCode) {
+      throw new Error(`第 ${rowNumber} 行缺少“尺寸库编码”，无法导入。`)
     }
+
+    const matchedUnit = findMatchedCutSizeUnitByCode(line.cutSizeCode, cutSizeUnits, rowNumber)
 
     header.productName = productName
     header.productCode = productCode
     header.holeCount = holeCount
-    lines.push(line)
+    lines.push(
+      syncCuttingPlanLineWithCutSizeUnit(
+        {
+          ...line,
+          cutSizeId: matchedUnit.id,
+          cutSizeCode: matchedUnit.code,
+          cutSizeName: matchedUnit.name,
+        },
+        matchedUnit,
+      ),
+    )
   })
 
   if (rowLimitExceeded) {
@@ -196,5 +236,5 @@ export async function parseCuttingPlanImportExcel(file: File): Promise<CuttingPl
     ...header,
     status: resolveStatus(header.status),
     lines,
-  })
+  }, cutSizeUnits)
 }

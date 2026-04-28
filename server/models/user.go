@@ -16,6 +16,7 @@ type User struct {
 	FirstName   string         `gorm:"size:50" json:"firstName"`
 	LastName    string         `gorm:"size:50" json:"lastName"`
 	Status      string         `gorm:"size:20;default:'active'" json:"status"`
+	Role        string         `gorm:"size:100;index" json:"role"`
 	EmployeeID  string         `gorm:"size:100" json:"employeeId"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`

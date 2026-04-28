@@ -51,8 +51,8 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
   if (typeof openOrderCount !== 'number') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected openOrderCount to be a number.`)
   }
-  if (typeof lastOrderDate !== 'string' || lastOrderDate.trim() === '') {
-    throw new Error(`[INVALID_RESPONSE] ${context} expected lastOrderDate to be a non-empty string.`)
+  if (typeof lastOrderDate !== 'string') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected lastOrderDate to be a string.`)
   }
   if (typeof totalOrders !== 'number') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected totalOrders to be a number.`)

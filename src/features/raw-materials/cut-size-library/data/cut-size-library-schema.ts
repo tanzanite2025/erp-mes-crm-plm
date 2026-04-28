@@ -1,5 +1,7 @@
 export type CutSizeUnitStatus = 'Active' | 'Inactive' | 'Archived'
 
+import { resolveSupportedCutAngleValue } from '../../utils/cut-orientation'
+
 export interface CutSizeUnit {
   id: string
   code: string
@@ -63,7 +65,7 @@ export function normalizeCutSizeUnit(item: Partial<CutSizeUnit>): CutSizeUnit {
     areaM2: item.areaM2 || '',
     areaWeightGsm: item.areaWeightGsm || '',
     weightG: item.weightG || '',
-    cutAngle: item.cutAngle || '0',
+    cutAngle: resolveSupportedCutAngleValue(item.cutAngle),
     layupCount: item.layupCount || '1',
     layupMode: item.layupMode || '',
     usageType: item.usageType || '',
@@ -89,7 +91,7 @@ export function formFromCutSizeUnit(unit: CutSizeUnit | null): CutSizeUnitFormSt
     areaM2: unit.areaM2 || '',
     areaWeightGsm: unit.areaWeightGsm || '',
     weightG: unit.weightG || '',
-    cutAngle: unit.cutAngle || '0',
+    cutAngle: resolveSupportedCutAngleValue(unit.cutAngle),
     layupCount: unit.layupCount || '1',
     layupMode: unit.layupMode || '',
     usageType: unit.usageType || '',
@@ -124,7 +126,7 @@ export function buildCutSizeUnitPayload(
     areaM2,
     areaWeightGsm: form.areaWeightGsm.trim(),
     weightG,
-    cutAngle: form.cutAngle.trim() || '0',
+    cutAngle: resolveSupportedCutAngleValue(form.cutAngle),
     layupCount: form.layupCount.trim() || '1',
     layupMode: form.layupMode.trim(),
     usageType: form.usageType.trim(),

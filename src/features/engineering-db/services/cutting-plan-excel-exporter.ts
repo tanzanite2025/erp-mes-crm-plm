@@ -55,10 +55,7 @@ export async function generateCuttingPlanImportTemplate() {
     { header: 'RC含量', key: 'resinContentPercent', width: 12 },
     { header: '卷制顺序', key: 'rollOrder', width: 12 },
     { header: '纱别', key: 'yarnDirection', width: 16 },
-    { header: '宽*长*片*', key: 'sizeExpression', width: 20 },
-    { header: 'FAW', key: 'faw', width: 12 },
-    { header: '重量(g)', key: 'weightG', width: 12 },
-    { header: '面积(m2)', key: 'areaM2', width: 12 },
+    { header: '尺寸库编码*', key: 'cutSizeCode', width: 18 },
     { header: '操作说明', key: 'operationNote', width: 36 },
     { header: '分组标记(填#BREAK)', key: 'manualBreak', width: 20 },
     { header: '状态', key: 'status', width: 12 },
@@ -70,10 +67,10 @@ export async function generateCuttingPlanImportTemplate() {
   headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }
   headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
 
-  sheet.mergeCells('A2:S2')
+  sheet.mergeCells('A2:P2')
   const guideCell = sheet.getCell('A2')
   guideCell.value =
-    '导入说明：方案名称由“产品型号 + 孔数”自动生成，不需要填写名称列；黄色分组条请在“分组标记”列填 #BREAK。'
+    '导入说明：方案名称由“产品型号 + 孔数”自动生成，不需要填写名称列；每行必须填写尺寸库编码，并且该编码必须已在尺寸库中启用；黄色分组条请在“分组标记”列填 #BREAK。'
   guideCell.font = { bold: true, size: 10, color: { argb: 'FFB91C1C' } }
   guideCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } }
   guideCell.alignment = { vertical: 'middle', horizontal: 'left' }
@@ -97,11 +94,11 @@ export async function generateCuttingPlanImportTemplate() {
     row.getCell(1).protection = { locked: true }
     row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
 
-    for (let col = 1; col <= 19; col += 1) {
+    for (let col = 1; col <= 16; col += 1) {
       row.getCell(col).border = defaultBorder
     }
 
-    for (let col = 2; col <= 19; col += 1) {
+    for (let col = 2; col <= 16; col += 1) {
       row.getCell(col).protection = { locked: false }
     }
 
@@ -111,13 +108,13 @@ export async function generateCuttingPlanImportTemplate() {
       formulae: ['"14,16,18,20,21,24,28,32"'],
     }
 
-    row.getCell(18).dataValidation = {
+    row.getCell(15).dataValidation = {
       type: 'list',
       allowBlank: true,
       formulae: ['"#BREAK,BREAK,分组,分割,黄条"'],
     }
 
-    row.getCell(19).dataValidation = {
+    row.getCell(16).dataValidation = {
       type: 'list',
       allowBlank: true,
       formulae: ['"Draft,Active,Archived"'],

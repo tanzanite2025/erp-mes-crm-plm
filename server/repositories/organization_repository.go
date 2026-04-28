@@ -117,9 +117,17 @@ func (GormOrganizationRepository) ListPositions(database *gorm.DB) ([]models.Pos
 	}
 
 	var positions []models.Position
-	err := database.Table("positions").
-		Select("positions.*, organizations.name as org_unit_name").
-		Joins("LEFT JOIN organizations ON positions.org_unit_id = CAST(organizations.id AS TEXT)").
+	selectClause := "positions.*"
+	query := database.Table("positions")
+	if database.Migrator().HasTable("organizations") {
+		selectClause += ", organizations.name as org_unit_name"
+		query = query.Joins("LEFT JOIN organizations ON positions.org_unit_id = CAST(organizations.id AS TEXT)")
+	} else {
+		selectClause += ", '' as org_unit_name"
+	}
+
+	err := query.
+		Select(selectClause).
 		Where("positions.deleted_at IS NULL").
 		Order("CASE WHEN positions.status = 'active' THEN 0 ELSE 1 END").
 		Order("positions.sort_order asc").

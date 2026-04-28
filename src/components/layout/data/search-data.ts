@@ -63,14 +63,6 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'yhqx',
   },
   {
-    id: 'tab-personnel-permissions',
-    href: '/personnel/permissions',
-    titleKey: 'commandMenu.items.permissions',
-    parentKey: 'commandMenu.parents.orgPersonnelCenter',
-    keywords: ['permission', 'audit', '权限'],
-    pinyin: 'qxsj',
-  },
-  {
     id: 'tab-production-architecture-line',
     href: '/production-architecture/line',
     titleKey: 'commandMenu.items.productionLines',

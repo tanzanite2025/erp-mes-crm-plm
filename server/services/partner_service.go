@@ -23,6 +23,41 @@ type SupplierListQuery struct {
 	Options  bool
 }
 
+func BuildCustomerListMetadata(total int64, page int, pageSize int) (CustomerListMetadata, error) {
+	statsBaseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
+
+	var totalCustomers int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&totalCustomers).Error; err != nil {
+		return CustomerListMetadata{}, err
+	}
+
+	var active int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
+		return CustomerListMetadata{}, err
+	}
+
+	startOfMonth := time.Now().UTC()
+	startOfMonth = time.Date(startOfMonth.Year(), startOfMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
+
+	var newThisMonth int64
+	if err := statsBaseQuery.Session(&gorm.Session{}).Where("created_at >= ?", startOfMonth).Count(&newThisMonth).Error; err != nil {
+		return CustomerListMetadata{}, err
+	}
+
+	return CustomerListMetadata{
+		Pagination: PartnerListPaginationMeta{
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
+		},
+		Stats: CustomerListStats{
+			Total:        totalCustomers,
+			Active:       active,
+			NewThisMonth: newThisMonth,
+		},
+	}, nil
+}
+
 func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 	page := query.Page
 	if page < 1 {
@@ -42,23 +77,8 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 		}
 		return CustomerListResponse{Items: MapCustomersToResponse(customers)}, nil
 	}
-
-	statsBaseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
 	var total int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
-		return CustomerListResponse{}, err
-	}
-
-	var active int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("status = ?", "Active").Count(&active).Error; err != nil {
-		return CustomerListResponse{}, err
-	}
-
-	startOfMonth := time.Now().UTC()
-	startOfMonth = time.Date(startOfMonth.Year(), startOfMonth.Month(), 1, 0, 0, 0, 0, time.UTC)
-
-	var newThisMonth int64
-	if err := statsBaseQuery.Session(&gorm.Session{}).Where("created_at >= ?", startOfMonth).Count(&newThisMonth).Error; err != nil {
+	if err := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false).Count(&total).Error; err != nil {
 		return CustomerListResponse{}, err
 	}
 
@@ -67,23 +87,17 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 		return CustomerListResponse{}, err
 	}
 
+	metadata, err := BuildCustomerListMetadata(total, page, pageSize)
+	if err != nil {
+		return CustomerListResponse{}, err
+	}
+
 	return CustomerListResponse{
 		Items:    MapCustomersToResponse(items),
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,
-		Metadata: CustomerListMetadata{
-			Pagination: PartnerListPaginationMeta{
-				Total:    total,
-				Page:     page,
-				PageSize: pageSize,
-			},
-			Stats: CustomerListStats{
-				Total:        total,
-				Active:       active,
-				NewThisMonth: newThisMonth,
-			},
-		},
+		Metadata: metadata,
 	}, nil
 }
 

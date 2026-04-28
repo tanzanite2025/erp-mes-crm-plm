@@ -29,6 +29,10 @@ import {
   type CutSizeUnitFormState,
   type CutSizeUnitStatus,
 } from './data/cut-size-library-schema'
+import {
+  formatSupportedCutAngleLabel,
+  SUPPORTED_CUT_ANGLE_OPTIONS,
+} from '../utils/cut-orientation'
 import { CutSizeLibraryService } from './services/cut-size-library-service'
 
 const CUT_SIZE_LIBRARY_QUERY_KEY = ['raw-materials', 'cut-size-library'] as const
@@ -290,7 +294,7 @@ export function CutSizeLibraryPage() {
                         <div className='mt-1 text-[11px] text-slate-500'>{weightLabel(item)}</div>
                       </td>
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
-                        {item.cutAngle || '--'}
+                        {formatSupportedCutAngleLabel(item.cutAngle)}
                       </td>
                       <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
                         {item.layupCount ? `${item.layupCount} 层` : '--'}
@@ -396,11 +400,18 @@ export function CutSizeLibraryPage() {
               />
             </Field>
             <Field label='裁切角度'>
-              <Input
-                value={form.cutAngle}
-                onChange={(event) => updateForm('cutAngle', event.target.value)}
-                placeholder='0 / 45 / custom'
-              />
+              <Select value={form.cutAngle} onValueChange={(value) => updateForm('cutAngle', value)}>
+                <SelectTrigger className='h-10 rounded-xl'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_CUT_ANGLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label='面积 (m²)'>
               <Input

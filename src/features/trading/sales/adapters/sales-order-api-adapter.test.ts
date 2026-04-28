@@ -151,11 +151,53 @@ describe('sales-order-api-adapter', () => {
 
   it('does not synthesize missing list items into an empty page', () => {
     expect(() =>
-      toSalesOrderListPageContract({
-        total: 0,
+      toSalesOrderListPageContract(
+        {
+          total: 0,
+          page: 1,
+          pageSize: 50,
+        } as never,
+        { withLines: false }
+      )
+    ).toThrow()
+  })
+
+  it('normalizes list items without lines into empty line arrays', () => {
+    const page = toSalesOrderListPageContract(
+      {
+        items: [
+          {
+            ...baseOrderDto,
+            lines: undefined,
+          },
+        ],
+        total: 1,
         page: 1,
         pageSize: 50,
-      } as never)
-    ).toThrow()
+      },
+      { withLines: false }
+    )
+
+    expect(page.items).toHaveLength(1)
+    expect(page.items[0]?.lines).toEqual([])
+  })
+
+  it('keeps list items strict about lines when withLines is true', () => {
+    expect(() =>
+      toSalesOrderListPageContract(
+        {
+          items: [
+            {
+              ...baseOrderDto,
+              lines: undefined,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 50,
+        },
+        { withLines: true }
+      )
+    ).toThrow('[INVALID_RESPONSE] SalesOrderApiAdapter.toSalesOrderListItemContract expected "lines" to be an array.')
   })
 })

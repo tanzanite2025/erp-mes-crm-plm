@@ -9,7 +9,6 @@ export function getOrgPersonnelTabs(t: TranslateFn): TabItem[] {
     { key: 'employees', label: t('orgPersonnel.tabs.employees'), href: '/personnel/employees' },
     { key: 'accounts', label: t('orgPersonnel.tabs.accounts'), href: '/personnel/accounts' },
     { key: 'rights', label: t('orgPersonnel.tabs.rights'), href: '/personnel/rights' },
-    { key: 'permissions', label: t('orgPersonnel.tabs.permissions'), href: '/personnel/permissions' },
   ]
 }
 
