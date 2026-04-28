@@ -1,5 +1,5 @@
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
-import { toPositiveNumber } from '../../cut-size-library/data/cut-size-library-schema'
+import { toPositiveNumber } from '../../cut-size-library/domain/cut-size-geometry'
 import type { BuildBatchEngineDemandLinesResult } from './build-batch-engine-demand-lines-from-cutting-plan'
 import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 
@@ -40,7 +40,7 @@ export function buildBatchEnginePreview(
   }
 
   const { validLines, invalidLines } = mappedDemandLines
-  const selectedUnit = validLines[0]?.cutSizeUnit
+  const selectedUnit = validLines[0]?.cutSizeGeometry
   const demandLineCount = selectedCuttingPlan.lines.length
   const validDemandLineCount = validLines.length
   const invalidDemandLineCount = invalidLines.length
@@ -75,10 +75,10 @@ export function buildBatchEnginePreview(
   const rollLengthMm = toPositiveNumber(controls.rollLengthM) * 1000
   const knifeGapMm = toPositiveNumber(controls.knifeGapMm)
   const edgeTrimMm = toPositiveNumber(controls.edgeTrimMm)
-  const pieceWidthMm = validLines[0]?.occupiedWidthMm || toPositiveNumber(selectedUnit.widthMm)
-  const pieceLengthMm = validLines[0]?.occupiedLengthMm || toPositiveNumber(selectedUnit.lengthMm)
-  const pieceCountPerSet = validLines[0]?.pieceCountPerSet || Math.max(1, Math.floor(toPositiveNumber(selectedUnit.pieceCount) || 1))
-  const layupCount = validLines[0]?.layupCount || Math.max(1, Math.floor(toPositiveNumber(selectedUnit.layupCount) || 1))
+  const pieceWidthMm = validLines[0]?.occupiedWidthMm || selectedUnit.envelopeWidthMm
+  const pieceLengthMm = validLines[0]?.occupiedLengthMm || selectedUnit.envelopeLengthMm
+  const pieceCountPerSet = validLines[0]?.pieceCountPerSet || selectedUnit.pieceCountPerSet
+  const layupCount = validLines[0]?.layupCount || selectedUnit.layupCount
   const totalDemandAreaM2 = round(validLines.reduce((total, item) => total + item.areaM2, 0), 3)
   const totalOccupiedAreaM2 = round(validLines.reduce((total, item) => total + item.occupiedAreaM2, 0), 3)
 

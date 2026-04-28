@@ -8,9 +8,9 @@ import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 import {
-  formatCutSizeExpression,
   type CutSizeUnit,
 } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import { formatCutSizeExpression } from '@/features/raw-materials/cut-size-library/domain/cut-size-geometry'
 import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
 import { getCuttingOperationTabs } from '@/features/cutting-operations/tab-config'
 
@@ -53,7 +53,7 @@ export function CuttingSizeInventoryTab() {
   return (
     <ModuleTabbedLayout
       title={t('sidebar.items.cuttingOperations')}
-      tabs={getCuttingOperationTabs(t as any)}
+      tabs={getCuttingOperationTabs(t)}
     >
       <div className='flex animate-in flex-col gap-5 fade-in duration-700'>
         <IndustrialHeader

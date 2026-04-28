@@ -2,15 +2,13 @@ import type {
   CuttingPlan,
   CuttingPlanLine,
 } from '@/features/engineering-db/data/cutting-plan-schema'
+import { type CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
 import {
-  formatCutSizeExpression,
+  resolveCutSizeGeometryProjection,
   toPositiveNumber,
-  type CutSizeUnit,
-} from '../../cut-size-library/data/cut-size-library-schema'
-import {
-  resolveCutOrientationGeometry,
-  toCutAngleDegrees,
-} from '../../utils/cut-orientation'
+  type CutSizeDisplaySnapshot,
+  type CutSizeGeometryProjection,
+} from '../../cut-size-library/domain/cut-size-geometry'
 import type { BatchOptimizerDemandLineInput } from '../types'
 
 type BatchEngineResolvedDemandLine = BatchOptimizerDemandLineInput & {
@@ -21,7 +19,8 @@ type BatchEngineResolvedDemandLine = BatchOptimizerDemandLineInput & {
   occupiedAreaM2: number
   occupiedPieceAreaM2: number
   lineLabel: string
-  cutSizeUnit: CutSizeUnit
+  cutSizeGeometry: CutSizeGeometryProjection
+  cutSizeDisplay: CutSizeDisplaySnapshot
   sourceLine: CuttingPlanLine
 }
 
@@ -43,9 +42,9 @@ function round(value: number, digits = 3) {
   return Math.round(value * factor) / factor
 }
 
-function getLineLabel(line: CuttingPlanLine, unit?: CutSizeUnit) {
-  const expression = line.sizeExpression?.trim() || (unit ? formatCutSizeExpression(unit) : '') || '--'
-  const code = line.cutSizeCode?.trim() || unit?.code || '--'
+function getLineLabel(line: CuttingPlanLine, display?: CutSizeDisplaySnapshot) {
+  const expression = line.sizeExpression?.trim() || display?.sizeExpression || '--'
+  const code = line.cutSizeCode?.trim() || display?.code || '--'
   return `#${line.sequenceNo} / ${code} / ${expression}`
 }
 
@@ -139,22 +138,17 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
       return
     }
 
-    const widthMm = toPositiveNumber(cutSizeUnit.widthMm)
-    const lengthMm = toPositiveNumber(cutSizeUnit.lengthMm)
-    const pieceCountPerSet = Math.max(1, Math.floor(toPositiveNumber(cutSizeUnit.pieceCount) || 1))
-    const layupCount = Math.max(1, Math.floor(toPositiveNumber(cutSizeUnit.layupCount) || 1))
-    const cutAngle = toCutAngleDegrees(cutSizeUnit.cutAngle)
-    const geometry = resolveCutOrientationGeometry({
-      widthMm,
-      lengthMm,
-      cutAngleDeg: cutAngle,
-    })
+    const { geometry: cutSizeGeometry, display: cutSizeDisplay } = resolveCutSizeGeometryProjection(cutSizeUnit)
+    const widthMm = cutSizeGeometry.widthMm
+    const lengthMm = cutSizeGeometry.lengthMm
+    const pieceCountPerSet = cutSizeGeometry.pieceCountPerSet
+    const layupCount = cutSizeGeometry.layupCount
 
     if (!widthMm || !lengthMm) {
       invalidLines.push({
         demandLineId,
         sequenceNo: line.sequenceNo,
-        lineLabel: getLineLabel(line, cutSizeUnit),
+        lineLabel: getLineLabel(line, cutSizeDisplay),
         reason: '尺寸单元缺少有效宽长',
         line,
       })
@@ -165,7 +159,7 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
       invalidLines.push({
         demandLineId,
         sequenceNo: line.sequenceNo,
-        lineLabel: getLineLabel(line, cutSizeUnit),
+        lineLabel: getLineLabel(line, cutSizeDisplay),
         reason: '需求套数必须为大于 0 的整数',
         line,
       })
@@ -176,7 +170,7 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
       invalidLines.push({
         demandLineId,
         sequenceNo: line.sequenceNo,
-        lineLabel: getLineLabel(line, cutSizeUnit),
+        lineLabel: getLineLabel(line, cutSizeDisplay),
         reason: '优先级必须为大于 0 的整数',
         line,
       })
@@ -185,8 +179,8 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
 
     const requiredSets = normalizePositiveInteger(line.requiredSets, 1)
     const requiredPieces = requiredSets * pieceCountPerSet
-    const areaM2 = round((widthMm * lengthMm * pieceCountPerSet * layupCount * requiredSets) / 1_000_000, 3)
-    const occupiedPieceAreaM2 = geometry.envelopeAreaM2
+    const areaM2 = round(cutSizeGeometry.baseAreaM2 * pieceCountPerSet * layupCount * requiredSets, 3)
+    const occupiedPieceAreaM2 = cutSizeGeometry.envelopeAreaM2
     const occupiedAreaM2 = round(occupiedPieceAreaM2 * pieceCountPerSet * layupCount * requiredSets, 3)
     const priority = normalizePriority(line, index)
     const allowMixedPlan = resolveAllowMixedPlan(line)
@@ -199,14 +193,14 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
 
     validLines.push({
       demandLineId,
-      cutSizeUnitId: cutSizeUnit.id,
+      cutSizeUnitId: cutSizeGeometry.cutSizeUnitId,
       widthMm,
       lengthMm,
       pieceCountPerSet,
       requiredSets,
       requiredPieces,
       layupCount,
-      cutAngle: geometry.angleDeg,
+      cutAngle: cutSizeGeometry.cutAngleDeg,
       usageType: resolveUsageType(line, cutSizeUnit),
       priority,
       allowMixedPlan,
@@ -218,12 +212,13 @@ export function buildBatchEngineDemandLinesFromCuttingPlan(
       noteKeywords,
       sequenceNo: line.sequenceNo,
       areaM2,
-      occupiedWidthMm: geometry.envelopeWidthMm,
-      occupiedLengthMm: geometry.envelopeLengthMm,
+      occupiedWidthMm: cutSizeGeometry.envelopeWidthMm,
+      occupiedLengthMm: cutSizeGeometry.envelopeLengthMm,
       occupiedAreaM2,
       occupiedPieceAreaM2,
-      lineLabel: getLineLabel(line, cutSizeUnit),
-      cutSizeUnit,
+      lineLabel: getLineLabel(line, cutSizeDisplay),
+      cutSizeGeometry,
+      cutSizeDisplay,
       sourceLine: line,
     })
   })

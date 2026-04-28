@@ -18,17 +18,19 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
 import {
-  deriveCutSizeAreaM2,
-  deriveCutSizeWeightG,
   formFromCutSizeUnit,
-  formatCutSizeExpression,
-  resolveCutSizeAreaM2,
-  resolveCutSizeWeightG,
   EMPTY_CUT_SIZE_UNIT_FORM,
   type CutSizeUnit,
   type CutSizeUnitFormState,
   type CutSizeUnitStatus,
 } from './data/cut-size-library-schema'
+import {
+  deriveCutSizeAreaM2,
+  deriveCutSizeWeightG,
+  formatCutSizeExpression,
+  resolveCutSizeAreaM2,
+  resolveCutSizeWeightG,
+} from './domain/cut-size-geometry'
 import {
   formatSupportedCutAngleLabel,
   SUPPORTED_CUT_ANGLE_OPTIONS,

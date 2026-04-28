@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
-import { toPositiveNumber } from '../../cut-size-library/data/cut-size-library-schema'
+import { toPositiveNumber } from '../../cut-size-library/domain/cut-size-geometry'
 import type { PrepregMaterialSpec } from '../../data/prepreg-material-spec-schema'
 import { BatchEngineApi } from '../services/batch-engine-api'
 import type { BatchEngineControls, BatchEngineSimulation } from '../types'

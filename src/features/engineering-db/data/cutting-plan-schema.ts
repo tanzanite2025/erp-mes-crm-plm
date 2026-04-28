@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import {
+  type CutSizeUnit,
+} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import {
   deriveCutSizeAreaM2,
   deriveCutSizeWeightG,
   formatCutSizeExpression,
-  type CutSizeUnit,
-} from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+} from '@/features/raw-materials/cut-size-library/domain/cut-size-geometry'
 
 export const cuttingPlanStatusSchema = z.enum(['Draft', 'Active', 'Archived'])
 export type CuttingPlanStatus = z.infer<typeof cuttingPlanStatusSchema>

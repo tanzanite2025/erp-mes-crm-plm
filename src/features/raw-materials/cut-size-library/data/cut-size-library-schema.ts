@@ -1,5 +1,9 @@
 export type CutSizeUnitStatus = 'Active' | 'Inactive' | 'Archived'
 
+import {
+  deriveCutSizeAreaM2,
+  deriveCutSizeWeightG,
+} from '../domain/cut-size-geometry'
 import { resolveSupportedCutAngleValue } from '../../utils/cut-orientation'
 
 export interface CutSizeUnit {
@@ -122,60 +126,4 @@ export function buildCutSizeUnitPayload(
     status: form.status,
     version: editing?.version || 1,
   }
-}
-
-export function formatCutSizeExpression(
-  unit: Pick<CutSizeUnit, 'widthMm' | 'lengthMm' | 'pieceCount'>
-): string {
-  const width = unit.widthMm.trim()
-  const length = unit.lengthMm.trim()
-  const count = unit.pieceCount.trim() || '1'
-  if (!width || !length) return ''
-  return `${width}x${length}x${count}`
-}
-
-export function toPositiveNumber(value?: string): number {
-  const parsed = Number.parseFloat((value || '').trim())
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0
-  return parsed
-}
-
-function normalizeDecimalString(value: number, fractionDigits = 6): string {
-  if (!Number.isFinite(value) || value <= 0) return ''
-  return value.toFixed(fractionDigits).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, '').replace(/\.$/, '')
-}
-
-export function deriveCutSizeAreaM2(
-  unit: Pick<CutSizeUnitFormState, 'widthMm' | 'lengthMm' | 'pieceCount'>
-): string {
-  const widthMm = toPositiveNumber(unit.widthMm)
-  const lengthMm = toPositiveNumber(unit.lengthMm)
-  const pieceCount = toPositiveNumber(unit.pieceCount || '1')
-  if (!widthMm || !lengthMm || !pieceCount) return ''
-
-  const areaM2 = (widthMm * lengthMm * pieceCount) / 1000000
-  return normalizeDecimalString(areaM2)
-}
-
-export function resolveCutSizeAreaM2(
-  unit: Pick<CutSizeUnit, 'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'>
-): string {
-  return deriveCutSizeAreaM2(unit) || unit.areaM2.trim()
-}
-
-export function deriveCutSizeWeightG(
-  unit: Pick<CutSizeUnitFormState, 'widthMm' | 'lengthMm' | 'pieceCount' | 'areaM2' | 'areaWeightGsm'>
-): string {
-  const areaM2 = toPositiveNumber(unit.areaM2) || toPositiveNumber(deriveCutSizeAreaM2(unit))
-  const areaWeightGsm = toPositiveNumber(unit.areaWeightGsm)
-  if (!areaM2 || !areaWeightGsm) return ''
-
-  const weightG = areaM2 * areaWeightGsm
-  return normalizeDecimalString(weightG, 3)
-}
-
-export function resolveCutSizeWeightG(
-  unit: Pick<CutSizeUnit, 'weightG' | 'areaM2' | 'areaWeightGsm' | 'widthMm' | 'lengthMm' | 'pieceCount'>
-): string {
-  return deriveCutSizeWeightG(unit) || unit.weightG.trim()
 }

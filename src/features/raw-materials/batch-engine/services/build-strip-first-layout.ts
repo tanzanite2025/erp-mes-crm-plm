@@ -1,11 +1,4 @@
-import {
-  toPositiveNumber,
-  type CutSizeUnit,
-} from '../../cut-size-library/data/cut-size-library-schema'
-import {
-  resolveCutOrientationGeometry,
-  toCutAngleDegrees,
-} from '../../utils/cut-orientation'
+import { toPositiveNumber, type CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
 import type { BatchEngineControls, BatchEngineSimulation } from '../types'
 
 export type StripLayoutZoneKind = 'roll' | 'loss' | 'strip' | 'piece' | 'aggregate'
@@ -100,20 +93,15 @@ function buildLossZones(
 }
 
 function computeGeometry(
-  selectedUnit: CutSizeUnit,
+  selectedUnit: CutSizeGeometryProjection,
   controls: BatchEngineControls
 ) {
   const rollWidthMm = Math.max(toPositiveNumber(controls.rollWidthMm), 1)
   const rollLengthMm = Math.max(toPositiveNumber(controls.rollLengthM) * 1000, 1)
   const knifeGapMm = Math.max(toPositiveNumber(controls.knifeGapMm), 0)
   const edgeTrimMm = Math.max(toPositiveNumber(controls.edgeTrimMm), 0)
-  const orientationGeometry = resolveCutOrientationGeometry({
-    widthMm: toPositiveNumber(selectedUnit.widthMm),
-    lengthMm: toPositiveNumber(selectedUnit.lengthMm),
-    cutAngleDeg: toCutAngleDegrees(selectedUnit.cutAngle),
-  })
-  const pieceWidthMm = Math.max(orientationGeometry.envelopeWidthMm, 0)
-  const pieceLengthMm = Math.max(orientationGeometry.envelopeLengthMm, 0)
+  const pieceWidthMm = Math.max(selectedUnit.envelopeWidthMm, 0)
+  const pieceLengthMm = Math.max(selectedUnit.envelopeLengthMm, 0)
 
   const usableX = edgeTrimMm
   const usableY = edgeTrimMm
@@ -127,7 +115,6 @@ function computeGeometry(
     edgeTrimMm,
     pieceWidthMm,
     pieceLengthMm,
-    orientationGeometry,
     usableX,
     usableY,
     usableWidthMm,
@@ -174,7 +161,6 @@ export function buildStripFirstLayout(
     edgeTrimMm,
     pieceWidthMm,
     pieceLengthMm,
-    orientationGeometry,
     usableX,
     usableY,
     usableWidthMm,
@@ -252,7 +238,7 @@ export function buildStripFirstLayout(
         width: stripWidth,
         height: pieceHeight,
         label: `P${pieceIndex + 1}`,
-        detail: `${orientationGeometry.baseWidthMm.toFixed(1)}x${orientationGeometry.baseLengthMm.toFixed(1)}mm @ ${orientationGeometry.angleDeg.toFixed(1)}°`,
+        detail: `${selectedUnit.widthMm.toFixed(1)}x${selectedUnit.lengthMm.toFixed(1)}mm @ ${selectedUnit.cutAngleDeg.toFixed(1)}°`,
         interactive: true,
       })
     }

@@ -28,9 +28,9 @@ import { useActiveHoleCodeSource } from '@/features/code-center/hooks/use-hole-c
 import type { Product } from '@/features/engineering/data/schema'
 import { useGetProducts } from '@/features/engineering/hooks/use-products'
 import {
-  formatCutSizeExpression,
   type CutSizeUnit,
 } from '@/features/raw-materials/cut-size-library/data/cut-size-library-schema'
+import { formatCutSizeExpression } from '@/features/raw-materials/cut-size-library/domain/cut-size-geometry'
 import { CutSizeLibraryService } from '@/features/raw-materials/cut-size-library/services/cut-size-library-service'
 import type { PrepregMaterialSpec, PrepregMaterialSpecListResponse } from '@/features/raw-materials/data/prepreg-material-spec-schema'
 import { PrepregMaterialSpecService } from '@/features/raw-materials/services/prepreg-material-spec-service'

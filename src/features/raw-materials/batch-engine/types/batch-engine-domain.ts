@@ -1,4 +1,4 @@
-import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
+import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
 import type { BatchOptimizerObjectivePreset } from './batch-engine-api'
 
 export type BatchEngineControls = {
@@ -22,7 +22,7 @@ export type BatchEngineSimulation = {
   ready: boolean
   reason?: string
   selectedPlanName?: string
-  selectedUnit?: CutSizeUnit
+  selectedUnit?: CutSizeGeometryProjection
   demandLineCount: number
   validDemandLineCount: number
   invalidDemandLineCount: number
