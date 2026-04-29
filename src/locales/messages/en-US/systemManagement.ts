@@ -1,7 +1,6 @@
 export const systemManagement = {
   layout: {
     tabs: {
-      accounts: "Role Matrix",
       auditEngine: "Audit Engine"
     }
   },

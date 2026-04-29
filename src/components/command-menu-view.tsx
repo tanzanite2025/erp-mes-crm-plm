@@ -89,8 +89,8 @@ export function CommandMenuView({
         </div>
 
         <CommandList className='max-h-none overflow-hidden'>
-          <ScrollArea>
-            <div className={cn('overflow-hidden transition-all duration-500', isInitialState ? 'h-[280px]' : 'h-[420px]')}>
+          <ScrollArea className='h-[500px] max-h-[calc(100dvh-12rem)]'>
+            <div className='min-h-full'>
               <CommandEmpty className='py-24 text-sm italic text-muted-foreground/50'>
                 {t('commandMenu.empty')}
               </CommandEmpty>

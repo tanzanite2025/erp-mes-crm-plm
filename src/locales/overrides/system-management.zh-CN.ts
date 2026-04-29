@@ -64,43 +64,5 @@ export const systemManagementZhCNOverrides = {
         invalidJson: '流程定义 JSON 格式错误',
       },
     },
-    userRights: {
-      header: {
-        title: '角色权限矩阵',
-        subtitle: '按角色统一管理模块、页面、标签页与操作权限。',
-      },
-      actions: {
-        importAccountRole: '导入账号角色',
-        selectAccountRole: '选择账号角色',
-        confirmImport: '确认导入',
-        expand: '展开',
-        collapse: '收起',
-        expandAll: '展开全部',
-        collapseAll: '收起全部',
-      },
-      sections: {
-        accessTree: '权限树',
-        moduleActions: '模块级操作权限',
-      },
-      table: {
-        accessNodes: '权限节点',
-      },
-      mobile: {
-        targetRole: '选择角色',
-      },
-      kinds: {
-        module: '模块',
-        page: '页面',
-        tab: '标签',
-        action: '操作',
-      },
-      status: {
-        expanded: '已展开 {{count}} 个子节点',
-        collapsed: '已收起 {{count}} 个子节点，点击左侧可展开。',
-        collapsedShort: '已收起 {{count}} 个子节点',
-      },
-      securityInfo:
-        '权限矩阵遵循最小授权原则。系统保留的全局模板角色保持锁定，避免误触发全局授权漂移。',
-    },
   },
 } as const

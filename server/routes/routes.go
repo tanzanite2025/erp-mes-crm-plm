@@ -310,6 +310,7 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 	api.GET("/health", handlers.HealthHandler)
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
 	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
+	api.POST("/production/product-barcode-capture-sessions/:sessionId/submit", handlers.SubmitProductBarcodeCaptureSessionHandler)
 	api.GET("/ws", func(c *gin.Context) {
 		log.Printf("[WS_TRACE] Incoming request: Remote=%s, Host=%s, Upgrade=%s", c.Request.RemoteAddr, c.Request.Host, c.Request.Header.Get("Upgrade"))
 		handlers.WSHandler(c)

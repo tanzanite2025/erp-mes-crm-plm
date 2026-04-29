@@ -1,0 +1,151 @@
+import { apiFetch } from '@/lib/api-client'
+import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
+
+const PRODUCT_BINDING_ENDPOINT = '/production/product-barcode-bindings'
+
+export type ProductBindingRollInstanceSummary = {
+  id: string
+  bindingToken: string
+  specId: string
+  specCode: string
+  specName: string
+  supplierBatchNo: string
+  widthMm: string
+  lengthM: string
+  nominalAreaM2: string
+  boxNo: string
+  productionDate: string
+  status: string
+  activatedAt: string
+}
+
+export type CreateProductBindingRequest = {
+  productBarcode: string
+  prepregQrCode: string
+}
+
+export type ProductBindingRecord = {
+  id: string
+  productBarcode: string
+  prepregRollInstanceId: string
+  prepregRollInstance: ProductBindingRollInstanceSummary | null
+  prepregQrCode: string
+  prepregBindingToken: string
+  barcodeProtocol: string
+  barcodeSummary: string
+  boundAt: string
+  boundBy: string
+  source: string
+  status: string
+  message: string
+}
+
+export type ProductBindingHistoryQuery = {
+  limit?: number
+  productBarcode?: string
+  prepregBindingToken?: string
+}
+
+export type ProductBindingHistoryResult = {
+  items: ProductBindingRecord[]
+  total: number
+}
+
+function normalizeRollInstanceSummary(
+  input: Record<string, unknown> | null | undefined,
+): ProductBindingRollInstanceSummary | null {
+  if (!input) return null
+
+  return {
+    id: String(input.id ?? '').trim(),
+    bindingToken: String(input.bindingToken ?? '').trim(),
+    specId: String(input.specId ?? '').trim(),
+    specCode: String(input.specCode ?? '').trim(),
+    specName: String(input.specName ?? '').trim(),
+    supplierBatchNo: String(input.supplierBatchNo ?? '').trim(),
+    widthMm: String(input.widthMm ?? '').trim(),
+    lengthM: String(input.lengthM ?? '').trim(),
+    nominalAreaM2: String(input.nominalAreaM2 ?? '').trim(),
+    boxNo: String(input.boxNo ?? '').trim(),
+    productionDate: String(input.productionDate ?? '').trim(),
+    status: String(input.status ?? '').trim(),
+    activatedAt: String(input.activatedAt ?? '').trim(),
+  }
+}
+
+function normalizeProductBindingRecord(input: Record<string, unknown>): ProductBindingRecord {
+  const rollInstanceRaw = input.prepregRollInstance
+  const rollInstance =
+    rollInstanceRaw && typeof rollInstanceRaw === 'object' && !Array.isArray(rollInstanceRaw)
+      ? normalizeRollInstanceSummary(rollInstanceRaw as Record<string, unknown>)
+      : null
+
+  return {
+    id: String(input.id ?? '').trim(),
+    productBarcode: String(input.productBarcode ?? '').trim(),
+    prepregRollInstanceId: String(input.prepregRollInstanceId ?? '').trim(),
+    prepregRollInstance: rollInstance,
+    prepregQrCode: String(input.prepregQrCode ?? '').trim(),
+    prepregBindingToken: String(input.prepregBindingToken ?? '').trim(),
+    barcodeProtocol: String(input.barcodeProtocol ?? '').trim(),
+    barcodeSummary: String(input.barcodeSummary ?? '').trim(),
+    boundAt: String(input.boundAt ?? '').trim(),
+    boundBy: String(input.boundBy ?? '').trim(),
+    source: String(input.source ?? '').trim(),
+    status: String(input.status ?? 'BOUND').trim() || 'BOUND',
+    message: String(input.message ?? '').trim(),
+  }
+}
+
+export const productBindingService = {
+  async submitBinding(request: CreateProductBindingRequest): Promise<ProductBindingRecord> {
+    const payload: CreateProductBindingRequest = {
+      productBarcode: request.productBarcode.trim(),
+      prepregQrCode: request.prepregQrCode.trim(),
+    }
+
+    const response = await apiFetch<Record<string, unknown>>(PRODUCT_BINDING_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+
+    return normalizeProductBindingRecord(
+      ensureObjectResponse<Record<string, unknown>>(
+        response,
+        'productBindingService.submitBinding',
+      ),
+    )
+  },
+
+  async listBindings(query: ProductBindingHistoryQuery = {}): Promise<ProductBindingHistoryResult> {
+    const params = new URLSearchParams()
+    if (typeof query.limit === 'number') {
+      params.set('limit', String(query.limit))
+    }
+    if (query.productBarcode?.trim()) {
+      params.set('productBarcode', query.productBarcode.trim())
+    }
+    if (query.prepregBindingToken?.trim()) {
+      params.set('prepregBindingToken', query.prepregBindingToken.trim())
+    }
+
+    const endpoint = params.toString()
+      ? `${PRODUCT_BINDING_ENDPOINT}?${params.toString()}`
+      : PRODUCT_BINDING_ENDPOINT
+
+    const response = await apiFetch<Record<string, unknown>>(endpoint)
+    const checked = ensureObjectResponse<Record<string, unknown>>(
+      response,
+      'productBindingService.listBindings',
+    )
+
+    return {
+      items: ensureArrayField<Record<string, unknown>>(
+        checked,
+        'items',
+        'productBindingService.listBindings',
+      ).map(normalizeProductBindingRecord),
+      total: Number(checked.total) || 0,
+    }
+  },
+}

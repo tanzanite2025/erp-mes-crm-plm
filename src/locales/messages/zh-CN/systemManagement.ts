@@ -1,7 +1,6 @@
 export const systemManagement = {
   layout: {
     tabs: {
-      accounts: "角色权限",
       auditEngine: "审计引擎"
     }
   },

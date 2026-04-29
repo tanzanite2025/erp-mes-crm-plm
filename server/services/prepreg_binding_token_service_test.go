@@ -55,8 +55,33 @@ func setupPrepregBindingTokenServiceTestDB(t *testing.T) *gorm.DB {
 			deleted_at DATETIME,
 			token TEXT NOT NULL UNIQUE,
 			bound_spec_id TEXT,
+			bound_roll_instance_id TEXT,
 			bound_at DATETIME,
 			expires_at DATETIME
+		);
+	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE prepreg_roll_instances (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			binding_token TEXT NOT NULL UNIQUE,
+			spec_id TEXT NOT NULL,
+			spec_code TEXT NOT NULL,
+			spec_name TEXT NOT NULL,
+			resin_content_percent TEXT,
+			supplier_batch_no TEXT,
+			width_mm TEXT,
+			length_m TEXT,
+			nominal_area_m2 TEXT,
+			inspector TEXT,
+			box_no TEXT,
+			production_date TEXT,
+			ocr_raw_payload TEXT,
+			activated_at DATETIME,
+			activated_by TEXT,
+			status TEXT NOT NULL
 		);
 	`).Error)
 	db.DB = testDB

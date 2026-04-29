@@ -64,43 +64,5 @@ export const systemManagementEnUSOverrides = {
         invalidJson: 'Invalid workflow definition JSON',
       },
     },
-    userRights: {
-      header: {
-        title: 'Role Permission Matrix',
-        subtitle: 'Uniformly manage module, page, tab, and operation permissions by role.',
-      },
-      actions: {
-        importAccountRole: 'Import Account Role',
-        selectAccountRole: 'Select Account Role',
-        confirmImport: 'Confirm Import',
-        expand: 'Expand',
-        collapse: 'Collapse',
-        expandAll: 'Expand All',
-        collapseAll: 'Collapse All',
-      },
-      sections: {
-        accessTree: 'Permission Tree',
-        moduleActions: 'Module-level Operation Permissions',
-      },
-      table: {
-        accessNodes: 'Permission Nodes',
-      },
-      mobile: {
-        targetRole: 'Select Role',
-      },
-      kinds: {
-        module: 'Module',
-        page: 'Page',
-        tab: 'Tab',
-        action: 'Action',
-      },
-      status: {
-        expanded: 'Expanded {{count}} child nodes',
-        collapsed: 'Collapsed {{count}} child nodes, click left to expand.',
-        collapsedShort: 'Collapsed {{count}} child nodes',
-      },
-      securityInfo:
-        'The permission matrix follows the principle of least privilege. System-reserved global template roles remain locked to avoid accidental global authorization drift.',
-    },
   },
 } as const

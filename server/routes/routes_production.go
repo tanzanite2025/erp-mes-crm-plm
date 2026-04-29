@@ -30,6 +30,10 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.GET("/cutting-issuances/trace-report", handlers.GetCuttingIssuanceTraceReportHandler)
 		productionGroup.GET("/cutting-issuances", handlers.GetCuttingIssuanceExecutionsHandler)
 		productionGroup.POST("/cutting-issuances", handlers.CreateCuttingIssuanceExecutionHandler)
+		productionGroup.POST("/product-barcode-capture-sessions", handlers.CreateProductBarcodeCaptureSessionHandler)
+		productionGroup.GET("/product-barcode-capture-sessions/:sessionId", handlers.GetProductBarcodeCaptureSessionHandler)
+		productionGroup.GET("/product-barcode-bindings", handlers.GetProductBarcodeBindingsHandler)
+		productionGroup.POST("/product-barcode-bindings", handlers.CreateProductBarcodeBindingHandler)
 		productionGroup.GET("/stats", handlers.GetProductionStatsHandler)
 		productionGroup.GET("/order-progress", handlers.GetOrderProgressHandler)
 	}

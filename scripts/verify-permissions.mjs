@@ -14,7 +14,9 @@ const nodeRequire = createRequire(import.meta.url)
 const moduleCache = new Map()
 
 function resolveTsModulePath(fromFile, specifier) {
-  const basePath = specifier.startsWith('/')
+  const basePath = path.isAbsolute(specifier)
+    ? specifier
+    : specifier.startsWith('/')
     ? path.resolve(projectRoot, '.' + specifier)
     : path.resolve(path.dirname(fromFile), specifier)
 
@@ -55,6 +57,13 @@ function loadTsModule(modulePath) {
   moduleCache.set(normalizedPath, module.exports)
 
   const localRequire = (specifier) => {
+    if (specifier.startsWith('@/')) {
+      const resolved = resolveTsModulePath(
+        projectRoot,
+        path.resolve(projectRoot, 'src', specifier.slice(2)),
+      )
+      return loadTsModule(resolved)
+    }
     if (specifier.startsWith('.') || specifier.startsWith('/')) {
       const resolved = resolveTsModulePath(normalizedPath, specifier)
       return loadTsModule(resolved)

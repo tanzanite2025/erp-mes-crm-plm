@@ -14,6 +14,11 @@ export function getCuttingOperationTabs(t: TabTranslator): TabItem[] {
       href: '/cutting-operations/cutting-issuance',
     },
     {
+      key: 'product-binding',
+      label: t('cuttingOperations.tabs.productBinding'),
+      href: '/cutting-operations/product-binding',
+    },
+    {
       key: 'size-inventory',
       label: t('cuttingOperations.tabs.sizeInventory'),
       href: '/cutting-operations/size-inventory',

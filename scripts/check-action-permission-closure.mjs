@@ -12,6 +12,12 @@ const nodeRequire = createRequire(import.meta.url)
 
 const moduleCache = new Map()
 const ACTION_ID_PATTERN = /\b(?:action_[a-z0-9_]+|user_[a-z0-9_]+|perm_[a-z0-9_]+)\b/g
+const FRONTEND_ACTION_USAGE_EXCLUSIONS = new Set([
+  // Legacy migration alias, not a standalone runtime action permission.
+  'action_approval_config_manage',
+  // Effective-access diagnostic marker, not an action permission.
+  'user_permissions_authoritative',
+])
 const GROUP_DECLARATION_PATTERN = /(\w+)\s*:=\s*(\w+)\.Group\("([^"]*)"\)/g
 const ROUTE_DECLARATION_PATTERN = /(\w+)\.(GET|POST|PUT|PATCH|DELETE)\("([^"]*)"/g
 const MIDDLEWARE_ASSIGNMENT_PATTERN = /(\w+)\s*:=\s*middleware\.RequirePermissions\(([^\)]*)\)/g
@@ -231,6 +237,9 @@ function scanFrontendActionUsage() {
     const matches = source.matchAll(ACTION_ID_PATTERN)
     for (const match of matches) {
       const actionId = match[0]
+      if (FRONTEND_ACTION_USAGE_EXCLUSIONS.has(actionId)) {
+        continue
+      }
       const existing = usageMap.get(actionId) || []
       existing.push(path.relative(projectRoot, filePath))
       usageMap.set(actionId, existing)

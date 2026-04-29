@@ -17,6 +17,7 @@ import (
 const (
 	PrepregBindingTokenStatusUnbound = "UNBOUND"
 	PrepregBindingTokenStatusBound   = "BOUND"
+	PrepregRollInstanceStatusActive  = "ACTIVE"
 	prepregBindingTokenMaxBatchSize  = 200
 )
 
@@ -47,13 +48,75 @@ type BindPrepregBindingTokenRequest struct {
 }
 
 type PrepregBindingTokenLookupResult struct {
-	Token     string     `json:"token"`
-	Status    string     `json:"status"`
-	SpecID    string     `json:"specId,omitempty"`
-	SpecCode  string     `json:"specCode,omitempty"`
-	SpecName  string     `json:"specName,omitempty"`
-	BoundAt   *time.Time `json:"boundAt,omitempty"`
-	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+	Token           string     `json:"token"`
+	Status          string     `json:"status"`
+	SpecID          string     `json:"specId,omitempty"`
+	SpecCode        string     `json:"specCode,omitempty"`
+	SpecName        string     `json:"specName,omitempty"`
+	RollInstanceID  string     `json:"rollInstanceId,omitempty"`
+	SupplierBatchNo string     `json:"supplierBatchNo,omitempty"`
+	WidthMM         string     `json:"widthMm,omitempty"`
+	LengthM         string     `json:"lengthM,omitempty"`
+	NominalAreaM2   string     `json:"nominalAreaM2,omitempty"`
+	BoxNo           string     `json:"boxNo,omitempty"`
+	ProductionDate  string     `json:"productionDate,omitempty"`
+	BoundAt         *time.Time `json:"boundAt,omitempty"`
+	ExpiresAt       *time.Time `json:"expiresAt,omitempty"`
+}
+
+func mapPrepregRollInstanceToBindingTokenResult(binding models.PrepregBindingToken, roll *models.PrepregRollInstance) PrepregBindingTokenLookupResult {
+	result := PrepregBindingTokenLookupResult{
+		Token:     binding.Token,
+		Status:    PrepregBindingTokenStatusBound,
+		BoundAt:   binding.BoundAt,
+		ExpiresAt: binding.ExpiresAt,
+	}
+	if roll == nil {
+		return result
+	}
+	result.RollInstanceID = strings.TrimSpace(roll.ID)
+	result.SpecID = strings.TrimSpace(roll.SpecID)
+	result.SpecCode = strings.TrimSpace(roll.SpecCode)
+	result.SpecName = strings.TrimSpace(roll.SpecName)
+	result.SupplierBatchNo = strings.TrimSpace(roll.SupplierBatchNo)
+	result.WidthMM = strings.TrimSpace(roll.WidthMM)
+	result.LengthM = strings.TrimSpace(roll.LengthM)
+	result.NominalAreaM2 = strings.TrimSpace(roll.NominalAreaM2)
+	result.BoxNo = strings.TrimSpace(roll.BoxNo)
+	result.ProductionDate = strings.TrimSpace(roll.ProductionDate)
+	return result
+}
+
+func createPrepregRollInstanceFromSpecTx(tx *gorm.DB, binding *models.PrepregBindingToken, spec models.PrepregMaterialSpec) (*models.PrepregRollInstance, error) {
+	if binding == nil || strings.TrimSpace(binding.ID) == "" {
+		return nil, &PrepregMaterialSpecValidationError{Message: "绑定二维码无效，请重新生成"}
+	}
+	now := time.Now()
+	roll := &models.PrepregRollInstance{
+		BaseModel:           models.BaseModel{ID: uuid.NewString()},
+		BindingToken:        strings.TrimSpace(binding.Token),
+		SpecID:              strings.TrimSpace(spec.ID),
+		SpecCode:            strings.TrimSpace(spec.Code),
+		SpecName:            strings.TrimSpace(spec.DisplayAlias),
+		ResinContentPercent: strings.TrimSpace(spec.ResinContentPercent),
+		SupplierBatchNo:     strings.TrimSpace(spec.SupplierBatchNo),
+		WidthMM:             strings.TrimSpace(spec.WidthMM),
+		LengthM:             strings.TrimSpace(spec.LengthM),
+		NominalAreaM2:       strings.TrimSpace(spec.NominalAreaM2),
+		Inspector:           strings.TrimSpace(spec.Inspector),
+		BoxNo:               strings.TrimSpace(spec.BoxNo),
+		ProductionDate:      strings.TrimSpace(spec.ProductionDate),
+		ActivatedAt:         &now,
+		ActivatedBy:         "system",
+		Status:              PrepregRollInstanceStatusActive,
+	}
+	if roll.SpecName == "" {
+		roll.SpecName = strings.TrimSpace(spec.Name)
+	}
+	if err := tx.Create(roll).Error; err != nil {
+		return nil, err
+	}
+	return roll, nil
 }
 
 func normalizePrepregBindingToken(token string) string {
@@ -152,7 +215,7 @@ func GetPrepregBindingTokenState(token string) (PrepregBindingTokenLookupResult,
 	}
 
 	var binding models.PrepregBindingToken
-	err := db.DB.Preload("BoundSpec").Where("token = ?", normalizedToken).First(&binding).Error
+	err := db.DB.Preload("BoundSpec").Preload("BoundRollInstance").Where("token = ?", normalizedToken).First(&binding).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return PrepregBindingTokenLookupResult{}, &PrepregMaterialSpecValidationError{Message: "绑定二维码无效，请重新生成"}
 	}
@@ -167,12 +230,21 @@ func GetPrepregBindingTokenState(token string) (PrepregBindingTokenLookupResult,
 		}
 		return PrepregBindingTokenLookupResult{}, ErrPrepregBindingTokenExpired
 	}
-	if strings.TrimSpace(binding.BoundSpecID) == "" {
+	if strings.TrimSpace(binding.BoundSpecID) == "" && strings.TrimSpace(binding.BoundRollInstanceID) == "" {
 		return PrepregBindingTokenLookupResult{
 			Token:     binding.Token,
 			Status:    PrepregBindingTokenStatusUnbound,
 			ExpiresAt: binding.ExpiresAt,
 		}, nil
+	}
+	if strings.TrimSpace(binding.BoundRollInstanceID) != "" {
+		if binding.BoundRollInstance == nil {
+			if err := invalidatePrepregBindingTokenTx(db.DB, &binding); err != nil {
+				return PrepregBindingTokenLookupResult{}, err
+			}
+			return PrepregBindingTokenLookupResult{}, &PrepregMaterialSpecValidationError{Message: "绑定二维码无效，请重新生成"}
+		}
+		return mapPrepregRollInstanceToBindingTokenResult(binding, binding.BoundRollInstance), nil
 	}
 	if binding.BoundSpec == nil {
 		if err := invalidatePrepregBindingTokenTx(db.DB, &binding); err != nil {
@@ -226,6 +298,23 @@ func bindPrepregBindingTokenToSpecTx(tx *gorm.DB, token string, spec models.Prep
 		}
 		return ErrPrepregBindingTokenExpired
 	}
+	if strings.TrimSpace(binding.BoundRollInstanceID) != "" {
+		var roll models.PrepregRollInstance
+		rollErr := tx.Select("id", "spec_id").Where("id = ?", strings.TrimSpace(binding.BoundRollInstanceID)).First(&roll).Error
+		if errors.Is(rollErr, gorm.ErrRecordNotFound) {
+			if err := invalidatePrepregBindingTokenTx(tx, &binding); err != nil {
+				return err
+			}
+			return &PrepregMaterialSpecValidationError{Message: "绑定二维码无效，请重新生成"}
+		}
+		if rollErr != nil {
+			return rollErr
+		}
+		if strings.TrimSpace(roll.SpecID) != strings.TrimSpace(spec.ID) {
+			return ErrPrepregBindingTokenConflict
+		}
+		return nil
+	}
 	if strings.TrimSpace(binding.BoundSpecID) != "" {
 		var boundSpec models.PrepregMaterialSpec
 		boundSpecErr := tx.Select("id").Where("id = ?", strings.TrimSpace(binding.BoundSpecID)).First(&boundSpec).Error
@@ -241,13 +330,19 @@ func bindPrepregBindingTokenToSpecTx(tx *gorm.DB, token string, spec models.Prep
 	}
 
 	if strings.TrimSpace(binding.BoundSpecID) == "" {
+		roll, err := createPrepregRollInstanceFromSpecTx(tx, &binding, spec)
+		if err != nil {
+			return err
+		}
 		now := time.Now()
 		binding.BoundSpecID = spec.ID
+		binding.BoundRollInstanceID = roll.ID
 		binding.BoundAt = &now
 		return tx.Model(&binding).Updates(map[string]any{
-			"bound_spec_id": binding.BoundSpecID,
-			"bound_at":      binding.BoundAt,
-			"expires_at":    nil,
+			"bound_spec_id":          binding.BoundSpecID,
+			"bound_roll_instance_id": binding.BoundRollInstanceID,
+			"bound_at":               binding.BoundAt,
+			"expires_at":             nil,
 		}).Error
 	}
 

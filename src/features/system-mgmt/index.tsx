@@ -13,8 +13,6 @@ export function SystemMgmt() {
         switch (tab.key) {
           case 'status':
             return { ...tab, label: t('systemManagement.layout.tabs.status') }
-          case 'accounts':
-            return { ...tab, label: t('systemManagement.layout.tabs.accounts') }
           case 'routing':
             return { ...tab, label: t('systemManagement.layout.tabs.routing') }
           case 'workflow-definition':
@@ -39,4 +37,3 @@ export function SystemMgmt() {
     </ModuleTabbedLayout>
   )
 }
-
