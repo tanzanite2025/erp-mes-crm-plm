@@ -59,6 +59,8 @@ export const users = {
       empty: 'No explicit permissions assigned yet',
     },
     actions: {
+      selectAll: 'Select All',
+      deselectAll: 'Deselect All',
       filterSelected: 'Selected Only',
       expandAll: 'Expand All',
       collapseAll: 'Collapse All',

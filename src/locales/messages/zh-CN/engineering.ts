@@ -773,7 +773,6 @@ export const engineering = {
     },
     initializeNewProject: '开启新专案',
     overviewTab: '概览',
-    routingTab: '工艺路线',
     specLabel: '规格',
     noConstraints: '暂无约束',
     technicalArchive: '产品技术档案详情',

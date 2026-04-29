@@ -28,9 +28,8 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { createLogger } from '@/lib/logger'
 import { localizeTemplateDefinitions } from '../data/template-defaults'
-import { productTypeSchema, type ProductTemplate, type ProductType, type ProductTypeAttributeBinding } from '../data/schema'
+import { productTypeSchema, type ProductTemplate, type ProductType } from '../data/schema'
 import { ProductTypeService } from '../services/product-type-service'
-import { ProductTypeAttributeBindingService } from '../services/product-type-attribute-binding-service'
 import { productTemplateService } from '../services/product-template-service'
 import { type SaveProductTypeInput } from '../mutation-types'
 import {
@@ -49,10 +48,7 @@ type ProductTypeActionDialogProps = {
   currentRow?: ProductType
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (
-    data: SaveProductTypeInput,
-    options?: { syncTemplateBindings?: boolean; template?: ProductTemplate | null }
-  ) => void | Promise<void>
+  onSubmit?: (data: SaveProductTypeInput) => void | Promise<void>
 }
 
 const CODE_RULES = [
@@ -76,8 +72,6 @@ export function ProductTypeActionDialog({
   const isEdit = Boolean(currentRow)
   const [allTypes, setAllTypes] = useState<ProductType[]>([])
   const [allTemplates, setAllTemplates] = useState<ProductTemplate[]>([])
-  const [currentBindings, setCurrentBindings] = useState<ProductTypeAttributeBinding[]>([])
-  const [inheritTemplateBindings, setInheritTemplateBindings] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<ProductTypeForm>({
@@ -103,17 +97,13 @@ export function ProductTypeActionDialog({
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const [storedTypes, storedTemplates, storedBindings] = await Promise.all([
+        const [storedTypes, storedTemplates] = await Promise.all([
           ProductTypeService.getProductTypes(),
           productTemplateService.getTemplates(),
-          currentRow?.id
-            ? ProductTypeAttributeBindingService.getProductTypeAttributeBindings({ productTypeId: currentRow.id })
-            : Promise.resolve([]),
         ])
 
         setAllTypes(storedTypes || [])
         setAllTemplates(storedTemplates || [])
-        setCurrentBindings(storedBindings || [])
       } catch (error) {
         logger.error('Failed to load category dialog data', error)
       }
@@ -124,7 +114,6 @@ export function ProductTypeActionDialog({
           parentId: currentRow.parentId || 'root',
           templateId: currentRow.templateId || 'none',
         })
-        setInheritTemplateBindings(false)
         return
       }
 
@@ -140,8 +129,6 @@ export function ProductTypeActionDialog({
         createdAt: new Date().toISOString(),
         version: 1,
       })
-      setCurrentBindings([])
-      setInheritTemplateBindings(true)
     }
 
     if (open) void loadInitialData()
@@ -206,22 +193,6 @@ export function ProductTypeActionDialog({
     [selectedTemplate]
   )
 
-  const templateBindingStatus = useMemo(() => {
-    if (!selectedTemplate) return 'none'
-    if (currentBindings.length === 0) return 'unknown'
-
-    const templateSignature = templateAssembly
-      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
-      .sort()
-      .join('|')
-    const currentSignature = currentBindings
-      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
-      .sort()
-      .join('|')
-
-    return templateSignature === currentSignature ? 'aligned' : 'drifted'
-  }, [currentBindings, selectedTemplate, templateAssembly])
-
   const handleFormSubmit = async (values: ProductTypeForm) => {
     setIsSubmitting(true)
 
@@ -235,10 +206,7 @@ export function ProductTypeActionDialog({
       }
 
       if (onSubmit) {
-        await onSubmit(submissionData, {
-          syncTemplateBindings: inheritTemplateBindings && Boolean(selectedTemplate),
-          template: selectedTemplate,
-        })
+        await onSubmit(submissionData)
       }
     } finally {
       setIsSubmitting(false)
@@ -431,23 +399,9 @@ export function ProductTypeActionDialog({
                     </div>
 
                     <div className='rounded-2xl bg-white/80 px-4 py-3 text-[11px] font-bold text-slate-600 border border-dashed border-blue-100'>
-                      {templateBindingStatus === 'aligned'
-                        ? t('engineering.categoryArchive.dialog.templateDriftAligned')
-                        : templateBindingStatus === 'drifted'
-                          ? t('engineering.categoryArchive.dialog.templateDriftDetected')
-                          : t('engineering.categoryArchive.dialog.templateDriftUnknown')}
-                    </div>
-
-                    <div className='flex flex-row items-center justify-between rounded-2xl bg-white/90 p-3 border border-dashed border-blue-100 gap-4'>
-                      <div className='space-y-0.5 min-w-0 flex-1 text-left'>
-                        <div className='text-[10px] font-black uppercase tracking-widest text-blue-700'>
-                          {t('engineering.categoryArchive.dialog.templateSyncToggle')}
-                        </div>
-                        <div className='text-[9px] font-black text-muted-foreground/70 leading-tight mt-1'>
-                          {t('engineering.categoryArchive.dialog.templateSyncHelp')}
-                        </div>
-                      </div>
-                      <Switch checked={inheritTemplateBindings} onCheckedChange={setInheritTemplateBindings} />
+                      {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
+                        name: selectedTemplate.name,
+                      })}
                     </div>
                   </>
                 ) : null}

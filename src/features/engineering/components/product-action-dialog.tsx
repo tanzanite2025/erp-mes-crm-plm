@@ -26,6 +26,7 @@ import { useProductWriteActions } from '../hooks/use-product-write-actions'
 import { type Product, type ProductTemplate, type ProductType } from '../data/schema'
 import { getCreateProductTemplate } from '../utils/product-create-template-resolution'
 import { PRODUCT_ATTRIBUTE_CATEGORY_KEYS } from '../utils/product-attribute-utils'
+import { areSameProductAttributeCategoryKey } from '../utils/product-attribute-machine-value'
 import { ProductTypeService } from '../services/product-type-service'
 import { productTemplateService } from '../services/product-template-service'
 
@@ -75,7 +76,6 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     dynamicTypes,
     attributeCategories = [],
     attributeOptions = [],
-    attributeBindings = [],
     versionLevelOptions,
     moldOptions,
     specOptions,
@@ -285,21 +285,24 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
   const componentKey = boundTemplate?.componentKey as keyof typeof specComponents | undefined
   const activeSpec = componentKey ? specComponents[componentKey] : null
   const SpecComponent = activeSpec?.form
-  const templateBindingStatus = React.useMemo(() => {
-    if (!boundTemplate) return 'none'
-    if (attributeBindings.length === 0) return 'missing'
+  const effectiveAttributeBindings = React.useMemo(
+    () => boundTemplate?.attributeBindings ?? [],
+    [boundTemplate?.attributeBindings]
+  )
+  const handleDynamicAttributeValueChange = React.useCallback((categoryKey: string, nextValue: string) => {
+    if (!areSameProductAttributeCategoryKey(categoryKey, PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version)) {
+      return
+    }
 
-    const templateSignature = [...(boundTemplate.attributeBindings ?? [])]
-      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
-      .sort()
-      .join('|')
-    const typeSignature = [...attributeBindings]
-      .map((item) => `${item.categoryKey}:${item.required ? '1' : '0'}:${item.active === false ? '0' : '1'}`)
-      .sort()
-      .join('|')
+    const nextVersionLevel = nextValue.trim()
+    selectedVariants
+      .filter((variant) => variant.level !== nextVersionLevel)
+      .forEach((variant) => handleVariantToggle(variant.level, false))
 
-    return templateSignature === typeSignature ? 'aligned' : 'drifted'
-  }, [attributeBindings, boundTemplate])
+    if (nextVersionLevel && !selectedVariants.some((variant) => variant.level === nextVersionLevel)) {
+      handleVariantToggle(nextVersionLevel, true)
+    }
+  }, [handleVariantToggle, selectedVariants])
   const watchedModelCode = useWatch({ control: form.control, name: 'modelCode' })
   const issuanceBlocked = Boolean(!isEdit && nextCodeDeriveError && (!watchedModelCode || watchedModelCode === '01'))
   const templateResolutionPending = Boolean(
@@ -358,7 +361,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
         className='max-w-[95vw] sm:max-w-[85vw] h-[95vh] sm:h-[90vh] sm:max-h-[90vh] rounded-[32px] border-none shadow-2xl p-0 gap-0 overflow-hidden flex flex-col'
         aria-describedby={undefined}
       >
-        <DialogHeader className='shrink-0 text-start px-8 py-4 bg-muted/5 border-b border-dashed border-muted/50'>
+        <DialogHeader className='shrink-0 text-start px-8 py-3 bg-muted/5 border-b border-dashed border-muted/50'>
           <DialogTitle className='text-lg font-black tracking-tighter italic text-slate-800 flex items-center gap-3'>
             <div className='size-2 bg-blue-600 rounded-full animate-pulse' />
             {isEdit ? t('engineering.productMgmt.dialog.titleEdit') : t('engineering.productMgmt.dialog.titleCreate')}
@@ -367,7 +370,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             {t('engineering.productMgmt.dialog.description')}
           </DialogDescription>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto px-6 sm:px-8 py-4 scrollbar-hide'>
+        <div className='flex-1 overflow-y-auto px-6 sm:px-8 py-3 scrollbar-hide'>
           <Form {...form}>
             <form
               id='product-form'
@@ -382,7 +385,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                     : t('engineering.productMgmt.dialog.validationError')
                 )
               })}
-              className='space-y-6'
+              className='space-y-3'
             >
                 <ProductBasicInfo
                   form={form}
@@ -392,7 +395,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                   specOptions={specOptions}
                   moldOptions={moldOptions}
                   isEdit={isEdit}
-                  templateLabel={activeSpec?.label}
+                  templateLabel={boundTemplate?.name ?? activeSpec?.label}
                 />
 
               {templateResolveError ? (
@@ -412,11 +415,11 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
               ) : null}
 
               {boundTemplate ? (
-                <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-4 py-2 text-blue-900'>
+                <div className='rounded-2xl border border-dashed border-blue-300 bg-blue-50/90 px-3 py-1.5 text-blue-900'>
                   <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
                     <div className='min-w-0'>
                       <div className='text-[9px] font-black uppercase tracking-widest text-blue-700'>Template Status</div>
-                      <p className='text-[10px] font-black leading-tight'>
+                      <p className='truncate text-[10px] font-black leading-tight'>
                         {t('engineering.productMgmt.dialog.attributeBindingTemplateLabel', {
                           name: boundTemplate.name,
                         })}
@@ -426,15 +429,13 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                       <Badge variant='outline' className='h-5 border-blue-200 bg-white text-blue-700'>
                         {activeSpec?.label || boundTemplate.componentKey}
                       </Badge>
+                      <Badge variant='outline' className='h-5 border-blue-200 bg-white text-blue-700'>
+                        {t('engineering.categoryArchive.dialog.templateAssemblyCount', {
+                          count: effectiveAttributeBindings.length,
+                        })}
+                      </Badge>
                     </div>
                   </div>
-                  <p className='mt-1 text-[9px] font-black uppercase tracking-widest opacity-75'>
-                    {templateBindingStatus === 'aligned'
-                      ? t('engineering.productMgmt.dialog.attributeBindingAligned')
-                      : templateBindingStatus === 'missing'
-                        ? t('engineering.productMgmt.dialog.attributeBindingMissing')
-                        : t('engineering.productMgmt.dialog.attributeBindingDrifted')}
-                  </p>
                 </div>
               ) : null}
 
@@ -471,14 +472,14 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
                 locale={locale}
                 categories={attributeCategories}
                 options={attributeOptions}
-                bindings={attributeBindings}
-                excludeCategoryKeys={[PRODUCT_ATTRIBUTE_CATEGORY_KEYS.version]}
+                bindings={effectiveAttributeBindings}
+                onAttributeValueChange={handleDynamicAttributeValueChange}
               />
 
               {SpecComponent ? (
-                <div className='space-y-2'>
+                <div className='space-y-1.5'>
                   {isEdit && activeSpec && (
-                    <div className='px-3 py-1 bg-green-600/10 text-green-600 text-[10px] font-bold rounded flex items-center gap-2 w-fit mb-2'>
+                    <div className='px-3 py-0.5 bg-green-600/10 text-green-600 text-[10px] font-bold rounded flex items-center gap-2 w-fit mb-1'>
                       <span>●</span>
                       {t('engineering.productMgmt.dialog.activeTemplate', {
                         label: activeSpec.label,
@@ -520,8 +521,8 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
             </form>
           </Form>
         </div>
-        <DialogFooter className='shrink-0 px-4 sm:px-8 py-4 border-t border-dashed border-muted/50 bg-white flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-          <div className='min-w-0 flex-1 rounded-[24px] border border-dashed border-blue-600/30 bg-blue-600/5 px-4 py-3'>
+        <DialogFooter className='shrink-0 px-4 sm:px-8 py-2.5 border-t border-dashed border-muted/50 bg-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='min-w-0 flex-1 rounded-[20px] border border-dashed border-blue-600/30 bg-blue-600/5 px-3 py-2'>
             <div className='flex items-center justify-between gap-3 border-b border-dashed border-blue-600/30 pb-1'>
               <span className='text-[10px] font-black text-blue-800 italic'>
                 {t('engineering.productMgmt.dialog.previewTitle')}

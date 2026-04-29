@@ -254,6 +254,14 @@ func buildRawMaterialBatchOptimizerPlanLayoutSummary(
 			})
 		}
 	}
+	if candidate.GeometryLayoutSummary != nil {
+		for _, zone := range candidate.GeometryLayoutSummary.Zones {
+			if zone.DemandLineID == "" {
+				continue
+			}
+			demandZones[zone.DemandLineID] = append(demandZones[zone.DemandLineID], zone.ID)
+		}
+	}
 
 	demandSummaries := make([]models.RawMaterialBatchOptimizerPlanLayoutDemandSummary, 0, len(context.DemandLines))
 	fulfilledDemandLineCount := 0

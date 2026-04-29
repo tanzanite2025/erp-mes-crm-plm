@@ -1,17 +1,14 @@
-import { type ChangeOrder, type Product, type ProductProcessRouting, type ProductTemplate } from '../data/schema'
+import { type ChangeOrder, type Product, type ProductTemplate } from '../data/schema'
 import {
     type ChangeOrderDraftOverrides,
     type ProductDraftOverrides,
-    type ProductRoutingDraftOverrides,
     type ProductTemplateDraftOverrides,
 } from '../mutation-types'
 import {
     normalizeChangeOrderEntity,
     normalizeEngineeringChangeOrderNo,
     normalizeEngineeringRevisionNo,
-    normalizeEngineeringRoutingVersionControlTag,
     normalizeEngineeringSiteCode,
-    normalizeProductRoutingEntity,
     normalizeProductTemplateEntity,
 } from './product-code-normalization'
 
@@ -101,15 +98,4 @@ export function buildChangeOrderDraft(overrides?: ChangeOrderDraftOverrides | nu
         createdAt: overrides?.createdAt || '',
         version: overrides?.version ?? 1,
     }))
-}
-
-export function createProductRoutingDraft(overrides: ProductRoutingDraftOverrides = {}): ProductProcessRouting {
-    return normalizeProductRoutingEntity({
-        targetProductId: '',
-        versionControlTag: normalizeEngineeringRoutingVersionControlTag('V1.0.0.Draft'),
-        isCurrentlyActiveBlueprint: true,
-        version: 1,
-        routeNodes: [],
-        ...overrides,
-    })
 }

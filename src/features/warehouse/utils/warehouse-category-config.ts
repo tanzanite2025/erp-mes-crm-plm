@@ -1,11 +1,13 @@
 import { type WarehouseCategoryOption } from '../category/data/schema'
 
 export const SALES_RETURN_VIRTUAL_WAREHOUSE_CODE = 'SALES_RETURN_VIRTUAL'
+export const SALES_EXCHANGE_VIRTUAL_WAREHOUSE_CODE = 'SALES_EXCHANGE_VIRTUAL'
 
 export type WarehouseCategoryScene =
   | 'product-inbound'
   | 'material-inbound'
   | 'sales-return'
+  | 'sales-exchange'
   | 'shipment'
   | 'stocktake'
   | 'purchase-receipt'
@@ -18,6 +20,7 @@ export function isWarehouseCategoryAllowedForScene(
     case 'product-inbound':
     case 'material-inbound':
     case 'sales-return':
+    case 'sales-exchange':
       return category.allowInbound
     case 'shipment':
       return category.allowShipment
@@ -56,6 +59,19 @@ export function getDefaultWarehouseCategoryCode(
 
   if (scene === 'sales-return') {
     return (
+      allowed.find(
+        (category) => category.code === SALES_RETURN_VIRTUAL_WAREHOUSE_CODE
+      )?.code ||
+      allowed[0]?.code ||
+      ''
+    )
+  }
+
+  if (scene === 'sales-exchange') {
+    return (
+      allowed.find(
+        (category) => category.code === SALES_EXCHANGE_VIRTUAL_WAREHOUSE_CODE
+      )?.code ||
       allowed.find(
         (category) => category.code === SALES_RETURN_VIRTUAL_WAREHOUSE_CODE
       )?.code ||

@@ -114,6 +114,33 @@ type RawMaterialBatchOptimizerPlanLayoutZone struct {
 	Height               float64  `json:"height"`
 }
 
+type RawMaterialBatchOptimizerGeometryPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type RawMaterialBatchOptimizerGeometryLayoutZone struct {
+	ID                   string                                   `json:"id"`
+	Kind                 string                                   `json:"kind"`
+	UsageCategory        string                                   `json:"usageCategory"`
+	Label                string                                   `json:"label"`
+	Detail               string                                   `json:"detail"`
+	RollID               string                                   `json:"rollId,omitempty"`
+	DemandLineID         string                                   `json:"demandLineId,omitempty"`
+	AreaM2               float64                                  `json:"areaM2"`
+	AllocatedSets        int                                      `json:"allocatedSets"`
+	AllocatedPieces      int                                      `json:"allocatedPieces"`
+	CoverageSharePercent float64                                  `json:"coverageSharePercent"`
+	TooltipLines         []string                                 `json:"tooltipLines"`
+	PolygonPoints        []RawMaterialBatchOptimizerGeometryPoint `json:"polygonPoints"`
+}
+
+type RawMaterialBatchOptimizerGeometryLayoutSummary struct {
+	CanvasWidthMM  float64                                       `json:"canvasWidthMm"`
+	CanvasHeightMM float64                                       `json:"canvasHeightMm"`
+	Zones          []RawMaterialBatchOptimizerGeometryLayoutZone `json:"zones"`
+}
+
 type RawMaterialBatchOptimizerPlanLayoutSummary struct {
 	CanvasWidthMM              float64                                            `json:"canvasWidthMm"`
 	CanvasHeightMM             float64                                            `json:"canvasHeightMm"`
@@ -157,8 +184,12 @@ type RawMaterialBatchOptimizerPlanScoreBreakdown struct {
 	MustFulfillPenalty      float64                               `json:"mustFulfillPenalty"`
 	GroupSplitCount         int                                   `json:"groupSplitCount"`
 	SequenceViolationCount  int                                   `json:"sequenceViolationCount"`
+	AdjacencyBreakCount     int                                   `json:"adjacencyBreakCount"`
 	DirectionSwitchCount    int                                   `json:"directionSwitchCount"`
 	MixViolationCount       int                                   `json:"mixViolationCount"`
+	RollSwitchCount         int                                   `json:"rollSwitchCount"`
+	GeometryReuseHitCount   int                                   `json:"geometryReuseHitCount"`
+	ReusableResidualAreaM2  float64                               `json:"reusableResidualAreaM2"`
 	FinalScore              float64                               `json:"finalScore"`
 }
 
@@ -183,41 +214,145 @@ type RawMaterialBatchOptimizerPlanDiffSummary struct {
 	HighlightZoneIDs     []string `json:"highlightZoneIds"`
 }
 
+type RawMaterialBatchOptimizerSearchConfigSummary struct {
+	PresetKey               string  `json:"presetKey"`
+	BeamWidth               int     `json:"beamWidth"`
+	MaxSearchDepth          int     `json:"maxSearchDepth"`
+	PerDemandBranchingLimit int     `json:"perDemandBranchingLimit"`
+	ResidualReuseBias       int     `json:"residualReuseBias"`
+	ConvergenceAreaBucketM2 float64 `json:"convergenceAreaBucketM2"`
+}
+
+type RawMaterialBatchOptimizerContinuitySegment struct {
+	Kind                    string   `json:"kind"`
+	Key                     string   `json:"key"`
+	RollID                  string   `json:"rollId,omitempty"`
+	DemandLineIDs           []string `json:"demandLineIds"`
+	Preserved               bool     `json:"preserved"`
+	Reason                  string   `json:"reason"`
+	BreakPosition           int      `json:"breakPosition,omitempty"`
+	BreakBeforeDemandLineID string   `json:"breakBeforeDemandLineId,omitempty"`
+	BreakAfterDemandLineID  string   `json:"breakAfterDemandLineId,omitempty"`
+	AttributedZoneIDs       []string `json:"attributedZoneIds"`
+}
+
+type RawMaterialBatchOptimizerHeatZoneAttribution struct {
+	ZoneID        string   `json:"zoneId"`
+	SegmentKind   string   `json:"segmentKind"`
+	SegmentKey    string   `json:"segmentKey"`
+	Reason        string   `json:"reason"`
+	RollID        string   `json:"rollId,omitempty"`
+	DemandLineIDs []string `json:"demandLineIds"`
+	ClusterID     string   `json:"clusterId,omitempty"`
+	BreakSliceIDs []string `json:"breakSliceIds"`
+}
+
+type RawMaterialBatchOptimizerBreakSliceSummary struct {
+	ID                      string   `json:"id"`
+	SegmentKind             string   `json:"segmentKind"`
+	SegmentKey              string   `json:"segmentKey"`
+	RollID                  string   `json:"rollId,omitempty"`
+	BreakPosition           int      `json:"breakPosition"`
+	BreakBeforeDemandLineID string   `json:"breakBeforeDemandLineId,omitempty"`
+	BreakAfterDemandLineID  string   `json:"breakAfterDemandLineId,omitempty"`
+	ZoneIDs                 []string `json:"zoneIds"`
+	ClusterID               string   `json:"clusterId,omitempty"`
+	Reason                  string   `json:"reason"`
+	SeverityScore           float64  `json:"severityScore"`
+}
+
+type RawMaterialBatchOptimizerZoneClusterSummary struct {
+	ClusterID            string   `json:"clusterId"`
+	ZoneIDs              []string `json:"zoneIds"`
+	RollIDs              []string `json:"rollIds"`
+	DemandLineIDs        []string `json:"demandLineIds"`
+	BreakSliceIDs        []string `json:"breakSliceIds"`
+	DominantReason       string   `json:"dominantReason"`
+	DominantDemandLineID string   `json:"dominantDemandLineId,omitempty"`
+	DensityScore         float64  `json:"densityScore"`
+}
+
+type RawMaterialBatchOptimizerStrategyBudgetStat struct {
+	StrategyKey string `json:"strategyKey"`
+	InputCount  int    `json:"inputCount"`
+	KeptCount   int    `json:"keptCount"`
+}
+
+type RawMaterialBatchOptimizerDynamicStrategyBudgetStat struct {
+	StrategyKey   string  `json:"strategyKey"`
+	InputCount    int     `json:"inputCount"`
+	TargetQuota   int     `json:"targetQuota"`
+	KeptCount     int     `json:"keptCount"`
+	PriorityScore float64 `json:"priorityScore"`
+	RerankReason  string  `json:"rerankReason"`
+}
+
+type RawMaterialBatchOptimizerCandidateBudgetSummary struct {
+	PerStrategyQuota     int                                                  `json:"perStrategyQuota"`
+	GlobalBudget         int                                                  `json:"globalBudget"`
+	MergedCandidateCount int                                                  `json:"mergedCandidateCount"`
+	StrategyStats        []RawMaterialBatchOptimizerStrategyBudgetStat        `json:"strategyStats"`
+	DynamicStrategyStats []RawMaterialBatchOptimizerDynamicStrategyBudgetStat `json:"dynamicStrategyStats"`
+}
+
+type RawMaterialBatchOptimizerPlanExplainabilitySummary struct {
+	GroupSegments        []RawMaterialBatchOptimizerContinuitySegment   `json:"groupSegments"`
+	SequenceSegments     []RawMaterialBatchOptimizerContinuitySegment   `json:"sequenceSegments"`
+	AdjacencySegments    []RawMaterialBatchOptimizerContinuitySegment   `json:"adjacencySegments"`
+	PrimaryBreakReasons  []string                                       `json:"primaryBreakReasons"`
+	HeatZoneAttributions []RawMaterialBatchOptimizerHeatZoneAttribution `json:"heatZoneAttributions"`
+	BreakSlices          []RawMaterialBatchOptimizerBreakSliceSummary   `json:"breakSlices"`
+	ZoneClusters         []RawMaterialBatchOptimizerZoneClusterSummary  `json:"zoneClusters"`
+}
+
 type RawMaterialBatchOptimizerPlanReportSummary struct {
-	PlanRank               int                                            `json:"planRank"`
-	StrategyKey            string                                         `json:"strategyKey"`
-	ObjectivePreset        string                                         `json:"objectivePreset"`
-	AppliedWeights         RawMaterialBatchOptimizerScoreWeights          `json:"appliedWeights"`
-	BaselinePlanRank       int                                            `json:"baselinePlanRank"`
-	BaselineStrategyKey    string                                         `json:"baselineStrategyKey"`
-	Score                  float64                                        `json:"score"`
-	UtilizationPercent     float64                                        `json:"utilizationPercent"`
-	LossAreaM2             float64                                        `json:"lossAreaM2"`
-	MustFulfillRiskCount   int                                            `json:"mustFulfillRiskCount"`
-	ChangedDemandLineCount int                                            `json:"changedDemandLineCount"`
-	ChangedRollCount       int                                            `json:"changedRollCount"`
-	HighlightZoneCount     int                                            `json:"highlightZoneCount"`
-	ComparisonSummary      RawMaterialBatchOptimizerPlanComparisonSummary `json:"comparisonSummary"`
-	ScoreBreakdown         RawMaterialBatchOptimizerPlanScoreBreakdown    `json:"scoreBreakdown"`
+	PlanRank               int                                                `json:"planRank"`
+	StrategyKey            string                                             `json:"strategyKey"`
+	ObjectivePreset        string                                             `json:"objectivePreset"`
+	AppliedWeights         RawMaterialBatchOptimizerScoreWeights              `json:"appliedWeights"`
+	BaselinePlanRank       int                                                `json:"baselinePlanRank"`
+	BaselineStrategyKey    string                                             `json:"baselineStrategyKey"`
+	Score                  float64                                            `json:"score"`
+	UtilizationPercent     float64                                            `json:"utilizationPercent"`
+	LossAreaM2             float64                                            `json:"lossAreaM2"`
+	MustFulfillRiskCount   int                                                `json:"mustFulfillRiskCount"`
+	ChangedDemandLineCount int                                                `json:"changedDemandLineCount"`
+	ChangedRollCount       int                                                `json:"changedRollCount"`
+	HighlightZoneCount     int                                                `json:"highlightZoneCount"`
+	AdjacencyBreakCount    int                                                `json:"adjacencyBreakCount"`
+	RollSwitchCount        int                                                `json:"rollSwitchCount"`
+	GeometryReuseHitCount  int                                                `json:"geometryReuseHitCount"`
+	ReusableResidualAreaM2 float64                                            `json:"reusableResidualAreaM2"`
+	SearchConfig           RawMaterialBatchOptimizerSearchConfigSummary       `json:"searchConfig"`
+	CandidateBudgetSummary RawMaterialBatchOptimizerCandidateBudgetSummary    `json:"candidateBudgetSummary"`
+	BudgetRerankReason     string                                             `json:"budgetRerankReason"`
+	ExplainabilitySummary  RawMaterialBatchOptimizerPlanExplainabilitySummary `json:"explainabilitySummary"`
+	ComparisonSummary      RawMaterialBatchOptimizerPlanComparisonSummary     `json:"comparisonSummary"`
+	ScoreBreakdown         RawMaterialBatchOptimizerPlanScoreBreakdown        `json:"scoreBreakdown"`
 }
 
 type RawMaterialBatchOptimizerPlan struct {
-	Rank                   int                                              `json:"rank"`
-	StrategyKey            string                                           `json:"strategyKey"`
-	Score                  float64                                          `json:"score"`
-	UtilizationPercent     float64                                          `json:"utilizationPercent"`
-	LossAreaM2             float64                                          `json:"lossAreaM2"`
-	Explanation            string                                           `json:"explanation"`
-	Assignments            []RawMaterialBatchOptimizerPlanAssignment        `json:"assignments"`
-	UnfulfilledLines       []RawMaterialBatchOptimizerUnfulfilledLine       `json:"unfulfilledLines"`
-	LayoutSummary          RawMaterialBatchOptimizerPlanLayoutSummary       `json:"layoutSummary"`
-	LossBreakdown          RawMaterialBatchOptimizerPlanLossBreakdown       `json:"lossBreakdown"`
-	ComparisonSummary      RawMaterialBatchOptimizerPlanComparisonSummary   `json:"comparisonSummary"`
-	ScoreBreakdown         RawMaterialBatchOptimizerPlanScoreBreakdown      `json:"scoreBreakdown"`
-	MustFulfillDiagnostics []RawMaterialBatchOptimizerMustFulfillDiagnostic `json:"mustFulfillDiagnostics"`
-	DiffSummary            RawMaterialBatchOptimizerPlanDiffSummary         `json:"diffSummary"`
-	DiffSummaries          []RawMaterialBatchOptimizerPlanDiffSummary       `json:"diffSummaries"`
-	ReportSummary          RawMaterialBatchOptimizerPlanReportSummary       `json:"reportSummary"`
+	Rank                   int                                                `json:"rank"`
+	StrategyKey            string                                             `json:"strategyKey"`
+	Score                  float64                                            `json:"score"`
+	UtilizationPercent     float64                                            `json:"utilizationPercent"`
+	LossAreaM2             float64                                            `json:"lossAreaM2"`
+	Explanation            string                                             `json:"explanation"`
+	Assignments            []RawMaterialBatchOptimizerPlanAssignment          `json:"assignments"`
+	UnfulfilledLines       []RawMaterialBatchOptimizerUnfulfilledLine         `json:"unfulfilledLines"`
+	LayoutSummary          RawMaterialBatchOptimizerPlanLayoutSummary         `json:"layoutSummary"`
+	GeometryLayoutSummary  *RawMaterialBatchOptimizerGeometryLayoutSummary    `json:"geometryLayoutSummary,omitempty"`
+	LossBreakdown          RawMaterialBatchOptimizerPlanLossBreakdown         `json:"lossBreakdown"`
+	ComparisonSummary      RawMaterialBatchOptimizerPlanComparisonSummary     `json:"comparisonSummary"`
+	ScoreBreakdown         RawMaterialBatchOptimizerPlanScoreBreakdown        `json:"scoreBreakdown"`
+	MustFulfillDiagnostics []RawMaterialBatchOptimizerMustFulfillDiagnostic   `json:"mustFulfillDiagnostics"`
+	DiffSummary            RawMaterialBatchOptimizerPlanDiffSummary           `json:"diffSummary"`
+	DiffSummaries          []RawMaterialBatchOptimizerPlanDiffSummary         `json:"diffSummaries"`
+	SearchConfig           RawMaterialBatchOptimizerSearchConfigSummary       `json:"searchConfig"`
+	CandidateBudgetSummary RawMaterialBatchOptimizerCandidateBudgetSummary    `json:"candidateBudgetSummary"`
+	BudgetRerankReason     string                                             `json:"budgetRerankReason"`
+	ExplainabilitySummary  RawMaterialBatchOptimizerPlanExplainabilitySummary `json:"explainabilitySummary"`
+	ReportSummary          RawMaterialBatchOptimizerPlanReportSummary         `json:"reportSummary"`
 }
 
 type RawMaterialBatchOptimizerSolveSummary struct {

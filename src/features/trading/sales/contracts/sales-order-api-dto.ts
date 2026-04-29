@@ -38,6 +38,11 @@ export const salesOrderLineApiDTOSchema = z
     specification: z.string(),
     modelCodeSnapshot: z.string().optional(),
     holePrefixSnapshot: z.string().optional(),
+    appearanceId: z.string().optional(),
+    appearanceNameSnapshot: z.string().optional(),
+    appearanceBarcodeCodeSnapshot: z.string().optional(),
+    appearanceDescriptionSnapshot: z.string().optional(),
+    appearanceImageUrlSnapshot: z.string().optional(),
     description: z.string(),
     qty: z.number(),
     uom: z.string(),
@@ -69,6 +74,11 @@ export interface SalesOrderLineApiDTO {
   specification: string
   modelCodeSnapshot?: string
   holePrefixSnapshot?: string
+  appearanceId?: string
+  appearanceNameSnapshot?: string
+  appearanceBarcodeCodeSnapshot?: string
+  appearanceDescriptionSnapshot?: string
+  appearanceImageUrlSnapshot?: string
   description: string
   qty: number
   uom: string
@@ -99,6 +109,7 @@ const salesOrderListItemBaseSchema = z
     customerId: z.string().optional(),
     type: z.string(),
     currency: z.string(),
+    exchangeRateSnapshot: z.number().optional(),
     classification: z.string(),
     status: z.string(),
     statusNote: z.string().optional(),
@@ -153,6 +164,7 @@ export interface SalesOrderApiDTO {
   customerId?: string
   type: string
   currency: string
+  exchangeRateSnapshot?: number
   classification: string
   status: string
   statusNote?: string

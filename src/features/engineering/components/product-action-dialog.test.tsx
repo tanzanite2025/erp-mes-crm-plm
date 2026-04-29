@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from 'react'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProductActionDialog } from './product-action-dialog'
 import { useProductForm } from '../hooks/use-product-form'
 import { createProductDraft } from '../utils/default-builders'
-import type { ProductType } from '../data/schema'
+import type { ProductTemplate, ProductType } from '../data/schema'
 
 const {
   useProductFormMock,
@@ -25,7 +25,7 @@ const {
   dynamicAttributeSectionMock: vi.fn(),
   productionRestrictionsMock: vi.fn(),
   deleteProductMock: vi.fn(async () => undefined),
-  getTemplatesMock: vi.fn(async () => []),
+  getTemplatesMock: vi.fn(async (): Promise<unknown[]> => []),
   getTemplateResolutionMock: vi.fn(async () => ({
     resolvedTemplateId: undefined,
     resolvedTemplateKey: undefined,
@@ -158,7 +158,6 @@ function buildUseProductFormResult(overrides: Partial<UseProductFormResult> = {}
     dynamicTypes: [],
     attributeCategories: [],
     attributeOptions: [],
-    attributeBindings: [],
     versionLevelOptions: [],
     moldOptions: [],
     specOptions: [],
@@ -243,24 +242,11 @@ describe('ProductActionDialog', () => {
     const form = buildFormStub()
     const productTypes = buildProductTypes()
     const dynamicTypes = [{ ...productTypes[0], id: 'type-child', name: 'Type Child' }]
-    const attributeBindings = [
-      {
-        id: 'binding-1',
-        productTypeId: 'type-a',
-        categoryKey: 'SERIES',
-        required: true,
-        active: true,
-        sortOrder: 0,
-        version: 1,
-      },
-    ]
-
     const { onOpenChange, onSubmit } = renderDialog({
       props: { productTypes },
       hookResult: {
         form,
         dynamicTypes,
-        attributeBindings,
         specPreviewSummary: 'RIM-700C-V1',
         specOptions: [{ label: 'Spec A', value: 'spec-a' }],
         moldOptions: [{ label: 'Mold A', value: 'mold-a' }],
@@ -287,7 +273,7 @@ describe('ProductActionDialog', () => {
 
     expect(dynamicAttributeSectionMock).toHaveBeenCalledWith(expect.objectContaining({
       form,
-      bindings: attributeBindings,
+      bindings: [],
     }))
 
     expect(productionRestrictionsMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -297,6 +283,91 @@ describe('ProductActionDialog', () => {
     expect(screen.getByText('engineering.productMgmt.dialog.previewTitle')).toBeTruthy()
     expect(screen.getByText('RIM-700C-V1')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'engineering.productMgmt.dialog.saveStandard' })).toHaveProperty('disabled', false)
+  })
+
+  it('uses resolved template attribute bindings for dynamic attributes when product type bindings are missing', async () => {
+    const form = buildFormStub()
+    const templateAttributeBindings = [
+      {
+        id: 'template-binding-series',
+        templateId: 'template-rim',
+        categoryKey: 'techSeries',
+        required: true,
+        active: true,
+        sortOrder: 0,
+        version: 1,
+      },
+      {
+        id: 'template-binding-tire',
+        templateId: 'template-rim',
+        categoryKey: 'tireType',
+        required: true,
+        active: true,
+        sortOrder: 1,
+        version: 1,
+      },
+      {
+        id: 'template-binding-brake',
+        templateId: 'template-rim',
+        categoryKey: 'brakeType',
+        required: true,
+        active: true,
+        sortOrder: 2,
+        version: 1,
+      },
+      {
+        id: 'template-binding-version',
+        templateId: 'template-rim',
+        categoryKey: 'versionLevel',
+        required: true,
+        active: true,
+        sortOrder: 3,
+        version: 1,
+      },
+    ]
+    const templates: ProductTemplate[] = [
+      {
+        id: 'template-rim',
+        name: '车圈规格',
+        code: 'RIM_TEMPLATE',
+        componentKey: 'RIM',
+        description: '',
+        active: true,
+        attributeBindings: templateAttributeBindings,
+        createdAt: '2026-04-29T00:00:00.000Z',
+        version: 1,
+      },
+    ]
+    getTemplatesMock.mockResolvedValue(templates)
+    useWatchMock.mockImplementation(({ name }: { name?: string }) => {
+      if (name === 'modelCode') return '01'
+      if (name === 'typeId') return 'type-a'
+      return undefined
+    })
+
+    renderDialog({
+      props: {
+        currentRow: {
+          ...createProductDraft(),
+          id: 'product-r50',
+          typeId: 'type-a',
+          resolvedTemplateId: 'template-rim',
+          resolvedTemplateKey: 'RIM',
+          templateResolutionSource: 'backendResolvedTemplate',
+        },
+      },
+      hookResult: {
+        form,
+        isEdit: true,
+      },
+    })
+
+    await waitFor(() => {
+      expect(dynamicAttributeSectionMock).toHaveBeenLastCalledWith(expect.objectContaining({
+        form,
+        bindings: templateAttributeBindings,
+      }))
+    })
   })
 
   it('keeps shell behavior stable across rerender and only forwards explicit dialog close', async () => {

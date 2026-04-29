@@ -6,14 +6,12 @@ import { Box, Plus } from 'lucide-react'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { CategoryManagerDialog } from './components/category-manager-dialog'
 import { EngineeringSidebar } from './components/engineering-sidebar'
 import { ProductActionDialog } from './components/product-action-dialog'
 import { ProductOverviewTab } from './components/product-overview-tab'
-import { ProductRoutingView } from './components/product/product-routing-view'
 import { type Product, type ProductType } from './data/schema'
 import { useProductWriteActions } from './hooks/use-product-write-actions'
 import { type ProductSubmitPayload } from './hooks/use-product-form'
@@ -133,24 +131,7 @@ export function Engineering() {
                         </div>
                     ) : selectedProduct ? (
                         <div className='p-4 sm:p-8 mx-auto w-full overflow-y-auto'>
-                            <Tabs defaultValue='overview' className='w-full'>
-                                <div className='flex justify-between items-center mb-6 pl-2'>
-                                    <TabsList className='bg-muted/10 p-1 rounded-full border border-dashed'>
-                                        <TabsTrigger value='overview' className='rounded-full text-[10px] font-black tracking-widest uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'>
-                                            {t('engineering.productMgmt.overviewTab')}
-                                        </TabsTrigger>
-                                        <TabsTrigger value='routing' className='rounded-full text-[10px] font-black tracking-widest uppercase data-[state=active]:bg-purple-600 data-[state=active]:text-white'>
-                                            {t('engineering.productMgmt.routingTab')}
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </div>
-                                <TabsContent value='overview' className='mt-0'>
-                                    <ProductOverviewTab product={selectedProduct} productTypes={types} onEdit={handleEditProduct} />
-                                </TabsContent>
-                                <TabsContent value='routing' className='mt-0'>
-                                    <ProductRoutingView product={selectedProduct} />
-                                </TabsContent>
-                            </Tabs>
+                            <ProductOverviewTab product={selectedProduct} productTypes={types} onEdit={handleEditProduct} />
                         </div>
                     ) : (
                         <div className='flex-1 h-full p-4 flex items-center justify-center bg-background rounded-r-[32px]'>

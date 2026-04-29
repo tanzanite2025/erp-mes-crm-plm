@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"xdfc-server/models"
 )
 
@@ -35,10 +36,15 @@ func buildRawMaterialBatchOptimizerSolveResponse(
 			Assignments:            append([]models.RawMaterialBatchOptimizerPlanAssignment(nil), candidate.Assignments...),
 			UnfulfilledLines:       append([]models.RawMaterialBatchOptimizerUnfulfilledLine(nil), candidate.UnfulfilledLines...),
 			LayoutSummary:          layoutSummary,
+			GeometryLayoutSummary:  candidate.GeometryLayoutSummary,
 			LossBreakdown:          lossBreakdown,
 			ComparisonSummary:      comparisonSummary,
 			ScoreBreakdown:         evaluation.ScoreBreakdown,
 			MustFulfillDiagnostics: mustFulfillDiagnostics,
+			SearchConfig:           candidate.SearchConfig,
+			CandidateBudgetSummary: candidate.CandidateBudgetSummary,
+			BudgetRerankReason:     candidate.BudgetRerankReason,
+			ExplainabilitySummary:  candidate.ExplainabilitySummary,
 		})
 	}
 
@@ -81,21 +87,47 @@ func buildRawMaterialBatchOptimizerSummary(
 	context rawMaterialBatchOptimizerContext,
 ) (string, string) {
 	if len(plans) == 0 {
-		return "phase3_no_candidate", "候选方案增强流程已执行，但当前输入未形成可用候选方案。"
+		if canSolveRawMaterialBatchOptimizerPhase7Geometry(context) {
+			return "phase7_no_candidate", "第七批真几何候选增强流程已执行，但当前输入未形成可用候选方案。"
+		}
+		if canSolveRawMaterialBatchOptimizerPhase6Geometry(context) {
+			return "phase6_no_candidate", "第六批真几何候选增强流程已执行，但当前输入未形成可用候选方案。"
+		}
+		if canSolveRawMaterialBatchOptimizerPhase5Geometry(context) {
+			return "phase5_no_candidate", "第五批真几何候选增强流程已执行，但当前输入未形成可用候选方案。"
+		}
+		return "phase4_no_candidate", "第四批真几何候选增强流程已执行，但当前输入未形成可用候选方案。"
 	}
 
 	topPlan := plans[0]
+	phaseLabel := "候选方案增强流程"
+	statusPrefix := "phase3"
+	if strings.HasPrefix(topPlan.StrategyKey, "phase7-") {
+		phaseLabel = "第七批真几何候选增强流程"
+		statusPrefix = "phase7"
+	} else if strings.HasPrefix(topPlan.StrategyKey, "phase6-") {
+		phaseLabel = "第六批真几何候选增强流程"
+		statusPrefix = "phase6"
+	} else if strings.HasPrefix(topPlan.StrategyKey, "phase5-") {
+		phaseLabel = "第五批真几何候选增强流程"
+		statusPrefix = "phase5"
+	} else if strings.HasPrefix(topPlan.StrategyKey, "phase4-") {
+		phaseLabel = "第四批真几何候选增强流程"
+		statusPrefix = "phase4"
+	}
 	if len(topPlan.Assignments) == 0 {
-		return "phase3_seeded", "候选方案增强流程已执行，已返回带未满足明细的基础候选。"
+		return statusPrefix + "_seeded", phaseLabel + "已执行，已返回带未满足明细的基础候选。"
 	}
 	if context.IsSingleCutSize {
-		return "phase3_seeded_single_size", fmt.Sprintf(
-			"单尺寸候选增强流程已执行，返回 %d 个候选方案。",
+		return statusPrefix + "_seeded_single_size", fmt.Sprintf(
+			"%s已执行，单尺寸场景返回 %d 个候选方案。",
+			phaseLabel,
 			len(plans),
 		)
 	}
-	return "phase3_seeded_multi_task", fmt.Sprintf(
-		"多任务候选增强流程已执行，返回 %d 个候选方案。",
+	return statusPrefix + "_seeded_multi_task", fmt.Sprintf(
+		"%s已执行，多任务场景返回 %d 个候选方案。",
+		phaseLabel,
 		len(plans),
 	)
 }

@@ -18,8 +18,7 @@ export const tradingSalesOrder = {
   },
   errors: {
     missingActor: "缺少有效的交易操作者",
-    lineProductMissing: "订单第 {{lineNo}} 行未绑定产品，无法固化条码快照。",
-    lineBarcodeConfigMissing: "订单第 {{lineNo}} 行缺少产品条码配置，无法固化型号编码或孔型前缀。"
+    lineProductMissing: "订单第 {{lineNo}} 行未绑定产品，无法保存订单行快照。"
   },
   detail: {
     backToList: "返回台账",
@@ -40,6 +39,8 @@ export const tradingSalesOrder = {
     }
   },
   headerFields: {
+    paymentCurrency: "支付币种",
+    paymentCurrencyPlaceholder: "选择支付币种",
     paymentMethod: "支付方式",
     paymentMethodPlaceholder: "选择支付方式",
     paymentTerm: "结算方式",

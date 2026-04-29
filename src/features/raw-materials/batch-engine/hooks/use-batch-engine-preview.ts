@@ -6,6 +6,7 @@ import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-s
 import { buildBatchEngineDemandLinesFromCuttingPlan } from '../domain/build-batch-engine-demand-lines-from-cutting-plan'
 import { buildBatchEngineMetrics, buildBatchEngineLegend } from '../domain/build-batch-engine-metrics'
 import { buildBatchEnginePreview } from '../domain/build-batch-engine-preview'
+import { resolveBatchEngineControls } from '../services/resolve-batch-engine-controls'
 import type { BatchEngineControls } from '../types'
 
 type UseBatchEnginePreviewOptions = {
@@ -19,13 +20,9 @@ export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
   const { t } = useLanguage()
   const { controls, selectedCuttingPlan, cutSizeUnits, selectedPrepregSpec } = options
 
-  const effectiveControls = useMemo<BatchEngineControls>(
-    () => ({
-      ...controls,
-      rollWidthMm: selectedPrepregSpec?.widthMm?.trim() || '',
-      rollLengthM: selectedPrepregSpec?.lengthM?.trim() || '',
-    }),
-    [controls, selectedPrepregSpec?.lengthM, selectedPrepregSpec?.widthMm]
+  const controlState = useMemo(
+    () => resolveBatchEngineControls(controls, selectedPrepregSpec),
+    [controls, selectedPrepregSpec]
   )
 
   const mappedDemandLines = useMemo(
@@ -34,19 +31,20 @@ export function useBatchEnginePreview(options: UseBatchEnginePreviewOptions) {
   )
 
   const simulation = useMemo(
-    () => buildBatchEnginePreview(selectedCuttingPlan, mappedDemandLines, effectiveControls),
-    [effectiveControls, mappedDemandLines, selectedCuttingPlan]
+    () => buildBatchEnginePreview(selectedCuttingPlan, mappedDemandLines, controlState.normalizedControls),
+    [controlState.normalizedControls, mappedDemandLines, selectedCuttingPlan]
   )
 
   const metrics = useMemo(
-    () => buildBatchEngineMetrics({ t, controls: effectiveControls, selectedCuttingPlan, simulation }),
-    [effectiveControls, selectedCuttingPlan, simulation, t]
+    () => buildBatchEngineMetrics({ t, controls: controlState.resolvedControls, selectedCuttingPlan, simulation }),
+    [controlState.resolvedControls, selectedCuttingPlan, simulation, t]
   )
 
   const legend = useMemo(() => buildBatchEngineLegend(t), [t])
 
   return {
-    controls: effectiveControls,
+    controls: controlState.resolvedControls,
+    normalizedControls: controlState.normalizedControls,
     mappedDemandLines,
     simulation,
     metrics,

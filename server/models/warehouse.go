@@ -84,4 +84,14 @@ var DefaultWarehouseCategories = []WarehouseCategory{
 		AllowShipment:  false,
 		AllowStocktake: true,
 	},
+	{
+		Name:           "售后换货暂存仓",
+		Code:           "SALES_EXCHANGE_VIRTUAL",
+		Description:    "系统内置销售换货旧货承接仓，用于暂存客户换货退回的旧货并等待质检或补发处理",
+		IsSystem:       true,
+		SortOrder:      92,
+		AllowInbound:   true,
+		AllowShipment:  false,
+		AllowStocktake: true,
+	},
 }

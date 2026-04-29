@@ -18,8 +18,7 @@ export const tradingSalesOrder = {
   },
   errors: {
     missingActor: "Missing valid trading command actor",
-    lineProductMissing: "Line {{lineNo}} is not bound to a product, so barcode snapshots cannot be persisted.",
-    lineBarcodeConfigMissing: "Line {{lineNo}} is missing product barcode configuration, so model code or hole prefix snapshots cannot be persisted."
+    lineProductMissing: "Line {{lineNo}} is not bound to a product, so the order line snapshot cannot be saved."
   },
   detail: {
     backToList: "Back to Ledger",
@@ -40,6 +39,8 @@ export const tradingSalesOrder = {
     evidenceNotePlaceholder: "Example: signed page, email screenshot, packaging appearance"
   },
   headerFields: {
+    paymentCurrency: "Payment Currency",
+    paymentCurrencyPlaceholder: "Select payment currency",
     paymentMethod: "Payment Method",
     paymentMethodPlaceholder: "Select payment method",
     paymentTerm: "Payment Term",

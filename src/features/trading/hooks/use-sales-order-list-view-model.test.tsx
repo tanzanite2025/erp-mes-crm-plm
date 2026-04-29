@@ -16,6 +16,7 @@ function makeOrder(overrides: Partial<SalesOrder>): SalesOrder {
     customerId: 'customer-1',
     type: 'NORMAL',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     paymentMethod: 'BANK',
     paymentMethodName: 'Bank',
     paymentTerm: 'NET30',

@@ -114,6 +114,33 @@ export type BatchOptimizerPlanLayoutZone = {
   height: number
 }
 
+export type BatchOptimizerGeometryPoint = {
+  x: number
+  y: number
+}
+
+export type BatchOptimizerGeometryLayoutZone = {
+  id: string
+  kind: string
+  usageCategory: string
+  label: string
+  detail: string
+  rollId?: string
+  demandLineId?: string
+  areaM2: number
+  allocatedSets: number
+  allocatedPieces: number
+  coverageSharePercent: number
+  tooltipLines: string[]
+  polygonPoints: BatchOptimizerGeometryPoint[]
+}
+
+export type BatchOptimizerGeometryLayoutSummary = {
+  canvasWidthMm: number
+  canvasHeightMm: number
+  zones: BatchOptimizerGeometryLayoutZone[]
+}
+
 export type BatchOptimizerPlanLayoutSummary = {
   canvasWidthMm: number
   canvasHeightMm: number
@@ -157,8 +184,12 @@ export type BatchOptimizerPlanScoreBreakdown = {
   mustFulfillPenalty: number
   groupSplitCount: number
   sequenceViolationCount: number
+  adjacencyBreakCount: number
   directionSwitchCount: number
   mixViolationCount: number
+  rollSwitchCount: number
+  geometryReuseHitCount: number
+  reusableResidualAreaM2: number
   finalScore: number
 }
 
@@ -183,6 +214,97 @@ export type BatchOptimizerPlanDiffSummary = {
   highlightZoneIds: string[]
 }
 
+export type BatchOptimizerSearchConfigSummary = {
+  presetKey: string
+  beamWidth: number
+  maxSearchDepth: number
+  perDemandBranchingLimit: number
+  residualReuseBias: number
+  convergenceAreaBucketM2: number
+}
+
+export type BatchOptimizerContinuitySegment = {
+  kind: string
+  key: string
+  rollId?: string
+  demandLineIds: string[]
+  preserved: boolean
+  reason: string
+  breakPosition?: number
+  breakBeforeDemandLineId?: string
+  breakAfterDemandLineId?: string
+  attributedZoneIds: string[]
+}
+
+export type BatchOptimizerHeatZoneAttribution = {
+  zoneId: string
+  segmentKind: string
+  segmentKey: string
+  reason: string
+  rollId?: string
+  demandLineIds: string[]
+  clusterId?: string
+  breakSliceIds: string[]
+}
+
+export type BatchOptimizerBreakSliceSummary = {
+  id: string
+  segmentKind: string
+  segmentKey: string
+  rollId?: string
+  breakPosition: number
+  breakBeforeDemandLineId?: string
+  breakAfterDemandLineId?: string
+  zoneIds: string[]
+  clusterId?: string
+  reason: string
+  severityScore: number
+}
+
+export type BatchOptimizerZoneClusterSummary = {
+  clusterId: string
+  zoneIds: string[]
+  rollIds: string[]
+  demandLineIds: string[]
+  breakSliceIds: string[]
+  dominantReason: string
+  dominantDemandLineId?: string
+  densityScore: number
+}
+
+export type BatchOptimizerDynamicStrategyBudgetStat = {
+  strategyKey: string
+  inputCount: number
+  targetQuota: number
+  keptCount: number
+  priorityScore: number
+  rerankReason: string
+}
+
+export type BatchOptimizerStrategyBudgetStat = {
+  strategyKey: string
+  inputCount: number
+  keptCount: number
+}
+
+export type BatchOptimizerCandidateBudgetSummary = {
+  perStrategyQuota: number
+  globalBudget: number
+  mergedCandidateCount: number
+  strategyStats: BatchOptimizerStrategyBudgetStat[]
+  dynamicStrategyStats: BatchOptimizerDynamicStrategyBudgetStat[]
+}
+
+export type BatchOptimizerPlanExplainabilitySummary = {
+  groupSegments: BatchOptimizerContinuitySegment[]
+  sequenceSegments: BatchOptimizerContinuitySegment[]
+  adjacencySegments: BatchOptimizerContinuitySegment[]
+  primaryBreakReasons: string[]
+  heatZoneAttributions: BatchOptimizerHeatZoneAttribution[]
+  breakSlices: BatchOptimizerBreakSliceSummary[]
+  zoneClusters: BatchOptimizerZoneClusterSummary[]
+}
+
 export type BatchOptimizerPlanReportSummary = {
   planRank: number
   strategyKey: string
@@ -197,6 +319,14 @@ export type BatchOptimizerPlanReportSummary = {
   changedDemandLineCount: number
   changedRollCount: number
   highlightZoneCount: number
+  adjacencyBreakCount: number
+  rollSwitchCount: number
+  geometryReuseHitCount: number
+  reusableResidualAreaM2: number
+  searchConfig: BatchOptimizerSearchConfigSummary
+  candidateBudgetSummary: BatchOptimizerCandidateBudgetSummary
+  budgetRerankReason: string
+  explainabilitySummary: BatchOptimizerPlanExplainabilitySummary
   comparisonSummary: BatchOptimizerPlanComparisonSummary
   scoreBreakdown: BatchOptimizerPlanScoreBreakdown
 }
@@ -211,12 +341,17 @@ export type BatchOptimizerPlan = {
   assignments: BatchOptimizerPlanAssignment[]
   unfulfilledLines: BatchOptimizerUnfulfilledLine[]
   layoutSummary: BatchOptimizerPlanLayoutSummary
+  geometryLayoutSummary?: BatchOptimizerGeometryLayoutSummary
   lossBreakdown: BatchOptimizerPlanLossBreakdown
   comparisonSummary: BatchOptimizerPlanComparisonSummary
   scoreBreakdown: BatchOptimizerPlanScoreBreakdown
   mustFulfillDiagnostics: BatchOptimizerMustFulfillDiagnostic[]
   diffSummary: BatchOptimizerPlanDiffSummary
   diffSummaries: BatchOptimizerPlanDiffSummary[]
+  searchConfig: BatchOptimizerSearchConfigSummary
+  candidateBudgetSummary: BatchOptimizerCandidateBudgetSummary
+  budgetRerankReason: string
+  explainabilitySummary: BatchOptimizerPlanExplainabilitySummary
   reportSummary: BatchOptimizerPlanReportSummary
 }
 

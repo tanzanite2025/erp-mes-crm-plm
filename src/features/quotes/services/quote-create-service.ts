@@ -17,6 +17,7 @@ export async function createQuoteAsSalesOrderDraft(payload: CreateQuotePayload) 
     customerId: payload.customerId,
     type: 'retail',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     paymentMethod: '',
     paymentMethodName: '',
     paymentTerm: '',

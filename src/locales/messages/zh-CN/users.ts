@@ -59,6 +59,8 @@
       empty: '当前未分配显式权限',
     },
     actions: {
+      selectAll: '全选',
+      deselectAll: '取消全选',
       filterSelected: '仅看已选',
       expandAll: '全部展开',
       collapseAll: '全部收起',

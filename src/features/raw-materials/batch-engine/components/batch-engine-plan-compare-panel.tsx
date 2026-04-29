@@ -1,6 +1,13 @@
 import { useLanguage } from '@/context/language-provider'
+import type { ReactNode } from 'react'
 import type { BatchOptimizerPlan } from '../types'
 import { getActiveDiffSummary } from '../services/batch-engine-diff'
+import {
+  buildPhase7BreakSliceBadgeLabel,
+  buildPhase7BudgetQuotaBadgeLabel,
+  buildPhase7ZoneClusterBadgeLabel,
+} from '../services/batch-engine-phase7-display'
+import { BatchEnginePhase7ExplainabilityMetaBadge } from './batch-engine-phase7-explainability-meta-badge'
 
 type BatchEnginePlanComparePanelProps = {
   plans: BatchOptimizerPlan[]
@@ -31,6 +38,10 @@ export function BatchEnginePlanComparePanel(props: BatchEnginePlanComparePanelPr
             plan.scoreBreakdown.sequenceViolationCount +
             plan.scoreBreakdown.directionSwitchCount +
             plan.scoreBreakdown.mixViolationCount
+          const breakSliceCount = plan.explainabilitySummary.breakSlices.length
+          const zoneClusterCount = plan.explainabilitySummary.zoneClusters.length
+          const topClusterDensity = plan.explainabilitySummary.zoneClusters[0]?.densityScore ?? 0
+          const dynamicStrategyStats = plan.candidateBudgetSummary.dynamicStrategyStats.slice(0, 2)
           return (
             <button
               key={plan.rank}
@@ -64,6 +75,11 @@ export function BatchEnginePlanComparePanel(props: BatchEnginePlanComparePanelPr
                       ? t('rawMaterials.batchEngine.comparePanel.ruleRisk', { count: structuredRuleRiskCount })
                       : t('rawMaterials.batchEngine.comparePanel.ruleStable')}
                   </span>
+                  <BatchEnginePhase7ExplainabilityMetaBadge
+                    label={buildPhase7ZoneClusterBadgeLabel(String(zoneClusterCount))}
+                    tone={zoneClusterCount > 0 ? 'amber' : 'slate'}
+                    compact
+                  />
                 </div>
               </div>
 
@@ -78,15 +94,80 @@ export function BatchEnginePlanComparePanel(props: BatchEnginePlanComparePanelPr
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.mustPenalty')} value={`-${plan.scoreBreakdown.mustFulfillPenalty.toFixed(2)}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.groupSplit')} value={`${plan.scoreBreakdown.groupSplitCount}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.sequenceViolation')} value={`${plan.scoreBreakdown.sequenceViolationCount}`} />
+                <CompareMetric label='相邻破坏' value={`${plan.scoreBreakdown.adjacencyBreakCount}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.directionSwitch')} value={`${plan.scoreBreakdown.directionSwitchCount}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.mixViolation')} value={`${plan.scoreBreakdown.mixViolationCount}`} />
+                <CompareMetric label='切卷次数' value={`${plan.scoreBreakdown.rollSwitchCount}`} />
+                <CompareMetric label='残料复用命中' value={`${plan.scoreBreakdown.geometryReuseHitCount}`} />
+                <CompareMetric label='可复用残料' value={`${plan.scoreBreakdown.reusableResidualAreaM2.toFixed(6)} m2`} />
+                <CompareMetric label='搜索预设' value={plan.searchConfig.presetKey} />
+                <CompareMetric label='搜索深度' value={`${plan.searchConfig.maxSearchDepth}`} />
+                <CompareMetric label='候选预算' value={`${plan.candidateBudgetSummary.mergedCandidateCount}/${plan.candidateBudgetSummary.globalBudget}`} />
+                <CompareMetric label='Break Slice' value={`${breakSliceCount}`} />
+                <CompareMetric label='Zone Cluster' value={`${zoneClusterCount}`} />
+                <CompareMetric label='Cluster 密度峰值' value={topClusterDensity ? topClusterDensity.toFixed(2) : '--'} />
+                <CompareMetric label='动态配额策略' value={`${plan.candidateBudgetSummary.dynamicStrategyStats.length}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.diffDemand')} value={`${diffSummary.changedDemandLineIds.length}`} />
                 <CompareMetric label={t('rawMaterials.batchEngine.comparePanel.metrics.diffZones')} value={`${diffSummary.highlightZoneIds.length}`} />
               </div>
 
+              <div className='mt-3 grid gap-2 lg:grid-cols-3'>
+                <CompareSummaryBlock
+                  title={t('rawMaterials.batchEngine.comparePanel.baseline', { rank: diffSummary.baselinePlanRank })}
+                  content={t('rawMaterials.batchEngine.comparePanel.mustDiagnostics', { count: plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length })}
+                  tone='slate'
+                />
+                <CompareSummaryBlock
+                  title='Break Summary'
+                  content={(
+                    <div className='grid gap-2'>
+                      <p>{plan.explainabilitySummary.primaryBreakReasons.join(' / ') || '连续段稳定'}</p>
+                      <div className='flex flex-wrap items-center gap-1.5'>
+                        {plan.explainabilitySummary.breakSlices.slice(0, 2).map((item) => (
+                          <BatchEnginePhase7ExplainabilityMetaBadge key={`break-slice-${item.id}`} label={buildPhase7BreakSliceBadgeLabel(item.id)} tone='violet' compact />
+                        ))}
+                        {plan.explainabilitySummary.zoneClusters.slice(0, 1).map((item) => (
+                          <BatchEnginePhase7ExplainabilityMetaBadge key={`zone-cluster-${item.clusterId}`} label={buildPhase7ZoneClusterBadgeLabel(item.clusterId)} tone='amber' compact />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  tone='violet'
+                />
+                <CompareSummaryBlock
+                  title='Budget Rerank'
+                  content={(
+                    <div className='grid gap-2'>
+                      <p>{plan.budgetRerankReason || dynamicStrategyStats.map((item) => `${item.strategyKey}:${item.targetQuota}`).join(' / ') || '动态预算稳定'}</p>
+                      <div className='flex flex-wrap items-center gap-1.5'>
+                        {dynamicStrategyStats.map((item) => (
+                          <BatchEnginePhase7ExplainabilityMetaBadge key={`dynamic-budget-${item.strategyKey}`} label={buildPhase7BudgetQuotaBadgeLabel(item.targetQuota)} tone='amber' compact />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  tone='amber'
+                />
+              </div>
+
+              {dynamicStrategyStats.length ? (
+                <div className='mt-3 grid gap-2 lg:grid-cols-2'>
+                  {dynamicStrategyStats.map((item) => (
+                    <div key={`${plan.rank}-${item.strategyKey}`} className='rounded-2xl border border-dashed border-slate-200 bg-white/90 px-3 py-3'>
+                      <p className='text-[8px] font-black uppercase tracking-[0.18em] text-slate-500'>Dynamic Budget</p>
+                      <p className='mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-800'>{item.strategyKey}</p>
+                      <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                        <p>Target: {item.targetQuota}</p>
+                        <p>Kept: {item.keptCount}</p>
+                        <p>Priority: {item.priorityScore.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
               <div className='mt-3 grid gap-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500'>
-                <p>{t('rawMaterials.batchEngine.comparePanel.baseline', { rank: diffSummary.baselinePlanRank })}</p>
-                <p>{t('rawMaterials.batchEngine.comparePanel.mustDiagnostics', { count: plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length })}</p>
+                <p>{plan.explainabilitySummary.heatZoneAttributions.slice(0, 2).map((item) => `${item.zoneId}:${item.segmentKind}`).join(' / ') || '热区归因稳定'}</p>
               </div>
             </button>
           )
@@ -101,6 +182,28 @@ function CompareMetric({ label, value }: { label: string; value: string }) {
     <div className='rounded-2xl border border-slate-200 bg-white px-3 py-2'>
       <p className='text-[8px] font-black uppercase tracking-[0.18em] text-slate-400'>{label}</p>
       <p className='mt-1 text-xs font-semibold text-slate-800'>{value}</p>
+    </div>
+  )
+}
+
+function CompareSummaryBlock({
+  title,
+  content,
+  tone,
+}: {
+  title: string
+  content: ReactNode
+  tone: 'slate' | 'violet' | 'amber'
+}) {
+  const className = tone === 'violet'
+    ? 'border-violet-200 bg-violet-500/5 text-violet-800'
+    : tone === 'amber'
+      ? 'border-amber-200 bg-amber-500/5 text-amber-800'
+      : 'border-slate-200 bg-slate-50/70 text-slate-800'
+  return (
+    <div className={`rounded-[20px] border border-dashed px-3 py-3 ${className}`}>
+      <p className='text-[8px] font-black uppercase tracking-[0.18em] opacity-70'>{title}</p>
+      <div className='mt-2 text-xs font-semibold leading-5'>{content}</div>
     </div>
   )
 }

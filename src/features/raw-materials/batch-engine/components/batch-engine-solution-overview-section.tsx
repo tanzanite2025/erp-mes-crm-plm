@@ -1,12 +1,15 @@
-import { Download, FileDown, ScrollText } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { BatchOptimizerPlan, BatchOptimizerPlanDiffSummary, BatchOptimizerSolveResponse } from '../types'
 import {
-  exportBatchEngineReviewCsv,
-  exportBatchEngineReviewJson,
-  printBatchEngineReviewPdf,
-} from '../services/export-batch-engine-review'
+  buildPhase7BreakSliceBadgeLabel,
+  buildPhase7BudgetPriorityBadgeLabel,
+  buildPhase7BudgetQuotaBadgeLabel,
+  buildPhase7BudgetRerankBadgeLabel,
+  buildPhase7ZoneClusterBadgeLabel,
+} from '../services/batch-engine-phase7-display'
+import { BatchEngineExportActions } from './batch-engine-export-actions'
 import { BatchEngineScoreBreakdownPanel } from './batch-engine-score-breakdown-panel'
+import { BatchEnginePhase7ExplainabilityMetaBadge } from './batch-engine-phase7-explainability-meta-badge'
 
 type BatchEngineSolutionOverviewSectionProps = {
   solution?: BatchOptimizerSolveResponse
@@ -42,6 +45,9 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
               const selected = plan.rank === selectedPlanRank
               const structuredRuleRiskCount = getStructuredRuleRiskCount(plan)
               const mustRiskCount = plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length
+              const breakSliceCount = plan.explainabilitySummary.breakSlices.length
+              const zoneClusterCount = plan.explainabilitySummary.zoneClusters.length
+              const dynamicStrategyCount = plan.candidateBudgetSummary.dynamicStrategyStats.length
               return (
                 <button
                   key={plan.rank}
@@ -73,6 +79,11 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
                       >
                         {t('rawMaterials.batchEngine.solutionOverview.metrics.mustRisk', { count: mustRiskCount })}
                       </span>
+                      <BatchEnginePhase7ExplainabilityMetaBadge
+                        label={buildPhase7ZoneClusterBadgeLabel(String(zoneClusterCount))}
+                        tone={zoneClusterCount > 0 ? 'amber' : 'slate'}
+                        compact
+                      />
                     </div>
                   </div>
                   <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
@@ -80,6 +91,9 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.utilization')}: {plan.utilizationPercent.toFixed(2)}%</p>
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.loss')}: {plan.lossAreaM2.toFixed(3)} m2</p>
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.unfulfilledLines')}: {plan.unfulfilledLines.length}</p>
+                    <p>Break Slice: {breakSliceCount}</p>
+                    <p>Zone Cluster: {zoneClusterCount}</p>
+                    <p>动态配额策略: {dynamicStrategyCount}</p>
                   </div>
                 </button>
               )
@@ -89,7 +103,13 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
           {selectedPlan ? (
             <div className='rounded-[20px] border border-dashed border-slate-300 bg-white p-3'>
               <p className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>{t('rawMaterials.batchEngine.solutionOverview.currentPlanDetail')}</p>
-              <div className='mt-2 grid gap-1'>
+              <div className='mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
+                <OverviewMetricCard label='Break Slice' value={`${selectedPlan.explainabilitySummary.breakSlices.length}`} tone='violet' />
+                <OverviewMetricCard label='Zone Cluster' value={`${selectedPlan.explainabilitySummary.zoneClusters.length}`} tone='amber' />
+                <OverviewMetricCard label='动态配额策略' value={`${selectedPlan.candidateBudgetSummary.dynamicStrategyStats.length}`} tone='slate' />
+                <OverviewMetricCard label='残料复用命中' value={`${selectedPlan.scoreBreakdown.geometryReuseHitCount}`} tone='emerald' />
+              </div>
+              <div className='mt-3 grid gap-1'>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.strategy')}: {selectedPlan.strategyKey}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.score')}: {selectedPlan.score.toFixed(2)}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.utilization')}: {selectedPlan.utilizationPercent.toFixed(2)}%</p>
@@ -104,34 +124,38 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.directionSwitch')}: {selectedPlan.scoreBreakdown.directionSwitchCount}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.mixViolation')}: {selectedPlan.scoreBreakdown.mixViolationCount}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.baseline')}: Top{activeDiffSummary?.baselinePlanRank ?? selectedPlan.diffSummary.baselinePlanRank}</p>
+                <p>预算重排: {selectedPlan.budgetRerankReason || '--'}</p>
                 <p>{selectedPlan.explanation}</p>
               </div>
-              <div className='mt-3 flex flex-wrap gap-2'>
-                <button
-                  type='button'
-                  onClick={() => exportBatchEngineReviewJson(selectedPlan, activeDiffSummary ?? selectedPlan.diffSummary)}
-                  className='inline-flex h-11 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700'
-                >
-                  <Download className='size-4' />
-                  导出 JSON
-                </button>
-                <button
-                  type='button'
-                  onClick={() => exportBatchEngineReviewCsv(selectedPlan, activeDiffSummary ?? selectedPlan.diffSummary)}
-                  className='inline-flex h-11 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700'
-                >
-                  <FileDown className='size-4' />
-                  导出 CSV
-                </button>
-                <button
-                  type='button'
-                  onClick={() => printBatchEngineReviewPdf(selectedPlan, activeDiffSummary ?? selectedPlan.diffSummary)}
-                  className='inline-flex h-11 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700'
-                >
-                  <ScrollText className='size-4' />
-                  导出 PDF
-                </button>
+              <div className='mt-3 flex flex-wrap items-center gap-1.5'>
+                {selectedPlan.explainabilitySummary.breakSlices.slice(0, 2).map((item) => (
+                  <BatchEnginePhase7ExplainabilityMetaBadge key={`selected-break-slice-${item.id}`} label={buildPhase7BreakSliceBadgeLabel(item.id)} tone='violet' compact />
+                ))}
+                {selectedPlan.explainabilitySummary.zoneClusters.slice(0, 2).map((item) => (
+                  <BatchEnginePhase7ExplainabilityMetaBadge key={`selected-zone-cluster-${item.clusterId}`} label={buildPhase7ZoneClusterBadgeLabel(item.clusterId)} tone='amber' compact />
+                ))}
+                {selectedPlan.budgetRerankReason ? <BatchEnginePhase7ExplainabilityMetaBadge label={buildPhase7BudgetRerankBadgeLabel()} tone='amber' compact /> : null}
               </div>
+              {selectedPlan.candidateBudgetSummary.dynamicStrategyStats.length ? (
+                <div className='mt-3 grid gap-2 xl:grid-cols-2'>
+                  {selectedPlan.candidateBudgetSummary.dynamicStrategyStats.slice(0, 4).map((item) => (
+                    <div key={`${selectedPlan.rank}-${item.strategyKey}`} className='rounded-[20px] border border-dashed border-slate-200 bg-slate-50/70 p-3'>
+                      <p className='text-[8px] font-black uppercase tracking-[0.18em] text-slate-500'>{item.strategyKey}</p>
+                      <div className='mt-2 flex flex-wrap items-center gap-1.5'>
+                        <BatchEnginePhase7ExplainabilityMetaBadge label={buildPhase7BudgetQuotaBadgeLabel(item.targetQuota)} tone='amber' compact />
+                        <BatchEnginePhase7ExplainabilityMetaBadge label={buildPhase7BudgetPriorityBadgeLabel(item.priorityScore)} tone='slate' compact />
+                      </div>
+                      <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                        <p>Target Quota: {item.targetQuota}</p>
+                        <p>Kept Count: {item.keptCount}</p>
+                        <p>Priority: {item.priorityScore.toFixed(2)}</p>
+                        <p>{item.rerankReason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <BatchEngineExportActions plan={selectedPlan} diffSummary={activeDiffSummary ?? selectedPlan.diffSummary} />
             </div>
           ) : null}
 
@@ -150,5 +174,29 @@ function getStructuredRuleRiskCount(plan: BatchOptimizerPlan) {
     plan.scoreBreakdown.sequenceViolationCount +
     plan.scoreBreakdown.directionSwitchCount +
     plan.scoreBreakdown.mixViolationCount
+  )
+}
+
+function OverviewMetricCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: 'violet' | 'amber' | 'slate' | 'emerald'
+}) {
+  const className = tone === 'violet'
+    ? 'border-violet-200 bg-violet-500/10 text-violet-700'
+    : tone === 'amber'
+      ? 'border-amber-200 bg-amber-500/10 text-amber-700'
+      : tone === 'emerald'
+        ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700'
+        : 'border-slate-200 bg-slate-50/80 text-slate-700'
+  return (
+    <div className={`rounded-[20px] border border-dashed px-3 py-3 ${className}`}>
+      <p className='text-[8px] font-black uppercase tracking-[0.18em] opacity-70'>{label}</p>
+      <p className='mt-2 text-sm font-black'>{value}</p>
+    </div>
   )
 }

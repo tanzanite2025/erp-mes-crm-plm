@@ -1,7 +1,12 @@
-import { toPositiveNumber, type CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
-import type { BatchEngineControls, BatchEngineSimulation } from '../types'
+import type { CutSizeGeometryProjection } from '../../cut-size-library/domain/cut-size-geometry'
+import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
 
 export type StripLayoutZoneKind = 'roll' | 'loss' | 'strip' | 'piece' | 'aggregate'
+
+export type StripLayoutPoint = {
+  x: number
+  y: number
+}
 
 export type StripLayoutZone = {
   id: string
@@ -22,6 +27,7 @@ export type StripLayoutZone = {
   tooltipLines?: string[]
   isDiffHighlighted?: boolean
   interactive?: boolean
+  polygonPoints?: StripLayoutPoint[]
 }
 
 export type StripFirstLayout = {
@@ -94,12 +100,12 @@ function buildLossZones(
 
 function computeGeometry(
   selectedUnit: CutSizeGeometryProjection,
-  controls: BatchEngineControls
+  controls: BatchEngineNormalizedControls
 ) {
-  const rollWidthMm = Math.max(toPositiveNumber(controls.rollWidthMm), 1)
-  const rollLengthMm = Math.max(toPositiveNumber(controls.rollLengthM) * 1000, 1)
-  const knifeGapMm = Math.max(toPositiveNumber(controls.knifeGapMm), 0)
-  const edgeTrimMm = Math.max(toPositiveNumber(controls.edgeTrimMm), 0)
+  const rollWidthMm = Math.max(controls.rollWidthMm, 1)
+  const rollLengthMm = Math.max(controls.rollLengthM * 1000, 1)
+  const knifeGapMm = Math.max(controls.knifeGapMm, 0)
+  const edgeTrimMm = Math.max(controls.edgeTrimMm, 0)
   const pieceWidthMm = Math.max(selectedUnit.envelopeWidthMm, 0)
   const pieceLengthMm = Math.max(selectedUnit.envelopeLengthMm, 0)
 
@@ -123,12 +129,12 @@ function computeGeometry(
 }
 
 export function buildStripFirstLayout(
-  controls: BatchEngineControls,
+  controls: BatchEngineNormalizedControls,
   simulation: BatchEngineSimulation
 ): StripFirstLayout {
   const selectedUnit = simulation.selectedUnit
-  const fallbackWidth = Math.max(toPositiveNumber(controls.rollWidthMm), 1)
-  const fallbackHeight = Math.max(toPositiveNumber(controls.rollLengthM) * 1000, 1)
+  const fallbackWidth = Math.max(controls.rollWidthMm, 1)
+  const fallbackHeight = Math.max(controls.rollLengthM * 1000, 1)
 
   if (!selectedUnit) {
     return {

@@ -1,7 +1,6 @@
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
-import { toPositiveNumber } from '../../cut-size-library/domain/cut-size-geometry'
 import type { BuildBatchEngineDemandLinesResult } from './build-batch-engine-demand-lines-from-cutting-plan'
-import type { BatchEngineControls, BatchEngineSimulation } from '../types'
+import type { BatchEngineNormalizedControls, BatchEngineSimulation } from '../types'
 
 function round(value: number, digits = 2): number {
   const factor = 10 ** digits
@@ -11,7 +10,7 @@ function round(value: number, digits = 2): number {
 export function buildBatchEnginePreview(
   selectedCuttingPlan: CuttingPlan | undefined,
   mappedDemandLines: BuildBatchEngineDemandLinesResult,
-  controls: BatchEngineControls
+  controls: BatchEngineNormalizedControls
 ): BatchEngineSimulation {
   if (!selectedCuttingPlan) {
     return {
@@ -71,10 +70,10 @@ export function buildBatchEnginePreview(
     }
   }
 
-  const rollWidthMm = toPositiveNumber(controls.rollWidthMm)
-  const rollLengthMm = toPositiveNumber(controls.rollLengthM) * 1000
-  const knifeGapMm = toPositiveNumber(controls.knifeGapMm)
-  const edgeTrimMm = toPositiveNumber(controls.edgeTrimMm)
+  const rollWidthMm = controls.rollWidthMm
+  const rollLengthMm = controls.rollLengthM * 1000
+  const knifeGapMm = controls.knifeGapMm
+  const edgeTrimMm = controls.edgeTrimMm
   const pieceWidthMm = validLines[0]?.occupiedWidthMm || selectedUnit.envelopeWidthMm
   const pieceLengthMm = validLines[0]?.occupiedLengthMm || selectedUnit.envelopeLengthMm
   const pieceCountPerSet = validLines[0]?.pieceCountPerSet || selectedUnit.pieceCountPerSet

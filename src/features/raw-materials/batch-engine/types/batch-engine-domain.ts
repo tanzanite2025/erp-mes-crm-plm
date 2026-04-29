@@ -18,6 +18,31 @@ export type BatchEngineControls = {
   mustPenaltyWeight: string
 }
 
+export type BatchEngineResolvedControls = BatchEngineControls
+
+export type BatchEngineNormalizedControls = {
+  selectedPrepregSpecId: string
+  selectedCuttingPlanId: string
+  rollWidthMm: number
+  rollLengthM: number
+  knifeGapMm: number
+  edgeTrimMm: number
+  objectivePreset: BatchOptimizerObjectivePreset
+  fulfilledWeight: number
+  utilizationWeight: number
+  stabilityWeight: number
+  assignmentPenaltyWeight: number
+  unfulfilledPenaltyWeight: number
+  splitPenaltyWeight: number
+  mustPenaltyWeight: number
+}
+
+export type BatchEngineResolvedControlState = {
+  rawControls: BatchEngineControls
+  resolvedControls: BatchEngineResolvedControls
+  normalizedControls: BatchEngineNormalizedControls
+}
+
 export type BatchEngineSimulation = {
   ready: boolean
   reason?: string

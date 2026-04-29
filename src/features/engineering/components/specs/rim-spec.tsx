@@ -31,8 +31,8 @@ export function RimSpecForm({
   const { t } = useLanguage()
 
   return (
-    <div className='p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100/50 dark:border-blue-900/30 space-y-2'>
-      <div className='flex items-center justify-between border-b border-blue-100 dark:border-blue-900/50 pb-1.5'>
+    <div className='p-1.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100/50 dark:border-blue-900/30 space-y-1.5'>
+      <div className='flex items-center justify-between border-b border-blue-100 dark:border-blue-900/50 pb-1'>
         <h4 className='text-xs font-semibold text-blue-600 dark:text-blue-400'>
           {t('engineering.specForms.rim.title')}
         </h4>
@@ -40,7 +40,7 @@ export function RimSpecForm({
           {t('engineering.specForms.rim.subtitle')}
         </Badge>
       </div>
-      <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2'>
+      <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1'>
         <FormField
           control={form.control}
           name='depth'
@@ -56,7 +56,7 @@ export function RimSpecForm({
                   onChange={(event) =>
                     field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
                   }
-                  className='h-8 w-full bg-background/50'
+                  className='h-7 w-full bg-background/50'
                 />
               </FormControl>
             </FormItem>
@@ -79,7 +79,7 @@ export function RimSpecForm({
                   onChange={(event) =>
                     field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
                   }
-                  className='h-8 w-full bg-background/50'
+                  className='h-7 w-full bg-background/50'
                 />
               </FormControl>
             </FormItem>
@@ -102,7 +102,7 @@ export function RimSpecForm({
                   onChange={(event) =>
                     field.onChange(event.target.value === '' ? undefined : parseFloat(event.target.value))
                   }
-                  className='h-8 w-full bg-background/50'
+                  className='h-7 w-full bg-background/50'
                 />
               </FormControl>
             </FormItem>
@@ -110,7 +110,7 @@ export function RimSpecForm({
         />
       </div>
 
-      <div className='p-2 bg-blue-600/5 rounded-xl border border-blue-600/10 space-y-2'>
+      <div className='p-1.5 bg-blue-600/5 rounded-xl border border-blue-600/10 space-y-1'>
         <div className='flex items-center gap-2 text-blue-700'>
           <ListChecks className='size-3' />
           <span className='text-[10px] font-black uppercase tracking-wider'>
@@ -118,7 +118,7 @@ export function RimSpecForm({
           </span>
         </div>
 
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-2 gap-y-1'>
           {options.versionCategoryOptions.map((option) => {
             const isSelected = selectedVariants.some((variant) => variant.level === option.value)
             const variant = selectedVariants.find((entry) => entry.level === option.value)
@@ -126,26 +126,26 @@ export function RimSpecForm({
             return (
               <div
                 key={option.value}
-                className={`flex items-center justify-between p-1 px-1.5 rounded border transition-all ${
+                className={`flex items-center justify-between p-0.5 px-1.5 rounded border transition-all ${
                   isSelected
                     ? 'bg-background border-blue-200 shadow-sm'
                     : 'bg-muted/5 border-transparent opacity-60 hover:opacity-100'
                 }`}
               >
-                <div className='flex items-center space-x-1.5'>
+                <div className='flex min-w-0 items-center space-x-1.5'>
                   <Checkbox
                     id={`spec-level-${option.value}`}
                     checked={isSelected}
                     onCheckedChange={(checked) => onVariantToggle(option.value, !!checked)}
                     className='size-3.5 data-[state=checked]:bg-blue-600'
                   />
-                  <Label htmlFor={`spec-level-${option.value}`} className='text-[10px] font-bold cursor-pointer'>
+                  <Label htmlFor={`spec-level-${option.value}`} className='min-w-0 truncate text-[10px] font-bold cursor-pointer'>
                     {option.label}
                   </Label>
                 </div>
 
                 {isSelected && (
-                  <div className='flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200'>
+                  <div className='flex shrink-0 items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200'>
                     <div className='text-[9px] text-muted-foreground mr-0.5'>
                       {t('engineering.specForms.rim.targetWeight')}
                     </div>

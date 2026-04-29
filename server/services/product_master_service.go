@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -698,153 +697,6 @@ func syncProductTemplateAttributeBindingsTx(tx *gorm.DB, templateID string, bind
 	return tx.Create(&items).Error
 }
 
-func buildTemplateBindingSignature(bindings []models.ProductTemplateAttributeBinding) string {
-	if len(bindings) == 0 {
-		return ""
-	}
-
-	signatureParts := make([]string, 0, len(bindings))
-	for _, binding := range bindings {
-		categoryKey := strings.TrimSpace(binding.CategoryKey)
-		if categoryKey == "" {
-			continue
-		}
-		requiredFlag := "0"
-		if binding.Required {
-			requiredFlag = "1"
-		}
-		activeFlag := "0"
-		if binding.Active {
-			activeFlag = "1"
-		}
-		signatureParts = append(signatureParts, categoryKey+":"+requiredFlag+":"+activeFlag)
-	}
-	sort.Strings(signatureParts)
-	return strings.Join(signatureParts, "|")
-}
-
-func buildTypeBindingSignature(bindings []models.ProductTypeAttributeBinding) string {
-	if len(bindings) == 0 {
-		return ""
-	}
-
-	signatureParts := make([]string, 0, len(bindings))
-	for _, binding := range bindings {
-		categoryKey := strings.TrimSpace(binding.CategoryKey)
-		if categoryKey == "" {
-			continue
-		}
-		requiredFlag := "0"
-		if binding.Required {
-			requiredFlag = "1"
-		}
-		activeFlag := "0"
-		if binding.Active {
-			activeFlag = "1"
-		}
-		signatureParts = append(signatureParts, categoryKey+":"+requiredFlag+":"+activeFlag)
-	}
-	sort.Strings(signatureParts)
-	return strings.Join(signatureParts, "|")
-}
-
-func buildTypeBindingsFromTemplate(productTypeID string, bindings []models.ProductTemplateAttributeBinding) []models.ProductTypeAttributeBinding {
-	items := make([]models.ProductTypeAttributeBinding, 0, len(bindings))
-	for idx, binding := range bindings {
-		item := models.ProductTypeAttributeBinding{
-			ProductTypeID: strings.TrimSpace(productTypeID),
-			CategoryKey:   strings.TrimSpace(binding.CategoryKey),
-			SortOrder:     idx + 1,
-			Required:      binding.Required,
-			Active:        binding.Active,
-			Version:       1,
-		}
-		normalizeProductTypeAttributeBinding(&item)
-		if item.CategoryKey == "" || item.ProductTypeID == "" {
-			continue
-		}
-		items = append(items, item)
-	}
-	return items
-}
-
-func syncResolvedProductTypeAttributeBindingsForTemplateTx(
-	tx *gorm.DB,
-	templateID string,
-	previousTemplateBindings []models.ProductTemplateAttributeBinding,
-	nextTemplateBindings []models.ProductTemplateAttributeBinding,
-) error {
-	templateID = strings.TrimSpace(templateID)
-	if templateID == "" {
-		return nil
-	}
-
-	typeTemplateBindings, err := loadProductTypeTemplateBindings(tx)
-	if err != nil {
-		return err
-	}
-
-	targetTypeIDs := make([]string, 0, len(typeTemplateBindings))
-	for productTypeID := range typeTemplateBindings {
-		resolvedTemplateID, _ := resolveTemplateIDFromProductTypeChain(typeTemplateBindings, productTypeID)
-		if strings.TrimSpace(resolvedTemplateID) == templateID {
-			targetTypeIDs = append(targetTypeIDs, productTypeID)
-		}
-	}
-
-	if len(targetTypeIDs) == 0 {
-		return nil
-	}
-
-	var currentTypeBindings []models.ProductTypeAttributeBinding
-	if err := tx.
-		Where("product_type_id IN ?", targetTypeIDs).
-		Order("sort_order asc").
-		Order("category_key asc").
-		Find(&currentTypeBindings).Error; err != nil {
-		return err
-	}
-
-	currentBindingsByTypeID := make(map[string][]models.ProductTypeAttributeBinding, len(targetTypeIDs))
-	for _, binding := range currentTypeBindings {
-		typeID := strings.TrimSpace(binding.ProductTypeID)
-		if typeID == "" {
-			continue
-		}
-		currentBindingsByTypeID[typeID] = append(currentBindingsByTypeID[typeID], binding)
-	}
-
-	previousSignature := buildTemplateBindingSignature(previousTemplateBindings)
-
-	for _, productTypeID := range targetTypeIDs {
-		typeID := strings.TrimSpace(productTypeID)
-		if typeID == "" {
-			continue
-		}
-
-		currentBindings := currentBindingsByTypeID[typeID]
-		currentSignature := buildTypeBindingSignature(currentBindings)
-		shouldSync := len(currentBindings) == 0 || currentSignature == previousSignature
-		if !shouldSync {
-			continue
-		}
-
-		if err := tx.Where("product_type_id = ?", typeID).Delete(&models.ProductTypeAttributeBinding{}).Error; err != nil {
-			return err
-		}
-
-		items := buildTypeBindingsFromTemplate(typeID, nextTemplateBindings)
-		if len(items) == 0 {
-			continue
-		}
-		if err := tx.Create(&items).Error; err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate, error) {
 	modelInput := models.ProductTemplate(input)
 	bindings := append([]models.ProductTemplateAttributeBinding(nil), modelInput.AttributeBindings...)
@@ -869,9 +721,6 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 			if err := syncProductTemplateAttributeBindingsTx(tx, existing.ID, bindings); err != nil {
 				return err
 			}
-			if err := syncResolvedProductTypeAttributeBindingsForTemplateTx(tx, existing.ID, existing.AttributeBindings, bindings); err != nil {
-				return err
-			}
 			return tx.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {
 				return database.Order("sort_order asc").Order("category_key asc")
 			}).First(&saved, "id = ?", existing.ID).Error
@@ -886,9 +735,6 @@ func SaveProductTemplate(input SaveProductTemplateInput) (models.ProductTemplate
 			return err
 		}
 		if err := syncProductTemplateAttributeBindingsTx(tx, modelInput.ID, bindings); err != nil {
-			return err
-		}
-		if err := syncResolvedProductTypeAttributeBindingsForTemplateTx(tx, modelInput.ID, nil, bindings); err != nil {
 			return err
 		}
 		return tx.Preload("AttributeBindings", func(database *gorm.DB) *gorm.DB {

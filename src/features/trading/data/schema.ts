@@ -165,6 +165,7 @@ export interface SalesOrder extends BaseEntity {
   customerId?: string // 引用客户 ID
   type: SalesOrderType
   currency: string // 货币类别
+  exchangeRateSnapshot: number
   paymentMethod?: string
   paymentMethodName?: string
   paymentTerm?: string
@@ -229,6 +230,7 @@ export const createEmptySalesOrderDraft = (
   customerId: '',
   type: '',
   currency: 'CNY',
+  exchangeRateSnapshot: 1,
   paymentMethod: '',
   paymentMethodName: '',
   paymentTerm: '',

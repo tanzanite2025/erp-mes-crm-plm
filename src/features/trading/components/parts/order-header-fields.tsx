@@ -31,6 +31,7 @@ export function OrderHeaderFields({
     typeOptions,
     classificationOptions,
     customerOptions,
+    selectedCustomerId,
     paymentMethodOptions,
     paymentTermOptions,
     handleCustomerChange,
@@ -39,6 +40,8 @@ export function OrderHeaderFields({
   } = useSalesOrderHeaderFieldsViewModel({
     locale,
     customers,
+    currentCustomerId: formData.customerId,
+    currentCustomerName: formData.customerName,
     paymentMethods,
     paymentTerms,
     setFormData,
@@ -97,7 +100,7 @@ export function OrderHeaderFields({
               <User className='absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
               <select
                 className='w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px] h-11'
-                value={formData.customerName}
+                value={selectedCustomerId}
                 onChange={(e) => handleCustomerChange(e.target.value)}
               >
                 <option value=''>{t('tradingSalesOrder.headerFields.customerPlaceholder')}</option>

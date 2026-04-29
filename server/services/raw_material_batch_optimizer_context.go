@@ -10,6 +10,7 @@ import (
 type rawMaterialBatchOptimizerContext struct {
 	RequestID           string
 	ObjectivePreset     string
+	SearchConfig        rawMaterialBatchOptimizerSearchConfig
 	ScoreWeights        models.RawMaterialBatchOptimizerScoreWeights
 	KnifeGapMM          float64
 	DefaultEdgeTrimMM   float64
@@ -63,14 +64,21 @@ type rawMaterialBatchOptimizerContextDemandLine struct {
 }
 
 type rawMaterialBatchOptimizerCandidatePlan struct {
-	Assignments          []models.RawMaterialBatchOptimizerPlanAssignment
-	UnfulfilledLines     []models.RawMaterialBatchOptimizerUnfulfilledLine
-	ConsumedAreaM2       float64
-	FulfilledSets        int
-	FulfilledPieces      int
-	MustFulfillSatisfied bool
-	StrategyKey          string
-	Explanation          string
+	Assignments            []models.RawMaterialBatchOptimizerPlanAssignment
+	UnfulfilledLines       []models.RawMaterialBatchOptimizerUnfulfilledLine
+	ConsumedAreaM2         float64
+	FulfilledSets          int
+	FulfilledPieces        int
+	MustFulfillSatisfied   bool
+	StrategyKey            string
+	Explanation            string
+	GeometryReuseHitCount  int
+	ReusableResidualAreaM2 float64
+	SearchConfig           models.RawMaterialBatchOptimizerSearchConfigSummary
+	CandidateBudgetSummary models.RawMaterialBatchOptimizerCandidateBudgetSummary
+	BudgetRerankReason     string
+	ExplainabilitySummary  models.RawMaterialBatchOptimizerPlanExplainabilitySummary
+	GeometryLayoutSummary  *models.RawMaterialBatchOptimizerGeometryLayoutSummary
 }
 
 func buildRawMaterialBatchOptimizerContext(
@@ -203,6 +211,7 @@ func buildRawMaterialBatchOptimizerContext(
 	return rawMaterialBatchOptimizerContext{
 		RequestID:           requestID,
 		ObjectivePreset:     input.ObjectivePreset,
+		SearchConfig:        buildRawMaterialBatchOptimizerSearchConfig(input),
 		ScoreWeights:        buildRawMaterialBatchOptimizerScoreWeights(input),
 		KnifeGapMM:          input.KnifeGapMM,
 		DefaultEdgeTrimMM:   input.DefaultEdgeTrimMM,

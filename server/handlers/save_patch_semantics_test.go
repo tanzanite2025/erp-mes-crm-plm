@@ -53,6 +53,7 @@ func setupSavePatchSemanticsTestDB(t *testing.T) {
 			customer_id TEXT,
 			type TEXT,
 			currency TEXT,
+			exchange_rate_snapshot REAL,
 			payment_method TEXT,
 			payment_method_name TEXT,
 			payment_term TEXT,
@@ -126,7 +127,7 @@ func TestPatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory(t *testing.T)
 	payload := services.SDRTSDeltaHandlerRequest{
 		Op: "PATCH",
 		Delta: map[string]json.RawMessage{
-			"category": json.RawMessage(`{"o":"weight","n":"面积"}`),
+			"category": json.RawMessage(`{"o":"weight","n":"闈㈢Н"}`),
 			"name":     json.RawMessage(`{"o":"Cubic Meter","n":"Square Meter"}`),
 		},
 		Metadata: services.SDRTSDeltaMetadata{ID: unitID, Version: 1},
@@ -164,7 +165,7 @@ func TestGetUnitsHandlerNormalizesHistoricalCategories(t *testing.T) {
 	require.NoError(t, db.DB.Exec(`
 		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), now, now, "M2", "Square Meter", "面积", 2, "active", false, "area unit").Error)
+	`, uuid.NewString(), now, now, "M2", "Square Meter", "闈㈢Н", 2, "active", false, "area unit").Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)

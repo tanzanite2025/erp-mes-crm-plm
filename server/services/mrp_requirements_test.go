@@ -95,6 +95,13 @@ func setupMrpRequirementsTestDB(t *testing.T) *gorm.DB {
 			product_model TEXT,
 			product_code TEXT,
 			specification TEXT,
+			model_code_snapshot TEXT,
+			hole_prefix_snapshot TEXT,
+			appearance_id TEXT,
+			appearance_name_snapshot TEXT,
+			appearance_barcode_code_snapshot TEXT,
+			appearance_description_snapshot TEXT,
+			appearance_image_url_snapshot TEXT,
 			qty REAL,
 			uom TEXT,
 			status TEXT

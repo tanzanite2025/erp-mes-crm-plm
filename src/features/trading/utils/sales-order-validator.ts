@@ -45,7 +45,7 @@ export const validateSalesOrder = (
   }
 
   const hasInvalidLine = formData.lines.some(
-    (line) => !line.productModel || (Number(line.qty) || 0) <= 0
+    (line) => !line.productId || (Number(line.qty) || 0) <= 0
   )
   if (hasInvalidLine) {
     return {

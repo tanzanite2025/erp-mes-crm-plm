@@ -9,7 +9,5 @@ export const PRODUCT_TEMPLATES_QUERY_KEY = ['engineering', 'productTemplates'] a
 export const PRODUCT_APPEARANCES_QUERY_KEY = ['engineering', 'productAppearances'] as const
 export const PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY = ['engineering', 'productAttributeCategories'] as const
 export const PRODUCT_ATTRIBUTE_OPTIONS_QUERY_KEY = ['engineering', 'productAttributeOptions'] as const
-export const productTypeAttributeBindingsQueryKey = (productTypeId: string) =>
-  ['engineering', 'productTypeAttributeBindings', productTypeId] as const
 export const ENGINEERING_PRODUCT_FORM_MOLD_GROUPS_QUERY_KEY = ['engineering', 'productForm', 'moldGroups'] as const
 export const BOMS_QUERY_KEY = ['engineering', 'boms'] as const

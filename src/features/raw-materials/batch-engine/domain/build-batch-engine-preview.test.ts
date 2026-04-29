@@ -4,6 +4,7 @@ import { buildBatchEnginePreview } from './build-batch-engine-preview'
 import type { CuttingPlan } from '@/features/engineering-db/data/cutting-plan-schema'
 import type { CutSizeUnit } from '../../cut-size-library/data/cut-size-library-schema'
 import type { BatchEngineControls } from '../types'
+import { resolveBatchEngineControls } from '../services/resolve-batch-engine-controls'
 
 function buildCutSizeUnit(overrides: Partial<CutSizeUnit> = {}): CutSizeUnit {
   return {
@@ -102,7 +103,7 @@ function buildControls(overrides: Partial<BatchEngineControls> = {}): BatchEngin
 describe('buildBatchEnginePreview', () => {
   it('uses occupied envelope geometry for bias-cut capacity while preserving actual demand area', () => {
     const cuttingPlan = buildCuttingPlan()
-    const controls = buildControls()
+    const normalizedControls = resolveBatchEngineControls(buildControls()).normalizedControls
 
     const zeroDegreeLines = buildBatchEngineDemandLinesFromCuttingPlan(cuttingPlan, [
       buildCutSizeUnit({ cutAngle: '0' }),
@@ -111,8 +112,8 @@ describe('buildBatchEnginePreview', () => {
       buildCutSizeUnit({ cutAngle: '45' }),
     ])
 
-    const zeroDegreePreview = buildBatchEnginePreview(cuttingPlan, zeroDegreeLines, controls)
-    const biasPreview = buildBatchEnginePreview(cuttingPlan, biasLines, controls)
+    const zeroDegreePreview = buildBatchEnginePreview(cuttingPlan, zeroDegreeLines, normalizedControls)
+    const biasPreview = buildBatchEnginePreview(cuttingPlan, biasLines, normalizedControls)
 
     expect(zeroDegreePreview.ready).toBe(true)
     expect(biasPreview.ready).toBe(true)

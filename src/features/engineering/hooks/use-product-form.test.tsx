@@ -35,7 +35,6 @@ function buildInitResult(overrides: Partial<InitResult> = {}): InitResult {
   return {
     attributeCategories: [],
     attributeOptions: [],
-    attributeBindings: [],
     versionLevelOptions: [],
     moldOptions: [],
     specOptions: [],
@@ -205,17 +204,6 @@ describe('useProductForm', () => {
     })
 
     useProductFormInitMock.mockReturnValue(buildInitResult({
-      attributeBindings: [
-        {
-          id: 'binding-1',
-          productTypeId: 'type-b',
-          categoryKey: 'SERIES',
-          required: true,
-          active: true,
-          sortOrder: 0,
-          version: 1,
-        },
-      ],
       versionLevelOptions: [{ label: 'V2', value: 'V2' }],
     }))
 

@@ -128,20 +128,6 @@ export const productTypeSchema = z.object({
 
 export type ProductType = z.infer<typeof productTypeSchema>
 
-export const productTypeAttributeBindingSchema = z.object({
-  id: z.string(),
-  productTypeId: z.string().min(1, 'Product type is required'),
-  categoryKey: z.string().min(1, 'Category key is required'),
-  sortOrder: z.number().default(0),
-  required: z.boolean().default(false),
-  active: z.boolean().default(true),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-  version: z.number().default(1),
-})
-
-export type ProductTypeAttributeBinding = z.infer<typeof productTypeAttributeBindingSchema>
-
 export const productAttributeValueSchema = z.object({
   id: z.string().optional(),
   productId: z.string().optional(),
@@ -262,29 +248,3 @@ export type BOMSubstitute = z.infer<typeof bomSubstituteSchema>
 export type BOMItem = z.infer<typeof bomItemSchema>
 export type BOM = z.infer<typeof bomSchema>
 export type BOMList = z.infer<typeof bomListSchema>
-
-// --- 产品工艺路线 (Product Routing) 模型 ---
-export const productProcessRoutingNodeSchema = z.object({
-  id: z.string().uuid().optional(),
-  sequenceNumber: z.number().int().min(10, '执行顺位比如 10, 20'),
-  processStepId: z.string().min(1, '强关联的工厂基础工序配置 ID'),
-  processStepName: z.string().min(1, '纯作显示用的工序名'),
-  standardTimeValueInSeconds: z.number().nonnegative().default(0),
-  requiredJobCategoryTitle: z.string().optional(),
-  qualityInspectionRequired: z.boolean().default(false),
-  operationInstructionText: z.string().optional(),
-})
-
-export const productProcessRoutingSchema = z.object({
-  id: z.string().uuid().optional(),
-  targetProductId: z.string().min(1, '强关联目标产品 ID'),
-  versionControlTag: z.string().default('V1.0'),
-  isCurrentlyActiveBlueprint: z.boolean().default(true),
-  routeNodes: z.array(productProcessRoutingNodeSchema).default([]),
-  engineeringApprovalMemo: z.string().optional(),
-  createdAt: z.string().optional(),
-  version: z.number().default(1),
-})
-
-export type ProductProcessRoutingNode = z.infer<typeof productProcessRoutingNodeSchema>
-export type ProductProcessRouting = z.infer<typeof productProcessRoutingSchema>

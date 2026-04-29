@@ -149,25 +149,6 @@ func TestPatchProductTemplateHandlerRejectsNestedDeltaPath(t *testing.T) {
 	require.Contains(t, response["error"], "nested delta path is not supported")
 }
 
-func TestPatchProductTypeAttributeBindingHandlerRejectsNestedDeltaPath(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	bindingID := uuid.NewString()
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	request := httptest.NewRequest(http.MethodPatch, "/api/v1/engineering/product-type-attribute-bindings/"+bindingID, strings.NewReader(`{"op":"PATCH","delta":{"binding.meta.key":{"o":"version","n":"weight"}},"metadata":{"id":"`+bindingID+`","version":2}}`))
-	request.Header.Set("Content-Type", "application/json")
-	ctx.Params = gin.Params{{Key: "id", Value: bindingID}}
-	ctx.Request = request
-
-	PatchProductTypeAttributeBindingHandler(ctx)
-	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
-
-	var response map[string]any
-	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Contains(t, response["error"], "nested delta path is not supported")
-}
-
 func TestPatchProductHandlerRejectsNestedDeltaPath(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

@@ -1,4 +1,4 @@
-import { Barcode as BarcodeIcon, Calendar, Hash, User } from 'lucide-react'
+import { Barcode as BarcodeIcon, Calendar, CircleDollarSign, Hash, User } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,8 +39,8 @@ export function DocumentHeaderFields({
   denseContractFields = false,
 }: DocumentHeaderFieldsProps) {
   const { t, locale } = useLanguage()
-  const financeResources = useTradingFinanceResources()
-  const { paymentMethods, paymentTerms } = financeResources
+  const financeResources = useTradingFinanceResources({ includeCurrencies: true })
+  const { currencies, paymentMethods, paymentTerms } = financeResources
   const isFinanceLoading = financeResources.readResource.status === 'loading'
   const isFinanceError = financeResources.readResource.status === 'error'
   const financeErrorMessage = financeResources.readResource.status === 'error'
@@ -50,14 +50,21 @@ export function DocumentHeaderFields({
     typeOptions,
     classificationOptions,
     customerOptions,
+    selectedCustomerId,
+    currencyOptions,
     paymentMethodOptions,
     paymentTermOptions,
     handleCustomerChange,
+    handleCurrencyChange,
     handlePaymentMethodChange,
     handlePaymentTermChange,
   } = useSalesOrderHeaderFieldsViewModel({
     locale,
     customers,
+    currencies,
+    currentCurrency: formData.currency,
+    currentCustomerId: formData.customerId,
+    currentCustomerName: formData.customerName,
     paymentMethods,
     paymentTerms,
     setFormData,
@@ -81,15 +88,15 @@ export function DocumentHeaderFields({
       >
         {isFinanceLoading ? (
           <div className='rounded-[20px] border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3'>
-            <p className='text-[10px] font-black uppercase tracking-widest text-amber-700'>财务字段加载中</p>
-            <p className='mt-1 text-[9px] font-bold text-amber-700/80'>付款方式与账期暂不可编辑。</p>
+            <p className='text-[10px] font-black tracking-widest text-amber-700 uppercase'>财务字段加载中</p>
+            <p className='mt-1 text-[9px] font-bold text-amber-700/80'>支付币种、支付方式与结算方式暂不可编辑。</p>
           </div>
         ) : null}
         {isFinanceError ? (
           <div className='flex items-center justify-between gap-3 rounded-[20px] border border-dashed border-rose-500/30 bg-rose-500/5 px-4 py-3'>
             <div className='space-y-1'>
-              <p className='text-[10px] font-black uppercase tracking-widest text-rose-700'>财务字段加载失败</p>
-              <p className='text-[9px] font-bold text-rose-700/80'>{financeErrorMessage || '请重试后再编辑付款方式与账期。'}</p>
+              <p className='text-[10px] font-black tracking-widest text-rose-700 uppercase'>财务字段加载失败</p>
+              <p className='text-[9px] font-bold text-rose-700/80'>{financeErrorMessage || '请重试后再编辑支付币种、支付方式与结算方式。'}</p>
             </div>
             <Button
               type='button'
@@ -152,7 +159,7 @@ export function DocumentHeaderFields({
               <User className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
               <select
                 className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
-                value={formData.customerName}
+                value={selectedCustomerId}
                 disabled={readOnly}
                 onChange={(e) => handleCustomerChange(e.target.value)}
               >
@@ -229,6 +236,30 @@ export function DocumentHeaderFields({
 
           <div className='grid gap-1'>
             <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
+              {t('tradingSalesOrder.headerFields.paymentCurrency')}
+            </Label>
+            <div className='relative'>
+              <CircleDollarSign className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground/40' />
+              <select
+                className='h-11 w-full appearance-none truncate rounded-xl border border-muted/30 bg-background px-3 pl-9 text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-primary/20 sm:h-10 sm:text-[12px]'
+                value={formData.currency || 'CNY'}
+                disabled={readOnly || isFinanceLoading || isFinanceError}
+                onChange={(e) => handleCurrencyChange(e.target.value)}
+              >
+                <option value=''>
+                  {t('tradingSalesOrder.headerFields.paymentCurrencyPlaceholder')}
+                </option>
+                {currencyOptions.map((currency) => (
+                  <option key={currency.value} value={currency.value}>
+                    {currency.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className='grid gap-1'>
+            <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.paymentMethod')}
             </Label>
             <select
@@ -269,7 +300,7 @@ export function DocumentHeaderFields({
             </select>
           </div>
 
-          <div className='grid gap-1 md:col-span-2'>
+          <div className='grid gap-1'>
             <Label className='pl-1 text-[8px] leading-none font-bold tracking-widest text-muted-foreground/80 uppercase italic sm:text-[9px]'>
               {t('tradingSalesOrder.headerFields.barcode')}
             </Label>

@@ -2,11 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
-import type { BatchEngineControls, BatchEngineSimulation, BatchOptimizerPlan, BatchOptimizerPlanDiffSummary } from '../types'
+import type {
+  BatchEngineNormalizedControls,
+  BatchEngineSimulation,
+  BatchOptimizerBreakSliceSummary,
+  BatchOptimizerHeatZoneAttribution,
+  BatchOptimizerPlan,
+  BatchOptimizerPlanDiffSummary,
+  BatchOptimizerZoneClusterSummary,
+} from '../types'
 import {
   buildStripFirstLayout,
   type StripLayoutZone,
 } from '../services/build-strip-first-layout'
+import { buildBatchEngineGeometryLayout } from '../services/build-batch-engine-geometry-layout'
 import {
   clampScale,
   createFitViewport,
@@ -17,11 +26,12 @@ import {
 } from '../services/draw-strip-first-layout'
 
 type BatchEngineCuttingCanvasProps = {
-  controls: BatchEngineControls
+  controls: BatchEngineNormalizedControls
   simulation: BatchEngineSimulation
   selectedPlan?: BatchOptimizerPlan
   activeDiffSummary?: BatchOptimizerPlanDiffSummary
   highlightedDemandLineId?: string
+  highlightedZoneIds?: string[]
   filteredRollIds?: string[]
   onSelectDemandLine?: (demandLineId: string) => void
 }
@@ -41,7 +51,7 @@ const MIN_PAN_DISTANCE = 3
 
 export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
   const { t } = useLanguage()
-  const { controls, simulation, selectedPlan, activeDiffSummary, highlightedDemandLineId, filteredRollIds, onSelectDemandLine } = props
+  const { controls, simulation, selectedPlan, activeDiffSummary, highlightedDemandLineId, highlightedZoneIds, filteredRollIds, onSelectDemandLine } = props
   const wrapperRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const dragRef = useRef<{
@@ -138,9 +148,10 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
       hoveredZoneId,
       selectedZoneId,
       highlightedDemandLineId,
+      highlightedZoneIds,
       filteredRollIds,
     })
-  }, [filteredRollIds, highlightedDemandLineId, hoveredZoneId, layout, selectedZoneId, size.height, size.width, viewport])
+  }, [filteredRollIds, highlightedDemandLineId, highlightedZoneIds, hoveredZoneId, layout, selectedZoneId, size.height, size.width, viewport])
 
   const resetViewport = () => {
     if (size.width <= 0 || size.height <= 0) return
@@ -243,6 +254,11 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
               高亮需求: {highlightedDemandLineId}
             </span>
           ) : null}
+          {highlightedZoneIds?.length ? (
+            <span className='rounded-full border border-violet-300 bg-violet-500/10 px-3 py-1 text-violet-700'>
+              联动热区: {highlightedZoneIds.length}
+            </span>
+          ) : null}
           {filteredRollIds?.length ? (
             <span className='rounded-full border border-slate-300 bg-white px-3 py-1'>卷材过滤: {filteredRollIds.length}</span>
           ) : null}
@@ -316,20 +332,25 @@ export function BatchEngineCuttingCanvas(props: BatchEngineCuttingCanvasProps) {
           ) : null}
         </div>
 
-        <ZoneInspector zone={activeZone} viewMode={viewMode} />
+        <ZoneInspector zone={activeZone} viewMode={viewMode} selectedPlan={selectedPlan} />
       </div>
     </div>
   )
 }
 
 function buildCanvasLayout(
-  controls: BatchEngineControls,
+  controls: BatchEngineNormalizedControls,
   simulation: BatchEngineSimulation,
   selectedPlan?: BatchOptimizerPlan,
   activeDiffSummary?: BatchOptimizerPlanDiffSummary
 ) {
   if (!selectedPlan) {
     return buildStripFirstLayout(controls, simulation)
+  }
+
+  const geometryLayout = buildBatchEngineGeometryLayout(selectedPlan, activeDiffSummary)
+  if (geometryLayout) {
+    return geometryLayout
   }
 
   const widthMm = Math.max(selectedPlan.layoutSummary.canvasWidthMm, 1)
@@ -376,8 +397,37 @@ function toCanvasZoneKind(kind: string): StripLayoutZone['kind'] {
   return 'aggregate'
 }
 
-function ZoneInspector({ zone, viewMode }: { zone: StripLayoutZone | null; viewMode: 'preview' | 'formal' }) {
+function ZoneInspector({
+  zone,
+  viewMode,
+  selectedPlan,
+}: {
+  zone: StripLayoutZone | null
+  viewMode: 'preview' | 'formal'
+  selectedPlan?: BatchOptimizerPlan
+}) {
   const { t } = useLanguage()
+
+  const zoneAttribution = useMemo<BatchOptimizerHeatZoneAttribution | undefined>(() => {
+    if (!zone || !selectedPlan) {
+      return undefined
+    }
+    return selectedPlan.explainabilitySummary.heatZoneAttributions.find((item) => item.zoneId === zone.id)
+  }, [selectedPlan, zone])
+
+  const zoneCluster = useMemo<BatchOptimizerZoneClusterSummary | undefined>(() => {
+    if (!zoneAttribution?.clusterId || !selectedPlan) {
+      return undefined
+    }
+    return selectedPlan.explainabilitySummary.zoneClusters.find((item) => item.clusterId === zoneAttribution.clusterId)
+  }, [selectedPlan, zoneAttribution])
+
+  const zoneBreakSlices = useMemo<BatchOptimizerBreakSliceSummary[]>(() => {
+    if (!selectedPlan || !zoneAttribution?.breakSliceIds.length) {
+      return []
+    }
+    return selectedPlan.explainabilitySummary.breakSlices.filter((item) => zoneAttribution.breakSliceIds.includes(item.id))
+  }, [selectedPlan, zoneAttribution])
 
   if (!zone) {
     return (
@@ -410,6 +460,9 @@ function ZoneInspector({ zone, viewMode }: { zone: StripLayoutZone | null; viewM
         <InspectorRow label={t('rawMaterials.batchEngine.canvas.type')} value={zone.kind} />
         <InspectorRow label='类别' value={zone.usageCategory || '--'} />
         <InspectorRow label='差异热区' value={zone.isDiffHighlighted ? '是' : '否'} />
+        <InspectorRow label='归因连续段' value={zoneAttribution ? `${zoneAttribution.segmentKind}:${zoneAttribution.segmentKey}` : '--'} />
+        <InspectorRow label='归因 cluster' value={zoneCluster?.clusterId || zoneAttribution?.clusterId || '--'} />
+        <InspectorRow label='归因 slice 数' value={String(zoneBreakSlices.length)} />
         <InspectorRow label='需求行' value={zone.demandLineId || '--'} />
         <InspectorRow label='卷材' value={zone.rollId || '--'} />
         <InspectorRow label='面积' value={zone.areaM2 ? `${zone.areaM2.toFixed(3)} m2` : '--'} />
@@ -423,6 +476,29 @@ function ZoneInspector({ zone, viewMode }: { zone: StripLayoutZone | null; viewM
           value={`${zone.width.toFixed(1)} x ${zone.height.toFixed(1)}`}
         />
       </div>
+
+      {zoneAttribution ? (
+        <div className='mt-3 rounded-2xl border border-dashed border-violet-300 bg-violet-500/5 p-3'>
+          <p className='text-[10px] font-black uppercase tracking-[0.18em] text-violet-700'>Heat Attribution</p>
+          <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+            <p>原因: {zoneAttribution.reason || '--'}</p>
+            <p>关联需求: {zoneAttribution.demandLineIds.join(', ') || '--'}</p>
+            <p>Break Slice: {zoneAttribution.breakSliceIds.join(', ') || '--'}</p>
+          </div>
+        </div>
+      ) : null}
+
+      {zoneCluster ? (
+        <div className='mt-3 rounded-2xl border border-dashed border-amber-300 bg-amber-500/5 p-3'>
+          <p className='text-[10px] font-black uppercase tracking-[0.18em] text-amber-700'>Zone Cluster</p>
+          <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+            <p>ID: {zoneCluster.clusterId}</p>
+            <p>主因: {zoneCluster.dominantReason || '--'}</p>
+            <p>主需求: {zoneCluster.dominantDemandLineId || '--'}</p>
+            <p>密度: {zoneCluster.densityScore.toFixed(2)}</p>
+          </div>
+        </div>
+      ) : null}
     </aside>
   )
 }

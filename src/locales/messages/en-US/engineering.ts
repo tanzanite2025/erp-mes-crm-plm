@@ -773,7 +773,6 @@ export const engineering = {
     },
     initializeNewProject: 'Start New Project',
     overviewTab: 'Overview',
-    routingTab: 'Routing',
     specLabel: 'Spec',
     noConstraints: 'No Constraints',
     technicalArchive: 'Technical Archive Details',

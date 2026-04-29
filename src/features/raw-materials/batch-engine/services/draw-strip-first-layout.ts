@@ -1,5 +1,6 @@
 import type {
   StripFirstLayout,
+  StripLayoutPoint,
   StripLayoutZone,
   StripLayoutZoneKind,
 } from './build-strip-first-layout'
@@ -20,6 +21,7 @@ type DrawOptions = {
   hoveredZoneId?: string
   selectedZoneId?: string
   highlightedDemandLineId?: string
+  highlightedZoneIds?: string[]
   filteredRollIds?: string[]
 }
 
@@ -113,31 +115,95 @@ function drawZoneLabel(
   style: ZoneStyle,
   viewport: BatchCanvasViewport
 ) {
+  const bounds = resolveZoneBounds(zone)
   const scale = Math.max(viewport.scale, 0.001)
-  const pxWidth = zone.width * scale
-  const pxHeight = zone.height * scale
+  const pxWidth = bounds.width * scale
+  const pxHeight = bounds.height * scale
   if (pxWidth < 58 || pxHeight < 20 || zone.id === 'roll-empty') return
 
   const paddingXPx = Math.min(12, pxWidth * 0.12)
   const paddingYPx = Math.min(8, pxHeight * 0.2)
   const paddingX = paddingXPx / scale
   const paddingY = paddingYPx / scale
-  const labelWidth = zone.width - paddingX * 2
-  const labelHeight = zone.height - paddingY * 2
+  const labelWidth = bounds.width - paddingX * 2
+  const labelHeight = bounds.height - paddingY * 2
   if (labelWidth <= 0 || labelHeight <= 0) return
 
   const fontSizePx = Math.max(9, Math.min(12, Math.min(pxHeight * 0.42, pxWidth * 0.16)))
 
   context.save()
   context.beginPath()
-  context.rect(zone.x + paddingX, zone.y + paddingY, labelWidth, labelHeight)
+  context.rect(bounds.x + paddingX, bounds.y + paddingY, labelWidth, labelHeight)
   context.clip()
   context.fillStyle = style.text
   context.font = `${fontSizePx / scale}px "Segoe UI", Arial, sans-serif`
   context.textAlign = 'center'
   context.textBaseline = 'middle'
-  context.fillText(zone.label, zone.x + zone.width / 2, zone.y + zone.height / 2, labelWidth)
+  context.fillText(zone.label, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, labelWidth)
   context.restore()
+}
+
+function resolvePolygonBounds(points: StripLayoutPoint[]) {
+  if (!points.length) {
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+  }
+  let minX = points[0].x
+  let minY = points[0].y
+  let maxX = points[0].x
+  let maxY = points[0].y
+  for (const point of points.slice(1)) {
+    minX = Math.min(minX, point.x)
+    minY = Math.min(minY, point.y)
+    maxX = Math.max(maxX, point.x)
+    maxY = Math.max(maxY, point.y)
+  }
+  return { minX, minY, maxX, maxY }
+}
+
+function resolveZoneBounds(zone: StripLayoutZone) {
+  if (zone.polygonPoints?.length) {
+    const bounds = resolvePolygonBounds(zone.polygonPoints)
+    return {
+      x: bounds.minX,
+      y: bounds.minY,
+      width: Math.max(bounds.maxX - bounds.minX, 0),
+      height: Math.max(bounds.maxY - bounds.minY, 0),
+    }
+  }
+  return {
+    x: zone.x,
+    y: zone.y,
+    width: zone.width,
+    height: zone.height,
+  }
+}
+
+function traceZonePath(context: CanvasRenderingContext2D, zone: StripLayoutZone) {
+  context.beginPath()
+  if (zone.polygonPoints?.length) {
+    context.moveTo(zone.polygonPoints[0].x, zone.polygonPoints[0].y)
+    for (const point of zone.polygonPoints.slice(1)) {
+      context.lineTo(point.x, point.y)
+    }
+    context.closePath()
+    return
+  }
+  context.rect(zone.x, zone.y, zone.width, zone.height)
+}
+
+function pointInPolygon(point: StripLayoutPoint, polygonPoints: StripLayoutPoint[]) {
+  let inside = false
+  for (let index = 0, previousIndex = polygonPoints.length - 1; index < polygonPoints.length; previousIndex = index++) {
+    const current = polygonPoints[index]
+    const previous = polygonPoints[previousIndex]
+    const intersects =
+      current.y > point.y !== previous.y > point.y &&
+      point.x < ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y || 1e-9) + current.x
+    if (intersects) {
+      inside = !inside
+    }
+  }
+  return inside
 }
 
 function drawZone(
@@ -147,6 +213,7 @@ function drawZone(
   hoveredZoneId?: string,
   selectedZoneId?: string,
   highlightedDemandLineId?: string,
+  highlightedZoneIds?: string[],
   filteredRollIds?: string[]
 ) {
   const style = getZoneStyle(zone.kind)
@@ -154,6 +221,7 @@ function drawZone(
   const isHovered = hoveredZoneId === zone.id
   const isSelected = selectedZoneId === zone.id
   const isHighlighted = Boolean(highlightedDemandLineId) && zone.demandLineId === highlightedDemandLineId
+  const isLinkedHighlighted = Boolean(highlightedZoneIds?.includes(zone.id))
   const isDiffHighlighted = Boolean(zone.isDiffHighlighted)
   const isFilteredOut = Boolean(filteredRollIds?.length && zone.rollId && !filteredRollIds.includes(zone.rollId))
 
@@ -164,25 +232,36 @@ function drawZone(
   context.fillStyle = style.fill
   context.strokeStyle = style.stroke
   context.lineWidth = lineWidth
-  context.fillRect(zone.x, zone.y, zone.width, zone.height)
-  context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+  traceZonePath(context, zone)
+  context.fill()
+  context.stroke()
 
   if (isHovered || isSelected) {
     context.strokeStyle = isSelected ? 'rgba(244, 114, 182, 1)' : 'rgba(56, 189, 248, 1)'
     context.lineWidth = (isSelected ? 2.6 : 2) / Math.max(viewport.scale, 0.001)
-    context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+    traceZonePath(context, zone)
+    context.stroke()
   }
 
   if (isHighlighted && !isSelected) {
     context.strokeStyle = 'rgba(251, 191, 36, 1)'
     context.lineWidth = 2.2 / Math.max(viewport.scale, 0.001)
-    context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+    traceZonePath(context, zone)
+    context.stroke()
+  }
+
+  if (isLinkedHighlighted && !isSelected) {
+    context.strokeStyle = 'rgba(168, 85, 247, 1)'
+    context.lineWidth = 2.8 / Math.max(viewport.scale, 0.001)
+    traceZonePath(context, zone)
+    context.stroke()
   }
 
   if (isDiffHighlighted && !isSelected) {
     context.strokeStyle = 'rgba(244, 63, 94, 1)'
     context.lineWidth = 2.4 / Math.max(viewport.scale, 0.001)
-    context.strokeRect(zone.x, zone.y, zone.width, zone.height)
+    traceZonePath(context, zone)
+    context.stroke()
   }
 
   drawZoneLabel(context, zone, style, viewport)
@@ -200,6 +279,7 @@ export function drawStripFirstLayout(options: DrawOptions) {
     hoveredZoneId,
     selectedZoneId,
     highlightedDemandLineId,
+    highlightedZoneIds,
     filteredRollIds,
   } = options
 
@@ -212,7 +292,7 @@ export function drawStripFirstLayout(options: DrawOptions) {
   context.translate(viewport.offsetX, viewport.offsetY)
   context.scale(viewport.scale, viewport.scale)
   for (const zone of layout.zones) {
-    drawZone(context, zone, viewport, hoveredZoneId, selectedZoneId, highlightedDemandLineId, filteredRollIds)
+    drawZone(context, zone, viewport, hoveredZoneId, selectedZoneId, highlightedDemandLineId, highlightedZoneIds, filteredRollIds)
   }
   context.restore()
 }
@@ -266,6 +346,12 @@ export function hitTestZone(
   for (let index = layout.zones.length - 1; index >= 0; index -= 1) {
     const zone = layout.zones[index]
     if (!zone || !zone.interactive) continue
+    if (zone.polygonPoints?.length) {
+      if (pointInPolygon(worldPoint, zone.polygonPoints)) {
+        return zone
+      }
+      continue
+    }
     if (
       worldPoint.x >= zone.x &&
       worldPoint.x <= zone.x + zone.width &&

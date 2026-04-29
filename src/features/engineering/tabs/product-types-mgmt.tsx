@@ -35,7 +35,6 @@ import { ProductTypeActionDialog } from '../components/product-type-action-dialo
 import { type ProductType } from '../data/schema'
 import { useProductTypeWriteActions } from '../hooks/use-product-type-write-actions'
 import { PRODUCT_TYPES_QUERY_KEY } from '../query-keys'
-import { ProductTypeAttributeBindingService } from '../services/product-type-attribute-binding-service'
 import { ProductTypeService, type SaveProductTypeInput } from '../services/product-type-service'
 import {
   buildOrderedProductTypes,
@@ -223,34 +222,9 @@ export function ProductTypesMgmt() {
     )
   }
 
-  const handleFormSubmit = async (
-    formData: SaveProductTypeInput,
-    options?: {
-      syncTemplateBindings?: boolean
-      template?: {
-        attributeBindings?: Array<{
-          categoryKey: string
-          required?: boolean
-          active?: boolean
-        }>
-      } | null
-    }
-  ) => {
+  const handleFormSubmit = async (formData: SaveProductTypeInput) => {
     try {
-      const savedType = await saveProductType({ formData, currentRow })
-      if (options?.syncTemplateBindings && options.template?.attributeBindings?.length) {
-        await ProductTypeAttributeBindingService.syncProductTypeAttributeBindings(
-          savedType.id,
-          options.template.attributeBindings.map((binding, index) => ({
-            productTypeId: savedType.id,
-            categoryKey: binding.categoryKey,
-            sortOrder: index + 1,
-            required: binding.required ?? false,
-            active: binding.active ?? true,
-            version: 1,
-          }))
-        )
-      }
+      await saveProductType({ formData, currentRow })
       toast.success(t('engineering.categoryArchive.toasts.saveSuccess'))
       setOpen(false)
     } catch (error) {

@@ -229,6 +229,9 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	if order.Currency == "" {
 		order.Currency = existing.Currency
 	}
+	if order.ExchangeRateSnapshot <= 0 {
+		order.ExchangeRateSnapshot = existing.ExchangeRateSnapshot
+	}
 	if order.PaymentMethod == "" {
 		order.PaymentMethod = existing.PaymentMethod
 	}
@@ -273,30 +276,31 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	}
 
 	updates := map[string]interface{}{
-		"order_no":             order.OrderNo,
-		"order_name":           order.OrderName,
-		"customer_name":        order.CustomerName,
-		"customer_id":          order.CustomerID,
-		"type":                 order.Type,
-		"currency":             order.Currency,
-		"payment_method":       order.PaymentMethod,
-		"payment_method_name":  order.PaymentMethodName,
-		"payment_term":         order.PaymentTerm,
-		"payment_term_name":    order.PaymentTermName,
-		"classification":       order.Classification,
-		"status":               order.Status,
-		"status_note":          order.StatusNote,
-		"amount":               order.Amount,
-		"quantity":             order.Quantity,
-		"order_date":           order.OrderDate,
-		"delivery_date":        order.DeliveryDate,
-		"purchase_order_no":    order.PurchaseOrderNo,
-		"barcode":              order.Barcode,
-		"requirements":         order.Requirements,
-		"workflow_instance_id": order.WorkflowInstanceID,
-		"updated_by":           order.UpdatedBy,
-		"is_deleted":           order.IsDeleted,
-		"version":              order.Version,
+		"order_no":               order.OrderNo,
+		"order_name":             order.OrderName,
+		"customer_name":          order.CustomerName,
+		"customer_id":            order.CustomerID,
+		"type":                   order.Type,
+		"currency":               order.Currency,
+		"exchange_rate_snapshot": order.ExchangeRateSnapshot,
+		"payment_method":         order.PaymentMethod,
+		"payment_method_name":    order.PaymentMethodName,
+		"payment_term":           order.PaymentTerm,
+		"payment_term_name":      order.PaymentTermName,
+		"classification":         order.Classification,
+		"status":                 order.Status,
+		"status_note":            order.StatusNote,
+		"amount":                 order.Amount,
+		"quantity":               order.Quantity,
+		"order_date":             order.OrderDate,
+		"delivery_date":          order.DeliveryDate,
+		"purchase_order_no":      order.PurchaseOrderNo,
+		"barcode":                order.Barcode,
+		"requirements":           order.Requirements,
+		"workflow_instance_id":   order.WorkflowInstanceID,
+		"updated_by":             order.UpdatedBy,
+		"is_deleted":             order.IsDeleted,
+		"version":                order.Version,
 	}
 	return tx.Model(&existing).Updates(updates).Error
 }

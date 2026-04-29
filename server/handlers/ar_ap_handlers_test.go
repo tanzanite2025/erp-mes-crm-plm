@@ -28,6 +28,7 @@ func setupArApHandlerTestDB(t *testing.T) {
 			customer_id TEXT,
 			type TEXT,
 			currency TEXT,
+			exchange_rate_snapshot REAL,
 			payment_method TEXT,
 			payment_method_name TEXT,
 			payment_term TEXT,
@@ -191,7 +192,7 @@ func seedReceivableLedger(t *testing.T, outstanding float64, status string) seed
 		ID:                ledgerID,
 		DocumentNo:        "AR-" + strings.ToUpper(uuid.NewString()[:8]),
 		SourceRefID:       ledgerID,
-		CustomerName:      "测试客户",
+		CustomerName:      "娴嬭瘯瀹㈡埛",
 		Currency:          "CNY",
 		OutstandingAmount: outstanding,
 		Status:            status,
@@ -742,7 +743,7 @@ func TestCreateReceiptRecordHandlerReturnsLockedCreateResponseContract(t *testin
 		"paymentTerm":"NET30",
 		"recordDate":"2026-04-19",
 		"receivedAt":"2026-04-19T10:30",
-		"receiptAccount":"招商银行-对公户",
+		"receiptAccount":"鎷涘晢閾惰-瀵瑰叕鎴?,
 		"referenceNo":"REF-RCV-001",
 		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":80,"sequenceNo":1,"remark":"full"}]
 	}`

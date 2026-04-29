@@ -60,6 +60,7 @@ function buildSalesOrder(overrides: Partial<SalesOrder> = {}): SalesOrder {
     customerId: 'customer-1',
     type: 'STANDARD',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     paymentMethod: 'BANK',
     paymentMethodName: 'Bank',
     paymentTerm: 'COD',

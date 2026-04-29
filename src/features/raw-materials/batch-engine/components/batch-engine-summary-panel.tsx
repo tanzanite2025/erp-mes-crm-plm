@@ -7,10 +7,12 @@ import type {
   BatchOptimizerPlanLayoutDemandSummary,
   BatchOptimizerSolveResponse,
 } from '../types'
+import type { BatchEngineExplainabilityTarget, BatchEngineExplainabilityTargetKind, BatchEngineExplainabilityTargetSource } from '../services/batch-engine-phase7-visualization'
 import { BatchEngineDemandReviewSection } from './batch-engine-demand-review-section'
 import { BatchEngineDiffReviewSection } from './batch-engine-diff-review-section'
 import { BatchEngineMustFulfillReviewSection } from './batch-engine-must-fulfill-review-section'
 import { BatchEngineSolutionOverviewSection } from './batch-engine-solution-overview-section'
+import { BatchEnginePhase7HomeSummarySection } from './batch-engine-phase7-home-summary-section'
 
 type BatchEngineSummaryPanelProps = {
   simulation: BatchEngineSimulation
@@ -36,6 +38,10 @@ type BatchEngineSummaryPanelProps = {
   selectedDemandLineId: string
   selectedDemand?: BatchOptimizerPlanLayoutDemandSummary
   onSelectDemandLine: (demandLineId: string) => void
+  onOpenExplainabilityTarget: (target: BatchEngineExplainabilityTarget) => void
+  selectedExplainabilityTargetId: string
+  selectedExplainabilityTargetKind: BatchEngineExplainabilityTargetKind
+  selectedExplainabilityTargetSource: BatchEngineExplainabilityTargetSource
 }
 
 export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
@@ -64,6 +70,10 @@ export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
     selectedDemandLineId,
     selectedDemand,
     onSelectDemandLine,
+    onOpenExplainabilityTarget,
+    selectedExplainabilityTargetId,
+    selectedExplainabilityTargetKind,
+    selectedExplainabilityTargetSource,
   } = props
 
   return (
@@ -111,6 +121,15 @@ export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
             {t('rawMaterials.batchEngine.sections.summary.cards.output.hint')}
           </p>
         </div>
+
+        <BatchEnginePhase7HomeSummarySection
+          selectedPlan={selectedPlan}
+          activeDiffSummary={activeDiffSummary}
+          onOpenExplainabilityTarget={onOpenExplainabilityTarget}
+          selectedExplainabilityTargetId={selectedExplainabilityTargetId}
+          selectedExplainabilityTargetKind={selectedExplainabilityTargetKind}
+          selectedExplainabilityTargetSource={selectedExplainabilityTargetSource}
+        />
 
         <BatchEngineSolutionOverviewSection
           solution={solution}

@@ -14,9 +14,20 @@ interface PaymentOption {
   name: string
 }
 
+interface CurrencyOption {
+  code: string
+  name: string
+  rate?: number
+  status?: 'Active' | 'Inactive'
+}
+
 interface SalesOrderHeaderFieldsViewModelOptions {
   locale: AppLocale
   customers: Customer[]
+  currencies?: CurrencyOption[]
+  currentCurrency?: string
+  currentCustomerId?: string
+  currentCustomerName?: string
   paymentMethods: PaymentOption[]
   paymentTerms: PaymentOption[]
   setFormData: (value: SalesOrderFormUpdater) => void
@@ -25,6 +36,10 @@ interface SalesOrderHeaderFieldsViewModelOptions {
 export function useSalesOrderHeaderFieldsViewModel({
   locale,
   customers,
+  currencies = [],
+  currentCurrency,
+  currentCustomerId,
+  currentCustomerName,
   paymentMethods,
   paymentTerms,
   setFormData,
@@ -32,9 +47,13 @@ export function useSalesOrderHeaderFieldsViewModel({
   const typeOptions = useMemo(() => getSalesOrderTypeOptions(locale), [locale])
   const classificationOptions = useMemo(() => getSalesOrderClassificationOptions(locale), [locale])
   const customerOptions = useMemo(
-    () => customers.map((customer) => ({ label: customer.name, value: customer.name, id: customer.id })),
+    () => customers.map((customer) => ({ label: customer.name, value: customer.id, id: customer.id })),
     [customers]
   )
+  const selectedCustomerId = useMemo(() => {
+    if (currentCustomerId) return currentCustomerId
+    return customers.find((customer) => customer.name === currentCustomerName)?.id ?? ''
+  }, [currentCustomerId, currentCustomerName, customers])
   const paymentMethodOptions = useMemo(
     () => paymentMethods.map((method) => ({ label: method.name, value: method.code })),
     [paymentMethods]
@@ -43,14 +62,28 @@ export function useSalesOrderHeaderFieldsViewModel({
     () => paymentTerms.map((term) => ({ label: term.name, value: term.code })),
     [paymentTerms]
   )
+  const currencyOptions = useMemo(() => {
+    const options = currencies
+      .filter((currency) => currency.status !== 'Inactive' || currency.code === currentCurrency)
+      .map((currency) => ({
+        label: `${currency.name} (${currency.code})`,
+        value: currency.code,
+      }))
+
+    if (currentCurrency && !options.some((option) => option.value === currentCurrency)) {
+      options.push({ label: currentCurrency, value: currentCurrency })
+    }
+
+    return options
+  }, [currencies, currentCurrency])
 
   const handleCustomerChange = useCallback(
     (value: string) => {
-      const customer = customers.find((item) => item.name === value)
+      const customer = customers.find((item) => item.id === value) ?? customers.find((item) => item.name === value)
       setFormData((prev) => ({
         ...prev,
-        customerName: value,
-        customerId: customer?.id,
+        customerName: customer?.name || '',
+        customerId: customer?.id || '',
       }))
     },
     [customers, setFormData]
@@ -80,13 +113,32 @@ export function useSalesOrderHeaderFieldsViewModel({
     [paymentTerms, setFormData]
   )
 
+  const handleCurrencyChange = useCallback(
+    (value: string) => {
+      const selected = currencies.find((currency) => currency.code === value)
+      const exchangeRateSnapshot =
+        typeof selected?.rate === 'number' && Number.isFinite(selected.rate) && selected.rate > 0
+          ? selected.rate
+          : 1
+      setFormData((prev) => ({
+        ...prev,
+        currency: value,
+        exchangeRateSnapshot,
+      }))
+    },
+    [currencies, setFormData]
+  )
+
   return {
     typeOptions,
     classificationOptions,
     customerOptions,
+    selectedCustomerId,
+    currencyOptions,
     paymentMethodOptions,
     paymentTermOptions,
     handleCustomerChange,
+    handleCurrencyChange,
     handlePaymentMethodChange,
     handlePaymentTermChange,
   }

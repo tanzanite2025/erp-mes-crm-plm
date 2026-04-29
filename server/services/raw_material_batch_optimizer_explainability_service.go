@@ -166,12 +166,14 @@ func buildRawMaterialBatchOptimizerPlanDiffSummary(
 		}
 	}
 
-	planZoneSet := make(map[string]models.RawMaterialBatchOptimizerPlanLayoutZone, len(plan.LayoutSummary.Zones))
-	baselineZoneSet := make(map[string]models.RawMaterialBatchOptimizerPlanLayoutZone, len(baseline.LayoutSummary.Zones))
-	for _, zone := range plan.LayoutSummary.Zones {
+	planZones := resolveRawMaterialBatchOptimizerDiffZones(plan)
+	baselineZones := resolveRawMaterialBatchOptimizerDiffZones(baseline)
+	planZoneSet := make(map[string]rawMaterialBatchOptimizerDiffZone, len(planZones))
+	baselineZoneSet := make(map[string]rawMaterialBatchOptimizerDiffZone, len(baselineZones))
+	for _, zone := range planZones {
 		planZoneSet[zone.ID] = zone
 	}
-	for _, zone := range baseline.LayoutSummary.Zones {
+	for _, zone := range baselineZones {
 		baselineZoneSet[zone.ID] = zone
 	}
 
@@ -196,7 +198,7 @@ func buildRawMaterialBatchOptimizerPlanDiffSummary(
 	}
 	changedDemandSet := toRawMaterialBatchOptimizerStringSet(changedDemandLineIDs)
 	changedRollSet := toRawMaterialBatchOptimizerStringSet(changedRollIDs)
-	for _, zone := range plan.LayoutSummary.Zones {
+	for _, zone := range planZones {
 		if _, changed := changedDemandSet[zone.DemandLineID]; changed && zone.ID != "" {
 			highlightZoneSet[zone.ID] = struct{}{}
 		}
@@ -228,6 +230,37 @@ func buildRawMaterialBatchOptimizerPlanDiffSummary(
 		ChangedRollIDs:       changedRollIDs,
 		HighlightZoneIDs:     highlightZoneIDs,
 	}
+}
+
+type rawMaterialBatchOptimizerDiffZone struct {
+	ID           string
+	DemandLineID string
+	RollID       string
+}
+
+func resolveRawMaterialBatchOptimizerDiffZones(
+	plan models.RawMaterialBatchOptimizerPlan,
+) []rawMaterialBatchOptimizerDiffZone {
+	if plan.GeometryLayoutSummary != nil && len(plan.GeometryLayoutSummary.Zones) > 0 {
+		zones := make([]rawMaterialBatchOptimizerDiffZone, 0, len(plan.GeometryLayoutSummary.Zones))
+		for _, zone := range plan.GeometryLayoutSummary.Zones {
+			zones = append(zones, rawMaterialBatchOptimizerDiffZone{
+				ID:           zone.ID,
+				DemandLineID: zone.DemandLineID,
+				RollID:       zone.RollID,
+			})
+		}
+		return zones
+	}
+	zones := make([]rawMaterialBatchOptimizerDiffZone, 0, len(plan.LayoutSummary.Zones))
+	for _, zone := range plan.LayoutSummary.Zones {
+		zones = append(zones, rawMaterialBatchOptimizerDiffZone{
+			ID:           zone.ID,
+			DemandLineID: zone.DemandLineID,
+			RollID:       zone.RollID,
+		})
+	}
+	return zones
 }
 
 func buildRawMaterialBatchOptimizerPlanDiffSummaries(

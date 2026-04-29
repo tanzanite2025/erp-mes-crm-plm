@@ -156,6 +156,25 @@ export const tradingQueryKeys = {
     id,
     'actual-amount-records',
   ],
+  salesExchangesRoot: (): readonly ['sales-exchanges'] => ['sales-exchanges'],
+  salesExchanges: (
+    page: number,
+    pageSize: number,
+    customerId: string,
+    status: string,
+    keyword: string
+  ): readonly ['sales-exchanges', number, number, string, string, string] => [
+    'sales-exchanges',
+    page,
+    pageSize,
+    customerId,
+    status,
+    keyword,
+  ],
+  salesExchangeDetail: (id: string): readonly ['sales-exchanges', string] => [
+    'sales-exchanges',
+    id,
+  ],
   salesOrderDetail: (id: string): readonly ['sales-orders', string] => [
     'sales-orders',
     id,

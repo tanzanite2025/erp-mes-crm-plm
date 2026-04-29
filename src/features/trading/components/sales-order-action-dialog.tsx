@@ -134,61 +134,10 @@ export function SalesOrderActionDialog({
       }
     }
 
-    const appearancesFailure = resolveQueryFailure({
-      data: appearancesQuery.data,
-      error: appearancesQuery.error,
-      isPending: appearancesQuery.isPending,
-      scope: 'SalesOrderActionDialog.appearances',
-      missingMessage: '[CRITICAL] Sales order appearances missing after load',
-      failureMessage: '[CRITICAL] Sales order appearances query failed',
-    })
-    if (appearancesFailure) {
-      return {
-        status: 'error',
-        error: appearancesFailure.error,
-        scope: appearancesFailure.scope,
-      }
-    }
-
-    const drillingFailure = resolveQueryFailure({
-      data: drillingQuery.data,
-      error: drillingQuery.error,
-      isPending: drillingQuery.isPending,
-      scope: 'SalesOrderActionDialog.drilling',
-      missingMessage: '[CRITICAL] Sales order drilling plans missing after load',
-      failureMessage: '[CRITICAL] Sales order drilling plans query failed',
-    })
-    if (drillingFailure) {
-      return {
-        status: 'error',
-        error: drillingFailure.error,
-        scope: drillingFailure.scope,
-      }
-    }
-
-    const labelingFailure = resolveQueryFailure({
-      data: labelingQuery.data,
-      error: labelingQuery.error,
-      isPending: labelingQuery.isPending,
-      scope: 'SalesOrderActionDialog.labeling',
-      missingMessage: '[CRITICAL] Sales order labeling drafts missing after load',
-      failureMessage: '[CRITICAL] Sales order labeling drafts query failed',
-    })
-    if (labelingFailure) {
-      return {
-        status: 'error',
-        error: labelingFailure.error,
-        scope: labelingFailure.scope,
-      }
-    }
-
     if (
       customersQuery.isPending ||
       productsQuery.isPending ||
-      unitsResource.status === 'loading' ||
-      appearancesQuery.isPending ||
-      drillingQuery.isPending ||
-      labelingQuery.isPending
+      unitsResource.status === 'loading'
     ) {
       return { status: 'loading' }
     }
@@ -198,23 +147,20 @@ export function SalesOrderActionDialog({
       customers: (customersQuery.data as Customer[]) ?? [],
       products: (productsQuery.data as Product[]) ?? [],
       units: unitsResource.status === 'ready' ? unitsResource.data : [],
-      appearances: (appearancesQuery.data as ProductAppearance[]) ?? [],
-      drillingPlans: (drillingQuery.data as DrillingPlan[]) ?? [],
-      labelingPlans: (labelingQuery.data as LabelingDraft[]) ?? [],
+      appearances: appearancesQuery.error ? [] : ((appearancesQuery.data as ProductAppearance[]) ?? []),
+      drillingPlans: drillingQuery.error ? [] : ((drillingQuery.data as DrillingPlan[]) ?? []),
+      labelingPlans: labelingQuery.error ? [] : ((labelingQuery.data as LabelingDraft[]) ?? []),
     }
   }, [
     appearancesQuery.data,
     appearancesQuery.error,
-    appearancesQuery.isPending,
     customersQuery.data,
     customersQuery.error,
     customersQuery.isPending,
     drillingQuery.data,
     drillingQuery.error,
-    drillingQuery.isPending,
     labelingQuery.data,
     labelingQuery.error,
-    labelingQuery.isPending,
     open,
     productsQuery.data,
     productsQuery.error,
@@ -316,10 +262,10 @@ export function SalesOrderActionDialog({
           <div className='px-6 py-6'>
             <div className='flex min-h-[320px] flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-rose-300/50 bg-rose-50/40 px-6 text-center'>
               <p className='text-[10px] font-black tracking-[0.3em] text-rose-600 uppercase'>
-                订单弹窗基础字典加载失败
+                订单弹窗基础数据加载失败
               </p>
               <p className='mt-3 max-w-xl text-xs font-bold text-rose-700/80'>
-                {dialogResource.error.message || '请重试后再加载客户、产品与工艺字典。'}
+                {dialogResource.error.message || '请重试后再加载客户、产品与单位字典。'}
               </p>
               <Button
                 variant='outline'

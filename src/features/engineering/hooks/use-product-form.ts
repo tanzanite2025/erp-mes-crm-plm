@@ -42,7 +42,6 @@ export function useProductForm({
   const {
     attributeCategories,
     attributeOptions,
-    attributeBindings,
     versionLevelOptions,
     moldOptions,
     specOptions,
@@ -50,7 +49,6 @@ export function useProductForm({
     metadataReady,
   } = useProductFormInit({
     open,
-    form,
   })
 
   useEffect(() => {
@@ -106,7 +104,6 @@ export function useProductForm({
     dynamicTypes,
     attributeCategories,
     attributeOptions,
-    attributeBindings,
     versionLevelOptions,
     moldOptions,
     specOptions,

@@ -14,6 +14,10 @@ export type MenuPermissionDefinition = {
 
 export const PERMISSION_VERSION = '1.1.0'
 
+const LEGACY_PERMISSION_ID_ALIASES: Record<string, string> = {
+  action_approval_config_manage: 'action_approval_review',
+}
+
 /**
  * 权限清单（Permission Catalog）
  * 系统菜单权限的单一真实源。
@@ -202,15 +206,18 @@ export function getMenuPermissionForPath(path: string): string {
  * Current behavior is non-destructive passthrough.
  */
 export function migratePermissions(
-  from: string,
-  to: string,
+  _from: string,
+  _to: string,
   permissionIds: string[]
 ): string[] {
-  if (!from || !to || from === to) {
-    return [...permissionIds]
-  }
-
-  return [...permissionIds]
+  return Array.from(
+    new Set(
+      permissionIds
+        .map((permissionId) => permissionId.trim().toLowerCase())
+        .filter(Boolean)
+        .map((permissionId) => LEGACY_PERMISSION_ID_ALIASES[permissionId] || permissionId),
+    ),
+  )
 }
 
 /**

@@ -16,6 +16,7 @@ describe('sales-order-api-adapter', () => {
     customerId: 'customer-1',
     type: 'NORMAL',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     classification: 'STANDARD',
     status: 'Pending',
     statusNote: '',
@@ -50,6 +51,7 @@ describe('sales-order-api-adapter', () => {
     customerId: 'customer-1',
     type: 'NORMAL',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     classification: 'STANDARD',
     status: 'Pending',
     statusNote: '',
@@ -148,6 +150,58 @@ describe('sales-order-api-adapter', () => {
       expect(order.lines[0]?.status).toBe('Canceled')
     }
   )
+
+  it('keeps order line appearance preview fields during API mapping', () => {
+    const order = toSalesOrderContract({
+      ...baseOrderDto,
+      lines: [
+        {
+          id: 1,
+          lineNo: 1,
+          productId: 'product-1',
+          productModel: 'MTB-01',
+          productCode: 'MTB-01',
+          specification: '',
+          modelCodeSnapshot: '01',
+          holePrefixSnapshot: 'R',
+          appearanceId: 'appearance-1',
+          appearanceNameSnapshot: 'UD',
+          appearanceBarcodeCodeSnapshot: '1',
+          appearanceDescriptionSnapshot: '外观位值: 1',
+          appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+          description: '',
+          qty: 2,
+          uom: 'PCS',
+          price: 50,
+          amount: 100,
+          deliveredQty: 0,
+          customerPartNo: '',
+          jobNo: '',
+          orderDate: '2026-04-18',
+          status: 'Pending',
+          returnedQuantity: 0,
+          remainingReturnableQuantity: 2,
+        },
+      ],
+    })
+
+    expect(order.lines[0]).toMatchObject({
+      appearanceId: 'appearance-1',
+      appearanceNameSnapshot: 'UD',
+      appearanceBarcodeCodeSnapshot: '1',
+      appearanceDescriptionSnapshot: '外观位值: 1',
+      appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+    })
+    const roundTrippedLines = toSalesOrderApiDTO(order).lines ?? []
+    expect(roundTrippedLines).toHaveLength(1)
+    expect(roundTrippedLines[0]).toMatchObject({
+      appearanceId: 'appearance-1',
+      appearanceNameSnapshot: 'UD',
+      appearanceBarcodeCodeSnapshot: '1',
+      appearanceDescriptionSnapshot: '外观位值: 1',
+      appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
+    })
+  })
 
   it('does not synthesize missing list items into an empty page', () => {
     expect(() =>

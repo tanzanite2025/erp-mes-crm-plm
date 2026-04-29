@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -38,11 +38,16 @@ export function ProductBasicInfo({
     isEdit,
     templateLabel
 }: ProductBasicInfoProps) {
-    const { t } = useLanguage()
+    const { locale, t } = useLanguage()
+    const isChineseLocale = locale.startsWith('zh')
+    const productStatusOptions = [
+        { label: isChineseLocale ? '启用' : 'Active', value: 'Active' },
+        { label: isChineseLocale ? '开发' : 'Draft', value: 'Draft' },
+        { label: isChineseLocale ? '停用' : 'Archived', value: 'Archived' },
+    ]
     return (
-        <div className='p-3.5 rounded-[32px] bg-muted/5 border border-dashed border-muted transition-all hover:bg-muted/10'>
-            {/* 第一层：核心选择区 (移动端纵向堆叠) */}
-            <div className='grid grid-cols-1 sm:grid-cols-[124px_minmax(0,1fr)] items-stretch sm:items-start gap-4 sm:gap-6'>
+        <div className='p-2.5 rounded-[24px] bg-muted/5 border border-dashed border-muted transition-all hover:bg-muted/10'>
+            <div className='grid grid-cols-1 sm:grid-cols-[104px_minmax(0,1fr)] items-stretch sm:items-start gap-3 sm:gap-4'>
                 <FormField
                     control={form.control}
                     name='image'
@@ -51,7 +56,7 @@ export function ProductBasicInfo({
                             <FormLabel className='text-slate-600 font-black text-[10px] uppercase tracking-widest ml-1'>{t('engineering.productMgmt.form.thumbnail')}</FormLabel>
                             <FormControl>
                                 <div className='relative group flex justify-center sm:block'>
-                                    <div className='size-[100px] sm:size-[124px] rounded-[24px] border-2 border-dashed border-muted/50 flex items-center justify-center bg-background overflow-hidden transition-all group-hover:border-blue-400 group-hover:bg-blue-50/50 shadow-inner'>
+                                    <div className='size-[88px] sm:size-[104px] rounded-xl border-2 border-dashed border-muted/50 flex items-center justify-center bg-background overflow-hidden transition-all group-hover:border-blue-400 group-hover:bg-blue-50/50 shadow-inner'>
                                         {field.value ? (
                                             <>
                                                 <img src={field.value} alt='Preview' className='size-full object-cover' />
@@ -65,7 +70,7 @@ export function ProductBasicInfo({
                                             </>
                                         ) : (
                                             <label className='size-full flex flex-col items-center justify-center cursor-pointer'>
-                                                <ImageIcon className='size-8 sm:size-10 text-muted-foreground/30 mb-1.5 sm:mb-2' />
+                                                <ImageIcon className='size-7 sm:size-8 text-muted-foreground/30 mb-1' />
                                                 <span className='text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 text-center px-2'>{t('engineering.productMgmt.form.uploadImg')}</span>
                                                 <input
                                                     type='file'
@@ -81,8 +86,8 @@ export function ProductBasicInfo({
                         </FormItem>
                     )}
                 />
-                <div className='flex min-w-0 flex-col justify-between gap-3 sm:min-h-[124px]'>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-3.5'>
+                <div className='flex min-w-0 flex-col justify-between gap-2.5 sm:min-h-[104px]'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5'>
                         <FormField
                             control={form.control}
                             name='typeId'
@@ -99,12 +104,12 @@ export function ProductBasicInfo({
                                             items={dynamicTypes.map((t: ProductType) => {
                                                 const parent = productTypes.find(p => p.id === t.parentId)
                                                 return {
-                                                    label: parent ? `├ ${t.name}` : `📁 ${t.name}`,
+                                                    label: parent ? `-- ${t.name}` : t.name,
                                                     value: t.id
                                                 }
                                             })}
                                             placeholder={t('engineering.productMgmt.form.categoryPlaceholder')}
-                                            className='h-[42px] w-full text-[11px] font-bold rounded-2xl bg-muted/40 border-none px-4'
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
                                     <FormMessage className='text-[10px] font-bold' />
                                 </FormItem>
@@ -124,7 +129,7 @@ export function ProductBasicInfo({
                                     </FormLabel>
                                     <FormControl>
                                         <Input
-                                            className={`h-[42px] w-full text-[13px] font-mono font-black rounded-2xl border-none bg-muted/40 px-4 ${isEdit ? 'opacity-50' : 'focus-visible:ring-blue-400 transition-all focus:bg-background'}`}
+                                            className={`h-[38px] w-full text-[13px] font-mono font-black rounded-xl border-none bg-muted/40 px-3 ${isEdit ? 'opacity-50' : 'focus-visible:ring-blue-400 transition-all focus:bg-background'}`}
                                             {...field}
                                             value={field.value || '01'}
                                             placeholder={t('engineering.productMgmt.form.modelCodePlaceholder')}
@@ -141,12 +146,11 @@ export function ProductBasicInfo({
                         />
                         <div className='space-y-0.5 min-w-0'>
                             <FormLabel className='text-blue-800 font-black text-[10px] uppercase tracking-widest italic ml-1'>{t('engineering.productMgmt.form.template')}</FormLabel>
-                            <Input
-                                value={templateLabel || ''}
-                                readOnly
-                                placeholder={t('engineering.productMgmt.form.templatePlaceholder')}
-                                className='h-[42px] w-full text-[11px] font-bold rounded-2xl bg-muted/20 border-none px-4 text-slate-600 cursor-default'
-                            />
+                            <div className='flex h-[38px] w-full items-center rounded-xl bg-muted/40 px-3 text-[11px] font-bold text-slate-700'>
+                                <span className='min-w-0 truncate'>
+                                    {templateLabel || t('engineering.productMgmt.form.templatePlaceholder')}
+                                </span>
+                            </div>
                         </div>
                         <FormField
                             control={form.control}
@@ -158,20 +162,15 @@ export function ProductBasicInfo({
                                             value={field.value}
                                             onValueChange={field.onChange}
                                             isControlled={true}
-                                            items={[
-                                                { label: t('engineering.dict.Active'), value: 'Active' },
-                                                { label: t('engineering.dict.Archived'), value: 'Archived' },
-                                                { label: t('engineering.dict.Draft'), value: 'Draft' },
-                                            ]}
-                                            className='h-[42px] w-full text-[11px] font-bold rounded-2xl bg-muted/40 border-none px-4'
+                                            items={productStatusOptions}
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3 text-slate-700'
                                         />
                                 </FormItem>
                             )}
                         />
                     </div>
 
-                    {/* 第二层：详细参数区 (通栏布局) */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-3.5'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5'>
                         <FormField
                             control={form.control}
                             name='name'
@@ -184,7 +183,7 @@ export function ProductBasicInfo({
                                     <FormControl>
                                         <Input
                                             placeholder={t('engineering.productMgmt.form.prodNamePlaceholder')}
-                                            className='h-[42px] w-full text-[13px] font-black italic rounded-2xl bg-muted/40 border-none focus-visible:ring-blue-400 transition-all px-4 shadow-sm'
+                                            className='h-[38px] w-full text-[13px] font-black italic rounded-xl bg-muted/40 border-none focus-visible:ring-blue-400 transition-all px-3 shadow-sm'
                                             {...field}
                                         />
                                     </FormControl>
@@ -204,7 +203,7 @@ export function ProductBasicInfo({
                                             isControlled={true}
                                             items={specOptions}
                                             placeholder={t('engineering.productMgmt.form.specPlaceholder')}
-                                            className='h-[42px] w-full text-[11px] font-bold rounded-2xl bg-muted/40 border-none px-4'
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
                                     <FormMessage className='text-[10px] font-bold' />
                                 </FormItem>
@@ -222,7 +221,7 @@ export function ProductBasicInfo({
                                             value={field.value}
                                             onValueChange={field.onChange}
                                             isControlled={true}
-                                            className='h-[42px] w-full text-[11px] font-bold rounded-2xl bg-muted/40 border-none px-4'
+                                            className='h-[38px] w-full text-[11px] font-bold rounded-xl bg-muted/40 border-none px-3'
                                         />
                                     <FormMessage className='text-[8px] font-bold uppercase' />
                                 </FormItem>
@@ -237,7 +236,7 @@ export function ProductBasicInfo({
                                     <FormControl>
                                         <Input
                                             placeholder={t('engineering.productMgmt.form.memoPlaceholder')}
-                                            className='h-[42px] w-full text-[11px] rounded-2xl bg-muted/40 border-none px-4'
+                                            className='h-[38px] w-full text-[11px] rounded-xl bg-muted/40 border-none px-3'
                                             {...field}
                                         />
                                     </FormControl>

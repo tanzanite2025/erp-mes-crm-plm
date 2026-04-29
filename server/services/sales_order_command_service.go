@@ -126,7 +126,7 @@ func PatchSalesOrder(command PatchSalesOrderCommand) (SalesOrderResponse, error)
 }
 
 func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchSalesOrderCommand, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "orderName", "customerName", "customerId", "type", "currency", "exchangeRateSnapshot", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "classification", "status", "statusNote", "amount", "quantity", "orderDate", "deliveryDate", "purchaseOrderNo", "barcode", "requirements", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
 		return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta: %w", err)
 	}
 
@@ -166,6 +166,10 @@ func BuildSalesOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (
 			}
 		case "currency":
 			if err := json.Unmarshal(valueRaw, &snapshot.Currency); err != nil {
+				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
+			}
+		case "exchangeRateSnapshot":
+			if err := json.Unmarshal(valueRaw, &snapshot.ExchangeRateSnapshot); err != nil {
 				return PatchSalesOrderCommand{}, fmt.Errorf("invalid sales order delta field %s", key)
 			}
 		case "paymentMethod":
@@ -357,32 +361,33 @@ func BuildSalesOrderSavePayload(snapshot SalesOrderSnapshotRequest, delta map[st
 
 func MapSaveSalesOrderRequestToSnapshot(input SaveSalesOrderRequest) SalesOrderSnapshotRequest {
 	return SalesOrderSnapshotRequest{
-		ID:                 input.ID,
-		OrderNo:            input.OrderNo,
-		OrderName:          input.OrderName,
-		CustomerName:       input.CustomerName,
-		CustomerID:         input.CustomerID,
-		Type:               input.Type,
-		Currency:           input.Currency,
-		PaymentMethod:      input.PaymentMethod,
-		PaymentMethodName:  input.PaymentMethodName,
-		PaymentTerm:        input.PaymentTerm,
-		PaymentTermName:    input.PaymentTermName,
-		Classification:     input.Classification,
-		Status:             input.Status,
-		StatusNote:         input.StatusNote,
-		Amount:             input.Amount,
-		Quantity:           input.Quantity,
-		OrderDate:          input.OrderDate,
-		DeliveryDate:       input.DeliveryDate,
-		PurchaseOrderNo:    input.PurchaseOrderNo,
-		Barcode:            input.Barcode,
-		Requirements:       input.Requirements,
-		Evidences:          input.Evidences,
-		WorkflowInstanceID: input.WorkflowInstanceID,
-		UpdatedBy:          input.UpdatedBy,
-		IsDeleted:          input.IsDeleted,
-		Version:            input.Version,
-		Lines:              input.Lines,
+		ID:                   input.ID,
+		OrderNo:              input.OrderNo,
+		OrderName:            input.OrderName,
+		CustomerName:         input.CustomerName,
+		CustomerID:           input.CustomerID,
+		Type:                 input.Type,
+		Currency:             input.Currency,
+		ExchangeRateSnapshot: input.ExchangeRateSnapshot,
+		PaymentMethod:        input.PaymentMethod,
+		PaymentMethodName:    input.PaymentMethodName,
+		PaymentTerm:          input.PaymentTerm,
+		PaymentTermName:      input.PaymentTermName,
+		Classification:       input.Classification,
+		Status:               input.Status,
+		StatusNote:           input.StatusNote,
+		Amount:               input.Amount,
+		Quantity:             input.Quantity,
+		OrderDate:            input.OrderDate,
+		DeliveryDate:         input.DeliveryDate,
+		PurchaseOrderNo:      input.PurchaseOrderNo,
+		Barcode:              input.Barcode,
+		Requirements:         input.Requirements,
+		Evidences:            input.Evidences,
+		WorkflowInstanceID:   input.WorkflowInstanceID,
+		UpdatedBy:            input.UpdatedBy,
+		IsDeleted:            input.IsDeleted,
+		Version:              input.Version,
+		Lines:                input.Lines,
 	}
 }

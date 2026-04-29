@@ -123,6 +123,7 @@ function createFallbackOrder(record: SalesReturnRecord): SalesOrder {
     customerId: record.customerId,
     type: 'NORMAL',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     classification: 'GENERAL',
     status: 'Done',
     amount: record.totalAmount,

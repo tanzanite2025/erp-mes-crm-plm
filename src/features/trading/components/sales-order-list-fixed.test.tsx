@@ -115,6 +115,7 @@ function buildOrder(overrides: Partial<SalesOrder> = {}): SalesOrder {
     customerId: 'customer-1',
     type: 'STANDARD',
     currency: 'CNY',
+    exchangeRateSnapshot: 1,
     paymentMethod: 'BANK',
     paymentMethodName: 'Bank',
     paymentTerm: 'COD',
@@ -183,6 +184,11 @@ describe('SalesOrderList preassemble entry boundary', () => {
       })
     )
     useTradingFinanceResourcesMock.mockReturnValue({
+      readResource: {
+        status: 'ready',
+        paymentMethodOptions: [],
+        paymentTermOptions: [],
+      },
       paymentMethods: [],
       paymentTerms: [],
     })

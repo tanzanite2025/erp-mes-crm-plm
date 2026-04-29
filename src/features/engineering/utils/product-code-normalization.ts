@@ -13,7 +13,7 @@ import {
   normalizeSku,
   normalizeTemplateKey,
 } from '@/lib/codecs/code-normalization'
-import { type ChangeOrder, type ProductProcessRouting, type ProductTemplate, type ProductType } from '../data/schema'
+import { type ChangeOrder, type ProductTemplate, type ProductType } from '../data/schema'
 import {
   type SaveChangeOrderInput,
   type SaveProductInput,
@@ -225,23 +225,6 @@ export function normalizeBOMControlFieldPatch<T extends {
   }
 
   return normalized
-}
-
-export function normalizeEngineeringRoutingVersionControlTag(
-  value?: string | null,
-  fallback = 'V1.0.0.Draft'
-): string {
-  return normalizeBomVersion(value, fallback)
-}
-
-export function normalizeProductRoutingEntity(
-  routing: ProductProcessRouting
-): ProductProcessRouting {
-  return {
-    ...routing,
-    versionControlTag: normalizeEngineeringRoutingVersionControlTag(routing.versionControlTag),
-    isCurrentlyActiveBlueprint: Boolean(routing.isCurrentlyActiveBlueprint),
-  }
 }
 
 export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {

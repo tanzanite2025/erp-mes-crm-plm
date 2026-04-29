@@ -95,3 +95,76 @@ func TestSaveSalesOrderGeneratesOrderNoFromBarcodeWhenBlank(t *testing.T) {
 	require.Equal(t, result.OrderNo, persisted.OrderNo)
 	require.Equal(t, result.Barcode, persisted.Barcode)
 }
+
+func TestSalesOrderLineSnapshotFieldsRoundTripThroughMapper(t *testing.T) {
+	line := SalesOrderLineRequest{
+		LineNo:                        1,
+		ProductID:                     "product-1",
+		ProductModel:                  "R50",
+		ProductCode:                   "R50-01",
+		Specification:                 "R50 (normal/std)",
+		ModelCodeSnapshot:             "01",
+		HolePrefixSnapshot:            "R",
+		AppearanceID:                  "appearance-1",
+		AppearanceNameSnapshot:        "UD",
+		AppearanceBarcodeCodeSnapshot: "1",
+		AppearanceDescriptionSnapshot: "外观位值: 1",
+		AppearanceImageURLSnapshot:    "/uploads/appearance/ud.png",
+		Qty:                           20,
+		UOM:                           "PCS",
+		Price:                         20,
+		Amount:                        400,
+		OrderDate:                     "2026-04-29",
+		Status:                        "Pending",
+	}
+
+	model := mapSalesOrderLineRequestToModel(line)
+	response := mapSalesOrderLineToResponse(model)
+	snapshot := mapSalesOrderLineResponseToRequest(response)
+
+	require.Equal(t, "01", model.ModelCodeSnapshot)
+	require.Equal(t, "R", model.HolePrefixSnapshot)
+	require.Equal(t, "appearance-1", model.AppearanceID)
+	require.Equal(t, "UD", model.AppearanceNameSnapshot)
+	require.Equal(t, "1", model.AppearanceBarcodeCodeSnapshot)
+	require.Equal(t, "外观位值: 1", model.AppearanceDescriptionSnapshot)
+	require.Equal(t, "/uploads/appearance/ud.png", model.AppearanceImageURLSnapshot)
+	require.Equal(t, "01", response.ModelCodeSnapshot)
+	require.Equal(t, "R", response.HolePrefixSnapshot)
+	require.Equal(t, "appearance-1", response.AppearanceID)
+	require.Equal(t, "UD", response.AppearanceNameSnapshot)
+	require.Equal(t, "1", response.AppearanceBarcodeCodeSnapshot)
+	require.Equal(t, "外观位值: 1", response.AppearanceDescriptionSnapshot)
+	require.Equal(t, "/uploads/appearance/ud.png", response.AppearanceImageURLSnapshot)
+	require.Equal(t, "01", snapshot.ModelCodeSnapshot)
+	require.Equal(t, "R", snapshot.HolePrefixSnapshot)
+	require.Equal(t, "appearance-1", snapshot.AppearanceID)
+	require.Equal(t, "UD", snapshot.AppearanceNameSnapshot)
+	require.Equal(t, "1", snapshot.AppearanceBarcodeCodeSnapshot)
+	require.Equal(t, "外观位值: 1", snapshot.AppearanceDescriptionSnapshot)
+	require.Equal(t, "/uploads/appearance/ud.png", snapshot.AppearanceImageURLSnapshot)
+}
+
+func TestSalesOrderExchangeRateSnapshotRoundTripThroughMapper(t *testing.T) {
+	request := SaveSalesOrderRequest{
+		ID:                   "order-1",
+		OrderNo:              "SO-001",
+		CustomerName:         "Customer A",
+		Type:                 "NORMAL",
+		Currency:             "USD",
+		ExchangeRateSnapshot: 7.125,
+		Classification:       "STANDARD",
+		Status:               "Pending",
+		OrderDate:            "2026-04-29",
+		DeliveryDate:         "2026-05-06",
+		Lines:                []SalesOrderLineRequest{},
+	}
+
+	model := MapSaveSalesOrderRequestToModel(request)
+	response := MapSalesOrderToResponse(model)
+	snapshot := MapSalesOrderResponseToSnapshot(response)
+
+	require.Equal(t, 7.125, model.ExchangeRateSnapshot)
+	require.Equal(t, 7.125, response.ExchangeRateSnapshot)
+	require.Equal(t, 7.125, snapshot.ExchangeRateSnapshot)
+}

@@ -7,10 +7,8 @@ import {
   type Product,
   type ProductAttributeCategory,
   type ProductAttributeOption,
-  type ProductProcessRouting,
   type ProductTemplate,
   type ProductType,
-  type ProductTypeAttributeBinding,
 } from './data/schema'
 import { type MaterialOption } from '../material-archive/data/schema'
 
@@ -50,17 +48,11 @@ export type SaveProductAttributeOptionInput = Omit<ProductAttributeOption, 'id' 
   version?: number
 }
 
-export type SaveProductTypeAttributeBindingInput = Omit<ProductTypeAttributeBinding, 'id' | 'version'> & {
-  id?: string
-  version?: number
-}
-
 export type SaveBOMInput = Omit<BOM, 'bomDisplayVersion'>
 
 export type ProductDraftOverrides = { [K in keyof Product]?: Product[K] }
 export type ChangeOrderDraftOverrides = { [K in keyof ChangeOrder]?: ChangeOrder[K] }
 export type ProductTemplateDraftOverrides = { [K in keyof ProductTemplate]?: ProductTemplate[K] }
-export type ProductRoutingDraftOverrides = { [K in keyof ProductProcessRouting]?: ProductProcessRouting[K] }
 export type BOMItemDraft = { [K in keyof BOMItem]?: BOMItem[K] }
 export type MaterialOptionDraft = { [K in keyof MaterialOption]?: MaterialOption[K] }
 export type BOMSubstitutePatch = { [K in keyof BOMSubstitute]?: BOMSubstitute[K] }

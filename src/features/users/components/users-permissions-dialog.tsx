@@ -1,27 +1,26 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ShieldPlus } from 'lucide-react'
+import { CheckCheck, ShieldPlus } from 'lucide-react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
 import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
+import { PERMISSION_VERSION, migratePermissions } from '@/features/authz/data/permission-catalog'
 import { buildPermissionTree, formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
 import type { Permission } from '@/features/authz/data/permission-schema'
 import type { PermissionPageNode, PermissionTreeNode } from '@/features/authz/utils/permission-tree-types'
 import { type User } from '../data/schema'
-import { useUserAccessSnapshotQuery, useUserMutations, useUserPermissionsQuery } from '../hooks/use-users'
+import { useUserMutations, useUserPermissionsQuery } from '../hooks/use-users'
 
 type UsersPermissionsDialogProps = {
   currentRow?: User
@@ -112,13 +111,12 @@ export function UsersPermissionsDialog({
   const userID = (currentRow?.id || '').trim()
   const defaultPermissions = getDefaultPermissions()
   const permissionTree = useMemo(() => buildPermissionTree(defaultPermissions), [defaultPermissions])
-  const permissionByID = useMemo(() => {
-    return new Map(defaultPermissions.map((permission) => [permission.id, permission]))
+  const allPermissionIDs = useMemo(() => {
+    return defaultPermissions.map((permission) => permission.id.trim().toLowerCase()).filter(Boolean)
   }, [defaultPermissions])
   const [localDraftPermissionIDs, setLocalDraftPermissionIDs] = useState<string[] | null>(null)
   const [search, setSearch] = useState('')
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false)
-  const [expandedModuleIDs, setExpandedModuleIDs] = useState<string[]>(() => permissionTree.map((node) => node.module.id))
+  const [expandedModuleIDs, setExpandedModuleIDs] = useState<string[]>([])
   const username = currentRow?.username || '-'
 
   const {
@@ -126,14 +124,10 @@ export function UsersPermissionsDialog({
     isLoading,
     refetch,
   } = useUserPermissionsQuery(userID, open && userID.length > 0)
-  const {
-    data: accessSnapshot,
-    isLoading: isAccessLoading,
-  } = useUserAccessSnapshotQuery(userID, open && userID.length > 0)
   const { replaceUserPermissionsMutation } = useUserMutations()
 
   const serverPermissionIDs = useMemo(
-    () => permissionsData?.permissions.map((item) => item.permissionId) || [],
+    () => migratePermissions('', PERMISSION_VERSION, permissionsData?.permissions.map((item) => item.permissionId) || []),
     [permissionsData],
   )
 
@@ -143,47 +137,20 @@ export function UsersPermissionsDialog({
     return new Set(draftPermissionIDs.map((item) => item.trim().toLowerCase()))
   }, [draftPermissionIDs])
 
-  const visibleTree = useMemo(() => {
-    const nextTree = filterPermissionTree(permissionTree, search)
-    if (!showSelectedOnly) {
-      return nextTree
-    }
+  const visibleTree = useMemo(() => filterPermissionTree(permissionTree, search), [permissionTree, search])
+  const visibleTreeColumns = useMemo(() => {
+    return visibleTree.reduce<PermissionTreeNode[][]>(
+      (columns, node, index) => {
+        columns[index % columns.length].push(node)
+        return columns
+      },
+      [[], [], []],
+    )
+  }, [visibleTree])
 
-    return nextTree.flatMap((node) => {
-      const moduleSelected = selectedPermissionIDSet.has(node.module.id.toLowerCase())
-      const pages = node.pages.flatMap((pageNode) => {
-        const selectedTabs = pageNode.tabs.filter((tab) => selectedPermissionIDSet.has(tab.id.toLowerCase()))
-        if (selectedPermissionIDSet.has(pageNode.page.id.toLowerCase()) || selectedTabs.length > 0) {
-          return [{
-            page: pageNode.page,
-            tabs: selectedTabs,
-          }]
-        }
-        return []
-      })
-      const directTabs = node.directTabs.filter((tab) => selectedPermissionIDSet.has(tab.id.toLowerCase()))
-      const directActions = node.directActions.filter((action) => selectedPermissionIDSet.has(action.id.toLowerCase()))
-
-      if (!moduleSelected && pages.length === 0 && directTabs.length === 0 && directActions.length === 0) {
-        return []
-      }
-
-      return [{
-        module: node.module,
-        pages,
-        directTabs,
-        directActions,
-        childNodeCount:
-          pages.reduce((count, pageNode) => count + 1 + pageNode.tabs.length, 0) + directTabs.length + directActions.length,
-      }]
-    })
-  }, [permissionTree, search, selectedPermissionIDSet, showSelectedOnly])
-
-  const selectedPermissions = useMemo(() => {
-    return draftPermissionIDs
-      .map((permissionID) => permissionByID.get(permissionID) || { id: permissionID, label: permissionID, desc: permissionID, category: 'action' as const })
-      .sort((a, b) => a.id.localeCompare(b.id))
-  }, [draftPermissionIDs, permissionByID])
+  const allPermissionsSelected = useMemo(() => {
+    return allPermissionIDs.length > 0 && allPermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID))
+  }, [allPermissionIDs, selectedPermissionIDSet])
 
   const togglePermissionIDs = (permissionIDs: string[]) => {
     const normalizedIDs = permissionIDs.map((permissionID) => permissionID.trim().toLowerCase()).filter(Boolean)
@@ -220,6 +187,14 @@ export function UsersPermissionsDialog({
     setLocalDraftPermissionIDs(null)
   }
 
+  const handleSelectAll = () => {
+    setLocalDraftPermissionIDs(allPermissionIDs)
+  }
+
+  const handleClearAll = () => {
+    setLocalDraftPermissionIDs([])
+  }
+
   const handleSave = () => {
     if (!userID) {
       return
@@ -248,8 +223,7 @@ export function UsersPermissionsDialog({
     if (!nextOpen) {
       setLocalDraftPermissionIDs(null)
       setSearch('')
-      setShowSelectedOnly(false)
-      setExpandedModuleIDs(permissionTree.map((node) => node.module.id))
+      setExpandedModuleIDs([])
     }
     onOpenChange(nextOpen)
   }
@@ -262,203 +236,165 @@ export function UsersPermissionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className='sm:max-w-6xl rounded-[28px] border-none p-0 overflow-hidden'>
-        <DialogHeader className='p-6 bg-muted/5 border-b border-dashed border-muted/40 relative text-left'>
-          <div className='absolute right-6 top-6 opacity-10 pointer-events-none'>
-            <ShieldPlus className='size-10' />
+      <DialogContent
+        showCloseButton={false}
+        className='w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-[28px] border-none p-0 sm:w-[96vw] sm:max-w-[1500px]'
+      >
+        <DialogHeader className='border-b border-dashed border-muted/40 bg-muted/5 px-5 py-3 text-left sm:px-6'>
+          <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+            <div className='min-w-0'>
+              <DialogTitle className='flex items-center gap-2 text-lg font-black tracking-tight uppercase'>
+                <ShieldPlus className='size-4 text-primary' aria-hidden='true' />
+                {t('users.permissionAssignments.title')}
+              </DialogTitle>
+              <DialogDescription className='mt-1 text-xs font-medium opacity-70'>
+                {t('users.permissionAssignments.subtitle', { username })}
+              </DialogDescription>
+            </div>
+            <div className='flex shrink-0 flex-wrap gap-2'>
+              <Button type='button' variant='outline' className='rounded-full' onClick={handleReset} disabled={anyMutationPending || !hasUnsavedChanges}>
+                {t('users.permissionAssignments.actions.reset')}
+              </Button>
+              <Button type='button' className='rounded-full' onClick={handleSave} disabled={anyMutationPending || !hasUnsavedChanges}>
+                {t('users.permissionAssignments.actions.save')}
+              </Button>
+              <Button type='button' variant='outline' className='rounded-full' onClick={() => handleDialogOpenChange(false)}>
+                {t('common.actions.close')}
+              </Button>
+            </div>
           </div>
-          <DialogTitle className='text-lg font-black tracking-tight uppercase'>{t('users.permissionAssignments.title')}</DialogTitle>
-          <DialogDescription className='text-xs font-medium opacity-70'>
-            {t('users.permissionAssignments.subtitle', { username })}
-          </DialogDescription>
         </DialogHeader>
 
-        <div className='px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto'>
-          <div className='grid grid-cols-1 lg:grid-cols-[1.4fr_0.9fr] gap-4'>
-            <div className='space-y-4'>
-              <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-center'>
+        <div className='max-h-[calc(100dvh-6rem)] space-y-3 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 xl:overflow-hidden'>
+          <div className='grid grid-cols-1 gap-3 xl:h-[calc(100dvh-7.75rem)]'>
+            <div className='space-y-3 xl:flex xl:min-h-0 xl:flex-col'>
+              <div className='shrink-0 space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3'>
+                <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
                   <Input
+                    className='sm:min-w-[220px] sm:flex-1'
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder={t('users.permissionAssignments.placeholders.search')}
                   />
-                  <Button type='button' variant={showSelectedOnly ? 'default' : 'outline'} onClick={() => setShowSelectedOnly((value) => !value)}>
-                    {t('users.permissionAssignments.actions.filterSelected')}
+                  <Button
+                    type='button'
+                    variant={allPermissionsSelected ? 'outline' : 'default'}
+                    className='rounded-full'
+                    onClick={allPermissionsSelected ? handleClearAll : handleSelectAll}
+                    disabled={allPermissionIDs.length === 0}
+                  >
+                    <CheckCheck className='size-4' />
+                    {allPermissionsSelected
+                      ? t('users.permissionAssignments.actions.deselectAll')
+                      : t('users.permissionAssignments.actions.selectAll')}
                   </Button>
-                  <Button type='button' variant='outline' onClick={() => setExpandedModuleIDs(permissionTree.map((node) => node.module.id))}>
+                  <Button type='button' variant='outline' className='rounded-full' onClick={() => setExpandedModuleIDs(permissionTree.map((node) => node.module.id))}>
                     {t('users.permissionAssignments.actions.expandAll')}
                   </Button>
-                  <Button type='button' variant='outline' onClick={() => setExpandedModuleIDs([])}>
+                  <Button type='button' variant='outline' className='rounded-full' onClick={() => setExpandedModuleIDs([])}>
                     {t('users.permissionAssignments.actions.collapseAll')}
                   </Button>
                 </div>
               </div>
 
-              <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.tree.title')}</div>
+              <div className='space-y-2 rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col'>
+                <div className='shrink-0 text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.tree.title')}</div>
                 {isLoading ? (
                   <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.loading')}</div>
                 ) : visibleTree.length === 0 ? (
                   <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.tree.empty')}</div>
                 ) : (
-                  <div className='space-y-3'>
-                    {visibleTree.map((node) => {
-                      const modulePermissionIDs = collectModulePermissionIDs(node)
-                      const moduleChecked = modulePermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID.toLowerCase()))
-                      const expanded = expandedModuleIDs.includes(node.module.id)
-                      return (
-                        <div key={node.module.id} className='rounded-2xl border border-dashed border-muted/30 bg-background p-4'>
-                          <div className='flex items-start justify-between gap-3'>
-                            <div className='space-y-1'>
-                              <div className='text-sm font-black tracking-tight'>{formatPermissionLabel(node.module.label)}</div>
-                              <div className='text-xs text-muted-foreground'>{node.module.desc}</div>
-                            </div>
-                            <div className='flex items-center gap-3'>
-                              <Button type='button' variant='ghost' size='sm' onClick={() => toggleModuleExpanded(node.module.id)}>
-                                {expanded ? t('users.permissionAssignments.actions.collapse') : t('users.permissionAssignments.actions.expand')}
-                              </Button>
-                              <Checkbox checked={moduleChecked} onCheckedChange={() => togglePermissionIDs(modulePermissionIDs)} />
-                            </div>
-                          </div>
+                  <div className='grid gap-2 xl:min-h-0 xl:flex-1 xl:grid-cols-3 xl:items-start xl:overflow-y-auto xl:pr-1'>
+                    {visibleTreeColumns.map((columnNodes, columnIndex) => (
+                      <div key={columnIndex} className='space-y-2'>
+                        {columnNodes.map((node) => {
+                          const modulePermissionIDs = collectModulePermissionIDs(node)
+                          const moduleChecked = modulePermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID.toLowerCase()))
+                          const expanded = expandedModuleIDs.includes(node.module.id)
+                          return (
+                            <div key={node.module.id} className='rounded-xl border border-dashed border-muted/30 bg-background p-3'>
+                              <div className='flex items-start justify-between gap-2'>
+                                <div className='min-w-0 space-y-0.5'>
+                                  <div className='text-sm font-black leading-tight tracking-tight'>{formatPermissionLabel(node.module.label)}</div>
+                                  <div className='text-xs leading-snug text-muted-foreground'>{node.module.desc}</div>
+                                </div>
+                                <div className='flex shrink-0 items-center gap-2'>
+                                  <Button type='button' variant='ghost' size='sm' className='h-7 rounded-full px-2 text-xs' onClick={() => toggleModuleExpanded(node.module.id)}>
+                                    {expanded ? t('users.permissionAssignments.actions.collapse') : t('users.permissionAssignments.actions.expand')}
+                                  </Button>
+                                  <Checkbox checked={moduleChecked} onCheckedChange={() => togglePermissionIDs(modulePermissionIDs)} />
+                                </div>
+                              </div>
 
-                          {expanded ? (
-                            <div className='mt-4 space-y-3'>
-                              {node.pages.map((pageNode) => {
-                                const pagePermissionIDs = collectPagePermissionIDs(pageNode)
-                                const pageChecked = pagePermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID.toLowerCase()))
-                                return (
-                                  <div key={pageNode.page.id} className='rounded-xl border border-dashed border-muted/30 p-3 space-y-2'>
-                                    <div className='flex items-start justify-between gap-3'>
-                                      <div>
-                                        <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.page')} / {formatPermissionLabel(pageNode.page.label)}</div>
-                                        <div className='text-xs text-muted-foreground'>{pageNode.page.path || pageNode.page.desc}</div>
-                                      </div>
-                                      <Checkbox checked={pageChecked} onCheckedChange={() => togglePermissionIDs(pagePermissionIDs)} />
-                                    </div>
-                                    {pageNode.tabs.map((tab) => (
-                                      <div key={tab.id} className='flex items-start justify-between gap-3 pl-4'>
-                                        <div>
-                                          <div className='text-sm'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
-                                          <div className='text-xs text-muted-foreground'>{tab.path || tab.desc}</div>
+                              {expanded ? (
+                                <div className='mt-3 space-y-2'>
+                                  {node.pages.map((pageNode) => {
+                                    const pagePermissionIDs = collectPagePermissionIDs(pageNode)
+                                    const pageChecked = pagePermissionIDs.every((permissionID) => selectedPermissionIDSet.has(permissionID.toLowerCase()))
+                                    return (
+                                      <div key={pageNode.page.id} className='space-y-1.5 rounded-lg border border-dashed border-muted/30 p-2.5'>
+                                        <div className='flex items-start justify-between gap-2'>
+                                          <div className='min-w-0'>
+                                            <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.page')} / {formatPermissionLabel(pageNode.page.label)}</div>
+                                            <div className='text-xs leading-snug text-muted-foreground'>{pageNode.page.path || pageNode.page.desc}</div>
+                                          </div>
+                                          <Checkbox checked={pageChecked} onCheckedChange={() => togglePermissionIDs(pagePermissionIDs)} />
                                         </div>
-                                        <Checkbox
-                                          checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
-                                          onCheckedChange={() => togglePermissionIDs([tab.id])}
-                                        />
+                                        {pageNode.tabs.map((tab) => (
+                                          <div key={tab.id} className='flex items-start justify-between gap-2 py-1 pl-3'>
+                                            <div className='min-w-0'>
+                                              <div className='text-sm leading-tight'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
+                                              <div className='text-xs leading-snug text-muted-foreground'>{tab.path || tab.desc}</div>
+                                            </div>
+                                            <Checkbox
+                                              checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
+                                              onCheckedChange={() => togglePermissionIDs([tab.id])}
+                                            />
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                )
-                              })}
+                                    )
+                                  })}
 
-                              {node.directTabs.map((tab) => (
-                                <div key={tab.id} className='flex items-start justify-between gap-3 rounded-xl border border-dashed border-muted/30 p-3'>
-                                  <div>
-                                    <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
-                                    <div className='text-xs text-muted-foreground'>{tab.path || tab.desc}</div>
-                                  </div>
-                                  <Checkbox
-                                    checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
-                                    onCheckedChange={() => togglePermissionIDs([tab.id])}
-                                  />
-                                </div>
-                              ))}
+                                  {node.directTabs.map((tab) => (
+                                    <div key={tab.id} className='flex items-start justify-between gap-2 rounded-lg border border-dashed border-muted/30 p-2.5'>
+                                      <div className='min-w-0'>
+                                        <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.tab')} / {formatPermissionLabel(tab.label)}</div>
+                                        <div className='text-xs leading-snug text-muted-foreground'>{tab.path || tab.desc}</div>
+                                      </div>
+                                      <Checkbox
+                                        checked={selectedPermissionIDSet.has(tab.id.toLowerCase())}
+                                        onCheckedChange={() => togglePermissionIDs([tab.id])}
+                                      />
+                                    </div>
+                                  ))}
 
-                              {node.directActions.map((action) => (
-                                <div key={action.id} className='flex items-start justify-between gap-3 rounded-xl border border-dashed border-muted/30 p-3'>
-                                  <div>
-                                    <div className='text-sm font-semibold'>{t('users.permissionAssignments.tree.action')} / {formatPermissionLabel(action.label)}</div>
-                                    <div className='text-xs text-muted-foreground'>{action.desc}</div>
-                                  </div>
-                                  <Checkbox
-                                    checked={selectedPermissionIDSet.has(action.id.toLowerCase())}
-                                    onCheckedChange={() => togglePermissionIDs([action.id])}
-                                  />
+                                  {node.directActions.map((action) => (
+                                    <div key={action.id} className='flex items-start justify-between gap-2 rounded-lg border border-dashed border-muted/30 p-2.5'>
+                                      <div className='min-w-0'>
+                                        <div className='text-sm font-semibold leading-tight'>{t('users.permissionAssignments.tree.action')} / {formatPermissionLabel(action.label)}</div>
+                                        <div className='text-xs leading-snug text-muted-foreground'>{action.desc}</div>
+                                      </div>
+                                      <Checkbox
+                                        checked={selectedPermissionIDSet.has(action.id.toLowerCase())}
+                                        onCheckedChange={() => togglePermissionIDs([action.id])}
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      )
-                    })}
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
                 )}
-              </div>
-            </div>
-
-            <div className='space-y-4'>
-              <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.summary.title')}</div>
-                {isAccessLoading ? (
-                  <div className='text-xs text-muted-foreground'>{t('users.permissionAssignments.accessLoading')}</div>
-                ) : (
-                  <div className='grid grid-cols-1 gap-3 text-xs'>
-                    <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.explicitPermissionCount')}</div>
-                      <div className='font-mono'>{String(draftPermissionIDs.length)}</div>
-                    </div>
-                    <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.status')}</div>
-                      <div className='font-mono'>{permissionsData?.status || currentRow?.status || '-'}</div>
-                    </div>
-                    <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.diagnostics')}</div>
-                      <div className='flex flex-wrap gap-2'>
-                        {(accessSnapshot?.diagnostics || []).length > 0 ? (
-                          accessSnapshot?.diagnostics?.map((item) => (
-                            <Badge key={item} variant='secondary'>
-                              {item}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className='font-mono'>{t('users.permissionAssignments.summary.none')}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className='space-y-1'>
-                      <div className='font-semibold text-muted-foreground'>{t('users.permissionAssignments.summary.unsavedChanges')}</div>
-                      <div className='font-mono'>{hasUnsavedChanges ? t('users.permissionAssignments.summary.changed') : t('users.permissionAssignments.summary.unchanged')}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className='rounded-2xl border border-dashed border-muted/40 bg-muted/10 p-4 space-y-3'>
-                <div className='flex items-center justify-between gap-3'>
-                  <div className='text-xs font-bold uppercase tracking-wide text-muted-foreground'>{t('users.permissionAssignments.selected.title')}</div>
-                  <Button type='button' variant='outline' size='sm' onClick={() => setLocalDraftPermissionIDs([])}>
-                    {t('users.permissionAssignments.actions.clear')}
-                  </Button>
-                </div>
-                <div className='max-h-[420px] overflow-y-auto space-y-2'>
-                  {selectedPermissions.length === 0 ? (
-                    <div className='text-xs text-muted-foreground py-6 text-center'>{t('users.permissionAssignments.selected.empty')}</div>
-                  ) : (
-                    selectedPermissions.map((permission) => (
-                      <div key={permission.id} className='rounded-xl border border-dashed border-muted/30 bg-background p-3'>
-                        <div className='text-sm font-semibold'>{permission.label}</div>
-                        <div className='text-xs text-muted-foreground mt-1'>{permission.id}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className='p-5 border-t border-dashed border-muted/40 bg-muted/5 gap-2'>
-          <Button type='button' variant='outline' onClick={handleReset} disabled={anyMutationPending || !hasUnsavedChanges}>
-            {t('users.permissionAssignments.actions.reset')}
-          </Button>
-          <Button type='button' onClick={handleSave} disabled={anyMutationPending || !hasUnsavedChanges}>
-            {t('users.permissionAssignments.actions.save')}
-          </Button>
-          <Button type='button' variant='outline' onClick={() => handleDialogOpenChange(false)}>
-            {t('common.actions.close')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -7,63 +7,71 @@ import (
 
 // SalesOrder 销售订单主单
 type SalesOrder struct {
-	ID                 string           `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	OrderNo            string           `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
-	OrderName          string           `gorm:"size:255" json:"orderName"`
-	CustomerName       string           `gorm:"size:100" json:"customerName"`
-	CustomerID         string           `gorm:"size:100" json:"customerId"`
-	Type               string           `gorm:"size:50" json:"type"`
-	Currency           string           `gorm:"size:20" json:"currency"`
-	PaymentMethod      string           `gorm:"size:50" json:"paymentMethod"`
-	PaymentMethodName  string           `gorm:"size:100" json:"paymentMethodName"`
-	PaymentTerm        string           `gorm:"size:50" json:"paymentTerm"`
-	PaymentTermName    string           `gorm:"size:100" json:"paymentTermName"`
-	Classification     string           `gorm:"size:50" json:"classification"`
-	Status             string           `gorm:"size:50;default:'Draft'" json:"status"`
-	StatusNote         string           `json:"statusNote"`
-	Amount             float64          `json:"amount"`
-	Quantity           float64          `json:"quantity"`
-	OrderDate          string           `gorm:"index:idx_so_deleted_date" json:"orderDate"`
-	DeliveryDate       string           `json:"deliveryDate"`
-	PurchaseOrderNo    string           `gorm:"size:100" json:"purchaseOrderNo"`
-	Barcode            string           `gorm:"size:100" json:"barcode"`
-	Requirements       string           `gorm:"type:text" json:"requirements"`
-	Evidences          json.RawMessage  `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
-	WorkflowInstanceID string           `gorm:"size:100;index" json:"workflowInstanceId"`
-	Lines              []SalesOrderLine `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
-	CreatedAt          time.Time        `json:"createdAt"`
-	UpdatedAt          time.Time        `json:"updatedAt"`
-	UpdatedBy          string           `json:"updatedBy"`
-	IsDeleted          bool             `gorm:"index:idx_so_deleted_date;default:false" json:"isDeleted"`
-	Version            int              `gorm:"default:1" json:"version"` // 对应前端 BaseEntity.version
+	ID                   string           `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	OrderNo              string           `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
+	OrderName            string           `gorm:"size:255" json:"orderName"`
+	CustomerName         string           `gorm:"size:100" json:"customerName"`
+	CustomerID           string           `gorm:"size:100" json:"customerId"`
+	Type                 string           `gorm:"size:50" json:"type"`
+	Currency             string           `gorm:"size:20" json:"currency"`
+	ExchangeRateSnapshot float64          `gorm:"default:1.0" json:"exchangeRateSnapshot"`
+	PaymentMethod        string           `gorm:"size:50" json:"paymentMethod"`
+	PaymentMethodName    string           `gorm:"size:100" json:"paymentMethodName"`
+	PaymentTerm          string           `gorm:"size:50" json:"paymentTerm"`
+	PaymentTermName      string           `gorm:"size:100" json:"paymentTermName"`
+	Classification       string           `gorm:"size:50" json:"classification"`
+	Status               string           `gorm:"size:50;default:'Draft'" json:"status"`
+	StatusNote           string           `json:"statusNote"`
+	Amount               float64          `json:"amount"`
+	Quantity             float64          `json:"quantity"`
+	OrderDate            string           `gorm:"index:idx_so_deleted_date" json:"orderDate"`
+	DeliveryDate         string           `json:"deliveryDate"`
+	PurchaseOrderNo      string           `gorm:"size:100" json:"purchaseOrderNo"`
+	Barcode              string           `gorm:"size:100" json:"barcode"`
+	Requirements         string           `gorm:"type:text" json:"requirements"`
+	Evidences            json.RawMessage  `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	WorkflowInstanceID   string           `gorm:"size:100;index" json:"workflowInstanceId"`
+	Lines                []SalesOrderLine `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+	CreatedAt            time.Time        `json:"createdAt"`
+	UpdatedAt            time.Time        `json:"updatedAt"`
+	UpdatedBy            string           `json:"updatedBy"`
+	IsDeleted            bool             `gorm:"index:idx_so_deleted_date;default:false" json:"isDeleted"`
+	Version              int              `gorm:"default:1" json:"version"` // 对应前端 BaseEntity.version
 }
 
 // SalesOrderLine 销售订单明细行
 type SalesOrderLine struct {
-	ID             uint    `gorm:"primaryKey" json:"id"`
-	SalesOrderID   string  `gorm:"type:uuid;index" json:"-"`
-	LineNo         int     `json:"lineNo"`
-	ProductID      string  `json:"productId"`
-	ProductModel   string  `json:"productModel"`
-	ProductCode    string  `json:"productCode"`
-	Specification  string  `json:"specification"`
-	Description    string  `json:"description"`
-	Qty            float64 `json:"qty"`
-	UOM            string  `json:"uom"`
-	Price          float64 `json:"price"`
-	Amount         float64 `json:"amount"`
-	DeliveredQty   float64 `json:"deliveredQty"`
-	CustomerPartNo string  `json:"customerPartNo"`
-	JobNo          string  `json:"jobNo"`
-	Note           string  `json:"note"`
-	DrillingPlanID string  `json:"drillingPlanId"`
-	LabelingPlanID string  `json:"labelingPlanId"`
-	HoleCount      int     `json:"holeCount"`
-	Route          string  `json:"route"`
-	OrderDate      string  `json:"orderDate"`
-	Status         string  `json:"status"`
-	ClaimedBy      string  `json:"claimedBy"`
-	ClaimedAt      string  `json:"claimedAt"`
+	ID                            uint    `gorm:"primaryKey" json:"id"`
+	SalesOrderID                  string  `gorm:"type:uuid;index" json:"-"`
+	LineNo                        int     `json:"lineNo"`
+	ProductID                     string  `json:"productId"`
+	ProductModel                  string  `json:"productModel"`
+	ProductCode                   string  `json:"productCode"`
+	Specification                 string  `json:"specification"`
+	ModelCodeSnapshot             string  `gorm:"size:20" json:"modelCodeSnapshot"`
+	HolePrefixSnapshot            string  `gorm:"size:20" json:"holePrefixSnapshot"`
+	AppearanceID                  string  `gorm:"size:100" json:"appearanceId"`
+	AppearanceNameSnapshot        string  `gorm:"size:100" json:"appearanceNameSnapshot"`
+	AppearanceBarcodeCodeSnapshot string  `gorm:"size:20" json:"appearanceBarcodeCodeSnapshot"`
+	AppearanceDescriptionSnapshot string  `gorm:"type:text" json:"appearanceDescriptionSnapshot"`
+	AppearanceImageURLSnapshot    string  `gorm:"type:text" json:"appearanceImageUrlSnapshot"`
+	Description                   string  `json:"description"`
+	Qty                           float64 `json:"qty"`
+	UOM                           string  `json:"uom"`
+	Price                         float64 `json:"price"`
+	Amount                        float64 `json:"amount"`
+	DeliveredQty                  float64 `json:"deliveredQty"`
+	CustomerPartNo                string  `json:"customerPartNo"`
+	JobNo                         string  `json:"jobNo"`
+	Note                          string  `json:"note"`
+	DrillingPlanID                string  `json:"drillingPlanId"`
+	LabelingPlanID                string  `json:"labelingPlanId"`
+	HoleCount                     int     `json:"holeCount"`
+	Route                         string  `json:"route"`
+	OrderDate                     string  `json:"orderDate"`
+	Status                        string  `json:"status"`
+	ClaimedBy                     string  `json:"claimedBy"`
+	ClaimedAt                     string  `json:"claimedAt"`
 }
 
 // SalesReturn 销售退货单

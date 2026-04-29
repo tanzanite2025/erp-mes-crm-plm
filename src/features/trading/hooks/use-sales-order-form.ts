@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { numberingService } from '@/features/basic-settings/services/numbering-service'
@@ -19,6 +19,7 @@ export function useSalesOrderForm(
   products: Product[]
 ) {
   const { t } = useLanguage()
+  const classificationPreviewRequestIdRef = useRef(0)
   const { initialFormData, isInitializing, initError, retryInit } = useSalesOrderInit(initialOrder, open)
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -40,9 +41,14 @@ export function useSalesOrderForm(
   const { handleAddLine, handleRemoveLine, updateLine } = useSalesOrderOps(setFormData)
 
   const handleClassificationChange = useCallback(async (value: string) => {
+    const requestId = classificationPreviewRequestIdRef.current + 1
+    classificationPreviewRequestIdRef.current = requestId
     const newBarcode = await numberingService.previewContractBarcode(
       getSalesOrderClassificationExt(value)
     )
+    if (requestId !== classificationPreviewRequestIdRef.current) {
+      return
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -75,12 +81,9 @@ export function useSalesOrderForm(
         }
 
         const product = productById.get(line.productId)
-        const modelCodeSnapshot = product?.barcodeConfig?.modelCode
-        const holePrefixSnapshot = product?.barcodeConfig?.category
-
-        if (!product || !modelCodeSnapshot || !holePrefixSnapshot) {
+        if (!product) {
           throw new Error(
-            t('tradingSalesOrder.errors.lineBarcodeConfigMissing', {
+            t('tradingSalesOrder.errors.lineProductMissing', {
               lineNo: line.lineNo,
             })
           )
@@ -88,8 +91,11 @@ export function useSalesOrderForm(
 
         return {
           ...line,
-          modelCodeSnapshot,
-          holePrefixSnapshot,
+          productModel: line.productModel || product.sku,
+          productCode: line.productCode || product.sku,
+          specification: line.specification || product.name || product.sku,
+          modelCodeSnapshot: line.modelCodeSnapshot || product.modelCode || '',
+          holePrefixSnapshot: line.holePrefixSnapshot || '',
         }
       })
     } catch (error) {

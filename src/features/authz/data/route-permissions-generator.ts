@@ -4,6 +4,7 @@ import {
   generatePermissionId,
   getMenuPermissionForPath,
 } from './permission-catalog'
+import { resolveRoutePermissionLabel } from './route-permission-labels'
 
 export type RoutePermissionEntry = {
   path: string
@@ -50,6 +51,9 @@ function comparePathsBySpecificity(a: string, b: string): number {
 }
 
 function formatPathLabel(path: string): string {
+  const configuredLabel = resolveRoutePermissionLabel(path)
+  if (configuredLabel) return configuredLabel
+
   const segments = splitPath(path)
   if (segments.length === 0) return '仪表盘首页'
 
