@@ -12,6 +12,7 @@ type ProductBarcodeMobileCapturePanelProps = {
   isCreatingSession: boolean
   onCreateSession: () => void
   onCopyLink: () => void
+  compact?: boolean
 }
 
 export function ProductBarcodeMobileCapturePanel({
@@ -21,6 +22,7 @@ export function ProductBarcodeMobileCapturePanel({
   isCreatingSession,
   onCreateSession,
   onCopyLink,
+  compact = false,
 }: ProductBarcodeMobileCapturePanelProps) {
   const { t } = useLanguage()
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -47,8 +49,8 @@ export function ProductBarcodeMobileCapturePanel({
   }, [captureUrl])
 
   return (
-    <section className='rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-3.5'>
-      <div className='flex flex-col gap-2.5 md:flex-row md:items-start md:justify-between'>
+    <section className={compact ? 'rounded-[20px] border border-dashed border-primary/20 bg-background/80 p-3' : 'rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-3.5'}>
+      <div className={compact ? 'flex flex-col gap-2 md:flex-row md:items-start md:justify-between' : 'flex flex-col gap-2.5 md:flex-row md:items-start md:justify-between'}>
         <div className='space-y-1'>
           <div className='flex items-center gap-2 text-sm font-black italic tracking-tighter text-foreground'>
             <Smartphone className='size-4 text-primary' />
@@ -67,7 +69,7 @@ export function ProductBarcodeMobileCapturePanel({
             variant='outline'
             onClick={onCreateSession}
             disabled={isCreatingSession}
-            className='h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'
+            className={compact ? 'h-8 rounded-full px-3 text-[9px] font-black uppercase tracking-widest' : 'h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'}
           >
             {isCreatingSession ? (
               <Loader2 className='size-4 animate-spin' />
@@ -81,7 +83,7 @@ export function ProductBarcodeMobileCapturePanel({
             variant='outline'
             onClick={onCopyLink}
             disabled={!captureUrl}
-            className='h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'
+            className={compact ? 'h-8 rounded-full px-3 text-[9px] font-black uppercase tracking-widest' : 'h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest'}
           >
             <Clipboard className='size-4' />
             {t('cuttingOperations.productBinding.mobileCapture.actions.copyLink')}
@@ -90,9 +92,9 @@ export function ProductBarcodeMobileCapturePanel({
       </div>
 
       {captureUrl ? (
-        <div className='mt-3 grid gap-2 rounded-[20px] border border-dashed border-primary/20 bg-background/80 p-2.5 md:grid-cols-[92px_1fr]'>
+        <div className={compact ? 'mt-3 grid gap-2 rounded-[18px] border border-dashed border-primary/20 bg-muted/30 p-2 md:grid-cols-[80px_1fr]' : 'mt-3 grid gap-2 rounded-[20px] border border-dashed border-primary/20 bg-background/80 p-2.5 md:grid-cols-[92px_1fr]'}>
           <div className='flex items-center justify-center rounded-xl bg-white p-2'>
-            <canvas ref={qrCanvasRef} className='size-[76px]' />
+            <canvas ref={qrCanvasRef} className={compact ? 'size-[64px]' : 'size-[76px]'} />
           </div>
           <div className='flex min-w-0 flex-col justify-center gap-1.5'>
             <div className='flex items-center gap-2 text-sm font-black italic tracking-tighter text-foreground'>

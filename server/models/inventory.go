@@ -86,3 +86,38 @@ type ShipmentRecord struct {
 func (ShipmentRecord) TableName() string {
 	return "shipment_records"
 }
+
+// CutSizeInventory stores on-hand stock for cutting size units maintained in the cut-size library.
+type CutSizeInventory struct {
+	BaseModel
+	CutSizeUnitID string  `gorm:"type:uuid;uniqueIndex;not null" json:"cutSizeUnitId"`
+	CutSizeCode   string  `gorm:"size:100;index" json:"cutSizeCode"`
+	CutSizeName   string  `gorm:"size:255" json:"cutSizeName"`
+	Quantity      float64 `gorm:"default:0" json:"quantity"`
+	Unit          string  `gorm:"size:20;default:'pcs'" json:"unit"`
+	Location      string  `gorm:"size:100" json:"location"`
+	Remarks       string  `gorm:"type:text" json:"remarks"`
+}
+
+func (CutSizeInventory) TableName() string {
+	return "cut_size_inventory"
+}
+
+// CutSizeInventoryTransaction records quantity-changing events for cutting size inventory.
+type CutSizeInventoryTransaction struct {
+	BaseModel
+	CutSizeUnitID string  `gorm:"type:uuid;index;not null" json:"cutSizeUnitId"`
+	CutSizeCode   string  `gorm:"size:100;index" json:"cutSizeCode"`
+	CutSizeName   string  `gorm:"size:255" json:"cutSizeName"`
+	Type          string  `gorm:"size:40;index;not null" json:"type"`
+	QuantityDelta float64 `gorm:"not null" json:"quantityDelta"`
+	QuantityAfter float64 `gorm:"not null" json:"quantityAfter"`
+	Unit          string  `gorm:"size:20;default:'pcs'" json:"unit"`
+	Location      string  `gorm:"size:100" json:"location"`
+	Operator      string  `gorm:"size:100" json:"operator"`
+	Remarks       string  `gorm:"type:text" json:"remarks"`
+}
+
+func (CutSizeInventoryTransaction) TableName() string {
+	return "cut_size_inventory_transactions"
+}

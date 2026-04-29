@@ -246,6 +246,28 @@ func buildProductBarcodeBindingEventSnapshot(req CreateProductBarcodeBindingRequ
 	return string(payload)
 }
 
+func CountProductBarcodeBindings(input ProductBarcodeBindingListQuery) (int64, error) {
+	if db.DB == nil {
+		return 0, errors.New("database not initialized")
+	}
+
+	query := normalizeProductBarcodeBindingListQuery(input)
+	base := db.DB.Model(&models.ProductBarcodeBinding{}).Where("deleted_at IS NULL")
+	if query.ProductBarcode != "" {
+		base = base.Where("product_barcode = ?", query.ProductBarcode)
+	}
+	if query.PrepregBindingToken != "" {
+		base = base.Where("prepreg_binding_token = ?", query.PrepregBindingToken)
+	}
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return 0, fmt.Errorf("failed to count product barcode bindings: %w", err)
+	}
+
+	return total, nil
+}
+
 func ListProductBarcodeBindings(input ProductBarcodeBindingListQuery) (ProductBarcodeBindingListResponse, error) {
 	if db.DB == nil {
 		return ProductBarcodeBindingListResponse{}, errors.New("database not initialized")

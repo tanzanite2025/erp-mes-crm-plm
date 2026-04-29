@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { getErrorStatus } from '@/lib/error-status'
 import {
+  getProductBindingSubmissionOutcome,
   productBindingService,
   type CreateProductBindingRequest,
   type ProductBindingRecord,
@@ -11,6 +13,16 @@ import {
   ProductBarcodeCaptureSessionService,
   type ProductBarcodeCaptureSession,
 } from '../services/product-barcode-capture-session-service'
+import { invalidateProductBindingHistoryQueries } from './use-product-binding-history-query'
+
+ function getErrorMessage(error: unknown): string {
+   if (error instanceof Error) return error.message
+   if (error && typeof error === 'object' && 'message' in error) {
+     const message = error.message
+     return typeof message === 'string' ? message : ''
+   }
+   return ''
+ }
 
 export type ProductBindingFeedbackState =
   | 'idle'
@@ -18,11 +30,9 @@ export type ProductBindingFeedbackState =
   | 'missingQr'
   | 'submitting'
   | 'success'
+  | 'duplicate'
+  | 'conflict'
   | 'error'
-
-function buildProductBindingHistoryQueryKey(productBarcode: string, prepregQrCode: string) {
-  return ['cutting-operations', 'product-binding', 'history', productBarcode, prepregQrCode] as const
-}
 
 export function useProductBindingPageState() {
   const { t } = useLanguage()
@@ -37,27 +47,12 @@ export function useProductBindingPageState() {
   const [isCreatingBarcodeCaptureSession, setIsCreatingBarcodeCaptureSession] = useState(false)
   const [barcodeCaptureStatusMessage, setBarcodeCaptureStatusMessage] = useState('')
 
-  const trimmedProductBarcode = useMemo(() => productBarcode.trim(), [productBarcode])
-  const trimmedPrepregQrCode = useMemo(() => prepregQrCode.trim(), [prepregQrCode])
   const barcodeCaptureUrl = useMemo(() => {
     if (!barcodeCaptureSession?.uploadToken || typeof window === 'undefined') return ''
     const sessionId = encodeURIComponent(barcodeCaptureSession.sessionId)
     const token = encodeURIComponent(barcodeCaptureSession.uploadToken)
     return `${window.location.origin}/product-barcode-capture/${sessionId}?token=${token}`
   }, [barcodeCaptureSession])
-
-  const historyQueryKey = buildProductBindingHistoryQueryKey(trimmedProductBarcode, trimmedPrepregQrCode)
-
-  const historyQuery = useQuery({
-    queryKey: historyQueryKey,
-    queryFn: () =>
-      productBindingService.listBindings({
-        limit: 12,
-        productBarcode: trimmedProductBarcode || undefined,
-        prepregBindingToken: trimmedPrepregQrCode || undefined,
-      }),
-    enabled: true,
-  })
 
   const submitBindingMutation = useMutation({
     mutationFn: async (payload: CreateProductBindingRequest) => productBindingService.submitBinding(payload),
@@ -151,11 +146,39 @@ export function useProductBindingPageState() {
         productBarcode: productBarcode.trim(),
         prepregQrCode: prepregQrCode.trim(),
       })
-      await queryClient.invalidateQueries({ queryKey: historyQueryKey })
+      await invalidateProductBindingHistoryQueries(queryClient)
       setBindingResult(result)
-      setFeedbackState('success')
+      setFeedbackState(
+        getProductBindingSubmissionOutcome(result) === 'duplicate' ? 'duplicate' : 'success'
+      )
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : '')
+      if (getErrorStatus(error) === 409) {
+        const conflictMessage = getErrorMessage(error)
+        setSubmitError(conflictMessage)
+
+        try {
+          const history = await productBindingService.listBindings({
+            limit: 1,
+            productBarcode: productBarcode.trim(),
+          })
+          const latestBinding = history.items[0]
+          setBindingResult(
+            latestBinding
+              ? {
+                  ...latestBinding,
+                  message: conflictMessage || latestBinding.message,
+                }
+              : null
+          )
+        } catch {
+          setBindingResult(null)
+        }
+
+        setFeedbackState('conflict')
+        return
+      }
+
+      setSubmitError(getErrorMessage(error))
       setFeedbackState('error')
     }
   }
@@ -173,10 +196,6 @@ export function useProductBindingPageState() {
     resetFeedback,
     submitBindingMutation,
     handleSubmitBinding,
-    bindingHistory: historyQuery.data?.items ?? [],
-    historyTotal: historyQuery.data?.total ?? 0,
-    isHistoryLoading: historyQuery.isLoading,
-    historyError: historyQuery.error,
     latestBindingId,
     barcodeCaptureSession,
     barcodeCaptureUrl,

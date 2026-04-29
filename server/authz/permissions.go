@@ -97,6 +97,10 @@ const (
 )
 
 const (
+	ActionCuttingSizeInventoryRecord = "action_cutting_size_inventory_record"
+)
+
+const (
 	ActionApprovalReview       = "action_approval_review"
 	ActionSystemWorkflowManage = "action_system_workflow_manage"
 	ActionSystemWorkflowReview = "action_system_workflow_review"
@@ -170,6 +174,7 @@ var AdminFallbackPermissions = []string{
 	ActionEmployeeImportPreview,
 	ActionEmployeeImportCommit,
 	ActionProductionLineUpdate,
+	ActionCuttingSizeInventoryRecord,
 	ActionApprovalReview,
 	ActionSystemWorkflowManage,
 	ActionSystemWorkflowReview,

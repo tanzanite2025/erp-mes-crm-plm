@@ -27,8 +27,8 @@ export function KpiGrid() {
 
     if (loading || !stats) {
         return (
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-                {[1, 2, 3, 4].map((i) => (
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                {[1, 2, 3].map((i) => (
                     <Card key={i} className='animate-pulse'>
                         <CardHeader className='h-20' />
                         <CardContent className='h-24' />
@@ -39,7 +39,7 @@ export function KpiGrid() {
     }
 
     return (
-        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             {/* REALTIME_WIP */}
             <Card className='rounded-xl md:rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-none hover:bg-muted/10 transition-all group overflow-hidden'>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4 md:px-5'>
@@ -155,40 +155,6 @@ export function KpiGrid() {
                 </CardContent>
             </Card>
 
-            {/* SN_ACTIVATION */}
-            <Card className='rounded-xl md:rounded-[24px] border-dashed border-blue-500/20 bg-blue-500/[0.02] shadow-none hover:bg-blue-500/[0.05] transition-all group overflow-hidden'>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4 md:px-5'>
-                    <CardTitle className='text-[10px] font-black uppercase tracking-widest text-blue-600/60'>
-                        {t('dashboard.page.kpi.activation.title')}
-                    </CardTitle>
-                    <div className='p-2 rounded-xl bg-blue-500/10 text-blue-600 transition-transform group-hover:scale-110'>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth='2.5'
-                            className='h-3.5 w-3.5'
-                        >
-                            <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-                        </svg>
-                    </div>
-                </CardHeader>
-                <CardContent className='pb-4 px-4 md:px-5'>
-                    {stats.availability.totalSn.connected ? (
-                        <>
-                            <div className='text-xl md:text-2xl font-black tracking-tighter text-blue-700'>
-                                {stats.totalSn.toLocaleString()} <span className='text-[10px] font-black text-blue-600/40 ml-1 uppercase'>{t('dashboard.page.kpi.activation.unit')}</span>
-                            </div>
-                            <p className='text-[9px] font-bold text-blue-600/40 uppercase tracking-tight mt-1'>
-                                {t('dashboard.page.kpi.activation.description')}
-                            </p>
-                        </>
-                    ) : renderPendingConnection(pendingLabel)}
-                </CardContent>
-            </Card>
         </div>
     )
 }

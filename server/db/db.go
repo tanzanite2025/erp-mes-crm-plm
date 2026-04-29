@@ -849,6 +849,8 @@ func InitDB(dsn string) {
 		&models.Inventory{},
 		&models.InboundRecord{},
 		&models.ShipmentRecord{},
+		&models.CutSizeInventory{},
+		&models.CutSizeInventoryTransaction{},
 		&models.PrintBatch{},
 		&models.Sequence{},
 		&models.ProductType{},

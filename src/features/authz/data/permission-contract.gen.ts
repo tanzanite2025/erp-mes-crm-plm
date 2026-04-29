@@ -72,6 +72,7 @@ export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "action_employee_import_preview",
   "action_employee_import_commit",
   "action_production_line_update",
+  "action_cutting_size_inventory_record",
   "action_approval_review",
   "action_system_workflow_manage",
   "action_system_workflow_review"
@@ -145,6 +146,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "action_employee_import_preview",
   "action_employee_import_commit",
   "action_production_line_update",
+  "action_cutting_size_inventory_record",
   "action_approval_review",
   "action_system_workflow_manage",
   "action_system_workflow_review",

@@ -119,12 +119,21 @@ export const cuttingOperations = {
         title: 'Binding Submitted Successfully',
         description: 'The current binding state and roll-instance event trail have been written, and the page has already refreshed the latest result.',
       },
+      duplicate: {
+        title: 'Duplicate Submission Detected',
+        description: 'This submission matched an existing binding on the same roll, and the system has replayed the formal result from the existing event.',
+      },
+      conflict: {
+        title: 'Product Barcode Conflict Detected',
+        description: 'This product barcode is already bound to another prepreg roll, and the system has replayed the existing binding record for review.',
+      },
       error: {
         title: 'Binding Submission Failed',
         description: 'The formal binding did not succeed. Check whether the roll-instance QR is activated, the barcode content, or the product-barcode conflict details.',
       },
       snapshot: {
         executionLabel: 'Roll Spec Snapshot',
+        executionDetailLabel: 'Roll Detail Snapshot',
         barcodeLabel: 'Barcode Input Snapshot',
         qrLabel: 'QR Input Snapshot',
         tokenLabel: 'Prepreg Binding Token',
@@ -144,13 +153,19 @@ export const cuttingOperations = {
       empty: 'No matching roll-instance binding records yet. Submit a formal binding first.',
       error: 'Failed to load binding records: {{message}}',
       latestBadge: 'Latest Submission',
+      actions: {
+        openDialog: 'View Roll-Instance Binding Records',
+        copyProductBarcode: 'Copy Product Barcode',
+      },
+      toasts: {
+        productBarcodeCopied: 'Product barcode copied.',
+        copyFailed: 'Copy failed. Please try again later.',
+      },
       columns: {
-        bindingId: 'Record ID',
-        execution: 'Roll Summary',
+        prepregQrCode: 'QR Code',
         productBarcode: 'Product Barcode',
-        prepregToken: 'Prepreg Token',
-        protocol: 'Protocol',
-        summary: 'Summary',
+        supplierBatchNo: 'Roll Batch No',
+        productionDate: 'Production Date',
         boundBy: 'Operator',
         status: 'Status',
         boundAt: 'Bound At',
@@ -167,7 +182,10 @@ export const cuttingOperations = {
     header: {
       title: 'Cutting Size Inventory',
       description:
-        'Size master data is read directly from the cut-size library. Inventory quantity will be connected to stock deduction in a later phase.',
+        'Size master data is read directly from the cut-size library. Pick active size units to record inventory and show current on-hand quantity.',
+    },
+    actions: {
+      recordInventory: 'Record Inventory',
     },
     metrics: {
       total: 'Total Sizes',
@@ -176,10 +194,11 @@ export const cuttingOperations = {
     },
     table: {
       title: 'Size Inventory Ledger (sourced from Cut-Size Library)',
-      hint: 'This view only shows size source records; no mock inventory is written.',
+      hint: 'Inventory records are selected from cut-size library units and accumulated by inbound entry.',
       loading: 'Loading cut-size library records...',
       empty: 'No available sizes yet. Maintain size units in Cut-Size Library first.',
-      pendingInventory: 'Pending inventory engine',
+      noInventory: 'No inventory record',
+      noLocation: 'No location',
       error: 'Failed to load size inventory: {{message}}',
       columns: {
         code: 'Size Code',
@@ -189,6 +208,25 @@ export const cuttingOperations = {
         sourceStatus: 'Source Status',
         inventoryQty: 'Inventory Qty',
       },
+    },
+    dialog: {
+      title: 'Record Cutting Size Inventory',
+      unit: 'Size Unit',
+      unitPlaceholder: 'Select an active cut-size library unit',
+      quantity: 'Inbound Quantity',
+      location: 'Location',
+      locationPlaceholder: 'e.g. A-01 / cutting buffer',
+      remarks: 'Remarks',
+      remarksPlaceholder: 'Source, batch, or note for this entry',
+      cancel: 'Cancel',
+      save: 'Record',
+      saving: 'Recording...',
+    },
+    toasts: {
+      noActiveUnit: 'No active cut-size unit is available. Maintain the cut-size library first.',
+      selectUnit: 'Select a size unit first.',
+      invalidQuantity: 'Enter an inbound quantity greater than 0.',
+      recordSuccess: 'Size inventory recorded.',
     },
     status: {
       Active: 'Active',

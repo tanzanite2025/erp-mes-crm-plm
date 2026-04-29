@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureArrayField, ensureObjectResponse } from '@/lib/api-response'
+import { extractPrepregBindingToken } from '@/features/raw-materials/prepreg-binding-qr/services/prepreg-binding-token-service'
 
 const PRODUCT_BINDING_ENDPOINT = '/production/product-barcode-bindings'
 
@@ -43,12 +44,25 @@ export type ProductBindingRecord = {
 export type ProductBindingHistoryQuery = {
   limit?: number
   productBarcode?: string
+  prepregQrCode?: string
   prepregBindingToken?: string
 }
 
 export type ProductBindingHistoryResult = {
   items: ProductBindingRecord[]
   total: number
+}
+
+export type ProductBindingSubmissionOutcome = 'bound' | 'duplicate'
+
+export function getProductBindingSubmissionOutcome(
+  record: Pick<ProductBindingRecord, 'message'> | null | undefined,
+): ProductBindingSubmissionOutcome {
+  const message = record?.message?.trim() || ''
+  if (message.includes('重复提交')) {
+    return 'duplicate'
+  }
+  return 'bound'
 }
 
 function normalizeRollInstanceSummary(
@@ -97,6 +111,24 @@ function normalizeProductBindingRecord(input: Record<string, unknown>): ProductB
   }
 }
 
+export function normalizeProductBindingHistoryQuery(
+  query: ProductBindingHistoryQuery = {},
+): ProductBindingHistoryQuery {
+  const prepregQrCode = query.prepregQrCode?.trim() || undefined
+  const prepregBindingToken =
+    query.prepregBindingToken?.trim() ||
+    (prepregQrCode ? extractPrepregBindingToken(prepregQrCode) : '') ||
+    undefined
+
+  return {
+    limit: typeof query.limit === 'number' ? query.limit : undefined,
+    productBarcode: query.productBarcode?.trim() || undefined,
+    prepregQrCode,
+    prepregBindingToken,
+  }
+}
+
+
 export const productBindingService = {
   async submitBinding(request: CreateProductBindingRequest): Promise<ProductBindingRecord> {
     const payload: CreateProductBindingRequest = {
@@ -118,15 +150,16 @@ export const productBindingService = {
   },
 
   async listBindings(query: ProductBindingHistoryQuery = {}): Promise<ProductBindingHistoryResult> {
+    const normalizedQuery = normalizeProductBindingHistoryQuery(query)
     const params = new URLSearchParams()
-    if (typeof query.limit === 'number') {
-      params.set('limit', String(query.limit))
+    if (typeof normalizedQuery.limit === 'number') {
+      params.set('limit', String(normalizedQuery.limit))
     }
-    if (query.productBarcode?.trim()) {
-      params.set('productBarcode', query.productBarcode.trim())
+    if (normalizedQuery.productBarcode) {
+      params.set('productBarcode', normalizedQuery.productBarcode)
     }
-    if (query.prepregBindingToken?.trim()) {
-      params.set('prepregBindingToken', query.prepregBindingToken.trim())
+    if (normalizedQuery.prepregBindingToken) {
+      params.set('prepregBindingToken', normalizedQuery.prepregBindingToken)
     }
 
     const endpoint = params.toString()
@@ -147,5 +180,27 @@ export const productBindingService = {
       ).map(normalizeProductBindingRecord),
       total: Number(checked.total) || 0,
     }
+  },
+
+  async countBindings(query: ProductBindingHistoryQuery = {}): Promise<number> {
+    const normalizedQuery = normalizeProductBindingHistoryQuery(query)
+    const params = new URLSearchParams()
+    if (normalizedQuery.productBarcode) {
+      params.set('productBarcode', normalizedQuery.productBarcode)
+    }
+    if (normalizedQuery.prepregBindingToken) {
+      params.set('prepregBindingToken', normalizedQuery.prepregBindingToken)
+    }
+
+    const endpoint = params.toString()
+      ? `${PRODUCT_BINDING_ENDPOINT}/count?${params.toString()}`
+      : `${PRODUCT_BINDING_ENDPOINT}/count`
+
+    const response = await apiFetch<Record<string, unknown>>(endpoint)
+    const checked = ensureObjectResponse<Record<string, unknown>>(
+      response,
+      'productBindingService.countBindings',
+    )
+    return Number(checked.count) || 0
   },
 }

@@ -119,12 +119,21 @@ export const cuttingOperations = {
         title: '绑定提交成功',
         description: '产品绑定当前状态与卷实例绑定事件已写入正式链路，页面已同步回显最新结果。',
       },
+      duplicate: {
+        title: '检测到重复提交',
+        description: '本次提交命中了同卷既有绑定记录，系统已按既有绑定事件回显当前正式结果。',
+      },
+      conflict: {
+        title: '检测到产品码冲突',
+        description: '该产品码已绑定到其它预浸料卷，系统已回显当前既有绑定记录供你核对冲突来源。',
+      },
       error: {
         title: '绑定提交失败',
         description: '本次正式绑定未成功，请检查卷实例二维码是否已激活、条码内容或产品码冲突信息。',
       },
       snapshot: {
         executionLabel: '卷实例规格快照',
+        executionDetailLabel: '卷实例明细快照',
         barcodeLabel: '一维码输入快照',
         qrLabel: '二维码输入快照',
         tokenLabel: '预浸料绑定标记',
@@ -144,13 +153,19 @@ export const cuttingOperations = {
       empty: '当前没有匹配的卷实例绑定记录，请先完成一条正式绑定。',
       error: '加载绑定记录失败：{{message}}',
       latestBadge: '最新提交',
+      actions: {
+        openDialog: '查看卷实例绑定记录',
+        copyProductBarcode: '复制产品一维码',
+      },
+      toasts: {
+        productBarcodeCopied: '产品一维码已复制。',
+        copyFailed: '复制失败，请稍后重试。',
+      },
       columns: {
-        bindingId: '记录编号',
-        execution: '卷实例摘要',
+        prepregQrCode: '二维码',
         productBarcode: '产品一维码',
-        prepregToken: '预浸料标记',
-        protocol: '条码协议',
-        summary: '条码摘要',
+        supplierBatchNo: '卷批号',
+        productionDate: '卷生产日期',
         boundBy: '操作人',
         status: '状态',
         boundAt: '绑定时间',
@@ -166,7 +181,10 @@ export const cuttingOperations = {
   sizeInventory: {
     header: {
       title: '裁纱尺寸库存',
-      description: '尺寸主数据直接读取裁切尺寸库，库存数量字段待后续库存引擎接入后自动扣减。',
+      description: '尺寸主数据直接读取裁切尺寸库，可选择启用的尺寸单元录入库存并回显当前库存数量。',
+    },
+    actions: {
+      recordInventory: '录入库存',
     },
     metrics: {
       total: '尺寸总数',
@@ -175,10 +193,11 @@ export const cuttingOperations = {
     },
     table: {
       title: '尺寸库存台账（尺寸来自裁切尺寸库）',
-      hint: '当前仅展示尺寸主数据来源，不写入模拟库存。',
+      hint: '录入时从裁切尺寸库选择尺寸单元，库存数量按入库记录累加。',
       loading: '正在加载尺寸库数据...',
       empty: '暂无可用尺寸，请先在“裁切尺寸库”维护尺寸单元。',
-      pendingInventory: '待库存引擎接入',
+      noInventory: '暂无库存记录',
+      noLocation: '未填写库位',
       error: '加载尺寸库存失败：{{message}}',
       columns: {
         code: '尺寸编号',
@@ -188,6 +207,25 @@ export const cuttingOperations = {
         sourceStatus: '来源状态',
         inventoryQty: '库存数量',
       },
+    },
+    dialog: {
+      title: '录入裁纱尺寸库存',
+      unit: '尺寸单元',
+      unitPlaceholder: '请选择裁切尺寸库中的启用尺寸',
+      quantity: '入库数量',
+      location: '库位',
+      locationPlaceholder: '例如 A-01 / 裁纱暂存区',
+      remarks: '备注',
+      remarksPlaceholder: '填写本次录入来源、批次或说明',
+      cancel: '取消',
+      save: '确认录入',
+      saving: '录入中...',
+    },
+    toasts: {
+      noActiveUnit: '暂无启用的裁切尺寸单元，请先维护裁切尺寸库。',
+      selectUnit: '请先选择尺寸单元。',
+      invalidQuantity: '请填写大于 0 的入库数量。',
+      recordSuccess: '尺寸库存已录入。',
     },
     status: {
       Active: '启用',

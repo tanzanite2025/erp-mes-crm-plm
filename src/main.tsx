@@ -7,6 +7,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { getErrorKind, getErrorStatus } from '@/lib/error-status'
 import { handleServerError } from '@/lib/handle-server-error'
 import { createLogger } from '@/lib/logger'
+import { router } from '@/lib/router'
+import { setAppRouter } from '@/lib/router-reference'
 import { registerProductionResourceQueryClient } from '@/features/production-shared/services/production-resource-invalidation'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -69,9 +71,8 @@ const queryClient = new QueryClient({
   }),
 })
 
-import { router } from '@/lib/router'
-
 registerProductionResourceQueryClient(queryClient)
+setAppRouter(router)
 
 // Update the router context with the real queryClient instance
 router.update({

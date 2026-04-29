@@ -7,11 +7,17 @@ function feedbackToneClass(state: ProductBindingFeedbackState): string {
   if (state === 'success') {
     return 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'
   }
+  if (state === 'duplicate') {
+    return 'border-amber-500/30 bg-amber-500/5 text-amber-700'
+  }
   if (state === 'missingBarcode' || state === 'missingQr') {
     return 'border-amber-500/30 bg-amber-500/5 text-amber-700'
   }
   if (state === 'submitting') {
     return 'border-cyan-500/30 bg-cyan-500/5 text-cyan-700'
+  }
+  if (state === 'conflict') {
+    return 'border-rose-500/30 bg-rose-500/5 text-rose-700'
   }
   if (state === 'error') {
     return 'border-rose-500/30 bg-rose-500/5 text-rose-700'
@@ -54,6 +60,20 @@ export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProp
           description:
             bindingResult?.message || t('cuttingOperations.productBinding.feedback.success.description'),
         }
+      case 'duplicate':
+        return {
+          title: t('cuttingOperations.productBinding.feedback.duplicate.title'),
+          description:
+            bindingResult?.message || t('cuttingOperations.productBinding.feedback.duplicate.description'),
+        }
+      case 'conflict':
+        return {
+          title: t('cuttingOperations.productBinding.feedback.conflict.title'),
+          description:
+            bindingResult?.message ||
+            submitError ||
+            t('cuttingOperations.productBinding.feedback.conflict.description'),
+        }
       case 'error':
         return {
           title: t('cuttingOperations.productBinding.feedback.error.title'),
@@ -65,7 +85,11 @@ export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProp
           description: t('cuttingOperations.productBinding.feedback.idle.description'),
         }
     }
-  }, [bindingResult?.message, feedbackState, t])
+  }, [bindingResult?.message, feedbackState, submitError, t])
+
+  const showBindingSnapshot =
+    bindingResult !== null &&
+    (feedbackState === 'success' || feedbackState === 'duplicate' || feedbackState === 'conflict')
 
   return (
     <div className={`rounded-[24px] border border-dashed p-5 ${feedbackToneClass(feedbackState)}`}>
@@ -74,7 +98,7 @@ export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProp
         {feedback.description}
       </p>
 
-      {feedbackState === 'success' ? (
+      {showBindingSnapshot ? (
         <div className='mt-5 grid gap-3'>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
             <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
@@ -98,7 +122,7 @@ export function ProductBindingFeedbackCard(props: ProductBindingFeedbackCardProp
           </div>
           <div className='rounded-[20px] border border-dashed border-current/20 bg-background/80 px-4 py-3'>
             <p className='text-[8px] font-black uppercase tracking-[0.16em] opacity-60'>
-              {t('cuttingOperations.productBinding.history.columns.execution')}
+              {t('cuttingOperations.productBinding.feedback.snapshot.executionDetailLabel')}
             </p>
             <p className='mt-2 text-[11px] font-mono leading-5'>
               {bindingResult?.prepregRollInstance?.specName || '--'} / {bindingResult?.prepregRollInstance?.supplierBatchNo || '--'} / {bindingResult?.prepregRollInstance?.boxNo || '--'}

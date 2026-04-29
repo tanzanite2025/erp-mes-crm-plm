@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
+import { ProductBarcodeMobileCapturePanel } from './product-barcode-mobile-capture-panel'
+import type { ProductBarcodeCaptureSession } from '../services/product-barcode-capture-session-service'
 
 type ProductBindingFormSectionProps = {
   productBarcode: string
@@ -11,6 +13,12 @@ type ProductBindingFormSectionProps = {
   onPrepregQrCodeChange: (value: string) => void
   onSubmit: () => void
   isSubmitting: boolean
+  captureSession: ProductBarcodeCaptureSession | null
+  captureUrl: string
+  captureStatusMessage: string
+  isCreatingCaptureSession: boolean
+  onCreateCaptureSession: () => void
+  onCopyCaptureLink: () => void
 }
 
 export function ProductBindingFormSection(props: ProductBindingFormSectionProps) {
@@ -22,11 +30,17 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
     onPrepregQrCodeChange,
     onSubmit,
     isSubmitting,
+    captureSession,
+    captureUrl,
+    captureStatusMessage,
+    isCreatingCaptureSession,
+    onCreateCaptureSession,
+    onCopyCaptureLink,
   } = props
 
   return (
     <div className='grid gap-4'>
-      <div className='grid gap-4 lg:grid-cols-2'>
+      <div className='grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.95fr)]'>
         <div className='rounded-[24px] border border-dashed border-border/60 bg-muted/10 p-4'>
           <div className='flex items-center gap-3'>
             <div className='flex size-10 items-center justify-center rounded-2xl bg-muted/50'>
@@ -55,6 +69,18 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
             <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
               {t('cuttingOperations.productBinding.form.barcode.hint')}
             </p>
+          </div>
+
+          <div className='mt-3'>
+            <ProductBarcodeMobileCapturePanel
+              captureSession={captureSession}
+              captureUrl={captureUrl}
+              statusMessage={captureStatusMessage}
+              isCreatingSession={isCreatingCaptureSession}
+              onCreateSession={onCreateCaptureSession}
+              onCopyLink={onCopyCaptureLink}
+              compact
+            />
           </div>
         </div>
 

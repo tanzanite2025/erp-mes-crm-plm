@@ -1,8 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguage } from '@/context/language-provider'
 import type { ProductBindingRecord } from '../services/product-binding-service'
+import { formatProductBindingBoundAtLabel } from '../product-binding-history-formatters'
+import {
+  HistoryProductBarcodeCell,
+  HistoryQrCodeCell,
+} from './product-binding-history-cell-renderers'
+import { ProductBindingHistoryEmptyState } from './product-binding-history-empty-state'
 
-type ProductBindingHistoryTableProps = {
+export type ProductBindingHistoryTableProps = {
   items: ProductBindingRecord[]
   isLoading: boolean
   error: Error | null
@@ -11,13 +17,13 @@ type ProductBindingHistoryTableProps = {
 }
 
 export function ProductBindingHistoryTable(props: ProductBindingHistoryTableProps) {
-  const { t } = useLanguage()
+  const { t, locale } = useLanguage()
   const { items, isLoading, error, latestBindingId, historyTotal } = props
 
   return (
-    <Card className='rounded-[24px] border border-dashed border-border/70 bg-background shadow-none'>
-      <CardContent className='p-0'>
-        <div className='flex items-center justify-between border-b border-dashed border-border/70 px-5 py-4'>
+    <Card className='h-full gap-0 rounded-[24px] border border-dashed border-border/70 bg-background shadow-none'>
+      <CardContent className='flex h-full min-h-0 flex-col p-0'>
+        <div className='flex items-center justify-between border-b border-dashed border-border/70 px-4 py-3'>
           <div className='flex flex-col gap-1'>
             <p className='text-sm font-black italic tracking-tighter text-foreground'>
               {t('cuttingOperations.productBinding.history.title')}
@@ -29,40 +35,43 @@ export function ProductBindingHistoryTable(props: ProductBindingHistoryTableProp
         </div>
 
         {error ? (
-          <div className='px-5 py-6 text-sm text-rose-600'>
+          <div className='px-4 py-4 text-sm text-rose-600'>
             {t('cuttingOperations.productBinding.history.error', { message: error.message })}
           </div>
         ) : null}
 
-        <div className='overflow-x-auto'>
-          <table className='w-full min-w-[1320px] text-sm'>
-            <thead className='bg-muted/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
+        <div className='min-h-0 flex-1 overflow-auto'>
+          <table className='w-full min-w-[1040px] text-sm'>
+            <colgroup>
+              <col className='w-[112px]' />
+              <col className='w-[220px]' />
+              <col className='w-[180px]' />
+              <col className='w-[160px]' />
+              <col className='w-[140px]' />
+              <col className='w-[120px]' />
+              <col className='w-[160px]' />
+            </colgroup>
+            <thead className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
               <tr>
-                <th className='px-5 py-3 text-left'>
-                  {t('cuttingOperations.productBinding.history.columns.bindingId')}
+                <th className='sticky top-0 z-10 bg-background/95 px-3 py-3 text-center backdrop-blur'>
+                  {t('cuttingOperations.productBinding.history.columns.prepregQrCode')}
                 </th>
-                <th className='px-5 py-3 text-left'>
-                  {t('cuttingOperations.productBinding.history.columns.execution')}
-                </th>
-                <th className='px-5 py-3 text-left'>
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
                   {t('cuttingOperations.productBinding.history.columns.productBarcode')}
                 </th>
-                <th className='px-5 py-3 text-left'>
-                  {t('cuttingOperations.productBinding.history.columns.prepregToken')}
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
+                  {t('cuttingOperations.productBinding.history.columns.supplierBatchNo')}
                 </th>
-                <th className='px-5 py-3 text-left'>
-                  {t('cuttingOperations.productBinding.history.columns.protocol')}
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
+                  {t('cuttingOperations.productBinding.history.columns.productionDate')}
                 </th>
-                <th className='px-5 py-3 text-left'>
-                  {t('cuttingOperations.productBinding.history.columns.summary')}
-                </th>
-                <th className='px-5 py-3 text-left'>
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
                   {t('cuttingOperations.productBinding.history.columns.boundBy')}
                 </th>
-                <th className='px-5 py-3 text-left'>
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
                   {t('cuttingOperations.productBinding.history.columns.status')}
                 </th>
-                <th className='px-5 py-3 text-left'>
+                <th className='sticky top-0 z-10 bg-background/95 px-4 py-3 text-left backdrop-blur'>
                   {t('cuttingOperations.productBinding.history.columns.boundAt')}
                 </th>
               </tr>
@@ -70,7 +79,7 @@ export function ProductBindingHistoryTable(props: ProductBindingHistoryTableProp
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td className='px-5 py-6 text-muted-foreground' colSpan={9}>
+                  <td className='px-4 py-6 text-muted-foreground' colSpan={7}>
                     {t('cuttingOperations.productBinding.history.loading')}
                   </td>
                 </tr>
@@ -78,8 +87,8 @@ export function ProductBindingHistoryTable(props: ProductBindingHistoryTableProp
 
               {!isLoading && !error && items.length === 0 ? (
                 <tr>
-                  <td className='px-5 py-6 text-muted-foreground' colSpan={9}>
-                    {t('cuttingOperations.productBinding.history.empty')}
+                  <td className='p-0' colSpan={7}>
+                    <ProductBindingHistoryEmptyState />
                   </td>
                 </tr>
               ) : null}
@@ -93,41 +102,32 @@ export function ProductBindingHistoryTable(props: ProductBindingHistoryTableProp
                         key={item.id}
                         className={`border-t border-dashed border-border/60 align-top ${isLatest ? 'bg-primary/5' : ''}`}
                       >
-                        <td className='px-5 py-4'>
-                          <div className='flex flex-col gap-2'>
-                            <span className='text-[11px] font-mono text-foreground'>{item.id || '--'}</span>
-                            {isLatest ? (
-                              <span className='inline-flex h-5 w-fit items-center rounded-full bg-emerald-500/10 px-2 text-[8px] font-mono uppercase tracking-[0.16em] text-emerald-700'>
-                                {t('cuttingOperations.productBinding.history.latestBadge')}
-                              </span>
-                            ) : null}
-                          </div>
+                        <td className='px-3 py-3'>
+                          <HistoryQrCodeCell
+                            code={item.prepregQrCode || item.prepregBindingToken}
+                            isLatest={isLatest}
+                            latestLabel={t('cuttingOperations.productBinding.history.latestBadge')}
+                          />
                         </td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
-                          {[item.prepregRollInstance?.specCode, item.prepregRollInstance?.supplierBatchNo, item.prepregRollInstance?.boxNo]
-                            .filter(Boolean)
-                            .join(' / ') || item.prepregBindingToken || '--'}
+                        <td className='px-4 py-3'>
+                          <HistoryProductBarcodeCell productBarcode={item.productBarcode} />
                         </td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
-                          {item.productBarcode || '--'}
+                        <td className='px-4 py-3 text-[11px] font-mono text-foreground'>
+                          {item.prepregRollInstance?.supplierBatchNo || '--'}
                         </td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
-                          {item.prepregBindingToken || '--'}
+                        <td className='px-4 py-3 text-[11px] font-mono text-foreground'>
+                          {item.prepregRollInstance?.productionDate || '--'}
                         </td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
-                          {item.barcodeProtocol || '--'}
-                        </td>
-                        <td className='px-5 py-4 text-slate-700'>{item.barcodeSummary || '--'}</td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
+                        <td className='px-4 py-3 text-[11px] font-mono text-foreground'>
                           {item.boundBy || '--'}
                         </td>
-                        <td className='px-5 py-4'>
+                        <td className='px-4 py-3'>
                           <span className='inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[8px] font-mono uppercase tracking-[0.16em] text-emerald-700'>
                             {item.status || '--'}
                           </span>
                         </td>
-                        <td className='px-5 py-4 text-[11px] font-mono text-foreground'>
-                          {item.boundAt || '--'}
+                        <td className='px-4 py-3 text-[11px] font-mono text-foreground'>
+                          {formatProductBindingBoundAtLabel(item.boundAt, locale)}
                         </td>
                       </tr>
                     )

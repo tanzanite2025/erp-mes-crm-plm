@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 import { getErrorKind, getErrorStatus, isForbiddenError } from '@/lib/error-status'
 import { createLogger } from '@/lib/logger'
 import { ERROR_ACTION_REGISTRY } from '@/lib/error-action-registry'
-import { router } from '@/lib/router'
+import { getAppRouter } from '@/lib/router-reference'
 import { translate, DEFAULT_LOCALE, type AppLocale, type TranslationKey } from '@/locales'
 import { getCookie } from '@/lib/cookies'
 import { LANGUAGE_COOKIE_NAME } from '@/lib/locale'
@@ -99,10 +99,18 @@ export function getServerErrorPresentation(error: unknown): ServerErrorPresentat
         action: {
           label: translate(locale, actionMetadata.actionLabelKey),
           onClick: () => {
+            const router = getAppRouter()
+            if (!router) {
+              logger.error('Router reference unavailable for error action navigation', {
+                target: navigationTarget,
+              })
+              return
+            }
+
             logger.info('Action triggered', { target: actionMetadata.target })
-            router.navigate({ to: navigationTarget })
+            Promise.resolve(router.navigate({ to: navigationTarget }))
               .then(() => logger.info('Navigation successful'))
-              .catch((err) => logger.error('Navigation failed', err))
+              .catch((err: unknown) => logger.error('Navigation failed', err))
           },
         },
       }

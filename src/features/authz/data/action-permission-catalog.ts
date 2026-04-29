@@ -623,6 +623,14 @@ const productionActions: LegacyActionPermissionEntry[] = [
     parentId: 'menu_prod_config',
     routeBindings: ['PATCH /production/lines/:id'],
   },
+  {
+    id: 'action_cutting_size_inventory_record',
+    label: '裁纱：录入尺寸库存',
+    desc: '允许在裁纱尺寸库存中为裁切尺寸库的尺寸单元录入库存数量。',
+    category: 'action',
+    parentId: 'menu_piecework',
+    routeBindings: ['POST /cutting-operations/size-inventory/records'],
+  },
 ]
 
 export const ACTION_PERMISSION_CATALOG: Record<string, ActionPermissionEntry[]> =

@@ -25,6 +25,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerInventoryRoutes(authorized)
 		registerEquipmentRoutes(authorized)
 		registerProductionRoutes(authorized)
+		registerCuttingOperationRoutes(authorized)
 		registerOrgRoutes(authorized)
 		registerLeaveRoutes(authorized)
 		registerFinanceRoutes(authorized)
