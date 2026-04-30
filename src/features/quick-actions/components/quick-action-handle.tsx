@@ -8,10 +8,16 @@ import { cn } from '@/lib/utils'
 interface QuickActionHandleProps {
   isOpen: boolean
   onToggle: () => void
+  placement?: 'floating' | 'dock'
 }
 
-export function QuickActionHandle({ isOpen, onToggle }: QuickActionHandleProps) {
+export function QuickActionHandle({
+  isOpen,
+  onToggle,
+  placement = 'floating',
+}: QuickActionHandleProps) {
   const { t } = useLanguage()
+  const isDock = placement === 'dock'
 
   return (
     <Button
@@ -20,13 +26,20 @@ export function QuickActionHandle({ isOpen, onToggle }: QuickActionHandleProps) 
       onClick={onToggle}
       aria-label={t('quickActions.handle.ariaLabel')}
       className={cn(
-        'fixed right-0 top-1/2 z-40 h-28 w-11 -translate-y-1/2 rounded-l-2xl rounded-r-none border border-r-0 border-primary/20 bg-primary/95 px-0 text-primary-foreground shadow-2xl shadow-primary/20 transition-all hover:w-12 hover:bg-primary',
-        isOpen && 'w-12 bg-primary'
+        'border border-primary/20 bg-primary/95 text-primary-foreground shadow-xl shadow-primary/15 transition-all hover:bg-primary',
+        isDock
+          ? 'size-11 rounded-full px-0 hover:scale-105 active:scale-95'
+          : 'fixed right-0 top-1/2 z-40 h-28 w-11 -translate-y-1/2 rounded-l-2xl rounded-r-none border-r-0 px-0 shadow-2xl shadow-primary/20 hover:w-12',
+        isOpen && (isDock ? 'bg-primary ring-2 ring-primary/20' : 'w-12 bg-primary')
       )}
     >
-      <div className='flex h-full flex-col items-center justify-center gap-2'>
+      <div className={cn('flex items-center justify-center', isDock ? 'size-full' : 'h-full flex-col gap-2')}>
         <ScanLine className='size-4' />
-        <span className='text-[10px] font-black uppercase tracking-widest [writing-mode:vertical-rl]'>{t('quickActions.handle.label')}</span>
+        {!isDock && (
+          <span className='text-[10px] font-black uppercase tracking-widest [writing-mode:vertical-rl]'>
+            {t('quickActions.handle.label')}
+          </span>
+        )}
       </div>
     </Button>
   )

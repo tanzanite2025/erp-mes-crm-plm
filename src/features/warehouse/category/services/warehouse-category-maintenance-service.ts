@@ -8,21 +8,51 @@ import {
 import { type WarehouseCategoryApiDTO } from '../contracts/warehouse-category-api-dto'
 import type { WarehouseCategory } from '../data/schema'
 
+export const WAREHOUSE_CATEGORY_INTENT_CREATE = 'WAREHOUSE_CATEGORY_CREATE'
+
+export interface WarehouseCategoryTransactionRequest<TPayload> {
+  intent: string
+  actorId?: string
+  payload: TPayload
+}
+
+type WarehouseCategoryCreatePayload = Omit<WarehouseCategory, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+
+const buildWarehouseCategoryTransactionBody = (
+  request: WarehouseCategoryTransactionRequest<WarehouseCategoryCreatePayload>
+) => ({
+  ...toWarehouseCategoryApiDTO(request.payload),
+  metadata: {
+    intent: request.intent,
+    actorId: request.actorId,
+  },
+})
+
+export async function executeWarehouseCategoryTransaction(
+  request: WarehouseCategoryTransactionRequest<WarehouseCategoryCreatePayload>,
+  context = 'WarehouseCategoryMaintenanceService.executeWarehouseCategoryTransaction'
+): Promise<WarehouseCategory> {
+  const res = await apiFetch<WarehouseCategoryApiDTO>('/warehouse/categories', {
+    method: 'POST',
+    body: JSON.stringify(buildWarehouseCategoryTransactionBody(request)),
+  })
+
+  return toWarehouseCategoryContract(
+    ensureObjectResponse<WarehouseCategoryApiDTO & Record<string, unknown>>(
+      res,
+      context
+    ) as WarehouseCategoryApiDTO
+  )
+}
+
 export const WarehouseCategoryMaintenanceService = {
   async createCategory(
-    category: Omit<WarehouseCategory, 'id' | 'version' | 'createdAt' | 'updatedAt'>
+    category: WarehouseCategoryCreatePayload
   ): Promise<WarehouseCategory> {
-    const res = await apiFetch<WarehouseCategoryApiDTO>('/warehouse/categories', {
-      method: 'POST',
-      body: JSON.stringify(toWarehouseCategoryApiDTO(category)),
-    })
-
-    return toWarehouseCategoryContract(
-      ensureObjectResponse<WarehouseCategoryApiDTO & Record<string, unknown>>(
-        res,
-        'WarehouseCategoryMaintenanceService.createCategory'
-      ) as WarehouseCategoryApiDTO
-    )
+    return executeWarehouseCategoryTransaction({
+      intent: WAREHOUSE_CATEGORY_INTENT_CREATE,
+      payload: category,
+    }, 'WarehouseCategoryMaintenanceService.createCategory')
   },
 
   async patchCategory(id: string, delta: DeltaSet, version: number): Promise<WarehouseCategory> {

@@ -15,21 +15,46 @@ import { type Product } from '../data/schema'
 import { type SaveProductInput } from '../mutation-types'
 import { normalizeSaveProductInput } from '../utils/product-code-normalization'
 
-const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'
+export const PRODUCT_CREATE_INTENT_SAVE = 'ENGINEERING_PRODUCT_CREATE'
+export const PRODUCT_PATCH_INTENT_SAVE = 'ENGINEERING_PRODUCT_UPDATE'
+
+export interface ProductTransactionRequest<TPayload> {
+  intent: string
+  actorId?: string
+  payload: TPayload
+}
+
+const buildProductTransactionBody = (request: ProductTransactionRequest<SaveProductInput>) => ({
+  ...toProductApiDTO(request.payload),
+  metadata: {
+    intent: request.intent,
+    actorId: request.actorId,
+  },
+})
+
+export const executeProductTransaction = async (
+  request: ProductTransactionRequest<SaveProductInput>,
+  context = 'ProductMaintenanceService.executeProductTransaction'
+): Promise<Product> => {
+  const res = await apiFetch<ProductApiDTO>('/engineering/products', {
+    method: 'POST',
+    body: JSON.stringify(buildProductTransactionBody(request)),
+  })
+  return toProductContract(
+    ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
+      res,
+      context
+    ) as ProductApiDTO
+  )
+}
 
 export const ProductMaintenanceService = {
   async createProduct(product: SaveProductInput): Promise<Product> {
     const payload = normalizeSaveProductInput({ ...product, id: '', version: 1 })
-    const res = await apiFetch<ProductApiDTO>('/engineering/products', {
-      method: 'POST',
-      body: JSON.stringify(toProductApiDTO(payload)),
-    })
-    return toProductContract(
-      ensureObjectResponse<ProductApiDTO & Record<string, unknown>>(
-        res,
-        'ProductMaintenanceService.createProduct'
-      ) as ProductApiDTO
-    )
+    return executeProductTransaction({
+      intent: PRODUCT_CREATE_INTENT_SAVE,
+      payload,
+    }, 'ProductMaintenanceService.createProduct')
   },
 
   async patchProduct(current: Product, product: SaveProductInput): Promise<Product> {

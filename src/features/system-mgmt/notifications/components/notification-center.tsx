@@ -41,11 +41,15 @@ type NotificationVisualConfig = {
   gradient: string
 }
 
+interface NotificationCenterProps {
+  placement?: 'header' | 'dock'
+}
+
 /**
  * 全局系统消息中心 (Notification Center)
  * 已对齐“后端裁决”原则：移除组件挂载时的本地存储读取，改为实时同步后端指令与规则。
  */
-export function NotificationCenter() {
+export function NotificationCenter({ placement = 'header' }: NotificationCenterProps) {
   const user = useAuthStore((state) => state.user)
   const hasUser = !!user
   const navigate = useNavigate()
@@ -142,6 +146,7 @@ export function NotificationCenter() {
     error: { icon: AlertCircle, color: 'text-red-500', badge: 'bg-red-100/50 text-red-600', gradient: 'from-red-50/50 to-white' },
     critical: { icon: ShieldAlert, color: 'text-rose-600', badge: 'bg-rose-100/50 text-rose-600', gradient: 'from-rose-50/50 to-white' },
   }
+  const isDock = placement === 'dock'
 
   return (
     <>
@@ -150,7 +155,8 @@ export function NotificationCenter() {
         variant="ghost"
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "relative h-10 w-10 rounded-full border border-dashed border-cyan-100/80 bg-cyan-500 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.28),0_14px_32px_-16px_rgba(6,182,212,0.95)] transition-all hover:border-white/90 hover:bg-cyan-400 hover:text-white hover:shadow-[0_0_0_1px_rgba(103,232,249,0.38),0_16px_34px_-16px_rgba(34,211,238,1)] dark:border-cyan-50/80 dark:bg-cyan-400 dark:text-slate-950 dark:shadow-[0_0_0_1px_rgba(165,243,252,0.3),0_16px_34px_-16px_rgba(34,211,238,0.88)] dark:hover:border-white dark:hover:bg-cyan-300 dark:hover:text-slate-950",
+          "relative rounded-full border border-dashed border-cyan-100/80 bg-cyan-500 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.28),0_14px_32px_-16px_rgba(6,182,212,0.95)] transition-all hover:border-white/90 hover:bg-cyan-400 hover:text-white hover:shadow-[0_0_0_1px_rgba(103,232,249,0.38),0_16px_34px_-16px_rgba(34,211,238,1)] dark:border-cyan-50/80 dark:bg-cyan-400 dark:text-slate-950 dark:shadow-[0_0_0_1px_rgba(165,243,252,0.3),0_16px_34px_-16px_rgba(34,211,238,0.88)] dark:hover:border-white dark:hover:bg-cyan-300 dark:hover:text-slate-950",
+          isDock ? "size-11 hover:scale-105 active:scale-95" : "h-10 w-10",
           isExpanded && "border-white bg-cyan-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,243,252,0.45),0_18px_36px_-16px_rgba(34,211,238,1)] dark:border-white dark:bg-cyan-200 dark:text-slate-950",
           visibleUnreadCount > 0 && !isExpanded && "ring-2 ring-cyan-300/35 ring-offset-2 ring-offset-background dark:ring-cyan-200/30"
         )}

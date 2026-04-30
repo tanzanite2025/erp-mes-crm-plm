@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { GlobalBottomDock } from '@/components/layout/global-bottom-dock'
 import { SkipToMain } from '@/components/skip-to-main'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
@@ -23,6 +24,12 @@ const SystemAnomalyBanner = lazy(() =>
 )
 
 const AIAssistant = lazy(() => import('@/features/ai-assistant'))
+
+const NotificationCenter = lazy(() =>
+  import('@/features/system-mgmt/notifications/components/notification-center').then((module) => ({
+    default: module.NotificationCenter,
+  }))
+)
 
 function useDeferredActivation(enabled: boolean, delayMs = 0) {
   const [active, setActive] = useState(false)
@@ -232,18 +239,25 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           className={cn(
             '@container/content',
             'min-h-0 w-full bg-background',
-            isPDAShellRoute ? 'pt-0' : 'pt-14 md:pt-16',
+            isPDAShellRoute ? 'pt-0' : 'pt-14 pb-16 md:pt-16',
             !isPDAShellRoute &&
               'peer-data-[variant=inset]:mx-2 peer-data-[variant=inset]:mb-2 peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm'
           )}
         >
           {children ?? <Outlet />}
         </SidebarInset>
-        <QuickActionsFloating />
-        {showAssistant && (
-          <Suspense fallback={null}>
-            <AIAssistant />
-          </Suspense>
+        {!isPDAShellRoute && (
+          <GlobalBottomDock>
+            <QuickActionsFloating placement='dock' />
+            <Suspense fallback={null}>
+              <NotificationCenter placement='dock' />
+            </Suspense>
+            {showAssistant && (
+              <Suspense fallback={null}>
+                <AIAssistant placement='dock' />
+              </Suspense>
+            )}
+          </GlobalBottomDock>
         )}
       </SidebarProvider>
     </LayoutProvider>

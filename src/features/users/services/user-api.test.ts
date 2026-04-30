@@ -12,10 +12,14 @@ vi.mock('@/lib/api-client', () => ({
 import {
   bindUserEmployee,
   createUser,
+  executeUserTransaction,
   fetchUserOptions,
   fetchUsers,
   patchUser,
   replaceUser,
+  USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+  USER_TRANSACTION_INTENT_CREATE,
+  USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE,
   unbindUserEmployee,
 } from './user-api'
 
@@ -92,6 +96,31 @@ describe('user-api contract regression', () => {
         email: 'new@example.com',
         status: 'active',
         employeeId: 'EMP-3',
+        metadata: {
+          intent: USER_TRANSACTION_INTENT_CREATE,
+          actorId: undefined,
+        },
+      }),
+    })
+  })
+
+  it('executeUserTransaction sends intent metadata with optional actor', async () => {
+    apiFetchMock.mockResolvedValue({ id: 'u-8', status: 'active', username: 'actor-user' })
+
+    await executeUserTransaction('/users/custom-command', {
+      intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+      actorId: 'operator-1',
+      payload: { employeeId: 'EMP-8' },
+    })
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/users/custom-command', {
+      method: 'POST',
+      body: JSON.stringify({
+        employeeId: 'EMP-8',
+        metadata: {
+          intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+          actorId: 'operator-1',
+        },
       }),
     })
   })
@@ -152,7 +181,13 @@ describe('user-api contract regression', () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/bind-employee', {
       method: 'POST',
-      body: JSON.stringify({ employeeId: 'EMP-7' }),
+      body: JSON.stringify({
+        employeeId: 'EMP-7',
+        metadata: {
+          intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+          actorId: undefined,
+        },
+      }),
     })
   })
 
@@ -163,6 +198,12 @@ describe('user-api contract regression', () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith('/users/u-7/unbind-employee', {
       method: 'POST',
+      body: JSON.stringify({
+        metadata: {
+          intent: USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE,
+          actorId: undefined,
+        },
+      }),
     })
   })
 })

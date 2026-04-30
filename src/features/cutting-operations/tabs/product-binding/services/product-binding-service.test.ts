@@ -17,7 +17,9 @@ vi.mock('@/features/raw-materials/prepreg-binding-qr/services/prepreg-binding-to
 }))
 
 import {
+  executeProductBinding,
   normalizeProductBindingHistoryQuery,
+  PRODUCT_BINDING_INTENT_CREATE,
   productBindingService,
 } from './product-binding-service'
 
@@ -75,6 +77,78 @@ describe('productBindingService', () => {
     expect(result).toEqual({
       items: [],
       total: 3,
+    })
+  })
+
+  it('wraps submitBinding in product-binding transaction metadata', async () => {
+    apiFetchMock.mockResolvedValue({
+      id: 'binding-1',
+      productBarcode: 'PROD-001',
+      prepregRollInstanceId: 'roll-1',
+      prepregQrCode: 'qr-1',
+      prepregBindingToken: 'PREPREG-BIND-001',
+      barcodeProtocol: 'linear',
+      barcodeSummary: 'summary',
+      boundAt: '2026-05-01T00:00:00Z',
+      boundBy: 'tester',
+      source: 'PRODUCT_BINDING_TAB',
+      status: 'BOUND',
+      message: 'created',
+    })
+
+    const result = await productBindingService.submitBinding({
+      productBarcode: ' PROD-001 ',
+      prepregQrCode: ' qr-1 ',
+    })
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/production/product-barcode-bindings', {
+      method: 'POST',
+      body: JSON.stringify({
+        productBarcode: 'PROD-001',
+        prepregQrCode: 'qr-1',
+        metadata: {
+          intent: PRODUCT_BINDING_INTENT_CREATE,
+          actorId: undefined,
+        },
+      }),
+    })
+    expect(result.id).toBe('binding-1')
+  })
+
+  it('allows explicit product-binding transaction execution with actor metadata', async () => {
+    apiFetchMock.mockResolvedValue({
+      id: 'binding-2',
+      productBarcode: 'PROD-002',
+      prepregRollInstanceId: 'roll-2',
+      prepregQrCode: 'qr-2',
+      prepregBindingToken: 'PREPREG-BIND-002',
+      barcodeProtocol: 'linear',
+      barcodeSummary: 'summary',
+      boundAt: '2026-05-01T00:00:00Z',
+      boundBy: 'operator-a',
+      source: 'PRODUCT_BINDING_TAB',
+      status: 'BOUND',
+    })
+
+    await executeProductBinding({
+      intent: PRODUCT_BINDING_INTENT_CREATE,
+      actorId: 'operator-a',
+      payload: {
+        productBarcode: ' PROD-002 ',
+        prepregQrCode: ' qr-2 ',
+      },
+    })
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/production/product-barcode-bindings', {
+      method: 'POST',
+      body: JSON.stringify({
+        productBarcode: 'PROD-002',
+        prepregQrCode: 'qr-2',
+        metadata: {
+          intent: PRODUCT_BINDING_INTENT_CREATE,
+          actorId: 'operator-a',
+        },
+      }),
     })
   })
 

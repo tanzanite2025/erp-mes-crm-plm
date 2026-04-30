@@ -18,6 +18,10 @@ import {
   type UserPermissionsReplaceResultApiDTO,
 } from '../contracts/user-api-dto'
 
+export const USER_TRANSACTION_INTENT_CREATE = 'USER_CREATE'
+export const USER_TRANSACTION_INTENT_BIND_EMPLOYEE = 'USER_BIND_EMPLOYEE'
+export const USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE = 'USER_UNBIND_EMPLOYEE'
+
 export interface CreateUserPayload {
   username: string
   password: string
@@ -59,8 +63,22 @@ export interface ReplaceUserPermissionsPayload {
   reason?: string
 }
 
+export interface UserTransactionRequest<TPayload> {
+  intent: string
+  actorId?: string
+  payload: TPayload
+}
+
 type UsersQueryValue = string | number | boolean | null | undefined | string[]
 type UsersQueryParams = Record<string, UsersQueryValue>
+
+const buildUserTransactionBody = <TPayload extends object>(request: UserTransactionRequest<TPayload>) => ({
+  ...request.payload,
+  metadata: {
+    intent: request.intent,
+    actorId: request.actorId,
+  },
+})
 
 export const fetchUsers = async (params: UsersQueryParams = {}) => {
   const query = new URLSearchParams()
@@ -104,17 +122,28 @@ export const fetchUserOptions = async (params: UsersQueryParams = {}) => {
   return toUserOptionContracts(ensureArrayResponse<UserOptionApiDTO>(res, 'UserApi.fetchUserOptions'))
 }
 
+export const executeUserTransaction = async <TPayload extends object>(
+  endpoint: string,
+  request: UserTransactionRequest<TPayload>,
+  context = 'UserApi.executeUserTransaction',
+) => {
+  const res = await apiFetch<UserApiDTO>(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(buildUserTransactionBody(request)),
+  })
+  return toUserContract(
+    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, context) as UserApiDTO
+  )
+}
+
 /**
  * 创建用户
  */
 export const createUser = async (userData: CreateUserPayload) => {
-  const res = await apiFetch<UserApiDTO>('/users', {
-    method: 'POST',
-    body: JSON.stringify(userData),
-  })
-  return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.createUser') as UserApiDTO
-  )
+  return executeUserTransaction<CreateUserPayload>('/users', {
+    intent: USER_TRANSACTION_INTENT_CREATE,
+    payload: userData,
+  }, 'UserApi.createUser')
 }
 
 /**
@@ -214,20 +243,15 @@ export const replaceUserPermissions = async (id: string, payload: ReplaceUserPer
 }
 
 export const bindUserEmployee = async (id: string, employeeId: string) => {
-  const res = await apiFetch<UserApiDTO>(`/users/${id}/bind-employee`, {
-    method: 'POST',
-    body: JSON.stringify({ employeeId }),
-  })
-  return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.bindUserEmployee') as UserApiDTO,
-  )
+  return executeUserTransaction<{ employeeId: string }>(`/users/${id}/bind-employee`, {
+    intent: USER_TRANSACTION_INTENT_BIND_EMPLOYEE,
+    payload: { employeeId },
+  }, 'UserApi.bindUserEmployee')
 }
 
 export const unbindUserEmployee = async (id: string) => {
-  const res = await apiFetch<UserApiDTO>(`/users/${id}/unbind-employee`, {
-    method: 'POST',
-  })
-  return toUserContract(
-    ensureObjectResponse<UserApiDTO & Record<string, unknown>>(res, 'UserApi.unbindUserEmployee') as UserApiDTO,
-  )
+  return executeUserTransaction<Record<string, never>>(`/users/${id}/unbind-employee`, {
+    intent: USER_TRANSACTION_INTENT_UNBIND_EMPLOYEE,
+    payload: {},
+  }, 'UserApi.unbindUserEmployee')
 }

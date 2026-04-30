@@ -9,12 +9,16 @@ import { useAiPermissions } from '../hooks/use-ai-permissions'
 import { useAiVoice } from '../hooks/use-ai-voice'
 import { toast } from 'sonner'
 
+interface AiTriggerProps {
+    placement?: 'floating' | 'dock'
+}
+
 /**
  * AI 极光分析按钮 (V4.1 架构纯化版)
  * 职责：UI 交互触发器、语音入口、实时快照协调。
  * 特点：按钮永久显示 (Always Visible)，实时抓取快照 (Live Context)。
  */
-export function AiTrigger() {
+export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
     const { canUseDashboardSnapshot } = useAiPermissions()
     const { getSnapshot } = useDashboardSnapshot()
     
@@ -86,42 +90,50 @@ export function AiTrigger() {
         }
     }
 
+    const isDock = placement === 'dock'
+    const triggerButton = (
+        <div className={cn('relative', !isDock && 'scale-90 sm:scale-100')}>
+            <Button
+                size="icon"
+                onMouseDown={startPress}
+                onMouseUp={endPress}
+                onTouchStart={startPress}
+                onTouchEnd={endPress}
+                className={cn(
+                    "rounded-full shadow-[0_0_40px_rgba(79,70,229,0.2)] transition-all duration-300 border-2",
+                    isDock ? "size-11" : "size-14",
+                    isRecording 
+                        ? "bg-rose-600 border-rose-100 scale-110 animate-pulse opacity-100" 
+                        : "bg-indigo-600 border-indigo-100 hover:scale-105 active:scale-95 opacity-90 hover:opacity-100",
+                    isModalOpen && "scale-0 opacity-0 pointer-events-none"
+                )}
+            >
+                <div className="relative flex items-center justify-center">
+                    {isRecording ? (
+                        <Mic className={cn("text-white animate-bounce", isDock ? 'size-5' : 'size-6')} />
+                    ) : (
+                        <Sparkles className={cn("text-white", isDock ? 'size-5' : 'size-6')} />
+                    )}
+                    
+                    {hasUnread && !isRecording && (
+                        <span className="absolute -top-1 -right-1 block size-3.5 rounded-full bg-rose-500 border-2 border-white animate-pulse shadow-lg" />
+                    )}
+                    
+                    {!isRecording && !hasUnread && (
+                        <span className="absolute -top-1 -right-1 block size-2.5 rounded-full bg-indigo-300 animate-ping" />
+                    )}
+                </div>
+            </Button>
+        </div>
+    )
+
     return (
         <>
-            <div className="fixed bottom-6 left-6 z-[101] pointer-events-auto">
-                <div className="scale-90 sm:scale-100 relative">
-                    <Button
-                        size="icon"
-                        onMouseDown={startPress}
-                        onMouseUp={endPress}
-                        onTouchStart={startPress}
-                        onTouchEnd={endPress}
-                        className={cn(
-                            "size-14 rounded-full shadow-[0_0_40px_rgba(79,70,229,0.2)] transition-all duration-300 border-2",
-                            isRecording 
-                                ? "bg-rose-600 border-rose-100 scale-110 animate-pulse opacity-100" 
-                                : "bg-indigo-600 border-indigo-100 hover:scale-105 active:scale-95 opacity-80 hover:opacity-100",
-                            isModalOpen && "scale-0 opacity-0 pointer-events-none"
-                        )}
-                    >
-                        <div className="relative flex items-center justify-center">
-                            {isRecording ? (
-                                <Mic className="size-6 text-white animate-bounce" />
-                            ) : (
-                                <Sparkles className="size-6 text-white" />
-                            )}
-                            
-                            {hasUnread && !isRecording && (
-                                <span className="absolute -top-1 -right-1 block size-3.5 rounded-full bg-rose-500 border-2 border-white animate-pulse shadow-lg" />
-                            )}
-                            
-                            {!isRecording && !hasUnread && (
-                                <span className="absolute -top-1 -right-1 block size-2.5 rounded-full bg-indigo-300 animate-ping" />
-                            )}
-                        </div>
-                    </Button>
+            {isDock ? triggerButton : (
+                <div className="fixed bottom-6 left-6 z-[101] pointer-events-auto">
+                    {triggerButton}
                 </div>
-            </div>
+            )}
 
             <DailyInsightModal 
                 open={isModalOpen} 

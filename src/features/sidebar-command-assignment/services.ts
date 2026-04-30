@@ -1,6 +1,14 @@
 import { apiFetch } from '@/lib/api-client'
 import type { UserOption } from '@/features/users/data/schema'
 
+export const SIDEBAR_COMMAND_INTENT_CREATE = 'SIDEBAR_COMMAND_CREATE'
+
+export interface SidebarCommandTransactionRequest<TPayload> {
+  intent: string
+  actorId?: string
+  payload: TPayload
+}
+
 export type SidebarCommandDefinitionDto = {
   commandId: string
   title: string
@@ -74,6 +82,31 @@ export type SaveSidebarCommandCategoryPayload = {
   sortOrder: number
 }
 
+function buildSidebarCommandTransactionBody<TPayload extends object>(
+  request: SidebarCommandTransactionRequest<TPayload>
+) {
+  return {
+    ...request.payload,
+    metadata: {
+      intent: request.intent,
+      actorId: request.actorId,
+    },
+  }
+}
+
+export function executeSidebarCommandTransaction<
+  TPayload extends object,
+  TResult
+>(
+  endpoint: string,
+  request: SidebarCommandTransactionRequest<TPayload>
+) {
+  return apiFetch<TResult>(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(buildSidebarCommandTransactionBody(request)),
+  })
+}
+
 export function fetchAssignableSidebarCommands() {
   return apiFetch<SidebarCommandDefinitionDto[]>(
     '/quick-actions/sidebar/commands'
@@ -133,11 +166,14 @@ export function setSidebarCommandCategoryEnabled(
 export function createSidebarCommandDefinition(
   payload: SaveSidebarCommandDefinitionPayload
 ) {
-  return apiFetch<SidebarCommandDefinitionDto>(
+  return executeSidebarCommandTransaction<
+    SaveSidebarCommandDefinitionPayload,
+    SidebarCommandDefinitionDto
+  >(
     '/quick-actions/sidebar/library',
     {
-      method: 'POST',
-      body: JSON.stringify(payload),
+      intent: SIDEBAR_COMMAND_INTENT_CREATE,
+      payload,
     }
   )
 }

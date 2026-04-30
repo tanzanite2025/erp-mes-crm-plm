@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
@@ -11,12 +11,6 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { AuthDebugIndicator } from '@/components/layout/auth-debug-indicator'
-
-const NotificationCenter = lazy(() =>
-  import('@/features/system-mgmt/notifications/components/notification-center').then((module) => ({
-    default: module.NotificationCenter,
-  }))
-)
 
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
@@ -113,9 +107,6 @@ export function Header({
                     <div className='flex items-center gap-2 md:gap-3 p-1 rounded-md'>
                         <AuthDebugIndicator />
                         <div className='h-4 w-px bg-border' />
-                        <Suspense fallback={null}>
-                          <NotificationCenter />
-                        </Suspense>
                         <LanguageSwitch />
                         {showProfileDropdown && <ProfileDropdown />}
                         <ThemeSwitch />

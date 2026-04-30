@@ -5,7 +5,13 @@ import { useLocation } from '@tanstack/react-router'
 import { QuickActionDrawer } from './quick-action-drawer'
 import { QuickActionHandle } from './quick-action-handle'
 
-export function QuickActionsFloating() {
+interface QuickActionsFloatingProps {
+  placement?: 'floating' | 'dock'
+}
+
+export function QuickActionsFloating({
+  placement = 'floating',
+}: QuickActionsFloatingProps) {
   const [open, setOpen] = useState(false)
   const pathname = useLocation({ select: (location) => location.pathname })
 
@@ -17,6 +23,7 @@ export function QuickActionsFloating() {
     <>
       <QuickActionHandle
         isOpen={open}
+        placement={placement}
         onToggle={() => setOpen((current) => !current)}
       />
       <QuickActionDrawer open={open} onOpenChange={setOpen} />

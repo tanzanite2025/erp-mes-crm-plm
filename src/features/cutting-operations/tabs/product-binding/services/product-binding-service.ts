@@ -4,6 +4,8 @@ import { extractPrepregBindingToken } from '@/features/raw-materials/prepreg-bin
 
 const PRODUCT_BINDING_ENDPOINT = '/production/product-barcode-bindings'
 
+export const PRODUCT_BINDING_INTENT_CREATE = 'PRODUCT_BINDING_CREATE'
+
 export type ProductBindingRollInstanceSummary = {
   id: string
   bindingToken: string
@@ -23,6 +25,12 @@ export type ProductBindingRollInstanceSummary = {
 export type CreateProductBindingRequest = {
   productBarcode: string
   prepregQrCode: string
+}
+
+export type ProductBindingTransactionRequest<TPayload> = {
+  intent: string
+  actorId?: string
+  payload: TPayload
 }
 
 export type ProductBindingRecord = {
@@ -128,25 +136,44 @@ export function normalizeProductBindingHistoryQuery(
   }
 }
 
+function normalizeCreateProductBindingRequest(
+  request: CreateProductBindingRequest,
+): CreateProductBindingRequest {
+  return {
+    productBarcode: request.productBarcode.trim(),
+    prepregQrCode: request.prepregQrCode.trim(),
+  }
+}
+
+export async function executeProductBinding<TPayload extends CreateProductBindingRequest>(
+  request: ProductBindingTransactionRequest<TPayload>,
+): Promise<ProductBindingRecord> {
+  const payload = normalizeCreateProductBindingRequest(request.payload)
+  const response = await apiFetch<Record<string, unknown>>(PRODUCT_BINDING_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({
+      ...payload,
+      metadata: {
+        intent: request.intent,
+        actorId: request.actorId,
+      },
+    }),
+  })
+
+  return normalizeProductBindingRecord(
+    ensureObjectResponse<Record<string, unknown>>(
+      response,
+      'productBindingService.executeProductBinding',
+    ),
+  )
+}
 
 export const productBindingService = {
   async submitBinding(request: CreateProductBindingRequest): Promise<ProductBindingRecord> {
-    const payload: CreateProductBindingRequest = {
-      productBarcode: request.productBarcode.trim(),
-      prepregQrCode: request.prepregQrCode.trim(),
-    }
-
-    const response = await apiFetch<Record<string, unknown>>(PRODUCT_BINDING_ENDPOINT, {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    return executeProductBinding<CreateProductBindingRequest>({
+      intent: PRODUCT_BINDING_INTENT_CREATE,
+      payload: request,
     })
-
-    return normalizeProductBindingRecord(
-      ensureObjectResponse<Record<string, unknown>>(
-        response,
-        'productBindingService.submitBinding',
-      ),
-    )
   },
 
   async listBindings(query: ProductBindingHistoryQuery = {}): Promise<ProductBindingHistoryResult> {
