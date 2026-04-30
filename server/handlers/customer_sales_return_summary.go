@@ -10,19 +10,23 @@ import (
 )
 
 type customerSalesReturnSummaryRow struct {
-	CustomerID         string  `gorm:"column:customer_id"`
-	ReturnedQuantity   float64 `gorm:"column:returned_quantity"`
-	ReturnedOrderCount int64   `gorm:"column:returned_order_count"`
-	LastReturnDate     string  `gorm:"column:last_return_date"`
-	TotalOrders        int64   `gorm:"column:total_orders"`
+	CustomerID          string  `gorm:"column:customer_id"`
+	ReturnedQuantity    float64 `gorm:"column:returned_quantity"`
+	ReturnedOrderCount  int64   `gorm:"column:returned_order_count"`
+	LastReturnDate      string  `gorm:"column:last_return_date"`
+	CanceledOrderCount  int64   `gorm:"column:canceled_order_count"`
+	EffectiveOrderCount int64   `gorm:"column:effective_order_count"`
+	TotalOrders         int64   `gorm:"column:total_orders"`
 }
 
 type CustomerSalesReturnSummaryResponse struct {
-	CustomerID         string  `json:"customerId"`
-	ReturnedQuantity   float64 `json:"returnedQuantity"`
-	ReturnedOrderCount int64   `json:"returnedOrderCount"`
-	LastReturnDate     string  `json:"lastReturnDate"`
-	TotalOrders        int64   `json:"totalOrders"`
+	CustomerID          string  `json:"customerId"`
+	ReturnedQuantity    float64 `json:"returnedQuantity"`
+	ReturnedOrderCount  int64   `json:"returnedOrderCount"`
+	LastReturnDate      string  `json:"lastReturnDate"`
+	CanceledOrderCount  int64   `json:"canceledOrderCount"`
+	EffectiveOrderCount int64   `json:"effectiveOrderCount"`
+	TotalOrders         int64   `json:"totalOrders"`
 }
 
 func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
@@ -31,6 +35,8 @@ func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
 		Select(`
 			so.customer_id AS customer_id,
 			COUNT(DISTINCT so.id) AS total_orders,
+			COALESCE(SUM(CASE WHEN LOWER(TRIM(so.status)) IN ('canceled', 'cancelled', 'voided', 'void') THEN 1 ELSE 0 END), 0) AS canceled_order_count,
+			COALESCE(SUM(CASE WHEN LOWER(TRIM(so.status)) NOT IN ('canceled', 'cancelled', 'voided', 'void') THEN 1 ELSE 0 END), 0) AS effective_order_count,
 			COALESCE(return_agg.returned_quantity, 0) AS returned_quantity,
 			COALESCE(return_agg.returned_order_count, 0) AS returned_order_count,
 			COALESCE(return_agg.last_return_date, '') AS last_return_date
@@ -43,8 +49,13 @@ func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
 					COUNT(DISTINCT sr.sales_order_id) AS returned_order_count,
 					CAST(MAX(sr.return_date) AS TEXT) AS last_return_date
 				FROM sales_returns AS sr
+				INNER JOIN sales_orders AS source_order
+					ON source_order.id = sr.sales_order_id
+					AND source_order.is_deleted = FALSE
+					AND LOWER(TRIM(source_order.status)) NOT IN ('canceled', 'cancelled', 'voided', 'void')
 				LEFT JOIN sales_return_lines AS srl ON srl.sales_return_id = sr.id
 				WHERE sr.deleted_at IS NULL
+					AND LOWER(TRIM(sr.status)) NOT IN ('canceled', 'cancelled', 'voided', 'void')
 				GROUP BY sr.customer_id
 			) AS return_agg ON return_agg.customer_id = so.customer_id
 		`).
@@ -58,11 +69,13 @@ func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
 	items := make([]CustomerSalesReturnSummaryResponse, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, CustomerSalesReturnSummaryResponse{
-			CustomerID:         strings.TrimSpace(row.CustomerID),
-			ReturnedQuantity:   row.ReturnedQuantity,
-			ReturnedOrderCount: row.ReturnedOrderCount,
-			LastReturnDate:     normalizeCustomerSalesReturnDate(row.LastReturnDate),
-			TotalOrders:        row.TotalOrders,
+			CustomerID:          strings.TrimSpace(row.CustomerID),
+			ReturnedQuantity:    row.ReturnedQuantity,
+			ReturnedOrderCount:  row.ReturnedOrderCount,
+			LastReturnDate:      normalizeCustomerSalesReturnDate(row.LastReturnDate),
+			CanceledOrderCount:  row.CanceledOrderCount,
+			EffectiveOrderCount: row.EffectiveOrderCount,
+			TotalOrders:         row.TotalOrders,
 		})
 	}
 

@@ -24,7 +24,7 @@ export function useVehicleContactBindings(filters: VehicleContactRemoteFilters) 
   return {
     bindings: query.data ?? [],
     loading: query.isLoading || query.isFetching,
-    error: query.error instanceof Error ? query.error : query.error ? new Error('联系人加载失败') : null,
+    error: query.error instanceof Error ? query.error : query.error ? new Error('车型联系人加载失败') : null,
     toastMessage,
     toastVariant,
     showToast,

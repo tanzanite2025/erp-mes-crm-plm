@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { type ContactChannel, type ContactChannelType } from './contacts-page.types'
+import { type ContactChannel, type ContactChannelType } from './vehicle-contact.types'
 
 const CHANNEL_LABELS: Record<ContactChannelType, string> = {
   phone: '电话',

@@ -7,6 +7,6 @@ const searchSchema = z.object({
   bindShipmentId: z.string().optional(),
 })
 
-export const Route = createFileRoute('/_authenticated/trading/logistics')({
+export const Route = createFileRoute('/_authenticated/shipping-management/logistics')({
   validateSearch: (search) => searchSchema.parse(search),
 })

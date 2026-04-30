@@ -350,14 +350,16 @@ export const trading = {
       quoteSelectHint: 'Choose one to view the quote details',
       quoteSelect: 'Choose Quote Profile',
       returnTitle: 'Return Summary',
-      returnMetricTitle: 'Returned Units / Orders',
+      returnMetricTitle: 'Return Orders / Effective Orders',
       ready: 'Ready',
       pending: 'Pending',
+      noEffectiveOrders: 'No effective orders',
       returnReadyDescription:
-        'Returned quantity totals {{returnedQuantity}} across {{totalOrders}} orders.',
+        'Effective orders: {{effectiveOrderCount}}; return orders: {{returnedOrderCount}}; returned quantity: {{returnedQuantity}}. Voided orders excluded: {{canceledOrderCount}}.',
       returnPendingDescription:
         'No return summary yet. You can enter the return profile from here.',
       returnReadyBadge: 'Returns Ready',
+      returnVoidedOnlyBadge: 'Only Voided Orders',
       returnPendingBadge: 'Returns Pending',
       returnAction: 'View Return Profile',
     },
@@ -526,26 +528,26 @@ export const trading = {
   },
   shippingManagement: {
     moduleDescription:
-      'A unified entry for shipment vehicle matching, contact outreach, and shipment history tracking.',
+      'A unified entry for shipment vehicle matching, vehicle-contact outreach, and logistics management.',
     tabs: {
       vehicleMatch: 'Vehicle Match',
-      contacts: 'Contacts',
-      history: 'Shipment History',
+      vehicleContacts: 'Vehicle Contacts',
+      logistics: 'Logistics',
     },
     vehicleMatch: {
       title: 'Vehicle Match',
       description:
         'Enter vehicle matching from the pending shipment list and later review recommended vehicles, load rate, and pre-shipment confirmation details here.',
     },
-    contacts: {
-      title: 'Contacts',
+    vehicleContacts: {
+      title: 'Vehicle Contacts',
       description:
-        'Review shipment-related contacts, outreach methods, and carrier-side coordination details in one place for future call, message, and copy actions.',
+        'Maintain contacts, phone numbers, channels, and dispatch notes by vehicle model to avoid mixing them with customer, supplier, or carrier contacts.',
     },
-    history: {
-      title: 'Shipment History',
+    logistics: {
+      title: 'Logistics',
       description:
-        'Track shipment confirmation, vehicle matching, contact outreach, and status transitions in a single shipment lifecycle view.',
+        'Bind shipment records with tracking numbers and review carriers, shipment states, and logistics timelines in one place.',
     },
   },
 }

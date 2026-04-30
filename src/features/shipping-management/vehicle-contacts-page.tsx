@@ -9,16 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useVehicleSpecsQuery } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
 import { createDefaultVehicleContactRemoteFilters } from './contact-filters.shared'
 import { VehicleContactEditorDialog } from './vehicle-contact-editor-dialog'
-import { ContactsListPanel } from './contacts-list-panel'
+import { VehicleContactsListPanel } from './vehicle-contacts-list-panel'
 import { VehicleContactDeleteDialog } from './vehicle-contact-delete-dialog'
 import { useVehicleContactBindings } from './hooks/use-vehicle-contact-bindings'
 import { useVehicleContactActions } from './hooks/use-vehicle-contact-actions'
 import { useVehicleContactUiFilters } from './hooks/use-vehicle-contact-filters'
-import { type VehicleContactBinding } from './contacts-page.types'
+import { type VehicleContactBinding } from './vehicle-contact.types'
 import { vehicleContactQueryKeys } from './query-keys'
 import { toVehicleContactSaveInput, toVehicleContactToggleInput } from './services/vehicle-contact-service'
 
-export function ContactsPage() {
+export function VehicleContactsPage() {
   const queryClient = useQueryClient()
   const { vehicleSpecs, isLoadingSpecs, specsError, specsStatus } = useVehicleSpecsQuery()
   const [editorOpen, setEditorOpen] = useState(false)
@@ -68,17 +68,17 @@ export function ContactsPage() {
         ? '车型接口加载失败'
         : vehicleOptions.length === 0
           ? '车型库暂无可绑定车型'
-          : '还没有联系人绑定'
+          : '还没有车型联系人绑定'
 
   const emptyStateDescription = specsStatus === 'loading'
     ? '正在从车型库接口获取可绑定车型，请稍候。'
     : specsStatus === 'forbidden'
-      ? '当前账号没有读取车型库的权限，因此联系人页无法拿到可绑定车型。请联系管理员开放车型库查看权限。'
+      ? '当前账号没有读取车型库的权限，因此车型联系人页无法拿到可绑定车型。请联系管理员开放车型库查看权限。'
       : specsStatus === 'failed'
         ? `车型库接口异常，无法生成绑定下拉选项：${specsError?.message ?? '未知错误'}`
         : vehicleOptions.length === 0
-          ? '车型接口已返回，但当前没有可用于联系人绑定的车型。请先到车型库确认是否启用并可见。'
-          : '联系人绑定依附于车型库主数据，负责补充联系人、电话、渠道和调度备注。'
+          ? '车型接口已返回，但当前没有可用于车型联系人绑定的车型。请先到车型库确认是否启用并可见。'
+          : '车型联系人绑定依附于车型库主数据，负责补充联系人、电话、渠道和调度备注。'
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
@@ -136,7 +136,7 @@ export function ContactsPage() {
         <div className='mb-3 flex flex-wrap items-center justify-between gap-3'>
           <div>
             <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>筛选面板</div>
-            <div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>按类别、车型、状态快速定位联系人绑定。</div>
+            <div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>按类别、车型、状态快速定位车型联系人绑定。</div>
           </div>
         </div>
         <div className='grid gap-3 lg:grid-cols-4'>
@@ -172,13 +172,13 @@ export function ContactsPage() {
             className='h-10 rounded-lg border border-border/60 bg-background px-3 text-[11px] shadow-none'
             value={uiFilters.keyword}
             onChange={(e) => setUiFilters((prev) => ({ ...prev, keyword: e.target.value }))}
-            placeholder='搜索联系人、电话、备注...'
+            placeholder='搜索车型联系人、电话、备注...'
           />
         </div>
       </Card>
 
       {specsError ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{specsError.message}</div></Card> : null}
-      {error ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>联系人加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{error.message}</div><button type='button' className='uds-chip mt-3 border-destructive/40 text-[10px] text-destructive' onClick={() => void reload()}>重新加载</button></Card> : null}
+      {error ? <Card className='rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest text-destructive'>车型联系人加载失败</div><div className='mt-1.5 text-[11px] leading-5 text-muted-foreground'>{error.message}</div><button type='button' className='uds-chip mt-3 border-destructive/40 text-[10px] text-destructive' onClick={() => void reload()}>重新加载</button></Card> : null}
       {isLoadingSpecs || loading ? <Card className='rounded-2xl border border-border/60 bg-background/70 px-5 py-5 shadow-none'><div className='text-[10px] font-black uppercase tracking-widest'>数据加载中...</div></Card> : null}
 
       <div className='grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]'>
@@ -186,7 +186,7 @@ export function ContactsPage() {
           <div className='flex items-center justify-between gap-3'>
             <div>
               <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>分组导航</div>
-              <div className='text-[11px] text-muted-foreground'>点击切换联系人类别</div>
+              <div className='text-[11px] text-muted-foreground'>点击切换车型联系人类别</div>
             </div>
             <div className='rounded-full border border-border/60 px-3 py-1 text-[10px] font-black tracking-widest tabular-nums'>{filteredBindings.length}</div>
           </div>
@@ -203,7 +203,7 @@ export function ContactsPage() {
           </div>
         </Card>
 
-        <ContactsListPanel
+        <VehicleContactsListPanel
           bindings={filteredBindings}
           onEdit={(item) => void openEdit(item)}
           onToggleEnabled={(item) => void toggleEnabled(item)}

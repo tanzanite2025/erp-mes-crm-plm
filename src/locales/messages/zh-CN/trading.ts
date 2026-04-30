@@ -334,13 +334,15 @@ export const trading = {
       quoteSelectHint: '选择后可直接查看报价详情',
       quoteSelect: '选择报价档案',
       returnTitle: '退货摘要',
-      returnMetricTitle: '退货件数 / 订单数',
+      returnMetricTitle: '退货订单 / 有效订单',
       ready: '已接入',
       pending: '待补充',
+      noEffectiveOrders: '无有效订单',
       returnReadyDescription:
-        '当前累计退货总件数 {{returnedQuantity}}，对应订单数 {{totalOrders}}。',
+        '有效订单 {{effectiveOrderCount}} 单，已产生退货订单 {{returnedOrderCount}} 单，累计退货 {{returnedQuantity}} 件；已作废订单 {{canceledOrderCount}} 单不计入摘要。',
       returnPendingDescription: '暂无退货摘要，可从这里进入退货档案。',
       returnReadyBadge: '退货已接入',
+      returnVoidedOnlyBadge: '仅作废订单',
       returnPendingBadge: '退货待补充',
       returnAction: '查看退货档案',
     },
@@ -504,26 +506,26 @@ export const trading = {
   },
   shippingManagement: {
     moduleDescription:
-      '统一承载发货车型匹配、联系人触达与发货记录追踪的模块入口。',
+      '统一承载发货车型匹配、车型联系人触达与物流管理的模块入口。',
     tabs: {
       vehicleMatch: '车型匹配',
-      contacts: '联系人',
-      history: '发货记录',
+      vehicleContacts: '车型联系人',
+      logistics: '物流管理',
     },
     vehicleMatch: {
       title: '车型匹配',
       description:
         '从待发货货物列表进入车型匹配，后续在这里查看推荐车型、装载率与发货前确认信息。',
     },
-    contacts: {
-      title: '联系人',
+    vehicleContacts: {
+      title: '车型联系人',
       description:
-        '集中查看发货相关联系人、触达方式与承运侧对接信息，承接后续电话、微信和复制联系能力。',
+        '按车型维护联系人、电话、渠道与调度备注，避免与客户、供应商或承运商联系人混用。',
     },
-    history: {
-      title: '发货记录',
+    logistics: {
+      title: '物流管理',
       description:
-        '查看发货确认、车型匹配、联系人触达与状态流转记录，形成发货闭环追踪视图。',
+        '绑定发货记录与物流单号，集中查看承运商、运单状态和物流轨迹。',
     },
   },
 }

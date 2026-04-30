@@ -10,6 +10,8 @@ export interface CustomerSalesReturnSummary {
   returnedQuantity: number
   returnedOrderCount: number
   lastReturnDate: string
+  canceledOrderCount: number
+  effectiveOrderCount: number
   totalOrders: number
 }
 
@@ -33,6 +35,8 @@ function parseSummaryItem(
   const returnedQuantity = record.returnedQuantity
   const returnedOrderCount = record.returnedOrderCount
   const lastReturnDate = record.lastReturnDate
+  const canceledOrderCount = record.canceledOrderCount
+  const effectiveOrderCount = record.effectiveOrderCount
   const totalOrders = record.totalOrders
 
   if (typeof customerId !== 'string' || customerId.trim() === '') {
@@ -55,6 +59,16 @@ function parseSummaryItem(
       `[INVALID_RESPONSE] ${context} expected lastReturnDate to be a string.`
     )
   }
+  if (typeof canceledOrderCount !== 'number') {
+    throw new Error(
+      `[INVALID_RESPONSE] ${context} expected canceledOrderCount to be a number.`
+    )
+  }
+  if (typeof effectiveOrderCount !== 'number') {
+    throw new Error(
+      `[INVALID_RESPONSE] ${context} expected effectiveOrderCount to be a number.`
+    )
+  }
   if (typeof totalOrders !== 'number') {
     throw new Error(
       `[INVALID_RESPONSE] ${context} expected totalOrders to be a number.`
@@ -66,6 +80,8 @@ function parseSummaryItem(
     returnedQuantity,
     returnedOrderCount,
     lastReturnDate,
+    canceledOrderCount,
+    effectiveOrderCount,
     totalOrders,
   }
 }

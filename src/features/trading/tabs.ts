@@ -12,7 +12,6 @@ export const tradingTabs: TabItem[] = [
   { key: 'sales-orders', label: '', href: '/trading/sales-orders' },
   { key: 'sales-returns', label: '', href: '/trading/sales-returns' },
   { key: 'sales-exchanges', label: '', href: '/trading/sales-exchanges' },
-  { key: 'logistics', label: '', href: '/trading/logistics' },
   { key: 'receivables', label: '', href: '/trading/receivables' },
 ]
 
@@ -37,11 +36,6 @@ export function getTradingTabs(t: TranslateFn): TabItem[] {
       key: 'sales-exchanges',
       label: t('trading.tabs.salesExchanges'),
       href: '/trading/sales-exchanges',
-    },
-    {
-      key: 'logistics',
-      label: t('trading.tabs.logistics'),
-      href: '/trading/logistics',
     },
     {
       key: 'receivables',

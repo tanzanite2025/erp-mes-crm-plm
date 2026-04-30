@@ -1,7 +1,6 @@
 import { ShoppingCart, Users } from 'lucide-react'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
-import { LogisticsMgmt as LogisticsMgmtView } from '@/features/logistics/components/logistics-mgmt'
 import { CustomerList } from '../components/customer-list'
 import { SalesOrderList } from '../components/sales-order-list-fixed'
 
@@ -34,14 +33,6 @@ export function SalesOrders() {
       <div className='flex min-h-0 flex-1'>
         <SalesOrderList />
       </div>
-    </div>
-  )
-}
-
-export function LogisticsMgmt() {
-  return (
-    <div className='animate-in fade-in duration-700'>
-      <LogisticsMgmtView />
     </div>
   )
 }

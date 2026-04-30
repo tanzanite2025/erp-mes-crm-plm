@@ -79,7 +79,7 @@ export function VirtualShipmentRow({ item, onMatchVehicle }: { item: ShippingVeh
         </Button>
         <Button type='button' variant='outline' className='h-10 rounded-full border-dashed px-5 text-[10px] font-black uppercase tracking-widest'>
           <PhoneCall className='mr-2 size-4' />
-          联系人
+          车型联系人
         </Button>
       </div>
     </Card>

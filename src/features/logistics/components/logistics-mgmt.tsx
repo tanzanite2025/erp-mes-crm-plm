@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
-import { Route } from '@/routes/_authenticated/trading/logistics'
+import { Route } from '@/routes/_authenticated/shipping-management/logistics'
 import { getCarrierLabelKey, logisticsStatuses, type LogisticsRecord } from '../data/schema'
 import { useGetLogistics, useGetLogisticsDetail, useLogisticsMutations } from '../hooks/use-logistics'
 import { LogisticsActionDialog } from './logistics-action-dialog'
@@ -54,7 +54,7 @@ export function LogisticsMgmt() {
       setInitialBindInfo({ orderNo: bindOrderNo, shipmentId: bindShipmentId })
       setIsActionDialogOpen(true)
       void router.navigate({
-        to: '/trading/logistics',
+        to: '/shipping-management/logistics',
         search: (prev) => ({ ...prev, bindOrderNo: undefined, bindShipmentId: undefined }),
         replace: true,
       })

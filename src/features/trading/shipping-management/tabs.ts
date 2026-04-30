@@ -6,7 +6,7 @@ type TranslateFn = (key: TranslationKey, params?: Record<string, string | number
 export function getShippingManagementTabs(t: TranslateFn): TabItem[] {
   return [
     { key: 'vehicle-match', label: t('trading.shippingManagement.tabs.vehicleMatch'), href: '/shipping-management/vehicle-match' },
-    { key: 'contacts', label: t('trading.shippingManagement.tabs.contacts'), href: '/shipping-management/contacts' },
-    { key: 'history', label: t('trading.shippingManagement.tabs.history'), href: '/shipping-management/history' },
+    { key: 'vehicle-contacts', label: t('trading.shippingManagement.tabs.vehicleContacts'), href: '/shipping-management/vehicle-contacts' },
+    { key: 'logistics', label: t('trading.shippingManagement.tabs.logistics'), href: '/shipping-management/logistics' },
   ]
 }

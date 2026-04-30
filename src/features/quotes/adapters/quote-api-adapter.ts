@@ -10,6 +10,31 @@ function requireNonEmptyString(value: unknown, context: string, field: string): 
   return value.trim()
 }
 
+function trimString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function optionalString(value: unknown): string {
+  return trimString(value)
+}
+
+function isUuidLike(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+function optionalDisplayName(value: unknown): string {
+  const trimmed = trimString(value)
+  return isUuidLike(trimmed) ? '' : trimmed
+}
+
+function firstNonEmptyString(values: unknown[], context: string, field: string): string {
+  for (const value of values) {
+    const trimmed = trimString(value)
+    if (trimmed) return trimmed
+  }
+  throw new Error(`[INVALID_RESPONSE] ${context} expected ${field} to be a non-empty string.`)
+}
+
 function requireNumber(value: unknown, context: string, field: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`[INVALID_RESPONSE] ${context} expected ${field} to be a finite number.`)
@@ -73,7 +98,7 @@ export function toQuoteSummaryContract(dto: QuoteListItemApiDTO, index: number):
     updatedAt: requireNonEmptyString(dto.updatedAt ?? dto.updated_at, context, 'updatedAt'),
     amountLabel: formatAmountLabel(dto.amount ?? dto.totalAmount, dto.amountLabel, context),
     itemCount: dto.itemCount ?? dto.lineCount ?? (() => { throw new Error(`[INVALID_RESPONSE] ${context} expected itemCount or lineCount to be present.`) })(),
-    ownerName: requireNonEmptyString(dto.ownerName ?? dto.owner, context, 'ownerName'),
+    ownerName: optionalDisplayName(dto.ownerName ?? dto.owner),
     productSummary: requireNonEmptyString(dto.productSummary ?? dto.summary, context, 'productSummary'),
   }
 }
@@ -88,41 +113,43 @@ export function toQuoteDetailContract(dto: QuoteDetailApiDTO): QuoteDetail {
   if (!Array.isArray(lines)) {
     throw new Error(`[INVALID_RESPONSE] ${context} expected lines to be an array.`)
   }
+  const quoteNo = requireNonEmptyString(dto.quoteNo, context, 'quoteNo')
+  const customerName = firstNonEmptyString([dto.customerName, 'Unknown customer'], context, 'customerName')
 
   return {
     id: requireNonEmptyString(dto.id, context, 'id'),
-    quoteNo: requireNonEmptyString(dto.quoteNo, context, 'quoteNo'),
-    orderName: requireNonEmptyString(dto.orderName, context, 'orderName'),
-    customerName: requireNonEmptyString(dto.customerName, context, 'customerName'),
-    customerId: requireNonEmptyString(dto.customerId, context, 'customerId'),
-    wechat: requireNonEmptyString(dto.wechat, context, 'wechat'),
-    whatsapp: requireNonEmptyString(dto.whatsapp, context, 'whatsapp'),
-    customerSegment: normalizeCustomerSegment(dto.customerSegment, context),
-    type: normalizeQuoteType(dto.type, context),
-    status: normalizeStatus(dto.status, context),
-    currency: requireNonEmptyString(dto.currency, context, 'currency'),
-    amountLabel: requireNonEmptyString(dto.amountLabel, context, 'amountLabel'),
-    quantityLabel: requireNonEmptyString(dto.quantityLabel, context, 'quantityLabel'),
-    orderDate: requireNonEmptyString(dto.orderDate, context, 'orderDate'),
-    deliveryDate: requireNonEmptyString(dto.deliveryDate, context, 'deliveryDate'),
-    paymentMethodName: requireNonEmptyString(dto.paymentMethodName, context, 'paymentMethodName'),
-    paymentTermName: requireNonEmptyString(dto.paymentTermName, context, 'paymentTermName'),
-    requirements: requireNonEmptyString(dto.requirements, context, 'requirements'),
-    ownerName: requireNonEmptyString(dto.ownerName, context, 'ownerName'),
-    updatedAt: requireNonEmptyString(dto.updatedAt, context, 'updatedAt'),
+    quoteNo,
+    orderName: firstNonEmptyString([dto.orderName, quoteNo], context, 'orderName'),
+    customerName,
+    customerId: optionalString(dto.customerId),
+    wechat: optionalString(dto.wechat),
+    whatsapp: optionalString(dto.whatsapp),
+    customerSegment: normalizeCustomerSegment(firstNonEmptyString([dto.customerSegment, 'new'], context, 'customerSegment'), context),
+    type: normalizeQuoteType(firstNonEmptyString([dto.type, 'retail'], context, 'type'), context),
+    status: normalizeStatus(firstNonEmptyString([dto.status, 'draft'], context, 'status'), context),
+    currency: firstNonEmptyString([dto.currency, 'CNY'], context, 'currency'),
+    amountLabel: firstNonEmptyString([dto.amountLabel, 'CNY 0.00'], context, 'amountLabel'),
+    quantityLabel: firstNonEmptyString([dto.quantityLabel, '0.00'], context, 'quantityLabel'),
+    orderDate: optionalString(dto.orderDate),
+    deliveryDate: optionalString(dto.deliveryDate),
+    paymentMethodName: optionalString(dto.paymentMethodName),
+    paymentTermName: optionalString(dto.paymentTermName),
+    requirements: optionalString(dto.requirements),
+    ownerName: optionalDisplayName(dto.ownerName),
+    updatedAt: optionalString(dto.updatedAt),
     lines: lines.map((line, index) => {
       const lineContext = `${context}.lines[${index}]`
       return {
-        id: requireNonEmptyString(String(line.id ?? ''), lineContext, 'id'),
+        id: firstNonEmptyString([String(line.id ?? ''), `line-${index + 1}`], lineContext, 'id'),
         lineNo: requireNumber(line.lineNo, lineContext, 'lineNo'),
-        productModel: requireNonEmptyString(line.productModel, lineContext, 'productModel'),
-        productCode: requireNonEmptyString(line.productCode, lineContext, 'productCode'),
-        specification: requireNonEmptyString(line.specification, lineContext, 'specification'),
+        productModel: firstNonEmptyString([line.productModel, line.productCode, 'Unnamed product'], lineContext, 'productModel'),
+        productCode: optionalString(line.productCode),
+        specification: optionalString(line.specification),
         qty: requireNumber(line.qty, lineContext, 'qty'),
         price: requireNumber(line.price, lineContext, 'price'),
         amount: requireNumber(line.amount, lineContext, 'amount'),
-        uom: requireNonEmptyString(line.uom, lineContext, 'uom'),
-        note: requireNonEmptyString(line.note, lineContext, 'note'),
+        uom: optionalString(line.uom),
+        note: optionalString(line.note),
       }
     }),
   }

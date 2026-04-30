@@ -11,19 +11,23 @@ import (
 )
 
 type customerSalesClosureSummaryRow struct {
-	CustomerID     string `gorm:"column:customer_id"`
-	LastOrderDate  string `gorm:"column:last_order_date"`
-	OpenOrderCount int64  `gorm:"column:open_order_count"`
-	TotalOrders    int64  `gorm:"column:total_orders"`
+	CustomerID         string `gorm:"column:customer_id"`
+	LastOrderDate      string `gorm:"column:last_order_date"`
+	OpenOrderCount     int64  `gorm:"column:open_order_count"`
+	CanceledOrderCount int64  `gorm:"column:canceled_order_count"`
+	TotalOrders        int64  `gorm:"column:total_orders"`
 }
 
 type CustomerSalesClosureSummaryResponse struct {
-	CustomerID         string `json:"customerId"`
-	HasOpenOrders      bool   `json:"hasOpenOrders"`
-	OpenOrderCount     int64  `json:"openOrderCount"`
-	LastOrderDate      string `json:"lastOrderDate"`
-	DaysSinceLastOrder *int   `json:"daysSinceLastOrder,omitempty"`
-	TotalOrders        int64  `json:"totalOrders"`
+	CustomerID          string `json:"customerId"`
+	HasOpenOrders       bool   `json:"hasOpenOrders"`
+	OpenOrderCount      int64  `json:"openOrderCount"`
+	ClosedOrderCount    int64  `json:"closedOrderCount"`
+	CanceledOrderCount  int64  `json:"canceledOrderCount"`
+	EffectiveOrderCount int64  `json:"effectiveOrderCount"`
+	LastOrderDate       string `json:"lastOrderDate"`
+	DaysSinceLastOrder  *int   `json:"daysSinceLastOrder,omitempty"`
+	TotalOrders         int64  `json:"totalOrders"`
 }
 
 type CustomerSalesClosureSummaryMetadata struct {
@@ -64,7 +68,8 @@ func GetCustomerSalesClosureSummaryHandler(c *gin.Context) {
 		Select(`
 			so.customer_id AS customer_id,
 			COALESCE(MAX(so.order_date), '') AS last_order_date,
-			COALESCE(SUM(CASE WHEN so.status IN ('Draft', 'Pending', 'InProgress') THEN 1 ELSE 0 END), 0) AS open_order_count,
+			COALESCE(SUM(CASE WHEN LOWER(TRIM(so.status)) IN ('draft', 'pending', 'inprogress', 'in_progress', 'in progress') THEN 1 ELSE 0 END), 0) AS open_order_count,
+			COALESCE(SUM(CASE WHEN LOWER(TRIM(so.status)) IN ('canceled', 'cancelled', 'voided', 'void') THEN 1 ELSE 0 END), 0) AS canceled_order_count,
 			COUNT(DISTINCT so.id) AS total_orders
 		`).
 		Where("so.is_deleted = ? AND COALESCE(so.customer_id, '') <> ''", false).
@@ -77,12 +82,28 @@ func GetCustomerSalesClosureSummaryHandler(c *gin.Context) {
 	items := make([]CustomerSalesClosureSummaryResponse, 0, len(rows))
 	today := time.Now().In(time.Local)
 	for _, row := range rows {
+		effectiveOrderCount := row.TotalOrders - row.CanceledOrderCount
+		if effectiveOrderCount < 0 {
+			effectiveOrderCount = 0
+		}
+		effectiveOpenOrderCount := row.OpenOrderCount
+		if effectiveOpenOrderCount > effectiveOrderCount {
+			effectiveOpenOrderCount = effectiveOrderCount
+		}
+		closedOrderCount := effectiveOrderCount - effectiveOpenOrderCount
+		if closedOrderCount < 0 {
+			closedOrderCount = 0
+		}
+
 		item := CustomerSalesClosureSummaryResponse{
-			CustomerID:     strings.TrimSpace(row.CustomerID),
-			HasOpenOrders:  row.OpenOrderCount > 0,
-			OpenOrderCount: row.OpenOrderCount,
-			LastOrderDate:  strings.TrimSpace(row.LastOrderDate),
-			TotalOrders:    row.TotalOrders,
+			CustomerID:          strings.TrimSpace(row.CustomerID),
+			HasOpenOrders:       effectiveOpenOrderCount > 0,
+			OpenOrderCount:      effectiveOpenOrderCount,
+			ClosedOrderCount:    closedOrderCount,
+			CanceledOrderCount:  row.CanceledOrderCount,
+			EffectiveOrderCount: effectiveOrderCount,
+			LastOrderDate:       strings.TrimSpace(row.LastOrderDate),
+			TotalOrders:         row.TotalOrders,
 		}
 		if parsedDate, ok := parseSummaryOrderDate(row.LastOrderDate); ok {
 			days := int(today.Sub(parsedDate.In(time.Local)).Hours() / 24)

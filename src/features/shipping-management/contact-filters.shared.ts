@@ -1,4 +1,4 @@
-import { type VehicleCategory } from './contacts-page.types'
+import { type VehicleCategory } from './vehicle-contact.types'
 
 export type VehicleContactFilterCategory = VehicleCategory | 'all'
 

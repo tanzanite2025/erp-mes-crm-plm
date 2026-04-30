@@ -22,6 +22,9 @@ describe('customer-sales-closure-summary-service', () => {
           customerId: 'cust-1',
           hasOpenOrders: true,
           openOrderCount: 1,
+          closedOrderCount: 0,
+          canceledOrderCount: 0,
+          effectiveOrderCount: 1,
           lastOrderDate: '',
           totalOrders: 1,
         },
@@ -46,6 +49,9 @@ describe('customer-sales-closure-summary-service', () => {
     expect(apiFetchMock).toHaveBeenCalledWith('/customers/sales-closure-summary')
     expect(result.items).toHaveLength(1)
     expect(result.items[0]?.lastOrderDate).toBe('')
+    expect(result.items[0]?.closedOrderCount).toBe(0)
+    expect(result.items[0]?.canceledOrderCount).toBe(0)
+    expect(result.items[0]?.effectiveOrderCount).toBe(1)
     expect(result.metadata.stats.active).toBe(1)
     expect(result.metadata.pagination.pageSize).toBe(1)
   })
@@ -57,6 +63,9 @@ describe('customer-sales-closure-summary-service', () => {
           customerId: 'cust-1',
           hasOpenOrders: false,
           openOrderCount: 0,
+          closedOrderCount: 0,
+          canceledOrderCount: 0,
+          effectiveOrderCount: 0,
           lastOrderDate: '',
           totalOrders: 0,
         },

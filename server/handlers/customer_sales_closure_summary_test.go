@@ -77,8 +77,9 @@ func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyL
 		VALUES
 		('so-1', 'cust-1', 'Customer A', 'Draft', '', FALSE),
 		('so-2', 'cust-2', 'Customer B', 'Done', ?, FALSE),
-		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', TRUE)
-	`, yesterday).Error)
+		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', TRUE),
+		('so-4', 'cust-2', 'Customer B', 'Canceled', ?, FALSE)
+	`, yesterday, yesterday).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -110,12 +111,21 @@ func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyL
 	require.Equal(t, "", emptyDateItem["lastOrderDate"])
 	require.Equal(t, true, emptyDateItem["hasOpenOrders"])
 	require.Equal(t, float64(1), emptyDateItem["openOrderCount"])
+	require.Equal(t, float64(0), emptyDateItem["closedOrderCount"])
+	require.Equal(t, float64(0), emptyDateItem["canceledOrderCount"])
+	require.Equal(t, float64(1), emptyDateItem["effectiveOrderCount"])
 	require.Equal(t, float64(1), emptyDateItem["totalOrders"])
 	_, hasDaysSinceLastOrder := emptyDateItem["daysSinceLastOrder"]
 	require.False(t, hasDaysSinceLastOrder)
 
 	validDateItem := itemsByCustomerID["cust-2"]
 	require.Equal(t, yesterday, validDateItem["lastOrderDate"])
+	require.Equal(t, false, validDateItem["hasOpenOrders"])
+	require.Equal(t, float64(0), validDateItem["openOrderCount"])
+	require.Equal(t, float64(1), validDateItem["closedOrderCount"])
+	require.Equal(t, float64(1), validDateItem["canceledOrderCount"])
+	require.Equal(t, float64(1), validDateItem["effectiveOrderCount"])
+	require.Equal(t, float64(2), validDateItem["totalOrders"])
 	_, hasValidDaysSinceLastOrder := validDateItem["daysSinceLastOrder"]
 	require.True(t, hasValidDaysSinceLastOrder)
 }

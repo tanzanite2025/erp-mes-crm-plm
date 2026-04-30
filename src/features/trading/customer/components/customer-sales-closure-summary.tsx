@@ -19,7 +19,7 @@ export function CustomerSalesClosureSummaryBlock({
     <div className='grid grid-cols-1 gap-3 rounded-xl border border-dashed border-muted/40 bg-muted/10 px-3 py-2.5 md:grid-cols-3 md:items-center'>
       <div className='space-y-1'>
         <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground uppercase italic opacity-40'>
-          {metrics.openOrderCount > 0 ? (
+          {metrics.openOrderCount > 0 || metrics.canceledOrderCount > 0 ? (
             <AlertCircle className='size-3' />
           ) : (
             <CheckCircle2 className='size-3' />
@@ -35,11 +35,21 @@ export function CustomerSalesClosureSummaryBlock({
             className={
               metrics.openOrderCount > 0
                 ? 'border-amber-500/20 bg-amber-500/10 text-[8px] font-black text-amber-600 uppercase'
+                : metrics.canceledOrderCount > 0 && metrics.effectiveOrderCount === 0
+                  ? 'border-slate-500/20 bg-slate-500/10 text-[8px] font-black text-slate-600 uppercase'
                 : 'border-emerald-500/20 bg-emerald-500/10 text-[8px] font-black text-emerald-600 uppercase'
             }
           >
             {metrics.closureStatusLabel}
           </Badge>
+          {metrics.canceledStatusLabel ? (
+            <Badge
+              variant='outline'
+              className='border-slate-500/20 bg-slate-500/10 text-[8px] font-black text-slate-600 uppercase'
+            >
+              {metrics.canceledStatusLabel}
+            </Badge>
+          ) : null}
         </div>
       </div>
 

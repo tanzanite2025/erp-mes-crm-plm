@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { type VehicleContactBindingSaveInput } from '../contacts-page.types'
+import { type VehicleContactBindingSaveInput } from '../vehicle-contact.types'
 import { vehicleContactService } from '../services/vehicle-contact-service'
 
 export function useVehicleContactActions() {

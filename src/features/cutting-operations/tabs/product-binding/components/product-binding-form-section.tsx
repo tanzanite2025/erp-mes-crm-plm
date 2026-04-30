@@ -1,4 +1,5 @@
 import { Barcode, Link2, QrCode } from 'lucide-react'
+import { TrackingNumberInput } from '@/components/tracking-number-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -59,11 +60,11 @@ export function ProductBindingFormSection(props: ProductBindingFormSectionProps)
             <Label className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
               {t('cuttingOperations.productBinding.form.barcode.label')}
             </Label>
-            <Input
+            <TrackingNumberInput
               value={productBarcode}
-              onChange={(event) => onProductBarcodeChange(event.target.value)}
+              onValueChange={onProductBarcodeChange}
               placeholder={t('cuttingOperations.productBinding.form.barcode.placeholder')}
-              className='h-12 rounded-2xl border-none bg-muted/50 text-sm'
+              inputClassName='h-12 rounded-2xl border-none bg-muted/50 text-sm'
               disabled={isSubmitting}
             />
             <p className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>

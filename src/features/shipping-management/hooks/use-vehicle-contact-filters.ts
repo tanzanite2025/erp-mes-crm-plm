@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createDefaultVehicleContactUiFilters, type VehicleContactUiFilters } from '../contact-filters.shared'
-import { type VehicleContactBinding, type VehicleCategory } from '../contacts-page.types'
+import { type VehicleContactBinding, type VehicleCategory } from '../vehicle-contact.types'
 
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   van: '面包车',

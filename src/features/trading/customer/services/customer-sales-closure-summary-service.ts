@@ -5,6 +5,9 @@ export interface CustomerSalesClosureSummary {
   customerId: string
   hasOpenOrders: boolean
   openOrderCount: number
+  closedOrderCount: number
+  canceledOrderCount: number
+  effectiveOrderCount: number
   lastOrderDate: string
   daysSinceLastOrder?: number
   totalOrders: number
@@ -39,6 +42,9 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
   const customerId = record.customerId
   const hasOpenOrders = record.hasOpenOrders
   const openOrderCount = record.openOrderCount
+  const closedOrderCount = record.closedOrderCount
+  const canceledOrderCount = record.canceledOrderCount
+  const effectiveOrderCount = record.effectiveOrderCount
   const lastOrderDate = record.lastOrderDate
   const totalOrders = record.totalOrders
 
@@ -50,6 +56,15 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
   }
   if (typeof openOrderCount !== 'number') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected openOrderCount to be a number.`)
+  }
+  if (typeof closedOrderCount !== 'number') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected closedOrderCount to be a number.`)
+  }
+  if (typeof canceledOrderCount !== 'number') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected canceledOrderCount to be a number.`)
+  }
+  if (typeof effectiveOrderCount !== 'number') {
+    throw new Error(`[INVALID_RESPONSE] ${context} expected effectiveOrderCount to be a number.`)
   }
   if (typeof lastOrderDate !== 'string') {
     throw new Error(`[INVALID_RESPONSE] ${context} expected lastOrderDate to be a string.`)
@@ -67,6 +82,9 @@ function parseSummaryItem(value: unknown, context: string): CustomerSalesClosure
     customerId,
     hasOpenOrders,
     openOrderCount,
+    closedOrderCount,
+    canceledOrderCount,
+    effectiveOrderCount,
     lastOrderDate,
     daysSinceLastOrder,
     totalOrders,

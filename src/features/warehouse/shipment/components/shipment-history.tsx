@@ -38,7 +38,7 @@ export function ShipmentHistory({
   const { t } = useLanguage()
   const router = useRouter()
   const user = useAuthStore((state) => state.user)
-  const canOpenTradingLogistics = canOpenRouteEntryNonBlocking(user, '/trading/logistics')
+  const canOpenShippingLogistics = canOpenRouteEntryNonBlocking(user, '/shipping-management/logistics')
   const filteredHistory = activeTab === 'all'
     ? history
     : history.filter(h => h.status === activeTab)
@@ -158,13 +158,13 @@ export function ShipmentHistory({
                         )}
                         {record.status === 'COMMITTED' && (
                           <div className='flex gap-1.5'>
-                            {canOpenTradingLogistics ? (
+                            {canOpenShippingLogistics ? (
                               <Button
                                 variant='ghost'
                                 size='sm'
                                 className='h-7 md:h-8 px-3 md:px-4 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-500/10'
                                 onClick={() => router.navigate({
-                                  to: '/trading/logistics',
+                                  to: '/shipping-management/logistics',
                                   search: { bindOrderNo: record.orderNo, bindShipmentId: record.id }
                                 })}
                               >

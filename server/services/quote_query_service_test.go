@@ -32,7 +32,7 @@ func TestQuoteQueryServiceNormalizesQuoteSummaryTypeAliases(t *testing.T) {
 				Requirements:   "Product",
 			}
 
-			got := mapSalesOrderToQuoteSummary(order, "new")
+			got := mapSalesOrderToQuoteSummary(order, "new", "")
 			if got.Type != tt.want {
 				t.Fatalf("got quote type %q, want %q", got.Type, tt.want)
 			}
@@ -68,6 +68,51 @@ func TestQuoteQueryServiceNormalizesQuoteTypeFilters(t *testing.T) {
 		if got := normalizeQuoteTypeFilter(raw); got != want {
 			t.Fatalf("normalizeQuoteTypeFilter(%q) = %q, want %q", raw, got, want)
 		}
+	}
+}
+
+func TestQuoteQueryServiceDerivesDetailOrderNameForLegacyBlankOrderName(t *testing.T) {
+	order := models.SalesOrder{
+		ID:             "quote-1",
+		OrderNo:        "Q-001",
+		OrderName:      "   ",
+		CustomerName:   "Acme",
+		Type:           "retail",
+		Classification: "quote",
+		Status:         "Draft",
+	}
+
+	detail := mapSalesOrderToQuoteDetail(order, models.Customer{}, "new", "")
+	if detail.OrderName != "Q-001" {
+		t.Fatalf("OrderName = %q, want %q", detail.OrderName, "Q-001")
+	}
+}
+
+func TestQuoteQueryServiceUsesResolvedOwnerName(t *testing.T) {
+	order := models.SalesOrder{
+		ID:        "quote-1",
+		OrderNo:   "Q-001",
+		UpdatedBy: "96945266-ca9e-494b-9521-4dda39ae688f",
+		Status:    "Draft",
+	}
+
+	detail := mapSalesOrderToQuoteDetail(order, models.Customer{}, "new", "alice")
+	if detail.OwnerName != "alice" {
+		t.Fatalf("OwnerName = %q, want %q", detail.OwnerName, "alice")
+	}
+}
+
+func TestQuoteOwnerDisplayNamePrefersEmployeeName(t *testing.T) {
+	got := quoteOwnerDisplayNameForUser(models.User{
+		ID:         "user-1",
+		Username:   "alice",
+		FirstName:  "Alice",
+		LastName:   "User",
+		EmployeeID: "emp-1",
+	}, map[string]string{"emp-1": "张三"})
+
+	if got != "张三" {
+		t.Fatalf("display name = %q, want %q", got, "张三")
 	}
 }
 

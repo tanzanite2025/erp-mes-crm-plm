@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { type VehicleSpecsLoadState } from '@/features/logistics-config/vehicle-loading/hooks/use-vehicle-specs-query'
-import { type VehicleCategory, type VehicleContactBinding } from './contacts-page.types'
+import { type VehicleCategory, type VehicleContactBinding } from './vehicle-contact.types'
 
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
   van: '面包车',
@@ -27,7 +27,7 @@ type Props = {
   emptyStateDescription: string
 }
 
-export function ContactsListPanel({
+export function VehicleContactsListPanel({
   bindings,
   onEdit,
   onToggleEnabled,
@@ -66,7 +66,7 @@ export function ContactsListPanel({
               </div>
               <div className='rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm'>
                 <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>步骤 02</div>
-                <div className='mt-1 text-[11px] font-medium leading-5 text-foreground'>再给车型补充联系人、电话和调度备注</div>
+                <div className='mt-1 text-[11px] font-medium leading-5 text-foreground'>再给车型补充车型联系人、电话和调度备注</div>
               </div>
             </div>
             <div className='flex flex-wrap gap-2'>
@@ -87,7 +87,7 @@ export function ContactsListPanel({
                 车型库负责管理车型定义、规格和可用范围。
               </div>
               <div className='rounded-lg border border-border/50 bg-primary/5 px-4 py-3 text-foreground'>
-                联系人管理只负责给已存在车型追加联系人绑定。
+                车型联系人管理只负责给已存在车型追加联系人绑定。
               </div>
               <div className='rounded-lg border border-border/50 bg-background px-4 py-3'>
                 状态类型：<span className='font-semibold text-foreground'>{vehicleSpecsStatus === 'forbidden' ? '权限不足' : vehicleSpecsStatus === 'failed' ? '接口失败' : vehicleSpecsStatus === 'empty' ? '空目录' : vehicleSpecsStatus === 'loading' ? '加载中' : '正常'}</span>
@@ -106,7 +106,7 @@ export function ContactsListPanel({
     <div className='space-y-3'>
       <div className='flex items-center justify-between gap-3'>
         <div>
-          <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>联系人列表</div>
+          <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>车型联系人列表</div>
           <div className='mt-1.5 text-[10px] leading-5 text-muted-foreground'>当前显示 {bindings.length} 条记录</div>
         </div>
       </div>

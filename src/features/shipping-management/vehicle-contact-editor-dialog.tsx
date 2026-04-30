@@ -13,7 +13,7 @@ import {
   type ContactChannelType,
   type VehicleContactBinding,
   type VehicleContactBindingForm,
-} from './contacts-page.types'
+} from './vehicle-contact.types'
 import { VehicleContactChannelRow } from './vehicle-contact-channel-row'
 
 function toForm(binding?: VehicleContactBinding | null): VehicleContactBindingForm {
@@ -61,7 +61,7 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
   const validationError = !form.vehicleId
     ? '请选择车型'
     : !form.contactName.trim()
-      ? '请输入联系人'
+      ? '请输入车型联系人'
       : !hasPhoneChannel
         ? '至少需要一个电话联系方式'
         : primaryPhoneCount !== 1
@@ -174,7 +174,7 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
       title={(
         <>
           <Users className='size-5 text-primary' />
-          {binding ? '编辑联系人' : '新增联系人'}
+          {binding ? '编辑车型联系人' : '新增车型联系人'}
         </>
       )}
       description='维护车型联系人、电话、渠道与调度备注。'
@@ -208,7 +208,7 @@ export function VehicleContactEditorDialog({ open, binding, vehicleOptions, onOp
           <Input value={form.supplierName} onChange={(e) => updateFormField('supplierName', e.target.value)} placeholder='可选' className='h-10 rounded-xl font-bold text-xs' />
         </div>
         <div className='space-y-2'>
-          <Label className='text-[10px] font-black uppercase ml-1'>联系人</Label>
+          <Label className='text-[10px] font-black uppercase ml-1'>车型联系人</Label>
           <Input value={form.contactName} onChange={(e) => updateFormField('contactName', e.target.value)} placeholder='必填' className='h-10 rounded-xl font-bold text-xs' />
         </div>
         <div className='space-y-2'>

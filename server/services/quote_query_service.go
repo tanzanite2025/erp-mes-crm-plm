@@ -19,6 +19,10 @@ type customerQuoteSummaryProjection struct {
 	UpdatedAt  time.Time
 }
 
+func applyQuoteRecordScope(query *gorm.DB) *gorm.DB {
+	return query.Where("(LOWER(TRIM(classification)) = ? OR LOWER(TRIM(type)) = ?)", "quote", "quote")
+}
+
 func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse, error) {
 	orderID := strings.TrimSpace(id)
 	if orderID == "" {
@@ -26,7 +30,7 @@ func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse,
 	}
 
 	var order models.SalesOrder
-	if err := db.DB.Where("id = ? AND is_deleted = ?", orderID, false).First(&order).Error; err != nil {
+	if err := applyQuoteRecordScope(db.DB.Where("id = ? AND is_deleted = ?", orderID, false)).First(&order).Error; err != nil {
 		return QuoteConvertResponse{}, err
 	}
 
@@ -73,7 +77,7 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	}
 
 	var orders []models.SalesOrder
-	baseQuery := db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false)
+	baseQuery := applyQuoteRecordScope(db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false))
 
 	if keyword := strings.TrimSpace(query.Keyword); keyword != "" {
 		likeKeyword := "%" + keyword + "%"
@@ -108,6 +112,7 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 			customerByID[customer.ID] = customer
 		}
 	}
+	ownerNameByRawValue := resolveQuoteOwnerDisplayNamesFromOrders(orders)
 
 	items := make([]QuoteSummaryResponse, 0, len(orders))
 	customerSegmentFilter := strings.TrimSpace(query.CustomerSegmentRaw)
@@ -119,7 +124,7 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 		if customerSegmentFilter != "" && !strings.EqualFold(customerSegmentFilter, customerSegment) {
 			continue
 		}
-		item := mapSalesOrderToQuoteSummary(order, customerSegment)
+		item := mapSalesOrderToQuoteSummary(order, customerSegment, ownerNameByRawValue[strings.TrimSpace(order.UpdatedBy)])
 		if statusFilter != "" && item.Status != statusFilter {
 			continue
 		}
@@ -154,9 +159,9 @@ func ListCustomerQuoteSummary(query CustomerQuoteSummaryQuery) (CustomerQuoteSum
 	}
 
 	var rows []customerQuoteSummaryProjection
-	if err := db.DB.Model(&models.SalesOrder{}).
+	if err := applyQuoteRecordScope(db.DB.Model(&models.SalesOrder{}).
 		Select("id, customer_id, order_no, barcode, status, updated_at").
-		Where("is_deleted = ? AND customer_id = ?", false, customerID).
+		Where("is_deleted = ? AND customer_id = ?", false, customerID)).
 		Order("updated_at desc").
 		Find(&rows).Error; err != nil {
 		return CustomerQuoteSummaryResponse{}, err
@@ -282,7 +287,7 @@ func normalizeQuoteStatusFilter(raw string) string {
 	return normalizeQuoteStatus(trimmed)
 }
 
-func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string) QuoteSummaryResponse {
+func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string, ownerName string) QuoteSummaryResponse {
 	quoteNo := deriveQuoteNo(order.OrderNo, order.Barcode, order.ID)
 
 	productSummary := strings.TrimSpace(order.Requirements)
@@ -303,14 +308,14 @@ func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string
 		UpdatedAt:       order.UpdatedAt.Format("2006-01-02 15:04"),
 		AmountLabel:     fmt.Sprintf("¥ %.2f", order.Amount),
 		ItemCount:       len(order.Lines),
-		OwnerName:       strings.TrimSpace(order.UpdatedBy),
+		OwnerName:       firstTrimmed(ownerName, order.UpdatedBy),
 		ProductSummary:  productSummary,
 	}
 }
 
 func GetQuoteDetail(id string) (QuoteDetailResponse, error) {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false).First(&order).Error; err != nil {
+	if err := applyQuoteRecordScope(db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false)).First(&order).Error; err != nil {
 		return QuoteDetailResponse{}, err
 	}
 
@@ -323,10 +328,10 @@ func GetQuoteDetail(id string) (QuoteDetailResponse, error) {
 		}
 	}
 
-	return mapSalesOrderToQuoteDetail(order, customer, deriveQuoteCustomerSegment(customer)), nil
+	return mapSalesOrderToQuoteDetail(order, customer, deriveQuoteCustomerSegment(customer), resolveQuoteOwnerDisplayName(strings.TrimSpace(order.UpdatedBy))), nil
 }
 
-func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Customer, customerSegment string) QuoteDetailResponse {
+func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Customer, customerSegment string, ownerName string) QuoteDetailResponse {
 	quoteNo := deriveQuoteNo(order.OrderNo, order.Barcode, order.ID)
 
 	lines := make([]QuoteDetailLineResponse, 0, len(order.Lines))
@@ -348,7 +353,7 @@ func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Custome
 	return QuoteDetailResponse{
 		ID:                order.ID,
 		QuoteNo:           quoteNo,
-		OrderName:         strings.TrimSpace(order.OrderName),
+		OrderName:         deriveQuoteOrderName(order, quoteNo),
 		CustomerName:      strings.TrimSpace(order.CustomerName),
 		CustomerID:        strings.TrimSpace(order.CustomerID),
 		WeChat:            strings.TrimSpace(customer.WeChat),
@@ -364,10 +369,146 @@ func mapSalesOrderToQuoteDetail(order models.SalesOrder, customer models.Custome
 		PaymentMethodName: strings.TrimSpace(order.PaymentMethodName),
 		PaymentTermName:   strings.TrimSpace(order.PaymentTermName),
 		Requirements:      strings.TrimSpace(order.Requirements),
-		OwnerName:         strings.TrimSpace(order.UpdatedBy),
+		OwnerName:         firstTrimmed(ownerName, order.UpdatedBy),
 		UpdatedAt:         order.UpdatedAt.Format("2006-01-02 15:04"),
 		Lines:             lines,
 	}
+}
+
+func firstTrimmed(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
+}
+
+func resolveQuoteOwnerDisplayNamesFromOrders(orders []models.SalesOrder) map[string]string {
+	rawValues := make([]string, 0, len(orders))
+	for _, order := range orders {
+		rawValues = append(rawValues, order.UpdatedBy)
+	}
+	return resolveQuoteOwnerDisplayNames(rawValues)
+}
+
+func resolveQuoteOwnerDisplayName(rawValue string) string {
+	return resolveQuoteOwnerDisplayNames([]string{rawValue})[strings.TrimSpace(rawValue)]
+}
+
+func resolveQuoteOwnerDisplayNames(rawValues []string) map[string]string {
+	result := make(map[string]string, len(rawValues))
+	uniqueValues := make([]string, 0, len(rawValues))
+	seenValues := make(map[string]struct{}, len(rawValues))
+	for _, rawValue := range rawValues {
+		trimmed := strings.TrimSpace(rawValue)
+		if trimmed == "" {
+			continue
+		}
+		result[trimmed] = trimmed
+		if _, ok := seenValues[trimmed]; ok {
+			continue
+		}
+		seenValues[trimmed] = struct{}{}
+		uniqueValues = append(uniqueValues, trimmed)
+	}
+	if len(uniqueValues) == 0 || db.DB == nil || !db.DB.Migrator().HasTable(&models.User{}) {
+		if len(uniqueValues) > 0 {
+			for rawValue, employeeName := range resolveEmployeeNamesForQuoteOwnerRefs(uniqueValues) {
+				result[rawValue] = employeeName
+			}
+		}
+		return result
+	}
+
+	for rawValue, employeeName := range resolveEmployeeNamesForQuoteOwnerRefs(uniqueValues) {
+		result[rawValue] = employeeName
+	}
+
+	var users []models.User
+	if err := db.DB.Model(&models.User{}).
+		Where("id IN ? OR username IN ?", uniqueValues, uniqueValues).
+		Find(&users).Error; err != nil {
+		return result
+	}
+
+	employeeNames := resolveEmployeeNamesForQuoteOwners(users)
+	for _, user := range users {
+		displayName := quoteOwnerDisplayNameForUser(user, employeeNames)
+		if displayName == "" {
+			continue
+		}
+		if userID := strings.TrimSpace(user.ID); userID != "" {
+			result[userID] = displayName
+		}
+		if username := strings.TrimSpace(user.Username); username != "" {
+			result[username] = displayName
+		}
+	}
+	return result
+}
+
+func resolveEmployeeNamesForQuoteOwnerRefs(employeeRefs []string) map[string]string {
+	result := make(map[string]string)
+	if len(employeeRefs) == 0 || db.DB == nil || !db.DB.Migrator().HasTable(&models.Employee{}) {
+		return result
+	}
+
+	var employees []models.Employee
+	if err := db.DB.Model(&models.Employee{}).
+		Where("id IN ? OR staff_id IN ?", employeeRefs, employeeRefs).
+		Find(&employees).Error; err != nil {
+		return result
+	}
+	for _, employee := range employees {
+		name := strings.TrimSpace(employee.Name)
+		if name == "" {
+			continue
+		}
+		if id := strings.TrimSpace(employee.ID); id != "" {
+			result[id] = name
+		}
+		if staffID := strings.TrimSpace(employee.StaffID); staffID != "" {
+			result[staffID] = name
+		}
+	}
+	return result
+}
+
+func resolveEmployeeNamesForQuoteOwners(users []models.User) map[string]string {
+	result := make(map[string]string)
+	if len(users) == 0 || db.DB == nil || !db.DB.Migrator().HasTable(&models.Employee{}) {
+		return result
+	}
+
+	employeeRefs := make([]string, 0, len(users))
+	seenRefs := make(map[string]struct{}, len(users))
+	for _, user := range users {
+		employeeRef := strings.TrimSpace(user.EmployeeID)
+		if employeeRef == "" {
+			continue
+		}
+		if _, ok := seenRefs[employeeRef]; ok {
+			continue
+		}
+		seenRefs[employeeRef] = struct{}{}
+		employeeRefs = append(employeeRefs, employeeRef)
+	}
+	if len(employeeRefs) == 0 {
+		return result
+	}
+
+	return resolveEmployeeNamesForQuoteOwnerRefs(employeeRefs)
+}
+
+func quoteOwnerDisplayNameForUser(user models.User, employeeNames map[string]string) string {
+	if employeeName := strings.TrimSpace(employeeNames[strings.TrimSpace(user.EmployeeID)]); employeeName != "" {
+		return employeeName
+	}
+	if name := strings.TrimSpace(strings.TrimSpace(user.FirstName) + " " + strings.TrimSpace(user.LastName)); name != "" {
+		return name
+	}
+	return strings.TrimSpace(user.Username)
 }
 
 func errorsIsRecordNotFound(err error) bool {
@@ -383,4 +524,17 @@ func deriveQuoteNo(orderNo string, barcode string, fallbackID string) string {
 		quoteNo = strings.TrimSpace(fallbackID)
 	}
 	return quoteNo
+}
+
+func deriveQuoteOrderName(order models.SalesOrder, quoteNo string) string {
+	if orderName := strings.TrimSpace(order.OrderName); orderName != "" {
+		return orderName
+	}
+	if trimmedQuoteNo := strings.TrimSpace(quoteNo); trimmedQuoteNo != "" {
+		return trimmedQuoteNo
+	}
+	if customerName := strings.TrimSpace(order.CustomerName); customerName != "" {
+		return "Quote-" + customerName
+	}
+	return strings.TrimSpace(order.ID)
 }
