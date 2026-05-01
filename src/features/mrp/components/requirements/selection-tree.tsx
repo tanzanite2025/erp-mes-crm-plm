@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, ClipboardList, ExternalLink, Layers, Package, ShoppingCart } from 'lucide-react'
+import { BottomFloatingActionBar } from '@/components/layout/bottom-floating-action-bar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -218,7 +219,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
       })}
 
       {selectedKeys.length > 0 && (
-        <div className='fixed bottom-6 left-1/2 -translate-x-1/2 w-fit min-w-[320px] bg-[#0F172A] text-white p-2 rounded-3xl shadow-2xl flex items-center gap-6 border border-white/10 animate-in slide-in-from-bottom-6 duration-500 z-50 ring-1 ring-white/10'>
+        <BottomFloatingActionBar className='w-[min(calc(100vw-1.5rem),560px)] bg-[#0F172A] text-white p-2 rounded-3xl shadow-2xl flex flex-col items-stretch gap-3 border border-white/10 animate-in slide-in-from-bottom-6 duration-500 ring-1 ring-white/10 sm:w-fit sm:min-w-[320px] sm:flex-row sm:items-center sm:gap-6'>
           <div className='flex items-center gap-3 pl-4'>
             <div className='size-9 rounded-2xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary),0.5)]'>
               <Layers className='size-5 text-white' />
@@ -235,7 +236,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
             </div>
           </div>
 
-          <div className='flex items-center gap-2 pr-2'>
+          <div className='flex items-center justify-end gap-2 pr-2'>
             <button onClick={() => onSelectionChange([])} className='h-10 px-4 rounded-2xl text-[11px] font-black uppercase hover:bg-white/5 transition-colors'>
               {t('mrp.requirements.selectionTree.cancel')}
             </button>
@@ -247,7 +248,7 @@ export function SelectionTree({ orders, selectedKeys, onSelectionChange, onAnaly
               {t('mrp.requirements.selectionTree.analyze')}
             </button>
           </div>
-        </div>
+        </BottomFloatingActionBar>
       )}
     </div>
   )

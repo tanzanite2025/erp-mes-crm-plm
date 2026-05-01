@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { BottomFloatingActionBar } from '@/components/layout/bottom-floating-action-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 import {
   Tooltip,
   TooltipContent,
@@ -135,7 +136,7 @@ export function DataTableBulkActions<TData>({
         {announcement}
       </div>
 
-      <div
+      <BottomFloatingActionBar
         ref={toolbarRef}
         role='toolbar'
         aria-label={`Bulk actions for ${selectedCount} selected ${entityName}${selectedCount > 1 ? 's' : ''}`}
@@ -143,7 +144,7 @@ export function DataTableBulkActions<TData>({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         className={cn(
-          'fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl',
+          'rounded-xl',
           'transition-all delay-100 duration-300 ease-out hover:scale-105',
           'focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none'
         )}
@@ -207,7 +208,7 @@ export function DataTableBulkActions<TData>({
 
           {children}
         </div>
-      </div>
+      </BottomFloatingActionBar>
     </>
   )
 }
