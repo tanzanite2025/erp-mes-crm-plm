@@ -115,7 +115,7 @@ export function SidebarCommandAssignmentPage() {
         }
       />
 
-      <section className='grid min-h-[660px] gap-6 xl:grid-cols-[380px_minmax(0,1fr)]'>
+      <section className='grid min-h-[660px] gap-5 xl:grid-cols-[380px_minmax(0,1fr)]'>
         <AssignmentAccountList
           accounts={accounts}
           filteredAccounts={filteredAccounts}
@@ -127,7 +127,7 @@ export function SidebarCommandAssignmentPage() {
           onToggleTarget={toggleTarget}
         />
 
-        <div className='flex min-w-0 flex-col gap-5'>
+        <div className='flex min-w-0 flex-col gap-3'>
           <AssignmentSummary
             selectedAccount={selectedAccount}
             hasSelectedAccount={hasSelectedAccount}

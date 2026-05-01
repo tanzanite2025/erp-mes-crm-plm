@@ -37,10 +37,10 @@ export function PrivateToolsPanel() {
   }
 
   return (
-    <div className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner'>
-      <div className='mb-4 flex items-center gap-3'>
-        <div className='flex size-10 items-center justify-center rounded-2xl bg-background'>
-          <ShieldOff className='size-5 text-muted-foreground' />
+    <div className='rounded-[18px] border border-dashed border-muted/50 bg-muted/5 px-4 py-3 shadow-inner'>
+      <div className='mb-2 flex items-center gap-3'>
+        <div className='flex size-8 items-center justify-center rounded-xl bg-background'>
+          <ShieldOff className='size-4 text-muted-foreground' />
         </div>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
@@ -51,14 +51,14 @@ export function PrivateToolsPanel() {
           </p>
         </div>
       </div>
-      <div className='grid gap-3 sm:grid-cols-3'>
+      <div className='grid gap-2 sm:grid-cols-3'>
         {privateSidebarTools.map((tool) => {
           return (
             <div
               key={tool.id}
-              className='flex items-center gap-3 rounded-[20px] bg-background/70 p-3 shadow-sm'
+              className='flex items-center gap-2.5 rounded-xl bg-background/70 px-3 py-2 shadow-sm'
             >
-              <span className='flex size-9 items-center justify-center rounded-2xl bg-muted'>
+              <span className='flex size-8 items-center justify-center rounded-xl bg-muted'>
                 <PrivateToolIcon toolId={tool.id} className='size-4' />
               </span>
               <span className='text-sm font-black tracking-tight'>

@@ -27,11 +27,11 @@ export function AssignmentBatchPanel({
   const { t } = useLanguage()
 
   return (
-    <div className='rounded-[32px] border border-dashed border-muted/50 bg-background p-5 shadow-inner'>
-      <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+    <div className='rounded-[18px] border border-dashed border-muted/50 bg-background px-4 py-3 shadow-inner'>
+      <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-3'>
-          <div className='flex size-10 items-center justify-center rounded-2xl bg-muted'>
-            <UsersRound className='size-5' />
+          <div className='flex size-8 items-center justify-center rounded-xl bg-muted'>
+            <UsersRound className='size-4' />
           </div>
           <div>
             <h2 className='text-sm font-black tracking-tighter italic'>
@@ -45,20 +45,20 @@ export function AssignmentBatchPanel({
         <div className='flex flex-wrap gap-2'>
           <Button
             variant={batchMode === 'replace' ? 'default' : 'outline'}
-            className='h-9 rounded-full px-5 text-[10px] font-black tracking-widest'
+            className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
             onClick={() => onBatchModeChange('replace')}
           >
             {t('sidebarCommandAssignment.batch.replace')}
           </Button>
           <Button
             variant={batchMode === 'append' ? 'default' : 'outline'}
-            className='h-9 rounded-full px-5 text-[10px] font-black tracking-widest'
+            className='h-8 rounded-full px-4 text-[10px] font-black tracking-widest'
             onClick={() => onBatchModeChange('append')}
           >
             {t('sidebarCommandAssignment.batch.append')}
           </Button>
           <Button
-            className='h-9 gap-2 rounded-full px-5 text-[10px] font-black tracking-widest'
+            className='h-8 gap-2 rounded-full px-4 text-[10px] font-black tracking-widest'
             disabled={
               selectedTargetCount === 0 || !hasSelectedAccount || isBatchPending
             }
@@ -69,7 +69,7 @@ export function AssignmentBatchPanel({
           </Button>
           <Button
             variant='outline'
-            className='h-9 gap-2 rounded-full border-dashed px-5 text-[10px] font-black tracking-widest'
+            className='h-8 gap-2 rounded-full border-dashed px-4 text-[10px] font-black tracking-widest'
             disabled={
               selectedTargetCount === 0 || isCopyPending || !hasSelectedAccount
             }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   deserializeSalesOrderApiDTO,
   deserializeSalesOrderListPageApiDTO,
@@ -27,7 +27,6 @@ const baseOrder = {
   purchaseOrderNo: '',
   barcode: 'SO-001',
   requirements: '',
-  workflowInstanceId: '',
   createdAt: '2026-04-18T00:00:00.000Z',
   updatedAt: '2026-04-18T00:00:00.000Z',
   updatedBy: 'tester',
@@ -57,7 +56,7 @@ describe('sales-order-api-dto', () => {
             appearanceId: 'appearance-1',
             appearanceNameSnapshot: 'UD',
             appearanceBarcodeCodeSnapshot: '1',
-            appearanceDescriptionSnapshot: '外观位值: 1',
+            appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
             appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
             description: 'desc',
             qty: 2,
@@ -94,7 +93,7 @@ describe('sales-order-api-dto', () => {
           appearanceId: 'appearance-1',
           appearanceNameSnapshot: 'UD',
           appearanceBarcodeCodeSnapshot: '1',
-          appearanceDescriptionSnapshot: '外观位值: 1',
+          appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
           appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
           description: 'desc',
           qty: 2,

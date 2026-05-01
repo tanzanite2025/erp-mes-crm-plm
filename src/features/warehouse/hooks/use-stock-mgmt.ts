@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
@@ -10,6 +9,7 @@ import { WarehouseCategoryCoreService } from '../category'
 import type { WarehouseCategory } from '../category/services/warehouse-category-core-service'
 import { InventoryCoreService, InventoryMaintenanceService, type InventoryView } from '../inventory'
 import { warehouseQueryKeys } from '../query-keys'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
 const logger = createLogger('useStockMgmt')
 
@@ -26,7 +26,11 @@ type StockMgmtReadResource = CompositeReadResource<{
  * useStockMgmt - 深度重构后的库存管理 Hook 情况情况总量针对。
  * 职责：聚合多个核心查询，处理过滤器状态，并提供事务性维护操作。
  */
-export function useStockMgmt() {
+export function useStockMgmt(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
+    const ui = useMemo(
+        () => feedback ?? createWarehouseUiFeedback(),
+        [feedback],
+    )
     const queryClient = useQueryClient()
     const { allowsAction } = useNonBlockingPermissionActions()
     const { t } = useLanguage()
@@ -72,20 +76,20 @@ export function useStockMgmt() {
         mutationFn: () => InventoryMaintenanceService.reconcileInventory(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.inventoryList() })
-            toast.success(t('warehouse.stock.toast.reconcileSuccess'))
+            ui.success(t('warehouse.stock.toast.reconcileSuccess'))
             setReconcileConfirmOpen(false)
         },
         onError: (err) => failLoudly(err, 'StockMgmt.onConfirmReconcile')
     })
 
     const setThresholdMutation = useMutation({
-        mutationFn: (params: { id: string, value: number }) => 
+        mutationFn: (params: { id: string, value: number }) =>
             InventoryMaintenanceService.setAlertThreshold(params.id, params.value),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.alertThresholds() })
-            toast.success(t('warehouse.stock.toast.thresholdUpdated', { 
-                name: selectedMaterial?.name || 'Item', 
-                value: variables.value 
+            ui.success(t('warehouse.stock.toast.thresholdUpdated', {
+                name: selectedMaterial?.name || 'Item',
+                value: variables.value
             }))
             setConfigDialogOpen(false)
         }

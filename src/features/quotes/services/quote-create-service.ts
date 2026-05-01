@@ -35,7 +35,6 @@ export async function createQuoteAsSalesOrderDraft(payload: CreateQuotePayload) 
     requirements: payload.requirements,
     lines: [],
     fulfillmentRate: 0,
-    workflowInstanceId: '',
     version: 1,
   }
 

@@ -242,7 +242,7 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 		}
 		var material models.Material
 		if err := tx.Where("id = ? AND status = ?", line.MaterialID, "Active").First(&material).Error; err != nil {
-			return nil, errors.New("[CRITICAL_DATA_INTEGRITY] 閲囪喘鍗曚繚瀛樺け璐ワ細鏄庣粏琛屽紩鐢ㄤ簡鏃犳晥鎴栧凡鍋滅敤鐨勭墿鏂?ID: " + line.MaterialID)
+			return nil, errors.New("[CRITICAL_DATA_INTEGRITY] 采购单保存失败：明细行引用了无效或已停用的物料 ID: " + line.MaterialID)
 		}
 	}
 
@@ -256,9 +256,6 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 	if len(nextOrder.Evidences) == 0 {
 		nextOrder.Evidences = encodeOrderEvidences(payload.FinalData.Evidences)
 	}
-	if nextOrder.WorkflowInstanceID == "" {
-		nextOrder.WorkflowInstanceID = current.WorkflowInstanceID
-	}
 	if nextOrder.SupplierName == "" {
 		nextOrder.SupplierName = current.SupplierName
 	}
@@ -267,25 +264,24 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 	}
 
 	if err := tx.Model(current).Updates(map[string]any{
-		"order_no":             nextOrder.OrderNo,
-		"supplier_id":          nextOrder.SupplierID,
-		"supplier_name":        nextOrder.SupplierName,
-		"order_date":           nextOrder.OrderDate,
-		"expected_date":        nextOrder.ExpectedDate,
-		"status":               nextOrder.Status,
-		"currency":             nextOrder.Currency,
-		"amount":               nextOrder.Amount,
-		"exchange_rate":        nextOrder.ExchangeRate,
-		"purchaser":            nextOrder.Purchaser,
-		"payment_method":       nextOrder.PaymentMethod,
-		"payment_method_name":  nextOrder.PaymentMethodName,
-		"payment_term":         nextOrder.PaymentTerm,
-		"payment_term_name":    nextOrder.PaymentTermName,
-		"note":                 nextOrder.Note,
-		"evidences":            nextOrder.Evidences,
-		"workflow_instance_id": nextOrder.WorkflowInstanceID,
-		"is_deleted":           nextOrder.IsDeleted,
-		"version":              nextOrder.Version,
+		"order_no":            nextOrder.OrderNo,
+		"supplier_id":         nextOrder.SupplierID,
+		"supplier_name":       nextOrder.SupplierName,
+		"order_date":          nextOrder.OrderDate,
+		"expected_date":       nextOrder.ExpectedDate,
+		"status":              nextOrder.Status,
+		"currency":            nextOrder.Currency,
+		"amount":              nextOrder.Amount,
+		"exchange_rate":       nextOrder.ExchangeRate,
+		"purchaser":           nextOrder.Purchaser,
+		"payment_method":      nextOrder.PaymentMethod,
+		"payment_method_name": nextOrder.PaymentMethodName,
+		"payment_term":        nextOrder.PaymentTerm,
+		"payment_term_name":   nextOrder.PaymentTermName,
+		"note":                nextOrder.Note,
+		"evidences":           nextOrder.Evidences,
+		"is_deleted":          nextOrder.IsDeleted,
+		"version":             nextOrder.Version,
 	}).Error; err != nil {
 		return nil, err
 	}
@@ -934,7 +930,7 @@ func parsePurchaseOrderSavePayload(raw json.RawMessage) (PurchaseOrderSavePayloa
 	if len(payload.Delta) == 0 {
 		return PurchaseOrderSavePayload{}, fmt.Errorf("%w: delta is required", ErrPurchaseTransactionInvalidPayload)
 	}
-	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(payload.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "evidences", "isDeleted", "lines"); err != nil {
 		return PurchaseOrderSavePayload{}, fmt.Errorf("%w: %v", ErrPurchaseTransactionInvalidPayload, err)
 	}
 

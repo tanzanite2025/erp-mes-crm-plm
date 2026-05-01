@@ -264,7 +264,7 @@ func ListMyApprovals(userID string, permissionIDs []string) ([]models.ApprovalRe
 func hasApprovalFullAccess(permissionIDs []string) bool {
 	normalized := authz.DeduplicatePermissionIDs(permissionIDs)
 	for _, permissionID := range normalized {
-		if permissionID == authz.PermissionManage || permissionID == authz.ActionSystemWorkflowManage {
+		if permissionID == authz.PermissionManage {
 			return true
 		}
 	}

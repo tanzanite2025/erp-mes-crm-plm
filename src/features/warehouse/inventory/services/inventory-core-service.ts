@@ -1,7 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import {
   ensureArrayField,
-  ensureArrayResponse,
   ensureObjectResponse,
 } from '@/lib/api-response'
 import {
@@ -10,7 +9,6 @@ import {
   toInventoryRecordContract,
   toInventoryValuationContract,
   toInventoryViewContracts,
-  toMasterDataSearchResultContracts,
 } from '../adapters/inventory-api-adapter'
 import {
   type InventoryAlertSummaryApiDTO,
@@ -19,14 +17,12 @@ import {
   type InventoryItemApiDTO,
   type InventoryListPageApiDTO,
   type InventoryValuationApiDTO,
-  type MasterDataSearchResultApiDTO,
 } from '../contracts/inventory-api-dto'
 import {
   type InboundRecord,
   type InventoryAlertSummary,
   type InventoryRecord,
   type InventoryView,
-  type MasterDataSearchResult,
 } from '../data/schema'
 
 export type {
@@ -73,20 +69,6 @@ export const InventoryCoreService = {
     return ensureObjectResponse<Record<string, number>>(
       res,
       'InventoryCoreService.getInventoryBreakdown'
-    )
-  },
-
-  searchMasterData: async (query: string): Promise<MasterDataSearchResult[]> => {
-    if (!query) return []
-
-    const res = await apiFetch<MasterDataSearchResultApiDTO[]>(
-      `/inventory/search?q=${encodeURIComponent(query)}`
-    )
-    return toMasterDataSearchResultContracts(
-      ensureArrayResponse<MasterDataSearchResultApiDTO>(
-        res,
-        'InventoryCoreService.searchMasterData'
-      )
     )
   },
 

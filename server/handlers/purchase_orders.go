@@ -61,10 +61,6 @@ func SavePurchaseOrderHandler(c *gin.Context) {
 			respondVersionConflict(c)
 			return
 		}
-		if errors.Is(err, services.ErrWorkflowDefinitionMissing) {
-			respondPurchaseOrderError(c, http.StatusBadRequest, "未找到可用流程定义，请先配置并启用采购单工作流")
-			return
-		}
 		respondPurchaseOrderError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

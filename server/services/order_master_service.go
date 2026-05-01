@@ -265,9 +265,6 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 	if order.Requirements == "" {
 		order.Requirements = existing.Requirements
 	}
-	if order.WorkflowInstanceID == "" {
-		order.WorkflowInstanceID = existing.WorkflowInstanceID
-	}
 	if order.UpdatedBy == "" {
 		order.UpdatedBy = existing.UpdatedBy
 	}
@@ -297,7 +294,6 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 		"purchase_order_no":      order.PurchaseOrderNo,
 		"barcode":                order.Barcode,
 		"requirements":           order.Requirements,
-		"workflow_instance_id":   order.WorkflowInstanceID,
 		"updated_by":             order.UpdatedBy,
 		"is_deleted":             order.IsDeleted,
 		"version":                order.Version,

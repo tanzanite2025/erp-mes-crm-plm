@@ -131,6 +131,7 @@ func seedSidebarCommandDefinitions(t *testing.T) {
 		{CommandID: "wheel_trace_scan", Title: "Wheel Trace", Route: "/wheel-trace", SearchParams: []byte(`{"scan":"1"}`), Category: "business", Assignable: true, Enabled: true, Status: "active", SortOrder: 5},
 		{CommandID: "warehouse_inbound_scan", Title: "Warehouse Inbound", Route: "/warehouse/inbound", SearchParams: []byte(`{"mode":"scan"}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 10},
 		{CommandID: "warehouse_shipment_scan", Title: "Warehouse Shipment", Route: "/warehouse/shipment", SearchParams: []byte(`{"mode":"scan"}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 20},
+		{CommandID: "warehouse_packaging_assembly", Title: "Packaging Assembly", Route: "/warehouse/packaging-assembly", SearchParams: []byte(`{}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 40},
 		{CommandID: "disabled_scan", Title: "Disabled Scan", Route: "/disabled", SearchParams: []byte(`{}`), Category: "warehouse", Assignable: true, Enabled: false, Status: "disabled", SortOrder: 90},
 	}
 	for _, row := range rows {
@@ -156,16 +157,16 @@ func TestListSidebarCommandDefinitionsIncludesDisabledCommands(t *testing.T) {
 
 	commands, err := ListSidebarCommandDefinitions()
 	require.NoError(t, err)
-	require.Len(t, commands, 4)
+	require.Len(t, commands, 5)
 
 	assignable, err := ListAssignableSidebarCommands()
 	require.NoError(t, err)
-	require.Len(t, assignable, 3)
+	require.Len(t, assignable, 4)
 
 	categories, err := ListSidebarCommandCategories()
 	require.NoError(t, err)
 	require.Len(t, categories, 2)
-	require.Equal(t, 2, categories[1].CommandCount)
+	require.Equal(t, 3, categories[1].CommandCount)
 }
 
 func TestCreateUpdateEnableAndReorderSidebarCommandDefinition(t *testing.T) {
@@ -208,7 +209,7 @@ func TestCreateUpdateEnableAndReorderSidebarCommandDefinition(t *testing.T) {
 	require.Equal(t, "disabled", disabled.Status)
 
 	_, err = ReorderSidebarCommandDefinitions(ReorderSidebarCommandDefinitionsInput{
-		CommandIDs: []string{"quality_scan", "wheel_trace_scan", "warehouse_inbound_scan", "warehouse_shipment_scan", "disabled_scan"},
+		CommandIDs: []string{"quality_scan", "wheel_trace_scan", "warehouse_inbound_scan", "warehouse_shipment_scan", "warehouse_packaging_assembly", "disabled_scan"},
 	})
 	require.NoError(t, err)
 
@@ -297,7 +298,7 @@ func TestReplaceSidebarCommandAssignmentWithCategoriesAndDirectCommands(t *testi
 	require.NoError(t, err)
 	require.Equal(t, []string{"warehouse"}, view.CategoryIDs)
 	require.Equal(t, []string{"warehouse_inbound_scan", "wheel_trace_scan"}, view.CommandIDs)
-	require.Equal(t, []string{"warehouse_inbound_scan", "warehouse_shipment_scan", "wheel_trace_scan"}, view.EffectiveCommandIDs)
+	require.Equal(t, []string{"warehouse_inbound_scan", "warehouse_shipment_scan", "warehouse_packaging_assembly", "wheel_trace_scan"}, view.EffectiveCommandIDs)
 }
 
 func TestSidebarCommandAssignmentRejectsPrivateTools(t *testing.T) {
@@ -337,7 +338,7 @@ func TestBatchAppendAndCopySidebarCommandAssignment(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []string{"business", "warehouse"}, userTwo.CategoryIDs)
 	require.Equal(t, []string{"warehouse_inbound_scan", "wheel_trace_scan"}, userTwo.CommandIDs)
-	require.Equal(t, []string{"wheel_trace_scan", "warehouse_inbound_scan", "warehouse_shipment_scan"}, userTwo.EffectiveCommandIDs)
+	require.Equal(t, []string{"wheel_trace_scan", "warehouse_inbound_scan", "warehouse_shipment_scan", "warehouse_packaging_assembly"}, userTwo.EffectiveCommandIDs)
 
 	copyResult, err := CopySidebarCommandAssignment(CopySidebarCommandsInput{
 		SourceUserID:  "user-2",

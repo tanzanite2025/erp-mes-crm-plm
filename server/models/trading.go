@@ -30,7 +30,6 @@ type SalesOrder struct {
 	Barcode              string           `gorm:"size:100" json:"barcode"`
 	Requirements         string           `gorm:"type:text" json:"requirements"`
 	Evidences            json.RawMessage  `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
-	WorkflowInstanceID   string           `gorm:"size:100;index" json:"workflowInstanceId"`
 	Lines                []SalesOrderLine `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
 	CreatedAt            time.Time        `json:"createdAt"`
 	UpdatedAt            time.Time        `json:"updatedAt"`
@@ -178,29 +177,28 @@ type Supplier struct {
 
 // PurchaseOrder 采购订单主单
 type PurchaseOrder struct {
-	ID                 string              `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	OrderNo            string              `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
-	SupplierID         string              `gorm:"size:100" json:"supplierId"`
-	SupplierName       string              `gorm:"size:255" json:"supplierName"`
-	OrderDate          string              `json:"orderDate"`
-	ExpectedDate       string              `json:"expectedDate"`
-	Status             string              `gorm:"size:50;default:'Draft'" json:"status"`
-	Currency           string              `gorm:"size:20" json:"currency"`
-	Amount             float64             `json:"amount"`
-	ExchangeRate       float64             `gorm:"default:1.0" json:"exchangeRate"`
-	Purchaser          string              `gorm:"size:100" json:"purchaser"`
-	PaymentMethod      string              `gorm:"size:50" json:"paymentMethod"`
-	PaymentMethodName  string              `gorm:"size:100" json:"paymentMethodName"`
-	PaymentTerm        string              `gorm:"size:50" json:"paymentTerm"`
-	PaymentTermName    string              `gorm:"size:100" json:"paymentTermName"`
-	Note               string              `gorm:"type:text" json:"note"`
-	Evidences          json.RawMessage     `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
-	WorkflowInstanceID string              `gorm:"size:100;index" json:"workflowInstanceId"`
-	Lines              []PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
-	CreatedAt          time.Time           `json:"createdAt"`
-	UpdatedAt          time.Time           `json:"updatedAt"`
-	IsDeleted          bool                `gorm:"default:false" json:"isDeleted"`
-	Version            int                 `gorm:"default:1" json:"version"`
+	ID                string              `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	OrderNo           string              `gorm:"size:50;uniqueIndex;not null" json:"orderNo"`
+	SupplierID        string              `gorm:"size:100" json:"supplierId"`
+	SupplierName      string              `gorm:"size:255" json:"supplierName"`
+	OrderDate         string              `json:"orderDate"`
+	ExpectedDate      string              `json:"expectedDate"`
+	Status            string              `gorm:"size:50;default:'Draft'" json:"status"`
+	Currency          string              `gorm:"size:20" json:"currency"`
+	Amount            float64             `json:"amount"`
+	ExchangeRate      float64             `gorm:"default:1.0" json:"exchangeRate"`
+	Purchaser         string              `gorm:"size:100" json:"purchaser"`
+	PaymentMethod     string              `gorm:"size:50" json:"paymentMethod"`
+	PaymentMethodName string              `gorm:"size:100" json:"paymentMethodName"`
+	PaymentTerm       string              `gorm:"size:50" json:"paymentTerm"`
+	PaymentTermName   string              `gorm:"size:100" json:"paymentTermName"`
+	Note              string              `gorm:"type:text" json:"note"`
+	Evidences         json.RawMessage     `gorm:"type:jsonb;not null;default:'[]'" json:"evidences"`
+	Lines             []PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
+	CreatedAt         time.Time           `json:"createdAt"`
+	UpdatedAt         time.Time           `json:"updatedAt"`
+	IsDeleted         bool                `gorm:"default:false" json:"isDeleted"`
+	Version           int                 `gorm:"default:1" json:"version"`
 }
 
 // PurchaseOrderLine 采购订单明细

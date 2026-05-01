@@ -229,7 +229,6 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			purchase_order_no TEXT,
 			barcode TEXT,
 			requirements TEXT,
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			updated_by TEXT,

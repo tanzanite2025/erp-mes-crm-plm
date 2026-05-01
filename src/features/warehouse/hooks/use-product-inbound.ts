@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
@@ -18,10 +17,12 @@ import {
   type MasterDataSearchResult,
 } from '../inventory'
 import { warehouseQueryKeys } from '../query-keys'
+import { WarehouseMasterDataService } from '../services/warehouse-master-data-service'
 import {
   filterWarehouseCategoriesByScene,
   getDefaultWarehouseCategoryCode,
 } from '../utils/warehouse-category-config'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
 const logger = createLogger('useProductInbound')
 
@@ -92,8 +93,12 @@ function buildInboundTDO(
   }
 }
 
-export function useProductInbound() {
+export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
   const { t } = useLanguage()
+  const ui = useMemo(
+    () => feedback ?? createWarehouseUiFeedback(),
+    [feedback],
+  )
   const { allowsAction } = useNonBlockingPermissionActions()
   const queryClient = useQueryClient()
 
@@ -124,8 +129,11 @@ export function useProductInbound() {
   })
 
   const searchQueryResult = useQuery({
-    queryKey: warehouseQueryKeys.masterDataSearch(debouncedSearchQuery),
-    queryFn: () => InventoryCoreService.searchMasterData(debouncedSearchQuery),
+    queryKey: warehouseQueryKeys.masterDataSearch('INBOUND', debouncedSearchQuery),
+    queryFn: () => WarehouseMasterDataService.searchSelectableItems({
+      query: debouncedSearchQuery,
+      scope: 'INBOUND',
+    }),
     enabled: debouncedSearchQuery.length > 0,
   })
 
@@ -221,26 +229,26 @@ export function useProductInbound() {
       return
     }
 
-    toast.error(t('warehouse.inbound.toast.failed'))
+    ui.error(t('warehouse.inbound.toast.failed'))
     logger.error(`Failed to load product inbound resources: ${readResource.scope}`, readResource.error)
     failLoudly(readResource.error, readResource.scope)
-  }, [readResource, t])
+  }, [readResource, t, ui])
 
   useEffect(() => {
     if (searchResource.status !== 'error') {
       return
     }
 
-    toast.error(t('warehouse.inbound.toast.failed'))
+    ui.error(t('warehouse.inbound.toast.failed'))
     logger.error(`Product inbound search failed: ${searchResource.scope}`, searchResource.error)
     failLoudly(searchResource.error, searchResource.scope)
-  }, [searchResource, t])
+  }, [searchResource, t, ui])
 
   useEffect(() => {
     if (searchResource.status !== 'ready') return
     if (searchResource.data.length > 0) return
-    toast.error(t('warehouse.inbound.toast.notFound'))
-  }, [searchResource, t])
+    ui.error(t('warehouse.inbound.toast.notFound'))
+  }, [searchResource, t, ui])
 
   const submitInboundMutation = useMutation({
     mutationFn: async (payload: InboundTDO) => {
@@ -260,7 +268,7 @@ export function useProductInbound() {
         }),
       ])
 
-      toast.success(
+      ui.success(
         t('warehouse.inbound.toast.success', { name: savedRecord.materialName })
       )
       setIsInboundOpen(false)
@@ -331,7 +339,7 @@ export function useProductInbound() {
     if (!allowsAction('action_warehouse_inbound_record')) return
     if (!selectedItem) return
     if (formData.quantity <= 0) {
-      toast.error(t('warehouse.inbound.toast.quantityInvalid'))
+      ui.error(t('warehouse.inbound.toast.quantityInvalid'))
       return
     }
 

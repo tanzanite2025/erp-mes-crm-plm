@@ -236,7 +236,7 @@ export function PurchaseOrderMaster({
                           />
                           {canEditPurchaseOrder(order.status)
                             ? t('purchase.orders.editOrder')
-                            : t('purchase.orders.workflowLocked')}
+                            : t('purchase.orders.statusLocked')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => {

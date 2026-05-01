@@ -44,7 +44,6 @@ func setupArApHandlerTestDB(t *testing.T) {
 			barcode TEXT,
 			requirements TEXT,
 			evidences BLOB DEFAULT X'5B5D',
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			updated_by TEXT,
@@ -192,7 +191,7 @@ func seedReceivableLedger(t *testing.T, outstanding float64, status string) seed
 		ID:                ledgerID,
 		DocumentNo:        "AR-" + strings.ToUpper(uuid.NewString()[:8]),
 		SourceRefID:       ledgerID,
-		CustomerName:      "娴嬭瘯瀹㈡埛",
+		CustomerName:      "测试客户",
 		Currency:          "CNY",
 		OutstandingAmount: outstanding,
 		Status:            status,
@@ -743,7 +742,7 @@ func TestCreateReceiptRecordHandlerReturnsLockedCreateResponseContract(t *testin
 		"paymentTerm":"NET30",
 		"recordDate":"2026-04-19",
 		"receivedAt":"2026-04-19T10:30",
-		"receiptAccount":"鎷涘晢閾惰-瀵瑰叕鎴?,
+		"receiptAccount":"招商银行-对公户",
 		"referenceNo":"REF-RCV-001",
 		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":80,"sequenceNo":1,"remark":"full"}]
 	}`

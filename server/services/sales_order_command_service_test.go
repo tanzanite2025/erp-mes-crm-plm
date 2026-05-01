@@ -36,22 +36,6 @@ func setupSalesOrderCommandTestDB(t *testing.T) *gorm.DB {
 			last_reset TEXT
 		)
 	`).Error)
-	require.NoError(t, testDB.Exec(`
-		CREATE TABLE workflow_definitions (
-			id TEXT PRIMARY KEY NOT NULL,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			code TEXT,
-			name TEXT,
-			version INTEGER,
-			module TEXT,
-			definition_json TEXT,
-			description TEXT,
-			is_active BOOLEAN
-		)
-	`).Error)
-
 	return testDB
 }
 

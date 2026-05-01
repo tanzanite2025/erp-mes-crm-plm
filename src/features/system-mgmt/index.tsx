@@ -15,11 +15,6 @@ export function SystemMgmt() {
             return { ...tab, label: t('systemManagement.layout.tabs.status') }
           case 'routing':
             return { ...tab, label: t('systemManagement.layout.tabs.routing') }
-          case 'workflow-definition':
-            return {
-              ...tab,
-              label: t('systemManagement.layout.tabs.workflowDefinition') || 'Sales Workflow',
-            }
           case 'ai-capability':
             return { ...tab, label: t('systemManagement.layout.tabs.aiCapability') }
           case 'audit-engine':

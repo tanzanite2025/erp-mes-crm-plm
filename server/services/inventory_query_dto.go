@@ -31,6 +31,25 @@ type InventoryListResponse struct {
 	PageSize int                     `json:"pageSize"`
 }
 
+type WarehouseMasterDataSearchScope string
+
+const (
+	WarehouseMasterDataScopeAll      WarehouseMasterDataSearchScope = "ALL"
+	WarehouseMasterDataScopeInbound  WarehouseMasterDataSearchScope = "INBOUND"
+	WarehouseMasterDataScopeShipment WarehouseMasterDataSearchScope = "SHIPMENT"
+)
+
+type WarehouseMasterDataSearchItemResponse struct {
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	Code         string  `json:"code"`
+	Spec         string  `json:"spec"`
+	UOM          string  `json:"uom"`
+	Category     string  `json:"category"`
+	SourceModule string  `json:"sourceModule"`
+	Stock        float64 `json:"stock"`
+}
+
 type InventoryInboundHistoryResponse struct {
 	Items    []InventoryInboundRecordResponse `json:"items"`
 	Total    int64                            `json:"total"`

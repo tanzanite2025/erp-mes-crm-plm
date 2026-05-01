@@ -101,9 +101,7 @@ const (
 )
 
 const (
-	ActionApprovalReview       = "action_approval_review"
-	ActionSystemWorkflowManage = "action_system_workflow_manage"
-	ActionSystemWorkflowReview = "action_system_workflow_review"
+	ActionApprovalReview = "action_approval_review"
 )
 
 var AdminFallbackPermissions = []string{
@@ -176,8 +174,6 @@ var AdminFallbackPermissions = []string{
 	ActionProductionLineUpdate,
 	ActionCuttingSizeInventoryRecord,
 	ActionApprovalReview,
-	ActionSystemWorkflowManage,
-	ActionSystemWorkflowReview,
 	MenuPDA,
 }
 

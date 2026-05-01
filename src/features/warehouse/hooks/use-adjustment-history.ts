@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { AdjustmentService, type InventoryAdjustment } from '../adjustment'
 import { warehouseQueryKeys } from '../query-keys'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
-export function useAdjustmentHistory() {
+export function useAdjustmentHistory(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
+  const ui = useMemo(
+    () => feedback ?? createWarehouseUiFeedback(),
+    [feedback],
+  )
   const [selectedAdj, setSelectedAdj] = useState<InventoryAdjustment | null>(null)
   const [executeConfirmOpen, setExecuteConfirmOpen] = useState(false)
   const [adjToExecute, setAdjToExecute] = useState<InventoryAdjustment | null>(null)
@@ -23,12 +27,12 @@ export function useAdjustmentHistory() {
       await queryClient.invalidateQueries({
         queryKey: warehouseQueryKeys.inventoryAdjustments(),
       })
-      toast.success(t('warehouse.adjustment.toast.executeSuccess'))
+      ui.success(t('warehouse.adjustment.toast.executeSuccess'))
       setExecuteConfirmOpen(false)
       setAdjToExecute(null)
     },
     onError: (err: Error) => {
-      toast.error(
+      ui.error(
         t('warehouse.adjustment.toast.executeFailed', { message: err.message })
       )
     },

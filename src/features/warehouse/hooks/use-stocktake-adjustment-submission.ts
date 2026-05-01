@@ -1,12 +1,17 @@
+import { useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { warehouseQueryKeys } from '../query-keys'
 import { StocktakeMaintenanceService } from '../stocktake'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
-export function useStocktakeAdjustmentSubmission() {
+export function useStocktakeAdjustmentSubmission(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
+  const ui = useMemo(
+    () => feedback ?? createWarehouseUiFeedback(),
+    [feedback],
+  )
 
   const postAdjustmentMutation = useMutation({
     mutationFn: (taskId: string) =>
@@ -23,10 +28,10 @@ export function useStocktakeAdjustmentSubmission() {
           queryKey: warehouseQueryKeys.inventoryAdjustments(),
         }),
       ])
-      toast.success(t('warehouse.stocktake.toast.postSuccess'))
+      ui.success(t('warehouse.stocktake.toast.postSuccess'))
     },
     onError: (err: Error) => {
-      toast.error(
+      ui.error(
         t('warehouse.stocktake.toast.postFailed', { message: err.message })
       )
     },

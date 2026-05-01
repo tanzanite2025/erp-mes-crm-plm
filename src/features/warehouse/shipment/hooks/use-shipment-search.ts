@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { InventoryCoreService, type MasterDataSearchResult } from '../../inventory'
+import { type MasterDataSearchResult } from '../../inventory'
 import { warehouseQueryKeys } from '../../query-keys'
+import { WarehouseMasterDataService } from '../../services/warehouse-master-data-service'
+import { type ShipmentUiFeedback } from './shipment-ui-feedback'
 
 const logger = createLogger('useShipmentSearch')
 
@@ -16,7 +17,7 @@ export type ShipmentSearchResource =
   | { status: 'idle' }
   | ReadResource<MasterDataSearchResult[]>
 
-export function useShipmentSearch() {
+export function useShipmentSearch(feedback: Pick<ShipmentUiFeedback, 'error'>) {
   const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
@@ -30,8 +31,11 @@ export function useShipmentSearch() {
   }, [searchQuery])
 
   const searchResultsQuery = useQuery({
-    queryKey: warehouseQueryKeys.masterDataSearch(debouncedSearchQuery),
-    queryFn: (): Promise<MasterDataSearchResult[]> => InventoryCoreService.searchMasterData(debouncedSearchQuery),
+    queryKey: warehouseQueryKeys.masterDataSearch('SHIPMENT', debouncedSearchQuery),
+    queryFn: (): Promise<MasterDataSearchResult[]> => WarehouseMasterDataService.searchSelectableItems({
+      query: debouncedSearchQuery,
+      scope: 'SHIPMENT',
+    }),
     enabled: debouncedSearchQuery.length > 0,
   })
 
@@ -75,8 +79,8 @@ export function useShipmentSearch() {
   useEffect(() => {
     if (searchResource.status !== 'ready') return
     if (searchResource.data.length > 0) return
-    toast.error(t('warehouse.shipment.toast.notFound'))
-  }, [searchResource, t])
+    feedback.error(t('warehouse.shipment.toast.notFound'))
+  }, [feedback, searchResource, t])
 
   return {
     searchQuery,

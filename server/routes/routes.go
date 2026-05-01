@@ -33,7 +33,6 @@ func SetupRoutes(r *gin.Engine) {
 		registerSettlementEvidenceRoutes(authorized)
 		registerVoucherRoutes(authorized)
 		registerApprovalRoutes(authorized)
-		registerWorkflowRoutes(authorized)
 		registerPersonalWorkbenchRoutes(authorized)
 		registerSidebarCommandRoutes(authorized)
 		registerApsSchedulingRoutes(authorized)
@@ -312,6 +311,7 @@ func registerPublicRoutes(api *gin.RouterGroup) {
 	api.POST("/auth/login", middleware.LoginRateLimitMiddleware(), handlers.LoginHandler)
 	api.POST("/raw-materials/prepreg-label-ocr-sessions/:sessionId/submit", handlers.SubmitPrepregLabelOcrSessionHandler)
 	api.POST("/production/product-barcode-capture-sessions/:sessionId/submit", handlers.SubmitProductBarcodeCaptureSessionHandler)
+	api.POST("/warehouse/packaging-assemblies/capture-sessions/:sessionId/submit", handlers.SubmitPackagingAssemblyCaptureSessionHandler)
 	api.GET("/ws", func(c *gin.Context) {
 		log.Printf("[WS_TRACE] Incoming request: Remote=%s, Host=%s, Upgrade=%s", c.Request.RemoteAddr, c.Request.Host, c.Request.Header.Get("Upgrade"))
 		handlers.WSHandler(c)

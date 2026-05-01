@@ -27,6 +27,7 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	inventoryGroup := authorized.Group("")
 	inventoryGroup.Use(warehouseAccess)
 	inventoryGroup.GET("/inventory", handlers.GetInventoryHandler)
+	inventoryGroup.GET("/warehouse/master-data/search", handlers.SearchWarehouseMasterDataHandler)
 	inventoryGroup.GET("/inventory/valuation", handlers.GetInventoryValuationHandler)
 	inventoryGroup.GET("/inventory/alerts/summary", handlers.GetInventoryAlertSummaryHandler)
 	inventoryGroup.PATCH("/inventory/:id", adjustmentUpdate, handlers.PatchInventoryHandler)
@@ -49,6 +50,11 @@ func registerInventoryRoutes(authorized *gin.RouterGroup) {
 	categoryGroup.POST("", categoryManage, handlers.SaveWarehouseCategoryHandler)
 	categoryGroup.PATCH("/:id", categoryManage, handlers.PatchWarehouseCategoryHandler)
 	categoryGroup.DELETE("/:id", categoryManage, handlers.DeleteWarehouseCategoryHandler)
+
+	packagingAssemblyGroup := inventoryGroup.Group("/warehouse/packaging-assemblies")
+	packagingAssemblyGroup.GET("", handlers.GetPackagingAssembliesHandler)
+	packagingAssemblyGroup.POST("/capture-sessions", handlers.CreatePackagingAssemblyCaptureSessionHandler)
+	packagingAssemblyGroup.GET("/capture-sessions/:sessionId", handlers.GetPackagingAssemblyCaptureSessionHandler)
 
 	stocktakeGroup := inventoryGroup.Group("/stocktakes")
 	stocktakeGroup.GET("", handlers.GetStocktakeTasksHandler)

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
@@ -13,7 +12,9 @@ import {
 } from '../inventory'
 import { ShipmentCoreService, type ShipmentRecord } from '../shipment'
 import { WarehouseExportService } from '../services/warehouse-export-service'
+import { WarehouseMasterDataService } from '../services/warehouse-master-data-service'
 import { warehouseQueryKeys } from '../query-keys'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
 const logger = createLogger('useWarehouseReport')
 
@@ -24,8 +25,12 @@ type ReportReadResource = CompositeReadResource<{
     hasData: boolean
 }>
 
-export function useReport() {
+export function useReport(feedback?: Pick<WarehouseUiFeedback, 'confirm' | 'error' | 'success'>) {
     const { locale, t } = useLanguage()
+    const ui = useMemo(
+        () => feedback ?? createWarehouseUiFeedback(),
+        [feedback],
+    )
     const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState('inbound')
     const [filters, setFilters] = useState({
@@ -48,7 +53,10 @@ export function useReport() {
 
     const masterDataQuery = useQuery({
         queryKey: warehouseQueryKeys.masterDataAll(),
-        queryFn: () => InventoryCoreService.searchMasterData(''),
+        queryFn: () => WarehouseMasterDataService.searchSelectableItems({
+            query: '',
+            scope: 'ALL',
+        }),
     })
     const { refetch: refetchMasterData } = masterDataQuery
 
@@ -197,19 +205,19 @@ export function useReport() {
                 queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.shipmentHistory() }),
                 queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.masterDataAll() }),
             ])
-            toast.success(t('warehouse.reports.reconcileSuccess', {
+            ui.success(t('warehouse.reports.reconcileSuccess', {
                 totalItems: result.totalItems,
                 fixedNegatives: result.fixedNegatives
             }))
         },
         onError: (error) => {
             logger.error('Inventory reconciliation failed', error)
-            toast.error(t('warehouse.reports.reconcileFailed'))
+            ui.error(t('warehouse.reports.reconcileFailed'))
         },
     })
 
     const handleReconcile = async () => {
-        if (!confirm(t('warehouse.reports.reconcileConfirm'))) return false
+        if (!ui.confirm(t('warehouse.reports.reconcileConfirm'))) return false
 
         try {
             await reconcileMutation.mutateAsync()

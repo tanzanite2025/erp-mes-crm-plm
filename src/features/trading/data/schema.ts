@@ -1,4 +1,4 @@
-import { z } from 'zod'
+﻿import { z } from 'zod'
 import { type BaseEntity } from '@/types/base'
 import {
   type PurchaseOrderStatus,
@@ -73,7 +73,7 @@ export type SalesOrderStatus =
   | 'Done'
   | 'Canceled'
 
-export type SalesOrderType = string // 交易模块订单模式枚举
+export type SalesOrderType = string
 
 export type SalesOrderAvailableAction =
   | 'submitPending'
@@ -92,34 +92,34 @@ export interface SalesOrderActionAvailability {
 export interface SalesOrderLine {
   id?: number
   lineNo: number
-  productId?: string // 引用 Engineering 模块的产品 ID
+  productId?: string
   productModel: string
   productCode: string
-  specification: string // 冗余存储下订单时的规格快照
+  specification: string
   modelCodeSnapshot?: string
   holePrefixSnapshot?: string
-  appearanceId?: string // 引用产品外观主数据 ID
-  appearanceNameSnapshot?: string // 外观名称快照
-  appearanceBarcodeCodeSnapshot?: string // 外观条码位值快照
-  appearanceDescriptionSnapshot?: string // 外观说明快照
-  appearanceImageUrlSnapshot?: string // 外观图片快照
+  appearanceId?: string
+  appearanceNameSnapshot?: string
+  appearanceBarcodeCodeSnapshot?: string
+  appearanceDescriptionSnapshot?: string
+  appearanceImageUrlSnapshot?: string
   description: string
   qty: number
   uom: string
   price: number
   amount: number
-  deliveredQty: number // 已交付数量 (联动库存模块)
+  deliveredQty: number
   customerPartNo: string
   jobNo: string
   note?: string
-  drillingPlanId?: string // 订单关联：打孔方案 ID
-  labelingPlanId?: string // 订单关联：贴标方案 ID
-  holeCount?: number // 订单关联：孔数
-  route?: string // 工序路线快照
+  drillingPlanId?: string
+  labelingPlanId?: string
+  holeCount?: number
+  route?: string
   orderDate: string
   status: SalesOrderStatus
-  claimedBy?: string // 认领人姓名
-  claimedAt?: string // 认领时间
+  claimedBy?: string
+  claimedAt?: string
   returnedQuantity: number
   remainingReturnableQuantity: number
 }
@@ -146,7 +146,6 @@ export const EMPTY_SALES_ORDER_LINE: Partial<SalesOrderLine> = {
   remainingReturnableQuantity: 0,
 }
 
-// Removed old manual SalesOrderApproval as it was superseded by Workflow Engine
 
 export interface OrderEvidence {
   id: string
@@ -162,17 +161,17 @@ export interface SalesOrder extends BaseEntity {
   orderNo: string
   orderName?: string
   customerName: string
-  customerId?: string // 引用客户 ID
+  customerId?: string
   type: SalesOrderType
-  currency: string // 货币类别
+  currency: string
   exchangeRateSnapshot: number
   paymentMethod?: string
   paymentMethodName?: string
   paymentTerm?: string
   paymentTermName?: string
-  classification: string // 交易模块订单分类枚举
+  classification: string
   status: SalesOrderStatus
-  statusNote?: string // 弃用：建议使用 evidences
+  statusNote?: string
   evidences?: OrderEvidence[]
   amount: number
   quantity: number
@@ -184,8 +183,7 @@ export interface SalesOrder extends BaseEntity {
   lines: SalesOrderLine[]
   fulfillmentRate?: number
   availableActions?: SalesOrderActionAvailability[]
-  workflowInstanceId?: string // 统一工作流引擎桥接关键链
-  version: number // SDRTS 乐观锁
+  version: number
 }
 
 export type SalesOrderDraft = Omit<
@@ -248,7 +246,6 @@ export const createEmptySalesOrderDraft = (
   requirements: '',
   lines: [createEmptySalesOrderLine()],
   fulfillmentRate: 0,
-  workflowInstanceId: '',
   version: 1,
 })
 
@@ -269,7 +266,7 @@ export const salesOrderStatuses: {
   },
   {
     value: 'InProgress',
-    label: '生产中',
+    label: '进行中',
     color: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
   },
   {
@@ -292,7 +289,7 @@ export interface PurchaseOrderLine {
   id?: number
   version?: number
   lineNo: number
-  materialId: string // 引用 Materials 模块的物料 ID
+  materialId: string
   materialName: string
   materialCode: string
   specification: string
@@ -310,13 +307,13 @@ export interface PurchaseOrderLine {
 export interface PurchaseOrderListItem extends BaseEntity {
   orderNo: string
   supplierName: string
-  supplierId: string // 引用供应商 ID
+  supplierId: string
   status: PurchaseOrderStatus
   evidences?: OrderEvidence[]
   amount: number
   orderDate: string
   expectedDate: string
-  purchaser: string // 采购员
+  purchaser: string
   currency: string
   exchangeRate?: number
   paymentMethod?: string
@@ -324,9 +321,8 @@ export interface PurchaseOrderListItem extends BaseEntity {
   paymentTerm?: string
   paymentTermName?: string
   note?: string
-  workflowInstanceId?: string // 统一工作流引擎桥接关键链
   isDeleted: boolean
-  version: number // SDRTS 乐观锁
+  version: number
 }
 
 export interface PurchaseOrder extends PurchaseOrderListItem {

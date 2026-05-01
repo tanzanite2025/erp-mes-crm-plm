@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, type ReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
 import { warehouseQueryKeys } from '../query-keys'
 import { StocktakeCoreService, StocktakeMaintenanceService, StocktakeOfflineAdapter, type PDAScanPayload, type StocktakeItem, type StocktakeTask } from '../stocktake'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from './warehouse-ui-feedback'
 
 const logger = createLogger('useStocktake')
 
@@ -18,7 +18,11 @@ type StocktakeItemsResource =
     | { status: 'idle' }
     | ReadResource<StocktakeItem[]>
 
-export function useStocktake() {
+export function useStocktake(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
+    const ui = useMemo(
+        () => feedback ?? createWarehouseUiFeedback(),
+        [feedback],
+    )
     const queryClient = useQueryClient()
 
     const tasksQuery = useQuery({
@@ -43,11 +47,11 @@ export function useStocktake() {
             StocktakeMaintenanceService.create(data),
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
-            toast.success('盘点任务已创建')
+            ui.success('盘点任务已创建')
         },
         onError: (error: unknown) => {
             const message = error instanceof Error ? error.message : 'unknown error'
-            toast.error(`发起盘点失败: ${message}`)
+            ui.error(`发起盘点失败: ${message}`)
         },
     })
 
@@ -57,11 +61,11 @@ export function useStocktake() {
             await refreshPendingScans()
 
             if (result.status === 'queued') {
-                toast.success('扫描数据已保存为离线草稿，网络恢复后会自动补交。')
+                ui.success('扫描数据已保存为离线草稿，网络恢复后会自动补交。')
                 return
             }
 
-            toast.success('扫描数据已同步。')
+            ui.success('扫描数据已同步。')
             await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
         },
     })
@@ -73,12 +77,12 @@ export function useStocktake() {
             await queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.stocktakeTasks() })
 
             if (result.syncedCount > 0) {
-                toast.success(`已同步 ${result.syncedCount} 条离线扫描记录。`)
+                ui.success(`已同步 ${result.syncedCount} 条离线扫描记录。`)
                 return
             }
 
             if (result.remainingCount > 0) {
-                toast.success(`当前仍有 ${result.remainingCount} 条待同步扫描记录。`)
+                ui.success(`当前仍有 ${result.remainingCount} 条待同步扫描记录。`)
             }
         },
     })

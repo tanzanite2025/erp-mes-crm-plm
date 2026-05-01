@@ -20,20 +20,20 @@ export function AssignmentCategoryGrid({
   const { t } = useLanguage()
 
   return (
-    <section className='rounded-[32px] border border-dashed border-muted/50 bg-background p-5 shadow-inner'>
-      <div className='mb-4 flex items-center justify-between gap-3'>
+    <section className='rounded-2xl border border-dashed border-muted/50 bg-background px-3 py-2.5 shadow-inner'>
+      <div className='mb-1.5 flex items-center justify-between gap-3'>
         <div>
-          <h2 className='text-sm font-black tracking-tighter italic'>
+          <h2 className='text-[13px] font-black tracking-tighter italic'>
             {t('sidebarCommandAssignment.categoryGrid.title')}
           </h2>
-          <p className='mt-1 text-[9px] font-black tracking-widest text-muted-foreground/55 uppercase'>
+          <p className='mt-0.5 text-[8px] font-black tracking-widest text-muted-foreground/55 uppercase'>
             {t('sidebarCommandAssignment.categoryGrid.description')}
           </p>
         </div>
-        <FolderTree className='size-5 text-muted-foreground' />
+        <FolderTree className='size-4 text-muted-foreground' />
       </div>
 
-      <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid gap-1.5 md:grid-cols-2 xl:grid-cols-3'>
         {categories.map((category) => {
           const checked = selectedCategorySet.has(category.categoryId)
 
@@ -41,7 +41,7 @@ export function AssignmentCategoryGrid({
             <label
               key={category.categoryId}
               className={cn(
-                'flex min-h-16 cursor-pointer items-center gap-3 rounded-[18px] border px-4 py-3 transition-colors',
+                'flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
                 checked
                   ? 'border-primary/30 bg-primary/5 shadow-sm'
                   : 'border-dashed border-muted/50 bg-muted/10 hover:border-muted/80'
@@ -56,14 +56,14 @@ export function AssignmentCategoryGrid({
                 aria-label={`${t('sidebarCommandAssignment.categoryGrid.title')} ${category.name}`}
               />
               <span className='min-w-0 flex-1'>
-                <span className='block truncate text-sm font-black tracking-tight'>
+                <span className='block truncate text-[13px] font-black tracking-tight'>
                   {category.name}
                 </span>
-                <span className='mt-1 block truncate font-mono text-[10px] font-black tracking-tight text-muted-foreground/50'>
+                <span className='block truncate font-mono text-[8px] font-black tracking-tight text-muted-foreground/50'>
                   {category.categoryId}
                 </span>
               </span>
-              <span className='shrink-0 rounded-full bg-muted px-2.5 py-1 text-[10px] font-black text-muted-foreground tabular-nums'>
+              <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[8px] font-black text-muted-foreground tabular-nums'>
                 {t('sidebarCommandAssignment.categoryGrid.commandCount', {
                   count: category.commandCount,
                 })}
@@ -73,7 +73,7 @@ export function AssignmentCategoryGrid({
         })}
 
         {categories.length === 0 ? (
-          <div className='rounded-[24px] border border-dashed border-muted/50 bg-muted/5 px-4 py-10 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
+          <div className='rounded-xl border border-dashed border-muted/50 bg-muted/5 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
             {t('sidebarCommandAssignment.categoryGrid.empty')}
           </div>
         ) : null}

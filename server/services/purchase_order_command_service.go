@@ -113,7 +113,7 @@ func PatchPurchaseOrder(command PatchPurchaseOrderCommand) (PurchaseOrderRespons
 }
 
 func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest) (PatchPurchaseOrderRequest, error) {
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "evidences", "workflowInstanceId", "isDeleted", "lines"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "orderNo", "supplierId", "supplierName", "orderDate", "expectedDate", "status", "currency", "amount", "exchangeRate", "purchaser", "paymentMethod", "paymentMethodName", "paymentTerm", "paymentTermName", "note", "evidences", "isDeleted", "lines"); err != nil {
 		return PatchPurchaseOrderRequest{}, fmt.Errorf("invalid purchase order delta: %w", err)
 	}
 
@@ -124,27 +124,26 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 
 	patch := MapPurchaseOrderToResponse(existing)
 	patchReq := PatchPurchaseOrderRequest{
-		ID:                 patch.ID,
-		OrderNo:            patch.OrderNo,
-		SupplierID:         patch.SupplierID,
-		SupplierName:       patch.SupplierName,
-		OrderDate:          patch.OrderDate,
-		ExpectedDate:       patch.ExpectedDate,
-		Status:             patch.Status,
-		Currency:           patch.Currency,
-		Amount:             patch.Amount,
-		ExchangeRate:       patch.ExchangeRate,
-		Purchaser:          patch.Purchaser,
-		PaymentMethod:      patch.PaymentMethod,
-		PaymentMethodName:  patch.PaymentMethodName,
-		PaymentTerm:        patch.PaymentTerm,
-		PaymentTermName:    patch.PaymentTermName,
-		Note:               patch.Note,
-		Evidences:          patch.Evidences,
-		WorkflowInstanceID: patch.WorkflowInstanceID,
-		IsDeleted:          patch.IsDeleted,
-		Version:            int(req.Metadata.Version),
-		Lines:              make([]PurchaseOrderLineRequest, 0, len(patch.Lines)),
+		ID:                patch.ID,
+		OrderNo:           patch.OrderNo,
+		SupplierID:        patch.SupplierID,
+		SupplierName:      patch.SupplierName,
+		OrderDate:         patch.OrderDate,
+		ExpectedDate:      patch.ExpectedDate,
+		Status:            patch.Status,
+		Currency:          patch.Currency,
+		Amount:            patch.Amount,
+		ExchangeRate:      patch.ExchangeRate,
+		Purchaser:         patch.Purchaser,
+		PaymentMethod:     patch.PaymentMethod,
+		PaymentMethodName: patch.PaymentMethodName,
+		PaymentTerm:       patch.PaymentTerm,
+		PaymentTermName:   patch.PaymentTermName,
+		Note:              patch.Note,
+		Evidences:         patch.Evidences,
+		IsDeleted:         patch.IsDeleted,
+		Version:           int(req.Metadata.Version),
+		Lines:             make([]PurchaseOrderLineRequest, 0, len(patch.Lines)),
 	}
 	for _, line := range patch.Lines {
 		patchReq.Lines = append(patchReq.Lines, PurchaseOrderLineRequest{
@@ -235,10 +234,6 @@ func BuildPurchaseOrderPatchRequest(orderID string, req SDRTSDeltaHandlerRequest
 			if err := json.Unmarshal(valueRaw, &patchReq.Evidences); err != nil {
 				return PatchPurchaseOrderRequest{}, fmt.Errorf("evidences 字段错误")
 			}
-		case "workflowInstanceId":
-			if err := json.Unmarshal(valueRaw, &patchReq.WorkflowInstanceID); err != nil {
-				return PatchPurchaseOrderRequest{}, fmt.Errorf("workflowInstanceId 字段错误")
-			}
 		case "isDeleted":
 			if err := json.Unmarshal(valueRaw, &patchReq.IsDeleted); err != nil {
 				return PatchPurchaseOrderRequest{}, fmt.Errorf("isDeleted 字段错误")
@@ -280,24 +275,6 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 			return err
 		}
 
-		workflowInstance, err := CreateWorkflowInstanceForDocumentTx(
-			tx,
-			WorkflowModulePurchaseOrder,
-			"PURCHASE_ORDER",
-			order.ID,
-			requesterID,
-		)
-		if err != nil {
-			return err
-		}
-
-		order.WorkflowInstanceID = workflowInstance.ID
-		if err := tx.Model(&order).Update("workflow_instance_id", workflowInstance.ID).Error; err != nil {
-			return err
-		}
-		if err := recordAuditEventTx(tx, trading_audit.BuildPurchaseOrderWorkflowEvent(order.ID, workflowInstance.ID, audit.AuditActor{UserID: requesterID, Username: operator, IP: ip, Source: "workflow"})); err != nil {
-			return err
-		}
 		if err := DispatchPurchaseOrderStatusChangedTx(tx, order, "", order.Status, requesterID, operator); err != nil {
 			return err
 		}
@@ -315,27 +292,26 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 
 func MapSavePurchaseOrderRequestToPatchRequest(input SavePurchaseOrderRequest) PatchPurchaseOrderRequest {
 	return PatchPurchaseOrderRequest{
-		ID:                 input.ID,
-		OrderNo:            input.OrderNo,
-		SupplierID:         input.SupplierID,
-		SupplierName:       input.SupplierName,
-		OrderDate:          input.OrderDate,
-		ExpectedDate:       input.ExpectedDate,
-		Status:             input.Status,
-		Currency:           input.Currency,
-		Amount:             input.Amount,
-		ExchangeRate:       input.ExchangeRate,
-		Purchaser:          input.Purchaser,
-		PaymentMethod:      input.PaymentMethod,
-		PaymentMethodName:  input.PaymentMethodName,
-		PaymentTerm:        input.PaymentTerm,
-		PaymentTermName:    input.PaymentTermName,
-		Note:               input.Note,
-		Evidences:          input.Evidences,
-		WorkflowInstanceID: input.WorkflowInstanceID,
-		IsDeleted:          input.IsDeleted,
-		Version:            input.Version,
-		Lines:              input.Lines,
+		ID:                input.ID,
+		OrderNo:           input.OrderNo,
+		SupplierID:        input.SupplierID,
+		SupplierName:      input.SupplierName,
+		OrderDate:         input.OrderDate,
+		ExpectedDate:      input.ExpectedDate,
+		Status:            input.Status,
+		Currency:          input.Currency,
+		Amount:            input.Amount,
+		ExchangeRate:      input.ExchangeRate,
+		Purchaser:         input.Purchaser,
+		PaymentMethod:     input.PaymentMethod,
+		PaymentMethodName: input.PaymentMethodName,
+		PaymentTerm:       input.PaymentTerm,
+		PaymentTermName:   input.PaymentTermName,
+		Note:              input.Note,
+		Evidences:         input.Evidences,
+		IsDeleted:         input.IsDeleted,
+		Version:           input.Version,
+		Lines:             input.Lines,
 	}
 }
 
@@ -344,7 +320,6 @@ func buildPurchaseOrderSaveDelta(request SavePurchaseOrderRequest) map[string]js
 	var raw map[string]json.RawMessage
 	_ = json.Unmarshal(payload, &raw)
 	delete(raw, "id")
-	delete(raw, "workflowInstanceId")
 	delete(raw, "version")
 	return raw
 }
@@ -354,7 +329,6 @@ func buildPurchaseOrderPatchDelta(request PatchPurchaseOrderRequest) map[string]
 	var raw map[string]json.RawMessage
 	_ = json.Unmarshal(payload, &raw)
 	delete(raw, "id")
-	delete(raw, "workflowInstanceId")
 	delete(raw, "version")
 	return raw
 }

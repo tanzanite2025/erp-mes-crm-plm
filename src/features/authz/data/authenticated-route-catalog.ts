@@ -11,7 +11,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/code-center/linear-barcode/print",
   "/quality/standards/new",
   "/logistics-config/vehicle-specs-library",
-  "/system-management/workflow-definition",
   "/basic-settings/permission-tree-smoke",
   "/shipping-management/vehicle-contacts",
   "/cutting-operations/cutting-issuance",

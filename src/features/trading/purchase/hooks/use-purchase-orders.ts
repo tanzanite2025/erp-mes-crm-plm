@@ -241,7 +241,7 @@ export const usePurchaseOrderMutations = () => {
     lineContentChangeMutation,
   }
 
-  const workflowMutations = {
+  const orderLifecycleMutations = {
     supplierChangeMutation,
     expectedDateChangeMutation,
     confirmReceiptMutation,
@@ -250,9 +250,9 @@ export const usePurchaseOrderMutations = () => {
   return {
     ...createSaveMutations,
     ...lineEditMutations,
-    ...workflowMutations,
+    ...orderLifecycleMutations,
     createSaveMutations,
     lineEditMutations,
-    workflowMutations,
+    orderLifecycleMutations,
   }
 }

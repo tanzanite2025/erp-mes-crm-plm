@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { type DeltaSet } from '@/lib/delta/types'
 import { createLogger } from '@/lib/logger'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
@@ -12,6 +11,7 @@ import {
 } from '../services/warehouse-category-core-service'
 import { WarehouseCategoryMaintenanceService } from '../services/warehouse-category-maintenance-service'
 import { warehouseQueryKeys } from '../../query-keys'
+import { createWarehouseUiFeedback, type WarehouseUiFeedback } from '../../hooks/warehouse-ui-feedback'
 
 const logger = createLogger('useWarehouseCategory')
 
@@ -19,8 +19,12 @@ export type WarehouseCategoryListResource = CompositeReadResource<{
   categories: WarehouseCategory[]
 }>
 
-export function useWarehouseCategory() {
+export function useWarehouseCategory(feedback?: Pick<WarehouseUiFeedback, 'success'>) {
   const queryClient = useQueryClient()
+  const ui = useMemo(
+    () => feedback ?? createWarehouseUiFeedback(),
+    [feedback],
+  )
 
   const categoriesQuery = useQuery({
     queryKey: warehouseQueryKeys.categoryList(),
@@ -33,7 +37,7 @@ export function useWarehouseCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
-      toast.success('Warehouse category created')
+      ui.success('Warehouse category created')
     }
   })
 
@@ -43,7 +47,7 @@ export function useWarehouseCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
-      toast.success('Warehouse category updated')
+      ui.success('Warehouse category updated')
     }
   })
 
@@ -52,7 +56,7 @@ export function useWarehouseCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryList() })
       queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.categoryOptions() })
-      toast.success('Warehouse category deleted')
+      ui.success('Warehouse category deleted')
     }
   })
 

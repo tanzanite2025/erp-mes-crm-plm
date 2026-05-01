@@ -147,7 +147,6 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
-			workflow_instance_id TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
@@ -192,7 +191,6 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			barcode TEXT,
 			requirements TEXT,
 			evidences BLOB DEFAULT X'5B5D',
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			updated_by TEXT,

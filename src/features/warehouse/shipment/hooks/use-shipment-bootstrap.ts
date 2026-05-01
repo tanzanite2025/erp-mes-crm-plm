@@ -2,21 +2,21 @@
 
 import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { failLoudly } from '@/lib/safe-catch'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { WarehouseCategoryCoreService } from '../../category'
 import {
-  InventoryCoreService,
   InventoryMaintenanceService,
   type MasterDataSearchResult,
 } from '../../inventory'
 import { type WarehouseCategoryOption } from '../../category/data/schema'
 import { warehouseQueryKeys } from '../../query-keys'
+import { WarehouseMasterDataService } from '../../services/warehouse-master-data-service'
 import { filterWarehouseCategoriesByScene } from '../../utils/warehouse-category-config'
 import { type ShipmentDemand, type ShipmentRecord } from '../data/schema'
 import { ShipmentCoreService } from '../services/shipment-core-service'
+import { type ShipmentUiFeedback } from './shipment-ui-feedback'
 
 export type ShipmentBootstrapResource = CompositeReadResource<{
   history: ShipmentRecord[]
@@ -26,7 +26,7 @@ export type ShipmentBootstrapResource = CompositeReadResource<{
   masterDataMap: Record<string, MasterDataSearchResult>
 }>
 
-export function useShipmentBootstrap() {
+export function useShipmentBootstrap(feedback: Pick<ShipmentUiFeedback, 'error'>) {
   const { t } = useLanguage()
 
   const historyQuery = useQuery({
@@ -46,7 +46,10 @@ export function useShipmentBootstrap() {
 
   const masterDataQuery = useQuery({
     queryKey: warehouseQueryKeys.masterDataAll(),
-    queryFn: () => InventoryCoreService.searchMasterData(''),
+    queryFn: () => WarehouseMasterDataService.searchSelectableItems({
+      query: '',
+      scope: 'ALL',
+    }),
   })
 
   const thresholdsQuery = useQuery({
@@ -187,9 +190,9 @@ export function useShipmentBootstrap() {
 
   useEffect(() => {
     if (readResource.status !== 'error') return
-    toast.error(t('warehouse.errors.queryFailed'))
+    feedback.error(t('warehouse.errors.queryFailed'))
     failLoudly(readResource.error, readResource.scope)
-  }, [readResource, t])
+  }, [feedback, readResource, t])
 
   return {
     readResource,

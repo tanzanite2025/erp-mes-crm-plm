@@ -8,7 +8,6 @@ import (
 	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -25,46 +24,6 @@ func setupPurchaseOrderContractServiceTestDB(t *testing.T) *gorm.DB {
 
 	applyTradingTestSchema(t, testDB, tradingTestSchemaOptions{includePurchase: true, includeAuditLog: true})
 	for _, statement := range []string{
-		`CREATE TABLE workflow_definitions (
-			id TEXT PRIMARY KEY NOT NULL,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			code TEXT NOT NULL UNIQUE,
-			name TEXT NOT NULL,
-			version INTEGER DEFAULT 1,
-			module TEXT NOT NULL,
-			definition_json TEXT NOT NULL,
-			description TEXT,
-			is_active BOOLEAN DEFAULT TRUE
-		)`,
-		`CREATE TABLE workflow_instances (
-			id TEXT PRIMARY KEY NOT NULL,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			definition_id TEXT NOT NULL,
-			business_type TEXT NOT NULL,
-			business_ref_id TEXT NOT NULL,
-			current_node_id TEXT,
-			status TEXT,
-			requester_id TEXT,
-			started_at DATETIME,
-			finished_at DATETIME
-		)`,
-		`CREATE TABLE workflow_tasks (
-			id TEXT PRIMARY KEY NOT NULL,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			instance_id TEXT NOT NULL,
-			node_id TEXT,
-			assignee_user_id TEXT NOT NULL,
-			status TEXT,
-			action TEXT,
-			comment TEXT,
-			action_at DATETIME
-		)`,
 		`CREATE TABLE materials (
 			id TEXT PRIMARY KEY NOT NULL,
 			created_at DATETIME,
@@ -88,22 +47,6 @@ func setupPurchaseOrderContractServiceTestDB(t *testing.T) *gorm.DB {
 	})
 
 	return testDB
-}
-
-func seedPurchaseOrderContractWorkflow(t *testing.T, testDB *gorm.DB) {
-	t.Helper()
-
-	definition := models.WorkflowDefinition{
-		BaseModel:      models.BaseModel{ID: uuid.NewString()},
-		Code:           "PO-CONTRACT-FLOW",
-		Name:           "PO Contract Flow",
-		Version:        1,
-		Module:         WorkflowModulePurchaseOrder,
-		DefinitionJSON: `{"startNodeId":"n1","nodes":[{"nodeId":"n1","assigneeUserId":"u-approver"}]}`,
-		Description:    "test",
-		IsActive:       true,
-	}
-	require.NoError(t, testDB.Create(&definition).Error)
 }
 
 func seedPurchaseOrderContractFixture(t *testing.T, testDB *gorm.DB) models.PurchaseOrder {
@@ -218,8 +161,7 @@ func TestPurchaseOrderServiceContractGetByIDIncludesLines(t *testing.T) {
 }
 
 func TestPurchaseOrderServiceContractSaveIncludesLinesArray(t *testing.T) {
-	testDB := setupPurchaseOrderContractServiceTestDB(t)
-	seedPurchaseOrderContractWorkflow(t, testDB)
+	setupPurchaseOrderContractServiceTestDB(t)
 
 	result, err := SavePurchaseOrder(SavePurchaseOrderCommand{
 		Request: SavePurchaseOrderRequest{

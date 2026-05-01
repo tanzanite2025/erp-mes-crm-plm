@@ -8,7 +8,6 @@ import {
   type UserPermissionsResponse,
 } from '../data/schema'
 import * as userApi from '../services/user-api'
-import { handleServerError } from '@/lib/handle-server-error'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import { type DeltaSet } from '@/lib/delta/types'
 import {
@@ -65,7 +64,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, CreateUserPayload>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -79,7 +77,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string; delta: DeltaSet; version: number; user?: User }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -93,7 +90,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string; data: UserReplacePayload; user?: User }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -107,7 +103,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<unknown, unknown, { id: string; user: User }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -116,7 +111,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string; employeeId: string }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -125,7 +119,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<User, unknown, { id: string }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 
@@ -135,7 +128,6 @@ export const useUserMutations = () => {
     ...buildMutationOptions<UserPermissionsReplaceResult, unknown, { id: string; payload: ReplaceUserPermissionsPayload }>({
       queryClient,
       invalidateQueryKeys: [USERS_QUERY_KEY, USER_PERMISSIONS_QUERY_KEY, USER_ACCESS_SNAPSHOT_QUERY_KEY],
-      onError: handleServerError,
     }),
   })
 

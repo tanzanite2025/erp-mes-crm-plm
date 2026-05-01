@@ -1,504 +1,354 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Boxes,
-  FileCode2,
-  LayoutTemplate,
-  Printer,
-  Settings2,
-  Workflow,
+  CheckCircle2,
+  Clipboard,
+  LinkIcon,
+  Loader2,
+  PackageCheck,
+  QrCode,
+  RefreshCw,
+  Smartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { warehouseQueryKeys } from '../query-keys'
+import {
+  PackagingAssemblyService,
+  type PackagingAssembly,
+  type PackagingAssemblyCaptureSession,
+} from '../services/packaging-assembly-service'
 
-type CodeType = 'QR' | 'CODE128'
-type SerialRule = 'DATE_SEQ' | 'ORDER_BOX' | 'RANDOM_8'
-
-interface PackagingCenterCopy {
+type PackagingCopy = {
   title: string
-  subtitle: string
-  semanticTip: string
-  sectionTemplate: string
-  sectionTemplateHint: string
-  sectionLayout: string
-  sectionLayoutHint: string
-  sectionMapping: string
-  sectionMappingHint: string
-  sectionPreview: string
-  sectionPreviewHint: string
-  templateLabel: string
-  paperWidth: string
-  paperHeight: string
-  dpi: string
-  copies: string
-  margin: string
-  codeType: string
-  prefix: string
-  serialRule: string
-  payloadFields: string
-  fieldOrderNo: string
-  fieldCustomer: string
-  fieldBoxNo: string
-  fieldItemCount: string
-  fieldPackedAt: string
-  livePayload: string
-  liveMatrix: string
-  saveDraft: string
-  testPrint: string
-  publish: string
-  saveSuccess: string
-  testSuccess: string
-  publishSuccess: string
-  executionSpec: string
-  executionSpecHint: string
-  execSales: string
-  execWarehouseInbound: string
-  serialDateSeq: string
-  serialOrderBox: string
-  serialRandom: string
+  description: string
+  createSession: string
+  refresh: string
+  copyLink: string
+  mobileEntry: string
+  packageCode: string
+  scanHint: string
+  status: string
+  latestAssemblies: string
+  itemCount: string
+  productBarcodes: string
+  empty: string
+  sessionCreated: string
+  copied: string
+  copyFailed: string
+  submitted: string
 }
 
-interface TemplatePreset {
-  id: string
-  name: string
-  widthMm: number
-  heightMm: number
-  dpi: number
-  marginMm: number
-}
-
-const templatePresets: TemplatePreset[] = [
-  { id: 'carton-100x150', name: '100 x 150 mm Carton Label', widthMm: 100, heightMm: 150, dpi: 300, marginMm: 2 },
-  { id: 'carton-80x50', name: '80 x 50 mm Box Sticker', widthMm: 80, heightMm: 50, dpi: 300, marginMm: 1.5 },
-  { id: 'line-60x40', name: '60 x 40 mm Line Quick Label', widthMm: 60, heightMm: 40, dpi: 203, marginMm: 1.2 },
-]
-
-const copyByLocale: Record<'zh-CN' | 'en-US', PackagingCenterCopy> = {
+const copyByLocale: Record<'zh-CN' | 'en-US', PackagingCopy> = {
   'zh-CN': {
-    title: '装箱组装功能中心',
-    subtitle: '模板管理、尺寸定义、装箱码映射与打印策略统一配置',
-    semanticTip:
-      '执行扫码不在此页进行。本中心负责“定义规则”；实际发货扫码在销售订单发货弹窗内调用。',
-    sectionTemplate: '模板库',
-    sectionTemplateHint: '选择装箱单模板，自动带出纸张尺寸与打印分辨率。',
-    sectionLayout: '版式与打印参数',
-    sectionLayoutHint: '设置标签尺寸、边距、DPI 与默认打印份数。',
-    sectionMapping: '装箱码映射规则',
-    sectionMappingHint: '定义箱码编码方式、前缀、序列规则与载荷字段。',
-    sectionPreview: '预览与发布',
-    sectionPreviewHint: '实时查看装箱码载荷与二维码矩阵示意，然后保存或发布。',
-    templateLabel: '模板',
-    paperWidth: '宽(mm)',
-    paperHeight: '高(mm)',
-    dpi: 'DPI',
-    copies: '默认份数',
-    margin: '边距(mm)',
-    codeType: '码制',
-    prefix: '编码前缀',
-    serialRule: '序列规则',
-    payloadFields: '载荷字段',
-    fieldOrderNo: '订单号',
-    fieldCustomer: '客户',
-    fieldBoxNo: '箱序号',
-    fieldItemCount: '箱内件数',
-    fieldPackedAt: '装箱时间',
-    livePayload: '实时载荷',
-    liveMatrix: '二维码矩阵示意',
-    saveDraft: '保存草稿',
-    testPrint: '打印测试',
-    publish: '发布模板',
-    saveSuccess: '装箱模板草稿已保存',
-    testSuccess: '测试打印任务已下发',
-    publishSuccess: '装箱模板已发布',
-    executionSpec: '执行入口约定',
-    executionSpecHint: '发货扫码入口应使用弹窗调用本中心规则，避免流程串线。',
-    execSales: '销售订单卡片 -> 扫码发货弹窗（产品码/箱码）',
-    execWarehouseInbound: '仓库入库 -> 扫箱码弹窗（自动展开箱内产品）',
-    serialDateSeq: '日期 + 4位流水',
-    serialOrderBox: '订单号 + 箱序号',
-    serialRandom: '随机8位',
+    title: '装箱组装',
+    description: '创建箱码二维码，用手机扫码进入装箱采集页，再扫描系统产品一维码完成箱码与产品码绑定。',
+    createSession: '新建装箱码',
+    refresh: '刷新',
+    copyLink: '复制手机链接',
+    mobileEntry: '手机扫码入口',
+    packageCode: '箱码 / 组装码',
+    scanHint: '用手机扫描左侧二维码后，逐个扫描已在系统绑定的产品一维码。提交后这里会自动回显装箱结果。',
+    status: '状态',
+    latestAssemblies: '装箱组装记录',
+    itemCount: '件数',
+    productBarcodes: '产品一维码',
+    empty: '暂无装箱记录，先新建一个装箱码。',
+    sessionCreated: '装箱码已创建',
+    copied: '手机扫码链接已复制',
+    copyFailed: '复制失败',
+    submitted: '装箱组装已完成',
   },
   'en-US': {
-    title: 'Packaging Assembly Function Center',
-    subtitle: 'Manage templates, sizing, package-code mapping, and printing strategy',
-    semanticTip:
-      'Execution scanning is not done on this page. This center defines rules; scan-to-ship is called from sales shipment modal.',
-    sectionTemplate: 'Template Library',
-    sectionTemplateHint: 'Pick a package label template and inherit size plus print resolution.',
-    sectionLayout: 'Layout & Print Parameters',
-    sectionLayoutHint: 'Configure label dimensions, margins, DPI, and default copy count.',
-    sectionMapping: 'Package Code Mapping',
-    sectionMappingHint: 'Define code type, prefix, serial rule, and payload fields.',
-    sectionPreview: 'Preview & Publish',
-    sectionPreviewHint: 'Review live payload and QR matrix mock before saving or publishing.',
-    templateLabel: 'Template',
-    paperWidth: 'Width (mm)',
-    paperHeight: 'Height (mm)',
-    dpi: 'DPI',
-    copies: 'Default Copies',
-    margin: 'Margin (mm)',
-    codeType: 'Code Type',
-    prefix: 'Prefix',
-    serialRule: 'Serial Rule',
-    payloadFields: 'Payload Fields',
-    fieldOrderNo: 'Order No.',
-    fieldCustomer: 'Customer',
-    fieldBoxNo: 'Box No.',
-    fieldItemCount: 'Items in Box',
-    fieldPackedAt: 'Packed At',
-    livePayload: 'Live Payload',
-    liveMatrix: 'QR Matrix Mock',
-    saveDraft: 'Save Draft',
-    testPrint: 'Test Print',
-    publish: 'Publish Template',
-    saveSuccess: 'Packaging template draft saved',
-    testSuccess: 'Test print job submitted',
-    publishSuccess: 'Packaging template published',
-    executionSpec: 'Execution Entry Contract',
-    executionSpecHint: 'Scan-to-ship should consume these rules from modal workflows to avoid process drift.',
-    execSales: 'Sales order card -> Ship-by-scan modal (product/package code)',
-    execWarehouseInbound: 'Warehouse inbound -> Scan-package modal (expand inner product codes)',
-    serialDateSeq: 'Date + 4-digit sequence',
-    serialOrderBox: 'Order No. + Box No.',
-    serialRandom: 'Random 8-digit',
+    title: 'Packaging Assembly',
+    description: 'Create a package QR, scan it with a phone, then scan bound product barcodes into the package.',
+    createSession: 'New Package Code',
+    refresh: 'Refresh',
+    copyLink: 'Copy Mobile Link',
+    mobileEntry: 'Mobile Scan Entry',
+    packageCode: 'Package / Assembly Code',
+    scanHint: 'Scan the QR with a phone, then scan product barcodes already bound in the system. Results appear here after submit.',
+    status: 'Status',
+    latestAssemblies: 'Packaging Records',
+    itemCount: 'Items',
+    productBarcodes: 'Product Barcodes',
+    empty: 'No packaging records yet. Create a package code first.',
+    sessionCreated: 'Package code created',
+    copied: 'Mobile scan link copied',
+    copyFailed: 'Copy failed',
+    submitted: 'Packaging assembly submitted',
   },
 }
 
-function createMatrixAscii(seed: string) {
-  const size = 21
-  let state = 0
-  for (let i = 0; i < seed.length; i += 1) {
-    state = (state * 131 + seed.charCodeAt(i)) % 2147483647
-  }
+function PackagingQrCanvas({
+  code,
+  type = 'qrcode',
+  className = 'size-40',
+}: {
+  code: string
+  type?: 'qrcode' | 'code128'
+  className?: string
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const rows: string[] = []
-  for (let y = 0; y < size; y += 1) {
-    let row = ''
-    for (let x = 0; x < size; x += 1) {
-      state = (state * 1103515245 + 12345 + x + y) & 0x7fffffff
-      row += state % 3 === 0 ? '██' : '  '
+  useEffect(() => {
+    if (!code || !canvasRef.current) return
+    let cancelled = false
+    const render = async () => {
+      try {
+        if (!canvasRef.current || cancelled) return
+        await renderBwipBarcode({
+          canvas: canvasRef.current,
+          code,
+          type,
+        })
+      } catch {
+        return
+      }
     }
-    rows.push(row)
-  }
-  return rows.join('\n')
+    void render()
+    return () => {
+      cancelled = true
+    }
+  }, [code, type])
+
+  return <canvas ref={canvasRef} className={className} />
 }
 
-function formatSerialExample(rule: SerialRule, orderNo: string, boxNo: string) {
-  if (rule === 'DATE_SEQ') return '20260425-0008'
-  if (rule === 'ORDER_BOX') return `${orderNo}-${boxNo}`
-  return 'A8F39K2P'
+function formatDateTime(value?: string) {
+  if (!value) return '--'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString()
 }
 
 export default function PackagingAssembly() {
   const { locale } = useLanguage()
   const copy = copyByLocale[locale]
+  const queryClient = useQueryClient()
+  const [captureSession, setCaptureSession] = useState<PackagingAssemblyCaptureSession | null>(null)
 
-  const [templateId, setTemplateId] = useState(templatePresets[0].id)
-  const [widthMm, setWidthMm] = useState(templatePresets[0].widthMm)
-  const [heightMm, setHeightMm] = useState(templatePresets[0].heightMm)
-  const [dpi, setDpi] = useState(templatePresets[0].dpi)
-  const [copies, setCopies] = useState(1)
-  const [marginMm, setMarginMm] = useState(templatePresets[0].marginMm)
-  const [codeType, setCodeType] = useState<CodeType>('QR')
-  const [prefix, setPrefix] = useState('PKG')
-  const [serialRule, setSerialRule] = useState<SerialRule>('DATE_SEQ')
-  const [includeOrderNo, setIncludeOrderNo] = useState(true)
-  const [includeCustomer, setIncludeCustomer] = useState(false)
-  const [includeBoxNo, setIncludeBoxNo] = useState(true)
-  const [includeItemCount, setIncludeItemCount] = useState(true)
-  const [includePackedAt, setIncludePackedAt] = useState(false)
+  const assembliesQuery = useQuery({
+    queryKey: warehouseQueryKeys.packagingAssemblies(),
+    queryFn: () => PackagingAssemblyService.list(20),
+  })
 
-  const selectedTemplate = useMemo(
-    () => templatePresets.find((item) => item.id === templateId) ?? templatePresets[0],
-    [templateId]
-  )
+  const captureUrl = useMemo(() => {
+    if (!captureSession?.uploadToken || typeof window === 'undefined') return ''
+    const sessionId = encodeURIComponent(captureSession.sessionId)
+    const token = encodeURIComponent(captureSession.uploadToken)
+    const packageCode = encodeURIComponent(captureSession.packageCode)
+    return `${window.location.origin}/packaging-assembly-capture/${sessionId}?token=${token}&packageCode=${packageCode}`
+  }, [captureSession])
 
-  const payloadExample = useMemo(() => {
-    const orderNo = 'SO-2026-0425'
-    const boxNo = 'BOX-03'
-    const serial = formatSerialExample(serialRule, orderNo, boxNo)
-    const parts: string[] = [`${prefix}-${serial}`]
-    if (includeOrderNo) parts.push(`order=${orderNo}`)
-    if (includeCustomer) parts.push('customer=ACME')
-    if (includeBoxNo) parts.push(`box=${boxNo}`)
-    if (includeItemCount) parts.push('qty=24')
-    if (includePackedAt) parts.push('packedAt=2026-04-25T10:30:00Z')
-    parts.push(`codeType=${codeType}`)
-    return parts.join('|')
-  }, [
-    codeType,
-    includeBoxNo,
-    includeCustomer,
-    includeItemCount,
-    includeOrderNo,
-    includePackedAt,
-    prefix,
-    serialRule,
-  ])
+  const createSessionMutation = useMutation({
+    mutationFn: () => PackagingAssemblyService.createCaptureSession(),
+    onSuccess: (session) => {
+      setCaptureSession(session)
+      toast.success(copy.sessionCreated, { description: session.packageCode })
+    },
+  })
 
-  const matrixPreview = useMemo(() => createMatrixAscii(payloadExample), [payloadExample])
+  useEffect(() => {
+    if (!captureSession || captureSession.status !== 'Waiting') return
+    const intervalId = window.setInterval(() => {
+      void PackagingAssemblyService.getCaptureSession(captureSession.sessionId)
+        .then((nextSession) => {
+          setCaptureSession((current) => ({
+            ...nextSession,
+            uploadToken: current?.uploadToken,
+          }))
+          if (nextSession.status === 'Submitted') {
+            toast.success(copy.submitted, { description: nextSession.packageCode })
+            void queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.packagingAssemblies() })
+          }
+        })
+        .catch(() => undefined)
+    }, 2500)
+    return () => window.clearInterval(intervalId)
+  }, [captureSession, copy.submitted, queryClient])
 
-  const handleTemplateChange = (nextId: string) => {
-    const next = templatePresets.find((item) => item.id === nextId)
-    if (!next) return
-    setTemplateId(next.id)
-    setWidthMm(next.widthMm)
-    setHeightMm(next.heightMm)
-    setDpi(next.dpi)
-    setMarginMm(next.marginMm)
+  const copyCaptureLink = async () => {
+    if (!captureUrl) return
+    try {
+      await navigator.clipboard.writeText(captureUrl)
+      toast.success(copy.copied)
+    } catch {
+      toast.error(copy.copyFailed)
+    }
   }
 
+  const assemblies = assembliesQuery.data?.items ?? []
+  const activePackageCode = captureSession?.packageCode || assemblies[0]?.packageCode || ''
+
   return (
-    <div className='flex flex-col gap-6 animate-in fade-in duration-500'>
-      <IndustrialHeader title={copy.title} description={copy.subtitle} icon={Boxes} />
+    <div className='flex flex-col gap-5 animate-in fade-in duration-500'>
+      <IndustrialHeader title={copy.title} description={copy.description} icon={Boxes} />
 
-      <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-[11px] font-bold text-primary'>
-        {copy.semanticTip}
-      </div>
-
-      <div className='grid gap-6 xl:grid-cols-[1.2fr_1fr]'>
-        <div className='space-y-6'>
-          <Card className='rounded-[24px] border border-dashed border-muted/50 shadow-none'>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
-                <LayoutTemplate className='size-4 text-primary' />
-                {copy.sectionTemplate}
-              </CardTitle>
-              <CardDescription className='text-[11px]'>{copy.sectionTemplateHint}</CardDescription>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='grid gap-3 sm:grid-cols-3'>
-                {templatePresets.map((preset) => {
-                  const selected = preset.id === templateId
-                  return (
-                    <button
-                      key={preset.id}
-                      type='button'
-                      onClick={() => handleTemplateChange(preset.id)}
-                      className={`rounded-2xl border border-dashed px-3 py-3 text-left transition-all ${
-                        selected
-                          ? 'border-primary/50 bg-primary/10'
-                          : 'border-muted bg-muted/5 hover:border-primary/30'
-                      }`}
-                    >
-                      <div className='text-[10px] font-black uppercase tracking-widest'>{preset.name}</div>
-                      <div className='mt-1 text-[10px] text-muted-foreground'>
-                        {preset.widthMm} x {preset.heightMm} mm
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className='rounded-[24px] border border-dashed border-muted/50 shadow-none'>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
-                <Printer className='size-4 text-primary' />
-                {copy.sectionLayout}
-              </CardTitle>
-              <CardDescription className='text-[11px]'>{copy.sectionLayoutHint}</CardDescription>
-            </CardHeader>
-            <CardContent className='grid gap-4 sm:grid-cols-5'>
-              <div className='space-y-1.5 sm:col-span-2'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.templateLabel}</Label>
-                <Select value={templateId} onValueChange={handleTemplateChange}>
-                  <SelectTrigger className='h-10 rounded-xl border-dashed'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templatePresets.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {preset.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className='space-y-1.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.paperWidth}</Label>
-                <Input type='number' value={widthMm} onChange={(e) => setWidthMm(Number(e.target.value))} className='h-10 rounded-xl border-dashed' />
-              </div>
-              <div className='space-y-1.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.paperHeight}</Label>
-                <Input type='number' value={heightMm} onChange={(e) => setHeightMm(Number(e.target.value))} className='h-10 rounded-xl border-dashed' />
-              </div>
-              <div className='space-y-1.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.dpi}</Label>
-                <Input type='number' value={dpi} onChange={(e) => setDpi(Number(e.target.value))} className='h-10 rounded-xl border-dashed' />
-              </div>
-              <div className='space-y-1.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.copies}</Label>
-                <Input type='number' value={copies} onChange={(e) => setCopies(Number(e.target.value))} className='h-10 rounded-xl border-dashed' />
-              </div>
-              <div className='space-y-1.5'>
-                <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.margin}</Label>
-                <Input type='number' value={marginMm} onChange={(e) => setMarginMm(Number(e.target.value))} className='h-10 rounded-xl border-dashed' />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className='rounded-[24px] border border-dashed border-muted/50 shadow-none'>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
-                <FileCode2 className='size-4 text-primary' />
-                {copy.sectionMapping}
-              </CardTitle>
-              <CardDescription className='text-[11px]'>{copy.sectionMappingHint}</CardDescription>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='grid gap-4 sm:grid-cols-3'>
-                <div className='space-y-1.5'>
-                  <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.codeType}</Label>
-                  <Select value={codeType} onValueChange={(value) => setCodeType(value as CodeType)}>
-                    <SelectTrigger className='h-10 rounded-xl border-dashed'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='QR'>QR</SelectItem>
-                      <SelectItem value='CODE128'>CODE128</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className='space-y-1.5'>
-                  <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.prefix}</Label>
-                  <Input value={prefix} onChange={(e) => setPrefix(e.target.value.trim().toUpperCase())} className='h-10 rounded-xl border-dashed' />
-                </div>
-                <div className='space-y-1.5'>
-                  <Label className='text-[10px] font-black uppercase tracking-widest'>{copy.serialRule}</Label>
-                  <Select value={serialRule} onValueChange={(value) => setSerialRule(value as SerialRule)}>
-                    <SelectTrigger className='h-10 rounded-xl border-dashed'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='DATE_SEQ'>{copy.serialDateSeq}</SelectItem>
-                      <SelectItem value='ORDER_BOX'>{copy.serialOrderBox}</SelectItem>
-                      <SelectItem value='RANDOM_8'>{copy.serialRandom}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className='space-y-2 rounded-2xl border border-dashed border-muted/60 bg-muted/5 px-3 py-3'>
-                <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
-                  {copy.payloadFields}
-                </div>
-                <div className='grid gap-2 sm:grid-cols-2'>
-                  <label className='flex items-center gap-2 text-[11px] font-bold'>
-                    <Checkbox checked={includeOrderNo} onCheckedChange={(checked) => setIncludeOrderNo(checked === true)} />
-                    {copy.fieldOrderNo}
-                  </label>
-                  <label className='flex items-center gap-2 text-[11px] font-bold'>
-                    <Checkbox checked={includeCustomer} onCheckedChange={(checked) => setIncludeCustomer(checked === true)} />
-                    {copy.fieldCustomer}
-                  </label>
-                  <label className='flex items-center gap-2 text-[11px] font-bold'>
-                    <Checkbox checked={includeBoxNo} onCheckedChange={(checked) => setIncludeBoxNo(checked === true)} />
-                    {copy.fieldBoxNo}
-                  </label>
-                  <label className='flex items-center gap-2 text-[11px] font-bold'>
-                    <Checkbox checked={includeItemCount} onCheckedChange={(checked) => setIncludeItemCount(checked === true)} />
-                    {copy.fieldItemCount}
-                  </label>
-                  <label className='flex items-center gap-2 text-[11px] font-bold'>
-                    <Checkbox checked={includePackedAt} onCheckedChange={(checked) => setIncludePackedAt(checked === true)} />
-                    {copy.fieldPackedAt}
-                  </label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className='rounded-[24px] border border-dashed border-muted/50 shadow-none'>
-          <CardHeader>
+      <div className='grid gap-4 xl:grid-cols-[420px_1fr]'>
+        <Card className='rounded-lg border border-border/70 shadow-none'>
+          <CardHeader className='pb-3'>
             <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
-              <Settings2 className='size-4 text-primary' />
-              {copy.sectionPreview}
+              <Smartphone className='size-4 text-primary' />
+              {copy.mobileEntry}
             </CardTitle>
-            <CardDescription className='text-[11px]'>{copy.sectionPreviewHint}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='rounded-2xl border border-dashed border-muted bg-muted/10 p-3'>
-              <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
-                {copy.livePayload}
+            <div className='grid gap-3 sm:grid-cols-[168px_1fr] xl:grid-cols-1'>
+              <div className='flex items-center justify-center rounded-lg border border-dashed border-primary/30 bg-white p-3'>
+                {captureUrl ? (
+                  <PackagingQrCanvas code={captureUrl} />
+                ) : (
+                  <div className='flex size-40 items-center justify-center rounded-lg bg-muted text-muted-foreground'>
+                    <QrCode className='size-12' />
+                  </div>
+                )}
               </div>
-              <code className='mt-2 block break-all font-mono text-[10px] leading-5 text-foreground'>
-                {payloadExample}
-              </code>
-            </div>
 
-            <div className='rounded-2xl border border-dashed border-muted bg-background p-3'>
-              <div className='mb-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70'>
-                {copy.liveMatrix}
+              <div className='space-y-3'>
+                <div className='rounded-lg border border-dashed border-border bg-muted/20 p-3'>
+                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+                    {copy.packageCode}
+                  </div>
+                  <div className='mt-2 break-all font-mono text-lg font-black tracking-tight'>
+                    {activePackageCode || '--'}
+                  </div>
+                  <div className='mt-2 flex flex-wrap gap-2'>
+                    <Badge variant='outline' className='rounded-full'>
+                      {copy.status}: {captureSession?.status || '--'}
+                    </Badge>
+                    {captureSession?.expiresAt ? (
+                      <Badge variant='outline' className='rounded-full'>
+                        {formatDateTime(captureSession.expiresAt)}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
+
+                <p className='text-xs font-semibold leading-5 text-muted-foreground'>
+                  {copy.scanHint}
+                </p>
               </div>
-              <pre className='max-h-[320px] overflow-auto rounded-xl bg-muted/20 p-2 font-mono text-[6px] leading-[6px] text-foreground'>
-                {matrixPreview}
-              </pre>
             </div>
 
             <div className='flex flex-wrap gap-2'>
-              <Badge variant='outline' className='rounded-full border-dashed'>
-                {selectedTemplate.widthMm} x {selectedTemplate.heightMm} mm
-              </Badge>
-              <Badge variant='outline' className='rounded-full border-dashed'>
-                {dpi} DPI
-              </Badge>
-              <Badge variant='outline' className='rounded-full border-dashed'>
-                {copies} copies
-              </Badge>
-              <Badge variant='outline' className='rounded-full border-dashed'>
-                margin {marginMm} mm
-              </Badge>
-            </div>
-
-            <div className='space-y-2 rounded-2xl border border-dashed border-primary/20 bg-primary/5 p-3'>
-              <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary'>
-                <Workflow className='size-3.5' />
-                {copy.executionSpec}
-              </div>
-              <p className='text-[10px] font-medium text-primary/80'>{copy.executionSpecHint}</p>
-              <ul className='space-y-1 text-[10px] font-bold text-primary/90'>
-                <li>1. {copy.execSales}</li>
-                <li>2. {copy.execWarehouseInbound}</li>
-              </ul>
-            </div>
-
-            <div className='flex items-center justify-end gap-2'>
+              <Button
+                type='button'
+                onClick={() => createSessionMutation.mutate()}
+                disabled={createSessionMutation.isPending}
+                className='h-10 rounded-full text-xs font-black'
+              >
+                {createSessionMutation.isPending ? (
+                  <Loader2 className='size-4 animate-spin' />
+                ) : (
+                  <PackageCheck className='size-4' />
+                )}
+                {copy.createSession}
+              </Button>
               <Button
                 type='button'
                 variant='outline'
-                className='h-10 rounded-2xl border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
-                onClick={() => toast.success(copy.saveSuccess)}
+                onClick={() => void copyCaptureLink()}
+                disabled={!captureUrl}
+                className='h-10 rounded-full text-xs font-black'
               >
-                {copy.saveDraft}
+                <Clipboard className='size-4' />
+                {copy.copyLink}
               </Button>
               <Button
                 type='button'
-                variant='secondary'
-                className='h-10 rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest'
-                onClick={() => toast.success(copy.testSuccess)}
+                variant='outline'
+                onClick={() => void assembliesQuery.refetch()}
+                className='h-10 rounded-full text-xs font-black'
               >
-                {copy.testPrint}
-              </Button>
-              <Button
-                type='button'
-                className='h-10 rounded-2xl px-5 text-[10px] font-black uppercase tracking-widest'
-                onClick={() => toast.success(copy.publishSuccess)}
-              >
-                {copy.publish}
+                <RefreshCw className='size-4' />
+                {copy.refresh}
               </Button>
             </div>
+
+            {captureUrl ? (
+              <div className='flex min-w-0 items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono'>
+                <LinkIcon className='size-3.5 shrink-0 text-muted-foreground' />
+                <span className='truncate'>{captureUrl}</span>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
+
+        <Card className='rounded-lg border border-border/70 shadow-none'>
+          <CardHeader className='pb-3'>
+            <CardTitle className='flex items-center gap-2 text-base font-black tracking-tight'>
+              <CheckCircle2 className='size-4 text-primary' />
+              {copy.latestAssemblies}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-3'>
+            {assembliesQuery.isLoading ? (
+              <div className='flex h-40 items-center justify-center text-muted-foreground'>
+                <Loader2 className='size-5 animate-spin' />
+              </div>
+            ) : assemblies.length === 0 ? (
+              <div className='flex h-40 items-center justify-center rounded-lg border border-dashed border-border text-sm font-bold text-muted-foreground'>
+                {copy.empty}
+              </div>
+            ) : (
+              assemblies.map((assembly) => (
+                <AssemblyRecord key={assembly.id} assembly={assembly} copy={copy} />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function AssemblyRecord({
+  assembly,
+  copy,
+}: {
+  assembly: PackagingAssembly
+  copy: PackagingCopy
+}) {
+  return (
+    <div className='rounded-lg border border-border bg-background p-3'>
+      <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
+        <div className='min-w-0 space-y-1'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='font-mono text-sm font-black'>{assembly.packageCode}</span>
+            <Badge variant='secondary' className='rounded-full'>
+              {copy.itemCount}: {assembly.itemCount}
+            </Badge>
+            <Badge variant='outline' className='rounded-full'>
+              {assembly.status}
+            </Badge>
+          </div>
+          <div className='text-[11px] font-semibold text-muted-foreground'>
+            {formatDateTime(assembly.assembledAt || assembly.createdAt)} / {assembly.assembledBy || '--'}
+          </div>
+        </div>
+        <div className='flex shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-white p-1.5'>
+          <PackagingQrCanvas code={assembly.packageCode} className='size-16' />
+        </div>
+      </div>
+
+      <div className='mt-3 rounded-md bg-muted/30 p-2'>
+        <div className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          {copy.productBarcodes}
+        </div>
+        <div className='flex flex-wrap gap-1.5'>
+          {assembly.items.map((item) => (
+            <Badge key={item.id} variant='outline' className='rounded-full font-mono text-[10px]'>
+              {item.productBarcode}
+            </Badge>
+          ))}
+        </div>
       </div>
     </div>
   )

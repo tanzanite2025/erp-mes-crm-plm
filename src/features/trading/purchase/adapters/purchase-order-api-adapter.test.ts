@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   toPurchaseOrderContract,
   toPurchaseOrderListPageContract,
@@ -24,7 +24,6 @@ describe('purchase-order-api-adapter', () => {
         paymentTerm: '',
         paymentTermName: '',
         note: '',
-        workflowInstanceId: '',
         isDeleted: false,
         createdAt: '2026-04-18T00:00:00.000Z',
         updatedAt: '2026-04-18T00:00:00.000Z',
@@ -55,7 +54,6 @@ describe('purchase-order-api-adapter', () => {
           paymentTerm: '',
           paymentTermName: '',
           note: '',
-          workflowInstanceId: '',
           isDeleted: false,
           createdAt: '2026-04-18T00:00:00.000Z',
           updatedAt: '2026-04-18T00:00:00.000Z',
@@ -100,7 +98,6 @@ describe('purchase-order-api-adapter', () => {
         paymentTerm: '',
         paymentTermName: '',
         note: '',
-        workflowInstanceId: '',
         isDeleted: false,
         createdAt: '2026-04-18T00:00:00.000Z',
         updatedAt: '2026-04-18T00:00:00.000Z',
@@ -149,7 +146,6 @@ describe('purchase-order-api-adapter', () => {
         paymentTerm: '',
         paymentTermName: '',
         note: '',
-        workflowInstanceId: '',
         isDeleted: false,
         createdAt: '2026-04-18T00:00:00.000Z',
         updatedAt: '2026-04-18T00:00:00.000Z',

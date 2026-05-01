@@ -38,7 +38,6 @@ func setupPurchaseReceiptServiceTestDB(t *testing.T) *gorm.DB {
 			payment_term TEXT,
 			payment_term_name TEXT,
 			note TEXT,
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { type SalesOrder } from '@/features/trading/data/schema'
@@ -11,7 +10,6 @@ import { shippingManagementQueryKeys } from '@/features/trading/shipping-managem
 import { auditUtils } from '@/lib/audit-utils'
 import { type CompositeReadResource, resolveQueryFailure } from '@/lib/read-resource'
 import { failLoudly } from '@/lib/safe-catch'
-import { resolveInventoryErrorTip } from '../../constants/inventory-error-codes'
 import { type MasterDataSearchResult } from '../../inventory'
 import { warehouseQueryKeys } from '../../query-keys'
 import { InventoryMaintenanceService } from '../../services/inventory-maintenance-service'
@@ -21,6 +19,7 @@ import {
 } from '../../utils/warehouse-category-config'
 import { type ShipmentDemand } from '../data/schema'
 import { ShipmentTransactionService } from '../services/shipment-transaction-service'
+import { createShipmentUiFeedback, type ShipmentUiFeedback } from './shipment-ui-feedback'
 import { useShipmentBootstrap, type ShipmentBootstrapResource } from './use-shipment-bootstrap'
 import { useShipmentFormState } from './use-shipment-form-state'
 import { useShipmentInventoryContext } from './use-shipment-inventory-context'
@@ -37,12 +36,16 @@ type ShipmentReadResource = CompositeReadResource<{
   salesOrders: SalesOrder[]
 }>
 
-export function useShipment() {
+export function useShipment(feedback?: ShipmentUiFeedback) {
   const { locale, t } = useLanguage()
+  const ui = useMemo(
+    () => feedback ?? createShipmentUiFeedback(locale),
+    [feedback, locale],
+  )
   const queryClient = useQueryClient()
   const { allowsAction } = useNonBlockingPermissionActions()
-  const shipmentSearch = useShipmentSearch()
-  const shipmentBootstrap = useShipmentBootstrap()
+  const shipmentSearch = useShipmentSearch(ui)
+  const shipmentBootstrap = useShipmentBootstrap(ui)
   const shipmentForm = useShipmentFormState()
   const shipmentInventoryContext = useShipmentInventoryContext({
     selectedItem: shipmentForm.selectedItem,
@@ -222,19 +225,19 @@ export function useShipment() {
     if (!selectedItem) return
 
     if (formData.quantity <= 0) {
-      toast.error(t('warehouse.shipment.toast.quantityInvalid'))
+      ui.error(t('warehouse.shipment.toast.quantityInvalid'))
       return
     }
 
     if (inventoryContextResource.status !== 'ready') {
-      toast.error(t('warehouse.errors.queryFailed'))
+      ui.error(t('warehouse.errors.queryFailed'))
       return
     }
 
     const categoryStock = inventoryContextResource.categoryStock
 
     if (status === 'COMMITTED' && formData.quantity > categoryStock) {
-      toast.warning(
+      ui.warning(
         t('warehouse.shipment.toast.insufficientStock', {
           count: categoryStock,
           uom: selectedItem.uom,
@@ -245,7 +248,7 @@ export function useShipment() {
     try {
       if (shipmentForm.formMode === 'virtualLock') {
         if (!formData.salesOrderId || !formData.salesOrderLineId) {
-          toast.error('订单行信息缺失，无法转入虚拟发货仓')
+          ui.error('订单行信息缺失，无法转入虚拟发货仓')
           return
         }
 
@@ -260,7 +263,7 @@ export function useShipment() {
           remarks: formData.remarks,
         })
 
-        toast.success('已转入虚拟发货仓，配车页面会同步读取')
+        ui.success('已转入虚拟发货仓，配车页面会同步读取')
         shipmentForm.closeShipmentForm()
         await invalidateWarehouseReads(selectedItem.id, formData.sourceCategory)
         return
@@ -294,7 +297,7 @@ export function useShipment() {
         await ShipmentTransactionService.commitShipment(created.id)
       }
 
-      toast.success(
+      ui.success(
         status === 'DRAFT'
           ? t('warehouse.shipment.toast.savedDraft')
           : t('warehouse.shipment.toast.commitSuccess'),
@@ -302,16 +305,16 @@ export function useShipment() {
       shipmentForm.closeShipmentForm()
       await invalidateWarehouseReads(selectedItem.id, formData.sourceCategory)
     } catch (error) {
-      toast.error(resolveInventoryErrorTip(error, locale))
+      ui.error(ui.resolveError(error))
     }
   }, [
     allowsAction,
     invalidateWarehouseReads,
     inventoryContextResource,
-    locale,
     resolveSalesOrderBinding,
     shipmentForm,
     t,
+    ui,
   ])
 
   const commitDraft = useCallback(async (id: string, name: string) => {
@@ -320,22 +323,22 @@ export function useShipment() {
 
     const record = readResource.history.find((entry) => entry.id === id)
     if (!record) {
-      toast.error(t('warehouse.shipment.toast.notFound'))
+      ui.error(t('warehouse.shipment.toast.notFound'))
       return
     }
 
-    if (!confirm(t('warehouse.shipment.toast.commitConfirm', { name }))) {
+    if (!ui.confirm(t('warehouse.shipment.toast.commitConfirm', { name }))) {
       return
     }
 
     try {
       await ShipmentTransactionService.commitShipment(id)
-      toast.success(t('warehouse.shipment.toast.commitRecorded'))
+      ui.success(t('warehouse.shipment.toast.commitRecorded'))
       await invalidateWarehouseReads(record.materialId, record.sourceCategory)
     } catch (error) {
-      toast.error(resolveInventoryErrorTip(error, locale))
+      ui.error(ui.resolveError(error))
     }
-  }, [allowsAction, invalidateWarehouseReads, locale, readResource, t])
+  }, [allowsAction, invalidateWarehouseReads, readResource, t, ui])
 
   const removeRecord = useCallback(async (
     id: string,
@@ -354,20 +357,20 @@ export function useShipment() {
       ? t('warehouse.shipment.toast.voidConfirmCommitted', { name, quantity })
       : t('warehouse.shipment.toast.voidConfirmDraft')
 
-    if (!approvalId && !confirm(dialogMsg)) return
+    if (!approvalId && !ui.confirm(dialogMsg)) return
 
     try {
       await InventoryMaintenanceService.deleteShipmentRecord(id, approvalId)
-      toast.success(
+      ui.success(
         status === 'COMMITTED'
           ? t('warehouse.shipment.toast.voidSuccess')
           : t('warehouse.shipment.toast.actionSuccess'),
       )
       await invalidateWarehouseReads(record.materialId, record.sourceCategory)
     } catch (error) {
-      toast.error(resolveInventoryErrorTip(error, locale))
+      ui.error(ui.resolveError(error))
     }
-  }, [allowsAction, invalidateWarehouseReads, locale, readResource, t])
+  }, [allowsAction, invalidateWarehouseReads, readResource, t, ui])
 
   return {
     readResource,

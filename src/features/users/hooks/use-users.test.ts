@@ -30,10 +30,6 @@ vi.mock('../services/user-api', () => ({
   unbindUserEmployee: vi.fn(),
 }))
 
-vi.mock('@/lib/handle-server-error', () => ({
-  handleServerError: vi.fn(),
-}))
-
 vi.mock('@/lib/react-query-mutation', () => ({
   buildMutationOptions: vi.fn(() => ({})),
 }))

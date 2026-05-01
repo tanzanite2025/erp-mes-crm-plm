@@ -36,7 +36,6 @@ func TestGetPurchaseOrderHandlerReturnsNamedErrorResponseWhenMissing(t *testing.
 		payment_term_name TEXT,
 		note TEXT,
 		evidences BLOB DEFAULT X'5B5D',
-		workflow_instance_id TEXT,
 		created_at DATETIME,
 		updated_at DATETIME,
 		is_deleted BOOLEAN DEFAULT FALSE,

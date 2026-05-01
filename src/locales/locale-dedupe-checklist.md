@@ -80,7 +80,7 @@
 
 - 删除：41 个重复叶子 key
 - 保留：94 个 base-only / fallback key
-- 删除最多的分区：`salesWorkflowDefinition` (34)，`layout` (6)，`routingTab` (1)
+- 删除最多的分区：`layout` (6)，`routingTab` (1)
 - 保留分区：`layout`，`statusPage`，`serverIdentity`，`infrastructure`，`componentStatus`，`diagnostic`，`routingTab`，`permissionAudit`，`logisticsFallback`，`auditEngine`
 
 | `src/locales/messages/zh-CN/workflowCore.ts` | `src/locales/overrides/workflow-core.zh-CN.ts` | 38 | 2 | 36 |

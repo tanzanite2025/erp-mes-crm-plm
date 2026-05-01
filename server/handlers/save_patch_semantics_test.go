@@ -69,7 +69,6 @@ func setupSavePatchSemanticsTestDB(t *testing.T) {
 			barcode TEXT,
 			requirements TEXT,
 			evidences BLOB DEFAULT X'5B5D',
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			updated_by TEXT,
@@ -127,7 +126,7 @@ func TestPatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory(t *testing.T)
 	payload := services.SDRTSDeltaHandlerRequest{
 		Op: "PATCH",
 		Delta: map[string]json.RawMessage{
-			"category": json.RawMessage(`{"o":"weight","n":"闈㈢Н"}`),
+			"category": json.RawMessage(`{"o":"weight","n":"闂堛垻袧"}`),
 			"name":     json.RawMessage(`{"o":"Cubic Meter","n":"Square Meter"}`),
 		},
 		Metadata: services.SDRTSDeltaMetadata{ID: unitID, Version: 1},
@@ -165,7 +164,7 @@ func TestGetUnitsHandlerNormalizesHistoricalCategories(t *testing.T) {
 	require.NoError(t, db.DB.Exec(`
 		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), now, now, "M2", "Square Meter", "闈㈢Н", 2, "active", false, "area unit").Error)
+	`, uuid.NewString(), now, now, "M2", "Square Meter", "闂堛垻袧", 2, "active", false, "area unit").Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -217,15 +216,15 @@ func TestSaveTaxRateHandlerPreservesDescriptionOnSparseUpdate(t *testing.T) {
 	require.Equal(t, "existing description", persisted.Description)
 }
 
-func TestSaveSalesOrderForBulkSyncPreservesRequirementsAndWorkflowInstanceOnSparseUpdate(t *testing.T) {
+func TestSaveSalesOrderForBulkSyncPreservesRequirementsOnSparseUpdate(t *testing.T) {
 	setupSavePatchSemanticsTestDB(t)
 
 	orderID := uuid.NewString()
 	now := time.Now()
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, status_note, amount, quantity, order_date, delivery_date, purchase_order_no, barcode, requirements, workflow_instance_id, created_at, updated_at, updated_by, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, orderID, "SO-001", "Original", "Customer", "cust-1", "standard", "CNY", "A", "Draft", "existing note", 100.0, 10.0, "2026-04-01", "2026-04-10", "PO-1", "BAR-1", "keep-me", "wf-123", now, now, "alice", false, 3).Error)
+		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, status_note, amount, quantity, order_date, delivery_date, purchase_order_no, barcode, requirements, created_at, updated_at, updated_by, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, orderID, "SO-001", "Original", "Customer", "cust-1", "standard", "CNY", "A", "Draft", "existing note", 100.0, 10.0, "2026-04-01", "2026-04-10", "PO-1", "BAR-1", "keep-me", now, now, "alice", false, 3).Error)
 
 	testDB := db.DB
 
@@ -250,5 +249,4 @@ func TestSaveSalesOrderForBulkSyncPreservesRequirementsAndWorkflowInstanceOnSpar
 	require.NoError(t, db.DB.Where("id = ?", orderID).First(&persisted).Error)
 	require.Equal(t, "Updated", persisted.OrderName)
 	require.Equal(t, "keep-me", persisted.Requirements)
-	require.Equal(t, "wf-123", persisted.WorkflowInstanceID)
 }

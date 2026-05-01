@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { apiFetchMock } = vi.hoisted(() => ({
   apiFetchMock: vi.fn(),
@@ -50,7 +50,6 @@ describe('sales-query-service', () => {
       purchaseOrderNo: '',
       barcode: 'SO-001',
       requirements: '',
-      workflowInstanceId: '',
       createdAt: '2026-04-18T00:00:00.000Z',
       updatedAt: '2026-04-18T00:00:00.000Z',
       updatedBy: 'tester',
@@ -86,7 +85,6 @@ describe('sales-query-service', () => {
       purchaseOrderNo: '',
       barcode: 'SO-001',
       requirements: '',
-      workflowInstanceId: '',
       createdAt: '2026-04-18T00:00:00.000Z',
       updatedAt: '2026-04-18T00:00:00.000Z',
       updatedBy: 'tester',
@@ -124,7 +122,6 @@ describe('sales-query-service', () => {
           purchaseOrderNo: '',
           barcode: 'SO-001',
           requirements: '',
-          workflowInstanceId: '',
           createdAt: '2026-04-18T00:00:00.000Z',
           updatedAt: '2026-04-18T00:00:00.000Z',
           updatedBy: 'tester',
@@ -228,7 +225,6 @@ describe('sales-query-service', () => {
           purchaseOrderNo: '',
           barcode: 'SO-001',
           requirements: '',
-          workflowInstanceId: '',
           createdAt: '2026-04-18T00:00:00.000Z',
           updatedAt: '2026-04-18T00:00:00.000Z',
           updatedBy: 'tester',

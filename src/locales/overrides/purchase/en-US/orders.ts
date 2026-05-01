@@ -31,7 +31,7 @@ export const orders = {
   notSet: 'Not set',
   baseCurrency: 'Base: CNY',
   editOrder: 'Edit Order',
-  workflowLocked: 'Locked by workflow',
+  statusLocked: 'Locked by status',
   removePermanently: 'Remove Permanently',
   voidContract: 'Void Contract',
   mobileDate: 'Date',

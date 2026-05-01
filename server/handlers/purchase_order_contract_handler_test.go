@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 	"xdfc-server/models"
-	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -72,7 +71,7 @@ func seedPurchaseOrderContractHandlerFixture(t *testing.T, testDB *gorm.DB) mode
 }
 
 func TestGetPurchaseOrdersHandlerContractOmitsLinesWithoutWithLines(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	seedPurchaseOrderContractHandlerFixture(t, testDB)
 
 	recorder := httptest.NewRecorder()
@@ -89,7 +88,7 @@ func TestGetPurchaseOrdersHandlerContractOmitsLinesWithoutWithLines(t *testing.T
 }
 
 func TestGetPurchaseOrdersHandlerContractIncludesLinesWhenRequested(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	seedPurchaseOrderContractHandlerFixture(t, testDB)
 
 	recorder := httptest.NewRecorder()
@@ -110,7 +109,7 @@ func TestGetPurchaseOrdersHandlerContractIncludesLinesWhenRequested(t *testing.T
 }
 
 func TestGetPurchaseOrdersHandlerContractSupportsStatusFilter(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	seedPurchaseOrderContractHandlerFixture(t, testDB)
 	require.NoError(t, testDB.Create(&models.PurchaseOrder{
 		ID:           "44444444-4444-4444-8444-444444444445",
@@ -145,7 +144,7 @@ func TestGetPurchaseOrdersHandlerContractSupportsStatusFilter(t *testing.T) {
 }
 
 func TestGetPurchaseOrderHandlerContractIncludesLines(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	order := seedPurchaseOrderContractHandlerFixture(t, testDB)
 
 	recorder := httptest.NewRecorder()
@@ -166,8 +165,7 @@ func TestGetPurchaseOrderHandlerContractIncludesLines(t *testing.T) {
 }
 
 func TestSavePurchaseOrderHandlerContractIncludesLinesArray(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
-	seedWorkflowDefinition(t, testDB, services.WorkflowModulePurchaseOrder, "PO_CONTRACT_HANDLER_FLOW")
+	setupTradingOrderHandlerTestDB(t)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -201,7 +199,7 @@ func TestSavePurchaseOrderHandlerContractIncludesLinesArray(t *testing.T) {
 }
 
 func TestPatchPurchaseOrderHandlerContractIncludesLinesArray(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	order := seedPurchaseOrderContractHandlerFixture(t, testDB)
 
 	recorder := httptest.NewRecorder()
@@ -232,7 +230,7 @@ func TestPatchPurchaseOrderHandlerContractIncludesLinesArray(t *testing.T) {
 }
 
 func TestExecutePurchaseOrderTransactionHandlerContractIncludesLinesArray(t *testing.T) {
-	testDB := setupTradingWorkflowHandlerTestDB(t)
+	testDB := setupTradingOrderHandlerTestDB(t)
 	order := seedPurchaseOrderContractHandlerFixture(t, testDB)
 
 	recorder := httptest.NewRecorder()

@@ -437,6 +437,20 @@ func ensureSalesOrderIntegrityConstraints() {
 	}
 }
 
+func dropLegacyWorkflowArtifacts() {
+	if DB == nil || DB.Dialector.Name() != "postgres" {
+		return
+	}
+
+	if err := DB.Exec(`
+		DROP TABLE IF EXISTS workflow_tasks, workflow_instances, workflow_definitions CASCADE;
+		ALTER TABLE sales_orders DROP COLUMN IF EXISTS workflow_instance_id;
+		ALTER TABLE purchase_orders DROP COLUMN IF EXISTS workflow_instance_id;
+	`).Error; err != nil {
+		log.Fatal("Failed to drop legacy workflow artifacts:", err)
+	}
+}
+
 func backfillBlankProductSKUs() {
 	if DB == nil || !DB.Migrator().HasTable(&models.Product{}) {
 		return
@@ -583,6 +597,14 @@ func ensureDefaultSidebarCommandCategories() {
 			Status:      "active",
 			SortOrder:   10,
 		},
+		{
+			CategoryID:  "warehouse",
+			Name:        "仓库现场",
+			Description: "仓库现场扫码、入库、出库、盘点、装箱组装等可分配指令。",
+			Enabled:     true,
+			Status:      "active",
+			SortOrder:   20,
+		},
 	}
 
 	for _, category := range defaultCategories {
@@ -657,6 +679,19 @@ func ensureDefaultSidebarCommandDefinitions() {
 			Enabled:      true,
 			Status:       "active",
 			SortOrder:    30,
+		},
+		{
+			CommandID:    "warehouse_packaging_assembly",
+			Title:        "装箱组装",
+			Description:  "从快捷入口进入仓库装箱组装台，生成手机扫码会话并绑定系统产品一维码。",
+			Route:        "/warehouse/packaging-assembly",
+			SearchParams: json.RawMessage(`{}`),
+			Icon:         "PackagePlus",
+			Category:     "warehouse",
+			Assignable:   true,
+			Enabled:      true,
+			Status:       "active",
+			SortOrder:    40,
 		},
 	}
 
@@ -881,6 +916,9 @@ func InitDB(dsn string) {
 		&models.PrepregRollInstance{},
 		&models.PrepregLabelOcrSession{},
 		&models.ProductBarcodeCaptureSession{},
+		&models.PackagingAssembly{},
+		&models.PackagingAssemblyItem{},
+		&models.PackagingAssemblyCaptureSession{},
 		&models.Material{},
 		&models.ProductInventoryMaterialMapping{},
 		&models.PackagingRule{},
@@ -890,9 +928,6 @@ func InitDB(dsn string) {
 		&models.Employee{},
 		&models.WarehouseCategory{},
 		&models.ApprovalRequest{},
-		&models.WorkflowDefinition{},
-		&models.WorkflowInstance{},
-		&models.WorkflowTask{},
 		&models.LeaveRequest{},
 		&models.VehicleContactBinding{},
 		&models.FinancialVoucher{},
@@ -970,6 +1005,7 @@ func InitDB(dsn string) {
 		log.Fatal("Failed to migrate database:", err)
 	}
 	dropLegacyRoleArtifacts()
+	dropLegacyWorkflowArtifacts()
 	// --- 闂傚鍓﹂崑鍌炲船閵堝洠鍋撻棃娑氱Ш缂傚秴鐗婂缁樻媴閻?(v8.7) ---
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()

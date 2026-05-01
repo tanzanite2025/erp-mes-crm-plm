@@ -31,7 +31,7 @@ export const orders = {
   notSet: '未设置',
   baseCurrency: '本位币：人民币',
   editOrder: '编辑单据',
-  workflowLocked: '已进入流程，不可编辑',
+  statusLocked: '当前状态不可编辑',
   removePermanently: '物理移除',
   voidContract: '作废合同',
   mobileDate: '日期',

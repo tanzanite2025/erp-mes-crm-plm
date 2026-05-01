@@ -61,7 +61,6 @@ type SaveSalesOrderRequest struct {
 	Barcode              string                  `json:"barcode"`
 	Requirements         string                  `json:"requirements"`
 	Evidences            []OrderEvidencePayload  `json:"evidences"`
-	WorkflowInstanceID   string                  `json:"workflowInstanceId"`
 	UpdatedBy            string                  `json:"updatedBy"`
 	IsDeleted            bool                    `json:"isDeleted"`
 	Version              int                     `json:"version"`
@@ -92,7 +91,6 @@ type SalesOrderSnapshotRequest struct {
 	Barcode              string                  `json:"barcode"`
 	Requirements         string                  `json:"requirements"`
 	Evidences            []OrderEvidencePayload  `json:"evidences"`
-	WorkflowInstanceID   string                  `json:"workflowInstanceId"`
 	UpdatedBy            string                  `json:"updatedBy"`
 	IsDeleted            bool                    `json:"isDeleted"`
 	Version              int                     `json:"version"`
@@ -165,7 +163,6 @@ type SalesOrderResponse struct {
 	Barcode              string                                 `json:"barcode"`
 	Requirements         string                                 `json:"requirements"`
 	Evidences            []OrderEvidencePayload                 `json:"evidences"`
-	WorkflowInstanceID   string                                 `json:"workflowInstanceId"`
 	CreatedAt            time.Time                              `json:"createdAt"`
 	UpdatedAt            time.Time                              `json:"updatedAt"`
 	UpdatedBy            string                                 `json:"updatedBy"`
@@ -200,7 +197,6 @@ type SalesOrderListItemResponse struct {
 	Barcode              string                                 `json:"barcode"`
 	Requirements         string                                 `json:"requirements"`
 	Evidences            []OrderEvidencePayload                 `json:"evidences"`
-	WorkflowInstanceID   string                                 `json:"workflowInstanceId"`
 	CreatedAt            time.Time                              `json:"createdAt"`
 	UpdatedAt            time.Time                              `json:"updatedAt"`
 	UpdatedBy            string                                 `json:"updatedBy"`

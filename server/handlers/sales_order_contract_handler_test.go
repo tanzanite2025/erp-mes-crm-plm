@@ -42,7 +42,6 @@ func setupSalesOrderContractHandlerDB(t *testing.T) *gorm.DB {
 			barcode TEXT,
 			requirements TEXT,
 			evidences BLOB DEFAULT X'5B5D',
-			workflow_instance_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			updated_by TEXT,
@@ -91,19 +90,6 @@ func setupSalesOrderContractHandlerDB(t *testing.T) *gorm.DB {
 			operator TEXT,
 			ip TEXT,
 			created_at DATETIME
-		)`,
-		`CREATE TABLE workflow_definitions (
-			id TEXT PRIMARY KEY NOT NULL,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at DATETIME,
-			code TEXT,
-			name TEXT,
-			version INTEGER,
-			module TEXT,
-			definition_json TEXT,
-			description TEXT,
-			is_active BOOLEAN
 		)`,
 	} {
 		require.NoError(t, testDB.Exec(statement).Error)

@@ -66,7 +66,6 @@ const purchaseOrderListItemBaseSchema = z.object({
   paymentTerm: z.string().optional(),
   paymentTermName: z.string().optional(),
   note: z.string().optional(),
-  workflowInstanceId: z.string().optional(),
   isDeleted: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -105,7 +104,6 @@ export interface PurchaseOrderApiDTO {
   paymentTerm?: string
   paymentTermName?: string
   note?: string
-  workflowInstanceId?: string
   isDeleted?: boolean
   createdAt: string
   updatedAt: string

@@ -19,6 +19,16 @@ func GetInventoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func SearchWarehouseMasterDataHandler(c *gin.Context) {
+	response, err := services.SearchWarehouseMasterData(c.Query("q"), c.Query("scope"))
+	if err != nil {
+		respondInventoryError(c, http.StatusInternalServerError, "WAREHOUSE_MASTER_DATA_SEARCH_FAILED", "[SERVER] failed to search warehouse master data: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 // GetInboundHistoryHandler returns paginated inbound history.
 func GetInboundHistoryHandler(c *gin.Context) {
 	page, pageSize := parsePageAndSize(c, 1, 50)

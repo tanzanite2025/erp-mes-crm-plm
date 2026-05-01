@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import type { SalesOrder } from '../../data/schema'
 import type { SalesOrderApiDTO } from '../contracts/sales-order-api-dto'
 import {
@@ -31,7 +31,6 @@ describe('sales-order-api-adapter', () => {
     purchaseOrderNo: '',
     barcode: 'SO-001',
     requirements: '',
-    workflowInstanceId: '',
     createdAt: '2026-04-18T00:00:00.000Z',
     updatedAt: '2026-04-18T00:00:00.000Z',
     updatedBy: 'tester',
@@ -66,7 +65,6 @@ describe('sales-order-api-adapter', () => {
     purchaseOrderNo: '',
     barcode: 'SO-001',
     requirements: '',
-    workflowInstanceId: '',
     createdAt: '2026-04-18T00:00:00.000Z',
     updatedAt: '2026-04-18T00:00:00.000Z',
     updatedBy: 'tester',
@@ -167,7 +165,7 @@ describe('sales-order-api-adapter', () => {
           appearanceId: 'appearance-1',
           appearanceNameSnapshot: 'UD',
           appearanceBarcodeCodeSnapshot: '1',
-          appearanceDescriptionSnapshot: '外观位值: 1',
+          appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
           appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
           description: '',
           qty: 2,
@@ -189,7 +187,7 @@ describe('sales-order-api-adapter', () => {
       appearanceId: 'appearance-1',
       appearanceNameSnapshot: 'UD',
       appearanceBarcodeCodeSnapshot: '1',
-      appearanceDescriptionSnapshot: '外观位值: 1',
+      appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
       appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
     })
     const roundTrippedLines = toSalesOrderApiDTO(order).lines ?? []
@@ -198,7 +196,7 @@ describe('sales-order-api-adapter', () => {
       appearanceId: 'appearance-1',
       appearanceNameSnapshot: 'UD',
       appearanceBarcodeCodeSnapshot: '1',
-      appearanceDescriptionSnapshot: '外观位值: 1',
+      appearanceDescriptionSnapshot: '澶栬浣嶅€? 1',
       appearanceImageUrlSnapshot: '/uploads/appearance/ud.png',
     })
   })

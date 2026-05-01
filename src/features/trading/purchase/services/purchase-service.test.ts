@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { apiFetchMock } = vi.hoisted(() => ({
   apiFetchMock: vi.fn(),
@@ -39,7 +39,6 @@ const detailOrderResponse = {
   paymentTerm: '',
   paymentTermName: '',
   note: '',
-  workflowInstanceId: '',
   isDeleted: false,
   createdAt: '2026-04-18T00:00:00.000Z',
   updatedAt: '2026-04-18T00:00:00.000Z',
@@ -194,7 +193,6 @@ describe('purchase-service', () => {
         paymentTerm: '',
         paymentTermName: '',
         note: '',
-        workflowInstanceId: '',
         isDeleted: false,
         createdAt: '2026-04-18T00:00:00.000Z',
         updatedAt: '2026-04-18T00:00:00.000Z',

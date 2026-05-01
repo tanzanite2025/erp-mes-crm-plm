@@ -12,7 +12,6 @@ const (
 	AuditActionPatch    AuditAction = "Patch"
 	AuditActionBulkSync AuditAction = "BulkSync"
 	AuditActionStatus   AuditAction = "StatusChange"
-	AuditActionWorkflow AuditAction = "WorkflowUpdate"
 )
 
 // AuditEntityKey identifies the audited business entity.

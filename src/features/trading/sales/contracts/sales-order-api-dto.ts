@@ -124,7 +124,6 @@ const salesOrderListItemBaseSchema = z
     purchaseOrderNo: z.string().optional(),
     barcode: z.string().optional(),
     requirements: z.string().optional(),
-    workflowInstanceId: z.string().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
     updatedBy: z.string().optional(),
@@ -179,7 +178,6 @@ export interface SalesOrderApiDTO {
   purchaseOrderNo?: string
   barcode?: string
   requirements?: string
-  workflowInstanceId?: string
   createdAt: string
   updatedAt: string
   updatedBy?: string

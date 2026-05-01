@@ -14,8 +14,8 @@ export function AssignmentEffectivePreview({
   const { t } = useLanguage()
 
   return (
-    <section className='rounded-[32px] border border-dashed border-muted/50 bg-muted/5 p-5 shadow-inner'>
-      <div className='mb-4 flex items-center justify-between gap-3'>
+    <section className='rounded-[18px] border border-dashed border-muted/50 bg-muted/5 px-4 py-3 shadow-inner'>
+      <div className='mb-2 flex items-center justify-between gap-3'>
         <div>
           <h2 className='text-sm font-black tracking-tighter italic'>
             {t('sidebarCommandAssignment.preview.title')}
@@ -24,16 +24,16 @@ export function AssignmentEffectivePreview({
             {t('sidebarCommandAssignment.preview.description')}
           </p>
         </div>
-        <ListChecks className='size-5 text-muted-foreground' />
+        <ListChecks className='size-4 text-muted-foreground' />
       </div>
 
       <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-3'>
         {commands.map((command) => (
           <div
             key={command.code}
-            className='flex min-h-14 items-center gap-3 rounded-[18px] bg-background/80 px-3 py-2 shadow-sm'
+            className='flex min-h-12 items-center gap-2.5 rounded-xl bg-background/80 px-3 py-2 shadow-sm'
           >
-            <span className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground'>
+            <span className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground'>
               <SidebarCommandIcon
                 iconName={command.iconName}
                 fallback='list'
@@ -63,7 +63,7 @@ export function AssignmentEffectivePreview({
         ))}
 
         {commands.length === 0 ? (
-          <div className='rounded-[24px] border border-dashed border-muted/50 bg-background/60 px-4 py-10 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
+          <div className='rounded-xl border border-dashed border-muted/50 bg-background/60 px-4 py-5 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase md:col-span-2 xl:col-span-3'>
             {t('sidebarCommandAssignment.preview.empty')}
           </div>
         ) : null}

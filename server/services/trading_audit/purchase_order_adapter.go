@@ -18,19 +18,14 @@ func BuildPurchaseOrderCreateEvent(order models.PurchaseOrder, actor audit.Audit
 	return event.Normalize()
 }
 
-func BuildPurchaseOrderWorkflowEvent(orderID, workflowInstanceID string, actor audit.AuditActor) audit.AuditEvent {
-	event := audit.NewAuditEvent(audit.AuditEntityPurchaseOrder, orderID, audit.AuditActionWorkflow, actor)
-	return event.WithMetadata("workflowInstanceId", strings.TrimSpace(workflowInstanceID)).Normalize()
-}
-
 func BuildPurchaseOrderStatusChangeEvent(orderID, oldStatus, newStatus string, actor audit.AuditActor) audit.AuditEvent {
 	event := audit.NewAuditEvent(audit.AuditEntityPurchaseOrder, orderID, audit.AuditActionStatus, actor)
 	event = event.WithChanges(audit.AuditChange{
 		Field:     "status",
-		OldValue:   oldStatus,
-		NewValue:   newStatus,
+		OldValue:  oldStatus,
+		NewValue:  newStatus,
 		Label:     "Status",
-		ValueType:  "string",
+		ValueType: "string",
 	})
 	return event.Normalize()
 }
