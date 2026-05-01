@@ -1,23 +1,43 @@
-import { AlertCircle, CheckCheck, Loader2, Package, Printer, Trash2, Truck } from 'lucide-react'
 import { useRef, useState } from 'react'
+import {
+  AlertCircle,
+  CheckCheck,
+  Loader2,
+  Package,
+  Printer,
+  Trash2,
+  Truck,
+} from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
-import { AuditStatusDisplay } from '@/components/common/audit-status-display'
-import { AuditStamp } from '@/components/common/audit-stamp'
+import { useAuthStore } from '@/stores/auth-store'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { useLanguage } from '@/context/language-provider'
+import { AuditStamp } from '@/components/common/audit-stamp'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
-import { useAuthStore } from '@/stores/auth-store'
-import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
-import { canReceivePurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
-import { useGetPurchaseOrderDetail, usePurchaseOrderMutations } from '../../purchase'
+import { canPerformPurchaseOrderAction } from '../../data/purchase-order-state-machine'
+import {
+  canReceivePurchaseOrder,
+  getPurchaseStatusDisplayMeta,
+} from '../../data/purchase-status'
+import {
+  type PurchaseOrder,
+  type PurchaseOrderListItem,
+} from '../../data/schema'
+import {
+  useGetPurchaseOrderDetail,
+  usePurchaseOrderMutations,
+} from '../../purchase'
 import { OrderEvidenceGallery } from '../parts/order-evidence-gallery'
 import { PurchaseOrderEvidencePrint } from './purchase-order-evidence-print'
 import { PurchaseReceiptConfirmDialog } from './purchase-receipt-confirm-dialog'
 
-function isDetailedPurchaseOrder(order?: PurchaseOrder | PurchaseOrderListItem): order is PurchaseOrder {
+function isDetailedPurchaseOrder(
+  order?: PurchaseOrder | PurchaseOrderListItem
+): order is PurchaseOrder {
   return Boolean(order && 'lines' in order && Array.isArray(order.lines))
 }
 
@@ -26,25 +46,33 @@ interface PurchaseOrderDetailProps {
   onDelete: (id: string) => void
 }
 
-export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseOrderDetailProps) {
+export function PurchaseOrderDetail({
+  order: initialOrder,
+  onDelete,
+}: PurchaseOrderDetailProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
   const user = useAuthStore((state) => state.user)
-  const { data: detailedOrder, isLoading: isDetailLoading } = useGetPurchaseOrderDetail(initialOrder?.id || '')
+  const { data: detailedOrder, isLoading: isDetailLoading } =
+    useGetPurchaseOrderDetail(initialOrder?.id || '')
   const { confirmReceiptMutation } = usePurchaseOrderMutations()
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
-  const order = detailedOrder || (isDetailedPurchaseOrder(initialOrder) ? initialOrder : undefined)
+  const order =
+    detailedOrder ||
+    (isDetailedPurchaseOrder(initialOrder) ? initialOrder : undefined)
   const reactToPrint = useReactToPrint({
     contentRef: printRef,
-    documentTitle: order ? `${order.orderNo}_purchase_evidence` : 'purchase_evidence',
+    documentTitle: order
+      ? `${order.orderNo}_purchase_evidence`
+      : 'purchase_evidence',
   })
 
   if (isDetailLoading) {
     return (
       <div className='flex h-[50vh] flex-col items-center justify-center space-y-3 opacity-50'>
         <Loader2 className='size-10 animate-spin text-primary' />
-        <p className='text-xs font-black uppercase tracking-widest italic'>
+        <p className='text-xs font-black tracking-widest uppercase italic'>
           {t('purchase.orders.detailLoading')}
         </p>
       </div>
@@ -55,7 +83,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
     return (
       <div className='flex h-[50vh] flex-col items-center justify-center space-y-3 opacity-20'>
         <AlertCircle className='size-12' />
-        <p className='text-xs font-black uppercase tracking-widest'>
+        <p className='text-xs font-black tracking-widest uppercase'>
           {t('purchase.orders.detailNoSelection')}
         </p>
       </div>
@@ -75,14 +103,22 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
 
   const statusMeta = getPurchaseStatusDisplayMeta(order.status, t)
   const hasReceivableLines = order.lines.some(
-    (line) => ((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0)) > 0 && !!line.id
+    (line) =>
+      (line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0) > 0 &&
+      !!line.id
   )
-  const canConfirmReceipt = canReceivePurchaseOrder(order.status) && hasReceivableLines
+  const canConfirmReceipt =
+    canReceivePurchaseOrder(order.status) && hasReceivableLines
+  const canCancelOrder = canPerformPurchaseOrderAction(order.status, 'cancel')
   const hasEvidencePhotos = (order.evidences?.length || 0) > 0
 
   return (
     <div className='mx-auto max-w-5xl space-y-6 p-4 pb-20 md:space-y-8 md:p-6'>
-      <div className='hidden'>{order ? <PurchaseOrderEvidencePrint ref={printRef} order={order} /> : null}</div>
+      <div className='hidden'>
+        {order ? (
+          <PurchaseOrderEvidencePrint ref={printRef} order={order} />
+        ) : null}
+      </div>
 
       <PurchaseReceiptConfirmDialog
         open={isReceiptDialogOpen}
@@ -91,7 +127,12 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
         isSubmitting={confirmReceiptMutation.isPending}
         onConfirm={(payload) => {
           confirmReceiptMutation.mutate(
-            { id: order.id, payload, expectedVersion: order.version, actorId: user?.id },
+            {
+              id: order.id,
+              payload,
+              expectedVersion: order.version,
+              actorId: user?.id,
+            },
             {
               onSuccess: () => {
                 setIsReceiptDialogOpen(false)
@@ -103,19 +144,19 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
 
       <div className='grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4'>
         <Card className='rounded-[28px] border-none bg-muted/30 p-4'>
-          <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          <p className='mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('purchase.orders.detailStats.orderNo')}
           </p>
           <p className='text-sm font-black'>{order.orderNo}</p>
         </Card>
         <Card className='rounded-[28px] border-none bg-muted/30 p-4'>
-          <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          <p className='mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('purchase.orders.detailStats.status')}
           </p>
           <AuditStatusDisplay meta={statusMeta} />
         </Card>
         <Card className='rounded-[28px] border-none bg-muted/30 p-4'>
-          <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          <p className='mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('purchase.orders.detailStats.totalAmount')}
           </p>
           <p className='text-sm font-black text-primary'>
@@ -123,7 +164,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
           </p>
         </Card>
         <Card className='rounded-[28px] border-none bg-muted/30 p-4'>
-          <p className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+          <p className='mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
             {t('purchase.orders.detailStats.expectedArrival')}
           </p>
           <p className='text-sm font-black'>{order.expectedDate}</p>
@@ -133,7 +174,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
       <div className='grid grid-cols-1 gap-8 lg:grid-cols-3'>
         <div className='space-y-4 lg:col-span-2'>
           <div className='flex items-center justify-between px-2'>
-            <h3 className='flex items-center gap-2 text-sm font-black uppercase tracking-widest'>
+            <h3 className='flex items-center gap-2 text-sm font-black tracking-widest uppercase'>
               <Package className='size-4 text-primary' />
               {t('purchase.orders.detailItemsTitle')}
             </h3>
@@ -146,13 +187,15 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
               >
                 <div className='flex items-center gap-3 md:gap-4'>
                   <div className='flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/5 md:size-10'>
-                    <span className='text-[10px] font-black text-primary'>{line.lineNo}</span>
+                    <span className='text-[10px] font-black text-primary'>
+                      {line.lineNo}
+                    </span>
                   </div>
                   <div>
-                    <p className='text-[12px] font-black leading-tight md:text-[13px]'>
+                    <p className='text-[12px] leading-tight font-black md:text-[13px]'>
                       {line.materialName}
                     </p>
-                    <p className='mt-0.5 text-[9px] font-bold uppercase text-muted-foreground opacity-60 md:text-[10px]'>
+                    <p className='mt-0.5 text-[9px] font-bold text-muted-foreground uppercase opacity-60 md:text-[10px]'>
                       {line.materialCode} | {line.specification}
                     </p>
                   </div>
@@ -162,7 +205,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                     <p className='text-[10px] font-black tabular-nums md:text-[11px]'>
                       {line.qty} {line.uom}
                     </p>
-                    <p className='text-[8px] font-bold uppercase text-muted-foreground opacity-40 md:text-[10px]'>
+                    <p className='text-[8px] font-bold text-muted-foreground uppercase opacity-40 md:text-[10px]'>
                       {t('purchase.orders.detailQty')}
                     </p>
                   </div>
@@ -170,27 +213,28 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                     <p className='text-[10px] font-black tabular-nums md:text-[11px]'>
                       {line.price.toLocaleString()}
                     </p>
-                    <p className='text-[8px] font-bold uppercase text-muted-foreground opacity-40 md:text-[10px]'>
+                    <p className='text-[8px] font-bold text-muted-foreground uppercase opacity-40 md:text-[10px]'>
                       {t('purchase.orders.detailPrice')}
                     </p>
                   </div>
                   <div className='text-right'>
-                    <p className='text-[10px] font-black tabular-nums text-primary md:text-[11px]'>
+                    <p className='text-[10px] font-black text-primary tabular-nums md:text-[11px]'>
                       {line.amount.toLocaleString()}
                     </p>
-                    <p className='text-[8px] font-bold uppercase text-muted-foreground opacity-40 md:text-[10px]'>
+                    <p className='text-[8px] font-bold text-muted-foreground uppercase opacity-40 md:text-[10px]'>
                       {t('purchase.orders.detailAmount')}
                     </p>
                   </div>
                   <div className='text-right'>
-                    <p className='text-[10px] font-black tabular-nums text-emerald-600 md:text-[11px]'>
+                    <p className='text-[10px] font-black text-emerald-600 tabular-nums md:text-[11px]'>
                       {line.receivedQty || 0} / {line.qty}
                     </p>
-                    <p className='text-[8px] font-bold uppercase text-muted-foreground opacity-40 md:text-[10px]'>
+                    <p className='text-[8px] font-bold text-muted-foreground uppercase opacity-40 md:text-[10px]'>
                       {t('purchase.orders.detailReceivedQty')}
                     </p>
-                    <p className='mt-1 text-[8px] font-bold uppercase text-rose-500/80 md:text-[9px]'>
-                      {t('purchase.orders.returns.alreadyReturned')}: {line.returnedQty || 0}
+                    <p className='mt-1 text-[8px] font-bold text-rose-500/80 uppercase md:text-[9px]'>
+                      {t('purchase.orders.returns.alreadyReturned')}:{' '}
+                      {line.returnedQty || 0}
                     </p>
                   </div>
                 </div>
@@ -201,7 +245,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
 
         <div className='space-y-6'>
           <Card className='space-y-4 rounded-[32px] border-none p-6 shadow-sm'>
-            <h4 className='flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter'>
+            <h4 className='flex items-center gap-2 text-[11px] font-black tracking-tighter uppercase'>
               <Truck className='size-3.5 text-primary' />
               {t('purchase.orders.detailSideTitle')}
             </h4>
@@ -210,20 +254,26 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                 <span className='text-[11px] font-bold text-muted-foreground'>
                   {t('purchase.orders.detailFields.supplier')}
                 </span>
-                <span className='text-[11px] font-black'>{order.supplierName}</span>
+                <span className='text-[11px] font-black'>
+                  {order.supplierName}
+                </span>
               </div>
               <div className='flex items-center justify-between'>
                 <span className='text-[11px] font-bold text-muted-foreground'>
                   {t('purchase.orders.detailFields.purchaser')}
                 </span>
-                <span className='text-[11px] font-black'>{order.purchaser}</span>
+                <span className='text-[11px] font-black'>
+                  {order.purchaser}
+                </span>
               </div>
               <Separator className='bg-muted/50' />
               <div className='flex items-center justify-between'>
                 <span className='text-[11px] font-bold text-muted-foreground'>
                   {t('purchase.orders.detailFields.orderDate')}
                 </span>
-                <span className='text-[11px] font-black'>{order.orderDate}</span>
+                <span className='text-[11px] font-black'>
+                  {order.orderDate}
+                </span>
               </div>
               <div className='flex items-center justify-between'>
                 <span className='text-[11px] font-bold text-muted-foreground'>
@@ -231,10 +281,14 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                 </span>
                 <span
                   className={`text-[11px] font-black ${
-                    !order.paymentMethod && !order.paymentMethodName ? 'font-medium italic text-muted-foreground/30' : ''
+                    !order.paymentMethod && !order.paymentMethodName
+                      ? 'font-medium text-muted-foreground/30 italic'
+                      : ''
                   }`}
                 >
-                  {order.paymentMethodName || order.paymentMethod || t('purchase.orders.detailFields.paymentMethodUnset')}
+                  {order.paymentMethodName ||
+                    order.paymentMethod ||
+                    t('purchase.orders.detailFields.paymentMethodUnset')}
                 </span>
               </div>
               <div className='flex items-center justify-between'>
@@ -243,10 +297,14 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
                 </span>
                 <span
                   className={`text-[11px] font-black ${
-                    !order.paymentTerm && !order.paymentTermName ? 'font-medium italic text-muted-foreground/30' : ''
+                    !order.paymentTerm && !order.paymentTermName
+                      ? 'font-medium text-muted-foreground/30 italic'
+                      : ''
                   }`}
                 >
-                  {order.paymentTermName || order.paymentTerm || t('purchase.orders.detailFields.paymentTermUnset')}
+                  {order.paymentTermName ||
+                    order.paymentTerm ||
+                    t('purchase.orders.detailFields.paymentTermUnset')}
                 </span>
               </div>
             </div>
@@ -295,7 +353,7 @@ export function PurchaseOrderDetail({ order: initialOrder, onDelete }: PurchaseO
           <Button
             variant='destructive'
             className='w-full rounded-[24px] py-6 text-[11px] font-black shadow-lg shadow-destructive/10'
-            disabled={order.status === 'Canceled'}
+            disabled={!canCancelOrder}
             onClick={handleDelete}
           >
             <Trash2 className='mr-2 size-4' />

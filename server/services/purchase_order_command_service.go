@@ -8,6 +8,7 @@ import (
 	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 	"xdfc-server/services/trading_audit"
 
 	"github.com/google/uuid"
@@ -263,7 +264,13 @@ func createPurchaseOrderTx(order models.PurchaseOrder, originalID, requesterID, 
 			order.OrderNo = originalID
 		}
 		if strings.TrimSpace(order.Status) == "" {
-			order.Status = "Draft"
+			order.Status = string(statemachine.PurchaseOrderStatusDraft)
+		} else {
+			status := statemachine.NormalizePurchaseOrderStatus(order.Status)
+			if !statemachine.IsKnownPurchaseOrderStatus(status) {
+				return statemachine.Deny(statemachine.PurchaseOrderDenyUnknownStatus, "unknown purchase order status").Err()
+			}
+			order.Status = string(status)
 		}
 		if strings.TrimSpace(order.ID) == "" {
 			order.ID = uuid.NewString()

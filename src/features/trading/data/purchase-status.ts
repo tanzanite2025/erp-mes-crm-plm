@@ -1,7 +1,12 @@
 import type { TranslationKey } from '@/locales'
 import type { AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
+import {
+  canPerformPurchaseOrderAction,
+  normalizePurchaseOrderStatus,
+  type PurchaseOrderStatus,
+} from './purchase-order-state-machine'
 
-export type PurchaseOrderStatus = 'Draft' | 'Sent' | 'Awaiting' | 'Received' | 'Canceled'
+export type { PurchaseOrderStatus }
 
 export interface PurchaseStatusMeta {
   value: PurchaseOrderStatus
@@ -10,21 +15,12 @@ export interface PurchaseStatusMeta {
   description?: string
 }
 
-export function normalizePurchaseOrderStatus(status: string): PurchaseOrderStatus {
-  if (
-    status === 'Draft' ||
-    status === 'Sent' ||
-    status === 'Awaiting' ||
-    status === 'Received' ||
-    status === 'Canceled'
-  ) {
-    return status
-  }
+export { normalizePurchaseOrderStatus }
 
-  throw new Error(`Invalid purchase order status: ${status}`)
-}
-
-const PURCHASE_STATUS_TRANSLATION_KEYS: Record<PurchaseOrderStatus, TranslationKey> = {
+const PURCHASE_STATUS_TRANSLATION_KEYS: Record<
+  PurchaseOrderStatus,
+  TranslationKey
+> = {
   Draft: 'purchase.orders.statusDraft',
   Sent: 'purchase.orders.statusSent',
   Awaiting: 'purchase.orders.statusAwaiting',
@@ -65,10 +61,11 @@ export const purchaseOrderStatuses: PurchaseStatusMeta[] = [
   },
 ]
 
-export const canEditPurchaseOrder = (status: PurchaseOrderStatus): boolean => status === 'Draft'
+export const canEditPurchaseOrder = (status: PurchaseOrderStatus): boolean =>
+  canPerformPurchaseOrderAction(status, 'save')
 
 export const canReceivePurchaseOrder = (status: PurchaseOrderStatus): boolean =>
-  status === 'Sent' || status === 'Awaiting'
+  canPerformPurchaseOrderAction(status, 'confirmReceipt')
 
 export const needsApprovalWorkflow = (status: PurchaseOrderStatus): boolean =>
   status !== 'Draft' && status !== 'Canceled'
@@ -82,16 +79,23 @@ export const getPurchaseStatusMeta = (status: string) =>
 
 export function getPurchaseStatusLabel(
   status: string,
-  translate?: (key: TranslationKey, params?: Record<string, string | number>) => string
+  translate?: (
+    key: TranslationKey,
+    params?: Record<string, string | number>
+  ) => string
 ) {
-  const translationKey = PURCHASE_STATUS_TRANSLATION_KEYS[status as PurchaseOrderStatus]
+  const translationKey =
+    PURCHASE_STATUS_TRANSLATION_KEYS[status as PurchaseOrderStatus]
   if (translationKey && translate) return translate(translationKey)
   return getPurchaseStatusMeta(status).label
 }
 
 export function getPurchaseStatusDisplayMeta(
   status: string,
-  translate?: (key: TranslationKey, params?: Record<string, string | number>) => string
+  translate?: (
+    key: TranslationKey,
+    params?: Record<string, string | number>
+  ) => string
 ): AuditStatusDisplayMeta {
   const label = getPurchaseStatusLabel(status, translate)
 

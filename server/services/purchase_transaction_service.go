@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -148,6 +149,17 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 	if nextLines == nil {
 		nextLines = []models.PurchaseOrderLine{}
 	}
+	currentStatus := statemachine.NormalizePurchaseOrderStatus(current.Status)
+	nextStatus := statemachine.NormalizePurchaseOrderStatus(nextOrder.Status)
+	if !statemachine.IsKnownPurchaseOrderStatus(currentStatus) || !statemachine.IsKnownPurchaseOrderStatus(nextStatus) {
+		return nil, fmt.Errorf("%w: %s", ErrPurchaseTransactionInvalidPayload, statemachine.PurchaseOrderDenyUnknownStatus)
+	}
+	if currentStatus != nextStatus {
+		if guard := statemachine.CanTransitionPurchaseOrderStatus(string(currentStatus), string(nextStatus)); !guard.Allowed {
+			return nil, guard.Err()
+		}
+	}
+	nextOrder.Status = string(nextStatus)
 
 	isExpectedDateOnlyChange := true
 	isSupplierOnlyChange := true

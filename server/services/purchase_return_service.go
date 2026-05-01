@@ -9,6 +9,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -111,8 +112,8 @@ func createPurchaseReturnTx(tx *gorm.DB, input CreatePurchaseReturnInput) (Creat
 		return CreatePurchaseReturnResult{}, err
 	}
 
-	if order.Status == "Draft" || order.Status == "Canceled" || order.Status == "Received" {
-		return CreatePurchaseReturnResult{}, errors.New("purchase order status does not allow pre-inbound return")
+	if guard := statemachine.CanCreatePurchasePreInboundReturn(order); !guard.Allowed {
+		return CreatePurchaseReturnResult{}, guard.Err()
 	}
 
 	lineMap := make(map[uint]models.PurchaseOrderLine, len(order.Lines))

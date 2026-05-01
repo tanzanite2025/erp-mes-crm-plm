@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { canPerformPurchaseOrderAction } from '../data/purchase-order-state-machine'
 import type { PurchaseOrder } from '../data/schema'
 import type { PurchaseReturnRecord } from '../purchase'
 
@@ -8,15 +9,23 @@ export interface PurchaseReturnLineDraftLike {
   reason: string
 }
 
-export function getPurchaseOrderRemainingQty(order: PurchaseOrder, lineId?: number) {
+export function getPurchaseOrderRemainingQty(
+  order: PurchaseOrder,
+  lineId?: number
+) {
   const line = order.lines.find((item) => item.id === lineId)
   if (!line) return 0
-  return Math.max((line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0), 0)
+  return Math.max(
+    (line.qty || 0) - (line.receivedQty || 0) - (line.returnedQty || 0),
+    0
+  )
 }
 
 export function getPurchaseOrderPendingLines(order?: PurchaseOrder) {
   if (!order) return []
-  return order.lines.filter((line) => line.id && getPurchaseOrderRemainingQty(order, line.id) > 0)
+  return order.lines.filter(
+    (line) => line.id && getPurchaseOrderRemainingQty(order, line.id) > 0
+  )
 }
 
 interface UsePurchaseReturnViewModelParams {
@@ -40,8 +49,10 @@ export function usePurchaseReturnViewModel({
     () =>
       orders.filter(
         (order) =>
-          (order.status === 'Sent' || order.status === 'Awaiting') &&
-          order.lines.some((line) => getPurchaseOrderRemainingQty(order, line.id) > 0)
+          canPerformPurchaseOrderAction(order.status, 'createReturn') &&
+          order.lines.some(
+            (line) => getPurchaseOrderRemainingQty(order, line.id) > 0
+          )
       ),
     [orders]
   )
@@ -69,7 +80,8 @@ export function usePurchaseReturnViewModel({
     eligibleOrders.forEach((order) => {
       const pendingLines = getPurchaseOrderPendingLines(order)
       const pendingQty = pendingLines.reduce(
-        (sum, line) => sum + (line.id ? getPurchaseOrderRemainingQty(order, line.id) : 0),
+        (sum, line) =>
+          sum + (line.id ? getPurchaseOrderRemainingQty(order, line.id) : 0),
         0
       )
 
@@ -97,7 +109,9 @@ export function usePurchaseReturnViewModel({
   const selectedPendingQty = useMemo(
     () =>
       selectedPendingLines.reduce(
-        (sum, line) => sum + (line.id ? getPurchaseOrderRemainingQty(selectedOrder!, line.id) : 0),
+        (sum, line) =>
+          sum +
+          (line.id ? getPurchaseOrderRemainingQty(selectedOrder!, line.id) : 0),
         0
       ),
     [selectedOrder, selectedPendingLines]
@@ -141,7 +155,9 @@ export function usePurchaseReturnViewModel({
         supplierName: supplierKey,
         groups: [],
       }
-      let statusGroup = supplierEntry.groups.find((item) => item.status === order.status)
+      let statusGroup = supplierEntry.groups.find(
+        (item) => item.status === order.status
+      )
       if (!statusGroup) {
         statusGroup = { status: order.status, orders: [] }
         supplierEntry.groups.push(statusGroup)
@@ -150,31 +166,43 @@ export function usePurchaseReturnViewModel({
       supplierMap.set(supplierKey, supplierEntry)
     })
 
-    return Array.from(supplierMap.values()).sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+    return Array.from(supplierMap.values()).sort((a, b) =>
+      a.supplierName.localeCompare(b.supplierName)
+    )
   }, [filteredEligibleOrders])
 
   const visibleRecords = useMemo(() => {
     const normalized = historyOrderNo.trim().toLowerCase()
     if (normalized) {
-      return records.filter((record) => record.purchaseOrderNo.toLowerCase().includes(normalized))
+      return records.filter((record) =>
+        record.purchaseOrderNo.toLowerCase().includes(normalized)
+      )
     }
     if (!selectedOrder) return records
-    const matched = records.filter((record) => record.purchaseOrderId === selectedOrder.id)
+    const matched = records.filter(
+      (record) => record.purchaseOrderId === selectedOrder.id
+    )
     return matched.length > 0 ? matched : records
   }, [historyOrderNo, records, selectedOrder])
 
   const totalReturnedAmount = useMemo(
-    () => records.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0),
+    () =>
+      records.reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0),
     [records]
   )
 
   const totalReturnedQty = useMemo(
-    () => records.reduce((sum, item) => sum + (Number(item.totalQuantity) || 0), 0),
+    () =>
+      records.reduce((sum, item) => sum + (Number(item.totalQuantity) || 0), 0),
     [records]
   )
 
   const totalPendingLineCount = useMemo(
-    () => eligibleOrders.reduce((sum, order) => sum + getPurchaseOrderPendingLines(order).length, 0),
+    () =>
+      eligibleOrders.reduce(
+        (sum, order) => sum + getPurchaseOrderPendingLines(order).length,
+        0
+      ),
     [eligibleOrders]
   )
 

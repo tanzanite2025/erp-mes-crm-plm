@@ -2,8 +2,8 @@ package services
 
 import (
 	"errors"
-	"strings"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 )
 
 const purchaseReceiptTolerance = 1e-9
@@ -13,36 +13,9 @@ func recalculatePurchaseOrderStatus(order *models.PurchaseOrder) (string, error)
 		return "", errors.New("purchase order is required")
 	}
 
-	currentStatus := strings.TrimSpace(order.Status)
-	if currentStatus == "Canceled" {
-		return "Canceled", nil
+	nextStatus, guard := statemachine.DerivePurchaseOrderStatusValue(*order)
+	if !guard.Allowed {
+		return "", guard.Err()
 	}
-	if len(order.Lines) == 0 {
-		return currentStatus, nil
-	}
-
-	hasProgress := false
-	allReceived := true
-	for _, line := range order.Lines {
-		if line.ReceivedQty > purchaseReceiptTolerance {
-			hasProgress = true
-		}
-		if line.ReturnedQty > purchaseReceiptTolerance {
-			hasProgress = true
-		}
-		if line.Qty-line.ReceivedQty-line.ReturnedQty > purchaseReceiptTolerance {
-			allReceived = false
-		}
-	}
-
-	if allReceived {
-		return "Received", nil
-	}
-	if hasProgress {
-		return "Awaiting", nil
-	}
-	if currentStatus == "Draft" {
-		return "Draft", nil
-	}
-	return "Sent", nil
+	return string(nextStatus), nil
 }

@@ -8,7 +8,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react'
-import { AuditStatusDisplay } from '@/components/common/audit-status-display'
+import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,9 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLanguage } from '@/context/language-provider'
+import { AuditStatusDisplay } from '@/components/common/audit-status-display'
+import {
+  isPurchaseOrderTerminalStatus,
+  normalizePurchaseOrderStatus,
+} from '../../data/purchase-order-state-machine'
+import {
+  canEditPurchaseOrder,
+  getPurchaseStatusDisplayMeta,
+} from '../../data/purchase-status'
 import { type PurchaseOrderListItem } from '../../data/schema'
-import { canEditPurchaseOrder, getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 
 interface PurchaseOrderMasterProps {
   orders: PurchaseOrderListItem[]
@@ -37,7 +44,12 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function isOrderOverdue(date?: string, status?: string) {
-  if (!date || status === 'Received' || status === 'Canceled') return false
+  if (
+    !date ||
+    (status &&
+      isPurchaseOrderTerminalStatus(normalizePurchaseOrderStatus(status)))
+  )
+    return false
   const today = new Date().toISOString().split('T')[0]
   return date < today
 }
@@ -55,7 +67,7 @@ export function PurchaseOrderMaster({
     return (
       <div className='flex h-[40vh] flex-1 flex-col items-center justify-center space-y-3 rounded-[32px] border border-dashed border-muted/50 bg-muted/5'>
         <div className='mb-2 size-12 animate-pulse rounded-full border-2 border-dashed border-primary' />
-        <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/40'>
+        <p className='text-[10px] font-black tracking-widest text-muted-foreground/40 uppercase'>
           {t('purchase.orders.masterEmpty')}
         </p>
       </div>
@@ -68,31 +80,31 @@ export function PurchaseOrderMaster({
         <table className='min-w-full border-separate border-spacing-y-1.5 text-sm'>
           <thead className='sticky top-0 z-10 bg-background/80 backdrop-blur-md'>
             <tr>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.orderStatus')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.supplierChannel')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.orderDate')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.expectedArrival')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.exchangeRate')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.paymentMethod')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.paymentTerm')}
               </th>
-              <th className='px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-left text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.contractAmount')}
               </th>
-              <th className='px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>
+              <th className='px-4 py-3 text-center text-[10px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                 {t('purchase.orders.columns.actions')}
               </th>
             </tr>
@@ -106,8 +118,10 @@ export function PurchaseOrderMaster({
                 <tr
                   key={order.id}
                   onClick={() => onSelect(order.id)}
-                  className={`group animate-in cursor-pointer fade-in slide-in-from-left-2 transition-all duration-300 hover:bg-white hover:shadow-md ${
-                    active ? 'bg-white shadow-lg ring-1 ring-primary/30' : 'bg-card'
+                  className={`group animate-in cursor-pointer transition-all duration-300 fade-in slide-in-from-left-2 hover:bg-white hover:shadow-md ${
+                    active
+                      ? 'bg-white shadow-lg ring-1 ring-primary/30'
+                      : 'bg-card'
                   }`}
                 >
                   <td className='rounded-l-2xl px-4 py-3'>
@@ -119,7 +133,7 @@ export function PurchaseOrderMaster({
                         <StatusBadge status={order.status} />
                       </div>
                       <div className='mt-0.5 flex items-center gap-1.5 opacity-40'>
-                        <span className='text-[8px] font-black uppercase tracking-widest text-primary'>
+                        <span className='text-[8px] font-black tracking-widest text-primary uppercase'>
                           {t('purchase.orders.buyer')}:
                         </span>
                         <span className='text-[9px] font-bold uppercase'>
@@ -133,7 +147,7 @@ export function PurchaseOrderMaster({
                       <span className='max-w-[150px] truncate text-[11px] font-black text-foreground/80'>
                         {order.supplierName}
                       </span>
-                      <span className='mt-0.5 text-[8px] font-mono uppercase text-muted-foreground/40'>
+                      <span className='mt-0.5 font-mono text-[8px] text-muted-foreground/40 uppercase'>
                         ID: {order.supplierId}
                       </span>
                     </div>
@@ -146,20 +160,22 @@ export function PurchaseOrderMaster({
                       <div className='flex flex-col'>
                         <span
                           className={`font-mono text-[11px] font-bold ${
-                            isOverdue ? 'text-rose-500' : 'text-muted-foreground'
+                            isOverdue
+                              ? 'text-rose-500'
+                              : 'text-muted-foreground'
                           }`}
                         >
                           {order.expectedDate}
                         </span>
                         {isOverdue && (
-                          <span className='flex items-center gap-0.5 text-[8px] font-black uppercase tracking-tighter text-rose-500 animate-pulse'>
+                          <span className='flex animate-pulse items-center gap-0.5 text-[8px] font-black tracking-tighter text-rose-500 uppercase'>
                             <AlertCircle className='size-2.5' />
                             {t('purchase.orders.overdueWarning')}
                           </span>
                         )}
                       </div>
                     ) : (
-                      <span className='text-[10px] font-bold italic text-muted-foreground/30'>
+                      <span className='text-[10px] font-bold text-muted-foreground/30 italic'>
                         {t('purchase.orders.notSet')}
                       </span>
                     )}
@@ -169,7 +185,7 @@ export function PurchaseOrderMaster({
                       <span className='font-mono text-[11px] font-bold text-emerald-600'>
                         {(order.exchangeRate ?? 1).toFixed(4)}
                       </span>
-                      <span className='text-[8px] font-black uppercase tracking-widest opacity-30'>
+                      <span className='text-[8px] font-black tracking-widest uppercase opacity-30'>
                         {t('purchase.orders.baseCurrency')}
                       </span>
                     </div>
@@ -177,9 +193,11 @@ export function PurchaseOrderMaster({
                   <td className='px-4 py-3'>
                     <div className='flex flex-col'>
                       <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
-                        {order.paymentMethodName || order.paymentMethod || t('purchase.orders.notSet')}
+                        {order.paymentMethodName ||
+                          order.paymentMethod ||
+                          t('purchase.orders.notSet')}
                       </span>
-                      <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                      <span className='font-mono text-[8px] text-muted-foreground/40 uppercase'>
                         {order.paymentMethod || '--'}
                       </span>
                     </div>
@@ -187,19 +205,21 @@ export function PurchaseOrderMaster({
                   <td className='px-4 py-3'>
                     <div className='flex flex-col'>
                       <span className='max-w-[120px] truncate text-[11px] font-black text-foreground/80'>
-                        {order.paymentTermName || order.paymentTerm || t('purchase.orders.notSet')}
+                        {order.paymentTermName ||
+                          order.paymentTerm ||
+                          t('purchase.orders.notSet')}
                       </span>
-                      <span className='text-[8px] font-mono uppercase text-muted-foreground/40'>
+                      <span className='font-mono text-[8px] text-muted-foreground/40 uppercase'>
                         {order.paymentTerm || '--'}
                       </span>
                     </div>
                   </td>
                   <td className='px-4 py-3'>
                     <div className='flex flex-col'>
-                      <span className='text-[12px] font-black tabular-nums text-primary'>
+                      <span className='text-[12px] font-black text-primary tabular-nums'>
                         {order.amount?.toLocaleString()}
                       </span>
-                      <span className='text-[8px] font-black uppercase tracking-widest opacity-30'>
+                      <span className='text-[8px] font-black tracking-widest uppercase opacity-30'>
                         {order.currency || 'CNY'}
                       </span>
                     </div>
@@ -210,7 +230,7 @@ export function PurchaseOrderMaster({
                         <Button
                           variant='ghost'
                           size='icon'
-                          className='h-8 w-8 rounded-full hover:bg-muted group-hover:bg-muted/50'
+                          className='h-8 w-8 rounded-full group-hover:bg-muted/50 hover:bg-muted'
                         >
                           <MoreHorizontal className='size-4' />
                         </Button>
@@ -225,7 +245,7 @@ export function PurchaseOrderMaster({
                             e.stopPropagation()
                             onEdit(order)
                           }}
-                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest'
+                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
                         >
                           <Edit2
                             className={`size-3 ${
@@ -243,7 +263,7 @@ export function PurchaseOrderMaster({
                             e.stopPropagation()
                             onDelete(order.id)
                           }}
-                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-rose-500 focus:text-rose-600'
+                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
                         >
                           <Trash2 className='size-3' />
                           {order.status === 'Canceled'
@@ -277,14 +297,15 @@ export function PurchaseOrderMaster({
               <div className='mb-4 flex items-start justify-between'>
                 <div className='space-y-1'>
                   <div className='flex items-center gap-2'>
-                    <span className='text-[13px] font-black italic tracking-tighter tabular-nums'>
+                    <span className='text-[13px] font-black tracking-tighter italic tabular-nums'>
                       {order.orderNo}
                     </span>
                     <StatusBadge status={order.status} />
                   </div>
-                  <div className='flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
+                  <div className='flex items-center gap-1.5 text-[8px] font-black tracking-widest text-muted-foreground/40 uppercase italic'>
                     <User className='size-2.5' />
-                    {t('purchase.orders.buyer')}: {order.purchaser || t('purchase.orders.systemBuyer')}
+                    {t('purchase.orders.buyer')}:{' '}
+                    {order.purchaser || t('purchase.orders.systemBuyer')}
                   </div>
                 </div>
                 <DropdownMenu>
@@ -298,7 +319,10 @@ export function PurchaseOrderMaster({
                       <MoreHorizontal className='size-4' />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end' className='rounded-2xl border-2'>
+                  <DropdownMenuContent
+                    align='end'
+                    className='rounded-2xl border-2'
+                  >
                     <DropdownMenuItem
                       onClick={() => onEdit(order)}
                       className='px-4 py-2 text-[10px] font-black uppercase'
@@ -307,7 +331,7 @@ export function PurchaseOrderMaster({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onDelete(order.id)}
-                      className='px-4 py-2 text-[10px] font-black uppercase text-rose-500'
+                      className='px-4 py-2 text-[10px] font-black text-rose-500 uppercase'
                     >
                       {t('purchase.orders.voidContract')}
                     </DropdownMenuItem>
@@ -321,8 +345,10 @@ export function PurchaseOrderMaster({
                     <Building2 className='size-4 text-primary opacity-50' />
                   </div>
                   <div className='flex flex-col'>
-                    <span className='text-[12px] font-black text-foreground'>{order.supplierName}</span>
-                    <span className='text-[9px] font-bold uppercase text-muted-foreground opacity-40'>
+                    <span className='text-[12px] font-black text-foreground'>
+                      {order.supplierName}
+                    </span>
+                    <span className='text-[9px] font-bold text-muted-foreground uppercase opacity-40'>
                       ID: {order.supplierId}
                     </span>
                   </div>
@@ -330,47 +356,55 @@ export function PurchaseOrderMaster({
 
                 <div className='grid grid-cols-2 gap-3 rounded-2xl border border-dashed border-primary/10 bg-primary/5 px-3 py-2'>
                   <div className='space-y-1'>
-                    <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                    <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {t('purchase.orders.columns.paymentMethod')}
                     </p>
                     <p className='truncate text-[10px] font-black text-foreground/80'>
-                      {order.paymentMethodName || order.paymentMethod || t('purchase.orders.notSet')}
+                      {order.paymentMethodName ||
+                        order.paymentMethod ||
+                        t('purchase.orders.notSet')}
                     </p>
                   </div>
                   <div className='space-y-1'>
-                    <p className='text-[8px] font-black uppercase tracking-widest text-muted-foreground/50'>
+                    <p className='text-[8px] font-black tracking-widest text-muted-foreground/50 uppercase'>
                       {t('purchase.orders.columns.paymentTerm')}
                     </p>
                     <p className='truncate text-[10px] font-black text-foreground/80'>
-                      {order.paymentTermName || order.paymentTerm || t('purchase.orders.notSet')}
+                      {order.paymentTermName ||
+                        order.paymentTerm ||
+                        t('purchase.orders.notSet')}
                     </p>
                   </div>
                 </div>
 
                 <div className='flex items-center justify-between border-t border-dashed border-primary/10 pt-3'>
                   <div className='flex flex-col gap-1'>
-                    <div className='flex items-center gap-1.5 text-[8px] font-black uppercase text-muted-foreground opacity-40 italic'>
+                    <div className='flex items-center gap-1.5 text-[8px] font-black text-muted-foreground uppercase italic opacity-40'>
                       <Calendar className='size-2.5' />
                       {t('purchase.orders.mobileDate')}
                     </div>
-                    <span className='text-[10px] font-black tabular-nums'>{order.orderDate}</span>
+                    <span className='text-[10px] font-black tabular-nums'>
+                      {order.orderDate}
+                    </span>
                   </div>
                   <div className='flex flex-col gap-1'>
-                    <div className='flex items-center justify-center gap-1.5 text-[8px] font-black uppercase text-emerald-600 italic'>
+                    <div className='flex items-center justify-center gap-1.5 text-[8px] font-black text-emerald-600 uppercase italic'>
                       {t('purchase.orders.mobileRate')}
                     </div>
-                    <span className='text-[10px] font-mono font-bold text-emerald-600'>
+                    <span className='font-mono text-[10px] font-bold text-emerald-600'>
                       {(order.exchangeRate ?? 1).toFixed(4)}
                     </span>
                   </div>
                   <div className='flex flex-col gap-1 text-right'>
-                    <div className='flex items-center justify-end gap-1.5 text-[8px] font-black uppercase text-secondary italic'>
+                    <div className='flex items-center justify-end gap-1.5 text-[8px] font-black text-secondary uppercase italic'>
                       <Wallet className='size-2.5' />
                       {t('purchase.orders.mobileTotal')}
                     </div>
-                    <span className='text-[15px] font-black italic tracking-tighter text-primary tabular-nums'>
+                    <span className='text-[15px] font-black tracking-tighter text-primary italic tabular-nums'>
                       {order.amount?.toLocaleString()}{' '}
-                      <span className='text-[9px] opacity-40'>{order.currency || 'CNY'}</span>
+                      <span className='text-[9px] opacity-40'>
+                        {order.currency || 'CNY'}
+                      </span>
                     </span>
                   </div>
                 </div>

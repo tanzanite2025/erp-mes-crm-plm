@@ -7,6 +7,7 @@ import (
 	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	statemachine "xdfc-server/services/state_machine"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -172,8 +173,8 @@ func confirmPurchaseReceiptTx(tx *gorm.DB, input ConfirmPurchaseReceiptInput) (C
 		First(&order).Error; err != nil {
 		return ConfirmPurchaseReceiptResult{}, err
 	}
-	if order.Status != "Sent" && order.Status != "Awaiting" {
-		return ConfirmPurchaseReceiptResult{}, errors.New("purchase order status does not allow receipt confirmation")
+	if guard := statemachine.CanConfirmPurchaseReceipt(order); !guard.Allowed {
+		return ConfirmPurchaseReceiptResult{}, guard.Err()
 	}
 
 	lineMap := make(map[uint]models.PurchaseOrderLine, len(order.Lines))
