@@ -171,6 +171,12 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: Database,
         permissionId: permissionIdForPath('/materials'),
       },
+      {
+        titleKey: 'sidebar.items.warehouseConfig',
+        url: '/warehouse-config',
+        icon: Sliders,
+        permissionId: permissionIdForPath('/warehouse-config'),
+      },
     ],
   },
   {
@@ -440,6 +446,12 @@ export const sidebarData: SidebarData = {
           url: '/materials',
           icon: Database,
           permissionId: permissionIdForPath('/materials'),
+        },
+        {
+          title: '仓储配置',
+          url: '/warehouse-config',
+          icon: Sliders,
+          permissionId: permissionIdForPath('/warehouse-config'),
         },
       ],
     },

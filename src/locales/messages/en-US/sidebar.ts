@@ -23,6 +23,7 @@ export const sidebar = {
     dashboard: 'Dashboard',
     warehouse: 'Warehouse',
     warehouseOperations: 'Warehouse Operations',
+    warehouseConfig: 'Warehouse Config',
     salesManagement: 'Sales Management',
     quoteManagement: 'Quote Management',
     shippingManagement: 'Shipping Management',

@@ -23,6 +23,7 @@ export const sidebar = {
     dashboard: '仪表盘',
     warehouse: '仓储',
     warehouseOperations: '仓储作业',
+    warehouseConfig: '仓储配置',
     salesManagement: '销售管理',
     quoteManagement: '报价管理',
     shippingManagement: '发货管理',

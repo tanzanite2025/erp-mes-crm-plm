@@ -15,6 +15,7 @@ import { printMgmt } from './printMgmt'
 import { engineering } from './engineering'
 import { tradingSalesOrder } from './tradingSalesOrder'
 import { warehouse } from './warehouse'
+import { warehouseConfig } from './warehouseConfig'
 import { workflowCore } from './workflowCore'
 import { finance } from './finance'
 import { approval } from './approval'
@@ -57,6 +58,7 @@ export const enUSMessages = {
   engineering,
   tradingSalesOrder,
   warehouse,
+  warehouseConfig,
   workflowCore,
   finance,
   approval,

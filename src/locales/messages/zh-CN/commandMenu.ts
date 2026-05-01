@@ -43,6 +43,7 @@ export const commandMenu = {
   items: {
     dashboard: '仪表盘',
     warehouse: '仓储',
+    warehouseConfig: '仓储配置',
     trading: '销售管理',
     quoteManagement: '报价管理',
     salesAnalysis: '销售分析',
@@ -92,6 +93,7 @@ export const commandMenu = {
     reports: '报表',
     inbound: '产品入库',
     shipment: '产品出货',
+    packagingAssembly: '装箱组装',
     warehouseCategory: '仓库分类',
     stocktake: '物料盘点',
     adjustments: '调账记录',

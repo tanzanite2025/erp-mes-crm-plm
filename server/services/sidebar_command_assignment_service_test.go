@@ -131,7 +131,7 @@ func seedSidebarCommandDefinitions(t *testing.T) {
 		{CommandID: "wheel_trace_scan", Title: "Wheel Trace", Route: "/wheel-trace", SearchParams: []byte(`{"scan":"1"}`), Category: "business", Assignable: true, Enabled: true, Status: "active", SortOrder: 5},
 		{CommandID: "warehouse_inbound_scan", Title: "Warehouse Inbound", Route: "/warehouse/inbound", SearchParams: []byte(`{"mode":"scan"}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 10},
 		{CommandID: "warehouse_shipment_scan", Title: "Warehouse Shipment", Route: "/warehouse/shipment", SearchParams: []byte(`{"mode":"scan"}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 20},
-		{CommandID: "warehouse_packaging_assembly", Title: "Packaging Assembly", Route: "/warehouse/packaging-assembly", SearchParams: []byte(`{}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 40},
+		{CommandID: "warehouse_packaging_assembly", Title: "Packaging Assembly", Route: "/warehouse-config/packaging-assembly", SearchParams: []byte(`{}`), Category: "warehouse", Assignable: true, Enabled: true, Status: "active", SortOrder: 40},
 		{CommandID: "disabled_scan", Title: "Disabled Scan", Route: "/disabled", SearchParams: []byte(`{}`), Category: "warehouse", Assignable: true, Enabled: false, Status: "disabled", SortOrder: 90},
 	}
 	for _, row := range rows {

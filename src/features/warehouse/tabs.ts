@@ -8,8 +8,6 @@ export const warehouseTabs: TabItem[] = [
   { key: 'reports', label: '', href: '/warehouse/reports' },
   { key: 'inbound', label: '', href: '/warehouse/inbound' },
   { key: 'shipment', label: '', href: '/warehouse/shipment' },
-  { key: 'packaging-assembly', label: '', href: '/warehouse/packaging-assembly' },
-  { key: 'category', label: '', href: '/warehouse/category' },
   { key: 'stocktake', label: '', href: '/warehouse/stocktake' },
   { key: 'adjustments', label: '', href: '/warehouse/adjustments' },
 ]
@@ -20,12 +18,6 @@ export function getWarehouseTabs(t: TranslateFn): TabItem[] {
     { key: 'reports', label: t('warehouse.tabs.reports'), href: '/warehouse/reports' },
     { key: 'inbound', label: t('warehouse.tabs.inbound'), href: '/warehouse/inbound' },
     { key: 'shipment', label: t('warehouse.tabs.shipment'), href: '/warehouse/shipment' },
-    {
-      key: 'packaging-assembly',
-      label: '装箱组装',
-      href: '/warehouse/packaging-assembly',
-    },
-    { key: 'category', label: t('warehouse.tabs.category'), href: '/warehouse/category' },
     { key: 'stocktake', label: t('warehouse.tabs.stocktake'), href: '/warehouse/stocktake' },
     { key: 'adjustments', label: t('warehouse.tabs.adjustments'), href: '/warehouse/adjustments' },
   ]

@@ -684,7 +684,7 @@ func ensureDefaultSidebarCommandDefinitions() {
 			CommandID:    "warehouse_packaging_assembly",
 			Title:        "装箱组装",
 			Description:  "从快捷入口进入仓库装箱组装台，生成手机扫码会话并绑定系统产品一维码。",
-			Route:        "/warehouse/packaging-assembly",
+			Route:        "/warehouse-config/packaging-assembly",
 			SearchParams: json.RawMessage(`{}`),
 			Icon:         "PackagePlus",
 			Category:     "warehouse",
@@ -699,6 +699,11 @@ func ensureDefaultSidebarCommandDefinitions() {
 		var existing models.SidebarCommandDefinition
 		err := DB.Where("command_id = ?", command.CommandID).First(&existing).Error
 		if err == nil {
+			if command.CommandID == "warehouse_packaging_assembly" && existing.Route != command.Route {
+				if updateErr := DB.Model(&existing).Update("route", command.Route).Error; updateErr != nil {
+					log.Fatal("Failed to update default sidebar command definition:", updateErr)
+				}
+			}
 			continue
 		}
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

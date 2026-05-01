@@ -127,14 +127,6 @@ const moduleGroups: CommandItemConfig[] = [
     pinyin: 'cpch',
   },
   {
-    id: 'tab-warehouse-category',
-    href: '/warehouse/category',
-    titleKey: 'commandMenu.items.warehouseCategory',
-    parentKey: 'commandMenu.parents.warehouse',
-    keywords: ['warehouse', 'category', '仓库分类'],
-    pinyin: 'ckfl',
-  },
-  {
     id: 'tab-warehouse-stocktake',
     href: '/warehouse/stocktake',
     titleKey: 'commandMenu.items.stocktake',
@@ -149,6 +141,22 @@ const moduleGroups: CommandItemConfig[] = [
     parentKey: 'commandMenu.parents.warehouse',
     keywords: ['adjustment', 'record', '调账'],
     pinyin: 'tzjl',
+  },
+  {
+    id: 'tab-warehouse-config-packaging-assembly',
+    href: '/warehouse-config/packaging-assembly',
+    titleKey: 'commandMenu.items.packagingAssembly',
+    parentKey: 'commandMenu.items.warehouseConfig',
+    keywords: ['warehouse', 'packaging', 'assembly', '装箱组装'],
+    pinyin: 'zxzz',
+  },
+  {
+    id: 'tab-warehouse-config-category',
+    href: '/warehouse-config/category',
+    titleKey: 'commandMenu.items.warehouseCategory',
+    parentKey: 'commandMenu.items.warehouseConfig',
+    keywords: ['warehouse', 'category', '仓库基础配置', '仓库分类'],
+    pinyin: 'ckjc',
   },
   {
     id: 'tab-trading-customers',

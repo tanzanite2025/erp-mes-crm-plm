@@ -5,6 +5,7 @@
 export const BACKEND_PERMISSION_CONTRACT_IDS = [
   "menu_dashboard",
   "menu_warehouse",
+  "menu_warehouse_config",
   "menu_mrp",
   "menu_trading",
   "menu_org",
@@ -84,6 +85,7 @@ export const BACKEND_ADMIN_FALLBACK_PERMISSION_IDS = [
   "perm_manage",
   "menu_dashboard",
   "menu_warehouse",
+  "menu_warehouse_config",
   "menu_mrp",
   "menu_trading",
   "menu_org",

@@ -43,6 +43,7 @@ export const commandMenu = {
   items: {
     dashboard: 'Dashboard',
     warehouse: 'Warehouse',
+    warehouseConfig: 'Warehouse Config',
     trading: 'Trading',
     quoteManagement: 'Quote Management',
     salesAnalysis: 'Sales Analysis',
@@ -92,6 +93,7 @@ export const commandMenu = {
     reports: 'Reports',
     inbound: 'Product Inbound',
     shipment: 'Product Shipment',
+    packagingAssembly: 'Packaging Assembly',
     warehouseCategory: 'Warehouse Categories',
     stocktake: 'Stocktake',
     adjustments: 'Adjustment Logs',

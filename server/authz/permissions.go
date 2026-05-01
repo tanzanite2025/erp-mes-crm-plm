@@ -1,21 +1,22 @@
 package authz
 
 const (
-	MenuDashboard   = "menu_dashboard"
-	MenuWarehouse   = "menu_warehouse"
-	MenuMrp         = "menu_mrp"
-	MenuTrading     = "menu_trading"
-	MenuOrg         = "menu_org"
-	MenuEngineering = "menu_engineering"
-	MenuQuality     = "menu_quality"
-	MenuProdConfig  = "menu_prod_config"
-	MenuPiecework   = "menu_piecework"
-	MenuEquipment   = "menu_equipment"
-	MenuSystem      = "menu_system"
-	MenuSettings    = "menu_settings"
-	MenuCodeCenter  = "menu_code_center"
-	MenuApproval    = "menu_approval"
-	MenuPDA         = "menu_pda"
+	MenuDashboard       = "menu_dashboard"
+	MenuWarehouse       = "menu_warehouse"
+	MenuWarehouseConfig = "menu_warehouse_config"
+	MenuMrp             = "menu_mrp"
+	MenuTrading         = "menu_trading"
+	MenuOrg             = "menu_org"
+	MenuEngineering     = "menu_engineering"
+	MenuQuality         = "menu_quality"
+	MenuProdConfig      = "menu_prod_config"
+	MenuPiecework       = "menu_piecework"
+	MenuEquipment       = "menu_equipment"
+	MenuSystem          = "menu_system"
+	MenuSettings        = "menu_settings"
+	MenuCodeCenter      = "menu_code_center"
+	MenuApproval        = "menu_approval"
+	MenuPDA             = "menu_pda"
 )
 
 const (
@@ -112,6 +113,7 @@ var AdminFallbackPermissions = []string{
 	PermissionManage,
 	MenuDashboard,
 	MenuWarehouse,
+	MenuWarehouseConfig,
 	MenuMrp,
 	MenuTrading,
 	MenuOrg,

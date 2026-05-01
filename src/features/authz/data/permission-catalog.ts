@@ -37,6 +37,13 @@ export const MENU_PERMISSIONS = {
     icon: 'Warehouse',
     rootPath: '/warehouse',
   },
+  warehouseConfig: {
+    id: 'menu_warehouse_config',
+    label: '访问：仓储配置',
+    desc: '允许进入仓储配置、装箱组装与仓库基础配置',
+    icon: 'Sliders',
+    rootPath: '/warehouse-config',
+  },
   mrp: {
     id: 'menu_mrp',
     label: '\u8bbf\u95ee\uff1aMRP',
@@ -136,6 +143,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
 > = {
   '/dashboard': 'dashboard',
   '/warehouse': 'warehouse',
+  '/warehouse-config': 'warehouseConfig',
   '/mrp': 'mrp',
   '/raw-materials': 'trading',
   '/trading': 'trading',
