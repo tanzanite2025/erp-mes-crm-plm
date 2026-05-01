@@ -139,6 +139,26 @@ func insertBoundProductBarcode(t *testing.T, testDB *gorm.DB, productBarcode str
 	).Error)
 }
 
+func TestCreatePackagingAssemblyCaptureSessionCreatesWaitingSessionWithoutAssemblyID(t *testing.T) {
+	testDB := setupPackagingAssemblyTestDB(t)
+
+	result, err := CreatePackagingAssemblyCaptureSession()
+	require.NoError(t, err)
+	require.NotEmpty(t, result.SessionID)
+	require.NotEmpty(t, result.UploadToken)
+	require.NotEmpty(t, result.PackageCode)
+	require.Equal(t, PackagingAssemblyCaptureStatusWaiting, result.Status)
+	require.Empty(t, result.AssemblyID)
+
+	var storedAssemblyID *string
+	require.NoError(t, testDB.
+		Table("packaging_assembly_capture_sessions").
+		Select("assembly_id").
+		Where("session_id = ?", result.SessionID).
+		Scan(&storedAssemblyID).Error)
+	require.Nil(t, storedAssemblyID)
+}
+
 func TestSubmitPackagingAssemblyCaptureSessionCreatesAssembly(t *testing.T) {
 	testDB := setupPackagingAssemblyTestDB(t)
 	sessionID := "packaging-assembly-" + uuid.NewString()

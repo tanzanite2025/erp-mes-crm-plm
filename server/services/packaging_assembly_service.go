@@ -85,6 +85,7 @@ func CreatePackagingAssemblyCaptureSession() (PackagingAssemblyCaptureSessionRes
 	}
 
 	session := models.PackagingAssemblyCaptureSession{
+		BaseModel:   models.BaseModel{ID: uuid.NewString()},
 		SessionID:   "packaging-assembly-" + uuid.NewString(),
 		UploadToken: randomPackagingAssemblyCaptureToken(24),
 		Status:      PackagingAssemblyCaptureStatusWaiting,
@@ -108,8 +109,8 @@ func GetPackagingAssemblyCaptureSession(sessionID string) (PackagingAssemblyCapt
 	}
 
 	var assembly *PackagingAssemblyResponse
-	if strings.TrimSpace(session.AssemblyID) != "" {
-		if item, err := loadPackagingAssemblyByID(session.AssemblyID); err == nil {
+	if assemblyID := optionalUUIDString(session.AssemblyID); assemblyID != "" {
+		if item, err := loadPackagingAssemblyByID(assemblyID); err == nil {
 			mapped := mapPackagingAssembly(item)
 			assembly = &mapped
 		}
@@ -134,8 +135,8 @@ func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagi
 	if strings.TrimSpace(input.Token) == "" || strings.TrimSpace(input.Token) != session.UploadToken {
 		return PackagingAssemblyCaptureSessionResponse{}, ErrPackagingAssemblyCaptureSessionToken
 	}
-	if session.Status == PackagingAssemblyCaptureStatusSubmitted && strings.TrimSpace(session.AssemblyID) != "" {
-		assembly, loadErr := loadPackagingAssemblyByID(session.AssemblyID)
+	if assemblyID := optionalUUIDString(session.AssemblyID); session.Status == PackagingAssemblyCaptureStatusSubmitted && assemblyID != "" {
+		assembly, loadErr := loadPackagingAssemblyByID(assemblyID)
 		if loadErr != nil {
 			return PackagingAssemblyCaptureSessionResponse{}, loadErr
 		}
@@ -161,7 +162,7 @@ func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagi
 		} else if exists {
 			assembly = existing
 			session.Status = PackagingAssemblyCaptureStatusSubmitted
-			session.AssemblyID = existing.ID
+			session.AssemblyID = stringPtr(existing.ID)
 			if session.SubmittedAt == nil {
 				session.SubmittedAt = &now
 			}
@@ -226,7 +227,7 @@ func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagi
 		snapshot, _ := json.Marshal(productBarcodes)
 		session.Status = PackagingAssemblyCaptureStatusSubmitted
 		session.ProductBarcodeSnapshot = string(snapshot)
-		session.AssemblyID = assembly.ID
+		session.AssemblyID = stringPtr(assembly.ID)
 		session.SubmittedAt = &now
 		if err := tx.Save(&session).Error; err != nil {
 			return err
@@ -399,7 +400,7 @@ func mapPackagingAssemblyCaptureSession(session models.PackagingAssemblyCaptureS
 		SessionID:   strings.TrimSpace(session.SessionID),
 		Status:      strings.TrimSpace(session.Status),
 		PackageCode: strings.TrimSpace(session.PackageCode),
-		AssemblyID:  strings.TrimSpace(session.AssemblyID),
+		AssemblyID:  optionalUUIDString(session.AssemblyID),
 		Assembly:    assembly,
 		SubmittedAt: session.SubmittedAt,
 		ExpiresAt:   session.ExpiresAt,
@@ -408,6 +409,21 @@ func mapPackagingAssemblyCaptureSession(session models.PackagingAssemblyCaptureS
 		response.UploadToken = session.UploadToken
 	}
 	return response
+}
+
+func optionalUUIDString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(*value)
+}
+
+func stringPtr(value string) *string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
 
 func nextPackagingAssemblyPackageCode() string {

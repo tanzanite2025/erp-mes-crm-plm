@@ -2,22 +2,26 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Boxes,
+  Barcode,
   CheckCircle2,
-  Clipboard,
-  LinkIcon,
   Loader2,
   PackageCheck,
+  Printer,
   QrCode,
   RefreshCw,
   Smartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import { useLanguage } from '@/context/language-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
-import { useLanguage } from '@/context/language-provider'
-import { renderBwipBarcode } from '@/lib/bwip-renderer'
+import {
+  PackagingAssemblyPrintDialog,
+  type PackagingLabelType,
+} from '../components/packaging-assembly-print-dialog'
 import { warehouseQueryKeys } from '../query-keys'
 import {
   PackagingAssemblyService,
@@ -30,7 +34,12 @@ type PackagingCopy = {
   description: string
   createSession: string
   refresh: string
-  copyLink: string
+  printPackageCode: string
+  printFormat: string
+  barcodeLabel: string
+  qrLabel: string
+  barcodeHint: string
+  qrHint: string
   mobileEntry: string
   packageCode: string
   scanHint: string
@@ -40,48 +49,56 @@ type PackagingCopy = {
   productBarcodes: string
   empty: string
   sessionCreated: string
-  copied: string
-  copyFailed: string
   submitted: string
 }
 
 const copyByLocale: Record<'zh-CN' | 'en-US', PackagingCopy> = {
   'zh-CN': {
     title: '装箱组装',
-    description: '创建箱码二维码，用手机扫码进入装箱采集页，再扫描系统产品一维码完成箱码与产品码绑定。',
+    description:
+      '创建装箱码，打印后贴到外箱；手机扫描贴好的二维码进入装箱采集页，再录入系统产品一维码。',
     createSession: '新建装箱码',
     refresh: '刷新',
-    copyLink: '复制手机链接',
-    mobileEntry: '手机扫码入口',
+    printPackageCode: '打印装箱码',
+    printFormat: '打印格式',
+    barcodeLabel: '一维码',
+    qrLabel: '二维码',
+    barcodeHint: '适合扫码枪识别箱码',
+    qrHint: '适合手机扫码进入采集',
+    mobileEntry: '装箱码生成',
     packageCode: '箱码 / 组装码',
-    scanHint: '用手机扫描左侧二维码后，逐个扫描已在系统绑定的产品一维码。提交后这里会自动回显装箱结果。',
+    scanHint:
+      '先打印装箱码并贴到外箱。若选择二维码标签，手机扫描箱体贴纸后进入采集页，再逐个录入内部产品一维码。',
     status: '状态',
     latestAssemblies: '装箱组装记录',
     itemCount: '件数',
     productBarcodes: '产品一维码',
     empty: '暂无装箱记录，先新建一个装箱码。',
     sessionCreated: '装箱码已创建',
-    copied: '手机扫码链接已复制',
-    copyFailed: '复制失败',
     submitted: '装箱组装已完成',
   },
   'en-US': {
     title: 'Packaging Assembly',
-    description: 'Create a package QR, scan it with a phone, then scan bound product barcodes into the package.',
+    description:
+      'Create a package QR, scan it with a phone, then scan bound product barcodes into the package.',
     createSession: 'New Package Code',
     refresh: 'Refresh',
-    copyLink: 'Copy Mobile Link',
-    mobileEntry: 'Mobile Scan Entry',
+    printPackageCode: 'Print Package Code',
+    printFormat: 'Print Format',
+    barcodeLabel: 'Linear Barcode',
+    qrLabel: 'QR Code',
+    barcodeHint: 'For scanner-gun package lookup',
+    qrHint: 'For mobile capture entry',
+    mobileEntry: 'Package Code Setup',
     packageCode: 'Package / Assembly Code',
-    scanHint: 'Scan the QR with a phone, then scan product barcodes already bound in the system. Results appear here after submit.',
+    scanHint:
+      'Print the package code and attach it to the carton. QR labels open the mobile capture page; then scan product barcodes inside the package.',
     status: 'Status',
     latestAssemblies: 'Packaging Records',
     itemCount: 'Items',
     productBarcodes: 'Product Barcodes',
     empty: 'No packaging records yet. Create a package code first.',
     sessionCreated: 'Package code created',
-    copied: 'Mobile scan link copied',
-    copyFailed: 'Copy failed',
     submitted: 'Packaging assembly submitted',
   },
 }
@@ -128,11 +145,104 @@ function formatDateTime(value?: string) {
   return parsed.toLocaleString()
 }
 
+function PackageCodePrintFormatSelector({
+  packageCode,
+  qrCodeValue,
+  selectedType,
+  onSelect,
+  copy,
+}: {
+  packageCode: string
+  qrCodeValue: string
+  selectedType: PackagingLabelType
+  onSelect: (type: PackagingLabelType) => void
+  copy: PackagingCopy
+}) {
+  const options: Array<{
+    type: PackagingLabelType
+    label: string
+    hint: string
+    code: string
+    icon: typeof Barcode
+  }> = [
+    {
+      type: 'code128',
+      label: copy.barcodeLabel,
+      hint: copy.barcodeHint,
+      code: packageCode,
+      icon: Barcode,
+    },
+    {
+      type: 'qrcode',
+      label: copy.qrLabel,
+      hint: copy.qrHint,
+      code: qrCodeValue || packageCode,
+      icon: QrCode,
+    },
+  ]
+
+  return (
+    <div className='mt-3 space-y-2'>
+      <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+        {copy.printFormat}
+      </div>
+      <div className='grid gap-2 sm:grid-cols-2'>
+        {options.map((option) => {
+          const Icon = option.icon
+          const selected = selectedType === option.type
+          return (
+            <button
+              key={option.type}
+              type='button'
+              onClick={() => onSelect(option.type)}
+              className={`min-w-0 rounded-lg border p-2 text-left transition ${
+                selected
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-border bg-background hover:border-primary/40'
+              }`}
+            >
+              <div className='mb-2 flex items-center justify-between gap-2'>
+                <span className='inline-flex items-center gap-1.5 text-[11px] font-black'>
+                  <Icon className='size-3.5' />
+                  {option.label}
+                </span>
+                <span
+                  className={`size-2 rounded-full ${
+                    selected ? 'bg-primary' : 'bg-muted-foreground/30'
+                  }`}
+                />
+              </div>
+              <div className='flex h-14 items-center justify-center overflow-hidden rounded-md bg-white p-1'>
+                <PackagingQrCanvas
+                  code={option.code}
+                  type={option.type}
+                  className={
+                    option.type === 'code128'
+                      ? 'h-10 w-full max-w-full'
+                      : 'size-12'
+                  }
+                />
+              </div>
+              <div className='mt-1 truncate text-[10px] font-bold text-muted-foreground'>
+                {option.hint}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function PackagingAssembly() {
   const { locale } = useLanguage()
   const copy = copyByLocale[locale]
   const queryClient = useQueryClient()
-  const [captureSession, setCaptureSession] = useState<PackagingAssemblyCaptureSession | null>(null)
+  const [captureSession, setCaptureSession] =
+    useState<PackagingAssemblyCaptureSession | null>(null)
+  const [printPackageCode, setPrintPackageCode] = useState('')
+  const [printLabelType, setPrintLabelType] =
+    useState<PackagingLabelType>('code128')
 
   const assembliesQuery = useQuery({
     queryKey: warehouseQueryKeys.packagingAssemblies(),
@@ -165,8 +275,12 @@ export default function PackagingAssembly() {
             uploadToken: current?.uploadToken,
           }))
           if (nextSession.status === 'Submitted') {
-            toast.success(copy.submitted, { description: nextSession.packageCode })
-            void queryClient.invalidateQueries({ queryKey: warehouseQueryKeys.packagingAssemblies() })
+            toast.success(copy.submitted, {
+              description: nextSession.packageCode,
+            })
+            void queryClient.invalidateQueries({
+              queryKey: warehouseQueryKeys.packagingAssemblies(),
+            })
           }
         })
         .catch(() => undefined)
@@ -174,22 +288,31 @@ export default function PackagingAssembly() {
     return () => window.clearInterval(intervalId)
   }, [captureSession, copy.submitted, queryClient])
 
-  const copyCaptureLink = async () => {
-    if (!captureUrl) return
-    try {
-      await navigator.clipboard.writeText(captureUrl)
-      toast.success(copy.copied)
-    } catch {
-      toast.error(copy.copyFailed)
-    }
-  }
-
   const assemblies = assembliesQuery.data?.items ?? []
-  const activePackageCode = captureSession?.packageCode || assemblies[0]?.packageCode || ''
+  const activePackageCode =
+    captureSession?.packageCode || assemblies[0]?.packageCode || ''
+  const selectedPrintBarcodeValue =
+    printLabelType === 'qrcode' && printPackageCode === activePackageCode
+      ? captureUrl || printPackageCode
+      : printPackageCode
+  const isPrintDialogOpen = printPackageCode.trim() !== ''
 
   return (
-    <div className='flex flex-col gap-5 animate-in fade-in duration-500'>
-      <IndustrialHeader title={copy.title} description={copy.description} icon={Boxes} />
+    <div className='flex animate-in flex-col gap-5 duration-500 fade-in'>
+      <IndustrialHeader
+        title={copy.title}
+        description={copy.description}
+        icon={Boxes}
+      />
+      <PackagingAssemblyPrintDialog
+        open={isPrintDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) setPrintPackageCode('')
+        }}
+        packageCode={printPackageCode}
+        barcodeValue={selectedPrintBarcodeValue}
+        labelType={printLabelType}
+      />
 
       <div className='grid gap-4 xl:grid-cols-[420px_1fr]'>
         <Card className='rounded-lg border border-border/70 shadow-none'>
@@ -200,41 +323,38 @@ export default function PackagingAssembly() {
             </CardTitle>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='grid gap-3 sm:grid-cols-[168px_1fr] xl:grid-cols-1'>
-              <div className='flex items-center justify-center rounded-lg border border-dashed border-primary/30 bg-white p-3'>
-                {captureUrl ? (
-                  <PackagingQrCanvas code={captureUrl} />
-                ) : (
-                  <div className='flex size-40 items-center justify-center rounded-lg bg-muted text-muted-foreground'>
-                    <QrCode className='size-12' />
-                  </div>
-                )}
-              </div>
-
-              <div className='space-y-3'>
-                <div className='rounded-lg border border-dashed border-border bg-muted/20 p-3'>
-                  <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
-                    {copy.packageCode}
-                  </div>
-                  <div className='mt-2 break-all font-mono text-lg font-black tracking-tight'>
-                    {activePackageCode || '--'}
-                  </div>
-                  <div className='mt-2 flex flex-wrap gap-2'>
-                    <Badge variant='outline' className='rounded-full'>
-                      {copy.status}: {captureSession?.status || '--'}
-                    </Badge>
-                    {captureSession?.expiresAt ? (
-                      <Badge variant='outline' className='rounded-full'>
-                        {formatDateTime(captureSession.expiresAt)}
-                      </Badge>
-                    ) : null}
-                  </div>
+            <div className='space-y-3'>
+              <div className='rounded-lg border border-dashed border-border bg-muted/20 p-3'>
+                <div className='text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
+                  {copy.packageCode}
                 </div>
-
-                <p className='text-xs font-semibold leading-5 text-muted-foreground'>
-                  {copy.scanHint}
-                </p>
+                <div className='mt-2 font-mono text-lg font-black tracking-tight break-all'>
+                  {activePackageCode || '--'}
+                </div>
+                <div className='mt-2 flex flex-wrap gap-2'>
+                  <Badge variant='outline' className='rounded-full'>
+                    {copy.status}: {captureSession?.status || '--'}
+                  </Badge>
+                  {captureSession?.expiresAt ? (
+                    <Badge variant='outline' className='rounded-full'>
+                      {formatDateTime(captureSession.expiresAt)}
+                    </Badge>
+                  ) : null}
+                </div>
+                {activePackageCode ? (
+                  <PackageCodePrintFormatSelector
+                    packageCode={activePackageCode}
+                    qrCodeValue={captureUrl}
+                    selectedType={printLabelType}
+                    onSelect={setPrintLabelType}
+                    copy={copy}
+                  />
+                ) : null}
               </div>
+
+              <p className='text-xs leading-5 font-semibold text-muted-foreground'>
+                {copy.scanHint}
+              </p>
             </div>
 
             <div className='flex flex-wrap gap-2'>
@@ -254,12 +374,12 @@ export default function PackagingAssembly() {
               <Button
                 type='button'
                 variant='outline'
-                onClick={() => void copyCaptureLink()}
-                disabled={!captureUrl}
+                onClick={() => setPrintPackageCode(activePackageCode)}
+                disabled={!activePackageCode}
                 className='h-10 rounded-full text-xs font-black'
               >
-                <Clipboard className='size-4' />
-                {copy.copyLink}
+                <Printer className='size-4' />
+                {copy.printPackageCode}
               </Button>
               <Button
                 type='button'
@@ -271,13 +391,6 @@ export default function PackagingAssembly() {
                 {copy.refresh}
               </Button>
             </div>
-
-            {captureUrl ? (
-              <div className='flex min-w-0 items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-[11px] font-mono'>
-                <LinkIcon className='size-3.5 shrink-0 text-muted-foreground' />
-                <span className='truncate'>{captureUrl}</span>
-              </div>
-            ) : null}
           </CardContent>
         </Card>
 
@@ -299,7 +412,13 @@ export default function PackagingAssembly() {
               </div>
             ) : (
               assemblies.map((assembly) => (
-                <AssemblyRecord key={assembly.id} assembly={assembly} copy={copy} />
+                <AssemblyRecord
+                  key={assembly.id}
+                  assembly={assembly}
+                  copy={copy}
+                  selectedPrintType={printLabelType}
+                  onPrint={() => setPrintPackageCode(assembly.packageCode)}
+                />
               ))
             )}
           </CardContent>
@@ -312,16 +431,22 @@ export default function PackagingAssembly() {
 function AssemblyRecord({
   assembly,
   copy,
+  selectedPrintType,
+  onPrint,
 }: {
   assembly: PackagingAssembly
   copy: PackagingCopy
+  selectedPrintType: PackagingLabelType
+  onPrint: () => void
 }) {
   return (
     <div className='rounded-lg border border-border bg-background p-3'>
       <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
         <div className='min-w-0 space-y-1'>
           <div className='flex flex-wrap items-center gap-2'>
-            <span className='font-mono text-sm font-black'>{assembly.packageCode}</span>
+            <span className='font-mono text-sm font-black'>
+              {assembly.packageCode}
+            </span>
             <Badge variant='secondary' className='rounded-full'>
               {copy.itemCount}: {assembly.itemCount}
             </Badge>
@@ -330,21 +455,46 @@ function AssemblyRecord({
             </Badge>
           </div>
           <div className='text-[11px] font-semibold text-muted-foreground'>
-            {formatDateTime(assembly.assembledAt || assembly.createdAt)} / {assembly.assembledBy || '--'}
+            {formatDateTime(assembly.assembledAt || assembly.createdAt)} /{' '}
+            {assembly.assembledBy || '--'}
           </div>
         </div>
-        <div className='flex shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-white p-1.5'>
-          <PackagingQrCanvas code={assembly.packageCode} className='size-16' />
+        <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
+          <div className='flex items-center justify-center rounded-md border border-dashed border-border bg-white p-1.5'>
+            <PackagingQrCanvas
+              code={assembly.packageCode}
+              type={selectedPrintType}
+              className={
+                selectedPrintType === 'code128'
+                  ? 'h-10 w-24 max-w-full'
+                  : 'size-16'
+              }
+            />
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-8 rounded-full text-[11px] font-black'
+            onClick={onPrint}
+          >
+            <Printer className='size-3.5' />
+            {copy.printPackageCode}
+          </Button>
         </div>
       </div>
 
       <div className='mt-3 rounded-md bg-muted/30 p-2'>
-        <div className='mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground'>
+        <div className='mb-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase'>
           {copy.productBarcodes}
         </div>
         <div className='flex flex-wrap gap-1.5'>
           {assembly.items.map((item) => (
-            <Badge key={item.id} variant='outline' className='rounded-full font-mono text-[10px]'>
+            <Badge
+              key={item.id}
+              variant='outline'
+              className='rounded-full font-mono text-[10px]'
+            >
               {item.productBarcode}
             </Badge>
           ))}

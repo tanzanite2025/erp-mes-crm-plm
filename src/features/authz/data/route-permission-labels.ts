@@ -15,6 +15,9 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/mrp': 'sidebar.items.mrp',
   '/mrp/requirements': 'mrp.tabs.requirements',
   '/purchase': 'sidebar.items.purchaseManagement',
+  '/purchase/suppliers': 'purchase.tabs.suppliers',
+  '/purchase/orders': 'purchase.tabs.orders',
+  '/purchase/payables': 'purchase.tabs.payables',
   '/purchase/logistics': 'purchase.tabs.logistics',
   '/raw-materials': 'sidebar.items.cuttingDatabase',
   '/raw-materials/catalog': 'commandMenu.items.prepregCatalog',
@@ -23,8 +26,10 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/raw-materials/cutting-plan': 'commandMenu.items.cuttingPlan',
   '/cutting-operations': 'sidebar.items.cuttingOperations',
   '/cutting-operations/cutting-issuance': 'commandMenu.items.cuttingOperations',
-  '/cutting-operations/product-binding': 'cuttingOperations.tabs.productBinding',
-  '/cutting-operations/size-inventory': 'commandMenu.items.cuttingSizeInventory',
+  '/cutting-operations/product-binding':
+    'cuttingOperations.tabs.productBinding',
+  '/cutting-operations/size-inventory':
+    'commandMenu.items.cuttingSizeInventory',
   '/trading': 'sidebar.items.salesManagement',
   '/trading/customers': 'trading.tabs.customers',
   '/trading/sales-orders': 'trading.tabs.salesOrders',
@@ -38,12 +43,14 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering/products': 'commandMenu.items.engineeringProducts',
   '/engineering/bom': 'commandMenu.items.engineeringBom',
   '/engineering/templates': 'commandMenu.items.engineeringTemplates',
-  '/materials': 'sidebar.items.materialArchive',
   '/engineering-db': 'sidebar.items.engineeringDatabase',
   '/engineering-reference': 'sidebar.items.engineeringReference',
   '/quality': 'sidebar.items.qualityAudit',
   '/quality/standards': 'commandMenu.items.qualityStandards',
   '/quality/formulas': 'commandMenu.items.qualityFormulas',
+  '/materials': 'sidebar.items.materialArchive',
+  '/materials/all': 'materialArchive.layout.tabs.all',
+  '/materials/assembly': 'materialArchive.layout.tabs.assembly',
   '/production-quality': 'sidebar.items.qualityOperations',
   '/production-quality/abnormalities': 'commandMenu.items.qualityAbnormalities',
   '/production-quality/inspection': 'commandMenu.items.qualityInspection',
@@ -71,7 +78,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/logistics-config/suppliers': 'logisticsConfig.tabs.suppliers',
   '/logistics-config/packaging-rules': 'logisticsConfig.tabs.packagingRules',
   '/logistics-config/vehicle-loading': 'logisticsConfig.tabs.vehicleLoading',
-  '/logistics-config/vehicle-specs-library': 'logisticsConfig.tabs.vehicleSpecsLibrary',
+  '/logistics-config/vehicle-specs-library':
+    'logisticsConfig.tabs.vehicleSpecsLibrary',
   '/logistics-settings': 'sidebar.items.logisticsSettings',
   '/logistics-settings/platforms': 'logisticsConfig.tabs.platforms',
   '/logistics-settings/scanning': 'logisticsConfig.tabs.scanning',
@@ -84,7 +92,8 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/code-center/linear-barcode': 'sidebar.items.linearBarcode',
   '/code-center/dm-code': 'sidebar.items.dmCode',
   '/code-center/shared-code-source': 'sidebar.items.sharedCodeSource',
-  '/code-center/shared-code-source/numbering-engine': 'commandMenu.items.sharedNumberingEngine',
+  '/code-center/shared-code-source/numbering-engine':
+    'commandMenu.items.sharedNumberingEngine',
   '/print-mgmt': 'sidebar.items.printCenter',
   '/terminal-config': 'sidebar.items.terminalConfig',
   '/terminal-config/printers': 'commandMenu.items.terminalPrinters',
@@ -112,16 +121,26 @@ function normalizePath(path: string): string {
   return normalized || '/'
 }
 
-export function resolveRoutePermissionLabelKey(path: string): TranslationKey | undefined {
+export function resolveRoutePermissionLabelKey(
+  path: string
+): TranslationKey | undefined {
   let normalizedPath = normalizePath(path)
 
   while (normalizedPath !== '/') {
     const key = ROUTE_PERMISSION_LABEL_KEYS[normalizedPath]
     if (key) return key
-    normalizedPath = normalizePath(normalizedPath.split('/').slice(0, -1).join('/'))
+    normalizedPath = normalizePath(
+      normalizedPath.split('/').slice(0, -1).join('/')
+    )
   }
 
   return ROUTE_PERMISSION_LABEL_KEYS['/']
+}
+
+export function resolveExactRoutePermissionLabelKey(
+  path: string
+): TranslationKey | undefined {
+  return ROUTE_PERMISSION_LABEL_KEYS[normalizePath(path)]
 }
 
 export function resolveRoutePermissionLabel(path: string): string | undefined {

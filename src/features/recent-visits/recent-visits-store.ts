@@ -1,7 +1,10 @@
+import type { AuthUser } from '@/stores/auth-store'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
 import { StorageService } from '@/features/system-mgmt/services/storage-service'
-import type { AuthUser } from '@/stores/auth-store'
-import { resolveRecentVisitFallbackLabel, resolveRecentVisitLabelKey } from './recent-visit-labels'
+import {
+  resolveRecentVisitFallbackLabel,
+  resolveRecentVisitLabelKey,
+} from './recent-visit-labels'
 import type { RecentVisit } from './types'
 
 export const RECENT_VISITS_UPDATED_EVENT = 'xdfc_recent_visits_updated'
@@ -23,7 +26,11 @@ const IGNORED_PREFIXES = [
 ]
 
 function normalizePath(path: string): string {
-  const normalized = path.split('?')[0]?.split('#')[0]?.replace(/\/+/g, '/').replace(/\/$/, '')
+  const normalized = path
+    .split('?')[0]
+    ?.split('#')[0]
+    ?.replace(/\/+/g, '/')
+    .replace(/\/$/, '')
   return normalized || '/'
 }
 
@@ -31,9 +38,13 @@ function getUserStorageIdentity(user: AuthUser | null): string | null {
   return user?.id || user?.accountNo || user?.username || null
 }
 
-export function getRecentVisitsStorageKey(user: AuthUser | null): string | null {
+export function getRecentVisitsStorageKey(
+  user: AuthUser | null
+): string | null {
   const identity = getUserStorageIdentity(user)
-  return identity ? `${RECENT_VISITS_STORAGE_PREFIX}:${encodeURIComponent(identity)}` : null
+  return identity
+    ? `${RECENT_VISITS_STORAGE_PREFIX}:${encodeURIComponent(identity)}`
+    : null
 }
 
 export function shouldTrackRecentVisit(path: string): boolean {
@@ -60,30 +71,44 @@ function normalizeVisits(raw: unknown): RecentVisit[] {
     .map((visit) => ({
       ...visit,
       path: normalizePath(visit.path),
+      labelKey: resolveRecentVisitLabelKey(normalizePath(visit.path)),
+      fallbackLabel: resolveRecentVisitFallbackLabel(normalizePath(visit.path)),
       count: Math.max(1, Math.floor(visit.count)),
     }))
     .filter((visit) => shouldTrackRecentVisit(visit.path))
 }
 
-export async function readRecentVisits(user: AuthUser | null): Promise<RecentVisit[]> {
+export async function readRecentVisits(
+  user: AuthUser | null
+): Promise<RecentVisit[]> {
   const storageKey = getRecentVisitsStorageKey(user)
   if (!storageKey) return []
   const raw = await StorageService.getItem<RecentVisit[]>(storageKey)
   return normalizeVisits(raw)
 }
 
-export async function writeRecentVisits(user: AuthUser | null, visits: RecentVisit[]): Promise<void> {
+export async function writeRecentVisits(
+  user: AuthUser | null,
+  visits: RecentVisit[]
+): Promise<void> {
   const storageKey = getRecentVisitsStorageKey(user)
   if (!storageKey) return
 
   await StorageService.setItem(storageKey, visits.slice(0, RECENT_VISITS_LIMIT))
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(RECENT_VISITS_UPDATED_EVENT, { detail: { key: storageKey } }))
+    window.dispatchEvent(
+      new CustomEvent(RECENT_VISITS_UPDATED_EVENT, {
+        detail: { key: storageKey },
+      })
+    )
   }
 }
 
-export async function recordRecentVisit(user: AuthUser | null, path: string): Promise<void> {
+export async function recordRecentVisit(
+  user: AuthUser | null,
+  path: string
+): Promise<void> {
   const normalizedPath = normalizePath(path)
   if (!user || !shouldTrackRecentVisit(normalizedPath)) return
 
@@ -106,16 +131,24 @@ export async function recordRecentVisit(user: AuthUser | null, path: string): Pr
   await writeRecentVisits(user, next)
 }
 
-export function canReadRecentVisit(user: AuthUser | null, visit: RecentVisit): boolean {
+export function canReadRecentVisit(
+  user: AuthUser | null,
+  visit: RecentVisit
+): boolean {
   if (!user) return false
-  const granted = new Set((user.permissions ?? []).map((permission) => permission.trim().toLowerCase()))
+  const granted = new Set(
+    (user.permissions ?? []).map((permission) =>
+      permission.trim().toLowerCase()
+    )
+  )
   if (granted.size === 0) return false
 
   try {
-    const requiredPermission = getMenuPermissionForPath(visit.path).toLowerCase()
+    const requiredPermission = getMenuPermissionForPath(
+      visit.path
+    ).toLowerCase()
     return granted.has(requiredPermission)
   } catch {
     return false
   }
 }
-

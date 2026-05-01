@@ -41,7 +41,7 @@ type PackagingAssemblyCaptureSession struct {
 	Status                 string     `gorm:"size:24;default:'Waiting';index" json:"status"`
 	PackageCode            string     `gorm:"size:120;index;not null" json:"packageCode"`
 	ProductBarcodeSnapshot string     `gorm:"type:text" json:"productBarcodeSnapshot"`
-	AssemblyID             string     `gorm:"type:uuid;index" json:"assemblyId"`
+	AssemblyID             *string    `gorm:"type:uuid;index" json:"assemblyId,omitempty"`
 	SubmittedAt            *time.Time `json:"submittedAt,omitempty"`
 	ExpiresAt              time.Time  `gorm:"index" json:"expiresAt"`
 }
