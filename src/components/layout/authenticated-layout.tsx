@@ -8,11 +8,13 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { GlobalBottomDock } from '@/components/layout/global-bottom-dock'
 import { SkipToMain } from '@/components/skip-to-main'
+import { Search } from '@/components/search'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemMonitor } from '@/features/system-mgmt/monitor/hooks/use-system-monitor'
 import { useAuthStore } from '@/stores/auth-store'
 import { syncIdentitySnapshotFromProfile } from '@/features/authz/services/effective-permission-service'
 import { QuickActionsFloating } from '@/features/quick-actions'
+import { useRecentVisitTracker } from '@/features/recent-visits'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthenticatedLayout')
@@ -122,6 +124,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   useNotifications()
   useSystemMonitor()
+  useRecentVisitTracker()
 
   const isPDAShellRoute = pathname === '/pda-shell'
   const showAssistant = useDeferredActivation(!isPDAShellRoute, 1000)
@@ -249,6 +252,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         {!isPDAShellRoute && (
           <GlobalBottomDock>
             <QuickActionsFloating placement='dock' />
+            <Search placement='dock' />
             <Suspense fallback={null}>
               <NotificationCenter placement='dock' />
             </Suspense>

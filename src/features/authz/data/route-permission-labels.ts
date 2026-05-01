@@ -112,8 +112,20 @@ function normalizePath(path: string): string {
   return normalized || '/'
 }
 
+export function resolveRoutePermissionLabelKey(path: string): TranslationKey | undefined {
+  let normalizedPath = normalizePath(path)
+
+  while (normalizedPath !== '/') {
+    const key = ROUTE_PERMISSION_LABEL_KEYS[normalizedPath]
+    if (key) return key
+    normalizedPath = normalizePath(normalizedPath.split('/').slice(0, -1).join('/'))
+  }
+
+  return ROUTE_PERMISSION_LABEL_KEYS['/']
+}
+
 export function resolveRoutePermissionLabel(path: string): string | undefined {
-  const key = ROUTE_PERMISSION_LABEL_KEYS[normalizePath(path)]
+  const key = resolveRoutePermissionLabelKey(path)
   if (!key) return undefined
   return translate(DEFAULT_LOCALE, key)
 }

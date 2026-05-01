@@ -39,6 +39,7 @@ import { codeCenter } from './codeCenter'
 import { productionQuality } from './productionQuality'
 import { productionArchitecture } from './productionArchitecture'
 import { cuttingOperations } from './cuttingOperations'
+import { recentVisits } from './recentVisits'
 
 export const zhCNMessages = {
   common,
@@ -82,4 +83,5 @@ export const zhCNMessages = {
   productionQuality,
   productionArchitecture,
   cuttingOperations,
+  recentVisits,
 } as const

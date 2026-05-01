@@ -110,7 +110,9 @@ export const systemManagement = {
     modules: {
       warehouse: "Warehouse",
       trading: "Trading",
+      purchase: "Purchase",
       mrp: "MRP",
+      apsScheduling: "APS Scheduling",
       engineering: "Engineering",
       quality: "Quality",
       production: "Production",

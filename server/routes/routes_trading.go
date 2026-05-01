@@ -10,6 +10,7 @@ import (
 
 func registerTradingRoutes(authorized *gin.RouterGroup) {
 	tradingAccess := middleware.RequirePermissions(authz.MenuTrading)
+	purchaseAccess := middleware.RequirePermissions(authz.MenuPurchase)
 	salesOrderManage := middleware.RequirePermissions(authz.ActionTradingSalesOrderManage)
 	salesOrderDelete := middleware.RequirePermissions(authz.ActionTradingSalesOrderDelete)
 	salesOrderSync := middleware.RequirePermissions(authz.ActionTradingSalesOrderSync)
@@ -75,7 +76,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	quoteGroup.POST("/:id/convert", salesOrderManage, handlers.ConvertQuoteHandler)
 
 	supplierGroup := authorized.Group("/suppliers")
-	supplierGroup.Use(tradingAccess)
+	supplierGroup.Use(purchaseAccess)
 	supplierGroup.GET("", handlers.GetSuppliersHandler)
 	supplierGroup.POST("", supplierManage, handlers.SaveSupplierHandler)
 	supplierGroup.POST("/:id/transactions", supplierManage, handlers.ExecuteSupplierTransactionHandler)
@@ -84,7 +85,7 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	supplierGroup.POST("/sync", supplierSync, handlers.BulkSyncSuppliersHandler)
 
 	purchaseGroup := authorized.Group("/purchase")
-	purchaseGroup.Use(tradingAccess)
+	purchaseGroup.Use(purchaseAccess)
 	purchaseGroup.GET("/orders", handlers.GetPurchaseOrdersHandler)
 	purchaseGroup.GET("/deleted-orders", handlers.GetDeletedPurchaseOrdersHandler)
 	purchaseGroup.GET("/returns", handlers.GetPurchaseReturnsHandler)
@@ -99,6 +100,6 @@ func registerTradingRoutes(authorized *gin.RouterGroup) {
 	purchaseGroup.DELETE("/orders/:id", purchaseOrderDelete, handlers.DeletePurchaseOrderHandler)
 
 	mrpGroup := authorized.Group("/mrp")
-	mrpGroup.Use(tradingAccess)
+	mrpGroup.Use(middleware.RequirePermissions(authz.MenuMrp))
 	mrpGroup.GET("/requirements", handlers.GetMrpRequirementsHandler)
 }

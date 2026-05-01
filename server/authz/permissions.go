@@ -5,7 +5,9 @@ const (
 	MenuWarehouse       = "menu_warehouse"
 	MenuWarehouseConfig = "menu_warehouse_config"
 	MenuMrp             = "menu_mrp"
+	MenuApsScheduling   = "menu_aps_scheduling"
 	MenuTrading         = "menu_trading"
+	MenuPurchase        = "menu_purchase"
 	MenuOrg             = "menu_org"
 	MenuEngineering     = "menu_engineering"
 	MenuQuality         = "menu_quality"
@@ -115,7 +117,9 @@ var AdminFallbackPermissions = []string{
 	MenuWarehouse,
 	MenuWarehouseConfig,
 	MenuMrp,
+	MenuApsScheduling,
 	MenuTrading,
+	MenuPurchase,
 	MenuOrg,
 	MenuEngineering,
 	MenuQuality,

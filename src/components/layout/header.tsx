@@ -5,18 +5,17 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { TopNav } from '@/components/layout/top-nav'
 import { topNav } from '@/components/layout/data/sidebar-data'
-import { Search } from '@/components/search'
 import { LanguageSwitch } from '@/components/language-switch'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { AuthDebugIndicator } from '@/components/layout/auth-debug-indicator'
+import { RecentVisitsBar } from '@/features/recent-visits'
 
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean
   showSidebarTrigger?: boolean
   showTopNav?: boolean
-  showGlobalSearch?: boolean
   showThemeSwitch?: boolean
   showProfileDropdown?: boolean
   showConfigDrawer?: boolean
@@ -28,7 +27,6 @@ export function Header({
   fixed,
   showSidebarTrigger = true,
   showTopNav = true,
-  showGlobalSearch = true,
   showThemeSwitch = true,
   showProfileDropdown = true,
   showConfigDrawer = false,
@@ -87,22 +85,14 @@ export function Header({
         </div>
 
         {/* === 中心 (Center) === */}
-        <div className='flex justify-center items-center px-4 h-full min-w-0'>
-            {showGlobalSearch && (
-            <div className='hidden md:block w-full max-w-md'>
-                <Search className='sm:w-full lg:w-full xl:w-full max-w-md' />
-            </div>
-            )}
+        <div className='flex min-w-0 items-center justify-center px-2 md:px-4 h-full'>
+          <RecentVisitsBar />
         </div>
 
         {/* === 右翼 (Right Wing) === */}
         <div className='flex items-center justify-end gap-2 md:gap-4 h-full px-2'>
-            {(showGlobalSearch || showThemeSwitch || showProfileDropdown || showConfigDrawer) && (
+            {(showThemeSwitch || showProfileDropdown || showConfigDrawer) && (
             <div className='flex items-center justify-end gap-2 md:gap-4 shrink-0 relative z-50'>
-                <div className='md:hidden flex items-center'>
-                    {showGlobalSearch && <Search className='sm:w-9' />}
-                </div>
-
                 {showThemeSwitch && (
                     <div className='flex items-center gap-2 md:gap-3 p-1 rounded-md'>
                         <AuthDebugIndicator />

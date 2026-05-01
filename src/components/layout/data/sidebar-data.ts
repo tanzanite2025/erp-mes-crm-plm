@@ -67,6 +67,22 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: BarChart3,
         permissionId: permissionIdForPath('/dashboard/overview'),
       },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.purchaseManagement',
+    items: [
+      {
+        titleKey: 'sidebar.items.purchaseManagement',
+        url: '/purchase',
+        icon: Truck,
+        permissionId: permissionIdForPath('/purchase'),
+      },
+    ],
+  },
+  {
+    titleKey: 'sidebar.groups.planningCenter',
+    items: [
       {
         titleKey: 'sidebar.items.mrp',
         url: '/mrp',
@@ -74,10 +90,10 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/mrp'),
       },
       {
-        titleKey: 'sidebar.items.purchaseManagement',
-        url: '/purchase',
-        icon: Truck,
-        permissionId: permissionIdForPath('/purchase'),
+        titleKey: 'sidebar.items.apsScheduling',
+        url: '/aps-scheduling',
+        icon: Calendar,
+        permissionId: permissionIdForPath('/aps-scheduling'),
       },
     ],
   },
@@ -198,12 +214,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         url: '/piecework',
         icon: CheckSquare,
         permissionId: permissionIdForPath('/piecework'),
-      },
-      {
-        titleKey: 'sidebar.items.apsScheduling',
-        url: '/aps-scheduling',
-        icon: Calendar,
-        permissionId: permissionIdForPath('/aps-scheduling'),
       },
       {
         titleKey: 'sidebar.items.productionArchitecture',
@@ -367,16 +377,38 @@ export const sidebarData: SidebarData = {
           permissionId: permissionIdForPath('/dashboard/overview'),
         },
         {
+          title: '原材料管理',
+          url: '/raw-materials',
+          icon: Database,
+          permissionId: permissionIdForPath('/raw-materials'),
+        },
+      ],
+    },
+    {
+      title: '采购管理',
+      items: [
+        {
           title: '采购管理',
           url: '/purchase',
           icon: Truck,
           permissionId: permissionIdForPath('/purchase'),
         },
+      ],
+    },
+    {
+      title: '计划中心',
+      items: [
         {
-          title: '原材料管理',
-          url: '/raw-materials',
-          icon: Database,
-          permissionId: permissionIdForPath('/raw-materials'),
+          title: 'MRP',
+          url: '/mrp',
+          icon: Gauge,
+          permissionId: permissionIdForPath('/mrp'),
+        },
+        {
+          title: 'APS排产',
+          url: '/aps-scheduling',
+          icon: Calendar,
+          permissionId: permissionIdForPath('/aps-scheduling'),
         },
       ],
     },

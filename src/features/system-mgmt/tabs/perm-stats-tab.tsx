@@ -71,7 +71,9 @@ export function PermStatsTab() {
     const modules = [
       { label: t('systemManagement.permissionAudit.modules.warehouse'), id: 'menu_warehouse' },
       { label: t('systemManagement.permissionAudit.modules.trading'), id: 'menu_trading' },
+      { label: t('systemManagement.permissionAudit.modules.purchase'), id: 'menu_purchase' },
       { label: t('systemManagement.permissionAudit.modules.mrp'), id: 'menu_mrp' },
+      { label: t('systemManagement.permissionAudit.modules.apsScheduling'), id: 'menu_aps_scheduling' },
       { label: t('systemManagement.permissionAudit.modules.engineering'), id: 'menu_engineering' },
       { label: t('systemManagement.permissionAudit.modules.quality'), id: 'menu_quality' },
       { label: t('systemManagement.permissionAudit.modules.production'), id: 'menu_prod_config' },

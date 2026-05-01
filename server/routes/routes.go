@@ -43,6 +43,7 @@ func SetupRoutes(r *gin.Engine) {
 		pieceworkAccess := middleware.RequirePermissions(authz.MenuPiecework)
 		printAccess := middleware.RequirePermissions(authz.MenuSettings)
 		tradingAccess := middleware.RequirePermissions(authz.MenuTrading)
+		tradingOrPurchaseAccess := middleware.RequirePermissions(authz.MenuTrading, authz.MenuPurchase)
 		tradingLogisticsManage := middleware.RequirePermissions(authz.ActionTradingLogisticsManage)
 		tradingLogisticsStatus := middleware.RequirePermissions(authz.ActionTradingLogisticsStatusUpdate)
 		tradingLogisticsDelete := middleware.RequirePermissions(authz.ActionTradingLogisticsDelete)
@@ -140,7 +141,7 @@ func SetupRoutes(r *gin.Engine) {
 		}
 
 		logisticsGroup := authorized.Group("/logistics")
-		logisticsGroup.Use(tradingAccess)
+		logisticsGroup.Use(tradingOrPurchaseAccess)
 		{
 			logisticsGroup.GET("", handlers.GetLogisticsRecordsHandler)
 			logisticsGroup.GET("/:id", handlers.GetLogisticsRecordHandler)

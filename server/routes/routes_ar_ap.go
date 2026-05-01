@@ -10,6 +10,7 @@ import (
 
 func registerArApRoutes(authorized *gin.RouterGroup) {
 	tradingRead := middleware.RequirePermissions(authz.MenuTrading)
+	purchaseRead := middleware.RequirePermissions(authz.MenuPurchase)
 
 	receivables := authorized.Group("/receivables")
 	{
@@ -21,9 +22,9 @@ func registerArApRoutes(authorized *gin.RouterGroup) {
 
 	payables := authorized.Group("/payables")
 	{
-		payables.GET("", tradingRead, handlers.GetPayableLedgersHandler)
-		payables.GET("/search", tradingRead, handlers.SearchPayableLedgersHandler)
-		payables.GET("/:id", tradingRead, handlers.GetPayableLedgerHandler)
-		payables.POST("/:id/payments", tradingRead, handlers.CreatePaymentRecordHandler)
+		payables.GET("", purchaseRead, handlers.GetPayableLedgersHandler)
+		payables.GET("/search", purchaseRead, handlers.SearchPayableLedgersHandler)
+		payables.GET("/:id", purchaseRead, handlers.GetPayableLedgerHandler)
+		payables.POST("/:id/payments", purchaseRead, handlers.CreatePaymentRecordHandler)
 	}
 }
