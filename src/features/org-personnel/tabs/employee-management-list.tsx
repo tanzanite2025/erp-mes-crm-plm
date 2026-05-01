@@ -10,6 +10,7 @@ import {
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    type PaginationState,
     type Row,
     useReactTable,
 } from '@tanstack/react-table'
@@ -75,6 +76,7 @@ export function EmployeeManagementList() {
     const [itemsToDelete, setItemsToDelete] = useState<Employee[]>([])
     const [globalFilter, setGlobalFilter] = useState('')
     const [searchValue, setSearchValue] = useState('')
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
 
     const employeesQuery = useQuery({
         queryKey: personnelQueryKeys.employees(),
@@ -279,10 +281,12 @@ export function EmployeeManagementList() {
             rowSelection,
             columnVisibility,
             globalFilter,
+            pagination,
         },
         meta: { nameMap },
         onColumnVisibilityChange: setColumnVisibility,
         onGlobalFilterChange: setGlobalFilter,
+        onPaginationChange: setPagination,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -295,6 +299,16 @@ export function EmployeeManagementList() {
             return id === 'name' || id === 'staffId'
         },
     })
+
+    const pageCount = table.getPageCount()
+    useEffect(() => {
+        setPagination((current) => {
+            const maxPageIndex = Math.max(pageCount - 1, 0)
+            return current.pageIndex > maxPageIndex
+                ? { ...current, pageIndex: maxPageIndex }
+                : current
+        })
+    }, [pageCount])
 
     const recentResignPreviewNames = recentResignSnapshot
         ? recentResignSnapshot.employees

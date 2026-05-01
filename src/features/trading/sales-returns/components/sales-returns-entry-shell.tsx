@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -214,29 +214,12 @@ export function SalesReturnsEntryShell({
           )}
 
           {sourceTotalPages > 1 ? (
-            <div className='mt-2 flex items-center justify-center gap-4'>
-              <Button
-                variant='outline'
-                size='icon'
-                disabled={sourcePage === 1}
-                onClick={() => onSourcePageChange(sourcePage - 1)}
-                className='size-10 rounded-full'
-              >
-                <ChevronLeft className='size-4' />
-              </Button>
-              <span className='font-mono text-[10px] font-black'>
-                {sourcePage} / {sourceTotalPages}
-              </span>
-              <Button
-                variant='outline'
-                size='icon'
-                disabled={sourcePage >= sourceTotalPages}
-                onClick={() => onSourcePageChange(sourcePage + 1)}
-                className='size-10 rounded-full'
-              >
-                <ChevronRight className='size-4' />
-              </Button>
-            </div>
+            <CompactPaginationControls
+              className='mt-2'
+              page={sourcePage}
+              totalPages={sourceTotalPages}
+              onPageChange={onSourcePageChange}
+            />
           ) : null}
         </div>
 
@@ -290,29 +273,12 @@ export function SalesReturnsEntryShell({
             )}
 
             {returnTotalPages > 1 ? (
-              <div className='mt-6 flex items-center justify-center gap-4'>
-                <Button
-                  variant='outline'
-                  size='icon'
-                  disabled={returnPage === 1}
-                  onClick={() => onReturnPageChange(returnPage - 1)}
-                  className='size-10 rounded-full'
-                >
-                  <ChevronLeft className='size-4' />
-                </Button>
-                <span className='font-mono text-[10px] font-black'>
-                  {returnPage} / {returnTotalPages}
-                </span>
-                <Button
-                  variant='outline'
-                  size='icon'
-                  disabled={returnPage >= returnTotalPages}
-                  onClick={() => onReturnPageChange(returnPage + 1)}
-                  className='size-10 rounded-full'
-                >
-                  <ChevronRight className='size-4' />
-                </Button>
-              </div>
+              <CompactPaginationControls
+                className='mt-6'
+                page={returnPage}
+                totalPages={returnTotalPages}
+                onPageChange={onReturnPageChange}
+              />
             ) : null}
           </div>
         </div>

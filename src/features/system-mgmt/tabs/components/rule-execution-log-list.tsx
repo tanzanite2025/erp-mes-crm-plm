@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { type RuleExecutionLog } from '../../workflow-core/data/rule-execution-log-schema'
 import {
   formatTargets,
@@ -122,29 +122,23 @@ export function RuleExecutionLogList({
         )
       })}
 
-      <div className='flex items-center justify-between pt-2'>
-        <p className='text-xs text-muted-foreground'>
-          当前第 {page} / {totalPages} 页，共 {total} 条
-        </p>
-        <div className='flex gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={page <= 1 || isFetching}
-            onClick={onPreviousPage}
-          >
-            上一页
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            disabled={page >= totalPages || isFetching}
-            onClick={onNextPage}
-          >
-            下一页
-          </Button>
-        </div>
-      </div>
+      <CompactPaginationControls
+        className='justify-between pt-2'
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        disabled={isFetching}
+        summaryClassName='min-w-[168px] text-left'
+        onPageChange={(nextPage) => {
+          if (nextPage > page) {
+            onNextPage()
+            return
+          }
+          if (nextPage < page) {
+            onPreviousPage()
+          }
+        }}
+      />
     </>
   )
 }

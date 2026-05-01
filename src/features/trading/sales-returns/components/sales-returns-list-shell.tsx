@@ -1,13 +1,7 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  RotateCcw,
-  Search,
-} from 'lucide-react'
+import { Loader2, RotateCcw, Search } from 'lucide-react'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { isForbiddenError } from '@/lib/error-status'
 import { useLanguage } from '@/context/language-provider'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -180,29 +174,12 @@ export function SalesReturnsListShell({
       </div>
 
       {totalPages > 1 ? (
-        <div className='mt-2 flex items-center justify-center gap-4'>
-          <Button
-            variant='outline'
-            size='icon'
-            disabled={page === 1}
-            onClick={() => onPageChange(page - 1)}
-            className='size-10 rounded-full'
-          >
-            <ChevronLeft className='size-4' />
-          </Button>
-          <span className='font-mono text-[10px] font-black'>
-            {page} / {totalPages}
-          </span>
-          <Button
-            variant='outline'
-            size='icon'
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-            className='size-10 rounded-full'
-          >
-            <ChevronRight className='size-4' />
-          </Button>
-        </div>
+        <CompactPaginationControls
+          className='mt-2'
+          page={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
       ) : null}
     </div>
   )

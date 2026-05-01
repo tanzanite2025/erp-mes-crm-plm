@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import {
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Plus,
   Search,
@@ -11,6 +9,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
+import { CompactPaginationControls } from '@/components/pagination/compact-pagination-controls'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -667,29 +666,12 @@ export function SalesOrderList() {
                 )}
 
                 {showCanceledSection && canceledTotal > pageSize && (
-                  <div className='mt-2 flex items-center justify-center gap-4'>
-                    <Button
-                      variant='outline'
-                      size='icon'
-                      disabled={canceledPage === 1}
-                      onClick={() => setCanceledPage((p) => p - 1)}
-                      className='size-10 rounded-full'
-                    >
-                      <ChevronLeft className='size-4' />
-                    </Button>
-                    <span className='font-mono text-[10px] font-black'>
-                      {canceledPage} / {Math.ceil(canceledTotal / pageSize)}
-                    </span>
-                    <Button
-                      variant='outline'
-                      size='icon'
-                      disabled={canceledPage >= Math.ceil(canceledTotal / pageSize)}
-                      onClick={() => setCanceledPage((p) => p + 1)}
-                      className='size-10 rounded-full'
-                    >
-                      <ChevronRight className='size-4' />
-                    </Button>
-                  </div>
+                  <CompactPaginationControls
+                    className='mt-2'
+                    page={canceledPage}
+                    totalPages={Math.ceil(canceledTotal / pageSize)}
+                    onPageChange={setCanceledPage}
+                  />
                 )}
               </div>
             )}
@@ -697,29 +679,12 @@ export function SalesOrderList() {
         </ScrollArea>
 
         {total > pageSize && (
-          <div className='mt-2 flex items-center justify-center gap-4'>
-            <Button
-              variant='outline'
-              size='icon'
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className='size-10 rounded-full'
-            >
-              <ChevronLeft className='size-4' />
-            </Button>
-            <span className='font-mono text-[10px] font-black'>
-              {page} / {Math.ceil(total / pageSize)}
-            </span>
-            <Button
-              variant='outline'
-              size='icon'
-              disabled={page >= Math.ceil(total / pageSize)}
-              onClick={() => setPage((p) => p + 1)}
-              className='size-10 rounded-full'
-            >
-              <ChevronRight className='size-4' />
-            </Button>
-          </div>
+          <CompactPaginationControls
+            className='mt-2'
+            page={page}
+            totalPages={Math.ceil(total / pageSize)}
+            onPageChange={setPage}
+          />
         )}
       </div>
 
