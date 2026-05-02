@@ -10,11 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type deltaValue struct {
-	Old json.RawMessage `json:"o"`
-	New json.RawMessage `json:"n"`
-}
-
 // decodeJSONBodyMap extracts the raw JSON body and unmarshals it into a map of raw messages.
 // This allows for partial updates while maintaining awareness of which fields were explicitly provided.
 func decodeJSONBodyMap(c *gin.Context) (map[string]json.RawMessage, []byte, error) {
@@ -32,12 +27,19 @@ func decodeJSONBodyMap(c *gin.Context) (map[string]json.RawMessage, []byte, erro
 }
 
 func extractDeltaNewValue(raw json.RawMessage) (json.RawMessage, error) {
-	var value deltaValue
-	if err := json.Unmarshal(raw, &value); err == nil && value.New != nil {
-		return value.New, nil
+	var value map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &value); err != nil || value == nil {
+		return nil, errors.New("delta value must be an SDRTS object with o and n")
 	}
-
-	return raw, nil
+	oldValue, hasOld := value["o"]
+	newValue, hasNew := value["n"]
+	if !hasOld || oldValue == nil || !hasNew || newValue == nil {
+		return nil, errors.New("delta value must include both o and n")
+	}
+	if len(value) != 2 {
+		return nil, errors.New("delta value must only contain o and n")
+	}
+	return newValue, nil
 }
 
 func parseOptionalTimeValue(raw json.RawMessage) (*time.Time, error) {

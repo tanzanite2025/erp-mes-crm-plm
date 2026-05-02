@@ -46,7 +46,7 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 	var orders []models.SalesOrder
 	var total int64
 
-	tx := db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false)
+	tx := db.DB.Model(&models.SalesOrder{})
 	customerID := strings.TrimSpace(query.CustomerID)
 	if customerID != "" {
 		tx = tx.Where("customer_id = ?", customerID)
@@ -130,7 +130,7 @@ func ListSalesOrders(query SalesOrderListQuery) (SalesOrderListResponse, error) 
 
 func GetSalesOrderByID(id string) (SalesOrderResponse, error) {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false).First(&order).Error; err != nil {
+	if err := db.DB.Preload("Lines").Where("id = ?", id).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
 	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
@@ -142,7 +142,7 @@ func GetSalesOrderByID(id string) (SalesOrderResponse, error) {
 
 func GetSalesOrderByNo(orderNo string) (SalesOrderResponse, error) {
 	var order models.SalesOrder
-	if err := db.DB.Preload("Lines").Where("order_no = ? AND is_deleted = ?", orderNo, false).First(&order).Error; err != nil {
+	if err := db.DB.Preload("Lines").Where("order_no = ?", orderNo).First(&order).Error; err != nil {
 		return SalesOrderResponse{}, err
 	}
 	returnedQuantityMap, err := loadSalesOrderReturnedQuantityMap(db.DB, []models.SalesOrder{order})
@@ -172,12 +172,16 @@ func DeleteSalesOrder(id string) error {
 		return ErrSalesOrderDeleteHasReturns
 	}
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
-		return tx.Model(&order).Updates(map[string]interface{}{
-			"is_deleted": true,
-			"version":    order.Version + 1,
-		}).Error
-	})
+	if err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&order).Update("version", order.Version+1).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&order).Error
+	}); err != nil {
+		return err
+	}
+	deleteSearchDocument(order.ID)
+	return nil
 }
 
 func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
@@ -295,8 +299,11 @@ func SaveSalesOrderForBulkSync(tx *gorm.DB, order *models.SalesOrder) error {
 		"barcode":                order.Barcode,
 		"requirements":           order.Requirements,
 		"updated_by":             order.UpdatedBy,
-		"is_deleted":             order.IsDeleted,
+		"deleted_at":             nil,
 		"version":                order.Version,
+	}
+	if order.DeletedAt.Valid || order.IsDeleted {
+		updates["deleted_at"] = gorm.Expr("COALESCE(deleted_at, NOW())")
 	}
 	return tx.Model(&existing).Updates(updates).Error
 }
@@ -329,7 +336,10 @@ func ListPurchaseOrders(query PurchaseOrderListQuery) (PurchaseOrderListResponse
 	var orders []models.PurchaseOrder
 	var total int64
 
-	tx := db.DB.Model(&models.PurchaseOrder{}).Where("is_deleted = ?", query.Deleted)
+	tx := db.DB.Model(&models.PurchaseOrder{})
+	if query.Deleted {
+		tx = tx.Unscoped().Where("deleted_at IS NOT NULL")
+	}
 	statusFilterRaw := strings.TrimSpace(query.StatusFilterRaw)
 	if statusFilterRaw != "" {
 		statuses := make([]string, 0)
@@ -372,5 +382,18 @@ func GetPurchaseOrderByID(id string) (PurchaseOrderResponse, error) {
 }
 
 func DeletePurchaseOrder(id string) error {
-	return db.DB.Model(&models.PurchaseOrder{}).Where("id = ?", id).Update("is_deleted", true).Error
+	var order models.PurchaseOrder
+	if err := db.DB.Where("id = ?", id).First(&order).Error; err != nil {
+		return err
+	}
+	if err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&order).Update("version", order.Version+1).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&order).Error
+	}); err != nil {
+		return err
+	}
+	deleteSearchDocument(order.ID)
+	return nil
 }

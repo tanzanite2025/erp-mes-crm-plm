@@ -98,7 +98,7 @@ func ExecutePurchaseOrderReceiptConfirmation(command ExecutePurchaseOrderReceipt
 		var current models.PurchaseOrder
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Preload("Lines").
-			Where("id = ? AND is_deleted = ?", strings.TrimSpace(command.OrderID), false).
+			Where("id = ?", strings.TrimSpace(command.OrderID)).
 			First(&current).Error; err != nil {
 			return err
 		}

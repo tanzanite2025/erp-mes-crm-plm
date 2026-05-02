@@ -129,7 +129,7 @@ func loadReceivableSettlementBundle(tx *gorm.DB, orders []models.SalesOrder) (re
 func resolveReceivableSalesOrderTx(tx *gorm.DB, id string) (models.SalesOrder, error) {
 	id = strings.TrimSpace(id)
 	var order models.SalesOrder
-	if err := tx.Where("id = ? AND is_deleted = ? AND LOWER(COALESCE(status, '')) <> LOWER(?)", id, false, "Canceled").First(&order).Error; err != nil {
+	if err := tx.Where("id = ? AND LOWER(COALESCE(status, '')) <> LOWER(?)", id, "Canceled").First(&order).Error; err != nil {
 		return models.SalesOrder{}, err
 	}
 	return order, nil

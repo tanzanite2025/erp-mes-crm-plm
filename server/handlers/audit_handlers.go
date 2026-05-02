@@ -1,13 +1,60 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
+	"strings"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
+
+// auditModulePermissionMap maps canonical audit module keys to the menu permissions
+// required to access their timeline data. A module must have at least one matching
+// permission for the requesting user; unknown modules are denied (fail-closed).
+var auditModulePermissionMap = map[string][]string{
+	services.AuditModuleSalesOrder:     {authz.MenuTrading},
+	services.AuditModulePurchaseOrder:  {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModuleCustomer:       {authz.MenuTrading},
+	services.AuditModuleSupplier:       {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModuleEmployee:       {authz.MenuOrg},
+	services.AuditModuleProductionLine: {authz.MenuProdConfig, authz.MenuEquipment},
+	"Inventory":                        {authz.MenuWarehouse},
+	"Shipment":                         {authz.MenuWarehouse},
+	"InspectionStandard":               {authz.MenuQuality},
+	"InspectionTask":                   {authz.MenuQuality},
+}
+
+// enforceAuditModulePermission checks whether the requesting user has permission
+// to access audit data for the given module. Returns true if access is granted.
+func enforceAuditModulePermission(c *gin.Context, module string) bool {
+	canonical := services.NormalizeAuditModule(module)
+	if canonical == "" {
+		canonical = strings.TrimSpace(module)
+	}
+
+	requiredPermissions, ok := auditModulePermissionMap[canonical]
+	if !ok {
+		// Fail-closed: unknown module → deny access and log for visibility.
+		log.Printf("[AUDIT_SECURITY] Denied timeline access for unknown module=%q user=%s ip=%s",
+			module, middleware.GetSafeUserID(c), c.ClientIP())
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] 无权访问该模块的审计数据"})
+		return false
+	}
+
+	if !middleware.HasAnyPermission(c, requiredPermissions...) {
+		log.Printf("[AUDIT_SECURITY] Denied timeline access for module=%q user=%s ip=%s (insufficient permissions)",
+			module, middleware.GetSafeUserID(c), c.ClientIP())
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] 无权访问该模块的审计数据"})
+		return false
+	}
+
+	return true
+}
 
 // GetDataTimelineHandler 获取指定对象的数据时间轴
 func GetDataTimelineHandler(c *gin.Context) {
@@ -16,6 +63,11 @@ func GetDataTimelineHandler(c *gin.Context) {
 
 	if module == "" || targetID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] module and target_id are required"})
+		return
+	}
+
+	// [SECURITY] 校验用户是否拥有该审计模块的访问权限
+	if !enforceAuditModulePermission(c, module) {
 		return
 	}
 

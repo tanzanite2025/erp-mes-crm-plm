@@ -46,6 +46,19 @@ func syncSearchDocument(doc SearchDocument) {
 	}()
 }
 
+func deleteSearchDocument(id string) {
+	if GlobalSearchClient == nil {
+		return
+	}
+	normalizedID := strings.TrimSpace(id)
+	if normalizedID == "" {
+		return
+	}
+	go func() {
+		_ = GlobalSearchClient.DeleteIndex(normalizedID)
+	}()
+}
+
 func inventorySearchDocument(inv models.Inventory) SearchDocument {
 	return SearchDocument{
 		ID:       inv.ID,

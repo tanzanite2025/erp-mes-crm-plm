@@ -62,3 +62,21 @@ func TestParseSalesOrderSavePayloadRejectsNestedDeltaPath(t *testing.T) {
 	require.ErrorIs(t, err, ErrSalesTransactionInvalidPayload)
 	require.ErrorContains(t, err, "nested delta path is not supported")
 }
+
+func TestExtractDeltaNewValueRejectsLiteralDelta(t *testing.T) {
+	_, err := extractDeltaNewValue(json.RawMessage(`"Inactive"`))
+	require.Error(t, err)
+	require.ErrorContains(t, err, "SDRTS object")
+}
+
+func TestExtractDeltaNewValueRejectsMissingOldValue(t *testing.T) {
+	_, err := extractDeltaNewValue(json.RawMessage(`{"n":"Inactive"}`))
+	require.Error(t, err)
+	require.ErrorContains(t, err, "both o and n")
+}
+
+func TestExtractDeltaNewValueAllowsNullOldValue(t *testing.T) {
+	value, err := extractDeltaNewValue(json.RawMessage(`{"o":null,"n":"Inactive"}`))
+	require.NoError(t, err)
+	require.JSONEq(t, `"Inactive"`, string(value))
+}

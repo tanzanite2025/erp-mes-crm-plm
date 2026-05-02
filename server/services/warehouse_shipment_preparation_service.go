@@ -41,7 +41,7 @@ func ListShipmentDemands() (ShipmentDemandListResponse, error) {
 	var orders []models.SalesOrder
 	if err := db.DB.
 		Preload("Lines").
-		Where("is_deleted = ? AND status IN ?", false, activeShipmentDemandOrderStatuses()).
+		Where("status IN ?", activeShipmentDemandOrderStatuses()).
 		Order("delivery_date asc, order_date asc, order_no asc").
 		Find(&orders).Error; err != nil {
 		return ShipmentDemandListResponse{}, err
@@ -174,7 +174,7 @@ func PrepareVirtualShipment(input PrepareVirtualShipmentRequest) (InventoryShipm
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		var order models.SalesOrder
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND is_deleted = ?", input.SalesOrderID, false).
+			Where("id = ?", input.SalesOrderID).
 			First(&order).Error; err != nil {
 			return errors.New("[CRITICAL_DATA_INTEGRITY] sales order not found")
 		}
@@ -205,7 +205,7 @@ func PrepareVirtualShipment(input PrepareVirtualShipmentRequest) (InventoryShipm
 			return errors.New("[VALIDATION] virtual shipment quantity exceeds remaining order demand")
 		}
 
-		if err := transferInventoryTx(tx, TransferInventoryInput{
+		if _, err := transferInventoryTx(tx, TransferInventoryInput{
 			MaterialID:   materialID,
 			Quantity:     input.Quantity,
 			FromCategory: sourceCategory,

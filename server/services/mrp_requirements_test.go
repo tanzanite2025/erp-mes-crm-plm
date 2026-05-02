@@ -83,6 +83,7 @@ func setupMrpRequirementsTestDB(t *testing.T) *gorm.DB {
 			status TEXT,
 			order_date TEXT,
 			delivery_date TEXT,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN
 		)
 	`).Error)

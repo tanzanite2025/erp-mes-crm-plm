@@ -379,7 +379,7 @@ func executeCustomerUnifiedSaveTx(tx *gorm.DB, current *models.Customer, input E
 	if mergedFinalData.Code != strings.TrimSpace(current.Code) {
 		var duplicateCount int64
 		if err := tx.Model(&models.Customer{}).
-			Where("code = ? AND id <> ? AND is_deleted = ?", mergedFinalData.Code, current.ID, false).
+			Where("code = ? AND id <> ?", mergedFinalData.Code, current.ID).
 			Count(&duplicateCount).Error; err != nil {
 			return nil, err
 		}
@@ -504,7 +504,7 @@ func executeSupplierUnifiedSaveTx(tx *gorm.DB, current *models.Supplier, input E
 	if mergedFinalData.Code != strings.TrimSpace(current.Code) {
 		var duplicateCount int64
 		if err := tx.Model(&models.Supplier{}).
-			Where("code = ? AND id <> ? AND is_deleted = ?", mergedFinalData.Code, current.ID, false).
+			Where("code = ? AND id <> ?", mergedFinalData.Code, current.ID).
 			Count(&duplicateCount).Error; err != nil {
 			return nil, err
 		}
@@ -605,7 +605,7 @@ func executeCustomerTransactionTx(tx *gorm.DB, input ExecuteCustomerTransactionI
 	}
 
 	var current models.Customer
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ? AND is_deleted = ?", input.CustomerID, false).Error; err != nil {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", input.CustomerID).Error; err != nil {
 		return nil, err
 	}
 
@@ -659,7 +659,7 @@ func executeCustomerIdentityChangeTx(tx *gorm.DB, current *models.Customer, inpu
 
 	var duplicateCount int64
 	if err := tx.Model(&models.Customer{}).
-		Where("code = ? AND id <> ? AND is_deleted = ?", nextCode, current.ID, false).
+		Where("code = ? AND id <> ?", nextCode, current.ID).
 		Count(&duplicateCount).Error; err != nil {
 		return nil, err
 	}
@@ -794,7 +794,7 @@ func executeSupplierTransactionTx(tx *gorm.DB, input ExecuteSupplierTransactionI
 	}
 
 	var current models.Supplier
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ? AND is_deleted = ?", input.SupplierID, false).Error; err != nil {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&current, "id = ?", input.SupplierID).Error; err != nil {
 		return nil, err
 	}
 
@@ -848,7 +848,7 @@ func executeSupplierIdentityChangeTx(tx *gorm.DB, current *models.Supplier, inpu
 
 	var duplicateCount int64
 	if err := tx.Model(&models.Supplier{}).
-		Where("code = ? AND id <> ? AND is_deleted = ?", nextCode, current.ID, false).
+		Where("code = ? AND id <> ?", nextCode, current.ID).
 		Count(&duplicateCount).Error; err != nil {
 		return nil, err
 	}

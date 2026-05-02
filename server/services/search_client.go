@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -65,6 +66,28 @@ func (s *SearchServiceClient) SyncIndex(doc SearchDocument) error {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("[CRITICAL][SEARCH_ERROR] Search engine returned status %d for ID %s", resp.StatusCode, doc.ID)
+		return fmt.Errorf("search engine status: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (s *SearchServiceClient) DeleteIndex(id string) error {
+	url := fmt.Sprintf("%s/v1/index/%s", s.BaseURL, url.PathEscape(strings.TrimSpace(id)))
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return fmt.Errorf("create search delete request failed: %w", err)
+	}
+
+	resp, err := s.HTTPClient.Do(req)
+	if err != nil {
+		log.Printf("[CRITICAL][SEARCH_OFFLINE] Failed to delete search index for ID %s: %v", id, err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("[CRITICAL][SEARCH_ERROR] Search engine returned status %d while deleting ID %s", resp.StatusCode, id)
 		return fmt.Errorf("search engine status: %d", resp.StatusCode)
 	}
 

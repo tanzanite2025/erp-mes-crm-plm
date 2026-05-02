@@ -152,8 +152,8 @@ export const engineering = {
     createBom: '新增配方',
   },
   productBarcode: {
-    syncSequenceSuccess: '已从云端同步最新 36 进制流水号：{{sn}}',
-    syncSequenceFailed: '同步流水号失败，请检查网络',
+    syncSequenceSuccess: '预览流水号已递增至：{{sn}}',
+    syncSequenceFailed: '预览流水号递增失败，请检查当前值',
     templateName: '产品标签 - {{name}}',
     printBatchSuccess: '已记录打印批次，当前 SN: {{sn}}',
     printBatchFailed: '原子化打印失败，请重试',

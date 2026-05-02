@@ -437,6 +437,33 @@ func ensureSalesOrderIntegrityConstraints() {
 	}
 }
 
+func backfillTradingSoftDeleteTimestamps() {
+	if DB == nil {
+		return
+	}
+
+	targets := []string{
+		"sales_orders",
+		"purchase_orders",
+		"customers",
+		"suppliers",
+	}
+
+	for _, tableName := range targets {
+		if !DB.Migrator().HasTable(tableName) {
+			continue
+		}
+		if !DB.Migrator().HasColumn(tableName, "deleted_at") || !DB.Migrator().HasColumn(tableName, "is_deleted") {
+			continue
+		}
+		if err := DB.Exec(
+			"UPDATE " + tableName + " SET deleted_at = COALESCE(deleted_at, updated_at, created_at, NOW()) WHERE deleted_at IS NULL AND COALESCE(is_deleted, FALSE) = TRUE",
+		).Error; err != nil {
+			log.Fatal("Failed to backfill deleted_at for table ", tableName, ": ", err)
+		}
+	}
+}
+
 func dropLegacyWorkflowArtifacts() {
 	if DB == nil || DB.Dialector.Name() != "postgres" {
 		return
@@ -1016,6 +1043,7 @@ func InitDB(dsn string) {
 	ensureUserIntegrityConstraints()
 	backfillBlankProductSKUs()
 	backfillBlankSalesOrderNos()
+	backfillTradingSoftDeleteTimestamps()
 	backfillLeaveRequestSubmittedByUsers()
 	ensureProductIntegrityConstraints()
 	ensureSalesOrderIntegrityConstraints()

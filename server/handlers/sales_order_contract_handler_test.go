@@ -44,6 +44,7 @@ func setupSalesOrderContractHandlerDB(t *testing.T) *gorm.DB {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1

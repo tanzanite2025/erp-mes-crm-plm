@@ -27,6 +27,7 @@ func setupSalesOrderIdentityTestDB(t *testing.T) *gorm.DB {
 			barcode TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE
 		)
 	`).Error)

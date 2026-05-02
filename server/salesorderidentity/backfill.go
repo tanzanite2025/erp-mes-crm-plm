@@ -26,7 +26,7 @@ func PlanBlankSalesOrderNoBackfill(database *gorm.DB) ([]BlankSalesOrderNoPlan, 
 	var candidates []blankSalesOrderNoCandidate
 	if err := database.Table("sales_orders").
 		Select("id", "customer_name", "barcode").
-		Where("is_deleted = false AND (order_no IS NULL OR length(trim(order_no)) = 0)").
+		Where("deleted_at IS NULL AND (order_no IS NULL OR length(trim(order_no)) = 0)").
 		Order("created_at ASC, id ASC").
 		Scan(&candidates).Error; err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func PlanBlankSalesOrderNoBackfill(database *gorm.DB) ([]BlankSalesOrderNoPlan, 
 
 	var conflictingOrders []models.SalesOrder
 	if err := database.Select("id", "order_no", "customer_name").
-		Where("is_deleted = false AND order_no IN ? AND id NOT IN ?", derivedOrderNos, blankIDs).
+		Where("deleted_at IS NULL AND order_no IN ? AND id NOT IN ?", derivedOrderNos, blankIDs).
 		Find(&conflictingOrders).Error; err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func ApplyBlankSalesOrderNoBackfill(database *gorm.DB) ([]BlankSalesOrderNoPlan,
 	err = database.Transaction(func(tx *gorm.DB) error {
 		for _, plan := range plans {
 			if err := tx.Model(&models.SalesOrder{}).
-				Where("id = ? AND is_deleted = false AND (order_no IS NULL OR length(trim(order_no)) = 0)", plan.ID).
+				Where("id = ? AND deleted_at IS NULL AND (order_no IS NULL OR length(trim(order_no)) = 0)", plan.ID).
 				Updates(map[string]any{
 					"order_no":   plan.DerivedOrderNo,
 					"updated_at": time.Now(),

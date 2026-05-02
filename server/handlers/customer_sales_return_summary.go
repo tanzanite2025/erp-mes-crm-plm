@@ -51,7 +51,7 @@ func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
 				FROM sales_returns AS sr
 				INNER JOIN sales_orders AS source_order
 					ON source_order.id = sr.sales_order_id
-					AND source_order.is_deleted = FALSE
+					AND source_order.deleted_at IS NULL
 					AND LOWER(TRIM(source_order.status)) NOT IN ('canceled', 'cancelled', 'voided', 'void')
 				LEFT JOIN sales_return_lines AS srl ON srl.sales_return_id = sr.id
 				WHERE sr.deleted_at IS NULL
@@ -59,7 +59,7 @@ func GetCustomerSalesReturnSummaryHandler(c *gin.Context) {
 				GROUP BY sr.customer_id
 			) AS return_agg ON return_agg.customer_id = so.customer_id
 		`).
-		Where("so.is_deleted = ? AND COALESCE(so.customer_id, '') <> ''", false).
+		Where("so.deleted_at IS NULL AND COALESCE(so.customer_id, '') <> ''").
 		Group("so.customer_id, return_agg.returned_quantity, return_agg.returned_order_count, return_agg.last_return_date").
 		Scan(&rows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to aggregate customer sales return summary"})

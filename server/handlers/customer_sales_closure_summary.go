@@ -72,7 +72,7 @@ func GetCustomerSalesClosureSummaryHandler(c *gin.Context) {
 			COALESCE(SUM(CASE WHEN LOWER(TRIM(so.status)) IN ('canceled', 'cancelled', 'voided', 'void') THEN 1 ELSE 0 END), 0) AS canceled_order_count,
 			COUNT(DISTINCT so.id) AS total_orders
 		`).
-		Where("so.is_deleted = ? AND COALESCE(so.customer_id, '') <> ''", false).
+		Where("so.deleted_at IS NULL AND COALESCE(so.customer_id, '') <> ''").
 		Group("so.customer_id").
 		Scan(&rows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] failed to aggregate customer sales closure summary"})

@@ -341,7 +341,7 @@ func loadSalesReturnOrderForUpdate(tx *gorm.DB, salesOrderID string) (models.Sal
 	var order models.SalesOrder
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Preload("Lines").
-		Where("id = ? AND is_deleted = ?", strings.TrimSpace(salesOrderID), false).
+		Where("id = ?", strings.TrimSpace(salesOrderID)).
 		First(&order).Error; err != nil {
 		return models.SalesOrder{}, err
 	}

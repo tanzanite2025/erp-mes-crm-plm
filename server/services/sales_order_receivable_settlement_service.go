@@ -1,13 +1,16 @@
 package services
 
 import (
+	"errors"
 	"math"
+	"sort"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest) (CreateReceiptRecordResponse, error) {
@@ -20,14 +23,7 @@ func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest)
 
 	var response CreateReceiptRecordResponse
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		routeOrder, err := resolveReceivableSalesOrderTx(tx, id)
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return ErrReceivableLedgerNotFound
-			}
-			return err
-		}
-		targets, err := resolveReceivableAllocationTargetsTx(tx, req.Allocations)
+		routeOrder, targets, err := resolveReceivableSettlementTargetsTx(tx, id, req.Allocations)
 		if err != nil {
 			return err
 		}
@@ -69,43 +65,88 @@ func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest)
 	return response, err
 }
 
-func resolveReceivableAllocationTargetsTx(tx *gorm.DB, requests []SettlementAllocationRequest) ([]receivableAllocationTarget, error) {
-	targets := make([]receivableAllocationTarget, 0, len(requests))
-	uniqueOrders := make(map[string]models.SalesOrder)
-	for _, item := range requests {
-		order, err := resolveReceivableSalesOrderTx(tx, item.LedgerID)
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return nil, ErrReceivableLedgerNotFound
-			}
-			return nil, err
+func resolveReceivableSettlementTargetsTx(tx *gorm.DB, routeID string, requests []SettlementAllocationRequest) (models.SalesOrder, []receivableAllocationTarget, error) {
+	uniqueIDs := make(map[string]struct{}, len(requests)+1)
+	routeID = strings.TrimSpace(routeID)
+	if routeID != "" {
+		uniqueIDs[routeID] = struct{}{}
+	}
+	for _, request := range requests {
+		id := strings.TrimSpace(request.LedgerID)
+		if id != "" {
+			uniqueIDs[id] = struct{}{}
 		}
-		uniqueOrders[order.ID] = order
+	}
+	ordersByID, lockedOrders, err := lockReceivableSalesOrdersByIDTx(tx, uniqueIDs)
+	if err != nil {
+		return models.SalesOrder{}, nil, err
+	}
+	routeOrder, ok := ordersByID[routeID]
+	if !ok {
+		return models.SalesOrder{}, nil, ErrReceivableLedgerNotFound
+	}
+
+	targets := make([]receivableAllocationTarget, 0, len(requests))
+	for _, item := range requests {
+		order, ok := ordersByID[strings.TrimSpace(item.LedgerID)]
+		if !ok {
+			return models.SalesOrder{}, nil, ErrReceivableLedgerNotFound
+		}
 		targets = append(targets, receivableAllocationTarget{request: item, orderID: order.ID})
 	}
-	orders := make([]models.SalesOrder, 0, len(uniqueOrders))
-	for _, order := range uniqueOrders {
-		orders = append(orders, order)
-	}
-	bundle, err := loadReceivableSettlementBundle(tx, orders)
+	bundle, err := loadReceivableSettlementBundle(tx, lockedOrders)
 	if err != nil {
-		return nil, err
+		return models.SalesOrder{}, nil, err
 	}
-	remaining := make(map[string]float64, len(orders))
-	for _, order := range orders {
+	remaining := make(map[string]float64, len(lockedOrders))
+	for _, order := range lockedOrders {
 		_, outstanding := calculateReceivableAmounts(order, bundle)
 		remaining[order.ID] = outstanding
 		if isReceivableOrderNotAllocatable(order, outstanding) {
-			return nil, ErrSettlementLedgerStatusInvalid
+			return models.SalesOrder{}, nil, ErrSettlementLedgerStatusInvalid
 		}
 	}
 	for _, target := range targets {
 		if target.request.AllocatedAmount > remaining[target.orderID] {
-			return nil, ErrSettlementAllocationOverflow
+			return models.SalesOrder{}, nil, ErrSettlementAllocationOverflow
 		}
 		remaining[target.orderID] = math.Round((remaining[target.orderID]-target.request.AllocatedAmount)*100) / 100
 	}
-	return targets, nil
+	return routeOrder, targets, nil
+}
+
+func resolveReceivableSalesOrderForUpdateTx(tx *gorm.DB, id string) (models.SalesOrder, error) {
+	id = strings.TrimSpace(id)
+	var order models.SalesOrder
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ? AND LOWER(COALESCE(status, '')) <> LOWER(?)", id, "Canceled").
+		First(&order).Error; err != nil {
+		return models.SalesOrder{}, err
+	}
+	return order, nil
+}
+
+func lockReceivableSalesOrdersByIDTx(tx *gorm.DB, ids map[string]struct{}) (map[string]models.SalesOrder, []models.SalesOrder, error) {
+	orderedIDs := make([]string, 0, len(ids))
+	for id := range ids {
+		orderedIDs = append(orderedIDs, id)
+	}
+	sort.Strings(orderedIDs)
+
+	ordersByID := make(map[string]models.SalesOrder, len(orderedIDs))
+	orders := make([]models.SalesOrder, 0, len(orderedIDs))
+	for _, id := range orderedIDs {
+		order, err := resolveReceivableSalesOrderForUpdateTx(tx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, nil, ErrReceivableLedgerNotFound
+			}
+			return nil, nil, err
+		}
+		ordersByID[order.ID] = order
+		orders = append(orders, order)
+	}
+	return ordersByID, orders, nil
 }
 
 func createReceivableOrderAllocationsTx(tx *gorm.DB, record models.ReceiptRecord, targets []receivableAllocationTarget) ([]SettlementAllocationResponse, error) {

@@ -54,6 +54,7 @@ func setupTradingQueryContractRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
@@ -111,6 +112,7 @@ func setupTradingQueryContractRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
@@ -148,7 +150,7 @@ func setupTradingQueryContractRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	api := router.Group("/api/v1")
 	authorized := api.Group("")
 	authorized.Use(func(c *gin.Context) {
-		c.Set("permissions", []string{authz.MenuTrading})
+		c.Set("permissions", []string{authz.MenuTrading, authz.MenuPurchase})
 		c.Next()
 	})
 	registerTradingRoutes(authorized)

@@ -292,10 +292,15 @@ func executePurchaseOrderUnifiedSaveTx(tx *gorm.DB, current *models.PurchaseOrde
 		"payment_term_name":   nextOrder.PaymentTermName,
 		"note":                nextOrder.Note,
 		"evidences":           nextOrder.Evidences,
-		"is_deleted":          nextOrder.IsDeleted,
+		"deleted_at":          nil,
 		"version":             nextOrder.Version,
 	}).Error; err != nil {
 		return nil, err
+	}
+	if nextOrder.DeletedAt.Valid || nextOrder.IsDeleted {
+		if err := tx.Model(current).Update("deleted_at", gorm.Expr("COALESCE(deleted_at, NOW())")).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tx.Model(current).Association("Lines").Replace(nextOrder.Lines); err != nil {
@@ -360,7 +365,7 @@ func executePurchaseOrderSupplierChangeTx(tx *gorm.DB, current *models.PurchaseO
 	}
 
 	var supplier models.Supplier
-	if err := tx.Where("id = ? AND is_deleted = ?", supplierID, false).First(&supplier).Error; err != nil {
+	if err := tx.Where("id = ?", supplierID).First(&supplier).Error; err != nil {
 		return nil, errors.New("[CRITICAL_DATA_INTEGRITY] 采购单保存失败：供应商不存在或已停用: " + supplierID)
 	}
 	if supplierName == "" {
@@ -490,7 +495,7 @@ func executePurchaseOrderTransactionTx(tx *gorm.DB, input ExecutePurchaseOrderTr
 	}
 
 	var current models.PurchaseOrder
-	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ? AND is_deleted = ?", strings.TrimSpace(input.OrderID), false).First(&current).Error; err != nil {
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Lines").Where("id = ?", strings.TrimSpace(input.OrderID)).First(&current).Error; err != nil {
 		return nil, err
 	}
 

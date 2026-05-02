@@ -126,7 +126,7 @@ func searchReceivableOrders(query LedgerSearchQuery) (LedgerSearchResponse, erro
 }
 
 func loadReceivableOrders(tx *gorm.DB, query ReceivableLedgerQuery) ([]models.SalesOrder, error) {
-	base := tx.Model(&models.SalesOrder{}).Where("is_deleted = ?", false).Where("LOWER(COALESCE(status, '')) <> LOWER(?)", "Canceled")
+	base := tx.Model(&models.SalesOrder{}).Where("LOWER(COALESCE(status, '')) <> LOWER(?)", "Canceled")
 	sourceType := strings.ToUpper(strings.TrimSpace(query.SourceType))
 	if sourceType != "" && sourceType != "SALES_ORDER" {
 		return []models.SalesOrder{}, nil

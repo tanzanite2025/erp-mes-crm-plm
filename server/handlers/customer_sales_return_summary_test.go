@@ -20,6 +20,7 @@ func setupCustomerSalesReturnSummaryHandlerDB(t *testing.T) {
 			customer_name TEXT,
 			status TEXT,
 			order_date TEXT,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE
 		)`,
 		`CREATE TABLE sales_returns (

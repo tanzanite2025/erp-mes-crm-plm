@@ -3,12 +3,14 @@ package services
 import (
 	"errors"
 	"math"
+	"sort"
 	"strings"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -346,13 +348,15 @@ func validateSettlementAllocationRequests(amount float64, allocations []Settleme
 func createPayableAllocationsTx(tx *gorm.DB, record models.PaymentRecord, requests []SettlementAllocationRequest) ([]SettlementAllocationResponse, string, error) {
 	responses := make([]SettlementAllocationResponse, 0, len(requests))
 	primaryLedgerID := strings.TrimSpace(requests[0].LedgerID)
+	ledgersByID, err := lockPayableLedgersByIDTx(tx, requests)
+	if err != nil {
+		return nil, "", err
+	}
 	for index, item := range requests {
-		var ledger models.PayableLedger
-		if err := tx.First(&ledger, "id = ?", strings.TrimSpace(item.LedgerID)).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, "", ErrPayableLedgerNotFound
-			}
-			return nil, "", err
+		ledgerID := strings.TrimSpace(item.LedgerID)
+		ledger, ok := ledgersByID[ledgerID]
+		if !ok {
+			return nil, "", ErrPayableLedgerNotFound
 		}
 		if isLedgerNotAllocatable(ledger.Status) {
 			return nil, "", ErrSettlementLedgerStatusInvalid
@@ -379,6 +383,7 @@ func createPayableAllocationsTx(tx *gorm.DB, record models.PaymentRecord, reques
 		if err := tx.Save(&ledger).Error; err != nil {
 			return nil, "", err
 		}
+		ledgersByID[ledgerID] = ledger
 
 		responses = append(responses, mapSettlementAllocation(allocation))
 	}
@@ -386,6 +391,34 @@ func createPayableAllocationsTx(tx *gorm.DB, record models.PaymentRecord, reques
 		return nil, "", err
 	}
 	return responses, primaryLedgerID, nil
+}
+
+func lockPayableLedgersByIDTx(tx *gorm.DB, requests []SettlementAllocationRequest) (map[string]models.PayableLedger, error) {
+	uniqueIDs := make(map[string]struct{}, len(requests))
+	for _, item := range requests {
+		id := strings.TrimSpace(item.LedgerID)
+		if id != "" {
+			uniqueIDs[id] = struct{}{}
+		}
+	}
+	orderedIDs := make([]string, 0, len(uniqueIDs))
+	for id := range uniqueIDs {
+		orderedIDs = append(orderedIDs, id)
+	}
+	sort.Strings(orderedIDs)
+
+	ledgersByID := make(map[string]models.PayableLedger, len(orderedIDs))
+	for _, id := range orderedIDs {
+		var ledger models.PayableLedger
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ledger, "id = ?", id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrPayableLedgerNotFound
+			}
+			return nil, err
+		}
+		ledgersByID[ledger.ID] = ledger
+	}
+	return ledgersByID, nil
 }
 
 func isLedgerNotAllocatable(status string) bool {

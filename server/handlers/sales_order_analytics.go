@@ -84,7 +84,7 @@ func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
 			COUNT(DISTINCT so.id) AS total_orders,
 			COALESCE(SUM(so.amount), 0) AS total_amount
 		`).
-		Where("so.is_deleted = ?", false)
+		Where("so.deleted_at IS NULL")
 	if customerID != "" {
 		summaryQuery = summaryQuery.Where("so.customer_id = ?", customerID)
 	}
@@ -110,7 +110,7 @@ func GetSalesOrderCustomerProductStatsHandler(c *gin.Context) {
 			COUNT(DISTINCT so.id) AS order_count,
 			COALESCE(SUM(sol.amount), 0) AS total_amount
 		`).
-		Where("so.is_deleted = ?", false)
+		Where("so.deleted_at IS NULL")
 	if customerID != "" {
 		productQuery = productQuery.Where("so.customer_id = ?", customerID)
 	}
@@ -193,7 +193,7 @@ func GetSalesOrderGlobalProductRankingHandler(c *gin.Context) {
 			COUNT(DISTINCT so.id) AS order_count,
 			COALESCE(SUM(sol.amount), 0) AS total_amount
 		`).
-		Where("so.is_deleted = ?", false).
+		Where("so.deleted_at IS NULL").
 		Group("sol.product_id").
 		Order("COALESCE(SUM(sol.qty), 0) DESC").
 		Limit(limit).

@@ -108,8 +108,8 @@ func GetMrpRequirements(params GetMrpRequirementsParams) (MrpRequirementsRespons
 	var orders []models.SalesOrder
 	if err := db.DB.Preload("Lines", func(tx *gorm.DB) *gorm.DB {
 		return tx.Select("id", "sales_order_id", "line_no", "product_id", "product_model", "product_code", "specification", "qty", "uom", "status")
-	}).Select("id", "order_no", "customer_name", "status", "order_date", "delivery_date", "is_deleted").
-		Where("is_deleted = ? AND status IN ?", false, []string{"Pending", "Scheduling", "InProgress"}).
+	}).Select("id", "order_no", "customer_name", "status", "order_date", "delivery_date", "deleted_at").
+		Where("status IN ?", []string{"Pending", "Scheduling", "InProgress"}).
 		Order("order_date desc").
 		Find(&orders).Error; err != nil {
 		return MrpRequirementsResponse{}, err

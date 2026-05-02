@@ -147,6 +147,7 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
@@ -193,6 +194,7 @@ func setupInventoryCommandHandlerTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
@@ -383,7 +385,10 @@ func TestReconcileInventoryHandlerReturnsNamedStatusResponse(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/reconcile", nil)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/reconcile", nil)
+	request.RemoteAddr = "10.10.10.1:4567"
+	ctx.Request = request
+	ctx.Set("username", "warehouse-reconciler")
 
 	ReconcileInventoryHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -395,6 +400,17 @@ func TestReconcileInventoryHandlerReturnsNamedStatusResponse(t *testing.T) {
 	var quantity float64
 	require.NoError(t, db.DB.Raw(`SELECT quantity FROM inventory WHERE category_code = ? AND batch_no = ?`, "WH_A", "B-REC-001").Scan(&quantity).Error)
 	require.Equal(t, 0.0, quantity)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "INVENTORY_RECONCILE").Scan(&audit).Error)
+	require.Equal(t, "INVENTORY_RECONCILE", audit.Action)
+	require.Equal(t, "warehouse-reconciler", audit.Operator)
+	require.Equal(t, "10.10.10.1", audit.IP)
 }
 
 func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.T) {
@@ -405,6 +421,7 @@ func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.
 	payload := `[{"materialId":"mat-bulk-1","materialName":"Bulk Material","materialCode":"MAT-BULK-001","materialSpec":"Spec-B","quantity":8,"totalValue":40,"averageUnitCost":5,"categoryCode":"WH_A","batchNo":"B-BULK-001","uom":"PCS"}]`
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/sync", strings.NewReader(payload))
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.10.2:4567"
 	ctx.Request = request
 	ctx.Set("username", "admin")
 	ctx.Set("permissions", []string{authz.ActionWarehouseSync})
@@ -429,6 +446,17 @@ func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.
 	require.Equal(t, "WH_A", row.CategoryCode)
 	require.Equal(t, "B-BULK-001", row.BatchNo)
 	require.Equal(t, 8.0, row.Quantity)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "INVENTORY_BULK_SYNC").Scan(&audit).Error)
+	require.Equal(t, "INVENTORY_BULK_SYNC", audit.Action)
+	require.Equal(t, "admin", audit.Operator)
+	require.Equal(t, "10.10.10.2", audit.IP)
 }
 
 func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
@@ -446,7 +474,9 @@ func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
 	payload := `{"materialId":"` + materialID + `","quantity":4,"fromCategory":"WH_A","toCategory":"WH_B","batchNo":"B-TR-001"}`
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/transfer", strings.NewReader(payload))
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.10.3:4567"
 	ctx.Request = request
+	ctx.Set("username", "transfer-admin")
 
 	TransferInventoryHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -468,6 +498,17 @@ func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
 	require.NoError(t, db.DB.Raw(`SELECT category_code, quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, "WH_B", "B-TR-001").Scan(&toRow).Error)
 	require.Equal(t, "WH_B", toRow.CategoryCode)
 	require.Equal(t, 4.0, toRow.Quantity)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "INVENTORY_TRANSFER").Scan(&audit).Error)
+	require.Equal(t, "INVENTORY_TRANSFER", audit.Action)
+	require.Equal(t, "transfer-admin", audit.Operator)
+	require.Equal(t, "10.10.10.3", audit.IP)
 }
 
 func TestBulkSyncInventoryHandlerReturnsForbiddenForNonAdmin(t *testing.T) {

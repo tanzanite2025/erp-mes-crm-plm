@@ -177,6 +177,7 @@ func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderRespons
 	for _, line := range order.Lines {
 		lines = append(lines, mapPurchaseOrderLineToResponse(line, order.ExpectedDate))
 	}
+	isDeleted := order.DeletedAt.Valid || order.IsDeleted
 	return PurchaseOrderResponse{
 		ID:                order.ID,
 		OrderNo:           order.OrderNo,
@@ -197,7 +198,7 @@ func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderRespons
 		Evidences:         decodeOrderEvidences(order.Evidences),
 		CreatedAt:         order.CreatedAt,
 		UpdatedAt:         order.UpdatedAt,
-		IsDeleted:         order.IsDeleted,
+		IsDeleted:         isDeleted,
 		Version:           order.Version,
 		Lines:             lines,
 	}
@@ -206,6 +207,7 @@ func MapPurchaseOrderToResponse(order models.PurchaseOrder) PurchaseOrderRespons
 func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder, includeLines bool) []PurchaseOrderListItemResponse {
 	items := make([]PurchaseOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
+		isDeleted := order.DeletedAt.Valid || order.IsDeleted
 		var lines *[]PurchaseOrderLineResponse
 		if includeLines {
 			mappedLines := make([]PurchaseOrderLineResponse, 0, len(order.Lines))
@@ -234,7 +236,7 @@ func MapPurchaseOrdersToListItems(orders []models.PurchaseOrder, includeLines bo
 			Evidences:         decodeOrderEvidences(order.Evidences),
 			CreatedAt:         order.CreatedAt,
 			UpdatedAt:         order.UpdatedAt,
-			IsDeleted:         order.IsDeleted,
+			IsDeleted:         isDeleted,
 			Version:           order.Version,
 			Lines:             lines,
 		})

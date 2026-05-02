@@ -156,8 +156,8 @@ func normalizePrepregSupplierReference(input *models.PrepregMaterialSpec) error 
 
 	var supplier models.Supplier
 	err := db.DB.
-		Select("id", "code", "name", "is_deleted").
-		Where("id = ? AND is_deleted = ?", input.SupplierID, false).
+		Select("id", "code", "name", "deleted_at").
+		Where("id = ?", input.SupplierID).
 		First(&supplier).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &PrepregMaterialSpecValidationError{Message: "供应商不存在，请重新选择"}

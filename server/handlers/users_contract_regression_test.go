@@ -7,12 +7,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func setupUsersContractRegressionTestDB(t *testing.T) {
@@ -59,7 +61,30 @@ func seedRegressionUser(t *testing.T, user models.User) {
 	require.NoError(t, db.DB.Create(&user).Error)
 }
 
-func performReplaceUserRequest(t *testing.T, userID string, requestBody string) *httptest.ResponseRecorder {
+func performPatchUserRequestWithActor(t *testing.T, userID string, requestBody string, actorUserID string, permissions []string) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/users/"+userID, strings.NewReader(requestBody))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: userID}}
+	if actorUserID != "" {
+		ctx.Set("userId", actorUserID)
+	}
+	if permissions != nil {
+		ctx.Set("permissions", permissions)
+	}
+	PatchUserHandler(ctx)
+	return recorder
+}
+
+func performPatchUserRequest(t *testing.T, userID string, requestBody string) *httptest.ResponseRecorder {
+	t.Helper()
+	return performPatchUserRequestWithActor(t, userID, requestBody, userID, nil)
+}
+
+func performReplaceUserRequestWithActor(t *testing.T, userID string, requestBody string, actorUserID string, permissions []string) *httptest.ResponseRecorder {
 	t.Helper()
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -67,8 +92,19 @@ func performReplaceUserRequest(t *testing.T, userID string, requestBody string) 
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 	ctx.Params = gin.Params{{Key: "id", Value: userID}}
+	if actorUserID != "" {
+		ctx.Set("userId", actorUserID)
+	}
+	if permissions != nil {
+		ctx.Set("permissions", permissions)
+	}
 	ReplaceUserHandler(ctx)
 	return recorder
+}
+
+func performReplaceUserRequest(t *testing.T, userID string, requestBody string) *httptest.ResponseRecorder {
+	t.Helper()
+	return performReplaceUserRequestWithActor(t, userID, requestBody, userID, nil)
 }
 
 func TestReplaceUserHandlerReplacesAllDeclaredFieldsAndKeepsPasswordWhenOmitted(t *testing.T) {
@@ -114,6 +150,88 @@ func TestReplaceUserHandlerReplacesAllDeclaredFieldsAndKeepsPasswordWhenOmitted(
 	require.Equal(t, "EMP-009", persisted.EmployeeID)
 	require.Equal(t, hashedPassword, persisted.Password)
 	require.Equal(t, "legacy@example.com", persisted.Email)
+}
+
+func TestPatchUserHandlerRejectsCrossUserPasswordResetWithoutManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	targetID := uuid.NewString()
+	actorID := uuid.NewString()
+	hashedPassword, err := hashUserPassword("finance-pass")
+	require.NoError(t, err)
+
+	seedRegressionUser(t, models.User{
+		ID:        targetID,
+		Username:  "finance-manager",
+		Password:  hashedPassword,
+		Status:    "active",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+
+	recorder := performPatchUserRequestWithActor(t, targetID, `{"password":"HackerPassword123"}`, actorID, nil)
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "modify your own account")
+
+	var persisted models.User
+	require.NoError(t, db.DB.First(&persisted, "id = ?", targetID).Error)
+	require.Equal(t, hashedPassword, persisted.Password)
+	require.NoError(t, bcrypt.CompareHashAndPassword([]byte(persisted.Password), []byte("finance-pass")))
+}
+
+func TestPatchUserHandlerRejectsCrossUserEmployeeBindingWithoutManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	targetID := uuid.NewString()
+	actorID := uuid.NewString()
+	hashedPassword, err := hashUserPassword("ops-pass")
+	require.NoError(t, err)
+
+	seedRegressionUser(t, models.User{
+		ID:         targetID,
+		Username:   "ops-manager",
+		Password:   hashedPassword,
+		Status:     "active",
+		EmployeeID: "EMP-FIN-001",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	})
+
+	recorder := performPatchUserRequestWithActor(t, targetID, `{"employeeId":"EMP-ATTACKER"}`, actorID, nil)
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "modify your own account")
+
+	var persisted models.User
+	require.NoError(t, db.DB.First(&persisted, "id = ?", targetID).Error)
+	require.Equal(t, "EMP-FIN-001", persisted.EmployeeID)
+}
+
+func TestPatchUserHandlerAllowsSelfPasswordChange(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	userID := uuid.NewString()
+	hashedPassword, err := hashUserPassword("self-pass")
+	require.NoError(t, err)
+
+	seedRegressionUser(t, models.User{
+		ID:        userID,
+		Username:  "self-user",
+		Password:  hashedPassword,
+		Status:    "active",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+
+	recorder := performPatchUserRequest(t, userID, `{"password":"SelfUpdated123"}`)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var persisted models.User
+	require.NoError(t, db.DB.First(&persisted, "id = ?", userID).Error)
+	require.NotEqual(t, hashedPassword, persisted.Password)
+	require.NoError(t, bcrypt.CompareHashAndPassword([]byte(persisted.Password), []byte("SelfUpdated123")))
 }
 
 func TestReplaceUserHandlerRejectsInvalidStatus(t *testing.T) {
@@ -172,6 +290,82 @@ func TestReplaceUserHandlerRejectsAdminReplacementByNonAdmin(t *testing.T) {
 
 	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
 	require.Contains(t, recorder.Body.String(), "Only admin can manage the seed admin account")
+}
+
+func TestReplaceUserHandlerRejectsCrossUserReplacementWithoutManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	targetID := uuid.NewString()
+	actorID := uuid.NewString()
+	hashedPassword, err := hashUserPassword("finance-pass")
+	require.NoError(t, err)
+
+	seedRegressionUser(t, models.User{
+		ID:         targetID,
+		Username:   "finance-manager",
+		Password:   hashedPassword,
+		Status:     "active",
+		EmployeeID: "EMP-FIN-200",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	})
+
+	recorder := performReplaceUserRequestWithActor(t, targetID, `{
+		"username":"finance-manager",
+		"phoneNumber":"9999",
+		"firstName":"Hijacked",
+		"lastName":"Account",
+		"status":"inactive",
+		"employeeId":"EMP-HIJACK",
+		"password":"ResetByAttacker123"
+	}`, actorID, nil)
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "modify your own account")
+
+	var persisted models.User
+	require.NoError(t, db.DB.First(&persisted, "id = ?", targetID).Error)
+	require.Equal(t, "EMP-FIN-200", persisted.EmployeeID)
+	require.Equal(t, "active", persisted.Status)
+	require.Equal(t, hashedPassword, persisted.Password)
+}
+
+func TestReplaceUserHandlerAllowsManagerToReplaceAnotherUser(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupUsersContractRegressionTestDB(t)
+
+	targetID := uuid.NewString()
+	managerID := uuid.NewString()
+	hashedPassword, err := hashUserPassword("legacy-pass")
+	require.NoError(t, err)
+
+	seedRegressionUser(t, models.User{
+		ID:         targetID,
+		Username:   "replace-target",
+		Password:   hashedPassword,
+		Status:     "active",
+		EmployeeID: "EMP-OLD",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	})
+
+	recorder := performReplaceUserRequestWithActor(t, targetID, `{
+		"username":"replace-target-updated",
+		"phoneNumber":"2222",
+		"firstName":"Managed",
+		"lastName":"Target",
+		"status":"inactive",
+		"employeeId":"EMP-NEW",
+		"password":"ManagerReset456"
+	}`, managerID, []string{authz.PermissionManage})
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var persisted models.User
+	require.NoError(t, db.DB.First(&persisted, "id = ?", targetID).Error)
+	require.Equal(t, "replace-target-updated", persisted.Username)
+	require.Equal(t, "EMP-NEW", persisted.EmployeeID)
+	require.Equal(t, "inactive", persisted.Status)
+	require.NoError(t, bcrypt.CompareHashAndPassword([]byte(persisted.Password), []byte("ManagerReset456")))
 }
 
 func TestGetUsersHandlerReturnsPaginatedContractWithFilters(t *testing.T) {

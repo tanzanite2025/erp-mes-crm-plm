@@ -31,6 +31,7 @@ func setupPurchaseReturnServiceTestDB(t *testing.T) *gorm.DB {
 			exchange_rate REAL,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)

@@ -46,6 +46,7 @@ func setupArApHandlerTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
@@ -177,12 +178,12 @@ func seedReceivableLedger(t *testing.T, outstanding float64, status string) seed
 	now := time.Now()
 	orderAmount := outstanding
 	orderStatus := "Pending"
-	deliveryDate := "2026-04-30"
+	deliveryDate := now.AddDate(0, 0, 7).Format("2006-01-02")
 	if strings.EqualFold(status, models.LedgerStatusSettled) {
 		orderAmount = 0
 	}
 	if strings.EqualFold(status, models.LedgerStatusOverdue) {
-		deliveryDate = "2026-04-01"
+		deliveryDate = now.AddDate(0, 0, -7).Format("2006-01-02")
 	}
 	if strings.EqualFold(status, models.LedgerStatusCancelled) {
 		orderStatus = "Canceled"
@@ -231,12 +232,12 @@ func seedReceivableLedgerForSearch(t *testing.T, ledgerNo string, customerName s
 	now := time.Now()
 	orderAmount := outstanding
 	orderStatus := "Pending"
-	deliveryDate := "2026-04-30"
+	deliveryDate := now.AddDate(0, 0, 7).Format("2006-01-02")
 	if strings.EqualFold(status, models.LedgerStatusSettled) {
 		orderAmount = 0
 	}
 	if strings.EqualFold(status, models.LedgerStatusOverdue) {
-		deliveryDate = "2026-04-01"
+		deliveryDate = now.AddDate(0, 0, -7).Format("2006-01-02")
 	}
 	if strings.EqualFold(status, models.LedgerStatusCancelled) {
 		orderStatus = "Canceled"
@@ -730,6 +731,44 @@ func TestCreateReceiptRecordHandlerRejectsAllocationOverflow(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, w.Code)
 }
 
+func TestCreateReceiptRecordHandlerRejectsOverflowAfterPriorReceipt(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupArApHandlerTestDB(t)
+	ledger := seedReceivableLedger(t, 100, models.LedgerStatusOpen)
+
+	firstBody := `{
+		"amount":70,
+		"recordDate":"2026-04-13",
+		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":70,"sequenceNo":1,"remark":"first"}]
+	}`
+	first := httptest.NewRecorder()
+	firstCtx, _ := gin.CreateTestContext(first)
+	firstCtx.Params = gin.Params{{Key: "id", Value: ledger.ID}}
+	firstCtx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/receivables/"+ledger.ID+"/receipts", strings.NewReader(firstBody))
+	firstCtx.Request.Header.Set("Content-Type", "application/json")
+
+	CreateReceiptRecordHandler(firstCtx)
+	require.Equal(t, http.StatusOK, first.Code)
+
+	secondBody := `{
+		"amount":40,
+		"recordDate":"2026-04-14",
+		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":40,"sequenceNo":1,"remark":"overflow"}]
+	}`
+	second := httptest.NewRecorder()
+	secondCtx, _ := gin.CreateTestContext(second)
+	secondCtx.Params = gin.Params{{Key: "id", Value: ledger.ID}}
+	secondCtx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/receivables/"+ledger.ID+"/receipts", strings.NewReader(secondBody))
+	secondCtx.Request.Header.Set("Content-Type", "application/json")
+
+	CreateReceiptRecordHandler(secondCtx)
+	require.Equal(t, http.StatusBadRequest, second.Code)
+
+	var allocationCount int64
+	require.NoError(t, db.DB.Model(&models.SettlementAllocation{}).Where("sales_order_id = ?", ledger.ID).Count(&allocationCount).Error)
+	require.EqualValues(t, 1, allocationCount)
+}
+
 func TestCreateReceiptRecordHandlerReturnsLockedCreateResponseContract(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	setupArApHandlerTestDB(t)
@@ -792,6 +831,49 @@ func TestCreatePaymentRecordHandlerRejectsSettledLedgerAllocation(t *testing.T) 
 
 	CreatePaymentRecordHandler(c)
 	require.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestCreatePaymentRecordHandlerRejectsOverflowAfterPriorPayment(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupArApHandlerTestDB(t)
+	ledger := seedPayableLedger(t, 100, models.LedgerStatusOpen)
+
+	firstBody := `{
+		"amount":70,
+		"recordDate":"2026-04-13",
+		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":70,"sequenceNo":1,"remark":"first"}]
+	}`
+	first := httptest.NewRecorder()
+	firstCtx, _ := gin.CreateTestContext(first)
+	firstCtx.Params = gin.Params{{Key: "id", Value: ledger.ID}}
+	firstCtx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/payables/"+ledger.ID+"/payments", strings.NewReader(firstBody))
+	firstCtx.Request.Header.Set("Content-Type", "application/json")
+
+	CreatePaymentRecordHandler(firstCtx)
+	require.Equal(t, http.StatusOK, first.Code)
+
+	secondBody := `{
+		"amount":40,
+		"recordDate":"2026-04-14",
+		"allocations":[{"ledgerId":"` + ledger.ID + `","allocatedAmount":40,"sequenceNo":1,"remark":"overflow"}]
+	}`
+	second := httptest.NewRecorder()
+	secondCtx, _ := gin.CreateTestContext(second)
+	secondCtx.Params = gin.Params{{Key: "id", Value: ledger.ID}}
+	secondCtx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/payables/"+ledger.ID+"/payments", strings.NewReader(secondBody))
+	secondCtx.Request.Header.Set("Content-Type", "application/json")
+
+	CreatePaymentRecordHandler(secondCtx)
+	require.Equal(t, http.StatusBadRequest, second.Code)
+
+	var reloaded models.PayableLedger
+	require.NoError(t, db.DB.First(&reloaded, "id = ?", ledger.ID).Error)
+	require.Equal(t, 30.0, reloaded.OutstandingAmount)
+	require.Equal(t, 70.0, reloaded.SettledAmount)
+
+	var allocationCount int64
+	require.NoError(t, db.DB.Model(&models.SettlementAllocation{}).Where("ledger_id = ?", ledger.ID).Count(&allocationCount).Error)
+	require.EqualValues(t, 1, allocationCount)
 }
 
 func TestCreatePaymentRecordHandlerReturnsLockedCreateResponseContract(t *testing.T) {

@@ -57,6 +57,7 @@ func setupLogisticsStatusSyncTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,

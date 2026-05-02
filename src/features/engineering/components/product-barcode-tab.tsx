@@ -64,25 +64,35 @@ export function ProductBarcodeTab({ product, onUpdateProduct }: ProductBarcodeTa
     // 【深度集成】从后端获取下一个可用流水号 (36 进制)
     const getNextSN = useCallback(async () => {
         try {
-            const registryKey = `product:${product.id}:dm_sn`
-            const { sn } = await PrintRecordService.getNextSequence(registryKey)
+            const currentValue = Number.parseInt((config.serialNumber || '00000').trim().toUpperCase(), 36)
+            if (!Number.isFinite(currentValue) || Number.isNaN(currentValue) || currentValue < 0) {
+                throw new Error('invalid serial number')
+            }
+            const nextValue = currentValue + 1
+            if (nextValue > 60466175) {
+                throw new Error('serial number overflow')
+            }
+            const sn = nextValue.toString(36).toUpperCase().padStart(5, '0')
             updateConfig({ serialNumber: sn })
             toast.info(t('engineering.productBarcode.syncSequenceSuccess', { sn }))
         } catch (_err) {
             toast.error(t('engineering.productBarcode.syncSequenceFailed'))
         }
-    }, [product.id, t, updateConfig])
+    }, [config.serialNumber, t, updateConfig])
 
     // 组件挂载时自动同步
     useEffect(() => {
         const timer = globalThis.setTimeout(() => {
-            void getNextSN()
+            const normalizedSerial = (config.serialNumber || '00001').trim().toUpperCase().padStart(5, '0').slice(-5)
+            if (normalizedSerial !== config.serialNumber) {
+                updateConfig({ serialNumber: normalizedSerial })
+            }
         }, 0)
 
         return () => {
             globalThis.clearTimeout(timer)
         }
-    }, [getNextSN])
+    }, [config.serialNumber, updateConfig])
 
     const handlePrintSingle = async () => {
         try {

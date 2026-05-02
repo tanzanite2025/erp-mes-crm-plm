@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/services"
@@ -77,6 +78,9 @@ func normalizeUnitCategoryValue(value string) string {
 	if trimmed == "" {
 		return "OTHER"
 	}
+	if trimmed == "闂堛垻袧" {
+		return "AREA"
+	}
 
 	upper := strings.ToUpper(trimmed)
 	switch upper {
@@ -137,6 +141,13 @@ func saveUnitRecord(unit *models.Unit) error {
 		"description": unit.Description,
 	}
 	return db.DB.Model(&existing).Updates(updates).Error
+}
+
+func invalidateUnitsCache() {
+	if db.RDB == nil {
+		return
+	}
+	_ = db.RDB.Del(context.Background(), "global:cache:units").Err()
 }
 
 func buildUnitUpdates(payload map[string]json.RawMessage) (map[string]interface{}, error) {
@@ -248,9 +259,7 @@ func SaveUnitHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		if db.RDB != nil {
-			db.RDB.Del(context.Background(), "global:cache:units")
-		}
+		invalidateUnitsCache()
 		c.JSON(http.StatusOK, unit)
 		return
 	}
@@ -267,14 +276,17 @@ func SaveUnitHandler(c *gin.Context) {
 	}
 
 	// 清洗常驻内存
-	if db.RDB != nil {
-		db.RDB.Del(context.Background(), "global:cache:units")
-	}
+	invalidateUnitsCache()
 
 	c.JSON(http.StatusOK, unit)
 }
 
 func PatchUnitHandler(c *gin.Context) {
+	if !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
 	id := c.Param("id")
 	var req services.SDRTSDeltaHandlerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -325,9 +337,7 @@ func PatchUnitHandler(c *gin.Context) {
 	}
 	normalizeUnitModel(&unit)
 
-	if db.RDB != nil {
-		db.RDB.Del(context.Background(), "global:cache:units")
-	}
+	invalidateUnitsCache()
 
 	c.JSON(http.StatusOK, unit)
 }
@@ -364,15 +374,18 @@ func BulkSyncUnitsHandler(c *gin.Context) {
 	}
 
 	// 清洗常驻内存
-	if db.RDB != nil {
-		db.RDB.Del(context.Background(), "global:cache:units")
-	}
+	invalidateUnitsCache()
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "count": len(units)})
 }
 
 // DeleteUnitHandler 删除计量单位
 func DeleteUnitHandler(c *gin.Context) {
+	if !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+		return
+	}
+
 	id := c.Param("id")
 	if err := db.DB.Delete(&models.Unit{}, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 删除单位失败: " + err.Error()})
@@ -380,7 +393,7 @@ func DeleteUnitHandler(c *gin.Context) {
 	}
 
 	// 清洗常驻内存
-	db.RDB.Del(context.Background(), "global:cache:units")
+	invalidateUnitsCache()
 
 	c.Status(http.StatusNoContent)
 }

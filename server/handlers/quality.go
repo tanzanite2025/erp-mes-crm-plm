@@ -382,7 +382,30 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		if task.ID != "" {
-			// 更新模式：基于 ID 局部更新
+			// [SECURITY] 更新模式：校验原始记录归属与标准绑定不可变性
+			var existing models.InspectionTask
+			if err := tx.First(&existing, "id = ?", task.ID).Error; err != nil {
+				return errors.New("[NOT_FOUND] 检验任务不存在")
+			}
+
+			// 归属校验：只有原始检验员或管理员可以修改已有记录
+			currentUser := middleware.GetSafeUsername(c)
+			isAdmin := middleware.HasAnyPermission(c, "perm_manage")
+			if strings.TrimSpace(existing.Inspector) != "" &&
+				!strings.EqualFold(existing.Inspector, currentUser) &&
+				!isAdmin {
+				log.Printf("[QUALITY_SECURITY] Denied task update: taskId=%s owner=%s requestor=%s ip=%s",
+					task.ID, existing.Inspector, currentUser, c.ClientIP())
+				return errors.New("[SECURITY] 仅原始检验员或管理员可修改此检验记录")
+			}
+
+			// 标准绑定不可变：禁止将已有任务重新绑定到不同的检验标准
+			if strings.TrimSpace(existing.StandardID) != "" &&
+				strings.TrimSpace(task.StandardID) != "" &&
+				existing.StandardID != task.StandardID {
+				return errors.New("[SECURITY] 检验标准绑定后不可变更，请创建新检验任务")
+			}
+
 			if err := tx.Model(&models.InspectionTask{}).Where("id = ?", task.ID).Updates(task).Error; err != nil {
 				return err
 			}
@@ -416,7 +439,8 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 提交检验失败: " + err.Error()})
+		status := mapDomainErrorToHTTPStatus(err)
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, mapInspectionTaskToResponse(task))

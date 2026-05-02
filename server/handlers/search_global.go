@@ -3,11 +3,14 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GlobalSearchHandler(c *gin.Context) {
@@ -34,6 +37,7 @@ func GlobalSearchHandler(c *gin.Context) {
 		return
 	}
 
+	access := buildGlobalSearchAccess(c)
 	matches := make([]globalSearchMatch, 0, len(searchRes.Items))
 	inventoryIDs := make([]string, 0, len(searchRes.Items))
 	salesOrderIDs := make([]string, 0, len(searchRes.Items))
@@ -47,20 +51,35 @@ func GlobalSearchHandler(c *gin.Context) {
 			Category: item.Category,
 			Score:    item.Score,
 		}
-		matches = append(matches, match)
 
 		switch item.Category {
 		case services.SearchCategorySalesOrder:
+			if !access.canSalesOrder {
+				continue
+			}
 			salesOrderIDs = append(salesOrderIDs, item.ID)
 		case services.SearchCategoryPurchaseOrder:
+			if !access.canPurchaseOrder {
+				continue
+			}
 			purchaseOrderIDs = append(purchaseOrderIDs, item.ID)
 		case services.SearchCategorySupplier:
+			if !access.canSupplier {
+				continue
+			}
 			supplierIDs = append(supplierIDs, item.ID)
 		case services.SearchCategoryApprovalRequest:
+			if !access.canApprovalRequest {
+				continue
+			}
 			approvalRequestIDs = append(approvalRequestIDs, item.ID)
 		default:
+			if !access.canInventory {
+				continue
+			}
 			inventoryIDs = append(inventoryIDs, item.ID)
 		}
+		matches = append(matches, match)
 	}
 
 	inventoryByID := make(map[string]models.Inventory)
@@ -78,7 +97,7 @@ func GlobalSearchHandler(c *gin.Context) {
 	salesOrderByID := make(map[string]models.SalesOrder)
 	if len(salesOrderIDs) > 0 {
 		var salesOrders []models.SalesOrder
-		if err := db.DB.Where("id IN ? AND is_deleted = ?", salesOrderIDs, false).Find(&salesOrders).Error; err != nil {
+		if err := db.DB.Where("id IN ?", salesOrderIDs).Find(&salesOrders).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "data hydration failed"})
 			return
 		}
@@ -90,7 +109,7 @@ func GlobalSearchHandler(c *gin.Context) {
 	purchaseOrderByID := make(map[string]models.PurchaseOrder)
 	if len(purchaseOrderIDs) > 0 {
 		var purchaseOrders []models.PurchaseOrder
-		if err := db.DB.Where("id IN ? AND is_deleted = ?", purchaseOrderIDs, false).Find(&purchaseOrders).Error; err != nil {
+		if err := db.DB.Where("id IN ?", purchaseOrderIDs).Find(&purchaseOrders).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "data hydration failed"})
 			return
 		}
@@ -102,7 +121,7 @@ func GlobalSearchHandler(c *gin.Context) {
 	supplierByID := make(map[string]models.Supplier)
 	if len(supplierIDs) > 0 {
 		var suppliers []models.Supplier
-		if err := db.DB.Where("id IN ? AND is_deleted = ?", supplierIDs, false).Find(&suppliers).Error; err != nil {
+		if err := db.DB.Where("id IN ?", supplierIDs).Find(&suppliers).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "data hydration failed"})
 			return
 		}
@@ -114,7 +133,9 @@ func GlobalSearchHandler(c *gin.Context) {
 	approvalRequestByID := make(map[string]models.ApprovalRequest)
 	if len(approvalRequestIDs) > 0 {
 		var approvalRequests []models.ApprovalRequest
-		if err := db.DB.Where("id IN ?", approvalRequestIDs).Find(&approvalRequests).Error; err != nil {
+		query := db.DB.Where("id IN ?", approvalRequestIDs)
+		query = applyGlobalSearchApprovalScope(query, access)
+		if err := query.Find(&approvalRequests).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "data hydration failed"})
 			return
 		}
@@ -126,4 +147,42 @@ func GlobalSearchHandler(c *gin.Context) {
 	results := mapGlobalSearchMatches(matches, inventoryByID, salesOrderByID, purchaseOrderByID, supplierByID, approvalRequestByID)
 
 	c.JSON(http.StatusOK, gin.H{"data": results})
+}
+
+type globalSearchAccess struct {
+	userID             string
+	canInventory       bool
+	canSalesOrder      bool
+	canPurchaseOrder   bool
+	canSupplier        bool
+	canApprovalRequest bool
+	canAllApprovals    bool
+}
+
+func buildGlobalSearchAccess(c *gin.Context) globalSearchAccess {
+	hasManage := middleware.HasAnyPermission(c, authz.PermissionManage)
+	return globalSearchAccess{
+		userID:             middleware.GetSafeUserID(c),
+		canInventory:       hasManage || middleware.HasAnyPermission(c, authz.MenuWarehouse),
+		canSalesOrder:      hasManage || middleware.HasAnyPermission(c, authz.MenuTrading),
+		canPurchaseOrder:   hasManage || middleware.HasAnyPermission(c, authz.MenuPurchase),
+		canSupplier:        hasManage || middleware.HasAnyPermission(c, authz.MenuPurchase),
+		canApprovalRequest: hasManage || middleware.HasAnyPermission(c, authz.MenuApproval, authz.ActionApprovalReview),
+		canAllApprovals:    hasManage,
+	}
+}
+
+func applyGlobalSearchApprovalScope(query *gorm.DB, access globalSearchAccess) *gorm.DB {
+	if access.canAllApprovals {
+		return query
+	}
+	if access.userID == "" {
+		return query.Where("1 = 0")
+	}
+	return query.Where(
+		`requester_id = ?
+		 OR approver1_id = ?
+		 OR approver2_id = ?`,
+		access.userID, access.userID, access.userID,
+	)
 }

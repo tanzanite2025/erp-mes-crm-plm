@@ -250,6 +250,75 @@ func TestKnowledgeBaseHandlersRecordView(t *testing.T) {
 	require.NotNil(t, entry.LastViewedAt)
 }
 
+func TestSanitizeKnowledgeContentHTMLRejectsScriptableMarkup(t *testing.T) {
+	input := `<p>safe</p><svg/onload=alert('Hack_ERP_System')><iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></iframe>`
+	output := sanitizeKnowledgeContentHTML(input)
+
+	require.Contains(t, output, "<p>safe</p>")
+	require.NotContains(t, strings.ToLower(output), "svg")
+	require.NotContains(t, strings.ToLower(output), "onload")
+	require.NotContains(t, strings.ToLower(output), "iframe")
+	require.NotContains(t, strings.ToLower(output), "data:text/html")
+	require.NotContains(t, strings.ToLower(output), "script")
+}
+
+func TestSanitizeKnowledgeContentHTMLRejectsEncodedJavaScriptURL(t *testing.T) {
+	output := sanitizeKnowledgeContentHTML(`<a href="java&#x09;script:alert(1)">open</a>`)
+
+	require.Contains(t, output, ">open</a>")
+	require.NotContains(t, strings.ToLower(output), "href=")
+	require.NotContains(t, strings.ToLower(output), "javascript")
+}
+
+func TestSanitizeKnowledgeContentHTMLKeepsSafeRichText(t *testing.T) {
+	output := sanitizeKnowledgeContentHTML(`<h3 onclick="alert(1)">Title</h3><a href="https://example.com" style="color:red">open</a><img src="/uploads/demo.png" alt="demo" onerror="alert(1)">`)
+
+	require.Contains(t, output, "<h3>Title</h3>")
+	require.Contains(t, output, `href="https://example.com"`)
+	require.Contains(t, output, `target="_blank"`)
+	require.Contains(t, output, `rel="noreferrer"`)
+	require.Contains(t, output, `src="/uploads/demo.png"`)
+	require.Contains(t, output, `alt="demo"`)
+	require.NotContains(t, strings.ToLower(output), "onclick")
+	require.NotContains(t, strings.ToLower(output), "onerror")
+	require.NotContains(t, strings.ToLower(output), "style=")
+}
+
+func TestSanitizeKnowledgeContentHTMLRejectsSVGDataImage(t *testing.T) {
+	output := sanitizeKnowledgeContentHTML(`<img src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+" alt="bad"><p>ok</p>`)
+
+	require.Contains(t, output, "<p>ok</p>")
+	require.NotContains(t, strings.ToLower(output), "<img")
+	require.NotContains(t, strings.ToLower(output), "svg")
+}
+
+func TestExtractKnowledgeContentTextUsesTokenizerAndDropsScriptableContent(t *testing.T) {
+	text := extractKnowledgeContentText(`<p>safe</p><script>alert(1)</script><svg/onload=alert(2)><img src=x onerror="alert(3)"`)
+
+	require.Equal(t, "safe", text)
+	require.NotContains(t, strings.ToLower(text), "alert")
+	require.NotContains(t, strings.ToLower(text), "onerror")
+	require.NotContains(t, strings.ToLower(text), "svg")
+}
+
+func TestDetectKnowledgeContentMediaUsesParsedHTML(t *testing.T) {
+	media := detectKnowledgeContentMedia(`<p>safe</p><img src="/uploads/demo.png" alt="demo"><video src="/uploads/demo.mp4"></video>`)
+
+	require.True(t, media.hasImage)
+	require.True(t, media.hasVideo)
+}
+
+func TestSearchKnowledgeBaseEntriesRejectsOverlongQuery(t *testing.T) {
+	router := setupKnowledgeBaseHandlerTestRouter(t)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/knowledge-base/entries/search?q="+strings.Repeat("a", knowledgeSearchMaxQueryRunes+1), nil)
+
+	router.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Contains(t, recorder.Body.String(), "knowledge search query is too long")
+}
+
 func TestKnowledgeBaseHandlersSearchReturnsRouteLinkedKnowledge(t *testing.T) {
 	router := setupKnowledgeBaseHandlerTestRouter(t)
 	require.NoError(t, db.DB.Create(&models.KnowledgeBaseEntry{

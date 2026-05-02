@@ -40,6 +40,7 @@ func setupCustomerSalesClosureSummaryHandlerDB(t *testing.T) {
 			status TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE
 		)`,
 		`CREATE TABLE sales_orders (
@@ -48,6 +49,7 @@ func setupCustomerSalesClosureSummaryHandlerDB(t *testing.T) {
 			customer_name TEXT,
 			status TEXT,
 			order_date TEXT,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE
 		)`,
 	} {
@@ -65,21 +67,21 @@ func TestGetCustomerSalesClosureSummaryHandlerReturnsFullContractAndAllowsEmptyL
 	yesterday := now.Add(-24 * time.Hour).Format("2006-01-02")
 
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO customers (id, name, status, created_at, updated_at, is_deleted)
+		INSERT INTO customers (id, name, status, created_at, updated_at, deleted_at, is_deleted)
 		VALUES
-		('cust-1', 'Customer A', 'Active', ?, ?, FALSE),
-		('cust-2', 'Customer B', 'Inactive', ?, ?, FALSE),
-		('cust-3', 'Customer C', 'Active', ?, ?, TRUE)
-	`, now, now, lastMonth, lastMonth, now, now).Error)
+		('cust-1', 'Customer A', 'Active', ?, ?, NULL, FALSE),
+		('cust-2', 'Customer B', 'Inactive', ?, ?, NULL, FALSE),
+		('cust-3', 'Customer C', 'Active', ?, ?, ?, TRUE)
+	`, now, now, lastMonth, lastMonth, now, now, now).Error)
 
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO sales_orders (id, customer_id, customer_name, status, order_date, is_deleted)
+		INSERT INTO sales_orders (id, customer_id, customer_name, status, order_date, deleted_at, is_deleted)
 		VALUES
-		('so-1', 'cust-1', 'Customer A', 'Draft', '', FALSE),
-		('so-2', 'cust-2', 'Customer B', 'Done', ?, FALSE),
-		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', TRUE),
-		('so-4', 'cust-2', 'Customer B', 'Canceled', ?, FALSE)
-	`, yesterday, yesterday).Error)
+		('so-1', 'cust-1', 'Customer A', 'Draft', '', NULL, FALSE),
+		('so-2', 'cust-2', 'Customer B', 'Done', ?, NULL, FALSE),
+		('so-3', 'cust-3', 'Customer C', 'Done', '2026-04-01', ?, TRUE),
+		('so-4', 'cust-2', 'Customer B', 'Canceled', ?, NULL, FALSE)
+	`, yesterday, now, yesterday).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)

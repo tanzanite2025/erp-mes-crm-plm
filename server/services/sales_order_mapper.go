@@ -206,6 +206,7 @@ func MapSalesOrderToResponseWithReturnMetrics(order models.SalesOrder, returnedQ
 	for _, line := range order.Lines {
 		lines = append(lines, mapSalesOrderLineToResponseWithReturnMetrics(line, returnedQuantityMap))
 	}
+	isDeleted := order.DeletedAt.Valid || order.IsDeleted
 	return SalesOrderResponse{
 		ID:                   order.ID,
 		OrderNo:              order.OrderNo,
@@ -233,7 +234,7 @@ func MapSalesOrderToResponseWithReturnMetrics(order models.SalesOrder, returnedQ
 		CreatedAt:            order.CreatedAt,
 		UpdatedAt:            order.UpdatedAt,
 		UpdatedBy:            order.UpdatedBy,
-		IsDeleted:            order.IsDeleted,
+		IsDeleted:            isDeleted,
 		Version:              order.Version,
 		FulfillmentRate:      calculateSalesOrderFulfillmentRate(order),
 		AvailableActions:     buildSalesOrderAvailableActions(order, returnedQuantityMap),
@@ -280,6 +281,7 @@ func MapSalesOrderResponseToSnapshot(order SalesOrderResponse) SalesOrderSnapsho
 func MapSalesOrdersToListItemsWithReturnMetrics(orders []models.SalesOrder, includeLines bool, returnedQuantityMap map[uint]float64) []SalesOrderListItemResponse {
 	items := make([]SalesOrderListItemResponse, 0, len(orders))
 	for _, order := range orders {
+		isDeleted := order.DeletedAt.Valid || order.IsDeleted
 		var lines *[]SalesOrderLineResponse
 		if includeLines {
 			mappedLines := make([]SalesOrderLineResponse, 0, len(order.Lines))
@@ -315,7 +317,7 @@ func MapSalesOrdersToListItemsWithReturnMetrics(orders []models.SalesOrder, incl
 			CreatedAt:            order.CreatedAt,
 			UpdatedAt:            order.UpdatedAt,
 			UpdatedBy:            order.UpdatedBy,
-			IsDeleted:            order.IsDeleted,
+			IsDeleted:            isDeleted,
 			Version:              order.Version,
 			FulfillmentRate:      calculateSalesOrderFulfillmentRate(order),
 			AvailableActions:     buildSalesOrderAvailableActions(order, returnedQuantityMap),

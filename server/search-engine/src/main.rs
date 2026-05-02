@@ -1,9 +1,9 @@
 use axum::body::Bytes;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -105,6 +105,21 @@ async fn index_document(
     writer.commit().unwrap();
 
     (StatusCode::OK, "Indexed")
+}
+
+async fn delete_document(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let mut writer = state.writer.write().unwrap();
+    let schema = &state.schema;
+
+    let id_field = schema.get_field("id").unwrap();
+    let term = tantivy::Term::from_field_text(id_field, &id);
+    writer.delete_term(term);
+    writer.commit().unwrap();
+
+    (StatusCode::OK, "Deleted")
 }
 
 async fn search(
@@ -235,6 +250,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/v1/health", get(health_check))
         .route("/v1/index", post(index_document))
+	    .route("/v1/index/:id", delete(delete_document))
         .route("/v1/search", get(search))
         .route(
             "/v1/process-image",

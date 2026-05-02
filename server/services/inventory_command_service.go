@@ -96,6 +96,52 @@ func auditDeltaKeys(deltaKeys []string) json.RawMessage {
 	return diff
 }
 
+func inventoryAuditSnapshot(inv models.Inventory) map[string]any {
+	return map[string]any{
+		"id":              strings.TrimSpace(inv.ID),
+		"materialId":      strings.TrimSpace(inv.MaterialID),
+		"materialName":    strings.TrimSpace(inv.MaterialName),
+		"materialCode":    strings.TrimSpace(inv.MaterialCode),
+		"materialSpec":    strings.TrimSpace(inv.MaterialSpec),
+		"quantity":        inv.Quantity,
+		"totalValue":      inv.TotalValue,
+		"averageUnitCost": inv.AverageUnitCost,
+		"categoryCode":    strings.TrimSpace(inv.CategoryCode),
+		"batchNo":         strings.TrimSpace(inv.BatchNo),
+		"uom":             strings.TrimSpace(inv.UOM),
+	}
+}
+
+func inventoryAuditDiff(before map[string]any, payload map[string]any) json.RawMessage {
+	body := map[string]any{
+		"payload": payload,
+	}
+	if len(before) > 0 {
+		body["before"] = before
+	}
+	diff, _ := json.Marshal(body)
+	return diff
+}
+
+func writeInventoryAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
+	return defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "Inventory",
+		TargetID: strings.TrimSpace(targetID),
+		Action:   strings.TrimSpace(action),
+		Diff:     inventoryAuditDiff(before, payload),
+		Operator: strings.TrimSpace(operator),
+		IP:       strings.TrimSpace(ip),
+	})
+}
+
+type inventoryTransferAuditResult struct {
+	fromBefore    models.Inventory
+	fromAfter     models.Inventory
+	toBefore      *models.Inventory
+	toAfter       models.Inventory
+	transferValue float64
+}
+
 func PatchInventoryRecord(id string, patch PatchInventoryRequest, deltaKeys []string, operator string, ip string) (models.Inventory, error) {
 	var updated models.Inventory
 
@@ -461,19 +507,20 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 	return InventoryShipmentRecordResponse{}, err
 }
 
-func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
+func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) (inventoryTransferAuditResult, error) {
 	var from models.Inventory
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("material_id = ? AND category_code = ? AND batch_no = ?", input.MaterialID, input.FromCategory, input.BatchNo).
 		First(&from).Error; err != nil {
-		return errors.New("source inventory record not found")
+		return inventoryTransferAuditResult{}, errors.New("source inventory record not found")
 	}
 	if input.Quantity <= 0 {
-		return errors.New("[CRITICAL_LOGIC_ERROR] transfer quantity must be greater than zero")
+		return inventoryTransferAuditResult{}, errors.New("[CRITICAL_LOGIC_ERROR] transfer quantity must be greater than zero")
 	}
 	if from.Quantity < input.Quantity {
-		return errors.New("source inventory shortage")
+		return inventoryTransferAuditResult{}, errors.New("source inventory shortage")
 	}
+	result := inventoryTransferAuditResult{fromBefore: from}
 	transferValue := input.Quantity * from.AverageUnitCost
 	from.Quantity -= input.Quantity
 	from.TotalValue -= transferValue
@@ -486,8 +533,9 @@ func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
 		from.AverageUnitCost = 0
 	}
 	if err := updateInventoryRecord(tx, &from); err != nil {
-		return err
+		return inventoryTransferAuditResult{}, err
 	}
+	result.fromAfter = from
 
 	var to models.Inventory
 	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -498,7 +546,9 @@ func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
 		if input.Quantity > 0 {
 			toUnitCost = transferValue / input.Quantity
 		}
+		to.ID = uuid.NewString()
 		to = models.Inventory{
+			BaseModel:       models.BaseModel{ID: to.ID},
 			MaterialID:      input.MaterialID,
 			MaterialName:    from.MaterialName,
 			MaterialCode:    from.MaterialCode,
@@ -510,11 +560,18 @@ func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
 			BatchNo:         input.BatchNo,
 			UOM:             from.UOM,
 		}
-		return tx.Create(&to).Error
+		if err := tx.Create(&to).Error; err != nil {
+			return inventoryTransferAuditResult{}, err
+		}
+		result.toAfter = to
+		result.transferValue = transferValue
+		return result, nil
 	}
 	if err != nil {
-		return err
+		return inventoryTransferAuditResult{}, err
 	}
+	toBefore := to
+	result.toBefore = &toBefore
 
 	previousToQuantity := to.Quantity
 	to.MaterialName = from.MaterialName
@@ -528,12 +585,43 @@ func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) error {
 	} else if previousToQuantity == 0 {
 		to.AverageUnitCost = 0
 	}
-	return updateInventoryRecord(tx, &to)
+	if err := updateInventoryRecord(tx, &to); err != nil {
+		return inventoryTransferAuditResult{}, err
+	}
+	result.toAfter = to
+	result.transferValue = transferValue
+	return result, nil
 }
 
-func TransferInventory(input TransferInventoryInput) error {
+func TransferInventory(input TransferInventoryInput, operator string, ip string) error {
+	var transferResult inventoryTransferAuditResult
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		return transferInventoryTx(tx, input)
+		var err error
+		transferResult, err = transferInventoryTx(tx, input)
+		if err != nil {
+			return err
+		}
+
+		before := map[string]any{
+			"from": inventoryAuditSnapshot(transferResult.fromBefore),
+		}
+		if transferResult.toBefore != nil {
+			before["to"] = inventoryAuditSnapshot(*transferResult.toBefore)
+		}
+		payload := map[string]any{
+			"materialId":      strings.TrimSpace(input.MaterialID),
+			"fromCategory":    strings.TrimSpace(input.FromCategory),
+			"toCategory":      strings.TrimSpace(input.ToCategory),
+			"batchNo":         strings.TrimSpace(input.BatchNo),
+			"quantity":        input.Quantity,
+			"transferValue":   transferResult.transferValue,
+			"fromInventoryId": strings.TrimSpace(transferResult.fromAfter.ID),
+			"toInventoryId":   strings.TrimSpace(transferResult.toAfter.ID),
+			"from":            inventoryAuditSnapshot(transferResult.fromAfter),
+			"to":              inventoryAuditSnapshot(transferResult.toAfter),
+		}
+
+		return writeInventoryAuditEntry(tx, strings.TrimSpace(input.MaterialID), "INVENTORY_TRANSFER", before, payload, operator, ip)
 	})
 
 	if err == nil {
@@ -548,17 +636,35 @@ func TransferInventory(input TransferInventoryInput) error {
 	return err
 }
 
-func ReconcileNegativeInventory() error {
-	return db.DB.Model(&models.Inventory{}).
-		Where("quantity < 0").
-		Updates(map[string]interface{}{
-			"quantity":          0,
-			"total_value":       0,
-			"average_unit_cost": 0,
-		}).Error
+func ReconcileNegativeInventory(operator string, ip string) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		var records []models.Inventory
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("quantity < 0").
+			Find(&records).Error; err != nil {
+			return err
+		}
+
+		for _, record := range records {
+			before := inventoryAuditSnapshot(record)
+			record.Quantity = 0
+			record.TotalValue = 0
+			record.AverageUnitCost = 0
+			if err := updateInventoryRecord(tx, &record); err != nil {
+				return err
+			}
+			payload := inventoryAuditSnapshot(record)
+			payload["operation"] = "reconcile_negative_inventory"
+			if err := writeInventoryAuditEntry(tx, record.ID, "INVENTORY_RECONCILE", before, payload, operator, ip); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
-func BulkSyncInventory(items []BulkSyncInventoryItemRequest) error {
+func BulkSyncInventory(items []BulkSyncInventoryItemRequest, operator string, ip string) error {
 	modelsItems := MapBulkSyncInventoryRequestsToModels(items)
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		for _, inv := range modelsItems {
@@ -579,14 +685,25 @@ func BulkSyncInventory(items []BulkSyncInventoryItemRequest) error {
 				if err := tx.Create(&inv).Error; err != nil {
 					return err
 				}
+				payload := inventoryAuditSnapshot(inv)
+				payload["operation"] = "create"
+				if err := writeInventoryAuditEntry(tx, inv.ID, "INVENTORY_BULK_SYNC", nil, payload, operator, ip); err != nil {
+					return err
+				}
 				continue
 			}
 			if lookupErr != nil {
 				return lookupErr
 			}
 
+			before := inventoryAuditSnapshot(existing)
 			mergeInventoryForSync(&existing, inv)
 			if err := updateInventoryRecord(tx, &existing); err != nil {
+				return err
+			}
+			payload := inventoryAuditSnapshot(existing)
+			payload["operation"] = "update"
+			if err := writeInventoryAuditEntry(tx, existing.ID, "INVENTORY_BULK_SYNC", before, payload, operator, ip); err != nil {
 				return err
 			}
 		}

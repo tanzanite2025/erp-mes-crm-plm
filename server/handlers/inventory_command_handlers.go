@@ -337,7 +337,7 @@ func TransferInventoryHandler(c *gin.Context) {
 
 	input := services.MapTransferInventoryRequestToInput(request)
 
-	if err := services.TransferInventory(input); err != nil {
+	if err := services.TransferInventory(input, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_TRANSFER_FAILED", "[SERVER] transfer failed: "+err.Error())
 		return
 	}
@@ -364,7 +364,7 @@ func PrepareVirtualShipmentHandler(c *gin.Context) {
 
 // ReconcileInventoryHandler fixes negative quantity records to zero.
 func ReconcileInventoryHandler(c *gin.Context) {
-	if err := services.ReconcileNegativeInventory(); err != nil {
+	if err := services.ReconcileNegativeInventory(middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_RECONCILE_FAILED", "reconcile failed")
 		return
 	}
@@ -400,7 +400,7 @@ func BulkSyncInventoryHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.BulkSyncInventory(input); err != nil {
+	if err := services.BulkSyncInventory(input, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_BULK_SYNC_FAILED", "[SERVER] bulk sync failed: "+err.Error())
 		return
 	}

@@ -34,6 +34,7 @@ func setupReceivableDetailServiceTestDB(t *testing.T) *gorm.DB {
 			barcode TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1

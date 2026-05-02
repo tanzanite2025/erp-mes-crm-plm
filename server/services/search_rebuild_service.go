@@ -25,7 +25,7 @@ func RebuildSearchIndex() (int, error) {
 	}
 
 	var salesOrders []models.SalesOrder
-	if err := db.DB.Where("is_deleted = ?", false).Find(&salesOrders).Error; err != nil {
+	if err := db.DB.Find(&salesOrders).Error; err != nil {
 		return 0, err
 	}
 	for _, order := range salesOrders {
@@ -35,7 +35,7 @@ func RebuildSearchIndex() (int, error) {
 	}
 
 	var purchaseOrders []models.PurchaseOrder
-	if err := db.DB.Where("is_deleted = ?", false).Find(&purchaseOrders).Error; err != nil {
+	if err := db.DB.Find(&purchaseOrders).Error; err != nil {
 		return 0, err
 	}
 	for _, order := range purchaseOrders {
@@ -45,7 +45,7 @@ func RebuildSearchIndex() (int, error) {
 	}
 
 	var suppliers []models.Supplier
-	if err := db.DB.Where("is_deleted = ?", false).Find(&suppliers).Error; err != nil {
+	if err := db.DB.Find(&suppliers).Error; err != nil {
 		return 0, err
 	}
 	for _, supplier := range suppliers {

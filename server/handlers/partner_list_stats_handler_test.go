@@ -47,6 +47,7 @@ func setupPartnerListStatsHandlerTestDB(t *testing.T) {
 			balance REAL,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
@@ -64,6 +65,7 @@ func setupPartnerListStatsHandlerTestDB(t *testing.T) {
 			rating REAL,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
@@ -82,17 +84,17 @@ func TestGetCustomersHandlerReturnsMetadataStats(t *testing.T) {
 	lastMonth := startOfMonth.Add(-24 * time.Hour)
 
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
 	`, uuid.NewString(), "Active New Customer", "CUST-001", "Alice", "13800000001", "a@example.com", "Addr-1", "Active", 1000, 0, now, now, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
 	`, uuid.NewString(), "Inactive Old Customer", "CUST-002", "Bob", "13800000002", "b@example.com", "Addr-2", "Inactive", 1000, 0, lastMonth, lastMonth, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), "Deleted Customer", "CUST-003", "Carol", "13800000003", "c@example.com", "Addr-3", "Active", 1000, 0, now, now, true, 1).Error)
+		INSERT INTO customers (id, name, code, contact_person, contact_phone, email, address, status, credit_limit, balance, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), "Deleted Customer", "CUST-003", "Carol", "13800000003", "c@example.com", "Addr-3", "Active", 1000, 0, now, now, now, true, 1).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -121,17 +123,17 @@ func TestGetSuppliersHandlerReturnsMetadataStats(t *testing.T) {
 	now := time.Now().UTC()
 
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), "Active Supplier", "SUP-001", "Metal", "[]", "Alice", "13800000101", "sa@example.com", "Addr-1", "Active", 4.5, now, now, false, 1).Error)
+		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), "Active Supplier", "SUP-001", "Metal", "[]", "Alice", "13800000101", "sa@example.com", "Addr-1", "Active", 4.5, now, now, nil, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), "Review Supplier", "SUP-002", "Chem", "[]", "Bob", "13800000102", "sb@example.com", "Addr-2", "OnReview", 4.2, now, now, false, 1).Error)
+		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), "Review Supplier", "SUP-002", "Chem", "[]", "Bob", "13800000102", "sb@example.com", "Addr-2", "OnReview", 4.2, now, now, nil, false, 1).Error)
 	require.NoError(t, db.DB.Exec(`
-		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, is_deleted, version)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, uuid.NewString(), "Deleted Supplier", "SUP-003", "Equip", "[]", "Carol", "13800000103", "sc@example.com", "Addr-3", "Active", 4.8, now, now, true, 1).Error)
+		INSERT INTO suppliers (id, name, code, category, main_products, contact_person, contact_phone, email, address, status, rating, created_at, updated_at, deleted_at, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), "Deleted Supplier", "SUP-003", "Equip", "[]", "Carol", "13800000103", "sc@example.com", "Addr-3", "Active", 4.8, now, now, now, true, 1).Error)
 
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)

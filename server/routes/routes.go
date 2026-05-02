@@ -56,7 +56,7 @@ func SetupRoutes(r *gin.Engine) {
 		authorized.GET("/auth/snapshot", handlers.GetAuthSnapshotHandler)
 		authorized.GET("/dashboard/stats", middleware.RequirePermissions(authz.MenuDashboard), handlers.GetDashboardStatsHandler)
 		authorized.GET("/audit/timeline", handlers.GetDataTimelineHandler)
-		authorized.GET("/audit/engine/stats", handlers.GetAuditEngineStatsHandler)
+		authorized.GET("/audit/engine/stats", middleware.RequirePermissions(authz.MenuSystem), handlers.GetAuditEngineStatsHandler)
 		authorized.POST("/assets/upload", handlers.UploadAssetHandler)
 		authorized.POST("/ai/proxy", middleware.AIPolicyGuard(), middleware.AIProxyIngressGuard(), handlers.AiProxyHandler)
 
@@ -252,7 +252,6 @@ func SetupRoutes(r *gin.Engine) {
 			printGroup.POST("/atomic-print", handlers.AtomicPrintHandler)
 			printGroup.POST("/:id/activate", handlers.ActivateBatchHandler)
 			printGroup.POST("/:id/scrap", handlers.ScrapBatchHandler)
-			printGroup.GET("/next-sequence", handlers.GetNextSequenceHandler)
 		}
 
 		numberingGroup := authorized.Group("/numbering")

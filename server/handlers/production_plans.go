@@ -165,7 +165,7 @@ func GetOrderProgressHandler(c *gin.Context) {
 			COALESCE((SELECT SUM(pp.quantity) FROM production_plans pp WHERE pp.order_id = so.id AND pp.status = 'COMPLETED'), 0) as completed,
 			COALESCE((SELECT SUM(pp.quantity) FROM production_plans pp WHERE pp.order_id = so.id AND pp.status = 'IN_PROGRESS'), 0) as wip
 		FROM sales_orders so
-		WHERE so.is_deleted = false
+		WHERE so.deleted_at IS NULL
 		ORDER BY so.created_at DESC
 		LIMIT 20
 	`

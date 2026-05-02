@@ -10,7 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+const maxPrintSequenceValue int64 = 60466175
 
 // generateBatchNo generates a daily incremental batch number like P20260327-001.
 func generateBatchNo(tx *gorm.DB) (string, error) {
@@ -223,6 +226,10 @@ func AtomicPrintHandler(c *gin.Context) {
 	}
 
 	req.TemplateName = strings.TrimSpace(req.TemplateName)
+	if req.Quantity <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] quantity 必须大于 0"})
+		return
+	}
 
 	productID, err := normalizeOptionalUUIDString(req.ProductID)
 	if err != nil || productID == "" {
@@ -248,21 +255,34 @@ func AtomicPrintHandler(c *gin.Context) {
 		if err := tx.Where(models.Sequence{Key: key}).FirstOrCreate(&seq).Error; err != nil {
 			return err
 		}
-		if err := tx.Raw("SELECT * FROM sequences WHERE key = ? FOR UPDATE", key).Scan(&seq).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("key = ?", key).First(&seq).Error; err != nil {
 			return err
 		}
 
-		seq.Value++
-		if seq.Value > 60466175 {
+		startValue := seq.Value + 1
+		nextValue := seq.Value + int64(req.Quantity)
+		if nextValue > maxPrintSequenceValue {
 			return fmt.Errorf("流水号已达到 36 进制 5 位上限")
 		}
-		if err := tx.Model(&seq).Update("value", seq.Value).Error; err != nil {
+		result := tx.Model(&models.Sequence{}).
+			Where("key = ? AND value = ?", key, seq.Value).
+			Update("value", nextValue)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrVersionConflict
+		}
+
+		batchNo, err := generateBatchNo(tx)
+		if err != nil {
 			return err
 		}
 
-		sn = toBase36(seq.Value)
+		sn = toBase36(startValue)
 		sn = fmt.Sprintf("%05s", sn)
 		batch = models.PrintBatch{
+			BatchNo:      batchNo,
 			TemplateName: req.TemplateName,
 			ProductID:    req.ProductID,
 			BOMID:        req.BOMID,

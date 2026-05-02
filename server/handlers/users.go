@@ -210,6 +210,24 @@ func hasContextPermission(c *gin.Context, required string) bool {
 	return false
 }
 
+func canManageTargetUser(c *gin.Context, targetUserID string) bool {
+	if hasContextPermission(c, authz.PermissionManage) {
+		return true
+	}
+
+	rawUserID, exists := c.Get("userId")
+	if !exists {
+		return false
+	}
+
+	currentUserID, ok := rawUserID.(string)
+	if !ok {
+		return false
+	}
+
+	return strings.TrimSpace(currentUserID) != "" && strings.TrimSpace(currentUserID) == strings.TrimSpace(targetUserID)
+}
+
 // BindUserEmployeeHandler binds an account to an employee identity.
 func BindUserEmployeeHandler(c *gin.Context) {
 	userID := strings.TrimSpace(c.Param("id"))
@@ -444,6 +462,10 @@ func PatchUserHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
+	if !canManageTargetUser(c, user.ID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] You can only modify your own account unless you have manage permissions"})
+		return
+	}
 
 	if strings.EqualFold(strings.TrimSpace(user.Username), "admin") && !hasContextPermission(c, authz.PermissionManage) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can manage the seed admin account"})
@@ -548,6 +570,10 @@ func ReplaceUserHandler(c *gin.Context) {
 	var user models.User
 	if err := db.DB.First(&user, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	if !canManageTargetUser(c, user.ID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] You can only modify your own account unless you have manage permissions"})
 		return
 	}
 

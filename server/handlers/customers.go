@@ -171,7 +171,7 @@ func DeleteCustomerHandler(c *gin.Context) {
 
 	var orderCount int64
 	db.DB.Model(&models.SalesOrder{}).
-		Where("customer_id = ? AND is_deleted = ? AND status NOT IN (?)", id, false, []string{"Done", "Canceled"}).
+		Where("customer_id = ? AND status NOT IN (?)", id, []string{"Done", "Canceled"}).
 		Count(&orderCount)
 
 	if orderCount > 0 {

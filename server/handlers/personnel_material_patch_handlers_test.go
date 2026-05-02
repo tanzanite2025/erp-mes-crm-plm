@@ -217,3 +217,30 @@ func TestPatchMaterialHandlerReturnsVersionedResponse(t *testing.T) {
 	require.Equal(t, "Tube Plus", response.Name)
 	require.Equal(t, 3, response.Version)
 }
+
+func TestPatchMaterialHandlerRejectsLiteralDeltaValue(t *testing.T) {
+	setupPersonnelMaterialPatchHandlerTestDB(t)
+
+	now := time.Now().UTC()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, code, name, category, uom, status, version, revision_no, change_type, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, materialID, "MAT-001", "Tube", "RAW_MATERIAL", "PCS", "Active", 2, "R1", "MANUAL", now, now).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(
+		http.MethodPatch,
+		"/api/v1/materials/"+materialID,
+		strings.NewReader(`{"op":"PATCH","delta":{"name":"Tube Plus"},"metadata":{"id":"`+materialID+`","version":2}}`),
+	)
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: materialID}}
+	ctx.Request = request
+
+	PatchMaterialHandler(ctx)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "SDRTS object")
+}

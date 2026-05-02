@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"html"
+	stdhtml "html"
+	"io"
 	"net/http"
-	"regexp"
+	"net/url"
 	"sort"
 	"strings"
 	"unicode"
@@ -15,12 +17,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	htmlnode "golang.org/x/net/html"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-const legacyKnowledgeBaseConfigKey = "BASIC_SETTINGS_KNOWLEDGE_BASE_ENTRIES"
+const (
+	legacyKnowledgeBaseConfigKey  = "BASIC_SETTINGS_KNOWLEDGE_BASE_ENTRIES"
+	knowledgeSearchMaxQueryRunes  = 120
+	knowledgeSearchMaxTokens      = 8
+	knowledgeSearchCandidateLimit = 500
+	knowledgeSearchResultLimit    = 50
+)
 
 var (
 	knowledgeAllowedCategories = map[string]bool{
@@ -77,13 +86,21 @@ var (
 		{52218, 52697, 't'}, {52698, 52979, 'w'}, {52980, 53640, 'x'},
 		{53689, 54480, 'y'}, {54481, 55289, 'z'},
 	}
-	knowledgeTagPattern         = regexp.MustCompile(`<[^>]+>`)
-	knowledgeBreakPattern       = regexp.MustCompile(`(?i)<br\s*/?>|</(p|div|li|h3|h4|blockquote)>`)
-	knowledgeImagePattern       = regexp.MustCompile(`(?i)<img\b`)
-	knowledgeVideoPattern       = regexp.MustCompile(`(?i)<(video|source)\b`)
-	knowledgeScriptPattern      = regexp.MustCompile(`(?is)<script[\s\S]*?>[\s\S]*?</script>`)
-	knowledgeInlineEventPattern = regexp.MustCompile(`(?i)\son\w+\s*=\s*(".*?"|'.*?'|[^\s>]+)`)
-	knowledgeJavascriptPattern  = regexp.MustCompile(`(?i)javascript:`)
+	knowledgeAllowedHTMLTags = map[string]bool{
+		"a": true, "b": true, "blockquote": true, "br": true, "div": true, "em": true, "h3": true, "h4": true,
+		"i": true, "img": true, "li": true, "ol": true, "p": true, "span": true, "strong": true, "u": true, "ul": true,
+	}
+	knowledgeVoidHTMLTags = map[string]bool{
+		"br": true, "img": true,
+	}
+	knowledgeDropHTMLContentTags = map[string]bool{
+		"base": true, "button": true, "embed": true, "form": true, "iframe": true, "input": true, "link": true,
+		"math": true, "meta": true, "object": true, "option": true, "script": true, "select": true, "source": true,
+		"style": true, "svg": true, "textarea": true, "video": true,
+	}
+	knowledgeTextBreakTags = map[string]bool{
+		"blockquote": true, "br": true, "div": true, "h3": true, "h4": true, "li": true, "ol": true, "p": true, "ul": true,
+	}
 	defaultKnowledgeBaseEntries = []knowledgeEntryInput{
 		{
 			ID:        "kb-sales-order-scheduling",
@@ -153,19 +170,34 @@ func SearchKnowledgeBaseEntriesHandler(c *gin.Context) {
 	}
 
 	query := strings.TrimSpace(c.Query("q"))
-	var entries []models.KnowledgeBaseEntry
-	if err := db.DB.Order("updated_at desc").Find(&entries).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[KNOWLEDGE_BASE] failed to search entries"})
+	if len([]rune(query)) > knowledgeSearchMaxQueryRunes {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] knowledge search query is too long"})
 		return
 	}
+
+	var entries []models.KnowledgeBaseEntry
 	if query == "" {
+		if err := db.DB.Order("updated_at desc").Limit(knowledgeSearchResultLimit).Find(&entries).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[KNOWLEDGE_BASE] failed to search entries"})
+			return
+		}
 		c.JSON(http.StatusOK, entries)
+		return
+	}
+
+	searchTokens := knowledgeSearchTokens(query)
+	if len(searchTokens) == 0 {
+		c.JSON(http.StatusOK, []models.KnowledgeBaseEntry{})
+		return
+	}
+	if err := queryKnowledgeBaseSearchCandidates(searchTokens).Find(&entries).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[KNOWLEDGE_BASE] failed to search entries"})
 		return
 	}
 
 	scoredEntries := make([]knowledgeScoredEntry, 0, len(entries))
 	for _, entry := range entries {
-		score := knowledgeEntrySearchScore(entry, query)
+		score := knowledgeEntrySearchScore(entry, searchTokens)
 		if score <= 0 {
 			continue
 		}
@@ -180,6 +212,9 @@ func SearchKnowledgeBaseEntriesHandler(c *gin.Context) {
 
 	results := make([]models.KnowledgeBaseEntry, 0, len(scoredEntries))
 	for _, item := range scoredEntries {
+		if len(results) >= knowledgeSearchResultLimit {
+			break
+		}
 		results = append(results, item.entry)
 	}
 	c.JSON(http.StatusOK, results)
@@ -330,6 +365,7 @@ func buildKnowledgeBaseEntry(input knowledgeEntryInput, createdBy string, id str
 	}
 
 	userID := optionalUserID(createdBy)
+	media := detectKnowledgeContentMedia(content)
 	return models.KnowledgeBaseEntry{
 		BaseModel:   models.BaseModel{ID: id},
 		Title:       title,
@@ -339,8 +375,8 @@ func buildKnowledgeBaseEntry(input knowledgeEntryInput, createdBy string, id str
 		ContentText: extractKnowledgeContentText(content),
 		Keywords:    keywords,
 		RoutePath:   routePath,
-		HasImage:    knowledgeImagePattern.MatchString(content),
-		HasVideo:    knowledgeVideoPattern.MatchString(content),
+		HasImage:    media.hasImage,
+		HasVideo:    media.hasVideo,
 		Version:     1,
 		CreatedBy:   userID,
 		UpdatedBy:   userID,
@@ -388,13 +424,101 @@ func marshalKnowledgeKeywords(values []string) (json.RawMessage, error) {
 }
 
 func extractKnowledgeContentText(content string) string {
-	withBreaks := knowledgeBreakPattern.ReplaceAllString(content, "\n")
-	withoutTags := knowledgeTagPattern.ReplaceAllString(withBreaks, "")
-	return strings.TrimSpace(html.UnescapeString(withoutTags))
+	tokenizer := htmlnode.NewTokenizer(strings.NewReader(content))
+	var builder strings.Builder
+	dropTag := ""
+	dropDepth := 0
+
+	for {
+		tokenType := tokenizer.Next()
+		if tokenType == htmlnode.ErrorToken {
+			break
+		}
+
+		token := tokenizer.Token()
+		tagName := strings.ToLower(token.Data)
+		if dropTag != "" {
+			switch tokenType {
+			case htmlnode.StartTagToken:
+				if tagName == dropTag {
+					dropDepth++
+				}
+			case htmlnode.EndTagToken:
+				if tagName == dropTag {
+					dropDepth--
+					if dropDepth <= 0 {
+						dropTag = ""
+					}
+				}
+			}
+			continue
+		}
+
+		switch tokenType {
+		case htmlnode.TextToken:
+			builder.WriteString(stdhtml.UnescapeString(token.Data))
+		case htmlnode.StartTagToken, htmlnode.SelfClosingTagToken:
+			if knowledgeDropHTMLContentTags[tagName] && tokenType == htmlnode.StartTagToken {
+				dropTag = tagName
+				dropDepth = 1
+				continue
+			}
+			if knowledgeTextBreakTags[tagName] {
+				builder.WriteByte('\n')
+			}
+		case htmlnode.EndTagToken:
+			if knowledgeTextBreakTags[tagName] {
+				builder.WriteByte('\n')
+			}
+		}
+	}
+
+	return normalizeKnowledgeContentText(builder.String())
 }
 
-func knowledgeEntrySearchScore(entry models.KnowledgeBaseEntry, query string) int {
-	tokens := knowledgeSearchTokens(query)
+func normalizeKnowledgeContentText(value string) string {
+	lines := strings.Split(value, "\n")
+	normalized := make([]string, 0, len(lines))
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		normalized = append(normalized, strings.Join(fields, " "))
+	}
+	return strings.TrimSpace(strings.Join(normalized, "\n"))
+}
+
+type knowledgeContentMediaState struct {
+	hasImage bool
+	hasVideo bool
+}
+
+func detectKnowledgeContentMedia(content string) knowledgeContentMediaState {
+	tokenizer := htmlnode.NewTokenizer(strings.NewReader(content))
+	state := knowledgeContentMediaState{}
+	for {
+		tokenType := tokenizer.Next()
+		if tokenType == htmlnode.ErrorToken {
+			break
+		}
+		if tokenType != htmlnode.StartTagToken && tokenType != htmlnode.SelfClosingTagToken {
+			continue
+		}
+		switch strings.ToLower(tokenizer.Token().Data) {
+		case "img":
+			state.hasImage = true
+		case "video", "source":
+			state.hasVideo = true
+		}
+		if state.hasImage && state.hasVideo {
+			return state
+		}
+	}
+	return state
+}
+
+func knowledgeEntrySearchScore(entry models.KnowledgeBaseEntry, tokens []string) int {
 	if len(tokens) == 0 {
 		return 1
 	}
@@ -529,6 +653,41 @@ func keywordMatchesKnowledgeToken(raw json.RawMessage, token string) bool {
 	return false
 }
 
+func queryKnowledgeBaseSearchCandidates(tokens []string) *gorm.DB {
+	query := db.DB.Order("updated_at desc").Limit(knowledgeSearchCandidateLimit)
+	clauses := make([]string, 0, len(tokens))
+	args := make([]interface{}, 0, len(tokens)*6)
+	for _, token := range tokens {
+		if !knowledgeSearchTokenCanUseDBPrefilter(token) {
+			continue
+		}
+		like := "%" + strings.ToLower(token) + "%"
+		clauses = append(clauses, `(LOWER(title) LIKE ?
+			OR LOWER(summary) LIKE ?
+			OR LOWER(content_text) LIKE ?
+			OR LOWER(route_path) LIKE ?
+			OR LOWER(category) LIKE ?
+			OR LOWER(CAST(keywords AS TEXT)) LIKE ?)`)
+		args = append(args, like, like, like, like, like, like)
+	}
+	if len(clauses) == 0 {
+		return query
+	}
+	return query.Where(strings.Join(clauses, " OR "), args...)
+}
+
+func knowledgeSearchTokenCanUseDBPrefilter(token string) bool {
+	if len([]rune(token)) < 2 {
+		return false
+	}
+	for _, r := range token {
+		if r > unicode.MaxASCII {
+			return true
+		}
+	}
+	return false
+}
+
 func knowledgeSearchTokens(query string) []string {
 	normalized := strings.ToLower(strings.TrimSpace(query))
 	fields := strings.FieldsFunc(normalized, func(r rune) bool {
@@ -543,14 +702,205 @@ func knowledgeSearchTokens(query string) []string {
 		}
 		seen[token] = true
 		tokens = append(tokens, token)
+		if len(tokens) >= knowledgeSearchMaxTokens {
+			break
+		}
 	}
 	return tokens
 }
 
 func sanitizeKnowledgeContentHTML(content string) string {
-	withoutScripts := knowledgeScriptPattern.ReplaceAllString(content, "")
-	withoutEvents := knowledgeInlineEventPattern.ReplaceAllString(withoutScripts, "")
-	return strings.TrimSpace(knowledgeJavascriptPattern.ReplaceAllString(withoutEvents, ""))
+	tokenizer := htmlnode.NewTokenizer(strings.NewReader(content))
+	var builder strings.Builder
+	dropTag := ""
+	dropDepth := 0
+
+	for {
+		tokenType := tokenizer.Next()
+		if tokenType == htmlnode.ErrorToken {
+			if tokenizer.Err() == io.EOF {
+				break
+			}
+			break
+		}
+
+		token := tokenizer.Token()
+		tagName := strings.ToLower(token.Data)
+
+		if dropTag != "" {
+			switch tokenType {
+			case htmlnode.StartTagToken:
+				if tagName == dropTag {
+					dropDepth++
+				}
+			case htmlnode.EndTagToken:
+				if tagName == dropTag {
+					dropDepth--
+					if dropDepth <= 0 {
+						dropTag = ""
+					}
+				}
+			}
+			continue
+		}
+
+		switch tokenType {
+		case htmlnode.TextToken:
+			builder.WriteString(stdhtml.EscapeString(token.Data))
+		case htmlnode.StartTagToken, htmlnode.SelfClosingTagToken:
+			if !knowledgeAllowedHTMLTags[tagName] {
+				if knowledgeDropHTMLContentTags[tagName] && tokenType == htmlnode.StartTagToken {
+					dropTag = tagName
+					dropDepth = 1
+				}
+				continue
+			}
+			renderKnowledgeStartTag(&builder, tagName, token.Attr, tokenType == htmlnode.SelfClosingTagToken)
+		case htmlnode.EndTagToken:
+			if knowledgeAllowedHTMLTags[tagName] && !knowledgeVoidHTMLTags[tagName] {
+				builder.WriteString("</")
+				builder.WriteString(tagName)
+				builder.WriteByte('>')
+			}
+		}
+	}
+
+	return strings.TrimSpace(builder.String())
+}
+
+func renderKnowledgeStartTag(builder *strings.Builder, tagName string, attributes []htmlnode.Attribute, selfClosing bool) {
+	if tagName == "img" && !knowledgeImageAttributes(attributes).hasSource {
+		return
+	}
+
+	builder.WriteByte('<')
+	builder.WriteString(tagName)
+	for _, attr := range sanitizeKnowledgeAttributes(tagName, attributes) {
+		builder.WriteByte(' ')
+		builder.WriteString(attr.Key)
+		builder.WriteString(`="`)
+		builder.WriteString(stdhtml.EscapeString(attr.Val))
+		builder.WriteByte('"')
+	}
+	if knowledgeVoidHTMLTags[tagName] {
+		builder.WriteByte('>')
+		return
+	}
+	builder.WriteByte('>')
+	if selfClosing {
+		builder.WriteString("</")
+		builder.WriteString(tagName)
+		builder.WriteByte('>')
+	}
+}
+
+type knowledgeImageAttributeState struct {
+	hasSource bool
+}
+
+func knowledgeImageAttributes(attributes []htmlnode.Attribute) knowledgeImageAttributeState {
+	state := knowledgeImageAttributeState{}
+	for _, attr := range attributes {
+		if strings.EqualFold(attr.Key, "src") && isSafeKnowledgeImageSrc(attr.Val) {
+			state.hasSource = true
+			return state
+		}
+	}
+	return state
+}
+
+func sanitizeKnowledgeAttributes(tagName string, attributes []htmlnode.Attribute) []htmlnode.Attribute {
+	safeAttributes := make([]htmlnode.Attribute, 0, len(attributes)+2)
+	switch tagName {
+	case "a":
+		for _, attr := range attributes {
+			name := strings.ToLower(strings.TrimSpace(attr.Key))
+			switch name {
+			case "href":
+				if isSafeKnowledgeLinkURL(attr.Val) {
+					safeAttributes = append(safeAttributes, htmlnode.Attribute{Key: "href", Val: strings.TrimSpace(attr.Val)})
+				}
+			}
+		}
+		safeAttributes = append(safeAttributes,
+			htmlnode.Attribute{Key: "target", Val: "_blank"},
+			htmlnode.Attribute{Key: "rel", Val: "noreferrer"},
+		)
+	case "img":
+		for _, attr := range attributes {
+			name := strings.ToLower(strings.TrimSpace(attr.Key))
+			switch name {
+			case "src":
+				if isSafeKnowledgeImageSrc(attr.Val) {
+					safeAttributes = append(safeAttributes, htmlnode.Attribute{Key: "src", Val: strings.TrimSpace(attr.Val)})
+				}
+			case "alt":
+				safeAttributes = append(safeAttributes, htmlnode.Attribute{Key: "alt", Val: strings.TrimSpace(attr.Val)})
+			}
+		}
+	}
+	return safeAttributes
+}
+
+func normalizeKnowledgeURLValue(value string) string {
+	return strings.Map(func(r rune) rune {
+		if r <= 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, strings.TrimSpace(stdhtml.UnescapeString(value)))
+}
+
+func isSafeKnowledgeLinkURL(value string) bool {
+	normalized := normalizeKnowledgeURLValue(value)
+	if normalized == "" {
+		return false
+	}
+	if strings.HasPrefix(normalized, "/") {
+		return !strings.HasPrefix(normalized, "//")
+	}
+	parsed, err := url.Parse(normalized)
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(parsed.Scheme) {
+	case "http", "https", "mailto", "tel":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSafeKnowledgeImageSrc(value string) bool {
+	normalized := normalizeKnowledgeURLValue(value)
+	lower := strings.ToLower(normalized)
+	if strings.HasPrefix(normalized, "/") {
+		return !strings.HasPrefix(normalized, "//")
+	}
+	if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
+		return true
+	}
+
+	const dataPrefix = "data:image/"
+	if !strings.HasPrefix(lower, dataPrefix) {
+		return false
+	}
+	commaIndex := strings.Index(normalized, ",")
+	if commaIndex <= 0 {
+		return false
+	}
+	mediaType := lower[len(dataPrefix):commaIndex]
+	if !strings.Contains(mediaType, ";base64") {
+		return false
+	}
+	imageType := strings.Split(mediaType, ";")[0]
+	switch imageType {
+	case "png", "jpeg", "jpg", "gif", "webp":
+	default:
+		return false
+	}
+	_, err := base64.StdEncoding.DecodeString(normalized[commaIndex+1:])
+	return err == nil
 }
 
 func ensureKnowledgeBaseSeeded() error {

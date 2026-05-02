@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/services"
@@ -71,6 +72,7 @@ func setupSavePatchSemanticsTestDB(t *testing.T) {
 			evidences BLOB DEFAULT X'5B5D',
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN,
 			version INTEGER
@@ -140,6 +142,7 @@ func TestPatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory(t *testing.T)
 	request.Header.Set("Content-Type", "application/json")
 	ctx.Request = request
 	ctx.Params = gin.Params{{Key: "id", Value: unitID}}
+	ctx.Set("permissions", []string{authz.PermissionManage})
 
 	PatchUnitHandler(ctx)
 
@@ -150,6 +153,44 @@ func TestPatchUnitHandlerSupportsDeltaPayloadAndNormalizesCategory(t *testing.T)
 	require.Equal(t, "Square Meter", persisted.Name)
 	require.Equal(t, "AREA", persisted.Category)
 	require.Equal(t, "volume unit", persisted.Description)
+}
+
+func TestPatchUnitHandlerReturnsForbiddenWithoutManagePermission(t *testing.T) {
+	setupSavePatchSemanticsTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	unitID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, unitID, now, now, "KG", "Kilogram", "weight", 3, "active", true, "system unit").Error)
+
+	payload := services.SDRTSDeltaHandlerRequest{
+		Op: "PATCH",
+		Delta: map[string]json.RawMessage{
+			"name": json.RawMessage(`{"o":"Kilogram","n":"Hijacked"}`),
+		},
+		Metadata: services.SDRTSDeltaMetadata{ID: unitID, Version: 1},
+	}
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/basic/units/"+unitID, strings.NewReader(string(body)))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: unitID}}
+
+	PatchUnitHandler(ctx)
+
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "insufficient permissions")
+
+	var persisted models.Unit
+	require.NoError(t, db.DB.Where("id = ?", unitID).First(&persisted).Error)
+	require.Equal(t, "Kilogram", persisted.Name)
 }
 
 func TestGetUnitsHandlerNormalizesHistoricalCategories(t *testing.T) {
@@ -186,6 +227,69 @@ func TestGetUnitsHandlerNormalizesHistoricalCategories(t *testing.T) {
 
 	require.Equal(t, "WEIGHT", categoryByCode["KG"])
 	require.Equal(t, "AREA", categoryByCode["M2"])
+}
+
+func TestDeleteUnitHandlerDoesNotPanicWhenRedisIsNil(t *testing.T) {
+	setupSavePatchSemanticsTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	previousRDB := db.RDB
+	db.RDB = nil
+	t.Cleanup(func() {
+		db.RDB = previousRDB
+	})
+
+	unitID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, unitID, now, now, "PCS", "Pieces", "quantity", 0, "active", false, "count unit").Error)
+
+	recorder := httptest.NewRecorder()
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("permissions", []string{authz.PermissionManage})
+		c.Next()
+	})
+	router.DELETE("/api/v1/basic/units/:id", DeleteUnitHandler)
+	request := httptest.NewRequest(http.MethodDelete, "/api/v1/basic/units/"+unitID, nil)
+
+	require.NotPanics(t, func() {
+		router.ServeHTTP(recorder, request)
+	})
+	require.Equal(t, http.StatusNoContent, recorder.Code, recorder.Body.String())
+
+	var count int64
+	require.NoError(t, db.DB.Model(&models.Unit{}).Where("id = ?", unitID).Count(&count).Error)
+	require.Equal(t, int64(0), count)
+}
+
+func TestDeleteUnitHandlerReturnsForbiddenWithoutManagePermission(t *testing.T) {
+	setupSavePatchSemanticsTestDB(t)
+	gin.SetMode(gin.TestMode)
+
+	unitID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO units (id, created_at, updated_at, code, name, category, precision, status, is_system, description)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, unitID, now, now, "PCS", "Pieces", "quantity", 0, "active", false, "count unit").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodDelete, "/api/v1/basic/units/"+unitID, nil)
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: unitID}}
+
+	DeleteUnitHandler(ctx)
+
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "insufficient permissions")
+
+	var count int64
+	require.NoError(t, db.DB.Model(&models.Unit{}).Where("id = ?", unitID).Count(&count).Error)
+	require.Equal(t, int64(1), count)
 }
 
 func TestSaveTaxRateHandlerPreservesDescriptionOnSparseUpdate(t *testing.T) {

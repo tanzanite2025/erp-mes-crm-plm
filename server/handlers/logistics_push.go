@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -477,17 +480,117 @@ type traceItem struct {
 	Location string `json:"location"`
 }
 
+func normalizeWebhookSignature(value string) string {
+	normalized := strings.TrimSpace(value)
+	normalized = strings.TrimPrefix(normalized, "sha256=")
+	normalized = strings.TrimPrefix(normalized, "SHA256=")
+	normalized = strings.TrimPrefix(normalized, "md5=")
+	normalized = strings.TrimPrefix(normalized, "MD5=")
+	return strings.ToLower(strings.TrimSpace(normalized))
+}
+
+func logisticsWebhookSignatureFromRequest(c *gin.Context) string {
+	for _, key := range []string{
+		"X-XDFC-Logistics-Signature",
+		"X-XDFC-Signature",
+		"X-Logistics-Signature",
+		"X-Signature",
+		"Sign",
+	} {
+		if value := strings.TrimSpace(c.GetHeader(key)); value != "" {
+			return normalizeWebhookSignature(value)
+		}
+	}
+	for _, key := range []string{"signature", "sign"} {
+		if value := strings.TrimSpace(c.Query(key)); value != "" {
+			return normalizeWebhookSignature(value)
+		}
+	}
+	return ""
+}
+
+func hmacSHA256Hex(secret string, payload []byte) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(payload)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func md5Hex(parts ...string) string {
+	hash := md5.New()
+	for _, part := range parts {
+		hash.Write([]byte(part))
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func verifyLogisticsWebhookSignature(provider models.LogisticsAPIProvider, rawBody []byte, signature string) bool {
+	signature = normalizeWebhookSignature(signature)
+	if signature == "" {
+		return false
+	}
+
+	body := string(rawBody)
+	expected := make([]string, 0, 6)
+	if secret := strings.TrimSpace(provider.AppSecret); secret != "" {
+		expected = append(expected,
+			hmacSHA256Hex(secret, rawBody),
+			md5Hex(body, secret),
+			md5Hex(strings.TrimSpace(provider.AppKey), body, secret),
+		)
+	}
+	if checkWord := strings.TrimSpace(provider.CheckWord); checkWord != "" {
+		expected = append(expected,
+			hmacSHA256Hex(checkWord, rawBody),
+			md5Hex(body, checkWord),
+			md5Hex(strings.TrimSpace(provider.AppKey), body, checkWord),
+		)
+	}
+
+	for _, candidate := range expected {
+		normalizedCandidate := normalizeWebhookSignature(candidate)
+		if len(signature) == len(normalizedCandidate) && hmac.Equal([]byte(signature), []byte(normalizedCandidate)) {
+			return true
+		}
+	}
+	return false
+}
+
 // HandlePushCallbackHandler 接收物流平台推送回调
 func HandlePushCallbackHandler(c *gin.Context) {
 	var payload webhookPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
+	rawBody, err := c.GetRawData()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid callback payload"})
+		return
+	}
+	if err := json.Unmarshal(rawBody, &payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid callback payload"})
+		return
+	}
+	payload.TrackingNo = strings.TrimSpace(payload.TrackingNo)
+	payload.CarrierCode = strings.ToUpper(strings.TrimSpace(payload.CarrierCode))
+	payload.Status = strings.TrimSpace(payload.Status)
+	if payload.TrackingNo == "" || payload.CarrierCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "trackingNo and carrierCode are required"})
+		return
+	}
+
+	var provider models.LogisticsAPIProvider
+	if err := db.DB.Where("code = ? AND status = ?", payload.CarrierCode, "Enabled").First(&provider).Error; err != nil {
+		log.Printf("[LOGISTICS-PUSH][WARN] Callback for disabled or unknown provider: carrier=%s tracking=%s", payload.CarrierCode, payload.TrackingNo)
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid callback provider"})
+		return
+	}
+	signature := logisticsWebhookSignatureFromRequest(c)
+	if !verifyLogisticsWebhookSignature(provider, rawBody, signature) {
+		log.Printf("[LOGISTICS-PUSH][WARN] Callback signature rejected: carrier=%s tracking=%s", payload.CarrierCode, payload.TrackingNo)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid callback signature"})
 		return
 	}
 
 	// 查找主单
 	var order models.DeliveryOrder
-	if err := db.DB.Where("tracking_no = ?", payload.TrackingNo).First(&order).Error; err != nil {
+	if err := db.DB.Where("tracking_no = ? AND carrier_code = ?", payload.TrackingNo, payload.CarrierCode).First(&order).Error; err != nil {
 		log.Printf("[LOGISTICS-PUSH][WARN] Callback for unknown tracking: %s", payload.TrackingNo)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return

@@ -157,6 +157,7 @@ func MapSaveCustomerRequestToModel(input SaveCustomerRequest) models.Customer {
 }
 
 func MapCustomerToResponse(model models.Customer) CustomerResponse {
+	isDeleted := model.DeletedAt.Valid || model.IsDeleted
 	return CustomerResponse{
 		ID:            model.ID,
 		Name:          model.Name,
@@ -175,7 +176,7 @@ func MapCustomerToResponse(model models.Customer) CustomerResponse {
 		Balance:       model.Balance,
 		CreatedAt:     model.CreatedAt,
 		UpdatedAt:     model.UpdatedAt,
-		IsDeleted:     model.IsDeleted,
+		IsDeleted:     isDeleted,
 		Version:       model.Version,
 	}
 }
@@ -189,6 +190,7 @@ func MapCustomersToResponse(items []models.Customer) []CustomerResponse {
 }
 
 func MapSupplierToResponse(model models.Supplier) SupplierResponse {
+	isDeleted := model.DeletedAt.Valid || model.IsDeleted
 	return SupplierResponse{
 		ID:            model.ID,
 		Name:          model.Name,
@@ -208,7 +210,7 @@ func MapSupplierToResponse(model models.Supplier) SupplierResponse {
 		Rating:        model.Rating,
 		CreatedAt:     model.CreatedAt,
 		UpdatedAt:     model.UpdatedAt,
-		IsDeleted:     model.IsDeleted,
+		IsDeleted:     isDeleted,
 		Version:       model.Version,
 	}
 }

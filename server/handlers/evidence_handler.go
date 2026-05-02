@@ -76,7 +76,7 @@ func HandleEvidenceUpload(c *gin.Context) {
 	// 3. Redis 感知哈希查重 (pHash)
 	isDuplicate := false
 	var fileName string
-	
+
 	// [CRITICAL] 增强健壮性：检查 Redis 客户端是否初始化
 	if db.RDB != nil {
 		existingFileName, err := db.RDB.HGet(c.Request.Context(), REDIS_PHASH_KEY, processed.PHash).Result()
@@ -115,7 +115,11 @@ func HandleEvidenceUpload(c *gin.Context) {
 		}
 
 		// 5. 登记 Redis 指纹库 (仅非重复时)
-		db.RDB.HSet(c.Request.Context(), REDIS_PHASH_KEY, processed.PHash, fileName)
+		if db.RDB != nil {
+			db.RDB.HSet(c.Request.Context(), REDIS_PHASH_KEY, processed.PHash, fileName)
+		} else {
+			log.Warn().Msg("Redis client (RDB) is nil, skipping perceptual hash registration to maintain service availability")
+		}
 	}
 
 	c.JSON(http.StatusOK, EvidenceUploadResponse{

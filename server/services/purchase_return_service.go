@@ -107,7 +107,7 @@ func createPurchaseReturnTx(tx *gorm.DB, input CreatePurchaseReturnInput) (Creat
 	var order models.PurchaseOrder
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Preload("Lines").
-		Where("id = ? AND is_deleted = ?", strings.TrimSpace(input.PurchaseOrderID), false).
+		Where("id = ?", strings.TrimSpace(input.PurchaseOrderID)).
 		First(&order).Error; err != nil {
 		return CreatePurchaseReturnResult{}, err
 	}

@@ -45,6 +45,7 @@ func applyTradingTestSchema(t *testing.T, testDB *gorm.DB, options tradingTestSc
 				evidences BLOB DEFAULT X'5B5D',
 				created_at DATETIME,
 				updated_at DATETIME,
+				deleted_at DATETIME,
 				updated_by TEXT,
 				is_deleted BOOLEAN DEFAULT FALSE,
 				version INTEGER DEFAULT 1
@@ -107,6 +108,7 @@ func applyTradingTestSchema(t *testing.T, testDB *gorm.DB, options tradingTestSc
 				evidences BLOB DEFAULT X'5B5D',
 				created_at DATETIME,
 				updated_at DATETIME,
+				deleted_at DATETIME,
 				is_deleted BOOLEAN DEFAULT FALSE,
 				version INTEGER DEFAULT 1
 			)`,

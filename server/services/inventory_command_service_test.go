@@ -231,6 +231,7 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			requirements TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			updated_by TEXT,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
@@ -287,6 +288,7 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 			payment_term_name TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
+			deleted_at DATETIME,
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)
@@ -317,6 +319,15 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 	sqlDB.SetMaxOpenConns(2)
 
 	return testDB
+}
+
+type inventoryAuditLogRow struct {
+	Module   string
+	TargetID string
+	Action   string
+	Operator string
+	IP       string
+	Diff     string
 }
 
 func TestRecordInboundMovingAverageUpdatesInventoryValue(t *testing.T) {
@@ -835,6 +846,50 @@ func TestVoidShipmentConcurrentRollbackOnlyOnce(t *testing.T) {
 	require.Equal(t, "VOID", gotShipment.Status)
 }
 
+func TestReconcileNegativeInventoryWritesAuditEntries(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	inventoryID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, inventoryID, now, now, uuid.NewString(), "Copper Wire", "MAT-NEG-001", -3.0, -15.0, 5.0, "WH_A", "B-NEG-001", "kg").Error)
+
+	err := ReconcileNegativeInventory("reconciler", "127.0.0.1")
+	require.NoError(t, err)
+
+	var persisted models.Inventory
+	require.NoError(t, db.DB.Where("id = ?", inventoryID).First(&persisted).Error)
+	require.Equal(t, 0.0, persisted.Quantity)
+	require.Equal(t, 0.0, persisted.TotalValue)
+	require.Equal(t, 0.0, persisted.AverageUnitCost)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "INVENTORY_RECONCILE").Scan(&auditRow).Error)
+	require.Equal(t, "Inventory", auditRow.Module)
+	require.Equal(t, inventoryID, auditRow.TargetID)
+	require.Equal(t, "reconciler", auditRow.Operator)
+	require.Equal(t, "127.0.0.1", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "quantity")
+	require.Contains(t, auditRow.Diff, "operation")
+}
+
 func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValues(t *testing.T) {
 	originalDB := db.DB
 	testDB := setupInventoryCommandTestDB(t)
@@ -863,7 +918,7 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 		AverageUnitCost: 8,
 		CategoryCode:    "WH_A",
 		BatchNo:         "B-001",
-	}})
+	}}, "bulk-updater", "127.0.0.2")
 	require.NoError(t, err)
 
 	var persisted models.Inventory
@@ -874,6 +929,76 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 	require.Equal(t, "kg", persisted.UOM)
 	require.InDelta(t, 15.0, persisted.Quantity, 0.000001)
 	require.InDelta(t, 120.0, persisted.TotalValue, 0.000001)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "INVENTORY_BULK_SYNC").Scan(&auditRow).Error)
+	require.Equal(t, "Inventory", auditRow.Module)
+	require.Equal(t, inventoryID, auditRow.TargetID)
+	require.Equal(t, "bulk-updater", auditRow.Operator)
+	require.Equal(t, "127.0.0.2", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "operation")
+	require.Contains(t, auditRow.Diff, "quantity")
+}
+
+func TestTransferInventoryWritesAuditEntry(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	now := time.Now()
+	materialID := uuid.NewString()
+	fromInventoryID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, material_spec, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, fromInventoryID, now, now, materialID, "Copper Wire", "MAT-TR-001", "Spec-T", 10.0, 50.0, 5.0, "WH_A", "B-TR-001", "kg").Error)
+
+	err := TransferInventory(TransferInventoryInput{
+		MaterialID:   materialID,
+		Quantity:     4,
+		FromCategory: "WH_A",
+		ToCategory:   "WH_B",
+		BatchNo:      "B-TR-001",
+	}, "transfer-user", "127.0.0.3")
+	require.NoError(t, err)
+
+	var fromInventory models.Inventory
+	require.NoError(t, db.DB.Where("id = ?", fromInventoryID).First(&fromInventory).Error)
+	require.InDelta(t, 6.0, fromInventory.Quantity, 0.000001)
+	require.InDelta(t, 30.0, fromInventory.TotalValue, 0.000001)
+
+	var toInventory models.Inventory
+	require.NoError(t, db.DB.Where("material_id = ? AND category_code = ? AND batch_no = ?", materialID, "WH_B", "B-TR-001").First(&toInventory).Error)
+	require.InDelta(t, 4.0, toInventory.Quantity, 0.000001)
+	require.InDelta(t, 20.0, toInventory.TotalValue, 0.000001)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "INVENTORY_TRANSFER").Scan(&auditRow).Error)
+	require.Equal(t, "Inventory", auditRow.Module)
+	require.Equal(t, materialID, auditRow.TargetID)
+	require.Equal(t, "transfer-user", auditRow.Operator)
+	require.Equal(t, "127.0.0.3", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "fromCategory")
+	require.Contains(t, auditRow.Diff, "toCategory")
 }
 
 func TestPatchStocktakeItemUpdatesActualQtyAndAuditFields(t *testing.T) {

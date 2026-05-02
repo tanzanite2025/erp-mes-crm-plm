@@ -184,7 +184,7 @@ func hasModelIntersection(valuesA []string, valuesB []string) bool {
 
 func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionRequest) (*salesOrderLineSnapshot, error) {
 	var order models.SalesOrder
-	if err := tx.Preload("Lines").Where("id = ? AND is_deleted = false", req.OrderID).First(&order).Error; err != nil {
+	if err := tx.Preload("Lines").Where("id = ?", req.OrderID).First(&order).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("orderId not found")
 		}

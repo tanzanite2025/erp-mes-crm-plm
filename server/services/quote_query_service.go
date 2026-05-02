@@ -30,7 +30,7 @@ func ConvertQuoteToSalesOrder(id string, operator string) (QuoteConvertResponse,
 	}
 
 	var order models.SalesOrder
-	if err := applyQuoteRecordScope(db.DB.Where("id = ? AND is_deleted = ?", orderID, false)).First(&order).Error; err != nil {
+	if err := applyQuoteRecordScope(db.DB.Where("id = ?", orderID)).First(&order).Error; err != nil {
 		return QuoteConvertResponse{}, err
 	}
 
@@ -77,7 +77,7 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	}
 
 	var orders []models.SalesOrder
-	baseQuery := applyQuoteRecordScope(db.DB.Model(&models.SalesOrder{}).Where("is_deleted = ?", false))
+	baseQuery := applyQuoteRecordScope(db.DB.Model(&models.SalesOrder{}))
 
 	if keyword := strings.TrimSpace(query.Keyword); keyword != "" {
 		likeKeyword := "%" + keyword + "%"
@@ -105,7 +105,7 @@ func ListQuotes(query QuoteListQuery) (QuoteListResponse, error) {
 	customerByID := make(map[string]models.Customer, len(customerIDs))
 	if len(customerIDs) > 0 {
 		var customers []models.Customer
-		if err := db.DB.Model(&models.Customer{}).Where("id IN ? AND is_deleted = ?", customerIDs, false).Find(&customers).Error; err != nil {
+		if err := db.DB.Model(&models.Customer{}).Where("id IN ?", customerIDs).Find(&customers).Error; err != nil {
 			return QuoteListResponse{}, err
 		}
 		for _, customer := range customers {
@@ -161,7 +161,7 @@ func ListCustomerQuoteSummary(query CustomerQuoteSummaryQuery) (CustomerQuoteSum
 	var rows []customerQuoteSummaryProjection
 	if err := applyQuoteRecordScope(db.DB.Model(&models.SalesOrder{}).
 		Select("id, customer_id, order_no, barcode, status, updated_at").
-		Where("is_deleted = ? AND customer_id = ?", false, customerID)).
+		Where("customer_id = ?", customerID)).
 		Order("updated_at desc").
 		Find(&rows).Error; err != nil {
 		return CustomerQuoteSummaryResponse{}, err
@@ -315,13 +315,13 @@ func mapSalesOrderToQuoteSummary(order models.SalesOrder, customerSegment string
 
 func GetQuoteDetail(id string) (QuoteDetailResponse, error) {
 	var order models.SalesOrder
-	if err := applyQuoteRecordScope(db.DB.Preload("Lines").Where("id = ? AND is_deleted = ?", id, false)).First(&order).Error; err != nil {
+	if err := applyQuoteRecordScope(db.DB.Preload("Lines").Where("id = ?", id)).First(&order).Error; err != nil {
 		return QuoteDetailResponse{}, err
 	}
 
 	var customer models.Customer
 	if strings.TrimSpace(order.CustomerID) != "" {
-		if err := db.DB.Where("id = ? AND is_deleted = ?", order.CustomerID, false).First(&customer).Error; err != nil {
+		if err := db.DB.Where("id = ?", order.CustomerID).First(&customer).Error; err != nil {
 			if !errorsIsRecordNotFound(err) {
 				return QuoteDetailResponse{}, err
 			}

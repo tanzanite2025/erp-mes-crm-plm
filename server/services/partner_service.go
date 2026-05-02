@@ -24,7 +24,7 @@ type SupplierListQuery struct {
 }
 
 func BuildCustomerListMetadata(total int64, page int, pageSize int) (CustomerListMetadata, error) {
-	statsBaseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
+	statsBaseQuery := db.DB.Model(&models.Customer{})
 
 	var totalCustomers int64
 	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&totalCustomers).Error; err != nil {
@@ -68,7 +68,7 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 		pageSize = 50
 	}
 
-	baseQuery := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false)
+	baseQuery := db.DB.Model(&models.Customer{})
 
 	if query.Options {
 		var customers []models.Customer
@@ -78,7 +78,7 @@ func ListCustomers(query CustomerListQuery) (CustomerListResponse, error) {
 		return CustomerListResponse{Items: MapCustomersToResponse(customers)}, nil
 	}
 	var total int64
-	if err := db.DB.Model(&models.Customer{}).Where("is_deleted = ?", false).Count(&total).Error; err != nil {
+	if err := db.DB.Model(&models.Customer{}).Count(&total).Error; err != nil {
 		return CustomerListResponse{}, err
 	}
 
@@ -111,7 +111,7 @@ func ListSuppliers(query SupplierListQuery) (SupplierListResponse, error) {
 		pageSize = 50
 	}
 
-	baseQuery := db.DB.Model(&models.Supplier{}).Where("is_deleted = ?", false)
+	baseQuery := db.DB.Model(&models.Supplier{})
 
 	if query.Options {
 		var suppliers []models.Supplier
@@ -121,7 +121,7 @@ func ListSuppliers(query SupplierListQuery) (SupplierListResponse, error) {
 		return SupplierListResponse{Items: MapSuppliersToResponse(suppliers)}, nil
 	}
 
-	statsBaseQuery := db.DB.Model(&models.Supplier{}).Where("is_deleted = ?", false)
+	statsBaseQuery := db.DB.Model(&models.Supplier{})
 	var total int64
 	if err := statsBaseQuery.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return SupplierListResponse{}, err
@@ -206,7 +206,7 @@ func SaveCustomer(input SaveCustomerRequest, actorID string, operator string, ip
 
 func PatchCustomer(input PatchCustomerRequest, actorID string, operator string, ip string) (CustomerResponse, error) {
 	var current models.Customer
-	if err := db.DB.Where("id = ? AND is_deleted = ?", input.ID, false).First(&current).Error; err != nil {
+	if err := db.DB.Where("id = ?", input.ID).First(&current).Error; err != nil {
 		return CustomerResponse{}, err
 	}
 
@@ -309,7 +309,7 @@ func SaveSupplier(input SaveSupplierRequest, actorID string, operator string, ip
 
 func PatchSupplier(input PatchSupplierRequest, actorID string, operator string, ip string) (SupplierResponse, error) {
 	var current models.Supplier
-	if err := db.DB.Where("id = ? AND is_deleted = ?", input.ID, false).First(&current).Error; err != nil {
+	if err := db.DB.Where("id = ?", input.ID).First(&current).Error; err != nil {
 		return SupplierResponse{}, err
 	}
 

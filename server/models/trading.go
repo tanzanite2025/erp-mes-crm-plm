@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/json"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // SalesOrder 销售订单主单
@@ -33,8 +35,9 @@ type SalesOrder struct {
 	Lines                []SalesOrderLine `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
 	CreatedAt            time.Time        `json:"createdAt"`
 	UpdatedAt            time.Time        `json:"updatedAt"`
+	DeletedAt            gorm.DeletedAt   `gorm:"index" json:"-"`
 	UpdatedBy            string           `json:"updatedBy"`
-	IsDeleted            bool             `gorm:"index:idx_so_deleted_date;default:false" json:"isDeleted"`
+	IsDeleted            bool             `gorm:"-" json:"isDeleted"`
 	Version              int              `gorm:"default:1" json:"version"` // 对应前端 BaseEntity.version
 }
 
@@ -130,49 +133,51 @@ type SalesReturnLine struct {
 
 // Customer 客户模型
 type Customer struct {
-	ID            string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	Name          string    `gorm:"size:255;index:idx_cust_deleted_name;not null" json:"name"`
-	Code          string    `gorm:"size:100;uniqueIndex;not null" json:"code"`
-	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
-	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
-	WeChat        string    `gorm:"size:100" json:"wechat"`
-	WhatsApp      string    `gorm:"size:100" json:"whatsapp"`
-	Facebook      string    `gorm:"size:255" json:"facebook"`
-	Instagram     string    `gorm:"size:100" json:"instagram"`
-	Telegram      string    `gorm:"size:100" json:"telegram"`
-	Email         string    `gorm:"size:100" json:"email"`
-	Address       string    `gorm:"type:text" json:"address"`
-	Status        string    `gorm:"size:20;default:'Active'" json:"status"`
-	CreditLimit   float64   `json:"creditLimit"`
-	Balance       float64   `json:"balance"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
-	IsDeleted     bool      `gorm:"index:idx_cust_deleted_name;default:false" json:"isDeleted"`
-	Version       int       `gorm:"default:1" json:"version"`
+	ID            string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Name          string         `gorm:"size:255;index:idx_cust_deleted_name;not null" json:"name"`
+	Code          string         `gorm:"size:100;uniqueIndex;not null" json:"code"`
+	ContactPerson string         `gorm:"size:100" json:"contactPerson"`
+	ContactPhone  string         `gorm:"size:50" json:"contactPhone"`
+	WeChat        string         `gorm:"size:100" json:"wechat"`
+	WhatsApp      string         `gorm:"size:100" json:"whatsapp"`
+	Facebook      string         `gorm:"size:255" json:"facebook"`
+	Instagram     string         `gorm:"size:100" json:"instagram"`
+	Telegram      string         `gorm:"size:100" json:"telegram"`
+	Email         string         `gorm:"size:100" json:"email"`
+	Address       string         `gorm:"type:text" json:"address"`
+	Status        string         `gorm:"size:20;default:'Active'" json:"status"`
+	CreditLimit   float64        `json:"creditLimit"`
+	Balance       float64        `json:"balance"`
+	CreatedAt     time.Time      `json:"createdAt"`
+	UpdatedAt     time.Time      `json:"updatedAt"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+	IsDeleted     bool           `gorm:"-" json:"isDeleted"`
+	Version       int            `gorm:"default:1" json:"version"`
 }
 
 // Supplier 供应商模型
 type Supplier struct {
-	ID            string    `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	Name          string    `gorm:"size:255;index:idx_supp_deleted_name;not null" json:"name"`
-	Code          string    `gorm:"size:100;uniqueIndex;not null" json:"code"`
-	Category      string    `gorm:"size:100" json:"category"`
-	MainProducts  string    `gorm:"type:jsonb" json:"mainProducts"` // 存储产品列表 JSON
-	ContactPerson string    `gorm:"size:100" json:"contactPerson"`
-	ContactPhone  string    `gorm:"size:50" json:"contactPhone"`
-	WeChat        string    `gorm:"size:100" json:"wechat"`
-	WhatsApp      string    `gorm:"size:100" json:"whatsapp"`
-	Facebook      string    `gorm:"size:255" json:"facebook"`
-	Instagram     string    `gorm:"size:100" json:"instagram"`
-	Telegram      string    `gorm:"size:100" json:"telegram"`
-	Email         string    `gorm:"size:100" json:"email"`
-	Address       string    `gorm:"type:text" json:"address"`
-	Status        string    `gorm:"size:20;default:'Active'" json:"status"`
-	Rating        float64   `json:"rating"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
-	IsDeleted     bool      `gorm:"index:idx_supp_deleted_name;default:false" json:"isDeleted"`
-	Version       int       `gorm:"default:1" json:"version"`
+	ID            string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	Name          string         `gorm:"size:255;index:idx_supp_deleted_name;not null" json:"name"`
+	Code          string         `gorm:"size:100;uniqueIndex;not null" json:"code"`
+	Category      string         `gorm:"size:100" json:"category"`
+	MainProducts  string         `gorm:"type:jsonb" json:"mainProducts"` // 存储产品列表 JSON
+	ContactPerson string         `gorm:"size:100" json:"contactPerson"`
+	ContactPhone  string         `gorm:"size:50" json:"contactPhone"`
+	WeChat        string         `gorm:"size:100" json:"wechat"`
+	WhatsApp      string         `gorm:"size:100" json:"whatsapp"`
+	Facebook      string         `gorm:"size:255" json:"facebook"`
+	Instagram     string         `gorm:"size:100" json:"instagram"`
+	Telegram      string         `gorm:"size:100" json:"telegram"`
+	Email         string         `gorm:"size:100" json:"email"`
+	Address       string         `gorm:"type:text" json:"address"`
+	Status        string         `gorm:"size:20;default:'Active'" json:"status"`
+	Rating        float64        `json:"rating"`
+	CreatedAt     time.Time      `json:"createdAt"`
+	UpdatedAt     time.Time      `json:"updatedAt"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+	IsDeleted     bool           `gorm:"-" json:"isDeleted"`
+	Version       int            `gorm:"default:1" json:"version"`
 }
 
 // PurchaseOrder 采购订单主单
@@ -197,8 +202,29 @@ type PurchaseOrder struct {
 	Lines             []PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"lines"`
 	CreatedAt         time.Time           `json:"createdAt"`
 	UpdatedAt         time.Time           `json:"updatedAt"`
-	IsDeleted         bool                `gorm:"default:false" json:"isDeleted"`
+	DeletedAt         gorm.DeletedAt      `gorm:"index" json:"-"`
+	IsDeleted         bool                `gorm:"-" json:"isDeleted"`
 	Version           int                 `gorm:"default:1" json:"version"`
+}
+
+func (order *SalesOrder) AfterFind(*gorm.DB) error {
+	order.IsDeleted = order.DeletedAt.Valid
+	return nil
+}
+
+func (customer *Customer) AfterFind(*gorm.DB) error {
+	customer.IsDeleted = customer.DeletedAt.Valid
+	return nil
+}
+
+func (supplier *Supplier) AfterFind(*gorm.DB) error {
+	supplier.IsDeleted = supplier.DeletedAt.Valid
+	return nil
+}
+
+func (order *PurchaseOrder) AfterFind(*gorm.DB) error {
+	order.IsDeleted = order.DeletedAt.Valid
+	return nil
 }
 
 // PurchaseOrderLine 采购订单明细

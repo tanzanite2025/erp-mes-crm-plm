@@ -114,12 +114,8 @@ func AiProxyHandler(c *gin.Context) {
 		method, redactURL(targetURL), authHeader != "", groupID, isStream, requestTimeout)
 
 	client := &http.Client{
-		Timeout: requestTimeout,
-		Transport: &http.Transport{
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: requestTimeout,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
+		Timeout:   requestTimeout,
+		Transport: newAIProxyTransport(cfg, requestTimeout),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -183,13 +179,12 @@ func validateTargetURL(raw string, cfg aiProxySecurityConfig) (string, error) {
 		return "", fmt.Errorf("target port %s is not allowed", u.Port())
 	}
 
-	if isHostAllowed(host, cfg.AllowedHosts) {
-		// [SSRF_BYPASS] 既然主机已明确在白名单中，信任该域名，跳过 DNS/IP 再次校验
-		return u.String(), nil
-	}
-
 	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
 		return "", fmt.Errorf("localhost target is blocked")
+	}
+
+	if len(cfg.AllowedHosts) > 0 && !isHostAllowed(host, cfg.AllowedHosts) {
+		return "", fmt.Errorf("target host is not allowed")
 	}
 
 	if ip := net.ParseIP(host); ip != nil {
@@ -218,9 +213,95 @@ func validateTargetURL(raw string, cfg aiProxySecurityConfig) (string, error) {
 	return u.String(), nil
 }
 
+type aiProxyLookupIPAddrFunc func(ctx context.Context, host string) ([]net.IPAddr, error)
+type aiProxyDialContextFunc func(ctx context.Context, network string, address string) (net.Conn, error)
+
+func newAIProxyTransport(cfg aiProxySecurityConfig, requestTimeout time.Duration) *http.Transport {
+	dialTimeout := 10 * time.Second
+	if requestTimeout > 0 && requestTimeout < dialTimeout {
+		dialTimeout = requestTimeout
+	}
+	dialer := &net.Dialer{
+		Timeout:   dialTimeout,
+		KeepAlive: 30 * time.Second,
+	}
+
+	return &http.Transport{
+		DialContext:           secureAIProxyDialContext(cfg, net.DefaultResolver.LookupIPAddr, dialer.DialContext),
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: requestTimeout,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+}
+
+func secureAIProxyDialContext(cfg aiProxySecurityConfig, lookup aiProxyLookupIPAddrFunc, dial aiProxyDialContextFunc) aiProxyDialContextFunc {
+	return func(ctx context.Context, network string, address string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(address)
+		if err != nil {
+			return nil, fmt.Errorf("invalid upstream address")
+		}
+		host = strings.Trim(strings.ToLower(host), "[]")
+		if host == "" {
+			return nil, fmt.Errorf("missing upstream host")
+		}
+		if port != "443" {
+			return nil, fmt.Errorf("upstream port %s is not allowed", port)
+		}
+		if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+			return nil, fmt.Errorf("localhost target is blocked")
+		}
+
+		ips, err := resolveAIProxyDialIPs(ctx, host, lookup)
+		if err != nil {
+			return nil, err
+		}
+		if len(ips) == 0 {
+			return nil, fmt.Errorf("dns has no records")
+		}
+		if !cfg.AllowPrivateIP {
+			for _, ip := range ips {
+				if isPrivateOrBlockedIP(ip) {
+					return nil, fmt.Errorf("resolved ip is private or blocked")
+				}
+			}
+		}
+
+		var lastErr error
+		for _, ip := range ips {
+			conn, err := dial(ctx, network, net.JoinHostPort(ip.String(), port))
+			if err == nil {
+				return conn, nil
+			}
+			lastErr = err
+		}
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return nil, fmt.Errorf("upstream dial failed")
+	}
+}
+
+func resolveAIProxyDialIPs(ctx context.Context, host string, lookup aiProxyLookupIPAddrFunc) ([]net.IP, error) {
+	if ip := net.ParseIP(host); ip != nil {
+		return []net.IP{ip}, nil
+	}
+
+	addrs, err := lookup(ctx, host)
+	if err != nil {
+		return nil, fmt.Errorf("dns resolve failed")
+	}
+	ips := make([]net.IP, 0, len(addrs))
+	for _, addr := range addrs {
+		if addr.IP != nil {
+			ips = append(ips, addr.IP)
+		}
+	}
+	return ips, nil
+}
+
 func isHostAllowed(host string, allowed []string) bool {
 	for _, h := range allowed {
-		if host == h {
+		if host == strings.ToLower(strings.TrimSpace(h)) {
 			return true
 		}
 	}
@@ -233,13 +314,19 @@ func isPrivateOrBlockedIP(ip net.IP) bool {
 	}
 	// Normalize IPv4-mapped IPv6 addresses such as ::ffff:47.89.128.168
 	// so public IPv4 endpoints are not misclassified by the ::ffff:0:0/96 blocklist.
+	isIPv4 := false
 	if ip4 := ip.To4(); ip4 != nil {
 		ip = ip4
+		isIPv4 = true
 	}
 	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified() {
 		return true
 	}
 	for _, cidr := range blockedCIDRs {
+		_, bits := cidr.Mask.Size()
+		if (bits == 32) != isIPv4 {
+			continue
+		}
 		if cidr.Contains(ip) {
 			return true
 		}

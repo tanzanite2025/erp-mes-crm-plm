@@ -152,8 +152,8 @@ export const engineering = {
     createBom: 'Create BOM',
   },
   productBarcode: {
-    syncSequenceSuccess: 'Synced latest base-36 sequence from cloud: {{sn}}',
-    syncSequenceFailed: 'Failed to sync sequence. Check network.',
+    syncSequenceSuccess: 'Preview serial advanced to: {{sn}}',
+    syncSequenceFailed: 'Failed to advance preview serial. Check the current value.',
     templateName: 'Product Label - {{name}}',
     printBatchSuccess: 'Print batch recorded. Current SN: {{sn}}',
     printBatchFailed: 'Atomic print failed. Please try again.',
