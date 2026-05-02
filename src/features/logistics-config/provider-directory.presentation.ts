@@ -7,6 +7,7 @@ import {
 import {
   getProviderVerificationStatus,
   hasProviderCredentials,
+  supportsProviderAutomaticVerification,
 } from '@/features/logistics-config/provider-directory.domain'
 
 export const LOGISTICS_CAPABILITY_OPTIONS: Array<{ value: LogisticsCapability; label: string }> = [
@@ -48,6 +49,8 @@ export function getProviderVerificationLabel(status: LogisticsVerificationStatus
       return '已探测可达'
     case 'healthy':
       return '已验证可用'
+    case 'manual_review':
+      return '需人工联调'
     case 'error':
       return '最近异常'
     case 'invalid_config':
@@ -65,6 +68,8 @@ export function getProviderVerificationLabelKey(status: LogisticsVerificationSta
       return 'logisticsConfig.providerShared.verificationStatus.reachable'
     case 'healthy':
       return 'logisticsConfig.providerShared.verificationStatus.healthy'
+    case 'manual_review':
+      return 'logisticsConfig.providerShared.verificationStatus.manual_review'
     case 'error':
       return 'logisticsConfig.providerShared.verificationStatus.error'
     case 'invalid_config':
@@ -82,6 +87,8 @@ export function getProviderVerificationBadgeClass(status: LogisticsVerificationS
       return 'border-none bg-cyan-100 text-cyan-700'
     case 'healthy':
       return 'border-none bg-emerald-100 text-emerald-700'
+    case 'manual_review':
+      return 'border-none bg-violet-100 text-violet-700'
     case 'error':
       return 'border-none bg-rose-100 text-rose-700'
     case 'invalid_config':
@@ -153,7 +160,7 @@ export function getProviderCalloutClass(tone: ProviderCalloutTone) {
 export function getProviderVerificationActionTone(provider: LogisticsProvider): ProviderCalloutTone {
   const status = getProviderVerificationStatus(provider)
 
-  if (status === 'healthy' || status === 'reachable' || status === 'unverified') {
+  if (status === 'healthy' || status === 'reachable' || status === 'unverified' || status === 'manual_review') {
     return 'info'
   }
 
@@ -180,6 +187,10 @@ export function getProviderVerificationActionKey(provider: LogisticsProvider): T
     return 'logisticsConfig.providerShared.nextActions.healthy'
   }
 
+  if (status === 'manual_review') {
+    return 'logisticsConfig.providerShared.nextActions.manualReview'
+  }
+
   if (status === 'error') {
     return 'logisticsConfig.providerShared.nextActions.error'
   }
@@ -198,13 +209,14 @@ export function getProviderVerificationActionKey(provider: LogisticsProvider): T
   }
 
   if (status === 'invalid_config') {
-    if (!provider.endpoint?.trim()) {
-      return 'logisticsConfig.providerShared.nextActions.invalidConfigEndpoint'
-    }
     if (!hasProviderCredentials(provider)) {
       return 'logisticsConfig.providerShared.nextActions.invalidConfigCredentials'
     }
     return 'logisticsConfig.providerShared.nextActions.invalidConfigGeneral'
+  }
+
+  if (!supportsProviderAutomaticVerification(provider) && hasProviderCredentials(provider)) {
+    return 'logisticsConfig.providerShared.nextActions.manualReview'
   }
 
   return 'logisticsConfig.providerShared.nextActions.unverified'
@@ -218,6 +230,8 @@ export function getProviderVerificationSummaryKey(provider: LogisticsProvider): 
       return 'logisticsConfig.providerShared.summaries.reachable'
     case 'healthy':
       return 'logisticsConfig.providerShared.summaries.healthy'
+    case 'manual_review':
+      return 'logisticsConfig.providerShared.summaries.manual_review'
     case 'error':
       return 'logisticsConfig.providerShared.summaries.error'
     case 'invalid_config':

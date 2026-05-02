@@ -115,6 +115,7 @@ function normalizeVerificationStatus(value: unknown, status: unknown): Logistics
     case 'healthy':
     case 'error':
     case 'invalid_config':
+    case 'manual_review':
     case 'disabled':
       return value
     default:

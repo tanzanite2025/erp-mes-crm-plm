@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"xdfc-server/services"
 
 	"gorm.io/gorm"
 )
@@ -94,10 +95,17 @@ func (t *LogisticsCompensationTask) pollAndCompensate(order DeliveryOrder) error
 		return fmt.Errorf("provider %s not found or disabled", order.CarrierCode)
 	}
 
+	resolution := services.ResolveTrustedLogisticsProviderTarget(provider.Code, services.LogisticsProviderTargetPurposeTracking)
+	if !resolution.Supported || resolution.TargetURL == "" {
+		log.Printf("[LOGISTICS-JANITOR] [SANDBOX-STUB] Tracking compensation for %s (%s) requires manual review: tracking=%s summary=%s",
+			provider.Name, provider.Code, order.TrackingNo, resolution.SummaryMessage)
+		return nil
+	}
+
 	// 2. 调用第三方"即时查询"接口 (此处为砂箱占位逻辑)
-	// 正式并网时替换为实际的 HTTP 客户端调用
-	log.Printf("[LOGISTICS-JANITOR] [SANDBOX-STUB] Would poll %s API for tracking: %s (endpoint: %s)",
-		provider.Name, order.TrackingNo, provider.Endpoint)
+	// 正式并网时替换为实际的 HTTP 客户端调用，但目标解析必须继续复用受控解析器
+	log.Printf("[LOGISTICS-JANITOR] [SANDBOX-STUB] Would poll %s API for tracking: %s (trusted_target: %s)",
+		provider.Name, order.TrackingNo, resolution.TargetURL)
 
 	// 3. 更新 API 额度消耗
 	t.DB.Model(&provider).Update("quota_used", gorm.Expr("quota_used + 1"))

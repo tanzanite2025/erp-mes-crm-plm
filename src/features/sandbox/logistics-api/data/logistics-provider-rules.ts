@@ -15,16 +15,30 @@ type LogisticsProviderRule = {
 }
 
 const allCredentialFields: LogisticsProviderCredentialFieldKey[] = [...LOGISTICS_PROVIDER_CREDENTIAL_FIELD_KEYS]
-const endpointAndBaseCredentialsRule: LogisticsProviderRule = {
+const automaticVerificationRule: LogisticsProviderRule = {
   credentialFields: allCredentialFields,
   requiredCredentialFields: ['appKey', 'appSecret'],
-  requiresEndpoint: true,
+  requiresEndpoint: false,
 }
 
+const automaticVerificationCodes = new Set(['SF', 'JD', 'ZTO', 'YTO', 'YD', 'JTSD'])
+
 const logisticsProviderRuleMap: Record<string, LogisticsProviderRule> = {
-  SF: endpointAndBaseCredentialsRule,
-  JD: endpointAndBaseCredentialsRule,
-  '17TRACK': endpointAndBaseCredentialsRule,
+  SF: automaticVerificationRule,
+  JD: automaticVerificationRule,
+  ZTO: automaticVerificationRule,
+  YTO: automaticVerificationRule,
+  YD: automaticVerificationRule,
+  JTSD: automaticVerificationRule,
+  '17TRACK': {
+    credentialFields: allCredentialFields,
+    requiredCredentialFields: ['appKey', 'appSecret'],
+    requiresEndpoint: false,
+  },
+}
+
+export function supportsAutomaticLogisticsVerification(provider: Pick<LogisticsProviderLike, 'code'>) {
+  return automaticVerificationCodes.has(provider.code.trim().toUpperCase())
 }
 
 export function getLogisticsProviderRule(provider: LogisticsProviderLike): LogisticsProviderRule {
@@ -36,7 +50,7 @@ export function getLogisticsProviderRule(provider: LogisticsProviderLike): Logis
   return {
     credentialFields: allCredentialFields,
     requiredCredentialFields: provider.capabilities.length > 0 ? ['appKey', 'appSecret'] : [],
-    requiresEndpoint: true,
+    requiresEndpoint: false,
   }
 }
 

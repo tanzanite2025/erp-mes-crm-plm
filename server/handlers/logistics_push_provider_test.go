@@ -140,3 +140,50 @@ func TestSaveLogisticsProviderHandlerAllowsExplicitFieldClearingOnUpdate(t *test
 	require.Equal(t, "key-2", saved.AppKey)
 	require.Equal(t, "check-2", saved.CheckWord)
 }
+
+func TestSaveLogisticsProviderHandlerDoesNotResetVerificationWhenOnlyEndpointChanges(t *testing.T) {
+	setupLogisticsProviderHandlerTestDB(t)
+
+	now := time.Now().UTC()
+	existing := models.LogisticsAPIProvider{
+		ID:                      3,
+		CreatedAt:               now,
+		UpdatedAt:               now,
+		Name:                    "顺丰速运",
+		Code:                    "SF",
+		Category:                "domestic",
+		AppKey:                  "key-3",
+		AppSecret:               "secret-3",
+		CustomerID:              "customer-3",
+		CheckWord:               "check-3",
+		Endpoint:                "https://old-endpoint.example.com",
+		Status:                  "Enabled",
+		Capabilities:            models.StringList{"tracking", "callback"},
+		VerificationStatus:      "reachable",
+		LastVerifiedAt:          &now,
+		LastVerificationMessage: "trusted verification endpoint reachable",
+		LastVerificationAction:  "请继续用顺丰测试单执行真实鉴权/下单联调，当前结果只代表系统内置顺丰网关已可达。",
+	}
+	require.NoError(t, db.DB.Create(&existing).Error)
+
+	body := `{"id":3,"endpoint":"https://new-endpoint.example.com"}`
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/logistics-push/providers", strings.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	ctx.Request = request
+
+	SaveLogisticsProviderHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var saved models.LogisticsAPIProvider
+	require.NoError(t, db.DB.First(&saved, 3).Error)
+	require.Equal(t, "https://new-endpoint.example.com", saved.Endpoint)
+	require.Equal(t, "reachable", saved.VerificationStatus)
+	require.Equal(t, "trusted verification endpoint reachable", saved.LastVerificationMessage)
+	require.Equal(t, existing.LastVerificationAction, saved.LastVerificationAction)
+	require.NotNil(t, saved.LastVerifiedAt)
+	if saved.LastVerifiedAt != nil {
+		require.WithinDuration(t, now, *saved.LastVerifiedAt, time.Second)
+	}
+}

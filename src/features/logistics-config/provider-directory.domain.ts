@@ -7,7 +7,10 @@ import {
   type LogisticsVerificationStatus,
 } from '@/features/sandbox/logistics-api/types'
 import { createEmptyLogisticsProviderDraft } from '@/features/sandbox/logistics-api/data/logistics-provider-field-registry'
-import { isLogisticsProviderCredentialsComplete } from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
+import {
+  isLogisticsProviderCredentialsComplete,
+  supportsAutomaticLogisticsVerification,
+} from '@/features/sandbox/logistics-api/data/logistics-provider-rules'
 
 export const logisticsProviderQueryKey = ['logistics-push-providers'] as const
 
@@ -53,6 +56,10 @@ export function hasProviderCredentials(provider: LogisticsProvider) {
   return isLogisticsProviderCredentialsComplete(provider)
 }
 
+export function supportsProviderAutomaticVerification(provider: Pick<LogisticsProvider, 'code'>) {
+  return supportsAutomaticLogisticsVerification(provider)
+}
+
 export function getProviderCapabilities(provider: LogisticsProvider) {
   if (provider.capabilities?.length) {
     return provider.capabilities
@@ -76,7 +83,9 @@ export function toggleProviderCapability(provider: LogisticsProvider, capability
 }
 
 export function isProviderApiConnected(provider: LogisticsProvider) {
-  return provider.status === 'Enabled' && Boolean(provider.endpoint?.trim()) && hasProviderCredentials(provider)
+  return provider.status === 'Enabled' && hasProviderCredentials(provider) && (
+    supportsProviderAutomaticVerification(provider) || Boolean(provider.endpoint?.trim())
+  )
 }
 
 export function getProviderVerificationStatus(provider: LogisticsProvider): LogisticsVerificationStatus {

@@ -1,9 +1,8 @@
 package services
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 	"xdfc-server/models"
@@ -18,11 +17,19 @@ type LogisticsProviderVerificationResult struct {
 
 type logisticsProviderVerificationProfile struct {
 	Name                   string
-	RequiresEndpoint       bool
 	RequiresCredentials    bool
 	ReachableAction        string
 	MissingCredentialsHint string
-	MissingEndpointHint    string
+	ManualReviewAction     string
+}
+
+var logisticsProviderVerificationHTTPClientFactory = func() *http.Client {
+	return &http.Client{
+		Timeout: 5 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 }
 
 func getLogisticsProviderVerificationProfile(provider models.LogisticsAPIProvider) logisticsProviderVerificationProfile {
@@ -32,39 +39,35 @@ func getLogisticsProviderVerificationProfile(provider models.LogisticsAPIProvide
 	case "SF":
 		return logisticsProviderVerificationProfile{
 			Name:                   "顺丰速运",
-			RequiresEndpoint:       true,
 			RequiresCredentials:    true,
-			ReachableAction:        "请继续用顺丰测试单执行真实鉴权/下单联调，当前结果只代表网关已可达。",
+			ReachableAction:        "请继续用顺丰测试单执行真实鉴权/下单联调，当前结果只代表系统内置顺丰网关已可达。",
 			MissingCredentialsHint: "请补齐顺丰 AppKey / AppSecret 后再测试。",
-			MissingEndpointHint:    "请确认顺丰生产网关地址是否已填写。",
+			ManualReviewAction:     "当前顺丰平台未启用自动验证，请联系平台管理员完成人工联调。",
 		}
 	case "JD":
 		return logisticsProviderVerificationProfile{
 			Name:                   "京东物流",
-			RequiresEndpoint:       true,
 			RequiresCredentials:    true,
-			ReachableAction:        "请继续用京东物流测试单执行真实业务鉴权，当前结果只代表网关已可达。",
+			ReachableAction:        "请继续用京东物流测试单执行真实业务鉴权，当前结果只代表系统内置京东网关已可达。",
 			MissingCredentialsHint: "请补齐京东物流 AppKey / AppSecret 后再测试。",
-			MissingEndpointHint:    "请确认京东物流生产网关地址是否已填写。",
+			ManualReviewAction:     "当前京东物流平台未启用自动验证，请联系平台管理员完成人工联调。",
 		}
 	case "17TRACK":
 		return logisticsProviderVerificationProfile{
 			Name:                   "17TRACK",
-			RequiresEndpoint:       true,
 			RequiresCredentials:    true,
-			ReachableAction:        "请继续在 17TRACK 控制台使用实际 token 与示例请求联调，当前只完成网络探测。",
+			ReachableAction:        "请继续在 17TRACK 控制台使用实际 token 与示例请求联调。",
 			MissingCredentialsHint: "请补齐 17TRACK 的 API Token/Secret 后再测试。",
-			MissingEndpointHint:    "请先从 17TRACK 控制台复制实际 API endpoint。",
+			ManualReviewAction:     "17TRACK 当前未启用系统内置自动验证，请改用控制台样例或人工联调确认配置。",
 		}
 	default:
 		requiresCredentials := len(provider.Capabilities) > 0
 		return logisticsProviderVerificationProfile{
 			Name:                   code,
-			RequiresEndpoint:       true,
 			RequiresCredentials:    requiresCredentials,
-			ReachableAction:        "当前仅完成网络探测；如需确认业务可用，请继续执行真实平台鉴权或沙箱请求。",
+			ReachableAction:        "当前仅确认系统内置可信网关可达；如需确认业务可用，请继续执行真实平台鉴权或沙箱请求。",
 			MissingCredentialsHint: "请补齐接口凭证后再测试。",
-			MissingEndpointHint:    "请补齐 endpoint 后再测试。",
+			ManualReviewAction:     "当前厂商未启用系统内置自动验证，请改用人工联调或选择受支持模板。",
 		}
 	}
 }
@@ -91,15 +94,6 @@ func VerifyLogisticsProvider(provider models.LogisticsAPIProvider) LogisticsProv
 		}
 	}
 
-	if profile.RequiresEndpoint && strings.TrimSpace(provider.Endpoint) == "" {
-		return LogisticsProviderVerificationResult{
-			Status:    "invalid_config",
-			Message:   "endpoint is required",
-			Action:    profile.MissingEndpointHint,
-			CheckedAt: checkedAt,
-		}
-	}
-
 	if profile.RequiresCredentials && (strings.TrimSpace(provider.AppKey) == "" || strings.TrimSpace(provider.AppSecret) == "") {
 		return LogisticsProviderVerificationResult{
 			Status:    "invalid_config",
@@ -109,34 +103,37 @@ func VerifyLogisticsProvider(provider models.LogisticsAPIProvider) LogisticsProv
 		}
 	}
 
-	parsedURL, err := url.ParseRequestURI(strings.TrimSpace(provider.Endpoint))
-	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+	resolution := ResolveTrustedLogisticsProviderTarget(provider.Code, LogisticsProviderTargetPurposeVerify)
+	trustedVerificationURL := strings.TrimSpace(resolution.TargetURL)
+	if !resolution.Supported || trustedVerificationURL == "" {
 		return LogisticsProviderVerificationResult{
-			Status:    "invalid_config",
-			Message:   "endpoint is not a valid URL",
-			Action:    "请确认 endpoint 是否为完整的 http/https 地址。",
+			Status:    "manual_review",
+			Message:   "automatic verification is not available for this provider",
+			Action:    profile.ManualReviewAction,
 			CheckedAt: checkedAt,
 		}
 	}
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequest(http.MethodGet, parsedURL.String(), nil)
+	client := logisticsProviderVerificationHTTPClientFactory()
+	requestPlan, err := BuildTrustedLogisticsProviderRequest(provider, LogisticsProviderTargetPurposeVerify, http.MethodGet, nil)
 	if err != nil {
 		return LogisticsProviderVerificationResult{
 			Status:    "error",
-			Message:   fmt.Sprintf("failed to build verification request: %v", err),
-			Action:    "请检查 endpoint 格式与平台协议要求后重试。",
+			Message:   "failed to build trusted verification request",
+			Action:    "请联系系统管理员检查内置物流网关配置。",
 			CheckedAt: checkedAt,
 		}
 	}
+	req := requestPlan.Request
 	req.Header.Set("User-Agent", "XDFC-Logistics-Provider-Verify/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("[LOGISTICS-VERIFY][WARN] Trusted verification request failed for provider=%s code=%s target=%s err=%v", strings.TrimSpace(provider.Name), strings.TrimSpace(provider.Code), trustedVerificationURL, err)
 		return LogisticsProviderVerificationResult{
 			Status:    "error",
-			Message:   fmt.Sprintf("endpoint request failed: %v", err),
-			Action:    "请检查网络连通性、DNS、防火墙或平台出口白名单。",
+			Message:   "trusted verification request failed",
+			Action:    "请稍后重试；若持续失败，请联系平台方确认系统内置网关状态。",
 			CheckedAt: checkedAt,
 		}
 	}
@@ -145,15 +142,15 @@ func VerifyLogisticsProvider(provider models.LogisticsAPIProvider) LogisticsProv
 	if resp.StatusCode >= 500 {
 		return LogisticsProviderVerificationResult{
 			Status:    "error",
-			Message:   fmt.Sprintf("endpoint returned server error: HTTP %d", resp.StatusCode),
-			Action:    "请稍后重试；若持续失败，请联系平台方确认网关状态。",
+			Message:   "trusted verification endpoint unavailable",
+			Action:    "请稍后重试；若持续失败，请联系平台方确认系统内置网关状态。",
 			CheckedAt: checkedAt,
 		}
 	}
 
 	return LogisticsProviderVerificationResult{
 		Status:    "reachable",
-		Message:   fmt.Sprintf("endpoint reachable: HTTP %d", resp.StatusCode),
+		Message:   "trusted verification endpoint reachable",
 		Action:    profile.ReachableAction,
 		CheckedAt: checkedAt,
 	}

@@ -237,8 +237,7 @@ func applyVerificationReset(existing *models.LogisticsAPIProvider, input *models
 		return
 	}
 
-	configChanged := existing.Endpoint != input.Endpoint ||
-		existing.AppKey != input.AppKey ||
+	configChanged := existing.AppKey != input.AppKey ||
 		existing.AppSecret != input.AppSecret ||
 		existing.CustomerID != input.CustomerID ||
 		existing.CheckWord != input.CheckWord ||
