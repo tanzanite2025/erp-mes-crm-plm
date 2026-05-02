@@ -18,7 +18,8 @@ interface UseProductFormProps {
   open: boolean
   productTypes: ProductType[]
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => Promise<void> | void
+  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSaved?: (products: Product[]) => void
 }
 
 export function useProductForm({
@@ -27,6 +28,7 @@ export function useProductForm({
   productTypes,
   onOpenChange,
   onSubmit,
+  onSaved,
 }: UseProductFormProps) {
   const isEdit = !!currentRow
   const [selectedVariants, setSelectedVariants] = useState<ProductVariantSelection[]>([])
@@ -96,6 +98,7 @@ export function useProductForm({
     setSelectedVariants,
     onOpenChange,
     onSubmit,
+    onSaved,
   })
 
   return {

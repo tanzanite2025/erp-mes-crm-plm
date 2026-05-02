@@ -115,7 +115,7 @@ export const commandMenu = {
     addEmployee: '新增员工',
     inboundAction: '产品入库操作',
     addMaterial: '新增物料主数据',
-    addProduct: '创建产品型号 / BOM',
+    addProduct: '创建产品型号',
     importDrawing: '导入图纸档案',
     retailQuoteTemplates: '零售报价模板',
     wholesaleQuoteTemplates: '批发报价模板',

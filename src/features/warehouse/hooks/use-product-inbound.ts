@@ -35,12 +35,18 @@ export type ProductInboundSearchResource =
   | { status: 'idle' }
   | ReadResource<MasterDataSearchResult[]>
 
-type InboundFormData = {
+export type InboundFormData = {
   quantity: number
   batchNo: string
   targetCategory: string
   entryDate: string
   remarks: string
+}
+
+type UseProductInboundOptions = {
+  feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>
+  enabled?: boolean
+  onSubmitted?: (savedRecord: InboundRecord) => void
 }
 
 const DEFAULT_INBOUND_DATA: InboundFormData = {
@@ -93,11 +99,12 @@ function buildInboundTDO(
   }
 }
 
-export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' | 'success'>) {
+export function useProductInbound(options?: UseProductInboundOptions) {
   const { t } = useLanguage()
+  const enabled = options?.enabled ?? true
   const ui = useMemo(
-    () => feedback ?? createWarehouseUiFeedback(),
-    [feedback],
+    () => options?.feedback ?? createWarehouseUiFeedback(),
+    [options?.feedback],
   )
   const { allowsAction } = useNonBlockingPermissionActions()
   const queryClient = useQueryClient()
@@ -121,11 +128,13 @@ export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' |
   const historyQuery = useQuery({
     queryKey: warehouseQueryKeys.inboundHistory(),
     queryFn: () => InventoryCoreService.getInboundHistory(),
+    enabled,
   })
 
   const categoriesQuery = useQuery({
     queryKey: warehouseQueryKeys.categoryOptions(),
     queryFn: () => WarehouseCategoryCoreService.getCategoryOptions(),
+    enabled,
   })
 
   const searchQueryResult = useQuery({
@@ -134,7 +143,7 @@ export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' |
       query: debouncedSearchQuery,
       scope: 'INBOUND',
     }),
-    enabled: debouncedSearchQuery.length > 0,
+    enabled: enabled && debouncedSearchQuery.length > 0,
   })
 
   const readResource = useMemo<ProductInboundReadResource>(() => {
@@ -276,6 +285,7 @@ export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' |
       setSearchQuery('')
       setDebouncedSearchQuery('')
       setFormData(DEFAULT_INBOUND_DATA)
+      options?.onSubmitted?.(savedRecord)
     },
     onError: (error) => {
       failLoudly(error, 'useProductInbound.submitInbound')
@@ -351,6 +361,14 @@ export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' |
     setFormData(DEFAULT_INBOUND_DATA)
   }
 
+  const resetInboundSession = () => {
+    setSelectedItem(null)
+    setIsInboundOpen(false)
+    setSearchQuery('')
+    setDebouncedSearchQuery('')
+    setFormData(DEFAULT_INBOUND_DATA)
+  }
+
   return {
     readResource,
     searchResource,
@@ -369,6 +387,7 @@ export function useProductInbound(feedback?: Pick<WarehouseUiFeedback, 'error' |
     openInboundForm,
     submitInbound,
     closeInboundDialog,
+    resetInboundSession,
     isSubmittingInbound: submitInboundMutation.isPending,
     retryRead: async () => {
       await Promise.all([historyQuery.refetch(), categoriesQuery.refetch()])

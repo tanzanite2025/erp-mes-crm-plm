@@ -96,7 +96,7 @@ export function Engineering() {
             setSelectedProductId(savedProducts[0].id)
         }
 
-        setIsProductDialogOpen(false)
+        return savedProducts
     }
 
     return (

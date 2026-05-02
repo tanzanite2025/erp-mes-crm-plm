@@ -1,8 +1,6 @@
 import { useCommandMenu } from '@/hooks/use-command-menu'
-import { MaterialUpsertDialog } from '@/features/material-archive/components/material-upsert-dialog'
-import { CustomerActionDialog } from '@/features/trading/components/customer-action-dialog'
-import { SalesOrderActionDialog } from '@/features/trading/components/sales-order-action-dialog'
 import { CommandMenuView } from './command-menu-view'
+import { QuickActionHost } from './quick-action-host'
 
 /**
  * CommandMenu (Orchestrator)
@@ -22,16 +20,8 @@ export function CommandMenu() {
     isSearching,
     groupedItems,
     handleItemSelect,
-    isMaterialCreateDialogOpen,
-    setIsMaterialCreateDialogOpen,
-    handleMaterialCreate,
-    isCustomerCreateDialogOpen,
-    setIsCustomerCreateDialogOpen,
-    handleCustomerCreate,
-    handleCustomerCreated,
-    isSalesOrderCreateDialogOpen,
-    setIsSalesOrderCreateDialogOpen,
-    handleSalesOrderCreated,
+    activeQuickActionId,
+    setActiveQuickActionId,
   } = useCommandMenu()
 
   return (
@@ -49,24 +39,10 @@ export function CommandMenu() {
         onKnowledgeSelect={setSelectedKnowledgeEntry}
         onItemSelect={handleItemSelect}
       />
-      <MaterialUpsertDialog
-        open={isMaterialCreateDialogOpen}
-        onOpenChange={setIsMaterialCreateDialogOpen}
-        material={null}
-        onSave={handleMaterialCreate}
-      />
-      <CustomerActionDialog
-        open={isCustomerCreateDialogOpen}
-        onOpenChange={setIsCustomerCreateDialogOpen}
-        customer={null}
-        onSave={handleCustomerCreate}
-        onSaved={handleCustomerCreated}
-      />
-      <SalesOrderActionDialog
-        open={isSalesOrderCreateDialogOpen}
-        onOpenChange={setIsSalesOrderCreateDialogOpen}
-        order={null}
-        onSaved={handleSalesOrderCreated}
+      <QuickActionHost
+        actionId={activeQuickActionId}
+        onActionChange={setActiveQuickActionId}
+        onSearchReset={() => setSearchValue('')}
       />
     </>
   )

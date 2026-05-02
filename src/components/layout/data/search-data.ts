@@ -1,6 +1,10 @@
 import type { ElementType } from 'react'
 import { type TranslationKey } from '@/locales'
 import { Layout, PlusCircle } from 'lucide-react'
+import {
+  ENABLED_QUICK_ACTION_IDS,
+  QUICK_ACTION_DEFINITIONS,
+} from './quick-action-registry'
 
 export type SearchCategory = 'navigation' | 'modules' | 'actions' | 'data'
 
@@ -30,11 +34,7 @@ type CommandItemConfig = {
   enabled?: boolean
 }
 
-export const ENABLED_ACTION_RESULT_IDS: string[] = [
-  'action-add-material',
-  'action-add-customer',
-  'action-create-sales-order',
-]
+export const ENABLED_ACTION_RESULT_IDS: string[] = [...ENABLED_QUICK_ACTION_IDS]
 
 const moduleGroups: CommandItemConfig[] = [
   {
@@ -490,122 +490,9 @@ const moduleGroups: CommandItemConfig[] = [
   },
 ]
 
-const actionConfigDefinitions: CommandItemConfig[] = [
-  // --- 工程类 (Engineering) ---
-  {
-    id: 'action-add-material',
-    href: '/materials?action=add',
-    titleKey: 'materialArchive.upsertDialog.createTitle',
-    parentKey: 'materialArchive.layout.title',
-    keywords: [
-      'material',
-      'add',
-      'new',
-      '新增物料',
-      '创建物料',
-      '登记档案',
-      '登记新物料',
-      '物料档案',
-      '物料主数据',
-      '物料资源中心',
-    ],
-    pinyin: 'djxwl wlda wlzyzx xzwl',
-  },
-  {
-    id: 'action-add-product',
-    href: '/engineering/products?action=add',
-    titleKey: 'commandMenu.items.addProduct',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['product', 'bom', 'add', '创建型号', '新增产品'],
-    pinyin: 'xzcp',
-  },
-  {
-    id: 'action-import-drawing',
-    href: '/engineering/drawings?action=import',
-    titleKey: 'commandMenu.items.importDrawing',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['drawing', 'import', 'upload', '导入图纸', '上传'],
-    pinyin: 'drtz',
-  },
-
-  // --- 贸销类 (Trading) ---
-  {
-    id: 'action-add-customer',
-    href: '/trading/customers?action=add',
-    titleKey: 'commandMenu.items.addCustomer',
-    parentKey: 'commandMenu.parents.salesManagement',
-    keywords: ['customer', 'partner', 'add', '新增客户', '登记'],
-    pinyin: 'xzkh',
-  },
-  {
-    id: 'action-create-sales-order',
-    href: '/trading/sales-orders?action=create',
-    titleKey: 'commandMenu.items.createSalesOrder',
-    parentKey: 'commandMenu.parents.salesManagement',
-    keywords: ['sales', 'order', 'create', '创建订单', '销售'],
-    pinyin: 'cjdd',
-  },
-  {
-    id: 'action-create-requirement',
-    href: '/mrp/requirements?action=create',
-    titleKey: 'commandMenu.items.createRequirement',
-    parentKey: 'commandMenu.parents.mrp',
-    keywords: ['requirement', 'part', 'mrp', 'new', '发起需求', '料号'],
-    pinyin: 'fqxq',
-  },
-
-  // --- 仓库类 (Warehouse) ---
-  {
-    id: 'action-inbound',
-    href: '/warehouse/inbound?action=add',
-    titleKey: 'commandMenu.items.inboundAction',
-    parentKey: 'commandMenu.parents.warehouse',
-    keywords: ['inbound', 'action', 'product', '入库操作', '成品'],
-    pinyin: 'rkcz',
-  },
-  {
-    id: 'action-start-stocktake',
-    href: '/warehouse/stocktake?action=start',
-    titleKey: 'commandMenu.items.startStocktake',
-    parentKey: 'commandMenu.parents.warehouse',
-    keywords: ['stocktake', 'inventory', 'start', '开始盘点', '实地'],
-    pinyin: 'kspd',
-  },
-  {
-    id: 'action-inventory-adjustment',
-    href: '/warehouse/adjustments?action=new',
-    titleKey: 'commandMenu.items.newAdjustment',
-    parentKey: 'commandMenu.parents.warehouse',
-    keywords: ['adjustment', 'fix', 'stock', '调账操作', '修正'],
-    pinyin: 'tzcz',
-  },
-
-  // --- 人事与系统 (System & HR) ---
-  {
-    id: 'action-add-employee',
-    href: '/personnel/employees?action=add',
-    titleKey: 'commandMenu.items.addEmployee',
-    parentKey: 'commandMenu.parents.employeeManagement',
-    keywords: ['employee', 'staff', 'add', '新入职', '添加员工'],
-    pinyin: 'xryz',
-  },
-  {
-    id: 'action-approval-center',
-    href: '/approval/routing',
-    titleKey: 'commandMenu.items.approvalCenter',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: [
-      'approval',
-      'workflow',
-      'center',
-      'message',
-      'routing',
-      '消息中心',
-      '审批中心',
-    ],
-    pinyin: 'spzx',
-  },
-]
+const actionConfigDefinitions: CommandItemConfig[] = QUICK_ACTION_DEFINITIONS.map(
+  ({ hostKind: _hostKind, successHref: _successHref, ...config }) => config
+)
 
 const actionConfigs: CommandItemConfig[] = actionConfigDefinitions.map(
   (config): CommandItemConfig => ({

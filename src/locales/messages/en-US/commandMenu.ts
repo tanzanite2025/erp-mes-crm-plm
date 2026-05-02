@@ -115,7 +115,7 @@ export const commandMenu = {
     addEmployee: 'Add Employee',
     inboundAction: 'Product Inbound Action',
     addMaterial: 'Add Material Master Data',
-    addProduct: 'Create Product Model / BOM',
+    addProduct: 'Create Product Model',
     importDrawing: 'Import Drawings',
     retailQuoteTemplates: 'Retail Quote Templates',
     wholesaleQuoteTemplates: 'Wholesale Quote Templates',

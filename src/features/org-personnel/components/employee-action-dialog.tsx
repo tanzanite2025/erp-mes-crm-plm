@@ -52,7 +52,8 @@ type EmployeeActionDialogProps = {
     currentRow?: Employee
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSubmit?: (data: Employee, isPatch?: boolean, delta?: DeltaSet) => void
+    onSubmit?: (data: Employee, isPatch?: boolean, delta?: DeltaSet) => Promise<Employee | void>
+    onSaved?: (employee: Employee) => void
 }
 
 function buildDefaultValues(): EmployeeForm {
@@ -103,6 +104,7 @@ export function EmployeeActionDialog({
     open,
     onOpenChange,
     onSubmit,
+    onSaved,
 }: EmployeeActionDialogProps) {
     const { locale, t } = useLanguage()
     const isEdit = !!currentRow
@@ -169,7 +171,7 @@ export function EmployeeActionDialog({
         form.reset(initialFormValues)
     }, [form, initialFormValues, open])
 
-    const onSubmitHandler = (values: EmployeeForm) => {
+    const onSubmitHandler = async (values: EmployeeForm) => {
         Object.assign(deltaProxy, values)
         const delta = tracker.commit()
         const isDirty = Object.keys(delta).length > 0
@@ -200,7 +202,17 @@ export function EmployeeActionDialog({
             ;(nextEmployee as Record<string, unknown>)[field.key] = normalizedValue
         })
 
-        onSubmit?.(nextEmployee as Employee, isEdit, isEdit ? delta : undefined)
+        try {
+            const savedEmployee = await onSubmit?.(nextEmployee as Employee, isEdit, isEdit ? delta : undefined)
+            if (!savedEmployee) {
+                return
+            }
+
+            onSaved?.(savedEmployee)
+        } catch {
+            return
+        }
+
         form.reset(defaultValues)
         onOpenChange(false)
     }

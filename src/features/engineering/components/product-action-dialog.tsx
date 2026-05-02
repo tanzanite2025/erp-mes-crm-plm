@@ -36,7 +36,8 @@ interface ProductActionDialogProps {
   currentRow?: Product
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => void | Promise<void>
+  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSaved?: (products: Product[]) => void
   productTypes?: ProductType[]
 }
 
@@ -67,6 +68,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     open,
     onOpenChange,
     onSubmit,
+    onSaved,
     productTypes = [],
   } = props
 
@@ -87,7 +89,7 @@ export function ProductActionDialog(props: ProductActionDialogProps) {
     handleVariantToggle,
     updateVariantWeight,
     handleFormSubmit,
-  } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit })
+  } = useProductForm({ currentRow, open, productTypes, onOpenChange, onSubmit, onSaved })
   const { deleteProduct, isDeletingProduct } = useProductWriteActions()
   const watchedTypeId = useWatch({ control: form.control, name: 'typeId' })
   const [boundTemplate, setBoundTemplate] = useState<ProductTemplate | null>(null)

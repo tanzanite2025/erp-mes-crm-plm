@@ -16,7 +16,8 @@ interface UseProductFormSubmitParams {
   selectedVariants: ProductVariantSelection[]
   setSelectedVariants: Dispatch<SetStateAction<ProductVariantSelection[]>>
   onOpenChange: (open: boolean) => void
-  onSubmit?: (payload: ProductSubmitPayload) => Promise<void> | void
+  onSubmit?: (payload: ProductSubmitPayload) => Promise<Product[] | void> | Product[] | void
+  onSaved?: (products: Product[]) => void
 }
 
 function createEmptySubmitPayloadError(detail: string): Error {
@@ -32,6 +33,7 @@ export function useProductFormSubmit({
   setSelectedVariants,
   onOpenChange,
   onSubmit,
+  onSaved,
 }: UseProductFormSubmitParams) {
   const { t } = useLanguage()
 
@@ -73,6 +75,8 @@ export function useProductFormSubmit({
       throw error
     }
 
+    let savedProducts: Product[] | void = undefined
+
     if (submitPayload.mode === 'batch') {
       toast.loading(
         t('engineering.productArchive.toasts.batchSaving', {
@@ -83,7 +87,7 @@ export function useProductFormSubmit({
 
       try {
         if (onSubmit) {
-          await onSubmit({
+          savedProducts = await onSubmit({
             products: submitPayload.productsToSave,
           })
         }
@@ -110,7 +114,7 @@ export function useProductFormSubmit({
         throw error
       }
       if (onSubmit) {
-        await onSubmit({
+        savedProducts = await onSubmit({
           products: [finalData],
           currentRow,
         })
@@ -130,7 +134,7 @@ export function useProductFormSubmit({
         throw error
       }
       if (onSubmit) {
-        await onSubmit({
+        savedProducts = await onSubmit({
           products: [singleData],
           currentRow,
         })
@@ -139,6 +143,10 @@ export function useProductFormSubmit({
       toast.success(
         t('engineering.productArchive.toasts.createSingleSuccess')
       )
+    }
+
+    if (savedProducts && savedProducts.length > 0) {
+      onSaved?.(savedProducts)
     }
 
     onOpenChange(false)

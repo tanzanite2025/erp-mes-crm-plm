@@ -210,20 +210,24 @@ export function EmployeeManagementList() {
     const handleUpdateEmployee = async (finalEmp: Employee, isPatch?: boolean, delta?: DeltaSet) => {
         try {
             if (isPatch && delta && finalEmp.id) {
-                await EmployeeMaintenanceService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
+                const savedEmployee = await EmployeeMaintenanceService.patchEmployee(finalEmp.id, delta, finalEmp.version || 1)
                 toast.success(t('orgPersonnel.list.saveUpdated'))
+                await refreshEmployees()
+                setCurrentRow(undefined)
+                return savedEmployee
             } else {
-                await EmployeeMaintenanceService.saveEmployee(finalEmp)
+                const savedEmployee = await EmployeeMaintenanceService.saveEmployee(finalEmp)
                 toast.success(t('orgPersonnel.list.saveCreated'))
+                await refreshEmployees()
+                setCurrentRow(undefined)
+                return savedEmployee
             }
-
-            await refreshEmployees()
-            setCurrentRow(undefined)
         } catch (err) {
             logger.error('Update employee failed', err)
             toast.error(t('orgPersonnel.list.saveFailed', {
                 message: err instanceof Error ? err.message : 'Unknown error',
             }))
+            throw err
         }
     }
 
