@@ -12,7 +12,7 @@ interface UseSalesOrderSaveOptions {
   prepareToSave: () => Promise<SalesOrderFormValues | undefined>
   commit: () => DeltaSet
   canSave?: boolean
-  onSaved: () => void
+  onSaved: (order: SalesOrder) => void
 }
 
 export function useSalesOrderSave({
@@ -44,14 +44,14 @@ export function useSalesOrderSave({
     try {
       if (!order) {
         const stampedData = auditUtils.stamp(submitValues, 'create')
-        await createMutation.mutateAsync(stampedData)
-        onSaved()
+        const createdOrder = await createMutation.mutateAsync(stampedData)
+        onSaved(createdOrder)
         return
       }
 
       const delta = commit()
       if (Object.keys(delta).length === 0) {
-        onSaved()
+        onSaved(order)
         return
       }
 
@@ -59,7 +59,7 @@ export function useSalesOrderSave({
         { operator: user?.accountNo, actorId: user?.id },
         'useSalesOrderSave.handleSave'
       )
-      await saveMutation.mutateAsync({
+      const savedOrder = await saveMutation.mutateAsync({
         orderId: order.id,
         delta,
         finalData: submitValues,
@@ -68,7 +68,7 @@ export function useSalesOrderSave({
         expectedVersion: order.version,
       })
 
-      onSaved()
+      onSaved(savedOrder)
     } catch (_error) {
       // Mutation onError handlers already surface the failure to the user.
     }
@@ -80,8 +80,7 @@ export function useSalesOrderSave({
     order,
     prepareToSave,
     saveMutation,
-    user?.accountNo,
-    user?.id,
+    user,
     validate,
   ])
 

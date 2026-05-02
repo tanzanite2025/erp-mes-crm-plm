@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Clock3, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,11 @@ import {
 } from './recent-visits-store'
 import type { RecentVisit } from './types'
 
-const DESKTOP_VISIBLE_LIMIT = 4
+const DESKTOP_MAX_VISIBLE_LIMIT = 6
+const DESKTOP_RECENT_TRIGGER_WIDTH = 118
+const DESKTOP_OVERFLOW_TRIGGER_WIDTH = 44
+const DESKTOP_VISIT_SLOT_WIDTH = 112
+const RECENT_VISITS_MENU_LIMIT = 12
 
 function formatVisitTime(value: string, locale: string): string {
   const date = new Date(value)
@@ -41,6 +45,8 @@ export function RecentVisitsBar() {
   const pathname = useLocation({ select: (location) => location.pathname })
   const user = useAuthStore((state) => state.user)
   const [visits, setVisits] = useState<RecentVisit[]>([])
+  const [desktopVisibleLimit, setDesktopVisibleLimit] = useState(DESKTOP_MAX_VISIBLE_LIMIT)
+  const desktopSlotRef = useRef<HTMLDivElement | null>(null)
   const storageKey = useMemo(() => getRecentVisitsStorageKey(user), [user])
 
   useEffect(() => {
@@ -78,14 +84,32 @@ export function RecentVisitsBar() {
     }
   }, [storageKey, user])
 
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return
+    const element = desktopSlotRef.current
+    if (!element) return
+
+    const updateVisibleLimit = () => {
+      const availableWidth = element.getBoundingClientRect().width
+      const reservedWidth = DESKTOP_RECENT_TRIGGER_WIDTH + DESKTOP_OVERFLOW_TRIGGER_WIDTH
+      const nextLimit = Math.floor((availableWidth - reservedWidth) / DESKTOP_VISIT_SLOT_WIDTH)
+      setDesktopVisibleLimit(Math.min(DESKTOP_MAX_VISIBLE_LIMIT, Math.max(1, nextLimit)))
+    }
+
+    updateVisibleLimit()
+    const observer = new ResizeObserver(updateVisibleLimit)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
   const displayVisits = visits.map((visit) => ({
     ...visit,
     label: visit.labelKey ? t(visit.labelKey) : visit.fallbackLabel,
     isActive: pathname === visit.path || pathname.startsWith(`${visit.path}/`),
   }))
 
-  const visibleVisits = displayVisits.slice(0, DESKTOP_VISIBLE_LIMIT)
-  const overflowVisits = displayVisits.slice(DESKTOP_VISIBLE_LIMIT)
+  const visibleVisits = displayVisits.slice(0, desktopVisibleLimit)
+  const overflowVisits = displayVisits.slice(desktopVisibleLimit)
 
   const goToVisit = (path: string) => {
     navigate({ to: path as never })
@@ -109,14 +133,16 @@ export function RecentVisitsBar() {
     </DropdownMenuItem>
   )
 
-  const renderRecentVisitsContent = (title: string, items = displayVisits) => (
+  const renderRecentVisitsContent = (title: string, items = displayVisits) => {
+    const menuItems = items.slice(0, RECENT_VISITS_MENU_LIMIT)
+    return (
     <>
       <DropdownMenuLabel className='px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
         {title}
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      {items.length > 0 ? (
-        items.map(renderVisitItem)
+      {menuItems.length > 0 ? (
+        menuItems.map(renderVisitItem)
       ) : (
         <div className='px-3 py-4 text-center'>
           <div className='text-xs font-black tracking-tight text-foreground'>
@@ -128,10 +154,11 @@ export function RecentVisitsBar() {
         </div>
       )}
     </>
-  )
+    )
+  }
 
   return (
-    <div className='flex min-w-0 items-center justify-center'>
+    <div ref={desktopSlotRef} className='flex w-full min-w-0 items-center justify-center'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -148,7 +175,7 @@ export function RecentVisitsBar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className='hidden min-w-0 max-w-[min(52vw,680px)] items-center gap-2 md:flex'>
+      <div className='hidden w-full min-w-0 max-w-[min(62vw,960px)] items-center justify-center gap-2 md:flex'>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -173,7 +200,7 @@ export function RecentVisitsBar() {
               variant='outline'
               onClick={() => goToVisit(visit.path)}
               className={cn(
-                'h-9 max-w-[136px] rounded-full border-dashed bg-background/70 px-3 text-[10px] font-black tracking-widest shadow-none transition-colors lg:max-w-[168px]',
+                'h-9 max-w-[112px] rounded-full border-dashed bg-background/70 px-3 text-[10px] font-black tracking-widest shadow-none transition-colors xl:max-w-[126px]',
                 visit.isActive
                   ? 'border-primary/30 bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:text-foreground'

@@ -102,7 +102,7 @@ export function KnowledgeBaseEntryCard({
   )
 }
 
-function KnowledgeBaseMediaIndicators({
+export function KnowledgeBaseMediaIndicators({
   hasImage,
   hasVideo,
   imageLabel,

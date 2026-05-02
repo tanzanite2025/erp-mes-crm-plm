@@ -26,7 +26,7 @@ interface CommandMenuViewProps {
   knowledgeEntries: KnowledgeBaseEntry[]
   selectedKnowledgeEntry: KnowledgeBaseEntry | null
   onKnowledgeSelect: (entry: KnowledgeBaseEntry | null) => void
-  onItemSelect: (href: string) => void
+  onItemSelect: (item: SearchItem) => void
 }
 
 const DISPLAY_LIMIT = 6
@@ -61,6 +61,7 @@ export function CommandMenuView({
       open={open}
       onOpenChange={onOpenChange}
       requireCloseButton
+      shouldFilter={false}
       overlayClassName='!bg-transparent'
       className='!w-[85vw] !max-w-[85vw] overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 [&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:border-sky-500/20 [&_[data-slot=command-input-wrapper]]:px-6 [&_[data-slot=command-input-wrapper]_svg]:size-5'
     >
@@ -126,7 +127,7 @@ export function CommandMenuView({
                         <SearchListItem
                           key={item.id}
                           item={item}
-                          onSelect={() => onItemSelect(item.href)}
+                          onSelect={() => onItemSelect(item)}
                           isData
                         />
                       ))}
@@ -141,7 +142,7 @@ export function CommandMenuView({
                       {groupedItems.modules
                         .slice(0, isInitialState ? DISPLAY_LIMIT : undefined)
                         .map((item) => (
-                          <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item.href)} />
+                          <SearchListItem key={item.id} item={item} onSelect={() => onItemSelect(item)} />
                         ))}
                       
                       {isInitialState && groupedItems.modules.length > DISPLAY_LIMIT && (
@@ -175,7 +176,7 @@ export function CommandMenuView({
                             <SearchListItem
                               key={item.id}
                               item={item}
-                              onSelect={() => onItemSelect(item.href)}
+                              onSelect={() => onItemSelect(item)}
                               isAction
                             />
                           ))}

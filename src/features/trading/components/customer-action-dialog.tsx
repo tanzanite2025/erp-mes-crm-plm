@@ -18,7 +18,12 @@ interface CustomerActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customer?: Customer | null
-  onSave: (payload: { data: Customer | CustomerFormValues; isPatch: boolean; delta?: DeltaSet }) => void
+  onSave: (payload: {
+    data: Customer | CustomerFormValues
+    isPatch: boolean
+    delta?: DeltaSet
+  }) => Promise<Customer | void>
+  onSaved?: (customer: Customer) => void
 }
 
 export function CustomerActionDialog({
@@ -26,6 +31,7 @@ export function CustomerActionDialog({
   onOpenChange,
   customer,
   onSave,
+  onSaved,
 }: CustomerActionDialogProps) {
   const { t } = useLanguage()
   const shellClasses = buildActionDialogShellClasses({
@@ -37,17 +43,17 @@ export function CustomerActionDialog({
     footer: 'flex-col-reverse sm:flex-row gap-3 p-6 pt-2 border-t border-dashed border-muted/30',
   })
   const { allowedEditStatuses, initialFormData, statusOptions } = useCustomerActionViewModel({ customer, t })
-  const { data: formData, tracker } = useDeltaTracker(initialFormData, open)
+  const { data: formData, deltaProxy, tracker } = useDeltaTracker(initialFormData, open)
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen)
   }
 
   const updateField = <K extends keyof CustomerFormValues>(key: K, value: CustomerFormValues[K]) => {
-    formData[key] = value
+    Object.assign(deltaProxy, { [key]: value })
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const isPatch = !!customer
     const delta = tracker.commit()
     const nextData = buildCustomerSaveSnapshot(customer, formData)
@@ -57,12 +63,22 @@ export function CustomerActionDialog({
       return
     }
 
-    onSave({ 
-      data: nextData,
-      isPatch, 
-      delta: isPatch ? delta : undefined 
-    })
-    onOpenChange(false)
+    try {
+      const savedCustomer = await onSave({
+        data: nextData,
+        isPatch,
+        delta: isPatch ? delta : undefined,
+      })
+
+      if (!savedCustomer) {
+        return
+      }
+
+      onSaved?.(savedCustomer)
+      onOpenChange(false)
+    } catch {
+      return
+    }
   }
 
   return (

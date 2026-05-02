@@ -4,6 +4,9 @@ import {
   getKnowledgeContentText,
   type KnowledgeBaseEntry,
 } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
+import { getKnowledgeContentMediaFlags } from '@/features/basic-settings/knowledge-base/data/knowledge-content'
+import { KnowledgeBaseCategoryBadge } from '@/features/basic-settings/knowledge-base/components/knowledge-base-category-badge'
+import { KnowledgeBaseMediaIndicators } from '@/features/basic-settings/knowledge-base/components/knowledge-base-entry-card'
 import {
   CommandGroup,
   CommandItem,
@@ -61,6 +64,9 @@ function KnowledgeSearchListItem({
   entry: KnowledgeBaseEntry
   onSelect: () => void
 }) {
+  const { t } = useLanguage()
+  const mediaFlags = getKnowledgeContentMediaFlags(entry.content)
+
   return (
     <CommandItem
       value={`${entry.title} ${entry.summary} ${getKnowledgeContentText(entry.content)} ${entry.routePath} ${entry.keywords.join(' ')}`}
@@ -71,6 +77,20 @@ function KnowledgeSearchListItem({
         <BookOpenText className='size-4 text-sky-600' />
       </div>
       <div className='min-w-0 flex-1'>
+        <div className='mb-1 flex flex-wrap items-center gap-1.5'>
+          <KnowledgeBaseCategoryBadge category={entry.category} />
+          <KnowledgeBaseMediaIndicators
+            hasImage={mediaFlags.hasImage}
+            hasVideo={mediaFlags.hasVideo}
+            imageLabel={t('basicSettings.knowledgeBase.media.image')}
+            videoLabel={t('basicSettings.knowledgeBase.media.video')}
+          />
+          {entry.routePath ? (
+            <span className='truncate font-mono text-[9px] font-semibold text-muted-foreground/60'>
+              {entry.routePath}
+            </span>
+          ) : null}
+        </div>
         <div className='truncate text-sm font-bold tracking-tight'>{entry.title}</div>
         <div className='mt-0.5 line-clamp-1 text-[11px] font-semibold leading-4 text-muted-foreground'>
           {entry.summary}

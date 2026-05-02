@@ -215,14 +215,14 @@ export function CustomerList() {
     isPatch: boolean
     delta?: DeltaSet
   }) => {
-    if (!allowsAction('action_trading_customer_manage')) return
+    if (!allowsAction('action_trading_customer_manage')) return Promise.resolve(undefined)
 
     if (payload.isPatch && payload.delta && selectedCustomer) {
       const actor = requireTradingCommandActor(
         { operator: user?.accountNo, actorId: user?.id },
         'CustomerList.handleSaveCustomer'
       )
-      saveMutation.mutate({
+      return saveMutation.mutateAsync({
         id: selectedCustomer.id,
         delta: payload.delta,
         finalData: payload.data as Customer,
@@ -230,9 +230,9 @@ export function CustomerList() {
         actorId: actor.actorId,
         expectedVersion: selectedCustomer.version,
       })
-    } else {
-      createMutation.mutate(payload.data as CustomerFormValues)
     }
+
+    return createMutation.mutateAsync(payload.data as CustomerFormValues)
   }
 
   const handleDeleteCustomer = (id: string) => {

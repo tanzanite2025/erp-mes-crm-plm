@@ -53,12 +53,14 @@ interface SalesOrderActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   order?: SalesOrder | null
+  onSaved?: (order: SalesOrder) => void
 }
 
 export function SalesOrderActionDialog({
   open,
   onOpenChange,
   order,
+  onSaved,
 }: SalesOrderActionDialogProps) {
   const { t } = useLanguage()
   const { allowsAction } = useNonBlockingPermissionActions()
@@ -210,7 +212,10 @@ export function SalesOrderActionDialog({
     prepareToSave,
     commit,
     canSave: !readOnlySnapshot,
-    onSaved: () => onOpenChange(false),
+    onSaved: (savedOrder) => {
+      onSaved?.(savedOrder)
+      onOpenChange(false)
+    },
   })
 
   const handleActualSave = async () => {

@@ -27,7 +27,14 @@ type CommandItemConfig = {
   parentKey: TranslationKey
   keywords?: string[]
   pinyin?: string
+  enabled?: boolean
 }
+
+export const ENABLED_ACTION_RESULT_IDS: string[] = [
+  'action-add-material',
+  'action-add-customer',
+  'action-create-sales-order',
+]
 
 const moduleGroups: CommandItemConfig[] = [
   {
@@ -483,15 +490,26 @@ const moduleGroups: CommandItemConfig[] = [
   },
 ]
 
-const actionConfigs: CommandItemConfig[] = [
+const actionConfigDefinitions: CommandItemConfig[] = [
   // --- 工程类 (Engineering) ---
   {
     id: 'action-add-material',
     href: '/materials?action=add',
-    titleKey: 'commandMenu.items.addMaterial',
-    parentKey: 'commandMenu.parents.engineeringManagement',
-    keywords: ['material', 'add', 'new', '新增物料', '创建物料'],
-    pinyin: 'xzwl',
+    titleKey: 'materialArchive.upsertDialog.createTitle',
+    parentKey: 'materialArchive.layout.title',
+    keywords: [
+      'material',
+      'add',
+      'new',
+      '新增物料',
+      '创建物料',
+      '登记档案',
+      '登记新物料',
+      '物料档案',
+      '物料主数据',
+      '物料资源中心',
+    ],
+    pinyin: 'djxwl wlda wlzyzx xzwl',
   },
   {
     id: 'action-add-product',
@@ -589,6 +607,18 @@ const actionConfigs: CommandItemConfig[] = [
   },
 ]
 
+const actionConfigs: CommandItemConfig[] = actionConfigDefinitions.map(
+  (config): CommandItemConfig => ({
+    ...config,
+    enabled: ENABLED_ACTION_RESULT_IDS.includes(config.id),
+  })
+)
+
+export const STATIC_SEARCH_RESULT_REGISTRY = {
+  modules: moduleGroups,
+  actions: actionConfigs,
+} as const
+
 function buildKeywords(
   t: TranslateFn,
   titleKey: TranslationKey,
@@ -596,6 +626,10 @@ function buildKeywords(
   extraKeywords: string[] = []
 ) {
   return [t(titleKey), t(parentKey), ...extraKeywords]
+}
+
+function getEnabledConfigs(configs: readonly CommandItemConfig[]) {
+  return configs.filter((config) => config.enabled !== false)
 }
 
 function toSearchItem(
@@ -622,13 +656,13 @@ function toSearchItem(
 }
 
 function getTabItems(t: TranslateFn): SearchItem[] {
-  return moduleGroups.map((config) =>
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.modules).map((config) =>
     toSearchItem(t, config, 'modules', Layout)
   )
 }
 
 function getActionItems(t: TranslateFn): SearchItem[] {
-  return actionConfigs.map((config) =>
+  return getEnabledConfigs(STATIC_SEARCH_RESULT_REGISTRY.actions).map((config) =>
     toSearchItem(t, config, 'actions', PlusCircle)
   )
 }
