@@ -1,10 +1,12 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
@@ -57,7 +59,7 @@ type PatchEmployeeRequest struct {
 	ProcessID       *string
 }
 
-func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
+func (s *OrganizationService) PatchOrganization(ctx context.Context, input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
 	var updated models.Organization
 
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
@@ -111,7 +113,7 @@ func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) 
 		if err := s.repository.SaveOrganization(tx, &current); err != nil {
 			return err
 		}
-		if err := recordLegacyAuditEntryTx(tx, "Organization", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys), "", "", ""); err != nil {
+		if err := recordLegacyAuditEntryWithContext(ctx, tx, "Organization", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys)); err != nil {
 			return err
 		}
 
@@ -125,7 +127,7 @@ func (s *OrganizationService) PatchOrganization(input PatchOrganizationRequest) 
 	return MapOrganizationNodeToResponse(&updated), nil
 }
 
-func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
+func (s *OrganizationService) PatchEmployee(ctx context.Context, input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
 	var updated models.Employee
 
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
@@ -206,13 +208,22 @@ func (s *OrganizationService) PatchEmployee(input PatchEmployeeRequest) (Employe
 			current.ProcessID = strings.TrimSpace(*input.ProcessID)
 		}
 
+		actor, _ := audit.ActorFromContext(ctx)
+		current.Operator = actor.Username
+		if current.Operator == "" {
+			current.Operator = actor.UserID
+		}
+		if current.Operator == "" {
+			current.Operator = "system"
+		}
+
 		if err := s.repository.SaveEmployee(tx, &current); err != nil {
 			return err
 		}
 		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, current, "legacy_employee_patch", ""); err != nil {
 			return err
 		}
-		if err := recordLegacyAuditEntryTx(tx, "Employee", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys), "", "", ""); err != nil {
+		if err := recordLegacyAuditEntryWithContext(ctx, tx, "Employee", current.ID, "PATCH", auditDeltaKeys(input.DeltaKeys)); err != nil {
 			return err
 		}
 

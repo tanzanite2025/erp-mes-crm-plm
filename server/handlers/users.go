@@ -444,17 +444,16 @@ func CreateUserHandler(c *gin.Context) {
 		user.ID = uuid.NewString()
 	}
 
-	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		return tx.Create(&user).Error
-	}); err != nil {
+	created, err := services.CreateUser(auditContextFromGin(c), user)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, mapUserToResponse(user))
+	c.JSON(http.StatusCreated, mapUserToResponse(created))
 }
 
-// PatchUserHandler 鏇存柊鐢ㄦ埛淇℃伅
+// PatchUserHandler
 func PatchUserHandler(c *gin.Context) {
 	id := c.Param("id")
 	var input UpdateUserRequest
@@ -543,25 +542,13 @@ func PatchUserHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&user).Updates(updates).Error; err != nil {
-			return err
-		}
-		if err := tx.First(&user, "id = ?", id).Error; err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
+	updated, err := services.PatchUser(auditContextFromGin(c), id, updates)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
 	}
 
-	if err := db.DB.First(&user, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated user"})
-		return
-	}
-
-	c.JSON(http.StatusOK, mapUserToResponse(user))
+	c.JSON(http.StatusOK, mapUserToResponse(updated))
 }
 
 // ReplaceUserHandler 鏇存柊鐢ㄦ埛淇℃伅 (完整替换语义)
@@ -629,25 +616,13 @@ func ReplaceUserHandler(c *gin.Context) {
 		updates["password"] = hashedPassword
 	}
 
-	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&user).Updates(updates).Error; err != nil {
-			return err
-		}
-		if err := tx.First(&user, "id = ?", id).Error; err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
+	replaced, err := services.ReplaceUser(auditContextFromGin(c), id, updates)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to replace user"})
 		return
 	}
 
-	if err := db.DB.First(&user, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load replaced user"})
-		return
-	}
-
-	c.JSON(http.StatusOK, mapUserToResponse(user))
+	c.JSON(http.StatusOK, mapUserToResponse(replaced))
 }
 
 // DeleteUserHandler 鍒犻櫎鐢ㄦ埛
@@ -668,9 +643,7 @@ func DeleteUserHandler(c *gin.Context) {
 		}
 	}
 
-	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		return tx.Delete(&models.User{}, "id = ?", id).Error
-	}); err != nil {
+	if err := services.DeleteUser(auditContextFromGin(c), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}

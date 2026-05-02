@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,6 +36,8 @@ const (
 	DOStatusException  = "Exception"
 	DOStatusReturned   = "Returned"
 )
+
+var refreshDeliveryTracking = services.RefreshDeliveryTracking
 
 // --- 幂等性哈希工具 ---
 
@@ -446,6 +449,7 @@ func GetDeliveryOrdersHandler(c *gin.Context) {
 // GetDeliveryTrackingHandler 获取单票轨迹明细
 func GetDeliveryTrackingHandler(c *gin.Context) {
 	trackingNo := c.Param("trackingNo")
+	refreshRequested := shouldRefreshDeliveryTracking(c.Query("refresh"))
 
 	var order models.DeliveryOrder
 	if err := db.DB.Where("tracking_no = ?", trackingNo).First(&order).Error; err != nil {
@@ -453,13 +457,44 @@ func GetDeliveryTrackingHandler(c *gin.Context) {
 		return
 	}
 
+	var refreshResult *services.LogisticsTrackingRefreshResult
+	if refreshRequested {
+		result, err := refreshDeliveryTracking(trackingNo)
+		if err != nil {
+			if errors.Is(err, services.ErrDeliveryTrackingOrderNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "[LOGISTICS-PUSH] 单号不存在"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 实时查询失败"})
+			return
+		}
+		refreshResult = &result
+		if err := db.DB.Where("tracking_no = ?", trackingNo).First(&order).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "[LOGISTICS-PUSH] 刷新后读取主单失败"})
+			return
+		}
+	}
+
 	var details []models.DeliveryTrackingDetail
 	db.DB.Where("delivery_order_id = ?", order.ID).Order("time desc").Find(&details)
 
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"order":  order,
 		"traces": details,
-	})
+	}
+	if refreshResult != nil {
+		response["refresh"] = refreshResult
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func shouldRefreshDeliveryTracking(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "y", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 // =========================================================================

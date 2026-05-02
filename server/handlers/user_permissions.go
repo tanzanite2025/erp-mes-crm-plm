@@ -107,7 +107,7 @@ func ReplaceUserPermissionsHandler(c *gin.Context) {
 	}
 
 	grantedBy, _ := c.Get("userId")
-	result, err := services.ReplaceUserPermissions(userID, services.ReplaceUserPermissionsInput{
+	result, err := services.ReplaceUserPermissions(auditContextFromGin(c), userID, services.ReplaceUserPermissionsInput{
 		PermissionIDs: input.Permissions,
 		Source:        input.Source,
 		Reason:        input.Reason,

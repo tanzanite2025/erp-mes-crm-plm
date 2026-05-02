@@ -24,10 +24,7 @@ func ExecuteSalesOrderTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	actorID := strings.TrimSpace(req.ActorID)
-	if actorID == "" {
-		actorID = middleware.GetSafeUserID(c)
-	}
+	actorID := middleware.GetSafeUserID(c)
 
 	result, err := services.ExecuteSalesOrderTransaction(services.ExecuteSalesOrderTransactionInput{
 		OrderID:         orderID,

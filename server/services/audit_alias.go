@@ -23,6 +23,22 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleEmployee,
 		"Employee",
 	},
+	AuditModuleMaterial: {
+		AuditModuleMaterial,
+		"Material",
+	},
+	AuditModuleUser: {
+		AuditModuleUser,
+		"User",
+	},
+	AuditModuleUserPermission: {
+		AuditModuleUserPermission,
+		"UserPermission",
+	},
+	AuditModuleRole: {
+		AuditModuleRole,
+		"Role",
+	},
 	AuditModuleProductionLine: {
 		AuditModuleProductionLine,
 		"ProductionLine",

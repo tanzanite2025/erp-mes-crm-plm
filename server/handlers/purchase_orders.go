@@ -118,10 +118,7 @@ func ConfirmPurchaseReceiptHandler(c *gin.Context) {
 		return
 	}
 
-	operator := strings.TrimSpace(req.Operator)
-	if operator == "" {
-		operator = middleware.GetSafeUsername(c)
-	}
+	operator := middleware.GetSafeUsername(c)
 
 	payload, err := services.MarshalPurchaseOrderReceiptConfirmPayload(req, operator)
 	if err != nil {

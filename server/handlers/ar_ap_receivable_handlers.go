@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"xdfc-server/middleware"
 	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
@@ -67,7 +68,7 @@ func createReceiptRecordHandler(c *gin.Context) {
 		return
 	}
 
-	response, err := services.CreateReceiptRecord(c.Param("id"), req)
+	response, err := services.CreateReceiptRecord(c.Param("id"), req, middleware.GetSafeUsername(c))
 	if err != nil {
 		handleCreateReceiptRecordError(c, err)
 		return

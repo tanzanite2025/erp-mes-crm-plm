@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link2Off, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Combobox } from '@/components/ui/combobox'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,6 +46,7 @@ import {
   buildUserCreatePayload,
   buildUserReplacePayload,
 } from './users-action-dialog.submit'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 
 const UNASSIGNED_ROLE_VALUE = '__unassigned_role__'
 
@@ -158,10 +160,10 @@ export function UsersActionDialog({
         const employeeChanged = nextEmployeeID !== currentEmployeeID
 
         await replaceMutation.mutateAsync({
-            id: currentRow.id,
-            data: payload,
-            user: currentRow,
-          })
+          id: currentRow.id,
+          data: payload,
+          user: currentRow,
+        })
 
         if (employeeChanged) {
           if (nextEmployeeID) {
@@ -200,12 +202,22 @@ export function UsersActionDialog({
           <div className='absolute right-8 top-8 opacity-5 select-none pointer-events-none'>
             <UserPlus className='h-12 w-12' />
           </div>
-          <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex flex-col gap-0.5'>
-            <span>{isEdit ? t('users.dialogs.editTitle') : t('users.dialogs.createTitle')}</span>
-            <span className='text-[9px] font-mono opacity-40 tracking-widest'>
-              {isEdit ? 'ACCOUNT_PROFILE_RECOVERY' : 'PROVISION_CONTROL_CLUSTER'}
-            </span>
-          </DialogTitle>
+          <div className='flex items-start justify-between gap-3'>
+            <DialogTitle className='text-lg font-black tracking-tighter italic uppercase flex flex-col gap-0.5'>
+              <span>{isEdit ? t('users.dialogs.editTitle') : t('users.dialogs.createTitle')}</span>
+              <span className='text-[9px] font-mono opacity-40 tracking-widest'>
+                {isEdit ? 'ACCOUNT_PROFILE_RECOVERY' : 'PROVISION_CONTROL_CLUSTER'}
+              </span>
+            </DialogTitle>
+            {isEdit && currentRow ? (
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.user}
+                targetId={currentRow.id}
+                targetName={currentRow.username}
+                className='bg-background/70'
+              />
+            ) : null}
+          </div>
           <DialogDescription className='text-[10px] font-black uppercase tracking-widest opacity-60 mt-2'>
             {isEdit ? t('users.dialogs.editSubtitle') : t('users.dialogs.createSubtitle')}
           </DialogDescription>
@@ -345,33 +357,51 @@ export function UsersActionDialog({
                 name='role'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-6 gap-y-1'>
-                    <div className='col-span-2 flex flex-col items-end gap-0.5'>
-                      <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
-                        {t('users.dialogs.labels.role')}
-                      </FormLabel>
-                      <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
-                        ROLE_BINDING
-                      </span>
-                    </div>
-                    <FormControl>
-                      <Select
-                        value={field.value || UNASSIGNED_ROLE_VALUE}
-                        onValueChange={(value) => field.onChange(value === UNASSIGNED_ROLE_VALUE ? '' : value)}
-                      >
-                        <SelectTrigger className='col-span-4 h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
-                          <SelectValue placeholder={t('users.dialogs.placeholders.role')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={UNASSIGNED_ROLE_VALUE}>{t('users.dialogs.placeholders.roleEmpty')}</SelectItem>
-                          {roles.map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.label || role.id}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
+                    {(() => {
+                      const selectedRole = roles.find((role) => role.id === (field.value || ''))
+                      return (
+                        <>
+                          <div className='col-span-2 flex flex-col items-end gap-0.5'>
+                            <FormLabel className='text-[11px] font-black tracking-tight text-muted-foreground/60 leading-none'>
+                              {t('users.dialogs.labels.role')}
+                            </FormLabel>
+                            <span className='text-[8px] font-mono font-black uppercase tracking-widest opacity-20 leading-none'>
+                              ROLE_BINDING
+                            </span>
+                          </div>
+                          <div className='col-span-4 flex items-center gap-2'>
+                            <FormControl>
+                              <Select
+                                value={field.value || UNASSIGNED_ROLE_VALUE}
+                                onValueChange={(value) => field.onChange(value === UNASSIGNED_ROLE_VALUE ? '' : value)}
+                              >
+                                <SelectTrigger className='h-11 w-full rounded-2xl border-none bg-muted/50 px-4 text-xs font-bold shadow-inner'>
+                                  <SelectValue placeholder={t('users.dialogs.placeholders.role')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={UNASSIGNED_ROLE_VALUE}>{t('users.dialogs.placeholders.roleEmpty')}</SelectItem>
+                                  {roles.map((role) => (
+                                    <SelectItem key={role.id} value={role.id}>
+                                      {role.label || role.id}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            {field.value ? (
+                              <AuditTimelineTriggerButton
+                                module={AUDIT_MODULES.role}
+                                targetId={field.value}
+                                targetName={selectedRole?.label || selectedRole?.id || field.value}
+                                label='角色审计'
+                                className='shrink-0'
+                              />
+                            ) : null}
+                          </div>
+                          <FormMessage className='col-span-4 col-start-3' />
+                        </>
+                      )
+                    })()}
                   </FormItem>
                 )}
               />

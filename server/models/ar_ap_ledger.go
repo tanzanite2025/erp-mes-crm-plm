@@ -63,6 +63,7 @@ type ReceiptRecord struct {
 	ReceivedAt     string                     `gorm:"size:40;index" json:"receivedAt"`
 	ReceiptAccount string                     `gorm:"size:120" json:"receiptAccount"`
 	Status         string                     `gorm:"size:30;index;not null;default:'DRAFT'" json:"status"`
+	Operator       string                     `gorm:"size:100" json:"operator"`
 	ReferenceNo    string                     `gorm:"size:100" json:"referenceNo"`
 	Evidences      []SettlementRecordEvidence `gorm:"foreignKey:RecordID;references:ID" json:"evidences,omitempty"`
 }
@@ -81,6 +82,7 @@ type PaymentRecord struct {
 	PaymentTerm   string                     `gorm:"size:50" json:"paymentTerm"`
 	RecordDate    string                     `gorm:"size:40;index" json:"recordDate"`
 	Status        string                     `gorm:"size:30;index;not null;default:'DRAFT'" json:"status"`
+	Operator      string                     `gorm:"size:100" json:"operator"`
 	ReferenceNo   string                     `gorm:"size:100" json:"referenceNo"`
 	Evidences     []SettlementRecordEvidence `gorm:"foreignKey:RecordID;references:ID" json:"evidences,omitempty"`
 }

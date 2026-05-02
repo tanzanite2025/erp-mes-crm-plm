@@ -63,6 +63,7 @@ const (
 	ActionTradingLogisticsStatusUpdate   = "action_trading_logistics_status_update"
 	ActionTradingLogisticsDelete         = "action_trading_logistics_delete"
 	ActionTradingLogisticsProviderManage = "action_trading_logistics_provider_manage"
+	ActionFinanceSettlementManage        = "action_finance_settlement_manage"
 )
 
 const (
@@ -91,13 +92,16 @@ const (
 const (
 	ActionOrgProfileUpdate      = "action_org_profile_update"
 	ActionEmployeeUpdate        = "action_employee_update"
+	ActionHRDetailView          = "action_hr_detail_view"
 	ActionEmployeeImportPreview = "action_employee_import_preview"
 	ActionEmployeeImportCommit  = "action_employee_import_commit"
 )
 
 const (
-	ActionProductionLineUpdate  = "action_production_line_update"
-	ActionProductionPlanManage  = "action_production_plan_manage"
+	ActionProductionLineUpdate     = "action_production_line_update"
+	ActionProductionPlanManage     = "action_production_plan_manage"
+	ActionProductionIssuanceExecute = "action_production_issuance_execute"
+	ActionBarcodeBindingManage      = "action_barcode_binding_manage"
 )
 
 const (
@@ -160,6 +164,7 @@ var AdminFallbackPermissions = []string{
 	ActionTradingLogisticsStatusUpdate,
 	ActionTradingLogisticsDelete,
 	ActionTradingLogisticsProviderManage,
+	ActionFinanceSettlementManage,
 	ActionEquipmentMoldManage,
 	ActionEquipmentMoldSync,
 	ActionEquipmentDrawingManage,
@@ -176,10 +181,13 @@ var AdminFallbackPermissions = []string{
 	ActionLabExperimentalCategoryDelete,
 	ActionOrgProfileUpdate,
 	ActionEmployeeUpdate,
+	ActionHRDetailView,
 	ActionEmployeeImportPreview,
 	ActionEmployeeImportCommit,
 	ActionProductionLineUpdate,
 	ActionProductionPlanManage,
+	ActionProductionIssuanceExecute,
+	ActionBarcodeBindingManage,
 	ActionCuttingSizeInventoryRecord,
 	ActionApprovalReview,
 	MenuPDA,

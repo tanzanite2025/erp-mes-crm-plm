@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 	"xdfc-server/authz"
@@ -41,11 +43,12 @@ type ReplaceUserPermissionsInput struct {
 }
 
 type ReplaceUserPermissionsResult struct {
-	UserID      string
-	Permissions []string
-	Added       int
-	Removed     int
-	Unchanged   int
+	BeforePermissions []string
+	UserID            string
+	Permissions       []string
+	Added             int
+	Removed           int
+	Unchanged         int
 }
 
 func normalizeUserPermissionSource(value string, fallback string) string {
@@ -150,8 +153,12 @@ func replaceUserPermissionsTx(tx *gorm.DB, user models.User, input ReplaceUserPe
 	}
 
 	result := ReplaceUserPermissionsResult{
-		UserID:      user.ID,
-		Permissions: normalizedPermissionIDs,
+		BeforePermissions: make([]string, 0, len(existingByID)),
+		UserID:            user.ID,
+		Permissions:       normalizedPermissionIDs,
+	}
+	for permissionID := range existingByID {
+		result.BeforePermissions = append(result.BeforePermissions, permissionID)
 	}
 
 	for _, item := range existing {
@@ -184,10 +191,11 @@ func replaceUserPermissionsTx(tx *gorm.DB, user models.User, input ReplaceUserPe
 		result.Added++
 	}
 
+	sort.Strings(result.BeforePermissions)
 	return result, nil
 }
 
-func ReplaceUserPermissions(userID string, input ReplaceUserPermissionsInput) (ReplaceUserPermissionsResult, error) {
+func ReplaceUserPermissions(ctx context.Context, userID string, input ReplaceUserPermissionsInput) (ReplaceUserPermissionsResult, error) {
 	normalizedUserID := strings.TrimSpace(userID)
 	if normalizedUserID == "" {
 		return ReplaceUserPermissionsResult{}, ErrUserPermissionsUserNotFound
@@ -197,7 +205,7 @@ func ReplaceUserPermissions(userID string, input ReplaceUserPermissionsInput) (R
 	}
 
 	var result ReplaceUserPermissionsResult
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var user models.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Select("id", "username", "status", "employee_id").
@@ -213,7 +221,7 @@ func ReplaceUserPermissions(userID string, input ReplaceUserPermissionsInput) (R
 			return err
 		}
 		result = replaced
-		return nil
+		return writeUserPermissionsAuditEntryWithContext(ctx, tx, user, replaced.BeforePermissions, replaced, input)
 	})
 	if err != nil {
 		return ReplaceUserPermissionsResult{}, err

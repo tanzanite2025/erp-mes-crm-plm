@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -257,7 +258,7 @@ func TestOrganizationServiceSaveOrganizationRejectsDuplicateName(t *testing.T) {
 		repo,
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{Name: "Ops"})
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{Name: "Ops"})
 
 	require.ErrorIs(t, err, ErrOrganizationNameConflict)
 	require.False(t, repo.saveOrgHit)
@@ -269,7 +270,7 @@ func TestOrganizationServiceDeleteOrganizationRejectsChildDepartments(t *testing
 		&fakeOrganizationRepository{childCount: 2},
 	)
 
-	err := service.DeleteOrganization("dept-1")
+	err := service.DeleteOrganization(context.Background(), "dept-1")
 
 	require.ErrorIs(t, err, ErrOrganizationHasChildren)
 }
@@ -280,7 +281,7 @@ func TestOrganizationServiceDeleteOrganizationRejectsEmployees(t *testing.T) {
 		&fakeOrganizationRepository{employeeCount: 1},
 	)
 
-	err := service.DeleteOrganization("dept-1")
+	err := service.DeleteOrganization(context.Background(), "dept-1")
 
 	require.ErrorIs(t, err, ErrOrganizationHasEmployees)
 }
@@ -291,7 +292,7 @@ func TestOrganizationServiceSaveOrganizationRejectsInvalidRootType(t *testing.T)
 		&fakeOrganizationRepository{},
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{
 		Name: "Production Unit A",
 		Type: "team",
 	})
@@ -306,7 +307,7 @@ func TestOrganizationServiceSaveOrganizationRejectsMissingParent(t *testing.T) {
 		&fakeOrganizationRepository{},
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{
 		Name:     "Manufacturing",
 		Type:     "department",
 		ParentID: &parentID,
@@ -329,7 +330,7 @@ func TestOrganizationServiceSaveOrganizationRejectsInvalidChildType(t *testing.T
 		repo,
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{
 		Name:     "Workshop Unit",
 		Type:     "team",
 		ParentID: &parentID,
@@ -352,7 +353,7 @@ func TestOrganizationServiceSaveOrganizationRejectsFourthLevel(t *testing.T) {
 		repo,
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{
 		Name:     "Too Deep",
 		Type:     "team",
 		ParentID: &parentID,
@@ -375,7 +376,7 @@ func TestOrganizationServiceSaveOrganizationAcceptsDepartmentUnderCompany(t *tes
 		repo,
 	)
 
-	_, err := service.SaveOrganization(OrganizationSaveRequest{
+	_, err := service.SaveOrganization(context.Background(), OrganizationSaveRequest{
 		Name:     "Manufacturing",
 		Type:     "department",
 		ParentID: &parentID,
@@ -392,7 +393,7 @@ func TestOrganizationServiceBulkUpdateEmployeeStatusNormalizesIDs(t *testing.T) 
 		repo,
 	)
 
-	result, err := service.BulkUpdateEmployeeStatus([]string{" emp-1 ", "", "emp-2"}, "active")
+	result, err := service.BulkUpdateEmployeeStatus(context.Background(), []string{" emp-1 ", "", "emp-2"}, "active")
 
 	require.NoError(t, err)
 	require.Equal(t, int64(2), result.Updated)
@@ -409,7 +410,7 @@ func TestOrganizationServiceDeleteEmployeesDisablesLinkedUsers(t *testing.T) {
 		repo,
 	)
 
-	err := service.DeleteEmployees([]string{" emp-1 ", "emp-2"})
+	err := service.DeleteEmployees(context.Background(), []string{" emp-1 ", "emp-2"})
 
 	require.NoError(t, err)
 	require.Equal(t, []string{"emp-1", "emp-2"}, repo.deletedIDs)
@@ -501,7 +502,7 @@ func TestOrganizationServiceSaveEmployeeProjectsPrimaryAssignmentFromLegacyDept(
 		&fakeOrganizationRepository{},
 	)
 
-	_, err := service.SaveEmployee(EmployeeSaveRequest{
+	_, err := service.SaveEmployee(context.Background(), EmployeeSaveRequest{
 		ID:     "emp-assignment-1",
 		Name:   "Alice",
 		Status: "active",

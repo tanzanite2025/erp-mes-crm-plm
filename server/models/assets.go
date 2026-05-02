@@ -61,6 +61,7 @@ type MoldLoan struct {
 	Status             string    `gorm:"size:50;default:'ACTIVE'" json:"status"` // 'ACTIVE', 'RETURNED', 'OVERDUE'
 	Remarks            string    `gorm:"type:text" json:"remarks"`
 	PhotoURL           string    `json:"photoUrl"`
+	CreatedBy          string    `gorm:"size:100" json:"createdBy"`
 	CreatedAt          time.Time `json:"createdAt"`
 }
 

@@ -145,7 +145,13 @@ export function getUsersColumns(
 
         return (
           <div className='flex space-x-2'>
-            <Badge variant='outline' className={cn('capitalize', badgeColor)}>
+            <Badge
+              variant='outline'
+              className={cn(
+                'h-7 rounded-full border-dashed px-3 text-[10px] font-black uppercase tracking-widest',
+                badgeColor,
+              )}
+            >
               {label}
             </Badge>
           </div>

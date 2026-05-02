@@ -14,6 +14,8 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 	productionLineUpdate := middleware.RequirePermissions(authz.ActionProductionLineUpdate)
 
 	productionPlanManage := middleware.RequirePermissions(authz.ActionProductionPlanManage)
+	productionIssuanceExecute := middleware.RequirePermissions(authz.ActionProductionIssuanceExecute)
+	barcodeBindingManage := middleware.RequirePermissions(authz.ActionBarcodeBindingManage)
 
 	productionGroup := authorized.Group("/production")
 	productionGroup.Use(productionAccess)
@@ -31,12 +33,12 @@ func registerProductionRoutes(authorized *gin.RouterGroup) {
 		productionGroup.POST("/plans", productionPlanManage, handlers.SaveProductionPlanHandler)
 		productionGroup.GET("/cutting-issuances/trace-report", handlers.GetCuttingIssuanceTraceReportHandler)
 		productionGroup.GET("/cutting-issuances", handlers.GetCuttingIssuanceExecutionsHandler)
-		productionGroup.POST("/cutting-issuances", handlers.CreateCuttingIssuanceExecutionHandler)
+		productionGroup.POST("/cutting-issuances", productionIssuanceExecute, handlers.CreateCuttingIssuanceExecutionHandler)
 		productionGroup.POST("/product-barcode-capture-sessions", handlers.CreateProductBarcodeCaptureSessionHandler)
 		productionGroup.GET("/product-barcode-capture-sessions/:sessionId", handlers.GetProductBarcodeCaptureSessionHandler)
 		productionGroup.GET("/product-barcode-bindings", handlers.GetProductBarcodeBindingsHandler)
 		productionGroup.GET("/product-barcode-bindings/count", handlers.CountProductBarcodeBindingsHandler)
-		productionGroup.POST("/product-barcode-bindings", handlers.CreateProductBarcodeBindingHandler)
+		productionGroup.POST("/product-barcode-bindings", barcodeBindingManage, handlers.CreateProductBarcodeBindingHandler)
 		productionGroup.GET("/stats", handlers.GetProductionStatsHandler)
 		productionGroup.GET("/order-progress", handlers.GetOrderProgressHandler)
 	}

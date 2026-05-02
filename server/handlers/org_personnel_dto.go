@@ -120,11 +120,13 @@ func mapEmployeeSaveServiceResponseToResponse(input services.EmployeeSaveRespons
 		"name":           input.Name,
 		"gender":         input.Gender,
 		"birthday":       input.Birthday,
-		"idCard":         input.IDCard,
+		"idCard":         input.MaskedIDCard,
+		"maskedIdCard":   input.MaskedIDCard,
 		"phone":          input.Phone,
 		"emergencyPhone": input.EmergencyPhone,
 		"address":        input.Address,
-		"bankCard":       input.BankCard,
+		"bankCard":       input.MaskedBankCard,
+		"maskedBankCard": input.MaskedBankCard,
 		"bankName":       input.BankName,
 		"education":      input.Education,
 		"age":            input.Age,
@@ -192,4 +194,46 @@ func mapBulkSyncEmployeeHandlerRequestsToService(input []BulkSyncEmployeeHandler
 		})
 	}
 	return result
+}
+
+type EmployeeListDTO struct {
+	ID           string     `json:"id"`
+	StaffID      string     `json:"staffId"`
+	Name         string     `json:"name"`
+	Gender       string     `json:"gender"`
+	Age          int        `json:"age"`
+	Status       string     `json:"status"`
+	JoinedDate   *time.Time `json:"joinedDate"`
+	DeptID       string     `json:"deptId"`
+	DeptName     string     `json:"deptName"`
+	PositionID   string     `json:"positionId"`
+	PositionName string     `json:"positionName"`
+	LineID       string     `json:"lineId"`
+	LineName     string     `json:"lineName"`
+	ProcessID    string     `json:"processId"`
+	ProcessName  string     `json:"processName"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+}
+
+func mapEmployeeToListDTO(input services.EmployeeListItemResponse) EmployeeListDTO {
+	return EmployeeListDTO{
+		ID:           input.ID,
+		StaffID:      input.StaffID,
+		Name:         input.Name,
+		Gender:       input.Gender,
+		Age:          input.Age,
+		Status:       input.Status,
+		JoinedDate:   input.JoinedDate,
+		DeptID:       input.DeptID,
+		DeptName:     input.DeptName,
+		PositionID:   input.PositionID,
+		PositionName: input.PositionName,
+		LineID:       input.LineID,
+		LineName:     input.LineName,
+		ProcessID:    input.ProcessID,
+		ProcessName:  input.ProcessName,
+		CreatedAt:    input.CreatedAt,
+		UpdatedAt:    input.UpdatedAt,
+	}
 }

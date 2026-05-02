@@ -4,6 +4,10 @@ export const AUDIT_MODULES = {
   customer: 'customer',
   supplier: 'supplier',
   employee: 'employee',
+  material: 'material',
+  user: 'user',
+  userPermission: 'user-permission',
+  role: 'role',
 } as const
 
 export type AuditModuleValue = (typeof AUDIT_MODULES)[keyof typeof AUDIT_MODULES]

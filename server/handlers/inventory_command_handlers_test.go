@@ -263,7 +263,10 @@ func TestRecordInboundHandlerBindsPurchaseReceiptAssociationAndUpdatesStatus(t *
 	ctx, _ := gin.CreateTestContext(recorder)
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/inbound", strings.NewReader(payload))
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.11.1:4567"
 	ctx.Request = request
+	ctx.Set("username", "handler-inbound-user")
+	ctx.Set("userId", "handler-inbound-id")
 
 	RecordInboundHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -275,6 +278,17 @@ func TestRecordInboundHandlerBindsPurchaseReceiptAssociationAndUpdatesStatus(t *
 	var status string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM purchase_orders WHERE id = ?`, "po-handler-1").Scan(&status).Error)
 	require.Equal(t, "Awaiting", status)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "INVENTORY_INBOUND").Scan(&audit).Error)
+	require.Equal(t, "INVENTORY_INBOUND", audit.Action)
+	require.Equal(t, "handler-inbound-user", audit.Operator)
+	require.Equal(t, "10.10.11.1", audit.IP)
 }
 
 func TestPatchInventoryHandlerReturnsRealVersionedResponse(t *testing.T) {
@@ -321,7 +335,9 @@ func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdate
 	payload := `{"materialId":"` + materialID + `","salesOrderId":"so-handler-1","salesOrderLineId":1,"quantity":3,"sourceCategory":"WH_A","batchNo":"B-001","orderNo":"SO-H-001","status":"DRAFT","shipmentDate":"2026-04-05T00:00:00Z","operator":"tester","remarks":"ok"}`
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment", strings.NewReader(payload))
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.11.2:4567"
 	ctx.Request = request
+	ctx.Set("username", "handler-shipment-drafter")
 
 	RecordShipmentHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -334,6 +350,9 @@ func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdate
 	commitCtx, _ := gin.CreateTestContext(commitRecorder)
 	commitCtx.Params = gin.Params{{Key: "id", Value: shipmentID}}
 	commitCtx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment/"+shipmentID+"/commit", nil)
+	commitCtx.Request.RemoteAddr = "10.10.11.3:4567"
+	commitCtx.Set("username", "handler-shipment-committer")
+	commitCtx.Set("userId", "handler-shipment-committer-id")
 
 	CommitShipmentHandler(commitCtx)
 	require.Equal(t, http.StatusOK, commitRecorder.Code, commitRecorder.Body.String())
@@ -345,6 +364,17 @@ func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdate
 	var status string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM sales_orders WHERE id = ?`, "so-handler-1").Scan(&status).Error)
 	require.Equal(t, "InProgress", status)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "SHIPMENT_COMMIT").Scan(&audit).Error)
+	require.Equal(t, "SHIPMENT_COMMIT", audit.Action)
+	require.Equal(t, "handler-shipment-committer", audit.Operator)
+	require.Equal(t, "10.10.11.3", audit.IP)
 }
 
 func TestPatchShipmentHandlerReturnsConflictForStaleVersion(t *testing.T) {
@@ -577,6 +607,9 @@ func TestVoidShipmentHandlerReturnsNamedStatusResponse(t *testing.T) {
 	ctx.Params = gin.Params{{Key: "id", Value: "ship-void-handler-1"}}
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/v1/inventory/shipment/ship-void-handler-1/void", strings.NewReader(`{"approvalId":""}`))
 	ctx.Request.Header.Set("Content-Type", "application/json")
+	ctx.Request.RemoteAddr = "10.10.11.4:4567"
+	ctx.Set("username", "handler-shipment-voider")
+	ctx.Set("userId", "handler-shipment-voider-id")
 
 	VoidShipmentHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -584,4 +617,15 @@ func TestVoidShipmentHandlerReturnsNamedStatusResponse(t *testing.T) {
 	var response services.InventoryCommandStatusResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 	require.Equal(t, "success", response.Status)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "SHIPMENT_VOID").Scan(&audit).Error)
+	require.Equal(t, "SHIPMENT_VOID", audit.Action)
+	require.Equal(t, "handler-shipment-voider", audit.Operator)
+	require.Equal(t, "10.10.11.4", audit.IP)
 }

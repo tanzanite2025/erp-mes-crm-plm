@@ -29,7 +29,7 @@ var ledgerSearchSortColumns = map[string]string{
 	"ledger_no":          "ledger_no",
 }
 
-func CreatePaymentRecord(ledgerID string, req CreatePaymentRecordRequest) (CreatePaymentRecordResponse, error) {
+func CreatePaymentRecord(ledgerID string, req CreatePaymentRecordRequest, operator string) (CreatePaymentRecordResponse, error) {
 	if req.Amount <= 0 {
 		return CreatePaymentRecordResponse{}, ErrSettlementAmountInvalid
 	}
@@ -49,6 +49,7 @@ func CreatePaymentRecord(ledgerID string, req CreatePaymentRecordRequest) (Creat
 			PaymentTerm:   strings.TrimSpace(req.PaymentTerm),
 			RecordDate:    strings.TrimSpace(req.RecordDate),
 			Status:        models.SettlementRecordStatusConfirmed,
+			Operator:      operator,
 			ReferenceNo:   strings.TrimSpace(req.ReferenceNo),
 		}
 		if err := tx.Create(&record).Error; err != nil {
@@ -346,6 +347,7 @@ func validateSettlementAllocationRequests(amount float64, allocations []Settleme
 }
 
 func createPayableAllocationsTx(tx *gorm.DB, record models.PaymentRecord, requests []SettlementAllocationRequest) ([]SettlementAllocationResponse, string, error) {
+	operator := record.Operator
 	responses := make([]SettlementAllocationResponse, 0, len(requests))
 	primaryLedgerID := strings.TrimSpace(requests[0].LedgerID)
 	ledgersByID, err := lockPayableLedgersByIDTx(tx, requests)
@@ -373,7 +375,7 @@ func createPayableAllocationsTx(tx *gorm.DB, record models.PaymentRecord, reques
 			AllocatedAmount: item.AllocatedAmount,
 			SequenceNo:      normalizeSequenceNo(item.SequenceNo, index),
 			Remark:          strings.TrimSpace(item.Remark),
-			Operator:        "system",
+			Operator:        operator,
 		}
 		if err := tx.Create(&allocation).Error; err != nil {
 			return nil, "", err

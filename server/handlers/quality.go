@@ -12,6 +12,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -195,11 +196,7 @@ func PatchInspectionStandardHandler(c *gin.Context) {
 			case "items":
 				next.Items = append(json.RawMessage(nil), valueRaw...)
 			case "auditor":
-				var value string
-				if err := json.Unmarshal(valueRaw, &value); err != nil {
-					return errors.New("invalid quality standard auditor payload")
-				}
-				next.Auditor = strings.TrimSpace(value)
+				next.Auditor = middleware.GetSafeUsername(c)
 			case "auditTime":
 				value, err := parseOptionalTimeValue(valueRaw)
 				if err != nil {
@@ -214,24 +211,9 @@ func PatchInspectionStandardHandler(c *gin.Context) {
 				next.Description = strings.TrimSpace(value)
 			}
 		}
-
-		next.Version = nextQualityStandardVersion(standard.Version)
-		updates := map[string]interface{}{
-			"code":        next.Code,
-			"name":        next.Name,
-			"type":        next.Type,
-			"version":     next.Version,
-			"status":      next.Status,
-			"items":       next.Items,
-			"auditor":     next.Auditor,
-			"audit_time":  next.AuditTime,
-			"description": next.Description,
-		}
-
-		if err := tx.Model(&standard).Updates(updates).Error; err != nil {
+		if err := services.SaveInspectionStandard(auditContextFromGin(c), &next); err != nil {
 			return err
 		}
-
 		return tx.First(&updated, "id = ?", id).Error
 	})
 
@@ -262,41 +244,11 @@ func SaveInspectionStandardHandler(c *gin.Context) {
 	}
 
 	standard := mapInspectionStandardRequestToModel(input)
-
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		var existing models.InspectionStandard
-		if standard.ID != "" {
-			if err := tx.First(&existing, "id = ?", standard.ID).Error; err == nil {
-				standard.Version = nextQualityStandardVersion(existing.Version)
-				log.Printf("[INFO] Incrementing Standard %s Version to %.1f", standard.Code, standard.Version)
-			}
-		} else {
-			standard.Version = 1.0
-		}
-
-		if standard.ID != "" {
-			if err := tx.Model(&existing).Omit("CreatedAt", "CreatedBy").Updates(standard).Error; err != nil {
-				return err
-			}
-			return tx.First(&standard, "id = ?", existing.ID).Error
-		} else {
-			if err := tx.Save(&standard).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
+	if err := services.SaveInspectionStandard(auditContextFromGin(c), &standard); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存品质标准失败: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, mapInspectionStandardToResponse(standard))
-}
-
-func nextQualityStandardVersion(current float64) float64 {
-	return math.Round((current+0.1)*10) / 10
 }
 
 func qualityVersionMatches(current float64, expected float64) bool {
@@ -380,65 +332,7 @@ func SaveInspectionTaskHandler(c *gin.Context) {
 	task.CompletedAt = &now
 	task.Inspector = middleware.GetSafeUsername(c)
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if task.ID != "" {
-			// [SECURITY] 更新模式：校验原始记录归属与标准绑定不可变性
-			var existing models.InspectionTask
-			if err := tx.First(&existing, "id = ?", task.ID).Error; err != nil {
-				return errors.New("[NOT_FOUND] 检验任务不存在")
-			}
-
-			// 归属校验：只有原始检验员或管理员可以修改已有记录
-			currentUser := middleware.GetSafeUsername(c)
-			isAdmin := middleware.HasAnyPermission(c, "perm_manage")
-			if strings.TrimSpace(existing.Inspector) != "" &&
-				!strings.EqualFold(existing.Inspector, currentUser) &&
-				!isAdmin {
-				log.Printf("[QUALITY_SECURITY] Denied task update: taskId=%s owner=%s requestor=%s ip=%s",
-					task.ID, existing.Inspector, currentUser, c.ClientIP())
-				return errors.New("[SECURITY] 仅原始检验员或管理员可修改此检验记录")
-			}
-
-			// 标准绑定不可变：禁止将已有任务重新绑定到不同的检验标准
-			if strings.TrimSpace(existing.StandardID) != "" &&
-				strings.TrimSpace(task.StandardID) != "" &&
-				existing.StandardID != task.StandardID {
-				return errors.New("[SECURITY] 检验标准绑定后不可变更，请创建新检验任务")
-			}
-
-			if err := tx.Model(&models.InspectionTask{}).Where("id = ?", task.ID).Updates(task).Error; err != nil {
-				return err
-			}
-			if err := tx.Preload("Standard").First(&task, "id = ?", task.ID).Error; err != nil {
-				return err
-			}
-		} else {
-			// 新增模式
-			if err := tx.Save(&task).Error; err != nil {
-				return err
-			}
-			if err := tx.Preload("Standard").First(&task, "id = ?", task.ID).Error; err != nil {
-				return err
-			}
-		}
-
-		// 判定逻辑：如果判定不通过，自动生成质量异常单 (QualityAbnormality)
-		if task.Result == "FAIL" {
-			abnormality := models.QualityAbnormality{
-				TaskID:      task.ID,
-				Severity:    "MAJOR",
-				Description: "[AUTO_GEN] 检验判定不通过: " + task.Remarks,
-				Status:      "OPEN",
-			}
-			if err := tx.Create(&abnormality).Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
+	if err := services.SaveInspectionTask(auditContextFromGin(c), &task); err != nil {
 		status := mapDomainErrorToHTTPStatus(err)
 		c.JSON(status, gin.H{"error": err.Error()})
 		return

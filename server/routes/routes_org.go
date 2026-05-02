@@ -28,6 +28,7 @@ func registerOrgRoutes(authorized *gin.RouterGroup) {
 	authorized.POST("/org/sync", adminOnly, handlers.BulkSyncOrgHandler)
 	authorized.DELETE("/org/:id", orgDelete, handlers.DeleteOrgHandler)
 	authorized.GET("/employees", middleware.RequirePermissions(authz.MenuOrg), handlers.GetEmployeesHandler)
+	authorized.GET("/employees/:id", middleware.RequirePermissions(authz.ActionHRDetailView), handlers.GetEmployeeDetailHandler)
 	authorized.GET("/positions", middleware.RequirePermissions(authz.MenuOrg), handlers.GetPositionsHandler)
 	authorized.POST("/employees", employeeWrite, handlers.SaveEmployeeHandler)
 	authorized.PATCH("/employees/:id", employeeUpdate, handlers.PatchEmployeeHandler)

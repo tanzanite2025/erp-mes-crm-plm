@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -9,6 +10,15 @@ import (
 
 	"gorm.io/gorm"
 )
+
+func recordLegacyAuditEntryWithContext(ctx context.Context, tx *gorm.DB, module, targetID, action string, diff json.RawMessage) error {
+	actor, ok := audit.ActorFromContext(ctx)
+	if !ok {
+		// 回退方案：如果 Context 中没身份，记录为系统操作
+		actor = audit.AuditActor{Source: "system"}
+	}
+	return recordLegacyAuditEntryTx(tx, module, targetID, action, diff, actor.Username, actor.UserID, actor.IP)
+}
 
 func recordLegacyAuditEntryTx(tx *gorm.DB, module, targetID, action string, diff json.RawMessage, operator, actorID, ip string) error {
 	source := ""

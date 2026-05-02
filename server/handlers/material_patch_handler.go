@@ -168,7 +168,7 @@ func PatchMaterialHandler(c *gin.Context) {
 		}
 	}
 
-	updated, err := services.PatchMaterial(patch)
+	updated, err := services.PatchMaterial(auditContextFromGin(c), patch)
 	if err != nil {
 		if errors.Is(err, services.ErrMaterialPatchVersionConflict) {
 			respondVersionConflict(c)

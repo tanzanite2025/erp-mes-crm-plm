@@ -30,6 +30,7 @@ type DataTableFacetedFilterProps<TData, TValue> = {
   }[]
   variant?: 'default' | 'industrial'
   subtitle?: string
+  triggerClassName?: string
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -38,6 +39,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   options,
   variant = 'default',
   subtitle,
+  triggerClassName,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   const selectedValues = new Set(column?.getFilterValue() as string[])
@@ -48,7 +50,10 @@ export function DataTableFacetedFilter<TData, TValue>({
         {variant === 'industrial' ? (
           <Button
             variant='outline'
-            className='w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0'
+            className={cn(
+              'w-[105px] h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 border-dashed border-muted shadow-sm hover:bg-muted active:scale-95 transition-all p-0',
+              triggerClassName,
+            )}
           >
             <div className='flex items-center gap-1.5'>
               <PlusCircledIcon className='size-3 text-blue-600' />
@@ -67,7 +72,7 @@ export function DataTableFacetedFilter<TData, TValue>({
             )}
           </Button>
         ) : (
-          <Button variant='outline' size='sm' className='h-8 border-dashed'>
+          <Button variant='outline' size='sm' className={cn('h-8 border-dashed', triggerClassName)}>
             <PlusCircledIcon className='size-4' />
             {title}
             {selectedValues?.size > 0 && (

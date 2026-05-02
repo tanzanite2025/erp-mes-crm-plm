@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   type SortingState,
   type VisibilityState,
@@ -36,6 +41,7 @@ type DataTableProps = {
   mode?: UsersTableMode
   showBulkActions?: boolean
   showSelection?: boolean
+  leadingViewSlot?: ReactNode
 }
 
 export function UsersTable({
@@ -47,6 +53,7 @@ export function UsersTable({
   mode = 'management',
   showBulkActions = true,
   showSelection = true,
+  leadingViewSlot,
 }: DataTableProps) {
   const { t } = useLanguage()
 
@@ -113,6 +120,7 @@ export function UsersTable({
         table={table}
         searchPlaceholder={t('users.table.searchPlaceholder')}
         searchKey='username'
+        leadingViewSlot={leadingViewSlot}
         filters={[
           {
             columnId: 'status',
@@ -122,6 +130,8 @@ export function UsersTable({
               { label: t('users.status.inactive'), value: 'inactive' },
               { label: t('users.status.suspended'), value: 'suspended' },
             ],
+            triggerClassName:
+              'h-9 rounded-full px-4 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95',
           },
         ]}
       />

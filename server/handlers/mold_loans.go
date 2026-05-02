@@ -37,6 +37,7 @@ func CreateLoanWithStatusHandler(c *gin.Context) {
 	
 	input.Loan.LoanDate = time.Now()
 	input.Loan.CreatedAt = time.Now()
+	input.Loan.CreatedBy = operatorStr
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		// 1. 保存借还记录

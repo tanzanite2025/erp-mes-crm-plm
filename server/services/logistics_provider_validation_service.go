@@ -55,9 +55,9 @@ func getLogisticsProviderVerificationProfile(provider models.LogisticsAPIProvide
 	case "17TRACK":
 		return logisticsProviderVerificationProfile{
 			Name:                   "17TRACK",
-			RequiresCredentials:    true,
+			RequiresCredentials:    false,
 			ReachableAction:        "请继续在 17TRACK 控制台使用实际 token 与示例请求联调。",
-			MissingCredentialsHint: "请补齐 17TRACK 的 API Token/Secret 后再测试。",
+			MissingCredentialsHint: "请补齐 17TRACK 的 Access Key 后再测试。",
 			ManualReviewAction:     "17TRACK 当前未启用系统内置自动验证，请改用控制台样例或人工联调确认配置。",
 		}
 	default:

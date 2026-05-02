@@ -349,7 +349,7 @@ func confirmSalesExchangeOldItemInboundTx(tx *gorm.DB, input ConfirmSalesExchang
 			Operator:       input.Operator,
 			Remarks:        input.Remarks,
 		}
-		if err := recordInboundTx(tx, &inbound); err != nil {
+		if _, err := recordInboundTx(tx, &inbound); err != nil {
 			return ConfirmSalesExchangeOldItemInboundResult{}, err
 		}
 		createdRecords = append(createdRecords, inbound)

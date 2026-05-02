@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -49,12 +50,12 @@ func ListOrganizationTree() ([]OrganizationTreeNodeResponse, error) {
 	return defaultOrganizationService.ListOrganizationTree()
 }
 
-func SaveOrganization(input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
-	return defaultOrganizationService.SaveOrganization(input)
+func SaveOrganization(ctx context.Context, input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
+	return defaultOrganizationService.SaveOrganization(ctx, input)
 }
 
-func DeleteOrganization(id string) error {
-	return defaultOrganizationService.DeleteOrganization(id)
+func DeleteOrganization(ctx context.Context, id string) error {
+	return defaultOrganizationService.DeleteOrganization(ctx, id)
 }
 
 func ListEmployees() ([]EmployeeListItemResponse, error) {
@@ -65,33 +66,37 @@ func ListPositions() ([]PositionListItemResponse, error) {
 	return defaultOrganizationService.ListPositions()
 }
 
+func GetEmployeeDetail(id string) (EmployeeDetailResponse, error) {
+	return defaultOrganizationService.GetEmployeeDetail(id)
+}
+
 type BulkUpdateEmployeeStatusResult struct {
 	Updated    int64
 	OperatedAt time.Time
 }
 
-func BulkUpdateEmployeeStatus(ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
-	return defaultOrganizationService.BulkUpdateEmployeeStatus(ids, status)
+func BulkUpdateEmployeeStatus(ctx context.Context, ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
+	return defaultOrganizationService.BulkUpdateEmployeeStatus(ctx, ids, status)
 }
 
-func SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
-	return defaultOrganizationService.SaveEmployee(input)
+func SaveEmployee(ctx context.Context, input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
+	return defaultOrganizationService.SaveEmployee(ctx, input)
 }
 
-func PatchOrganization(input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
-	return defaultOrganizationService.PatchOrganization(input)
+func PatchOrganization(ctx context.Context, input PatchOrganizationRequest) (OrganizationTreeNodeResponse, error) {
+	return defaultOrganizationService.PatchOrganization(ctx, input)
 }
 
-func PatchEmployee(input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
-	return defaultOrganizationService.PatchEmployee(input)
+func PatchEmployee(ctx context.Context, input PatchEmployeeRequest) (EmployeeListItemResponse, error) {
+	return defaultOrganizationService.PatchEmployee(ctx, input)
 }
 
-func DeleteEmployees(ids []string) error {
-	return defaultOrganizationService.DeleteEmployees(ids)
+func DeleteEmployees(ctx context.Context, ids []string) error {
+	return defaultOrganizationService.DeleteEmployees(ctx, ids)
 }
 
-func BulkSyncOrganizations(input []BulkSyncOrganizationRequest) (int, error) {
-	return defaultOrganizationService.BulkSyncOrganizations(input)
+func BulkSyncOrganizations(ctx context.Context, input []BulkSyncOrganizationRequest) (int, error) {
+	return defaultOrganizationService.BulkSyncOrganizations(ctx, input)
 }
 
 func BulkSyncEmployees(input []BulkSyncEmployeeRequest) (int, error) {
@@ -130,7 +135,7 @@ func (s *OrganizationService) ListOrganizationTree() ([]OrganizationTreeNodeResp
 	return MapOrganizationTreeToResponse(rootNodes), nil
 }
 
-func (s *OrganizationService) SaveOrganization(input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
+func (s *OrganizationService) SaveOrganization(ctx context.Context, input OrganizationSaveRequest) (OrganizationSaveResponse, error) {
 	model := MapOrganizationSaveRequestToModel(input)
 	if err := s.validateOrganizationHierarchy(&model); err != nil {
 		return OrganizationSaveResponse{}, err
@@ -145,7 +150,10 @@ func (s *OrganizationService) SaveOrganization(input OrganizationSaveRequest) (O
 	}
 
 	if err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
-		return s.repository.SaveOrganization(tx, &model)
+		if err := s.repository.SaveOrganization(tx, &model); err != nil {
+			return err
+		}
+		return recordLegacyAuditEntryWithContext(ctx, tx, "Organization", model.ID, "save", nil)
 	}); err != nil {
 		return OrganizationSaveResponse{}, err
 	}
@@ -209,7 +217,7 @@ func (s *OrganizationService) validateOrganizationHierarchyWithDB(database *gorm
 	return nil
 }
 
-func (s *OrganizationService) DeleteOrganization(id string) error {
+func (s *OrganizationService) DeleteOrganization(ctx context.Context, id string) error {
 	childCount, err := s.repository.CountChildOrganizations(s.txManager.DB(), id)
 	if err != nil {
 		return err
@@ -217,7 +225,6 @@ func (s *OrganizationService) DeleteOrganization(id string) error {
 	if childCount > 0 {
 		return ErrOrganizationHasChildren
 	}
-
 	employeeCount, err := s.repository.CountEmployeesByDeptID(s.txManager.DB(), id)
 	if err != nil {
 		return err
@@ -225,7 +232,9 @@ func (s *OrganizationService) DeleteOrganization(id string) error {
 	if employeeCount > 0 {
 		return ErrOrganizationHasEmployees
 	}
-
+	if err := recordLegacyAuditEntryWithContext(ctx, s.txManager.DB(), "Organization", id, "delete", nil); err != nil {
+		return err
+	}
 	return s.repository.DeleteOrganization(s.txManager.DB(), id)
 }
 
@@ -237,6 +246,14 @@ func (s *OrganizationService) ListEmployees() ([]EmployeeListItemResponse, error
 	return MapEmployeesToListItemResponse(employees), nil
 }
 
+func (s *OrganizationService) GetEmployeeDetail(id string) (EmployeeDetailResponse, error) {
+	employee, err := loadEmployeeAggregate(s.txManager.DB(), id)
+	if err != nil {
+		return EmployeeDetailResponse{}, err
+	}
+	return MapEmployeeToDetailResponse(employee), nil
+}
+
 func (s *OrganizationService) ListPositions() ([]PositionListItemResponse, error) {
 	positions, err := s.repository.ListPositions(s.txManager.DB())
 	if err != nil {
@@ -245,7 +262,7 @@ func (s *OrganizationService) ListPositions() ([]PositionListItemResponse, error
 	return MapPositionsToListItemResponse(positions), nil
 }
 
-func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
+func (s *OrganizationService) BulkUpdateEmployeeStatus(ctx context.Context, ids []string, status string) (BulkUpdateEmployeeStatusResult, error) {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
 		return BulkUpdateEmployeeStatusResult{}, ErrEmptyEmployeeIDs
@@ -264,6 +281,11 @@ func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status stri
 		var err error
 		updated, err = s.repository.BulkUpdateEmployeeStatus(tx, normalizedIDs, normalizedStatus)
 		operatedAt = time.Now().UTC()
+		for _, id := range normalizedIDs {
+			if err := recordLegacyAuditEntryWithContext(ctx, tx, "Employee", id, "status_change", nil); err != nil {
+				return err
+			}
+		}
 		return err
 	})
 	if err != nil {
@@ -273,14 +295,26 @@ func (s *OrganizationService) BulkUpdateEmployeeStatus(ids []string, status stri
 	return BulkUpdateEmployeeStatusResult{Updated: updated, OperatedAt: operatedAt}, nil
 }
 
-func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
+func (s *OrganizationService) SaveEmployee(ctx context.Context, input EmployeeSaveRequest) (EmployeeSaveResponse, error) {
 	model := MapEmployeeSaveRequestToModel(input)
 	var refreshed models.Employee
 	if err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
+		actor, _ := audit.ActorFromContext(ctx)
+		model.Operator = actor.Username
+		if model.Operator == "" {
+			model.Operator = actor.UserID
+		}
+		if model.Operator == "" {
+			model.Operator = "system"
+		}
+
 		if err := s.repository.SaveEmployee(tx, &model); err != nil {
 			return err
 		}
 		if _, err := syncPrimaryAssignmentProjectionFromEmployee(tx, model, "legacy_employee_save", ""); err != nil {
+			return err
+		}
+		if err := recordLegacyAuditEntryWithContext(ctx, tx, "Employee", model.ID, "save", nil); err != nil {
 			return err
 		}
 		var err error
@@ -293,7 +327,7 @@ func (s *OrganizationService) SaveEmployee(input EmployeeSaveRequest) (EmployeeS
 	return MapEmployeeToSaveResponse(refreshed), nil
 }
 
-func (s *OrganizationService) DeleteEmployees(ids []string) error {
+func (s *OrganizationService) DeleteEmployees(ctx context.Context, ids []string) error {
 	normalizedIDs := normalizeStringIDs(ids)
 	if len(normalizedIDs) == 0 {
 		return ErrEmptyEmployeeIDs
@@ -307,6 +341,9 @@ func (s *OrganizationService) DeleteEmployees(ids []string) error {
 			return err
 		}
 		for _, employeeID := range normalizedIDs {
+			if err := recordLegacyAuditEntryWithContext(ctx, tx, "Employee", employeeID, "delete", nil); err != nil {
+				return err
+			}
 			if err := recordAuditEventTx(tx, audit.NewAuditEvent(audit.AuditEntityEmployee, employeeID, audit.AuditActionDelete, audit.AuditActor{}).Normalize()); err != nil {
 				return err
 			}
@@ -315,11 +352,14 @@ func (s *OrganizationService) DeleteEmployees(ids []string) error {
 	})
 }
 
-func (s *OrganizationService) BulkSyncOrganizations(input []BulkSyncOrganizationRequest) (int, error) {
+func (s *OrganizationService) BulkSyncOrganizations(ctx context.Context, input []BulkSyncOrganizationRequest) (int, error) {
 	err := s.txManager.WithinTransaction(func(tx *gorm.DB) error {
 		for _, item := range input {
 			node := MapBulkSyncOrganizationRequestToModel(item)
 			if err := s.repository.SaveOrganization(tx, &node); err != nil {
+				return err
+			}
+			if err := recordLegacyAuditEntryWithContext(ctx, tx, "Organization", node.ID, "bulk_sync", nil); err != nil {
 				return err
 			}
 		}

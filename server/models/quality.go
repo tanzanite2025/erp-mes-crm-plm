@@ -18,6 +18,7 @@ type InspectionStandard struct {
 	Items       json.RawMessage `gorm:"type:jsonb" json:"items"`               // 具体检验项列表 (JSONB)
 	Auditor     string          `gorm:"size:100" json:"auditor"`
 	AuditTime   *time.Time      `json:"auditTime"`
+	Operator    string          `gorm:"size:100" json:"operator"` // 最后修改人
 	Description string          `gorm:"type:text" json:"description"`
 }
 
@@ -52,5 +53,6 @@ type QualityAbnormality struct {
 	DisposalMethod string     `gorm:"size:50" json:"disposalMethod"` // SCRAP(报废), REWORK(重工), CONCESSION(让步接收)
 	Status         string     `gorm:"size:20;default:'OPEN'" json:"status"` // OPEN, CLOSED, REJECTED
 	Deadline       *time.Time `json:"deadline"`
-	Resolver       string     `gorm:"size:100" json:"resolver"`
+	Reporter       string     `gorm:"size:100" json:"reporter"` // 报告人/第一发现人
+	Resolver       string     `gorm:"size:100" json:"resolver"` // 解决人/处理人
 }

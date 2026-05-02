@@ -12,12 +12,14 @@ func registerArApRoutes(authorized *gin.RouterGroup) {
 	tradingRead := middleware.RequirePermissions(authz.MenuTrading)
 	purchaseRead := middleware.RequirePermissions(authz.MenuPurchase)
 
+	financeSettlement := middleware.RequirePermissions(authz.ActionFinanceSettlementManage)
+
 	receivables := authorized.Group("/receivables")
 	{
 		receivables.GET("", tradingRead, handlers.GetReceivableLedgersHandler)
 		receivables.GET("/search", tradingRead, handlers.SearchReceivableLedgersHandler)
 		receivables.GET("/:id", tradingRead, handlers.GetReceivableLedgerHandler)
-		receivables.POST("/:id/receipts", tradingRead, handlers.CreateReceiptRecordHandler)
+		receivables.POST("/:id/receipts", financeSettlement, handlers.CreateReceiptRecordHandler)
 	}
 
 	payables := authorized.Group("/payables")
@@ -25,6 +27,6 @@ func registerArApRoutes(authorized *gin.RouterGroup) {
 		payables.GET("", purchaseRead, handlers.GetPayableLedgersHandler)
 		payables.GET("/search", purchaseRead, handlers.SearchPayableLedgersHandler)
 		payables.GET("/:id", purchaseRead, handlers.GetPayableLedgerHandler)
-		payables.POST("/:id/payments", purchaseRead, handlers.CreatePaymentRecordHandler)
+		payables.POST("/:id/payments", financeSettlement, handlers.CreatePaymentRecordHandler)
 	}
 }

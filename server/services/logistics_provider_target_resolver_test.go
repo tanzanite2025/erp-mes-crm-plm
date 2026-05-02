@@ -25,6 +25,14 @@ func TestResolveTrustedLogisticsProviderTargetReturnsTrackingTargetForSupportedP
 	require.Equal(t, "https://api.jd.com/routerjson", resolution.TargetURL)
 }
 
+func TestResolveTrustedLogisticsProviderTargetReturnsTrackingTargetFor17Track(t *testing.T) {
+	resolution := ResolveTrustedLogisticsProviderTarget("17TRACK", LogisticsProviderTargetPurposeTracking)
+
+	require.True(t, resolution.Supported)
+	require.False(t, resolution.ManualReview)
+	require.Equal(t, "https://api.17track.net/track/v1", resolution.TargetURL)
+}
+
 func TestResolveTrustedLogisticsProviderTargetReturnsOrderCreateTargetForSupportedProvider(t *testing.T) {
 	resolution := ResolveTrustedLogisticsProviderTarget("SF", LogisticsProviderTargetPurposeOrderCreate)
 
@@ -67,6 +75,16 @@ func TestBuildTrustedLogisticsProviderRequestBuildsResolvedRequest(t *testing.T)
 	require.NotNil(t, plan.Request)
 	require.Equal(t, "https://api.jd.com/routerjson", plan.Request.URL.String())
 	require.Equal(t, "XDFC-Logistics-Gateway/1.0", plan.Request.Header.Get("User-Agent"))
+	require.True(t, plan.Resolution.Supported)
+}
+
+func TestBuildTrustedLogisticsProviderRequestForPathBuildsResolvedRequest(t *testing.T) {
+	plan, err := BuildTrustedLogisticsProviderRequestForPath(models.LogisticsAPIProvider{Code: "17TRACK"}, LogisticsProviderTargetPurposeTracking, http.MethodPost, "gettrackinfo", nil)
+
+	require.NoError(t, err)
+	require.Equal(t, http.MethodPost, plan.Method)
+	require.NotNil(t, plan.Request)
+	require.Equal(t, "https://api.17track.net/track/v1/gettrackinfo", plan.Request.URL.String())
 	require.True(t, plan.Resolution.Supported)
 }
 

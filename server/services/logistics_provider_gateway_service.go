@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"xdfc-server/models"
 )
@@ -40,5 +41,30 @@ func BuildTrustedLogisticsProviderRequest(provider models.LogisticsAPIProvider, 
 
 	plan.Method = normalizedMethod
 	plan.Request = req
+	return plan, nil
+}
+
+func BuildTrustedLogisticsProviderRequestForPath(provider models.LogisticsAPIProvider, purpose LogisticsProviderTargetPurpose, method string, pathSuffix string, body io.Reader) (TrustedLogisticsProviderRequestPlan, error) {
+	plan, err := BuildTrustedLogisticsProviderRequest(provider, purpose, method, body)
+	if err != nil {
+		return plan, err
+	}
+
+	normalizedPathSuffix := strings.TrimSpace(pathSuffix)
+	if normalizedPathSuffix == "" {
+		return plan, nil
+	}
+
+	resolvedURL, err := url.JoinPath(plan.Request.URL.String(), normalizedPathSuffix)
+	if err != nil {
+		return plan, err
+	}
+
+	requestURL, err := url.Parse(resolvedURL)
+	if err != nil {
+		return plan, err
+	}
+
+	plan.Request.URL = requestURL
 	return plan, nil
 }

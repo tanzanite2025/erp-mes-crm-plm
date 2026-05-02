@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -321,6 +322,15 @@ func setupInventoryCommandTestDB(t *testing.T) *gorm.DB {
 	return testDB
 }
 
+func inventoryAuditTestContext(username string, userID string, ip string) context.Context {
+	return audit.NewContextWithActor(context.Background(), audit.AuditActor{
+		UserID:   userID,
+		Username: username,
+		IP:       ip,
+		Source:   "test",
+	})
+}
+
 type inventoryAuditLogRow struct {
 	Module   string
 	TargetID string
@@ -356,7 +366,7 @@ func TestRecordInboundMovingAverageUpdatesInventoryValue(t *testing.T) {
 		TargetCategory: "WH_A",
 		BatchNo:        "B-001",
 	}
-	require.NoError(t, RecordInbound(inboundA))
+	require.NoError(t, RecordInbound(context.Background(), inboundA))
 
 	inboundB := &models.InboundRecord{
 		MaterialID:     materialID,
@@ -365,7 +375,7 @@ func TestRecordInboundMovingAverageUpdatesInventoryValue(t *testing.T) {
 		TargetCategory: "WH_A",
 		BatchNo:        "B-001",
 	}
-	require.NoError(t, RecordInbound(inboundB))
+	require.NoError(t, RecordInbound(context.Background(), inboundB))
 
 	type inventoryRow struct {
 		Quantity        float64
@@ -418,7 +428,7 @@ func TestCommitShipmentSnapshotsCOGSAndDeductsInventoryValue(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, shipmentID, now, now, materialID, 3, "WH_A", "B-001", "DRAFT", now).Error)
 
-	shipment, err := CommitShipment(shipmentID)
+	shipment, err := CommitShipment(context.Background(), shipmentID)
 	require.NoError(t, err)
 	require.Equal(t, shipmentID, shipment.ID)
 	require.Equal(t, materialID, shipment.MaterialID)
@@ -515,7 +525,7 @@ func TestCommitShipmentAppliesSalesFulfillmentProgressAndRecalculatesSalesOrderS
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "ship-1", now, now, materialID, "so-ship-1", 1, 3.0, "WH_A", "B-001", "SO-SHIP-001", "DRAFT", now).Error)
 
-	shipment, err := CommitShipment("ship-1")
+	shipment, err := CommitShipment(context.Background(), "ship-1")
 	require.NoError(t, err)
 	require.Equal(t, "COMMITTED", shipment.Status)
 
@@ -557,7 +567,7 @@ func TestCommitShipmentRejectsNonDraftShipment(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "ship-not-draft-1", now, now, materialID, 3.0, "WH_A", "B-001", "SO-LOCK-001", "COMMITTED", now).Error)
 
-	_, err := CommitShipment("ship-not-draft-1")
+	_, err := CommitShipment(context.Background(), "ship-not-draft-1")
 	require.ErrorIs(t, err, ErrShipmentNotDraft)
 
 	type shipmentRow struct {
@@ -646,7 +656,7 @@ func TestRecordInboundRollsBackWhenVoucherCreationFails(t *testing.T) {
 		VALUES (?, ?, ?)
 	`, materialID, now, now).Error)
 
-	err := RecordInbound(&models.InboundRecord{
+	err := RecordInbound(context.Background(), &models.InboundRecord{
 		MaterialID:     materialID,
 		Quantity:       5,
 		PurchasePrice:  0,
@@ -697,7 +707,7 @@ func TestRecordInboundRollbackWhenDenominatorBecomesZero(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, inventoryID, now, now, materialID, -5, -20, 4, "WH_A", "B-001").Error)
 
-	err := RecordInbound(&models.InboundRecord{
+	err := RecordInbound(context.Background(), &models.InboundRecord{
 		MaterialID:     materialID,
 		Quantity:       5,
 		PurchasePrice:  6,
@@ -742,7 +752,7 @@ func TestRecordInboundAppliesPurchaseReceiptProgressAndRecalculatesPurchaseOrder
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, 1, "po-inbound-1", 1, materialID, 10.0, "PCS", 5.0, 50.0, 3.0, 0.0, "Open").Error)
 
-	err := RecordInbound(&models.InboundRecord{
+	err := RecordInbound(context.Background(), &models.InboundRecord{
 		MaterialID:          materialID,
 		PurchaseOrderID:     "po-inbound-1",
 		PurchaseOrderLineID: 1,
@@ -844,6 +854,139 @@ func TestVoidShipmentConcurrentRollbackOnlyOnce(t *testing.T) {
 	var gotShipment shipmentRow
 	require.NoError(t, db.DB.Raw("SELECT status FROM shipment_records WHERE id = ?", shipmentID).Scan(&gotShipment).Error)
 	require.Equal(t, "VOID", gotShipment.Status)
+}
+
+func TestRecordInboundWritesAuditEntryFromContext(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	materialID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO materials (id, created_at, updated_at)
+		VALUES (?, ?, ?)
+	`, materialID, now, now).Error)
+
+	inbound := &models.InboundRecord{
+		MaterialID:     materialID,
+		Quantity:       6,
+		PurchasePrice:  4,
+		TargetCategory: "WH_A",
+		BatchNo:        "B-AUD-001",
+	}
+
+	err := RecordInbound(inventoryAuditTestContext("inbound-auditor", "user-in-1", "10.10.10.11"), inbound)
+	require.NoError(t, err)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "INVENTORY_INBOUND").Scan(&auditRow).Error)
+	require.Equal(t, "Inventory", auditRow.Module)
+	require.Equal(t, inbound.ID, auditRow.TargetID)
+	require.Equal(t, "inbound-auditor", auditRow.Operator)
+	require.Equal(t, "10.10.10.11", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "inventoryId")
+	require.Contains(t, auditRow.Diff, "targetCategory")
+}
+
+func TestCommitShipmentWritesAuditEntryFromContext(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	materialID := uuid.NewString()
+	inventoryID := uuid.NewString()
+	shipmentID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, quantity, total_value, average_unit_cost, category_code, batch_no)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, inventoryID, now, now, materialID, 10, 80, 8, "WH_A", "B-AUD-002").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO shipment_records (id, created_at, updated_at, material_id, quantity, source_category, batch_no, status, shipment_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, shipmentID, now, now, materialID, 2, "WH_A", "B-AUD-002", "DRAFT", now).Error)
+
+	_, err := CommitShipment(inventoryAuditTestContext("shipment-committer", "user-ship-1", "10.10.10.12"), shipmentID)
+	require.NoError(t, err)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "SHIPMENT_COMMIT").Scan(&auditRow).Error)
+	require.Equal(t, "Shipment", auditRow.Module)
+	require.Equal(t, shipmentID, auditRow.TargetID)
+	require.Equal(t, "shipment-committer", auditRow.Operator)
+	require.Equal(t, "10.10.10.12", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "COMMITTED")
+	require.Contains(t, auditRow.Diff, "inventory")
+}
+
+func TestVoidShipmentWritesAuditEntryFromContext(t *testing.T) {
+	originalDB := db.DB
+	testDB := setupInventoryCommandTestDB(t)
+	db.DB = testDB
+	t.Cleanup(func() {
+		db.DB = originalDB
+		sqlDB, err := testDB.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
+
+	materialID := uuid.NewString()
+	shipmentID := uuid.NewString()
+	now := time.Now()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, quantity, total_value, average_unit_cost, category_code, batch_no)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, materialID, 17.0, 85.0, 5.0, "WH_A", "B-AUD-003").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO shipment_records (id, created_at, updated_at, material_id, quantity, source_category, batch_no, status, cogs, shipment_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, shipmentID, now, now, materialID, 3.0, "WH_A", "B-AUD-003", "COMMITTED", 15.0, now).Error)
+
+	err := VoidShipment(inventoryAuditTestContext("shipment-voider", "user-void-1", "10.10.10.13"), shipmentID)
+	require.NoError(t, err)
+
+	var auditRow inventoryAuditLogRow
+	require.NoError(t, db.DB.Raw(`
+		SELECT module, target_id, action, operator, ip, diff
+		FROM audit_logs
+		WHERE action = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, "SHIPMENT_VOID").Scan(&auditRow).Error)
+	require.Equal(t, "Shipment", auditRow.Module)
+	require.Equal(t, shipmentID, auditRow.TargetID)
+	require.Equal(t, "shipment-voider", auditRow.Operator)
+	require.Equal(t, "10.10.10.13", auditRow.IP)
+	require.Contains(t, auditRow.Diff, "rollbackApplied")
+	require.Contains(t, auditRow.Diff, "VOID")
 }
 
 func TestReconcileNegativeInventoryWritesAuditEntries(t *testing.T) {

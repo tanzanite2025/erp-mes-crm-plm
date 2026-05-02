@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ type DataTableToolbarProps<TData> = {
   table: Table<TData>
   searchPlaceholder?: string
   searchKey?: string
+  leadingViewSlot?: ReactNode
   filters?: {
     columnId: string
     title: string
@@ -17,6 +19,7 @@ type DataTableToolbarProps<TData> = {
       value: string
       icon?: React.ComponentType<{ className?: string }>
     }[]
+    triggerClassName?: string
   }[]
 }
 
@@ -24,8 +27,10 @@ export function DataTableToolbar<TData>({
   table,
   searchPlaceholder = 'Filter...',
   searchKey,
+  leadingViewSlot,
   filters = [],
 }: DataTableToolbarProps<TData>) {
+
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
 
@@ -61,6 +66,7 @@ export function DataTableToolbar<TData>({
                 column={column}
                 title={filter.title}
                 options={filter.options}
+                triggerClassName={filter.triggerClassName}
               />
             )
           })}
@@ -79,7 +85,10 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className='flex items-center gap-2'>
+        {leadingViewSlot}
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   )
 }

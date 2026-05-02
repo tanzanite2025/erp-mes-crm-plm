@@ -24,10 +24,7 @@ func ExecutePurchaseOrderTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	actorID := strings.TrimSpace(req.ActorID)
-	if actorID == "" {
-		actorID = middleware.GetSafeUserID(c)
-	}
+	actorID := middleware.GetSafeUserID(c)
 
 	if strings.TrimSpace(req.Intent) == services.PurchaseTransactionIntentReceiptConfirm {
 		payload, err := services.ParsePurchaseOrderReceiptConfirmPayload(req.Payload)

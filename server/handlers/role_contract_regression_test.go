@@ -45,6 +45,16 @@ func setupRoleContractRegressionTestDB(t *testing.T) {
 			updated_at DATETIME,
 			deleted_at DATETIME
 		)`,
+		`CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		)`,
 	}
 
 	for _, stmt := range statements {
@@ -89,7 +99,7 @@ func TestGetRolesHandlerReturnsNormalizedRoleContract(t *testing.T) {
 	setupRoleContractRegressionTestDB(t)
 
 	seedRoleRecord(t, models.Role{
-		BaseModel: models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		BaseModel:   models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		RoleID:      "Finance-Manager",
 		Label:       "财务经理",
 		Color:       "bg-blue-500/10 text-blue-600 border-blue-200",
@@ -134,7 +144,7 @@ func TestUpsertRoleHandlerUpdatesExistingRole(t *testing.T) {
 	setupRoleContractRegressionTestDB(t)
 
 	seedRoleRecord(t, models.Role{
-		BaseModel: models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		BaseModel:   models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		RoleID:      "finance-manager",
 		Label:       "旧标签",
 		Color:       "bg-slate-500/10 text-slate-600 border-slate-200",
@@ -162,7 +172,7 @@ func TestDeleteRoleHandlerClearsUserBindingsAndDeletesRole(t *testing.T) {
 	setupRoleContractRegressionTestDB(t)
 
 	seedRoleRecord(t, models.Role{
-		BaseModel: models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		BaseModel:   models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		RoleID:      "finance-manager",
 		Label:       "财务经理",
 		Color:       "bg-blue-500/10 text-blue-600 border-blue-200",
@@ -195,7 +205,7 @@ func TestDeleteRoleHandlerRejectsProtectedAdminRole(t *testing.T) {
 	setupRoleContractRegressionTestDB(t)
 
 	seedRoleRecord(t, models.Role{
-		BaseModel: models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		BaseModel:   models.BaseModel{ID: uuid.NewString(), CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		RoleID:      "admin",
 		Label:       "管理员",
 		Color:       "bg-slate-500/10 text-slate-600 border-slate-200",

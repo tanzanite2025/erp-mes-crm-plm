@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -123,15 +124,91 @@ func inventoryAuditDiff(before map[string]any, payload map[string]any) json.RawM
 	return diff
 }
 
-func writeInventoryAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
+func inboundAuditSnapshot(inbound models.InboundRecord) map[string]any {
+	return map[string]any{
+		"id":                  strings.TrimSpace(inbound.ID),
+		"materialId":          strings.TrimSpace(inbound.MaterialID),
+		"materialName":        strings.TrimSpace(inbound.MaterialName),
+		"materialCode":        strings.TrimSpace(inbound.MaterialCode),
+		"purchaseOrderId":     strings.TrimSpace(inbound.PurchaseOrderID),
+		"purchaseOrderLineId": inbound.PurchaseOrderLineID,
+		"quantity":            inbound.Quantity,
+		"purchasePrice":       inbound.PurchasePrice,
+		"targetCategory":      strings.TrimSpace(inbound.TargetCategory),
+		"batchNo":             strings.TrimSpace(inbound.BatchNo),
+		"inboundDate":         inbound.InboundDate,
+		"operator":            strings.TrimSpace(inbound.Operator),
+		"remarks":             strings.TrimSpace(inbound.Remarks),
+	}
+}
+
+func shipmentAuditSnapshot(shipment models.ShipmentRecord) map[string]any {
+	return map[string]any{
+		"id":               strings.TrimSpace(shipment.ID),
+		"materialId":       strings.TrimSpace(shipment.MaterialID),
+		"materialName":     strings.TrimSpace(shipment.MaterialName),
+		"materialCode":     strings.TrimSpace(shipment.MaterialCode),
+		"salesOrderId":     strings.TrimSpace(shipment.SalesOrderID),
+		"salesOrderLineId": shipment.SalesOrderLineID,
+		"quantity":         shipment.Quantity,
+		"sourceCategory":   strings.TrimSpace(shipment.SourceCategory),
+		"batchNo":          strings.TrimSpace(shipment.BatchNo),
+		"orderNo":          strings.TrimSpace(shipment.OrderNo),
+		"status":           strings.TrimSpace(shipment.Status),
+		"cogs":             shipment.COGS,
+		"shipmentDate":     shipment.ShipmentDate,
+		"operator":         strings.TrimSpace(shipment.Operator),
+		"remarks":          strings.TrimSpace(shipment.Remarks),
+	}
+}
+
+func inventoryAuditIdentityFromContext(ctx context.Context, fallbackOperator string) (string, string) {
+	operator := strings.TrimSpace(fallbackOperator)
+	actor, ok := audit.ActorFromContext(ctx)
+	if ok {
+		if strings.TrimSpace(actor.Username) != "" {
+			operator = strings.TrimSpace(actor.Username)
+		} else if strings.TrimSpace(actor.UserID) != "" {
+			operator = strings.TrimSpace(actor.UserID)
+		}
+		if operator == "" {
+			operator = "system"
+		}
+		return operator, strings.TrimSpace(actor.IP)
+	}
+	if operator == "" {
+		operator = "system"
+	}
+	return operator, ""
+}
+
+func writeAuditEntry(tx *gorm.DB, module string, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
 	return defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
-		Module:   "Inventory",
+		Module:   strings.TrimSpace(module),
 		TargetID: strings.TrimSpace(targetID),
 		Action:   strings.TrimSpace(action),
 		Diff:     inventoryAuditDiff(before, payload),
 		Operator: strings.TrimSpace(operator),
 		IP:       strings.TrimSpace(ip),
 	})
+}
+
+func writeInventoryAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
+	return writeAuditEntry(tx, "Inventory", targetID, action, before, payload, operator, ip)
+}
+
+func writeShipmentAuditEntry(tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, operator string, ip string) error {
+	return writeAuditEntry(tx, "Shipment", targetID, action, before, payload, operator, ip)
+}
+
+func writeInventoryAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, fallbackOperator string) error {
+	operator, ip := inventoryAuditIdentityFromContext(ctx, fallbackOperator)
+	return writeInventoryAuditEntry(tx, targetID, action, before, payload, operator, ip)
+}
+
+func writeShipmentAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, fallbackOperator string) error {
+	operator, ip := inventoryAuditIdentityFromContext(ctx, fallbackOperator)
+	return writeShipmentAuditEntry(tx, targetID, action, before, payload, operator, ip)
 }
 
 type inventoryTransferAuditResult struct {
@@ -268,17 +345,23 @@ func CreateShipmentDraft(shipment *models.ShipmentRecord) error {
 	return db.DB.Create(shipment).Error
 }
 
-func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) error {
+type inboundInventoryAuditResult struct {
+	inventoryBefore *models.Inventory
+	inventoryAfter  models.Inventory
+}
+
+func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) (inboundInventoryAuditResult, error) {
 	if tx == nil || inbound == nil {
-		return errors.New("transaction and inbound are required")
+		return inboundInventoryAuditResult{}, errors.New("transaction and inbound are required")
 	}
+	auditResult := inboundInventoryAuditResult{}
 	var material models.Material
 	if err := tx.Where("id = ?", inbound.MaterialID).First(&material).Error; err != nil {
-		return errors.New("[CRITICAL_DATA_INTEGRITY] inbound failed: material not found: " + inbound.MaterialID)
+		return inboundInventoryAuditResult{}, errors.New("[CRITICAL_DATA_INTEGRITY] inbound failed: material not found: " + inbound.MaterialID)
 	}
 
 	if err := tx.Create(inbound).Error; err != nil {
-		return err
+		return inboundInventoryAuditResult{}, err
 	}
 
 	var inv models.Inventory
@@ -288,7 +371,7 @@ func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) error {
 	inboundValue := inbound.Quantity * inbound.PurchasePrice
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		if inbound.Quantity == 0 {
-			return errors.New("[CRITICAL_LOGIC_ERROR] denominator equals zero")
+			return inboundInventoryAuditResult{}, errors.New("[CRITICAL_LOGIC_ERROR] denominator equals zero")
 		}
 		inv = models.Inventory{
 			MaterialID:      inbound.MaterialID,
@@ -299,21 +382,24 @@ func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) error {
 			BatchNo:         inbound.BatchNo,
 		}
 		if err := tx.Create(&inv).Error; err != nil {
-			return err
+			return inboundInventoryAuditResult{}, err
 		}
+		auditResult.inventoryAfter = inv
 	} else {
 		if err != nil {
-			return err
+			return inboundInventoryAuditResult{}, err
 		}
 
+		beforeInventory := inv
+		auditResult.inventoryBefore = &beforeInventory
 		oldQuantity := inv.Quantity
 		oldTotalValue := oldQuantity * inv.AverageUnitCost
 		newQuantity := oldQuantity + inbound.Quantity
 		if newQuantity == 0 {
-			return errors.New("[CRITICAL_LOGIC_ERROR] denominator equals zero")
+			return inboundInventoryAuditResult{}, errors.New("[CRITICAL_LOGIC_ERROR] denominator equals zero")
 		}
 		if newQuantity < 0 {
-			return errors.New("[CRITICAL_LOGIC_ERROR] negative inventory quantity")
+			return inboundInventoryAuditResult{}, errors.New("[CRITICAL_LOGIC_ERROR] negative inventory quantity")
 		}
 		newTotalValue := oldTotalValue + inboundValue
 
@@ -321,19 +407,23 @@ func recordInboundTx(tx *gorm.DB, inbound *models.InboundRecord) error {
 		inv.TotalValue = newTotalValue
 		inv.AverageUnitCost = newTotalValue / newQuantity
 		if err := updateInventoryRecord(tx, &inv); err != nil {
-			return err
+			return inboundInventoryAuditResult{}, err
 		}
+		auditResult.inventoryAfter = inv
 	}
 
 	if err := applyInboundToPurchaseOrderTx(tx, inbound); err != nil {
-		return err
+		return inboundInventoryAuditResult{}, err
 	}
 
 	_, err = CreateInboundVoucherTx(tx, *inbound)
-	return err
+	if err != nil {
+		return inboundInventoryAuditResult{}, err
+	}
+	return auditResult, nil
 }
 
-func RecordInbound(inbound *models.InboundRecord) error {
+func RecordInbound(ctx context.Context, inbound *models.InboundRecord) error {
 	if inbound.Quantity <= 0 {
 		return errors.New("[CRITICAL_LOGIC_ERROR] invalid inbound quantity")
 	}
@@ -343,9 +433,31 @@ func RecordInbound(inbound *models.InboundRecord) error {
 	if strings.TrimSpace(inbound.ID) == "" {
 		inbound.ID = uuid.NewString()
 	}
+	if strings.TrimSpace(inbound.Operator) == "" {
+		operator, _ := inventoryAuditIdentityFromContext(ctx, "")
+		if operator != "system" {
+			inbound.Operator = operator
+		}
+	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		return recordInboundTx(tx, inbound)
+	var auditResult inboundInventoryAuditResult
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var txErr error
+		auditResult, txErr = recordInboundTx(tx, inbound)
+		if txErr != nil {
+			return txErr
+		}
+
+		var before map[string]any
+		if auditResult.inventoryBefore != nil {
+			before = map[string]any{
+				"inventory": inventoryAuditSnapshot(*auditResult.inventoryBefore),
+			}
+		}
+		payload := inboundAuditSnapshot(*inbound)
+		payload["inventoryId"] = strings.TrimSpace(auditResult.inventoryAfter.ID)
+		payload["inventory"] = inventoryAuditSnapshot(auditResult.inventoryAfter)
+		return writeInventoryAuditEntryWithContext(ctx, tx, inbound.ID, "INVENTORY_INBOUND", before, payload, strings.TrimSpace(inbound.Operator))
 	})
 	if err == nil {
 		var latestInv models.Inventory
@@ -428,9 +540,9 @@ func rollbackShipmentFromSalesOrderTx(tx *gorm.DB, shipment *models.ShipmentReco
 	return err
 }
 
-func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
+func CommitShipment(ctx context.Context, id string) (InventoryShipmentRecordResponse, error) {
 	var shipment models.ShipmentRecord
-	if err := db.DB.First(&shipment, "id = ?", id).Error; err != nil {
+	if err := db.DB.WithContext(ctx).First(&shipment, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return InventoryShipmentRecordResponse{}, ErrShipmentNotFound
 		}
@@ -444,7 +556,7 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		return InventoryShipmentRecordResponse{}, errors.New("[CRITICAL_LOGIC_ERROR] invalid shipment quantity")
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var inv models.Inventory
 		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("material_id = ? AND category_code = ? AND batch_no = ?", shipment.MaterialID, shipment.SourceCategory, shipment.BatchNo).
@@ -456,6 +568,8 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		if inv.Quantity < shipment.Quantity {
 			return errors.New("[CRITICAL_STOCK_SHORTAGE] insufficient inventory (current: " + strconv.FormatFloat(inv.Quantity, 'f', -1, 64) + ")")
 		}
+		beforeInventory := inv
+		beforeShipment := shipment
 		cogs := shipment.Quantity * inv.AverageUnitCost
 		newTotalValue := inv.TotalValue - cogs
 		if newTotalValue < -inventoryValueTolerance {
@@ -480,6 +594,7 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		}
 
 		shipment.COGS = cogs
+		shipment.Status = "COMMITTED"
 		if err := tx.Model(&shipment).Updates(map[string]interface{}{
 			"status": "COMMITTED",
 			"cogs":   shipment.COGS,
@@ -492,7 +607,19 @@ func CommitShipment(id string) (InventoryShipmentRecordResponse, error) {
 		}
 
 		_, err = CreateShipmentVoucherTx(tx, shipment)
-		return err
+		if err != nil {
+			return err
+		}
+
+		before := map[string]any{
+			"shipment":  shipmentAuditSnapshot(beforeShipment),
+			"inventory": inventoryAuditSnapshot(beforeInventory),
+		}
+		payload := map[string]any{
+			"shipment":  shipmentAuditSnapshot(shipment),
+			"inventory": inventoryAuditSnapshot(inv),
+		}
+		return writeShipmentAuditEntryWithContext(ctx, tx, shipment.ID, "SHIPMENT_COMMIT", before, payload, strings.TrimSpace(shipment.Operator))
 	})
 	if err == nil {
 		var latestInv models.Inventory
@@ -726,6 +853,7 @@ func VoidShipment(ctx context.Context, id string) error {
 		if shipment.Status == "VOID" {
 			return errors.New("shipment already voided")
 		}
+		beforeShipment := shipment
 
 		if shipment.Status == "COMMITTED" {
 			transition := tx.Model(&models.ShipmentRecord{}).
@@ -745,6 +873,7 @@ func VoidShipment(ctx context.Context, id string) error {
 			if err != nil {
 				return errors.New("[CRITICAL] void failed: missing inventory record for rollback")
 			}
+			beforeInventory := inv
 
 			inv.Quantity += shipment.Quantity
 			inv.TotalValue += shipment.COGS
@@ -757,7 +886,17 @@ func VoidShipment(ctx context.Context, id string) error {
 			if err := rollbackShipmentFromSalesOrderTx(tx, &shipment); err != nil {
 				return err
 			}
-			return nil
+			shipment.Status = "VOID"
+			before := map[string]any{
+				"shipment":  shipmentAuditSnapshot(beforeShipment),
+				"inventory": inventoryAuditSnapshot(beforeInventory),
+			}
+			payload := map[string]any{
+				"shipment":        shipmentAuditSnapshot(shipment),
+				"inventory":       inventoryAuditSnapshot(inv),
+				"rollbackApplied": true,
+			}
+			return writeShipmentAuditEntryWithContext(ctx, tx, shipment.ID, "SHIPMENT_VOID", before, payload, strings.TrimSpace(shipment.Operator))
 		}
 
 		result := tx.Model(&models.ShipmentRecord{}).
@@ -769,6 +908,13 @@ func VoidShipment(ctx context.Context, id string) error {
 		if result.RowsAffected == 0 {
 			return ErrVoidInProgress
 		}
-		return nil
+		shipment.Status = "VOID"
+		before := map[string]any{
+			"shipment": shipmentAuditSnapshot(beforeShipment),
+		}
+		payload := map[string]any{
+			"shipment": shipmentAuditSnapshot(shipment),
+		}
+		return writeShipmentAuditEntryWithContext(ctx, tx, shipment.ID, "SHIPMENT_VOID", before, payload, shipment.Operator)
 	})
 }

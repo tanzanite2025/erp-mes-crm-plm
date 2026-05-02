@@ -81,3 +81,40 @@ func TestGetDataTimelineHandlerReturnsStoredLegacyObjectDiffAsIs(t *testing.T) {
 	require.Len(t, response, 1)
 	require.JSONEq(t, `{"intent":"CUSTOMER_SAVE","payload":{"status":"Inactive","code":"CUST-001"}}`, string(response[0].Diff))
 }
+
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForUserPermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-up-1",
+		Module:    "user-permission",
+		TargetID:  "user-1",
+		Action:    "REPLACE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 3, 8, 0, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-up-2",
+		Module:    "UserPermission",
+		TargetID:  "user-2",
+		Action:    "REPLACE",
+		Operator:  "tester",
+		CreatedAt: time.Date(2026, 5, 3, 9, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=user-permission", nil)
+	ctx.Set("permissions", []string{authz.MenuOrg})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-up-2", response[0].ID)
+	require.Equal(t, "log-up-1", response[1].ID)
+}

@@ -61,6 +61,9 @@ var trustedLogisticsProviderTargets = map[string]logisticsProviderTargetProfile{
 		TrackingURL:     "https://openapi.jtexpress.com.cn",
 		LabelURL:        "https://openapi.jtexpress.com.cn",
 	},
+	"17TRACK": {
+		TrackingURL: "https://api.17track.net/track/v1",
+	},
 }
 
 func ResolveTrustedLogisticsProviderTarget(code string, purpose LogisticsProviderTargetPurpose) LogisticsProviderTargetResolution {

@@ -2,15 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type RolePayload struct {
@@ -83,50 +82,17 @@ func UpsertRoleHandler(c *gin.Context) {
 
 	normalizedRoleID := strings.ToLower(input.ID)
 	payloadPermissions := normalizeRolePermissionIDs(input.Permissions)
-
-	var existing models.Role
-	result := db.DB.Unscoped().Where("LOWER(role_id) = ?", normalizedRoleID).First(&existing)
-	if result.Error == nil {
-		updates := map[string]any{
-			"permissions": serializeRolePermissionIDs(payloadPermissions),
-			"deleted_at":  nil,
-		}
-		if !isProtectedRoleID(existing.RoleID) {
-			updates["label"] = strings.TrimSpace(input.Label)
-			updates["color"] = strings.TrimSpace(input.Color)
-		}
-		if err := db.DB.Unscoped().Model(&existing).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update role"})
-			return
-		}
-		if err := db.DB.Where("id = ?", existing.ID).First(&existing).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reload role"})
-			return
-		}
-		c.JSON(http.StatusOK, buildRoleResponse(existing))
-		return
-	}
-
-	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to query role"})
-		return
-	}
-
-	created := models.Role{
+	saved, err := services.UpsertRole(auditContextFromGin(c), models.Role{
 		RoleID:      normalizedRoleID,
 		Label:       strings.TrimSpace(input.Label),
 		Color:       strings.TrimSpace(input.Color),
 		Permissions: serializeRolePermissionIDs(payloadPermissions),
-	}
-	if created.Color == "" {
-		created.Color = "bg-slate-500/10 text-slate-600 border-slate-200"
-	}
-
-	if err := db.DB.Create(&created).Error; err != nil {
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create role"})
 		return
 	}
-	c.JSON(http.StatusOK, buildRoleResponse(created))
+	c.JSON(http.StatusOK, buildRoleResponse(saved))
 }
 
 func DeleteRoleHandler(c *gin.Context) {
@@ -140,12 +106,7 @@ func DeleteRoleHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.User{}).Where("LOWER(role) = ?", normalizedID).Update("role", "").Error; err != nil {
-			return err
-		}
-		return tx.Where("LOWER(role_id) = ?", normalizedID).Delete(&models.Role{}).Error
-	}); err != nil {
+	if err := services.DeleteRole(auditContextFromGin(c), normalizedID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete role"})
 		return
 	}

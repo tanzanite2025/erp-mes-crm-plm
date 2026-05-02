@@ -1,6 +1,8 @@
 import { ShieldCheck, ShieldPlus, Users as UsersIcon } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type NavigateFn } from '@/hooks/use-table-url-state'
 import { isForbiddenError } from '@/lib/error-status'
 import { UsersDialogs } from './components/users-dialogs'
@@ -127,6 +129,13 @@ export function UsersPermissionsPage({ search, navigate }: UsersPermissionsPageP
           mode='permissions'
           showBulkActions={false}
           showSelection={false}
+          leadingViewSlot={(
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.userPermission}
+              targetName={t('users.permissionPage.title')}
+              label='权限审计'
+            />
+          )}
         />
       </div>
       <UsersDialogs />

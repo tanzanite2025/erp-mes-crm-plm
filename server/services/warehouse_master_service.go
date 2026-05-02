@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"xdfc-server/db"
 	"xdfc-server/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -63,6 +65,52 @@ func toMaterialModel(input SaveMaterialAPIRequest) models.Material {
 		Status:             input.Status,
 		Version:            input.Version,
 	}
+}
+
+func materialAuditSnapshot(material models.Material) map[string]any {
+	return map[string]any{
+		"id":                 strings.TrimSpace(material.ID),
+		"code":               strings.TrimSpace(material.Code),
+		"name":               strings.TrimSpace(material.Name),
+		"category":           strings.TrimSpace(material.Category),
+		"spec":               strings.TrimSpace(material.Spec),
+		"internalDimensions": append(json.RawMessage(nil), material.InternalDimensions...),
+		"externalDimensions": append(json.RawMessage(nil), material.ExternalDimensions...),
+		"uom":                strings.TrimSpace(material.UOM),
+		"minStock":           material.MinStock,
+		"costPrice":          material.CostPrice,
+		"supplierId":         strings.TrimSpace(material.SupplierID),
+		"description":        strings.TrimSpace(material.Description),
+		"images":             append(json.RawMessage(nil), material.Images...),
+		"status":             strings.TrimSpace(material.Status),
+		"revisionNo":         strings.TrimSpace(material.RevisionNo),
+		"effectiveFrom":      material.EffectiveFrom,
+		"effectiveTo":        material.EffectiveTo,
+		"changeType":         strings.TrimSpace(material.ChangeType),
+		"changeOrderNo":      strings.TrimSpace(material.ChangeOrderNo),
+		"siteCode":           strings.TrimSpace(material.SiteCode),
+		"isDefaultSite":      material.IsDefaultSite,
+		"version":            material.Version,
+	}
+}
+
+func materialAuditDiff(before map[string]any, payload map[string]any) json.RawMessage {
+	diff, _ := json.Marshal(map[string]any{
+		"before":  before,
+		"payload": payload,
+	})
+	return diff
+}
+
+func writeMaterialAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any) error {
+	return recordLegacyAuditEntryWithContext(ctx, tx, "Material", strings.TrimSpace(targetID), strings.TrimSpace(action), materialAuditDiff(before, payload))
+}
+
+func materialAuditTargetID(material models.Material, fallbackCode string) string {
+	if strings.TrimSpace(material.ID) != "" {
+		return strings.TrimSpace(material.ID)
+	}
+	return strings.TrimSpace(fallbackCode)
 }
 
 type CreateStocktakeTaskInput struct {
@@ -156,14 +204,18 @@ func ListMaterials(query MaterialListPageQuery) ([]models.Material, int64, error
 	return materials, total, nil
 }
 
-func SaveMaterial(input SaveMaterialAPIRequest) (models.Material, error) {
+func SaveMaterial(ctx context.Context, input SaveMaterialAPIRequest) (models.Material, error) {
 	modelInput := toMaterialModel(input)
 	var saved models.Material
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if strings.TrimSpace(modelInput.ID) == "" {
+			modelInput.ID = uuid.NewString()
+		}
 		if modelInput.ID != "" {
 			var existing models.Material
 			if err := tx.Where("id = ?", modelInput.ID).First(&existing).Error; err == nil {
+				before := materialAuditSnapshot(existing)
 				modelInput.MasterDataControl.MergeMissingFrom(existing.MasterDataControl, "R1")
 				if modelInput.Version != existing.Version {
 					return ErrMaterialVersionConflict
@@ -172,7 +224,12 @@ func SaveMaterial(input SaveMaterialAPIRequest) (models.Material, error) {
 				if err := tx.Model(&existing).Updates(modelInput).Error; err != nil {
 					return err
 				}
-				return tx.Where("id = ?", existing.ID).First(&saved).Error
+				if err := tx.Where("id = ?", existing.ID).First(&saved).Error; err != nil {
+					return err
+				}
+				payload := materialAuditSnapshot(saved)
+				payload["operation"] = "update"
+				return writeMaterialAuditEntryWithContext(ctx, tx, saved.ID, "SAVE", before, payload)
 			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
@@ -184,7 +241,9 @@ func SaveMaterial(input SaveMaterialAPIRequest) (models.Material, error) {
 			return err
 		}
 		saved = modelInput
-		return nil
+		payload := materialAuditSnapshot(saved)
+		payload["operation"] = "create"
+		return writeMaterialAuditEntryWithContext(ctx, tx, materialAuditTargetID(saved, modelInput.Code), "SAVE", nil, payload)
 	})
 	if err != nil {
 		return models.Material{}, err
@@ -192,10 +251,26 @@ func SaveMaterial(input SaveMaterialAPIRequest) (models.Material, error) {
 	return saved, nil
 }
 
-func BulkSyncMaterials(input BulkSyncMaterialsAPIPayload) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+func BulkSyncMaterials(ctx context.Context, input BulkSyncMaterialsAPIPayload) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, in := range input.Materials {
 			material := toMaterialModel(in)
+			if strings.TrimSpace(material.ID) == "" {
+				material.ID = uuid.NewString()
+			}
+
+			var existing models.Material
+			before := map[string]any(nil)
+			operation := "create"
+			err := tx.Where("code = ?", strings.TrimSpace(material.Code)).First(&existing).Error
+			if err == nil {
+				before = materialAuditSnapshot(existing)
+				operation = "update"
+				material.ID = existing.ID
+			} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+
 			material.MasterDataControl.Normalize("R1")
 			if err := tx.Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "code"}},
@@ -203,45 +278,74 @@ func BulkSyncMaterials(input BulkSyncMaterialsAPIPayload) error {
 			}).Create(&material).Error; err != nil {
 				return err
 			}
+
+			var saved models.Material
+			if err := tx.Where("code = ?", strings.TrimSpace(material.Code)).First(&saved).Error; err != nil {
+				return err
+			}
+			payload := materialAuditSnapshot(saved)
+			payload["operation"] = operation
+			payload["batchCount"] = len(input.Materials)
+			payload["globalVersion"] = input.GlobalVersion
+			if err := writeMaterialAuditEntryWithContext(ctx, tx, materialAuditTargetID(saved, material.Code), "BULK_SYNC", before, payload); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
 }
 
-func DeleteMaterial(id string) error {
-	var invCount int64
-	if err := db.DB.Model(&models.Inventory{}).Where("material_id = ? AND quantity > 0", id).Count(&invCount).Error; err != nil {
-		return err
-	}
-	if invCount > 0 {
-		return ErrMaterialInInventory
-	}
+func DeleteMaterial(ctx context.Context, id string) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var material models.Material
+		if err := tx.Where("id = ?", id).First(&material).Error; err != nil {
+			return err
+		}
 
-	var salesCount int64
-	if err := db.DB.Model(&models.SalesOrderLine{}).Where("product_id = ?", id).Count(&salesCount).Error; err != nil {
-		return err
-	}
-	if salesCount > 0 {
-		return ErrMaterialLinkedSales
-	}
+		var invCount int64
+		if err := tx.Model(&models.Inventory{}).Where("material_id = ? AND quantity > 0", id).Count(&invCount).Error; err != nil {
+			return err
+		}
+		if invCount > 0 {
+			return ErrMaterialInInventory
+		}
 
-	var bomCount int64
-	if err := db.DB.Model(&models.BOMItem{}).Where("material_id = ?", id).Count(&bomCount).Error; err != nil {
-		return err
-	}
-	if bomCount > 0 {
-		return ErrMaterialLinkedBOM
-	}
+		var salesCount int64
+		if err := tx.Model(&models.SalesOrderLine{}).Where("product_id = ?", id).Count(&salesCount).Error; err != nil {
+			return err
+		}
+		if salesCount > 0 {
+			return ErrMaterialLinkedSales
+		}
 
-	var purchaseCount int64
-	if err := db.DB.Model(&models.PurchaseOrderLine{}).Where("material_id = ?", id).Count(&purchaseCount).Error; err != nil {
-		return err
-	}
-	if purchaseCount > 0 {
-		return ErrMaterialLinkedPurchase
-	}
+		var bomCount int64
+		if err := tx.Model(&models.BOMItem{}).Where("material_id = ?", id).Count(&bomCount).Error; err != nil {
+			return err
+		}
+		if bomCount > 0 {
+			return ErrMaterialLinkedBOM
+		}
 
-	return db.DB.Delete(&models.Material{}, "id = ?", id).Error
+		var purchaseCount int64
+		if err := tx.Model(&models.PurchaseOrderLine{}).Where("material_id = ?", id).Count(&purchaseCount).Error; err != nil {
+			return err
+		}
+		if purchaseCount > 0 {
+			return ErrMaterialLinkedPurchase
+		}
+
+		before := materialAuditSnapshot(material)
+		if err := tx.Delete(&models.Material{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		payload := map[string]any{
+			"deleted":  true,
+			"code":     strings.TrimSpace(material.Code),
+			"name":     strings.TrimSpace(material.Name),
+			"category": strings.TrimSpace(material.Category),
+		}
+		return writeMaterialAuditEntryWithContext(ctx, tx, material.ID, "DELETE", before, payload)
+	})
 }
 
 func ListStocktakeTasks() ([]models.StocktakeTask, error) {

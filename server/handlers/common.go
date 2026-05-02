@@ -6,8 +6,10 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"xdfc-server/audit"
 	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -57,6 +59,17 @@ func respondVersionConflict(c *gin.Context) {
 		"error": versionConflictMessage,
 		"code":  "CONFLICT",
 	})
+}
+
+// auditContextFromGin 从 Gin Context 构造带审计身份的标准 Context
+func auditContextFromGin(c *gin.Context) context.Context {
+	actor := audit.AuditActor{
+		UserID:   middleware.GetSafeUserID(c),
+		Username: middleware.GetSafeUsername(c),
+		IP:       c.ClientIP(),
+		Source:   "http",
+	}
+	return audit.NewContextWithActor(c.Request.Context(), actor)
 }
 
 func normalizeOptionalUUIDString(value string) (string, error) {

@@ -22,7 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DataTimelineProps {
   module: AuditModuleValue;
-  targetId: string;
+  targetId?: string;
   targetName?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,7 +39,7 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md border-l-0 p-0 flex flex-col gap-0 bg-background/95 backdrop-blur-sm">
+      <SheetContent side="bottom" className="h-[72vh] w-full gap-0 rounded-t-[32px] border-t border-dashed border-primary/20 p-0 pt-0 shadow-2xl bg-background/95 backdrop-blur-sm">
         {/* Header - UDS 1.0 Style */}
         <SheetHeader className="p-6 pb-4 border-b border-dashed bg-muted/5">
           <div className="flex items-center gap-3">
@@ -51,7 +51,9 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                 Data Timeline
               </SheetTitle>
               <SheetDescription className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                Full-field audit history for {targetName || targetId}
+                {targetId
+                  ? `Full-field audit history for ${targetName || targetId}`
+                  : `Module-level audit history for ${targetName || module}`}
               </SheetDescription>
             </div>
           </div>

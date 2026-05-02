@@ -85,6 +85,7 @@ type Employee struct {
 	LineName       string     `gorm:"->" json:"lineName"`
 	ProcessName    string     `gorm:"->" json:"processName"`
 	PositionName   string     `gorm:"->" json:"positionName"`
+	Operator       string     `gorm:"size:100" json:"operator"` // 操作人
 }
 
 // Team stores team definitions.

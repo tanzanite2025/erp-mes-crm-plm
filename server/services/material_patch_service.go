@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -45,16 +46,17 @@ type PatchMaterialRequest struct {
 	IsDefaultSite         *bool
 }
 
-func PatchMaterial(input PatchMaterialRequest) (models.Material, error) {
+func PatchMaterial(ctx context.Context, input PatchMaterialRequest) (models.Material, error) {
 	var updated models.Material
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var current models.Material
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ?", strings.TrimSpace(input.ID)).
 			First(&current).Error; err != nil {
 			return err
 		}
+		before := materialAuditSnapshot(current)
 
 		if input.ExpectedVersion != current.Version {
 			return ErrMaterialPatchVersionConflict
@@ -127,12 +129,10 @@ func PatchMaterial(input PatchMaterialRequest) (models.Material, error) {
 		if err := tx.Save(&current).Error; err != nil {
 			return err
 		}
-		if err := defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
-			Module:   "Material",
-			TargetID: current.ID,
-			Action:   "PATCH",
-			Diff:     auditDeltaKeys(input.DeltaKeys),
-		}); err != nil {
+		payload := materialAuditSnapshot(current)
+		payload["operation"] = "patch"
+		payload["deltaKeys"] = append([]string(nil), input.DeltaKeys...)
+		if err := writeMaterialAuditEntryWithContext(ctx, tx, current.ID, "PATCH", before, payload); err != nil {
 			return err
 		}
 

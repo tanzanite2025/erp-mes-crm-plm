@@ -81,13 +81,11 @@ type EmployeeListItemResponse struct {
 	StaffID        string     `json:"staffId"`
 	Name           string     `json:"name"`
 	Gender         string     `json:"gender"`
-	Birthday       *time.Time `json:"birthday"`
-	IDCard         string     `json:"idCard"`
+	Birthday       *time.Time `json:"birthday,omitempty"`
 	MaskedIDCard   string     `json:"maskedIdCard"`
 	Phone          string     `json:"phone"`
 	EmergencyPhone string     `json:"emergencyPhone"`
 	Address        string     `json:"address"`
-	BankCard       string     `json:"bankCard"`
 	MaskedBankCard string     `json:"maskedBankCard"`
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
@@ -108,18 +106,22 @@ type EmployeeListItemResponse struct {
 	Version        int        `json:"version"`
 }
 
+type EmployeeDetailResponse struct {
+	EmployeeListItemResponse
+	IDCard   string `json:"idCard"`
+	BankCard string `json:"bankCard"`
+}
+
 type EmployeeSaveResponse struct {
 	ID             string     `json:"id"`
 	StaffID        string     `json:"staffId"`
 	Name           string     `json:"name"`
 	Gender         string     `json:"gender"`
 	Birthday       *time.Time `json:"birthday"`
-	IDCard         string     `json:"idCard"`
 	MaskedIDCard   string     `json:"maskedIdCard"`
 	Phone          string     `json:"phone"`
 	EmergencyPhone string     `json:"emergencyPhone"`
 	Address        string     `json:"address"`
-	BankCard       string     `json:"bankCard"`
 	MaskedBankCard string     `json:"maskedBankCard"`
 	BankName       string     `json:"bankName"`
 	Education      string     `json:"education"`
@@ -335,12 +337,10 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		Name:           model.Name,
 		Gender:         model.Gender,
 		Birthday:       model.Birthday,
-		IDCard:         model.IDCard,
 		MaskedIDCard:   maskedIDCard,
 		Phone:          model.Phone,
 		EmergencyPhone: model.EmergencyPhone,
 		Address:        model.Address,
-		BankCard:       model.BankCard,
 		MaskedBankCard: maskedBankCard,
 		BankName:       model.BankName,
 		Education:      model.Education,
@@ -359,6 +359,14 @@ func MapEmployeeToListItemResponse(model models.Employee) EmployeeListItemRespon
 		CreatedAt:      model.CreatedAt,
 		UpdatedAt:      model.UpdatedAt,
 		Version:        optimisticVersionFromTimestamps(model.UpdatedAt, model.CreatedAt),
+	}
+}
+
+func MapEmployeeToDetailResponse(model models.Employee) EmployeeDetailResponse {
+	return EmployeeDetailResponse{
+		EmployeeListItemResponse: MapEmployeeToListItemResponse(model),
+		IDCard:                   model.IDCard,
+		BankCard:                 model.BankCard,
 	}
 }
 
@@ -381,12 +389,10 @@ func MapEmployeeToSaveResponse(model models.Employee) EmployeeSaveResponse {
 		Name:           model.Name,
 		Gender:         model.Gender,
 		Birthday:       model.Birthday,
-		IDCard:         model.IDCard,
 		MaskedIDCard:   maskedIDCard,
 		Phone:          model.Phone,
 		EmergencyPhone: model.EmergencyPhone,
 		Address:        model.Address,
-		BankCard:       model.BankCard,
 		MaskedBankCard: maskedBankCard,
 		BankName:       model.BankName,
 		Education:      model.Education,

@@ -163,7 +163,7 @@ func SaveMaterialHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.SaveMaterial(input)
+	saved, err := services.SaveMaterial(auditContextFromGin(c), input)
 	if err != nil {
 		if errors.Is(err, services.ErrMaterialVersionConflict) {
 			respondVersionConflict(c)
@@ -189,7 +189,7 @@ func BulkSyncMaterialsHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.BulkSyncMaterials(input); err != nil {
+	if err := services.BulkSyncMaterials(auditContextFromGin(c), input); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 批量同步物料失败: " + err.Error()})
 		return
 	}
@@ -202,7 +202,7 @@ func BulkSyncMaterialsHandler(c *gin.Context) {
 func DeleteMaterialHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	err := services.DeleteMaterial(id)
+	err := services.DeleteMaterial(auditContextFromGin(c), id)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrMaterialInInventory):

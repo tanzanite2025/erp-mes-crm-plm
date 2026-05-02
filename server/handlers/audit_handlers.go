@@ -22,6 +22,10 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleCustomer:       {authz.MenuTrading},
 	services.AuditModuleSupplier:       {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleEmployee:       {authz.MenuOrg},
+	services.AuditModuleMaterial:       {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
+	services.AuditModuleUser:           {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionUserDelete, authz.PermissionManage},
+	services.AuditModuleUserPermission: {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionManage},
+	services.AuditModuleRole:           {authz.MenuOrg, authz.PermissionManage},
 	services.AuditModuleProductionLine: {authz.MenuProdConfig, authz.MenuEquipment},
 	"Inventory":                        {authz.MenuWarehouse},
 	"Shipment":                         {authz.MenuWarehouse},
@@ -61,8 +65,15 @@ func GetDataTimelineHandler(c *gin.Context) {
 	module := c.Query("module")
 	targetID := c.Query("target_id")
 
-	if module == "" || targetID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] module and target_id are required"})
+	if module == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] module is required"})
+		return
+	}
+
+	canonicalModule := services.NormalizeAuditModule(module)
+	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission
+	if strings.TrimSpace(targetID) == "" && !allowModuleLevelQuery {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] target_id is required for this module"})
 		return
 	}
 
@@ -77,9 +88,11 @@ func GetDataTimelineHandler(c *gin.Context) {
 	}
 
 	var logs []models.AuditLog
-	if err := db.DB.Where("module IN ? AND target_id = ?", moduleAliases, targetID).
-		Order("created_at DESC").
-		Find(&logs).Error; err != nil {
+	query := db.DB.Where("module IN ?", moduleAliases)
+	if strings.TrimSpace(targetID) != "" {
+		query = query.Where("target_id = ?", targetID)
+	}
+	if err := query.Order("created_at DESC").Find(&logs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[CRITICAL_DB_ERROR] failed to fetch data timeline: " + err.Error()})
 		return
 	}

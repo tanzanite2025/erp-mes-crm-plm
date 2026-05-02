@@ -89,6 +89,21 @@ func setupCreateUserHandlerTestDB(t *testing.T) {
 		t.Fatalf("create roles table failed: %v", err)
 	}
 
+	if err := testDB.Exec(`
+		CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		);
+	`).Error; err != nil {
+		t.Fatalf("create audit_logs table failed: %v", err)
+	}
+
 	db.DB = testDB
 	t.Cleanup(func() {
 		db.DB = prevDB

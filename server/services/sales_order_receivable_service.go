@@ -27,6 +27,6 @@ func GetReceivableLedgerByID(id string) (ReceivableLedgerDetailResponse, error) 
 	return getReceivableOrderByID(id)
 }
 
-func CreateReceiptRecord(ledgerID string, req CreateReceiptRecordRequest) (CreateReceiptRecordResponse, error) {
-	return createReceiptRecordForSalesOrder(ledgerID, req)
+func CreateReceiptRecord(ledgerID string, req CreateReceiptRecordRequest, operator string) (CreateReceiptRecordResponse, error) {
+	return createReceiptRecordForSalesOrder(ledgerID, req, operator)
 }

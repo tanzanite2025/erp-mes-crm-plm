@@ -113,18 +113,7 @@ func PatchStocktakeItemHandler(c *gin.Context) {
 			}
 			patch.ActualQty = &value
 		case "scannerId":
-			if string(valueRaw) == "null" {
-				value := ""
-				patch.ScannerID = &value
-				continue
-			}
-
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] scannerId field is invalid"})
-				return
-			}
-			patch.ScannerID = &value
+			patch.ScannerID = middleware.GetSafeUsernamePtr(c)
 		case "scanTime":
 			value, err := parseOptionalTimeValue(valueRaw)
 			if err != nil {
@@ -174,10 +163,7 @@ func PDASubmitScanHandler(c *gin.Context) {
 		return
 	}
 
-	scannerID := strings.TrimSpace(input.ScannerID)
-	if scannerID == "" {
-		scannerID = middleware.GetSafeUsername(c)
-	}
+	scannerID := middleware.GetSafeUsername(c)
 
 	if err := services.SubmitPDAScanRequest(input, scannerID); err != nil {
 		status := mapPDAScanErrorToStatus(err)

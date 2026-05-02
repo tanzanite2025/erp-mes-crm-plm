@@ -599,6 +599,14 @@ const productionActions: LegacyActionPermissionEntry[] = [
     routeBindings: ['PATCH /production/lines/:id'],
   },
   {
+    id: 'action_production_plan_manage',
+    label: '生产：管理生产计划',
+    desc: '允许创建和更新生产计划。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['POST /production/plans'],
+  },
+  {
     id: 'action_cutting_size_inventory_record',
     label: '裁纱：录入尺寸库存',
     desc: '允许在裁纱尺寸库存中为裁切尺寸库的尺寸单元录入库存数量。',

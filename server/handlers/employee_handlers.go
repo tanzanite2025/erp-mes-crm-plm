@@ -37,6 +37,20 @@ func GetEmployeesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, employees)
 }
 
+func GetEmployeeDetailHandler(c *gin.Context) {
+	id := c.Param("id")
+	employee, err := services.GetEmployeeDetail(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Employee not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch employee detail"})
+		return
+	}
+	c.JSON(http.StatusOK, employee)
+}
+
 func GetPositionsHandler(c *gin.Context) {
 	positions, err := services.ListPositions()
 	if err != nil {
@@ -57,7 +71,7 @@ func BulkUpdateEmployeeStatusHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := services.BulkUpdateEmployeeStatus(input.IDs, input.Status)
+	result, err := services.BulkUpdateEmployeeStatus(auditContextFromGin(c), input.IDs, input.Status)
 	if err != nil {
 		if err == services.ErrInvalidEmployeeStatus || err == services.ErrEmptyEmployeeIDs {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -81,7 +95,7 @@ func SaveEmployeeHandler(c *gin.Context) {
 		return
 	}
 
-	employee, err := services.SaveEmployee(mapEmployeeSaveHandlerRequestToService(input))
+	employee, err := services.SaveEmployee(auditContextFromGin(c), mapEmployeeSaveHandlerRequestToService(input))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save employee"})
 		return
@@ -97,8 +111,8 @@ func PatchEmployeeHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee patch payload: " + err.Error()})
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "idCard", "phone", "emergencyPhone", "address", "bankCard", "bankName", "education", "age", "status", "joinedDate", "deptId", "positionId", "lineId", "processId"); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee delta: " + err.Error()})
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "staffId", "name", "gender", "birthday", "phone", "emergencyPhone", "address", "bankName", "education", "age", "status", "joinedDate", "deptId", "positionId", "lineId", "processId"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee delta: " + err.Error() + " (Sensitive fields like idCard/bankCard must be updated through specialized channels)"})
 		return
 	}
 
@@ -145,12 +159,8 @@ func PatchEmployeeHandler(c *gin.Context) {
 			patch.Birthday = value
 			patch.BirthdaySet = true
 		case "idCard":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee idCard payload"})
-				return
-			}
-			patch.IDCard = &value
+			c.JSON(http.StatusForbidden, gin.H{"error": "Modifying idCard via generic patch is prohibited"})
+			return
 		case "phone":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -173,12 +183,8 @@ func PatchEmployeeHandler(c *gin.Context) {
 			}
 			patch.Address = &value
 		case "bankCard":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid employee bankCard payload"})
-				return
-			}
-			patch.BankCard = &value
+			c.JSON(http.StatusForbidden, gin.H{"error": "Modifying bankCard via generic patch is prohibited"})
+			return
 		case "bankName":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -251,7 +257,7 @@ func PatchEmployeeHandler(c *gin.Context) {
 		}
 	}
 
-	refreshed, err := services.PatchEmployee(patch)
+	refreshed, err := services.PatchEmployee(auditContextFromGin(c), patch)
 	if err != nil {
 		if errors.Is(err, services.ErrEmployeePatchVersionConflict) {
 			respondVersionConflict(c)
@@ -321,7 +327,7 @@ func CommitEmployeeImportHandler(c *gin.Context) {
 func DeleteEmployeeHandler(c *gin.Context) {
 	ids := strings.Split(c.Param("id"), ",")
 
-	err := services.DeleteEmployees(ids)
+	err := services.DeleteEmployees(auditContextFromGin(c), ids)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete employees and disable linked users"})
 		return

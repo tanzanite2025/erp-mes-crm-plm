@@ -193,9 +193,6 @@ func confirmPurchaseReceiptTx(tx *gorm.DB, input ConfirmPurchaseReceiptInput) (C
 		if lineInput.Quantity <= 0 {
 			return ConfirmPurchaseReceiptResult{}, errors.New("receipt quantity must be greater than zero")
 		}
-		if lineInput.PurchasePrice < 0 {
-			return ConfirmPurchaseReceiptResult{}, errors.New("receipt purchase price must be greater than or equal to zero")
-		}
 		if strings.TrimSpace(lineInput.TargetCategory) == "" {
 			return ConfirmPurchaseReceiptResult{}, errors.New("target category is required")
 		}
@@ -225,14 +222,14 @@ func confirmPurchaseReceiptTx(tx *gorm.DB, input ConfirmPurchaseReceiptInput) (C
 			PurchaseOrderID:     purchaseOrderID,
 			PurchaseOrderLineID: lineInput.PurchaseOrderLineID,
 			Quantity:            lineInput.Quantity,
-			PurchasePrice:       lineInput.PurchasePrice,
+			PurchasePrice:       orderLine.Price, // [SECURITY] 强制使用 PO 行的协商价格，防止前端注入
 			TargetCategory:      strings.TrimSpace(lineInput.TargetCategory),
 			BatchNo:             strings.TrimSpace(lineInput.BatchNo),
 			InboundDate:         input.ReceiptDate,
 			Operator:            input.Operator,
 			Remarks:             input.Remarks,
 		}
-		if err := recordInboundTx(tx, &inbound); err != nil {
+		if _, err := recordInboundTx(tx, &inbound); err != nil {
 			return ConfirmPurchaseReceiptResult{}, err
 		}
 		createdRecords = append(createdRecords, inbound)

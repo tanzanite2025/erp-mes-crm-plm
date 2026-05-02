@@ -17,6 +17,7 @@ type PieceworkRate struct {
 	Currency    string   `gorm:"size:10;default:'CNY'" json:"currency"`
 	EffectiveAt time.Time `gorm:"default:now()" json:"effectiveAt"`
 	Status      string   `gorm:"size:20;default:'active'" json:"status"` // active, historical
+	Operator    string   `gorm:"size:100" json:"operator"`               // 操作人
 }
 
 // PieceworkRecord 计件采集明细 (报工产生的持久化记录)

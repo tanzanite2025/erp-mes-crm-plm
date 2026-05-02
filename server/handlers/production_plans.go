@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/middleware"
 	"xdfc-server/models"
 	"xdfc-server/services"
 
@@ -114,8 +115,9 @@ func SaveProductionPlanHandler(c *gin.Context) {
 		if err := services.DispatchProductionPlanStatusChangedTx(tx, savedPlan, previousPlanStatus, savedPlan.Status, "", ""); err != nil {
 			return err
 		}
-		for _, task := range savedPlan.Tasks {
-			if err := services.DispatchProductionTaskStatusChangedTx(tx, savedPlan, task, previousTaskStatusByID[task.ID], task.Status, "", task.Operator); err != nil {
+		for i := range savedPlan.Tasks {
+			savedPlan.Tasks[i].Operator = middleware.GetSafeUsername(c)
+			if err := services.DispatchProductionTaskStatusChangedTx(tx, savedPlan, savedPlan.Tasks[i], previousTaskStatusByID[savedPlan.Tasks[i].ID], savedPlan.Tasks[i].Status, "", savedPlan.Tasks[i].Operator); err != nil {
 				return err
 			}
 		}

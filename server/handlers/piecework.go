@@ -3,9 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+	"xdfc-server/audit"
 	"xdfc-server/db"
 	"xdfc-server/middleware"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,6 +64,20 @@ func patchTeamRecord(id string, updates map[string]interface{}) error {
 	return db.DB.Model(&existing).Updates(updates).Error
 }
 
+func writeTeamAuditEntry(c *gin.Context, targetID string, action string) error {
+	return services.RecordAuditEventTx(db.DB, audit.NewAuditEvent(
+		audit.AuditEntityKey("team"),
+		strings.TrimSpace(targetID),
+		audit.AuditAction(strings.TrimSpace(action)),
+		audit.AuditActor{
+			UserID:   middleware.GetSafeUserID(c),
+			Username: middleware.GetSafeUsername(c),
+			IP:       c.ClientIP(),
+			Source:   "http",
+		},
+	).Normalize())
+}
+
 // SaveTeamHandler 保存/更新班组
 func SaveTeamHandler(c *gin.Context) {
 	payload, body, err := decodeJSONBodyMap(c)
@@ -85,6 +102,8 @@ func SaveTeamHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存班组失败: " + err.Error()})
 			return
 		}
+		// 记录审计日志
+		_ = writeTeamAuditEntry(c, id, "PATCH")
 		var team models.Team
 		db.DB.First(&team, "id = ?", id)
 		c.JSON(http.StatusOK, team)
@@ -103,6 +122,7 @@ func SaveTeamHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建班组失败: " + err.Error()})
 		return
 	}
+	_ = writeTeamAuditEntry(c, team.ID, "CREATE")
 
 	c.JSON(http.StatusOK, team)
 }
@@ -180,17 +200,43 @@ func SavePieceworkRateHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] 无效的 ID 格式"})
 			return
 		}
+
+		var rate models.PieceworkRate
+		if err := db.DB.First(&rate, "id = ?", id).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "工价标准不存在"})
+			return
+		}
+
 		updates, err := buildPieceworkRateUpdates(payload)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := patchPieceworkRateRecord(id, updates); err != nil {
+
+		// 将 map 转换为 struct 的简单模拟（由于字段不多）
+		if v, ok := updates["productId"].(string); ok {
+			rate.ProductID = v
+		}
+		if v, ok := updates["processCode"].(string); ok {
+			rate.ProcessCode = v
+		}
+		if v, ok := updates["processName"].(string); ok {
+			rate.ProcessName = v
+		}
+		if v, ok := updates["currency"].(string); ok {
+			rate.Currency = v
+		}
+		if v, ok := updates["status"].(string); ok {
+			rate.Status = v
+		}
+		if v, ok := updates["unit_price"].(float64); ok {
+			rate.UnitPrice = v
+		}
+
+		if err := services.SavePieceworkRate(auditContextFromGin(c), &rate); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 差分保存工价失败: " + err.Error()})
 			return
 		}
-		var rate models.PieceworkRate
-		db.DB.First(&rate, "id = ?", id)
 		c.JSON(http.StatusOK, rate)
 		return
 	}
@@ -201,8 +247,8 @@ func SavePieceworkRateHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Create(&rate).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建工价失败: " + err.Error()})
+	if err := services.SavePieceworkRate(auditContextFromGin(c), &rate); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 保存工价失败: " + err.Error()})
 		return
 	}
 

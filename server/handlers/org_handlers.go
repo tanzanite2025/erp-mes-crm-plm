@@ -27,7 +27,7 @@ func SaveOrgHandler(c *gin.Context) {
 		return
 	}
 
-	organization, err := services.SaveOrganization(mapOrganizationSaveHandlerRequestToService(input))
+	organization, err := services.SaveOrganization(auditContextFromGin(c), mapOrganizationSaveHandlerRequestToService(input))
 	if err != nil {
 		if err == services.ErrOrganizationNameConflict {
 			c.JSON(http.StatusConflict, gin.H{"error": "Organization name already exists under the same parent"})
@@ -137,7 +137,7 @@ func PatchOrgHandler(c *gin.Context) {
 		}
 	}
 
-	refreshed, err := services.PatchOrganization(patch)
+	refreshed, err := services.PatchOrganization(auditContextFromGin(c), patch)
 	if err != nil {
 		if errors.Is(err, services.ErrOrganizationPatchVersionConflict) {
 			respondVersionConflict(c)
@@ -184,7 +184,7 @@ func findOrganizationResponse(node services.OrganizationTreeNodeResponse, target
 func DeleteOrgHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	err := services.DeleteOrganization(id)
+	err := services.DeleteOrganization(auditContextFromGin(c), id)
 	if err != nil {
 		if err == services.ErrOrganizationHasChildren {
 			c.JSON(http.StatusConflict, gin.H{"error": "Cannot delete organization with child departments"})

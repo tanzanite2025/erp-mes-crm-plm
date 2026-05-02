@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest) (CreateReceiptRecordResponse, error) {
+func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest, operator string) (CreateReceiptRecordResponse, error) {
 	if req.Amount <= 0 {
 		return CreateReceiptRecordResponse{}, ErrSettlementAmountInvalid
 	}
@@ -41,6 +41,7 @@ func createReceiptRecordForSalesOrder(id string, req CreateReceiptRecordRequest)
 			ReceivedAt:     strings.TrimSpace(req.ReceivedAt),
 			ReceiptAccount: strings.TrimSpace(req.ReceiptAccount),
 			Status:         models.SettlementRecordStatusConfirmed,
+			Operator:       operator,
 			ReferenceNo:    strings.TrimSpace(req.ReferenceNo),
 		}
 		if err := tx.Create(&record).Error; err != nil {
@@ -150,6 +151,7 @@ func lockReceivableSalesOrdersByIDTx(tx *gorm.DB, ids map[string]struct{}) (map[
 }
 
 func createReceivableOrderAllocationsTx(tx *gorm.DB, record models.ReceiptRecord, targets []receivableAllocationTarget) ([]SettlementAllocationResponse, error) {
+	operator := record.Operator
 	responses := make([]SettlementAllocationResponse, 0, len(targets))
 	for index, target := range targets {
 		allocation := models.SettlementAllocation{
@@ -160,6 +162,7 @@ func createReceivableOrderAllocationsTx(tx *gorm.DB, record models.ReceiptRecord
 			AllocatedAmount: target.request.AllocatedAmount,
 			SequenceNo:      normalizeSequenceNo(target.request.SequenceNo, index),
 			Remark:          strings.TrimSpace(target.request.Remark),
+			Operator:        operator,
 		}
 		if err := tx.Create(&allocation).Error; err != nil {
 			return nil, err

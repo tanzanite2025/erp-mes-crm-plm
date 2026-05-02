@@ -21,7 +21,7 @@ func PatchInventoryHandler(c *gin.Context) {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory patch payload: "+err.Error())
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "materialSpec", "quantity", "totalValue", "averageUnitCost", "categoryCode", "batchNo", "uom"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "materialSpec", "categoryCode", "batchNo", "uom"); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory delta: "+err.Error())
 		return
 	}
@@ -68,27 +68,7 @@ func PatchInventoryHandler(c *gin.Context) {
 				return
 			}
 			patch.MaterialSpec = &value
-		case "quantity":
-			var value float64
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] quantity 字段错误")
-				return
-			}
-			patch.Quantity = &value
-		case "totalValue":
-			var value float64
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] totalValue 字段错误")
-				return
-			}
-			patch.TotalValue = &value
-		case "averageUnitCost":
-			var value float64
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] averageUnitCost 字段错误")
-				return
-			}
-			patch.AverageUnitCost = &value
+
 		case "categoryCode":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -233,12 +213,7 @@ func PatchShipmentHandler(c *gin.Context) {
 			}
 			patch.ShipmentDate = value
 		case "operator":
-			var value string
-			if err := json.Unmarshal(valueRaw, &value); err != nil {
-				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_SHIPMENT_PATCH_VALIDATION_FAILED", "[VALIDATION] operator 字段错误")
-				return
-			}
-			patch.Operator = &value
+			patch.Operator = middleware.GetSafeUsernamePtr(c)
 		case "remarks":
 			var value string
 			if err := json.Unmarshal(valueRaw, &value); err != nil {
@@ -270,7 +245,6 @@ func PatchShipmentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, services.MapShipmentRecordToResponse(updated))
 }
 
-// RecordInboundHandler records inbound flow and updates inventory atomically.
 func RecordInboundHandler(c *gin.Context) {
 	var req services.RecordInboundRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -279,8 +253,9 @@ func RecordInboundHandler(c *gin.Context) {
 	}
 
 	inbound := services.MapRecordInboundRequestToModel(req)
+	inbound.Operator = middleware.GetSafeUsername(c)
 
-	if err := services.RecordInbound(&inbound); err != nil {
+	if err := services.RecordInbound(auditContextFromGin(c), &inbound); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_INBOUND_FAILED", "[SERVER] inbound operation failed: "+err.Error())
 		return
 	}
@@ -297,6 +272,7 @@ func RecordShipmentHandler(c *gin.Context) {
 	}
 
 	shipment := services.MapRecordShipmentRequestToModel(req)
+	shipment.Operator = middleware.GetSafeUsername(c)
 
 	if err := services.CreateShipmentDraft(&shipment); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_SHIPMENT_CREATE_FAILED", "[SERVER] failed to save shipment draft: "+err.Error())
@@ -310,7 +286,7 @@ func RecordShipmentHandler(c *gin.Context) {
 func CommitShipmentHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	shipment, err := services.CommitShipment(id)
+	shipment, err := services.CommitShipment(auditContextFromGin(c), id)
 	if errors.Is(err, services.ErrShipmentNotFound) {
 		respondInventoryError(c, http.StatusNotFound, "INVENTORY_SHIPMENT_NOT_FOUND", "shipment not found")
 		return
@@ -353,6 +329,7 @@ func PrepareVirtualShipmentHandler(c *gin.Context) {
 		return
 	}
 
+	request.Operator = middleware.GetSafeUsername(c)
 	shipment, err := services.PrepareVirtualShipment(request)
 	if err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_VIRTUAL_SHIPMENT_FAILED", "[SERVER] virtual shipment preparation failed: "+err.Error())
@@ -375,7 +352,7 @@ func ReconcileInventoryHandler(c *gin.Context) {
 func VoidShipmentHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := services.VoidShipment(c.Request.Context(), id); err != nil {
+	if err := services.VoidShipment(auditContextFromGin(c), id); err != nil {
 		log.Printf("[LOCK_INFO] operation conflict: %v", err)
 		if errors.Is(err, services.ErrVoidInProgress) {
 			respondInventoryError(c, http.StatusConflict, "INVENTORY_VOID_IN_PROGRESS", "record is being processed, please do not repeat")

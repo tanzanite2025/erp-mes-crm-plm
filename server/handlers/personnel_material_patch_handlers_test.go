@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -200,8 +201,11 @@ func TestPatchMaterialHandlerReturnsVersionedResponse(t *testing.T) {
 		strings.NewReader(`{"op":"PATCH","delta":{"name":{"o":"Tube","n":"Tube Plus"}},"metadata":{"id":"`+materialID+`","version":2}}`),
 	)
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "198.51.100.77:2345"
 	ctx.Params = gin.Params{{Key: "id", Value: materialID}}
 	ctx.Request = request
+	ctx.Set("userId", "patch-user-1")
+	ctx.Set("username", "patch-auditor")
 
 	PatchMaterialHandler(ctx)
 
@@ -216,6 +220,13 @@ func TestPatchMaterialHandlerReturnsVersionedResponse(t *testing.T) {
 	require.Equal(t, materialID, response.ID)
 	require.Equal(t, "Tube Plus", response.Name)
 	require.Equal(t, 3, response.Version)
+
+	var logs []models.AuditLog
+	require.NoError(t, db.DB.Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, "PATCH", logs[0].Action)
+	require.Equal(t, "patch-auditor", logs[0].Operator)
+	require.Equal(t, "198.51.100.77", logs[0].IP)
 }
 
 func TestPatchMaterialHandlerRejectsLiteralDeltaValue(t *testing.T) {

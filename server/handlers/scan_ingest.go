@@ -82,10 +82,7 @@ func PDAIngestScanHandler(c *gin.Context) {
 		Material: material,
 	}
 
-	scannerID := strings.TrimSpace(input.ScannerID)
-	if scannerID == "" {
-		scannerID = middleware.GetSafeUsername(c)
-	}
+	scannerID := middleware.GetSafeUsername(c)
 
 	bridge, bridgeErr := bridgeStocktakeScanIfRequested(input, scannerID)
 	if bridgeErr != nil {

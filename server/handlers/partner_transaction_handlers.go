@@ -24,10 +24,7 @@ func ExecuteCustomerTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	actorID := strings.TrimSpace(req.ActorID)
-	if actorID == "" {
-		actorID = middleware.GetSafeUserID(c)
-	}
+	actorID := middleware.GetSafeUserID(c)
 
 	result, err := services.ExecuteCustomerTransaction(services.ExecuteCustomerTransactionInput{
 		CustomerID:      customerID,
@@ -68,10 +65,7 @@ func ExecuteSupplierTransactionHandler(c *gin.Context) {
 		return
 	}
 
-	actorID := strings.TrimSpace(req.ActorID)
-	if actorID == "" {
-		actorID = middleware.GetSafeUserID(c)
-	}
+	actorID := middleware.GetSafeUserID(c)
 
 	result, err := services.ExecuteSupplierTransaction(services.ExecuteSupplierTransactionInput{
 		SupplierID:      supplierID,

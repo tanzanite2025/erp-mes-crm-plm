@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Settings2 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type Material } from '../data/schema'
 import { useMaterialForm } from '../hooks/use-material-form'
 import { MaterialForm } from './material-form'
@@ -61,13 +63,23 @@ export function MaterialUpsertDialog({
         <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
         <div className='relative max-h-[90vh] overflow-y-auto p-6'>
           <DialogHeader className='mb-4'>
-            <div className='flex items-center gap-2 text-primary'>
-              <Settings2 className='size-5' />
-              <DialogTitle className='text-lg font-black italic tracking-tighter'>
-                {material
-                  ? t('materialArchive.upsertDialog.editTitle')
-                  : t('materialArchive.upsertDialog.createTitle')}
-              </DialogTitle>
+            <div className='flex items-center justify-between gap-3 text-primary'>
+              <div className='flex items-center gap-2'>
+                <Settings2 className='size-5' />
+                <DialogTitle className='text-lg font-black italic tracking-tighter'>
+                  {material
+                    ? t('materialArchive.upsertDialog.editTitle')
+                    : t('materialArchive.upsertDialog.createTitle')}
+                </DialogTitle>
+              </div>
+              {material ? (
+                <AuditTimelineTriggerButton
+                  module={AUDIT_MODULES.material}
+                  targetId={material.id}
+                  targetName={material.name || material.code}
+                  className='bg-background/70 text-primary'
+                />
+              ) : null}
             </div>
           </DialogHeader>
 

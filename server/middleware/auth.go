@@ -166,3 +166,9 @@ func GetSafeUserID(c *gin.Context) string {
 
 	return str
 }
+
+// GetSafeUsernamePtr returns a pointer to the safe username. Useful for pointer-based DTO fields.
+func GetSafeUsernamePtr(c *gin.Context) *string {
+	username := GetSafeUsername(c)
+	return &username
+}

@@ -18,7 +18,7 @@ func BulkSyncOrgHandler(c *gin.Context) {
 		return
 	}
 
-	count, err := services.BulkSyncOrganizations(mapBulkSyncOrganizationHandlerRequestsToService(input))
+	count, err := services.BulkSyncOrganizations(auditContextFromGin(c), mapBulkSyncOrganizationHandlerRequestsToService(input))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[CRITICAL_SYNC_FAILED] failed to bulk sync organizations: " + err.Error()})
 		return
