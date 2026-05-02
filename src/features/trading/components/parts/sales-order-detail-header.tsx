@@ -1,4 +1,4 @@
-import { CheckCircle, FileCheck, Play, Printer, Settings2, XCircle } from 'lucide-react'
+import { CalendarClock, CheckCircle, FileCheck, Play, Printer, Settings2, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguage } from '@/context/language-provider'
 import { type SalesOrder } from '../../data/schema'
@@ -30,10 +30,12 @@ export function SalesOrderDetailHeader({
     showClaimBanner,
     commandTitle,
     canSubmitPending,
+    canStartScheduling,
     canStartProduction,
     canMarkDone,
     canCancel,
     submitPendingPayload,
+    startSchedulingPayload,
     startProductionPayload,
     markDonePayload,
     cancelPayload,
@@ -65,6 +67,16 @@ export function SalesOrderDetailHeader({
           >
             <FileCheck className='size-3.5' />
             {t('tradingSalesOrder.detail.submitPending')}
+          </Button>
+        )}
+        {canStartScheduling && (
+          <Button
+            size='sm'
+            className='h-7 gap-1.5 rounded-lg bg-violet-500 px-2 text-[10px] font-black uppercase text-white shadow-lg shadow-violet-500/20 hover:bg-violet-600'
+            onClick={() => onMutateStatus(startSchedulingPayload)}
+          >
+            <CalendarClock className='size-3.5' />
+            {t('tradingSalesOrder.detail.startScheduling')}
           </Button>
         )}
         {canStartProduction && (

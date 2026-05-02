@@ -31,10 +31,16 @@ export function useSalesOrderDetailHeaderViewModel({
     showClaimBanner,
     commandTitle,
     canSubmitPending: hasAvailableAction(order, 'submitPending'),
+    canStartScheduling: hasAvailableAction(order, 'startScheduling'),
     canStartProduction: hasAvailableAction(order, 'startProduction'),
     canMarkDone: hasAvailableAction(order, 'markDone'),
     canCancel: hasAvailableAction(order, 'cancel'),
     submitPendingPayload: { id: order.id, status: 'Pending' as const },
+    startSchedulingPayload: {
+      id: order.id,
+      status: 'Scheduling' as const,
+      statusNote: t('tradingSalesOrder.detail.schedulingTriggered'),
+    },
     startProductionPayload: {
       id: order.id,
       status: 'InProgress' as const,

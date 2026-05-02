@@ -2,9 +2,50 @@ export const basicSettings = {
   tabs: {
     dmNumbering: "DM码发号规则",
     units: "单位管理",
+    knowledgeBase: "知识库",
     sequences: "一维码发号规则",
     enterprise: "企业信息",
     security: "安全设置"
+  },
+  knowledgeBase: {
+    page: {
+      title: "知识库",
+      subtitle: "沉淀可搜索的操作知识、状态口径和页面直达入口，降低新人理解成本。",
+      searchPlaceholder: "搜索标题、关键词、路径或内容",
+      entryCount: "{{count}} 条知识",
+      empty: "当前筛选条件下暂无知识条目。",
+      loading: "正在加载知识条目...",
+      saveFailed: "知识库同步失败，请检查系统配置服务后重试。"
+    },
+    categories: {
+      all: "全部",
+      workflow: "流程",
+      status: "状态",
+      operation: "操作",
+      exception: "异常",
+      terminology: "术语"
+    },
+    actions: {
+      create: "新建知识",
+      openRoute: "打开页面"
+    },
+    media: {
+      image: "包含图片",
+      video: "包含视频"
+    },
+    editor: {
+      createTitle: "新建知识条目",
+      editTitle: "编辑知识条目",
+      description: "维护可复用的业务知识，后续可直接接入全局搜索索引。",
+      fields: {
+        title: "标题",
+        category: "分类",
+        routePath: "关联路径",
+        summary: "摘要",
+        content: "正文",
+        keywords: "关键词"
+      }
+    }
   },
   placeholders: {
     moduleInitialized: "功能模块已接入，等待底层业务逻辑挂载",

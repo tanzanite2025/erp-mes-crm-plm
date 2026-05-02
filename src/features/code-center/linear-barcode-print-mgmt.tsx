@@ -30,6 +30,7 @@ export function LinearBarcodePrintMgmt() {
     protocolQuery,
     orderOptions,
     selectedOrder,
+    selectedOrderStatusLabel,
     previewLines,
     readyCount,
     blockedCount,
@@ -163,7 +164,7 @@ export function LinearBarcodePrintMgmt() {
                         <span className='font-black text-muted-foreground/60'>
                           {t('codeCenter.linearBarcode.print.sections.templates.summary.status')}
                         </span>
-                        <span className='font-bold text-foreground'>{selectedOrder.status}</span>
+                        <span className='font-bold text-foreground'>{selectedOrderStatusLabel}</span>
                       </div>
                       <div className='flex items-center justify-between gap-3'>
                         <span className='font-black text-muted-foreground/60'>

@@ -45,8 +45,11 @@ func recalculateSalesOrderStatus(order *models.SalesOrder) (string, error) {
 	if currentStatus == "Draft" {
 		return "Draft", nil
 	}
+	if currentStatus == "Scheduling" {
+		return "Scheduling", nil
+	}
 	if allClaimed && currentStatus == "Pending" {
-		return "InProgress", nil
+		return "Scheduling", nil
 	}
 	return "Pending", nil
 }

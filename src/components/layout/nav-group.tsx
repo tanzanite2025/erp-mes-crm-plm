@@ -61,6 +61,8 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const { unreadApprovals } = useNotificationStore()
   const pathname = useLocation({ select: (location) => location.pathname })
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null)
+  const { state } = useSidebar()
+  const isCollapsed = state === 'collapsed'
 
   const shouldWatchSystemAlerts = items.some((item) => isSystemManagementItem(item))
   const { data: systemActiveAlerts = [] } = useQuery({
@@ -79,33 +81,36 @@ export function NavGroup({ title, items }: NavGroupProps) {
   const itemsWithBadges = withDynamicBadges(items, unreadApprovals, systemAlertCount)
   const shouldExpandForPath = groupHasActiveItem(pathname, itemsWithBadges)
   const isExpanded = manualExpanded ?? shouldExpandForPath
+  const shouldRenderMenu = isCollapsed || isExpanded
 
   return (
     <SidebarGroup>
-      <button
-        type='button'
-        className={cn(
-          'flex w-full items-center justify-between rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 px-2.5 py-1.5 text-left shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-colors group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
-          isExpanded ? 'mb-1.5' : 'mb-1',
-          'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
-          isExpanded && 'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
-        )}
-        onClick={() => {
-          setManualExpanded((current) => {
-            if (current === null) {
-              return !shouldExpandForPath
-            }
+      {isCollapsed ? null : (
+        <button
+          type='button'
+          className={cn(
+            'flex w-full items-center justify-between rounded-full border border-sidebar-border/45 bg-sidebar-accent/18 px-2.5 py-1.5 text-left shadow-[0_1px_2px_hsl(var(--sidebar-border)/0.18)] transition-colors',
+            isExpanded ? 'mb-1.5' : 'mb-1',
+            'text-sidebar-foreground/70 hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground',
+            isExpanded && 'border-sidebar-border/55 bg-sidebar-accent/40 text-sidebar-accent-foreground'
+          )}
+          onClick={() => {
+            setManualExpanded((current) => {
+              if (current === null) {
+                return !shouldExpandForPath
+              }
 
-            return !current
-          })
-        }}
-      >
-        <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
-          {title}
-        </SidebarGroupLabel>
-        <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />
-      </button>
-      {isExpanded ? (
+              return !current
+            })
+          }}
+        >
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
+            {title}
+          </SidebarGroupLabel>
+          <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />
+        </button>
+      )}
+      {shouldRenderMenu ? (
         <SidebarMenu className='gap-px'>
           {itemsWithBadges.map((item) => {
             const key = `${item.title}-${'url' in item ? item.url : item.title}`

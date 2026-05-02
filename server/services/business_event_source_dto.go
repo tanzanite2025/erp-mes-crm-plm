@@ -28,13 +28,14 @@ var allowedBusinessEventActionKinds = map[string]struct{}{
 }
 
 var allowedBusinessStatusPhases = map[string]struct{}{
-	"draft":     {},
-	"pending":   {},
-	"active":    {},
-	"done":      {},
-	"cancelled": {},
-	"terminal":  {},
-	"custom":    {},
+	"draft":      {},
+	"pending":    {},
+	"scheduling": {},
+	"active":     {},
+	"done":       {},
+	"cancelled":  {},
+	"terminal":   {},
+	"custom":     {},
 }
 
 var allowedBusinessFieldTypes = map[string]struct{}{

@@ -17,6 +17,7 @@ const salesOrderActionAvailabilitySchema = z
   .object({
     action: z.enum([
       'submitPending',
+      'startScheduling',
       'startProduction',
       'markDone',
       'cancel',

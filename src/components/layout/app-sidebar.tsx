@@ -76,7 +76,7 @@ export function AppSidebar() {
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>
-      <SidebarRail />
+      {collapsible === 'icon' ? <SidebarRail /> : null}
     </Sidebar>
   )
 }

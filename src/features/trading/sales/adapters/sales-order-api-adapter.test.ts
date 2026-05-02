@@ -149,6 +149,41 @@ describe('sales-order-api-adapter', () => {
     }
   )
 
+  it.each(['Scheduling', 'Scheduled', 'scheduling'])(
+    'normalizes %s order and line statuses as Scheduling',
+    (status) => {
+      const order = toSalesOrderContract({
+        ...baseOrderDto,
+        status,
+        lines: [
+          {
+            id: 1,
+            lineNo: 1,
+            productId: 'product-1',
+            productModel: 'MTB-01',
+            productCode: 'MTB-01',
+            specification: '',
+            description: '',
+            qty: 2,
+            uom: 'PCS',
+            price: 50,
+            amount: 100,
+            deliveredQty: 0,
+            customerPartNo: '',
+            jobNo: '',
+            orderDate: '2026-04-18',
+            status,
+            returnedQuantity: 0,
+            remainingReturnableQuantity: 2,
+          },
+        ],
+      })
+
+      expect(order.status).toBe('Scheduling')
+      expect(order.lines[0]?.status).toBe('Scheduling')
+    }
+  )
+
   it('keeps order line appearance preview fields during API mapping', () => {
     const order = toSalesOrderContract({
       ...baseOrderDto,

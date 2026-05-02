@@ -6,6 +6,7 @@ export const commandMenu = {
     modules: 'Modules / Features',
     actions: 'Actions / Shortcuts',
     data: 'Data / Business Matches',
+    knowledgeBase: 'Knowledge Base',
     system: 'System / Appearance',
   },
   footer: {
@@ -123,7 +124,6 @@ export const commandMenu = {
     createRequirement: 'Submit Material Requirement',
     startStocktake: 'Start Stocktake',
     newAdjustment: 'New Inventory Adjustment',
-    printLabels: 'Label Printing Hub',
     approvalCenter: 'Approval Center',
   },
 }

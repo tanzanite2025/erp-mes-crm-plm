@@ -3,9 +3,50 @@ export const basicSettings = {
     dmNumbering: "DM Code Numbering Rules",
     linearBarcode: "Linear Barcode",
     units: "Unit Management",
+    knowledgeBase: "Knowledge Base",
     sequences: "Linear Barcode Numbering Rules",
     enterprise: "Enterprise Info",
     security: "Security Settings"
+  },
+  knowledgeBase: {
+    page: {
+      title: "Knowledge Base",
+      subtitle: "Maintain searchable operating knowledge, status explanations, and direct page links for onboarding and daily troubleshooting.",
+      searchPlaceholder: "Search title, keyword, route, or content",
+      entryCount: "{{count}} entries",
+      empty: "No knowledge entries match the current filters.",
+      loading: "Loading knowledge entries...",
+      saveFailed: "Knowledge base sync failed. Please retry after checking the system configuration service."
+    },
+    categories: {
+      all: "All",
+      workflow: "Workflow",
+      status: "Status",
+      operation: "Operation",
+      exception: "Exception",
+      terminology: "Terminology"
+    },
+    actions: {
+      create: "New Entry",
+      openRoute: "Open Page"
+    },
+    media: {
+      image: "Contains image",
+      video: "Contains video"
+    },
+    editor: {
+      createTitle: "Create Knowledge Entry",
+      editTitle: "Edit Knowledge Entry",
+      description: "Write reusable business knowledge that can later be indexed by global search.",
+      fields: {
+        title: "Title",
+        category: "Category",
+        routePath: "Linked Route",
+        summary: "Summary",
+        content: "Content",
+        keywords: "Keywords"
+      }
+    }
   },
   placeholders: {
     moduleInitialized: "Module initialized. Waiting for underlying business logic.",

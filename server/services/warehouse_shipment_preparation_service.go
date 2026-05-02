@@ -34,7 +34,7 @@ func shipmentDemandKey(materialID string) string {
 }
 
 func activeShipmentDemandOrderStatuses() []string {
-	return []string{"Pending", "InProgress"}
+	return []string{"Pending", "Scheduling", "InProgress"}
 }
 
 func ListShipmentDemands() (ShipmentDemandListResponse, error) {

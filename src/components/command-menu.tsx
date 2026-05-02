@@ -13,6 +13,9 @@ export function CommandMenu() {
     searchValue,
     setSearchValue,
     asyncResults,
+    knowledgeEntries,
+    selectedKnowledgeEntry,
+    setSelectedKnowledgeEntry,
     isSearching,
     groupedItems,
     handleNavigate,
@@ -27,6 +30,9 @@ export function CommandMenu() {
       isSearching={isSearching}
       groupedItems={groupedItems}
       asyncResults={asyncResults}
+      knowledgeEntries={knowledgeEntries}
+      selectedKnowledgeEntry={selectedKnowledgeEntry}
+      onKnowledgeSelect={setSelectedKnowledgeEntry}
       onItemSelect={handleNavigate}
     />
   )

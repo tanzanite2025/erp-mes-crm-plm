@@ -174,11 +174,11 @@ describe('sales-query-service', () => {
       page: 2,
       pageSize: 25,
       withLines: true,
-      status: ['Pending', 'Done'],
+      status: ['Scheduling'],
     })
 
     expect(apiFetchMock).toHaveBeenCalledWith(
-      `/sales-orders?${TRADING_QUERY_PARAM_PAGE}=2&${TRADING_QUERY_PARAM_PAGE_SIZE}=25&${TRADING_QUERY_PARAM_WITH_LINES}=true&${TRADING_QUERY_PARAM_STATUS}=Pending%2CDone`
+      `/sales-orders?${TRADING_QUERY_PARAM_PAGE}=2&${TRADING_QUERY_PARAM_PAGE_SIZE}=25&${TRADING_QUERY_PARAM_WITH_LINES}=true&${TRADING_QUERY_PARAM_STATUS}=Scheduling`
     )
   })
 

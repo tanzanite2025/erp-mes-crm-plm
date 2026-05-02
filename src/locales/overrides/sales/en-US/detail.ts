@@ -6,10 +6,12 @@ export const detail = {
       pendingInstruction: 'Pending Instruction',
       claimFallback: 'Claim order content',
       submitPending: 'Submit to Pending',
+      startScheduling: 'Start Scheduling',
       startProduction: 'Start Production',
       markDone: 'Mark as Done',
       cancelOrder: 'Cancel Order',
       cancelConfirm: 'Cancel this order?',
+      schedulingTriggered: 'Production scheduling started',
       productionTriggered: 'Triggered by system rules',
       info: {
         orderName: 'Order Name',

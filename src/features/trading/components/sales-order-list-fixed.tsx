@@ -48,9 +48,10 @@ type SalesOrderListResource = CompositeReadResource<{
   canceledTotal: number
 }>
 
-const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'inProgress' | 'done' | 'canceled'> = {
+const salesOrderStatusLabelKeyMap: Record<SalesOrderStatus, 'draft' | 'pending' | 'scheduling' | 'inProgress' | 'done' | 'canceled'> = {
   Draft: 'draft',
   Pending: 'pending',
+  Scheduling: 'scheduling',
   InProgress: 'inProgress',
   Done: 'done',
   Canceled: 'canceled',
@@ -95,7 +96,7 @@ export function SalesOrderList() {
     paymentTermFilter !== 'ALL' ? paymentTermFilter : undefined
 
   const primaryStatusFilter = useMemo(
-    () => (isAllStatusesFilter ? ['Draft', 'Pending', 'InProgress', 'Done'] : [statusFilter]),
+    () => (isAllStatusesFilter ? ['Draft', 'Pending', 'Scheduling', 'InProgress', 'Done'] : [statusFilter]),
     [isAllStatusesFilter, statusFilter]
   )
 

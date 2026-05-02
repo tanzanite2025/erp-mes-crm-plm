@@ -11,7 +11,19 @@ const LAYOUT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 // Default values
 const DEFAULT_VARIANT = 'inset'
-const DEFAULT_COLLAPSIBLE = 'icon'
+const DEFAULT_COLLAPSIBLE: Collapsible = 'offcanvas'
+
+function normalizeCollapsible(value: unknown): Collapsible {
+  if (value === 'none' || value === 'offcanvas') {
+    return value
+  }
+
+  if (value === 'icon') {
+    return 'offcanvas'
+  }
+
+  return DEFAULT_COLLAPSIBLE
+}
 
 type LayoutContextType = {
   resetLayout: () => void
@@ -34,7 +46,7 @@ type LayoutProviderProps = {
 export function LayoutProvider({ children }: LayoutProviderProps) {
   const [collapsible, _setCollapsible] = useState<Collapsible>(() => {
     const saved = getCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME)
-    return (saved as Collapsible) || DEFAULT_COLLAPSIBLE
+    return normalizeCollapsible(saved)
   })
 
   const [variant, _setVariant] = useState<Variant>(() => {
@@ -43,10 +55,11 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
   })
 
   const setCollapsible = (newCollapsible: Collapsible) => {
-    _setCollapsible(newCollapsible)
+    const normalized = normalizeCollapsible(newCollapsible)
+    _setCollapsible(normalized)
     setCookie(
       LAYOUT_COLLAPSIBLE_COOKIE_NAME,
-      newCollapsible,
+      normalized,
       LAYOUT_COOKIE_MAX_AGE
     )
   }

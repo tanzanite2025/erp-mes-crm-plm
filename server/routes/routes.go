@@ -20,6 +20,7 @@ func SetupRoutes(r *gin.Engine) {
 		registerUserRoutes(authorized)
 		registerAuthzRoutes(authorized)
 		registerBasicUnitRoutes(authorized)
+		registerKnowledgeBaseRoutes(authorized)
 		registerSystemConfigRoutes(authorized)
 		registerTradingRoutes(authorized)
 		registerInventoryRoutes(authorized)
@@ -346,4 +347,14 @@ func registerBasicUnitRoutes(authorized *gin.RouterGroup) {
 	unitGroup.PATCH("/:id", middleware.RequirePermissions(authz.PermissionManage), handlers.PatchUnitHandler)
 	unitGroup.POST("/sync", middleware.RequirePermissions(authz.PermissionManage), handlers.BulkSyncUnitsHandler)
 	unitGroup.DELETE("/:id", middleware.RequirePermissions(authz.PermissionManage), handlers.DeleteUnitHandler)
+}
+
+func registerKnowledgeBaseRoutes(authorized *gin.RouterGroup) {
+	knowledgeGroup := authorized.Group("/knowledge-base")
+	knowledgeGroup.GET("/entries/search", handlers.SearchKnowledgeBaseEntriesHandler)
+	knowledgeGroup.GET("/entries", middleware.RequirePermissions(authz.MenuSettings), handlers.GetKnowledgeBaseEntriesHandler)
+	knowledgeGroup.POST("/entries", middleware.RequirePermissions(authz.PermissionManage), handlers.CreateKnowledgeBaseEntryHandler)
+	knowledgeGroup.PUT("/entries/:id", middleware.RequirePermissions(authz.PermissionManage), handlers.UpdateKnowledgeBaseEntryHandler)
+	knowledgeGroup.POST("/entries/:id/view", handlers.RecordKnowledgeBaseEntryViewHandler)
+	knowledgeGroup.DELETE("/entries/:id", middleware.RequirePermissions(authz.PermissionManage), handlers.DeleteKnowledgeBaseEntryHandler)
 }

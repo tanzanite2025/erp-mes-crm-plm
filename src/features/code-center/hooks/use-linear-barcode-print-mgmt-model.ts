@@ -28,8 +28,23 @@ import {
   resolveLinearBarcodePrintLines,
   type LinearBarcodeResolvedPrintLine,
 } from '@/features/code-center/utils/linear-barcode-print-resolver'
+import type { SalesOrder, SalesOrderStatus } from '@/features/trading/data/schema'
+import { getSalesStatusLabel } from '@/features/trading/data/sales-status'
 import { useGetSalesOrderDetail, useGetSalesOrders } from '@/features/trading/sales'
 import { useLanguage } from '@/context/language-provider'
+
+export const LINEAR_BARCODE_PRINTABLE_SALES_ORDER_STATUSES: readonly SalesOrderStatus[] = [
+  'Scheduling',
+]
+
+export function isLinearBarcodePrintableSalesOrder(
+  order: Pick<SalesOrder, 'status'> | null | undefined
+) {
+  return Boolean(
+    order &&
+      LINEAR_BARCODE_PRINTABLE_SALES_ORDER_STATUSES.includes(order.status)
+  )
+}
 
 export function useLinearBarcodePrintMgmtModel() {
   const { t } = useLanguage()
@@ -44,7 +59,10 @@ export function useLinearBarcodePrintMgmtModel() {
   const [issueFeedback, setIssueFeedback] = useState<LinearBarcodeInlineFeedbackState | null>(null)
   const [batchPrintResult, setBatchPrintResult] = useState<BatchPrintResult | null>(null)
   const [resultFilter, setResultFilter] = useState<BatchPrintResultFilter>('all')
-  const ordersQuery = useGetSalesOrders(1, 100, { enabled: true })
+  const ordersQuery = useGetSalesOrders(1, 100, {
+    enabled: true,
+    status: [...LINEAR_BARCODE_PRINTABLE_SALES_ORDER_STATUSES],
+  })
   const detailQuery = useGetSalesOrderDetail(selectedOrderId)
   const protocolQuery = useQuery({
     queryKey: ['code-center', 'linear-barcode', 'print', 'protocol'],
@@ -53,21 +71,29 @@ export function useLinearBarcodePrintMgmtModel() {
 
   const orderOptions = useMemo(
     () =>
-      (ordersQuery.data?.items ?? []).map((order) => ({
-        id: order.id,
-        label: `${order.orderNo} · ${order.customerName}`,
-      })),
+      (ordersQuery.data?.items ?? [])
+        .filter(isLinearBarcodePrintableSalesOrder)
+        .map((order) => ({
+          id: order.id,
+          label: `${order.orderNo} · ${order.customerName}`,
+        })),
     [ordersQuery.data?.items]
   )
 
   const selectedOrder = detailQuery.data
+  const printableSelectedOrder = isLinearBarcodePrintableSalesOrder(selectedOrder)
+    ? selectedOrder
+    : undefined
+  const selectedOrderStatusLabel = selectedOrder
+    ? getSalesStatusLabel(selectedOrder.status, t)
+    : ''
   const resolvedLines = useMemo(() => {
     return resolveLinearBarcodePrintLines({
-      order: selectedOrder,
+      order: printableSelectedOrder,
       protocol: protocolQuery.data,
       t,
     })
-  }, [protocolQuery.data, selectedOrder, t])
+  }, [printableSelectedOrder, protocolQuery.data, t])
 
   useEffect(() => {
     setIssuedSerialByLine({})
@@ -394,6 +420,7 @@ export function useLinearBarcodePrintMgmtModel() {
     protocolQuery,
     orderOptions,
     selectedOrder,
+    selectedOrderStatusLabel,
     resolvedLines,
     previewLines,
     readyCount,

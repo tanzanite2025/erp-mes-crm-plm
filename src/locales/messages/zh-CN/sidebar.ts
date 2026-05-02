@@ -3,6 +3,9 @@ export const sidebar = {
     defaultName: '数字化管理 ERP',
     defaultPlan: '专业版',
   },
+  actions: {
+    expandAllMenus: '点击展开所有菜单',
+  },
   groups: {
     resourceManagement: '资源管理',
     purchaseManagement: '采购管理',
@@ -53,7 +56,6 @@ export const sidebar = {
     personnelCenter: '组织人事',
     leaveManagement: '请假管理',
     hallOfFame: '荣誉榜',
-    printCenter: '打印中心',
     logisticsConfig: '物流',
     logisticsSettings: '物流配置',
     terminalConfig: '终端配置',

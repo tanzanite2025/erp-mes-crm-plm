@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-const EXCLUDED_ROOT_SEGMENTS = new Set(['errors', 'experimental', 'labs'])
+const EXCLUDED_ROOT_SEGMENTS = new Set(['errors', 'experimental'])
 
 export function normalizePath(path) {
   const normalized = path.replace(/\\/g, '/').replace(/\/+$/g, '').replace(/\/+/g, '/')

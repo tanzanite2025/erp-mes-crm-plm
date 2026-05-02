@@ -84,7 +84,8 @@ func TestMapSalesOrderToResponseIncludesAvailableActions(t *testing.T) {
 		actions[action.Action] = action
 	}
 
-	require.True(t, actions["startProduction"].Allowed)
+	require.True(t, actions["startScheduling"].Allowed)
+	require.False(t, actions["startProduction"].Allowed)
 	require.True(t, actions["cancel"].Allowed)
 	require.False(t, actions["createReturn"].Allowed)
 	require.Equal(t, "SALES_ORDER_RETURN_STATUS_NOT_ALLOWED", actions["createReturn"].ReasonCode)

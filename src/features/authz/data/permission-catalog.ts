@@ -188,7 +188,6 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/sidebar-command-assignment': 'settings',
   '/sidebar-command-library': 'settings',
   '/code-center': 'codeCenter',
-  '/print-mgmt': 'settings',
   '/terminal-config': 'settings',
   '/logistics-config': 'settings',
   '/logistics-settings': 'settings',

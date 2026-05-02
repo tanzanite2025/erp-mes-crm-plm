@@ -37,7 +37,7 @@ export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle
                     tabs={visibleTabs} 
                     activeKey={activeTabKey} 
                     actions={actions} 
-                    className='border-b border-dashed py-1! px-4!'
+                    className='border-b border-dashed py-1!'
                 />
             </div>
 

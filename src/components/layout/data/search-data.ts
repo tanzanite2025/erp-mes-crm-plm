@@ -572,14 +572,6 @@ const actionConfigs: CommandItemConfig[] = [
     pinyin: 'xryz',
   },
   {
-    id: 'action-print-labels',
-    href: '/print-mgmt',
-    titleKey: 'commandMenu.items.printLabels',
-    parentKey: 'commandMenu.parents.systemSettings',
-    keywords: ['print', 'label', 'batch', '打印中心'],
-    pinyin: 'dyzx',
-  },
-  {
     id: 'action-approval-center',
     href: '/approval/routing',
     titleKey: 'commandMenu.items.approvalCenter',

@@ -1,9 +1,11 @@
-import { ArrowRight, Box, Zap, Search } from 'lucide-react'
+import { ArrowRight, BookOpenText, Box, Search, Zap } from 'lucide-react'
 import { useLanguage } from '@/context/language-provider'
 import type { SearchItem } from './layout/data/search-data'
+import type { KnowledgeBaseEntry } from '@/features/basic-settings/knowledge-base/data/knowledge-base'
+import { CommandMenuKnowledgeDetailDrawer } from './command-menu-knowledge-detail-drawer'
+import { CommandMenuKnowledgeTab } from './command-menu-knowledge-tab'
 import {
   CommandDialog,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -21,6 +23,9 @@ interface CommandMenuViewProps {
   isSearching: boolean
   groupedItems: Record<string, SearchItem[]>
   asyncResults: SearchItem[]
+  knowledgeEntries: KnowledgeBaseEntry[]
+  selectedKnowledgeEntry: KnowledgeBaseEntry | null
+  onKnowledgeSelect: (entry: KnowledgeBaseEntry | null) => void
   onItemSelect: (href: string) => void
 }
 
@@ -34,6 +39,9 @@ export function CommandMenuView({
   isSearching,
   groupedItems,
   asyncResults,
+  knowledgeEntries,
+  selectedKnowledgeEntry,
+  onKnowledgeSelect,
   onItemSelect,
 }: CommandMenuViewProps) {
   const { t } = useLanguage()
@@ -44,17 +52,21 @@ export function CommandMenuView({
   }
 
   const isInitialState = searchValue === ''
+  const hasBusinessResults = asyncResults.length > 0 || (groupedItems.modules?.length ?? 0) > 0
+  const hasActionResults = (groupedItems.actions?.length ?? 0) > 0
 
   return (
     <CommandDialog
-      modal
+      modal={false}
       open={open}
       onOpenChange={onOpenChange}
-      className='max-w-[calc(100%-2rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-2xl [&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:px-6 [&_[data-slot=command-input-wrapper]_svg]:size-5'
+      requireCloseButton
+      overlayClassName='!bg-transparent'
+      className='!w-[85vw] !max-w-[85vw] overflow-hidden rounded-[32px] border border-sky-500/35 bg-background p-0 shadow-[0_24px_80px_rgba(14,165,233,0.16)] ring-1 ring-sky-500/20 [&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:border-sky-500/20 [&_[data-slot=command-input-wrapper]]:px-6 [&_[data-slot=command-input-wrapper]_svg]:size-5'
     >
-      <div className='pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent' />
+      <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_34%)]' />
 
-      <div className='relative border-b border-dashed'>
+      <div className='relative border-b border-dashed border-sky-500/20'>
         <CommandInput
           placeholder={t('commandMenu.placeholder')}
           className='h-16 border-none bg-transparent text-base focus:ring-0'
@@ -70,17 +82,24 @@ export function CommandMenuView({
 
       <Tabs defaultValue='business' className='flex flex-col'>
         <div className='px-4 pt-2'>
-          <TabsList className='grid w-full grid-cols-2 rounded-2xl bg-muted/50 p-1'>
+          <TabsList className='grid w-full grid-cols-3 rounded-2xl border border-sky-500/15 bg-sky-500/5 p-1'>
             <TabsTrigger
               value='business'
-              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest italic transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm'
+              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
             >
               <Box size={12} />
               {t('commandMenu.headings.data')}
             </TabsTrigger>
             <TabsTrigger
+              value='knowledge'
+              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
+            >
+              <BookOpenText size={12} />
+              {t('commandMenu.headings.knowledgeBase')}
+            </TabsTrigger>
+            <TabsTrigger
               value='actions'
-              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest italic transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm'
+              className='flex items-center gap-2 rounded-xl py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic transition-all data-[state=active]:bg-background data-[state=active]:text-sky-700 data-[state=active]:shadow-sm'
             >
               <Zap size={12} />
               {t('commandMenu.headings.actions')}
@@ -91,12 +110,12 @@ export function CommandMenuView({
         <CommandList className='max-h-none overflow-hidden'>
           <ScrollArea className='h-[500px] max-h-[calc(100dvh-12rem)]'>
             <div className='min-h-full'>
-              <CommandEmpty className='py-24 text-sm italic text-muted-foreground/50'>
-                {t('commandMenu.empty')}
-              </CommandEmpty>
-
               <TabsContent value='business' className='m-0 focus-visible:outline-none'>
                 <div className='space-y-4 p-4'>
+                  {!hasBusinessResults && (
+                    <SearchEmptyState message={t('commandMenu.empty')} />
+                  )}
+
                   {/* Rust Results (Always show all matches if searching) */}
                   {asyncResults.length > 0 && (
                     <CommandGroup
@@ -133,8 +152,17 @@ export function CommandMenuView({
                 </div>
               </TabsContent>
 
+              <CommandMenuKnowledgeTab
+                entries={knowledgeEntries}
+                onSelect={onKnowledgeSelect}
+              />
+
               <TabsContent value='actions' className='m-0 focus-visible:outline-none'>
                 <div className='p-4'>
+                  {!hasActionResults && (
+                    <SearchEmptyState message={t('commandMenu.empty')} />
+                  )}
+
                   {groupedItems.actions && (
                     <CommandGroup
                       heading={categoryLabels.actions}
@@ -165,32 +193,44 @@ export function CommandMenuView({
         </CommandList>
       </Tabs>
 
-      <div className='flex items-center justify-between border-t border-dashed bg-muted/20 px-6 p-3'>
-        <div className='flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>
+      <div className='flex items-center justify-between border-t border-dashed border-sky-500/20 bg-sky-500/5 px-6 p-3'>
+        <div className='flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 italic'>
           <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed bg-background px-1.5 py-0.5 font-mono text-[8px]'>
+            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[8px]'>
               Enter
             </kbd>
             {t('commandMenu.footer.enter')}
           </span>
           <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed bg-background px-1.5 py-0.5 font-mono text-[8px]'>
+            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[8px]'>
               ↑↓
             </kbd>
             {t('commandMenu.footer.arrows')}
           </span>
           <span className='flex items-center gap-1.5'>
-            <kbd className='rounded border border-dashed bg-background px-1.5 py-0.5 font-mono text-[8px]'>
+            <kbd className='rounded border border-dashed border-sky-500/20 bg-background px-1.5 py-0.5 font-mono text-[8px]'>
               Tab
             </kbd>
             {t('commandMenu.footer.tab')}
           </span>
         </div>
-        <div className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/30 italic'>
+        <div className='text-[10px] font-black uppercase tracking-[0.2em] text-sky-600/35 italic'>
           XDFC Intelligent Search v2.1
         </div>
       </div>
+      <CommandMenuKnowledgeDetailDrawer
+        entry={selectedKnowledgeEntry}
+        onClose={() => onKnowledgeSelect(null)}
+      />
     </CommandDialog>
+  )
+}
+
+function SearchEmptyState({ message }: { message: string }) {
+  return (
+    <div className='flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-muted/10 px-4 text-center text-sm font-bold italic text-muted-foreground/50'>
+      {message}
+    </div>
   )
 }
 

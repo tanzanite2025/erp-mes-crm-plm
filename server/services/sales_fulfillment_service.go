@@ -22,16 +22,23 @@ func RecalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.Sal
 		return models.SalesOrder{}, err
 	}
 
+	nextStatus, err := recalculateSalesOrderStatus(&order)
+	if err != nil {
+		return models.SalesOrder{}, err
+	}
+
 	for i := range order.Lines {
 		desiredStatus := "Pending"
-		if strings.TrimSpace(order.Status) == "Canceled" {
+		if nextStatus == "Canceled" {
 			desiredStatus = "Canceled"
 		} else if order.Lines[i].DeliveredQty >= order.Lines[i].Qty-salesDeliveryTolerance {
 			desiredStatus = "Done"
 		} else if order.Lines[i].DeliveredQty > salesDeliveryTolerance {
 			desiredStatus = "InProgress"
-		} else if strings.TrimSpace(order.Status) == "Draft" {
+		} else if nextStatus == "Draft" {
 			desiredStatus = "Draft"
+		} else if nextStatus == "Scheduling" {
+			desiredStatus = "Scheduling"
 		}
 
 		if order.Lines[i].Status != desiredStatus {
@@ -42,10 +49,6 @@ func RecalculateSalesOrderStatusTx(tx *gorm.DB, salesOrderID string) (models.Sal
 		}
 	}
 
-	nextStatus, err := recalculateSalesOrderStatus(&order)
-	if err != nil {
-		return models.SalesOrder{}, err
-	}
 	if nextStatus == order.Status {
 		return order, nil
 	}

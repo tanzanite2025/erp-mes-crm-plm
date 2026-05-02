@@ -5,6 +5,7 @@ describe('isSalesOrderPreassembleScanAllowed', () => {
   it('allows active sales order statuses', () => {
     expect(isSalesOrderPreassembleScanAllowed({ status: 'Draft' })).toBe(true)
     expect(isSalesOrderPreassembleScanAllowed({ status: 'Pending' })).toBe(true)
+    expect(isSalesOrderPreassembleScanAllowed({ status: 'Scheduling' })).toBe(true)
     expect(isSalesOrderPreassembleScanAllowed({ status: 'InProgress' })).toBe(true)
   })
 

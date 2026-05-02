@@ -52,11 +52,14 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
         const container = scrollContainerRef.current
         if (!container) return
 
-        checkScroll()
+        const frameId = window.requestAnimationFrame(() => {
+            checkScroll()
+        })
         container.addEventListener('scroll', checkScroll)
         window.addEventListener('resize', checkScroll)
 
         return () => {
+            window.cancelAnimationFrame(frameId)
             container.removeEventListener('scroll', checkScroll)
             window.removeEventListener('resize', checkScroll)
         }
@@ -72,9 +75,9 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
 
     return (
         <div className={cn(
-            'w-auto border-b bg-background/95 backdrop-blur fixed top-14 md:top-16 right-0 z-40 px-4 py-3',
+            'w-auto border-b bg-background/95 backdrop-blur fixed top-14 md:top-16 z-40 px-4 py-3',
             'transition-all duration-300 ease-in-out',
-            'left-0 md:left-(--header-fixed-left,var(--sidebar-width))',
+            'left-(--header-fixed-left,0px) right-(--header-fixed-right,0px)',
             className
         )}>
             <div className='flex items-center justify-between gap-4 min-w-0 w-full overflow-hidden'>

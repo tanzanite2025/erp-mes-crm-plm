@@ -10,7 +10,6 @@ import {
   FileText,
   Gauge,
   ListChecks,
-  Printer,
   ScanLine,
   Scale,
   ShieldCheck,
@@ -324,12 +323,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         permissionId: permissionIdForPath('/pda-shell'),
       },
       {
-        titleKey: 'sidebar.items.printCenter',
-        url: '/print-mgmt',
-        icon: Printer,
-        permissionId: permissionIdForPath('/print-mgmt'),
-      },
-      {
         titleKey: 'sidebar.items.terminalConfig',
         url: '/terminal-config',
         icon: ScanLine,
@@ -591,12 +584,6 @@ export const sidebarData: SidebarData = {
           url: '/personnel',
           icon: Users,
           permissionId: permissionIdForPath('/personnel'),
-        },
-        {
-          title: '打印中心',
-          url: '/print-mgmt',
-          icon: Printer,
-          permissionId: permissionIdForPath('/print-mgmt'),
         },
         {
           title: '终端配置',

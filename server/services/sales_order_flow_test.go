@@ -36,7 +36,7 @@ func TestRecalculateSalesOrderStatusRules(t *testing.T) {
 
 	status, err := recalculateSalesOrderStatus(order)
 	require.NoError(t, err)
-	require.Equal(t, "InProgress", status)
+	require.Equal(t, "Scheduling", status)
 
 	order.Status = "Canceled"
 	order.Lines[0].DeliveredQty = 10
@@ -77,11 +77,11 @@ func TestRecalculateSalesOrderStatusTxUpdatesPersistedOrder(t *testing.T) {
 		updated = result
 		return nil
 	}))
-	require.Equal(t, "InProgress", updated.Status)
+	require.Equal(t, "Scheduling", updated.Status)
 	require.Len(t, updated.Lines, 1)
-	require.Equal(t, "Pending", updated.Lines[0].Status)
+	require.Equal(t, "Scheduling", updated.Lines[0].Status)
 
 	var persisted models.SalesOrder
 	require.NoError(t, testDB.Where("id = ?", "so-flow-1").First(&persisted).Error)
-	require.Equal(t, "InProgress", persisted.Status)
+	require.Equal(t, "Scheduling", persisted.Status)
 }

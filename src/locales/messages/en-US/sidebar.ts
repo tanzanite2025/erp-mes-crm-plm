@@ -3,6 +3,9 @@ export const sidebar = {
     defaultName: 'Digital Management ERP',
     defaultPlan: 'Professional Edition',
   },
+  actions: {
+    expandAllMenus: 'Click to expand all menus',
+  },
   groups: {
     resourceManagement: 'Resource Management',
     purchaseManagement: 'Purchase Management',
@@ -53,7 +56,6 @@ export const sidebar = {
     personnelCenter: 'Organization & Personnel',
     leaveManagement: 'Leave Management',
     hallOfFame: 'Hall of Fame',
-    printCenter: 'Print Center',
     logisticsConfig: 'Logistics',
     logisticsSettings: 'Logistics Settings',
     terminalConfig: 'Terminal Config',

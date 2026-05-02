@@ -12,7 +12,7 @@ export const configDrawer = {
   },
   themeDescription: 'Choose between system preference, light mode, or dark mode.',
   sidebarDescription: 'Choose between inset, floating, or standard sidebar layout.',
-  layoutDescription: 'Choose between default expanded, compact icon-only, or full layout mode.',
+  layoutDescription: 'Choose between default expanded or full layout mode.',
   directionDescription: 'Choose between left-to-right or right-to-left site direction.',
   sidebarOptions: {
     inset: 'Inset',

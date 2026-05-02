@@ -7,6 +7,7 @@ import { useTheme } from '@/context/theme-provider'
 import { apiFetch } from '@/lib/api-client'
 import { getSearchItems, type SearchItem } from '@/components/layout/data/search-data'
 import { createLogger } from '@/lib/logger'
+import { useCommandMenuKnowledge } from './use-command-menu-knowledge'
 
 const logger = createLogger('useCommandMenu')
 
@@ -15,6 +16,23 @@ export function normalizeSearchHref(href: string) {
     return '/approval/routing'
   }
   return href
+}
+
+function commandItemMatches(item: SearchItem, query: string) {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (normalizedQuery === '') return true
+
+  return [
+    item.title,
+    item.parentTitle,
+    item.href,
+    item.pinyin,
+    ...(item.keywords ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .includes(normalizedQuery)
 }
 
 export function useCommandMenu() {
@@ -28,6 +46,12 @@ export function useCommandMenu() {
   const [debouncedValue, setDebouncedValue] = React.useState('')
 
   const searchItems = React.useMemo(() => getSearchItems(t), [t])
+
+  const {
+    knowledgeEntries,
+    selectedKnowledgeEntry,
+    setSelectedKnowledgeEntry,
+  } = useCommandMenuKnowledge(open, searchValue)
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -89,12 +113,12 @@ export function useCommandMenu() {
   )
 
   const groupedItems = React.useMemo(() => {
-    return searchItems.reduce((acc, item) => {
+    return searchItems.filter((item) => commandItemMatches(item, searchValue)).reduce((acc, item) => {
       if (!acc[item.category]) acc[item.category] = []
       acc[item.category].push(item)
       return acc
     }, {} as Record<string, SearchItem[]>)
-  }, [searchItems])
+  }, [searchItems, searchValue])
 
   const handleNavigate = (href: string) => {
     runCommand(() => navigate({ to: href }))
@@ -110,6 +134,9 @@ export function useCommandMenu() {
     searchValue,
     setSearchValue,
     asyncResults,
+    knowledgeEntries,
+    selectedKnowledgeEntry,
+    setSelectedKnowledgeEntry,
     isSearching,
     groupedItems,
     handleNavigate,

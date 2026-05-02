@@ -1,9 +1,14 @@
-const AUTHENTICATED_ROUTE_MODULES = import.meta.glob('/src/routes/_authenticated/**/*.tsx')
+const AUTHENTICATED_ROUTE_MODULES = import.meta.glob(
+  '/src/routes/_authenticated/**/*.tsx'
+)
 
-const EXCLUDED_ROOT_SEGMENTS = new Set(['errors', 'experimental', 'labs'])
+const EXCLUDED_ROOT_SEGMENTS = new Set(['errors', 'experimental'])
 
 function normalizePath(path: string): string {
-  const normalized = path.replace(/\\/g, '/').replace(/\/+$/g, '').replace(/\/+/g, '/')
+  const normalized = path
+    .replace(/\\/g, '/')
+    .replace(/\/+$/g, '')
+    .replace(/\/+/g, '/')
   return normalized || '/'
 }
 
@@ -23,8 +28,12 @@ function comparePathsBySpecificity(a: string, b: string): number {
     return bSegments.length - aSegments.length
   }
 
-  const aStaticCount = aSegments.filter((segment) => !segment.startsWith(':')).length
-  const bStaticCount = bSegments.filter((segment) => !segment.startsWith(':')).length
+  const aStaticCount = aSegments.filter(
+    (segment) => !segment.startsWith(':')
+  ).length
+  const bStaticCount = bSegments.filter(
+    (segment) => !segment.startsWith(':')
+  ).length
 
   if (aStaticCount !== bStaticCount) {
     return bStaticCount - aStaticCount
@@ -96,7 +105,7 @@ const AUTHENTICATED_ROUTE_PATHS = Array.from(
     ...Object.keys(AUTHENTICATED_ROUTE_MODULES)
       .map((modulePath) => routeModulePathToRoutePath(modulePath))
       .filter((routePath): routePath is string => Boolean(routePath)),
-  ]),
+  ])
 ).sort(comparePathsBySpecificity)
 
 export function getAuthenticatedRoutePaths(): readonly string[] {

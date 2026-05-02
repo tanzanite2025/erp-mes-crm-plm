@@ -110,3 +110,17 @@
     height: 0;
   }
 }
+
+@keyframes sidebar-expand-hint-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-4px);
+  }
+}
+
+.sidebar-expand-hint-arrow {
+  animation: sidebar-expand-hint-nudge 1.4s ease-in-out infinite;
+}

@@ -6,6 +6,7 @@ export const commandMenu = {
     modules: '模块 / 功能',
     actions: '快捷 / 操作',
     data: '数据 / 业务匹配',
+    knowledgeBase: '知识库',
     system: '系统 / 外观',
   },
   footer: {
@@ -123,7 +124,6 @@ export const commandMenu = {
     createRequirement: '发起物料需求',
     startStocktake: '开始物料盘点',
     newAdjustment: '新建调账申请',
-    printLabels: '极速打印中心',
     approvalCenter: '办事审批中心',
   },
 }

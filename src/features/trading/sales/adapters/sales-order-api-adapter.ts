@@ -25,6 +25,9 @@ function normalizeSalesOrderLineStatus(
   if (normalizedStatus === 'inprogress') {
     return 'InProgress'
   }
+  if (normalizedStatus === 'scheduling' || normalizedStatus === 'scheduled') {
+    return 'Scheduling'
+  }
   if (normalizedStatus === 'completed' || normalizedStatus === 'done') {
     return 'Done'
   }
@@ -128,6 +131,9 @@ function normalizeSalesOrderStatus(
     normalizedStatus === 'inprogress'
   ) {
     return 'InProgress'
+  }
+  if (normalizedStatus === 'scheduling' || normalizedStatus === 'scheduled') {
+    return 'Scheduling'
   }
   return 'Pending'
 }

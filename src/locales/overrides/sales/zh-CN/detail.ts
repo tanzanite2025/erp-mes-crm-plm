@@ -6,10 +6,12 @@ export const detail = {
       pendingInstruction: '待执行指令',
       claimFallback: '认领订单内容',
       submitPending: '确认并下达待处理',
+      startScheduling: '进入排产',
       startProduction: '正式下达生产',
       markDone: '标记订单已完成',
       cancelOrder: '作废订单',
       cancelConfirm: '确认作废该订单？',
+      schedulingTriggered: '已进入排产链路',
       productionTriggered: '已根据系统规则触发通知',
       info: {
         orderName: '订单名称',

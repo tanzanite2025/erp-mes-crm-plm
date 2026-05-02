@@ -6,7 +6,6 @@ import { useDirection } from '@/context/direction-provider'
 import { type Collapsible, useLayout } from '@/context/layout-provider'
 import { useTheme } from '@/context/theme-provider'
 import { IconDir } from '@/assets/custom/icon-dir'
-import { IconLayoutCompact } from '@/assets/custom/icon-layout-compact'
 import { IconLayoutDefault } from '@/assets/custom/icon-layout-default'
 import { IconLayoutFull } from '@/assets/custom/icon-layout-full'
 import { IconSidebarFloating } from '@/assets/custom/icon-sidebar-floating'
@@ -414,7 +413,7 @@ function LayoutConfig() {
           setOpen(false)
           setCollapsible(value as Collapsible)
         }}
-        className='grid w-full max-w-md grid-cols-3 gap-4'
+        className='grid w-full max-w-md grid-cols-2 gap-4'
         aria-label={t('configDrawer.sections.layout')}
         aria-describedby='layout-description'
       >
@@ -423,11 +422,6 @@ function LayoutConfig() {
             value: 'default',
             label: t('configDrawer.layoutOptions.default'),
             icon: IconLayoutDefault,
-          },
-          {
-            value: 'icon',
-            label: t('configDrawer.layoutOptions.compact'),
-            icon: IconLayoutCompact,
           },
           {
             value: 'offcanvas',

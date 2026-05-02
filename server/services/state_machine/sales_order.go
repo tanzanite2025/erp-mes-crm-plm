@@ -12,6 +12,7 @@ type SalesOrderStatus string
 const (
 	SalesOrderStatusDraft      SalesOrderStatus = "Draft"
 	SalesOrderStatusPending    SalesOrderStatus = "Pending"
+	SalesOrderStatusScheduling SalesOrderStatus = "Scheduling"
 	SalesOrderStatusInProgress SalesOrderStatus = "InProgress"
 	SalesOrderStatusDone       SalesOrderStatus = "Done"
 	SalesOrderStatusCanceled   SalesOrderStatus = "Canceled"
@@ -21,6 +22,7 @@ type SalesOrderAction string
 
 const (
 	SalesOrderActionSubmitPending   SalesOrderAction = "submitPending"
+	SalesOrderActionStartScheduling SalesOrderAction = "startScheduling"
 	SalesOrderActionStartProduction SalesOrderAction = "startProduction"
 	SalesOrderActionMarkDone        SalesOrderAction = "markDone"
 	SalesOrderActionCancel          SalesOrderAction = "cancel"
@@ -49,7 +51,8 @@ func SalesOrderStatusCatalog() []SalesOrderStatusDefinition {
 	return []SalesOrderStatusDefinition{
 		{Status: SalesOrderStatusDraft, Label: "草稿", Phase: "draft", IsTerminal: false, DefaultResolve: false},
 		{Status: SalesOrderStatusPending, Label: "待处理", Phase: "pending", IsTerminal: false, DefaultResolve: false},
-		{Status: SalesOrderStatusInProgress, Label: "正式下达", Phase: "active", IsTerminal: false, DefaultResolve: false},
+		{Status: SalesOrderStatusScheduling, Label: "排产中", Phase: "scheduling", IsTerminal: false, DefaultResolve: false},
+		{Status: SalesOrderStatusInProgress, Label: "生产中", Phase: "active", IsTerminal: false, DefaultResolve: false},
 		{Status: SalesOrderStatusDone, Label: "已完成", Phase: "done", IsTerminal: true, DefaultResolve: true},
 		{Status: SalesOrderStatusCanceled, Label: "已作废", Phase: "cancelled", IsTerminal: true, DefaultResolve: true},
 	}
@@ -61,6 +64,8 @@ func NormalizeSalesOrderStatus(raw string) SalesOrderStatus {
 		return SalesOrderStatusDraft
 	case "pending":
 		return SalesOrderStatusPending
+	case "scheduling", "scheduled", "inplanning", "in_planning":
+		return SalesOrderStatusScheduling
 	case "inprogress", "in_progress":
 		return SalesOrderStatusInProgress
 	case "done", "completed":
@@ -76,6 +81,7 @@ func IsKnownSalesOrderStatus(status SalesOrderStatus) bool {
 	switch status {
 	case SalesOrderStatusDraft,
 		SalesOrderStatusPending,
+		SalesOrderStatusScheduling,
 		SalesOrderStatusInProgress,
 		SalesOrderStatusDone,
 		SalesOrderStatusCanceled:
@@ -102,6 +108,10 @@ func CanTransitionSalesOrderStatus(currentRaw string, targetRaw string) GuardRes
 			return Allow()
 		}
 	case SalesOrderStatusPending:
+		if target == SalesOrderStatusScheduling || target == SalesOrderStatusCanceled {
+			return Allow()
+		}
+	case SalesOrderStatusScheduling:
 		if target == SalesOrderStatusInProgress || target == SalesOrderStatusCanceled {
 			return Allow()
 		}
@@ -117,7 +127,7 @@ func CanTransitionSalesOrderStatus(currentRaw string, targetRaw string) GuardRes
 func CanCancelSalesOrder(order models.SalesOrder) GuardResult {
 	status := NormalizeSalesOrderStatus(order.Status)
 	switch status {
-	case SalesOrderStatusDraft, SalesOrderStatusPending:
+	case SalesOrderStatusDraft, SalesOrderStatusPending, SalesOrderStatusScheduling:
 		return Allow()
 	case SalesOrderStatusCanceled:
 		return Deny(SalesOrderDenyCancelNotAllowed, "order already canceled")
@@ -130,6 +140,8 @@ func CanPerformSalesOrderAction(order models.SalesOrder, action SalesOrderAction
 	switch action {
 	case SalesOrderActionSubmitPending:
 		return CanTransitionSalesOrderStatus(order.Status, string(SalesOrderStatusPending))
+	case SalesOrderActionStartScheduling:
+		return CanTransitionSalesOrderStatus(order.Status, string(SalesOrderStatusScheduling))
 	case SalesOrderActionStartProduction:
 		return CanTransitionSalesOrderStatus(order.Status, string(SalesOrderStatusInProgress))
 	case SalesOrderActionMarkDone:

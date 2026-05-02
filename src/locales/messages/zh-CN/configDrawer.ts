@@ -12,7 +12,7 @@ export const configDrawer = {
   },
   themeDescription: '在跟随系统、浅色与深色模式之间切换。',
   sidebarDescription: '在内嵌、浮动或标准侧边栏样式之间切换。',
-  layoutDescription: '在默认展开、紧凑图标或完整布局模式之间切换。',
+  layoutDescription: '在默认展开或完整布局模式之间切换。',
   directionDescription: '在从左到右和从右到左方向之间切换。',
   sidebarOptions: {
     inset: '内嵌',

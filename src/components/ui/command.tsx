@@ -31,13 +31,19 @@ function CommandDialog({
   description = 'Search for a command to run...',
   children,
   className,
+  commandClassName,
+  overlayClassName,
   showCloseButton = true,
+  requireCloseButton = false,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
+  commandClassName?: string
+  overlayClassName?: string
   showCloseButton?: boolean
+  requireCloseButton?: boolean
 }) {
   return (
     <Dialog {...props}>
@@ -47,9 +53,13 @@ function CommandDialog({
       </DialogHeader>
       <DialogContent
         className={cn('overflow-hidden p-0', className)}
+        overlayClassName={overlayClassName}
+        size='full'
         showCloseButton={showCloseButton}
+        onEscapeKeyDown={requireCloseButton ? (event) => event.preventDefault() : undefined}
+        onInteractOutside={requireCloseButton ? (event) => event.preventDefault() : undefined}
       >
-        <Command className='**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5'>
+        <Command shouldFilter={false} className={cn('**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5', commandClassName)}>
           {children}
         </Command>
       </DialogContent>
@@ -96,12 +106,13 @@ function CommandList({
 }
 
 function CommandEmpty({
+  className,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
   return (
     <CommandPrimitive.Empty
       data-slot='command-empty'
-      className='py-6 text-center text-sm'
+      className={cn('py-6 text-center text-sm', className)}
       {...props}
     />
   )
