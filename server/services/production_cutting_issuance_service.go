@@ -13,6 +13,7 @@ import (
 	"xdfc-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CuttingIssuanceBatchRequest struct {
@@ -182,9 +183,13 @@ func hasModelIntersection(valuesA []string, valuesB []string) bool {
 	return false
 }
 
-func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionRequest) (*salesOrderLineSnapshot, error) {
+func loadSalesOrderLineSnapshot(tx *gorm.DB, req CreateCuttingIssuanceExecutionRequest, lock bool) (*salesOrderLineSnapshot, error) {
 	var order models.SalesOrder
-	if err := tx.Preload("Lines").Where("id = ?", req.OrderID).First(&order).Error; err != nil {
+	query := tx.Preload("Lines").Where("id = ?", req.OrderID)
+	if lock {
+		query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	if err := query.First(&order).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("orderId not found")
 		}
@@ -453,10 +458,23 @@ func CreateCuttingIssuanceExecution(
 
 	var created models.CuttingIssuanceExecution
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		lineSnapshot, err := loadSalesOrderLineSnapshot(tx, req)
+		// 1. 锁定并加载订单行快照 (防止并发重入)
+		lineSnapshot, err := loadSalesOrderLineSnapshot(tx, req, true)
 		if err != nil {
 			return err
 		}
+
+		// 2. 幂等性检查：防止对同一订单行重复下发领料
+		var existingCount int64
+		if err := tx.Model(&models.CuttingIssuanceExecution{}).
+			Where("order_id = ? AND sales_order_line_no = ?", req.OrderID, req.SalesOrderLineNo).
+			Count(&existingCount).Error; err != nil {
+			return err
+		}
+		if existingCount > 0 {
+			return ErrCuttingIssuanceAlreadyExists
+		}
+
 		templateSnapshot, err := loadCuttingPlanSnapshot(tx, req.TemplateID)
 		if err != nil {
 			return err

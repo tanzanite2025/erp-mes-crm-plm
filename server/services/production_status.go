@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	ErrInvalidProductionPlanStatus = errors.New("invalid production plan status")
-	ErrInvalidProductionTaskStatus = errors.New("invalid production task status")
+	ErrInvalidProductionPlanStatus  = errors.New("invalid production plan status")
+	ErrInvalidProductionTaskStatus  = errors.New("invalid production task status")
+	ErrCuttingIssuanceAlreadyExists = errors.New("[CONFLICT] 该订单行已执行过领料下发，不可重复操作")
 )
 
 var productionPlanStatusSet = map[string]struct{}{
