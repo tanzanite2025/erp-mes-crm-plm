@@ -403,6 +403,12 @@ func CreateUserHandler(c *gin.Context) {
 		return
 	}
 
+	normalizedRole := strings.ToLower(strings.TrimSpace(req.Role))
+	if normalizedRole != "" && !hasContextPermission(c, authz.PermissionManage) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "[SECURITY] Only admin can assign account roles during user creation"})
+		return
+	}
+
 	// --- [23505_FIX] 唯一键冲突预处理 ---
 	var existing models.User
 	if err := db.DB.Unscoped().Where("LOWER(username) = ?", strings.ToLower(req.Username)).First(&existing).Error; err == nil {
@@ -431,7 +437,7 @@ func CreateUserHandler(c *gin.Context) {
 		FirstName:   req.FirstName,
 		LastName:    req.LastName,
 		Status:      req.Status,
-		Role:        strings.ToLower(strings.TrimSpace(req.Role)),
+		Role:        normalizedRole,
 		EmployeeID:  req.EmployeeID,
 	}
 	if strings.TrimSpace(user.ID) == "" {

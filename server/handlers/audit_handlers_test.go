@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
 
@@ -37,6 +38,7 @@ func TestGetDataTimelineHandlerReturnsCanonicalAndAliasLogsForCanonicalQuery(t *
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=sales-order&target_id=so-1", nil)
+	ctx.Set("permissions", []string{authz.MenuTrading})
 
 	GetDataTimelineHandler(ctx)
 
@@ -68,6 +70,7 @@ func TestGetDataTimelineHandlerReturnsStoredLegacyObjectDiffAsIs(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=customer&target_id=cust-1", nil)
+	ctx.Set("permissions", []string{authz.MenuTrading})
 
 	GetDataTimelineHandler(ctx)
 

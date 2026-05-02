@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"xdfc-server/authz"
 	"xdfc-server/db"
+	"xdfc-server/dependencies"
 	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +21,7 @@ func setupCreateUserHandlerTestDB(t *testing.T) {
 	t.Helper()
 
 	prevDB := db.DB
-	testDB, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	testDB, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("open sqlite failed: %v", err)
 	}
@@ -71,6 +74,21 @@ func setupCreateUserHandlerTestDB(t *testing.T) {
 		t.Fatalf("create employees table failed: %v", err)
 	}
 
+	if err := testDB.Exec(`
+		CREATE TABLE roles (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			role_id TEXT NOT NULL UNIQUE,
+			label TEXT,
+			color TEXT,
+			permissions TEXT
+		);
+	`).Error; err != nil {
+		t.Fatalf("create roles table failed: %v", err)
+	}
+
 	db.DB = testDB
 	t.Cleanup(func() {
 		db.DB = prevDB
@@ -81,15 +99,22 @@ func setupCreateUserHandlerTestDB(t *testing.T) {
 	})
 }
 
-func performCreateUserRequest(requestBody string) *httptest.ResponseRecorder {
+func performCreateUserRequestWithPermissions(requestBody string, permissions []string) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/users", strings.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	ctx.Request = req
+	if permissions != nil {
+		ctx.Set("permissions", permissions)
+	}
 	CreateUserHandler(ctx)
 	return recorder
+}
+
+func performCreateUserRequest(requestBody string) *httptest.ResponseRecorder {
+	return performCreateUserRequestWithPermissions(requestBody, []string{authz.PermissionUserCreate})
 }
 
 func performBindUserEmployeeRequest(userID string, requestBody string) *httptest.ResponseRecorder {
@@ -206,6 +231,70 @@ func TestCreateUserHandlerAllowsEmployeeBindingWithCleanPayloads(t *testing.T) {
 	if recorder.Code != http.StatusCreated {
 		t.Fatalf("expected 201 when permission fields are absent, got %d body=%s", recorder.Code, recorder.Body.String())
 	}
+}
+
+func TestCreateUserHandlerRejectsRoleAssignmentWithoutManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCreateUserHandlerTestDB(t)
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO roles (id, role_id, label, color, permissions)
+		VALUES (?, ?, ?, ?, ?)
+	`, "role-system-admin", "system-admin", "System Admin", "bg-rose-500/10", `[
+		"perm_manage",
+		"user_view"
+	]`).Error)
+
+	requestBody := `{"username":"elevated-user","password":"secure123","email":"elevated@example.com","status":"active","role":"system-admin"}`
+	recorder := performCreateUserRequest(requestBody)
+
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "assign account roles")
+
+	var count int64
+	require.NoError(t, db.DB.Model(&models.User{}).Where("username = ?", "elevated-user").Count(&count).Error)
+	require.EqualValues(t, 0, count)
+}
+
+func TestCreateUserHandlerAllowsRoleAssignmentWithManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCreateUserHandlerTestDB(t)
+
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO roles (id, role_id, label, color, permissions)
+		VALUES (?, ?, ?, ?, ?)
+	`, "role-system-admin", "system-admin", "System Admin", "bg-rose-500/10", `[
+		"perm_manage",
+		"user_view"
+	]`).Error)
+
+	requestBody := `{"username":"managed-user","password":"secure123","email":"managed@example.com","status":"active","role":"system-admin"}`
+	recorder := performCreateUserRequestWithPermissions(requestBody, []string{authz.PermissionUserCreate, authz.PermissionManage})
+
+	require.Equal(t, http.StatusCreated, recorder.Code, recorder.Body.String())
+
+	var created models.User
+	require.NoError(t, db.DB.Where("username = ?", "managed-user").First(&created).Error)
+	require.Equal(t, "system-admin", created.Role)
+
+	profile := dependencies.ResolveEffectiveAccessProfileForUser(created)
+	require.Contains(t, profile.Permissions, authz.PermissionManage)
+	require.Contains(t, profile.Permissions, authz.PermissionUserView)
+}
+
+func TestCreateUserHandlerRejectsAdminUsernameWithoutManagePermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupCreateUserHandlerTestDB(t)
+
+	requestBody := `{"username":"admin","password":"secure123","email":"admin@example.com","status":"active"}`
+	recorder := performCreateUserRequest(requestBody)
+
+	require.Equal(t, http.StatusForbidden, recorder.Code, recorder.Body.String())
+	require.Contains(t, recorder.Body.String(), "Only admin can create admin accounts")
+
+	var count int64
+	require.NoError(t, db.DB.Model(&models.User{}).Where("LOWER(username) = ?", "admin").Count(&count).Error)
+	require.EqualValues(t, 0, count)
 }
 
 func TestBindUserEmployeeHandlerBindsEmployeeWithoutMirroringPermission(t *testing.T) {

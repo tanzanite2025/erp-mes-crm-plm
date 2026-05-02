@@ -96,7 +96,8 @@ const (
 )
 
 const (
-	ActionProductionLineUpdate = "action_production_line_update"
+	ActionProductionLineUpdate  = "action_production_line_update"
+	ActionProductionPlanManage  = "action_production_plan_manage"
 )
 
 const (
@@ -178,6 +179,7 @@ var AdminFallbackPermissions = []string{
 	ActionEmployeeImportPreview,
 	ActionEmployeeImportCommit,
 	ActionProductionLineUpdate,
+	ActionProductionPlanManage,
 	ActionCuttingSizeInventoryRecord,
 	ActionApprovalReview,
 	MenuPDA,
