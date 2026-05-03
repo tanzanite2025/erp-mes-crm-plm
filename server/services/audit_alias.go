@@ -31,6 +31,18 @@ var auditModuleAliasMap = map[string][]string{
 		AuditModuleInventory,
 		"Inventory",
 	},
+	AuditModuleShipment: {
+		AuditModuleShipment,
+		"Shipment",
+	},
+	AuditModuleLogistics: {
+		AuditModuleLogistics,
+		"Logistics",
+	},
+	AuditModulePackagingAssembly: {
+		AuditModulePackagingAssembly,
+		"PackagingAssembly",
+	},
 	AuditModuleChangeOrder: {
 		AuditModuleChangeOrder,
 		"ChangeOrder",

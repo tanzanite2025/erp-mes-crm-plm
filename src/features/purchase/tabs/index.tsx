@@ -16,6 +16,14 @@ export function SupplierMgmt() {
         icon={Factory}
         title={t('purchase.suppliers.title')}
         description={t('purchase.suppliers.description')}
+        statusBadge={
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.supplier}
+            targetName={t('purchase.suppliers.title')}
+            label={t('common.audit.trigger')}
+            className='h-10 rounded-full px-4'
+          />
+        }
       />
       <SupplierList />
     </div>

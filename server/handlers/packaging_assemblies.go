@@ -10,7 +10,7 @@ import (
 )
 
 func CreatePackagingAssemblyCaptureSessionHandler(c *gin.Context) {
-	session, err := services.CreatePackagingAssemblyCaptureSession()
+	session, err := services.CreatePackagingAssemblyCaptureSession(auditContextFromGin(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "[PACKAGING_ASSEMBLY] failed to create capture session: " + err.Error()})
 		return
@@ -42,6 +42,7 @@ func SubmitPackagingAssemblyCaptureSessionHandler(c *gin.Context) {
 	}
 
 	session, err := services.SubmitPackagingAssemblyCaptureSession(
+		auditContextFromGin(c),
 		c.Param("sessionId"),
 		input,
 		"",

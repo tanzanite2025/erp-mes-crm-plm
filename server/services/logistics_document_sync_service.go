@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"xdfc-server/models"
@@ -9,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func SyncLogisticsBusinessDocumentTx(tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
+func SyncLogisticsBusinessDocumentTx(ctx context.Context, tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
 	if tx == nil || record == nil {
 		return nil
 	}
@@ -18,15 +19,15 @@ func SyncLogisticsBusinessDocumentTx(tx *gorm.DB, record *models.LogisticsRecord
 	status := strings.TrimSpace(nextStatus)
 	switch logisticsType {
 	case "Receipt":
-		return syncPurchaseLogisticsStatusTx(tx, record, status)
+		return syncPurchaseLogisticsStatusTx(ctx, tx, record, status)
 	case "Shipment":
-		return syncSalesLogisticsStatusTx(tx, record, status)
+		return syncSalesLogisticsStatusTx(ctx, tx, record, status)
 	default:
 		return nil
 	}
 }
 
-func syncPurchaseLogisticsStatusTx(tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
+func syncPurchaseLogisticsStatusTx(ctx context.Context, tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
 	purchaseOrderID := strings.TrimSpace(record.PurchaseOrderID)
 	if purchaseOrderID == "" {
 		return nil
@@ -51,13 +52,15 @@ func syncPurchaseLogisticsStatusTx(tx *gorm.DB, record *models.LogisticsRecord, 
 		if err := tx.Model(&order).Update("status", order.Status).Error; err != nil {
 			return err
 		}
-		return DispatchPurchaseOrderStatusChangedTx(tx, order, previousStatus, order.Status, "", "")
+		actorID, operator := logisticsBusinessIdentityFromContext(ctx)
+		return DispatchPurchaseOrderStatusChangedTx(tx, order, previousStatus, order.Status, actorID, operator)
 	default:
 		return nil
 	}
 }
 
-func syncSalesLogisticsStatusTx(tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
+func syncSalesLogisticsStatusTx(ctx context.Context, tx *gorm.DB, record *models.LogisticsRecord, nextStatus string) error {
+	_ = ctx
 	_ = tx
 	_ = record
 	_ = nextStatus

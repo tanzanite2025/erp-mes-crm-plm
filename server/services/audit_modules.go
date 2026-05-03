@@ -4,19 +4,22 @@ package services
 // Registry, alias, order, and stats responsibilities have been split into
 // audit_registry.go, audit_alias.go, and audit_stats.go.
 const (
-	AuditModuleSalesOrder     = "sales-order"
-	AuditModulePurchaseOrder  = "purchase-order"
-	AuditModuleCustomer       = "customer"
-	AuditModuleSupplier       = "supplier"
-	AuditModuleEmployee       = "employee"
-	AuditModuleMaterial       = "material"
-	AuditModuleInventory      = "inventory"
-	AuditModuleChangeOrder    = "change-order"
-	AuditModuleBOM            = "bom"
-	AuditModuleUser           = "user"
-	AuditModuleUserPermission = "user-permission"
-	AuditModuleRole           = "role"
-	AuditModuleProductionLine = "production-line"
+	AuditModuleSalesOrder        = "sales-order"
+	AuditModulePurchaseOrder     = "purchase-order"
+	AuditModuleCustomer          = "customer"
+	AuditModuleSupplier          = "supplier"
+	AuditModuleEmployee          = "employee"
+	AuditModuleMaterial          = "material"
+	AuditModuleInventory         = "inventory"
+	AuditModuleShipment          = "shipment"
+	AuditModuleLogistics         = "logistics"
+	AuditModulePackagingAssembly = "packaging-assembly"
+	AuditModuleChangeOrder       = "change-order"
+	AuditModuleBOM               = "bom"
+	AuditModuleUser              = "user"
+	AuditModuleUserPermission    = "user-permission"
+	AuditModuleRole              = "role"
+	AuditModuleProductionLine    = "production-line"
 )
 
 const (

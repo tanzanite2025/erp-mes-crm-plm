@@ -12,8 +12,10 @@ import {
   Smartphone,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { renderBwipBarcode } from '@/lib/bwip-renderer'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -304,6 +306,15 @@ export default function PackagingAssembly() {
         description={copy.description}
         icon={Boxes}
       />
+
+      <div className='flex justify-end'>
+        <AuditTimelineTriggerButton
+          module={AUDIT_MODULES.packagingAssembly}
+          targetName={copy.title}
+          label='审计'
+          className='h-10 md:h-11 rounded-full px-4 md:px-5'
+        />
+      </div>
       <PackagingAssemblyPrintDialog
         open={isPrintDialogOpen}
         onOpenChange={(open) => {
@@ -460,6 +471,13 @@ function AssemblyRecord({
           </div>
         </div>
         <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.packagingAssembly}
+            targetId={assembly.id}
+            targetName={assembly.packageCode}
+            iconOnly
+            className='size-8 rounded-full border-dashed px-0'
+          />
           <div className='flex items-center justify-center rounded-md border border-dashed border-border bg-white p-1.5'>
             <PackagingQrCanvas
               code={assembly.packageCode}

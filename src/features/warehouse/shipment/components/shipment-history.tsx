@@ -2,7 +2,9 @@
 
 import { History as HistoryIcon, Send, Trash2, RotateCcw, Link as LinkIcon, Database } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { canOpenRouteEntryNonBlocking } from '@/features/authz/guards/route-entry-access'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -136,6 +138,13 @@ export function ShipmentHistory({
                     <td className='px-4 md:px-6 py-3 md:py-4 text-[8px] md:text-[9px] font-mono font-bold text-muted-foreground/40 whitespace-nowrap'>{record.shipmentDate}</td>
                     <td className='px-4 md:px-6 py-3 md:py-4 text-right rounded-r-xl md:rounded-r-2xl'>
                       <div className='flex justify-end gap-1.5 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100'>
+                        <AuditTimelineTriggerButton
+                          module={AUDIT_MODULES.shipment}
+                          targetId={record.id}
+                          targetName={item?.name || record.materialName || t('warehouse.shipment.history.masterRecord')}
+                          iconOnly
+                          className='size-7 md:size-8 rounded-full border-dashed px-0 text-slate-500 hover:text-slate-900'
+                        />
                         {record.status === 'DRAFT' && (
                           <>
                             <Button

@@ -13,6 +13,7 @@ import {
   Search,
   Truck,
 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/shipping-management/logistics'
@@ -196,14 +198,22 @@ export function LogisticsMgmt() {
               {t('trading.logistics.pageDescription')}
             </p>
           </div>
-          <Button
-            size='sm'
-            className='h-11 px-6 rounded-full shadow-lg shadow-primary/20 bg-primary font-black text-[10px] uppercase tracking-widest gap-2'
-            onClick={handleAdd}
-          >
-            <Plus className='h-4 w-4' />
-            {t('trading.logistics.bindShipment')}
-          </Button>
+          <div className='flex items-center gap-3'>
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.logistics}
+              targetName={t('trading.logistics.pageTitle')}
+              label={t('common.audit.trigger')}
+              className='h-11 rounded-full px-5'
+            />
+            <Button
+              size='sm'
+              className='h-11 px-6 rounded-full shadow-lg shadow-primary/20 bg-primary font-black text-[10px] uppercase tracking-widest gap-2'
+              onClick={handleAdd}
+            >
+              <Plus className='h-4 w-4' />
+              {t('trading.logistics.bindShipment')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -292,6 +302,13 @@ export function LogisticsMgmt() {
                     </div>
                   </div>
                   <div className='flex items-center gap-1'>
+                    <AuditTimelineTriggerButton
+                      module={AUDIT_MODULES.logistics}
+                      targetId={record.id}
+                      targetName={record.trackingNo || record.orderNo}
+                      iconOnly
+                      className='size-9 rounded-xl border-dashed hover:bg-primary/10 hover:text-primary'
+                    />
                     <Button
                       size='icon'
                       variant='ghost'
@@ -418,22 +435,33 @@ export function LogisticsMgmt() {
                         </span>
                       ) : null}
                     </div>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      onClick={() => void handleRefreshTracking()}
-                      disabled={!selectedTrackingNo || refreshTrackingMutation.isPending}
-                      className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
-                    >
-                      {refreshTrackingMutation.isPending ? (
-                        <Loader2 className='me-2 size-3.5 animate-spin' />
-                      ) : (
-                        <RefreshCw className='me-2 size-3.5' />
-                      )}
-                      {refreshTrackingMutation.isPending
-                        ? t('trading.logistics.detailRefreshing')
-                        : t('trading.logistics.detailRefresh')}
-                    </Button>
+                    <div className='flex flex-wrap items-center justify-end gap-2'>
+                      {displayRecord ? (
+                        <AuditTimelineTriggerButton
+                          module={AUDIT_MODULES.logistics}
+                          targetId={displayRecord.id}
+                          targetName={displayRecord.trackingNo || displayRecord.orderNo}
+                          label={t('common.audit.trigger')}
+                          className='h-9 rounded-full px-4 text-[10px]'
+                        />
+                      ) : null}
+                      <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => void handleRefreshTracking()}
+                        disabled={!selectedTrackingNo || refreshTrackingMutation.isPending}
+                        className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                      >
+                        {refreshTrackingMutation.isPending ? (
+                          <Loader2 className='me-2 size-3.5 animate-spin' />
+                        ) : (
+                          <RefreshCw className='me-2 size-3.5' />
+                        )}
+                        {refreshTrackingMutation.isPending
+                          ? t('trading.logistics.detailRefreshing')
+                          : t('trading.logistics.detailRefresh')}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

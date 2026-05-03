@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { AuditStatusDisplay, type AuditStatusDisplayMeta } from '@/components/common/audit-status-display'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { getDeletedPurchaseOrders } from '../../purchase'
 import { type PurchaseOrderListItem } from '../../data/schema'
@@ -246,7 +248,16 @@ export function PurchaseOrderLogs() {
                             </p>
                           </div>
                         </div>
-                        <AuditStatusDisplay meta={getDeletedOrderStatusMeta(locale)} badgeClassName='px-4 py-1' />
+                        <div className='flex items-center gap-2'>
+                          <AuditTimelineTriggerButton
+                            module={AUDIT_MODULES.purchaseOrder}
+                            targetId={order.id}
+                            targetName={order.orderNo}
+                            iconOnly
+                            className='size-8 rounded-full border-dashed'
+                          />
+                          <AuditStatusDisplay meta={getDeletedOrderStatusMeta(locale)} badgeClassName='px-4 py-1' />
+                        </div>
                       </div>
                       <div className='grid grid-cols-3 gap-4'>
                         <div>

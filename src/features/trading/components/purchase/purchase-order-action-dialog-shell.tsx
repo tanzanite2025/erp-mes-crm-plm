@@ -11,7 +11,7 @@ import {
 
 interface PurchaseOrderActionDialogShellProps {
   open: boolean
-  title: string
+  title: ReactNode
   description: string
   totalLabel: string
   totalAmount: string

@@ -3,10 +3,12 @@ import {
   type AuditStatusDisplayMeta,
   AuditStatusDisplay,
 } from '@/components/common/audit-status-display'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { type PurchaseOrder } from '../../data/schema'
 import { getPurchaseStatusDisplayMeta } from '../../data/purchase-status'
 
@@ -124,6 +126,12 @@ export function PurchaseOrderListToolbar({
           <Plus className='h-4 w-4' />
           {t('purchase.orders.addOrder')}
         </Button>
+        <AuditTimelineTriggerButton
+          module={AUDIT_MODULES.purchaseOrder}
+          targetName={t('purchase.orders.title')}
+          label={t('common.audit.trigger')}
+          className='h-11 w-full rounded-full px-6 sm:w-auto'
+        />
       </div>
       {financeFilterStatus !== 'ready' ? (
         <div className='flex w-full items-center justify-end gap-3 text-right text-[9px] font-black uppercase tracking-widest text-muted-foreground/50'>

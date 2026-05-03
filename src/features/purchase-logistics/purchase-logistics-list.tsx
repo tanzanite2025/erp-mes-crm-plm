@@ -8,6 +8,7 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 import { Truck, Package, Search, ChevronRight, MapPin, Loader2, RefreshCw } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Input } from '@/components/ui/input'
@@ -16,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import {
@@ -152,22 +154,31 @@ function PurchaseLogisticsDetailSheet({ record }: { record: PurchaseLogisticsRec
               ) : null}
             </div>
 
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => void handleRefreshTracking()}
-              disabled={!record.trackingNo || refreshTrackingMutation.isPending}
-              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
-            >
-              {refreshTrackingMutation.isPending ? (
-                <Loader2 className='me-2 size-3.5 animate-spin' />
-              ) : (
-                <RefreshCw className='me-2 size-3.5' />
-              )}
-              {refreshTrackingMutation.isPending
-                ? t('purchase.logistics.detailRefreshing')
-                : t('purchase.logistics.detailRefresh')}
-            </Button>
+            <div className='flex flex-wrap items-center justify-end gap-2'>
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.logistics}
+                targetId={record.id}
+                targetName={record.trackingNo || record.orderNo}
+                label={t('common.audit.trigger')}
+                className='h-9 rounded-full px-4 text-[10px]'
+              />
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => void handleRefreshTracking()}
+                disabled={!record.trackingNo || refreshTrackingMutation.isPending}
+                className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+              >
+                {refreshTrackingMutation.isPending ? (
+                  <Loader2 className='me-2 size-3.5 animate-spin' />
+                ) : (
+                  <RefreshCw className='me-2 size-3.5' />
+                )}
+                {refreshTrackingMutation.isPending
+                  ? t('purchase.logistics.detailRefreshing')
+                  : t('purchase.logistics.detailRefresh')}
+              </Button>
+            </div>
           </div>
         </SheetHeader>
 
@@ -315,7 +326,18 @@ export function PurchaseLogisticsList() {
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => <PurchaseLogisticsDetailSheet record={row.original} />,
+      cell: ({ row }) => (
+        <div className='flex items-center justify-end gap-2'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.logistics}
+            targetId={row.original.id}
+            targetName={row.original.trackingNo || row.original.orderNo}
+            iconOnly
+            className='size-8 rounded-full border-dashed'
+          />
+          <PurchaseLogisticsDetailSheet record={row.original} />
+        </div>
+      ),
     },
   ]
 

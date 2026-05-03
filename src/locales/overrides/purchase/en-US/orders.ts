@@ -146,7 +146,10 @@ export const orders = {
     totalAmount: 'Returned Amount',
     empty: 'No purchase return records',
     emptyDescription: 'If goods are rejected during arrival inspection before inbound, register the returned quantity here.',
+    emptySelection: 'Select a purchase order to view returnable lines',
+    emptySelectionDescription: 'The left panel lists arrived purchase orders that still have returnable quantities. Select one to inspect the lines for this return.',
     noEligibleOrders: 'There are currently no purchase orders eligible for pre-inbound return.',
+    noEligibleOrdersDescription: 'Only arrived purchase orders with unresolved pre-inbound issue quantities will appear here for return registration.',
     tip: 'This action only reduces the purchase order receivable balance. It does not create negative inventory or an inventory return transaction.',
   },
   headerFields: {

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useNonBlockingPermissionActions } from '@/features/authz/hooks/use-permission-passthrough'
 import { useAuthStore } from '@/stores/auth-store'
 import { type PurchaseOrder, type PurchaseOrderListItem } from '../../data/schema'
@@ -89,7 +91,20 @@ export function PurchaseOrderActionDialog({
   return (
     <PurchaseOrderActionDialogShell
       open={open}
-      title={dialogTitle}
+      title={
+        <div className='flex items-center justify-between gap-3'>
+          <span>{dialogTitle}</span>
+          {activeOrder?.id ? (
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.purchaseOrder}
+              targetId={activeOrder.id}
+              targetName={activeOrder.orderNo}
+              iconOnly
+              className='size-9 rounded-full border-dashed'
+            />
+          ) : null}
+        </div>
+      }
       description={t('purchase.orders.dialogDescription')}
       totalLabel={t('purchase.orders.dialogTotal')}
       totalAmount={totalAmount}

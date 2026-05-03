@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -79,7 +80,53 @@ type PackagingAssemblyListQuery struct {
 	PackageCode string
 }
 
-func CreatePackagingAssemblyCaptureSession() (PackagingAssemblyCaptureSessionResponse, error) {
+func packagingAssemblyAuditDiff(before map[string]any, payload map[string]any) json.RawMessage {
+	diff, _ := json.Marshal(map[string]any{
+		"before":  before,
+		"payload": payload,
+	})
+	return diff
+}
+
+func packagingAssemblyAuditIdentityFromContext(ctx context.Context, fallbackOperator string) (string, string) {
+	return inventoryAuditIdentityFromContext(ctx, fallbackOperator)
+}
+
+func writePackagingAssemblyAuditEntryWithContext(ctx context.Context, tx *gorm.DB, targetID string, action string, before map[string]any, payload map[string]any, fallbackOperator string) error {
+	operator, ip := packagingAssemblyAuditIdentityFromContext(ctx, fallbackOperator)
+	return defaultServiceRuntime().auditLogger.Write(tx, AuditEntry{
+		Module:   "PackagingAssembly",
+		TargetID: strings.TrimSpace(targetID),
+		Action:   strings.TrimSpace(action),
+		Diff:     packagingAssemblyAuditDiff(before, payload),
+		Operator: strings.TrimSpace(operator),
+		IP:       strings.TrimSpace(ip),
+	})
+}
+
+func packagingAssemblySessionAuditPayload(session models.PackagingAssemblyCaptureSession) map[string]any {
+	return map[string]any{
+		"sessionId":   strings.TrimSpace(session.SessionID),
+		"packageCode": strings.TrimSpace(session.PackageCode),
+		"status":      strings.TrimSpace(session.Status),
+		"expiresAt":   session.ExpiresAt,
+	}
+}
+
+func packagingAssemblyRecordAuditPayload(assembly models.PackagingAssembly, productBarcodes []string) map[string]any {
+	return map[string]any{
+		"packageCode":     strings.TrimSpace(assembly.PackageCode),
+		"status":          strings.TrimSpace(assembly.Status),
+		"itemCount":       assembly.ItemCount,
+		"source":          strings.TrimSpace(assembly.Source),
+		"sessionId":       strings.TrimSpace(assembly.SessionID),
+		"assembledBy":     strings.TrimSpace(assembly.AssembledBy),
+		"assembledAt":     assembly.AssembledAt,
+		"productBarcodes": productBarcodes,
+	}
+}
+
+func CreatePackagingAssemblyCaptureSession(ctx context.Context) (PackagingAssemblyCaptureSessionResponse, error) {
 	if db.DB == nil {
 		return PackagingAssemblyCaptureSessionResponse{}, errors.New("database not initialized")
 	}
@@ -92,7 +139,12 @@ func CreatePackagingAssemblyCaptureSession() (PackagingAssemblyCaptureSessionRes
 		PackageCode: nextPackagingAssemblyPackageCode(),
 		ExpiresAt:   time.Now().Add(45 * time.Minute),
 	}
-	if err := db.DB.Create(&session).Error; err != nil {
+	if err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&session).Error; err != nil {
+			return err
+		}
+		return writePackagingAssemblyAuditEntryWithContext(ctx, tx, session.ID, "CAPTURE_SESSION_CREATE", nil, packagingAssemblySessionAuditPayload(session), "")
+	}); err != nil {
 		return PackagingAssemblyCaptureSessionResponse{}, err
 	}
 	return mapPackagingAssemblyCaptureSession(session, true, nil), nil
@@ -118,7 +170,7 @@ func GetPackagingAssemblyCaptureSession(sessionID string) (PackagingAssemblyCapt
 	return mapPackagingAssemblyCaptureSession(session, false, assembly), nil
 }
 
-func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagingAssemblyCaptureSessionRequest, operator string) (PackagingAssemblyCaptureSessionResponse, error) {
+func SubmitPackagingAssemblyCaptureSession(ctx context.Context, sessionID string, input SubmitPackagingAssemblyCaptureSessionRequest, operator string) (PackagingAssemblyCaptureSessionResponse, error) {
 	if db.DB == nil {
 		return PackagingAssemblyCaptureSessionResponse{}, errors.New("database not initialized")
 	}
@@ -156,7 +208,7 @@ func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagi
 
 	var assembly models.PackagingAssembly
 	now := time.Now().UTC()
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+	err = db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if existing, exists, loadErr := findPackagingAssemblyByPackageCodeTx(tx, session.PackageCode); loadErr != nil {
 			return loadErr
 		} else if exists {
@@ -233,6 +285,9 @@ func SubmitPackagingAssemblyCaptureSession(sessionID string, input SubmitPackagi
 			return err
 		}
 		assembly.Items = items
+		if err := writePackagingAssemblyAuditEntryWithContext(ctx, tx, assembly.ID, "SUBMIT", nil, packagingAssemblyRecordAuditPayload(assembly, productBarcodes), resolvedOperator); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {

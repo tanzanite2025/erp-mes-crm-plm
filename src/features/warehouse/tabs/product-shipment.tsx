@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw, TrendingDown } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Button } from '@/components/ui/button'
 import { Route } from '@/routes/_authenticated/warehouse/shipment'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { isForbiddenError } from '@/lib/error-status'
 
@@ -116,6 +118,15 @@ export default function ProductShipment() {
                 description={t('warehouse.shipment.subtitle')}
                 icon={TrendingDown}
             />
+
+            <div className='flex justify-end'>
+                <AuditTimelineTriggerButton
+                    module={AUDIT_MODULES.shipment}
+                    targetName={t('warehouse.shipment.title')}
+                    label={t('common.audit.trigger')}
+                    className='h-10 md:h-11 rounded-full px-4 md:px-5'
+                />
+            </div>
 
             <ShipmentDemandBoard
                 demands={shipmentDemands}

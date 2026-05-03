@@ -1,6 +1,7 @@
 'use client'
 
 import { Truck, Warehouse, Calendar, TrendingDown, FileText, Tag, User, Save, Send, AlertTriangle, Database } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import {
   Dialog,
   DialogContent
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { cn } from '@/lib/utils'
 import type { MasterDataSearchResult } from '../../inventory'
 import type { SalesOrder } from '@/features/trading/data/schema'
@@ -76,7 +78,8 @@ export function ShipmentDialog({
             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}
           />
 
-          <div className='relative flex items-center gap-4 md:gap-5 overflow-hidden'>
+          <div className='relative flex items-center justify-between gap-4 w-full overflow-hidden'>
+            <div className='flex items-center gap-4 md:gap-5 overflow-hidden'>
             <div className='size-10 md:size-12 rounded-xl md:rounded-[18px] bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl shrink-0'>
               <Truck className='size-5 md:size-6 text-white' />
             </div>
@@ -88,6 +91,15 @@ export function ShipmentDialog({
                 <Badge className='bg-white/20 text-white border-none text-[7px] md:text-[8px] font-black uppercase tracking-widest px-1.5 h-3.5 rounded-full leading-none shrink-0'>{t('warehouse.shipment.dialog.masterNode')}</Badge>
                 <span className='text-blue-100/60 font-mono text-[8px] md:text-[9px] font-black uppercase tracking-widest truncate'>{selectedItem.name} ({selectedItem.code})</span>
               </div>
+            </div>
+            </div>
+            <div className='hidden sm:flex shrink-0'>
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.shipment}
+                targetName={isVirtualLock ? '转入虚拟发货仓' : t('warehouse.shipment.dialog.title')}
+                label={t('common.audit.trigger')}
+                className='h-10 rounded-full border-white/30 bg-white/10 px-4 text-white hover:bg-white/20 hover:text-white'
+              />
             </div>
           </div>
 

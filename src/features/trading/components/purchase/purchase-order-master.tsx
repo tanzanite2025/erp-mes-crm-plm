@@ -8,6 +8,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { AuditStatusDisplay } from '@/components/common/audit-status-display'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import {
   isPurchaseOrderTerminalStatus,
   normalizePurchaseOrderStatus,
@@ -225,53 +227,64 @@ export function PurchaseOrderMaster({
                     </div>
                   </td>
                   <td className='rounded-r-2xl px-4 py-3 text-center'>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 rounded-full group-hover:bg-muted/50 hover:bg-muted'
+                    <div className='flex items-center justify-center gap-2'>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <AuditTimelineTriggerButton
+                          module={AUDIT_MODULES.purchaseOrder}
+                          targetId={order.id}
+                          targetName={order.orderNo}
+                          iconOnly
+                          className='size-8 rounded-full border-dashed'
+                        />
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 rounded-full group-hover:bg-muted/50 hover:bg-muted'
+                          >
+                            <MoreHorizontal className='size-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align='end'
+                          className='min-w-[140px] rounded-[20px] border-2 p-1.5 shadow-2xl'
                         >
-                          <MoreHorizontal className='size-4' />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align='end'
-                        className='min-w-[140px] rounded-[20px] border-2 p-1.5 shadow-2xl'
-                      >
-                        <DropdownMenuItem
-                          disabled={!canEditPurchaseOrder(order.status)}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onEdit(order)
-                          }}
-                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
-                        >
-                          <Edit2
-                            className={`size-3 ${
-                              canEditPurchaseOrder(order.status)
-                                ? 'text-blue-500'
-                                : 'text-muted-foreground/30'
-                            }`}
-                          />
-                          {canEditPurchaseOrder(order.status)
-                            ? t('purchase.orders.editOrder')
-                            : t('purchase.orders.statusLocked')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(order.id)
-                          }}
-                          className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
-                        >
-                          <Trash2 className='size-3' />
-                          {order.status === 'Canceled'
-                            ? t('purchase.orders.removePermanently')
-                            : t('purchase.orders.voidContract')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <DropdownMenuItem
+                            disabled={!canEditPurchaseOrder(order.status)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEdit(order)
+                            }}
+                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest uppercase'
+                          >
+                            <Edit2
+                              className={`size-3 ${
+                                canEditPurchaseOrder(order.status)
+                                  ? 'text-blue-500'
+                                  : 'text-muted-foreground/30'
+                              }`}
+                            />
+                            {canEditPurchaseOrder(order.status)
+                              ? t('purchase.orders.editOrder')
+                              : t('purchase.orders.statusLocked')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDelete(order.id)
+                            }}
+                            className='gap-2 rounded-xl px-3 py-2 text-[10px] font-black tracking-widest text-rose-500 uppercase focus:text-rose-600'
+                          >
+                            <Trash2 className='size-3' />
+                            {order.status === 'Canceled'
+                              ? t('purchase.orders.removePermanently')
+                              : t('purchase.orders.voidContract')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               )
@@ -308,35 +321,46 @@ export function PurchaseOrderMaster({
                     {order.purchaser || t('purchase.orders.systemBuyer')}
                   </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 rounded-full bg-muted/20'
-                      onClick={(e) => e.stopPropagation()}
+                <div className='flex items-center gap-2'>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <AuditTimelineTriggerButton
+                      module={AUDIT_MODULES.purchaseOrder}
+                      targetId={order.id}
+                      targetName={order.orderNo}
+                      iconOnly
+                      className='size-8 rounded-full border-dashed bg-muted/20'
+                    />
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 rounded-full bg-muted/20'
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className='size-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align='end'
+                      className='rounded-2xl border-2'
                     >
-                      <MoreHorizontal className='size-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align='end'
-                    className='rounded-2xl border-2'
-                  >
-                    <DropdownMenuItem
-                      onClick={() => onEdit(order)}
-                      className='px-4 py-2 text-[10px] font-black uppercase'
-                    >
-                      {t('purchase.orders.editOrder')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDelete(order.id)}
-                      className='px-4 py-2 text-[10px] font-black text-rose-500 uppercase'
-                    >
-                      {t('purchase.orders.voidContract')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <DropdownMenuItem
+                        onClick={() => onEdit(order)}
+                        className='px-4 py-2 text-[10px] font-black uppercase'
+                      >
+                        {t('purchase.orders.editOrder')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(order.id)}
+                        className='px-4 py-2 text-[10px] font-black text-rose-500 uppercase'
+                      >
+                        {t('purchase.orders.voidContract')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
 
               <div className='space-y-3'>

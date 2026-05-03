@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 	"xdfc-server/db"
+	"xdfc-server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -61,6 +63,45 @@ func setupLogisticsStatusSyncTestDB(t *testing.T) {
 			is_deleted BOOLEAN DEFAULT FALSE,
 			version INTEGER DEFAULT 1
 		)`,
+		`CREATE TABLE notification_rules (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			name TEXT,
+			enabled NUMERIC,
+			entity TEXT,
+			source_code TEXT,
+			action_code TEXT,
+			segments BLOB,
+			version INTEGER
+		)`,
+		`CREATE TABLE rule_execution_logs (
+			id TEXT PRIMARY KEY,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			event_key TEXT,
+			entity TEXT,
+			source_code TEXT,
+			action_code TEXT,
+			status_code TEXT,
+			rule_id TEXT,
+			rule_name TEXT,
+			segment_id TEXT,
+			segment_title TEXT,
+			execution_type TEXT,
+			execution_status TEXT,
+			command_id TEXT,
+			title TEXT,
+			content TEXT,
+			action_url TEXT,
+			targets BLOB,
+			metadata BLOB,
+			result BLOB,
+			error_message TEXT,
+			triggered_at DATETIME
+		)`,
 		`CREATE TABLE audit_logs (
 			id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
 			created_at DATETIME,
@@ -69,7 +110,7 @@ func setupLogisticsStatusSyncTestDB(t *testing.T) {
 			module TEXT,
 			action TEXT,
 			target_id TEXT,
-			content TEXT,
+			diff TEXT,
 			operator TEXT,
 			ip TEXT
 		)`,
@@ -88,6 +129,16 @@ func TestUpdateLogisticsStatusHandlerMovesPurchaseOrderToAwaitingWhenReceiptInTr
 		INSERT INTO purchase_orders (id, order_no, status, currency, amount, exchange_rate, created_at, updated_at, is_deleted, version)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, "po-log-1", "PO-LOG-001", "Sent", "CNY", 88.0, 1.0, now, now, false, 1).Error)
+	require.NoError(t, db.DB.Create(&models.NotificationRule{
+		BaseModel:  models.BaseModel{ID: "rule-1", CreatedAt: now, UpdatedAt: now},
+		Name:       "Purchase logistics status routing",
+		Enabled:    true,
+		Entity:     "ORDER",
+		SourceCode: "PURCHASE_ORDER",
+		ActionCode: "STATUS_CHANGED",
+		Segments:   json.RawMessage(`[{"id":"segment-1","title":"Awaiting routing","targetStatuses":["Awaiting"],"commandIds":[],"assigneeGroups":[],"assigneeUsernames":[]}]`),
+		Version:    1,
+	}).Error)
 	require.NoError(t, db.DB.Exec(`
 		INSERT INTO logistics_records (id, created_at, updated_at, order_no, purchase_order_id, type, carrier, tracking_no, status, version, is_deleted)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -101,6 +152,7 @@ func TestUpdateLogisticsStatusHandlerMovesPurchaseOrderToAwaitingWhenReceiptInTr
 	ctx.Request = request
 	ctx.Params = gin.Params{{Key: "id", Value: "log-1"}}
 	ctx.Set("username", "tester")
+	ctx.Set("userId", "tester-id")
 
 	UpdateLogisticsStatusHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -112,4 +164,20 @@ func TestUpdateLogisticsStatusHandlerMovesPurchaseOrderToAwaitingWhenReceiptInTr
 	var logisticsStatus string
 	require.NoError(t, db.DB.Raw(`SELECT status FROM logistics_records WHERE id = ?`, "log-1").Scan(&logisticsStatus).Error)
 	require.Equal(t, "InTransit", logisticsStatus)
+
+	var auditLogs []models.AuditLog
+	require.NoError(t, db.DB.Order("created_at asc").Find(&auditLogs).Error)
+	require.Len(t, auditLogs, 1)
+	require.Equal(t, "logistics", auditLogs[0].Module)
+	require.Equal(t, "STATUS_CHANGE", auditLogs[0].Action)
+	require.Equal(t, "tester", auditLogs[0].Operator)
+	require.Equal(t, "127.0.0.1", auditLogs[0].IP)
+	require.Contains(t, string(auditLogs[0].Diff), "Shenzhen")
+
+	var executionLogs []models.RuleExecutionLog
+	require.NoError(t, db.DB.Order("execution_type asc").Find(&executionLogs).Error)
+	require.Len(t, executionLogs, 1)
+	require.Equal(t, "match", executionLogs[0].ExecutionType)
+	require.Contains(t, string(executionLogs[0].Metadata), `"actorId":"tester-id"`)
+	require.Contains(t, string(executionLogs[0].Metadata), `"operator":"tester"`)
 }

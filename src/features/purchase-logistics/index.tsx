@@ -1,12 +1,14 @@
 import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CloudOff, RefreshCw, Trash2, Truck } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import {
   getPurchaseLogisticsOfflineDraftsSnapshot,
   removePurchaseLogisticsOfflineDraft,
@@ -31,36 +33,39 @@ export function PurchaseLogisticsPage() {
   const pendingDrafts = drafts.filter((draft) => draft.syncStatus === 'pending')
   const blockedDrafts = drafts.filter((draft) => draft.syncStatus === 'blocked')
 
-  async function performSync(mode: 'auto' | 'manual') {
-    if (isSyncingRef.current) return
+  const performSync = React.useCallback(
+    async (mode: 'auto' | 'manual') => {
+      if (isSyncingRef.current) return
 
-    isSyncingRef.current = true
-    setIsSyncing(true)
+      isSyncingRef.current = true
+      setIsSyncing(true)
 
-    try {
-      const result = await syncPurchaseLogisticsOfflineDrafts()
+      try {
+        const result = await syncPurchaseLogisticsOfflineDrafts()
 
-      if (result.syncedCount > 0) {
-        queryClient.invalidateQueries({ queryKey: ['purchase-logistics-list'] })
-        toast.success(t('purchase.logistics.offlineSyncSuccess'), {
-          description: t('purchase.logistics.offlineSyncSuccessDesc', { count: result.syncedCount }),
-          icon: <Truck className='h-4 w-4' />,
-        })
-        return
+        if (result.syncedCount > 0) {
+          queryClient.invalidateQueries({ queryKey: ['purchase-logistics-list'] })
+          toast.success(t('purchase.logistics.offlineSyncSuccess'), {
+            description: t('purchase.logistics.offlineSyncSuccessDesc', { count: result.syncedCount }),
+            icon: <Truck className='h-4 w-4' />,
+          })
+          return
+        }
+
+        if (mode === 'manual' && result.remainingCount > 0) {
+          toast.error(t('purchase.logistics.offlineSyncPending'), {
+            description: t('purchase.logistics.offlineSyncPendingDesc', {
+              count: result.remainingCount,
+            }),
+          })
+        }
+      } finally {
+        isSyncingRef.current = false
+        setIsSyncing(false)
       }
-
-      if (mode === 'manual' && result.remainingCount > 0) {
-        toast.error(t('purchase.logistics.offlineSyncPending'), {
-          description: t('purchase.logistics.offlineSyncPendingDesc', {
-            count: result.remainingCount,
-          }),
-        })
-      }
-    } finally {
-      isSyncingRef.current = false
-      setIsSyncing(false)
-    }
-  }
+    },
+    [queryClient, t]
+  )
 
   React.useEffect(() => {
     const handleNetworkChange = () => {
@@ -79,7 +84,7 @@ export function PurchaseLogisticsPage() {
       window.removeEventListener('online', handleNetworkChange)
       window.removeEventListener('offline', handleNetworkChange)
     }
-  }, [queryClient, t])
+  }, [performSync])
 
   // 【副作用解耦】仅在网络恢复或组件挂载时触发一次自动同步情况情况总量针对。情况总量情况情况情况情况。
   React.useEffect(() => {
@@ -95,6 +100,14 @@ export function PurchaseLogisticsPage() {
         icon={Truck}
         title={t('purchase.logistics.title')}
         description={t('purchase.logistics.description')}
+        statusBadge={
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.logistics}
+            targetName={t('purchase.logistics.title')}
+            label={t('common.audit.trigger')}
+            className='h-10 rounded-full px-4'
+          />
+        }
       />
 
       <div className='space-y-6'>

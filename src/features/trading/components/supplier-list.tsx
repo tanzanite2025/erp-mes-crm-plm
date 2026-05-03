@@ -34,6 +34,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { AuditStamp } from '@/components/common/audit-stamp'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
@@ -517,14 +518,23 @@ export function SupplierList() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    variant='secondary'
-                    size='sm'
-                    className='h-9 w-full rounded-full bg-muted/20 px-5 text-[8px] font-black tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/30 sm:w-auto md:text-[9px]'
-                  >
-                    {t('purchase.suppliers.dossier')}
-                    <ExternalLink className='ms-2 size-3 opacity-50' />
-                  </Button>
+                  <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
+                    <AuditTimelineTriggerButton
+                      module={AUDIT_MODULES.supplier}
+                      targetId={supplier.id}
+                      targetName={supplier.name || supplier.code}
+                      label={t('common.audit.trigger')}
+                      className='h-9 w-full rounded-full px-5 text-[8px] sm:w-auto md:text-[9px]'
+                    />
+                    <Button
+                      variant='secondary'
+                      size='sm'
+                      className='h-9 w-full rounded-full bg-muted/20 px-5 text-[8px] font-black tracking-widest text-muted-foreground uppercase transition-colors hover:bg-muted/30 sm:w-auto md:text-[9px]'
+                    >
+                      {t('purchase.suppliers.dossier')}
+                      <ExternalLink className='ms-2 size-3 opacity-50' />
+                    </Button>
+                  </div>
                 </div>
 
                 <AuditStamp

@@ -1,10 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/db"
+	"xdfc-server/models"
 
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
@@ -93,6 +96,18 @@ func setupPackagingAssemblyTestDB(t *testing.T) *gorm.DB {
 			sort_order INTEGER NOT NULL
 		);
 	`).Error)
+	require.NoError(t, testDB.Exec(`
+		CREATE TABLE audit_logs (
+			id TEXT PRIMARY KEY NOT NULL,
+			module TEXT,
+			target_id TEXT,
+			action TEXT,
+			diff TEXT,
+			operator TEXT,
+			ip TEXT,
+			created_at DATETIME
+		);
+	`).Error)
 	db.DB = testDB
 
 	t.Cleanup(func() {
@@ -100,6 +115,15 @@ func setupPackagingAssemblyTestDB(t *testing.T) *gorm.DB {
 	})
 
 	return testDB
+}
+
+func packagingAssemblyAuditContext() context.Context {
+	return audit.NewContextWithActor(context.Background(), audit.AuditActor{
+		UserID:   "packaging-audit-user-id",
+		Username: "packaging-audit-user",
+		IP:       "203.0.113.88",
+		Source:   "http",
+	})
 }
 
 func insertPackagingAssemblySession(t *testing.T, testDB *gorm.DB, sessionID string, token string) {
@@ -142,7 +166,7 @@ func insertBoundProductBarcode(t *testing.T, testDB *gorm.DB, productBarcode str
 func TestCreatePackagingAssemblyCaptureSessionCreatesWaitingSessionWithoutAssemblyID(t *testing.T) {
 	testDB := setupPackagingAssemblyTestDB(t)
 
-	result, err := CreatePackagingAssemblyCaptureSession()
+	result, err := CreatePackagingAssemblyCaptureSession(packagingAssemblyAuditContext())
 	require.NoError(t, err)
 	require.NotEmpty(t, result.SessionID)
 	require.NotEmpty(t, result.UploadToken)
@@ -157,6 +181,14 @@ func TestCreatePackagingAssemblyCaptureSessionCreatesWaitingSessionWithoutAssemb
 		Where("session_id = ?", result.SessionID).
 		Scan(&storedAssemblyID).Error)
 	require.Nil(t, storedAssemblyID)
+
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, "packaging-assembly", logs[0].Module)
+	require.Equal(t, "CAPTURE_SESSION_CREATE", logs[0].Action)
+	require.Equal(t, "packaging-audit-user", logs[0].Operator)
+	require.Equal(t, "203.0.113.88", logs[0].IP)
 }
 
 func TestSubmitPackagingAssemblyCaptureSessionCreatesAssembly(t *testing.T) {
@@ -167,7 +199,7 @@ func TestSubmitPackagingAssemblyCaptureSessionCreatesAssembly(t *testing.T) {
 	insertPackagingAssemblySession(t, testDB, sessionID, token)
 	insertBoundProductBarcode(t, testDB, productBarcode)
 
-	result, err := SubmitPackagingAssemblyCaptureSession(sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
+	result, err := SubmitPackagingAssemblyCaptureSession(packagingAssemblyAuditContext(), sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
 		Token:           token,
 		ProductBarcodes: []string{productBarcode},
 	}, "tester")
@@ -178,6 +210,16 @@ func TestSubmitPackagingAssemblyCaptureSessionCreatesAssembly(t *testing.T) {
 	require.Equal(t, 1, result.Assembly.ItemCount)
 	require.Len(t, result.Assembly.Items, 1)
 	require.Equal(t, productBarcode, result.Assembly.Items[0].ProductBarcode)
+
+	var logs []models.AuditLog
+	require.NoError(t, testDB.Order("created_at asc").Find(&logs).Error)
+	require.Len(t, logs, 1)
+	require.Equal(t, "packaging-assembly", logs[0].Module)
+	require.Equal(t, result.Assembly.ID, logs[0].TargetID)
+	require.Equal(t, "SUBMIT", logs[0].Action)
+	require.Equal(t, "packaging-audit-user", logs[0].Operator)
+	require.Equal(t, "203.0.113.88", logs[0].IP)
+	require.Contains(t, string(logs[0].Diff), productBarcode)
 }
 
 func TestSubmitPackagingAssemblyCaptureSessionRequiresSystemBoundProductBarcode(t *testing.T) {
@@ -186,7 +228,7 @@ func TestSubmitPackagingAssemblyCaptureSessionRequiresSystemBoundProductBarcode(
 	token := "token-002"
 	insertPackagingAssemblySession(t, testDB, sessionID, token)
 
-	_, err := SubmitPackagingAssemblyCaptureSession(sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
+	_, err := SubmitPackagingAssemblyCaptureSession(context.Background(), sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
 		Token:           token,
 		ProductBarcodes: []string{"24125031R360001"},
 	}, "tester")
@@ -203,13 +245,13 @@ func TestSubmitPackagingAssemblyCaptureSessionIsIdempotent(t *testing.T) {
 	insertPackagingAssemblySession(t, testDB, sessionID, token)
 	insertBoundProductBarcode(t, testDB, productBarcode)
 
-	first, err := SubmitPackagingAssemblyCaptureSession(sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
+	first, err := SubmitPackagingAssemblyCaptureSession(context.Background(), sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
 		Token:           token,
 		ProductBarcodes: []string{productBarcode},
 	}, "tester")
 	require.NoError(t, err)
 
-	second, err := SubmitPackagingAssemblyCaptureSession(sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
+	second, err := SubmitPackagingAssemblyCaptureSession(context.Background(), sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
 		Token:           token,
 		ProductBarcodes: []string{productBarcode},
 	}, "tester")
@@ -234,7 +276,7 @@ func TestSubmitPackagingAssemblyCaptureSessionRejectsTooManyItems(t *testing.T) 
 		productBarcodes = append(productBarcodes, fmt.Sprintf("24125031R36%04d", index))
 	}
 
-	_, err := SubmitPackagingAssemblyCaptureSession(sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
+	_, err := SubmitPackagingAssemblyCaptureSession(context.Background(), sessionID, SubmitPackagingAssemblyCaptureSessionRequest{
 		Token:           token,
 		ProductBarcodes: productBarcodes,
 	}, "tester")

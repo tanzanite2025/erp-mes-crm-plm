@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Box, Building2, Mail, MapPin, Phone, User } from 'lucide-react'
 import { ActionDialogShell } from '@/components/action-dialog-shell'
 import { buildActionDialogShellClasses } from '@/components/action-dialog-shell.styles'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { useDeltaTracker } from '@/hooks/use-delta-tracker'
 import { type Supplier, type SupplierStatus } from '../data/schema'
 import { type DeltaSet } from '@/lib/delta/types'
@@ -87,7 +89,20 @@ export function SupplierActionDialog({
     <ActionDialogShell
       open={open}
       onOpenChange={handleDialogOpenChange}
-      title={supplier ? t('purchase.suppliers.dialogEditTitle') : t('purchase.suppliers.dialogCreateTitle')}
+      title={
+        <div className='flex items-center justify-between gap-3'>
+          <span>{supplier ? t('purchase.suppliers.dialogEditTitle') : t('purchase.suppliers.dialogCreateTitle')}</span>
+          {supplier?.id ? (
+            <AuditTimelineTriggerButton
+              module={AUDIT_MODULES.supplier}
+              targetId={supplier.id}
+              targetName={supplier.name || supplier.code}
+              iconOnly
+              className='size-9 rounded-full border-dashed'
+            />
+          ) : null}
+        </div>
+      }
       description={t('purchase.suppliers.dialogDescription')}
       contentClassName={shellClasses.content}
       headerClassName={shellClasses.header}

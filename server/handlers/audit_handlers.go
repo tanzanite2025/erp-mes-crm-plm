@@ -17,23 +17,28 @@ import (
 // required to access their timeline data. A module must have at least one matching
 // permission for the requesting user; unknown modules are denied (fail-closed).
 var auditModulePermissionMap = map[string][]string{
-	services.AuditModuleSalesOrder:     {authz.MenuTrading},
-	services.AuditModulePurchaseOrder:  {authz.MenuTrading, authz.MenuPurchase},
-	services.AuditModuleCustomer:       {authz.MenuTrading},
-	services.AuditModuleSupplier:       {authz.MenuTrading, authz.MenuPurchase},
-	services.AuditModuleEmployee:       {authz.MenuOrg},
-	services.AuditModuleMaterial:       {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
-	services.AuditModuleInventory:      {authz.MenuWarehouse},
-	services.AuditModuleChangeOrder:    {authz.MenuEngineering},
-	services.AuditModuleBOM:            {authz.MenuEngineering},
-	services.AuditModuleUser:           {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionUserDelete, authz.PermissionManage},
-	services.AuditModuleUserPermission: {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionManage},
-	services.AuditModuleRole:           {authz.MenuOrg, authz.PermissionManage},
-	services.AuditModuleProductionLine: {authz.MenuProdConfig, authz.MenuEquipment},
-	"Inventory":                        {authz.MenuWarehouse},
-	"Shipment":                         {authz.MenuWarehouse},
-	"InspectionStandard":               {authz.MenuQuality},
-	"InspectionTask":                   {authz.MenuQuality},
+	services.AuditModuleSalesOrder:        {authz.MenuTrading},
+	services.AuditModulePurchaseOrder:     {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModuleCustomer:          {authz.MenuTrading},
+	services.AuditModuleSupplier:          {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModuleEmployee:          {authz.MenuOrg},
+	services.AuditModuleMaterial:          {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
+	services.AuditModuleInventory:         {authz.MenuWarehouse},
+	services.AuditModuleShipment:          {authz.MenuWarehouse},
+	services.AuditModuleLogistics:         {authz.MenuTrading, authz.MenuPurchase},
+	services.AuditModulePackagingAssembly: {authz.MenuWarehouse},
+	services.AuditModuleChangeOrder:       {authz.MenuEngineering},
+	services.AuditModuleBOM:               {authz.MenuEngineering},
+	services.AuditModuleUser:              {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionUserDelete, authz.PermissionManage},
+	services.AuditModuleUserPermission:    {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionManage},
+	services.AuditModuleRole:              {authz.MenuOrg, authz.PermissionManage},
+	services.AuditModuleProductionLine:    {authz.MenuProdConfig, authz.MenuEquipment},
+	"Inventory":                           {authz.MenuWarehouse},
+	"Shipment":                            {authz.MenuWarehouse},
+	"Logistics":                           {authz.MenuTrading, authz.MenuPurchase},
+	"PackagingAssembly":                   {authz.MenuWarehouse},
+	"InspectionStandard":                  {authz.MenuQuality},
+	"InspectionTask":                      {authz.MenuQuality},
 }
 
 // enforceAuditModulePermission checks whether the requesting user has permission
@@ -74,7 +79,7 @@ func GetDataTimelineHandler(c *gin.Context) {
 	}
 
 	canonicalModule := services.NormalizeAuditModule(module)
-	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission || canonicalModule == services.AuditModuleInventory
+	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission || canonicalModule == services.AuditModuleInventory || canonicalModule == services.AuditModuleShipment || canonicalModule == services.AuditModuleLogistics || canonicalModule == services.AuditModulePurchaseOrder || canonicalModule == services.AuditModuleSupplier || canonicalModule == services.AuditModulePackagingAssembly
 	if strings.TrimSpace(targetID) == "" && !allowModuleLevelQuery {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] target_id is required for this module"})
 		return

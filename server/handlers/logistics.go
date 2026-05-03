@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"xdfc-server/db"
 	"xdfc-server/models"
 	"xdfc-server/services"
@@ -104,83 +104,26 @@ func SaveLogisticsRecordHandler(c *gin.Context) {
 	}
 	input.ProductID = productID
 
-	if input.ID != "" {
-		// 更新逻辑
-		var existing models.LogisticsRecord
-		if err := db.DB.First(&existing, "id = ?", input.ID).Error; err != nil {
+	record, err := services.SaveLogisticsRecord(auditContextFromGin(c), input)
+	if err != nil {
+		var conflictErr *services.LogisticsTrackingNoConflictError
+		switch {
+		case errors.As(err, &conflictErr):
+			c.JSON(http.StatusConflict, gin.H{"error": conflictErr.Error()})
+			return
+		case errors.Is(err, gorm.ErrRecordNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
 			return
-		}
-		updateTx := db.DB.Model(&existing)
-		if input.SalesOrderID == "" {
-			updateTx = updateTx.Omit("SalesOrderID")
-		}
-		if input.PurchaseOrderID == "" {
-			updateTx = updateTx.Omit("PurchaseOrderID")
-		}
-		if input.ProductID == "" {
-			updateTx = updateTx.Omit("ProductID")
-		}
-		if err := updateTx.Updates(input).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
-			return
-		}
-		if input.SalesOrderID == "" {
-			if err := db.DB.Model(&existing).Update("sales_order_id", nil).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "鏇存柊澶辫触"})
+		default:
+			if strings.TrimSpace(input.ID) != "" {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败"})
 				return
 			}
-		}
-		if input.PurchaseOrderID == "" {
-			if err := db.DB.Model(&existing).Update("purchase_order_id", nil).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "鏇存柊澶辫触"})
-				return
-			}
-		}
-		if input.ProductID == "" {
-			if err := db.DB.Model(&existing).Update("product_id", nil).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "鏇存柊澶辫触"})
-				return
-			}
-		}
-		if err := db.DB.First(&existing, "id = ?", existing.ID).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新后加载失败"})
-			return
-		}
-		c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(existing))
-	} else {
-		// 创建逻辑前增加唯一性检查
-		var duplicate models.LogisticsRecord
-		if err := db.DB.Where("carrier = ? AND tracking_no = ? AND is_deleted = ?",
-			input.Carrier, input.TrackingNo, false).First(&duplicate).Error; err == nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "[BLOCKING] 该单号已在系统中绑定到订单: " + duplicate.OrderNo})
-			return
-		}
-
-		input.UpdatedAt = time.Now()
-
-		// 如果有单号，自动追加初始状态
-		if input.TrackingNo != "" && (len(input.Events) == 0 || string(input.Events) == "null") {
-			initialEvent := `[{"id":"evt-init","time":"` + time.Now().Format(time.RFC3339) + `","location":"系统","description":"物流单号已绑定，等待揽收","status":"Pending"}]`
-			input.Events = []byte(initialEvent)
-		}
-
-		createTx := db.DB
-		if input.SalesOrderID == "" {
-			createTx = createTx.Omit("SalesOrderID")
-		}
-		if input.PurchaseOrderID == "" {
-			createTx = createTx.Omit("PurchaseOrderID")
-		}
-		if input.ProductID == "" {
-			createTx = createTx.Omit("ProductID")
-		}
-		if err := createTx.Create(&input).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建失败"})
 			return
 		}
-		c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(input))
 	}
+	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))
 }
 
 // UpdateLogisticsStatusHandler 更新物流状态并追加事件 (加固：乐观锁 + 审计)
@@ -204,66 +147,32 @@ func UpdateLogisticsStatusHandler(c *gin.Context) {
 		return
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		// 1. 更新主记录 (执行乐观锁检查)
-		res := tx.Model(&record).
-			Where("version = ?", req.Version).
-			Updates(map[string]interface{}{
-				"status":        req.Status,
-				"last_location": req.Location,
-				"events":        req.EventsJSON,
-				"version":       req.Version + 1,
-				"updated_at":    time.Now(),
-			})
-
-		if res.Error != nil {
-			return res.Error
-		}
-		if res.RowsAffected == 0 {
-			return gorm.ErrInvalidTransaction // 模拟版本冲突
-		}
-
-		record.Status = req.Status
-		if err := services.SyncLogisticsBusinessDocumentTx(tx, &record, req.Status); err != nil {
-			return err
-		}
-
-		return nil
+	updated, err := services.UpdateLogisticsStatus(auditContextFromGin(c), id, services.UpdateLogisticsStatusInput{
+		Status:      req.Status,
+		Location:    req.Location,
+		Description: req.Description,
+		EventsJSON:  req.EventsJSON,
+		Version:     req.Version,
 	})
-
 	if err != nil {
-		if err == gorm.ErrInvalidTransaction {
+		if errors.Is(err, services.ErrLogisticsStatusVersionConflict) {
 			respondVersionConflict(c)
+			return
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "记录不存在"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新失败: " + err.Error()})
 		return
 	}
-
-	if err := db.DB.First(&record, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新后加载失败"})
-		return
-	}
-
-	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(record))
+	c.JSON(http.StatusOK, services.MapLogisticsRecordToResponse(updated))
 }
 
 func DeleteLogisticsRecordHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&models.LogisticsRecord{}).Where("id = ?", id).Updates(map[string]interface{}{
-			"is_deleted": true,
-			"status":     "Canceled",
-			"updated_at": time.Now(),
-		}).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
+	if err := services.DeleteLogisticsRecord(auditContextFromGin(c), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
 		return
 	}
