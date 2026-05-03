@@ -10,8 +10,10 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table'
 import { ClipboardList, Edit, Eye, Layers, Trash2 } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
 import { DataTablePagination } from '@/components/data-table'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -198,6 +200,13 @@ export function BOMTable({
       header: t('engineering.bomArchive.table.actions'),
       cell: ({ row }) => (
         <div className='flex items-center gap-1'>
+          <AuditTimelineTriggerButton
+            module={AUDIT_MODULES.bom}
+            targetId={row.original.id}
+            targetName={row.original.bomNo}
+            iconOnly
+            className='size-8 rounded-full border-none bg-muted/40 text-foreground hover:bg-muted'
+          />
           <Button variant='ghost' size='icon' className='size-8 rounded-full text-blue-600 hover:bg-blue-50' onClick={() => onPreview(row.original)}>
             <Eye className='size-4' />
           </Button>

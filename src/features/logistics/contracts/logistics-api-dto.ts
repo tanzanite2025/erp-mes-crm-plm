@@ -64,3 +64,46 @@ export interface UpdateLogisticsStatusApiDTO {
   events: LogisticsEventApiDTO[]
   version: number
 }
+
+export interface ControlledTrackingOrderApiDTO {
+  id: number
+  createdAt: string
+  updatedAt: string
+  bizOrderNo: string
+  bizType: string
+  carrierCode: string
+  carrierName: string
+  trackingNo: string
+  status: string
+  subscribedAt?: string | null
+  lastPushAt?: string | null
+  lastLocation?: string
+  lastEvent?: string
+  signedAt?: string | null
+  version?: number
+}
+
+export interface ControlledTrackingTraceApiDTO {
+  id?: number
+  createdAt?: string
+  deliveryOrderId?: number
+  time: string
+  context?: string
+  location?: string
+  hashKey?: string
+}
+
+export interface LogisticsTrackingRefreshResultApiDTO {
+  status?: string
+  message?: string
+  action?: string
+  providerCode?: string
+  insertedTraces?: number
+  checkedAt?: string
+}
+
+export interface ControlledTrackingDetailApiDTO {
+  order: ControlledTrackingOrderApiDTO
+  traces: ControlledTrackingTraceApiDTO[]
+  refresh?: LogisticsTrackingRefreshResultApiDTO | null
+}

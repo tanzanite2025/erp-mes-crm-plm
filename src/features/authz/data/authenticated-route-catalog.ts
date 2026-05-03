@@ -88,7 +88,6 @@ export const AUTHENTICATED_ROUTE_PATHS = [
   "/trading/sales-orders",
   "/code-center/dm-code",
   "/dashboard/analytics",
-  "/engineering/changes",
   "/personnel/employees",
   "/quality/special-buy",
   "/terminal-config/pda",

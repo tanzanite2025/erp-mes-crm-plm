@@ -22,6 +22,7 @@ type ApprovalRequest struct {
 	ExpiresAt *time.Time `json:"expiresAt"`
 	Module    string     `gorm:"size:50" json:"module"`
 	Action    string     `gorm:"size:50" json:"action"`
+	VerifierID string     `gorm:"size:100;index" json:"verifierId"`
 }
 
 func (ApprovalRequest) TableName() string {

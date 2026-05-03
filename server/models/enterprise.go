@@ -7,7 +7,9 @@ package models
 type EnterpriseConfig struct {
 	BaseModel
 	Name string `json:"name" gorm:"type:string"`
-	Plan string `json:"plan" gorm:"type:string"`
+	Plan     string `json:"plan" gorm:"type:string"`
+	Operator string `json:"operator" gorm:"type:string"`
+	Version  int    `json:"version" gorm:"type:int;default:1"`
 }
 
 func (EnterpriseConfig) TableName() string {

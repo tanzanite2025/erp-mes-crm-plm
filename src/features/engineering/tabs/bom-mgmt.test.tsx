@@ -87,7 +87,6 @@ function buildReadyReadResource() {
         id: 'bom-1',
         bomNo: 'BOM-001',
         productId: 'product-1',
-        changeOrderId: '',
         bomVersion: 'V1.0',
         revisionNo: 'R1',
         changeType: 'MANUAL' as const,

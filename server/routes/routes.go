@@ -107,9 +107,6 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.GET("/bom", handlers.GetBOMsHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", adminOnly, handlers.DeleteBOMHandler)
-			engineeringGroup.GET("/change-orders", handlers.GetChangeOrdersHandler)
-			engineeringGroup.POST("/change-orders", adminOnly, handlers.SaveChangeOrderHandler)
-			engineeringGroup.DELETE("/change-orders/:id", adminOnly, handlers.DeleteChangeOrderHandler)
 
 			templateGroup := engineeringGroup.Group("/templates")
 			{
@@ -220,7 +217,7 @@ func SetupRoutes(r *gin.Engine) {
 
 		// --- 企业配置 (Enterprise Config) ---
 		authorized.GET("/enterprise/config", middleware.RequirePermissions(authz.MenuSettings), handlers.GetEnterpriseConfigHandler)
-		authorized.POST("/enterprise/config", middleware.RequirePermissions(authz.MenuSettings), handlers.SaveEnterpriseConfigHandler)
+		authorized.POST("/enterprise/config", adminOnly, handlers.SaveEnterpriseConfigHandler)
 
 		// --- 工作流引擎路由 (Workflow Routing) ---
 		routingGroup := authorized.Group("/system/routing")

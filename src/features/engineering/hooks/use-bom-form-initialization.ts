@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { type UseFormReturn } from 'react-hook-form'
 import { createLogger } from '@/lib/logger'
-import { type ChangeOrder, type BOM } from '../data/schema'
+import { type BOM } from '../data/schema'
 import { type BOMItemDraft } from '../mutation-types'
 import {
   normalizeBOMControlFieldPatch,
@@ -16,8 +16,6 @@ const logger = createLogger('useBOMFormInitialization')
 interface UseBOMFormInitializationParams {
   form: UseFormReturn<BOM>
   tracker: { reset: (data: BOM) => void }
-  changeOrders: ChangeOrder[]
-  optionsReady: boolean
   currentRow?: BOM
   initialItems?: BOMItemDraft[]
   initialProductId?: string
@@ -28,8 +26,6 @@ interface UseBOMFormInitializationParams {
 export function useBOMFormInitialization({
   form,
   tracker,
-  changeOrders,
-  optionsReady,
   currentRow,
   initialItems,
   initialProductId,
@@ -41,7 +37,6 @@ export function useBOMFormInitialization({
       id: '',
       bomNo: '',
       productId: '',
-      changeOrderId: '',
       bomVersion: normalizeEngineeringBomVersion('V1.0'),
       revisionNo: normalizeEngineeringRevisionNo('R1'),
       changeType: normalizeEngineeringBomChangeType('MANUAL'),
@@ -55,14 +50,6 @@ export function useBOMFormInitialization({
   )
 
   useEffect(() => {
-    if (!open || !optionsReady) return
-    const currentChangeOrderId = form.getValues('changeOrderId')
-    if (currentChangeOrderId && !changeOrders.some((order) => order.id === currentChangeOrderId)) {
-      form.setValue('changeOrderId', '', { shouldDirty: true })
-    }
-  }, [changeOrders, form, open, optionsReady])
-
-  useEffect(() => {
     const loadInitData = async () => {
       if (!open) return
 
@@ -70,7 +57,6 @@ export function useBOMFormInitialization({
         if (isEdit && currentRow) {
           const data = normalizeBOMControlFieldPatch({
             ...currentRow,
-            changeOrderId: currentRow.changeOrderId || '',
             isDefaultSite: currentRow.isDefaultSite ?? !currentRow.siteCode,
             items: (currentRow.items || []).map((item) => ({
               ...item,
@@ -88,7 +74,6 @@ export function useBOMFormInitialization({
           id: '',
           bomNo: '',
           productId: initialProductId || '',
-          changeOrderId: '',
           bomVersion: initialVersion,
           revisionNo: normalizeEngineeringRevisionNo('R1'),
           changeType: normalizeEngineeringBomChangeType('MANUAL'),

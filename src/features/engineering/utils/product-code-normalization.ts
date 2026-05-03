@@ -13,9 +13,8 @@ import {
   normalizeSku,
   normalizeTemplateKey,
 } from '@/lib/codecs/code-normalization'
-import { type ChangeOrder, type ProductTemplate, type ProductType } from '../data/schema'
+import { type ProductTemplate, type ProductType } from '../data/schema'
 import {
-  type SaveChangeOrderInput,
   type SaveProductInput,
   type SaveProductTemplateInput,
   type SaveProductTypeInput,
@@ -150,18 +149,6 @@ export function normalizeEngineeringChangeOrderNo(value?: string | null): string
   return normalizeChangeOrderNo(value)
 }
 
-export function normalizeChangeOrderInput(changeOrder: SaveChangeOrderInput): SaveChangeOrderInput {
-  const normalizedSiteCode = normalizeEngineeringSiteCode(changeOrder.siteCode)
-
-  return {
-    ...changeOrder,
-    changeOrderNo: normalizeEngineeringChangeOrderNo(changeOrder.changeOrderNo),
-    siteCode: normalizedSiteCode,
-    revisionNo: normalizeEngineeringRevisionNo(changeOrder.revisionNo),
-    isDefaultSite: normalizedSiteCode === '' || Boolean(changeOrder.isDefaultSite),
-  }
-}
-
 export function normalizeEngineeringBomNo(value?: string | null): string {
   return normalizeBomNo(value)
 }
@@ -191,7 +178,6 @@ export function normalizeEngineeringBomEffectiveDate(value?: string | null): str
 export function normalizeBOMControlFieldPatch<T extends {
   changeType?: string | null
   status?: string | null
-  changeOrderNo?: string | null
   revisionNo?: string | null
   siteCode?: string | null
   effectiveFrom?: string | null
@@ -205,9 +191,6 @@ export function normalizeBOMControlFieldPatch<T extends {
   }
   if ('status' in data) {
     normalized.status = normalizeEngineeringBomStatus(data.status) as T['status']
-  }
-  if ('changeOrderNo' in data) {
-    normalized.changeOrderNo = normalizeEngineeringChangeOrderNo(data.changeOrderNo) as T['changeOrderNo']
   }
   if ('revisionNo' in data) {
     normalized.revisionNo = normalizeEngineeringRevisionNo(data.revisionNo) as T['revisionNo']
@@ -236,23 +219,10 @@ export function normalizeBOMInput(data: SaveBOMInput): SaveBOMInput {
     bomVersion: normalizeEngineeringBomVersion(data.bomVersion),
     changeType: normalizeEngineeringBomChangeType(data.changeType),
     status: normalizeEngineeringBomStatus(data.status),
-    changeOrderNo: normalizeEngineeringChangeOrderNo(data.changeOrderNo),
     siteCode: normalizedSiteCode,
     revisionNo: normalizeEngineeringRevisionNo(data.revisionNo),
     effectiveFrom: normalizeEngineeringBomEffectiveDate(data.effectiveFrom) || undefined,
     effectiveTo: normalizeEngineeringBomEffectiveDate(data.effectiveTo) || undefined,
     isDefaultSite: normalizedSiteCode === '' || Boolean(data.isDefaultSite),
-  }
-}
-
-export function normalizeChangeOrderEntity(changeOrder: ChangeOrder): ChangeOrder {
-  const normalizedSiteCode = normalizeEngineeringSiteCode(changeOrder.siteCode)
-
-  return {
-    ...changeOrder,
-    changeOrderNo: normalizeEngineeringChangeOrderNo(changeOrder.changeOrderNo),
-    siteCode: normalizedSiteCode,
-    revisionNo: normalizeEngineeringRevisionNo(changeOrder.revisionNo),
-    isDefaultSite: normalizedSiteCode === '' || Boolean(changeOrder.isDefaultSite),
   }
 }

@@ -3,7 +3,6 @@ import {
   type BOMItem,
   type BOMSubstitute,
   type BarcodeConfig,
-  type ChangeOrder,
   type Product,
   type ProductAttributeCategory,
   type ProductAttributeOption,
@@ -28,11 +27,6 @@ export type SaveProductTypeInput = Omit<ProductType, 'id' | 'version'> & {
   version?: number
 }
 
-export type SaveChangeOrderInput = Omit<ChangeOrder, 'id' | 'version'> & {
-  id?: string
-  version?: number
-}
-
 export type SaveProductTemplateInput = Omit<ProductTemplate, 'id' | 'version'> & {
   id?: string
   version?: number
@@ -51,7 +45,6 @@ export type SaveProductAttributeOptionInput = Omit<ProductAttributeOption, 'id' 
 export type SaveBOMInput = Omit<BOM, 'bomDisplayVersion'>
 
 export type ProductDraftOverrides = { [K in keyof Product]?: Product[K] }
-export type ChangeOrderDraftOverrides = { [K in keyof ChangeOrder]?: ChangeOrder[K] }
 export type ProductTemplateDraftOverrides = { [K in keyof ProductTemplate]?: ProductTemplate[K] }
 export type BOMItemDraft = { [K in keyof BOMItem]?: BOMItem[K] }
 export type MaterialOptionDraft = { [K in keyof MaterialOption]?: MaterialOption[K] }

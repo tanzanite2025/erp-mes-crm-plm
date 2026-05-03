@@ -67,7 +67,7 @@ func SaveBOMHandler(c *gin.Context) {
 		return
 	}
 
-	saved, err := services.SaveBOM(input)
+	saved, err := services.SaveBOM(auditContextFromGin(c), input)
 	if err != nil {
 		if errors.Is(err, services.ErrBOMActiveConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "[VALIDATION] failed to save BOM: " + err.Error()})
@@ -82,7 +82,7 @@ func SaveBOMHandler(c *gin.Context) {
 
 func DeleteBOMHandler(c *gin.Context) {
 	id := c.Param("id")
-	err := services.DeleteBOM(id)
+	err := services.DeleteBOM(auditContextFromGin(c), id)
 	if err != nil {
 		if errors.Is(err, services.ErrBOMIDRequired) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] BOM ID is required"})

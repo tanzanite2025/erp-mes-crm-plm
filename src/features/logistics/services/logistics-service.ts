@@ -1,13 +1,25 @@
 import { apiFetch } from '@/lib/api-client'
+import { isApiClientError } from '@/lib/api-error'
 import { ensureObjectResponse } from '@/lib/api-response'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
 import {
+  toControlledTrackingDetailContract,
   toLogisticsListPageContract,
   toLogisticsRecordContract,
   toSaveLogisticsRecordApiDTO,
 } from '../adapters/logistics-api-adapter'
-import type { LogisticsListPageApiDTO, LogisticsRecordApiDTO } from '../contracts/logistics-api-dto'
-import type { LogisticsListPage, LogisticsRecord, SaveLogisticsRecordInput, UpdateLogisticsStatusPayload } from '../data/schema'
+import type {
+  ControlledTrackingDetailApiDTO,
+  LogisticsListPageApiDTO,
+  LogisticsRecordApiDTO,
+} from '../contracts/logistics-api-dto'
+import type {
+  ControlledTrackingDetail,
+  LogisticsListPage,
+  LogisticsRecord,
+  SaveLogisticsRecordInput,
+  UpdateLogisticsStatusPayload,
+} from '../data/schema'
 
 class LogisticsService {
   async getRecords(page = 1, pageSize = 50): Promise<LogisticsListPage> {
@@ -28,6 +40,42 @@ class LogisticsService {
         `LogisticsService.getRecordById(${id})`
       ) as LogisticsRecordApiDTO
     )
+  }
+
+  async getControlledTrackingDetail(
+    trackingNo: string,
+    options: { refresh?: boolean } = {}
+  ): Promise<ControlledTrackingDetail | null> {
+    const normalizedTrackingNo = trackingNo.trim()
+    if (normalizedTrackingNo === '') {
+      return null
+    }
+
+    const searchParams = new URLSearchParams()
+    if (options.refresh) {
+      searchParams.set('refresh', '1')
+    }
+    const queryString = searchParams.toString()
+
+    try {
+      const res = await apiFetch<ControlledTrackingDetailApiDTO>(
+        `/logistics-push/tracking/${encodeURIComponent(normalizedTrackingNo)}${queryString ? `?${queryString}` : ''}`,
+        {
+          suppressErrorStatuses: [404],
+        }
+      )
+      return toControlledTrackingDetailContract(
+        ensureObjectResponse<ControlledTrackingDetailApiDTO & Record<string, unknown>>(
+          res,
+          `LogisticsService.getControlledTrackingDetail(${normalizedTrackingNo})`
+        ) as ControlledTrackingDetailApiDTO
+      )
+    } catch (error) {
+      if (isApiClientError(error) && error.status === 404) {
+        return null
+      }
+      throw error
+    }
   }
 
   async getRecordsByOrderNo(orderNo: string): Promise<LogisticsRecord[]> {

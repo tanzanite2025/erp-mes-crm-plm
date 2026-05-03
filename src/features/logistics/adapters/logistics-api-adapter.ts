@@ -1,12 +1,20 @@
 import type {
+  ControlledTrackingDetail,
+  ControlledTrackingOrder,
   LogisticsEvent,
   LogisticsListPage,
   LogisticsRecord,
+  LogisticsStatus,
+  LogisticsTrackingRefreshResult,
   SaveLogisticsRecordInput,
   UpdateLogisticsStatusInput,
 } from '../data/schema'
 import type {
+  ControlledTrackingDetailApiDTO,
+  ControlledTrackingOrderApiDTO,
+  ControlledTrackingTraceApiDTO,
   LogisticsEventApiDTO,
+  LogisticsTrackingRefreshResultApiDTO,
   LogisticsListPageApiDTO,
   LogisticsRecordApiDTO,
   SaveLogisticsRecordApiDTO,
@@ -37,6 +45,122 @@ export function toLogisticsEventContract(dto: LogisticsEventApiDTO): LogisticsEv
     location: dto.location ?? '',
     description: dto.description ?? '',
     status: dto.status,
+  }
+}
+
+function toControlledTrackingTimelineStatus(status: string | undefined): LogisticsStatus {
+  switch ((status ?? '').trim().toLowerCase()) {
+    case 'pending':
+    case 'collected':
+      return 'Pending'
+    case 'intransit':
+    case 'delivering':
+      return 'InTransit'
+    case 'signed':
+      return 'Delivered'
+    case 'exception':
+      return 'Exception'
+    case 'returned':
+    case 'canceled':
+      return 'Canceled'
+    default:
+      return 'InTransit'
+  }
+}
+
+function inferControlledTrackingEventStatus(context: string | undefined, fallbackStatus: LogisticsStatus): LogisticsStatus {
+  const normalized = (context ?? '').trim().toLowerCase()
+  if (normalized === '') {
+    return fallbackStatus
+  }
+  if (
+    normalized.includes('signed') ||
+    normalized.includes('delivered') ||
+    normalized.includes('签收') ||
+    normalized.includes('妥投')
+  ) {
+    return 'Delivered'
+  }
+  if (
+    normalized.includes('exception') ||
+    normalized.includes('failed') ||
+    normalized.includes('delay') ||
+    normalized.includes('异常')
+  ) {
+    return 'Exception'
+  }
+  if (
+    normalized.includes('returned') ||
+    normalized.includes('return') ||
+    normalized.includes('退回') ||
+    normalized.includes('退件')
+  ) {
+    return 'Canceled'
+  }
+  if (
+    normalized.includes('pending') ||
+    normalized.includes('collected') ||
+    normalized.includes('揽收') ||
+    normalized.includes('待揽收')
+  ) {
+    return 'Pending'
+  }
+  return fallbackStatus
+}
+
+function toControlledTrackingOrderContract(dto: ControlledTrackingOrderApiDTO): ControlledTrackingOrder {
+  return {
+    id: dto.id,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    bizOrderNo: dto.bizOrderNo,
+    bizType: dto.bizType,
+    carrierCode: dto.carrierCode,
+    carrierName: dto.carrierName,
+    trackingNo: dto.trackingNo,
+    status: dto.status,
+    subscribedAt: dto.subscribedAt ?? undefined,
+    lastPushAt: dto.lastPushAt ?? undefined,
+    lastLocation: dto.lastLocation ?? '',
+    lastEvent: dto.lastEvent ?? '',
+    signedAt: dto.signedAt ?? undefined,
+    version: dto.version ?? 1,
+  }
+}
+
+function toLogisticsTrackingRefreshResultContract(
+  dto: LogisticsTrackingRefreshResultApiDTO
+): LogisticsTrackingRefreshResult {
+  return {
+    status: dto.status ?? '',
+    message: dto.message ?? '',
+    action: dto.action ?? '',
+    providerCode: dto.providerCode ?? '',
+    insertedTraces: dto.insertedTraces ?? 0,
+    checkedAt: dto.checkedAt ?? '',
+  }
+}
+
+export function toControlledTrackingEventContract(
+  dto: ControlledTrackingTraceApiDTO,
+  fallbackStatus: LogisticsStatus
+): LogisticsEvent {
+  return {
+    id: dto.hashKey ?? `${dto.time}-${dto.context ?? ''}-${dto.location ?? ''}`,
+    time: dto.time,
+    location: dto.location ?? '',
+    description: dto.context ?? '',
+    status: inferControlledTrackingEventStatus(dto.context, fallbackStatus),
+  }
+}
+
+export function toControlledTrackingDetailContract(dto: ControlledTrackingDetailApiDTO): ControlledTrackingDetail {
+  const order = toControlledTrackingOrderContract(dto.order)
+  const fallbackStatus = toControlledTrackingTimelineStatus(order.status)
+  return {
+    order,
+    events: dto.traces.map((trace) => toControlledTrackingEventContract(trace, fallbackStatus)),
+    refresh: dto.refresh ? toLogisticsTrackingRefreshResultContract(dto.refresh) : undefined,
   }
 }
 

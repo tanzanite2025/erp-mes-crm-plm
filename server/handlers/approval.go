@@ -62,7 +62,7 @@ func RequestApprovalHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := services.RequestApproval(services.RequestApprovalInput{
+	result, err := services.RequestApproval(auditContextFromGin(c), services.RequestApprovalInput{
 		Module:      input.Module,
 		Action:      input.Action,
 		TargetID:    input.TargetID,
@@ -98,6 +98,7 @@ func ApproveRequestHandler(c *gin.Context) {
 	}
 
 	result, err := services.ApproveRequest(
+		auditContextFromGin(c),
 		services.ApproveRequestInput{
 			RequestID:      c.Param("id"),
 			Status:         input.Status,
@@ -145,7 +146,7 @@ func VerifyAuthCodeHandler(c *gin.Context) {
 		return
 	}
 
-	request, err := services.VerifyAuthCode(services.VerifyAuthCodeInput{
+	request, err := services.VerifyAuthCode(auditContextFromGin(c), services.VerifyAuthCodeInput{
 		Module:   input.Module,
 		Action:   input.Action,
 		TargetID: input.TargetID,

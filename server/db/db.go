@@ -924,7 +924,6 @@ func InitDB(dsn string) {
 		&models.LogisticsRecord{},
 		&models.Product{},
 		&models.ProductAppearance{},
-		&models.ChangeOrder{},
 		&models.BOM{},
 		&models.BOMItem{},
 		&models.BOMSubstituteItem{},

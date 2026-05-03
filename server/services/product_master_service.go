@@ -593,7 +593,6 @@ func GetNextProductModelCode(typeID string) (string, error) {
 func DeleteProduct(id string) error {
 	referenceChecks := []any{
 		&models.BOM{},
-		&models.ChangeOrder{},
 		&models.SalesOrderLine{},
 		&models.LogisticsRecord{},
 		&models.ProductionPlan{},

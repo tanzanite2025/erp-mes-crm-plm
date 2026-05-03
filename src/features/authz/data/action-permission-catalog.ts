@@ -411,6 +411,14 @@ const tradingActions: LegacyActionPermissionEntry[] = [
       'DELETE /logistics-push/providers/:id',
     ],
   },
+  {
+    id: 'action_finance_settlement_manage',
+    label: '财务：登记往来结算',
+    desc: '允许在应收与应付台账中登记收款和付款记录。',
+    category: 'action',
+    parentId: 'menu_trading',
+    routeBindings: ['POST /receivables/:id/receipts', 'POST /payables/:id/payments'],
+  },
 ]
 
 const equipmentActions: LegacyActionPermissionEntry[] = [
@@ -572,6 +580,14 @@ const orgActions: LegacyActionPermissionEntry[] = [
     ],
   },
   {
+    id: 'action_hr_detail_view',
+    label: '组织人事：查看员工详情',
+    desc: '允许查看员工档案详情。',
+    category: 'action',
+    parentId: 'menu_org',
+    routeBindings: ['GET /employees/:id'],
+  },
+  {
     id: 'action_employee_import_preview',
     label: '组织人事：预览员工导入',
     desc: '允许执行员工导入预览。',
@@ -605,6 +621,22 @@ const productionActions: LegacyActionPermissionEntry[] = [
     category: 'action',
     parentId: 'menu_prod_config',
     routeBindings: ['POST /production/plans'],
+  },
+  {
+    id: 'action_production_issuance_execute',
+    label: '生产：执行领料下发',
+    desc: '允许创建裁纱领料下发执行记录。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['POST /production/cutting-issuances'],
+  },
+  {
+    id: 'action_barcode_binding_manage',
+    label: '生产：管理产品条码绑定',
+    desc: '允许创建产品条码绑定记录。',
+    category: 'action',
+    parentId: 'menu_prod_config',
+    routeBindings: ['POST /production/product-barcode-bindings'],
   },
   {
     id: 'action_cutting_size_inventory_record',

@@ -3,6 +3,7 @@ import { History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTimeline } from '@/features/audit-timeline/components/data-timeline'
 import { type AuditModuleValue } from '@/features/audit-timeline/data/audit-modules'
+import { useLanguage } from '@/context/language-provider'
 import { cn } from '@/lib/utils'
 
 interface AuditTimelineTriggerButtonProps {
@@ -10,6 +11,7 @@ interface AuditTimelineTriggerButtonProps {
   targetId?: string
   targetName?: string
   label?: string
+  iconOnly?: boolean
   className?: string
 }
 
@@ -17,10 +19,13 @@ export function AuditTimelineTriggerButton({
   module,
   targetId,
   targetName,
-  label = '变更记录',
+  label,
+  iconOnly = false,
   className,
 }: AuditTimelineTriggerButtonProps) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
+  const resolvedLabel = label || t('common.audit.trigger')
 
   return (
     <>
@@ -29,13 +34,15 @@ export function AuditTimelineTriggerButton({
         variant='outline'
         size='sm'
         onClick={() => setOpen(true)}
+        aria-label={resolvedLabel}
         className={cn(
           'h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest',
+          iconOnly && 'size-8 rounded-full px-0',
           className,
         )}
       >
         <History className='size-3.5' />
-        {label}
+        {iconOnly ? null : resolvedLabel}
       </Button>
       <DataTimeline
         module={module}

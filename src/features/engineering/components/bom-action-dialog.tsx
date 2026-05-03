@@ -2,7 +2,9 @@
 
 import { Layers } from 'lucide-react'
 import { type UseFormReturn } from 'react-hook-form'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -71,14 +73,24 @@ export function BOMActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex h-[94vh] max-h-[94vh] max-w-[98vw] flex-col gap-0 overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[95vw]'>
         <DialogHeader className='p-4 sm:p-5 pb-1.5 text-start flex-none relative'>
-          <DialogTitle className='flex items-center gap-2 sm:gap-3 text-base sm:text-xl font-black tracking-tighter uppercase italic pr-8'>
-            <Layers className='size-5 sm:size-6 text-blue-600 stroke-3 shrink-0' />
-            <span className='truncate sm:whitespace-normal'>
-              {isEdit
-                ? t('engineering.bomArchive.dialog.editTitle')
-                : t('engineering.bomArchive.dialog.createTitle')}
-            </span>
-          </DialogTitle>
+          <div className='flex items-center justify-between gap-3'>
+            <DialogTitle className='flex items-center gap-2 sm:gap-3 text-base sm:text-xl font-black tracking-tighter uppercase italic pr-8'>
+              <Layers className='size-5 sm:size-6 text-blue-600 stroke-3 shrink-0' />
+              <span className='truncate sm:whitespace-normal'>
+                {isEdit
+                  ? t('engineering.bomArchive.dialog.editTitle')
+                  : t('engineering.bomArchive.dialog.createTitle')}
+              </span>
+            </DialogTitle>
+            {isEdit && currentRow?.id ? (
+              <AuditTimelineTriggerButton
+                module={AUDIT_MODULES.bom}
+                targetId={currentRow.id}
+                targetName={currentRow.bomNo}
+                className='h-9 rounded-full border-dashed bg-background/80 px-4 text-[10px] font-black uppercase tracking-widest'
+              />
+            ) : null}
+          </div>
         </DialogHeader>
         <Form {...typedForm}>
           <form

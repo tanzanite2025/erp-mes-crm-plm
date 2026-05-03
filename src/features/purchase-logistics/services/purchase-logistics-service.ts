@@ -1,5 +1,10 @@
 import { apiFetch } from '@/lib/api-client'
 import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { logisticsService } from '../../logistics/services/logistics-service'
+import type {
+  ControlledTrackingOrder,
+  LogisticsTrackingRefreshResult,
+} from '../../logistics/data/schema'
 
 export interface LogisticsEvent {
   id: string
@@ -29,24 +34,64 @@ export interface PurchaseLogisticsRecord {
   updatedAt: string
 }
 
+export interface PurchaseControlledTrackingDetail {
+  order: ControlledTrackingOrder
+  events: LogisticsEvent[]
+  refresh?: LogisticsTrackingRefreshResult
+}
+
+interface PurchaseLogisticsApiRecord extends Omit<PurchaseLogisticsRecord, 'events'> {
+  events?: unknown
+}
+
+interface PurchaseLogisticsApiListResponse {
+  items?: PurchaseLogisticsApiRecord[]
+  total?: number
+  page?: number
+  pageSize?: number
+}
+
+export interface PurchaseLogisticsListResponse {
+  items?: PurchaseLogisticsRecord[]
+  total?: number
+  page?: number
+  pageSize?: number
+}
+
+function normalizeLogisticsEvents(raw: unknown): LogisticsEvent[] {
+  if (Array.isArray(raw)) {
+    return raw as LogisticsEvent[]
+  }
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      return Array.isArray(parsed) ? (parsed as LogisticsEvent[]) : []
+    } catch (_error) {
+      return []
+    }
+  }
+
+  return []
+}
+
 export const PurchaseLogisticsService = {
   /**
    * 获取所有物流记录，可选按采购订单过滤 (带数据规范化)
    */
-  async getRecords(params?: { purchaseOrderId?: string; page?: number; pageSize?: number }) {
+  async getRecords(params?: { purchaseOrderId?: string; page?: number; pageSize?: number }): Promise<PurchaseLogisticsListResponse> {
     const searchParams = new URLSearchParams()
     if (params?.purchaseOrderId) searchParams.append('purchaseOrderId', params.purchaseOrderId)
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.pageSize) searchParams.append('pageSize', params.pageSize.toString())
 
     const queryString = searchParams.toString()
-    const res = await apiFetch(`/logistics${queryString ? `?${queryString}` : ''}`) as any
-    
-    // 数据规范化：确保 events 始终为数组
-    if (res && res.items) {
-      res.items = res.items.map((item: any) => this.normalizeRecord(item))
+    const res = await apiFetch<PurchaseLogisticsApiListResponse>(`/logistics${queryString ? `?${queryString}` : ''}`)
+
+    return {
+      ...res,
+      items: res.items?.map((item) => this.normalizeRecord(item)),
     }
-    return res
   },
 
   /**
@@ -62,21 +107,35 @@ export const PurchaseLogisticsService = {
     })
   },
 
+  async getControlledTrackingDetail(
+    trackingNo: string,
+    options: { refresh?: boolean } = {}
+  ): Promise<PurchaseControlledTrackingDetail | null> {
+    const detail = await logisticsService.getControlledTrackingDetail(trackingNo, options)
+    if (!detail) {
+      return null
+    }
+
+    return {
+      order: detail.order,
+      refresh: detail.refresh,
+      events: detail.events.map((event) => ({
+        id: event.id,
+        time: event.time,
+        location: event.location,
+        description: event.description,
+        status: event.status,
+      })),
+    }
+  },
+
   /**
    * 规范化记录：处理 JSON 字符串等问题
    */
-  normalizeRecord(record: any): PurchaseLogisticsRecord {
-    let events = record.events
-    if (typeof events === 'string') {
-      try {
-        events = JSON.parse(events)
-      } catch (e) {
-        events = []
-      }
-    }
+  normalizeRecord(record: PurchaseLogisticsApiRecord): PurchaseLogisticsRecord {
     return {
       ...record,
-      events: Array.isArray(events) ? events : []
+      events: normalizeLogisticsEvents(record.events)
     }
   },
 
@@ -87,7 +146,7 @@ export const PurchaseLogisticsService = {
     status: string
     location: string
     description: string
-    events: any[]
+    events: LogisticsEvent[]
     version: number
   }) {
     return apiFetch(`/logistics/${id}/status`, {

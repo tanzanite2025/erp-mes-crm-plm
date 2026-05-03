@@ -1,9 +1,12 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
+	"xdfc-server/audit"
 	"xdfc-server/authz"
 	"xdfc-server/db"
 	"xdfc-server/models"
@@ -122,16 +125,18 @@ func RequestApprovalTx(tx *gorm.DB, input RequestApprovalInput) (ApprovalWorkflo
 	}, nil
 }
 
-func RequestApproval(input RequestApprovalInput) (ApprovalWorkflowResult, error) {
+func RequestApproval(ctx context.Context, input RequestApprovalInput) (ApprovalWorkflowResult, error) {
 	result, err := RequestApprovalTx(db.DB, input)
 	if err != nil {
 		return ApprovalWorkflowResult{}, err
 	}
 	syncApprovalRequestToSearch(result.Request)
+	// 记录发起申请的审计日志
+	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", result.Request.ID, "request", nil)
 	return result, nil
 }
 
-func ApproveRequest(input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {
+func ApproveRequest(ctx context.Context, input ApproveRequestInput, now time.Time, generateCode func() string) (ApprovalWorkflowResult, error) {
 	var request models.ApprovalRequest
 	if err := db.DB.First(&request, "id = ?", input.RequestID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -236,6 +241,8 @@ func ApproveRequest(input ApproveRequestInput, now time.Time, generateCode func(
 	}
 
 	result.Request = request
+	// 记录审批决策的审计日志
+	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", request.ID, "approve_"+strings.ToLower(input.Status), nil)
 	return result, nil
 }
 
@@ -271,7 +278,12 @@ func hasApprovalFullAccess(permissionIDs []string) bool {
 	return false
 }
 
-func VerifyAuthCode(input VerifyAuthCodeInput, now time.Time) (models.ApprovalRequest, error) {
+func VerifyAuthCode(ctx context.Context, input VerifyAuthCodeInput, now time.Time) (models.ApprovalRequest, error) {
+	actor, _ := audit.ActorFromContext(ctx)
+	if actor.UserID == "" {
+		return models.ApprovalRequest{}, errors.New("[CRITICAL] Identity required for auth code verification")
+	}
+
 	var request models.ApprovalRequest
 	err := db.DB.Where(
 		"module = ? AND action = ? AND target_id = ? AND auth_code = ? AND status = 'APPROVED'",
@@ -289,11 +301,26 @@ func VerifyAuthCode(input VerifyAuthCodeInput, now time.Time) (models.ApprovalRe
 		return models.ApprovalRequest{}, ErrApprovalAuthCodeExpired
 	}
 
-	if err := db.DB.Model(&request).Update("status", "VERIFIED").Error; err != nil {
+	// 记录验证者身份并更新状态
+	if err := db.DB.Model(&request).Updates(map[string]interface{}{
+		"status":      "VERIFIED",
+		"verifier_id": actor.UserID,
+	}).Error; err != nil {
 		return models.ApprovalRequest{}, err
 	}
+
 	request.Status = "VERIFIED"
+	request.VerifierID = actor.UserID
 	request.UpdatedAt = now
 	syncApprovalRequestToSearch(request)
+
+	// 记录验证行为的审计日志 (关键合规环节)
+	verifyDiff, _ := json.Marshal(map[string]any{
+		"module":   input.Module,
+		"action":   input.Action,
+		"targetId": input.TargetID,
+	})
+	_ = recordLegacyAuditEntryWithContext(ctx, db.DB, "ApprovalRequest", request.ID, "verify_code", verifyDiff)
+
 	return request, nil
 }

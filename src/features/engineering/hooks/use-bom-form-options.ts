@@ -6,37 +6,25 @@ import { failLoudly } from '@/lib/safe-catch'
 import { MATERIAL_OPTIONS_QUERY_KEY } from '../../material-archive/query-keys'
 import { type MaterialOption } from '../../material-archive/data/schema'
 import { MaterialCoreService } from '../../material-archive/services/material-core-service'
-import { type ChangeOrder, type Product } from '../data/schema'
-import { CHANGE_ORDERS_QUERY_KEY, productOptionsQueryKey } from '../query-keys'
-import { changeOrderService } from '../services/change-order-service'
+import { type Product } from '../data/schema'
+import { productOptionsQueryKey } from '../query-keys'
 import { ProductCoreService } from '../services/product-core-service'
 
 const logger = createLogger('useBOMFormOptions')
 
 interface UseBOMFormOptionsParams {
   open: boolean
-  selectedProductId?: string
 }
 
 export type BOMFormOptionsResource = CompositeReadResource<{
   products: Product[]
   materials: MaterialOption[]
-  changeOrders: ChangeOrder[]
 }>
 
-export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptionsParams): BOMFormOptionsResource {
+export function useBOMFormOptions({ open }: UseBOMFormOptionsParams): BOMFormOptionsResource {
   const productsQuery = useQuery({
     queryKey: productOptionsQueryKey(),
     queryFn: () => ProductCoreService.getProducts({ isOptions: true }),
-    enabled: open,
-  })
-  const changeOrdersQuery = useQuery({
-    queryKey: [...CHANGE_ORDERS_QUERY_KEY, selectedProductId || 'all', 'options'],
-    queryFn: () =>
-      changeOrderService.getChangeOrders({
-        isOptions: true,
-        productId: selectedProductId || undefined,
-      }),
     enabled: open,
   })
   const materialsQuery = useQuery({
@@ -62,22 +50,6 @@ export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptions
       }
     }
 
-    const changeOrdersFailure = resolveQueryFailure({
-      data: changeOrdersQuery.data,
-      error: changeOrdersQuery.error,
-      isPending: changeOrdersQuery.isPending,
-      scope: 'useBOMFormOptions.changeOrders',
-      missingMessage: '[CRITICAL] Missing BOM form change orders query data',
-      failureMessage: '[CRITICAL] BOM form change orders query failed',
-    })
-    if (changeOrdersFailure) {
-      return {
-        status: 'error',
-        error: changeOrdersFailure.error,
-        scope: changeOrdersFailure.scope,
-      }
-    }
-
     const materialsFailure = resolveQueryFailure({
       data: materialsQuery.data,
       error: materialsQuery.error,
@@ -94,20 +66,16 @@ export function useBOMFormOptions({ open, selectedProductId }: UseBOMFormOptions
       }
     }
 
-    if (productsQuery.isPending || changeOrdersQuery.isPending || materialsQuery.isPending) {
+    if (productsQuery.isPending || materialsQuery.isPending) {
       return { status: 'loading' }
     }
 
     return {
       status: 'ready',
       products: productsQuery.data as Product[],
-      changeOrders: changeOrdersQuery.data as ChangeOrder[],
       materials: materialsQuery.data as MaterialOption[],
     }
   }, [
-    changeOrdersQuery.data,
-    changeOrdersQuery.error,
-    changeOrdersQuery.isPending,
     materialsQuery.data,
     materialsQuery.error,
     materialsQuery.isPending,

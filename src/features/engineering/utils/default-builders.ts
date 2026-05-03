@@ -1,16 +1,9 @@
-import { type ChangeOrder, type Product, type ProductTemplate } from '../data/schema'
+import { type Product, type ProductTemplate } from '../data/schema'
 import {
-    type ChangeOrderDraftOverrides,
     type ProductDraftOverrides,
     type ProductTemplateDraftOverrides,
 } from '../mutation-types'
-import {
-    normalizeChangeOrderEntity,
-    normalizeEngineeringChangeOrderNo,
-    normalizeEngineeringRevisionNo,
-    normalizeEngineeringSiteCode,
-    normalizeProductTemplateEntity,
-} from './product-code-normalization'
+import { normalizeProductTemplateEntity } from './product-code-normalization'
 
 export function createProductDraft(overrides: ProductDraftOverrides = {}): Product {
     return {
@@ -56,46 +49,4 @@ export function createProductTemplateDraft(overrides: ProductTemplateDraftOverri
         version: 1,
         ...overrides,
     })
-}
-
-export function createChangeOrderDraft(overrides: ChangeOrderDraftOverrides = {}): ChangeOrder {
-    return normalizeChangeOrderEntity({
-        id: '',
-        title: '',
-        productId: '',
-        status: 'draft',
-        description: '',
-        createdAt: '',
-        version: 1,
-        changeOrderNo: '',
-        changeType: 'ECO',
-        siteCode: '',
-        revisionNo: 'R1',
-        isDefaultSite: true,
-        effectiveFrom: '',
-        effectiveTo: '',
-        ...overrides,
-    })
-}
-
-const formatDateInput = (value?: string | null) => (value ? value.slice(0, 10) : '')
-
-export function buildChangeOrderDraft(overrides?: ChangeOrderDraftOverrides | null): ChangeOrder {
-    const siteCode = normalizeEngineeringSiteCode(overrides?.siteCode)
-
-    return normalizeChangeOrderEntity(createChangeOrderDraft({
-        ...overrides,
-        changeOrderNo: normalizeEngineeringChangeOrderNo(overrides?.changeOrderNo),
-        title: overrides?.title || '',
-        productId: overrides?.productId || '',
-        status: overrides?.status || 'draft',
-        description: overrides?.description || '',
-        siteCode,
-        revisionNo: normalizeEngineeringRevisionNo(overrides?.revisionNo),
-        isDefaultSite: overrides?.isDefaultSite ?? !siteCode,
-        effectiveFrom: formatDateInput(overrides?.effectiveFrom),
-        effectiveTo: formatDateInput(overrides?.effectiveTo),
-        createdAt: overrides?.createdAt || '',
-        version: overrides?.version ?? 1,
-    }))
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import {
   Hash,
   History,
@@ -8,6 +9,7 @@ import {
   Package,
   Phone,
   Plus,
+  RefreshCw,
   Search,
   Truck,
 } from 'lucide-react'
@@ -22,12 +24,17 @@ import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/shipping-management/logistics'
 import { getCarrierLabelKey, logisticsStatuses, type LogisticsRecord } from '../data/schema'
-import { useGetLogistics, useGetLogisticsDetail, useLogisticsMutations } from '../hooks/use-logistics'
+import {
+  useGetControlledTrackingDetail,
+  useGetLogistics,
+  useGetLogisticsDetail,
+  useLogisticsMutations,
+} from '../hooks/use-logistics'
 import { LogisticsActionDialog } from './logistics-action-dialog'
 import { LogisticsTimeline } from './logistics-timeline'
 
 export function LogisticsMgmt() {
-  const { t } = useLanguage()
+  const { locale, t } = useLanguage()
   const { bindOrderNo, bindShipmentId } = Route.useSearch()
   const router = useRouter()
   const [page, setPage] = useState(1)
@@ -35,7 +42,7 @@ export function LogisticsMgmt() {
   const { data, error, isLoading } = useGetLogistics(page, pageSize)
   const records = useMemo(() => data?.items ?? [], [data?.items])
   const total = data?.total || 0
-  const { updateStatusMutation } = useLogisticsMutations()
+  const { refreshTrackingMutation, updateStatusMutation } = useLogisticsMutations()
   const [searchTerm, setSearchTerm] = useState('')
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<LogisticsRecord | null>(null)
@@ -46,6 +53,58 @@ export function LogisticsMgmt() {
     selectedRecord?.id || undefined
   )
   const displayRecord = detailedRecord || selectedRecord
+  const selectedTrackingNo = selectedRecord?.trackingNo || detailedRecord?.trackingNo
+  const { data: controlledTrackingDetail, isLoading: isControlledTrackingLoading } = useGetControlledTrackingDetail(
+    selectedTrackingNo,
+    isDetailOpen
+  )
+  const displayEvents = controlledTrackingDetail?.events.length ? controlledTrackingDetail.events : displayRecord?.events || []
+  const displayCarrier = controlledTrackingDetail?.order.carrierName || controlledTrackingDetail?.order.carrierCode || displayRecord?.carrier || ''
+  const displayCarrierLabelKey = getCarrierLabelKey(displayCarrier)
+  const latestRefresh = controlledTrackingDetail?.refresh
+  const isShowingTrustedTracking = Boolean(controlledTrackingDetail)
+  const isSheetLoading = isDetailLoading || (isDetailOpen && Boolean(selectedTrackingNo) && isControlledTrackingLoading)
+
+  const handleRefreshTracking = async () => {
+    if (!selectedTrackingNo) {
+      return
+    }
+
+    const detail = await refreshTrackingMutation.mutateAsync(selectedTrackingNo)
+    if (!detail) {
+      toast.warning(t('trading.logistics.toasts.trackingRefreshUnavailable'))
+      return
+    }
+
+    const refresh = detail.refresh
+    if (!refresh) {
+      toast.success(t('trading.logistics.toasts.trackingRefreshSuccess'))
+      return
+    }
+
+    const description = refresh.action || refresh.message || undefined
+    switch (refresh.status) {
+      case 'refreshed':
+        toast.success(t('trading.logistics.toasts.trackingRefreshSuccess'), {
+          description,
+        })
+        return
+      case 'manual_review':
+        toast.warning(t('trading.logistics.toasts.trackingRefreshManualReview'), {
+          description,
+        })
+        return
+      case 'invalid_config':
+        toast.warning(t('trading.logistics.toasts.trackingRefreshInvalidConfig'), {
+          description,
+        })
+        return
+      default:
+        toast.error(t('trading.logistics.toasts.trackingRefreshFailed', {
+          message: description ?? refresh.status,
+        }))
+    }
+  }
 
   useEffect(() => {
     if (!bindOrderNo) return
@@ -317,7 +376,7 @@ export function LogisticsMgmt() {
               <SheetTitle className='text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground mb-4'>
                 {t('trading.logistics.detailTitle')}
               </SheetTitle>
-              {isDetailLoading ? (
+              {isSheetLoading ? (
                 <div className='flex items-center gap-3 animate-pulse'>
                   <Loader2 className='size-5 animate-spin text-primary' />
                   <span className='text-xs font-bold text-primary'>{t('trading.logistics.syncing')}</span>
@@ -329,10 +388,10 @@ export function LogisticsMgmt() {
                       {displayRecord?.trackingNo}
                     </h2>
                     <Badge className='font-black uppercase text-[10px] rounded-lg bg-primary text-white border-none'>
-                      {displayRecord?.carrier
-                        ? getCarrierLabelKey(displayRecord.carrier)
-                          ? t(getCarrierLabelKey(displayRecord.carrier)!)
-                          : displayRecord.carrier
+                      {displayCarrier
+                        ? displayCarrierLabelKey
+                          ? t(displayCarrierLabelKey)
+                          : displayCarrier
                         : ''}
                     </Badge>
                   </div>
@@ -346,17 +405,77 @@ export function LogisticsMgmt() {
                       {displayRecord?.contactPhone || t('trading.logistics.notAvailable')}
                     </span>
                   </div>
+                  <div className='flex flex-wrap items-center justify-between gap-3'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+                        {isShowingTrustedTracking
+                          ? t('trading.logistics.detailSourceTrusted')
+                          : t('trading.logistics.detailSourceLocal')}
+                      </Badge>
+                      {latestRefresh?.checkedAt ? (
+                        <span className='text-[8px] font-mono text-muted-foreground/60'>
+                          {t('trading.logistics.detailRefreshCheckedAt')}: {new Date(latestRefresh.checkedAt).toLocaleString(locale)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      onClick={() => void handleRefreshTracking()}
+                      disabled={!selectedTrackingNo || refreshTrackingMutation.isPending}
+                      className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+                    >
+                      {refreshTrackingMutation.isPending ? (
+                        <Loader2 className='me-2 size-3.5 animate-spin' />
+                      ) : (
+                        <RefreshCw className='me-2 size-3.5' />
+                      )}
+                      {refreshTrackingMutation.isPending
+                        ? t('trading.logistics.detailRefreshing')
+                        : t('trading.logistics.detailRefresh')}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
           </SheetHeader>
           <div className='flex-1 overflow-y-auto px-8 py-10 custom-scrollbar'>
-            {isDetailLoading ? (
+            {isSheetLoading ? (
               <div className='h-full flex items-center justify-center opacity-20'>
                 <Loader2 className='size-12 animate-spin' />
               </div>
             ) : (
-              <LogisticsTimeline events={displayRecord?.events || []} />
+              <>
+                {latestRefresh ? (
+                  <div className='mb-6 rounded-[24px] border border-dashed border-primary/20 bg-primary/5 p-4'>
+                    <div className='flex flex-wrap items-center justify-between gap-3'>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+                          {latestRefresh.providerCode || t('trading.logistics.detailSourceTrusted')}
+                        </Badge>
+                        <span className='text-[8px] font-mono uppercase text-muted-foreground/60'>
+                          {latestRefresh.status || t('trading.logistics.notAvailable')}
+                        </span>
+                      </div>
+                      {latestRefresh.checkedAt ? (
+                        <span className='text-[8px] font-mono text-muted-foreground/60'>
+                          {new Date(latestRefresh.checkedAt).toLocaleString(locale)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className='mt-3 text-[10px] font-black uppercase tracking-widest text-secondary/80'>
+                      {latestRefresh.action || latestRefresh.message || t('trading.logistics.notAvailable')}
+                    </p>
+                  </div>
+                ) : !isShowingTrustedTracking && selectedTrackingNo ? (
+                  <div className='mb-6 rounded-[24px] border border-dashed border-amber-500/20 bg-amber-500/5 p-4'>
+                    <p className='text-[10px] font-black uppercase tracking-widest text-amber-700/80'>
+                      {t('trading.logistics.detailFallback')}
+                    </p>
+                  </div>
+                ) : null}
+                <LogisticsTimeline events={displayEvents} />
+              </>
             )}
           </div>
         </SheetContent>

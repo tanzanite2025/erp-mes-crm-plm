@@ -4,7 +4,12 @@ import { useLanguage } from '@/context/language-provider'
 import { buildMutationOptions } from '@/lib/react-query-mutation'
 import { isConflictError } from '@/lib/handle-server-error'
 import { toUpdateLogisticsStatusApiDTO } from '../adapters/logistics-api-adapter'
-import type { LogisticsEvent, LogisticsRecord, SaveLogisticsRecordInput, UpdateLogisticsStatusInput } from '../data/schema'
+import type {
+  LogisticsEvent,
+  LogisticsRecord,
+  SaveLogisticsRecordInput,
+  UpdateLogisticsStatusInput,
+} from '../data/schema'
 import { logisticsService } from '../services/logistics-service'
 import { type DeltaSet } from '@/lib/delta/types'
 
@@ -29,6 +34,7 @@ export const LOGISTICS_KEYS = {
   all: ['logistics'] as const,
   list: () => [...LOGISTICS_KEYS.all, 'list'] as const,
   detail: (id: string) => [...LOGISTICS_KEYS.all, 'detail', id] as const,
+  tracking: (trackingNo: string) => [...LOGISTICS_KEYS.all, 'tracking', trackingNo] as const,
   byOrder: (orderNo: string) => [...LOGISTICS_KEYS.all, 'by-order', orderNo] as const,
 }
 
@@ -44,6 +50,14 @@ export function useGetLogisticsDetail(id: string | undefined) {
     queryKey: LOGISTICS_KEYS.detail(id || ''),
     queryFn: () => (id ? logisticsService.getRecordById(id) : null),
     enabled: !!id,
+  })
+}
+
+export function useGetControlledTrackingDetail(trackingNo: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: LOGISTICS_KEYS.tracking(trackingNo || ''),
+    queryFn: () => (trackingNo ? logisticsService.getControlledTrackingDetail(trackingNo) : null),
+    enabled: enabled && !!trackingNo,
   })
 }
 
@@ -111,9 +125,23 @@ export function useLogisticsMutations() {
     },
   })
 
+  const refreshTrackingMutation = useMutation({
+    mutationFn: async (trackingNo: string) => {
+      const detail = await logisticsService.getControlledTrackingDetail(trackingNo, { refresh: true })
+      if (detail) {
+        queryClient.setQueryData(LOGISTICS_KEYS.tracking(trackingNo), detail)
+      }
+      return detail
+    },
+    onError: (err: Error) => {
+      toast.error(t('trading.logistics.toasts.trackingRefreshFailed', { message: err.message }))
+    },
+  })
+
   return {
     saveMutation,
     updateStatusMutation,
     deleteMutation,
+    refreshTrackingMutation,
   }
 }

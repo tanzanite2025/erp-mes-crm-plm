@@ -33,6 +33,39 @@ export interface LogisticsRecord {
   updatedAt: string
 }
 
+export interface LogisticsTrackingRefreshResult {
+  status: string
+  message: string
+  action: string
+  providerCode: string
+  insertedTraces: number
+  checkedAt: string
+}
+
+export interface ControlledTrackingOrder {
+  id: number
+  createdAt: string
+  updatedAt: string
+  bizOrderNo: string
+  bizType: string
+  carrierCode: string
+  carrierName: string
+  trackingNo: string
+  status: string
+  subscribedAt?: string
+  lastPushAt?: string
+  lastLocation: string
+  lastEvent: string
+  signedAt?: string
+  version: number
+}
+
+export interface ControlledTrackingDetail {
+  order: ControlledTrackingOrder
+  events: LogisticsEvent[]
+  refresh?: LogisticsTrackingRefreshResult
+}
+
 export interface LogisticsListPage {
   items: LogisticsRecord[]
   total: number

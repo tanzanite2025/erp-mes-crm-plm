@@ -23,6 +23,8 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleSupplier:       {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleEmployee:       {authz.MenuOrg},
 	services.AuditModuleMaterial:       {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
+	services.AuditModuleChangeOrder:    {authz.MenuEngineering},
+	services.AuditModuleBOM:            {authz.MenuEngineering},
 	services.AuditModuleUser:           {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionUserDelete, authz.PermissionManage},
 	services.AuditModuleUserPermission: {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionManage},
 	services.AuditModuleRole:           {authz.MenuOrg, authz.PermissionManage},

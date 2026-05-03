@@ -4,7 +4,6 @@ export const productListQueryKey = (page: number = 1, pageSize: number = 50) =>
   [...PRODUCTS_QUERY_KEY, 'page', page, pageSize] as const
 export const productDetailQueryKey = (id: string) => ['engineering', 'products', id] as const
 export const PRODUCT_TYPES_QUERY_KEY = ['engineering', 'productTypes'] as const
-export const CHANGE_ORDERS_QUERY_KEY = ['engineering', 'changeOrders'] as const
 export const PRODUCT_TEMPLATES_QUERY_KEY = ['engineering', 'productTemplates'] as const
 export const PRODUCT_APPEARANCES_QUERY_KEY = ['engineering', 'productAppearances'] as const
 export const PRODUCT_ATTRIBUTE_CATEGORIES_QUERY_KEY = ['engineering', 'productAttributeCategories'] as const

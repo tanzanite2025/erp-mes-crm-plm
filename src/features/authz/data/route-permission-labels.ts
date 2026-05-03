@@ -53,7 +53,6 @@ const ROUTE_PERMISSION_LABEL_KEYS: Record<string, TranslationKey> = {
   '/engineering/product-appearance': 'engineering.tabs.productAppearance',
   '/engineering/product-attributes': 'engineering.tabs.productAttributes',
   '/engineering/bom': 'engineering.tabs.bom',
-  '/engineering/changes': 'engineering.tabs.changes',
   '/engineering/templates': 'engineering.tabs.templates',
   '/engineering/types': 'engineering.tabs.types',
   '/engineering-db': 'sidebar.items.engineeringDatabase',

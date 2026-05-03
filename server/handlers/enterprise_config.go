@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"xdfc-server/db"
 	"xdfc-server/models"
+	"xdfc-server/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,23 +32,12 @@ func SaveEnterpriseConfigHandler(c *gin.Context) {
 		return
 	}
 
-	var existing models.EnterpriseConfig
-	if err := db.DB.First(&existing).Error; err != nil {
-		// 创建新纪录
-		if err := db.DB.Create(&input).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 创建企业配置失败: " + err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, input)
+	if err := services.SaveEnterpriseConfig(auditContextFromGin(c), &input); err != nil {
+		respondDomainError(c, err, "[SERVER] 保存企业配置失败: ")
 		return
 	}
 
-	// 更新现有记录
-	if err := db.DB.Model(&existing).Updates(input).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "[SERVER] 更新企业配置失败: " + err.Error()})
-		return
-	}
-
-	db.DB.First(&existing)
-	c.JSON(http.StatusOK, existing)
+	var updated models.EnterpriseConfig
+	db.DB.First(&updated)
+	c.JSON(http.StatusOK, updated)
 }

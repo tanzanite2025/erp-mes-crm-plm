@@ -93,10 +93,9 @@ function buildUseBOMFormResult(overrides: Partial<UseBOMFormResult> = {}): UseBO
     fields: [],
     append: vi.fn(),
     remove: vi.fn(),
-    optionsResource: { status: 'ready', products: [], materials: [], changeOrders: [] },
+    optionsResource: { status: 'ready', products: [], materials: [] },
     products: [{ id: 'product-1', sku: 'SKU-001', name: 'Product A' }],
     materials: [{ id: 'mat-1', code: 'MAT-001', name: 'Material A', category: 'RAW_MATERIAL', spec: '', uom: 'PCS', status: 'Active' }],
-    changeOrders: [],
     ...overrides,
   } as UseBOMFormResult
 }
@@ -132,7 +131,6 @@ describe('BOMActionDialog', () => {
       optionsResource: { status: 'loading' },
       products: [],
       materials: [],
-      changeOrders: [],
     }))
 
     render(<BOMActionDialog open onOpenChange={vi.fn()} onSubmit={vi.fn()} />)
@@ -154,7 +152,6 @@ describe('BOMActionDialog', () => {
       },
       products: [],
       materials: [],
-      changeOrders: [],
     }))
 
     render(<BOMActionDialog open onOpenChange={vi.fn()} onSubmit={vi.fn()} />)

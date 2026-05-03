@@ -133,7 +133,7 @@ export function UsersPermissionsPage({ search, navigate }: UsersPermissionsPageP
             <AuditTimelineTriggerButton
               module={AUDIT_MODULES.userPermission}
               targetName={t('users.permissionPage.title')}
-              label='权限审计'
+              label={t('common.audit.permissionTrigger')}
             />
           )}
         />

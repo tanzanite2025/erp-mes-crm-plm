@@ -393,7 +393,7 @@ export function UsersActionDialog({
                                 module={AUDIT_MODULES.role}
                                 targetId={field.value}
                                 targetName={selectedRole?.label || selectedRole?.id || field.value}
-                                label='角色审计'
+                                label={t('common.audit.roleTrigger')}
                                 className='shrink-0'
                               />
                             ) : null}

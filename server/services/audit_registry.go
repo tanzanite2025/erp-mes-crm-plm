@@ -15,6 +15,8 @@ var auditEntityRegistry = []AuditEntityRegistration{
 	{EntityKey: AuditModuleCustomer, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "Customer"},
 	{EntityKey: AuditModuleSupplier, EngineModule: AuditEngineModuleTrading, EntryIntegrated: true, DisplayName: "Supplier"},
 	{EntityKey: AuditModuleEmployee, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "Employee"},
+	{EntityKey: AuditModuleChangeOrder, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "ChangeOrder"},
+	{EntityKey: AuditModuleBOM, EngineModule: AuditEngineModuleEngineering, EntryIntegrated: true, DisplayName: "BOM"},
 	{EntityKey: AuditModuleProductionLine, EngineModule: AuditEngineModuleEquipment, EntryIntegrated: false, DisplayName: "ProductionLine"},
 }
 

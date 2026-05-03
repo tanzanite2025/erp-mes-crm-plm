@@ -1,5 +1,5 @@
 import React from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -7,7 +7,8 @@ import {
   useReactTable,
   flexRender,
 } from '@tanstack/react-table'
-import { Truck, Package, Search, ChevronRight, MapPin, ExternalLink } from 'lucide-react'
+import { Truck, Package, Search, ChevronRight, MapPin, Loader2, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,11 +18,209 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useLanguage } from '@/context/language-provider'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
-import { PurchaseLogisticsService, type PurchaseLogisticsRecord } from './services/purchase-logistics-service'
+import {
+  PurchaseLogisticsService,
+  type PurchaseLogisticsListResponse,
+  type PurchaseLogisticsRecord,
+} from './services/purchase-logistics-service'
 import { PurchaseLogisticsTimeline } from './purchase-logistics-timeline'
 
-type PurchaseLogisticsListResponse = {
-  items?: PurchaseLogisticsRecord[]
+const PURCHASE_LOGISTICS_KEYS = {
+  tracking: (trackingNo: string) => ['purchase-logistics', 'tracking', trackingNo] as const,
+}
+
+function PurchaseLogisticsDetailSheet({ record }: { record: PurchaseLogisticsRecord }) {
+  const { locale, t } = useLanguage()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = React.useState(false)
+  const localEvents = React.useMemo(
+    () => (Array.isArray(record.events) ? record.events : []),
+    [record.events]
+  )
+  const { data: controlledTrackingDetail, isLoading: isControlledTrackingLoading } = useQuery({
+    queryKey: PURCHASE_LOGISTICS_KEYS.tracking(record.trackingNo),
+    queryFn: () => PurchaseLogisticsService.getControlledTrackingDetail(record.trackingNo),
+    enabled: open && Boolean(record.trackingNo),
+  })
+  const refreshTrackingMutation = useMutation({
+    mutationFn: async (trackingNo: string) => {
+      const detail = await PurchaseLogisticsService.getControlledTrackingDetail(trackingNo, { refresh: true })
+      if (detail) {
+        queryClient.setQueryData(PURCHASE_LOGISTICS_KEYS.tracking(trackingNo), detail)
+      }
+      return detail
+    },
+    onError: (err: Error) => {
+      toast.error(t('purchase.logistics.toasts.trackingRefreshFailed', { message: err.message }))
+    },
+  })
+
+  const displayEvents = controlledTrackingDetail?.events.length ? controlledTrackingDetail.events : localEvents
+  const displayCarrier =
+    controlledTrackingDetail?.order.carrierName || controlledTrackingDetail?.order.carrierCode || record.carrier
+  const latestRefresh = controlledTrackingDetail?.refresh
+  const isShowingTrustedTracking = Boolean(controlledTrackingDetail)
+  const isSheetLoading = open && Boolean(record.trackingNo) && isControlledTrackingLoading
+
+  const handleRefreshTracking = async () => {
+    if (!record.trackingNo) {
+      return
+    }
+
+    const detail = await refreshTrackingMutation.mutateAsync(record.trackingNo)
+    if (!detail) {
+      toast.warning(t('purchase.logistics.toasts.trackingRefreshUnavailable'))
+      return
+    }
+
+    const refresh = detail.refresh
+    if (!refresh) {
+      toast.success(t('purchase.logistics.toasts.trackingRefreshSuccess'))
+      return
+    }
+
+    const description = refresh.action || refresh.message || undefined
+    switch (refresh.status) {
+      case 'refreshed':
+        toast.success(t('purchase.logistics.toasts.trackingRefreshSuccess'), {
+          description,
+        })
+        return
+      case 'manual_review':
+        toast.warning(t('purchase.logistics.toasts.trackingRefreshManualReview'), {
+          description,
+        })
+        return
+      case 'invalid_config':
+        toast.warning(t('purchase.logistics.toasts.trackingRefreshInvalidConfig'), {
+          description,
+        })
+        return
+      default:
+        toast.error(
+          t('purchase.logistics.toasts.trackingRefreshFailed', {
+            message: description ?? refresh.status,
+          })
+        )
+    }
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='size-7 rounded-full hover:bg-emerald-50 hover:text-emerald-600'
+        >
+          <ChevronRight className='size-4' />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side='right' className='w-[400px] sm:w-[500px] sm:max-w-full p-0 flex flex-col'>
+        <SheetHeader className='p-6 bg-slate-50 border-b relative'>
+          <div className='absolute top-0 right-0 p-4 opacity-5 pointer-events-none'>
+            <Truck className='size-32' />
+          </div>
+          <div className='flex items-center gap-3 mb-2'>
+            <div className='size-10 rounded-2xl bg-white border border-dashed border-slate-200 flex items-center justify-center shadow-sm'>
+              <Truck className='size-5 text-emerald-600' />
+            </div>
+            <div>
+              <SheetTitle className='text-sm font-black italic tracking-tighter uppercase'>
+                {t('purchase.logistics.detailTitle')}
+              </SheetTitle>
+              <div className='flex items-center gap-2'>
+                <Badge variant='outline' className='text-[8px] font-mono border-dashed bg-white'>
+                  {displayCarrier}
+                </Badge>
+                <span className='text-[10px] font-mono text-slate-400'>{record.trackingNo}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className='flex flex-wrap items-center justify-between gap-3 mt-4'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+                {isShowingTrustedTracking
+                  ? t('purchase.logistics.detailSourceTrusted')
+                  : t('purchase.logistics.detailSourceLocal')}
+              </Badge>
+              {latestRefresh?.checkedAt ? (
+                <span className='text-[8px] font-mono text-slate-400'>
+                  {t('purchase.logistics.detailRefreshCheckedAt')}: {new Date(latestRefresh.checkedAt).toLocaleString(locale)}
+                </span>
+              ) : null}
+            </div>
+
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => void handleRefreshTracking()}
+              disabled={!record.trackingNo || refreshTrackingMutation.isPending}
+              className='h-9 rounded-full border-dashed px-4 text-[10px] font-black uppercase tracking-widest'
+            >
+              {refreshTrackingMutation.isPending ? (
+                <Loader2 className='me-2 size-3.5 animate-spin' />
+              ) : (
+                <RefreshCw className='me-2 size-3.5' />
+              )}
+              {refreshTrackingMutation.isPending
+                ? t('purchase.logistics.detailRefreshing')
+                : t('purchase.logistics.detailRefresh')}
+            </Button>
+          </div>
+        </SheetHeader>
+
+        <div className='flex-1 overflow-auto p-8'>
+          {isSheetLoading ? (
+            <div className='flex h-full items-center justify-center opacity-20'>
+              <Loader2 className='size-12 animate-spin' />
+            </div>
+          ) : (
+            <>
+              {latestRefresh ? (
+                <div className='mb-6 rounded-[24px] border border-dashed border-emerald-500/20 bg-emerald-500/5 p-4'>
+                  <div className='flex flex-wrap items-center justify-between gap-3'>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant='outline' className='rounded-full border-dashed bg-white text-[8px] font-mono'>
+                        {latestRefresh.providerCode || t('purchase.logistics.detailSourceTrusted')}
+                      </Badge>
+                      <span className='text-[8px] font-mono uppercase text-slate-400'>
+                        {latestRefresh.status || t('purchase.logistics.notAvailable')}
+                      </span>
+                    </div>
+                    {latestRefresh.checkedAt ? (
+                      <span className='text-[8px] font-mono text-slate-400'>
+                        {new Date(latestRefresh.checkedAt).toLocaleString(locale)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className='mt-3 text-[10px] font-black uppercase tracking-widest text-slate-700'>
+                    {latestRefresh.action || latestRefresh.message || t('purchase.logistics.notAvailable')}
+                  </p>
+                </div>
+              ) : !isShowingTrustedTracking && record.trackingNo ? (
+                <div className='mb-6 rounded-[24px] border border-dashed border-amber-500/20 bg-amber-500/5 p-4'>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-amber-700/80'>
+                    {t('purchase.logistics.detailFallback')}
+                  </p>
+                </div>
+              ) : null}
+
+              <PurchaseLogisticsTimeline events={displayEvents} />
+            </>
+          )}
+        </div>
+
+        <div className='p-4 border-t bg-slate-50 flex items-center justify-between'>
+          <span className='text-[9px] font-mono text-slate-300 italic'>UUID: {record.id}</span>
+          <span className='text-[9px] font-black uppercase tracking-widest text-slate-400'>
+            {record.orderNo}
+          </span>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
 }
 
 export function PurchaseLogisticsList() {
@@ -116,58 +315,7 @@ export function PurchaseLogisticsList() {
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => (
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-7 rounded-full hover:bg-emerald-50 hover:text-emerald-600'
-            >
-              <ChevronRight className='size-4' />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side='right' className='w-[400px] sm:w-[500px] sm:max-w-full p-0 flex flex-col'>
-            <SheetHeader className='p-6 bg-slate-50 border-b relative'>
-              <div className='absolute top-0 right-0 p-4 opacity-5 pointer-events-none'>
-                <Truck className='size-32' />
-              </div>
-              <div className='flex items-center gap-3 mb-2'>
-                <div className='size-10 rounded-2xl bg-white border border-dashed border-slate-200 flex items-center justify-center shadow-sm'>
-                  <Truck className='size-5 text-emerald-600' />
-                </div>
-                <div>
-                  <SheetTitle className='text-sm font-black italic tracking-tighter uppercase'>
-                    {t('purchase.logistics.detailTitle')}
-                  </SheetTitle>
-                  <div className='flex items-center gap-2'>
-                    <Badge variant='outline' className='text-[8px] font-mono border-dashed bg-white'>
-                      {row.original.carrier}
-                    </Badge>
-                    <span className='text-[10px] font-mono text-slate-400'>
-                      {row.original.trackingNo}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </SheetHeader>
-
-            <div className='flex-1 overflow-auto p-8'>
-              <PurchaseLogisticsTimeline events={Array.isArray(row.original.events) ? row.original.events : []} />
-            </div>
-
-            <div className='p-4 border-t bg-slate-50 flex items-center justify-between'>
-              <span className='text-[9px] font-mono text-slate-300 italic'>UUID: {row.original.id}</span>
-              <div className='flex gap-2'>
-                <Button variant='outline' size='sm' className='h-8 text-[10px] font-black uppercase rounded-full'>
-                  <ExternalLink className='size-3 me-2' />
-                  {t('purchase.logistics.courierQuery')}
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      ),
+      cell: ({ row }) => <PurchaseLogisticsDetailSheet record={row.original} />,
     },
   ]
 
