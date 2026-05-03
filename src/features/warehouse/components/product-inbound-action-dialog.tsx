@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { AlertCircle, Database, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { type InboundRecord } from '../inventory'
@@ -68,15 +70,25 @@ export function ProductInboundActionDialog({
           <div className='absolute inset-0 bg-linear-to-br from-emerald-600/5 via-transparent pointer-events-none' />
           <div className='relative p-5 md:p-8 space-y-6'>
             <DialogHeader className='text-left'>
-              <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic flex items-center gap-3'>
-                <div className='size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
-                  <Package className='size-5 text-emerald-600' />
+              <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+                <div className='min-w-0'>
+                  <DialogTitle className='text-lg md:text-xl font-black tracking-tighter uppercase italic flex items-center gap-3'>
+                    <div className='size-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0'>
+                      <Package className='size-5 text-emerald-600' />
+                    </div>
+                    <span className='truncate'>{t('commandMenu.items.inboundAction')}</span>
+                  </DialogTitle>
+                  <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
+                    {t('warehouse.inbound.subtitle')}
+                  </DialogDescription>
                 </div>
-                <span className='truncate'>{t('commandMenu.items.inboundAction')}</span>
-              </DialogTitle>
-              <DialogDescription className='text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>
-                {t('warehouse.inbound.subtitle')}
-              </DialogDescription>
+                <AuditTimelineTriggerButton
+                  module={AUDIT_MODULES.inventory}
+                  targetName={t('commandMenu.items.inboundAction')}
+                  label={t('common.audit.trigger')}
+                  className='h-10 rounded-full px-4 self-start'
+                />
+              </div>
             </DialogHeader>
 
             {inbound.readResource.status === 'error' ? (

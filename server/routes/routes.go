@@ -105,6 +105,7 @@ func SetupRoutes(r *gin.Engine) {
 			engineeringGroup.DELETE("/products/:id", adminOnly, handlers.DeleteProductHandler)
 			engineeringGroup.POST("/products/sync", adminOnly, handlers.BulkSyncProductsHandler)
 			engineeringGroup.GET("/bom", handlers.GetBOMsHandler)
+			engineeringGroup.GET("/bom/:id", handlers.GetBOMHandler)
 			engineeringGroup.POST("/bom", adminOnly, handlers.SaveBOMHandler)
 			engineeringGroup.DELETE("/bom/:id", adminOnly, handlers.DeleteBOMHandler)
 

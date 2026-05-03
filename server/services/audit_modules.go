@@ -10,6 +10,7 @@ const (
 	AuditModuleSupplier       = "supplier"
 	AuditModuleEmployee       = "employee"
 	AuditModuleMaterial       = "material"
+	AuditModuleInventory      = "inventory"
 	AuditModuleChangeOrder    = "change-order"
 	AuditModuleBOM            = "bom"
 	AuditModuleUser           = "user"

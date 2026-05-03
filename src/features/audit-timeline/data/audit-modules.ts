@@ -5,6 +5,7 @@ export const AUDIT_MODULES = {
   supplier: 'supplier',
   employee: 'employee',
   material: 'material',
+  inventory: 'inventory',
   bom: 'bom',
   user: 'user',
   userPermission: 'user-permission',

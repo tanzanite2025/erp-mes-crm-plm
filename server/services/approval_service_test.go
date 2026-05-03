@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func setupApprovalServiceTestDB(t *testing.T) *gorm.DB {
 func TestRequestApproval_UsesRuleDrivenApprovers(t *testing.T) {
 	testDB := setupApprovalServiceTestDB(t)
 
-	result, err := RequestApproval(RequestApprovalInput{
+	result, err := RequestApproval(context.Background(), RequestApprovalInput{
 		Module:      "Trading",
 		Action:      "ORDER_REVIEW",
 		TargetID:    "order-1",
@@ -75,7 +76,7 @@ func TestRequestApproval_UsesRuleDrivenApprovers(t *testing.T) {
 func TestApproveRequest_UsesRuleDrivenApprovers(t *testing.T) {
 	testDB := setupApprovalServiceTestDB(t)
 
-	requestResult, err := RequestApproval(RequestApprovalInput{
+	requestResult, err := RequestApproval(context.Background(), RequestApprovalInput{
 		Module:      "Trading",
 		Action:      "ORDER_REVIEW",
 		TargetID:    "order-2",
@@ -86,7 +87,7 @@ func TestApproveRequest_UsesRuleDrivenApprovers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	approveResult, err := ApproveRequest(ApproveRequestInput{
+	approveResult, err := ApproveRequest(context.Background(), ApproveRequestInput{
 		RequestID:      requestResult.Request.ID,
 		Status:         "APPROVED",
 		ApproverUserID: "user-9",
@@ -104,7 +105,7 @@ func TestApproveRequest_UsesRuleDrivenApprovers(t *testing.T) {
 func TestRequestApproval_AllowsRuleDrivenApproversWithoutLegacyConfig(t *testing.T) {
 	testDB := setupApprovalServiceTestDB(t)
 
-	result, err := RequestApproval(RequestApprovalInput{
+	result, err := RequestApproval(context.Background(), RequestApprovalInput{
 		Module:      "Trading",
 		Action:      "ORDER_REVIEW",
 		TargetID:    "order-3",
@@ -125,7 +126,7 @@ func TestRequestApproval_AllowsRuleDrivenApproversWithoutLegacyConfig(t *testing
 func TestRequestApproval_StillRequiresConfigWhenNoApproverChainProvided(t *testing.T) {
 	setupApprovalServiceTestDB(t)
 
-	_, err := RequestApproval(RequestApprovalInput{
+	_, err := RequestApproval(context.Background(), RequestApprovalInput{
 		Module:      "Trading",
 		Action:      "ORDER_REVIEW",
 		TargetID:    "order-4",

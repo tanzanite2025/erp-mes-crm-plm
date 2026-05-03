@@ -219,10 +219,11 @@ type inventoryTransferAuditResult struct {
 	transferValue float64
 }
 
-func PatchInventoryRecord(id string, patch PatchInventoryRequest, deltaKeys []string, operator string, ip string) (models.Inventory, error) {
+func PatchInventoryRecord(ctx context.Context, id string, patch PatchInventoryRequest, deltaKeys []string) (models.Inventory, error) {
 	var updated models.Inventory
+	operator, ip := inventoryAuditIdentityFromContext(ctx, "")
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var inventory models.Inventory
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&inventory, "id = ?", id).Error; err != nil {
 			return err
@@ -274,10 +275,11 @@ func PatchInventoryRecord(id string, patch PatchInventoryRequest, deltaKeys []st
 	return updated, nil
 }
 
-func PatchShipmentDraftRecord(id string, patch PatchShipmentRequest, deltaKeys []string, operator string, ip string) (models.ShipmentRecord, error) {
+func PatchShipmentDraftRecord(ctx context.Context, id string, patch PatchShipmentRequest, deltaKeys []string) (models.ShipmentRecord, error) {
 	var updated models.ShipmentRecord
+	operator, ip := inventoryAuditIdentityFromContext(ctx, "")
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var shipment models.ShipmentRecord
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&shipment, "id = ?", id).Error; err != nil {
 			return err
@@ -720,9 +722,9 @@ func transferInventoryTx(tx *gorm.DB, input TransferInventoryInput) (inventoryTr
 	return result, nil
 }
 
-func TransferInventory(input TransferInventoryInput, operator string, ip string) error {
+func TransferInventory(ctx context.Context, input TransferInventoryInput) error {
 	var transferResult inventoryTransferAuditResult
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var err error
 		transferResult, err = transferInventoryTx(tx, input)
 		if err != nil {
@@ -748,7 +750,7 @@ func TransferInventory(input TransferInventoryInput, operator string, ip string)
 			"to":              inventoryAuditSnapshot(transferResult.toAfter),
 		}
 
-		return writeInventoryAuditEntry(tx, strings.TrimSpace(input.MaterialID), "INVENTORY_TRANSFER", before, payload, operator, ip)
+		return writeInventoryAuditEntryWithContext(ctx, tx, strings.TrimSpace(input.MaterialID), "INVENTORY_TRANSFER", before, payload, "")
 	})
 
 	if err == nil {
@@ -763,8 +765,8 @@ func TransferInventory(input TransferInventoryInput, operator string, ip string)
 	return err
 }
 
-func ReconcileNegativeInventory(operator string, ip string) error {
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+func ReconcileNegativeInventory(ctx context.Context) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var records []models.Inventory
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("quantity < 0").
@@ -782,7 +784,7 @@ func ReconcileNegativeInventory(operator string, ip string) error {
 			}
 			payload := inventoryAuditSnapshot(record)
 			payload["operation"] = "reconcile_negative_inventory"
-			if err := writeInventoryAuditEntry(tx, record.ID, "INVENTORY_RECONCILE", before, payload, operator, ip); err != nil {
+			if err := writeInventoryAuditEntryWithContext(ctx, tx, record.ID, "INVENTORY_RECONCILE", before, payload, ""); err != nil {
 				return err
 			}
 		}
@@ -791,9 +793,9 @@ func ReconcileNegativeInventory(operator string, ip string) error {
 	})
 }
 
-func BulkSyncInventory(items []BulkSyncInventoryItemRequest, operator string, ip string) error {
+func BulkSyncInventory(ctx context.Context, items []BulkSyncInventoryItemRequest) error {
 	modelsItems := MapBulkSyncInventoryRequestsToModels(items)
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	return db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, inv := range modelsItems {
 			var existing models.Inventory
 			var lookupErr error
@@ -814,7 +816,7 @@ func BulkSyncInventory(items []BulkSyncInventoryItemRequest, operator string, ip
 				}
 				payload := inventoryAuditSnapshot(inv)
 				payload["operation"] = "create"
-				if err := writeInventoryAuditEntry(tx, inv.ID, "INVENTORY_BULK_SYNC", nil, payload, operator, ip); err != nil {
+				if err := writeInventoryAuditEntryWithContext(ctx, tx, inv.ID, "INVENTORY_BULK_SYNC", nil, payload, ""); err != nil {
 					return err
 				}
 				continue
@@ -830,7 +832,7 @@ func BulkSyncInventory(items []BulkSyncInventoryItemRequest, operator string, ip
 			}
 			payload := inventoryAuditSnapshot(existing)
 			payload["operation"] = "update"
-			if err := writeInventoryAuditEntry(tx, existing.ID, "INVENTORY_BULK_SYNC", before, payload, operator, ip); err != nil {
+			if err := writeInventoryAuditEntryWithContext(ctx, tx, existing.ID, "INVENTORY_BULK_SYNC", before, payload, ""); err != nil {
 				return err
 			}
 		}

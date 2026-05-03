@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns';
 import { 
   History, 
@@ -20,8 +21,12 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/context/language-provider'
+import { type MaterialOption } from '@/features/material-archive/data/schema'
+import { MATERIAL_OPTIONS_QUERY_KEY } from '@/features/material-archive/query-keys'
+import { MaterialCoreService } from '@/features/material-archive/services/material-core-service'
 import { getDefaultPermissions } from '@/features/authz/data/default-permission-queries'
 import { formatPermissionLabel } from '@/features/authz/utils/permission-tree-utils'
+import { BomAuditEntry } from './bom-audit-entry'
 import { buildPermissionLabelMap } from '../utils/permission-audit'
 import { UserPermissionAuditEntry } from './user-permission-audit-entry'
 
@@ -97,6 +102,18 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
 
     return buildPermissionLabelMap(getDefaultPermissions(), formatPermissionLabel)
   }, [module])
+  const materialsQuery = useQuery({
+    queryKey: MATERIAL_OPTIONS_QUERY_KEY,
+    queryFn: (): Promise<MaterialOption[]> => MaterialCoreService.getMaterialOptions(),
+    enabled: module === AUDIT_MODULES.bom && open,
+  })
+  const materialOptionMap = useMemo(() => {
+    if (module !== AUDIT_MODULES.bom) {
+      return new Map<string, MaterialOption>()
+    }
+
+    return new Map((materialsQuery.data ?? []).map((material) => [material.id, material]))
+  }, [materialsQuery.data, module])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -140,7 +157,13 @@ export const DataTimeline: React.FC<DataTimelineProps> = ({
                     <div className="absolute -left-[37px] top-0 w-4 h-4 rounded-full border-2 border-background bg-muted-foreground/20 group-hover:bg-primary transition-colors" />
 
                     {/* Diff Cards */}
-                    {module === AUDIT_MODULES.userPermission ? (
+                    {module === AUDIT_MODULES.bom ? (
+                      <BomAuditEntry
+                        log={log}
+                        actionLabel={formatAuditActionLabel(log.action, t)}
+                        materialOptionMap={materialOptionMap}
+                      />
+                    ) : module === AUDIT_MODULES.userPermission ? (
                       <UserPermissionAuditEntry
                         log={log}
                         actionLabel={formatAuditActionLabel(log.action, t)}

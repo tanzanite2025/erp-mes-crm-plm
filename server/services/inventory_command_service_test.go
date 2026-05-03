@@ -1008,7 +1008,8 @@ func TestReconcileNegativeInventoryWritesAuditEntries(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, inventoryID, now, now, uuid.NewString(), "Copper Wire", "MAT-NEG-001", -3.0, -15.0, 5.0, "WH_A", "B-NEG-001", "kg").Error)
 
-	err := ReconcileNegativeInventory("reconciler", "127.0.0.1")
+	ctx := audit.NewContextWithActor(context.Background(), audit.AuditActor{Username: "reconciler", IP: "127.0.0.1", Source: "test"})
+	err := ReconcileNegativeInventory(ctx)
 	require.NoError(t, err)
 
 	var persisted models.Inventory
@@ -1053,7 +1054,8 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, inventoryID, now, now, materialID, "Copper Wire", "MAT-001", "Spec-A", 10.0, 80.0, 8.0, "WH_A", "B-001", "kg").Error)
 
-	err := BulkSyncInventory([]BulkSyncInventoryItemRequest{{
+	ctx := audit.NewContextWithActor(context.Background(), audit.AuditActor{Username: "bulk-updater", IP: "127.0.0.2", Source: "test"})
+	err := BulkSyncInventory(ctx, []BulkSyncInventoryItemRequest{{
 		ID:              inventoryID,
 		MaterialID:      materialID,
 		Quantity:        15,
@@ -1061,7 +1063,7 @@ func TestBulkSyncInventoryPreservesExistingDisplayFieldsWhenPayloadUsesZeroValue
 		AverageUnitCost: 8,
 		CategoryCode:    "WH_A",
 		BatchNo:         "B-001",
-	}}, "bulk-updater", "127.0.0.2")
+	}})
 	require.NoError(t, err)
 
 	var persisted models.Inventory
@@ -1109,13 +1111,14 @@ func TestTransferInventoryWritesAuditEntry(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, fromInventoryID, now, now, materialID, "Copper Wire", "MAT-TR-001", "Spec-T", 10.0, 50.0, 5.0, "WH_A", "B-TR-001", "kg").Error)
 
-	err := TransferInventory(TransferInventoryInput{
+	ctx := audit.NewContextWithActor(context.Background(), audit.AuditActor{Username: "transfer-user", IP: "127.0.0.3", Source: "test"})
+	err := TransferInventory(ctx, TransferInventoryInput{
 		MaterialID:   materialID,
 		Quantity:     4,
 		FromCategory: "WH_A",
 		ToCategory:   "WH_B",
 		BatchNo:      "B-TR-001",
-	}, "transfer-user", "127.0.0.3")
+	})
 	require.NoError(t, err)
 
 	var fromInventory models.Inventory

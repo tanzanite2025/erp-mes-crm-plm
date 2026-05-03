@@ -118,3 +118,70 @@ func TestGetDataTimelineHandlerAllowsModuleLevelQueryForUserPermission(t *testin
 	require.Equal(t, "log-up-2", response[0].ID)
 	require.Equal(t, "log-up-1", response[1].ID)
 }
+
+func TestGetDataTimelineHandlerReturnsLegacyInventoryLogsForCanonicalInventoryQuery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-inv-1",
+		Module:    "Inventory",
+		TargetID:  "inbound-1",
+		Action:    "INVENTORY_INBOUND",
+		Operator:  "warehouse-user",
+		CreatedAt: time.Date(2026, 5, 3, 10, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=inventory&target_id=inbound-1", nil)
+	ctx.Set("permissions", []string{authz.MenuWarehouse})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 1)
+	require.Equal(t, "log-inv-1", response[0].ID)
+	require.Equal(t, "Inventory", response[0].Module)
+	require.Equal(t, "INVENTORY_INBOUND", response[0].Action)
+}
+
+func TestGetDataTimelineHandlerAllowsModuleLevelQueryForInventory(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	setupHandlerSQLiteTestDB(t, &models.AuditLog{})
+
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-inv-module-1",
+		Module:    "Inventory",
+		TargetID:  "inbound-1",
+		Action:    "INVENTORY_INBOUND",
+		Operator:  "warehouse-user",
+		CreatedAt: time.Date(2026, 5, 3, 10, 0, 0, 0, time.UTC),
+	}).Error)
+	require.NoError(t, db.DB.Create(&models.AuditLog{
+		ID:        "log-inv-module-2",
+		Module:    "Inventory",
+		TargetID:  "inbound-2",
+		Action:    "INVENTORY_SAVE",
+		Operator:  "warehouse-user",
+		CreatedAt: time.Date(2026, 5, 3, 11, 0, 0, 0, time.UTC),
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/api/v1/audit/timeline?module=inventory", nil)
+	ctx.Set("permissions", []string{authz.MenuWarehouse})
+
+	GetDataTimelineHandler(ctx)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response []models.AuditLog
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response, 2)
+	require.Equal(t, "log-inv-module-2", response[0].ID)
+	require.Equal(t, "log-inv-module-1", response[1].ID)
+}

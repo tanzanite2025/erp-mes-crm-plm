@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"math"
 	"sort"
@@ -152,7 +153,7 @@ func ListShipmentDemands() (ShipmentDemandListResponse, error) {
 	}, nil
 }
 
-func PrepareVirtualShipment(input PrepareVirtualShipmentRequest) (InventoryShipmentRecordResponse, error) {
+func PrepareVirtualShipment(ctx context.Context, input PrepareVirtualShipmentRequest) (InventoryShipmentRecordResponse, error) {
 	if input.Quantity <= shipmentDemandTolerance {
 		return InventoryShipmentRecordResponse{}, errors.New("[VALIDATION] quantity must be greater than zero")
 	}
@@ -170,8 +171,14 @@ func PrepareVirtualShipment(input PrepareVirtualShipmentRequest) (InventoryShipm
 	var shipment models.ShipmentRecord
 	materialID := ""
 	batchNo := strings.TrimSpace(input.BatchNo)
+	if strings.TrimSpace(input.Operator) == "" {
+		operator, _ := inventoryAuditIdentityFromContext(ctx, "")
+		if operator != "system" {
+			input.Operator = operator
+		}
+	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var order models.SalesOrder
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ?", input.SalesOrderID).

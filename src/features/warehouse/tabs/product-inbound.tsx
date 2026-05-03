@@ -1,21 +1,15 @@
 'use client'
 
-import { AlertCircle, Database, History, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
+import { AlertCircle, Database, Loader2, Package, Plus, RefreshCw, Search } from 'lucide-react'
+import { AuditTimelineTriggerButton } from '@/components/common/audit-timeline-trigger-button'
 import { ForbiddenState } from '@/components/forbidden-state'
 import { NonBlockingPermissionBoundary } from '@/components/permission-passthrough'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from '@/components/ui/table'
 import { IndustrialHeader } from '@/components/uds/industrial-header'
 import { useLanguage } from '@/context/language-provider'
+import { AUDIT_MODULES } from '@/features/audit-timeline/data/audit-modules'
 import { isForbiddenError } from '@/lib/error-status'
 import { cn } from '@/lib/utils'
 import { Route } from '@/routes/_authenticated/warehouse/inbound'
@@ -38,8 +32,6 @@ export default function ProductInbound() {
         targetNodeDescription,
         isInboundOpen,
         formData,
-        history,
-        warehouseCategories,
         selectableWarehouseCategories,
         isSubmittingInbound,
         handleSearchQueryChange,
@@ -121,9 +113,17 @@ export default function ProductInbound() {
                         </div>
                     )}
                 </div>
-                <div className='flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-500/5 px-3 md:px-4 py-2 rounded-full border border-dashed border-emerald-500/30 shrink-0'>
-                    <AlertCircle className='size-3 md:size-3.5' />
-                    {t('warehouse.inbound.archiveValidation')}
+                <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0'>
+                    <AuditTimelineTriggerButton
+                        module={AUDIT_MODULES.inventory}
+                        targetName={t('warehouse.inbound.title')}
+                        label={t('common.audit.trigger')}
+                        className='h-10 md:h-11 rounded-full px-4 md:px-5'
+                    />
+                    <div className='flex items-center gap-2 text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-500/5 px-3 md:px-4 py-2 rounded-full border border-dashed border-emerald-500/30 shrink-0'>
+                        <AlertCircle className='size-3 md:size-3.5' />
+                        {t('warehouse.inbound.archiveValidation')}
+                    </div>
                 </div>
             </div>
 
@@ -219,66 +219,6 @@ export default function ProductInbound() {
                             </p>
                         </div>
                     )}
-                </div>
-            </div>
-
-            <div className='rounded-2xl md:rounded-[32px] border border-dashed border-muted/50 bg-muted/5 overflow-hidden shadow-inner mt-4'>
-                <div className='px-5 md:px-8 py-4 md:py-5 border-b border-dashed border-muted/50 flex items-center justify-between bg-muted/20'>
-                    <div className='flex items-center gap-2'>
-                        <History className='size-4 text-emerald-600 shrink-0' />
-                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase truncate'>{t('warehouse.inbound.historyTitle')}</h3>
-                    </div>
-                    <p className='hidden sm:block text-[9px] font-black uppercase tracking-widest text-muted-foreground/40'>{t('warehouse.inbound.latestTransactions')}</p>
-                </div>
-                <div className='overflow-x-auto scrollbar-hide'>
-                    <Table className='min-w-[700px] md:min-w-0'>
-                        <TableHeader className='bg-muted/30 h-12 md:h-14'>
-                            <TableRow className='hover:bg-transparent border-b border-dashed border-muted/50'>
-                                <TableHead className='pl-5 md:pl-8 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.transId')}</TableHead>
-                                <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.targetNode')}</TableHead>
-                                <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.quantity')}</TableHead>
-                                <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.batch')}</TableHead>
-                                <TableHead className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.area')}</TableHead>
-                                <TableHead className='pr-5 md:pr-8 text-right text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/50'>{t('warehouse.inbound.columns.timestamp')}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {history.length > 0 ? (
-                                history.slice(0, 10).map((record) => (
-                                    <TableRow key={record.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
-                                        <TableCell className='font-mono text-[8px] text-muted-foreground/20 pl-5 md:pl-8'>#{record.id}</TableCell>
-                                        <TableCell className='py-2.5'>
-                                            <div className='flex flex-col overflow-hidden max-w-[150px]'>
-                                                <span className='font-bold text-[12px] text-slate-700 tracking-tight uppercase group-hover:text-emerald-600 transition-colors truncate'>
-                                                    {record.materialId}
-                                                </span>
-                                                <span className='text-[8px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>ID: {record.materialId}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className='py-2.5'>
-                                            <div className='flex items-center gap-1.5'>
-                                                <div className='w-1 h-3 bg-emerald-500/40 rounded-full shrink-0' />
-                                                <span className='font-black text-emerald-600 text-sm font-mono'>+{record.quantity}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className='text-[9px] md:text-[10px] font-bold font-mono text-muted-foreground/40 uppercase tracking-tighter truncate max-w-[80px]'>{record.batchNo}</TableCell>
-                                        <TableCell className='py-2.5'>
-                                            <Badge variant='outline' className='font-black text-[7px] md:text-[8px] uppercase tracking-widest bg-emerald-500/5 text-emerald-600 border-none h-4 px-2 rounded-full whitespace-nowrap'>
-                                                {warehouseCategories.find(c => c.value === record.targetCategory)?.label || record.targetCategory}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className='text-right text-[8px] md:text-[9px] font-mono font-bold text-muted-foreground/30 pr-5 md:pr-8'>{record.entryDate}</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className='h-32 text-center'>
-                                        <p className='text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/20'>{t('warehouse.inbound.noHistory')}</p>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
                 </div>
             </div>
 

@@ -307,8 +307,11 @@ func TestPatchInventoryHandlerReturnsRealVersionedResponse(t *testing.T) {
 	ctx, _ := gin.CreateTestContext(recorder)
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/inventory/"+recordID, strings.NewReader(payload))
 	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.10.9:4567"
 	ctx.Params = gin.Params{{Key: "id", Value: recordID}}
 	ctx.Request = request
+	ctx.Set("username", "inventory-patcher")
+	ctx.Set("userId", "inventory-patcher-id")
 
 	PatchInventoryHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
@@ -318,6 +321,17 @@ func TestPatchInventoryHandlerReturnsRealVersionedResponse(t *testing.T) {
 	require.Equal(t, 12.0, response.Quantity)
 	require.Equal(t, 60.0, response.TotalValue)
 	require.Greater(t, response.Version, inventoryVersionForTest(now))
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "INVENTORY_SAVE").Scan(&audit).Error)
+	require.Equal(t, "INVENTORY_SAVE", audit.Action)
+	require.Equal(t, "inventory-patcher", audit.Operator)
+	require.Equal(t, "10.10.10.9", audit.IP)
 }
 
 func TestRecordShipmentAndCommitHandlersBindSalesFulfillmentAssociationAndUpdateStatus(t *testing.T) {
@@ -404,6 +418,104 @@ func TestPatchShipmentHandlerReturnsConflictForStaleVersion(t *testing.T) {
 	require.Equal(t, "CONFLICT", response["code"])
 }
 
+func TestPatchShipmentHandlerWritesAuditWithContextActor(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now().Add(-2 * time.Second).UTC()
+	shipmentID := uuid.NewString()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO shipment_records (id, created_at, updated_at, material_id, material_name, material_code, quantity, source_category, batch_no, order_no, status, shipment_date, operator, remarks)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, shipmentID, now, now, materialID, "Tube", "MAT-001", 3.0, "WH_A", "B-001", "SO-001", "DRAFT", now, "legacy-operator", "draft").Error)
+
+	payload := `{"op":"PATCH","delta":{"remarks":{"o":"draft","n":"changed-success"}},"metadata":{"id":"` + shipmentID + `","version":` + strconv.Itoa(inventoryVersionForTest(now)) + `}}`
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/inventory/shipment/"+shipmentID, strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.10.12:4567"
+	ctx.Params = gin.Params{{Key: "id", Value: shipmentID}}
+	ctx.Request = request
+	ctx.Set("username", "shipment-patcher")
+	ctx.Set("userId", "shipment-patcher-id")
+
+	PatchShipmentHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryShipmentRecordResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "changed-success", response.Remarks)
+
+	type auditRow struct {
+		Action   string
+		Operator string
+		IP       string
+	}
+	var audit auditRow
+	require.NoError(t, db.DB.Raw(`SELECT action, operator, ip FROM audit_logs WHERE action = ? ORDER BY created_at DESC LIMIT 1`, "SHIPMENT_SAVE").Scan(&audit).Error)
+	require.Equal(t, "SHIPMENT_SAVE", audit.Action)
+	require.Equal(t, "shipment-patcher", audit.Operator)
+	require.Equal(t, "10.10.10.12", audit.IP)
+}
+
+func TestPrepareVirtualShipmentHandlerUsesContextAwareServicePath(t *testing.T) {
+	setupInventoryCommandHandlerTestDB(t)
+
+	now := time.Now()
+	materialID := uuid.NewString()
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO inventory (id, created_at, updated_at, material_id, material_name, material_code, material_spec, quantity, total_value, average_unit_cost, category_code, batch_no, uom)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, uuid.NewString(), now, now, materialID, "Virtual Material", "MAT-V-001", "Spec-V", 10.0, 50.0, 5.0, "WH_A", "B-V-001", "PCS").Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO sales_orders (id, order_no, order_name, customer_name, customer_id, type, currency, classification, status, amount, quantity, order_date, delivery_date, created_at, updated_at, updated_by, is_deleted, version)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, "so-virtual-handler-1", "SO-V-001", "Virtual Order", "Customer", "cust-virtual-1", "standard", "CNY", "GENERAL", "Pending", 100.0, 10.0, "2026-04-05", "2026-04-12", now, now, "alice", false, 1).Error)
+	require.NoError(t, db.DB.Exec(`
+		INSERT INTO sales_order_lines (id, sales_order_id, line_no, product_id, product_model, product_code, description, qty, uom, price, amount, delivered_qty, order_date, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, 1, "so-virtual-handler-1", 1, materialID, "Virtual Product", "MAT-V-001", "Virtual Product Desc", 10.0, "PCS", 10.0, 100.0, 2.0, "2026-04-05", "Pending").Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	payload := `{"salesOrderId":"so-virtual-handler-1","salesOrderLineId":1,"quantity":3,"sourceCategory":"WH_A","batchNo":"B-V-001","shipmentDate":"2026-04-05T00:00:00Z","remarks":"prep"}`
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/inventory/virtual-shipment", strings.NewReader(payload))
+	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "10.10.10.13:4567"
+	ctx.Request = request
+	ctx.Set("username", "virtual-preparer")
+	ctx.Set("userId", "virtual-preparer-id")
+
+	PrepareVirtualShipmentHandler(ctx)
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+
+	var response services.InventoryShipmentRecordResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, services.ShippingVirtualCategoryCode, response.SourceCategory)
+	require.Equal(t, "virtual-preparer", response.Operator)
+	require.InDelta(t, 3.0, response.Quantity, 0.000001)
+
+	type shipmentRow struct {
+		Operator       string
+		SourceCategory string
+		Quantity       float64
+	}
+	var shipment shipmentRow
+	require.NoError(t, db.DB.Raw(`SELECT operator, source_category, quantity FROM shipment_records WHERE sales_order_id = ? AND sales_order_line_id = ? ORDER BY created_at DESC LIMIT 1`, "so-virtual-handler-1", 1).Scan(&shipment).Error)
+	require.Equal(t, "virtual-preparer", shipment.Operator)
+	require.Equal(t, services.ShippingVirtualCategoryCode, shipment.SourceCategory)
+	require.InDelta(t, 3.0, shipment.Quantity, 0.000001)
+
+	var sourceQty float64
+	require.NoError(t, db.DB.Raw(`SELECT quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, "WH_A", "B-V-001").Scan(&sourceQty).Error)
+	require.InDelta(t, 7.0, sourceQty, 0.000001)
+
+	var virtualQty float64
+	require.NoError(t, db.DB.Raw(`SELECT quantity FROM inventory WHERE material_id = ? AND category_code = ? AND batch_no = ?`, materialID, services.ShippingVirtualCategoryCode, "B-V-001").Scan(&virtualQty).Error)
+	require.InDelta(t, 3.0, virtualQty, 0.000001)
+}
+
 func TestReconcileInventoryHandlerReturnsNamedStatusResponse(t *testing.T) {
 	setupInventoryCommandHandlerTestDB(t)
 
@@ -454,6 +566,7 @@ func TestBulkSyncInventoryHandlerUsesNamedRequestAndResponseContract(t *testing.
 	request.RemoteAddr = "10.10.10.2:4567"
 	ctx.Request = request
 	ctx.Set("username", "admin")
+	ctx.Set("userId", "admin-id")
 	ctx.Set("permissions", []string{authz.ActionWarehouseSync})
 
 	BulkSyncInventoryHandler(ctx)
@@ -507,6 +620,7 @@ func TestTransferInventoryHandlerUsesNamedRequestContract(t *testing.T) {
 	request.RemoteAddr = "10.10.10.3:4567"
 	ctx.Request = request
 	ctx.Set("username", "transfer-admin")
+	ctx.Set("userId", "transfer-admin-id")
 
 	TransferInventoryHandler(ctx)
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())

@@ -23,6 +23,7 @@ var auditModulePermissionMap = map[string][]string{
 	services.AuditModuleSupplier:       {authz.MenuTrading, authz.MenuPurchase},
 	services.AuditModuleEmployee:       {authz.MenuOrg},
 	services.AuditModuleMaterial:       {authz.MenuEngineering, authz.MenuTrading, authz.MenuWarehouse},
+	services.AuditModuleInventory:      {authz.MenuWarehouse},
 	services.AuditModuleChangeOrder:    {authz.MenuEngineering},
 	services.AuditModuleBOM:            {authz.MenuEngineering},
 	services.AuditModuleUser:           {authz.MenuOrg, authz.PermissionUserView, authz.PermissionUserEdit, authz.PermissionUserDelete, authz.PermissionManage},
@@ -73,7 +74,7 @@ func GetDataTimelineHandler(c *gin.Context) {
 	}
 
 	canonicalModule := services.NormalizeAuditModule(module)
-	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission
+	allowModuleLevelQuery := canonicalModule == services.AuditModuleUserPermission || canonicalModule == services.AuditModuleInventory
 	if strings.TrimSpace(targetID) == "" && !allowModuleLevelQuery {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "[VALIDATION] target_id is required for this module"})
 		return

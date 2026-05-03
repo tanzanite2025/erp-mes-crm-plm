@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api-client'
 import { ensureObjectResponse } from '@/lib/api-response'
-import { type DeltaPayload, type DeltaSet } from '@/lib/delta/types'
+import { type DeltaSet } from '@/lib/delta/types'
 import { bomListSchema, bomSchema, type BOM, type BOMList } from '../data/schema'
 import { type SaveBOMInput } from '../mutation-types'
 import { normalizeBOMInput } from '../utils/product-code-normalization'
@@ -95,22 +95,8 @@ export const bomService = {
      * 保存或更新 BOM
      */
     async saveBOM(params: { data: SaveBOMInput; isPatch?: boolean; delta?: DeltaSet }): Promise<BOM> {
-        const { data, isPatch, delta } = params
+        const { data } = params
         const sanitizedData = sanitizeBOMInput(data)
-        if (isPatch && data.id && delta) {
-            const payload: DeltaPayload = {
-                op: 'PATCH',
-                delta,
-                metadata: { id: sanitizedData.id, version: sanitizedData.version },
-            }
-            const res = await apiFetch<BOM>(`/engineering/bom/${sanitizedData.id}`, {
-                method: 'PATCH',
-                body: JSON.stringify(payload),
-            })
-            return bomSchema.parse(
-                ensureObjectResponse<Record<string, unknown>>(res, 'BOMService.patchBOM')
-            )
-        }
 
         const res = await apiFetch<BOM>('/engineering/bom', {
             method: 'POST',

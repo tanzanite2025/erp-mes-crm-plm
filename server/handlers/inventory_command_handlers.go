@@ -21,7 +21,7 @@ func PatchInventoryHandler(c *gin.Context) {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory patch payload: "+err.Error())
 		return
 	}
-	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "materialSpec", "categoryCode", "batchNo", "uom"); err != nil {
+	if err := validateSupportedTopLevelDeltaKeys(req.Delta, "materialId", "materialName", "materialCode", "materialSpec", "quantity", "totalValue", "averageUnitCost", "categoryCode", "batchNo", "uom"); err != nil {
 		respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] invalid inventory delta: "+err.Error())
 		return
 	}
@@ -68,6 +68,27 @@ func PatchInventoryHandler(c *gin.Context) {
 				return
 			}
 			patch.MaterialSpec = &value
+		case "quantity":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] quantity 字段错误")
+				return
+			}
+			patch.Quantity = &value
+		case "totalValue":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] totalValue 字段错误")
+				return
+			}
+			patch.TotalValue = &value
+		case "averageUnitCost":
+			var value float64
+			if err := json.Unmarshal(valueRaw, &value); err != nil {
+				respondInventoryError(c, http.StatusBadRequest, "INVENTORY_PATCH_VALIDATION_FAILED", "[VALIDATION] averageUnitCost 字段错误")
+				return
+			}
+			patch.AverageUnitCost = &value
 
 		case "categoryCode":
 			var value string
@@ -98,7 +119,7 @@ func PatchInventoryHandler(c *gin.Context) {
 		deltaKeys = append(deltaKeys, key)
 	}
 
-	updated, err := services.PatchInventoryRecord(id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
+	updated, err := services.PatchInventoryRecord(auditContextFromGin(c), id, patch, deltaKeys)
 	if err != nil {
 		if errors.Is(err, services.ErrInventoryPatchVersionConflict) {
 			respondVersionConflict(c)
@@ -229,7 +250,7 @@ func PatchShipmentHandler(c *gin.Context) {
 		deltaKeys = append(deltaKeys, key)
 	}
 
-	updated, err := services.PatchShipmentDraftRecord(id, patch, deltaKeys, middleware.GetSafeUsername(c), c.ClientIP())
+	updated, err := services.PatchShipmentDraftRecord(auditContextFromGin(c), id, patch, deltaKeys)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrShipmentPatchVersionConflict):
@@ -313,7 +334,7 @@ func TransferInventoryHandler(c *gin.Context) {
 
 	input := services.MapTransferInventoryRequestToInput(request)
 
-	if err := services.TransferInventory(input, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+	if err := services.TransferInventory(auditContextFromGin(c), input); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_TRANSFER_FAILED", "[SERVER] transfer failed: "+err.Error())
 		return
 	}
@@ -330,7 +351,7 @@ func PrepareVirtualShipmentHandler(c *gin.Context) {
 	}
 
 	request.Operator = middleware.GetSafeUsername(c)
-	shipment, err := services.PrepareVirtualShipment(request)
+	shipment, err := services.PrepareVirtualShipment(auditContextFromGin(c), request)
 	if err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_VIRTUAL_SHIPMENT_FAILED", "[SERVER] virtual shipment preparation failed: "+err.Error())
 		return
@@ -341,7 +362,7 @@ func PrepareVirtualShipmentHandler(c *gin.Context) {
 
 // ReconcileInventoryHandler fixes negative quantity records to zero.
 func ReconcileInventoryHandler(c *gin.Context) {
-	if err := services.ReconcileNegativeInventory(middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+	if err := services.ReconcileNegativeInventory(auditContextFromGin(c)); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_RECONCILE_FAILED", "reconcile failed")
 		return
 	}
@@ -377,7 +398,7 @@ func BulkSyncInventoryHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.BulkSyncInventory(input, middleware.GetSafeUsername(c), c.ClientIP()); err != nil {
+	if err := services.BulkSyncInventory(auditContextFromGin(c), input); err != nil {
 		respondInventoryError(c, http.StatusInternalServerError, "INVENTORY_BULK_SYNC_FAILED", "[SERVER] bulk sync failed: "+err.Error())
 		return
 	}
