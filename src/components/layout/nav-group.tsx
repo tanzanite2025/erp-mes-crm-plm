@@ -11,6 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { Badge } from '../ui/badge'
@@ -20,51 +23,118 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
 import type {
-  NavCollapsible,
+  NavBranch,
   NavGroup as NavGroupProps,
   NavItem,
   NavLink,
 } from './types'
 
-function isSystemManagementItem(item: NavItem) {
-  return 'url' in item && item.url === '/system-management'
-}
+const branchButtonClassName =
+  'ms-3 w-[calc(100%-0.75rem)] min-h-8 rounded-xl border border-transparent px-2.5 py-1 transition-all hover:bg-sidebar-accent/28 data-[active=true]:bg-sidebar-accent/45 data-[active=true]:text-sidebar-accent-foreground'
 
-function isApprovalCenterItem(item: NavItem) {
-  return 'url' in item && item.url === '/approval'
+const dropdownContentClassName =
+  'rounded-[24px] border-dashed border-border/55 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-sm'
+
+const dropdownLabelClassName =
+  'px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/70'
+
+const dropdownItemClassName =
+  'rounded-xl border border-dashed border-transparent px-2.5 py-2 text-[11px] font-black italic tracking-tight focus:border-border/50 focus:bg-accent/60'
+
+const dropdownSubTriggerClassName =
+  'rounded-xl border border-dashed border-transparent px-2.5 py-2 text-[11px] font-black italic tracking-tight focus:border-border/50 focus:bg-accent/60 data-[state=open]:border-border/50 data-[state=open]:bg-accent/70'
+
+const dropdownSubContentClassName =
+  'rounded-[20px] border-dashed border-border/55 bg-popover/96 p-1.5 shadow-xl backdrop-blur-sm'
+
+function resolveBadgeValue(item: NavItem, unreadApprovals: number, systemAlertCount: number): string | undefined {
+  if (item.badgeKey === 'approval-unread' || item.id === 'approval-center') {
+    return unreadApprovals > 0 ? unreadApprovals.toString() : undefined
+  }
+
+  if (item.badgeKey === 'system-alert' || item.id === 'system-management') {
+    return systemAlertCount > 0 ? '●' : undefined
+  }
+
+  return item.badge
 }
 
 function withDynamicBadges(items: NavItem[], unreadApprovals: number, systemAlertCount: number): NavItem[] {
   return items.map((item) => {
-    if (isApprovalCenterItem(item) && unreadApprovals > 0) {
-      return { ...item, badge: unreadApprovals.toString() }
+    const resolvedBadge = resolveBadgeValue(item, unreadApprovals, systemAlertCount)
+
+    return {
+      ...item,
+      badge: resolvedBadge,
+      children: item.children?.map((child) => withDynamicBadges([child], unreadApprovals, systemAlertCount)[0]),
     }
-    if (isSystemManagementItem(item) && systemAlertCount > 0) {
-      return { ...item, badge: '●' }
-    }
-    return item
   })
+}
+
+function isPathMatch(pathname: string, target?: string): boolean {
+  if (!target) {
+    return false
+  }
+
+  if (target === '/') {
+    return pathname === '/'
+  }
+
+  return pathname === target || pathname.startsWith(target + '/')
+}
+
+function checkIsActive(pathname: string, item: NavItem, mainNav = false): boolean {
+  const itemUrl = item.url ? String(item.url) : undefined
+  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
+  const selfActive = isPathMatch(pathname, activeTarget)
+  const childActive = !!item.children?.some((child) => checkIsActive(pathname, child))
+
+  if (selfActive || childActive) {
+    return true
+  }
+
+  return !!(itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
 }
 
 function groupHasActiveItem(pathname: string, items: NavItem[]) {
   return items.some((item) => checkIsActive(pathname, item))
 }
 
+function hasChildren(item: NavItem): item is NavBranch {
+  return Array.isArray(item.children) && item.children.length > 0
+}
+
+function isSystemAlertBadge(item: NavItem) {
+  return (item.badgeKey === 'system-alert' || item.id === 'system-management') && item.badge === '●'
+}
+
+function hasSystemAlertConsumer(items: NavItem[]): boolean {
+  return items.some(
+    (item) =>
+      item.badgeKey === 'system-alert' ||
+      item.id === 'system-management' ||
+      (!!item.children?.length && hasSystemAlertConsumer(item.children))
+  )
+}
+
 type SidebarSystemAlert = {
   id?: string
 }
 
-export function NavGroup({ title, items }: NavGroupProps) {
+export function NavGroup({ title, children }: NavGroupProps) {
   const { unreadApprovals } = useNotificationStore()
   const pathname = useLocation({ select: (location) => location.pathname })
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null)
   const { state } = useSidebar()
   const isCollapsed = state === 'collapsed'
 
-  const shouldWatchSystemAlerts = items.some((item) => isSystemManagementItem(item))
+  const shouldWatchSystemAlerts = hasSystemAlertConsumer(children)
   const { data: systemActiveAlerts = [] } = useQuery({
     queryKey: ['sidebar-system-active-alerts'],
     queryFn: () => apiFetch<SidebarSystemAlert[]>('/system/status/alerts/active'),
@@ -78,7 +148,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
   })
 
   const systemAlertCount = systemActiveAlerts.length
-  const itemsWithBadges = withDynamicBadges(items, unreadApprovals, systemAlertCount)
+  const itemsWithBadges = withDynamicBadges(children, unreadApprovals, systemAlertCount)
   const shouldExpandForPath = groupHasActiveItem(pathname, itemsWithBadges)
   const isExpanded = manualExpanded ?? shouldExpandForPath
   const shouldRenderMenu = isCollapsed || isExpanded
@@ -104,7 +174,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
             })
           }}
         >
-          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[13px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
+          <SidebarGroupLabel className='mb-0 min-h-0 flex-1 px-0 py-0 text-[12px] leading-tight whitespace-normal font-black italic tracking-tight text-sidebar-foreground/78'>
             {title}
           </SidebarGroupLabel>
           <ChevronRight className={cn('size-4 shrink-0 transition-transform opacity-80', isExpanded && 'rotate-90 opacity-100')} />
@@ -113,13 +183,15 @@ export function NavGroup({ title, items }: NavGroupProps) {
       {shouldRenderMenu ? (
         <SidebarMenu className='gap-px'>
           {itemsWithBadges.map((item) => {
-            const key = `${item.title}-${'url' in item ? item.url : item.title}`
-
-            if (!item.items) {
-              return <SidebarMenuLink key={key} item={item} pathname={pathname} />
+            if (isNavLink(item) && !hasChildren(item)) {
+              return <SidebarMenuLink key={item.id} item={item} pathname={pathname} />
             }
 
-            return <SidebarMenuCollapsedDropdown key={key} item={item} pathname={pathname} />
+            if (!hasChildren(item)) {
+              return null
+            }
+
+            return <SidebarMenuBranch key={item.id} item={item} pathname={pathname} isCollapsed={isCollapsed} />
           })}
         </SidebarMenu>
       ) : null}
@@ -151,7 +223,7 @@ function NavBadge({
 
 function SidebarMenuLink({ item, pathname }: { item: NavLink; pathname: string }) {
   const { setOpenMobile } = useSidebar()
-  const isSystemAlertBadge = item.url === '/system-management' && item.badge === '●'
+  const showSystemAlertBadge = isSystemAlertBadge(item)
 
   return (
     <SidebarMenuItem>
@@ -160,7 +232,7 @@ function SidebarMenuLink({ item, pathname }: { item: NavLink; pathname: string }
           {item.icon && <item.icon />}
           <span className='px-0.5 py-0 italic font-black leading-normal'>{item.title}</span>
           {item.badge && (
-            <NavBadge danger={isSystemAlertBadge} dot={isSystemAlertBadge}>
+            <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
               {item.badge}
             </NavBadge>
           )}
@@ -174,10 +246,10 @@ function SidebarMenuCollapsedDropdown({
   item,
   pathname,
 }: {
-  item: NavCollapsible
+  item: NavBranch
   pathname: string
 }) {
-  const isSystemAlertBadge = item.url === '/system-management' && item.badge === '●'
+  const showSystemAlertBadge = isSystemAlertBadge(item)
 
   return (
     <SidebarMenuItem>
@@ -189,37 +261,92 @@ function SidebarMenuCollapsedDropdown({
               <span className='px-0.5 py-0 italic leading-normal'>{item.title}</span>
             </div>
             {item.badge && (
-              <NavBadge danger={isSystemAlertBadge} dot={isSystemAlertBadge}>
+              <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
                 {item.badge}
               </NavBadge>
             )}
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side='right' align='start' sideOffset={4}>
-          <DropdownMenuLabel className='italic'>
+        <DropdownMenuContent side='right' align='start' sideOffset={4} className={dropdownContentClassName}>
+          <DropdownMenuLabel className={cn(dropdownLabelClassName, 'italic')}>
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <div className='py-1'>
-            {item.items.map((subItem) => (
-              <DropdownMenuItem key={`${subItem.title}-${subItem.url}`} asChild>
-                <Link
-                  to={subItem.url}
-                  className={cn(checkIsActive(pathname, subItem) ? 'bg-secondary' : '')}
-                >
-                  {subItem.icon && <subItem.icon />}
-                  <span className='max-w-52 px-0.5 py-0.5 text-wrap italic font-black leading-normal'>
-                    {subItem.title}
-                  </span>
-                  {subItem.badge && (
-                    <span className='ms-auto text-[10px] font-black italic opacity-60'>
-                      {subItem.badge}
+            {item.children.map((subItem) => {
+              if (hasChildren(subItem)) {
+                const nestedChildLinks = subItem.children.filter(isNavLink)
+
+                if (nestedChildLinks.length === 0) {
+                  return null
+                }
+
+                return (
+                  <DropdownMenuSub key={subItem.id}>
+                    <DropdownMenuSubTrigger
+                      className={cn(
+                        dropdownSubTriggerClassName,
+                        checkIsActive(pathname, subItem) && 'border-border/50 bg-accent/65 text-accent-foreground'
+                      )}
+                    >
+                      {subItem.icon && <subItem.icon />}
+                      <span className='max-w-52 px-0.5 py-0.5 text-wrap italic font-black leading-normal'>
+                        {subItem.title}
+                      </span>
+                      {subItem.badge ? (
+                        <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                          {subItem.badge}
+                        </span>
+                      ) : null}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className={dropdownSubContentClassName}>
+                      {nestedChildLinks.map((nestedItem) => (
+                        <DropdownMenuItem key={nestedItem.id} asChild className={dropdownItemClassName}>
+                          <Link
+                            to={nestedItem.url}
+                            className={cn(checkIsActive(pathname, nestedItem) ? 'bg-secondary' : '')}
+                          >
+                            {nestedItem.icon && <nestedItem.icon />}
+                            <span className='max-w-52 px-0.5 py-0.5 text-wrap italic font-black leading-normal'>
+                              {nestedItem.title}
+                            </span>
+                            {nestedItem.badge ? (
+                              <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                                {nestedItem.badge}
+                              </span>
+                            ) : null}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )
+              }
+
+              if (!isNavLink(subItem)) {
+                return null
+              }
+
+              return (
+                <DropdownMenuItem key={subItem.id} asChild className={dropdownItemClassName}>
+                  <Link
+                    to={subItem.url}
+                    className={cn(checkIsActive(pathname, subItem) ? 'bg-secondary' : '')}
+                  >
+                    {subItem.icon && <subItem.icon />}
+                    <span className='max-w-52 px-0.5 py-0.5 text-wrap italic font-black leading-normal'>
+                      {subItem.title}
                     </span>
-                  )}
-                </Link>
-              </DropdownMenuItem>
-            ))}
+                    {subItem.badge ? (
+                      <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                        {subItem.badge}
+                      </span>
+                    ) : null}
+                  </Link>
+                </DropdownMenuItem>
+              )
+            })}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -227,21 +354,107 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
-function isNavLink(item: NavItem): item is NavLink {
-  return 'url' in item
-}
-
-function checkIsActive(pathname: string, item: NavItem, mainNav = false) {
-  if (isNavLink(item) && item.url === '/') {
-    return pathname === '/'
+function SidebarMenuBranch({
+  item,
+  pathname,
+  isCollapsed,
+}: {
+  item: NavBranch
+  pathname: string
+  isCollapsed: boolean
+}) {
+  if (isCollapsed) {
+    return <SidebarMenuCollapsedDropdown item={item} pathname={pathname} />
   }
 
-  const itemUrl = isNavLink(item) ? item.url : undefined
+  const childLinks = item.children.filter(isNavLink)
+  const showSystemAlertBadge = isSystemAlertBadge(item)
 
   return (
-    (!!itemUrl && pathname === itemUrl) ||
-    (!!itemUrl && pathname.startsWith(itemUrl + '/')) ||
-    !!item?.items?.some((subItem) => pathname === subItem.url || pathname.startsWith(subItem.url + '/')) ||
-    (!!itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
+    <SidebarMenuItem>
+      {item.url ? (
+        <SidebarMenuButton
+          asChild
+          isActive={checkIsActive(pathname, item)}
+          tooltip={item.title}
+          className={branchButtonClassName}
+        >
+          <Link to={item.url}>
+            <div className='flex min-w-0 items-center gap-2.5'>
+              {item.icon ? <item.icon className='size-3.5 opacity-70' /> : null}
+              <span className='px-0.5 py-0 text-[11px] leading-normal font-black italic tracking-tight'>
+                {item.title}
+              </span>
+            </div>
+            {item.badge && (
+              <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
+                {item.badge}
+              </NavBadge>
+            )}
+            <div className='ms-auto size-4 flex items-center justify-center'>
+              <div
+                className={cn(
+                  'size-1.5 rounded-full ring-2 ring-transparent transition-all',
+                  checkIsActive(pathname, item)
+                    ? 'bg-primary animate-pulse ring-primary/20'
+                    : 'bg-muted-foreground/30'
+                )}
+              />
+            </div>
+          </Link>
+        </SidebarMenuButton>
+      ) : (
+        <SidebarMenuButton
+          isActive={checkIsActive(pathname, item)}
+          tooltip={item.title}
+          className={branchButtonClassName}
+        >
+          <div className='flex min-w-0 items-center gap-2.5'>
+            {item.icon ? <item.icon className='size-3.5 opacity-70' /> : null}
+            <span className='px-0.5 py-0 text-[11px] leading-normal font-black italic tracking-tight'>
+              {item.title}
+            </span>
+          </div>
+          {item.badge && (
+            <NavBadge danger={showSystemAlertBadge} dot={showSystemAlertBadge}>
+              {item.badge}
+            </NavBadge>
+          )}
+          <div className='ms-auto size-4 flex items-center justify-center'>
+            <div
+              className={cn(
+                'size-1.5 rounded-full ring-2 ring-transparent transition-all',
+                checkIsActive(pathname, item)
+                  ? 'bg-primary animate-pulse ring-primary/20'
+                  : 'bg-muted-foreground/30'
+              )}
+            />
+          </div>
+        </SidebarMenuButton>
+      )}
+      {childLinks.length > 0 ? (
+        <SidebarMenuSub>
+          {childLinks.map((subItem) => (
+            <SidebarMenuSubItem key={subItem.id} className='before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:bg-sidebar-border/35 before:content-[""]'>
+              <SidebarMenuSubButton asChild isActive={checkIsActive(pathname, subItem)}>
+                <Link to={subItem.url}>
+                  {subItem.icon && <subItem.icon />}
+                  <span className='italic font-black text-[10px] tracking-tight'>{subItem.title}</span>
+                  {subItem.badge ? (
+                    <span className='ms-auto text-[10px] font-black italic opacity-60'>
+                      {subItem.badge}
+                    </span>
+                  ) : null}
+                </Link>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          ))}
+        </SidebarMenuSub>
+      ) : null}
+    </SidebarMenuItem>
   )
+}
+
+function isNavLink(item: NavItem): item is NavLink {
+  return typeof item.url !== 'undefined'
 }

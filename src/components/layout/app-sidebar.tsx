@@ -18,14 +18,15 @@ export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { t } = useLanguage()
   const user = useAuthStore((state) => state.user)
+  const isIdentitySynced = useAuthStore((state) => state.isIdentitySynced)
   const localizedSidebarData = useMemo(() => getSidebarData(t), [t])
   const [brand, setBrand] = useState({
     name: localizedSidebarData.teams[0].name,
     plan: localizedSidebarData.teams[0].plan,
   })
   const visibleNavGroups = useMemo(
-    () => getNonBlockingNavGroups(user, localizedSidebarData.navGroups),
-    [localizedSidebarData.navGroups, user],
+    () => getNonBlockingNavGroups(user, localizedSidebarData.navGroups, { isIdentitySynced }),
+    [localizedSidebarData.navGroups, user, isIdentitySynced],
   )
 
   /**
@@ -73,7 +74,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className='no-scrollbar'>
         {visibleNavGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
+          <NavGroup key={props.id} {...props} />
         ))}
       </SidebarContent>
       {collapsible === 'icon' ? <SidebarRail /> : null}

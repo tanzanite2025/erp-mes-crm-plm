@@ -24,7 +24,7 @@ export function VehicleRecommendationPanel({ recommendations, onViewDiagram, onV
         <div className='text-[10px] font-black uppercase tracking-widest text-primary/70'>
           {t('logisticsConfig.vehicleLoading.recommendation.title')}
         </div>
-        <Badge className='border-none bg-white/60 text-primary'>{t('logisticsConfig.vehicleLoading.badges.rules')}</Badge>
+        <Badge className='border-none bg-primary/10 text-primary'>{t('logisticsConfig.vehicleLoading.badges.rules')}</Badge>
       </div>
 
       {recommendations.length === 0 ? (
@@ -37,7 +37,7 @@ export function VehicleRecommendationPanel({ recommendations, onViewDiagram, onV
       ) : (
         <div className='mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3'>
           {recommendations.map((rec) => (
-            <div key={rec.vehicle.id} className='rounded-[18px] border border-dashed border-primary/20 bg-white/60 px-4 py-3'>
+            <div key={rec.vehicle.id} className='rounded-[18px] border border-dashed border-primary/20 bg-card px-4 py-3'>
               <div className='text-sm font-black tracking-tight'>{rec.vehicle.name}</div>
               <div className='mt-1 text-[11px] text-primary/80'>
                 {t('logisticsConfig.vehicleLoading.recommendation.vehiclesNeeded', {

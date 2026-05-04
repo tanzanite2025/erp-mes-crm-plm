@@ -13,27 +13,34 @@ type Team = {
 }
 
 type BaseNavItem = {
+  id: string
   title: string
   badge?: string
   icon?: React.ElementType
-  permissionId?: string
+  permissionId?: string | string[]
 }
 
-type NavLink = BaseNavItem & {
+type NavNode = BaseNavItem & {
+  url?: LinkProps['to'] | (string & {})
+  activeMatch?: LinkProps['to'] | (string & {})
+  badgeKey?: string
+  children?: NavNode[]
+}
+
+type NavLink = NavNode & {
   url: LinkProps['to'] | (string & {})
-  items?: never
 }
 
-type NavCollapsible = BaseNavItem & {
-  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}) })[]
-  url?: never
+type NavBranch = NavNode & {
+  children: NavNode[]
 }
 
-type NavItem = NavCollapsible | NavLink
+type NavItem = NavNode
 
 type NavGroup = {
+  id: string
   title: string
-  items: NavItem[]
+  children: NavNode[]
 }
 
 type SidebarData = {
@@ -42,4 +49,4 @@ type SidebarData = {
   navGroups: NavGroup[]
 }
 
-export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink }
+export type { SidebarData, NavGroup, NavNode, NavItem, NavBranch, NavLink }

@@ -45,6 +45,7 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
               const selected = plan.rank === selectedPlanRank
               const structuredRuleRiskCount = getStructuredRuleRiskCount(plan)
               const mustRiskCount = plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length
+              const breakSliceCount = plan.explainabilitySummary.breakSlices.length
               const zoneClusterCount = plan.explainabilitySummary.zoneClusters.length
               const dynamicStrategyCount = plan.candidateBudgetSummary.dynamicStrategyStats.length
               return (

@@ -8,6 +8,7 @@ export const sidebar = {
   },
   groups: {
     resourceManagement: '资源管理',
+    purchaseAndSales: '购销管理',
     purchaseManagement: '采购管理',
     planningCenter: '计划中心',
     rawMaterialsManagement: '原材料管理',

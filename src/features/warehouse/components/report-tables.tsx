@@ -14,7 +14,7 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
     const { t } = useLanguage()
 
     return (
-        <div className='rounded-2xl md:rounded-[24px] border border-dashed border-muted overflow-x-auto bg-white/50 shadow-inner scrollbar-hide'>
+        <div className='rounded-2xl md:rounded-[24px] border border-dashed border-muted overflow-x-auto bg-card/50 shadow-inner scrollbar-hide'>
             <table className='w-full text-left border-collapse min-w-[700px] md:min-w-0'>
                 <thead className='bg-muted/30 border-b border-dashed border-muted'>
                     <tr>
@@ -39,7 +39,7 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
                                 <tr key={item.id} className='hover:bg-blue-500/5 transition-all group border-b border-dashed border-muted/30 last:border-none'>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] text-muted-foreground/40 tracking-tighter whitespace-nowrap'>{item.entryDate}</td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
-                                        <div className='font-bold text-slate-700 uppercase tracking-tight group-hover:text-blue-600 transition-colors truncate max-w-[150px] md:max-w-none'>{master?.name || 'UNKNOWN'}</div>
+                                        <div className='font-bold text-foreground/90 uppercase tracking-tight group-hover:text-blue-600 transition-colors truncate max-w-[150px] md:max-w-none'>{master?.name || 'UNKNOWN'}</div>
                                         <div className='text-[7px] md:text-[9px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>{master?.code || 'VOID'}</div>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
@@ -50,9 +50,9 @@ export function InboundReportTable({ data, masterDataMap }: InboundTableProps) {
                                         <span className='ml-1 text-[7px] md:text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter'>{master?.uom}</span>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
-                                        <Badge variant='outline' className='bg-white border-none shadow-sm text-slate-500 text-[7px] md:text-[8px] font-black uppercase tracking-widest h-3.5 md:h-4 px-1.5 md:px-2 rounded-full'>{item.targetCategory}</Badge>
+                                        <Badge variant='outline' className='bg-muted border-none shadow-sm text-muted-foreground text-[7px] md:text-[8px] font-black uppercase tracking-widest h-3.5 md:h-4 px-1.5 md:px-2 rounded-full'>{item.targetCategory}</Badge>
                                     </td>
-                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
+                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-muted-foreground uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
                                 </tr>
                             )
                         })
@@ -77,7 +77,7 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
     }
 
     return (
-        <div className='rounded-2xl md:rounded-[24px] border border-dashed border-muted overflow-x-auto bg-white/50 shadow-inner scrollbar-hide'>
+        <div className='rounded-2xl md:rounded-[24px] border border-dashed border-muted overflow-x-auto bg-card/50 shadow-inner scrollbar-hide'>
             <table className='w-full text-left border-collapse min-w-[800px] md:min-w-0'>
                 <thead className='bg-muted/30 border-b border-dashed border-muted'>
                     <tr>
@@ -107,10 +107,10 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
                                 <tr key={item.id} className='hover:bg-blue-500/5 transition-all group border-b border-dashed border-muted/30 last:border-none'>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] text-muted-foreground/40 tracking-tighter whitespace-nowrap'>{item.shipmentDate}</td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
-                                        <span className='font-mono font-bold text-[10px] md:text-sm text-slate-800 uppercase tracking-tighter whitespace-nowrap'>{item.orderNo || '-'}</span>
+                                        <span className='font-mono font-bold text-[10px] md:text-sm text-foreground uppercase tracking-tighter whitespace-nowrap'>{item.orderNo || '-'}</span>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
-                                        <div className='font-bold text-slate-700 uppercase tracking-tight group-hover:text-blue-600 transition-colors text-ellipsis overflow-hidden max-w-[120px] whitespace-nowrap'>{master?.name || 'UNKNOWN'}</div>
+                                        <div className='font-bold text-foreground/90 uppercase tracking-tight group-hover:text-blue-600 transition-colors text-ellipsis overflow-hidden max-w-[120px] whitespace-nowrap'>{master?.name || 'UNKNOWN'}</div>
                                         <div className='text-[7px] md:text-[8px] font-mono text-muted-foreground/20 uppercase tracking-widest truncate'>{master?.code || 'VOID'}</div>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5 text-right whitespace-nowrap'>
@@ -118,7 +118,7 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
                                         <span className='ml-1 text-[7px] md:text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter'>{master?.uom}</span>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5'>
-                                        <Badge variant='outline' className='bg-white border-none shadow-sm text-slate-500 text-[7px] md:text-[8px] font-black uppercase tracking-widest h-3.5 md:h-4 px-1.5 md:px-2 rounded-full'>{item.sourceCategory}</Badge>
+                                        <Badge variant='outline' className='bg-muted border-none shadow-sm text-muted-foreground text-[7px] md:text-[8px] font-black uppercase tracking-widest h-3.5 md:h-4 px-1.5 md:px-2 rounded-full'>{item.sourceCategory}</Badge>
                                     </td>
                                     <td className='px-4 md:px-6 py-2 md:py-2.5 text-center'>
                                         <Badge className={cn(
@@ -128,7 +128,7 @@ export function ShipmentReportTable({ data, masterDataMap }: ShipmentTableProps)
                                             {status.label}
                                         </Badge>
                                     </td>
-                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-slate-500 uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
+                                    <td className='px-4 md:px-6 py-2 md:py-2.5 font-bold text-muted-foreground uppercase tracking-tighter whitespace-nowrap'>{operatorName}</td>
                                 </tr>
                             )
                         })

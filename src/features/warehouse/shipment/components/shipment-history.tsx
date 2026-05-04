@@ -97,13 +97,13 @@ export function ShipmentHistory({
                     key={record.id}
                     className={cn(
                       'group cursor-default transition-all duration-300 hover:translate-x-1',
-                      isHighlighted ? 'bg-white ring-2 ring-primary/20 shadow-xl' : 'bg-white/50 hover:bg-white border-y border-dashed border-muted/50'
+                      isHighlighted ? 'bg-card ring-2 ring-primary/20 shadow-xl' : 'bg-card/50 hover:bg-card border-y border-dashed border-muted/50'
                     )}
                   >
                     <td className='px-4 md:px-6 py-3 md:py-4 rounded-l-xl md:rounded-l-2xl border-l-[3px] md:border-l-4 border-l-transparent group-hover:border-l-primary/30 transition-colors'>
                       <div className='flex flex-col gap-1 md:gap-1.5'>
                         <div className='flex items-center gap-2'>
-                          <span className='font-mono text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest'>#{record.id.slice(-6)}</span>
+                          <span className='font-mono text-[8px] md:text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest'>#{record.id.slice(-6)}</span>
                           {isHighlighted && <div className='size-1 md:size-1.5 rounded-full bg-primary animate-ping' />}
                         </div>
                         <div className='flex'>
@@ -115,7 +115,7 @@ export function ShipmentHistory({
                     </td>
                     <td className='px-4 md:px-6 py-3 md:py-4'>
                       <div className='flex flex-col overflow-hidden max-w-[150px] md:max-w-none'>
-                        <span className='font-black text-[12px] md:text-[13px] text-slate-700 tracking-tight uppercase group-hover:text-primary transition-colors truncate'>{item?.name || t('warehouse.shipment.history.masterRecord')}</span>
+                        <span className='font-black text-[12px] md:text-[13px] text-foreground/90 tracking-tight uppercase group-hover:text-primary transition-colors truncate'>{item?.name || t('warehouse.shipment.history.masterRecord')}</span>
                         <span className='text-[8px] md:text-[9px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>{item?.code || 'SKU'}</span>
                       </div>
                     </td>
@@ -124,14 +124,14 @@ export function ShipmentHistory({
                         <div className={cn('w-1 h-3 rounded-full shrink-0', record.status === 'VOID' ? 'bg-muted' : 'bg-primary/40 group-hover:bg-primary transition-colors')} />
                         <span className={cn(
                           'font-mono text-sm md:text-[16px] font-black tabular-nums tracking-tighter shrink-0',
-                          record.status === 'VOID' ? 'text-slate-300' : 'text-primary'
+                          record.status === 'VOID' ? 'text-muted-foreground/40' : 'text-primary'
                         )}>
                           -{record.quantity.toLocaleString()} <span className='text-[8px] md:text-[9px] font-black uppercase tracking-widest opacity-40'>{item?.uom || t('warehouse.shipment.history.units')}</span>
                         </span>
                       </div>
                     </td>
                     <td className='px-4 md:px-6 py-3 md:py-4'>
-                      <Badge variant='outline' className='font-black text-[7px] md:text-[8px] uppercase tracking-widest bg-muted/20 border-none h-4 md:h-5 px-2 md:px-3 rounded-lg md:rounded-xl text-slate-500 whitespace-nowrap'>
+                      <Badge variant='outline' className='font-black text-[7px] md:text-[8px] uppercase tracking-widest bg-muted/20 border-none h-4 md:h-5 px-2 md:px-3 rounded-lg md:rounded-xl text-muted-foreground whitespace-nowrap'>
                         {warehouseCategories.find(c => c.value === record.sourceCategory)?.label || record.sourceCategory}
                       </Badge>
                     </td>
@@ -143,7 +143,7 @@ export function ShipmentHistory({
                           targetId={record.id}
                           targetName={item?.name || record.materialName || t('warehouse.shipment.history.masterRecord')}
                           iconOnly
-                          className='size-7 md:size-8 rounded-full border-dashed px-0 text-slate-500 hover:text-slate-900'
+                          className='size-7 md:size-8 rounded-full border-dashed px-0 text-muted-foreground hover:text-foreground'
                         />
                         {record.status === 'DRAFT' && (
                           <>
@@ -158,7 +158,7 @@ export function ShipmentHistory({
                             <Button
                               variant='ghost'
                               size='sm'
-                              className='h-7 md:h-8 px-2 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-500/5 transition-colors'
+                              className='h-7 md:h-8 px-2 rounded-full text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/5 transition-colors'
                               onClick={() => onRemove(record.id, item?.name || t('warehouse.shipment.history.draft'), record.quantity, record.status)}
                             >
                               <Trash2 className='size-3 md:size-3.5' />

@@ -222,8 +222,8 @@ export function PermStatsTab() {
                 <span className='mb-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
                   {moduleItem.name} {t('systemManagement.permissionAudit.matrix.moduleSuffix')}
                 </span>
-                <div className='text-2xl font-black font-mono text-slate-800'>{moduleItem.users}</div>
-                <span className='mt-1 text-[8px] font-black uppercase tracking-widest text-slate-400 opacity-40'>
+                <div className='text-2xl font-black font-mono text-foreground'>{moduleItem.users}</div>
+                <span className='mt-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-40'>
                   {t('systemManagement.permissionAudit.matrix.rolesAccess')}
                 </span>
               </div>
@@ -232,8 +232,8 @@ export function PermStatsTab() {
         </CardContent>
       </Card>
 
-      <div className='rounded-[20px] border border-dashed border-indigo-100/50 bg-indigo-50/30 p-4'>
-        <p className='text-center text-[8px] font-black uppercase italic leading-relaxed tracking-tighter text-indigo-600/60 sm:text-left sm:text-[10px]'>
+      <div className='rounded-[20px] border border-dashed border-muted/50 bg-muted/5 p-4'>
+        <p className='text-center text-[8px] font-black uppercase italic leading-relaxed tracking-tighter text-muted-foreground/60 sm:text-left sm:text-[10px]'>
           {t('systemManagement.permissionAudit.note')}
         </p>
       </div>

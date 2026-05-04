@@ -144,9 +144,9 @@ export function SalesOrderMaster({
                       }
                       onSelect(order.id)
                     }}
-                    className={`group animate-in cursor-pointer transition-all duration-200 fade-in slide-in-from-left-2 hover:bg-white hover:shadow-md ${
+                    className={`group animate-in cursor-pointer transition-all duration-200 fade-in slide-in-from-left-2 hover:bg-muted/50 hover:shadow-md ${
                       active
-                        ? 'bg-white shadow-lg ring-1 ring-primary/30'
+                        ? 'bg-card shadow-lg ring-1 ring-primary/30'
                         : 'bg-card'
                     }`}
                   >

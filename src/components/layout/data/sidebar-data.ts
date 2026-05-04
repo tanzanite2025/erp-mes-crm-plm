@@ -10,6 +10,7 @@ import {
   FileText,
   Gauge,
   ListChecks,
+  HandCoins,
   ScanLine,
   Scale,
   ShieldCheck,
@@ -22,23 +23,28 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { getMenuPermissionForPath } from '@/features/authz/data/permission-catalog'
-import type { SidebarData } from '../types'
+import type { NavGroup, NavNode, SidebarData } from '../types'
 
 type TranslateFn = (
   key: TranslationKey,
   params?: Record<string, string | number>
 ) => string
 
-type SidebarItemConfig = {
+type SidebarNodeConfig = {
+  id: string
   titleKey: TranslationKey
-  url: string
-  icon: React.ElementType
-  permissionId: string
+  url?: string
+  icon?: React.ElementType
+  permissionId?: string
+  activeMatch?: string
+  badgeKey?: string
+  children?: SidebarNodeConfig[]
 }
 
 type SidebarGroupConfig = {
+  id: string
   titleKey: TranslationKey
-  items: SidebarItemConfig[]
+  children: SidebarNodeConfig[]
 }
 
 const defaultUser = {
@@ -58,37 +64,87 @@ const permissionIdForPath = (path: string): string =>
 
 const navGroupConfigs: SidebarGroupConfig[] = [
   {
+    id: 'resource-management',
     titleKey: 'sidebar.groups.resourceManagement',
-    items: [
+    children: [
       {
+        id: 'dashboard',
         titleKey: 'sidebar.items.dashboard',
-        url: '/dashboard/overview',
+        url: '/dashboard',
         icon: BarChart3,
         permissionId: permissionIdForPath('/dashboard/overview'),
+        activeMatch: '/dashboard',
       },
     ],
   },
   {
-    titleKey: 'sidebar.groups.purchaseManagement',
-    items: [
+    id: 'purchase-and-sales',
+    titleKey: 'sidebar.groups.purchaseAndSales',
+    children: [
       {
-        titleKey: 'sidebar.items.purchaseManagement',
-        url: '/purchase',
-        icon: Truck,
-        permissionId: permissionIdForPath('/purchase'),
+        id: 'purchase-management-group',
+        titleKey: 'sidebar.groups.purchaseManagement',
+        icon: HandCoins,
+        children: [
+          {
+            id: 'purchase-management',
+            titleKey: 'sidebar.items.purchaseManagement',
+            url: '/purchase',
+            icon: Truck,
+            permissionId: permissionIdForPath('/purchase'),
+          },
+        ],
+      },
+      {
+        id: 'sales-management-group',
+        titleKey: 'sidebar.groups.salesManagement',
+        icon: BarChart3,
+        children: [
+          {
+            id: 'sales-management',
+            titleKey: 'sidebar.items.salesManagement',
+            url: '/trading',
+            icon: ShoppingBag,
+            permissionId: permissionIdForPath('/trading'),
+          },
+          {
+            id: 'quote-management',
+            titleKey: 'sidebar.items.quoteManagement',
+            url: '/quotes',
+            icon: FileText,
+            permissionId: permissionIdForPath('/quotes'),
+          },
+          {
+            id: 'shipping-management',
+            titleKey: 'sidebar.items.shippingManagement',
+            url: '/shipping-management',
+            icon: Package,
+            permissionId: permissionIdForPath('/shipping-management'),
+          },
+          {
+            id: 'sales-analysis',
+            titleKey: 'sidebar.items.salesAnalysis',
+            url: '/sales-analysis',
+            icon: BarChart3,
+            permissionId: permissionIdForPath('/sales-analysis'),
+          },
+        ],
       },
     ],
   },
   {
+    id: 'planning-center',
     titleKey: 'sidebar.groups.planningCenter',
-    items: [
+    children: [
       {
+        id: 'mrp',
         titleKey: 'sidebar.items.mrp',
         url: '/mrp',
         icon: Gauge,
         permissionId: permissionIdForPath('/mrp'),
       },
       {
+        id: 'aps-scheduling',
         titleKey: 'sidebar.items.apsScheduling',
         url: '/aps-scheduling',
         icon: Calendar,
@@ -97,15 +153,18 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'raw-materials-management',
     titleKey: 'sidebar.groups.rawMaterialsManagement',
-    items: [
+    children: [
       {
+        id: 'cutting-database',
         titleKey: 'sidebar.items.cuttingDatabase',
         url: '/raw-materials',
         icon: Database,
         permissionId: permissionIdForPath('/raw-materials'),
       },
       {
+        id: 'cutting-operations',
         titleKey: 'sidebar.items.cuttingOperations',
         url: '/cutting-operations',
         icon: Calendar,
@@ -114,56 +173,32 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
-    titleKey: 'sidebar.groups.salesManagement',
-    items: [
-      {
-        titleKey: 'sidebar.items.salesManagement',
-        url: '/trading',
-        icon: ShoppingBag,
-        permissionId: permissionIdForPath('/trading'),
-      },
-      {
-        titleKey: 'sidebar.items.quoteManagement',
-        url: '/quotes',
-        icon: FileText,
-        permissionId: permissionIdForPath('/quotes'),
-      },
-      {
-        titleKey: 'sidebar.items.shippingManagement',
-        url: '/shipping-management',
-        icon: Package,
-        permissionId: permissionIdForPath('/shipping-management'),
-      },
-      {
-        titleKey: 'sidebar.items.salesAnalysis',
-        url: '/sales-analysis',
-        icon: BarChart3,
-        permissionId: permissionIdForPath('/sales-analysis'),
-      },
-    ],
-  },
-  {
+    id: 'engineering-management',
     titleKey: 'sidebar.groups.engineeringManagement',
-    items: [
+    children: [
       {
+        id: 'product-engineering',
         titleKey: 'sidebar.items.productEngineering',
         url: '/engineering',
         icon: Box,
         permissionId: permissionIdForPath('/engineering'),
       },
       {
+        id: 'engineering-database',
         titleKey: 'sidebar.items.engineeringDatabase',
         url: '/engineering-db',
         icon: Database,
         permissionId: permissionIdForPath('/engineering-db'),
       },
       {
+        id: 'engineering-reference',
         titleKey: 'sidebar.items.engineeringReference',
         url: '/engineering-reference',
         icon: FileText,
         permissionId: permissionIdForPath('/engineering-reference'),
       },
       {
+        id: 'quality-audit',
         titleKey: 'sidebar.items.qualityAudit',
         url: '/quality',
         icon: Scale,
@@ -172,21 +207,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'warehouse-management',
     titleKey: 'sidebar.groups.warehouseManagement',
-    items: [
+    children: [
       {
+        id: 'warehouse-operations',
         titleKey: 'sidebar.items.warehouseOperations',
         url: '/warehouse',
         icon: Warehouse,
         permissionId: permissionIdForPath('/warehouse'),
       },
       {
+        id: 'material-archive',
         titleKey: 'sidebar.items.materialArchive',
         url: '/materials',
         icon: Database,
         permissionId: permissionIdForPath('/materials'),
       },
       {
+        id: 'warehouse-config',
         titleKey: 'sidebar.items.warehouseConfig',
         url: '/warehouse-config',
         icon: Sliders,
@@ -195,9 +234,11 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'experimental-center',
     titleKey: 'sidebar.groups.experimentalCenter',
-    items: [
+    children: [
       {
+        id: 'experimental-center',
         titleKey: 'sidebar.groups.experimentalCenter',
         url: '/labs/experimental',
         icon: Cpu,
@@ -206,21 +247,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'production-coordination',
     titleKey: 'sidebar.groups.productionCoordination',
-    items: [
+    children: [
       {
+        id: 'piecework',
         titleKey: 'sidebar.items.piecework',
         url: '/piecework',
         icon: CheckSquare,
         permissionId: permissionIdForPath('/piecework'),
       },
       {
+        id: 'production-architecture',
         titleKey: 'sidebar.items.productionArchitecture',
         url: '/production-architecture',
         icon: Box,
         permissionId: permissionIdForPath('/production-architecture'),
       },
       {
+        id: 'quality-operations',
         titleKey: 'sidebar.items.qualityOperations',
         url: '/production-quality',
         icon: ListChecks,
@@ -229,15 +274,18 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'tooling-management',
     titleKey: 'sidebar.groups.toolingManagement',
-    items: [
+    children: [
       {
+        id: 'tooling-assets',
         titleKey: 'sidebar.items.toolingAssets',
         url: '/equipment-tooling/overview',
         icon: Cpu,
         permissionId: permissionIdForPath('/equipment-tooling/overview'),
       },
       {
+        id: 'furnace-assets',
         titleKey: 'sidebar.items.furnaceAssets',
         url: '/furnaces',
         icon: Gauge,
@@ -246,15 +294,18 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'org-personnel',
     titleKey: 'sidebar.groups.orgPersonnel',
-    items: [
+    children: [
       {
+        id: 'personnel-center',
         titleKey: 'sidebar.items.personnelCenter',
         url: '/personnel',
         icon: Users,
         permissionId: permissionIdForPath('/personnel'),
       },
       {
+        id: 'hall-of-fame',
         titleKey: 'sidebar.items.hallOfFame',
         url: '/hall-of-fame',
         icon: Trophy,
@@ -263,15 +314,18 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'logistics',
     titleKey: 'sidebar.groups.logistics',
-    items: [
+    children: [
       {
+        id: 'logistics-config',
         titleKey: 'sidebar.items.logisticsConfig',
         url: '/logistics-config',
         icon: Truck,
         permissionId: permissionIdForPath('/logistics-config'),
       },
       {
+        id: 'logistics-settings',
         titleKey: 'sidebar.items.logisticsSettings',
         url: '/logistics-settings',
         icon: Sliders,
@@ -280,9 +334,11 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'finance-management',
     titleKey: 'sidebar.groups.financeManagement',
-    items: [
+    children: [
       {
+        id: 'finance-center',
         titleKey: 'sidebar.items.financeCenter',
         url: '/finance-management',
         icon: Scale,
@@ -291,21 +347,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'code-center',
     titleKey: 'sidebar.groups.codeCenter',
-    items: [
+    children: [
       {
+        id: 'linear-barcode',
         titleKey: 'sidebar.items.linearBarcode',
         url: '/code-center/linear-barcode',
         icon: Barcode,
         permissionId: permissionIdForPath('/code-center/linear-barcode'),
       },
       {
+        id: 'dm-code',
         titleKey: 'sidebar.items.dmCode',
         url: '/code-center/dm-code',
         icon: ScanLine,
         permissionId: permissionIdForPath('/code-center/dm-code'),
       },
       {
+        id: 'shared-code-source',
         titleKey: 'sidebar.items.sharedCodeSource',
         url: '/code-center/shared-code-source',
         icon: Database,
@@ -314,39 +374,48 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'system-settings',
     titleKey: 'sidebar.groups.systemSettings',
-    items: [
+    children: [
       {
+        id: 'pda-shell',
         titleKey: 'sidebar.items.pdaShell',
         url: '/pda-shell',
         icon: ScanLine,
         permissionId: permissionIdForPath('/pda-shell'),
       },
       {
+        id: 'terminal-config',
         titleKey: 'sidebar.items.terminalConfig',
         url: '/terminal-config',
         icon: ScanLine,
         permissionId: permissionIdForPath('/terminal-config'),
       },
       {
+        id: 'sidebar-command-assignment',
         titleKey: 'sidebar.items.sidebarCommandAssignment',
         url: '/sidebar-command-library',
         icon: ListChecks,
         permissionId: permissionIdForPath('/sidebar-command-library'),
       },
       {
+        id: 'system-management',
         titleKey: 'sidebar.items.systemManagement',
         url: '/system-management',
         icon: ShieldCheck,
         permissionId: permissionIdForPath('/system-management'),
+        badgeKey: 'system-alert',
       },
       {
+        id: 'approval-center',
         titleKey: 'sidebar.items.approvalCenter',
         url: '/approval',
         icon: ShieldCheck,
         permissionId: permissionIdForPath('/approval'),
+        badgeKey: 'approval-unread',
       },
       {
+        id: 'basic-settings',
         titleKey: 'sidebar.items.basicSettings',
         url: '/basic-settings',
         icon: Sliders,
@@ -356,268 +425,25 @@ const navGroupConfigs: SidebarGroupConfig[] = [
   },
 ]
 
-export const sidebarData: SidebarData = {
-  user: defaultUser,
-  teams: [defaultTeam],
-  navGroups: [
-    {
-      title: '资源管理',
-      items: [
-        {
-          title: '仪表盘',
-          url: '/dashboard/overview',
-          icon: BarChart3,
-          permissionId: permissionIdForPath('/dashboard/overview'),
-        },
-        {
-          title: '原材料管理',
-          url: '/raw-materials',
-          icon: Database,
-          permissionId: permissionIdForPath('/raw-materials'),
-        },
-      ],
-    },
-    {
-      title: '采购管理',
-      items: [
-        {
-          title: '采购管理',
-          url: '/purchase',
-          icon: Truck,
-          permissionId: permissionIdForPath('/purchase'),
-        },
-      ],
-    },
-    {
-      title: '计划中心',
-      items: [
-        {
-          title: 'MRP',
-          url: '/mrp',
-          icon: Gauge,
-          permissionId: permissionIdForPath('/mrp'),
-        },
-        {
-          title: 'APS排产',
-          url: '/aps-scheduling',
-          icon: Calendar,
-          permissionId: permissionIdForPath('/aps-scheduling'),
-        },
-      ],
-    },
-    {
-      title: '销售管理',
-      items: [
-        {
-          title: '销售管理',
-          url: '/trading',
-          icon: ShoppingBag,
-          permissionId: permissionIdForPath('/trading'),
-        },
-        {
-          title: '报价管理',
-          url: '/quotes',
-          icon: FileText,
-          permissionId: permissionIdForPath('/quotes'),
-        },
-        {
-          title: '发货管理',
-          url: '/shipping-management',
-          icon: Package,
-          permissionId: permissionIdForPath('/shipping-management'),
-        },
-        {
-          title: '销售分析',
-          url: '/sales-analysis',
-          icon: BarChart3,
-          permissionId: permissionIdForPath('/sales-analysis'),
-        },
-      ],
-    },
-    {
-      title: '工程管理',
-      items: [
-        {
-          title: '产品工程管理',
-          url: '/engineering',
-          icon: Box,
-          permissionId: permissionIdForPath('/engineering'),
-        },
-        {
-          title: '工程数据库',
-          url: '/engineering-db',
-          icon: Database,
-          permissionId: permissionIdForPath('/engineering-db'),
-        },
-        {
-          title: '品质基准',
-          url: '/quality',
-          icon: Scale,
-          permissionId: permissionIdForPath('/quality'),
-        },
-      ],
-    },
-    {
-      title: '仓储',
-      items: [
-        {
-          title: '仓储作业',
-          url: '/warehouse',
-          icon: Warehouse,
-          permissionId: permissionIdForPath('/warehouse'),
-        },
-        {
-          title: '物料档案',
-          url: '/materials',
-          icon: Database,
-          permissionId: permissionIdForPath('/materials'),
-        },
-        {
-          title: '仓储配置',
-          url: '/warehouse-config',
-          icon: Sliders,
-          permissionId: permissionIdForPath('/warehouse-config'),
-        },
-      ],
-    },
-    {
-      title: '实验中心',
-      items: [
-        {
-          title: '实验中心',
-          url: '/labs/experimental',
-          icon: Cpu,
-          permissionId: permissionIdForPath('/labs/experimental'),
-        },
-      ],
-    },
-    {
-      title: '生产协同',
-      items: [
-        {
-          title: '计件管理',
-          url: '/piecework',
-          icon: CheckSquare,
-          permissionId: permissionIdForPath('/piecework'),
-        },
-        {
-          title: '品质作业',
-          url: '/production-quality',
-          icon: ListChecks,
-          permissionId: permissionIdForPath('/production-quality'),
-        },
-      ],
-    },
-    {
-      title: '工装管理',
-      items: [
-        {
-          title: '模具资产管理',
-          url: '/equipment-tooling/overview',
-          icon: Cpu,
-          permissionId: permissionIdForPath('/equipment-tooling/overview'),
-        },
-        {
-          title: '炉台资产档案',
-          url: '/furnaces',
-          icon: Gauge,
-          permissionId: permissionIdForPath('/furnaces'),
-        },
-      ],
-    },
-    {
-      title: '物流',
-      items: [
-        {
-          title: '物流',
-          url: '/logistics-config',
-          icon: Truck,
-          permissionId: permissionIdForPath('/logistics-config'),
-        },
-        {
-          title: '物流配置',
-          url: '/logistics-settings',
-          icon: Sliders,
-          permissionId: permissionIdForPath('/logistics-settings'),
-        },
-      ],
-    },
-    {
-      title: '财务管理',
-      items: [
-        {
-          title: '财务中心',
-          url: '/finance-management',
-          icon: Scale,
-          permissionId: permissionIdForPath('/finance-management'),
-        },
-      ],
-    },
-    {
-      title: '编码中心',
-      items: [
-        {
-          title: '一维码',
-          url: '/code-center/linear-barcode',
-          icon: Barcode,
-          permissionId: permissionIdForPath('/code-center/linear-barcode'),
-        },
-        {
-          title: 'DM码',
-          url: '/code-center/dm-code',
-          icon: ScanLine,
-          permissionId: permissionIdForPath('/code-center/dm-code'),
-        },
-      ],
-    },
-    {
-      title: '系统配置',
-      items: [
-        {
-          title: 'Pda Shell',
-          url: '/pda-shell',
-          icon: ScanLine,
-          permissionId: permissionIdForPath('/pda-shell'),
-        },
-        {
-          title: '人事账号中心',
-          url: '/personnel',
-          icon: Users,
-          permissionId: permissionIdForPath('/personnel'),
-        },
-        {
-          title: '终端配置',
-          url: '/terminal-config',
-          icon: ScanLine,
-          permissionId: permissionIdForPath('/terminal-config'),
-        },
-        {
-          title: '快捷操作配置',
-          url: '/sidebar-command-library',
-          icon: ListChecks,
-          permissionId: permissionIdForPath('/sidebar-command-library'),
-        },
-        {
-          title: '系统管理',
-          url: '/system-management',
-          icon: ShieldCheck,
-          permissionId: permissionIdForPath('/system-management'),
-        },
-        {
-          title: '审批中心',
-          url: '/approval',
-          icon: ShieldCheck,
-          permissionId: permissionIdForPath('/approval'),
-        },
-        {
-          title: '基础配置',
-          url: '/basic-settings',
-          icon: Sliders,
-          permissionId: permissionIdForPath('/basic-settings'),
-        },
-      ],
-    },
-  ],
+function localizeNavNode(t: TranslateFn, node: SidebarNodeConfig): NavNode {
+  return {
+    id: node.id,
+    title: t(node.titleKey),
+    url: node.url,
+    icon: node.icon,
+    permissionId: node.permissionId,
+    activeMatch: node.activeMatch,
+    badgeKey: node.badgeKey,
+    children: node.children?.map((child) => localizeNavNode(t, child)),
+  }
+}
+
+function localizeNavGroup(t: TranslateFn, group: SidebarGroupConfig): NavGroup {
+  return {
+    id: group.id,
+    title: t(group.titleKey),
+    children: group.children.map((item) => localizeNavNode(t, item)),
+  }
 }
 
 export function getSidebarData(t: TranslateFn): SidebarData {
@@ -630,15 +456,7 @@ export function getSidebarData(t: TranslateFn): SidebarData {
         plan: t('sidebar.team.defaultPlan'),
       },
     ],
-    navGroups: navGroupConfigs.map((group) => ({
-      title: t(group.titleKey),
-      items: group.items.map((item) => ({
-        title: t(item.titleKey),
-        url: item.url,
-        icon: item.icon,
-        permissionId: item.permissionId,
-      })),
-    })),
+    navGroups: navGroupConfigs.map((group) => localizeNavGroup(t, group)),
   }
 }
 

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
-import { VariantProps, cva } from 'class-variance-authority'
+import { type VariantProps, cva } from 'class-variance-authority'
 import { PanelLeftIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -609,10 +609,15 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean
 }) {
+  const widthSeed = React.useId()
   // Random width between 50 to 90%.
   const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+    const seedValue = widthSeed
+      .split('')
+      .reduce((total, character) => total + character.charCodeAt(0), 0)
+
+    return `${(seedValue % 40) + 50}%`
+  }, [widthSeed])
 
   return (
     <div
@@ -646,7 +651,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul'>) {
       data-slot='sidebar-menu-sub'
       data-sidebar='menu-sub'
       className={cn(
-        'mx-3.5 flex min-w-0 translate-x-px flex-col gap-0 border-s border-sidebar-border px-2.5 py-0',
+        'relative ms-6 w-[calc(100%-1.5rem)] flex min-w-0 flex-col gap-0.5 border-s border-dashed border-sidebar-border/30 py-1.5 transition-all',
         'group-data-[collapsible=icon]:hidden',
         className
       )}
@@ -689,10 +694,10 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        'flex h-6.5 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-inherit',
-        'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground',
-        size === 'sm' && 'text-xs',
-        size === 'md' && 'text-sm',
+        'flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-transparent px-2.5 text-sidebar-foreground/72 ring-sidebar-ring outline-hidden transition-all hover:bg-sidebar-accent/28 hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent/35 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-inherit relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-orange-500 before:opacity-0 data-[active=true]:before:opacity-100 before:transition-opacity before:rounded-full',
+        'data-[active=true]:bg-sidebar-accent/60 data-[active=true]:text-sidebar-accent-foreground',
+        size === 'sm' && 'text-[10px] font-black tracking-tight',
+        size === 'md' && 'text-[11px] font-black tracking-tight',
         'group-data-[collapsible=icon]:hidden',
         className
       )}

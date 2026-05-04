@@ -215,11 +215,11 @@ export function StocktakeMgmt() {
                                             'group relative p-5 rounded-[24px] border border-muted/60 transition-all cursor-pointer',
                                             selectedTask?.id === task.id
                                                 ? 'bg-background shadow-xl border-blue-500/50 scale-[1.02] ring-4 ring-blue-500/5'
-                                                : 'bg-background/40 hover:bg-background/60 hover:shadow-lg hover:border-blue-500/30'
+                                                : 'bg-card/40 hover:bg-background/60 hover:shadow-lg hover:border-blue-500/30'
                                         )}
                                     >
                                         <div className='flex justify-between items-start mb-3'>
-                                            <h4 className='font-black text-slate-800 tracking-tighter uppercase text-sm group-hover:text-blue-600 transition-colors italic'>
+                                            <h4 className='font-black text-foreground tracking-tighter uppercase text-sm group-hover:text-blue-600 transition-colors italic'>
                                                 {task.title}
                                             </h4>
                                             <div className='scale-75 origin-top-right'>
@@ -232,11 +232,11 @@ export function StocktakeMgmt() {
                                         <div className='flex items-center gap-4 mt-4 pt-4 border-t border-dashed border-muted/50'>
                                             <div className='flex flex-col'>
                                                 <span className='text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest'>{t('warehouse.stocktake.areaCode')}</span>
-                                                <span className='text-[10px] font-black font-mono text-slate-500'>{task.warehouseCategoryCode}</span>
+                                                <span className='text-[10px] font-black font-mono text-muted-foreground'>{task.warehouseCategoryCode}</span>
                                             </div>
                                             <div className='flex flex-col ml-auto text-right'>
                                                 <span className='text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest'>{t('warehouse.stocktake.creator')}</span>
-                                                <span className='text-[10px] font-black text-slate-500'>{creatorName}</span>
+                                                <span className='text-[10px] font-black text-muted-foreground'>{creatorName}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -254,7 +254,7 @@ export function StocktakeMgmt() {
                                 <div className='space-y-0.5 overflow-hidden'>
                                     <div className='flex items-center gap-3'>
                                         <div className='w-1 h-4 md:h-5 bg-blue-600 rounded-full shrink-0' />
-                                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-slate-800 truncate'>{selectedTask.title}</h3>
+                                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-foreground truncate'>{selectedTask.title}</h3>
                                     </div>
                                     <p className='text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-[16px] truncate'>
                                         {t('warehouse.stocktake.detailSubtitle', { count: items?.length || 0 })}
@@ -313,16 +313,16 @@ export function StocktakeMgmt() {
                                                     <TableRow key={item.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
                                                         <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5'>
                                                             <div className='flex flex-col overflow-hidden max-w-[150px] md:max-w-none'>
-                                                                <span className='font-bold text-[11px] md:text-[12px] text-slate-700 tracking-tight uppercase group-hover:text-blue-600 transition-colors truncate'>{item.materialName}</span>
+                                                                <span className='font-bold text-[11px] md:text-[12px] text-foreground/90 tracking-tight uppercase group-hover:text-blue-600 transition-colors truncate'>{item.materialName}</span>
                                                                 <span className='text-[7px] md:text-[8px] font-mono text-muted-foreground/30 uppercase tracking-widest truncate'>{item.materialCode}</span>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className='py-2 md:py-2.5'>
-                                                            <span className='inline-flex h-3.5 items-center rounded-full bg-white px-1.5 md:px-2 font-black text-[7px] md:text-[8px] uppercase tracking-widest shadow-sm whitespace-nowrap'>
+                                                            <span className='inline-flex h-3.5 items-center rounded-full bg-muted/30 px-1.5 md:px-2 font-black text-[7px] md:text-[8px] uppercase tracking-widest shadow-sm whitespace-nowrap'>
                                                                 {item.batchNo || t('warehouse.stocktake.noBatch')}
                                                             </span>
                                                         </TableCell>
-                                                        <TableCell className='text-right py-2 md:py-2.5 font-mono text-[10px] md:text-[11px] font-bold text-slate-400 whitespace-nowrap'>
+                                                        <TableCell className='text-right py-2 md:py-2.5 font-mono text-[10px] md:text-[11px] font-bold text-muted-foreground/60 whitespace-nowrap'>
                                                             {item.theoryQty} <span className='text-[7px] uppercase tracking-tighter'>{item.uom}</span>
                                                         </TableCell>
                                                         <TableCell className='text-right py-2 md:py-2.5 font-mono text-xs md:text-sm font-black text-blue-600 whitespace-nowrap'>

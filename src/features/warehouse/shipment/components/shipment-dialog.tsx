@@ -318,7 +318,7 @@ export function ShipmentDialog({
 
           <div className='w-full lg:w-[260px] bg-muted/20 border-t lg:border-t-0 lg:border-l border-dashed border-muted p-5 md:p-6 flex flex-col shrink-0'>
             <div className='flex items-center gap-3 mb-6'>
-              <div className='size-9 rounded-xl bg-white border border-dashed border-muted flex items-center justify-center shadow-inner'>
+              <div className='size-9 rounded-xl bg-card border border-dashed border-muted flex items-center justify-center shadow-inner'>
                 <Warehouse className='size-4.5 text-blue-500' />
               </div>
               <div className='space-y-0.5'>
@@ -351,7 +351,7 @@ export function ShipmentDialog({
                     <div className='flex items-baseline justify-between'>
                       <div className={cn(
                         'text-lg font-black font-mono tracking-tighter leading-none',
-                        isSelected ? 'text-blue-600' : 'text-slate-800'
+                        isSelected ? 'text-blue-600' : 'text-foreground'
                       )}>
                         {stock}
                       </div>
@@ -372,7 +372,7 @@ export function ShipmentDialog({
               <div className='flex justify-between items-center'>
                 <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/30'>{t('warehouse.shipment.dialog.totalReserve')}</span>
                 <div className='flex items-center gap-2'>
-                  <span className='text-sm font-black font-mono text-slate-800'>{selectedItem.stock}</span>
+                  <span className='text-sm font-black font-mono text-foreground'>{selectedItem.stock}</span>
                   <span className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/20'>{selectedItem.uom}</span>
                 </div>
               </div>

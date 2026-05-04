@@ -120,9 +120,9 @@ export function PurchaseOrderMaster({
                 <tr
                   key={order.id}
                   onClick={() => onSelect(order.id)}
-                  className={`group animate-in cursor-pointer transition-all duration-300 fade-in slide-in-from-left-2 hover:bg-white hover:shadow-md ${
+                  className={`group animate-in cursor-pointer transition-all duration-300 fade-in slide-in-from-left-2 hover:bg-muted/50 hover:shadow-md ${
                     active
-                      ? 'bg-white shadow-lg ring-1 ring-primary/30'
+                      ? 'bg-card shadow-lg ring-1 ring-primary/30'
                       : 'bg-card'
                   }`}
                 >
@@ -303,7 +303,7 @@ export function PurchaseOrderMaster({
               onClick={() => onSelect(order.id)}
               className={`rounded-[28px] border border-dashed p-4 transition-all active:scale-[0.98] ${
                 active
-                  ? 'border-primary/30 bg-white shadow-xl ring-2 ring-primary/20'
+                  ? 'border-primary/30 bg-card shadow-xl ring-2 ring-primary/20'
                   : 'border-muted/50 bg-card'
               }`}
             >

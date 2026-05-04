@@ -76,7 +76,7 @@ export function AdjustmentHistory() {
                 <div className='px-5 md:px-8 py-4 md:py-5 border-b border-dashed border-muted/50 flex items-center justify-between bg-muted/20'>
                     <div className='flex items-center gap-2 overflow-hidden'>
                         <History className='size-4 text-amber-600 shrink-0' />
-                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-slate-800 truncate'>{t('warehouse.adjustment.flowTitle')}</h3>
+                        <h3 className='text-base md:text-lg font-black tracking-tighter italic uppercase text-foreground truncate'>{t('warehouse.adjustment.flowTitle')}</h3>
                     </div>
                     <p className='hidden sm:block text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 italic'>{t('warehouse.adjustment.auditData')}</p>
                 </div>
@@ -112,13 +112,13 @@ export function AdjustmentHistory() {
                                     const ownerName = auditUtils.formatOperatorName(adj.createdBy) || adj.createdBy
                                     return (
                                     <TableRow key={adj.id} className='hover:bg-muted/30 transition-colors border-muted/50 group'>
-                                        <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-amber-600 transition-colors truncate max-w-[120px]'>{adj.adjustmentNo}</TableCell>
+                                        <TableCell className='pl-5 md:pl-8 py-2 md:py-2.5 font-mono text-[9px] md:text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest group-hover:text-amber-600 transition-colors truncate max-w-[120px]'>{adj.adjustmentNo}</TableCell>
                                         <TableCell>
                                             <Badge variant='outline' className='font-black text-[8px] md:text-[9px] uppercase tracking-widest bg-muted border-none h-4 md:h-5 px-2 md:px-3 rounded-full whitespace-nowrap'>
                                                 {adj.type === 'STOCKTAKE' ? t('warehouse.adjustment.typeStocktake') : t('warehouse.adjustment.typeManual')}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className='font-black text-[11px] md:text-[12px] text-slate-500 uppercase tracking-tight whitespace-nowrap'>{adj.totalItems}</TableCell>
+                                        <TableCell className='font-black text-[11px] md:text-[12px] text-muted-foreground uppercase tracking-tight whitespace-nowrap'>{adj.totalItems}</TableCell>
                                         <TableCell>
                                             <AuditStatusDisplay
                                                 meta={getAdjustmentStatusMeta(t, adj.status)}
@@ -127,7 +127,7 @@ export function AdjustmentHistory() {
                                         </TableCell>
                                         <TableCell className='py-2 md:py-2.5 whitespace-nowrap'>
                                             <div className='flex flex-col gap-1'>
-                                                <span className='font-bold text-[10px] md:text-[11px] text-slate-600'>{ownerName}</span>
+                                                <span className='font-bold text-[10px] md:text-[11px] text-foreground/80'>{ownerName}</span>
                                                 <span className='text-[8px] md:text-[9px] text-muted-foreground/50'>
                                                     {t('warehouse.adjustment.audit.approvedBy')}: {adj.approvedBy || t('warehouse.adjustment.audit.empty')}
                                                 </span>
@@ -189,7 +189,7 @@ export function AdjustmentHistory() {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className='rounded-xl md:rounded-[24px] border border-dashed border-muted bg-white p-4 md:p-8 mb-6 md:mb-8 overflow-y-auto max-h-[50vh] md:max-h-[60vh] shadow-inner'>
+                        <div className='rounded-xl md:rounded-[24px] border border-dashed border-muted bg-card p-4 md:p-8 mb-6 md:mb-8 overflow-y-auto max-h-[50vh] md:max-h-[60vh] shadow-inner'>
                             {selectedAdj && (
                                 <div className='print-content scale-[0.85] origin-top md:scale-100'>
                                     <AdjustmentPrint data={selectedAdj} ref={printRef} />

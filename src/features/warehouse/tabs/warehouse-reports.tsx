@@ -151,12 +151,12 @@ export function WarehouseReports() {
                         <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
                             <div className='overflow-x-auto scrollbar-hide'>
                                 <TabsList className='bg-muted/50 p-1 rounded-xl h-10 border-none inline-flex'>
-                                    <TabsTrigger value='inbound' className='gap-2 px-4 md:px-8 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm whitespace-nowrap'>
+                                    <TabsTrigger value='inbound' className='gap-2 px-4 md:px-8 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm whitespace-nowrap'>
                                         <ArrowDownLeft className='size-3.5 shrink-0' />
                                         {t('warehouse.reports.inbound')}
                                         <Badge className='ml-1 h-3.5 md:h-4 px-1 text-[7px] md:text-[8px] font-black bg-blue-500/10 text-blue-600 border-none rounded-full'>{filteredInbound.length}</Badge>
                                     </TabsTrigger>
-                                    <TabsTrigger value='shipment' className='gap-2 px-4 md:px-8 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm whitespace-nowrap'>
+                                    <TabsTrigger value='shipment' className='gap-2 px-4 md:px-8 rounded-lg font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:text-orange-600 data-[state=active]:shadow-sm whitespace-nowrap'>
                                         <ArrowUpRight className='size-3.5 shrink-0' />
                                         {t('warehouse.reports.shipment')}
                                         <Badge className='ml-1 h-3.5 md:h-4 px-1 text-[7px] md:text-[8px] font-black bg-orange-500/10 text-orange-600 border-none rounded-full'>{filteredShipment.length}</Badge>
