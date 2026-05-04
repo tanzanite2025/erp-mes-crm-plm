@@ -150,10 +150,10 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                 {isInsightMode ? (
                     <>
                         {/* 2. 核心分析内容域 */}
-                        <div className="px-8 pt-8 pb-4 bg-white relative">
+                        <div className="px-8 pt-8 pb-4 bg-card relative">
                             <ScrollArea className="h-[300px] md:h-[350px] pr-6">
                                 <div className="prose prose-sm max-w-none prose-slate">
-                                    <div className="whitespace-pre-wrap font-bold text-[14px] text-slate-800 leading-[1.8] tracking-tight">
+                                    <div className="whitespace-pre-wrap font-bold text-[14px] text-foreground/90 leading-[1.8] tracking-tight">
                                         {cleanContent || '正在生成运营分析...'}
                                     </div>
                                 </div>
@@ -163,33 +163,33 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                         {/* 3. 动态行动磁贴 (Action Tiles) */}
                         {actions.length > 0 && (
                             <div className="px-8 pb-4">
-                                <div className="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-slate-100 border-dashed border-t" />
+                                <div className="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
+                                    <div className="h-px flex-1 bg-border/40 border-dashed border-t" />
                                     建议直接处理以下业务动作
-                                    <div className="h-px flex-1 bg-slate-100 border-dashed border-t" />
+                                    <div className="h-px flex-1 bg-border/40 border-dashed border-t" />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {actions.map((action, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => handleAction(action.value)}
-                                            className="flex items-center justify-between p-4 rounded-2xl border border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all group group-active:scale-95"
+                                            className="flex items-center justify-between p-4 rounded-2xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all group group-active:scale-95"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="size-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-white transition-colors">
-                                                    {action.value.includes('trading') && <ShoppingCart className="size-4 text-slate-600" />}
-                                                    {action.value.includes('production') && <Factory className="size-4 text-slate-600" />}
-                                                    {action.value.includes('furnace') && <Cpu className="size-4 text-slate-600" />}
-                                                    {!['trading', 'production', 'furnace'].some(k => action.value.includes(k)) && <ExternalLink className="size-4 text-slate-600" />}
+                                                <div className="size-9 rounded-xl bg-muted/30 flex items-center justify-center group-hover:bg-card transition-colors">
+                                                    {action.value.includes('trading') && <ShoppingCart className="size-4 text-muted-foreground/80" />}
+                                                    {action.value.includes('production') && <Factory className="size-4 text-muted-foreground/80" />}
+                                                    {action.value.includes('furnace') && <Cpu className="size-4 text-muted-foreground/80" />}
+                                                    {!['trading', 'production', 'furnace'].some(k => action.value.includes(k)) && <ExternalLink className="size-4 text-muted-foreground/80" />}
                                                 </div>
                                                 <div className="text-left">
-                                                    <div className="text-[11px] font-black text-slate-900 leading-none mb-1">{action.label}</div>
-                                                    <div className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter truncate w-32">
+                                                    <div className="text-[11px] font-black text-foreground/90 leading-none mb-1">{action.label}</div>
+                                                    <div className="text-[8px] font-mono text-muted-foreground/40 uppercase tracking-tighter truncate w-32">
                                                         {action.value}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <ArrowRight className="size-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                                            <ArrowRight className="size-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                                         </button>
                                     ))}
                                 </div>
@@ -197,13 +197,13 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                         )}
 
                         {/* 4. 底层操作按钮 */}
-                        <div className="p-8 bg-slate-50/80 backdrop-blur-sm flex items-center justify-center border-t border-dashed border-slate-200/50">
+                        <div className="p-8 bg-muted/10 backdrop-blur-sm flex items-center justify-center border-t border-dashed border-border/40">
                             <Button 
                                 onClick={() => {
                                     onOpenChange(false);
                                     aiAgentService.markAsRead();
                                 }}
-                                className="w-full max-w-sm h-14 rounded-full bg-slate-900 hover:bg-black text-[11px] font-black uppercase tracking-[0.2em] gap-3 shadow-2xl shadow-indigo-100 active:scale-95 transition-all"
+                                className="w-full max-w-sm h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-black uppercase tracking-[0.2em] gap-3 shadow-2xl shadow-primary/10 active:scale-95 transition-all"
                             >
                                 <CheckCircle2 className="size-5 text-emerald-400" />
                                 已知晓，继续监控全线运营
@@ -212,7 +212,7 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                     </>
                 ) : (
                     <>
-                        <div className="px-8 pt-8 pb-4 bg-white relative">
+                        <div className="px-8 pt-8 pb-4 bg-card relative">
                             <ScrollArea className="h-[320px] md:h-[360px] pr-2">
                                 <div className="flex flex-col gap-6 pb-4 cursor-default">
                                     {isHistoryLoading ? (
@@ -245,7 +245,7 @@ export function DailyInsightModal({ open, onOpenChange, session, content, getLat
                             </ScrollArea>
                         </div>
 
-                        <div className="p-8 bg-slate-50/80 backdrop-blur-sm flex flex-col gap-3 border-t border-dashed border-slate-200/50">
+                        <div className="p-8 bg-muted/10 backdrop-blur-sm flex flex-col gap-3 border-t border-dashed border-border/40">
                             <Card className="p-1.5 flex items-center gap-1.5 rounded-[28px] border border-dashed border-primary/20 bg-muted/20 focus-within:ring-2 ring-primary/20 transition-all shadow-xl">
                                 <div className="flex-1 px-2.5">
                                     <Input

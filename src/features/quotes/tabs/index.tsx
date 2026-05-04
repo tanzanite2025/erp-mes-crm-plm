@@ -161,12 +161,14 @@ export function QuoteOrdersTab() {
       <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>报价创建字典加载中</p>
     </div>
   ) : (
-    <div className='space-y-4'>
+    <div className='space-y-3'>
       <DocumentHeaderFields
         formData={createFormData}
         setFormData={setCreateFormData}
         customers={createResources.customers}
         onClassificationChange={handleCreateClassificationChange}
+        compactEvidence
+        denseContractFields
       />
       <DocumentLinesEditor
         appearances={createResources.appearances}
@@ -182,6 +184,7 @@ export function QuoteOrdersTab() {
       />
       <DocumentNotesSection
         value={createFormData.requirements || ''}
+        compact
         onChange={(value) => setCreateFormData((prev) => ({ ...prev, requirements: value }))}
       />
     </div>

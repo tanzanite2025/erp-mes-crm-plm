@@ -100,11 +100,11 @@ export function AiTrigger({ placement = 'floating' }: AiTriggerProps) {
                 onTouchStart={startPress}
                 onTouchEnd={endPress}
                 className={cn(
-                    "rounded-full shadow-[0_0_40px_rgba(79,70,229,0.2)] transition-all duration-300 border-2",
+                    "rounded-full shadow-[0_0_40px_rgba(79,70,229,0.15)] transition-all duration-300 border-2",
                     isDock ? "size-11" : "size-14",
                     isRecording 
-                        ? "bg-rose-600 border-rose-100 scale-110 animate-pulse opacity-100" 
-                        : "bg-indigo-600 border-indigo-100 hover:scale-105 active:scale-95 opacity-90 hover:opacity-100",
+                        ? "bg-rose-600 border-rose-100/50 scale-110 animate-pulse opacity-100" 
+                        : "bg-indigo-600 border-indigo-500/20 hover:scale-105 active:scale-95 opacity-90 hover:opacity-100 dark:border-indigo-400/20",
                     isModalOpen && "scale-0 opacity-0 pointer-events-none"
                 )}
             >

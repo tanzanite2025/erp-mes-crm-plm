@@ -65,13 +65,13 @@ export function BatchEnginePhase7HomeSummarySection(props: BatchEnginePhase7Home
   }))
 
   return (
-    <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
+    <div className='rounded-[24px] border border-dashed border-border/60 bg-card p-4'>
       <div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/75'>Phase7 首页摘要</p>
-          <p className='mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-slate-400'>break slice / zone cluster / dynamic budget</p>
+          <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>Phase7 首页摘要</p>
+          <p className='mt-1 text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground/40'>break slice / zone cluster / dynamic budget</p>
         </div>
-        <div className='rounded-full border border-dashed border-amber-300 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700'>
+        <div className='rounded-full border border-dashed border-primary/40 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary'>
           {selectedPlan.budgetRerankReason || '动态预算稳定'}
         </div>
       </div>
@@ -157,12 +157,12 @@ function Phase7HeroMetricCard({
   onClick?: () => void
 }) {
   const className = tone === 'violet'
-    ? 'border-violet-200 bg-violet-500/10 text-violet-700'
+    ? 'border-violet-500/30 bg-violet-500/10 text-violet-500'
     : tone === 'amber'
-      ? 'border-amber-200 bg-amber-500/10 text-amber-700'
+      ? 'border-amber-500/30 bg-amber-500/10 text-amber-500'
       : tone === 'rose'
-        ? 'border-rose-200 bg-rose-500/10 text-rose-700'
-        : 'border-slate-200 bg-slate-50/80 text-slate-700'
+        ? 'border-rose-500/30 bg-rose-500/10 text-rose-500'
+        : 'border-border/60 bg-muted/10 text-muted-foreground'
   const activeClassName = active ? 'shadow-sm ring-1 ring-current/25' : ''
   const content = (
     <>
@@ -187,7 +187,7 @@ function Phase7HeroMetricCard({
           aria-label={`${label} 联动预览`}
           aria-pressed={active ? 'true' : 'false'}
           onClick={onClick}
-          className={`w-full text-left transition hover:-translate-y-0.5 ${active ? 'rounded-[16px] bg-white/65 px-2 py-2' : ''}`.trim()}
+          className={`w-full text-left transition hover:-translate-y-0.5 ${active ? 'rounded-[16px] bg-background/40 px-2 py-2' : ''}`.trim()}
         >
           {content}
         </button>
@@ -201,7 +201,7 @@ function Phase7HeroMetricCard({
               aria-label={`${label} 快捷入口 ${item.label}`}
               aria-pressed={item.active ? 'true' : 'false'}
               onClick={item.onClick}
-              className={`rounded-full border border-dashed px-2.5 py-1.5 text-left text-[9px] font-black tracking-[0.14em] transition hover:bg-white/80 ${item.active ? 'border-current/60 bg-white/90 shadow-sm ring-1 ring-current/20' : 'border-current/35 bg-white/55'}`.trim()}
+              className={`rounded-full border border-dashed px-2.5 py-1.5 text-left text-[9px] font-black tracking-[0.14em] transition hover:bg-background/80 ${item.active ? 'border-current/60 bg-background shadow-sm ring-1 ring-current/20' : 'border-current/35 bg-background/50'}`.trim()}
             >
               {item.label}
               <span className='ml-1 opacity-70'>{item.hint}</span>
@@ -219,15 +219,15 @@ function Phase7SummaryBlock({
   content,
   tone,
 }: {
-  title: string
-  content: string
-  tone: 'violet' | 'amber' | 'slate'
+  title: string;
+  content: string;
+  tone: 'violet' | 'amber' | 'slate';
 }) {
   const className = tone === 'violet'
-    ? 'border-violet-200 bg-violet-500/5 text-violet-800'
+    ? 'border-violet-500/30 bg-violet-500/5 text-violet-400'
     : tone === 'amber'
-      ? 'border-amber-200 bg-amber-500/5 text-amber-800'
-      : 'border-slate-200 bg-slate-50/80 text-slate-800'
+      ? 'border-amber-500/30 bg-amber-500/5 text-amber-400'
+      : 'border-border/40 bg-muted/10 text-muted-foreground'
   return (
     <div className={`rounded-[20px] border border-dashed px-3 py-3 ${className}`}>
       <p className='text-[8px] font-black uppercase tracking-[0.18em] opacity-70'>{title}</p>

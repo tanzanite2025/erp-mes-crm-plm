@@ -71,7 +71,7 @@ export function DocumentHeaderFields({
   })
 
   return (
-    <section className='space-y-3'>
+    <section className={cn('space-y-3', (compactEvidence || denseContractFields) && 'space-y-2')}>
       <div className='flex items-center gap-2 px-1'>
         <div className='flex size-3 items-center justify-center rounded-full bg-primary/20'>
           <div className='size-1.5 rounded-full bg-primary' />
@@ -113,6 +113,7 @@ export function DocumentHeaderFields({
         <div
           className={cn(
             'grid grid-cols-1 gap-4 rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-4 transition-all sm:p-5 md:grid-cols-2',
+            (compactEvidence || denseContractFields) && 'gap-3 rounded-[20px] p-3 sm:p-4',
             denseContractFields ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
           )}
         >
@@ -320,6 +321,7 @@ export function DocumentHeaderFields({
           <div
             className={cn(
               'grid gap-3 md:col-span-4',
+              compactEvidence && 'gap-2',
               denseContractFields && 'lg:col-span-5'
             )}
           >

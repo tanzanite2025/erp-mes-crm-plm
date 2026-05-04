@@ -32,9 +32,9 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
   const { controls, updateControl, prepregSpecs, prepregLoading, selectedPrepregSpec } = props
 
   return (
-    <div className='rounded-[22px] border border-dashed border-slate-300/80 bg-slate-50/75 p-4'>
-      <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
-        <ScanSearch className='size-4 text-cyan-700' />
+    <div className='rounded-[22px] border border-dashed border-border/50 bg-muted/5 p-4'>
+      <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70'>
+        <ScanSearch className='size-4 text-primary/80' />
         {t('rawMaterials.batchEngine.sections.control.blocks.roll.title')}
       </div>
       <div className='mt-3 grid gap-2'>
@@ -45,7 +45,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
               updateControl('selectedPrepregSpecId', value === '__none__' ? '' : value)
             }
           >
-            <SelectTrigger className='h-9 rounded-lg bg-white text-xs font-semibold'>
+            <SelectTrigger className='h-9 rounded-lg bg-background text-xs font-semibold'>
               <SelectValue
                 placeholder={
                   prepregLoading
@@ -67,14 +67,14 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
           </Select>
         </BatchEngineControlField>
 
-        <p className='min-h-5 text-xs font-semibold text-slate-600'>
+        <p className='min-h-5 text-xs font-semibold text-muted-foreground/80'>
           {selectedPrepregSpec
             ? `${t('rawMaterials.batchEngine.sections.control.prepregSummary.prefix')}: ${selectedPrepregSpec.widthMm || '--'}mm x ${selectedPrepregSpec.lengthM || '--'}m`
             : t('rawMaterials.batchEngine.sections.control.prepregSummary.empty')}
         </p>
 
-        <div className='rounded-[14px] border border-dashed border-cyan-300/70 bg-cyan-50/70 p-3'>
-          <div className='mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-800/80'>
+        <div className='rounded-[14px] border border-dashed border-primary/30 bg-primary/5 p-3'>
+          <div className='mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-primary/80'>
             <Package2 className='size-4' />
             {t('rawMaterials.batchEngine.sections.control.blocks.rollSpec.title')}
           </div>
@@ -83,7 +83,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
               <Input
                 value={controls.rollWidthMm}
                 readOnly
-                className='h-8 rounded-lg bg-white text-xs font-semibold'
+                className='h-8 rounded-lg bg-background text-xs font-semibold'
                 placeholder='--'
               />
             </BatchEngineControlField>
@@ -91,7 +91,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
               <Input
                 value={controls.rollLengthM}
                 readOnly
-                className='h-8 rounded-lg bg-white text-xs font-semibold'
+                className='h-8 rounded-lg bg-background text-xs font-semibold'
                 placeholder='--'
               />
             </BatchEngineControlField>
@@ -102,7 +102,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
           <Input
             value={controls.knifeGapMm}
             onChange={(event) => updateControl('knifeGapMm', event.target.value)}
-            className='h-8 rounded-lg bg-white text-xs font-semibold'
+            className='h-8 rounded-lg bg-background text-xs font-semibold'
             placeholder='2'
           />
         </BatchEngineControlField>
@@ -110,7 +110,7 @@ export function BatchEngineControlRollSection(props: BatchEngineControlRollSecti
           <Input
             value={controls.edgeTrimMm}
             onChange={(event) => updateControl('edgeTrimMm', event.target.value)}
-            className='h-8 rounded-lg bg-white text-xs font-semibold'
+            className='h-8 rounded-lg bg-background text-xs font-semibold'
             placeholder='0'
           />
         </BatchEngineControlField>

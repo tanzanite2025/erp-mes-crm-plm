@@ -55,6 +55,7 @@ export function Header({
   showProfileDropdown = true,
   showConfigDrawer = false,
   children,
+  style,
   ...props
 }: HeaderProps) {
   const [offset, setOffset] = useState(0)
@@ -76,10 +77,20 @@ export function Header({
     <header
       className={cn(
         'z-50 h-14 md:h-16 flex-none transition-[background-color,border-color,shadow,backdrop-filter] duration-300',
-        fixed && 'header-fixed fixed top-(--header-fixed-top,0px) right-(--header-fixed-right,0px) left-(--header-fixed-left,0px) bg-background/60 backdrop-blur-xl border-b border-dashed border-muted-foreground/20',
+        fixed && 'header-fixed fixed bg-background/60 backdrop-blur-xl border-b border-dashed border-muted-foreground/20',
         offset > 5 && !fixed && 'shadow-sm bg-background/80 backdrop-blur-md',
         className
       )}
+      style={
+        fixed
+          ? {
+              ...style,
+              top: 'var(--header-fixed-top, 0px)',
+              left: 'var(--header-fixed-left, 0px)',
+              right: 'var(--header-fixed-right, 0px)',
+            }
+          : style
+      }
       {...props}
     >
       <div

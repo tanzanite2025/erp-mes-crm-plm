@@ -30,7 +30,7 @@ export function BatchEnginePage() {
         title={t('rawMaterials.batchEngine.title')}
       />
 
-      <section className='rounded-[32px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.2)] sm:p-5'>
+      <section className='rounded-[32px] border border-dashed border-border/60 bg-card p-4 shadow-none sm:p-5'>
         <div className='flex flex-col gap-6'>
           <BatchEngineControlPanel
             metrics={preview.metrics}

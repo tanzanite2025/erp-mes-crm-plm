@@ -2,7 +2,6 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog'
-import { QuoteWorkspaceActionPanel } from '@/features/quotes/components/quote-workspace-action-panel'
 import { QuoteWorkspaceDetailContent } from '@/features/quotes/components/quote-workspace-detail-content'
 import { QuoteWorkspaceFooter } from '@/features/quotes/components/quote-workspace-footer'
 import { QuoteWorkspaceHeader } from '@/features/quotes/components/quote-workspace-header'
@@ -63,7 +62,7 @@ export function QuoteWorkspaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[92vh] w-[96vw] max-w-[96vw] sm:max-w-[96vw] xl:w-[1400px] xl:max-w-[1400px] overflow-hidden rounded-3xl border border-primary/20 p-0'>
+      <DialogContent className='max-h-[95vh] w-[96vw] max-w-[96vw] sm:max-w-[96vw] xl:w-[1480px] xl:max-w-[1480px] overflow-hidden rounded-3xl border border-primary/20 p-0'>
         <QuoteWorkspaceHeader
           detail={detail}
           isCreateMode={isCreateMode}
@@ -71,7 +70,7 @@ export function QuoteWorkspaceDialog({
           detailError={detailError}
         />
 
-        <div className={`min-h-0 max-h-[calc(92vh-150px)] overflow-hidden ${isCreateMode ? 'flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_320px]' : 'grid lg:grid-cols-[minmax(0,1.25fr)_360px]'}`}>
+        <div className='min-h-0 max-h-[calc(95vh-150px)] overflow-hidden'>
           {isCreateMode ? (
             <div className='min-w-0 overflow-y-auto px-6 py-5'>{createEditor ?? null}</div>
           ) : (
@@ -87,20 +86,6 @@ export function QuoteWorkspaceDialog({
               onRequirementsChange={onRequirementsChange}
             />
           )}
-
-          <QuoteWorkspaceActionPanel
-            isCreateMode={isCreateMode}
-            hasDetail={Boolean(detail)}
-            isSaving={isSaving}
-            saveDisabled={saveDisabled}
-            isConverting={isConverting}
-            transferLabel={transferAction.label}
-            transferHelper={transferAction.helper}
-            onSave={onSave}
-            onExportPdf={onExportPdf}
-            onTransfer={handleTransferClick}
-            onConvert={onConvert}
-          />
         </div>
 
         <QuoteWorkspaceFooter
@@ -108,8 +93,14 @@ export function QuoteWorkspaceDialog({
           isCreateMode={isCreateMode}
           isSaving={isSaving}
           saveDisabled={saveDisabled}
+          isConverting={isConverting}
+          transferLabel={transferAction.label}
+          transferHelper={transferAction.helper}
           onOpenChange={onOpenChange}
           onSave={onSave}
+          onExportPdf={onExportPdf}
+          onTransfer={handleTransferClick}
+          onConvert={onConvert}
         />
       </DialogContent>
     </Dialog>

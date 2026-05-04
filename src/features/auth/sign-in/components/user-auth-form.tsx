@@ -334,12 +334,12 @@ export function UserAuthForm({
           name='email'
           render={({ field }) => (
             <FormItem>
-              <FormLabel className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
+              <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
                 {t('common.auth.signInForm.account')}
               </FormLabel>
               <FormControl>
                 <Input
-                  className='h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] transition-colors placeholder:text-slate-400 focus-visible:border-slate-300 focus-visible:ring-slate-900/10'
+                  className='h-12 rounded-2xl border border-border bg-card/50 px-4 text-sm font-semibold text-foreground shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] transition-colors placeholder:text-muted-foreground/30 focus-visible:border-primary/30 focus-visible:ring-primary/10'
                   placeholder={t('common.auth.signInForm.accountPlaceholder')}
                   {...field}
                 />
@@ -354,19 +354,19 @@ export function UserAuthForm({
           render={({ field }) => (
             <FormItem>
               <div className='flex items-center justify-between gap-3'>
-                <FormLabel className='text-[10px] font-black uppercase tracking-widest text-slate-500'>
+                <FormLabel className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/80'>
                   {t('common.auth.signInForm.password')}
                 </FormLabel>
                 <Link
                   to='/forgot-password'
-                  className='shrink-0 text-[9px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-900'
+                  className='shrink-0 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 transition-colors hover:text-foreground'
                 >
                   {t('common.auth.signInForm.forgotPassword')}
                 </Link>
               </div>
               <FormControl>
                 <PasswordInput
-                  className='h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] transition-colors placeholder:text-slate-400 focus-visible:border-slate-300 focus-visible:ring-slate-900/10'
+                  className='h-12 rounded-2xl border border-border bg-card/50 px-4 text-sm font-semibold text-foreground shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)] transition-colors placeholder:text-muted-foreground/30 focus-visible:border-primary/30 focus-visible:ring-primary/10'
                   placeholder={t('common.auth.signInForm.passwordPlaceholder')}
                   {...field}
                 />

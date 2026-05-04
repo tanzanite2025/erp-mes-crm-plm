@@ -45,19 +45,19 @@ export function ShippingVehicleMatchPage() {
         description={t('trading.shippingManagement.vehicleMatch.description')}
       />
 
-      <Card className='rounded-[28px] border-dashed border-border/60 bg-primary/5 p-5 shadow-none'>
+      <Card className='rounded-[28px] border-dashed border-border/60 bg-muted/5 p-5 shadow-none'>
         <div className='flex items-center justify-between gap-4'>
           <div>
             <div className='text-[10px] font-black uppercase tracking-widest text-primary/70'>虚拟发货仓</div>
             <div className='mt-2 text-sm font-black'>待发货货物列表</div>
           </div>
-          <Badge className='h-6 rounded-full border-none bg-white/70 px-3 text-[10px] font-black text-primary'>系统保护仓</Badge>
+          <Badge className='h-6 rounded-full border-none bg-primary/10 px-3 text-[10px] font-black text-primary'>系统保护仓</Badge>
         </div>
       </Card>
 
       {readResource.status === 'loading' ? (
         <div className='space-y-4'>
-          <Card className='rounded-[24px] border-dashed border-border/60 bg-background/90 p-5 shadow-none'>
+          <Card className='rounded-[24px] border-dashed border-border/60 bg-card p-5 shadow-none'>
             <div className='space-y-4'>
               <Skeleton className='h-5 w-40' />
               <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
@@ -85,7 +85,7 @@ export function ShippingVehicleMatchPage() {
           </div>
         </Card>
       ) : readyItems.length === 0 ? (
-        <Card className='rounded-[24px] border-dashed border-border/60 bg-background/90 p-5 shadow-none'>
+        <Card className='rounded-[24px] border-dashed border-border/60 bg-card p-5 shadow-none'>
           <div className='space-y-2'>
             <div className='text-sm font-black'>暂无待匹配发货数据</div>
             <div className='text-xs leading-relaxed text-muted-foreground'>当前虚拟发货仓下没有可用于车型匹配的真实发货记录。</div>

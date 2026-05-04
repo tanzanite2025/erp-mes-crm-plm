@@ -47,12 +47,12 @@ function statusLabel(status: CutSizeUnitStatus): string {
 
 function statusBadgeClass(status: CutSizeUnitStatus): string {
   if (status === 'Active') {
-    return 'border-emerald-300/70 bg-emerald-50 text-emerald-700'
+    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
   }
   if (status === 'Inactive') {
-    return 'border-amber-300/70 bg-amber-50 text-amber-700'
+    return 'border-amber-500/30 bg-amber-500/10 text-amber-500'
   }
-  return 'border-slate-300/70 bg-slate-100 text-slate-600'
+  return 'border-border/60 bg-muted/20 text-muted-foreground'
 }
 
 function areaLabel(item: Pick<CutSizeUnit, 'areaM2' | 'widthMm' | 'lengthMm' | 'pieceCount'>): string {
@@ -182,23 +182,23 @@ export function CutSizeLibraryPage() {
         title={t('rawMaterials.cutSizeLibrary.title')}
         description={t('rawMaterials.cutSizeLibrary.description')}
         statusBadge={
-          <div className='rounded-full border border-cyan-500/20 bg-cyan-500/8 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700/85'>
+          <div className='rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary/80'>
             {t('rawMaterials.cutSizeLibrary.status')}
           </div>
         }
       />
 
-      <section className='rounded-[28px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] p-5 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.2)]'>
+      <section className='rounded-[28px] border border-border/50 bg-card p-5 shadow-none'>
         <div className='flex flex-col gap-4'>
           <div className='flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between'>
             <div className='space-y-2'>
-              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500/75'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
                 {t('rawMaterials.cutSizeLibrary.sections.dataset.kicker')}
               </p>
-              <h2 className='text-base font-black tracking-tight text-slate-950'>
+              <h2 className='text-base font-black tracking-tight text-foreground'>
                 {t('rawMaterials.cutSizeLibrary.sections.dataset.title')}
               </h2>
-              <p className='text-xs leading-5 text-slate-600/85'>
+              <p className='text-xs leading-5 text-muted-foreground/80'>
                 {t('rawMaterials.cutSizeLibrary.sections.dataset.description')}
               </p>
             </div>
@@ -225,9 +225,9 @@ export function CutSizeLibraryPage() {
             </Button>
           </div>
 
-          <div className='overflow-x-auto rounded-2xl border border-dashed border-slate-300/80 bg-white/80'>
+          <div className='overflow-x-auto rounded-2xl border border-border/40 bg-muted/5'>
             <table className='w-full min-w-[1180px] text-sm'>
-              <thead className='bg-slate-100/80 text-left'>
+              <thead className='bg-muted/10 text-left'>
                 <tr>
                   {[
                     t('rawMaterials.cutSizeLibrary.columns.code'),
@@ -242,7 +242,7 @@ export function CutSizeLibraryPage() {
                   ].map((label) => (
                     <th
                       key={label}
-                      className='px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500/80'
+                      className='px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/60'
                     >
                       {label}
                     </th>
@@ -259,41 +259,41 @@ export function CutSizeLibraryPage() {
                 ) : units.length === 0 ? (
                   <tr>
                     <td colSpan={9} className='px-4 py-8 text-center'>
-                      <p className='text-[11px] font-black uppercase tracking-[0.2em] text-slate-500'>
+                      <p className='text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>
                         {t('rawMaterials.cutSizeLibrary.empty.title')}
                       </p>
-                      <p className='mt-1 text-xs leading-5 text-slate-600/85'>
+                      <p className='mt-1 text-xs leading-5 text-muted-foreground/40'>
                         {t('rawMaterials.cutSizeLibrary.empty.description')}
                       </p>
                     </td>
                   </tr>
                 ) : (
                   units.map((item) => (
-                    <tr key={item.id} className='border-t border-dashed border-slate-200/80'>
+                    <tr key={item.id} className='border-t border-border/40'>
                       <td className='px-4 py-3 align-top'>
-                        <div className='font-mono text-xs font-black tracking-wider text-slate-900'>{item.code}</div>
+                        <div className='font-mono text-xs font-black tracking-wider text-foreground/90'>{item.code}</div>
                       </td>
                       <td className='px-4 py-3 align-top'>
-                        <div className='text-xs font-black text-slate-900'>{item.name}</div>
+                        <div className='text-xs font-black text-foreground/90'>{item.name}</div>
                       </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-muted-foreground'>
                         {formatCutSizeExpression(item) || '--'}
                       </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-muted-foreground'>
                         <div>{areaLabel(item)}</div>
-                        <div className='mt-1 text-[11px] text-slate-500'>
+                        <div className='mt-1 text-[11px] text-muted-foreground/60'>
                           {item.areaWeightGsm.trim() ? `${item.areaWeightGsm.trim()} g/m²` : '未填写面密度'}
                         </div>
-                        <div className='mt-1 text-[11px] text-slate-500'>{weightLabel(item)}</div>
+                        <div className='mt-1 text-[11px] text-muted-foreground/60'>{weightLabel(item)}</div>
                       </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-muted-foreground'>
                         {formatSupportedCutAngleLabel(item.cutAngle)}
                       </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-muted-foreground'>
                         {item.layupCount ? `${item.layupCount} 层` : '--'}
                         {item.layupMode ? ` / ${item.layupMode}` : ''}
                       </td>
-                      <td className='px-4 py-3 align-top text-xs font-semibold text-slate-700'>
+                      <td className='px-4 py-3 align-top text-xs font-semibold text-muted-foreground'>
                         {item.usageType || '--'}
                       </td>
                       <td className='px-4 py-3 align-top'>
@@ -307,7 +307,7 @@ export function CutSizeLibraryPage() {
                             variant='ghost'
                             size='icon'
                             onClick={() => openEdit(item)}
-                            className='size-8 rounded-full text-slate-600'
+                            className='size-8 rounded-full text-muted-foreground'
                           >
                             <Edit3 className='size-4' />
                           </Button>
@@ -451,16 +451,16 @@ export function CutSizeLibraryPage() {
             <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3 md:col-span-4'>
               <div className='text-[10px] font-black uppercase tracking-[0.2em] text-primary/80'>面积与重量口径</div>
               <div className='mt-2 grid gap-2 md:grid-cols-3'>
-                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-foreground/80'>
                   几何推导面积：{derivedAreaM2 ? `${derivedAreaM2} m²` : '--'}
                 </div>
-                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-foreground/80'>
                   保存面积：{resolvedFormAreaM2 ? `${resolvedFormAreaM2} m²` : '--'}
                 </div>
-                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-foreground/80'>
                   当前面密度：{form.areaWeightGsm.trim() ? `${form.areaWeightGsm.trim()} g/m²` : '--'}
                 </div>
-                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-slate-700'>
+                <div className='rounded-xl bg-background/80 px-3 py-2 text-[11px] font-bold text-foreground/80'>
                   自动换算重量：{resolvedFormWeightG ? `${resolvedFormWeightG} g` : '--'}
                 </div>
               </div>

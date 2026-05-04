@@ -256,18 +256,18 @@ export function DocumentEvidenceManager({
       <div
         className={cn(
           compact
-            ? 'relative min-h-[72px] rounded-[20px] border border-dashed border-muted-foreground/20 bg-muted/5 p-2.5 transition-all'
+            ? 'relative min-h-[64px] rounded-[18px] border border-dashed border-muted-foreground/20 bg-muted/5 p-2 transition-all'
             : 'relative min-h-[100px] rounded-[24px] border border-dashed border-muted-foreground/20 bg-muted/5 p-3 transition-all',
           'hover:border-primary/30 hover:bg-muted/10'
         )}
       >
-        <div className={cn('grid md:grid-cols-2', compact ? 'gap-2.5' : 'gap-4')}>
+        <div className={cn('grid md:grid-cols-2', compact ? 'gap-2' : 'gap-4')}>
           {evidences.map((ev) => (
             <div
               key={ev.id}
               className={cn(
                 compact
-                  ? 'group/item rounded-[18px] border bg-background p-2.5 shadow-sm transition-all hover:shadow-md'
+                  ? 'group/item rounded-[16px] border bg-background p-2 shadow-sm transition-all hover:shadow-md'
                   : 'group/item rounded-2xl border bg-background p-3 shadow-sm transition-all hover:shadow-md',
                 dragOverEvidenceId === ev.id && draggingEvidenceId !== ev.id
                   ? 'border-primary bg-primary/5'
@@ -295,11 +295,11 @@ export function DocumentEvidenceManager({
                     alt={ev.name}
                     className={cn(
                       'w-full object-cover transition-transform duration-500 group-hover/item:scale-105',
-                      compact ? 'h-28' : 'h-40'
+                      compact ? 'h-[72px]' : 'h-40'
                     )}
                   />
                 ) : (
-                  <div className={cn('flex items-center justify-center bg-muted/20', compact ? 'h-28' : 'h-40')}>
+                  <div className={cn('flex items-center justify-center bg-muted/20', compact ? 'h-[72px]' : 'h-40')}>
                     <Loader2 className='size-4 animate-spin text-muted-foreground/40' />
                   </div>
                 )}
@@ -339,7 +339,7 @@ export function DocumentEvidenceManager({
                 ) : null}
               </div>
 
-              <div className={cn(compact ? 'mt-2 space-y-1.5' : 'mt-3 space-y-2')}>
+              <div className={cn(compact ? 'mt-1.5 space-y-1' : 'mt-3 space-y-2')}>
                 <p className='truncate text-[10px] font-bold text-muted-foreground'>
                   {ev.name}
                 </p>
@@ -355,7 +355,7 @@ export function DocumentEvidenceManager({
                     placeholder={resolvedNotePlaceholder}
                     className={cn(
                       'rounded-xl bg-background text-xs shadow-none',
-                      compact ? 'h-8' : 'h-9'
+                      compact ? 'h-7.5' : 'h-9'
                     )}
                     disabled={disabled}
                   />
@@ -365,7 +365,7 @@ export function DocumentEvidenceManager({
           ))}
 
           {!disabled && evidences.length < maxCount ? (
-            <div className={cn('relative', compact ? 'min-h-[124px]' : 'min-h-[240px]')}>
+            <div className={cn('relative', compact ? 'min-h-[84px]' : 'min-h-[240px]')}>
               <input
                 type='file'
                 className='absolute inset-0 z-10 cursor-pointer opacity-0'
@@ -381,7 +381,7 @@ export function DocumentEvidenceManager({
               <div
                 className={cn(
                   'flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-all hover:border-primary/50 hover:bg-primary/5',
-                  compact ? 'min-h-[124px] space-y-2' : 'min-h-[240px] space-y-2'
+                  compact ? 'min-h-[84px] space-y-1.5 rounded-[16px]' : 'min-h-[240px] space-y-2'
                 )}
               >
                 {uploading ? (
@@ -391,13 +391,13 @@ export function DocumentEvidenceManager({
                     <div
                       className={cn(
                         'flex items-center justify-center rounded-full bg-muted group-hover:bg-primary/20',
-                        compact ? 'size-8' : 'size-10'
+                        compact ? 'size-7' : 'size-10'
                       )}
                     >
                       <CloudUpload
                         className={cn(
                           'text-muted-foreground group-hover:text-primary',
-                          compact ? 'size-4' : 'size-5'
+                          compact ? 'size-3.5' : 'size-5'
                         )}
                       />
                     </div>
@@ -420,7 +420,7 @@ export function DocumentEvidenceManager({
           <div
             className={cn(
               'absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/30',
-              compact ? 'space-y-1.5' : 'space-y-2'
+              compact ? 'space-y-1' : 'space-y-2'
             )}
           >
             <CloudUpload className={cn(compact ? 'size-6' : 'size-8')} />
@@ -441,7 +441,7 @@ export function DocumentEvidenceManager({
       {shouldShowHint ? (
         <div className={cn('flex items-center gap-2', compact ? 'px-0.5' : 'px-1')}>
           <div className='size-1 rounded-full bg-primary/40' />
-          <p className='text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase'>
+          <p className={cn('font-bold tracking-widest text-muted-foreground/60 uppercase', compact ? 'text-[8px]' : 'text-[9px]')}>
             {resolvedHint}
           </p>
         </div>

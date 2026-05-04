@@ -251,7 +251,21 @@ export function SalesExchangeReceivingQueueCard() {
 
   return (
     <Collapsible key={hasItems ? 'has-items' : 'empty'} defaultOpen={hasItems} className='rounded-2xl border border-dashed border-sky-500/25 bg-sky-500/3 p-3 shadow-inner md:rounded-[28px] md:p-4'>
-      <CollapsibleTrigger className='group w-full text-left hover:no-underline'>
+      <CollapsibleTrigger asChild className='group w-full text-left hover:no-underline'>
+        <div
+          role='button'
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) {
+              return
+            }
+
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              event.currentTarget.click()
+            }
+          }}
+        >
         <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
           <div className='flex min-w-0 items-center gap-2.5'>
             <div className='rounded-xl bg-sky-500/10 p-2.5 text-sky-700'>
@@ -320,6 +334,7 @@ export function SalesExchangeReceivingQueueCard() {
               <ChevronDown className='size-3.5 transition-transform group-data-[state=open]:rotate-180' />
             </div>
           </div>
+        </div>
         </div>
       </CollapsibleTrigger>
 

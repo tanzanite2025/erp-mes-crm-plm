@@ -1,5 +1,4 @@
 import {
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -19,15 +18,10 @@ export function QuoteWorkspaceHeader({
   detailError,
 }: QuoteWorkspaceHeaderProps) {
   return (
-    <DialogHeader className='border-b border-dashed border-border/60 px-4 py-4 pr-12'>
-      <div className='flex flex-col gap-3'>
-        <div className='space-y-1'>
+    <DialogHeader className='border-b border-dashed border-border/60 px-4 py-3 pr-12'>
+      <div className='flex flex-col gap-2'>
+        <div>
           <DialogTitle className='text-lg font-black tracking-tight'>报价工作台</DialogTitle>
-          <DialogDescription>
-            {isCreateMode
-              ? '在同一个工作台中完成报价新建，并在创建成功后继续转发、导出与转单。'
-              : '在一个弹窗里完成报价查看、局部编辑、导出 PDF、客户转发与转正式销售订单等现场高频动作。'}
-          </DialogDescription>
         </div>
         {!isLoading && !detail && !detailError && !isCreateMode ? (
           <div className='rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground'>

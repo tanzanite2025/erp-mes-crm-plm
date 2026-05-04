@@ -10,10 +10,10 @@ export function SignIn() {
   return (
     <AuthLayout>
       {/* 🚀 主容器：40px 物理极限圆角 + 大面积磨砂玻璃 */}
-      <div className='relative flex w-full flex-col lg:flex-row shadow-2xl rounded-[40px] overflow-hidden bg-white/70 backdrop-blur-2xl border border-white/20 min-h-[600px]'>
+      <div className='relative flex w-full flex-col lg:flex-row shadow-2xl rounded-[40px] overflow-hidden bg-card/70 backdrop-blur-2xl border border-border/40 min-h-[600px]'>
         
         {/* 🌗 左翼：纯净功能区 (45%) */}
-        <div className='relative w-full lg:w-[45%] p-10 lg:p-12 flex flex-col justify-between items-center bg-white/40'>
+        <div className='relative w-full lg:w-[45%] p-10 lg:p-12 flex flex-col justify-between items-center bg-card/30'>
           {/* 🔮 移动端专属装饰：流光顶栏 */}
           <div className='lg:hidden absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/30 via-primary to-primary/30' />
           
@@ -22,14 +22,14 @@ export function SignIn() {
             <div className='mb-10 flex flex-col'>
               <div className='inline-flex items-center gap-2 mb-4'>
                 <div className='size-2 rounded-full bg-primary animate-pulse' />
-                <span className='text-[10px] font-black uppercase tracking-[0.4em] text-slate-400'>
+                <span className='text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60'>
                    {t('common.auth.layout.connectivity')}
                 </span>
               </div>
-              <h1 className='text-3xl font-black italic tracking-tighter uppercase text-slate-900'>
+              <h1 className='text-3xl font-black italic tracking-tighter uppercase text-foreground'>
                 {t('common.auth.layout.title')}
               </h1>
-              <p className='mt-1 text-[11px] font-black uppercase leading-none tracking-[0.2em] text-slate-400'>
+              <p className='mt-1 text-[11px] font-black uppercase leading-none tracking-[0.2em] text-muted-foreground/60'>
                 {t('common.auth.layout.title', { locale: 'en-US' }) === '数字化管理系统' ? 'Digital Management System' : t('common.auth.layout.title')}
               </p>
             </div>
@@ -39,16 +39,16 @@ export function SignIn() {
 
           {/* 🔗 底部页脚 */}
           <div className='mt-12 w-full'>
-            <p className='text-center text-[9px] font-black uppercase tracking-widest text-slate-400'>
+            <p className='text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/60'>
               {t('common.auth.layout.description')}
             </p>
           </div>
         </div>
 
         {/* 🌘 右翼：3D 沉浸视觉区 (55%) */}
-        <div className='hidden lg:flex w-[55%] relative overflow-hidden bg-slate-900'>
+        <div className='hidden lg:flex w-[55%] relative overflow-hidden bg-background'>
           {/* 🔮 底色渐变与网格纹理 (防止图片不显示时的突兀感) */}
-          <div className='absolute inset-0 z-0 bg-gradient-to-br from-primary/40 via-slate-900 to-black' />
+          <div className='absolute inset-0 z-0 bg-gradient-to-br from-primary/40 via-background to-black' />
           <div className='absolute inset-0 z-0 opacity-20' 
                style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
           

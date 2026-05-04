@@ -36,19 +36,19 @@ export function BatchEngineControlPanel(props: BatchEngineControlPanelProps) {
   } = props
 
   return (
-    <section className='rounded-[26px] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.18)]'>
+    <section className='rounded-[26px] border border-border/60 bg-card p-4 shadow-none'>
       <div className='flex items-start gap-3'>
-        <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/10'>
+        <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/10'>
           <SlidersHorizontal className='size-4' />
         </div>
         <div>
-          <p className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500/75'>
+          <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
             {t('rawMaterials.batchEngine.sections.control.kicker')}
           </p>
-          <h2 className='mt-2 text-base font-black tracking-tight text-slate-950'>
+          <h2 className='mt-2 text-base font-black tracking-tight text-foreground'>
             {t('rawMaterials.batchEngine.sections.control.title')}
           </h2>
-          <p className='mt-1 text-xs leading-5 text-slate-600/85'>
+          <p className='mt-1 text-xs leading-5 text-muted-foreground/80'>
             {t('rawMaterials.batchEngine.sections.control.description')}
           </p>
         </div>

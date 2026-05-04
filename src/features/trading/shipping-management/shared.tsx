@@ -6,7 +6,7 @@ import type { ShippingVehicleMatchItem } from './types'
 
 export function ShippingPlaceholderCard({ title, description, actionLabel }: { title: string; description: string; actionLabel: string }) {
   return (
-    <Card className='rounded-[28px] border-dashed border-border/60 bg-background/80 p-6 shadow-none'>
+    <Card className='rounded-[28px] border-dashed border-border/60 bg-card p-6 shadow-none'>
       <div className='flex items-start justify-between gap-4'>
         <div className='space-y-2'>
           <div className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>{title}</div>
@@ -35,7 +35,7 @@ function formatMetric(value: number | null, digits: number, unit: string) {
 
 export function VirtualShipmentRow({ item, onMatchVehicle }: { item: ShippingVehicleMatchItem; onMatchVehicle?: (item: ShippingVehicleMatchItem) => void }) {
   return (
-    <Card className='rounded-[24px] border-dashed border-border/60 bg-background/90 p-5 shadow-none'>
+    <Card className='rounded-[24px] border-dashed border-border/60 bg-card p-5 shadow-none'>
       <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
         <div className='space-y-3'>
           <div className='flex flex-wrap items-center gap-2'>

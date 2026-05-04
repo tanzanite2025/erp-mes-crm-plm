@@ -16,13 +16,14 @@ interface ModuleTabsProps {
     activeKey?: string
     className?: string
     actions?: React.ReactNode
+    style?: React.CSSProperties
 }
 
 /**
  * 演示系统专用：可复用的多页签组件
  * 已优化：全平台强制单行显示，支持智能横向滑动与视觉提示（渐变+箭头）
  */
-export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsProps) {
+export function ModuleTabs({ tabs, activeKey, className, actions, style }: ModuleTabsProps) {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const [showLeftArrow, setShowLeftArrow] = useState(false)
     const [showRightArrow, setShowRightArrow] = useState(false)
@@ -75,11 +76,15 @@ export function ModuleTabs({ tabs, activeKey, className, actions }: ModuleTabsPr
 
     return (
         <div className={cn(
-            'w-auto border-b bg-background/95 backdrop-blur fixed top-14 md:top-16 z-40 px-4 py-3',
+            'w-auto border-b bg-background/95 backdrop-blur fixed top-[calc(var(--header-fixed-top,0px)+3.5rem)] md:top-[calc(var(--header-fixed-top,0px)+4rem)] z-40 px-4 py-3',
             'transition-all duration-300 ease-in-out',
-            'left-(--header-fixed-left,0px) right-(--header-fixed-right,0px)',
             className
-        )}>
+        )}
+        style={{
+            ...style,
+            left: 'var(--header-fixed-left, 0px)',
+            right: 'var(--header-fixed-right, 0px)',
+        }}>
             <div className='flex items-center justify-between gap-4 min-w-0 w-full overflow-hidden'>
                 <div className="relative flex-1 min-w-0 group">
                     {showLeftArrow && (

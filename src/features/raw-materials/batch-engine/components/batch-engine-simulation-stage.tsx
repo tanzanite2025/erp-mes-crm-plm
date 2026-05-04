@@ -33,21 +33,21 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
   const { legend, simulation, canSolve, solveDisabledReason, isSolving, onSolve, onOpenPreview } = props
 
   return (
-    <section className='rounded-[28px] border border-cyan-300/55 bg-[linear-gradient(180deg,rgba(236,254,255,0.9),rgba(255,255,255,0.98))] p-4 shadow-[0_18px_50px_-34px_rgba(8,145,178,0.45)]'>
+    <section className='rounded-[28px] border border-border/50 bg-card p-4 shadow-none'>
       <div className='flex flex-col gap-4'>
         <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
           <div className='flex items-start gap-3'>
-            <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-white shadow-lg shadow-cyan-600/20'>
+            <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/10'>
               <Scissors className='size-4' />
             </div>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/75'>
+              <p className='text-[10px] font-black uppercase tracking-[0.24em] text-primary/70'>
                 {t('rawMaterials.batchEngine.sections.stage.kicker')}
               </p>
-              <h2 className='mt-2 text-base font-black tracking-tight text-slate-950'>
+              <h2 className='mt-2 text-base font-black tracking-tight text-foreground'>
                 {t('rawMaterials.batchEngine.sections.stage.title')}
               </h2>
-              <p className='mt-1 text-xs leading-5 text-slate-600/85'>
+              <p className='mt-1 text-xs leading-5 text-muted-foreground/80'>
                 {t('rawMaterials.batchEngine.sections.stage.description')}
               </p>
             </div>
@@ -57,7 +57,7 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             {legend.map((item) => (
               <span
                 key={item.key}
-                className='inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600'
+                className='inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground'
               >
                 <span className={`size-2.5 rounded-full ${getLegendToneClassName(item.tone)}`} />
                 {item.label}
@@ -66,13 +66,13 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
           </div>
         </div>
 
-        <div className='rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-inner'>
+        <div className='rounded-[24px] border border-border/40 bg-muted/5 p-4 shadow-inner'>
           <div className='flex flex-wrap items-center justify-between gap-3'>
             <div>
-              <p className='text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
+              <p className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60'>
                 {t('rawMaterials.batchEngine.sections.stage.rollCanvasLabel')}
               </p>
-              <p className='mt-1 text-sm font-semibold text-slate-800'>
+              <p className='mt-1 text-sm font-semibold text-foreground/90'>
                 {simulation.selectedPlanName
                   ? `${t('rawMaterials.batchEngine.sections.stage.planPrefix')}: ${simulation.selectedPlanName} / ${simulation.demandLineCount}`
                   : t('rawMaterials.batchEngine.sections.stage.rollCanvasHint')}
@@ -80,8 +80,8 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
             </div>
 
             <div className='flex items-center gap-2'>
-              <div className='inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600'>
-                <ChartColumnIncreasing className='size-4 text-cyan-700' />
+              <div className='inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground'>
+                <ChartColumnIncreasing className='size-4 text-primary/80' />
                 {simulation.ready
                   ? t('rawMaterials.batchEngine.sections.stage.computedStatus')
                   : t('rawMaterials.batchEngine.sections.stage.simulationStatus')}
@@ -107,13 +107,13 @@ export function BatchEngineSimulationStage(props: BatchEngineSimulationStageProp
           </div>
 
           {!canSolve && solveDisabledReason ? (
-            <p className='mt-3 text-xs font-semibold text-amber-700'>{solveDisabledReason}</p>
+            <p className='mt-3 text-xs font-semibold text-destructive/80'>{solveDisabledReason}</p>
           ) : null}
 
-          <div className='mt-4 rounded-[22px] border border-dashed border-slate-300/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(30,41,59,0.96))] p-4'>
-            <div className='rounded-[18px] border border-cyan-400/30 bg-slate-950/70 p-4'>
+          <div className='mt-4 rounded-[22px] border border-dashed border-border/40 bg-background/50 p-4'>
+            <div className='rounded-[18px] border border-primary/20 bg-muted/5 p-4'>
               {!simulation.ready ? (
-                <div className='rounded-2xl border border-dashed border-cyan-500/40 bg-cyan-500/10 px-4 py-6 text-center text-sm font-semibold text-cyan-100/85'>
+                <div className='rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-6 text-center text-sm font-semibold text-primary/70'>
                   {simulation.reason || t('rawMaterials.batchEngine.sections.stage.pendingHint')}
                 </div>
               ) : (

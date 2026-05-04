@@ -77,32 +77,32 @@ export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
   } = props
 
   return (
-    <section className='rounded-[26px] border border-dashed border-slate-300/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(241,245,249,0.8))] p-4 shadow-none'>
+    <section className='rounded-[26px] border border-dashed border-border/50 bg-card/50 p-4 shadow-none'>
       <div className='flex items-start gap-3'>
-        <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl border border-slate-300 bg-white/85 text-slate-600'>
+        <div className='flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-muted/10 text-muted-foreground'>
           <ClipboardCheck className='size-4' />
         </div>
         <div>
-          <p className='text-[10px] font-black uppercase tracking-[0.24em] text-slate-500/75'>
+          <p className='text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60'>
             {t('rawMaterials.batchEngine.sections.summary.kicker')}
           </p>
-          <h2 className='mt-2 text-base font-black italic tracking-tight text-slate-900'>
+          <h2 className='mt-2 text-base font-black italic tracking-tight text-foreground'>
             {t('rawMaterials.batchEngine.sections.summary.title')}
           </h2>
-          <p className='mt-1 text-xs leading-5 text-slate-600/85'>
+          <p className='mt-1 text-xs leading-5 text-muted-foreground/80'>
             {t('rawMaterials.batchEngine.sections.summary.description')}
           </p>
         </div>
       </div>
 
       <div className='mt-4 grid gap-4'>
-        <div className='rounded-[22px] border border-slate-200 bg-white/85 p-4'>
-          <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/70'>
-            <ScrollText className='size-4 text-cyan-700' />
+        <div className='rounded-[22px] border border-border/40 bg-muted/5 p-4'>
+          <div className='flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70'>
+            <ScrollText className='size-4 text-primary/80' />
             {t('rawMaterials.batchEngine.sections.summary.cards.output.title')}
           </div>
           {simulation.ready ? (
-            <div className='mt-3 grid gap-2 text-xs font-semibold text-slate-700'>
+            <div className='mt-3 grid gap-2 text-xs font-semibold text-foreground/90'>
               <p>裁纱单据: {simulation.selectedPlanName || '--'}</p>
               <p>总需求行数: {simulation.demandLineCount}</p>
               <p>有效需求行: {simulation.validDemandLineCount}</p>
@@ -113,11 +113,11 @@ export function BatchEngineSummaryPanel(props: BatchEngineSummaryPanelProps) {
               <p>损耗面积（占用口径）: {simulation.lossAreaM2.toFixed(3)} m2</p>
             </div>
           ) : (
-            <p className='mt-3 text-sm font-semibold text-slate-800'>
+            <p className='mt-3 text-sm font-semibold text-foreground'>
               {simulation.reason || t('rawMaterials.batchEngine.sections.summary.cards.output.value')}
             </p>
           )}
-          <p className='mt-1 text-xs leading-5 text-slate-600/80'>
+          <p className='mt-1 text-xs leading-5 text-muted-foreground/70'>
             {t('rawMaterials.batchEngine.sections.summary.cards.output.hint')}
           </p>
         </div>

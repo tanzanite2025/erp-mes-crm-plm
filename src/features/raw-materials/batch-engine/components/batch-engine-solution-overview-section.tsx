@@ -26,15 +26,15 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
   const { solution, isSolving, solveError, selectedPlanRank, selectedPlan, activeDiffSummary, onSelectPlan } = props
 
   return (
-    <div className='rounded-[24px] border border-dashed border-slate-300 bg-white/90 p-4'>
-      <p className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>{t('rawMaterials.batchEngine.solutionOverview.title')}</p>
+    <div className='rounded-[24px] border border-dashed border-border/60 bg-card p-4'>
+      <p className='text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/60'>{t('rawMaterials.batchEngine.solutionOverview.title')}</p>
       {isSolving ? (
-        <p className='mt-3 text-xs font-semibold text-cyan-700'>{t('rawMaterials.batchEngine.solutionOverview.solving')}</p>
+        <p className='mt-3 text-xs font-semibold text-primary'>{t('rawMaterials.batchEngine.solutionOverview.solving')}</p>
       ) : solveError ? (
-        <p className='mt-3 text-xs font-semibold text-rose-700'>{solveError}</p>
+        <p className='mt-3 text-xs font-semibold text-destructive'>{solveError}</p>
       ) : solution ? (
-        <div className='mt-3 grid gap-4 text-xs font-semibold text-slate-700'>
-          <div className='rounded-[20px] border border-slate-200 bg-slate-50/80 p-3'>
+        <div className='mt-3 grid gap-4 text-xs font-semibold text-foreground/90'>
+          <div className='rounded-[20px] border border-border/40 bg-muted/10 p-3'>
             <p>{t('rawMaterials.batchEngine.solutionOverview.summary.solverStatus')}: {solution.summary.solverStatus}</p>
             <p className='mt-1'>{t('rawMaterials.batchEngine.solutionOverview.summary.planCount')}: {solution.summary.planCount}</p>
             <p className='mt-1'>{t('rawMaterials.batchEngine.solutionOverview.summary.message')}: {solution.summary.message}</p>
@@ -45,7 +45,6 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
               const selected = plan.rank === selectedPlanRank
               const structuredRuleRiskCount = getStructuredRuleRiskCount(plan)
               const mustRiskCount = plan.mustFulfillDiagnostics.filter((item) => item.status === 'unfulfilled').length
-              const breakSliceCount = plan.explainabilitySummary.breakSlices.length
               const zoneClusterCount = plan.explainabilitySummary.zoneClusters.length
               const dynamicStrategyCount = plan.candidateBudgetSummary.dynamicStrategyStats.length
               return (
@@ -54,28 +53,28 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
                   type='button'
                   onClick={() => onSelectPlan(plan.rank)}
                   className={selected
-                    ? 'rounded-2xl border border-cyan-300 bg-cyan-50 px-3 py-3 text-left'
-                    : 'rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left'}
+                    ? 'rounded-2xl border border-primary/40 bg-primary/5 px-3 py-3 text-left'
+                    : 'rounded-2xl border border-border/40 bg-muted/5 px-3 py-3 text-left'}
                 >
                   <div className='flex items-center justify-between gap-3'>
-                    <p className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>
+                    <p className='text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/60'>
                       #{plan.rank} / {plan.strategyKey}
                     </p>
                     <div className='flex flex-wrap items-center justify-end gap-1'>
-                      <span className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-600'>
+                      <span className='text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/70'>
                         {selected
                           ? t('rawMaterials.batchEngine.solutionOverview.currentPlan')
                           : t('rawMaterials.batchEngine.solutionOverview.optionalPlan')}
                       </span>
                       <span className={structuredRuleRiskCount > 0
-                        ? 'rounded-full border border-amber-200 bg-amber-500/10 px-2 py-1 text-[8px] font-mono text-amber-700'
-                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 text-[8px] font-mono text-emerald-700'}
+                        ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[8px] font-mono text-amber-500'
+                        : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[8px] font-mono text-emerald-500'}
                       >
                         {t('rawMaterials.batchEngine.solutionOverview.metrics.structuredRuleRisk', { count: structuredRuleRiskCount })}
                       </span>
                       <span className={mustRiskCount > 0
-                        ? 'rounded-full border border-rose-200 bg-rose-500/10 px-2 py-1 text-[8px] font-mono text-rose-700'
-                        : 'rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-1 text-[8px] font-mono text-emerald-700'}
+                        ? 'rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[8px] font-mono text-rose-500'
+                        : 'rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[8px] font-mono text-emerald-500'}
                       >
                         {t('rawMaterials.batchEngine.solutionOverview.metrics.mustRisk', { count: mustRiskCount })}
                       </span>
@@ -86,7 +85,7 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
                       />
                     </div>
                   </div>
-                  <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                  <div className='mt-2 grid gap-1 text-xs font-semibold text-muted-foreground/80'>
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.score')}: {plan.score.toFixed(2)}</p>
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.utilization')}: {plan.utilizationPercent.toFixed(2)}%</p>
                     <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.loss')}: {plan.lossAreaM2.toFixed(3)} m2</p>
@@ -101,15 +100,15 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
           </div>
 
           {selectedPlan ? (
-            <div className='rounded-[20px] border border-dashed border-slate-300 bg-white p-3'>
-              <p className='text-[10px] font-black uppercase tracking-[0.18em] text-slate-500'>{t('rawMaterials.batchEngine.solutionOverview.currentPlanDetail')}</p>
+            <div className='rounded-[20px] border border-dashed border-border/40 bg-muted/5 p-3'>
+              <p className='text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/60'>{t('rawMaterials.batchEngine.solutionOverview.currentPlanDetail')}</p>
               <div className='mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
                 <OverviewMetricCard label='Break Slice' value={`${selectedPlan.explainabilitySummary.breakSlices.length}`} tone='violet' />
                 <OverviewMetricCard label='Zone Cluster' value={`${selectedPlan.explainabilitySummary.zoneClusters.length}`} tone='amber' />
                 <OverviewMetricCard label='动态配额策略' value={`${selectedPlan.candidateBudgetSummary.dynamicStrategyStats.length}`} tone='slate' />
                 <OverviewMetricCard label='残料复用命中' value={`${selectedPlan.scoreBreakdown.geometryReuseHitCount}`} tone='emerald' />
               </div>
-              <div className='mt-3 grid gap-1'>
+              <div className='mt-3 grid gap-1 text-foreground/90'>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.strategy')}: {selectedPlan.strategyKey}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.score')}: {selectedPlan.score.toFixed(2)}</p>
                 <p>{t('rawMaterials.batchEngine.solutionOverview.metrics.utilization')}: {selectedPlan.utilizationPercent.toFixed(2)}%</p>
@@ -139,13 +138,13 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
               {selectedPlan.candidateBudgetSummary.dynamicStrategyStats.length ? (
                 <div className='mt-3 grid gap-2 xl:grid-cols-2'>
                   {selectedPlan.candidateBudgetSummary.dynamicStrategyStats.slice(0, 4).map((item) => (
-                    <div key={`${selectedPlan.rank}-${item.strategyKey}`} className='rounded-[20px] border border-dashed border-slate-200 bg-slate-50/70 p-3'>
-                      <p className='text-[8px] font-black uppercase tracking-[0.18em] text-slate-500'>{item.strategyKey}</p>
+                    <div key={`${selectedPlan.rank}-${item.strategyKey}`} className='rounded-[20px] border border-dashed border-border/40 bg-muted/10 p-3'>
+                      <p className='text-[8px] font-black uppercase tracking-[0.18em] text-muted-foreground/60'>{item.strategyKey}</p>
                       <div className='mt-2 flex flex-wrap items-center gap-1.5'>
                         <BatchEnginePhase7ExplainabilityMetaBadge label={buildPhase7BudgetQuotaBadgeLabel(item.targetQuota)} tone='amber' compact />
                         <BatchEnginePhase7ExplainabilityMetaBadge label={buildPhase7BudgetPriorityBadgeLabel(item.priorityScore)} tone='slate' compact />
                       </div>
-                      <div className='mt-2 grid gap-1 text-xs font-semibold text-slate-700'>
+                      <div className='mt-2 grid gap-1 text-xs font-semibold text-muted-foreground/80'>
                         <p>Target Quota: {item.targetQuota}</p>
                         <p>Kept Count: {item.keptCount}</p>
                         <p>Priority: {item.priorityScore.toFixed(2)}</p>
@@ -162,7 +161,9 @@ export function BatchEngineSolutionOverviewSection(props: BatchEngineSolutionOve
           {selectedPlan ? <BatchEngineScoreBreakdownPanel plan={selectedPlan} /> : null}
         </div>
       ) : (
-        <p className='mt-3 text-xs font-semibold text-slate-600'>{t('rawMaterials.batchEngine.solutionOverview.empty')}</p>
+        <div className='mt-3 rounded-[20px] border border-dashed border-border/40 bg-muted/5 p-6 text-center'>
+          <p className='text-xs font-semibold text-muted-foreground/60'>{t('rawMaterials.batchEngine.solutionOverview.empty')}</p>
+        </div>
       )}
     </div>
   )
