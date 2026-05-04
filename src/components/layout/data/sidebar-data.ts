@@ -362,6 +362,39 @@ const navGroupConfigs: SidebarGroupConfig[] = [
     ],
   },
   {
+    id: 'message-and-approval',
+    titleKey: 'sidebar.groups.messageAndApproval',
+    children: [
+      {
+        id: 'approval-group',
+        titleKey: 'sidebar.groups.approvals',
+        icon: ShieldCheck,
+        children: [
+          {
+            id: 'approval-center',
+            titleKey: 'sidebar.items.approvalCenter',
+            url: '/approval',
+            icon: ShieldCheck,
+            permissionId: permissionIdForPath('/approval'),
+            badgeKey: 'approval-unread',
+          },
+        ],
+      },
+      {
+        id: 'messages-group',
+        titleKey: 'sidebar.groups.messages',
+        icon: FileText,
+        children: [
+          {
+            id: 'messages-shell',
+            titleKey: 'sidebar.groups.messages',
+            icon: FileText,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'code-center',
     titleKey: 'sidebar.groups.codeCenter',
     children: [
@@ -420,14 +453,6 @@ const navGroupConfigs: SidebarGroupConfig[] = [
         icon: ShieldCheck,
         permissionId: permissionIdForPath('/system-management'),
         badgeKey: 'system-alert',
-      },
-      {
-        id: 'approval-center',
-        titleKey: 'sidebar.items.approvalCenter',
-        url: '/approval',
-        icon: ShieldCheck,
-        permissionId: permissionIdForPath('/approval'),
-        badgeKey: 'approval-unread',
       },
       {
         id: 'basic-settings',

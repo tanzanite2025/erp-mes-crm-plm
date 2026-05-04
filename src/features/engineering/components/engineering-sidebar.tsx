@@ -1,15 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import { Search, Plus, Box, Settings2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLanguage } from '@/context/language-provider'
-import { getProductAttributes } from '../utils/product-utils'
-
-import { type TranslationKey } from '@/locales'
 import { type Product, type ProductType } from '../data/schema'
+import { useEngineeringSidebarViewModel } from '../hooks/use-engineering-sidebar-view-model'
 
 type EngineeringSidebarProps = {
     products: Product[]
@@ -31,84 +28,7 @@ export function EngineeringSidebar({
     onAddType
 }: EngineeringSidebarProps) {
     const { t } = useLanguage()
-    const [searchTerm, setSearchTerm] = useState('')
-
-
-
-    // 字典映射工具函数
-    const getDictLabel = (value: string) => {
-        if (!value) return '-'
-
-        // 1. 优先从 i18n 语言包获取翻译 (支持 Disc, Rim, STD 等)
-        // 路径如 engineering.dict.Disc
-        const translationKey = `engineering.dict.${value}` as TranslationKey
-        const localized = t(translationKey)
-        if (localized !== translationKey) return localized
-
-        // 2. 备选字典反查
-        return value
-    }
-
-    const filteredProducts = useMemo(() => {
-        return products.filter((p: Product) =>
-            p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    }, [products, searchTerm])
-
-    const productsByType = useMemo(() => {
-        const grouped = new Map<string, Product[]>()
-
-        filteredProducts.forEach((product) => {
-            const list = grouped.get(product.typeId) || []
-            list.push(product)
-            grouped.set(product.typeId, list)
-        })
-
-        return grouped
-    }, [filteredProducts])
-
-    const productViewMap = useMemo(
-        () => new Map(filteredProducts.map((product) => [product.id, getProductAttributes(product)])),
-        [filteredProducts]
-    )
-
-    // 层级化整理品类 (递归排序并计算深度) - 性能优化 O(N)
-    const sortedTypes = useMemo(() => {
-        const result: (ProductType & { level: number })[] = []
-        const typeMap = new Map<string, ProductType[]>()
-        
-        // 1. 建立父子映射索引
-        types.forEach(t => {
-            const pid = t.parentId || 'root'
-            const list = typeMap.get(pid) || []
-            list.push(t)
-            typeMap.set(pid, list)
-        })
-
-        const processedIds = new Set<string>()
-
-        // 2. 递归构建树
-        const visit = (pid: string, level: number) => {
-            const children = typeMap.get(pid === '' ? 'root' : pid) || []
-            children.forEach(child => {
-                if (processedIds.has(child.id)) return // 防死循环
-                result.push({ ...child, level })
-                processedIds.add(child.id)
-                visit(child.id, level + 1)
-            })
-        }
-        visit('', 0)
-        
-        // 3. 孤儿节点检测 (利用 Set O(1) 查找)
-        types.forEach(t => {
-            if (!processedIds.has(t.id)) {
-                result.push({ ...t, level: 0 })
-            }
-        })
-        
-        return result
-    }, [types])
+    const vm = useEngineeringSidebarViewModel({ products, types })
 
     return (
         <div className='w-full lg:w-[480px] bg-card flex flex-col'>
@@ -120,10 +40,11 @@ export function EngineeringSidebar({
                         <Input
                             placeholder={t('engineering.productMgmt.sidebar.searchPlaceholder')}
                             className='pl-9 h-11 bg-white/50 border-none rounded-full focus-visible:ring-2 focus-visible:ring-blue-600/20 text-xs font-bold uppercase tracking-tight placeholder:text-muted-foreground/30 shadow-inner'
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={vm.searchTerm}
+                            onChange={(e) => vm.handleSearchTermChange(e.target.value)}
                         />
                     </div>
+
                     <div className='flex items-center gap-2'>
                         <Button
                             variant='outline'
@@ -146,9 +67,8 @@ export function EngineeringSidebar({
             {/* 垂直品类分组展示区 */}
             <ScrollArea className='flex-1 border-t'>
                 <div className='px-4 sm:px-6 bg-muted/5 min-h-full py-4 space-y-4'>
-                    {sortedTypes.map(type => {
-                        const typeProducts = productsByType.get(type.id) || []
-                        if (typeProducts.length === 0 && searchTerm) return null
+                    {vm.typeSections.map(({ type, products: typeProducts }) => {
+                        if (typeProducts.length === 0 && vm.searchTerm) return null
 
                         return (
                             <div key={type.id} className='space-y-2 group/row relative' style={{ paddingLeft: `calc(${type.level} * clamp(8px, 4vw, 24px))` }}>
@@ -175,9 +95,10 @@ export function EngineeringSidebar({
                                 <div className='flex flex-col gap-1 pl-4'>
                                     {typeProducts.length > 0 ? (
                                         typeProducts.map(product => {
-                                                const productView = productViewMap.get(product.id) || getProductAttributes(product)
+                                            const productView = vm.productViewMap.get(product.id)
+                                            if (!productView) return null
 
-                                                return (
+                                            return (
                                                 <div
                                                     key={product.id}
                                                     className={`grid grid-cols-[64px_1fr] xs:grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] items-center gap-3 xs:gap-4 sm:gap-6 p-3 sm:p-4 rounded-[24px] cursor-pointer transition-all border-2 border-dashed ${selectedProductId === product.id
@@ -198,11 +119,11 @@ export function EngineeringSidebar({
                                                     </div>
 
                                                     {/* 第 2 列：信息集中对齐 */}
-                                                        <div className='flex flex-col gap-1.5 min-w-0 relative group/card-info'>
-                                                            <div className='flex items-center justify-between gap-4'>
-                                                                <p className='text-sm sm:text-[16px] font-black truncate tracking-tight uppercase leading-none italic'>
-                                                                    {productView.name}
-                                                                </p>
+                                                    <div className='flex flex-col gap-1.5 min-w-0 relative group/card-info'>
+                                                        <div className='flex items-center justify-between gap-4'>
+                                                            <p className='text-sm sm:text-[16px] font-black truncate tracking-tight uppercase leading-none italic'>
+                                                                {productView.name}
+                                                            </p>
                                                             <div className='flex items-center gap-2 shrink-0'>
                                                                 <Button
                                                                     variant='ghost'
@@ -227,7 +148,7 @@ export function EngineeringSidebar({
                                                                 {t('engineering.productMgmt.specLabel')}: {productView.sizeLabel}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-orange-600/10 text-orange-600'}`}>
-                                                                {getDictLabel(productView.brake || '')}
+                                                                {vm.getDictLabel(productView.brake || '')}
                                                             </div>
                                                             <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${selectedProductId === product.id ? 'bg-white/20 text-white' : 'bg-emerald-600/10 text-emerald-600'}`}>
                                                                 {productView.weightUppercase}
@@ -248,7 +169,7 @@ export function EngineeringSidebar({
                                                         </div>
                                                     </div>
                                                 </div>
-                                                )
+                                            )
                                         })
                                     ) : (
                                         <Button
@@ -263,7 +184,7 @@ export function EngineeringSidebar({
                             </div>
                         )
                     })}
-                    {filteredProducts.length === 0 && (
+                    {vm.filteredProducts.length === 0 && (
                         <div className='py-12 flex flex-col items-center justify-center text-muted-foreground gap-3 border border-dashed rounded-2xl bg-muted/5'>
                             <Search className='size-8 opacity-10' />
                             <p className='text-xs font-bold opacity-30 tracking-widest uppercase'>{t('engineering.db.status.noData')}</p>

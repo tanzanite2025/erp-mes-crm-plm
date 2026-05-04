@@ -76,15 +76,11 @@ export function ModuleTabs({ tabs, activeKey, className, actions, style }: Modul
 
     return (
         <div className={cn(
-            'w-auto border-b bg-background/95 backdrop-blur fixed top-[calc(var(--header-fixed-top,0px)+3.5rem)] md:top-[calc(var(--header-fixed-top,0px)+4rem)] z-40 px-4 py-3',
-            'transition-all duration-300 ease-in-out',
+            'w-full border-b bg-background/95 px-4 py-3 backdrop-blur',
+            'transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-in-out',
             className
         )}
-        style={{
-            ...style,
-            left: 'var(--header-fixed-left, 0px)',
-            right: 'var(--header-fixed-right, 0px)',
-        }}>
+        style={style}>
             <div className='flex items-center justify-between gap-4 min-w-0 w-full overflow-hidden'>
                 <div className="relative flex-1 min-w-0 group">
                     {showLeftArrow && (
@@ -103,7 +99,7 @@ export function ModuleTabs({ tabs, activeKey, className, actions, style }: Modul
                         <TabsList 
                             ref={scrollContainerRef}
                             className={cn(
-                                'flex flex-nowrap h-auto min-h-11 items-center justify-start rounded-2xl p-1 gap-1 transition-all w-full',
+                                'flex flex-nowrap h-auto min-h-11 items-center justify-start rounded-2xl p-1 gap-1 w-full',
                                 'overflow-x-auto scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
                                 'bg-slate-100/50 border-slate-200 shadow-inner',
                                 'dark:bg-white/5 dark:backdrop-blur-xl dark:border-white/10'

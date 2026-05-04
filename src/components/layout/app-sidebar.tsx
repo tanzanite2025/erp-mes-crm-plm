@@ -125,9 +125,9 @@ export function AppSidebar() {
                   variant='default'
                   size='lg'
                   className={cn(
-                    'relative h-12 overflow-hidden rounded-[24px] border border-dashed border-white/10 bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.22)]',
-                    'hover:bg-slate-900 hover:text-white dark:border-white/6 dark:bg-slate-900 dark:text-slate-50 dark:hover:bg-slate-800',
-                    'data-[active=true]:bg-slate-900 data-[active=true]:text-white data-[active=true]:before:bg-white/80 dark:data-[active=true]:bg-slate-800 dark:data-[active=true]:text-slate-50 dark:data-[active=true]:before:bg-white/70',
+                    'relative h-12 overflow-hidden rounded-[24px] border border-transparent bg-slate-950 text-white shadow-none',
+                    'hover:bg-slate-900 hover:text-white dark:border dark:border-dashed dark:border-white/6 dark:bg-slate-900 dark:text-slate-50 dark:shadow-[0_8px_18px_rgba(2,6,23,0.34)] dark:hover:bg-slate-800',
+                    'data-[active=true]:bg-slate-900 data-[active=true]:text-white dark:data-[active=true]:bg-slate-800 dark:data-[active=true]:text-slate-50',
                     'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:rounded-[18px]! group-data-[collapsible=icon]:border-white/8 dark:group-data-[collapsible=icon]:border-white/6'
                   )}
                 >
@@ -142,7 +142,7 @@ export function AppSidebar() {
                             <homeEntry.icon className='size-4 opacity-90 group-data-[collapsible=icon]:size-3.5' />
                           </div>
                         ) : null}
-                        <span className='px-0.5 py-0 text-[12px] font-black italic tracking-tight text-white dark:text-slate-50'>
+                        <span className='px-0.5 py-0 text-[13px] font-black italic tracking-tight text-white dark:text-slate-50'>
                           {homeEntry.title}
                         </span>
                       </div>

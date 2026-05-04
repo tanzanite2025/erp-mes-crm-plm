@@ -11,10 +11,10 @@ import { useTraceStats } from '../hooks/use-trace-stats'
 function renderPendingConnection(label: string) {
     return (
         <>
-            <div className='text-base md:text-lg font-black tracking-tighter text-muted-foreground/70'>
+            <div className='text-sm md:text-base font-black tracking-tighter text-muted-foreground/70 leading-none'>
                 {label}
             </div>
-            <p className='text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tight mt-1'>
+            <p className='mt-0.5 text-[8px] font-bold text-muted-foreground/40 uppercase tracking-tight leading-none'>
                 {label}
             </p>
         </>
@@ -30,9 +30,9 @@ export function KpiGrid() {
         return (
             <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                 {[1, 2, 3].map((i) => (
-                    <Card key={i} className='animate-pulse'>
-                        <CardHeader className='h-20' />
-                        <CardContent className='h-24' />
+                    <Card key={i} className='animate-pulse gap-2 py-2 md:py-2.5'>
+                        <CardHeader className='h-10 px-3 md:px-3.5' />
+                        <CardContent className='h-8 px-3 pb-2 md:px-3.5 md:pb-2.5' />
                     </Card>
                 ))}
             </div>
@@ -42,22 +42,22 @@ export function KpiGrid() {
     return (
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             {/* REALTIME_WIP */}
-            <Card className='rounded-xl md:rounded-[24px] border-dashed border-muted/50 bg-muted/5 shadow-none hover:bg-muted/10 transition-all group overflow-hidden'>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4 md:px-5'>
+            <Card className='gap-2 rounded-xl border-dashed border-muted/50 bg-muted/5 py-2 md:rounded-[24px] md:py-2.5 shadow-none transition-all group overflow-hidden hover:bg-muted/10'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
                     <CardTitle className='text-[10px] font-black uppercase tracking-widest text-muted-foreground/60'>
                         {t('dashboard.page.kpi.wip.title')}
                     </CardTitle>
-                    <div className='p-2 rounded-xl bg-emerald-500/10 text-emerald-600 transition-transform group-hover:scale-110'>
-                        <DollarSign className='h-3.5 w-3.5 stroke-[2.5]' />
+                    <div className='rounded-lg bg-emerald-500/10 p-1.5 text-emerald-600 transition-transform group-hover:scale-110'>
+                        <DollarSign className='h-3 w-3 stroke-[2.5]' />
                     </div>
                 </CardHeader>
-                <CardContent className='pb-4 px-4 md:px-5'>
+                <CardContent className='px-3 pb-0.5 md:px-3.5'>
                     {stats.availability.wip.connected ? (
                         <>
-                            <div className='text-xl md:text-2xl font-black tracking-tighter text-emerald-700'>
-                                {stats.wip.toLocaleString()} <span className='text-[10px] uppercase font-black text-emerald-600/40 ml-1'>{t('dashboard.page.kpi.wip.unit')}</span>
+                            <div className='text-lg md:text-xl font-black tracking-tighter leading-none text-emerald-700'>
+                                {stats.wip.toLocaleString()} <span className='ml-1 text-[9px] font-black uppercase text-emerald-600/40'>{t('dashboard.page.kpi.wip.unit')}</span>
                             </div>
-                            <p className='text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tight mt-1'>
+                            <p className='mt-0.5 text-[8px] font-bold uppercase tracking-tight text-muted-foreground/40 leading-none'>
                                 {t('dashboard.page.kpi.wip.description')}
                             </p>
                         </>
@@ -66,24 +66,24 @@ export function KpiGrid() {
             </Card>
 
             {/* SCRAP_FLOW */}
-            <Card className='rounded-xl md:rounded-[24px] border-dashed border-rose-500/20 bg-rose-500/[0.02] shadow-none hover:bg-rose-500/[0.05] transition-all group overflow-hidden'>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4 md:px-5'>
+            <Card className='gap-2 rounded-xl border-dashed border-rose-500/20 bg-rose-500/2 py-2 md:rounded-[24px] md:py-2.5 shadow-none transition-all group overflow-hidden hover:bg-rose-500/5'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
                     <CardTitle className='text-[10px] font-black uppercase tracking-widest text-rose-600/60'>
                         {t('dashboard.page.kpi.scrap.title')}
                     </CardTitle>
-                    <div className='p-2 rounded-xl bg-rose-500/10 text-rose-500 transition-transform group-hover:scale-110'>
-                        <Users className='h-3.5 w-3.5 stroke-[2.5]' />
+                    <div className='rounded-lg bg-rose-500/10 p-1.5 text-rose-500 transition-transform group-hover:scale-110'>
+                        <Users className='h-3 w-3 stroke-[2.5]' />
                     </div>
                 </CardHeader>
-                <CardContent className='pb-4 px-4 md:px-5'>
+                <CardContent className='px-3 pb-0.5 md:px-3.5'>
                     {stats.availability.scrap.connected ? (
                         <>
-                            <div className='text-xl md:text-2xl font-black tracking-tighter text-rose-600'>
-                                {stats.scrap} <span className='text-[10px] uppercase font-black text-rose-500/40 ml-1'>{t('dashboard.page.kpi.scrap.unit')}</span>
+                            <div className='text-lg md:text-xl font-black tracking-tighter leading-none text-rose-600'>
+                                {stats.scrap} <span className='ml-1 text-[9px] font-black uppercase text-rose-500/40'>{t('dashboard.page.kpi.scrap.unit')}</span>
                             </div>
-                            <div className='flex items-center gap-1.5 mt-1'>
+                            <div className='mt-0.5 flex items-center gap-1'>
                                 <span className='size-1 rounded-full bg-rose-500 animate-pulse' />
-                                <p className='text-[9px] font-bold text-rose-600/50 uppercase tracking-tight'>
+                                <p className='text-[8px] font-bold uppercase tracking-tight text-rose-600/50 leading-none'>
                                     {stats.availability.scrapDelta.connected
                                         ? t('dashboard.page.kpi.scrap.delta', { value: stats.scrapDelta })
                                         : pendingLabel}
@@ -95,22 +95,22 @@ export function KpiGrid() {
             </Card>
 
             {/* DELIVERY_GAP */}
-            <Card className='rounded-xl md:rounded-[24px] border-dashed border-amber-500/20 bg-amber-500/[0.02] shadow-none hover:bg-amber-500/[0.05] transition-all group overflow-hidden'>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4 md:px-5'>
+            <Card className='gap-2 rounded-xl border-dashed border-amber-500/20 bg-amber-500/2 py-2 md:rounded-[24px] md:py-2.5 shadow-none transition-all group overflow-hidden hover:bg-amber-500/5'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 px-3 pt-0.5 pb-0 md:px-3.5'>
                     <CardTitle className='text-[10px] font-black uppercase tracking-widest text-amber-600/60'>
                         {t('dashboard.page.kpi.gap.title')}
                     </CardTitle>
-                    <div className='p-2 rounded-xl bg-amber-500/10 text-amber-600 transition-transform group-hover:scale-110'>
-                        <CreditCard className='h-3.5 w-3.5 stroke-[2.5]' />
+                    <div className='rounded-lg bg-amber-500/10 p-1.5 text-amber-600 transition-transform group-hover:scale-110'>
+                        <CreditCard className='h-3 w-3 stroke-[2.5]' />
                     </div>
                 </CardHeader>
-                <CardContent className='pb-4 px-4 md:px-5'>
+                <CardContent className='px-3 pb-0.5 md:px-3.5'>
                     {stats.availability.gapOrders.connected ? (
                         <>
-                            <div className='text-xl md:text-2xl font-black tracking-tighter text-amber-600'>
-                                {stats.gapOrders} <span className='text-[10px] uppercase font-black text-amber-600/40 ml-1'>{t('dashboard.page.kpi.gap.unit')}</span>
+                            <div className='text-lg md:text-xl font-black tracking-tighter leading-none text-amber-600'>
+                                {stats.gapOrders} <span className='ml-1 text-[9px] font-black uppercase text-amber-600/40'>{t('dashboard.page.kpi.gap.unit')}</span>
                             </div>
-                            <p className='text-[9px] font-bold text-amber-600/50 uppercase tracking-tight mt-1'>
+                            <p className='mt-0.5 text-[8px] font-bold uppercase tracking-tight text-amber-600/50 leading-none'>
                                 {stats.availability.gapDescription.connected
                                     ? t('dashboard.page.kpi.gap.description', { value: stats.gapDescription })
                                     : pendingLabel}
