@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetBusinessEventPhaseCatalogHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, services.ListBusinessEventPhaseCatalog())
+}
+
 func GetBusinessEventSourcesHandler(c *gin.Context) {
 	sources, err := services.ListBusinessEventSources()
 	if err != nil {

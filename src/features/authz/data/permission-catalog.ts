@@ -174,7 +174,7 @@ export const ROUTE_TO_MENU_MAPPING: Record<
   '/labs': 'quality',
   '/experimental': 'quality',
   '/equipment-tooling': 'equipment',
-  '/furnaces': 'equipment',
+  '/tooling-furnaces': 'equipment',
   '/personnel': 'org',
   '/leave-management': 'org',
   '/hall-of-fame': 'org',

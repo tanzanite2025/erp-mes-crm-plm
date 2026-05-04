@@ -5,7 +5,11 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
-import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
+import {
+  buildBusinessEventPhaseOptions,
+  type BusinessEventPhaseCatalogItem,
+  type BusinessEventSource,
+} from '../../workflow-core/data/business-event-source-schema'
 import { getBusinessEventSourceRuntimeCoverage } from '../../workflow-core/data/business-event-source-runtime-coverage'
 import {
   restoreRemovedBusinessEventSourceItem,
@@ -65,6 +69,7 @@ import {
 
 interface BusinessEventSourceCardProps {
   source: BusinessEventSource
+  phaseCatalog: BusinessEventPhaseCatalogItem[]
   expanded: boolean
   highlighted?: boolean
   onExpandedChange: (expanded: boolean) => void
@@ -139,6 +144,7 @@ function mergeDirtySectionsIntoIncomingSource(
 
 export function BusinessEventSourceCard({
   source,
+  phaseCatalog,
   expanded,
   highlighted = false,
   onExpandedChange,
@@ -154,6 +160,10 @@ export function BusinessEventSourceCard({
   const initialCommitted = cloneBusinessEventSource(source)
   const [draft, setDraft] = useState<BusinessEventSource>(
     () => initialCommitted
+  )
+  const statusPhaseOptions = useMemo(
+    () => buildBusinessEventPhaseOptions(phaseCatalog, draft.config.statuses),
+    [phaseCatalog, draft.config.statuses]
   )
   const [committedSource, setCommittedSource] =
     useState<BusinessEventSource>(initialCommitted)
@@ -729,6 +739,7 @@ export function BusinessEventSourceCard({
       <BusinessEventSourceCardDrawerPanel
         drawerMode={drawerMode}
         statuses={draft.config.statuses}
+        statusPhaseOptions={statusPhaseOptions}
         fields={draft.config.fields}
         persistedStatusIds={persistedStatusIds}
         persistedFieldIds={persistedFieldIds}

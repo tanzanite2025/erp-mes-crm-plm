@@ -3,7 +3,6 @@ import {
   type BusinessEventAction,
   type BusinessEventField,
   type BusinessEventSource,
-  type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
 
 export const ENTITY_OPTIONS: ReadonlyArray<BusinessEventSource['entity']> = [
@@ -19,16 +18,6 @@ export const ACTION_KIND_OPTIONS: BusinessEventAction['kind'][] = [
   'updated',
   'deleted',
   'status',
-  'custom',
-]
-
-export const STATUS_PHASE_OPTIONS: BusinessStatus['phase'][] = [
-  'draft',
-  'pending',
-  'active',
-  'done',
-  'cancelled',
-  'terminal',
   'custom',
 ]
 

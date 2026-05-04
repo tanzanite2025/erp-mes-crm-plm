@@ -16,17 +16,7 @@ export const businessEventActionSchema = businessConfigItemBaseSchema.extend({
 export const businessStatusSchema = businessConfigItemBaseSchema.extend({
   code: z.string().min(1),
   label: z.string().min(1),
-  phase: z
-    .enum([
-      'draft',
-      'pending',
-      'active',
-      'done',
-      'cancelled',
-      'terminal',
-      'custom',
-    ])
-    .default('custom'),
+  phase: z.string().trim().min(1).default('custom'),
   isTerminal: z.boolean().default(false),
   defaultResolve: z.boolean().default(false),
 })

@@ -1,4 +1,5 @@
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { type BusinessEventPhaseOption } from '../../workflow-core/data/business-event-phase-catalog'
 import { type BusinessEventSource } from '../../workflow-core/data/business-event-source-schema'
 import {
   type BusinessEventSourceItemChangeKind,
@@ -11,6 +12,7 @@ export type BusinessEventSourceDrawerMode = 'statuses' | 'fields' | null
 interface BusinessEventSourceCardDrawerPanelProps {
   drawerMode: BusinessEventSourceDrawerMode
   statuses: BusinessEventSource['config']['statuses']
+  statusPhaseOptions: BusinessEventPhaseOption[]
   fields: BusinessEventSource['config']['fields']
   persistedStatusIds: Set<string>
   persistedFieldIds: Set<string>
@@ -55,6 +57,7 @@ interface BusinessEventSourceCardDrawerPanelProps {
 export function BusinessEventSourceCardDrawerPanel({
   drawerMode,
   statuses,
+  statusPhaseOptions,
   fields,
   persistedStatusIds,
   persistedFieldIds,
@@ -101,6 +104,7 @@ export function BusinessEventSourceCardDrawerPanel({
         {drawerMode === 'statuses' && (
           <StatusDrawer
             statuses={statuses}
+            phaseOptions={statusPhaseOptions}
             persistedStatusIds={persistedStatusIds}
             onAdd={onAddStatus}
             onUpdate={onUpdateStatus}

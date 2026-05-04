@@ -27,17 +27,6 @@ var allowedBusinessEventActionKinds = map[string]struct{}{
 	"custom":  {},
 }
 
-var allowedBusinessStatusPhases = map[string]struct{}{
-	"draft":      {},
-	"pending":    {},
-	"scheduling": {},
-	"active":     {},
-	"done":       {},
-	"cancelled":  {},
-	"terminal":   {},
-	"custom":     {},
-}
-
 var allowedBusinessFieldTypes = map[string]struct{}{
 	"string":  {},
 	"number":  {},

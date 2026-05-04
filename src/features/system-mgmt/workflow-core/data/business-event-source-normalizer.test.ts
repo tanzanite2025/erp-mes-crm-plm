@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_SALES_ORDER_EVENT_SOURCE } from './business-event-source-templates/sales-order'
 import {
   deserializeBusinessEventSource,
+  deserializeBusinessEventSources,
   deserializeBusinessEventSourceTemplate,
   materializeBusinessEventSourceTemplate,
   serializeBusinessEventSourceCreate,
@@ -73,5 +74,54 @@ describe('business-event-source-normalizer contracts', () => {
 
     expect(entity.id).toBe('entity-1')
     expect(entity.code).toBe('SALES_ORDER')
+  })
+
+  it('accepts scheduling as a valid business status phase during list deserialization', () => {
+    const entities = deserializeBusinessEventSources([
+      {
+        ...DEFAULT_SALES_ORDER_EVENT_SOURCE,
+        id: 'entity-1',
+        config: {
+          ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config,
+          statuses: [
+            ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config.statuses,
+            {
+              code: 'Scheduling',
+              label: '排产中',
+              phase: 'scheduling',
+              isTerminal: false,
+              defaultResolve: false,
+            },
+          ],
+        },
+      },
+    ])
+
+    expect(entities).toHaveLength(1)
+    expect(entities[0]?.config.statuses[entities[0].config.statuses.length - 1]?.phase).toBe('scheduling')
+  })
+
+  it('does not reject the whole event source list when an unknown phase appears', () => {
+    const entities = deserializeBusinessEventSources([
+      {
+        ...DEFAULT_SALES_ORDER_EVENT_SOURCE,
+        id: 'entity-unknown-phase',
+        config: {
+          ...DEFAULT_SALES_ORDER_EVENT_SOURCE.config,
+          statuses: [
+            {
+              code: 'Reviewing',
+              label: '评审中',
+              phase: 'reviewing',
+              isTerminal: false,
+              defaultResolve: false,
+            },
+          ],
+        },
+      },
+    ])
+
+    expect(entities).toHaveLength(1)
+    expect(entities[0]?.config.statuses[0]?.phase).toBe('reviewing')
   })
 })

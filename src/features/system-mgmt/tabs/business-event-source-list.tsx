@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { createLogger } from '@/lib/logger'
 import { isForbiddenError } from '@/lib/error-status'
 import { ForbiddenState } from '@/components/forbidden-state'
 import {
   BUSINESS_EVENT_SOURCE_TEMPLATES,
+  type BusinessEventPhaseCatalogItem,
   type BusinessEventSource,
 } from '../workflow-core/data/business-event-source-schema'
 import {
@@ -12,6 +14,7 @@ import {
 } from '../workflow-core/data/business-event-source-runtime-coverage'
 import { RoutingQueryErrorState } from '../workflow-core/components/routing-query-error-state'
 import { useBusinessEventSources } from '../workflow-core/hooks/use-business-event-sources'
+import { RoutingService } from '../workflow-core/services/routing-service'
 import {
   createDuplicateEventSource,
   createEventSourceFromTemplate,
@@ -20,6 +23,8 @@ import {
 import { BusinessEventSourceCard } from './components/business-event-source-card'
 import { BusinessEventSourceListHeader } from './components/business-event-source-list-header'
 import { BusinessEventSourceListHint } from './components/business-event-source-list-hint'
+
+const logger = createLogger('BusinessEventSourceList')
 
 export function BusinessEventSourceList() {
   const {
@@ -31,6 +36,7 @@ export function BusinessEventSourceList() {
     deleteSource,
     reloadSources,
   } = useBusinessEventSources()
+  const [phaseCatalog, setPhaseCatalog] = useState<BusinessEventPhaseCatalogItem[]>([])
   const [templateCode, setTemplateCode] = useState(
     BUSINESS_EVENT_SOURCE_TEMPLATES[0]?.code ?? ''
   )
@@ -121,10 +127,13 @@ export function BusinessEventSourceList() {
   }
 
   useEffect(() => {
-    setExpandedSourceIds((prev) =>
-      prev.filter((id) => sources.some((source) => source.id === id))
-    )
-  }, [sources])
+    void RoutingService.getEventSourcePhaseCatalog()
+      .then(setPhaseCatalog)
+      .catch((err) => {
+        logger.error('加载业务事件 phase 目录失败', err)
+        setPhaseCatalog([])
+      })
+  }, [])
 
   useEffect(() => {
     if (!highlightedSourceId) return
@@ -211,6 +220,7 @@ export function BusinessEventSourceList() {
           >
             <BusinessEventSourceCard
               source={source}
+              phaseCatalog={phaseCatalog}
               expanded={expandedSourceIds.includes(source.id)}
               highlighted={highlightedSourceId === source.id}
               onExpandedChange={(expanded) =>

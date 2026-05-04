@@ -15,6 +15,23 @@ beforeEach(() => {
 })
 
 describe('RoutingService event source contracts', () => {
+  it('loads the business event phase catalog from the dedicated backend endpoint', async () => {
+    apiFetchMock.mockResolvedValue([
+      { code: 'draft', label: '草稿', semantic: 'draft', order: 0 },
+      { code: 'scheduling', label: '排产中', semantic: 'pending', order: 2 },
+    ])
+
+    const result = await RoutingService.getEventSourcePhaseCatalog()
+
+    expect(apiFetchMock).toHaveBeenCalledWith(
+      '/system/routing/event-source-phase-catalog'
+    )
+    expect(result).toEqual([
+      { code: 'draft', label: '草稿', semantic: 'draft', order: 0 },
+      { code: 'scheduling', label: '排产中', semantic: 'pending', order: 2 },
+    ])
+  })
+
   it('posts a create payload without persistence fields and deserializes the response', async () => {
     apiFetchMock.mockResolvedValue({
       id: 'source-1',

@@ -20,7 +20,7 @@ const ALLOWED_ROUTES = [
   '/warehouse/stock',
   '/warehouse/receipts',
   '/warehouse/shipments',
-  '/furnaces',
+  '/tooling-furnaces',
   '/finance/accounts',
   '/system-mgmt/users',
   '/system-mgmt/configs'

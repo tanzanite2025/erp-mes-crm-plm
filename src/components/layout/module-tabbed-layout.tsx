@@ -42,7 +42,7 @@ export function ModuleTabbedLayout({ tabs, children, actions, title, headerTitle
                 />
             </div>
 
-            <div className='h-26 shrink-0 md:h-29' />
+            <div className='h-14 shrink-0' />
 
             <Main fixed className='flex-1 overflow-y-auto pt-0 pb-5 [scrollbar-gutter:stable_both-edges]'>
                 <div className='flex flex-col items-stretch animate-in fade-in duration-700 min-h-0 min-w-0 h-fit'>

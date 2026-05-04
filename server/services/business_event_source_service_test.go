@@ -259,6 +259,15 @@ func TestEnsureDefaultBusinessEventSources_BackfillsMissingDefaultSeeds(t *testi
 	})
 }
 
+func TestBusinessEventPhaseCatalogCoversDefaultSalesOrderStatusPhases(t *testing.T) {
+	allowed := buildAllowedBusinessStatusPhases()
+
+	for _, item := range statemachine.SalesOrderStatusCatalog() {
+		_, ok := allowed[item.Phase]
+		require.Truef(t, ok, "phase %q from sales order status catalog must exist in business event phase catalog", item.Phase)
+	}
+}
+
 func TestDefaultSalesOrderEventSourceUsesStateMachineStatuses(t *testing.T) {
 	config, err := unmarshalBusinessEventSourceConfig(defaultSalesOrderEventSourceConfig())
 	require.NoError(t, err)

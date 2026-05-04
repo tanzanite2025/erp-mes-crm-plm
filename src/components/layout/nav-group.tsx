@@ -77,6 +77,20 @@ function withDynamicBadges(items: NavItem[], unreadApprovals: number, systemAler
   })
 }
 
+function normalizePath(path?: string): string {
+  if (!path) {
+    return ''
+  }
+
+  const normalized = path
+    .split('?')[0]
+    ?.split('#')[0]
+    ?.replace(/\/+/g, '/')
+    .replace(/\/$/, '')
+
+  return normalized || '/'
+}
+
 function isPathMatch(pathname: string, target?: string): boolean {
   if (!target) {
     return false
@@ -87,6 +101,14 @@ function isPathMatch(pathname: string, target?: string): boolean {
   }
 
   return pathname === target || pathname.startsWith(target + '/')
+}
+
+function isExactPathMatch(pathname: string, target?: string): boolean {
+  if (!target) {
+    return false
+  }
+
+  return normalizePath(pathname) === normalizePath(target)
 }
 
 function checkIsActive(pathname: string, item: NavItem, mainNav = false): boolean {
@@ -100,6 +122,16 @@ function checkIsActive(pathname: string, item: NavItem, mainNav = false): boolea
   }
 
   return !!(itemUrl && mainNav && pathname.split('/')[1] === itemUrl.split('/')[1])
+}
+
+function checkIsDirectlySelected(pathname: string, item: NavItem): boolean {
+  const itemUrl = item.url ? String(item.url) : undefined
+  const activeTarget = item.activeMatch ? String(item.activeMatch) : itemUrl
+  return isExactPathMatch(pathname, activeTarget)
+}
+
+function hasActiveDescendant(pathname: string, item: NavItem): boolean {
+  return !!item.children?.some((child) => checkIsActive(pathname, child))
 }
 
 function groupHasActiveItem(pathname: string, items: NavItem[]) {
@@ -369,13 +401,24 @@ function SidebarMenuBranch({
 
   const childLinks = item.children.filter(isNavLink)
   const showSystemAlertBadge = isSystemAlertBadge(item)
+  const branchIsActive = checkIsActive(pathname, item)
+  const branchIsDirectlySelected = checkIsDirectlySelected(pathname, item)
+  const branchHasActiveDescendant = hasActiveDescendant(pathname, item)
+  const branchIndicatorClassName = cn(
+    'size-1.5 rounded-full ring-2 ring-transparent transition-all',
+    branchIsDirectlySelected
+      ? 'bg-primary animate-pulse ring-primary/20'
+      : branchHasActiveDescendant
+        ? 'bg-primary/70 ring-primary/10'
+        : 'bg-muted-foreground/30'
+  )
 
   return (
     <SidebarMenuItem>
       {item.url ? (
         <SidebarMenuButton
           asChild
-          isActive={checkIsActive(pathname, item)}
+          isActive={branchIsActive}
           tooltip={item.title}
           className={branchButtonClassName}
         >
@@ -392,20 +435,13 @@ function SidebarMenuBranch({
               </NavBadge>
             )}
             <div className='ms-auto size-4 flex items-center justify-center'>
-              <div
-                className={cn(
-                  'size-1.5 rounded-full ring-2 ring-transparent transition-all',
-                  checkIsActive(pathname, item)
-                    ? 'bg-primary animate-pulse ring-primary/20'
-                    : 'bg-muted-foreground/30'
-                )}
-              />
+              <div className={branchIndicatorClassName} />
             </div>
           </Link>
         </SidebarMenuButton>
       ) : (
         <SidebarMenuButton
-          isActive={checkIsActive(pathname, item)}
+          isActive={branchIsActive}
           tooltip={item.title}
           className={branchButtonClassName}
         >
@@ -421,36 +457,43 @@ function SidebarMenuBranch({
             </NavBadge>
           )}
           <div className='ms-auto size-4 flex items-center justify-center'>
-            <div
-              className={cn(
-                'size-1.5 rounded-full ring-2 ring-transparent transition-all',
-                checkIsActive(pathname, item)
-                  ? 'bg-primary animate-pulse ring-primary/20'
-                  : 'bg-muted-foreground/30'
-              )}
-            />
+            <div className={branchIndicatorClassName} />
           </div>
         </SidebarMenuButton>
       )}
       {childLinks.length > 0 ? (
         <SidebarMenuSub>
-          {childLinks.map((subItem) => (
-            <SidebarMenuSubItem key={subItem.id} className='before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:bg-sidebar-border/35 before:content-[""]'>
-              <SidebarMenuSubButton asChild isActive={checkIsActive(pathname, subItem)}>
-                <Link to={subItem.url}>
-                  {subItem.icon && <subItem.icon />}
-                  <span className='min-w-0 flex-1 truncate italic font-black text-[12px] tracking-tight'>
-                    {subItem.title}
-                  </span>
-                  {subItem.badge ? (
-                    <span className='ms-auto shrink-0 text-[10px] font-black italic opacity-60'>
-                      {subItem.badge}
+          {childLinks.map((subItem) => {
+            const subItemIsActive = checkIsActive(pathname, subItem)
+
+            return (
+              <SidebarMenuSubItem key={subItem.id} className='before:absolute before:-left-3 before:top-1/2 before:h-px before:w-3 before:bg-sidebar-border/35 before:content-[""]'>
+                <SidebarMenuSubButton asChild isActive={subItemIsActive}>
+                  <Link to={subItem.url}>
+                    {subItem.icon && <subItem.icon />}
+                    <span className='min-w-0 flex-1 truncate italic font-black text-[12px] tracking-tight'>
+                      {subItem.title}
                     </span>
-                  ) : null}
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
+                    {subItem.badge ? (
+                      <span className='ms-auto shrink-0 text-[10px] font-black italic opacity-60'>
+                        {subItem.badge}
+                      </span>
+                    ) : null}
+                    <div
+                      className={cn(
+                        'size-4 shrink-0 flex items-center justify-center',
+                        !subItem.badge && 'ms-auto'
+                      )}
+                    >
+                      {subItemIsActive ? (
+                        <span className='size-1.5 rounded-full bg-orange-500 animate-pulse ring-2 ring-orange-500/25' />
+                      ) : null}
+                    </div>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )
+          })}
         </SidebarMenuSub>
       ) : null}
     </SidebarMenuItem>

@@ -223,6 +223,7 @@ func SetupRoutes(r *gin.Engine) {
 		// --- 工作流引擎路由 (Workflow Routing) ---
 		routingGroup := authorized.Group("/system/routing")
 		{
+			routingGroup.GET("/event-source-phase-catalog", middleware.RequirePermissions(authz.MenuSystem), handlers.GetBusinessEventPhaseCatalogHandler)
 			routingGroup.GET("/event-sources", middleware.RequirePermissions(authz.MenuSystem), handlers.GetBusinessEventSourcesHandler)
 			routingGroup.POST("/event-sources", adminOnly, handlers.SaveBusinessEventSourceHandler)
 			routingGroup.PUT("/event-sources/:id", adminOnly, handlers.UpdateBusinessEventSourceHandler)

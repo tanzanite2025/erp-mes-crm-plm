@@ -96,6 +96,7 @@ export function FurnaceMgmt() {
         icon={Thermometer}
         title={t('equipmentTooling.furnaces.page.title')}
         description={t('equipmentTooling.furnaces.page.description')}
+        className='gap-1.5 p-5 md:p-6'
       />
 
       <FurnaceStatsHeader stats={furnaceStats} />

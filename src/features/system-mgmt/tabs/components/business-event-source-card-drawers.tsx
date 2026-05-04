@@ -13,10 +13,8 @@ import {
   type BusinessEventField,
   type BusinessStatus,
 } from '../../workflow-core/data/business-event-source-schema'
-import {
-  FIELD_TYPE_OPTIONS,
-  STATUS_PHASE_OPTIONS,
-} from './business-event-source-card-constants'
+import { type BusinessEventPhaseOption } from '../../workflow-core/data/business-event-phase-catalog'
+import { FIELD_TYPE_OPTIONS } from './business-event-source-card-constants'
 import {
   type BusinessEventSourceItemChangeKind,
   type BusinessEventSourceRemovedItemSummary,
@@ -50,6 +48,7 @@ function drawerReadonlyFieldClass(locked?: boolean) {
 
 export function StatusDrawer({
   statuses,
+  phaseOptions,
   persistedStatusIds,
   onAdd,
   onUpdate,
@@ -72,6 +71,7 @@ export function StatusDrawer({
   forceOpenRemovedItems,
 }: {
   statuses: BusinessStatus[]
+  phaseOptions: BusinessEventPhaseOption[]
   persistedStatusIds?: Set<string>
   onAdd: () => void
   onUpdate: (index: number, updates: Partial<BusinessStatus>) => void
@@ -178,9 +178,9 @@ export function StatusDrawer({
                     drawerReadonlyFieldClass(isStatusIdentityLocked)
                   )}
                 >
-                  {STATUS_PHASE_OPTIONS.map((phase) => (
-                    <option key={phase} value={phase}>
-                      {phase}
+                  {phaseOptions.map((phase) => (
+                    <option key={phase.value} value={phase.value}>
+                      {phase.label}
                     </option>
                   ))}
                 </select>
